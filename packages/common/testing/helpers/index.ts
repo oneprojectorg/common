@@ -13,3 +13,4 @@
  */
 export { createTestAdminClient, type TestAdminClient } from './adminClient';
 export { TestPhoneAuthDataManager } from './TestPhoneAuthDataManager';
+export { advanceInstancePhase } from './advanceInstancePhase';

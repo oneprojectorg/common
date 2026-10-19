@@ -1,7 +1,4 @@
-const firstValue = (header: string | null): string | null => {
-  const value = header?.split(',')[0]?.trim();
-  return value ? value : null;
-};
+import { firstHeaderValue } from '../lib/firstHeaderValue';
 
 export const resolveWebhookUrl = ({
   url,
@@ -10,10 +7,10 @@ export const resolveWebhookUrl = ({
   url: string;
   headers: Headers;
 }): string => {
-  const proto = firstValue(headers.get('x-forwarded-proto'));
+  const proto = firstHeaderValue(headers.get('x-forwarded-proto'));
   const host =
-    firstValue(headers.get('x-forwarded-host')) ??
-    firstValue(headers.get('host'));
+    firstHeaderValue(headers.get('x-forwarded-host')) ??
+    firstHeaderValue(headers.get('host'));
 
   if (!proto || !host) {
     return url;

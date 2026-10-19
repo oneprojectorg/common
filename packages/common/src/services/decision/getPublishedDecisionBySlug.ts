@@ -5,16 +5,15 @@ import { permission } from 'access-zones';
 import { NotFoundError } from '../../utils';
 import { assertProfileAccess } from '../assert';
 import {
-  type PhaseInstanceData,
-  getInstancePhases,
-} from './schemas/instanceData';
+  type CurrentPhaseSummary,
+  summarizeCurrentPhase,
+} from './summarizeCurrentPhase';
 
-export interface PublishedDecision {
+export interface PublishedDecision extends CurrentPhaseSummary {
   profileId: string;
   processInstanceId: string;
   name: string;
   slug: string;
-  currentPhase: PhaseInstanceData | null;
 }
 
 export async function getPublishedDecisionBySlug({
@@ -56,16 +55,12 @@ export async function getPublishedDecisionBySlug({
   });
 
   const { id, instanceData, currentStateId } = profile.processInstance;
-  const currentPhase =
-    getInstancePhases(instanceData).find(
-      (phase) => phase.phaseId === currentStateId,
-    ) ?? null;
 
   return {
     profileId: profile.id,
     processInstanceId: id,
     name: profile.name,
     slug: profile.slug,
-    currentPhase,
+    ...summarizeCurrentPhase({ instanceData, currentStateId }),
   };
 }

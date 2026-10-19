@@ -351,3 +351,19 @@ export async function findAuthUserByPhone(
     isAnonymous: row.is_anonymous,
   };
 }
+
+export async function readProfileIdForAuthUser(
+  authUserId: string,
+): Promise<string> {
+  const [row] = await db
+    .select({ profileId: users.profileId })
+    .from(users)
+    .where(eq(users.authUserId, authUserId))
+    .limit(1);
+
+  if (!row?.profileId) {
+    throw new Error(`The signup trigger created no profile for ${authUserId}`);
+  }
+
+  return row.profileId;
+}

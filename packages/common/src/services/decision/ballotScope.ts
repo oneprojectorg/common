@@ -1,10 +1,9 @@
-import { type SQL, and, db, eq, notInArray, sql } from '@op/db/client';
+import { type SQL, and, db, eq } from '@op/db/client';
 import { processInstances, proposals } from '@op/db/schema';
 
 import { getPhaseProposalSqlScope } from './getProposalsForPhase';
-import { notSuperseded } from './proposalSupersession';
+import { votingEligiblePredicate } from './phaseEligibility';
 import { isReadableByEveryone } from './proposalVisibility';
-import { VOTING_INELIGIBLE_STATUSES } from './votingEligibility';
 
 export async function buildBallotProposalFilter({
   processInstanceId,
@@ -34,10 +33,7 @@ export async function buildBallotProposalFilter({
   const filter = and(
     eq(proposals.processInstanceId, processInstanceId),
     isReadableByEveryone(proposals),
-    notInArray(sql<string>`${proposals.status}::text`, [
-      ...VOTING_INELIGIBLE_STATUSES,
-    ]),
-    notSuperseded({ proposalId: proposals.id, processInstanceId }),
+    votingEligiblePredicate(proposals),
     scope.buildNonDraftFilter(proposals),
   );
 

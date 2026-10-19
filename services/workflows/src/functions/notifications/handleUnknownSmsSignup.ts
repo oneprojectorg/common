@@ -4,11 +4,8 @@ import {
   confirmPhoneSignupCode,
   discardUnconfirmedPhoneSignup,
   getPhoneSignupState,
-  getSmsProvider,
   PHONE_SIGNUP_REPLY_WINDOW_MINUTES,
-  RateLimitError,
   requestPhoneSignupCode,
-  safeParsePhoneNumber,
 } from '@op/common';
 import { Events, inngest } from '@op/events';
 import { logger } from '@op/logging';
@@ -19,6 +16,12 @@ import {
   SMS_THROTTLE_PERIOD,
   smsNumberRateLimit,
 } from './smsInboundLimits';
+import {
+  INVALID_PHONE_RESULT,
+  SMS_UNAVAILABLE_RESULT,
+  createTextSender,
+  parseInboundNumber,
+} from './smsReply';
 
 const SMS_SIGNUP_FEATURE_FLAG = 'sms-signup';
 const MAX_REPLY_ATTEMPTS = 3;
@@ -68,16 +71,11 @@ export const handleUnknownSmsSignup = inngest.createFunction(
       return { message: 'sms signup disabled' };
     }
 
-    const parsedFrom = safeParsePhoneNumber(from);
+    const to = parseInboundNumber(from, 'signup');
 
-    if (!parsedFrom.success) {
-      logger.info('Inbound SMS from a non-E.164 number, skipping signup', {
-        reason: parsedFrom.error.message,
-      });
-      return { message: 'invalid phone number' };
+    if (!to) {
+      return INVALID_PHONE_RESULT;
     }
-
-    const to = parsedFrom.data;
 
     const state = await step.run('check-known-number', () =>
       getPhoneSignupState({ phone: to }),
@@ -98,25 +96,15 @@ export const handleUnknownSmsSignup = inngest.createFunction(
       return { message: 'signup attempt in progress, skipped' };
     }
 
-    const provider = getSmsProvider();
+    const sendText = createTextSender({
+      step,
+      to,
+      purpose: 'start SMS signup',
+    });
 
-    if (!provider?.sendSms) {
-      logger.error(
-        'Cannot start SMS signup: no Twilio Messaging Service configured',
-      );
-      return { message: 'sms sending unavailable' };
+    if (!sendText) {
+      return SMS_UNAVAILABLE_RESULT;
     }
-
-    const sendSms = provider.sendSms;
-
-    const sendText = (stepId: string, label: string, body: string) =>
-      step.run(stepId, async () => {
-        const result = await sendSms({ to, body });
-        if (result.status === 'rejected' && result.retryable) {
-          throw new RateLimitError(`${label} send rejected: ${result.reason}`);
-        }
-        return result;
-      });
 
     if (keyword !== 'join') {
       const helpResult = await sendText(

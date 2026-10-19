@@ -1,18 +1,17 @@
-import {
-  type DecisionSchemaDefinition,
-  type PhoneNumber,
-  advancePhase,
-  createInstanceDataFromTemplate,
-} from '@op/common';
+import { type DecisionSchemaDefinition, type PhoneNumber } from '@op/common';
 import {
   createDecisionInstance,
   createDecisionProcess,
   createProposal,
   grantDecisionProfileAccess,
+  readProfileIdForAuthUser,
 } from '@op/common/testing/data';
-import { TestPhoneAuthDataManager } from '@op/common/testing/helpers';
-import { db, eq, inArray } from '@op/db/client';
-import { ProposalStatus, profiles, proposals, users } from '@op/db/schema';
+import {
+  TestPhoneAuthDataManager,
+  advanceInstancePhase,
+} from '@op/common/testing/helpers';
+import { db, inArray } from '@op/db/client';
+import { ProposalStatus, profiles } from '@op/db/schema';
 
 type RegisterCleanup = (fn: () => void | Promise<void>) => void;
 
@@ -85,20 +84,6 @@ export const votingSchema = (
   ],
 });
 
-const readProfileId = async (authUserId: string) => {
-  const [row] = await db
-    .select({ profileId: users.profileId })
-    .from(users)
-    .where(eq(users.authUserId, authUserId))
-    .limit(1);
-
-  if (!row?.profileId) {
-    throw new Error(`The signup trigger created no profile for ${authUserId}`);
-  }
-
-  return row.profileId;
-};
-
 export class SmsCommandFixture {
   private readonly phoneAuth: TestPhoneAuthDataManager;
   private readonly profileIds: string[] = [];
@@ -115,7 +100,7 @@ export class SmsCommandFixture {
     });
     return {
       authUserId,
-      profileId: await readProfileId(authUserId),
+      profileId: await readProfileIdForAuthUser(authUserId),
       email: null,
     };
   }
@@ -156,6 +141,7 @@ export class SmsCommandFixture {
       const proposal = await createProposal({
         processInstanceId: instance.id,
         submittedByProfileId: owner.profileId,
+        status: ProposalStatus.SUBMITTED,
         proposalData: {
           title,
           ...(budget === undefined
@@ -166,30 +152,21 @@ export class SmsCommandFixture {
         },
       });
       this.profileIds.push(proposal.profileId);
-      await db
-        .update(proposals)
-        .set({ status: ProposalStatus.SUBMITTED })
-        .where(eq(proposals.id, proposal.id));
-      created.push({ ...proposal, status: ProposalStatus.SUBMITTED });
+      created.push(proposal);
     }
 
     const phaseIds = schema.phases.map((phase) => phase.id);
-    const instanceData = createInstanceDataFromTemplate({ template: schema });
     for (let index = 0; index < phaseIds.indexOf(currentPhaseId); index++) {
       const fromPhaseId = phaseIds[index];
       const toPhaseId = phaseIds[index + 1];
       if (!fromPhaseId || !toPhaseId) {
         throw new Error(`No phase to advance into after ${fromPhaseId}`);
       }
-      const result = await db.transaction((tx) =>
-        advancePhase({
-          db: tx,
-          instance: { id: instance.id, instanceData },
-          fromPhaseId,
-          toPhaseId,
-          triggeredByProfileId: null,
-        }),
-      );
+      const result = await advanceInstancePhase({
+        instanceId: instance.id,
+        fromPhaseId,
+        toPhaseId,
+      });
       if (result.conflict) {
         throw new Error(
           `Could not advance ${instance.id} from ${fromPhaseId} to ${toPhaseId}`,

@@ -8,7 +8,6 @@ import {
   getSmsProvider,
   requestPhoneSignupCode,
 } from '@op/common';
-import { Events } from '@op/events';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@op/analytics', () => ({ isFeatureEnabled: vi.fn() }));
@@ -33,36 +32,21 @@ vi.mock('@op/common', () => {
   };
 });
 
+import { smsInboundEvent } from '../../../testing/smsInboundEvent';
 import { handleUnknownSmsSignup } from './handleUnknownSmsSignup';
 
 type SendSms = NonNullable<SmsProvider['sendSms']>;
 
 const FROM = '+15005550006';
 
-const triggerEvent = (
-  code: string | null = null,
-  keyword: 'join' | null = 'join',
-) => ({
-  name: Events.smsInboundReceived.name,
-  data: {
-    from: FROM,
-    messageSid: 'SM1',
-    code,
-    keyword,
-    argument: null,
-  },
-});
-
 const reply = (attempt: number, code: string | null) => ({
   id: `wait-for-confirmation-${attempt}`,
   handler: () => ({
-    data: {
+    data: smsInboundEvent({
       from: FROM,
-      messageSid: `SM-reply-${attempt}`,
       code,
-      keyword: null,
-      argument: null,
-    },
+      messageSid: `SM-reply-${attempt}`,
+    }).data,
   }),
 });
 
@@ -109,7 +93,9 @@ describe('handleUnknownSmsSignup', () => {
     vi.mocked(isFeatureEnabled).mockResolvedValue(false);
     const t = new InngestTestEngine({ function: handleUnknownSmsSignup });
 
-    const { result } = await t.execute({ events: [triggerEvent()] });
+    const { result } = await t.execute({
+      events: [smsInboundEvent({ from: FROM, keyword: 'join' })],
+    });
 
     expect(result).toEqual({ message: 'sms signup disabled' });
     expect(getPhoneSignupState).not.toHaveBeenCalled();
@@ -121,7 +107,9 @@ describe('handleUnknownSmsSignup', () => {
     vi.mocked(getPhoneSignupState).mockResolvedValue(confirmed(1));
     const t = new InngestTestEngine({ function: handleUnknownSmsSignup });
 
-    const { result } = await t.execute({ events: [triggerEvent()] });
+    const { result } = await t.execute({
+      events: [smsInboundEvent({ from: FROM, keyword: 'join' })],
+    });
 
     expect(getPhoneSignupState).toHaveBeenCalledWith({ phone: FROM });
     expect(result).toEqual({ message: 'known number, skipped' });
@@ -137,7 +125,9 @@ describe('handleUnknownSmsSignup', () => {
     });
     const t = new InngestTestEngine({ function: handleUnknownSmsSignup });
 
-    const { result } = await t.execute({ events: [triggerEvent()] });
+    const { result } = await t.execute({
+      events: [smsInboundEvent({ from: FROM, keyword: 'join' })],
+    });
 
     expect(result).toEqual({ message: 'signup attempt in progress, skipped' });
     expect(getSmsProvider).not.toHaveBeenCalled();
@@ -150,7 +140,10 @@ describe('handleUnknownSmsSignup', () => {
     );
     const t = new InngestTestEngine({ function: handleUnknownSmsSignup });
 
-    await t.execute({ events: [triggerEvent()], steps: [silence(1)] });
+    await t.execute({
+      events: [smsInboundEvent({ from: FROM, keyword: 'join' })],
+      steps: [silence(1)],
+    });
 
     expect(requestPhoneSignupCode).toHaveBeenCalledWith({ phone: FROM });
     expect(sendSms).toHaveBeenCalledTimes(1);
@@ -162,7 +155,9 @@ describe('handleUnknownSmsSignup', () => {
     vi.mocked(getSmsProvider).mockReturnValue({});
     const t = new InngestTestEngine({ function: handleUnknownSmsSignup });
 
-    const { result } = await t.execute({ events: [triggerEvent()] });
+    const { result } = await t.execute({
+      events: [smsInboundEvent({ from: FROM, keyword: 'join' })],
+    });
 
     expect(result).toEqual({ message: 'sms sending unavailable' });
     expect(requestPhoneSignupCode).not.toHaveBeenCalled();
@@ -174,7 +169,9 @@ describe('handleUnknownSmsSignup', () => {
     );
     const t = new InngestTestEngine({ function: handleUnknownSmsSignup });
 
-    const { result } = await t.execute({ events: [triggerEvent(null, null)] });
+    const { result } = await t.execute({
+      events: [smsInboundEvent({ from: FROM })],
+    });
 
     expect(result).toEqual({ message: 'help sent' });
     expect(sendSms).toHaveBeenCalledWith({
@@ -195,7 +192,9 @@ describe('handleUnknownSmsSignup', () => {
     );
     const t = new InngestTestEngine({ function: handleUnknownSmsSignup });
 
-    const { result } = await t.execute({ events: [triggerEvent(null, null)] });
+    const { result } = await t.execute({
+      events: [smsInboundEvent({ from: FROM })],
+    });
 
     expect(result).toEqual({
       message: 'help send rejected',
@@ -210,16 +209,11 @@ describe('handleUnknownSmsSignup', () => {
 
     const { result } = await t.execute({
       events: [
-        {
-          name: Events.smsInboundReceived.name,
-          data: {
-            from: 'not-e164',
-            messageSid: 'SM1',
-            code: null,
-            keyword: 'join',
-            argument: null,
-          },
-        },
+        smsInboundEvent({
+          from: 'not-e164',
+          keyword: 'join',
+          messageSid: 'SM1',
+        }),
       ],
     });
 
@@ -236,7 +230,9 @@ describe('handleUnknownSmsSignup', () => {
     });
     const t = new InngestTestEngine({ function: handleUnknownSmsSignup });
 
-    const { result } = await t.execute({ events: [triggerEvent()] });
+    const { result } = await t.execute({
+      events: [smsInboundEvent({ from: FROM, keyword: 'join' })],
+    });
 
     expect(result).toEqual({
       message: 'code send rejected',
@@ -256,7 +252,9 @@ describe('handleUnknownSmsSignup', () => {
     );
     const t = new InngestTestEngine({ function: handleUnknownSmsSignup });
 
-    const { result } = await t.execute({ events: [triggerEvent()] });
+    const { result } = await t.execute({
+      events: [smsInboundEvent({ from: FROM, keyword: 'join' })],
+    });
 
     expect(result).toEqual({
       message: 'consent send rejected',
@@ -277,7 +275,9 @@ describe('handleUnknownSmsSignup', () => {
     );
     const t = new InngestTestEngine({ function: handleUnknownSmsSignup });
 
-    const { error } = await t.execute({ events: [triggerEvent()] });
+    const { error } = await t.execute({
+      events: [smsInboundEvent({ from: FROM, keyword: 'join' })],
+    });
 
     expect(error).toMatchObject({
       message: expect.stringContaining(
@@ -293,7 +293,7 @@ describe('handleUnknownSmsSignup', () => {
     const t = new InngestTestEngine({ function: handleUnknownSmsSignup });
 
     const { result } = await t.execute({
-      events: [triggerEvent()],
+      events: [smsInboundEvent({ from: FROM, keyword: 'join' })],
       steps: [silence(1)],
     });
 
@@ -320,7 +320,7 @@ describe('handleUnknownSmsSignup', () => {
     const t = new InngestTestEngine({ function: handleUnknownSmsSignup });
 
     const { result } = await t.execute({
-      events: [triggerEvent()],
+      events: [smsInboundEvent({ from: FROM, keyword: 'join' })],
       steps: [reply(1, null), reply(2, '123456')],
     });
 
@@ -347,7 +347,7 @@ describe('handleUnknownSmsSignup', () => {
     const t = new InngestTestEngine({ function: handleUnknownSmsSignup });
 
     const { result } = await t.execute({
-      events: [triggerEvent()],
+      events: [smsInboundEvent({ from: FROM, keyword: 'join' })],
       steps: [reply(1, '000000'), silence(2)],
     });
 
@@ -371,7 +371,7 @@ describe('handleUnknownSmsSignup', () => {
     const t = new InngestTestEngine({ function: handleUnknownSmsSignup });
 
     const { result } = await t.execute({
-      events: [triggerEvent()],
+      events: [smsInboundEvent({ from: FROM, keyword: 'join' })],
       steps: [
         reply(1, null),
         reply(2, '000000'),
@@ -404,7 +404,7 @@ describe('handleUnknownSmsSignup', () => {
     const t = new InngestTestEngine({ function: handleUnknownSmsSignup });
 
     const { result } = await t.execute({
-      events: [triggerEvent()],
+      events: [smsInboundEvent({ from: FROM, keyword: 'join' })],
       steps: [reply(1, '123456')],
     });
 
@@ -438,7 +438,7 @@ describe('handleUnknownSmsSignup', () => {
     const t = new InngestTestEngine({ function: handleUnknownSmsSignup });
 
     const { result } = await t.execute({
-      events: [triggerEvent()],
+      events: [smsInboundEvent({ from: FROM, keyword: 'join' })],
       steps: [reply(1, '123456')],
     });
 

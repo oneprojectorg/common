@@ -8,10 +8,10 @@ import {
 import { TestPhoneAuthDataManager } from '@op/common/testing/helpers';
 import { db, eq } from '@op/db/client';
 import { authUsers, profiles, users } from '@op/db/schema';
-import { Events } from '@op/events';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { recordedSms, resetRecordedSms } from '../../../testing/mocks/sms';
+import { smsInboundEvent } from '../../../testing/smsInboundEvent';
 import { handleUnknownSmsSignup } from './handleUnknownSmsSignup';
 
 /**
@@ -31,31 +31,14 @@ const TEST_NUMBERS = {
 
 type TestNumber = keyof typeof TEST_NUMBERS;
 
-const inboundText = (
-  from: PhoneNumber,
-  code: string | null = null,
-  keyword: 'join' | null = 'join',
-) => ({
-  name: Events.smsInboundReceived.name,
-  data: {
-    from,
-    messageSid: `SM-${from}-${code ?? 'text'}`,
-    code,
-    keyword,
-    argument: null,
-  },
-});
-
 const reply = (from: PhoneNumber, attempt: number, code: string | null) => ({
   id: `wait-for-confirmation-${attempt}`,
   handler: () => ({
-    data: {
+    data: smsInboundEvent({
       from,
-      messageSid: `SM-reply-${from}-${attempt}`,
       code,
-      keyword: null,
-      argument: null,
-    },
+      messageSid: `SM-reply-${from}-${attempt}`,
+    }).data,
   }),
 });
 
@@ -126,7 +109,7 @@ describe('handleUnknownSmsSignup against the database', () => {
     const t = new InngestTestEngine({ function: handleUnknownSmsSignup });
 
     const { result } = await t.execute({
-      events: [inboundText(phone, null, null)],
+      events: [smsInboundEvent({ from: phone })],
     });
 
     expect(result).toEqual({ message: 'help sent' });
@@ -148,7 +131,7 @@ describe('handleUnknownSmsSignup against the database', () => {
     const t = new InngestTestEngine({ function: handleUnknownSmsSignup });
 
     const { result } = await t.execute({
-      events: [inboundText(phone)],
+      events: [smsInboundEvent({ from: phone, keyword: 'join' })],
       steps: replyingWith(phone, code),
     });
 
@@ -180,7 +163,7 @@ describe('handleUnknownSmsSignup against the database', () => {
     const t = new InngestTestEngine({ function: handleUnknownSmsSignup });
 
     const { result } = await t.execute({
-      events: [inboundText(phone)],
+      events: [smsInboundEvent({ from: phone, keyword: 'join' })],
       steps: noReply,
     });
 
@@ -209,7 +192,7 @@ describe('handleUnknownSmsSignup against the database', () => {
     const t = new InngestTestEngine({ function: handleUnknownSmsSignup });
 
     const { result } = await t.execute({
-      events: [inboundText(phone)],
+      events: [smsInboundEvent({ from: phone, keyword: 'join' })],
     });
 
     expect(result).toEqual({ message: 'signup attempt in progress, skipped' });
@@ -227,7 +210,7 @@ describe('handleUnknownSmsSignup against the database', () => {
     const t = new InngestTestEngine({ function: handleUnknownSmsSignup });
 
     const { result } = await t.execute({
-      events: [inboundText(phone)],
+      events: [smsInboundEvent({ from: phone, keyword: 'join' })],
     });
 
     expect(result).toEqual({ message: 'known number, skipped' });
@@ -248,7 +231,7 @@ describe('handleUnknownSmsSignup against the database', () => {
     delete process.env.NEXT_PUBLIC_E2E;
     try {
       const { result } = await t.execute({
-        events: [inboundText(phone)],
+        events: [smsInboundEvent({ from: phone, keyword: 'join' })],
       });
 
       expect(result).toEqual({ message: 'sms signup disabled' });
@@ -264,16 +247,11 @@ describe('handleUnknownSmsSignup against the database', () => {
 
     const { result } = await t.execute({
       events: [
-        {
-          name: Events.smsInboundReceived.name,
-          data: {
-            from: 'not-a-phone',
-            messageSid: 'SM-bad',
-            code: null,
-            keyword: 'join',
-            argument: null,
-          },
-        },
+        smsInboundEvent({
+          from: 'not-a-phone',
+          keyword: 'join',
+          messageSid: 'SM-bad',
+        }),
       ],
     });
 
@@ -290,7 +268,7 @@ describe('handleUnknownSmsSignup against the database', () => {
     const t = new InngestTestEngine({ function: handleUnknownSmsSignup });
 
     const { result } = await t.execute({
-      events: [inboundText(phone)],
+      events: [smsInboundEvent({ from: phone, keyword: 'join' })],
       steps: [reply(phone, 1, '000000'), silence(2)],
     });
 
@@ -311,7 +289,7 @@ describe('handleUnknownSmsSignup against the database', () => {
     const t = new InngestTestEngine({ function: handleUnknownSmsSignup });
 
     const { result } = await t.execute({
-      events: [inboundText(phone)],
+      events: [smsInboundEvent({ from: phone, keyword: 'join' })],
       steps: [reply(phone, 1, null), reply(phone, 2, code)],
     });
 

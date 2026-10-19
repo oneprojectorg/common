@@ -3,13 +3,11 @@ import {
   EntityType,
   ProcessStatus,
   processInstances,
-  profileUsers,
   profiles,
 } from '@op/db/schema';
 
-import { resolveAccessUserIds } from '../access';
-import { getInstancePhases } from './schemas/instanceData';
-import { isVotingPhase } from './utils/phaseSettings';
+import { memberProfileIds, resolveAccessUserIds } from '../access';
+import { summarizeCurrentPhase } from './summarizeCurrentPhase';
 
 export interface SmsDecisionListItem {
   name: string;
@@ -37,31 +35,18 @@ export async function listSmsDecisions({
         eq(processInstances.status, ProcessStatus.PUBLISHED),
         inArray(
           profiles.id,
-          db
-            .select({ profileId: profileUsers.profileId })
-            .from(profileUsers)
-            .where(
-              inArray(
-                profileUsers.authUserId,
-                resolveAccessUserIds({ id: authUserId }),
-              ),
-            ),
+          memberProfileIds(resolveAccessUserIds({ id: authUserId })),
         ),
       ),
     )
     .orderBy(asc(profiles.name), asc(profiles.id));
 
   return rows
-    .map(({ name, slug, instanceData, currentStateId }) => {
-      const phases = getInstancePhases(instanceData);
-      const currentPhase = phases.find(
-        (phase) => phase.phaseId === currentStateId,
-      );
-      return {
-        name,
-        slug,
-        votingOpen: currentPhase ? isVotingPhase(currentPhase) : false,
-      };
-    })
+    .map(({ name, slug, instanceData, currentStateId }) => ({
+      name,
+      slug,
+      votingOpen: summarizeCurrentPhase({ instanceData, currentStateId })
+        .votingOpen,
+    }))
     .sort((a, b) => Number(b.votingOpen) - Number(a.votingOpen));
 }

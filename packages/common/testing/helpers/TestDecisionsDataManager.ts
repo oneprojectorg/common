@@ -19,7 +19,6 @@ import {
   type DecisionInstanceData,
   type DecisionSchemaDefinition as DecisionSchemaDefinitionStrict,
   type PhaseDefinition,
-  advancePhase,
   createDecisionInstance,
   createInstanceDataFromTemplate,
   createOrganization as createOrganizationService,
@@ -32,7 +31,9 @@ import {
   makeDecisionPublic as makeDecisionPublicShared,
   testMinimalSchema,
 } from '../data/decision-data';
+import { readProfileIdForAuthUser } from '../data/test-data';
 import { createTestUser, supabaseTestAdminClient } from '../supabase';
+import { advanceInstancePhase } from './advanceInstancePhase';
 
 // Fixture schemas are literals written straight to `process_schema` (jsonb), so
 // this mirrors the looser shape the api decision encoders decode them into.
@@ -217,21 +218,8 @@ export class TestDecisionsDataManager {
 
     this.createdAuthUserIds.push(authUser.id);
 
-    // Get the user record that was created by the trigger
-    const [userRecord] = await db
-      .select()
-      .from(users)
-      .where(eq(users.authUserId, authUser.id));
-
-    if (!userRecord) {
-      throw new Error(`Failed to find user record for ${userEmail}`);
-    }
-
-    // Track the profile ID that was created by the trigger for cleanup
-    if (!userRecord.profileId) {
-      throw new Error(`User record missing profileId for ${userEmail}`);
-    }
-    this.createdProfileIds.push(userRecord.profileId);
+    const profileId = await readProfileIdForAuthUser(authUser.id);
+    this.createdProfileIds.push(profileId);
 
     const user: User = {
       id: authUser.id,
@@ -278,7 +266,7 @@ export class TestDecisionsDataManager {
         name: this.generateUniqueName(processName),
         description: processDescription,
         processSchema: newProcessSchema,
-        createdByProfileId: userRecord.profileId,
+        createdByProfileId: profileId,
       })
       .returning();
 
@@ -721,24 +709,7 @@ export class TestDecisionsDataManager {
     fromPhaseId: string;
     toPhaseId: string;
   }) {
-    const processInstance = await db.query.processInstances.findFirst({
-      where: { id: opts.instanceId },
-    });
-    if (!processInstance) {
-      throw new Error(`Instance ${opts.instanceId} not found`);
-    }
-    return db.transaction(async (tx) =>
-      advancePhase({
-        db: tx,
-        instance: {
-          ...processInstance,
-          instanceData: processInstance.instanceData as DecisionInstanceData,
-        },
-        fromPhaseId: opts.fromPhaseId,
-        toPhaseId: opts.toPhaseId,
-        triggeredByProfileId: null,
-      }),
-    );
+    return advanceInstancePhase(opts);
   }
 
   /**

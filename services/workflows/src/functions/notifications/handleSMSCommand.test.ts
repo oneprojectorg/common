@@ -1,16 +1,12 @@
 import { InngestTestEngine } from '@inngest/test';
-import {
-  type PhoneNumber,
-  SMS_MAX_BODY_LENGTH,
-  parsePhoneNumber,
-} from '@op/common';
-import type { SmsKeyword } from '@op/core/sms';
-import { Events } from '@op/events';
+import { SMS_MAX_BODY_LENGTH, parsePhoneNumber } from '@op/common';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { recordedSms, resetRecordedSms } from '../../../testing/mocks/sms';
 import { SmsCommandFixture } from '../../../testing/smsCommandFixture';
+import { smsInboundEvent } from '../../../testing/smsInboundEvent';
 import { handleSMSCommand } from './handleSMSCommand';
+import { SMS_COMMAND_HELP_MESSAGE } from './smsReply';
 
 const NUMBERS = {
   member: '+15005550090',
@@ -26,25 +22,6 @@ const NUMBERS = {
   lister: '+15005550088',
   longText: '+15005550087',
 } as const;
-
-const HELP_MESSAGE =
-  'Text SHOW to see your decisions, or SHOW and a decision name, for example SHOW columbus. Reply STOP to unsubscribe.';
-
-const inbound = (
-  from: PhoneNumber,
-  keyword: SmsKeyword | null,
-  argument: string | null,
-  code: string | null = null,
-) => ({
-  name: Events.smsInboundReceived.name,
-  data: {
-    from,
-    messageSid: `SM-command-${from}`,
-    code,
-    keyword,
-    argument,
-  },
-});
 
 beforeEach(() => {
   resetRecordedSms();
@@ -71,7 +48,9 @@ describe('handleSMSCommand against the database', () => {
     const t = new InngestTestEngine({ function: handleSMSCommand });
 
     const { result } = await t.execute({
-      events: [inbound(phone, 'show', slug)],
+      events: [
+        smsInboundEvent({ from: phone, keyword: 'show', argument: slug }),
+      ],
     });
 
     expect(result).toEqual({ message: 'decision sent' });
@@ -98,7 +77,9 @@ describe('handleSMSCommand against the database', () => {
     const t = new InngestTestEngine({ function: handleSMSCommand });
 
     const { result } = await t.execute({
-      events: [inbound(phone, 'show', slug)],
+      events: [
+        smsInboundEvent({ from: phone, keyword: 'show', argument: slug }),
+      ],
     });
 
     expect(result).toEqual({ message: 'decision sent' });
@@ -117,7 +98,13 @@ describe('handleSMSCommand against the database', () => {
     const t = new InngestTestEngine({ function: handleSMSCommand });
 
     const { result } = await t.execute({
-      events: [inbound(phone, 'show', `no-such-decision-${task.id}`)],
+      events: [
+        smsInboundEvent({
+          from: phone,
+          keyword: 'show',
+          argument: `no-such-decision-${task.id}`,
+        }),
+      ],
     });
 
     expect(result).toEqual({ message: 'decision not found' });
@@ -140,7 +127,9 @@ describe('handleSMSCommand against the database', () => {
     );
 
     const { result } = await t.execute({
-      events: [inbound(phone, 'show', argument)],
+      events: [
+        smsInboundEvent({ from: phone, keyword: 'show', argument: argument }),
+      ],
     });
 
     expect(result).toEqual({ message: 'decision not found' });
@@ -167,7 +156,13 @@ describe('handleSMSCommand against the database', () => {
     const t = new InngestTestEngine({ function: handleSMSCommand });
 
     const { result } = await t.execute({
-      events: [inbound(outsiderPhone, 'show', slug)],
+      events: [
+        smsInboundEvent({
+          from: outsiderPhone,
+          keyword: 'show',
+          argument: slug,
+        }),
+      ],
     });
 
     expect(result).toEqual({ message: 'decision not found' });
@@ -186,11 +181,13 @@ describe('handleSMSCommand against the database', () => {
     const t = new InngestTestEngine({ function: handleSMSCommand });
 
     const { result } = await t.execute({
-      events: [inbound(phone, null, null)],
+      events: [smsInboundEvent({ from: phone, keyword: null, argument: null })],
     });
 
     expect(result).toEqual({ message: 'help sent' });
-    expect(recordedSms.map((sms) => sms.body)).toEqual([HELP_MESSAGE]);
+    expect(recordedSms.map((sms) => sms.body)).toEqual([
+      SMS_COMMAND_HELP_MESSAGE,
+    ]);
   });
 
   it('given a member of no decision texts SHOW alone, then they are told they are in no decision yet', async ({
@@ -203,7 +200,9 @@ describe('handleSMSCommand against the database', () => {
     const t = new InngestTestEngine({ function: handleSMSCommand });
 
     const { result } = await t.execute({
-      events: [inbound(phone, 'show', null)],
+      events: [
+        smsInboundEvent({ from: phone, keyword: 'show', argument: null }),
+      ],
     });
 
     expect(result).toEqual({ message: 'decisions sent', count: 0 });
@@ -237,7 +236,9 @@ describe('handleSMSCommand against the database', () => {
     const t = new InngestTestEngine({ function: handleSMSCommand });
 
     const { result } = await t.execute({
-      events: [inbound(phone, 'show', null)],
+      events: [
+        smsInboundEvent({ from: phone, keyword: 'show', argument: null }),
+      ],
     });
 
     expect(result).toEqual({ message: 'decisions sent', count: 2 });
@@ -260,7 +261,14 @@ describe('handleSMSCommand against the database', () => {
     const t = new InngestTestEngine({ function: handleSMSCommand });
 
     const { result } = await t.execute({
-      events: [inbound(phone, null, null, '123456')],
+      events: [
+        smsInboundEvent({
+          from: phone,
+          keyword: null,
+          argument: null,
+          code: '123456',
+        }),
+      ],
     });
 
     expect(result).toEqual({ message: 'signup code, left to signup' });
@@ -277,7 +285,9 @@ describe('handleSMSCommand against the database', () => {
     const t = new InngestTestEngine({ function: handleSMSCommand });
 
     const { result } = await t.execute({
-      events: [inbound(phone, 'join', null)],
+      events: [
+        smsInboundEvent({ from: phone, keyword: 'join', argument: null }),
+      ],
     });
 
     expect(result).toEqual({ message: 'join is handled by signup' });
@@ -289,7 +299,9 @@ describe('handleSMSCommand against the database', () => {
     const t = new InngestTestEngine({ function: handleSMSCommand });
 
     const { result } = await t.execute({
-      events: [inbound(phone, 'show', 'columbus')],
+      events: [
+        smsInboundEvent({ from: phone, keyword: 'show', argument: 'columbus' }),
+      ],
     });
 
     expect(result).toEqual({ message: 'unknown number, skipped' });

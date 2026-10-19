@@ -1,6 +1,5 @@
 import {
   NotFoundError,
-  RateLimitError,
   UnauthorizedError,
   clipSmsText,
   countBallotProposals,
@@ -8,18 +7,20 @@ import {
   formatSmsDecisionList,
   getPhoneSignupState,
   getPublishedDecisionBySlug,
-  getSmsProvider,
-  isVotingPhase,
   listSmsDecisions,
-  safeParsePhoneNumber,
 } from '@op/common';
 import { Events, inngest } from '@op/events';
 import { logger } from '@op/logging';
 
 import { smsNumberRateLimit } from './smsInboundLimits';
+import {
+  INVALID_PHONE_RESULT,
+  SMS_COMMAND_HELP_MESSAGE,
+  SMS_UNAVAILABLE_RESULT,
+  createTextSender,
+  parseInboundNumber,
+} from './smsReply';
 
-const HELP_MESSAGE =
-  'Text SHOW to see your decisions, or SHOW and a decision name, for example SHOW columbus. Reply STOP to unsubscribe.';
 const SMS_SLUG_LENGTH = 100;
 const { smsInboundReceived } = Events;
 
@@ -46,16 +47,11 @@ export const handleSMSCommand = inngest.createFunction(
       return { message: 'signup code, left to signup' };
     }
 
-    const parsedFrom = safeParsePhoneNumber(from);
+    const to = parseInboundNumber(from, 'command');
 
-    if (!parsedFrom.success) {
-      logger.info('SMS command from a non-E.164 number, skipping', {
-        reason: parsedFrom.error.message,
-      });
-      return { message: 'invalid phone number' };
+    if (!to) {
+      return INVALID_PHONE_RESULT;
     }
-
-    const to = parsedFrom.data;
 
     const account = await step.run('resolve-account', async () => {
       const state = await getPhoneSignupState({ phone: to });
@@ -71,29 +67,19 @@ export const handleSMSCommand = inngest.createFunction(
       return { message: 'unknown number, skipped' };
     }
 
-    const provider = getSmsProvider();
+    const text = createTextSender({
+      step,
+      to,
+      purpose: 'answer an SMS command',
+      context: { keyword },
+    });
 
-    if (!provider?.sendSms) {
-      logger.error(
-        'Cannot answer an SMS command: no Twilio Messaging Service configured',
-        { keyword },
-      );
-      return { message: 'sms sending unavailable' };
+    if (!text) {
+      return SMS_UNAVAILABLE_RESULT;
     }
 
-    const sendSms = provider.sendSms;
-
-    const text = (stepId: string, body: string) =>
-      step.run(stepId, async () => {
-        const result = await sendSms({ to, body });
-        if (result.status === 'rejected' && result.retryable) {
-          throw new RateLimitError(`SMS reply rejected: ${result.reason}`);
-        }
-        return result;
-      });
-
     const help = async () => {
-      await text('send-help-reply', HELP_MESSAGE);
+      await text('send-help-reply', 'Help reply', SMS_COMMAND_HELP_MESSAGE);
       return { message: 'help sent' };
     };
 
@@ -107,6 +93,7 @@ export const handleSMSCommand = inngest.createFunction(
           index === 0
             ? 'send-decision-list'
             : `send-decision-list-${index + 1}`,
+          'Decision list',
           body,
         );
       }
@@ -138,6 +125,7 @@ export const handleSMSCommand = inngest.createFunction(
       if (!decision) {
         await text(
           'send-not-found-reply',
+          'Not-found reply',
           `No decision named "${clipSmsText(argument, SMS_SLUG_LENGTH)}" was found.`,
         );
         return { message: 'decision not found' };
@@ -151,12 +139,11 @@ export const handleSMSCommand = inngest.createFunction(
 
       await text(
         'send-decision-reply',
+        'Decision reply',
         formatSmsDecisionInfo({
           name: decision.name,
           phaseName: decision.currentPhase?.name ?? null,
-          votingOpen: decision.currentPhase
-            ? isVotingPhase(decision.currentPhase)
-            : false,
+          votingOpen: decision.votingOpen,
           proposalCount,
         }),
       );
