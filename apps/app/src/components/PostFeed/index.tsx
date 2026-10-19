@@ -456,7 +456,7 @@ export const PostItem = ({
       />
       <FeedMain>
         <FeedHeader className="relative w-full justify-between">
-          <div className="flex flex-col items-baseline gap-2">
+          <div className="flex flex-col items-start gap-2">
             <Header3 className="font-sans text-base font-normal">
               <PostDisplayName
                 profile={profile}
