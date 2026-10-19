@@ -15,7 +15,6 @@ import {
   Visibility,
   decisionsVoteProposals,
   decisionsVoteSubmissions,
-  profileUsers,
   proposalCategories,
   proposals,
 } from '@op/db/schema';
@@ -33,6 +32,7 @@ import {
 import {
   assertInstanceProfileAccess,
   getCurrentProfileId,
+  memberProfileIds,
   resolveAccessUserIds,
 } from '../access';
 import {
@@ -196,13 +196,7 @@ export const listAllProposals = async ({
         ? undefined
         : or(
             noActiveModerationFlag('proposal', t.id),
-            inArray(
-              t.profileId,
-              db
-                .select({ profileId: profileUsers.profileId })
-                .from(profileUsers)
-                .where(inArray(profileUsers.authUserId, accessUserIds)),
-            ),
+            inArray(t.profileId, memberProfileIds(accessUserIds)),
           ),
     )!;
 

@@ -12,3 +12,4 @@
  * that client only exists under the shared setup.
  */
 export { TestPhoneAuthDataManager } from './TestPhoneAuthDataManager';
+export { advanceInstancePhase } from './advanceInstancePhase';

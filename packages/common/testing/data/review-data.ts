@@ -335,13 +335,8 @@ export async function createReviewScenario(
     authUserId: opts.author.authUserId,
     email: opts.author.email,
     proposalData: opts.proposalData ?? { title: 'Community Garden Expansion' },
+    status: ProposalStatus.SUBMITTED,
   });
-
-  await db
-    .update(proposals)
-    .set({ status: ProposalStatus.SUBMITTED })
-    .where(eq(proposals.id, proposal.id));
-  proposal.status = ProposalStatus.SUBMITTED;
 
   const assignedProposalHistoryId = await getLatestProposalHistoryId({
     proposalId: proposal.id,

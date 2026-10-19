@@ -1,4 +1,4 @@
-import { handleTwilioStatusWebhookRequest } from '@op/api';
+import { handleTwilioStatusWebhookRequest, resolveWebhookUrl } from '@op/api';
 import { CommonError } from '@op/common';
 import { logger } from '@op/logging';
 import type { NextRequest } from 'next/server';
@@ -11,7 +11,11 @@ export const POST = async (req: NextRequest): Promise<Response> => {
     const { status, body } = handleTwilioStatusWebhookRequest({
       rawBody,
       signature,
-      url: req.url,
+      url: resolveWebhookUrl({
+        url: req.url,
+        headers: req.headers,
+        trustForwardedHeaders: process.env.NODE_ENV !== 'production',
+      }),
     });
     return new Response(body ?? null, {
       status,

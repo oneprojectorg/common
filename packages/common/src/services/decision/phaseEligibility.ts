@@ -1,8 +1,11 @@
-import { type SQL, and, notInArray } from '@op/db/client';
+import { type SQL, and, notInArray, sql } from '@op/db/client';
 import type { proposals } from '@op/db/schema';
 
 import { notSuperseded } from './proposalSupersession';
-import { PIPELINE_INELIGIBLE_STATUSES } from './votingEligibility';
+import {
+  PIPELINE_INELIGIBLE_STATUSES,
+  VOTING_INELIGIBLE_STATUSES,
+} from './votingEligibility';
 
 /**
  * Excludes drafts (never in a phase), rejected proposals, and superseded
@@ -18,4 +21,10 @@ export const phaseEligiblePredicate = (t: typeof proposals): SQL =>
       proposalId: t.id,
       processInstanceId: t.processInstanceId,
     }),
+  )!;
+
+export const votingEligiblePredicate = (t: typeof proposals): SQL =>
+  and(
+    phaseEligiblePredicate(t),
+    notInArray(sql<string>`${t.status}::text`, [...VOTING_INELIGIBLE_STATUSES]),
   )!;

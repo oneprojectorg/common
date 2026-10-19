@@ -15,6 +15,8 @@ import { CommentNotificationEmail, OPBatchSend } from '@op/emails';
 import { Events, inngest } from '@op/events';
 import { eq } from 'drizzle-orm';
 
+import { clipCommentContext } from './commentContext';
+
 const key = 'event.data.authorProfileId + "-" + event.data.parentPostId';
 const { commentPosted } = Events;
 
@@ -115,10 +117,7 @@ export const sendPostCommentNotification = inngest.createFunction(
       return;
     }
 
-    const contextName =
-      parent.postContent.length > 50
-        ? `${parent.postContent.slice(0, 50).trim()}...`
-        : parent.postContent.trim();
+    const contextName = clipCommentContext(parent.postContent);
 
     // Prefer org context for the URL/postedIn field when the parent post is
     // org-attached; otherwise fall back to the recipient (author) profile.

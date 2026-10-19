@@ -8,6 +8,8 @@ import { Events, inngest } from '@op/events';
 import { logger } from '@op/logging';
 import { eq } from 'drizzle-orm';
 
+import { clipCommentContext } from './commentContext';
+
 const key = 'event.data.authorProfileId + "-" + event.data.proposalId';
 const { proposalCommentPosted } = Events;
 
@@ -109,10 +111,7 @@ export const sendProposalCommentNotification = inngest.createFunction(
 
     const proposalTitle = proposal.profile.name;
     const contextSource = proposalTitle || proposalContent;
-    const contextName =
-      contextSource.length > 50
-        ? `${contextSource.slice(0, 50).trim()}...`
-        : contextSource.trim();
+    const contextName = clipCommentContext(contextSource);
 
     const postedIn =
       proposal.processInstance?.name ?? 'Decision Making Process';

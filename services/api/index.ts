@@ -17,6 +17,7 @@ export {
   handleTwilioInboundWebhookRequest,
   type TwilioInboundWebhookRequest,
 } from './src/notification/handleTwilioInboundWebhookRequest';
+export { resolveWebhookUrl } from './src/notification/resolveWebhookUrl';
 export {
   unwrapResponseWithChannels,
   wrapResponseWithChannels,

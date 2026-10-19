@@ -1,3 +1,5 @@
+import { firstHeaderValue } from './firstHeaderValue';
+
 // An IP address is personal data (GDPR Recital 30), so nothing we retain past
 // the request itself keeps the host part. IPv4 keeps the /24 network, IPv6 the
 // /48 routing prefix — enough to correlate abuse from one network, not enough
@@ -13,7 +15,7 @@
 export const anonymizeIp = (
   forwardedFor: string | null | undefined,
 ): string | undefined => {
-  const client = forwardedFor?.split(',')[0]?.trim();
+  const client = firstHeaderValue(forwardedFor);
 
   if (!client) {
     return undefined;

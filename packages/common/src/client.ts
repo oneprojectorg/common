@@ -390,3 +390,8 @@ export {
   safeParsePhoneNumber,
   toGoTruePhoneFormat,
 } from './services/notification/schemas';
+export {
+  SMS_MAX_BODY_LENGTH,
+  clipSmsText,
+  splitSmsBody,
+} from './services/sms/text';
