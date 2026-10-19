@@ -65,10 +65,9 @@ const DecisionViewLayout = async ({
             isActive ? <DecisionViewToggle decisionSlug={slug} /> : undefined
           }
         />
-        {/* overflow-x-clip: the bar's full-bleed `w-screen` chrome is 100vw,
-            which exceeds the content width by the scrollbar on desktop and would
-            otherwise add a few px of horizontal scroll. */}
-        <div className="overflow-x-clip overflow-y-auto">{children}</div>
+        <div className="min-w-0 overflow-x-clip overflow-y-auto">
+          {children}
+        </div>
       </div>
       {/*
        * Like the header's updates toggle, the side panel reads the `panel`
