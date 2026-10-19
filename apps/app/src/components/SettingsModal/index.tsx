@@ -12,7 +12,6 @@ import {
   DialogTitle,
 } from '@op/sense/Dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@op/sense/Tabs';
-import { cn } from '@op/sense/lib/utils';
 import { screens } from '@op/styles/constants';
 import { useRef, useState } from 'react';
 import { LuX } from 'react-icons/lu';
@@ -21,8 +20,6 @@ import { useTranslations } from '@/lib/i18n';
 
 import { AccountSettings } from './AccountSettings';
 import { NotificationSettings } from './NotificationSettings';
-import { PrivacySettings } from './PrivacySettings';
-import { YourDataSettings } from './YourDataSettings';
 import { useSettingsMockState } from './useSettingsMockState';
 
 interface SettingsModalProps {
@@ -30,12 +27,12 @@ interface SettingsModalProps {
   onOpenChange: (open: boolean) => void;
 }
 
-type SettingsSection = 'account' | 'privacy' | 'notifications' | 'data';
+type SettingsSection = 'account' | 'notifications';
 
 /**
- * The user's Settings, opened from the avatar menu: Account, Privacy,
- * Notifications and Your data. A sidebar of sections beside the open one on
- * wider screens; below `sm` the sidebar becomes a tab strip above it.
+ * The user's Settings, opened from the avatar menu: Account and
+ * Notifications. A sidebar of sections beside the open one on wider screens;
+ * below `sm` the sidebar becomes a tab strip above it.
  *
  * UI only for now. Changes live in local state (see `useSettingsMockState`)
  * and are lost on reload, except the language, which is real.
@@ -58,9 +55,7 @@ export const SettingsModal = ({ open, onOpenChange }: SettingsModalProps) => {
 
   const sections: Array<{ value: SettingsSection; label: string }> = [
     { value: 'account', label: t('accountTab') },
-    { value: 'privacy', label: t('privacyTab') },
     { value: 'notifications', label: t('notificationsTab') },
-    { value: 'data', label: t('yourDataTab') },
   ];
 
   return (
@@ -70,12 +65,7 @@ export const SettingsModal = ({ open, onOpenChange }: SettingsModalProps) => {
         showCloseButton={false}
         // 800px wide, shrinking to keep the dialog margin on 640-832px
         // screens; the base classes centre it.
-        className={cn(
-          'overflow-hidden sm:h-160 sm:w-200 sm:max-w-dialog',
-          // Base UI draws no backdrop for a dialog opened from inside this one
-          // (Delete account), so dim this one while it's open.
-          'data-nested-dialog-open:after:absolute data-nested-dialog-open:after:inset-0 data-nested-dialog-open:after:z-30 data-nested-dialog-open:after:bg-overlay/15',
-        )}
+        className="overflow-hidden sm:h-160 sm:w-200 sm:max-w-dialog"
       >
         <DialogHeader>
           <DialogTitle>{t('title')}</DialogTitle>
@@ -134,13 +124,6 @@ export const SettingsModal = ({ open, onOpenChange }: SettingsModalProps) => {
               setTwoStepEnabled={settings.setTwoStepEnabled}
             />
           </TabsContent>
-          <TabsContent value="privacy" className={PANEL_CLASS_NAME}>
-            <PrivacySettings
-              processes={settings.processes}
-              userName={user.currentProfile?.name ?? user.name ?? ''}
-              setParticipationMode={settings.setParticipationMode}
-            />
-          </TabsContent>
           <TabsContent value="notifications" className={PANEL_CLASS_NAME}>
             <NotificationSettings
               email={settings.email}
@@ -149,9 +132,6 @@ export const SettingsModal = ({ open, onOpenChange }: SettingsModalProps) => {
               setNotification={settings.setNotification}
               onGoToAccount={goToAccount}
             />
-          </TabsContent>
-          <TabsContent value="data" className={PANEL_CLASS_NAME}>
-            <YourDataSettings />
           </TabsContent>
         </Tabs>
       </DialogContent>
