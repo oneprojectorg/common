@@ -1,8 +1,11 @@
 /**
- * The nonce contract spans the response header the browser enforces and the
- * request header Next reads the nonce back out of. If the two disagree the
- * page renders with scripts the policy refuses, which no header-only
- * assertion would catch. Matcher tests live in `proxy.test.ts`.
+ * What the proxy forwards to the renderer. The CSP nonce contract spans the
+ * response header the browser enforces and the request header Next reads the
+ * nonce back out of; if the two disagree the page renders with scripts the
+ * policy refuses, which no header-only assertion would catch. The locale
+ * header is what next-intl's server APIs read when a call passes no locale;
+ * the proxy owns it on locale-prefixed paths. Matcher tests live in
+ * `proxy.test.ts`.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -55,8 +58,19 @@ const { NextFetchEvent } =
   await import('next/dist/server/web/spec-extension/fetch-event');
 const { proxy } = await import('./proxy');
 
-const run = (path: string, cookies: Record<string, string> = {}) => {
-  const request = new NextRequest(`https://common.oneproject.org${path}`);
+const run = (
+  path: string,
+  {
+    cookies = {},
+    headers = {},
+  }: {
+    cookies?: Record<string, string>;
+    headers?: Record<string, string>;
+  } = {},
+) => {
+  const request = new NextRequest(`https://common.oneproject.org${path}`, {
+    headers,
+  });
 
   for (const [name, value] of Object.entries(cookies)) {
     request.cookies.set(name, value);
@@ -74,6 +88,16 @@ const getNonce = (policy: string | null) =>
 /** `NextResponse.next({ request })` encodes forwarded headers like this. */
 const getForwardedHeader = (response: Response, name: string) =>
   response.headers.get(`x-middleware-request-${name}`);
+
+const refreshToken = () => {
+  getClaims.mockImplementation(async () => {
+    setAllCookies([
+      { name: 'sb-access-token', value: 'refreshed', options: {} },
+    ]);
+
+    return { data: { claims: { sub: 'user' } } };
+  });
+};
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -145,15 +169,11 @@ describe('proxy Content-Security-Policy', () => {
   it('forwards the refreshed session, nonce and path when a token refreshes', async () => {
     // The refresh replaces the response mid-flight; that rebuild used to
     // restore the original headers, dropping x-pathname / x-search / the nonce.
-    getClaims.mockImplementation(async () => {
-      setAllCookies([
-        { name: 'sb-access-token', value: 'refreshed', options: {} },
-      ]);
+    refreshToken();
 
-      return { data: { claims: { sub: 'user' } } };
+    const response = await run('/en/decisions', {
+      cookies: { 'sb-access-token': 'stale' },
     });
-
-    const response = await run('/en/decisions', { 'sb-access-token': 'stale' });
 
     expect(setAllCookies).toHaveBeenCalled();
     // The renderer has to see the new token, not the one the browser sent.
@@ -164,5 +184,67 @@ describe('proxy Content-Security-Policy', () => {
       response.headers.get('content-security-policy'),
     );
     expect(getForwardedHeader(response, 'x-pathname')).toBe('/en/decisions');
+  });
+});
+
+describe('proxy request locale', () => {
+  const getForwardedLocale = (response: Response) =>
+    getForwardedHeader(response, 'x-next-intl-locale');
+
+  beforeEach(() => {
+    getClaims.mockResolvedValue({ data: { claims: { sub: 'user' } } });
+  });
+
+  it.each([
+    ['/es/decisions', 'es'],
+    ['/es', 'es'],
+    ['/en/start', 'en'],
+  ])(
+    'forwards the locale prefix of %s as the request locale',
+    async (path, locale) => {
+      const response = await run(path);
+
+      expect(getForwardedLocale(response)).toBe(locale);
+    },
+  );
+
+  it('lets the URL win over a locale header the client sent', async () => {
+    const response = await run('/es/decisions', {
+      headers: { 'x-next-intl-locale': 'en' },
+    });
+
+    expect(getForwardedLocale(response)).toBe('es');
+  });
+
+  it('forwards the locale when the preference cookie already matches', async () => {
+    // The matching-cookie branch skips the cookie-setting response and falls
+    // back to a plain forwarded one; both must carry the same headers.
+    const response = await run('/es/decisions', {
+      cookies: { NEXT_LOCALE: 'es' },
+    });
+
+    expect(getForwardedLocale(response)).toBe('es');
+  });
+
+  it('keeps forwarding the locale when a token refresh rebuilds the response', async () => {
+    refreshToken();
+
+    const response = await run('/es/decisions', {
+      cookies: { 'sb-access-token': 'stale' },
+    });
+
+    expect(setAllCookies).toHaveBeenCalled();
+    expect(getForwardedLocale(response)).toBe('es');
+  });
+
+  it('strips a locale header the client sent on an unprefixed path', async () => {
+    // Anonymous `/` is the one unprefixed path the proxy serves itself; any
+    // other goes through the (mocked) i18n redirect, which copies headers.
+    getClaims.mockResolvedValue({ data: { claims: null } });
+    const response = await run('/', {
+      headers: { 'x-next-intl-locale': 'es' },
+    });
+
+    expect(getForwardedLocale(response)).toBeNull();
   });
 });

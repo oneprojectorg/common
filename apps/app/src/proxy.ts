@@ -73,6 +73,8 @@ export async function proxy(request: NextRequest, event: NextFetchEvent) {
     ? (headers: Headers) => headers
     : createCspHeaderApplier();
 
+  const currentLocale = findPathLocale(pathname);
+
   // Rebuilt per call, not captured: the Supabase cookie adapter below mutates
   // `request.cookies` and forwards the request again, so a snapshot would send
   // the pre-refresh cookie and no nonce.
@@ -83,11 +85,16 @@ export async function proxy(request: NextRequest, event: NextFetchEvent) {
     const headers = new Headers(request.headers);
     headers.set('x-pathname', pathname);
     headers.set('x-search', request.nextUrl.search);
+    // next-intl's server APIs read this when a call passes no locale; the URL
+    // is its only source, so a value the client sent never gets through.
+    if (currentLocale) {
+      headers.set('x-next-intl-locale', currentLocale);
+    } else {
+      headers.delete('x-next-intl-locale');
+    }
 
     return applyCsp(headers);
   };
-
-  const currentLocale = findPathLocale(pathname);
 
   // Set locale cookie if URL contains a locale (for preference learning)
   const forwardedHeaders = buildForwardedHeaders();
