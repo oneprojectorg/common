@@ -15,24 +15,20 @@ import { ProposalStatus, profiles } from '@op/db/schema';
 
 type RegisterCleanup = (fn: () => void | Promise<void>) => void;
 
-export interface FixtureAccount {
+interface FixtureAccount {
   authUserId: string;
   profileId: string;
   email: string | null;
 }
 
-export const VOTING_PHASE_ID = 'voting';
-
-export interface FixtureProposal {
+interface FixtureProposal {
   title: string;
   budget?: number;
-  summary?: string;
-  leftBehind?: boolean;
 }
 
-export const votingSchema = (
-  maxVotesPerMember: number,
-): DecisionSchemaDefinition => ({
+const VOTING_PHASE_ID = 'voting';
+
+const votingSchema: DecisionSchemaDefinition = {
   id: 'sms-voting',
   version: '1.0.0',
   name: 'SMS Voting',
@@ -46,29 +42,14 @@ export const votingSchema = (
         voting: { submit: false },
         advancement: { method: 'manual' as const },
       },
-      selectionPipeline: {
-        version: '1.0.0',
-        blocks: [
-          {
-            id: 'advance-submitted',
-            type: 'filter' as const,
-            condition: {
-              not: {
-                operator: 'equals' as const,
-                left: { field: 'proposalData.leftBehind' },
-                right: { value: true },
-              },
-            },
-          },
-        ],
-      },
+      selectionPipeline: { version: '1.0.0', blocks: [] },
     },
     {
       id: VOTING_PHASE_ID,
       name: 'Voting',
       rules: {
         proposals: { submit: false },
-        voting: { submit: true, maxVotesPerMember },
+        voting: { submit: true, maxVotesPerMember: 1 },
         advancement: { method: 'manual' as const },
       },
     },
@@ -82,7 +63,7 @@ export const votingSchema = (
       },
     },
   ],
-});
+};
 
 export class SmsCommandFixture {
   private readonly phoneAuth: TestPhoneAuthDataManager;
@@ -107,21 +88,18 @@ export class SmsCommandFixture {
 
   async createVotingInstance({
     owner,
-    maxVotesPerMember,
     proposalTitles,
     name,
     currentPhaseId = VOTING_PHASE_ID,
   }: {
     owner: FixtureAccount;
-    maxVotesPerMember: number;
     proposalTitles: Array<string | FixtureProposal>;
     name?: string;
     currentPhaseId?: string;
   }) {
-    const schema = votingSchema(maxVotesPerMember);
     const process = await createDecisionProcess({
       createdByProfileId: owner.profileId,
-      schema,
+      schema: votingSchema,
     });
     const { instance, profileId, slug } = await createDecisionInstance({
       processId: process.id,
@@ -129,14 +107,13 @@ export class SmsCommandFixture {
       authUserId: owner.authUserId,
       email: owner.email,
       name,
-      schema,
+      schema: votingSchema,
       grantAdminAccess: false,
     });
     this.profileIds.push(profileId);
 
-    const created = [];
     for (const entry of proposalTitles) {
-      const { title, budget, summary, leftBehind } =
+      const { title, budget } =
         typeof entry === 'string' ? { title: entry } : entry;
       const proposal = await createProposal({
         processInstanceId: instance.id,
@@ -147,15 +124,12 @@ export class SmsCommandFixture {
           ...(budget === undefined
             ? {}
             : { budget: { amount: budget, currency: 'USD' } }),
-          ...(summary === undefined ? {} : { summary }),
-          ...(leftBehind ? { leftBehind } : {}),
         },
       });
       this.profileIds.push(proposal.profileId);
-      created.push(proposal);
     }
 
-    const phaseIds = schema.phases.map((phase) => phase.id);
+    const phaseIds = votingSchema.phases.map((phase) => phase.id);
     for (let index = 0; index < phaseIds.indexOf(currentPhaseId); index++) {
       const fromPhaseId = phaseIds[index];
       const toPhaseId = phaseIds[index + 1];
@@ -174,12 +148,7 @@ export class SmsCommandFixture {
       }
     }
 
-    return {
-      instanceId: instance.id,
-      instanceProfileId: profileId,
-      slug,
-      proposals: created,
-    };
+    return { instanceProfileId: profileId, slug };
   }
 
   async addMember(instanceProfileId: string, member: FixtureAccount) {

@@ -21,10 +21,11 @@ describe.concurrent('getPublishedDecisionBySlug', () => {
         authUserId: setup.user.id,
         slug: setup.instance.slug,
       }),
-    ).resolves.toMatchObject({
+    ).resolves.toEqual({
       processInstanceId: setup.instance.instance.id,
-      slug: setup.instance.slug,
-      currentPhase: { phaseId: setup.instance.instance.currentStateId },
+      name: setup.instance.instance.name,
+      phaseName: 'Initial Phase',
+      votingOpen: false,
     });
   });
 

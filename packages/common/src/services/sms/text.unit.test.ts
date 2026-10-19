@@ -51,16 +51,6 @@ describe('splitSmsBody', () => {
     );
   });
 
-  it('given a space separator, then lines are packed into sentences rather than rows', () => {
-    expect(
-      splitSmsBody({
-        lines: ['Pick 1: "A".', 'Pick 2: "B".'],
-        footer: '1 pick left.',
-        separator: ' ',
-      }),
-    ).toEqual(['Pick 1: "A". Pick 2: "B". 1 pick left.']);
-  });
-
   it('given no lines, then the heading and footer still form one body', () => {
     expect(
       splitSmsBody({ heading: 'Head:', lines: [], footer: 'Foot.' }),

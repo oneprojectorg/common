@@ -37,7 +37,6 @@ describe('handleSMSCommand against the database', () => {
     const member = await fixture.createPhoneOnlyAccount(phone);
     const { instanceProfileId, slug } = await fixture.createVotingInstance({
       owner: member,
-      maxVotesPerMember: 1,
       name: `Park Funding ${task.id}`,
       proposalTitles: [
         { title: 'Fifth Ave crosswalk lighting', budget: 85_000 },
@@ -68,7 +67,6 @@ describe('handleSMSCommand against the database', () => {
     const member = await fixture.createPhoneOnlyAccount(phone);
     const { instanceProfileId, slug } = await fixture.createVotingInstance({
       owner: member,
-      maxVotesPerMember: 1,
       name: `Bike Lanes ${task.id}`,
       proposalTitles: ['Fund the park'],
       currentPhaseId: 'submission',
@@ -150,7 +148,6 @@ describe('handleSMSCommand against the database', () => {
     await fixture.createPhoneOnlyAccount(outsiderPhone);
     const { slug } = await fixture.createVotingInstance({
       owner,
-      maxVotesPerMember: 1,
       proposalTitles: ['Fund the park'],
     });
     const t = new InngestTestEngine({ function: handleSMSCommand });
@@ -220,14 +217,12 @@ describe('handleSMSCommand against the database', () => {
     const member = await fixture.createPhoneOnlyAccount(phone);
     const submitting = await fixture.createVotingInstance({
       owner: member,
-      maxVotesPerMember: 1,
       proposalTitles: [],
       name: `Bike Lanes ${task.id}`,
       currentPhaseId: 'submission',
     });
     const voting = await fixture.createVotingInstance({
       owner: member,
-      maxVotesPerMember: 1,
       proposalTitles: ['Fund the park'],
       name: `Park Funding ${task.id}`,
     });

@@ -78,11 +78,6 @@ export const handleSMSCommand = inngest.createFunction(
       return SMS_UNAVAILABLE_RESULT;
     }
 
-    const help = async () => {
-      await text('send-help-reply', 'Help reply', SMS_COMMAND_HELP_MESSAGE);
-      return { message: 'help sent' };
-    };
-
     const listDecisions = async () => {
       const decisions = await step.run('list-decisions', () =>
         listSmsDecisions({ authUserId: account.authUserId }),
@@ -140,12 +135,7 @@ export const handleSMSCommand = inngest.createFunction(
       await text(
         'send-decision-reply',
         'Decision reply',
-        formatSmsDecisionInfo({
-          name: decision.name,
-          phaseName: decision.currentPhase?.name ?? null,
-          votingOpen: decision.votingOpen,
-          proposalCount,
-        }),
+        formatSmsDecisionInfo({ ...decision, proposalCount }),
       );
       return { message: 'decision sent' };
     };
@@ -156,7 +146,8 @@ export const handleSMSCommand = inngest.createFunction(
       case 'show':
         return show();
       default:
-        return help();
+        await text('send-help-reply', 'Help reply', SMS_COMMAND_HELP_MESSAGE);
+        return { message: 'help sent' };
     }
   },
 );

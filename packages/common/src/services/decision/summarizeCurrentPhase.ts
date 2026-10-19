@@ -1,12 +1,9 @@
-import {
-  type PhaseInstanceData,
-  getInstancePhases,
-} from './schemas/instanceData';
+import { getInstancePhases } from './schemas/instanceData';
 import { getInstanceCurrentPhase } from './utils/instance';
 import { isVotingPhase } from './utils/phaseSettings';
 
 export interface CurrentPhaseSummary {
-  currentPhase: PhaseInstanceData | null;
+  phaseName: string | null;
   votingOpen: boolean;
 }
 
@@ -22,7 +19,7 @@ export const summarizeCurrentPhase = ({
     instanceData: { phases: getInstancePhases(instanceData) },
   });
   return {
-    currentPhase,
+    phaseName: currentPhase?.name ?? null,
     votingOpen: currentPhase ? isVotingPhase(currentPhase) : false,
   };
 };

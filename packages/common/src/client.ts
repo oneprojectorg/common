@@ -391,7 +391,6 @@ export {
   toGoTruePhoneFormat,
 } from './services/notification/schemas';
 export {
-  SMS_ELLIPSIS,
   SMS_MAX_BODY_LENGTH,
   clipSmsText,
   splitSmsBody,

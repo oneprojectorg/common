@@ -10,10 +10,8 @@ import {
 } from './summarizeCurrentPhase';
 
 export interface PublishedDecision extends CurrentPhaseSummary {
-  profileId: string;
   processInstanceId: string;
   name: string;
-  slug: string;
 }
 
 export async function getPublishedDecisionBySlug({
@@ -25,7 +23,7 @@ export async function getPublishedDecisionBySlug({
 }): Promise<PublishedDecision> {
   const profile = await db.query.profiles.findFirst({
     where: { slug, type: EntityType.DECISION },
-    columns: { id: true, name: true, slug: true },
+    columns: { id: true, name: true },
     with: {
       processInstance: {
         columns: {
@@ -57,10 +55,8 @@ export async function getPublishedDecisionBySlug({
   const { id, instanceData, currentStateId } = profile.processInstance;
 
   return {
-    profileId: profile.id,
     processInstanceId: id,
     name: profile.name,
-    slug: profile.slug,
     ...summarizeCurrentPhase({ instanceData, currentStateId }),
   };
 }
