@@ -4,6 +4,7 @@ import {
   createDecisionProcess,
   createProposal,
   grantDecisionProfileAccess,
+  makeDecisionPublic,
   readProfileIdForAuthUser,
 } from '@op/common/testing/data';
 import {
@@ -149,6 +150,10 @@ export class SmsCommandFixture {
     }
 
     return { instanceProfileId: profileId, slug };
+  }
+
+  async makePublic(instanceProfileId: string) {
+    await makeDecisionPublic({ profileId: instanceProfileId });
   }
 
   async addMember(instanceProfileId: string, member: FixtureAccount) {

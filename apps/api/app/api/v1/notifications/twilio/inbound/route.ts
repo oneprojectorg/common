@@ -11,7 +11,11 @@ export const POST = async (req: NextRequest): Promise<Response> => {
     const { status, body } = await handleTwilioInboundWebhookRequest({
       rawBody,
       signature,
-      url: resolveWebhookUrl({ url: req.url, headers: req.headers }),
+      url: resolveWebhookUrl({
+        url: req.url,
+        headers: req.headers,
+        trustForwardedHeaders: process.env.NODE_ENV !== 'production',
+      }),
     });
     return new Response(body ?? null, {
       status,

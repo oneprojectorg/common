@@ -9,6 +9,7 @@ describe('resolveWebhookUrl', () => {
     expect(
       resolveWebhookUrl({
         url: LOCAL_URL,
+        trustForwardedHeaders: true,
         headers: new Headers({
           'x-forwarded-proto': 'https',
           'x-forwarded-host': 'example.ngrok-free.dev',
@@ -24,6 +25,7 @@ describe('resolveWebhookUrl', () => {
     expect(
       resolveWebhookUrl({
         url: LOCAL_URL,
+        trustForwardedHeaders: true,
         headers: new Headers({ host: 'localhost:3301' }),
       }),
     ).toBe(LOCAL_URL);
@@ -33,6 +35,7 @@ describe('resolveWebhookUrl', () => {
     expect(
       resolveWebhookUrl({
         url: LOCAL_URL,
+        trustForwardedHeaders: true,
         headers: new Headers({
           'x-forwarded-proto': 'https',
           host: 'example.ngrok-free.dev',
@@ -47,6 +50,7 @@ describe('resolveWebhookUrl', () => {
     expect(
       resolveWebhookUrl({
         url: `${LOCAL_URL}?from=test`,
+        trustForwardedHeaders: true,
         headers: new Headers({
           'x-forwarded-proto': 'https, http',
           'x-forwarded-host': 'example.ngrok-free.dev, localhost:3301',
@@ -55,5 +59,21 @@ describe('resolveWebhookUrl', () => {
     ).toBe(
       'https://example.ngrok-free.dev/api/v1/notifications/twilio/inbound?from=test',
     );
+  });
+});
+
+describe('resolveWebhookUrl in production', () => {
+  it('given forwarded headers that are not trusted, then the url is returned unchanged so a sender cannot pick the url the signature is checked against', () => {
+    expect(
+      resolveWebhookUrl({
+        url: LOCAL_URL,
+        trustForwardedHeaders: false,
+        headers: new Headers({
+          'x-forwarded-proto': 'https',
+          'x-forwarded-host': 'attacker.example',
+          host: 'localhost:3301',
+        }),
+      }),
+    ).toBe(LOCAL_URL);
   });
 });

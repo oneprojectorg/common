@@ -157,14 +157,16 @@ error; any other number needs real credentials in `.env.local`.
 
 ## Feature flags
 
-Two PostHog flags gate the phone features. `sms-login` needs only Verify.
-`sms-signup` sends through the Messaging Service, so it stays off until the
-A2P campaign is approved.
+Three PostHog flags gate the phone features. `sms-login` needs only Verify.
+`sms-signup` and `sms-commands` send through the Messaging Service, so they
+stay off until the A2P campaign is approved.
 
-| Flag         | Gates                                                                                                            |
-| ------------ | ---------------------------------------------------------------------------------------------------------------- |
-| `sms-login`  | The phone option in `LoginPanel` and `JoinAccountModal`.                                                         |
-| `sms-signup` | `handleUnknownSmsSignup`: an unknown number that texts the Messaging Service gets a consent text and an account. |
+| Flag           | Gates                                                                                                            |
+| -------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `sms-login`    | The phone option in `LoginPanel` and `JoinAccountModal`.                                                         |
+| `sms-signup`   | `handleUnknownSmsSignup`: an unknown number that texts the Messaging Service gets a consent text and an account. |
+| `sms-commands` | `handleSMSCommand`: a confirmed number that texts SHOW, JOIN or anything else gets a reply.                      |
+| `sms-commands` | `handleSMSCommand`: a confirmed number that texts SHOW, JOIN or anything else gets a reply.                      |
 
 ## Local development
 

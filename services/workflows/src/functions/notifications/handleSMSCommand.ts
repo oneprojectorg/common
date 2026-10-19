@@ -1,3 +1,4 @@
+import { isFeatureEnabled } from '@op/analytics';
 import {
   NotFoundError,
   UnauthorizedError,
@@ -12,15 +13,21 @@ import {
 import { Events, inngest } from '@op/events';
 import { logger } from '@op/logging';
 
-import { smsNumberRateLimit } from './smsInboundLimits';
+import {
+  SMS_THROTTLE_LIMIT,
+  SMS_THROTTLE_PERIOD,
+  smsNumberRateLimit,
+} from './smsInboundLimits';
 import {
   INVALID_PHONE_RESULT,
+  SMS_ALREADY_JOINED_MESSAGE,
   SMS_COMMAND_HELP_MESSAGE,
   SMS_UNAVAILABLE_RESULT,
   createTextSender,
   parseInboundNumber,
 } from './smsReply';
 
+const SMS_COMMANDS_FEATURE_FLAG = 'sms-commands';
 const SMS_SLUG_LENGTH = 100;
 const { smsInboundReceived } = Events;
 
@@ -28,6 +35,10 @@ export const handleSMSCommand = inngest.createFunction(
   {
     id: 'handleSMSCommand',
     rateLimit: smsNumberRateLimit('event.data.from'),
+    throttle: {
+      limit: SMS_THROTTLE_LIMIT,
+      period: SMS_THROTTLE_PERIOD,
+    },
     debounce: {
       key: 'event.data.from',
       period: '5s',
@@ -45,6 +56,15 @@ export const handleSMSCommand = inngest.createFunction(
 
     if (code !== null) {
       return { message: 'signup code, left to signup' };
+    }
+
+    const flagEnabled = await step.run('check-feature-flag', () =>
+      isFeatureEnabled(SMS_COMMANDS_FEATURE_FLAG, 'server'),
+    );
+
+    if (!flagEnabled) {
+      logger.info('SMS commands feature flag is disabled, skipping');
+      return { message: 'sms commands disabled' };
     }
 
     const to = parseInboundNumber(from, 'command');
@@ -78,19 +98,34 @@ export const handleSMSCommand = inngest.createFunction(
       return SMS_UNAVAILABLE_RESULT;
     }
 
+    const deliver = async (stepId: string, label: string, body: string) => {
+      const sent = await text(stepId, label, body);
+      if (sent.status !== 'rejected') {
+        return null;
+      }
+      logger.warn('SMS command reply permanently rejected', {
+        keyword,
+        reason: sent.reason,
+      });
+      return { message: 'reply rejected' as const, reason: sent.reason };
+    };
+
     const listDecisions = async () => {
       const decisions = await step.run('list-decisions', () =>
         listSmsDecisions({ authUserId: account.authUserId }),
       );
       const bodies = formatSmsDecisionList(decisions);
       for (const [index, body] of bodies.entries()) {
-        await text(
+        const failed = await deliver(
           index === 0
             ? 'send-decision-list'
             : `send-decision-list-${index + 1}`,
           'Decision list',
           body,
         );
+        if (failed) {
+          return failed;
+        }
       }
       return { message: 'decisions sent', count: decisions.length };
     };
@@ -118,12 +153,12 @@ export const handleSMSCommand = inngest.createFunction(
       });
 
       if (!decision) {
-        await text(
+        const failed = await deliver(
           'send-not-found-reply',
           'Not-found reply',
           `No decision named "${clipSmsText(argument, SMS_SLUG_LENGTH)}" was found.`,
         );
-        return { message: 'decision not found' };
+        return failed ?? { message: 'decision not found' };
       }
 
       const proposalCount = await step.run('count-proposals', () =>
@@ -132,22 +167,33 @@ export const handleSMSCommand = inngest.createFunction(
         }),
       );
 
-      await text(
+      const failed = await deliver(
         'send-decision-reply',
         'Decision reply',
         formatSmsDecisionInfo({ ...decision, proposalCount }),
       );
-      return { message: 'decision sent' };
+      return failed ?? { message: 'decision sent' };
     };
 
     switch (keyword) {
-      case 'join':
-        return { message: 'join is handled by signup' };
+      case 'join': {
+        const failed = await deliver(
+          'send-already-joined-reply',
+          'Already joined reply',
+          SMS_ALREADY_JOINED_MESSAGE,
+        );
+        return failed ?? { message: 'already joined' };
+      }
       case 'show':
         return show();
-      default:
-        await text('send-help-reply', 'Help reply', SMS_COMMAND_HELP_MESSAGE);
-        return { message: 'help sent' };
+      default: {
+        const failed = await deliver(
+          'send-help-reply',
+          'Help reply',
+          SMS_COMMAND_HELP_MESSAGE,
+        );
+        return failed ?? { message: 'help sent' };
+      }
     }
   },
 );

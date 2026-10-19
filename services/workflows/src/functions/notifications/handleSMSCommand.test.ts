@@ -2,11 +2,18 @@ import { InngestTestEngine } from '@inngest/test';
 import { SMS_MAX_BODY_LENGTH, parsePhoneNumber } from '@op/common';
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import { recordedSms, resetRecordedSms } from '../../../testing/mocks/sms';
+import {
+  recordedSms,
+  refuseSmsTo,
+  resetRecordedSms,
+} from '../../../testing/mocks/sms';
 import { SmsCommandFixture } from '../../../testing/smsCommandFixture';
 import { smsInboundEvent } from '../../../testing/smsInboundEvent';
 import { handleSMSCommand } from './handleSMSCommand';
-import { SMS_COMMAND_HELP_MESSAGE } from './smsReply';
+import {
+  SMS_ALREADY_JOINED_MESSAGE,
+  SMS_COMMAND_HELP_MESSAGE,
+} from './smsReply';
 
 const NUMBERS = {
   member: '+15005550090',
@@ -21,6 +28,9 @@ const NUMBERS = {
   codeReply: '+15005550089',
   lister: '+15005550088',
   longText: '+15005550087',
+  publicOnly: '+15005550086',
+  refused: '+15005550085',
+  flagOff: '+15005550084',
 } as const;
 
 beforeEach(() => {
@@ -270,7 +280,7 @@ describe('handleSMSCommand against the database', () => {
     expect(recordedSms).toEqual([]);
   });
 
-  it('given a member texts JOIN, then nothing is sent because the signup function answers JOIN', async ({
+  it('given a member texts JOIN, then they are told they already have an account and how to see their decisions', async ({
     task,
     onTestFinished,
   }) => {
@@ -285,8 +295,92 @@ describe('handleSMSCommand against the database', () => {
       ],
     });
 
-    expect(result).toEqual({ message: 'join is handled by signup' });
+    expect(result).toEqual({ message: 'already joined' });
+    expect(recordedSms.map((sms) => sms.body)).toEqual([
+      SMS_ALREADY_JOINED_MESSAGE,
+    ]);
+  });
+
+  it('given a public decision the member never joined, when they text SHOW alone, then it is not listed, and SHOW with its slug still describes it', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsCommandFixture(task.id, onTestFinished);
+    const phone = parsePhoneNumber(NUMBERS.publicOnly);
+    const member = await fixture.createPhoneOnlyAccount(phone);
+    const { instanceProfileId, slug } = await fixture.createVotingInstance({
+      owner: member,
+      proposalTitles: ['Fund the park'],
+      name: `Open Air ${task.id}`,
+    });
+    await fixture.makePublic(instanceProfileId);
+
+    const list = await new InngestTestEngine({
+      function: handleSMSCommand,
+    }).execute({
+      events: [
+        smsInboundEvent({ from: phone, keyword: 'show', argument: null }),
+      ],
+    });
+    const show = await new InngestTestEngine({
+      function: handleSMSCommand,
+    }).execute({
+      events: [
+        smsInboundEvent({ from: phone, keyword: 'show', argument: slug }),
+      ],
+    });
+
+    expect(list.result).toEqual({ message: 'decisions sent', count: 0 });
+    expect(show.result).toEqual({ message: 'decision sent' });
+    expect(recordedSms.map((sms) => sms.body)).toEqual([
+      'You are not a participant in any decision yet.',
+      `"Open Air ${task.id}": Voting phase, voting open, 1 proposal.`,
+    ]);
+  });
+
+  it('given the carrier refuses the reply because the number opted out, then the result says the reply was rejected and nothing else is sent', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsCommandFixture(task.id, onTestFinished);
+    const phone = parsePhoneNumber(NUMBERS.refused);
+    await fixture.createPhoneOnlyAccount(phone);
+    refuseSmsTo(phone, { reason: 'opted_out', retryable: false });
+    const t = new InngestTestEngine({ function: handleSMSCommand });
+
+    const { result } = await t.execute({
+      events: [
+        smsInboundEvent({ from: phone, keyword: 'show', argument: null }),
+      ],
+    });
+
+    expect(result).toEqual({ message: 'reply rejected', reason: 'opted_out' });
     expect(recordedSms).toEqual([]);
+  });
+
+  it('given the sms-commands flag is off, when a member texts SHOW, then nothing is sent', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsCommandFixture(task.id, onTestFinished);
+    const phone = parsePhoneNumber(NUMBERS.flagOff);
+    await fixture.createPhoneOnlyAccount(phone);
+    const t = new InngestTestEngine({ function: handleSMSCommand });
+
+    const previous = process.env.NEXT_PUBLIC_E2E;
+    delete process.env.NEXT_PUBLIC_E2E;
+    try {
+      const { result } = await t.execute({
+        events: [
+          smsInboundEvent({ from: phone, keyword: 'show', argument: null }),
+        ],
+      });
+
+      expect(result).toEqual({ message: 'sms commands disabled' });
+      expect(recordedSms).toEqual([]);
+    } finally {
+      process.env.NEXT_PUBLIC_E2E = previous;
+    }
   });
 
   it('given a number with no account texts a command, then nothing is sent because the signup function owns unknown numbers', async () => {

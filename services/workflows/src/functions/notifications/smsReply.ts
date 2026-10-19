@@ -19,6 +19,9 @@ export const SMS_UNAVAILABLE_RESULT = {
 export const SMS_COMMAND_HELP_MESSAGE =
   'Text SHOW to see your decisions, or SHOW and a decision name, for example SHOW columbus. Reply STOP to unsubscribe.';
 
+export const SMS_ALREADY_JOINED_MESSAGE =
+  'You already have an account. Text SHOW to see your decisions.';
+
 export const parseInboundNumber = (
   from: string,
   skipped: string,

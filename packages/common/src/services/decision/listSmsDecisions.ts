@@ -6,7 +6,7 @@ import {
   profiles,
 } from '@op/db/schema';
 
-import { memberProfileIds, resolveAccessUserIds } from '../access';
+import { memberProfileIds } from '../access';
 import { summarizeCurrentPhase } from './summarizeCurrentPhase';
 
 export interface SmsDecisionListItem {
@@ -33,10 +33,7 @@ export async function listSmsDecisions({
       and(
         eq(profiles.type, EntityType.DECISION),
         eq(processInstances.status, ProcessStatus.PUBLISHED),
-        inArray(
-          profiles.id,
-          memberProfileIds(resolveAccessUserIds({ id: authUserId })),
-        ),
+        inArray(profiles.id, memberProfileIds([authUserId])),
       ),
     )
     .orderBy(asc(profiles.name), asc(profiles.id));
