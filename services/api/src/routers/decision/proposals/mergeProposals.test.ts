@@ -413,6 +413,42 @@ describe.concurrent('mergeProposals', () => {
     // The source is untouched — a failed authz check must not partially apply.
     expect(await readStatus(source.id)).toBe(ProposalStatus.SHORTLISTED);
   });
+
+  it("rejects the source's author, who is admin of the proposal but not the decision", async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instanceId, target } =
+      await createMergeableProposals(testData);
+
+    const author = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [setup.instance.profileId],
+    });
+    const [source, authorCaller] = await Promise.all([
+      testData.createProposal({
+        userEmail: author.email,
+        processInstanceId: instanceId,
+        proposalData: { title: 'Author Proposal', description: 'Mine' },
+        status: ProposalStatus.SHORTLISTED,
+      }),
+      createAuthenticatedCaller(author.email),
+    ]);
+
+    await expect(
+      authorCaller.decision.mergeProposals({
+        sourceProposalId: source.id,
+        targetProposalId: target.id,
+      }),
+    ).rejects.toMatchObject({ cause: { statusCode: 403 } });
+
+    const [edge] = await db
+      .select()
+      .from(proposalRelationships)
+      .where(eq(proposalRelationships.sourceProposalId, source.id));
+    expect(edge).toBeUndefined();
+  });
 });
 
 describe.concurrent('unmergeProposal', () => {

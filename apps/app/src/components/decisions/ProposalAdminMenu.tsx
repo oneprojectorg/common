@@ -33,34 +33,14 @@ import { useProposalRejectionActions } from './useProposalRejectionActions';
  *
  * The Figma frame also shows shortlist / reject-from-shortlist here, but #1630
  * removed those actions from the app, so they aren't offered on either surface.
- *
- * Renders nothing unless the viewer has decision-admin access and the proposal
- * has left draft.
  */
+// fallow-ignore-next-line complexity
 export function ProposalAdminMenu({
   proposal,
   backHref,
 }: {
   proposal: Proposal;
   /** Where to go after deleting — this page is about to 404. */
-  backHref: string;
-}) {
-  const canModerate =
-    proposal.access?.admin === true && proposal.status !== ProposalStatus.DRAFT;
-
-  if (!canModerate) {
-    return null;
-  }
-
-  return <ProposalAdminMenuItems proposal={proposal} backHref={backHref} />;
-}
-
-/** Split from the gate so the hooks only run for a viewer who can act. */
-function ProposalAdminMenuItems({
-  proposal,
-  backHref,
-}: {
-  proposal: Proposal;
   backHref: string;
 }) {
   const t = useTranslations();
@@ -82,8 +62,6 @@ function ProposalAdminMenuItems({
     },
   });
   const rejectEnabled = useFeatureFlag('reject-proposals') ?? false;
-  // The parent gate already requires admin + non-draft, so the slot always
-  // shows; it just toggles to Undo once rejected.
   const isRejected = proposal.status === ProposalStatus.REJECTED;
   const { reject, unreject, isRejecting, isUnrejecting } =
     useProposalRejectionActions(proposal);

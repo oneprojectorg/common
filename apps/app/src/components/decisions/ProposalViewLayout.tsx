@@ -46,10 +46,7 @@ export function ProposalViewLayout({
     onToggle: () => void;
     isActive: boolean;
   };
-  /**
-   * Admin overflow menu (hide / delete). Gates itself on
-   * `proposal.access.admin`, so it's safe to pass for any viewer.
-   */
+  /** Pass only when `ProposalAffordances.moderation` holds. */
   moderationProposal?: Proposal;
   /**
    * Read-only status shown at the head of the action cluster. Pass a fragment
