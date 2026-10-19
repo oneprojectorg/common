@@ -8,7 +8,7 @@ import { TooltipProvider } from '@op/sense/Tooltip';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import type { Metadata, Viewport } from 'next';
 import { getLocale, getMessages } from 'next-intl/server';
-import { Roboto, Roboto_Serif } from 'next/font/google';
+import { Noto_Sans_Arabic, Roboto, Roboto_Serif } from 'next/font/google';
 import Script from 'next/script';
 import { NuqsAdapter } from 'nuqs/adapters/next/app';
 
@@ -29,7 +29,7 @@ const roboto = Roboto({
   // instead of rounding up to the nearest static cut (500). next's Roboto type
   // only accepts 'variable' here, not a range string.
   weight: 'variable',
-  variable: '--font-sans',
+  variable: '--font-roboto',
   display: 'swap',
 });
 
@@ -37,7 +37,18 @@ const robotoSerif = Roboto_Serif({
   subsets: ['latin'],
   weight: ['300', '400'],
   style: ['normal', 'italic'],
-  variable: '--font-serif',
+  variable: '--font-roboto-serif',
+  display: 'swap',
+});
+
+// Arabic-script glyphs only (Google's unicode-range), so Latin falls through to
+// Roboto. The synthetic metric-adjusted fallback has no unicode-range and would
+// swallow Latin when this face leads the stack in the Arabic UI, so it's off.
+const notoSansArabic = Noto_Sans_Arabic({
+  subsets: ['arabic'],
+  weight: 'variable',
+  variable: '--font-noto-sans-arabic',
+  adjustFontFallback: false,
   display: 'swap',
 });
 
@@ -89,7 +100,11 @@ const RootLayout = async ({ children }: { children: React.ReactNode }) => {
   const dir = getLocaleDirection(locale);
 
   return (
-    <html lang={locale} dir={dir} className="h-full">
+    <html
+      lang={locale}
+      dir={dir}
+      className={`${roboto.variable} ${robotoSerif.variable} ${notoSansArabic.variable} h-full`}
+    >
       <head>
         <Script id="nfo-script" strategy="beforeInteractive">
           {printNFO()}
@@ -97,9 +112,7 @@ const RootLayout = async ({ children }: { children: React.ReactNode }) => {
       </head>
       <TRPCProvider ssrCookies={ssrCookies}>
         <QueryInvalidationSubscriber />
-        <body
-          className={`${roboto.variable} ${robotoSerif.variable} h-full overflow-x-hidden text-base text-foreground antialiased`}
-        >
+        <body className="h-full overflow-x-hidden text-base text-foreground antialiased">
           <FileDropGuard />
           {/* base-ui reads direction from this context and nowhere else — its
               `useDirection` falls back to 'ltr', so `dir` on <html> alone left

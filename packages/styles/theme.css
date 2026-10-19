@@ -553,6 +553,18 @@
     color: var(--color-gray-700);
   }
 
+  /* Arabic UI: the Arabic face sets the line's metrics; Latin still falls
+   * through to Roboto via the face's unicode-range. */
+  :root:lang(ar) {
+    --font-sans:
+      var(--font-noto-sans-arabic), var(--font-roboto), ui-sans-serif,
+      system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+      'Segoe UI Symbol', 'Noto Color Emoji';
+    --font-serif:
+      var(--font-noto-sans-arabic), var(--font-roboto-serif), ui-serif, Georgia,
+      Cambria, 'Times New Roman', Times, serif;
+  }
+
   /* Placeholder styles */
   input::placeholder {
     color: var(--color-gray-400);

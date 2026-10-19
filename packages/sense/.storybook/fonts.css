@@ -1,8 +1,11 @@
 /* Roboto as a variable font (wght 100..900) to match the app's next/font
- * config — intermediate weights like font-strong (450) need real faces. */
-@import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&family=Roboto+Serif:ital,opsz,wght@0,8..144,300;0,8..144,400;1,8..144,300;1,8..144,400&display=swap');
+ * config — intermediate weights like font-strong (450) need real faces.
+ * Noto Sans Arabic covers Arabic script; @op/styles stacks it after Roboto
+ * and leads with it under :lang(ar). */
+@import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&family=Roboto+Serif:ital,opsz,wght@0,8..144,300;0,8..144,400;1,8..144,300;1,8..144,400&family=Noto+Sans+Arabic:wght@100..900&display=swap');
 
 :root {
-  --font-sans: 'Roboto', sans-serif;
-  --font-serif: 'Roboto Serif', serif;
+  --font-roboto: 'Roboto';
+  --font-roboto-serif: 'Roboto Serif';
+  --font-noto-sans-arabic: 'Noto Sans Arabic';
 }
