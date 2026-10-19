@@ -47,8 +47,8 @@ export function ProposalViewLayout({
     isActive: boolean;
   };
   /**
-   * Admin overflow menu (hide / delete). Gates itself on
-   * `proposal.access.admin`, so it's safe to pass for any viewer.
+   * Admin overflow menu (merge / do not advance / hide / delete). Pass only
+   * for a decision admin — see `ProposalAffordances.moderation`.
    */
   moderationProposal?: Proposal;
   /**

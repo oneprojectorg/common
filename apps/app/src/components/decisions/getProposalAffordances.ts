@@ -12,10 +12,13 @@ export interface ProposalAffordances {
     /** Mid-phase only; the feedback panel carries the history afterwards. */
     revisions: boolean;
   };
+  /** Decision-admin curation: merge, do not advance, hide, delete. */
+  moderation: boolean;
 }
 
 export const NO_PROPOSAL_AFFORDANCES: ProposalAffordances = {
   review: { feedback: false, revisions: false },
+  moderation: false,
 };
 
 type ProposalReviewPhase = { phaseId: string } & Parameters<
@@ -34,9 +37,10 @@ export function getProposalAffordances({
   user: { currentProfile?: { id: string } | null } | null | undefined;
 }): ProposalAffordances {
   const currentProfileId = user?.currentProfile?.id;
+  const isDecisionAdmin = instance.access?.admin === true;
   const feedback =
     (!!currentProfileId && proposal.submittedBy?.id === currentProfileId) ||
-    instance.access?.admin === true ||
+    isDecisionAdmin ||
     instance.access?.review === true;
 
   const currentPhase = getInstanceCurrentPhase(instance);
@@ -46,5 +50,6 @@ export function getProposalAffordances({
       feedback,
       revisions: !!currentPhase && isReviewPhase(currentPhase) && feedback,
     },
+    moderation: isDecisionAdmin,
   };
 }

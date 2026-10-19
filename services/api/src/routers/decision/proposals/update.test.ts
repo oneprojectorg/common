@@ -180,6 +180,39 @@ describe.concurrent('updateProposal visibility', () => {
     });
   });
 
+  it("should not allow a proposal's author to change its visibility", async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const author = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [setup.instance.profileId],
+    });
+    // The author holds admin on the proposal's own profile, not the decision.
+    const proposal = await testData.createProposal({
+      userEmail: author.email,
+      processInstanceId: setup.instance.instance.id,
+      proposalData: { title: 'Author Proposal' },
+      status: ProposalStatus.SUBMITTED,
+    });
+    const authorCaller = await createAuthenticatedCaller(author.email);
+
+    await expect(
+      authorCaller.decision.updateProposal({
+        proposalId: proposal.id,
+        data: { visibility: Visibility.HIDDEN },
+      }),
+    ).rejects.toMatchObject({
+      cause: { statusCode: 403 },
+    });
+  });
+
   it('should filter hidden proposals from listProposals for non-admins', async ({
     task,
     onTestFinished,
