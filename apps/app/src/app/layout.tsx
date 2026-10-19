@@ -41,14 +41,13 @@ const robotoSerif = Roboto_Serif({
   display: 'swap',
 });
 
-// Arabic-script glyphs only (Google's unicode-range), so Latin falls through to
-// Roboto. The synthetic metric-adjusted fallback has no unicode-range and would
-// swallow Latin when this face leads the stack in the Arabic UI, so it's off.
+// Arabic-script glyphs only (Google's unicode-range), fetched lazily the first
+// time the browser renders one, so Latin-only pages never download it.
 const notoSansArabic = Noto_Sans_Arabic({
   subsets: ['arabic'],
   weight: 'variable',
   variable: '--font-noto-sans-arabic',
-  adjustFontFallback: false,
+  preload: false,
   display: 'swap',
 });
 
