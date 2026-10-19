@@ -1,5 +1,16 @@
 export const SMS_MAX_BODY_LENGTH = 1600;
 
+export const trimTrailing = (
+  value: string,
+  terminators: ReadonlySet<string>,
+): string => {
+  let end = value.length;
+  while (end > 0 && terminators.has(value.charAt(end - 1))) {
+    end--;
+  }
+  return value.slice(0, end);
+};
+
 const SMS_ELLIPSIS = '...';
 
 const SEPARATOR = '\n';

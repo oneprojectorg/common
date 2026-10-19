@@ -290,6 +290,23 @@ describe('parseTwilioInboundMessage', () => {
       from: '+15005550006',
       body: 'YES',
       messageSid: 'SM456',
+      optOutType: null,
+    });
+  });
+
+  it('carries the opt-out tag Twilio attaches to a carrier keyword', () => {
+    expect(
+      parseTwilioInboundMessage({
+        From: '+15005550006',
+        Body: 'STOP',
+        MessageSid: 'SM789',
+        OptOutType: 'STOP',
+      }),
+    ).toEqual({
+      from: '+15005550006',
+      body: 'STOP',
+      messageSid: 'SM789',
+      optOutType: 'STOP',
     });
   });
 
@@ -298,6 +315,7 @@ describe('parseTwilioInboundMessage', () => {
       from: '',
       body: '',
       messageSid: '',
+      optOutType: null,
     });
   });
 });

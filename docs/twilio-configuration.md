@@ -85,6 +85,13 @@ when it is one; the message text never leaves the API. Both handlers reply
 with empty TwiML (`<Response></Response>`, `text/xml`), which Twilio expects
 from a message webhook.
 
+A carrier keyword — STOP, START or HELP and their aliases, as Twilio lists
+them — is acknowledged and not published. Twilio answers those itself and,
+after STOP, refuses every later send to the number with error 21610, so a
+reply from us would be a second help text or a doomed send. With Advanced
+Opt-Out on the Messaging Service the request carries `OptOutType`; without
+it the handler recognises the keyword from the body.
+
 ## Webhook failure logs
 
 Both handlers log through `@op/logging`, which exports OpenTelemetry log
