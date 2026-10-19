@@ -42,7 +42,9 @@ const robotoSerif = Roboto_Serif({
 });
 
 // Arabic-script glyphs only (Google's unicode-range), fetched lazily the first
-// time the browser renders one, so Latin-only pages never download it.
+// time the browser renders one, so Latin-only pages never download it. The
+// stacks name the face directly as --font-arabic (see @op/styles tokens.css);
+// this variable is not read.
 const notoSansArabic = Noto_Sans_Arabic({
   subsets: ['arabic'],
   weight: 'variable',

@@ -162,16 +162,19 @@
   --font-accent:
     var(--font-accent), ui-sans-serif, system-ui, sans-serif,
     'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
-  /* Faces are declared by next/font in the app and fonts.css in Storybook.
-   * Noto Sans Arabic carries Google's Arabic unicode-range, so it only paints
-   * Arabic script and Latin falls through to Roboto. It must sit before the
-   * '* Fallback' faces next/font synthesises: those are local Arial/Times with
-   * no range, and Arial has Arabic glyphs. */
+  /* Faces are declared by next/font in the app and fonts.css in Storybook;
+   * --font-roboto and --font-roboto-serif are next/font's variables on <html>,
+   * each a face plus its metric-matched local fallback. */
+  /* The Arabic face only paints Arabic script (Google's unicode-range), so it
+   * leads every stack and Latin falls through. Kept literal on purpose:
+   * next/font's variable appends a local Arial fallback with no range, which
+   * would catch Latin ahead of Roboto. */
+  --font-arabic: 'Noto Sans Arabic';
   --font-serif:
-    'Roboto Serif', 'Noto Sans Arabic', 'Roboto Serif Fallback', ui-serif,
+    var(--font-arabic), var(--font-roboto-serif, 'Roboto Serif'), ui-serif,
     Georgia, Cambria, 'Times New Roman', Times, serif;
   --font-sans:
-    'Roboto', 'Noto Sans Arabic', 'Roboto Fallback', ui-sans-serif, system-ui,
+    var(--font-arabic), var(--font-roboto, 'Roboto'), ui-sans-serif, system-ui,
     sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
     'Noto Color Emoji';
   /* No web font for mono — the app relies on system monospace fonts */
