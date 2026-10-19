@@ -194,7 +194,6 @@ describe.concurrent('updateProposal visibility', () => {
       organization: setup.organization,
       instanceProfileIds: [setup.instance.profileId],
     });
-    // The author holds admin on the proposal's own profile, not the decision.
     const [proposal, authorCaller] = await Promise.all([
       testData.createProposal({
         userEmail: author.email,

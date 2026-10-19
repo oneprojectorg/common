@@ -35,8 +35,6 @@ test.describe('Proposal page admin menu', () => {
       instanceProfileId: instance.profileId,
     });
 
-    // The author holds admin on the proposal's own profile, which is not
-    // decision admin.
     const proposal = await createProposal({
       processInstanceId: instance.instance.id,
       submittedByProfileId: participant.profileId,

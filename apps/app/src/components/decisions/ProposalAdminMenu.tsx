@@ -33,11 +33,7 @@ import { useProposalRejectionActions } from './useProposalRejectionActions';
  *
  * The Figma frame also shows shortlist / reject-from-shortlist here, but #1630
  * removed those actions from the app, so they aren't offered on either surface.
- *
- * Mount it only when `ProposalAffordances.moderation` holds.
  */
-// Pre-existing: this is the body of the former `ProposalAdminMenuItems`,
-// renamed when its gating wrapper moved into `getProposalAffordances`.
 // fallow-ignore-next-line complexity
 export function ProposalAdminMenu({
   proposal,
@@ -66,7 +62,6 @@ export function ProposalAdminMenu({
     },
   });
   const rejectEnabled = useFeatureFlag('reject-proposals') ?? false;
-  // Toggles to Undo once rejected.
   const isRejected = proposal.status === ProposalStatus.REJECTED;
   const { reject, unreject, isRejecting, isUnrejecting } =
     useProposalRejectionActions(proposal);

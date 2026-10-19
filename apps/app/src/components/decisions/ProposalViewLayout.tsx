@@ -46,10 +46,7 @@ export function ProposalViewLayout({
     onToggle: () => void;
     isActive: boolean;
   };
-  /**
-   * Admin overflow menu (merge / do not advance / hide / delete); see
-   * `ProposalAdminMenu` for when to pass it.
-   */
+  /** Pass only when `ProposalAffordances.moderation` holds. */
   moderationProposal?: Proposal;
   /**
    * Read-only status shown at the head of the action cluster. Pass a fragment
