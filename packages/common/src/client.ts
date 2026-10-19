@@ -20,6 +20,7 @@ export {
   getVoterCostField,
   getVoterBudget,
   hasVotingPhase,
+  isRankedVoting,
   isReviewPhase,
   isVotingPhase,
   resolveReviewSettings,

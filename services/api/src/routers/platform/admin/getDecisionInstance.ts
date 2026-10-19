@@ -4,6 +4,7 @@ import {
   allowsComments,
   getVoterCostField,
   getVoterBudget,
+  isRankedVoting,
   isReviewPhase,
 } from '@op/common/client';
 import { db } from '@op/db/client';
@@ -34,6 +35,7 @@ const phaseRulesSchema = z
         maxVotesPerMember: z.number().optional(),
         voterBudget: z.number().optional(),
         voterCostField: z.string().optional(),
+        ranked: z.boolean().optional(),
       })
       .partial()
       .optional(),
@@ -188,6 +190,7 @@ export const getDecisionInstanceRouter = router({
             voterBudget: voterBudget ?? null,
             voterCostField:
               voterBudget === undefined ? null : getVoterCostField({ rules }),
+            ranked: isRankedVoting({ rules }),
             proposalsHiddenByDefault:
               rules?.proposals?.defaults?.hidden ?? false,
             advancementMethod: rules?.advancement?.method ?? null,

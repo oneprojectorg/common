@@ -26,6 +26,7 @@ export interface VoteData extends Record<string, unknown> {
   selections?: Array<{
     proposalId: string;
     cost: number | null;
+    rank?: number;
   }>;
   totalCost?: number;
 }

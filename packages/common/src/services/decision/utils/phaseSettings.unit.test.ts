@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import type { PhaseRules } from '../schemas/types';
 import {
   allowsComments,
   areCommentsAllowed,
@@ -9,6 +10,7 @@ import {
   getVoterBudget,
   hasVotingPhase,
   isPostSubmissionEditingAllowed,
+  isRankedVoting,
   isReviewPhase,
   isVotingPhase,
   resolveReviewSettings,
@@ -107,6 +109,19 @@ describe('getVoterCostField', () => {
       getVoterCostField({ rules: { voting: { voterCostField: '  ' } } }),
     ).toBe('budget');
     expect(getVoterCostField({})).toBe('budget');
+  });
+});
+
+describe('isRankedVoting', () => {
+  it('is true only when the rule says so', () => {
+    expect(isRankedVoting({ rules: { voting: { ranked: true } } })).toBe(true);
+    expect(isRankedVoting({ rules: { voting: { ranked: false } } })).toBe(
+      false,
+    );
+    const unrankedVoting: PhaseRules = { voting: { submit: true } };
+    expect(isRankedVoting({ rules: unrankedVoting })).toBe(false);
+    expect(isRankedVoting({ rules: {} })).toBe(false);
+    expect(isRankedVoting({})).toBe(false);
   });
 });
 

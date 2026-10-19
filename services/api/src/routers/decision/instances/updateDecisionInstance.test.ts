@@ -1285,6 +1285,7 @@ describe.concurrent('updateDecisionInstance', () => {
               maxVotesPerMember: 3,
               voterBudget: 10,
               voterCostField: 'cost',
+              ranked: true,
             },
           },
         },
@@ -1301,6 +1302,7 @@ describe.concurrent('updateDecisionInstance', () => {
     expect(storedRules?.voting).toMatchObject({
       voterBudget: 10,
       voterCostField: 'cost',
+      ranked: true,
     });
 
     await caller.decision.updateDecisionInstance({
@@ -1327,6 +1329,7 @@ describe.concurrent('updateDecisionInstance', () => {
       maxVotesPerMember: 2,
       voterBudget: 10,
       voterCostField: 'cost',
+      ranked: true,
     });
   });
 

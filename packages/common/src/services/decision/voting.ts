@@ -30,6 +30,7 @@ import type { ProposalTemplateSchema } from './types';
 import {
   getVoterCostField,
   getVoterBudget,
+  isRankedVoting,
   isVotingPhase,
 } from './utils/phaseSettings';
 import { isVotingEligible } from './votingEligibility';
@@ -42,6 +43,7 @@ interface PhaseConfig {
   maxVotesPerMember: number | undefined;
   voterBudget: number | undefined;
   voterCostField: string;
+  ranked: boolean;
 }
 
 /** Extract voting/proposal rules for the current phase. */
@@ -73,6 +75,7 @@ function getCurrentPhaseConfig(processInstance: {
     maxVotesPerMember: currentPhase.rules?.voting?.maxVotesPerMember,
     voterBudget: getVoterBudget(currentPhase),
     voterCostField: getVoterCostField(currentPhase),
+    ranked: isRankedVoting(currentPhase),
   };
 }
 
@@ -229,9 +232,10 @@ async function getValidatedBallot({
     throw new ValidationError(`Invalid vote selection: ${errors.join(', ')}`);
   }
 
-  const selections = selectedProposalIds.map((proposalId) => ({
+  const selections = selectedProposalIds.map((proposalId, index) => ({
     proposalId,
     cost: pricing?.costs.get(proposalId) ?? null,
+    ...(phaseConfig.ranked && { rank: index + 1 }),
   }));
 
   return { pricing, selections, totalCost: budget.totalCost };
@@ -297,6 +301,7 @@ export interface VotingStatusResult {
     voterBudget: number | undefined;
     voterCostField: string | undefined;
     costUnit: AmountUnit | undefined;
+    ranked: boolean;
     schemaType: string;
     isReadOnly: boolean;
   };
@@ -465,9 +470,10 @@ export const submitVote = async ({
 
       // Create join table entries for selected proposals
       const voteProposalEntries = data.selectedProposalIds.map(
-        (proposalId) => ({
+        (proposalId, index) => ({
           voteSubmissionId: voteSubmission.id,
           proposalId,
+          rank: phaseConfig.ranked ? index + 1 : null,
         }),
       );
 
@@ -555,6 +561,8 @@ export const getVotingStatus = async ({
             },
             with: {
               voteProposals: {
+                // Postgres sorts NULLs last, so unranked ballots keep creation order.
+                orderBy: { rank: 'asc', createdAt: 'asc' },
                 with: {
                   proposal: {
                     with: {
@@ -610,6 +618,7 @@ export const getVotingStatus = async ({
         voterBudget: cap?.voterBudget,
         voterCostField: cap?.voterCostField,
         costUnit: cap?.unit,
+        ranked: phaseConfig.ranked,
         schemaType: schemaResult.schemaType,
         isReadOnly: !!voteSubmission || !votingConfig.allowDecisions,
       },

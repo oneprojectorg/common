@@ -64,6 +64,12 @@ export function getVoterBudget(phase: {
     : undefined;
 }
 
+export function isRankedVoting(phase: {
+  rules?: { voting?: { ranked?: boolean } };
+}): boolean {
+  return phase.rules?.voting?.ranked === true;
+}
+
 /**
  * Participants may comment during this phase — the Process Builder's
  * "Comments" toggle.
