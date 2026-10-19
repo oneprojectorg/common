@@ -17,10 +17,21 @@ const SEPARATOR = '\n';
 
 const MARKER_ROOM = 8;
 
+const clipToUnits = (text: string, units: number): string => {
+  let kept = '';
+  for (const char of text) {
+    if (kept.length + char.length > units) {
+      break;
+    }
+    kept += char;
+  }
+  return kept;
+};
+
 export const clipSmsText = (text: string, max: number): string =>
   text.length <= max
     ? text
-    : `${text.slice(0, Math.max(0, max - SMS_ELLIPSIS.length)).trimEnd()}${SMS_ELLIPSIS}`;
+    : `${clipToUnits(text, Math.max(0, max - SMS_ELLIPSIS.length)).trimEnd()}${SMS_ELLIPSIS}`;
 
 export const splitSmsBody = ({
   heading,

@@ -14,6 +14,20 @@ describe('clipSmsText', () => {
     expect(clipped).toHaveLength(8);
     expect(clipped).toMatch(/^[\x20-\x7E]*$/);
   });
+
+  it('given an emoji that straddles the cut, then the cut moves before it so no half character is sent', () => {
+    const clipped = clipSmsText('abcdef🎉ghij', 10);
+
+    expect(clipped).toBe('abcdef...');
+    expect(clipped).not.toMatch(/\p{Surrogate}/u);
+  });
+
+  it('given an emoji that fits before the cut, then it is kept whole and the limit still counts it as two units', () => {
+    const clipped = clipSmsText('ab🎉cdefghij', 10);
+
+    expect(clipped).toBe('ab🎉cde...');
+    expect(clipped).toHaveLength(10);
+  });
 });
 
 describe('splitSmsBody', () => {
