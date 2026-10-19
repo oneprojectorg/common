@@ -41,10 +41,10 @@ const robotoSerif = Roboto_Serif({
   display: 'swap',
 });
 
-// Arabic-script glyphs only (Google's unicode-range), fetched lazily the first
-// time the browser renders one, so Latin-only pages never download it. The
-// stacks name the face directly as --font-arabic (see @op/styles tokens.css);
-// this variable is not read.
+// Fetched lazily the first time the browser needs one of its glyphs, so
+// Latin-only pages never download it. Google ships Latin subsets of this face
+// too, which is why @op/styles keeps Roboto ahead of it. The font variables
+// are not read: tokens.css names the faces directly.
 const notoSansArabic = Noto_Sans_Arabic({
   subsets: ['arabic'],
   weight: 'variable',
