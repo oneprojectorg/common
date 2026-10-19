@@ -29,16 +29,13 @@ export async function generateMetadata({
 }
 
 const OrgListingPage = async ({
-  params,
   searchParams,
 }: {
-  params: Promise<{ locale: string }>;
   searchParams: Promise<SearchParams>;
 }) => {
-  const { locale } = await params;
   const [t, tOrg, filters, { utils, queryClient }] = await Promise.all([
-    getTranslations({ locale }),
-    getTranslations({ locale, namespace: 'org' }),
+    getTranslations(),
+    getTranslations('org'),
     loadDirectorySearchParams(searchParams),
     createServerUtils(),
   ]);
