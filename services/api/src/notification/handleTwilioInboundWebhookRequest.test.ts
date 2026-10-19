@@ -139,6 +139,36 @@ describe('handleTwilioInboundWebhookRequest', () => {
     });
   });
 
+  it('given Twilio tags the message as a STOP opt-out, when handled, then it is acknowledged and not forwarded because Twilio answers it', async () => {
+    process.env.TWILIO_AUTH_TOKEN = AUTH_TOKEN;
+    const params = { ...MESSAGE_PARAMS, Body: 'STOP', OptOutType: 'STOP' };
+    const signature = signTwilioRequest(AUTH_TOKEN, URL, params);
+
+    const response = await handleTwilioInboundWebhookRequest({
+      rawBody: rawBodyOf(params),
+      signature,
+      url: URL,
+    });
+
+    expect(response).toEqual({ status: 200, body: '<Response></Response>' });
+    expect(inngest.send).not.toHaveBeenCalled();
+  });
+
+  it('given a HELP text that Twilio did not tag, when handled, then it is still not forwarded so the member gets one help reply, not two', async () => {
+    process.env.TWILIO_AUTH_TOKEN = AUTH_TOKEN;
+    const params = { ...MESSAGE_PARAMS, Body: 'Help?' };
+    const signature = signTwilioRequest(AUTH_TOKEN, URL, params);
+
+    const response = await handleTwilioInboundWebhookRequest({
+      rawBody: rawBodyOf(params),
+      signature,
+      url: URL,
+    });
+
+    expect(response).toEqual({ status: 200, body: '<Response></Response>' });
+    expect(inngest.send).not.toHaveBeenCalled();
+  });
+
   it('rejects a request with no signature and does not forward it', async () => {
     process.env.TWILIO_AUTH_TOKEN = AUTH_TOKEN;
     const rawBody = rawBodyOf(MESSAGE_PARAMS);

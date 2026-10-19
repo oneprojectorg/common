@@ -285,6 +285,7 @@ export interface TwilioInboundMessage {
   from: string;
   body: string;
   messageSid: string;
+  optOutType: string | null;
 }
 
 export const parseTwilioInboundMessage = (
@@ -293,4 +294,5 @@ export const parseTwilioInboundMessage = (
   from: params.From ?? '',
   body: params.Body ?? '',
   messageSid: params.MessageSid ?? '',
+  optOutType: params.OptOutType ?? null,
 });

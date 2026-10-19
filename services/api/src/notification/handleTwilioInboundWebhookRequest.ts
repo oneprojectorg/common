@@ -1,5 +1,7 @@
 import {
   extractSmsCode,
+  isCarrierKeyword,
+  parseCarrierKeyword,
   parseSmsCommand,
   parseTwilioInboundMessage,
   verifyTwilioWebhookSignature,
@@ -51,6 +53,18 @@ export const handleTwilioInboundWebhookRequest = async ({
   if (!message.messageSid) {
     logger.warn('Twilio inbound webhook missing MessageSid');
     return { status: 400 };
+  }
+
+  const carrierKeyword = isCarrierKeyword(message.optOutType)
+    ? message.optOutType
+    : parseCarrierKeyword(message.body);
+
+  if (carrierKeyword) {
+    logger.info('Twilio inbound message is a carrier keyword, left to Twilio', {
+      messageSid: message.messageSid,
+      carrierKeyword,
+    });
+    return { status: 200, body: '<Response></Response>' };
   }
 
   const { keyword, argument } = parseSmsCommand(message.body);
