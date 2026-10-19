@@ -8,7 +8,6 @@ import { TooltipProvider } from '@op/sense/Tooltip';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import type { Metadata, Viewport } from 'next';
 import { getLocale, getMessages } from 'next-intl/server';
-import { Noto_Sans_Arabic, Roboto, Roboto_Serif } from 'next/font/google';
 import Script from 'next/script';
 import { NuqsAdapter } from 'nuqs/adapters/next/app';
 
@@ -22,36 +21,9 @@ import { QueryInvalidationSubscriber } from '../components/QueryInvalidationSubs
 import { I18nProvider } from '../lib/i18n';
 import { getLocaleDirection } from '../lib/i18n/config';
 import { getCookieConsentRequired } from '../utils/cookieConsent';
-
-const roboto = Roboto({
-  subsets: ['latin'],
-  // Load the variable font (full wght axis) so font-strong's 450 renders true
-  // instead of rounding up to the nearest static cut (500). next's Roboto type
-  // only accepts 'variable' here, not a range string.
-  weight: 'variable',
-  variable: '--font-roboto',
-  display: 'swap',
-});
-
-const robotoSerif = Roboto_Serif({
-  subsets: ['latin'],
-  weight: ['300', '400'],
-  style: ['normal', 'italic'],
-  variable: '--font-roboto-serif',
-  display: 'swap',
-});
-
-// Fetched lazily the first time the browser needs one of its glyphs, so
-// Latin-only pages never download it. Google ships Latin subsets of this face
-// too, which is why @op/styles keeps Roboto ahead of it. The font variables
-// are not read: tokens.css names the faces directly.
-const notoSansArabic = Noto_Sans_Arabic({
-  subsets: ['arabic'],
-  weight: 'variable',
-  variable: '--font-noto-sans-arabic',
-  preload: false,
-  display: 'swap',
-});
+// Side-effect import: keeps the fonts in the root layout's module graph so
+// their @font-face rules load and the Latin files preload on every route.
+import './fonts';
 
 export const metadata: Metadata = {
   metadataBase: new URL(OPURLConfig('APP').ENV_URL),
@@ -101,11 +73,7 @@ const RootLayout = async ({ children }: { children: React.ReactNode }) => {
   const dir = getLocaleDirection(locale);
 
   return (
-    <html
-      lang={locale}
-      dir={dir}
-      className={`${roboto.variable} ${robotoSerif.variable} ${notoSansArabic.variable} h-full`}
-    >
+    <html lang={locale} dir={dir} className="h-full">
       <head>
         <Script id="nfo-script" strategy="beforeInteractive">
           {printNFO()}
