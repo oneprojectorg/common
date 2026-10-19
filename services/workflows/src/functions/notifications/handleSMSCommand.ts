@@ -3,11 +3,10 @@ import {
   NotFoundError,
   UnauthorizedError,
   clipSmsText,
-  countBallotProposals,
+  describeSmsDecision,
   formatSmsDecisionInfo,
   formatSmsDecisionList,
   getPhoneSignupState,
-  getPublishedDecisionBySlug,
   listSmsDecisions,
 } from '@op/common';
 import { Events, inngest } from '@op/events';
@@ -128,9 +127,9 @@ export const handleSMSCommand = inngest.createFunction(
         return listDecisions();
       }
 
-      const decision = await step.run('find-decision', async () => {
+      const decision = await step.run('describe-decision', async () => {
         try {
-          return await getPublishedDecisionBySlug({
+          return await describeSmsDecision({
             authUserId: account.authUserId,
             slug: argument,
           });
@@ -154,16 +153,10 @@ export const handleSMSCommand = inngest.createFunction(
         return failed ?? { message: 'decision not found' };
       }
 
-      const proposalCount = await step.run('count-proposals', () =>
-        countBallotProposals({
-          processInstanceId: decision.processInstanceId,
-        }),
-      );
-
       const failed = await deliver(
         'send-decision-reply',
         'Decision reply',
-        formatSmsDecisionInfo({ ...decision, proposalCount }),
+        formatSmsDecisionInfo(decision),
       );
       return failed ?? { message: 'decision sent' };
     };
