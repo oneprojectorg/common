@@ -95,7 +95,10 @@ describe('proxy request locale', () => {
   });
 
   it('forwards no locale for an unprefixed path, which keeps the default', async () => {
-    const response = await run('/login');
+    // Anonymous `/` is the one unprefixed path the proxy serves itself; any
+    // other goes through the (mocked) i18n redirect, which copies headers.
+    getClaims.mockResolvedValue({ data: { claims: null } });
+    const response = await run('/');
 
     expect(getForwardedLocale(response)).toBeNull();
   });
