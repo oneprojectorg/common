@@ -74,10 +74,6 @@ export const LocaleChooser = ({ onClose }: LocaleChooserProps) => {
   );
 };
 
-/**
- * The locale in the URL, and a way to move to another one. Shared by the
- * header's globe menu and the language setting in the Settings modal.
- */
 export const useLocaleSwitch = () => {
   const pathname = usePathname();
   const params = useParams();

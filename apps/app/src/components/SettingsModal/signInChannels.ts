@@ -4,17 +4,11 @@ import { isValidEmail } from '../decisions/emailUtils';
 
 export type SignInChannel = 'email' | 'phone';
 
-/** Why a new sign-in email or phone number was rejected. */
 export type ChannelValueError = 'required' | 'invalid' | 'unchanged';
 
 export const otherChannel = (channel: SignInChannel): SignInChannel =>
   channel === 'email' ? 'phone' : 'email';
 
-/**
- * Checks a new value for a sign-in channel before a code is sent to it, with
- * the same rules the login screen applies. `current` is the value already on
- * file, if any.
- */
 export const validateChannelValue = (
   channel: SignInChannel,
   value: string,
@@ -51,14 +45,11 @@ export const validateChannelValue = (
   return null;
 };
 
-/** Normalises a value for display once it's accepted. */
 export const formatChannelValue = (
   channel: SignInChannel,
   value: string,
 ): string => (channel === 'phone' ? formatPhoneNumber(value) : value.trim());
 
-// Only North American numbers get a canonical shape for now; anything else is
-// shown as typed.
 const formatPhoneNumber = (value: string): string => {
   const northAmerican = /^\+1(\d{3})(\d{3})(\d{4})$/.exec(
     normalizePhoneNumber(value),

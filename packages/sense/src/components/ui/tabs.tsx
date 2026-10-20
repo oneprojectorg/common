@@ -14,8 +14,7 @@ function Tabs({
     <TabsPrimitive.Root
       data-slot="tabs"
       data-orientation={orientation}
-      // Forwarded as well as mirrored: the registry only sets the attribute,
-      // so vertical tabs kept left/right arrow keys and no aria-orientation.
+      // forwarded, not just mirrored: else vertical tabs keep left/right keys and lack aria-orientation
       orientation={orientation}
       className={cn(
         'group/tabs flex gap-2 data-horizontal:flex-col',

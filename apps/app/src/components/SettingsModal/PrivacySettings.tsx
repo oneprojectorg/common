@@ -20,16 +20,10 @@ import type { ParticipationMode, ProcessPrivacy } from './useSettingsMockState';
 
 interface PrivacySettingsProps {
   processes: Array<ProcessPrivacy>;
-  /** The name other participants see when the user shows it. */
   userName: string;
   setParticipationMode: (processId: string, mode: ParticipationMode) => void;
 }
 
-/**
- * The Privacy tab: for each process the user joined, whether other
- * participants see their name or a participant number. Change opens the two
- * choices inline.
- */
 export const PrivacySettings = ({
   processes,
   userName,
@@ -71,11 +65,9 @@ const ProcessPrivacyRow = ({
   const nameOptionId = useId();
   const anonymousOptionId = useId();
 
-  // The chosen option while editing; `null` when the choices are closed.
   const [draft, setDraft] = useState<ParticipationMode | null>(null);
 
-  // Focus moves into the choices when they open and back to Change when they
-  // close, since each replaces the other.
+  // the choices replace the Change button and vice versa, so focus is moved by hand
   const changeRef = useRef<HTMLButtonElement>(null);
   const choicesRef = useRef<HTMLDivElement>(null);
   const pendingFocus = useRef<'choices' | 'change' | null>(null);
@@ -114,13 +106,11 @@ const ProcessPrivacyRow = ({
     >
       <Header4 id={headingId}>{process.processName}</Header4>
       <div className="mt-3 flex items-center gap-2 text-sm text-muted-foreground">
-        {/* Decorative: the organization's name is right beside it. */}
         <ProfileAvatar
           name={process.organizationName}
           alt=""
           size="sm"
-          // The size has to carry the same variant as Avatar's own, or it
-          // loses on specificity.
+          // must carry Avatar's own size variant or it loses on specificity
           className="data-[size=sm]:size-5"
         />
         <bdi>{process.organizationName}</bdi>
@@ -182,8 +172,7 @@ const ProcessPrivacyRow = ({
                 : t('nameShownStatus')}
             </span>
           </p>
-          {/* Described by the status, so returning focus here after a save
-              announces the new choice. */}
+          {/* described by the status so a save announces the new choice on focus return */}
           <Button
             ref={changeRef}
             variant="outline"

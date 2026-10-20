@@ -130,8 +130,7 @@
   max-height: calc(100dvh - 2rem);
 }
 
-/* The width counterpart: a wide dialog (`w-200`, say) shrinks to keep the same
- * margin on viewports narrower than it, instead of running edge to edge. */
+/* width counterpart of max-h-dialog: a wide dialog keeps the margin on narrower viewports */
 @utility max-w-dialog {
   max-width: calc(100dvw - 2rem);
 }
