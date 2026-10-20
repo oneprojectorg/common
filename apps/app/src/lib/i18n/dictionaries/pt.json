@@ -1379,6 +1379,7 @@
       "viewAllProposalsAction": "Ver todas as propostas",
       "totalVotesLabel": "Total de votos",
       "myBallotOption": "Minha cédula",
+      "likedOption": "Curtidas por mim",
       "selectedProposalsCount": "<highlight>{numSelected, plural, one {# proposta selecionada} other {# propostas selecionadas}}</highlight>",
       "selectedProposalsOfMaxCount": "<highlight>{numSelected}</highlight> de {max, plural, one {# proposta selecionada} other {# propostas selecionadas}}",
       "allCategoriesOption": "Todas as categorias",

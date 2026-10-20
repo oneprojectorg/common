@@ -1379,6 +1379,7 @@
       "viewAllProposalsAction": "عرض جميع المقترحات",
       "totalVotesLabel": "إجمالي الأصوات",
       "myBallotOption": "بطاقة اقتراعي",
+      "likedOption": "أعجبتني",
       "selectedProposalsCount": "<highlight>{numSelected, plural, zero {لا مقترحات} one {مقترح واحد} two {مقترحان} few {# مقترحات} many {# مقترحًا} other {# مقترح}}</highlight> محدد",
       "selectedProposalsOfMaxCount": "<highlight>{numSelected}</highlight> من {max, plural, zero {لا مقترحات} one {مقترح واحد} two {مقترحان} few {# مقترحات} many {# مقترحًا} other {# مقترح}} محدد",
       "allCategoriesOption": "جميع الفئات",

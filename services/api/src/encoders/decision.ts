@@ -764,6 +764,11 @@ export const proposalFilterSchema = instanceOptionalPhaseRefSchema.extend({
    */
   excludeAssignedForReview: z.boolean().optional(),
   /**
+   * When true, only proposals the current user has liked. Resolved
+   * server-side from the request's user context.
+   */
+  likedByCurrentUser: z.boolean().optional(),
+  /**
    * The "Not advanced" filter: rejected proposals plus, on the current phase,
    * those earlier phases left behind. Omitted lists the phase's other proposals.
    */
@@ -788,6 +793,7 @@ export const proposalLocationsFilterSchema =
     search: proposalSearchSchema,
     votedByProfileId: z.uuid().optional(),
     excludeAssignedForReview: z.boolean().optional(),
+    likedByCurrentUser: z.boolean().optional(),
     notAdvanced: z.boolean().optional(),
     phase: z.enum(['results']).optional(),
   });

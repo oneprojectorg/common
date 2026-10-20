@@ -59,6 +59,11 @@ export interface ListProposalsInput {
    */
   excludeAssignedForReview?: boolean;
   /**
+   * Restrict results to proposals the current user has liked. Resolved
+   * server-side from the caller's profile — never a client-supplied ID.
+   */
+  likedByCurrentUser?: boolean;
+  /**
    * Internal override: skip phase resolution and use this exact set of IDs.
    * Not exposed on the tRPC schema — public callers should use phaseId or
    * votedByProfileId.
