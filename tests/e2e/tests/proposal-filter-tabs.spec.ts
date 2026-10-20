@@ -140,13 +140,14 @@ test.describe('Proposal filter tabs', () => {
     const myTab = authenticatedPage.getByRole('tab', { name: 'My proposals' });
     await expect(allTab).toHaveAttribute('aria-selected', 'true');
 
-    // The tabs are "All proposals" and "My proposals" and nothing else, so there
-    // are two. Scoped to the tab bar: the decision view's Overview/Current
+    // The tabs are "All proposals", "My proposals" and "Liked" and nothing
+    // else, so there are three. Scoped to the tab bar: the decision view's Overview/Current
     // toggle is a tablist too, so an unscoped tab count would read four.
     const filterTabs = authenticatedPage.getByRole('tablist', {
       name: /Filter proposals$/,
     });
-    await expect(filterTabs.getByRole('tab')).toHaveCount(2);
+    await expect(filterTabs.getByRole('tab')).toHaveCount(3);
+    await expect(filterTabs.getByRole('tab', { name: 'Liked' })).toBeVisible();
 
     // Beside them, the status axis as its own select.
     const statusSelect = authenticatedPage.getByRole('combobox', {
