@@ -347,7 +347,7 @@ export async function listAssignmentsForReviewer({
 
   const proposalTemplate = await resolveProposalTemplate(
     instance.instanceData,
-    instance.process.id,
+    instance.processId,
   );
 
   const docContentInputs: Array<{

@@ -1,0 +1,3 @@
+ALTER TABLE "decision_process_instances" DROP CONSTRAINT "decision_process_instances_process_id_decision_processes_id_fk";--> statement-breakpoint
+ALTER TABLE "decision_process_instances" ALTER COLUMN "process_id" DROP NOT NULL;--> statement-breakpoint
+ALTER TABLE "decision_process_instances" ADD CONSTRAINT "decision_process_instances_B1A6tWf3JdD0_fkey" FOREIGN KEY ("process_id") REFERENCES "decision_processes"("id") ON DELETE SET NULL ON UPDATE CASCADE;
