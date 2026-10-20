@@ -125,25 +125,56 @@ describe('getProposalCosts', () => {
     ).toBe(900);
   });
 
-  it('defers a zero document value to the snapshot', async () => {
+  it('treats the document as the source of truth once it is read', async () => {
     getDocuments.mockResolvedValue(
       new Map<string, ProposalDocumentContent>([
-        ['a', { type: 'json', fragments: { cost: fragment('0') } }],
+        ['zero', { type: 'json', fragments: { cost: fragment('0') } }],
+        ['garbled', { type: 'json', fragments: { cost: fragment('three') } }],
+        ['cleared', { type: 'json', fragments: {} }],
       ]),
     );
 
     const costs = await getProposalCosts({
       proposals: [
-        { id: 'a', proposalData: { cost: 3 } },
-        { id: 'b', proposalData: {} },
+        { id: 'zero', proposalData: { cost: 3 } },
+        { id: 'garbled', proposalData: { cost: 3 } },
+        { id: 'cleared', proposalData: { cost: 3 } },
       ],
       proposalTemplate: template,
       voterCostField: 'cost',
       unit: DOTS,
     });
 
-    expect(costs.get('a')).toBe(3);
-    expect(costs.get('b')).toBeNull();
+    expect([...costs]).toEqual([
+      ['zero', 0],
+      ['garbled', null],
+      ['cleared', null],
+    ]);
+  });
+
+  it('rejects the ballot when a document cannot be read', async () => {
+    getDocuments.mockResolvedValue(
+      new Map<string, ProposalDocumentContent>([
+        ['a', { type: 'unavailable' }],
+      ]),
+    );
+
+    await expect(
+      getProposalCosts({
+        proposals: [
+          {
+            id: 'a',
+            proposalData: { budget: { amount: 100, currency: 'USD' } },
+          },
+        ],
+        proposalTemplate: template,
+        voterCostField: 'budget',
+        unit: USD,
+      }),
+    ).rejects.toThrow('Could not read the current cost');
+    expect(getDocuments).toHaveBeenCalledWith(expect.any(Array), {
+      onFetchError: 'unavailable',
+    });
   });
 
   it('does not charge a value stored in another currency', async () => {

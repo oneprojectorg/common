@@ -150,6 +150,22 @@ async function setupVotingInstance(
     ),
   );
 
+  // Voting prices from the live document, so it must match the snapshot.
+  proposals.forEach((proposal, i) => {
+    const { collaborationDocId } = proposal.proposalData as {
+      collaborationDocId?: string;
+    };
+    const prices = opts.proposalPrices?.[i];
+
+    if (collaborationDocId) {
+      mockCollab.setDocFragments(collaborationDocId, {
+        title: `Proposal ${i + 1}`,
+        ...(prices?.budget && { budget: JSON.stringify(prices.budget) }),
+        ...(prices?.cost !== undefined && { cost: String(prices.cost) }),
+      });
+    }
+  });
+
   const targetPhase = opts.votingEnabled === false ? 'submission' : 'voting';
   await db
     .update(processInstances)

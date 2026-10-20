@@ -1,7 +1,8 @@
+import { CommonError } from '../../utils';
 import { type AmountUnit, getFieldAmount } from './fieldUnit';
 import { getProposalDocumentsContent } from './getProposalDocumentsContent';
 import { parseProposalData } from './proposalDataSchema';
-import { resolveDocumentFieldValues } from './proposalListPreview';
+import { getDocumentFieldTexts } from './proposalListPreview';
 import type { ProposalTemplateSchema } from './types';
 
 export type ProposalCosts = ReadonlyMap<string, number | null>;
@@ -24,35 +25,43 @@ export async function getProposalCosts({
       proposalData,
       proposalTemplate,
     })),
+    { onFetchError: 'unavailable' },
   );
 
   return new Map(
     proposals.map(({ id, proposalData }) => {
-      const snapshot = getFieldAmount({
-        value: parseProposalData(proposalData)[voterCostField],
-        unit,
-      });
       const documentContent = documentContentMap.get(id);
 
-      if (documentContent?.type !== 'json') {
-        return [id, snapshot];
+      // Charging the stale snapshot could let an over-budget ballot through.
+      if (documentContent?.type === 'unavailable') {
+        throw new CommonError(
+          'Could not read the current cost of a selected proposal. Please try again.',
+        );
       }
 
-      const live = getFieldAmount({
-        value: resolveDocumentFieldValues({
-          fragments: documentContent.fragments,
-          proposalTemplate,
-          keys: [voterCostField],
-        })[voterCostField],
-        unit,
-      });
+      const value =
+        documentContent?.type === 'json'
+          ? parseFieldText(
+              getDocumentFieldTexts({
+                fragments: documentContent.fragments,
+                keys: [voterCostField],
+              })[voterCostField],
+            )
+          : parseProposalData(proposalData)[voterCostField];
 
-      if (live === null) {
-        return [id, snapshot];
-      }
-
-      // A fragment that fails to parse also yields 0, so 0 defers to the snapshot.
-      return [id, live === 0 ? (snapshot ?? live) : live];
+      return [id, getFieldAmount({ value, unit })];
     }),
   );
+}
+
+function parseFieldText(text: string | undefined): unknown {
+  if (text === undefined) {
+    return undefined;
+  }
+
+  try {
+    return JSON.parse(text);
+  } catch {
+    return text;
+  }
 }
