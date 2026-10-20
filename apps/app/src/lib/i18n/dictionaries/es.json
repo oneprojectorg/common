@@ -1379,7 +1379,7 @@
       "viewAllProposalsAction": "Ver todas las propuestas",
       "totalVotesLabel": "Votos totales",
       "myBallotOption": "Mi boleta",
-      "likedOption": "Que me gustan",
+      "likedOption": "Mis me gusta",
       "selectedProposalsCount": "<highlight>{numSelected, plural, one {# propuesta seleccionada} other {# propuestas seleccionadas}}</highlight>",
       "selectedProposalsOfMaxCount": "<highlight>{numSelected}</highlight> de {max, plural, one {# propuesta seleccionada} other {# propuestas seleccionadas}}",
       "allCategoriesOption": "Todas las categorías",

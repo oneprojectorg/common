@@ -155,12 +155,17 @@ type ReviewAssignmentExclusion = {
 // table (for plain `db.select(...).from(proposals).where(...)`) or the
 // relationally-aliased table from a v2 `RAW` callback. Both forms yield SQL
 // that resolves to the right alias in their respective query contexts.
-const buildBaseConditions = (
-  t: typeof proposals,
-  input: ListProposalsInput,
-  reviewExclusion: ReviewAssignmentExclusion | undefined,
-  likedByProfileId: string | undefined,
-): SQL => {
+const buildBaseConditions = ({
+  t,
+  input,
+  reviewExclusion,
+  likedByProfileId,
+}: {
+  t: typeof proposals;
+  input: ListProposalsInput;
+  reviewExclusion: ReviewAssignmentExclusion | undefined;
+  likedByProfileId: string | undefined;
+}): SQL => {
   const { processInstanceId, submittedByProfileId, status, search } = input;
 
   // processInstanceId is always present, so the array is non-empty and the
@@ -469,12 +474,12 @@ export const resolveProposalListScope = async ({
   // passes an aliased `table`) and the plain count query (which passes the
   // schema table). See `buildBaseConditions` above for the same pattern.
   const buildWhereClause = (proposalsTable: typeof proposals): SQL => {
-    let clause: SQL = buildBaseConditions(
-      proposalsTable,
+    let clause: SQL = buildBaseConditions({
+      t: proposalsTable,
       input,
       reviewExclusion,
       likedByProfileId,
-    );
+    });
 
     // Explicit scope (proposalIds or votedByProfileId): constrain the entire
     // query to that ID set so the draft branch can't independently surface

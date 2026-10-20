@@ -141,8 +141,9 @@ test.describe('Proposal filter tabs', () => {
     await expect(allTab).toHaveAttribute('aria-selected', 'true');
 
     // The tabs are "All proposals", "My proposals" and "Liked" and nothing
-    // else, so there are three. Scoped to the tab bar: the decision view's Overview/Current
-    // toggle is a tablist too, so an unscoped tab count would read four.
+    // else, so there are three. Scoped to the tab bar: the decision view's
+    // Overview/Current toggle is a tablist too, so an unscoped count would read
+    // five.
     const filterTabs = authenticatedPage.getByRole('tablist', {
       name: /Filter proposals$/,
     });
