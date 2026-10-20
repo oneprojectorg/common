@@ -21,8 +21,7 @@ import { QueryInvalidationSubscriber } from '../components/QueryInvalidationSubs
 import { I18nProvider } from '../lib/i18n';
 import { getLocaleDirection } from '../lib/i18n/config';
 import { getCookieConsentRequired } from '../utils/cookieConsent';
-// Side-effect import: keeps the fonts in the root layout's module graph so
-// their @font-face rules load and the Latin files preload on every route.
+// Side-effect import: emits the @font-face rules and Latin preloads on every route.
 import './fonts';
 
 export const metadata: Metadata = {

@@ -131,6 +131,8 @@
   --brand-teal-500: #3f8d99;
   --brand-green-500: #5db131;
   --brand-blue-500: #446fcc;
+  /* Read through var() inside the --font-* stacks; not a font-* utility. */
+  --font-arabic: 'Noto Sans Arabic';
 }
 
 /* ============================================
@@ -162,14 +164,7 @@
   --font-accent:
     var(--font-accent), ui-sans-serif, system-ui, sans-serif,
     'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
-  /* Faces are declared by next/font in the app and fonts.css in Storybook.
-   * The order is load-bearing: Google ships Noto Sans Arabic with Latin
-   * subsets too, so Roboto must lead or Latin renders in Noto; and the
-   * '* Fallback' faces next/font synthesises are local Arial/Times with no
-   * unicode-range, and Arial has Arabic glyphs, so they must trail Noto.
-   * Spelled by name because next/font's variables bundle each face with its
-   * fallback. */
-  --font-arabic: 'Noto Sans Arabic';
+  /* Order is load-bearing: Roboto before Noto (Noto ships Latin), Noto before the next/font '* Fallback' faces (local Arial has Arabic glyphs). */
   --font-serif:
     'Roboto Serif', var(--font-arabic), 'Roboto Serif Fallback', ui-serif,
     Georgia, Cambria, 'Times New Roman', Times, serif;
