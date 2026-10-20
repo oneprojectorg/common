@@ -16,8 +16,9 @@ import {
   Sortable,
   type SortableItemControls,
 } from '@op/sense/Sortable';
+import { cn } from '@op/sense/lib/utils';
 import { type ReactNode, type RefCallback, useRef } from 'react';
-import { LuChevronDown, LuChevronUp, LuX } from 'react-icons/lu';
+import { LuChevronDown, LuChevronUp, LuCircleCheck, LuX } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -69,10 +70,32 @@ export const BallotPopover = ({
   return (
     <Popover>
       <PopoverTrigger
-        render={<Button variant="ghost" className="text-base font-normal" />}
+        render={
+          <Button
+            variant="ghost"
+            className={cn(
+              'text-base',
+              ballot.length === 0
+                ? 'font-normal text-muted-foreground'
+                : 'font-medium',
+            )}
+          />
+        }
       >
+        <LuCircleCheck
+          data-icon="inline-start"
+          aria-hidden
+          className={cn(
+            'size-5',
+            ballot.length === 0 ? 'text-input' : 'text-primary',
+          )}
+        />
         {children}
-        <LuChevronUp data-icon="inline-end" aria-hidden />
+        <LuChevronDown
+          data-icon="inline-end"
+          aria-hidden
+          className="text-muted-foreground transition-transform group-data-popup-open/button:rotate-180 motion-reduce:transition-none"
+        />
       </PopoverTrigger>
       <PopoverContent
         ref={popupRef}

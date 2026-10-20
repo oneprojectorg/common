@@ -398,9 +398,9 @@ const VotingProposalsList = ({
     );
   }
 
-  const highlight = (chunks: ReactNode) => (
-    <span className="text-primary">{chunks}</span>
-  );
+  // The ballot trigger carries its own icon and weight, so no accent there.
+  const highlight = (chunks: ReactNode) =>
+    ranked ? chunks : <span className="text-primary">{chunks}</span>;
   const selectionCount =
     maxVotesPerMember !== undefined
       ? t.rich('decisions.proposals.selectedProposalsOfMaxCount', {

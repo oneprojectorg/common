@@ -1,7 +1,7 @@
 'use client';
 
 import type { Proposal } from '@op/common/client';
-import { Progress } from '@op/sense/Progress';
+import { SegmentedProgress } from '@op/sense/SegmentedProgress';
 import { cn } from '@op/sense/lib/utils';
 import type { ReactNode } from 'react';
 
@@ -11,9 +11,13 @@ import {
   type BallotBudget,
   formatBallotAmount,
   getBallotTotal,
+  getProposalCost,
 } from './ballot';
 
-/** How much of the voter budget the ballot spends, as a bar and a sentence. */
+/**
+ * How much of the voter budget the ballot spends: a bar with one segment per
+ * pick, and a sentence.
+ */
 export const BallotBudgetMeter = ({
   ballot,
   budget,
@@ -37,8 +41,11 @@ export const BallotBudgetMeter = ({
 
   return (
     <div className={cn('flex w-full min-w-0 items-center gap-4', className)}>
-      <Progress
-        value={Math.min(total, budget.voterBudget)}
+      <SegmentedProgress
+        segments={ballot.map((proposal) => ({
+          id: proposal.id,
+          value: getProposalCost({ proposal, budget }),
+        }))}
         max={budget.voterBudget}
         aria-label={t('budgetAllocatedLabel')}
         getAriaValueText={() => summary}
