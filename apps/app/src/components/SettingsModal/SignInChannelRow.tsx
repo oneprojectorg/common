@@ -105,7 +105,12 @@ export const SignInChannelRow = ({
 
   const open = (mode: EditMode) => {
     setConfirmation(null);
-    setEditor({ step: 'enter', mode, draft: '', error: null });
+    setEditor({
+      step: 'enter',
+      mode,
+      draft: mode === 'change' ? (value ?? '') : '',
+      error: null,
+    });
   };
 
   const submitValue = (event: FormEvent<HTMLFormElement>) => {
@@ -334,6 +339,12 @@ const EnterValueStep = ({
           placeholder={copy.placeholder}
           value={editor.draft}
           onChange={(event) => onDraftChange(event.target.value)}
+          // prefilled: typing replaces it, a click drops into a typo fix
+          onFocus={
+            editor.mode === 'change'
+              ? (event) => event.currentTarget.select()
+              : undefined
+          }
           aria-invalid={editor.error ? true : undefined}
           aria-describedby={messageId}
           className="sm:max-w-80"
