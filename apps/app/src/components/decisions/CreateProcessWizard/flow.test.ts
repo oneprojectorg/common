@@ -15,6 +15,10 @@ import {
   type WizardAnswers,
 } from './flow';
 import { EMPTY_OTHER, type OtherAnswers } from './otherFlow';
+import type { WizardFlags } from './types';
+
+const ROLLING: WizardFlags = { rollingDecisions: true };
+const NO_ROLLING: WizardFlags = { rollingDecisions: false };
 
 const answers = (patch: Partial<WizardAnswers>): WizardAnswers => ({
   ...EMPTY_ANSWERS,
@@ -29,7 +33,7 @@ const withFocus: OtherAnswers = {
 
 describe('screensFor', () => {
   it('asks grantmaking who decides, after the shape', () => {
-    expect(screensFor(answers({ type: 'grant' }))).toEqual([
+    expect(screensFor(answers({ type: 'grant' }), ROLLING)).toEqual([
       'intro',
       'type',
       'shape',
@@ -40,7 +44,7 @@ describe('screensFor', () => {
   });
 
   it('asks budgeting for the shape alone', () => {
-    expect(screensFor(answers({ type: 'pb' }))).toEqual([
+    expect(screensFor(answers({ type: 'pb' }), ROLLING)).toEqual([
       'intro',
       'type',
       'shape',
@@ -50,7 +54,7 @@ describe('screensFor', () => {
   });
 
   it('hands the other pathway its own questions', () => {
-    expect(screensFor(answers({ type: 'other' }))).toEqual([
+    expect(screensFor(answers({ type: 'other' }), ROLLING)).toEqual([
       'intro',
       'type',
       'subjects',
@@ -63,7 +67,10 @@ describe('screensFor', () => {
   });
 
   it('asks which subject to focus on, after cadence, only for several subjects on a timeline', () => {
-    const screens = screensFor(answers({ type: 'other', other: withFocus }));
+    const screens = screensFor(
+      answers({ type: 'other', other: withFocus }),
+      ROLLING,
+    );
 
     expect(screens.indexOf('focus')).toBe(screens.indexOf('cadence') + 1);
     expect(
@@ -72,6 +79,7 @@ describe('screensFor', () => {
           type: 'other',
           other: { ...withFocus, cadence: 'ongoing' },
         }),
+        ROLLING,
       ),
     ).not.toContain('focus');
     expect(
@@ -80,12 +88,42 @@ describe('screensFor', () => {
           type: 'other',
           other: { ...withFocus, subjects: ['funding'] },
         }),
+        ROLLING,
       ),
     ).not.toContain('focus');
   });
 
+  it('never asks about cadence while rolling decisions are off', () => {
+    expect(screensFor(answers({ type: 'other' }), NO_ROLLING)).toEqual([
+      'intro',
+      'type',
+      'subjects',
+      'submits',
+      'decision',
+      'mapping',
+      'name',
+    ]);
+  });
+
+  it('still asks which subject to focus on when cadence was never asked', () => {
+    const unasked: OtherAnswers = { ...withFocus, cadence: null };
+
+    expect(
+      screensFor(answers({ type: 'other', other: unasked }), NO_ROLLING),
+    ).toEqual([
+      'intro',
+      'type',
+      'subjects',
+      'focus',
+      'submits',
+      'decision',
+      'mapping',
+      'name',
+    ]);
+  });
+
   it('asks no step 3 questions before a type is picked', () => {
-    expect(screensFor(EMPTY_ANSWERS).map(stepOf)).not.toContain(3);
+    expect(screensFor(EMPTY_ANSWERS, ROLLING).map(stepOf)).not.toContain(3);
   });
 
   it('reaches every screen from some set of answers, once each', () => {
@@ -93,7 +131,7 @@ describe('screensFor', () => {
       answers({ type: 'grant' }),
       answers({ type: 'pb' }),
       answers({ type: 'other', other: withFocus }),
-    ].flatMap(screensFor);
+    ].flatMap((input) => screensFor(input, ROLLING));
 
     expect(new Set(reached)).toEqual(
       new Set([
@@ -116,34 +154,45 @@ describe('screensFor', () => {
 describe('nextScreen and previousScreen', () => {
   it('walk the screens these answers ask', () => {
     const grant = answers({ type: 'grant' });
-    const screens = screensFor(grant);
+    const screens = screensFor(grant, ROLLING);
     const walked: ScreenId[] = ['intro'];
 
     for (
-      let screen = nextScreen('intro', grant);
+      let screen = nextScreen('intro', grant, ROLLING);
       screen;
-      screen = nextScreen(screen, grant)
+      screen = nextScreen(screen, grant, ROLLING)
     ) {
       walked.push(screen);
     }
 
     expect(walked).toEqual(screens);
-    expect(previousScreen('mapping', grant)).toBe('grantDecision');
+    expect(previousScreen('mapping', grant, ROLLING)).toBe('grantDecision');
   });
 
   it('skips the focus screen when it is not asked', () => {
     const other = answers({ type: 'other', other: EMPTY_OTHER });
 
-    expect(nextScreen('cadence', other)).toBe('submits');
-    expect(previousScreen('submits', other)).toBe('cadence');
+    expect(nextScreen('cadence', other, ROLLING)).toBe('submits');
+    expect(previousScreen('submits', other, ROLLING)).toBe('cadence');
     expect(
-      nextScreen('cadence', answers({ type: 'other', other: withFocus })),
+      nextScreen(
+        'cadence',
+        answers({ type: 'other', other: withFocus }),
+        ROLLING,
+      ),
     ).toBe('focus');
   });
 
+  it('steps over cadence in both directions while rolling decisions are off', () => {
+    const other = answers({ type: 'other', other: EMPTY_OTHER });
+
+    expect(nextScreen('subjects', other, NO_ROLLING)).toBe('submits');
+    expect(previousScreen('submits', other, NO_ROLLING)).toBe('subjects');
+  });
+
   it('stops at either end', () => {
-    expect(previousScreen('intro', EMPTY_ANSWERS)).toBeNull();
-    expect(nextScreen('name', EMPTY_ANSWERS)).toBeNull();
+    expect(previousScreen('intro', EMPTY_ANSWERS, ROLLING)).toBeNull();
+    expect(nextScreen('name', EMPTY_ANSWERS, ROLLING)).toBeNull();
   });
 });
 
@@ -187,54 +236,70 @@ describe('isScreenComplete', () => {
 
 describe('progressPercent', () => {
   it.each([
-    ['with', withFocus],
-    ['without', EMPTY_OTHER],
-  ])('only moves forward through step 3, %s the focus screen', (_, other) => {
-    const bar = screensFor(answers({ type: 'other', other }))
-      .filter((screen) => stepOf(screen) === 3)
-      .map((screen) => progressPercent(screen, 'other'));
+    ['with', withFocus, ROLLING],
+    ['without', EMPTY_OTHER, ROLLING],
+    ['without cadence or', EMPTY_OTHER, NO_ROLLING],
+  ])(
+    'only moves forward through step 3, %s the focus screen',
+    (_, other, flags) => {
+      const bar = screensFor(answers({ type: 'other', other }), flags)
+        .filter((screen) => stepOf(screen) === 3)
+        .map((screen) => progressPercent(screen, 'other', flags));
 
-    expect(bar).toEqual([...bar].sort((a, b) => a - b));
-    expect(new Set(bar).size).toBe(bar.length);
-    expect(bar[0]).toBeGreaterThan(progressPercent('type', 'other'));
-    expect(bar.at(-1)).toBe((3 / TOTAL_STEPS) * 100);
+      expect(bar).toEqual([...bar].sort((a, b) => a - b));
+      expect(new Set(bar).size).toBe(bar.length);
+      expect(bar[0]).toBeGreaterThan(progressPercent('type', 'other', flags));
+      expect(bar.at(-1)).toBe((3 / TOTAL_STEPS) * 100);
+    },
+  );
+
+  it('divides step 3 by fewer screens once cadence cannot be asked', () => {
+    expect(progressPercent('subjects', 'other', NO_ROLLING)).toBeGreaterThan(
+      progressPercent('subjects', 'other', ROLLING),
+    );
   });
 
   it('fills the bar on the last step', () => {
-    expect(progressPercent('name', null)).toBe(100);
+    expect(progressPercent('name', null, ROLLING)).toBe(100);
   });
 });
 
 describe('reconcileAnswers', () => {
   it('drops a shape the new type does not offer', () => {
     expect(
-      reconcileAnswers(answers({ type: 'pb', shape: 'loi' })).shape,
+      reconcileAnswers(answers({ type: 'pb', shape: 'loi' }), ROLLING).shape,
     ).toBeNull();
     expect(
-      reconcileAnswers(answers({ type: 'grant', shape: 'loi' })).shape,
+      reconcileAnswers(answers({ type: 'grant', shape: 'loi' }), ROLLING).shape,
     ).toBe('loi');
   });
 
   it('gives the other pathway its composed shape', () => {
     expect(
-      reconcileAnswers(answers({ type: 'other', shape: 'single' })).shape,
+      reconcileAnswers(answers({ type: 'other', shape: 'single' }), ROLLING)
+        .shape,
     ).toBe('custom');
   });
 
   it('keeps who decides for grantmaking only', () => {
     expect(
-      reconcileAnswers(answers({ type: 'grant', grantDecision: 'hybrid' }))
-        .grantDecision,
+      reconcileAnswers(
+        answers({ type: 'grant', grantDecision: 'hybrid' }),
+        ROLLING,
+      ).grantDecision,
     ).toBe('hybrid');
     expect(
-      reconcileAnswers(answers({ type: 'pb', grantDecision: 'hybrid' }))
-        .grantDecision,
+      reconcileAnswers(
+        answers({ type: 'pb', grantDecision: 'hybrid' }),
+        ROLLING,
+      ).grantDecision,
     ).toBeNull();
   });
 
   it('empties the other answers once another type is picked', () => {
     expect(
-      reconcileAnswers(answers({ type: 'pb', other: withFocus })).other,
+      reconcileAnswers(answers({ type: 'pb', other: withFocus }), ROLLING)
+        .other,
     ).toEqual(EMPTY_OTHER);
   });
 
@@ -242,7 +307,7 @@ describe('reconcileAnswers', () => {
     const other = answers({ type: 'other', shape: 'custom', other: withFocus });
 
     expect(
-      reconcileAnswers({ ...other, type: 'grant' }, other).shape,
+      reconcileAnswers({ ...other, type: 'grant' }, ROLLING, other).shape,
     ).toBeNull();
   });
 
@@ -253,6 +318,16 @@ describe('reconcileAnswers', () => {
       grantDecision: 'applicants',
     });
 
-    expect(reconcileAnswers(answered, answered)).toEqual(answered);
+    expect(reconcileAnswers(answered, ROLLING, answered)).toEqual(answered);
+  });
+
+  it('forgets a saved always-open answer once rolling decisions are off', () => {
+    const ongoing = answers({
+      type: 'other',
+      other: { ...withFocus, cadence: 'ongoing' },
+    });
+
+    expect(reconcileAnswers(ongoing, ROLLING).other.cadence).toBe('ongoing');
+    expect(reconcileAnswers(ongoing, NO_ROLLING).other.cadence).toBeNull();
   });
 });
