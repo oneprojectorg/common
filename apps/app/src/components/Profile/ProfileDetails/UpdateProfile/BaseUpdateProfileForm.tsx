@@ -157,7 +157,6 @@ export const BaseUpdateProfileForm = forwardRef<
             name="title"
             children={(field) => (
               <field.TextField
-                isRequired
                 label={t('Headline')}
                 description={
                   placeholders?.titleDescription ?? t('profile.headlineHint')
@@ -277,13 +276,8 @@ export const createValidator = (t: TranslateFn) =>
           error: t('maxLength200Error'),
         }),
       title: z
-        .string({
-          error: t('profile.titlePrompt'),
-        })
+        .string()
         .trim()
-        .min(1, {
-          error: t('profile.titlePrompt'),
-        })
         .max(200, {
           error: t('maxLength200Error'),
         }),
@@ -326,7 +320,7 @@ export const createValidator = (t: TranslateFn) =>
 export const validator = z
   .object({
     fullName: z.string().trim().min(1).max(200),
-    title: z.string().trim().min(1).max(200),
+    title: z.string().trim().max(200).optional(),
     pronouns: z.string().trim().optional(),
     customPronouns: z.string().trim().optional(),
     email: z

@@ -1,3 +1,4 @@
+import { textOrNull } from '@/utils/textOrNull';
 import { trpc } from '@op/api/client';
 import type { Profile } from '@op/api/encoders';
 import { ReactNode, forwardRef } from 'react';
@@ -22,7 +23,7 @@ export const UpdateProfileForm = forwardRef<
   const handleSubmit = async (value: FormFields) => {
     await updateProfile.mutateAsync({
       name: value.fullName,
-      bio: value.title,
+      bio: textOrNull(value.title),
       pronouns:
         value.pronouns === 'custom'
           ? value.customPronouns

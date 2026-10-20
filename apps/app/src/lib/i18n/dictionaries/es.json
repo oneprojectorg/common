@@ -296,7 +296,6 @@
     "fullNamePrompt": "Ingresa tu nombre completo",
     "headlinePlaceholder": "Ingresa tu titular",
     "headlineHint": "Agrega un titular descriptivo para tu perfil. Puede ser tu título profesional en tu organización o tus áreas de enfoque.",
-    "titlePrompt": "Ingresa tu título profesional",
     "emailPlaceholder": "Ingresa tu dirección de correo electrónico",
     "websitePlaceholder": "Ingresa la URL de tu sitio web",
     "emailTooLong": "Máximo 255 caracteres",

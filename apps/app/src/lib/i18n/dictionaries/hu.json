@@ -296,7 +296,6 @@
     "fullNamePrompt": "Adja meg a teljes nevét",
     "headlinePlaceholder": "Adja meg a mottóját",
     "headlineHint": "Adjon meg egy találó mottót a profiljához. Ez lehet a szervezetén belüli beosztása vagy a fókuszterületei.",
-    "titlePrompt": "Adja meg a beosztását",
     "emailPlaceholder": "Adja meg az e-mail-címét",
     "websitePlaceholder": "Adja meg a weboldala URL-címét",
     "emailTooLong": "Legfeljebb 255 karakter lehet",

@@ -1,4 +1,5 @@
 import { useProfileImageUpload } from '@/hooks/useProfileImageUpload';
+import { textOrNull } from '@/utils/textOrNull';
 import { trpc } from '@op/api/client';
 import { zodUrl } from '@op/common/validation';
 import { AvatarUploader } from '@op/sense/AvatarUploader';
@@ -32,13 +33,8 @@ export const createValidator = (t: TranslateFn) =>
           message: t('maxLength200Error'),
         }),
       title: z
-        .string({
-          message: t('profile.titlePrompt'),
-        })
+        .string()
         .trim()
-        .min(1, {
-          message: t('profile.titlePrompt'),
-        })
         .max(200, {
           message: t('maxLength200Error'),
         }),
@@ -82,7 +78,7 @@ export const createValidator = (t: TranslateFn) =>
 // Fallback validator for external use
 export const validator = z.object({
   fullName: z.string().trim().min(1).max(200),
-  title: z.string().trim().min(1).max(200),
+  title: z.string().trim().max(200).optional(),
   email: z.string().optional(),
   website: z.string().optional(),
   pronouns: z.string().optional(),
@@ -153,7 +149,7 @@ export const PersonalDetailsForm = ({
     onSubmit: async ({ value }: { value: FormFields }) => {
       await updateProfile.mutateAsync({
         name: value.fullName,
-        bio: value.title,
+        bio: textOrNull(value.title),
         email: value.email || undefined,
         pronouns:
           value.pronouns === 'custom'
@@ -223,7 +219,6 @@ export const PersonalDetailsForm = ({
           name="title"
           children={(field) => (
             <field.TextField
-              isRequired
               label={t('Headline')}
               description={t('profile.headlineHint')}
               placeholder={t('profile.headlinePlaceholder')}

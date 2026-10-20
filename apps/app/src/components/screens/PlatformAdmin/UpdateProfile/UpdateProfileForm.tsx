@@ -1,3 +1,4 @@
+import { textOrNull } from '@/utils/textOrNull';
 import { trpc } from '@op/api/client';
 import type { Profile } from '@op/api/encoders';
 
@@ -27,7 +28,7 @@ export const UpdateProfileForm = ({
       authUserId,
       data: {
         name: value.fullName,
-        bio: value.title,
+        bio: textOrNull(value.title),
         email: value.email || undefined,
         website: value.website || undefined,
         focusAreas: value.focusAreas || undefined,
