@@ -113,6 +113,15 @@ describe('getBallotRemaining', () => {
     ).toBe(0.3);
   });
 
+  it('reports nothing left when the ballot spends the whole budget', () => {
+    expect(
+      getBallotRemaining({
+        proposals: [proposalCosting({ amount: 100, currency: 'USD' })],
+        budget,
+      }),
+    ).toBe(0);
+  });
+
   it('never reports less than nothing left', () => {
     expect(
       getBallotRemaining({
@@ -182,10 +191,15 @@ describe('moveBallotItem', () => {
     ).toEqual(['a', 'c', 'b']);
   });
 
-  it('moves an item down one place', () => {
-    expect(
-      moveBallotItem({ items: ['a', 'b', 'c'], index: 0, offset: 1 }),
-    ).toEqual(['b', 'a', 'c']);
+  it('moves an item down one place without changing the input', () => {
+    const items = ['a', 'b', 'c'];
+
+    expect(moveBallotItem({ items, index: 0, offset: 1 })).toEqual([
+      'b',
+      'a',
+      'c',
+    ]);
+    expect(items).toEqual(['a', 'b', 'c']);
   });
 
   it('keeps the order when the move would leave the list', () => {

@@ -36,7 +36,7 @@ const PRICES = {
 } as const;
 
 test.describe('Ranked voting with a voter budget', () => {
-  test('ranks picks in ballot order and blocks a proposal over the remaining budget', async ({
+  test('ranks picks in ballot order and blocks a proposal over the remaining budget until room is made', async ({
     authenticatedPage,
     org,
   }) => {
@@ -89,17 +89,54 @@ test.describe('Ranked voting with a voter budget', () => {
       'aria-valuetext',
       '$900 of $1,000 allocated',
     );
+    const muralCard = authenticatedPage
+      .getByRole('button', { name: /select proposal/i })
+      .filter({ hasText: 'Downtown Mural' });
     await expect(ballotToggle('Downtown Mural')).toBeDisabled();
+    await expect(muralCard).toHaveAttribute('aria-disabled', 'true');
+    await muralCard.click();
+    await expect(
+      authenticatedPage.getByText(
+        'This proposal costs more than your remaining $100. Remove a pick to make room.',
+      ),
+    ).toBeVisible();
+    await expect(meter).toHaveAttribute(
+      'aria-valuetext',
+      '$900 of $1,000 allocated',
+    );
 
-    // Keyboard, not a click: the dev server's issues badge covers the trigger.
+    // Keyboard rather than a click: in `next dev` the issues badge covers the
+    // trigger; the production build CI runs has no badge.
     await authenticatedPage
       .getByRole('button', { name: '2 proposals selected' })
       .press('Enter');
-    await authenticatedPage
+    const popover = authenticatedPage.getByRole('dialog', {
+      name: 'Your ballot',
+    });
+    await expect(
+      popover.getByRole('button', { name: 'Move Riverside Bike Path up' }),
+    ).toBeDisabled();
+    await popover
       .getByRole('button', { name: 'Move Harbor Reading Room up' })
       .click();
     await expect(ballotToggle('Harbor Reading Room')).toHaveText('1');
+    await expect(ballotToggle('Riverside Bike Path')).toHaveText('2');
+
+    await popover
+      .getByRole('button', {
+        name: 'Remove Riverside Bike Path from your ballot',
+      })
+      .click();
+    await expect(ballotToggle('Riverside Bike Path')).not.toBeChecked();
+    await expect(meter).toHaveAttribute(
+      'aria-valuetext',
+      '$300 of $1,000 allocated',
+    );
     await authenticatedPage.keyboard.press('Escape');
+    await expect(popover).toBeHidden();
+
+    await ballotToggle('Downtown Mural').click();
+    await expect(ballotToggle('Downtown Mural')).toHaveText('2');
 
     await authenticatedPage
       .getByRole('button', { name: 'Submit my votes' })
@@ -111,8 +148,14 @@ test.describe('Ranked voting with a voter budget', () => {
     const ballot = dialog.getByRole('list', { name: 'Selected proposals' });
     await expect(ballot.getByRole('heading', { level: 3 })).toHaveText([
       'Harbor Reading Room',
-      'Riverside Bike Path',
+      'Downtown Mural',
     ]);
+    await expect(
+      dialog.getByRole('progressbar', { name: 'Budget allocated' }),
+    ).toHaveAttribute('aria-valuetext', '$800 of $1,000 allocated');
+    await expect(dialog.getByRole('note')).toContainText(
+      'Your order is your ranking',
+    );
 
     await dialog.getByRole('button', { name: 'Submit votes' }).click();
     await expect(dialog).toBeHidden({ timeout: 15_000 });
@@ -131,11 +174,23 @@ test.describe('Ranked voting with a voter budget', () => {
         rank: decisionsVoteProposals.rank,
       })
       .from(decisionsVoteProposals)
-      .where(eq(decisionsVoteProposals.voteSubmissionId, submission.id));
-    const [bikePath, readingRoom] = proposals;
-    expect(votes.sort((a, b) => (a.rank ?? 0) - (b.rank ?? 0))).toEqual([
+      .where(eq(decisionsVoteProposals.voteSubmissionId, submission.id))
+      .orderBy(decisionsVoteProposals.rank);
+    const [, readingRoom, mural] = proposals;
+    expect(votes).toEqual([
       { proposalId: readingRoom?.id, rank: 1 },
-      { proposalId: bikePath?.id, rank: 2 },
+      { proposalId: mural?.id, rank: 2 },
     ]);
+
+    await authenticatedPage.reload({ waitUntil: 'domcontentloaded' });
+    const votedToggle = (title: string) =>
+      authenticatedPage
+        .getByTestId('proposal-card')
+        .filter({ hasText: title })
+        .getByRole('checkbox');
+    await expect(votedToggle('Harbor Reading Room')).toHaveText('1', {
+      timeout: 30_000,
+    });
+    await expect(votedToggle('Downtown Mural')).toHaveText('2');
   });
 });

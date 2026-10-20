@@ -445,6 +445,7 @@ const VotingProposalsList = ({
                 aside={
                   isVotedFor ? (
                     <VoteCheckbox
+                      ranked={ranked}
                       checked
                       disabled
                       rank={
@@ -512,8 +513,10 @@ const VotingProposalsList = ({
                       {showCheckbox && (
                         <div onClick={(e) => e.stopPropagation()}>
                           <VoteCheckbox
+                            ranked={ranked}
                             checked={isSelected}
-                            disabled={isUnaffordable}
+                            // Not `disabled`: a press still explains the budget.
+                            aria-disabled={isUnaffordable || undefined}
                             rank={rank}
                             onCheckedChange={() => {
                               toggleProposal(proposal);
@@ -626,10 +629,12 @@ const VotingProposalsList = ({
 
 /** The ballot toggle on a card: a round checkbox, numbered on a ranked vote. */
 const VoteCheckbox = ({
+  ranked,
   rank,
   ...props
-}: ComponentProps<typeof RankCheckbox>) => {
-  if (rank !== undefined) {
+}: ComponentProps<typeof RankCheckbox> & { ranked: boolean }) => {
+  // One component for the whole ranked vote, so picking doesn't remount it.
+  if (ranked) {
     return <RankCheckbox rank={rank} {...props} />;
   }
 

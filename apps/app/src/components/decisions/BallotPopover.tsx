@@ -157,6 +157,9 @@ const BallotRow = ({
         variant="ghost"
         size="icon-xs"
         disabled={!onMoveUp}
+        // Focusable at the edge, or a move to the top drops keyboard focus.
+        focusableWhenDisabled
+        className="aria-disabled:opacity-50"
         onClick={onMoveUp}
         aria-label={t('ballotMoveUpLabel', { title: titleText })}
       >
@@ -166,6 +169,8 @@ const BallotRow = ({
         variant="ghost"
         size="icon-xs"
         disabled={!onMoveDown}
+        focusableWhenDisabled
+        className="aria-disabled:opacity-50"
         onClick={onMoveDown}
         aria-label={t('ballotMoveDownLabel', { title: titleText })}
       >
