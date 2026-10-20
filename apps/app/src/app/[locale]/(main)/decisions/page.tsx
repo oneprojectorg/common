@@ -25,7 +25,9 @@ const DecisionsListingPage = async () => {
         <Header1 className="text-headline">
           {t('shell.decisionsPageTitle')}
         </Header1>
-        <p>{t('shell.decisionsPageSubtitle')}</p>
+        <p className="text-muted-foreground">
+          {t('shell.decisionsPageSubtitle')}
+        </p>
       </div>
       <AllDecisions />
     </ListPageLayout>

@@ -12,12 +12,11 @@ import { Skeleton } from '@op/sense/Skeleton';
 import { cn } from '@op/sense/lib/utils';
 import { getGradientForString } from '@op/styles/constants';
 import Image from 'next/image';
-import { Suspense, useState } from 'react';
+import { Suspense, useId, useState } from 'react';
 import { LuChevronDown, LuChevronUp } from 'react-icons/lu';
 
-import { useTranslations } from '@/lib/i18n';
+import { Link, useTranslations } from '@/lib/i18n';
 
-import { ButtonLink } from '@/components/ButtonLink';
 import ErrorBoundary from '@/components/ErrorBoundary';
 
 const MAX_HOME_PROCESSES = 3;
@@ -78,7 +77,7 @@ const ActiveProcessesList = () => {
       </ul>
       {canSeeMore && (
         <Button
-          variant="secondary"
+          variant="link"
           className="self-center"
           onClick={seeMore}
           loading={isFetchingNextPage}
@@ -91,7 +90,7 @@ const ActiveProcessesList = () => {
       )}
       {isExpanded && !canSeeMore && (
         <Button
-          variant="secondary"
+          variant="link"
           className="self-center"
           onClick={() => setIsExpanded(false)}
           aria-expanded
@@ -106,7 +105,7 @@ const ActiveProcessesList = () => {
 };
 
 const ProcessCard = ({ decision }: { decision: DecisionProfile }) => {
-  const t = useTranslations();
+  const headingId = useId();
   const instance = decision.processInstance;
   const coverUrl = getPublicUrl(instance.instanceData?.overview?.heroImage);
   const host = instance.steward ?? instance.owner;
@@ -117,7 +116,12 @@ const ProcessCard = ({ decision }: { decision: DecisionProfile }) => {
       : undefined);
 
   return (
-    <article className="flex flex-col overflow-hidden rounded-xl border bg-background sm:flex-row">
+    <Link
+      href={`/decisions/${decision.slug}`}
+      // Name the link by its heading alone; the avatar's initial would otherwise run into it
+      aria-labelledby={headingId}
+      className="flex flex-col overflow-hidden rounded-xl border bg-background transition-colors outline-none hover:bg-accent focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 sm:flex-row"
+    >
       <div
         className={cn(
           'relative h-32 shrink-0 sm:h-auto sm:w-52',
@@ -134,37 +138,26 @@ const ProcessCard = ({ decision }: { decision: DecisionProfile }) => {
           />
         )}
       </div>
-      <div className="flex min-w-0 flex-1 flex-col gap-4 p-6 sm:flex-row sm:items-start sm:gap-6">
-        <div className="flex min-w-0 flex-1 flex-col gap-3">
-          <Header3>{decision.name}</Header3>
-          {host ? (
-            <div className="flex items-center gap-2">
-              <ProfileAvatar
-                name={host.name}
-                src={getPublicUrl(host.avatarImage?.name)}
-                alt=""
-                size="sm"
-              />
-              <bdi className="text-sm text-muted-foreground">{host.name}</bdi>
-            </div>
-          ) : null}
-          {description ? (
-            <p dir="auto" className="truncate ltr:text-left rtl:text-right">
-              {description}
-            </p>
-          ) : null}
-        </div>
-        <ButtonLink
-          href={`/decisions/${decision.slug}`}
-          className="shrink-0"
-          aria-label={t('shell.participateInProcessLabel', {
-            name: decision.name,
-          })}
-        >
-          {t('decisions.participateAction')}
-        </ButtonLink>
+      <div className="flex min-w-0 flex-1 flex-col gap-3 p-6">
+        <Header3 id={headingId}>{decision.name}</Header3>
+        {host ? (
+          <div className="flex items-center gap-2">
+            <ProfileAvatar
+              name={host.name}
+              src={getPublicUrl(host.avatarImage?.name)}
+              alt=""
+              size="sm"
+            />
+            <bdi className="text-sm text-muted-foreground">{host.name}</bdi>
+          </div>
+        ) : null}
+        {description ? (
+          <p dir="auto" className="truncate ltr:text-left rtl:text-right">
+            {description}
+          </p>
+        ) : null}
       </div>
-    </article>
+    </Link>
   );
 };
 
