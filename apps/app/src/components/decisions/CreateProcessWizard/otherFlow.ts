@@ -203,9 +203,11 @@ export function reconcileOther(
   flags: WizardFlags,
   previous?: OtherAnswers,
 ): OtherAnswers {
+  const cadence = flags.rollingDecisions ? next.cadence : null;
   const ended: OtherAnswers = {
     ...next,
-    cadence: flags.rollingDecisions ? next.cadence : null,
+    cadence,
+    decision: cadence === 'ongoing' ? null : next.decision,
   };
   const settled: OtherAnswers = {
     ...ended,
@@ -319,16 +321,18 @@ const INTAKE_DESCRIPTION: Record<SubmitKey, WizardCopyKey> = {
   none: 'collectSubmissionsDescription',
 };
 
+const REVIEW_CAPABILITIES: WizardCopyKey[] = [
+  'buildScoringRubric',
+  'inviteReviewersPanel',
+  'scoreBlindIfYouWant',
+  'chooseWhatAdvances',
+];
+
 export function composeOtherPieces(answers: OtherAnswers): ProcessPiece[] {
   const subject = activeSubject(answers);
   const submits = answers.submits ?? 'none';
-  const decision = answers.decision ?? 'vote';
-  const discussionOnly = decision === 'agree';
 
   if (answers.cadence === 'ongoing') {
-    const votingCapabilities: WizardCopyKey[] =
-      decision === 'vote' || decision === 'both' ? ['runVoteItemWhenYou'] : [];
-
     return [
       {
         name: INTAKE_NAME[submits === 'none' ? 'proposals' : submits],
@@ -340,7 +344,6 @@ export function composeOtherPieces(answers: OtherAnswers): ProcessPiece[] {
           'setYourOwnQuestions',
           'inviteYourGroup',
           'letMembersCommentLikeShow',
-          ...votingCapabilities,
           'noClosingDateRunsLong',
         ],
         norm: 'ongoingIntakeNorm',
@@ -348,6 +351,8 @@ export function composeOtherPieces(answers: OtherAnswers): ProcessPiece[] {
     ];
   }
 
+  const decision = answers.decision ?? 'vote';
+  const discussionOnly = decision === 'agree';
   const pieces: ProcessPiece[] = [];
 
   if (submits !== 'none') {
@@ -369,21 +374,16 @@ export function composeOtherPieces(answers: OtherAnswers): ProcessPiece[] {
     });
   }
 
-  if (decision === 'review' || decision === 'both') {
+  if (decision === 'both' || (decision === 'review' && submits === 'rough')) {
     pieces.push({
-      name: decision === 'both' ? 'narrowDown' : 'reviewDecide',
-      phaseName: decision === 'both' ? 'shortlisting' : 'reviewDecide',
+      name: 'narrowDown',
+      phaseName: 'shortlisting',
       phaseType: 'review',
       description:
         decision === 'both'
           ? 'narrowDownDescription'
-          : 'reviewDecideDescription',
-      capabilities: [
-        'buildScoringRubric',
-        'inviteReviewersPanel',
-        'scoreBlindIfYouWant',
-        'chooseWhatAdvances',
-      ],
+          : 'narrowDownToWorkUpDescription',
+      capabilities: REVIEW_CAPABILITIES,
     });
   }
 
@@ -398,6 +398,16 @@ export function composeOtherPieces(answers: OtherAnswers): ProcessPiece[] {
         'addQuestionsFullerVersion',
         'setDeadline',
       ],
+    });
+  }
+
+  if (decision === 'review') {
+    pieces.push({
+      name: 'reviewDecide',
+      phaseName: 'reviewDecide',
+      phaseType: 'review',
+      description: 'reviewDecideDescription',
+      capabilities: REVIEW_CAPABILITIES,
     });
   }
 
