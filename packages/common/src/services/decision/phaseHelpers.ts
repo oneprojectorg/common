@@ -51,10 +51,12 @@ export const insertPhase = async ({
   // Only tests pass this, to force slug clashes.
   generateSlug?: () => string;
 }): Promise<{ phase: ProcessPhase; profile: Profile }> => {
-  if (name.length > MAX_PHASE_NAME_LENGTH) {
+  // Counts code points: `varchar(256)` does, `String.length` counts UTF-16 units.
+  const chars = [...name];
+  if (chars.length > MAX_PHASE_NAME_LENGTH) {
     throw new ValidationError(
       `A phase name can have at most ${MAX_PHASE_NAME_LENGTH} characters`,
-      { name: `Shorten "${name.slice(0, 40)}…"` },
+      { name: `Shorten "${chars.slice(0, 40).join('')}…"` },
     );
   }
 
