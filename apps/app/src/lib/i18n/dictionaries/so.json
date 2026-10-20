@@ -1388,6 +1388,7 @@
       "selectProposalLabel": "Dooro soo jeedinta",
       "selectedProposalLabel": "Soo jeedinta la doortay",
       "deselectRankedProposalLabel": "Ka saar doorashada soo jeedinta kaalinta {rank}",
+      "votedRankedProposalLabel": "Doorashadaada lambarka {rank}",
       "overBudgetHint": "Soo jeedintani waxay ka qiimo badan tahay {remaining} ee kuu hadhay. Ka saar mid ka mid ah doorashooyinkaaga si meel loo banneeyo.",
       "budgetAllocatedLabel": "Miisaaniyadda la qoondeeyay",
       "budgetAllocatedSummary": "{allocated} oo ka mid ah {budget} ayaa la qoondeeyay",

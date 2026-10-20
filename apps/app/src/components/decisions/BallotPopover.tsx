@@ -16,7 +16,7 @@ import {
   Sortable,
   type SortableItemControls,
 } from '@op/sense/Sortable';
-import type { ReactNode } from 'react';
+import { type ReactNode, type RefCallback, useRef } from 'react';
 import { LuChevronDown, LuChevronUp, LuX } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -48,6 +48,23 @@ export const BallotPopover = ({
   children: ReactNode;
 }) => {
   const t = useTranslations('decisions.proposals');
+  const popupRef = useRef<HTMLDivElement>(null);
+  const removeButtons = useRef(new Map<string, HTMLButtonElement>());
+  const getTitle = (proposal: Proposal) =>
+    resolvePresentationFields({
+      proposal,
+      defaultTitle: t('untitledProposal'),
+    }).title;
+
+  // Focus moves before the row unmounts, or it drops to the document body.
+  const remove = (index: number) => {
+    const removed = ballot[index];
+    const neighbour = ballot[index + 1] ?? ballot[index - 1];
+    const nextFocus = neighbour && removeButtons.current.get(neighbour.id);
+
+    (nextFocus ?? popupRef.current)?.focus();
+    onBallotChange(ballot.filter((proposal) => proposal !== removed));
+  };
 
   return (
     <Popover>
@@ -57,7 +74,12 @@ export const BallotPopover = ({
         {children}
         <LuChevronUp data-icon="inline-end" aria-hidden />
       </PopoverTrigger>
-      <PopoverContent side="top" align="start" className="sm:w-96">
+      <PopoverContent
+        ref={popupRef}
+        side="top"
+        align="start"
+        className="sm:w-96"
+      >
         <PopoverHeader>
           <PopoverTitle>{t('ballotTitle')}</PopoverTitle>
           <PopoverDescription>{t('ballotReorderHint')}</PopoverDescription>
@@ -72,6 +94,7 @@ export const BallotPopover = ({
             items={ballot}
             onChange={onBallotChange}
             aria-label={t('ballotTitle')}
+            getItemLabel={getTitle}
             className="max-h-80 gap-1 overflow-y-auto"
           >
             {(proposal, controls) => {
@@ -84,17 +107,23 @@ export const BallotPopover = ({
               return (
                 <BallotRow
                   proposal={proposal}
+                  title={getTitle(proposal)}
                   budget={budget}
                   controls={controls}
                   onMoveUp={index > 0 ? () => move(-1) : undefined}
                   onMoveDown={
                     index < ballot.length - 1 ? () => move(1) : undefined
                   }
-                  onRemove={() =>
-                    onBallotChange(
-                      ballot.filter(({ id }) => id !== proposal.id),
-                    )
-                  }
+                  onRemove={() => remove(index)}
+                  removeButtonRef={(node) => {
+                    if (!node) {
+                      return;
+                    }
+                    removeButtons.current.set(proposal.id, node);
+                    return () => {
+                      removeButtons.current.delete(proposal.id);
+                    };
+                  }}
                 />
               );
             }}
@@ -109,13 +138,16 @@ export const BallotPopover = ({
 
 const BallotRow = ({
   proposal,
+  title: titleText,
   budget,
   controls,
   onMoveUp,
   onMoveDown,
   onRemove,
+  removeButtonRef,
 }: {
   proposal: Proposal;
+  title: string;
   budget?: BallotBudget;
   controls: SortableItemControls;
   /** Undefined at the top of the ballot. */
@@ -123,12 +155,9 @@ const BallotRow = ({
   /** Undefined at the bottom of the ballot. */
   onMoveDown?: () => void;
   onRemove: () => void;
+  removeButtonRef: RefCallback<HTMLButtonElement>;
 }) => {
   const t = useTranslations('decisions.proposals');
-  const { title: titleText } = resolvePresentationFields({
-    proposal,
-    defaultTitle: t('untitledProposal'),
-  });
   const { index, dragHandleProps } = controls;
   const rank = index + 1;
 
@@ -179,6 +208,7 @@ const BallotRow = ({
       <Button
         variant="ghost"
         size="icon-xs"
+        ref={removeButtonRef}
         onClick={onRemove}
         aria-label={t('ballotRemoveLabel', { title: titleText })}
       >

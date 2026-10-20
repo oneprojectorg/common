@@ -1388,6 +1388,7 @@
       "selectProposalLabel": "اختر المقترح",
       "selectedProposalLabel": "المقترح المحدد",
       "deselectRankedProposalLabel": "إلغاء تحديد المقترح في المرتبة {rank}",
+      "votedRankedProposalLabel": "اختيارك رقم {rank}",
       "overBudgetHint": "تكلفة هذا المقترح أكبر من المبلغ المتبقي لك {remaining}. أزل أحد اختياراتك لإفساح المجال.",
       "budgetAllocatedLabel": "الميزانية المخصصة",
       "budgetAllocatedSummary": "تم تخصيص {allocated} من {budget}",

@@ -94,7 +94,8 @@ test.describe('Ranked voting with a voter budget', () => {
       .filter({ hasText: 'Downtown Mural' });
     await expect(ballotToggle('Downtown Mural')).toBeDisabled();
     await expect(muralCard).toHaveAttribute('aria-disabled', 'true');
-    await muralCard.click();
+    // Forced: an aria-disabled card still takes a press, which explains why.
+    await muralCard.click({ force: true });
     await expect(
       authenticatedPage.getByText(
         'This proposal costs more than your remaining $100. Remove a pick to make room.',

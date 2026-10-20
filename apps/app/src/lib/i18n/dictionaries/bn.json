@@ -1388,6 +1388,7 @@
       "selectProposalLabel": "প্রস্তাব নির্বাচন করুন",
       "selectedProposalLabel": "নির্বাচিত প্রস্তাব",
       "deselectRankedProposalLabel": "{rank} নম্বরে থাকা প্রস্তাবটি অনির্বাচন করুন",
+      "votedRankedProposalLabel": "আপনার {rank} নম্বর পছন্দ",
       "overBudgetHint": "এই প্রস্তাবের খরচ আপনার বাকি {remaining}-এর চেয়ে বেশি। জায়গা করতে একটি বাছাই সরান।",
       "budgetAllocatedLabel": "বরাদ্দকৃত বাজেট",
       "budgetAllocatedSummary": "{budget}-এর মধ্যে {allocated} বরাদ্দ করা হয়েছে",

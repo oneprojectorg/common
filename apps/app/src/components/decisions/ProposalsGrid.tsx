@@ -434,6 +434,10 @@ const VotingProposalsList = ({
 
           // Ballot view: after voting, show a simpler card with clickable title
           if (isEligibleForVote && isReadOnly) {
+            const votedRank = ranked
+              ? getBallotRank({ ballotIds: votedProposalIds, id: proposal.id })
+              : undefined;
+
             return (
               <ProposalCardView
                 key={proposal.id}
@@ -448,17 +452,14 @@ const VotingProposalsList = ({
                       ranked={ranked}
                       checked
                       disabled
-                      rank={
-                        ranked
-                          ? getBallotRank({
-                              ballotIds: votedProposalIds,
-                              id: proposal.id,
+                      rank={votedRank}
+                      aria-label={
+                        votedRank === undefined
+                          ? t('decisions.proposals.selectedProposalLabel')
+                          : t('decisions.proposals.votedRankedProposalLabel', {
+                              rank: votedRank,
                             })
-                          : undefined
                       }
-                      aria-label={t(
-                        'decisions.proposals.selectedProposalLabel',
-                      )}
                     />
                   ) : undefined
                 }

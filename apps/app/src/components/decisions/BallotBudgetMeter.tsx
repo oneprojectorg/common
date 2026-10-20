@@ -42,10 +42,10 @@ export const BallotBudgetMeter = ({
         max={budget.voterBudget}
         aria-label={t('budgetAllocatedLabel')}
         getAriaValueText={() => summary}
-        className="min-w-0 flex-1"
+        className="min-w-16 flex-1"
       />
       <p
-        className="shrink-0 text-sm text-muted-foreground tabular-nums"
+        className="min-w-0 text-sm text-muted-foreground tabular-nums"
         aria-live="polite"
       >
         {t.rich('budgetAllocatedOfTotal', {

@@ -1388,6 +1388,7 @@
       "selectProposalLabel": "Sélectionner la proposition",
       "selectedProposalLabel": "Proposition sélectionnée",
       "deselectRankedProposalLabel": "Désélectionner la proposition classée {rank}",
+      "votedRankedProposalLabel": "Votre choix numéro {rank}",
       "overBudgetHint": "Cette proposition coûte plus que les {remaining} qui vous restent. Retirez un choix pour faire de la place.",
       "budgetAllocatedLabel": "Budget alloué",
       "budgetAllocatedSummary": "{allocated} sur {budget} alloués",
