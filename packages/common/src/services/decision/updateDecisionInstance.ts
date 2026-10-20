@@ -17,11 +17,14 @@ import { assertProfileAccess, assertProfileAdmin } from '../assert';
 import { generateUniqueProfileSlug } from '../profile/utils';
 import { assertVoterCostField } from './assertVoterCostField';
 import { createTransitionsForProcess } from './createTransitionsForProcess';
+import {
+  getNormalizedCategories,
+  getUpdatedInstanceData,
+} from './getUpdatedInstanceData';
 import { ensureProposalTaxonomyTerms } from './proposalTaxonomy';
 import { schemaValidator } from './schemaValidator';
 import type {
   DecisionInstanceData,
-  InstanceOverview,
   InstanceOverviewUpdate,
   PhaseOverride,
 } from './schemas/instanceData';
@@ -90,14 +93,6 @@ export const updateDecisionInstance = async ({
     schemaValidator.validateJsonSchema(proposalTemplate);
   }
 
-  // Phases whose endDate actually changed — emitted to the caller so it can
-  // fire `phase_end_date_changed` analytics events for committed changes only.
-  const phaseEndDateChanges: Array<{
-    phaseId: string;
-    previousEndDate: string | undefined;
-    newEndDate: string;
-  }> = [];
-
   // Validate rubricTemplate is a structurally valid JSON Schema before persisting
   if (rubricTemplate !== undefined) {
     schemaValidator.validateJsonSchema(rubricTemplate);
@@ -143,143 +138,27 @@ export const updateDecisionInstance = async ({
     updateData.stewardProfileId = stewardProfileId;
   }
 
-  // Apply config, overview, phase overrides, and/or template updates to existing instanceData
-  const hasConfigUpdate = config !== undefined;
-  const hasOverviewUpdate = overview !== undefined;
-  const hasPhaseUpdates = phases && phases.length > 0;
-  const hasProposalTemplateUpdate = proposalTemplate !== undefined;
-  const hasRubricTemplateUpdate = rubricTemplate !== undefined;
+  const instanceDataUpdate = getUpdatedInstanceData({
+    existing: existingInstance.instanceData as DecisionInstanceData,
+    update: { config, overview, phases, proposalTemplate, rubricTemplate },
+  });
+  const phaseEndDateChanges = instanceDataUpdate?.phaseEndDateChanges ?? [];
 
-  if (
-    hasConfigUpdate ||
-    hasOverviewUpdate ||
-    hasPhaseUpdates ||
-    hasProposalTemplateUpdate ||
-    hasRubricTemplateUpdate
-  ) {
-    const existingInstanceData =
-      existingInstance.instanceData as DecisionInstanceData;
-
-    let updatedInstanceData: DecisionInstanceData = { ...existingInstanceData };
-
-    // Apply config updates (merge with existing config)
-    if (hasConfigUpdate) {
-      const normalizedCategories = (config?.categories ?? []).map(
-        (category) => ({
-          ...category,
-          label: category.label.trim(),
-          description: category.description.trim(),
-        }),
+  if (instanceDataUpdate) {
+    if (config !== undefined) {
+      await ensureProposalTaxonomyTerms(
+        getNormalizedCategories(config).map((category) => category.label),
       );
-      const categories = normalizedCategories.map((category) => category.label);
-
-      await ensureProposalTaxonomyTerms(categories);
-
-      updatedInstanceData.config = {
-        ...existingInstanceData.config,
-        ...config,
-        ...(config?.categories ? { categories: normalizedCategories } : {}),
-      };
     }
 
-    // Apply overview updates (merge with existing overview)
-    if (hasOverviewUpdate) {
-      const { headline, ...overviewPatch } = overview ?? {};
-      const mergedOverview: InstanceOverview = {
-        ...existingInstanceData.overview,
-        ...overviewPatch,
-        ...(typeof headline === 'string' && { headline }),
-      };
-      // `null` clears the headline; so does a legacy `''` on the stored row.
-      if (headline === null || isBlankHeadline(mergedOverview.headline)) {
-        delete mergedOverview.headline;
-      }
-      updatedInstanceData.overview = mergedOverview;
-    }
-
-    // Apply phase updates — replaces the full phases array to accommodate
-    // adding, removing, and reordering phases from the phase editor.
-    // Existing phase data (selectionPipeline, settingsSchema, etc.) is
-    // preserved by merging with the previous phase when a match exists.
-    if (hasPhaseUpdates) {
-      const existingPhaseMap = new Map(
-        existingInstanceData.phases.map((p) => [p.phaseId, p]),
-      );
-
-      for (const phase of phases) {
-        if (phase.endDate === undefined) {
-          continue;
-        }
-        const existing = existingPhaseMap.get(phase.phaseId);
-        if (existing && existing.endDate !== phase.endDate) {
-          phaseEndDateChanges.push({
-            phaseId: phase.phaseId,
-            previousEndDate: existing.endDate,
-            newEndDate: phase.endDate,
-          });
-        }
-      }
-
-      updatedInstanceData.phases = phases.map((phase) => {
-        const existing = existingPhaseMap.get(phase.phaseId);
-        const merged = {
-          ...existing,
-          phaseId: phase.phaseId,
-          ...(phase.name !== undefined && { name: phase.name }),
-          ...(phase.description !== undefined && {
-            description: phase.description,
-          }),
-          ...(typeof phase.headline === 'string' && {
-            headline: phase.headline,
-          }),
-          ...(phase.additionalInfo !== undefined && {
-            additionalInfo: phase.additionalInfo,
-          }),
-          ...(phase.rules !== undefined && { rules: phase.rules }),
-          ...(phase.startDate !== undefined && { startDate: phase.startDate }),
-          ...(phase.endDate !== undefined && { endDate: phase.endDate }),
-          ...(phase.settings !== undefined && { settings: phase.settings }),
-          ...(phase.rubricTemplate != null && {
-            rubricTemplate: phase.rubricTemplate,
-          }),
-        };
-        // `null` clears the phase rubric (falls back to the instance-level template).
-        if (phase.rubricTemplate === null) {
-          delete merged.rubricTemplate;
-        }
-        // Same for the headline — `null` clears it, and a legacy `''` on the
-        // stored phase clears with it.
-        if (phase.headline === null || isBlankHeadline(merged.headline)) {
-          delete merged.headline;
-        }
-        return merged;
-      });
-    }
-
-    // Apply proposal template update (replace entirely)
-    if (hasProposalTemplateUpdate) {
-      updatedInstanceData = {
-        ...updatedInstanceData,
-        proposalTemplate,
-      } as DecisionInstanceData;
-    }
-
-    // Apply rubric template update (replace entirely)
-    if (hasRubricTemplateUpdate) {
-      updatedInstanceData = {
-        ...updatedInstanceData,
-        rubricTemplate,
-      } as DecisionInstanceData;
-    }
-
-    if (hasPhaseUpdates || hasProposalTemplateUpdate) {
+    if ((phases !== undefined && phases.length > 0) || proposalTemplate) {
       await assertVoterCostField({
-        instanceData: updatedInstanceData,
+        instanceData: instanceDataUpdate.instanceData,
         processId: existingInstance.processId,
       });
     }
 
-    updateData.instanceData = updatedInstanceData;
+    updateData.instanceData = instanceDataUpdate.instanceData;
   }
 
   // Only update if there's something to update
@@ -431,11 +310,3 @@ export const updateDecisionInstance = async ({
 
   return { profile, phaseEndDateChanges, didPublish: isBeingPublished };
 };
-
-/**
- * True for a stored headline of `''` (or whitespace only) — the shape rows
- * written before the API rejected an empty title still hold. Dropping it on the
- * next write keeps a blank title from rendering where the default copy belongs.
- */
-const isBlankHeadline = (headline: string | undefined) =>
-  headline?.trim() === '';
