@@ -13,12 +13,15 @@ type APIFallbacks = {
 export const APIErrorBoundary = ({
   children,
   fallbacks = {},
+  resetKeys,
 }: {
   children: ReactNode;
   fallbacks?: APIFallbacks;
+  resetKeys?: unknown[];
 }) => {
   return (
     <ReactErrorBoundary
+      resetKeys={resetKeys}
       fallbackRender={({ error, resetErrorBoundary }: FallbackProps) => {
         const fallback = fallbacks[error.data?.httpStatus];
 

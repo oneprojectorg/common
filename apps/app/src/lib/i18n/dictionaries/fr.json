@@ -278,7 +278,19 @@
     "accountAvatarAlt": "Avatar de l'utilisateur",
     "accountDeletedTitle": "Compte supprimé",
     "accountDeletedBody": "{profileName} a été supprimé. Toutes les données associées ont été définitivement supprimées.",
-    "deleteAccountError": "Échec de la suppression du compte"
+    "deleteAccountError": "Échec de la suppression du compte",
+    "directorySubtitle": "Découvrez toutes les organisations qui font partie de Common.",
+    "allFocusAreasOption": "Tous les domaines d'action",
+    "focusAreaFilterLabel": "Filtrer par domaine d'action",
+    "allStrategiesOption": "Toutes les stratégies",
+    "strategyFilterLabel": "Filtrer par stratégie",
+    "sortLabel": "Trier les organisations",
+    "sortNewest": "Plus récentes",
+    "sortOldest": "Plus anciennes",
+    "sortName": "Nom (A–Z)",
+    "directoryLoadError": "Impossible de charger les organisations.",
+    "directoryEmpty": "Aucune organisation ne correspond à ces filtres.",
+    "directoryResultCount": "{count, plural, one {# organisation affichée} other {# organisations affichées}}"
   },
   "profile": {
     "aboutTab": "À propos",

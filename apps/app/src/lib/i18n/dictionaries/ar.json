@@ -278,7 +278,19 @@
     "accountAvatarAlt": "صورة المستخدم",
     "accountDeletedTitle": "تم حذف الحساب",
     "accountDeletedBody": "تم حذف {profileName}. تمت إزالة جميع البيانات المرتبطة بشكل دائم.",
-    "deleteAccountError": "فشل حذف الحساب"
+    "deleteAccountError": "فشل حذف الحساب",
+    "directorySubtitle": "اكتشف جميع المنظمات التي تشكّل جزءًا من Common.",
+    "allFocusAreasOption": "جميع مجالات التركيز",
+    "focusAreaFilterLabel": "التصفية حسب مجال التركيز",
+    "allStrategiesOption": "جميع الاستراتيجيات",
+    "strategyFilterLabel": "التصفية حسب الاستراتيجية",
+    "sortLabel": "ترتيب المنظمات",
+    "sortNewest": "الأحدث",
+    "sortOldest": "الأقدم",
+    "sortName": "الاسم (أ–ي)",
+    "directoryLoadError": "تعذّر تحميل المنظمات.",
+    "directoryEmpty": "لا توجد منظمات تطابق عوامل التصفية هذه.",
+    "directoryResultCount": "{count, plural, one {عرض منظمة واحدة} two {عرض منظمتين} few {عرض # منظمات} other {عرض # منظمة}}"
   },
   "profile": {
     "aboutTab": "حول",

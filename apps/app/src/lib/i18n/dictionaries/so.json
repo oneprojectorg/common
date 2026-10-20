@@ -278,7 +278,19 @@
     "accountAvatarAlt": "Sawirka isticmaalaha",
     "accountDeletedTitle": "Akoonka waa la tirtiray",
     "accountDeletedBody": "{profileName} waa la tirtiray. Dhammaan xogta la xiriirta waa la tirtiray oo dhan.",
-    "deleteAccountError": "Ku guuldareystay tirtirka akoonka"
+    "deleteAccountError": "Ku guuldareystay tirtirka akoonka",
+    "directorySubtitle": "Ogow dhammaan ururada ka mid ah Common.",
+    "allFocusAreasOption": "Dhammaan meelaha diiradda",
+    "focusAreaFilterLabel": "Ku shaandhee meesha diiradda",
+    "allStrategiesOption": "Dhammaan istaraatiijiyadaha",
+    "strategyFilterLabel": "Ku shaandhee istaraatiijiyad",
+    "sortLabel": "Kala horree ururada",
+    "sortNewest": "Kuwa ugu cusub",
+    "sortOldest": "Kuwa ugu da'da weyn",
+    "sortName": "Magaca (A–Z)",
+    "directoryLoadError": "Ururada lama soo gelin karin.",
+    "directoryEmpty": "Ma jiro urur la jaanqaadaya shaandhooyinkan.",
+    "directoryResultCount": "{count, plural, one {Waxaa la muujinayaa # urur} other {Waxaa la muujinayaa # urur}}"
   },
   "profile": {
     "aboutTab": "Ku saabsan",
