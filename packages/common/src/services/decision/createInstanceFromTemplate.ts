@@ -10,11 +10,11 @@ import {
 import type { User } from '@op/supabase/lib';
 import { randomUUID } from 'crypto';
 
-import { CommonError, UnauthorizedError } from '../../utils';
+import { CommonError, UnauthorizedError, ValidationError } from '../../utils';
 import { assertUserByAuthId } from '../assert';
 import { createDefaultDecisionRoles } from './decisionRoles';
 import { getTemplate } from './getTemplate';
-import { insertPhase } from './phaseHelpers';
+import { MAX_PHASES_PER_DECISION, insertPhase } from './phaseHelpers';
 import type { DecisionInstanceData } from './schemas/instanceData';
 import { createInstanceDataFromTemplate } from './schemas/instanceData';
 
@@ -78,6 +78,15 @@ export const createDecisionInstance = async ({
 
     if (!newInstance) {
       throw new CommonError('Failed to create decision process instance');
+    }
+
+    if (instanceData.phases.length > MAX_PHASES_PER_DECISION) {
+      throw new ValidationError(
+        `A decision can have at most ${MAX_PHASES_PER_DECISION} phases`,
+        {
+          phases: `Remove ${instanceData.phases.length - MAX_PHASES_PER_DECISION}`,
+        },
+      );
     }
 
     for (const [sortOrder, phase] of instanceData.phases.entries()) {

@@ -1,4 +1,4 @@
-import { updatePhase } from '@op/common';
+import { MAX_PHASE_NAME_LENGTH, updatePhase } from '@op/common';
 import { z } from 'zod';
 
 import {
@@ -21,7 +21,7 @@ export const updatePhaseRouter = router({
       z
         .object({
           phaseId: z.uuid(),
-          name: z.string().trim().min(1).max(256).optional(),
+          name: z.string().trim().min(1).max(MAX_PHASE_NAME_LENGTH).optional(),
           data: phaseDataInputEncoder.optional(),
         })
         .refine(
