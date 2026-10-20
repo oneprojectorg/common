@@ -23,9 +23,10 @@ import { i18nConfig } from '@/lib/i18n/config';
 
 import { localeDisplayNames, useLocaleSwitch } from '../LocaleChooser';
 import { SignInChannelRow } from './SignInChannelRow';
+import { settingsOpenSearch } from './settingsQuery';
 import type {
-  AccountSettings as AccountSettingsValues,
   AccountSettingsActions,
+  AccountSettingsValues,
 } from './useSettingsMockState';
 
 type AccountSettingsProps = AccountSettingsValues & AccountSettingsActions;
@@ -113,7 +114,7 @@ const LanguageField = () => {
         value={currentLocale}
         onValueChange={(value) => {
           if (value) {
-            switchLocale(value);
+            switchLocale(value, settingsOpenSearch);
           }
         }}
       >

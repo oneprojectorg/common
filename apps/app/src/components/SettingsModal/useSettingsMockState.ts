@@ -4,7 +4,7 @@ import { useState } from 'react';
 
 import { type SignInChannel, otherChannel } from './signInChannels';
 
-export interface AccountSettings {
+export interface AccountSettingsValues {
   email: string | null;
   phone: string | null;
   twoStepEnabled: boolean;
@@ -44,12 +44,12 @@ export interface ProcessPrivacy {
   mode: ParticipationMode;
 }
 
-interface SettingsMockState extends AccountSettings {
+interface SettingsMockState extends AccountSettingsValues {
   notifications: NotificationPreferences;
   processes: Array<ProcessPrivacy>;
 }
 
-export interface SettingsMockActions extends AccountSettingsActions {
+interface SettingsMockActions extends AccountSettingsActions {
   setNotification: (
     topic: NotificationTopic,
     channel: keyof NotificationChannels,
