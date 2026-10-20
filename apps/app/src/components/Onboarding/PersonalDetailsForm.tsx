@@ -32,13 +32,8 @@ export const createValidator = (t: TranslateFn) =>
           message: t('maxLength200Error'),
         }),
       title: z
-        .string({
-          message: t('profile.titlePrompt'),
-        })
+        .string()
         .trim()
-        .min(1, {
-          message: t('profile.titlePrompt'),
-        })
         .max(200, {
           message: t('maxLength200Error'),
         }),
@@ -82,7 +77,7 @@ export const createValidator = (t: TranslateFn) =>
 // Fallback validator for external use
 export const validator = z.object({
   fullName: z.string().trim().min(1).max(200),
-  title: z.string().trim().min(1).max(200),
+  title: z.string().trim().max(200),
   email: z.string().optional(),
   website: z.string().optional(),
   pronouns: z.string().optional(),
@@ -223,7 +218,6 @@ export const PersonalDetailsForm = ({
           name="title"
           children={(field) => (
             <field.TextField
-              isRequired
               label={t('Headline')}
               description={t('profile.headlineHint')}
               placeholder={t('profile.headlinePlaceholder')}

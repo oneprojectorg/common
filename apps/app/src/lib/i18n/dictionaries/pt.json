@@ -296,7 +296,6 @@
     "fullNamePrompt": "Digite seu nome completo",
     "headlinePlaceholder": "Digite seu título",
     "headlineHint": "Adicione um título descritivo para seu perfil. Pode ser seu título profissional na sua organização ou suas áreas de foco.",
-    "titlePrompt": "Digite seu título profissional",
     "emailPlaceholder": "Digite seu endereço de e-mail",
     "websitePlaceholder": "Digite a URL do seu site",
     "emailTooLong": "Deve ter no máximo 255 caracteres",

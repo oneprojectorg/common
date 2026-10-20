@@ -50,7 +50,7 @@ export const updateUserProfile = async ({
   // Prepare profile data
   const profileData: any = {};
   if (name !== undefined) profileData.name = name;
-  if (bio !== undefined) profileData.bio = bio;
+  if (bio !== undefined) profileData.bio = bio.trim() || null;
   if (email !== undefined) profileData.email = email;
   if (website !== undefined) profileData.website = website;
 
@@ -81,7 +81,7 @@ export const updateUserProfile = async ({
           type: EntityType.INDIVIDUAL,
           name: name || currentUser.name || 'Unnamed User',
           slug,
-          bio,
+          bio: bio?.trim() || null,
           email,
           website,
         })

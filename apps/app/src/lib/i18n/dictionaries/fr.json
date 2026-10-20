@@ -296,7 +296,6 @@
     "fullNamePrompt": "Entrez votre nom complet",
     "headlinePlaceholder": "Entrez votre titre",
     "headlineHint": "Ajoutez un titre descriptif pour votre profil. Cela peut être votre titre professionnel dans votre organisation ou vos domaines d'expertise.",
-    "titlePrompt": "Introduisez vos informations",
     "emailPlaceholder": "Entrez votre adresse courriel",
     "websitePlaceholder": "Entrez l'URL de votre site web",
     "emailTooLong": "Doit contenir au maximum 255 caractères",

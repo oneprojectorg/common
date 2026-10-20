@@ -31,6 +31,42 @@ describe.concurrent('updateUserProfile', () => {
     const after = await caller.account.getMyAccount();
     expect(after?.profile?.name).toBe(newName);
   });
+
+  it('given a user who leaves the headline empty, when the profile is saved, then the profile has no headline', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({ grantAccess: true });
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+    const name = `No headline ${task.id}`;
+
+    const result = await caller.account.updateUserProfile({ name, bio: '' });
+
+    expect(result.profile).toMatchObject({ name, bio: null });
+    const account = await caller.account.getMyAccount();
+    expect(account?.profile).toMatchObject({ name, bio: null });
+  });
+
+  it('given a user with a saved headline, when they clear the field, then the headline is removed and the name stays', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({ grantAccess: true });
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+    const name = `Facilitator ${task.id}`;
+
+    await caller.account.updateUserProfile({
+      name,
+      bio: 'Budget delegate facilitator',
+    });
+    const cleared = await caller.account.updateUserProfile({ bio: '   ' });
+
+    expect(cleared.profile).toMatchObject({ name, bio: null });
+    const account = await caller.account.getMyAccount();
+    expect(account?.profile).toMatchObject({ name, bio: null });
+  });
 });
 
 describeAccessTierGating('account.updateUserProfile', {

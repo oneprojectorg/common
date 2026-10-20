@@ -296,7 +296,6 @@
     "fullNamePrompt": "Enter your full name",
     "headlinePlaceholder": "Enter your headline",
     "headlineHint": "Add a descriptive headline for your profile. This could be your professional title at your organization or your focus areas.",
-    "titlePrompt": "Enter your professional title",
     "emailPlaceholder": "Enter your email address",
     "websitePlaceholder": "Enter your website URL",
     "emailTooLong": "Must be at most 255 characters",
