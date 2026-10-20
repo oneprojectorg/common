@@ -30,14 +30,15 @@ export const VoteReviewStep = ({
   ranked,
   budget,
 }: VoteReviewStepProps) => {
-  const t = useTranslations('decisions.review');
-  const tProposals = useTranslations('decisions.proposals');
+  const t = useTranslations();
   const labelId = useId();
   const List = ranked ? 'ol' : 'ul';
 
   return (
     <div className="space-y-4">
-      <Header4 id={labelId}>{t('selectedProposalsHeading')}</Header4>
+      <Header4 id={labelId}>
+        {t('decisions.review.selectedProposalsHeading')}
+      </Header4>
 
       <List aria-labelledby={labelId} className="space-y-4">
         {proposals.map((proposal, index) => (
@@ -57,7 +58,9 @@ export const VoteReviewStep = ({
       {ranked && (
         <Alert variant="info" role="note">
           <LuInfo aria-hidden />
-          <AlertDescription>{tProposals('rankedBallotHint')}</AlertDescription>
+          <AlertDescription>
+            {t('decisions.proposals.rankedBallotHint')}
+          </AlertDescription>
         </Alert>
       )}
     </div>

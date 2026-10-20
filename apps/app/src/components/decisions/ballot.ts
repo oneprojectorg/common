@@ -74,17 +74,31 @@ export function getBallotRemaining({
 
 export function canAffordProposal({
   proposal,
-  ballot,
+  remaining,
   budget,
 }: {
   proposal: Pick<Proposal, 'proposalData'>;
-  ballot: Array<Pick<Proposal, 'proposalData'>>;
+  /** What the ballot has left, from {@link getBallotRemaining}. */
+  remaining: number;
   budget: BallotBudget;
 }): boolean {
   return isAtMost({
-    amount: getBallotTotal({ proposals: [...ballot, proposal], budget }),
-    limit: budget.voterBudget,
+    amount: getProposalCost({ proposal, budget }),
+    limit: remaining,
   });
+}
+
+/** 1-based position of `id` in the ballot order, or undefined when absent. */
+export function getBallotRank({
+  ballotIds,
+  id,
+}: {
+  ballotIds: string[];
+  id: string;
+}): number | undefined {
+  const index = ballotIds.indexOf(id);
+
+  return index < 0 ? undefined : index + 1;
 }
 
 export function formatBallotAmount({

@@ -42,6 +42,7 @@ import {
   canAffordProposal,
   formatBallotAmount,
   getBallotBudget,
+  getBallotRank,
   getBallotRemaining,
 } from './ballot';
 import {
@@ -286,10 +287,18 @@ const VotingProposalsList = ({
     ? getBallotBudget(votingConfiguration)
     : undefined;
 
+  const selectedIds = selectedProposals.map(({ id }) => id);
+  const remaining = budget
+    ? getBallotRemaining({ proposals: selectedProposals, budget })
+    : 0;
+
+  const isProposalSelected = (proposalId: string) =>
+    selectedIds.includes(proposalId);
+
   const isOverBudget = (proposal: Proposal) =>
     !!budget &&
     !isProposalSelected(proposal.id) &&
-    !canAffordProposal({ proposal, ballot: selectedProposals, budget });
+    !canAffordProposal({ proposal, remaining, budget });
 
   const toggleProposal = (proposal: Proposal) => {
     // The ballot limits are unknown until the voting status loads.
@@ -298,11 +307,6 @@ const VotingProposalsList = ({
     }
 
     if (budget && isOverBudget(proposal)) {
-      const remaining = getBallotRemaining({
-        proposals: selectedProposals,
-        budget,
-      });
-
       toast.info(
         t('decisions.proposals.overBudgetHint', {
           remaining: formatBallotAmount({
@@ -326,9 +330,6 @@ const VotingProposalsList = ({
       return prev;
     });
   };
-
-  const isProposalSelected = (proposalId: string) =>
-    selectedProposals.some(({ id }) => id === proposalId);
 
   // Handle successful vote submission
   const handleVoteSuccess = () => {
@@ -448,7 +449,10 @@ const VotingProposalsList = ({
                       disabled
                       rank={
                         ranked
-                          ? votedProposalIds.indexOf(proposal.id) + 1
+                          ? getBallotRank({
+                              ballotIds: votedProposalIds,
+                              id: proposal.id,
+                            })
                           : undefined
                       }
                       aria-label={t(
@@ -464,11 +468,11 @@ const VotingProposalsList = ({
           // Active voting view: the whole card is a selection toggle.
           if (isEligibleForVote) {
             const rank = ranked
-              ? selectedProposals.findIndex(({ id }) => id === proposal.id) + 1
-              : 0;
+              ? getBallotRank({ ballotIds: selectedIds, id: proposal.id })
+              : undefined;
             const isUnaffordable = isOverBudget(proposal);
             let toggleLabel = t('decisions.proposals.selectProposalLabel');
-            if (rank > 0) {
+            if (rank !== undefined) {
               toggleLabel = t(
                 'decisions.proposals.deselectRankedProposalLabel',
                 { rank },
@@ -510,7 +514,7 @@ const VotingProposalsList = ({
                           <VoteCheckbox
                             checked={isSelected}
                             disabled={isUnaffordable}
-                            rank={rank > 0 ? rank : undefined}
+                            rank={rank}
                             onCheckedChange={() => {
                               toggleProposal(proposal);
                             }}

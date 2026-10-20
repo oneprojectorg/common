@@ -74,15 +74,30 @@ export const BallotPopover = ({
             aria-label={t('ballotTitle')}
             className="max-h-80 gap-1 overflow-y-auto"
           >
-            {(proposal, controls) => (
-              <BallotRow
-                proposal={proposal}
-                ballot={ballot}
-                budget={budget}
-                controls={controls}
-                onBallotChange={onBallotChange}
-              />
-            )}
+            {(proposal, controls) => {
+              const { index } = controls;
+              const move = (offset: -1 | 1) =>
+                onBallotChange(
+                  moveBallotItem({ items: ballot, index, offset }),
+                );
+
+              return (
+                <BallotRow
+                  proposal={proposal}
+                  budget={budget}
+                  controls={controls}
+                  onMoveUp={index > 0 ? () => move(-1) : undefined}
+                  onMoveDown={
+                    index < ballot.length - 1 ? () => move(1) : undefined
+                  }
+                  onRemove={() =>
+                    onBallotChange(
+                      ballot.filter(({ id }) => id !== proposal.id),
+                    )
+                  }
+                />
+              );
+            }}
           </Sortable>
         )}
 
@@ -94,16 +109,20 @@ export const BallotPopover = ({
 
 const BallotRow = ({
   proposal,
-  ballot,
   budget,
   controls,
-  onBallotChange,
+  onMoveUp,
+  onMoveDown,
+  onRemove,
 }: {
   proposal: Proposal;
-  ballot: Proposal[];
   budget?: BallotBudget;
   controls: SortableItemControls;
-  onBallotChange: (ballot: Proposal[]) => void;
+  /** Undefined at the top of the ballot. */
+  onMoveUp?: () => void;
+  /** Undefined at the bottom of the ballot. */
+  onMoveDown?: () => void;
+  onRemove: () => void;
 }) => {
   const t = useTranslations('decisions.proposals');
   const { title: titleText } = resolvePresentationFields({
@@ -113,9 +132,6 @@ const BallotRow = ({
   const { index, dragHandleProps } = controls;
   const rank = index + 1;
 
-  const move = (offset: -1 | 1) =>
-    onBallotChange(moveBallotItem({ items: ballot, index, offset }));
-
   return (
     <div className="flex items-center gap-2 rounded-md bg-background py-1">
       <DragHandle
@@ -123,8 +139,11 @@ const BallotRow = ({
         aria-label={t('ballotDragLabel', { title: titleText })}
       />
       <BadgeNumber aria-hidden>{rank}</BadgeNumber>
-      <p className="min-w-0 flex-1 truncate text-sm">
-        <bdi>{titleText}</bdi>
+      <p
+        dir="auto"
+        className="min-w-0 flex-1 truncate text-sm ltr:text-left rtl:text-right"
+      >
+        {titleText}
       </p>
       {budget && (
         <span className="shrink-0 text-sm text-muted-foreground tabular-nums">
@@ -137,8 +156,8 @@ const BallotRow = ({
       <Button
         variant="ghost"
         size="icon-xs"
-        disabled={index === 0}
-        onClick={() => move(-1)}
+        disabled={!onMoveUp}
+        onClick={onMoveUp}
         aria-label={t('ballotMoveUpLabel', { title: titleText })}
       >
         <LuChevronUp />
@@ -146,8 +165,8 @@ const BallotRow = ({
       <Button
         variant="ghost"
         size="icon-xs"
-        disabled={index === ballot.length - 1}
-        onClick={() => move(1)}
+        disabled={!onMoveDown}
+        onClick={onMoveDown}
         aria-label={t('ballotMoveDownLabel', { title: titleText })}
       >
         <LuChevronDown />
@@ -155,9 +174,7 @@ const BallotRow = ({
       <Button
         variant="ghost"
         size="icon-xs"
-        onClick={() =>
-          onBallotChange(ballot.filter(({ id }) => id !== proposal.id))
-        }
+        onClick={onRemove}
         aria-label={t('ballotRemoveLabel', { title: titleText })}
       >
         <LuX />

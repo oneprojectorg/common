@@ -6,6 +6,7 @@ import {
   canAffordProposal,
   formatBallotAmount,
   getBallotBudget,
+  getBallotRank,
   getBallotRemaining,
   getBallotTotal,
   getProposalCost,
@@ -123,26 +124,34 @@ describe('getBallotRemaining', () => {
 });
 
 describe('canAffordProposal', () => {
-  const ballot = [proposalCosting({ amount: 60, currency: 'USD' })];
-
-  it('allows a proposal that exactly fills the budget', () => {
+  it('allows a proposal that exactly fills what is left', () => {
     expect(
       canAffordProposal({
         proposal: proposalCosting({ amount: 40, currency: 'USD' }),
-        ballot,
+        remaining: 40,
         budget,
       }),
     ).toBe(true);
   });
 
-  it('rejects a proposal that goes over the budget', () => {
+  it('rejects a proposal that costs more than what is left', () => {
     expect(
       canAffordProposal({
-        proposal: proposalCosting({ amount: 41, currency: 'USD' }),
-        ballot,
+        proposal: proposalCosting({ amount: 40.01, currency: 'USD' }),
+        remaining: 40,
         budget,
       }),
     ).toBe(false);
+  });
+});
+
+describe('getBallotRank', () => {
+  it('ranks from 1 in ballot order', () => {
+    expect(getBallotRank({ ballotIds: ['a', 'b'], id: 'b' })).toBe(2);
+  });
+
+  it('returns undefined for a proposal not on the ballot', () => {
+    expect(getBallotRank({ ballotIds: ['a'], id: 'c' })).toBeUndefined();
   });
 });
 
