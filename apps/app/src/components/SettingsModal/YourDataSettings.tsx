@@ -1,5 +1,16 @@
 'use client';
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@op/sense/AlertDialog';
 import { Button } from '@op/sense/Button';
 import { FieldDescription, FieldTitle } from '@op/sense/Field';
 import { Header3 } from '@op/sense/Header';
@@ -7,7 +18,6 @@ import { type ReactNode, useId, useRef, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { ConfirmDeleteModal } from '../ConfirmDeleteModal';
 import { type Confirmation, InlineConfirmation } from './InlineConfirmation';
 
 export const YourDataSettings = () => {
@@ -52,22 +62,32 @@ export const YourDataSettings = () => {
           title={t('deleteAccountTitle')}
           hint={t('deleteAccountHint')}
           action={
-            <ConfirmDeleteModal
-              isOpen={isDeleteOpen}
-              title={t('deleteAccountConfirmTitle')}
-              message={t('deleteAccountConfirmBody')}
-              // mock: the account is not deleted yet
-              onConfirm={() => setIsDeleteOpen(false)}
-              onCancel={() => setIsDeleteOpen(false)}
-              trigger={
-                <Button
-                  variant="destructive"
-                  onClick={() => setIsDeleteOpen(true)}
-                >
-                  {tShared('Delete')}
-                </Button>
-              }
-            />
+            // nested in the settings dialog so Base UI stacks it and returns focus to the trigger
+            <AlertDialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
+              <AlertDialogTrigger render={<Button variant="destructive" />}>
+                {tShared('Delete')}
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>
+                    {t('deleteAccountConfirmTitle')}
+                  </AlertDialogTitle>
+                  <AlertDialogDescription>
+                    {t('deleteAccountConfirmBody')}
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>{tShared('Cancel')}</AlertDialogCancel>
+                  <AlertDialogAction
+                    variant="destructive"
+                    // mock: the account is not deleted yet
+                    onClick={() => setIsDeleteOpen(false)}
+                  >
+                    {tShared('Delete')}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           }
         />
       </div>
