@@ -70,6 +70,12 @@ describe.concurrent('PersonalDetailsForm validator', () => {
     expect(result).toMatchObject({ success: true, data: { title: '' } });
   });
 
+  it('accepts personal details that carry no headline key at all', () => {
+    const { title: _title, ...withoutTitle } = details;
+
+    expect(validator.safeParse(withoutTitle)).toMatchObject({ success: true });
+  });
+
   it('refuses personal details with no name', () => {
     const result = createValidator(t).safeParse({ ...details, fullName: '' });
 

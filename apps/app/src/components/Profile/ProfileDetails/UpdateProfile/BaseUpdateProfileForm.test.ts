@@ -30,6 +30,12 @@ describe.concurrent('BaseUpdateProfileForm validator', () => {
     expect(result).toMatchObject({ success: true, data: { title: '' } });
   });
 
+  it('accepts a profile edit that carries no headline key at all', () => {
+    const { title: _title, ...withoutTitle } = profile;
+
+    expect(validator.safeParse(withoutTitle)).toMatchObject({ success: true });
+  });
+
   it('refuses a profile edit with no name', () => {
     const result = createValidator(t).safeParse({ ...profile, fullName: '' });
 

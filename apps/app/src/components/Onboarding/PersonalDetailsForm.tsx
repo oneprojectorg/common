@@ -78,7 +78,7 @@ export const createValidator = (t: TranslateFn) =>
 // Fallback validator for external use
 export const validator = z.object({
   fullName: z.string().trim().min(1).max(200),
-  title: z.string().trim().max(200),
+  title: z.string().trim().max(200).optional(),
   email: z.string().optional(),
   website: z.string().optional(),
   pronouns: z.string().optional(),

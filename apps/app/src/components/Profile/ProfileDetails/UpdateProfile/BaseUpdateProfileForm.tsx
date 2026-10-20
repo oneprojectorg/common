@@ -320,7 +320,7 @@ export const createValidator = (t: TranslateFn) =>
 export const validator = z
   .object({
     fullName: z.string().trim().min(1).max(200),
-    title: z.string().trim().max(200),
+    title: z.string().trim().max(200).optional(),
     pronouns: z.string().trim().optional(),
     customPronouns: z.string().trim().optional(),
     email: z

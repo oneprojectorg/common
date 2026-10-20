@@ -11,6 +11,11 @@ describe.concurrent('textOrNull', () => {
     expect(textOrNull('   ')).toBeNull();
   });
 
+  it('returns null when the field is absent', () => {
+    expect(textOrNull(undefined)).toBeNull();
+    expect(textOrNull(null)).toBeNull();
+  });
+
   it('returns the trimmed text when the field holds text', () => {
     expect(textOrNull('  Budget delegate facilitator ')).toBe(
       'Budget delegate facilitator',
