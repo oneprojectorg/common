@@ -1,3 +1,4 @@
+import type { DecisionSchemaDefinition } from '@op/common';
 import {
   createDecisionInstance,
   createProposal,
@@ -13,16 +14,20 @@ import { db, eq } from '@op/db/test';
 
 import { expect, test } from '../fixtures/index.js';
 
+const [votingPhase] = testVotingPhaseSchema.phases;
+
 const rankedBudgetSchema = {
   ...testVotingPhaseSchema,
-  phases: testVotingPhaseSchema.phases.map((phase) => ({
-    ...phase,
-    rules: {
-      ...phase.rules,
-      voting: { submit: true, ranked: true, voterBudget: 1000 },
+  phases: [
+    {
+      ...votingPhase,
+      rules: {
+        ...votingPhase.rules,
+        voting: { submit: true, ranked: true, voterBudget: 1000 },
+      },
     },
-  })),
-};
+  ],
+} satisfies DecisionSchemaDefinition;
 
 const PRICES = {
   'Riverside Bike Path': 600,
@@ -86,9 +91,10 @@ test.describe('Ranked voting with a voter budget', () => {
     );
     await expect(ballotToggle('Downtown Mural')).toBeDisabled();
 
+    // Keyboard, not a click: the dev server's issues badge covers the trigger.
     await authenticatedPage
       .getByRole('button', { name: '2 proposals selected' })
-      .click();
+      .press('Enter');
     await authenticatedPage
       .getByRole('button', { name: 'Move Harbor Reading Room up' })
       .click();
