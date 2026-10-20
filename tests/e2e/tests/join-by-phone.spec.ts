@@ -280,5 +280,16 @@ test.describe('Join by phone (public decision) — retreat to email', () => {
     await expect(
       dialog.getByRole('button', { name: 'Email me a code' }),
     ).toBeVisible();
+
+    await dialog.getByRole('tab', { name: 'Phone number' }).click();
+    await expect(
+      page.getByRole('heading', { name: 'Check your texts' }),
+    ).not.toBeVisible();
+    await expect(
+      dialog.getByRole('textbox', { name: 'Phone number' }),
+    ).toHaveValue('');
+    await expect(
+      dialog.getByRole('button', { name: 'Text me a code' }),
+    ).toBeVisible();
   });
 });

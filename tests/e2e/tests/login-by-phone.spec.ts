@@ -49,6 +49,17 @@ test.describe('Login by phone', () => {
       page.getByRole('button', { name: 'Email me a code' }),
     ).toBeVisible();
     await expect(codeAlert).not.toBeVisible();
+
+    await page.getByRole('tab', { name: 'Phone Number' }).click();
+    await expect(
+      page.getByRole('heading', { name: 'Check your texts' }),
+    ).not.toBeVisible();
+    await expect(
+      page.getByRole('textbox', { name: 'Phone Number' }),
+    ).toHaveValue('');
+    await expect(
+      page.getByRole('button', { name: 'Text me a code' }),
+    ).toBeVisible();
   });
 
   test('given the emailed code step, when the person picks phone instead, then the phone field is offered empty', async ({
@@ -84,6 +95,15 @@ test.describe('Login by phone', () => {
     ).toHaveValue('');
     await expect(
       page.getByRole('button', { name: 'Text me a code' }),
+    ).toBeVisible();
+
+    await page.getByRole('tab', { name: 'Email' }).click();
+    await expect(
+      page.getByRole('heading', { name: 'Check your email' }),
+    ).not.toBeVisible();
+    await expect(page.getByRole('textbox', { name: 'Email' })).toHaveValue('');
+    await expect(
+      page.getByRole('button', { name: 'Email me a code' }),
     ).toBeVisible();
   });
 });

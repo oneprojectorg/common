@@ -295,7 +295,7 @@ export async function releaseTestPhoneNumber(phone: string): Promise<void> {
 
   await db.execute(sql`
     UPDATE auth.users
-    SET phone = NULL, phone_confirmed_at = NULL
+    SET phone = NULL, phone_confirmed_at = NULL, confirmation_token = NULL
     WHERE phone = ${digits}
   `);
 }
