@@ -16,9 +16,13 @@ import { toast } from '@op/sense/Toast';
 import { useTranslations } from '@/lib/i18n';
 
 import { VoteReviewStep } from './VoteReviewStep';
+import type { BallotBudget } from './ballot';
 
 interface VoteSubmissionModalProps {
+  /** In ballot order, which is the rank on a ranked vote. */
   selectedProposals: Proposal[];
+  ranked: boolean;
+  budget?: BallotBudget;
   instanceId: string;
   /**
    * Called after the ballot is accepted. The caller owns the dialog's open
@@ -35,6 +39,8 @@ interface VoteSubmissionModalProps {
  */
 export const VoteSubmissionModal = ({
   selectedProposals,
+  ranked,
+  budget,
   instanceId,
   onSuccess,
 }: VoteSubmissionModalProps) => {
@@ -73,7 +79,11 @@ export const VoteSubmissionModal = ({
       </DialogHeader>
 
       <div className="px-6 py-4">
-        <VoteReviewStep proposals={selectedProposals} />
+        <VoteReviewStep
+          proposals={selectedProposals}
+          ranked={ranked}
+          budget={budget}
+        />
       </div>
 
       <DialogFooter>

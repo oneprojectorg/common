@@ -22,6 +22,7 @@ import {
   FooterBarEnd,
   FooterBarStart,
 } from '@op/sense/FooterBar';
+import { RankCheckbox } from '@op/sense/RankCheckbox';
 import { toast } from '@op/sense/Toast';
 import { type ComponentProps, type ReactNode, useState } from 'react';
 import { LuLeaf } from 'react-icons/lu';
@@ -30,11 +31,19 @@ import { useTranslations } from '@/lib/i18n';
 
 import { ButtonLink } from '@/components/ButtonLink';
 
+import { BallotBudgetMeter } from './BallotBudgetMeter';
+import { BallotPopover } from './BallotPopover';
 import { ProposalBrowseCard } from './ProposalBrowseCard';
 import { ProposalCardMenu, ProposalCardView } from './ProposalCard';
 import { ProposalMasonry } from './ProposalMasonry';
 import { VoteSubmissionModal } from './VoteSubmissionModal';
 import { VoteSuccessModal } from './VoteSuccessModal';
+import {
+  canAffordProposal,
+  formatBallotAmount,
+  getBallotBudget,
+  getBallotRemaining,
+} from './ballot';
 import {
   CustomFormModal,
   type CustomFormValues,
@@ -270,9 +279,41 @@ const VotingProposalsList = ({
   // Determine voting state
   const hasVoted = voteStatus?.hasVoted || false;
   const isReadOnly = hasVoted || !canVote;
-  const maxVotesPerMember = voteStatus?.votingConfiguration?.maxVotesPerMember;
+  const votingConfiguration = voteStatus?.votingConfiguration;
+  const maxVotesPerMember = votingConfiguration?.maxVotesPerMember;
+  const ranked = votingConfiguration?.ranked ?? false;
+  const budget = votingConfiguration
+    ? getBallotBudget(votingConfiguration)
+    : undefined;
+
+  const isOverBudget = (proposal: Proposal) =>
+    !!budget &&
+    !isProposalSelected(proposal.id) &&
+    !canAffordProposal({ proposal, ballot: selectedProposals, budget });
 
   const toggleProposal = (proposal: Proposal) => {
+    // The ballot limits are unknown until the voting status loads.
+    if (!votingConfiguration) {
+      return;
+    }
+
+    if (budget && isOverBudget(proposal)) {
+      const remaining = getBallotRemaining({
+        proposals: selectedProposals,
+        budget,
+      });
+
+      toast.info(
+        t('decisions.proposals.overBudgetHint', {
+          remaining: formatBallotAmount({
+            amount: remaining,
+            unit: budget.unit,
+          }),
+        }),
+      );
+      return;
+    }
+
     setSelectedProposals((prev) => {
       const isSelected = prev.some(({ id }) => id === proposal.id);
 
@@ -356,6 +397,21 @@ const VotingProposalsList = ({
     );
   }
 
+  const highlight = (chunks: ReactNode) => (
+    <span className="text-primary">{chunks}</span>
+  );
+  const selectionCount =
+    maxVotesPerMember !== undefined
+      ? t.rich('decisions.proposals.selectedProposalsOfMaxCount', {
+          numSelected,
+          max: maxVotesPerMember,
+          highlight,
+        })
+      : t.rich('decisions.proposals.selectedProposalsCount', {
+          numSelected,
+          highlight,
+        });
+
   return (
     <>
       <ProposalMasonry loadingMore={isFetchingNextPage}>
@@ -387,16 +443,17 @@ const VotingProposalsList = ({
                 headerBadge={null}
                 aside={
                   isVotedFor ? (
-                    // TODO(sense-migration): sense Checkbox has no
-                    // shape="circle"/borderColor; approximated with
-                    // rounded-full — revisit against Figma vote design.
-                    <Checkbox
+                    <VoteCheckbox
                       checked
                       disabled
+                      rank={
+                        ranked
+                          ? votedProposalIds.indexOf(proposal.id) + 1
+                          : undefined
+                      }
                       aria-label={t(
                         'decisions.proposals.selectedProposalLabel',
                       )}
-                      className="rounded-full"
                     />
                   ) : undefined
                 }
@@ -406,6 +463,20 @@ const VotingProposalsList = ({
 
           // Active voting view: the whole card is a selection toggle.
           if (isEligibleForVote) {
+            const rank = ranked
+              ? selectedProposals.findIndex(({ id }) => id === proposal.id) + 1
+              : 0;
+            const isUnaffordable = isOverBudget(proposal);
+            let toggleLabel = t('decisions.proposals.selectProposalLabel');
+            if (rank > 0) {
+              toggleLabel = t(
+                'decisions.proposals.deselectRankedProposalLabel',
+                { rank },
+              );
+            } else if (isSelected) {
+              toggleLabel = t('decisions.proposals.deselectProposalLabel');
+            }
+
             return (
               <ProposalCardView
                 key={proposal.id}
@@ -415,13 +486,14 @@ const VotingProposalsList = ({
                 showTranslateLink={false}
                 role="button"
                 aria-pressed={isSelected}
-                aria-label={
-                  isSelected
-                    ? t('decisions.proposals.deselectProposalLabel')
-                    : t('decisions.proposals.selectProposalLabel')
-                }
+                aria-disabled={isUnaffordable || undefined}
+                aria-label={toggleLabel}
                 onClick={() => toggleProposal(proposal)}
-                className="cursor-pointer"
+                className={
+                  isUnaffordable
+                    ? 'cursor-default opacity-50'
+                    : 'cursor-pointer'
+                }
                 aside={
                   canManageProposals || proposal.isEditable || showCheckbox ? (
                     <div className="flex items-center gap-2">
@@ -435,20 +507,14 @@ const VotingProposalsList = ({
                       )}
                       {showCheckbox && (
                         <div onClick={(e) => e.stopPropagation()}>
-                          {/* TODO(sense-migration): sense Checkbox has no
-                              shape="circle"/borderColor; approximated with
-                              rounded-full — revisit against Figma. */}
-                          <Checkbox
+                          <VoteCheckbox
                             checked={isSelected}
+                            disabled={isUnaffordable}
+                            rank={rank > 0 ? rank : undefined}
                             onCheckedChange={() => {
                               toggleProposal(proposal);
                             }}
-                            aria-label={
-                              isSelected
-                                ? t('decisions.proposals.deselectProposalLabel')
-                                : t('decisions.proposals.selectProposalLabel')
-                            }
-                            className="rounded-full"
+                            aria-label={toggleLabel}
                           />
                         </div>
                       )}
@@ -491,24 +557,27 @@ const VotingProposalsList = ({
       {canVote && !isReadOnly && (
         <FooterBar position="fixed" className="bg-muted/95">
           <FooterBarStart>
-            <span className="text-base">
-              {maxVotesPerMember !== undefined
-                ? t.rich('decisions.proposals.selectedProposalsOfMaxCount', {
-                    numSelected,
-                    max: maxVotesPerMember,
-                    highlight: (chunks: ReactNode) => (
-                      <span className="text-primary">{chunks}</span>
-                    ),
-                  })
-                : t.rich('decisions.proposals.selectedProposalsCount', {
-                    numSelected,
-                    highlight: (chunks: ReactNode) => (
-                      <span className="text-primary">{chunks}</span>
-                    ),
-                  })}
-            </span>
+            {ranked ? (
+              <BallotPopover
+                ballot={selectedProposals}
+                budget={budget}
+                onBallotChange={setSelectedProposals}
+              >
+                {selectionCount}
+              </BallotPopover>
+            ) : (
+              <span className="text-base">{selectionCount}</span>
+            )}
           </FooterBarStart>
-          <FooterBarCenter />
+          <FooterBarCenter>
+            {budget && (
+              <BallotBudgetMeter
+                ballot={selectedProposals}
+                budget={budget}
+                className="max-w-xl"
+              />
+            )}
+          </FooterBarCenter>
           <FooterBarEnd>
             <Dialog open={isVoteReviewOpen} onOpenChange={setIsVoteReviewOpen}>
               <DialogTrigger
@@ -521,6 +590,8 @@ const VotingProposalsList = ({
               <DialogContent className="sm:max-w-2xl">
                 <VoteSubmissionModal
                   selectedProposals={selectedProposals}
+                  ranked={ranked}
+                  budget={budget}
                   instanceId={instanceId}
                   onSuccess={handleVoteSuccess}
                 />
@@ -547,6 +618,20 @@ const VotingProposalsList = ({
       />
     </>
   );
+};
+
+/** The ballot toggle on a card: a round checkbox, numbered on a ranked vote. */
+const VoteCheckbox = ({
+  rank,
+  ...props
+}: ComponentProps<typeof RankCheckbox>) => {
+  if (rank !== undefined) {
+    return <RankCheckbox rank={rank} {...props} />;
+  }
+
+  // TODO(sense-migration): sense Checkbox has no shape="circle"/borderColor;
+  // approximated with rounded-full — revisit against Figma vote design.
+  return <Checkbox {...props} className="rounded-full" />;
 };
 
 const ViewProposalsList = ({

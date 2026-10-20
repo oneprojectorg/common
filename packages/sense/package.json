@@ -80,6 +80,7 @@
     "./ProposalCard": "./src/components/ProposalCard/index.tsx",
     "./ProposalFeed": "./src/components/ProposalFeed/index.tsx",
     "./RadioGroup": "./src/components/ui/radio-group.tsx",
+    "./RankCheckbox": "./src/components/RankCheckbox/index.tsx",
     "./RequiredAsterisk": "./src/components/RequiredAsterisk/index.tsx",
     "./Resizable": "./src/components/ui/resizable.tsx",
     "./ReviewResultCard": "./src/components/ReviewResultCard/index.tsx",
