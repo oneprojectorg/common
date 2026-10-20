@@ -48,7 +48,7 @@ describe.concurrent('updateUserProfile', () => {
     expect(account?.profile).toMatchObject({ name, bio: null });
   });
 
-  it('given a user with a saved headline, when they clear the field, then the headline is removed and the name stays', async ({
+  it('given a user with a saved headline, when the form sends null, then the headline is removed and the name stays', async ({
     task,
     onTestFinished,
   }) => {
@@ -61,11 +61,25 @@ describe.concurrent('updateUserProfile', () => {
       name,
       bio: 'Budget delegate facilitator',
     });
-    const cleared = await caller.account.updateUserProfile({ bio: '   ' });
+    const cleared = await caller.account.updateUserProfile({ bio: null });
 
     expect(cleared.profile).toMatchObject({ name, bio: null });
     const account = await caller.account.getMyAccount();
     expect(account?.profile).toMatchObject({ name, bio: null });
+  });
+
+  it('given a user with a saved headline, when an old client sends only spaces, then the headline is stored as null', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({ grantAccess: true });
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    await caller.account.updateUserProfile({ bio: 'Facilitator' });
+    const cleared = await caller.account.updateUserProfile({ bio: '   ' });
+
+    expect(cleared.profile).toMatchObject({ bio: null });
   });
 });
 

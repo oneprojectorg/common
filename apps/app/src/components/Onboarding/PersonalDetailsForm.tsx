@@ -1,4 +1,5 @@
 import { useProfileImageUpload } from '@/hooks/useProfileImageUpload';
+import { textOrNull } from '@/utils/textOrNull';
 import { trpc } from '@op/api/client';
 import { zodUrl } from '@op/common/validation';
 import { AvatarUploader } from '@op/sense/AvatarUploader';
@@ -148,7 +149,7 @@ export const PersonalDetailsForm = ({
     onSubmit: async ({ value }: { value: FormFields }) => {
       await updateProfile.mutateAsync({
         name: value.fullName,
-        bio: value.title,
+        bio: textOrNull(value.title),
         email: value.email || undefined,
         pronouns:
           value.pronouns === 'custom'
