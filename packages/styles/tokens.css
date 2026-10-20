@@ -131,8 +131,6 @@
   --brand-teal-500: #3f8d99;
   --brand-green-500: #5db131;
   --brand-blue-500: #446fcc;
-  /* Read through var() inside the --font-* stacks; not a font-* utility. */
-  --font-arabic: 'Noto Sans Arabic';
 }
 
 /* ============================================
@@ -166,10 +164,10 @@
     'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
   /* Order is load-bearing: Roboto before Noto (Noto ships Latin), Noto before the next/font '* Fallback' faces (local Arial has Arabic glyphs). */
   --font-serif:
-    'Roboto Serif', var(--font-arabic), 'Roboto Serif Fallback', ui-serif,
+    'Roboto Serif', 'Noto Sans Arabic', 'Roboto Serif Fallback', ui-serif,
     Georgia, Cambria, 'Times New Roman', Times, serif;
   --font-sans:
-    'Roboto', var(--font-arabic), 'Roboto Fallback', ui-sans-serif, system-ui,
+    'Roboto', 'Noto Sans Arabic', 'Roboto Fallback', ui-sans-serif, system-ui,
     sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
     'Noto Color Emoji';
   /* No web font for mono — the app relies on system monospace fonts */
