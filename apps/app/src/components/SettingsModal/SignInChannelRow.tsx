@@ -24,6 +24,7 @@ import {
 import { useTranslations } from '@/lib/i18n';
 
 import { type Confirmation, InlineConfirmation } from './InlineConfirmation';
+import { cancelOnEscape } from './cancelOnEscape';
 import {
   type ChannelValueError,
   type SignInChannel,
@@ -325,7 +326,12 @@ const EnterValueStep = ({
   const messageId = useId();
 
   return (
-    <form noValidate onSubmit={onSubmit} className="mt-4 flex flex-col gap-4">
+    <form
+      noValidate
+      onSubmit={onSubmit}
+      onKeyDown={cancelOnEscape(onCancel)}
+      className="mt-4 flex flex-col gap-4"
+    >
       <Field>
         <FieldLabel htmlFor={inputId}>
           {editor.mode === 'add' ? copy.addLabel : copy.changeLabel}
@@ -385,7 +391,12 @@ const EnterCodeStep = ({
   const errorId = useId();
 
   return (
-    <form noValidate onSubmit={onSubmit} className="mt-4 flex flex-col gap-4">
+    <form
+      noValidate
+      onSubmit={onSubmit}
+      onKeyDown={cancelOnEscape(onCancel)}
+      className="mt-4 flex flex-col gap-4"
+    >
       <Field>
         {/* block: the label's default flex row would gap around the address in the sentence */}
         <FieldLabel htmlFor={codeId} className="block font-normal">
@@ -465,6 +476,7 @@ const ConfirmRemoveStep = ({
     <div
       role="group"
       aria-labelledby={questionId}
+      onKeyDown={cancelOnEscape(onCancel)}
       className="mt-4 flex flex-col gap-4"
     >
       <p id={questionId} className="text-sm text-muted-foreground">

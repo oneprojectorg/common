@@ -16,6 +16,7 @@ import {
 
 import { useTranslations } from '@/lib/i18n';
 
+import { cancelOnEscape } from './cancelOnEscape';
 import type { ParticipationMode, ProcessPrivacy } from './useSettingsMockState';
 
 interface PrivacySettingsProps {
@@ -121,7 +122,11 @@ const ProcessPrivacyRow = ({
       </div>
 
       {draft ? (
-        <form onSubmit={save} className="mt-5 flex flex-col gap-4">
+        <form
+          onSubmit={save}
+          onKeyDown={cancelOnEscape(close)}
+          className="mt-5 flex flex-col gap-4"
+        >
           <RadioGroup
             ref={choicesRef}
             value={draft}
