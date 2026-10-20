@@ -29,7 +29,6 @@ import { Separator } from '@op/sense/Separator';
 import { cn } from '@op/sense/lib/utils';
 import { screens } from '@op/styles/constants';
 import dynamic from 'next/dynamic';
-import { useQueryState } from 'nuqs';
 import { ReactNode, useEffect, useRef, useState } from 'react';
 import {
   LuChevronDown,
@@ -46,10 +45,6 @@ import { CommunityCommitmentsContent } from '../CommunityCommitmentsContent';
 import { DeleteOrganizationModal } from '../DeleteOrganizationModal';
 import { PrivacyPolicyContent } from '../PrivacyPolicyContent';
 import { ProfileSwitchingModal } from '../ProfileSwitchingModal';
-import {
-  SETTINGS_OPEN,
-  SETTINGS_QUERY_KEY,
-} from '../SettingsModal/settingsQuery';
 import { ToSContent } from '../ToSContent';
 
 type LegalDialog = 'privacy' | 'tos' | 'community';
@@ -521,9 +516,7 @@ export const UserAvatarMenu = ({ className }: { className?: string }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isOrgDeletionOpen, setIsOrgDeletionOpen] = useState(false);
   const [legalDialog, setLegalDialog] = useState<LegalDialog | null>(null);
-  // in the URL so a locale change, which reloads the page, can reopen it
-  const [settingsParam, setSettingsParam] = useQueryState(SETTINGS_QUERY_KEY);
-  const isSettingsOpen = settingsParam === SETTINGS_OPEN;
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isSwitchingProfile, setIsSwitchingProfile] = useState(false);
   const [switchingToProfile, setSwitchingToProfile] = useState<{
     name: string;
@@ -556,7 +549,7 @@ export const UserAvatarMenu = ({ className }: { className?: string }) => {
 
   const openSettings = () => {
     closeMenus();
-    setSettingsParam(SETTINGS_OPEN);
+    setIsSettingsOpen(true);
   };
 
   const deleteOrganizationEnabled = useFeatureFlag('delete_organization');
@@ -619,10 +612,7 @@ export const UserAvatarMenu = ({ className }: { className?: string }) => {
         />
       ) : null}
       {settingsModalEnabled ? (
-        <SettingsModal
-          open={isSettingsOpen}
-          onOpenChange={(open) => setSettingsParam(open ? SETTINGS_OPEN : null)}
-        />
+        <SettingsModal open={isSettingsOpen} onOpenChange={setIsSettingsOpen} />
       ) : null}
     </>
   );

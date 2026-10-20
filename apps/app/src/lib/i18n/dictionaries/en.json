@@ -1648,7 +1648,7 @@
     "twoStepNeedsEmail": "Add an email address to turn this on.",
     "twoStepNeedsPhone": "Add a phone number to turn this on.",
     "languageTitle": "Language",
-    "languageHint": "The language for Common's menus and buttons.",
+    "languageHint": "The language for Common's menus and buttons. Changing it reloads the page.",
     "smsLabel": "SMS",
     "repliesTitle": "Your proposals and comments",
     "repliesHint": "Someone replies to you or comments on your proposal.",

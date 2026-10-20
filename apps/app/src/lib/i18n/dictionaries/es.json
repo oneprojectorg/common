@@ -1648,7 +1648,7 @@
     "twoStepNeedsEmail": "Agrega una dirección de correo electrónico para activar esta opción.",
     "twoStepNeedsPhone": "Agrega un número de teléfono para activar esta opción.",
     "languageTitle": "Idioma",
-    "languageHint": "El idioma de los menús y botones de Common.",
+    "languageHint": "El idioma de los menús y botones de Common. Al cambiarlo, la página se recarga.",
     "smsLabel": "SMS",
     "repliesTitle": "Tus propuestas y comentarios",
     "repliesHint": "Alguien te responde o comenta tu propuesta.",

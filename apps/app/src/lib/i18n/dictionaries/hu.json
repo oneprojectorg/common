@@ -1648,7 +1648,7 @@
     "twoStepNeedsEmail": "A bekapcsoláshoz adjon hozzá egy e-mail-címet.",
     "twoStepNeedsPhone": "A bekapcsoláshoz adjon hozzá egy telefonszámot.",
     "languageTitle": "Nyelv",
-    "languageHint": "A Common menüinek és gombjainak nyelve.",
+    "languageHint": "A Common menüinek és gombjainak nyelve. A módosítás újratölti az oldalt.",
     "smsLabel": "SMS",
     "repliesTitle": "Az Ön javaslatai és hozzászólásai",
     "repliesHint": "Valaki válaszol Önnek, vagy hozzászól a javaslatához.",

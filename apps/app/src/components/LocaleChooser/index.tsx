@@ -81,7 +81,7 @@ export const useLocaleSwitch = () => {
   const currentLocale =
     (Array.isArray(localeParam) ? localeParam[0] : localeParam) ?? '';
 
-  const switchLocale = (value: string, search = '') => {
+  const switchLocale = (value: string) => {
     if (value && value !== currentLocale) {
       // Hard navigation (not the client router) so the server applies the
       // vanity URL rewrite. Vanity decision paths like `/columbus` exist only
@@ -89,7 +89,7 @@ export const useLocaleSwitch = () => {
       // can't resolve them and bounces anonymous viewers to /login. A full load
       // resolves the rewrite and keeps the pretty URL. Locale changes are rare,
       // so the reload is negligible.
-      window.location.assign(`/${value}${pathname}${search}`);
+      window.location.assign(`/${value}${pathname}`);
     }
   };
 

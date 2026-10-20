@@ -23,7 +23,6 @@ import { i18nConfig } from '@/lib/i18n/config';
 
 import { localeDisplayNames, useLocaleSwitch } from '../LocaleChooser';
 import { SignInChannelRow } from './SignInChannelRow';
-import { settingsOpenSearch } from './settingsQuery';
 import type {
   AccountSettingsActions,
   AccountSettingsValues,
@@ -114,7 +113,7 @@ const LanguageField = () => {
         value={currentLocale}
         onValueChange={(value) => {
           if (value) {
-            switchLocale(value, settingsOpenSearch);
+            switchLocale(value);
           }
         }}
       >
