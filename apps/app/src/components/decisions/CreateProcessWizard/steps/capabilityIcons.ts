@@ -63,7 +63,6 @@ const BY_ID: Partial<Record<WizardCopyKey, IconComponent>> = {
   publishWhatGotFunded: LuMegaphone,
   publishWhatGroupLanded: LuMegaphone,
   runMoreThanOneRound: LuRepeat,
-  runVoteItemWhenYou: LuVote,
   scoreBlindIfYouWant: LuEyeOff,
   setBudgetLimits: LuWallet,
   setDeadline: LuClock,
