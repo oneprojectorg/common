@@ -50,9 +50,10 @@ const WelcomeSection = async () => {
   const [t, user] = await Promise.all([getTranslations(), getRequiredUser()]);
 
   return (
-    <div className="flex flex-col gap-2 text-center">
+    // Tops the column's gap up to the layout's top padding, so the greeting sits evenly between them
+    <div className="flex flex-col gap-2 pb-1 text-center sm:pb-5">
       <Welcome user={user} />
-      <p>{t('shell.homeSubtitle')}</p>
+      <p className="text-muted-foreground">{t('shell.homeSubtitle')}</p>
     </div>
   );
 };
@@ -61,7 +62,7 @@ const WelcomeSkeleton = async () => {
   const t = await getTranslations();
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-2 pb-1 sm:pb-5">
       <Skeleton>
         <Header1 className="text-center text-transparent">
           {t('shell.welcomeBackTitle')}

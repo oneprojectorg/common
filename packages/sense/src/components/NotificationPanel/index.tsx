@@ -5,16 +5,12 @@ import { Header2 } from '../Header';
 import { BadgeNumber } from '../ui/badge';
 
 /**
- * A bordered notification surface with a serif header (title + count badge),
- * a list of items, and per-item action groups. Composed from tokens — the
- * consumer supplies the rows via NotificationPanelList / -Item / -Actions.
+ * A notification section: a serif header (title + count badge) above a
+ * bordered list of items with per-item action groups. Composed from tokens —
+ * the consumer supplies the rows via NotificationPanelList / -Item / -Actions.
  */
 function NotificationPanel({ children }: { children: ReactNode }) {
-  return (
-    <div className="flex flex-col overflow-hidden rounded-lg border bg-card">
-      {children}
-    </div>
-  );
+  return <section className="flex flex-col gap-4">{children}</section>;
 }
 
 function NotificationPanelHeader({
@@ -25,15 +21,20 @@ function NotificationPanelHeader({
   count: number;
 }) {
   return (
-    <div className="flex items-center gap-1 p-6 text-foreground">
-      <Header2 className="text-title">{title}</Header2>
+    <div className="flex items-center gap-2 text-foreground">
+      <Header2 className="text-label font-normal">{title}</Header2>
       <BadgeNumber>{count}</BadgeNumber>
     </div>
   );
 }
 
+/** The bordered surface; items are separated by a rule between them. */
 function NotificationPanelList({ children }: { children: ReactNode }) {
-  return <ul className="flex flex-col">{children}</ul>;
+  return (
+    <ul className="flex flex-col divide-y overflow-hidden rounded-lg border bg-card">
+      {children}
+    </ul>
+  );
 }
 
 function NotificationPanelItem({
@@ -46,7 +47,7 @@ function NotificationPanelItem({
   return (
     <li
       className={cn(
-        'flex flex-col justify-between gap-6 border-t p-6 transition-colors sm:flex-row sm:items-center sm:gap-2',
+        'flex flex-col justify-between gap-6 p-6 transition-colors sm:flex-row sm:items-center sm:gap-2',
         className,
       )}
     >
