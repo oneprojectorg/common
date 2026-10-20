@@ -85,9 +85,10 @@ export const getDecisionBySlug = async ({
   const instance = profile.processInstance;
 
   // Proposal/participant aggregates are intentionally NOT computed here: the
-  // overview route (this endpoint's only consumer) never renders them, and
-  // list views get their counts from listDecisionProfiles. Keeping the
-  // hot-path slug fetch aggregate-free saves a proposals table scan per view.
+  // overview route never renders them, list views get their counts from
+  // listDecisionProfiles, and the SMS SHOW path (describeSmsDecision) counts
+  // its ballot itself. Keeping the hot-path slug fetch aggregate-free saves a
+  // proposals table scan per view.
   await assertProfileAccess({
     user,
     profileId: profile.id,
