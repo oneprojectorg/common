@@ -1,7 +1,8 @@
 import { trackAdminSetProcess, trackAdminSetRubric } from '@op/analytics';
 import { OPURLConfig } from '@op/core';
-import { db, eq } from '@op/db/client';
+import { type TransactionType, db, eq } from '@op/db/client';
 import {
+  type ProcessInstance,
   ProcessStatus,
   decisionProcessTransitions,
   processInstances,
@@ -88,22 +89,7 @@ export const updateDecisionInstance = async ({
     permissions: { decisions: permission.ADMIN },
   });
 
-  // Validate proposalTemplate is a structurally valid JSON Schema before persisting
-  if (proposalTemplate !== undefined) {
-    schemaValidator.validateJsonSchema(proposalTemplate);
-  }
-
-  // Validate rubricTemplate is a structurally valid JSON Schema before persisting
-  if (rubricTemplate !== undefined) {
-    schemaValidator.validateJsonSchema(rubricTemplate);
-  }
-
-  // Same validation for phase-level rubric templates (null = clear, skipped)
-  for (const phase of phases ?? []) {
-    if (phase.rubricTemplate != null) {
-      schemaValidator.validateJsonSchema(phase.rubricTemplate);
-    }
-  }
+  assertValidTemplates({ proposalTemplate, rubricTemplate, phases });
 
   // Build update data
   const updateData: Record<string, unknown> = {};
@@ -124,17 +110,10 @@ export const updateDecisionInstance = async ({
     stewardProfileId !== undefined &&
     stewardProfileId !== existingInstance.stewardProfileId
   ) {
-    if (!existingInstance.ownerProfileId) {
-      throw new UnauthorizedError(
-        'Only the process owner can change the steward',
-      );
-    }
-
-    await assertProfileAdmin({
+    await assertCanChangeSteward({
       user,
-      profileId: existingInstance.ownerProfileId,
+      ownerProfileId: existingInstance.ownerProfileId,
     });
-
     updateData.stewardProfileId = stewardProfileId;
   }
 
@@ -163,19 +142,11 @@ export const updateDecisionInstance = async ({
 
   // Only update if there's something to update
   if (Object.keys(updateData).length === 0) {
-    // Nothing to update, just return the existing profile
-    const profile = await db.query.profiles.findFirst({
-      where: { id: profileId },
-      with: {
-        processInstance: true,
-      },
-    });
-
-    if (!profile) {
-      throw new CommonError('Failed to fetch decision profile');
-    }
-
-    return { profile, phaseEndDateChanges, didPublish: false };
+    return {
+      profile: await getDecisionProfile(profileId),
+      phaseEndDateChanges,
+      didPublish: false,
+    };
   }
 
   const isBeingPublished =
@@ -195,112 +166,27 @@ export const updateDecisionInstance = async ({
       throw new CommonError('Failed to update decision process instance');
     }
 
-    // Determine the final status (updated or existing)
-    const finalStatus = status ?? existingInstance.status;
-
-    // Build a single profile update for name sync and/or slug generation.
-    const profileUpdate: Record<string, string> = {};
-
-    // Keep the profile name in sync with the instance name.
-    if (name !== undefined) {
-      profileUpdate.name = name;
-    }
-
-    // Generate a permanent, name-based slug when publishing.
-    // Draft instances keep their original UUID slug so the URL stays stable
-    // while editing. Once published the slug is locked.
-    if (isBeingPublished) {
-      const instanceName = name ?? existingInstance.name;
-      profileUpdate.slug = await generateUniqueProfileSlug({
-        name: `decision-${instanceName}`,
-        db: tx,
-      });
-    }
-
-    if (Object.keys(profileUpdate).length > 0) {
-      await tx
-        .update(profiles)
-        .set(profileUpdate)
-        .where(eq(profiles.id, profileId));
-    }
-
-    // If status is DRAFT, remove all transitions
-    if (finalStatus === ProcessStatus.DRAFT) {
-      await tx
-        .delete(decisionProcessTransitions)
-        .where(eq(decisionProcessTransitions.processInstanceId, instanceId));
-    } else if (isBeingPublished) {
-      // When publishing a draft, create transitions for all date-based phases
-      await createTransitionsForProcess({
-        processInstance: updatedInstance,
-        db: tx,
-      });
-    } else if (phases && phases.length > 0) {
-      // If phases were updated and already published, update the corresponding transitions
-      await updateTransitionsForProcess({
-        processInstance: updatedInstance,
-        db: tx,
-      });
-    }
-  });
-
-  // Fetch the profile with processInstance joined for the response
-  const profile = await db.query.profiles.findFirst({
-    where: { id: profileId },
-    with: {
-      processInstance: true,
-    },
-  });
-
-  if (!profile) {
-    throw new CommonError('Failed to fetch updated decision profile');
-  }
-
-  // When publishing a draft, send queued invite emails for this process instance's profile
-  if (isBeingPublished) {
-    const queuedInvites = await db.query.profileInvites.findMany({
-      where: {
-        profileId,
-        notifiedAt: { isNull: true },
-      },
-      with: {
-        profile: true,
-        inviter: true,
-      },
+    await updateDecisionProfile({
+      tx,
+      profileId,
+      name,
+      instanceName: name ?? existingInstance.name,
+      isBeingPublished,
     });
 
-    if (queuedInvites.length > 0) {
-      const baseUrl = OPURLConfig('APP').ENV_URL;
+    await syncTransitions({
+      tx,
+      updatedInstance,
+      isDraft: (status ?? existingInstance.status) === ProcessStatus.DRAFT,
+      isBeingPublished,
+      phasesChanged: phases !== undefined && phases.length > 0,
+    });
+  });
 
-      const invitations = queuedInvites.map((invite) => ({
-        email: invite.email,
-        inviterName: invite.inviter?.name || 'A team member',
-        profileName: invite.profile.name,
-        inviteUrl: profile.slug
-          ? `${baseUrl}/decisions/${profile.slug}/invite`
-          : baseUrl,
-        personalMessage: invite.message ?? undefined,
-      }));
-
-      // Use the first invite's inviter as the sender
-      const firstInvite = queuedInvites[0];
-      if (firstInvite) {
-        const senderProfileId = firstInvite.invitedBy;
-
-        await event.send({
-          name: Events.profileInviteSent.name,
-          data: {
-            senderProfileId,
-            inviteIds: queuedInvites.map((inv) => inv.id),
-            invitations,
-          },
-        });
-        // notifiedAt is set by the Inngest workflow after successful email delivery
-      }
-    }
-  }
+  const profile = await getDecisionProfile(profileId);
 
   if (isBeingPublished) {
+    await sendQueuedInvites({ profileId, profileSlug: profile.slug });
     waitUntil(trackAdminSetProcess(user.id, instanceId));
   }
 
@@ -310,3 +196,171 @@ export const updateDecisionInstance = async ({
 
   return { profile, phaseEndDateChanges, didPublish: isBeingPublished };
 };
+
+function assertValidTemplates({
+  proposalTemplate,
+  rubricTemplate,
+  phases,
+}: {
+  proposalTemplate?: Record<string, unknown>;
+  rubricTemplate?: RubricTemplateSchema;
+  phases?: PhaseOverride[];
+}) {
+  if (proposalTemplate !== undefined) {
+    schemaValidator.validateJsonSchema(proposalTemplate);
+  }
+
+  if (rubricTemplate !== undefined) {
+    schemaValidator.validateJsonSchema(rubricTemplate);
+  }
+
+  // A null phase rubric clears it, so there is nothing to validate.
+  for (const phase of phases ?? []) {
+    if (phase.rubricTemplate != null) {
+      schemaValidator.validateJsonSchema(phase.rubricTemplate);
+    }
+  }
+}
+
+async function updateDecisionProfile({
+  tx,
+  profileId,
+  name,
+  instanceName,
+  isBeingPublished,
+}: {
+  tx: TransactionType;
+  profileId: string;
+  name?: string;
+  instanceName: string;
+  isBeingPublished: boolean;
+}) {
+  const profileUpdate: Record<string, string> = {};
+
+  if (name !== undefined) {
+    profileUpdate.name = name;
+  }
+
+  // Drafts keep their UUID slug; publishing locks in a name-based one.
+  if (isBeingPublished) {
+    profileUpdate.slug = await generateUniqueProfileSlug({
+      name: `decision-${instanceName}`,
+      db: tx,
+    });
+  }
+
+  if (Object.keys(profileUpdate).length > 0) {
+    await tx
+      .update(profiles)
+      .set(profileUpdate)
+      .where(eq(profiles.id, profileId));
+  }
+}
+
+async function syncTransitions({
+  tx,
+  updatedInstance,
+  isDraft,
+  isBeingPublished,
+  phasesChanged,
+}: {
+  tx: TransactionType;
+  updatedInstance: ProcessInstance;
+  isDraft: boolean;
+  isBeingPublished: boolean;
+  phasesChanged: boolean;
+}) {
+  if (isDraft) {
+    await tx
+      .delete(decisionProcessTransitions)
+      .where(
+        eq(decisionProcessTransitions.processInstanceId, updatedInstance.id),
+      );
+  } else if (isBeingPublished) {
+    await createTransitionsForProcess({
+      processInstance: updatedInstance,
+      db: tx,
+    });
+  } else if (phasesChanged) {
+    await updateTransitionsForProcess({
+      processInstance: updatedInstance,
+      db: tx,
+    });
+  }
+}
+
+async function sendQueuedInvites({
+  profileId,
+  profileSlug,
+}: {
+  profileId: string;
+  profileSlug: string | null;
+}) {
+  const queuedInvites = await db.query.profileInvites.findMany({
+    where: {
+      profileId,
+      notifiedAt: { isNull: true },
+    },
+    with: {
+      profile: true,
+      inviter: true,
+    },
+  });
+
+  const [firstInvite] = queuedInvites;
+  if (!firstInvite) {
+    return;
+  }
+
+  const baseUrl = OPURLConfig('APP').ENV_URL;
+  const inviteUrl = profileSlug
+    ? `${baseUrl}/decisions/${profileSlug}/invite`
+    : baseUrl;
+
+  // notifiedAt is set by the Inngest workflow after successful email delivery
+  await event.send({
+    name: Events.profileInviteSent.name,
+    data: {
+      senderProfileId: firstInvite.invitedBy,
+      inviteIds: queuedInvites.map((invite) => invite.id),
+      invitations: queuedInvites.map((invite) => ({
+        email: invite.email,
+        inviterName: invite.inviter?.name || 'A team member',
+        profileName: invite.profile.name,
+        inviteUrl,
+        personalMessage: invite.message ?? undefined,
+      })),
+    },
+  });
+}
+
+async function assertCanChangeSteward({
+  user,
+  ownerProfileId,
+}: {
+  user: User;
+  ownerProfileId: string | null;
+}) {
+  if (!ownerProfileId) {
+    throw new UnauthorizedError(
+      'Only the process owner can change the steward',
+    );
+  }
+
+  await assertProfileAdmin({ user, profileId: ownerProfileId });
+}
+
+async function getDecisionProfile(profileId: string) {
+  const profile = await db.query.profiles.findFirst({
+    where: { id: profileId },
+    with: {
+      processInstance: true,
+    },
+  });
+
+  if (!profile) {
+    throw new CommonError('Failed to fetch decision profile');
+  }
+
+  return profile;
+}
