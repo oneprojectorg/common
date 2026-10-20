@@ -2,7 +2,7 @@ import { type ReactNode, createElement } from 'react';
 
 import type { TranslateFn } from '@/lib/i18n';
 
-import type { Choice, ProcessPiece, WizardCopyKey } from './types';
+import type { Choice, ProcessPiece, WizardCopyKey, WizardFlags } from './types';
 
 export type Subject = 'funding' | 'ideas' | 'people' | 'else';
 
@@ -189,20 +189,30 @@ export const DECISION_OPTIONS: Choice<Decision>[] = [
   },
 ];
 
+/** An unanswered cadence runs to an end, as when the question is never asked. */
 export const needsFocus = ({ subjects, cadence }: OtherAnswers): boolean =>
-  subjects.length > 1 && cadence === 'timeline';
+  subjects.length > 1 && cadence !== 'ongoing';
 
-/** `submits` also clears when the active subject changes: a key is labelled per subject. */
+/**
+ * `submits` also clears when the active subject changes: a key is labelled per
+ * subject. With rolling decisions off the cadence clears too, so a saved
+ * always-open answer can't outlive the flag.
+ */
 export function reconcileOther(
   next: OtherAnswers,
+  flags: WizardFlags,
   previous?: OtherAnswers,
 ): OtherAnswers {
-  const settled: OtherAnswers = {
+  const ended: OtherAnswers = {
     ...next,
-    elseText: next.subjects.includes('else') ? next.elseText : '',
+    cadence: flags.rollingDecisions ? next.cadence : null,
+  };
+  const settled: OtherAnswers = {
+    ...ended,
+    elseText: ended.subjects.includes('else') ? ended.elseText : '',
     focus:
-      next.focus && needsFocus(next) && next.subjects.includes(next.focus)
-        ? next.focus
+      ended.focus && needsFocus(ended) && ended.subjects.includes(ended.focus)
+        ? ended.focus
         : null,
   };
   const subject = activeSubject(settled);

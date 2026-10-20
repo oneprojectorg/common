@@ -9,6 +9,12 @@ export type WizardCopyKey = MessageKeys<
 
 export type ProcessType = 'grant' | 'pb' | 'other';
 
+/** Feature flags the wizard reads, resolved once by the route. */
+export interface WizardFlags {
+  /** Offers the always-open cadence; off, every "other" process runs to an end. */
+  rollingDecisions: boolean;
+}
+
 export type GrantShape = 'single' | 'loi';
 
 export type PbShape = 'ideas' | 'proposals';
