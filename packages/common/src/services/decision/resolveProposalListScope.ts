@@ -159,7 +159,7 @@ const buildBaseConditions = (
   t: typeof proposals,
   input: ListProposalsInput,
   reviewExclusion: ReviewAssignmentExclusion | undefined,
-  currentProfileId: string | undefined,
+  likedByProfileId: string | undefined,
 ): SQL => {
   const { processInstanceId, submittedByProfileId, status, search } = input;
 
@@ -184,9 +184,8 @@ const buildBaseConditions = (
     conditions.push(eq(t.status, status));
   }
 
-  // Direct likes only, matching `isLikedByUser` on the card. Without a profile
-  // the scope is empty and callers short-circuit before querying.
-  if (input.likedByCurrentUser && currentProfileId) {
+  // Direct likes only, matching `isLikedByUser` on the card.
+  if (likedByProfileId) {
     conditions.push(
       exists(
         db
@@ -194,7 +193,7 @@ const buildBaseConditions = (
           .from(profileRelationships)
           .where(
             and(
-              eq(profileRelationships.sourceProfileId, currentProfileId),
+              eq(profileRelationships.sourceProfileId, likedByProfileId),
               eq(profileRelationships.targetProfileId, t.profileId),
               eq(
                 profileRelationships.relationshipType,
@@ -394,13 +393,16 @@ export const resolveProposalListScope = async ({
   }
 
   // Unreached phases on non-legacy instances surface zero rows from both the
-  // non-draft and draft scopes; an empty category, or Liked with no profile to
-  // have liked from, likewise can't match. Any makes the whole scope empty, so
-  // callers should short-circuit.
+  // non-draft and draft scopes; an empty category, or Liked without a profile,
+  // likewise can't match. Any makes the whole scope empty, so callers should
+  // short-circuit.
+  const likedByProfileId = input.likedByCurrentUser
+    ? currentProfileId
+    : undefined;
   const isEmpty =
     phaseScope.isEmpty ||
     categoryIsEmpty ||
-    (input.likedByCurrentUser === true && currentProfileId === undefined);
+    (input.likedByCurrentUser === true && !likedByProfileId);
 
   // The phase being viewed — the "Other proposals" tab omits phaseId and
   // defaults to the instance's current state.
@@ -471,7 +473,7 @@ export const resolveProposalListScope = async ({
       proposalsTable,
       input,
       reviewExclusion,
-      currentProfileId,
+      likedByProfileId,
     );
 
     // Explicit scope (proposalIds or votedByProfileId): constrain the entire

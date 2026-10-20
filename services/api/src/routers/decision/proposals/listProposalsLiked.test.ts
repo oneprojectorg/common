@@ -37,7 +37,7 @@ describe.concurrent('listProposals: likedByCurrentUser (liked filter)', () => {
         status: ProposalStatus.SUBMITTED,
       });
 
-    const [likedA, likedB, likedByOther, unliked] = await Promise.all([
+    const [likedA, likedB, likedByOther] = await Promise.all([
       createSubmitted('Liked A'),
       createSubmitted('Liked B'),
       createSubmitted('Liked by other'),
@@ -69,10 +69,10 @@ describe.concurrent('listProposals: likedByCurrentUser (liked filter)', () => {
       likedByCurrentUser: true,
     });
 
-    const ids = result.items.map((p) => p.id);
-    expect(ids.sort()).toEqual([likedA.id, likedB.id].sort());
-    expect(ids).not.toContain(likedByOther.id);
-    expect(ids).not.toContain(unliked.id);
+    // Neither another member's like nor an unliked proposal comes through.
+    expect(result.items.map((p) => p.id).sort()).toEqual(
+      [likedA.id, likedB.id].sort(),
+    );
     expect(result.total).toBe(2);
   });
 
@@ -94,20 +94,18 @@ describe.concurrent('listProposals: likedByCurrentUser (liked filter)', () => {
       instanceProfileIds: [instance.profileId],
     });
 
-    const [bikeLane, communityGarden] = await Promise.all(
-      ['Bike lane', 'Community garden'].map((title) =>
-        testData.createProposal({
-          userEmail: setup.userEmail,
-          processInstanceId: instance.instance.id,
-          proposalData: { title: `${title} ${task.id}` },
-          status: ProposalStatus.SUBMITTED,
-        }),
-      ),
-    );
+    const createSubmitted = (title: string) =>
+      testData.createProposal({
+        userEmail: setup.userEmail,
+        processInstanceId: instance.instance.id,
+        proposalData: { title: `${title} ${task.id}` },
+        status: ProposalStatus.SUBMITTED,
+      });
 
-    if (!bikeLane || !communityGarden) {
-      throw new Error('Failed to seed proposals');
-    }
+    const [bikeLane, communityGarden] = await Promise.all([
+      createSubmitted('Bike lane'),
+      createSubmitted('Community garden'),
+    ]);
 
     const likerCaller = await createAuthenticatedCaller(liker.email);
 
