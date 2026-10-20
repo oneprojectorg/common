@@ -120,7 +120,7 @@ export const SettingsModal = ({ open, onOpenChange }: SettingsModalProps) => {
           <TabsContent value="privacy" className={PANEL_CLASS_NAME}>
             <PrivacySettings
               processes={settings.processes}
-              userName={user.currentProfile?.name ?? user.name ?? ''}
+              userName={user.profile?.name ?? user.name ?? t('nameFallback')}
               setParticipationMode={settings.setParticipationMode}
             />
           </TabsContent>

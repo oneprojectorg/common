@@ -35,16 +35,20 @@ export const PrivacySettings = ({
     <div className="flex flex-col gap-4">
       <Header3>{t('privacyTab')}</Header3>
       <p>{t('privacyIntro')}</p>
-      <div className="mt-3 flex flex-col divide-y">
-        {processes.map((process) => (
-          <ProcessPrivacyRow
-            key={process.id}
-            process={process}
-            userName={userName}
-            onSave={(mode) => setParticipationMode(process.id, mode)}
-          />
-        ))}
-      </div>
+      {processes.length === 0 ? (
+        <p className="mt-3 text-muted-foreground">{t('noProcesses')}</p>
+      ) : (
+        <div className="mt-3 flex flex-col divide-y">
+          {processes.map((process) => (
+            <ProcessPrivacyRow
+              key={process.id}
+              process={process}
+              userName={userName}
+              onSave={(mode) => setParticipationMode(process.id, mode)}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 };
