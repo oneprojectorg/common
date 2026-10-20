@@ -721,10 +721,6 @@
     "welcomeHeading": "Soo dhawoow",
     "welcomeBackHeading": "Ku soo dhawoow mar kale",
     "welcomeBackTitle": "Ku soo dhawoow mar kale, Common!",
-    "landingSubtitle": "Baro xiriiro cusub oo xoogee xiriiriyaha jira.",
-    "newOrganizationsHeading": "Ururado Cusub",
-    "discoverTab": "Baro",
-    "recentTab": "Dhawaan",
     "feedLoadError": "Lama soo rari karo qoraalada. Fadlan isku day inaad cusboonaysiiso.",
     "notFoundToastTitle": "Hoogaag! Lama helin",
     "notFoundToastBody": "Ma heli karno taas. Waxaa laga yaabaa in la saaray.",
@@ -733,7 +729,25 @@
     "noAccessTitle": "Kuma geli kartid boggan",
     "noAccessHint": "La xiriir qofka xiriiriyaha kula wadaagay haddii aad u malaynayso inay tahay khalad.",
     "goToCommonAction": "Aad Common",
-    "newTabHint": "(waxay ka furmaysaa tab cusub)"
+    "newTabHint": "(waxay ka furmaysaa tab cusub)",
+    "toggleSidebarLabel": "Muuji ama qari barta dhinaca",
+    "exploreNavHeading": "Sahan",
+    "updatesNavTitle": "Wararka",
+    "updatesPageSubtitle": "Wararka ururada ku jira Common oo dhan.",
+    "seeMoreAction": "Eeg wax badan",
+    "activeProcessesHeading": "Hababka firfircoon",
+    "participateInProcessLabel": "Ka qayb qaado {name}",
+    "homeSubtitle": "La soco hababkaaga iyo dadka ku xeeran.",
+    "setUpProfileHeading": "Diyaari astaantaada",
+    "setUpProfileBody": "Fikradaha way sii fogaadaan marka dadku arkaan qofka ka dambeeya. Hababkaaga waxaad ku ahaanaysaa qof aan la aqoon ilaa aad si kale doorato.",
+    "setUpProfileAction": "Diyaari astaanta",
+    "dismissSetUpProfileLabel": "Iska dhaaf",
+    "seeLessAction": "Eeg wax yar",
+    "visibleDecisionsCount": "{count, plural, one {Waxaa la muujinayaa # go’aan} other {Waxaa la muujinayaa # go’aanno}}",
+    "editProfileAction": "Wax ka beddel astaanta",
+    "profilesMenuHeading": "Astaamaha",
+    "activeProfileLabel": "Firfircoon",
+    "settingsAction": "Dejinta"
   },
   "decisions": {
     "processBuilder": {
@@ -1587,7 +1601,8 @@
     "stewardedByDescription": "Hab go'aan-qaadashada oo uu ilaalinayo {stewardName}.",
     "editingPageTitle": "Wax ka beddelaya",
     "participantCount": "{count, plural, one {# ka qaybgale} other {# ka qaybgalayaal}}",
-    "membersSubmittedCount": "{count, plural, =1 {1 xubin ayaa soo gudbisay soo jeedimo} other {# xubno ayaa soo gudbiyay soo jeedimo}}"
+    "membersSubmittedCount": "{count, plural, =1 {1 xubin ayaa soo gudbisay soo jeedimo} other {# xubno ayaa soo gudbiyay soo jeedimo}}",
+    "revisionRequestsHeading": "Codsiyada dib-u-eegista"
   },
   "loadingProgress": "Waa la soo rarayaa...",
   "validEmailError": "Geli cinwaan sax ah oo email ah",

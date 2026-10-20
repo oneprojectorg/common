@@ -721,10 +721,6 @@
     "welcomeHeading": "Bem-vindo",
     "welcomeBackHeading": "Bem-vindo de volta",
     "welcomeBackTitle": "Bem-vindo de volta à Common!",
-    "landingSubtitle": "Explore novas conexões e fortaleça relacionamentos existentes.",
-    "newOrganizationsHeading": "Novas organizações",
-    "discoverTab": "Descobrir",
-    "recentTab": "Recente",
     "feedLoadError": "Não foi possível carregar as publicações. Tente atualizar a página.",
     "notFoundToastTitle": "Ops! Não encontrado",
     "notFoundToastBody": "Não conseguimos encontrar isso. Pode ter sido removido.",
@@ -733,7 +729,25 @@
     "noAccessTitle": "Você não tem acesso a esta página",
     "noAccessHint": "Entre em contato com a pessoa que compartilhou este link se você acha que isso é um erro.",
     "goToCommonAction": "Ir para Common",
-    "newTabHint": "(abre num novo separador)"
+    "newTabHint": "(abre num novo separador)",
+    "toggleSidebarLabel": "Mostrar ou ocultar a barra lateral",
+    "exploreNavHeading": "Explorar",
+    "updatesNavTitle": "Atualizações",
+    "updatesPageSubtitle": "Atualizações de organizações de todo o Common.",
+    "seeMoreAction": "Ver mais",
+    "activeProcessesHeading": "Processos ativos",
+    "participateInProcessLabel": "Participar de {name}",
+    "homeSubtitle": "Acompanhe seus processos e as pessoas ao redor deles.",
+    "setUpProfileHeading": "Configure seu perfil",
+    "setUpProfileBody": "As ideias vão mais longe quando as pessoas podem ver quem está por trás delas. Você permanece anônimo em seus processos até escolher o contrário.",
+    "setUpProfileAction": "Configurar perfil",
+    "dismissSetUpProfileLabel": "Dispensar",
+    "seeLessAction": "Ver menos",
+    "visibleDecisionsCount": "{count, plural, one {Mostrando # decisão} other {Mostrando # decisões}}",
+    "editProfileAction": "Editar perfil",
+    "profilesMenuHeading": "Perfis",
+    "activeProfileLabel": "Ativo",
+    "settingsAction": "Configurações"
   },
   "decisions": {
     "processBuilder": {
@@ -1587,7 +1601,8 @@
     "stewardedByDescription": "Um processo de tomada de decisão administrado por {stewardName}.",
     "editingPageTitle": "Editando",
     "participantCount": "{count, plural, one {# participante} other {# participantes}}",
-    "membersSubmittedCount": "{count, plural, =1 {1 membro enviou propostas} other {# membros enviaram propostas}}"
+    "membersSubmittedCount": "{count, plural, =1 {1 membro enviou propostas} other {# membros enviaram propostas}}",
+    "revisionRequestsHeading": "Solicitações de revisão"
   },
   "loadingProgress": "Carregando...",
   "validEmailError": "Digite um endereço de e-mail válido",

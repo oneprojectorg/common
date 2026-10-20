@@ -101,7 +101,7 @@ export const SiteHeader = () => {
         )}
       >
         <SidebarTrigger
-          aria-label={t('shell.openMenuLabel')}
+          aria-label={t('shell.toggleSidebarLabel')}
           className="size-8 rounded-lg md:size-11"
         >
           <LuAlignJustify className="size-4" />

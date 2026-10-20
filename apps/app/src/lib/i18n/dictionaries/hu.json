@@ -721,10 +721,6 @@
     "welcomeHeading": "Üdvözöljük",
     "welcomeBackHeading": "Üdvözöljük újra",
     "welcomeBackTitle": "Üdvözöljük újra a Commonon!",
-    "landingSubtitle": "Fedezzen fel új kapcsolatokat, és erősítse a meglévőket.",
-    "newOrganizationsHeading": "Új szervezetek",
-    "discoverTab": "Felfedezés",
-    "recentTab": "Legutóbbi",
     "feedLoadError": "Nem sikerült betölteni a bejegyzéseket. Próbálja meg frissíteni az oldalt.",
     "notFoundToastTitle": "Hoppá! Nem található",
     "notFoundToastBody": "Úgy tűnik, nem találjuk. Lehet, hogy eltávolították.",
@@ -733,7 +729,25 @@
     "noAccessTitle": "Nincs hozzáférése ehhez az oldalhoz",
     "noAccessHint": "Ha úgy gondolja, hogy ez tévedés, forduljon ahhoz, aki megosztotta Önnel ezt a hivatkozást.",
     "goToCommonAction": "Ugrás a Commonra",
-    "newTabHint": "(új lapon nyílik meg)"
+    "newTabHint": "(új lapon nyílik meg)",
+    "toggleSidebarLabel": "Oldalsáv megjelenítése vagy elrejtése",
+    "exploreNavHeading": "Felfedezés",
+    "updatesNavTitle": "Hírek",
+    "updatesPageSubtitle": "Hírek a Common szervezeteitől.",
+    "seeMoreAction": "Továbbiak",
+    "activeProcessesHeading": "Aktív folyamatok",
+    "participateInProcessLabel": "Részvétel: {name}",
+    "homeSubtitle": "Kövesd a folyamataidat és a körülöttük lévő embereket.",
+    "setUpProfileHeading": "Állítsd be a profilodat",
+    "setUpProfileBody": "Az ötletek messzebbre jutnak, ha látszik, ki áll mögöttük. A folyamataidban névtelen maradsz, amíg másként nem döntesz.",
+    "setUpProfileAction": "Profil beállítása",
+    "dismissSetUpProfileLabel": "Elvetés",
+    "seeLessAction": "Kevesebb",
+    "visibleDecisionsCount": "{count, plural, other {# döntés látható}}",
+    "editProfileAction": "Profil szerkesztése",
+    "profilesMenuHeading": "Profilok",
+    "activeProfileLabel": "Aktív",
+    "settingsAction": "Beállítások"
   },
   "decisions": {
     "processBuilder": {
@@ -1587,7 +1601,8 @@
     "stewardedByDescription": "Döntéshozatali folyamat, amelyet a(z) {stewardName} gondoz.",
     "editingPageTitle": "Szerkesztés",
     "participantCount": "{count, plural, one {# résztvevő} other {# résztvevő}}",
-    "membersSubmittedCount": "{count, plural, =1 {1 tag nyújtott be javaslatot} other {# tag nyújtott be javaslatot}}"
+    "membersSubmittedCount": "{count, plural, =1 {1 tag nyújtott be javaslatot} other {# tag nyújtott be javaslatot}}",
+    "revisionRequestsHeading": "Átdolgozási kérések"
   },
   "loadingProgress": "Betöltés...",
   "validEmailError": "Adjon meg egy érvényes e-mail-címet",

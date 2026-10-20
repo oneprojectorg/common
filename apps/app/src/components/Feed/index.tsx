@@ -23,7 +23,7 @@ export const FeedContent = ({
   return (
     <div
       className={cn(
-        'flex w-full flex-col gap-2 leading-6 [&>.mediaItem:first-child]:mt-2',
+        'flex w-full flex-col gap-4 leading-6 [&>.mediaItem:first-child]:mt-4',
         className,
       )}
       style={{ overflowWrap: 'anywhere' }}

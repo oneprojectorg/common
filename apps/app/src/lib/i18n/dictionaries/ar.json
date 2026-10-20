@@ -721,10 +721,6 @@
     "welcomeHeading": "مرحبًا",
     "welcomeBackHeading": "مرحبًا بعودتك",
     "welcomeBackTitle": "مرحبًا بعودتك إلى Common!",
-    "landingSubtitle": "استكشف اتصالات جديدة وعزز العلاقات القائمة.",
-    "newOrganizationsHeading": "مؤسسات جديدة",
-    "discoverTab": "اكتشف",
-    "recentTab": "الأحدث",
     "feedLoadError": "تعذر تحميل المنشورات. يرجى محاولة التحديث.",
     "notFoundToastTitle": "عذرًا! غير موجود",
     "notFoundToastBody": "لا يمكننا العثور على ذلك. ربما تمت إزالته.",
@@ -733,7 +729,25 @@
     "noAccessTitle": "ليس لديك حق الوصول إلى هذه الصفحة",
     "noAccessHint": "اتصل بالشخص الذي شارك هذا الرابط إذا كنت تعتقد أن هذا خطأ.",
     "goToCommonAction": "اذهب إلى Common",
-    "newTabHint": "(يفتح في علامة تبويب جديدة)"
+    "newTabHint": "(يفتح في علامة تبويب جديدة)",
+    "toggleSidebarLabel": "إظهار الشريط الجانبي أو إخفاؤه",
+    "exploreNavHeading": "استكشاف",
+    "updatesNavTitle": "المستجدات",
+    "updatesPageSubtitle": "مستجدات من المنظمات في كل أنحاء Common.",
+    "seeMoreAction": "عرض المزيد",
+    "activeProcessesHeading": "العمليات النشطة",
+    "participateInProcessLabel": "المشاركة في {name}",
+    "homeSubtitle": "تابع عملياتك والأشخاص من حولها.",
+    "setUpProfileHeading": "أعدّ ملفك الشخصي",
+    "setUpProfileBody": "تصل الأفكار إلى أبعد عندما يرى الناس من يقف وراءها. تبقى مجهول الهوية في عملياتك حتى تختار غير ذلك.",
+    "setUpProfileAction": "إعداد الملف الشخصي",
+    "dismissSetUpProfileLabel": "تجاهل",
+    "seeLessAction": "عرض أقل",
+    "visibleDecisionsCount": "{count, plural, zero {يتم عرض # قرار} one {يتم عرض قرار واحد} two {يتم عرض قرارين} few {يتم عرض # قرارات} many {يتم عرض # قرارًا} other {يتم عرض # قرار}}",
+    "editProfileAction": "تعديل الملف الشخصي",
+    "profilesMenuHeading": "الملفات الشخصية",
+    "activeProfileLabel": "نشط",
+    "settingsAction": "الإعدادات"
   },
   "decisions": {
     "processBuilder": {
@@ -1587,7 +1601,8 @@
     "stewardedByDescription": "عملية صنع قرار يشرف عليها {stewardName}.",
     "editingPageTitle": "تحرير",
     "participantCount": "{count, plural, zero {لا مشاركين} one {مشارك واحد} two {مشاركان} few {# مشاركين} many {# مشاركًا} other {# مشارك}}",
-    "membersSubmittedCount": "{count, plural, =0 {لم يقدم أي عضو مقترحات} one {قام عضو واحد بتقديم مقترحات} two {قام عضوان بتقديم مقترحات} few {قام # أعضاء بتقديم مقترحات} many {قام # عضوًا بتقديم مقترحات} other {قام # عضو بتقديم مقترحات}}"
+    "membersSubmittedCount": "{count, plural, =0 {لم يقدم أي عضو مقترحات} one {قام عضو واحد بتقديم مقترحات} two {قام عضوان بتقديم مقترحات} few {قام # أعضاء بتقديم مقترحات} many {قام # عضوًا بتقديم مقترحات} other {قام # عضو بتقديم مقترحات}}",
+    "revisionRequestsHeading": "طلبات المراجعة"
   },
   "loadingProgress": "جارٍ التحميل...",
   "validEmailError": "أدخل عنوان بريد إلكتروني صالح",

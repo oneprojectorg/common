@@ -85,6 +85,9 @@ const FeedContent = ({ limit = PAGE_LIMIT.sm }: { limit?: number }) => {
             withLinks={true}
             onLikeClick={handleLikeClick}
             onCommentClick={handleCommentClick}
+            className="sm:px-0"
+            avatarClassName="size-10"
+            stacked={true}
           />
           <hr />
         </Fragment>
