@@ -114,7 +114,7 @@
   "module": "./src/index.ts",
   "scripts": {
     "build": "storybook build",
-    "dev": "storybook dev -p 3600 --no-open",
+    "dev": "pnpm --filter @op/styles build && storybook dev -p 3600 --no-open",
     "format:check": "oxfmt --check",
     "typecheck": "tsc --noEmit"
   },

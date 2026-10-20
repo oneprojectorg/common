@@ -162,12 +162,14 @@
   --font-accent:
     var(--font-accent), ui-sans-serif, system-ui, sans-serif,
     'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+  /* Order is load-bearing: Roboto before Rubik (Rubik ships Latin), Rubik before the next/font '* Fallback' faces (local Arial has Arabic glyphs). */
   --font-serif:
-    var(--font-serif), ui-serif, Georgia, Cambria, 'Times New Roman', Times,
-    serif;
+    'Roboto Serif', 'Rubik', 'Roboto Serif Fallback', ui-serif,
+    Georgia, Cambria, 'Times New Roman', Times, serif;
   --font-sans:
-    var(--font-sans), ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji',
-    'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+    'Roboto', 'Rubik', 'Roboto Fallback', ui-sans-serif, system-ui,
+    sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
+    'Noto Color Emoji';
   /* No web font for mono — the app relies on system monospace fonts */
   --font-mono:
     ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono',
