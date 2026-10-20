@@ -14,6 +14,54 @@ describe('clipSmsText', () => {
     expect(clipped).toHaveLength(8);
     expect(clipped).toMatch(/^[\x20-\x7E]*$/);
   });
+
+  it('given an emoji that straddles the cut, then the cut moves before it so no half character is sent', () => {
+    const clipped = clipSmsText('abcdef🎉ghij', 10);
+
+    expect(clipped).toBe('abcdef...');
+    expect(clipped).not.toMatch(/\p{Surrogate}/u);
+  });
+
+  it('given an emoji that fits before the cut, then it is kept whole and the limit still counts it as two units', () => {
+    const clipped = clipSmsText('ab🎉cdefghij', 10);
+
+    expect(clipped).toBe('ab🎉cde...');
+    expect(clipped).toHaveLength(10);
+  });
+
+  it('given a single emoji within the limit, then it is returned whole, not dropped', () => {
+    expect(clipSmsText('🎉', 2)).toBe('🎉');
+    expect(clipSmsText('🎉', 4)).toBe('🎉');
+  });
+
+  it('given text made only of emoji and room for one, then one whole emoji is kept before the ellipsis', () => {
+    const clipped = clipSmsText('🎉🎉🎉🎉', 5);
+
+    expect(clipped).toBe('🎉...');
+    expect(clipped).toHaveLength(5);
+  });
+
+  it('given text made only of emoji and room for less than one, then only the ellipsis is sent, never half a character', () => {
+    const clipped = clipSmsText('🎉🎉🎉', 4);
+
+    expect(clipped).toBe('...');
+    expect(clipped).not.toMatch(/\p{Surrogate}/u);
+  });
+
+  it.each([
+    ['ab🎉cdefghij', 10],
+    ['🎉🎉🎉🎉🎉', 7],
+    ['a🎉b🎉c🎉d', 6],
+    ['abcdef🎉ghij', 10],
+  ])(
+    'given %j clipped to %i, then the result fits the limit in UTF-16 units and holds no half character',
+    (text, max) => {
+      const clipped = clipSmsText(text, max);
+
+      expect(clipped.length).toBeLessThanOrEqual(max);
+      expect(clipped).not.toMatch(/\p{Surrogate}/u);
+    },
+  );
 });
 
 describe('splitSmsBody', () => {
