@@ -1,4 +1,4 @@
-import { createPhase } from '@op/common';
+import { MAX_PHASE_NAME_LENGTH, createPhase } from '@op/common';
 import { z } from 'zod';
 
 import { createPhaseDataInputEncoder } from '../../../encoders/decision';
@@ -20,7 +20,7 @@ export const createPhaseRouter = router({
     .input(
       z.object({
         instanceId: z.uuid(),
-        name: z.string().trim().min(1).max(256),
+        name: z.string().trim().min(1).max(MAX_PHASE_NAME_LENGTH),
         sortOrder: z.number().int().min(0).max(2_147_483_647),
         data: createPhaseDataInputEncoder.optional(),
       }),
