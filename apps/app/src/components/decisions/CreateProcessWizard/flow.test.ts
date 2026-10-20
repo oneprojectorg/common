@@ -105,6 +105,26 @@ describe('screensFor', () => {
     ]);
   });
 
+  it('skips the decision question once the process has no end', () => {
+    expect(
+      screensFor(
+        answers({
+          type: 'other',
+          other: { ...withFocus, cadence: 'ongoing' },
+        }),
+        ROLLING,
+      ),
+    ).toEqual([
+      'intro',
+      'type',
+      'subjects',
+      'cadence',
+      'submits',
+      'mapping',
+      'name',
+    ]);
+  });
+
   it('still asks which subject to focus on when cadence was never asked', () => {
     const unasked: OtherAnswers = { ...withFocus, cadence: null };
 

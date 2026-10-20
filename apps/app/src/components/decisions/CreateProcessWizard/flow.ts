@@ -91,6 +91,7 @@ const SCREEN: Record<ScreenId, Screen> = {
   decision: {
     step: 3,
     types: ['other'],
+    isAsked: ({ other }) => other.cadence !== 'ongoing',
     isComplete: ({ other }) => otherCanContinue('decision', other),
   },
   mapping: { step: 4, isComplete: () => true },

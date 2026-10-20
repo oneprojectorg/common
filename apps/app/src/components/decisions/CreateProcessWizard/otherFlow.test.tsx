@@ -56,13 +56,14 @@ describe('reconcileOther', () => {
 
   it('drops the focus, and what it asked for, once the process has no end', () => {
     const ongoing = reconcileOther(
-      { ...twoOnTimeline, cadence: 'ongoing' },
+      { ...twoOnTimeline, cadence: 'ongoing', decision: 'vote' },
       ROLLING,
       twoOnTimeline,
     );
 
     expect(ongoing.focus).toBeNull();
     expect(ongoing.submits).toBeNull();
+    expect(ongoing.decision).toBeNull();
   });
 
   it('drops a focus that is no longer among the subjects', () => {
@@ -146,18 +147,6 @@ describe('composeOtherPieces', () => {
     expect(pieces[0]?.capabilities).toContain('letMembersCommentLikeShow');
   });
 
-  it('offers a per-item vote on an always-open space only when one is wanted', () => {
-    const withVote = composeOtherPieces(
-      answers({ subjects: ['ideas'], cadence: 'ongoing', decision: 'vote' }),
-    );
-    const withoutVote = composeOtherPieces(
-      answers({ subjects: ['ideas'], cadence: 'ongoing', decision: 'agree' }),
-    );
-
-    expect(withVote[0]?.capabilities).toContain('runVoteItemWhenYou');
-    expect(withoutVote[0]?.capabilities).not.toContain('runVoteItemWhenYou');
-  });
-
   it('skips the intake when nothing is submitted', () => {
     expect(
       phases(
@@ -190,6 +179,22 @@ describe('composeOtherPieces', () => {
         answers({ cadence: 'timeline', submits: 'rough', decision: 'both' }),
       ),
     ).toEqual(['submissions', 'review', 'submissions', 'voting', 'results']);
+  });
+
+  it('narrows rough ideas down before the smaller group decides on the fuller versions', () => {
+    const pieces = composeOtherPieces(
+      answers({ cadence: 'timeline', submits: 'rough', decision: 'review' }),
+    );
+
+    expect(pieces.map((piece) => piece.phaseType)).toEqual([
+      'submissions',
+      'review',
+      'submissions',
+      'review',
+      'results',
+    ]);
+    expect(pieces[1]?.name).toBe('narrowDown');
+    expect(pieces[3]?.name).toBe('reviewDecide');
   });
 
   it('leaves out voting when a smaller group decides', () => {
