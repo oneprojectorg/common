@@ -227,6 +227,9 @@ published source lags its declared dependency versions. Reapply if you re-run
 
 - `calendar.tsx` — removed the `table:` `className` entry. `react-day-picker`
   v10 dropped `table` from its `ClassNames` type; the registry still emits it.
+- `dialog.tsx`, `alert-dialog.tsx` — the backdrop is rendered with `forceRender`.
+  Base UI skips the backdrop of a nested dialog by default, which left the
+  parent dialog undimmed behind the child.
 - `tabs.tsx` — `Tabs` forwards `orientation` to `TabsPrimitive.Root` as well
   as setting `data-orientation`. The registry only sets the attribute, so the
   styling went vertical while Base UI stayed horizontal: arrow keys stayed

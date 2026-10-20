@@ -1,3 +1,14 @@
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@op/sense/AlertDialog';
 import { Button } from '@op/sense/Button';
 import {
   Dialog,
@@ -150,6 +161,48 @@ export const MobileFullScreen: Story = {
       contentClassName="overflow-hidden"
       bodyClassName="min-h-0 flex-1"
     />
+  ),
+};
+
+// A dialog opened from inside another. Base UI nests it: the parent ignores
+// Escape and outside presses until the child closes, focus returns to the
+// trigger, and the child backdrop dims the parent.
+export const Nested: Story = {
+  render: () => (
+    <Dialog>
+      <DialogTrigger render={<Button variant="outline" />}>
+        Open settings
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Settings</DialogTitle>
+          <DialogDescription>Manage your account.</DialogDescription>
+        </DialogHeader>
+        <div className="px-6 pt-8 pb-10">
+          <AlertDialog>
+            <AlertDialogTrigger render={<Button variant="destructive" />}>
+              Delete account
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete your account?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Your profile and account will be removed. This cannot be
+                  undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction variant="destructive">
+                  Delete
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
+        <DialogFooter showCloseButton />
+      </DialogContent>
+    </Dialog>
   ),
 };
 
