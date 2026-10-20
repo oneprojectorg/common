@@ -1249,6 +1249,118 @@ describe.concurrent('updateDecisionInstance', () => {
 
     expect(result.processInstance.name).toBe(newName);
   });
+
+  // Rule keys missing from `phaseRulesEncoder` are erased by any phase edit.
+  it('keeps the ballot-constraint rules across an unrelated phase edit', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+      proposalTemplate: {
+        type: 'object',
+        properties: {
+          title: { type: 'string' },
+          budget: { type: 'object', 'x-format': 'money' },
+          cost: { type: 'number', 'x-unit': { kind: 'custom', label: 'dots' } },
+        },
+      },
+    });
+
+    const instance = setup.instance;
+    const phaseId = await getFirstPhaseId(instance.instance.id);
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    await caller.decision.updateDecisionInstance({
+      instanceId: instance.instance.id,
+      phases: [
+        {
+          phaseId,
+          rules: {
+            voting: {
+              submit: true,
+              maxVotesPerMember: 3,
+              voterBudget: 10,
+              voterCostField: 'cost',
+            },
+          },
+        },
+      ],
+    });
+
+    const reread = await caller.decision.getInstance({
+      instanceId: instance.instance.id,
+    });
+    const storedRules = reread.instanceData?.phases?.find(
+      (p) => p.phaseId === phaseId,
+    )?.rules;
+
+    expect(storedRules?.voting).toMatchObject({
+      voterBudget: 10,
+      voterCostField: 'cost',
+    });
+
+    await caller.decision.updateDecisionInstance({
+      instanceId: instance.instance.id,
+      phases: [
+        {
+          phaseId,
+          rules: {
+            ...storedRules,
+            voting: { ...storedRules?.voting, maxVotesPerMember: 2 },
+          },
+        },
+      ],
+    });
+
+    const dbInstance = await db.query.processInstances.findFirst({
+      where: { id: instance.instance.id },
+    });
+    const voting = (
+      dbInstance!.instanceData as DecisionInstanceData
+    ).phases.find((p) => p.phaseId === phaseId)?.rules?.voting;
+
+    expect(voting).toMatchObject({
+      maxVotesPerMember: 2,
+      voterBudget: 10,
+      voterCostField: 'cost',
+    });
+  });
+
+  it('rejects a voter budget whose cost field the template does not price', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+      proposalTemplate: {
+        type: 'object',
+        properties: { title: { type: 'string' } },
+      },
+    });
+
+    const instance = setup.instance;
+    const phaseId = await getFirstPhaseId(instance.instance.id);
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    await expect(
+      caller.decision.updateDecisionInstance({
+        instanceId: instance.instance.id,
+        phases: [
+          {
+            phaseId,
+            rules: { voting: { submit: true, voterBudget: 5000 } },
+          },
+        ],
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
+  });
 });
 
 describeDecisionAccessTierGating('updateDecisionInstance', {

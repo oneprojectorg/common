@@ -7,6 +7,11 @@ import { decisionsVoteProposals } from './decisions_vote_proposals.sql';
 import { processInstances } from './processInstances.sql';
 import { profiles } from './profiles.sql';
 
+// Mirrors `AmountUnit`; `services/db` can't import `@op/common`.
+type BallotAmountUnit =
+  | { kind: 'currency'; code: string }
+  | { kind: 'custom'; label: string };
+
 export interface VoteData extends Record<string, unknown> {
   schemaVersion: string;
   schemaType: string;
@@ -16,6 +21,17 @@ export interface VoteData extends Record<string, unknown> {
     [key: string]: unknown;
   };
   validationSignature: string;
+
+  voterBudget?: number;
+  /** Template field each selection was charged from, in `costUnit`. */
+  voterCostField?: string;
+  costUnit?: BallotAmountUnit;
+  /** `cost` is null when unpriceable or when no cap applied. */
+  selections?: Array<{
+    proposalId: string;
+    cost: number | null;
+  }>;
+  totalCost?: number;
 }
 
 export const decisionsVoteSubmissions = pgTable(

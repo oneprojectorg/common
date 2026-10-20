@@ -15,6 +15,7 @@ import { permission } from 'access-zones';
 import { CommonError, NotFoundError, UnauthorizedError } from '../../utils';
 import { assertProfileAccess, assertProfileAdmin } from '../assert';
 import { generateUniqueProfileSlug } from '../profile/utils';
+import { assertVoterCostField } from './assertVoterCostField';
 import { createTransitionsForProcess } from './createTransitionsForProcess';
 import { ensureProposalTaxonomyTerms } from './proposalTaxonomy';
 import { schemaValidator } from './schemaValidator';
@@ -269,6 +270,13 @@ export const updateDecisionInstance = async ({
         ...updatedInstanceData,
         rubricTemplate,
       } as DecisionInstanceData;
+    }
+
+    if (hasPhaseUpdates || hasProposalTemplateUpdate) {
+      await assertVoterCostField({
+        instanceData: updatedInstanceData,
+        processId: existingInstance.processId,
+      });
     }
 
     updateData.instanceData = updatedInstanceData;

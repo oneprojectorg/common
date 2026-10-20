@@ -1,4 +1,11 @@
 import {
+  type AmountUnit,
+  formatUnitAmount,
+  isAtMost,
+  sumAmounts,
+} from './fieldUnit';
+import type { ProposalCosts } from './getProposalCosts';
+import {
   DecisionProcessSchema,
   DecisionProcessSchemaBase,
   ProposalConfig,
@@ -149,6 +156,41 @@ export function extractSupportedProperties(
   );
 
   return [...baseProperties, ...additionalProperties];
+}
+
+// Missing or unpriceable costs charge nothing so the proposal stays votable.
+export function validateVoteBudget(
+  selectedProposalIds: string[],
+  cap:
+    | { voterBudget: number; costs: ProposalCosts; unit: AmountUnit }
+    | undefined,
+): {
+  isValid: boolean;
+  errors: string[];
+  totalCost: number;
+} {
+  if (cap === undefined) {
+    return { isValid: true, errors: [], totalCost: 0 };
+  }
+
+  const totalCost = sumAmounts(
+    selectedProposalIds.map((id) => cap.costs.get(id) ?? 0),
+  );
+
+  if (isAtMost({ amount: totalCost, limit: cap.voterBudget })) {
+    return { isValid: true, errors: [], totalCost };
+  }
+
+  const total = formatUnitAmount({ amount: totalCost, unit: cap.unit });
+  const budget = formatUnitAmount({ amount: cap.voterBudget, unit: cap.unit });
+
+  return {
+    isValid: false,
+    errors: [
+      `Selected proposals total ${total}, exceeding the voter budget of ${budget}.`,
+    ],
+    totalCost,
+  };
 }
 
 export function validateVoteSelection(

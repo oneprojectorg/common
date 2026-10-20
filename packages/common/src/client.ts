@@ -17,6 +17,8 @@ export {
   areCommentsAllowed,
   canEditProposals,
   getPhaseReviewSettings,
+  getVoterCostField,
+  getVoterBudget,
   hasVotingPhase,
   isReviewPhase,
   isVotingPhase,
@@ -204,6 +206,7 @@ export {
 export {
   type AmountUnit,
   amountUnitSchema,
+  formatUnitAmount,
   getFieldUnit,
   getUnitLabel,
   isAtMost,
