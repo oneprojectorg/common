@@ -32,7 +32,6 @@ Key exports (`.`, `client` -> `TRPCProvider.tsx`, `vanilla`) are defined in `pac
 - **`@tanstack/react-query`**: Used on the client-side (`TRPCProvider.tsx`) for caching, state management, and interacting with tRPC procedures via `@trpc/react-query`.
 - **`@tanstack/react-query-persist-client`**: Used to persist React Query cache (e.g., to local storage).
 - **SuperJSON**: Handles serialization/deserialization of complex data types (like Dates) over the network.
-- **AI SDK (`ai`, `@ai-sdk/anthropic`)**: Integrates with Anthropic models, exposed via the `llm` tRPC router (`src/routers/llm/chat.ts`).
 - **`server-only`**: Ensures certain code (like `supabase/server.ts`) only runs on the server.
 
 ## Relationship to Other Workspaces

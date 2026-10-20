@@ -25,7 +25,6 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@ai-sdk/anthropic": "^1.2.1",
     "@op/analytics": "workspace:*",
     "@op/cache": "workspace:*",
     "@op/collab": "workspace:*",
@@ -48,7 +47,6 @@
     "@types/sanitize-s3-objectkey": "^0.0.0",
     "@vercel/functions": "^2.1.0",
     "access-zones": "catalog:",
-    "ai": "^4.2.2",
     "cookie": "^1.0.2",
     "deepl-node": "^1.24.0",
     "drizzle-orm": "catalog:",
