@@ -15,6 +15,7 @@ import { permission } from 'access-zones';
 import { CommonError, NotFoundError, UnauthorizedError } from '../../utils';
 import { assertProfileAccess, assertProfileAdmin } from '../assert';
 import { generateUniqueProfileSlug } from '../profile/utils';
+import { assertCanStewardToProfile } from './assertCanStewardToProfile';
 import { createTransitionsForProcess } from './createTransitionsForProcess';
 import { ensureProposalTaxonomyTerms } from './proposalTaxonomy';
 import { schemaValidator } from './schemaValidator';
@@ -137,6 +138,12 @@ export const updateDecisionInstance = async ({
     await assertProfileAdmin({
       user,
       profileId: existingInstance.ownerProfileId,
+    });
+
+    await assertCanStewardToProfile({
+      user,
+      stewardProfileId,
+      ownerProfileId: existingInstance.ownerProfileId,
     });
 
     updateData.stewardProfileId = stewardProfileId;
