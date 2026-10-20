@@ -376,6 +376,14 @@ const JoinAccountModalContent = ({ close }: { close: () => void }) => {
             }}
             onResend={resendCode}
             onBack={goBack}
+            onSwitchChannel={
+              smsEnabled
+                ? () => {
+                    goBack();
+                    switchChannel(isPhone ? 'email' : 'phone');
+                  }
+                : undefined
+            }
           />
         ) : (
           <>

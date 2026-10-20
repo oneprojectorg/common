@@ -227,3 +227,58 @@ test.describe('Join by phone (public decision)', () => {
     await expect(page.getByText('Failed to create proposal')).not.toBeVisible();
   });
 });
+
+test.describe('Join by phone (public decision) — retreat to email', () => {
+  test.use({ storageState: { cookies: [], origins: [] } });
+
+  const admin = createSupabaseAdminClient();
+
+  test('given the texted code step in the Join modal, when the person picks email instead, then the email field is offered empty', async ({
+    page,
+  }) => {
+    const phone = '+15005550010';
+    const org = await createOrganization({
+      testId: `phone-retreat-${randomUUID().slice(0, 6)}`,
+      supabaseAdmin: admin,
+      users: { admin: 1, member: 0 },
+    });
+    const template = await getSeededTemplate();
+    const instance = await createDecisionInstance({
+      processId: template.id,
+      ownerProfileId: org.organizationProfile.id,
+      authUserId: org.adminUser.authUserId,
+      email: org.adminUser.email,
+      schema: template.processSchema,
+    });
+    await makeDecisionPublic({ profileId: instance.profileId });
+    await releaseTestPhoneNumber(phone);
+
+    await page.goto(`/en/decisions/${instance.slug}?join=1`, {
+      waitUntil: 'networkidle',
+    });
+
+    const dialog = page
+      .getByRole('dialog')
+      .and(page.locator(':not([data-slot="toast"])'));
+    await dialog.getByRole('tab', { name: 'Phone number' }).click();
+    await dialog.getByRole('textbox', { name: 'Phone number' }).fill(phone);
+    await dialog.getByRole('button', { name: 'Text me a code' }).click();
+
+    await expect(
+      page.getByRole('heading', { name: 'Check your texts' }),
+    ).toBeVisible({ timeout: 20000 });
+
+    await dialog.getByRole('button', { name: 'Use email instead' }).click();
+
+    await expect(dialog.getByRole('tab', { name: 'Email' })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
+    await expect(dialog.getByRole('textbox', { name: 'Email' })).toHaveValue(
+      '',
+    );
+    await expect(
+      dialog.getByRole('button', { name: 'Email me a code' }),
+    ).toBeVisible();
+  });
+});

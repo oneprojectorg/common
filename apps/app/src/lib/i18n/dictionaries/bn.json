@@ -159,6 +159,8 @@
     "resendCodeAction": "কোড আবার পাঠান",
     "changePhoneAction": "একটি ভিন্ন ফোন নম্বর ব্যবহার করুন",
     "useEmailAction": "একটি ভিন্ন ইমেইল ঠিকানা ব্যবহার করুন",
+    "useEmailInsteadAction": "পরিবর্তে ইমেইল ব্যবহার করুন",
+    "usePhoneInsteadAction": "পরিবর্তে ফোন ব্যবহার করুন",
     "phoneNumberLabel": "ফোন নম্বর",
     "errorTitle": "উফ!",
     "waitlistTitle": "অপেক্ষায় থাকুন!",
