@@ -2,13 +2,13 @@
 
 import { cn } from '@op/sense/lib/utils';
 import { type ReactNode, useEffect, useRef, useState } from 'react';
-import { LuCheck } from 'react-icons/lu';
+import { LuCheck, LuTriangleAlert } from 'react-icons/lu';
 
 export interface Confirmation {
   // bumped on every new confirmation so a repeat restarts the timer
   id: number;
   message: ReactNode;
-  tone: 'success' | 'muted';
+  tone: 'success' | 'muted' | 'error';
 }
 
 const VISIBLE_MS = 5000;
@@ -56,16 +56,20 @@ export const InlineConfirmation = ({
       aria-live="polite"
       className={cn(
         'flex items-start gap-2 text-sm transition-opacity duration-300 motion-reduce:transition-none',
-        confirmation?.tone === 'muted'
-          ? 'text-muted-foreground'
-          : 'text-success',
+        confirmation?.tone === 'muted' && 'text-muted-foreground',
+        confirmation?.tone === 'success' && 'text-success',
+        confirmation?.tone === 'error' && 'text-destructive',
         confirmation && leavingId === confirmation.id && 'opacity-0',
         className,
       )}
     >
       {confirmation ? (
         <>
-          <LuCheck aria-hidden className="mt-0.5 size-4 shrink-0" />
+          {confirmation.tone === 'error' ? (
+            <LuTriangleAlert aria-hidden className="mt-0.5 size-4 shrink-0" />
+          ) : (
+            <LuCheck aria-hidden className="mt-0.5 size-4 shrink-0" />
+          )}
           <span>{confirmation.message}</span>
         </>
       ) : null}
