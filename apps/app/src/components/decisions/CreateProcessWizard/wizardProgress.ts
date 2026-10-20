@@ -10,6 +10,7 @@ import {
   type ScreenId,
   type WizardAnswers,
 } from './flow';
+import type { WizardFlags } from './types';
 
 export interface WizardProgress {
   screen: ScreenId;
@@ -58,14 +59,21 @@ const progressSchema: z.ZodType<WizardProgress> = z.object({
  * `undefined` until mounted, so the server render and hydration agree. Leaving
  * the page in-app discards the answers; a reload never unmounts, so it keeps them.
  */
-export function useSavedWizardProgress(): WizardProgress | null | undefined {
+export function useSavedWizardProgress(
+  flags: WizardFlags,
+): WizardProgress | null | undefined {
   const [saved, setSaved] = useState<WizardProgress | null>();
   // Survives Strict Mode's remount, whose cleanup has already cleared storage.
   const restored = useRef<WizardProgress | null | undefined>(undefined);
+  // The route resolves the flags once; reading them through a ref keeps the
+  // effect from re-running, which would clear what it just restored.
+  const flagsRef = useRef(flags);
 
   useEffect(() => {
     const progress =
-      restored.current === undefined ? readWizardProgress() : restored.current;
+      restored.current === undefined
+        ? readWizardProgress(flagsRef.current)
+        : restored.current;
     restored.current = progress;
     setSaved(progress);
 
@@ -91,7 +99,7 @@ export function clearWizardProgress() {
   }
 }
 
-export function readWizardProgress(): WizardProgress | null {
+export function readWizardProgress(flags: WizardFlags): WizardProgress | null {
   try {
     const raw = sessionStorage.getItem(STORAGE_KEY);
 
@@ -101,7 +109,7 @@ export function readWizardProgress(): WizardProgress | null {
 
     const parsed = progressSchema.safeParse(JSON.parse(raw));
 
-    return parsed.success ? resumableProgress(parsed.data) : null;
+    return parsed.success ? resumableProgress(parsed.data, flags) : null;
   } catch (error) {
     logger.warn('Failed to read create-process wizard progress', { error });
     return null;
@@ -112,12 +120,15 @@ export function readWizardProgress(): WizardProgress | null {
  * Pulls saved progress back to the first unanswered question, so answers from
  * an older wizard can't land the creator past one.
  */
-export function resumableProgress(saved: WizardProgress): WizardProgress {
-  const answers = reconcileAnswers(saved.answers);
-  const screens = screensFor(answers);
+export function resumableProgress(
+  saved: WizardProgress,
+  flags: WizardFlags,
+): WizardProgress {
+  const answers = reconcileAnswers(saved.answers, flags);
+  const screens = screensFor(answers, flags);
   const target = screens.includes(saved.screen)
     ? saved.screen
-    : (previousScreen(saved.screen, answers) ?? 'intro');
+    : (previousScreen(saved.screen, answers, flags) ?? 'intro');
   const screen =
     screens.find(
       (candidate) =>

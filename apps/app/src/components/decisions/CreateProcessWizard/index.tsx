@@ -40,6 +40,7 @@ import type {
   ProcessPiece,
   ProcessType,
   ShapeKey,
+  WizardFlags,
 } from './types';
 import type { WizardProgress } from './wizardProgress';
 
@@ -63,12 +64,14 @@ interface StepBodyProps {
 }
 
 export function CreateProcessWizard({
+  flags,
   initial,
   onProgressChange,
   onExit,
   onComplete,
   isSubmitting = false,
 }: {
+  flags: WizardFlags;
   initial?: WizardProgress | null;
   onProgressChange?: (progress: WizardProgress) => void;
   onExit: () => void;
@@ -91,7 +94,7 @@ export function CreateProcessWizard({
 
   const answer = (patch: Partial<WizardAnswers>) =>
     setAnswers((previous) =>
-      reconcileAnswers({ ...previous, ...patch }, previous),
+      reconcileAnswers({ ...previous, ...patch }, flags, previous),
     );
 
   const step = stepOf(screen);
@@ -124,7 +127,7 @@ export function CreateProcessWizard({
       return;
     }
 
-    const next = nextScreen(screen, answers);
+    const next = nextScreen(screen, answers, flags);
 
     if (!next) {
       if (type && shape) {
@@ -143,7 +146,7 @@ export function CreateProcessWizard({
   };
 
   const back = () => {
-    setScreen(previousScreen(screen, answers) ?? screen);
+    setScreen(previousScreen(screen, answers, flags) ?? screen);
   };
 
   const isTypedStep = step === TOTAL_STEPS;
@@ -158,7 +161,7 @@ export function CreateProcessWizard({
     <div className="flex h-dvh flex-col bg-muted">
       {step > 1 ? (
         <Progress
-          value={progressPercent(screen, type)}
+          value={progressPercent(screen, type, flags)}
           aria-label={t('stepProgress', {
             current: step,
             total: TOTAL_STEPS,
@@ -239,6 +242,7 @@ export function CreateProcessWizard({
               setAnswers((previous) =>
                 reconcileAnswers(
                   { ...previous, other: { ...previous.other, ...patch } },
+                  flags,
                   previous,
                 ),
               )
