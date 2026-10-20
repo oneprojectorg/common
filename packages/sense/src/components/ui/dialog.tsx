@@ -80,8 +80,6 @@ function DialogContent({
           // No mobile `translate`: it would become a containing block and break
           // the `fixed` close button below.
           'fixed inset-0 z-50 flex w-full flex-col overflow-y-auto bg-popover text-popover-foreground duration-100 outline-none data-closed:animate-out data-closed:fade-out-0 data-open:animate-in data-open:fade-in-0 sm:inset-auto sm:top-1/2 sm:left-1/2 sm:max-h-dialog sm:max-w-sm sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-xl sm:border sm:data-closed:zoom-out-95 sm:data-open:zoom-in-95',
-          // Base UI renders no backdrop for a nested dialog, so dim this one while it is open
-          'data-nested-dialog-open:after:pointer-events-none data-nested-dialog-open:after:absolute data-nested-dialog-open:after:inset-0 data-nested-dialog-open:after:z-30 data-nested-dialog-open:after:bg-overlay/15',
           className,
         )}
         {...props}
