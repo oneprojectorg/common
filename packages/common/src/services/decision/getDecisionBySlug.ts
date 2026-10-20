@@ -1,10 +1,10 @@
 import { cache } from '@op/cache';
 import { db } from '@op/db/client';
 import { EntityType } from '@op/db/schema';
-import { User } from '@op/supabase/lib';
 import { permission } from 'access-zones';
 
 import { UnauthorizedError } from '../../utils';
+import type { AccessUser } from '../access/cacheKeys';
 import { assertProfileAccess } from '../assert';
 
 const decisionProfileQueryConfig = {
@@ -68,7 +68,7 @@ export const getDecisionBySlug = async ({
   user,
   slug,
 }: {
-  user: User | undefined;
+  user: AccessUser | undefined;
   slug: string;
 }): Promise<DecisionProfileItem> => {
   // The DB load is viewer-independent, so it's cached; the access check below
