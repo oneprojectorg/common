@@ -12,7 +12,6 @@ import {
   accessTierGatingCell,
   describeDecisionAccessTierGating,
   expectFailsAccessTierGate,
-  expectPassesAccessTierGate,
 } from '../../../test/helpers/gating/decision';
 import { createAuthenticatedCaller } from '../../../test/supabase-utils';
 
@@ -265,25 +264,20 @@ describeDecisionAccessTierGating('createInstance', {
   ),
 
   userJwtNonPublic: accessTierGatingCell(
-    'admits user-JWT caller past the tier gate',
+    'rejects out-of-network user-JWT caller',
     async ({ task, onTestFinished, callers }) => {
       const testData = new TestDecisionsDataManager(task.id, onTestFinished);
       await testData.createDecisionSetup({ instanceCount: 0 });
 
       const caller = await callers.userJwt();
 
-      const created = caller.decision.createInstance({
-        ...grantDraft,
-        name: `user ${task.id}`,
-      });
-      try {
-        await expectPassesAccessTierGate(created);
-      } finally {
-        const profile = await created.catch(() => null);
-        if (profile) {
-          testData.trackProfileForCleanup(profile.id);
-        }
-      }
+      await expectFailsAccessTierGate(
+        caller.decision.createInstance({
+          ...grantDraft,
+          name: `user ${task.id}`,
+        }),
+        'user',
+      );
     },
   ),
 
