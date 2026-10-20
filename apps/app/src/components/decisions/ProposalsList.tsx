@@ -534,6 +534,7 @@ const ProposalsListContent = ({
                 search: queryParams.search,
                 submittedByProfileId: queryParams.submittedByProfileId,
                 votedByProfileId: queryParams.votedByProfileId,
+                likedByCurrentUser: queryParams.likedByCurrentUser,
                 status: queryParams.status,
                 notAdvanced: queryParams.notAdvanced,
                 excludeAssignedForReview: queryParams.excludeAssignedForReview,
