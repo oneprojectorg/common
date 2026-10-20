@@ -5,6 +5,8 @@
  * the API-encoder shape both pass. Client-safe: no server-only imports.
  */
 
+export const MAX_PHASES_PER_DECISION = 30;
+
 interface PhaseOrderInstanceData<Phase extends { phaseId: string }> {
   phases?: readonly Phase[];
 }

@@ -178,6 +178,17 @@ export {
 } from './services/decision/templateLocation';
 export { templateCollectsBudget } from './services/decision/templateBudget';
 export {
+  PROCESS_NAME_MAX_LENGTH,
+  PROCESS_NAME_MIN_LENGTH,
+  PHASE_KINDS,
+  PROCESS_TYPES,
+  type CreateInstanceInput,
+  type InstancePhaseInput,
+  type PhaseKind,
+  type ProcessType,
+  createInstanceSchema,
+} from './services/decision/schemas/createInstance';
+export {
   RESULT_NOTIFICATION_MESSAGE_MAX_LENGTH,
   type ResultNotificationMessages,
   resultNotificationMessagesSchema,
