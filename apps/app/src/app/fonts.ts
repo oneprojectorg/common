@@ -1,4 +1,4 @@
-import { Noto_Sans_Arabic, Roboto, Roboto_Serif } from 'next/font/google';
+import { Readex_Pro, Roboto, Roboto_Serif } from 'next/font/google';
 
 // Declares the @font-face rules only; the stack is composed by face name in @op/styles.
 // Exported because next/font needs a const binding and noUnusedLocals rejects an unread one.
@@ -17,7 +17,7 @@ export const robotoSerif = Roboto_Serif({
   display: 'swap',
 });
 
-export const notoSansArabic = Noto_Sans_Arabic({
+export const readexPro = Readex_Pro({
   subsets: ['arabic'],
   weight: 'variable',
   // Not preloaded so Latin-only pages never download it; Arabic pages swap in.

@@ -162,12 +162,12 @@
   --font-accent:
     var(--font-accent), ui-sans-serif, system-ui, sans-serif,
     'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
-  /* Order is load-bearing: Roboto before Noto (Noto ships Latin), Noto before the next/font '* Fallback' faces (local Arial has Arabic glyphs). */
+  /* Order is load-bearing: Roboto before Readex (Readex ships Latin), Readex before the next/font '* Fallback' faces (local Arial has Arabic glyphs). */
   --font-serif:
-    'Roboto Serif', 'Noto Sans Arabic', 'Roboto Serif Fallback', ui-serif,
+    'Roboto Serif', 'Readex Pro', 'Roboto Serif Fallback', ui-serif,
     Georgia, Cambria, 'Times New Roman', Times, serif;
   --font-sans:
-    'Roboto', 'Noto Sans Arabic', 'Roboto Fallback', ui-sans-serif, system-ui,
+    'Roboto', 'Readex Pro', 'Roboto Fallback', ui-sans-serif, system-ui,
     sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
     'Noto Color Emoji';
   /* No web font for mono — the app relies on system monospace fonts */
