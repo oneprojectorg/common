@@ -18,10 +18,24 @@ describe('validateChannelValue', () => {
     );
   });
 
-  it('rejects the email already on file, ignoring case', () => {
+  it('rejects the email already on file, ignoring case and spacing', () => {
     expect(
       validateChannelValue('email', 'IZA@oneproject.org', 'iza@oneproject.org'),
     ).toBe('unchanged');
+    expect(
+      validateChannelValue(
+        'email',
+        ' iza@oneproject.org ',
+        'iza@oneproject.org',
+      ),
+    ).toBe('unchanged');
+  });
+
+  it('accepts any valid value when nothing is on file', () => {
+    expect(
+      validateChannelValue('email', 'iza@oneproject.org', null),
+    ).toBeNull();
+    expect(validateChannelValue('phone', '+1 555 555 5555', null)).toBeNull();
   });
 
   it('accepts a new email', () => {
@@ -68,6 +82,11 @@ describe('formatChannelValue', () => {
     expect(formatChannelValue('phone', '1 (555) 555 5555')).toBe(
       '+1-555-555-5555',
     );
+    expect(formatChannelValue('phone', '5555555555')).toBe('+1-555-555-5555');
+  });
+
+  it('leaves a +1 number with the wrong length as typed', () => {
+    expect(formatChannelValue('phone', ' +1 555 5555 ')).toBe('+1 555 5555');
   });
 
   it('leaves other numbers as typed', () => {
