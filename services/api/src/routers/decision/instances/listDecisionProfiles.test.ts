@@ -312,6 +312,76 @@ describe.concurrent('listDecisionProfiles', () => {
     expect(result.items[0]?.processInstance.participantCount).toBe(1);
   });
 
+  it('should count proposals and distinct participants per instance', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 2,
+      grantAccess: true,
+    });
+
+    const firstInstance = setup.instances[0];
+    const secondInstance = setup.instances[1];
+
+    if (!firstInstance || !secondInstance) {
+      throw new Error('Expected two instances');
+    }
+
+    const otherUser = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [firstInstance.profileId],
+    });
+
+    await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: firstInstance.instance.id,
+      proposalData: { title: 'First proposal' },
+      status: ProposalStatus.SUBMITTED,
+    });
+
+    await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: firstInstance.instance.id,
+      proposalData: { title: 'Second proposal' },
+      status: ProposalStatus.SUBMITTED,
+    });
+
+    await testData.createProposal({
+      userEmail: otherUser.email,
+      processInstanceId: firstInstance.instance.id,
+      proposalData: { title: 'Other user proposal' },
+      status: ProposalStatus.SUBMITTED,
+    });
+
+    await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: secondInstance.instance.id,
+      proposalData: { title: 'Second instance proposal' },
+      status: ProposalStatus.SUBMITTED,
+    });
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const result = await caller.decision.listDecisionProfiles({
+      limit: 10,
+    });
+
+    const firstItem = result.items.find(
+      (item) => item.processInstance.id === firstInstance.instance.id,
+    );
+    const secondItem = result.items.find(
+      (item) => item.processInstance.id === secondInstance.instance.id,
+    );
+
+    expect(firstItem?.processInstance.proposalCount).toBe(3);
+    expect(firstItem?.processInstance.participantCount).toBe(2);
+    expect(secondItem?.processInstance.proposalCount).toBe(1);
+    expect(secondItem?.processInstance.participantCount).toBe(1);
+  });
+
   it('should return empty list when no decision profiles exist', async ({
     task,
     onTestFinished,
