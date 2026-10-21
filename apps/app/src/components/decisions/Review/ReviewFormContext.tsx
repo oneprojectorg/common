@@ -136,11 +136,8 @@ function ReviewFormProviderInner({
   children: ReactNode;
 }) {
   const t = useTranslations('decisions.review');
-  const tDecisions = useTranslations('decisions');
   const router = useRouter();
   const posthog = usePostHog();
-  const utils = trpc.useUtils();
-  const { user } = useUser();
 
   const [reviewAssignment] = trpc.decision.getReviewAssignment.useSuspenseQuery(
     { assignmentId },
@@ -243,11 +240,6 @@ function ReviewFormProviderInner({
     },
   });
 
-  const submitCustomForm = trpc.customForm.submit.useMutation();
-  const [reviewPhaseForm, setReviewPhaseForm] = useState<CustomFormDTO | null>(
-    null,
-  );
-
   const scheduleAutosave = useAutosaveDraft({
     assignmentId,
     answers: values,
@@ -319,7 +311,6 @@ function ReviewFormProviderInner({
   const updateMutate = updateReview.mutateAsync;
   const requestRevisionMutate = requestRevisionMutation.mutate;
   const cancelRevisionMutate = cancelRevisionMutation.mutate;
-  const submitCustomFormMutate = submitCustomForm.mutateAsync;
 
   // Rejections are swallowed: the mutation's onError owns the message, and
   // callers only await settlement.
@@ -331,84 +322,12 @@ function ReviewFormProviderInner({
     }).catch(() => {});
   }, [assignmentId, values, rationales, overallComment, submitMutate]);
 
-  // A custom form on the review phase gates the submit, as a submission-phase
-  // form gates proposal submission.
-  const handleSubmit = useCallback(async () => {
-    let form: CustomFormDTO | null = null;
-    try {
-      const instance = await utils.decision.getInstance.fetch({
-        instanceId: assignment.processInstanceId,
-      });
-      if (instance.profileId) {
-        form = await utils.customForm.getForProfile.fetch({
-          profileId: instance.profileId,
-          phaseId: assignment.phaseId,
-          initialPhaseId: instance.instanceData?.phases?.[0]?.phaseId,
-        });
-      }
-    } catch (error) {
-      logger.error('Failed to load the review phase form', {
-        error,
-        context: 'ReviewFormContext.handleSubmit',
-      });
-      toast.error(t('submitReviewError'));
-      return;
-    }
-
-    if (form) {
-      setReviewPhaseForm(form);
-      return;
-    }
-
-    await submitRubric();
-  }, [
-    utils,
-    assignment.processInstanceId,
-    assignment.phaseId,
-    t,
-    submitRubric,
-  ]);
-
-  const handleReviewPhaseFormSubmit = useCallback(
-    async (formValues: CustomFormValues) => {
-      if (!reviewPhaseForm || !user?.profileId) {
-        return;
-      }
-      try {
-        await submitCustomFormMutate({
-          customFormId: reviewPhaseForm.id,
-          profileId: user.profileId,
-          data: formValues,
-        });
-      } catch (error) {
-        logger.error('Failed to submit the review phase form', {
-          error,
-          context: 'ReviewFormContext.handleReviewPhaseFormSubmit',
-        });
-        toast.error(tDecisions('proposals.submitFormError'));
-        return;
-      }
-      setReviewPhaseForm(null);
-      await submitRubric();
-    },
-    [
-      reviewPhaseForm,
-      user?.profileId,
-      submitCustomFormMutate,
-      tDecisions,
-      submitRubric,
-    ],
-  );
-
-  // Dismissing the form cancels the submit; the review stays a draft.
-  const handleReviewPhaseFormOpenChange = useCallback(
-    (open: boolean) => {
-      if (!open && !submitCustomForm.isPending) {
-        setReviewPhaseForm(null);
-      }
-    },
-    [submitCustomForm.isPending],
-  );
+  const { handleSubmit, reviewPhaseFormModal } = useReviewPhaseForm({
+    processInstanceId: assignment.processInstanceId,
+    phaseId: assignment.phaseId,
+    submitLabel: t('submitReviewAction'),
+    onSubmit: submitRubric,
+  });
 
   const startEditing = useCallback(() => {
     setIsEditRequested(true);
@@ -524,18 +443,114 @@ function ReviewFormProviderInner({
   return (
     <ReviewFormContext.Provider value={state}>
       {children}
-      {reviewPhaseForm && (
-        <CustomFormModal
-          isOpen
-          schema={reviewPhaseForm.schema}
-          isSubmitting={submitCustomForm.isPending}
-          onSubmit={handleReviewPhaseFormSubmit}
-          onOpenChange={handleReviewPhaseFormOpenChange}
-          submitLabel={t('submitReviewAction')}
-        />
-      )}
+      {reviewPhaseFormModal}
     </ReviewFormContext.Provider>
   );
+}
+
+/**
+ * Gates a review submit on the custom form attached to the review phase, as a
+ * submission-phase form gates proposal submission. With no form owed,
+ * `handleSubmit` calls `onSubmit` directly.
+ */
+function useReviewPhaseForm({
+  processInstanceId,
+  phaseId,
+  submitLabel,
+  onSubmit,
+}: {
+  processInstanceId: string;
+  phaseId: string;
+  submitLabel: string;
+  onSubmit: () => Promise<void>;
+}) {
+  const t = useTranslations('decisions');
+  const utils = trpc.useUtils();
+  const { user } = useUser();
+  const submitCustomForm = trpc.customForm.submit.useMutation();
+  const [form, setForm] = useState<CustomFormDTO | null>(null);
+
+  const submitCustomFormMutate = submitCustomForm.mutateAsync;
+  const isSubmittingForm = submitCustomForm.isPending;
+  const reviewerProfileId = user?.profileId;
+
+  const handleSubmit = useCallback(async () => {
+    let owedForm: CustomFormDTO | null = null;
+    try {
+      const instance = await utils.decision.getInstance.fetch({
+        instanceId: processInstanceId,
+      });
+      if (instance.profileId) {
+        owedForm = await utils.customForm.getForProfile.fetch({
+          profileId: instance.profileId,
+          phaseId,
+          initialPhaseId: instance.instanceData?.phases?.[0]?.phaseId,
+        });
+      }
+    } catch (error) {
+      logger.error('Failed to load the review phase form', {
+        error,
+        context: 'useReviewPhaseForm.handleSubmit',
+      });
+      toast.error(t('review.submitReviewError'));
+      return;
+    }
+
+    if (owedForm) {
+      setForm(owedForm);
+      return;
+    }
+
+    await onSubmit();
+  }, [utils, processInstanceId, phaseId, t, onSubmit]);
+
+  const handleFormSubmit = useCallback(
+    async (values: CustomFormValues) => {
+      if (!form || !reviewerProfileId) {
+        return;
+      }
+      try {
+        await submitCustomFormMutate({
+          customFormId: form.id,
+          profileId: reviewerProfileId,
+          data: values,
+        });
+      } catch (error) {
+        logger.error('Failed to submit the review phase form', {
+          error,
+          context: 'useReviewPhaseForm.handleFormSubmit',
+        });
+        toast.error(t('proposals.submitFormError'));
+        return;
+      }
+      setForm(null);
+      await onSubmit();
+    },
+    [form, reviewerProfileId, submitCustomFormMutate, t, onSubmit],
+  );
+
+  // Dismissing the form cancels the submit; the review stays a draft.
+  const handleOpenChange = useCallback(
+    (open: boolean) => {
+      if (!open && !isSubmittingForm) {
+        setForm(null);
+      }
+    },
+    [isSubmittingForm],
+  );
+
+  const reviewPhaseFormModal = form ? (
+    <CustomFormModal
+      isOpen
+      schema={form.schema}
+      isSubmitting={isSubmittingForm}
+      onSubmit={handleFormSubmit}
+      onOpenChange={handleOpenChange}
+      submitLabel={submitLabel}
+    />
+  ) : null;
+
+  return { handleSubmit, reviewPhaseFormModal };
 }
 
 function useAutosaveDraft({
