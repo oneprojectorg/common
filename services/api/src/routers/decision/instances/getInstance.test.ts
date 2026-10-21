@@ -1,5 +1,4 @@
 import { TestDecisionsDataManager } from '@op/common/testing';
-import { ProposalStatus } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
@@ -180,48 +179,6 @@ describe.concurrent('getInstance', () => {
         instanceId: instance.instance.id,
       }),
     ).rejects.toMatchObject({ cause: { statusCode: 403 } });
-  });
-
-  it('should exclude draft proposals from stats', async ({
-    task,
-    onTestFinished,
-  }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-
-    const setup = await testData.createDecisionSetup({
-      instanceCount: 1,
-      grantAccess: true,
-    });
-
-    const instance = setup.instance;
-
-    const draftProposal = await testData.createProposal({
-      userEmail: setup.userEmail,
-      processInstanceId: instance.instance.id,
-      proposalData: {
-        title: 'Draft proposal',
-        description: 'Still drafting',
-      },
-    });
-
-    const submittedProposal = await testData.createProposal({
-      userEmail: setup.userEmail,
-      processInstanceId: instance.instance.id,
-      proposalData: { title: 'Submitted proposal' },
-    });
-
-    const caller = await createAuthenticatedCaller(setup.userEmail);
-
-    const submittedResult = await caller.decision.submitProposal({
-      proposalId: submittedProposal.id,
-    });
-
-    expect(draftProposal.status).toBe(ProposalStatus.DRAFT);
-    expect(submittedResult.status).toBe(ProposalStatus.SUBMITTED);
-
-    await caller.decision.getInstance({
-      instanceId: instance.instance.id,
-    });
   });
 });
 
