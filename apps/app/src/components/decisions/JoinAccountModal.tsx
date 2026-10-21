@@ -236,7 +236,11 @@ const JoinAccountModalContent = ({ close }: { close: () => void }) => {
       setOtpSent(true);
       setIsSubmitting(false);
     } catch {
-      setContactError(t("That didn't work"));
+      setContactError(
+        isPhone
+          ? t('onboarding.phoneCodeNotSentError')
+          : t('onboarding.emailCodeNotSentError'),
+      );
       setIsSubmitting(false);
     }
   };

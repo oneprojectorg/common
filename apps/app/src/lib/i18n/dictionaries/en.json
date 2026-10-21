@@ -139,7 +139,9 @@
     "invitedPersonSummary": "You've invited <bold>{email}</bold> to join <bold>{organization}</bold>.",
     "invitedPeopleSummary": "You've invited <bold>{count, plural, one {# person} other {# people}}</bold> to join <bold>{organization}</bold>.",
     "inviteMoreAction": "Invite more people",
-    "alreadySignedInError": "You're already signed in. Reload the page to continue."
+    "alreadySignedInError": "You're already signed in. Reload the page to continue.",
+    "emailCodeNotSentError": "We couldn't email a code to this address. Check the address and try again, or log in if you already have an account.",
+    "phoneCodeNotSentError": "We couldn't text a code to this number. Check the number and try again, or log in if you already have an account."
   },
   "auth": {
     "welcomeHeading": "Welcome to",

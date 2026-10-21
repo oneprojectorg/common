@@ -139,7 +139,9 @@
     "invitedPersonSummary": "Waxaad casuuntay <bold>{email}</bold> inuu ku biiro <bold>{organization}</bold>.",
     "invitedPeopleSummary": "Waxaad casuuntay <bold>{count, plural, one {# qof} other {# qof}}</bold> inay ku biiraan <bold>{organization}</bold>.",
     "inviteMoreAction": "Casuun dad kale",
-    "alreadySignedInError": "Horeyba waad u soo gashay. Dib u shub bogga si aad u sii wadato."
+    "alreadySignedInError": "Horeyba waad u soo gashay. Dib u shub bogga si aad u sii wadato.",
+    "emailCodeNotSentError": "Ma awoodin inaan kood u dirno ciwaankan iimaylka. Hubi ciwaanka oo mar kale isku day, ama soo gal haddii aad horey u lahayd akoon.",
+    "phoneCodeNotSentError": "Ma awoodin inaan kood u dirno lambarkan. Hubi lambarka oo mar kale isku day, ama soo gal haddii aad horey u lahayd akoon."
   },
   "auth": {
     "welcomeHeading": "Ku soo dhawoow",

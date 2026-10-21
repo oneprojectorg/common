@@ -64,7 +64,7 @@ export function getClaimEmailErrorMessage(
   if (result.code !== 'email_exists') {
     logger.error('claim: requestEmailCode failed', { code: result.code });
   }
-  return t("That didn't work");
+  return t('onboarding.emailCodeNotSentError');
 }
 
 /** The phone counterpart of {@link getClaimEmailErrorMessage}. */
@@ -80,7 +80,7 @@ export function getClaimPhoneErrorMessage(
   if (result.code !== 'phone_exists') {
     logger.error('claim: requestPhoneCode failed', { code: result.code });
   }
-  return t("That didn't work");
+  return t('onboarding.phoneCodeNotSentError');
 }
 
 /**

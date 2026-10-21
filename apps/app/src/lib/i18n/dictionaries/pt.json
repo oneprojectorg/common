@@ -139,7 +139,9 @@
     "invitedPersonSummary": "Você convidou <bold>{email}</bold> para participar de <bold>{organization}</bold>.",
     "invitedPeopleSummary": "Você convidou <bold>{count, plural, one {# pessoa} other {# pessoas}}</bold> para participar de <bold>{organization}</bold>.",
     "inviteMoreAction": "Convidar mais pessoas",
-    "alreadySignedInError": "Você já está com a sessão iniciada. Recarregue a página para continuar."
+    "alreadySignedInError": "Você já está com a sessão iniciada. Recarregue a página para continuar.",
+    "emailCodeNotSentError": "Não foi possível enviar um código para este e-mail. Verifique o endereço e tente novamente, ou faça login se já tiver uma conta.",
+    "phoneCodeNotSentError": "Não foi possível enviar um código por SMS para este número. Verifique o número e tente novamente, ou faça login se já tiver uma conta."
   },
   "auth": {
     "welcomeHeading": "Bem-vindo a",

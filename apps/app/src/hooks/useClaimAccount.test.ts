@@ -21,7 +21,8 @@ describe('getClaimPhoneErrorMessage', () => {
     );
 
     expect(taken).toBe(other);
-    expect(taken).not.toMatch(/already|exists|log in/i);
+    expect(taken).toBe(t('onboarding.phoneCodeNotSentError'));
+    expect(taken).not.toMatch(/exists/i);
   });
 
   it('given the session already belongs to a full account, then the message says to reload', () => {
@@ -43,6 +44,7 @@ describe('getClaimEmailErrorMessage', () => {
     );
 
     expect(taken).toBe(other);
-    expect(taken).not.toMatch(/already|exists|log in/i);
+    expect(taken).toBe(t('onboarding.emailCodeNotSentError'));
+    expect(taken).not.toMatch(/exists/i);
   });
 });

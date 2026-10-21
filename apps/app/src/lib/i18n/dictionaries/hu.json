@@ -139,7 +139,9 @@
     "invitedPersonSummary": "Meghívta a(z) <bold>{email}</bold> címet a(z) <bold>{organization}</bold> szervezetbe.",
     "invitedPeopleSummary": "<bold>{count, plural, one {# személyt} other {# személyt}}</bold> hívott meg a(z) <bold>{organization}</bold> szervezetbe.",
     "inviteMoreAction": "További személyek meghívása",
-    "alreadySignedInError": "Ön már be van jelentkezve. Töltse újra az oldalt a folytatáshoz."
+    "alreadySignedInError": "Ön már be van jelentkezve. Töltse újra az oldalt a folytatáshoz.",
+    "emailCodeNotSentError": "Nem tudtunk kódot küldeni erre az e-mail-címre. Ellenőrizze a címet és próbálja újra, vagy jelentkezzen be, ha már van fiókja.",
+    "phoneCodeNotSentError": "Nem tudtunk kódot küldeni SMS-ben erre a számra. Ellenőrizze a számot és próbálja újra, vagy jelentkezzen be, ha már van fiókja."
   },
   "auth": {
     "welcomeHeading": "Üdvözöljük itt:",
