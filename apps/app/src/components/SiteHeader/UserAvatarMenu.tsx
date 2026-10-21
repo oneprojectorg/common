@@ -605,7 +605,7 @@ export const UserAvatarMenu = ({ className }: { className?: string }) => {
           {/* A bottom sheet, deliberately opting out of the full-screen default. */}
           <DialogContent
             showCloseButton={false}
-            className="top-auto bottom-0 max-h-[85svh] rounded-t p-0"
+            className="top-auto bottom-0 h-auto max-h-[85svh] rounded-t p-0"
           >
             <DialogTitle className="sr-only">
               {t('shell.openMenuLabel')}

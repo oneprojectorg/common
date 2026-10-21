@@ -4,6 +4,7 @@ import { Dialog as DialogPrimitive } from '@base-ui/react/dialog';
 import * as React from 'react';
 import { LuX } from 'react-icons/lu';
 
+import { useVisualViewportFit } from '../../lib/useVisualViewportFit';
 import { cn } from '../../lib/utils';
 import { Confetti } from '../Confetti';
 import { Button } from './button';
@@ -43,7 +44,9 @@ function DialogOverlay({
 /**
  * Full-viewport sheet below `sm`, centred card above it. Prefix layout overrides
  * with `sm:` or they shrink the sheet, and give the body `flex-1 min-h-0` if you
- * pass `overflow-hidden`.
+ * pass `overflow-hidden`. The sheet is sized from the visual viewport so the
+ * iOS keyboard shrinks it instead of panning it off screen; an override that
+ * anchors to the bottom (`top-auto bottom-0`) also needs `h-auto`.
  */
 function DialogContent({
   className,
@@ -51,6 +54,7 @@ function DialogContent({
   showCloseButton = true,
   container,
   confetti = false,
+  ref,
   ...props
 }: DialogPrimitive.Popup.Props & {
   showCloseButton?: boolean;
@@ -62,6 +66,7 @@ function DialogContent({
    */
   confetti?: boolean;
 }) {
+  const popupRef = useVisualViewportFit(ref);
   return (
     <DialogPortal container={container}>
       <DialogOverlay>
@@ -75,11 +80,12 @@ function DialogContent({
         ) : null}
       </DialogOverlay>
       <DialogPrimitive.Popup
+        ref={popupRef}
         data-slot="dialog-content"
         className={cn(
           // No mobile `translate`: it would become a containing block and break
           // the `fixed` close button below.
-          'fixed inset-0 z-50 flex w-full flex-col overflow-y-auto bg-popover text-popover-foreground duration-100 outline-none data-closed:animate-out data-closed:fade-out-0 data-open:animate-in data-open:fade-in-0 sm:inset-auto sm:top-1/2 sm:left-1/2 sm:max-h-dialog sm:max-w-sm sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-xl sm:border sm:data-closed:zoom-out-95 sm:data-open:zoom-in-95',
+          'fixed inset-x-0 top-(--visual-viewport-top,0px) z-50 flex h-(--visual-viewport-height,100%) w-full flex-col overflow-y-auto overscroll-contain bg-popover text-popover-foreground duration-100 outline-none data-closed:animate-out data-closed:fade-out-0 data-open:animate-in data-open:fade-in-0 sm:inset-auto sm:top-1/2 sm:left-1/2 sm:h-auto sm:max-h-dialog sm:max-w-sm sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-xl sm:border sm:data-closed:zoom-out-95 sm:data-open:zoom-in-95',
           className,
         )}
         {...props}

@@ -243,6 +243,12 @@ published source lags its declared dependency versions. Reapply if you re-run
   resize grip on `textarea`) and keeps the behaviour, for a field that reads as
   the text around it (`EditableText`, the process overview). The counterpart of
   `Button`'s `bare`.
+- `dialog.tsx` — below `sm` the popup's `ref` goes through
+  `lib/useVisualViewportFit` and it is sized `top-(--visual-viewport-top,0px)
+  h-(--visual-viewport-height,100%)` instead of `inset-0`, with
+  `overscroll-contain`. iOS Safari overlays the keyboard and pans the page, so
+  a layout-viewport-sized sheet slid off the top of the screen instead of
+  scrolling its content; the `sm:` card is stock apart from `sm:h-auto`.
 - `textarea.tsx` — the `ref` goes through `lib/useFieldSizingFallback`, which
   sizes the box from `scrollHeight` where `field-sizing: content` is
   unsupported (Firefox) and only merges the ref elsewhere.
