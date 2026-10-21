@@ -201,6 +201,16 @@ export {
   isMoneyFieldSchema,
   resolveMoneyDisplayCurrency,
 } from './services/decision/rubric/money';
+export {
+  type AmountUnit,
+  amountUnitSchema,
+  getFieldUnit,
+  getUnitLabel,
+  isAtMost,
+  isSameUnit,
+  getFieldAmount,
+  sumAmounts,
+} from './services/decision/fieldUnit';
 export { assembleProposalData } from './services/decision/assembleProposalData';
 export { relaxLocationCategoryRequirement } from './services/decision/relaxLocationCategoryRequirement';
 export {
