@@ -323,7 +323,7 @@ function ReviewFormProviderInner({
   }, [assignmentId, values, rationales, overallComment, submitMutate]);
 
   const { handleSubmit, isSubmitInFlight, reviewPhaseFormModal } =
-    useReviewPhaseForm({
+    useReviewPhaseCustomForm({
       processInstanceId: assignment.processInstanceId,
       phaseId: assignment.phaseId,
       onSubmit: submitRubric,
@@ -454,7 +454,7 @@ function ReviewFormProviderInner({
  * submission-phase form gates proposal submission. With no form owed,
  * `handleSubmit` calls `onSubmit` directly.
  */
-function useReviewPhaseForm({
+function useReviewPhaseCustomForm({
   processInstanceId,
   phaseId,
   onSubmit,
@@ -507,7 +507,7 @@ function useReviewPhaseForm({
     } catch (error) {
       logger.error('Failed to load the review phase form', {
         error,
-        context: 'useReviewPhaseForm.handleSubmit',
+        context: 'useReviewPhaseCustomForm.handleSubmit',
       });
       toast.error(t('submitReviewError'));
       setSubmitInFlight(false);
@@ -537,7 +537,7 @@ function useReviewPhaseForm({
       } catch (error) {
         logger.error('Failed to submit the review phase form', {
           error,
-          context: 'useReviewPhaseForm.handleFormSubmit',
+          context: 'useReviewPhaseCustomForm.handleFormSubmit',
         });
         toast.error(t('submitFormError'));
         return;
