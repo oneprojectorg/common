@@ -1,19 +1,19 @@
 import { ProcessStatus } from '@op/db/schema';
 
-import { NotFoundError } from '../../utils';
-import { countBallotProposals } from './countBallotProposals';
-import { getDecisionBySlug } from './getDecisionBySlug';
+import { NotFoundError } from '../../../utils';
+import { countBallotProposals } from '../countBallotProposals';
+import { getDecisionBySlug } from '../getDecisionBySlug';
 import {
   type CurrentPhaseSummary,
   summarizeCurrentPhase,
-} from './summarizeCurrentPhase';
+} from '../summarizeCurrentPhase';
 
 export interface SmsDecisionDescription extends CurrentPhaseSummary {
   name: string;
   proposalCount: number;
 }
 
-export async function describeSmsDecision({
+export async function getSmsDecisionDescription({
   authUserId,
   slug,
 }: {

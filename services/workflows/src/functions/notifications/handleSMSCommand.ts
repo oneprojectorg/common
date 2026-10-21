@@ -3,7 +3,7 @@ import {
   NotFoundError,
   UnauthorizedError,
   clipSmsText,
-  describeSmsDecision,
+  getSmsDecisionDescription,
   formatSmsDecisionInfo,
   formatSmsDecisionList,
   getPhoneSignupState,
@@ -129,7 +129,7 @@ export const handleSMSCommand = inngest.createFunction(
 
       const decision = await step.run('describe-decision', async () => {
         try {
-          return await describeSmsDecision({
+          return await getSmsDecisionDescription({
             authUserId: account.authUserId,
             slug: argument,
           });

@@ -6,8 +6,8 @@ import {
   profiles,
 } from '@op/db/schema';
 
-import { memberProfileIds } from '../access';
-import { summarizeCurrentPhase } from './summarizeCurrentPhase';
+import { memberProfileIds } from '../../access';
+import { summarizeCurrentPhase } from '../summarizeCurrentPhase';
 
 export interface SmsDecisionListItem {
   name: string;

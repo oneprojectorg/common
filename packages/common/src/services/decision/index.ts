@@ -201,8 +201,7 @@ export * from './utils/phaseTemplates';
 // Voting management
 export * from './voting';
 export * from './votingEligibility';
-export * from './describeSmsDecision';
-export * from './listSmsDecisions';
+export * from './sms';
 export * from './countBallotProposals';
 
 // Process survey

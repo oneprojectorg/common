@@ -2,9 +2,9 @@ import { TestDecisionsDataManager } from '@op/common/testing';
 import { ProcessStatus, ProposalStatus } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
-import { describeSmsDecision } from './describeSmsDecision';
+import { getSmsDecisionDescription } from './getSmsDecisionDescription';
 
-describe.concurrent('describeSmsDecision', () => {
+describe.concurrent('getSmsDecisionDescription', () => {
   it('given a published decision with one submitted proposal, when a member asks for it by slug, then they get its name, phase, voting state and ballot count', async ({
     task,
     onTestFinished,
@@ -23,7 +23,7 @@ describe.concurrent('describeSmsDecision', () => {
     });
 
     await expect(
-      describeSmsDecision({
+      getSmsDecisionDescription({
         authUserId: setup.user.id,
         slug: setup.instance.slug,
       }),
@@ -47,7 +47,7 @@ describe.concurrent('describeSmsDecision', () => {
     });
 
     await expect(
-      describeSmsDecision({
+      getSmsDecisionDescription({
         authUserId: setup.user.id,
         slug: setup.instance.slug,
       }),
@@ -68,7 +68,7 @@ describe.concurrent('describeSmsDecision', () => {
     });
 
     await expect(
-      describeSmsDecision({
+      getSmsDecisionDescription({
         authUserId: outsider.authUserId,
         slug: setup.instance.slug,
       }),
