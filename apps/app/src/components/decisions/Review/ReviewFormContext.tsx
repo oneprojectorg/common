@@ -382,7 +382,7 @@ function ReviewFormProviderInner({
       rationales,
       overallComment,
       canSubmit,
-      isSubmitting: submitReview.isPending || isSubmitInFlight,
+      isSubmitting: isSubmitInFlight,
       isSubmitted,
       canEditReview,
       isEditing,
@@ -426,7 +426,6 @@ function ReviewFormProviderInner({
       rubricTemplate,
       review,
       assignment,
-      submitReview.isPending,
       isSubmitInFlight,
       requestRevisionMutation.isPending,
       cancelRevisionMutation.isPending,
@@ -469,22 +468,6 @@ function useReviewPhaseCustomForm({
   const submitCustomForm = trpc.customForm.submit.useMutation();
   const [form, setForm] = useState<CustomFormDTO | null>(null);
 
-  const submitCustomFormMutate = submitCustomForm.mutateAsync;
-
-  const getOwedForm = useCallback(async () => {
-    const instance = await utils.decision.getInstance.ensureData({
-      instanceId: processInstanceId,
-    });
-    if (!instance.profileId) {
-      return null;
-    }
-    return utils.customForm.getForProfile.fetch({
-      profileId: instance.profileId,
-      phaseId,
-      initialPhaseId: instance.instanceData?.phases?.[0]?.phaseId,
-    });
-  }, [utils, processInstanceId, phaseId]);
-
   // A submit stays in flight from the click until the review is sent or the
   // form is dismissed, so a second click cannot submit twice.
   const submitInFlightRef = useRef(false);
@@ -501,9 +484,18 @@ function useReviewPhaseCustomForm({
     }
     setSubmitInFlight(true);
 
-    let owedForm: CustomFormDTO | null;
+    let owedForm: CustomFormDTO | null = null;
     try {
-      owedForm = await getOwedForm();
+      const instance = await utils.decision.getInstance.ensureData({
+        instanceId: processInstanceId,
+      });
+      if (instance.profileId) {
+        owedForm = await utils.customForm.getForProfile.fetch({
+          profileId: instance.profileId,
+          phaseId,
+          initialPhaseId: instance.instanceData?.phases?.[0]?.phaseId,
+        });
+      }
     } catch (error) {
       logger.error('Failed to load the review phase form', {
         error,
@@ -521,51 +513,38 @@ function useReviewPhaseCustomForm({
 
     await onSubmit();
     setSubmitInFlight(false);
-  }, [getOwedForm, onSubmit, t, setSubmitInFlight]);
+  }, [utils, processInstanceId, phaseId, onSubmit, t, setSubmitInFlight]);
 
-  const handleFormSubmit = useCallback(
-    async (values: CustomFormValues) => {
-      if (!form || !user?.profileId) {
-        return;
-      }
-      try {
-        await submitCustomFormMutate({
-          customFormId: form.id,
-          profileId: user.profileId,
-          data: values,
-        });
-      } catch (error) {
-        logger.error('Failed to submit the review phase form', {
-          error,
-          context: 'useReviewPhaseCustomForm.handleFormSubmit',
-        });
-        toast.error(t('submitFormError'));
-        return;
-      }
-      setForm(null);
-      await onSubmit();
-      setSubmitInFlight(false);
-    },
-    [
-      form,
-      user?.profileId,
-      submitCustomFormMutate,
-      t,
-      onSubmit,
-      setSubmitInFlight,
-    ],
-  );
+  const handleFormSubmit = async (values: CustomFormValues) => {
+    if (!form || !user?.profileId) {
+      return;
+    }
+    try {
+      await submitCustomForm.mutateAsync({
+        customFormId: form.id,
+        profileId: user.profileId,
+        data: values,
+      });
+    } catch (error) {
+      logger.error('Failed to submit the review phase form', {
+        error,
+        context: 'useReviewPhaseCustomForm.handleFormSubmit',
+      });
+      toast.error(t('submitFormError'));
+      return;
+    }
+    setForm(null);
+    await onSubmit();
+    setSubmitInFlight(false);
+  };
 
   // Dismissing the form cancels the submit; the review stays a draft.
-  const handleOpenChange = useCallback(
-    (open: boolean) => {
-      if (!open && !submitCustomForm.isPending) {
-        setForm(null);
-        setSubmitInFlight(false);
-      }
-    },
-    [submitCustomForm.isPending, setSubmitInFlight],
-  );
+  const handleOpenChange = (open: boolean) => {
+    if (!open && !submitCustomForm.isPending) {
+      setForm(null);
+      setSubmitInFlight(false);
+    }
+  };
 
   const reviewPhaseFormModal = form ? (
     <CustomFormModal
