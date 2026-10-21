@@ -322,7 +322,7 @@ function ReviewFormProviderInner({
     }).catch(() => {});
   }, [assignmentId, values, rationales, overallComment, submitMutate]);
 
-  const { handleSubmit, isCheckingForm, reviewPhaseFormModal } =
+  const { handleSubmit, isSubmitInFlight, reviewPhaseFormModal } =
     useReviewPhaseForm({
       processInstanceId: assignment.processInstanceId,
       phaseId: assignment.phaseId,
@@ -382,7 +382,7 @@ function ReviewFormProviderInner({
       rationales,
       overallComment,
       canSubmit,
-      isSubmitting: submitReview.isPending || isCheckingForm,
+      isSubmitting: submitReview.isPending || isSubmitInFlight,
       isSubmitted,
       canEditReview,
       isEditing,
@@ -427,7 +427,7 @@ function ReviewFormProviderInner({
       review,
       assignment,
       submitReview.isPending,
-      isCheckingForm,
+      isSubmitInFlight,
       requestRevisionMutation.isPending,
       cancelRevisionMutation.isPending,
       handleValueChange,
@@ -485,35 +485,43 @@ function useReviewPhaseForm({
     });
   }, [utils, processInstanceId, phaseId]);
 
-  // The lookup runs before the review mutation is pending, so this guard keeps
-  // a second click from submitting twice.
-  const isCheckingFormRef = useRef(false);
-  const [isCheckingForm, setIsCheckingForm] = useState(false);
+  // A submit stays in flight from the click until the review is sent or the
+  // form is dismissed, so a second click cannot submit twice.
+  const submitInFlightRef = useRef(false);
+  const [isSubmitInFlight, setIsSubmitInFlight] = useState(false);
+
+  const setSubmitInFlight = useCallback((inFlight: boolean) => {
+    submitInFlightRef.current = inFlight;
+    setIsSubmitInFlight(inFlight);
+  }, []);
 
   const handleSubmit = useCallback(async () => {
-    if (isCheckingFormRef.current) {
+    if (submitInFlightRef.current) {
       return;
     }
-    isCheckingFormRef.current = true;
-    setIsCheckingForm(true);
+    setSubmitInFlight(true);
+
+    let owedForm: CustomFormDTO | null;
     try {
-      const owedForm = await getOwedForm();
-      if (owedForm) {
-        setForm(owedForm);
-        return;
-      }
-      await onSubmit();
+      owedForm = await getOwedForm();
     } catch (error) {
       logger.error('Failed to load the review phase form', {
         error,
         context: 'useReviewPhaseForm.handleSubmit',
       });
       toast.error(t('submitReviewError'));
-    } finally {
-      isCheckingFormRef.current = false;
-      setIsCheckingForm(false);
+      setSubmitInFlight(false);
+      return;
     }
-  }, [getOwedForm, onSubmit, t]);
+
+    if (owedForm) {
+      setForm(owedForm);
+      return;
+    }
+
+    await onSubmit();
+    setSubmitInFlight(false);
+  }, [getOwedForm, onSubmit, t, setSubmitInFlight]);
 
   const handleFormSubmit = useCallback(
     async (values: CustomFormValues) => {
@@ -536,8 +544,16 @@ function useReviewPhaseForm({
       }
       setForm(null);
       await onSubmit();
+      setSubmitInFlight(false);
     },
-    [form, user?.profileId, submitCustomFormMutate, t, onSubmit],
+    [
+      form,
+      user?.profileId,
+      submitCustomFormMutate,
+      t,
+      onSubmit,
+      setSubmitInFlight,
+    ],
   );
 
   // Dismissing the form cancels the submit; the review stays a draft.
@@ -545,9 +561,10 @@ function useReviewPhaseForm({
     (open: boolean) => {
       if (!open && !submitCustomForm.isPending) {
         setForm(null);
+        setSubmitInFlight(false);
       }
     },
-    [submitCustomForm.isPending],
+    [submitCustomForm.isPending, setSubmitInFlight],
   );
 
   const reviewPhaseFormModal = form ? (
@@ -561,7 +578,7 @@ function useReviewPhaseForm({
     />
   ) : null;
 
-  return { handleSubmit, isCheckingForm, reviewPhaseFormModal };
+  return { handleSubmit, isSubmitInFlight, reviewPhaseFormModal };
 }
 
 function useAutosaveDraft({
