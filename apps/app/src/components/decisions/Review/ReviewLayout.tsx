@@ -8,7 +8,7 @@ import { CommonError } from '@op/common';
 import {
   getPhaseReviewSettings,
   getPreviousReviewPhases,
-  type PreviousReviewPhase,
+  hasOpenReviews,
   type ReviewSettings,
 } from '@op/common/client';
 import { SplitPane } from '@op/sense/SplitPane';
@@ -20,6 +20,7 @@ import { ReviewFormProvider } from './ReviewFormContext';
 import { ReviewNavbar } from './ReviewNavbar';
 import { ReviewProposalPane } from './ReviewProposalPane';
 import { ReviewRubricForm } from './ReviewRubricForm';
+import type { PreviousReviewPhase } from './ReviewTabs';
 
 interface ReviewLayoutProps {
   decisionSlug: string;
@@ -55,11 +56,15 @@ export async function ReviewLayout({
     // from this screen. Strictly before the assignment's phase in the
     // instance's phase ordering, so the phase this screen reviews in never
     // doubles up with its own "Other reviews" tab.
-    previousReviewPhases = getPreviousReviewPhases({
+    previousReviewPhases = getPreviousReviewPhases(
       instanceData,
-      phaseId: assignmentPhaseId,
-      openReviewsOnly: true,
-    });
+      assignmentPhaseId,
+    )
+      .filter(hasOpenReviews)
+      .map((phase) => ({
+        id: phase.phaseId,
+        name: phase.name ?? phase.phaseId,
+      }));
   } catch (error) {
     // tRPC errors carry the CommonError in `cause`; local throws are the error itself.
     const cause =

@@ -26,6 +26,15 @@ export function isReviewPhase(phase: { rules?: ReviewPhaseRules }): boolean {
 }
 
 /**
+ * Reviews in this phase are readable by the other reviewers, and by later
+ * phases once it ends (`reviews.openReviews`). Phase-only: no legacy config
+ * counterpart.
+ */
+export function hasOpenReviews(phase: { rules?: ReviewPhaseRules }): boolean {
+  return phase.rules?.reviews?.openReviews ?? false;
+}
+
+/**
  * Authors may edit their proposals after submitting them in this phase — the
  * Process Builder's "Proposal editing" toggle.
  */
@@ -169,42 +178,15 @@ export function resolveReviewSettings(
   return reviewSettingsFromPhase(instanceData.config, phase);
 }
 
-/** An earlier review phase, as the review screens list it in their tabs. */
-export interface PreviousReviewPhase {
-  id: string;
-  name: string;
-}
-
 /**
- * The review phases strictly before `phaseId`, in phase order. With
- * `openReviewsOnly`, only the phases whose `openReviews` lets a reviewer read
- * their reviews; without it, every review phase, for callers that read reviews
- * by capability (admins).
+ * The review phases strictly before `phaseId`, in phase order. Admins read
+ * every one by capability; the reviewer screens compose this with
+ * `hasOpenReviews` to keep only the phases that opened their reviews.
  */
-export function getPreviousReviewPhases({
-  instanceData,
-  phaseId,
-  openReviewsOnly,
-}: {
-  instanceData: ReviewSettingsInstanceData & {
-    phases?: ReadonlyArray<{
-      phaseId: string;
-      name?: string;
-      rules?: ReviewPhaseRules;
-    }>;
-  };
-  phaseId: string;
-  openReviewsOnly: boolean;
-}): PreviousReviewPhase[] {
-  return getPreviousPhases(instanceData, phaseId)
-    .filter((phase) => {
-      const settings = reviewSettingsFromPhase(instanceData.config, phase);
-      return settings.submit && (!openReviewsOnly || settings.openReviews);
-    })
-    .map((phase) => ({
-      id: phase.phaseId,
-      name: phase.name ?? phase.phaseId,
-    }));
+export function getPreviousReviewPhases<
+  Phase extends { phaseId: string; rules?: ReviewPhaseRules },
+>(instanceData: { phases?: readonly Phase[] }, phaseId: string): Phase[] {
+  return getPreviousPhases(instanceData, phaseId).filter(isReviewPhase);
 }
 
 function reviewSettingsFromPhase(
@@ -224,7 +206,6 @@ function reviewSettingsFromPhase(
     // Defaults on: the field rendered unconditionally before this was wired.
     anonymousFeedback:
       reviews?.anonymousFeedback ?? config?.reviewsAnonymousFeedback ?? true,
-    // Phase-only (no legacy config counterpart), like scope.
-    openReviews: reviews?.openReviews ?? false,
+    openReviews: phase ? hasOpenReviews(phase) : false,
   };
 }

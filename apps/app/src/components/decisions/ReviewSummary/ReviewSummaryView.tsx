@@ -3,11 +3,7 @@
 import { useRequiredUser } from '@/utils/UserProvider';
 import { getDecisionCommonProperties } from '@op/analytics/client-utils';
 import { trpc } from '@op/api/client';
-import {
-  type PreviousReviewPhase,
-  ProposalReviewState,
-  type ReviewSettings,
-} from '@op/common/client';
+import { ProposalReviewState, type ReviewSettings } from '@op/common/client';
 import { Button } from '@op/sense/Button';
 import { SplitPane } from '@op/sense/SplitPane';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@op/sense/Tabs';
@@ -23,6 +19,7 @@ import { DecisionSubpageHeader } from '../DecisionSubpageHeader';
 import { ProposalPreview } from '../ProposalPreview';
 import { AuthorNotesSection } from '../Review/AuthorNotesSection';
 import type { ReviewFormStatus } from '../Review/ReviewFormContext';
+import type { PreviousReviewPhase } from '../Review/ReviewTabs';
 import {
   PhaseReviews,
   PhaseReviewsTabPanel,

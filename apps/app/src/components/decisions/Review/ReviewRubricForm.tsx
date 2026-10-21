@@ -5,7 +5,6 @@ import {
   DEFAULT_MONEY_CURRENCY,
   ProposalReviewState,
   type SchemaOption,
-  type PreviousReviewPhase,
   type XFormatPropertySchema,
   buildMoneyFieldAnswer,
   getCurrencySymbol,
@@ -56,7 +55,7 @@ import {
 } from '../rubricTemplate';
 import { useReviewForm } from './ReviewFormContext';
 import { FormShell, TotalScoreCard } from './ReviewFormShell';
-import { ReviewTabs } from './ReviewTabs';
+import { type PreviousReviewPhase, ReviewTabs } from './ReviewTabs';
 import { SubmittedReviewView } from './SubmittedReviewView';
 import { ViewRevisionRequestModal } from './ViewRevisionRequestModal';
 

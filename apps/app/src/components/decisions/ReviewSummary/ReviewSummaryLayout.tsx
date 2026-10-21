@@ -98,11 +98,10 @@ export async function ReviewSummaryLayout({
 
   // Every earlier review phase, open reviews or not: admins read reviews by
   // capability. Fetched lazily on the client, so nothing extra to prefetch.
-  const previousReviewPhases = getPreviousReviewPhases({
-    instanceData: instance.instanceData ?? {},
+  const previousReviewPhases = getPreviousReviewPhases(
+    instance.instanceData ?? {},
     phaseId,
-    openReviewsOnly: false,
-  });
+  ).map((phase) => ({ id: phase.phaseId, name: phase.name ?? phase.phaseId }));
 
   // isReviewPhase guards the resolver's fallback, which returns the current
   // phase when the instance has no review phase at all.

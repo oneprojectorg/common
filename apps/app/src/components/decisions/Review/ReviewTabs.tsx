@@ -1,7 +1,6 @@
 'use client';
 
 import { getDecisionCommonProperties } from '@op/analytics/client-utils';
-import type { PreviousReviewPhase } from '@op/common/client';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@op/sense/Tabs';
 import { usePostHog } from 'posthog-js/react';
 import type { ReactNode } from 'react';
@@ -17,6 +16,12 @@ import { useReviewForm } from './ReviewFormContext';
 const MY_REVIEW_TAB = 'my-review';
 const OTHER_REVIEWS_TAB = 'other-reviews';
 const PHASE_TAB_PREFIX = 'phase-reviews-';
+
+/** An earlier review phase, as the review screens list it in their tabs. */
+export interface PreviousReviewPhase {
+  id: string;
+  name: string;
+}
 
 /**
  * Tab shell for the "Review Proposal" panel:

@@ -20,11 +20,11 @@ export {
   getPreviousReviewPhases,
   getVoterCostField,
   getVoterBudget,
+  hasOpenReviews,
   hasVotingPhase,
   isReviewPhase,
   isVotingPhase,
   resolveReviewSettings,
-  type PreviousReviewPhase,
   type ReviewSettings,
 } from './services/decision/utils/phaseSettings';
 export {
