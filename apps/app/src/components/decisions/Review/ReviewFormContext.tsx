@@ -322,12 +322,15 @@ function ReviewFormProviderInner({
     }).catch(() => {});
   }, [assignmentId, values, rationales, overallComment, submitMutate]);
 
-  const { handleSubmit, isSubmitInFlight, reviewPhaseFormModal } =
-    useReviewPhaseCustomForm({
-      processInstanceId: assignment.processInstanceId,
-      phaseId: assignment.phaseId,
-      onSubmit: submitRubric,
-    });
+  const {
+    handleSubmit: handleCustomFormSubmit,
+    isSubmitInFlight: isCustomFormSubmitInFlight,
+    reviewPhaseFormModal: customFormModal,
+  } = useReviewPhaseCustomForm({
+    processInstanceId: assignment.processInstanceId,
+    phaseId: assignment.phaseId,
+    onSubmit: submitRubric,
+  });
 
   const startEditing = useCallback(() => {
     setIsEditRequested(true);
@@ -365,7 +368,7 @@ function ReviewFormProviderInner({
   const canUpdate = isRubricValid && isEditing;
 
   // What a host outside the form needs to drive its primary action.
-  const primaryAction = isEditing ? handleUpdate : handleSubmit;
+  const primaryAction = isEditing ? handleUpdate : handleCustomFormSubmit;
   const primaryActionEnabled = isEditing ? canUpdate : canSubmit;
 
   useEffect(() => {
@@ -382,7 +385,7 @@ function ReviewFormProviderInner({
       rationales,
       overallComment,
       canSubmit,
-      isSubmitting: isSubmitInFlight,
+      isSubmitting: isCustomFormSubmitInFlight,
       isSubmitted,
       canEditReview,
       isEditing,
@@ -399,7 +402,7 @@ function ReviewFormProviderInner({
       handleValueChange,
       handleRationaleChange,
       handleOverallCommentChange,
-      handleSubmit,
+      handleSubmit: handleCustomFormSubmit,
       startEditing,
       handleUpdate,
       requestRevision: handleRequestRevision,
@@ -426,13 +429,13 @@ function ReviewFormProviderInner({
       rubricTemplate,
       review,
       assignment,
-      isSubmitInFlight,
+      isCustomFormSubmitInFlight,
       requestRevisionMutation.isPending,
       cancelRevisionMutation.isPending,
       handleValueChange,
       handleRationaleChange,
       handleOverallCommentChange,
-      handleSubmit,
+      handleCustomFormSubmit,
       startEditing,
       handleUpdate,
       handleRequestRevision,
@@ -443,7 +446,7 @@ function ReviewFormProviderInner({
   return (
     <ReviewFormContext.Provider value={state}>
       {children}
-      {reviewPhaseFormModal}
+      {customFormModal}
     </ReviewFormContext.Provider>
   );
 }

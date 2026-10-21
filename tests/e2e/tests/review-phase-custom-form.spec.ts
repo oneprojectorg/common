@@ -114,17 +114,16 @@ test.describe('Review phase custom form', () => {
     };
     const reviewer = { profileId: org.adminUser.profileId };
     const [first, second] = await Promise.all(
-      ['Community Solar Initiative', 'Neighborhood Tool Library'].map(
-        (title) =>
-          createReviewScenario({
-            instance: { id: instance.instance.id },
-            author,
-            reviewer,
-            proposalData: {
-              title,
-              collaborationDocId: 'test-proposal-view-doc',
-            },
-          }),
+      ['Community Solar Initiative', 'Neighborhood Tool Library'].map((title) =>
+        createReviewScenario({
+          instance: { id: instance.instance.id },
+          author,
+          reviewer,
+          proposalData: {
+            title,
+            collaborationDocId: 'test-proposal-view-doc',
+          },
+        }),
       ),
     );
     if (!first || !second) {
@@ -141,6 +140,12 @@ test.describe('Review phase custom form', () => {
     const submittedToast = page
       .locator('[data-slot="toast"]')
       .filter({ hasText: 'Review submitted successfully' });
+
+    const listAnswers = () =>
+      db
+        .select()
+        .from(customFormSubmissions)
+        .where(eq(customFormSubmissions.customFormId, form.id));
 
     const openReview = async (assignmentId: string) => {
       await page.goto(
@@ -170,7 +175,9 @@ test.describe('Review phase custom form', () => {
     // Closing the form cancels the submit.
     await page.keyboard.press('Escape');
     await expect(formDialog).toBeHidden();
-    await expect(submittedToast).toBeHidden();
+    await expect(submitReview).toBeEnabled();
+    expect(page.url()).toContain(`/reviews/${first.assignment.id}`);
+    expect(await listAnswers()).toHaveLength(0);
 
     await submitReview.click();
     await conflictsField.fill('No conflicts.');
@@ -191,10 +198,7 @@ test.describe('Review phase custom form', () => {
       path: test.info().outputPath('04-first-review-submitted.png'),
     });
 
-    const answers = await db
-      .select()
-      .from(customFormSubmissions)
-      .where(eq(customFormSubmissions.customFormId, form.id));
+    const answers = await listAnswers();
     expect(answers).toHaveLength(1);
     expect(answers[0]?.profileId).toBe(org.adminUser.profileId);
 
@@ -208,6 +212,7 @@ test.describe('Review phase custom form', () => {
     await submitReview.click();
     await expect(submittedToast).toBeVisible({ timeout: 10_000 });
     await expect(formDialog).toBeHidden();
+    expect(await listAnswers()).toHaveLength(1);
     await expect(page.getByText('Proposals to review').first()).toBeVisible({
       timeout: 36_000,
     });
