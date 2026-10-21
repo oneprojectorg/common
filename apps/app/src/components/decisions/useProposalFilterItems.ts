@@ -38,6 +38,11 @@ export const useProposalFilterItems = ({
         ]
       : []),
     {
+      id: ProposalFilter.LIKED,
+      label: t('likedOption'),
+      isDisabled: !currentProfileId,
+    },
+    {
       id: ProposalFilter.REJECTED,
       label: t('notAdvancedStatus'),
     },

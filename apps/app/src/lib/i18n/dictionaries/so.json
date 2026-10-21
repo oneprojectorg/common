@@ -1380,6 +1380,7 @@
       "viewAllProposalsAction": "Eeg dhammaan soo jeedimaha",
       "totalVotesLabel": "Wadarta Codadka",
       "myBallotOption": "Codkayga",
+      "likedOption": "Kuwa aan jeclaaday",
       "selectedProposalsCount": "<highlight>{numSelected, plural, one {# soo jeedin} other {# soo jeedimo}}</highlight> la doortay",
       "selectedProposalsOfMaxCount": "<highlight>{numSelected}</highlight> ka mid ah {max, plural, one {# soo jeedin} other {# soo jeedimo}} la doortay",
       "allCategoriesOption": "Dhammaan qaybaha",

@@ -3,6 +3,7 @@ import {
   and,
   db,
   eq,
+  exists,
   inArray,
   isNull,
   ne,
@@ -11,11 +12,13 @@ import {
   sql,
 } from '@op/db/client';
 import {
+  ProfileRelationshipType,
   ProposalStatus,
   Visibility,
   decisionsVoteProposals,
   decisionsVoteSubmissions,
   processInstances,
+  profileRelationships,
   proposalCategories,
   proposalReviewAssignments,
   proposals,
@@ -152,11 +155,17 @@ type ReviewAssignmentExclusion = {
 // table (for plain `db.select(...).from(proposals).where(...)`) or the
 // relationally-aliased table from a v2 `RAW` callback. Both forms yield SQL
 // that resolves to the right alias in their respective query contexts.
-const buildBaseConditions = (
-  t: typeof proposals,
-  input: ListProposalsInput,
-  reviewExclusion: ReviewAssignmentExclusion | undefined,
-): SQL => {
+const buildBaseConditions = ({
+  t,
+  input,
+  reviewExclusion,
+  likedByProfileId,
+}: {
+  t: typeof proposals;
+  input: ListProposalsInput;
+  reviewExclusion: ReviewAssignmentExclusion | undefined;
+  likedByProfileId: string | undefined;
+}): SQL => {
   const { processInstanceId, submittedByProfileId, status, search } = input;
 
   // processInstanceId is always present, so the array is non-empty and the
@@ -178,6 +187,27 @@ const buildBaseConditions = (
 
   if (status) {
     conditions.push(eq(t.status, status));
+  }
+
+  // Direct likes only, matching `isLikedByUser` on the card.
+  if (likedByProfileId) {
+    conditions.push(
+      exists(
+        db
+          .select({ id: profileRelationships.id })
+          .from(profileRelationships)
+          .where(
+            and(
+              eq(profileRelationships.sourceProfileId, likedByProfileId),
+              eq(profileRelationships.targetProfileId, t.profileId),
+              eq(
+                profileRelationships.relationshipType,
+                ProfileRelationshipType.LIKES,
+              ),
+            ),
+          ),
+      ),
+    );
   }
 
   const searchCondition = buildProposalTitleSearchCondition(t, search);
@@ -368,9 +398,16 @@ export const resolveProposalListScope = async ({
   }
 
   // Unreached phases on non-legacy instances surface zero rows from both the
-  // non-draft and draft scopes; an empty category likewise can't match. Either
-  // makes the whole scope empty, so callers should short-circuit.
-  const isEmpty = phaseScope.isEmpty || categoryIsEmpty;
+  // non-draft and draft scopes; an empty category, or Liked without a profile,
+  // likewise can't match. Any makes the whole scope empty, so callers should
+  // short-circuit.
+  const likedByProfileId = input.likedByCurrentUser
+    ? currentProfileId
+    : undefined;
+  const isEmpty =
+    phaseScope.isEmpty ||
+    categoryIsEmpty ||
+    (input.likedByCurrentUser === true && !likedByProfileId);
 
   // The phase being viewed — the "Other proposals" tab omits phaseId and
   // defaults to the instance's current state.
@@ -437,11 +474,12 @@ export const resolveProposalListScope = async ({
   // passes an aliased `table`) and the plain count query (which passes the
   // schema table). See `buildBaseConditions` above for the same pattern.
   const buildWhereClause = (proposalsTable: typeof proposals): SQL => {
-    let clause: SQL = buildBaseConditions(
-      proposalsTable,
+    let clause: SQL = buildBaseConditions({
+      t: proposalsTable,
       input,
       reviewExclusion,
-    );
+      likedByProfileId,
+    });
 
     // Explicit scope (proposalIds or votedByProfileId): constrain the entire
     // query to that ID set so the draft branch can't independently surface

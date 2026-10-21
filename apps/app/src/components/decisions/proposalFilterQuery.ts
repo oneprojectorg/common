@@ -12,6 +12,7 @@ const TAB_BAR_FILTERS: readonly ProposalFilter[] = [
   ProposalFilter.ALL,
   ProposalFilter.MY_PROPOSALS,
   ProposalFilter.MY_BALLOT,
+  ProposalFilter.LIKED,
 ];
 
 export const PROPOSAL_STATUS_VALUES = ['all', 'not-advanced'] as const;
@@ -27,6 +28,7 @@ export type ProposalQueryParams = {
   search?: string;
   submittedByProfileId?: string;
   votedByProfileId?: string;
+  likedByCurrentUser?: boolean;
   status?: ProposalStatus;
   /** "Not advanced": rejected, plus (for admins) what earlier phases left behind. */
   notAdvanced?: boolean;
@@ -96,7 +98,9 @@ export const isFilterActive = (
     params.status ||
     params.notAdvanced ||
     (!ignoreAudience &&
-      (params.submittedByProfileId || params.votedByProfileId)),
+      (params.submittedByProfileId ||
+        params.votedByProfileId ||
+        params.likedByCurrentUser)),
   );
 
 export const hasPendingChange = (pairs: [string, string][]): boolean =>
@@ -147,6 +151,8 @@ export const buildQueryParams = ({
     params.submittedByProfileId = currentProfileId;
   } else if (filter === ProposalFilter.MY_BALLOT && currentProfileId) {
     params.votedByProfileId = currentProfileId;
+  } else if (filter === ProposalFilter.LIKED && currentProfileId) {
+    params.likedByCurrentUser = true;
   }
 
   // The results phase already spans every phase, so it filters on rejection

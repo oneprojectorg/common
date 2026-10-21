@@ -26,6 +26,7 @@ const items = (hasVoted: boolean, profileId?: string): ProposalFilterItem[] => [
         },
       ]
     : []),
+  { id: ProposalFilter.LIKED, label: 'Liked', isDisabled: !profileId },
   { id: ProposalFilter.REJECTED, label: 'Not advanced' },
 ];
 
@@ -48,6 +49,7 @@ describe('resolveFilters', () => {
     expect(resolve().availableFilters.map((item) => item.id)).toEqual([
       ProposalFilter.ALL,
       ProposalFilter.MY_PROPOSALS,
+      ProposalFilter.LIKED,
     ]);
   });
 
@@ -101,6 +103,15 @@ describe('resolveFilters', () => {
       resolve({
         everyFilter: items(false),
         filterParam: ProposalFilter.MY_PROPOSALS,
+      }).proposalFilter,
+    ).toBe(ProposalFilter.ALL);
+  });
+
+  it('falls back to all for a liked link from a signed-out reader', () => {
+    expect(
+      resolve({
+        everyFilter: items(false),
+        filterParam: ProposalFilter.LIKED,
       }).proposalFilter,
     ).toBe(ProposalFilter.ALL);
   });
@@ -185,12 +196,24 @@ describe('buildQueryParams', () => {
     expect(params.submittedByProfileId).toBeUndefined();
   });
 
+  it("asks for the reader's own likes", () => {
+    const params = build({ filter: ProposalFilter.LIKED });
+
+    expect(params.likedByCurrentUser).toBe(true);
+    expect(params.submittedByProfileId).toBeUndefined();
+    expect(params.votedByProfileId).toBeUndefined();
+  });
+
   it('ignores a profile-bound filter with no profile', () => {
     expect(
       build({
         filter: ProposalFilter.MY_PROPOSALS,
         currentProfileId: undefined,
       }).submittedByProfileId,
+    ).toBeUndefined();
+    expect(
+      build({ filter: ProposalFilter.LIKED, currentProfileId: undefined })
+        .likedByCurrentUser,
     ).toBeUndefined();
   });
 
@@ -226,6 +249,7 @@ describe('isFilterActive', () => {
     expect(isFilterActive(build({ filter: ProposalFilter.MY_PROPOSALS }))).toBe(
       true,
     );
+    expect(isFilterActive(build({ filter: ProposalFilter.LIKED }))).toBe(true);
   });
 
   it('ignores the sort order, which reorders rather than narrows', () => {
@@ -239,6 +263,14 @@ describe('isFilterActive with a pinned audience', () => {
 
     expect(isFilterActive(params)).toBe(true);
     expect(isFilterActive(params, { ignoreAudience: true })).toBe(false);
+  });
+
+  it('treats Liked as part of the audience', () => {
+    expect(
+      isFilterActive(build({ filter: ProposalFilter.LIKED }), {
+        ignoreAudience: true,
+      }),
+    ).toBe(false);
   });
 
   it('still reports the axes the reader can clear', () => {

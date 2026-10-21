@@ -1380,6 +1380,7 @@
       "viewAllProposalsAction": "সব প্রস্তাব দেখুন",
       "totalVotesLabel": "মোট ভোট",
       "myBallotOption": "আমার ব্যালট",
+      "likedOption": "আমার পছন্দের",
       "selectedProposalsCount": "<highlight>{numSelected}</highlight> প্রস্তাব নির্বাচিত",
       "selectedProposalsOfMaxCount": "<highlight>{numSelected}</highlight> / {max} প্রস্তাব নির্বাচিত",
       "allCategoriesOption": "সব বিভাগ",
