@@ -1076,6 +1076,7 @@
       "loadReviewsError": "Failed to load reviews",
       "requestRevisionError": "Failed to request revision",
       "submitReviewError": "Failed to submit review",
+      "submitFormError": "Failed to submit form",
       "updateReviewError": "Failed to update review",
       "feedbackLabel": "Feedback",
       "feedbackToAuthorLabel": "Feedback to author",

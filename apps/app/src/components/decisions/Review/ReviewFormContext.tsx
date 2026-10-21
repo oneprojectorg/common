@@ -322,11 +322,12 @@ function ReviewFormProviderInner({
     }).catch(() => {});
   }, [assignmentId, values, rationales, overallComment, submitMutate]);
 
-  const { handleSubmit, reviewPhaseFormModal } = useReviewPhaseForm({
-    processInstanceId: assignment.processInstanceId,
-    phaseId: assignment.phaseId,
-    onSubmit: submitRubric,
-  });
+  const { handleSubmit, isCheckingForm, reviewPhaseFormModal } =
+    useReviewPhaseForm({
+      processInstanceId: assignment.processInstanceId,
+      phaseId: assignment.phaseId,
+      onSubmit: submitRubric,
+    });
 
   const startEditing = useCallback(() => {
     setIsEditRequested(true);
@@ -381,7 +382,7 @@ function ReviewFormProviderInner({
       rationales,
       overallComment,
       canSubmit,
-      isSubmitting: submitReview.isPending,
+      isSubmitting: submitReview.isPending || isCheckingForm,
       isSubmitted,
       canEditReview,
       isEditing,
@@ -426,6 +427,7 @@ function ReviewFormProviderInner({
       review,
       assignment,
       submitReview.isPending,
+      isCheckingForm,
       requestRevisionMutation.isPending,
       cancelRevisionMutation.isPending,
       handleValueChange,
@@ -461,7 +463,7 @@ function useReviewPhaseForm({
   phaseId: string;
   onSubmit: () => Promise<void>;
 }) {
-  const t = useTranslations('decisions');
+  const t = useTranslations('decisions.review');
   const utils = trpc.useUtils();
   const { user } = useUser();
   const submitCustomForm = trpc.customForm.submit.useMutation();
@@ -469,35 +471,49 @@ function useReviewPhaseForm({
 
   const submitCustomFormMutate = submitCustomForm.mutateAsync;
 
+  const getOwedForm = useCallback(async () => {
+    const instance = await utils.decision.getInstance.ensureData({
+      instanceId: processInstanceId,
+    });
+    if (!instance.profileId) {
+      return null;
+    }
+    return utils.customForm.getForProfile.fetch({
+      profileId: instance.profileId,
+      phaseId,
+      initialPhaseId: instance.instanceData?.phases?.[0]?.phaseId,
+    });
+  }, [utils, processInstanceId, phaseId]);
+
+  // The lookup runs before the review mutation is pending, so this guard keeps
+  // a second click from submitting twice.
+  const isCheckingFormRef = useRef(false);
+  const [isCheckingForm, setIsCheckingForm] = useState(false);
+
   const handleSubmit = useCallback(async () => {
-    let owedForm: CustomFormDTO | null = null;
+    if (isCheckingFormRef.current) {
+      return;
+    }
+    isCheckingFormRef.current = true;
+    setIsCheckingForm(true);
     try {
-      const instance = await utils.decision.getInstance.ensureData({
-        instanceId: processInstanceId,
-      });
-      if (instance.profileId) {
-        owedForm = await utils.customForm.getForProfile.fetch({
-          profileId: instance.profileId,
-          phaseId,
-          initialPhaseId: instance.instanceData?.phases?.[0]?.phaseId,
-        });
+      const owedForm = await getOwedForm();
+      if (owedForm) {
+        setForm(owedForm);
+        return;
       }
+      await onSubmit();
     } catch (error) {
       logger.error('Failed to load the review phase form', {
         error,
         context: 'useReviewPhaseForm.handleSubmit',
       });
-      toast.error(t('review.submitReviewError'));
-      return;
+      toast.error(t('submitReviewError'));
+    } finally {
+      isCheckingFormRef.current = false;
+      setIsCheckingForm(false);
     }
-
-    if (owedForm) {
-      setForm(owedForm);
-      return;
-    }
-
-    await onSubmit();
-  }, [utils, processInstanceId, phaseId, t, onSubmit]);
+  }, [getOwedForm, onSubmit, t]);
 
   const handleFormSubmit = useCallback(
     async (values: CustomFormValues) => {
@@ -515,7 +531,7 @@ function useReviewPhaseForm({
           error,
           context: 'useReviewPhaseForm.handleFormSubmit',
         });
-        toast.error(t('proposals.submitFormError'));
+        toast.error(t('submitFormError'));
         return;
       }
       setForm(null);
@@ -541,11 +557,11 @@ function useReviewPhaseForm({
       isSubmitting={submitCustomForm.isPending}
       onSubmit={handleFormSubmit}
       onOpenChange={handleOpenChange}
-      submitLabel={t('review.submitReviewAction')}
+      submitLabel={t('submitReviewAction')}
     />
   ) : null;
 
-  return { handleSubmit, reviewPhaseFormModal };
+  return { handleSubmit, isCheckingForm, reviewPhaseFormModal };
 }
 
 function useAutosaveDraft({

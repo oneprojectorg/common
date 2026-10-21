@@ -3,7 +3,11 @@ import {
   TestReviewsDataManager,
 } from '@op/common/testing';
 import { db, eq } from '@op/db/client';
-import { customFormSubmissions, customForms } from '@op/db/schema';
+import {
+  customFormSubmissions,
+  customForms,
+  decisionsVoteSubmissions,
+} from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '..';
@@ -38,13 +42,16 @@ const TEST_FORM_SCHEMA = {
 async function createCustomForm(
   profileId: string,
   onTestFinished: (fn: () => Promise<void>) => void,
+  phaseId?: string,
 ) {
   const [form] = await db
     .insert(customForms)
     .values({
       profileId,
       name: 'Test Form',
-      schema: TEST_FORM_SCHEMA,
+      schema: phaseId
+        ? { ...TEST_FORM_SCHEMA, 'x-phase': phaseId }
+        : TEST_FORM_SCHEMA,
     })
     .returning();
 
@@ -235,6 +242,7 @@ describe.concurrent('customForm.submit', () => {
     const form = await createCustomForm(
       context.instance.profileId,
       onTestFinished,
+      'review',
     );
 
     const caller = await createAuthenticatedCaller(reviewer.email);
@@ -246,6 +254,90 @@ describe.concurrent('customForm.submit', () => {
     });
 
     expect(submission.profileId).toBe(reviewer.profileId);
+  });
+
+  it("rejects a reviewer's submission to a form of a phase they do not review in", async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const { context, reviewer } = await testData.createReviewAssignment();
+    // No `x-phase`: the form applies to the initial (submission) phase.
+    const form = await createCustomForm(
+      context.instance.profileId,
+      onTestFinished,
+    );
+
+    const caller = await createAuthenticatedCaller(reviewer.email);
+
+    await expect(
+      caller.customForm.submit({
+        customFormId: form.id,
+        profileId: reviewer.profileId,
+        data: { neighborhood: 'Downtown' },
+      }),
+    ).rejects.toThrow(/does not belong to this form/i);
+  });
+
+  it('rejects a reviewer whose assignment is in another process', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const [{ reviewer }, otherContext] = await Promise.all([
+      testData.createReviewAssignment(),
+      testData.createContext(),
+    ]);
+    const form = await createCustomForm(
+      otherContext.instance.profileId,
+      onTestFinished,
+      'review',
+    );
+
+    const caller = await createAuthenticatedCaller(reviewer.email);
+
+    await expect(
+      caller.customForm.submit({
+        customFormId: form.id,
+        profileId: reviewer.profileId,
+        data: { neighborhood: 'Downtown' },
+      }),
+    ).rejects.toThrow(/does not belong to this form/i);
+  });
+
+  it("records a voter's submission against their own profile", async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const context = await testData.createContext();
+    const voter = await testData.createInstanceMember(context);
+    // Mirrors the row `submitVote` writes; the voting rules are not under test.
+    await db.insert(decisionsVoteSubmissions).values({
+      processInstanceId: context.instance.instance.id,
+      submittedByProfileId: voter.profileId,
+      voteData: {
+        schemaVersion: '1.0.0',
+        schemaType: 'simple',
+        submissionMetadata: { timestamp: new Date().toISOString() },
+        validationSignature: 'test-signature',
+      },
+    });
+    const form = await createCustomForm(
+      context.instance.profileId,
+      onTestFinished,
+      'voting',
+    );
+
+    const caller = await createAuthenticatedCaller(voter.email);
+
+    const submission = await caller.customForm.submit({
+      customFormId: form.id,
+      profileId: voter.profileId,
+      data: { neighborhood: 'Downtown' },
+    });
+
+    expect(submission.profileId).toBe(voter.profileId);
   });
 
   it('rejects an own-profile submission from a member who neither voted nor reviews', async ({

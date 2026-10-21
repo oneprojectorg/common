@@ -1,20 +1,17 @@
-import { and, db, eq } from '@op/db/client';
-import type { CustomFormSubmission } from '@op/db/schema';
-import {
-  customFormSubmissions,
-  decisionsVoteSubmissions,
-  processInstances,
-  proposalReviewAssignments,
-} from '@op/db/schema';
+import { db, eq } from '@op/db/client';
+import type { CustomForm, CustomFormSubmission } from '@op/db/schema';
+import { customFormSubmissions } from '@op/db/schema';
 import { permission } from 'access-zones';
 
 import { CommonError, NotFoundError, ValidationError } from '../../utils';
 import { assertProfileAccess } from '../assert';
 import { schemaValidator } from '../decision/schemaValidator';
+import { parseInstancePhases } from './customFormAuth';
 import type {
   CreateCustomFormSubmissionInput,
   CustomFormDefinitionSchema,
 } from './schemas/customForm';
+import { getEffectiveFormPhase } from './utils';
 
 /**
  * Records a submission against a custom form, attached to the target
@@ -27,7 +24,7 @@ import type {
  *   - a proposal whose decision process owns the form (submission/edit forms),
  *   - a participant's own profile that has voted in the process (post-vote
  *     forms), or
- *   - a reviewer's own profile with a review assignment in the process
+ *   - a reviewer's own profile with a review assignment in the form's phase
  *     (review-phase forms).
  *
  * Idempotent per (customFormId, profileId): a retry after a failed
@@ -81,7 +78,7 @@ export const createCustomFormSubmission = async ({
     belongsViaProposal ||
     (await isParticipantInFormProcess({
       participantProfileId: input.profileId,
-      formProfileId: form.profileId,
+      form,
     }));
 
   if (!belongsToForm) {
@@ -138,51 +135,46 @@ export const createCustomFormSubmission = async ({
   return submission;
 };
 
-/**
- * Whether the profile voted in, or holds a review assignment in, the process
- * instance that owns the form.
- */
 const isParticipantInFormProcess = async ({
   participantProfileId,
-  formProfileId,
+  form,
 }: {
   participantProfileId: string;
-  formProfileId: string;
+  form: CustomForm;
 }): Promise<boolean> => {
-  const [instance] = await db
-    .select({ id: processInstances.id })
-    .from(processInstances)
-    .where(eq(processInstances.profileId, formProfileId))
-    .limit(1);
+  const instance = await db.query.processInstances.findFirst({
+    where: { profileId: form.profileId },
+    columns: { id: true, instanceData: true },
+  });
 
   if (!instance) {
     return false;
   }
 
-  const [[vote], [reviewAssignment]] = await Promise.all([
-    db
-      .select({ id: decisionsVoteSubmissions.id })
-      .from(decisionsVoteSubmissions)
-      .where(
-        and(
-          eq(decisionsVoteSubmissions.processInstanceId, instance.id),
-          eq(
-            decisionsVoteSubmissions.submittedByProfileId,
-            participantProfileId,
-          ),
-        ),
-      )
-      .limit(1),
-    db
-      .select({ id: proposalReviewAssignments.id })
-      .from(proposalReviewAssignments)
-      .where(
-        and(
-          eq(proposalReviewAssignments.processInstanceId, instance.id),
-          eq(proposalReviewAssignments.reviewerProfileId, participantProfileId),
-        ),
-      )
-      .limit(1),
+  // A reviewer answers only the form of a phase they review in.
+  const formPhaseId = getEffectiveFormPhase({
+    schema: form.schema,
+    initialPhaseId: parseInstancePhases(instance.instanceData).initialPhaseId,
+  });
+
+  const [vote, reviewAssignment] = await Promise.all([
+    db.query.decisionsVoteSubmissions.findFirst({
+      where: {
+        processInstanceId: instance.id,
+        submittedByProfileId: participantProfileId,
+      },
+      columns: { id: true },
+    }),
+    formPhaseId
+      ? db.query.proposalReviewAssignments.findFirst({
+          where: {
+            processInstanceId: instance.id,
+            reviewerProfileId: participantProfileId,
+            phaseId: formPhaseId,
+          },
+          columns: { id: true },
+        })
+      : undefined,
   ]);
 
   return !!vote || !!reviewAssignment;

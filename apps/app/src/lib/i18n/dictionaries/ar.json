@@ -1076,6 +1076,7 @@
       "loadReviewsError": "فشل تحميل المراجعات",
       "requestRevisionError": "فشل طلب التعديل",
       "submitReviewError": "فشل إرسال المراجعة",
+      "submitFormError": "فشل تقديم النموذج",
       "updateReviewError": "فشل تحديث المراجعة",
       "feedbackLabel": "الملاحظات",
       "feedbackToAuthorLabel": "ملاحظات إلى المؤلف",

@@ -1076,6 +1076,7 @@
       "loadReviewsError": "Waa lagu guuldareystay soo-dejinta dib-u-eegisyada",
       "requestRevisionError": "Ku guuldareystay codsiga dib-u-habeynta",
       "submitReviewError": "Ku guuldareystay gudbinta dib-u-eegista",
+      "submitFormError": "Ku guuldareystay gudbinta foomka",
       "updateReviewError": "Ku guuldareystay cusboonaysiinta dib-u-eegista",
       "feedbackLabel": "Jawaab celin",
       "feedbackToAuthorLabel": "Jawaab-celin qoraaga",

@@ -1076,6 +1076,7 @@
       "loadReviewsError": "Nem sikerült betölteni az értékeléseket",
       "requestRevisionError": "Nem sikerült átdolgozást kérni",
       "submitReviewError": "Nem sikerült elküldeni az értékelést",
+      "submitFormError": "Nem sikerült elküldeni az űrlapot",
       "updateReviewError": "Nem sikerült frissíteni az értékelést",
       "feedbackLabel": "Visszajelzés",
       "feedbackToAuthorLabel": "Visszajelzés a szerzőnek",

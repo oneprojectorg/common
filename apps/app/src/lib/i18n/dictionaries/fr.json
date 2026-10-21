@@ -1076,6 +1076,7 @@
       "loadReviewsError": "Échec du chargement des évaluations",
       "requestRevisionError": "Échec de la demande de révision",
       "submitReviewError": "Échec de la soumission de l'évaluation",
+      "submitFormError": "Échec de l'envoi du formulaire",
       "updateReviewError": "Échec de la mise à jour de l'évaluation",
       "feedbackLabel": "Retours",
       "feedbackToAuthorLabel": "Commentaires à l'auteur",
