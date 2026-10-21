@@ -102,8 +102,8 @@ export function ReviewSummaryView({
     null,
   );
   const [isSavingOwnReview, setIsSavingOwnReview] = useState(false);
-  // The selected review and the own form belong to "Review Progress", so
-  // leaving that tab clears both.
+  // Leaving "Review Progress" clears the selected review. The own form stays
+  // open in the kept-mounted panel, so a tab switch keeps unsaved edits.
   const [activeTab, setActiveTab] = useState(REVIEW_PROGRESS_TAB);
 
   // Guarded: writing this unconditionally pushes a history entry for the
@@ -131,10 +131,9 @@ export function ReviewSummaryView({
       setActiveTab(value);
       if (value !== REVIEW_PROGRESS_TAB) {
         clearSelectedAssignment();
-        closeOwnForm();
       }
     },
-    [clearSelectedAssignment, closeOwnForm],
+    [clearSelectedAssignment],
   );
 
   // Kept for the submitter's own pane, which must be correct with the
@@ -177,6 +176,10 @@ export function ReviewSummaryView({
   const isOwnDetailOpen =
     !!ownAssignment && selectedAssignmentId === ownAssignment.assignment.id;
   const canEditOwnReview = !!ownAssignment?.canEditReview;
+  // The header actions and the status text follow the form only while it is
+  // on screen.
+  const isProgressTabActive = activeTab === REVIEW_PROGRESS_TAB;
+  const isOwnFormOnScreen = isOwnFormOpen && isProgressTabActive;
 
   // Only a review the aggregates flagged stale switches the left pane.
   const selectedStaleReview = selectedAssignmentId
@@ -202,7 +205,7 @@ export function ReviewSummaryView({
     <>
       {/* Outside the form, or the live region announces every keystroke. */}
       <span role="status" className="sr-only">
-        {isOwnFormOpen
+        {isOwnFormOnScreen
           ? t('decisions.review.reviewProposalHeading')
           : t('decisions.review.reviewProgressHeading')}
       </span>
@@ -247,7 +250,7 @@ export function ReviewSummaryView({
       >
         {/* Swaps without a navigation. */}
         <div aria-live="polite">
-          {isOwnFormOpen
+          {isOwnFormOnScreen
             ? ownFormStatus && (
                 <Button
                   onClick={saveOwnReview}
@@ -260,7 +263,8 @@ export function ReviewSummaryView({
                     : t('decisions.review.submitReviewAction')}
                 </Button>
               )
-            : isOwnDetailOpen &&
+            : isProgressTabActive &&
+              isOwnDetailOpen &&
               canEditOwnReview && (
                 <Button variant="outline" onClick={openOwnForm}>
                   <LuPencil className="size-4" />
