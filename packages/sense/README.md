@@ -227,6 +227,8 @@ published source lags its declared dependency versions. Reapply if you re-run
 
 - `calendar.tsx` — removed the `table:` `className` entry. `react-day-picker`
   v10 dropped `table` from its `ClassNames` type; the registry still emits it.
+- `tabs.tsx` — `TabsList` has a `sidebar` variant (sidebar palette, tinted
+  active tab, no card) for a settings-style nav column. Not in the registry.
 - `scroll-area.tsx` — dropped an unused `import * as React from "react"` that
   fails `noUnusedLocals`.
 - `sheet.tsx` — moved the panel width out of the `data-[side=left|right]:`

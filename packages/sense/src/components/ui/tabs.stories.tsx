@@ -99,6 +99,30 @@ export const Vertical: Story = {
   ),
 };
 
+export const Sidebar: Story = {
+  render: () => (
+    <Tabs
+      defaultValue="Overview"
+      orientation="vertical"
+      className="h-72 w-120 gap-0 overflow-hidden rounded-lg border"
+    >
+      <TabsList variant="sidebar" className="w-44 shrink-0">
+        {tabPanels.map(({ tab }) => (
+          <TabsTrigger key={tab} value={tab}>
+            {tab}
+          </TabsTrigger>
+        ))}
+      </TabsList>
+      {tabPanels.map(({ tab, body }) => (
+        <TabsContent key={tab} value={tab} className="p-6">
+          <p className="font-strong text-foreground">{tab}</p>
+          <p className="mt-1 text-sm text-muted-foreground">{body}</p>
+        </TabsContent>
+      ))}
+    </Tabs>
+  ),
+};
+
 export const DisabledTab: Story = {
   render: () => (
     <Tabs defaultValue="Overview" className="w-96">
