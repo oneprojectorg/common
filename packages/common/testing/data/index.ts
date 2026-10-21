@@ -15,6 +15,7 @@ export {
 } from './test-data';
 
 export {
+  createCustomForm,
   createDecisionInstance,
   createDecisionProcess,
   createInstanceMember,

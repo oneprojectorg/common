@@ -5,6 +5,7 @@ import {
   ProposalStatus,
   accessRolePermissionsOnAccessZones,
   accessRoles,
+  customForms,
   decisionProcesses,
   processInstances,
   profileUserToAccessRoles,
@@ -962,4 +963,27 @@ export async function createProposal(
     proposalData: proposal.proposalData as Record<string, unknown>,
     status: proposal.status,
   };
+}
+
+/**
+ * Attaches a custom form to a decision instance's profile. `x-phase` in the
+ * schema picks the phase; without it the form applies to the initial phase.
+ */
+export async function createCustomForm({
+  profileId,
+  schema,
+}: {
+  profileId: string;
+  schema: Record<string, unknown>;
+}) {
+  const [form] = await db
+    .insert(customForms)
+    .values({ profileId, name: 'Test Form', schema })
+    .returning();
+
+  if (!form) {
+    throw new Error('Failed to create custom form');
+  }
+
+  return form;
 }
