@@ -1,6 +1,7 @@
 'use client';
 
 import { ClientOnly } from '@/utils/ClientOnly';
+import { isSearchQueryLongEnough } from '@/utils/isSearchQueryLongEnough';
 import { trpc } from '@op/api/client';
 import { ProcessStatus } from '@op/api/encoders';
 import type { SortDir } from '@op/common';
@@ -52,7 +53,9 @@ export const ProfileUsersAccess = ({
   const orderBy = sortDescriptor.column;
   const dir: SortDir =
     sortDescriptor.direction === 'ascending' ? 'asc' : 'desc';
-  const searchFilter = debouncedQuery.length >= 2 ? debouncedQuery : undefined;
+  const searchFilter = isSearchQueryLongEnough(debouncedQuery)
+    ? debouncedQuery
+    : undefined;
 
   const {
     data,
