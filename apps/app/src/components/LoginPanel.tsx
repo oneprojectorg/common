@@ -6,6 +6,7 @@ import { trpc } from '@op/api/client';
 import { getSafeRedirectPath } from '@op/common/client';
 import { APP_NAME, OPURLConfig } from '@op/core';
 import { useAuthUser, useMount } from '@op/hooks';
+import { Alert, AlertDescription } from '@op/sense/Alert';
 import { Button } from '@op/sense/Button';
 import { SocialLinks } from '@op/sense/SocialLinks';
 import { createSBBrowserClient } from '@op/supabase/client';
@@ -191,7 +192,7 @@ export const LoginPanel = () => {
     }
   }, [email, token, supabase, finishSignIn, setTokenError, t]);
 
-  const formError = isPhone ? phoneFlow.error : undefined;
+  const sendError = isPhone ? phoneFlow.error : undefined;
 
   const codeError = isCodeStep
     ? isPhone
@@ -310,12 +311,10 @@ export const LoginPanel = () => {
 
       {!isConnectionError && !isErrorState && (
         <div className="flex flex-col gap-8">
-          {/* role="alert" so failures are announced while focus stays on the
-            submit button. */}
-          {formError ? (
-            <p role="alert" className="text-center text-destructive">
-              {formError}
-            </p>
+          {isCodeStep && sendError ? (
+            <Alert variant="destructive">
+              <AlertDescription>{sendError}</AlertDescription>
+            </Alert>
           ) : null}
 
           {!isCodeStep && (
@@ -349,6 +348,7 @@ export const LoginPanel = () => {
               phone={{
                 value: phone,
                 isDisabled: phoneFlow.isSending,
+                error: sendError,
                 onChange: setPhone,
                 onSubmit: () => {
                   void phoneFlow.requestCode();

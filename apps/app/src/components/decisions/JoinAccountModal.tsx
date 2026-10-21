@@ -15,6 +15,7 @@ import {
   isValidTypedPhoneNumber,
   normalizePhoneNumber,
 } from '@op/common/client';
+import { Alert, AlertDescription } from '@op/sense/Alert';
 import { Button } from '@op/sense/Button';
 import {
   Dialog,
@@ -315,12 +316,10 @@ const JoinAccountModalContent = ({ close }: { close: () => void }) => {
       <CodeSentAnnouncement sentTo={sentTo} />
 
       <div className="flex flex-col gap-4 px-6 py-4">
-        {/* role="alert" so async claim errors are announced while focus stays on
-          the submit button. */}
-        {contactError ? (
-          <p role="alert" className="text-center text-destructive">
-            {contactError}
-          </p>
+        {otpSent && contactError ? (
+          <Alert variant="destructive">
+            <AlertDescription>{contactError}</AlertDescription>
+          </Alert>
         ) : null}
 
         {otpSent ? (
@@ -347,6 +346,7 @@ const JoinAccountModalContent = ({ close }: { close: () => void }) => {
               email={{
                 value: email,
                 isDisabled: isSubmitting,
+                error: isPhone ? undefined : contactError,
                 onChange: setEmail,
                 onSubmit: () => {
                   void submitContact();
@@ -355,6 +355,7 @@ const JoinAccountModalContent = ({ close }: { close: () => void }) => {
               phone={{
                 value: phone,
                 isDisabled: isSubmitting,
+                error: isPhone ? contactError : undefined,
                 onChange: setPhone,
                 onSubmit: () => {
                   void submitContact();

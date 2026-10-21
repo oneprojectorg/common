@@ -6,7 +6,11 @@ import { useState } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import messages from '../lib/i18n/dictionaries/en.json';
-import { type AuthChannel, AuthCodeStepActions } from './AuthPanel';
+import {
+  type AuthChannel,
+  AuthCodeStepActions,
+  AuthContactFields,
+} from './AuthPanel';
 
 type AuthCodeFieldComponent = (typeof import('./AuthPanel'))['AuthCodeField'];
 
@@ -222,6 +226,91 @@ describe('AuthCodeField', () => {
 
     expect(input.getAttribute('aria-invalid')).toBeNull();
     expect(screen.getByRole('group').getAttribute('data-invalid')).toBeNull();
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+});
+
+describe('AuthContactFields', () => {
+  afterEach(() => {
+    cleanup();
+  });
+
+  const contactField = (error?: string) => ({
+    value: '',
+    isDisabled: false,
+    onChange: vi.fn(),
+    onSubmit: vi.fn(),
+    error,
+  });
+
+  const renderContactFields = ({
+    channel,
+    email,
+    phone,
+  }: {
+    channel: AuthChannel;
+    email?: string;
+    phone?: string;
+  }) =>
+    render(
+      <NextIntlClientProvider locale="en" messages={messages}>
+        <AuthContactFields
+          smsEnabled
+          value={channel}
+          onValueChange={vi.fn()}
+          email={contactField(email)}
+          phone={contactField(phone)}
+        />
+      </NextIntlClientProvider>,
+    );
+
+  it('given the phone request failed, then the message sits below the phone input in the field error state', () => {
+    renderContactFields({
+      channel: 'phone',
+      phone: 'An account with this phone number already exists.',
+    });
+
+    const input = screen.getByRole('textbox', { name: 'Phone Number' });
+    const field = screen.getByRole('group');
+    const alert = screen.getByRole('alert');
+
+    expect(input.getAttribute('aria-invalid')).toBe('true');
+    expect(field.getAttribute('data-invalid')).toBe('true');
+    expect(field.contains(alert)).toBe(true);
+    expect(
+      input.compareDocumentPosition(alert) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(alert.textContent).toBe(
+      'An account with this phone number already exists.',
+    );
+  });
+
+  it('given the email request failed, then the message sits below the email input in the field error state', () => {
+    renderContactFields({
+      channel: 'email',
+      email: 'An account with this email already exists.',
+    });
+
+    const input = screen.getByRole('textbox', { name: 'Email' });
+    const field = screen.getByRole('group');
+    const alert = screen.getByRole('alert');
+
+    expect(input.getAttribute('aria-invalid')).toBe('true');
+    expect(field.getAttribute('data-invalid')).toBe('true');
+    expect(field.contains(alert)).toBe(true);
+    expect(
+      input.compareDocumentPosition(alert) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+  });
+
+  it('given no request failed, then neither contact input is marked invalid', () => {
+    renderContactFields({ channel: 'phone' });
+
+    expect(
+      screen
+        .getByRole('textbox', { name: 'Phone Number' })
+        .getAttribute('aria-invalid'),
+    ).toBeNull();
     expect(screen.queryByRole('alert')).toBeNull();
   });
 });
