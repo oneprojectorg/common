@@ -1,8 +1,8 @@
-import { CommonError } from '../../utils';
+import { CommonError, ValidationError } from '../../utils';
 import { type AmountUnit, getFieldAmount } from './fieldUnit';
 import { getProposalDocumentsContent } from './getProposalDocumentsContent';
 import { parseProposalData } from './proposalDataSchema';
-import { getDocumentFieldTexts } from './proposalListPreview';
+import { resolveDocumentFieldValues } from './proposalListPreview';
 import type { ProposalTemplateSchema } from './types';
 
 export type ProposalCosts = ReadonlyMap<string, number | null>;
@@ -41,27 +41,24 @@ export async function getProposalCosts({
 
       const value =
         documentContent?.type === 'json'
-          ? parseFieldText(
-              getDocumentFieldTexts({
-                fragments: documentContent.fragments,
-                keys: [voterCostField],
-              })[voterCostField],
-            )
+          ? resolveDocumentFieldValues({
+              fragments: documentContent.fragments,
+              proposalTemplate,
+              keys: [voterCostField],
+            })[voterCostField]
           : parseProposalData(proposalData)[voterCostField];
+      const amount = getFieldAmount({ value, unit });
 
-      return [id, getFieldAmount({ value, unit })];
+      // A cost that is filled in but unreadable must not ride free on a capped ballot.
+      if (amount === null && typeof value === 'string' && value.trim()) {
+        const title = parseProposalData(proposalData).title ?? id;
+
+        throw new ValidationError(
+          `The ${voterCostField} of "${title}" is not a valid amount, so this ballot cannot be priced. Remove it from your ballot, or ask an admin to correct the proposal.`,
+        );
+      }
+
+      return [id, amount];
     }),
   );
-}
-
-function parseFieldText(text: string | undefined): unknown {
-  if (text === undefined) {
-    return undefined;
-  }
-
-  try {
-    return JSON.parse(text);
-  } catch {
-    return text;
-  }
 }

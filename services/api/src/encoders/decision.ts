@@ -85,7 +85,6 @@ const phaseRulesEncoder = z.object({
       submit: z.boolean().optional(),
       edit: z.boolean().optional(),
       maxVotesPerMember: z.number().int().positive().optional(),
-      // Omitting a key here erases it on write, since rules are written wholesale.
       voterBudget: z.number().finite().positive().optional(),
       voterCostField: z.string().trim().min(1).optional(),
     })

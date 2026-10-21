@@ -129,7 +129,6 @@ describe('getProposalCosts', () => {
     getDocuments.mockResolvedValue(
       new Map<string, ProposalDocumentContent>([
         ['zero', { type: 'json', fragments: { cost: fragment('0') } }],
-        ['garbled', { type: 'json', fragments: { cost: fragment('three') } }],
         ['cleared', { type: 'json', fragments: {} }],
       ]),
     );
@@ -137,7 +136,6 @@ describe('getProposalCosts', () => {
     const costs = await getProposalCosts({
       proposals: [
         { id: 'zero', proposalData: { cost: 3 } },
-        { id: 'garbled', proposalData: { cost: 3 } },
         { id: 'cleared', proposalData: { cost: 3 } },
       ],
       proposalTemplate: template,
@@ -147,9 +145,55 @@ describe('getProposalCosts', () => {
 
     expect([...costs]).toEqual([
       ['zero', 0],
-      ['garbled', null],
       ['cleared', null],
     ]);
+  });
+
+  it('rejects the ballot when a document cost is filled in but not an amount', async () => {
+    getDocuments.mockResolvedValue(
+      new Map<string, ProposalDocumentContent>([
+        ['a', { type: 'json', fragments: { budget: fragment('lots') } }],
+      ]),
+    );
+
+    await expect(
+      getProposalCosts({
+        proposals: [
+          {
+            id: 'a',
+            proposalData: {
+              title: 'Community garden',
+              budget: { amount: 100, currency: 'USD' },
+            },
+          },
+        ],
+        proposalTemplate: template,
+        voterCostField: 'budget',
+        unit: USD,
+      }),
+    ).rejects.toThrow('The budget of "Community garden" is not a valid amount');
+  });
+
+  it('rejects the ballot when a snapshot cost is filled in but not an amount', async () => {
+    await expect(
+      getProposalCosts({
+        proposals: [{ id: 'a', proposalData: { cost: 'three' } }],
+        proposalTemplate: template,
+        voterCostField: 'cost',
+        unit: DOTS,
+      }),
+    ).rejects.toThrow('The cost of "a" is not a valid amount');
+  });
+
+  it('charges nothing for a blank cost', async () => {
+    const costs = await getProposalCosts({
+      proposals: [{ id: 'a', proposalData: { cost: '  ' } }],
+      proposalTemplate: template,
+      voterCostField: 'cost',
+      unit: DOTS,
+    });
+
+    expect(costs.get('a')).toBeNull();
   });
 
   it('rejects the ballot when a document cannot be read', async () => {

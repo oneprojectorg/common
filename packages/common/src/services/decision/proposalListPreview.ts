@@ -60,7 +60,7 @@ export function resolveDocumentFieldValues({
   );
 }
 
-export function getDocumentFieldTexts({
+function getDocumentFieldTexts({
   fragments,
   keys,
 }: {
