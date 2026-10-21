@@ -2,8 +2,8 @@ import { z } from 'zod';
 
 /**
  * The unit a numeric template field is counted in: a currency, or a custom
- * label such as "dots". Lives here because `@op/db` types the stored ballot
- * with it and cannot depend on `@op/common`, which owns the pricing logic.
+ * label such as "dots". Shared because `@op/db` types the stored ballot with
+ * it and cannot depend on `@op/common`, which owns the pricing logic.
  */
 
 const CUSTOM_UNIT_LABEL_MAX_LENGTH = 40;

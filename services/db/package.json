@@ -33,6 +33,7 @@
   "dependencies": {
     "@op/core": "workspace:*",
     "@op/supabase": "workspace:^",
+    "@op/types": "workspace:*",
     "@types/pg": "^8.11.11",
     "access-zones": "catalog:",
     "dotenv": "^16.4.7",

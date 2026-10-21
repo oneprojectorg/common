@@ -1,4 +1,4 @@
-import type { AmountUnit } from '@op/core/amountUnit';
+import type { AmountUnit } from '@op/types/amountUnit';
 import { describe, expect, it } from 'vitest';
 
 import {

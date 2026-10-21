@@ -1,4 +1,4 @@
-import type { AmountUnit } from '@op/core/amountUnit';
+import type { AmountUnit } from '@op/types/amountUnit';
 
 import { formatUnitAmount, isAtMost, sumAmounts } from './fieldUnit';
 import type { ProposalCosts } from './getProposalCosts';

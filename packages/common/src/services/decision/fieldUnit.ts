@@ -1,5 +1,5 @@
-import { type AmountUnit, amountUnitSchema } from '@op/core/amountUnit';
 import { logger } from '@op/logging';
+import { type AmountUnit, amountUnitSchema } from '@op/types/amountUnit';
 import { z } from 'zod';
 
 import {

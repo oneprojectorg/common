@@ -1,5 +1,4 @@
 import { trackUserVoted } from '@op/analytics';
-import type { AmountUnit } from '@op/core/amountUnit';
 import { db } from '@op/db/client';
 import {
   type VoteData,
@@ -8,6 +7,7 @@ import {
 } from '@op/db/schema';
 import { logger } from '@op/logging';
 import type { User } from '@op/supabase/lib';
+import type { AmountUnit } from '@op/types/amountUnit';
 import { waitUntil } from '@vercel/functions';
 import { permission } from 'access-zones';
 

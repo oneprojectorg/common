@@ -1,5 +1,5 @@
-import type { AmountUnit } from '@op/core/amountUnit';
 import type { DecisionProcessTransition } from '@op/db/schema';
+import type { AmountUnit } from '@op/types/amountUnit';
 import type { JSONSchema7 } from 'json-schema';
 
 import type { PhaseDefinition } from './schemas/types';

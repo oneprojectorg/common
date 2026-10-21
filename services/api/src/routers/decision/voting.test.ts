@@ -1,9 +1,9 @@
 import { mockCollab } from '@op/collab/testing';
 import type { BudgetData } from '@op/common/client';
 import { TestDecisionsDataManager } from '@op/common/testing';
-import type { AmountUnit } from '@op/core/amountUnit';
 import { ProposalStatus, processInstances } from '@op/db/schema';
 import { db, eq } from '@op/db/test';
+import type { AmountUnit } from '@op/types/amountUnit';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '..';
