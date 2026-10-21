@@ -49,6 +49,17 @@ const hiddenSubmissionSchema: DecisionSchemaDefinition = {
   ),
 };
 
+const readInstance = async (instanceId: string) => {
+  const instance = await db.query.processInstances.findFirst({
+    where: { id: instanceId },
+    columns: { id: true, instanceData: true, currentStateId: true },
+  });
+  if (!instance) {
+    throw new Error(`Instance ${instanceId} not found`);
+  }
+  return instance;
+};
+
 describe.concurrent('countBallotProposals', () => {
   it('given a proposal submitted in a phase that hides submissions by default, then it is not counted', async ({
     task,
@@ -76,7 +87,7 @@ describe.concurrent('countBallotProposals', () => {
     expect(advanced).toMatchObject({ conflict: false });
 
     await expect(
-      countBallotProposals({ processInstanceId: instanceId }),
+      countBallotProposals({ instance: await readInstance(instanceId) }),
     ).resolves.toBe(0);
   });
 
@@ -117,7 +128,7 @@ describe.concurrent('countBallotProposals', () => {
     });
 
     await expect(
-      countBallotProposals({ processInstanceId: instanceId }),
+      countBallotProposals({ instance: await readInstance(instanceId) }),
     ).resolves.toBe(1);
   });
 
@@ -149,7 +160,7 @@ describe.concurrent('countBallotProposals', () => {
     expect(advanced).toMatchObject({ conflict: false });
 
     await expect(
-      countBallotProposals({ processInstanceId: instanceId }),
+      countBallotProposals({ instance: await readInstance(instanceId) }),
     ).resolves.toBe(2);
   });
 });

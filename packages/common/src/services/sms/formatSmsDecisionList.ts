@@ -1,4 +1,4 @@
-import type { SmsDecisionListItem } from '../decision/listSmsDecisions';
+import type { SmsDecisionListItem } from '../decision/sms/listSmsDecisions';
 import { clipSmsText, splitSmsBody } from './text';
 
 const MAX_LISTED_DECISIONS = 10;

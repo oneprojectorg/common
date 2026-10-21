@@ -1,11 +1,11 @@
 import { TestDecisionsDataManager } from '@op/common/testing';
-import { ProcessStatus } from '@op/db/schema';
+import { ProcessStatus, ProposalStatus } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
-import { getPublishedDecisionBySlug } from './getPublishedDecisionBySlug';
+import { getSmsDecisionDescription } from './getSmsDecisionDescription';
 
-describe.concurrent('getPublishedDecisionBySlug', () => {
-  it('given a published decision, when a member looks it up by slug, then it is returned with its current phase', async ({
+describe.concurrent('getSmsDecisionDescription', () => {
+  it('given a published decision with one submitted proposal, when a member asks for it by slug, then they get its name, phase, voting state and ballot count', async ({
     task,
     onTestFinished,
   }) => {
@@ -15,21 +15,27 @@ describe.concurrent('getPublishedDecisionBySlug', () => {
       grantAccess: true,
       status: ProcessStatus.PUBLISHED,
     });
+    await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: setup.instance.instance.id,
+      proposalData: { title: `Fund the park ${task.id}` },
+      status: ProposalStatus.SUBMITTED,
+    });
 
     await expect(
-      getPublishedDecisionBySlug({
+      getSmsDecisionDescription({
         authUserId: setup.user.id,
-        slug: setup.instance.slug,
+        decisionSlug: setup.instance.slug,
       }),
     ).resolves.toEqual({
-      processInstanceId: setup.instance.instance.id,
       name: setup.instance.instance.name,
       phaseName: 'Initial Phase',
       votingOpen: false,
+      proposalCount: 1,
     });
   });
 
-  it('given a decision that is not published, when a member looks it up by slug, then it is not found', async ({
+  it('given a decision that is not published, when a member asks for it by slug, then it is not found', async ({
     task,
     onTestFinished,
   }) => {
@@ -41,14 +47,14 @@ describe.concurrent('getPublishedDecisionBySlug', () => {
     });
 
     await expect(
-      getPublishedDecisionBySlug({
+      getSmsDecisionDescription({
         authUserId: setup.user.id,
-        slug: setup.instance.slug,
+        decisionSlug: setup.instance.slug,
       }),
     ).rejects.toMatchObject({ name: 'NotFoundError' });
   });
 
-  it('given a published decision the caller is not a member of, when they look it up by slug, then the lookup is refused', async ({
+  it('given a published decision the caller is not a member of, when they ask for it by slug, then the lookup is refused', async ({
     task,
     onTestFinished,
   }) => {
@@ -62,9 +68,9 @@ describe.concurrent('getPublishedDecisionBySlug', () => {
     });
 
     await expect(
-      getPublishedDecisionBySlug({
+      getSmsDecisionDescription({
         authUserId: outsider.authUserId,
-        slug: setup.instance.slug,
+        decisionSlug: setup.instance.slug,
       }),
     ).rejects.toMatchObject({ name: 'UnauthorizedError' });
   });
