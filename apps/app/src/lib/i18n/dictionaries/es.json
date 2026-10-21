@@ -1076,7 +1076,6 @@
       "loadReviewsError": "No se pudieron cargar las revisiones",
       "requestRevisionError": "Error al solicitar la revisión",
       "submitReviewError": "Error al enviar la revisión",
-      "submitFormError": "Error al enviar el formulario",
       "updateReviewError": "Error al actualizar la revisión",
       "feedbackLabel": "Comentarios",
       "feedbackToAuthorLabel": "Comentarios al autor",

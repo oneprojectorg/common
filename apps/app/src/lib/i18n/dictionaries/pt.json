@@ -1076,7 +1076,6 @@
       "loadReviewsError": "Falha ao carregar as avaliações",
       "requestRevisionError": "Falha ao solicitar revisão",
       "submitReviewError": "Falha ao enviar avaliação",
-      "submitFormError": "Falha ao enviar o formulário",
       "updateReviewError": "Falha ao atualizar avaliação",
       "feedbackLabel": "Comentários",
       "feedbackToAuthorLabel": "Feedback ao autor",

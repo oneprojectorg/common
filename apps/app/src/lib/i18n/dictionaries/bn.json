@@ -1076,7 +1076,6 @@
       "loadReviewsError": "পর্যালোচনা লোড করতে ব্যর্থ হয়েছে",
       "requestRevisionError": "সংশোধনের অনুরোধ ব্যর্থ হয়েছে",
       "submitReviewError": "পর্যালোচনা জমা দিতে ব্যর্থ",
-      "submitFormError": "ফর্ম জমা দিতে ব্যর্থ",
       "updateReviewError": "পর্যালোচনা আপডেট করতে ব্যর্থ",
       "feedbackLabel": "মতামত",
       "feedbackToAuthorLabel": "লেখকের কাছে মতামত",
