@@ -13,9 +13,8 @@ interface MailpitMessage {
 
 /**
  * The login code GoTrue emailed to `to`, read from the newest message in
- * Mailpit. The e2e magic-link template renders `{{ .Token }}` inside the only
- * `letter-spacing` element that holds digits, split by a word joiner
- * that defeats phone-number detection and is dropped here.
+ * Mailpit. The e2e magic-link template renders `{{ .Token }}` inside a span
+ * with `letter-spacing`, which is the only run of digits in that position.
  */
 export const readLoginCode = async (to: string): Promise<string> => {
   let code: string | undefined;
@@ -64,8 +63,5 @@ const findLoginCode = async (to: string): Promise<string | undefined> => {
 
   const { HTML }: MailpitMessage = await message.json();
 
-  return HTML.match(/letter-spacing[^>]*>\s*([\d\u2060]+)\s*</)?.[1]?.replace(
-    /\u2060/g,
-    '',
-  );
+  return HTML.match(/letter-spacing[^>]*>\s*(\d+)\s*</)?.[1];
 };
