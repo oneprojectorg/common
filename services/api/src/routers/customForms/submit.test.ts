@@ -1,4 +1,7 @@
-import { TestDecisionsDataManager } from '@op/common/testing';
+import {
+  TestDecisionsDataManager,
+  TestReviewsDataManager,
+} from '@op/common/testing';
 import { db, eq } from '@op/db/client';
 import { customFormSubmissions, customForms } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
@@ -218,6 +221,51 @@ describe.concurrent('customForm.submit', () => {
       caller.customForm.submit({
         customFormId: form.id,
         profileId: proposal.profileId,
+        data: { neighborhood: 'Downtown' },
+      }),
+    ).rejects.toThrow(/does not belong to this form/i);
+  });
+
+  it("records a reviewer's submission against their own profile", async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const { context, reviewer } = await testData.createReviewAssignment();
+    const form = await createCustomForm(
+      context.instance.profileId,
+      onTestFinished,
+    );
+
+    const caller = await createAuthenticatedCaller(reviewer.email);
+
+    const submission = await caller.customForm.submit({
+      customFormId: form.id,
+      profileId: reviewer.profileId,
+      data: { neighborhood: 'Downtown' },
+    });
+
+    expect(submission.profileId).toBe(reviewer.profileId);
+  });
+
+  it('rejects an own-profile submission from a member who neither voted nor reviews', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const context = await testData.createContext();
+    const member = await testData.createInstanceMember(context);
+    const form = await createCustomForm(
+      context.instance.profileId,
+      onTestFinished,
+    );
+
+    const caller = await createAuthenticatedCaller(member.email);
+
+    await expect(
+      caller.customForm.submit({
+        customFormId: form.id,
+        profileId: member.profileId,
         data: { neighborhood: 'Downtown' },
       }),
     ).rejects.toThrow(/does not belong to this form/i);

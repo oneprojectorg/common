@@ -4,6 +4,7 @@ import {
   customFormSubmissions,
   decisionsVoteSubmissions,
   processInstances,
+  proposalReviewAssignments,
 } from '@op/db/schema';
 import { permission } from 'access-zones';
 
@@ -22,10 +23,12 @@ import type {
  * Authorization: the caller must hold profile access on the TARGET profile
  * (for a proposal attachment, the proposal's own profile — its creator and
  * collaborators). The target must also belong to the form's owning process,
- * via one of two attachment sites:
- *   - a proposal whose decision process owns the form (submission/edit forms), or
- *   - a participant's own profile that has voted in the process (e.g. a
- *     post-vote form attached to the voter's individual profile).
+ * via one of these attachment sites:
+ *   - a proposal whose decision process owns the form (submission/edit forms),
+ *   - a participant's own profile that has voted in the process (post-vote
+ *     forms), or
+ *   - a reviewer's own profile with a review assignment in the process
+ *     (review-phase forms).
  *
  * Idempotent per (customFormId, profileId): a retry after a failed
  * follow-up mutation updates the existing row instead of inserting a
@@ -65,10 +68,7 @@ export const createCustomFormSubmission = async ({
 
   // The target profile must belong to the process that owns the form
   // (`form.profileId` is the process instance's profile). This stops a caller
-  // from attaching their own entity to an unrelated form. Two attachment sites
-  // are allowed:
-  //   1. a proposal in the form's process (submission/edit forms), or
-  //   2. a participant's own profile that voted in the process (post-vote forms).
+  // from attaching their own entity to an unrelated form.
   const proposal = await db.query.proposals.findFirst({
     where: { profileId: input.profileId },
     with: { processInstance: true },
@@ -77,33 +77,13 @@ export const createCustomFormSubmission = async ({
   const belongsViaProposal =
     !!proposal && proposal.processInstance.profileId === form.profileId;
 
-  let belongsViaParticipation = false;
-  if (!belongsViaProposal) {
-    // Resolve the process instance that owns the form, then confirm the target
-    // profile cast a vote in it. `decisionsVoteSubmissions` is the authoritative
-    // per-voter participation record (unique per instance + voter).
-    const [instance] = await db
-      .select({ id: processInstances.id })
-      .from(processInstances)
-      .where(eq(processInstances.profileId, form.profileId))
-      .limit(1);
-
-    if (instance) {
-      const [vote] = await db
-        .select({ id: decisionsVoteSubmissions.id })
-        .from(decisionsVoteSubmissions)
-        .where(
-          and(
-            eq(decisionsVoteSubmissions.processInstanceId, instance.id),
-            eq(decisionsVoteSubmissions.submittedByProfileId, input.profileId),
-          ),
-        )
-        .limit(1);
-      belongsViaParticipation = !!vote;
-    }
-  }
-
-  if (!belongsViaProposal && !belongsViaParticipation) {
+  if (
+    !belongsViaProposal &&
+    !(await isParticipantInFormProcess({
+      participantProfileId: input.profileId,
+      formProfileId: form.profileId,
+    }))
+  ) {
     throw new ValidationError(
       'The submission target does not belong to this form',
     );
@@ -155,4 +135,54 @@ export const createCustomFormSubmission = async ({
   }
 
   return submission;
+};
+
+/**
+ * Whether the profile voted in, or holds a review assignment in, the process
+ * instance that owns the form.
+ */
+const isParticipantInFormProcess = async ({
+  participantProfileId,
+  formProfileId,
+}: {
+  participantProfileId: string;
+  formProfileId: string;
+}): Promise<boolean> => {
+  const [instance] = await db
+    .select({ id: processInstances.id })
+    .from(processInstances)
+    .where(eq(processInstances.profileId, formProfileId))
+    .limit(1);
+
+  if (!instance) {
+    return false;
+  }
+
+  const [[vote], [reviewAssignment]] = await Promise.all([
+    db
+      .select({ id: decisionsVoteSubmissions.id })
+      .from(decisionsVoteSubmissions)
+      .where(
+        and(
+          eq(decisionsVoteSubmissions.processInstanceId, instance.id),
+          eq(
+            decisionsVoteSubmissions.submittedByProfileId,
+            participantProfileId,
+          ),
+        ),
+      )
+      .limit(1),
+    db
+      .select({ id: proposalReviewAssignments.id })
+      .from(proposalReviewAssignments)
+      .where(
+        and(
+          eq(proposalReviewAssignments.processInstanceId, instance.id),
+          eq(proposalReviewAssignments.reviewerProfileId, participantProfileId),
+        ),
+      )
+      .limit(1),
+  ]);
+
+  return !!vote || !!reviewAssignment;
 };
