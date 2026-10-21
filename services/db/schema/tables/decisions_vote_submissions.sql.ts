@@ -1,3 +1,4 @@
+import type { AmountUnit } from '@op/types/amountUnit';
 import type { InferModel } from 'drizzle-orm';
 import { relations } from 'drizzle-orm/_relations';
 import { index, jsonb, pgTable, text, unique, uuid } from 'drizzle-orm/pg-core';
@@ -16,6 +17,17 @@ export interface VoteData extends Record<string, unknown> {
     [key: string]: unknown;
   };
   validationSignature: string;
+
+  voterBudget?: number;
+  /** Template field each selection was charged from, in `costUnit`. */
+  voterCostField?: string;
+  costUnit?: AmountUnit;
+  /** `cost` is null when unpriceable or when no cap applied. */
+  selections?: Array<{
+    proposalId: string;
+    cost: number | null;
+  }>;
+  totalCost?: number;
 }
 
 export const decisionsVoteSubmissions = pgTable(

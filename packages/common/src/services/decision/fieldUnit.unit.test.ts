@@ -1,7 +1,7 @@
+import type { AmountUnit } from '@op/types/amountUnit';
 import { describe, expect, it } from 'vitest';
 
 import {
-  type AmountUnit,
   formatUnitAmount,
   getFieldUnit,
   getUnitLabel,

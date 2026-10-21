@@ -1431,6 +1431,9 @@ importers:
       '@op/supabase':
         specifier: workspace:^
         version: link:../supabase
+      '@op/types':
+        specifier: workspace:*
+        version: link:../../packages/types
       '@types/pg':
         specifier: 8.11.11
         version: 8.11.11

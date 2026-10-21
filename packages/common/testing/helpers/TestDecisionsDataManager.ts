@@ -16,6 +16,7 @@ import { eq, inArray } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
 
 import {
+  type BudgetInput,
   type DecisionInstanceData,
   type DecisionSchemaDefinition as DecisionSchemaDefinitionStrict,
   type PhaseDefinition,
@@ -412,8 +413,8 @@ export class TestDecisionsDataManager {
 
     // Update budget if needed (instanceData may not include budget from template)
     if (budget) {
-      const instanceRecord = await db._query.processInstances.findFirst({
-        where: eq(processInstances.id, processInstance.id),
+      const instanceRecord = await db.query.processInstances.findFirst({
+        where: { id: processInstance.id },
       });
       if (instanceRecord) {
         const instanceData = instanceRecord.instanceData as Record<
@@ -636,6 +637,9 @@ export class TestDecisionsDataManager {
       title: string;
       description?: string;
       collaborationDocId?: string;
+      budget?: BudgetInput;
+      /** Custom template fields, such as a numeric cost. */
+      [key: string]: unknown;
     };
     status?: ProposalStatus;
     seedCollabDoc?: boolean;

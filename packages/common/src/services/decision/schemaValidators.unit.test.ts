@@ -1,9 +1,87 @@
+import type { AmountUnit } from '@op/types/amountUnit';
 import { describe, expect, it } from 'vitest';
 
 import {
   isValidDecisionProcessSchema,
+  validateVoteBudget,
   validateVoteSelection,
 } from './schemaValidators';
+
+describe('validateVoteBudget', () => {
+  const USD: AmountUnit = { kind: 'currency', code: 'USD' };
+  const DOTS: AmountUnit = { kind: 'custom', label: 'dots' };
+
+  const costs = (entries: Record<string, number | null>) =>
+    new Map(Object.entries(entries));
+
+  const pool = costs({ a: 300, b: 450, unpriced: null });
+  const cap = (voterBudget: number) => ({
+    voterBudget,
+    costs: pool,
+    unit: USD,
+  });
+
+  it('accepts any ballot when no cap is set', () => {
+    expect(validateVoteBudget(['a', 'b'], undefined)).toEqual({
+      isValid: true,
+      errors: [],
+      totalCost: 0,
+    });
+  });
+
+  it('accepts a ballot under the cap', () => {
+    expect(validateVoteBudget(['a'], cap(500)).isValid).toBe(true);
+  });
+
+  it('accepts a ballot exactly at the cap', () => {
+    expect(validateVoteBudget(['a', 'b'], cap(750)).isValid).toBe(true);
+  });
+
+  it('accepts fractional costs that exactly meet the cap', () => {
+    expect(
+      validateVoteBudget(['a', 'b'], {
+        voterBudget: 0.3,
+        costs: costs({ a: 0.1, b: 0.2 }),
+        unit: USD,
+      }).isValid,
+    ).toBe(true);
+  });
+
+  it('rejects fractional costs that exceed the cap by less than a cent', () => {
+    expect(
+      validateVoteBudget(['a', 'b', 'c'], {
+        voterBudget: 0.01,
+        costs: costs({ a: 0.004, b: 0.004, c: 0.004 }),
+        unit: DOTS,
+      }),
+    ).toMatchObject({ isValid: false, totalCost: 0.012 });
+  });
+
+  it('rejects a ballot over the cap and names both figures', () => {
+    const result = validateVoteBudget(['a', 'b'], cap(700));
+
+    expect(result.isValid).toBe(false);
+    expect(result.totalCost).toBe(750);
+    expect(result.errors).toEqual([
+      'Selected proposals total $750, exceeding the voter budget of $700.',
+    ]);
+  });
+
+  it('charges nothing for a proposal with no cost', () => {
+    expect(validateVoteBudget(['a', 'unpriced'], cap(300))).toMatchObject({
+      isValid: true,
+      totalCost: 300,
+    });
+  });
+
+  it('labels a custom unit in the error', () => {
+    const dots = { voterBudget: 11, costs: costs({ a: 7, b: 5 }), unit: DOTS };
+
+    expect(validateVoteBudget(['a', 'b'], dots).errors).toEqual([
+      'Selected proposals total 12 dots, exceeding the voter budget of 11 dots.',
+    ]);
+  });
+});
 
 describe('validateVoteSelection', () => {
   const available = ['a', 'b', 'c', 'd', 'e'];

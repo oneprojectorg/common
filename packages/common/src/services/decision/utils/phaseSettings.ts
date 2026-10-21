@@ -41,6 +41,29 @@ export function isVotingPhase(phase: {
   return phase.rules?.voting?.submit ?? false;
 }
 
+const DEFAULT_VOTER_COST_FIELD = 'budget';
+
+export function getVoterCostField(phase: {
+  rules?: { voting?: { voterCostField?: string } };
+}): string {
+  const voterCostField = phase.rules?.voting?.voterCostField?.trim();
+
+  return voterCostField ? voterCostField : DEFAULT_VOTER_COST_FIELD;
+}
+
+// Invalid values mean no cap rather than an error.
+export function getVoterBudget(phase: {
+  rules?: { voting?: { voterBudget?: number } };
+}): number | undefined {
+  const voterBudget = phase.rules?.voting?.voterBudget;
+
+  return typeof voterBudget === 'number' &&
+    Number.isFinite(voterBudget) &&
+    voterBudget > 0
+    ? voterBudget
+    : undefined;
+}
+
 /**
  * Participants may comment during this phase — the Process Builder's
  * "Comments" toggle.

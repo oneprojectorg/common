@@ -1,14 +1,13 @@
 import { trackUserVoted } from '@op/analytics';
-import { and, db, eq, isNull } from '@op/db/client';
+import { db } from '@op/db/client';
 import {
   type VoteData,
   decisionsVoteProposals,
   decisionsVoteSubmissions,
-  processInstances,
-  proposals,
 } from '@op/db/schema';
 import { logger } from '@op/logging';
 import type { User } from '@op/supabase/lib';
+import type { AmountUnit } from '@op/types/amountUnit';
 import { waitUntil } from '@vercel/functions';
 import { permission } from 'access-zones';
 
@@ -20,17 +19,29 @@ import {
 } from '../../utils';
 import { assertInstanceProfileAccess, getIndividualProfileId } from '../access';
 import { assertProfileAccess } from '../assert';
+import { getFieldUnit } from './fieldUnit';
+import { type ProposalCosts, getProposalCosts } from './getProposalCosts';
 import { decisionPermission } from './permissions';
+import { resolveProposalTemplate } from './resolveProposalTemplate';
 import { processDecisionProcessSchema } from './schemaRegistry';
-import { validateVoteSelection } from './schemaValidators';
+import { validateVoteBudget, validateVoteSelection } from './schemaValidators';
 import type { DecisionInstanceData } from './schemas/instanceData';
-import { isVotingPhase } from './utils/phaseSettings';
+import type { ProposalTemplateSchema } from './types';
+import {
+  getVoterCostField,
+  getVoterBudget,
+  isVotingPhase,
+} from './utils/phaseSettings';
 import { isVotingEligible } from './votingEligibility';
+
+type BallotSelections = NonNullable<VoteData['selections']>;
 
 interface PhaseConfig {
   allowProposals: boolean;
   allowDecisions: boolean;
   maxVotesPerMember: number | undefined;
+  voterBudget: number | undefined;
+  voterCostField: string;
 }
 
 /** Extract voting/proposal rules for the current phase. */
@@ -60,7 +71,170 @@ function getCurrentPhaseConfig(processInstance: {
     allowProposals: currentPhase.rules?.proposals?.submit ?? false,
     allowDecisions: isVotingPhase(currentPhase),
     maxVotesPerMember: currentPhase.rules?.voting?.maxVotesPerMember,
+    voterBudget: getVoterBudget(currentPhase),
+    voterCostField: getVoterCostField(currentPhase),
   };
+}
+
+interface VoteCap {
+  voterBudget: number;
+  voterCostField: string;
+  /** Undefined when the rules name a field the template no longer prices. */
+  unit: AmountUnit | undefined;
+  proposalTemplate: ProposalTemplateSchema | null;
+}
+
+// Undefined when the phase sets no cap.
+async function getVoteCap({
+  phaseConfig,
+  processInstance,
+}: {
+  phaseConfig: PhaseConfig;
+  processInstance: { instanceData: unknown; processId: string | null };
+}): Promise<VoteCap | undefined> {
+  if (phaseConfig.voterBudget === undefined) {
+    return undefined;
+  }
+
+  const proposalTemplate = await resolveProposalTemplate(
+    processInstance.instanceData as Record<string, unknown> | null,
+    processInstance.processId,
+  );
+
+  return {
+    voterBudget: phaseConfig.voterBudget,
+    voterCostField: phaseConfig.voterCostField,
+    unit: getFieldUnit(
+      proposalTemplate?.properties?.[phaseConfig.voterCostField],
+    ),
+    proposalTemplate,
+  };
+}
+
+type PricedBallot = Omit<VoteCap, 'unit' | 'proposalTemplate'> & {
+  unit: AmountUnit;
+  costs: ProposalCosts;
+};
+
+// Costs come from the live fragments; skipped entirely when no cap applies.
+async function getBallotPricing({
+  phaseConfig,
+  processInstance,
+  eligibleProposals,
+  selectedProposalIds,
+}: {
+  phaseConfig: PhaseConfig;
+  processInstance: {
+    id: string;
+    instanceData: unknown;
+    processId: string | null;
+  };
+  eligibleProposals: Array<{ id: string; proposalData: unknown }>;
+  selectedProposalIds: string[];
+}): Promise<PricedBallot | undefined> {
+  const cap = await getVoteCap({ phaseConfig, processInstance });
+
+  if (!cap) {
+    return undefined;
+  }
+
+  const { unit, proposalTemplate, ...rest } = cap;
+
+  // Fail closed: an uncapped ballot on a capped phase is the worse outcome.
+  if (!unit) {
+    logger.warn(
+      'Voting phase charges from a field the template does not price',
+      {
+        processInstanceId: processInstance.id,
+        voterCostField: cap.voterCostField,
+      },
+    );
+    throw new ValidationError(
+      `Voting is misconfigured: "${cap.voterCostField}" is not a priced field on the proposal template.`,
+    );
+  }
+
+  const selected = new Set(selectedProposalIds);
+
+  return {
+    ...rest,
+    unit,
+    costs: await getProposalCosts({
+      proposals: eligibleProposals.filter((p) => selected.has(p.id)),
+      proposalTemplate,
+      voterCostField: cap.voterCostField,
+      unit,
+    }),
+  };
+}
+
+async function getVotingInstance(processInstanceId: string) {
+  const processInstance = await db.query.processInstances.findFirst({
+    where: { id: processInstanceId },
+    columns: {
+      id: true,
+      profileId: true,
+      ownerProfileId: true,
+      processId: true,
+      instanceData: true,
+      currentStateId: true,
+    },
+  });
+
+  if (!processInstance) {
+    throw new NotFoundError('Process instance', processInstanceId);
+  }
+
+  return processInstance;
+}
+
+// Runs both caps so the voter sees every problem at once.
+async function getValidatedBallot({
+  selectedProposalIds,
+  phaseConfig,
+  processInstance,
+  eligibleProposals,
+}: {
+  selectedProposalIds: string[];
+  phaseConfig: PhaseConfig;
+  processInstance: {
+    id: string;
+    instanceData: unknown;
+    processId: string | null;
+  };
+  eligibleProposals: Array<{ id: string; proposalData: unknown }>;
+}): Promise<{
+  pricing: PricedBallot | undefined;
+  selections: BallotSelections;
+  totalCost: number;
+}> {
+  const selection = validateVoteSelection(
+    selectedProposalIds,
+    phaseConfig.maxVotesPerMember,
+    eligibleProposals.map((p) => p.id),
+  );
+
+  const pricing = await getBallotPricing({
+    phaseConfig,
+    processInstance,
+    eligibleProposals,
+    selectedProposalIds,
+  });
+
+  const budget = validateVoteBudget(selectedProposalIds, pricing);
+
+  const errors = [...selection.errors, ...budget.errors];
+
+  if (errors.length > 0) {
+    throw new ValidationError(`Invalid vote selection: ${errors.join(', ')}`);
+  }
+
+  const selections = selectedProposalIds.map((proposalId) => ({
+    proposalId,
+    cost: pricing?.costs.get(proposalId) ?? null,
+  }));
+
+  return { pricing, selections, totalCost: budget.totalCost };
 }
 
 function buildVotingSchemaResult(phaseConfig: PhaseConfig) {
@@ -115,12 +289,14 @@ export interface VotingStatusResult {
   selectedProposals: Array<{
     id: string;
     title: string;
-    amount?: number;
     schemaSpecificDisplay?: any;
   }> | null;
   votingConfiguration: {
     allowDecisions: boolean;
     maxVotesPerMember: number | undefined;
+    voterBudget: number | undefined;
+    voterCostField: string | undefined;
+    costUnit: AmountUnit | undefined;
     schemaType: string;
     isReadOnly: boolean;
   };
@@ -144,7 +320,8 @@ export interface VoteValidationResult {
 
 const createVoteSignature = (proposalIds: string[], userId: string): string => {
   const data = {
-    proposalIds: proposalIds.sort(),
+    // `sort` mutates; the caller relies on submission order.
+    proposalIds: [...proposalIds].sort(),
     userId,
     timestamp: new Date().toISOString(),
   };
@@ -166,21 +343,7 @@ export const submitVote = async ({
   try {
     const profileId = await getIndividualProfileId(authUserId);
 
-    // Get process instance and schema
-    const processInstance = await db._query.processInstances.findFirst({
-      where: eq(processInstances.id, data.processInstanceId),
-      columns: {
-        id: true,
-        profileId: true,
-        ownerProfileId: true,
-        instanceData: true,
-        currentStateId: true,
-      },
-    });
-
-    if (!processInstance) {
-      throw new NotFoundError('Process instance', data.processInstanceId);
-    }
+    const processInstance = await getVotingInstance(data.processInstanceId);
 
     if (!processInstance.profileId) {
       throw new NotFoundError('Decision profile', data.processInstanceId);
@@ -212,11 +375,11 @@ export const submitVote = async ({
     }
 
     // Check if user has already voted
-    const existingVote = await db._query.decisionsVoteSubmissions.findFirst({
-      where: and(
-        eq(decisionsVoteSubmissions.processInstanceId, data.processInstanceId),
-        eq(decisionsVoteSubmissions.submittedByProfileId, profileId),
-      ),
+    const existingVote = await db.query.decisionsVoteSubmissions.findFirst({
+      where: {
+        processInstanceId: data.processInstanceId,
+        submittedByProfileId: profileId,
+      },
     });
 
     if (existingVote) {
@@ -229,12 +392,12 @@ export const submitVote = async ({
     // (CSAM) rows must never be votable, so we require both
     // `deletedAt IS NULL` and `moderationDetachedAt IS NULL` at query time —
     // filtering post-fetch would still leak the row to the eligibility check.
-    const availableProposals = await db._query.proposals.findMany({
-      where: and(
-        eq(proposals.processInstanceId, data.processInstanceId),
-        isNull(proposals.deletedAt),
-        isNull(proposals.moderationDetachedAt),
-      ),
+    const availableProposals = await db.query.proposals.findMany({
+      where: {
+        processInstanceId: data.processInstanceId,
+        deletedAt: { isNull: true },
+        moderationDetachedAt: { isNull: true },
+      },
     });
 
     // Filter to eligible proposals for voting
@@ -254,18 +417,12 @@ export const submitVote = async ({
       );
     }
 
-    // Validate the vote selection
-    const validation = validateVoteSelection(
-      data.selectedProposalIds,
-      votingConfig.maxVotesPerMember,
-      eligibleProposalIds,
-    );
-
-    if (!validation.isValid) {
-      throw new ValidationError(
-        `Invalid vote selection: ${validation.errors.join(', ')}`,
-      );
-    }
+    const { pricing, selections, totalCost } = await getValidatedBallot({
+      selectedProposalIds: data.selectedProposalIds,
+      phaseConfig,
+      processInstance,
+      eligibleProposals,
+    });
 
     // Create vote submission record
     const voteData: VoteData = {
@@ -279,6 +436,13 @@ export const submitVote = async ({
         data.selectedProposalIds,
         profileId,
       ),
+      selections,
+      ...(pricing && {
+        voterBudget: pricing.voterBudget,
+        voterCostField: pricing.voterCostField,
+        costUnit: pricing.unit,
+        totalCost,
+      }),
     };
 
     // Use transaction to create vote submission and join table entries
@@ -362,21 +526,7 @@ export const getVotingStatus = async ({
       }
     }
 
-    // Get process instance and schema
-    const processInstance = await db._query.processInstances.findFirst({
-      where: eq(processInstances.id, data.processInstanceId),
-      columns: {
-        id: true,
-        profileId: true,
-        ownerProfileId: true,
-        instanceData: true,
-        currentStateId: true,
-      },
-    });
-
-    if (!processInstance) {
-      throw new NotFoundError('Process instance', data.processInstanceId);
-    }
+    const processInstance = await getVotingInstance(data.processInstanceId);
 
     await assertInstanceProfileAccess({
       user,
@@ -395,33 +545,33 @@ export const getVotingStatus = async ({
     const { votingConfig } = schemaResult;
 
     // Check if user has voted
-    let voteSubmission = null;
-    if (profileId) {
-      voteSubmission = await db._query.decisionsVoteSubmissions.findFirst({
-        where: and(
-          eq(
-            decisionsVoteSubmissions.processInstanceId,
-            data.processInstanceId,
-          ),
-          eq(decisionsVoteSubmissions.submittedByProfileId, profileId),
-        ),
-        with: {
-          voteProposals: {
+    // The ballot and the cap don't depend on each other.
+    const [voteSubmission, cap] = await Promise.all([
+      profileId
+        ? db.query.decisionsVoteSubmissions.findFirst({
+            where: {
+              processInstanceId: data.processInstanceId,
+              submittedByProfileId: profileId,
+            },
             with: {
-              proposal: {
+              voteProposals: {
                 with: {
-                  profile: {
-                    columns: {
-                      name: true,
+                  proposal: {
+                    with: {
+                      profile: {
+                        columns: {
+                          name: true,
+                        },
+                      },
                     },
                   },
                 },
               },
             },
-          },
-        },
-      });
-    }
+          })
+        : null,
+      getVoteCap({ phaseConfig, processInstance }),
+    ]);
 
     let selectedProposals = null;
     let selectedProposalIds: string[] = [];
@@ -434,7 +584,6 @@ export const getVotingStatus = async ({
       selectedProposals = voteSubmission.voteProposals.map((vp) => ({
         id: vp.proposal.id,
         title: vp.proposal.profile?.name || 'Untitled',
-        amount: (vp.proposal.proposalData as any)?.amount,
         schemaSpecificDisplay: (vp.proposal.proposalData as any)
           ?.schemaSpecificDisplay,
       }));
@@ -458,6 +607,9 @@ export const getVotingStatus = async ({
       votingConfiguration: {
         allowDecisions: votingConfig.allowDecisions,
         maxVotesPerMember: votingConfig.maxVotesPerMember,
+        voterBudget: cap?.voterBudget,
+        voterCostField: cap?.voterCostField,
+        costUnit: cap?.unit,
         schemaType: schemaResult.schemaType,
         isReadOnly: !!voteSubmission || !votingConfig.allowDecisions,
       },

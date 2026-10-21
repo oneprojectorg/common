@@ -54,6 +54,19 @@ export function resolveDocumentFieldValues({
     return {};
   }
 
+  return assembleProposalData(
+    proposalTemplate,
+    getDocumentFieldTexts({ fragments, keys }),
+  );
+}
+
+function getDocumentFieldTexts({
+  fragments,
+  keys,
+}: {
+  fragments: TipTapFragmentResponse;
+  keys: Iterable<string>;
+}): Record<string, string> {
   const fragmentTexts: Record<string, string> = {};
   for (const key of keys) {
     const content = fragments[key]?.content;
@@ -71,7 +84,7 @@ export function resolveDocumentFieldValues({
     }
   }
 
-  return assembleProposalData(proposalTemplate, fragmentTexts);
+  return fragmentTexts;
 }
 
 /**

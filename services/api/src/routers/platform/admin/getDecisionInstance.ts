@@ -2,6 +2,8 @@ import { NotFoundError, isDecisionPublic } from '@op/common';
 import {
   adminDecisionInstanceDetailSchema,
   allowsComments,
+  getVoterCostField,
+  getVoterBudget,
   isReviewPhase,
 } from '@op/common/client';
 import { db } from '@op/db/client';
@@ -30,6 +32,8 @@ const phaseRulesSchema = z
         submit: z.boolean().optional(),
         edit: z.boolean().optional(),
         maxVotesPerMember: z.number().optional(),
+        voterBudget: z.number().optional(),
+        voterCostField: z.string().optional(),
       })
       .partial()
       .optional(),
@@ -167,6 +171,7 @@ export const getDecisionInstanceRouter = router({
           // Instance rules win; fall back to the process schema definition
           // (older instances don't copy every rule into instanceData).
           const rules = phase.rules ?? schemaRulesByPhaseId.get(phase.phaseId);
+          const voterBudget = getVoterBudget({ rules });
           return {
             phaseId: phase.phaseId,
             name: phase.name ?? null,
@@ -180,6 +185,9 @@ export const getDecisionInstanceRouter = router({
             canEditVotes: rules?.voting?.edit ?? false,
             allowsComments: allowsComments({ rules }),
             maxVotesPerMember: rules?.voting?.maxVotesPerMember ?? null,
+            voterBudget: voterBudget ?? null,
+            voterCostField:
+              voterBudget === undefined ? null : getVoterCostField({ rules }),
             proposalsHiddenByDefault:
               rules?.proposals?.defaults?.hidden ?? false,
             advancementMethod: rules?.advancement?.method ?? null,

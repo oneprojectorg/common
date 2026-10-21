@@ -27,6 +27,10 @@ export interface PhaseRules {
     edit?: boolean;
     /** Undefined = no limit (distinct from 0, which would block all voting). */
     maxVotesPerMember?: number;
+    /** In the unit of `voterCostField`. Read through `getVoterBudget`. */
+    voterBudget?: number;
+    /** Key of the template field a selection costs the voter; `budget` when unset. Read through `getVoterCostField`. */
+    voterCostField?: string;
   };
   comments?: {
     /** Unlike its siblings this defaults to TRUE — see `allowsComments`. */

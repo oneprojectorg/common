@@ -17,6 +17,8 @@ export {
   areCommentsAllowed,
   canEditProposals,
   getPhaseReviewSettings,
+  getVoterCostField,
+  getVoterBudget,
   hasVotingPhase,
   isReviewPhase,
   isVotingPhase,
@@ -202,8 +204,7 @@ export {
   resolveMoneyDisplayCurrency,
 } from './services/decision/rubric/money';
 export {
-  type AmountUnit,
-  amountUnitSchema,
+  formatUnitAmount,
   getFieldUnit,
   getUnitLabel,
   isAtMost,
