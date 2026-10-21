@@ -219,7 +219,7 @@ describe.concurrent('getInstance', () => {
     expect(draftProposal.status).toBe(ProposalStatus.DRAFT);
     expect(submittedResult.status).toBe(ProposalStatus.SUBMITTED);
 
-    const result = await caller.decision.getInstance({
+    await caller.decision.getInstance({
       instanceId: instance.instance.id,
     });
   });
