@@ -2,7 +2,12 @@
 
 import { getAuthOtpLength } from '@op/core';
 import { Button } from '@op/sense/Button';
-import { Field, FieldDescription, FieldLabel } from '@op/sense/Field';
+import {
+  Field,
+  FieldDescription,
+  FieldError,
+  FieldLabel,
+} from '@op/sense/Field';
 import { Header1 } from '@op/sense/Header';
 import { Input } from '@op/sense/Input';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@op/sense/InputOTP';
@@ -302,20 +307,23 @@ export const AuthCodeField = ({
   channel,
   value,
   isDisabled,
+  error,
   onChange,
   onSubmit,
 }: {
   channel: AuthChannel;
   value: string | undefined;
   isDisabled: boolean;
+  error?: string;
   onChange: (value: string) => void;
   onSubmit: () => void | Promise<void>;
 }) => {
   const t = useTranslations();
   const length = getAuthOtpLength(channel);
+  const isInvalid = !!error;
 
   return (
-    <Field>
+    <Field data-invalid={isInvalid || undefined}>
       <FieldLabel htmlFor="auth-code" className="justify-center">
         {t('auth.codeLabel')}
       </FieldLabel>
@@ -327,6 +335,7 @@ export const AuthCodeField = ({
         pasteTransformer={keepDigits}
         autoFocus
         disabled={isDisabled}
+        aria-invalid={isInvalid || undefined}
         value={value ?? ''}
         onChange={onChange}
         onComplete={() => {
@@ -335,10 +344,18 @@ export const AuthCodeField = ({
       >
         <InputOTPGroup className="w-full">
           {Array.from({ length }, (_, index) => (
-            <InputOTPSlot key={index} index={index} className="w-auto flex-1" />
+            <InputOTPSlot
+              key={index}
+              index={index}
+              aria-invalid={isInvalid || undefined}
+              className="w-auto flex-1"
+            />
           ))}
         </InputOTPGroup>
       </InputOTP>
+      {isInvalid ? (
+        <FieldError className="text-center">{error}</FieldError>
+      ) : null}
     </Field>
   );
 };
@@ -499,20 +516,18 @@ export const AuthSendCodeButton = ({
 export const AuthCodeStepActions = ({
   isVerifyDisabled,
   isLoading,
-  isPhone,
+  canSwitchChannel,
   onVerify,
   onResend,
   onBack,
-  onSwitchChannel,
 }: {
   /** Left to the caller — not every flow disables verify the same way. */
   isVerifyDisabled: boolean;
   isLoading: boolean;
-  isPhone: boolean;
+  canSwitchChannel: boolean;
   onVerify: () => void;
   onResend: () => void;
   onBack: () => void;
-  onSwitchChannel?: () => void;
 }) => {
   const t = useTranslations();
 
@@ -535,15 +550,10 @@ export const AuthCodeStepActions = ({
         {t('auth.resendCodeAction')}
       </Button>
       <Button variant="link" disabled={isLoading} onClick={onBack}>
-        {isPhone ? t('auth.changePhoneAction') : t('auth.useEmailAction')}
+        {canSwitchChannel
+          ? t('auth.changeContactAction')
+          : t('auth.useEmailAction')}
       </Button>
-      {onSwitchChannel ? (
-        <Button variant="link" disabled={isLoading} onClick={onSwitchChannel}>
-          {isPhone
-            ? t('auth.useEmailInsteadAction')
-            : t('auth.usePhoneInsteadAction')}
-        </Button>
-      ) : null}
     </>
   );
 };

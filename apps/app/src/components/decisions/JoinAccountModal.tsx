@@ -164,7 +164,8 @@ const JoinAccountModalContent = ({ close }: { close: () => void }) => {
   const [channel, setChannel] = useState<'email' | 'phone'>('email');
   const [token, setToken] = useState<string | undefined>();
   const [otpSent, setOtpSent] = useState(false);
-  const [error, setError] = useState<string | undefined>();
+  const [contactError, setContactError] = useState<string | undefined>();
+  const [codeError, setCodeError] = useState<string | undefined>();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // With the flag off there is no phone channel to be on, even if a previous
@@ -209,7 +210,7 @@ const JoinAccountModalContent = ({ close }: { close: () => void }) => {
     }
 
     setIsSubmitting(true);
-    setError(undefined);
+    setContactError(undefined);
 
     // Deliberately left submitting through the success-navigation path so the
     // form can't be re-submitted while window.location is unloading the page.
@@ -218,7 +219,7 @@ const JoinAccountModalContent = ({ close }: { close: () => void }) => {
         ? await requestPhoneCode(phone, { mintAnonSession: true })
         : await requestEmailCode(email, { mintAnonSession: true });
       if (!result.ok) {
-        setError(
+        setContactError(
           isPhone
             ? getClaimPhoneErrorMessage(result, t)
             : getClaimEmailErrorMessage(result, t),
@@ -233,7 +234,7 @@ const JoinAccountModalContent = ({ close }: { close: () => void }) => {
       setOtpSent(true);
       setIsSubmitting(false);
     } catch {
-      setError(t("That didn't work"));
+      setContactError(t("That didn't work"));
       setIsSubmitting(false);
     }
   };
@@ -244,7 +245,7 @@ const JoinAccountModalContent = ({ close }: { close: () => void }) => {
     }
 
     setIsSubmitting(true);
-    setError(undefined);
+    setCodeError(undefined);
 
     try {
       const result = isPhone
@@ -254,27 +255,35 @@ const JoinAccountModalContent = ({ close }: { close: () => void }) => {
         goAfterClaim();
         return;
       }
-      setError(codeFailureMessage(result.reason, t));
+      setCodeError(codeFailureMessage(result.reason, t));
     } catch {
-      setError(t('auth.verifyCodeError'));
+      setCodeError(t('auth.verifyCodeError'));
     }
     setIsSubmitting(false);
+  };
+
+  const changeToken = (next: string) => {
+    setToken(next);
+    setCodeError(undefined);
   };
 
   const goBack = () => {
     setOtpSent(false);
     setToken(undefined);
-    setError(undefined);
+    setContactError(undefined);
+    setCodeError(undefined);
   };
 
   const resendCode = () => {
     setToken(undefined);
+    setCodeError(undefined);
     void submitContact();
   };
 
   const switchChannel = (next: AuthChannel) => {
     setChannel(next);
-    setError(undefined);
+    setContactError(undefined);
+    setCodeError(undefined);
     setEmail('');
     setPhone('');
   };
@@ -308,9 +317,9 @@ const JoinAccountModalContent = ({ close }: { close: () => void }) => {
       <div className="flex flex-col gap-4 px-6 py-4">
         {/* role="alert" so async claim errors are announced while focus stays on
           the submit button. */}
-        {error ? (
-          <p role="alert" className="text-destructive">
-            {error}
+        {contactError ? (
+          <p role="alert" className="text-center text-destructive">
+            {contactError}
           </p>
         ) : null}
 
@@ -319,7 +328,8 @@ const JoinAccountModalContent = ({ close }: { close: () => void }) => {
             channel={activeChannel}
             value={token}
             isDisabled={isSubmitting}
-            onChange={setToken}
+            error={codeError}
+            onChange={changeToken}
             onSubmit={submitToken}
           />
         ) : (
@@ -370,20 +380,12 @@ const JoinAccountModalContent = ({ close }: { close: () => void }) => {
           <AuthCodeStepActions
             isVerifyDisabled={!isValidOtpLength(token, activeChannel)}
             isLoading={isSubmitting}
-            isPhone={isPhone}
+            canSwitchChannel={smsEnabled}
             onVerify={() => {
               void submitToken();
             }}
             onResend={resendCode}
             onBack={goBack}
-            onSwitchChannel={
-              smsEnabled
-                ? () => {
-                    goBack();
-                    switchChannel(isPhone ? 'email' : 'phone');
-                  }
-                : undefined
-            }
           />
         ) : (
           <>

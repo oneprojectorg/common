@@ -33,10 +33,12 @@ const renderCodeField = ({
   AuthCodeField,
   channel,
   onSubmit,
+  error,
 }: {
   AuthCodeField: AuthCodeFieldComponent;
   channel: AuthChannel;
   onSubmit: () => void;
+  error?: string;
 }) => {
   const Harness = () => {
     const [value, setValue] = useState('');
@@ -47,6 +49,7 @@ const renderCodeField = ({
         isDisabled={false}
         onChange={setValue}
         onSubmit={onSubmit}
+        error={error}
       />
     );
   };
@@ -180,29 +183,67 @@ describe('AuthCodeField', () => {
     expect(label.getAttribute('for')).toBe(input.id);
     expect(input.getAttribute('aria-label')).toBeNull();
   });
+
+  it('given the code was rejected, then the field is marked invalid and the message is announced centred inside it', async () => {
+    const AuthCodeField = await loadAuthCodeField({
+      emailLength: 6,
+      smsLength: 6,
+    });
+    renderCodeField({
+      AuthCodeField,
+      channel: 'phone',
+      onSubmit: vi.fn(),
+      error: 'That code expired. Request a new one.',
+    });
+
+    const input = screen.getByRole('textbox', {
+      name: 'Enter verification code',
+    });
+    const field = screen.getByRole('group');
+    const alert = screen.getByRole('alert');
+
+    expect(input.getAttribute('aria-invalid')).toBe('true');
+    expect(field.getAttribute('data-invalid')).toBe('true');
+    expect(field.contains(alert)).toBe(true);
+    expect(alert.textContent).toBe('That code expired. Request a new one.');
+    expect(alert.classList.contains('text-center')).toBe(true);
+  });
+
+  it('given no code was rejected, then the field is not marked invalid', async () => {
+    const AuthCodeField = await loadAuthCodeField({
+      emailLength: 6,
+      smsLength: 6,
+    });
+    renderCodeField({ AuthCodeField, channel: 'phone', onSubmit: vi.fn() });
+
+    const input = screen.getByRole('textbox', {
+      name: 'Enter verification code',
+    });
+
+    expect(input.getAttribute('aria-invalid')).toBeNull();
+    expect(screen.getByRole('group').getAttribute('data-invalid')).toBeNull();
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
 });
 
 const renderCodeStepActions = ({
-  isPhone,
+  canSwitchChannel,
   isLoading = false,
   onBack = vi.fn(),
-  onSwitchChannel,
 }: {
-  isPhone: boolean;
+  canSwitchChannel: boolean;
   isLoading?: boolean;
   onBack?: () => void;
-  onSwitchChannel?: () => void;
 }) =>
   render(
     <NextIntlClientProvider locale="en" messages={messages}>
       <AuthCodeStepActions
         isVerifyDisabled={false}
         isLoading={isLoading}
-        isPhone={isPhone}
+        canSwitchChannel={canSwitchChannel}
         onVerify={vi.fn()}
         onResend={vi.fn()}
         onBack={onBack}
-        onSwitchChannel={onSwitchChannel}
       />
     </NextIntlClientProvider>,
   );
@@ -212,59 +253,51 @@ describe('AuthCodeStepActions', () => {
     cleanup();
   });
 
-  it('given a texted code was not accepted, when the person picks email instead, then the panel switches channel without changing the number', async () => {
+  it('given phone sign-in is on, then one link offers a different phone number or email and returns to the contact step', async () => {
     const onBack = vi.fn();
-    const onSwitchChannel = vi.fn();
-    renderCodeStepActions({ isPhone: true, onBack, onSwitchChannel });
+    renderCodeStepActions({ canSwitchChannel: true, onBack });
 
+    expect(screen.getAllByRole('button')).toHaveLength(3);
     expect(
-      screen.getByRole('button', { name: 'Use a different phone number' }),
-    ).toBeTruthy();
-
-    await userEvent.click(
-      screen.getByRole('button', { name: 'Use email instead' }),
-    );
-
-    expect(onSwitchChannel).toHaveBeenCalledTimes(1);
-    expect(onBack).not.toHaveBeenCalled();
-  });
-
-  it('given an emailed code was not accepted, when phone sign-in is on, then the person can pick phone instead', async () => {
-    const onSwitchChannel = vi.fn();
-    renderCodeStepActions({ isPhone: false, onSwitchChannel });
-
-    expect(
-      screen.getByRole('button', { name: 'Use a different email address' }),
-    ).toBeTruthy();
-
-    await userEvent.click(
-      screen.getByRole('button', { name: 'Use phone instead' }),
-    );
-
-    expect(onSwitchChannel).toHaveBeenCalledTimes(1);
-  });
-
-  it('given phone sign-in is off, when the emailed code step renders, then no phone option is offered', () => {
-    renderCodeStepActions({ isPhone: false });
-
-    expect(
-      screen.getByRole('button', { name: 'Use a different email address' }),
-    ).toBeTruthy();
-    expect(
-      screen.queryByRole('button', { name: 'Use phone instead' }),
+      screen.queryByRole('button', { name: 'Use email instead' }),
     ).toBeNull();
+    expect(
+      screen.queryByRole('button', { name: 'Use a different phone number' }),
+    ).toBeNull();
+
+    await userEvent.click(
+      screen.getByRole('button', {
+        name: 'Use a different phone number or email',
+      }),
+    );
+
+    expect(onBack).toHaveBeenCalledTimes(1);
   });
 
-  it('given a code is being verified, then switching channel is disabled until the verification settles', () => {
-    renderCodeStepActions({
-      isPhone: true,
-      isLoading: true,
-      onSwitchChannel: vi.fn(),
-    });
+  it('given phone sign-in is off, then the link offers a different email address only', async () => {
+    const onBack = vi.fn();
+    renderCodeStepActions({ canSwitchChannel: false, onBack });
+
+    expect(screen.getAllByRole('button')).toHaveLength(3);
+    expect(
+      screen.queryByRole('button', {
+        name: 'Use a different phone number or email',
+      }),
+    ).toBeNull();
+
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Use a different email address' }),
+    );
+
+    expect(onBack).toHaveBeenCalledTimes(1);
+  });
+
+  it('given a code is being verified, then changing the contact is disabled until the verification settles', () => {
+    renderCodeStepActions({ canSwitchChannel: true, isLoading: true });
 
     expect(
       screen.getByRole<HTMLButtonElement>('button', {
-        name: 'Use email instead',
+        name: 'Use a different phone number or email',
       }).disabled,
     ).toBe(true);
   });

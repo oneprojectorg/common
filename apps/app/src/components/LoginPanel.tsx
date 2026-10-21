@@ -191,11 +191,22 @@ export const LoginPanel = () => {
     }
   }, [email, token, supabase, finishSignIn, setTokenError, t]);
 
-  const formError = isPhone
-    ? phoneFlow.error
-    : isCodeStep
-      ? tokenError
-      : undefined;
+  const formError = isPhone ? phoneFlow.error : undefined;
+
+  const codeError = isCodeStep
+    ? isPhone
+      ? phoneFlow.codeError
+      : tokenError
+    : undefined;
+
+  const changeToken = (next: string) => {
+    setToken(next);
+    if (isPhone) {
+      phoneFlow.clearCodeError();
+    } else {
+      setTokenError(undefined);
+    }
+  };
 
   // Email code verification runs straight against Supabase, so only the
   // phone channel has a loading flag for it.
@@ -302,7 +313,7 @@ export const LoginPanel = () => {
           {/* role="alert" so failures are announced while focus stays on the
             submit button. */}
           {formError ? (
-            <p role="alert" className="text-destructive">
+            <p role="alert" className="text-center text-destructive">
               {formError}
             </p>
           ) : null}
@@ -319,7 +330,8 @@ export const LoginPanel = () => {
               channel={activeChannel}
               value={token}
               isDisabled={isLoading}
-              onChange={setToken}
+              error={codeError}
+              onChange={changeToken}
               onSubmit={verifyCode}
             />
           ) : (
@@ -375,15 +387,10 @@ export const LoginPanel = () => {
                     : !!token && !isValidOtpLength(token, activeChannel)
                 }
                 isLoading={isLoading}
-                isPhone={isPhone}
+                canSwitchChannel={smsLoginEnabled}
                 onVerify={verifyCode}
                 onResend={resendCode}
                 onBack={backToContact}
-                onSwitchChannel={
-                  smsLoginEnabled
-                    ? () => switchChannel(isPhone ? 'email' : 'phone')
-                    : undefined
-                }
               />
             </div>
           ) : (
