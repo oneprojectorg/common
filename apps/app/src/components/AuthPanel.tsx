@@ -503,7 +503,6 @@ export const AuthCodeStepActions = ({
   onVerify,
   onResend,
   onBack,
-  onSwitchChannel,
 }: {
   /** Left to the caller — not every flow disables verify the same way. */
   isVerifyDisabled: boolean;
@@ -512,7 +511,6 @@ export const AuthCodeStepActions = ({
   onVerify: () => void;
   onResend: () => void;
   onBack: () => void;
-  onSwitchChannel?: () => void;
 }) => {
   const t = useTranslations();
 
@@ -537,13 +535,6 @@ export const AuthCodeStepActions = ({
       <Button variant="link" disabled={isLoading} onClick={onBack}>
         {isPhone ? t('auth.changePhoneAction') : t('auth.useEmailAction')}
       </Button>
-      {onSwitchChannel ? (
-        <Button variant="link" disabled={isLoading} onClick={onSwitchChannel}>
-          {isPhone
-            ? t('auth.useEmailInsteadAction')
-            : t('auth.usePhoneInsteadAction')}
-        </Button>
-      ) : null}
     </>
   );
 };

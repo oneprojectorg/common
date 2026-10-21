@@ -6,7 +6,7 @@ import { useState } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import messages from '../lib/i18n/dictionaries/en.json';
-import { type AuthChannel, AuthCodeStepActions } from './AuthPanel';
+import type { AuthChannel } from './AuthPanel';
 
 type AuthCodeFieldComponent = (typeof import('./AuthPanel'))['AuthCodeField'];
 
@@ -179,93 +179,5 @@ describe('AuthCodeField', () => {
     expect(label.tagName).toBe('LABEL');
     expect(label.getAttribute('for')).toBe(input.id);
     expect(input.getAttribute('aria-label')).toBeNull();
-  });
-});
-
-const renderCodeStepActions = ({
-  isPhone,
-  isLoading = false,
-  onBack = vi.fn(),
-  onSwitchChannel,
-}: {
-  isPhone: boolean;
-  isLoading?: boolean;
-  onBack?: () => void;
-  onSwitchChannel?: () => void;
-}) =>
-  render(
-    <NextIntlClientProvider locale="en" messages={messages}>
-      <AuthCodeStepActions
-        isVerifyDisabled={false}
-        isLoading={isLoading}
-        isPhone={isPhone}
-        onVerify={vi.fn()}
-        onResend={vi.fn()}
-        onBack={onBack}
-        onSwitchChannel={onSwitchChannel}
-      />
-    </NextIntlClientProvider>,
-  );
-
-describe('AuthCodeStepActions', () => {
-  afterEach(() => {
-    cleanup();
-  });
-
-  it('given a texted code was not accepted, when the person picks email instead, then the panel switches channel without changing the number', async () => {
-    const onBack = vi.fn();
-    const onSwitchChannel = vi.fn();
-    renderCodeStepActions({ isPhone: true, onBack, onSwitchChannel });
-
-    expect(
-      screen.getByRole('button', { name: 'Use a different phone number' }),
-    ).toBeTruthy();
-
-    await userEvent.click(
-      screen.getByRole('button', { name: 'Use email instead' }),
-    );
-
-    expect(onSwitchChannel).toHaveBeenCalledTimes(1);
-    expect(onBack).not.toHaveBeenCalled();
-  });
-
-  it('given an emailed code was not accepted, when phone sign-in is on, then the person can pick phone instead', async () => {
-    const onSwitchChannel = vi.fn();
-    renderCodeStepActions({ isPhone: false, onSwitchChannel });
-
-    expect(
-      screen.getByRole('button', { name: 'Use a different email address' }),
-    ).toBeTruthy();
-
-    await userEvent.click(
-      screen.getByRole('button', { name: 'Use phone instead' }),
-    );
-
-    expect(onSwitchChannel).toHaveBeenCalledTimes(1);
-  });
-
-  it('given phone sign-in is off, when the emailed code step renders, then no phone option is offered', () => {
-    renderCodeStepActions({ isPhone: false });
-
-    expect(
-      screen.getByRole('button', { name: 'Use a different email address' }),
-    ).toBeTruthy();
-    expect(
-      screen.queryByRole('button', { name: 'Use phone instead' }),
-    ).toBeNull();
-  });
-
-  it('given a code is being verified, then switching channel is disabled until the verification settles', () => {
-    renderCodeStepActions({
-      isPhone: true,
-      isLoading: true,
-      onSwitchChannel: vi.fn(),
-    });
-
-    expect(
-      screen.getByRole<HTMLButtonElement>('button', {
-        name: 'Use email instead',
-      }).disabled,
-    ).toBe(true);
   });
 });

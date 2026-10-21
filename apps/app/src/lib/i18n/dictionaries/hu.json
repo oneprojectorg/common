@@ -159,8 +159,6 @@
     "resendCodeAction": "Küldje újra a kódot",
     "changePhoneAction": "Másik telefonszám használata",
     "useEmailAction": "Másik e-mail cím használata",
-    "useEmailInsteadAction": "Inkább e-mail használata",
-    "usePhoneInsteadAction": "Inkább telefon használata",
     "phoneNumberLabel": "Telefonszám",
     "errorTitle": "Hoppá!",
     "waitlistTitle": "Hamarosan jelentkezünk!",

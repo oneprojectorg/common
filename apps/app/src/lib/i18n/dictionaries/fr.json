@@ -159,8 +159,6 @@
     "resendCodeAction": "Renvoyer un code",
     "changePhoneAction": "Utiliser un autre numéro de téléphone",
     "useEmailAction": "Utiliser une autre adresse e-mail",
-    "useEmailInsteadAction": "Utiliser l'e-mail à la place",
-    "usePhoneInsteadAction": "Utiliser le téléphone à la place",
     "phoneNumberLabel": "Numéro de téléphone",
     "errorTitle": "Oups !",
     "waitlistTitle": "Restez à l'écoute !",
