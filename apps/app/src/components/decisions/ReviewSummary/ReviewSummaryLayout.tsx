@@ -96,8 +96,7 @@ export async function ReviewSummaryLayout({
     phaseId,
   );
 
-  // Every earlier review phase, open reviews or not: admins read reviews by
-  // capability. Fetched lazily on the client, so nothing extra to prefetch.
+  // Rendered lazily on the client, so nothing to prefetch.
   const previousReviewPhases = getPreviousReviewPhases(
     instance.instanceData ?? {},
     phaseId,

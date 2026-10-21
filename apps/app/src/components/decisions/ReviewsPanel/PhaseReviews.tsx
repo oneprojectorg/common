@@ -17,17 +17,11 @@ interface PhaseReviewsProps {
   processInstanceId: string;
   proposalId: string;
   phaseId: string;
-  /** Sets the `phase_kind` of the `review_viewed` event. */
   isCurrentPhase: boolean;
   emptyMessage: string;
   excludeOwnReview?: boolean;
 }
 
-/**
- * One phase's submitted reviews for this proposal (average bar, recommendation
- * groups, drill-in). `excludeOwnReview` hides the viewer's own review — used by
- * the current phase's "Other reviews" tab; earlier phases show the full record.
- */
 export function PhaseReviews({
   processInstanceId,
   proposalId,
@@ -47,7 +41,6 @@ export function PhaseReviews({
   >(null);
 
   const handleSelectAssignment = (reviewAssignmentId: string | null) => {
-    // Non-null = drilling into another reviewer's full review; null = back.
     if (reviewAssignmentId !== null) {
       posthog.capture(
         'review_viewed',
@@ -98,7 +91,6 @@ export function PhaseReviews({
   );
 }
 
-/** Lazily mounted reviews tab panel with its own error boundary + suspense fallback. */
 export function PhaseReviewsTabPanel({
   value,
   children,

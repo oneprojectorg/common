@@ -40,7 +40,6 @@ interface ReviewSummaryViewProps {
   phaseId: string;
   isPhaseInProgress?: boolean;
   reviewSettings: ReviewSettings;
-  /** Every review phase before `phaseId`; admins read them by capability. */
   previousReviewPhases: PreviousReviewPhase[];
 }
 
@@ -182,8 +181,7 @@ export function ReviewSummaryView({
 
   const reviewProgress = (
     <>
-      {/* Outside the panel: a live region around the form would announce
-          every keystroke. */}
+      {/* Outside the form, or the live region announces every keystroke. */}
       <span role="status" className="sr-only">
         {isOwnFormOpen
           ? t('decisions.review.reviewProposalHeading')
@@ -307,14 +305,6 @@ export function ReviewSummaryView({
   );
 }
 
-/**
- * Tab shell for the summary pane when the process had review phases before
- * the one this screen describes: "Review Progress" (kept mounted, so an open
- * own-review form and its autosave survive a tab switch) and one lazily
- * mounted "Reviews from {phase}" tab per earlier review phase, each showing
- * the full record. No "Other reviews" tab: the progress list already shows
- * every review, the admin's own marked.
- */
 function ReviewSummaryTabs({
   instanceId,
   proposalId,
@@ -356,8 +346,6 @@ function ReviewSummaryTabs({
         );
       }}
     >
-      {/* sense `TabsList` is `w-fit`, so the underline track comes from a
-          full-width wrapper. */}
       <div className="w-full border-b">
         <TabsList
           variant="line"
@@ -378,6 +366,7 @@ function ReviewSummaryTabs({
         </TabsList>
       </div>
 
+      {/* Kept mounted so an open own-review form survives a tab switch. */}
       <TabsContent value={REVIEW_PROGRESS_TAB} keepMounted>
         {reviewProgress}
       </TabsContent>

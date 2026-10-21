@@ -52,10 +52,6 @@ export async function ReviewLayout({
     // instance's phase list (stale assignment) — mapped to notFound() below.
     reviewSettings = getPhaseReviewSettings(instanceData, assignmentPhaseId);
 
-    // Earlier review phases whose `openReviews` keeps their reviews readable
-    // from this screen. Strictly before the assignment's phase in the
-    // instance's phase ordering, so the phase this screen reviews in never
-    // doubles up with its own "Other reviews" tab.
     previousReviewPhases = getPreviousReviewPhases(
       instanceData,
       assignmentPhaseId,

@@ -17,7 +17,6 @@ const MY_REVIEW_TAB = 'my-review';
 const OTHER_REVIEWS_TAB = 'other-reviews';
 const PHASE_TAB_PREFIX = 'phase-reviews-';
 
-/** An earlier review phase, as the review screens list it in their tabs. */
 export interface PreviousReviewPhase {
   id: string;
   name: string;

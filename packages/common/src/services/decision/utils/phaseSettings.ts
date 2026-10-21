@@ -25,11 +25,7 @@ export function isReviewPhase(phase: { rules?: ReviewPhaseRules }): boolean {
   );
 }
 
-/**
- * Reviews in this phase are readable by the other reviewers, and by later
- * phases once it ends (`reviews.openReviews`). Phase-only: no legacy config
- * counterpart.
- */
+/** Reviews in this phase are readable by other reviewers and by later phases. */
 export function hasOpenReviews(phase: { rules?: ReviewPhaseRules }): boolean {
   return phase.rules?.reviews?.openReviews ?? false;
 }
@@ -146,13 +142,18 @@ export type ReviewSettings = Required<
   >
 >;
 
+interface ReviewPhase {
+  phaseId: string;
+  rules?: ReviewPhaseRules;
+}
+
 interface ReviewSettingsInstanceData {
   config?: {
     reviewsPolicy?: ReviewsPolicy;
     reviewsAllowRevisions?: boolean;
     reviewsAnonymousFeedback?: boolean;
   };
-  phases?: ReadonlyArray<{ phaseId: string; rules?: ReviewPhaseRules }>;
+  phases?: readonly ReviewPhase[];
 }
 
 /** Resolves review settings for `phaseId`; throws if the phase doesn't exist. */
@@ -178,20 +179,16 @@ export function resolveReviewSettings(
   return reviewSettingsFromPhase(instanceData.config, phase);
 }
 
-/**
- * The review phases strictly before `phaseId`, in phase order. Admins read
- * every one by capability; the reviewer screens compose this with
- * `hasOpenReviews` to keep only the phases that opened their reviews.
- */
-export function getPreviousReviewPhases<
-  Phase extends { phaseId: string; rules?: ReviewPhaseRules },
->(instanceData: { phases?: readonly Phase[] }, phaseId: string): Phase[] {
+export function getPreviousReviewPhases<Phase extends ReviewPhase>(
+  instanceData: { phases?: readonly Phase[] },
+  phaseId: string,
+): Phase[] {
   return getPreviousPhases(instanceData, phaseId).filter(isReviewPhase);
 }
 
 function reviewSettingsFromPhase(
   config: ReviewSettingsInstanceData['config'],
-  phase: { phaseId: string; rules?: ReviewPhaseRules } | undefined,
+  phase: ReviewPhase | undefined,
 ): ReviewSettings {
   const reviews = phase?.rules?.reviews;
 
