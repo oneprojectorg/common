@@ -15,7 +15,7 @@ import {
   isValidTypedPhoneNumber,
   normalizePhoneNumber,
 } from '@op/common/client';
-import { Alert, AlertDescription } from '@op/sense/Alert';
+import { Alert, AlertTitle } from '@op/sense/Alert';
 import { Button } from '@op/sense/Button';
 import {
   Dialog,
@@ -29,6 +29,7 @@ import { createSBBrowserClient } from '@op/supabase/client';
 import { usePathname } from 'next/navigation';
 import { useQueryState } from 'nuqs';
 import { type ReactNode, Suspense, useState } from 'react';
+import { LuCircleAlert } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -319,7 +320,8 @@ const JoinAccountModalContent = ({ close }: { close: () => void }) => {
       <div className="flex flex-col gap-4 px-6 py-4">
         {otpSent && contactError ? (
           <Alert variant="destructive">
-            <AlertDescription>{contactError}</AlertDescription>
+            <LuCircleAlert />
+            <AlertTitle>{contactError}</AlertTitle>
           </Alert>
         ) : null}
 

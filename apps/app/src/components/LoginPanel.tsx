@@ -6,12 +6,13 @@ import { trpc } from '@op/api/client';
 import { getSafeRedirectPath } from '@op/common/client';
 import { APP_NAME, OPURLConfig } from '@op/core';
 import { useAuthUser, useMount } from '@op/hooks';
-import { Alert, AlertDescription } from '@op/sense/Alert';
+import { Alert, AlertTitle } from '@op/sense/Alert';
 import { Button } from '@op/sense/Button';
 import { SocialLinks } from '@op/sense/SocialLinks';
 import { createSBBrowserClient } from '@op/supabase/client';
 import { useSearchParams } from 'next/navigation';
 import { useCallback } from 'react';
+import { LuCircleAlert } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -313,7 +314,8 @@ export const LoginPanel = () => {
         <div className="flex flex-col gap-8">
           {isCodeStep && sendError ? (
             <Alert variant="destructive">
-              <AlertDescription>{sendError}</AlertDescription>
+              <LuCircleAlert />
+              <AlertTitle>{sendError}</AlertTitle>
             </Alert>
           ) : null}
 
