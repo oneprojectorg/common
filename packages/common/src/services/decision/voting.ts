@@ -124,7 +124,11 @@ async function getBallotPricing({
   selectedProposalIds,
 }: {
   phaseConfig: PhaseConfig;
-  processInstance: { id: string; instanceData: unknown; processId: string | null };
+  processInstance: {
+    id: string;
+    instanceData: unknown;
+    processId: string | null;
+  };
   eligibleProposals: Array<{ id: string; proposalData: unknown }>;
   selectedProposalIds: string[];
 }): Promise<PricedBallot | undefined> {
@@ -193,7 +197,11 @@ async function getValidatedBallot({
 }: {
   selectedProposalIds: string[];
   phaseConfig: PhaseConfig;
-  processInstance: { id: string; instanceData: unknown; processId: string | null };
+  processInstance: {
+    id: string;
+    instanceData: unknown;
+    processId: string | null;
+  };
   eligibleProposals: Array<{ id: string; proposalData: unknown }>;
 }): Promise<{
   pricing: PricedBallot | undefined;
