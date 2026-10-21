@@ -102,21 +102,40 @@ export function ReviewSummaryView({
     null,
   );
   const [isSavingOwnReview, setIsSavingOwnReview] = useState(false);
+  // The selected review and the own form belong to "Review Progress", so
+  // leaving that tab clears both.
+  const [activeTab, setActiveTab] = useState(REVIEW_PROGRESS_TAB);
 
-  const openOwnForm = useCallback(() => {
-    // Guarded: writing this unconditionally pushes a history entry for the
-    // same URL when the form opens from the list.
+  // Guarded: writing this unconditionally pushes a history entry for the
+  // same URL.
+  const clearSelectedAssignment = useCallback(() => {
     if (selectedAssignmentId) {
       setSelectedAssignmentId(null);
     }
+  }, [selectedAssignmentId, setSelectedAssignmentId]);
+
+  const openOwnForm = useCallback(() => {
+    setActiveTab(REVIEW_PROGRESS_TAB);
+    clearSelectedAssignment();
     setOwnFormStatus(null);
     setIsOwnFormOpen(true);
-  }, [selectedAssignmentId, setSelectedAssignmentId]);
+  }, [clearSelectedAssignment]);
 
   const closeOwnForm = useCallback(() => {
     setOwnFormStatus(null);
     setIsOwnFormOpen(false);
   }, []);
+
+  const changeTab = useCallback(
+    (value: string) => {
+      setActiveTab(value);
+      if (value !== REVIEW_PROGRESS_TAB) {
+        clearSelectedAssignment();
+        closeOwnForm();
+      }
+    },
+    [clearSelectedAssignment, closeOwnForm],
+  );
 
   // Kept for the submitter's own pane, which must be correct with the
   // realtime socket down.
@@ -288,6 +307,8 @@ export function ReviewSummaryView({
               proposalId={proposalId}
               phaseId={phaseId}
               previousReviewPhases={previousReviewPhases}
+              activeTab={activeTab}
+              onTabChange={changeTab}
               reviewProgress={reviewProgress}
             />
           )}
@@ -310,12 +331,16 @@ function ReviewSummaryTabs({
   proposalId,
   phaseId,
   previousReviewPhases,
+  activeTab,
+  onTabChange,
   reviewProgress,
 }: {
   instanceId: string;
   proposalId: string;
   phaseId: string;
   previousReviewPhases: PreviousReviewPhase[];
+  activeTab: string;
+  onTabChange: (value: string) => void;
   reviewProgress: ReactNode;
 }) {
   const t = useTranslations();
@@ -324,8 +349,9 @@ function ReviewSummaryTabs({
   return (
     <Tabs
       className="gap-4"
-      defaultValue={REVIEW_PROGRESS_TAB}
+      value={activeTab}
       onValueChange={(value: string, eventDetails) => {
+        onTabChange(value);
         // Only user-initiated switches count as opening a tab.
         if (eventDetails.reason !== 'none') {
           return;
