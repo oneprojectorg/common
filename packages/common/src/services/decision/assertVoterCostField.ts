@@ -10,7 +10,7 @@ export async function assertVoterCostField({
   processId,
 }: {
   instanceData: DecisionInstanceData;
-  processId: string;
+  processId: string | null;
 }): Promise<void> {
   const capped = instanceData.phases.filter(
     (phase) => getVoterBudget(phase) !== undefined,

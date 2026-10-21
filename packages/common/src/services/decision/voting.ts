@@ -90,7 +90,7 @@ async function getVoteCap({
   processInstance,
 }: {
   phaseConfig: PhaseConfig;
-  processInstance: { instanceData: unknown; processId: string };
+  processInstance: { instanceData: unknown; processId: string | null };
 }): Promise<VoteCap | undefined> {
   if (phaseConfig.voterBudget === undefined) {
     return undefined;
@@ -124,7 +124,7 @@ async function getBallotPricing({
   selectedProposalIds,
 }: {
   phaseConfig: PhaseConfig;
-  processInstance: { id: string; instanceData: unknown; processId: string };
+  processInstance: { id: string; instanceData: unknown; processId: string | null };
   eligibleProposals: Array<{ id: string; proposalData: unknown }>;
   selectedProposalIds: string[];
 }): Promise<PricedBallot | undefined> {
@@ -193,7 +193,7 @@ async function getValidatedBallot({
 }: {
   selectedProposalIds: string[];
   phaseConfig: PhaseConfig;
-  processInstance: { id: string; instanceData: unknown; processId: string };
+  processInstance: { id: string; instanceData: unknown; processId: string | null };
   eligibleProposals: Array<{ id: string; proposalData: unknown }>;
 }): Promise<{
   pricing: PricedBallot | undefined;
