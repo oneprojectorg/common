@@ -232,6 +232,9 @@ export const LoginPanel = () => {
   const switchChannel = (next: AuthChannel) => {
     if (isPhone) {
       phoneFlow.changeNumber();
+    } else {
+      setLoginSuccess(false);
+      setToken(undefined);
     }
     setChannel(next);
     setEmail('');
@@ -376,6 +379,11 @@ export const LoginPanel = () => {
                 onVerify={verifyCode}
                 onResend={resendCode}
                 onBack={backToContact}
+                onSwitchChannel={
+                  smsLoginEnabled
+                    ? () => switchChannel(isPhone ? 'email' : 'phone')
+                    : undefined
+                }
               />
             </div>
           ) : (

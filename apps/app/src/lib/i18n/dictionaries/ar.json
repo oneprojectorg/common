@@ -159,6 +159,8 @@
     "resendCodeAction": "إعادة إرسال الرمز",
     "changePhoneAction": "استخدام رقم هاتف مختلف",
     "useEmailAction": "استخدام عنوان بريد إلكتروني مختلف",
+    "useEmailInsteadAction": "استخدام البريد الإلكتروني بدلاً من ذلك",
+    "usePhoneInsteadAction": "استخدام الهاتف بدلاً من ذلك",
     "phoneNumberLabel": "رقم الهاتف",
     "errorTitle": "عفوًا!",
     "waitlistTitle": "ترقبوا!",
