@@ -204,8 +204,6 @@ export {
   resolveMoneyDisplayCurrency,
 } from './services/decision/rubric/money';
 export {
-  type AmountUnit,
-  amountUnitSchema,
   formatUnitAmount,
   getFieldUnit,
   getUnitLabel,

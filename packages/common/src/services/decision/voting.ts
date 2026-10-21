@@ -1,4 +1,5 @@
 import { trackUserVoted } from '@op/analytics';
+import type { AmountUnit } from '@op/core/amountUnit';
 import { db } from '@op/db/client';
 import {
   type VoteData,
@@ -18,7 +19,7 @@ import {
 } from '../../utils';
 import { assertInstanceProfileAccess, getIndividualProfileId } from '../access';
 import { assertProfileAccess } from '../assert';
-import { type AmountUnit, getFieldUnit } from './fieldUnit';
+import { getFieldUnit } from './fieldUnit';
 import { type ProposalCosts, getProposalCosts } from './getProposalCosts';
 import { decisionPermission } from './permissions';
 import { resolveProposalTemplate } from './resolveProposalTemplate';

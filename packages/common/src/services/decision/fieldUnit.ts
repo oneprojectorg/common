@@ -1,3 +1,4 @@
+import { type AmountUnit, amountUnitSchema } from '@op/core/amountUnit';
 import { logger } from '@op/logging';
 import { z } from 'zod';
 
@@ -8,18 +9,6 @@ import {
 } from '../../money';
 import { getMoneyFieldCurrency, isMoneyFieldSchema } from './rubric/money';
 import type { XFormatPropertySchema } from './types';
-
-const CUSTOM_UNIT_LABEL_MAX_LENGTH = 40;
-
-export const amountUnitSchema = z.discriminatedUnion('kind', [
-  z.object({ kind: z.literal('currency'), code: z.string().min(1) }),
-  z.object({
-    kind: z.literal('custom'),
-    label: z.string().trim().min(1).max(CUSTOM_UNIT_LABEL_MAX_LENGTH),
-  }),
-]);
-
-export type AmountUnit = z.infer<typeof amountUnitSchema>;
 
 const unitAmountValueSchema = z.union([
   z.object({ amount: z.number(), currency: z.string().optional() }),

@@ -1,5 +1,7 @@
+import type { AmountUnit } from '@op/core/amountUnit';
+
 import { CommonError, ValidationError } from '../../utils';
-import { type AmountUnit, getFieldAmount } from './fieldUnit';
+import { getFieldAmount } from './fieldUnit';
 import { getProposalDocumentsContent } from './getProposalDocumentsContent';
 import { parseProposalData } from './proposalDataSchema';
 import { resolveDocumentFieldValues } from './proposalListPreview';

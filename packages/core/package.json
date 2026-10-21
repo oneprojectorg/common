@@ -6,6 +6,7 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
+    "./amountUnit": "./src/amountUnit.ts",
     "./decisions": "./src/decisions.ts",
     "./fulog": "./src/fulog.ts",
     "./previews": "./previews.mjs",
@@ -21,7 +22,8 @@
   },
   "dependencies": {
     "he": "^1.2.0",
-    "p-queue": "^8.1.0"
+    "p-queue": "^8.1.0",
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@op/typescript-config": "workspace:*",

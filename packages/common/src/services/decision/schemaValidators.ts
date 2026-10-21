@@ -1,9 +1,6 @@
-import {
-  type AmountUnit,
-  formatUnitAmount,
-  isAtMost,
-  sumAmounts,
-} from './fieldUnit';
+import type { AmountUnit } from '@op/core/amountUnit';
+
+import { formatUnitAmount, isAtMost, sumAmounts } from './fieldUnit';
 import type { ProposalCosts } from './getProposalCosts';
 import {
   DecisionProcessSchema,

@@ -907,6 +907,9 @@ importers:
       p-queue:
         specifier: ^8.1.0
         version: 8.1.0
+      zod:
+        specifier: 'catalog:'
+        version: 4.1.12
     devDependencies:
       '@op/typescript-config':
         specifier: workspace:*

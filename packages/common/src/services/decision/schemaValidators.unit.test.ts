@@ -1,6 +1,6 @@
+import type { AmountUnit } from '@op/core/amountUnit';
 import { describe, expect, it } from 'vitest';
 
-import type { AmountUnit } from './fieldUnit';
 import {
   isValidDecisionProcessSchema,
   validateVoteBudget,

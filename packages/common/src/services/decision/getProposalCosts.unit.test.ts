@@ -4,7 +4,8 @@ vi.mock('./getProposalDocumentsContent', () => ({
   getProposalDocumentsContent: vi.fn(),
 }));
 
-import type { AmountUnit } from './fieldUnit';
+import type { AmountUnit } from '@op/core/amountUnit';
+
 import { getProposalCosts } from './getProposalCosts';
 import {
   type ProposalDocumentContent,
