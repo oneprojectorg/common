@@ -139,9 +139,7 @@
     "invitedPersonSummary": "আপনি <bold>{organization}</bold>-এ যোগ দিতে <bold>{email}</bold>-কে আমন্ত্রণ জানিয়েছেন।",
     "invitedPeopleSummary": "আপনি <bold>{organization}</bold>-এ যোগ দিতে <bold>{count, plural, one {# জনকে} other {# জনকে}}</bold> আমন্ত্রণ জানিয়েছেন।",
     "inviteMoreAction": "আরও লোককে আমন্ত্রণ জানান",
-    "alreadySignedInError": "আপনি ইতিমধ্যে সাইন ইন করেছেন। চালিয়ে যেতে পৃষ্ঠাটি পুনরায় লোড করুন।",
-    "emailTakenError": "এই ইমেল দিয়ে ইতিমধ্যে একটি অ্যাকাউন্ট রয়েছে। পরিবর্তে লগ ইন করার চেষ্টা করুন।",
-    "phoneTakenError": "এই ইমেল দিয়ে ইতিমধ্যে একটি অ্যাকাউন্ট রয়েছে। পরিবর্তে লগ ইন করার চেষ্টা করুন।"
+    "alreadySignedInError": "আপনি ইতিমধ্যে সাইন ইন করেছেন। চালিয়ে যেতে পৃষ্ঠাটি পুনরায় লোড করুন।"
   },
   "auth": {
     "welcomeHeading": "স্বাগতম",

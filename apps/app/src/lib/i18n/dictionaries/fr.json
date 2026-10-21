@@ -139,9 +139,7 @@
     "invitedPersonSummary": "Vous avez invité <bold>{email}</bold> à rejoindre <bold>{organization}</bold>.",
     "invitedPeopleSummary": "Vous avez invité <bold>{count, plural, one {# personne} other {# personnes}}</bold> à rejoindre <bold>{organization}</bold>.",
     "inviteMoreAction": "Inviter d'autres personnes",
-    "alreadySignedInError": "Vous êtes déjà connecté. Rechargez la page pour continuer.",
-    "emailTakenError": "Un compte avec cet e-mail existe déjà. Essayez plutôt de vous connecter.",
-    "phoneTakenError": "Un compte avec cet e-mail existe déjà. Essayez plutôt de vous connecter."
+    "alreadySignedInError": "Vous êtes déjà connecté. Rechargez la page pour continuer."
   },
   "auth": {
     "welcomeHeading": "Bienvenue sur",

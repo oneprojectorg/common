@@ -139,9 +139,7 @@
     "invitedPersonSummary": "You've invited <bold>{email}</bold> to join <bold>{organization}</bold>.",
     "invitedPeopleSummary": "You've invited <bold>{count, plural, one {# person} other {# people}}</bold> to join <bold>{organization}</bold>.",
     "inviteMoreAction": "Invite more people",
-    "alreadySignedInError": "You're already signed in. Reload the page to continue.",
-    "emailTakenError": "An account with this email already exists. Try logging in instead.",
-    "phoneTakenError": "An account with this phone number already exists. Try logging in instead."
+    "alreadySignedInError": "You're already signed in. Reload the page to continue."
   },
   "auth": {
     "welcomeHeading": "Welcome to",

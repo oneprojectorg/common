@@ -139,9 +139,7 @@
     "invitedPersonSummary": "Meghívta a(z) <bold>{email}</bold> címet a(z) <bold>{organization}</bold> szervezetbe.",
     "invitedPeopleSummary": "<bold>{count, plural, one {# személyt} other {# személyt}}</bold> hívott meg a(z) <bold>{organization}</bold> szervezetbe.",
     "inviteMoreAction": "További személyek meghívása",
-    "alreadySignedInError": "Ön már be van jelentkezve. Töltse újra az oldalt a folytatáshoz.",
-    "emailTakenError": "Ezzel az e-mail-címmel már létezik fiók. Próbáljon meg inkább bejelentkezni.",
-    "phoneTakenError": "Ezzel az e-mail-címmel már létezik fiók. Próbáljon meg inkább bejelentkezni."
+    "alreadySignedInError": "Ön már be van jelentkezve. Töltse újra az oldalt a folytatáshoz."
   },
   "auth": {
     "welcomeHeading": "Üdvözöljük itt:",

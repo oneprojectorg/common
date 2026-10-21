@@ -57,12 +57,13 @@ export function getClaimEmailErrorMessage(
   if (result.alreadySignedIn) {
     return t('onboarding.alreadySignedInError');
   }
-  if (result.code === 'email_exists') {
-    return t('onboarding.emailTakenError');
+  // One generic message for every failure, so the reply never confirms that
+  // an address already has an account. `email_exists` is expected, not an
+  // error worth logging; the others keep the code findable without logging
+  // the raw Supabase message, which can echo the email back.
+  if (result.code !== 'email_exists') {
+    logger.error('claim: requestEmailCode failed', { code: result.code });
   }
-  // The user sees localized generic copy; keep the code findable without
-  // logging the raw Supabase message, which can echo the email back.
-  logger.error('claim: requestEmailCode failed', { code: result.code });
   return t("That didn't work");
 }
 
@@ -74,12 +75,11 @@ export function getClaimPhoneErrorMessage(
   if (result.alreadySignedIn) {
     return t('onboarding.alreadySignedInError');
   }
-  if (result.code === 'phone_exists') {
-    return t('onboarding.phoneTakenError');
+  // Same reasoning as getClaimEmailErrorMessage: a taken number gets the
+  // generic message, and the raw message can echo the number back.
+  if (result.code !== 'phone_exists') {
+    logger.error('claim: requestPhoneCode failed', { code: result.code });
   }
-  // Same reasoning as getClaimEmailErrorMessage — the raw message can echo
-  // the phone number back, so only the code is worth keeping.
-  logger.error('claim: requestPhoneCode failed', { code: result.code });
   return t("That didn't work");
 }
 
@@ -150,8 +150,8 @@ export function useClaimAccount() {
       }
 
       // updateUser fails with code 'email_exists' when the email already
-      // belongs to another account — mapped to friendly copy in
-      // getClaimEmailErrorMessage.
+      // belongs to another account — getClaimEmailErrorMessage answers it
+      // with the generic copy so the reply does not confirm the account.
       const { data, error } = await supabase.auth.updateUser({ email });
       if (error) {
         return { ok: false, code: error.code, message: error.message };

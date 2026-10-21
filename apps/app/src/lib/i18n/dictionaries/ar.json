@@ -139,9 +139,7 @@
     "invitedPersonSummary": "لقد دعوت <bold>{email}</bold> للانضمام إلى <bold>{organization}</bold>.",
     "invitedPeopleSummary": "لقد دعوت <bold>{count, plural, zero {# شخص} one {شخصًا واحدًا} two {شخصين} few {# أشخاص} many {# شخصًا} other {# شخص}}</bold> للانضمام إلى <bold>{organization}</bold>.",
     "inviteMoreAction": "دعوة المزيد من الأشخاص",
-    "alreadySignedInError": "لقد سجّلت الدخول بالفعل. أعد تحميل الصفحة للمتابعة.",
-    "emailTakenError": "يوجد حساب بهذا البريد الإلكتروني بالفعل. حاول تسجيل الدخول بدلاً من ذلك.",
-    "phoneTakenError": "يوجد حساب بهذا البريد الإلكتروني بالفعل. حاول تسجيل الدخول بدلاً من ذلك."
+    "alreadySignedInError": "لقد سجّلت الدخول بالفعل. أعد تحميل الصفحة للمتابعة."
   },
   "auth": {
     "welcomeHeading": "مرحبًا بك في",
