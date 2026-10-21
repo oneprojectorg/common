@@ -95,7 +95,7 @@ export const SettingsModal = ({ open, onOpenChange }: SettingsModalProps) => {
           <TabsList
             aria-label={t('sectionsLabel')}
             variant={isSidebarLayout ? 'sidebar' : 'line'}
-            className="mx-4 mt-4 flex h-auto w-auto shrink-0 justify-start overflow-x-auto border-b group-data-horizontal/tabs:h-auto group-data-vertical/tabs:h-auto sm:m-0 sm:w-55 sm:overflow-x-visible sm:border-b-0"
+            className="mx-4 mt-4 no-scrollbar flex h-auto w-auto shrink-0 justify-start overflow-x-auto border-b group-data-horizontal/tabs:h-auto group-data-vertical/tabs:h-auto sm:m-0 sm:w-55 sm:overflow-x-visible sm:border-b-0"
           >
             {sections.map(({ value, label }) => (
               <TabsTrigger
