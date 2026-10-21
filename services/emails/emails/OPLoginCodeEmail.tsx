@@ -6,12 +6,21 @@ import { Footnote } from '../components/Footnote';
 import { Header } from '../components/Header';
 import { InlineLink } from '../components/InlineLink';
 
+interface OPLoginCodeEmailProps {
+  /** Preview only. GoTrue fills `{{ .Token }}` itself when this is absent. */
+  token?: string;
+}
+
+// A zero-width non-joiner halfway through the code stops iOS Mail and Gmail
+// from reading ten digits as a phone number; the app's code field drops it on paste.
+const SPLIT_AT = 5;
+const ZWNJ = '\u200c';
+
 /**
- * Source of `supabase/templates/magiclink.html`. GoTrue substitutes
- * `{{ .Token }}` at send time, so the placeholder is rendered verbatim.
- * `OPLoginCodeEmail.test.ts` keeps the two in sync; `pnpm w:emails test -- -u` regenerates the HTML.
+ * Source of `supabase/templates/magiclink.html`. The snapshot test keeps the
+ * two in sync; `pnpm w:emails test -- -u` regenerates the HTML.
  */
-export const OPLoginCodeEmail = () => {
+export const OPLoginCodeEmail = ({ token }: OPLoginCodeEmailProps = {}) => {
   return (
     <EmailTemplate previewText="Your Common login code">
       <Header>Login</Header>
@@ -22,7 +31,7 @@ export const OPLoginCodeEmail = () => {
 
       <Section className="mt-6 mb-6">
         <Text className="bg-primary-teal m-0 block rounded-lg px-4 py-3 text-center font-mono text-xl font-medium tracking-[0.25em] whitespace-nowrap text-white md:text-2xl">
-          {'{{ .Token }}'}
+          {token ? splitCode(token) : GOTRUE_SPLIT_TOKEN}
         </Text>
       </Section>
 
@@ -36,5 +45,17 @@ export const OPLoginCodeEmail = () => {
 };
 
 OPLoginCodeEmail.subject = 'Your Common login code';
+
+OPLoginCodeEmail.PreviewProps = {
+  token: '0195488727',
+} satisfies OPLoginCodeEmailProps;
+
+const splitCode = (code: string): string =>
+  code.length > SPLIT_AT
+    ? `${code.slice(0, SPLIT_AT)}${ZWNJ}${code.slice(SPLIT_AT)}`
+    : code;
+
+// Go template equivalent of `splitCode`, guarded so a short token never panics the send.
+const GOTRUE_SPLIT_TOKEN = `{{ if gt (len .Token) ${SPLIT_AT} }}{{ slice .Token 0 ${SPLIT_AT} }}${ZWNJ}{{ slice .Token ${SPLIT_AT} }}{{ else }}{{ .Token }}{{ end }}`;
 
 export default OPLoginCodeEmail;

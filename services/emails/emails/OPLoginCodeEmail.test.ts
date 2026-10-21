@@ -7,7 +7,8 @@ import { OPLoginCodeEmail } from './OPLoginCodeEmail';
 // After a change to the template or the shared layout: `pnpm w:emails test -- -u`.
 describe('OPLoginCodeEmail', () => {
   it('matches the Supabase magic-link template', async () => {
-    const html = await render(OPLoginCodeEmail(), { pretty: true });
+    // Not pretty-printed: a wrap inside the Go action would put whitespace in the code.
+    const html = await render(OPLoginCodeEmail());
 
     await expect(html).toMatchFileSnapshot(
       '../../../supabase/templates/magiclink.html',
