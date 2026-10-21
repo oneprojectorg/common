@@ -1140,7 +1140,7 @@
       "updateReviewSuccess": "تم تحديث المراجعة بنجاح",
       "reviewerNotFound": "لم يُعثر على المراجع",
       "reviewersHeading": "المراجعون",
-      "reviewsFromPhase": "مراجعات {phase}",
+      "reviewsFromPhase": "مراجعات <bdi>{phase}</bdi>",
       "revisedLabel": "تمت المراجعة",
       "revisedTimeAgo": "Revised {timeAgo}",
       "revisedOnLabel": "تمت المراجعة في",

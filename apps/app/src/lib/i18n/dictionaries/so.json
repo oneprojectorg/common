@@ -1140,7 +1140,7 @@
       "updateReviewSuccess": "Dib-u-eegista si guul ah ayaa loo cusboonaysiiyay",
       "reviewerNotFound": "Dib-u-eegaha lama helin",
       "reviewersHeading": "Dib-u-eegayaal",
-      "reviewsFromPhase": "Dib-u-eegisyada {phase}",
+      "reviewsFromPhase": "Dib-u-eegisyada <bdi>{phase}</bdi>",
       "revisedLabel": "La dib-u-habeeyay",
       "revisedTimeAgo": "Revised {timeAgo}",
       "revisedOnLabel": "La dib u habeeyay",

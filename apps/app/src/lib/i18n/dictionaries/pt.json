@@ -1140,7 +1140,7 @@
       "updateReviewSuccess": "Avaliação atualizada com sucesso",
       "reviewerNotFound": "Avaliador não encontrado",
       "reviewersHeading": "Revisores",
-      "reviewsFromPhase": "Avaliações de {phase}",
+      "reviewsFromPhase": "Avaliações de <bdi>{phase}</bdi>",
       "revisedLabel": "Revisado",
       "revisedTimeAgo": "Revised {timeAgo}",
       "revisedOnLabel": "Revisado em",

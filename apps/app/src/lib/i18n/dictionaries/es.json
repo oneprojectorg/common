@@ -1140,7 +1140,7 @@
       "updateReviewSuccess": "Revisión actualizada correctamente",
       "reviewerNotFound": "No se encontró la persona revisora",
       "reviewersHeading": "Revisores",
-      "reviewsFromPhase": "Revisiones de {phase}",
+      "reviewsFromPhase": "Revisiones de <bdi>{phase}</bdi>",
       "revisedLabel": "Revisado",
       "revisedTimeAgo": "Revised {timeAgo}",
       "revisedOnLabel": "Revisado el",

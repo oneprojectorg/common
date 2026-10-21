@@ -106,7 +106,10 @@ export function ReviewTabs({
               key={phase.id}
               value={`${PHASE_TAB_PREFIX}${phase.id}`}
             >
-              {t('decisions.review.reviewsFromPhase', { phase: phase.name })}
+              {t.rich('decisions.review.reviewsFromPhase', {
+                phase: phase.name,
+                bdi: (chunks) => <bdi>{chunks}</bdi>,
+              })}
             </TabsTrigger>
           ))}
         </TabsList>
