@@ -25,7 +25,7 @@ describe.concurrent('getSmsDecisionDescription', () => {
     await expect(
       getSmsDecisionDescription({
         authUserId: setup.user.id,
-        slug: setup.instance.slug,
+        decisionSlug: setup.instance.slug,
       }),
     ).resolves.toEqual({
       name: setup.instance.instance.name,
@@ -49,7 +49,7 @@ describe.concurrent('getSmsDecisionDescription', () => {
     await expect(
       getSmsDecisionDescription({
         authUserId: setup.user.id,
-        slug: setup.instance.slug,
+        decisionSlug: setup.instance.slug,
       }),
     ).rejects.toMatchObject({ name: 'NotFoundError' });
   });
@@ -70,7 +70,7 @@ describe.concurrent('getSmsDecisionDescription', () => {
     await expect(
       getSmsDecisionDescription({
         authUserId: outsider.authUserId,
-        slug: setup.instance.slug,
+        decisionSlug: setup.instance.slug,
       }),
     ).rejects.toMatchObject({ name: 'UnauthorizedError' });
   });

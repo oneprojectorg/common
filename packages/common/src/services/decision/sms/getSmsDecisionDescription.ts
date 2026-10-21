@@ -15,18 +15,18 @@ export interface SmsDecisionDescription extends CurrentPhaseSummary {
 
 export async function getSmsDecisionDescription({
   authUserId,
-  slug,
+  decisionSlug,
 }: {
   authUserId: string;
-  slug: string;
+  decisionSlug: string;
 }): Promise<SmsDecisionDescription> {
   const { name, processInstance } = await getDecisionBySlug({
     user: { id: authUserId },
-    slug,
+    slug: decisionSlug,
   });
 
   if (processInstance.status !== ProcessStatus.PUBLISHED) {
-    throw new NotFoundError('Decision', slug);
+    throw new NotFoundError('Decision', decisionSlug);
   }
 
   const { id, instanceData, currentStateId } = processInstance;

@@ -3,10 +3,10 @@ import {
   NotFoundError,
   UnauthorizedError,
   clipSmsText,
-  getSmsDecisionDescription,
   formatSmsDecisionInfo,
   formatSmsDecisionList,
   getPhoneSignupState,
+  getSmsDecisionDescription,
   listSmsDecisions,
 } from '@op/common';
 import { Events, inngest } from '@op/events';
@@ -131,7 +131,7 @@ export const handleSMSCommand = inngest.createFunction(
         try {
           return await getSmsDecisionDescription({
             authUserId: account.authUserId,
-            slug: argument,
+            decisionSlug: argument,
           });
         } catch (error) {
           if (
