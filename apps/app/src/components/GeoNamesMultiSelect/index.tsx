@@ -1,5 +1,6 @@
 'use client';
 
+import { isSearchQueryLongEnough } from '@/utils/isSearchQueryLongEnough';
 import { trpc } from '@op/api/client';
 import { useDebounce } from '@op/hooks';
 import {
@@ -37,12 +38,13 @@ export const GeoNamesMultiSelect = ({
   const t = useTranslations();
   const [whereWeWorkQuery, setWhereWeWorkQuery] = useState('');
   const [debouncedQuery] = useDebounce(whereWeWorkQuery, 300);
+  const isQueryLongEnough = isSearchQueryLongEnough(debouncedQuery);
   const { data: geoNamesData, isLoading } = trpc.taxonomy.getGeoNames.useQuery(
     {
       q: debouncedQuery,
     },
     {
-      enabled: debouncedQuery.length >= 2,
+      enabled: isQueryLongEnough,
       placeholderData: (prev) => prev,
     },
   );
@@ -68,7 +70,7 @@ export const GeoNamesMultiSelect = ({
       })
       .filter((o) => !selectedOptions.some((s) => s.id === o.id)) ?? [];
 
-  const loading = isLoading && debouncedQuery.length >= 2;
+  const loading = isLoading && isQueryLongEnough;
 
   return (
     <div className="flex w-full flex-col gap-2">
@@ -97,7 +99,7 @@ export const GeoNamesMultiSelect = ({
           <ComboboxEmpty>
             {loading ? (
               <Spinner className="size-4" />
-            ) : debouncedQuery.length >= 2 ? (
+            ) : isQueryLongEnough ? (
               t('No results')
             ) : null}
           </ComboboxEmpty>
