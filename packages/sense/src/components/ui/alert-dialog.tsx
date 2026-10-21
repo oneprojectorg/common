@@ -49,7 +49,8 @@ function AlertDialogContent({
 }) {
   return (
     <AlertDialogPortal container={container}>
-      <AlertDialogOverlay />
+      {/* forceRender: Base UI skips a nested dialog's backdrop by default, which would leave the parent dialog undimmed */}
+      <AlertDialogOverlay forceRender />
       <AlertDialogPrimitive.Popup
         data-slot="alert-dialog-content"
         data-size={size}
