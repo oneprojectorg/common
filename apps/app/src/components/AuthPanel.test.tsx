@@ -211,6 +211,8 @@ describe('AuthCodeField', () => {
     expect(field.contains(alert)).toBe(true);
     expect(alert.textContent).toBe('That code expired. Request a new one.');
     expect(alert.classList.contains('text-center')).toBe(true);
+    expect(alert.id).not.toBe('');
+    expect(input.getAttribute('aria-describedby')).toBe(alert.id);
   });
 
   it('given no code was rejected, then the field is not marked invalid', async () => {
@@ -225,6 +227,7 @@ describe('AuthCodeField', () => {
     });
 
     expect(input.getAttribute('aria-invalid')).toBeNull();
+    expect(input.getAttribute('aria-describedby')).toBeNull();
     expect(screen.getByRole('group').getAttribute('data-invalid')).toBeNull();
     expect(screen.queryByRole('alert')).toBeNull();
   });
@@ -283,6 +286,8 @@ describe('AuthContactFields', () => {
     expect(alert.textContent).toBe(
       'An account with this phone number already exists.',
     );
+    expect(alert.id).not.toBe('');
+    expect(input.getAttribute('aria-describedby')).toBe(alert.id);
   });
 
   it('given the email request failed, then the message sits below the email input in the field error state', () => {
@@ -301,16 +306,17 @@ describe('AuthContactFields', () => {
     expect(
       input.compareDocumentPosition(alert) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
+    expect(alert.id).not.toBe('');
+    expect(input.getAttribute('aria-describedby')).toBe(alert.id);
   });
 
   it('given no request failed, then neither contact input is marked invalid', () => {
     renderContactFields({ channel: 'phone' });
 
-    expect(
-      screen
-        .getByRole('textbox', { name: 'Phone Number' })
-        .getAttribute('aria-invalid'),
-    ).toBeNull();
+    const input = screen.getByRole('textbox', { name: 'Phone Number' });
+
+    expect(input.getAttribute('aria-invalid')).toBeNull();
+    expect(input.getAttribute('aria-describedby')).toBeNull();
     expect(screen.queryByRole('alert')).toBeNull();
   });
 });

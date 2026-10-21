@@ -194,6 +194,7 @@ export const AuthEmailField = ({
   placeholder?: string;
 }) => {
   const t = useTranslations();
+  const errorId = useId();
   const isInvalid = !!error;
 
   return (
@@ -215,6 +216,7 @@ export const AuthEmailField = ({
             aria-label={t('Email')}
             aria-required
             aria-invalid={isInvalid || undefined}
+            aria-describedby={isInvalid ? errorId : undefined}
             type="email"
             placeholder={placeholder}
             spellCheck={false}
@@ -224,7 +226,7 @@ export const AuthEmailField = ({
             onChange={(e) => onChange(e.target.value)}
           />
           {description && <FieldDescription>{description}</FieldDescription>}
-          {isInvalid ? <FieldError>{error}</FieldError> : null}
+          {isInvalid ? <FieldError id={errorId}>{error}</FieldError> : null}
         </Field>
       </form>
     </div>
@@ -257,6 +259,7 @@ export const AuthPhoneField = ({
   onSubmit: () => void;
   placeholder?: string;
 }) => {
+  const errorId = useId();
   const isInvalid = !!error;
 
   return (
@@ -282,6 +285,7 @@ export const AuthPhoneField = ({
             aria-label={label}
             aria-required
             aria-invalid={isInvalid || undefined}
+            aria-describedby={isInvalid ? errorId : undefined}
             type="tel"
             inputMode="tel"
             autoComplete="tel"
@@ -293,7 +297,7 @@ export const AuthPhoneField = ({
             onChange={(e) => onChange(e.target.value)}
           />
           {description && <FieldDescription>{description}</FieldDescription>}
-          {isInvalid ? <FieldError>{error}</FieldError> : null}
+          {isInvalid ? <FieldError id={errorId}>{error}</FieldError> : null}
         </Field>
       </form>
     </div>
@@ -330,6 +334,7 @@ export const AuthCodeField = ({
   onSubmit: () => void | Promise<void>;
 }) => {
   const t = useTranslations();
+  const errorId = useId();
   const length = getAuthOtpLength(channel);
   const isInvalid = !!error;
 
@@ -347,6 +352,7 @@ export const AuthCodeField = ({
         autoFocus
         disabled={isDisabled}
         aria-invalid={isInvalid || undefined}
+        aria-describedby={isInvalid ? errorId : undefined}
         value={value ?? ''}
         onChange={onChange}
         onComplete={() => {
@@ -365,7 +371,9 @@ export const AuthCodeField = ({
         </InputOTPGroup>
       </InputOTP>
       {isInvalid ? (
-        <FieldError className="text-center">{error}</FieldError>
+        <FieldError id={errorId} className="text-center">
+          {error}
+        </FieldError>
       ) : null}
     </Field>
   );
