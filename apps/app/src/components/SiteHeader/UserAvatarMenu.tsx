@@ -28,12 +28,14 @@ import { ProfileItem } from '@op/sense/ProfileItem';
 import { Separator } from '@op/sense/Separator';
 import { cn } from '@op/sense/lib/utils';
 import { screens } from '@op/styles/constants';
+import dynamic from 'next/dynamic';
 import { ReactNode, useEffect, useRef, useState } from 'react';
 import {
   LuChevronDown,
   LuChevronRight,
   LuCircleHelp,
   LuLogOut,
+  LuSettings,
 } from 'react-icons/lu';
 
 import { Link, useRouter, useTranslations } from '@/lib/i18n';
@@ -46,6 +48,12 @@ import { ProfileSwitchingModal } from '../ProfileSwitchingModal';
 import { ToSContent } from '../ToSContent';
 
 type LegalDialog = 'privacy' | 'tos' | 'community';
+
+// behind a flag and rarely opened, so it stays out of every page's header chunk
+const SettingsModal = dynamic(
+  () => import('../SettingsModal').then((module) => module.SettingsModal),
+  { ssr: false },
+);
 
 /**
  * A profile/org switcher row. Renders as a base-ui `DropdownMenuItem` in the
@@ -289,11 +297,13 @@ const AvatarMenuContent = ({
   onProfileSwitch,
   onOpenLegal,
   onDeleteAccount,
+  onOpenSettings,
 }: {
   asMenuItem?: boolean;
   onClose?: () => void;
   onOpenLegal: (dialog: LegalDialog) => void;
   onDeleteAccount: () => void;
+  onOpenSettings: () => void;
   onProfileSwitch?: (profile: {
     name: string;
     avatarImage?: { name: string } | null;
@@ -331,6 +341,7 @@ const AvatarMenuContent = ({
     ) ?? {};
 
   const deleteOrganizationEnabled = useFeatureFlag('delete_organization');
+  const settingsModalEnabled = useFeatureFlag('settings_modal');
 
   return (
     <>
@@ -362,6 +373,15 @@ const AvatarMenuContent = ({
       <MenuDivider asMenuItem={asMenuItem} />
 
       <MenuSection asMenuItem={asMenuItem} className="flex flex-col gap-1 p-2">
+        {settingsModalEnabled ? (
+          <ActionRow
+            asMenuItem={asMenuItem}
+            className="font-normal text-foreground"
+            onClick={onOpenSettings}
+          >
+            <LuSettings className="size-4" /> {t('settings.title')}
+          </ActionRow>
+        ) : null}
         <LinkRow
           asMenuItem={asMenuItem}
           href="https://oneprojectorg.notion.site/Common-Support-Hub-a9ef0b6622538269927c01e51045638b"
@@ -496,6 +516,7 @@ export const UserAvatarMenu = ({ className }: { className?: string }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isOrgDeletionOpen, setIsOrgDeletionOpen] = useState(false);
   const [legalDialog, setLegalDialog] = useState<LegalDialog | null>(null);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isSwitchingProfile, setIsSwitchingProfile] = useState(false);
   const [switchingToProfile, setSwitchingToProfile] = useState<{
     name: string;
@@ -526,7 +547,13 @@ export const UserAvatarMenu = ({ className }: { className?: string }) => {
     setIsOrgDeletionOpen(true);
   };
 
+  const openSettings = () => {
+    closeMenus();
+    setIsSettingsOpen(true);
+  };
+
   const deleteOrganizationEnabled = useFeatureFlag('delete_organization');
+  const settingsModalEnabled = useFeatureFlag('settings_modal');
 
   // Hide modal when profile actually changes
   useEffect(() => {
@@ -584,6 +611,9 @@ export const UserAvatarMenu = ({ className }: { className?: string }) => {
           onOpenChange={setIsOrgDeletionOpen}
         />
       ) : null}
+      {settingsModalEnabled ? (
+        <SettingsModal open={isSettingsOpen} onOpenChange={setIsSettingsOpen} />
+      ) : null}
     </>
   );
 
@@ -615,6 +645,7 @@ export const UserAvatarMenu = ({ className }: { className?: string }) => {
                 onClose={() => setIsDrawerOpen(false)}
                 onOpenLegal={openLegal}
                 onDeleteAccount={openDeleteAccount}
+                onOpenSettings={openSettings}
                 onProfileSwitch={handleProfileSwitch}
               />
             </div>
@@ -651,6 +682,7 @@ export const UserAvatarMenu = ({ className }: { className?: string }) => {
             onClose={() => setIsMenuOpen(false)}
             onOpenLegal={openLegal}
             onDeleteAccount={openDeleteAccount}
+            onOpenSettings={openSettings}
             onProfileSwitch={handleProfileSwitch}
           />
         </DropdownMenuContent>
