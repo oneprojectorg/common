@@ -1,7 +1,7 @@
 'use client';
 
 import { trpc } from '@op/api/client';
-import type { CustomFormDTO } from '@op/common/client';
+import type { CustomForm } from '@op/api/encoders';
 import { logger } from '@op/logging/client';
 import { toast } from '@op/sense/Toast';
 import { useCallback, useRef, useState } from 'react';
@@ -30,7 +30,7 @@ export function usePhaseCustomForm({
   const t = useTranslations('decisions.proposals');
   const utils = trpc.useUtils();
   const submitCustomForm = trpc.customForm.submit.useMutation();
-  const [form, setForm] = useState<CustomFormDTO | null>(null);
+  const [form, setForm] = useState<CustomForm | null>(null);
 
   // The action stays in flight from the trigger until `onSubmit` settles or the
   // form is dismissed, so a second trigger cannot run it twice.
@@ -49,7 +49,7 @@ export function usePhaseCustomForm({
     }
     setInFlight(true);
 
-    let owedForm: CustomFormDTO | null = null;
+    let owedForm: CustomForm | null = null;
     try {
       const instance = await utils.decision.getInstance.ensureData({
         instanceId: processInstanceId,
