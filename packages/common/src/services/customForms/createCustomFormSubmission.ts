@@ -77,13 +77,14 @@ export const createCustomFormSubmission = async ({
   const belongsViaProposal =
     !!proposal && proposal.processInstance.profileId === form.profileId;
 
-  if (
-    !belongsViaProposal &&
-    !(await isParticipantInFormProcess({
+  const belongsToForm =
+    belongsViaProposal ||
+    (await isParticipantInFormProcess({
       participantProfileId: input.profileId,
       formProfileId: form.profileId,
-    }))
-  ) {
+    }));
+
+  if (!belongsToForm) {
     throw new ValidationError(
       'The submission target does not belong to this form',
     );

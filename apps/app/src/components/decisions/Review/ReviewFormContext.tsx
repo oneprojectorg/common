@@ -325,7 +325,6 @@ function ReviewFormProviderInner({
   const { handleSubmit, reviewPhaseFormModal } = useReviewPhaseForm({
     processInstanceId: assignment.processInstanceId,
     phaseId: assignment.phaseId,
-    submitLabel: t('submitReviewAction'),
     onSubmit: submitRubric,
   });
 
@@ -456,12 +455,10 @@ function ReviewFormProviderInner({
 function useReviewPhaseForm({
   processInstanceId,
   phaseId,
-  submitLabel,
   onSubmit,
 }: {
   processInstanceId: string;
   phaseId: string;
-  submitLabel: string;
   onSubmit: () => Promise<void>;
 }) {
   const t = useTranslations('decisions');
@@ -471,13 +468,11 @@ function useReviewPhaseForm({
   const [form, setForm] = useState<CustomFormDTO | null>(null);
 
   const submitCustomFormMutate = submitCustomForm.mutateAsync;
-  const isSubmittingForm = submitCustomForm.isPending;
-  const reviewerProfileId = user?.profileId;
 
   const handleSubmit = useCallback(async () => {
     let owedForm: CustomFormDTO | null = null;
     try {
-      const instance = await utils.decision.getInstance.fetch({
+      const instance = await utils.decision.getInstance.ensureData({
         instanceId: processInstanceId,
       });
       if (instance.profileId) {
@@ -506,13 +501,13 @@ function useReviewPhaseForm({
 
   const handleFormSubmit = useCallback(
     async (values: CustomFormValues) => {
-      if (!form || !reviewerProfileId) {
+      if (!form || !user?.profileId) {
         return;
       }
       try {
         await submitCustomFormMutate({
           customFormId: form.id,
-          profileId: reviewerProfileId,
+          profileId: user.profileId,
           data: values,
         });
       } catch (error) {
@@ -526,27 +521,27 @@ function useReviewPhaseForm({
       setForm(null);
       await onSubmit();
     },
-    [form, reviewerProfileId, submitCustomFormMutate, t, onSubmit],
+    [form, user?.profileId, submitCustomFormMutate, t, onSubmit],
   );
 
   // Dismissing the form cancels the submit; the review stays a draft.
   const handleOpenChange = useCallback(
     (open: boolean) => {
-      if (!open && !isSubmittingForm) {
+      if (!open && !submitCustomForm.isPending) {
         setForm(null);
       }
     },
-    [isSubmittingForm],
+    [submitCustomForm.isPending],
   );
 
   const reviewPhaseFormModal = form ? (
     <CustomFormModal
       isOpen
       schema={form.schema}
-      isSubmitting={isSubmittingForm}
+      isSubmitting={submitCustomForm.isPending}
       onSubmit={handleFormSubmit}
       onOpenChange={handleOpenChange}
-      submitLabel={submitLabel}
+      submitLabel={t('review.submitReviewAction')}
     />
   ) : null;
 

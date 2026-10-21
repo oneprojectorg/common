@@ -91,8 +91,9 @@ const getFormForPhase = async ({
  *
  * A submission row points at the entity the answers were collected against, not
  * at the person who gave them — the proposal's profile for a submission form,
- * the participant's own profile for a post-vote one. Both attachment sites
- * `createCustomFormSubmission` accepts are resolved back to the caller here.
+ * the participant's own profile for a post-vote or review-phase one. Every
+ * attachment site `createCustomFormSubmission` accepts is resolved back to the
+ * caller here.
  */
 const getCallerSubmission = async ({
   formId,
