@@ -1,12 +1,12 @@
 import { formatCurrency } from '@/utils/formatting';
 import {
-  type AmountUnit,
   type Proposal,
   formatUnitAmount,
   getFieldAmount,
   isAtMost,
   sumAmounts,
 } from '@op/common/client';
+import type { AmountUnit } from '@op/types/amountUnit';
 
 export interface BallotBudget {
   voterBudget: number;
