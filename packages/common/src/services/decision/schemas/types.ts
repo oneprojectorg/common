@@ -31,6 +31,8 @@ export interface PhaseRules {
     voterBudget?: number;
     /** Key of the template field a selection costs the voter; `budget` when unset. Read through `getVoterCostField`. */
     voterCostField?: string;
+    /** Persists ballot order as a rank. Read through `isRankedVoting`. */
+    ranked?: boolean;
   };
   comments?: {
     /** Unlike its siblings this defaults to TRUE — see `allowsComments`. */

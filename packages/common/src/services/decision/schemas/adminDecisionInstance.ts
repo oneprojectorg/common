@@ -62,6 +62,7 @@ export const adminDecisionPhaseSchema = z.object({
   voterBudget: z.number().nullable(),
   /** Field a selection is charged from; null without a voter budget. */
   voterCostField: z.string().nullable(),
+  ranked: z.boolean().nullable(),
   proposalsHiddenByDefault: z.boolean(),
   /** 'date' | 'manual' | null when unset. */
   advancementMethod: z.string().nullable(),
