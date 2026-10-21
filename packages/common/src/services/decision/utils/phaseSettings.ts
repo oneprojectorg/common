@@ -4,6 +4,7 @@ import {
 } from '../schemas/types';
 import type { PhaseReviewSettings, ReviewsPolicy } from '../schemas/types';
 import { assertInstancePhase } from './instance';
+import { getPreviousPhases } from './phaseOrder';
 
 /**
  * Phase-level settings resolution: `rules.<domain>` → legacy `config.*` →
@@ -22,6 +23,11 @@ export function isReviewPhase(phase: { rules?: ReviewPhaseRules }): boolean {
   return (
     phase.rules?.reviews?.submit ?? phase.rules?.proposals?.review ?? false
   );
+}
+
+/** Reviews in this phase are readable by other reviewers and by later phases. */
+export function hasOpenReviews(phase: { rules?: ReviewPhaseRules }): boolean {
+  return phase.rules?.reviews?.openReviews ?? false;
 }
 
 /**
@@ -136,13 +142,18 @@ export type ReviewSettings = Required<
   >
 >;
 
+interface ReviewPhase {
+  phaseId: string;
+  rules?: ReviewPhaseRules;
+}
+
 interface ReviewSettingsInstanceData {
   config?: {
     reviewsPolicy?: ReviewsPolicy;
     reviewsAllowRevisions?: boolean;
     reviewsAnonymousFeedback?: boolean;
   };
-  phases?: ReadonlyArray<{ phaseId: string; rules?: ReviewPhaseRules }>;
+  phases?: readonly ReviewPhase[];
 }
 
 /** Resolves review settings for `phaseId`; throws if the phase doesn't exist. */
@@ -168,9 +179,16 @@ export function resolveReviewSettings(
   return reviewSettingsFromPhase(instanceData.config, phase);
 }
 
+export function getPreviousReviewPhases<Phase extends ReviewPhase>(
+  instanceData: { phases?: readonly Phase[] },
+  phaseId: string,
+): Phase[] {
+  return getPreviousPhases(instanceData, phaseId).filter(isReviewPhase);
+}
+
 function reviewSettingsFromPhase(
   config: ReviewSettingsInstanceData['config'],
-  phase: { phaseId: string; rules?: ReviewPhaseRules } | undefined,
+  phase: ReviewPhase | undefined,
 ): ReviewSettings {
   const reviews = phase?.rules?.reviews;
 
@@ -185,7 +203,6 @@ function reviewSettingsFromPhase(
     // Defaults on: the field rendered unconditionally before this was wired.
     anonymousFeedback:
       reviews?.anonymousFeedback ?? config?.reviewsAnonymousFeedback ?? true,
-    // Phase-only (no legacy config counterpart), like scope.
-    openReviews: reviews?.openReviews ?? false,
+    openReviews: phase ? hasOpenReviews(phase) : false,
   };
 }

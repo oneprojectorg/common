@@ -7,6 +7,7 @@ import { createClient } from '@op/api/serverClient';
 import { CommonError } from '@op/common';
 import {
   assertInstancePhase,
+  getPreviousReviewPhases,
   isReviewPhase,
   resolveReviewSettings,
 } from '@op/common/client';
@@ -95,6 +96,12 @@ export async function ReviewSummaryLayout({
     phaseId,
   );
 
+  // Rendered lazily on the client, so nothing to prefetch.
+  const previousReviewPhases = getPreviousReviewPhases(
+    instance.instanceData ?? {},
+    phaseId,
+  ).map((phase) => ({ id: phase.phaseId, name: phase.name ?? phase.phaseId }));
+
   // isReviewPhase guards the resolver's fallback, which returns the current
   // phase when the instance has no review phase at all.
   const isPhaseInProgress =
@@ -129,6 +136,7 @@ export async function ReviewSummaryLayout({
         phaseId={phaseId}
         isPhaseInProgress={isPhaseInProgress}
         reviewSettings={reviewSettings}
+        previousReviewPhases={previousReviewPhases}
       />
     </HydrationBoundary>
   );

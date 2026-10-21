@@ -1140,7 +1140,7 @@
       "updateReviewSuccess": "পর্যালোচনা সফলভাবে আপডেট করা হয়েছে",
       "reviewerNotFound": "পর্যালোচক পাওয়া যায়নি",
       "reviewersHeading": "পর্যালোচকগণ",
-      "reviewsFromPhase": "{phase} থেকে পর্যালোচনা",
+      "reviewsFromPhase": "<bdi>{phase}</bdi> থেকে পর্যালোচনা",
       "revisedLabel": "সংশোধিত",
       "revisedTimeAgo": "Revised {timeAgo}",
       "revisedOnLabel": "সংশোধিত",

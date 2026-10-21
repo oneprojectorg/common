@@ -1,24 +1,22 @@
 'use client';
 
-import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
-import { useUser } from '@/utils/UserProvider';
 import { getDecisionCommonProperties } from '@op/analytics/client-utils';
-import { trpc } from '@op/api/client';
-import { Skeleton } from '@op/sense/Skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@op/sense/Tabs';
 import { usePostHog } from 'posthog-js/react';
-import { type ReactNode, Suspense, useState } from 'react';
+import type { ReactNode } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { ReviewsPanel } from '../ReviewsPanel/ReviewsPanel';
+import {
+  PhaseReviews,
+  PhaseReviewsTabPanel,
+} from '../ReviewsPanel/PhaseReviews';
 import { useReviewForm } from './ReviewFormContext';
 
 const MY_REVIEW_TAB = 'my-review';
 const OTHER_REVIEWS_TAB = 'other-reviews';
 const PHASE_TAB_PREFIX = 'phase-reviews-';
 
-/** An earlier review phase whose `openReviews` keeps its reviews readable here. */
 export interface PreviousReviewPhase {
   id: string;
   name: string;
@@ -108,7 +106,10 @@ export function ReviewTabs({
               key={phase.id}
               value={`${PHASE_TAB_PREFIX}${phase.id}`}
             >
-              {t('decisions.review.reviewsFromPhase', { phase: phase.name })}
+              {t.rich('decisions.review.reviewsFromPhase', {
+                phase: phase.name,
+                bdi: (chunks) => <bdi>{chunks}</bdi>,
+              })}
             </TabsTrigger>
           ))}
         </TabsList>
@@ -124,140 +125,32 @@ export function ReviewTabs({
       </TabsContent>
 
       {showOtherReviews ? (
-        <ReviewsTabPanel value={OTHER_REVIEWS_TAB}>
+        <PhaseReviewsTabPanel value={OTHER_REVIEWS_TAB}>
           <PhaseReviews
+            processInstanceId={assignment.processInstanceId}
+            proposalId={assignment.proposal.id}
             phaseId={assignment.phaseId}
+            isCurrentPhase
             excludeOwnReview
             emptyMessage={t('decisions.review.noOtherReviews')}
           />
-        </ReviewsTabPanel>
+        </PhaseReviewsTabPanel>
       ) : null}
 
       {previousPhases.map((phase) => (
-        <ReviewsTabPanel
+        <PhaseReviewsTabPanel
           key={phase.id}
           value={`${PHASE_TAB_PREFIX}${phase.id}`}
         >
           <PhaseReviews
+            processInstanceId={assignment.processInstanceId}
+            proposalId={assignment.proposal.id}
             phaseId={phase.id}
+            isCurrentPhase={false}
             emptyMessage={t('decisions.review.noReviewsInPhase')}
           />
-        </ReviewsTabPanel>
+        </PhaseReviewsTabPanel>
       ))}
     </Tabs>
-  );
-}
-
-/** Lazily mounted reviews panel with its own error boundary + suspense fallback. */
-function ReviewsTabPanel({
-  value,
-  children,
-}: {
-  value: string;
-  children: ReactNode;
-}) {
-  const t = useTranslations();
-
-  return (
-    <TabsContent value={value}>
-      <APIErrorBoundary
-        fallbacks={{
-          default: () => (
-            <p className="py-8 text-center text-base text-muted-foreground">
-              {t('decisions.review.loadReviewsError')}
-            </p>
-          ),
-        }}
-      >
-        <Suspense fallback={<PhaseReviewsSkeleton />}>{children}</Suspense>
-      </APIErrorBoundary>
-    </TabsContent>
-  );
-}
-
-/**
- * One phase's submitted reviews for this proposal (average bar, recommendation
- * groups, drill-in). `excludeOwnReview` hides the viewer's own review — used by
- * the current phase's "Other reviews" tab; earlier phases show the full record.
- */
-function PhaseReviews({
-  phaseId,
-  emptyMessage,
-  excludeOwnReview = false,
-}: {
-  phaseId: string;
-  emptyMessage: string;
-  excludeOwnReview?: boolean;
-}) {
-  const { assignment } = useReviewForm();
-  const { user } = useUser();
-  const posthog = usePostHog();
-  const excludeProfileId = excludeOwnReview
-    ? (user?.currentProfileId ?? undefined)
-    : undefined;
-
-  const [selectedAssignmentId, setSelectedAssignmentId] = useState<
-    string | null
-  >(null);
-
-  const handleSelectAssignment = (reviewAssignmentId: string | null) => {
-    // Non-null = drilling into another reviewer's full review; null = back.
-    if (reviewAssignmentId !== null) {
-      posthog.capture(
-        'review_viewed',
-        getDecisionCommonProperties({
-          decisionInstanceId: assignment.processInstanceId,
-          proposalId: assignment.proposal.id,
-          additionalProps: {
-            phase_id: phaseId,
-            phase_kind: phaseId === assignment.phaseId ? 'current' : 'previous',
-            review_assignment_id: reviewAssignmentId,
-          },
-        }),
-      );
-    }
-    setSelectedAssignmentId(reviewAssignmentId);
-  };
-
-  const [proposalWithReviews] =
-    trpc.decision.getProposalWithReviewAggregates.useSuspenseQuery({
-      processInstanceId: assignment.processInstanceId,
-      proposalId: assignment.proposal.id,
-      phaseId,
-    });
-
-  const visibleReviews = excludeProfileId
-    ? proposalWithReviews.reviews.filter(
-        (review) => review.reviewer.id !== excludeProfileId,
-      )
-    : proposalWithReviews.reviews;
-
-  if (visibleReviews.length === 0) {
-    return (
-      <p className="py-8 text-center text-base text-muted-foreground">
-        {emptyMessage}
-      </p>
-    );
-  }
-
-  return (
-    <ReviewsPanel
-      proposalWithReviews={proposalWithReviews}
-      rubricTemplate={proposalWithReviews.rubricTemplate}
-      selectedAssignmentId={selectedAssignmentId}
-      onSelectAssignment={handleSelectAssignment}
-      excludeProfileId={excludeProfileId}
-      hideSummaryHeader
-    />
-  );
-}
-
-function PhaseReviewsSkeleton() {
-  return (
-    <div className="flex flex-col gap-4">
-      <Skeleton className="h-14 w-full" />
-      <Skeleton className="h-14 w-full" />
-      <Skeleton className="h-14 w-full" />
-    </div>
   );
 }

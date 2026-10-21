@@ -1140,7 +1140,7 @@
       "updateReviewSuccess": "Az értékelést sikeresen frissítettük",
       "reviewerNotFound": "Az értékelő nem található",
       "reviewersHeading": "Értékelők",
-      "reviewsFromPhase": "Értékelések ebből a szakaszból: {phase}",
+      "reviewsFromPhase": "Értékelések ebből a szakaszból: <bdi>{phase}</bdi>",
       "revisedLabel": "Átdolgozva",
       "revisedTimeAgo": "Revised {timeAgo}",
       "revisedOnLabel": "Átdolgozva",

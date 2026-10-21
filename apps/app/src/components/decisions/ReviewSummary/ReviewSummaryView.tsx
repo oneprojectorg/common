@@ -1,13 +1,16 @@
 'use client';
 
 import { useRequiredUser } from '@/utils/UserProvider';
+import { getDecisionCommonProperties } from '@op/analytics/client-utils';
 import { trpc } from '@op/api/client';
 import { ProposalReviewState, type ReviewSettings } from '@op/common/client';
 import { Button } from '@op/sense/Button';
 import { SplitPane } from '@op/sense/SplitPane';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@op/sense/Tabs';
 import { cn } from '@op/sense/lib/utils';
 import { useQueryState } from 'nuqs';
-import { useCallback, useState } from 'react';
+import { usePostHog } from 'posthog-js/react';
+import { type ReactNode, useCallback, useState } from 'react';
 import { LuCheck, LuPencil } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -16,6 +19,11 @@ import { DecisionSubpageHeader } from '../DecisionSubpageHeader';
 import { ProposalPreview } from '../ProposalPreview';
 import { AuthorNotesSection } from '../Review/AuthorNotesSection';
 import type { ReviewFormStatus } from '../Review/ReviewFormContext';
+import type { PreviousReviewPhase } from '../Review/ReviewTabs';
+import {
+  PhaseReviews,
+  PhaseReviewsTabPanel,
+} from '../ReviewsPanel/PhaseReviews';
 import type { OwnReviewEntry } from '../ReviewsPanel/ReviewsPanel';
 import { ReviewsPanel } from '../ReviewsPanel/ReviewsPanel';
 import { TranslateLink } from '../TranslateLink';
@@ -32,7 +40,11 @@ interface ReviewSummaryViewProps {
   phaseId: string;
   isPhaseInProgress?: boolean;
   reviewSettings: ReviewSettings;
+  previousReviewPhases: PreviousReviewPhase[];
 }
+
+const REVIEW_PROGRESS_TAB = 'review-progress';
+const PHASE_TAB_PREFIX = 'phase-reviews-';
 
 export function ReviewSummaryView({
   decisionSlug,
@@ -42,6 +54,7 @@ export function ReviewSummaryView({
   phaseId,
   isPhaseInProgress = false,
   reviewSettings,
+  previousReviewPhases,
 }: ReviewSummaryViewProps) {
   const t = useTranslations();
   const { user } = useRequiredUser();
@@ -89,21 +102,39 @@ export function ReviewSummaryView({
     null,
   );
   const [isSavingOwnReview, setIsSavingOwnReview] = useState(false);
+  // Leaving "Review Progress" clears the selected review. The own form stays
+  // open in the kept-mounted panel, so a tab switch keeps unsaved edits.
+  const [activeTab, setActiveTab] = useState(REVIEW_PROGRESS_TAB);
 
-  const openOwnForm = useCallback(() => {
-    // Guarded: writing this unconditionally pushes a history entry for the
-    // same URL when the form opens from the list.
+  // Guarded: writing this unconditionally pushes a history entry for the
+  // same URL.
+  const clearSelectedAssignment = useCallback(() => {
     if (selectedAssignmentId) {
       setSelectedAssignmentId(null);
     }
+  }, [selectedAssignmentId, setSelectedAssignmentId]);
+
+  const openOwnForm = useCallback(() => {
+    setActiveTab(REVIEW_PROGRESS_TAB);
+    clearSelectedAssignment();
     setOwnFormStatus(null);
     setIsOwnFormOpen(true);
-  }, [selectedAssignmentId, setSelectedAssignmentId]);
+  }, [clearSelectedAssignment]);
 
   const closeOwnForm = useCallback(() => {
     setOwnFormStatus(null);
     setIsOwnFormOpen(false);
   }, []);
+
+  const changeTab = useCallback(
+    (value: string) => {
+      setActiveTab(value);
+      if (value !== REVIEW_PROGRESS_TAB) {
+        clearSelectedAssignment();
+      }
+    },
+    [clearSelectedAssignment],
+  );
 
   // Kept for the submitter's own pane, which must be correct with the
   // realtime socket down.
@@ -145,6 +176,10 @@ export function ReviewSummaryView({
   const isOwnDetailOpen =
     !!ownAssignment && selectedAssignmentId === ownAssignment.assignment.id;
   const canEditOwnReview = !!ownAssignment?.canEditReview;
+  // The header actions and the status text follow the form only while it is
+  // on screen.
+  const isProgressTabActive = activeTab === REVIEW_PROGRESS_TAB;
+  const isOwnFormOnScreen = isOwnFormOpen && isProgressTabActive;
 
   // Only a review the aggregates flagged stale switches the left pane.
   const selectedStaleReview = selectedAssignmentId
@@ -166,6 +201,42 @@ export function ReviewSummaryView({
     />
   );
 
+  const reviewProgress = (
+    <>
+      {/* Outside the form, or the live region announces every keystroke. */}
+      <span role="status" className="sr-only">
+        {isOwnFormOnScreen
+          ? t('decisions.review.reviewProposalHeading')
+          : t('decisions.review.reviewProgressHeading')}
+      </span>
+
+      {isOwnFormOpen && ownAssignment ? (
+        <OwnReviewPanel
+          decisionSlug={decisionSlug}
+          assignmentId={ownAssignment.assignment.id}
+          reviewSettings={reviewSettings}
+          onBack={closeOwnForm}
+          onCompleted={handleOwnReviewCompleted}
+          initiallyEditing={ownReviewIsSubmitted}
+          onStatusChange={setOwnFormStatus}
+        />
+      ) : (
+        <ReviewsPanel
+          proposalWithReviews={proposalWithReviews}
+          rubricTemplate={rubricTemplate}
+          selectedAssignmentId={selectedAssignmentId}
+          onSelectAssignment={setSelectedAssignmentId}
+          title={
+            isPhaseInProgress
+              ? t('decisions.review.reviewProgressHeading')
+              : undefined
+          }
+          ownReview={ownReview}
+        />
+      )}
+    </>
+  );
+
   return (
     <div
       className={cn(
@@ -179,7 +250,7 @@ export function ReviewSummaryView({
       >
         {/* Swaps without a navigation. */}
         <div aria-live="polite">
-          {isOwnFormOpen
+          {isOwnFormOnScreen
             ? ownFormStatus && (
                 <Button
                   onClick={saveOwnReview}
@@ -192,7 +263,8 @@ export function ReviewSummaryView({
                     : t('decisions.review.submitReviewAction')}
                 </Button>
               )
-            : isOwnDetailOpen &&
+            : isProgressTabActive &&
+              isOwnDetailOpen &&
               canEditOwnReview && (
                 <Button variant="outline" onClick={openOwnForm}>
                   <LuPencil className="size-4" />
@@ -231,36 +303,17 @@ export function ReviewSummaryView({
               : t('decisions.review.reviewSummaryHeading')
           }
         >
-          {/* Outside the panel: a live region around the form would announce
-              every keystroke. */}
-          <span role="status" className="sr-only">
-            {isOwnFormOpen
-              ? t('decisions.review.reviewProposalHeading')
-              : t('decisions.review.reviewProgressHeading')}
-          </span>
-
-          {isOwnFormOpen && ownAssignment ? (
-            <OwnReviewPanel
-              decisionSlug={decisionSlug}
-              assignmentId={ownAssignment.assignment.id}
-              reviewSettings={reviewSettings}
-              onBack={closeOwnForm}
-              onCompleted={handleOwnReviewCompleted}
-              initiallyEditing={ownReviewIsSubmitted}
-              onStatusChange={setOwnFormStatus}
-            />
+          {previousReviewPhases.length === 0 ? (
+            reviewProgress
           ) : (
-            <ReviewsPanel
-              proposalWithReviews={proposalWithReviews}
-              rubricTemplate={rubricTemplate}
-              selectedAssignmentId={selectedAssignmentId}
-              onSelectAssignment={setSelectedAssignmentId}
-              title={
-                isPhaseInProgress
-                  ? t('decisions.review.reviewProgressHeading')
-                  : undefined
-              }
-              ownReview={ownReview}
+            <ReviewSummaryTabs
+              instanceId={instanceId}
+              proposalId={proposalId}
+              phaseId={phaseId}
+              previousReviewPhases={previousReviewPhases}
+              activeTab={activeTab}
+              onTabChange={changeTab}
+              reviewProgress={reviewProgress}
             />
           )}
         </SplitPane.Pane>
@@ -274,5 +327,97 @@ export function ReviewSummaryView({
         />
       )}
     </div>
+  );
+}
+
+function ReviewSummaryTabs({
+  instanceId,
+  proposalId,
+  phaseId,
+  previousReviewPhases,
+  activeTab,
+  onTabChange,
+  reviewProgress,
+}: {
+  instanceId: string;
+  proposalId: string;
+  phaseId: string;
+  previousReviewPhases: PreviousReviewPhase[];
+  activeTab: string;
+  onTabChange: (value: string) => void;
+  reviewProgress: ReactNode;
+}) {
+  const t = useTranslations();
+  const posthog = usePostHog();
+
+  return (
+    <Tabs
+      className="gap-4"
+      value={activeTab}
+      onValueChange={(value: string, eventDetails) => {
+        onTabChange(value);
+        // Only user-initiated switches count as opening a tab.
+        if (eventDetails.reason !== 'none') {
+          return;
+        }
+        const isPreviousPhase = value !== REVIEW_PROGRESS_TAB;
+        posthog.capture(
+          'review_tab_opened',
+          getDecisionCommonProperties({
+            decisionInstanceId: instanceId,
+            proposalId,
+            additionalProps: {
+              tab: isPreviousPhase ? 'previous_phase' : 'review_progress',
+              phase_id: isPreviousPhase
+                ? value.slice(PHASE_TAB_PREFIX.length)
+                : phaseId,
+            },
+          }),
+        );
+      }}
+    >
+      <div className="w-full border-b">
+        <TabsList
+          variant="line"
+          aria-label={t('decisions.review.reviewSummaryHeading')}
+          className="flex gap-4 overflow-x-auto"
+        >
+          <TabsTrigger value={REVIEW_PROGRESS_TAB}>
+            {t('decisions.review.reviewProgressHeading')}
+          </TabsTrigger>
+          {previousReviewPhases.map((phase) => (
+            <TabsTrigger
+              key={phase.id}
+              value={`${PHASE_TAB_PREFIX}${phase.id}`}
+            >
+              {t.rich('decisions.review.reviewsFromPhase', {
+                phase: phase.name,
+                bdi: (chunks) => <bdi>{chunks}</bdi>,
+              })}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+      </div>
+
+      {/* Kept mounted so an open own-review form survives a tab switch. */}
+      <TabsContent value={REVIEW_PROGRESS_TAB} keepMounted>
+        {reviewProgress}
+      </TabsContent>
+
+      {previousReviewPhases.map((phase) => (
+        <PhaseReviewsTabPanel
+          key={phase.id}
+          value={`${PHASE_TAB_PREFIX}${phase.id}`}
+        >
+          <PhaseReviews
+            processInstanceId={instanceId}
+            proposalId={proposalId}
+            phaseId={phase.id}
+            isCurrentPhase={false}
+            emptyMessage={t('decisions.review.noReviewsInPhase')}
+          />
+        </PhaseReviewsTabPanel>
+      ))}
+    </Tabs>
   );
 }
