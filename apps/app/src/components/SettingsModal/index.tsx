@@ -94,15 +94,15 @@ export const SettingsModal = ({ open, onOpenChange }: SettingsModalProps) => {
           {/* a line strip on small screens, a sidebar from sm up */}
           <TabsList
             aria-label={t('sectionsLabel')}
-            variant={isSidebarLayout ? 'default' : 'line'}
-            className="mx-4 mt-4 flex h-auto w-auto shrink-0 justify-start gap-1 overflow-x-auto border-b group-data-horizontal/tabs:h-auto group-data-vertical/tabs:h-auto sm:m-0 sm:w-55 sm:items-stretch sm:overflow-x-visible sm:border-b-0 sm:bg-sidebar sm:p-2"
+            variant={isSidebarLayout ? 'sidebar' : 'line'}
+            className="mx-4 mt-4 flex h-auto w-auto shrink-0 justify-start overflow-x-auto border-b group-data-horizontal/tabs:h-auto group-data-vertical/tabs:h-auto sm:m-0 sm:w-55 sm:overflow-x-visible sm:border-b-0"
           >
             {sections.map(({ value, label }) => (
               <TabsTrigger
                 key={value}
                 ref={value === 'account' ? accountTabRef : undefined}
                 value={value}
-                className="flex-none justify-start px-2 font-normal group-data-[variant=default]/tabs-list:data-active:shadow-none sm:h-10 sm:rounded-md sm:border-0 sm:text-sidebar-foreground sm:hover:bg-sidebar-accent sm:hover:text-sidebar-accent-foreground sm:data-active:bg-sidebar-accent sm:data-active:text-sidebar-accent-foreground"
+                className="flex-none px-2 font-normal"
               >
                 {label}
               </TabsTrigger>
