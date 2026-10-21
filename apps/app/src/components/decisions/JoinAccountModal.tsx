@@ -246,6 +246,7 @@ const JoinAccountModalContent = ({ close }: { close: () => void }) => {
     }
 
     setIsSubmitting(true);
+    setContactError(undefined);
     setCodeError(undefined);
 
     try {
