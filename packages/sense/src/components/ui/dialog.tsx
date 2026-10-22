@@ -47,8 +47,8 @@ function DialogOverlay({
  * Full-viewport sheet below `sm`, centred card above it. Prefix layout overrides
  * with `sm:` or they shrink the sheet, and give the body `flex-1 min-h-0` if you
  * pass `overflow-hidden`. The sheet is sized from the visual viewport so the
- * iOS keyboard shrinks it instead of panning it off screen; an override that
- * anchors to the bottom (`top-auto bottom-0`) also needs `h-auto`.
+ * iOS keyboard shrinks it instead of panning it off screen; for a bottom sheet
+ * use `Sheet side="bottom"` rather than repositioning this.
  */
 function DialogContent({
   className,

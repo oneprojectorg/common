@@ -59,7 +59,7 @@ const SettingsModal = dynamic(
  * A profile/org switcher row. Renders as a base-ui `DropdownMenuItem` in the
  * desktop dropdown (`asMenuItem`) and as a plain button in the mobile bottom
  * sheet — base-ui `Menu.Item` needs a `Menu.Root` context and cannot render
- * inside the sheet's `Dialog`.
+ * inside the `Sheet`.
  */
 const ProfileMenuRow = ({
   profile,

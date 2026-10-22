@@ -21,8 +21,11 @@ function useVisualViewportFit(ref: FitRef): React.RefCallback<HTMLDivElement> {
   return React.useCallback(
     (node: HTMLDivElement | null) => {
       const release = attachRef(ref, node);
-      const stopFit = node ? track(node) : () => {};
-      const stopPan = node ? containTouchScroll(node) : () => {};
+      if (!node) {
+        return release;
+      }
+      const stopFit = track(node);
+      const stopPan = containTouchScroll(node);
       return () => {
         stopPan();
         stopFit();
@@ -93,17 +96,22 @@ function containTouchScroll(node: HTMLElement) {
     if (event.touches.length !== 1 || !touch || !event.cancelable) {
       return;
     }
+    // The viewport can only pan while something (the keyboard) shrinks it.
+    const viewport = window.visualViewport;
+    if (!viewport || viewport.height >= window.innerHeight) {
+      return;
+    }
     const deltaX = touch.clientX - startX;
     const deltaY = touch.clientY - startY;
     if (deltaY === 0 || Math.abs(deltaX) > Math.abs(deltaY)) {
       return;
     }
-    const target = event.target instanceof Element ? event.target : null;
     // Selection handles inside a field need the native gesture.
-    if (isEditable(target)) {
+    if (isEditable(event.target)) {
       return;
     }
-    if (!findScrollableAncestor(target, node, deltaY)) {
+    const target = event.target instanceof Element ? event.target : null;
+    if (!canScrollToward(target, node, deltaY)) {
       event.preventDefault();
     }
   };
@@ -115,15 +123,12 @@ function containTouchScroll(node: HTMLElement) {
   };
 }
 
-/**
- * The nearest element between `target` and `root` (inclusive) that can still
- * scroll in the direction of a finger moving by `deltaY`.
- */
-function findScrollableAncestor(
+/** Whether an element between `target` and `root` can still scroll the way a finger moving by `deltaY` asks. */
+function canScrollToward(
   target: Element | null,
   root: HTMLElement,
   deltaY: number,
-): Element | null {
+): boolean {
   let element: Element | null = target;
   while (element) {
     const { overflowY } = getComputedStyle(element);
@@ -135,15 +140,15 @@ function findScrollableAncestor(
       const atBottom =
         element.scrollTop + element.clientHeight >= element.scrollHeight - 1;
       if ((deltaY > 0 && !atTop) || (deltaY < 0 && !atBottom)) {
-        return element;
+        return true;
       }
     }
     if (element === root) {
-      return null;
+      return false;
     }
     element = element.parentElement;
   }
-  return null;
+  return false;
 }
 
 export { useVisualViewportFit };
