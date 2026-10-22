@@ -1,3 +1,4 @@
+import { cache } from '@op/cache';
 import { and, db, desc, eq } from '@op/db/client';
 import {
   decisionProcessResultSelections,
@@ -5,24 +6,25 @@ import {
   processInstances,
   proposals,
 } from '@op/db/schema';
-import { User } from '@op/supabase/lib';
 import { permission } from 'access-zones';
 
 import { NotFoundError } from '../../utils';
-import { assertInstanceProfileAccess } from '../access';
+import { type AccessUser, assertInstanceProfileAccess } from '../access';
 import { extractBudgetValue } from './proposalDataSchema';
+
+type ResultsStats = {
+  membersVoted: number;
+  proposalsFunded: number;
+  totalAllocated: number;
+};
 
 export const getResultsStats = async ({
   instanceId,
   user,
 }: {
   instanceId: string;
-  user: User;
-}): Promise<{
-  membersVoted: number;
-  proposalsFunded: number;
-  totalAllocated: number;
-} | null> => {
+  user?: AccessUser;
+}): Promise<ResultsStats | null> => {
   const instance = await db
     .select({
       instanceId: processInstances.id,
@@ -42,12 +44,24 @@ export const getResultsStats = async ({
   }
 
   await assertInstanceProfileAccess({
-    user: { id: user.id },
+    user,
     instance: instance[0],
     profilePermissions: { decisions: permission.READ },
     orgFallbackPermissions: [{ decisions: permission.READ }],
   });
 
+  // The stats cache under the instance alone, so the access assert above must
+  // run before the cache can answer for any caller.
+  return cache({
+    type: 'decision',
+    params: [instanceId, 'stats'],
+    fetch: () => computeResultsStats(instanceId),
+  });
+};
+
+const computeResultsStats = async (
+  instanceId: string,
+): Promise<ResultsStats | null> => {
   // Failed and reverted runs stay as audit records; they are not the current
   // results, so they resolve to "no results" rather than an error.
   const result = await db._query.decisionProcessResults.findFirst({

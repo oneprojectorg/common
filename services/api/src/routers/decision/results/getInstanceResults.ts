@@ -3,10 +3,10 @@ import { PAGE_LIMIT } from '@op/common/client';
 
 import { legacyInstanceResultsEncoder } from '../../../encoders/legacyDecision';
 import { getInstanceResultsInputSchema } from '../../../encoders/results';
-import { networkAuthenticatedProcedure, router } from '../../../trpcFactory';
+import { openProcedure, router } from '../../../trpcFactory';
 
 export const getInstanceResultsRouter = router({
-  getInstanceResults: networkAuthenticatedProcedure({
+  getInstanceResults: openProcedure({
     rateLimit: { windowSize: 10, maxRequests: 30 },
   })
     .input(getInstanceResultsInputSchema)

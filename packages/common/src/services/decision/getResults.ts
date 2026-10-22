@@ -6,7 +6,6 @@ import {
   decisionsVoteSubmissions,
   processInstances,
 } from '@op/db/schema';
-import { User } from '@op/supabase/lib';
 import { permission } from 'access-zones';
 import { count as countFn } from 'drizzle-orm';
 
@@ -17,7 +16,7 @@ import {
   decodeCursor,
   encodeCursor,
 } from '../../utils';
-import { assertInstanceProfileAccess } from '../access';
+import { type AccessUser, assertInstanceProfileAccess } from '../access';
 import { listProposals } from './listProposals';
 
 // Uses selectionRank with id as tiebreaker for stable ordering
@@ -38,7 +37,7 @@ export const getLatestResultWithProposals = async ({
   cursor,
 }: {
   processInstanceId: string;
-  user: User;
+  user?: AccessUser;
   limit?: number;
   cursor?: string | null;
 }): Promise<Paginated<ResultProposalItem> | null> => {
