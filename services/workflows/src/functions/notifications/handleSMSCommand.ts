@@ -1,5 +1,9 @@
 import { isFeatureEnabled } from '@op/analytics';
-import { getPhoneSignupState } from '@op/common';
+import {
+  findChatLine,
+  getPhoneSignupState,
+  parsePhoneNumber,
+} from '@op/common';
 import { assertNever } from '@op/core';
 import { Events, inngest } from '@op/events';
 import { logger } from '@op/logging';
@@ -32,9 +36,13 @@ export const handleSMSCommand = inngest.createFunction(
   },
   { event: smsInboundReceived.name },
   async ({ event, step }) => {
-    const { from, keyword, argument, code } = smsInboundReceived.schema.parse(
-      event.data,
-    );
+    const {
+      from,
+      to: inboundTo,
+      keyword,
+      argument,
+      code,
+    } = smsInboundReceived.schema.parse(event.data);
 
     if (code !== null) {
       return { message: 'signup code, left to signup' };
@@ -69,11 +77,17 @@ export const handleSMSCommand = inngest.createFunction(
       return { message: 'unknown number, skipped' };
     }
 
+    const line = await step.run('resolve-line', async () => {
+      const found = inboundTo ? await findChatLine({ phone: inboundTo }) : null;
+      return found ? { phone: found.phone, slug: found.slug } : null;
+    });
+
     const text = createTextSender({
       step,
       to,
+      from: line ? parsePhoneNumber(line.phone) : undefined,
       purpose: 'answer an SMS command',
-      context: { keyword },
+      context: { keyword, onLine: line !== null },
     });
 
     if (!text) {
@@ -92,7 +106,13 @@ export const handleSMSCommand = inngest.createFunction(
       return { message: 'reply rejected', reason: sent.reason };
     };
 
-    const context = { step, account, argument, deliver };
+    const context = {
+      step,
+      account,
+      argument,
+      line: line ? { slug: line.slug } : null,
+      deliver,
+    };
 
     switch (keyword) {
       case null:

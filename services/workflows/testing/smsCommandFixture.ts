@@ -1,5 +1,6 @@
 import { type DecisionSchemaDefinition, type PhoneNumber } from '@op/common';
 import {
+  createDecisionChatLine,
   createDecisionInstance,
   createDecisionProcess,
   createProposal,
@@ -149,7 +150,14 @@ export class SmsCommandFixture {
       }
     }
 
-    return { instanceProfileId: profileId, slug };
+    return { instanceId: instance.id, instanceProfileId: profileId, slug };
+  }
+
+  async bindLine(instanceId: string, phone: PhoneNumber) {
+    await createDecisionChatLine({
+      processInstanceId: instanceId,
+      phoneNumber: phone,
+    });
   }
 
   async makePublic(instanceProfileId: string) {

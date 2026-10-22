@@ -34,10 +34,15 @@ export type SmsDeliver = (
   body: string,
 ) => Promise<SmsReplyRejected | null>;
 
+export interface ChatLine {
+  slug: string;
+}
+
 export interface SmsCommandContext {
   step: GetStepTools<typeof inngest>;
   account: { authUserId: string };
   argument: string | null;
+  line: ChatLine | null;
   deliver: SmsDeliver;
 }
 
@@ -110,10 +115,10 @@ const describeDecision = async (
   return failed ?? { message: 'decision sent' };
 };
 
-export const show: SmsCommandHandler = (context) =>
-  context.argument
-    ? describeDecision(context, context.argument)
-    : listDecisions(context);
+export const show: SmsCommandHandler = (context) => {
+  const slug = context.argument ?? context.line?.slug;
+  return slug ? describeDecision(context, slug) : listDecisions(context);
+};
 
 export const sendSmsHelp = async (
   deliver: SmsDeliver,

@@ -31,6 +31,15 @@ const NUMBERS = {
   publicOnly: '+15005550086',
   refused: '+15005550085',
   flagOff: '+15005550084',
+  lineMember: '+15005550080',
+  lineSlugMember: '+15005550081',
+  unboundLineMember: '+15005550082',
+} as const;
+
+const LINES = {
+  bare: '+16145550130',
+  slug: '+16145550131',
+  unbound: '+16145550132',
 } as const;
 
 beforeEach(() => {
@@ -395,5 +404,102 @@ describe('handleSMSCommand against the database', () => {
 
     expect(result).toEqual({ message: 'unknown number, skipped' });
     expect(recordedSms).toEqual([]);
+  });
+});
+
+describe('handleSMSCommand on a decision line', () => {
+  it("given a member texts SHOW alone to a decision's own line, then that decision is described and the reply comes from the line", async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsCommandFixture(task.id, onTestFinished);
+    const phone = parsePhoneNumber(NUMBERS.lineMember);
+    const line = parsePhoneNumber(LINES.bare);
+    const member = await fixture.createPhoneOnlyAccount(phone);
+    const { instanceId, instanceProfileId } =
+      await fixture.createVotingInstance({
+        owner: member,
+        name: `Line Funding ${task.id}`,
+        proposalTitles: ['Crosswalk lighting'],
+      });
+    await fixture.addMember(instanceProfileId, member);
+    await fixture.bindLine(instanceId, line);
+    const t = new InngestTestEngine({ function: handleSMSCommand });
+
+    const { result } = await t.execute({
+      events: [smsInboundEvent({ from: phone, to: line, keyword: 'show' })],
+    });
+
+    expect(result).toEqual({ message: 'decision sent' });
+    expect(recordedSms).toEqual([
+      expect.objectContaining({
+        to: phone,
+        from: line,
+        body: `"Line Funding ${task.id}": Voting phase, voting open, 1 proposal.`,
+      }),
+    ]);
+  });
+
+  it("given a member of two decisions texts SHOW and the other decision's slug to a line, then the slug wins and the reply still comes from the line", async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsCommandFixture(task.id, onTestFinished);
+    const phone = parsePhoneNumber(NUMBERS.lineSlugMember);
+    const line = parsePhoneNumber(LINES.slug);
+    const member = await fixture.createPhoneOnlyAccount(phone);
+    const bound = await fixture.createVotingInstance({
+      owner: member,
+      name: `Bound ${task.id}`,
+      proposalTitles: ['One'],
+    });
+    const other = await fixture.createVotingInstance({
+      owner: member,
+      name: `Other ${task.id}`,
+      proposalTitles: ['Two', 'Three'],
+    });
+    await fixture.addMember(bound.instanceProfileId, member);
+    await fixture.addMember(other.instanceProfileId, member);
+    await fixture.bindLine(bound.instanceId, line);
+    const t = new InngestTestEngine({ function: handleSMSCommand });
+
+    const { result } = await t.execute({
+      events: [
+        smsInboundEvent({
+          from: phone,
+          to: line,
+          keyword: 'show',
+          argument: other.slug,
+        }),
+      ],
+    });
+
+    expect(result).toEqual({ message: 'decision sent' });
+    expect(recordedSms).toEqual([
+      expect.objectContaining({
+        from: line,
+        body: `"Other ${task.id}": Voting phase, voting open, 2 proposals.`,
+      }),
+    ]);
+  });
+  it('given a member of no decision texts SHOW alone to a number no decision owns, then they get the same reply as on the shared number and it names no from line', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsCommandFixture(task.id, onTestFinished);
+    const phone = parsePhoneNumber(NUMBERS.unboundLineMember);
+    await fixture.createPhoneOnlyAccount(phone);
+    const t = new InngestTestEngine({ function: handleSMSCommand });
+
+    const { result } = await t.execute({
+      events: [
+        smsInboundEvent({ from: phone, to: LINES.unbound, keyword: 'show' }),
+      ],
+    });
+
+    expect(result).toEqual({ message: 'decisions sent', count: 0 });
+    expect(recordedSms).toEqual([
+      expect.objectContaining({ to: phone, from: null }),
+    ]);
   });
 });
