@@ -16,6 +16,19 @@ describe('sms/inbound.received event schema', () => {
       code: null,
       keyword: 'join',
       argument: null,
+      to: null,
     });
+  });
+
+  it('given an event recorded before the to field existed, when parsed, then it reads as sent to no known line', () => {
+    const parsed = Events.smsInboundReceived.schema.parse({
+      from: '+15005550006',
+      messageSid: 'SM-no-to',
+      code: null,
+      keyword: 'show',
+      argument: 'columbus',
+    });
+
+    expect(parsed.to).toBeNull();
   });
 });
