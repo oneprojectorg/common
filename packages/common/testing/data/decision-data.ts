@@ -839,7 +839,6 @@ export interface CreateProposalOptions {
   };
   /** Proposal status (defaults to DRAFT to match production behavior) */
   status?: ProposalStatus;
-  createdAt?: Date;
   /**
    * Auth user ID of the proposal creator. When provided (along with email),
    * a profileUsers record is created on the proposal's profile — matching
@@ -878,7 +877,6 @@ export async function createProposal(
     status = ProposalStatus.DRAFT,
     authUserId,
     email,
-    createdAt,
   } = opts;
 
   const proposalId = randomUUID();
@@ -939,7 +937,6 @@ export async function createProposal(
       profileId: proposalProfile.id,
       proposalData: storedProposalData,
       status: ProposalStatus.DRAFT,
-      createdAt: createdAt?.toISOString(),
     })
     .returning();
 

@@ -629,6 +629,7 @@ export class TestDecisionsDataManager {
     processInstanceId,
     proposalData,
     status,
+    createdAt,
     seedCollabDoc = false,
   }: {
     userEmail: string;
@@ -642,6 +643,7 @@ export class TestDecisionsDataManager {
       [key: string]: unknown;
     };
     status?: ProposalStatus;
+    createdAt?: Date;
     seedCollabDoc?: boolean;
   }) {
     this.ensureCleanupRegistered();
@@ -686,11 +688,12 @@ export class TestDecisionsDataManager {
       }
     }
 
-    if (nonDefaultStatus || legacyProposalData) {
+    if (nonDefaultStatus || legacyProposalData || createdAt) {
       await db
         .update(proposals)
         .set({
           ...(nonDefaultStatus ? { status: nonDefaultStatus } : {}),
+          ...(createdAt ? { createdAt: createdAt.toISOString() } : {}),
           ...(legacyProposalData ? { proposalData: legacyProposalData } : {}),
         })
         .where(eq(proposals.id, proposal.id));
