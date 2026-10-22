@@ -61,3 +61,8 @@ before this change, in creation order.
 - Rejected: derive the code from row order. It needs no migration, but a
   rejection, a moderation hide or a hard delete renumbers every proposal
   after it.
+- Rejected: encode an integer with Sqids (<https://sqids.org/>). Its
+  alphabet mixes upper-case and lower-case letters with digits, so a code
+  such as `Uk3f` needs the shift and symbol keys on a phone keypad. A
+  three-digit number is typed from the numeric keypad alone. Sqids also
+  needs a stored integer to encode, so it saves no column.
