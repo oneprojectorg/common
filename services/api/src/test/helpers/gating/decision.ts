@@ -13,12 +13,10 @@ export {
 /**
  * Decision-instance endpoints that participate in network gating declare an
  * outcome for the four caller kinds (no-JWT / anon-JWT / user-JWT / network-JWT)
- * against a non-public instance. Decision endpoints are `networkAuthenticatedProcedure`,
- * so the first three are rejected by the tier gate (`AccessTierError`) and
- * network-JWT is admitted. Public-mode cells will be added when the
- * public-instance toggle
- * mechanism lands; until then the matrix only exercises the closed-network
- * behavior that is enforced today.
+ * against a non-public instance. What each cell asserts depends on the
+ * procedure's tier: a `networkAuthenticatedProcedure` endpoint rejects the
+ * first three at the tier gate (`AccessTierError`); an `openProcedure` endpoint
+ * admits them past the gate and the service denies them (`UnauthorizedError`).
  *
  * Forgetting a key is a compile error.
  */

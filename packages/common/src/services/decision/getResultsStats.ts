@@ -50,8 +50,8 @@ export const getResultsStats = async ({
     orgFallbackPermissions: [{ decisions: permission.READ }],
   });
 
-  // The stats cache under the instance alone, so the access assert above must
-  // run before the cache can answer for any caller.
+  // The cache key is the instance id alone, so the access assert must run
+  // before the cache is read.
   return cache({
     type: 'decision',
     params: [instanceId, 'stats'],

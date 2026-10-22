@@ -15,13 +15,15 @@ const DECISION_CACHE_KEYS = [
   // Versioned because the cached payload shape changed in ADR-0003; old
   // entries expire on their own.
   'submitters:v2',
+  'stats',
 ] as const;
 
 /**
  * Invalidate every cached projection of a decision instance — the instance
  * snapshot (`getInstance`), the categories list (`getProcessCategories`), the
- * participation face-pile (`listProposalSubmitters`), and the slug-keyed
- * overview snapshot (`getDecisionBySlug`). Call from any mutation that touches
+ * participation face-pile (`listProposalSubmitters`), the results stats
+ * (`getResultsStats`), and the slug-keyed overview snapshot
+ * (`getDecisionBySlug`). Call from any mutation that touches
  * `processInstances`, `decisionProcesses`, the linked profile, or any of this
  * instance's proposals.
  */

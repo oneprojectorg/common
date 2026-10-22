@@ -137,6 +137,22 @@ describe.concurrent('getInstanceResults', () => {
 
     expect(result.items.map((item) => item.id)).toEqual([proposal.id]);
   });
+
+  it('returns the selected proposals to an anonymous session on a public decision', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instanceId, proposal } =
+      await createInstanceWithSelectedProposal(testData, task.id);
+
+    await testData.makeDecisionPublic(setup.instance.profileId);
+
+    const caller = await createGatingCallers(onTestFinished).anonJwt();
+    const result = await caller.decision.getInstanceResults({ instanceId });
+
+    expect(result.items.map((item) => item.id)).toEqual([proposal.id]);
+  });
 });
 
 describeDecisionAccessTierGating('getInstanceResults', {
