@@ -11,16 +11,11 @@ import {
   SUBMIT_OPTIONS,
   composeOtherPieces,
   describeOther,
-  needsFocus,
   otherCanContinue,
   reconcileOther,
   subjectPhrase,
   type OtherAnswers,
 } from './otherFlow';
-import type { WizardFlags } from './types';
-
-const ROLLING: WizardFlags = { rollingDecisions: true };
-const NO_ROLLING: WizardFlags = { rollingDecisions: false };
 
 const answers = (patch: Partial<OtherAnswers>): OtherAnswers => ({
   ...EMPTY_OTHER,
@@ -49,15 +44,12 @@ describe('reconcileOther', () => {
   });
 
   it('keeps answers the others still support', () => {
-    expect(reconcileOther(twoOnTimeline, ROLLING, twoOnTimeline)).toEqual(
-      twoOnTimeline,
-    );
+    expect(reconcileOther(twoOnTimeline, twoOnTimeline)).toEqual(twoOnTimeline);
   });
 
   it('drops the focus, and what it asked for, once the process has no end', () => {
     const ongoing = reconcileOther(
       { ...twoOnTimeline, cadence: 'ongoing', decision: 'vote' },
-      ROLLING,
       twoOnTimeline,
     );
 
@@ -70,7 +62,6 @@ describe('reconcileOther', () => {
     expect(
       reconcileOther(
         { ...twoOnTimeline, subjects: ['funding', 'ideas'] },
-        ROLLING,
         twoOnTimeline,
       ).focus,
     ).toBeNull();
@@ -79,7 +70,6 @@ describe('reconcileOther', () => {
   it('keeps what is submitted when one subject remains and it was the focus', () => {
     const narrowed = reconcileOther(
       { ...twoOnTimeline, subjects: ['people'] },
-      ROLLING,
       twoOnTimeline,
     );
 
@@ -91,48 +81,22 @@ describe('reconcileOther', () => {
     const funding = answers({ subjects: ['funding'], submits: 'applications' });
 
     expect(
-      reconcileOther({ ...funding, subjects: ['people'] }, ROLLING, funding)
-        .submits,
+      reconcileOther({ ...funding, subjects: ['people'] }, funding).submits,
     ).toBeNull();
   });
 
   it('drops a submission the subject does not offer, with nothing to compare against', () => {
     expect(
-      reconcileOther(
-        answers({ subjects: ['funding'], submits: 'nominations' }),
-        ROLLING,
-      ).submits,
+      reconcileOther(answers({ subjects: ['funding'], submits: 'nominations' }))
+        .submits,
     ).toBeNull();
   });
 
   it('drops the words for something else once it is unticked', () => {
     expect(
-      reconcileOther(
-        answers({ subjects: ['funding'], elseText: 'A new logo' }),
-        ROLLING,
-      ).elseText,
+      reconcileOther(answers({ subjects: ['funding'], elseText: 'A new logo' }))
+        .elseText,
     ).toBe('');
-  });
-
-  it('forgets an always-open answer once rolling decisions are off, keeping the focus', () => {
-    const ongoing = { ...twoOnTimeline, cadence: 'ongoing' as const };
-
-    expect(reconcileOther(ongoing, ROLLING).cadence).toBe('ongoing');
-    expect(reconcileOther(ongoing, NO_ROLLING)).toEqual({
-      ...twoOnTimeline,
-      cadence: null,
-    });
-  });
-});
-
-describe('needsFocus', () => {
-  it('treats an unasked cadence as a process with an end', () => {
-    const several = answers({ subjects: ['funding', 'people'] });
-
-    expect(needsFocus(several)).toBe(true);
-    expect(needsFocus({ ...several, cadence: 'timeline' })).toBe(true);
-    expect(needsFocus({ ...several, cadence: 'ongoing' })).toBe(false);
-    expect(needsFocus(answers({ subjects: ['funding'] }))).toBe(false);
   });
 });
 
