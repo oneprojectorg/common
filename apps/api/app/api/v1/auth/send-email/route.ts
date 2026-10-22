@@ -18,14 +18,9 @@ export const POST = async (req: NextRequest): Promise<Response> => {
       );
     }
 
-    const headers: Record<string, string> = {};
-    req.headers.forEach((value, key) => {
-      headers[key] = value;
-    });
-
     const { status, body } = await handleSendEmailHookRequest({
       rawBody,
-      headers,
+      headers: Object.fromEntries(req.headers),
     });
     return Response.json(body, { status });
   } catch (error) {

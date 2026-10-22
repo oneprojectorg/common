@@ -32,7 +32,6 @@
     "@op/common": "workspace:*",
     "@op/core": "workspace:*",
     "@op/db": "workspace:*",
-    "@op/emails": "workspace:*",
     "@op/events": "workspace:*",
     "@op/logging": "workspace:*",
     "@op/realtime": "workspace:^",

@@ -1,6 +1,5 @@
-import { updateUserLocale } from '@op/common';
+import { sendAuthCodeEmail, updateUserLocale } from '@op/common';
 import { signUpConfirmedUser } from '@op/common/testing';
-import { type BatchEmailItem, OPNodemailerWithFallback, render } from '@op/emails';
 import { logger } from '@op/logging';
 import { randomBytes, randomUUID } from 'node:crypto';
 import { Webhook } from 'standardwebhooks';
@@ -8,12 +7,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { handleSendEmailHookRequest } from './handleSendEmailHookRequest';
 
-vi.mock('@op/emails', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@op/emails')>()),
-  OPNodemailerWithFallback: vi.fn(),
+vi.mock('@op/common', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@op/common')>()),
+  sendAuthCodeEmail: vi.fn(),
 }));
 
-const sendMock = vi.mocked(OPNodemailerWithFallback);
+const sendMock = vi.mocked(sendAuthCodeEmail);
 
 const SECRET = randomBytes(32).toString('base64');
 
@@ -60,15 +59,7 @@ const hookPayload = ({
   },
 });
 
-const sentEmails = () =>
-  sendMock.mock.calls.map(([email]: [BatchEmailItem]) => email);
-
-const renderedDigits = async (email: BatchEmailItem) => {
-  const html = await render(email.component());
-  return [...html.matchAll(/data-code-digit[^>]*>(\d)</g)]
-    .map((match) => match[1])
-    .join('');
-};
+const sentEmails = () => sendMock.mock.calls.map(([email]) => email);
 
 beforeEach(() => {
   process.env.SEND_EMAIL_HOOK_SECRET = `v1,whsec_${SECRET}`;
@@ -86,10 +77,14 @@ describe('handleSendEmailHookRequest', () => {
     );
 
     expect(result).toEqual({ status: 200, body: {} });
-    const [email] = sentEmails();
-    expect(email?.to).toBe('person@example.com');
-    expect(email?.subject).toBe('Your login code');
-    expect(email && (await renderedDigits(email))).toBe('4815162342');
+    expect(sentEmails()).toEqual([
+      expect.objectContaining({
+        to: 'person@example.com',
+        code: '4815162342',
+        locale: 'en',
+        subject: 'Your login code',
+      }),
+    ]);
   });
 
   it('sends a confirmation email for a signup', async () => {
@@ -111,9 +106,9 @@ describe('handleSendEmailHookRequest', () => {
       ),
     );
 
-    const emails = sentEmails();
-    expect(emails.map(({ to }) => to)).toEqual(['new@example.com']);
-    expect(emails[0] && (await renderedDigits(emails[0]))).toBe('1111111111');
+    expect(sentEmails().map(({ to, code }) => ({ to, code }))).toEqual([
+      { to: 'new@example.com', code: '1111111111' },
+    ]);
   });
 
   it('sends the token to the current address and token_new to the new one in a secure email change', async () => {
@@ -128,14 +123,10 @@ describe('handleSendEmailHookRequest', () => {
       ),
     );
 
-    const emails = sentEmails();
-    expect(emails.map(({ to }) => to)).toEqual([
-      'old@example.com',
-      'new@example.com',
+    expect(sentEmails().map(({ to, code }) => ({ to, code }))).toEqual([
+      { to: 'old@example.com', code: '1111111111' },
+      { to: 'new@example.com', code: '2222222222' },
     ]);
-    expect(
-      await Promise.all(emails.map((email) => renderedDigits(email))),
-    ).toEqual(['1111111111', '2222222222']);
   });
 
   it('writes the email in the locale stored for the account over the one in user_metadata', async ({
@@ -163,15 +154,18 @@ describe('handleSendEmailHookRequest', () => {
       signedRequest(hookPayload({ user: { user_metadata: { locale: 'ar' } } })),
     );
 
-    const [email] = sentEmails();
-    expect(email?.subject).toBe('رمز تسجيل الدخول الخاص بك');
-    expect(email && (await render(email.component()))).toContain('dir="rtl"');
+    expect(sentEmails()[0]).toMatchObject({
+      locale: 'ar',
+      subject: 'رمز تسجيل الدخول الخاص بك',
+    });
   });
 
   it('writes the email in English when no source names a supported locale', async () => {
     await handleSendEmailHookRequest(
       signedRequest(
-        hookPayload({ user: { user_metadata: { locale: { not: 'a string' } } } }),
+        hookPayload({
+          user: { user_metadata: { locale: { not: 'a string' } } },
+        }),
       ),
     );
 
@@ -183,7 +177,10 @@ describe('handleSendEmailHookRequest', () => {
 
     const result = await handleSendEmailHookRequest({
       ...request,
-      rawBody: request.rawBody.replace('person@example.com', 'attacker@example.com'),
+      rawBody: request.rawBody.replace(
+        'person@example.com',
+        'attacker@example.com',
+      ),
     });
 
     expect(result.status).toBe(401);

@@ -1,10 +1,5 @@
-import { getUserLocale } from '@op/common';
-import {
-  type SupportedLocale,
-  getLocaleDirection,
-  isSupportedLocale,
-} from '@op/common/locales';
-import { AuthCodeEmail, OPNodemailerWithFallback } from '@op/emails';
+import { getUserLocale, sendAuthCodeEmail } from '@op/common';
+import { type SupportedLocale, isSupportedLocale } from '@op/common/locales';
 import { logger } from '@op/logging';
 import { Webhook } from 'standardwebhooks';
 import { z } from 'zod';
@@ -27,14 +22,10 @@ interface SendEmailHookResponse {
 type AuthEmailKind = 'loginCode' | 'confirmEmail' | 'emailChange';
 
 interface AuthEmail {
-  to: string;
+  to: string | null | undefined;
   code: string;
   kind: AuthEmailKind;
 }
-
-type UnaddressedAuthEmail = Omit<AuthEmail, 'to'> & {
-  to: string | null | undefined;
-};
 
 const sendEmailHookPayloadSchema = z.object({
   user: z.object({
@@ -97,7 +88,9 @@ export const handleSendEmailHookRequest = async ({
     return errorResponse(400, 'Unsupported email action type');
   }
 
-  const emails = unaddressedEmails.filter(hasRecipient);
+  const emails = unaddressedEmails.flatMap((email) =>
+    email.to ? [{ ...email, to: email.to }] : [],
+  );
   if (emails.length !== unaddressedEmails.length) {
     logger.error('Send Email hook payload has no recipient address', {
       emailActionType,
@@ -109,8 +102,24 @@ export const handleSendEmailHookRequest = async ({
   const messages = await getAuthEmailMessages(locale);
 
   try {
-    for (const email of emails) {
-      await sendAuthEmail({ email, locale, messages, emailActionType });
+    const results = await Promise.all(
+      emails.map(({ to, code, kind }) =>
+        sendAuthCodeEmail({
+          to,
+          code,
+          locale,
+          ...getEmailCopy({ kind, messages }),
+        }),
+      ),
+    );
+
+    for (const result of results) {
+      if (result.transport === 'fallback') {
+        logger.warn('Auth email sent through the fallback transport', {
+          error: result.primaryError,
+          emailActionType,
+        });
+      }
     }
   } catch (error) {
     logger.error('Send Email hook could not send an auth email', {
@@ -134,7 +143,7 @@ const errorResponse = (
 const getAuthEmails = ({
   user,
   email_data: { token, token_new, email_action_type },
-}: SendEmailHookPayload): Array<UnaddressedAuthEmail> | undefined => {
+}: SendEmailHookPayload): Array<AuthEmail> | undefined => {
   switch (email_action_type) {
     case 'magiclink':
     case 'email':
@@ -155,9 +164,6 @@ const getAuthEmails = ({
   }
 };
 
-const hasRecipient = (email: UnaddressedAuthEmail): email is AuthEmail =>
-  Boolean(email.to);
-
 const resolveEmailLocale = async (
   user: SendEmailHookPayload['user'],
 ): Promise<SupportedLocale> => {
@@ -174,38 +180,6 @@ const resolveEmailLocale = async (
   return 'en';
 };
 
-const sendAuthEmail = async ({
-  email: { to, code, kind },
-  locale,
-  messages,
-  emailActionType,
-}: {
-  email: AuthEmail;
-  locale: SupportedLocale;
-  messages: AuthEmailMessages;
-  emailActionType: string;
-}) => {
-  const copy = getEmailCopy({ kind, messages });
-  const result = await OPNodemailerWithFallback({
-    to,
-    subject: copy.subject,
-    component: () =>
-      AuthCodeEmail({
-        code,
-        lang: locale,
-        dir: getLocaleDirection(locale),
-        copy,
-      }),
-  });
-
-  if (result.transport === 'fallback') {
-    logger.warn('Auth email sent through the fallback transport', {
-      error: result.primaryError,
-      emailActionType,
-    });
-  }
-};
-
 const getEmailCopy = ({
   kind,
   messages,
@@ -213,31 +187,28 @@ const getEmailCopy = ({
   kind: AuthEmailKind;
   messages: AuthEmailMessages;
 }) => {
-  const shared = {
-    codeExpiryHint: messages.codeExpiryHint,
-    supportHint: messages.supportHint,
-    maintainerNote: messages.maintainerNote,
-    deliveryReasonNote: messages.deliveryReasonNote,
-  };
-
   if (kind === 'loginCode') {
     return {
-      ...shared,
       subject: messages.loginCodeSubject,
-      previewText: messages.loginCodePreview,
-      heading: messages.loginCodeHeading,
-      description: messages.loginCodeDescription,
+      copy: {
+        ...messages,
+        previewText: messages.loginCodePreview,
+        heading: messages.loginCodeHeading,
+        description: messages.loginCodeDescription,
+      },
     };
   }
 
   return {
-    ...shared,
     subject: messages.confirmEmailSubject,
-    previewText: messages.confirmEmailPreview,
-    heading: messages.confirmEmailHeading,
-    description:
-      kind === 'emailChange'
-        ? messages.emailChangeDescription
-        : messages.confirmEmailDescription,
+    copy: {
+      ...messages,
+      previewText: messages.confirmEmailPreview,
+      heading: messages.confirmEmailHeading,
+      description:
+        kind === 'emailChange'
+          ? messages.emailChangeDescription
+          : messages.confirmEmailDescription,
+    },
   };
 };

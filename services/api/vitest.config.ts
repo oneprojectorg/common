@@ -9,9 +9,6 @@ const integration = defineIntegrationProject({
 
 export default defineConfig({
   ...integration,
-  // The auth email hook renders @op/emails templates. The workspace tsconfig
-  // sets jsx: "preserve" for Next, which leaves esbuild on the classic runtime.
-  esbuild: { jsx: 'automatic' },
   test: {
     ...integration.test,
     coverage: coverageConfig(),

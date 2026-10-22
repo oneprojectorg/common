@@ -74,34 +74,42 @@ const getTransporter = () => {
   return cachedTransporter;
 };
 
-/** Renders and sends one email through the configured SMTP transport. */
-const sendSmtpEmail = async ({
+/** Renders one email into the message every SMTP transport sends. */
+const buildSmtpMessage = async ({
   to,
   from,
   component,
   subject,
   renderOptions,
-}: BatchEmailItem & { renderOptions?: RenderParameter[1] }) => {
-  const html = await render(component(), renderOptions);
+}: BatchEmailItem & { renderOptions?: RenderParameter[1] }) => ({
+  from: formatFromAddress(from),
+  to: safeEmailSchema.parse(to),
+  subject,
+  html: await render(component(), renderOptions),
+});
 
-  return getTransporter().sendMail({
-    from: formatFromAddress(from),
-    to: safeEmailSchema.parse(to),
-    subject,
-    html,
-  });
-};
+/** Renders and sends one email through the configured SMTP transport. */
+const sendSmtpEmail = async (
+  email: BatchEmailItem & { renderOptions?: RenderParameter[1] },
+) => getTransporter().sendMail(await buildSmtpMessage(email));
 
-// Under GoTrue's Send Email hook timeout, with time left for the fallback.
+// Short enough that the fallback still delivers while the person waits.
 const PRIMARY_SEND_TIMEOUT_MS = 2_000;
 
 let cachedFallbackTransporter: ReturnType<
   typeof nodemailer.createTransport
 > | null = null;
 
-const getFallbackTransporter = (fallbackSmtpUrl: string) => {
+/** The transport for `EMAIL_FALLBACK_SMTP_URL`, or null when it is unset. */
+const getFallbackTransporter = () => {
+  const { EMAIL_FALLBACK_SMTP_URL } = process.env;
+  if (!EMAIL_FALLBACK_SMTP_URL) {
+    return null;
+  }
   if (!cachedFallbackTransporter) {
-    cachedFallbackTransporter = nodemailer.createTransport(fallbackSmtpUrl);
+    cachedFallbackTransporter = nodemailer.createTransport(
+      EMAIL_FALLBACK_SMTP_URL,
+    );
   }
   return cachedFallbackTransporter;
 };
@@ -116,28 +124,21 @@ export type FallbackSendResult =
  * `EMAIL_FALLBACK_SMTP_URL`, so a Resend outage does not block sign-in. A slow
  * primary send can still deliver later, so the recipient can get two copies.
  */
-export const OPNodemailerWithFallback = async ({
-  to,
-  subject,
-  component,
-}: BatchEmailItem): Promise<FallbackSendResult> => {
-  const message = {
-    from: formatFromAddress(),
-    to: safeEmailSchema.parse(to),
-    subject,
-    html: await render(component()),
-  };
+export const OPNodemailerWithFallback = async (
+  email: BatchEmailItem,
+): Promise<FallbackSendResult> => {
+  const message = await buildSmtpMessage(email);
 
   try {
-    await withTimeout(getTransporter().sendMail(message));
+    await withTimeout<unknown>(getTransporter().sendMail(message));
     return { transport: 'primary' };
   } catch (primaryError) {
-    const { EMAIL_FALLBACK_SMTP_URL } = process.env;
-    if (!EMAIL_FALLBACK_SMTP_URL) {
+    const fallbackTransporter = getFallbackTransporter();
+    if (!fallbackTransporter) {
       throw primaryError;
     }
 
-    await getFallbackTransporter(EMAIL_FALLBACK_SMTP_URL).sendMail(message);
+    await fallbackTransporter.sendMail(message);
     return { transport: 'fallback', primaryError };
   }
 };

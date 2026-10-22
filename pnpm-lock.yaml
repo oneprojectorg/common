@@ -1233,9 +1233,6 @@ importers:
       '@op/db':
         specifier: workspace:*
         version: link:../db
-      '@op/emails':
-        specifier: workspace:*
-        version: link:../emails
       '@op/events':
         specifier: workspace:*
         version: link:../events
