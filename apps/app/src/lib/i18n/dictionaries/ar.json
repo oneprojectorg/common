@@ -140,8 +140,8 @@
     "invitedPeopleSummary": "لقد دعوت <bold>{count, plural, zero {# شخص} one {شخصًا واحدًا} two {شخصين} few {# أشخاص} many {# شخصًا} other {# شخص}}</bold> للانضمام إلى <bold>{organization}</bold>.",
     "inviteMoreAction": "دعوة المزيد من الأشخاص",
     "alreadySignedInError": "لقد سجّلت الدخول بالفعل. أعد تحميل الصفحة للمتابعة.",
-    "emailTakenError": "يوجد حساب بهذا البريد الإلكتروني بالفعل. حاول تسجيل الدخول بدلاً من ذلك.",
-    "phoneTakenError": "يوجد حساب بهذا البريد الإلكتروني بالفعل. حاول تسجيل الدخول بدلاً من ذلك."
+    "emailCodeNotSentError": "تعذّر إرسال رمز إلى هذا البريد الإلكتروني. تحقق من العنوان وحاول مرة أخرى، أو سجّل الدخول إذا كان لديك حساب بالفعل.",
+    "phoneCodeNotSentError": "تعذّر إرسال رمز برسالة نصية إلى هذا الرقم. تحقق من الرقم وحاول مرة أخرى، أو سجّل الدخول إذا كان لديك حساب بالفعل."
   },
   "auth": {
     "welcomeHeading": "مرحبًا بك في",
@@ -157,10 +157,8 @@
     "createProfileCodeHint": "تم إرسال رمز إلى {email}. اكتب الرمز أدناه لإنشاء ملفك الشخصي.",
     "createProfileAction": "إنشاء الملف الشخصي",
     "resendCodeAction": "إعادة إرسال الرمز",
-    "changePhoneAction": "استخدام رقم هاتف مختلف",
+    "changeContactAction": "استخدام رقم هاتف أو بريد إلكتروني مختلف",
     "useEmailAction": "استخدام عنوان بريد إلكتروني مختلف",
-    "useEmailInsteadAction": "استخدام البريد الإلكتروني بدلاً من ذلك",
-    "usePhoneInsteadAction": "استخدام الهاتف بدلاً من ذلك",
     "phoneNumberLabel": "رقم الهاتف",
     "errorTitle": "عفوًا!",
     "waitlistTitle": "ترقبوا!",

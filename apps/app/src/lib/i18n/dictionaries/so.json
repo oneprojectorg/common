@@ -140,8 +140,8 @@
     "invitedPeopleSummary": "Waxaad casuuntay <bold>{count, plural, one {# qof} other {# qof}}</bold> inay ku biiraan <bold>{organization}</bold>.",
     "inviteMoreAction": "Casuun dad kale",
     "alreadySignedInError": "Horeyba waad u soo gashay. Dib u shub bogga si aad u sii wadato.",
-    "emailTakenError": "Akoon leh emailkan ayaa horey u jiray. Isku day inaad gasho.",
-    "phoneTakenError": "Akoon leh emailkan ayaa horey u jiray. Isku day inaad gasho."
+    "emailCodeNotSentError": "Ma awoodin inaan kood u dirno ciwaankan iimaylka. Hubi ciwaanka oo mar kale isku day, ama soo gal haddii aad horey u lahayd akoon.",
+    "phoneCodeNotSentError": "Ma awoodin inaan kood u dirno lambarkan. Hubi lambarka oo mar kale isku day, ama soo gal haddii aad horey u lahayd akoon."
   },
   "auth": {
     "welcomeHeading": "Ku soo dhawoow",
@@ -157,10 +157,8 @@
     "createProfileCodeHint": "Furaha waxaa loo diray {email}. Ku qor furaha hoose si aad u abuurto profilekaaga.",
     "createProfileAction": "Samee profile",
     "resendCodeAction": "Dib u dir furaha",
-    "changePhoneAction": "Isticmaal lambar taleefan oo kale",
+    "changeContactAction": "Isticmaal lambar taleefan ama iimayl oo kale",
     "useEmailAction": "Isticmaal ciwaan iimayl oo kale",
-    "useEmailInsteadAction": "Isticmaal iimayl beddelkeeda",
-    "usePhoneInsteadAction": "Isticmaal taleefan beddelkeeda",
     "phoneNumberLabel": "Lambarka taleefanka",
     "errorTitle": "Waa yaab!",
     "waitlistTitle": "Sii daawanow!",

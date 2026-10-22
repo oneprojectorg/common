@@ -140,8 +140,8 @@
     "invitedPeopleSummary": "You've invited <bold>{count, plural, one {# person} other {# people}}</bold> to join <bold>{organization}</bold>.",
     "inviteMoreAction": "Invite more people",
     "alreadySignedInError": "You're already signed in. Reload the page to continue.",
-    "emailTakenError": "An account with this email already exists. Try logging in instead.",
-    "phoneTakenError": "An account with this phone number already exists. Try logging in instead."
+    "emailCodeNotSentError": "We couldn't email a code to this address. Check the address and try again, or log in if you already have an account.",
+    "phoneCodeNotSentError": "We couldn't text a code to this number. Check the number and try again, or log in if you already have an account."
   },
   "auth": {
     "welcomeHeading": "Welcome to",
@@ -157,10 +157,8 @@
     "createProfileCodeHint": "A code was sent to {email}. Type the code below to create your profile.",
     "createProfileAction": "Create profile",
     "resendCodeAction": "Resend code",
-    "changePhoneAction": "Use a different phone number",
+    "changeContactAction": "Use a different phone number or email",
     "useEmailAction": "Use a different email address",
-    "useEmailInsteadAction": "Use email instead",
-    "usePhoneInsteadAction": "Use phone instead",
     "phoneNumberLabel": "Phone Number",
     "errorTitle": "Oops!",
     "waitlistTitle": "Stay tuned!",

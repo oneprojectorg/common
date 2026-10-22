@@ -233,7 +233,7 @@ test.describe('Join by phone (public decision) — retreat to email', () => {
 
   const admin = createSupabaseAdminClient();
 
-  test('given the texted code step in the Join modal, when the person picks email instead, then the email field is offered empty', async ({
+  test('given a texted code was not accepted in the Join modal, when the person edits the code and changes the contact, then the error clears and each tab offers its field empty', async ({
     page,
   }) => {
     const phone = '+15005550010';
@@ -268,8 +268,40 @@ test.describe('Join by phone (public decision) — retreat to email', () => {
       page.getByRole('heading', { name: 'Check your texts' }),
     ).toBeVisible({ timeout: 20000 });
 
-    await dialog.getByRole('button', { name: 'Use email instead' }).click();
+    const codeField = dialog.getByRole('textbox', {
+      name: 'Enter verification code',
+    });
+    const codeGroup = dialog.getByRole('group').filter({
+      has: page.getByRole('textbox', { name: 'Enter verification code' }),
+    });
+    const codeAlert = codeGroup.getByRole('alert');
 
+    await codeField.fill('000000');
+    await expect(codeAlert).toContainText('code', { timeout: 20000 });
+    await expect(codeField).toHaveAttribute('aria-invalid', 'true');
+
+    await codeField.fill('1');
+    await expect(codeField).not.toHaveAttribute('aria-invalid', 'true');
+    await expect(codeAlert).toHaveCount(0);
+
+    await expect(
+      dialog.getByRole('button', { name: 'Use email instead' }),
+    ).toHaveCount(0);
+    await dialog
+      .getByRole('button', { name: 'Use a different phone number or email' })
+      .click();
+
+    await expect(
+      page.getByRole('heading', { name: 'Check your texts' }),
+    ).not.toBeVisible();
+    await expect(
+      dialog.getByRole('tab', { name: 'Phone number' }),
+    ).toHaveAttribute('aria-selected', 'true');
+    await expect(
+      dialog.getByRole('textbox', { name: 'Phone number' }),
+    ).toHaveValue(phone);
+
+    await dialog.getByRole('tab', { name: 'Email' }).click();
     await expect(dialog.getByRole('tab', { name: 'Email' })).toHaveAttribute(
       'aria-selected',
       'true',

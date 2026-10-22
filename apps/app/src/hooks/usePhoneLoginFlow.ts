@@ -40,6 +40,7 @@ export const usePhoneLoginFlow = ({
   // Only the error stays local. It describes the last attempt, and a stale one
   // after a reload would explain a failure the visitor never saw.
   const [error, setError] = useState<string | undefined>(undefined);
+  const [codeError, setCodeError] = useState<string | undefined>(undefined);
 
   // People type `(415) 555-0132`. Validate and send what they meant.
   const normalized = normalizePhoneNumber(phone);
@@ -75,6 +76,7 @@ export const usePhoneLoginFlow = ({
   const resend = useCallback(async () => {
     setToken(undefined);
     setError(undefined);
+    setCodeError(undefined);
     await requestCode();
   }, [requestCode, setToken]);
 
@@ -83,10 +85,16 @@ export const usePhoneLoginFlow = ({
     setPhoneCodeSent(false);
     setToken(undefined);
     setError(undefined);
+    setCodeError(undefined);
   }, [setPhoneCodeSent, setToken]);
+
+  const clearCodeError = useCallback(() => {
+    setCodeError(undefined);
+  }, []);
 
   const submitCode = useCallback(async () => {
     setError(undefined);
+    setCodeError(undefined);
     const result = await phoneLogin.verifyCode({
       phone: normalized,
       code: token ?? '',
@@ -95,11 +103,13 @@ export const usePhoneLoginFlow = ({
       onSignedIn();
       return;
     }
-    setError(codeFailureMessage(result.reason, t));
+    setCodeError(codeFailureMessage(result.reason, t));
   }, [normalized, token, phoneLogin, onSignedIn, t]);
 
   return {
     error,
+    codeError,
+    clearCodeError,
     isValid,
     isLoading,
     isSending: phoneLogin.isSending,

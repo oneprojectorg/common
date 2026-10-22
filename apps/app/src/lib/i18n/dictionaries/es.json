@@ -140,8 +140,8 @@
     "invitedPeopleSummary": "Has invitado a <bold>{count, plural, one {# persona} other {# personas}}</bold> a unirse a <bold>{organization}</bold>.",
     "inviteMoreAction": "Invitar a más personas",
     "alreadySignedInError": "Ya has iniciado sesión. Recarga la página para continuar.",
-    "emailTakenError": "Ya existe una cuenta con este correo electrónico. Intenta iniciar sesión.",
-    "phoneTakenError": "Ya existe una cuenta con este correo electrónico. Intenta iniciar sesión."
+    "emailCodeNotSentError": "No pudimos enviar un código a esta dirección de correo electrónico. Revisa la dirección e inténtalo de nuevo, o inicia sesión si ya tienes una cuenta.",
+    "phoneCodeNotSentError": "No pudimos enviar un código por SMS a este número. Revisa el número e inténtalo de nuevo, o inicia sesión si ya tienes una cuenta."
   },
   "auth": {
     "welcomeHeading": "Bienvenido a",
@@ -157,10 +157,8 @@
     "createProfileCodeHint": "Se envió un código a {email}. Escribe el código a continuación para crear tu perfil.",
     "createProfileAction": "Crear perfil",
     "resendCodeAction": "Reenviar código",
-    "changePhoneAction": "Usar un número de teléfono diferente",
+    "changeContactAction": "Usar un número de teléfono o correo electrónico diferente",
     "useEmailAction": "Usar una dirección de correo electrónico diferente",
-    "useEmailInsteadAction": "Usar correo electrónico en su lugar",
-    "usePhoneInsteadAction": "Usar teléfono en su lugar",
     "phoneNumberLabel": "Número de teléfono",
     "errorTitle": "¡Ups!",
     "waitlistTitle": "¡Mantente atento!",

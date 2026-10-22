@@ -140,8 +140,8 @@
     "invitedPeopleSummary": "আপনি <bold>{organization}</bold>-এ যোগ দিতে <bold>{count, plural, one {# জনকে} other {# জনকে}}</bold> আমন্ত্রণ জানিয়েছেন।",
     "inviteMoreAction": "আরও লোককে আমন্ত্রণ জানান",
     "alreadySignedInError": "আপনি ইতিমধ্যে সাইন ইন করেছেন। চালিয়ে যেতে পৃষ্ঠাটি পুনরায় লোড করুন।",
-    "emailTakenError": "এই ইমেল দিয়ে ইতিমধ্যে একটি অ্যাকাউন্ট রয়েছে। পরিবর্তে লগ ইন করার চেষ্টা করুন।",
-    "phoneTakenError": "এই ইমেল দিয়ে ইতিমধ্যে একটি অ্যাকাউন্ট রয়েছে। পরিবর্তে লগ ইন করার চেষ্টা করুন।"
+    "emailCodeNotSentError": "এই ইমেইল ঠিকানায় কোড পাঠানো যায়নি। ঠিকানাটি যাচাই করে আবার চেষ্টা করুন, অথবা আপনার অ্যাকাউন্ট থাকলে লগ ইন করুন।",
+    "phoneCodeNotSentError": "এই নম্বরে কোড পাঠানো যায়নি। নম্বরটি যাচাই করে আবার চেষ্টা করুন, অথবা আপনার অ্যাকাউন্ট থাকলে লগ ইন করুন।"
   },
   "auth": {
     "welcomeHeading": "স্বাগতম",
@@ -157,10 +157,8 @@
     "createProfileCodeHint": "{email}-এ একটি কোড পাঠানো হয়েছে। আপনার প্রোফাইল তৈরি করতে নীচে কোডটি টাইপ করুন।",
     "createProfileAction": "প্রোফাইল তৈরি করুন",
     "resendCodeAction": "কোড আবার পাঠান",
-    "changePhoneAction": "একটি ভিন্ন ফোন নম্বর ব্যবহার করুন",
+    "changeContactAction": "একটি ভিন্ন ফোন নম্বর বা ইমেইল ব্যবহার করুন",
     "useEmailAction": "একটি ভিন্ন ইমেইল ঠিকানা ব্যবহার করুন",
-    "useEmailInsteadAction": "পরিবর্তে ইমেইল ব্যবহার করুন",
-    "usePhoneInsteadAction": "পরিবর্তে ফোন ব্যবহার করুন",
     "phoneNumberLabel": "ফোন নম্বর",
     "errorTitle": "উফ!",
     "waitlistTitle": "অপেক্ষায় থাকুন!",
