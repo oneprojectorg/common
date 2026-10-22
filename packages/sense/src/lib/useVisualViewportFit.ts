@@ -4,6 +4,8 @@ import { attachRef } from './attachRef';
 
 type FitRef = React.Ref<HTMLDivElement> | undefined;
 
+const EDITABLE = 'input, textarea, select, [contenteditable="true"]';
+
 /**
  * Keeps a `fixed` full-screen surface inside the visual viewport. iOS Safari
  * overlays the keyboard and pans the page instead of shrinking the layout
@@ -40,14 +42,40 @@ function track(node: HTMLElement) {
     node.style.setProperty('--visual-viewport-height', `${viewport.height}px`);
     node.style.setProperty('--visual-viewport-top', `${viewport.offsetTop}px`);
   };
+  const reset = () => {
+    node.style.removeProperty('--visual-viewport-height');
+    node.style.removeProperty('--visual-viewport-top');
+  };
+  // iOS reports the resize only after the keyboard has finished animating.
+  // Losing focus is when dismissal starts, so fall back to the layout
+  // viewport at once; a focus moving to another field re-measures, and the
+  // eventual `resize` confirms either way.
+  const onFocusOut = (event: FocusEvent) => {
+    if (isEditable(event.target)) {
+      reset();
+    }
+  };
+  const onFocusIn = (event: FocusEvent) => {
+    if (isEditable(event.target)) {
+      fit();
+    }
+  };
   fit();
   // `scroll` covers the pan iOS still performs while the keyboard is open.
   viewport.addEventListener('resize', fit);
   viewport.addEventListener('scroll', fit);
+  node.addEventListener('focusout', onFocusOut);
+  node.addEventListener('focusin', onFocusIn);
   return () => {
     viewport.removeEventListener('resize', fit);
     viewport.removeEventListener('scroll', fit);
+    node.removeEventListener('focusout', onFocusOut);
+    node.removeEventListener('focusin', onFocusIn);
   };
+}
+
+function isEditable(target: EventTarget | null) {
+  return target instanceof Element && target.closest(EDITABLE) !== null;
 }
 
 function containTouchScroll(node: HTMLElement) {
@@ -72,7 +100,7 @@ function containTouchScroll(node: HTMLElement) {
     }
     const target = event.target instanceof Element ? event.target : null;
     // Selection handles inside a field need the native gesture.
-    if (target?.closest('input, textarea, [contenteditable="true"]')) {
+    if (isEditable(target)) {
       return;
     }
     if (!findScrollableAncestor(target, node, deltaY)) {
