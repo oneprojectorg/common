@@ -47,6 +47,10 @@ before this change, in creation order.
 - A code is meaningful only inside its scope. A reader resolves
   `(scope, code)` to a profile, then joins the object on `profile_id`.
 - A draft has no code. Readers handle `null`.
+- A code and its scope are set together; a check constraint refuses one
+  without the other. The unique index covers coded rows only. Deleting a
+  scope profile deletes the profiles it coded, as deleting a decision
+  already deletes its proposals.
 - A decision code needs no schema change: the same three columns with the
   organization's profile as scope.
 - `decision_process_instances.profile_id` is nullable. A decision with no
