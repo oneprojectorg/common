@@ -18,3 +18,4 @@ export * from './saveProfileImage';
 export * from './getProfileUserWithRelations';
 export * from './requests';
 export * from './schemas';
+export * from './profileChatLine';

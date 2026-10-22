@@ -98,7 +98,7 @@ export const adminDecisionInstanceDetailSchema = z.object({
   createdAt: z.string().nullable(),
   /** Whether a visitor with no account can read the decision. */
   isPublic: z.boolean(),
-  smsLine: z.string().nullable(),
+  chatLine: z.string().nullable(),
   owner: adminProfileRefSchema.nullable(),
   steward: adminProfileRefSchema.nullable(),
   reviewsPolicy: z.string().nullable(),

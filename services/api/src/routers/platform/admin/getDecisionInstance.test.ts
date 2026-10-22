@@ -131,7 +131,7 @@ describe.concurrent('platform.admin.getDecisionInstance', () => {
       instanceId: setup.instance.instance.id,
     });
 
-    expect(detail.smsLine).toBeNull();
+    expect(detail.chatLine).toBeNull();
   });
 
   it('throws NotFound for an unknown instance id', async ({

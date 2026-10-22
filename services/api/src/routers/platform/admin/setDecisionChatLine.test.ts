@@ -28,11 +28,11 @@ const gatingInput = {
   phoneNumber: NUMBERS.gating,
 };
 
-describeAccessTierGating('platform.admin.setDecisionSmsLine', {
+describeAccessTierGating('platform.admin.setDecisionChatLine', {
   noJwt: accessTierGatingCell('rejects no-JWT caller', async ({ callers }) => {
     const caller = await callers.noJwt();
     await expectFailsAccessTierGate(
-      caller.platform.admin.setDecisionSmsLine(gatingInput),
+      caller.platform.admin.setDecisionChatLine(gatingInput),
       'none',
     );
   }),
@@ -42,7 +42,7 @@ describeAccessTierGating('platform.admin.setDecisionSmsLine', {
     async ({ callers }) => {
       const caller = await callers.anonJwt();
       await expectFailsAccessTierGate(
-        caller.platform.admin.setDecisionSmsLine(gatingInput),
+        caller.platform.admin.setDecisionChatLine(gatingInput),
         'anon',
       );
     },
@@ -53,7 +53,7 @@ describeAccessTierGating('platform.admin.setDecisionSmsLine', {
     async ({ callers }) => {
       const caller = await callers.userJwt();
       await expectFailsAccessTierGate(
-        caller.platform.admin.setDecisionSmsLine(gatingInput),
+        caller.platform.admin.setDecisionChatLine(gatingInput),
         'user',
       );
     },
@@ -64,13 +64,13 @@ describeAccessTierGating('platform.admin.setDecisionSmsLine', {
     async ({ callers }) => {
       const caller = await callers.networkJwt();
       await expectPassesAccessTierGate(
-        caller.platform.admin.setDecisionSmsLine(gatingInput),
+        caller.platform.admin.setDecisionChatLine(gatingInput),
       );
     },
   ),
 });
 
-describe.concurrent('platform.admin.setDecisionSmsLine', () => {
+describe.concurrent('platform.admin.setDecisionChatLine', () => {
   it('given a platform admin, when they bind a number, then the decision detail shows it', async ({
     task,
     onTestFinished,
@@ -81,7 +81,7 @@ describe.concurrent('platform.admin.setDecisionSmsLine', () => {
     const { session } = await createIsolatedSession(setup.userEmail);
     const caller = createCaller(await createTestContextWithSession(session));
 
-    const result = await caller.platform.admin.setDecisionSmsLine({
+    const result = await caller.platform.admin.setDecisionChatLine({
       instanceId,
       phoneNumber: NUMBERS.bind,
     });
@@ -90,7 +90,7 @@ describe.concurrent('platform.admin.setDecisionSmsLine', () => {
     const detail = await caller.platform.admin.getDecisionInstance({
       instanceId,
     });
-    expect(detail.smsLine).toBe(NUMBERS.bind);
+    expect(detail.chatLine).toBe(NUMBERS.bind);
   });
 
   it('given a number bound to another decision, when a platform admin binds it here, then the call fails and the number stays with the first decision', async ({
@@ -105,22 +105,22 @@ describe.concurrent('platform.admin.setDecisionSmsLine', () => {
     }
     const { session } = await createIsolatedSession(setup.userEmail);
     const caller = createCaller(await createTestContextWithSession(session));
-    await caller.platform.admin.setDecisionSmsLine({
+    await caller.platform.admin.setDecisionChatLine({
       instanceId: holder.instance.id,
       phoneNumber: NUMBERS.taken,
     });
 
     await expect(
-      caller.platform.admin.setDecisionSmsLine({
+      caller.platform.admin.setDecisionChatLine({
         instanceId: other.instance.id,
         phoneNumber: NUMBERS.taken,
       }),
     ).rejects.toMatchObject({ cause: { name: 'ConflictError' } });
 
-    const line = await db.query.decisionSmsLines.findFirst({
+    const line = await db.query.profileChatLines.findFirst({
       where: { phoneNumber: NUMBERS.taken },
-      columns: { processInstanceId: true },
+      columns: { profileId: true },
     });
-    expect(line).toEqual({ processInstanceId: holder.instance.id });
+    expect(line).toEqual({ profileId: holder.profileId });
   });
 });

@@ -3,13 +3,14 @@ import { db } from '@op/db/client';
 import { describe, expect, it } from 'vitest';
 
 import {
-  clearDecisionSmsLine,
-  getDecisionSmsLine,
-  setDecisionSmsLine,
-} from './decisionSmsLine';
+  clearDecisionChatLine,
+  getDecisionChatLine,
+  setDecisionChatLine,
+} from './decisionChatLine';
 
 const NUMBERS = {
   bind: '+15005550093',
+  owner: '+15005550092',
   first: '+15005550094',
   second: '+15005550095',
   shared: '+15005550096',
@@ -19,12 +20,12 @@ const NUMBERS = {
 } as const;
 
 const readLineByNumber = (phoneNumber: string) =>
-  db.query.decisionSmsLines.findFirst({
+  db.query.profileChatLines.findFirst({
     where: { phoneNumber },
-    columns: { processInstanceId: true, phoneNumber: true },
+    columns: { profileId: true, phoneNumber: true },
   });
 
-describe.concurrent('decisionSmsLine', () => {
+describe.concurrent('decisionChatLine', () => {
   it('given an unbound decision, when an admin binds a number, then the decision reads back with that number', async ({
     task,
     onTestFinished,
@@ -33,14 +34,32 @@ describe.concurrent('decisionSmsLine', () => {
     const setup = await testData.createDecisionSetup({ instanceCount: 1 });
     const instanceId = setup.instance.instance.id;
 
-    const result = await setDecisionSmsLine({
+    const result = await setDecisionChatLine({
       instanceId,
       phoneNumber: NUMBERS.bind,
     });
 
     expect(result).toEqual({ phoneNumber: NUMBERS.bind });
-    await expect(getDecisionSmsLine({ instanceId })).resolves.toEqual({
+    await expect(getDecisionChatLine({ instanceId })).resolves.toEqual({
       phoneNumber: NUMBERS.bind,
+    });
+  });
+
+  it('given a bound decision, when an admin binds a number, then the line row belongs to the decision profile', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({ instanceCount: 1 });
+
+    await setDecisionChatLine({
+      instanceId: setup.instance.instance.id,
+      phoneNumber: NUMBERS.owner,
+    });
+
+    await expect(readLineByNumber(NUMBERS.owner)).resolves.toEqual({
+      profileId: setup.instance.profileId,
+      phoneNumber: NUMBERS.owner,
     });
   });
 
@@ -51,11 +70,11 @@ describe.concurrent('decisionSmsLine', () => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
     const setup = await testData.createDecisionSetup({ instanceCount: 1 });
     const instanceId = setup.instance.instance.id;
-    await setDecisionSmsLine({ instanceId, phoneNumber: NUMBERS.first });
+    await setDecisionChatLine({ instanceId, phoneNumber: NUMBERS.first });
 
-    await setDecisionSmsLine({ instanceId, phoneNumber: NUMBERS.second });
+    await setDecisionChatLine({ instanceId, phoneNumber: NUMBERS.second });
 
-    await expect(getDecisionSmsLine({ instanceId })).resolves.toEqual({
+    await expect(getDecisionChatLine({ instanceId })).resolves.toEqual({
       phoneNumber: NUMBERS.second,
     });
     await expect(readLineByNumber(NUMBERS.first)).resolves.toBeUndefined();
@@ -71,23 +90,23 @@ describe.concurrent('decisionSmsLine', () => {
     if (!holder || !other) {
       throw new Error('expected two instances');
     }
-    await setDecisionSmsLine({
+    await setDecisionChatLine({
       instanceId: holder.instance.id,
       phoneNumber: NUMBERS.shared,
     });
 
     await expect(
-      setDecisionSmsLine({
+      setDecisionChatLine({
         instanceId: other.instance.id,
         phoneNumber: NUMBERS.shared,
       }),
     ).rejects.toMatchObject({ name: 'ConflictError' });
 
     await expect(
-      getDecisionSmsLine({ instanceId: other.instance.id }),
+      getDecisionChatLine({ instanceId: other.instance.id }),
     ).resolves.toBeNull();
     await expect(readLineByNumber(NUMBERS.shared)).resolves.toMatchObject({
-      processInstanceId: holder.instance.id,
+      profileId: holder.profileId,
     });
   });
 
@@ -103,11 +122,11 @@ describe.concurrent('decisionSmsLine', () => {
     }
 
     const outcomes = await Promise.allSettled([
-      setDecisionSmsLine({
+      setDecisionChatLine({
         instanceId: first.instance.id,
         phoneNumber: NUMBERS.raced,
       }),
-      setDecisionSmsLine({
+      setDecisionChatLine({
         instanceId: second.instance.id,
         phoneNumber: NUMBERS.raced,
       }),
@@ -123,9 +142,7 @@ describe.concurrent('decisionSmsLine', () => {
     expect(rejected).toHaveLength(1);
     expect(rejected[0]?.reason).toMatchObject({ name: 'ConflictError' });
     const holder = await readLineByNumber(NUMBERS.raced);
-    expect([first.instance.id, second.instance.id]).toContain(
-      holder?.processInstanceId,
-    );
+    expect([first.profileId, second.profileId]).toContain(holder?.profileId);
   });
 
   it('given a number that is not E.164, when an admin binds it, then it fails as a validation error and nothing is stored', async ({
@@ -137,10 +154,10 @@ describe.concurrent('decisionSmsLine', () => {
     const instanceId = setup.instance.instance.id;
 
     await expect(
-      setDecisionSmsLine({ instanceId, phoneNumber: 'not a number' }),
+      setDecisionChatLine({ instanceId, phoneNumber: 'not a number' }),
     ).rejects.toMatchObject({ name: 'ValidationError' });
 
-    await expect(getDecisionSmsLine({ instanceId })).resolves.toBeNull();
+    await expect(getDecisionChatLine({ instanceId })).resolves.toBeNull();
   });
 
   it('given a number typed with spaces and dashes, when an admin binds it, then the stored number is E.164', async ({
@@ -151,9 +168,9 @@ describe.concurrent('decisionSmsLine', () => {
     const setup = await testData.createDecisionSetup({ instanceCount: 1 });
     const instanceId = setup.instance.instance.id;
 
-    await setDecisionSmsLine({ instanceId, phoneNumber: '+1 (500) 555-0098' });
+    await setDecisionChatLine({ instanceId, phoneNumber: '+1 (500) 555-0098' });
 
-    await expect(getDecisionSmsLine({ instanceId })).resolves.toEqual({
+    await expect(getDecisionChatLine({ instanceId })).resolves.toEqual({
       phoneNumber: NUMBERS.spaced,
     });
   });
@@ -165,12 +182,12 @@ describe.concurrent('decisionSmsLine', () => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
     const setup = await testData.createDecisionSetup({ instanceCount: 1 });
     const instanceId = setup.instance.instance.id;
-    await setDecisionSmsLine({ instanceId, phoneNumber: NUMBERS.clear });
+    await setDecisionChatLine({ instanceId, phoneNumber: NUMBERS.clear });
 
-    const result = await clearDecisionSmsLine({ instanceId });
+    const result = await clearDecisionChatLine({ instanceId });
 
     expect(result).toEqual({ cleared: true });
-    await expect(getDecisionSmsLine({ instanceId })).resolves.toBeNull();
+    await expect(getDecisionChatLine({ instanceId })).resolves.toBeNull();
     await expect(readLineByNumber(NUMBERS.clear)).resolves.toBeUndefined();
   });
 
@@ -182,14 +199,14 @@ describe.concurrent('decisionSmsLine', () => {
     const setup = await testData.createDecisionSetup({ instanceCount: 1 });
     const instanceId = setup.instance.instance.id;
 
-    await expect(clearDecisionSmsLine({ instanceId })).resolves.toEqual({
+    await expect(clearDecisionChatLine({ instanceId })).resolves.toEqual({
       cleared: false,
     });
   });
 
   it('given an unknown decision id, when an admin binds a number, then it fails as not found', async () => {
     await expect(
-      setDecisionSmsLine({
+      setDecisionChatLine({
         instanceId: crypto.randomUUID(),
         phoneNumber: NUMBERS.bind,
       }),

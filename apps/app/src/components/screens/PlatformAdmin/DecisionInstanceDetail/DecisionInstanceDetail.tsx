@@ -26,12 +26,12 @@ import { LuArrowLeft, LuArrowUpRight, LuCheck, LuCopy } from 'react-icons/lu';
 import { useTranslations } from '@/lib/i18n';
 import { Link } from '@/lib/i18n/routing';
 
+import { ChatLineSection } from './ChatLineSection';
 import { CustomFormsPanel } from './CustomFormsPanel';
 import { MakePublicButton } from './MakePublicButton';
 import { RemovePublicAccessButton } from './RemovePublicAccessButton';
 import { RevertPhaseButton } from './RevertPhaseButton';
 import { ReviewPhasePanel } from './ReviewPhasePanel';
-import { SmsLineSection } from './SmsLineSection';
 import {
   type PublicAccessState,
   getPublicAccessState,
@@ -170,7 +170,7 @@ const DecisionInstanceDetailContent = ({
           <ConfigurationCard
             instanceId={instanceId}
             isPublic={detail.isPublic}
-            smsLine={detail.smsLine}
+            chatLine={detail.chatLine}
             status={detail.status}
             config={detail.config}
             instanceData={detail.instanceData}
@@ -346,14 +346,14 @@ const PhaseCard = ({
 const ConfigurationCard = ({
   instanceId,
   isPublic,
-  smsLine,
+  chatLine,
   status,
   config,
   instanceData,
 }: {
   instanceId: string;
   isPublic: boolean;
-  smsLine: string | null;
+  chatLine: string | null;
   status: ProcessStatus | null;
   config: AdminDecisionConfig;
   instanceData: unknown;
@@ -426,7 +426,7 @@ const ConfigurationCard = ({
           isPublic={isPublic}
           status={status}
         />
-        <SmsLineSection instanceId={instanceId} smsLine={smsLine} />
+        <ChatLineSection instanceId={instanceId} chatLine={chatLine} />
         <dl className="grid gap-x-8 gap-y-3 sm:grid-cols-2">
           {settings.map((setting) => (
             <div

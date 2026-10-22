@@ -12,44 +12,44 @@ import { useTranslations } from '@/lib/i18n';
 
 import { AdminActionConfirmation } from './AdminActionConfirmation';
 
-export const SmsLineSection = ({
+export const ChatLineSection = ({
   instanceId,
-  smsLine,
+  chatLine,
 }: {
   instanceId: string;
-  smsLine: string | null;
+  chatLine: string | null;
 }) => {
   const t = useTranslations('admin');
 
   return (
     <section className="flex flex-col gap-3">
       <h3 className="text-xs tracking-wide text-muted-foreground uppercase">
-        {t('smsLineTitle')}
+        {t('chatLineTitle')}
       </h3>
       <p className="text-sm text-muted-foreground" aria-live="polite">
-        {smsLine === null
-          ? t('smsLineUnboundHint')
-          : t.rich('smsLineBoundHint', {
-              phoneNumber: smsLine,
+        {chatLine === null
+          ? t('chatLineUnboundHint')
+          : t.rich('chatLineBoundHint', {
+              phoneNumber: chatLine,
               bdi: isolateNumber,
             })}
       </p>
       <div className="flex flex-wrap gap-2">
-        <SetSmsLineButton instanceId={instanceId} smsLine={smsLine} />
-        {smsLine === null ? null : (
-          <ClearSmsLineButton instanceId={instanceId} smsLine={smsLine} />
+        <SetChatLineButton instanceId={instanceId} chatLine={chatLine} />
+        {chatLine === null ? null : (
+          <ClearChatLineButton instanceId={instanceId} chatLine={chatLine} />
         )}
       </div>
     </section>
   );
 };
 
-const SetSmsLineButton = ({
+const SetChatLineButton = ({
   instanceId,
-  smsLine,
+  chatLine,
 }: {
   instanceId: string;
-  smsLine: string | null;
+  chatLine: string | null;
 }) => {
   const t = useTranslations('admin');
   const utils = trpc.useUtils();
@@ -63,9 +63,9 @@ const SetSmsLineButton = ({
     }
   };
 
-  const setLine = trpc.platform.admin.setDecisionSmsLine.useMutation({
+  const setLine = trpc.platform.admin.setDecisionChatLine.useMutation({
     onSuccess: () => {
-      toast.success(t('setSmsLineSuccess'));
+      toast.success(t('setChatLineSuccess'));
       utils.platform.admin.getDecisionInstance.invalidate({ instanceId });
       handleOpenChange(false);
     },
@@ -73,10 +73,10 @@ const SetSmsLineButton = ({
       const status = httpStatusOf(error);
       toast.error(
         status === 409
-          ? t('smsLineTakenError')
+          ? t('chatLineTakenError')
           : status === 400
-            ? t('smsLineInvalidError')
-            : t('setSmsLineError'),
+            ? t('chatLineInvalidError')
+            : t('setChatLineError'),
       );
     },
   });
@@ -85,14 +85,16 @@ const SetSmsLineButton = ({
     <AdminActionConfirmation
       trigger={{
         label:
-          smsLine === null ? t('setSmsLineAction') : t('changeSmsLineAction'),
+          chatLine === null
+            ? t('setChatLineAction')
+            : t('changeChatLineAction'),
         icon: <LuPhone data-icon="inline-start" />,
         variant: 'outline',
       }}
-      title={t('setSmsLineConfirmTitle')}
-      description={t('setSmsLineConfirmHint')}
+      title={t('setChatLineConfirmTitle')}
+      description={t('setChatLineConfirmHint')}
       confirm={{
-        label: t('setSmsLineConfirmAction'),
+        label: t('setChatLineConfirmAction'),
         pendingLabel: t('bindingProgress'),
         variant: 'default',
       }}
@@ -103,62 +105,62 @@ const SetSmsLineButton = ({
       onConfirm={() => setLine.mutate({ instanceId, phoneNumber })}
     >
       <Field>
-        <FieldLabel htmlFor="sms-line-number">
-          {t('smsLineNumberLabel')}
+        <FieldLabel htmlFor="chat-line-number">
+          {t('chatLineNumberLabel')}
         </FieldLabel>
         <Input
-          id="sms-line-number"
+          id="chat-line-number"
           type="tel"
           inputMode="tel"
           autoComplete="off"
           spellCheck={false}
-          placeholder={t('smsLineNumberPlaceholder')}
+          placeholder={t('chatLineNumberPlaceholder')}
           disabled={setLine.isPending}
           value={phoneNumber}
           onChange={(event) => setPhoneNumber(event.target.value)}
         />
-        <FieldDescription>{t('smsLineNumberHint')}</FieldDescription>
+        <FieldDescription>{t('chatLineNumberHint')}</FieldDescription>
       </Field>
     </AdminActionConfirmation>
   );
 };
 
-const ClearSmsLineButton = ({
+const ClearChatLineButton = ({
   instanceId,
-  smsLine,
+  chatLine,
 }: {
   instanceId: string;
-  smsLine: string;
+  chatLine: string;
 }) => {
   const t = useTranslations('admin');
   const utils = trpc.useUtils();
   const [isOpen, setIsOpen] = useState(false);
 
-  const clearLine = trpc.platform.admin.clearDecisionSmsLine.useMutation({
+  const clearLine = trpc.platform.admin.clearDecisionChatLine.useMutation({
     onSuccess: () => {
-      toast.success(t('clearSmsLineSuccess'));
+      toast.success(t('clearChatLineSuccess'));
       utils.platform.admin.getDecisionInstance.invalidate({ instanceId });
       setIsOpen(false);
     },
     onError: () => {
-      toast.error(t('clearSmsLineError'));
+      toast.error(t('clearChatLineError'));
     },
   });
 
   return (
     <AdminActionConfirmation
       trigger={{
-        label: t('clearSmsLineAction'),
+        label: t('clearChatLineAction'),
         icon: <LuPhoneOff data-icon="inline-start" />,
         variant: 'destructive',
       }}
-      title={t.rich('clearSmsLineConfirmTitle', {
-        phoneNumber: smsLine,
+      title={t.rich('clearChatLineConfirmTitle', {
+        phoneNumber: chatLine,
         bdi: isolateNumber,
       })}
-      description={t('clearSmsLineConfirmHint')}
+      description={t('clearChatLineConfirmHint')}
       confirm={{
-        label: t('clearSmsLineConfirmAction'),
+        label: t('clearChatLineConfirmAction'),
         pendingLabel: t('unbindingProgress'),
         variant: 'destructive',
       }}

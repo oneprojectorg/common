@@ -108,9 +108,11 @@ export const getDecisionInstanceRouter = router({
         with: {
           owner: { columns: { id: true, name: true, slug: true } },
           steward: { columns: { id: true, name: true, slug: true } },
-          profile: { columns: { slug: true } },
+          profile: {
+            columns: { slug: true },
+            with: { chatLine: { columns: { phoneNumber: true } } },
+          },
           process: { columns: { name: true, processSchema: true } },
-          smsLine: { columns: { phoneNumber: true } },
         },
       });
 
@@ -143,7 +145,7 @@ export const getDecisionInstanceRouter = router({
         status: instance.status,
         createdAt: instance.createdAt,
         isPublic,
-        smsLine: instance.smsLine?.phoneNumber ?? null,
+        chatLine: instance.profile?.chatLine?.phoneNumber ?? null,
         owner: instance.owner ?? null,
         steward: instance.steward ?? null,
         reviewsPolicy: instanceData.config?.reviewsPolicy ?? null,

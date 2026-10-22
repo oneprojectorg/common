@@ -22,11 +22,11 @@ const NUMBERS = {
 
 const gatingInput = { instanceId: crypto.randomUUID() };
 
-describeAccessTierGating('platform.admin.clearDecisionSmsLine', {
+describeAccessTierGating('platform.admin.clearDecisionChatLine', {
   noJwt: accessTierGatingCell('rejects no-JWT caller', async ({ callers }) => {
     const caller = await callers.noJwt();
     await expectFailsAccessTierGate(
-      caller.platform.admin.clearDecisionSmsLine(gatingInput),
+      caller.platform.admin.clearDecisionChatLine(gatingInput),
       'none',
     );
   }),
@@ -36,7 +36,7 @@ describeAccessTierGating('platform.admin.clearDecisionSmsLine', {
     async ({ callers }) => {
       const caller = await callers.anonJwt();
       await expectFailsAccessTierGate(
-        caller.platform.admin.clearDecisionSmsLine(gatingInput),
+        caller.platform.admin.clearDecisionChatLine(gatingInput),
         'anon',
       );
     },
@@ -47,7 +47,7 @@ describeAccessTierGating('platform.admin.clearDecisionSmsLine', {
     async ({ callers }) => {
       const caller = await callers.userJwt();
       await expectFailsAccessTierGate(
-        caller.platform.admin.clearDecisionSmsLine(gatingInput),
+        caller.platform.admin.clearDecisionChatLine(gatingInput),
         'user',
       );
     },
@@ -58,13 +58,13 @@ describeAccessTierGating('platform.admin.clearDecisionSmsLine', {
     async ({ callers }) => {
       const caller = await callers.networkJwt();
       await expectPassesAccessTierGate(
-        caller.platform.admin.clearDecisionSmsLine(gatingInput),
+        caller.platform.admin.clearDecisionChatLine(gatingInput),
       );
     },
   ),
 });
 
-describe.concurrent('platform.admin.clearDecisionSmsLine', () => {
+describe.concurrent('platform.admin.clearDecisionChatLine', () => {
   it('given a bound decision, when a platform admin unbinds it, then the decision detail shows no line', async ({
     task,
     onTestFinished,
@@ -74,12 +74,12 @@ describe.concurrent('platform.admin.clearDecisionSmsLine', () => {
     const instanceId = setup.instance.instance.id;
     const { session } = await createIsolatedSession(setup.userEmail);
     const caller = createCaller(await createTestContextWithSession(session));
-    await caller.platform.admin.setDecisionSmsLine({
+    await caller.platform.admin.setDecisionChatLine({
       instanceId,
       phoneNumber: NUMBERS.bound,
     });
 
-    const result = await caller.platform.admin.clearDecisionSmsLine({
+    const result = await caller.platform.admin.clearDecisionChatLine({
       instanceId,
     });
 
@@ -87,6 +87,6 @@ describe.concurrent('platform.admin.clearDecisionSmsLine', () => {
     const detail = await caller.platform.admin.getDecisionInstance({
       instanceId,
     });
-    expect(detail.smsLine).toBeNull();
+    expect(detail.chatLine).toBeNull();
   });
 });
