@@ -290,6 +290,11 @@ describe.concurrent('listDecisionProfiles', () => {
     const profile = result.items.find((item) => item.id === created.id);
     expect(profile).toBeDefined();
     expect(profile?.processInstance.process).toBeNull();
+
+    const detail = await caller.decision.getInstance({
+      instanceId: created.processInstance.id,
+    });
+    expect(detail.process).toBeNull();
   });
 
   it('should exclude draft proposals from stats', async ({

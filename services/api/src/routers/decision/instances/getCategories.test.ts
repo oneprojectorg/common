@@ -470,6 +470,71 @@ describe.concurrent('getCategories category matching', () => {
       }),
     );
   });
+
+  it('returns the categories of a wizard-created instance with no process template', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({ instanceCount: 0 });
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const created = await caller.decision.createInstance({
+      type: 'grant',
+      phases: [{ kind: 'submissions', name: 'Send your application' }],
+      name: `Wizard ${task.id}`,
+    });
+    testData.trackProfileForCleanup(created.id);
+
+    const { termRecords } = await seedProposalTaxonomy(
+      ['Water Access'],
+      onTestFinished,
+    );
+
+    await injectInstanceCategories(created.processInstance.id, [
+      {
+        id: 'cat-1',
+        label: 'Water Access',
+        description: 'Water access proposals',
+      },
+    ]);
+
+    const result = await caller.decision.getCategories({
+      processInstanceId: created.processInstance.id,
+    });
+
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0]).toEqual(
+      expect.objectContaining({
+        id: termRecords[0]!.id,
+        name: 'Water Access',
+      }),
+    );
+  });
+
+  it('returns an empty list for a wizard-created instance with no categories', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({ instanceCount: 0 });
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const created = await caller.decision.createInstance({
+      type: 'grant',
+      phases: [{ kind: 'submissions', name: 'Send your application' }],
+      name: `Wizard ${task.id}`,
+    });
+    testData.trackProfileForCleanup(created.id);
+
+    await seedProposalTaxonomy(['Digital Literacy'], onTestFinished);
+
+    const result = await caller.decision.getCategories({
+      processInstanceId: created.processInstance.id,
+    });
+
+    expect(result.items).toEqual([]);
+  });
 });
 
 describeDecisionAccessTierGating('getCategories', {
