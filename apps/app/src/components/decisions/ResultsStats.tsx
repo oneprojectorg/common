@@ -74,14 +74,18 @@ export function ResultsStats({ instanceId }: ResultsStatsProps) {
           <StatNumber>{stats.proposalsFunded}</StatNumber>
           <StatLabel>{t('proposalsSelectedStat')}</StatLabel>
         </Stat>
-        <hr
-          aria-hidden="true"
-          className="hidden h-8 w-0.5 border-0 bg-white/50 xxs:block"
-        />
-        <Stat>
-          <StatNumber>{formatCurrency(stats.totalAllocated)}</StatNumber>
-          <StatLabel>{t('totalAllocatedStat')}</StatLabel>
-        </Stat>
+        {stats.totalAllocated > 0 && (
+          <>
+            <hr
+              aria-hidden="true"
+              className="hidden h-8 w-0.5 border-0 bg-white/50 xxs:block"
+            />
+            <Stat>
+              <StatNumber>{formatCurrency(stats.totalAllocated)}</StatNumber>
+              <StatLabel>{t('totalAllocatedStat')}</StatLabel>
+            </Stat>
+          </>
+        )}
       </div>
     </div>
   );
