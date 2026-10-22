@@ -1,5 +1,6 @@
 import { TRPCProvider } from '@op/api/client';
 import { getSSRCookies } from '@op/api/ssrCookies';
+import { getLocaleDirection } from '@op/common/locales';
 import { APP_NAME, OPURLConfig, printNFO } from '@op/core';
 import '@op/styles';
 import { DirectionProvider } from '@op/sense/Direction';
@@ -19,7 +20,6 @@ import { OTelBrowserProvider } from '../components/OTelBrowserProvider';
 import { PostHogProvider } from '../components/PostHogProvider';
 import { QueryInvalidationSubscriber } from '../components/QueryInvalidationSubscriber';
 import { I18nProvider } from '../lib/i18n';
-import { getLocaleDirection } from '../lib/i18n/config';
 import { getCookieConsentRequired } from '../utils/cookieConsent';
 // Side-effect import: emits the @font-face rules and Latin preloads on every route.
 import './fonts';

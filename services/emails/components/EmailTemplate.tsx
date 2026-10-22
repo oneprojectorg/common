@@ -20,13 +20,21 @@ import TailwindConfig from '../tailwind.config';
 const EmailTemplate = ({
   children,
   previewText,
+  lang = 'en',
+  dir = 'ltr',
+  maintainerNote = 'Common is maintained by One Project.',
+  deliveryReasonNote = 'You’re receiving this email as part of our authentication and communication processes.',
 }: {
   children: React.ReactNode;
   previewText: string;
+  lang?: string;
+  dir?: 'ltr' | 'rtl';
+  maintainerNote?: string;
+  deliveryReasonNote?: string;
 }) => {
   return (
     <Tailwind config={TailwindConfig}>
-      <Html>
+      <Html lang={lang} dir={dir}>
         <Head>
           <meta name="color-scheme" content="light" />
           <meta name="supported-color-schemes" content="light" />
@@ -77,13 +85,8 @@ const EmailTemplate = ({
               <Section className="mt-8">{children}</Section>
             </Container>
             <Container className="mx-auto mb-0 max-w-[600px] p-8 font-sans font-normal">
-              <Text className="mt-0 mb-0 text-sm">
-                Common is maintained by One Project.
-              </Text>
-              <Text className="mt-2 mb-0 text-sm">
-                You’re receiving this email as part of our authentication and
-                communication processes.
-              </Text>
+              <Text className="mt-0 mb-0 text-sm">{maintainerNote}</Text>
+              <Text className="mt-2 mb-0 text-sm">{deliveryReasonNote}</Text>
             </Container>
           </Container>
         </Body>

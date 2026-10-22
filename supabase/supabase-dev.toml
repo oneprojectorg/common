@@ -93,6 +93,14 @@ content_path = "./supabase/templates/magiclink.html"
 subject = "Confirm your email"
 content_path = "./supabase/templates/email_change.html"
 
+# Auth emails go through the API, which renders them in the account's locale.
+# The secret is a fixed local-only value; the API reads the same value from
+# SEND_EMAIL_HOOK_SECRET.
+[auth.hook.send_email]
+enabled = true
+uri = "http://host.docker.internal:3101/api/v1/auth/send-email"
+secrets = "v1,whsec_ezQzIi+/zbGAqQUKH++1nC+ii4SHzrLVQXpk3NMuLW4="
+
 [auth.sms]
 enable_signup = true
 enable_confirmations = true

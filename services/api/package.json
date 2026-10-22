@@ -32,6 +32,7 @@
     "@op/common": "workspace:*",
     "@op/core": "workspace:*",
     "@op/db": "workspace:*",
+    "@op/emails": "workspace:*",
     "@op/events": "workspace:*",
     "@op/logging": "workspace:*",
     "@op/realtime": "workspace:^",
@@ -62,6 +63,7 @@
     "sanitize-s3-objectkey": "^0.0.1",
     "server-only": "^0.0.1",
     "ssr-only-secrets": "^0.1.4",
+    "standardwebhooks": "^1.1.1",
     "superjson": "^2.2.2",
     "zod": "catalog:"
   },

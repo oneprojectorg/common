@@ -1677,5 +1677,20 @@
     "deleteAccountHint": "تتم إزالة ملفك الشخصي وحسابك.",
     "deleteAccountConfirmTitle": "هل تريد حذف حسابك؟",
     "deleteAccountConfirmBody": "ستتم إزالة ملفك الشخصي وحسابك. لا يمكن التراجع عن هذا الإجراء."
+  },
+  "authEmail": {
+    "loginCodeSubject": "رمز تسجيل الدخول الخاص بك",
+    "loginCodePreview": "حان وقت تسجيل دخولك! 🔑",
+    "loginCodeHeading": "تسجيل الدخول",
+    "loginCodeDescription": "رمز تسجيل الدخول الخاص بك أدناه. أدخله في نافذة المتصفح المفتوحة وسنسجّل دخولك.",
+    "confirmEmailSubject": "أكّد بريدك الإلكتروني",
+    "confirmEmailPreview": "أكّد بريدك الإلكتروني! 👋",
+    "confirmEmailHeading": "أكّد بريدك الإلكتروني",
+    "confirmEmailDescription": "رمز التأكيد الخاص بك أدناه. أدخله في نافذة المتصفح المفتوحة وسنسجّل دخولك.",
+    "emailChangeDescription": "رمز التأكيد الخاص بك أدناه. أدخله في نافذة المتصفح المفتوحة لإكمال إنشاء ملفك الشخصي.",
+    "codeExpiryHint": "سيكون هذا الرمز صالحًا خلال الدقائق العشر القادمة فقط.",
+    "supportHint": "هل تواجه مشكلة؟ راسلنا على",
+    "maintainerNote": "تتولى One Project صيانة Common.",
+    "deliveryReasonNote": "تتلقى هذه الرسالة كجزء من عمليات المصادقة والتواصل لدينا."
   }
 }

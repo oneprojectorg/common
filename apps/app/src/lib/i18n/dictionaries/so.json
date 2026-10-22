@@ -1677,5 +1677,20 @@
     "deleteAccountHint": "Bogga shakhsigaaga iyo akoonkaaga waa la saaraa.",
     "deleteAccountConfirmTitle": "Ma tirtiraysaa akoonkaaga?",
     "deleteAccountConfirmBody": "Bogga shakhsigaaga iyo akoonkaaga waa la saari doonaa. Tan dib looma celin karo."
+  },
+  "authEmail": {
+    "loginCodeSubject": "Koodhkaaga gelitaanka",
+    "loginCodePreview": "Waa waqtigii aad soo gali lahayd! 🔑",
+    "loginCodeHeading": "Gal",
+    "loginCodeDescription": "Koodhkaaga gelitaanka waa kan hoose. Ku qor daaqadda browser-ka ee furan, waanu ku soo gelin doonnaa.",
+    "confirmEmailSubject": "Xaqiiji iimaylkaaga",
+    "confirmEmailPreview": "Xaqiiji iimaylkaaga! 👋",
+    "confirmEmailHeading": "Xaqiiji iimaylkaaga",
+    "confirmEmailDescription": "Koodhkaaga xaqiijinta waa kan hoose. Ku qor daaqadda browser-ka ee furan, waanu ku soo gelin doonnaa.",
+    "emailChangeDescription": "Koodhkaaga xaqiijinta waa kan hoose. Ku qor daaqadda browser-ka ee furan si aad u dhammaystirto abuurista profilekaaga.",
+    "codeExpiryHint": "Koodhkan wuxuu ansax ahaan doonaa oo keliya 10-ka daqiiqo ee soo socda.",
+    "supportHint": "Dhibaato ma qabtaa? Iimayl noogu soo dir",
+    "maintainerNote": "Common waxaa maamula One Project.",
+    "deliveryReasonNote": "Iimaylkan waxaad u helaysaa qayb ka mid ah hababkayaga xaqiijinta iyo isgaarsiinta."
   }
 }

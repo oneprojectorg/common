@@ -1677,5 +1677,20 @@
     "deleteAccountHint": "Se eliminan tu perfil y tu cuenta.",
     "deleteAccountConfirmTitle": "¿Eliminar tu cuenta?",
     "deleteAccountConfirmBody": "Se eliminarán tu perfil y tu cuenta. Esta acción no se puede deshacer."
+  },
+  "authEmail": {
+    "loginCodeSubject": "Tu código de inicio de sesión",
+    "loginCodePreview": "¡Es hora de iniciar sesión! 🔑",
+    "loginCodeHeading": "Iniciar sesión",
+    "loginCodeDescription": "Tu código de inicio de sesión está abajo. Introdúcelo en la ventana del navegador que tienes abierta y te conectaremos.",
+    "confirmEmailSubject": "Confirma tu correo electrónico",
+    "confirmEmailPreview": "¡Confirma tu correo electrónico! 👋",
+    "confirmEmailHeading": "Confirma tu correo electrónico",
+    "confirmEmailDescription": "Tu código de confirmación está abajo. Introdúcelo en la ventana del navegador que tienes abierta y te conectaremos.",
+    "emailChangeDescription": "Tu código de confirmación está abajo. Introdúcelo en la ventana del navegador que tienes abierta para terminar de crear tu perfil.",
+    "codeExpiryHint": "Este código solo será válido durante los próximos 10 minutos.",
+    "supportHint": "¿Tienes problemas? Escríbenos a",
+    "maintainerNote": "Common es mantenido por One Project.",
+    "deliveryReasonNote": "Recibes este correo como parte de nuestros procesos de autenticación y comunicación."
   }
 }

@@ -12,9 +12,9 @@ interface MailpitMessage {
 }
 
 /**
- * The login code GoTrue emailed to `to`, read from the newest message in
- * Mailpit. The e2e magic-link template renders `{{ .Token }}` inside a span
- * with `letter-spacing`, which is the only run of digits in that position.
+ * The login code emailed to `to`, read from the newest message in Mailpit.
+ * `AuthCodeEmail` in `@op/emails` renders each digit in its own
+ * `data-code-digit` cell.
  */
 export const readLoginCode = async (to: string): Promise<string> => {
   let code: string | undefined;
@@ -63,5 +63,9 @@ const findLoginCode = async (to: string): Promise<string | undefined> => {
 
   const { HTML }: MailpitMessage = await message.json();
 
-  return HTML.match(/letter-spacing[^>]*>\s*(\d+)\s*</)?.[1];
+  const digits = [...HTML.matchAll(/data-code-digit[^>]*>(\d)</g)].map(
+    (match) => match[1],
+  );
+
+  return digits.length > 0 ? digits.join('') : undefined;
 };

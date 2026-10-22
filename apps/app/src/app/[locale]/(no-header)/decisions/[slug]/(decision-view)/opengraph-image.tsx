@@ -1,10 +1,11 @@
+import { getLocaleDirection } from '@op/common/locales';
 import { OPURLConfig, getTextPreview } from '@op/core';
 import { logger } from '@op/logging';
 import { getAvatarColorForString } from '@op/styles/constants';
 import { ImageResponse } from 'next/og';
 
 import { getTranslations } from '@/lib/i18n';
-import { getLocaleDirection, i18nConfig } from '@/lib/i18n/config';
+import { i18nConfig } from '@/lib/i18n/config';
 
 import { loadDecision } from './loadDecision';
 

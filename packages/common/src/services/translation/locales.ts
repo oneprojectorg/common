@@ -8,6 +8,11 @@ export type SupportedLocale = (typeof SUPPORTED_LOCALES)[number];
 export const isSupportedLocale = (locale: string): locale is SupportedLocale =>
   SUPPORTED_LOCALES.some((supported) => supported === locale);
 
+const RTL_LOCALES = new Set<string>(['ar']);
+
+export const getLocaleDirection = (locale: string): 'ltr' | 'rtl' =>
+  RTL_LOCALES.has(locale) ? 'rtl' : 'ltr';
+
 /**
  * Maps platform locale codes to DeepL target language codes.
  * DeepL requires regional variants for some languages (e.g. EN-US, PT-BR).

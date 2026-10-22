@@ -92,6 +92,65 @@ const sendSmtpEmail = async ({
   });
 };
 
+// Under GoTrue's Send Email hook timeout, with time left for the fallback.
+const PRIMARY_SEND_TIMEOUT_MS = 2_000;
+
+let cachedFallbackTransporter: ReturnType<
+  typeof nodemailer.createTransport
+> | null = null;
+
+const getFallbackTransporter = (fallbackSmtpUrl: string) => {
+  if (!cachedFallbackTransporter) {
+    cachedFallbackTransporter = nodemailer.createTransport(fallbackSmtpUrl);
+  }
+  return cachedFallbackTransporter;
+};
+
+export type FallbackSendResult =
+  | { transport: 'primary' }
+  | { transport: 'fallback'; primaryError: unknown };
+
+/**
+ * Sends one email that a person waits on, such as a sign-in code. When the
+ * primary transport fails or is slow, it sends again through
+ * `EMAIL_FALLBACK_SMTP_URL`, so a Resend outage does not block sign-in. A slow
+ * primary send can still deliver later, so the recipient can get two copies.
+ */
+export const OPNodemailerWithFallback = async ({
+  to,
+  subject,
+  component,
+}: BatchEmailItem): Promise<FallbackSendResult> => {
+  const message = {
+    from: formatFromAddress(),
+    to: safeEmailSchema.parse(to),
+    subject,
+    html: await render(component()),
+  };
+
+  try {
+    await withTimeout(getTransporter().sendMail(message));
+    return { transport: 'primary' };
+  } catch (primaryError) {
+    const { EMAIL_FALLBACK_SMTP_URL } = process.env;
+    if (!EMAIL_FALLBACK_SMTP_URL) {
+      throw primaryError;
+    }
+
+    await getFallbackTransporter(EMAIL_FALLBACK_SMTP_URL).sendMail(message);
+    return { transport: 'fallback', primaryError };
+  }
+};
+
+const withTimeout = <T,>(promise: Promise<T>): Promise<T> =>
+  new Promise((resolve, reject) => {
+    const timer = setTimeout(
+      () => reject(new Error('Primary email send timed out')),
+      PRIMARY_SEND_TIMEOUT_MS,
+    );
+    promise.then(resolve, reject).finally(() => clearTimeout(timer));
+  });
+
 export const OPNodemailer = async ({
   to,
   from,
@@ -220,5 +279,6 @@ export * from './emails/ProposalMergedEmail';
 export * from './emails/ProposalMergedIntoYoursEmail';
 export * from './emails/ProposalRejectedEmail';
 export * from './emails/DecisionResultEmail';
+export * from './emails/AuthCodeEmail';
 
 export { render } from 'react-email';

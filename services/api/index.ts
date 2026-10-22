@@ -6,6 +6,10 @@ import type { AppRouter } from './src/routers';
 export * from './src/routers';
 export * from './src/trpcFactory';
 export {
+  handleSendEmailHookRequest,
+  type SendEmailHookRequest,
+} from './src/auth/handleSendEmailHookRequest';
+export {
   handleModerationWebhookRequest,
   type ModerationWebhookRequest,
 } from './src/moderation/handleModerationWebhookRequest';
