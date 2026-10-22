@@ -115,7 +115,12 @@ export const sendPhaseTransitionNotification = inngest.createFunction(
       return;
     }
 
-    const processUrl = `${OPURLConfig('APP').ENV_URL}/decisions/${processData.profileSlug}`;
+    // Without phase types, the last phase is always rendered as the results
+    // view, so send participants straight to the current-phase tab instead of
+    // the overview.
+    const isFinalPhase =
+      toPhaseIndex !== -1 && toPhaseIndex === totalPhases - 1;
+    const processUrl = `${OPURLConfig('APP').ENV_URL}/decisions/${processData.profileSlug}${isFinalPhase ? '/current' : ''}`;
 
     const result = await step.run('send-emails', async () => {
       try {
