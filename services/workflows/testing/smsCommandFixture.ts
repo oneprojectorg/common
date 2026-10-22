@@ -27,6 +27,7 @@ interface FixtureProposal {
   title: string;
   budget?: number;
   createdAt?: Date;
+  status?: ProposalStatus;
 }
 
 const VOTING_PHASE_ID = 'voting';
@@ -116,12 +117,12 @@ export class SmsCommandFixture {
     this.profileIds.push(profileId);
 
     for (const entry of proposalTitles) {
-      const { title, budget, createdAt } =
+      const { title, budget, createdAt, status } =
         typeof entry === 'string' ? { title: entry } : entry;
       const proposal = await createProposal({
         processInstanceId: instance.id,
         submittedByProfileId: owner.profileId,
-        status: ProposalStatus.SUBMITTED,
+        status: status ?? ProposalStatus.SUBMITTED,
         createdAt,
         proposalData: {
           title,

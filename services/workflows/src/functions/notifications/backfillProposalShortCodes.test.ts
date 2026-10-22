@@ -1,6 +1,6 @@
 import { parsePhoneNumber } from '@op/common';
 import { db, eq, sql } from '@op/db/client';
-import { proposals } from '@op/db/schema';
+import { ProposalStatus, proposals } from '@op/db/schema';
 import { execSync } from 'node:child_process';
 import { describe, expect, it } from 'vitest';
 
@@ -22,7 +22,7 @@ const runBackfill = (args: string) =>
   });
 
 describe('backfill-proposal-short-codes against the database', () => {
-  it('given a published decision whose proposals were inserted out of creation order, when the script runs, then codes follow creation time, the counter moves past them, and a second run assigns nothing', async ({
+  it('given a published decision whose proposals were inserted out of creation order, when the script runs, then submitted proposals get codes in creation order, a draft gets none, the counter moves past them, and a second run assigns nothing', async ({
     task,
     onTestFinished,
   }) => {
@@ -38,6 +38,11 @@ describe('backfill-proposal-short-codes against the database', () => {
         { title: 'Created last', createdAt: new Date(base + 2 * MINUTE_MS) },
         { title: 'Created first', createdAt: new Date(base - 2 * MINUTE_MS) },
         { title: 'Created second', createdAt: new Date(base - MINUTE_MS) },
+        {
+          title: 'Still a draft',
+          createdAt: new Date(base - 3 * MINUTE_MS),
+          status: ProposalStatus.DRAFT,
+        },
       ],
     });
     const instance = await db.query.processInstances.findFirst({
@@ -69,6 +74,7 @@ describe('backfill-proposal-short-codes against the database', () => {
       { title: 'Created first', code: 101 },
       { title: 'Created second', code: 102 },
       { title: 'Created last', code: 103 },
+      { title: 'Still a draft', code: null },
     ]);
     expect(counter).toEqual({ nextShortCode: 104 });
     expect(dryRun).toContain('3 assigned  101..103');
