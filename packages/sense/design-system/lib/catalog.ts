@@ -91,7 +91,10 @@ function describe(name: string, source: string, story: string): CatalogEntry {
     name,
     source,
     story,
-    title: /title:\s*'([^']+)'/.exec(storyCode)?.[1] ?? `Components/${name}`,
+    // The meta's title, not a `title` field in the story's sample data.
+    title:
+      (/Meta<[\s\S]*?title:\s*'([^']+)'/.exec(storyCode) ??
+        /title:\s*'([^']+)'/.exec(storyCode))?.[1] ?? `Components/${name}`,
     stories: [...storyCode.matchAll(/^export const (\w+)/gm)].flatMap((m) =>
       m[1] ? [m[1]] : [],
     ),

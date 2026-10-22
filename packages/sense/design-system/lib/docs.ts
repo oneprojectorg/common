@@ -115,7 +115,7 @@ function guide(entry: CatalogEntry, summaries: Record<string, string>): string {
     [summary, entry.doc].filter(Boolean).join('\n\n') ||
     `The ${entry.name} component.`;
   const parts = entry.exports.filter((name) =>
-    /^[A-Z]|^use[A-Z]|^toast$/.test(name),
+    /^[A-Z]|^(use|create)[A-Z]|^toast$/.test(name),
   );
   const shown = parts.slice(0, 6).join(', ') + (parts.length > 6 ? ', …' : '');
   return `# ${cardFolder(entry)}
