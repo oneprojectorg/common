@@ -48,18 +48,21 @@ export function resolveProcessPhases({
   templatePhases?: Array<NamedPhase & { id: string }>;
 }): ProcessPhase[] {
   if (storePhases?.length) {
-    return storePhases.map((p) => ({ phaseId: p.phaseId, name: p.name ?? '' }));
+    return storePhases.map((phase) => ({
+      phaseId: phase.phaseId,
+      name: phase.name ?? '',
+    }));
   }
   // An empty list is an answer; only an instance without one is still on
   // its template.
   if (instancePhases) {
-    return instancePhases.map((p) => ({
-      phaseId: p.phaseId,
-      name: p.name ?? '',
+    return instancePhases.map((phase) => ({
+      phaseId: phase.phaseId,
+      name: phase.name ?? '',
     }));
   }
-  return (templatePhases ?? []).map((p) => ({
-    phaseId: p.id,
-    name: p.name ?? '',
+  return (templatePhases ?? []).map((phase) => ({
+    phaseId: phase.id,
+    name: phase.name ?? '',
   }));
 }

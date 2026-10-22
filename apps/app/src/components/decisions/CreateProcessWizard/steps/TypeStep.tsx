@@ -1,11 +1,13 @@
 'use client';
 
+import type { ProcessType } from '@op/common';
+
 import { useTranslations } from '@/lib/i18n';
 
 import { ChoiceList } from '../ChoiceList';
 import { StepHeading } from '../StepHeading';
 import { TYPE_META, TYPE_ORDER } from '../content';
-import type { Choice, ProcessType } from '../types';
+import type { Choice } from '../types';
 
 const TYPE_OPTIONS: Choice<ProcessType>[] = TYPE_ORDER.map((type) => ({
   key: type,

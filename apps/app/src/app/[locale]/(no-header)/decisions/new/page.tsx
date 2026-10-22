@@ -24,10 +24,15 @@ export async function generateMetadata({
 const NewDecisionProcessPage = async () => {
   const user = await getRequiredUser();
 
-  const isEnabled = await isServerFeatureEnabled(
-    'new_process_admin_enabled',
-    user.authUserId,
-  );
+  // `decision.createInstance` admits only the closed network.
+  if (!user.isNetworkMember) {
+    notFound();
+  }
+
+  const isEnabled = await isServerFeatureEnabled({
+    key: 'new_process_admin_enabled',
+    distinctId: user.authUserId,
+  });
 
   if (!isEnabled) {
     notFound();

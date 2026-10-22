@@ -74,7 +74,7 @@ const DECISION_RECAP: Record<Decision, WizardCopyKey> = {
   agree: 'recapDecisionAgree',
 };
 
-const REVIEW_CAPABILITIES: WizardCopyKey[] = [
+const REVIEW_CAPABILITIES: CapabilityKey[] = [
   'buildScoringRubric',
   'inviteReviewersPanel',
   'scoreBlindIfYouWant',

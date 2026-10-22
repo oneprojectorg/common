@@ -1,5 +1,6 @@
 'use client';
 
+import type { ProcessType } from '@op/common';
 import { Button } from '@op/sense/Button';
 import { Progress } from '@op/sense/Progress';
 import { cn } from '@op/sense/lib/utils';
@@ -35,12 +36,7 @@ import { NameAccessStep } from './steps/NameAccessStep';
 import { OtherStep } from './steps/OtherStep';
 import { GrantDecisionStep, ShapeStep } from './steps/ShapeStep';
 import { TypeStep } from './steps/TypeStep';
-import type {
-  ProcessDraft,
-  ProcessPiece,
-  ProcessType,
-  ShapeKey,
-} from './types';
+import type { ProcessDraft, ProcessPiece, ShapeKey } from './types';
 import type { WizardProgress } from './wizardProgress';
 
 interface StepBodyProps {
@@ -146,7 +142,6 @@ export function CreateProcessWizard({
     setScreen(previousScreen(screen, answers) ?? screen);
   };
 
-  const isTypedStep = step === TOTAL_STEPS;
   let primaryLabel = tShared('Continue');
   if (step === 1) {
     primaryLabel = t('getStartedAction');
@@ -247,7 +242,7 @@ export function CreateProcessWizard({
             onSubmit={advance}
           />
 
-          {step > 1 && (canContinue || isTypedStep) ? (
+          {step > 1 ? (
             <div className="mt-8 flex justify-center">
               <Button
                 onClick={advance}

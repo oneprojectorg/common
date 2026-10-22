@@ -1,6 +1,8 @@
 import type { PhaseKind, ProcessType } from '@op/common/client';
 import type { MessageKeys, Messages, NestedKeyOf } from 'next-intl';
 
+import type { CapabilityKey } from './steps/capabilityIcons';
+
 type WizardMessages = Messages['decisions']['createWizard'];
 
 export type WizardCopyKey = MessageKeys<
@@ -49,7 +51,7 @@ export interface WizardPhase {
   phaseName: WizardCopyKey;
   kind: PhaseKind;
   description?: WizardCopyKey;
-  capabilities: WizardCopyKey[];
+  capabilities: CapabilityKey[];
   norm?: WizardCopyKey;
 }
 
