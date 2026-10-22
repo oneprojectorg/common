@@ -8,16 +8,11 @@ Accepted
 
 ## Context
 
-A member who votes by text names a proposal with a short number, `214`,
-typed on a phone. The number is printed in a ballot guide before voting
-opens and must mean the same proposal for the life of the decision. A
-proposal has no such identifier: its id is a UUID and its profile slug is
-a sentence.
-
-A number derived from row order is not stable. The first SMS ballot
-derived codes over the eligible proposals, so a rejection or a moderation
-hide renumbered every proposal after it. Numbering every row instead still
-shifts on a hard delete, which `deleteProposal` performs at any phase.
+A member who votes over SMS or WhatsApp selects a proposal by typing an
+identifier. A proposal's id is a UUID and its slug is a sentence; neither
+can be typed on a phone. A short numeric code, `214`, can. The code is
+printed in the ballot guide before voting opens, so it must name the same
+proposal for the life of the decision.
 
 ## Decision
 
@@ -40,6 +35,6 @@ and a code never changes once set. Codes are never reused.
 - A code is meaningful only inside its decision. A reader joins on the
   instance.
 - A proposal has no code until the first assignment. Readers handle `null`.
-- Rejected: derive the code from `row_number()` over all rows. It needs no
-  migration, but it depends on a guard in `deleteProposal` and on a
-  convention no table column records.
+- Rejected: derive the code from row order. It needs no migration, but a
+  rejection, a moderation hide or a hard delete renumbers every proposal
+  after it.
