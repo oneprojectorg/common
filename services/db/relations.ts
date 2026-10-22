@@ -333,6 +333,10 @@ export const relations = defineRelations(schema, (r) => ({
    * avatarImageId and headerImageId are nullable.
    */
   profiles: {
+    chatLine: r.one.profileChatLines({
+      from: r.profiles.id,
+      to: r.profileChatLines.profileId,
+    }),
     avatarImage: r.one.objectsInStorage({
       from: r.profiles.avatarImageId,
       to: r.objectsInStorage.id,
@@ -421,10 +425,6 @@ export const relations = defineRelations(schema, (r) => ({
     categoryReviewers: r.many.categoryReviewers({
       from: r.processInstances.id,
       to: r.categoryReviewers.processInstanceId,
-    }),
-    smsLine: r.one.decisionSmsLines({
-      from: r.processInstances.id,
-      to: r.decisionSmsLines.processInstanceId,
     }),
     phases: r.many.processPhases({
       from: r.processInstances.id,
@@ -603,10 +603,10 @@ export const relations = defineRelations(schema, (r) => ({
     }),
   },
 
-  decisionSmsLines: {
-    processInstance: r.one.processInstances({
-      from: r.decisionSmsLines.processInstanceId,
-      to: r.processInstances.id,
+  profileChatLines: {
+    profile: r.one.profiles({
+      from: r.profileChatLines.profileId,
+      to: r.profiles.id,
       optional: false,
     }),
   },
