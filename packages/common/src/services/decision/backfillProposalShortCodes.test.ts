@@ -1,14 +1,8 @@
-import { parsePhoneNumber } from '@op/common';
+import { TestDecisionsDataManager } from '@op/common/testing';
 import { db, eq, sql } from '@op/db/client';
-import { ProposalStatus, proposals } from '@op/db/schema';
+import { ProcessStatus, ProposalStatus, proposals } from '@op/db/schema';
 import { execSync } from 'node:child_process';
 import { describe, expect, it } from 'vitest';
-
-import { SmsCommandFixture } from '../../../testing/smsCommandFixture';
-
-const NUMBERS = {
-  owner: '+15005550083',
-} as const;
 
 const TEST_DATABASE_URL =
   'postgresql://postgres:postgres@127.0.0.1:55322/postgres';
@@ -21,37 +15,39 @@ const runBackfill = (args: string) =>
     encoding: 'utf8',
   });
 
-describe('backfill-proposal-short-codes against the database', () => {
+describe.concurrent('backfill-proposal-short-codes against the database', () => {
   it('given a published decision whose proposals were inserted out of creation order, when the script runs, then submitted proposals get codes in creation order, a draft gets none, the counter moves past them, and a second run assigns nothing', async ({
     task,
     onTestFinished,
   }) => {
-    const fixture = new SmsCommandFixture(task.id, onTestFinished);
-    const owner = await fixture.createPhoneOnlyAccount(
-      parsePhoneNumber(NUMBERS.owner),
-    );
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      status: ProcessStatus.PUBLISHED,
+      grantAccess: true,
+    });
+    const { instance } = setup.instance;
+    const creator = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [setup.instance.profileId],
+    });
     const base = Date.now();
-    const { instanceProfileId } = await fixture.createVotingInstance({
-      owner,
-      name: `Backfill ${task.id}`,
-      proposalTitles: [
-        { title: 'Created last', createdAt: new Date(base + 2 * MINUTE_MS) },
-        { title: 'Created first', createdAt: new Date(base - 2 * MINUTE_MS) },
-        { title: 'Created second', createdAt: new Date(base - MINUTE_MS) },
-        {
-          title: 'Still a draft',
-          createdAt: new Date(base - 3 * MINUTE_MS),
-          status: ProposalStatus.DRAFT,
-        },
-      ],
-    });
-    const instance = await db.query.processInstances.findFirst({
-      where: { profileId: instanceProfileId },
-      columns: { id: true },
-    });
-    if (!instance) {
-      throw new Error('The fixture created no process instance');
-    }
+    const seed = (
+      title: string,
+      offsetMinutes: number,
+      status: ProposalStatus,
+    ) =>
+      testData.createProposal({
+        userEmail: creator.email,
+        processInstanceId: instance.id,
+        proposalData: { title },
+        status,
+        createdAt: new Date(base + offsetMinutes * MINUTE_MS),
+      });
+    await seed('Created last', 2, ProposalStatus.SUBMITTED);
+    await seed('Created first', -2, ProposalStatus.SUBMITTED);
+    await seed('Created second', -1, ProposalStatus.SUBMITTED);
+    await seed('Still a draft', -3, ProposalStatus.DRAFT);
 
     const dryRun = runBackfill(`--dry-run --instance=${instance.id}`);
     runBackfill(`--instance=${instance.id}`);
