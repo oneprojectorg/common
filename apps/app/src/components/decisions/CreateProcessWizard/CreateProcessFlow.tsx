@@ -8,19 +8,19 @@ import { useMutation } from '@tanstack/react-query';
 import { useRouter, useTranslations } from '@/lib/i18n';
 
 import { CreateProcessWizard } from '.';
-import type { ProcessDraft, WizardFlags } from './types';
+import type { ProcessDraft } from './types';
 import {
   clearWizardProgress,
   saveWizardProgress,
   useSavedWizardProgress,
 } from './wizardProgress';
 
-export function CreateProcessFlow({ flags }: { flags: WizardFlags }) {
+export function CreateProcessFlow() {
   const t = useTranslations();
   const tWizard = useTranslations('decisions.createWizard');
   const router = useRouter();
   const utils = trpc.useUtils();
-  const savedProgress = useSavedWizardProgress(flags);
+  const savedProgress = useSavedWizardProgress();
 
   const createProcess = useMutation({
     mutationFn: (draft: ProcessDraft) =>
@@ -59,7 +59,6 @@ export function CreateProcessFlow({ flags }: { flags: WizardFlags }) {
 
   return (
     <CreateProcessWizard
-      flags={flags}
       initial={savedProgress}
       onProgressChange={saveWizardProgress}
       onExit={exit}

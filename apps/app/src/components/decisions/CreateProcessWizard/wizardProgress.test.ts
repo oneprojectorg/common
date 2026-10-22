@@ -1,7 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { EMPTY_OTHER } from './otherFlow';
-import type { WizardFlags } from './types';
 import {
   clearWizardProgress,
   readWizardProgress,
@@ -13,9 +12,6 @@ import {
 vi.mock('@op/logging/client', () => ({
   logger: { warn: vi.fn(), error: vi.fn(), info: vi.fn() },
 }));
-
-const ROLLING: WizardFlags = { rollingDecisions: true };
-const NO_ROLLING: WizardFlags = { rollingDecisions: false };
 
 const progress: WizardProgress = {
   screen: 'cadence',
@@ -47,14 +43,14 @@ describe('wizard progress', () => {
   it('reads back what was saved', () => {
     saveWizardProgress(progress);
 
-    expect(readWizardProgress(ROLLING)).toEqual(progress);
+    expect(readWizardProgress()).toEqual(progress);
   });
 
   it('reads nothing once cleared', () => {
     saveWizardProgress(progress);
     clearWizardProgress();
 
-    expect(readWizardProgress(ROLLING)).toBeNull();
+    expect(readWizardProgress()).toBeNull();
   });
 
   it('discards saved progress that no longer fits the wizard', () => {
@@ -66,13 +62,13 @@ describe('wizard progress', () => {
       }),
     );
 
-    expect(readWizardProgress(ROLLING)).toBeNull();
+    expect(readWizardProgress()).toBeNull();
   });
 
   it('discards saved progress that is not JSON', () => {
     store.set('create-process-wizard', '{');
 
-    expect(readWizardProgress(ROLLING)).toBeNull();
+    expect(readWizardProgress()).toBeNull();
   });
 
   it('does not throw when storage is unavailable', () => {
@@ -90,7 +86,7 @@ describe('wizard progress', () => {
 
     expect(() => saveWizardProgress(progress)).not.toThrow();
     expect(() => clearWizardProgress()).not.toThrow();
-    expect(readWizardProgress(ROLLING)).toBeNull();
+    expect(readWizardProgress()).toBeNull();
   });
 });
 
@@ -107,69 +103,42 @@ describe('resumableProgress', () => {
   };
 
   it('resumes where the creator left off when every answer is there', () => {
-    expect(resumableProgress(pbAnswered, ROLLING)).toEqual(pbAnswered);
+    expect(resumableProgress(pbAnswered)).toEqual(pbAnswered);
   });
 
   it('sends a creator with no process type back to choosing one', () => {
     expect(
-      resumableProgress(
-        {
-          ...pbAnswered,
-          answers: { ...pbAnswered.answers, type: null },
-        },
-        ROLLING,
-      ),
+      resumableProgress({
+        ...pbAnswered,
+        answers: { ...pbAnswered.answers, type: null },
+      }),
     ).toMatchObject({ screen: 'type' });
   });
 
   it("drops a shape that isn't one of the type's and asks for it again", () => {
     expect(
-      resumableProgress(
-        {
-          ...pbAnswered,
-          answers: { ...pbAnswered.answers, shape: 'loi' },
-        },
-        ROLLING,
-      ),
+      resumableProgress({
+        ...pbAnswered,
+        answers: { ...pbAnswered.answers, shape: 'loi' },
+      }),
     ).toMatchObject({ screen: 'shape', answers: { shape: null } });
   });
 
   it('stops at the first unanswered question inside step three', () => {
     expect(
-      resumableProgress(
-        {
-          screen: 'mapping',
-          answers: {
-            ...progress.answers,
-            other: { ...progress.answers.other, cadence: 'ongoing' },
-          },
+      resumableProgress({
+        screen: 'mapping',
+        answers: {
+          ...progress.answers,
+          other: { ...progress.answers.other, cadence: 'ongoing' },
         },
-        ROLLING,
-      ),
+      }),
     ).toMatchObject({ screen: 'submits' });
   });
 
   it('pulls a screen these answers do not ask back to the one before it', () => {
     expect(
-      resumableProgress({ ...pbAnswered, screen: 'grantDecision' }, ROLLING),
+      resumableProgress({ ...pbAnswered, screen: 'grantDecision' }),
     ).toMatchObject({ screen: 'shape' });
-  });
-
-  it('forgets a saved always-open answer and its screen once rolling decisions are off', () => {
-    const resumed = resumableProgress(
-      {
-        screen: 'cadence',
-        answers: {
-          ...progress.answers,
-          other: { ...progress.answers.other, cadence: 'ongoing' },
-        },
-      },
-      NO_ROLLING,
-    );
-
-    expect(resumed).toMatchObject({
-      screen: 'subjects',
-      answers: { other: { cadence: null } },
-    });
   });
 });
