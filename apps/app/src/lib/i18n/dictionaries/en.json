@@ -1682,15 +1682,15 @@
     "loginCodeSubject": "Your login code",
     "loginCodePreview": "Time to get you logged in! 🔑",
     "loginCodeHeading": "Log in",
-    "loginCodeDescription": "Your login code is below. Enter it in your open browser window and we'll get you signed in.",
+    "loginCodeDescription": "Your login code is below. Enter it in your open browser window and we’ll get you signed in.",
     "confirmEmailSubject": "Confirm your email",
     "confirmEmailPreview": "Confirm your email! 👋",
     "confirmEmailHeading": "Confirm your email",
-    "confirmEmailDescription": "Your confirmation code is below. Enter it in your open browser window and we'll get you signed in.",
+    "confirmEmailDescription": "Your confirmation code is below. Enter it in your open browser window and we’ll get you signed in.",
     "emailChangeDescription": "Your confirmation code is below. Enter it in your open browser window to finish creating your profile.",
     "codeExpiryHint": "This code will only be valid for the next 10 minutes.",
     "supportHint": "Having problems? Email us at",
     "maintainerNote": "Common is maintained by One Project.",
-    "deliveryReasonNote": "You're receiving this email as part of our authentication and communication processes."
+    "deliveryReasonNote": "You’re receiving this email as part of our authentication and communication processes."
   }
 }

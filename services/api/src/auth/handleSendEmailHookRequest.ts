@@ -56,7 +56,10 @@ export const handleSendEmailHookRequest = async ({
   const secret = process.env.SEND_EMAIL_HOOK_SECRET;
   if (!secret) {
     logger.error('Send Email hook called but SEND_EMAIL_HOOK_SECRET is unset');
-    return errorResponse(503, 'Email hook is not configured');
+    return errorResponse({
+      status: 503,
+      message: 'Email hook is not configured',
+    });
   }
 
   let verifiedBody: unknown;
@@ -68,7 +71,7 @@ export const handleSendEmailHookRequest = async ({
     );
   } catch (error) {
     logger.warn('Send Email hook signature verification failed', { error });
-    return errorResponse(401, 'Invalid signature');
+    return errorResponse({ status: 401, message: 'Invalid signature' });
   }
 
   const payload = sendEmailHookPayloadSchema.safeParse(verifiedBody);
@@ -76,7 +79,7 @@ export const handleSendEmailHookRequest = async ({
     logger.error('Send Email hook payload did not parse', {
       error: payload.error,
     });
-    return errorResponse(400, 'Invalid payload');
+    return errorResponse({ status: 400, message: 'Invalid payload' });
   }
 
   const emailActionType = payload.data.email_data.email_action_type;
@@ -85,7 +88,10 @@ export const handleSendEmailHookRequest = async ({
     logger.error('Send Email hook got an unsupported email action type', {
       emailActionType,
     });
-    return errorResponse(400, 'Unsupported email action type');
+    return errorResponse({
+      status: 400,
+      message: 'Unsupported email action type',
+    });
   }
 
   const emails = unaddressedEmails.flatMap((email) =>
@@ -95,7 +101,7 @@ export const handleSendEmailHookRequest = async ({
     logger.error('Send Email hook payload has no recipient address', {
       emailActionType,
     });
-    return errorResponse(400, 'Missing recipient address');
+    return errorResponse({ status: 400, message: 'Missing recipient address' });
   }
 
   const locale = await resolveEmailLocale(payload.data.user);
@@ -126,16 +132,19 @@ export const handleSendEmailHookRequest = async ({
       error,
       emailActionType,
     });
-    return errorResponse(500, 'Failed to send email');
+    return errorResponse({ status: 500, message: 'Failed to send email' });
   }
 
   return { status: 200, body: {} };
 };
 
-const errorResponse = (
-  status: number,
-  message: string,
-): SendEmailHookResponse => ({
+const errorResponse = ({
+  status,
+  message,
+}: {
+  status: number;
+  message: string;
+}): SendEmailHookResponse => ({
   status,
   body: { error: { http_code: status, message } },
 });

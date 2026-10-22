@@ -76,6 +76,18 @@ describe('OPNodemailerWithFallback', () => {
     );
   });
 
+  it('gives up when the fallback does not answer in time either', async () => {
+    vi.useFakeTimers();
+    primarySendMail.mockReturnValue(new Promise(() => {}));
+    fallbackSendMail.mockReturnValue(new Promise(() => {}));
+
+    const result = OPNodemailerWithFallback(email);
+    const assertion = expect(result).rejects.toThrow('timed out');
+    await vi.advanceTimersByTimeAsync(2_000 + 2_500);
+
+    await assertion;
+  });
+
   it('throws the primary error when no fallback is configured', async () => {
     vi.stubEnv('EMAIL_FALLBACK_SMTP_URL', '');
     primarySendMail.mockRejectedValue(new Error('Resend is down'));

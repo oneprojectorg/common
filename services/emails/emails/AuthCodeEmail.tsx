@@ -75,12 +75,12 @@ AuthCodeEmail.PreviewProps = {
     previewText: 'Time to get you logged in! 🔑',
     heading: 'Log in',
     description:
-      "Your login code is below. Enter it in your open browser window and we'll get you signed in.",
+      'Your login code is below. Enter it in your open browser window and we’ll get you signed in.',
     codeExpiryHint: 'This code will only be valid for the next 10 minutes.',
     supportHint: 'Having problems? Email us at',
     maintainerNote: 'Common is maintained by One Project.',
     deliveryReasonNote:
-      "You're receiving this email as part of our authentication and communication processes.",
+      'You’re receiving this email as part of our authentication and communication processes.',
   },
 } satisfies Parameters<typeof AuthCodeEmail>[0];
 

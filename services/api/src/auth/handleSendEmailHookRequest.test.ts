@@ -96,7 +96,12 @@ describe('handleSendEmailHookRequest', () => {
       signedRequest(hookPayload({ emailActionType: 'signup' })),
     );
 
-    expect(sentEmails()[0]?.subject).toBe('Confirm your email');
+    expect(sentEmails()[0]).toMatchObject({
+      subject: 'Confirm your email',
+      copy: {
+        description: expect.stringContaining('get you signed in'),
+      },
+    });
   });
 
   it('sends an email change code to the new address of an account with no address', async () => {
@@ -113,6 +118,9 @@ describe('handleSendEmailHookRequest', () => {
     expect(sentEmails().map(({ to, code }) => ({ to, code }))).toEqual([
       { to: 'new@example.com', code: '1111111111' },
     ]);
+    expect(sentEmails()[0]?.copy.description).toContain(
+      'finish creating your profile',
+    );
   });
 
   it('sends the token to the current address and token_new to the new one in a secure email change', async () => {
