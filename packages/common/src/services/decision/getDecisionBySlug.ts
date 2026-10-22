@@ -43,7 +43,7 @@ const DECISION_SLUG_CACHE_TTL_MS = 5 * 60 * 1000;
 /**
  * Viewer-independent decision-profile snapshot for the overview's slug fetch,
  * cached under `['decision', slug, 'slugProfile']` (cf. getInstance's
- * `[instanceId, 'instance']`). Busted by invalidateDecisionInstance, which
+ * `[instanceId, 'instance:v2']`). Busted by invalidateDecisionInstance, which
  * resolves the instance's slug. skipMemCache for the same reason as the
  * resources list: mutation-driven client refetches must not read another
  * instance's stale local LRU — Redis is the shared layer the invalidate

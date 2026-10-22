@@ -10,7 +10,7 @@ import { db } from '@op/db/client';
  * because its key is the profile slug, not the instance id.
  */
 const DECISION_CACHE_KEYS = [
-  'instance',
+  'instance:v2',
   'categories',
   // Versioned because the cached payload shape changed in ADR-0003; old
   // entries expire on their own.
