@@ -32,13 +32,10 @@ export const getProcessCategories = async ({
       fetch: () =>
         db.query.processInstances.findFirst({
           where: { id: processInstanceId },
-          with: {
-            process: true,
-          },
         }),
     });
 
-    if (!instance || !instance.process) {
+    if (!instance) {
       return [];
     }
 

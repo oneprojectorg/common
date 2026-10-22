@@ -8,6 +8,7 @@ import {
   expectFailsAccessTierGate,
   expectPassesAccessTierGate,
 } from '../../../test/helpers/gating/decision';
+import { createWizardDraft } from '../../../test/helpers/wizardDraftTestUtils';
 import {
   createIsolatedSession,
   createTestContextWithSession,
@@ -179,6 +180,19 @@ describe.concurrent('getInstance', () => {
         instanceId: instance.instance.id,
       }),
     ).rejects.toMatchObject({ cause: { statusCode: 403 } });
+  });
+
+  it('returns a wizard-created instance that has no process', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { created, caller } = await createWizardDraft(task, onTestFinished);
+
+    const result = await caller.decision.getInstance({
+      instanceId: created.processInstance.id,
+    });
+
+    expect(result.process).toBeNull();
   });
 });
 

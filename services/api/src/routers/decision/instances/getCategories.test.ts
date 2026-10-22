@@ -16,6 +16,7 @@ import {
   describeDecisionAccessTierGating,
   expectPassesAccessTierGate,
 } from '../../../test/helpers/gating/decision';
+import { createWizardDraft } from '../../../test/helpers/wizardDraftTestUtils';
 import {
   createIsolatedSession,
   createTestContextWithSession,
@@ -468,6 +469,33 @@ describe.concurrent('getCategories category matching', () => {
         name: 'Health & Wellness',
         termUri: expectedTermUri,
       }),
+    );
+  });
+
+  it('returns the categories of a wizard-created instance with no process template', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const [{ created, caller }, { termRecords }] = await Promise.all([
+      createWizardDraft(task, onTestFinished),
+      seedProposalTaxonomy(['Water Access'], onTestFinished),
+    ]);
+
+    await injectInstanceCategories(created.processInstance.id, [
+      {
+        id: 'cat-1',
+        label: 'Water Access',
+        description: 'Water access proposals',
+      },
+    ]);
+
+    const result = await caller.decision.getCategories({
+      processInstanceId: created.processInstance.id,
+    });
+
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0]).toEqual(
+      expect.objectContaining({ id: termRecords[0]!.id, name: 'Water Access' }),
     );
   });
 });

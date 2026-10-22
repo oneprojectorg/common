@@ -8,6 +8,7 @@ import {
   describeDecisionAccessTierGating,
   expectFailsAccessTierGate,
 } from '../../../test/helpers/gating/decision';
+import { createWizardDraft } from '../../../test/helpers/wizardDraftTestUtils';
 import {
   createIsolatedSession,
   createTestContextWithSession,
@@ -500,6 +501,22 @@ describe.concurrent('listDecisionProfiles', () => {
     expect(allNames).toEqual(sortedNames);
 
     expect(pageCount).toBe(5);
+  });
+
+  it('lists a wizard-created draft that has no process', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { created, caller } = await createWizardDraft(task, onTestFinished);
+
+    const result = await caller.decision.listDecisionProfiles({
+      limit: 10,
+      status: [ProcessStatus.DRAFT],
+    });
+
+    const profile = result.items.find((item) => item.id === created.id);
+    expect(profile).toBeDefined();
+    expect(profile?.processInstance.process).toBeNull();
   });
 });
 

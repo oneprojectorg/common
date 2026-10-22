@@ -17,6 +17,7 @@ import {
   expectFailsAccessTierGate,
   expectPassesAccessTierGate,
 } from '../../../test/helpers/gating/decision';
+import { createWizardDraft } from '../../../test/helpers/wizardDraftTestUtils';
 import {
   createIsolatedSession,
   createTestContextWithSession,
@@ -950,6 +951,29 @@ describe.concurrent('duplicateInstance', () => {
 
     expect(duplicateData.overview).toBeUndefined();
     expect(duplicateData.fieldValues).toBeUndefined();
+  });
+
+  it('duplicates a wizard-created instance that has no process template', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const {
+      created: source,
+      caller,
+      testData,
+    } = await createWizardDraft(task, onTestFinished);
+
+    const duplicate = await caller.decision.duplicateInstance({
+      instanceId: source.processInstance.id,
+      name: `Duplicate of ${source.name}`,
+      include: ALL_INCLUDED,
+    });
+    testData.trackProfileForCleanup(duplicate.id);
+
+    const instance = await db.query.processInstances.findFirst({
+      where: { id: duplicate.processInstance.id },
+    });
+    expect(instance?.processId).toBeNull();
   });
 });
 
