@@ -34,17 +34,12 @@ export function IntroBackdrop() {
   return (
     <div
       aria-hidden
-      // The arbitrary sizes are hand-tuned; the scale has no match.
-      className="pointer-events-none absolute inset-x-0 bottom-0 h-[calc(60%-75px)] animate-intro-wash overflow-hidden opacity-65 motion-reduce:animate-none"
-      style={{
-        maskImage: 'linear-gradient(to top, black 15%, transparent 95%)',
-        WebkitMaskImage: 'linear-gradient(to top, black 15%, transparent 95%)',
-      }}
+      className="pointer-events-none absolute inset-x-0 bottom-0 h-intro-wash animate-intro-wash overflow-hidden mask-t-from-15% mask-t-to-95% opacity-65 motion-reduce:animate-none"
     >
       <div className="absolute inset-0 bg-gradient opacity-50 blur-3xl" />
 
-      <div className="absolute -start-1/4 -bottom-1/3 size-[115%] animate-intro-blob-a rounded-full bg-gradient opacity-50 blur-3xl motion-reduce:animate-none" />
-      <div className="absolute -end-1/4 -bottom-1/4 size-[110%] animate-intro-blob-b rounded-full bg-gradient opacity-40 blur-3xl motion-reduce:animate-none" />
+      <div className="absolute -start-1/4 -bottom-1/3 size-intro-blob-a animate-intro-blob-a rounded-full bg-gradient opacity-50 blur-3xl motion-reduce:animate-none" />
+      <div className="absolute -end-1/4 -bottom-1/4 size-intro-blob-b animate-intro-blob-b rounded-full bg-gradient opacity-40 blur-3xl motion-reduce:animate-none" />
     </div>
   );
 }

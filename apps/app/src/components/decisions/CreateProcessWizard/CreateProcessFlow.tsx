@@ -4,14 +4,17 @@ import { trpc } from '@op/api/client';
 import { logger } from '@op/logging/client';
 import { toast } from '@op/sense/Toast';
 import { useMutation } from '@tanstack/react-query';
+import { useCallback, useRef } from 'react';
 
 import { useRouter, useTranslations } from '@/lib/i18n';
 
 import { CreateProcessWizard } from '.';
 import type { ProcessDraft } from './types';
 import {
+  type WizardProgress,
   clearWizardProgress,
   saveWizardProgress,
+  takeWizardOrigin,
   useSavedWizardProgress,
 } from './wizardProgress';
 
@@ -21,6 +24,7 @@ export function CreateProcessFlow() {
   const router = useRouter();
   const utils = trpc.useUtils();
   const savedProgress = useSavedWizardProgress();
+  const progress = useRef<WizardProgress | null>(null);
 
   const createProcess = useMutation({
     mutationFn: (draft: ProcessDraft) =>
@@ -32,25 +36,39 @@ export function CreateProcessFlow() {
           name: tWizard(piece.phaseName ?? piece.name),
         })),
       }),
-    onSuccess: (decisionProfile) => {
-      clearWizardProgress();
-      // Not push: Back must not reopen the wizard.
-      router.replace(`/decisions/${decisionProfile.slug}/edit`);
-    },
     onError: (error) => {
       logger.error('Failed to create a decision process', { error });
-      toast.error(t('shell.createDecisionError'));
     },
   });
 
-  const exit = () => {
+  const saveProgress = useCallback((next: WizardProgress) => {
+    progress.current = next;
+    saveWizardProgress(next);
+  }, []);
+
+  const submit = (draft: ProcessDraft) => {
+    // Cleared before the request, so a reload mid-flight cannot resubmit.
     clearWizardProgress();
 
-    if (window.history.length > 1) {
-      router.back();
-    } else {
-      router.push('/');
-    }
+    // Per-call callbacks run only while this component is still mounted.
+    createProcess.mutate(draft, {
+      onSuccess: (decisionProfile) => {
+        // Not push: Back must not reopen the wizard.
+        router.replace(`/decisions/${decisionProfile.slug}/edit`);
+      },
+      onError: () => {
+        if (progress.current) {
+          saveWizardProgress(progress.current);
+        }
+
+        toast.error(t('shell.createDecisionError'));
+      },
+    });
+  };
+
+  const exit = () => {
+    clearWizardProgress();
+    router.push(takeWizardOrigin() ?? '/');
   };
 
   if (savedProgress === undefined) {
@@ -60,9 +78,9 @@ export function CreateProcessFlow() {
   return (
     <CreateProcessWizard
       initial={savedProgress}
-      onProgressChange={saveWizardProgress}
+      onProgressChange={saveProgress}
       onExit={exit}
-      onComplete={(draft) => createProcess.mutate(draft)}
+      onComplete={submit}
       isSubmitting={createProcess.isPending || createProcess.isSuccess}
     />
   );

@@ -17,7 +17,6 @@ import {
   LuRepeat,
   LuShare2,
   LuShuffle,
-  LuSparkles,
   LuTrophy,
   LuUserCheck,
   LuUserPlus,
@@ -30,7 +29,7 @@ import type { WizardCopyKey } from '../types';
 
 type IconComponent = ComponentType<{ className?: string }>;
 
-const BY_ID: Partial<Record<WizardCopyKey, IconComponent>> = {
+const BY_ID = {
   addCostBudgetDetails: LuBanknote,
   addDeadline: LuClock,
   addDeadlineRunTimer: LuClock,
@@ -72,8 +71,11 @@ const BY_ID: Partial<Record<WizardCopyKey, IconComponent>> = {
   setYourOwnQuestions: LuCirclePlus,
   shareSummaryPage: LuShare2,
   showTitlesOnlyFullEntries: LuFileText,
-};
+} satisfies Partial<Record<WizardCopyKey, IconComponent>>;
 
-export function capabilityIcon(id: WizardCopyKey): IconComponent {
-  return BY_ID[id] ?? LuSparkles;
+/** Every capability a piece may list; a new one needs an icon here. */
+export type CapabilityKey = keyof typeof BY_ID;
+
+export function capabilityIcon(id: CapabilityKey): IconComponent {
+  return BY_ID[id];
 }

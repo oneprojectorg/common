@@ -26,6 +26,20 @@ describe('resolveProcessPhases', () => {
     ).toEqual([{ phaseId: 'ideas', name: 'Ideas' }]);
   });
 
+  it('returns no phases when nothing is known', () => {
+    expect(resolveProcessPhases({})).toEqual([]);
+  });
+
+  it("ignores an empty editor list and shows the instance's phases", () => {
+    expect(
+      resolveProcessPhases({
+        storePhases: [],
+        instancePhases: [{ phaseId: 'ideas', name: 'Ideas' }],
+        templatePhases,
+      }),
+    ).toEqual([{ phaseId: 'ideas', name: 'Ideas' }]);
+  });
+
   it('prefers unsaved phases in the editor over saved ones', () => {
     expect(
       resolveProcessPhases({

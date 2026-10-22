@@ -27,7 +27,9 @@ import {
   LuWandSparkles,
 } from 'react-icons/lu';
 
-import { useRouter, useTranslations } from '@/lib/i18n';
+import { usePathname, useRouter, useTranslations } from '@/lib/i18n';
+
+import { saveWizardOrigin } from '@/components/decisions/CreateProcessWizard/wizardProgress';
 
 import { InviteUserModal } from '../InviteUserModal';
 import { CreateOrganizationModal } from '../Profile/ProfileDetails/CreateOrganizationModal';
@@ -38,6 +40,7 @@ const SM_BREAKPOINT = screens.sm;
 export const CreateMenu = () => {
   const t = useTranslations();
   const router = useRouter();
+  const pathname = usePathname();
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [isCreateOrganizationModalOpen, setIsCreateOrganizationModalOpen] =
     useState(false);
@@ -92,7 +95,7 @@ export const CreateMenu = () => {
           >
             <LuUsers className="size-4" /> {t('Organization')}
           </DropdownMenuItem>
-          {(createDecisionEnabled || newProcessAdminEnabled) && (
+          {createDecisionEnabled && (
             <DropdownMenuItem
               data-testid="create-decision-process"
               disabled={isCreatingDecision}
@@ -111,7 +114,10 @@ export const CreateMenu = () => {
             <DropdownMenuItem
               data-testid="create-decision-process-wizard"
               disabled={isCreatingDecision}
-              onClick={() => router.push('/decisions/new')}
+              onClick={() => {
+                saveWizardOrigin(pathname);
+                router.push('/decisions/new');
+              }}
             >
               <LuWandSparkles className="size-4" />{' '}
               {t('shell.createDecisionAction')}

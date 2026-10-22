@@ -91,6 +91,28 @@ export function clearWizardProgress() {
   }
 }
 
+const ORIGIN_KEY = 'create-process-wizard-origin';
+
+/** The in-app route Exit returns to; `history.back()` could leave the site. */
+export function saveWizardOrigin(pathname: string) {
+  try {
+    sessionStorage.setItem(ORIGIN_KEY, pathname);
+  } catch {
+    // Exit falls back to the home route.
+  }
+}
+
+export function takeWizardOrigin(): string | null {
+  try {
+    const origin = sessionStorage.getItem(ORIGIN_KEY);
+    sessionStorage.removeItem(ORIGIN_KEY);
+
+    return origin;
+  } catch {
+    return null;
+  }
+}
+
 export function readWizardProgress(): WizardProgress | null {
   try {
     const raw = sessionStorage.getItem(STORAGE_KEY);

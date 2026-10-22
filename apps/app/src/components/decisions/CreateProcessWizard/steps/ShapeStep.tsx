@@ -1,5 +1,7 @@
 'use client';
 
+import type { ProcessType } from '@op/common';
+
 import { useTranslations } from '@/lib/i18n';
 
 import { ChoiceList } from '../ChoiceList';
@@ -9,7 +11,7 @@ import {
   SHAPE_QUESTION,
   type GrantDecision,
 } from '../content';
-import type { ProcessType, ShapeKey } from '../types';
+import type { ShapeKey } from '../types';
 
 export function ShapeStep({
   type,

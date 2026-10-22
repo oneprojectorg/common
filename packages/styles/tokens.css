@@ -187,6 +187,10 @@
    * (was 4rem/64px). Consumed by ProposalEditorHeader only. */
   --spacing-editor-topbar: 3.75rem;
   --spacing-18: 4.5rem;
+  /* Create-process intro backdrop: the wash height and its two blobs. */
+  --spacing-intro-wash: calc(60% - 4.6875rem);
+  --spacing-intro-blob-a: 115%;
+  --spacing-intro-blob-b: 110%;
 
   /* ============================================
    * Box Shadows
