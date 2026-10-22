@@ -257,7 +257,11 @@ published source lags its declared dependency versions. Reapply if you re-run
   a layout-viewport-sized sheet slid off the top of the screen instead of
   scrolling its content; the `sm:` card is stock apart from `sm:h-auto`. The
   overlay is opaque `bg-popover` below `sm` (the sheet covers it; the dim and
-  blur showed through Safari's toolbar) and stock from `sm:` up.
+  blur showed through Safari's toolbar) and stock from `sm:` up. The same
+  hook cancels vertical touch gestures the sheet cannot absorb by scrolling,
+  which is what pans the visual viewport under the keyboard (Base UI's iOS
+  lock is `overflow: hidden` on `<html>` only), and `DialogHeader` is
+  `touch-none` below `sm` so a swipe on it does not scroll the sheet.
 - `textarea.tsx` — the `ref` goes through `lib/useFieldSizingFallback`, which
   sizes the box from `scrollHeight` where `field-sizing: content` is
   unsupported (Firefox) and only merges the ref elsewhere.

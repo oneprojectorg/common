@@ -121,7 +121,9 @@ function DialogHeader({ className, ...props }: React.ComponentProps<'div'>) {
     <div
       data-slot="dialog-header"
       className={cn(
-        'sticky top-0 z-10 flex flex-col gap-2 border-b bg-popover px-6 pe-12 pt-6 pb-4 sm:static',
+        // `touch-none`: a swipe that starts on the sticky header must not
+        // scroll the sheet or pan the viewport.
+        'sticky top-0 z-10 flex touch-none flex-col gap-2 border-b bg-popover px-6 pe-12 pt-6 pb-4 sm:static sm:touch-auto',
         className,
       )}
       {...props}
