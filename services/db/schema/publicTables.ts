@@ -217,8 +217,8 @@ export type {
 } from './tables/proposalReviews.sql';
 export { categoryReviewers } from './tables/categoryReviewers.sql';
 export type { CategoryReviewer } from './tables/categoryReviewers.sql';
-export { decisionSmsLines } from './tables/decisionSmsLines.sql';
-export type { DecisionSmsLine } from './tables/decisionSmsLines.sql';
+export { profileChatLines } from './tables/profileChatLines.sql';
+export type { ProfileChatLine } from './tables/profileChatLines.sql';
 
 export {
   decisionsVoteSubmissions,
