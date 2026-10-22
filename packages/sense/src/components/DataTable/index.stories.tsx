@@ -149,7 +149,7 @@ const columns: DataTableColumnDef<Proposal>[] = column.columns([
       <div
         dir="auto"
         title={row.original.title}
-        className="max-w-sm truncate ltr:text-left rtl:text-right"
+        className="truncate ltr:text-left rtl:text-right"
       >
         {row.original.title}
       </div>
@@ -158,6 +158,7 @@ const columns: DataTableColumnDef<Proposal>[] = column.columns([
   column.accessor((row) => STATUS[row.status].label, {
     id: 'status',
     header: 'Status',
+    meta: { width: 'w-44' },
     cell: ({ row }) => (
       <StatusBadge variant={STATUS[row.original.status].variant}>
         {STATUS[row.original.status].label}
@@ -166,7 +167,7 @@ const columns: DataTableColumnDef<Proposal>[] = column.columns([
   }),
   column.accessor('votes', {
     header: 'Votes',
-    meta: { align: 'end' },
+    meta: { align: 'end', width: 'w-24' },
     cell: ({ row }) => (
       <span className="tabular-nums">
         {row.original.votes.toLocaleString('en-US')}
@@ -175,6 +176,7 @@ const columns: DataTableColumnDef<Proposal>[] = column.columns([
   }),
   column.accessor('updated', {
     header: 'Updated',
+    meta: { width: 'w-28' },
     sortDescFirst: true,
     cell: ({ row }) => (
       <span className="whitespace-nowrap text-muted-foreground">
@@ -185,7 +187,7 @@ const columns: DataTableColumnDef<Proposal>[] = column.columns([
   column.display({
     id: 'actions',
     header: 'Actions',
-    meta: { align: 'end' },
+    meta: { align: 'end', width: 'w-20' },
     cell: ({ row }) => (
       <DropdownMenu>
         <DropdownMenuTrigger
@@ -228,12 +230,8 @@ const meta: Meta<typeof DataTable<Proposal>> = {
     actions: <Button variant="outline">Export</Button>,
     selectionActions: () => (
       <>
-        <Button variant="outline" size="sm">
-          Export selected
-        </Button>
-        <Button variant="outline" size="sm">
-          Archive selected
-        </Button>
+        <Button variant="outline">Export selected</Button>
+        <Button variant="outline">Archive selected</Button>
       </>
     ),
     copy: {

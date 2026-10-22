@@ -29,13 +29,14 @@ import {
 import { useMemo, useState, type ReactNode } from 'react';
 import {
   LuChevronDown,
+  LuChevronLeft,
+  LuChevronRight,
   LuChevronUp,
   LuChevronsUpDown,
   LuCircleAlert,
 } from 'react-icons/lu';
 
 import { cn } from '../../lib/utils';
-import { PaginationBar, type PaginationBarBounds } from '../PaginationBar';
 import { Alert, AlertTitle } from '../ui/alert';
 import { Button } from '../ui/button';
 import { Checkbox } from '../ui/checkbox';
@@ -66,6 +67,8 @@ declare module '@tanstack/react-table' {
   > {
     /** `end` for numbers and row actions: right-aligned in LTR. */
     align?: 'start' | 'end';
+    /** A fixed width as a Tailwind class (`w-24`). Leave it off one column, usually the title, to take the rest. */
+    width?: string;
   }
 }
 
@@ -109,7 +112,7 @@ export interface DataTableCopy {
   selectRow: (rowLabel: string) => string;
   /** The noun in the range readout: "1 - 8 of 12 proposals". */
   items: string;
-  range?: (bounds: PaginationBarBounds) => ReactNode;
+  range: (start: number, end: number, total: number, items: string) => string;
   previous: string;
   next: string;
   pagination: string;
@@ -158,6 +161,7 @@ const DEFAULT_COPY: DataTableCopy = {
   selectAll: 'Select all on this page',
   selectRow: (rowLabel) => `Select ${rowLabel}`,
   items: 'items',
+  range: (start, end, total, items) => `${start} - ${end} of ${total} ${items}`,
   previous: 'Previous',
   next: 'Next',
   pagination: 'Pages',
@@ -170,8 +174,9 @@ const SKELETON_ROWS = [0, 1, 2, 3, 4];
 /**
  * A table for records people work through: search, sort one column at a time,
  * select rows and act on the selection, and page. Built on TanStack Table v9
- * and the `Table`, `Checkbox`, `Button`, `Input`, `PaginationBar`, `Empty`,
- * `Skeleton` and `Alert` primitives. Use plain `Table` for rows that are read
+ * and the `Table`, `Checkbox`, `Button`, `Input`, `Empty`, `Skeleton` and
+ * `Alert` primitives. Columns keep fixed widths (`meta.width`) and a short last
+ * page is padded, so nothing shifts from page to page. Use plain `Table` for rows that are read
  * and never worked on.
  */
 export function DataTable<TData extends RowData>({
@@ -223,6 +228,9 @@ export function DataTable<TData extends RowData>({
   const { pageIndex } = table.state.pagination;
   const rows = table.getRowModel().rows;
   const columnCount = table.getVisibleLeafColumns().length;
+  const fillerCount = rows.length ? pageSize - rows.length : 0;
+  const start = pageIndex * pageSize + 1;
+  const end = start + rows.length - 1;
 
   return (
     <div className={cn('flex flex-col gap-4', className)}>
@@ -234,7 +242,6 @@ export function DataTable<TData extends RowData>({
           {selectionActions?.(selectedRows.map((row) => row.original))}
           <Button
             variant="ghost"
-            size="sm"
             className="ms-auto"
             onClick={() => table.resetRowSelection(true)}
           >
@@ -265,7 +272,19 @@ export function DataTable<TData extends RowData>({
         </Alert>
       )}
 
-      <Table aria-busy={loading || undefined}>
+      <Table aria-busy={loading || undefined} className="table-fixed">
+        <colgroup>
+          {table.getVisibleLeafColumns().map((column) => (
+            <col
+              key={column.id}
+              className={
+                column.id === SELECT_COLUMN
+                  ? 'w-10'
+                  : column.columnDef.meta?.width
+              }
+            />
+          ))}
+        </colgroup>
         <TableHeader>
           {table.getHeaderGroups().map((headerGroup) => (
             <TableRow key={headerGroup.id}>
@@ -330,7 +349,7 @@ export function DataTable<TData extends RowData>({
                   <TableCell key={column.id}>
                     <Skeleton
                       className={cn(
-                        column.id === SELECT_COLUMN ? 'size-4' : 'h-4 w-24',
+                        column.id === SELECT_COLUMN ? 'size-4' : 'h-4 w-3/4',
                         column.columnDef.meta?.align === 'end' && 'ms-auto',
                       )}
                     />
@@ -339,44 +358,61 @@ export function DataTable<TData extends RowData>({
               </TableRow>
             ))
           ) : rows.length ? (
-            rows.map((row) => (
-              <TableRow
-                key={row.id}
-                data-state={row.getIsSelected() ? 'selected' : undefined}
-              >
-                {row.getVisibleCells().map((cell) => {
-                  const end = cell.column.columnDef.meta?.align === 'end';
-                  if (cell.column.id === SELECT_COLUMN) {
-                    return (
-                      <TableCell key={cell.id}>
-                        <Checkbox
-                          aria-label={text.selectRow(
-                            rowLabel ? rowLabel(row.original) : row.id,
-                          )}
-                          checked={row.getIsSelected()}
-                          onCheckedChange={(checked) =>
-                            row.toggleSelected(checked)
-                          }
-                        />
+            [
+              ...rows.map((row) => (
+                <TableRow
+                  key={row.id}
+                  data-state={row.getIsSelected() ? 'selected' : undefined}
+                >
+                  {row.getVisibleCells().map((cell) => {
+                    const end = cell.column.columnDef.meta?.align === 'end';
+                    if (cell.column.id === SELECT_COLUMN) {
+                      return (
+                        <TableCell key={cell.id}>
+                          <Checkbox
+                            aria-label={text.selectRow(
+                              rowLabel ? rowLabel(row.original) : row.id,
+                            )}
+                            checked={row.getIsSelected()}
+                            onCheckedChange={(checked) =>
+                              row.toggleSelected(checked)
+                            }
+                          />
+                        </TableCell>
+                      );
+                    }
+                    const content = <table.FlexRender cell={cell} />;
+                    return cell.column.id === rowHeader ? (
+                      <TableRowHeader
+                        key={cell.id}
+                        className={cn(end && 'text-end')}
+                      >
+                        {content}
+                      </TableRowHeader>
+                    ) : (
+                      <TableCell
+                        key={cell.id}
+                        className={cn(end && 'text-end')}
+                      >
+                        {content}
                       </TableCell>
                     );
-                  }
-                  const content = <table.FlexRender cell={cell} />;
-                  return cell.column.id === rowHeader ? (
-                    <TableRowHeader
-                      key={cell.id}
-                      className={cn(end && 'text-end')}
-                    >
-                      {content}
-                    </TableRowHeader>
-                  ) : (
-                    <TableCell key={cell.id} className={cn(end && 'text-end')}>
-                      {content}
-                    </TableCell>
-                  );
-                })}
-              </TableRow>
-            ))
+                  })}
+                </TableRow>
+              )),
+              // A short last page keeps the full page's height, so the pager stays put.
+              ...Array.from({ length: fillerCount }, (_, index) => (
+                <TableRow
+                  key={`filler-${index}`}
+                  aria-hidden
+                  className="pointer-events-none hover:bg-transparent"
+                >
+                  <TableCell colSpan={columnCount}>
+                    <div className="h-9" />
+                  </TableCell>
+                </TableRow>
+              )),
+            ]
           ) : (
             <TableRow>
               <TableCell colSpan={columnCount}>
@@ -411,23 +447,41 @@ export function DataTable<TData extends RowData>({
         </span>
       )}
 
-      {!loading && (
-        <PaginationBar
-          range={{
-            totalItems: filteredCount,
-            itemsPerPage: pageSize,
-            page: pageIndex,
-            label: text.items,
-          }}
-          renderRange={text.range}
-          previous={
-            table.getCanPreviousPage() ? () => table.previousPage() : undefined
-          }
-          next={table.getCanNextPage() ? () => table.nextPage() : undefined}
-          previousLabel={text.previous}
-          nextLabel={text.next}
-          navLabel={text.pagination}
-        />
+      {!loading && rows.length > 0 && (
+        <div className="flex items-center justify-end gap-4">
+          <span
+            className="text-sm text-muted-foreground tabular-nums"
+            aria-live="polite"
+          >
+            {text.range(start, end, filteredCount, text.items)}
+          </span>
+          <nav aria-label={text.pagination} className="flex gap-2">
+            <Button
+              variant="outline"
+              disabled={!table.getCanPreviousPage()}
+              onClick={() => table.previousPage()}
+            >
+              <LuChevronLeft
+                aria-hidden
+                data-icon="inline-start"
+                className="rtl:-scale-x-100"
+              />
+              {text.previous}
+            </Button>
+            <Button
+              variant="outline"
+              disabled={!table.getCanNextPage()}
+              onClick={() => table.nextPage()}
+            >
+              {text.next}
+              <LuChevronRight
+                aria-hidden
+                data-icon="inline-end"
+                className="rtl:-scale-x-100"
+              />
+            </Button>
+          </nav>
+        </div>
       )}
     </div>
   );
