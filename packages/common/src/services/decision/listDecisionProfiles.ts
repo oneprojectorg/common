@@ -1,10 +1,11 @@
-import { and, db, eq, inArray } from '@op/db/client';
+import { and, count, countDistinct, db, eq, inArray, ne } from '@op/db/client';
 import {
   EntityType,
   ProcessStatus,
   ProposalStatus,
   processInstances,
   profileUsers,
+  proposals,
 } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
 import { collapseRoles } from 'access-zones';
@@ -126,13 +127,6 @@ export const listDecisionProfiles = async ({
               avatarImage: true,
             },
           },
-          proposals: {
-            columns: {
-              id: true,
-              status: true,
-              submittedByProfileId: true,
-            },
-          },
         },
       },
       profileUsers: {
@@ -156,6 +150,44 @@ export const listDecisionProfiles = async ({
     limit: limit + 1, // Fetch one extra to check hasMore
   });
 
+  // One aggregate per page instead of loading every proposal row per instance
+  const instanceIds = profileList.reduce<string[]>((accum, profile) => {
+    const id = profile.processInstance?.id;
+    if (id) {
+      accum.push(id);
+    }
+    return accum;
+  }, []);
+
+  const countsMap = new Map<
+    string,
+    { proposalCount: number; participantCount: number }
+  >();
+
+  if (instanceIds.length > 0) {
+    const counts = await db
+      .select({
+        processInstanceId: proposals.processInstanceId,
+        proposalCount: count(proposals.id),
+        participantCount: countDistinct(proposals.submittedByProfileId),
+      })
+      .from(proposals)
+      .where(
+        and(
+          inArray(proposals.processInstanceId, instanceIds),
+          ne(proposals.status, ProposalStatus.DRAFT),
+        ),
+      )
+      .groupBy(proposals.processInstanceId);
+
+    for (const row of counts) {
+      countsMap.set(row.processInstanceId, {
+        proposalCount: row.proposalCount,
+        participantCount: row.participantCount,
+      });
+    }
+  }
+
   type DecisionProfileQueryResult = (typeof profileList)[number];
 
   type DecisionProfileItem = Omit<
@@ -176,16 +208,9 @@ export const listDecisionProfiles = async ({
     const { profileUsers: _, ...profileWithoutUsers } = profile;
 
     if (profile.processInstance) {
-      const { proposals, ...instanceRest } = profile.processInstance;
-      const nonDraftProposals =
-        proposals?.filter(
-          (proposal) => proposal.status !== ProposalStatus.DRAFT,
-        ) ?? [];
-      const proposalCount = nonDraftProposals.length;
-      const uniqueParticipants = new Set(
-        nonDraftProposals.map((proposal) => proposal.submittedByProfileId),
-      );
-      const participantCount = uniqueParticipants.size;
+      const stats = countsMap.get(profile.processInstance.id);
+      const proposalCount = stats?.proposalCount ?? 0;
+      const participantCount = stats?.participantCount ?? 0;
 
       // Compute decision access from the joined profileUser roles
       const profileUser = profile.profileUsers?.[0];
@@ -198,8 +223,7 @@ export const listDecisionProfiles = async ({
       return {
         ...profileWithoutUsers,
         processInstance: {
-          ...instanceRest,
-          proposals,
+          ...profile.processInstance,
           proposalCount,
           participantCount,
           access,
