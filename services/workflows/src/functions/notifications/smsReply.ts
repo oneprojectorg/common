@@ -39,11 +39,13 @@ export const parseInboundNumber = (
 export const createTextSender = ({
   step,
   to,
+  from,
   purpose,
   context,
 }: {
   step: GetStepTools<typeof inngest>;
   to: PhoneNumber;
+  from?: PhoneNumber;
   purpose: string;
   context?: Record<string, unknown>;
 }) => {
@@ -58,7 +60,7 @@ export const createTextSender = ({
   const sendSms = provider.sendSms;
   return (stepId: string, label: string, body: string) =>
     step.run(stepId, async () => {
-      const result = await sendSms({ to, body });
+      const result = await sendSms({ to, body, ...(from ? { from } : {}) });
       if (result.status === 'rejected' && result.retryable) {
         throw new RateLimitError(`${label} send rejected: ${result.reason}`);
       }

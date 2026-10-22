@@ -57,6 +57,7 @@ export interface TwilioRestClient {
     create(options: {
       to: string;
       body: string;
+      from?: string;
       messagingServiceSid: string;
     }): Promise<{ sid: string }>;
   };
@@ -234,14 +235,17 @@ export const createTwilioProvider = ({
     async ({
       to,
       body,
+      from,
     }: {
       to: PhoneNumber;
       body: string;
+      from?: PhoneNumber;
     }): Promise<SmsSendResult> => {
       try {
         const message = await client.messages.create({
           to,
           body,
+          ...(from ? { from } : {}),
           messagingServiceSid: serviceSid,
         });
         return { status: 'accepted', providerMessageId: message.sid };
@@ -283,6 +287,7 @@ export const parseTwilioStatusCallback = (
 
 export interface TwilioInboundMessage {
   from: string;
+  to: string;
   body: string;
   messageSid: string;
   optOutType: string | null;
@@ -292,6 +297,7 @@ export const parseTwilioInboundMessage = (
   params: Record<string, string>,
 ): TwilioInboundMessage => ({
   from: params.From ?? '',
+  to: params.To ?? '',
   body: params.Body ?? '',
   messageSid: params.MessageSid ?? '',
   optOutType: params.OptOutType ?? null,

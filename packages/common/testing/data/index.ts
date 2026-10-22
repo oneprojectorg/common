@@ -16,6 +16,7 @@ export {
 
 export {
   createCustomForm,
+  createDecisionChatLine,
   createDecisionInstance,
   createDecisionProcess,
   createInstanceMember,
@@ -34,6 +35,7 @@ export {
   testMinimalSchema,
   testSimpleVotingSchema,
   testVotingPhaseSchema,
+  type CreateDecisionChatLineOptions,
   type CreateDecisionInstanceOptions,
   type CreateDecisionInstanceResult,
   type CreateDecisionProcessOptions,

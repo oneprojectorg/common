@@ -210,6 +210,7 @@ export const Events = {
       code: z.string().nullable(),
       keyword: z.enum(SMS_KEYWORDS).nullable(),
       argument: z.string().nullable().default(null),
+      to: z.string().nullable().default(null),
     }),
   },
 } as const;
