@@ -16,6 +16,7 @@ import { AllowListUser, allowListMetadataSchema } from './validators';
 
 export * from './discardUnconfirmedPhoneSignup';
 export * from './getPhoneSignupState';
+export * from './getUserLocale';
 export * from './phoneSignup';
 export * from './updateUserLocale';
 

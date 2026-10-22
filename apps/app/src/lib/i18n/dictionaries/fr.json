@@ -1677,5 +1677,20 @@
     "deleteAccountHint": "Cela supprime votre profil et votre compte.",
     "deleteAccountConfirmTitle": "Supprimer votre compte ?",
     "deleteAccountConfirmBody": "Votre profil et votre compte seront supprimés. Cette action est irréversible."
+  },
+  "authEmail": {
+    "loginCodeSubject": "Votre code de connexion",
+    "loginCodePreview": "Il est temps de vous connecter ! 🔑",
+    "loginCodeHeading": "Connexion",
+    "loginCodeDescription": "Votre code de connexion se trouve ci-dessous. Saisissez-le dans la fenêtre de navigateur ouverte et nous vous connecterons.",
+    "confirmEmailSubject": "Confirmez votre adresse e-mail",
+    "confirmEmailPreview": "Confirmez votre adresse e-mail ! 👋",
+    "confirmEmailHeading": "Confirmez votre adresse e-mail",
+    "confirmEmailDescription": "Votre code de confirmation se trouve ci-dessous. Saisissez-le dans la fenêtre de navigateur ouverte et nous vous connecterons.",
+    "emailChangeDescription": "Votre code de confirmation se trouve ci-dessous. Saisissez-le dans la fenêtre de navigateur ouverte pour terminer la création de votre profil.",
+    "codeExpiryHint": "Ce code ne sera valable que pendant les 10 prochaines minutes.",
+    "supportHint": "Un problème ? Écrivez-nous à",
+    "maintainerNote": "Common est maintenu par One Project.",
+    "deliveryReasonNote": "Vous recevez cet e-mail dans le cadre de nos processus d’authentification et de communication."
   }
 }

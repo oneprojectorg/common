@@ -1,9 +1,9 @@
 import { setupSSR } from '@/utils/setupSSR';
+import { getLocaleDirection } from '@op/common/locales';
 import { DirectionProvider } from '@op/sense/Direction';
 import { getMessages } from 'next-intl/server';
 
 import { I18nProvider } from '@/lib/i18n';
-import { getLocaleDirection } from '@/lib/i18n/config';
 
 import { LocaleDirSync } from '@/components/LocaleDirSync';
 

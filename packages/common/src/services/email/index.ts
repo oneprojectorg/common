@@ -136,3 +136,4 @@ export const sendRelationshipRequestEmail = async ({
 };
 
 export * from './recipients';
+export * from './sendAuthCodeEmail';

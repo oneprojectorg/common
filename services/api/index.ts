@@ -5,6 +5,8 @@ import type { AppRouter } from './src/routers';
 
 export * from './src/routers';
 export * from './src/trpcFactory';
+export { handleSendEmailHookRequest } from './src/auth/handleSendEmailHookRequest';
+export { readBodyWithLimit } from './src/utils/readBodyWithLimit';
 export {
   handleModerationWebhookRequest,
   type ModerationWebhookRequest,

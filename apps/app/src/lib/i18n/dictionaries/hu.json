@@ -1677,5 +1677,20 @@
     "deleteAccountHint": "A profilját és a fiókját eltávolítjuk.",
     "deleteAccountConfirmTitle": "Törli a fiókját?",
     "deleteAccountConfirmBody": "A profilját és a fiókját eltávolítjuk. Ez nem vonható vissza."
+  },
+  "authEmail": {
+    "loginCodeSubject": "Az Ön bejelentkezési kódja",
+    "loginCodePreview": "Ideje bejelentkezni! 🔑",
+    "loginCodeHeading": "Bejelentkezés",
+    "loginCodeDescription": "A bejelentkezési kódja lent található. Írja be a megnyitott böngészőablakban, és bejelentkeztetjük.",
+    "confirmEmailSubject": "Erősítse meg e-mail-címét",
+    "confirmEmailPreview": "Erősítse meg e-mail-címét! 👋",
+    "confirmEmailHeading": "Erősítse meg e-mail-címét",
+    "confirmEmailDescription": "A megerősítő kódja lent található. Írja be a megnyitott böngészőablakban, és bejelentkeztetjük.",
+    "emailChangeDescription": "A megerősítő kódja lent található. Írja be a megnyitott böngészőablakban a profilja létrehozásának befejezéséhez.",
+    "codeExpiryHint": "Ez a kód csak a következő 10 percben érvényes.",
+    "supportHint": "Problémája van? Írjon nekünk:",
+    "maintainerNote": "A Commont a One Project tartja fenn.",
+    "deliveryReasonNote": "Ezt az e-mailt a hitelesítési és kommunikációs folyamataink részeként kapja."
   }
 }
