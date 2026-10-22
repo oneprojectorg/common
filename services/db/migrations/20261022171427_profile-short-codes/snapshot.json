@@ -1,7 +1,7 @@
 {
   "version": "8",
   "dialect": "postgres",
-  "id": "aa15b893-3b1e-4b9f-b4e5-ea31666646d1",
+  "id": "31aafaf8-6401-41d4-a147-265f15d0b90d",
   "prevIds": [
     "51e07490-f5b9-47a7-a02c-f5afeeecf462"
   ],
@@ -4397,19 +4397,6 @@
       "table": "decision_process_instances"
     },
     {
-      "type": "integer",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": "101",
-      "generated": null,
-      "identity": null,
-      "name": "next_short_code",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "decision_process_instances"
-    },
-    {
       "type": "tsvector",
       "typeSchema": null,
       "notNull": false,
@@ -5344,6 +5331,45 @@
       "generated": null,
       "identity": null,
       "name": "avatar_image_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "profiles"
+    },
+    {
+      "type": "integer",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "short_code",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "profiles"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "short_code_scope_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "profiles"
+    },
+    {
+      "type": "integer",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "101",
+      "generated": null,
+      "identity": null,
+      "name": "next_short_code",
       "entityType": "columns",
       "schema": "public",
       "table": "profiles"
@@ -6608,19 +6634,6 @@
       "generated": null,
       "identity": null,
       "name": "moderation_detached_at",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "decision_proposals"
-    },
-    {
-      "type": "integer",
-      "typeSchema": null,
-      "notNull": false,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "short_code",
       "entityType": "columns",
       "schema": "public",
       "table": "decision_proposals"
@@ -10941,6 +10954,34 @@
       "table": "profile_users"
     },
     {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "short_code_scope_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        },
+        {
+          "value": "short_code",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": true,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "profiles_short_code_scope_uniq",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "profiles"
+    },
+    {
       "nameExplicit": false,
       "columns": [
         {
@@ -11653,34 +11694,6 @@
       "entityType": "indexes",
       "schema": "public",
       "table": "decision_proposal_reviews"
-    },
-    {
-      "nameExplicit": true,
-      "columns": [
-        {
-          "value": "process_instance_id",
-          "isExpression": false,
-          "asc": true,
-          "nullsFirst": false,
-          "opclass": null
-        },
-        {
-          "value": "short_code",
-          "isExpression": false,
-          "asc": true,
-          "nullsFirst": false,
-          "opclass": null
-        }
-      ],
-      "isUnique": true,
-      "where": null,
-      "with": "",
-      "method": "btree",
-      "concurrently": false,
-      "name": "proposals_process_short_code_uniq",
-      "entityType": "indexes",
-      "schema": "public",
-      "table": "decision_proposals"
     },
     {
       "nameExplicit": false,
@@ -13958,6 +13971,23 @@
       "onUpdate": "CASCADE",
       "onDelete": "NO ACTION",
       "name": "profiles_avatar_image_id_objects_id_fk",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "profiles"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "short_code_scope_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "profiles",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "CASCADE",
+      "onDelete": "SET NULL",
+      "name": "profiles_short_code_scope_id_profiles_id_fkey",
       "entityType": "fks",
       "schema": "public",
       "table": "profiles"

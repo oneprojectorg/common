@@ -3,7 +3,7 @@ import { and, asc, eq, isNull, ne, sql } from 'drizzle-orm';
 import { db } from '.';
 import {
   ProcessStatus,
-  processInstances,
+  profiles,
   ProposalStatus,
   proposals,
 } from './schema';
@@ -16,6 +16,7 @@ interface Options {
 interface InstanceReport {
   instanceId: string;
   name: string | null;
+  scopeProfileId: string | null;
   assigned: number;
   firstCode: number | null;
   lastCode: number | null;
@@ -34,61 +35,67 @@ const listTargets = ({ instanceIds }: Options) =>
       status: ProcessStatus.PUBLISHED,
       ...(instanceIds.length > 0 && { id: { in: instanceIds } }),
     },
-    columns: { id: true, name: true },
+    columns: { id: true, name: true, profileId: true },
     orderBy: { createdAt: 'asc' },
   });
 
 const assignShortCodes = (
   instanceId: string,
+  scopeProfileId: string,
   dryRun: boolean,
-): Promise<Omit<InstanceReport, 'name'>> =>
+): Promise<Pick<InstanceReport, 'assigned' | 'firstCode' | 'lastCode'>> =>
   db.transaction(async (tx) => {
-    const [locked] = await tx
-      .select({ next: processInstances.nextShortCode })
-      .from(processInstances)
-      .where(eq(processInstances.id, instanceId))
+    const [scope] = await tx
+      .select({ next: profiles.nextShortCode })
+      .from(profiles)
+      .where(eq(profiles.id, scopeProfileId))
       .for('update');
 
-    if (!locked) {
-      throw new Error(`Process instance ${instanceId} disappeared mid-run`);
+    if (!scope) {
+      throw new Error(
+        `Profile ${scopeProfileId} of instance ${instanceId} disappeared mid-run`,
+      );
     }
 
     const uncoded = await tx
-      .select({ id: proposals.id })
+      .select({ profileId: proposals.profileId })
       .from(proposals)
+      .innerJoin(profiles, eq(profiles.id, proposals.profileId))
       .where(
         and(
           eq(proposals.processInstanceId, instanceId),
           ne(proposals.status, ProposalStatus.DRAFT),
-          isNull(proposals.shortCode),
+          isNull(profiles.shortCode),
         ),
       )
       .orderBy(asc(proposals.createdAt), asc(proposals.id));
 
     const report = {
-      instanceId,
       assigned: uncoded.length,
-      firstCode: uncoded.length > 0 ? locked.next : null,
-      lastCode: uncoded.length > 0 ? locked.next + uncoded.length - 1 : null,
+      firstCode: uncoded.length > 0 ? scope.next : null,
+      lastCode: uncoded.length > 0 ? scope.next + uncoded.length - 1 : null,
     };
 
     if (dryRun || uncoded.length === 0) {
       return report;
     }
 
-    for (const [index, proposal] of uncoded.entries()) {
+    for (const [index, { profileId }] of uncoded.entries()) {
       await tx
-        .update(proposals)
-        .set({ shortCode: locked.next + index })
-        .where(eq(proposals.id, proposal.id));
+        .update(profiles)
+        .set({
+          shortCode: scope.next + index,
+          shortCodeScopeId: scopeProfileId,
+        })
+        .where(eq(profiles.id, profileId));
     }
 
     await tx
-      .update(processInstances)
+      .update(profiles)
       .set({
-        nextShortCode: sql`${processInstances.nextShortCode} + ${uncoded.length}`,
+        nextShortCode: sql`${profiles.nextShortCode} + ${uncoded.length}`,
       })
-      .where(eq(processInstances.id, instanceId));
+      .where(eq(profiles.id, scopeProfileId));
 
     return report;
   });
@@ -97,8 +104,23 @@ const run = async (options: Options): Promise<InstanceReport[]> => {
   const targets = await listTargets(options);
   const reports: InstanceReport[] = [];
   for (const target of targets) {
-    const report = await assignShortCodes(target.id, options.dryRun);
-    reports.push({ ...report, name: target.name });
+    const base = {
+      instanceId: target.id,
+      name: target.name,
+      scopeProfileId: target.profileId,
+    };
+    reports.push(
+      target.profileId
+        ? {
+            ...base,
+            ...(await assignShortCodes(
+              target.id,
+              target.profileId,
+              options.dryRun,
+            )),
+          }
+        : { ...base, assigned: 0, firstCode: null, lastCode: null },
+    );
   }
   return reports;
 };
@@ -112,15 +134,20 @@ const reports = await run(options);
 
 for (const report of reports) {
   const range =
-    report.firstCode === null ? '-' : `${report.firstCode}..${report.lastCode}`;
+    report.scopeProfileId === null
+      ? 'no profile'
+      : report.firstCode === null
+        ? '-'
+        : `${report.firstCode}..${report.lastCode}`;
   console.log(
     `${report.instanceId}  ${report.assigned} assigned  ${range}  ${report.name ?? ''}`,
   );
 }
 
 const total = reports.reduce((sum, report) => sum + report.assigned, 0);
+const skipped = reports.filter((report) => report.scopeProfileId === null);
 console.log(
-  `${reports.length} published decisions, ${total} proposals ${options.dryRun ? 'would get' : 'got'} a code`,
+  `${reports.length} published decisions, ${total} proposals ${options.dryRun ? 'would get' : 'got'} a code, ${skipped.length} decisions without a profile skipped`,
 );
 
 await db.$client.end();

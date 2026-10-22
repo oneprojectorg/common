@@ -1,6 +1,11 @@
 import { TestDecisionsDataManager } from '@op/common/testing';
 import { db, eq, sql } from '@op/db/client';
-import { ProcessStatus, ProposalStatus, proposals } from '@op/db/schema';
+import {
+  ProcessStatus,
+  ProposalStatus,
+  profiles,
+  proposals,
+} from '@op/db/schema';
 import { execSync } from 'node:child_process';
 import { describe, expect, it } from 'vitest';
 
@@ -16,7 +21,7 @@ const runBackfill = (args: string) =>
   });
 
 describe.concurrent('backfill-proposal-short-codes against the database', () => {
-  it('given a published decision whose proposals were inserted out of creation order, when the script runs, then submitted proposals get codes in creation order, a draft gets none, the counter moves past them, and a second run assigns nothing', async ({
+  it('given a published decision whose proposals were inserted out of creation order, when the script runs, then each submitted proposal profile gets a code in creation order scoped to the decision profile, a draft gets none, the decision counter moves past them, and a second run assigns nothing', async ({
     task,
     onTestFinished,
   }) => {
@@ -26,10 +31,10 @@ describe.concurrent('backfill-proposal-short-codes against the database', () => 
       status: ProcessStatus.PUBLISHED,
       grantAccess: true,
     });
-    const { instance } = setup.instance;
+    const { instance, profileId: decisionProfileId } = setup.instance;
     const creator = await testData.createMemberUser({
       organization: setup.organization,
-      instanceProfileIds: [setup.instance.profileId],
+      instanceProfileIds: [decisionProfileId],
     });
     const base = Date.now();
     const seed = (
@@ -56,21 +61,23 @@ describe.concurrent('backfill-proposal-short-codes against the database', () => 
     const rows = await db
       .select({
         title: sql<string>`${proposals.proposalData}->>'title'`,
-        code: proposals.shortCode,
+        code: profiles.shortCode,
+        scope: profiles.shortCodeScopeId,
       })
       .from(proposals)
+      .innerJoin(profiles, eq(profiles.id, proposals.profileId))
       .where(eq(proposals.processInstanceId, instance.id))
-      .orderBy(proposals.shortCode);
-    const counter = await db.query.processInstances.findFirst({
-      where: { id: instance.id },
+      .orderBy(profiles.shortCode);
+    const counter = await db.query.profiles.findFirst({
+      where: { id: decisionProfileId },
       columns: { nextShortCode: true },
     });
 
     expect(rows).toEqual([
-      { title: 'Created first', code: 101 },
-      { title: 'Created second', code: 102 },
-      { title: 'Created last', code: 103 },
-      { title: 'Still a draft', code: null },
+      { title: 'Created first', code: 101, scope: decisionProfileId },
+      { title: 'Created second', code: 102, scope: decisionProfileId },
+      { title: 'Created last', code: 103, scope: decisionProfileId },
+      { title: 'Still a draft', code: null, scope: null },
     ]);
     expect(counter).toEqual({ nextShortCode: 104 });
     expect(dryRun).toContain('3 assigned  101..103');
