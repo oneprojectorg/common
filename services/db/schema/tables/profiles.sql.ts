@@ -3,6 +3,7 @@ import type { SQL } from 'drizzle-orm';
 import { relations } from 'drizzle-orm/_relations';
 import {
   type AnyPgColumn,
+  check,
   index,
   integer,
   pgTable,
@@ -62,7 +63,7 @@ export const profiles = pgTable(
     shortCode: integer('short_code'),
     shortCodeScopeId: uuid('short_code_scope_id').references(
       (): AnyPgColumn => profiles.id,
-      { onUpdate: 'cascade', onDelete: 'set null' },
+      { onUpdate: 'cascade', onDelete: 'cascade' },
     ),
     nextShortCode: integer('next_short_code').notNull().default(101),
 
@@ -75,9 +76,12 @@ export const profiles = pgTable(
   },
   (table) => [
     ...serviceRolePolicies,
-    uniqueIndex('profiles_short_code_scope_uniq').on(
-      table.shortCodeScopeId,
-      table.shortCode,
+    uniqueIndex('profiles_short_code_scope_uniq')
+      .on(table.shortCodeScopeId, table.shortCode)
+      .where(sql`${table.shortCode} IS NOT NULL`),
+    check(
+      'profiles_short_code_scope_chk',
+      sql`(${table.shortCode} IS NULL) = (${table.shortCodeScopeId} IS NULL)`,
     ),
     index().on(table.id).concurrently(),
     index().on(table.slug).concurrently(),

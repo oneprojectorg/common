@@ -1,7 +1,7 @@
 {
   "version": "8",
   "dialect": "postgres",
-  "id": "31aafaf8-6401-41d4-a147-265f15d0b90d",
+  "id": "30a35b70-f34f-43c1-aafb-5f4c9acbe538",
   "prevIds": [
     "51e07490-f5b9-47a7-a02c-f5afeeecf462"
   ],
@@ -10972,7 +10972,7 @@
         }
       ],
       "isUnique": true,
-      "where": null,
+      "where": "\"short_code\" IS NOT NULL",
       "with": "",
       "method": "btree",
       "concurrently": false,
@@ -13986,7 +13986,7 @@
         "id"
       ],
       "onUpdate": "CASCADE",
-      "onDelete": "SET NULL",
+      "onDelete": "CASCADE",
       "name": "profiles_short_code_scope_id_profiles_id_fkey",
       "entityType": "fks",
       "schema": "public",
@@ -15708,6 +15708,13 @@
       "schema": "public",
       "table": "users",
       "entityType": "uniques"
+    },
+    {
+      "value": "(\"short_code\" IS NULL) = (\"short_code_scope_id\" IS NULL)",
+      "name": "profiles_short_code_scope_chk",
+      "entityType": "checks",
+      "schema": "public",
+      "table": "profiles"
     },
     {
       "value": "\"source_proposal_id\" <> \"target_proposal_id\"",
