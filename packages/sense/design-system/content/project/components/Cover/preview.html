@@ -1,0 +1,57 @@
+<!-- @dsCard height=288 -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Sense</title>
+<style>
+  html, body { margin:0; padding:0; height:100%; }
+  body { background:var(--background); color:var(--foreground); font-family:var(--font-sans); overflow:hidden; }
+  .cover { position:relative; width:960px; height:288px; overflow:hidden; }
+  .art { position:absolute; top:0; left:480px; width:480px; height:288px; overflow:hidden; }
+  .art svg { display:block; width:480px; height:288px; }
+  .brand { fill:var(--primary); }
+  .tint { fill:var(--accent); }
+  .deep { fill:var(--foreground); }
+  .warm { fill:var(--color-orange-500); }
+  .blk { rx:var(--radius); }
+  .ring { fill:none; stroke:var(--color-orange-500); }
+  .ring.big { stroke-width:24px; }
+  .ring.dot { stroke:var(--primary); stroke-width:4px; }
+  .ring.cut { stroke:var(--accent); stroke-width:4px; }
+  .words { position:absolute; left:32px; bottom:32px; max-width:440px; }
+  .name { margin:0; font-family:var(--font-serif); font-weight:400; font-size:120px; line-height:.9; letter-spacing:-0.025em; color:var(--foreground); }
+  .tag { margin:12px 0 0 4px; font-size:14px; line-height:20px; color:var(--muted-foreground); }
+</style>
+</head>
+<body>
+<div class="cover">
+<div class="art" aria-hidden="true">
+<svg viewBox="0 0 480 288" width="480" height="288">
+<!--
+  blocks      primary (teal-500) 160×272 slab bled off the top · accent (teal-50) 128×176 tint · foreground (gray-900) 160×216 bled off the right · orange-500 48×48 once (the Common wordmark's warmth) — ≈35% of 960×288
+  arrangement one tall teal slab with satellites, bottoms on one line space-8 above the edge, space-4 gutters
+  pattern     rings, from the One Project ring mark (op-ring): one thick orange ring on the dark block, a 3×4 grid of small teal rings on the tint, three accent rings cut into the slab
+  scales      gutters space-4 (16); pitch space-8 (32); block corners radius (8); rings are radius-full discs
+-->
+<rect class="brand blk" x="16" y="-16" width="160" height="272" rx="8"/>
+<rect class="tint blk" x="192" y="80" width="128" height="176" rx="8"/>
+<rect class="deep blk" x="336" y="40" width="160" height="216" rx="8"/>
+<rect class="warm blk" x="272" y="16" width="48" height="48" rx="8"/>
+<circle class="ring big" cx="416" cy="148" r="44"/>
+<circle class="ring cut" cx="96" cy="176" r="12"/>
+<circle class="ring cut" cx="96" cy="208" r="12"/>
+<circle class="ring cut" cx="64" cy="208" r="12"/>
+<circle class="ring dot" cx="224" cy="112" r="8"/><circle class="ring dot" cx="256" cy="112" r="8"/><circle class="ring dot" cx="288" cy="112" r="8"/>
+<circle class="ring dot" cx="224" cy="144" r="8"/><circle class="ring dot" cx="256" cy="144" r="8"/><circle class="ring dot" cx="288" cy="144" r="8"/>
+<circle class="ring dot" cx="224" cy="176" r="8"/><circle class="ring dot" cx="256" cy="176" r="8"/><circle class="ring dot" cx="288" cy="176" r="8"/>
+<circle class="ring dot" cx="224" cy="208" r="8"/><circle class="ring dot" cx="256" cy="208" r="8"/><circle class="ring dot" cx="288" cy="208" r="8"/>
+</svg>
+</div>
+<div class="words">
+<h1 class="name">Sense</h1>
+<p class="tag">The design system behind Common, by One Project.</p>
+</div>
+</div>
+</body>
+</html>

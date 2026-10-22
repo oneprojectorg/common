@@ -114,9 +114,10 @@
   "module": "./src/index.ts",
   "scripts": {
     "build": "storybook build",
+    "design-system": "node --no-warnings design-system/build.ts",
     "dev": "pnpm --filter @op/styles build && storybook dev -p 3600 --no-open",
     "format:check": "oxfmt --check",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit && tsc --noEmit -p design-system"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",
@@ -153,6 +154,9 @@
     "zod": "catalog:"
   },
   "devDependencies": {
+    "@fontsource-variable/roboto": "5.3.0",
+    "@fontsource-variable/rubik": "5.3.0",
+    "@fontsource/roboto-serif": "5.3.0",
     "@op/typescript-config": "workspace:*",
     "@storybook/addon-a11y": "^10.5.7",
     "@storybook/addon-docs": "^10.5.7",
@@ -162,6 +166,8 @@
     "@tailwindcss/postcss": "4.1.18",
     "@types/node": "^22.13.5",
     "@types/react": "19.0.10",
+    "esbuild": "0.25.12",
+    "playwright-core": "1.58.2",
     "postcss": "^8.5.3",
     "react-masonry-css": "^1.0.16",
     "storybook": "^10.5.7",
