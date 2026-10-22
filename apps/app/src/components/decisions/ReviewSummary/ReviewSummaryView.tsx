@@ -41,6 +41,7 @@ interface ReviewSummaryViewProps {
   isPhaseInProgress?: boolean;
   reviewSettings: ReviewSettings;
   previousReviewPhases: PreviousReviewPhase[];
+  isAdmin: boolean;
 }
 
 const REVIEW_PROGRESS_TAB = 'review-progress';
@@ -55,6 +56,7 @@ export function ReviewSummaryView({
   isPhaseInProgress = false,
   reviewSettings,
   previousReviewPhases,
+  isAdmin,
 }: ReviewSummaryViewProps) {
   const t = useTranslations();
   const { user } = useRequiredUser();
@@ -190,6 +192,8 @@ export function ReviewSummaryView({
       )
     : undefined;
 
+  const showAdvanceFooter = isAdmin && !isPhaseInProgress;
+
   const currentProposalPane = (
     <ProposalPreview
       proposal={proposal}
@@ -232,6 +236,7 @@ export function ReviewSummaryView({
               : undefined
           }
           ownReview={ownReview}
+          hideSummaryHeader={!isAdmin}
         />
       )}
     </>
@@ -241,7 +246,7 @@ export function ReviewSummaryView({
     <div
       className={cn(
         'flex h-dvh flex-col bg-white',
-        !isPhaseInProgress && 'pb-14',
+        showAdvanceFooter && 'pb-14',
       )}
     >
       <DecisionSubpageHeader
@@ -319,7 +324,7 @@ export function ReviewSummaryView({
         </SplitPane.Pane>
       </SplitPane>
 
-      {!isPhaseInProgress && (
+      {showAdvanceFooter && (
         <ReviewSummaryAdvanceFooter
           instanceId={instanceId}
           proposalId={proposalId}
