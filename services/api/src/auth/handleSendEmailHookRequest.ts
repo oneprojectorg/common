@@ -176,7 +176,7 @@ const getAuthEmails = ({
 const resolveEmailLocale = async (
   user: SendEmailHookPayload['user'],
 ): Promise<SupportedLocale> => {
-  const storedLocale = await getUserLocale({ authUserId: user.id });
+  const storedLocale = await getStoredLocale(user.id);
   if (storedLocale) {
     return storedLocale;
   }
@@ -187,6 +187,30 @@ const resolveEmailLocale = async (
   }
 
   return 'en';
+};
+
+// GoTrue gives the hook 5s in total, and the send needs most of it.
+const STORED_LOCALE_TIMEOUT_MS = 500;
+
+/** The stored locale, or undefined when the database does not answer in time. */
+const getStoredLocale = async (
+  authUserId: string,
+): Promise<SupportedLocale | undefined> => {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<undefined>((resolve) => {
+    timer = setTimeout(() => resolve(undefined), STORED_LOCALE_TIMEOUT_MS);
+  });
+
+  try {
+    return await Promise.race([getUserLocale({ authUserId }), timeout]);
+  } catch (error) {
+    logger.warn('Send Email hook could not read the stored locale', {
+      error,
+    });
+    return undefined;
+  } finally {
+    clearTimeout(timer);
+  }
 };
 
 const getEmailCopy = ({

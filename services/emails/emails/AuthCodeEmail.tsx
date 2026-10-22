@@ -37,13 +37,13 @@ export const AuthCodeEmail = ({
     <Header>{copy.heading}</Header>
     <Text className="mt-8 text-lg">{copy.description}</Text>
     {/* One cell per digit, so mail clients do not detect the code as a phone
-        number and turn it into a call link. */}
+        number and turn it into a call link. Ten cells fit a 375px screen. */}
     <table
       role="presentation"
       dir="ltr"
       align="center"
       className="my-8"
-      style={{ borderCollapse: 'separate', borderSpacing: '4px' }}
+      style={{ borderCollapse: 'separate', borderSpacing: '2px' }}
     >
       <tbody>
         <tr>
@@ -51,7 +51,7 @@ export const AuthCodeEmail = ({
             <td
               key={index}
               data-code-digit
-              className="rounded border border-solid border-neutral-200 px-2 py-2 text-center font-mono text-2xl"
+              className="rounded border border-solid border-neutral-200 px-1 py-2 text-center font-mono text-2xl"
             >
               {digit}
             </td>

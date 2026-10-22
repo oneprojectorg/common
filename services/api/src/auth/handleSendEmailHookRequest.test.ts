@@ -1,4 +1,4 @@
-import { sendAuthCodeEmail, updateUserLocale } from '@op/common';
+import { getUserLocale, sendAuthCodeEmail, updateUserLocale } from '@op/common';
 import { signUpConfirmedUser } from '@op/common/testing';
 import { db, eq } from '@op/db/client';
 import { users } from '@op/db/schema';
@@ -9,12 +9,17 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { handleSendEmailHookRequest } from './handleSendEmailHookRequest';
 
-vi.mock('@op/common', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@op/common')>()),
-  sendAuthCodeEmail: vi.fn(),
-}));
+vi.mock('@op/common', async (importOriginal) => {
+  const original = await importOriginal<typeof import('@op/common')>();
+  return {
+    ...original,
+    sendAuthCodeEmail: vi.fn(),
+    getUserLocale: vi.fn(original.getUserLocale),
+  };
+});
 
 const sendMock = vi.mocked(sendAuthCodeEmail);
+const getUserLocaleMock = vi.mocked(getUserLocale);
 
 const SECRET = randomBytes(32).toString('base64');
 
@@ -360,5 +365,27 @@ describe('handleSendEmailHookRequest', () => {
 
     expect(result.status).toBe(401);
     expect(sendMock).not.toHaveBeenCalled();
+  });
+
+  it('uses the locale in user_metadata when the stored locale cannot be read in time', async () => {
+    getUserLocaleMock.mockReturnValueOnce(new Promise(() => {}));
+
+    const result = await handleSendEmailHookRequest(
+      signedRequest(hookPayload({ user: { user_metadata: { locale: 'hu' } } })),
+    );
+
+    expect(result.status).toBe(200);
+    expect(sentEmails()[0]?.locale).toBe('hu');
+  });
+
+  it('uses the locale in user_metadata when reading the stored locale fails', async () => {
+    getUserLocaleMock.mockRejectedValueOnce(new Error('pool exhausted'));
+
+    const result = await handleSendEmailHookRequest(
+      signedRequest(hookPayload({ user: { user_metadata: { locale: 'so' } } })),
+    );
+
+    expect(result.status).toBe(200);
+    expect(sentEmails()[0]?.locale).toBe('so');
   });
 });
