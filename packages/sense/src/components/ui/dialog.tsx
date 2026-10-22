@@ -33,7 +33,9 @@ function DialogOverlay({
     <DialogPrimitive.Backdrop
       data-slot="dialog-overlay"
       className={cn(
-        'fixed inset-0 isolate z-50 bg-overlay/15 duration-100 data-closed:animate-out data-closed:fade-out-0 data-open:animate-in data-open:fade-in-0 supports-backdrop-filter:backdrop-blur-sm',
+        // Opaque below `sm`: the sheet covers the overlay, and the dim and blur
+        // only surfaced through Safari's translucent toolbar and keyboard edge.
+        'fixed inset-0 isolate z-50 bg-popover duration-100 data-closed:animate-out data-closed:fade-out-0 data-open:animate-in data-open:fade-in-0 sm:bg-overlay/15 sm:supports-backdrop-filter:backdrop-blur-sm',
         className,
       )}
       {...props}

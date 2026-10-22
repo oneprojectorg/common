@@ -255,7 +255,9 @@ published source lags its declared dependency versions. Reapply if you re-run
   h-(--visual-viewport-height,100%)` instead of `inset-0`, with
   `overscroll-contain`. iOS Safari overlays the keyboard and pans the page, so
   a layout-viewport-sized sheet slid off the top of the screen instead of
-  scrolling its content; the `sm:` card is stock apart from `sm:h-auto`.
+  scrolling its content; the `sm:` card is stock apart from `sm:h-auto`. The
+  overlay is opaque `bg-popover` below `sm` (the sheet covers it; the dim and
+  blur showed through Safari's toolbar) and stock from `sm:` up.
 - `textarea.tsx` — the `ref` goes through `lib/useFieldSizingFallback`, which
   sizes the box from `scrollHeight` where `field-sizing: content` is
   unsupported (Firefox) and only merges the ref elsewhere.
