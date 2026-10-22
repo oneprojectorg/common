@@ -10,7 +10,9 @@ const useSuspenseQuery = vi.fn();
 
 vi.mock('@op/api/client', () => ({
   trpc: {
-    decision: { getResultsStats: { useSuspenseQuery: () => useSuspenseQuery() } },
+    decision: {
+      getResultsStats: { useSuspenseQuery: () => useSuspenseQuery() },
+    },
   },
 }));
 
