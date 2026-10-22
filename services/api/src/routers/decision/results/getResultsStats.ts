@@ -1,14 +1,13 @@
-import { cache } from '@op/cache';
 import { getResultsStats } from '@op/common';
 
 import {
   getResultsStatsInputSchema,
   resultsStatsEncoder,
 } from '../../../encoders/results';
-import { networkAuthenticatedProcedure, router } from '../../../trpcFactory';
+import { openProcedure, router } from '../../../trpcFactory';
 
 export const getResultsStatsRouter = router({
-  getResultsStats: networkAuthenticatedProcedure({
+  getResultsStats: openProcedure({
     rateLimit: { windowSize: 10, maxRequests: 30 },
   })
     .input(getResultsStatsInputSchema)
@@ -17,16 +16,6 @@ export const getResultsStatsRouter = router({
       const { user } = ctx;
       const { instanceId } = input;
 
-      const stats = await cache({
-        type: 'decision',
-        params: [instanceId, 'stats'],
-        fetch: () =>
-          getResultsStats({
-            instanceId,
-            user,
-          }),
-      });
-
-      return stats;
+      return await getResultsStats({ instanceId, user });
     }),
 });

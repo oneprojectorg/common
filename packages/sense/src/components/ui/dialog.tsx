@@ -69,7 +69,8 @@ function DialogContent({
   const popupRef = useVisualViewportFit(ref);
   return (
     <DialogPortal container={container}>
-      <DialogOverlay>
+      {/* forceRender: Base UI skips a nested dialog's backdrop by default, which would leave the parent dialog undimmed */}
+      <DialogOverlay forceRender>
         {/* Inside the backdrop so it inherits the open/close transition — on an
             early close the confetti fades out with the backdrop instead of
             being cut. pointer-events-none keeps click-to-dismiss working. */}

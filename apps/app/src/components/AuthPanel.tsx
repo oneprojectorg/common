@@ -2,7 +2,12 @@
 
 import { getAuthOtpLength } from '@op/core';
 import { Button } from '@op/sense/Button';
-import { Field, FieldDescription, FieldLabel } from '@op/sense/Field';
+import {
+  Field,
+  FieldDescription,
+  FieldError,
+  FieldLabel,
+} from '@op/sense/Field';
 import { Header1 } from '@op/sense/Header';
 import { Input } from '@op/sense/Input';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@op/sense/InputOTP';
@@ -174,6 +179,7 @@ export const AuthEmailField = ({
   description,
   value,
   isDisabled,
+  error,
   onChange,
   onSubmit,
   placeholder = 'admin@yourorganization.org',
@@ -182,11 +188,14 @@ export const AuthEmailField = ({
   description?: string;
   value: string;
   isDisabled: boolean;
+  error?: string;
   onChange: (value: string) => void;
   onSubmit: () => void;
   placeholder?: string;
 }) => {
   const t = useTranslations();
+  const errorId = useId();
+  const isInvalid = !!error;
 
   return (
     <div className="flex flex-col">
@@ -197,7 +206,7 @@ export const AuthEmailField = ({
           onSubmit();
         }}
       >
-        <Field>
+        <Field data-invalid={isInvalid || undefined}>
           <FieldLabel htmlFor="auth-email">
             {label}
             <RequiredAsterisk />
@@ -206,6 +215,8 @@ export const AuthEmailField = ({
             id="auth-email"
             aria-label={t('Email')}
             aria-required
+            aria-invalid={isInvalid || undefined}
+            aria-describedby={isInvalid ? errorId : undefined}
             type="email"
             placeholder={placeholder}
             spellCheck={false}
@@ -215,6 +226,7 @@ export const AuthEmailField = ({
             onChange={(e) => onChange(e.target.value)}
           />
           {description && <FieldDescription>{description}</FieldDescription>}
+          {isInvalid ? <FieldError id={errorId}>{error}</FieldError> : null}
         </Field>
       </form>
     </div>
@@ -233,6 +245,7 @@ export const AuthPhoneField = ({
   description,
   value,
   isDisabled,
+  error,
   onChange,
   onSubmit,
   placeholder = '+15551234567',
@@ -241,10 +254,14 @@ export const AuthPhoneField = ({
   description?: string;
   value: string;
   isDisabled: boolean;
+  error?: string;
   onChange: (value: string) => void;
   onSubmit: () => void;
   placeholder?: string;
 }) => {
+  const errorId = useId();
+  const isInvalid = !!error;
+
   return (
     <div className="flex flex-col">
       <form
@@ -254,7 +271,7 @@ export const AuthPhoneField = ({
           onSubmit();
         }}
       >
-        <Field>
+        <Field data-invalid={isInvalid || undefined}>
           <FieldLabel htmlFor="auth-phone">
             {label}
             <RequiredAsterisk />
@@ -267,6 +284,8 @@ export const AuthPhoneField = ({
             // something the screen does not show.
             aria-label={label}
             aria-required
+            aria-invalid={isInvalid || undefined}
+            aria-describedby={isInvalid ? errorId : undefined}
             type="tel"
             inputMode="tel"
             autoComplete="tel"
@@ -278,6 +297,7 @@ export const AuthPhoneField = ({
             onChange={(e) => onChange(e.target.value)}
           />
           {description && <FieldDescription>{description}</FieldDescription>}
+          {isInvalid ? <FieldError id={errorId}>{error}</FieldError> : null}
         </Field>
       </form>
     </div>
@@ -302,20 +322,24 @@ export const AuthCodeField = ({
   channel,
   value,
   isDisabled,
+  error,
   onChange,
   onSubmit,
 }: {
   channel: AuthChannel;
   value: string | undefined;
   isDisabled: boolean;
+  error?: string;
   onChange: (value: string) => void;
   onSubmit: () => void | Promise<void>;
 }) => {
   const t = useTranslations();
+  const errorId = useId();
   const length = getAuthOtpLength(channel);
+  const isInvalid = !!error;
 
   return (
-    <Field>
+    <Field data-invalid={isInvalid || undefined}>
       <FieldLabel htmlFor="auth-code" className="justify-center">
         {t('auth.codeLabel')}
       </FieldLabel>
@@ -327,6 +351,8 @@ export const AuthCodeField = ({
         pasteTransformer={keepDigits}
         autoFocus
         disabled={isDisabled}
+        aria-invalid={isInvalid || undefined}
+        aria-describedby={isInvalid ? errorId : undefined}
         value={value ?? ''}
         onChange={onChange}
         onComplete={() => {
@@ -335,10 +361,20 @@ export const AuthCodeField = ({
       >
         <InputOTPGroup className="w-full">
           {Array.from({ length }, (_, index) => (
-            <InputOTPSlot key={index} index={index} className="w-auto flex-1" />
+            <InputOTPSlot
+              key={index}
+              index={index}
+              aria-invalid={isInvalid || undefined}
+              className="w-auto flex-1"
+            />
           ))}
         </InputOTPGroup>
       </InputOTP>
+      {isInvalid ? (
+        <FieldError id={errorId} className="text-center">
+          {error}
+        </FieldError>
+      ) : null}
     </Field>
   );
 };
@@ -372,6 +408,7 @@ export const CodeSentAnnouncement = ({ sentTo }: { sentTo?: string }) => (
 interface ContactField {
   value: string;
   isDisabled: boolean;
+  error?: string;
   onChange: (value: string) => void;
   onSubmit: () => void;
 }
@@ -410,6 +447,7 @@ export const AuthContactFields = ({
       placeholder="name@example.com"
       value={email.value}
       isDisabled={email.isDisabled}
+      error={email.error}
       onChange={email.onChange}
       onSubmit={email.onSubmit}
     />
@@ -458,6 +496,7 @@ export const AuthContactFields = ({
           description={t('auth.smsRatesHint')}
           value={phone.value}
           isDisabled={phone.isDisabled}
+          error={phone.error}
           onChange={phone.onChange}
           onSubmit={phone.onSubmit}
         />
@@ -499,20 +538,18 @@ export const AuthSendCodeButton = ({
 export const AuthCodeStepActions = ({
   isVerifyDisabled,
   isLoading,
-  isPhone,
+  canSwitchChannel,
   onVerify,
   onResend,
   onBack,
-  onSwitchChannel,
 }: {
   /** Left to the caller — not every flow disables verify the same way. */
   isVerifyDisabled: boolean;
   isLoading: boolean;
-  isPhone: boolean;
+  canSwitchChannel: boolean;
   onVerify: () => void;
   onResend: () => void;
   onBack: () => void;
-  onSwitchChannel?: () => void;
 }) => {
   const t = useTranslations();
 
@@ -535,15 +572,10 @@ export const AuthCodeStepActions = ({
         {t('auth.resendCodeAction')}
       </Button>
       <Button variant="link" disabled={isLoading} onClick={onBack}>
-        {isPhone ? t('auth.changePhoneAction') : t('auth.useEmailAction')}
+        {canSwitchChannel
+          ? t('auth.changeContactAction')
+          : t('auth.useEmailAction')}
       </Button>
-      {onSwitchChannel ? (
-        <Button variant="link" disabled={isLoading} onClick={onSwitchChannel}>
-          {isPhone
-            ? t('auth.useEmailInsteadAction')
-            : t('auth.usePhoneInsteadAction')}
-        </Button>
-      ) : null}
     </>
   );
 };

@@ -218,7 +218,7 @@ export function ReviewPage({
                     decisionSlug={decisionSlug}
                     phaseId={currentPhase.phaseId}
                     enabled={canSeeReviewCounts}
-                    access={instance.access}
+                    canOpenReviews={canSeeReviewCounts}
                   >
                     <Suspense fallback={<ProposalListSkeleton />}>
                       <ProposalsList

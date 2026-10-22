@@ -6,11 +6,13 @@ import { trpc } from '@op/api/client';
 import { getSafeRedirectPath } from '@op/common/client';
 import { APP_NAME, OPURLConfig } from '@op/core';
 import { useAuthUser, useMount } from '@op/hooks';
+import { Alert, AlertTitle } from '@op/sense/Alert';
 import { Button } from '@op/sense/Button';
 import { SocialLinks } from '@op/sense/SocialLinks';
 import { createSBBrowserClient } from '@op/supabase/client';
 import { useSearchParams } from 'next/navigation';
 import { useCallback } from 'react';
+import { LuCircleAlert } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -191,11 +193,22 @@ export const LoginPanel = () => {
     }
   }, [email, token, supabase, finishSignIn, setTokenError, t]);
 
-  const formError = isPhone
-    ? phoneFlow.error
-    : isCodeStep
-      ? tokenError
-      : undefined;
+  const sendError = isPhone ? phoneFlow.error : undefined;
+
+  const codeError = isCodeStep
+    ? isPhone
+      ? phoneFlow.codeError
+      : tokenError
+    : undefined;
+
+  const changeToken = (next: string) => {
+    setToken(next);
+    if (isPhone) {
+      phoneFlow.clearCodeError();
+    } else {
+      setTokenError(undefined);
+    }
+  };
 
   // Email code verification runs straight against Supabase, so only the
   // phone channel has a loading flag for it.
@@ -299,12 +312,11 @@ export const LoginPanel = () => {
 
       {!isConnectionError && !isErrorState && (
         <div className="flex flex-col gap-8">
-          {/* role="alert" so failures are announced while focus stays on the
-            submit button. */}
-          {formError ? (
-            <p role="alert" className="text-destructive">
-              {formError}
-            </p>
+          {isCodeStep && sendError ? (
+            <Alert variant="destructive">
+              <LuCircleAlert />
+              <AlertTitle>{sendError}</AlertTitle>
+            </Alert>
           ) : null}
 
           {!isCodeStep && (
@@ -319,7 +331,8 @@ export const LoginPanel = () => {
               channel={activeChannel}
               value={token}
               isDisabled={isLoading}
-              onChange={setToken}
+              error={codeError}
+              onChange={changeToken}
               onSubmit={verifyCode}
             />
           ) : (
@@ -337,6 +350,7 @@ export const LoginPanel = () => {
               phone={{
                 value: phone,
                 isDisabled: phoneFlow.isSending,
+                error: sendError,
                 onChange: setPhone,
                 onSubmit: () => {
                   void phoneFlow.requestCode();
@@ -375,15 +389,10 @@ export const LoginPanel = () => {
                     : !!token && !isValidOtpLength(token, activeChannel)
                 }
                 isLoading={isLoading}
-                isPhone={isPhone}
+                canSwitchChannel={smsLoginEnabled}
                 onVerify={verifyCode}
                 onResend={resendCode}
                 onBack={backToContact}
-                onSwitchChannel={
-                  smsLoginEnabled
-                    ? () => switchChannel(isPhone ? 'email' : 'phone')
-                    : undefined
-                }
               />
             </div>
           ) : (

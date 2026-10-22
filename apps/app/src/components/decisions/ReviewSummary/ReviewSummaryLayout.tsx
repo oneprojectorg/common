@@ -8,6 +8,7 @@ import { CommonError } from '@op/common';
 import {
   assertInstancePhase,
   getPreviousReviewPhases,
+  hasOpenReviews,
   isReviewPhase,
   resolveReviewSettings,
 } from '@op/common/client';
@@ -46,7 +47,10 @@ export async function ReviewSummaryLayout({
     notFound();
   }
 
-  if (!decisionProfile.processInstance.access?.admin) {
+  const isAdmin = Boolean(decisionProfile.processInstance.access?.admin);
+  const canReview = Boolean(decisionProfile.processInstance.access?.review);
+
+  if (!isAdmin && !canReview) {
     forbidden();
   }
 
@@ -100,7 +104,13 @@ export async function ReviewSummaryLayout({
   const previousReviewPhases = getPreviousReviewPhases(
     instance.instanceData ?? {},
     phaseId,
-  ).map((phase) => ({ id: phase.phaseId, name: phase.name ?? phase.phaseId }));
+  )
+    .filter((phase) => isAdmin || hasOpenReviews(phase))
+    .map((phase) => ({ id: phase.phaseId, name: phase.name ?? phase.phaseId }));
+  // Mirrors the service's `canReadPhaseReviews`.
+  if (!isAdmin && !reviewSettings.openReviews) {
+    forbidden();
+  }
 
   // isReviewPhase guards the resolver's fallback, which returns the current
   // phase when the instance has no review phase at all.
@@ -137,6 +147,7 @@ export async function ReviewSummaryLayout({
         isPhaseInProgress={isPhaseInProgress}
         reviewSettings={reviewSettings}
         previousReviewPhases={previousReviewPhases}
+        isAdmin={isAdmin}
       />
     </HydrationBoundary>
   );
