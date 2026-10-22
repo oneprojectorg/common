@@ -68,6 +68,8 @@ export const users = pgTable(
     // Used for measuring when a user completed onboarding
     onboardedAt: timestamp({ withTimezone: true, mode: 'string' }),
     notificationPreferences: jsonb().$type<StoredNotificationPreferences>(),
+    // The app locale at the last email sign-in, so auth emails match it.
+    locale: varchar({ length: 10 }),
     ...timestamps,
   },
   (table) => [

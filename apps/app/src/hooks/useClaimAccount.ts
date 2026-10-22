@@ -10,6 +10,7 @@ import {
 import { SUPPORTED_LOCALES } from '@op/common/locales';
 import { logger } from '@op/logging/client';
 import { createSBBrowserClient } from '@op/supabase/client';
+import { useLocale } from 'next-intl';
 import { useCallback } from 'react';
 
 import { i18nConfig } from '@/lib/i18n/config';
@@ -111,6 +112,7 @@ export function goToOnboarding(dest: string | null) {
 export function useClaimAccount() {
   const supabase = createSBBrowserClient();
   const utils = trpc.useUtils();
+  const locale = useLocale();
 
   /**
    * Attach `email` to the visitor's anon user. `updateUser({ email })` sends
@@ -152,7 +154,11 @@ export function useClaimAccount() {
       // updateUser fails with code 'email_exists' when the email already
       // belongs to another account — getClaimEmailErrorMessage answers it
       // with the generic copy so the reply does not confirm the account.
-      const { data, error } = await supabase.auth.updateUser({ email });
+      // The Send Email hook writes the code email in this locale.
+      const { data, error } = await supabase.auth.updateUser({
+        email,
+        data: { locale },
+      });
       if (error) {
         return { ok: false, code: error.code, message: error.message };
       }
@@ -168,7 +174,7 @@ export function useClaimAccount() {
       }
       return { ok: true, needsOtp: true };
     },
-    [supabase, utils],
+    [supabase, utils, locale],
   );
 
   /**

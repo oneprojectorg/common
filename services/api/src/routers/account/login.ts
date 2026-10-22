@@ -4,7 +4,9 @@ import {
   UnauthorizedError,
   ValidationError,
   getAllowListUser,
+  updateUserLocale,
 } from '@op/common';
+import { SUPPORTED_LOCALES } from '@op/common/locales';
 import {
   APP_NAME,
   adminEmails,
@@ -29,6 +31,8 @@ const login = router({
       z.object({
         email: z.email().toLowerCase().trim(),
         usingOAuth: z.boolean().optional(),
+        /** The app locale to write auth emails in. Absent means English. */
+        locale: z.enum(SUPPORTED_LOCALES).optional(),
       }),
     )
     .output(z.boolean())
@@ -110,11 +114,19 @@ const login = router({
       // If the user is not using OAuth and doesn't have a token, send them an OTP
       if (!input.usingOAuth) {
         const supabase = createSBAdminClient(ctx);
+        const { locale } = input;
+
+        // The Send Email hook reads the stored locale. A new account has no
+        // row to store it on yet, so it travels in user_metadata instead.
+        if (locale && existingAuthUser) {
+          await updateUserLocale({ authUserId: existingAuthUser.id, locale });
+        }
 
         const authResponse = await supabase.auth.signInWithOtp({
           email: input.email,
           options: {
             shouldCreateUser: true,
+            data: locale ? { locale } : undefined,
           },
         });
 

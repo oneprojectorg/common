@@ -4,12 +4,14 @@ import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { usePhoneLoginFlow } from '@/hooks/usePhoneLoginFlow';
 import { trpc } from '@op/api/client';
 import { getSafeRedirectPath } from '@op/common/client';
+import { isSupportedLocale } from '@op/common/locales';
 import { APP_NAME, OPURLConfig } from '@op/core';
 import { useAuthUser, useMount } from '@op/hooks';
 import { Alert, AlertTitle } from '@op/sense/Alert';
 import { Button } from '@op/sense/Button';
 import { SocialLinks } from '@op/sense/SocialLinks';
 import { createSBBrowserClient } from '@op/supabase/client';
+import { useLocale } from 'next-intl';
 import { useSearchParams } from 'next/navigation';
 import { useCallback } from 'react';
 import { LuCircleAlert } from 'react-icons/lu';
@@ -49,6 +51,7 @@ type LoginStep = 'phone-code' | 'phone-number' | 'email-address' | 'email-code';
 export const LoginPanel = () => {
   const supabase = createSBBrowserClient();
   const t = useTranslations();
+  const locale = useLocale();
 
   const { mounted } = useMount();
   const searchParams = useSearchParams();
@@ -155,6 +158,7 @@ export const LoginPanel = () => {
     {
       email,
       usingOAuth: false,
+      locale: isSupportedLocale(locale) ? locale : undefined,
     },
     {
       enabled: false,
