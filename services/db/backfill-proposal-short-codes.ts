@@ -1,12 +1,7 @@
 import { and, asc, eq, isNull, ne, sql } from 'drizzle-orm';
 
 import { db } from '.';
-import {
-  ProcessStatus,
-  profiles,
-  ProposalStatus,
-  proposals,
-} from './schema';
+import { ProcessStatus, profiles, ProposalStatus, proposals } from './schema';
 
 interface Options {
   dryRun: boolean;
