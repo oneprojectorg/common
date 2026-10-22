@@ -31,7 +31,7 @@ const login = router({
       z.object({
         email: z.email().toLowerCase().trim(),
         usingOAuth: z.boolean().optional(),
-        /** The app locale to write auth emails in. Absent means English. */
+        /** The app locale for auth emails. Absent keeps the stored locale. */
         locale: z.enum(SUPPORTED_LOCALES).optional(),
       }),
     )
