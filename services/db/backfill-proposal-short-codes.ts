@@ -1,7 +1,12 @@
-import { and, asc, eq, isNull, sql } from 'drizzle-orm';
+import { and, asc, eq, isNull, ne, sql } from 'drizzle-orm';
 
 import { db } from '.';
-import { ProcessStatus, processInstances, proposals } from './schema';
+import {
+  ProcessStatus,
+  processInstances,
+  ProposalStatus,
+  proposals,
+} from './schema';
 
 interface Options {
   dryRun: boolean;
@@ -54,6 +59,7 @@ const assignShortCodes = (
       .where(
         and(
           eq(proposals.processInstanceId, instanceId),
+          ne(proposals.status, ProposalStatus.DRAFT),
           isNull(proposals.shortCode),
         ),
       )

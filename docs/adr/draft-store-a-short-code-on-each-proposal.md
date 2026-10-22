@@ -21,10 +21,12 @@ integer, unique per `(process_instance_id, short_code)`.
 `decision_process_instances.next_short_code` is the per-decision counter,
 default 101, so every code has at least three digits.
 
-A service assigns codes in creation order inside one transaction that
-locks the instance row. It runs at the transition into a voting phase and
-again whenever a ballot is listed, so a late proposal gets the next code
-and a code never changes once set. Codes are never reused.
+`submitProposal` assigns the next code inside the transaction that moves
+the proposal to `submitted`. It locks the instance row, reads the counter,
+writes the code and advances the counter. A code never changes once set
+and is never reused. A one-time script, `pnpm w:db
+backfill:proposal-short-codes`, codes the submitted proposals that exist
+before this change, in creation order.
 
 ## Consequences
 
@@ -34,7 +36,7 @@ and a code never changes once set. Codes are never reused.
   row is locked, not because callers check first.
 - A code is meaningful only inside its decision. A reader joins on the
   instance.
-- A proposal has no code until the first assignment. Readers handle `null`.
+- A draft has no code. Readers handle `null`.
 - Rejected: derive the code from row order. It needs no migration, but a
   rejection, a moderation hide or a hard delete renumbers every proposal
   after it.
