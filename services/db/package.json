@@ -24,6 +24,7 @@
     "seed": "cross-env DB_SEEDING=true tsx ./seed.ts",
     "seed:e2e": "cross-env DB_SEEDING=true DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:56322/postgres tsx ./seed-test.ts",
     "seed:test": "cross-env DB_SEEDING=true DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:55322/postgres tsx ./seed-test.ts",
+    "backfill:proposal-short-codes": "tsx ./backfill-proposal-short-codes.ts",
     "start": "pnpm --dir ../.. exec supabase start",
     "status": "pnpm --dir ../.. exec supabase status",
     "stop": "pnpm --dir ../.. exec supabase stop",
