@@ -524,7 +524,7 @@ export const stateTransitionHistoryEncoder = createSelectSchema(
     transitionedAt: true,
   })
   .extend({
-    triggeredBy: baseProfileEncoder.optional(),
+    triggeredBy: baseProfileEncoder.nullish(),
   });
 
 // List Encoders (for paginated responses)

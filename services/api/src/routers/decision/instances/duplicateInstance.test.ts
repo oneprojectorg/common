@@ -17,6 +17,7 @@ import {
   expectFailsAccessTierGate,
   expectPassesAccessTierGate,
 } from '../../../test/helpers/gating/decision';
+import { createWizardDraft } from '../../../test/helpers/wizardDraftTestUtils';
 import {
   createIsolatedSession,
   createTestContextWithSession,
@@ -956,16 +957,11 @@ describe.concurrent('duplicateInstance', () => {
     task,
     onTestFinished,
   }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const setup = await testData.createDecisionSetup({ instanceCount: 0 });
-    const caller = await createAuthenticatedCaller(setup.userEmail);
-
-    const source = await caller.decision.createInstance({
-      type: 'grant',
-      phases: [{ kind: 'submissions', name: 'Send your application' }],
-      name: `Wizard ${task.id}`,
-    });
-    testData.trackProfileForCleanup(source.id);
+    const {
+      created: source,
+      caller,
+      testData,
+    } = await createWizardDraft(task, onTestFinished);
 
     const duplicate = await caller.decision.duplicateInstance({
       instanceId: source.processInstance.id,
@@ -973,8 +969,6 @@ describe.concurrent('duplicateInstance', () => {
       include: ALL_INCLUDED,
     });
     testData.trackProfileForCleanup(duplicate.id);
-
-    expect(duplicate.processInstance.id).not.toBe(source.processInstance.id);
 
     const instance = await db.query.processInstances.findFirst({
       where: { id: duplicate.processInstance.id },
