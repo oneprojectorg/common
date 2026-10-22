@@ -2,6 +2,7 @@
 
 import { trpc } from '@op/api/client';
 import { EntityType, SearchProfilesResult } from '@op/api/encoders';
+import { PAGE_LIMIT } from '@op/common/client';
 import { match } from '@op/core';
 import {
   Empty,
@@ -22,7 +23,7 @@ import { ProfileListSkeleton, ProfileSummaryList } from '../ProfileList';
 
 export const ProfileSearchResultsSuspense = ({
   query,
-  limit = 10,
+  limit = PAGE_LIMIT.sm,
 }: {
   query: string;
   limit?: number;
@@ -45,7 +46,7 @@ export const ProfileSearchResultsSuspense = ({
       <Header1 className="text-headline">
         {totalResults > 0 ? (
           <span className="text-muted-foreground">
-            {t.rich('Results for <highlight>{query}</highlight>', {
+            {t.rich('org.searchResultsHeading', {
               query: query,
               highlight: (chunks: React.ReactNode) => (
                 <span className="font-strong text-foreground">{chunks}</span>
@@ -54,7 +55,7 @@ export const ProfileSearchResultsSuspense = ({
           </span>
         ) : (
           <span className="text-muted-foreground">
-            {t.rich('No results for <highlight>{query}</highlight>', {
+            {t.rich('org.searchNoResultsHeading', {
               query: query,
               highlight: (chunks: React.ReactNode) => (
                 <span className="font-strong text-foreground">{chunks}</span>
@@ -69,9 +70,7 @@ export const ProfileSearchResultsSuspense = ({
       ) : (
         <div className="flex justify-center">
           <span className="max-w-96 text-center">
-            {t(
-              'You may want to try using different keywords, checking for typos, or adjusting your filters.',
-            )}
+            {t('org.searchNoResultsHint')}
           </span>
         </div>
       )}
@@ -125,7 +124,7 @@ export const TabbedProfileSearchResults = ({
                 <EmptyHeader>
                   <EmptyMedia variant="icon">{icon}</EmptyMedia>
                   <EmptyDescription>
-                    {t('No {type} found.', { type: label })}
+                    {t('org.searchNoResultsOfType', { type: label })}
                   </EmptyDescription>
                 </EmptyHeader>
               </Empty>
@@ -139,7 +138,7 @@ export const TabbedProfileSearchResults = ({
 
 const SearchResultsErrorFallback = () => {
   const t = useTranslations();
-  return <div>{t('Could not load search results')}</div>;
+  return <div>{t('org.searchError')}</div>;
 };
 
 export const ProfileSearchResults = ({

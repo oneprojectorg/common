@@ -3,6 +3,7 @@
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import type { Organization, Post } from '@op/api/encoders';
+import { PAGE_LIMIT } from '@op/common/client';
 import {
   Dialog,
   DialogContent,
@@ -41,20 +42,20 @@ export function DiscussionModal({
   const t = useTranslations();
   const commentsContainerRef = useRef<HTMLDivElement>(null);
 
-  const { handleReactionClick, handleCommentClick } = usePostFeedActions();
+  const { handleLikeClick, handleCommentClick } = usePostFeedActions();
 
   // Get comments for the post using getPosts without profileId (works for all post types)
   const { data: commentsData, isLoading } = trpc.posts.getPosts.useQuery(
     {
       parentPostId: post.id,
-      limit: 50,
+      limit: PAGE_LIMIT.lg,
       offset: 0,
       includeChildren: false,
     },
     { enabled: isOpen },
   );
 
-  const comments = commentsData || [];
+  const comments = commentsData?.items ?? [];
 
   // Function to scroll to show the bottom of the original post after adding a comment
   const scrollToOriginalPost = useCallback(() => {
@@ -96,7 +97,7 @@ export function DiscussionModal({
       <DialogContent className="overflow-hidden p-0 text-start sm:max-w-lg sm:rounded-lg">
         <DialogHeader>
           <DialogTitle>
-            {t.rich("<bdi>{authorName}</bdi>'s Post", {
+            {t.rich('posts.authorPostTitle', {
               authorName,
               bdi: (chunks: React.ReactNode) => <bdi>{chunks}</bdi>,
             })}
@@ -114,7 +115,7 @@ export function DiscussionModal({
               organization={organization ?? null}
               user={user}
               withLinks={false}
-              onReactionClick={handleReactionClick}
+              onLikeClick={handleLikeClick}
               className="px-4"
             />
             <hr />
@@ -127,7 +128,7 @@ export function DiscussionModal({
           ) : comments.length > 0 ? (
             <div
               role="feed"
-              aria-label={t('{count} comments', { count: comments.length })}
+              aria-label={t('commentCount', { count: comments.length })}
             >
               <PostFeed className="border-none pt-6">
                 {comments.map((comment, i) => (
@@ -142,7 +143,7 @@ export function DiscussionModal({
                         organization={organization ?? null}
                         user={user}
                         withLinks={true}
-                        onReactionClick={handleReactionClick}
+                        onLikeClick={handleLikeClick}
                         onCommentClick={handleCommentClick}
                         className="px-4"
                       />
@@ -158,9 +159,7 @@ export function DiscussionModal({
                 <EmptyMedia variant="icon">
                   <LuLeaf />
                 </EmptyMedia>
-                <EmptyDescription>
-                  {t('No comments yet. Be the first to comment!')}
-                </EmptyDescription>
+                <EmptyDescription>{t('noCommentsYet')}</EmptyDescription>
               </EmptyHeader>
             </Empty>
           )}
@@ -172,10 +171,10 @@ export function DiscussionModal({
             parentPostId={post.id}
             placeholder={
               user?.currentProfile?.name
-                ? t('Comment as {name}...', {
+                ? t('posts.commentAsPlaceholder', {
                     name: user.currentProfile.name,
                   })
-                : t('Comment...')
+                : t('posts.commentPlaceholder')
             }
             label={t('Comment')}
             onSuccess={scrollToOriginalPost}

@@ -64,7 +64,7 @@ export const DecisionInvitesForm = ({
     try {
       await declineInvite.mutateAsync({ inviteId });
     } catch (error) {
-      toast.error(t('Failed to decline invitation'));
+      toast.error(t('decisions.declineInviteError'));
     }
   };
 
@@ -87,7 +87,7 @@ export const DecisionInvitesForm = ({
       onComplete();
     } catch (error) {
       setIsLoading(false);
-      toast.error(t('Failed to accept invitations'));
+      toast.error(t('decisions.acceptInvitesError'));
     }
   };
 
@@ -106,12 +106,10 @@ export const DecisionInvitesForm = ({
         {/* Header section - gap-2 (8px) between title and subtitle */}
         <div className="flex flex-col gap-2 text-center">
           <Header1 className="text-foreground">
-            {t('Join decision-making processes')}
+            {t('onboarding.decisionInvitesTitle')}
           </Header1>
           <p className="text-sm text-muted-foreground">
-            {t(
-              "You've been invited to join the following decision-making processes",
-            )}
+            {t('onboarding.decisionInvitesSubtitle')}
           </p>
         </div>
 
@@ -147,7 +145,7 @@ export const DecisionInvitesForm = ({
               onClick={() => handleDecline(invites[0]!.id)}
               disabled={declineInvite.isPending}
             >
-              {t("I don't want to participate")}
+              {t('decisions.declineInviteAction')}
             </Button>
           )}
         </div>

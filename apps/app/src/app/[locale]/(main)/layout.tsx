@@ -8,7 +8,6 @@ import { assertWalledGardenAccess } from '@/utils/walledGarden';
 import { SidebarInset, SidebarProvider } from '@op/sense/Sidebar';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
-import Script from 'next/script';
 
 import { PolicyReacceptanceModal } from '@/components/PolicyReacceptanceModal';
 import { SidebarNav } from '@/components/SidebarNav';
@@ -24,8 +23,10 @@ export const dynamic = 'force-dynamic';
 const AppRoot = async ({ children }: { children: React.ReactNode }) => {
   const user = await getUser();
 
-  await assertWalledGardenAccess(user);
-
+  // Onboarding is asked first, because /start admits a non-member and this
+  // gate does not. Gating first met a not-yet-onboarded account with a 403 it
+  // could never clear — the flow built for that account was on the other side
+  // of the wall.
   if (shouldRedirectToOnboarding(user)) {
     const requestHeaders = await headers();
     redirect(
@@ -35,6 +36,8 @@ const AppRoot = async ({ children }: { children: React.ReactNode }) => {
       ),
     );
   }
+
+  await assertWalledGardenAccess(user);
 
   return (
     <div className="flex size-full max-h-full flex-col">
@@ -56,9 +59,6 @@ const AppRoot = async ({ children }: { children: React.ReactNode }) => {
           </div>
         </SidebarProvider>
       </UserProvider>
-      {/* Served by our own edge-cached proxy (app/api/embeds) instead of
-          cdn.iframe.ly, so embed loads don't hit iframely's billed CDN. */}
-      <Script async src="/api/embeds/embed.js"></Script>
     </div>
   );
 };

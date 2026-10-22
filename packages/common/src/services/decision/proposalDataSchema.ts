@@ -367,17 +367,33 @@ export function parseSchemaOptions(
       : undefined;
 
   if (Array.isArray(itemSchema?.oneOf)) {
-    return itemSchema.oneOf
-      .filter(
-        (entry): entry is { const: string; title: string } =>
-          typeof entry === 'object' &&
-          entry !== null &&
-          'const' in entry &&
-          typeof (entry as Record<string, unknown>).const === 'string' &&
-          'title' in entry &&
-          typeof (entry as Record<string, unknown>).title === 'string',
-      )
-      .map((entry) => ({ value: entry.const, title: entry.title }));
+    return (
+      itemSchema.oneOf
+        .filter(
+          (
+            entry,
+          ): entry is {
+            const: string;
+            title: string;
+            description?: string;
+          } =>
+            typeof entry === 'object' &&
+            entry !== null &&
+            'const' in entry &&
+            typeof (entry as Record<string, unknown>).const === 'string' &&
+            'title' in entry &&
+            typeof (entry as Record<string, unknown>).title === 'string',
+        )
+        // Descriptions carry through like the single-value branch above: a
+        // multi-select rubric criterion explains its options the same way.
+        .map((entry) => ({
+          value: entry.const,
+          title: entry.title,
+          ...(typeof entry.description === 'string'
+            ? { description: entry.description }
+            : {}),
+        }))
+    );
   }
 
   if (Array.isArray(itemSchema?.enum)) {
@@ -450,4 +466,23 @@ export function schemaAllowsMultipleSelection(
     schema.type === 'array' ||
     (Array.isArray(schema.type) && schema.type.includes('array'))
   );
+}
+
+/**
+ * User-friendly display name for a template field: its schema `title`,
+ * falling back to the field key as-is. Shared by anything that turns a
+ * template field key into a label a person reads (validation error
+ * messages, export column headers).
+ *
+ * Never imposes casing of its own — an author-set title (however they chose
+ * to capitalize it) is returned unchanged, and the fallback key isn't
+ * capitalized either.
+ */
+export function getSchemaFieldTitle(
+  schema: XFormatPropertySchema | null | undefined,
+  key: string,
+): string {
+  // `||`, not `??` — an explicitly empty `title` is as unusable as a missing
+  // one, and should fall back the same way.
+  return schema?.title || key;
 }

@@ -4,6 +4,11 @@ export * from './updateProcess';
 export * from './getTemplate';
 export * from './listProcesses';
 
+// Notification audiences
+export * from './listProcessParticipants';
+export * from './listResultNotificationRecipients';
+export * from './resultNotificationTemplate';
+
 // Instance cache invalidation
 export * from './decisionCache';
 
@@ -13,8 +18,17 @@ export * from './removeOverviewHeroImage';
 export * from './signOverviewHeroImageUploadUrl';
 export * from './updateOverviewHeroImage';
 
+// Phase entities
+export { MAX_PHASES_PER_DECISION, type PhaseData } from './phaseHelpers';
+export * from './createPhase';
+export * from './deletePhase';
+export * from './reorderPhases';
+export * from './updatePhase';
+
 // Instance management
 export * from './createInstanceFromTemplate';
+export * from './createInstance';
+export * from './schemas/createInstance';
 export * from './duplicateInstance';
 export * from './updateDecisionInstance';
 export * from './listInstances';
@@ -34,6 +48,12 @@ export * from './triggerPhaseAdvancement';
 
 // Platform-admin reversal of the most recent advancement
 export * from './revertPhase';
+
+// Platform-admin public access
+export * from './isDecisionPublic';
+export * from './makeDecisionPublic';
+export * from './removeDecisionPublicAccess';
+export * from './resolvePublicGrantTarget';
 
 // Transition management
 export * from './buildExpectedTransitions';
@@ -59,25 +79,56 @@ export * from './isLegacyInstance';
 export * from './listSelectionCandidates';
 export * from './resolveManualSelectionStatus';
 export * from './submitManualSelection';
-export * from './getProposalsForPhase';
+export {
+  type PhaseProposalSqlScope,
+  type PhaseScopedInstance,
+  getPhaseProposalAndDraftIds,
+  getPhaseProposalSqlScope,
+  getProposalIdsForPhase,
+  getProposalsForPhase,
+} from './getProposalsForPhase';
 export * from './createProposal';
 export * from './submitProposal';
 export * from './updateProposal';
+export * from './rejectProposal';
+export * from './unrejectProposal';
+export * from './advanceProposal';
+export * from './getProposalAdvanceTarget';
+export * from './listProposalRejectionRecipients';
 export * from './getProposal';
+export * from './getCollabToken';
 export * from './assertProposalEngagementAccess';
+export { mergeTargetIds } from './proposalSupersession';
+
+// Proposal relationships (merge / unmerge / list)
+export * from './mergeProposals';
+export * from './unmergeProposal';
+export * from './listProposalRelationships';
+export * from './listContributingProposals';
+export * from './listProposalMergeRecipients';
+
 export * from './getLatestSelectionForProposal';
 export * from './listProposals';
+export * from './proposalAuthor';
+export * from './projectProposalLocation';
 export * from './listProposalLocations';
 export * from './listAllProposals';
 export * from './assignReviewsToReviewer';
+export * from './assignPhaseReviews';
+export * from './removeReviewAssignments';
+export * from './getDecisionReviewAssignments';
+export * from './getPhaseReviewAssignments';
 export * from './generateReviewAssignments';
 export * from './runGenerateReviewAssignments';
 export * from './backfillReviewAssignments';
+export * from './pruneReviewAssignmentsForMember';
 export * from './reconcileReviewAssignments';
 export * from './getEligibleReviewerProfileIds';
+export * from './reviews';
 export * from './listProposalSubmitters';
 export * from './getReviewAssignment';
 export * from './listReviewAssignments';
+export * from './listReviewAssignmentLocations';
 export * from './listCategoryReviewers';
 export * from './listEligibleReviewers';
 export * from './listReviewerCategories';
@@ -85,10 +136,13 @@ export * from './addCategoryReviewer';
 export * from './removeCategoryReviewer';
 export * from './listProposalsWithReviewAggregates';
 export * from './getProposalWithReviewAggregates';
+export * from './proposal/getReviewedProposalVersion';
 export * from './getPhaseReviewProgress';
 export * from './listProposalsRevisionRequests';
+export * from './listProposalFeedback';
 export * from './listProposalRevisionRequests';
-export * from './submitRevisionResponse';
+export * from './listProposalRevisionNotes';
+export * from './submitProposalRevision';
 export * from './submitReview';
 export * from './updateReview';
 export * from './saveReviewDraft';
@@ -115,6 +169,7 @@ export * from './resolveBoundary';
 export * from './listBoundaryShapes';
 export * from './reverseGeocode';
 export * from './templateLocation';
+export * from './rubric/money';
 export * from './extractProposalText';
 export * from './resolveProposalTemplate';
 export * from './getProposalTemplateFieldOrder';
@@ -145,6 +200,9 @@ export * from './utils/phaseTemplates';
 
 // Voting management
 export * from './voting';
+export * from './votingEligibility';
+export * from './sms';
+export * from './countBallotProposals';
 
 // Process survey
 export * from './processSurvey';
@@ -161,8 +219,12 @@ export type {
   DecisionInstanceData,
   PhaseInstanceData,
   PhaseOverride,
+  PhaseSettingsSchema,
 } from './schemas/instanceData';
-export { createInstanceDataFromTemplate } from './schemas/instanceData';
+export {
+  createInstanceDataFromTemplate,
+  getInstancePhases,
+} from './schemas/instanceData';
 export type {
   DecisionSchemaDefinition,
   PhaseDefinition,

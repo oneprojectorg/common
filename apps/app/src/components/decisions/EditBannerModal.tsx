@@ -20,19 +20,18 @@ export function EditBannerModal({
   /** Stored storage path of the current hero image, if any. */
   heroImagePath?: string;
 }) {
-  const t = useTranslations();
+  const t = useTranslations('decisions.processBuilder');
   const [isOpen, setIsOpen] = useState(false);
 
   return (
     <>
       <Button
         variant="outline"
-        size="sm"
         className="absolute end-4 top-4 z-10 hidden md:flex"
         onClick={() => setIsOpen(true)}
       >
         <LuImage className="size-4" aria-hidden="true" />
-        {t('Edit banner')}
+        {t('editBannerTitle')}
       </Button>
       <BannerUploadModal
         instanceId={instanceId}

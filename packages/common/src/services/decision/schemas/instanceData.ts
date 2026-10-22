@@ -30,6 +30,45 @@ export function isLastPhase(
   return currentStateId === phases[phases.length - 1]?.phaseId;
 }
 
+/** Narrows the `instanceData` jsonb column to its phase list. */
+export function getInstancePhases(
+  instanceData: unknown,
+): readonly PhaseInstanceData[] {
+  if (
+    instanceData === null ||
+    typeof instanceData !== 'object' ||
+    !('phases' in instanceData)
+  ) {
+    return [];
+  }
+
+  const { phases } = instanceData;
+
+  return Array.isArray(phases) ? phases : [];
+}
+
+export type PhaseSettingsSchema = JSONSchema7 & { ui?: UiSchema };
+
+export const assertSettingsMatchSchema = ({
+  settings,
+  settingsSchema,
+  phaseLabel,
+}: {
+  settings: Record<string, unknown>;
+  settingsSchema: PhaseSettingsSchema;
+  phaseLabel: string;
+}): void => {
+  // Ajv's strict mode rejects the RJSF `ui` key.
+  const { ui: _ui, ...schema } = settingsSchema;
+  const result = schemaValidator.validate(schema, settings);
+  if (!result.valid) {
+    throw new ValidationError(
+      `Invalid settings for phase "${phaseLabel}"`,
+      result.errors,
+    );
+  }
+};
+
 export interface PhaseInstanceData {
   phaseId: string;
   name?: string;
@@ -38,12 +77,14 @@ export interface PhaseInstanceData {
   additionalInfo?: string;
   rules?: PhaseRules;
   selectionPipeline?: SelectionPipeline;
-  settingsSchema?: JSONSchema7 & { ui?: UiSchema };
+  settingsSchema?: PhaseSettingsSchema;
   startDate?: string;
   endDate?: string;
   settings?: Record<string, unknown>;
   /** Phase-specific rubric; resolve via `getPhaseRubricTemplate`, never directly. */
   rubricTemplate?: RubricTemplateSchema;
+  /** Phase-specific form; resolve via `getPhaseProposalTemplate`, never directly. */
+  proposalTemplate?: ProposalTemplateSchema;
 }
 
 /** Public-facing overview content (headline, short description, rich text body) */
@@ -62,6 +103,18 @@ export interface InstanceOverview {
    * gradient banner. Admins upload it from the Process Builder Overview tab.
    */
   heroImage?: string;
+}
+
+/**
+ * Overview patch accepted by `updateDecisionInstance`. Same headline rule as
+ * `PhaseOverride`: `null` clears it, `undefined` leaves it unchanged, and `''`
+ * never reaches here.
+ */
+export interface InstanceOverviewUpdate extends Omit<
+  InstanceOverview,
+  'headline'
+> {
+  headline?: string | null;
 }
 
 /**
@@ -87,7 +140,12 @@ export interface PhaseOverride {
   phaseId: string;
   name?: string;
   description?: string;
-  headline?: string;
+  /**
+   * Phase headline override. `null` clears it (the phase page falls back to its
+   * default copy), `undefined` leaves it unchanged. `''` is rejected at the API
+   * boundary — an empty title is not valid content.
+   */
+  headline?: string | null;
   additionalInfo?: string;
   rules?: PhaseRules;
   startDate?: string;
@@ -128,22 +186,12 @@ export function createInstanceDataFromTemplate(input: {
     phases: template.phases.map((phase) => {
       const override = overrideMap.get(phase.id);
 
-      // Validate settings against phase's settings schema if provided
       if (override?.settings && phase.settings) {
-        // Strip RJSF-specific 'ui' property before AJV validation
-        const { ui: _ui, ...settingsSchema } = phase.settings as JSONSchema7 & {
-          ui?: unknown;
-        };
-        const result = schemaValidator.validate(
-          settingsSchema,
-          override.settings,
-        );
-        if (!result.valid) {
-          throw new ValidationError(
-            `Invalid settings for phase "${phase.id}"`,
-            result.errors,
-          );
-        }
+        assertSettingsMatchSchema({
+          settings: override.settings,
+          settingsSchema: phase.settings,
+          phaseLabel: phase.id,
+        });
       }
 
       return {

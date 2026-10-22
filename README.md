@@ -39,7 +39,13 @@ Otherwise, install these manually:
 - **OrbStack** (preferred on macOS) or **Docker Desktop** / **colima** running — give it enough headroom: the stack steady-states at **~6–8 GB RAM** (DinD + ~12 Supabase sub-containers + the Next.js app + API + Redis).
 - **Disk space** — budget **~15–20 GB** for the base image, the DinD volume (Supabase images cached inside it), `node_modules` volumes, and Next.js build caches.
 - **Node.js 24** and **pnpm** (via `corepack enable`) — the `pnpm docker:dev` script invokes compose; if you only want the raw `docker compose up` path, Node/pnpm aren't strictly required.
-- **`TIPTAP_PRO_TOKEN`** — set it in your shell before running, or put it in `.env.local` at the repo root (`.env.local` is sourced by your workflow; `.env.docker` is tracked and must not contain the real token).
+- **Tiptap Pro registry credentials** — run both of these once (the registry line too, not just the token, or installs 404 against npmjs):
+
+  ```bash
+  pnpm config set "@tiptap-pro:registry" "https://registry.tiptap.dev/"
+  pnpm config set "//registry.tiptap.dev/:_authToken" "<token>"
+  ```
+- **`TIPTAP_PRO_TOKEN`** — still needed for the Docker path: set it in your shell before running, or put it in `.env.local` at the repo root (`.env.local` is sourced by your workflow; `.env.docker` is tracked and must not contain the real token).
 - **Platform** — tested on arm64 macOS. amd64 Linux should work but isn't verified in CI.
 
 ### Starting the dev server

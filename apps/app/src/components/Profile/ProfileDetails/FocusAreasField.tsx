@@ -15,7 +15,7 @@ interface FocusAreasFieldProps {
 }
 
 export const FocusAreasField = ({ profileId, field }: FocusAreasFieldProps) => {
-  const t = useTranslations();
+  const t = useTranslations('org');
 
   const [individualTermsData] =
     trpc.individual.getTermsByProfile.useSuspenseQuery({
@@ -46,7 +46,7 @@ export const FocusAreasField = ({ profileId, field }: FocusAreasFieldProps) => {
 
   return (
     <TermsMultiSelect
-      label={t('Focus Areas')}
+      label={t('focusAreasLabel')}
       taxonomy="necSimple:focusArea"
       value={(field.state.value as Array<Option>) ?? []}
       onChange={field.handleChange}

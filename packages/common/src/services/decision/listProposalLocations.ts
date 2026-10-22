@@ -2,7 +2,11 @@ import { db } from '@op/db/client';
 import type { User } from '@op/supabase/lib';
 
 import type { ListProposalsInput } from './listProposals';
-import { parseProposalData } from './proposalDataSchema';
+import {
+  projectProposalLocation,
+  proposalLocationColumns,
+  proposalLocationWith,
+} from './projectProposalLocation';
 import { resolveProposalListScope } from './resolveProposalListScope';
 
 /**
@@ -31,77 +35,19 @@ export const listProposalLocations = async ({
   });
 
   if (isEmpty) {
-    return { proposals: [] };
+    return { items: [] };
   }
 
   const rows = await db.query.proposals.findMany({
     where: {
       RAW: (table) => buildWhereClause(table),
     },
-    columns: {
-      id: true,
-      processInstanceId: true,
-      proposalData: true,
-      status: true,
-      visibility: true,
-      profileId: true,
-      submittedByProfileId: true,
-    },
-    with: {
-      submittedBy: {
-        with: {
-          avatarImage: true,
-          profileUsers: {
-            columns: {},
-            with: { authUser: { columns: { isAnonymous: true } } },
-          },
-        },
-      },
-      profile: true,
-    },
+    columns: proposalLocationColumns,
+    with: proposalLocationWith,
   });
 
-  const proposals = rows.flatMap((proposal) => {
-    // Drafts and any proposal without coordinates never render a pin.
-    const proposalData = parseProposalData(proposal.proposalData);
-    if (!proposalData.location) {
-      return [];
-    }
+  // Drafts and any proposal without coordinates never render a pin.
+  const proposals = rows.flatMap((row) => projectProposalLocation(row));
 
-    const rawSubmittedBy = Array.isArray(proposal.submittedBy)
-      ? proposal.submittedBy[0]
-      : proposal.submittedBy;
-    const submittedBy = rawSubmittedBy
-      ? (() => {
-          const { profileUsers, ...author } = rawSubmittedBy;
-          return {
-            ...author,
-            isAnonymous: Boolean(
-              profileUsers?.some(
-                (pu: { authUser: { isAnonymous: boolean } | null }) =>
-                  pu.authUser?.isAnonymous,
-              ),
-            ),
-          };
-        })()
-      : rawSubmittedBy;
-    const profile = Array.isArray(proposal.profile)
-      ? proposal.profile[0]
-      : proposal.profile;
-
-    return [
-      {
-        id: proposal.id,
-        processInstanceId: proposal.processInstanceId,
-        proposalData,
-        status: proposal.status,
-        visibility: proposal.visibility,
-        profileId: proposal.profileId,
-        submittedBy,
-        profile,
-      },
-    ];
-  });
-
-  return { proposals };
+  return { items: proposals };
 };

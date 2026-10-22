@@ -109,7 +109,7 @@ describe.concurrent('decision.listBoundaryShapes', () => {
 
     const result = await caller.decision.listBoundaryShapes({ profileId });
 
-    const match = result.boundaries.find((b) => b.id === inserted?.id);
+    const match = result.items.find((b) => b.id === inserted?.id);
     expect(match).toBeDefined();
     expect(match?.name).toBe(boundaryName);
     expect(match?.geometry.type).toBe('MultiPolygon');
@@ -146,7 +146,7 @@ describe.concurrent('decision.listBoundaryShapes', () => {
     });
 
     expect(
-      result.boundaries.find((b) => b.id === otherBoundary?.id),
+      result.items.find((b) => b.id === otherBoundary?.id),
     ).toBeUndefined();
   });
 });

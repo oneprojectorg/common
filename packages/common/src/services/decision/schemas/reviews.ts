@@ -4,17 +4,23 @@ import {
   ProposalReviewState,
   categoryReviewers,
   profiles,
+  proposalReviewRequests,
 } from '@op/db/schema';
 import { logger } from '@op/logging';
 import { createSelectSchema } from 'drizzle-zod';
 import { z } from 'zod';
 
+import { list, paginated, total } from '../../../utils/pagination';
 import type { RubricTemplateSchema } from '../types';
 import {
   instanceOptionalPhaseRefSchema,
   instancePhaseRefSchema,
 } from './instance';
 import { proposalProfileSchema, proposalSchema } from './proposal';
+import {
+  type ProposalCategoryItem,
+  proposalCategorySchema,
+} from './proposalCategory';
 
 export {
   ProposalReviewAssignmentStatus,
@@ -103,12 +109,17 @@ export const proposalReviewRequestSchema = z.object({
   state: z.enum(ProposalReviewRequestState),
   requestComment: z.string(),
   responseComment: z.string().nullable(),
+  respondedProposalHistoryId: z.uuid().nullable(),
   requestedAt: z.string().nullable(),
   respondedAt: z.string().nullable(),
   resolvedAt: z.string().nullable(),
   createdAt: z.string().nullable(),
   updatedAt: z.string().nullable(),
 });
+
+export const proposalReviewRequestListSchema = list(
+  proposalReviewRequestSchema,
+);
 
 // ── Review schemas ──────────────────────────────────────────────────────
 
@@ -129,10 +140,15 @@ export const reviewAssignmentExtendedSchema = z.object({
   review: proposalReviewSchema.nullable(),
   revisionRequest: proposalReviewRequestSchema.nullable(),
   canEditReview: z.boolean(),
+  /** The proposal changed after this review was submitted. Derived at read time. */
+  isReviewOutOfDate: z.boolean(),
 });
 
-export const reviewAssignmentListSchema = z.object({
-  assignments: z.array(reviewAssignmentExtendedSchema),
+export const reviewAssignmentListSchema = paginated(
+  reviewAssignmentExtendedSchema,
+).extend({
+  /** Count for the request's filters, independent of the page. */
+  total,
 });
 
 // ── Proposal-scoped revision request schemas ──────────────────────────
@@ -143,9 +159,64 @@ export const proposalRevisionRequestItemSchema = z.object({
   decisionProfileSlug: z.string(),
 });
 
-export const proposalRevisionRequestListSchema = z.object({
-  revisionRequests: z.array(proposalRevisionRequestItemSchema),
+export const proposalRevisionRequestListSchema = list(
+  proposalRevisionRequestItemSchema,
+);
+
+// ── Proposal-scoped author revision notes ────────────────────────────
+
+/**
+ * One revision request answered by an author note. Reviewer-authored, so the
+ * reviewer's identity is deliberately absent: revision requests are anonymous
+ * to the author and to the other reviewers.
+ */
+export const proposalRevisionNoteRequestSchema = createSelectSchema(
+  proposalReviewRequests,
+).pick({
+  id: true,
+  requestComment: true,
+  requestedAt: true,
 });
+
+/**
+ * One author note — a single resubmission — with every revision request it
+ * answered. Grouped on `respondedProposalHistoryId`, the proposal version the
+ * author resubmitted. The writer always sets it, but the FK nulls it out if
+ * that snapshot is later deleted; `listProposalRevisionNotes` substitutes the
+ * request's own id in that case, so this field is a stable group key rather
+ * than always a real history pointer.
+ */
+export const proposalRevisionNoteSchema = createSelectSchema(
+  proposalReviewRequests,
+)
+  .pick({
+    responseComment: true,
+    respondedAt: true,
+  })
+  .extend({
+    respondedProposalHistoryId: z.uuid(),
+    requests: z.array(proposalRevisionNoteRequestSchema),
+  });
+
+export const proposalRevisionNoteListSchema = list(proposalRevisionNoteSchema);
+
+export type ProposalRevisionNote = z.infer<typeof proposalRevisionNoteSchema>;
+
+// ── Proposal-scoped author feedback schemas ───────────────────────────
+
+/**
+ * One anonymized reviewer note released to the proposal author. Deliberately
+ * narrower than `proposalReviewSchema`: no `reviewData`, and never a reviewer
+ * identity — anonymity is structural, not a runtime setting.
+ */
+export const proposalFeedbackItemSchema = z.object({
+  id: z.uuid(),
+  comment: z.string(),
+  phaseId: z.string(),
+  submittedAt: z.string().nullable(),
+});
+
+export const proposalFeedbackListSchema = list(proposalFeedbackItemSchema);
 
 // ── Per-proposal review aggregates ─────────────────────────────────────
 
@@ -160,10 +231,14 @@ export const proposalRevisionRequestListSchema = z.object({
  * `overallRecommendationCount` is a tally of submitted answers to the
  * well-known overall-recommendation criterion (e.g. `{ yes: 2, no: 1 }`).
  * Empty when the rubric doesn't include the field or no reviews are in.
+ *
+ * `outOfDateReviewsCount` is how many of those submissions were written
+ * against an older proposal version. Derived at read time, never stored.
  */
 export const proposalReviewAggregatesSchema = z.object({
   assignmentsCount: z.number().int(),
   reviewsSubmittedCount: z.number().int(),
+  outOfDateReviewsCount: z.number().int(),
   averageScore: z.number(),
   overallRecommendationCount: z.record(z.string(), z.number().int()),
   reviewers: z.array(
@@ -174,13 +249,6 @@ export const proposalReviewAggregatesSchema = z.object({
   ),
 });
 
-/** Taxonomy-backed category attached to a proposal. */
-export const proposalCategorySchema = z.object({
-  id: z.uuid(),
-  label: z.string(),
-  termUri: z.string(),
-});
-
 export const proposalWithAggregatesSchema = z.object({
   proposal: proposalSchema,
   aggregates: proposalReviewAggregatesSchema,
@@ -188,14 +256,12 @@ export const proposalWithAggregatesSchema = z.object({
 });
 
 /**
- * Single response shape for both filtered and paginated modes. In
- * filtered mode `total` is just `items.length` and `next` is null —
- * one shape is simpler than a union and clients can ignore the extras.
+ * Single response shape for both modes. A caller that wants a count reads
+ * `items.length`.
  */
-export const proposalsWithReviewAggregatesListSchema = z.object({
-  items: z.array(proposalWithAggregatesSchema),
-  total: z.number().int(),
-  next: z.string().nullable(),
+export const proposalsWithReviewAggregatesListSchema = list(
+  proposalWithAggregatesSchema,
+).extend({
   /** The phase-resolved rubric the items' aggregates were scored against. */
   rubricTemplate: rubricTemplateSchema.nullable(),
 });
@@ -209,6 +275,8 @@ export const submittedReviewItemSchema = z.object({
   assignmentStatus: z.enum(ProposalReviewAssignmentStatus),
   score: z.number(),
   overallRecommendation: z.string().nullable(),
+  /** The proposal changed after this review was submitted. Derived at read time. */
+  isReviewOutOfDate: z.boolean(),
 });
 
 export const proposalWithSubmittedReviewsSchema =
@@ -253,10 +321,12 @@ export type ProposalRevisionRequestItem = z.infer<
 export type ProposalRevisionRequestList = z.infer<
   typeof proposalRevisionRequestListSchema
 >;
+export type ProposalFeedbackItem = z.infer<typeof proposalFeedbackItemSchema>;
+export type ProposalFeedbackList = z.infer<typeof proposalFeedbackListSchema>;
 export type ProposalReviewAggregates = z.infer<
   typeof proposalReviewAggregatesSchema
 >;
-export type ProposalCategoryItem = z.infer<typeof proposalCategorySchema>;
+export { proposalCategorySchema, type ProposalCategoryItem };
 export type ProposalWithAggregates = z.infer<
   typeof proposalWithAggregatesSchema
 >;
@@ -318,9 +388,7 @@ export type CategoryWithReviewersSchema = z.infer<
   typeof categoryWithReviewersSchema
 >;
 
-export const categoryReviewersListSchema = z.object({
-  categories: z.array(categoryWithReviewersSchema),
-});
+export const categoryReviewersListSchema = list(categoryWithReviewersSchema);
 
 export const removeCategoryReviewerResultSchema = z.object({
   removed: z.boolean(),
@@ -350,9 +418,7 @@ export const eligibleReviewerSchema = createSelectSchema(profiles)
 
 export type EligibleReviewerSchema = z.infer<typeof eligibleReviewerSchema>;
 
-export const eligibleReviewersListSchema = z.object({
-  reviewers: z.array(eligibleReviewerSchema),
-});
+export const eligibleReviewersListSchema = list(eligibleReviewerSchema);
 
 /** A category (taxonomy term id + label) the current reviewer is scoped to. */
 export const reviewerCategorySchema = z.object({
@@ -362,4 +428,4 @@ export const reviewerCategorySchema = z.object({
 
 export type ReviewerCategory = z.infer<typeof reviewerCategorySchema>;
 
-export const reviewerCategoriesSchema = z.array(reviewerCategorySchema);
+export const reviewerCategoriesSchema = list(reviewerCategorySchema);

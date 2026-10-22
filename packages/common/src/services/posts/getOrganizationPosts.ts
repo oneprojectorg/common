@@ -4,8 +4,9 @@ import { logger } from '@op/logging';
 import type { GetOrganizationPostsInput } from '@op/types';
 import { and, desc, eq, isNull } from 'drizzle-orm';
 
+import { PAGE_LIMIT } from '../../utils/pagination';
 import { getCurrentProfileId } from '../access';
-import { getItemsWithReactionsAndComments } from './listPosts';
+import { getItemsWithLikesAndComments } from './listPosts';
 
 interface GetOrganizationPostsServiceInput extends GetOrganizationPostsInput {
   authUserId: string;
@@ -17,7 +18,7 @@ export const getOrganizationPosts = async (
   const {
     organizationId,
     parentPostId,
-    limit = 20,
+    limit = PAGE_LIMIT.md,
     offset = 0,
     includeChildren = false,
     authUserId,
@@ -109,13 +110,12 @@ export const getOrganizationPosts = async (
 
     // Transform to match expected format and add reaction data
     const actorProfileId = await getCurrentProfileId(authUserId);
-    const itemsWithReactionsAndComments =
-      await getItemsWithReactionsAndComments({
-        items: orgPosts,
-        profileId: actorProfileId,
-      });
+    const itemsWithLikesAndComments = await getItemsWithLikesAndComments({
+      items: orgPosts,
+      profileId: actorProfileId,
+    });
 
-    return itemsWithReactionsAndComments;
+    return itemsWithLikesAndComments;
   } catch (error) {
     logger.error('Error fetching organization posts', { error });
     throw error;

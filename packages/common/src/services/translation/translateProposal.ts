@@ -2,7 +2,9 @@ import type { User } from '@op/supabase/lib';
 import type { TranslatableEntry } from '@op/translation';
 
 import { getProposal } from '../decision/getProposal';
+import { SYSTEM_FIELD_KEYS } from '../decision/getProposalTemplateFieldOrder';
 import { parseSchemaOptions } from '../decision/proposalDataSchema';
+import { buildProposalListPreview } from '../decision/proposalListPreview';
 import type { ProposalTemplateSchema } from '../decision/types';
 import type { SupportedLocale } from './locales';
 import { runTranslateBatch } from './runTranslateBatch';
@@ -40,19 +42,25 @@ export async function translateProposal({
   const proposalId = proposal.id;
   const { proposalData } = proposal;
 
-  // TODO: eventually use `htmlContent` for all fields
+  const template = proposal.proposalTemplate as ProposalTemplateSchema | null;
+
+  // Translate the title the reader sees as plain text, not its fragment's HTML.
+  const { systemFieldOverrides } = buildProposalListPreview({
+    documentContent: proposal.documentContent,
+    proposalTemplate: template,
+  });
   entries.push(
     ...flattenTranslatableFields(`proposal:${proposalId}:`, {
-      title: proposal.profile?.name,
+      title: systemFieldOverrides.title ?? proposal.profile?.name,
       category: proposalData.category,
     }),
   );
 
-  // HTML fragments from TipTap — proposal.htmlContent is the server-generated HTML (Record<string, string>)
+  // System fields are translated above as plain text, or not at all.
   if (proposal.htmlContent) {
     const htmlContent = proposal.htmlContent as Record<string, string>;
     for (const [fragmentName, html] of Object.entries(htmlContent)) {
-      if (html) {
+      if (html && !SYSTEM_FIELD_KEYS.has(fragmentName)) {
         entries.push({
           contentKey: `proposal:${proposalId}:${fragmentName}`,
           text: html,
@@ -62,7 +70,6 @@ export async function translateProposal({
   }
 
   // Template field titles and descriptions
-  const template = proposal.proposalTemplate as ProposalTemplateSchema | null;
   if (template?.properties) {
     for (const [fieldKey, property] of Object.entries(template.properties)) {
       if (property.title) {

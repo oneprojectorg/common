@@ -1,9 +1,9 @@
 import { OPURLConfig, getTextPreview } from '@op/core';
 import { logger } from '@op/logging';
 import { getAvatarColorForString } from '@op/styles/constants';
-import { getTranslations } from 'next-intl/server';
 import { ImageResponse } from 'next/og';
 
+import { getTranslations } from '@/lib/i18n';
 import { getLocaleDirection, i18nConfig } from '@/lib/i18n/config';
 
 import { loadDecision } from './loadDecision';
@@ -144,14 +144,14 @@ const Image = async ({
     const stats: string[] = [];
     if (instance.proposalCount != null) {
       stats.push(
-        t('{count, plural, one {# proposal} other {# proposals}}', {
+        t('decisions.proposals.proposalCount', {
           count: instance.proposalCount,
         }),
       );
     }
     if (instance.participantCount != null) {
       stats.push(
-        t('{count, plural, one {# participant} other {# participants}}', {
+        t('decisions.participantCount', {
           count: instance.participantCount,
         }),
       );
@@ -160,10 +160,12 @@ const Image = async ({
     return new ImageResponse(
       <Card
         title={getTextPreview({
-          content: decisionProfile.name || t('Decision'),
+          content: decisionProfile.name || t('decisions.decisionLabel'),
           maxLength: 80,
         })}
-        byline={byName ? t('by {name}', { name: byName }) : undefined}
+        byline={
+          byName ? t('decisions.bylineLabel', { name: byName }) : undefined
+        }
         stats={stats}
         headerUrl={headerUrl}
         logoSrc={logoSrc}

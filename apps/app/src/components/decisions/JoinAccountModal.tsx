@@ -1,12 +1,21 @@
 'use client';
 
+import { codeFailureMessage } from '@/hooks/phoneAuth/failureMessage';
 import {
   getClaimEmailErrorMessage,
+  getClaimPhoneErrorMessage,
+  getOnboardingPath,
   goToOnboarding,
   useClaimAccount,
 } from '@/hooks/useClaimAccount';
+import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { useUser } from '@/utils/UserProvider';
-import type { CommonUser } from '@op/api/encoders';
+import { isJoinEligible } from '@/utils/isJoinEligible';
+import {
+  isValidTypedPhoneNumber,
+  normalizePhoneNumber,
+} from '@op/common/client';
+import { Alert, AlertTitle } from '@op/sense/Alert';
 import { Button } from '@op/sense/Button';
 import {
   Dialog,
@@ -16,13 +25,26 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@op/sense/Dialog';
+import { createSBBrowserClient } from '@op/supabase/client';
 import { usePathname } from 'next/navigation';
 import { useQueryState } from 'nuqs';
 import { type ReactNode, Suspense, useState } from 'react';
+import { LuCircleAlert } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { AuthCodeField, AuthEmailField, isValidOtpLength } from '../AuthPanel';
+import {
+  type AuthChannel,
+  AuthCodeField,
+  AuthCodeStepActions,
+  AuthContactFields,
+  AuthDivider,
+  AuthGoogleButton,
+  AuthSendCodeButton,
+  CodeSentAnnouncement,
+  codeSentToLabel,
+  isValidOtpLength,
+} from '../AuthPanel';
 import { HeaderUserMenu } from '../SiteHeader';
 import { isValidEmail } from './emailUtils';
 
@@ -38,14 +60,6 @@ import { isValidEmail } from './emailUtils';
  * won't open for one.
  */
 
-/**
- * Who may claim: logged-out visitors and anonymous accounts. NOT the same as
- * `!userCanInteract` — a full account without a currentProfile must see the
- * user menu, not Join.
- */
-export const isJoinEligible = (user: CommonUser | null | undefined): boolean =>
-  !user || user.isAnonymous;
-
 export const JoinAccountModal = () => {
   const { user } = useUser();
   const [join, setJoin] = useQueryState('join');
@@ -59,7 +73,7 @@ export const JoinAccountModal = () => {
   return (
     <Dialog open={isOpen} onOpenChange={(open) => (open ? null : close())}>
       <DialogContent className="sm:max-w-128">
-        <JoinAccountModalContent />
+        <JoinAccountModalContent close={close} />
       </DialogContent>
     </Dialog>
   );
@@ -83,7 +97,7 @@ export const JoinDecisionButton = ({
         void setJoin('1');
       }}
     >
-      {t('Join')}
+      {t('auth.joinAction')}
     </Button>
   );
 };
@@ -99,7 +113,7 @@ export const JoinDecisionButtonFallback = () => {
   // button and keep link semantics rather than its `role="button"`.
   return (
     <Button nativeButton={false} role={undefined} render={<a href="?join=1" />}>
-      {t('Join')}
+      {t('auth.joinAction')}
     </Button>
   );
 };
@@ -131,20 +145,40 @@ export const JoinOrUserMenu = ({
   return <HeaderUserMenu className={userMenuClassName} />;
 };
 
-const JoinAccountModalContent = () => {
+const JoinAccountModalContent = ({ close }: { close: () => void }) => {
   const t = useTranslations();
-  const { requestEmailCode, verifyEmailCode } = useClaimAccount();
+  const supabase = createSBBrowserClient();
+  const {
+    requestEmailCode,
+    verifyEmailCode,
+    requestPhoneCode,
+    verifyPhoneCode,
+  } = useClaimAccount();
+  // Same flag the login screen gates its phone channel on, so the two agree
+  // about whether SMS exists at all.
+  const smsEnabled = useFeatureFlag('sms-login') ?? false;
   // next/navigation (not the i18n router): the locale prefix must stay — the
   // promote-onboarding redirect and the locale-less /login route both need it.
   const pathname = usePathname();
 
   const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [channel, setChannel] = useState<'email' | 'phone'>('email');
   const [token, setToken] = useState<string | undefined>();
   const [otpSent, setOtpSent] = useState(false);
-  const [error, setError] = useState<string | undefined>();
+  const [contactError, setContactError] = useState<string | undefined>();
+  const [codeError, setCodeError] = useState<string | undefined>();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // With the flag off there is no phone channel to be on, even if a previous
+  // render put us there.
+  const activeChannel = smsEnabled ? channel : 'email';
+  const isPhone = activeChannel === 'phone';
+
   const emailIsValid = isValidEmail(email);
+  // People type `(415) 555-0132`. Validate what they meant, and send that.
+  const phoneIsValid = isValidTypedPhoneNumber(phone);
+  const contactIsValid = isPhone ? phoneIsValid : emailIsValid;
 
   // Return to this decision page after onboarding. Query params are dropped
   // deliberately — `join=1` must not re-open the modal on the way back.
@@ -152,20 +186,46 @@ const JoinAccountModalContent = () => {
     goToOnboarding(pathname);
   };
 
-  const submitEmail = async () => {
-    if (isSubmitting || !emailIsValid) {
+  // Google is a redirect flow, not an in-page OTP exchange, so it can't call
+  // goAfterClaim itself — the destination has to travel as the callback's own
+  // `redirect` param.
+  //
+  // KNOWN GAP: unlike requestEmailCode/requestPhoneCode (see useClaimAccount's
+  // module doc), this goes through the standard /api/auth/callback, which
+  // calls account.login and enforces the invite-only allow-list. A public,
+  // uninvited visitor who picks "Continue with Google" here will be rejected
+  // and their freshly-created account deleted — the exact gate the claim flow
+  // exists to bypass. Left as-is per product decision; needs a claim-flow
+  // equivalent (linkIdentity) before this is correct for public processes.
+  const joinWithGoogle = async () => {
+    const callbackUrl = new URL('/api/auth/callback', window.location.origin);
+    callbackUrl.searchParams.set('redirect', getOnboardingPath(pathname));
+    await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: callbackUrl.toString() },
+    });
+  };
+
+  const submitContact = async () => {
+    if (isSubmitting || !contactIsValid) {
       return;
     }
 
     setIsSubmitting(true);
-    setError(undefined);
+    setContactError(undefined);
 
     // Deliberately left submitting through the success-navigation path so the
     // form can't be re-submitted while window.location is unloading the page.
     try {
-      const result = await requestEmailCode(email, { mintAnonSession: true });
+      const result = isPhone
+        ? await requestPhoneCode(phone, { mintAnonSession: true })
+        : await requestEmailCode(email, { mintAnonSession: true });
       if (!result.ok) {
-        setError(getClaimEmailErrorMessage(result, t));
+        setContactError(
+          isPhone
+            ? getClaimPhoneErrorMessage(result, t)
+            : getClaimEmailErrorMessage(result, t),
+        );
         setIsSubmitting(false);
         return;
       }
@@ -176,7 +236,11 @@ const JoinAccountModalContent = () => {
       setOtpSent(true);
       setIsSubmitting(false);
     } catch {
-      setError(t("That didn't work"));
+      setContactError(
+        isPhone
+          ? t('onboarding.phoneCodeNotSentError')
+          : t('onboarding.emailCodeNotSentError'),
+      );
       setIsSubmitting(false);
     }
   };
@@ -187,81 +251,127 @@ const JoinAccountModalContent = () => {
     }
 
     setIsSubmitting(true);
-    setError(undefined);
+    setContactError(undefined);
+    setCodeError(undefined);
 
     try {
-      const result = await verifyEmailCode({ email, token });
+      const result = isPhone
+        ? await verifyPhoneCode({ phone, token })
+        : await verifyEmailCode({ email, token });
       if (result.ok) {
         goAfterClaim();
         return;
       }
-      setError(result.message ?? t('Failed to verify code'));
+      setCodeError(codeFailureMessage(result.reason, t));
     } catch {
-      setError(t('Failed to verify code'));
+      setCodeError(t('auth.verifyCodeError'));
     }
     setIsSubmitting(false);
+  };
+
+  const changeToken = (next: string) => {
+    setToken(next);
+    setCodeError(undefined);
   };
 
   const goBack = () => {
     setOtpSent(false);
     setToken(undefined);
-    setError(undefined);
+    setContactError(undefined);
+    setCodeError(undefined);
+  };
+
+  const resendCode = () => {
+    setToken(undefined);
+    setCodeError(undefined);
+    void submitContact();
+  };
+
+  const switchChannel = (next: AuthChannel) => {
+    setChannel(next);
+    setContactError(undefined);
+    setCodeError(undefined);
+    setEmail('');
+    setPhone('');
   };
 
   // Native anchor: /login is outside the [locale] tree, so a RAC link 404s at
   // /en/login (same as HeaderUserMenu).
   const loginHref = `/login?redirect=${encodeURIComponent(pathname)}`;
 
+  const sentTo = otpSent
+    ? codeSentToLabel(t, { isPhone, phone: normalizePhoneNumber(phone), email })
+    : undefined;
+
   return (
     <>
       {/* DialogContent renders the dismiss X; DialogTitle names the dialog. */}
       <DialogHeader>
-        <DialogTitle>
-          {otpSent ? t('Email sent!') : t('Claim your account')}
-        </DialogTitle>
-        <DialogDescription>
+        <DialogTitle className="text-center">
           {otpSent
-            ? t(
-                'A code was sent to {email}. Type the code below to create your profile.',
-                { email },
-              )
-            : t(
-                'Join Common to like, comment on, and follow any idea — and to edit and get updates about your own submissions.',
-              )}
+            ? isPhone
+              ? t('auth.checkTextsTitle')
+              : t('auth.checkEmailTitle')
+            : t('decisions.joinPromptTitle')}
+        </DialogTitle>
+        <DialogDescription className="text-center">
+          {sentTo ?? t('decisions.joinPromptDescription')}
         </DialogDescription>
       </DialogHeader>
 
+      <CodeSentAnnouncement sentTo={sentTo} />
+
       <div className="flex flex-col gap-4 px-6 py-4">
-        {/* role="alert" so async claim errors are announced while focus stays on
-          the submit button. */}
-        {error ? (
-          <p role="alert" className="text-destructive">
-            {error}
-          </p>
+        {otpSent && contactError ? (
+          <Alert variant="destructive">
+            <LuCircleAlert />
+            <AlertTitle>{contactError}</AlertTitle>
+          </Alert>
         ) : null}
 
         {otpSent ? (
           <AuthCodeField
+            channel={activeChannel}
             value={token}
             isDisabled={isSubmitting}
-            onChange={setToken}
+            error={codeError}
+            onChange={changeToken}
             onSubmit={submitToken}
           />
         ) : (
           <>
-            <AuthEmailField
-              label={t('Email')}
-              // Example-email placeholders are deliberately untranslated.
-              placeholder="your@email.com"
-              value={email}
-              isDisabled={isSubmitting}
-              onChange={setEmail}
-              onSubmit={() => {
-                void submitEmail();
+            <AuthGoogleButton
+              onPress={() => {
+                void joinWithGoogle();
               }}
             />
+            <AuthDivider />
+            <AuthContactFields
+              smsEnabled={smsEnabled}
+              value={activeChannel}
+              onValueChange={switchChannel}
+              email={{
+                value: email,
+                isDisabled: isSubmitting,
+                error: isPhone ? undefined : contactError,
+                onChange: setEmail,
+                onSubmit: () => {
+                  void submitContact();
+                },
+              }}
+              phone={{
+                value: phone,
+                isDisabled: isSubmitting,
+                error: isPhone ? contactError : undefined,
+                onChange: setPhone,
+                onSubmit: () => {
+                  void submitContact();
+                },
+              }}
+              isTriggersDisabled={isSubmitting}
+            />
             <p className="text-muted-foreground">
-              {t.rich('Already have an account? <login>Log in</login>', {
+              {t.rich('auth.haveAccountPrompt', {
                 login: (chunks: ReactNode) => (
                   <a href={loginHref} className="underline">
                     {chunks}
@@ -275,32 +385,30 @@ const JoinAccountModalContent = () => {
 
       <DialogFooter className="flex-col sm:flex-col">
         {otpSent ? (
+          <AuthCodeStepActions
+            isVerifyDisabled={!isValidOtpLength(token, activeChannel)}
+            isLoading={isSubmitting}
+            canSwitchChannel={smsEnabled}
+            onVerify={() => {
+              void submitToken();
+            }}
+            onResend={resendCode}
+            onBack={goBack}
+          />
+        ) : (
           <>
-            <Button
-              className="w-full"
-              loading={isSubmitting}
-              disabled={isSubmitting || !isValidOtpLength(token)}
-              onClick={() => {
-                void submitToken();
+            <AuthSendCodeButton
+              isPhone={isPhone}
+              isLoading={isSubmitting}
+              isDisabled={isSubmitting || !contactIsValid}
+              onSubmit={() => {
+                void submitContact();
               }}
-            >
-              {t('Create profile')}
-            </Button>
-            <Button variant="outline" className="w-full" onClick={goBack}>
-              {t('Go back')}
+            />
+            <Button variant="link" onClick={close}>
+              {t('Browse proposals for now')}
             </Button>
           </>
-        ) : (
-          <Button
-            className="w-full"
-            loading={isSubmitting}
-            disabled={isSubmitting || !emailIsValid}
-            onClick={() => {
-              void submitEmail();
-            }}
-          >
-            {t('Join')}
-          </Button>
         )}
       </DialogFooter>
     </>

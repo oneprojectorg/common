@@ -10,6 +10,7 @@ import { Checkbox } from '@op/sense/Checkbox';
 import { Dialog, DialogContent, DialogTrigger } from '@op/sense/Dialog';
 import {
   Empty,
+  EmptyContent,
   EmptyHeader,
   EmptyMedia,
   EmptyTitle,
@@ -22,7 +23,7 @@ import {
   FooterBarStart,
 } from '@op/sense/FooterBar';
 import { toast } from '@op/sense/Toast';
-import { type ReactNode, useState } from 'react';
+import { type ComponentProps, type ReactNode, useState } from 'react';
 import { LuLeaf } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -39,6 +40,7 @@ import {
   type CustomFormValues,
 } from './proposalEditor/CustomFormModal';
 import { proposalHref } from './proposalHrefs';
+import { useOpenProposalInSheet } from './proposalSheetState';
 
 export interface ProposalsProps {
   proposals?: Proposal[];
@@ -49,6 +51,10 @@ export interface ProposalsProps {
   permissions?: DecisionAccess | null;
   votedProposalIds?: string[];
   hasFilter: boolean;
+  /** Applied search term — named in the empty state when it returns nothing. */
+  searchQuery?: string;
+  /** Resets every filter from the empty state. */
+  onClearFilters?: () => void;
   /** When true, the current phase has voting enabled — always show voting UI */
   isVotingPhase?: boolean;
   /** When true, new proposals are hidden by default in the current phase. */
@@ -60,10 +66,10 @@ export interface ProposalsProps {
 }
 
 export const ProposalsGrid = ({
-  revisionRequestIdByProposalId,
+  proposalIdsWithRevisionRequest,
   ...props
 }: ProposalsProps & {
-  revisionRequestIdByProposalId?: Map<string, string>;
+  proposalIdsWithRevisionRequest?: Set<string>;
 }) => {
   const { instanceId, isVotingPhase } = props;
 
@@ -84,18 +90,31 @@ export const ProposalsGrid = ({
   return (
     <ViewProposalsList
       {...props}
-      revisionRequestIdByProposalId={revisionRequestIdByProposalId}
+      proposalIdsWithRevisionRequest={proposalIdsWithRevisionRequest}
     />
   );
 };
 
-const NoProposalsFound = ({
-  hasFilter,
-  excludeAssignedForReview,
-}: {
+export interface NoProposalsFoundProps {
   hasFilter: boolean;
   excludeAssignedForReview?: boolean;
-}) => {
+  /** The applied search term, quoted back so the miss names itself. */
+  searchQuery?: string;
+  /** Resets search, category and the All/Mine/Shortlisted filter. */
+  onClearFilters?: () => void;
+}
+
+/**
+ * Empty state for every filtered proposal surface — the grid, the voting list,
+ * and the map's list column. Names the search term that missed, and offers the
+ * way out of a filter that returned nothing.
+ */
+export const NoProposalsFound = ({
+  hasFilter,
+  excludeAssignedForReview,
+  searchQuery,
+  onClearFilters,
+}: NoProposalsFoundProps) => {
   const t = useTranslations();
 
   if (excludeAssignedForReview && !hasFilter) {
@@ -105,14 +124,31 @@ const NoProposalsFound = ({
           <EmptyMedia variant="icon">
             <LuLeaf className="size-6" />
           </EmptyMedia>
-          <EmptyTitle>{t('No other proposals')}</EmptyTitle>
+          <EmptyTitle>{t('decisions.proposals.noOtherProposals')}</EmptyTitle>
           <EmptyDescription>
-            {t('There are no proposals outside your review queue.')}
+            {t('decisions.proposals.noProposalsOutsideQueue')}
           </EmptyDescription>
         </EmptyHeader>
       </Empty>
     );
   }
+
+  // A search names itself; the generic filter copy only has to cover the rest.
+  // Curly quotes, not straight: ICU reads `'{` as the start of an escaped
+  // literal, which would print the placeholder instead of the term.
+  const title = searchQuery
+    ? t('decisions.proposals.noProposalsForQuery', { query: searchQuery })
+    : hasFilter
+      ? t('decisions.proposals.noProposalsForFilters')
+      : t('decisions.proposals.noProposalsYet');
+
+  // Under a search the term is already in the title, so the only line worth
+  // adding is the one that explains a miss the reader can see is wrong.
+  const description = searchQuery
+    ? null
+    : hasFilter
+      ? t('decisions.proposals.adjustFiltersHint')
+      : t('decisions.proposals.noProposalsFirstHint');
 
   return (
     <Empty className="border-0">
@@ -120,18 +156,43 @@ const NoProposalsFound = ({
         <EmptyMedia variant="icon">
           <LuLeaf className="size-6" />
         </EmptyMedia>
-        <EmptyTitle>
-          {hasFilter
-            ? t('No proposals found matching the current filters.')
-            : t('No proposals yet')}
-        </EmptyTitle>
-        <EmptyDescription>
-          {hasFilter
-            ? t('Try adjusting your filter selection above.')
-            : t('You could be the first one to submit a proposal')}
-        </EmptyDescription>
+        <EmptyTitle>{title}</EmptyTitle>
+        {description && <EmptyDescription>{description}</EmptyDescription>}
       </EmptyHeader>
+      {hasFilter && onClearFilters && (
+        <EmptyContent>
+          <Button variant="link" size="inline" onClick={onClearFilters}>
+            {t('decisions.proposals.clearFiltersAction')}
+          </Button>
+        </EmptyContent>
+      )}
     </Empty>
+  );
+};
+
+/** Opens the sheet on the voting-phase cards, whose titles are not links. */
+const ReadProposalAction = ({
+  href,
+  onClick,
+}: {
+  href: string;
+  onClick: ComponentProps<typeof ButtonLink>['onClick'];
+}) => {
+  const t = useTranslations();
+
+  return (
+    <ButtonLink
+      href={href}
+      onClick={(event) => {
+        // The card behind is the ballot toggle; reading must not vote.
+        event.stopPropagation();
+        onClick?.(event);
+      }}
+      variant="outline"
+      className="w-full"
+    >
+      {t('decisions.proposals.readFullProposalAction')}
+    </ButtonLink>
   );
 };
 
@@ -145,7 +206,7 @@ const HiddenProposalsEmptyState = () => {
           <LuLeaf className="size-6" />
         </EmptyMedia>
         <EmptyDescription>
-          {t("You'll see your proposal here once you submit.")}
+          {t('decisions.proposals.myProposalsEmptyHint')}
         </EmptyDescription>
       </EmptyHeader>
     </Empty>
@@ -160,19 +221,22 @@ const VotingProposalsList = ({
   permissions,
   votedProposalIds = [],
   hasFilter,
+  searchQuery,
+  onClearFilters,
   proposalsHidden,
   excludeAssignedForReview,
   isFetchingNextPage,
 }: ProposalsProps) => {
   const canVote = permissions?.vote ?? false;
   const canManageProposals = permissions?.admin ?? false;
-  const [selectedProposalIds, setSelectedProposalIds] = useState<string[]>([]);
+  const [selectedProposals, setSelectedProposals] = useState<Proposal[]>([]);
   const [isVoteReviewOpen, setIsVoteReviewOpen] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showPhaseFormModal, setShowPhaseFormModal] = useState(false);
   const t = useTranslations();
+  const openInSheet = useOpenProposalInSheet();
 
-  const numSelected = selectedProposalIds.length;
+  const numSelected = selectedProposals.length;
 
   // Get voting status for this user and process
   const { data: voteStatus } = trpc.decision.getVotingStatus.useQuery({
@@ -208,33 +272,29 @@ const VotingProposalsList = ({
   const isReadOnly = hasVoted || !canVote;
   const maxVotesPerMember = voteStatus?.votingConfiguration?.maxVotesPerMember;
 
-  const toggleProposal = (proposalId: string) => {
-    setSelectedProposalIds((prev) => {
-      const isSelected = prev.includes(proposalId);
+  const toggleProposal = (proposal: Proposal) => {
+    setSelectedProposals((prev) => {
+      const isSelected = prev.some(({ id }) => id === proposal.id);
 
       if (isSelected) {
-        return prev.filter((id) => id !== proposalId);
+        return prev.filter(({ id }) => id !== proposal.id);
       }
       if (maxVotesPerMember === undefined || prev.length < maxVotesPerMember) {
-        return [...prev, proposalId];
+        return [...prev, proposal];
       }
       return prev;
     });
   };
 
   const isProposalSelected = (proposalId: string) =>
-    selectedProposalIds.includes(proposalId);
-
-  // Get selected proposals for the modal
-  const selectedProposals =
-    proposals?.filter((p) => selectedProposalIds.includes(p.id)) || [];
+    selectedProposals.some(({ id }) => id === proposalId);
 
   // Handle successful vote submission
   const handleVoteSuccess = () => {
     // Closed from here rather than by a `DialogClose` inside it, because the
     // close fires from a mutation callback, not a click.
     setIsVoteReviewOpen(false);
-    setSelectedProposalIds([]);
+    setSelectedProposals([]);
     utils.decision.getVotingStatus.invalidate({
       processInstanceId: instanceId,
     });
@@ -264,7 +324,7 @@ const VotingProposalsList = ({
         error,
         context: 'ProposalsGrid.handlePhaseFormSubmit',
       });
-      toast.error(t('Failed to submit form'));
+      toast.error(t('decisions.proposals.submitFormError'));
       return; // Keep the modal open so the user can retry.
     }
     setShowPhaseFormModal(false);
@@ -290,6 +350,8 @@ const VotingProposalsList = ({
       <NoProposalsFound
         hasFilter={hasFilter}
         excludeAssignedForReview={excludeAssignedForReview}
+        searchQuery={searchQuery}
+        onClearFilters={onClearFilters}
       />
     );
   }
@@ -299,7 +361,10 @@ const VotingProposalsList = ({
       <ProposalMasonry loadingMore={isFetchingNextPage}>
         {proposals.map((proposal) => {
           const isSelected = isProposalSelected(proposal.id);
-          const isEligibleForVote = isVotingEligible(proposal.status);
+          // A proposal left behind in an earlier phase isn't on this ballot.
+          const isEligibleForVote =
+            isVotingEligible(proposal.status) &&
+            !proposal.isOutsideCurrentPhase;
           const isVotedFor = votedProposalIds.includes(proposal.id);
           const showCheckbox = !isReadOnly || isVotedFor;
 
@@ -317,8 +382,9 @@ const VotingProposalsList = ({
                 key={proposal.id}
                 proposal={proposal}
                 href={href}
+                onTitleClick={openInSheet(proposal.profileId)}
                 selected={isVotedFor}
-                showStatusBadge={false}
+                headerBadge={null}
                 aside={
                   isVotedFor ? (
                     // TODO(sense-migration): sense Checkbox has no
@@ -327,7 +393,9 @@ const VotingProposalsList = ({
                     <Checkbox
                       checked
                       disabled
-                      aria-label={t('Selected proposal')}
+                      aria-label={t(
+                        'decisions.proposals.selectedProposalLabel',
+                      )}
                       className="rounded-full"
                     />
                   ) : undefined
@@ -343,13 +411,16 @@ const VotingProposalsList = ({
                 key={proposal.id}
                 proposal={proposal}
                 selected={isSelected}
-                showStatusBadge={false}
+                headerBadge={null}
+                showTranslateLink={false}
                 role="button"
                 aria-pressed={isSelected}
                 aria-label={
-                  isSelected ? t('Deselect proposal') : t('Select proposal')
+                  isSelected
+                    ? t('decisions.proposals.deselectProposalLabel')
+                    : t('decisions.proposals.selectProposalLabel')
                 }
-                onClick={() => toggleProposal(proposal.id)}
+                onClick={() => toggleProposal(proposal)}
                 className="cursor-pointer"
                 aside={
                   canManageProposals || proposal.isEditable || showCheckbox ? (
@@ -370,12 +441,12 @@ const VotingProposalsList = ({
                           <Checkbox
                             checked={isSelected}
                             onCheckedChange={() => {
-                              toggleProposal(proposal.id);
+                              toggleProposal(proposal);
                             }}
                             aria-label={
                               isSelected
-                                ? t('Deselect proposal')
-                                : t('Select proposal')
+                                ? t('decisions.proposals.deselectProposalLabel')
+                                : t('decisions.proposals.selectProposalLabel')
                             }
                             className="rounded-full"
                           />
@@ -385,9 +456,10 @@ const VotingProposalsList = ({
                   ) : undefined
                 }
                 actions={
-                  <ButtonLink href={href} variant="outline" className="w-full">
-                    {t('Read full proposal')}
-                  </ButtonLink>
+                  <ReadProposalAction
+                    href={href}
+                    onClick={openInSheet(proposal.profileId)}
+                  />
                 }
               />
             );
@@ -405,9 +477,10 @@ const VotingProposalsList = ({
                   ) : undefined
                 }
                 actions={
-                  <ButtonLink href={href} variant="outline" className="w-full">
-                    {t('Read full proposal')}
-                  </ButtonLink>
+                  <ReadProposalAction
+                    href={href}
+                    onClick={openInSheet(proposal.profileId)}
+                  />
                 }
               />
             );
@@ -420,25 +493,19 @@ const VotingProposalsList = ({
           <FooterBarStart>
             <span className="text-base">
               {maxVotesPerMember !== undefined
-                ? t.rich(
-                    '<highlight>{numSelected}</highlight> of {max, plural, one {# proposal} other {# proposals}} selected',
-                    {
-                      numSelected,
-                      max: maxVotesPerMember,
-                      highlight: (chunks: ReactNode) => (
-                        <span className="text-primary">{chunks}</span>
-                      ),
-                    },
-                  )
-                : t.rich(
-                    '<highlight>{numSelected, plural, one {# proposal} other {# proposals}}</highlight> selected',
-                    {
-                      numSelected,
-                      highlight: (chunks: ReactNode) => (
-                        <span className="text-primary">{chunks}</span>
-                      ),
-                    },
-                  )}
+                ? t.rich('decisions.proposals.selectedProposalsOfMaxCount', {
+                    numSelected,
+                    max: maxVotesPerMember,
+                    highlight: (chunks: ReactNode) => (
+                      <span className="text-primary">{chunks}</span>
+                    ),
+                  })
+                : t.rich('decisions.proposals.selectedProposalsCount', {
+                    numSelected,
+                    highlight: (chunks: ReactNode) => (
+                      <span className="text-primary">{chunks}</span>
+                    ),
+                  })}
             </span>
           </FooterBarStart>
           <FooterBarCenter />
@@ -447,7 +514,7 @@ const VotingProposalsList = ({
               <DialogTrigger
                 render={
                   <Button disabled={numSelected === 0} variant="default">
-                    {t('Submit my votes')}
+                    {t('decisions.proposals.submitVotesAction')}
                   </Button>
                 }
               />
@@ -489,12 +556,14 @@ const ViewProposalsList = ({
   decisionSlug,
   permissions,
   hasFilter,
+  searchQuery,
+  onClearFilters,
   proposalsHidden,
   excludeAssignedForReview,
   isFetchingNextPage,
-  revisionRequestIdByProposalId,
+  proposalIdsWithRevisionRequest,
 }: ProposalsProps & {
-  revisionRequestIdByProposalId?: Map<string, string>;
+  proposalIdsWithRevisionRequest?: Set<string>;
 }) => {
   if (!proposals || proposals.length === 0) {
     if (proposalsHidden && !hasFilter) {
@@ -504,6 +573,8 @@ const ViewProposalsList = ({
       <NoProposalsFound
         hasFilter={hasFilter}
         excludeAssignedForReview={excludeAssignedForReview}
+        searchQuery={searchQuery}
+        onClearFilters={onClearFilters}
       />
     );
   }
@@ -518,7 +589,7 @@ const ViewProposalsList = ({
           slug={slug}
           decisionSlug={decisionSlug}
           permissions={permissions}
-          revisionRequestId={revisionRequestIdByProposalId?.get(proposal.id)}
+          hasRevisionRequest={proposalIdsWithRevisionRequest?.has(proposal.id)}
         />
       ))}
     </ProposalMasonry>

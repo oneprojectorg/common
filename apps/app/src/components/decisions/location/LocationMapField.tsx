@@ -46,7 +46,7 @@ export function LocationMapField({
   defaultMapView,
   onChange,
 }: LocationMapFieldProps) {
-  const t = useTranslations();
+  const t = useTranslations('decisions.proposals');
   const styleUrl = useMapStyleUrl();
   const [center, setCenter] = useState<LngLat>(
     value
@@ -73,7 +73,7 @@ export function LocationMapField({
     { profileId: profileId ?? '' },
     { enabled: profileId != null, staleTime: Infinity, gcTime: Infinity },
   );
-  const boundaries = boundaryShapesQuery.data?.boundaries;
+  const boundaries = boundaryShapesQuery.data?.items;
 
   // Reverse-geocode a freshly-placed pin through react-query, which caches by
   // coordinate and surfaces failures as query state (so no try/catch is needed).
@@ -167,7 +167,7 @@ export function LocationMapField({
           boundaries={boundaries}
           onMapClick={placeFromCoordinates}
           onMarkerDragEnd={placeFromCoordinates}
-          ariaLabel={t('Project location map')}
+          ariaLabel={t('locationMapLabel')}
         />
 
         <div className="flex flex-col justify-between gap-2.5 p-4 sm:flex-row sm:items-center">
@@ -178,11 +178,11 @@ export function LocationMapField({
             >
               {/* While reverse geocoding is in flight `address` is undefined —
                   render nothing rather than exposing raw coordinates. */}
-              {value ? value.address : t('No location selected')}
+              {value ? value.address : t('noLocationSelected')}
             </span>
             {!isWithinArea && (
               <span className="text-sm text-destructive">
-                {t('This address is outside the allowed proposal area.')}
+                {t('locationOutOfBoundsError')}
               </span>
             )}
           </div>
@@ -193,7 +193,7 @@ export function LocationMapField({
             className="shrink-0"
           >
             <LuLocate aria-hidden className="size-4" />
-            {t('Use my location')}
+            {t('useMyLocationAction')}
           </Button>
         </div>
       </div>

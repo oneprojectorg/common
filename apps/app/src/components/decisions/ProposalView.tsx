@@ -6,94 +6,48 @@ import {
 } from '@/hooks/useProposalEngagement';
 import { useTrackPageView } from '@/hooks/useTrackPageView';
 import { getDecisionCommonProperties } from '@op/analytics/client-utils';
-import { trpc } from '@op/api/client';
-import {
-  type Proposal,
-  ProposalReviewRequestState,
-  type ProposalSelection,
-} from '@op/common/client';
+import type { Proposal, ProposalSelection } from '@op/common/client';
 import { SplitPane } from '@op/sense/SplitPane';
-import { useQueryStates } from 'nuqs';
-import { type ReactNode, useCallback, useEffect, useState } from 'react';
+import type { ReactNode } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
+import { ContributingIdeas } from './ContributingIdeas';
 import { ProposalComments } from './ProposalComments';
-import { ProposalPreview } from './ProposalPreview';
-import { ProposalRevisionSubmittedPanel } from './ProposalRevisionSubmittedPanel';
+import { ProposalMergeNotice } from './ProposalMergeNotice';
+import { ProposalPreview, toPreviewEngagement } from './ProposalPreview';
 import { ProposalViewLayout } from './ProposalViewLayout';
 import { RevisedOnBadge } from './Review/AuthorRevisionNote';
-import { TranslateBanner } from './TranslateBanner';
-import { proposalEditorReviewRevisionParser } from './proposalEditor/proposalEditorAsideParams';
+import { ReviewNotesPanel } from './ReviewNotesPanel';
+import { TranslateLink } from './TranslateLink';
+import type { ProposalAffordances } from './getProposalAffordances';
+import { useCommentsAllowed } from './useCommentsAllowed';
+import { useLiveProposalDocument } from './useLiveProposalDocument';
+import { useProposalReviewNotes } from './useProposalReviewNotes';
 import { useTranslateProposal } from './useTranslateProposal';
-
-/** How often to re-fetch while the document is still propagating from TipTap. */
-const DOCUMENT_POLL_INTERVAL_MS = 2500;
-/**
- * How long to keep polling for a missing document before treating it as
- * truly not found. Bounds the "still loading" window so a genuinely absent
- * document eventually surfaces an error instead of spinning forever.
- */
-const DOCUMENT_POLL_TIMEOUT_MS = 20000;
-
-export type ProposalDocumentState = 'ready' | 'pending' | 'error';
 
 export function ProposalView({
   proposal: initialProposal,
-  canSeeRevisions,
+  affordances,
+  isAuthor,
+  currentPhaseId,
   decisionRoot,
   selection,
 }: {
   proposal: Proposal;
-  canSeeRevisions: boolean;
+  /** What this viewer may see here — see `getProposalAffordances`. */
+  affordances: ProposalAffordances;
+  isAuthor: boolean;
+  /** The instance's current phase; `null` on a legacy instance. */
+  currentPhaseId: string | null;
   decisionRoot: string;
   selection: ProposalSelection | null;
 }) {
   const t = useTranslations();
+  const commentsEnabled = useCommentsAllowed(initialProposal.processInstanceId);
 
-  // When the document fetch failed server-side it comes back as
-  // `{ type: 'unavailable' }`. That can be transient (still syncing from the
-  // collaboration server), so poll until it resolves, and only after a bounded
-  // wait treat it as truly missing.
-  const [documentLoadTimedOut, setDocumentLoadTimedOut] = useState(false);
-
-  const { data: proposal } = trpc.decision.getProposal.useQuery(
-    {
-      profileId: initialProposal.profileId,
-    },
-    {
-      refetchInterval: (query) =>
-        query.state.data?.documentContent?.type === 'unavailable' &&
-        !documentLoadTimedOut
-          ? DOCUMENT_POLL_INTERVAL_MS
-          : false,
-    },
-  );
-
-  // Safety check - fallback to initial data if query returns undefined
-  const currentProposal = proposal || initialProposal;
-
-  const isDocumentUnavailable =
-    currentProposal.documentContent?.type === 'unavailable';
-
-  useEffect(() => {
-    if (!isDocumentUnavailable) {
-      setDocumentLoadTimedOut(false);
-      return;
-    }
-
-    const timer = setTimeout(
-      () => setDocumentLoadTimedOut(true),
-      DOCUMENT_POLL_TIMEOUT_MS,
-    );
-    return () => clearTimeout(timer);
-  }, [isDocumentUnavailable]);
-
-  const documentState: ProposalDocumentState = isDocumentUnavailable
-    ? documentLoadTimedOut
-      ? 'error'
-      : 'pending'
-    : 'ready';
+  const { proposal: currentProposal, documentState } =
+    useLiveProposalDocument(initialProposal);
 
   const { processInstanceId, id: proposalId } = currentProposal;
   useTrackPageView(
@@ -120,63 +74,17 @@ export function ProposalView({
     ? `${decisionRoot}/proposal/${currentProposal.profileId}/edit`
     : undefined;
 
-  const [{ reviewRevision }, setQueryState] = useQueryStates({
-    reviewRevision: proposalEditorReviewRevisionParser,
+  // `feedback`, not `revisions`: the sheet outlives the review phase.
+  const reviewNotes = useProposalReviewNotes({
+    proposalId: currentProposal.id,
+    phaseId: currentPhaseId,
+    enabled: affordances.review.feedback,
   });
 
-  // The view panel is "Revision submitted" — only surface entries the author
-  // has already responded to. Pending requests are handled by the editor.
-  // The server throws UnauthorizedError when the viewer lacks review access;
-  // treat any error as "no revisions" so the proposal still renders.
-  const { data: revisionData, error: revisionError } =
-    trpc.decision.listProposalRevisionRequests.useQuery(
-      {
-        proposalId: currentProposal.id,
-        states: [ProposalReviewRequestState.RESUBMITTED],
-      },
-      { enabled: canSeeRevisions, throwOnError: false, retry: false },
-    );
+  const { link, translation } = useTranslateProposal(currentProposal);
 
-  const submittedRevisions = revisionError
-    ? []
-    : (revisionData?.revisionRequests ?? []);
-
-  const firstRevisionRequestId =
-    submittedRevisions[0]?.revisionRequest.id ?? null;
-
-  const activeRevisionRequest = reviewRevision
-    ? (submittedRevisions.find((r) => r.revisionRequest.id === reviewRevision)
-        ?.revisionRequest ?? null)
-    : null;
-
-  const toggleRevisionRequest = useCallback(() => {
-    if (!firstRevisionRequestId) {
-      return;
-    }
-
-    void setQueryState(
-      {
-        reviewRevision:
-          reviewRevision === firstRevisionRequestId
-            ? null
-            : firstRevisionRequestId,
-      },
-      { history: 'push', scroll: false },
-    );
-  }, [firstRevisionRequestId, reviewRevision, setQueryState]);
-
-  const {
-    translation,
-    showBanner,
-    isTranslating,
-    targetLanguageName,
-    handleTranslate,
-    dismissBanner,
-  } = useTranslateProposal(currentProposal);
-
-  // Most recently responded revision (if any) — drives the "Revised on"
-  // badge shown inline in the submitter metadata row.
-  const latestResponse = submittedRevisions[0]?.revisionRequest ?? null;
+  // The server orders newest first.
+  const latestRespondedAt = reviewNotes.noteGroups[0]?.respondedAt ?? null;
 
   const proposalBody: ReactNode = (
     <>
@@ -186,27 +94,40 @@ export function ProposalView({
         documentState={documentState}
         // Everyone sees the counts; only a signed-in member with engagement
         // access gets the controls (the hook returns undefined otherwise).
-        engagement={
-          engagement
-            ? {
-                isLiked: engagement.isLiked,
-                isFollowing: engagement.isFollowed,
-                onLike: engagement.onLike,
-                onFollow: engagement.onFollow,
-              }
-            : undefined
-        }
+        engagement={toPreviewEngagement(engagement)}
         translation={translation}
+        translateLink={<TranslateLink translation={link} />}
         submissionMetaSuffix={
-          latestResponse?.respondedAt ? (
-            <RevisedOnBadge respondedAt={latestResponse.respondedAt} />
+          latestRespondedAt ? (
+            <RevisedOnBadge respondedAt={latestRespondedAt} />
           ) : undefined
         }
       />
 
-      <ProposalComments proposal={currentProposal} />
+      <ContributingIdeas
+        proposal={currentProposal}
+        decisionRoot={decisionRoot}
+      />
+
+      {commentsEnabled && (
+        <ProposalComments
+          proposal={currentProposal}
+          decisionRoot={decisionRoot}
+        />
+      )}
     </>
   );
+
+  const asidePane: ReactNode = reviewNotes.isOpen ? (
+    <div className="flex flex-col gap-6 px-12 pt-12 pb-4">
+      <ReviewNotesPanel
+        openRequests={reviewNotes.openRequests}
+        noteGroups={reviewNotes.noteGroups}
+        feedbackNotes={reviewNotes.feedbackNotes}
+        isAuthor={isAuthor}
+      />
+    </div>
+  ) : null;
 
   return (
     <ProposalViewLayout
@@ -219,32 +140,44 @@ export function ProposalView({
       // so the Join button, the modal mount, and the prompt can't diverge —
       // on any route that renders a proposal, including the legacy one.
       canJoin={currentProposal.access?.submitProposals === true}
+      commentsEnabled={commentsEnabled}
       // The admin overflow menu (shortlist / reject / hide) gates itself on
-      // `access.admin` and on the proposal having left draft.
+      // `proposal.access.admin` and on the proposal having left draft.
       moderationProposal={currentProposal}
-      revisionToggle={
-        firstRevisionRequestId
+      notices={
+        <ProposalMergeNotice
+          proposal={currentProposal}
+          decisionRoot={decisionRoot}
+        />
+      }
+      reviewNotesToggle={
+        reviewNotes.hasReviewNotes
           ? {
-              onToggle: toggleRevisionRequest,
-              isActive: Boolean(activeRevisionRequest),
+              onToggle: reviewNotes.toggle,
+              isActive: reviewNotes.isOpen,
             }
           : undefined
       }
     >
-      {activeRevisionRequest ? (
+      {asidePane ? (
         <SplitPane className="mx-auto w-full max-w-6xl">
-          <SplitPane.Pane id="proposal" label={t('Proposal')} className="gap-8">
+          {/* Same section rhythm as the standalone column below: a section's
+              own `pt` mirrors this gap, so every rule sits centred between the
+              two sections it separates. */}
+          <SplitPane.Pane
+            id="proposal"
+            label={t('decisions.proposals.proposalLabel')}
+            className="gap-6 sm:gap-10"
+          >
             {proposalBody}
           </SplitPane.Pane>
           <SplitPane.Pane
-            id="feedback"
-            label={t('Revision feedback')}
-            className="bg-white"
+            id="reviewNotes"
+            label={t('decisions.review.reviewNotesHeading')}
+            className="bg-background"
             unpadded
           >
-            <ProposalRevisionSubmittedPanel
-              revisionRequest={activeRevisionRequest}
-            />
+            {asidePane}
           </SplitPane.Pane>
         </SplitPane>
       ) : (
@@ -255,16 +188,6 @@ export function ProposalView({
             {proposalBody}
           </div>
         </div>
-      )}
-
-      {/* Translation banner */}
-      {showBanner && (
-        <TranslateBanner
-          onTranslate={handleTranslate}
-          onDismiss={dismissBanner}
-          isTranslating={isTranslating}
-          languageName={targetLanguageName}
-        />
       )}
     </ProposalViewLayout>
   );

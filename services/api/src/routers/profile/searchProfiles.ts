@@ -1,5 +1,6 @@
 import { cache } from '@op/cache';
 import { NotFoundError, searchProfiles } from '@op/common';
+import { PAGE_LIMIT } from '@op/common/client';
 import { EntityType } from '@op/db/schema';
 import { z } from 'zod';
 
@@ -19,7 +20,7 @@ export const searchProfilesRouter = router({
     )
     .output(searchProfilesResultEncoder)
     .query(async ({ ctx, input }) => {
-      const { q, limit = 10, types } = input;
+      const { q, limit = PAGE_LIMIT.sm, types } = input;
 
       const result = await cache<ReturnType<typeof searchProfiles>>({
         type: 'search',

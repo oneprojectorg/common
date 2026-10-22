@@ -74,10 +74,10 @@ const RemoveRelationshipModalContent = ({
           from: profileId,
         });
 
-        toast.success(t('Relationship removed'));
+        toast.success(t('profile.relationshipRemovedToast'));
         onClose();
       } catch (e) {
-        toast.error(t('Could not remove relationship'));
+        toast.error(t('profile.removeRelationshipError'));
       }
     });
   };
@@ -86,20 +86,15 @@ const RemoveRelationshipModalContent = ({
     <DialogContent className="sm:min-w-[29rem]">
       <form onSubmit={handleSubmit} className="contents">
         <DialogHeader>
-          <DialogTitle>{t('Remove relationship')}</DialogTitle>
+          <DialogTitle>{t('profile.removeRelationshipTitle')}</DialogTitle>
         </DialogHeader>
         <div className="flex flex-col gap-4 px-6 py-4">
           <div>
-            {t(
-              'Are you sure you want to remove the {relationshipType} relationship?',
-              { relationshipType: relationship.relationshipType },
-            )}
+            {t('profile.removeRelationshipConfirm', {
+              relationshipType: relationship.relationshipType,
+            })}
           </div>
-          <div>
-            {t(
-              "You'll need to send a new request to restore this relationship on your profile.",
-            )}
-          </div>
+          <div>{t('profile.removeRelationshipHint')}</div>
         </div>
         <DialogFooter>
           <Button onClick={onClose} variant="outline" type="button">
@@ -172,13 +167,12 @@ export const AddRelationshipModalSuspense = ({
                     : relationshipActiveButtonClass,
                 )}
               >
-                {t(
-                  '{count, plural, =1 {1 relationship} other {# relationships}}',
-                  { count: relationships.length },
-                )}{' '}
+                {t('profile.relationshipCount', {
+                  count: relationships.length,
+                })}{' '}
                 {user.currentProfile ? (
                   <>
-                    {t('with')}
+                    {t('profile.relationshipWithConnector')}
                     <OrganizationAvatar
                       profile={user.currentProfile}
                       className="size-6"
@@ -234,7 +228,7 @@ export const AddRelationshipModalSuspense = ({
                 />
                 {relationship.pending && (
                   <TooltipContent>
-                    {t('Pending confirmation from {name}', {
+                    {t('profile.relationshipPendingConfirmation', {
                       name: profile.profile.name,
                     })}
                   </TooltipContent>
@@ -253,7 +247,7 @@ export const AddRelationshipModalSuspense = ({
             render={
               <Button className="min-w-full text-nowrap sm:min-w-fit">
                 <LuPlus className="size-4" />
-                {t('Add relationship')}
+                {t('profile.addRelationshipTitle')}
               </Button>
             }
           />

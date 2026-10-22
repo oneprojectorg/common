@@ -4,6 +4,7 @@ import { trpc } from '@op/api/client';
 import { isLastPhase, isReviewPhase, isVotingPhase } from '@op/common/client';
 import { notFound } from 'next/navigation';
 
+import { ProposalSheetProvider } from './ProposalSheetProvider';
 import { FinalPhaseManualSelectionPage } from './pages/FinalPhaseManualSelectionPage';
 import { ResultsPage } from './pages/ResultsPage';
 import { ReviewPage } from './pages/ReviewPage';
@@ -33,12 +34,10 @@ function DecisionStateRouterNew({
   instanceId,
   slug,
   decisionSlug,
-  decisionProfileId,
 }: {
   instanceId: string;
   slug: string;
   decisionSlug?: string;
-  decisionProfileId?: string | null;
 }) {
   const [instance] = trpc.decision.getInstance.useSuspenseQuery({ instanceId });
 
@@ -81,7 +80,6 @@ function DecisionStateRouterNew({
         instanceId={instanceId}
         slug={slug}
         decisionSlug={decisionSlug}
-        decisionProfileId={decisionProfileId}
         pinOffset={DECISION_VIEW_PIN_OFFSET}
       />
     );
@@ -96,7 +94,6 @@ function DecisionStateRouterNew({
         instance={instance}
         decisionSlug={decisionSlug}
         slug={slug}
-        decisionProfileId={decisionProfileId}
         pinOffset={DECISION_VIEW_PIN_OFFSET}
       />
     );
@@ -131,7 +128,6 @@ function DecisionStateRouterNew({
       instanceId={instanceId}
       slug={slug}
       decisionSlug={decisionSlug}
-      decisionProfileId={decisionProfileId}
       pinOffset={DECISION_VIEW_PIN_OFFSET}
     />
   );
@@ -141,27 +137,30 @@ export function DecisionStateRouter({
   instanceId,
   slug,
   decisionSlug,
-  decisionProfileId,
   useLegacy = false,
 }: {
   instanceId: string;
   slug: string;
   /** Decision profile slug for building proposal links */
   decisionSlug?: string;
-  /** Decision profile ID for translating the decision content */
-  decisionProfileId?: string | null;
   /** Use legacy getInstance endpoint (for /profile/[slug]/decisions/[id] route) */
   useLegacy?: boolean;
 }) {
-  if (useLegacy) {
-    return <DecisionStateRouterLegacy instanceId={instanceId} slug={slug} />;
-  }
   return (
-    <DecisionStateRouterNew
-      instanceId={instanceId}
+    <ProposalSheetProvider
       slug={slug}
+      instanceId={instanceId}
       decisionSlug={decisionSlug}
-      decisionProfileId={decisionProfileId}
-    />
+    >
+      {useLegacy ? (
+        <DecisionStateRouterLegacy instanceId={instanceId} slug={slug} />
+      ) : (
+        <DecisionStateRouterNew
+          instanceId={instanceId}
+          slug={slug}
+          decisionSlug={decisionSlug}
+        />
+      )}
+    </ProposalSheetProvider>
   );
 }

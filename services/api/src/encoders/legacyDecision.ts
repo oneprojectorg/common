@@ -1,4 +1,12 @@
-import { documentContentSchema, proposalDataSchema } from '@op/common/client';
+import {
+  PAGE_LIMIT,
+  PROCESS_NAME_MAX_LENGTH,
+  PROCESS_NAME_MIN_LENGTH,
+  documentContentSchema,
+  list,
+  paginated,
+  proposalDataSchema,
+} from '@op/common/client';
 import {
   ProcessStatus,
   decisionProcesses,
@@ -242,14 +250,11 @@ export const legacyProcessInstanceListEncoder = z.object({
   hasMore: z.boolean(),
 });
 
-export const legacyInstanceResultsEncoder = z.object({
-  items: z.array(legacyProposalEncoder),
-  next: z.string().nullish(),
-});
+export const legacyInstanceResultsEncoder = paginated(legacyProposalEncoder);
 
 // Input Schemas
 export const legacyCreateProcessInputSchema = z.object({
-  name: z.string().min(3).max(256),
+  name: z.string().min(PROCESS_NAME_MIN_LENGTH).max(PROCESS_NAME_MAX_LENGTH),
   description: z.string().optional(),
   processSchema: legacyProcessSchemaEncoder,
 });
@@ -260,7 +265,7 @@ export const legacyGetInstanceInputSchema = z.object({
 
 // Pagination Schema (internal — used by legacyInstanceFilterSchema)
 const legacyPaginationInputSchema = z.object({
-  limit: z.number().min(1).max(100).prefault(20),
+  limit: z.number().min(1).max(PAGE_LIMIT.max).prefault(PAGE_LIMIT.md),
   offset: z.number().min(0).prefault(0),
 });
 
@@ -279,7 +284,7 @@ export const legacyOnlyInstanceFilterSchema = z.object({
   ownerProfileId: z.uuid(),
 });
 
-export const legacyInstanceListEncoder = z.array(legacyProcessInstanceEncoder);
+export const legacyInstanceListEncoder = list(legacyProcessInstanceEncoder);
 
 // Type exports
 export type LegacyProcessInstance = z.infer<

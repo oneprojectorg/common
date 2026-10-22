@@ -1,6 +1,6 @@
 'use client';
 
-import { useFeatureFlag } from '@/hooks/useFeatureFlag';
+import { linkifyText } from '@/utils/linkDetection';
 import {
   formatProposalCategories,
   isDistrictCategoryLabel,
@@ -60,8 +60,7 @@ interface ProposalFormRendererProps {
   /**
    * Decision profile (== `processInstances.profileId`) the proposal is being
    * composed under. Threaded through to the location field so the boundary
-   * overlay / out-of-area check scope to the right decision. `null` for
-   * preview-template mode where no decision is in scope.
+   * overlay / out-of-area check scope to the right decision.
    */
   decisionProfileId: string | null;
   /** Called when any system field value changes. */
@@ -71,7 +70,7 @@ interface ProposalFormRendererProps {
   /** Called with the editor instance when a rich-text field loses focus. */
   onEditorBlur?: (editor: Editor) => void;
   /** Rendering mode for collaborative editing or readonly previews. */
-  mode?: 'edit-collaborative' | 'preview-version' | 'preview-template';
+  mode?: 'edit-collaborative' | 'preview-version';
   /** Version preview content keyed by fragment name. */
   previewVersionFragmentContents?: Record<string, JSONContent | null>;
 }
@@ -117,64 +116,6 @@ function formatPreviewBudget(
   });
 }
 
-function getPreviewText({
-  mode,
-  draftValue,
-  previewContent,
-}: {
-  mode: 'preview-version' | 'preview-template';
-  draftValue: string | null | undefined;
-  previewContent: JSONContent | null | undefined;
-}): string | null {
-  if (mode === 'preview-version') {
-    const previewText = getFragmentText(previewContent);
-    return previewText || null;
-  }
-
-  return draftValue ?? null;
-}
-
-function getPreviewCategories({
-  mode,
-  draftValue,
-  previewContent,
-}: {
-  mode: 'preview-version' | 'preview-template';
-  draftValue: string[];
-  previewContent: JSONContent | null | undefined;
-}): string[] {
-  if (mode === 'preview-version') {
-    return parseCategoryFragmentValue(getFragmentText(previewContent) ?? '');
-  }
-
-  return draftValue;
-}
-
-function getPreviewBudgetValue({
-  mode,
-  draftValue,
-  previewContent,
-}: {
-  mode: 'preview-version' | 'preview-template';
-  draftValue: ProposalDraftFields['budget'] | null | undefined;
-  previewContent: JSONContent | null | undefined;
-}): string | null {
-  if (mode === 'preview-version') {
-    return formatPreviewBudget(previewContent);
-  }
-
-  if (!draftValue) {
-    return null;
-  }
-
-  return draftValue.amount.toLocaleString(undefined, {
-    style: 'currency',
-    currency: draftValue.currency,
-    currencyDisplay: 'narrowSymbol',
-    maximumFractionDigits: 0,
-  });
-}
-
 // ---------------------------------------------------------------------------
 // Field renderer
 // ---------------------------------------------------------------------------
@@ -189,7 +130,7 @@ function renderField(
   decisionProfileId: string | null,
   onFieldChange: (key: string, value: unknown) => void,
   t: TranslateFn,
-  mode: 'edit-collaborative' | 'preview-version' | 'preview-template',
+  mode: 'edit-collaborative' | 'preview-version',
   previewVersionFragmentContents: Record<string, JSONContent | null>,
   onEditorFocus?: (editor: Editor) => void,
   onEditorBlur?: (editor: Editor) => void,
@@ -197,6 +138,8 @@ function renderField(
   const { key, format, schema } = field;
   const isReadonlyMode = mode !== 'edit-collaborative';
   const previewContent = previewVersionFragmentContents[key];
+  // Template help text is plain text, never rich text.
+  const description = linkifyText(schema.description);
 
   // -- Title ------------------------------------------------------------------
 
@@ -204,26 +147,22 @@ function renderField(
     if (isReadonlyMode) {
       return (
         <ReadonlyTitleField
-          title={schema.title ?? t('Proposal name')}
+          title={schema.title ?? t('decisions.proposals.proposalNameLabel')}
           required={field.required}
-          value={getPreviewText({
-            mode,
-            draftValue: draft.title,
-            previewContent,
-          })}
+          value={getFragmentText(previewContent) || null}
         />
       );
     }
 
     return (
       <CollaborativeTitleField
-        title={schema.title ?? t('Proposal name')}
+        title={schema.title ?? t('decisions.proposals.proposalNameLabel')}
         required={field.required}
         maxLength={Math.min(
           schema.maxLength ?? TITLE_MAX_LENGTH,
           TITLE_MAX_LENGTH,
         )}
-        placeholder={t('Untitled Proposal')}
+        placeholder={t('decisions.proposals.untitledProposal')}
         onChange={(value) => onFieldChange('title', value)}
       />
     );
@@ -234,14 +173,13 @@ function renderField(
   if (key === 'category') {
     const options = extractOptions(schema);
     const isMultipleSelection = schemaAllowsMultipleSelection(schema);
-    const categoryLabel = schema.title ?? t('Select a category');
+    const categoryLabel =
+      schema.title ?? t('decisions.proposals.selectCategoryPlaceholder');
 
     if (isReadonlyMode) {
-      const selectedValues = getPreviewCategories({
-        mode,
-        draftValue: draft.category,
-        previewContent,
-      });
+      const selectedValues = parseCategoryFragmentValue(
+        getFragmentText(previewContent) ?? '',
+      );
       const selectedLabels = options
         .filter((opt) => selectedValues.includes(opt.value))
         .map((opt) => opt.label);
@@ -255,7 +193,7 @@ function renderField(
           }
           title={categoryLabel}
           required={field.required}
-          placeholder={t('Select category')}
+          placeholder={t('decisions.proposals.selectCategoryLabel')}
         />
       );
     }
@@ -275,7 +213,9 @@ function renderField(
           onChange={(value) => onFieldChange('category', value)}
           fragmentName="category"
           title={categoryLabel}
-          description={schema.description ?? t('Select all that apply')}
+          description={
+            description ?? t('decisions.proposals.selectAllThatApplyHint')
+          }
           required={field.required}
         />
       );
@@ -288,41 +228,39 @@ function renderField(
         onChange={(value) => onFieldChange('category', value)}
         fragmentName="category"
         title={categoryLabel}
-        description={schema.description}
+        description={description}
         allowEmpty={!field.required}
         required={field.required}
       />
     );
   }
 
-  // -- Budget (system) --------------------------------------------------------
+  // -- Budget (system) and money fields ---------------------------------------
 
-  if (key === 'budget') {
+  // A legacy template's budget carries no `x-format`, so it is matched by key
+  // as well as by format.
+  if (key === 'budget' || format === 'money') {
     if (isReadonlyMode) {
       return (
         <ReadonlyBudgetField
-          value={getPreviewBudgetValue({
-            mode,
-            draftValue: draft.budget,
-            previewContent,
-          })}
-          title={schema.title ?? t('Funding amount')}
-          description={schema.description}
+          value={formatPreviewBudget(previewContent)}
+          title={schema.title ?? t('decisions.proposals.fundingAmountLabel')}
+          description={description}
           required={field.required}
-          placeholder={t('Add budget')}
+          placeholder={t('decisions.proposals.addBudgetAction')}
         />
       );
     }
 
     return (
       <CollaborativeBudgetField
-        title={schema.title ?? t('Funding amount')}
-        description={schema.description}
+        title={schema.title ?? t('decisions.proposals.fundingAmountLabel')}
+        description={description}
         required={field.required}
         minAmount={schema.minimum}
         maxAmount={schema.maximum}
-        initialValue={draft.budget}
-        onChange={(value) => onFieldChange('budget', value)}
+        initialValue={key === 'budget' ? draft.budget : null}
+        onChange={(value) => onFieldChange(key, value)}
       />
     );
   }
@@ -332,17 +270,15 @@ function renderField(
   switch (format) {
     case 'short-text':
     case 'long-text': {
-      const placeholder = t('Start typing...');
+      const placeholder = t('startTypingPlaceholder');
 
       if (isReadonlyMode) {
         return (
           <ReadonlyTextField
             title={schema.title}
-            description={schema.description}
+            description={description}
             required={field.required}
-            content={
-              mode === 'preview-version' ? (previewContent ?? null) : null
-            }
+            content={previewContent ?? null}
             placeholder={placeholder}
             multiline={format === 'long-text'}
           />
@@ -354,7 +290,7 @@ function renderField(
           fragmentName={key}
           title={schema.title}
           required={field.required}
-          description={schema.description}
+          description={description}
           placeholder={placeholder}
           multiline={format === 'long-text'}
           maxLength={schema.maxLength}
@@ -365,47 +301,14 @@ function renderField(
       );
     }
 
-    case 'money': {
-      if (isReadonlyMode) {
-        return (
-          <ReadonlyBudgetField
-            value={getPreviewBudgetValue({
-              mode,
-              draftValue: (draft[key] as ProposalDraftFields['budget']) ?? null,
-              previewContent,
-            })}
-            title={schema.title ?? t('Funding amount')}
-            description={schema.description}
-            required={field.required}
-            placeholder={t('Add budget')}
-          />
-        );
-      }
-
-      return (
-        <CollaborativeBudgetField
-          title={schema.title ?? t('Funding amount')}
-          description={schema.description}
-          required={field.required}
-          minAmount={schema.minimum}
-          maxAmount={schema.maximum}
-          initialValue={null}
-          onChange={(value) => onFieldChange(key, value)}
-        />
-      );
-    }
-
     case 'location': {
       if (isReadonlyMode) {
-        const location =
-          mode === 'preview-version'
-            ? parsePreviewLocation(previewContent)
-            : ((draft[key] as ProposalDraftFields['location']) ?? undefined);
+        const location = parsePreviewLocation(previewContent);
 
         return (
           <LabeledFieldSet
-            legend={schema.title ?? t('Location')}
-            description={schema.description}
+            legend={schema.title ?? t('decisions.proposals.locationLabel')}
+            description={description}
             required={field.required}
             data-testid={`field-${key}`}
           >
@@ -419,8 +322,8 @@ function renderField(
         // search + map + "use my location"), and each part carries its own
         // accessible name.
         <LabeledFieldSet
-          legend={schema.title ?? t('Location')}
-          description={schema.description}
+          legend={schema.title ?? t('decisions.proposals.locationLabel')}
+          description={description}
           required={field.required}
           data-testid={`field-${key}`}
         >
@@ -440,11 +343,7 @@ function renderField(
       const options = extractOptions(schema);
 
       if (isReadonlyMode) {
-        const selectedValue = getPreviewText({
-          mode,
-          draftValue: (draft[key] as string | null) ?? null,
-          previewContent,
-        });
+        const selectedValue = getFragmentText(previewContent) || null;
         const selectedOption = options.find(
           (opt) => opt.value === selectedValue,
         );
@@ -452,10 +351,10 @@ function renderField(
         return (
           <ReadonlyDropdownField
             value={selectedOption?.label ?? null}
-            title={schema.title ?? t('Select option')}
-            description={schema.description}
+            title={schema.title ?? t('decisions.proposals.selectOptionLabel')}
+            description={description}
             required={field.required}
-            placeholder={t('Select option')}
+            placeholder={t('decisions.proposals.selectOptionLabel')}
           />
         );
       }
@@ -468,8 +367,8 @@ function renderField(
           initialValue={(draft[key] as string | null) ?? null}
           onChange={(value) => onFieldChange(key, value)}
           fragmentName={key}
-          title={schema.title ?? t('Select option')}
-          description={schema.description}
+          title={schema.title ?? t('decisions.proposals.selectOptionLabel')}
+          description={description}
           allowEmpty={!field.required}
           required={field.required}
         />
@@ -488,11 +387,11 @@ function renderField(
 // ---------------------------------------------------------------------------
 
 /**
- * Schema-driven form renderer for proposal editing and template preview.
+ * Schema-driven form renderer for proposal editing and version preview.
  *
  * Takes compiled field descriptors and renders the correct component for
- * each field. Version and template previews reuse readonly field components,
- * while editing keeps the collaborative Yjs-backed fields.
+ * each field. Version previews reuse readonly field components, while
+ * editing keeps the collaborative Yjs-backed fields.
  *
  * Layout: one flat stack of labeled fields at the form's field gap — title,
  * budget, category, then the dynamic template fields in schema order.
@@ -508,15 +407,11 @@ export function ProposalFormRenderer({
   previewVersionFragmentContents = {},
 }: ProposalFormRendererProps) {
   const t = useTranslations();
-  const gisMapsEnabled = useFeatureFlag('gis_maps');
 
   const titleField = fields.find((f) => f.key === 'title');
   const categoryField = fields.find((f) => f.key === 'category');
   const budgetField = fields.find((f) => f.key === 'budget');
-  // The location field lives behind the `gis_maps` flag.
-  const dynamicFields = fields.filter(
-    (f) => !f.isSystem && (gisMapsEnabled || f.format !== 'location'),
-  );
+  const dynamicFields = fields.filter((f) => !f.isSystem);
 
   const render = (field: FieldDescriptor) =>
     renderField(

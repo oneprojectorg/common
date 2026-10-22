@@ -4,7 +4,8 @@ import { User } from '@op/supabase/lib';
 import { and, eq } from 'drizzle-orm';
 
 import {
-  type PaginatedResult,
+  PAGE_LIMIT,
+  type Paginated,
   decodeCursor,
   encodeCursor,
   getCursorCondition,
@@ -26,7 +27,7 @@ export const listProfileJoinRequests = async ({
   targetProfileId,
   status,
   cursor,
-  limit = 10,
+  limit = PAGE_LIMIT.sm,
   dir = 'desc',
 }: {
   user: User;
@@ -35,7 +36,7 @@ export const listProfileJoinRequests = async ({
   cursor?: string | null;
   limit?: number;
   dir?: 'asc' | 'desc';
-}): Promise<PaginatedResult<JoinProfileRequestWithProfiles>> => {
+}): Promise<Paginated<JoinProfileRequestWithProfiles>> => {
   // Build cursor condition for pagination
   const cursorCondition = cursor
     ? getCursorCondition({

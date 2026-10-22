@@ -1,22 +1,32 @@
 'use client';
 
+import { useFeatureFlag } from '@/hooks/useFeatureFlag';
+import { trpc } from '@op/api/client';
 import { ProposalStatus } from '@op/api/encoders';
 import type { Proposal } from '@op/common/client';
+import { logger } from '@op/logging/client';
+import { toast } from '@op/sense/Toast';
 import { useState } from 'react';
 import { LuEye, LuEyeOff, LuTrash2 } from 'react-icons/lu';
 
 import { useRouter, useTranslations } from '@/lib/i18n';
 
+import { MergeProposalDialog } from './MergeProposalDialog';
 import { DeleteProposalDialog } from './ProposalCard/DeleteProposalDialog';
 import {
   ProposalOptionsMenu,
   type ProposalOptionsMenuItem,
 } from './ProposalOptionsMenu';
+import { RejectProposalDialog } from './RejectProposalDialog';
+import { buildMergeMenuItem, getProposalDisplayTitle } from './proposals/merge';
+import { buildRejectMenuItem } from './proposals/reject';
+import { useProposalAdvance } from './useProposalAdvance';
 import { useProposalModerationActions } from './useProposalModerationActions';
+import { useProposalRejectionActions } from './useProposalRejectionActions';
 
 /**
- * Admin overflow menu (`…`) for the proposal page's action row: hide / unhide
- * and delete.
+ * Admin overflow menu (`…`) for the proposal page's action row: hide / unhide,
+ * delete, and "Advance to [phase]" for a proposal outside the current phase.
  * Mirrors the browse-card kebab (`ProposalCard/ProposalCardMenu`) and shares its
  * mutation + toast copy via {@link useProposalModerationActions}, so the two
  * surfaces can't drift.
@@ -35,13 +45,6 @@ export function ProposalAdminMenu({
   /** Where to go after deleting — this page is about to 404. */
   backHref: string;
 }) {
-  const t = useTranslations();
-  const router = useRouter();
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-
-  const { toggleVisibility, isHidden, isLoading } =
-    useProposalModerationActions(proposal);
-
   const canModerate =
     proposal.access?.admin === true && proposal.status !== ProposalStatus.DRAFT;
 
@@ -49,9 +52,113 @@ export function ProposalAdminMenu({
     return null;
   }
 
-  const triggerLabel = t('Proposal options');
+  return <ProposalAdminMenuItems proposal={proposal} backHref={backHref} />;
+}
+
+/** Split from the gate so the hooks only run for a viewer who can act. */
+function ProposalAdminMenuItems({
+  proposal,
+  backHref,
+}: {
+  proposal: Proposal;
+  backHref: string;
+}) {
+  const t = useTranslations();
+  const router = useRouter();
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isMergeModalOpen, setIsMergeModalOpen] = useState(false);
+  const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
+
+  const { toggleVisibility, isHidden, isLoading } =
+    useProposalModerationActions(proposal);
+  // No invalidation needed: the endpoint registers the affected proposal channels.
+  const unmergeMutation = trpc.decision.unmergeProposal.useMutation({
+    onError: (error) => {
+      toast.error(error.message || t('decisions.proposals.unmergeError'));
+      logger.error('Failed to unmerge proposal', {
+        error,
+        context: 'ProposalAdminMenu',
+      });
+    },
+  });
+  const rejectEnabled = useFeatureFlag('reject-proposals') ?? false;
+  // The parent gate already requires admin + non-draft, so the slot always
+  // shows; it just toggles to Undo once rejected.
+  const isRejected = proposal.status === ProposalStatus.REJECTED;
+  const { reject, unreject, isRejecting, isUnrejecting } =
+    useProposalRejectionActions(proposal);
+
+  // A superseded proposal leaves every listing, so its own page is the only
+  // surface that can offer the undo.
+  const { data: mergedAway } = trpc.decision.listProposalRelationships.useQuery(
+    { sourceProposalId: proposal.id },
+  );
+  const supersededBy = mergedAway?.items[0];
+
+  const triggerLabel = t('decisions.proposals.proposalOptionsLabel');
+
+  const handleUnmerge = () =>
+    unmergeMutation.mutate(
+      { sourceProposalId: proposal.id },
+      {
+        // Per-call so the toast can name it; the input carries only an id.
+        onSuccess: () =>
+          toast.success(
+            t('decisions.proposals.unmergeSuccess', {
+              source: getProposalDisplayTitle(
+                proposal,
+                t('decisions.proposals.untitledProposal'),
+              ),
+            }),
+          ),
+      },
+    );
+
+  const { advanceItem, isAdvancing } = useProposalAdvance({
+    proposal,
+    lookUpTarget: true,
+  });
+  // Advancing, rejecting and unmerging all move the proposal between pools,
+  // so none starts while another is in flight.
+  const isBusy =
+    isLoading ||
+    unmergeMutation.isPending ||
+    isRejecting ||
+    isUnrejecting ||
+    isAdvancing;
+
+  // Merge leads, matching the card kebab (Figma 15311:9078).
+  const mergeItem = buildMergeMenuItem({
+    isDisabled: isBusy,
+    mergeLabel: t('decisions.proposals.mergeProposalAction'),
+    onMerge: () => setIsMergeModalOpen(true),
+    unmerge: {
+      isSuperseded: Boolean(supersededBy),
+      label: t('decisions.proposals.unmergeAction'),
+      onAction: handleUnmerge,
+    },
+  });
+
+  const advanceMenuItem = advanceItem(isBusy);
+
+  // A proposal the admin can advance gets that choice instead: offering both
+  // "Advance" and "Do not advance" would read as contradictory.
+  const rejectItem =
+    rejectEnabled && !advanceMenuItem
+      ? buildRejectMenuItem({
+          isDisabled: isBusy,
+          isRejected,
+          rejectLabel: t('decisions.proposals.doNotAdvanceAction'),
+          undoLabel: t('decisions.proposals.undoRejectionAction'),
+          onReject: () => setIsRejectModalOpen(true),
+          onUndo: unreject,
+        })
+      : null;
 
   const items: ProposalOptionsMenuItem[] = [
+    mergeItem,
+    ...(rejectItem ? [rejectItem] : []),
+    ...(advanceMenuItem ? [advanceMenuItem] : []),
     {
       key: 'visibility',
       icon: isHidden ? (
@@ -59,7 +166,9 @@ export function ProposalAdminMenu({
       ) : (
         <LuEyeOff className="size-5" />
       ),
-      label: isHidden ? t('Unhide proposal') : t('Hide proposal'),
+      label: isHidden
+        ? t('decisions.proposals.unhideProposalAction')
+        : t('decisions.proposals.hideProposalAction'),
       onAction: toggleVisibility,
       isDisabled: isLoading,
     },
@@ -85,6 +194,23 @@ export function ProposalAdminMenu({
         onOpenChange={setIsDeleteModalOpen}
         onDeleted={() => router.push(backHref)}
       />
+      {!supersededBy ? (
+        <MergeProposalDialog
+          proposal={proposal}
+          open={isMergeModalOpen}
+          onOpenChange={setIsMergeModalOpen}
+        />
+      ) : null}
+      {rejectEnabled && !isRejected ? (
+        <RejectProposalDialog
+          open={isRejectModalOpen}
+          onOpenChange={setIsRejectModalOpen}
+          isPending={isRejecting}
+          onConfirm={(input) =>
+            reject(input, { onSuccess: () => setIsRejectModalOpen(false) })
+          }
+        />
+      ) : null}
     </ProposalOptionsMenu>
   );
 }

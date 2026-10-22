@@ -1,3 +1,4 @@
+import { trackRevisionRequestCancelled } from '@op/analytics';
 import { db } from '@op/db/client';
 import {
   ProposalReviewAssignmentStatus,
@@ -7,12 +8,13 @@ import {
   proposalReviewRequests,
 } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
-import { eq } from 'drizzle-orm';
+import { waitUntil } from '@vercel/functions';
+import { and, eq } from 'drizzle-orm';
 
 import { CommonError, NotFoundError, ValidationError } from '../../utils';
 import { assertReviewAssignmentContext } from './reviewHelpers';
 
-/** Cancels an active revision request and resumes the assignment. */
+/** Cancels an active revision request and resumes a paused assignment. */
 export async function cancelRevisionRequest({
   assignmentId,
   revisionRequestId,
@@ -21,7 +23,13 @@ export async function cancelRevisionRequest({
   assignmentId: string;
   revisionRequestId: string;
   user: User;
-}): Promise<ProposalReviewRequest & { processInstanceId: string }> {
+}): Promise<
+  ProposalReviewRequest & {
+    processInstanceId: string;
+    proposalId: string;
+    proposalAssignmentIds: Array<string>;
+  }
+> {
   const context = await assertReviewAssignmentContext({
     assignmentId,
     user,
@@ -55,13 +63,35 @@ export async function cancelRevisionRequest({
       .set({
         status: ProposalReviewAssignmentStatus.IN_PROGRESS,
       })
-      .where(eq(proposalReviewAssignments.id, assignmentId));
+      .where(
+        and(
+          eq(proposalReviewAssignments.id, assignmentId),
+          eq(
+            proposalReviewAssignments.status,
+            ProposalReviewAssignmentStatus.AWAITING_AUTHOR_REVISION,
+          ),
+        ),
+      );
 
     return cancelledRequest;
   });
 
+  waitUntil(
+    trackRevisionRequestCancelled(
+      user.id,
+      context.assignment.processInstanceId,
+      context.assignment.proposalId,
+      {
+        assignment_id: assignmentId,
+        phase_id: context.assignment.phaseId,
+      },
+    ),
+  );
+
   return {
     ...request,
     processInstanceId: context.assignment.processInstanceId,
+    proposalId: context.assignment.proposalId,
+    proposalAssignmentIds: context.proposalAssignmentIds,
   };
 }

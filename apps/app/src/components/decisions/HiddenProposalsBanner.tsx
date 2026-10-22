@@ -16,7 +16,7 @@ export function HiddenProposalsBanner({
   nextPhaseName,
   currentPhaseEndDate,
 }: HiddenProposalsBannerProps) {
-  const t = useTranslations();
+  const t = useTranslations('decisions.proposals');
   const locale = useLocale();
 
   const formattedDate = currentPhaseEndDate
@@ -28,11 +28,11 @@ export function HiddenProposalsBanner({
 
   const message =
     nextPhaseName && formattedDate
-      ? t(
-          'Proposals are private during this phase. All proposals will move to {nextPhase} on {date}.',
-          { nextPhase: nextPhaseName, date: formattedDate },
-        )
-      : t('Proposals are private during this phase.');
+      ? t('privateProposalsWithDateNotice', {
+          nextPhase: nextPhaseName,
+          date: formattedDate,
+        })
+      : t('privateProposalsNotice');
 
   return (
     <Alert

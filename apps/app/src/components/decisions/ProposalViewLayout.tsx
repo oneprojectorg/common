@@ -2,19 +2,8 @@
 
 import type { Proposal } from '@op/common/client';
 import { Button } from '@op/sense/Button';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@op/sense/Tooltip';
 import { ReactNode } from 'react';
-import {
-  LuArrowLeft,
-  LuMessageCircle,
-  LuPencil,
-  LuStickyNote,
-} from 'react-icons/lu';
+import { LuArrowLeft, LuMessageCircle, LuPencil } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 import { useRouter } from '@/lib/i18n/routing';
@@ -25,6 +14,7 @@ import { JoinAccountModal, JoinOrUserMenu } from './JoinAccountModal';
 import { ProposalAdminMenu } from './ProposalAdminMenu';
 import { PROPOSAL_COMMENTS_ANCHOR_ID } from './ProposalComments';
 import { ReportProposalDialog } from './ReportProposalDialog';
+import { ReviewNotesButton } from './ReviewNotesButton';
 
 export function ProposalViewLayout({
   children,
@@ -32,9 +22,11 @@ export function ProposalViewLayout({
   editHref,
   canEdit = false,
   canJoin = false,
+  commentsEnabled,
   reportProposalId,
-  revisionToggle,
+  reviewNotesToggle,
   moderationProposal,
+  notices,
 }: {
   children: ReactNode;
   backHref: string;
@@ -46,14 +38,11 @@ export function ProposalViewLayout({
    * "Log in" to logged-out and anonymous visitors.
    */
   canJoin?: boolean;
+  commentsEnabled: boolean;
   /** When set, renders the "Report" action (opens the report dialog) for the
    *  proposal with this id. */
   reportProposalId?: string;
-  /**
-   * When provided, renders a sticky-note disclosure button in the header with
-   * an orange indicator dot. `isActive` reflects the aria-expanded state.
-   */
-  revisionToggle?: {
+  reviewNotesToggle?: {
     onToggle: () => void;
     isActive: boolean;
   };
@@ -62,11 +51,15 @@ export function ProposalViewLayout({
    * `proposal.access.admin`, so it's safe to pass for any viewer.
    */
   moderationProposal?: Proposal;
+  /**
+   * Read-only status shown at the head of the action cluster. Pass a fragment
+   * for more than one; each renders nothing when it has nothing to say.
+   */
+  notices?: ReactNode;
 }) {
   const t = useTranslations();
   const router = useRouter();
-  const revisionRequestLabel = t('Revision request');
-  const backLabel = t('Back to Proposals');
+  const backLabel = t('decisions.proposals.backToProposalsAction');
 
   return (
     <div className="grid h-screen min-h-0 min-w-0 grid-cols-1 grid-rows-[auto_1fr] bg-white">
@@ -86,79 +79,60 @@ export function ProposalViewLayout({
           </Button>
         </div>
 
-        {/* One tooltip group for the row — `delay` exists on Provider alone. */}
-        <TooltipProvider delay={500}>
-          <div className="flex items-center gap-2 sm:gap-4">
-            {canEdit && editHref && (
-              <Button
-                variant="outline"
-                onClick={() => router.push(editHref)}
-                className="max-sm:size-11"
-                aria-label={t('Edit')}
-              >
-                <LuPencil className="size-4" />
-                <span className="hidden sm:inline">{t('Edit')}</span>
-              </Button>
-            )}
-            {/* Report is a safety action the moderation API accepts from any
+        <div className="flex items-center gap-2 sm:gap-4">
+          {notices}
+          {canEdit && editHref && (
+            <Button
+              variant="outline"
+              onClick={() => router.push(editHref)}
+              className="max-sm:size-11"
+              aria-label={t('Edit')}
+            >
+              <LuPencil className="size-4" />
+              <span className="hidden sm:inline">{t('Edit')}</span>
+            </Button>
+          )}
+          {/* Report is a safety action the moderation API accepts from any
               caller (signed-in, anonymous, or sessionless). Offer it to any
               viewer so inappropriate content is always flaggable. */}
-            {reportProposalId && (
-              <ReportProposalDialog proposalId={reportProposalId} />
-            )}
-            {/* Mobile-only jump to the comments section (Figma's speech-bubble
+          {reportProposalId && (
+            <ReportProposalDialog proposalId={reportProposalId} />
+          )}
+          {/* Mobile-only jump to the comments section (Figma's speech-bubble
               icon). A plain fragment link — no scroll scripting needed. */}
+          {commentsEnabled && (
             <ButtonLink
               href={`#${PROPOSAL_COMMENTS_ANCHOR_ID}`}
               variant="outline"
               size="icon"
-              aria-label={t('View comments')}
+              aria-label={t('decisions.proposals.viewCommentsAction')}
               className="sm:hidden"
             >
               <LuMessageCircle className="size-4" />
             </ButtonLink>
-            {/* Like/Follow live in the proposal's engagement row, not here — see
+          )}
+          {/* Like/Follow live in the proposal's engagement row, not here — see
               ProposalPreview's `engagement` prop. */}
-            {revisionToggle && (
-              <Tooltip>
-                <TooltipTrigger
-                  render={
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={revisionToggle.onToggle}
-                      aria-label={revisionRequestLabel}
-                      aria-expanded={revisionToggle.isActive}
-                      className="relative"
-                    >
-                      <LuStickyNote className="size-4" />
-                      <span
-                        aria-hidden
-                        className="absolute -end-0.5 -top-0.5 size-1.5 rounded-full bg-warning"
-                      />
-                    </Button>
-                  }
-                />
-                <TooltipContent>{revisionRequestLabel}</TooltipContent>
-              </Tooltip>
-            )}
-            {moderationProposal ? (
-              <ProposalAdminMenu
-                proposal={moderationProposal}
-                backHref={backHref}
-              />
-            ) : null}
-            <div className="hidden sm:block">
-              <LocaleChooser />
-            </div>
-            {/* Outside the sm-only cluster: Join stays visible on mobile (the
-              avatar keeps its desktop-only treatment via userMenuClassName). */}
-            <JoinOrUserMenu
-              canJoin={canJoin}
-              userMenuClassName="hidden sm:block"
+          {reviewNotesToggle && (
+            <ReviewNotesButton
+              onToggle={reviewNotesToggle.onToggle}
+              isExpanded={reviewNotesToggle.isActive}
             />
-          </div>
-        </TooltipProvider>
+          )}
+          {moderationProposal ? (
+            <ProposalAdminMenu
+              proposal={moderationProposal}
+              backHref={backHref}
+            />
+          ) : null}
+          <LocaleChooser />
+          {/* Outside the sm-only cluster: Join stays visible on mobile (the
+              avatar keeps its desktop-only treatment via userMenuClassName). */}
+          <JoinOrUserMenu
+            canJoin={canJoin}
+            userMenuClassName="hidden sm:block"
+          />
+        </div>
       </div>
 
       <div className="relative min-h-0 overflow-y-auto">{children}</div>

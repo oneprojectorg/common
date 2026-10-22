@@ -19,7 +19,7 @@ export const PlatformStats = () => {
 
 /** Renders platform statistics grid with live data */
 const PlatformStatsWithData = () => {
-  const t = useTranslations();
+  const t = useTranslations('admin');
   const [stats] = trpc.platform.admin.getStats.useSuspenseQuery();
 
   const statItems: Array<{
@@ -28,17 +28,17 @@ const PlatformStatsWithData = () => {
     href: string;
   }> = [
     {
-      label: t('Total users'),
+      label: t('totalUsersStat'),
       value: stats.totalUsers,
       href: '/admin/users',
     },
     {
-      label: t('Total organizations'),
+      label: t('totalOrganizationsStat'),
       value: stats.totalOrganizations,
       href: '/admin/orgs',
     },
     {
-      label: t('Total decisions'),
+      label: t('totalDecisionsStat'),
       value: stats.totalDecisionInstances,
       href: '/admin/decisions',
     },

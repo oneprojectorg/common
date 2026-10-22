@@ -26,13 +26,13 @@ export const InviteNewOrganization = ({
   personalMessage,
   setPersonalMessage,
 }: InviteNewOrganizationProps) => {
-  const t = useTranslations();
+  const t = useTranslations('org');
   const { user } = useRequiredUser();
   const messageId = useId();
 
   return (
     <div className="flex flex-col gap-6">
-      <p>{t('Invite new organizations onto Common.')}</p>
+      <p>{t('inviteNewOrgSubtitle')}</p>
 
       <div className="flex flex-col gap-4">
         <EmailInviteField
@@ -42,16 +42,18 @@ export const InviteNewOrganization = ({
           setEmailBadges={setEmailBadges}
           // No target org on this tab — invitees are new organizations.
           domain={user.currentOrganization?.domain || 'solidarityseeds.org'}
-          description={t('Separate multiple emails with commas or line breaks')}
+          description={t('inviteEmailsHint')}
         />
 
         <Field>
-          <FieldLabel htmlFor={messageId}>{t('Personal Message')}</FieldLabel>
+          <FieldLabel htmlFor={messageId}>
+            {t('invitePersonalMessageLabel')}
+          </FieldLabel>
           <Textarea
             id={messageId}
             value={personalMessage}
             onChange={(e) => setPersonalMessage(e.target.value)}
-            placeholder={t('Add a personal note to your invitation')}
+            placeholder={t('invitePersonalMessagePlaceholder')}
             rows={3}
           />
         </Field>

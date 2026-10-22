@@ -2,9 +2,11 @@
 
 import { useRelationshipMutations } from '@/hooks/useRelationshipMutations';
 import { useUser } from '@/utils/UserProvider';
+import { isJoinEligible } from '@/utils/isJoinEligible';
 import { userCanInteract } from '@/utils/userCanInteract';
 import type { DecisionAccess } from '@op/api/encoders';
 import type { Proposal } from '@op/common/client';
+import { usePathname, useRouter } from 'next/navigation';
 
 /**
  * Whether the viewer's access on a decision admits Like/Follow.
@@ -56,6 +58,8 @@ export function useProposalEngagement({
   canEngage?: boolean;
 }): ProposalEngagement | undefined {
   const { user } = useUser();
+  const router = useRouter();
+  const pathname = usePathname();
   const canToggle = userCanInteract(user) && canEngage;
 
   const { isLiked, isFollowed, stateUnknown, handleLike, handleFollow } =
@@ -65,9 +69,29 @@ export function useProposalEngagement({
       invalidateQueries: [{ processInstanceId: proposal.processInstanceId }],
     });
 
+  if (!canToggle) {
+    if (canEngage && isJoinEligible(user)) {
+      // Plain navigation, not nuqs' useQueryState — this list-rendered path
+      // must not need a Suspense boundary of its own.
+      const openJoinModal = () => {
+        const params = new URLSearchParams(window.location.search);
+        params.set('join', '1');
+        router.push(`${pathname}?${params.toString()}`);
+      };
+
+      return {
+        isLiked: false,
+        isFollowed: false,
+        onLike: openJoinModal,
+        onFollow: openJoinModal,
+      };
+    }
+    return undefined;
+  }
+
   // With nothing loaded both flags read false for want of data, which would
   // render every toggle unpressed and turn the next click into a redundant add.
-  if (!canToggle || stateUnknown) {
+  if (stateUnknown) {
     return undefined;
   }
 

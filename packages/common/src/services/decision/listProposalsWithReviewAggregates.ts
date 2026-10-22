@@ -1,50 +1,55 @@
 import { and, db, eq, inArray, isNull } from '@op/db/client';
 import {
   ProposalReviewState,
+  ProposalStatus,
   proposalCategories,
-  proposals,
   taxonomyTerms,
 } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
-import { count as countFn } from 'drizzle-orm';
+import { checkPermission, permission } from 'access-zones';
 import { z } from 'zod';
 
-import {
-  UnauthorizedError,
-  decodeCursor,
-  encodeCursor,
-  getCursorCondition,
-} from '../../utils';
+import { UnauthorizedError } from '../../utils';
+import { assertProfileAccess } from '../assert';
 import { getInstance } from './getInstance';
+import { getProposalDocumentsContent } from './getProposalDocumentsContent';
 import { getProposalIdsForPhase } from './getProposalsForPhase';
 import {
   OVERALL_RECOMMENDATION_KEY,
   getRubricScoringInfo,
 } from './getRubricScoringInfo';
+import { getCurrentProposalHistoryIds } from './proposal/history';
+import { parseProposalData } from './proposalDataSchema';
+import { buildProposalListPreview } from './proposalListPreview';
+import { resolveProposalTemplate } from './resolveProposalTemplate';
+import { isReviewOutOfDate } from './review/staleness';
+import { assertCanReadPhaseReviews } from './reviewHelpers';
 import { instanceOptionalPhaseRefSchema } from './schemas/instance';
+import { getInstancePhases, isLastPhase } from './schemas/instanceData';
 import {
   type ProposalCategoryItem,
   type ProposalsWithReviewAggregatesList,
   proposalsWithReviewAggregatesListSchema,
 } from './schemas/reviews';
-import type { RubricTemplateSchema } from './types';
+import type { ProposalTemplateSchema, RubricTemplateSchema } from './types';
 import { getPhaseRubricTemplate } from './utils/phaseTemplates';
 
 // ── Input schema ───────────────────────────────────────────────────────
 
 /**
  * Single union schema for both dispatch modes:
- *   - filtered: caller passes `proposalIds`, no pagination.
- *   - paginated: phase-scoped, cursor-paginated.
+ *   - filtered: caller passes `proposalIds`.
+ *   - phase-scoped: no `proposalIds`, returns the whole phase.
+ *
+ * The second branch is `.strict()` so it rejects a `proposalIds` it cannot
+ * use. Left open it would accept an invalid filtered read, drop the key, and
+ * hand a caller who asked for a few proposals the entire phase.
  */
 export const listProposalsWithReviewAggregatesInputSchema = z.union([
   instanceOptionalPhaseRefSchema.extend({
     proposalIds: z.array(z.uuid()).min(1),
   }),
-  instanceOptionalPhaseRefSchema.extend({
-    limit: z.number().int().min(1).max(100).default(50),
-    cursor: z.string().optional(),
-  }),
+  instanceOptionalPhaseRefSchema.strict(),
 ]);
 
 export type ListProposalsWithReviewAggregatesInput = z.infer<
@@ -54,14 +59,13 @@ export type ListProposalsWithReviewAggregatesInput = z.infer<
 // ── Public entry ───────────────────────────────────────────────────────
 
 /**
- * Admin-only proposal list with per-proposal review aggregates. Two dispatch
- * modes determined by input shape:
+ * Proposal list with per-proposal review aggregates. Two dispatch modes
+ * determined by input shape:
  *
- *   - filtered (`proposalIds` present): caller-owned ID list, no pagination.
- *   - paginated: phase-scoped, `createdAt DESC`, cursor-paginated.
- *
- * Both modes share the auth + instance + rubric setup; the split happens
- * after the admin check.
+ *   - filtered (`proposalIds` present): caller-owned ID list.
+ *     Gated by `canReadPhaseReviews` — admins always, reviewers on a named
+ *     `openReviews` phase (the same gate as the per-proposal review set).
+ *   - phase-scoped: every proposal in the phase, `createdAt DESC`. Admin-only.
  */
 export async function listProposalsWithReviewAggregates(
   input: ListProposalsWithReviewAggregatesInput & { user: User },
@@ -69,12 +73,6 @@ export async function listProposalsWithReviewAggregates(
   const { user, processInstanceId } = input;
 
   const instance = await getInstance({ instanceId: processInstanceId, user });
-
-  if (!instance.access.admin) {
-    throw new UnauthorizedError(
-      "You don't have admin access to this process instance",
-    );
-  }
 
   const phaseId = input.phaseId ?? instance.currentStateId ?? undefined;
 
@@ -86,12 +84,16 @@ export async function listProposalsWithReviewAggregates(
         .criteria.filter((c) => c.scored)
         .map((c) => c.key)
     : [];
-  const phaseProposalIds = await getProposalIdsForPhase({
-    instance,
-    phaseId,
-  });
 
+  // Filtered mode gates on the raw `phaseId`, not the effective one: a reviewer
+  // must name the phase. The gate races the phase lookup, which never throws.
   if ('proposalIds' in input) {
+    const [phaseProposalIds, proposalTemplate] = await Promise.all([
+      getProposalIdsForPhase({ instance, phaseId }),
+      resolveProposalTemplate(instance.instanceData, instance.processId),
+      assertCanReadPhaseReviews({ instance, phaseId: input.phaseId, user }),
+    ]);
+
     return listProposalsFiltered({
       proposalIds: input.proposalIds,
       phaseProposalIds,
@@ -99,17 +101,38 @@ export async function listProposalsWithReviewAggregates(
       phaseId,
       scoredCriterionKeys,
       rubricTemplate,
+      proposalTemplate,
     });
   }
 
-  return listProposalsPaginated({
+  if (!instance.profileId) {
+    throw new UnauthorizedError("You don't have access to do this");
+  }
+
+  const [phaseProposalIds, proposalTemplate, roles] = await Promise.all([
+    getProposalIdsForPhase({ instance, phaseId }),
+    resolveProposalTemplate(instance.instanceData, instance.processId),
+    assertProfileAccess({
+      user,
+      profileId: instance.profileId,
+      permissions: { decisions: permission.ADMIN },
+    }),
+  ]);
+
+  return listPhaseProposalsWithAggregates({
     processInstanceId,
     phaseId,
+    // Mirrors `updateProposal`, which also refuses every edit in the results phase.
+    isEditable:
+      checkPermission({ decisions: permission.UPDATE }, roles) &&
+      !isLastPhase(
+        instance.currentStateId,
+        getInstancePhases(instance.instanceData),
+      ),
     phaseProposalIds,
-    limit: input.limit,
-    cursor: input.cursor,
     scoredCriterionKeys,
     rubricTemplate,
+    proposalTemplate,
   });
 }
 
@@ -122,6 +145,7 @@ async function listProposalsFiltered({
   phaseId,
   scoredCriterionKeys,
   rubricTemplate,
+  proposalTemplate,
 }: {
   proposalIds: string[];
   phaseProposalIds: string[];
@@ -129,6 +153,7 @@ async function listProposalsFiltered({
   phaseId: string | undefined;
   scoredCriterionKeys: string[];
   rubricTemplate: RubricTemplateSchema | null;
+  proposalTemplate: ProposalTemplateSchema | null;
 }): Promise<ProposalsWithReviewAggregatesList> {
   const phaseProposalIdSet = new Set(phaseProposalIds);
   const filteredProposalIds = proposalIds.filter((id) =>
@@ -136,138 +161,111 @@ async function listProposalsFiltered({
   );
 
   if (filteredProposalIds.length === 0) {
-    return { items: [], total: 0, next: null, rubricTemplate };
+    return { items: [], rubricTemplate };
   }
 
-  const [proposalsFull, categoriesByProposalId] = await Promise.all([
-    db.query.proposals.findMany({
-      // Defense-in-depth: getProposalsForPhase already drops detached IDs, but
-      // re-apply the filter here so a bug upstream can't leak a CSAM row to
-      // the review UI.
-      where: {
-        RAW: (table) =>
-          and(
-            inArray(table.id, filteredProposalIds),
-            isNull(table.moderationDetachedAt),
-          )!,
-      },
-      with: proposalRelations({ processInstanceId, phaseId }),
-    }),
-    getCategoriesByProposalIds(filteredProposalIds),
-  ]);
+  const [storedProposals, categoriesByProposalId, currentHistoryIdByProposal] =
+    await Promise.all([
+      db.query.proposals.findMany({
+        // Defense-in-depth: getProposalsForPhase already drops detached IDs, but
+        // re-apply the filter here so a bug upstream can't leak a CSAM row to
+        // the review UI.
+        where: {
+          RAW: (table) =>
+            and(
+              inArray(table.id, filteredProposalIds),
+              isNull(table.moderationDetachedAt),
+            )!,
+        },
+        with: proposalRelations({ processInstanceId, phaseId }),
+      }),
+      getCategoriesByProposalIds(filteredProposalIds),
+      getCurrentProposalHistoryIds({ proposalIds: filteredProposalIds }),
+    ]);
+  const proposalsFull = await withSubmittedSystemFields({
+    proposals: storedProposals,
+    proposalTemplate,
+  });
 
   const items = proposalsFull.map((proposal) => ({
     proposal,
-    aggregates: getComputedReviewAggregates(
-      proposal.reviewAssignments,
+    aggregates: getComputedReviewAggregates({
+      reviewAssignments: proposal.reviewAssignments,
       scoredCriterionKeys,
-    ),
+      currentProposalHistoryId: currentHistoryIdByProposal.get(proposal.id),
+    }),
     categories: categoriesByProposalId.get(proposal.id) ?? [],
   }));
 
   return proposalsWithReviewAggregatesListSchema.parse({
     items,
-    total: items.length,
-    next: null,
     rubricTemplate,
   });
 }
 
-// ── Paginated mode (phase-scoped, cursor) ──────────────────────────────
+// ── Phase-scoped mode (whole phase) ───────────────────────────────────
 
-async function listProposalsPaginated({
+/** Unbounded, like `listSelectionCandidates`: an admin has to see the phase whole to act on it. */
+async function listPhaseProposalsWithAggregates({
   processInstanceId,
   phaseId,
+  isEditable,
   phaseProposalIds,
-  limit,
-  cursor,
   scoredCriterionKeys,
   rubricTemplate,
+  proposalTemplate,
 }: {
   processInstanceId: string;
   phaseId: string | undefined;
+  isEditable: boolean;
   phaseProposalIds: string[];
-  limit: number;
-  cursor: string | undefined;
   scoredCriterionKeys: string[];
   rubricTemplate: RubricTemplateSchema | null;
+  proposalTemplate: ProposalTemplateSchema | null;
 }): Promise<ProposalsWithReviewAggregatesList> {
   if (phaseProposalIds.length === 0) {
-    return { items: [], total: 0, next: null, rubricTemplate };
+    return { items: [], rubricTemplate };
   }
 
-  const decodedCursor = cursor
-    ? decodeCursor<{ value: string; id: string }>(cursor)
-    : undefined;
-
-  const [pageRowsRaw, totalRows] = await Promise.all([
-    db.query.proposals.findMany({
-      // Defense-in-depth: `phaseProposalIds` is already detach-filtered by
-      // getProposalsForPhase, but the extra `moderationDetachedAt IS NULL`
-      // guards against a future caller / bug slipping a detached ID in.
-      where: {
-        RAW: (table) =>
-          and(
-            inArray(table.id, phaseProposalIds),
-            isNull(table.moderationDetachedAt),
-            decodedCursor
-              ? getCursorCondition({
-                  column: table.createdAt,
-                  tieBreakerColumn: table.id,
-                  cursor: decodedCursor,
-                  direction: 'desc',
-                })
-              : undefined,
-          )!,
-      },
-      with: proposalRelations({ processInstanceId, phaseId }),
-      orderBy: { createdAt: 'desc', id: 'desc' },
-      limit: limit + 1,
-    }),
-    db
-      .select({ count: countFn() })
-      .from(proposals)
-      .where(
+  const storedRows = await db.query.proposals.findMany({
+    // Defense-in-depth: `phaseProposalIds` is already detach-filtered by
+    // getProposalsForPhase, but the extra `moderationDetachedAt IS NULL`
+    // guards against a future caller / bug slipping a detached ID in.
+    where: {
+      RAW: (table) =>
         and(
-          inArray(proposals.id, phaseProposalIds),
-          isNull(proposals.moderationDetachedAt),
-        ),
-      ),
-  ]);
+          inArray(table.id, phaseProposalIds),
+          isNull(table.moderationDetachedAt),
+        )!,
+    },
+    with: proposalRelations({ processInstanceId, phaseId }),
+    orderBy: { createdAt: 'desc', id: 'desc' },
+  });
 
-  const hasMore = pageRowsRaw.length > limit;
-  const pageRows = hasMore ? pageRowsRaw.slice(0, limit) : pageRowsRaw;
-  const total = Number(totalRows[0]?.count ?? 0);
-
-  if (pageRows.length === 0) {
-    return { items: [], total, next: null, rubricTemplate };
+  if (storedRows.length === 0) {
+    return { items: [], rubricTemplate };
   }
 
-  const pageIds = pageRows.map((p) => p.id);
-  const categoriesByProposalId = await getCategoriesByProposalIds(pageIds);
+  const rowProposalIds = storedRows.map((p) => p.id);
+  const [rows, categoriesByProposalId, currentHistoryIdByProposal] =
+    await Promise.all([
+      withSubmittedSystemFields({ proposals: storedRows, proposalTemplate }),
+      getCategoriesByProposalIds(rowProposalIds),
+      getCurrentProposalHistoryIds({ proposalIds: rowProposalIds }),
+    ]);
 
-  const items = pageRows.map((proposal) => ({
-    proposal,
-    aggregates: getComputedReviewAggregates(
-      proposal.reviewAssignments,
+  const items = rows.map((proposal) => ({
+    proposal: { ...proposal, isEditable },
+    aggregates: getComputedReviewAggregates({
+      reviewAssignments: proposal.reviewAssignments,
       scoredCriterionKeys,
-    ),
+      currentProposalHistoryId: currentHistoryIdByProposal.get(proposal.id),
+    }),
     categories: categoriesByProposalId.get(proposal.id) ?? [],
   }));
 
-  let next: string | null = null;
-  if (hasMore) {
-    const lastRow = pageRows[pageRows.length - 1]!;
-    next = encodeCursor<{ value: string; id: string }>({
-      value: lastRow.createdAt ?? '',
-      id: lastRow.id,
-    });
-  }
-
   return proposalsWithReviewAggregatesListSchema.parse({
     items,
-    total,
-    next,
     rubricTemplate,
   });
 }
@@ -275,8 +273,59 @@ async function listProposalsPaginated({
 // ── Helpers ────────────────────────────────────────────────────────────
 
 /**
+ * Overlays each proposal's title and budget from its collaboration document
+ * onto `proposalData`, as the proposal list does. The stored copy can lag the
+ * document (submit pins a version but stamps back only location and
+ * category), and the results confirm step awards the budget shown here by
+ * default.
+ */
+async function withSubmittedSystemFields<
+  T extends { id: string; status: string | null; proposalData: unknown },
+>({
+  proposals,
+  proposalTemplate,
+}: {
+  proposals: T[];
+  proposalTemplate: ProposalTemplateSchema | null;
+}): Promise<T[]> {
+  const documentContentMap = await getProposalDocumentsContent(
+    proposals.map((proposal) => ({
+      id: proposal.id,
+      proposalData: proposal.proposalData,
+      proposalTemplate,
+      collaborationDocVersionId:
+        proposal.status === ProposalStatus.DRAFT
+          ? undefined
+          : parseProposalData(proposal.proposalData).collaborationDocVersionId,
+    })),
+    // A single unavailable document must not break the whole list.
+    { onFetchError: 'omit' },
+  );
+
+  return proposals.map((proposal) => {
+    const parsed = parseProposalData(proposal.proposalData);
+    const { systemFieldOverrides } = buildProposalListPreview({
+      documentContent: documentContentMap.get(proposal.id),
+      proposalTemplate,
+      existingBudget: parsed.budget,
+    });
+    return {
+      ...proposal,
+      proposalData: { ...parsed, ...systemFieldOverrides },
+    };
+  });
+}
+
+/** The review columns the aggregates and the staleness rule read. */
+type ReviewAggregateRow = {
+  state: string;
+  reviewData: unknown;
+  reviewedProposalHistoryId: string | null;
+};
+
+/**
  * `with` block for the proposal relational query — shared by filtered and
- * paginated.
+ * phase-scoped.
  */
 export function proposalRelations({
   processInstanceId,
@@ -339,21 +388,31 @@ export async function getCategoriesByProposalIds(
  *
  * `proposal_reviews_assignment_unique` makes `reviews` 0-or-1; we read just
  * the first row even though the relation is declared as many.
+ *
+ * `currentProposalHistoryId` comes from one batched lookup per page — never
+ * per row — so `outOfDateReviewsCount` costs no extra query.
  */
-export function getComputedReviewAggregates(
+export function getComputedReviewAggregates({
+  reviewAssignments,
+  scoredCriterionKeys,
+  currentProposalHistoryId,
+}: {
   reviewAssignments: Array<{
     status: string;
     reviewer: unknown;
-    reviews: Array<{ state: string; reviewData: unknown }>;
-  }>,
-  scoredCriterionKeys: string[],
-) {
+    assignedProposalHistoryId: string | null;
+    reviews: Array<ReviewAggregateRow>;
+  }>;
+  scoredCriterionKeys: string[];
+  currentProposalHistoryId: string | null | undefined;
+}) {
   const reviewers = reviewAssignments.map((a) => ({
     profile: a.reviewer,
     status: a.status,
   }));
 
   let reviewsSubmittedCount = 0;
+  let outOfDateReviewsCount = 0;
   let totalScore = 0;
   const overallRecommendationCount: Record<string, number> = {};
 
@@ -364,6 +423,15 @@ export function getComputedReviewAggregates(
       continue;
     }
     reviewsSubmittedCount += 1;
+    if (
+      isReviewOutOfDate({
+        assignment,
+        review: review ?? null,
+        currentProposalHistoryId,
+      })
+    ) {
+      outOfDateReviewsCount += 1;
+    }
     totalScore += scored.score;
 
     if (scored.overallRecommendation != null) {
@@ -379,6 +447,7 @@ export function getComputedReviewAggregates(
   return {
     assignmentsCount: reviewAssignments.length,
     reviewsSubmittedCount,
+    outOfDateReviewsCount,
     averageScore,
     overallRecommendationCount,
     reviewers,

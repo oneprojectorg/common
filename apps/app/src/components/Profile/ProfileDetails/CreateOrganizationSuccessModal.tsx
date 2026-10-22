@@ -12,7 +12,7 @@ export const CreateOrganizationSuccessModal = ({
   isOpen: boolean;
   organizationName?: string;
 }) => {
-  const t = useTranslations();
+  const t = useTranslations('profile');
 
   return (
     // No onOpenChange: this is a transient "setting up" state the parent flips
@@ -20,12 +20,14 @@ export const CreateOrganizationSuccessModal = ({
     // no-op, close button hidden).
     <Dialog open={isOpen}>
       <DialogContent showCloseButton={false} className="justify-center">
-        <DialogTitle className="sr-only">{t('Setting up')}</DialogTitle>
+        <DialogTitle className="sr-only">
+          {t('creatingOrganizationTitle')}
+        </DialogTitle>
         <div className="flex flex-col items-center justify-center gap-6 p-12 text-center">
           <p>
-            {t('Setting up')}{' '}
+            {t('creatingOrganizationTitle')}{' '}
             <span className="font-semibold">
-              {organizationName || t('your organization')}
+              {organizationName || t('creatingOrganizationFallbackName')}
             </span>
             ...
           </p>

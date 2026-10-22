@@ -1,5 +1,6 @@
 'use client';
 
+import { linkifyText } from '@/utils/linkDetection';
 import type {
   CustomFormDefinitionSchema,
   XFormatPropertySchema,
@@ -37,6 +38,7 @@ import {
 } from '@op/sense/Select';
 import { Textarea } from '@op/sense/Textarea';
 import { screens } from '@op/styles/constants';
+import type { ReactNode } from 'react';
 import { useId, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -91,7 +93,21 @@ export function CustomFormModal({
   }
 
   const definition = schema;
-  const requiredFields = new Set(definition.required ?? []);
+  // Decided once, here: a field the renderer would skip must also come out of
+  // `required`, or AJV rejects every submission over a field that isn't on
+  // screen to show the error or be answered.
+  const renderableKeys = getFieldOrder(definition).filter((key) => {
+    const field = definition.properties?.[key];
+    return !!field && typeof field === 'object' && canRenderField(field);
+  });
+  const renderable = new Set(renderableKeys);
+  const requiredFields = new Set(
+    (definition.required ?? []).filter((key) => renderable.has(key)),
+  );
+  const answerableDefinition = {
+    ...definition,
+    required: [...requiredFields],
+  };
 
   const handleFieldChange = (key: string, value: unknown) => {
     setValues((prev) => ({ ...prev, [key]: value }));
@@ -108,7 +124,7 @@ export function CustomFormModal({
       return;
     }
     const cleaned = cleanValues(values);
-    const result = schemaValidator.validate(definition, cleaned);
+    const result = schemaValidator.validate(answerableDefinition, cleaned);
     if (!result.valid) {
       setErrors(result.errors);
       return;
@@ -116,11 +132,10 @@ export function CustomFormModal({
     await onSubmit(cleaned);
   };
 
-  // Validation errors that don't key to a rendered field (root-level or
-  // nested paths from AJV) would otherwise be invisible.
-  const fieldKeys = new Set(Object.keys(definition.properties ?? {}));
+  // Errors that don't key to a rendered field (root-level or nested AJV paths,
+  // or a field we skipped) would otherwise be invisible.
   const formLevelErrors = Object.entries(errors)
-    .filter(([key]) => !fieldKeys.has(key))
+    .filter(([key]) => !renderable.has(key))
     .map(([, message]) => message);
 
   return (
@@ -129,7 +144,8 @@ export function CustomFormModal({
       <DialogContent className="gap-0 p-0 sm:max-w-120">
         <DialogHeader>
           <DialogTitle>
-            {definition.title ?? t('Additional details')}
+            {definition.title ??
+              t('decisions.proposals.additionalDetailsHeading')}
           </DialogTitle>
         </DialogHeader>
         {/* `noValidate`: validation is AJV's (`schemaValidator`), and its
@@ -146,11 +162,11 @@ export function CustomFormModal({
         >
           <div className="flex flex-1 flex-col gap-6 overflow-y-auto px-6 py-4">
             {definition.description ? (
-              <p className="text-base text-muted-foreground">
-                {definition.description}
+              <p className="text-base text-muted-foreground [&>a]:underline [&>a]:underline-offset-4">
+                {linkifyText(definition.description)}
               </p>
             ) : null}
-            {getFieldOrder(definition).map((key) => {
+            {renderableKeys.map((key) => {
               const field = definition.properties?.[key];
               if (!field || typeof field !== 'object') {
                 return null;
@@ -179,7 +195,7 @@ export function CustomFormModal({
           </div>
           <DialogFooter className="shrink-0">
             <Button type="submit" className="w-full" loading={isSubmitting}>
-              {submitLabel ?? t('Submit')}
+              {submitLabel ?? t('decisions.proposals.submitAction')}
             </Button>
           </DialogFooter>
         </form>
@@ -198,6 +214,10 @@ function CustomFormField({
 }: CustomFormFieldProps) {
   const fieldId = useId();
   const label = field.title ?? name;
+  const description = linkifyText(field.description);
+  const descriptionNode = description ? (
+    <FieldDescription>{description}</FieldDescription>
+  ) : null;
   // Same breakpoint the NPS survey uses to swap its scale control between
   // a horizontal radio row (desktop) and a dropdown (mobile).
   const isMobile = useMediaQuery(`(max-width: ${screens.sm})`) ?? false;
@@ -230,15 +250,7 @@ function CustomFormField({
   // as a checkbox group. An empty selection is stored as absent so JSON
   // Schema `required` treats it as missing.
   if (field.type === 'array') {
-    const itemSchema =
-      typeof field.items === 'object' && !Array.isArray(field.items)
-        ? field.items
-        : undefined;
-    const multiOptions = Array.isArray(itemSchema?.enum)
-      ? itemSchema.enum.filter((option): option is string => {
-          return typeof option === 'string';
-        })
-      : [];
+    const multiOptions = readEnumOptions(readItemsSchema(field)?.enum);
     const selected = Array.isArray(value)
       ? value.filter((entry): entry is string => typeof entry === 'string')
       : [];
@@ -248,9 +260,7 @@ function CustomFormField({
           {label}
           {isRequired ? <RequiredAsterisk /> : null}
         </FieldLegend>
-        {field.description ? (
-          <FieldDescription>{field.description}</FieldDescription>
-        ) : null}
+        {descriptionNode}
         {multiOptions.map((option) => (
           <Field key={option} className="items-start" orientation="horizontal">
             <Checkbox
@@ -273,11 +283,7 @@ function CustomFormField({
     );
   }
 
-  const enumOptions = Array.isArray(field.enum)
-    ? field.enum.filter((option): option is string => {
-        return typeof option === 'string';
-      })
-    : [];
+  const enumOptions = readEnumOptions(field.enum);
 
   // NPS-style numeric scale — matches the ProcessSurveyModal control:
   // horizontal radio row with the label under each number on desktop,
@@ -290,7 +296,7 @@ function CustomFormField({
         <EnumSelectField
           fieldId={fieldId}
           label={label}
-          description={field.description}
+          description={description}
           error={error}
           isRequired={isRequired}
           options={enumOptions}
@@ -306,9 +312,7 @@ function CustomFormField({
           {label}
           {isRequired ? <RequiredAsterisk /> : null}
         </FieldLegend>
-        {field.description ? (
-          <FieldDescription>{field.description}</FieldDescription>
-        ) : null}
+        {descriptionNode}
         <RadioGroup
           value={selected}
           onValueChange={(next) =>
@@ -340,7 +344,7 @@ function CustomFormField({
       <EnumSelectField
         fieldId={fieldId}
         label={label}
-        description={field.description}
+        description={description}
         error={error}
         isRequired={isRequired}
         options={enumOptions}
@@ -382,9 +386,7 @@ function CustomFormField({
           }}
         />
         {error ? <FieldError>{error}</FieldError> : null}
-        {field.description ? (
-          <FieldDescription>{field.description}</FieldDescription>
-        ) : null}
+        {descriptionNode}
       </Field>
     );
   }
@@ -416,9 +418,7 @@ function CustomFormField({
         />
       )}
       {error ? <FieldError>{error}</FieldError> : null}
-      {field.description ? (
-        <FieldDescription>{field.description}</FieldDescription>
-      ) : null}
+      {descriptionNode}
     </Field>
   );
 }
@@ -439,7 +439,7 @@ function EnumSelectField({
 }: {
   fieldId: string;
   label: string;
-  description?: string;
+  description?: ReactNode;
   error?: string;
   isRequired: boolean;
   options: string[];
@@ -466,7 +466,9 @@ function EnumSelectField({
           className="w-full"
           aria-invalid={Boolean(error)}
         >
-          <SelectValue placeholder={t('Select an option')} />
+          <SelectValue
+            placeholder={t('decisions.proposals.selectOptionPlaceholder')}
+          />
         </SelectTrigger>
         <SelectContent>
           <SelectGroup>
@@ -482,6 +484,36 @@ function EnumSelectField({
       {description ? <FieldDescription>{description}</FieldDescription> : null}
     </Field>
   );
+}
+
+const CHOICE_FORMATS = new Set<XFormatPropertySchema['x-format']>([
+  'radio',
+  'dropdown',
+]);
+
+/** False for a control that would draw with nothing to choose from. */
+function canRenderField(field: XFormatPropertySchema): boolean {
+  if (field.type === 'array') {
+    return readEnumOptions(readItemsSchema(field)?.enum).length > 0;
+  }
+
+  if (CHOICE_FORMATS.has(field['x-format'])) {
+    return readEnumOptions(field.enum).length > 0;
+  }
+
+  return true;
+}
+
+function readItemsSchema(field: XFormatPropertySchema) {
+  return typeof field.items === 'object' && !Array.isArray(field.items)
+    ? field.items
+    : undefined;
+}
+
+function readEnumOptions(candidate: unknown): string[] {
+  return Array.isArray(candidate)
+    ? candidate.filter((option): option is string => typeof option === 'string')
+    : [];
 }
 
 function isCustomFormDefinition(

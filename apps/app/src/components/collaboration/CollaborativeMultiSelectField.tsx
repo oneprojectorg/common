@@ -4,6 +4,7 @@ import { useCollaborativeFragment } from '@/hooks/useCollaborativeFragment';
 import { parseCategoryFragmentValue } from '@op/common/client';
 import { Checkbox } from '@op/sense/Checkbox';
 import { OptionBox } from '@op/sense/OptionBox';
+import type { ReactNode } from 'react';
 import { useEffect, useId, useMemo, useRef } from 'react';
 
 import { LabeledFieldSet } from '@/components/decisions/forms/LabeledFieldSet';
@@ -23,7 +24,7 @@ interface CollaborativeMultiSelectFieldProps {
   fragmentName: string;
   /** Visible group legend. */
   title: string;
-  description?: string;
+  description?: ReactNode;
   required?: boolean;
 }
 

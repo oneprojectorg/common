@@ -1,8 +1,8 @@
-import { parseAsInteger, parseAsString, parseAsStringLiteral } from 'nuqs';
+import { parseAsBoolean, parseAsInteger, parseAsStringLiteral } from 'nuqs';
 
 export const proposalEditorAsideValues = ['versions'] as const;
 
-export const proposalEditorReviewRevisionParser = parseAsString;
+export const proposalReviewNotesParser = parseAsBoolean.withDefault(false);
 
 export type ProposalEditorAside = (typeof proposalEditorAsideValues)[number];
 

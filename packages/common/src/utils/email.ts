@@ -12,3 +12,28 @@
 export const hasEmail = <T extends { email?: string | null }>(
   row: T,
 ): row is T & { email: string } => Boolean(row.email);
+
+/**
+ * The addresses a bulk send should target: rows with a usable email, one entry
+ * per inbox. Dedup is case-insensitive (`Ada@` and `ada@` are one inbox); only
+ * the key is lowercased, the returned address keeps its casing.
+ */
+export const selectEmailRecipients = <T extends { email?: string | null }>(
+  rows: Array<T>,
+): Array<string> => {
+  const seen = new Set<string>();
+  const recipients: Array<string> = [];
+
+  for (const row of rows.filter(hasEmail)) {
+    const key = row.email.toLowerCase();
+
+    if (seen.has(key)) {
+      continue;
+    }
+
+    seen.add(key);
+    recipients.push(row.email);
+  }
+
+  return recipients;
+};

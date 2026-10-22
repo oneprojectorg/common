@@ -3,11 +3,14 @@
 import type { TranslationKey } from '@/lib/i18n';
 
 export const STEPS = [
-  { id: 'general', labelKey: 'General' },
-  { id: 'template', labelKey: 'Proposal Template' },
-  { id: 'reviews', labelKey: 'Reviews' },
-  { id: 'participants', labelKey: 'Participants' },
-  { id: 'summary', labelKey: 'Summary' },
+  { id: 'general', labelKey: 'decisions.processBuilder.generalStepLabel' },
+  {
+    id: 'template',
+    labelKey: 'decisions.processBuilder.proposalTemplateSectionLabel',
+  },
+  { id: 'reviews', labelKey: 'decisions.review.reviewsLabel' },
+  { id: 'participants', labelKey: 'decisions.participantsLabel' },
+  { id: 'summary', labelKey: 'decisions.processBuilder.summaryHeading' },
 ] as const;
 
 // Derive StepId first so we can use it in SECTIONS_BY_STEP
@@ -15,22 +18,44 @@ export type StepId = (typeof STEPS)[number]['id'];
 
 export const SECTIONS_BY_STEP = {
   general: [
-    { id: 'generalInformation', labelKey: 'General Information' },
-    { id: 'overview', labelKey: 'Overview' },
-    { id: 'phases', labelKey: 'Phases' },
-    { id: 'proposalCategories', labelKey: 'Proposal Categories' },
+    {
+      id: 'generalInformation',
+      labelKey: 'decisions.processBuilder.generalInformationSectionLabel',
+    },
+    { id: 'overview', labelKey: 'decisions.overviewTab' },
+    { id: 'phases', labelKey: 'decisions.processBuilder.phasesLabel' },
+    {
+      id: 'proposalCategories',
+      labelKey: 'decisions.processBuilder.proposalCategoriesSectionLabel',
+    },
   ],
-  template: [{ id: 'templateEditor', labelKey: 'Template Editor' }],
+  template: [
+    {
+      id: 'templateEditor',
+      labelKey: 'decisions.processBuilder.templateEditorSectionLabel',
+    },
+  ],
   reviews: [
-    { id: 'criteria', labelKey: 'Review Rubric' },
-    { id: 'reviewSettings', labelKey: 'Reviews' },
-    { id: 'reviewRubric', labelKey: 'Review Rubric' },
+    {
+      id: 'criteria',
+      labelKey: 'decisions.processBuilder.reviewRubricSectionLabel',
+    },
+    { id: 'reviewSettings', labelKey: 'decisions.review.reviewsLabel' },
+    {
+      id: 'reviewRubric',
+      labelKey: 'decisions.processBuilder.reviewRubricSectionLabel',
+    },
   ],
   participants: [
-    { id: 'roles', labelKey: 'Roles & Permissions' },
-    { id: 'participants', labelKey: 'Participants' },
+    {
+      id: 'roles',
+      labelKey: 'decisions.processBuilder.rolesPermissionsSectionLabel',
+    },
+    { id: 'participants', labelKey: 'decisions.participantsLabel' },
   ],
-  summary: [{ id: 'summary', labelKey: 'Summary' }],
+  summary: [
+    { id: 'summary', labelKey: 'decisions.processBuilder.summaryHeading' },
+  ],
 } as const satisfies Record<
   StepId,
   readonly { id: string; labelKey: TranslationKey }[]
@@ -79,50 +104,58 @@ export type SidebarItem =
 export const SIDEBAR_ITEMS: SidebarItem[] = [
   {
     id: 'generalInformation',
-    labelKey: 'General Information',
+    labelKey: 'decisions.processBuilder.generalInformationSectionLabel',
     parentStepId: 'general',
   },
-  { id: 'overview', labelKey: 'Overview', parentStepId: 'general' },
-  { id: 'phases', labelKey: 'Phases', parentStepId: 'general' },
+  {
+    id: 'overview',
+    labelKey: 'decisions.overviewTab',
+    parentStepId: 'general',
+  },
+  {
+    id: 'phases',
+    labelKey: 'decisions.processBuilder.phasesLabel',
+    parentStepId: 'general',
+  },
   {
     id: 'proposalCategories',
-    labelKey: 'Proposal Categories',
+    labelKey: 'decisions.processBuilder.proposalCategoriesSectionLabel',
     parentStepId: 'general',
   },
   {
     id: 'templateEditor',
-    labelKey: 'Proposal Template',
+    labelKey: 'decisions.processBuilder.proposalTemplateSectionLabel',
     parentStepId: 'template',
   },
   {
     id: 'criteria',
-    labelKey: 'Review Rubric',
+    labelKey: 'decisions.processBuilder.reviewRubricSectionLabel',
     parentStepId: 'reviews',
   },
   {
     id: 'reviewSettings',
-    labelKey: 'Reviews',
+    labelKey: 'decisions.review.reviewsLabel',
     parentStepId: 'reviews',
   },
   {
     id: 'reviewRubric',
-    labelKey: 'Review Rubric',
+    labelKey: 'decisions.processBuilder.reviewRubricSectionLabel',
     parentStepId: 'reviews',
     parentSectionId: 'reviewSettings',
   },
   {
     id: 'roles',
-    labelKey: 'Roles & Permissions',
+    labelKey: 'decisions.processBuilder.rolesPermissionsSectionLabel',
     parentStepId: 'participants',
   },
   {
     id: 'participants',
-    labelKey: 'Manage Participants',
+    labelKey: 'decisions.manageParticipantsTitle',
     parentStepId: 'participants',
   },
   {
     id: 'summary',
-    labelKey: 'Summary',
+    labelKey: 'decisions.processBuilder.summaryHeading',
     parentStepId: 'summary',
   },
 ];

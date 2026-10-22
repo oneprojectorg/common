@@ -1,6 +1,10 @@
-import { NotFoundError } from '@op/common';
+import { NotFoundError, isDecisionPublic } from '@op/common';
 import {
   adminDecisionInstanceDetailSchema,
+  allowsComments,
+  getVoterCostField,
+  getVoterBudget,
+  isRankedVoting,
   isReviewPhase,
 } from '@op/common/client';
 import { db } from '@op/db/client';
@@ -29,9 +33,13 @@ const phaseRulesSchema = z
         submit: z.boolean().optional(),
         edit: z.boolean().optional(),
         maxVotesPerMember: z.number().optional(),
+        voterBudget: z.number().optional(),
+        voterCostField: z.string().optional(),
+        ranked: z.boolean().optional(),
       })
       .partial()
       .optional(),
+    comments: z.object({ submit: z.boolean().optional() }).partial().optional(),
     advancement: z
       .object({ method: z.string().optional() })
       .partial()
@@ -112,6 +120,11 @@ export const getDecisionInstanceRouter = router({
       const parsed = detailInstanceData.safeParse(instance.instanceData);
       const instanceData = parsed.success ? parsed.data : {};
 
+      // No profile of its own means no grant to carry.
+      const isPublic = instance.profileId
+        ? await isDecisionPublic({ profileId: instance.profileId })
+        : false;
+
       const schemaParsed = detailProcessSchema.safeParse(
         instance.process?.processSchema,
       );
@@ -125,8 +138,10 @@ export const getDecisionInstanceRouter = router({
         id: instance.id,
         name: instance.name,
         slug: instance.profile?.slug ?? null,
+        profileId: instance.profileId,
         status: instance.status,
         createdAt: instance.createdAt,
+        isPublic,
         owner: instance.owner ?? null,
         steward: instance.steward ?? null,
         reviewsPolicy: instanceData.config?.reviewsPolicy ?? null,
@@ -138,10 +153,11 @@ export const getDecisionInstanceRouter = router({
           hideBudget: instanceData.config?.hideBudget ?? false,
           hasProposalTemplate: instanceData.proposalTemplate != null,
           hasRubric: instanceData.rubricTemplate != null,
+          // Unset resolves to on (getPhaseReviewSettings); display must match.
           reviewsAllowRevisions:
-            instanceData.config?.reviewsAllowRevisions ?? false,
+            instanceData.config?.reviewsAllowRevisions ?? true,
           reviewsAnonymousFeedback:
-            instanceData.config?.reviewsAnonymousFeedback ?? false,
+            instanceData.config?.reviewsAnonymousFeedback ?? true,
           requireCategorySelection:
             instanceData.config?.requireCategorySelection ?? false,
           allowMultipleCategories:
@@ -152,10 +168,12 @@ export const getDecisionInstanceRouter = router({
             instanceData.config?.requireCollaborativeProposals ?? false,
           categoriesCount: instanceData.config?.categories?.length ?? 0,
         },
+        instanceData: instance.instanceData,
         phases: (instanceData.phases ?? []).map((phase) => {
           // Instance rules win; fall back to the process schema definition
           // (older instances don't copy every rule into instanceData).
           const rules = phase.rules ?? schemaRulesByPhaseId.get(phase.phaseId);
+          const voterBudget = getVoterBudget({ rules });
           return {
             phaseId: phase.phaseId,
             name: phase.name ?? null,
@@ -167,7 +185,12 @@ export const getDecisionInstanceRouter = router({
             hasVoting: rules?.voting?.submit ?? false,
             canEditProposals: rules?.proposals?.edit ?? false,
             canEditVotes: rules?.voting?.edit ?? false,
+            allowsComments: allowsComments({ rules }),
             maxVotesPerMember: rules?.voting?.maxVotesPerMember ?? null,
+            voterBudget: voterBudget ?? null,
+            voterCostField:
+              voterBudget === undefined ? null : getVoterCostField({ rules }),
+            ranked: isRankedVoting({ rules }),
             proposalsHiddenByDefault:
               rules?.proposals?.defaults?.hidden ?? false,
             advancementMethod: rules?.advancement?.method ?? null,

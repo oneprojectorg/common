@@ -79,6 +79,22 @@ export const Channels = {
     `profileCollections:${profileId}` as const,
 
   /**
+   * Channel for a profile's membership — the per-role member list
+   * (profile.users.listUsers) and role member counts (profile.listRoles).
+   * Subscribed to by both queries, broadcast to by membership mutations
+   * (e.g. removeUser).
+   */
+  profileMembers: (profileId: string) => `profileMembers:${profileId}` as const,
+
+  /**
+   * Channel for the custom forms attached to a decision process's profile.
+   * Subscribed to by customForm.list, broadcast to by customForm.create /
+   * update / delete.
+   */
+  profileCustomForms: (profileId: string) =>
+    `profileCustomForms:${profileId}` as const,
+
+  /**
    * Channel for a single proposals-export run. Subscribed to by
    * decision.getExportStatus, broadcast to by the `exportProposals` workflow
    * when the run reaches `completed` or `failed`.
@@ -95,6 +111,10 @@ export const Channels = {
    * subscription when that query unmounts.
    */
   proposalExport: (exportId: string) => `proposalExport:${exportId}` as const,
+
+  /** Per-run, like {@link Channels.proposalExport}. */
+  personalDataExport: (exportId: string) =>
+    `personalDataExport:${exportId}` as const,
 } as const;
 
 export type GlobalChannel = ReturnType<typeof Channels.global>;
@@ -132,7 +152,14 @@ export type CollectionResourcesChannel = ReturnType<
 export type ProfileCollectionsChannel = ReturnType<
   typeof Channels.profileCollections
 >;
+export type ProfileMembersChannel = ReturnType<typeof Channels.profileMembers>;
+export type ProfileCustomFormsChannel = ReturnType<
+  typeof Channels.profileCustomForms
+>;
 export type ProposalExportChannel = ReturnType<typeof Channels.proposalExport>;
+export type PersonalDataExportChannel = ReturnType<
+  typeof Channels.personalDataExport
+>;
 
 /**
  * Union of all valid channel types
@@ -153,4 +180,7 @@ export type ChannelName =
   | ProfileResourcesChannel
   | CollectionResourcesChannel
   | ProfileCollectionsChannel
-  | ProposalExportChannel;
+  | ProfileMembersChannel
+  | ProfileCustomFormsChannel
+  | ProposalExportChannel
+  | PersonalDataExportChannel;

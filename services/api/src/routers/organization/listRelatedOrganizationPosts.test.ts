@@ -1,8 +1,8 @@
+import { TestOrganizationDataManager } from '@op/common/testing';
 import { db, inArray } from '@op/db/client';
 import { posts } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
-import { TestOrganizationDataManager } from '../../test/helpers/TestOrganizationDataManager';
 import {
   accessTierGatingCell,
   describeAccessTierGating,

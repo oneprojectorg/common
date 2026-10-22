@@ -1,17 +1,12 @@
-import { hasEmail } from '@op/common/client';
+import { listProcessParticipants } from '@op/common';
+import { selectEmailRecipients } from '@op/common/client';
 import { OPURLConfig } from '@op/core';
 import { db } from '@op/db/client';
-import {
-  EntityType,
-  posts,
-  processInstances,
-  profileUsers,
-  profiles,
-} from '@op/db/schema';
+import { EntityType, posts, processInstances, profiles } from '@op/db/schema';
 import { DecisionUpdateNotificationEmail, OPBatchSend } from '@op/emails';
 import { Events, inngest } from '@op/events';
 import { logger } from '@op/logging';
-import { and, eq, isNotNull } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 
 const key = 'event.data.authorProfileId + "-" + event.data.targetProfileId';
 const { decisionUpdatePosted } = Events;
@@ -26,17 +21,16 @@ export const sendDecisionUpdateNotification = inngest.createFunction(
     },
   },
   { event: decisionUpdatePosted.name },
-  async ({ event, step }) => {
+  async ({ event, step, runId }) => {
     const { postId, targetProfileId } = decisionUpdatePosted.schema.parse(
       event.data,
     );
 
-    const [post, target, participants] = await Promise.all([
+    const [post, target] = await Promise.all([
       step.run('get-post', async () => {
         const [row] = await db
           .select({
             authorName: profiles.name,
-            authorEmail: profiles.email,
             postContent: posts.content,
           })
           .from(posts)
@@ -50,6 +44,7 @@ export const sendDecisionUpdateNotification = inngest.createFunction(
           .select({
             profileType: profiles.type,
             processProfileSlug: profiles.slug,
+            processInstanceId: processInstances.id,
             processTitle: processInstances.name,
           })
           .from(profiles)
@@ -61,25 +56,14 @@ export const sendDecisionUpdateNotification = inngest.createFunction(
           .limit(1);
         return row ?? null;
       }),
-      step.run('get-participants', async () => {
-        return db
-          .select({ email: profileUsers.email })
-          .from(profileUsers)
-          .where(
-            and(
-              eq(profileUsers.profileId, targetProfileId),
-              isNotNull(profileUsers.email),
-            ),
-          );
-      }),
     ]);
 
     if (target?.profileType !== EntityType.DECISION) {
       return;
     }
 
-    const { processProfileSlug, processTitle } = target;
-    if (!processProfileSlug || !processTitle) {
+    const { processProfileSlug, processInstanceId, processTitle } = target;
+    if (!processProfileSlug || !processInstanceId || !processTitle) {
       return;
     }
 
@@ -91,9 +75,15 @@ export const sendDecisionUpdateNotification = inngest.createFunction(
       return;
     }
 
-    const recipients = participants
-      .filter(hasEmail)
-      .filter((p) => p.email !== post.authorEmail);
+    // Process-profile members alone miss public submitters, who are the
+    // majority of an open process — same audience as phase transitions.
+    const participants = await step.run('get-participants', async () =>
+      listProcessParticipants({ processInstanceId }),
+    );
+
+    // Include the author when they are a participant so they also receive
+    // confirmation that their update went out to the process audience.
+    const recipients = selectEmailRecipients(participants);
 
     if (recipients.length === 0) {
       logger.warn('No participants to notify for decision update', {
@@ -107,7 +97,7 @@ export const sendDecisionUpdateNotification = inngest.createFunction(
     const authorName = post.authorName ?? 'A Common user';
 
     const result = await step.run('send-emails', async () => {
-      const emails = recipients.map(({ email }) => ({
+      const emails = recipients.map((email) => ({
         to: email,
         subject: DecisionUpdateNotificationEmail.subject(
           authorName,
@@ -122,17 +112,37 @@ export const sendDecisionUpdateNotification = inngest.createFunction(
           }),
       }));
 
-      const { data, errors } = await OPBatchSend(emails);
+      const { errors } = await OPBatchSend(emails, {
+        // Stable across retries, unique per run: a retry replays delivered
+        // chunks instead of re-sending them.
+        idempotencyKeyPrefix: `decision-update/${runId}`,
+      });
 
+      // Throwing would make Inngest retry the step and re-blast everyone
+      // whose batch already succeeded.
       if (errors.length > 0) {
-        throw new Error(`Email batch failed: ${JSON.stringify(errors)}`);
+        logger.error('Some decision update notifications failed to send', {
+          postId,
+          targetProfileId,
+          failedCount: errors.length,
+        });
       }
 
-      return { sent: data.length };
+      logger.info('Decision update notifications sent', {
+        postId,
+        targetProfileId,
+        sent: emails.length - errors.length,
+        idempotencyKeyPrefix: `decision-update/${runId}`,
+      });
+      // Not `data.length` — under Resend that counts 100-email batches.
+      return {
+        sent: emails.length - errors.length,
+        failed: errors.length,
+      };
     });
 
     return {
-      message: `${result.sent} decision update notification(s) sent`,
+      message: `${result.sent} decision update notification(s) sent, ${result.failed} failed`,
     };
   },
 );

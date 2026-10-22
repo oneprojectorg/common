@@ -1,5 +1,10 @@
 import type { RubricTemplateSchema } from '@op/common';
 import {
+  closeOpenProposalHistory,
+  reviseProposal,
+  TestReviewsDataManager,
+} from '@op/common/testing';
+import {
   ProposalReviewAssignmentStatus,
   ProposalReviewState,
 } from '@op/db/schema';
@@ -7,7 +12,6 @@ import { db } from '@op/db/test';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
-import { TestReviewsDataManager } from '../../../test/helpers/TestReviewsDataManager';
 import {
   accessTierGatingCell,
   describeDecisionAccessTierGating,
@@ -46,15 +50,8 @@ async function createAuthenticatedCaller(email: string) {
   return createCaller(await createTestContextWithSession(session));
 }
 
-/**
- * Submits a valid review and moves the instance to the assignment's phase so
- * the submitted review is editable. Returns the reviewer caller + ids.
- */
-async function submitEditableReview(
-  testData: TestReviewsDataManager,
-  opts: { setCurrentPhaseToReview?: boolean } = {},
-) {
-  const { setCurrentPhaseToReview = true } = opts;
+/** Submits a valid review (writable — the fixture leaves the instance on the assignment's phase). */
+async function submitEditableReview(testData: TestReviewsDataManager) {
   const created = await testData.createReviewAssignment();
   await testData.setRubricTemplate(created.context, rubricTemplate);
 
@@ -70,15 +67,6 @@ async function submitEditableReview(
     },
     overallComment: 'Ready to move forward',
   });
-
-  if (setCurrentPhaseToReview) {
-    // Assignments default to phase 'review'; the instance starts on the first
-    // phase ('submission'), so stamp the current phase to make edits allowed.
-    await testData.setCurrentPhase(
-      created.context.instance.instance.id,
-      'review',
-    );
-  }
 
   return { created, reviewerCaller };
 }
@@ -125,6 +113,93 @@ describe.concurrent('updateReview', () => {
     });
   });
 
+  it('re-affirms an out-of-date review: re-anchors it and advances submittedAt', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const { created, reviewerCaller } = await submitEditableReview(testData);
+
+    const before = await db.query.proposalReviews.findFirst({
+      where: { assignmentId: created.assignment.id },
+    });
+    const assignmentBefore = await db.query.proposalReviewAssignments.findFirst(
+      {
+        where: { id: created.assignment.id },
+      },
+    );
+
+    const currentHistoryId = await reviseProposal({
+      proposalId: created.proposal.id,
+      proposalData: { title: 'Community Garden Expansion (revised)' },
+    });
+    expect(before?.reviewedProposalHistoryId).not.toBe(currentHistoryId);
+
+    const result = await reviewerCaller.decision.updateReview({
+      assignmentId: created.assignment.id,
+      reviewData: { answers: { impact: 2 }, rationales: {} },
+      overallComment: 'Still supportive after the revision',
+    });
+
+    expect(result.submittedAt).not.toBe(before?.submittedAt);
+    expect(new Date(result.submittedAt ?? 0).getTime()).toBeGreaterThanOrEqual(
+      new Date(before?.submittedAt ?? 0).getTime(),
+    );
+
+    const reviewAfter = await db.query.proposalReviews.findFirst({
+      where: { assignmentId: created.assignment.id },
+    });
+    const assignmentAfter = await db.query.proposalReviewAssignments.findFirst({
+      where: { id: created.assignment.id },
+    });
+
+    expect(reviewAfter?.reviewedProposalHistoryId).toBe(currentHistoryId);
+    expect(assignmentAfter?.assignedProposalHistoryId).toBe(
+      assignmentBefore?.assignedProposalHistoryId,
+    );
+    expect(assignmentAfter?.status).toBe(
+      ProposalReviewAssignmentStatus.COMPLETED,
+    );
+    expect(result.state).toBe(ProposalReviewState.SUBMITTED);
+  });
+
+  it('leaves the anchor and submittedAt alone when the review is already current', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const { created, reviewerCaller } = await submitEditableReview(testData);
+
+    const assignmentBefore = await db.query.proposalReviewAssignments.findFirst(
+      {
+        where: { id: created.assignment.id },
+      },
+    );
+    const before = await db.query.proposalReviews.findFirst({
+      where: { assignmentId: created.assignment.id },
+    });
+
+    const result = await reviewerCaller.decision.updateReview({
+      assignmentId: created.assignment.id,
+      reviewData: { answers: { impact: 1 }, rationales: {} },
+    });
+
+    const reviewAfter = await db.query.proposalReviews.findFirst({
+      where: { assignmentId: created.assignment.id },
+    });
+    const assignmentAfter = await db.query.proposalReviewAssignments.findFirst({
+      where: { id: created.assignment.id },
+    });
+
+    expect(result.submittedAt).toBe(before?.submittedAt);
+    expect(reviewAfter?.reviewedProposalHistoryId).toBe(
+      before?.reviewedProposalHistoryId,
+    );
+    expect(assignmentAfter?.assignedProposalHistoryId).toBe(
+      assignmentBefore?.assignedProposalHistoryId,
+    );
+  });
+
   it('rejects editing a review that has not been submitted', async ({
     task,
     onTestFinished,
@@ -132,10 +207,6 @@ describe.concurrent('updateReview', () => {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
     const created = await testData.createReviewAssignment();
     await testData.setRubricTemplate(created.context, rubricTemplate);
-    await testData.setCurrentPhase(
-      created.context.instance.instance.id,
-      'review',
-    );
 
     const reviewerCaller = await createAuthenticatedCaller(
       created.reviewer.email,
@@ -160,9 +231,7 @@ describe.concurrent('updateReview', () => {
     onTestFinished,
   }) => {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
-    const { created, reviewerCaller } = await submitEditableReview(testData, {
-      setCurrentPhaseToReview: false,
-    });
+    const { created, reviewerCaller } = await submitEditableReview(testData);
 
     // Advance the instance to a later phase than the assignment's 'review'.
     await testData.setCurrentPhase(
@@ -210,6 +279,38 @@ describe.concurrent('updateReview', () => {
         reviewData: { answers: { impact: 2 }, rationales: {} },
       }),
     ).rejects.toThrow("don't have access to this review assignment");
+  });
+
+  it('keeps the anchor the review already had when the proposal has no current version', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const { created, reviewerCaller } = await submitEditableReview(testData);
+
+    const submitted = await db.query.proposalReviews.findFirst({
+      where: { assignmentId: created.assignment.id },
+    });
+    expect(submitted?.reviewedProposalHistoryId).toBeTruthy();
+
+    await closeOpenProposalHistory({ proposalId: created.proposal.id });
+
+    const result = await reviewerCaller.decision.updateReview({
+      assignmentId: created.assignment.id,
+      reviewData: {
+        answers: { impact: 2 },
+        rationales: { impact: 'Reassessed after committee discussion' },
+      },
+    });
+
+    expect(result.reviewData.answers).toEqual({ impact: 2 });
+
+    const edited = await db.query.proposalReviews.findFirst({
+      where: { assignmentId: created.assignment.id },
+    });
+    expect(edited?.reviewedProposalHistoryId).toBe(
+      submitted?.reviewedProposalHistoryId,
+    );
   });
 });
 

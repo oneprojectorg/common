@@ -1,3 +1,4 @@
+import { trackReviewUpdated } from '@op/analytics';
 import { and, db, eq } from '@op/db/client';
 import {
   type ProposalReview,
@@ -5,18 +6,20 @@ import {
   proposalReviews,
 } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
+import { waitUntil } from '@vercel/functions';
 
 import { ValidationError } from '../../utils';
-import { assertReviewAssignmentContext } from './reviewHelpers';
+import {
+  assertReviewAssignmentContext,
+  assertReviewAssignmentPhaseIsCurrent,
+} from './reviewHelpers';
 import { schemaValidator } from './schemaValidator';
 import type { RubricReviewData } from './schemas/reviews';
-import { isInstanceCurrentPhase } from './utils/instance';
 
 /**
- * Edits an already-submitted review in place — no version history — leaving
- * `submittedAt`, `state`, and the assignment status untouched (`updatedAt`
- * advances, so an edit stays derivable). Only while the assignment's phase is
- * still the instance's current phase; frozen once the process advances past it.
+ * Edits an already-submitted review in place while its phase is still current.
+ * Also the re-affirm path: the anchor moves to the current proposal version,
+ * and `submittedAt` advances only if the review was out of date.
  */
 export async function updateReview({
   assignmentId,
@@ -38,23 +41,10 @@ export async function updateReview({
     throw new ValidationError('Review has not been submitted yet');
   }
 
-  // getInstance's currentStateId is cached and can lag a phase advance, so
-  // re-read the live phase directly rather than trust context.instance.
-  const liveInstance = await db.query.processInstances.findFirst({
-    where: { id: context.assignment.processInstanceId },
-    columns: { currentStateId: true },
-  });
-
-  if (
-    !isInstanceCurrentPhase(
-      { currentStateId: liveInstance?.currentStateId ?? null },
-      context.assignment.phaseId,
-    )
-  ) {
-    throw new ValidationError(
-      'This review can no longer be edited because the review phase has ended',
-    );
-  }
+  assertReviewAssignmentPhaseIsCurrent(
+    context.instance,
+    context.assignment.phaseId,
+  );
 
   if (!context.rubricTemplate) {
     throw new ValidationError('Rubric template not found for this assignment');
@@ -62,26 +52,49 @@ export async function updateReview({
 
   schemaValidator.assertRubricData(context.rubricTemplate, reviewData.answers);
 
-  const [updatedReview] = await db
-    .update(proposalReviews)
-    .set({
-      reviewData,
-      overallComment: overallComment ?? null,
-    })
-    // Defensive: the row must still be SUBMITTED (nothing un-submits today).
-    .where(
-      and(
-        eq(proposalReviews.assignmentId, assignmentId),
-        eq(proposalReviews.state, ProposalReviewState.SUBMITTED),
-      ),
-    )
-    .returning();
+  const { currentProposalHistoryId, isReviewOutOfDate: stale } = context;
 
-  if (!updatedReview) {
-    throw new ValidationError(
-      'This review can no longer be edited; please refresh and try again',
-    );
-  }
+  const updatedReview = await db.transaction(async (tx) => {
+    const [row] = await tx
+      .update(proposalReviews)
+      .set({
+        reviewData,
+        overallComment: overallComment ?? null,
+        ...(currentProposalHistoryId && {
+          reviewedProposalHistoryId: currentProposalHistoryId,
+        }),
+        ...(stale && { submittedAt: new Date().toISOString() }),
+      })
+      // Defensive: the row must still be SUBMITTED (nothing un-submits today).
+      .where(
+        and(
+          eq(proposalReviews.assignmentId, assignmentId),
+          eq(proposalReviews.state, ProposalReviewState.SUBMITTED),
+        ),
+      )
+      .returning();
+
+    if (!row) {
+      throw new ValidationError(
+        'This review can no longer be edited; please refresh and try again',
+      );
+    }
+
+    return row;
+  });
+
+  waitUntil(
+    trackReviewUpdated(
+      user.id,
+      context.assignment.processInstanceId,
+      context.assignment.proposalId,
+      {
+        assignment_id: assignmentId,
+        phase_id: context.assignment.phaseId,
+        was_out_of_date: stale,
+      },
+    ),
+  );
 
   return {
     review: updatedReview,

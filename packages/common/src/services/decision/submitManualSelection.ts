@@ -1,8 +1,7 @@
-import { and, db, desc, eq, inArray } from '@op/db/client';
+import { db, desc, eq } from '@op/db/client';
 import {
   ProcessStatus,
   decisionTransitionProposals,
-  proposalHistory,
   stateTransitionHistory,
 } from '@op/db/schema';
 import { Events, event } from '@op/events';
@@ -18,12 +17,22 @@ import {
   ValidationError,
 } from '../../utils';
 import { assertProfileAccess, assertUserByAuthId } from '../assert';
+import { attachProposalsToTransition } from './attachProposalsToTransition';
 import { getProposalIdsForPhase } from './getProposalsForPhase';
 import { isLegacyInstanceData } from './isLegacyInstance';
 import { lockProcessInstance } from './lockProcessInstance';
 import { processResults } from './processResults';
+import {
+  RESULT_NOTIFICATION_MESSAGE_MAX_LENGTH,
+  type ResultNotificationMessages,
+  resultNotificationMessagesSchema,
+} from './resultNotificationTemplate';
 import { runGenerateReviewAssignments } from './runGenerateReviewAssignments';
 import { type DecisionInstanceData, isLastPhase } from './schemas/instanceData';
+import {
+  type ProposalAllocation,
+  proposalAllocationSchema,
+} from './schemas/selection';
 import type {
   ManualSelectionAudit,
   TransitionData,
@@ -33,6 +42,13 @@ import { isReviewPhase } from './utils/phaseSettings';
 export interface SubmitManualSelectionInput {
   processInstanceId: string;
   proposalIds: string[];
+  resultNotifications?: ResultNotificationMessages;
+  /**
+   * The amount awarded to each selected proposal, written to the result's
+   * selection rows. Final phase only; when given it must name every selected
+   * proposal exactly once.
+   */
+  allocations?: ProposalAllocation[];
   user: User;
 }
 
@@ -47,6 +63,8 @@ export interface SubmitManualSelectionInput {
 export async function submitManualSelection({
   processInstanceId,
   proposalIds,
+  resultNotifications,
+  allocations,
   user,
 }: SubmitManualSelectionInput): Promise<void> {
   const uniqueProposalIds = [...new Set(proposalIds)];
@@ -95,9 +113,21 @@ export async function submitManualSelection({
     );
   }
 
+  // Before the transaction opens, so a rejection lands before anything
+  // publishes. Whether this phase publishes at all is decided under the lock.
+  const composedNotifications = resultNotifications
+    ? parseResultNotifications(resultNotifications)
+    : undefined;
+  const allocatedByProposalId = parseAllocations({
+    allocations,
+    proposalIds: uniqueProposalIds,
+  });
+
   const now = new Date().toISOString();
   const byProfileId = dbUser.profileId;
   let previousPhaseId: string | null = null;
+  let processResultId: string | undefined;
+  let transitionHistoryId: string | null = null;
   let reviewAssignmentInput:
     | Parameters<typeof runGenerateReviewAssignments>[0]
     | null = null;
@@ -207,6 +237,9 @@ export async function submitManualSelection({
     const manualSelectionAudit: ManualSelectionAudit = {
       byProfileId,
       at: now,
+      ...(composedNotifications
+        ? { resultNotifications: composedNotifications }
+        : {}),
     };
 
     const nextTransitionData: TransitionData = {
@@ -225,34 +258,12 @@ export async function submitManualSelection({
       })
       .where(eq(stateTransitionHistory.id, latestRow.id));
 
-    const latestHistoryRows = await tx
-      .selectDistinctOn([proposalHistory.id], {
-        proposalId: proposalHistory.id,
-        historyId: proposalHistory.historyId,
-      })
-      .from(proposalHistory)
-      .where(
-        and(
-          eq(proposalHistory.processInstanceId, processInstanceId),
-          inArray(proposalHistory.id, uniqueProposalIds),
-        ),
-      )
-      .orderBy(proposalHistory.id, desc(proposalHistory.historyCreatedAt));
-
-    if (latestHistoryRows.length !== uniqueProposalIds.length) {
-      throw new CommonError(
-        `Proposals missing history records during manual selection for instance ${processInstanceId}: expected ${uniqueProposalIds.length}, got ${latestHistoryRows.length}`,
-      );
-    }
-
-    await tx.insert(decisionTransitionProposals).values(
-      latestHistoryRows.map(({ proposalId, historyId }) => ({
-        processInstanceId,
-        transitionHistoryId: latestRow.id,
-        proposalId,
-        proposalHistoryId: historyId,
-      })),
-    );
+    await attachProposalsToTransition({
+      dbClient: tx,
+      processInstanceId,
+      transitionHistoryId: latestRow.id,
+      proposalIds: uniqueProposalIds,
+    });
 
     // Defer review-assignment generation until after the transaction commits:
     // generateReviewAssignments reads the just-attached decisionTransitionProposals
@@ -273,12 +284,20 @@ export async function submitManualSelection({
       };
     }
 
+    const publishesResults = isLastPhase(currentStateId, lockedPhases ?? []);
+    if (!publishesResults && allocatedByProposalId) {
+      throw new ValidationError(
+        'Amounts are only awarded when confirming the final phase',
+      );
+    }
+
     // On the final phase, fold results processing into this transaction so
     // the new result row is atomic with the attachment write.
-    if (isLastPhase(currentStateId, lockedPhases ?? [])) {
-      await processResults({
+    if (publishesResults) {
+      processResultId = await processResults({
         processInstanceId,
         tx,
+        allocations: allocatedByProposalId,
         instance: {
           id: processInstanceId,
           instanceData: lockedInstance.instanceData,
@@ -288,6 +307,7 @@ export async function submitManualSelection({
     }
 
     previousPhaseId = lockedPreviousPhaseId;
+    transitionHistoryId = latestRow.id;
   });
 
   // Runs after commit so generateReviewAssignments sees the attached proposals
@@ -313,5 +333,98 @@ export async function submitManualSelection({
           error: err,
         });
       });
+
+    // Awaited, unlike the send above: publishing is one-shot, so a send
+    // dropped when the isolate freezes leaves every author unnotified with no
+    // way to retry.
+    if (transitionHistoryId && composedNotifications) {
+      try {
+        await event.send({
+          name: Events.decisionResultsNotified.name,
+          data: {
+            processInstanceId,
+            processResultId,
+            transitionHistoryId,
+            previousPhaseId,
+          },
+        });
+      } catch (err) {
+        logger.error('Failed to send decision results notified event', {
+          processInstanceId,
+          processResultId,
+          transitionHistoryId,
+          error: err,
+        });
+      }
+    }
   }
+}
+
+/** Asserted here, not trusted from the router: this is a public entry point. */
+function parseResultNotifications(
+  resultNotifications: ResultNotificationMessages,
+): ResultNotificationMessages {
+  const parsed =
+    resultNotificationMessagesSchema.safeParse(resultNotifications);
+
+  if (!parsed.success) {
+    const field = parsed.error.issues[0]?.path[0];
+    throw new ValidationError(
+      `${String(field ?? 'notification')} message must be between 1 and ${RESULT_NOTIFICATION_MESSAGE_MAX_LENGTH} characters`,
+    );
+  }
+
+  return parsed.data;
+}
+
+/**
+ * Asserted here, not trusted from the router: this is a public entry point.
+ * Every selected proposal needs exactly one amount, or a winner would publish
+ * with no award and nobody would notice.
+ */
+function parseAllocations({
+  allocations,
+  proposalIds,
+}: {
+  allocations: ProposalAllocation[] | undefined;
+  proposalIds: string[];
+}): Map<string, number> | undefined {
+  if (!allocations) {
+    return undefined;
+  }
+  const selected = new Set(proposalIds);
+  const allocatedByProposalId = new Map<string, number>();
+
+  for (const allocation of allocations) {
+    const { proposalId } = allocation;
+    const parsed = proposalAllocationSchema.safeParse(allocation);
+    if (!parsed.success) {
+      throw new ValidationError(
+        parsed.error.issues[0]?.path[0] === 'proposalId'
+          ? `Awarded amount names an invalid proposal id: ${proposalId}`
+          : `Awarded amount for proposal ${proposalId} must be a number greater than 0`,
+      );
+    }
+    if (!selected.has(proposalId)) {
+      throw new ValidationError(
+        `Proposal ${proposalId} has an awarded amount but is not selected`,
+      );
+    }
+    if (allocatedByProposalId.has(proposalId)) {
+      throw new ValidationError(
+        `Proposal ${proposalId} has more than one awarded amount`,
+      );
+    }
+    allocatedByProposalId.set(proposalId, allocation.amount);
+  }
+
+  for (const proposalId of proposalIds) {
+    if (!allocatedByProposalId.has(proposalId)) {
+      throw new ValidationError(
+        `Missing an awarded amount for proposal ${proposalId}`,
+      );
+    }
+  }
+
+  return allocatedByProposalId;
 }

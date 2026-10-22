@@ -1,5 +1,6 @@
 'use client';
 
+import { useCompleteOnboarding } from '@/hooks/useCompleteOnboarding';
 import { analyzeError, useConnectionStatus } from '@/utils/connectionErrors';
 import { trpc } from '@op/api/client';
 import { isSafeRedirectPath } from '@op/common/client';
@@ -100,7 +101,7 @@ export const OnboardingFlow = ({
   const trpcUtils = trpc.useUtils();
   const { data: userAccount } = trpc.account.getMyAccount.useQuery();
   const createJoinRequest = trpc.profile.createJoinRequest.useMutation();
-  const completeOnboarding = trpc.account.completeOnboarding.useMutation();
+  const completeOnboarding = useCompleteOnboarding();
   const createOrganization = trpc.organization.create.useMutation();
 
   // Handle hydration detection
@@ -136,9 +137,7 @@ export const OnboardingFlow = ({
     async (selectedOrgs: Array<{ id: string; profileId: string }>) => {
       if (!isOnline) {
         toast.error(t('No connection'), {
-          description: t(
-            'Please check your internet connection and try again.',
-          ),
+          description: t('checkConnectionHint'),
         });
         return;
       }
@@ -150,7 +149,7 @@ export const OnboardingFlow = ({
 
         if (selectedOrgs.length > 0 && !userProfileId) {
           toast.error(t("That didn't work"), {
-            description: t('Please try submitting the form again.'),
+            description: t('resubmitFormHint'),
           });
           setIsSubmitting(false);
           return;
@@ -169,19 +168,19 @@ export const OnboardingFlow = ({
           const failures = results.filter((r) => r.status === 'rejected');
           if (failures.length === results.length) {
             toast.error(t("That didn't work"), {
-              description: t('Please try submitting the form again.'),
+              description: t('resubmitFormHint'),
             });
             setIsSubmitting(false);
             return;
           }
           if (failures.length > 0) {
             toast.error(t("That didn't work"), {
-              description: t('Please try submitting the form again.'),
+              description: t('resubmitFormHint'),
             });
           }
         }
 
-        await completeOnboarding.mutateAsync({ tos: true, privacy: true });
+        await completeOnboarding();
         await trpcUtils.account.getMyAccount.invalidate();
         await trpcUtils.account.getMyAccount.refetch();
         router.push(completionDestination);
@@ -190,7 +189,7 @@ export const OnboardingFlow = ({
         const errorInfo = analyzeError(err);
         if (errorInfo.isConnectionError) {
           toast.error(t('Connection issue'), {
-            description: t('Please try submitting the form again.'),
+            description: t('resubmitFormHint'),
           });
         } else {
           toast.error(t("That didn't work"), {
@@ -240,7 +239,7 @@ export const OnboardingFlow = ({
   const submitOrganization = useCallback(() => {
     if (!isOnline) {
       toast.error(t('No connection'), {
-        description: t('Please check your internet connection and try again.'),
+        description: t('checkConnectionHint'),
       });
       return;
     }
@@ -259,7 +258,7 @@ export const OnboardingFlow = ({
       .mutateAsync(processOrgInputs(combined))
       .then(async () => {
         sendOnboardingAnalytics(combined);
-        await completeOnboarding.mutateAsync({ tos: true, privacy: true });
+        await completeOnboarding();
         await trpcUtils.account.getMyAccount.invalidate();
         await trpcUtils.account.getMyAccount.refetch();
         router.push(completionDestination);
@@ -274,7 +273,7 @@ export const OnboardingFlow = ({
         const errorInfo = analyzeError(err);
         if (errorInfo.isConnectionError) {
           toast.error(t('Connection issue'), {
-            description: t('Please try submitting the form again.'),
+            description: t('resubmitFormHint'),
           });
         } else {
           toast.error(t("That didn't work"), {

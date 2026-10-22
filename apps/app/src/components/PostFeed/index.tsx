@@ -4,6 +4,7 @@ import { useCanLinkToProfile } from '@/hooks/useCanLinkToProfile';
 import { getPublicUrl } from '@/utils';
 import { useUser } from '@/utils/UserProvider';
 import { detectLinks, linkifyText } from '@/utils/linkDetection';
+import { applyLikeToggle } from '@/utils/optimisticUpdates';
 import { userCanInteract } from '@/utils/userCanInteract';
 import { trpc } from '@op/api/client';
 import type {
@@ -23,19 +24,20 @@ import {
   DropdownMenuTrigger,
 } from '@op/sense/DropdownMenu';
 import { Header3 } from '@op/sense/Header';
+import { LikeButton } from '@op/sense/LikeButton';
 import { MediaDisplay } from '@op/sense/MediaDisplay';
-import { ReactionsButton } from '@op/sense/ReactionsButton';
 import { Skeleton } from '@op/sense/Skeleton';
 import { toast } from '@op/sense/Toast';
 import { cn } from '@op/sense/lib/utils';
-import { REACTION_OPTIONS } from '@op/types';
+import { useLocale } from 'next-intl';
 import Image from 'next/image';
 import { ReactNode, memo, useCallback, useMemo, useState } from 'react';
 import { LuEllipsis, LuFlag, LuLeaf } from 'react-icons/lu';
 
+import type { TranslateFn } from '@/lib/i18n';
 import { Link, useTranslations } from '@/lib/i18n';
 
-import { useDecisionTranslation } from '@/components/decisions/DecisionTranslationContext';
+import { TranslateLink } from '@/components/decisions/TranslateLink';
 
 import { DiscussionModal } from '../DiscussionModal';
 import { FeedContent, FeedHeader, FeedItem, FeedMain } from '../Feed';
@@ -43,6 +45,7 @@ import { LinkPreview } from '../LinkPreview';
 import { OrganizationAvatar } from '../OrganizationAvatar';
 import { DeletePostMenuItem } from './DeletePostMenuItem';
 import { ReportPostModal } from './ReportPostModal';
+import { usePostTranslation } from './usePostTranslation';
 
 const PostDisplayName = ({
   profile,
@@ -106,7 +109,7 @@ const PostFlaggedIndicator = ({ post }: { post: Post }) => {
   return (
     <div className="flex items-center gap-1 text-sm text-destructive">
       <LuFlag className="size-4" />
-      <span>{t('Flagged')}</span>
+      <span>{t('posts.flaggedBadge')}</span>
     </div>
   );
 };
@@ -181,43 +184,78 @@ const PostUrls = memo(({ urls }: { urls: string[] }) => {
 
 PostUrls.displayName = 'PostUrls';
 
-const PostReactions = ({
+const PostLikeButton = ({
   post,
-  onReactionClick,
+  onLikeClick,
 }: {
   post: Post;
-  onReactionClick: (postId: string, emoji: string) => void;
+  // The optimistic layer above owns the rollback, so the button itself only
+  // needs to report the click.
+  onLikeClick: (postId: string) => void;
 }) => {
+  const t = useTranslations();
+  const locale = useLocale();
   const { user } = useUser();
-  const canReact = userCanInteract(user);
 
   if (!post?.id) return null;
 
-  const reactions = post.reactionCounts
-    ? Object.entries(post.reactionCounts).map(([reactionType, count]) => {
-        const reactionOption = REACTION_OPTIONS.find(
-          (option) => option.key === reactionType,
-        );
-        const emoji = reactionOption?.emoji || reactionType;
-        const users = post.reactionUsers?.[reactionType] || [];
-
-        return {
-          emoji,
-          count: count as number,
-          isActive: post.userReaction === reactionType,
-          users,
-        };
-      })
-    : [];
+  const { id: postId, likeCount } = post;
 
   return (
-    <ReactionsButton
-      reactions={reactions}
-      reactionOptions={REACTION_OPTIONS}
-      canReact={canReact}
-      onReactionClick={(emoji) => onReactionClick(post.id!, emoji)}
-      onAddReaction={(emoji) => onReactionClick(post.id!, emoji)}
+    <LikeButton
+      count={likeCount}
+      label={t('posts.likeCount', { count: likeCount })}
+      isLiked={post.userHasLiked}
+      tooltip={formatLikerTooltip({
+        likeUsers: post.likeUsers,
+        likeCount,
+        locale,
+        t,
+      })}
+      canLike={userCanInteract(user)}
+      onClick={() => onLikeClick(postId)}
     />
+  );
+};
+
+/**
+ * Names the most recent likers for the hover tooltip. Lives here rather than in
+ * `@op/sense` because joining names is locale-specific and the design system has
+ * no translations. The overflow count comes off `likeCount`, since the payload
+ * only names the newest few.
+ */
+const formatLikerTooltip = ({
+  likeUsers,
+  likeCount,
+  locale,
+  t,
+}: {
+  likeUsers: Post['likeUsers'];
+  likeCount: number;
+  locale: string;
+  // The root translator, not a namespaced one: `ReturnType<typeof
+  // useTranslations>` now widens to every namespace's keys at once, which no
+  // caller can satisfy.
+  t: TranslateFn;
+}) => {
+  const named = likeUsers.map((liker) => liker.name).slice(0, 2);
+
+  if (named.length === 0) {
+    return null;
+  }
+
+  const others = Math.max(0, likeCount - named.length);
+
+  // The overflow goes in as a list item so ListFormat owns every separator and
+  // the conjunction — appending "and N others" ourselves would double the "and"
+  // the formatter already inserted.
+  return new Intl.ListFormat(locale, {
+    style: 'long',
+    type: 'conjunction',
+  }).format(
+    others > 0
+      ? [...named, t('posts.otherLikersCount', { count: others })]
+      : named,
   );
 };
 
@@ -240,7 +278,7 @@ const PostCommentButton = ({
   return (
     <CommentButton
       count={count}
-      label={t('{count} comments', { count })}
+      label={t('commentCount', { count })}
       onClick={onCommentClick}
     />
   );
@@ -282,7 +320,7 @@ const PostMenu = ({
             <Button
               variant="ghost"
               size="icon-xs"
-              aria-label={t('Post options')}
+              aria-label={t('posts.optionsLabel')}
               className="absolute end-0 top-0 aspect-square aria-expanded:bg-secondary"
             >
               <LuEllipsis className="size-4" />
@@ -292,7 +330,7 @@ const PostMenu = ({
         <DropdownMenuContent side="bottom" align="end" className="min-w-28">
           {canModerate ? <DeletePostMenuItem post={post} /> : null}
           <DropdownMenuItem onClick={() => setIsReportOpen(true)}>
-            {t('Report')}
+            {t('posts.reportAction')}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -315,7 +353,7 @@ export const EmptyPostsState = () => {
           <div className="flex size-10 items-center justify-center gap-4 rounded-full bg-secondary">
             <LuLeaf />
           </div>
-          <span>{t('No posts yet')}</span>
+          <span>{t('posts.emptyFeed')}</span>
         </FeedContent>
       </FeedMain>
     </FeedItem>
@@ -323,89 +361,62 @@ export const EmptyPostsState = () => {
 };
 
 /**
- * Hook for optimistic reaction updates with server sync.
- * Returns displayPost with optimistic reaction data and a handleReactionClick function.
+ * Hook for optimistic like updates with server sync.
+ * Returns displayPost with optimistic like data and a handleLikeClick function.
  * TODO: stopgap until we have server channels in place for updates
  */
-const useOptimisticReaction = (
+const useOptimisticLike = (
   post: Post,
-  onReactionClick: (postId: string, emoji: string) => void,
+  onLikeClick: (postId: string) => Promise<unknown>,
 ) => {
-  const [localReaction, setLocalReaction] = useState({
-    userReaction: post.userReaction ?? null,
-    reactionCounts: post.reactionCounts ?? {},
-  });
+  const { user } = useUser();
+  const currentProfile = user?.currentProfile;
+
+  const serverLike = {
+    userHasLiked: post.userHasLiked,
+    likeCount: post.likeCount,
+    likeUsers: post.likeUsers,
+  };
+
+  const [localLike, setLocalLike] = useState(serverLike);
 
   // Sync pattern: setState during render is intentional to avoid extra render cycle.
   // This syncs local state when server data changes (after refetch).
   // See: https://react.dev/reference/react/useState#storing-information-from-previous-renders
-  const serverReactionKey = `${post.userReaction}-${JSON.stringify(post.reactionCounts)}`;
-  const [lastServerKey, setLastServerKey] = useState(serverReactionKey);
-  if (serverReactionKey !== lastServerKey) {
-    setLastServerKey(serverReactionKey);
-    setLocalReaction({
-      userReaction: post.userReaction ?? null,
-      reactionCounts: post.reactionCounts ?? {},
-    });
+  // The liker ids are in the key because a like and an unlike between refetches
+  // leave the count untouched while changing who the tooltip should name.
+  const serverLikeKey = `${serverLike.userHasLiked}-${serverLike.likeCount}-${serverLike.likeUsers.map((liker) => liker.id).join()}`;
+  const [lastServerKey, setLastServerKey] = useState(serverLikeKey);
+  if (serverLikeKey !== lastServerKey) {
+    setLastServerKey(serverLikeKey);
+    setLocalLike(serverLike);
   }
 
-  const updateReaction = useCallback((reactionType: string) => {
-    setLocalReaction((current) => {
-      const newCounts = { ...current.reactionCounts };
+  const handleLikeClick = useCallback(
+    (postId: string) => {
+      const before = localLike;
+      const optimistic = applyLikeToggle({ current: before, currentProfile });
 
-      if (current.userReaction === reactionType) {
-        // Removing the reaction
-        const newCount = Math.max(0, (newCounts[reactionType] || 1) - 1);
-        if (newCount === 0) {
-          delete newCounts[reactionType];
-        } else {
-          newCounts[reactionType] = newCount;
-        }
-        return { userReaction: null, reactionCounts: newCounts };
-      } else {
-        // Adding or replacing reaction
-        if (current.userReaction) {
-          // Remove previous reaction count
-          const prevCount = Math.max(
-            0,
-            (newCounts[current.userReaction] || 1) - 1,
-          );
-          if (prevCount === 0) {
-            delete newCounts[current.userReaction];
-          } else {
-            newCounts[current.userReaction] = prevCount;
-          }
-        }
-        // Add new reaction count
-        newCounts[reactionType] = (newCounts[reactionType] || 0) + 1;
-        return { userReaction: reactionType, reactionCounts: newCounts };
-      }
-    });
-  }, []);
+      setLocalLike(optimistic);
 
-  const handleReactionClick = useCallback(
-    (postId: string, emoji: string) => {
-      const reactionOption = REACTION_OPTIONS.find(
-        (option) => option.emoji === emoji,
-      );
-      if (reactionOption?.key) {
-        updateReaction(reactionOption.key);
-      }
-      onReactionClick(postId, emoji);
+      // A rejected like (rate limit, lost access) refetches to the values we
+      // started from, so the sync key above is unchanged and can't undo the
+      // optimistic flip. Put it back here instead, or the button stays lit.
+      // Only when our own guess is still what's on screen though — a newer
+      // click or a server sync has better information than this snapshot.
+      void onLikeClick(postId).catch(() => {
+        setLocalLike((current) => (current === optimistic ? before : current));
+      });
     },
-    [onReactionClick, updateReaction],
+    [currentProfile, localLike, onLikeClick],
   );
 
   const displayPost = useMemo(
-    () => ({
-      ...post,
-      userReaction: localReaction.userReaction,
-      reactionCounts: localReaction.reactionCounts,
-    }),
-    [post, localReaction],
+    () => ({ ...post, ...localLike }),
+    [post, localLike],
   );
 
-  return { displayPost, handleReactionClick };
+  return { displayPost, handleLikeClick };
 };
 
 export const PostItem = ({
@@ -413,26 +424,22 @@ export const PostItem = ({
   organization,
   user,
   withLinks,
-  onReactionClick,
+  onLikeClick,
   onCommentClick,
+  contentFooter,
   className,
 }: {
   post: Post;
   organization: Organization | null;
   user?: CommonUser;
   withLinks: boolean;
-  onReactionClick: (postId: string, emoji: string) => void;
+  onLikeClick: (postId: string) => Promise<unknown>;
   onCommentClick?: (post: Post, organization: Organization | null) => void;
+  /** Rendered under the post body, above the like/comment row. */
+  contentFooter?: ReactNode;
   className?: string;
 }) => {
-  const decisionTranslation = useDecisionTranslation();
-  const translatedContent = decisionTranslation?.posts[post.id]?.content;
-  const displayContent = translatedContent ?? post?.content;
-  const { urls } = useMemo(() => detectLinks(post?.content), [post?.content]);
-  const { displayPost, handleReactionClick } = useOptimisticReaction(
-    post,
-    onReactionClick,
-  );
+  const { displayPost, handleLikeClick } = useOptimisticLike(post, onLikeClick);
 
   // For comments (posts without organization), show the post author
   // TODO: this is too complex. We need to refactor this
@@ -449,8 +456,8 @@ export const PostItem = ({
       />
       <FeedMain>
         <FeedHeader className="relative w-full justify-between">
-          <div className="flex flex-col items-baseline gap-2">
-            <Header3 className="font-sans text-base leading-3 font-normal">
+          <div className="flex flex-col items-start gap-2">
+            <Header3 className="font-sans text-base font-normal">
               <PostDisplayName
                 profile={profile}
                 displayName={displayName}
@@ -464,15 +471,10 @@ export const PostItem = ({
           <PostMenu post={post} user={user} organization={organization} />
         </FeedHeader>
         <FeedContent>
-          <PostFlaggedIndicator post={post} />
-          <PostContent content={displayContent} />
-          <PostAttachments attachments={post.attachments} />
-          <PostUrls urls={urls} />
-          <div className="flex items-center justify-between gap-2">
-            <PostReactions
-              post={displayPost}
-              onReactionClick={handleReactionClick}
-            />
+          <PostBody post={post} />
+          {contentFooter}
+          <div className="-ms-2 flex items-center">
+            <PostLikeButton post={displayPost} onLikeClick={handleLikeClick} />
             {onCommentClick ? (
               <PostCommentButton
                 post={post}
@@ -486,12 +488,28 @@ export const PostItem = ({
   );
 };
 
+const PostBody = ({ post }: { post: Post }) => {
+  const content = post.content ?? '';
+  const translation = usePostTranslation({ postId: post.id, content });
+  const { urls } = useMemo(() => detectLinks(content), [content]);
+
+  return (
+    <>
+      <TranslateLink translation={translation} />
+      <PostFlaggedIndicator post={post} />
+      <PostContent content={translation.translation ?? content} />
+      <PostAttachments attachments={post.attachments} />
+      <PostUrls urls={urls} />
+    </>
+  );
+};
+
 export const PostItemOnDetailPage = ({
   post,
   organization,
   user,
   withLinks,
-  onReactionClick,
+  onLikeClick,
   commentCount,
   className,
 }: {
@@ -499,16 +517,12 @@ export const PostItemOnDetailPage = ({
   organization: Organization | null;
   user?: CommonUser;
   withLinks: boolean;
-  onReactionClick: (postId: string, emoji: string) => void;
+  onLikeClick: (postId: string) => Promise<unknown>;
   commentCount: number;
   className?: string;
 }) => {
   const t = useTranslations();
-  const { urls } = useMemo(() => detectLinks(post?.content), [post?.content]);
-  const { displayPost, handleReactionClick } = useOptimisticReaction(
-    post,
-    onReactionClick,
-  );
+  const { displayPost, handleLikeClick } = useOptimisticLike(post, onLikeClick);
 
   // For comments (posts without organization), show the post author
   // TODO: this is too complex. We need to refactor this
@@ -526,7 +540,7 @@ export const PostItemOnDetailPage = ({
       <FeedMain>
         <FeedHeader className="relative w-full justify-between">
           <div className="flex items-baseline gap-2">
-            <Header3 className="font-sans leading-3 font-semibold">
+            <Header3 className="font-sans font-semibold">
               <PostDisplayName
                 profile={profile}
                 displayName={displayName}
@@ -540,18 +554,12 @@ export const PostItemOnDetailPage = ({
           <PostMenu post={post} user={user} organization={organization} />
         </FeedHeader>
         <FeedContent>
-          <PostFlaggedIndicator post={post} />
-          <PostContent content={post?.content} />
-          <PostAttachments attachments={post.attachments} />
-          <PostUrls urls={urls} />
-          <div className="flex items-center justify-between gap-2">
-            <PostReactions
-              post={displayPost}
-              onReactionClick={handleReactionClick}
-            />
+          <PostBody post={post} />
+          <div className="-ms-2 flex items-center">
+            <PostLikeButton post={displayPost} onLikeClick={handleLikeClick} />
             <CommentButton
               count={commentCount}
-              label={t('{count} comments', { count: commentCount })}
+              label={t('commentCount', { count: commentCount })}
               disabled
             />
           </div>
@@ -599,32 +607,25 @@ export const usePostFeedActions = () => {
   });
 
   const utils = trpc.useUtils();
-  const toggleReaction = trpc.organization.toggleReaction.useMutation({
+  const toggleLike = trpc.organization.toggleLike.useMutation({
     onSettled: () => {
       void utils.organization.listPosts.invalidate();
       void utils.organization.listAllPosts.invalidate();
       void utils.posts.getPosts.invalidate();
       void utils.posts.listProfilePosts.invalidate();
+      // Proposal comment feeds moved off listProfilePosts; without this a
+      // reaction on a proposal comment leaves the feed stale.
+      void utils.posts.listProposalComments.invalidate();
     },
     onError: (err) => {
-      toast.error(err.message || t('Failed to update reaction'));
+      toast.error(err.message || t('posts.likeError'));
     },
   });
 
-  const handleReactionClick = (postId: string, emoji: string) => {
-    // Convert emoji to reaction type using REACTION_OPTIONS
-    const reactionOption = REACTION_OPTIONS.find(
-      (option) => option.emoji === emoji,
-    );
-    const reactionType = reactionOption?.key;
-
-    if (!reactionType) {
-      console.error('Unknown emoji:', emoji);
-      return;
-    }
-
-    toggleReaction.mutate({ postId, reactionType });
-  };
+  // Returns the promise so the caller's optimistic state can roll itself back;
+  // `onError` above still owns the toast.
+  const handleLikeClick = (postId: string) =>
+    toggleLike.mutateAsync({ postId });
 
   const handleCommentClick = (
     post: Post,
@@ -639,7 +640,7 @@ export const usePostFeedActions = () => {
 
   return {
     discussionModal,
-    handleReactionClick,
+    handleLikeClick,
     handleCommentClick,
     handleModalClose,
   };

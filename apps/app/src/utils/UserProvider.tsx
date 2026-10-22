@@ -2,9 +2,12 @@
 
 import { trpc } from '@op/api/client';
 import type { CommonUser } from '@op/api/encoders';
+import { createSBBrowserClient } from '@op/supabase/client';
 import type { Permission } from 'access-zones';
 import posthog from 'posthog-js';
-import React, { Suspense, createContext, useContext } from 'react';
+import React, { Suspense, createContext, useContext, useEffect } from 'react';
+
+import { useTrackingConsent } from '@/components/PostHogProvider';
 
 const AccessZones = ['decisions', 'profile', 'admin'] as const;
 
@@ -61,15 +64,43 @@ export const UserProviderSuspense = ({
   // tree a null refetch is a transient cookie/token race, not a sign-out.
   const user = account ?? initialUser ?? undefined;
 
-  if (user) {
+  // The rule above holds only if a session that ends elsewhere, in another
+  // tab or in a check that found it invalid, leaves the same way the menu
+  // does. Supabase broadcasts the event to every tab.
+  useEffect(() => {
+    const {
+      data: { subscription },
+    } = createSBBrowserClient().auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_OUT') {
+        window.location.assign('/');
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  // Identifying attaches a persistent id to the person, which is exactly what
+  // a visitor being tracked cookielessly has not agreed to — they stay on
+  // PostHog's server-hashed identity instead. Keyed on the consent state so
+  // accepting identifies straight away rather than on the next navigation.
+  const { isIdentifiable } = useTrackingConsent();
+  const authUserId = user?.authUserId;
+  const email = user?.email;
+  const name = user?.name;
+
+  useEffect(() => {
+    if (!isIdentifiable || !authUserId) {
+      return;
+    }
+
     // We are only identifying One Project users by email.
-    if (user.email?.match(/.+@oneproject\.org$|.+@peoplepowered\.org$/)) {
-      posthog.identify(user.authUserId, { email: user.email, name: user.name });
+    if (email?.match(/.+@oneproject\.org$|.+@peoplepowered\.org$/)) {
+      posthog.identify(authUserId, { email, name });
     } else {
       // others are given anonymous IDs
-      posthog.identify(user.authUserId);
+      posthog.identify(authUserId);
     }
-  }
+  }, [isIdentifiable, authUserId, email, name]);
 
   // Utility function to get permissions for a specific profile
   const getPermissionsForProfile = (

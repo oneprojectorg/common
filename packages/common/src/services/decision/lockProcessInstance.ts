@@ -1,6 +1,8 @@
 import { type DbClient, eq } from '@op/db/client';
 import { processInstances } from '@op/db/schema';
 
+import { NotFoundError } from '../../utils';
+
 export type LockedProcessInstance = Pick<
   typeof processInstances.$inferSelect,
   'currentStateId' | 'status' | 'instanceData'
@@ -32,6 +34,27 @@ export async function lockProcessInstance({
     .where(eq(processInstances.id, instanceId))
     .limit(1)
     .for('update');
+
+  return locked;
+}
+
+/**
+ * {@link lockProcessInstance} for callers that resolved the instance before
+ * opening the transaction: a row that is gone by the time the lock runs means
+ * it was deleted in between.
+ */
+export async function lockProcessInstanceOrThrow({
+  db,
+  instanceId,
+}: {
+  db: DbClient;
+  instanceId: string;
+}): Promise<LockedProcessInstance> {
+  const locked = await lockProcessInstance({ db, instanceId });
+
+  if (!locked) {
+    throw new NotFoundError('Process instance', instanceId);
+  }
 
   return locked;
 }

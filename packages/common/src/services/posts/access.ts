@@ -1,29 +1,54 @@
 import { db } from '@op/db/client';
-import { EntityType, postsToOrganizations } from '@op/db/schema';
-import { permission } from 'access-zones';
-import { eq } from 'drizzle-orm';
+import { EntityType } from '@op/db/schema';
+import { logger } from '@op/logging';
+import { checkPermission, permission } from 'access-zones';
 
 import { NotFoundError, UnauthorizedError } from '../../utils';
 import {
   type AccessUser,
   assertInstanceProfileAccess,
   assertProfileTypeAccess,
+  getCurrentProfileId,
+  getProfileAccessRolesWithOrgFallback,
   getUserSession,
 } from '../access';
 import { decisionPermission } from '../decision/permissions';
+import { getInstancePhases } from '../decision/schemas/instanceData';
+import { areCommentsAllowed } from '../decision/utils/phaseSettings';
 import { getNetworkMembership } from '../user';
+
+export type PostReadAccess = {
+  /** The proposal behind the gated profile, or null when it is a decision. */
+  proposal: { id: string; processInstanceId: string } | null;
+  /**
+   * The profile whose admins moderate these posts — always the decision's own
+   * profile, never a proposal's.
+   *
+   * Moderation authority belongs to the process admins alone. A proposal's
+   * owner and co-authors hold `profile: ADMIN` on their *proposal* profile
+   * (`createProposal` grants the global Admin role), so resolving standing
+   * there would hand them every flagged comment on their own proposal — and,
+   * once a merge carries comments over, on every proposal merged into it.
+   * Flagged content stays hidden from them; only its own author still sees it,
+   * via the author clause in `postModerationFilter`.
+   */
+  moderationProfileId: string;
+};
 
 // Asserts a caller's READ access to a profile's posts, dispatching on the
 // profile's server-resolved type. Fail-closed: a type without a case is denied
 // (unlike assertProfileTypeAccess, whose policy map passes unlisted types and
 // leaked proposal posts). The type comes from the DB row, never the caller.
+//
+// Returns the proposal it resolved on the way, so a caller that needs it does
+// not query for it a second time.
 export const assertPostReadAccess = async ({
   user,
   profileId,
 }: {
   user: AccessUser | undefined;
   profileId: string;
-}) => {
+}): Promise<PostReadAccess> => {
   const profile = await db.query.profiles.findFirst({
     where: { id: profileId },
     columns: { type: true },
@@ -41,7 +66,8 @@ export const assertPostReadAccess = async ({
         profileIds: [profileId],
         policies: { [EntityType.DECISION]: { decisions: permission.READ } },
       });
-      return;
+      // The decision profile is its own moderation authority.
+      return { proposal: null, moderationProfileId: profileId };
     }
 
     // A proposal's READ grant lives on its parent decision (the process
@@ -65,7 +91,22 @@ export const assertPostReadAccess = async ({
           { decisions: permission.ADMIN },
         ],
       });
-      return;
+
+      // `assertInstanceProfileAccess` rejects an instance with no profile, so
+      // reaching this with a null is impossible; the check is what narrows the
+      // nullable column for the return.
+      const moderationProfileId = proposal.processInstance.profileId;
+      if (!moderationProfileId) {
+        throw new UnauthorizedError('You do not have access to these posts');
+      }
+
+      return {
+        proposal: {
+          id: proposal.id,
+          processInstanceId: proposal.processInstanceId,
+        },
+        moderationProfileId,
+      };
     }
 
     default:
@@ -73,22 +114,146 @@ export const assertPostReadAccess = async ({
   }
 };
 
+/** A flagged post is NotFound to everyone but its author and its moderators. */
+export const assertCanReadFlaggedPost = async ({
+  post,
+  user,
+  moderationProfileIds,
+}: {
+  post: { id: string; profileId: string | null };
+  user: AccessUser | undefined;
+  moderationProfileIds: string[];
+}) => {
+  const actorProfileId = user ? await getCurrentProfileId(user.id) : null;
+  // No profile is nobody's author, even of a post with no recorded author.
+  if (actorProfileId != null && actorProfileId === post.profileId) {
+    return;
+  }
+
+  const accessUser = user ? { id: user.id } : undefined;
+  const moderationRoles = await Promise.all(
+    moderationProfileIds.map((profileId) =>
+      getProfileAccessRolesWithOrgFallback({ user: accessUser, profileId }),
+    ),
+  );
+  // `[].every` is true, so an empty list must not grant moderator standing.
+  const isModerator =
+    moderationRoles.length > 0 &&
+    moderationRoles.every((roles) =>
+      checkPermission({ profile: permission.ADMIN }, roles),
+    );
+
+  if (!isModerator) {
+    throw new NotFoundError('Post', post.id);
+  }
+};
+
+type ResolvedInstance = {
+  instanceData: unknown;
+  currentStateId: string | null;
+};
+
 const WRITE_DENIED = 'You do not have access to write here';
+const READ_DENIED = 'You do not have access to this post';
+const COMMENTS_DISABLED = 'Comments are turned off for this phase';
+
+const assertPhaseAllowsComments = async (
+  decisionProfileId: string,
+  // Non-null when `resolvePostRoots` already read the instance on its way here.
+  resolvedInstance: ResolvedInstance | null,
+) => {
+  const instance =
+    resolvedInstance ??
+    (await db.query.processInstances.findFirst({
+      where: { profileId: decisionProfileId },
+      columns: { instanceData: true, currentStateId: true },
+    }));
+
+  // Deny rather than fall through to the permissive default: a DECISION
+  // profile always has an instance, so this means the rows disagree.
+  if (!instance) {
+    logger.warn('Decision profile has no process instance; denying comment', {
+      decisionProfileId,
+    });
+    throw new UnauthorizedError(WRITE_DENIED);
+  }
+
+  const allowed = areCommentsAllowed({
+    phases: getInstancePhases(instance.instanceData),
+    currentPhaseId: instance.currentStateId,
+  });
+
+  if (!allowed) {
+    throw new UnauthorizedError(COMMENTS_DISABLED);
+  }
+};
 
 // Asserts the caller is inside the walled garden (a network email domain
 // or an allow-list entry). Org-post comments are gated on this — anyone in
 // the walled garden can comment on any org post, regardless of per-org
 // membership. Fails closed when the caller has no resolvable email
 // (anonymous / sentinel callers).
-const assertOnWalledGarden = async (user: AccessUser | undefined) => {
+const assertOnWalledGarden = async ({
+  user,
+  deniedMessage = WRITE_DENIED,
+}: {
+  user: AccessUser | undefined;
+  deniedMessage?: string;
+}) => {
   if (!user?.id) {
-    throw new UnauthorizedError(WRITE_DENIED);
+    throw new UnauthorizedError(deniedMessage);
   }
   const session = await getUserSession({ authUserId: user.id });
   const isMember = await getNetworkMembership(session?.user?.email);
   if (!isMember) {
-    throw new UnauthorizedError(WRITE_DENIED);
+    throw new UnauthorizedError(deniedMessage);
   }
+};
+
+const getOrgProfileIds = async (postId: string) => {
+  const links = await db.query.postsToOrganizations.findMany({
+    where: { postId },
+    columns: {},
+    with: { organization: { columns: { profileId: true } } },
+  });
+  return links.map(({ organization }) => organization.profileId);
+};
+
+/**
+ * Asserts READ access to a post and returns the profiles whose admins moderate it.
+ * A post off any decision or proposal is an org post, open to the whole network.
+ */
+export const assertPostReadAccessForPost = async ({
+  user,
+  post,
+}: {
+  user: AccessUser | undefined;
+  post: {
+    id: string;
+    parentPostId: string | null;
+    postsToProfiles: { profileId: string }[];
+  };
+}): Promise<{ moderationProfileIds: string[] }> => {
+  if (post.postsToProfiles.length > 0) {
+    const readAccesses = await Promise.all(
+      post.postsToProfiles.map(({ profileId }) =>
+        assertPostReadAccess({ user, profileId }),
+      ),
+    );
+    return {
+      moderationProfileIds: readAccesses.map(
+        ({ moderationProfileId }) => moderationProfileId,
+      ),
+    };
+  }
+
+  await assertOnWalledGarden({ user, deniedMessage: READ_DENIED });
+
+  return {
+    moderationProfileIds: post.parentPostId
+      ? []
+      : await getOrgProfileIds(post.id),
+  };
 };
 
 // Asserts a caller's WRITE access for a new post, dispatching on the
@@ -102,11 +267,14 @@ export const assertPostWriteAccess = async ({
   rootProfileId,
   rootPostId,
   targetProfileId,
+  resolvedInstance = null,
 }: {
   user: AccessUser | undefined;
   rootProfileId: string | null;
   rootPostId: string | null;
   targetProfileId?: string | null;
+  /** Pass `resolvePostRoots`'s instance so the comment gate doesn't re-read it. */
+  resolvedInstance?: ResolvedInstance | null;
 }) => {
   // Legacy postsToOrganizations branch: the only write that lands here is
   // a reply under a legacy org-feed post. Same walled-garden gate as the
@@ -116,15 +284,11 @@ export const assertPostWriteAccess = async ({
     if (!rootPostId) {
       throw new UnauthorizedError(WRITE_DENIED);
     }
-    const [legacyLink] = await db
-      .select({ organizationId: postsToOrganizations.organizationId })
-      .from(postsToOrganizations)
-      .where(eq(postsToOrganizations.postId, rootPostId))
-      .limit(1);
-    if (!legacyLink) {
+    const orgProfileIds = await getOrgProfileIds(rootPostId);
+    if (orgProfileIds.length === 0) {
       throw new UnauthorizedError(WRITE_DENIED);
     }
-    await assertOnWalledGarden(user);
+    await assertOnWalledGarden({ user });
     return;
   }
 
@@ -160,6 +324,11 @@ export const assertPostWriteAccess = async ({
             : { decisions: decisionPermission.SUBMIT_PROPOSALS },
         },
       });
+      // After the permission check, so an unauthorized caller gets that error
+      // rather than a hint about the process config.
+      if (!isAnnouncement) {
+        await assertPhaseAllowsComments(rootProfileId, resolvedInstance);
+      }
       return;
 
     // Org profile: announcement requires `profile: ADMIN` (resolved via
@@ -184,7 +353,7 @@ export const assertPostWriteAccess = async ({
         });
         return;
       }
-      await assertOnWalledGarden(user);
+      await assertOnWalledGarden({ user });
       return;
 
     // INDIVIDUAL / USER profiles aren't a supported posting surface yet.

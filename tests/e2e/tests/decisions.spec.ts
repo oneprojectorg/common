@@ -1,4 +1,7 @@
-import { createDecisionInstance, getSeededTemplate } from '@op/test';
+import {
+  createDecisionInstance,
+  getSeededTemplate,
+} from '@op/common/testing/data';
 
 import { expect, test } from '../fixtures/index.js';
 

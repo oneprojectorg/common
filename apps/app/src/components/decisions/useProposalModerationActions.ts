@@ -27,19 +27,19 @@ export interface ProposalModerationActions {
 export function useProposalModerationActions(
   proposal: Proposal,
 ): ProposalModerationActions {
-  const t = useTranslations();
+  const t = useTranslations('decisions.proposals');
 
-  const proposalTitle = proposal.profile.name || t('Untitled Proposal');
+  const proposalTitle = proposal.profile.name || t('untitledProposal');
 
   const updateVisibilityMutation = trpc.decision.updateProposal.useMutation({
     onError: (error) => {
-      toast.error(error.message || t('Failed to update proposal visibility'));
+      toast.error(error.message || t('visibilityUpdateError'));
     },
     onSuccess: (_, variables) => {
       if (variables.data.visibility) {
         const message = match(variables.data.visibility, {
-          [Visibility.HIDDEN]: `${proposalTitle} ${t('is now hidden from active proposals.')}`,
-          [Visibility.VISIBLE]: `${proposalTitle} ${t('is now visible in active proposals.')}`,
+          [Visibility.HIDDEN]: `${proposalTitle} ${t('hiddenToast')}`,
+          [Visibility.VISIBLE]: `${proposalTitle} ${t('visibleToast')}`,
         });
         toast.success(message);
       }

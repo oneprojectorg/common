@@ -1,9 +1,9 @@
+import { TestProfileUserDataManager } from '@op/common/testing';
 import { db } from '@op/db/client';
 import { EntityType, profileInvites } from '@op/db/schema';
 import { ROLES } from '@op/db/seedData/accessControl';
 import { describe, expect, it } from 'vitest';
 
-import { TestProfileUserDataManager } from '../../test/helpers/TestProfileUserDataManager';
 import {
   createIsolatedSession,
   createTestContextWithSession,

@@ -31,7 +31,7 @@ const RESOURCE_LIST_CACHE_TTL_MS = 5 * 60 * 1000;
 /**
  * Viewer-independent, display-ordered rows for a profile's flattened resource
  * list. Cached under `['resources', profileId, 'list']` (cf. getInstance's
- * `['decision', id, 'instance']`); mutations bust it via
+ * `['decision', id, 'instance:v2']`); mutations bust it via
  * invalidateProfileResources. Signed URLs / link previews are NOT in here —
  * they're resolved per request in getResource against their own short-TTL
  * caches, so a cached list entry can never serve an expired token.

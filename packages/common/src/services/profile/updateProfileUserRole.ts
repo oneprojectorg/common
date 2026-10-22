@@ -1,4 +1,3 @@
-import { invalidate } from '@op/cache';
 import { and, db, eq, inArray } from '@op/db/client';
 import { EntityType, profileUserToAccessRoles } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
@@ -8,9 +7,7 @@ import { CommonError, NotFoundError, ValidationError } from '../../utils/error';
 import {
   assignableRoleFilter,
   getNormalizedRoles,
-  getProfileAccessUser,
-  getUserSession,
-  profileUserCacheKey,
+  invalidateProfileUserAccessCache,
 } from '../access';
 import { assertProfileAdmin } from '../assert';
 import { emitDecisionMemberRolesChanged } from '../decision/events/emitDecisionMemberRolesChanged';
@@ -140,24 +137,10 @@ export const updateProfileUserRoles = async ({
     }
   }
 
-  await Promise.all([
-    invalidate({
-      type: 'profileUser',
-      params: profileUserCacheKey({
-        user: { id: targetProfileUser.authUserId },
-        profileId: targetProfileId,
-      }),
-    }),
-    invalidate({
-      type: 'user',
-      params: [targetProfileUser.authUserId],
-    }),
-  ]);
-  getProfileAccessUser.invalidate({
-    user: { id: targetProfileUser.authUserId },
+  await invalidateProfileUserAccessCache({
+    authUserId: targetProfileUser.authUserId,
     profileId: targetProfileId,
   });
-  getUserSession.invalidate({ authUserId: targetProfileUser.authUserId });
 
   // Fetch and return the updated profile user with full relations
   const updatedProfileUser = await getProfileUserWithRelations(profileUserId);

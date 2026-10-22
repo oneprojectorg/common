@@ -1,12 +1,12 @@
 import { Channels, getPosts as getPostsService } from '@op/common';
 import type { ChannelName } from '@op/common';
+import { list } from '@op/common/client';
 import { getPostsSchema } from '@op/types';
-import { z } from 'zod';
 
 import { postsEncoder } from '../../encoders';
 import { openProcedure, router } from '../../trpcFactory';
 
-const outputSchema = z.array(postsEncoder);
+const outputSchema = list(postsEncoder);
 
 export const getPosts = router({
   getPosts: openProcedure()
@@ -29,6 +29,6 @@ export const getPosts = router({
         ctx.registerQueryChannels(channels);
       }
 
-      return outputSchema.parse(posts);
+      return outputSchema.parse({ items: posts });
     }),
 });

@@ -1,3 +1,7 @@
+import {
+  TestJoinProfileRequestDataManager,
+  TestOrganizationDataManager,
+} from '@op/common/testing';
 import { db } from '@op/db/client';
 import {
   allowList,
@@ -11,8 +15,6 @@ import {
 import { eq } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 
-import { TestJoinProfileRequestDataManager } from '../../test/helpers/TestJoinProfileRequestDataManager';
-import { TestOrganizationDataManager } from '../../test/helpers/TestOrganizationDataManager';
 import {
   createIsolatedSession,
   createTestContextWithSession,
@@ -89,7 +91,7 @@ describe.concurrent('Onboarding Organization Search', () => {
 
       const result = await caller.listMatchingDomainOrganizations(undefined);
 
-      expect(result).toEqual([]);
+      expect(result.items).toEqual([]);
     });
 
     it('creates no join requests when user skips org selection', async ({
@@ -114,7 +116,7 @@ describe.concurrent('Onboarding Organization Search', () => {
       // User can call listMatchingDomainOrganizations (procedure works)
       const matchingOrgs =
         await caller.listMatchingDomainOrganizations(undefined);
-      expect(Array.isArray(matchingOrgs)).toBe(true);
+      expect(Array.isArray(matchingOrgs.items)).toBe(true);
 
       // User "skips" — no createJoinRequest calls are made
       // Verify no join requests exist for this user
@@ -166,10 +168,10 @@ describe.concurrent('Onboarding Organization Search', () => {
         limit: 10,
       });
 
-      expect(Array.isArray(result)).toBe(true);
+      expect(Array.isArray(result.items)).toBe(true);
 
       // Verify our org appears in results
-      const found = result.find(({ org }) => org.id === organization.id);
+      const found = result.items.find(({ org }) => org.id === organization.id);
       expect(found).toBeDefined();
     });
 
@@ -202,7 +204,7 @@ describe.concurrent('Onboarding Organization Search', () => {
         limit: 10,
       });
 
-      const found = new Map(result.map((entry) => [entry.org.id, entry]));
+      const found = new Map(result.items.map((entry) => [entry.org.id, entry]));
       expect(found.get(alreadyMemberOrg.id)?.isMember).toBe(true);
       expect(found.get(otherOrg.id)?.isMember).toBe(false);
     });
@@ -320,9 +322,11 @@ describe.concurrent('Onboarding Organization Search', () => {
       const result = await caller.listMatchingDomainOrganizations(undefined);
 
       // Verify the domain-matched org is returned
-      expect(result.length).toBeGreaterThanOrEqual(1);
+      expect(result.items.length).toBeGreaterThanOrEqual(1);
 
-      const matchedOrg = result.find(({ org }) => org.id === organization.id);
+      const matchedOrg = result.items.find(
+        ({ org }) => org.id === organization.id,
+      );
       expect(matchedOrg).toBeDefined();
     });
 
@@ -376,7 +380,7 @@ describe.concurrent('Onboarding Organization Search', () => {
 
       const result = await caller.listMatchingDomainOrganizations(undefined);
 
-      const ids = result.map(({ org }) => org.id);
+      const ids = result.items.map(({ org }) => org.id);
       expect(ids).not.toContain(existingMembershipOrg.id);
       expect(ids).toContain(notYetJoinedOrg.id);
     });
@@ -416,7 +420,7 @@ describe.concurrent('Onboarding Organization Search', () => {
       const matchingOrgs =
         await accountCaller.listMatchingDomainOrganizations(undefined);
 
-      const matchedOrg = matchingOrgs.find(
+      const matchedOrg = matchingOrgs.items.find(
         ({ org }) => org.id === organization.id,
       );
       expect(matchedOrg).toBeDefined();
@@ -506,7 +510,9 @@ describe.concurrent('Onboarding Organization Search', () => {
       );
 
       const result = await caller.listMatchingDomainOrganizations(undefined);
-      const matched = result.find(({ org }) => org.id === organization.id);
+      const matched = result.items.find(
+        ({ org }) => org.id === organization.id,
+      );
 
       expect(matched).toBeDefined();
       expect(matched!.org.whereWeWork).toBeDefined();

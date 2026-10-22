@@ -11,10 +11,12 @@ export const listReviewerCategoriesRouter = router({
     .input(instancePhaseRefSchema)
     .output(reviewerCategoriesSchema)
     .query(async ({ ctx, input }) => {
-      return await listReviewerCategories({
+      const categories = await listReviewerCategories({
         processInstanceId: input.processInstanceId,
         phaseId: input.phaseId,
         user: ctx.user,
       });
+
+      return { items: categories };
     }),
 });

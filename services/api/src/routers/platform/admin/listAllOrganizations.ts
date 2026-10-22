@@ -1,4 +1,5 @@
 import { decodeCursor, encodeCursor } from '@op/common';
+import { paginated, total } from '@op/common/client';
 import { and, count, db, eq, ilike, inArray, lt, or } from '@op/db/client';
 import { organizations, profiles } from '@op/db/schema';
 import type { SQL } from 'drizzle-orm';
@@ -38,13 +39,7 @@ export const listAllOrganizationsRouter = router({
         })
         .optional(),
     )
-    .output(
-      z.object({
-        items: z.array(adminOrgEncoder),
-        next: z.string().nullish(),
-        total: z.number(),
-      }),
-    )
+    .output(paginated(adminOrgEncoder).extend({ total }))
     .query(async ({ input }) => {
       const { cursor, dir = 'desc', query, limit } = input ?? {};
       const cursorValue = cursor

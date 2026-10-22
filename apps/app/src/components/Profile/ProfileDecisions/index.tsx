@@ -17,18 +17,19 @@ import {
 } from '@/components/decisions/DecisionListItem';
 
 const DecisionProfilesList = ({ profileId }: { profileId: string }) => {
-  const [data] = trpc.decision.listDecisionProfiles.useSuspenseQuery({
-    stewardProfileId: profileId,
-    status: VISIBLE_DECISION_STATUSES,
-  });
+  const [{ items: decisionProfiles }] =
+    trpc.decision.listDecisionProfiles.useSuspenseQuery({
+      stewardProfileId: profileId,
+      status: VISIBLE_DECISION_STATUSES,
+    });
 
-  if (!data.items.length) {
+  if (!decisionProfiles.length) {
     return null;
   }
 
   return (
     <div className="flex flex-col gap-4 sm:gap-0">
-      {data.items.map((item) => (
+      {decisionProfiles.map((item) => (
         <DecisionListItem className="sm:p-6" key={item.id} item={item} />
       ))}
     </div>
@@ -37,17 +38,18 @@ const DecisionProfilesList = ({ profileId }: { profileId: string }) => {
 
 const LegacyDecisionProcessList = ({ profileId }: { profileId: string }) => {
   const { slug } = useParams();
-  const [data] = trpc.decision.listLegacyInstances.useSuspenseQuery({
-    ownerProfileId: profileId,
-  });
+  const [{ items: instances }] =
+    trpc.decision.listLegacyInstances.useSuspenseQuery({
+      ownerProfileId: profileId,
+    });
 
-  if (!data || data.length === 0) {
+  if (instances.length === 0) {
     return null;
   }
 
   return (
     <div className="flex flex-col">
-      {data.map((instance) => {
+      {instances.map((instance) => {
         const currentState = instance.process?.processSchema?.states?.find(
           (s) => s.id === instance.currentStateId,
         );
@@ -89,15 +91,11 @@ const EmptyDecisions = ({ profileId }: { profileId: string }) => {
       <div className="flex max-w-md flex-col gap-2">
         <Header2 className="text-title">
           {isProcessAdmin
-            ? t('Set up your decision-making process')
-            : t('There are no current decision-making processes')}
+            ? t('profile.noDecisionsCta')
+            : t('profile.noDecisionsTitle')}
         </Header2>
         {isProcessAdmin && (
-          <p className="text-base">
-            {t(
-              'Create your first participatory budgeting or grantmaking process to start collecting proposals from your community.',
-            )}
-          </p>
+          <p className="text-base">{t('profile.noDecisionsBody')}</p>
         )}
       </div>
     </div>
@@ -109,7 +107,7 @@ const DecisionProcessList = ({ profileId }: { profileId: string }) => {
   const canReadDecisions =
     access.getPermissionsForProfile(profileId).decisions.read;
 
-  const [decisionProfiles] =
+  const [{ items: decisionProfiles }] =
     trpc.decision.listDecisionProfiles.useSuspenseQuery({
       stewardProfileId: profileId,
       status: VISIBLE_DECISION_STATUSES,
@@ -120,8 +118,8 @@ const DecisionProcessList = ({ profileId }: { profileId: string }) => {
     { retry: false, enabled: canReadDecisions },
   );
 
-  const hasDecisionProfiles = decisionProfiles.items.length > 0;
-  const hasLegacyInstances = (legacyInstances.data?.length ?? 0) > 0;
+  const hasDecisionProfiles = decisionProfiles.length > 0;
+  const hasLegacyInstances = (legacyInstances.data?.items.length ?? 0) > 0;
 
   if (!hasDecisionProfiles && !hasLegacyInstances) {
     return <EmptyDecisions profileId={profileId} />;
@@ -154,7 +152,7 @@ export const ProfileDecisionsSuspense = ({
     <Suspense
       fallback={
         <div className="flex min-h-96 items-center justify-center">
-          <div className="animate-pulse text-base">{t('Loading...')}</div>
+          <div className="animate-pulse text-base">{t('loadingProgress')}</div>
         </div>
       }
     >

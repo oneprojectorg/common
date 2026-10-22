@@ -1,4 +1,5 @@
 import { REVERTED_RESULT_MESSAGE } from '@op/common';
+import { TestDecisionsDataManager } from '@op/common/testing';
 import { db, eq } from '@op/db/client';
 import {
   ProcessStatus,
@@ -11,7 +12,6 @@ import {
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
-import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
 import {
   accessTierGatingCell,
   describeAccessTierGating,
@@ -261,7 +261,7 @@ describe.concurrent('platform.admin.revertDecisionPhase', () => {
       await createTestContextWithSession(session),
     );
     const readBallot = async () => {
-      const { proposals: rows } = await voterCaller.decision.listProposals({
+      const { items: rows } = await voterCaller.decision.listProposals({
         processInstanceId: instanceId,
         votedByProfileId: voter.profileId,
       });

@@ -1,4 +1,12 @@
 import { mockCollab, textFragment } from '@op/collab/testing';
+import { PROPOSAL_SEARCH_MAX_LENGTH, RejectionReason } from '@op/common/client';
+import {
+  createReviewAssignment,
+  TestDecisionsDataManager,
+  schemaWithPipeline,
+  schemaWithThreePhases,
+  schemaWithoutPipeline,
+} from '@op/common/testing';
 import { db } from '@op/db/client';
 import {
   ProcessStatus,
@@ -12,23 +20,16 @@ import {
   stateTransitionHistory,
 } from '@op/db/schema';
 import { ROLES } from '@op/db/seedData/accessControl';
-import { createReviewAssignment } from '@op/test';
 import { and, eq } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
 import { transformFormDataToProcessSchema as cowopSchema } from '../../../../../../apps/app/src/components/Profile/CreateDecisionProcessModal/schemas/cowop';
-import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
 import {
   accessTierGatingCell,
   describeDecisionAccessTierGating,
   expectPassesAccessTierGate,
 } from '../../../test/helpers/gating/decision';
-import {
-  schemaWithPipeline,
-  schemaWithThreePhases,
-  schemaWithoutPipeline,
-} from '../../../test/helpers/pipelineSchemas';
 import {
   createIsolatedSession,
   createTestContextWithSession,
@@ -78,11 +79,11 @@ describe.concurrent('listProposals', () => {
       processInstanceId: instance.instance.id,
     });
 
-    expect(result.proposals).toHaveLength(2);
+    expect(result.items).toHaveLength(2);
     expect(result.total).toBe(2);
-    expect(result.hasMore).toBe(false);
+    expect(result.next).toBeNull();
 
-    const proposalIds = result.proposals.map((p) => p.id);
+    const proposalIds = result.items.map((p) => p.id);
     expect(proposalIds).toContain(proposal1.id);
     expect(proposalIds).toContain(proposal2.id);
   });
@@ -191,7 +192,7 @@ describe.concurrent('listProposals', () => {
       processInstanceId: instance.instance.id,
     });
 
-    const myProposal = result.proposals.find((p) => p.id === proposal.id);
+    const myProposal = result.items.find((p) => p.id === proposal.id);
     expect(myProposal?.isEditable).toBe(true);
   });
 
@@ -251,8 +252,8 @@ describe.concurrent('listProposals', () => {
     });
 
     // Non-admin should only see visible proposal
-    expect(result.proposals).toHaveLength(1);
-    expect(result.proposals[0]?.id).toBe(visibleProposal.id);
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0]?.id).toBe(visibleProposal.id);
   });
 
   it('should show hidden proposals to admin users', async ({
@@ -311,7 +312,257 @@ describe.concurrent('listProposals', () => {
     });
 
     // Admin should see both proposals (including member's hidden proposal)
-    expect(result.proposals).toHaveLength(2);
+    expect(result.items).toHaveLength(2);
+  });
+
+  it('lists rejected proposals under Not advanced only, for admins and non-admins alike', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instance;
+
+    const memberUser = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [instance.profileId],
+    });
+
+    const [keptProposal, rejectedProposal, adminCaller, memberCaller] =
+      await Promise.all([
+        testData.createProposal({
+          userEmail: memberUser.email,
+          processInstanceId: instance.instance.id,
+          proposalData: { title: 'Kept Proposal' },
+        }),
+        testData.createProposal({
+          userEmail: memberUser.email,
+          processInstanceId: instance.instance.id,
+          proposalData: { title: 'Rejected Proposal' },
+        }),
+        createAuthenticatedCaller(setup.userEmail),
+        createAuthenticatedCaller(memberUser.email),
+      ]);
+
+    // A draft can't be rejected, so submit both first.
+    await Promise.all([
+      memberCaller.decision.submitProposal({ proposalId: keptProposal.id }),
+      memberCaller.decision.submitProposal({ proposalId: rejectedProposal.id }),
+    ]);
+
+    await adminCaller.decision.rejectProposal({
+      proposalId: rejectedProposal.id,
+      reason: RejectionReason.INELIGIBLE,
+    });
+
+    const processInstanceId = instance.instance.id;
+    const cases = [
+      { input: {}, expected: keptProposal.id },
+      { input: { notAdvanced: true }, expected: rejectedProposal.id },
+      {
+        input: { status: ProposalStatus.REJECTED },
+        expected: rejectedProposal.id,
+      },
+      {
+        input: { submittedByProfileId: memberUser.profileId },
+        expected: keptProposal.id,
+      },
+    ];
+    const results = await Promise.all(
+      [memberCaller, adminCaller].flatMap((caller) =>
+        cases.map(async ({ input, expected }) => ({
+          expected,
+          ids: (
+            await caller.decision.listProposals({ processInstanceId, ...input })
+          ).items.map((p) => p.id),
+        })),
+      ),
+    );
+
+    for (const { ids, expected } of results) {
+      expect(ids).toEqual([expected]);
+    }
+  });
+
+  it('shows a rejected proposal to an anonymous visitor on a public decision', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instance;
+
+    await testData.makeDecisionPublic(instance.profileId);
+
+    const [rejectedProposal, adminCaller] = await Promise.all([
+      testData.createProposal({
+        userEmail: setup.userEmail,
+        processInstanceId: instance.instance.id,
+        proposalData: { title: 'Rejected Proposal' },
+      }),
+      createAuthenticatedCaller(setup.userEmail),
+    ]);
+
+    await adminCaller.decision.submitProposal({
+      proposalId: rejectedProposal.id,
+    });
+    await adminCaller.decision.rejectProposal({
+      proposalId: rejectedProposal.id,
+      reason: RejectionReason.INELIGIBLE,
+    });
+
+    // No-JWT caller — substituted to GLOBAL_USER_PUBLIC by the access layer.
+    // `listProposals` is an openProcedure, so logged-out visitors are part of
+    // the "everyone" this rule promises.
+    const publicCaller = createCaller(await createTestContextWithSession(null));
+    const [all, result] = await Promise.all(
+      [false, true].map((notAdvanced) =>
+        publicCaller.decision.listProposals({
+          processInstanceId: instance.instance.id,
+          notAdvanced,
+        }),
+      ),
+    );
+
+    expect(all?.items).toEqual([]);
+    expect(result?.items.map((p) => p.id)).toEqual([rejectedProposal.id]);
+    expect(result?.items[0]?.status).toBe(ProposalStatus.REJECTED);
+  });
+
+  it('keeps a rejected proposal in its own phase but out of later phases and the review read', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      processSchema: schemaWithoutPipeline,
+      instanceCount: 1,
+      status: ProcessStatus.PUBLISHED,
+      grantAccess: true,
+    });
+
+    const instanceId = setup.instance.instance.id;
+    const { userEmail } = setup;
+    const adminCaller = await createAuthenticatedCaller(userEmail);
+
+    const [keptProposal, rejectedProposal] = await Promise.all([
+      testData.createProposal({
+        userEmail,
+        processInstanceId: instanceId,
+        proposalData: { title: `Kept ${task.id}` },
+      }),
+      testData.createProposal({
+        userEmail,
+        processInstanceId: instanceId,
+        proposalData: { title: `Rejected ${task.id}` },
+      }),
+    ]);
+
+    await Promise.all([
+      adminCaller.decision.submitProposal({ proposalId: keptProposal.id }),
+      adminCaller.decision.submitProposal({ proposalId: rejectedProposal.id }),
+    ]);
+    await adminCaller.decision.rejectProposal({
+      proposalId: rejectedProposal.id,
+      reason: RejectionReason.INELIGIBLE,
+    });
+
+    await testData.advancePhase({
+      instanceId,
+      fromPhaseId: 'submission',
+      toPhaseId: 'review',
+    });
+
+    const [submissionPhase, submissionAll, reviewPhase, reviewAggregates] =
+      await Promise.all([
+        adminCaller.decision.listProposals({
+          processInstanceId: instanceId,
+          phaseId: 'submission',
+          notAdvanced: true,
+        }),
+        adminCaller.decision.listProposals({
+          processInstanceId: instanceId,
+          phaseId: 'submission',
+        }),
+        adminCaller.decision.listProposals({
+          processInstanceId: instanceId,
+          phaseId: 'review',
+        }),
+        adminCaller.decision.listWithReviewAggregates({
+          processInstanceId: instanceId,
+          phaseId: 'review',
+        }),
+      ]);
+
+    // It stays a record where it lived: the rejection happened in `submission`,
+    // and that phase's Not advanced list still carries it.
+    expect(submissionPhase.items.map((p) => p.id)).toContain(
+      rejectedProposal.id,
+    );
+    expect(submissionAll.items.map((p) => p.id)).toEqual([keptProposal.id]);
+
+    // Rejected proposals are dropped when the advance snapshot is written, so
+    // `review` never receives it — the pipeline exclusion this change must not
+    // weaken. The kept proposal proves the snapshot itself worked.
+    expect(reviewPhase.items.map((p) => p.id)).toEqual([keptProposal.id]);
+    expect(reviewAggregates.items.map((item) => item.proposal.id)).toEqual([
+      keptProposal.id,
+    ]);
+  });
+
+  it('restores a rejected proposal to the active pool on undo', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instance;
+
+    const [proposal, adminCaller, memberUser] = await Promise.all([
+      testData.createProposal({
+        userEmail: setup.userEmail,
+        processInstanceId: instance.instance.id,
+        proposalData: { title: 'Proposal' },
+      }),
+      createAuthenticatedCaller(setup.userEmail),
+      testData.createMemberUser({
+        organization: setup.organization,
+        instanceProfileIds: [instance.profileId],
+      }),
+    ]);
+
+    await adminCaller.decision.submitProposal({ proposalId: proposal.id });
+    await adminCaller.decision.rejectProposal({
+      proposalId: proposal.id,
+      reason: RejectionReason.INELIGIBLE,
+    });
+    await adminCaller.decision.unrejectProposal({ proposalId: proposal.id });
+
+    // Back to SUBMITTED, so a non-admin sees it in the list again.
+    const memberCaller = await createAuthenticatedCaller(memberUser.email);
+    const result = await memberCaller.decision.listProposals({
+      processInstanceId: instance.instance.id,
+    });
+
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0]?.id).toBe(proposal.id);
+    expect(result.items[0]?.status).toBe(ProposalStatus.SUBMITTED);
   });
 
   it('should show hidden proposals to their owners', async ({
@@ -354,9 +605,9 @@ describe.concurrent('listProposals', () => {
       processInstanceId: instance.instance.id,
     });
 
-    expect(result.proposals).toHaveLength(1);
-    expect(result.proposals[0]?.id).toBe(proposal.id);
-    expect(result.proposals[0]?.visibility).toBe(Visibility.HIDDEN);
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0]?.id).toBe(proposal.id);
+    expect(result.items[0]?.visibility).toBe(Visibility.HIDDEN);
   });
 
   it('should show hidden proposals to invited collaborators on the proposal profile', async ({
@@ -431,9 +682,9 @@ describe.concurrent('listProposals', () => {
       processInstanceId: instance.instance.id,
     });
 
-    expect(result.proposals).toHaveLength(1);
-    expect(result.proposals[0]?.id).toBe(proposal.id);
-    expect(result.proposals[0]?.visibility).toBe(Visibility.HIDDEN);
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0]?.id).toBe(proposal.id);
+    expect(result.items[0]?.visibility).toBe(Visibility.HIDDEN);
   });
 
   it('should support cursor pagination with limit and next', async ({
@@ -475,9 +726,8 @@ describe.concurrent('listProposals', () => {
       limit: 2,
     });
 
-    expect(page1.proposals).toHaveLength(2);
+    expect(page1.items).toHaveLength(2);
     expect(page1.total).toBe(3);
-    expect(page1.hasMore).toBe(true);
     expect(page1.next).not.toBeNull();
 
     // Second page, following the cursor
@@ -487,14 +737,13 @@ describe.concurrent('listProposals', () => {
       cursor: page1.next,
     });
 
-    expect(page2.proposals).toHaveLength(1);
+    expect(page2.items).toHaveLength(1);
     expect(page2.total).toBe(3);
-    expect(page2.hasMore).toBe(false);
     expect(page2.next).toBeNull();
 
     // Pages must not overlap.
-    const page1Ids = page1.proposals.map((p) => p.id);
-    expect(page1Ids).not.toContain(page2.proposals[0]?.id);
+    const page1Ids = page1.items.map((p) => p.id);
+    expect(page1Ids).not.toContain(page2.items[0]?.id);
   });
 
   it('should return parsed proposalData with correct structure for new and legacy proposals', async ({
@@ -536,12 +785,10 @@ describe.concurrent('listProposals', () => {
       processInstanceId: instance.instance.id,
     });
 
-    expect(result.proposals).toHaveLength(2);
+    expect(result.items).toHaveLength(2);
 
-    const newFormat = result.proposals.find(
-      (p) => p.id === newFormatProposal.id,
-    );
-    const legacy = result.proposals.find((p) => p.id === legacyProposal.id);
+    const newFormat = result.items.find((p) => p.id === newFormatProposal.id);
+    const legacy = result.items.find((p) => p.id === legacyProposal.id);
 
     // New format proposal should have title and API-generated collaborationDocId
     expect(newFormat?.proposalData).toMatchObject({
@@ -575,9 +822,9 @@ describe.concurrent('listProposals', () => {
       processInstanceId: instance.instance.id,
     });
 
-    expect(result.proposals).toHaveLength(0);
+    expect(result.items).toHaveLength(0);
     expect(result.total).toBe(0);
-    expect(result.hasMore).toBe(false);
+    expect(result.next).toBeNull();
   });
 
   it('should throw error when user does not have access to instance', async ({
@@ -660,7 +907,7 @@ describe.concurrent('listProposals', () => {
       processInstanceId: instance.instance.id,
     });
 
-    const foundProposal = result.proposals.find((p) => p.id === proposal.id);
+    const foundProposal = result.items.find((p) => p.id === proposal.id);
     expect(foundProposal?.previewText).toBe('This is rich content');
     // List rows ship the precomputed preview instead of the full content.
     expect(foundProposal?.documentContent).toBeUndefined();
@@ -711,7 +958,7 @@ describe.concurrent('listProposals', () => {
       processInstanceId: instance.instance.id,
     });
 
-    const foundProposal = result.proposals.find((p) => p.id === proposal.id);
+    const foundProposal = result.items.find((p) => p.id === proposal.id);
     expect(foundProposal?.previewText).toBe('Hello from TipTap');
     expect(foundProposal?.documentContent).toBeUndefined();
   });
@@ -748,7 +995,7 @@ describe.concurrent('listProposals', () => {
       processInstanceId: instance.instance.id,
     });
 
-    const foundProposal = result.proposals.find((p) => p.id === proposal.id);
+    const foundProposal = result.items.find((p) => p.id === proposal.id);
     expect(foundProposal).toBeDefined();
     expect(foundProposal?.previewText).toBeUndefined();
   });
@@ -809,8 +1056,8 @@ describe.concurrent('listProposals', () => {
       processInstanceId: instance.instance.id,
     });
 
-    const found1 = result.proposals.find((p) => p.id === proposal1.id);
-    const found2 = result.proposals.find((p) => p.id === proposal2.id);
+    const found1 = result.items.find((p) => p.id === proposal1.id);
+    const found2 = result.items.find((p) => p.id === proposal2.id);
 
     expect(found1?.previewText).toBe('Doc 1');
     expect(found2?.previewText).toBe('Doc 2');
@@ -871,13 +1118,9 @@ describe.concurrent('listProposals', () => {
       processInstanceId: instance.instance.id,
     });
 
-    const foundCollab = result.proposals.find(
-      (p) => p.id === collabProposal.id,
-    );
-    const foundLegacy = result.proposals.find(
-      (p) => p.id === legacyProposal.id,
-    );
-    const foundEmpty = result.proposals.find((p) => p.id === emptyProposal.id);
+    const foundCollab = result.items.find((p) => p.id === collabProposal.id);
+    const foundLegacy = result.items.find((p) => p.id === legacyProposal.id);
+    const foundEmpty = result.items.find((p) => p.id === emptyProposal.id);
 
     expect(foundCollab?.previewText).toBe('TipTap');
     expect(foundLegacy?.previewText).toBe('HTML');
@@ -984,10 +1227,10 @@ describe.concurrent('listProposals', () => {
       processInstanceId: instance.instance.id,
     });
 
-    expect(result.proposals).toHaveLength(2);
+    expect(result.items).toHaveLength(2);
 
-    const foundA = result.proposals.find((p) => p.id === proposalA.id);
-    const foundB = result.proposals.find((p) => p.id === proposalB.id);
+    const foundA = result.items.find((p) => p.id === proposalA.id);
+    const foundB = result.items.find((p) => p.id === proposalB.id);
 
     // Plain number → { amount, currency: 'USD' }
     expect(foundA?.proposalData).toMatchObject({
@@ -1067,14 +1310,10 @@ describe.concurrent('listProposals', () => {
       processInstanceId: instance.instance.id,
     });
 
-    expect(result.proposals).toHaveLength(2);
+    expect(result.items).toHaveLength(2);
 
-    const foundNew = result.proposals.find(
-      (p) => p.id === newSchemaProposal.id,
-    );
-    const foundLegacy = result.proposals.find(
-      (p) => p.id === legacyProposal.id,
-    );
+    const foundNew = result.items.find((p) => p.id === newSchemaProposal.id);
+    const foundLegacy = result.items.find((p) => p.id === legacyProposal.id);
 
     // New-schema: collaborationDocId present, TipTap content
     expect(foundNew?.proposalData).toMatchObject({
@@ -1147,7 +1386,7 @@ describe.concurrent('listProposals', () => {
       processInstanceId: instance.instance.id,
     });
 
-    const foundByCreator = creatorResult.proposals.find(
+    const foundByCreator = creatorResult.items.find(
       (p) => p.id === draftProposal.id,
     );
     expect(foundByCreator).toBeDefined();
@@ -1161,7 +1400,7 @@ describe.concurrent('listProposals', () => {
       processInstanceId: instance.instance.id,
     });
 
-    const foundByCollaborator = collaboratorResult.proposals.find(
+    const foundByCollaborator = collaboratorResult.items.find(
       (p) => p.id === draftProposal.id,
     );
     expect(foundByCollaborator).toBeDefined();
@@ -1201,7 +1440,7 @@ describe.concurrent('listProposals', () => {
     });
 
     // Admin should see zero draft proposals (they have no proposal-level access)
-    const drafts = result.proposals.filter(
+    const drafts = result.items.filter(
       (p) => p.status === ProposalStatus.DRAFT,
     );
     expect(drafts).toHaveLength(0);
@@ -1245,7 +1484,7 @@ describe.concurrent('listProposals', () => {
       processInstanceId: instance.instance.id,
     });
 
-    expect(result.proposals).toHaveLength(0);
+    expect(result.items).toHaveLength(0);
   });
 
   it('should show submitted proposals to all users with instance-level access', async ({
@@ -1292,9 +1531,9 @@ describe.concurrent('listProposals', () => {
       processInstanceId: instance.instance.id,
     });
 
-    expect(result.proposals).toHaveLength(1);
-    expect(result.proposals[0]?.id).toBe(proposal.id);
-    expect(result.proposals[0]?.status).toBe(ProposalStatus.SUBMITTED);
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0]?.id).toBe(proposal.id);
+    expect(result.items[0]?.status).toBe(ProposalStatus.SUBMITTED);
   });
 
   it('should show submitted proposals to admins', async ({
@@ -1334,9 +1573,9 @@ describe.concurrent('listProposals', () => {
       processInstanceId: instance.instance.id,
     });
 
-    expect(result.proposals).toHaveLength(1);
-    expect(result.proposals[0]?.id).toBe(proposal.id);
-    expect(result.proposals[0]?.status).toBe(ProposalStatus.SUBMITTED);
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0]?.id).toBe(proposal.id);
+    expect(result.items[0]?.status).toBe(ProposalStatus.SUBMITTED);
   });
 
   it('should show draft proposals to collaborators with proposal-level access', async ({
@@ -1386,7 +1625,7 @@ describe.concurrent('listProposals', () => {
       processInstanceId: instance.instance.id,
     });
 
-    const found = result.proposals.find((p) => p.id === draftProposal.id);
+    const found = result.items.find((p) => p.id === draftProposal.id);
     expect(found).toBeDefined();
     expect(found?.status).toBe(ProposalStatus.DRAFT);
   });
@@ -1449,11 +1688,11 @@ describe.concurrent('listProposals', () => {
       processInstanceId: instance.instance.id,
     });
 
-    const resultAIds = resultA.proposals.map((p) => p.id);
+    const resultAIds = resultA.items.map((p) => p.id);
     expect(resultAIds).toContain(draftA.id);
     expect(resultAIds).toContain(submittedA.id);
     expect(resultAIds).not.toContain(draftB.id);
-    expect(resultA.proposals).toHaveLength(2);
+    expect(resultA.items).toHaveLength(2);
 
     // Member B should see: their own draft + Member A's submitted proposal
     // Member B should NOT see: Member A's draft
@@ -1462,11 +1701,11 @@ describe.concurrent('listProposals', () => {
       processInstanceId: instance.instance.id,
     });
 
-    const resultBIds = resultB.proposals.map((p) => p.id);
+    const resultBIds = resultB.items.map((p) => p.id);
     expect(resultBIds).toContain(draftB.id);
     expect(resultBIds).toContain(submittedA.id);
     expect(resultBIds).not.toContain(draftA.id);
-    expect(resultB.proposals).toHaveLength(2);
+    expect(resultB.items).toHaveLength(2);
   });
 
   it('should serve versioned system field fragments for submitted proposals', async ({
@@ -1571,7 +1810,7 @@ describe.concurrent('listProposals', () => {
       processInstanceId: instance.instance.id,
     });
 
-    const listedProposal = result.proposals.find((p) => p.id === proposal.id);
+    const listedProposal = result.items.find((p) => p.id === proposal.id);
     expect(listedProposal).toBeDefined();
 
     // The pinned version's fragments drive both the preview and the resolved
@@ -1619,7 +1858,7 @@ describe.concurrent('listProposals: phase-scoped proposal visibility', () => {
       processInstanceId: instanceId,
     });
 
-    expect(result.proposals).toHaveLength(2);
+    expect(result.items).toHaveLength(2);
     expect(result.total).toBe(2);
   });
 
@@ -1656,7 +1895,7 @@ describe.concurrent('listProposals: phase-scoped proposal visibility', () => {
       processInstanceId: instanceId,
     });
 
-    expect(result.proposals).toHaveLength(3);
+    expect(result.items).toHaveLength(3);
     expect(result.total).toBe(3);
   });
 
@@ -1706,8 +1945,8 @@ describe.concurrent('listProposals: phase-scoped proposal visibility', () => {
     });
 
     // Only the non-deleted proposal should appear
-    expect(result.proposals).toHaveLength(1);
-    expect(result.proposals[0]?.id).toBe(p1.id);
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0]?.id).toBe(p1.id);
   });
 
   it('excludes proposals soft-deleted after transition from the phase-scoped list', async ({
@@ -1757,8 +1996,8 @@ describe.concurrent('listProposals: phase-scoped proposal visibility', () => {
     });
 
     // Soft-deleted proposal must be excluded even though it's in the join table
-    expect(result.proposals).toHaveLength(1);
-    expect(result.proposals[0]?.id).toBe(p1.id);
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0]?.id).toBe(p1.id);
   });
 
   it('shows the creator their draft when viewing the phase it was created in', async ({
@@ -1785,7 +2024,7 @@ describe.concurrent('listProposals: phase-scoped proposal visibility', () => {
       processInstanceId: instanceId,
       phaseId: 'submission',
     });
-    expect(phase1Result.proposals.map((p) => p.id)).toContain(phase1Draft.id);
+    expect(phase1Result.items.map((p) => p.id)).toContain(phase1Draft.id);
 
     await testData.advancePhase({
       instanceId,
@@ -1804,9 +2043,7 @@ describe.concurrent('listProposals: phase-scoped proposal visibility', () => {
     const currentPhaseResult = await caller.decision.listProposals({
       processInstanceId: instanceId,
     });
-    expect(currentPhaseResult.proposals.map((p) => p.id)).toContain(
-      phase2Draft.id,
-    );
+    expect(currentPhaseResult.items.map((p) => p.id)).toContain(phase2Draft.id);
   });
 
   it('hides a phase-1 draft from the creator after the instance advances to phase 2', async ({
@@ -1840,21 +2077,21 @@ describe.concurrent('listProposals: phase-scoped proposal visibility', () => {
     const reviewResult = await caller.decision.listProposals({
       processInstanceId: instanceId,
     });
-    expect(reviewResult.proposals.map((p) => p.id)).not.toContain(draft.id);
+    expect(reviewResult.items.map((p) => p.id)).not.toContain(draft.id);
 
     // Explicit phaseId='review' should likewise hide it.
     const reviewExplicit = await caller.decision.listProposals({
       processInstanceId: instanceId,
       phaseId: 'review',
     });
-    expect(reviewExplicit.proposals.map((p) => p.id)).not.toContain(draft.id);
+    expect(reviewExplicit.items.map((p) => p.id)).not.toContain(draft.id);
 
     // Querying back at the creation phase should re-surface the draft.
     const submissionResult = await caller.decision.listProposals({
       processInstanceId: instanceId,
       phaseId: 'submission',
     });
-    expect(submissionResult.proposals.map((p) => p.id)).toContain(draft.id);
+    expect(submissionResult.items.map((p) => p.id)).toContain(draft.id);
   });
 
   it('shows all drafts for legacy instances regardless of phaseId', async ({
@@ -1895,7 +2132,7 @@ describe.concurrent('listProposals: phase-scoped proposal visibility', () => {
       processInstanceId: instanceId,
       phaseId: 'review',
     });
-    expect(result.proposals.map((p) => p.id)).toContain(draft.id);
+    expect(result.items.map((p) => p.id)).toContain(draft.id);
   });
 
   it('does not leak another user’s phase-scoped draft to a member who lacks proposal-level access', async ({
@@ -1936,7 +2173,7 @@ describe.concurrent('listProposals: phase-scoped proposal visibility', () => {
 
     // Phase scoping must not bypass the ownership pushdown: another instance
     // member without proposal-level access must not see the creator's draft.
-    expect(result.proposals.map((p) => p.id)).not.toContain(draft.id);
+    expect(result.items.map((p) => p.id)).not.toContain(draft.id);
   });
 
   it('shows a phase-scoped draft to an invited collaborator viewing the creation phase', async ({
@@ -1991,7 +2228,7 @@ describe.concurrent('listProposals: phase-scoped proposal visibility', () => {
       phaseId: 'submission',
     });
 
-    expect(result.proposals.map((p) => p.id)).toContain(draft.id);
+    expect(result.items.map((p) => p.id)).toContain(draft.id);
   });
 
   it('places a draft created exactly at the inbound transition timestamp into the new phase (half-open window)', async ({
@@ -2042,13 +2279,13 @@ describe.concurrent('listProposals: phase-scoped proposal visibility', () => {
       processInstanceId: instanceId,
       phaseId: 'submission',
     });
-    expect(submissionResult.proposals.map((p) => p.id)).not.toContain(draft.id);
+    expect(submissionResult.items.map((p) => p.id)).not.toContain(draft.id);
 
     const reviewResult = await caller.decision.listProposals({
       processInstanceId: instanceId,
       phaseId: 'review',
     });
-    expect(reviewResult.proposals.map((p) => p.id)).toContain(draft.id);
+    expect(reviewResult.items.map((p) => p.id)).toContain(draft.id);
   });
 
   it('hides a draft created mid-phase from views of earlier and later phases (strict bounded window)', async ({
@@ -2084,7 +2321,7 @@ describe.concurrent('listProposals: phase-scoped proposal visibility', () => {
       processInstanceId: instanceId,
       phaseId: 'review',
     });
-    expect(reviewWhileCurrent.proposals.map((p) => p.id)).toContain(draft.id);
+    expect(reviewWhileCurrent.items.map((p) => p.id)).toContain(draft.id);
 
     // Advance past review so it now has both inbound and outbound transitions —
     // the draft sits strictly inside review's bounded window.
@@ -2098,19 +2335,19 @@ describe.concurrent('listProposals: phase-scoped proposal visibility', () => {
       processInstanceId: instanceId,
       phaseId: 'submission',
     });
-    expect(submissionResult.proposals.map((p) => p.id)).not.toContain(draft.id);
+    expect(submissionResult.items.map((p) => p.id)).not.toContain(draft.id);
 
     const finalResult = await caller.decision.listProposals({
       processInstanceId: instanceId,
       phaseId: 'final',
     });
-    expect(finalResult.proposals.map((p) => p.id)).not.toContain(draft.id);
+    expect(finalResult.items.map((p) => p.id)).not.toContain(draft.id);
 
     const reviewResult = await caller.decision.listProposals({
       processInstanceId: instanceId,
       phaseId: 'review',
     });
-    expect(reviewResult.proposals.map((p) => p.id)).toContain(draft.id);
+    expect(reviewResult.items.map((p) => p.id)).toContain(draft.id);
   });
 
   it('hides a HIDDEN proposal from a non-admin viewing a later phase (visibility + phaseId)', async ({
@@ -2176,7 +2413,7 @@ describe.concurrent('listProposals: phase-scoped proposal visibility', () => {
       phaseId: 'review',
     });
 
-    const ids = result.proposals.map((p) => p.id);
+    const ids = result.items.map((p) => p.id);
     expect(ids).toContain(visibleProposal.id);
     expect(ids).not.toContain(hiddenProposal.id);
   });
@@ -2230,8 +2467,8 @@ describe.concurrent('listProposals: phase-scoped proposal visibility', () => {
       dir: 'asc',
     });
 
-    const descIds = desc.proposals.map((p) => p.id);
-    const ascIds = asc.proposals.map((p) => p.id);
+    const descIds = desc.items.map((p) => p.id);
+    const ascIds = asc.items.map((p) => p.id);
 
     expect([...descIds].sort()).toEqual([p1.id, p2.id, p3.id].sort());
     expect(ascIds).toEqual([...descIds].reverse());
@@ -2411,7 +2648,7 @@ describe.concurrent('listProposals: excludeAssignedForReview', () => {
       processInstanceId: instanceId,
     });
     expect(withAssigned.total).toBe(3);
-    expect(withAssigned.proposals.map((p) => p.id)).toContain(p1.id);
+    expect(withAssigned.items.map((p) => p.id)).toContain(p1.id);
 
     // Flag on: the assigned proposal is gone and total drops to match.
     const withoutAssigned = await caller.decision.listProposals({
@@ -2419,7 +2656,7 @@ describe.concurrent('listProposals: excludeAssignedForReview', () => {
       excludeAssignedForReview: true,
     });
     expect(withoutAssigned.total).toBe(2);
-    expect(withoutAssigned.proposals.map((p) => p.id)).not.toContain(p1.id);
+    expect(withoutAssigned.items.map((p) => p.id)).not.toContain(p1.id);
   });
 
   it('keeps total and keyset pagination consistent with the exclusion', async ({
@@ -2447,7 +2684,6 @@ describe.concurrent('listProposals: excludeAssignedForReview', () => {
       limit: 1,
     });
     expect(page1.total).toBe(2);
-    expect(page1.hasMore).toBe(true);
     expect(page1.next).not.toBeNull();
 
     const page2 = await caller.decision.listProposals({
@@ -2457,10 +2693,10 @@ describe.concurrent('listProposals: excludeAssignedForReview', () => {
       cursor: page1.next,
     });
     expect(page2.total).toBe(2);
-    expect(page2.hasMore).toBe(false);
+    expect(page2.next).toBeNull();
 
     // The assigned proposal never surfaces on any page; the other two do.
-    const seenIds = [...page1.proposals, ...page2.proposals].map((p) => p.id);
+    const seenIds = [...page1.items, ...page2.items].map((p) => p.id);
     expect(seenIds).not.toContain(p1.id);
     expect(seenIds).toEqual(expect.arrayContaining([p2.id, p3.id]));
   });
@@ -2495,7 +2731,7 @@ describe.concurrent('listProposals: excludeAssignedForReview', () => {
       excludeAssignedForReview: true,
     });
     expect(result.total).toBe(3);
-    expect(result.proposals.map((p) => p.id)).toContain(p1.id);
+    expect(result.items.map((p) => p.id)).toContain(p1.id);
   });
 
   it('does not exclude assignments from a different phase', async ({
@@ -2524,7 +2760,7 @@ describe.concurrent('listProposals: excludeAssignedForReview', () => {
 
     // The past-phase assignment must not hide the proposal in the current one.
     expect(result.total).toBe(3);
-    expect(result.proposals.map((p) => p.id)).toContain(p1.id);
+    expect(result.items.map((p) => p.id)).toContain(p1.id);
   });
 
   it('composes with sort direction, excluding the assigned proposal', async ({
@@ -2560,10 +2796,229 @@ describe.concurrent('listProposals: excludeAssignedForReview', () => {
 
     // The excluded list is exactly the baseline order minus the assigned p1 —
     // sort composes with the exclusion, order is otherwise preserved.
-    const expectedIds = baseline.proposals
+    const expectedIds = baseline.items
       .map((p) => p.id)
       .filter((id) => id !== p1.id);
-    expect(excluded.proposals.map((p) => p.id)).toEqual(expectedIds);
+    expect(excluded.items.map((p) => p.id)).toEqual(expectedIds);
     expect(expectedIds).toEqual(expect.arrayContaining([p2.id, p3.id]));
+  });
+});
+
+describe.concurrent('listProposals: search', () => {
+  /** Two proposals with distinct titles, on their own instance. */
+  async function setupTitledProposals(
+    testData: TestDecisionsDataManager,
+    titles: [string, string],
+  ) {
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instanceId = setup.instance.instance.id;
+
+    const [first, second, caller] = await Promise.all([
+      testData.createProposal({
+        userEmail: setup.userEmail,
+        processInstanceId: instanceId,
+        proposalData: { title: titles[0] },
+        status: ProposalStatus.SUBMITTED,
+      }),
+      testData.createProposal({
+        userEmail: setup.userEmail,
+        processInstanceId: instanceId,
+        proposalData: { title: titles[1] },
+        status: ProposalStatus.SUBMITTED,
+      }),
+      createAuthenticatedCaller(setup.userEmail),
+    ]);
+
+    return { setup, instanceId, caller, first, second };
+  }
+
+  it('matches titles case-insensitively and reflects the filter in total', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { instanceId, caller, first, second } = await setupTitledProposals(
+      testData,
+      ['Bike Lanes on Fifth', 'Community Garden'],
+    );
+
+    const result = await caller.decision.listProposals({
+      processInstanceId: instanceId,
+      search: 'bIkE',
+    });
+
+    expect(result.items.map((p) => p.id)).toEqual([first.id]);
+    // `total` counts the filtered set, not the whole pool.
+    expect(result.total).toBe(1);
+    expect(result.items.map((p) => p.id)).not.toContain(second.id);
+  });
+
+  it('matches words in any order, and requires all of them', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { instanceId, caller, first } = await setupTitledProposals(testData, [
+      'Riverside Bike Path',
+      'Downtown Mural',
+    ]);
+
+    // Reversed word order still finds it — a single substring match would not,
+    // since "path riverside" never appears in the title.
+    const reversed = await caller.decision.listProposals({
+      processInstanceId: instanceId,
+      search: 'path riverside',
+    });
+    expect(reversed.items.map((p) => p.id)).toEqual([first.id]);
+
+    // Words are ANDed, so a term drawn from two different titles matches neither.
+    const mixed = await caller.decision.listProposals({
+      processInstanceId: instanceId,
+      search: 'bike mural',
+    });
+    expect(mixed.items).toHaveLength(0);
+    expect(mixed.total).toBe(0);
+  });
+
+  it('treats LIKE wildcards in the query as literal characters', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { instanceId, caller } = await setupTitledProposals(testData, [
+      'Alpha Project',
+      'Beta Project',
+    ]);
+
+    // Unescaped, `%` and `_` are both wildcards that match every title.
+    for (const search of ['%', '_', 'Alpha%Project']) {
+      const result = await caller.decision.listProposals({
+        processInstanceId: instanceId,
+        search,
+      });
+      expect(result.items).toHaveLength(0);
+      expect(result.total).toBe(0);
+    }
+  });
+
+  it('finds a proposal by its current title after a rename', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instanceId = setup.instance.instance.id;
+
+    const [proposal, caller] = await Promise.all([
+      testData.createProposal({
+        userEmail: setup.userEmail,
+        processInstanceId: instanceId,
+        proposalData: { title: 'Placeholder Draft' },
+      }),
+      createAuthenticatedCaller(setup.userEmail),
+    ]);
+
+    // Autosave sends `title` alongside `proposalData` but never rewrites
+    // `proposalData.title`, so the row's JSON keeps the creation-time value.
+    await caller.decision.updateProposal({
+      proposalId: proposal.id,
+      data: { title: 'Bicycle Parking Expansion' },
+    });
+
+    const byNewTitle = await caller.decision.listProposals({
+      processInstanceId: instanceId,
+      search: 'Bicycle Parking',
+    });
+    expect(byNewTitle.items.map((p) => p.id)).toEqual([proposal.id]);
+
+    const byStaleTitle = await caller.decision.listProposals({
+      processInstanceId: instanceId,
+      search: 'Placeholder',
+    });
+    expect(byStaleTitle.items).toHaveLength(0);
+  });
+
+  it('ignores an empty or whitespace-only query', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { instanceId, caller } = await setupTitledProposals(testData, [
+      'Alpha Project',
+      'Beta Project',
+    ]);
+
+    for (const search of ['', '   ']) {
+      const result = await caller.decision.listProposals({
+        processInstanceId: instanceId,
+        search,
+      });
+      expect(result.total).toBe(2);
+    }
+  });
+
+  it('drops words past the cap, widening the match rather than rejecting', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    // Exactly the 10 words the cap allows.
+    const tenWords = 'one two three four five six seven eight nine ten';
+    const { instanceId, caller, first } = await setupTitledProposals(testData, [
+      tenWords,
+      'Downtown Mural',
+    ]);
+
+    // The 11th word matches nothing but is dropped before it becomes a
+    // predicate, so the proposal still comes back.
+    const overCap = await caller.decision.listProposals({
+      processInstanceId: instanceId,
+      search: `${tenWords} zzzznomatch`,
+    });
+    expect(overCap.items.map((p) => p.id)).toEqual([first.id]);
+
+    // Inside the cap the same word does filter — so it was the cap, not the
+    // word being ignored generally.
+    const underCap = await caller.decision.listProposals({
+      processInstanceId: instanceId,
+      search: 'one zzzznomatch',
+    });
+    expect(underCap.items).toHaveLength(0);
+  });
+
+  it('truncates an over-long query instead of rejecting it', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { instanceId, caller, first } = await setupTitledProposals(testData, [
+      'Bike Lanes on Fifth',
+      'Community Garden',
+    ]);
+
+    // The non-matching word sits entirely past the cap: truncation drops it
+    // and the title still matches, rejection would throw.
+    const overCap =
+      `Bike`.padEnd(PROPOSAL_SEARCH_MAX_LENGTH, ' ') + 'zzzznomatch';
+    expect(overCap.length).toBeGreaterThan(PROPOSAL_SEARCH_MAX_LENGTH);
+
+    const result = await caller.decision.listProposals({
+      processInstanceId: instanceId,
+      search: overCap,
+    });
+    expect(result.items.map((p) => p.id)).toEqual([first.id]);
+
+    // Inside the cap the same word does filter — so it was the truncation.
+    const withinCap = await caller.decision.listProposals({
+      processInstanceId: instanceId,
+      search: 'Bike zzzznomatch',
+    });
+    expect(withinCap.items).toHaveLength(0);
   });
 });

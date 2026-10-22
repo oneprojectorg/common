@@ -1,6 +1,6 @@
 import { db } from '@op/db/client';
-import { createSBServiceClient } from '@op/supabase/server';
 
+import { signStorageDownloadUrlOrNull } from '../../utils/signStorageDownloadUrl';
 import {
   type ProposalAttachment,
   proposalAttachmentSchema,
@@ -27,7 +27,6 @@ export async function getProposalAttachmentsWithSignedUrls(
     return [];
   }
 
-  const supabase = createSBServiceClient();
   const attachmentsWithUrls = await Promise.all(
     proposalAttachmentJoins.map(async (join) => {
       const storagePath = join.attachment.storageObject?.name;
@@ -35,13 +34,12 @@ export async function getProposalAttachmentsWithSignedUrls(
         return { ...join, attachment: { ...join.attachment, url: undefined } };
       }
       // 4-hour TTL — the review pane re-fetches on each open
-      const { data } = await supabase.storage
-        .from('assets')
-        .createSignedUrl(storagePath, 60 * 60 * 4);
-      return {
-        ...join,
-        attachment: { ...join.attachment, url: data?.signedUrl },
-      };
+      const url =
+        (await signStorageDownloadUrlOrNull({
+          storagePath,
+          ttlSeconds: 60 * 60 * 4,
+        })) ?? undefined;
+      return { ...join, attachment: { ...join.attachment, url } };
     }),
   );
 

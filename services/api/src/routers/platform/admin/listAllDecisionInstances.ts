@@ -3,7 +3,11 @@ import {
   encodeCursor,
   getGenericCursorCondition,
 } from '@op/common';
-import { adminDecisionInstanceSchema } from '@op/common/client';
+import {
+  adminDecisionInstanceSchema,
+  paginated,
+  total,
+} from '@op/common/client';
 import {
   and,
   count,
@@ -91,13 +95,7 @@ export const listAllDecisionInstancesRouter = router({
         })
         .optional(),
     )
-    .output(
-      z.object({
-        items: z.array(adminDecisionInstanceSchema),
-        next: z.string().nullish(),
-        total: z.number(),
-      }),
-    )
+    .output(paginated(adminDecisionInstanceSchema).extend({ total }))
     .query(async ({ input }) => {
       const { cursor, dir = 'desc', query, limit } = input ?? {};
       const decodedCursor = cursor ? decodeCursor(cursor) : undefined;
@@ -199,7 +197,6 @@ export const listAllDecisionInstancesRouter = router({
             totalProposalCount: stats?.totalProposalCount ?? 0,
             participantCount: stats?.participantCount ?? 0,
             createdAt: instance.createdAt,
-            instanceData: instance.instanceData,
           });
         }),
         next: nextCursor,

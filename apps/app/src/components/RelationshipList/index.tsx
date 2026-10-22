@@ -106,11 +106,11 @@ const RelationshipListContent = ({
                       {profile.relationships.map((relationship, i, arr) => (
                         <React.Fragment key={relationship.relationshipType}>
                           {relationshipMap[relationship.relationshipType]
-                            ?.label ?? t('Relationship')}
+                            ?.label ?? t('profile.relationshipColumnLabel')}
                           {relationship.pending && (
                             <TagGroup className="ms-1 inline-flex">
                               <Tag className="rounded-md px-1 py-0.5 text-xs">
-                                {t('Pending')}
+                                {t('profile.relationshipPendingBadge')}
                               </Tag>
                             </TagGroup>
                           )}

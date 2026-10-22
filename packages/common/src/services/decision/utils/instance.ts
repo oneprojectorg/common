@@ -24,6 +24,23 @@ export function assertInstancePhase<Phase extends { phaseId: string }>({
 }
 
 /**
+ * The instance's current phase, or null when it has none configured. Never
+ * throws: visibility callers must fail closed rather than break the page.
+ */
+export function getInstanceCurrentPhase<
+  Phase extends { phaseId: string },
+>(instance: {
+  currentStateId: string | null;
+  instanceData?: { phases?: readonly Phase[] } | null;
+}): Phase | null {
+  return (
+    instance.instanceData?.phases?.find((p) =>
+      isInstanceCurrentPhase(instance, p.phaseId),
+    ) ?? null
+  );
+}
+
+/**
  * True when `phaseId` is the instance's current phase. Structural so it accepts
  * both domain and API-encoder instance shapes.
  */

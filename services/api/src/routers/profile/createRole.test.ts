@@ -1,3 +1,4 @@
+import { TestProfileUserDataManager } from '@op/common/testing';
 import { db } from '@op/db/client';
 import { accessRoles } from '@op/db/schema';
 import { fromBitField } from 'access-zones';
@@ -5,7 +6,6 @@ import { eq } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 
 import profileRouter from '.';
-import { TestProfileUserDataManager } from '../../test/helpers/TestProfileUserDataManager';
 import {
   createIsolatedSession,
   createTestContextWithSession,

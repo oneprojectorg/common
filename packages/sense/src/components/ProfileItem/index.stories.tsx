@@ -38,6 +38,27 @@ export const TitleOnly: Story = {
   ),
 };
 
+/**
+ * The avatar is vertically centered against the whole text block — the
+ * design contract that matters in table cells, where the row grows with
+ * extra lines (here via `children`).
+ */
+export const CenterAlignment: Story = {
+  render: () => (
+    <div className="w-80">
+      <ProfileItem
+        avatar={avatar}
+        title="Frida Kahlo"
+        description="Painter · Coyoacán"
+      >
+        <span className="text-sm text-muted-foreground">
+          Invited 2 days ago
+        </span>
+      </ProfileItem>
+    </div>
+  ),
+};
+
 export const Small: Story = {
   render: () => (
     <div className="w-80">

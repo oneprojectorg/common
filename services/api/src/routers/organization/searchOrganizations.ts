@@ -1,5 +1,6 @@
 import { cache } from '@op/cache';
 import { NotFoundError, searchOrganizations } from '@op/common';
+import { PAGE_LIMIT, list } from '@op/common/client';
 import { db } from '@op/db/client';
 import { organizationUsers } from '@op/db/schema';
 import { eq } from 'drizzle-orm';
@@ -16,9 +17,9 @@ export const searchOrganizationsRouter = router({
         q: z.string(),
       }),
     )
-    .output(z.array(searchedOrganizationEncoder))
+    .output(list(searchedOrganizationEncoder))
     .query(async ({ ctx, input }) => {
-      const { q, limit = 10 } = input;
+      const { q, limit = PAGE_LIMIT.sm } = input;
 
       // Membership is fetched alongside the search (and kept outside the
       // search cache so it stays fresh when membership changes), letting the
@@ -50,7 +51,7 @@ export const searchOrganizationsRouter = router({
         membershipRows.map((row) => row.organizationId),
       );
 
-      return result.map((org) => {
+      const organizations = result.map((org) => {
         // TODO: Doing this to account for the difference in shape between on avatarImage
         // which here is rendered even if it is null (with all null values)
         // @ts-expect-error
@@ -63,5 +64,7 @@ export const searchOrganizationsRouter = router({
           isMember: memberOrgIds.has(org.id),
         });
       });
+
+      return { items: organizations };
     }),
 });

@@ -42,8 +42,10 @@ export const PrivacyPolicyForm = ({
       className={className}
     >
       <FormContainer className="max-w-lg">
-        <FormHeader text={t('Privacy Policy Overview')}></FormHeader>
-        <span>{t('Effective Date: March 15, 2025')}</span>
+        <FormHeader
+          text={t('onboarding.privacyPolicyOverviewTitle')}
+        ></FormHeader>
+        <span>{t('onboarding.policyEffectiveDate')}</span>
         <PrivacyPolicyContentShort />
 
         <FormHeader text={t('Privacy Policy')}></FormHeader>
@@ -53,7 +55,9 @@ export const PrivacyPolicyForm = ({
           <form.Button variant="secondary" onClick={onBack}>
             {t('Back')}
           </form.Button>
-          <form.SubmitButton>{t('Accept & Continue')}</form.SubmitButton>
+          <form.SubmitButton>
+            {t('onboarding.acceptAndContinueAction')}
+          </form.SubmitButton>
         </div>
       </FormContainer>
     </form>

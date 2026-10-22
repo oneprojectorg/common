@@ -157,6 +157,9 @@ export const proposalReviewRequests = pgTable(
 
     responseComment: text('response_comment'),
 
+    // Both pointers reference `history_id` alone, so the schema cannot stop a
+    // request from naming another proposal's snapshot. Every writer loads the
+    // assignment first and takes the snapshot from its `proposalId`.
     requestedProposalHistoryId: uuid('requested_proposal_history_id'),
 
     respondedProposalHistoryId: uuid('responded_proposal_history_id'),
@@ -225,6 +228,14 @@ export const proposalReviews = pgTable(
       mode: 'string',
     }),
 
+    /**
+     * The proposal version this review was last written against; staleness
+     * compares it with the proposal's current history row, not with the
+     * assignment pin (the version the reviewer was asked to review). References
+     * `history_id` alone: every writer takes the snapshot from the assignment.
+     */
+    reviewedProposalHistoryId: uuid('reviewed_proposal_history_id'),
+
     ...timestamps,
   },
   (table) => [
@@ -236,6 +247,13 @@ export const proposalReviews = pgTable(
     })
       .onUpdate('cascade')
       .onDelete('cascade'),
+    foreignKey({
+      name: 'proposal_reviews_reviewed_history_fkey',
+      columns: [table.reviewedProposalHistoryId],
+      foreignColumns: [proposalHistory.historyId],
+    })
+      .onUpdate('cascade')
+      .onDelete('set null'),
     unique('proposal_reviews_assignment_unique').on(table.assignmentId),
     index('proposal_reviews_process_state_idx').on(table.state),
   ],

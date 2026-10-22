@@ -1,44 +1,26 @@
-import { mockCollab } from '@op/collab/testing';
+import { mockCollab, textFragment } from '@op/collab/testing';
+import { parseProposalData } from '@op/common';
+import {
+  TestDecisionsDataManager,
+  TestTranslationDataManager,
+} from '@op/common/testing';
 import { db, eq } from '@op/db/client';
 import { contentTranslations, ProposalStatus, proposals } from '@op/db/schema';
 import { like } from 'drizzle-orm';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '..';
-import { TestDecisionsDataManager } from '../../test/helpers/TestDecisionsDataManager';
-import { TestTranslationDataManager } from '../../test/helpers/TestTranslationDataManager';
 import {
   accessTierGatingCell,
   describeAccessTierGating,
   expectPassesAccessTierGate,
 } from '../../test/helpers/gating';
+import { mockTranslateText } from '../../test/mocks/deepl';
 import {
   createIsolatedSession,
   createTestContextWithSession,
 } from '../../test/supabase-utils';
 import { createCallerFactory } from '../../trpcFactory';
-
-// Set a fake API key so the endpoint doesn't throw before reaching the mock
-process.env.DEEPL_API_KEY = 'test-fake-key';
-
-// Mock DeepL's translateText — prefixes each text with [ES] so we can
-// distinguish mock translations from seeded cache entries ([ES-CACHED]).
-const mockTranslateText = vi.fn((texts: string | string[]) => {
-  const arr = Array.isArray(texts) ? texts : [texts];
-  const results = arr.map((t) => ({
-    text: `[ES] ${t}`,
-    detectedSourceLang: 'en',
-  }));
-  // Mirror deepl-node: a single-string input returns a single result object.
-  return Array.isArray(texts) ? results : results[0];
-});
-
-// Mock deepl-node so we never hit the real API
-vi.mock('deepl-node', () => ({
-  DeepLClient: class {
-    translateText = mockTranslateText;
-  },
-}));
 
 const createCaller = createCallerFactory(appRouter);
 
@@ -104,10 +86,6 @@ describeAccessTierGating('translation.translateProposal', {
 });
 
 describe('translation.translateProposal', () => {
-  beforeEach(() => {
-    mockTranslateText.mockClear();
-  });
-
   it('should let a no-JWT visitor translate a proposal on a public decision', async ({
     task,
     onTestFinished,
@@ -271,6 +249,72 @@ describe('translation.translateProposal', () => {
       null,
       'ES',
       expect.objectContaining({ tagHandling: 'html' }),
+    );
+  });
+
+  it('should translate the title as plain text, not its HTML fragment', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+      proposalTemplate: {
+        type: 'object',
+        'x-field-order': ['title', 'summary'],
+        properties: {
+          title: { type: 'string', title: 'Title', 'x-format': 'short-text' },
+          summary: {
+            type: 'string',
+            title: 'Summary',
+            'x-format': 'long-text',
+          },
+        },
+      },
+    });
+
+    const proposal = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: setup.instance.instance.id,
+      // A stale saved title: the document fragment is what the reader sees.
+      proposalData: { title: 'Old Title' },
+    });
+
+    const { collaborationDocId } = parseProposalData(proposal.proposalData);
+    if (!collaborationDocId) {
+      throw new Error('Proposal has no collaboration document');
+    }
+    mockCollab.setDocFragmentResponses(collaborationDocId, {
+      title: textFragment('Community Garden'),
+      summary: textFragment('Fresh food for neighbours'),
+    });
+
+    const proposalId = proposal.id;
+    onTestFinished(async () => {
+      await db
+        .delete(contentTranslations)
+        .where(
+          like(contentTranslations.contentKey, `proposal:${proposalId}:%`),
+        );
+    });
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const result = await caller.translation.translateProposal({
+      profileId: proposal.profileId,
+      targetLocale: 'es',
+    });
+
+    expect(result.translated.title).toBe('[ES] Community Garden');
+    expect(result.translated.summary).toMatch(/^\[ES\] <p[^>]*>Fresh food/);
+    // The title fragment's HTML is never sent; the summary's is.
+    expect(mockTranslateText).not.toHaveBeenCalledWith(
+      expect.stringMatching(/<p[^>]*>Community Garden</),
+      null,
+      'ES',
+      expect.anything(),
     );
   });
 

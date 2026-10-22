@@ -1,23 +1,16 @@
-import { and, count, db, eq, isNull } from '@op/db/client';
+import { and, db, eq, isNull } from '@op/db/client';
 import type {
   ObjectsInStorage,
   ProcessInstance,
   Profile,
   Proposal,
 } from '@op/db/schema';
-import {
-  ProfileRelationshipType,
-  ProposalStatus,
-  Visibility,
-  posts,
-  postsToProfiles,
-  profileRelationships,
-} from '@op/db/schema';
+import { ProposalStatus, Visibility } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
-import { createSBServiceClient } from '@op/supabase/server';
 import { checkPermission, permission } from 'access-zones';
 
 import { NotFoundError } from '../../utils';
+import { signStorageDownloadUrlOrNull } from '../../utils/signStorageDownloadUrl';
 import { assertInstanceProfileAccess, getProfileAccessRoles } from '../access';
 import { hasActiveModerationFlag } from '../moderation/moderationVisibility';
 import { generateProposalHtml } from './generateProposalHtml';
@@ -25,14 +18,18 @@ import {
   type ProposalDocumentContent,
   getProposalDocumentsContent,
 } from './getProposalDocumentsContent';
+import { getProposalRelationshipData } from './getProposalRelationshipData';
 import {
   type DecisionRolePermissions,
   decisionPermission,
   fromDecisionBitField,
 } from './permissions';
+import { isAnonymousAuthor } from './proposalAuthor';
 import { type ProposalData, parseProposalData } from './proposalDataSchema';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
+import { getInstancePhases } from './schemas/instanceData';
 import { ProposalTemplateSchema } from './types';
+import { isPostSubmissionEditingAllowed } from './utils/phaseSettings';
 
 /** Attachment with signed URL for accessing the file */
 type AttachmentWithUrl = {
@@ -177,53 +174,7 @@ export const getProposal = async ({
 
   // Run engagement counts and document fetch in parallel
   const [engagementCounts, documentContentMap] = await Promise.all([
-    // Get engagement counts if proposal has a profile
-    proposal.profileId
-      ? Promise.all([
-          // Get comment count
-          db
-            .select({ count: count() })
-            .from(posts)
-            .innerJoin(postsToProfiles, eq(posts.id, postsToProfiles.postId))
-            .where(eq(postsToProfiles.profileId, proposal.profileId)),
-
-          // Get likes count
-          db
-            .select({ count: count() })
-            .from(profileRelationships)
-            .where(
-              and(
-                eq(profileRelationships.targetProfileId, proposal.profileId),
-                eq(
-                  profileRelationships.relationshipType,
-                  ProfileRelationshipType.LIKES,
-                ),
-              ),
-            ),
-
-          // Get followers count
-          db
-            .select({ count: count() })
-            .from(profileRelationships)
-            .where(
-              and(
-                eq(profileRelationships.targetProfileId, proposal.profileId),
-                eq(
-                  profileRelationships.relationshipType,
-                  ProfileRelationshipType.FOLLOWING,
-                ),
-              ),
-            ),
-        ]).then(([comments, likes, followers]) => ({
-          commentsCount: Number(comments[0]?.count || 0),
-          likesCount: Number(likes[0]?.count || 0),
-          followersCount: Number(followers[0]?.count || 0),
-        }))
-      : Promise.resolve({
-          commentsCount: 0,
-          likesCount: 0,
-          followersCount: 0,
-        }),
+    getProposalEngagementCounts(proposal.profileId),
 
     // Fetch document content. Mark a failed fetch as 'unavailable' rather
     // than throwing: the proposal (title, budget, attachments) still renders
@@ -247,8 +198,6 @@ export const getProposal = async ({
   let attachmentsWithUrls = proposal.attachments ?? [];
 
   if (attachmentsWithUrls.length > 0) {
-    const supabase = createSBServiceClient();
-
     attachmentsWithUrls = await Promise.all(
       attachmentsWithUrls.map(async (pa) => {
         const storagePath = pa.attachment?.storageObject?.name;
@@ -256,15 +205,15 @@ export const getProposal = async ({
           return pa;
         }
 
-        const { data } = await supabase.storage
-          .from('assets')
-          .createSignedUrl(storagePath, 60 * 60 * 24);
+        const url =
+          (await signStorageDownloadUrlOrNull({
+            storagePath,
+            ttlSeconds: 60 * 60 * 24,
+          })) ?? undefined;
 
         return {
           ...pa,
-          attachment: pa.attachment
-            ? { ...pa.attachment, url: data?.signedUrl }
-            : pa.attachment,
+          attachment: pa.attachment ? { ...pa.attachment, url } : pa.attachment,
         };
       }),
     );
@@ -288,9 +237,7 @@ export const getProposal = async ({
     ...proposal,
     submittedBy: {
       ...submittedByProfile,
-      isAnonymous: Boolean(
-        profileUsers?.some((pu) => pu.authUser?.isAnonymous),
-      ),
+      isAnonymous: isAnonymousAuthor(profileUsers),
     },
     proposalData: parsedProposalData,
     proposalTemplate,
@@ -302,13 +249,35 @@ export const getProposal = async ({
   };
 };
 
+/**
+ * The detail page's counts, through the same reader the cards use. Drops that
+ * reader's viewer state: this read has no viewer, and `false` would claim
+ * "not liked" where the honest answer is "not asked".
+ */
+async function getProposalEngagementCounts(profileId: string | null) {
+  if (!profileId) {
+    return { commentsCount: 0, likesCount: 0, followersCount: 0 };
+  }
+
+  const relationshipData = await getProposalRelationshipData({
+    profileIds: [profileId],
+  });
+  const counts = relationshipData.get(profileId);
+
+  return {
+    commentsCount: counts?.commentsCount ?? 0,
+    likesCount: counts?.likesCount ?? 0,
+    followersCount: counts?.followersCount ?? 0,
+  };
+}
+
 export const getPermissionsOnProposal = async ({
   user,
   proposal,
 }: {
   user: User | undefined;
   proposal: Proposal & { processInstance: ProcessInstance };
-}): Promise<{ access: DecisionRolePermissions }> => {
+}): Promise<{ access: DecisionRolePermissions; isEditable: boolean }> => {
   const roles = await getProfileAccessRoles({
     user,
     profileId: proposal.profileId,
@@ -354,5 +323,16 @@ export const getPermissionsOnProposal = async ({
     }
   }
 
-  return { access };
+  const instancePhases = getInstancePhases(
+    proposal.processInstance.instanceData,
+  );
+  const isEditable =
+    access.update &&
+    (proposal.status === ProposalStatus.DRAFT ||
+      isPostSubmissionEditingAllowed({
+        phases: instancePhases,
+        currentPhaseId: proposal.processInstance.currentStateId,
+      }));
+
+  return { access, isEditable };
 };

@@ -14,6 +14,7 @@ const customDataSchema = z.record(z.string(), z.unknown()).optional();
 
 const submitVoteInput = z.object({
   processInstanceId: z.uuid(),
+  /** Order is persisted as the rank on ranked phases. */
   selectedProposalIds: z.array(z.uuid()).min(1),
   schemaVersion: z.string().optional(),
   customData: customDataSchema,

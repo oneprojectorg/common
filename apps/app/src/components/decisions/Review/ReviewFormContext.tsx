@@ -1,6 +1,7 @@
 'use client';
 
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
+import { getDecisionCommonProperties } from '@op/analytics/client-utils';
 import { trpc } from '@op/api/client';
 import {
   type ProposalReview,
@@ -8,6 +9,7 @@ import {
   type ProposalReviewRequest,
   ProposalReviewRequestState,
   ProposalReviewState,
+  type ReviewSettings,
   type RubricReviewData,
   type RubricTemplateSchema,
   schemaValidator,
@@ -15,6 +17,7 @@ import {
 import { useDebouncedCallback } from '@op/hooks';
 import { toast } from '@op/sense/Toast';
 import { notFound } from 'next/navigation';
+import { usePostHog } from 'posthog-js/react';
 import {
   type ReactNode,
   createContext,
@@ -28,9 +31,13 @@ import {
 
 import { useRouter, useTranslations } from '@/lib/i18n';
 
+import { withYesNoDefaults } from '../rubricTemplate';
+
 const AUTOSAVE_DEBOUNCE_MS = 1000;
 
 interface ReviewFormState {
+  /** Resolved review settings for the assignment's phase. */
+  reviewSettings: ReviewSettings;
   /** Rubric answers keyed by criterion id; validated against the rubricTemplate. */
   values: RubricReviewData['answers'];
   /** Optional free-text rationale per criterion id (always optional). */
@@ -47,9 +54,12 @@ interface ReviewFormState {
   isUpdating: boolean;
   /** Update button is enabled — editing an already-submitted review with a valid rubric. */
   canUpdate: boolean;
-  isPausedForRevision: boolean;
-  revisionRequest: ProposalReviewRequest | null;
-  isOwnRevisionRequest: boolean;
+  openRevisionRequests: Array<ProposalReviewRequest>;
+  ownRevisionRequest: ProposalReviewRequest | null;
+  /** Own latest request in any state. */
+  ownLatestRevisionRequest: ProposalReviewRequest | null;
+  /** The submitted review predates the proposal's current version. */
+  isReviewOutOfDate: boolean;
   canRequestRevision: boolean;
   rubricTemplate: RubricTemplateSchema;
   review: ProposalReview | null;
@@ -86,7 +96,7 @@ export interface ReviewFormStatus {
 export function ReviewFormProvider(props: {
   assignmentId: string;
   decisionSlug: string;
-  allowRevisions: boolean;
+  reviewSettings: ReviewSettings;
   /** Runs after a submit or an update instead of leaving for the decision page. */
   onCompleted?: () => void;
   /** Lets a host render the primary action outside the form. */
@@ -104,7 +114,7 @@ export function ReviewFormProvider(props: {
 function ReviewFormProviderInner({
   assignmentId,
   decisionSlug,
-  allowRevisions,
+  reviewSettings,
   onCompleted,
   onStatusChange,
   initiallyEditing = false,
@@ -112,14 +122,15 @@ function ReviewFormProviderInner({
 }: {
   assignmentId: string;
   decisionSlug: string;
-  allowRevisions: boolean;
+  reviewSettings: ReviewSettings;
   onCompleted?: () => void;
   onStatusChange?: (status: ReviewFormStatus) => void;
   initiallyEditing?: boolean;
   children: ReactNode;
 }) {
-  const t = useTranslations();
+  const t = useTranslations('decisions.review');
   const router = useRouter();
+  const posthog = usePostHog();
 
   const [reviewAssignment] = trpc.decision.getReviewAssignment.useSuspenseQuery(
     { assignmentId },
@@ -128,14 +139,20 @@ function ReviewFormProviderInner({
     { refetchOnMount: 'always' },
   );
 
-  const { rubricTemplate, review, revisionRequest, assignment, canEditReview } =
-    reviewAssignment;
+  const {
+    rubricTemplate,
+    review,
+    revisionRequest,
+    assignment,
+    canEditReview,
+    isReviewOutOfDate,
+  } = reviewAssignment;
 
   if (!rubricTemplate) {
     throw new Error(`Review assignment ${assignmentId} has no rubric template`);
   }
 
-  const [proposalRevisionRequestList] =
+  const [{ items: openRequestItems }] =
     trpc.decision.listProposalRevisionRequests.useSuspenseQuery(
       {
         proposalId: assignment.proposal.id,
@@ -144,8 +161,10 @@ function ReviewFormProviderInner({
       { refetchOnMount: 'always' },
     );
 
-  const hasAnyOpenRevisionRequest =
-    proposalRevisionRequestList.revisionRequests.length > 0;
+  const openRevisionRequests = useMemo(
+    () => openRequestItems.map((item) => item.revisionRequest),
+    [openRequestItems],
+  );
 
   // Only trust the per-assignment request when it is still REQUESTED — a
   // locally cached CANCELLED/RESUBMITTED entry must not gate the UI.
@@ -154,17 +173,11 @@ function ReviewFormProviderInner({
       ? revisionRequest
       : null;
 
-  // Prefer the reviewer's own request; otherwise surface the earliest
-  // outstanding request from any other reviewer on the same proposal so
-  // every reviewer sees the same paused state + feedback.
-  const effectiveRevisionRequest =
-    ownRevisionRequest ??
-    proposalRevisionRequestList.revisionRequests[0]?.revisionRequest ??
-    null;
-  const isOwnRevisionRequest = !!ownRevisionRequest;
-
-  const [values, setValues] = useState<RubricReviewData['answers']>(
-    review?.reviewData.answers ?? {},
+  // Seed 'no' for untouched yes/no criteria — the switch already shows "No"
+  // before it is touched, so a required criterion must not need a Yes→No
+  // double-tap just to record that.
+  const [values, setValues] = useState<RubricReviewData['answers']>(() =>
+    withYesNoDefaults(rubricTemplate, review?.reviewData.answers ?? {}),
   );
   const [rationales, setRationales] = useState<RubricReviewData['rationales']>(
     review?.reviewData.rationales ?? {},
@@ -173,16 +186,29 @@ function ReviewFormProviderInner({
     review?.overallComment ?? '',
   );
   const isSubmitted = review?.state === ProposalReviewState.SUBMITTED;
-  const isPausedForRevision = hasAnyOpenRevisionRequest;
   const canRequestRevision =
-    allowRevisions && !isSubmitted && !hasAnyOpenRevisionRequest;
+    reviewSettings.allowRevisions && !ownRevisionRequest;
 
   // Local: unsaved until "Update review", so navigating away discards edits.
-  const [isEditing, setIsEditing] = useState(initiallyEditing);
+  const [isEditRequested, setIsEditRequested] = useState(initiallyEditing);
+
+  // An out-of-date review opens pre-filled, skipping the read-only step.
+  const isEditing = isEditRequested || isReviewOutOfDate;
 
   const submitReview = trpc.decision.submitReview.useMutation({
     onSuccess: () => {
-      toast.success(t('Review submitted successfully'));
+      posthog.capture(
+        'review_submission_confirmed',
+        getDecisionCommonProperties({
+          decisionInstanceId: assignment.processInstanceId,
+          proposalId: assignment.proposal.id,
+          additionalProps: {
+            assignment_id: assignmentId,
+            phase_id: assignment.phaseId,
+          },
+        }),
+      );
+      toast.success(t('submitReviewSuccess'));
       if (onCompleted) {
         onCompleted();
         return;
@@ -190,7 +216,7 @@ function ReviewFormProviderInner({
       router.push(`/decisions/${decisionSlug}/current`);
     },
     onError: (error) => {
-      toast.error(error.message || t('Failed to submit review'));
+      toast.error(error.message || t('submitReviewError'));
     },
   });
 
@@ -198,12 +224,12 @@ function ReviewFormProviderInner({
     onSuccess: () => {
       // The mutation's review channels invalidate getReviewAssignment locally,
       // refreshing the read-only view in place (as requestRevision does).
-      setIsEditing(false);
-      toast.success(t('Review updated successfully'));
+      setIsEditRequested(false);
+      toast.success(t('updateReviewSuccess'));
       onCompleted?.();
     },
     onError: (error) => {
-      toast.error(error.message || t('Failed to update review'));
+      toast.error(error.message || t('updateReviewError'));
     },
   });
 
@@ -214,25 +240,25 @@ function ReviewFormProviderInner({
     overallComment,
     // Drafts are pre-submission only; edits to a submitted review persist
     // solely via "Update review", never autosave.
-    enabled: !isSubmitted && !isPausedForRevision,
+    enabled: !isSubmitted,
   });
 
   const requestRevisionMutation = trpc.decision.requestRevision.useMutation({
     onSuccess: () => {
-      toast.success(t('Revision requested'));
+      toast.success(t('revisionRequestedLabel'));
     },
     onError: (error) => {
-      toast.error(error.message || t('Failed to request revision'));
+      toast.error(error.message || t('requestRevisionError'));
     },
   });
 
   const cancelRevisionMutation =
     trpc.decision.cancelRevisionRequest.useMutation({
       onSuccess: () => {
-        toast.success(t('Revision request cancelled'));
+        toast.success(t('cancelRevisionRequestSuccess'));
       },
       onError: (error) => {
-        toast.error(error.message || t('Failed to cancel revision request'));
+        toast.error(error.message || t('cancelRevisionRequestError'));
       },
     });
 
@@ -243,7 +269,14 @@ function ReviewFormProviderInner({
 
   const handleValueChange = useCallback(
     (key: string, value: unknown) => {
-      setValues((current) => ({ ...current, [key]: value }));
+      setValues((current) => {
+        // `undefined` = unanswered: drop the key so the criterion validates as absent.
+        if (value === undefined) {
+          const { [key]: _cleared, ...rest } = current;
+          return rest;
+        }
+        return { ...current, [key]: value };
+      });
       scheduleAutosave();
     },
     [scheduleAutosave],
@@ -283,7 +316,7 @@ function ReviewFormProviderInner({
   }, [assignmentId, values, rationales, overallComment, submitMutate]);
 
   const startEditing = useCallback(() => {
-    setIsEditing(true);
+    setIsEditRequested(true);
   }, []);
 
   const handleUpdate = useCallback(async () => {
@@ -314,7 +347,7 @@ function ReviewFormProviderInner({
     });
   }, [assignmentId, ownRevisionRequest, cancelRevisionMutate]);
 
-  const canSubmit = isRubricValid && !isSubmitted && !isPausedForRevision;
+  const canSubmit = isRubricValid && !isSubmitted;
   const canUpdate = isRubricValid && isEditing;
 
   // What a host outside the form needs to drive its primary action.
@@ -330,6 +363,7 @@ function ReviewFormProviderInner({
 
   const state = useMemo<ReviewFormState>(
     () => ({
+      reviewSettings,
       values,
       rationales,
       overallComment,
@@ -340,9 +374,10 @@ function ReviewFormProviderInner({
       isEditing,
       isUpdating: updateReview.isPending,
       canUpdate,
-      isPausedForRevision,
-      revisionRequest: effectiveRevisionRequest,
-      isOwnRevisionRequest,
+      openRevisionRequests,
+      ownRevisionRequest,
+      ownLatestRevisionRequest: revisionRequest,
+      isReviewOutOfDate,
       canRequestRevision,
       rubricTemplate,
       review,
@@ -359,6 +394,7 @@ function ReviewFormProviderInner({
       isCancellingRevision: cancelRevisionMutation.isPending,
     }),
     [
+      reviewSettings,
       values,
       rationales,
       overallComment,
@@ -368,9 +404,10 @@ function ReviewFormProviderInner({
       canEditReview,
       isEditing,
       updateReview.isPending,
-      isPausedForRevision,
-      effectiveRevisionRequest,
-      isOwnRevisionRequest,
+      openRevisionRequests,
+      ownRevisionRequest,
+      revisionRequest,
+      isReviewOutOfDate,
       canRequestRevision,
       rubricTemplate,
       review,

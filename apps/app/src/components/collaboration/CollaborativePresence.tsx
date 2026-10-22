@@ -23,7 +23,7 @@ export function CollaborativePresence({
   maxVisible = 3,
   className,
 }: CollaborativePresenceProps) {
-  const t = useTranslations();
+  const t = useTranslations('editor');
   const { provider } = useCollaborativeDoc();
   const users = useAwarenessUsers(provider);
 
@@ -46,7 +46,7 @@ export function CollaborativePresence({
     avatarItems.push(
       <Avatar key="overflow">
         <AvatarFallback className="bg-foreground text-background">
-          {t('+{count}', { count: overflowCount })}
+          {t('presenceOverflowCount', { count: overflowCount })}
         </AvatarFallback>
       </Avatar>,
     );
@@ -57,7 +57,7 @@ export function CollaborativePresence({
       items={avatarItems}
       className={className}
       role="group"
-      aria-label={t('People currently editing')}
+      aria-label={t('presenceLabel')}
     />
   );
 }

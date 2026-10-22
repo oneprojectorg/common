@@ -1,9 +1,21 @@
 import { mockCollab } from '@op/collab/testing';
-import { ProposalStatus, Visibility } from '@op/db/schema';
+import { getInstancePhases, parseProposalData } from '@op/common';
+import {
+  createRevisionRequest,
+  TestDecisionsDataManager,
+  TestReviewsDataManager,
+} from '@op/common/testing';
+import { db, eq } from '@op/db/client';
+import {
+  ProposalReviewAssignmentStatus,
+  ProposalReviewRequestState,
+  ProposalStatus,
+  Visibility,
+  processInstances,
+} from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
-import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
 import {
   accessTierGatingCell,
   describeDecisionAccessTierGating,
@@ -21,6 +33,43 @@ const createCaller = createCallerFactory(appRouter);
 async function createAuthenticatedCaller(email: string) {
   const { session } = await createIsolatedSession(email);
   return createCaller(await createTestContextWithSession(session));
+}
+
+/** Sets the "Proposal editing" rule on the instance's current phase. */
+async function setProposalEditingRule(
+  processInstanceId: string,
+  edit: boolean,
+): Promise<void> {
+  const instanceRecord = await db.query.processInstances.findFirst({
+    where: { id: processInstanceId },
+  });
+
+  if (!instanceRecord) {
+    throw new Error(`Instance ${processInstanceId} not found`);
+  }
+
+  const { instanceData } = instanceRecord;
+
+  if (instanceData === null || typeof instanceData !== 'object') {
+    throw new Error(`Instance ${processInstanceId} has no instanceData`);
+  }
+
+  const phases = getInstancePhases(instanceData).map((phase) =>
+    phase.phaseId === instanceRecord.currentStateId
+      ? {
+          ...phase,
+          rules: {
+            ...phase.rules,
+            proposals: { ...phase.rules?.proposals, edit },
+          },
+        }
+      : phase,
+  );
+
+  await db
+    .update(processInstances)
+    .set({ instanceData: { ...instanceData, phases } })
+    .where(eq(processInstances.id, processInstanceId));
 }
 
 describe.concurrent('updateProposal visibility', () => {
@@ -188,8 +237,8 @@ describe.concurrent('updateProposal visibility', () => {
       processInstanceId: instance.instance.id,
     });
 
-    expect(result.proposals).toHaveLength(1);
-    expect(result.proposals[0]?.id).toBe(visibleProposal.id);
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0]?.id).toBe(visibleProposal.id);
   });
 
   it('should allow proposal owner to see their own hidden proposal', async ({
@@ -231,9 +280,9 @@ describe.concurrent('updateProposal visibility', () => {
       processInstanceId: instance.instance.id,
     });
 
-    expect(result.proposals).toHaveLength(1);
-    expect(result.proposals[0]?.id).toBe(proposal.id);
-    expect(result.proposals[0]?.visibility).toBe(Visibility.HIDDEN);
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0]?.id).toBe(proposal.id);
+    expect(result.items[0]?.visibility).toBe(Visibility.HIDDEN);
   });
 
   it('should allow admin to see all proposals including hidden ones', async ({
@@ -275,7 +324,7 @@ describe.concurrent('updateProposal visibility', () => {
       processInstanceId: instance.instance.id,
     });
 
-    expect(result.proposals).toHaveLength(2);
+    expect(result.items).toHaveLength(2);
     expect(result.canManageProposals).toBe(true);
   });
 });
@@ -452,6 +501,265 @@ describe.concurrent('updateProposal status', () => {
   });
 });
 
+describe.concurrent('updateProposal post-submission editing rule', () => {
+  it('should reject an author editing their submitted proposal when the phase disables editing', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instance;
+
+    const author = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [instance.profileId],
+    });
+
+    const proposal = await testData.createProposal({
+      userEmail: author.email,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Submitted Proposal' },
+      status: ProposalStatus.SUBMITTED,
+    });
+
+    await setProposalEditingRule(instance.instance.id, false);
+
+    const authorCaller = await createAuthenticatedCaller(author.email);
+
+    await expect(
+      authorCaller.decision.updateProposal({
+        proposalId: proposal.id,
+        data: { title: 'Edited After Submission' },
+      }),
+    ).rejects.toMatchObject({
+      cause: { statusCode: 403 },
+    });
+  });
+
+  it('should allow an author to edit their submitted proposal when the phase enables editing', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instance;
+
+    const author = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [instance.profileId],
+    });
+
+    const proposal = await testData.createProposal({
+      userEmail: author.email,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Submitted Proposal' },
+      status: ProposalStatus.SUBMITTED,
+    });
+
+    await setProposalEditingRule(instance.instance.id, true);
+
+    const authorCaller = await createAuthenticatedCaller(author.email);
+
+    const result = await authorCaller.decision.updateProposal({
+      proposalId: proposal.id,
+      data: { title: 'Edited After Submission' },
+    });
+
+    expect(result.profile.name).toBe('Edited After Submission');
+  });
+
+  it('should still allow an author to edit their draft when the phase disables editing', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instance;
+
+    const author = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [instance.profileId],
+    });
+
+    const proposal = await testData.createProposal({
+      userEmail: author.email,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Draft Proposal' },
+    });
+
+    await setProposalEditingRule(instance.instance.id, false);
+
+    const authorCaller = await createAuthenticatedCaller(author.email);
+
+    const result = await authorCaller.decision.updateProposal({
+      proposalId: proposal.id,
+      data: { title: 'Edited Draft' },
+    });
+
+    expect(result.profile.name).toBe('Edited Draft');
+  });
+
+  it('should still allow an instance admin to edit a submitted proposal when the phase disables editing', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instance;
+
+    const proposal = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Submitted Proposal' },
+      status: ProposalStatus.SUBMITTED,
+    });
+
+    await setProposalEditingRule(instance.instance.id, false);
+
+    const adminCaller = await createAuthenticatedCaller(setup.userEmail);
+
+    const result = await adminCaller.decision.updateProposal({
+      proposalId: proposal.id,
+      data: { title: 'Admin Edit' },
+    });
+
+    expect(result.profile.name).toBe('Admin Edit');
+  });
+
+  it('should allow an author with an open revision request to edit while editing is disabled', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+
+    const created = await testData.createReviewAssignment({
+      title: 'Needs Budget Detail',
+      status: ProposalReviewAssignmentStatus.AWAITING_AUTHOR_REVISION,
+    });
+
+    await createRevisionRequest({
+      assignmentId: created.assignment.id,
+      state: ProposalReviewRequestState.REQUESTED,
+      requestComment: 'Please add a detailed budget breakdown.',
+    });
+
+    await setProposalEditingRule(created.instance.instance.id, false);
+
+    const authorCaller = await createAuthenticatedCaller(created.author.email);
+
+    const result = await authorCaller.decision.updateProposal({
+      proposalId: created.proposal.id,
+      data: { title: 'Revised After Feedback' },
+    });
+
+    expect(result.profile.name).toBe('Revised After Feedback');
+  });
+
+  it('should report isEditable false to the author while editing is disabled', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instance;
+
+    const author = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [instance.profileId],
+    });
+
+    const proposal = await testData.createProposal({
+      userEmail: author.email,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Submitted Proposal' },
+      status: ProposalStatus.SUBMITTED,
+    });
+
+    await setProposalEditingRule(instance.instance.id, false);
+
+    const authorCaller = await createAuthenticatedCaller(author.email);
+
+    const [detail, list] = await Promise.all([
+      authorCaller.decision.getProposal({ profileId: proposal.profileId }),
+      authorCaller.decision.listProposals({
+        processInstanceId: instance.instance.id,
+      }),
+    ]);
+
+    expect(detail.isEditable).toBe(false);
+    expect(list.items.find((item) => item.id === proposal.id)?.isEditable).toBe(
+      false,
+    );
+  });
+
+  it('should report isEditable true to the author while editing is enabled', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instance;
+
+    const author = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [instance.profileId],
+    });
+
+    const proposal = await testData.createProposal({
+      userEmail: author.email,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Submitted Proposal' },
+      status: ProposalStatus.SUBMITTED,
+    });
+
+    await setProposalEditingRule(instance.instance.id, true);
+
+    const authorCaller = await createAuthenticatedCaller(author.email);
+
+    const [detail, list] = await Promise.all([
+      authorCaller.decision.getProposal({ profileId: proposal.profileId }),
+      authorCaller.decision.listProposals({
+        processInstanceId: instance.instance.id,
+      }),
+    ]);
+
+    expect(detail.isEditable).toBe(true);
+    expect(list.items.find((item) => item.id === proposal.id)?.isEditable).toBe(
+      true,
+    );
+  });
+});
+
 describe.concurrent('updateProposal validation', () => {
   it('should skip validation when proposal is in draft status', async ({
     task,
@@ -497,7 +805,12 @@ describe.concurrent('updateProposal validation', () => {
     // Updating proposalData on a draft should succeed even with missing required fields
     const result = await caller.decision.updateProposal({
       proposalId: proposal.id,
-      data: { proposalData: { title: 'Updated Draft' } },
+      data: {
+        proposalData: {
+          ...parseProposalData(proposal.proposalData),
+          title: 'Updated Draft',
+        },
+      },
     });
 
     expect(result.proposalData).toMatchObject({ title: 'Updated Draft' });
@@ -554,11 +867,139 @@ describe.concurrent('updateProposal validation', () => {
     await expect(
       caller.decision.updateProposal({
         proposalId: proposal.id,
-        data: { proposalData: { title: 'Updated Draft' } },
+        data: {
+          proposalData: {
+            ...parseProposalData(proposal.proposalData),
+            title: 'Updated Draft',
+          },
+        },
       }),
     ).rejects.toMatchObject({
       cause: { statusCode: 400 },
     });
+  });
+});
+
+describe.concurrent('updateProposal collaboration document id', () => {
+  it('should reject an update that points the proposal at another collaboration document', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const proposal = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: setup.instance.instance.id,
+      proposalData: { title: 'Own Proposal' },
+    });
+
+    const currentData = parseProposalData(proposal.proposalData);
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    await expect(
+      caller.decision.updateProposal({
+        proposalId: proposal.id,
+        data: {
+          proposalData: {
+            ...currentData,
+            collaborationDocId: 'proposal-00000000-0000-0000-0000-000000000000',
+          },
+        },
+      }),
+    ).rejects.toMatchObject({
+      cause: { name: 'ValidationError' },
+    });
+
+    const stored = await db.query.proposals.findFirst({
+      where: { id: proposal.id },
+    });
+
+    expect(parseProposalData(stored?.proposalData).collaborationDocId).toBe(
+      currentData.collaborationDocId,
+    );
+  });
+
+  it('should allow an update that resends the collaboration document id the proposal already has', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const proposal = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: setup.instance.instance.id,
+      proposalData: { title: 'Own Proposal' },
+    });
+
+    const currentData = parseProposalData(proposal.proposalData);
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const result = await caller.decision.updateProposal({
+      proposalId: proposal.id,
+      data: {
+        proposalData: {
+          ...currentData,
+          collaborationDocId: currentData.collaborationDocId,
+        },
+      },
+    });
+
+    expect(parseProposalData(result.proposalData).collaborationDocId).toBe(
+      currentData.collaborationDocId,
+    );
+  });
+
+  it('should reject an update that omits the collaboration document id the proposal has', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const proposal = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: setup.instance.instance.id,
+      proposalData: { title: 'Own Proposal' },
+    });
+
+    const { collaborationDocId: storedDocId, ...dataWithoutDocId } =
+      parseProposalData(proposal.proposalData);
+    expect(storedDocId).toBeDefined();
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    await expect(
+      caller.decision.updateProposal({
+        proposalId: proposal.id,
+        data: {
+          proposalData: { ...dataWithoutDocId, budget: 4200 },
+        },
+      }),
+    ).rejects.toMatchObject({
+      cause: { name: 'ValidationError' },
+    });
+
+    const stored = await db.query.proposals.findFirst({
+      where: { id: proposal.id },
+    });
+
+    expect(parseProposalData(stored?.proposalData).collaborationDocId).toBe(
+      storedDocId,
+    );
   });
 });
 
@@ -594,7 +1035,10 @@ describe.concurrent('updateProposal checkpointVersion', () => {
     const result = await caller.decision.updateProposal({
       proposalId: proposal.id,
       data: {
-        proposalData: { title: 'Updated Proposal' },
+        proposalData: {
+          ...parseProposalData(proposal.proposalData),
+          title: 'Updated Proposal',
+        },
         checkpointVersion: { type: 'update' },
       },
     });
@@ -636,7 +1080,10 @@ describe.concurrent('updateProposal checkpointVersion', () => {
     const result = await caller.decision.updateProposal({
       proposalId: proposal.id,
       data: {
-        proposalData: { title: 'Updated Proposal' },
+        proposalData: {
+          ...parseProposalData(proposal.proposalData),
+          title: 'Updated Proposal',
+        },
       },
     });
 

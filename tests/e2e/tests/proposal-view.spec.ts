@@ -1,5 +1,11 @@
 import type { ProposalTemplateSchema } from '@op/common';
 import {
+  createDecisionInstance,
+  createProposal,
+  getSeededTemplate,
+  makeDecisionPublic,
+} from '@op/common/testing/data';
+import {
   EntityType,
   ProcessStatus,
   ProposalStatus,
@@ -14,12 +20,6 @@ import {
 } from '@op/db/schema';
 import { ROLES } from '@op/db/seedData/accessControl';
 import { db } from '@op/db/test';
-import {
-  createDecisionInstance,
-  createProposal,
-  getSeededTemplate,
-  makeDecisionPublic,
-} from '@op/test';
 import type { Page } from '@playwright/test';
 import { randomUUID } from 'node:crypto';
 
@@ -99,6 +99,7 @@ test.describe('Proposal View', () => {
         summary: {
           type: 'string' as const,
           title: 'Summary',
+          description: 'Follow the guide at https://example.com/guide.',
           'x-format': 'long-text',
         },
       },
@@ -186,6 +187,19 @@ test.describe('Proposal View', () => {
     // "{amount} requested" secondary label, since there is no allocated value
     // to compare against.
     await expect(authenticatedPage.getByText(/requested/i)).toHaveCount(0);
+
+    // A URL an admin typed into a field description is a real link, and the
+    // sentence's full stop stays out of the href.
+    const hintLink = authenticatedPage.getByRole('link', {
+      name: 'https://example.com/guide',
+      exact: true,
+    });
+    await expect(hintLink).toHaveAttribute('href', 'https://example.com/guide');
+    await expect(hintLink).toHaveAttribute('target', '_blank');
+    await expect(hintLink).toHaveAttribute('rel', 'noopener noreferrer');
+    await expect(
+      authenticatedPage.getByText('Follow the guide at').first(),
+    ).toBeVisible();
 
     // Dynamic dropdown fields render with their label via ProposalContentRenderer.
     // The field labels should be visible as section headings.
@@ -690,7 +704,7 @@ test.describe('Proposal View', () => {
     ).toBeVisible({ timeout: 30_000 });
   });
 
-  test('gates write actions per viewer: reactions/Like/Follow members-only, Report visible to all', async ({
+  test('Like/Follow render for every viewer on a public decision, Report visible to all', async ({
     authenticatedPage,
     org,
     browser,
@@ -717,7 +731,7 @@ test.describe('Proposal View', () => {
     // Public decision so anonymous and logged-out visitors can read it.
     await makeDecisionPublic({ profileId: instance.profileId });
 
-    // Reactions render per-comment; seed a top-level post + like on the proposal.
+    // Likes render per-comment; seed a top-level post + like on the proposal.
     const commentText = 'Seeded comment carrying a like';
     const [comment] = await db
       .insert(posts)
@@ -737,12 +751,12 @@ test.describe('Proposal View', () => {
     });
 
     const proposalUrl = `/en/decisions/${instance.slug}/proposal/${proposal.profileId}`;
-    const likeBadge = /👍\s*1/;
 
     // Every viewer sees the proposal, the comment, the seeded like, and the
-    // Report action (moderation is open to any caller). Only a signed-in
-    // member also gets the interact-only write controls (add-reaction, Like,
-    // Follow).
+    // Report action (moderation is open to any caller). Like and Follow render
+    // for every viewer on a public decision: a member gets real toggles, a
+    // visitor or anonymous account gets buttons that open the claim flow. The
+    // comment's like is still a member toggle (disabled for everyone else).
     const expectProposalView = async (
       page: Page,
       { canInteract }: { canInteract: boolean },
@@ -752,22 +766,36 @@ test.describe('Proposal View', () => {
         page.getByRole('heading', { name: 'Reactable Proposal' }),
       ).toBeVisible({ timeout: 30_000 });
       await expect(page.getByText(commentText)).toBeVisible();
-      await expect(page.getByText(likeBadge)).toBeVisible();
 
-      // The like and follow toggles are named by the stat they show
-      // ("0 Likes"), so match the noun rather than a bare verb.
+      // The comment's like button renders for everyone so read-only viewers
+      // still see the seeded count; only a member gets it as a real toggle. It
+      // draws just the heart and the number, so "1 like" is its aria-label.
+      // Anchored regex, not the string form: `name` as a string matches
+      // case-insensitively on a substring, so '1 like' would also pick up the
+      // proposal-level "N Likes" stat and "11 likes".
+      const commentLike = page.getByRole('button', { name: /^1 like$/ });
+      await expect(commentLike).toBeVisible();
+      if (canInteract) {
+        await expect(commentLike).toHaveAttribute('aria-pressed', 'false');
+      } else {
+        await expect(commentLike).toHaveAttribute('aria-disabled', 'true');
+      }
+
+      // Like and Follow are named by the stat they show ("0 Likes"), so match
+      // the noun rather than a bare verb. They render for every viewer on a
+      // public decision (real toggles for a member, claim-flow buttons for a
+      // visitor or anonymous account), so all three cases see exactly one each.
       const writeControls = [
-        page.getByRole('button', { name: 'Add reaction' }),
         page.getByRole('button', { name: /^\d+ Likes?$/ }),
         page.getByRole('button', { name: /^\d+ Followers?$/ }),
       ];
       for (const control of writeControls) {
-        await expect(control).toHaveCount(canInteract ? 1 : 0);
+        await expect(control).toHaveCount(1);
       }
 
-      // A count of 0 above is satisfied by the stats vanishing as well as by
-      // them rendering as plain text, so assert the text is there either way —
-      // read-only viewers still see the counts, just not as toggles.
+      // The count text renders inside the toggle for every viewer, so assert
+      // it's there — a visitor still sees the live count, just behind a
+      // claim-flow button rather than a dead stat.
       await expect(page.getByText(/^\d+ Likes?$/)).toBeVisible();
       await expect(page.getByText(/^\d+ Followers?$/)).toBeVisible();
 
@@ -788,15 +816,17 @@ test.describe('Proposal View', () => {
       }
     };
 
-    // 1) Signed-in member: reactions/Like/Follow + Report all visible.
+    // 1) Signed-in member: real Like/Follow toggles + Report all visible.
     await expectProposalView(authenticatedPage, { canInteract: true });
 
-    // 2) Anonymous account: reactions/Like/Follow hidden, Report still visible.
+    // 2) Anonymous account: Like/Follow render as claim-flow buttons, Report
+    // still visible.
     await withCleanPage(async (page) => {
       await authenticateAnonymously(page);
       await expectProposalView(page, { canInteract: false });
     });
-    // 3) Logged-out visitor: same as anonymous — read-only but can still report.
+    // 3) Logged-out visitor: same as anonymous — Like/Follow open the claim
+    // flow, Report still visible.
     await withCleanPage((page) =>
       expectProposalView(page, { canInteract: false }),
     );

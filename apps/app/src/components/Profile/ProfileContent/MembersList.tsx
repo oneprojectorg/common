@@ -59,41 +59,40 @@ const MemberMenu = ({
   const t = useTranslations();
 
   // Query for all available roles to find the "Member" role ID
-  const { data: roles } = trpc.organization.getRoles.useQuery();
+  const { data: rolesData } = trpc.organization.getRoles.useQuery();
+  const roles = rolesData?.items;
 
   const updateUser = trpc.organization.updateOrganizationUser.useMutation({
     onSuccess: (_, variables) => {
       // Determine what role was assigned for the success message
       const wasChangingToAdmin = variables.data.roleIds?.some((roleId) =>
-        roles?.roles?.find(
+        roles?.find(
           (role: any) =>
             role.id === roleId && role.name.toLowerCase() === 'admin',
         ),
       );
 
       const message = wasChangingToAdmin
-        ? t('User changed to Admin successfully')
-        : t('User changed to Member successfully');
+        ? t('profile.changedToAdminToast')
+        : t('profile.changedToMemberToast');
 
       toast.success(message);
       // Invalidate listUsers query to refresh the UI
       void utils.organization.listUsers.invalidate({ profileId });
     },
     onError: (error) => {
-      toast.error(error.message || t('Failed to update user role'));
+      toast.error(error.message || t('profile.updateMemberRoleError'));
     },
   });
 
   const deleteUser = trpc.organization.deleteOrganizationUser.useMutation({
     onSuccess: () => {
-      toast.success(t('User removed from organization successfully'));
+      toast.success(t('profile.removeMemberToast'));
       // Invalidate listUsers query to refresh the UI
       void utils.organization.listUsers.invalidate({ profileId });
     },
     onError: (error) => {
-      toast.error(
-        error.message || t('Failed to remove user from organization'),
-      );
+      toast.error(error.message || t('profile.removeMemberError'));
     },
   });
 
@@ -105,12 +104,12 @@ const MemberMenu = ({
   const handleRoleToggle = () => {
     if (isCurrentlyAdmin) {
       // Change admin to member
-      const memberRole = roles?.roles?.find(
+      const memberRole = roles?.find(
         (role: any) => role.name.toLowerCase() === 'member',
       );
 
       if (!memberRole) {
-        toast.error(t('Member role not found'));
+        toast.error(t('profile.memberRoleMissingError'));
         return;
       }
 
@@ -123,12 +122,12 @@ const MemberMenu = ({
       });
     } else {
       // Change member to admin
-      const adminRole = roles?.roles?.find(
+      const adminRole = roles?.find(
         (role: any) => role.name.toLowerCase() === 'admin',
       );
 
       if (!adminRole) {
-        toast.error(t('Admin role not found'));
+        toast.error(t('profile.adminRoleMissingError'));
         return;
       }
 
@@ -143,11 +142,7 @@ const MemberMenu = ({
   };
 
   const handleRemoveFromOrganization = () => {
-    if (
-      confirm(
-        t('Are you sure you want to remove this user from the organization?'),
-      )
-    ) {
+    if (confirm(t('profile.removeMemberConfirm'))) {
       deleteUser.mutate({
         organizationId,
         organizationUserId: member.id,
@@ -160,7 +155,7 @@ const MemberMenu = ({
       <DropdownMenuTrigger
         render={
           <Button
-            aria-label={t('Member options')}
+            aria-label={t('profile.memberOptionsLabel')}
             variant="ghost"
             size="icon-xs"
             className="aria-expanded:bg-secondary"
@@ -171,13 +166,15 @@ const MemberMenu = ({
       />
       <DropdownMenuContent className="min-w-48 p-2" side="bottom" align="end">
         <DropdownMenuItem onClick={handleRoleToggle} className="px-3 py-1">
-          {isCurrentlyAdmin ? t('Change to Member') : t('Change to Admin')}
+          {isCurrentlyAdmin
+            ? t('profile.changeToMemberAction')
+            : t('profile.changeToAdminAction')}
         </DropdownMenuItem>
         <DropdownMenuItem
           onClick={handleRemoveFromOrganization}
           className="px-3 py-1 text-destructive"
         >
-          {t('Remove from organization')}
+          {t('profile.removeMemberAction')}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -270,7 +267,9 @@ const MembersListContent = ({
                       </TagGroup>
                     </div>
                   ) : (
-                    <div className="text-sm">{t('Member')}</div>
+                    <div className="text-sm">
+                      {t('profile.memberRoleLabel')}
+                    </div>
                   )}
 
                   {/* Show email if different from display name */}
@@ -299,21 +298,16 @@ const MembersListContent = ({
 export const MembersList = ({ profileId }: { profileId: string }) => {
   const t = useTranslations();
 
-  const [members] = trpc.organization.listUsers.useSuspenseQuery({
+  const [{ items: members }] = trpc.organization.listUsers.useSuspenseQuery({
     profileId,
   });
 
   // We need to get the organizationId from the profileId
   // This assumes the profileId belongs to an organization
-  const organizationId =
-    members && members.length > 0 && members[0]
-      ? members[0].organizationId
-      : '';
+  const organizationId = members[0]?.organizationId ?? '';
 
   // Group members by roles for filtering
   const rolesSegmented: Array<[string, Array<Member>]> = useMemo(() => {
-    if (!members) return [];
-
     // Get all unique role names
     const allRoleNames = new Set<string>();
     members.forEach((member) => {
@@ -331,7 +325,7 @@ export const MembersList = ({ profileId }: { profileId: string }) => {
     ]);
   }, [members]);
 
-  if (!members || members.length === 0) {
+  if (members.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-12 text-center">
         <div className="mb-4 flex size-12 items-center justify-center rounded-full bg-secondary">
@@ -340,9 +334,7 @@ export const MembersList = ({ profileId }: { profileId: string }) => {
         <div className="mb-2 font-serif text-title font-light">
           {t('No members found')}
         </div>
-        <p className="max-w-md text-sm">
-          {t("This organization doesn't have any members yet.")}
-        </p>
+        <p className="max-w-md text-sm">{t('profile.noMembersYet')}</p>
       </div>
     );
   }
@@ -352,7 +344,7 @@ export const MembersList = ({ profileId }: { profileId: string }) => {
       <div className="flex flex-col gap-4 px-4 sm:px-0">
         <div className="flex items-center justify-between">
           <Header2 className="w-full">
-            {t('{count, plural, =1 {1 member} other {# members}}', {
+            {t('profile.memberCount', {
               count: members.length,
             })}
           </Header2>
@@ -362,7 +354,7 @@ export const MembersList = ({ profileId }: { profileId: string }) => {
 
       <Tabs defaultValue="all">
         <TabsList className="px-4 sm:px-0">
-          <TabsTrigger value="all">{t('All members')}</TabsTrigger>
+          <TabsTrigger value="all">{t('profile.allMembersFilter')}</TabsTrigger>
           {rolesSegmented.map(([roleName, roleMembers]) =>
             roleMembers?.length ? (
               <TabsTrigger value={roleName} key={roleName}>

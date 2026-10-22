@@ -17,12 +17,6 @@ export type SortDir = 'asc' | 'desc';
 export const excludeGlobalUsers = (authUserIdColumn: AnyPgColumn): SQL =>
   notInArray(authUserIdColumn, [...GLOBAL_USER_IDS]);
 
-/** Generic paginated result type for cursor-based pagination */
-export type PaginatedResult<T> = {
-  items: T[];
-  next: string | null;
-};
-
 // Cursor utilities
 type GenericCursor = {
   date: Date;

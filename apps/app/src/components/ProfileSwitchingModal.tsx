@@ -23,9 +23,9 @@ export const ProfileSwitchingModal = ({
   profileName,
   onOpenChange,
 }: ProfileSwitchingModalProps) => {
-  const t = useTranslations();
+  const t = useTranslations('profile');
   const avatarUrl = getPublicUrl(avatarImage?.name);
-  const switchingTo = t('Switching to {name}…', { name: profileName ?? '' });
+  const switchingTo = t('switchingProfile', { name: profileName ?? '' });
 
   return (
     // `disablePointerDismissal`: the switch is in flight and closing this would

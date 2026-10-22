@@ -1,6 +1,11 @@
 'use client';
 
-import type { ComponentProps, ElementType, ReactNode } from 'react';
+import type {
+  ComponentProps,
+  ElementType,
+  MouseEventHandler,
+  ReactNode,
+} from 'react';
 import { useId } from 'react';
 
 /** Props the title/author link element must accept (a plain `<a>`, an i18n
@@ -10,6 +15,7 @@ import { useId } from 'react';
 type ProposalCardLinkProps = {
   href: string;
   className?: string;
+  onClick?: MouseEventHandler<HTMLAnchorElement>;
   children?: ReactNode;
 };
 import type { IconType } from 'react-icons';
@@ -66,7 +72,9 @@ export interface ProposalCardProps extends Omit<
    * a plain `<a>`. Must accept `href`, `className`, and children.
    */
   linkComponent?: ElementType<ProposalCardLinkProps>;
-  /** Visibility/status badge above the title (e.g. Draft, Hidden, Flagged). */
+  /** Click handler on the title link; `preventDefault()` cancels the navigation. */
+  onTitleClick?: MouseEventHandler<HTMLAnchorElement>;
+  /** Header content above the title, e.g. a status badge or a translate link. */
   headerBadge?: ReactNode;
   /** Alert below the title — typically a `StatusBadge` (e.g. "Revision requested"). */
   alert?: ReactNode;
@@ -108,6 +116,7 @@ export function ProposalCard({
   title,
   href,
   linkComponent,
+  onTitleClick,
   headerBadge,
   alert,
   aside,
@@ -142,8 +151,17 @@ export function ProposalCard({
         )}
         {...rest}
       >
-        <h3 className="line-clamp-2 font-serif text-label text-foreground">
-          <TitleLink href={href} linkComponent={linkComponent}>
+        {/* Clamped, so `dir` has to come from the content or the ellipsis clips
+            the wrong end; alignment is pinned back to the page. */}
+        <h3
+          dir="auto"
+          className="line-clamp-2 font-serif text-label text-foreground ltr:text-left rtl:text-right"
+        >
+          <TitleLink
+            href={href}
+            linkComponent={linkComponent}
+            onClick={onTitleClick}
+          >
             {title}
           </TitleLink>
         </h3>
@@ -173,6 +191,10 @@ export function ProposalCard({
       {aside ? <div className="absolute end-6 top-6 z-10">{aside}</div> : null}
       <div className={cn('flex flex-col gap-3', aside && 'pe-10')}>
         {headerBadge}
+        {/* Proposal text is user content, so it can run counter to the page
+            direction. `<bdi>` isolates the run — without it the trailing
+            punctuation jumps to the wrong end — while the heading itself keeps
+            the page's direction, so a grid of cards stays in one column. */}
         <h3
           id={titleId}
           className={cn(
@@ -180,8 +202,12 @@ export function ProposalCard({
             selected ? 'text-teal-600' : 'text-foreground',
           )}
         >
-          <TitleLink href={href} linkComponent={linkComponent}>
-            {title}
+          <TitleLink
+            href={href}
+            linkComponent={linkComponent}
+            onClick={onTitleClick}
+          >
+            <bdi>{title}</bdi>
           </TitleLink>
         </h3>
         {alert}
@@ -197,7 +223,12 @@ export function ProposalCard({
         </div>
       ) : null}
       {description ? (
-        <p className="line-clamp-3 text-base text-foreground">{description}</p>
+        <p
+          dir="auto"
+          className="line-clamp-3 text-base text-foreground ltr:text-left rtl:text-right"
+        >
+          {description}
+        </p>
       ) : null}
       {metrics ? (
         <div className="relative z-10 flex items-center gap-1">
@@ -228,8 +259,10 @@ export function ProposalCard({
             {status}
             {/* `relative z-10` lifts the label above the title's stretched
                 link overlay so an interactive `reviewedLabel` (e.g. a
-                reviewers tooltip trigger) stays hoverable/clickable. */}
-            <span className="relative z-10 text-sm text-muted-foreground">
+                reviewers tooltip trigger) stays hoverable/clickable.
+                `ms-auto` keeps it at the end of the row when it is the only
+                thing in it — a card with a count but no status badge. */}
+            <span className="relative z-10 ms-auto text-sm text-muted-foreground">
               {reviewedLabel}
             </span>
           </div>
@@ -259,10 +292,12 @@ export function ProposalCard({
 function TitleLink({
   href,
   linkComponent: Link = 'a',
+  onClick,
   children,
 }: {
   href?: string;
   linkComponent?: ElementType<ProposalCardLinkProps>;
+  onClick?: MouseEventHandler<HTMLAnchorElement>;
   children: ReactNode;
 }) {
   if (!href) {
@@ -271,6 +306,7 @@ function TitleLink({
   return (
     <Link
       href={href}
+      onClick={onClick}
       className="outline-none after:absolute after:inset-0 after:rounded-lg focus-visible:after:ring-2 focus-visible:after:ring-ring/50"
     >
       {children}
@@ -288,8 +324,13 @@ function AuthorRow({
   compact?: boolean;
 }) {
   const first = authors[0];
-  const label =
-    authors.length > 1 ? `${first?.name} +${authors.length - 1}` : first?.name;
+  // The name is isolated so a "+2" stays after it whichever way the name runs.
+  const label = (
+    <>
+      <bdi>{first?.name}</bdi>
+      {authors.length > 1 ? ` +${authors.length - 1}` : null}
+    </>
+  );
   return (
     <div className="flex items-center gap-1.5">
       <FacePile
@@ -346,7 +387,9 @@ function TagRow({
         // Categories are free text, so a long one has to ellipsize instead of
         // pushing the row past the card. Full text stays in the DOM.
         <Badge key={tag} variant="secondary" className="max-w-full" title={tag}>
-          <span className="truncate">{tag}</span>
+          <span className="truncate">
+            <bdi>{tag}</bdi>
+          </span>
         </Badge>
       ))}
       {overflow > 0 ? (

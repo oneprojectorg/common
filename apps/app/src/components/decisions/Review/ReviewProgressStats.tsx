@@ -40,7 +40,7 @@ function ReviewProgressStatsContent({
   phaseId: string;
   hasImage?: boolean;
 }) {
-  const t = useTranslations();
+  const t = useTranslations('decisions.review');
 
   const [progress] = trpc.decision.getPhaseReviewProgress.useSuspenseQuery({
     processInstanceId,
@@ -51,13 +51,13 @@ function ReviewProgressStatsContent({
     <StatsRow>
       <ReviewProgressStat
         value={`${progress.proposalsReviewedCount}/${progress.proposalsTotalCount}`}
-        label={t('Proposals Reviewed')}
+        label={t('proposalsReviewedStat')}
         hasImage={hasImage}
       />
       <Divider />
       <ReviewProgressStat
         value={`${progress.activeReviewersCount}/${progress.reviewersTotalCount}`}
-        label={t('Active Reviewers')}
+        label={t('activeReviewersHeading')}
         hasImage={hasImage}
       />
       {progress.daysLeft !== null ? (
@@ -65,7 +65,7 @@ function ReviewProgressStatsContent({
           <Divider />
           <ReviewProgressStat
             value={String(progress.daysLeft)}
-            label={t('Days left')}
+            label={t('daysLeftLabel')}
             hasImage={hasImage}
           />
         </>

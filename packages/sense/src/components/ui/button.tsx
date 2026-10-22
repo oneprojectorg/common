@@ -28,7 +28,7 @@ const buttonVariants = cva(
         // impose. Its geometry reset is a compound variant below, not part of
         // this string: `size` is emitted after `variant`, so `px-4` and
         // `gap-1.5` would win here.
-        bare: 'rounded-none [font:inherit] text-current active:not-aria-[haspopup]:translate-y-0',
+        bare: 'rounded-none [font:inherit] text-current active:not-aria-[haspopup]:translate-none',
       },
       size: {
         default:

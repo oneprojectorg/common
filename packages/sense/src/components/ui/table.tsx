@@ -6,6 +6,9 @@ import * as React from 'react';
 
 import { cn } from '../../lib/utils';
 
+const tableCellClassName =
+  'p-2 align-middle whitespace-nowrap [&:has([role=checkbox])]:pe-0';
+
 function Table({ className, ...props }: React.ComponentProps<'table'>) {
   return (
     <div
@@ -80,10 +83,6 @@ function TableHead({ className, ...props }: React.ComponentProps<'th'>) {
   );
 }
 
-/**
- * A `td` by default. Pass `render={<th scope="row" />}` for the cell that names
- * its row — `TableHead` would apply column-header styling.
- */
 function TableCell({
   className,
   render,
@@ -94,15 +93,27 @@ function TableCell({
     render,
     props: mergeProps<'td'>(
       {
-        className: cn(
-          'p-2 align-middle whitespace-nowrap [&:has([role=checkbox])]:pe-0',
-          className,
-        ),
+        className: cn(tableCellClassName, className),
       },
       props,
     ),
     state: { slot: 'table-cell' },
   });
+}
+
+/** A row's identifying cell, rendered as a start-aligned `th scope="row"`. */
+function TableRowHeader({
+  className,
+  ...props
+}: Omit<React.ComponentProps<'th'>, 'scope'>) {
+  return (
+    <th
+      data-slot="table-cell"
+      className={cn(tableCellClassName, 'text-start font-normal', className)}
+      {...props}
+      scope="row"
+    />
+  );
 }
 
 function TableCaption({
@@ -126,5 +137,6 @@ export {
   TableHead,
   TableRow,
   TableCell,
+  TableRowHeader,
   TableCaption,
 };

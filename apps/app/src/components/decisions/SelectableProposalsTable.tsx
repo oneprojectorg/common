@@ -15,6 +15,7 @@ import { screens } from '@op/styles/constants';
 import { Link, useTranslations } from '@/lib/i18n';
 
 import { AdvanceToggleButton } from './selection/AdvanceToggleButton';
+import { ProposalRowMenu } from './selection/ProposalRowMenu';
 import { SelectionCard } from './selection/SelectionCard';
 import { SelectionCategoryChips } from './selection/SelectionCategoryChips';
 import { resolvePresentationFields } from './selection/proposalPresentation';
@@ -26,6 +27,10 @@ interface SelectableProposalsTableProps {
   getProposalHref?: (proposal: Proposal) => string;
   /** Show the per-proposal vote count column. Only used by the final-phase view. */
   showVotes?: boolean;
+  /** Show the budget column. False when the proposal template collects no budget. */
+  showBudget?: boolean;
+  /** Offer Edit in the row menu. Proposals can't be edited in the results phase. */
+  canEditProposals?: boolean;
 }
 
 export const SelectableProposalsTable = ({
@@ -34,6 +39,8 @@ export const SelectableProposalsTable = ({
   onToggle,
   getProposalHref,
   showVotes = false,
+  showBudget = true,
+  canEditProposals = true,
 }: SelectableProposalsTableProps) => {
   const t = useTranslations();
   const isMobile = useMediaQuery(`(max-width: ${screens.md})`);
@@ -41,7 +48,10 @@ export const SelectableProposalsTable = ({
 
   if (isMobile) {
     return (
-      <ul className="flex flex-col gap-3" aria-label={t('Eligible proposals')}>
+      <ul
+        className="flex flex-col gap-3"
+        aria-label={t('decisions.review.eligibleProposalsHeading')}
+      >
         {proposals.map((proposal) => (
           <li key={proposal.id}>
             <SelectableProposalCard
@@ -50,6 +60,7 @@ export const SelectableProposalsTable = ({
               onToggle={onToggle}
               href={getProposalHref?.(proposal)}
               showVotes={showVotes}
+              showBudget={showBudget}
             />
           </li>
         ))}
@@ -58,15 +69,29 @@ export const SelectableProposalsTable = ({
   }
 
   return (
-    <Table aria-label={t('Eligible proposals')} className="w-full">
+    <Table
+      aria-label={t('decisions.review.eligibleProposalsHeading')}
+      className="w-full"
+    >
       <TableHeader>
         <TableRow>
-          <TableHead>{t('Proposal')}</TableHead>
-          <TableHead>{t('Budget')}</TableHead>
-          <TableHead>{t('Category')}</TableHead>
-          {showVotes ? <TableHead>{t('Votes')}</TableHead> : null}
+          <TableHead>{t('decisions.proposals.proposalLabel')}</TableHead>
+          {showBudget ? (
+            <TableHead>{t('decisions.budgetLabel')}</TableHead>
+          ) : null}
+          <TableHead>{t('decisions.categoryLabel')}</TableHead>
+          {showVotes ? (
+            <TableHead>{t('decisions.review.votesLabel')}</TableHead>
+          ) : null}
           <TableHead className="w-32 text-end">
-            <span className="sr-only">{t('Select proposal')}</span>
+            <span className="sr-only">
+              {t('decisions.proposals.selectProposalLabel')}
+            </span>
+          </TableHead>
+          <TableHead className="w-11">
+            <span className="sr-only">
+              {t('decisions.proposals.proposalOptionsLabel')}
+            </span>
           </TableHead>
         </TableRow>
       </TableHeader>
@@ -75,12 +100,12 @@ export const SelectableProposalsTable = ({
           const isSelected = selectedSet.has(proposal.id);
           const fields = resolvePresentationFields({
             proposal,
-            defaultTitle: t('Untitled Proposal'),
+            defaultTitle: t('decisions.proposals.untitledProposal'),
           });
           const href = getProposalHref?.(proposal);
 
           return (
-            <TableRow key={proposal.id}>
+            <TableRow key={proposal.id} className="group">
               <TableCell>
                 <div className="flex flex-col">
                   {href ? (
@@ -88,10 +113,12 @@ export const SelectableProposalsTable = ({
                       href={href}
                       className="text-base text-foreground hover:underline"
                     >
-                      {fields.title}
+                      <bdi>{fields.title}</bdi>
                     </Link>
                   ) : (
-                    <span className="text-base">{fields.title}</span>
+                    <span className="text-base">
+                      <bdi>{fields.title}</bdi>
+                    </span>
                   )}
                   {fields.submitterName ? (
                     <span className="text-sm text-muted-foreground">
@@ -100,20 +127,24 @@ export const SelectableProposalsTable = ({
                   ) : null}
                 </div>
               </TableCell>
-              <TableCell>
-                {fields.budget ? (
-                  <span className="text-base">{fields.budget}</span>
-                ) : (
-                  <span className="text-sm text-muted-foreground">—</span>
-                )}
-              </TableCell>
+              {showBudget ? (
+                <TableCell>
+                  {fields.budget ? (
+                    <span className="text-base">{fields.budget}</span>
+                  ) : (
+                    <span className="text-sm text-muted-foreground">—</span>
+                  )}
+                </TableCell>
+              ) : null}
               <TableCell>
                 <SelectionCategoryChips labels={fields.categories} />
               </TableCell>
               {showVotes ? (
                 <TableCell>
                   <span className="text-base">
-                    {t('{count} votes', { count: proposal.voteCount ?? 0 })}
+                    {t('decisions.review.votesCount', {
+                      count: proposal.voteCount ?? 0,
+                    })}
                   </span>
                 </TableCell>
               ) : null}
@@ -123,6 +154,13 @@ export const SelectableProposalsTable = ({
                   title={fields.title}
                   onPress={() => onToggle(proposal.id)}
                   className="ms-auto"
+                />
+              </TableCell>
+              <TableCell>
+                <ProposalRowMenu
+                  proposal={proposal}
+                  proposalHref={canEditProposals ? href : undefined}
+                  isSelected={isSelected}
                 />
               </TableCell>
             </TableRow>
@@ -139,17 +177,19 @@ const SelectableProposalCard = ({
   onToggle,
   href,
   showVotes,
+  showBudget,
 }: {
   proposal: Proposal;
   isSelected: boolean;
   onToggle: (proposalId: string) => void;
   href?: string;
   showVotes: boolean;
+  showBudget: boolean;
 }) => {
   const t = useTranslations();
   const fields = resolvePresentationFields({
     proposal,
-    defaultTitle: t('Untitled Proposal'),
+    defaultTitle: t('decisions.proposals.untitledProposal'),
   });
 
   return (
@@ -160,10 +200,12 @@ const SelectableProposalCard = ({
             href={href}
             className="text-base text-foreground hover:underline"
           >
-            {fields.title}
+            <bdi>{fields.title}</bdi>
           </Link>
         ) : (
-          <span className="text-base">{fields.title}</span>
+          <span className="text-base">
+            <bdi>{fields.title}</bdi>
+          </span>
         )}
         {fields.submitterName ? (
           <span className="text-sm text-muted-foreground">
@@ -173,13 +215,15 @@ const SelectableProposalCard = ({
       </div>
 
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-        {fields.budget ? (
+        {showBudget && fields.budget ? (
           <span className="text-base">{fields.budget}</span>
         ) : null}
         <SelectionCategoryChips labels={fields.categories} />
         {showVotes ? (
           <span className="text-sm text-muted-foreground">
-            {t('{count} votes', { count: proposal.voteCount ?? 0 })}
+            {t('decisions.review.votesCount', {
+              count: proposal.voteCount ?? 0,
+            })}
           </span>
         ) : null}
       </div>

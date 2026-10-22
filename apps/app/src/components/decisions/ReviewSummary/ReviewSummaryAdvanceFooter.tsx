@@ -24,7 +24,7 @@ export function ReviewSummaryAdvanceFooter({
   proposalId,
   phaseId,
 }: ReviewSummaryAdvanceFooterProps) {
-  const t = useTranslations();
+  const t = useTranslations('decisions.review');
   const [selectedIds, setSelectedIds] = useManualSelection(
     instanceId,
     phaseId ?? '',
@@ -46,7 +46,7 @@ export function ReviewSummaryAdvanceFooter({
       <FooterBarStart>
         <span className="flex items-center gap-2 text-base">
           <LuCircleCheck className="size-4 text-muted-foreground" aria-hidden />
-          {t('{count} proposals advancing', { count })}
+          {t('proposalsAdvancingCount', { count })}
         </span>
       </FooterBarStart>
       <FooterBarCenter />
@@ -61,7 +61,9 @@ export function ReviewSummaryAdvanceFooter({
           onPressedChange={toggle}
         >
           {isAdvancing ? <LuCheck className="size-4" /> : null}
-          {isAdvancing ? t('Advancing proposal') : t('Advance proposal')}
+          {isAdvancing
+            ? t('advancingProposalStatus')
+            : t('advanceProposalAction')}
         </Toggle>
       </FooterBarEnd>
     </FooterBar>

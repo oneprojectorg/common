@@ -3,13 +3,6 @@ import type {
   RubricTemplateSchema,
 } from '@op/common';
 import {
-  ProcessStatus,
-  ProposalReviewAssignmentStatus,
-  ProposalReviewState,
-  processInstances,
-} from '@op/db/schema';
-import { db, eq } from '@op/db/test';
-import {
   createDecisionInstance,
   createInstanceMember,
   createProposalReview,
@@ -18,7 +11,14 @@ import {
   getDecisionInstance,
   getSeededTemplate,
   grantInstanceReviewerRole,
-} from '@op/test';
+} from '@op/common/testing/data';
+import {
+  ProcessStatus,
+  ProposalReviewAssignmentStatus,
+  ProposalReviewState,
+  processInstances,
+} from '@op/db/schema';
+import { db, eq } from '@op/db/test';
 
 import {
   TEST_USER_DEFAULT_PASSWORD,
@@ -189,7 +189,7 @@ test.describe('Open Reviews', () => {
       authUserId: org.adminUser.authUserId,
       email: org.adminUser.email,
       // Review already enabled on the middle phase so the "Open reviews" row
-      // renders immediately (it is gated behind reviews-v2 + isReviewPhase).
+      // renders immediately (it is gated behind isReviewPhase).
       schema: makeReviewSchema(false),
       // Draft so the builder autosaves to the server on every edit. (Published
       // processes hold edits in memory until an explicit "Update Process".)
@@ -437,7 +437,7 @@ test.describe('Open Reviews', () => {
 
     // Average bar + Yes group + A's row with score.
     await expect(
-      otherPanel.getByText('Average Score', { exact: true }),
+      otherPanel.getByText('Average score:', { exact: true }),
     ).toBeVisible({ timeout: 15_000 });
     await expect(otherPanel.getByText('Yes (1)')).toBeVisible();
     // No "No" group — reviewer B's own "No" review is excluded.

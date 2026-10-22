@@ -3,6 +3,7 @@
 import { useCollaborativeFragment } from '@/hooks/useCollaborativeFragment';
 import { OptionBox } from '@op/sense/OptionBox';
 import { RadioGroup, RadioGroupItem } from '@op/sense/RadioGroup';
+import type { ReactNode } from 'react';
 import { useEffect, useId, useRef } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -21,7 +22,7 @@ interface CollaborativeDropdownFieldProps {
   fragmentName: string;
   /** Visible group legend. */
   title: string;
-  description?: string;
+  description?: ReactNode;
   /** When true, appends a "None" option that clears the selection back to null. */
   allowEmpty?: boolean;
   /** When true, renders the asterisk and sets `required` on the radio group. */

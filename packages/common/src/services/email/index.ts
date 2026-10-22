@@ -134,3 +134,5 @@ export const sendRelationshipRequestEmail = async ({
       }),
   });
 };
+
+export * from './recipients';

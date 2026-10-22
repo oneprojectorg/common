@@ -1,4 +1,3 @@
-import { set } from '@op/cache';
 import { db, eq } from '@op/db/client';
 import { processInstances } from '@op/db/schema';
 import { Events, event } from '@op/events';
@@ -8,7 +7,8 @@ import { randomUUID } from 'crypto';
 
 import { NotFoundError } from '../../utils';
 import { assertProfileAccess } from '../assert';
-import { EXPORT_CACHE_TTL_SECONDS, exportStatusCacheKey } from './exports';
+import { seedExportRecord } from '../exports';
+import { exportStatusCacheKey } from './exports';
 
 export interface ExportProposalsInput {
   processInstanceId: string;
@@ -24,14 +24,14 @@ export const exportProposals = async ({
 }): Promise<{ exportId: string }> => {
   const { processInstanceId } = input;
 
-  // Resolve the decision profile the export belongs to. Authorization hangs off
-  // this profile; there is no organization lookup because exports are written
-  // to the shared `assets` bucket and no longer need an owning org.
+  // Resolve the decision profile that owns the export. Authorization depends on
+  // this profile. There is no organization lookup, because the export's storage
+  // path uses the process instance, not the owning organization.
   //
-  // Deferred: joining `profiles` would make the null-profileId branch below
-  // unrepresentable, but it also collapses "no such instance" and "instance has
-  // no profile" into one indistinguishable miss. Kept as two lookups until we
-  // decide which error those callers should see.
+  // A join on `profiles` would make the null `profileId` branch below
+  // unrepresentable. It would also collapse "no such instance" and "instance
+  // has no profile" into one miss that a caller cannot tell apart. This stays
+  // as two lookups until we choose which error those callers see.
   const result = await db
     .select({
       profileId: processInstances.profileId,
@@ -63,18 +63,14 @@ export const exportProposals = async ({
   // requires `format`, so a partial record fails the first read instead of
   // answering it. This cache is the only store of export state — no table
   // stands behind it — so nothing else can supply what the seed omits.
-  await set(
-    exportStatusCacheKey(exportId),
-    {
-      exportId,
-      processInstanceId: input.processInstanceId,
-      userId: user.id,
-      format: input.format,
-      status: 'pending',
-      createdAt: new Date().toISOString(),
-    },
-    EXPORT_CACHE_TTL_SECONDS,
-  );
+  await seedExportRecord(exportStatusCacheKey(exportId), {
+    exportId,
+    processInstanceId: input.processInstanceId,
+    userId: user.id,
+    format: input.format,
+    status: 'pending',
+    createdAt: new Date().toISOString(),
+  });
 
   // Trigger workflow
   await event.send({

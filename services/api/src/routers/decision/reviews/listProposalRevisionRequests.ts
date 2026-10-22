@@ -14,11 +14,13 @@ export const listProposalRevisionRequestsRouter = router({
       z.object({
         proposalId: z.uuid(),
         states: z.array(z.enum(ProposalReviewRequestState)).optional(),
+        phaseId: z.string().optional(),
       }),
     )
     .output(proposalRevisionRequestListSchema)
     .query(async ({ ctx, input }) => {
       const result = await listProposalRevisionRequests({
+        phaseId: input.phaseId,
         proposalId: input.proposalId,
         states: input.states,
         user: ctx.user,
@@ -26,6 +28,7 @@ export const listProposalRevisionRequestsRouter = router({
 
       ctx.registerQueryChannels([
         Channels.reviewAssignments(result.processInstanceId),
+        Channels.decisionProposal(result.processInstanceId, input.proposalId),
       ]);
 
       return proposalRevisionRequestListSchema.parse(result);

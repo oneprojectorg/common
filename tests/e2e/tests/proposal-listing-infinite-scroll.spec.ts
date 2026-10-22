@@ -1,9 +1,9 @@
-import { ProposalStatus } from '@op/db/schema';
 import {
   createDecisionInstance,
   createDecisionProcess,
   createProposal,
-} from '@op/test';
+} from '@op/common/testing/data';
+import { ProposalStatus } from '@op/db/schema';
 
 import { expect, test } from '../fixtures/index.js';
 
@@ -41,7 +41,7 @@ test.describe('Proposal Listing — Infinite Scroll', () => {
       schema: process.processSchema,
     });
 
-    // Keep in sync with PROPOSALS_PAGE_LIMIT in ProposalsList.tsx.
+    // Keep in sync with PROPOSALS_PAGE_LIMIT in useProposalFilters.ts.
     const PAGE_LIMIT = 24;
     const TOTAL_PROPOSALS = PAGE_LIMIT + 4;
 
@@ -151,7 +151,7 @@ test.describe('Proposal Listing — Infinite Scroll', () => {
       },
     });
 
-    // Keep in sync with PROPOSALS_PAGE_LIMIT in ProposalsList.tsx.
+    // Keep in sync with PROPOSALS_PAGE_LIMIT in useProposalFilters.ts.
     const PAGE_LIMIT = 24;
     const TOTAL_PROPOSALS = PAGE_LIMIT + 4;
 

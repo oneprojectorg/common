@@ -3,9 +3,9 @@
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import type { DecisionAccess } from '@op/api/encoders';
+import { PAGE_LIMIT, areCommentsAllowed, nextCursor } from '@op/common/client';
 import { useInfiniteScroll } from '@op/hooks';
 import { Button } from '@op/sense/Button';
-import { useDirection } from '@op/sense/Direction';
 import {
   Empty,
   EmptyDescription,
@@ -33,25 +33,23 @@ import {
 import { PostUpdate } from '@/components/PostUpdate';
 import { ResourcesTabContent } from '@/components/Resources/ResourcesTabContent';
 
-import { useRegisterTranslationSamples } from './TranslationDetectionContext';
 import { PANEL_TABS, type PanelTab, panelStateParser } from './panelState';
-
-const UPDATES_PAGE_SIZE = 20;
 
 const isPanelTab = (key: string): key is PanelTab =>
   (PANEL_TABS as readonly string[]).includes(key);
 
 export const DecisionSidePanel = ({
   decisionProfileId,
+  instanceId,
   access,
 }: {
   decisionProfileId: string;
+  instanceId: string;
   access?: DecisionAccess | null;
 }) => {
   const t = useTranslations();
   const [panel, setPanel] = useQueryState('panel', panelStateParser);
   // Sheet's side is physical, so it has to be mirrored to stay at inline-end.
-  const isRtl = useDirection() === 'rtl';
 
   const isOpen = panel !== null;
   const close = useCallback(() => setPanel(null), [setPanel]);
@@ -78,18 +76,19 @@ export const DecisionSidePanel = ({
       }}
     >
       <SheetContent
-        side={isRtl ? 'left' : 'right'}
+        side="inline-end"
         showCloseButton={false}
         // Desktop: sit below the fixed decision header (h-12/h-14) instead of
         // running full-height under it. Mobile stays full-screen.
-        className="gap-0 p-0 sm:max-w-[22.5rem]"
+        className="gap-0 p-0 sm:max-w-lg"
       >
         <SheetTitle className="sr-only">
-          {t('Decision updates panel')}
+          {t('decisions.updatesPanelLabel')}
         </SheetTitle>
         <PanelContents
           isOpen={isOpen}
           decisionProfileId={decisionProfileId}
+          instanceId={instanceId}
           canPostUpdate={canPostUpdate}
           canReadUpdates={canReadUpdates}
           activeTab={activeTab}
@@ -104,6 +103,7 @@ export const DecisionSidePanel = ({
 const PanelContents = ({
   isOpen,
   decisionProfileId,
+  instanceId,
   canPostUpdate,
   canReadUpdates,
   activeTab,
@@ -112,6 +112,7 @@ const PanelContents = ({
 }: {
   isOpen: boolean;
   decisionProfileId: string;
+  instanceId: string;
   canPostUpdate: boolean;
   canReadUpdates: boolean;
   activeTab: PanelTab;
@@ -133,14 +134,14 @@ const PanelContents = ({
       <div className="flex shrink-0 items-center justify-between gap-2 border-b border-border pe-4 sm:pt-4">
         <TabsList
           variant="line"
-          aria-label={t('Decision side panel tabs')}
+          aria-label={t('decisions.sidePanelTabsLabel')}
           className="grow justify-start border-b-0 px-4 sm:px-6"
         >
           <TabsTrigger value="updates" className="h-auto flex-none">
-            {t('Updates')}
+            {t('posts.updatesTab')}
           </TabsTrigger>
           <TabsTrigger value="resources" className="h-auto flex-none">
-            {t('Resources')}
+            {t('decisions.resourcesTab')}
           </TabsTrigger>
         </TabsList>
         <Button
@@ -160,6 +161,7 @@ const PanelContents = ({
         {isOpen ? (
           <UpdatesTabContent
             decisionProfileId={decisionProfileId}
+            instanceId={instanceId}
             canPostUpdate={canPostUpdate}
             canReadUpdates={canReadUpdates}
           />
@@ -183,10 +185,12 @@ const PanelContents = ({
 
 const UpdatesTabContent = ({
   decisionProfileId,
+  instanceId,
   canPostUpdate,
   canReadUpdates,
 }: {
   decisionProfileId: string;
+  instanceId: string;
   canPostUpdate: boolean;
   canReadUpdates: boolean;
 }) => {
@@ -205,7 +209,7 @@ const UpdatesTabContent = ({
         {canPostUpdate ? (
           <PostUpdate
             profileId={decisionProfileId}
-            placeholder={t('Share an update with participants…')}
+            placeholder={t('decisions.updateComposerPlaceholder')}
             label={t('Post')}
             onSuccess={handlePostSuccess}
           />
@@ -213,7 +217,10 @@ const UpdatesTabContent = ({
         {canReadUpdates ? (
           <ErrorBoundary>
             <Suspense fallback={<PostFeedSkeleton numPosts={2} />}>
-              <UpdatesFeed decisionProfileId={decisionProfileId} />
+              <UpdatesFeed
+                decisionProfileId={decisionProfileId}
+                instanceId={instanceId}
+              />
             </Suspense>
           </ErrorBoundary>
         ) : (
@@ -223,7 +230,7 @@ const UpdatesTabContent = ({
                 <MegaphoneIcon />
               </EmptyMedia>
               <EmptyDescription>
-                {t("You don't have access to updates for this decision.")}
+                {t('decisions.updatesForbidden')}
               </EmptyDescription>
             </EmptyHeader>
           </Empty>
@@ -233,15 +240,29 @@ const UpdatesTabContent = ({
   );
 };
 
-const UpdatesFeed = ({ decisionProfileId }: { decisionProfileId: string }) => {
+const UpdatesFeed = ({
+  decisionProfileId,
+  instanceId,
+}: {
+  decisionProfileId: string;
+  instanceId: string;
+}) => {
   const t = useTranslations();
   const { user } = useUser();
 
+  // Suspense, not `useCommentsAllowed`: the overview tab does not
+  // preload `getInstance`, so a plain query would blink the reply button off.
+  const [instance] = trpc.decision.getInstance.useSuspenseQuery({ instanceId });
+  const commentsEnabled = areCommentsAllowed({
+    phases: instance.instanceData?.phases ?? [],
+    currentPhaseId: instance.currentStateId,
+  });
+
   const [paginatedData, { fetchNextPage, hasNextPage, isFetchingNextPage }] =
     trpc.posts.listProfilePosts.useSuspenseInfiniteQuery(
-      { profileId: decisionProfileId, limit: UPDATES_PAGE_SIZE },
+      { profileId: decisionProfileId, limit: PAGE_LIMIT.md },
       {
-        getNextPageParam: (lastPage) => lastPage.next ?? undefined,
+        getNextPageParam: nextCursor,
         staleTime: 30 * 1000,
       },
     );
@@ -250,16 +271,6 @@ const UpdatesFeed = ({ decisionProfileId }: { decisionProfileId: string }) => {
     () => paginatedData.pages.flatMap((page) => page.items),
     [paginatedData.pages],
   );
-
-  // `handleTranslate` already sends this decision's updates to translatePosts.
-  // Register them so the Translate control appears for a reader whose only
-  // unreadable content is an update — the proposals and the overview may well
-  // be in their language.
-  const postSamples = useMemo(
-    () => posts.map((post) => post.content ?? ''),
-    [posts],
-  );
-  useRegisterTranslationSamples('updates', postSamples);
 
   const { ref, shouldShowTrigger } = useInfiniteScroll<HTMLDivElement>(
     fetchNextPage,
@@ -273,7 +284,7 @@ const UpdatesFeed = ({ decisionProfileId }: { decisionProfileId: string }) => {
 
   const {
     discussionModal,
-    handleReactionClick,
+    handleLikeClick,
     handleCommentClick,
     handleModalClose,
   } = usePostFeedActions();
@@ -285,9 +296,9 @@ const UpdatesFeed = ({ decisionProfileId }: { decisionProfileId: string }) => {
           <EmptyMedia variant="icon">
             <MegaphoneIcon />
           </EmptyMedia>
-          <EmptyTitle>{t('No updates yet')}</EmptyTitle>
+          <EmptyTitle>{t('decisions.noUpdatesYet')}</EmptyTitle>
           <EmptyDescription className="max-w-72">
-            {t("The organizers haven't posted any updates yet")}
+            {t('decisions.updatesEmptyHint')}
           </EmptyDescription>
         </EmptyHeader>
       </Empty>
@@ -304,8 +315,8 @@ const UpdatesFeed = ({ decisionProfileId }: { decisionProfileId: string }) => {
               organization={null}
               user={user}
               withLinks={false}
-              onReactionClick={handleReactionClick}
-              onCommentClick={handleCommentClick}
+              onLikeClick={handleLikeClick}
+              onCommentClick={commentsEnabled ? handleCommentClick : undefined}
               className="sm:px-0"
             />
             <hr />

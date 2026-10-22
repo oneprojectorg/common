@@ -40,7 +40,7 @@ export const InviteToExistingOrganization = ({
 }: InviteToExistingOrganizationProps) => {
   const t = useTranslations();
 
-  const [rolesData] = trpc.organization.getRoles.useSuspenseQuery();
+  const [{ items: roles }] = trpc.organization.getRoles.useSuspenseQuery();
 
   const organizationItems = useAdminOrganizations();
   const selectedOrganizationItem = organizationItems.find(
@@ -48,15 +48,15 @@ export const InviteToExistingOrganization = ({
   );
   // Keyed on the role id, which is what the invite sends; SelectValue reads the
   // name back off `items`.
-  const roleItems = rolesData.roles.map((role) => ({
+  const roleItems = roles.map((role) => ({
     value: role.id,
     label: role.name,
   }));
 
   React.useEffect(() => {
     if (!selectedRoleId) {
-      const memberRole = rolesData.roles.find((role) => role.name === 'Member');
-      const defaultRole = memberRole || rolesData.roles[0];
+      const memberRole = roles.find((role) => role.name === 'Member');
+      const defaultRole = memberRole || roles[0];
       if (defaultRole) {
         setSelectedRoleId(defaultRole.id);
       }
@@ -80,7 +80,7 @@ export const InviteToExistingOrganization = ({
 
   return (
     <div className="flex flex-col gap-6">
-      <p>{t('Expand your network and collaborate with others on Common.')}</p>
+      <p>{t('org.inviteExistingOrgSubtitle')}</p>
 
       <div className="flex flex-col gap-4">
         <EmailInviteField
@@ -93,12 +93,10 @@ export const InviteToExistingOrganization = ({
 
         <Field>
           <FieldLabel htmlFor="invite-organization">
-            {t('Add to organization')}
+            {t('org.addToOrgLabel')}
           </FieldLabel>
           {organizationItems.length === 0 ? (
-            <FieldDescription>
-              {t('You can only invite people to organizations you administer.')}
-            </FieldDescription>
+            <FieldDescription>{t('org.inviteAdminOnlyHint')}</FieldDescription>
           ) : (
             <Select
               items={organizationItems}
@@ -106,7 +104,7 @@ export const InviteToExistingOrganization = ({
               onValueChange={(value) => setSelectedOrganization(value ?? '')}
             >
               <SelectTrigger id="invite-organization" className="w-full">
-                <SelectValue placeholder={t('Select an organization')} />
+                <SelectValue placeholder={t('org.inviteOrgPlaceholder')} />
               </SelectTrigger>
               <SelectContent>
                 <SelectGroup>

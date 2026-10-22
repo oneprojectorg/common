@@ -1,3 +1,8 @@
+import {
+  listOrganizationProfileRecipients,
+  listProfileRecipients,
+} from '@op/common';
+import { selectEmailRecipients } from '@op/common/client';
 import { OPURLConfig } from '@op/core';
 import { db } from '@op/db/client';
 import {
@@ -9,6 +14,8 @@ import {
 import { CommentNotificationEmail, OPBatchSend } from '@op/emails';
 import { Events, inngest } from '@op/events';
 import { eq } from 'drizzle-orm';
+
+import { clipCommentContext } from './commentContext';
 
 const key = 'event.data.authorProfileId + "-" + event.data.parentPostId';
 const { commentPosted } = Events;
@@ -36,12 +43,12 @@ export const sendPostCommentNotification = inngest.createFunction(
           .select({
             postContent: posts.content,
             recipientId: profiles.id,
+            recipientType: profiles.type,
             recipientName: profiles.name,
-            recipientEmail: profiles.email,
             recipientSlug: profiles.slug,
           })
           .from(posts)
-          .innerJoin(profiles, eq(profiles.id, posts.profileId))
+          .leftJoin(profiles, eq(profiles.id, posts.profileId))
           .where(eq(posts.id, parentPostId))
           .limit(1);
         return row ?? null;
@@ -65,6 +72,7 @@ export const sendPostCommentNotification = inngest.createFunction(
       step.run('get-parent-org-link', async () => {
         const [row] = await db
           .select({
+            orgProfileId: profiles.id,
             orgProfileName: profiles.name,
             orgProfileSlug: profiles.slug,
           })
@@ -88,29 +96,43 @@ export const sendPostCommentNotification = inngest.createFunction(
     if (parent.recipientId === authorProfileId) {
       return;
     }
-    const recipientEmail = parent.recipientEmail;
-    if (!recipientEmail) {
+
+    // Org-feed posts written before posts carried an author profile have
+    // `profileId` null; the linked organization owns them.
+    const recipients = selectEmailRecipients(
+      await step.run('get-recipients', async () => {
+        if (parent.recipientId && parent.recipientType) {
+          return listProfileRecipients({
+            id: parent.recipientId,
+            type: parent.recipientType,
+          });
+        }
+        return parentOrgLink
+          ? listOrganizationProfileRecipients(parentOrgLink.orgProfileId)
+          : [];
+      }),
+    );
+
+    if (recipients.length === 0) {
       return;
     }
 
-    const contextName =
-      parent.postContent.length > 50
-        ? `${parent.postContent.slice(0, 50).trim()}...`
-        : parent.postContent.trim();
+    const contextName = clipCommentContext(parent.postContent);
 
     // Prefer org context for the URL/postedIn field when the parent post is
     // org-attached; otherwise fall back to the recipient (author) profile.
     const linkedProfileSlug =
       parentOrgLink?.orgProfileSlug ?? parent.recipientSlug;
-    const postedIn = parentOrgLink?.orgProfileName ?? parent.recipientName;
+    const postedIn =
+      parentOrgLink?.orgProfileName ?? parent.recipientName ?? undefined;
 
     const baseUrl = OPURLConfig('APP').ENV_URL;
     const contentUrl = `${baseUrl}/profile/${linkedProfileSlug}/posts/${parentPostId}`;
 
     const result = await step.run('send-email', async () => {
-      const { errors } = await OPBatchSend([
-        {
-          to: recipientEmail,
+      const { errors } = await OPBatchSend(
+        recipients.map((to) => ({
+          to,
           from: `${commenter.name} via Common`,
           subject: CommentNotificationEmail.subject(commenter.name, 'post'),
           component: () =>
@@ -119,19 +141,22 @@ export const sendPostCommentNotification = inngest.createFunction(
               postContent: parent.postContent,
               commentContent: comment.content,
               postUrl: contentUrl,
-              recipientName: parent.recipientName,
+              recipientName:
+                parent.recipientName ??
+                parentOrgLink?.orgProfileName ??
+                undefined,
               contentType: 'post',
               contextName,
               postedIn,
             }),
-        },
-      ]);
+        })),
+      );
 
       if (errors.length > 0) {
         throw new Error(`Email send failed: ${JSON.stringify(errors)}`);
       }
 
-      return { sent: 1 };
+      return { sent: recipients.length };
     });
 
     return {

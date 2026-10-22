@@ -1,14 +1,19 @@
-import { and, db, eq, gt, lt, or, sql } from '@op/db/client';
-import { profileUsers, profiles, users } from '@op/db/schema';
+import { and, db, eq, gt, inArray, lt, or, sql } from '@op/db/client';
+import {
+  profileUserToAccessRoles,
+  profileUsers,
+  profiles,
+  users,
+} from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 
 import {
-  type PaginatedResult,
   type SortDir,
   decodeCursor,
   encodeCursor,
   excludeGlobalUsers,
 } from '../../utils/db';
+import { type Paginated } from '../../utils/pagination';
 import { assertProfile, assertProfileAdmin } from '../assert';
 import type {
   ProfileUserQueryResult,
@@ -40,6 +45,7 @@ export const listProfileUsers = async ({
   orderBy = 'name',
   dir = 'asc',
   query,
+  roleId,
   cursor,
   limit = 25,
 }: {
@@ -48,9 +54,10 @@ export const listProfileUsers = async ({
   orderBy?: ProfileUserOrderBy;
   dir?: SortDir;
   query?: string;
+  roleId?: string;
   cursor?: string | null;
   limit?: number;
-}): Promise<PaginatedResult<ProfileUserWithRelations>> => {
+}): Promise<Paginated<ProfileUserWithRelations>> => {
   // Check existence before access so a nonexistent profile is a 404
   // regardless of the caller's permissions.
   await assertProfile(profileId);
@@ -125,14 +132,30 @@ export const listProfileUsers = async ({
 
   const cursorCondition = buildCursorCondition();
 
+  // Optional role filter: only members holding the given role via the
+  // profileUser -> access role junction. Purely additive so it composes with
+  // the search and cursor conditions without touching the keyset logic.
+  const roleFilter = roleId
+    ? inArray(
+        profileUsers.id,
+        db
+          .select({ profileUserId: profileUserToAccessRoles.profileUserId })
+          .from(profileUserToAccessRoles)
+          .where(eq(profileUserToAccessRoles.accessRoleId, roleId)),
+      )
+    : undefined;
+
   // Combine all conditions
   const baseCondition = and(
     eq(profileUsers.profileId, profileId),
     excludeGlobalUsers(profileUsers.authUserId),
   );
-  const conditions = [baseCondition, searchFilter, cursorCondition].filter(
-    Boolean,
-  );
+  const conditions = [
+    baseCondition,
+    searchFilter,
+    roleFilter,
+    cursorCondition,
+  ].filter(Boolean);
   const whereClause =
     conditions.length > 1 ? and(...conditions) : baseCondition;
 

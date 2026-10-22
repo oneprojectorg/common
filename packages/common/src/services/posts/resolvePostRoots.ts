@@ -13,6 +13,15 @@ import { CommonError } from '../../utils';
 export type ResolvedPostRoots = {
   rootProfileId: string | null;
   rootPostId: string | null;
+  /**
+   * The root decision's instance, when the walk went through a proposal and
+   * read it anyway. Null on every other path; a wrapper rather than a bare
+   * `instanceData` so "not resolved" can't be confused with a null column.
+   */
+  resolvedInstance: {
+    instanceData: unknown;
+    currentStateId: string | null;
+  } | null;
 };
 
 // Resolves the two write-time root columns for a new post:
@@ -51,6 +60,7 @@ export const resolvePostRoots = async ({
       // If the parent has no rootPostId, the parent IS the thread root.
       // Otherwise propagate the parent's root so deep replies all share one.
       rootPostId: parent.rootPostId ?? parent.id,
+      resolvedInstance: null,
     };
   }
 
@@ -69,7 +79,11 @@ export const resolvePostRoots = async ({
     // parent decision's profile.
     if (profile.type === EntityType.PROPOSAL) {
       const [parent] = await db
-        .select({ decisionProfileId: processInstances.profileId })
+        .select({
+          decisionProfileId: processInstances.profileId,
+          instanceData: processInstances.instanceData,
+          currentStateId: processInstances.currentStateId,
+        })
         .from(proposals)
         .innerJoin(
           processInstances,
@@ -81,11 +95,22 @@ export const resolvePostRoots = async ({
       if (!parent?.decisionProfileId) {
         throw new CommonError('Proposal has no parent decision');
       }
-      return { rootProfileId: parent.decisionProfileId, rootPostId: null };
+      return {
+        rootProfileId: parent.decisionProfileId,
+        rootPostId: null,
+        resolvedInstance: {
+          instanceData: parent.instanceData,
+          currentStateId: parent.currentStateId,
+        },
+      };
     }
 
-    return { rootProfileId: profile.id, rootPostId: null };
+    return {
+      rootProfileId: profile.id,
+      rootPostId: null,
+      resolvedInstance: null,
+    };
   }
 
-  return { rootProfileId: null, rootPostId: null };
+  return { rootProfileId: null, rootPostId: null, resolvedInstance: null };
 };

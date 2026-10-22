@@ -2,6 +2,7 @@ import { mergeRouters } from '../../trpcFactory';
 import { deleteProposalAttachment } from './deleteProposalAttachment';
 import { instancesRouter } from './instances';
 import { listBoundaryShapesRouter } from './listBoundaryShapes';
+import { phasesRouter } from './phases';
 import { processesRouter } from './processes';
 import { proposalsRouter } from './proposals';
 import { resolveBoundaryRouter } from './resolveBoundary';
@@ -15,6 +16,7 @@ import { votingRouter } from './voting';
 export const decisionRouter = mergeRouters(
   processesRouter,
   instancesRouter,
+  phasesRouter,
   proposalsRouter,
   reviewsRouter,
   resultsRouter,

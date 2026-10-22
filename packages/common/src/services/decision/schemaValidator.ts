@@ -3,6 +3,7 @@ import addFormats from 'ajv-formats';
 import type { JSONSchema7 } from 'json-schema';
 
 import { ValidationError } from '../../utils';
+import { getSchemaFieldTitle } from './proposalDataSchema';
 
 export interface SchemaValidationResult {
   valid: boolean;
@@ -32,6 +33,7 @@ export class SchemaValidator {
     this.ajv.addKeyword('x-field-order');
     this.ajv.addKeyword('x-format');
     this.ajv.addKeyword('x-map-default');
+    this.ajv.addKeyword('x-unit');
     // Phase designation on custom forms (see CustomFormDefinitionSchema).
     this.ajv.addKeyword('x-phase');
   }
@@ -222,10 +224,10 @@ export class SchemaValidator {
    */
   private getFieldDisplayName(fieldName: string, schema?: JSONSchema7): string {
     const fieldSchema = schema?.properties?.[fieldName];
-    if (typeof fieldSchema === 'object' && fieldSchema?.title) {
-      return fieldSchema.title;
-    }
-    return fieldName.charAt(0).toUpperCase() + fieldName.slice(1);
+    return getSchemaFieldTitle(
+      typeof fieldSchema === 'object' ? fieldSchema : undefined,
+      fieldName,
+    );
   }
 
   /**

@@ -1,0 +1,2 @@
+ALTER TABLE "decision_proposal_reviews" ADD COLUMN "reviewed_proposal_history_id" uuid;--> statement-breakpoint
+ALTER TABLE "decision_proposal_reviews" ADD CONSTRAINT "proposal_reviews_reviewed_history_fkey" FOREIGN KEY ("reviewed_proposal_history_id") REFERENCES "decision_proposal_history"("history_id") ON DELETE SET NULL ON UPDATE CASCADE;

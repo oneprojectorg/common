@@ -1,0 +1,93 @@
+'use client';
+
+import type {
+  ProposalFeedbackItem,
+  ProposalReviewRequest,
+  ProposalRevisionNote,
+} from '@op/common/client';
+
+import { useTranslations } from '@/lib/i18n';
+
+import { RevisionRequestCard } from './RevisionRequestCard';
+import { RevisionFeedbackCard } from './proposalEditor/RevisionFeedbackCard';
+
+interface ReviewNotesPanelProps {
+  openRequests: Array<ProposalReviewRequest>;
+  noteGroups: Array<ProposalRevisionNote>;
+  feedbackNotes: Array<ProposalFeedbackItem>;
+  isAuthor: boolean;
+}
+
+/** Open revision requests, then reviewer notes, then the answered cycles. */
+export function ReviewNotesPanel({
+  openRequests,
+  noteGroups,
+  feedbackNotes,
+  isAuthor,
+}: ReviewNotesPanelProps) {
+  const t = useTranslations('decisions.review');
+  const noteTitle = isAuthor
+    ? t('yourRevisionNoteHeading')
+    : t('authorRevisionNoteHeading');
+
+  return (
+    // Fills in from a client query, with no navigation to announce it.
+    <div aria-live="polite" className="flex flex-col gap-4">
+      {openRequests.length > 0 ? (
+        <>
+          <h3 className="font-serif text-label">
+            {openRequests.length === 1
+              ? t('revisionRequestHeading')
+              : t('revisionRequestsHeading')}
+          </h3>
+
+          {openRequests.map((request) => (
+            <RevisionRequestCard key={request.id} request={request} />
+          ))}
+        </>
+      ) : null}
+
+      {feedbackNotes.length > 0 ? (
+        <>
+          <h3 className="font-serif text-label">{t('feedbackLabel')}</h3>
+
+          <p className="text-base text-muted-foreground">
+            {t('reviewNotesDescription')}
+          </p>
+
+          {feedbackNotes.map((item) => (
+            <RevisionFeedbackCard
+              key={item.id}
+              comment={item.comment}
+              sentAt={item.submittedAt}
+              variant="reviewer"
+              meta="anonymousReviewer"
+            />
+          ))}
+        </>
+      ) : null}
+
+      {noteGroups.map((group) => (
+        <div
+          key={group.respondedProposalHistoryId}
+          className="flex flex-col gap-4"
+        >
+          {/* A resubmission can carry no note. */}
+          {group.responseComment ? (
+            <RevisionFeedbackCard
+              comment={group.responseComment}
+              sentAt={group.respondedAt}
+              variant="author"
+              title={noteTitle}
+              meta="bare"
+            />
+          ) : null}
+
+          {group.requests.map((request) => (
+            <RevisionRequestCard key={request.id} request={request} />
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+}

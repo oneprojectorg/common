@@ -2,6 +2,10 @@
 
 import { trpc } from '@op/api/client';
 import type { ProcessInstance } from '@op/api/encoders';
+import type {
+  ProposalAllocation,
+  ResultNotificationMessages,
+} from '@op/common/client';
 import { getRubricScoringInfo } from '@op/common/client';
 import {
   Empty,
@@ -10,6 +14,7 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from '@op/sense/Empty';
+import { Header3 } from '@op/sense/Header';
 import { toast } from '@op/sense/Toast';
 import { notFound } from 'next/navigation';
 import { useMemo, useState } from 'react';
@@ -19,7 +24,8 @@ import { useTranslations } from '@/lib/i18n';
 
 import { Bullet } from '@/components/Bullet';
 
-import { StandardSelectionFooter } from '../StandardSelectionFooter';
+import { ProposalCardDialogProvider } from '../ProposalCardDialogContext';
+import { SelectionFooter } from '../SelectionFooter';
 import { useManualSelection } from '../useManualSelection';
 import {
   ReviewSelectionTable,
@@ -29,10 +35,23 @@ import {
 export function ReviewSelectionList({
   instance,
   previousPhaseId,
+  showBudget,
+  isFinalPhase,
 }: {
   instance: ProcessInstance;
   /** Phase whose proposals + review aggregates we're shortlisting from. */
   previousPhaseId: string;
+  /** Show the budget column. Derived by the page so the skeleton agrees. */
+  showBudget: boolean;
+  /**
+   * Confirming publishes results instead of advancing anyone, so the admin
+   * composes the copy mailed to every author first. Derived by the page,
+   * which words its hero off the same answer.
+   *
+   * Named to match `ManualSelectionList`'s `confirmVariant === 'finalPhase'`;
+   * the service calls the same predicate `publishesResults`.
+   */
+  isFinalPhase: boolean;
 }) {
   const t = useTranslations();
   const processInstanceId = instance.id;
@@ -51,18 +70,23 @@ export function ReviewSelectionList({
   const advancing = useMemo(() => new Set(advancingIds), [advancingIds]);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
-  const [{ items, total, rubricTemplate }] =
+  const [{ items, rubricTemplate }] =
     trpc.decision.listWithReviewAggregates.useSuspenseQuery({
       processInstanceId,
       phaseId: previousPhaseId,
     });
   const utils = trpc.useUtils();
 
-  const totalPoints = useMemo(
-    () =>
-      rubricTemplate ? getRubricScoringInfo(rubricTemplate).totalPoints : 0,
-    [rubricTemplate],
-  );
+  const { totalPoints, hasScoring } = useMemo(() => {
+    if (!rubricTemplate) {
+      return { totalPoints: 0, hasScoring: false };
+    }
+    const info = getRubricScoringInfo(rubricTemplate);
+    return {
+      totalPoints: info.totalPoints,
+      hasScoring: info.criteria.some((c) => c.scored),
+    };
+  }, [rubricTemplate]);
 
   const selectedProposals = useMemo(
     () =>
@@ -84,10 +108,33 @@ export function ReviewSelectionList({
       setIsConfirmOpen(false);
     },
     onError: (error) => {
-      setIsConfirmOpen(false);
+      // Re-read rather than sorting the failure by error code. If this lost to
+      // a concurrent advance or an already-submitted selection, the instance
+      // refetch flips `selectionsAreConfirmed` and routes this screen away; if
+      // a proposal left the pool, the aggregates refetch drops it from
+      // `selectedProposals`. Either way the retry isn't doomed to repeat.
+      utils.decision.getInstance.invalidate({ instanceId: processInstanceId });
+      utils.decision.listWithReviewAggregates.invalidate({
+        processInstanceId,
+        phaseId: previousPhaseId,
+      });
       toast.error(error.message);
     },
   });
+
+  const handleConfirm = (
+    resultNotifications?: ResultNotificationMessages,
+    allocations?: ProposalAllocation[],
+  ) =>
+    submitMutation.mutate({
+      processInstanceId,
+      // The resolved proposals, not the raw draft: the draft is persisted in
+      // localStorage and can name rows that have since left the pool, which the
+      // service rejects for the whole call.
+      proposalIds: selectedProposals.map((proposal) => proposal.id),
+      resultNotifications,
+      allocations,
+    });
 
   const handleAdvanceToggle = (proposalId: string) => {
     setAdvancingIds(
@@ -98,64 +145,73 @@ export function ReviewSelectionList({
   };
 
   return (
-    <div className="flex flex-col gap-6 pb-20">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center gap-2">
-          <span className="font-serif text-title font-light">
-            {t('All proposals')}
-          </span>
-          <Bullet />
-          <span className="font-serif text-title font-light">{total}</span>
+    <ProposalCardDialogProvider mergePhaseId={previousPhaseId}>
+      <div className="flex flex-col gap-6 pb-20">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <Header3 className="flex items-center gap-2">
+            {t('decisions.proposals.allProposalsOption')}
+            <Bullet />
+            {items.length}
+          </Header3>
         </div>
-      </div>
 
-      {items.length === 0 ? (
-        <Empty>
-          <EmptyHeader>
-            <EmptyMedia variant="icon">
-              <LuLeaf className="size-6" />
-            </EmptyMedia>
-            <EmptyTitle render={<h3 />}>
-              {t('No proposals to review yet')}
-            </EmptyTitle>
-            <EmptyDescription>
-              {t('Proposals will appear here once they are submitted.')}
-            </EmptyDescription>
-          </EmptyHeader>
-        </Empty>
-      ) : (
-        <ReviewSelectionTable
-          items={items}
-          totalPoints={totalPoints}
-          onAdvance={handleAdvanceToggle}
-          advancingIds={advancing}
-          decisionSlug={decisionSlug}
+        {items.length === 0 ? (
+          <Empty>
+            <EmptyHeader>
+              <EmptyMedia variant="icon">
+                <LuLeaf className="size-6" />
+              </EmptyMedia>
+              <EmptyTitle render={<h3 />}>
+                {t('decisions.review.noProposalsToReview')}
+              </EmptyTitle>
+              <EmptyDescription>
+                {t('decisions.review.noProposalsSubmittedHint')}
+              </EmptyDescription>
+            </EmptyHeader>
+          </Empty>
+        ) : (
+          <ReviewSelectionTable
+            items={items}
+            totalPoints={totalPoints}
+            showScore={hasScoring}
+            onAdvance={handleAdvanceToggle}
+            advancingIds={advancing}
+            decisionSlug={decisionSlug}
+            showBudget={showBudget}
+          />
+        )}
+
+        <SelectionFooter
+          selectedProposals={selectedProposals}
+          numSelected={selectedProposals.length}
+          totalCandidates={items.length}
+          publishesResults={isFinalPhase}
+          phaseName={currentPhaseName}
+          collectsBudget={showBudget}
+          isConfirmOpen={isConfirmOpen}
+          onConfirmOpenChange={setIsConfirmOpen}
+          onConfirm={handleConfirm}
+          isSubmitting={submitMutation.isPending}
         />
-      )}
-
-      <StandardSelectionFooter
-        selectedProposals={selectedProposals}
-        numSelected={advancingIds.length}
-        phaseName={currentPhaseName}
-        isConfirmOpen={isConfirmOpen}
-        onConfirmOpenChange={setIsConfirmOpen}
-        onConfirm={() =>
-          submitMutation.mutate({
-            processInstanceId,
-            proposalIds: advancingIds,
-          })
-        }
-        isSubmitting={submitMutation.isPending}
-      />
-    </div>
+      </div>
+    </ProposalCardDialogProvider>
   );
 }
 
-export function ReviewSelectionListSkeleton() {
+export function ReviewSelectionListSkeleton({
+  showScore = true,
+  showBudget = true,
+}: {
+  showScore?: boolean;
+  showBudget?: boolean;
+}) {
   return (
     <div className="flex flex-col gap-6">
       <div className="h-8 w-32 animate-pulse rounded bg-secondary" />
-      <ReviewSelectionTableSkeleton />
+      <ReviewSelectionTableSkeleton
+        showScore={showScore}
+        showBudget={showBudget}
+      />
     </div>
   );
 }

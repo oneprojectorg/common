@@ -44,7 +44,7 @@ export const HeaderUserMenu = ({ className }: { className?: string }) => {
         )
       }
     >
-      {t('Log in')}
+      {t('shell.logInAction')}
     </Button>
   );
 };
@@ -101,7 +101,7 @@ export const SiteHeader = () => {
         )}
       >
         <SidebarTrigger
-          aria-label={t('Open menu')}
+          aria-label={t('shell.openMenuLabel')}
           className="size-8 rounded-lg md:size-11"
         >
           <LuAlignJustify className="size-4" />

@@ -1,24 +1,31 @@
 'use client';
 
-import { useFeatureFlag } from '@/hooks/useFeatureFlag';
+import { linkifyText } from '@/utils/linkDetection';
 import {
+  DEFAULT_MONEY_CURRENCY,
   ProposalReviewState,
   type SchemaOption,
   type XFormatPropertySchema,
+  buildMoneyFieldAnswer,
+  getCurrencySymbol,
+  getMoneyAmount,
+  getMoneyFieldCurrency,
+  getMoneyFieldMinimum,
   isOverallRecommendationField,
   parseSchemaOptions,
 } from '@op/common/client';
 import { Alert, AlertDescription, AlertTitle } from '@op/sense/Alert';
 import { Badge } from '@op/sense/Badge';
 import { Button } from '@op/sense/Button';
+import { Checkbox } from '@op/sense/Checkbox';
 import {
   Field,
-  FieldContent,
   FieldDescription,
   FieldLabel,
   FieldTitle,
 } from '@op/sense/Field';
 import { Input } from '@op/sense/Input';
+import { NumberField } from '@op/sense/NumberField';
 import { OptionBox } from '@op/sense/OptionBox';
 import { RadioGroup, RadioGroupItem } from '@op/sense/RadioGroup';
 import { RequiredAsterisk } from '@op/sense/RequiredAsterisk';
@@ -32,87 +39,85 @@ import {
 } from '@op/sense/Select';
 import { Switch } from '@op/sense/Switch';
 import { Textarea } from '@op/sense/Textarea';
+import type { ReactNode } from 'react';
 import { useId, useMemo, useState } from 'react';
-import { LuCircleAlert, LuPlus } from 'react-icons/lu';
+import { LuPlus, LuRefreshCw } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
 import { compileRubricSchema } from '../forms/rubric';
 import type { FieldDescriptor } from '../forms/types';
 import {
+  YES_NO_VALUES,
   getCriterionMaxPoints,
+  getSelectedOptionValues,
   inferCriterionType,
-  translateRubricTemplate,
 } from '../rubricTemplate';
 import { useReviewForm } from './ReviewFormContext';
 import { FormShell, TotalScoreCard } from './ReviewFormShell';
 import { type PreviousReviewPhase, ReviewTabs } from './ReviewTabs';
-import { useReviewTranslation } from './ReviewTranslationContext';
 import { SubmittedReviewView } from './SubmittedReviewView';
 import { ViewRevisionRequestModal } from './ViewRevisionRequestModal';
 
 /**
- * Right-hand "Review Proposal" panel. Behind the reviews-v2 flag, the
- * reviewer's own form is shown under a "My review" tab alongside an "Other
- * reviews" tab (when the current phase's `openReviews` is on) and one
- * "Reviews from {phase}" tab per earlier open review phase. With no tab
- * beyond "My review", the form renders on its own exactly as before.
+ * Right-hand "Review Proposal" panel. The reviewer's own form is shown under a
+ * "My review" tab alongside an "Other reviews" tab (when the current phase's
+ * `openReviews` is on) and one "Reviews from {phase}" tab per earlier open
+ * review phase. With no tab beyond "My review", the form renders on its own.
  */
 export function ReviewRubricForm({
-  openReviews,
   previousReviewPhases,
 }: {
-  openReviews: boolean;
   previousReviewPhases: PreviousReviewPhase[];
 }) {
-  const reviewsV2Enabled = useFeatureFlag('reviews-v2') ?? false;
-  const showOtherReviews = reviewsV2Enabled && openReviews;
-  const previousPhases = reviewsV2Enabled ? previousReviewPhases : [];
+  const { openReviews } = useReviewForm().reviewSettings;
 
-  if (!showOtherReviews && previousPhases.length === 0) {
-    return (
-      <FormShell>
-        <MyReviewForm />
-      </FormShell>
-    );
+  if (!openReviews && previousReviewPhases.length === 0) {
+    return <OwnReviewRubricForm />;
   }
 
   return (
     <FormShell>
       <ReviewTabs
         myReview={<MyReviewForm />}
-        showOtherReviews={showOtherReviews}
-        previousPhases={previousPhases}
+        showOtherReviews={openReviews}
+        previousPhases={previousReviewPhases}
       />
+    </FormShell>
+  );
+}
+
+/** The reviewer's own form alone, for hosts that already list other reviews. */
+export function OwnReviewRubricForm() {
+  return (
+    <FormShell>
+      <MyReviewForm />
     </FormShell>
   );
 }
 
 /**
  * Schema-driven review rubric form renderer (the reviewer's own review).
+ *
+ * `anonymousFeedback` off hides only the add button: an existing comment is
+ * always re-submitted, so it must stay visible and editable.
  */
 function MyReviewForm() {
   const t = useTranslations();
   const {
-    rubricTemplate: authoredTemplate,
+    reviewSettings: { anonymousFeedback },
+    rubricTemplate: template,
     values,
     rationales,
     overallComment,
     handleValueChange,
     handleRationaleChange,
     handleOverallCommentChange,
-    isPausedForRevision,
+    openRevisionRequests,
+    isReviewOutOfDate,
     isEditing,
     review,
   } = useReviewForm();
-  const { rubricMeta } = useReviewTranslation();
-
-  // Display copy only — option values, bounds and the required list are
-  // untouched, so the answers this form collects are identical either way.
-  const template = useMemo(
-    () => translateRubricTemplate(authoredTemplate, rubricMeta),
-    [authoredTemplate, rubricMeta],
-  );
   const fields = compileRubricSchema(template);
 
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(
@@ -120,96 +125,114 @@ function MyReviewForm() {
   );
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
 
+  const revisionAlert =
+    openRevisionRequests.length > 0 ? (
+      <>
+        {/* Polite, not sense `Alert`'s default assertive `role="alert"`: this
+            can land mid-rubric and must not cut off the current announcement. */}
+        <Alert variant="warning" role="status" aria-live="polite">
+          <LuRefreshCw />
+          <AlertTitle>
+            {t('decisions.review.revisionRequestedLabel')}
+          </AlertTitle>
+          <AlertDescription>
+            {t('decisions.review.requestRevisionSuccessHint')}{' '}
+            <Button
+              variant="link"
+              size="inline"
+              className="text-sm underline"
+              onClick={() => setIsViewModalOpen(true)}
+            >
+              {t('decisions.review.viewRequestAction')}
+            </Button>
+          </AlertDescription>
+        </Alert>
+
+        <ViewRevisionRequestModal
+          isOpen={isViewModalOpen}
+          onOpenChange={setIsViewModalOpen}
+        />
+      </>
+    ) : null;
+
   // A submitted review shows the read-only result unless the reviewer has
-  // switched it back into the form via "Edit review".
+  // switched it back into the form via "Edit review", or it is out of date.
   if (review?.state === ProposalReviewState.SUBMITTED && !isEditing) {
     return (
-      <SubmittedReviewView
-        rubricTemplate={template}
-        review={review}
-        // Above the feedback block, per the design — hence the slot.
-        scoreSlot={<TotalScoreCard rubricTemplate={template} values={values} />}
-      />
+      <>
+        {revisionAlert}
+        <SubmittedReviewView
+          rubricTemplate={template}
+          review={review}
+          scoreSlot={
+            <TotalScoreCard rubricTemplate={template} values={values} />
+          }
+        />
+      </>
     );
   }
 
   return (
     <>
-      {isPausedForRevision && (
-        <>
-          <Alert variant="warning">
-            <LuCircleAlert />
-            <AlertTitle>{t('Proposal Revision Requested')}</AlertTitle>
-            <AlertDescription>
-              {t('Reviewing is paused until author submits a revision.')}{' '}
-              <Button
-                variant="link"
-                size="inline"
-                className="text-sm underline"
-                onClick={() => setIsViewModalOpen(true)}
-              >
-                {t('View feedback')}
-              </Button>
-            </AlertDescription>
-          </Alert>
+      {isReviewOutOfDate && <NewRevisionAlert />}
 
-          <ViewRevisionRequestModal
-            isOpen={isViewModalOpen}
-            onOpenChange={setIsViewModalOpen}
+      {revisionAlert}
+
+      <div className="flex flex-col gap-6">
+        {fields.map((field) => (
+          <RubricCriterionSection
+            key={field.key}
+            field={field}
+            maxPoints={getCriterionMaxPoints(template, field.key) ?? 0}
+            value={values[field.key]}
+            onChange={(value) => handleValueChange(field.key, value)}
+            rationaleValue={rationales[field.key] ?? ''}
+            onRationaleChange={(value) =>
+              handleRationaleChange(field.key, value)
+            }
+            rationalePlaceholder={
+              isOverallRecommendationField(field.key)
+                ? t('decisions.review.overallNotesPlaceholder')
+                : t('decisions.review.criterionNotesPlaceholder')
+            }
           />
-        </>
-      )}
+        ))}
 
-      {/* `inert` (not just pointer-events-none) so a paused form can't be
-          reached or edited by keyboard either. */}
-      <div
-        inert={isPausedForRevision}
-        className={
-          isPausedForRevision ? 'pointer-events-none opacity-50' : undefined
-        }
-      >
-        <div className="flex flex-col gap-6">
-          {fields.map((field) => (
-            <RubricCriterionSection
-              key={field.key}
-              field={field}
-              maxPoints={getCriterionMaxPoints(template, field.key) ?? 0}
-              value={values[field.key]}
-              onChange={(value) => handleValueChange(field.key, value)}
-              rationaleValue={rationales[field.key] ?? ''}
-              onRationaleChange={(value) =>
-                handleRationaleChange(field.key, value)
-              }
-              rationalePlaceholder={
-                isOverallRecommendationField(field.key)
-                  ? t('Add overall notes...')
-                  : t('Add reasons or insights...')
-              }
+        <TotalScoreCard rubricTemplate={template} values={values} />
+
+        {isFeedbackOpen ? (
+          <section className="border-t pt-6">
+            <FeedbackToAuthorField
+              value={overallComment}
+              onChange={handleOverallCommentChange}
             />
-          ))}
-
-          <TotalScoreCard rubricTemplate={template} values={values} />
-
-          {isFeedbackOpen ? (
-            <section className="border-t pt-6">
-              <FeedbackToAuthorField
-                value={overallComment}
-                onChange={handleOverallCommentChange}
-              />
-            </section>
-          ) : (
-            <Button
-              variant="outline"
-              className="w-full"
-              onClick={() => setIsFeedbackOpen(true)}
-            >
-              <LuPlus className="size-4" />
-              {t('Feedback to author')}
-            </Button>
-          )}
-        </div>
+          </section>
+        ) : anonymousFeedback ? (
+          <Button
+            variant="outline"
+            className="w-full"
+            onClick={() => setIsFeedbackOpen(true)}
+          >
+            <LuPlus className="size-4" />
+            {t('decisions.review.feedbackToAuthorLabel')}
+          </Button>
+        ) : null}
       </div>
     </>
+  );
+}
+
+function NewRevisionAlert() {
+  const t = useTranslations();
+
+  return (
+    <Alert variant="warning">
+      <LuRefreshCw />
+      <AlertTitle>{t('decisions.review.newRevisionLabel')}</AlertTitle>
+      <AlertDescription>
+        {t('decisions.review.ownReviewOutOfDateHint')}
+      </AlertDescription>
+    </Alert>
   );
 }
 
@@ -244,11 +267,14 @@ function RubricCriterionSection({
   const descriptionId = useId();
 
   const criterionType = inferCriterionType(field.schema);
-  const scoreLabel = maxPoints > 0 ? `${maxPoints} ${t('pts')}` : null;
-  const badgeLabel = criterionType === 'yes_no' ? t('No/Yes') : scoreLabel;
+  const scoreLabel =
+    maxPoints > 0 ? `${maxPoints} ${t('decisions.review.ptsSuffix')}` : null;
+  const badgeLabel =
+    criterionType === 'yes_no' ? t('decisions.review.noYesLabel') : scoreLabel;
   const isTextInput =
     field.format === 'short-text' || field.format === 'long-text';
-  const describedBy = field.schema.description ? descriptionId : undefined;
+  const description = linkifyText(field.schema.description);
+  const describedBy = description ? descriptionId : undefined;
 
   // `labelId` goes on the title text, not the whole row: the badge is inside
   // the heading, and a control named by the row would announce "Innovation
@@ -276,28 +302,37 @@ function RubricCriterionSection({
 
   return (
     <section className="border-b pb-6">
-      {/* Yes/no reads as a setting: prompt on the left, switch on the right. */}
-      {criterionType === 'yes_no' ? (
+      {/* Yes/no reads as a setting: badge top-right in the header row, then
+          the switch beside the description, top-aligned. */}
+      {criterionType === 'money' ? (
+        // Money uses the input's own label slot instead of the h4 field title.
+        <MoneyFieldInput
+          field={field}
+          description={description}
+          value={value}
+          onChange={onChange}
+          required={field.required ?? false}
+        />
+      ) : criterionType === 'yes_no' ? (
         // One `dir="auto"` for the whole field rather than one per part:
         // resolved separately, each element reads from its own text, so the
         // title (which also carries the points badge) can land on the opposite
-        // side from its own description. The controls inherit this; the portaled
-        // select popup can't, and sets its own below.
-        <Field orientation="horizontal" dir="auto">
-          <FieldContent>
-            <FieldTitle
-              render={<h4 />}
-              className="flex w-full items-start justify-between gap-2"
-            >
-              {label}
-            </FieldTitle>
-            {field.schema.description ? (
-              <FieldDescription id={descriptionId}>
-                {field.schema.description}
+        // side from its own description.
+        <Field dir="auto">
+          <FieldTitle
+            render={<h4 />}
+            className="flex w-full items-start justify-between gap-2"
+          >
+            {label}
+          </FieldTitle>
+          <div className="flex w-full items-start justify-end gap-3">
+            {description ? (
+              <FieldDescription id={descriptionId} className="flex-1">
+                {description}
               </FieldDescription>
             ) : null}
-          </FieldContent>
-          {control}
+            {control}
+          </div>
         </Field>
       ) : (
         <Field dir="auto">
@@ -313,9 +348,9 @@ function RubricCriterionSection({
               {label}
             </FieldTitle>
           )}
-          {field.schema.description ? (
+          {description ? (
             <FieldDescription id={descriptionId}>
-              {field.schema.description}
+              {description}
             </FieldDescription>
           ) : null}
           {control}
@@ -357,14 +392,16 @@ function RubricRationaleField({
         onClick={() => setIsOpen(true)}
       >
         <LuPlus className="size-4" />
-        {t('Add note')}
+        {t('decisions.review.addNoteAction')}
       </Button>
     );
   }
 
   return (
     <Field className="mt-4">
-      <FieldLabel htmlFor={noteId}>{t('Note')}</FieldLabel>
+      <FieldLabel htmlFor={noteId}>
+        {t('decisions.review.noteLabel')}
+      </FieldLabel>
       <Textarea
         id={noteId}
         className="min-h-20"
@@ -393,9 +430,11 @@ function FeedbackToAuthorField({
 
   return (
     <Field>
-      <FieldLabel htmlFor={fieldId}>{t('Feedback to Author')}</FieldLabel>
+      <FieldLabel htmlFor={fieldId}>
+        {t('decisions.review.feedbackToAuthorHeading')}
+      </FieldLabel>
       <FieldDescription>
-        {t('Shared anonymously with the author after the review phase')}
+        {t('decisions.review.feedbackAnonymousAfterPhaseHint')}
       </FieldDescription>
       <Textarea
         id={fieldId}
@@ -404,6 +443,47 @@ function FeedbackToAuthorField({
         rows={3}
       />
     </Field>
+  );
+}
+
+/**
+ * Amount input for a money criterion. The template-pinned currency is stamped
+ * into the answer at fill time; clearing the input drops the answer key.
+ */
+function MoneyFieldInput({
+  field,
+  description,
+  value,
+  onChange,
+  required,
+}: {
+  field: FieldDescriptor;
+  description?: ReactNode;
+  value: unknown;
+  onChange: (value: unknown) => void;
+  required: boolean;
+}) {
+  const t = useTranslations();
+
+  const currency =
+    getMoneyFieldCurrency(field.schema) ?? DEFAULT_MONEY_CURRENCY;
+  const currencySymbol = useMemo(() => getCurrencySymbol(currency), [currency]);
+
+  return (
+    <NumberField
+      label={field.schema.title || t('Amount')}
+      description={description}
+      required={required}
+      prefixText={currencySymbol}
+      value={getMoneyAmount(value)}
+      minValue={getMoneyFieldMinimum(field.schema)}
+      onChange={(next) =>
+        onChange(
+          next === null ? undefined : buildMoneyFieldAnswer(next, field.schema),
+        )
+      }
+      className="w-full"
+    />
   );
 }
 
@@ -439,9 +519,9 @@ function RubricFieldInput({
             id={controlId}
             aria-labelledby={labelledBy}
             aria-describedby={describedBy}
-            checked={value === 'yes'}
+            checked={value === YES_NO_VALUES.yes}
             onCheckedChange={(checked) => {
-              onChange(checked ? 'yes' : 'no');
+              onChange(checked ? YES_NO_VALUES.yes : YES_NO_VALUES.no);
             }}
           />
         );
@@ -508,6 +588,58 @@ function RubricFieldInput({
         );
       }
 
+      if (criterionType === 'multi_select') {
+        const options = parseSchemaOptions(field.schema);
+        const selected = getSelectedOptionValues(value);
+
+        // No `CheckboxGroup` in Base UI, so the group role and its name are
+        // wired by hand — without them each box announces on its own and the
+        // criterion prompt never reaches the reviewer.
+        return (
+          <div
+            role="group"
+            aria-labelledby={labelledBy}
+            aria-describedby={describedBy}
+            className="flex flex-col gap-2"
+          >
+            {options.map((option) => {
+              const optionValue = String(option.value);
+              const optionId = `${controlId}-${optionValue}`;
+
+              return (
+                <OptionBox
+                  key={optionValue}
+                  htmlFor={optionId}
+                  control={
+                    <Checkbox
+                      id={optionId}
+                      checked={selected.includes(optionValue)}
+                      onCheckedChange={(checked) => {
+                        // Rebuilt from the schema's option order, not from
+                        // click order, so a stored answer reads back in the
+                        // same order the reviewer saw.
+                        const next = options
+                          .map((o) => String(o.value))
+                          .filter((v) =>
+                            v === optionValue ? checked : selected.includes(v),
+                          );
+                        // `undefined`, not `[]`: an empty selection is
+                        // unanswered, and the form drops unanswered keys so a
+                        // required criterion stays invalid.
+                        onChange(next.length > 0 ? next : undefined);
+                      }}
+                    />
+                  }
+                  dir="auto"
+                  label={option.title || optionValue}
+                  description={option.description}
+                />
+              );
+            })}
+          </div>
+        );
+      }
+
       if (criterionType === 'scored') {
         // Highest score first (to match the process builder); each option
         // renders the score with its description below so reviewers can
@@ -534,7 +666,9 @@ function RubricFieldInput({
               aria-describedby={describedBy}
               className="w-full"
             >
-              <SelectValue placeholder={t('Select an option')} />
+              <SelectValue
+                placeholder={t('decisions.proposals.selectOptionPlaceholder')}
+              />
             </SelectTrigger>
             {/* The popup is portaled, so it inherits nothing from the field —
                 it resolves its own direction from the option labels. */}
@@ -573,7 +707,7 @@ function RubricFieldInput({
           aria-describedby={describedBy}
           value={typeof value === 'string' ? value : ''}
           onChange={(event) => onChange(event.target.value)}
-          placeholder={t('Start typing...')}
+          placeholder={t('startTypingPlaceholder')}
           rows={3}
         />
       );
@@ -585,7 +719,7 @@ function RubricFieldInput({
           aria-describedby={describedBy}
           value={typeof value === 'string' ? value : ''}
           onChange={(event) => onChange(event.target.value)}
-          placeholder={t('Start typing...')}
+          placeholder={t('startTypingPlaceholder')}
         />
       );
 

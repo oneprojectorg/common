@@ -1,3 +1,9 @@
+import {
+  addProposalToCategory,
+  ensureProposalCategoryTerms,
+  TestDecisionsDataManager,
+  schemaWithoutPipeline,
+} from '@op/common/testing';
 import { db, eq, sql } from '@op/db/client';
 import {
   ProcessStatus,
@@ -6,18 +12,18 @@ import {
   decisionsVoteProposals,
   decisionsVoteSubmissions,
   processInstances,
+  proposalCategories,
   stateTransitionHistory,
+  taxonomyTerms,
 } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
-import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
 import {
   accessTierGatingCell,
   describeDecisionAccessTierGating,
   expectFailsAccessTierGate,
 } from '../../../test/helpers/gating/decision';
-import { schemaWithoutPipeline } from '../../../test/helpers/pipelineSchemas';
 import {
   createIsolatedSession,
   createTestContextWithSession,
@@ -128,7 +134,110 @@ describe.concurrent('listSelectionCandidates', () => {
       processInstanceId: instanceId,
     });
 
-    expect(result.proposals.map((p) => p.id)).toContain(submitted.id);
+    expect(result.items.map((p) => p.id)).toContain(submitted.id);
+    expect(result.totalCandidates).toBe(result.items.length);
+  });
+
+  // The final-phase confirm derives "not funded" from this count, so it has to
+  // describe the whole pool even on the branch that returns no rows at all.
+  it('reports the unfiltered pool size when a category filter matches nothing', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { instanceId, userEmail, caller } = await seedInstance(testData);
+    await testData.createProposal({
+      userEmail,
+      processInstanceId: instanceId,
+      proposalData: { title: `Candidate ${task.id}` },
+      status: ProposalStatus.SUBMITTED,
+    });
+
+    await testData.advancePhase({
+      instanceId,
+      fromPhaseId: 'submission',
+      toPhaseId: 'review',
+    });
+    await db
+      .delete(decisionTransitionProposals)
+      .where(eq(decisionTransitionProposals.processInstanceId, instanceId));
+
+    const unfiltered = await caller.decision.listSelectionCandidates({
+      processInstanceId: instanceId,
+    });
+    const filtered = await caller.decision.listSelectionCandidates({
+      processInstanceId: instanceId,
+      // A taxonomy term no proposal in this instance carries.
+      categoryId: '00000000-0000-4000-8000-000000000000',
+    });
+
+    expect(unfiltered.totalCandidates).toBeGreaterThan(0);
+    expect(filtered.items).toEqual([]);
+    expect(filtered.totalCandidates).toBe(unfiltered.totalCandidates);
+  });
+
+  // The case above returns before the main return path. This one exercises it:
+  // a filter that narrows a non-empty pool must not narrow `totalCandidates`,
+  // or the footer's "not funded" count silently becomes "not funded, in this
+  // category" right before an irreversible mass email.
+  it('keeps the unfiltered pool size when a category filter narrows the rows', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { instanceId, userEmail, caller } = await seedInstance(testData);
+    const [tagged, untagged] = await Promise.all([
+      testData.createProposal({
+        userEmail,
+        processInstanceId: instanceId,
+        proposalData: { title: `Tagged ${task.id}` },
+        status: ProposalStatus.SUBMITTED,
+      }),
+      testData.createProposal({
+        userEmail,
+        processInstanceId: instanceId,
+        proposalData: { title: `Untagged ${task.id}` },
+        status: ProposalStatus.SUBMITTED,
+      }),
+    ]);
+
+    const [term] = await ensureProposalCategoryTerms([`cat-${task.id}`]);
+    if (!term) {
+      throw new Error('Failed to seed a category term');
+    }
+    await addProposalToCategory({
+      proposalId: tagged.id,
+      taxonomyTermId: term.taxonomyTermId,
+    });
+
+    // Teardown asserts `taxonomy_terms` is empty; drop the link first so the
+    // term delete can't trip the FK.
+    onTestFinished(async () => {
+      await db
+        .delete(proposalCategories)
+        .where(eq(proposalCategories.taxonomyTermId, term.taxonomyTermId));
+      await db
+        .delete(taxonomyTerms)
+        .where(eq(taxonomyTerms.id, term.taxonomyTermId));
+    });
+
+    await testData.advancePhase({
+      instanceId,
+      fromPhaseId: 'submission',
+      toPhaseId: 'review',
+    });
+    await db
+      .delete(decisionTransitionProposals)
+      .where(eq(decisionTransitionProposals.processInstanceId, instanceId));
+
+    const filtered = await caller.decision.listSelectionCandidates({
+      processInstanceId: instanceId,
+      categoryId: term.taxonomyTermId,
+    });
+
+    expect(filtered.items.map((p) => p.id)).toEqual([tagged.id]);
+    expect(filtered.items.map((p) => p.id)).not.toContain(untagged.id);
+    expect(filtered.totalCandidates).toBe(2);
   });
 
   it('still returns candidates after a manual-selection stamp exists (state gating lives on getInstance)', async ({
@@ -175,7 +284,7 @@ describe.concurrent('listSelectionCandidates', () => {
       processInstanceId: instanceId,
     });
 
-    expect(result.proposals.length).toBeGreaterThan(0);
+    expect(result.items.length).toBeGreaterThan(0);
   });
 
   it('returns empty when the instance is still in the first phase', async ({
@@ -189,7 +298,7 @@ describe.concurrent('listSelectionCandidates', () => {
       processInstanceId: instanceId,
     });
 
-    expect(result.proposals).toEqual([]);
+    expect(result.items).toEqual([]);
   });
 
   it('returns empty for a legacy instance (no phase model)', async ({
@@ -216,7 +325,7 @@ describe.concurrent('listSelectionCandidates', () => {
       processInstanceId: instanceId,
     });
 
-    expect(result.proposals).toEqual([]);
+    expect(result.items).toEqual([]);
   });
 
   it('rejects callers without admin access on the instance', async ({
@@ -322,7 +431,7 @@ describe.concurrent('listSelectionCandidates', () => {
     });
 
     const seededIds = new Set([low.id, high.id, mid.id, zero.id]);
-    const seededOnly = result.proposals.filter((p) => seededIds.has(p.id));
+    const seededOnly = result.items.filter((p) => seededIds.has(p.id));
 
     expect(seededOnly.map((p) => p.id)).toEqual([
       high.id,
@@ -406,7 +515,7 @@ describe.concurrent('listSelectionCandidates', () => {
       sortOrder: 'votes',
     });
 
-    const found = result.proposals.find((p) => p.id === proposal.id);
+    const found = result.items.find((p) => p.id === proposal.id);
     expect(found?.voteCount).toBe(2);
   });
 });

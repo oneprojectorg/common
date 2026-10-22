@@ -171,7 +171,7 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
           <CommandItem value="search-action" onSelect={handleSearchSelect}>
             <LuSearch className="size-4 text-foreground" />
             <span dir="auto">
-              {t.rich('Search for <strong>{query}</strong>', {
+              {t.rich('shell.searchForQuery', {
                 query,
                 strong: (chunks) => (
                   <strong className="font-bold">{chunks}</strong>
@@ -200,7 +200,7 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
       ) : null}
 
       {showRecents ? (
-        <CommandGroup heading={t('Recent Searches')}>
+        <CommandGroup heading={t('shell.recentSearchesHeading')}>
           {recentSearches.map((recentQuery) => (
             <CommandItem
               key={recentQuery}
@@ -287,7 +287,7 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
           cmdk renders) exists in the DOM even when closed; just hidden until
           there's something to show. */}
       <div
-        aria-label={t('Search results')}
+        aria-label={t('shell.searchResultsLabel')}
         className={cn(
           isMobile
             ? 'fixed inset-x-0 top-15 bottom-0 z-10 flex flex-col overflow-hidden bg-popover text-base'
@@ -320,7 +320,7 @@ const ProfileCommandItem = ({
   const profileType = match(profile.type, {
     [EntityType.INDIVIDUAL]: t('Individual'),
     [EntityType.ORG]: t('Organization'),
-    _: t('Profile'),
+    _: t('shell.profileFilterLabel'),
   });
 
   const additionalInfo = isIndividual ? profile.bio : profile.city;

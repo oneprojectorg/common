@@ -1,8 +1,9 @@
 import { ProcessStatus } from '@op/api/encoders';
 import { createClient } from '@op/api/serverClient';
 import type { Metadata } from 'next';
-import { getTranslations } from 'next-intl/server';
 import { forbidden, notFound } from 'next/navigation';
+
+import { getTranslations } from '@/lib/i18n';
 
 import { ProcessBuilderAutosaveProvider } from '@/components/decisions/ProcessBuilder/ProcessBuilderAutosaveContext';
 import { ProcessBuilderEditArea } from '@/components/decisions/ProcessBuilder/ProcessBuilderEditArea';
@@ -26,7 +27,9 @@ export async function generateMetadata({
     ]);
     const decisionProfile = await client.decision.getDecisionBySlug({ slug });
     return decisionProfile?.name
-      ? { title: `${decisionProfile.name} (${t('Editing')})` }
+      ? {
+          title: `${decisionProfile.name} (${t('decisions.editingPageTitle')})`,
+        }
       : {};
   } catch {
     return {};

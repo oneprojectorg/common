@@ -4,8 +4,10 @@ import {
   proposalReviewAssignments,
 } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
+import { permission } from 'access-zones';
 
 import { UnauthorizedError } from '../../utils';
+import { assertProfileAccess } from '../assert';
 import { getInstance } from './getInstance';
 import { getProposalIdsForPhase } from './getProposalsForPhase';
 import type { InstancePhaseRef } from './schemas/instance';
@@ -26,11 +28,17 @@ export async function getPhaseReviewProgress(
 
   const instance = await getInstance({ instanceId: processInstanceId, user });
 
-  if (!instance.access.admin) {
-    throw new UnauthorizedError(
-      "You don't have admin access to this process instance",
-    );
+  if (!instance.profileId) {
+    throw new UnauthorizedError("You don't have access to do this");
   }
+
+  // Ahead of `assertInstancePhase` so an unauthorized caller can't probe which
+  // phases the instance has.
+  await assertProfileAccess({
+    user,
+    profileId: instance.profileId,
+    permissions: { decisions: permission.ADMIN },
+  });
 
   assertInstancePhase({ instance, phaseId });
 

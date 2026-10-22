@@ -1,0 +1,203 @@
+import { describe, expect, it } from 'vitest';
+
+import {
+  findTwilioSids,
+  fingerprintTwilioSid,
+  redactEmails,
+  redactPhoneNumbers,
+  redactTwilioSids,
+} from './redact';
+
+describe('redactEmails', () => {
+  it('keeps the domain and drops the local part', () => {
+    expect(redactEmails('person@example.com')).toBe('[redacted]@example.com');
+  });
+
+  it('redacts an address embedded in a longer string', () => {
+    expect(redactEmails('User person@example.com was rejected')).toBe(
+      'User [redacted]@example.com was rejected',
+    );
+  });
+
+  it('redacts every address in the string', () => {
+    expect(redactEmails('first@example.com and second@other.org')).toBe(
+      '[redacted]@example.com and [redacted]@other.org',
+    );
+  });
+
+  it('redacts local parts carrying tags and punctuation', () => {
+    expect(redactEmails('first.last+tag@example.com')).toBe(
+      '[redacted]@example.com',
+    );
+  });
+
+  it('keeps subdomains', () => {
+    expect(redactEmails('person@mail.corp.example.co.uk')).toBe(
+      '[redacted]@mail.corp.example.co.uk',
+    );
+  });
+
+  it('redacts an uppercase address', () => {
+    expect(redactEmails('Person@Example.COM')).toBe('[redacted]@Example.COM');
+  });
+
+  it('redacts a percent-encoded address in a query string', () => {
+    // transformMiddlewareRequest logs the URL of every request, and
+    // encodeURIComponent writes `@` as `%40`.
+    expect(redactEmails('/login?email=person%40example.com&next=/')).toBe(
+      '/login?email=[redacted]%40example.com&next=/',
+    );
+  });
+
+  it('keeps sentence punctuation that trails an address', () => {
+    expect(redactEmails('Invited person@example.com.')).toBe(
+      'Invited [redacted]@example.com.',
+    );
+  });
+
+  it('leaves a run of percent signs alone in linear time', () => {
+    // The scanning regex this replaced backtracked here — CodeQL flagged it as
+    // polynomial on strings with many '%' (code-scanning/39).
+    const hostile = `${'%'.repeat(50_000)}@`;
+    const start = performance.now();
+
+    expect(redactEmails(hostile)).toBe(hostile);
+    expect(performance.now() - start).toBeLessThan(1_000);
+  });
+
+  it('leaves a candidate longer than an address can be alone', () => {
+    const overlong = `${'a'.repeat(255)}@example.com`;
+
+    expect(redactEmails(overlong)).toBe(overlong);
+  });
+
+  it('leaves a version spec alone', () => {
+    // The TLD must be alphabetic, so the `0.1.0` here is not a domain.
+    expect(redactEmails('@op/logging@0.1.0')).toBe('@op/logging@0.1.0');
+  });
+
+  it('leaves a bare domain alone', () => {
+    expect(redactEmails('example.com')).toBe('example.com');
+  });
+
+  it('leaves a string with no address alone', () => {
+    expect(redactEmails('Login attempt')).toBe('Login attempt');
+    expect(redactEmails('')).toBe('');
+  });
+});
+
+describe('redactPhoneNumbers', () => {
+  /**
+   * Given an E.164 number
+   * When it is redacted
+   * Then nothing of the number remains
+   */
+  it('redacts an E.164 number', () => {
+    expect(redactPhoneNumbers('+15551234567')).toBe('[phone]');
+  });
+
+  /**
+   * Given GoTrue's message for a Twilio refusal, which echoes the number and
+   * ends with the Twilio error URL
+   * When it is redacted
+   * Then the number is gone and the error code in the URL survives
+   */
+  it('redacts the number inside a Twilio error and keeps the error code', () => {
+    expect(
+      redactPhoneNumbers(
+        'Error sending sms OTP to provider: Invalid parameter `To`: +15551234567 More information: https://www.twilio.com/docs/errors/60200',
+      ),
+    ).toBe(
+      'Error sending sms OTP to provider: Invalid parameter `To`: [phone] More information: https://www.twilio.com/docs/errors/60200',
+    );
+  });
+
+  /**
+   * Given a number written the way a person types it
+   * When it is redacted
+   * Then the whole formatted number is replaced
+   */
+  it('redacts a formatted number', () => {
+    expect(redactPhoneNumbers('called (415) 555-0132 twice')).toBe(
+      'called [phone] twice',
+    );
+    expect(redactPhoneNumbers('415.555.0132')).toBe('[phone]');
+  });
+
+  /**
+   * Given digit runs that are not a phone number
+   * When they are redacted
+   * Then they are left alone
+   */
+  it('leaves short runs, dates, and long identifiers alone', () => {
+    expect(redactPhoneNumbers('code 60203 in 2026')).toBe('code 60203 in 2026');
+    expect(redactPhoneNumbers('2026-10-06')).toBe('2026-10-06');
+    expect(redactPhoneNumbers('id 1218450028299154')).toBe(
+      'id 1218450028299154',
+    );
+  });
+
+  it('leaves a string with no digits alone', () => {
+    expect(redactPhoneNumbers('Login attempt')).toBe('Login attempt');
+    expect(redactPhoneNumbers('')).toBe('');
+  });
+});
+
+describe('redactTwilioSids', () => {
+  // Assembled at runtime: a literal SID-shaped string trips GitHub's push
+  // protection even when it is made up.
+  const ACCOUNT_SID = `AC${'01234567'.repeat(4)}`;
+  const VERIFY_SID = `VA${'89abcdef'.repeat(4)}`;
+
+  /**
+   * Given Twilio's message for a missing Verify service, which names the
+   * account and the service by SID
+   * When it is redacted
+   * Then both SIDs are gone and the rest of the message survives
+   */
+  it('redacts every Twilio SID in a message', () => {
+    expect(
+      redactTwilioSids(
+        `The requested resource /v2/Services/${VERIFY_SID}/Verifications was not found for account ${ACCOUNT_SID}`,
+      ),
+    ).toBe(
+      'The requested resource /v2/Services/[twilio-sid]/Verifications was not found for account [twilio-sid]',
+    );
+  });
+
+  /**
+   * Given the same message
+   * When the SIDs are listed
+   * Then every SID comes back in the order it appears
+   */
+  it('finds every Twilio SID in a message', () => {
+    expect(
+      findTwilioSids(
+        `Resource /v2/Services/${VERIFY_SID}/Verifications not found for account ${ACCOUNT_SID}`,
+      ),
+    ).toEqual([VERIFY_SID, ACCOUNT_SID]);
+    expect(findTwilioSids('no sid here')).toEqual([]);
+  });
+
+  /**
+   * Given a SID
+   * When it is fingerprinted for a log attribute
+   * Then only its type and last four characters remain, enough to match it
+   * against the Console without reconstructing it
+   */
+  it('fingerprints a SID as its type and last four characters', () => {
+    expect(fingerprintTwilioSid(ACCOUNT_SID)).toBe('AC…4567');
+    expect(fingerprintTwilioSid(VERIFY_SID)).toBe('VA…cdef');
+  });
+
+  /**
+   * Given text that looks like a SID prefix but is not a SID
+   * When it is redacted
+   * Then it is left alone
+   */
+  it('leaves words and short hex runs alone', () => {
+    expect(redactTwilioSids('ACCOUNT VALID MG')).toBe('ACCOUNT VALID MG');
+    expect(redactTwilioSids('AC0123')).toBe('AC0123');
+    expect(redactTwilioSids('')).toBe('');
+  });
+});

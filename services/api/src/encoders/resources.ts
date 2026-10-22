@@ -1,5 +1,6 @@
 // The shape duplication with @op/common/services/resources/schemas.ts is
 // intentional — do not collapse it into a re-export.
+import { list, paginated } from '@op/common/client';
 import { z } from 'zod';
 
 export const attachmentSummaryEncoder = z.object({
@@ -76,19 +77,17 @@ export const resourceInCollectionEncoder = z.discriminatedUnion('type', [
 ]);
 export type ResourceInCollection = z.infer<typeof resourceInCollectionEncoder>;
 
-export const resourceListEncoder = z.object({
+// `next` is the sortKey cursor of the last item; null at the end.
+export const resourceListEncoder = paginated(
+  resourceInCollectionEncoder,
+).extend({
   collectionId: z.string().uuid().nullable(),
-  items: z.array(resourceInCollectionEncoder),
-  // Cursor (sortKey of the last item) for the next page; null at end.
-  next: z.string().nullable(),
 });
 export type ResourceList = z.infer<typeof resourceListEncoder>;
 
 // Flattened across a profile's collections (resources.list), so no top-level
 // collectionId/cursor — each item carries its own collectionId.
-export const profileResourceListEncoder = z.object({
-  items: z.array(resourceInCollectionEncoder),
-});
+export const profileResourceListEncoder = list(resourceInCollectionEncoder);
 export type ProfileResourceList = z.infer<typeof profileResourceListEncoder>;
 
 export const collectionEncoder = z.object({
@@ -100,7 +99,4 @@ export const collectionEncoder = z.object({
   updatedAt: z.string().nullable(),
 });
 
-export const collectionListEncoder = z.object({
-  items: z.array(collectionEncoder),
-  next: z.string().nullable(),
-});
+export const collectionListEncoder = paginated(collectionEncoder);

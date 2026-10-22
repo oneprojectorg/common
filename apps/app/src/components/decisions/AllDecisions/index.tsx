@@ -3,6 +3,7 @@
 import { useRequiredUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import { ProcessStatus } from '@op/api/encoders';
+import { PAGE_LIMIT, nextCursor } from '@op/common/client';
 import { match } from '@op/core';
 import { useInfiniteScroll } from '@op/hooks';
 import { Skeleton } from '@op/sense/Skeleton';
@@ -13,7 +14,6 @@ import { Fragment, Suspense } from 'react';
 import { useTranslations } from '@/lib/i18n';
 
 import ErrorBoundary from '@/components/ErrorBoundary';
-import { TranslatedText } from '@/components/TranslatedText';
 
 import { DecisionListItem } from '../DecisionListItem';
 
@@ -65,12 +65,12 @@ const DecisionsListSuspense = ({
     isFetchingNextPage,
   } = trpc.decision.listDecisionProfiles.useInfiniteQuery(
     {
-      limit: 20,
+      limit: PAGE_LIMIT.md,
       status,
       ownerProfileId,
     },
     {
-      getNextPageParam: (lastPage) => lastPage.next,
+      getNextPageParam: nextCursor,
     },
   );
 
@@ -87,7 +87,7 @@ const DecisionsListSuspense = ({
   if (paginatedItems.length === 0) {
     return (
       <div className="py-8 text-center text-muted-foreground">
-        {t('No processes found')}
+        {t('decisions.noProcessesFound')}
       </div>
     );
   }
@@ -117,13 +117,14 @@ const AllDecisionsTabs = () => {
   const [tab, setTab] = useQueryState('tab');
   const ownerProfileId = user.currentProfile?.id;
 
-  const [draftsCheck] = trpc.decision.listDecisionProfiles.useSuspenseQuery({
-    limit: 1,
-    status: [ProcessStatus.DRAFT],
-    ownerProfileId,
-  });
+  const [{ items: drafts }] =
+    trpc.decision.listDecisionProfiles.useSuspenseQuery({
+      limit: 1,
+      status: [ProcessStatus.DRAFT],
+      ownerProfileId,
+    });
 
-  const hasDrafts = draftsCheck.items.length > 0;
+  const hasDrafts = drafts.length > 0;
   const selectedTab = match(tab, {
     drafts: () => (hasDrafts ? 'drafts' : 'active'),
     completed: 'completed',
@@ -140,9 +141,17 @@ const AllDecisionsTabs = () => {
     >
       <div className="border-b">
         <TabsList variant="line">
-          <TabsTrigger value="active">{t('Active')}</TabsTrigger>
-          <TabsTrigger value="completed">{t('Completed')}</TabsTrigger>
-          {hasDrafts && <TabsTrigger value="drafts">{t('Drafts')}</TabsTrigger>}
+          <TabsTrigger value="active">
+            {t('decisions.activeFilter')}
+          </TabsTrigger>
+          <TabsTrigger value="completed">
+            {t('decisions.review.statusCompleted')}
+          </TabsTrigger>
+          {hasDrafts && (
+            <TabsTrigger value="drafts">
+              {t('decisions.draftsFilter')}
+            </TabsTrigger>
+          )}
         </TabsList>
       </div>
       <TabsContent value="active">
@@ -170,16 +179,11 @@ const AllDecisionsTabs = () => {
 };
 
 export const AllDecisions = () => {
+  const t = useTranslations();
   const { user } = useRequiredUser();
 
   return (
-    <ErrorBoundary
-      fallback={
-        <div>
-          <TranslatedText text="Could not load decisions" />
-        </div>
-      }
-    >
+    <ErrorBoundary fallback={<div>{t('decisions.decisionsLoadError')}</div>}>
       <Suspense fallback={<DecisionsListSkeleton />}>
         <AllDecisionsTabs key={user.currentProfile?.id} />
       </Suspense>

@@ -6,7 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) and other AI agents 
 
 - **Type checking**: `pnpm typecheck` (all workspaces via Turbo) or `pnpm w:app typecheck` (main app only) — run after making changes
 - **Format checking**: `pnpm format:check` (required by CI); `pnpm format:changes` formats only files changed in git
-- **Tests**: `pnpm test` (integration tests)
+- **Test naming**: `<name>.unit.test.ts` is a unit test; `<name>.test.ts` is an integration test against the test Supabase on 55321/55322. Applies to `packages/common`; every `services/api` test is an integration test
+- **Tests**: `pnpm test` runs every package through turbo; the packages that use the test database run one after another. `pnpm w:common test:unit` / `pnpm w:common test:integration` run one project. Run `pnpm test:supabase:start` first
 - **Workspaces**: use the `pnpm w:<name>` shortcuts defined in the root `package.json` scripts (e.g. `pnpm w:app`, `pnpm w:db`)
 - **Dependencies**: add with `pnpm add <package> --filter <workspace-name>`; `pnpm deps:clean` / `pnpm deps:override` keep versions consistent
 
@@ -18,6 +19,8 @@ Monorepo with `apps/`, `packages/`, and `services/` — directory names are self
 - **`apps/api`**: Next.js server that hosts the tRPC API; the routers, procedures, and middleware live in `services/api` (`@op/api`)
 - **`@op/common`** (`packages/common`): shared business logic and service layer
 - **`@op/db`** (`services/db`): Drizzle ORM schema, migrations, and database client
+
+Architecture decisions are recorded as ADRs — the numbered files matching `docs/adr/[0-9]*.md`. Read them before you propose a structural change. Say so when one contradicts your task; do not work around it. An absent ADR does not mean the area is unconstrained: the set is still filling up, and the rules in this file stay binding. [`docs/adr/README.md`](docs/adr/README.md) defines when to write one and in what format. Follow it, not an ADR convention from a skill.
 
 ## Key Technical Details
 
@@ -32,6 +35,7 @@ Monorepo with `apps/`, `packages/`, and `services/` — directory names are self
   - Colors: semantic classes (e.g. `bg-primary`, `text-muted-foreground`, `border-input`) — raw values in `packages/styles/tokens.css`, semantic names in `packages/styles/theme.css`
   - Text sizes: the sense type scale (`text-label`, `text-title`, `text-headline`, `text-display`) — no raw Tailwind size utilities we haven't defined, and never the legacy `text-title-*` scale
 - **Always use logical properties** — `ms-`/`me-`, `ps-`/`pe-`, `start-`/`end-`, `text-start`/`text-end` — never `ml-`/`pl-`/`left-`. The app ships Arabic.
+- **Isolate user-authored text** — a title, name, or category can run counter to the page direction, and without isolation its punctuation lands on the wrong side. Wrap it in `<bdi>`; if the block truncates or clamps, it needs `dir="auto"` plus `ltr:text-left rtl:text-right` instead, or the ellipsis clips the wrong end. See [`packages/sense/CLAUDE.md`](packages/sense/CLAUDE.md) for the reasoning and which sense components already do this.
 - Tailwind configuration is centralized in `@op/styles`: `tokens.css` holds raw values, `theme.css` holds semantics and is the package entry
 
 ### Accessibility
@@ -39,7 +43,7 @@ Monorepo with `apps/`, `packages/`, and `services/` — directory names are self
 Treat accessibility as a correctness property, not a polish pass. Base UI gives us focus management, keyboard navigation and `aria-*` wiring for free — don't reimplement or work around it. Four things it can't infer, which are on you:
 
 1. **An accessible name on every icon-only control** (`aria-label` on `<Button size="icon-*">`) — the most common defect in this codebase
-2. **A real label on every input** (`Field` + `FieldLabel`, or `htmlFor`) — a placeholder is not a label
+2. **A real label on every input** — `Field` + `FieldLabel` or `htmlFor` where the design shows a label; `aria-label` where the field stands in for its content (an inline-edited title, a search box). A placeholder is not a label
 3. **`aria-live="polite"` on content that changes without a navigation** — async results, counts, validation errors, save states
 4. **Real controls for anything clickable** — never `onClick` on a `div`
 
@@ -73,17 +77,21 @@ Two harnesses check it, both punch-lists rather than allow-lists (CI fails on an
 ### Internationalization (i18n)
 
 - **Translation files location**: `apps/app/src/lib/i18n/dictionaries/` — every `.json` file there is a supported language; keep them all in sync
-- **Use `useTranslations` hook for client components**: `const t = useTranslations()` then `t('Key string')`
-- **Use `TranslatedText` component** for server components
 - **ALWAYS** wrap user-facing strings with `t('...')` — never hardcode user-facing text
-- **For dynamic values**, use interpolation: `t('Hello {name}', { name: userName })` and `t.rich()` for strings that are broken up with styles/components
+- **A feature string lives in that feature's namespace under a camelCase ID that names its role, not its wording** ([draft ADR](docs/adr/draft-key-feature-messages-by-id-inside-namespaces.md)): `const t = useTranslations('onboarding')` then `t('fullName')`, with the English copy as the value in `en.json`. A string belongs to the feature that owns the concept even when another screen reads it
+- **A shared label keeps its English text as the key at the top level** — `Cancel`, `Back`, `Email`, `No results` — but only if it is at most four words and holds no `{`, `<` or `.`. Anything longer is a sentence a feature owns
+- **No key contains a period**, at any depth — next-intl reads one as a path separator
+- **Client components**: `const t = useTranslations('ns')`. **Server components**: `const t = await getTranslations({ locale, namespace: 'ns' })`, or `getTranslations('ns')` in a request-scoped call. Import both from `@/lib/i18n`, which types them from `en.json`
+- **For dynamic values**, use interpolation: `t('greeting', { name: userName })` and `t.rich()` for strings that are broken up with styles/components. next-intl types the values each key needs, so a missing or misspelt one is a compile error
+- **Check the dictionaries**: key parity, the naming rules and message formatting are unit tests in `apps/app/src/lib/i18n/dictionaries.test.ts` (`pnpm w:app test`). `pnpm i18n:check [<ref>]` diffs against `origin/dev` (CI: the PR's base branch): a key whose English value changed must change in every other locale, so a copy edit can't leave the seven translations stale.
 
 ### Logging
 
 - **Never log through `console.*`.** All logging must go through our loggers so it always reports to PostHog:
   - **Server** (services, `@op/common`, tRPC procedures, workflows): `import { logger } from '@op/logging'` — emits OpenTelemetry logs that ship to PostHog. Inside a tRPC procedure prefer `ctx.logger` (adds request context).
-  - **Client / browser** (`apps/app`, `'use client'` code): `import { logger } from '@op/logging/client'` — reports to PostHog (`captureException` for `error`/`warn`) and also writes to the console.
+  - **Client / browser** (`apps/app`, `'use client'` code): `import { logger } from '@op/logging/client'` — ships a structured record to PostHog Logs (service `common-web`, each data key an attribute) and, for `error`/`warn`, an exception to Error Tracking. It writes to the console outside production only; in production the project's console autocapture would duplicate the record.
 - Use `logger.error(message, { error })` for caught errors (pass the caught error under the `error` key), and `logger.warn` / `logger.info` for everything else.
+- **Never log a raw client IP**, or anything else that identifies a person directly (email, token, request body) — records land in PostHog and an IP is personal data. See "What not to log" in `packages/logging/README.md`.
 
 ## Workflow Notes
 

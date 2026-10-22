@@ -5,8 +5,9 @@ import {
 } from '@op/api/server';
 import { logger } from '@op/logging';
 import type { Metadata } from 'next';
-import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
+
+import { getTranslations } from '@/lib/i18n';
 
 import { DecisionStateRouter } from '@/components/decisions/DecisionStateRouter';
 import { DecisionContentSkeleton } from '@/components/skeletons/DecisionSkeleton';
@@ -33,7 +34,7 @@ export async function generateMetadata({
     const currentPhase = instanceData?.phases?.find(
       (phase) => phase.phaseId === currentStateId,
     );
-    const label = currentPhase?.name || t('Current Phase');
+    const label = currentPhase?.name || t('decisions.currentPhaseLabel');
     const name = decisionProfile.name;
 
     // openGraph is redefined here (without images) so the root layout's static
@@ -59,7 +60,7 @@ const CurrentPhasePage = async ({
   params: Promise<{ slug: string }>;
 }) => {
   const { slug } = await params;
-  const { decisionProfile, instanceId, ownerSlug } = await loadDecision(slug);
+  const { instanceId, ownerSlug } = await loadDecision(slug);
 
   // Seed the getInstance cache the current-phase content (DecisionStateRouter)
   // hydrates from. The (decision-view) layout no longer fetches getInstance
@@ -82,7 +83,6 @@ const CurrentPhasePage = async ({
           instanceId={instanceId}
           slug={ownerSlug}
           decisionSlug={slug}
-          decisionProfileId={decisionProfile.id}
         />
       </Suspense>
     </HydrationBoundary>

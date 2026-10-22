@@ -1,92 +1,42 @@
 'use client';
 
-import { Button } from '@op/sense/Button';
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@op/sense/Dialog';
-
-import { useTranslations } from '@/lib/i18n';
-
 import { useReviewForm } from './ReviewFormContext';
+import {
+  RevisionRequestDialog,
+  type ViewedRevisionRequest,
+} from './RevisionRequestDialog';
 
 interface ViewRevisionRequestModalProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
+  /** Defaults to every request still open on the proposal. */
+  requests?: Array<ViewedRevisionRequest>;
 }
 
+/** Adds the reviewer's own request: marks their card, offers the cancel. */
 export function ViewRevisionRequestModal({
   isOpen,
   onOpenChange,
+  requests,
 }: ViewRevisionRequestModalProps) {
-  const t = useTranslations();
   const {
-    revisionRequest,
-    isOwnRevisionRequest,
+    openRevisionRequests,
+    ownRevisionRequest,
+    assignment,
     cancelRevisionRequest,
     isCancellingRevision,
   } = useReviewForm();
 
-  const handleCancelRequest = () => {
-    cancelRevisionRequest();
-    onOpenChange(false);
-  };
-
-  if (!revisionRequest) {
-    return null;
-  }
-
-  const sentDate = revisionRequest.requestedAt
-    ? new Date(revisionRequest.requestedAt)
-    : null;
-
   return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          {/* This dialog *views* an existing request (Sent {date}, Cancel
-              request, Close) — the noun. "Request Revision" is the verb phrase
-              that titles RequestRevisionModal, which creates one. */}
-          <DialogTitle>{t('Revision request')}</DialogTitle>
-        </DialogHeader>
-
-        <div className="flex flex-col gap-2 px-6 py-4">
-          <span className="text-base">{t('Feedback to Author')}</span>
-
-          <div className="flex flex-col gap-2 rounded-lg border border-border p-3">
-            <p dir="auto" className="text-base">
-              {revisionRequest.requestComment}
-            </p>
-            {sentDate && (
-              <p className="text-sm text-muted-foreground">
-                {t('Sent {date}', {
-                  date: sentDate.toLocaleDateString(undefined, {
-                    month: 'short',
-                    day: 'numeric',
-                    year: 'numeric',
-                  }),
-                })}
-              </p>
-            )}
-          </div>
-        </div>
-
-        <DialogFooter>
-          {isOwnRevisionRequest && (
-            <Button
-              variant="outline"
-              onClick={handleCancelRequest}
-              loading={isCancellingRevision}
-            >
-              {t('Cancel request')}
-            </Button>
-          )}
-          <Button onClick={() => onOpenChange(false)}>{t('Close')}</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    <RevisionRequestDialog
+      isOpen={isOpen}
+      onOpenChange={onOpenChange}
+      requests={requests ?? openRevisionRequests}
+      ownAssignmentId={assignment.id}
+      onCancelOwn={
+        ownRevisionRequest !== null ? () => cancelRevisionRequest() : undefined
+      }
+      isCancelling={isCancellingRevision}
+    />
   );
 }

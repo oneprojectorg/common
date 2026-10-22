@@ -85,7 +85,7 @@ export const AssignReviewsDialog = ({
   const assignReviews = trpc.platform.admin.assignReviews.useMutation({
     onSuccess: ({ createdCount }) => {
       toast.success(
-        t('{count} review assignments created', {
+        t('decisions.review.assignmentsCreatedCount', {
           count: createdCount,
         }),
       );
@@ -141,30 +141,28 @@ export const AssignReviewsDialog = ({
       <DialogTrigger
         render={
           <Button size="sm" disabled={eligibleReviewers.length === 0}>
-            {t('Assign reviews')}
+            {t('admin.assignReviewsTitle')}
           </Button>
         }
       />
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>{t('Assign reviews')}</DialogTitle>
-          <DialogDescription>
-            {t(
-              'Assign the selected proposals to a reviewer. Existing assignments are kept as they are.',
-            )}
-          </DialogDescription>
+          <DialogTitle>{t('admin.assignReviewsTitle')}</DialogTitle>
+          <DialogDescription>{t('admin.assignReviewsHint')}</DialogDescription>
         </DialogHeader>
 
         <div className="flex flex-col gap-5 px-6 py-4">
           <div className="flex flex-col gap-2">
-            <Label>{t('Reviewer')}</Label>
+            <Label>{t('admin.reviewerLabel')}</Label>
             <Select
               items={reviewerItems}
               value={reviewerId}
               onValueChange={(value) => setReviewerId(value)}
             >
               <SelectTrigger className="w-full">
-                <SelectValue placeholder={t('Select a reviewer')} />
+                <SelectValue
+                  placeholder={t('admin.selectReviewerPlaceholder')}
+                />
               </SelectTrigger>
               <SelectContent>
                 <SelectGroup>
@@ -181,7 +179,7 @@ export const AssignReviewsDialog = ({
           <div className="flex flex-col gap-2">
             <div className="flex items-center justify-between gap-3">
               <Label>
-                {t('Proposals ({selected} of {total})', {
+                {t('admin.assignProposalsCount', {
                   selected: selectedAssignableIds.length,
                   total: assignableProposals.length,
                 })}
@@ -215,7 +213,8 @@ export const AssignReviewsDialog = ({
                       />
                       <span className="flex min-w-0 flex-col">
                         <span className="truncate">
-                          {proposal.title ?? t('Untitled Proposal')}
+                          {proposal.title ??
+                            t('decisions.proposals.untitledProposal')}
                         </span>
                         {proposal.author ? (
                           <span className="truncate text-sm text-muted-foreground">
@@ -225,7 +224,7 @@ export const AssignReviewsDialog = ({
                       </span>
                       {isOwnProposal ? (
                         <Badge variant="outline" className="ms-auto shrink-0">
-                          {t("Reviewer's own proposal")}
+                          {t('decisions.review.reviewerOwnProposal')}
                         </Badge>
                       ) : null}
                     </Label>
@@ -234,15 +233,13 @@ export const AssignReviewsDialog = ({
               })}
               {proposals.length === 0 ? (
                 <li className="px-3 py-2 text-sm text-muted-foreground">
-                  {t('No proposals in this phase yet.')}
+                  {t('decisions.review.noProposalsInPhase')}
                 </li>
               ) : null}
             </ul>
             {proposals.length > 0 && assignableProposals.length === 0 ? (
               <p className="text-sm text-muted-foreground">
-                {t(
-                  'This reviewer authored every proposal in this phase, so there is nothing to assign to them.',
-                )}
+                {t('admin.assignNothingToAssign')}
               </p>
             ) : null}
           </div>
@@ -266,7 +263,9 @@ export const AssignReviewsDialog = ({
               });
             }}
           >
-            {assignReviews.isPending ? t('Assigning…') : t('Assign')}
+            {assignReviews.isPending
+              ? t('admin.assigningProgress')
+              : t('admin.assignAction')}
           </Button>
         </DialogFooter>
       </DialogContent>

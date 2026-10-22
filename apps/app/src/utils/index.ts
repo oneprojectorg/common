@@ -1,9 +1,11 @@
+import { assetPublicUrl } from '@op/common/client';
+
 export const getPublicUrl = (key?: string | null) => {
   if (!key) {
     return;
   }
 
-  return `/assets/${key}`;
+  return assetPublicUrl(key);
 };
 
 export const makeArray = (item: any) => {

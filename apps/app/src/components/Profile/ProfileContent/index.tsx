@@ -52,7 +52,7 @@ const FocusAreas = ({
   return (
     <section className="flex flex-col gap-2">
       <Header3 className="font-sans text-base font-strong">
-        {t('Focus Areas')}
+        {t('org.focusAreasLabel')}
       </Header3>
       <TagGroup>
         {focusAreas.map((term) => (
@@ -102,7 +102,7 @@ const CommunitiesServed = ({ profileId }: { profileId: string }) => {
   return (
     <section className="flex flex-col gap-2">
       <Header3 className="font-sans text-base font-strong">
-        {t('Communities We Serve')}
+        {t('profile.communitiesServedHeading')}
       </Header3>
       <TagGroup>
         {communitiesServed.map((term) => (
@@ -129,13 +129,15 @@ const ProfileAbout = ({
   return (
     <div className={cn('flex flex-col gap-2 sm:gap-6', className)}>
       {orgType ? (
-        <Header2 className="text-label leading-normal">{t('About')}</Header2>
+        <Header2 className="text-label leading-normal">
+          {t('profile.aboutTab')}
+        </Header2>
       ) : null}
       <div className="flex flex-col gap-10 rounded border p-4 sm:rounded-none sm:border-none sm:p-0">
         {email || website ? (
           <section className="flex flex-col gap-2">
             <Header3 className="font-sans text-base font-strong">
-              {t('Contact')}
+              {t('profile.contactHeading')}
             </Header3>
             <div className="flex flex-col gap-2 text-primary">
               {website ? (
@@ -158,12 +160,9 @@ const ProfileAbout = ({
                       size="sm"
                       onClick={() => {
                         navigator.clipboard.writeText(email);
-                        toast.success(
-                          t(
-                            'This email address has been copied to your clipboard.',
-                          ),
-                          { dismissible: false },
-                        );
+                        toast.success(t('profile.emailCopiedToast'), {
+                          dismissible: false,
+                        });
                       }}
                     >
                       <LuCopy /> {t('Copy')}
@@ -186,7 +185,7 @@ const ProfileAbout = ({
         {orgType ? (
           <section className="flex flex-col gap-2">
             <Header3 className="font-sans text-base font-strong">
-              {t('Organizational Status')}
+              {t('org.statusLabel')}
             </Header3>
             <TagGroup>
               <Tag className="capitalize" variant="secondary">
@@ -199,7 +198,7 @@ const ProfileAbout = ({
         {mission ? (
           <section className="flex flex-col gap-2">
             <Header3 className="font-sans text-base font-strong">
-              {t('Mission Statement')}
+              {t('profile.missionHeading')}
             </Header3>
             <p>{mission}</p>
           </section>
@@ -208,7 +207,7 @@ const ProfileAbout = ({
         {strategies?.length > 0 ? (
           <section className="flex flex-col gap-2">
             <Header3 className="font-sans text-base font-strong">
-              {t('Strategies')}
+              {t('profile.strategiesHeading')}
             </Header3>
             <TagGroup>
               {strategies.map((strategy) =>
@@ -228,7 +227,7 @@ const ProfileAbout = ({
             fallback={
               <section className="flex flex-col gap-2">
                 <Header3 className="font-sans text-base font-strong">
-                  {t('Focus Areas')}
+                  {t('org.focusAreasLabel')}
                 </Header3>
                 <div className="flex flex-wrap gap-2">
                   <Skeleton className="h-6 w-16" />
@@ -251,7 +250,7 @@ const ProfileAbout = ({
             fallback={
               <section className="flex flex-col gap-2">
                 <Header3 className="font-sans text-base font-strong">
-                  {t('Communities We Serve')}
+                  {t('profile.communitiesServedHeading')}
                 </Header3>
                 <div className="flex flex-wrap gap-2">
                   <Skeleton className="h-6 w-18" />
@@ -272,28 +271,31 @@ const ProfileAbout = ({
 const ProfileDecisions = ({ profileId }: { profileId: string }) => {
   const t = useTranslations();
 
-  const [data] = trpc.decision.listDecisionProfiles.useSuspenseQuery({
-    limit: 3,
-    stewardProfileId: profileId,
-    status: [ProcessStatus.PUBLISHED],
-  });
+  const [{ items: decisionProfiles }] =
+    trpc.decision.listDecisionProfiles.useSuspenseQuery({
+      limit: 3,
+      stewardProfileId: profileId,
+      status: [ProcessStatus.PUBLISHED],
+    });
 
-  if (!data.items[0]) {
+  if (!decisionProfiles[0]) {
     return null;
   }
 
   return (
     <div className="flex flex-col gap-2 py-6 pb-2 sm:gap-0 sm:border-b sm:pt-4">
       <Header2 className="text-label leading-normal sm:px-6">
-        {t('Decisions')}
+        {t('decisions.decisionsLabel')}
       </Header2>
-      {data.items.map((item, index) => (
+      {decisionProfiles.map((item, index) => (
         <Fragment key={item.id}>
           <ProfileDecisionListItem
             item={item}
             className="rounded border p-4 transition-colors sm:rounded-none sm:border-none sm:p-6 hover:sm:bg-accent"
           />
-          {index < data.items.length - 1 && <hr className="hidden sm:block" />}
+          {index < decisionProfiles.length - 1 && (
+            <hr className="hidden sm:block" />
+          )}
         </Fragment>
       ))}
     </div>
@@ -440,18 +442,20 @@ export const ProfileTabsMobile = ({
           {!isIndividual && <TabsTrigger value="home">{t('Home')}</TabsTrigger>}
           {!isIndividual ? (
             <>
-              <TabsTrigger value="updates">{t('Updates')}</TabsTrigger>
+              <TabsTrigger value="updates">{t('posts.updatesTab')}</TabsTrigger>
               <FollowersTab />
               <MembersTab profileId={profile.profile.id} />
               <DecisionsTab profileId={profile.profile.id} />
             </>
           ) : (
             <>
-              <TabsTrigger value="about">{t('About')}</TabsTrigger>
+              <TabsTrigger value="about">{t('profile.aboutTab')}</TabsTrigger>
               <TabsTrigger value="organizations">
                 {t('Organizations')}
               </TabsTrigger>
-              <TabsTrigger value="following">{t('Following')}</TabsTrigger>
+              <TabsTrigger value="following">
+                {t('profile.followingTab')}
+              </TabsTrigger>
             </>
           )}
         </TabsList>
@@ -468,7 +472,7 @@ export const ProfileTabsMobile = ({
             <Suspense fallback={<Skeleton className="min-h-20 w-full" />}>
               <div className="-mx-4">
                 <Header2 className="px-4 py-2 text-label leading-normal">
-                  {t('Posts')}
+                  {t('profile.postsTab')}
                 </Header2>
                 <ProfileFeedProvider profile={profile}>
                   {(props) => <ProfileFeedCards {...props} />}

@@ -108,3 +108,18 @@ export class RateLimitError extends CommonError {
     super(message ?? defaultMessage);
   }
 }
+
+/**
+ * A capability this build deliberately does not provide.
+ *
+ * Distinct from a misconfiguration: no environment variable turns the feature
+ * on, so a caller that reaches this has to change, not the deployment.
+ */
+export class NotImplementedError extends CommonError {
+  public readonly statusCode: number = 501;
+
+  constructor(message?: string) {
+    const defaultMessage = 'This capability is not implemented.';
+    super(message ?? defaultMessage);
+  }
+}

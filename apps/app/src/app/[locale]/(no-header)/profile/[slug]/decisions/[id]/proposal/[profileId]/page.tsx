@@ -4,8 +4,9 @@ import {
   dehydrate,
 } from '@op/api/server';
 import type { Metadata } from 'next';
-import { getTranslations } from 'next-intl/server';
 import { cache } from 'react';
+
+import { getTranslations } from '@/lib/i18n';
 
 import { LegacyProposalViewClient } from './ProposalViewClient';
 
@@ -34,7 +35,8 @@ export async function generateMetadata({
       fetchProposal(profileId),
     ]);
     return {
-      title: proposal.profile?.name || t('Untitled Proposal'),
+      title:
+        proposal.profile?.name || t('decisions.proposals.untitledProposal'),
     };
   } catch {
     return {};

@@ -1,6 +1,7 @@
 import { createClient } from '@op/api/serverClient';
 import type { Metadata } from 'next';
-import { getTranslations } from 'next-intl/server';
+
+import { getTranslations } from '@/lib/i18n';
 
 import { ProfileRelationships } from '@/components/screens/ProfileRelationships';
 
@@ -17,7 +18,7 @@ export async function generateMetadata({
       getTranslations({ locale }),
     ]);
     const profile = await client.profile.getBySlug({ slug });
-    const label = t('Relationships');
+    const label = t('profile.relationshipsTab');
     return { title: profile.name ? `${label} | ${profile.name}` : label };
   } catch {
     return {};

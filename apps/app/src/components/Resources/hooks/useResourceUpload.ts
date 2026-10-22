@@ -17,7 +17,7 @@ export type UploadedResource = {
 };
 
 export const useResourceUpload = (profileId: string) => {
-  const t = useTranslations();
+  const t = useTranslations('resources');
   const uploadMutation = trpc.resources.uploadFile.useMutation();
   const [uploading, setUploading] = useState(false);
   const [uploaded, setUploaded] = useState<UploadedResource | null>(null);
@@ -47,7 +47,7 @@ export const useResourceUpload = (profileId: string) => {
         return null;
       }
       if (!putRes.ok) {
-        throw new Error(t('Could not add resource'));
+        throw new Error(t('addError'));
       }
       const result: UploadedResource = {
         profileId: signed.profileId,
@@ -61,9 +61,7 @@ export const useResourceUpload = (profileId: string) => {
       if (token !== generation.current) {
         return null;
       }
-      toast.error(
-        err instanceof Error ? err.message : t('Could not add resource'),
-      );
+      toast.error(err instanceof Error ? err.message : t('addError'));
       return null;
     } finally {
       if (token === generation.current) {

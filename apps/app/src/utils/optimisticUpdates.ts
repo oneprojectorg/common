@@ -1,4 +1,4 @@
-import type { PostToOrganization } from '@op/api/encoders';
+import type { Post } from '@op/api/encoders';
 
 export interface UserProfile {
   id: string;
@@ -9,160 +9,80 @@ export interface PostFeedUser {
   currentProfile?: UserProfile | null;
 }
 
-/**
- * A more flexible type for optimistic updates that only requires the post property
- */
-export type PostItem = Pick<PostToOrganization, 'post'> &
-  Partial<Omit<PostToOrganization, 'post'>>;
+/** The like fields the encoder puts on every post, kept in step with it. */
+export type PostLikeState = Pick<
+  Post,
+  'likeCount' | 'userHasLiked' | 'likeUsers'
+>;
 
 /**
- * Handles optimistic updates for post reactions
+ * The only shape a cached entry needs for a like to be flipped on it. Any cache
+ * entry carrying a post — feed row, comment, detail payload — matches.
  */
-export class OptimisticReactionUpdater {
-  constructor(private user?: PostFeedUser) {}
-
-  /**
-   * Updates a post's reaction data optimistically
-   * Uses a generic to preserve the input type shape
-   */
-  updatePostReactions = <T extends PostItem>(
-    item: T,
-    postId: string,
-    reactionType: string,
-  ): T => {
-    if (item.post.id !== postId) {
-      return item;
-    }
-
-    const currentReaction = item.post.userReaction;
-    const currentCounts = { ...(item.post.reactionCounts || {}) };
-    const currentReactionUsers = { ...(item.post.reactionUsers || {}) };
-
-    const hasReaction = currentReaction === reactionType;
-
-    if (hasReaction) {
-      return this.removeReaction<T>(
-        item,
-        reactionType,
-        currentCounts,
-        currentReactionUsers,
-      );
-    } else {
-      return this.addOrReplaceReaction<T>(
-        item,
-        reactionType,
-        currentReaction,
-        currentCounts,
-        currentReactionUsers,
-      );
-    }
-  };
-
-  private removeReaction = <T extends PostItem>(
-    item: T,
-    reactionType: string,
-    currentCounts: Record<string, number>,
-    currentReactionUsers: Record<string, any[]>,
-  ): T => {
-    const newCount = Math.max(0, (currentCounts[reactionType] || 1) - 1);
-
-    if (newCount === 0) {
-      delete currentCounts[reactionType];
-      delete currentReactionUsers[reactionType];
-    } else {
-      currentCounts[reactionType] = newCount;
-      // Remove current user from the reaction users list
-      if (currentReactionUsers[reactionType] && this.user?.currentProfile) {
-        currentReactionUsers[reactionType] = currentReactionUsers[
-          reactionType
-        ].filter((u) => u.id !== this.user!.currentProfile!.id);
-      }
-    }
-
-    return {
-      ...item,
-      post: {
-        ...item.post,
-        userReaction: null,
-        reactionCounts: currentCounts,
-        reactionUsers: currentReactionUsers,
-      },
-    } as T;
-  };
-
-  private addOrReplaceReaction = <T extends PostItem>(
-    item: T,
-    reactionType: string,
-    currentReaction: string | null | undefined,
-    currentCounts: Record<string, number>,
-    currentReactionUsers: Record<string, any[]>,
-  ): T => {
-    // Remove previous reaction if exists
-    if (currentReaction) {
-      this.removePreviousReaction(
-        currentReaction,
-        currentCounts,
-        currentReactionUsers,
-      );
-    }
-
-    // Add new reaction
-    currentCounts[reactionType] = (currentCounts[reactionType] || 0) + 1;
-
-    // Add current user to new reaction users
-    if (this.user?.currentProfile) {
-      if (!currentReactionUsers[reactionType]) {
-        currentReactionUsers[reactionType] = [];
-      }
-
-      // Add user at the beginning (most recent)
-      currentReactionUsers[reactionType] = [
-        {
-          id: this.user.currentProfile.id,
-          name: this.user.currentProfile.name,
-          timestamp: new Date(),
-        },
-        ...currentReactionUsers[reactionType].filter(
-          (u) => u.id !== this.user!.currentProfile!.id,
-        ),
-      ];
-    }
-
-    return {
-      ...item,
-      post: {
-        ...item.post,
-        userReaction: reactionType,
-        reactionCounts: currentCounts,
-        reactionUsers: currentReactionUsers,
-      },
-    } as T;
-  };
-
-  private removePreviousReaction = (
-    currentReaction: string,
-    currentCounts: Record<string, number>,
-    currentReactionUsers: Record<string, any[]>,
-  ) => {
-    const prevCount = Math.max(0, (currentCounts[currentReaction] || 1) - 1);
-
-    if (prevCount === 0) {
-      delete currentCounts[currentReaction];
-      delete currentReactionUsers[currentReaction];
-    } else {
-      currentCounts[currentReaction] = prevCount;
-      // Remove current user from previous reaction users
-      if (currentReactionUsers[currentReaction] && this.user?.currentProfile) {
-        currentReactionUsers[currentReaction] = currentReactionUsers[
-          currentReaction
-        ].filter((u) => u.id !== this.user!.currentProfile!.id);
-      }
-    }
-  };
-}
+export type LikeableItem = {
+  post: { id: string } & PostLikeState;
+};
 
 /**
- * Factory function to create an optimistic updater
+ * Flips a like locally: the count moves by one and the viewer joins or leaves
+ * the named likers. Without a current profile there is nobody to name, so only
+ * the count moves.
  */
-export const createOptimisticUpdater = (user?: PostFeedUser) =>
-  new OptimisticReactionUpdater(user);
+export const applyLikeToggle = ({
+  current,
+  currentProfile,
+}: {
+  current: PostLikeState;
+  currentProfile?: UserProfile | null;
+}): PostLikeState => {
+  const userHasLiked = !current.userHasLiked;
+  const others = currentProfile
+    ? current.likeUsers.filter((liker) => liker.id !== currentProfile.id)
+    : current.likeUsers;
+
+  return {
+    userHasLiked,
+    likeCount: Math.max(0, current.likeCount + (userHasLiked ? 1 : -1)),
+    likeUsers:
+      userHasLiked && currentProfile
+        ? [
+            {
+              id: currentProfile.id,
+              name: currentProfile.name,
+              timestamp: new Date(),
+            },
+            ...others,
+          ]
+        : others,
+  };
+};
+
+/**
+ * Applies {@link applyLikeToggle} to the matching post in a cached feed item,
+ * leaving every other item untouched. Preserves the input type shape so it can
+ * be mapped straight over a react-query cache entry.
+ */
+export const togglePostLike = <T extends LikeableItem>({
+  item,
+  postId,
+  user,
+}: {
+  item: T;
+  postId: string;
+  user?: PostFeedUser;
+}): T => {
+  if (item.post.id !== postId) {
+    return item;
+  }
+
+  return {
+    ...item,
+    post: {
+      ...item.post,
+      ...applyLikeToggle({
+        current: item.post,
+        currentProfile: user?.currentProfile,
+      }),
+    },
+  };
+};

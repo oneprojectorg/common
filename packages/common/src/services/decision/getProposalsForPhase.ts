@@ -10,7 +10,6 @@ import {
   inArray,
   isNull,
   lt,
-  ne,
   or,
   sql,
 } from '@op/db/client';
@@ -25,6 +24,7 @@ import {
 } from '@op/db/schema';
 
 import { isLegacyInstanceData } from './isLegacyInstance';
+import { phaseEligiblePredicate } from './phaseEligibility';
 
 /**
  * Minimal `processInstances` row shape required by the phase resolvers.
@@ -153,12 +153,19 @@ async function attachmentIdsFor(
           decisionTransitionProposals.transitionHistoryId,
           transitionHistoryId,
         ),
-        ne(proposals.status, ProposalStatus.DRAFT),
+        phaseEligiblePredicate(proposals),
         isNull(proposals.deletedAt),
+        isNull(proposals.moderationDetachedAt),
       ),
     );
   return rows.map((r) => r.id);
 }
+
+export const getAttachedProposalIds = ({
+  transitionHistoryId,
+}: {
+  transitionHistoryId: string;
+}): Promise<string[]> => attachmentIdsFor(transitionHistoryId, defaultDb);
 
 /**
  * Proposal ids matching `predicate` whose `createdAt` falls inside the
@@ -231,11 +238,12 @@ async function getActiveIdsByPredicate({
 }
 
 /**
- * Returns IDs of all active (non-deleted) non-draft proposals for an instance,
- * ignoring phase scoping. Use this for legacy instances or when the caller
- * has decided not to apply phase scoping (e.g. instance has no current phase).
+ * Returns IDs of all active (non-deleted) phase-eligible proposals for an
+ * instance, ignoring phase scoping. Use this for legacy instances or when the
+ * caller has decided not to apply phase scoping (e.g. instance has no current
+ * phase).
  */
-async function getActiveNonDraftIdsForInstance({
+async function getActivePhaseEligibleIdsForInstance({
   instanceId,
   db = defaultDb,
 }: {
@@ -244,13 +252,15 @@ async function getActiveNonDraftIdsForInstance({
 }): Promise<string[]> {
   return getActiveIdsByPredicate({
     instanceId,
-    predicate: ne(proposals.status, ProposalStatus.DRAFT),
+    predicate: phaseEligiblePredicate(proposals),
     db,
   });
 }
 
 /**
- * Returns IDs of non-draft proposals visible in the given phase.
+ * Returns IDs of non-draft proposals visible in the given phase. "Non-draft"
+ * here means phase-eligible — see {@link phaseEligiblePredicate}, which also
+ * drops merged proposals.
  *
  * A proposal is in phase P iff it was attached to P's inbound transition
  * (survived the advance-in snapshot) OR it was submitted during P's window
@@ -286,10 +296,10 @@ export async function getProposalIdsForPhase({
     : (phaseId ?? ctx.currentPhaseId);
 
   if (!resolvedPhaseId) {
-    return getActiveNonDraftIdsForInstance({ instanceId, db });
+    return getActivePhaseEligibleIdsForInstance({ instanceId, db });
   }
 
-  const nonDraftPredicate = ne(proposals.status, ProposalStatus.DRAFT);
+  const phaseEligible = phaseEligiblePredicate(proposals);
 
   const phaseWindow = await resolvePhaseWindow(
     instanceId,
@@ -309,7 +319,7 @@ export async function getProposalIdsForPhase({
         : Promise.resolve<string[]>([]),
       getIdsCreatedDuringWindow({
         instanceId,
-        predicate: nonDraftPredicate,
+        predicate: phaseEligible,
         inboundAt: phaseWindow.inbound?.transitionedAt,
         outboundAt: phaseWindow.outboundTransitionedAt,
         inboundComparator: 'gt',
@@ -358,7 +368,7 @@ export async function getPhaseProposalAndDraftIds({
   const ctx = deriveInstanceContext(instance);
   const instanceId = instance.id;
 
-  const nonDraftPredicate = ne(proposals.status, ProposalStatus.DRAFT);
+  const phaseEligible = phaseEligiblePredicate(proposals);
   const draftAccessPredicate = and(
     eq(proposals.status, ProposalStatus.DRAFT),
     inArray(
@@ -378,7 +388,7 @@ export async function getPhaseProposalAndDraftIds({
     const [nonDraftIds, draftIds] = await Promise.all([
       getActiveIdsByPredicate({
         instanceId,
-        predicate: nonDraftPredicate,
+        predicate: phaseEligible,
         db,
       }),
       getActiveIdsByPredicate({
@@ -411,7 +421,7 @@ export async function getPhaseProposalAndDraftIds({
       : Promise.resolve<string[]>([]),
     getIdsCreatedDuringWindow({
       instanceId,
-      predicate: nonDraftPredicate,
+      predicate: phaseEligible,
       inboundAt: phaseWindow.inbound?.transitionedAt,
       outboundAt: phaseWindow.outboundTransitionedAt,
       inboundComparator: 'gt',
@@ -475,9 +485,9 @@ export type PhaseProposalSqlScope = {
    */
   isEmpty: boolean;
   /**
-   * Predicate matching non-draft proposals visible in this phase. Composes
-   * with the outer query's `processInstanceId = X` and `status != 'draft'`
-   * filters.
+   * Predicate matching non-draft proposals visible in this phase. Carries no
+   * status or supersession filter of its own, so the caller owns both
+   * (`resolveProposalListScope` does).
    */
   buildNonDraftFilter: (t: typeof proposals) => SQL;
   /**

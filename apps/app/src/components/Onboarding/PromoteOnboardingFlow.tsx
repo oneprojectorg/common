@@ -1,5 +1,6 @@
 'use client';
 
+import { useCompleteOnboarding } from '@/hooks/useCompleteOnboarding';
 import { analyzeError, useConnectionStatus } from '@/utils/connectionErrors';
 import { trpc } from '@op/api/client';
 import { isSafeRedirectPath } from '@op/common/client';
@@ -52,7 +53,7 @@ export const PromoteOnboardingFlow = ({
 
   const { personalDetails } = useOnboardingFormStore();
   const trpcUtils = trpc.useUtils();
-  const completeOnboarding = trpc.account.completeOnboarding.useMutation();
+  const completeOnboarding = useCompleteOnboarding();
 
   const searchParams = useSearchParams();
   const redirectParam = searchParams.get('redirect');
@@ -69,7 +70,7 @@ export const PromoteOnboardingFlow = ({
   const handleComplete = useCallback(async () => {
     if (!isOnline) {
       toast.error(t('No connection'), {
-        description: t('Please check your internet connection and try again.'),
+        description: t('checkConnectionHint'),
       });
       return;
     }
@@ -77,7 +78,7 @@ export const PromoteOnboardingFlow = ({
     setIsSubmitting(true);
 
     try {
-      await completeOnboarding.mutateAsync({ tos: true, privacy: true });
+      await completeOnboarding();
       await trpcUtils.account.getMyAccount.invalidate();
       if (!isSafeRedirectPath(redirectParam)) {
         // `/` sends a non-member into the walled garden (403) — track how often
@@ -97,7 +98,7 @@ export const PromoteOnboardingFlow = ({
           : t("That didn't work"),
         {
           description: errorInfo.isConnectionError
-            ? t('Please try submitting the form again.')
+            ? t('resubmitFormHint')
             : errorInfo.message,
         },
       );

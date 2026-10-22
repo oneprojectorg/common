@@ -1,3 +1,5 @@
+import { listProfileRecipients } from '@op/common';
+import { selectEmailRecipients } from '@op/common/client';
 import { OPURLConfig } from '@op/core';
 import { db } from '@op/db/client';
 import { posts, profiles } from '@op/db/schema';
@@ -5,6 +7,8 @@ import { CommentNotificationEmail, OPBatchSend } from '@op/emails';
 import { Events, inngest } from '@op/events';
 import { logger } from '@op/logging';
 import { eq } from 'drizzle-orm';
+
+import { clipCommentContext } from './commentContext';
 
 const key = 'event.data.authorProfileId + "-" + event.data.proposalId';
 const { proposalCommentPosted } = Events;
@@ -29,6 +33,7 @@ export const sendProposalCommentNotification = inngest.createFunction(
           where: { id: proposalId },
           with: {
             profile: true,
+            submittedBy: true,
             processInstance: {
               with: {
                 profile: true,
@@ -68,20 +73,15 @@ export const sendProposalCommentNotification = inngest.createFunction(
       return;
     }
 
-    const proposalAuthor = await step.run('get-proposal-author', async () => {
-      const [row] = await db
-        .select({
-          name: profiles.name,
-          email: profiles.email,
-        })
-        .from(profiles)
-        .where(eq(profiles.id, proposal.submittedByProfileId))
-        .limit(1);
-      return row ?? null;
-    });
+    const proposalAuthor = proposal.submittedBy;
 
-    const recipientEmail = proposalAuthor?.email;
-    if (!recipientEmail) {
+    const recipients = selectEmailRecipients(
+      await step.run('get-author-recipients', async () =>
+        listProfileRecipients(proposalAuthor),
+      ),
+    );
+
+    if (recipients.length === 0) {
       return;
     }
 
@@ -111,18 +111,15 @@ export const sendProposalCommentNotification = inngest.createFunction(
 
     const proposalTitle = proposal.profile.name;
     const contextSource = proposalTitle || proposalContent;
-    const contextName =
-      contextSource.length > 50
-        ? `${contextSource.slice(0, 50).trim()}...`
-        : contextSource.trim();
+    const contextName = clipCommentContext(contextSource);
 
     const postedIn =
       proposal.processInstance?.name ?? 'Decision Making Process';
 
     const result = await step.run('send-email', async () => {
-      const { errors } = await OPBatchSend([
-        {
-          to: recipientEmail,
+      const { errors } = await OPBatchSend(
+        recipients.map((to) => ({
+          to,
           from: `${commenter.name} via Common`,
           subject: CommentNotificationEmail.subject(commenter.name, 'proposal'),
           component: () =>
@@ -136,14 +133,14 @@ export const sendProposalCommentNotification = inngest.createFunction(
               contextName,
               postedIn,
             }),
-        },
-      ]);
+        })),
+      );
 
       if (errors.length > 0) {
         throw new Error(`Email send failed: ${JSON.stringify(errors)}`);
       }
 
-      return { sent: 1 };
+      return { sent: recipients.length };
     });
 
     return {

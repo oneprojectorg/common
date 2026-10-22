@@ -13,7 +13,7 @@ export function SelectionCategoryChips({
   labels: string[];
   max?: number;
 }) {
-  const t = useTranslations();
+  const t = useTranslations('decisions.review');
   const visible = labels.slice(0, max);
   const extra = labels.length - visible.length;
 
@@ -30,7 +30,7 @@ export function SelectionCategoryChips({
       ))}
       {extra > 0 && (
         <span className="text-sm text-muted-foreground">
-          {t('+{count} More', { count: extra })}
+          {t('moreCount', { count: extra })}
         </span>
       )}
     </div>

@@ -77,7 +77,10 @@ export const DecisionInstanceHeader = ({
             >
               <LuArrowLeft className="size-4 rtl:-scale-x-100" />
               <span className="hidden md:flex">
-                {t('Back')} {backTo.label ? `${t('to')} ${backTo.label}` : ''}
+                {t('Back')}{' '}
+                {backTo.label
+                  ? `${t('decisions.dateRangeSeparator')} ${backTo.label}`
+                  : ''}
               </span>
             </ButtonLink>
           )}
@@ -118,16 +121,18 @@ export const DecisionInstanceHeader = ({
             <ButtonLink
               href={`/decisions/${decisionSlug}/edit`}
               variant="outline"
-              aria-label={t('Settings')}
+              aria-label={t('decisions.settingsAction')}
               className="max-sm:size-11"
             >
               <LuSettings className="size-4" />
-              <span className="hidden sm:inline-block">{t('Settings')}</span>
+              <span className="hidden sm:inline-block">
+                {t('decisions.settingsAction')}
+              </span>
             </ButtonLink>
           )}
           <Suspense fallback={null}>
             <DecisionUpdatesToggle
-              ariaLabel={t('Toggle updates panel')}
+              ariaLabel={t('decisions.toggleUpdatesPanelLabel')}
               canReadUpdates={canReadUpdates}
             />
           </Suspense>

@@ -12,6 +12,7 @@ import {
   ProposalCardView,
 } from './ProposalCard';
 import { proposalEditHref, proposalHref } from './proposalHrefs';
+import { useOpenProposalInSheet } from './proposalSheetState';
 
 interface ProposalBrowseCardProps {
   proposal: Proposal;
@@ -20,8 +21,8 @@ interface ProposalBrowseCardProps {
   /** Decision profile slug for building proposal links. */
   decisionSlug?: string;
   permissions?: DecisionAccess | null;
-  /** Id of this proposal's open revision request, if it has one. */
-  revisionRequestId?: string;
+  /** Whether any revision request is open on this proposal. */
+  hasRevisionRequest?: boolean;
   className?: string;
 }
 
@@ -39,16 +40,16 @@ export function ProposalBrowseCard({
   slug,
   decisionSlug,
   permissions,
-  revisionRequestId,
+  hasRevisionRequest = false,
   className,
 }: ProposalBrowseCardProps) {
   const canManageProposals = permissions?.admin ?? false;
   const canEngage = canEngageWithProposals(permissions);
+  const openInSheet = useOpenProposalInSheet();
 
   const isDraft = proposal.status === ProposalStatus.DRAFT;
   const isEditable = Boolean(proposal.isEditable);
   const showMenu = canManageProposals || isEditable;
-  const hasRevisionRequest = revisionRequestId !== undefined;
 
   const route = {
     profileId: proposal.profileId,
@@ -57,9 +58,6 @@ export function ProposalBrowseCard({
     instanceId,
   };
   const editHref = proposalEditHref(route);
-  const reviseHref = revisionRequestId
-    ? `${editHref}?reviewRevision=${revisionRequestId}`
-    : editHref;
   const viewHref = proposalHref(route);
 
   // Only pass `actions` when something will actually render — otherwise the
@@ -70,7 +68,7 @@ export function ProposalBrowseCard({
   // the card's purpose. Everywhere else they'd sit on every card an admin can
   // touch — which is all of them — so they live in the `…` menu.
   const actions = hasRevisionRequest ? (
-    <ProposalCardReviseAction editHref={reviseHref} />
+    <ProposalCardReviseAction editHref={editHref} />
   ) : isDraft ? (
     <ProposalCardOwnerActions proposal={proposal} editHref={editHref} />
   ) : undefined;
@@ -79,6 +77,7 @@ export function ProposalBrowseCard({
     <ProposalCardView
       proposal={proposal}
       href={viewHref}
+      onTitleClick={openInSheet(proposal.profileId)}
       aside={
         showMenu ? (
           <ProposalCardMenu

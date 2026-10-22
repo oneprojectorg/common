@@ -14,7 +14,10 @@ import { count } from 'drizzle-orm';
 import { CommonError, ValidationError } from '../../utils';
 import { getRubricScoringInfo } from './getRubricScoringInfo';
 import { getSubmittedReviewScore } from './listProposalsWithReviewAggregates';
-import { assertReviewAssignmentContext } from './reviewHelpers';
+import {
+  assertReviewAssignmentContext,
+  assertReviewAssignmentPhaseIsCurrent,
+} from './reviewHelpers';
 import { schemaValidator } from './schemaValidator';
 import type { RubricReviewData } from './schemas/reviews';
 
@@ -42,6 +45,11 @@ export async function submitReview({
     throw new ValidationError('Review has already been submitted');
   }
 
+  assertReviewAssignmentPhaseIsCurrent(
+    context.instance,
+    context.assignment.phaseId,
+  );
+
   if (!context.rubricTemplate) {
     throw new ValidationError('Rubric template not found for this assignment');
   }
@@ -49,6 +57,10 @@ export async function submitReview({
   schemaValidator.assertRubricData(context.rubricTemplate, reviewData.answers);
 
   const submittedAt = new Date().toISOString();
+
+  const reviewedHistoryValues = context.currentProposalHistoryId
+    ? { reviewedProposalHistoryId: context.currentProposalHistoryId }
+    : {};
 
   const review = await db.transaction(async (tx) => {
     const [submittedReview] = await tx
@@ -59,6 +71,7 @@ export async function submitReview({
         reviewData,
         overallComment: overallComment ?? null,
         submittedAt,
+        ...reviewedHistoryValues,
       })
       .onConflictDoUpdate({
         target: proposalReviews.assignmentId,
@@ -67,6 +80,7 @@ export async function submitReview({
           reviewData,
           overallComment: overallComment ?? null,
           submittedAt,
+          ...reviewedHistoryValues,
         },
       })
       .returning();
@@ -75,6 +89,7 @@ export async function submitReview({
       throw new CommonError('Failed to submit review');
     }
 
+    // The pin means "the version the reviewer was asked to review": unchanged here.
     await tx
       .update(proposalReviewAssignments)
       .set({

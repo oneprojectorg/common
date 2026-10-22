@@ -16,6 +16,7 @@ import { checkPermission, permission } from 'access-zones';
 import type { SQL } from 'drizzle-orm';
 
 import {
+  PAGE_LIMIT,
   NotFoundError,
   decodeCursor,
   encodeCursor,
@@ -26,6 +27,11 @@ import {
   getActivelyFlaggedItemIds,
   noActiveModerationFlag,
 } from '../moderation/moderationVisibility';
+import {
+  getLikeSummary,
+  type LikeSummary,
+  type ReactionRow,
+} from '../reactions/utils';
 
 /**
  * SQL filter for post/comment reads: the row carries no active moderation flag,
@@ -46,7 +52,7 @@ export const postModerationFilter = (
 export const listPosts = async ({
   authUserId,
   slug,
-  limit = 20,
+  limit = PAGE_LIMIT.md,
   cursor,
 }: {
   authUserId: string;
@@ -199,14 +205,13 @@ export const listPosts = async ({
           })
         : null;
 
-    // Transform items to include reaction counts, user's reactions, and comment counts
-    const itemsWithReactionsAndComments =
-      await getItemsWithReactionsAndComments({
-        items,
-        profileId: actorProfileId,
-      });
+    // Transform items to include like counts and comment counts
+    const itemsWithLikesAndComments = await getItemsWithLikesAndComments({
+      items,
+      profileId: actorProfileId,
+    });
 
-    return { items: itemsWithReactionsAndComments, next: nextCursor };
+    return { items: itemsWithLikesAndComments, next: nextCursor };
   } catch (e) {
     logger.error('Error listing posts', { error: e });
     throw e;
@@ -214,28 +219,9 @@ export const listPosts = async ({
 };
 
 /**
- * Represents a reaction item with required fields for processing
- */
-type ReactionItem = {
-  reactionType: string;
-  createdAt?: string | Date | null;
-  profileId: string;
-  profile?: {
-    id: string;
-    name: string;
-  } | null;
-};
-
-/**
  * Fields added to posts by this function
  */
-type EnhancedPostFields = {
-  reactionCounts: Record<string, number>;
-  reactionUsers: Record<
-    string,
-    Array<{ id: string; name: string; timestamp: Date }>
-  >;
-  userReaction: string | null;
+type EnhancedPostFields = LikeSummary & {
   commentCount: number;
   /** True when an active moderation flag hides this post from general readers.
    *  Only the author and admins ever receive a flagged post (the read filters
@@ -244,19 +230,17 @@ type EnhancedPostFields = {
 };
 
 /**
- * Processes posts to add reaction counts, user reactions, and comment counts.
+ * Processes posts to add like counts and comment counts.
  *
  * Note: The generic constraint uses `any` for the `post` parameter to remain compatible
  * with Drizzle's loosely-typed query results. Within the function, we process reactions
- * with proper type safety using the `ReactionItem` type.
+ * with proper type safety using the `ReactionRow` type.
  *
  * @param items - Array of items where each has a post with id and optional reactions array
- * @param profileId - The current user's profile ID to determine their reaction
- * @returns Items with enhanced post data including reaction counts and comment counts
+ * @param profileId - The current user's profile ID to determine whether they liked it
+ * @returns Items with enhanced post data including like counts and comment counts
  */
-export const getItemsWithReactionsAndComments = async <
-  T extends { post: any },
->({
+export const getItemsWithLikesAndComments = async <T extends { post: any }>({
   items,
   profileId,
 }: {
@@ -266,78 +250,39 @@ export const getItemsWithReactionsAndComments = async <
   // Get all post IDs to fetch comment counts
   const postIds = items.map((item) => item.post.id).filter(Boolean);
 
-  // Flagged posts only reach enrichment for their author or an admin (the read
-  // filters drop them for everyone else), so this decorates exactly the people
-  // who should see the "Flagged" indicator.
-  const flaggedIds = await getActivelyFlaggedItemIds('post', postIds);
+  // Both reads decorate the same page and neither gates the other, so they go
+  // out together — every post feed pays this cost once per request.
+  const [flaggedIds, commentCounts] = await Promise.all([
+    // Flagged posts only reach enrichment for their author or an admin (the
+    // read filters drop them for everyone else), so this decorates exactly the
+    // people who should see the "Flagged" indicator.
+    getActivelyFlaggedItemIds('post', postIds),
+    postIds.length > 0
+      ? db
+          .select({
+            parentPostId: posts.parentPostId,
+            count: count(posts.id),
+          })
+          .from(posts)
+          .where(
+            and(
+              isNotNull(posts.parentPostId),
+              inArray(posts.parentPostId, postIds),
+            ),
+          )
+          .groupBy(posts.parentPostId)
+      : [],
+  ]);
 
-  // Fetch comment counts for all posts in a single query
   const commentCountMap: Record<string, number> = {};
-  if (postIds.length > 0) {
-    const commentCounts = await db
-      .select({
-        parentPostId: posts.parentPostId,
-        count: count(posts.id),
-      })
-      .from(posts)
-      .where(
-        and(
-          isNotNull(posts.parentPostId),
-          inArray(posts.parentPostId, postIds),
-        ),
-      )
-      .groupBy(posts.parentPostId);
-
-    commentCounts.forEach((row) => {
-      if (row.parentPostId) {
-        commentCountMap[row.parentPostId] = Number(row.count);
-      }
-    });
-  }
+  commentCounts.forEach((row) => {
+    if (row.parentPostId) {
+      commentCountMap[row.parentPostId] = Number(row.count);
+    }
+  });
 
   return items.map((item) => {
-    const reactionCounts: Record<string, number> = {};
-    const reactionUsers: Record<
-      string,
-      Array<{ id: string; name: string; timestamp: Date }>
-    > = {};
-    let userReaction: string | null = null;
-
-    // Count reactions by type and collect user info
-    if (item.post.reactions) {
-      item.post.reactions.forEach((reaction: ReactionItem) => {
-        reactionCounts[reaction.reactionType] =
-          (reactionCounts[reaction.reactionType] || 0) + 1;
-
-        // Collect user data for each reaction type
-        if (!reactionUsers[reaction.reactionType]) {
-          reactionUsers[reaction.reactionType] = [];
-        }
-
-        // Only add user data if profile exists
-        if (reaction.profile) {
-          const timestamp = reaction.createdAt
-            ? new Date(reaction.createdAt)
-            : new Date();
-
-          // Ensure the date is valid
-          const validTimestamp = isNaN(timestamp.getTime())
-            ? new Date()
-            : timestamp;
-
-          reactionUsers[reaction.reactionType]?.push({
-            id: reaction.profile.id,
-            name: reaction.profile.name,
-            timestamp: validTimestamp,
-          });
-        }
-
-        // Track user's reaction (only one per user)
-        if (reaction.profileId === profileId) {
-          userReaction = reaction.reactionType;
-        }
-      });
-    }
+    const reactions: ReactionRow[] = item.post.reactions ?? [];
 
     // Get comment count for this post
     const commentCount = commentCountMap[item.post.id] || 0;
@@ -346,9 +291,7 @@ export const getItemsWithReactionsAndComments = async <
       ...item,
       post: {
         ...item.post,
-        reactionCounts,
-        reactionUsers, // Add user data grouped by reaction type
-        userReaction,
+        ...getLikeSummary({ reactions, profileId }),
         commentCount,
         isFlagged: flaggedIds.has(item.post.id),
       },

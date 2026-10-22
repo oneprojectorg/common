@@ -4,6 +4,7 @@ export enum ProposalFilter {
   ALL = 'all',
   MY_PROPOSALS = 'my-proposals',
   MY_BALLOT = 'my-ballot',
+  REJECTED = 'rejected',
 }
 
 /**

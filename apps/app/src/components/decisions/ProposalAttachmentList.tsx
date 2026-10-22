@@ -26,7 +26,7 @@ export function ProposalAttachmentList({
   files: AttachmentListItem[];
   onRemove: (id: string) => void;
 }) {
-  const t = useTranslations();
+  const t = useTranslations('decisions');
 
   if (files.length === 0) {
     return null;
@@ -47,7 +47,7 @@ export function ProposalAttachmentList({
               size="icon-sm"
               onClick={() => onRemove(file.id)}
               disabled={file.uploading}
-              aria-label={t('Remove {name}', { name: file.fileName })}
+              aria-label={t('removeNamed', { name: file.fileName })}
             >
               <LuX className="size-4" />
             </Button>

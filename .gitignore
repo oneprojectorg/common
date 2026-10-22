@@ -76,6 +76,8 @@ tests/e2e/a11y-baseline/diff.md
 tests/e2e/a11y-baseline/screenshots/
 .playwright-mcp
 ralph.sh
+# fallow working state (parse caches, ad-hoc snapshots). The committed health
+# baseline lives in configs/fallow/ instead.
 .fallow/
 
 # pnpm local store (created inside bind-mounted /app when container runs pnpm)

@@ -25,7 +25,9 @@ export const DeletePostMenuItem = ({ post }: { post: Post }) => {
 
         utils.posts.getPosts.setData(queryKey, (old) => {
           if (!old) return old;
-          return old.filter((comment) => comment.id !== post.id);
+          return {
+            items: old.items.filter((comment) => comment.id !== post.id),
+          };
         });
 
         return { previousComments };
@@ -37,7 +39,7 @@ export const DeletePostMenuItem = ({ post }: { post: Post }) => {
       void utils.organization.listPosts.invalidate();
       void utils.organization.listAllPosts.invalidate();
       router.refresh();
-      toast.success(t('Post deleted'));
+      toast.success(t('posts.deletedToast'));
     },
     onError: (error, _variables, context) => {
       if (post.parentPostId && context?.previousComments) {
@@ -45,7 +47,7 @@ export const DeletePostMenuItem = ({ post }: { post: Post }) => {
         utils.posts.getPosts.setData(queryKey, context.previousComments);
       }
 
-      toast.error(error.message || t('Failed to delete post'));
+      toast.error(error.message || t('posts.deleteError'));
     },
   });
 

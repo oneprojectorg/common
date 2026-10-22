@@ -1,6 +1,7 @@
 import { createClient } from '@op/api/serverClient';
 import type { Metadata } from 'next';
-import { getTranslations } from 'next-intl/server';
+
+import { getTranslations } from '@/lib/i18n';
 
 import { ProposalReviewsLayout } from '@/components/decisions/ProposalReviews/ProposalReviewsLayout';
 
@@ -17,7 +18,7 @@ export async function generateMetadata({
       getTranslations({ locale }),
     ]);
     const decisionProfile = await client.decision.getDecisionBySlug({ slug });
-    const label = t('Reviews');
+    const label = t('decisions.review.reviewsLabel');
     return {
       title: decisionProfile?.name
         ? `${label} | ${decisionProfile.name}`

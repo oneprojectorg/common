@@ -22,7 +22,7 @@ import { TimestampTooltip } from './TimestampTooltip';
 /** Renders table cells for an organization row - must be used inside a <TableRow> */
 export const OrgsRowCells = ({ org }: { org: AdminOrg }) => {
   const format = useFormatter();
-  const t = useTranslations();
+  const t = useTranslations('admin');
   const createdAt = org.createdAt ? new Date(org.createdAt) : null;
   const [isMembersModalOpen, setIsMembersModalOpen] = useState(false);
 
@@ -57,7 +57,7 @@ export const OrgsRowCells = ({ org }: { org: AdminOrg }) => {
                 <Button
                   variant="outline"
                   size="icon"
-                  aria-label={t('Organization options')}
+                  aria-label={t('orgOptionsLabel')}
                 >
                   <LuEllipsis />
                 </Button>
@@ -65,7 +65,7 @@ export const OrgsRowCells = ({ org }: { org: AdminOrg }) => {
             />
             <DropdownMenuContent align="end" className="min-w-48">
               <DropdownMenuItem onClick={() => setIsMembersModalOpen(true)}>
-                {t('View members')}
+                {t('viewMembersAction')}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

@@ -2,6 +2,7 @@
 
 import { getPublicUrl } from '@/utils';
 import { trpc } from '@op/api/client';
+import { PAGE_LIMIT } from '@op/common/client';
 import { Avatar, AvatarFallback } from '@op/sense/Avatar';
 import { Card } from '@op/sense/Card';
 import { GrowingFacePile } from '@op/sense/FacePile';
@@ -23,7 +24,7 @@ export const PlatformHighlights = () => {
 
   return (
     <Card className="gap-0 py-0">
-      <div className="flex flex-col items-center justify-between gap-6 px-10 py-6 sm:flex-row sm:gap-4">
+      <div className="flex flex-col items-center justify-around gap-6 px-10 py-6 sm:flex-row">
         {stats.newOrganizations > 0 && (
           <>
             <Highlight>
@@ -31,7 +32,7 @@ export const PlatformHighlights = () => {
                 {stats.newOrganizations}
               </HighlightNumber>
               <HighlightLabel>
-                {t('new organizations to explore')}
+                {t('posts.highlightsNewOrganizations')}
               </HighlightLabel>
             </Highlight>
             <hr className="hidden h-20 w-0.5 border-0 bg-secondary sm:block" />
@@ -42,10 +43,9 @@ export const PlatformHighlights = () => {
             {stats.totalRelationships}
           </HighlightNumber>
           <HighlightLabel>
-            {t(
-              '{count, plural, =1 {active relationship} other {active relationships}}',
-              { count: stats.totalRelationships },
-            )}
+            {t('posts.highlightsActiveRelationships', {
+              count: stats.totalRelationships,
+            })}
           </HighlightLabel>
         </Highlight>
         <hr className="hidden h-20 w-0.5 border-0 bg-secondary sm:block" />
@@ -53,14 +53,16 @@ export const PlatformHighlights = () => {
           <HighlightNumber className="bg-redTeal">
             {stats.totalOrganizations}
           </HighlightNumber>
-          <HighlightLabel>{t('organizations on Common')}</HighlightLabel>
+          <HighlightLabel>
+            {t('posts.highlightsOrganizationCount')}
+          </HighlightLabel>
         </Highlight>
         <hr className="hidden h-20 w-0.5 border-0 bg-secondary sm:block" />
         <Highlight>
           <HighlightNumber className="bg-redPurple">
             {stats.totalUsers}
           </HighlightNumber>
-          <HighlightLabel>{t('people on Common')}</HighlightLabel>
+          <HighlightLabel>{t('posts.highlightsPeopleCount')}</HighlightLabel>
         </Highlight>
       </div>
       <div className="flex flex-col justify-center gap-2 border-0 border-t bg-muted p-6 text-sm sm:flex-row sm:items-center">
@@ -68,7 +70,7 @@ export const PlatformHighlights = () => {
           <div className="flex max-w-full items-center gap-2">
             <OrganizationFacePile>
               <span className="whitespace-nowrap">
-                {t('are collaborating on Common')}
+                {t('posts.highlightsCollaborating')}
               </span>
             </OrganizationFacePile>
           </div>
@@ -89,7 +91,7 @@ const HighlightNumber = ({
     <div className="col-span-3 text-transparent xxs:col-span-2">
       <div
         className={cn(
-          'flex items-center justify-end bg-gradient bg-clip-text text-end font-serif text-display font-light',
+          'flex items-center justify-end bg-gradient bg-clip-text text-end font-serif text-5xl font-light',
           className,
         )}
       >
@@ -100,16 +102,12 @@ const HighlightNumber = ({
 };
 
 const HighlightLabel = ({ children }: { children?: ReactNode }) => {
-  return (
-    <div className="col-span-2 flex h-12 max-w-32 items-center xxs:col-span-3">
-      {children}
-    </div>
-  );
+  return <div className="flex h-12 items-center">{children}</div>;
 };
 
 const Highlight = ({ children }: { children?: ReactNode }) => {
   return (
-    <div className="grid w-full grid-cols-5 items-center gap-4 xxs:flex sm:flex">
+    <div className="flex w-full items-center justify-start gap-4 sm:w-fit">
       {children}
     </div>
   );
@@ -117,7 +115,7 @@ const Highlight = ({ children }: { children?: ReactNode }) => {
 
 const OrganizationFacePile = ({ children }: { children?: ReactNode }) => {
   const [[{ items: organizations }, stats]] = trpc.useSuspenseQueries((t) => [
-    t.organization.list({ limit: 100 }),
+    t.organization.list({ limit: PAGE_LIMIT.max }),
     t.platform.getStats(),
   ]);
 

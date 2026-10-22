@@ -4,6 +4,8 @@ export * from './moderation';
 export * from './terms';
 export * from './access';
 export * from './email';
+export * from './exports';
+export * from './personalDataExport';
 export * from './organization';
 export * from './platform';
 export * from './individual';
@@ -11,6 +13,7 @@ export * from './user';
 export * from './posts';
 export * from './reactions';
 export * from './decision';
+export * from './sms';
 export * from './platform';
 export {
   acceptProfileInvite,
@@ -45,3 +48,4 @@ export {
 export * from './linkPreview';
 export * from './resources';
 export * from './translation';
+export * from './notification';

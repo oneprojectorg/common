@@ -4,8 +4,9 @@ import {
   dehydrate,
 } from '@op/api/server';
 import type { Metadata } from 'next';
-import { getTranslations } from 'next-intl/server';
 import { cache } from 'react';
+
+import { getTranslations } from '@/lib/i18n';
 
 import { LegacyProposalEditClient } from './ProposalEditClient';
 
@@ -40,8 +41,9 @@ export async function generateMetadata({
       fetchInstance(id),
     ]);
 
-    const proposalTitle = proposal.profile?.name || t('Untitled Proposal');
-    const label = `${proposalTitle} (${t('Editing')})`;
+    const proposalTitle =
+      proposal.profile?.name || t('decisions.proposals.untitledProposal');
+    const label = `${proposalTitle} (${t('decisions.editingPageTitle')})`;
     return { title: instance?.name ? `${label} | ${instance.name}` : label };
   } catch {
     return {};

@@ -1,8 +1,10 @@
-import { TranslatedText } from '../TranslatedText';
+import { Header3 } from '@op/sense/Header';
 
-// Canonical proposal count label. With no `total` (or nothing filtered out) it
-// reads a single-size "328 proposals"; a narrowing search sets `total` to the
-// full pool and it reads "6 of 328 proposals" with a muted remainder.
+import { useTranslations } from '@/lib/i18n';
+
+// "328 proposals", or "6 of 328 proposals" once `total` says something was
+// filtered out. A filter can reach past the phase's pool ("Not advanced" adds
+// what earlier phases left behind), so a count above `total` stands alone.
 export const ProposalCount = ({
   count,
   total,
@@ -10,25 +12,26 @@ export const ProposalCount = ({
   count: number;
   total?: number;
 }) => {
+  const t = useTranslations('decisions.proposals');
   const narrowed = total != null && count < total;
+
   if (!narrowed) {
     return (
-      <span className="font-serif text-title font-light">
-        <TranslatedText
-          text="{count, plural, one {# proposal} other {# proposals}}"
-          values={{ count: total ?? count }}
-        />
-      </span>
+      <Header3>
+        {t('proposalCount', {
+          count,
+        })}
+      </Header3>
     );
   }
+
   return (
     <span className="flex items-baseline gap-1">
-      <span className="font-serif text-title font-light">{count}</span>
+      <Header3>{count}</Header3>
       <span className="text-base text-muted-foreground">
-        <TranslatedText
-          text="of {total, plural, one {# proposal} other {# proposals}}"
-          values={{ total }}
-        />
+        {t('ofTotalProposals', {
+          total,
+        })}
       </span>
     </span>
   );

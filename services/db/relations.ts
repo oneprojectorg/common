@@ -386,13 +386,13 @@ export const relations = defineRelations(schema, (r) => ({
   /**
    * Process instance relations
    *
-   * stewardProfileId is nullable.
+   * stewardProfileId and processId are nullable.
    */
   processInstances: {
     process: r.one.decisionProcesses({
       from: r.processInstances.processId,
       to: r.decisionProcesses.id,
-      optional: false,
+      optional: true,
     }),
     profile: r.one.profiles({
       from: r.processInstances.profileId,
@@ -422,6 +422,10 @@ export const relations = defineRelations(schema, (r) => ({
       from: r.processInstances.id,
       to: r.categoryReviewers.processInstanceId,
     }),
+    phases: r.many.processPhases({
+      from: r.processInstances.id,
+      to: r.processPhases.processInstanceId,
+    }),
     surveyResponses: r.many.decisionProcessSurveyResponses({
       from: r.processInstances.id,
       to: r.decisionProcessSurveyResponses.processInstanceId,
@@ -429,6 +433,52 @@ export const relations = defineRelations(schema, (r) => ({
     surveySubmitters: r.many.decisionProcessSurveySubmitters({
       from: r.processInstances.id,
       to: r.decisionProcessSurveySubmitters.processInstanceId,
+    }),
+  },
+
+  processPhases: {
+    processInstance: r.one.processInstances({
+      from: r.processPhases.processInstanceId,
+      to: r.processInstances.id,
+      optional: false,
+    }),
+    profile: r.one.profiles({
+      from: r.processPhases.profileId,
+      to: r.profiles.id,
+      alias: 'processPhase_profile',
+      optional: false,
+    }),
+  },
+
+  decisionsVoteSubmissions: {
+    processInstance: r.one.processInstances({
+      from: r.decisionsVoteSubmissions.processInstanceId,
+      to: r.processInstances.id,
+      optional: false,
+    }),
+    submittedBy: r.one.profiles({
+      from: r.decisionsVoteSubmissions.submittedByProfileId,
+      to: r.profiles.id,
+      alias: 'decisionsVoteSubmission_submittedBy',
+      optional: false,
+    }),
+    voteProposals: r.many.decisionsVoteProposals({
+      from: r.decisionsVoteSubmissions.id,
+      to: r.decisionsVoteProposals.voteSubmissionId,
+    }),
+  },
+
+  decisionsVoteProposals: {
+    voteSubmission: r.one.decisionsVoteSubmissions({
+      from: r.decisionsVoteProposals.voteSubmissionId,
+      to: r.decisionsVoteSubmissions.id,
+      optional: false,
+    }),
+    proposal: r.one.proposals({
+      from: r.decisionsVoteProposals.proposalId,
+      to: r.proposals.id,
+      alias: 'decisionsVoteProposal_proposal',
+      optional: false,
     }),
   },
 
@@ -707,6 +757,11 @@ export const relations = defineRelations(schema, (r) => ({
     serviceUser: r.one.users({
       from: r.organizationUsers.authUserId,
       to: r.users.authUserId,
+    }),
+    authUser: r.one.authUsers({
+      from: r.organizationUsers.authUserId,
+      to: r.authUsers.id,
+      optional: false,
     }),
     roles: r.many.organizationUserToAccessRoles({
       from: r.organizationUsers.id,

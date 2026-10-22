@@ -13,19 +13,32 @@ export {
 // Re-exported from the decision utils so client components can resolve
 // phase-level settings without pulling in the server-only utils barrel.
 export {
+  allowsComments,
+  areCommentsAllowed,
+  canEditProposals,
   getPhaseReviewSettings,
+  getPreviousReviewPhases,
+  getVoterCostField,
+  getVoterBudget,
+  hasOpenReviews,
   hasVotingPhase,
+  isRankedVoting,
   isReviewPhase,
   isVotingPhase,
+  resolveReviewSettings,
   type ReviewSettings,
 } from './services/decision/utils/phaseSettings';
-export { assertInstancePhase } from './services/decision/utils/instance';
+export {
+  assertInstancePhase,
+  getInstanceCurrentPhase,
+} from './services/decision/utils/instance';
 export {
   getPhaseIndex,
   getPreviousPhases,
   isPhaseAtOrBefore,
 } from './services/decision/utils/phaseOrder';
 export {
+  getPhaseProposalTemplate,
   getPhaseRubricTemplate,
   resolvePhaseTemplate,
 } from './services/decision/utils/phaseTemplates';
@@ -35,6 +48,7 @@ export {
   proposalAccessSchema,
   proposalAttachmentSchema,
   proposalSchema,
+  reviewedProposalVersionSchema,
   proposalListSchema,
   proposalLocationsSchema,
   proposalProfileSchema,
@@ -42,7 +56,10 @@ export {
   allProposalsFilterSchema,
   allProposalsListItemSchema,
   allProposalsListSchema,
+  PROPOSAL_SEARCH_MAX_LENGTH,
+  proposalSearchSchema,
   type Proposal,
+  type ReviewedProposalVersion,
   type ProposalList,
   type ProposalLocations,
   type ProposalProfile,
@@ -73,9 +90,51 @@ export {
   type AdminDecisionReviewAssignments,
 } from './services/decision/schemas/adminDecisionInstance';
 export {
+  phaseReviewerSummarySchema,
+  type PhaseReviewerSummary,
+  phaseReviewerSummariesSchema,
+  type PhaseReviewerSummaries,
+  reviewerAssignmentsSchema,
+  type ReviewerAssignments,
+  type ReviewerQueueStatus,
+} from './services/decision/schemas/reviewAssignments';
+export {
+  proposalAllocationSchema,
+  type ProposalAllocation,
   proposalSelectionSchema,
   type ProposalSelection,
 } from './services/decision/schemas/selection';
+export {
+  MERGE_NOTE_MAX_LENGTH,
+  mergeProposalsInputSchema,
+  unmergeProposalInputSchema,
+  listProposalRelationshipsInputSchema,
+  proposalRelationshipListSchema,
+  type MergeProposalsInput,
+  type UnmergeProposalInput,
+  type ListProposalRelationshipsInput,
+  type ProposalRelationshipList,
+} from './services/decision/schemas/proposalRelationships';
+export {
+  REJECTION_NOTE_MAX_LENGTH,
+  RejectionReason,
+  rejectionReasonSchema,
+  rejectProposalInputSchema,
+  unrejectProposalInputSchema,
+  type RejectProposalInput,
+  type UnrejectProposalInput,
+} from './services/decision/schemas/rejectProposal';
+export {
+  advanceProposalInputSchema,
+  getProposalAdvanceTargetInputSchema,
+  proposalAdvanceTargetSchema,
+} from './services/decision/schemas/advanceProposal';
+export {
+  listContributingProposalsInputSchema,
+  contributingProposalListSchema,
+  type ListContributingProposalsInput,
+  type ContributingProposalList,
+} from './services/decision/schemas/contributingProposals';
 export {
   profileUserSchema,
   profileUserWithProfileSchema,
@@ -122,6 +181,40 @@ export {
   templateCollectsLocation,
   getLocationFieldMapView,
 } from './services/decision/templateLocation';
+export { templateCollectsBudget } from './services/decision/templateBudget';
+export {
+  PROCESS_NAME_MAX_LENGTH,
+  PROCESS_NAME_MIN_LENGTH,
+  PHASE_KINDS,
+  PROCESS_TYPES,
+  type CreateInstanceInput,
+  type InstancePhaseInput,
+  type PhaseKind,
+  type ProcessType,
+  createInstanceSchema,
+} from './services/decision/schemas/createInstance';
+export {
+  RESULT_NOTIFICATION_MESSAGE_MAX_LENGTH,
+  type ResultNotificationMessages,
+  resultNotificationMessagesSchema,
+  resultNotificationToken,
+} from './services/decision/resultNotificationTemplate';
+export {
+  buildMoneyFieldAnswer,
+  getMoneyFieldCurrency,
+  getMoneyFieldMinimum,
+  isMoneyFieldSchema,
+  resolveMoneyDisplayCurrency,
+} from './services/decision/rubric/money';
+export {
+  formatUnitAmount,
+  getFieldUnit,
+  getUnitLabel,
+  isAtMost,
+  isSameUnit,
+  getFieldAmount,
+  sumAmounts,
+} from './services/decision/fieldUnit';
 export { assembleProposalData } from './services/decision/assembleProposalData';
 export { relaxLocationCategoryRequirement } from './services/decision/relaxLocationCategoryRequirement';
 export {
@@ -131,15 +224,31 @@ export {
 } from './services/decision/schemaValidator';
 export {
   customFormSchema,
+  customFormWithPhaseSchema,
   customFormSubmissionSchema,
+  customFormFieldSchema,
+  customFormDefinitionInputSchema,
+  createCustomFormInputSchema,
   createCustomFormSubmissionInputSchema,
+  deleteCustomFormInputSchema,
   getCustomFormForProfileInputSchema,
+  listCustomFormsInputSchema,
+  updateCustomFormInputSchema,
+  CUSTOM_FORM_DEFINITION_MAX_BYTES,
+  CUSTOM_FORM_MAX_FIELDS,
   CUSTOM_FORM_SUBMISSION_MAX_BYTES,
   type CustomFormDTO,
+  type CustomFormWithPhaseDTO,
   type CustomFormSubmissionDTO,
   type CustomFormDefinitionSchema,
+  type CustomFormDefinitionInput,
+  type CustomFormField,
+  type CreateCustomFormInput,
   type CreateCustomFormSubmissionInput,
+  type DeleteCustomFormInput,
   type GetCustomFormForProfileInput,
+  type ListCustomFormsInput,
+  type UpdateCustomFormInput,
 } from './services/customForms/schemas/customForm';
 export { serverExtensions } from './services/decision/tiptapExtensions';
 export { tiptapDocToPlainText } from './services/decision/tiptapDocToPlainText';
@@ -161,7 +270,11 @@ export {
   type PhaseReviewSettings,
   type ReviewsScope,
 } from './services/decision/schemas/types';
-export { isLastPhase } from './services/decision/schemas/instanceData';
+export {
+  isLastPhase,
+  type PhaseSettingsSchema,
+} from './services/decision/schemas/instanceData';
+export { selectionPipelineSchema } from './services/decision/selectionPipeline/schema';
 export {
   VOTING_INELIGIBLE_STATUSES,
   isVotingEligible,
@@ -174,6 +287,7 @@ export {
   ALLOWED_UPLOAD_MIME_TYPES,
   DEFAULT_UPLOAD_SIZE_LIMIT,
   IMAGE_UPLOAD_SIZE_LIMIT,
+  assetPublicUrl,
   isAllowedUploadMimeType,
   type AllowedUploadMimeType,
 } from './utils/storage';
@@ -193,18 +307,26 @@ export {
 // its server-only deps) into the client bundle.
 export { MAX_PROPOSAL_ATTACHMENT_FILE_SIZE } from './services/decision/proposalAttachmentStorage';
 
+export {
+  listProposalCommentsSchema,
+  type ListProposalCommentsInput,
+} from './services/posts/schemas';
+
 // Translation constants (no server dependencies)
 import { SUPPORTED_LOCALES } from './services/translation/locales';
 
 export {
   SUPPORTED_LOCALES,
+  isSupportedLocale,
   LOCALE_TO_DEEPL,
 } from './services/translation/locales';
 export type { SupportedLocale } from './services/translation/locales';
 export { parseTranslatedMeta } from './services/translation/parseTranslatedMeta';
-export type { PostTranslation } from './services/translation/translatePosts';
+export type { PostTranslation } from './services/translation/translatePost';
 export type { ProposalTranslation } from './services/translation/translateProposal';
 export type { ResourceTranslation } from './services/translation/translateResources';
+export type { ReviewTranslation } from './services/translation/translateReview';
+export type { RevisionRequestTranslation } from './services/translation/translateRevisionRequest';
 export type {
   TranslatedFieldValue,
   TranslatedFields,
@@ -212,7 +334,19 @@ export type {
 
 // Re-exported from utils so client components can import it without pulling in
 // the server-only utils barrel (which depends on drizzle).
-export { hasEmail } from './utils/email';
+export { hasEmail, selectEmailRecipients } from './utils/email';
+export {
+  PAGE_LIMIT,
+  list,
+  next,
+  nextCursor,
+  paginated,
+  paginationInput,
+  total,
+  type PageLimitTier,
+  type Paginated,
+  type PaginationInput,
+} from './utils/pagination';
 
 // Whitelist of safe redirect-path prefixes. Every legitimate app route lives
 // under a locale segment (en/es/fr/…) or under `/info`. Anything else —
@@ -270,3 +404,19 @@ export function getSafeRedirectPath(path: string | null): string | null {
 export function isSafeRedirectPath(path: string | null): path is string {
   return getSafeRedirectPath(path) !== null;
 }
+
+// The login panel validates a phone number before enabling its submit button.
+// GoTrue answers the browser directly, so this is the only check the number
+// passes before Twilio Verify sees it.
+export {
+  isValidTypedPhoneNumber,
+  normalizePhoneNumber,
+  phoneNumberSchema,
+  safeParsePhoneNumber,
+  toGoTruePhoneFormat,
+} from './services/notification/schemas';
+export {
+  SMS_MAX_BODY_LENGTH,
+  clipSmsText,
+  splitSmsBody,
+} from './services/sms/text';

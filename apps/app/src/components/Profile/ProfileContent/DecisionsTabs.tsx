@@ -21,19 +21,21 @@ export const DecisionsTab = ({ profileId }: { profileId: string }) => {
   const canReadDecisions =
     access.getPermissionsForProfile(profileId).decisions.read;
 
-  const decisionProfiles = trpc.decision.listDecisionProfiles.useQuery({
-    stewardProfileId: profileId,
-    status: VISIBLE_DECISION_STATUSES,
-  });
+  const { data: decisionProfilesData } =
+    trpc.decision.listDecisionProfiles.useQuery({
+      stewardProfileId: profileId,
+      status: VISIBLE_DECISION_STATUSES,
+    });
+  const decisionProfiles = decisionProfilesData?.items;
 
   const legacyInstances = trpc.decision.listLegacyInstances.useQuery(
     { ownerProfileId: profileId },
     { retry: false, enabled: canReadDecisions },
   );
 
-  const hasDecisionProfiles = (decisionProfiles.data?.items?.length ?? 0) > 0;
-  const hasLegacyInstances = (legacyInstances.data?.length ?? 0) > 0;
-  const hasPublishedDecisions = decisionProfiles.data?.items?.some(
+  const hasDecisionProfiles = (decisionProfiles?.length ?? 0) > 0;
+  const hasLegacyInstances = (legacyInstances.data?.items.length ?? 0) > 0;
+  const hasPublishedDecisions = decisionProfiles?.some(
     (item) => item.processInstance.status === ProcessStatus.PUBLISHED,
   );
 
@@ -43,7 +45,7 @@ export const DecisionsTab = ({ profileId }: { profileId: string }) => {
 
   return (
     <TabsTrigger value="decisions">
-      {t('Decisions')}
+      {t('decisions.decisionsLabel')}
       {hasPublishedDecisions && (
         <span className="ms-1.5 inline-block size-1 rounded-full bg-success" />
       )}
@@ -67,7 +69,9 @@ export const DecisionsTabPanel = ({
         className,
       )}
     >
-      <Header2 className="text-title sm:hidden">{t('Decisions')}</Header2>
+      <Header2 className="text-title sm:hidden">
+        {t('decisions.decisionsLabel')}
+      </Header2>
       {children}
     </TabsContent>
   );
@@ -77,7 +81,7 @@ export const MembersTab = ({ profileId }: { profileId: string }) => {
   const t = useTranslations();
   return (
     <AccessBoundary required={{ admin: { read: true } }} profileId={profileId}>
-      <TabsTrigger value="members">{t('Members')}</TabsTrigger>
+      <TabsTrigger value="members">{t('profile.membersTab')}</TabsTrigger>
     </AccessBoundary>
   );
 };

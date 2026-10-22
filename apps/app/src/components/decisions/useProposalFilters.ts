@@ -1,114 +1,182 @@
 'use client';
 
+import { useUser } from '@/utils/UserProvider';
+import { trpc } from '@op/api/client';
 import { ProposalFilter } from '@op/api/encoders';
-import type { Proposal } from '@op/common/client';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { PROPOSAL_SEARCH_MAX_LENGTH } from '@op/common/client';
+import { useDebounce } from '@op/hooks';
+import { parseAsString, parseAsStringLiteral, useQueryState } from 'nuqs';
+import { useCallback, useDeferredValue, useMemo } from 'react';
 
-import { useTranslations } from '@/lib/i18n';
+import {
+  ALL_CATEGORIES,
+  PROPOSAL_STATUS_VALUES,
+  type ProposalQueryParams,
+  buildQueryParams,
+  hasPendingChange,
+  isFilterActive,
+  resolveFilters,
+} from './proposalFilterQuery';
+import { useProposalFilterItems } from './useProposalFilterItems';
 
-// Filter items for the proposal `ResponsiveSelect`, shared by ProposalsList and
-// ManualSelectionToolbar so labels and disabled rules stay in lockstep.
-export const useProposalFilterItems = ({
-  hasVoted,
-  currentProfileId,
-}: {
-  hasVoted: boolean;
-  currentProfileId: string | undefined;
-}) => {
-  const t = useTranslations();
-  return [
-    { id: ProposalFilter.ALL, label: t('All proposals') },
-    {
-      id: ProposalFilter.MY_PROPOSALS,
-      label: t('My proposals'),
-      isDisabled: !currentProfileId,
-    },
-    ...(hasVoted
-      ? [{ id: ProposalFilter.MY_BALLOT, label: t('My ballot') }]
-      : []),
-  ];
-};
+const PROPOSAL_FILTER_VALUES = Object.values(ProposalFilter);
+const SEARCH_DEBOUNCE_MS = 300;
 
-// Filter selection state + auto-switch to "My ballot" once the user votes.
-// Composed by `useProposalFilters` (the in-memory candidate-list path).
-export function useProposalFilterState({
-  hasVoted,
-  initialFilter,
-}: {
-  hasVoted: boolean;
+interface ProposalFilterOptions {
+  instanceId: string;
+  phase?: 'results';
   initialFilter?: ProposalFilter;
-}): {
-  proposalFilter: ProposalFilter;
-  setProposalFilter: (filter: ProposalFilter) => void;
-} {
-  const defaultFilter: ProposalFilter =
-    initialFilter || (hasVoted ? ProposalFilter.MY_BALLOT : ProposalFilter.ALL);
-
-  const [proposalFilter, setProposalFilter] =
-    useState<ProposalFilter>(defaultFilter);
-
-  // Switch to "My ballot" when the user JUST voted (hasVoted false -> true).
-  const prevHasVotedRef = useRef(hasVoted);
-  useEffect(() => {
-    if (!prevHasVotedRef.current && hasVoted) {
-      setProposalFilter(ProposalFilter.MY_BALLOT);
-    }
-    prevHasVotedRef.current = hasVoted;
-  }, [hasVoted]);
-
-  return { proposalFilter, setProposalFilter };
+  excludeAssignedForReview?: boolean;
+  showFilterTabs?: boolean;
+  pinnedFilter?: ProposalFilter;
 }
 
-export function useProposalFilters({
-  proposals,
-  currentProfileId,
-  votedProposalIds,
-  hasVoted,
+// Complexity here is the hook calls; the branching lives in
+// `proposalFilterQuery`, which is unit tested.
+// fallow-ignore-next-line complexity
+export const useProposalFilters = ({
+  instanceId,
+  phase,
   initialFilter,
-}: {
-  proposals: Proposal[];
-  currentProfileId?: string;
-  votedProposalIds: string[];
-  hasVoted: boolean;
-  initialFilter?: ProposalFilter;
-}): {
-  filteredProposals: Proposal[];
-  proposalFilter: ProposalFilter;
-  setProposalFilter: (filter: ProposalFilter) => void;
-} {
-  const { proposalFilter, setProposalFilter } = useProposalFilterState({
-    hasVoted,
+  excludeAssignedForReview,
+  showFilterTabs,
+  pinnedFilter,
+}: ProposalFilterOptions) => {
+  const { user } = useUser();
+  const currentProfileId = user?.currentProfile?.id;
+
+  const [voteStatus] = trpc.decision.getVotingStatus.useSuspenseQuery({
+    processInstanceId: instanceId,
+  });
+  const hasVoted = voteStatus?.hasVoted ?? false;
+
+  const [selectedCategory, setSelectedCategory] = useQueryState(
+    'category',
+    parseAsString.withDefault(ALL_CATEGORIES),
+  );
+  const [sortOrder, setSortOrder] = useQueryState(
+    'sort',
+    parseAsString.withDefault('newest'),
+  );
+  const [urlSearch, setSearch] = useQueryState(
+    'q',
+    parseAsString.withDefault(''),
+  );
+  const [filterParam, setProposalFilter] = useQueryState(
+    'filter',
+    parseAsStringLiteral(PROPOSAL_FILTER_VALUES),
+  );
+  const [statusParam, setStatusFilter] = useQueryState(
+    'proposalStatus',
+    parseAsStringLiteral(PROPOSAL_STATUS_VALUES),
+  );
+
+  // Past the cap the endpoint rejects the query and takes the list down.
+  const search = urlSearch.slice(0, PROPOSAL_SEARCH_MAX_LENGTH);
+  const [debouncedSearch] = useDebounce(search.trim(), SEARCH_DEBOUNCE_MS);
+
+  const tabsOwnAudience = showFilterTabs || pinnedFilter !== undefined;
+
+  const { availableFilters, proposalFilter, proposalStatus } = resolveFilters({
+    everyFilter: useProposalFilterItems({ hasVoted, currentProfileId }),
+    tabsOwnAudience,
+    pinnedFilter,
+    filterParam,
     initialFilter,
+    hasVoted,
+    statusParam,
   });
 
-  const filteredProposals = useMemo(() => {
-    if (!proposals) {
-      return [];
+  // Non-urgent, or the suspense boundary swaps the bar (and focus) for a
+  // skeleton. One primitive per call: `useDeferredValue` uses `Object.is`.
+  const appliedSearch = useDeferredValue(debouncedSearch);
+  const appliedCategory = useDeferredValue(selectedCategory);
+  const appliedSortOrder = useDeferredValue(sortOrder);
+  const appliedFilter = useDeferredValue(proposalFilter);
+  const appliedStatus = useDeferredValue(proposalStatus);
+
+  // Debounced, not raw: otherwise the spinner lights on the first keystroke.
+  const isSearchFetching = appliedSearch !== debouncedSearch;
+  const isFilterFetching = hasPendingChange([
+    [appliedSearch, debouncedSearch],
+    [appliedCategory, selectedCategory],
+    [appliedSortOrder, sortOrder],
+    [appliedFilter, proposalFilter],
+    [appliedStatus, proposalStatus],
+  ]);
+
+  const queryParams = useMemo(
+    () =>
+      buildQueryParams({
+        instanceId,
+        phase,
+        excludeAssignedForReview,
+        currentProfileId,
+        category: appliedCategory,
+        search: appliedSearch,
+        sortOrder: appliedSortOrder,
+        filter: appliedFilter,
+        status: appliedStatus,
+      }),
+    [
+      instanceId,
+      phase,
+      excludeAssignedForReview,
+      currentProfileId,
+      appliedCategory,
+      appliedSearch,
+      appliedSortOrder,
+      appliedFilter,
+      appliedStatus,
+    ],
+  );
+
+  // Applied, not live: the controls flash "no proposals yet" for a frame when
+  // clearing a filter that returned nothing.
+  const hasActiveFilter = isFilterActive(queryParams);
+  const canClearFilters = isFilterActive(queryParams, {
+    ignoreAudience: pinnedFilter !== undefined,
+  });
+
+  const clearFilters = useCallback(() => {
+    setSearch('');
+    setSelectedCategory(ALL_CATEGORIES);
+    setStatusFilter('all');
+    // Pinned, this would write a `filter` param nothing here reads.
+    if (pinnedFilter === undefined) {
+      setProposalFilter(ProposalFilter.ALL);
     }
-
-    switch (proposalFilter) {
-      case ProposalFilter.MY_BALLOT:
-        // Show only proposals the user voted for
-        return proposals.filter((proposal) =>
-          votedProposalIds.includes(proposal.id),
-        );
-
-      case ProposalFilter.MY_PROPOSALS:
-        // Show only proposals submitted by the current user
-        return proposals.filter(
-          (proposal) => proposal.submittedBy?.id === currentProfileId,
-        );
-
-      case ProposalFilter.ALL:
-      default:
-        // Show all proposals
-        return proposals;
-    }
-  }, [proposals, proposalFilter, votedProposalIds, currentProfileId]);
+  }, [
+    setSearch,
+    setSelectedCategory,
+    setStatusFilter,
+    setProposalFilter,
+    pinnedFilter,
+  ]);
 
   return {
-    filteredProposals,
+    queryParams,
+    voteStatus,
+    availableFilters,
+    tabsOwnAudience,
     proposalFilter,
     setProposalFilter,
+    proposalStatus,
+    setStatusFilter,
+    selectedCategory,
+    setSelectedCategory,
+    sortOrder,
+    setSortOrder,
+    search,
+    setSearch,
+    isSearchFetching,
+    isFilterFetching,
+    hasActiveFilter,
+    canClearFilters,
+    clearFilters,
   };
-}
+};
+
+export type { ProposalQueryParams };
+
+export type ProposalFilterState = ReturnType<typeof useProposalFilters>;

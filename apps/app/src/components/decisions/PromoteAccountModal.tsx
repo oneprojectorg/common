@@ -86,8 +86,8 @@ const PromoteAccountModalContent = ({
       <div className="flex flex-col items-center gap-4 text-center">
         <CheckIcon />
         <div className="flex flex-col gap-2">
-          <Header2>{t('Your idea was submitted.')}</Header2>
-          <p className="text-base">{t('Want to follow what happens next?')}</p>
+          <Header2>{t('decisions.promoteAccountSubmittedTitle')}</Header2>
+          <p className="text-base">{t('decisions.promoteAccountTitle')}</p>
         </div>
       </div>
 
@@ -96,12 +96,10 @@ const PromoteAccountModalContent = ({
           <div className="flex items-center gap-1">
             <LuUserRoundMinus className="size-4 text-foreground" aria-hidden />
             <span className="font-serif text-label">
-              {t('Continue as a guest')}
+              {t('auth.guestOptionHeading')}
             </span>
           </div>
-          <p className="text-base">
-            {t('Stay anonymous. React to comments with emoji.')}
-          </p>
+          <p className="text-base">{t('decisions.promoteAccountAnonymity')}</p>
           {/* TODO(anon-upgrade): this checkbox only gates the button; ToS/privacy
               acceptance isn't persisted for the anon account. Pending team
               decision on what accepting terms means for an anonymous user. */}
@@ -113,17 +111,14 @@ const PromoteAccountModalContent = ({
             />
             <FieldLabel htmlFor="promote-tos">
               <span className="text-sm">
-                {t.rich(
-                  'I agree to the <tos>Terms of Service</tos> and <privacy>Privacy Policy</privacy>.',
-                  {
-                    tos: (chunks: ReactNode) => (
-                      <PolicyLink href="/info/tos">{chunks}</PolicyLink>
-                    ),
-                    privacy: (chunks: ReactNode) => (
-                      <PolicyLink href="/info/privacy">{chunks}</PolicyLink>
-                    ),
-                  },
-                )}
+                {t.rich('auth.policyConsentShort', {
+                  tos: (chunks: ReactNode) => (
+                    <PolicyLink href="/info/tos">{chunks}</PolicyLink>
+                  ),
+                  privacy: (chunks: ReactNode) => (
+                    <PolicyLink href="/info/privacy">{chunks}</PolicyLink>
+                  ),
+                })}
               </span>
             </FieldLabel>
           </Field>
@@ -133,7 +128,7 @@ const PromoteAccountModalContent = ({
             disabled={!agreed}
             onClick={onContinueAsGuest}
           >
-            {t('Continue as guest')}
+            {t('auth.continueAsGuestAction')}
           </Button>
         </section>
 
@@ -141,16 +136,12 @@ const PromoteAccountModalContent = ({
           <div className="flex items-center gap-1">
             <LuUserRoundPlus className="size-4 text-foreground" aria-hidden />
             <span className="font-serif text-label">
-              {t('With an account')}
+              {t('auth.accountOptionHeading')}
             </span>
           </div>
-          <p className="text-base">
-            {t(
-              'Edit your idea before review begins, get notified when it moves to the next phase, and like, comment, and follow other ideas.',
-            )}
-          </p>
+          <p className="text-base">{t('decisions.promoteAccountBenefits')}</p>
           <Button className="w-full" onClick={goToLogin}>
-            {t('Create account')}
+            {t('auth.createAccountAction')}
           </Button>
         </section>
       </div>

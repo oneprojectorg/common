@@ -8,6 +8,7 @@ import { createCommentsQueryKey } from '@/utils/queryKeys';
 import { userCanInteract } from '@/utils/userCanInteract';
 import { trpc } from '@op/api/client';
 import type { Organization, Post } from '@op/api/encoders';
+import { PAGE_LIMIT } from '@op/common/client';
 import { logger } from '@op/logging/client';
 import { Button } from '@op/sense/Button';
 import {
@@ -21,8 +22,8 @@ import { Skeleton } from '@op/sense/Skeleton';
 import { toast } from '@op/sense/Toast';
 import { cn } from '@op/sense/lib/utils';
 import { useRouter } from 'next/navigation';
-import { useEffect, useRef, useState } from 'react';
-import type { ReactNode, RefObject } from 'react';
+import { useRef, useState } from 'react';
+import type { ReactNode } from 'react';
 import { LuImage, LuX } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -78,7 +79,7 @@ const PostUpdateWithUser = ({
     attachmentIds: string[];
   } | null>(null);
   const optimisticCommentRef = useRef<string | null>(null);
-  const t = useTranslations();
+  const t = useTranslations('posts');
   const utils = trpc.useUtils();
   const router = useRouter();
   const isOnline = useConnectionStatus();
@@ -171,19 +172,18 @@ const PostUpdateWithUser = ({
           rootProfileId: null,
           rootPostId: null,
           attachments: [],
-          reactionCounts: {},
-          reactionUsers: {},
-          userReaction: null,
+          likeCount: 0,
+          userHasLiked: false,
+          likeUsers: [],
           commentCount: 0,
           childPosts: null,
           parentPost: null,
         };
 
         // Add optimistic comment
-        utils.posts.getPosts.setData(queryKey, (old) => {
-          if (!old) return [optimisticComment];
-          return [optimisticComment, ...old];
-        });
+        utils.posts.getPosts.setData(queryKey, (old) => ({
+          items: [optimisticComment, ...(old?.items ?? [])],
+        }));
 
         return {
           previousComments,
@@ -198,7 +198,7 @@ const PostUpdateWithUser = ({
         const queryKey = {
           profileId,
           parentPostId: null,
-          limit: 50,
+          limit: PAGE_LIMIT.lg,
           offset: 0,
           includeChildren: false,
         };
@@ -220,19 +220,18 @@ const PostUpdateWithUser = ({
           rootProfileId: null,
           rootPostId: null,
           attachments: [],
-          reactionCounts: {},
-          reactionUsers: {},
-          userReaction: null,
+          likeCount: 0,
+          userHasLiked: false,
+          likeUsers: [],
           commentCount: 0,
           childPosts: null,
           parentPost: null,
         };
 
         // Add optimistic post
-        utils.posts.getPosts.setData(queryKey, (old) => {
-          if (!old) return [optimisticPost];
-          return [optimisticPost, ...old];
-        });
+        utils.posts.getPosts.setData(queryKey, (old) => ({
+          items: [optimisticPost, ...(old?.items ?? [])],
+        }));
 
         return {
           previousPosts,
@@ -273,7 +272,7 @@ const PostUpdateWithUser = ({
           const queryKey = {
             profileId,
             parentPostId: null,
-            limit: 50,
+            limit: PAGE_LIMIT.lg,
             offset: 0,
             includeChildren: false,
           };
@@ -321,14 +320,14 @@ const PostUpdateWithUser = ({
             profileId,
           );
           utils.posts.getPosts.setData(queryKey, (old) => {
-            if (!old) return [enhancedData];
+            if (!old) return { items: [enhancedData] };
             // Drop our optimistic placeholder; if a realtime refetch already
             // inserted the real comment, return without re-prepending.
-            const filtered = old.filter((c) => c.id !== context.tempId);
+            const filtered = old.items.filter((c) => c.id !== context.tempId);
             if (filtered.some((c) => c.id === enhancedData.id)) {
-              return filtered;
+              return { items: filtered };
             }
-            return [enhancedData, ...filtered];
+            return { items: [enhancedData, ...filtered] };
           });
 
           // Update parent post's comment count in main feed caches
@@ -377,19 +376,19 @@ const PostUpdateWithUser = ({
           const queryKey = {
             profileId,
             parentPostId: null,
-            limit: 50,
+            limit: PAGE_LIMIT.lg,
             offset: 0,
             includeChildren: false,
           };
           utils.posts.getPosts.setData(queryKey, (old) => {
-            if (!old) return [enhancedData];
+            if (!old) return { items: [enhancedData] };
             // Drop our optimistic placeholder; if a realtime refetch already
             // inserted the real post, return without re-prepending.
-            const filtered = old.filter((p) => p.id !== context.tempId);
+            const filtered = old.items.filter((p) => p.id !== context.tempId);
             if (filtered.some((p) => p.id === enhancedData.id)) {
-              return filtered;
+              return { items: filtered };
             }
-            return [enhancedData, ...filtered];
+            return { items: [enhancedData, ...filtered] };
           });
 
           // If this is a proposal comment, invalidate proposal queries to refresh comment counts
@@ -431,7 +430,7 @@ const PostUpdateWithUser = ({
             const queryKey = {
               profileId,
               parentPostId: null,
-              limit: 50,
+              limit: PAGE_LIMIT.lg,
               offset: 0,
               includeChildren: false,
             };
@@ -502,9 +501,7 @@ const PostUpdateWithUser = ({
     if (content.trim() || fileUpload.hasUploadedFiles()) {
       // Check if offline
       if (!isOnline) {
-        toast.error(
-          t('You are offline. Please check your connection and try again.'),
-        );
+        toast.error(t('offlineError'));
         return;
       }
 
@@ -569,30 +566,6 @@ const PostUpdateWithUser = ({
     }
   };
 
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-  useEffect(() => {
-    const textarea = textareaRef.current;
-    if (textarea) {
-      const handleInput = () => {
-        textarea.style.height = '1.5rem';
-        textarea.style.height = `${textarea.scrollHeight}px`;
-      };
-
-      textarea.addEventListener('input', handleInput);
-
-      return () => {
-        textarea.removeEventListener('input', handleInput);
-      };
-    }
-  }, []);
-
-  useEffect(() => {
-    const textarea = textareaRef.current;
-    if (textarea && !content) {
-      textarea.style.height = '1.5rem';
-    }
-  }, [content]);
-
   if (!userCanInteract(user)) {
     return null;
   }
@@ -625,9 +598,9 @@ const PostUpdateWithUser = ({
         </InputGroupAddon>
         <div className="flex min-w-0 flex-1 flex-col">
           <InputGroupTextarea
-            ref={textareaRef as RefObject<HTMLTextAreaElement>}
+            rows={1}
             className="min-h-0 overflow-y-hidden ps-1 pt-1"
-            placeholder={placeholder || t('Post an update…')}
+            placeholder={placeholder || t('composerPlaceholder')}
             value={content}
             onChange={(e) => handleContentChange(e.target.value ?? '')}
             onKeyDown={handleKeyDown}
@@ -717,7 +690,7 @@ const PostUpdateWithUser = ({
               }}
               disabled={fileUpload.filePreviews.length >= 1}
             >
-              <LuImage /> {t('Media')}
+              <LuImage /> {t('mediaAction')}
             </InputGroupButton>
             <div className="flex items-center gap-2">
               <TextCounter text={content} max={characterLimit} />
@@ -731,8 +704,8 @@ const PostUpdateWithUser = ({
                   }
                 >
                   {createPost.isPending || createOrganizationPost.isPending
-                    ? t('Retrying...')
-                    : t('Retry Failed Post')}
+                    ? t('retryProgress')
+                    : t('retryAction')}
                 </InputGroupButton>
               )}
               <InputGroupButton

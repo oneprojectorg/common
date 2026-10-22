@@ -5,7 +5,7 @@ import { LuLayoutGrid, LuMap } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
-import type { ProposalView } from './ProposalViewToggle';
+import type { ProposalView } from './proposalViews';
 
 // Mobile-only view switch, sticky at the bottom of the screen. Reads "Map"
 // while listing, "List" while showing the map.
@@ -16,7 +16,7 @@ export const MobileViewSwitch = ({
   view: ProposalView;
   onChange: (next: ProposalView) => void;
 }) => {
-  const t = useTranslations();
+  const t = useTranslations('decisions.proposals');
 
   return (
     <div className="fixed inset-x-0 bottom-6 z-40 flex justify-center sm:hidden">
@@ -28,12 +28,12 @@ export const MobileViewSwitch = ({
         {view === 'map' ? (
           <>
             <LuLayoutGrid className="size-4" />
-            {t('List')}
+            {t('listViewOption')}
           </>
         ) : (
           <>
             <LuMap className="size-4" />
-            {t('Map')}
+            {t('mapViewShortOption')}
           </>
         )}
       </Button>

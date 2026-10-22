@@ -1,15 +1,17 @@
+import { getTranslations } from '@/lib/i18n';
 import { Link } from '@/lib/i18n/routing';
 
 import { CommonLogo } from '@/components/CommonLogo';
-import { TranslatedText } from '@/components/TranslatedText';
 
-export const FullScreenSplitMain = ({
+export const FullScreenSplitMain = async ({
   logo = true,
   children,
 }: {
   logo?: boolean;
   children: React.ReactNode;
 }) => {
+  const t = await getTranslations();
+
   return (
     <main className="relative col-span-3 flex size-full flex-col overflow-y-scroll p-4 md:p-8">
       <section className="sticky top-0 hidden lg:block">
@@ -19,9 +21,7 @@ export const FullScreenSplitMain = ({
               href="/"
               className="flex items-center gap-2 hover:no-underline"
             >
-              <span className="sr-only">
-                <TranslatedText text="Home" />
-              </span>
+              <span className="sr-only">{t('Home')}</span>
               <CommonLogo />
             </Link>
           ) : null}

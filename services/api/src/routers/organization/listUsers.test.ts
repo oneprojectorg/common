@@ -1,10 +1,10 @@
+import { TestOrganizationDataManager } from '@op/common/testing';
 import { db } from '@op/db/client';
 import { organizationUserToAccessRoles } from '@op/db/schema';
 import { ROLES } from '@op/db/seedData/accessControl';
 import { describe, expect, it } from 'vitest';
 
 import { organizationRouter } from '.';
-import { TestOrganizationDataManager } from '../../test/helpers/TestOrganizationDataManager';
 import {
   accessTierGatingCell,
   describeAccessTierGating,
@@ -39,7 +39,7 @@ describe.concurrent('organization.listUsers', () => {
       profileId: organization.profileId,
     });
 
-    expect(result).toMatchObject([
+    expect(result.items).toMatchObject([
       {
         email: adminUser.email,
       },
@@ -86,9 +86,9 @@ describe.concurrent('organization.listUsers', () => {
       profileId: organization.profileId,
     });
 
-    expect(result.length).toBe(2);
+    expect(result.items.length).toBe(2);
 
-    const userWithRoles = result.find(
+    const userWithRoles = result.items.find(
       (user: any) => user.email === adminUser.email,
     );
 

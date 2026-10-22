@@ -48,14 +48,14 @@ export const useFileUpload = (options: UseFileUploadOptions) => {
 
   const validateFile = (file: File): string | null => {
     if (!acceptedTypes.includes(file.type)) {
-      return t('That file type is not supported. Accepted types: {types}', {
+      return t('unsupportedFileType', {
         types: acceptedTypes.map((type) => type.split('/')[1]).join(', '),
       });
     }
 
     if (file.size > maxSizePerFile) {
       const maxSizeMB = (maxSizePerFile / 1024 / 1024).toFixed(2);
-      return t('File too large. Maximum size: {size}MB', { size: maxSizeMB });
+      return t('fileTooLarge', { size: maxSizeMB });
     }
     return null;
   };

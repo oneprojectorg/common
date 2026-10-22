@@ -1,31 +1,7 @@
-import { expect, test } from '../fixtures/index.js';
+import { expect, test, waitForAutoSave } from '../fixtures/index.js';
 
 // Use a wider viewport so the participant preview panel (xl:block >= 1280px) is visible.
 test.use({ viewport: { width: 1440, height: 900 } });
-
-/** Resolves when the next matching updateDecisionInstance mutation succeeds. */
-function waitForAutoSave(
-  page: import('@playwright/test').Page,
-  requestBodyIncludes?: string,
-) {
-  return page.waitForResponse(
-    (resp) => {
-      if (
-        !resp.url().includes('decision.updateDecisionInstance') ||
-        !resp.ok()
-      ) {
-        return false;
-      }
-
-      if (!requestBodyIncludes) {
-        return true;
-      }
-
-      return resp.request().postData()?.includes(requestBodyIncludes) ?? false;
-    },
-    { timeout: 12_000 },
-  );
-}
 
 test.describe('Create Process Instance', () => {
   test('can create a decision process and reach launch-ready state', async ({

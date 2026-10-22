@@ -26,7 +26,8 @@ import { useEffect, useState, useTransition } from 'react';
 import { useTranslations } from '@/lib/i18n';
 
 // TODO: typing here needs to be fixed
-type AccountProfile = RouterOutput['account']['getUserProfiles'][number];
+type AccountProfile =
+  RouterOutput['account']['getUserProfiles']['items'][number];
 
 interface OrgDeletionModalProps {
   isOpen: boolean;
@@ -38,7 +39,8 @@ export const DeleteOrganizationModal = ({
   onOpenChange,
 }: OrgDeletionModalProps) => {
   const t = useTranslations();
-  const { data: profiles } = trpc.account.getUserProfiles.useQuery();
+  const { data: profilesData } = trpc.account.getUserProfiles.useQuery();
+  const profiles = profilesData?.items;
   const [selectedProfileId, setSelectedProfileId] = useState<string>();
   const [profileToDelete, setProfileToDelete] = useState<AccountProfile>();
   const [currentStep, setCurrentStep] = useState(0);
@@ -96,7 +98,7 @@ export const DeleteOrganizationModal = ({
           context: 'DeleteOrganizationModal.handleSubmit',
           organizationProfileId: selectedProfileId,
         });
-        toast.error(t('Failed to delete account'));
+        toast.error(t('org.deleteAccountError'));
       }
     });
   };
@@ -168,14 +170,10 @@ const SelectProfileStep = ({
   return (
     <>
       <DialogHeader className="shrink-0">
-        <DialogTitle>{t('Delete an Account')}</DialogTitle>
+        <DialogTitle>{t('org.deleteAccountTitle')}</DialogTitle>
       </DialogHeader>
       <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-6 py-4">
-        <p id="select-accounts-label">
-          {t(
-            "Please select the account you'd like to delete. This action cannot be undone.",
-          )}
-        </p>
+        <p id="select-accounts-label">{t('org.deleteAccountSubtitle')}</p>
         <RadioGroup
           aria-labelledby="select-accounts-label"
           value={selectedProfile ?? ''}
@@ -202,14 +200,14 @@ const SelectProfileStep = ({
                     className="size-11 shrink-0"
                     name={profile.name}
                     src={getPublicUrl(avatarUrl)}
-                    alt={profile.name ?? t('User avatar')}
+                    alt={profile.name ?? t('org.accountAvatarAlt')}
                     imageRender={
                       avatarUrl ? (
                         <Image
                           src={getPublicUrl(avatarUrl) ?? ''}
                           fill
                           className="object-cover"
-                          alt={profile.name ?? t('User avatar')}
+                          alt={profile.name ?? t('org.accountAvatarAlt')}
                         />
                       ) : undefined
                     }
@@ -262,27 +260,23 @@ const ConfirmProfileStep = ({
   return (
     <>
       <DialogHeader className="shrink-0">
-        <DialogTitle>{t('Delete an Account')}</DialogTitle>
+        <DialogTitle>{t('org.deleteAccountTitle')}</DialogTitle>
       </DialogHeader>
       <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto px-6 py-4">
-        <p>
-          {t(
-            'You are about to delete this account. This action cannot be undone.',
-          )}
-        </p>
+        <p>{t('org.deleteAccountConfirm')}</p>
         <div className="flex gap-2 rounded border border-destructive p-4">
           <ProfileAvatar
             className="size-11 shrink-0"
             name={profileToDelete.name}
             src={getPublicUrl(avatarUrl)}
-            alt={profileToDelete.name ?? t('User avatar')}
+            alt={profileToDelete.name ?? t('org.accountAvatarAlt')}
             imageRender={
               avatarUrl ? (
                 <Image
                   src={getPublicUrl(avatarUrl) ?? ''}
                   fill
                   className="object-cover"
-                  alt={profileToDelete.name ?? t('User avatar')}
+                  alt={profileToDelete.name ?? t('org.accountAvatarAlt')}
                 />
               ) : undefined
             }
@@ -308,7 +302,7 @@ const ConfirmProfileStep = ({
           onClick={submitButtonAction}
           loading={isSubmitting}
         >
-          {isSubmitting ? t('Removing...') : t('Remove')}
+          {isSubmitting ? t('removingProgress') : t('Remove')}
         </Button>
       </DialogFooter>
     </>
@@ -326,14 +320,11 @@ const SuccessStep = ({
   return (
     <>
       <DialogHeader className="shrink-0">
-        <DialogTitle>{t('Account Deleted')}</DialogTitle>
+        <DialogTitle>{t('org.accountDeletedTitle')}</DialogTitle>
       </DialogHeader>
       <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto px-6 py-4">
         <p>
-          {t(
-            '{profileName} has been deleted. All associated data have been permanently removed.',
-            { profileName: deletedProfileName },
-          )}
+          {t('org.accountDeletedBody', { profileName: deletedProfileName })}
         </p>
       </div>
       <DialogFooter className="shrink-0">

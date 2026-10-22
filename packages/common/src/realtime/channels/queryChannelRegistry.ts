@@ -71,6 +71,17 @@ class QueryChannelRegistry {
   }
 
   /**
+   * Every channel that currently has at least one registered query.
+   *
+   * 'query:added' is not replayed, so a listener that attaches late — the
+   * realtime subscriber, which waits on an async session check — reads this to
+   * pick up channels whose queries answered before it was listening.
+   */
+  getChannels(): ChannelName[] {
+    return [...this.channelToQueryKeys.keys()];
+  }
+
+  /**
    * Register a query to channels. Idempotent: re-registering the same query
    * with a smaller channel set decrements the channels it no longer touches
    * (and emits 'channel:removed' for any that drain). Emits 'query:added'.

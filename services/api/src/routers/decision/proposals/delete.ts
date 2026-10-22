@@ -30,7 +30,7 @@ export const deleteProposalRouter = router({
       waitUntil(
         invalidate({
           type: 'decision',
-          params: [result.processInstanceId, 'submitters'],
+          params: [result.processInstanceId, 'submitters:v2'],
         }),
       );
 

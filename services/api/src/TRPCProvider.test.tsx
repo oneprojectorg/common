@@ -11,14 +11,7 @@
 import { useQueryClient } from '@tanstack/react-query';
 import React from 'react';
 import { renderToString } from 'react-dom/server';
-import { describe, expect, it, vi } from 'vitest';
-
-// The httpLink in ./links requires an OPURLConfig-resolved trpcUrl that isn't
-// wired in the test env. We're testing the QueryClient lifecycle, not the
-// transport, so stub the links module to a no-op array.
-vi.mock('./links', () => ({
-  createLinks: () => [],
-}));
+import { describe, expect, it } from 'vitest';
 
 import { TRPCProvider } from './TRPCProvider';
 

@@ -16,7 +16,7 @@ export const ProcessBuilderProcessSelector = () => {
     <div className="size-full grow p-4 sm:p-8">
       <div className="flex min-h-full w-full flex-col items-center justify-center gap-6 overflow-y-auto rounded-lg border bg-muted p-4 md:gap-8 md:p-8">
         <Header1 className="text-center">
-          {t('How do you want to structure your decision-making process?')}
+          {t('decisions.processBuilder.processTemplateQuestion')}
         </Header1>
         <div className="flex w-full flex-wrap items-stretch justify-center gap-4">
           <Suspense fallback={<TemplateListSkeleton />}>
@@ -44,7 +44,7 @@ const TemplateList = () => {
   if (!templates?.length) {
     return (
       <div className="grid aspect-square h-64 items-center rounded-lg border bg-white text-center">
-        <p>{t('No templates found')}</p>
+        <p>{t('decisions.processBuilder.noTemplatesFound')}</p>
       </div>
     );
   }

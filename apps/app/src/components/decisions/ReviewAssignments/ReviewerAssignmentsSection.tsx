@@ -1,0 +1,277 @@
+'use client';
+
+import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
+import { trpc } from '@op/api/client';
+import type { DecisionAccess } from '@op/api/encoders';
+import type { ReviewerAssignments } from '@op/common/client';
+import { useInfiniteScroll } from '@op/hooks';
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from '@op/sense/Empty';
+import { Header3 } from '@op/sense/Header';
+import { Item, ItemContent, ItemTitle } from '@op/sense/Item';
+import { Skeleton } from '@op/sense/Skeleton';
+import { StatusDot } from '@op/sense/StatusDot';
+import { useFormatter } from 'next-intl';
+import { Suspense, useCallback, useMemo } from 'react';
+import { LuUserX, LuUsers } from 'react-icons/lu';
+
+import { useTranslations } from '@/lib/i18n';
+
+import { ReviewAssignmentCard } from '../ReviewAssignmentCard';
+import { useReviewersByProposalId } from '../useReviewersByProposalId';
+import {
+  ReviewerAssignmentsBodySkeleton,
+  ReviewerHeaderSkeleton,
+} from './ReviewAssignmentsSkeletons';
+import { ReviewerHeader } from './ReviewerHeader';
+import {
+  assignmentStatusRank,
+  assignmentStatusSpecs,
+} from './assignmentStatusSpecs';
+
+interface ReviewerAssignmentsSectionProps {
+  processInstanceId: string;
+  phaseId: string;
+  reviewerProfileId: string;
+  decisionSlug: string;
+  access: DecisionAccess;
+}
+
+export function ReviewerAssignmentsSection(
+  props: ReviewerAssignmentsSectionProps,
+) {
+  const t = useTranslations();
+
+  return (
+    <APIErrorBoundary
+      fallbacks={{
+        default: () => (
+          <Empty>
+            <EmptyHeader>
+              <EmptyMedia variant="icon">
+                <LuUsers className="size-6" />
+              </EmptyMedia>
+              <EmptyTitle>
+                {t('decisions.review.loadAssignmentsError')}
+              </EmptyTitle>
+              <EmptyDescription>
+                {t('decisions.proposals.refreshPageHint')}
+              </EmptyDescription>
+            </EmptyHeader>
+          </Empty>
+        ),
+      }}
+    >
+      <Suspense
+        fallback={
+          <>
+            <ReviewerHeaderSkeleton />
+            <ReviewerAssignmentsBodySkeleton />
+          </>
+        }
+      >
+        <ReviewerAssignmentsContent {...props} />
+      </Suspense>
+    </APIErrorBoundary>
+  );
+}
+
+function ReviewerAssignmentsContent({
+  processInstanceId,
+  phaseId,
+  reviewerProfileId,
+  decisionSlug,
+  access,
+}: ReviewerAssignmentsSectionProps) {
+  const t = useTranslations();
+
+  const [data, query] =
+    trpc.decision.listReviewerAssignments.useSuspenseInfiniteQuery(
+      { processInstanceId, phaseId, reviewerProfileId },
+      {
+        getNextPageParam: (lastPage) => lastPage.next,
+        // An SSR-seeded entry never registers the realtime channel; refetch.
+        refetchOnMount: 'always',
+      },
+    );
+
+  const { fetchNextPage, hasNextPage, isFetchingNextPage } = query;
+  const loadNextPage = useCallback(() => {
+    fetchNextPage();
+  }, [fetchNextPage]);
+
+  const { ref: scrollTriggerRef, shouldShowTrigger } =
+    useInfiniteScroll<HTMLDivElement>(loadNextPage, {
+      hasNextPage,
+      isFetchingNextPage,
+    });
+
+  const summary = data.pages[0];
+  const assignments = useMemo(
+    () => data.pages.flatMap((page) => page.items),
+    [data.pages],
+  );
+
+  const reviewersByProposalId = useReviewersByProposalId({
+    processInstanceId,
+    phaseId,
+    proposalIds: assignments.map((item) => item.assignment.proposal.id),
+    enabled: access.admin,
+  });
+
+  // Reached only when the server prefetch failed, or the tie was removed since.
+  if (!summary?.reviewer) {
+    return (
+      <Empty className="rounded-md border border-dashed">
+        <EmptyHeader>
+          <EmptyMedia variant="icon">
+            <LuUserX className="size-6" />
+          </EmptyMedia>
+          <EmptyTitle>{t('decisions.review.reviewerNotFound')}</EmptyTitle>
+          <EmptyDescription>
+            {t('decisions.review.reviewerNotInPhase')}
+          </EmptyDescription>
+        </EmptyHeader>
+      </Empty>
+    );
+  }
+
+  const { reviewer } = summary;
+  const name = reviewer.name ?? reviewer.slug ?? reviewer.id;
+
+  return (
+    <>
+      <ReviewerHeader name={name} email={reviewer.email} />
+
+      <div className="flex flex-col gap-8 lg:flex-row lg:gap-10">
+        <ReviewProgressRail reviewer={summary} />
+
+        <div className="flex min-w-0 flex-1 flex-col gap-5">
+          <Header3 className="font-light">
+            {t('decisions.review.assignedProposalsHeading', {
+              count: summary.total,
+            })}
+          </Header3>
+
+          {assignments.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              {t('decisions.review.noReviewerAssignments')}
+            </p>
+          ) : (
+            <ul className="flex flex-col gap-3">
+              {assignments.map((item) => {
+                const href = `/decisions/${decisionSlug}/proposal/${item.assignment.proposal.profileId}/reviews`;
+
+                return (
+                  <li key={item.assignment.id}>
+                    <ReviewAssignmentCard
+                      assignment={item}
+                      viewHref={href}
+                      reviewsHref={href}
+                      reviewers={reviewersByProposalId.get(
+                        item.assignment.proposal.id,
+                      )}
+                      access={access}
+                    />
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+
+          {/* Hidden from the a11y tree; the `aria-live` line below announces loading. */}
+          {shouldShowTrigger ? (
+            <div ref={scrollTriggerRef} aria-hidden>
+              {isFetchingNextPage ? (
+                <Skeleton className="h-40 w-full rounded-lg" />
+              ) : null}
+            </div>
+          ) : null}
+          <p aria-live="polite" className="sr-only">
+            {isFetchingNextPage
+              ? t('decisions.review.loadingMoreProposals')
+              : ''}
+          </p>
+        </div>
+      </div>
+    </>
+  );
+}
+
+function ReviewProgressRail({ reviewer }: { reviewer: ReviewerAssignments }) {
+  const t = useTranslations();
+  const format = useFormatter();
+
+  const breakdown = useMemo(
+    () =>
+      [...reviewer.statusBreakdown].sort(
+        (a, b) =>
+          assignmentStatusRank[a.status] - assignmentStatusRank[b.status],
+      ),
+    [reviewer.statusBreakdown],
+  );
+
+  const lastSubmittedAt = reviewer.lastSubmittedAt
+    ? new Date(reviewer.lastSubmittedAt)
+    : null;
+
+  return (
+    <div className="flex w-full flex-col gap-3 lg:order-last lg:w-80 lg:shrink-0">
+      <Header3 className="font-light">
+        {t('decisions.review.reviewProgressLabel')}
+      </Header3>
+      <p aria-live="polite" className="text-sm text-muted-foreground">
+        {t('decisions.review.assignedReviewsSubmittedProgress', {
+          submitted: reviewer.submittedCount,
+          assigned: reviewer.assignedCount,
+        })}
+      </p>
+
+      <StatCard
+        label={t('decisions.review.statusSubmitted')}
+        value={t('decisions.review.reviewsSubmittedRatio', {
+          submitted: reviewer.submittedCount,
+          assigned: reviewer.assignedCount,
+        })}
+      />
+
+      {breakdown.length > 0 ? (
+        <ul className="flex flex-col gap-1.5">
+          {breakdown.map(({ status, count }) => (
+            <li key={status} className="flex items-center gap-2 py-1.5 text-sm">
+              <StatusDot intent={assignmentStatusSpecs[status].intent}>
+                {t(assignmentStatusSpecs[status].label)}
+              </StatusDot>
+              <span className="ms-auto text-muted-foreground">{count}</span>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+
+      <StatCard
+        label={t('decisions.review.lastSubmissionLabel')}
+        value={
+          lastSubmittedAt
+            ? format.dateTime(lastSubmittedAt, { dateStyle: 'medium' })
+            : '—'
+        }
+      />
+    </div>
+  );
+}
+
+function StatCard({ label, value }: { label: string; value: string }) {
+  return (
+    <Item variant="muted" className="gap-3 border-border px-4 py-3 text-sm">
+      <ItemContent>
+        <ItemTitle className="text-sm font-normal">{label}</ItemTitle>
+      </ItemContent>
+      <span className="font-strong">{value}</span>
+    </Item>
+  );
+}

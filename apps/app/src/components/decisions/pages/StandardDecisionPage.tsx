@@ -29,25 +29,24 @@ export function StandardDecisionPage({
   instanceId,
   slug,
   decisionSlug,
-  decisionProfileId,
   pinOffset,
 }: {
   instanceId: string;
   slug: string;
   /** Decision profile slug for building proposal links */
   decisionSlug?: string;
-  /** Decision profile ID for translating the decision content (phase titles, headline, descriptions) */
-  decisionProfileId?: string | null;
   /** Sticky filter-bar pin offset, forwarded to ProposalsList. */
   pinOffset?: number;
 }) {
   const t = useTranslations();
   const translation = useDecisionTranslation();
 
-  const [[instance, { submitters, total }]] = trpc.useSuspenseQueries((t) => [
-    t.decision.getInstance({ instanceId }),
-    t.decision.listProposalSubmitters({ processInstanceId: instanceId }),
-  ]);
+  const [[instance, { items: submitters, total }]] = trpc.useSuspenseQueries(
+    (t) => [
+      t.decision.getInstance({ instanceId }),
+      t.decision.listProposalSubmitters({ processInstanceId: instanceId }),
+    ],
+  );
 
   const phases = instance.instanceData?.phases ?? [];
   const currentPhaseId = instance.currentStateId;
@@ -61,8 +60,6 @@ export function StandardDecisionPage({
   const allowProposals = currentPhase?.rules?.proposals?.submit === true;
   const proposalsHidden =
     currentPhase?.rules?.proposals?.defaults?.hidden === true;
-  const description =
-    instance.description ?? instance.instanceData?.templateDescription;
   const canSubmitProposal = instance.access?.submitProposals ?? false;
   const isAdmin = Boolean(instance.access?.admin);
   // Non-admin landing on the last phase before the admin has confirmed
@@ -73,14 +70,13 @@ export function StandardDecisionPage({
     isLastPhase(currentPhaseId, phases);
 
   const heroTitle =
-    translation?.headline ?? currentPhase?.headline ?? t('Share your ideas.');
+    translation?.headline ??
+    currentPhase?.headline ??
+    t('decisions.shareIdeasHeading');
   const heroDescription =
     translation?.phaseDescription ?? currentPhase?.description;
   const actionBarDescription =
-    translation?.additionalInfo ??
-    currentPhase?.additionalInfo ??
-    translation?.description ??
-    description;
+    translation?.additionalInfo ?? currentPhase?.additionalInfo;
   const heroImagePath = instance.instanceData?.overview?.heroImage;
   const hasHeroImage = Boolean(heroImagePath);
 
@@ -129,10 +125,10 @@ export function StandardDecisionPage({
                   <LuClock className="size-6" />
                 </EmptyMedia>
                 <EmptyTitle className="font-light">
-                  {t('Results pending')}
+                  {t('decisions.resultsPendingHeading')}
                 </EmptyTitle>
                 <EmptyDescription className="text-base text-foreground">
-                  {t("Results for this process haven't been processed yet.")}
+                  {t('decisions.resultsNotProcessedNotice')}
                 </EmptyDescription>
               </EmptyHeader>
             </Empty>
@@ -146,10 +142,10 @@ export function StandardDecisionPage({
                         <LuTriangleAlert className="size-6" />
                       </EmptyMedia>
                       <EmptyTitle className="font-light">
-                        {t("Couldn't load manual selection")}
+                        {t('decisions.manualSelectionLoadError')}
                       </EmptyTitle>
                       <EmptyDescription className="text-base text-foreground">
-                        {t('Refresh the page to try again.')}
+                        {t('decisions.refreshPageHint')}
                       </EmptyDescription>
                     </EmptyHeader>
                   </Empty>
@@ -174,10 +170,10 @@ export function StandardDecisionPage({
                         <LuTriangleAlert className="size-6" />
                       </EmptyMedia>
                       <EmptyTitle className="font-light">
-                        {t("Couldn't load proposals")}
+                        {t('decisions.proposalsLoadError')}
                       </EmptyTitle>
                       <EmptyDescription className="text-base text-foreground">
-                        {t('Refresh the page to try again.')}
+                        {t('decisions.refreshPageHint')}
                       </EmptyDescription>
                     </EmptyHeader>
                   </Empty>
@@ -189,10 +185,10 @@ export function StandardDecisionPage({
                   slug={slug}
                   instanceId={instanceId}
                   decisionSlug={decisionSlug}
-                  decisionProfileId={decisionProfileId}
                   permissions={instance.access}
                   proposalsHidden={proposalsHidden}
                   pinOffset={pinOffset}
+                  showFilterTabs
                 />
               </Suspense>
             </APIErrorBoundary>

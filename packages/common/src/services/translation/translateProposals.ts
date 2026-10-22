@@ -1,13 +1,12 @@
-import { getTextPreview } from '@op/core';
 import { db } from '@op/db/client';
 import type { User } from '@op/supabase/lib';
 import type { TranslatableEntry } from '@op/translation';
 import { permission } from 'access-zones';
 
 import { assertInstanceProfileAccess } from '../access';
-import { generateProposalHtml } from '../decision/generateProposalHtml';
 import { getProposalDocumentsContent } from '../decision/getProposalDocumentsContent';
 import { parseProposalData } from '../decision/proposalDataSchema';
+import { buildProposalListPreview } from '../decision/proposalListPreview';
 import { resolveProposalTemplate } from '../decision/resolveProposalTemplate';
 import type { SupportedLocale } from './locales';
 import { runTranslateBatch } from './runTranslateBatch';
@@ -16,6 +15,8 @@ import {
   flattenTranslatableFields,
   unflattenTranslatedFields,
 } from './translatedFields';
+
+const MAX_PREVIEW_LENGTH = 200;
 
 /**
  * Translates proposal card-level content (title, category, preview text) for
@@ -50,6 +51,7 @@ export async function translateProposals({
       },
       processInstance: {
         columns: {
+          id: true,
           profileId: true,
           ownerProfileId: true,
           instanceData: true,
@@ -64,32 +66,22 @@ export async function translateProposals({
   }
 
   // 2. Deduplicate process instances and assert read access + resolve templates
-  const uniqueProcesses = new Map<
+  const uniqueInstances = new Map<
     string,
-    {
-      profileId: string | null;
-      ownerProfileId: string | null;
-      instanceData: unknown;
-      processId: string;
-    }
+    (typeof proposals)[number]['processInstance']
   >();
   for (const p of proposals) {
-    if (!uniqueProcesses.has(p.processInstance.processId)) {
-      uniqueProcesses.set(p.processInstance.processId, {
-        profileId: p.processInstance.profileId,
-        ownerProfileId: p.processInstance.ownerProfileId,
-        instanceData: p.processInstance.instanceData,
-        processId: p.processInstance.processId,
-      });
+    if (!uniqueInstances.has(p.processInstance.id)) {
+      uniqueInstances.set(p.processInstance.id, p.processInstance);
     }
   }
 
-  const templateByProcessId = new Map<
+  const templateByInstanceId = new Map<
     string,
     Awaited<ReturnType<typeof resolveProposalTemplate>>
   >();
   await Promise.all(
-    [...uniqueProcesses.values()].map(async (instance) => {
+    [...uniqueInstances.values()].map(async (instance) => {
       // Assert the user has decisions:READ on each unique process instance
       await assertInstanceProfileAccess({
         user: user ? { id: user.id } : undefined,
@@ -108,7 +100,7 @@ export async function translateProposals({
         instance.instanceData as Record<string, unknown> | null,
         instance.processId,
       );
-      templateByProcessId.set(instance.processId, template);
+      templateByInstanceId.set(instance.id, template);
     }),
   );
 
@@ -117,8 +109,7 @@ export async function translateProposals({
     proposals.map((p) => ({
       id: p.id,
       proposalData: p.proposalData,
-      proposalTemplate:
-        templateByProcessId.get(p.processInstance.processId) ?? null,
+      proposalTemplate: templateByInstanceId.get(p.processInstance.id) ?? null,
     })),
     // A single unavailable document must not break the whole batch.
     { onFetchError: 'omit' },
@@ -135,29 +126,15 @@ export async function translateProposals({
       continue;
     }
 
-    let preview: string | undefined;
-
-    // Generate HTML from document content and extract plain-text preview
-    const documentContent = documentContentMap.get(proposal.id);
-    let htmlContent: Record<string, string> | undefined;
-
-    if (documentContent?.type === 'json') {
-      htmlContent = generateProposalHtml(documentContent.fragments);
-    } else if (documentContent?.type === 'html') {
-      htmlContent = { default: documentContent.content };
-    }
-
-    if (htmlContent) {
-      const firstHtml = Object.values(htmlContent).find(Boolean);
-      if (firstHtml) {
-        const plainText = getTextPreview({
-          content: firstHtml,
-          maxLines: 3,
-          maxLength: 200,
-        });
-        preview = plainText || undefined;
-      }
-    }
+    // The body text the card shows, not the first fragment (the title).
+    const { previewText } = buildProposalListPreview({
+      documentContent: documentContentMap.get(proposal.id),
+      proposalTemplate:
+        templateByInstanceId.get(proposal.processInstance.id) ?? null,
+    });
+    // Already plain text: cap it without re-parsing it as HTML.
+    const preview =
+      previewText?.slice(0, MAX_PREVIEW_LENGTH).trim() || undefined;
 
     entries.push(
       ...flattenTranslatableFields(`batch:${pid}:`, {

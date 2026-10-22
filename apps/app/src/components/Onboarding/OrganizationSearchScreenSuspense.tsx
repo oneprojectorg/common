@@ -20,7 +20,7 @@ type OrganizationSearchScreenSuspenseProps = Omit<
 const OrganizationSearchScreenWithDomainMatch = (
   props: OrganizationSearchScreenSuspenseProps,
 ): ReactNode => {
-  const [matchingOrgs] =
+  const [{ items: matchingOrgs }] =
     trpc.account.listMatchingDomainOrganizations.useSuspenseQuery();
 
   return (

@@ -1,7 +1,9 @@
 'use client';
 
+import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { useRequiredUser } from '@/utils/UserProvider';
 import { analyzeError, useConnectionStatus } from '@/utils/connectionErrors';
+import { trackUserInvited } from '@/utils/inviteAnalytics';
 import { trpc } from '@op/api/client';
 import { logger } from '@op/logging/client';
 import { Button } from '@op/sense/Button';
@@ -14,7 +16,6 @@ import {
 } from '@op/sense/Dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@op/sense/Tabs';
 import { toast } from '@op/sense/Toast';
-import { useFeatureFlagEnabled } from 'posthog-js/react';
 import { Suspense, useEffect, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -56,7 +57,7 @@ export const InviteUserModal = ({
   const organizationItems = useAdminOrganizations();
 
   const inviteUserEnabled =
-    useFeatureFlagEnabled('invite_admin_user') ||
+    useFeatureFlag('invite_admin_user') ||
     user.currentOrganization?.networkOrganization;
 
   // Follow the profile switcher. This modal stays mounted across a switch, so
@@ -69,7 +70,12 @@ export const InviteUserModal = ({
   const collectEmails = () => [...emailBadges, ...parseEmails(emails).emails];
 
   const inviteUser = trpc.organization.invite.useMutation({
-    onSuccess: (result) => {
+    onSuccess: (result, variables) => {
+      trackUserInvited({
+        organizationId: variables.organizationId,
+        inviteCount: result.details?.successful.length ?? 0,
+      });
+
       // A 200 only means the request was accepted. The server reports per-email
       // outcomes in the payload, and `success` is merely "at least one landed",
       // so an all-failed batch arrives here rather than in onError.
@@ -80,14 +86,14 @@ export const InviteUserModal = ({
           context: 'InviteUserModal.sendInvite',
           failed,
         });
-        toast.error(t('No invitations were sent'), {
+        toast.error(t('org.inviteNoneSentTitle'), {
           description: describeFailures(failed),
         });
         return;
       }
 
       if (failed.length > 0) {
-        toast.warning(t('Some invitations could not be sent'), {
+        toast.warning(t('org.invitePartialFailureTitle'), {
           description: describeFailures(failed),
         });
       }
@@ -95,7 +101,7 @@ export const InviteUserModal = ({
       handleInviteSuccess(result.details?.successful ?? []);
     },
     onError: (error) => {
-      handleInviteError(error, t('Failed to send invite'));
+      handleInviteError(error, t('org.inviteSendError'));
     },
   });
 
@@ -120,7 +126,7 @@ export const InviteUserModal = ({
 
     if (errorInfo.isConnectionError) {
       toast.error(t('Connection issue'), {
-        description: t('Please try sending the invite again.'),
+        description: t('org.inviteRetryHint'),
       });
     } else {
       toast.error(title, {
@@ -132,7 +138,7 @@ export const InviteUserModal = ({
   const sendInvite = (recipients: string[]) => {
     if (!isOnline) {
       toast.error(t('No connection'), {
-        description: t('Please check your internet connection and try again.'),
+        description: t('checkConnectionHint'),
       });
       return;
     }
@@ -160,10 +166,8 @@ export const InviteUserModal = ({
 
     // Check maximum number of emails (Resend batch limit)
     if (allEmails.length > 100) {
-      toast.error(t('Too many emails'), {
-        description: t(
-          'You can invite a maximum of 100 emails at once. Please reduce the number and try again.',
-        ),
+      toast.error(t('org.inviteTooManyEmailsTitle'), {
+        description: t('org.inviteTooManyEmailsBody'),
       });
       return;
     }
@@ -174,8 +178,8 @@ export const InviteUserModal = ({
     if (invalidEmails.length > 0) {
       toast.error(
         invalidEmails.length === 1
-          ? t('Invalid email address')
-          : t('Invalid email addresses'),
+          ? t('org.inviteInvalidAddressTitle')
+          : t('org.inviteInvalidAddressesTitle'),
         {
           description: `${invalidEmails.join(', ')}`,
         },
@@ -197,7 +201,7 @@ export const InviteUserModal = ({
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <DialogContent className="sm:max-w-xl">
           <DialogHeader>
-            <DialogTitle>{t('Invite others to Common')}</DialogTitle>
+            <DialogTitle>{t('org.inviteTitle')}</DialogTitle>
           </DialogHeader>
           <ErrorBoundary>
             <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-scroll p-6">
@@ -213,13 +217,16 @@ export const InviteUserModal = ({
                     edge to edge inside the padded dialog; the rule is sticky so
                     it stays full width as the strip scrolls under it. */}
                 <div className="-mx-6 mb-2 no-scrollbar min-w-full overflow-x-scroll px-6">
-                  <TabsList variant="line" aria-label={t('Invite options')}>
+                  <TabsList
+                    variant="line"
+                    aria-label={t('org.inviteOptionsLabel')}
+                  >
                     <TabsTrigger value="existing">
-                      {t('Add to my organization')}
+                      {t('org.inviteToMyOrgTab')}
                     </TabsTrigger>
                     {inviteUserEnabled ? (
                       <TabsTrigger value="new">
-                        {t('Invite a new organization')}
+                        {t('org.inviteNewOrgTab')}
                       </TabsTrigger>
                     ) : null}
                   </TabsList>
@@ -230,7 +237,7 @@ export const InviteUserModal = ({
                   <Suspense
                     fallback={
                       <div className="animate-pulse">
-                        {t('Loading roles...')}
+                        {t('org.inviteRolesLoading')}
                       </div>
                     }
                   >
@@ -267,7 +274,9 @@ export const InviteUserModal = ({
                 onClick={handleSendInvite}
                 disabled={!canSend || inviteUser.isPending}
               >
-                {inviteUser.isPending ? t('Sending...') : t('Send')}
+                {inviteUser.isPending
+                  ? t('org.inviteSendingProgress')
+                  : t('org.inviteSendAction')}
               </Button>
             </DialogFooter>
           </ErrorBoundary>

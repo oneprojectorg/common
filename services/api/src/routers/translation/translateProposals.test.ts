@@ -1,44 +1,30 @@
-import { mockCollab } from '@op/collab/testing';
+import { mockCollab, textFragment } from '@op/collab/testing';
+import { parseProposalData } from '@op/common';
+import {
+  TestDecisionsDataManager,
+  TestTranslationDataManager,
+} from '@op/common/testing';
 import { db, eq } from '@op/db/client';
-import { contentTranslations, proposals } from '@op/db/schema';
+import {
+  contentTranslations,
+  processInstances,
+  proposals,
+} from '@op/db/schema';
 import { like } from 'drizzle-orm';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '..';
-import { TestDecisionsDataManager } from '../../test/helpers/TestDecisionsDataManager';
-import { TestTranslationDataManager } from '../../test/helpers/TestTranslationDataManager';
 import {
   accessTierGatingCell,
   describeAccessTierGating,
   expectPassesAccessTierGate,
 } from '../../test/helpers/gating';
+import { mockTranslateText } from '../../test/mocks/deepl';
 import {
   createIsolatedSession,
   createTestContextWithSession,
 } from '../../test/supabase-utils';
 import { createCallerFactory } from '../../trpcFactory';
-
-// Set a fake API key so the endpoint doesn't throw before reaching the mock
-process.env.DEEPL_API_KEY = 'test-fake-key';
-
-// Mock DeepL's translateText — prefixes each text with [ES] so we can
-// distinguish mock translations from seeded cache entries ([ES-CACHED]).
-const mockTranslateText = vi.fn((texts: string | string[]) => {
-  const arr = Array.isArray(texts) ? texts : [texts];
-  const results = arr.map((t) => ({
-    text: `[ES] ${t}`,
-    detectedSourceLang: 'en',
-  }));
-  // Mirror deepl-node: a single-string input returns a single result object.
-  return Array.isArray(texts) ? results : results[0];
-});
-
-// Mock deepl-node so we never hit the real API
-vi.mock('deepl-node', () => ({
-  DeepLClient: class {
-    translateText = mockTranslateText;
-  },
-}));
 
 const createCaller = createCallerFactory(appRouter);
 
@@ -104,10 +90,6 @@ describeAccessTierGating('translation.translateProposals', {
 });
 
 describe('translation.translateProposals', () => {
-  beforeEach(() => {
-    mockTranslateText.mockClear();
-  });
-
   it('should let a no-JWT visitor translate proposals on a public decision', async ({
     task,
     onTestFinished,
@@ -218,9 +200,8 @@ describe('translation.translateProposals', () => {
     task,
     onTestFinished,
   }) => {
-    // Two independent decisions (separate processes) — translateProposals
-    // asserts once per unique processId, so the private one must be its own
-    // process, not a second instance of the public one.
+    // Two independent decisions (separate processes); the shared-process
+    // case is covered below.
     const publicData = new TestDecisionsDataManager(task.id, onTestFinished);
     const privateData = new TestDecisionsDataManager(task.id, onTestFinished);
 
@@ -385,6 +366,128 @@ describe('translation.translateProposals', () => {
     expect(t2).toBeDefined();
     expect(t2?.title).toBe('[ES] Water Purification Project');
     expect(t2?.preview).toMatch(/^\[ES\] .*clean water/i);
+  });
+
+  it('should translate the body as the preview, not the title fragment', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    // The title is a document fragment like the body, and it comes first.
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+      proposalTemplate: {
+        type: 'object',
+        'x-field-order': ['title', 'summary'],
+        properties: {
+          title: { type: 'string', title: 'Title', 'x-format': 'short-text' },
+          summary: {
+            type: 'string',
+            title: 'Summary',
+            'x-format': 'long-text',
+          },
+        },
+      },
+    });
+
+    const proposal = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: setup.instance.instance.id,
+      proposalData: { title: 'Community Garden' },
+    });
+
+    const { collaborationDocId } = parseProposalData(proposal.proposalData);
+    if (!collaborationDocId) {
+      throw new Error('Proposal has no collaboration document');
+    }
+    mockCollab.setDocFragmentResponses(collaborationDocId, {
+      title: textFragment('Community Garden'),
+      summary: textFragment('Fresh food and a meeting place for neighbours'),
+    });
+
+    onTestFinished(async () => {
+      await db
+        .delete(contentTranslations)
+        .where(
+          like(contentTranslations.contentKey, `batch:${proposal.profileId}:%`),
+        );
+    });
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const result = await caller.translation.translateProposals({
+      profileIds: [proposal.profileId],
+      targetLocale: 'es',
+    });
+
+    const translation = result.translations[proposal.profileId];
+    expect(translation?.title).toBe('[ES] Community Garden');
+    expect(translation?.preview).toBe(
+      '[ES] Fresh food and a meeting place for neighbours',
+    );
+  });
+
+  it('should send literal entity text in the preview as typed', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+      proposalTemplate: {
+        type: 'object',
+        'x-field-order': ['title', 'summary'],
+        properties: {
+          title: { type: 'string', title: 'Title', 'x-format': 'short-text' },
+          summary: {
+            type: 'string',
+            title: 'Summary',
+            'x-format': 'long-text',
+          },
+        },
+      },
+    });
+
+    const proposal = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: setup.instance.instance.id,
+      proposalData: { title: 'Community Garden' },
+    });
+
+    const { collaborationDocId } = parseProposalData(proposal.proposalData);
+    if (!collaborationDocId) {
+      throw new Error('Proposal has no collaboration document');
+    }
+    mockCollab.setDocFragmentResponses(collaborationDocId, {
+      title: textFragment('Community Garden'),
+      summary: textFragment('Use &lt;name&gt; in the form.'),
+    });
+
+    onTestFinished(async () => {
+      await db
+        .delete(contentTranslations)
+        .where(
+          like(contentTranslations.contentKey, `batch:${proposal.profileId}:%`),
+        );
+    });
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    await caller.translation.translateProposals({
+      profileIds: [proposal.profileId],
+      targetLocale: 'es',
+    });
+
+    expect(mockTranslateText).toHaveBeenCalledWith(
+      'Use &lt;name&gt; in the form.',
+      null,
+      'ES',
+      expect.anything(),
+    );
   });
 
   it('should return cached batch translations without calling DeepL', async ({
@@ -568,5 +671,164 @@ describe('translation.translateProposals', () => {
       '[ES] Housing',
       '[ES] Transit',
     ]);
+  });
+});
+
+describe('translation.translateProposals across instances of one process', () => {
+  it('should fail closed when a private instance shares its template with a public one', async ({
+    task,
+    onTestFinished,
+  }) => {
+    // translateProposals asserts once per unique instance, never per
+    // template: a public sibling must not open a private instance.
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 2,
+      grantAccess: true,
+    });
+
+    const [publicInstance, privateInstance] = setup.instances;
+    if (!publicInstance || !privateInstance) {
+      throw new Error('Expected two instances');
+    }
+
+    const publicProposal = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: publicInstance.instance.id,
+      proposalData: { title: 'Readable Sibling Proposal' },
+    });
+    const privateProposal = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: privateInstance.instance.id,
+      proposalData: { title: 'Off-limits Sibling Proposal' },
+    });
+
+    await testData.makeDecisionPublic(publicInstance.profileId);
+
+    onTestFinished(async () => {
+      for (const profileId of [
+        publicProposal.profileId,
+        privateProposal.profileId,
+      ]) {
+        await db
+          .delete(contentTranslations)
+          .where(like(contentTranslations.contentKey, `batch:${profileId}:%`));
+      }
+    });
+
+    const visitorCaller = createCaller(
+      await createTestContextWithSession(null),
+    );
+
+    await expect(
+      visitorCaller.translation.translateProposals({
+        profileIds: [publicProposal.profileId, privateProposal.profileId],
+        targetLocale: 'es',
+      }),
+    ).rejects.toMatchObject({
+      cause: { name: 'UnauthorizedError' },
+    });
+  });
+
+  it('should resolve each instance against its own template snapshot', async ({
+    task,
+    onTestFinished,
+  }) => {
+    // Sibling instances of one process can carry different snapshots; the
+    // preview must come from the proposal's own instance, not a cached sibling.
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 2,
+      grantAccess: true,
+    });
+
+    const [summaryInstance, notesInstance] = setup.instances;
+    if (!summaryInstance || !notesInstance) {
+      throw new Error('Expected two instances');
+    }
+
+    const textField = (title: string) => ({
+      type: 'string',
+      title,
+      'x-format': 'long-text',
+    });
+    const moneyField = (title: string) => ({
+      type: 'object',
+      title,
+      'x-format': 'money',
+    });
+    const snapshotFor = (bodyKey: 'summary' | 'notes') => ({
+      type: 'object',
+      'x-field-order': ['title', 'summary', 'notes'],
+      properties: {
+        title: { type: 'string', title: 'Title', 'x-format': 'short-text' },
+        summary:
+          bodyKey === 'summary' ? textField('Summary') : moneyField('Summary'),
+        notes: bodyKey === 'notes' ? textField('Notes') : moneyField('Notes'),
+      },
+    });
+
+    for (const [created, bodyKey] of [
+      [summaryInstance, 'summary'],
+      [notesInstance, 'notes'],
+    ] as const) {
+      await db
+        .update(processInstances)
+        .set({
+          instanceData: {
+            ...created.instance.instanceData,
+            proposalTemplate: snapshotFor(bodyKey),
+          },
+        })
+        .where(eq(processInstances.id, created.instance.id));
+    }
+
+    const summaryProposal = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: summaryInstance.instance.id,
+      proposalData: { title: 'Summary Template Proposal' },
+    });
+    const notesProposal = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: notesInstance.instance.id,
+      proposalData: { title: 'Notes Template Proposal' },
+    });
+
+    for (const proposal of [summaryProposal, notesProposal]) {
+      const { collaborationDocId } = parseProposalData(proposal.proposalData);
+      if (!collaborationDocId) {
+        throw new Error('Proposal has no collaboration document');
+      }
+      mockCollab.setDocFragmentResponses(collaborationDocId, {
+        title: textFragment('Shared title'),
+        summary: textFragment('Text from the summary field'),
+        notes: textFragment('Text from the notes field'),
+      });
+    }
+
+    onTestFinished(async () => {
+      for (const profileId of [
+        summaryProposal.profileId,
+        notesProposal.profileId,
+      ]) {
+        await db
+          .delete(contentTranslations)
+          .where(like(contentTranslations.contentKey, `batch:${profileId}:%`));
+      }
+    });
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const result = await caller.translation.translateProposals({
+      profileIds: [summaryProposal.profileId, notesProposal.profileId],
+      targetLocale: 'es',
+    });
+
+    expect(result.translations[summaryProposal.profileId]?.preview).toBe(
+      '[ES] Text from the summary field',
+    );
+    expect(result.translations[notesProposal.profileId]?.preview).toBe(
+      '[ES] Text from the notes field',
+    );
   });
 });

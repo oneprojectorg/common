@@ -1,5 +1,5 @@
 import { and, count, countDistinct, db, inArray, ne } from '@op/db/client';
-import { ProposalStatus, proposals } from '@op/db/schema';
+import { ProcessStatus, ProposalStatus, proposals } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 
 /**
@@ -22,10 +22,20 @@ export const listUserInvites = async ({
   const invites = await db.query.profileInvites.findMany({
     where: {
       email: { ilike: user.email },
-      notifiedAt: { isNotNull: true },
       ...(pending === true && { acceptedOn: { isNull: true } }),
       ...(pending === false && { acceptedOn: { isNotNull: true } }),
       ...(entityType && { profileEntityType: entityType }),
+      // Draft processes hide their invites until publish. notifiedAt only
+      // ever reveals an invite (decisions admins are emailed during draft) —
+      // it never hides one, so a failed send cannot suppress a released one.
+      OR: [
+        { notifiedAt: { isNotNull: true } },
+        {
+          NOT: {
+            profile: { processInstance: { status: ProcessStatus.DRAFT } },
+          },
+        },
+      ],
     },
     with: {
       accessRole: true,

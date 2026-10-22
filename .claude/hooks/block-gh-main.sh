@@ -3,6 +3,16 @@
 INPUT=$(cat)
 COMMAND=$(echo "$INPUT" | jq -r '.tool_input.command // empty')
 
+# The /release flow opens the dev -> main PR and marks those commands with
+# CLAUDE_RELEASE=1.
+if echo "$COMMAND" | grep -qE '(^|[[:space:]])CLAUDE_RELEASE=1([[:space:]]|$)'; then
+  exit 0
+fi
+
+# Drop filesystem path tokens (`/x/main/y`, `~/main`, `./main`) so a directory
+# named `main` doesn't read as the branch.
+REFS_ONLY=$(echo "$COMMAND" | sed -E "s#(^|[[:space:]=<>|&;(\"'])(~|\.{1,2})?/[^[:space:]\"';|&)]*#\1#g")
+
 # git or gh invoked at start of line, or after a shell separator (; | & ()
 INVOKES_GIT_GH='(^|[;|&(]\s*)(git|gh)\s'
 
@@ -13,7 +23,7 @@ INVOKES_GIT_GH='(^|[;|&(]\s*)(git|gh)\s'
 # Not matched: domain, maintain, main-repo.
 REFERENCES_MAIN='(^|[[:space:]=:/])main([[:space:]=:/.~^@]|$)'
 
-if echo "$COMMAND" | grep -qE "$INVOKES_GIT_GH" && echo "$COMMAND" | grep -qE "$REFERENCES_MAIN"; then
+if echo "$COMMAND" | grep -qE "$INVOKES_GIT_GH" && echo "$REFS_ONLY" | grep -qE "$REFERENCES_MAIN"; then
   echo "BLOCKED: git/gh commands targeting 'main' branch are not allowed. Use 'dev' instead." >&2
   exit 2
 fi

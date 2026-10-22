@@ -1,18 +1,17 @@
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { type InstancePhaseData, type ProcessInstance } from '@op/api/encoders';
 import {
-  Empty,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from '@op/sense/Empty';
+  getPhaseRubricTemplate,
+  getRubricScoringInfo,
+  isLastPhase,
+  templateCollectsBudget,
+} from '@op/common/client';
 import { Suspense } from 'react';
-import { LuLeaf } from 'react-icons/lu';
 
-import { TranslatedText } from '@/components/TranslatedText';
+import { useTranslations } from '@/lib/i18n';
 
 import { DecisionHero } from '../DecisionHero';
+import { ProposalsLoadError } from '../ProposalsLoadError';
 import {
   ReviewSelectionList,
   ReviewSelectionListSkeleton,
@@ -26,23 +25,41 @@ export function ReviewSelectionPage({
   /** Phase whose proposals + review aggregates we're shortlisting from. */
   previousPhaseId: string;
 }) {
+  const t = useTranslations('decisions');
   const phases = instance.instanceData?.phases ?? [];
   const previousPhase = phases.find(
     (phase): phase is InstancePhaseData => phase.phaseId === previousPhaseId,
   );
 
+  // Match the loaded table's column set so the skeleton doesn't flash an
+  // extra Score column that shifts away when Suspense resolves.
+  const rubricTemplate = instance.instanceData
+    ? getPhaseRubricTemplate(instance.instanceData, previousPhaseId)
+    : null;
+  const showScore = rubricTemplate
+    ? getRubricScoringInfo(rubricTemplate).criteria.some((c) => c.scored)
+    : false;
+
+  // No budget key in the instance's proposal template means the process
+  // collects no budgets, so the column would only ever show "—".
+  const showBudget = templateCollectsBudget(
+    instance.instanceData?.proposalTemplate,
+  );
+
+  // Confirming the last phase publishes results rather than advancing anyone,
+  // which changes both the hero's promise and the footer the list renders.
+  const isFinalPhase = isLastPhase(instance.currentStateId, phases);
+
   return (
     <div className="min-h-full pt-8">
       <div className="mx-auto flex max-w-3xl flex-col items-center justify-center gap-4 px-4 pb-8">
         <DecisionHero
-          title={
-            previousPhase?.headline ?? (
-              <TranslatedText text="REVIEWS COMPLETE" />
-            )
-          }
+          title={previousPhase?.headline ?? t('reviewsCompleteBadge')}
           description={
             <p>
-              <TranslatedText text="Select which proposals move on to the next phase" />
+              {isFinalPhase
+                ? t('confirmWinnersHeading')
+                : t('selectAdvancingHeading')}
             </p>
           }
           variant="standard"
@@ -52,28 +69,21 @@ export function ReviewSelectionPage({
       <div className="flex w-full justify-center border-t bg-white">
         <div className="w-full p-4 sm:p-8">
           <APIErrorBoundary
-            fallbacks={{
-              default: () => (
-                <Empty>
-                  <EmptyHeader>
-                    <EmptyMedia variant="icon">
-                      <LuLeaf className="size-6" />
-                    </EmptyMedia>
-                    <EmptyTitle>
-                      <TranslatedText text="We couldn't load proposals" />
-                    </EmptyTitle>
-                    <EmptyDescription>
-                      <TranslatedText text="Please refresh the page to try again." />
-                    </EmptyDescription>
-                  </EmptyHeader>
-                </Empty>
-              ),
-            }}
+            fallbacks={{ default: () => <ProposalsLoadError /> }}
           >
-            <Suspense fallback={<ReviewSelectionListSkeleton />}>
+            <Suspense
+              fallback={
+                <ReviewSelectionListSkeleton
+                  showScore={showScore}
+                  showBudget={showBudget}
+                />
+              }
+            >
               <ReviewSelectionList
                 instance={instance}
                 previousPhaseId={previousPhaseId}
+                showBudget={showBudget}
+                isFinalPhase={isFinalPhase}
               />
             </Suspense>
           </APIErrorBoundary>

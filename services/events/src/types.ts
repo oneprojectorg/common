@@ -1,3 +1,5 @@
+import { RejectionReason } from '@op/core/decisions';
+import { SMS_KEYWORDS } from '@op/core/sms';
 import { z } from 'zod';
 
 // Mirrors the db `moderation_item_type` enum values; kept as a plain string
@@ -43,6 +45,13 @@ export const Events = {
       processInstanceId: z.string().uuid(),
       userId: z.string().uuid(),
       format: z.enum(['csv']),
+    }),
+  },
+  personalDataExportRequested: {
+    name: 'user/personal-data-export-requested' as const,
+    schema: z.object({
+      exportId: z.string().uuid(),
+      userId: z.string().uuid(),
     }),
   },
   profileInviteSent: {
@@ -94,6 +103,20 @@ export const Events = {
       toPhaseId: z.string().min(1),
     }),
   },
+  // Refs only, both addressed by id: a revert retires the result row, and any
+  // later transition would hide the copy. The message bodies live on the
+  // transition row.
+  decisionResultsNotified: {
+    name: 'decision/results-notified' as const,
+    schema: z.object({
+      processInstanceId: z.string().uuid(),
+      /** Final phase only. */
+      processResultId: z.string().uuid().optional(),
+      transitionHistoryId: z.string().uuid(),
+      /** The phase whose membership defines the not-selected audience. */
+      previousPhaseId: z.string().min(1),
+    }),
+  },
   voteSubmitted: {
     name: 'vote/submitted' as const,
     schema: z.object({
@@ -101,11 +124,20 @@ export const Events = {
       processInstanceId: z.string().uuid(),
     }),
   },
-  reviewRevisionResubmitted: {
-    name: 'review/revision-resubmitted' as const,
+  reviewPhaseEndingSoon: {
+    name: 'review/phase-ending-soon' as const,
     schema: z.object({
-      assignmentId: z.string().uuid(),
-      revisionRequestId: z.string().uuid(),
+      processInstanceId: z.string().uuid(),
+      phaseId: z.string().min(1),
+      reminderWindowEnd: z.string().min(1),
+    }),
+  },
+  reviewProposalRevisionSubmitted: {
+    name: 'review/proposal-revision-submitted' as const,
+    schema: z.object({
+      proposalId: z.string().uuid(),
+      proposalHistoryId: z.string().uuid(),
+      revisionRequestIds: z.array(z.string().uuid()).min(1),
     }),
   },
   reviewRevisionRequested: {
@@ -113,6 +145,13 @@ export const Events = {
     schema: z.object({
       assignmentId: z.string().uuid(),
       revisionRequestId: z.string().uuid(),
+    }),
+  },
+  // Emitted from submitReview only; updateReview must not re-send it.
+  reviewSubmitted: {
+    name: 'review/submitted' as const,
+    schema: z.object({
+      assignmentId: z.string().uuid(),
     }),
   },
   decisionUpdatePosted: {
@@ -137,6 +176,40 @@ export const Events = {
       postId: z.string().uuid(),
       proposalId: z.string().uuid(),
       authorProfileId: z.string().uuid(),
+    }),
+  },
+  // Keyed on the edge, not the proposal pair: the edge soft-deletes on unmerge,
+  // so the notification can re-check the merge before announcing it.
+  proposalMerged: {
+    name: 'proposal/merged' as const,
+    schema: z.object({
+      relationshipId: z.string().uuid(),
+      // Dropped from the recipient lists.
+      actorAuthUserId: z.string().uuid(),
+    }),
+  },
+  // Unlike every other notification here, the payload is the carrier rather than
+  // a ref to re-read: nothing stores the reason or the note, so the email can
+  // only get them from the event. Everything else about the rejection — whether
+  // it still stands, who hears about it — is still re-read at send time.
+  proposalRejected: {
+    name: 'proposal/rejected' as const,
+    schema: z.object({
+      proposalId: z.string().uuid(),
+      reason: z.enum(RejectionReason),
+      note: z.string().optional(),
+      // Dropped from the recipient list.
+      actorAuthUserId: z.string().uuid(),
+    }),
+  },
+  smsInboundReceived: {
+    name: 'sms/inbound.received' as const,
+    schema: z.object({
+      from: z.string(),
+      messageSid: z.string(),
+      code: z.string().nullable(),
+      keyword: z.enum(SMS_KEYWORDS).nullable(),
+      argument: z.string().nullable().default(null),
     }),
   },
 } as const;

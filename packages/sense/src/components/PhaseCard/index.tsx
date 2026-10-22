@@ -28,10 +28,8 @@ interface PhaseCardProps {
 }
 
 /**
- * A single phase row (`<li>`) in the decision Overview timeline. Dispatches to
- * one of four self-contained treatments; the consumer owns the `<ol>`, the
- * completed/current/upcoming derivation, and which phase is now open or
- * advanceable.
+ * One phase row in the decision Overview timeline. Renders a `div` — the
+ * consumer owns the `<ol>`, each `<li>`, and the state derivation.
  */
 function PhaseCard(props: PhaseCardProps) {
   switch (props.state) {
@@ -63,7 +61,7 @@ function CompletedPhaseCard({
   className,
 }: PhaseContentProps) {
   return (
-    <li
+    <div
       className={cn(
         'flex flex-col gap-1 border-s border-success/30 p-4',
         className,
@@ -81,7 +79,7 @@ function CompletedPhaseCard({
         locale={locale}
         className="text-muted-foreground"
       />
-    </li>
+    </div>
   );
 }
 
@@ -101,9 +99,10 @@ function CurrentPhaseCard({
 }: PhaseContentProps &
   Pick<PhaseCardProps, 'isNowOpen' | 'nowOpenLabel' | 'href'>) {
   return (
-    <li className={className}>
+    <div className={className}>
       <a
         href={href}
+        data-slot="phase-card-current"
         className="group flex items-center justify-between gap-4 rounded-lg bg-teal-50 p-4 text-teal-600 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
       >
         <div className="flex min-w-0 flex-col gap-2">
@@ -123,12 +122,13 @@ function CurrentPhaseCard({
         </div>
         <span
           aria-hidden
+          data-slot="phase-card-arrow"
           className="flex size-8 shrink-0 items-center justify-center rounded-md opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100"
         >
           <LuArrowRight className="size-4 rtl:-scale-x-100" />
         </span>
       </a>
-    </li>
+    </div>
   );
 }
 
@@ -143,7 +143,7 @@ function AdvanceablePhaseCard({
   onAdvance,
 }: PhaseContentProps & Pick<PhaseCardProps, 'advanceLabel' | 'onAdvance'>) {
   return (
-    <li
+    <div
       className={cn(
         'flex items-center justify-between gap-4 rounded-lg bg-gray-50 p-4',
         className,
@@ -166,7 +166,7 @@ function AdvanceablePhaseCard({
         <LuPlay className="size-4 rtl:-scale-x-100" aria-hidden />
         {advanceLabel}
       </Button>
-    </li>
+    </div>
   );
 }
 
@@ -179,7 +179,7 @@ function UpcomingPhaseCard({
   className,
 }: PhaseContentProps) {
   return (
-    <li className={cn('flex flex-col gap-1 border-s p-4', className)}>
+    <div className={cn('flex flex-col gap-1 border-s p-4', className)}>
       <PhaseName name={name} />
       <PhaseDates
         startDate={startDate}
@@ -187,7 +187,7 @@ function UpcomingPhaseCard({
         locale={locale}
         className="text-muted-foreground"
       />
-    </li>
+    </div>
   );
 }
 

@@ -1,13 +1,10 @@
-import { getRoles } from '@op/common';
+import { Channels, getRoles } from '@op/common';
+import { paginated } from '@op/common/client';
 import { z } from 'zod';
 
 import { roleEncoder } from '../../encoders/roles';
 import { networkAuthenticatedProcedure, router } from '../../trpcFactory';
-import {
-  createPaginatedOutput,
-  createSortable,
-  paginationSchema,
-} from '../../utils';
+import { createSortable, paginationSchema } from '../../utils';
 
 const roleSortableSchema = createSortable(['name'] as const);
 
@@ -15,6 +12,7 @@ const inputSchema = z
   .object({
     profileId: z.string().uuid().optional(),
     zoneName: z.string().optional(),
+    includeMemberCounts: z.boolean().optional(),
   })
   .merge(paginationSchema)
   .merge(roleSortableSchema);
@@ -22,16 +20,24 @@ const inputSchema = z
 export const listRolesRouter = router({
   listRoles: networkAuthenticatedProcedure()
     .input(inputSchema)
-    .output(createPaginatedOutput(roleEncoder))
-    .query(async ({ input }) => {
-      const { profileId, zoneName, cursor, limit, dir } = input;
+    .output(paginated(roleEncoder))
+    .query(async ({ ctx, input }) => {
+      const { profileId, zoneName, includeMemberCounts, cursor, limit, dir } =
+        input;
 
-      return getRoles({
+      const result = await getRoles({
         profileId,
         zoneName,
+        includeMemberCounts,
         cursor,
         limit,
         dir,
       });
+
+      if (profileId) {
+        ctx.registerQueryChannels([Channels.profileMembers(profileId)]);
+      }
+
+      return result;
     }),
 });

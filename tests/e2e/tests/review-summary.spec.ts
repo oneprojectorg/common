@@ -2,16 +2,22 @@ import type {
   DecisionSchemaDefinition,
   RubricTemplateSchema,
 } from '@op/common';
-import { ProposalReviewState, processInstances } from '@op/db/schema';
-import { db, eq } from '@op/db/test';
 import {
   createDecisionInstance,
   createInstanceMember,
   createProposalReview,
   createReviewAssignment,
   createReviewScenario,
+  createRevisionRequest,
   getSeededTemplate,
-} from '@op/test';
+  reviseProposal,
+} from '@op/common/testing/data';
+import {
+  ProposalReviewRequestState,
+  ProposalReviewState,
+  processInstances,
+} from '@op/db/schema';
+import { db, eq } from '@op/db/test';
 import type { Locator, Page } from '@playwright/test';
 
 import {
@@ -125,6 +131,15 @@ const RUBRIC_TEMPLATE = {
 } as const satisfies RubricTemplateSchema;
 
 const PROPOSAL_TITLE = 'Community Solar Initiative';
+
+const OLDER_REQUEST_COMMENT = 'Please add a detailed budget breakdown.';
+const NEWER_REQUEST_COMMENT = 'Please name the partner organisations.';
+const OLDER_NOTE = 'Broke the budget out per site and per line item.';
+const NEWER_NOTE = 'Added the partnership with the Riverside District Library.';
+
+function daysAgo(days: number): string {
+  return new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+}
 
 /**
  * Keyboard, not a click: headless, Base UI's inert node over the open popup is
@@ -282,7 +297,7 @@ test.describe('Review Summary page', () => {
     await page.goto(summaryUrl, { waitUntil: 'domcontentloaded' });
 
     // ====================================================================
-    // Step 1: Header reflects submitted/total + Average Score
+    // Step 1: Header reflects submitted/total + the average score
     // ====================================================================
 
     // The instance sits in the review phase, so no shortlisting yet.
@@ -301,11 +316,12 @@ test.describe('Review Summary page', () => {
     ).toBeVisible();
 
     const averageScoreSection = page
-      .getByText('Average Score', { exact: true })
+      .getByText('Average score:', { exact: true })
       .first()
       .locator('..');
-    await expect(averageScoreSection).toContainText('6.3');
-    await expect(averageScoreSection).toContainText('/8pts');
+    // The panel rounds the average to a whole number, so the 6.3 average of
+    // the three submitted reviews renders as "6/8 points".
+    await expect(averageScoreSection).toContainText('6/8 points');
 
     // ====================================================================
     // Step 2: Recommendation groups — Yes (2), Maybe (1); No is filtered out
@@ -453,7 +469,7 @@ test.describe('Review Summary page', () => {
     await expect(addReview).toBeVisible();
 
     // Nothing submitted yet, so no average to show — but the counts line stays.
-    await expect(page.getByText('Average Score')).toHaveCount(0);
+    await expect(page.getByText('Average score:')).toHaveCount(0);
     await expect(
       page
         .getByText('0 out of 1 reviewers submitted a review for this proposal')
@@ -530,7 +546,7 @@ test.describe('Review Summary page', () => {
     // Their review is grouped under the "Yes" recommendation they picked, and
     // an average exists now that one review is in.
     await expect(page.getByText('Yes (1)').first()).toBeVisible();
-    await expect(page.getByText('Average Score').first()).toBeVisible();
+    await expect(page.getByText('Average score:').first()).toBeVisible();
 
     // Submitted, so the button below the list is gone — the row is the entry.
     await expect(
@@ -766,5 +782,106 @@ test.describe('Review Summary page', () => {
     ).toBeVisible({ timeout: 36_000 });
 
     await ctx.close();
+  });
+  test('admin sees the author revision notes above the proposal content', async ({
+    authenticatedPage: page,
+    org,
+    supabaseAdmin,
+  }, testInfo) => {
+    const testId = `summary-notes-${testInfo.workerIndex}-${Date.now()}`;
+    const template = await getSeededTemplate();
+
+    const instance = await createDecisionInstance({
+      processId: template.id,
+      ownerProfileId: org.organizationProfile.id,
+      authUserId: org.adminUser.authUserId,
+      email: org.adminUser.email,
+      schema: REVIEW_SCHEMA,
+    });
+
+    await db
+      .update(processInstances)
+      .set({
+        instanceData: {
+          ...(instance.instance.instanceData as Record<string, unknown>),
+          rubricTemplate: RUBRIC_TEMPLATE,
+        },
+        currentStateId: 'review',
+      })
+      .where(eq(processInstances.id, instance.instance.id));
+
+    const { user: reviewer } = await createInstanceMember({
+      supabaseAdmin,
+      testId: `${testId}-reviewer`,
+      instanceProfileId: instance.profileId,
+    });
+
+    const {
+      proposal,
+      assignedProposalHistoryId: olderHistoryId,
+      assignment,
+    } = await createReviewScenario({
+      instance: { id: instance.instance.id },
+      author: {
+        profileId: org.organizationProfile.id,
+        authUserId: org.adminUser.authUserId,
+        email: org.adminUser.email,
+      },
+      reviewer: { profileId: reviewer.profileId },
+      proposalData: {
+        title: PROPOSAL_TITLE,
+        collaborationDocId: 'test-proposal-view-doc',
+      },
+    });
+
+    // Notes group on the resubmitted-version pointer, so two notes need two
+    // snapshots to point at.
+    const newerHistoryId = await reviseProposal({ proposalId: proposal.id });
+
+    await createRevisionRequest({
+      assignmentId: assignment.id,
+      state: ProposalReviewRequestState.RESUBMITTED,
+      requestComment: OLDER_REQUEST_COMMENT,
+      responseComment: OLDER_NOTE,
+      respondedProposalHistoryId: olderHistoryId,
+      respondedAt: daysAgo(5),
+    });
+    await createRevisionRequest({
+      assignmentId: assignment.id,
+      state: ProposalReviewRequestState.RESUBMITTED,
+      requestComment: NEWER_REQUEST_COMMENT,
+      responseComment: NEWER_NOTE,
+      respondedProposalHistoryId: newerHistoryId,
+      respondedAt: daysAgo(1),
+    });
+
+    await page.goto(
+      `/en/decisions/${instance.slug}/proposal/${proposal.profileId}/reviews`,
+      { waitUntil: 'domcontentloaded' },
+    );
+
+    const notes = page.getByTestId('author-notes').first();
+    await expect(notes).toBeVisible({ timeout: 36_000 });
+
+    const entries = notes.getByTestId('author-note');
+    await expect(entries).toHaveCount(2);
+    await expect(entries.nth(0)).toContainText(NEWER_NOTE);
+    await expect(entries.nth(1)).toContainText(OLDER_NOTE);
+
+    await entries
+      .nth(1)
+      .getByRole('button', { name: 'View revision request' })
+      .click();
+
+    const modal = page
+      .getByRole('dialog')
+      .and(page.locator(':not([data-slot="toast"])'));
+    await expect(modal).toBeVisible();
+    await expect(modal.getByText(OLDER_REQUEST_COMMENT)).toBeVisible();
+    await expect(modal.getByText(NEWER_REQUEST_COMMENT)).toHaveCount(0);
+    // Nothing here is the admin's to cancel, and requests stay anonymous.
+    await expect(
+      modal.getByRole('button', { name: 'Cancel request' }),
+    ).toHaveCount(0);
   });
 });

@@ -123,7 +123,12 @@ export {
   profileRelationshipTypeEnum,
 } from './tables/relationships.sql';
 export { users, usersRelations } from './tables/users.sql';
-export type { CommonUser } from './tables/users.sql';
+export type {
+  CommonUser,
+  NotificationCategory,
+  NotificationChannel,
+  StoredNotificationPreferences,
+} from './tables/users.sql';
 export { usersUsedStorage } from './tables/usersUsedStorage.sql';
 
 // Decision system tables
@@ -140,6 +145,8 @@ export {
   processStatusEnum,
 } from './tables/processInstances.sql';
 export type { ProcessInstance } from './tables/processInstances.sql';
+export { processPhases } from './tables/processPhases.sql';
+export type { ProcessPhase } from './tables/processPhases.sql';
 
 export {
   proposalCategories,

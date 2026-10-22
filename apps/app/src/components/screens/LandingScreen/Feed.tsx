@@ -2,6 +2,7 @@
 
 import { useRequiredUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
+import { PAGE_LIMIT, nextCursor } from '@op/common/client';
 import { useInfiniteScroll } from '@op/hooks';
 import { Fragment, useCallback } from 'react';
 
@@ -27,9 +28,9 @@ export const Feed = () => {
 };
 
 /** Feed content component with live data */
-const FeedContent = ({ limit = 10 }: { limit?: number }) => {
+const FeedContent = ({ limit = PAGE_LIMIT.sm }: { limit?: number }) => {
   const { user } = useRequiredUser();
-  const t = useTranslations();
+  const t = useTranslations('shell');
 
   const {
     data: paginatedData,
@@ -39,7 +40,7 @@ const FeedContent = ({ limit = 10 }: { limit?: number }) => {
   } = trpc.organization.listAllPosts.useInfiniteQuery(
     { limit },
     {
-      getNextPageParam: (lastPage) => lastPage.next,
+      getNextPageParam: nextCursor,
       staleTime: 30 * 1000,
       refetchOnMount: true,
       refetchOnWindowFocus: true,
@@ -62,7 +63,7 @@ const FeedContent = ({ limit = 10 }: { limit?: number }) => {
 
   const {
     discussionModal,
-    handleReactionClick,
+    handleLikeClick,
     handleCommentClick,
     handleModalClose,
   } = usePostFeedActions();
@@ -82,7 +83,7 @@ const FeedContent = ({ limit = 10 }: { limit?: number }) => {
             organization={postToOrg.organization ?? null}
             user={user}
             withLinks={true}
-            onReactionClick={handleReactionClick}
+            onLikeClick={handleLikeClick}
             onCommentClick={handleCommentClick}
           />
           <hr />
@@ -97,7 +98,7 @@ const FeedContent = ({ limit = 10 }: { limit?: number }) => {
 
       {allPosts.length > 0 && !shouldShowTrigger && (
         <p className="w-full p-4 text-center text-sm text-muted-foreground">
-          {t('No more updates.')}
+          {t('feedEnd')}
         </p>
       )}
 

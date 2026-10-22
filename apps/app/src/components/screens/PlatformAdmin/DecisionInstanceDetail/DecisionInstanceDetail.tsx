@@ -1,12 +1,13 @@
 'use client';
 
 import { trpc } from '@op/api/client';
+import { ProcessStatus } from '@op/api/encoders';
 import type {
   AdminDecisionConfig,
   AdminDecisionPhase,
 } from '@op/common/client';
 import { Badge } from '@op/sense/Badge';
-import { buttonVariants } from '@op/sense/Button';
+import { Button, buttonVariants } from '@op/sense/Button';
 import {
   Card,
   CardAction,
@@ -17,15 +18,23 @@ import {
 } from '@op/sense/Card';
 import { Skeleton } from '@op/sense/Skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@op/sense/Tabs';
+import { toast } from '@op/sense/Toast';
 import { useFormatter } from 'next-intl';
-import { Suspense } from 'react';
-import { LuArrowLeft, LuArrowUpRight } from 'react-icons/lu';
+import { Suspense, useState } from 'react';
+import { LuArrowLeft, LuArrowUpRight, LuCheck, LuCopy } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 import { Link } from '@/lib/i18n/routing';
 
+import { CustomFormsPanel } from './CustomFormsPanel';
+import { MakePublicButton } from './MakePublicButton';
+import { RemovePublicAccessButton } from './RemovePublicAccessButton';
 import { RevertPhaseButton } from './RevertPhaseButton';
 import { ReviewPhasePanel } from './ReviewPhasePanel';
+import {
+  type PublicAccessState,
+  getPublicAccessState,
+} from './publicAccessState';
 
 const STATUS_DISPLAY: Record<string, string> = {
   draft: 'Draft',
@@ -68,10 +77,12 @@ const DecisionInstanceDetailContent = ({
           className="flex w-fit items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
         >
           <LuArrowLeft className="size-3.5 rtl:-scale-x-100" />
-          {t('All Decisions')}
+          {t('admin.allDecisionsTitle')}
         </Link>
         <div className="flex flex-wrap items-center gap-3">
-          <h1 className="font-serif text-headline font-light">{detail.name}</h1>
+          <h1 className="font-serif text-headline font-light">
+            <bdi>{detail.name}</bdi>
+          </h1>
           {detail.status ? (
             <Badge variant="secondary">
               {STATUS_DISPLAY[detail.status] ?? detail.status}
@@ -82,7 +93,7 @@ const DecisionInstanceDetailContent = ({
               href={`/decisions/${detail.slug}`}
               className={`${buttonVariants({ variant: 'outline', size: 'sm' })} ms-auto`}
             >
-              {t('View decision')}
+              {t('admin.viewDecisionAction')}
               <LuArrowUpRight
                 data-icon="inline-end"
                 className="rtl:-scale-x-100"
@@ -91,10 +102,16 @@ const DecisionInstanceDetailContent = ({
           ) : null}
         </div>
         <dl className="flex flex-wrap gap-x-10 gap-y-2">
-          <MetaItem label={t('Owner')} value={detail.owner?.name ?? '—'} />
-          <MetaItem label={t('Steward')} value={detail.steward?.name ?? '—'} />
           <MetaItem
-            label={t('Process type')}
+            label={t('admin.ownerLabel')}
+            value={detail.owner?.name ?? '—'}
+          />
+          <MetaItem
+            label={t('admin.stewardLabel')}
+            value={detail.steward?.name ?? '—'}
+          />
+          <MetaItem
+            label={t('admin.processTypeLabel')}
             value={
               detail.processType
                 ? detail.templateVersion
@@ -104,11 +121,11 @@ const DecisionInstanceDetailContent = ({
             }
           />
           <MetaItem
-            label={t('Reviews policy')}
+            label={t('admin.reviewsPolicyLabel')}
             value={detail.reviewsPolicy?.replaceAll('_', ' ') ?? '—'}
           />
           <MetaItem
-            label={t('Created')}
+            label={t('admin.createdLabel')}
             value={
               createdAt
                 ? format.dateTime(createdAt, { dateStyle: 'medium' })
@@ -120,9 +137,14 @@ const DecisionInstanceDetailContent = ({
 
       <Tabs defaultValue="phases">
         <TabsList variant="line">
-          <TabsTrigger value="phases">{t('Phases')}</TabsTrigger>
-          <TabsTrigger value="configuration">{t('Configuration')}</TabsTrigger>
-          <TabsTrigger value="members">{t('Members')}</TabsTrigger>
+          <TabsTrigger value="phases">
+            {t('decisions.processBuilder.phasesLabel')}
+          </TabsTrigger>
+          <TabsTrigger value="forms">{t('admin.formsTitle')}</TabsTrigger>
+          <TabsTrigger value="configuration">
+            {t('admin.configurationHeading')}
+          </TabsTrigger>
+          <TabsTrigger value="members">{t('profile.membersTab')}</TabsTrigger>
         </TabsList>
         <TabsContent value="phases" className="flex flex-col gap-6 pt-4">
           {detail.phases.map((phase, index) => (
@@ -137,16 +159,26 @@ const DecisionInstanceDetailContent = ({
             />
           ))}
         </TabsContent>
+        <TabsContent value="forms" className="pt-4">
+          <CustomFormsPanel
+            profileId={detail.profileId}
+            phases={detail.phases}
+          />
+        </TabsContent>
         <TabsContent value="configuration" className="pt-4">
-          <ConfigurationCard config={detail.config} />
+          <ConfigurationCard
+            instanceId={instanceId}
+            isPublic={detail.isPublic}
+            status={detail.status}
+            config={detail.config}
+            instanceData={detail.instanceData}
+          />
         </TabsContent>
         <TabsContent value="members" className="pt-4">
           <Card>
             <CardHeader>
-              <CardTitle>{t('Members')}</CardTitle>
-              <CardDescription>
-                {t('Members, roles, and invite statuses')}
-              </CardDescription>
+              <CardTitle>{t('profile.membersTab')}</CardTitle>
+              <CardDescription>{t('admin.membersSectionHint')}</CardDescription>
             </CardHeader>
             <CardContent>
               <ComingSoon />
@@ -195,7 +227,7 @@ const PhaseCard = ({
   const endDate = formatDate(phase.endDate);
   const dates =
     startDate && endDate
-      ? t('{start} – {end}', { start: startDate, end: endDate })
+      ? t('admin.dateRange', { start: startDate, end: endDate })
       : (startDate ?? endDate);
 
   const hasAnySection =
@@ -205,21 +237,24 @@ const PhaseCard = ({
   const ruleParts = [
     phase.hasProposals &&
       (phase.proposalsHiddenByDefault
-        ? t('Proposal submissions (hidden by default)')
-        : t('Proposal submissions')),
-    phase.canEditProposals && t('Proposal editing'),
-    phase.hasReviews && t('Reviews'),
+        ? t('admin.proposalSubmissionsHidden')
+        : t('admin.proposalSubmissionsLabel')),
+    phase.canEditProposals &&
+      t('decisions.processBuilder.proposalEditingLabel'),
+    phase.hasReviews && t('decisions.review.reviewsLabel'),
     phase.hasVoting &&
       (phase.maxVotesPerMember != null
-        ? t('Voting (max {count} per member)', {
+        ? t('admin.votingWithMax', {
             count: phase.maxVotesPerMember,
           })
-        : t('Voting')),
-    phase.canEditVotes && t('Vote editing'),
+        : t('decisions.processBuilder.votingLabel')),
+    phase.canEditVotes && t('admin.voteEditingLabel'),
+    // Only the exception is worth a row: comments are on unless turned off.
+    !phase.allowsComments && t('admin.commentsOffLabel'),
     phase.advancementMethod === 'manual'
-      ? t('Advances manually')
+      ? t('admin.advancesManually')
       : phase.advancementMethod === 'date'
-        ? t('Advances by date')
+        ? t('admin.advancesByDate')
         : null,
   ].filter(Boolean);
 
@@ -235,10 +270,10 @@ const PhaseCard = ({
     >
       <CardHeader className={hasAnySection ? 'border-b' : undefined}>
         <CardTitle>
-          {phase.name ?? t('Phase {number}', { number: index + 1 })}
+          {phase.name ?? t('admin.phaseNumber', { number: index + 1 })}
         </CardTitle>
         <CardDescription>
-          {t('Phase {number} of {total}', { number: index + 1, total })}
+          {t('admin.phaseNumberOfTotal', { number: index + 1, total })}
           {dates ? <span> · {dates}</span> : null}
           {ruleParts.length > 0 ? (
             <span className="mt-0.5 block text-sm">
@@ -249,23 +284,25 @@ const PhaseCard = ({
         {currentIndex >= 0 ? (
           <CardAction>
             {phase.isCurrent ? (
-              <Badge>{t('Current phase')}</Badge>
+              <Badge>{t('admin.currentPhaseLabel')}</Badge>
             ) : index < currentIndex ? (
-              <Badge variant="secondary">{t('Completed')}</Badge>
+              <Badge variant="secondary">
+                {t('decisions.review.statusCompleted')}
+              </Badge>
             ) : (
-              <Badge variant="outline">{t('Upcoming')}</Badge>
+              <Badge variant="outline">{t('admin.upcomingLabel')}</Badge>
             )}
           </CardAction>
         ) : null}
       </CardHeader>
       <CardContent className="flex flex-col gap-6">
         {phase.hasProposals ? (
-          <PhaseSection title={t('Proposals')}>
+          <DetailSection title={t('decisions.proposalsLabel')}>
             <ComingSoon />
-          </PhaseSection>
+          </DetailSection>
         ) : null}
         {phase.hasReviews ? (
-          <PhaseSection title={t('Reviews')}>
+          <DetailSection title={t('decisions.review.reviewsLabel')}>
             <Suspense fallback={<Skeleton className="h-32 w-full" />}>
               <ReviewPhasePanel
                 instanceId={instanceId}
@@ -273,74 +310,118 @@ const PhaseCard = ({
                 isCompleted={isCompleted}
               />
             </Suspense>
-          </PhaseSection>
+          </DetailSection>
         ) : null}
         {phase.hasVoting ? (
-          <PhaseSection title={t('Voting')}>
+          <DetailSection title={t('decisions.processBuilder.votingLabel')}>
             <ComingSoon />
-          </PhaseSection>
+          </DetailSection>
         ) : null}
         {!hasAnySection ? (
           <p className="text-sm text-muted-foreground">
-            {t('Nothing to manage in this phase.')}
+            {t('admin.nothingToManage')}
           </p>
         ) : null}
         {phase.isCurrent && previousPhase ? (
-          <PhaseSection title={t('Danger zone')}>
+          <DetailSection title={t('admin.dangerZoneHeading')}>
             <div className="w-fit">
               <RevertPhaseButton
                 instanceId={instanceId}
                 phaseId={phase.phaseId}
                 previousPhaseName={
-                  previousPhase.name ?? t('Phase {number}', { number: index })
+                  previousPhase.name ??
+                  t('admin.phaseNumber', { number: index })
                 }
               />
             </div>
-          </PhaseSection>
+          </DetailSection>
         ) : null}
       </CardContent>
     </Card>
   );
 };
 
-const ConfigurationCard = ({ config }: { config: AdminDecisionConfig }) => {
+const ConfigurationCard = ({
+  instanceId,
+  isPublic,
+  status,
+  config,
+  instanceData,
+}: {
+  instanceId: string;
+  isPublic: boolean;
+  status: ProcessStatus | null;
+  config: AdminDecisionConfig;
+  instanceData: unknown;
+}) => {
   const t = useTranslations();
+  const [isRawShown, setIsRawShown] = useState(false);
+  const rawConfig = JSON.stringify(instanceData, null, 2);
 
   const settings: Array<{ label: string; value: string | boolean }> = [
-    { label: t('Private process'), value: config.isPrivate },
-    { label: t('Hide budget'), value: config.hideBudget },
-    { label: t('Proposal template'), value: config.hasProposalTemplate },
-    { label: t('Review rubric'), value: config.hasRubric },
-    { label: t('Review revisions'), value: config.reviewsAllowRevisions },
+    { label: t('admin.privateProcessLabel'), value: config.isPrivate },
+    { label: t('admin.hideBudgetLabel'), value: config.hideBudget },
     {
-      label: t('Anonymous review feedback'),
+      label: t('decisions.processBuilder.proposalTemplateHeading'),
+      value: config.hasProposalTemplate,
+    },
+    { label: t('admin.reviewRubricLabel'), value: config.hasRubric },
+    {
+      label: t('admin.reviewRevisionsLabel'),
+      value: config.reviewsAllowRevisions,
+    },
+    {
+      label: t('admin.anonymousReviewFeedbackLabel'),
       value: config.reviewsAnonymousFeedback,
     },
     {
-      label: t('Require category selection'),
+      label: t('decisions.processBuilder.requireCategorySelectionLabel'),
       value: config.requireCategorySelection,
     },
     {
-      label: t('Allow multiple categories'),
+      label: t('decisions.processBuilder.allowMultipleCategoriesLabel'),
       value: config.allowMultipleCategories,
     },
-    { label: t('Organize by categories'), value: config.organizeByCategories },
     {
-      label: t('Require collaborative proposals'),
+      label: t('admin.organizeByCategoriesLabel'),
+      value: config.organizeByCategories,
+    },
+    {
+      label: t('decisions.processBuilder.requireCollaborativeProposalsLabel'),
       value: config.requireCollaborativeProposals,
     },
-    { label: t('Categories'), value: String(config.categoriesCount) },
+    {
+      label: t('decisions.processBuilder.categoriesLabel'),
+      value: String(config.categoriesCount),
+    },
   ];
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{t('Configuration')}</CardTitle>
-        <CardDescription>
-          {t('Process-level settings for this decision')}
-        </CardDescription>
+        <CardTitle>{t('admin.configurationHeading')}</CardTitle>
+        <CardDescription>{t('admin.configurationHint')}</CardDescription>
+        <CardAction className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            aria-expanded={isRawShown}
+            aria-controls="raw-config"
+            onClick={() => setIsRawShown((shown) => !shown)}
+          >
+            {isRawShown
+              ? t('admin.hideRawConfigAction')
+              : t('admin.viewRawConfigAction')}
+          </Button>
+          <CopyRawConfigButton value={rawConfig} />
+        </CardAction>
       </CardHeader>
-      <CardContent>
+      <CardContent className="flex flex-col gap-6">
+        <PublicAccessSection
+          instanceId={instanceId}
+          isPublic={isPublic}
+          status={status}
+        />
         <dl className="grid gap-x-8 gap-y-3 sm:grid-cols-2">
           {settings.map((setting) => (
             <div
@@ -351,7 +432,7 @@ const ConfigurationCard = ({ config }: { config: AdminDecisionConfig }) => {
               <dd>
                 {typeof setting.value === 'boolean' ? (
                   <Badge variant={setting.value ? 'default' : 'outline'}>
-                    {setting.value ? t('On') : t('Off')}
+                    {setting.value ? t('admin.toggleOn') : t('admin.toggleOff')}
                   </Badge>
                 ) : (
                   <span className="text-sm text-muted-foreground">
@@ -362,12 +443,79 @@ const ConfigurationCard = ({ config }: { config: AdminDecisionConfig }) => {
             </div>
           ))}
         </dl>
+        {isRawShown ? (
+          <pre
+            id="raw-config"
+            className="max-h-96 overflow-y-auto rounded-lg bg-muted p-4 text-xs break-words whitespace-pre-wrap"
+          >
+            {rawConfig}
+          </pre>
+        ) : null}
       </CardContent>
     </Card>
   );
 };
 
-const PhaseSection = ({
+const PublicAccessSection = ({
+  instanceId,
+  isPublic,
+  status,
+}: {
+  instanceId: string;
+  isPublic: boolean;
+  status: ProcessStatus | null;
+}) => {
+  const t = useTranslations();
+  const state = getPublicAccessState({ isPublic, status });
+
+  const summaries: Record<PublicAccessState, string> = {
+    public: t('admin.publicAccessOnHint'),
+    openable: t('admin.publicAccessOffHint'),
+    unpublished: t('admin.makePublicRequiresPublishedHint'),
+  };
+
+  return (
+    <DetailSection title={t('admin.publicAccessTitle')}>
+      <p className="text-sm text-muted-foreground">{summaries[state]}</p>
+      {state === 'openable' ? (
+        <div className="w-fit">
+          <MakePublicButton instanceId={instanceId} />
+        </div>
+      ) : null}
+      {state === 'public' ? (
+        <div className="w-fit">
+          <RemovePublicAccessButton instanceId={instanceId} />
+        </div>
+      ) : null}
+    </DetailSection>
+  );
+};
+
+const CopyRawConfigButton = ({ value }: { value: string }) => {
+  const t = useTranslations();
+  const [hasCopied, setHasCopied] = useState(false);
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(value);
+      setHasCopied(true);
+      toast.success(t('admin.rawConfigCopied'));
+      // Revert the icon so a second copy still reads as a fresh action
+      setTimeout(() => setHasCopied(false), 2000);
+    } catch {
+      toast.error(t('admin.copyError'));
+    }
+  };
+
+  return (
+    <Button variant="outline" size="sm" onClick={handleCopy}>
+      {hasCopied ? <LuCheck /> : <LuCopy />}
+      {t('Copy')}
+    </Button>
+  );
+};
+
+const DetailSection = ({
   title,
   children,
 }: {
@@ -389,7 +537,7 @@ const ComingSoon = () => {
 
   return (
     <p className="rounded-md border border-dashed px-3 py-2 text-sm text-muted-foreground">
-      {t('Coming soon')}
+      {t('admin.comingSoonLabel')}
     </p>
   );
 };

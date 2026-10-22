@@ -19,6 +19,6 @@ export const listEligibleReviewersRouter = router({
         user: ctx.user,
       });
 
-      return { reviewers };
+      return { items: reviewers };
     }),
 });

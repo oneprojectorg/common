@@ -7,6 +7,7 @@ import { ProposalStatus, Visibility } from '@op/api/encoders';
 import {
   type Proposal,
   type ProposalTemplateSchema,
+  type ProposalTranslation,
   normalizeProposalCategories,
 } from '@op/common/client';
 import { match } from '@op/core';
@@ -14,15 +15,19 @@ import { ProposalCard as SenseProposalCard } from '@op/sense/ProposalCard';
 import { StatusBadge } from '@op/sense/StatusBadge';
 import { cn } from '@op/sense/lib/utils';
 import type { ComponentProps, ReactNode } from 'react';
+import { LuCircleX } from 'react-icons/lu';
 
 import { Link, useTranslations } from '@/lib/i18n';
 
 import { formatBudget } from '../BudgetDisplay';
-import { useCardTranslation } from '../ProposalTranslationContext';
+import { TranslateLink } from '../TranslateLink';
 import {
   getProposalContentPreview,
   resolveProposalSystemFields,
 } from '../proposalContentUtils';
+import { useProposalReviewDecoration } from '../proposalReviewDecoration';
+import { useCommentsAllowed } from '../useCommentsAllowed';
+import { useProposalCardTranslation } from './useProposalCardTranslation';
 
 /**
  * Maps the app's `Proposal` into the presentational values the sense
@@ -30,15 +35,22 @@ import {
  * preview), applying any per-card translation. Shared by every proposal-card
  * surface so the mapping lives in one place.
  */
-export function useProposalCardData(proposal: Proposal) {
+export function useProposalCardData({
+  proposal,
+  cardTranslation,
+}: {
+  proposal: Proposal;
+  cardTranslation?: ProposalTranslation;
+}) {
   const t = useTranslations();
   const canLinkToProfile = useCanLinkToProfile();
-  const cardTranslation = useCardTranslation(proposal.profileId);
   const { title, budget, category } = resolveProposalSystemFields(proposal);
 
   const titleText =
     cardTranslation?.title ??
-    (title || proposal.profile.name || t('Untitled Proposal'));
+    (title ||
+      proposal.profile.name ||
+      t('decisions.proposals.untitledProposal'));
 
   const budgetText = formatBudget(budget) ?? undefined;
 
@@ -80,37 +92,78 @@ export function useProposalCardData(proposal: Proposal) {
   return { titleText, budgetText, displayCategories, authors, description };
 }
 
-/** Proposal status/visibility surfaced as the composite's `headerBadge`. */
-export const ProposalStatusBadge = ({ proposal }: { proposal: Proposal }) => {
-  const t = useTranslations();
-  const { status, visibility, isSelected, isFlagged } = proposal;
-
+/** The state that says who can see this proposal at all, if any. */
+const restrictionOf = ({ status, visibility, isFlagged }: Proposal) => {
   // DRAFT wins over HIDDEN: a draft created in a hidden-by-default phase
   // should still read as "Draft" to its author, not "Hidden".
   if (status === ProposalStatus.DRAFT) {
-    return <StatusBadge variant="inactive">{t('Draft')}</StatusBadge>;
+    return 'draft';
   }
 
   // A flagged proposal is hidden from members pending a moderation verdict.
   if (isFlagged) {
-    return <StatusBadge variant="alert">{t('Flagged')}</StatusBadge>;
+    return 'flagged';
   }
 
-  if (visibility === Visibility.HIDDEN) {
-    return <StatusBadge variant="warning">{t('Hidden')}</StatusBadge>;
+  return visibility === Visibility.HIDDEN ? 'hidden' : undefined;
+};
+
+/** Restricted visibility on its own, for surfaces the candidacy states don't fit. */
+export const ProposalRestrictionBadge = ({
+  proposal,
+}: {
+  proposal: Proposal;
+}) => {
+  const t = useTranslations();
+
+  return match(restrictionOf(proposal), {
+    draft: (
+      <StatusBadge variant="inactive">{t('decisions.draftStatus')}</StatusBadge>
+    ),
+    flagged: (
+      <StatusBadge variant="alert">{t('posts.flaggedBadge')}</StatusBadge>
+    ),
+    hidden: (
+      <StatusBadge variant="warning">
+        {t('decisions.proposals.hiddenStatus')}
+      </StatusBadge>
+    ),
+    _: null,
+  });
+};
+
+/** Proposal status/visibility surfaced as the composite's `headerBadge`. */
+export const ProposalStatusBadge = ({ proposal }: { proposal: Proposal }) => {
+  const t = useTranslations();
+  const { status, isSelected } = proposal;
+
+  // Restricted visibility outranks the candidacy states below it.
+  if (restrictionOf(proposal)) {
+    return <ProposalRestrictionBadge proposal={proposal} />;
   }
 
   // "Selected" is driven by results selection, not the editable `status`.
   if (isSelected) {
-    return <StatusBadge variant="success">{t('Selected')}</StatusBadge>;
+    return (
+      <StatusBadge variant="success">
+        {t('decisions.proposals.selectedStatus')}
+      </StatusBadge>
+    );
+  }
+
+  if (isNotAdvanced(proposal)) {
+    return (
+      <StatusBadge variant="alert" icon={LuCircleX}>
+        {t('decisions.proposals.notAdvancedStatus')}
+      </StatusBadge>
+    );
   }
 
   return match(status, {
     [ProposalStatus.APPROVED]: (
-      <StatusBadge variant="success">{t('Shortlisted')}</StatusBadge>
-    ),
-    [ProposalStatus.REJECTED]: (
-      <StatusBadge variant="inactive">{t('Not shortlisted')}</StatusBadge>
+      <StatusBadge variant="success">
+        {t('decisions.proposals.shortlistedStatus')}
+      </StatusBadge>
     ),
     _: null,
   });
@@ -123,6 +176,8 @@ export interface ProposalCardViewProps extends Omit<
   proposal: Proposal;
   /** Detail link — when set the title becomes the card's stretched primary link. */
   href?: string;
+  /** Forwarded to the sense `ProposalCard` prop of the same name. */
+  onTitleClick?: ComponentProps<'a'>['onClick'];
   /** Utility-corner slot (menu / select toggle). */
   aside?: ReactNode;
   /** Action row (Revise / Edit / Delete / Read full proposal). */
@@ -138,14 +193,26 @@ export interface ProposalCardViewProps extends Omit<
   canEngage?: boolean;
   /** Render the "Revision requested" badge instead of the status badge. */
   revisionRequested?: boolean;
-  /** Show the proposal's status/visibility badge above the title. */
-  showStatusBadge?: boolean;
+  /**
+   * Badge above the title. Defaults to `ProposalStatusBadge`; pass `null` for
+   * no badge, or another one where the default's states don't fit.
+   */
+  headerBadge?: ReactNode;
   /** Selected treatment (teal border + title) for vote/selection phases. */
   selected?: boolean;
+  /** Off where the whole card is a control (active voting): a button can't nest in it. */
+  showTranslateLink?: boolean;
   /** Running vote total; renders the "N Total Votes" row when set. */
   totalVotes?: number;
   /** Awarded badge for funded proposals — shown on the right of the votes row. */
   awardedLabel?: ReactNode;
+  /** Left of the status row — typically a `StatusBadge`. */
+  status?: ReactNode;
+  /**
+   * Right of the status row (e.g. a "3 Reviewed" count). Left unset, a review
+   * surface's decoration provider fills it (see `useProposalReviewDecoration`).
+   */
+  reviewedLabel?: ReactNode;
 }
 
 /**
@@ -158,67 +225,67 @@ export interface ProposalCardViewProps extends Omit<
 export const ProposalCardView = ({
   proposal,
   href,
+  onTitleClick,
   aside,
   actions,
   showMetrics = false,
   canEngage = false,
   revisionRequested = false,
-  showStatusBadge = true,
+  // A default parameter, so `null` reaches the card as "no badge" while an
+  // absent prop still gets the standard one.
+  headerBadge = <ProposalStatusBadge proposal={proposal} />,
   selected,
+  showTranslateLink = true,
   totalVotes,
   awardedLabel,
+  status,
+  reviewedLabel,
   className,
   ...rest
 }: ProposalCardViewProps) => {
   const t = useTranslations();
+  const translation = useProposalCardTranslation({
+    proposal,
+    enabled: showTranslateLink,
+  });
   const { titleText, budgetText, displayCategories, authors, description } =
-    useProposalCardData(proposal);
-  const engagement = useProposalEngagement({ proposal, canEngage });
+    useProposalCardData({
+      proposal,
+      cardTranslation: translation.translation,
+    });
+  // Empty unless a review surface provides it; an explicit slot always wins.
+  const decoration = useProposalReviewDecoration(proposal.id);
 
   const tags =
     revisionRequested || displayCategories.length === 0
       ? undefined
       : displayCategories;
 
-  // Labels are passed rather than left to the card's English defaults: they're
-  // the metrics' accessible names.
-  const metrics = showMetrics
-    ? {
-        likes: {
-          count: proposal.likesCount || 0,
-          label: t('Likes'),
-          ...(engagement && {
-            active: engagement.isLiked,
-            onClick: engagement.onLike,
-          }),
-        },
-        bookmarks: {
-          count: proposal.followersCount || 0,
-          label: t('Followers'),
-          // No `onFollow` for an author — the count stays, the press goes.
-          ...(engagement?.onFollow && {
-            active: engagement.isFollowed,
-            onClick: engagement.onFollow,
-          }),
-        },
-        comments: { count: proposal.commentsCount || 0, label: t('Comments') },
-      }
-    : undefined;
+  const metrics = useProposalCardMetrics({ proposal, showMetrics, canEngage });
 
-  const headerBadge = revisionRequested ? (
-    <StatusBadge variant="revision">{t('Revision requested')}</StatusBadge>
-  ) : showStatusBadge ? (
-    <ProposalStatusBadge proposal={proposal} />
-  ) : undefined;
+  const badge = revisionRequested ? (
+    <StatusBadge variant="revision">
+      {t('decisions.review.revisionRequestedLabel')}
+    </StatusBadge>
+  ) : (
+    headerBadge
+  );
+  const header = (
+    <>
+      <TranslateLink translation={translation} />
+      {badge}
+    </>
+  );
 
   return (
     <SenseProposalCard
       title={titleText}
       href={href}
+      onTitleClick={onTitleClick}
       linkComponent={Link}
       className={className}
       selected={selected}
-      headerBadge={headerBadge}
+      headerBadge={header}
       aside={aside}
       budget={budgetText}
       tags={tags}
@@ -226,13 +293,66 @@ export const ProposalCardView = ({
       description={description}
       metrics={metrics}
       totalVotes={totalVotes}
-      totalVotesLabel={t('Total Votes')}
+      totalVotesLabel={t('decisions.proposals.totalVotesLabel')}
       awardedLabel={awardedLabel}
+      status={status}
+      reviewedLabel={reviewedLabel ?? decoration.reviewedLabel}
       actions={actions}
+      data-testid="proposal-card"
       {...rest}
     />
   );
 };
+
+/**
+ * The engagement counts (likes / follows / comments) for the card, or
+ * `undefined` when the surface doesn't show them.
+ */
+function useProposalCardMetrics({
+  proposal,
+  showMetrics,
+  canEngage,
+}: {
+  proposal: Proposal;
+  showMetrics: boolean;
+  canEngage: boolean;
+}) {
+  const t = useTranslations();
+  const engagement = useProposalEngagement({ proposal, canEngage });
+  const commentsEnabled = useCommentsAllowed(proposal.processInstanceId);
+
+  if (!showMetrics) {
+    return undefined;
+  }
+
+  // Labels are passed rather than left to the card's English defaults: they're
+  // the metrics' accessible names.
+  return {
+    likes: {
+      count: proposal.likesCount || 0,
+      label: t('decisions.proposals.likesLabel'),
+      ...(engagement && {
+        active: engagement.isLiked,
+        onClick: engagement.onLike,
+      }),
+    },
+    bookmarks: {
+      count: proposal.followersCount || 0,
+      label: t('Followers'),
+      // No `onFollow` for an author — the count stays, the press goes.
+      ...(engagement?.onFollow && {
+        active: engagement.isFollowed,
+        onClick: engagement.onFollow,
+      }),
+    },
+    ...(commentsEnabled && {
+      comments: {
+        count: proposal.commentsCount || 0,
+        label: t('decisions.proposals.commentsHeading'),
+      },
+    }),
+  };
+}
 
 /**
  * Compact proposal card for confirm modals and selection lists: title, budget,
@@ -246,7 +366,7 @@ export const ProposalMiniCard = ({
   className?: string;
 }) => {
   const { titleText, budgetText, displayCategories, authors } =
-    useProposalCardData(proposal);
+    useProposalCardData({ proposal });
 
   return (
     <SenseProposalCard
@@ -258,3 +378,10 @@ export const ProposalMiniCard = ({
     />
   );
 };
+
+/** Rejected, or left behind by an earlier transition whatever its status. */
+const isNotAdvanced = ({
+  status,
+  isOutsideCurrentPhase,
+}: Pick<Proposal, 'status' | 'isOutsideCurrentPhase'>) =>
+  isOutsideCurrentPhase === true || status === ProposalStatus.REJECTED;

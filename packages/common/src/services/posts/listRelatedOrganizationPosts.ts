@@ -4,10 +4,11 @@ import type { User } from '@op/supabase/lib';
 
 import {
   getCurrentProfileId,
-  getItemsWithReactionsAndComments,
+  getItemsWithLikesAndComments,
   getRelatedOrganizations,
 } from '../';
 import {
+  PAGE_LIMIT,
   decodeCursor,
   encodeCursor,
   getGenericCursorCondition,
@@ -34,7 +35,7 @@ export const listAllRelatedOrganizationPosts = async (
   authUserId: string,
   options: ListAllPostsOptions = {},
 ) => {
-  const { limit = 20, cursor } = options;
+  const { limit = PAGE_LIMIT.md, cursor } = options;
 
   const decodedCursor = cursor ? decodeCursor(cursor) : undefined;
 
@@ -119,12 +120,12 @@ export const listAllRelatedOrganizationPosts = async (
         })
       : null;
 
-  const itemsWithReactionsAndComments = await getItemsWithReactionsAndComments({
+  const itemsWithLikesAndComments = await getItemsWithLikesAndComments({
     items,
     profileId,
   });
 
-  return { items: itemsWithReactionsAndComments, next: nextCursor };
+  return { items: itemsWithLikesAndComments, next: nextCursor };
 };
 
 export const listRelatedOrganizationPosts = async (

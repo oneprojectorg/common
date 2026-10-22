@@ -2,18 +2,14 @@
   "includeCoAuthoredBy": false,
   "permissions": {
     "allow": [
-      "Find",
       "Grep",
       "WebFetch",
-      "Web Search",
-      "Fetch",
-      "Pnpm w:app lint"
+      "WebSearch"
     ],
     "deny": [
-      "Pnpm build",
-      "Pnpm w:db migrate",
-      "Pnpm w:db generate",
-      "Pnpm format"
+      "Bash(pnpm build:*)",
+      "Bash(pnpm w:db migrate:*)",
+      "Bash(pnpm format)"
     ],
     "ask": []
   },

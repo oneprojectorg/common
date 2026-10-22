@@ -7,8 +7,8 @@ import { z } from 'zod';
 export const updateUserProfileDataSchema = z
   .object({
     name: z.string().trim().min(1).max(255),
-    bio: z.string().trim().max(255),
-    title: z.string().trim().min(1).max(255),
+    bio: z.string().trim().max(255).nullable(),
+    title: z.string().trim().max(255).nullable(),
     pronouns: z.string().trim().max(255).optional(),
     // underscore, numbers, lowercase letters
     username: z

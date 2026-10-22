@@ -1,10 +1,8 @@
-import { hasEmail } from '@op/common/client';
+import { listMemberProfileRecipients } from '@op/common';
+import { selectEmailRecipients } from '@op/common/client';
 import { OPURLConfig } from '@op/core';
 import { db } from '@op/db/client';
-import {
-  ProposalReviewAssignmentStatus,
-  ProposalReviewRequestState,
-} from '@op/db/schema';
+import { ProposalReviewRequestState } from '@op/db/schema';
 import { OPBatchSend, RevisionRequestedEmail } from '@op/emails';
 import { Events, inngest } from '@op/events';
 import { logger } from '@op/logging';
@@ -31,13 +29,7 @@ export const sendRevisionRequestedNotification = inngest.createFunction(
         with: {
           proposal: {
             with: {
-              profile: {
-                with: {
-                  profileUsers: {
-                    where: { email: { isNotNull: true } },
-                  },
-                },
-              },
+              profile: true,
             },
           },
           processInstance: {
@@ -73,22 +65,15 @@ export const sendRevisionRequestedNotification = inngest.createFunction(
       return;
     }
 
-    if (
-      assignment.status !==
-      ProposalReviewAssignmentStatus.AWAITING_AUTHOR_REVISION
-    ) {
-      logger.info('Assignment is no longer awaiting revision', {
-        assignmentId,
-        status: assignment.status,
-      });
-      return;
-    }
-
     const { proposal, processInstance } = assignment;
-    const authorProfileUsers = proposal.profile.profileUsers.filter(hasEmail);
 
-    if (authorProfileUsers.length === 0) {
-      logger.warn('No author profile users found for proposal profile', {
+    const authors = await step.run('get-author-recipients', async () =>
+      listMemberProfileRecipients(proposal.profileId),
+    );
+    const recipients = selectEmailRecipients(authors);
+
+    if (recipients.length === 0) {
+      logger.warn('No author addresses found for proposal profile', {
         profileId: proposal.profileId,
       });
       return;
@@ -104,11 +89,11 @@ export const sendRevisionRequestedNotification = inngest.createFunction(
 
     const proposalName = proposal.profile.name;
     const processTitle = processProfile.name;
-    const proposalUrl = `${OPURLConfig('APP').ENV_URL}/decisions/${processProfile.slug}/proposal/${proposal.profileId}/edit?reviewRevision=${revisionRequestId}`;
+    const proposalUrl = `${OPURLConfig('APP').ENV_URL}/decisions/${processProfile.slug}/proposal/${proposal.profileId}/edit`;
 
     const result = await step.run('send-emails', async () => {
       try {
-        const emails = authorProfileUsers.map(({ email }) => ({
+        const emails = recipients.map((email) => ({
           to: email,
           subject: RevisionRequestedEmail.subject(proposalName),
           component: () =>

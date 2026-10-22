@@ -2,6 +2,7 @@ import {
   Channels,
   addProfileRelationship,
   getProfileRelationships,
+  mergeTargetIds,
   removeProfileRelationship,
 } from '@op/common';
 import { db, eq } from '@op/db/client';
@@ -19,39 +20,40 @@ import {
   trackProposalLiked,
 } from '../../utils/analytics';
 
-type ProposalInfo = { proposalId: string; processInstanceId: string };
+type ProposalInfo = {
+  proposalId: string;
+  processInstanceId: string;
+  mergeTargetIds: string[];
+};
 
 // Helper function to check if a profile belongs to a proposal and get process info
 async function getProposalInfo(
   profileId: string,
 ): Promise<ProposalInfo | null> {
-  const proposal = await db
+  const [proposal] = await db
     .select({
-      id: proposals.id,
+      proposalId: proposals.id,
       processInstanceId: proposals.processInstanceId,
+      mergeTargetIds: mergeTargetIds(proposals.id),
     })
     .from(proposals)
     .where(eq(proposals.profileId, profileId))
     .limit(1);
 
-  return proposal.length > 0
-    ? {
-        proposalId: proposal[0]!.id,
-        processInstanceId: proposal[0]!.processInstanceId,
-      }
-    : null;
+  return proposal ?? null;
 }
 
-// Channel the proposal detail query subscribes to. Like/follow mutations
-// register it so engagement counts (likesCount, followersCount) refresh
-// immediately on the proposal view. Deliberately scoped to the single
-// proposal — invalidating the whole `decisionProposals` list channel for
-// every like/follow would force every viewer to re-fetch every card.
+// Channels the proposal detail query subscribes to: the liked proposal, plus
+// every one its likes roll up into. Deliberately not the `decisionProposals`
+// list channel, which would make every viewer refetch every card on every like.
 function proposalRelationshipChannels({
   processInstanceId,
   proposalId,
+  mergeTargetIds,
 }: ProposalInfo) {
-  return [Channels.decisionProposal(processInstanceId, proposalId)];
+  return [proposalId, ...mergeTargetIds].map((id) =>
+    Channels.decisionProposal(processInstanceId, id),
+  );
 }
 
 const relationshipInputSchema = z.object({

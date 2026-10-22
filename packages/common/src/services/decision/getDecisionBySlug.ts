@@ -1,10 +1,10 @@
 import { cache } from '@op/cache';
 import { db } from '@op/db/client';
 import { EntityType } from '@op/db/schema';
-import { User } from '@op/supabase/lib';
 import { permission } from 'access-zones';
 
 import { UnauthorizedError } from '../../utils';
+import type { AccessUser } from '../access/cacheKeys';
 import { assertProfileAccess } from '../assert';
 
 const decisionProfileQueryConfig = {
@@ -43,7 +43,7 @@ const DECISION_SLUG_CACHE_TTL_MS = 5 * 60 * 1000;
 /**
  * Viewer-independent decision-profile snapshot for the overview's slug fetch,
  * cached under `['decision', slug, 'slugProfile']` (cf. getInstance's
- * `[instanceId, 'instance']`). Busted by invalidateDecisionInstance, which
+ * `[instanceId, 'instance:v2']`). Busted by invalidateDecisionInstance, which
  * resolves the instance's slug. skipMemCache for the same reason as the
  * resources list: mutation-driven client refetches must not read another
  * instance's stale local LRU — Redis is the shared layer the invalidate
@@ -68,7 +68,7 @@ export const getDecisionBySlug = async ({
   user,
   slug,
 }: {
-  user: User | undefined;
+  user: AccessUser | undefined;
   slug: string;
 }): Promise<DecisionProfileItem> => {
   // The DB load is viewer-independent, so it's cached; the access check below
@@ -85,9 +85,10 @@ export const getDecisionBySlug = async ({
   const instance = profile.processInstance;
 
   // Proposal/participant aggregates are intentionally NOT computed here: the
-  // overview route (this endpoint's only consumer) never renders them, and
-  // list views get their counts from listDecisionProfiles. Keeping the
-  // hot-path slug fetch aggregate-free saves a proposals table scan per view.
+  // overview route never renders them, list views get their counts from
+  // listDecisionProfiles, and the SMS SHOW path (getSmsDecisionDescription) counts
+  // its ballot itself. Keeping the hot-path slug fetch aggregate-free saves a
+  // proposals table scan per view.
   await assertProfileAccess({
     user,
     profileId: profile.id,

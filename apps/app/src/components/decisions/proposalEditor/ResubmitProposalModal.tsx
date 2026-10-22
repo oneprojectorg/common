@@ -13,94 +13,100 @@ import { Field, FieldDescription, FieldLabel } from '@op/sense/Field';
 import { Textarea } from '@op/sense/Textarea';
 import { toast } from '@op/sense/Toast';
 import { useId, useState } from 'react';
+import { LuCircleAlert } from 'react-icons/lu';
 
 import { useRouter, useTranslations } from '@/lib/i18n';
 
 interface ResubmitProposalModalProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  revisionRequestId: string;
+  proposalId: string;
   backHref: string;
 }
 
+/**
+ * One note answers every request open on the proposal, so this dialog asks the
+ * author for a single note rather than a reply per request.
+ */
 export function ResubmitProposalModal({
   isOpen,
   onOpenChange,
-  revisionRequestId,
+  proposalId,
   backHref,
 }: ResubmitProposalModalProps) {
-  const t = useTranslations();
+  const t = useTranslations('decisions.proposals');
   const router = useRouter();
-  const commentId = useId();
-  const [comment, setComment] = useState('');
+  const noteId = useId();
+  const noteDescriptionId = useId();
+  const noteHintId = useId();
+  const [note, setNote] = useState('');
 
-  const submitRevisionResponse =
-    trpc.decision.submitRevisionResponse.useMutation({
+  const submitProposalRevision =
+    trpc.decision.submitProposalRevision.useMutation({
       onSuccess: () => {
-        toast.success(t('Proposal resubmitted'));
+        toast.success(t('resubmitSuccess'));
         onOpenChange(false);
-        setComment('');
+        setNote('');
         router.push(backHref);
       },
       onError: () => {
-        toast.error(t('Failed to resubmit proposal'));
+        toast.error(t('resubmitError'));
       },
     });
 
-  const handleSubmit = () => {
-    submitRevisionResponse.mutate({
-      revisionRequestId,
-      resubmitComment: comment.trim() || undefined,
-    });
-  };
-
-  const handleCancel = () => {
-    onOpenChange(false);
-    setComment('');
-  };
+  const trimmedNote = note.trim();
 
   return (
     <Dialog
       open={isOpen}
       onOpenChange={(open) => {
         if (!open) {
-          setComment('');
+          setNote('');
         }
         onOpenChange(open);
       }}
     >
-      <DialogContent>
+      <DialogContent className="sm:max-w-xl">
         <DialogHeader>
-          <DialogTitle>{t('Resubmit proposal')}</DialogTitle>
+          <DialogTitle>{t('submitRevisionAction')}</DialogTitle>
         </DialogHeader>
-        <div className="px-6 py-4">
+        <div className="flex flex-col gap-4 px-6 py-6">
           <Field>
-            <FieldLabel htmlFor={commentId}>
-              {t('What did you change?')}
-            </FieldLabel>
-            <FieldDescription>
-              {t(
-                'Briefly describe your revisions so reviewers know what to look for.',
-              )}
+            <FieldLabel htmlFor={noteId}>{t('revisionNoteLabel')}</FieldLabel>
+            <FieldDescription id={noteDescriptionId}>
+              {t('revisionNoteHint')}
             </FieldDescription>
+            {/* `Field` does not wire `aria-describedby` itself, so the hint
+                below the field is listed here too — it states the one-shot
+                consequence of submitting, which a screen reader user needs
+                before the control, not after it. */}
             <Textarea
-              id={commentId}
-              rows={4}
-              placeholder={t('Describe what you changed…')}
-              value={comment}
-              onChange={(event) => setComment(event.target.value)}
+              id={noteId}
+              aria-describedby={`${noteDescriptionId} ${noteHintId}`}
+              rows={6}
+              placeholder={t('revisionNotePlaceholder')}
+              value={note}
+              onChange={(event) => setNote(event.target.value)}
             />
           </Field>
+
+          <p
+            id={noteHintId}
+            className="flex items-start gap-2 text-sm text-muted-foreground"
+          >
+            <LuCircleAlert className="mt-0.5 size-4 shrink-0" aria-hidden />
+            {t('resubmitFinalWarning')}
+          </p>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={handleCancel}>
-            {t('Cancel')}
-          </Button>
           <Button
-            onClick={handleSubmit}
-            loading={submitRevisionResponse.isPending}
+            onClick={() =>
+              submitProposalRevision.mutate({ proposalId, note: trimmedNote })
+            }
+            disabled={trimmedNote.length === 0}
+            loading={submitProposalRevision.isPending}
           >
-            {t('Resubmit proposal')}
+            {t('submitRevisionAction')}
           </Button>
         </DialogFooter>
       </DialogContent>

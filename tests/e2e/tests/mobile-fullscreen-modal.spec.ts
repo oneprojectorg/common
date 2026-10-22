@@ -1,10 +1,10 @@
-import { users } from '@op/db/schema';
-import { db, eq } from '@op/db/test';
 import {
   createDecisionInstance,
   getSeededTemplate,
   makeDecisionPublic,
-} from '@op/test';
+} from '@op/common/testing/data';
+import { users } from '@op/db/schema';
+import { db, eq } from '@op/db/test';
 import type { Locator, Page } from '@playwright/test';
 import { randomUUID } from 'node:crypto';
 
@@ -60,7 +60,7 @@ test.describe('Modals on mobile are full screen', () => {
       .getByRole('dialog')
       .and(page.locator(':not([data-slot="toast"])'));
     await expect(
-      dialog.getByRole('heading', { name: 'Claim your account' }),
+      dialog.getByRole('heading', { name: 'Add your voice to this idea' }),
     ).toBeVisible({ timeout: 15000 });
 
     await expectFillsViewport(dialog);

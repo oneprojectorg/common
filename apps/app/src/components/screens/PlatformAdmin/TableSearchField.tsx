@@ -28,7 +28,7 @@ export const TableSearchField = ({
   className?: string;
   'aria-label'?: string;
 }) => {
-  const t = useTranslations();
+  const t = useTranslations('admin');
 
   return (
     <InputGroup className={className}>
@@ -46,7 +46,7 @@ export const TableSearchField = ({
         <InputGroupAddon align="inline-end">
           <InputGroupButton
             size="icon-xs"
-            aria-label={t('Clear search')}
+            aria-label={t('clearSearchAction')}
             onClick={() => onChange('')}
           >
             <LuX />

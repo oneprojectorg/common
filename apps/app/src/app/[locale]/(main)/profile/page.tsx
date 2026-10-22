@@ -1,8 +1,10 @@
 import { EntityType } from '@op/api/encoders';
 import { createClient } from '@op/api/serverClient';
+import { PAGE_LIMIT } from '@op/common/client';
 import { Header1 } from '@op/sense/Header';
 import type { Metadata } from 'next';
-import { getTranslations } from 'next-intl/server';
+
+import { getTranslations } from '@/lib/i18n';
 
 import { AllOrganizations } from '@/components/Organizations/AllOrganizations';
 import { ListPageLayout } from '@/components/layout/ListPageLayout';
@@ -16,7 +18,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale });
-  return { title: t('People') };
+  return { title: t('shell.peopleNavTitle') };
 }
 
 const ProfileListingPage = async ({
@@ -35,22 +37,22 @@ const ProfileListingPage = async ({
 
     return (
       <ListPageLayout>
-        <Header1 className="text-headline">{t('People')}</Header1>
+        <Header1 className="text-headline">{t('shell.peopleNavTitle')}</Header1>
         <AllOrganizations
           initialData={organizations}
           types={[EntityType.INDIVIDUAL]}
-          limit={20}
+          limit={PAGE_LIMIT.md}
         />
       </ListPageLayout>
     );
   } catch (error) {
     return (
       <ListPageLayout>
-        <Header1 className="text-headline">{t('People')}</Header1>
+        <Header1 className="text-headline">{t('shell.peopleNavTitle')}</Header1>
         <AllOrganizations
           initialData={{ items: [], next: null }}
           types={[EntityType.USER]}
-          limit={20}
+          limit={PAGE_LIMIT.md}
         />
       </ListPageLayout>
     );

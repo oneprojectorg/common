@@ -1,24 +1,43 @@
 import { createClient } from '@op/api/serverClient';
 import { CommonError } from '@op/common';
+import { resolveReviewSettings } from '@op/common/client';
 import { forbidden, notFound } from 'next/navigation';
+import { Suspense } from 'react';
 
 import { ReviewLayout } from '@/components/decisions/Review/ReviewLayout';
+import { ReviewSkeleton } from '@/components/decisions/Review/ReviewSkeleton';
 import { ReviewSummaryLayout } from '@/components/decisions/ReviewSummary/ReviewSummaryLayout';
+import { ReviewSummarySkeleton } from '@/components/decisions/ReviewSummary/ReviewSummarySkeleton';
 
 interface ProposalReviewsLayoutProps {
   decisionSlug: string;
   proposalProfileId: string;
 }
 
+interface ReviewerReviewProps {
+  decisionSlug: string;
+  processInstanceId: string;
+  proposalProfileId: string;
+  phaseId: string;
+  canReadOpenReviews: boolean;
+}
+
 /**
  * Resolves the proposal-keyed reviews URL per viewer:
  *   1. instance admin        → the "Review Progress" summary screen
  *   2. reviewer assigned in the current phase → their own review screen
- *   3. anyone else           → forbidden()
+ *   3. unassigned reviewer, current phase has open reviews → the summary
+ *      screen, read-only
+ *   4. anyone else           → forbidden()
  *
  * Once the instance advances past the review phase, a reviewer's own review is
  * reachable through its `/reviews/[assignmentId]` link, and this URL belongs to
  * the admin summary (which walks back to the last review phase).
+ *
+ * Only the slug fetch that picks the branch is awaited here — the route's
+ * neutral `loading.tsx` shell covers it. Each branch then streams behind the
+ * skeleton of the screen it resolves to, so a viewer sees one skeleton shape,
+ * not a route-shaped one replaced by a role-shaped one.
  */
 export async function ProposalReviewsLayout({
   decisionSlug,
@@ -42,10 +61,12 @@ export async function ProposalReviewsLayout({
 
   if (decisionProfile.processInstance.access?.admin) {
     return (
-      <ReviewSummaryLayout
-        decisionSlug={decisionSlug}
-        proposalProfileId={proposalProfileId}
-      />
+      <Suspense fallback={<ReviewSummarySkeleton />}>
+        <ReviewSummaryLayout
+          decisionSlug={decisionSlug}
+          proposalProfileId={proposalProfileId}
+        />
+      </Suspense>
     );
   }
 
@@ -56,12 +77,46 @@ export async function ProposalReviewsLayout({
     forbidden();
   }
 
+  const canReadOpenReviews =
+    Boolean(decisionProfile.processInstance.access?.review) &&
+    resolveReviewSettings(
+      decisionProfile.processInstance.instanceData ?? {},
+      phaseId,
+    ).openReviews;
+
+  return (
+    <Suspense fallback={<ReviewSkeleton />}>
+      <ReviewerReview
+        decisionSlug={decisionSlug}
+        processInstanceId={decisionProfile.processInstance.id}
+        proposalProfileId={proposalProfileId}
+        phaseId={phaseId}
+        canReadOpenReviews={canReadOpenReviews}
+      />
+    </Suspense>
+  );
+}
+
+/**
+ * Resolves the viewer's assignment for this proposal in `phaseId` and hands it
+ * to the review screen. Suspended by the caller so the wait runs behind the
+ * review screen's own skeleton.
+ */
+async function ReviewerReview({
+  decisionSlug,
+  processInstanceId,
+  proposalProfileId,
+  phaseId,
+  canReadOpenReviews,
+}: ReviewerReviewProps) {
+  const client = await createClient();
+
   let assignmentId: string | undefined;
   try {
     // 'newest' orders by assignedAt (id tie-break) in SQL, so the first row is
     // the latest of this phase's assignments.
-    const { assignments } = await client.decision.listReviewAssignments({
-      processInstanceId: decisionProfile.processInstance.id,
+    const { items: assignments } = await client.decision.listReviewAssignments({
+      processInstanceId,
       proposalProfileId,
       phaseId,
       sort: 'newest',
@@ -73,8 +128,19 @@ export async function ProposalReviewsLayout({
     throw error;
   }
 
-  // Neither admin nor a reviewer of this proposal.
   if (!assignmentId) {
+    if (canReadOpenReviews) {
+      return (
+        <Suspense fallback={<ReviewSummarySkeleton />}>
+          <ReviewSummaryLayout
+            decisionSlug={decisionSlug}
+            proposalProfileId={proposalProfileId}
+          />
+        </Suspense>
+      );
+    }
+
+    // Neither admin nor a reviewer of this proposal.
     forbidden();
   }
 

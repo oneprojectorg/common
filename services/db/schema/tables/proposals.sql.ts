@@ -30,13 +30,9 @@ export enum ProposalStatus {
   DUPLICATE = 'duplicate',
   SELECTED = 'selected',
   /**
-   * Superseded by another proposal that this one was merged into. The edge
-   * itself lives in `decision_proposal_relationships`; this status is the cheap
-   * filter so list queries don't have to join to hide merged-away proposals.
-   *
-   * That makes it a denormalization of "has an outgoing merged edge", and no
-   * constraint enforces the pairing — whichever service writes the merge owns
-   * setting both in one transaction.
+   * @deprecated Never written. Supersession is a `merged` edge in
+   * `decision_proposal_relationships`, not a status. Kept because dropping an
+   * enum value requires recreating the type.
    */
   MERGED = 'merged',
 }

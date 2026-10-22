@@ -21,13 +21,9 @@ const NoAccessMessage = () => {
 
   return (
     <div className="flex size-full flex-col items-center justify-center gap-4 p-6 text-center">
-      <Header1>{t("You don't have access to this page")}</Header1>
-      <p className="text-muted-foreground">
-        {t(
-          'Contact the person who shared this link if you think this is a mistake.',
-        )}
-      </p>
-      <ButtonLink href="/">{t('Go to Common')}</ButtonLink>
+      <Header1>{t('shell.noAccessTitle')}</Header1>
+      <p className="text-muted-foreground">{t('shell.noAccessHint')}</p>
+      <ButtonLink href="/">{t('shell.goToCommonAction')}</ButtonLink>
     </div>
   );
 };
@@ -52,7 +48,7 @@ const ForbiddenWithInviteCheck = () => {
       window.location.reload();
     },
     onError: () => {
-      toast.error(t('Failed to accept invitations'));
+      toast.error(t('decisions.acceptInvitesError'));
     },
   });
 
@@ -61,7 +57,7 @@ const ForbiddenWithInviteCheck = () => {
       window.location.href = '/';
     },
     onError: () => {
-      toast.error(t('Failed to decline invitation'));
+      toast.error(t('decisions.declineInviteError'));
     },
   });
 
@@ -81,12 +77,12 @@ const ForbiddenWithInviteCheck = () => {
         <FormContainer className="gap-6">
           <div className="flex flex-col gap-2 text-center">
             <Header1 className="text-headline">
-              {t('Join {processInstanceName}', {
+              {t('decisions.joinProcessHeading', {
                 processInstanceName: matchingInvite.profile?.name,
               })}
             </Header1>
             <Header2 className="font-sans text-base text-muted-foreground">
-              {t('A decision-making process stewarded by {stewardName}.', {
+              {t('decisions.stewardedByDescription', {
                 stewardName: steward?.name ?? '',
               })}
             </Header2>
@@ -123,7 +119,7 @@ const ForbiddenWithInviteCheck = () => {
               disabled={acceptInvite.isPending || declineInvite.isPending}
               loading={declineInvite.isPending}
             >
-              {t("I don't want to participate")}
+              {t('decisions.declineInviteAction')}
             </Button>
           </div>
         </FormContainer>

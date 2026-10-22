@@ -7,6 +7,7 @@ import { Suspense } from 'react';
 
 import { ProposalView } from '@/components/decisions/ProposalView';
 import { ProposalViewSkeleton } from '@/components/decisions/ProposalViewSkeleton';
+import { NO_PROPOSAL_AFFORDANCES } from '@/components/decisions/getProposalAffordances';
 
 function ProposalViewPageContent({
   profileId,
@@ -28,10 +29,17 @@ function ProposalViewPageContent({
 
   const decisionRoot = `/profile/${orgSlug}/decisions/${instanceId}`;
 
+  // Comments fall back to allowed here: legacy phases carry no `comments` rule,
+  // and neither endpoint reports one — `getLegacyInstance` drops phase rules at
+  // its encoder and needs auth (these links are public), `getInstance` parses
+  // new-schema instances only.
   return (
     <ProposalView
       proposal={proposal}
-      canSeeRevisions={false}
+      affordances={NO_PROPOSAL_AFFORDANCES}
+      // A legacy instance has no revision cycle at all.
+      isAuthor={false}
+      currentPhaseId={null}
       decisionRoot={decisionRoot}
       selection={null}
     />

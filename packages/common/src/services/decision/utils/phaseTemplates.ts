@@ -4,15 +4,12 @@
  * `phaseOrder.ts`, so domain instance data and the API-encoder shape both
  * pass. Client-safe: no server-only imports.
  */
-import type { RubricTemplateSchema } from '../types';
+import type { ProposalTemplateSchema, RubricTemplateSchema } from '../types';
 
 /**
  * Phase-first template resolution. An unknown or omitted `phaseId` resolves
  * to the instance-level template, so cross-phase callers and phases without
  * their own template share the instance's.
- *
- * Shared by design: per-phase `proposalTemplate` is expected to reuse this
- * with its own selector.
  */
 export function resolvePhaseTemplate<
   Template,
@@ -54,5 +51,23 @@ export function getPhaseRubricTemplate(
     phaseId,
     (phase) => phase.rubricTemplate,
     instanceData.rubricTemplate,
+  );
+}
+
+export function getPhaseProposalTemplate(
+  instanceData: {
+    proposalTemplate?: ProposalTemplateSchema;
+    phases?: ReadonlyArray<{
+      phaseId: string;
+      proposalTemplate?: ProposalTemplateSchema;
+    }>;
+  },
+  phaseId: string | undefined,
+): ProposalTemplateSchema | null {
+  return resolvePhaseTemplate(
+    instanceData,
+    phaseId,
+    (phase) => phase.proposalTemplate,
+    instanceData.proposalTemplate,
   );
 }

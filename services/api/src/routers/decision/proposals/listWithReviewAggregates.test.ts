@@ -1,19 +1,26 @@
+import { mockCollab, textFragment } from '@op/collab/testing';
 import type { RubricTemplateSchema } from '@op/common';
 import { OVERALL_RECOMMENDATION_KEY } from '@op/common/client';
 import {
+  createProposalReview,
+  getCurrentProposalHistoryId,
+  reviseProposal,
+  TestDecisionsDataManager,
+  TestReviewsDataManager,
+} from '@op/common/testing';
+import {
+  ProposalReviewAssignmentStatus,
   ProposalReviewState,
   proposalCategories,
   proposals as proposalsTable,
   taxonomyTerms,
 } from '@op/db/schema';
 import { db } from '@op/db/test';
-import { createProposalReview } from '@op/test';
 import { eq } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
-import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
-import { TestReviewsDataManager } from '../../../test/helpers/TestReviewsDataManager';
+import { createGatingCallers } from '../../../test/helpers/gating/callers';
 import {
   accessTierGatingCell,
   describeDecisionAccessTierGating,
@@ -92,7 +99,7 @@ async function attachCategoryToProposal({
 }
 
 describe.concurrent('listWithReviewAggregates', () => {
-  it('rejects callers without admin access on the instance (paginated)', async ({
+  it('rejects callers without admin access on the instance (phase-scoped)', async ({
     task,
     onTestFinished,
   }) => {
@@ -110,7 +117,7 @@ describe.concurrent('listWithReviewAggregates', () => {
     ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
   });
 
-  it('rejects callers without admin access on the instance (filtered)', async ({
+  it('rejects a reviewer who does not name a phase (filtered)', async ({
     task,
     onTestFinished,
   }) => {
@@ -128,6 +135,56 @@ describe.concurrent('listWithReviewAggregates', () => {
         proposalIds: [created.proposal.id],
       }),
     ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
+  });
+
+  it('marks phase-scoped rows editable but not filtered ones', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const context = await testData.createContext();
+    await testData.setCurrentPhase(context.instance.instance.id, 'review');
+    const { proposal } = await testData.createReviewAssignment({ context });
+
+    const adminCaller = await createAuthenticatedCaller(
+      context.defaultReviewer.email,
+    );
+
+    const [phaseScoped, filtered] = await Promise.all([
+      adminCaller.decision.listWithReviewAggregates({
+        processInstanceId: context.instance.instance.id,
+      }),
+      adminCaller.decision.listWithReviewAggregates({
+        processInstanceId: context.instance.instance.id,
+        proposalIds: [proposal.id],
+      }),
+    ]);
+
+    expect(phaseScoped.items.map((item) => item.proposal.isEditable)).toEqual([
+      true,
+    ]);
+    expect(filtered.items[0]?.proposal.isEditable).toBeUndefined();
+  });
+
+  it('does not mark rows editable in the results phase', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const context = await testData.createContext();
+    await testData.createReviewAssignment({ context, phaseId: 'results' });
+
+    const adminCaller = await createAuthenticatedCaller(
+      context.defaultReviewer.email,
+    );
+
+    const result = await adminCaller.decision.listWithReviewAggregates({
+      processInstanceId: context.instance.instance.id,
+    });
+
+    expect(result.items.map((item) => item.proposal.isEditable)).toEqual([
+      false,
+    ]);
   });
 
   it('returns aggregates for the requested proposalIds in filtered mode', async ({
@@ -200,6 +257,69 @@ describe.concurrent('listWithReviewAggregates', () => {
     expect(unreviewedItem?.aggregates.reviewers).toHaveLength(1);
   });
 
+  it('counts out-of-date reviews per proposal in filtered mode', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const context = await testData.createContext();
+    await testData.setRubricTemplate(context, rubricTemplate);
+    await testData.setCurrentPhase(context.instance.instance.id, 'review');
+
+    // Same review on both proposals; only the first is edited afterwards, so
+    // the batched current-version lookup has to key its answer per proposal.
+    const [edited, untouched] = await Promise.all([
+      testData.createReviewAssignment({ context, title: 'Edited Proposal' }),
+      testData.createReviewAssignment({ context, title: 'Untouched Proposal' }),
+    ]);
+
+    await Promise.all(
+      [edited, untouched].map(async (scenario) =>
+        createProposalReview({
+          assignmentId: scenario.assignment.id,
+          state: ProposalReviewState.SUBMITTED,
+          reviewData: {
+            answers: { impact: 7, feasibility: 4 },
+            rationales: {},
+          },
+          submittedAt: new Date().toISOString(),
+          reviewedProposalHistoryId: await getCurrentProposalHistoryId({
+            proposalId: scenario.proposal.id,
+          }),
+        }),
+      ),
+    );
+
+    await reviseProposal({
+      proposalId: edited.proposal.id,
+      proposalData: { title: 'Edited Proposal (revised)' },
+    });
+
+    const adminCaller = await createAuthenticatedCaller(
+      context.defaultReviewer.email,
+    );
+    const result = await adminCaller.decision.listWithReviewAggregates({
+      processInstanceId: context.instance.instance.id,
+      proposalIds: [edited.proposal.id, untouched.proposal.id],
+    });
+
+    const editedItem = result.items.find(
+      (i) => i.proposal.id === edited.proposal.id,
+    );
+    const untouchedItem = result.items.find(
+      (i) => i.proposal.id === untouched.proposal.id,
+    );
+
+    expect(editedItem?.aggregates).toMatchObject({
+      reviewsSubmittedCount: 1,
+      outOfDateReviewsCount: 1,
+    });
+    expect(untouchedItem?.aggregates).toMatchObject({
+      reviewsSubmittedCount: 1,
+      outOfDateReviewsCount: 0,
+    });
+  });
+
   it('drops proposalIds belonging to a different instance in filtered mode', async ({
     task,
     onTestFinished,
@@ -260,7 +380,33 @@ describe.concurrent('listWithReviewAggregates', () => {
     expect(result.items).toEqual([]);
   });
 
-  it('paginates by createdAt across pages', async ({
+  it('rejects an invalid filtered read instead of returning the whole phase', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const created = await testData.createReviewAssignment({
+      title: 'Strict Branch',
+    });
+    await testData.setCurrentPhase(
+      created.context.instance.instance.id,
+      'review',
+    );
+
+    const adminCaller = await createAuthenticatedCaller(
+      created.context.defaultReviewer.email,
+    );
+
+    // Fails the filtered branch; must not fall through to the phase-scoped one.
+    await expect(
+      adminCaller.decision.listWithReviewAggregates({
+        processInstanceId: created.context.instance.instance.id,
+        proposalIds: [],
+      }),
+    ).rejects.toThrow();
+  });
+
+  it('returns every proposal in the phase, well past 50', async ({
     task,
     onTestFinished,
   }) => {
@@ -268,38 +414,98 @@ describe.concurrent('listWithReviewAggregates', () => {
     const context = await testData.createContext();
     await testData.setCurrentPhase(context.instance.instance.id, 'review');
 
-    const proposals = [];
-    for (const title of ['First', 'Second', 'Third']) {
-      proposals.push(await testData.createReviewAssignment({ context, title }));
+    const created = [];
+    for (let i = 0; i < 51; i++) {
+      created.push(
+        await testData.createReviewAssignment({
+          context,
+          title: `Proposal ${i}`,
+        }),
+      );
     }
 
     const adminCaller = await createAuthenticatedCaller(
       context.defaultReviewer.email,
     );
 
-    const page1 = await adminCaller.decision.listWithReviewAggregates({
+    const result = await adminCaller.decision.listWithReviewAggregates({
       processInstanceId: context.instance.instance.id,
-      limit: 2,
     });
 
-    expect(page1.total).toBe(3);
-    expect(page1.items).toHaveLength(2);
-    expect(page1.next).not.toBeNull();
+    expect(result.items).toHaveLength(created.length);
+    expect(result.items.map((i) => i.proposal.id).sort()).toEqual(
+      created.map((p) => p.proposal.id).sort(),
+    );
 
-    const page2 = await adminCaller.decision.listWithReviewAggregates({
-      processInstanceId: context.instance.instance.id,
-      limit: 2,
-      cursor: page1.next!,
+    const createdAts = result.items.map((i) => i.proposal.createdAt ?? '');
+    expect(createdAts).toEqual([...createdAts].sort().reverse());
+  });
+
+  it('counts out-of-date reviews per proposal in phase-scoped mode', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const context = await testData.createContext();
+    await testData.setRubricTemplate(context, rubricTemplate);
+    await testData.setCurrentPhase(context.instance.instance.id, 'review');
+
+    const untouched = await testData.createReviewAssignment({
+      context,
+      title: 'Untouched Proposal',
+    });
+    const edited = await testData.createReviewAssignment({
+      context,
+      title: 'Edited Proposal',
     });
 
-    expect(page2.items).toHaveLength(1);
-    expect(page2.next).toBeNull();
+    for (const scenario of [untouched, edited]) {
+      await createProposalReview({
+        assignmentId: scenario.assignment.id,
+        state: ProposalReviewState.SUBMITTED,
+        reviewData: {
+          answers: { impact: 7, feasibility: 4 },
+          rationales: {},
+        },
+        submittedAt: new Date().toISOString(),
+        reviewedProposalHistoryId: await getCurrentProposalHistoryId({
+          proposalId: scenario.proposal.id,
+        }),
+      });
+    }
 
-    // All three proposals appear exactly once across the two pages.
-    const allIds = [...page1.items, ...page2.items]
-      .map((i) => i.proposal.id)
-      .sort();
-    expect(allIds).toEqual(proposals.map((p) => p.proposal.id).sort());
+    await reviseProposal({
+      proposalId: edited.proposal.id,
+      proposalData: { title: 'Edited Proposal (revised)' },
+    });
+
+    const adminCaller = await createAuthenticatedCaller(
+      context.defaultReviewer.email,
+    );
+    const result = await adminCaller.decision.listWithReviewAggregates({
+      processInstanceId: context.instance.instance.id,
+    });
+
+    expect(result.items).toHaveLength(2);
+
+    const editedItem = result.items.find(
+      (i) => i.proposal.id === edited.proposal.id,
+    );
+    const untouchedItem = result.items.find(
+      (i) => i.proposal.id === untouched.proposal.id,
+    );
+
+    expect(editedItem?.aggregates).toMatchObject({
+      reviewsSubmittedCount: 1,
+      outOfDateReviewsCount: 1,
+    });
+    expect(untouchedItem?.aggregates).toMatchObject({
+      reviewsSubmittedCount: 1,
+      outOfDateReviewsCount: 0,
+    });
+
+    const createdAts = result.items.map((i) => i.proposal.createdAt ?? '');
+    expect(createdAts).toEqual([...createdAts].sort().reverse());
   });
 
   it('attaches categories to response items', async ({
@@ -341,6 +547,57 @@ describe.concurrent('listWithReviewAggregates', () => {
     ]);
   });
 
+  // The stored proposalData can lag the collaboration document: submit pins
+  // a document version but only stamps location and category back. The
+  // results confirm step awards this budget by default, so it must be the
+  // submitted one.
+  it('returns the budget from the submitted document, not the stored copy', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const context = await testData.createContext();
+    await testData.setCurrentPhase(context.instance.instance.id, 'review');
+
+    const created = await testData.createReviewAssignment({
+      context,
+      title: 'Budgeted',
+    });
+
+    const collaborationDocId = `review-budget-${created.proposal.id}`;
+    await db
+      .update(proposalsTable)
+      .set({
+        proposalData: {
+          title: 'Budgeted',
+          budget: { amount: 1000, currency: 'USD' },
+          collaborationDocId,
+          collaborationDocVersionId: 3,
+        },
+      })
+      .where(eq(proposalsTable.id, created.proposal.id));
+    mockCollab.setVersionedDocFragmentResponses(collaborationDocId, 3, {
+      title: textFragment('Budgeted'),
+      budget: textFragment('{"amount":2500,"currency":"USD"}'),
+    });
+
+    const adminCaller = await createAuthenticatedCaller(
+      context.defaultReviewer.email,
+    );
+
+    const result = await adminCaller.decision.listWithReviewAggregates({
+      processInstanceId: context.instance.instance.id,
+    });
+
+    const budgeted = result.items.find(
+      (i) => i.proposal.id === created.proposal.id,
+    );
+    expect(budgeted?.proposal.proposalData.budget).toEqual({
+      amount: 2500,
+      currency: 'USD',
+    });
+  });
+
   it('keeps proposals with zero submitted reviews and exposes their reviewer roster', async ({
     task,
     onTestFinished,
@@ -371,6 +628,189 @@ describe.concurrent('listWithReviewAggregates', () => {
       overallRecommendationCount: {},
     });
     expect(result.items[0]?.aggregates.reviewers.length).toBeGreaterThan(0);
+  });
+});
+
+/**
+ * Filtered mode is gated on `canReadPhaseReviews`: reviewers need a named
+ * `openReviews` phase, admins need nothing. Phase-scoped mode stays admin-only.
+ */
+describe.concurrent('listWithReviewAggregates: openReviews gate', () => {
+  /** A phase-`review` proposal carrying one COMPLETED assignment + submitted review. */
+  async function createReviewedProposal(testData: TestReviewsDataManager) {
+    const context = await testData.createContext();
+    await testData.setCurrentPhase(context.instance.instance.id, 'review');
+
+    const created = await testData.createReviewAssignment({
+      context,
+      title: 'Reviewed Proposal',
+      status: ProposalReviewAssignmentStatus.COMPLETED,
+    });
+    await createProposalReview({
+      assignmentId: created.assignment.id,
+      state: ProposalReviewState.SUBMITTED,
+      reviewData: { answers: { impact: 5 }, rationales: {} },
+      submittedAt: new Date().toISOString(),
+    });
+
+    return { context, proposal: created.proposal };
+  }
+
+  it('returns counts to a reviewer on an openReviews phase', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const { context, proposal } = await createReviewedProposal(testData);
+    await testData.setPhaseOpenReviews(
+      context.instance.instance.id,
+      'review',
+      true,
+    );
+
+    // A process reviewer who holds REVIEW but not ADMIN, and who is not
+    // assigned to this proposal — the "Other proposals" tab's viewer.
+    const reviewer = await testData.createInstanceReviewerWithRole(context);
+    const reviewerCaller = await createAuthenticatedCaller(reviewer.email);
+
+    const result = await reviewerCaller.decision.listWithReviewAggregates({
+      processInstanceId: context.instance.instance.id,
+      phaseId: 'review',
+      proposalIds: [proposal.id],
+    });
+
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0]?.aggregates).toMatchObject({
+      assignmentsCount: 1,
+      reviewsSubmittedCount: 1,
+    });
+    // One COMPLETED assignment — the "N Reviewed" count the card renders.
+    expect(
+      result.items[0]?.aggregates.reviewers.filter(
+        (r) => r.status === ProposalReviewAssignmentStatus.COMPLETED,
+      ),
+    ).toHaveLength(1);
+  });
+
+  it('rejects a reviewer when the named phase is not open', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const { context, proposal } = await createReviewedProposal(testData);
+    await testData.setPhaseOpenReviews(
+      context.instance.instance.id,
+      'review',
+      false,
+    );
+
+    const reviewer = await testData.createInstanceReviewerWithRole(context);
+    const reviewerCaller = await createAuthenticatedCaller(reviewer.email);
+
+    await expect(
+      reviewerCaller.decision.listWithReviewAggregates({
+        processInstanceId: context.instance.instance.id,
+        phaseId: 'review',
+        proposalIds: [proposal.id],
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
+  });
+
+  it('rejects a reviewer without the review capability on an open phase', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const { context, proposal } = await createReviewedProposal(testData);
+    await testData.setPhaseOpenReviews(
+      context.instance.instance.id,
+      'review',
+      true,
+    );
+
+    // READ only — openReviews widens the reviewer grant, not the member one.
+    const member = await testData.createInstanceMember(context);
+    const memberCaller = await createAuthenticatedCaller(member.email);
+
+    await expect(
+      memberCaller.decision.listWithReviewAggregates({
+        processInstanceId: context.instance.instance.id,
+        phaseId: 'review',
+        proposalIds: [proposal.id],
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
+  });
+
+  it('keeps the phase-scoped mode admin-only for a reviewer on an open phase', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const { context } = await createReviewedProposal(testData);
+    await testData.setPhaseOpenReviews(
+      context.instance.instance.id,
+      'review',
+      true,
+    );
+
+    const reviewer = await testData.createInstanceReviewerWithRole(context);
+    const reviewerCaller = await createAuthenticatedCaller(reviewer.email);
+
+    await expect(
+      reviewerCaller.decision.listWithReviewAggregates({
+        processInstanceId: context.instance.instance.id,
+        phaseId: 'review',
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
+  });
+
+  it('admits an admin in filtered mode with openReviews off and no phaseId', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const { context, proposal } = await createReviewedProposal(testData);
+    await testData.setPhaseOpenReviews(
+      context.instance.instance.id,
+      'review',
+      false,
+    );
+
+    const adminCaller = await createAuthenticatedCaller(
+      context.defaultReviewer.email,
+    );
+
+    const result = await adminCaller.decision.listWithReviewAggregates({
+      processInstanceId: context.instance.instance.id,
+      proposalIds: [proposal.id],
+    });
+
+    expect(result.items.map((item) => item.proposal.id)).toEqual([proposal.id]);
+  });
+
+  it('rejects an anonymous caller in filtered mode', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const { context, proposal } = await createReviewedProposal(testData);
+    await testData.setPhaseOpenReviews(
+      context.instance.instance.id,
+      'review',
+      true,
+    );
+
+    const callers = createGatingCallers(onTestFinished);
+    const anonCaller = await callers.anonJwt();
+
+    await expectFailsAccessTierGate(
+      anonCaller.decision.listWithReviewAggregates({
+        processInstanceId: context.instance.instance.id,
+        phaseId: 'review',
+        proposalIds: [proposal.id],
+      }),
+      'anon',
+    );
   });
 });
 

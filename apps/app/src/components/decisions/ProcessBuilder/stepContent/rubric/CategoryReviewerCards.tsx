@@ -37,15 +37,14 @@ export function CategoryReviewerCards({
 function CategoryReviewerCardsContent({
   instanceId,
 }: CategoryReviewerCardsProps) {
-  const t = useTranslations();
+  const t = useTranslations('decisions.processBuilder');
   const [, setSection] = useQueryState('section', { history: 'push' });
 
-  const [{ categories }] = trpc.decision.listCategoryReviewers.useSuspenseQuery(
-    {
+  const [{ items: categories }] =
+    trpc.decision.listCategoryReviewers.useSuspenseQuery({
       processInstanceId: instanceId,
-    },
-  );
-  const [{ reviewers: eligibleReviewers }] =
+    });
+  const [{ items: eligibleReviewers }] =
     trpc.decision.listEligibleReviewers.useSuspenseQuery({
       processInstanceId: instanceId,
     });
@@ -57,20 +56,17 @@ function CategoryReviewerCardsContent({
       <Alert variant="warning">
         <LuCircleAlert />
         <AlertTitle>
-          {t.rich(
-            'No categories found. Add them in <link>Proposal Categories</link> to assign reviewers by category.',
-            {
-              link: (chunks: React.ReactNode) => (
-                <button
-                  type="button"
-                  className="text-primary underline"
-                  onClick={() => void setSection('proposalCategories')}
-                >
-                  {chunks}
-                </button>
-              ),
-            },
-          )}
+          {t.rich('reviewersNoCategories', {
+            link: (chunks: React.ReactNode) => (
+              <button
+                type="button"
+                className="text-primary underline"
+                onClick={() => void setSection('proposalCategories')}
+              >
+                {chunks}
+              </button>
+            ),
+          })}
         </AlertTitle>
       </Alert>
     );
@@ -84,38 +80,32 @@ function CategoryReviewerCardsContent({
         <Alert variant="warning">
           <LuCircleAlert />
           <AlertTitle>
-            {t.rich(
-              'No participants can review yet. Grant review access in <link>Manage Participants</link> to add reviewers here.',
-              {
-                link: (chunks: React.ReactNode) => (
-                  <button
-                    type="button"
-                    className="text-primary underline"
-                    onClick={() => void setSection('participants')}
-                  >
-                    {chunks}
-                  </button>
-                ),
-              },
-            )}
-          </AlertTitle>
-        </Alert>
-      ) : (
-        <p className="text-base">
-          {t.rich(
-            'Categories come from <link>Proposal Categories</link>. Add reviewers to each, or invite someone new.',
-            {
+            {t.rich('reviewersNoParticipants', {
               link: (chunks: React.ReactNode) => (
                 <button
                   type="button"
                   className="text-primary underline"
-                  onClick={() => void setSection('proposalCategories')}
+                  onClick={() => void setSection('participants')}
                 >
                   {chunks}
                 </button>
               ),
-            },
-          )}
+            })}
+          </AlertTitle>
+        </Alert>
+      ) : (
+        <p className="text-base">
+          {t.rich('reviewersCategoriesHint', {
+            link: (chunks: React.ReactNode) => (
+              <button
+                type="button"
+                className="text-primary underline"
+                onClick={() => void setSection('proposalCategories')}
+              >
+                {chunks}
+              </button>
+            ),
+          })}
         </p>
       )}
 

@@ -41,7 +41,7 @@ function OverviewSectionContent({
   decisionProfileId,
   instanceId,
 }: SectionProps) {
-  const t = useTranslations();
+  const t = useTranslations('decisions.processBuilder');
 
   const [instance] = trpc.decision.getInstance.useSuspenseQuery({ instanceId });
 
@@ -113,7 +113,7 @@ function OverviewSectionContent({
             variant="headline"
             value={headline}
             maxLength={HEADLINE_MAX_LENGTH}
-            placeholder={t('Add a headline')}
+            placeholder={t('overviewHeadlinePlaceholder')}
             onChange={(value) => {
               setHeadline(value);
               saveOverview({ headline: value });
@@ -123,9 +123,7 @@ function OverviewSectionContent({
             variant="description"
             value={description}
             maxLength={DESCRIPTION_MAX_LENGTH}
-            placeholder={t(
-              'Add a short description — one or two lines that sit under the headline.',
-            )}
+            placeholder={t('overviewDescriptionPlaceholder')}
             onChange={(value) => {
               setDescription(value);
               saveOverview({ description: value });
@@ -145,8 +143,8 @@ function OverviewSectionContent({
               ? initialOverview.body
               : sanitizeTiptapDoc(initialOverview.body)
           }
-          placeholder={t('overview_body_placeholder')}
-          summaryPlaceholder={t('Write something...')}
+          placeholder={t('overviewBodyPlaceholder')}
+          summaryPlaceholder={t('writeSomethingPlaceholder')}
           // No focus ring: the body sits inline in the builder page rather than
           // in a bordered field, so the ring reads as a stray box.
           editorClassName="min-h-40 focus-visible:ring-0"

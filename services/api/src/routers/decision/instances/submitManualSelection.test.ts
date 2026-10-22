@@ -1,4 +1,8 @@
 import { getProposalsForPhase } from '@op/common';
+import {
+  TestDecisionsDataManager,
+  schemaWithoutPipeline,
+} from '@op/common/testing';
 import { db, desc, eq, inArray } from '@op/db/client';
 import {
   ProcessStatus,
@@ -15,14 +19,12 @@ import type { z } from 'zod';
 
 import { appRouter } from '../..';
 import type { decisionSchemaDefinitionEncoder } from '../../../encoders/decision';
-import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
 import {
   accessTierGatingCell,
   describeDecisionAccessTierGating,
   expectFailsAccessTierGate,
   expectPassesAccessTierGate,
 } from '../../../test/helpers/gating/decision';
-import { schemaWithoutPipeline } from '../../../test/helpers/pipelineSchemas';
 import {
   createIsolatedSession,
   createTestContextWithSession,
@@ -492,7 +494,7 @@ describe.concurrent('submitManualSelection', () => {
     }
   });
 
-  it('appends a new decision_process_results row when manual selection lands on the final phase', async ({
+  it.sequential('appends a new decision_process_results row when manual selection lands on the final phase', async ({
     task,
     onTestFinished,
   }) => {
@@ -564,9 +566,17 @@ describe.concurrent('submitManualSelection', () => {
     }
     expect(initialResult.selectedCount).toBe(0);
 
+    const mockSend = event.send as unknown as MockInstance;
+
+    const resultNotifications = {
+      selected: `Selected copy ${task.id}`,
+      notSelected: `Not selected copy ${task.id}`,
+    };
+
     await caller.decision.submitManualSelection({
       processInstanceId: instanceId,
       proposalIds: [p1.id, p2.id],
+      resultNotifications,
     });
 
     const allResults = await db
@@ -606,9 +616,226 @@ describe.concurrent('submitManualSelection', () => {
     for (const row of proposalRows) {
       expect(row.status).toBe(ProposalStatus.APPROVED);
     }
+
+    const [latestTransition] = await db
+      .select({
+        id: stateTransitionHistory.id,
+        transitionData: stateTransitionHistory.transitionData,
+      })
+      .from(stateTransitionHistory)
+      .where(eq(stateTransitionHistory.processInstanceId, instanceId))
+      .orderBy(desc(stateTransitionHistory.transitionedAt))
+      .limit(1);
+    expect(latestTransition?.transitionData).toMatchObject({
+      manualSelection: { resultNotifications },
+    });
+
+    // The announcement addresses both rows by id, and both ids resolve.
+    // Filtered by instance: the mock is shared across this concurrent file.
+    const notifiedCalls = mockSend.mock.calls.filter(
+      (call: unknown[]) =>
+        (call[0] as { name: string; data: { processInstanceId: string } })
+          .name === 'decision/results-notified' &&
+        (call[0] as { data: { processInstanceId: string } }).data
+          .processInstanceId === instanceId,
+    );
+    expect(notifiedCalls).toHaveLength(1);
+    expect(notifiedCalls[0]![0]).toMatchObject({
+      name: 'decision/results-notified',
+      data: {
+        processInstanceId: instanceId,
+        processResultId: latestResult.id,
+        transitionHistoryId: latestTransition?.id,
+        previousPhaseId: 'review',
+      },
+    });
   });
 
-  it('dispatches a manualSelectionsConfirmed event after a successful manual selection', async ({
+  it.sequential('publishes without announcing when no author copy is composed', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { instanceId, userEmail, caller } = await seedInstance(testData);
+
+    const proposal = await testData.createProposal({
+      userEmail,
+      processInstanceId: instanceId,
+      proposalData: { title: `Proposal ${task.id}` },
+      status: ProposalStatus.SUBMITTED,
+    });
+
+    await testData.advancePhase({
+      instanceId,
+      fromPhaseId: 'submission',
+      toPhaseId: 'review',
+    });
+    await db
+      .delete(decisionTransitionProposals)
+      .where(eq(decisionTransitionProposals.processInstanceId, instanceId));
+
+    const mockSend = event.send as unknown as MockInstance;
+
+    // `review` is the last phase of the default schema, so this publishes
+    // results — the review-selection flow reaches the same code path without
+    // composing any copy, and must stay able to.
+    await caller.decision.submitManualSelection({
+      processInstanceId: instanceId,
+      proposalIds: [proposal.id],
+    });
+
+    // Both halves of the name: it published...
+    const resultRows = await db
+      .select()
+      .from(decisionProcessResults)
+      .where(eq(decisionProcessResults.processInstanceId, instanceId));
+    expect(resultRows).toHaveLength(1);
+    expect(resultRows[0]?.selectedCount).toBe(1);
+    expect(resultRows[0]?.success).toBe(true);
+
+    // ...and announced nothing. Filtered by instance, not cleared: the mock is
+    // shared across this concurrent file, so another test's event must not be
+    // able to falsify this and a `mockClear` here must not eat theirs.
+    const notifiedCalls = mockSend.mock.calls.filter(
+      (call: unknown[]) =>
+        (call[0] as { name: string; data: { processInstanceId: string } })
+          .name === 'decision/results-notified' &&
+        (call[0] as { data: { processInstanceId: string } }).data
+          .processInstanceId === instanceId,
+    );
+    expect(notifiedCalls).toHaveLength(0);
+  });
+
+  it('stores the awarded amount on each selection row', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { instanceId, userEmail, caller } = await seedInstance(testData);
+
+    const [p1, p2] = await Promise.all([
+      testData.createProposal({
+        userEmail,
+        processInstanceId: instanceId,
+        proposalData: { title: `Proposal 1 ${task.id}` },
+        status: ProposalStatus.SUBMITTED,
+      }),
+      testData.createProposal({
+        userEmail,
+        processInstanceId: instanceId,
+        proposalData: { title: `Proposal 2 ${task.id}` },
+        status: ProposalStatus.SUBMITTED,
+      }),
+    ]);
+
+    await testData.advancePhase({
+      instanceId,
+      fromPhaseId: 'submission',
+      toPhaseId: 'review',
+    });
+    await db
+      .delete(decisionTransitionProposals)
+      .where(eq(decisionTransitionProposals.processInstanceId, instanceId));
+
+    // `review` is the last phase of the default schema, so this publishes.
+    await caller.decision.submitManualSelection({
+      processInstanceId: instanceId,
+      proposalIds: [p1.id, p2.id],
+      allocations: [
+        { proposalId: p1.id, amount: 1500 },
+        { proposalId: p2.id, amount: 250.75 },
+      ],
+    });
+
+    const [latestResult] = await db
+      .select({ id: decisionProcessResults.id })
+      .from(decisionProcessResults)
+      .where(eq(decisionProcessResults.processInstanceId, instanceId))
+      .orderBy(desc(decisionProcessResults.executedAt))
+      .limit(1);
+    if (!latestResult) {
+      throw new Error('Expected a decision_process_results row');
+    }
+
+    const selections = await db
+      .select({
+        proposalId: decisionProcessResultSelections.proposalId,
+        allocated: decisionProcessResultSelections.allocated,
+      })
+      .from(decisionProcessResultSelections)
+      .where(
+        eq(decisionProcessResultSelections.processResultId, latestResult.id),
+      );
+    const allocatedByProposalId = new Map(
+      selections.map((s) => [s.proposalId, Number(s.allocated)]),
+    );
+    expect(allocatedByProposalId).toEqual(
+      new Map([
+        [p1.id, 1500],
+        [p2.id, 250.75],
+      ]),
+    );
+  });
+
+  it.for([
+    {
+      payload: 'awarded amounts',
+      payloadFor: (proposalId: string) => ({
+        allocations: [{ proposalId, amount: 500 }],
+      }),
+      message: 'only awarded when confirming the final phase',
+    },
+  ])(
+    'rejects $payload on a phase that publishes nothing',
+    async ({ payloadFor, message }, { task, onTestFinished }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+      const schemaWithTrailingPhase = {
+        ...schemaWithoutPipeline,
+        phases: [
+          { id: 'submission', name: 'Submission', rules: {} },
+          { id: 'review', name: 'Review', rules: {} },
+          { id: 'final', name: 'Final', rules: {} },
+        ],
+      };
+      const { instanceId, userEmail, caller } = await seedInstance(
+        testData,
+        schemaWithTrailingPhase,
+      );
+
+      const proposal = await testData.createProposal({
+        userEmail,
+        processInstanceId: instanceId,
+        proposalData: { title: `Proposal ${task.id}` },
+        status: ProposalStatus.SUBMITTED,
+      });
+
+      await testData.advancePhase({
+        instanceId,
+        fromPhaseId: 'submission',
+        toPhaseId: 'review',
+      });
+      await db
+        .delete(decisionTransitionProposals)
+        .where(eq(decisionTransitionProposals.processInstanceId, instanceId));
+
+      await expect(
+        caller.decision.submitManualSelection({
+          processInstanceId: instanceId,
+          proposalIds: [proposal.id],
+          ...payloadFor(proposal.id),
+        }),
+        // Pinned to the message: four other guards on this path also throw
+        // ValidationError, so the name alone proves nothing.
+      ).rejects.toMatchObject({
+        cause: {
+          name: 'ValidationError',
+          message: expect.stringContaining(message),
+        },
+      });
+    },
+  );
+
+  it.sequential('dispatches a manualSelectionsConfirmed event after a successful manual selection', async ({
     task,
     onTestFinished,
   }) => {
@@ -634,7 +861,6 @@ describe.concurrent('submitManualSelection', () => {
       .where(eq(decisionTransitionProposals.processInstanceId, instanceId));
 
     const mockSend = event.send as unknown as MockInstance;
-    mockSend.mockClear();
 
     await caller.decision.submitManualSelection({
       processInstanceId: instanceId,
@@ -658,8 +884,7 @@ describe.concurrent('submitManualSelection', () => {
       },
     });
 
-    // submitManualSelection does not re-emit phaseTransitioned — the original
-    // advance already did.
+    // Only `onPhaseAdvanced` emits this, and nothing here calls it.
     const transitionCalls = mockSend.mock.calls.filter(
       (call: unknown[]) =>
         (call[0] as { name: string; data: { processInstanceId: string } })

@@ -1,31 +1,51 @@
 import { mergeRouters } from '../../../trpcFactory';
 import { acceptProposalInviteRouter } from './acceptProposalInvite';
 import { addProposalRelationshipRouter } from './addRelationship';
+import { advanceProposalRouter } from './advanceProposal';
 import { createProposalRouter } from './create';
 import { deleteProposalRouter } from './delete';
 import { exportProposalsRouter } from './export';
 import { getProposalRouter } from './get';
+import { getCollabTokenRouter } from './getCollabToken';
 import { getExportStatusRouter } from './getExportStatus';
 import { getLatestSelectionForProposalRouter } from './getLatestSelection';
+import { getProposalAdvanceTargetRouter } from './getProposalAdvanceTarget';
 import { getProposalWithReviewAggregatesRouter } from './getProposalWithReviewAggregates';
+import { getReviewedVersionRouter } from './getReviewedVersion';
 import { listProposalsRouter } from './list';
+import { listContributingProposalsRouter } from './listContributingProposals';
 import { listProposalLocationsRouter } from './listProposalLocations';
+import { listProposalRelationshipsRouter } from './listProposalRelationships';
 import { listWithReviewAggregatesRouter } from './listWithReviewAggregates';
+import { mergeProposalsRouter } from './mergeProposals';
+import { rejectProposalRouter } from './reject';
 import { removeProposalRelationshipRouter } from './removeRelationship';
 import { submitProposalRouter } from './submit';
+import { unmergeProposalRouter } from './unmergeProposal';
+import { unrejectProposalRouter } from './unreject';
 import { updateProposalRouter } from './update';
 
 export const proposalsRouter = mergeRouters(
   acceptProposalInviteRouter,
+  advanceProposalRouter,
   addProposalRelationshipRouter,
   removeProposalRelationshipRouter,
   createProposalRouter,
   getProposalRouter,
+  getProposalAdvanceTargetRouter,
+  getCollabTokenRouter,
   getLatestSelectionForProposalRouter,
   getProposalWithReviewAggregatesRouter,
+  getReviewedVersionRouter,
   listProposalsRouter,
   listProposalLocationsRouter,
+  listProposalRelationshipsRouter,
+  listContributingProposalsRouter,
   listWithReviewAggregatesRouter,
+  mergeProposalsRouter,
+  rejectProposalRouter,
+  unrejectProposalRouter,
+  unmergeProposalRouter,
   submitProposalRouter,
   updateProposalRouter,
   deleteProposalRouter,

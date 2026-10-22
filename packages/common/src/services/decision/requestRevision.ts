@@ -4,17 +4,21 @@ import {
   ProposalReviewAssignmentStatus,
   type ProposalReviewRequest,
   ProposalReviewRequestState,
+  ProposalReviewState,
   proposalReviewAssignments,
   proposalReviewRequests,
 } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 import { waitUntil } from '@vercel/functions';
-import { eq } from 'drizzle-orm';
+import { and, eq, inArray } from 'drizzle-orm';
 
 import { CommonError, ValidationError } from '../../utils';
-import { assertReviewAssignmentContext } from './reviewHelpers';
+import {
+  assertReviewAssignmentContext,
+  assertReviewAssignmentPhaseIsCurrent,
+} from './reviewHelpers';
 
-/** Creates a revision request and pauses the assignment until the author revises. */
+/** Creates a revision request for one reviewer's assignment. */
 export async function requestRevision({
   assignmentId,
   requestComment,
@@ -23,27 +27,39 @@ export async function requestRevision({
   assignmentId: string;
   requestComment: string;
   user: User;
-}): Promise<ProposalReviewRequest & { processInstanceId: string }> {
+}): Promise<
+  ProposalReviewRequest & {
+    processInstanceId: string;
+    proposalId: string;
+    proposalAssignmentIds: Array<string>;
+  }
+> {
   const context = await assertReviewAssignmentContext({
     assignmentId,
     user,
   });
 
-  switch (context.assignment.status) {
-    case ProposalReviewAssignmentStatus.PENDING:
-    case ProposalReviewAssignmentStatus.IN_PROGRESS:
-      break;
-    case ProposalReviewAssignmentStatus.AWAITING_AUTHOR_REVISION:
+  // A past-phase request would open a revision cycle nobody may complete.
+  assertReviewAssignmentPhaseIsCurrent(
+    context.instance,
+    context.assignment.phaseId,
+  );
+
+  const request = await db.transaction(async (tx) => {
+    const openRequest = await tx.query.proposalReviewRequests.findFirst({
+      where: {
+        assignmentId,
+        state: ProposalReviewRequestState.REQUESTED,
+      },
+      columns: { id: true },
+    });
+
+    if (openRequest) {
       throw new ValidationError(
         'A revision has already been requested for this assignment',
       );
-    case ProposalReviewAssignmentStatus.COMPLETED:
-      throw new ValidationError(
-        'Cannot request a revision for a completed assignment',
-      );
-  }
+    }
 
-  const request = await db.transaction(async (tx) => {
     const [revisionRequest] = await tx
       .insert(proposalReviewRequests)
       .values({
@@ -64,7 +80,15 @@ export async function requestRevision({
       .set({
         status: ProposalReviewAssignmentStatus.AWAITING_AUTHOR_REVISION,
       })
-      .where(eq(proposalReviewAssignments.id, assignmentId));
+      .where(
+        and(
+          eq(proposalReviewAssignments.id, assignmentId),
+          inArray(proposalReviewAssignments.status, [
+            ProposalReviewAssignmentStatus.PENDING,
+            ProposalReviewAssignmentStatus.IN_PROGRESS,
+          ]),
+        ),
+      );
 
     return revisionRequest;
   });
@@ -77,6 +101,8 @@ export async function requestRevision({
       {
         assignment_id: assignmentId,
         phase_id: context.assignment.phaseId,
+        review_submitted:
+          context.review?.state === ProposalReviewState.SUBMITTED,
       },
     ),
   );
@@ -84,5 +110,7 @@ export async function requestRevision({
   return {
     ...request,
     processInstanceId: context.assignment.processInstanceId,
+    proposalId: context.assignment.proposalId,
+    proposalAssignmentIds: context.proposalAssignmentIds,
   };
 }

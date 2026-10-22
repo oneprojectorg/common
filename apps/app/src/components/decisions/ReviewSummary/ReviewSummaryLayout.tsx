@@ -5,7 +5,13 @@ import {
 } from '@op/api/server';
 import { createClient } from '@op/api/serverClient';
 import { CommonError } from '@op/common';
-import { assertInstancePhase, isReviewPhase } from '@op/common/client';
+import {
+  assertInstancePhase,
+  getPreviousReviewPhases,
+  hasOpenReviews,
+  isReviewPhase,
+  resolveReviewSettings,
+} from '@op/common/client';
 import { forbidden, notFound } from 'next/navigation';
 
 import { ReviewSummaryView } from './ReviewSummaryView';
@@ -41,7 +47,10 @@ export async function ReviewSummaryLayout({
     notFound();
   }
 
-  if (!decisionProfile.processInstance.access?.admin) {
+  const isAdmin = Boolean(decisionProfile.processInstance.access?.admin);
+  const canReview = Boolean(decisionProfile.processInstance.access?.review);
+
+  if (!isAdmin && !canReview) {
     forbidden();
   }
 
@@ -79,12 +88,33 @@ export async function ReviewSummaryLayout({
   }
 
   const proposalId = proposal.id;
+  // Every read below is phase-scoped; no phase means no review to summarize.
   const phaseId = resolveReviewPhaseId(instance);
+  if (!phaseId) {
+    notFound();
+  }
+
+  // Keyed to the resolved review phase, like the aggregates below.
+  const reviewSettings = resolveReviewSettings(
+    instance.instanceData ?? {},
+    phaseId,
+  );
+
+  // Rendered lazily on the client, so nothing to prefetch.
+  const previousReviewPhases = getPreviousReviewPhases(
+    instance.instanceData ?? {},
+    phaseId,
+  )
+    .filter((phase) => isAdmin || hasOpenReviews(phase))
+    .map((phase) => ({ id: phase.phaseId, name: phase.name ?? phase.phaseId }));
+  // Mirrors the service's `canReadPhaseReviews`.
+  if (!isAdmin && !reviewSettings.openReviews) {
+    forbidden();
+  }
 
   // isReviewPhase guards the resolver's fallback, which returns the current
   // phase when the instance has no review phase at all.
   const isPhaseInProgress =
-    !!phaseId &&
     phaseId === instance.currentStateId &&
     isReviewPhase(assertInstancePhase({ instance, phaseId }));
 
@@ -102,6 +132,8 @@ export async function ReviewSummaryLayout({
       phaseId,
       sort: 'newest',
     }),
+    // The left pane's author-notes card reads this unconditionally.
+    utils.decision.listProposalRevisionNotes.prefetch({ proposalId }),
   ]);
 
   return (
@@ -113,6 +145,9 @@ export async function ReviewSummaryLayout({
         proposalProfileId={proposalProfileId}
         phaseId={phaseId}
         isPhaseInProgress={isPhaseInProgress}
+        reviewSettings={reviewSettings}
+        previousReviewPhases={previousReviewPhases}
+        isAdmin={isAdmin}
       />
     </HydrationBoundary>
   );

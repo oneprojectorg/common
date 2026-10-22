@@ -7,11 +7,13 @@ import {
   type SubmittedReviewItem,
   parseSchemaOptions,
 } from '@op/common/client';
+import { Alert, AlertDescription, AlertTitle } from '@op/sense/Alert';
+import { Badge } from '@op/sense/Badge';
 import { Button } from '@op/sense/Button';
 import { Header3 } from '@op/sense/Header';
 import { StatusDot } from '@op/sense/StatusDot';
 import { useMemo } from 'react';
-import { LuChevronRight } from 'react-icons/lu';
+import { LuChevronRight, LuCircleAlert, LuRefreshCcw } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -42,8 +44,12 @@ export function ReviewerList({
   ownReview,
 }: ReviewerListProps) {
   const t = useTranslations();
-  const { reviewsSubmittedCount, assignmentsCount, averageScore } =
-    proposalWithReviews.aggregates;
+  const {
+    reviewsSubmittedCount,
+    assignmentsCount,
+    averageScore,
+    outOfDateReviewsCount,
+  } = proposalWithReviews.aggregates;
   const { hasScoring, hasOverallRecommendation, totalPoints } = rubricSummary;
 
   const recommendationOptions = useMemo(
@@ -67,14 +73,35 @@ export function ReviewerList({
     <div className="flex flex-col gap-6">
       {!hideSummaryHeader && (
         <header className="flex flex-col gap-2">
-          <Header3>{title ?? t('Review Summary')}</Header3>
+          <Header3>
+            {title ?? t('decisions.review.reviewSummaryHeading')}
+          </Header3>
           <p className="text-base">
-            {t(
-              '{submitted} out of {total} reviewers submitted a review for this proposal',
-              { submitted: reviewsSubmittedCount, total: assignmentsCount },
-            )}
+            {t('decisions.review.proposalReviewersSubmittedProgress', {
+              submitted: reviewsSubmittedCount,
+              total: assignmentsCount,
+            })}
           </p>
         </header>
+      )}
+
+      {/* Admin-only: the reviewer-facing panel hides the summary header. */}
+      {!hideSummaryHeader && outOfDateReviewsCount > 0 && (
+        <Alert variant="warning">
+          <LuRefreshCcw />
+          <AlertTitle>
+            {t('decisions.review.reviewsOutOfDateCount', {
+              n: outOfDateReviewsCount,
+              total: reviewsSubmittedCount,
+            })}
+          </AlertTitle>
+          <AlertDescription>
+            {t('decisions.review.reviewsOutOfDateExplanation', {
+              n: outOfDateReviewsCount,
+              total: reviewsSubmittedCount,
+            })}
+          </AlertDescription>
+        </Alert>
       )}
 
       {hasScoring && reviewsSubmittedCount > 0 && (
@@ -108,7 +135,9 @@ export function ReviewerList({
         </div>
       ) : (
         <div className="flex flex-col gap-4">
-          <Header3 className="text-label">{t('Submitted Reviews')}</Header3>
+          <Header3 className="text-label">
+            {t('decisions.review.submittedReviewsStat')}
+          </Header3>
           <div className="flex flex-col gap-2">
             {reviews.map((item) => (
               <ReviewerRow
@@ -131,7 +160,7 @@ export function ReviewerList({
           onClick={ownReview.onOpenForm}
           className="self-start text-base"
         >
-          {t('+ Add review')}
+          {t('decisions.review.addReviewAction')}
         </Button>
       )}
     </div>
@@ -212,7 +241,7 @@ function ReviewerRow({
   const t = useTranslations();
   const reviewerName = item.reviewer.name ?? item.reviewer.slug;
   const rowLabel = isOwn
-    ? t('{name} (You)', { name: reviewerName })
+    ? t('decisions.review.reviewerNameYou', { name: reviewerName })
     : reviewerName;
 
   return (
@@ -222,7 +251,12 @@ function ReviewerRow({
       variant="bare"
       onClick={() => onSelect(item.review.assignmentId)}
       className="flex h-14 w-full items-center justify-between rounded-lg border border-border bg-white px-3 py-2 text-start transition-colors duration-200 hover:bg-muted"
-      aria-label={t('View review by {name}', { name: rowLabel })}
+      // aria-label replaces the row's visible text, so it must repeat the tag.
+      aria-label={
+        item.isReviewOutOfDate
+          ? t('decisions.review.viewOlderReviewByName', { name: rowLabel })
+          : t('decisions.review.viewReviewByName', { name: rowLabel })
+      }
     >
       <div className="flex items-center gap-2">
         <ProfileAvatar
@@ -240,7 +274,15 @@ function ReviewerRow({
           )}
         </div>
       </div>
-      <LuChevronRight className="size-4 text-muted-foreground rtl:-scale-x-100" />
+      <div className="flex items-center gap-2">
+        {item.isReviewOutOfDate && (
+          <Badge variant="warning">
+            <LuCircleAlert aria-hidden className="text-warning" />
+            {t('decisions.review.olderVersionLabel')}
+          </Badge>
+        )}
+        <LuChevronRight className="size-4 text-muted-foreground rtl:-scale-x-100" />
+      </div>
     </Button>
   );
 }

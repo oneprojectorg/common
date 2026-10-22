@@ -5,7 +5,7 @@ import { useCallback, useState } from 'react';
  *
  * This maintains a history of cursors to enable backward navigation without
  * requiring the API to support bidirectional queries. The API only needs to
- * return the next cursor and a hasMore flag.
+ * return the next cursor (`next`, `null` on the last page — see ADR-0003).
  *
  * @param limit - Number of items per page
  * @returns Pagination state and navigation handlers

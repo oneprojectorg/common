@@ -24,7 +24,7 @@ export function DecisionProcessStepper({
   className?: string;
 }) {
   const locale = useLocale();
-  const t = useTranslations();
+  const t = useTranslations('decisions');
   const translation = useDecisionTranslation();
   const translatedPhaseNames = useMemo(
     () =>
@@ -81,7 +81,7 @@ export function DecisionProcessStepper({
             ? currentPhaseAdvancement !== 'manual'
             : undefined,
           ariaLabel: isNextActionable
-            ? t('Start {phaseName}', {
+            ? t('startPhaseAction', {
                 phaseName: translatedPhaseNames?.get(phase.id) ?? phase.name,
               })
             : undefined,

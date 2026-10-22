@@ -54,11 +54,13 @@ export function AdvancePhaseConfirm({
     onSuccess: () => {
       advanceInitiatedRef.current = false;
       onClose();
-      toast.success(t('Phase advanced successfully'));
+      toast.success(t('decisions.processBuilder.advancePhaseSuccess'));
       router.refresh();
     },
     onError: (error) => {
-      toast.error(error.message || t('Failed to advance phase'));
+      toast.error(
+        error.message || t('decisions.processBuilder.advancePhaseError'),
+      );
     },
   });
 
@@ -86,11 +88,13 @@ export function AdvancePhaseConfirm({
     onClose();
   };
 
-  const title = t('Advance to {phaseName}?', { phaseName: nextPhaseName });
-  const body = t(
-    'This will end the {currentPhase} phase and move to {nextPhase}.',
-    { currentPhase: currentPhaseName, nextPhase: nextPhaseName },
-  );
+  const title = t('decisions.processBuilder.advancePhaseTitle', {
+    phaseName: nextPhaseName,
+  });
+  const body = t('decisions.processBuilder.advancePhaseDescription', {
+    currentPhase: currentPhaseName,
+    nextPhase: nextPhaseName,
+  });
 
   return (
     <AlertDialog open={isOpen} onOpenChange={handleOpenChange}>
@@ -110,7 +114,7 @@ export function AdvancePhaseConfirm({
             disabled={transitionMutation.isPending}
           >
             {transitionMutation.isPending ? <Spinner /> : null}
-            {t('Advance Phase')}
+            {t('decisions.processBuilder.advancePhaseAction')}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

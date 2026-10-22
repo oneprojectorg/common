@@ -6,34 +6,30 @@ import type { ProposalStatus } from '@op/api/encoders';
 import { type Proposal, parseProposalData } from '@op/common/client';
 import type { MapDefaultView } from '@op/common/client';
 import { cn } from '@op/sense/lib/utils';
-import { type ReactNode, memo, useCallback, useMemo, useState } from 'react';
+import { memo, useCallback, useMemo, useState } from 'react';
 
 import { useRouter, useTranslations } from '@/lib/i18n';
 
 import { ProposalMapHovercard } from './ProposalMapHovercard';
 import { ProposalsMapCanvas } from './location/dynamicProposalsMap';
 import { useMapStyleUrl } from './location/mapConfig';
+import type { RenderProposalCard } from './proposalViews';
 
 /** Filter for the all-locations pin query — shared with the list, minus the
  * list-only pagination fields (the map returns every located proposal). */
 interface ProposalLocationFilter {
   processInstanceId: string;
   categoryId?: string;
+  search?: string;
   submittedByProfileId?: string;
   votedByProfileId?: string;
   status?: ProposalStatus;
+  notAdvanced?: boolean;
   excludeAssignedForReview?: boolean;
   phase?: 'results';
 }
 
-/** Renders one proposal in the desktop list column. The view owns the active
- * highlight, so it hands the card the `className` carrying that policy. */
-type RenderProposalCard = (
-  proposal: Proposal,
-  opts: { className: string },
-) => ReactNode;
-
-interface ProposalsMapViewProps {
+export interface ProposalsMapViewProps {
   /** Loaded list pages — drives the desktop list column (stays paginated). */
   proposals: Proposal[];
   /** Marker source. Every located proposal the pins should plot, which can be
@@ -52,6 +48,11 @@ interface ProposalsMapViewProps {
    * sentinel inside the list column so loading more never adds space below
    * the sticky map. Mobile (map only, no list) never renders it. */
   listFooter?: React.ReactNode;
+  /**
+   * Takes the list column's place when a filter matched nothing. The map stays
+   * — it's the other half of the answer, and its pins are gone too.
+   */
+  emptyState?: React.ReactNode;
 }
 
 /**
@@ -73,8 +74,9 @@ export function ProposalsMapView({
   hrefFor,
   mapView,
   listFooter,
+  emptyState,
 }: ProposalsMapViewProps) {
-  const t = useTranslations();
+  const t = useTranslations('decisions.proposals');
   const router = useRouter();
   const styleUrl = useMapStyleUrl();
   const isMobile = useIsMobile();
@@ -176,7 +178,7 @@ export function ProposalsMapView({
       activeId={activeId}
       onMarkerClick={handleMarkerClick}
       renderHovercard={renderHovercard}
-      ariaLabel={t('Map of proposals')}
+      ariaLabel={t('proposalsMapLabel')}
       className="h-full sm:h-full"
       {...breakpointProps}
     />
@@ -194,19 +196,25 @@ export function ProposalsMapView({
 
   return (
     <div className="grid grid-cols-1 gap-6 sm:grid-cols-[minmax(320px,720px)_minmax(60%,1fr)]">
-      <ul className="flex min-w-0 flex-col gap-6">
-        {proposals.map((proposal) => (
-          <MapListRow
-            key={proposal.id}
-            proposal={proposal}
-            isActive={activeId === proposal.id}
-            onEnter={handleRowEnter}
-            onLeave={handleRowLeave}
-            renderCard={renderCard}
-          />
-        ))}
-        {listFooter && <li>{listFooter}</li>}
-      </ul>
+      {emptyState && proposals.length === 0 ? (
+        // `items-start` so the state sits at the top of the column rather than
+        // centring itself against the full height of the map beside it.
+        <div className="flex min-w-0 items-start">{emptyState}</div>
+      ) : (
+        <ul className="flex min-w-0 flex-col gap-6">
+          {proposals.map((proposal) => (
+            <MapListRow
+              key={proposal.id}
+              proposal={proposal}
+              isActive={activeId === proposal.id}
+              onEnter={handleRowEnter}
+              onLeave={handleRowLeave}
+              renderCard={renderCard}
+            />
+          ))}
+          {listFooter && <li>{listFooter}</li>}
+        </ul>
+      )}
       <aside className="sticky top-20 hidden h-[calc(100dvh_-_10rem)] overflow-hidden rounded-lg border border-border sm:block">
         {map}
       </aside>
@@ -227,7 +235,7 @@ export function ProposalsMapWithLocations({
 }: Omit<ProposalsMapViewProps, 'pinProposals'> & {
   locationFilter: ProposalLocationFilter;
 }) {
-  const [{ proposals: pinProposals }] =
+  const [{ items: pinProposals }] =
     trpc.decision.listProposalLocations.useSuspenseQuery(locationFilter, {
       staleTime: 30 * 1000,
       // Force a client-side fetch so the query registers its invalidation

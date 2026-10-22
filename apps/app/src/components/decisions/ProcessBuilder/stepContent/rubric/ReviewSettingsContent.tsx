@@ -1,12 +1,10 @@
 'use client';
 
-import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { getDecisionCommonProperties } from '@op/analytics/client-utils';
 import { trpc } from '@op/api/client';
 import type { InstancePhaseData } from '@op/api/encoders';
 import type { ReviewsScope } from '@op/common';
 import { isReviewPhase } from '@op/common/client';
-import { Badge } from '@op/sense/Badge';
 import {
   Field,
   FieldLabel,
@@ -42,9 +40,6 @@ export function ReviewSettingsContent({
 }: SectionProps) {
   const t = useTranslations();
   const posthog = usePostHog();
-  // Gates the by-category scope. When off, the radio stays disabled with a
-  // "Coming soon" chip (pre-flag behavior) and the reviewer cards never render.
-  const byCategoryEnabled = useFeatureFlag('reviews-v2');
 
   const [instance] = trpc.decision.getInstance.useSuspenseQuery({ instanceId });
   const config = instance.instanceData?.config;
@@ -117,7 +112,9 @@ export function ReviewSettingsContent({
   return (
     <div className="mx-auto w-full space-y-8 p-4 [scrollbar-gutter:stable] md:max-w-160 md:p-8">
       <div className="flex items-center justify-between">
-        <Header1 className="text-headline">{t('Reviews')}</Header1>
+        <Header1 className="text-headline">
+          {t('decisions.review.reviewsLabel')}
+        </Header1>
         <SaveStatusIndicator
           status={autosaveStatus.status}
           savedAt={autosaveStatus.savedAt}
@@ -126,10 +123,12 @@ export function ReviewSettingsContent({
 
       {/* Scope */}
       <section className="space-y-4">
-        <Header3 className="text-label">{t('Scope')}</Header3>
+        <Header3 className="text-label">
+          {t('decisions.processBuilder.reviewScopeLabel')}
+        </Header3>
         <FieldSet>
           <FieldLegend className="mb-3 text-base">
-            {t('What should each reviewer be responsible for?')}
+            {t('decisions.processBuilder.reviewScopeQuestion')}
           </FieldLegend>
           <RadioGroup
             value={settings.scope}
@@ -147,47 +146,35 @@ export function ReviewSettingsContent({
               );
               updateSettings({ scope: value as ReviewsScope });
             }}
-            aria-label={t('Scope')}
+            aria-label={t('decisions.processBuilder.reviewScopeLabel')}
             className="gap-3"
           >
             <Field orientation="horizontal">
               <RadioGroupItem id="scope-all" value="all" />
               <FieldContent>
                 <FieldLabel htmlFor="scope-all">
-                  {t('All proposals')}
+                  {t('decisions.proposals.allProposalsOption')}
                 </FieldLabel>
                 <FieldDescription>
-                  {t('Reviewers can review any submission')}
+                  {t('decisions.processBuilder.reviewScopeAllHint')}
                 </FieldDescription>
               </FieldContent>
             </Field>
-            <Field
-              orientation="horizontal"
-              data-disabled={!byCategoryEnabled || undefined}
-            >
-              <RadioGroupItem
-                id="scope-by_category"
-                value="by_category"
-                disabled={!byCategoryEnabled}
-              />
+            <Field orientation="horizontal">
+              <RadioGroupItem id="scope-by_category" value="by_category" />
               <FieldContent>
                 <FieldLabel htmlFor="scope-by_category">
-                  {t('By category')}
-                  {!byCategoryEnabled && (
-                    <Badge variant="secondary">{t('Coming soon')}</Badge>
-                  )}
+                  {t('decisions.processBuilder.reviewScopeByCategory')}
                 </FieldLabel>
                 <FieldDescription>
-                  {t(
-                    'Each reviewer is assigned to one or more categories. Their queue shows only proposals in those categories.',
-                  )}
+                  {t('decisions.processBuilder.reviewScopeByCategoryHint')}
                 </FieldDescription>
               </FieldContent>
             </Field>
           </RadioGroup>
         </FieldSet>
 
-        {byCategoryEnabled && settings.scope === 'by_category' && (
+        {settings.scope === 'by_category' && (
           <>
             <hr className="border-border" />
             <CategoryReviewerCards instanceId={instanceId} />
@@ -199,13 +186,13 @@ export function ReviewSettingsContent({
 
       {/* Revisions */}
       <section className="space-y-4">
-        <Header3 className="text-label">{t('Revisions')}</Header3>
+        <Header3 className="text-label">
+          {t('decisions.processBuilder.revisionsLabel')}
+        </Header3>
         <div className="space-y-2">
           <ToggleRow
-            label={t('Reviewers can request revisions')}
-            description={t(
-              'Reviewers can ask authors to revise their proposal before scoring',
-            )}
+            label={t('decisions.processBuilder.revisionsToggleLabel')}
+            description={t('decisions.processBuilder.revisionsHint')}
           >
             <Switch
               checked={settings.reviewsAllowRevisions}

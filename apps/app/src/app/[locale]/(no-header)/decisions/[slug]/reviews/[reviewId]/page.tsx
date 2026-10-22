@@ -1,8 +1,9 @@
 import { createClient } from '@op/api/serverClient';
 import { CommonError } from '@op/common';
 import type { Metadata } from 'next';
-import { getTranslations } from 'next-intl/server';
 import { forbidden, notFound } from 'next/navigation';
+
+import { getTranslations } from '@/lib/i18n';
 
 import { ReviewLayout } from '@/components/decisions/Review/ReviewLayout';
 
@@ -28,9 +29,12 @@ export async function generateMetadata({
       return {};
     }
     const proposalTitle =
-      reviewedProposal.profile?.name || t('Untitled Proposal');
+      reviewedProposal.profile?.name ||
+      t('decisions.proposals.untitledProposal');
 
-    const reviewLabel = t('Review {title}', { title: proposalTitle });
+    const reviewLabel = t('decisions.reviewPageTitle', {
+      title: proposalTitle,
+    });
     const decisionName = decisionProfile?.name;
     return {
       title: decisionName ? `${reviewLabel} | ${decisionName}` : reviewLabel,

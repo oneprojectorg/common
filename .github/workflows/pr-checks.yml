@@ -15,9 +15,6 @@ jobs:
     # Internal PRs (and pushes) evaluate to an empty string and skip the gate.
     environment: ${{ github.event.pull_request.head.repo.fork == true && 'fork-ci' || '' }}
 
-    env:
-      TIPTAP_PRO_TOKEN: ${{ secrets.TIPTAP_PRO_TOKEN }}
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -35,6 +32,15 @@ jobs:
 
       - name: Install pnpm
         run: corepack prepare pnpm@latest --activate
+
+      # Runner config, not the checked-out .npmrc: these jobs check out the PR's
+      # head, so that file is PR-authored and must not be handed the token.
+      - name: Authenticate to the Tiptap Pro registry
+        env:
+          TIPTAP_PRO_TOKEN: ${{ secrets.TIPTAP_PRO_TOKEN }}
+        run: |
+          pnpm config set "@tiptap-pro:registry" "https://registry.tiptap.dev/"
+          pnpm config set "//registry.tiptap.dev/:_authToken" "$TIPTAP_PRO_TOKEN"
 
       - name: Get pnpm store directory
         id: pnpm-cache
@@ -56,8 +62,39 @@ jobs:
       - name: Check formatting
         run: pnpm format:check
 
+      # An English copy change must reach every translation. Diffed against
+      # the PR's base branch, which `fetch-depth: 0` leaves under `origin/`.
+      - name: Check translations follow English copy changes
+        env:
+          I18N_BASE: origin/${{ github.base_ref }}
+        run: pnpm i18n:check "$I18N_BASE"
+
       - name: Run TypeScript checks - App
         run: pnpm typecheck
+
+      - name: Test the CI scripts
+        run: pnpm test:scripts
+
+  # Only adr-numbering.yml may create NNNN-*.md. The check runs the base
+  # branch's copy of the script. No token here, so no fork gate.
+  adr-numbers:
+    name: ADR numbers
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Check no ADR is numbered by hand
+        env:
+          BASE: origin/${{ github.base_ref }}
+        run: git show "$BASE:scripts/number-adrs.sh" | bash -s -- --check "$BASE"
+
+      - name: Test the numbering script
+        run: scripts/number-adrs.test.sh
 
   design-system:
     name: Design system
@@ -66,9 +103,6 @@ jobs:
     # approve before `secrets.TIPTAP_PRO_TOKEN` is materialised on the runner.
     # Internal PRs (and pushes) evaluate to an empty string and skip the gate.
     environment: ${{ github.event.pull_request.head.repo.fork == true && 'fork-ci' || '' }}
-
-    env:
-      TIPTAP_PRO_TOKEN: ${{ secrets.TIPTAP_PRO_TOKEN }}
 
     steps:
       - name: Checkout repository
@@ -87,6 +121,15 @@ jobs:
 
       - name: Install pnpm
         run: corepack prepare pnpm@latest --activate
+
+      # Runner config, not the checked-out .npmrc: these jobs check out the PR's
+      # head, so that file is PR-authored and must not be handed the token.
+      - name: Authenticate to the Tiptap Pro registry
+        env:
+          TIPTAP_PRO_TOKEN: ${{ secrets.TIPTAP_PRO_TOKEN }}
+        run: |
+          pnpm config set "@tiptap-pro:registry" "https://registry.tiptap.dev/"
+          pnpm config set "//registry.tiptap.dev/:_authToken" "$TIPTAP_PRO_TOKEN"
 
       - name: Get pnpm store directory
         id: pnpm-cache

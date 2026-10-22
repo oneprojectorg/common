@@ -10,6 +10,7 @@ import {
   PopoverTrigger,
 } from '@op/sense/Popover';
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { useRef } from 'react';
 
 const meta: Meta<typeof Popover> = {
   title: 'Primitives/Popover',
@@ -78,3 +79,85 @@ export const Sides: Story = {
     </div>
   ),
 };
+
+// The list hangs off the whole field, not the button that opened it.
+export const Anchored: Story = {
+  render: () => <AnchoredExample />,
+};
+
+// `fixed` keeps the popup still under the sticky bar — scroll the box with it
+// open.
+export const PortalContainer: Story = {
+  render: () => <PortalContainerExample />,
+};
+
+function AnchoredExample() {
+  const field = useRef<HTMLDivElement>(null);
+
+  return (
+    <Popover>
+      <div
+        ref={field}
+        className="flex w-80 items-center gap-2 rounded-lg border border-input p-2"
+      >
+        <Input
+          aria-label="Invite by email"
+          placeholder="name@example.com"
+          className="h-8 border-0 shadow-none"
+        />
+        <PopoverTrigger render={<Button variant="outline" size="sm" />}>
+          Suggestions
+        </PopoverTrigger>
+      </div>
+      <PopoverContent
+        anchor={field}
+        align="start"
+        className="w-(--anchor-width) gap-2"
+      >
+        <PopoverHeader>
+          <PopoverTitle>Recent</PopoverTitle>
+          <PopoverDescription>
+            Anchored to the field, not to the button.
+          </PopoverDescription>
+        </PopoverHeader>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+function PortalContainerExample() {
+  const box = useRef<HTMLDivElement>(null);
+
+  return (
+    <div
+      ref={box}
+      className="relative h-64 w-80 overflow-y-auto rounded-lg border p-4"
+    >
+      <div className="sticky top-0 flex justify-end bg-background pb-2">
+        <Popover>
+          <PopoverTrigger render={<Button variant="outline" size="sm" />}>
+            Filter
+          </PopoverTrigger>
+          <PopoverContent
+            container={box}
+            positionMethod="fixed"
+            align="end"
+            className="w-56"
+          >
+            <PopoverHeader>
+              <PopoverTitle>Filter</PopoverTitle>
+              <PopoverDescription>
+                Rendered inside the scroll box.
+              </PopoverDescription>
+            </PopoverHeader>
+          </PopoverContent>
+        </Popover>
+      </div>
+      {Array.from({ length: 12 }, (_, index) => (
+        <p key={index} className="py-2 text-sm text-muted-foreground">
+          Row {index + 1}
+        </p>
+      ))}
+    </div>
+  );
+}

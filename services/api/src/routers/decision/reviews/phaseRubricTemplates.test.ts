@@ -4,13 +4,16 @@ import type {
   RubricTemplateSchema,
 } from '@op/common';
 import { OVERALL_RECOMMENDATION_KEY } from '@op/common/client';
+import {
+  createProposalReview,
+  createReviewAssignment,
+  TestReviewsDataManager,
+} from '@op/common/testing';
 import { ProposalReviewState } from '@op/db/schema';
 import { db } from '@op/db/test';
-import { createProposalReview, createReviewAssignment } from '@op/test';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
-import { TestReviewsDataManager } from '../../../test/helpers/TestReviewsDataManager';
 import {
   createIsolatedSession,
   createTestContextWithSession,
@@ -224,10 +227,10 @@ describe.concurrent('per-phase rubric templates', () => {
         phaseId: FEASIBILITY_PHASE,
       },
     );
-    expect(feasibilityList.assignments.map((a) => a.assignment.id)).toEqual([
+    expect(feasibilityList.items.map((a) => a.assignment.id)).toEqual([
       feasibilityScenario.assignment.id,
     ]);
-    expect(feasibilityList.assignments[0]?.rubricTemplate).toMatchObject({
+    expect(feasibilityList.items[0]?.rubricTemplate).toMatchObject({
       properties: { viability: { title: 'Viability' } },
     });
 
@@ -235,10 +238,10 @@ describe.concurrent('per-phase rubric templates', () => {
       processInstanceId: context.instance.instance.id,
       phaseId: COMMUNITY_PHASE,
     });
-    expect(communityList.assignments.map((a) => a.assignment.id)).toEqual([
+    expect(communityList.items.map((a) => a.assignment.id)).toEqual([
       communityAssignment.id,
     ]);
-    expect(communityList.assignments[0]?.rubricTemplate).toMatchObject({
+    expect(communityList.items[0]?.rubricTemplate).toMatchObject({
       properties: { impact: { title: 'Impact' } },
     });
   });
@@ -256,6 +259,9 @@ describe.concurrent('per-phase rubric templates', () => {
       title: 'Phase-scoped rubric aggregates',
       phaseId: FEASIBILITY_PHASE,
     });
+    // createReviewAssignment stamped feasibility as current; this test reads
+    // the feasibility reviews as a PAST phase, with community current.
+    await testData.setCurrentPhase(instanceId, COMMUNITY_PHASE);
     await createProposalReview({
       assignmentId: feasibilityScenario.assignment.id,
       state: ProposalReviewState.SUBMITTED,
@@ -383,6 +389,11 @@ describe.concurrent('per-phase rubric templates', () => {
       title: 'Submit against phase rubric',
       phaseId: FEASIBILITY_PHASE,
     });
+    // Reviews can only be written while the assignment's phase is current.
+    await testData.setCurrentPhase(
+      context.instance.instance.id,
+      FEASIBILITY_PHASE,
+    );
     const reviewerCaller = await createAuthenticatedCaller(
       scenario.reviewer.email,
     );

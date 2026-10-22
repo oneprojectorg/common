@@ -68,11 +68,11 @@ the same change. A component with no story is undocumented.
    `text-start`/`text-end`. Never `ml-`/`pl-`/`left-`/`text-left`. The app ships
    Arabic.
 6. **Wrap every user-facing string in `t()`** — `useTranslations` in client
-   components, `TranslatedText` in server components. This includes `aria-label`,
+   components, `await getTranslations()` in server components. This includes `aria-label`,
    `alt`, and any string passed to a sense component as copy (sense itself is
    i18n-agnostic and takes copy as props).
 7. **Do the four a11y things** listed below.
-8. **Verify**: `pnpm typecheck` then `pnpm format`.
+8. **Verify**: `pnpm typecheck` then `pnpm format:changes`.
 
 ### The four accessibility obligations
 
@@ -84,7 +84,9 @@ reimplement or work around any of it. These four are yours:
    a nameless button. Add `aria-label={t('Close')}`. This is the single most
    common defect in this codebase.
 2. **Label every input.** `Field` + `FieldLabel`, or `htmlFor` matching the
-   control's `id`. A placeholder is not a label.
+   control's `id`, where the design shows a label; `aria-label` where the field
+   stands in for its content (`EditableText`, a search box). A placeholder is
+   not a label.
 3. **Announce content that changes without a navigation.** Async results, live
    counts, validation errors, save states → `aria-live="polite"` on the region
    that updates.
@@ -93,11 +95,74 @@ reimplement or work around any of it. These four are yours:
    whole surface must be clickable, use `Button variant="bare"`, which keeps
    button semantics without imposing button styling.
 
+Check your work in the **A11y** panel of the component's story — it runs axe
+against whatever is on screen, live.
+
+### RTL: layout, and then direction
+
+Logical properties (`ms-`, `ps-`, `start-`, `text-start`) get the *layout*
+right. They do nothing for *text direction*, which is a separate bug with a
+separate fix.
+
+The app ships Arabic, and its content is user-authored, so any proposal title,
+decision name, profile name, or category can run counter to the page direction.
+Rendered unisolated, its neutral characters — punctuation, digits, a currency
+symbol, the line-clamp ellipsis — resolve against the *page's* direction and
+jump to the wrong end: `Hell yeah??` renders as `??Hell yeah`. The text is
+correct in the DOM; only the rendering is wrong, which is why this survives
+review so easily.
+
+**Default: wrap user content in `<bdi>`.** Title, name, category, preview —
+heading or inline, it doesn't matter. `<bdi>` carries its own `dir="auto"`, so
+the *run* resolves its direction from its own first strong character while the
+surrounding block keeps the page's, and with it the page's alignment.
+
+```jsx
+<h3 className="font-serif text-title">
+  <bdi>{proposal.title}</bdi>
+</h3>
+```
+
+**If the block truncates or clamps, `<bdi>` is not enough.** The ellipsis is
+placed at the *block's* direction end, so an RTL block clips the head off an
+English name — `TEST Map Vote` renders as `…p Vote`. Those blocks need the
+direction on the element, and then the alignment pinned back to the page:
+
+```jsx
+<div dir="auto" className="truncate ltr:text-left rtl:text-right">
+  {profile.name}
+</div>
+```
+
+This is the one place physical `text-left` / `text-right` is the point rather
+than a bug: `text-start` would follow the element's own resolved direction,
+which is exactly what we're overriding.
+
+Two things that look like the answer and aren't:
+
+- **`dir="auto"` on its own.** Left-aligns an English row in an Arabic list
+  while its Arabic neighbours right-align — two ragged edges. Fine for a
+  *control* whose value the user is editing (`Input`, `Textarea`,
+  `lib/textDirection.ts`), wrong for display text unless paired with the
+  alignment override above.
+- **`unicode-bidi: plaintext`.** Resolves per *line* and drags alignment along.
+  The `RichTextEditor` viewer wants exactly that — mixed-language paragraphs are
+  the point there — and display text doesn't.
+
+Inputs need nothing from you: `Input`, `Textarea` and the `RichTextEditor`
+viewer already handle their own text.
+
+Already handled inside sense — don't re-wrap: `Header1`–`Header4`,
+`GradientHeader`, `ProfileItem`, `PhaseCard`, `ProposalCard`, `TagGroup`,
+`Input`, `Textarea`, `RichTextEditor`. A raw `<h1>`/`<p>`/`<span>` you write
+yourself is handled by nothing.
+
 Also: anything that animates needs a `motion-reduce:` branch, and any
 directional icon needs `rtl:-scale-x-100`.
 
-Check your work in the **A11y** panel of the component's story — it runs axe
-against whatever is on screen, live.
+To check it, switch Storybook or the app to Arabic and look at a story whose
+text is English — the mismatch is the whole point, and it's invisible when both
+run the same way.
 
 ---
 
@@ -152,7 +217,7 @@ Then:
 7. **Record any patch.** If you had to modify registry output to make it
    compile, add it to the "Known upstream patches" list in `README.md` so the
    next regeneration reapplies it.
-8. `pnpm typecheck`, `pnpm w:sense build`, `pnpm format`.
+8. `pnpm typecheck`, `pnpm w:sense build`, `pnpm format:changes`.
 
 ---
 
@@ -180,7 +245,7 @@ Composites are ours and are never overwritten by a tool.
    `"./<PascalName>": "./src/components/<PascalName>/index.tsx"`.
 8. **JSDoc the component and its non-obvious props**, and write
    `index.stories.tsx` with `title: 'Composites/<PascalName>'`.
-9. `pnpm typecheck`, `pnpm w:sense build`, `pnpm format`.
+9. `pnpm typecheck`, `pnpm w:sense build`, `pnpm format:changes`.
 
 ---
 
@@ -234,14 +299,12 @@ Hard-won; each of these cost real debugging time.
 ```bash
 pnpm typecheck        # whole repo, not just this package
 pnpm w:sense build    # every story has to compile and bundle
-pnpm format
+pnpm format:changes
 ```
 
-`pnpm w:sense build` and `dev` call Storybook directly, so on a fresh clone run
-`pnpm build` once first — `@op/styles` resolves to a generated
-`dist/styles.css`, and without it you get
-`Failed to resolve entry for package "@op/styles"`. CI runs
-`turbo build --filter=@op/sense`, which compiles the dependency first.
+`@op/styles` resolves to a generated `dist/styles.css`, which its `postinstall`
+builds. If you see `Failed to resolve entry for package "@op/styles"`, run
+`pnpm -C packages/styles build`.
 
 Then open the component's story in `pnpm w:sense dev` and read the **A11y**
 panel. Axe runs against whatever is on screen, so a violation there is a real

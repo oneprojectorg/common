@@ -1,9 +1,11 @@
 'use client';
 
 import { ClientOnly } from '@/utils/ClientOnly';
+import { isSearchQueryLongEnough } from '@/utils/isSearchQueryLongEnough';
 import { trpc } from '@op/api/client';
 import { ProcessStatus } from '@op/api/encoders';
 import type { SortDir } from '@op/common';
+import { nextCursor } from '@op/common/client';
 import { useDebounce, useInfiniteScroll, useMediaQuery } from '@op/hooks';
 import { Alert, AlertTitle, AlertDescription } from '@op/sense/Alert';
 import { Button } from '@op/sense/Button';
@@ -51,7 +53,9 @@ export const ProfileUsersAccess = ({
   const orderBy = sortDescriptor.column;
   const dir: SortDir =
     sortDescriptor.direction === 'ascending' ? 'asc' : 'desc';
-  const searchFilter = debouncedQuery.length >= 2 ? debouncedQuery : undefined;
+  const searchFilter = isSearchQueryLongEnough(debouncedQuery)
+    ? debouncedQuery
+    : undefined;
 
   const {
     data,
@@ -70,7 +74,7 @@ export const ProfileUsersAccess = ({
       query: searchFilter,
     },
     {
-      getNextPageParam: (lastPage) => lastPage.next,
+      getNextPageParam: nextCursor,
     },
   );
 
@@ -90,7 +94,7 @@ export const ProfileUsersAccess = ({
   const isDraft = instance?.status === ProcessStatus.DRAFT;
 
   // Fetch pending invites to show alongside accepted members, filtered by search
-  const { data: invites } = trpc.profile.listProfileInvites.useQuery(
+  const { data: invitesData } = trpc.profile.listProfileInvites.useQuery(
     {
       profileId,
       query: searchFilter,
@@ -100,28 +104,27 @@ export const ProfileUsersAccess = ({
 
   const profileUsers = data?.pages.flatMap((page) => page.items) ?? [];
   const roles = rolesData?.items ?? [];
+  const invites = invitesData?.items ?? [];
 
   return (
     <ClientOnly fallback={<Skeleton className="h-64 w-full" />}>
       <div className="flex flex-col gap-10">
         <div className="flex items-center justify-between gap-4">
           <Header1 className="text-headline">
-            {t('Manage Participants')}
+            {t('decisions.manageParticipantsTitle')}
           </Header1>
           <Button onClick={() => setIsInviteModalOpen(true)}>
             <LuUserPlus className="size-4" />
-            {t('Invite')}
+            {t('decisions.inviteAction')}
           </Button>
         </div>
 
         {isDraft && (
           <Alert variant="warning">
             <LuCircleAlert />
-            <AlertTitle>{t('Invites will send when you launch')}</AlertTitle>
+            <AlertTitle>{t('decisions.invitesPendingLaunchHint')}</AlertTitle>
             <AlertDescription>
-              {t(
-                'This process is still in draft. Participants with "Manage Process" access will be invited immediately. Everyone else is invited when the process launches.',
-              )}
+              {t('decisions.draftInvitesAdminNotice')}
             </AlertDescription>
           </Alert>
         )}
@@ -148,7 +151,7 @@ export const ProfileUsersAccess = ({
             onRetry={() => void refetch()}
             roles={roles}
             isMobile={isMobile}
-            invites={invites ?? []}
+            invites={invites}
             processName={processName}
             isDraft={isDraft}
           />

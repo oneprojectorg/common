@@ -6,13 +6,13 @@ import {
 } from '@op/api/server';
 import { Skeleton } from '@op/sense/Skeleton';
 import type { Metadata } from 'next';
-import { getTranslations } from 'next-intl/server';
 import { Suspense, cache } from 'react';
+
+import { getTranslations } from '@/lib/i18n';
 
 import { DecisionHeader } from '@/components/decisions/DecisionHeader';
 import { DecisionStateRouter } from '@/components/decisions/DecisionStateRouter';
 import { DecisionTranslationProvider } from '@/components/decisions/DecisionTranslationContext';
-import { TranslationDetectionProvider } from '@/components/decisions/TranslationDetectionContext';
 
 // cache() dedupes the read across generateMetadata + page render (one request),
 // so the resolver and its "viewed" event fire once and the data hydrates.
@@ -61,7 +61,7 @@ export async function generateMetadata({
       getTranslations({ locale }),
       fetchLegacyInstance(id),
     ]);
-    return { title: instance?.name || t('Decision') };
+    return { title: instance?.name || t('decisions.decisionLabel') };
   } catch {
     return {};
   }
@@ -86,18 +86,16 @@ const DecisionInstancePageContent = async ({
         <Suspense fallback={<DecisionHeaderSkeleton />}>
           <div className="bg-muted text-gray-700">
             <DecisionTranslationProvider>
-              <TranslationDetectionProvider>
-                <DecisionHeader instanceId={instanceId} slug={slug} useLegacy />
-                <Suspense
-                  fallback={<Skeleton className="h-96" aria-hidden="true" />}
-                >
-                  <DecisionStateRouter
-                    instanceId={instanceId}
-                    slug={slug}
-                    useLegacy
-                  />
-                </Suspense>
-              </TranslationDetectionProvider>
+              <DecisionHeader instanceId={instanceId} slug={slug} useLegacy />
+              <Suspense
+                fallback={<Skeleton className="h-96" aria-hidden="true" />}
+              >
+                <DecisionStateRouter
+                  instanceId={instanceId}
+                  slug={slug}
+                  useLegacy
+                />
+              </Suspense>
             </DecisionTranslationProvider>
           </div>
         </Suspense>

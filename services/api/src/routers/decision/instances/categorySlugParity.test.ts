@@ -1,9 +1,9 @@
+import { TestDecisionsDataManager } from '@op/common/testing';
 import { db, inArray } from '@op/db/client';
 import { taxonomies, taxonomyTerms } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
-import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
 import {
   createIsolatedSession,
   createTestContextWithSession,
@@ -106,9 +106,9 @@ describe.concurrent('category slug parity between creation and lookup', () => {
     });
 
     // Lookup now slugifies the same way, so the "cafe" term is found.
-    expect(result.categories).toHaveLength(1);
-    expect(result.categories[0]!.name).toBe(accentedLabel);
-    expect(result.categories[0]!.termUri).toBe(`cafe-${suffix.toLowerCase()}`);
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0]!.name).toBe(accentedLabel);
+    expect(result.items[0]!.termUri).toBe(`cafe-${suffix.toLowerCase()}`);
   });
 
   it('resolves categories whose labels contain an ampersand', async ({
@@ -148,9 +148,9 @@ describe.concurrent('category slug parity between creation and lookup', () => {
       processInstanceId: instance.instance.id,
     });
 
-    expect(result.categories).toHaveLength(1);
-    expect(result.categories[0]!.name).toBe(ampersandLabel);
-    expect(result.categories[0]!.termUri).toBe(
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0]!.name).toBe(ampersandLabel);
+    expect(result.items[0]!.termUri).toBe(
       `arts-and-culture-${suffix.toLowerCase()}`,
     );
   });

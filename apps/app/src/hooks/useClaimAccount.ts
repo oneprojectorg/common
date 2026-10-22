@@ -1,13 +1,22 @@
 'use client';
 
 import { trpc } from '@op/api/client';
-import { isSafeRedirectPath } from '@op/common/client';
+import {
+  isSafeRedirectPath,
+  normalizePhoneNumber,
+  safeParsePhoneNumber,
+  toGoTruePhoneFormat,
+} from '@op/common/client';
 import { SUPPORTED_LOCALES } from '@op/common/locales';
+import { logger } from '@op/logging/client';
 import { createSBBrowserClient } from '@op/supabase/client';
 import { useCallback } from 'react';
 
 import { i18nConfig } from '@/lib/i18n/config';
 import type { TranslateFn } from '@/lib/i18n/routing';
+
+import type { PhoneVerifyResult } from './phoneAuth/types';
+import { toVerifyResult } from './phoneAuth/verifyResult';
 
 /**
  * Claim a full account by linking an email identity (via OTP) onto the
@@ -38,7 +47,7 @@ export type ClaimEmailResult =
       alreadySignedIn?: boolean;
     };
 
-export type ClaimVerifyResult = { ok: true } | { ok: false; message?: string };
+export type ClaimVerifyResult = PhoneVerifyResult;
 
 /** Shared flag→copy mapping for failed `requestEmailCode` results. */
 export function getClaimEmailErrorMessage(
@@ -46,24 +55,44 @@ export function getClaimEmailErrorMessage(
   t: TranslateFn,
 ): string {
   if (result.alreadySignedIn) {
-    return t("You're already signed in. Reload the page to continue.");
+    return t('onboarding.alreadySignedInError');
   }
-  if (result.code === 'email_exists') {
-    return t(
-      'An account with this email already exists. Try logging in instead.',
-    );
+  // One generic message for every failure, so the reply never confirms that
+  // an address already has an account. `email_exists` is expected, not an
+  // error worth logging; the others keep the code findable without logging
+  // the raw Supabase message, which can echo the email back.
+  if (result.code !== 'email_exists') {
+    logger.error('claim: requestEmailCode failed', { code: result.code });
   }
-  // The user sees localized generic copy; keep the raw cause findable.
-  console.error('claim: requestEmailCode failed', result);
-  return t("That didn't work");
+  return t('onboarding.emailCodeNotSentError');
+}
+
+/** The phone counterpart of {@link getClaimEmailErrorMessage}. */
+export function getClaimPhoneErrorMessage(
+  result: Extract<ClaimEmailResult, { ok: false }>,
+  t: TranslateFn,
+): string {
+  if (result.alreadySignedIn) {
+    return t('onboarding.alreadySignedInError');
+  }
+  // Same reasoning as getClaimEmailErrorMessage: a taken number gets the
+  // generic message, and the raw message can echo the number back.
+  if (result.code !== 'phone_exists') {
+    logger.error('claim: requestPhoneCode failed', { code: result.code });
+  }
+  return t('onboarding.phoneCodeNotSentError');
 }
 
 /**
- * After linking, route through promote onboarding (personal details + ToS),
- * returning to `dest` when done. `dest` must carry the locale prefix — the
- * locale-less /login route and the modal both pass a localized pathname.
+ * The promote-onboarding URL (personal details + ToS) that returns to `dest`
+ * when done. `dest` must carry the locale prefix — the locale-less /login
+ * route and the modal both pass a localized pathname.
+ *
+ * Exported separately from {@link goToOnboarding} so a redirect-based flow
+ * (Google OAuth) can hand this to the auth callback's own `redirect` param
+ * instead of navigating client-side.
  */
-export function goToOnboarding(dest: string | null) {
+export function getOnboardingPath(dest: string | null): string {
   const safeDest = dest && isSafeRedirectPath(dest) ? dest : '/';
   // A safe path isn't necessarily locale-prefixed (e.g. /info/tos), so
   // validate the first segment before building the /start URL from it.
@@ -71,7 +100,12 @@ export function goToOnboarding(dest: string | null) {
   const locale = SUPPORTED_LOCALES.some((l) => l === firstSegment)
     ? firstSegment
     : i18nConfig.defaultLocale;
-  window.location.href = `/${locale}/start?promote=1&redirect=${encodeURIComponent(safeDest)}`;
+  return `/${locale}/start?promote=1&redirect=${encodeURIComponent(safeDest)}`;
+}
+
+/** After linking, route through promote onboarding. See {@link getOnboardingPath}. */
+export function goToOnboarding(dest: string | null) {
+  window.location.href = getOnboardingPath(dest);
 }
 
 export function useClaimAccount() {
@@ -116,8 +150,8 @@ export function useClaimAccount() {
       }
 
       // updateUser fails with code 'email_exists' when the email already
-      // belongs to another account — mapped to friendly copy in
-      // getClaimEmailErrorMessage.
+      // belongs to another account — getClaimEmailErrorMessage answers it
+      // with the generic copy so the reply does not confirm the account.
       const { data, error } = await supabase.auth.updateUser({ email });
       if (error) {
         return { ok: false, code: error.code, message: error.message };
@@ -137,6 +171,88 @@ export function useClaimAccount() {
     [supabase, utils],
   );
 
+  /**
+   * The phone counterpart of {@link requestEmailCode}: attach `phone` to the
+   * visitor's anon user with `updateUser({ phone })`.
+   *
+   * This is a phone *change*, which is one of the two writes GoTrue's SMS
+   * autoconfirm applies without checking a code. With autoconfirm on, the
+   * number is confirmed on the spot and `needsOtp` is false — the visitor
+   * would claim an account against a number they need not hold. The
+   * `enable_confirmations = true` this repository ships keeps that off, so the
+   * `needsOtp: false` branch is reachable only where a deployment has turned
+   * autoconfirm back on.
+   */
+  const requestPhoneCode = useCallback(
+    async (
+      phone: string,
+      { mintAnonSession = false }: { mintAnonSession?: boolean } = {},
+    ): Promise<ClaimEmailResult> => {
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (sessionData.session && !sessionData.session.user.is_anonymous) {
+        return { ok: false, alreadySignedIn: true };
+      }
+      const parsed = safeParsePhoneNumber(normalizePhoneNumber(phone));
+      if (!parsed.success) {
+        return { ok: false, message: parsed.error.message };
+      }
+      if (!sessionData.session && mintAnonSession) {
+        const { error } = await supabase.auth.signInAnonymously();
+        if (error) {
+          return { ok: false, code: error.code, message: error.message };
+        }
+        void utils.account.getMyAccount.invalidate();
+      }
+
+      const { data, error } = await supabase.auth.updateUser({
+        phone: parsed.data,
+      });
+      if (error) {
+        return { ok: false, code: error.code, message: error.message };
+      }
+
+      // GoTrue stores the number without the leading `+`, so compare on digits
+      // rather than the E.164 string we sent, or an applied change would read
+      // as pending and dead-end on a code screen with no code sent.
+      const stored = data.user?.phone ?? '';
+      if (
+        stored === toGoTruePhoneFormat(parsed.data) &&
+        !data.user?.new_phone
+      ) {
+        await supabase.auth.refreshSession();
+        return { ok: true, needsOtp: false };
+      }
+      return { ok: true, needsOtp: true };
+    },
+    [supabase, utils],
+  );
+
+  /** Confirm the OTP — the claim is a phone *change* on the anon user. */
+  const verifyPhoneCode = useCallback(
+    async ({
+      phone,
+      token,
+    }: {
+      phone: string;
+      token: string;
+    }): Promise<ClaimVerifyResult> => {
+      const answer = await supabase.auth.verifyOtp({
+        phone: normalizePhoneNumber(phone),
+        token,
+        type: 'phone_change',
+      });
+      const result = toVerifyResult(answer);
+      if (!result.ok) {
+        logger.error('claim: verifyPhoneCode failed', {
+          code: answer.error?.code,
+          status: answer.error?.status,
+        });
+      }
+      return result;
+    },
+    [supabase],
+  );
+
   /** Confirm the OTP — the claim is an email *change* on the anon user. */
   const verifyEmailCode = useCallback(
     async ({
@@ -146,19 +262,27 @@ export function useClaimAccount() {
       email: string;
       token: string;
     }): Promise<ClaimVerifyResult> => {
-      const { data, error } = await supabase.auth.verifyOtp({
+      const answer = await supabase.auth.verifyOtp({
         email,
         token,
         type: 'email_change',
       });
-
-      if (data.user && data.session && data.user.role === 'authenticated') {
-        return { ok: true };
+      const result = toVerifyResult(answer);
+      if (!result.ok) {
+        logger.error('claim: verifyEmailCode failed', {
+          code: answer.error?.code,
+          status: answer.error?.status,
+        });
       }
-      return { ok: false, message: error?.message };
+      return result;
     },
     [supabase],
   );
 
-  return { requestEmailCode, verifyEmailCode };
+  return {
+    requestEmailCode,
+    verifyEmailCode,
+    requestPhoneCode,
+    verifyPhoneCode,
+  };
 }

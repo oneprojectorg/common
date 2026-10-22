@@ -1,13 +1,16 @@
+import type { RubricTemplateSchema } from '@op/common';
+import {
+  createRevisionRequest,
+  TestReviewsDataManager,
+} from '@op/common/testing';
 import {
   ProposalReviewAssignmentStatus,
   ProposalReviewRequestState,
 } from '@op/db/schema';
 import { db } from '@op/db/test';
-import { createRevisionRequest } from '@op/test';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
-import { TestReviewsDataManager } from '../../../test/helpers/TestReviewsDataManager';
 import {
   accessTierGatingCell,
   describeDecisionAccessTierGating,
@@ -20,6 +23,26 @@ import {
 import { createCallerFactory } from '../../../trpcFactory';
 
 const createCaller = createCallerFactory(appRouter);
+
+const rubricTemplate: RubricTemplateSchema = {
+  type: 'object',
+  'x-field-order': ['impact'],
+  properties: {
+    impact: {
+      type: 'integer',
+      title: 'Impact',
+      'x-format': 'dropdown',
+      minimum: 1,
+      maximum: 5,
+      oneOf: [
+        { const: 1, title: 'Low' },
+        { const: 2, title: 'Medium' },
+        { const: 3, title: 'High' },
+      ],
+    },
+  },
+  required: ['impact'],
+};
 
 async function createAuthenticatedCaller(email: string) {
   const { session } = await createIsolatedSession(email);
@@ -60,6 +83,38 @@ describe.concurrent('requestRevision', () => {
     );
   });
 
+  it('rejects a revision request once the instance advances past the assignment phase', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const created = await testData.createReviewAssignment({
+      title: 'Phase Moved On',
+      status: ProposalReviewAssignmentStatus.IN_PROGRESS,
+    });
+
+    await testData.setCurrentPhase(
+      created.context.instance.instance.id,
+      'voting',
+    );
+
+    const reviewerCaller = await createAuthenticatedCaller(
+      created.reviewer.email,
+    );
+
+    await expect(
+      reviewerCaller.decision.requestRevision({
+        assignmentId: created.assignment.id,
+        requestComment: 'Too late for revisions',
+      }),
+    ).rejects.toThrow('the review phase has ended');
+
+    const assignment = await db.query.proposalReviewAssignments.findFirst({
+      where: { id: created.assignment.id },
+    });
+    expect(assignment?.status).toBe(ProposalReviewAssignmentStatus.IN_PROGRESS);
+  });
+
   it('rejects when a revision is already pending', async ({
     task,
     onTestFinished,
@@ -67,7 +122,7 @@ describe.concurrent('requestRevision', () => {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
     const created = await testData.createReviewAssignment({
       title: 'Already Awaiting',
-      status: ProposalReviewAssignmentStatus.AWAITING_AUTHOR_REVISION,
+      status: ProposalReviewAssignmentStatus.IN_PROGRESS,
     });
 
     await createRevisionRequest({
@@ -89,28 +144,37 @@ describe.concurrent('requestRevision', () => {
     });
   });
 
-  it('rejects when the assignment is already completed', async ({
+  it('accepts a revision request on a completed assignment and leaves it completed', async ({
     task,
     onTestFinished,
   }) => {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
     const created = await testData.createReviewAssignment({
-      title: 'Already Done',
-      status: ProposalReviewAssignmentStatus.COMPLETED,
+      title: 'Reviewed Then Revised',
+      status: ProposalReviewAssignmentStatus.IN_PROGRESS,
     });
+    await testData.setRubricTemplate(created.context, rubricTemplate);
 
     const reviewerCaller = await createAuthenticatedCaller(
       created.reviewer.email,
     );
 
-    await expect(
-      reviewerCaller.decision.requestRevision({
-        assignmentId: created.assignment.id,
-        requestComment: 'Too late',
-      }),
-    ).rejects.toMatchObject({
-      cause: { name: 'ValidationError' },
+    await reviewerCaller.decision.submitReview({
+      assignmentId: created.assignment.id,
+      reviewData: { answers: { impact: 3 }, rationales: {} },
     });
+
+    const result = await reviewerCaller.decision.requestRevision({
+      assignmentId: created.assignment.id,
+      requestComment: 'One more thing, please.',
+    });
+
+    expect(result.state).toBe(ProposalReviewRequestState.REQUESTED);
+
+    const assignment = await db.query.proposalReviewAssignments.findFirst({
+      where: { id: created.assignment.id },
+    });
+    expect(assignment?.status).toBe(ProposalReviewAssignmentStatus.COMPLETED);
   });
 
   it('allows a new revision request after cancelling a previous one', async ({

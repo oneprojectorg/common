@@ -9,6 +9,7 @@ import {
   DialogTrigger,
 } from '@op/sense/Dialog';
 import { RichTextViewer } from '@op/sense/RichTextEditor';
+import { viewerProseStyles } from '@op/sense/RichTextEditor/viewerStyles';
 import { Spinner } from '@op/sense/Spinner';
 import he from 'he';
 import { useParams } from 'next/navigation';
@@ -31,7 +32,7 @@ export const DecisionActionBar = ({
   markup?: boolean;
   showSubmitButton?: boolean;
 }) => {
-  const t = useTranslations();
+  const t = useTranslations('decisions');
   const { slug } = useParams<{ slug: string }>();
 
   const {
@@ -47,26 +48,26 @@ export const DecisionActionBar = ({
 
   return (
     <div className="flex w-full justify-center">
-      <div className="flex w-full max-w-48 flex-col items-center justify-center gap-4 sm:flex-row">
+      <div className="flex w-full flex-col items-center justify-center gap-4 sm:flex-row">
         {description ? (
           <Dialog>
             <DialogTrigger
               render={
-                <Button variant="outline" className="w-full">
-                  {label ?? t('Learn more')}
+                <Button variant="outline" className="w-full sm:w-auto">
+                  {label ?? t('learnMoreAction')}
                 </Button>
               }
             />
 
             <DialogContent className="sm:max-w-3xl">
               <DialogHeader>
-                <DialogTitle>{label ?? t('About the process')}</DialogTitle>
+                <DialogTitle>{label ?? t('aboutProcessAction')}</DialogTitle>
               </DialogHeader>
               <div className="max-h-[70vh] overflow-y-auto px-6 py-4">
                 {markup && description ? (
                   <div
                     dir="auto"
-                    className="prose max-w-none prose-gray"
+                    className={viewerProseStyles}
                     dangerouslySetInnerHTML={{
                       __html: he.decode(description),
                     }}
@@ -75,7 +76,6 @@ export const DecisionActionBar = ({
                   <RichTextViewer
                     extensions={getViewerExtensions()}
                     content={description}
-                    editorClassName="prose prose-base max-w-none [&_p]:text-base"
                   />
                 )}
               </div>
@@ -85,12 +85,12 @@ export const DecisionActionBar = ({
 
         {showSubmitButton && (
           <Button
-            className="w-full"
+            className="w-full sm:w-auto"
             disabled={!isReady || isCreating}
             onClick={handleCreateProposal}
           >
             {isCreating ? <Spinner /> : null}
-            {t('Start a proposal')}
+            {t('startProposalAction')}
           </Button>
         )}
       </div>

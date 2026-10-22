@@ -3,19 +3,22 @@
 import { useUser } from '@/utils/UserProvider';
 import { userCanInteract } from '@/utils/userCanInteract';
 import { trpc } from '@op/api/client';
-import type { Proposal } from '@op/common/client';
+import { PAGE_LIMIT, type Proposal } from '@op/common/client';
+import { logger } from '@op/logging/client';
+import { Button } from '@op/sense/Button';
 import {
   Empty,
   EmptyContent,
   EmptyDescription,
   EmptyHeader,
   EmptyMedia,
+  EmptyTitle,
 } from '@op/sense/Empty';
 import { Header3 } from '@op/sense/Header';
-import { useCallback, useRef } from 'react';
-import { LuUserRoundPlus } from 'react-icons/lu';
+import { type ReactNode, useCallback, useEffect, useRef } from 'react';
+import { LuTriangleAlert, LuUserRoundPlus } from 'react-icons/lu';
 
-import { useTranslations } from '@/lib/i18n';
+import { Link, useTranslations } from '@/lib/i18n';
 
 import { PostFeed, PostItem, usePostFeedActions } from '../PostFeed';
 import { PostUpdate } from '../PostUpdate';
@@ -30,23 +33,37 @@ export const PROPOSAL_COMMENTS_ANCHOR_ID = 'proposal-comments';
 
 export function ProposalComments({
   proposal,
+  decisionRoot,
   readOnly: readOnlyProp = false,
 }: {
   proposal: Proposal;
+  /** Route prefix for sibling proposals, e.g. `/decisions/participatory-budget`. */
+  decisionRoot: string;
   readOnly?: boolean;
 }) {
   const t = useTranslations();
   const { user } = useUser();
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const { data: commentsData, isLoading: commentsLoading } =
-    trpc.posts.listProfilePosts.useQuery({
-      profileId: proposal.profileId,
-      limit: 50,
-    });
+  // Also carries the comments of every proposal merged into this one.
+  const {
+    data: commentsData,
+    isLoading: commentsLoading,
+    error: commentsError,
+    refetch: refetchComments,
+  } = trpc.posts.listProposalComments.useQuery({
+    profileId: proposal.profileId,
+    // TODO(followup): paginate. `next` is discarded and there is no load-more,
+    // so anything past the first page is unreachable — and the window now
+    // spans the target plus every proposal merged into it, so the target's own
+    // older comments can be pushed out by carried-over ones with no
+    // indication. The header count below reads from the loaded page, so it
+    // reports 50 rather than the true total once truncated.
+    limit: PAGE_LIMIT.lg,
+  });
 
   const comments = commentsData?.items ?? [];
-  const { handleReactionClick } = usePostFeedActions();
+  const { handleLikeClick } = usePostFeedActions();
 
   // Mirror the server-side comment gate (`assertPostWriteAccess` →
   // SUBMIT_PROPOSALS on the decision profile). Showing the post box to users
@@ -74,9 +91,9 @@ export function ProposalComments({
 
   return (
     <div id={PROPOSAL_COMMENTS_ANCHOR_ID} ref={containerRef}>
-      <div className="space-y-4 border-t pt-8">
+      <div className="space-y-4 border-t pt-6 sm:pt-10">
         <Header3 className="text-label">
-          {t('Comments')} ({comments.length})
+          {t('decisions.proposals.commentsHeading')} ({comments.length})
         </Header3>
 
         {!readOnly && (
@@ -99,7 +116,7 @@ export function ProposalComments({
                 <LuUserRoundPlus />
               </EmptyMedia>
               <EmptyDescription id="join-to-comment-prompt">
-                {t('Join Common to comment on this proposal.')}
+                {t('decisions.proposals.commentsJoinPrompt')}
               </EmptyDescription>
             </EmptyHeader>
             <EmptyContent>
@@ -112,21 +129,36 @@ export function ProposalComments({
           <div
             className="py-8 text-center text-base text-muted-foreground"
             role="status"
-            aria-label={t('Loading comments')}
           >
-            {t('Loading comments...')}
+            {t('decisions.proposals.commentsLoading')}
           </div>
+        ) : commentsError ? (
+          <CommentsUnavailable
+            error={commentsError}
+            onRetry={() => void refetchComments()}
+          />
         ) : comments.length > 0 ? (
-          <div role="feed" aria-label={`${comments.length} comments`}>
+          <div
+            role="feed"
+            aria-label={t('commentCount', { count: comments.length })}
+          >
             <PostFeed>
-              {comments.map((comment, i) => (
-                <div key={comment.id}>
+              {comments.map(({ post, originProposal }, i) => (
+                <div key={post.id}>
                   <PostItem
-                    post={comment}
+                    post={post}
                     organization={null}
                     user={user}
                     withLinks={true}
-                    onReactionClick={handleReactionClick}
+                    onLikeClick={handleLikeClick}
+                    contentFooter={
+                      originProposal ? (
+                        <MergedCommentOrigin
+                          origin={originProposal}
+                          decisionRoot={decisionRoot}
+                        />
+                      ) : undefined
+                    }
                     className="sm:px-0"
                   />
                   {comments.length !== i + 1 && <hr className="my-4" />}
@@ -138,14 +170,85 @@ export function ProposalComments({
           <div
             className="py-8 text-center text-base text-muted-foreground"
             role="status"
-            aria-label={t('No comments')}
           >
             {readOnly
-              ? t('No comments yet.')
-              : t('No comments yet. Be the first to comment!')}
+              ? t('decisions.proposals.commentsEmpty')
+              : t('noCommentsYet')}
           </div>
         )}
       </div>
     </div>
+  );
+}
+
+/**
+ * Shown when the comments read fails. Without it the failure falls through to
+ * the empty state, which tells the user to be the first to comment on a
+ * proposal that may already have comments.
+ */
+function CommentsUnavailable({
+  error,
+  onRetry,
+}: {
+  error: unknown;
+  onRetry: () => void;
+}) {
+  const t = useTranslations();
+
+  useEffect(() => {
+    logger.error('Could not load proposal comments', { error });
+  }, [error]);
+
+  return (
+    <Empty>
+      <EmptyHeader>
+        <EmptyMedia variant="icon">
+          <LuTriangleAlert className="size-6" />
+        </EmptyMedia>
+        <EmptyTitle>{t('decisions.proposals.commentsLoadError')}</EmptyTitle>
+      </EmptyHeader>
+      <EmptyContent>
+        <Button variant="outline" size="sm" onClick={onRetry}>
+          {t('Try again')}
+        </Button>
+      </EmptyContent>
+    </Empty>
+  );
+}
+
+/**
+ * Marks a comment that was written on a proposal merged into this one. Without
+ * it the comment reads as a reply to a proposal its author never saw.
+ */
+function MergedCommentOrigin({
+  origin,
+  decisionRoot,
+}: {
+  origin: { profileId: string; name: string };
+  decisionRoot: string;
+}) {
+  const t = useTranslations();
+
+  return (
+    <p className="text-base text-muted-foreground">
+      {t.rich('decisions.proposals.commentOriginNotice', {
+        name: origin.name,
+        proposal: (chunks: ReactNode) => (
+          // New tab on purpose: this component also mounts inside the
+          // reviewer's split-pane review form, which saves solely via "Update
+          // review" and has no beforeunload guard — navigating away in place
+          // would silently drop an in-progress review.
+          <Link
+            href={`${decisionRoot}/proposal/${origin.profileId}`}
+            className="text-primary underline"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {chunks}
+            <span className="sr-only"> {t('shell.newTabHint')}</span>
+          </Link>
+        ),
+      })}
+    </p>
   );
 }

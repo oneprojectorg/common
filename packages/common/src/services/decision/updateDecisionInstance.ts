@@ -15,12 +15,14 @@ import { permission } from 'access-zones';
 import { CommonError, NotFoundError, UnauthorizedError } from '../../utils';
 import { assertProfileAccess, assertProfileAdmin } from '../assert';
 import { generateUniqueProfileSlug } from '../profile/utils';
+import { assertVoterCostField } from './assertVoterCostField';
 import { createTransitionsForProcess } from './createTransitionsForProcess';
 import { ensureProposalTaxonomyTerms } from './proposalTaxonomy';
 import { schemaValidator } from './schemaValidator';
 import type {
   DecisionInstanceData,
   InstanceOverview,
+  InstanceOverviewUpdate,
   PhaseOverride,
 } from './schemas/instanceData';
 import type { ProcessConfig } from './schemas/types';
@@ -51,7 +53,7 @@ export const updateDecisionInstance = async ({
   /** Process-level configuration (e.g., hideBudget) */
   config?: ProcessConfig;
   /** Public-facing overview content (headline, short description, rich text body) */
-  overview?: InstanceOverview;
+  overview?: InstanceOverviewUpdate;
   /** Optional phase overrides (dates and settings) */
   phases?: PhaseOverride[];
   /** Proposal template (JSON Schema) */
@@ -182,10 +184,17 @@ export const updateDecisionInstance = async ({
 
     // Apply overview updates (merge with existing overview)
     if (hasOverviewUpdate) {
-      updatedInstanceData.overview = {
+      const { headline, ...overviewPatch } = overview ?? {};
+      const mergedOverview: InstanceOverview = {
         ...existingInstanceData.overview,
-        ...overview,
+        ...overviewPatch,
+        ...(typeof headline === 'string' && { headline }),
       };
+      // `null` clears the headline; so does a legacy `''` on the stored row.
+      if (headline === null || isBlankHeadline(mergedOverview.headline)) {
+        delete mergedOverview.headline;
+      }
+      updatedInstanceData.overview = mergedOverview;
     }
 
     // Apply phase updates — replaces the full phases array to accommodate
@@ -220,7 +229,9 @@ export const updateDecisionInstance = async ({
           ...(phase.description !== undefined && {
             description: phase.description,
           }),
-          ...(phase.headline !== undefined && { headline: phase.headline }),
+          ...(typeof phase.headline === 'string' && {
+            headline: phase.headline,
+          }),
           ...(phase.additionalInfo !== undefined && {
             additionalInfo: phase.additionalInfo,
           }),
@@ -235,6 +246,11 @@ export const updateDecisionInstance = async ({
         // `null` clears the phase rubric (falls back to the instance-level template).
         if (phase.rubricTemplate === null) {
           delete merged.rubricTemplate;
+        }
+        // Same for the headline — `null` clears it, and a legacy `''` on the
+        // stored phase clears with it.
+        if (phase.headline === null || isBlankHeadline(merged.headline)) {
+          delete merged.headline;
         }
         return merged;
       });
@@ -256,6 +272,13 @@ export const updateDecisionInstance = async ({
       } as DecisionInstanceData;
     }
 
+    if (hasPhaseUpdates || hasProposalTemplateUpdate) {
+      await assertVoterCostField({
+        instanceData: updatedInstanceData,
+        processId: existingInstance.processId,
+      });
+    }
+
     updateData.instanceData = updatedInstanceData;
   }
 
@@ -273,7 +296,7 @@ export const updateDecisionInstance = async ({
       throw new CommonError('Failed to fetch decision profile');
     }
 
-    return { profile, phaseEndDateChanges };
+    return { profile, phaseEndDateChanges, didPublish: false };
   }
 
   const isBeingPublished =
@@ -406,5 +429,13 @@ export const updateDecisionInstance = async ({
     waitUntil(trackAdminSetRubric(user.id, instanceId));
   }
 
-  return { profile, phaseEndDateChanges };
+  return { profile, phaseEndDateChanges, didPublish: isBeingPublished };
 };
+
+/**
+ * True for a stored headline of `''` (or whitespace only) — the shape rows
+ * written before the API rejected an empty title still hold. Dropping it on the
+ * next write keeps a blank title from rendering where the default copy belongs.
+ */
+const isBlankHeadline = (headline: string | undefined) =>
+  headline?.trim() === '';

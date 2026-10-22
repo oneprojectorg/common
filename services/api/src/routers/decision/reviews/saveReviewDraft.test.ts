@@ -1,5 +1,11 @@
 import type { RubricTemplateSchema } from '@op/common';
 import {
+  closeOpenProposalHistory,
+  getCurrentProposalHistoryId,
+  reviseProposal,
+  TestReviewsDataManager,
+} from '@op/common/testing';
+import {
   ProposalReviewAssignmentStatus,
   ProposalReviewState,
 } from '@op/db/schema';
@@ -7,7 +13,6 @@ import { db } from '@op/db/test';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
-import { TestReviewsDataManager } from '../../../test/helpers/TestReviewsDataManager';
 import {
   accessTierGatingCell,
   describeDecisionAccessTierGating,
@@ -46,14 +51,23 @@ async function createAuthenticatedCaller(email: string) {
   return createCaller(await createTestContextWithSession(session));
 }
 
+/** Creates an assignment (in its current phase) with the rubric set. */
+async function createAssignmentWithRubric(
+  testData: TestReviewsDataManager,
+  opts: { status?: ProposalReviewAssignmentStatus } = {},
+) {
+  const created = await testData.createReviewAssignment(opts);
+  await testData.setRubricTemplate(created.context, rubricTemplate);
+  return created;
+}
+
 describe.concurrent('saveReviewDraft', () => {
   it('creates a draft and transitions the assignment to IN_PROGRESS', async ({
     task,
     onTestFinished,
   }) => {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
-    const created = await testData.createReviewAssignment();
-    await testData.setRubricTemplate(created.context, rubricTemplate);
+    const created = await createAssignmentWithRubric(testData);
 
     const reviewerCaller = await createAuthenticatedCaller(
       created.reviewer.email,
@@ -86,13 +100,63 @@ describe.concurrent('saveReviewDraft', () => {
     expect(assignment?.reviews[0]?.submittedAt).toBeNull();
   });
 
+  it("anchors the draft to the proposal's current version on every save", async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const created = await createAssignmentWithRubric(testData);
+
+    const reviewerCaller = await createAuthenticatedCaller(
+      created.reviewer.email,
+    );
+
+    const assignmentBefore = await db.query.proposalReviewAssignments.findFirst(
+      { where: { id: created.assignment.id } },
+    );
+
+    await reviewerCaller.decision.saveReviewDraft({
+      assignmentId: created.assignment.id,
+      reviewData: { answers: { impact: 2 }, rationales: {} },
+    });
+
+    const firstSave = await db.query.proposalReviews.findFirst({
+      where: { assignmentId: created.assignment.id },
+    });
+    expect(firstSave?.reviewedProposalHistoryId).toBe(
+      await getCurrentProposalHistoryId({ proposalId: created.proposal.id }),
+    );
+
+    const revisedHistoryId = await reviseProposal({
+      proposalId: created.proposal.id,
+      proposalData: { title: 'Community Garden Expansion (revised)' },
+    });
+    expect(firstSave?.reviewedProposalHistoryId).not.toBe(revisedHistoryId);
+
+    await reviewerCaller.decision.saveReviewDraft({
+      assignmentId: created.assignment.id,
+      reviewData: { answers: { impact: 3 }, rationales: {} },
+    });
+
+    const secondSave = await db.query.proposalReviews.findFirst({
+      where: { assignmentId: created.assignment.id },
+    });
+    expect(secondSave?.reviewedProposalHistoryId).toBe(revisedHistoryId);
+
+    const assignmentAfter = await db.query.proposalReviewAssignments.findFirst({
+      where: { id: created.assignment.id },
+    });
+    expect(assignmentAfter?.assignedProposalHistoryId).toBe(
+      assignmentBefore?.assignedProposalHistoryId,
+    );
+  });
+
   it('upserts a single draft row per assignment — last write wins', async ({
     task,
     onTestFinished,
   }) => {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
-    const created = await testData.createReviewAssignment();
-    await testData.setRubricTemplate(created.context, rubricTemplate);
+    const created = await createAssignmentWithRubric(testData);
 
     const reviewerCaller = await createAuthenticatedCaller(
       created.reviewer.email,
@@ -134,8 +198,7 @@ describe.concurrent('saveReviewDraft', () => {
     onTestFinished,
   }) => {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
-    const created = await testData.createReviewAssignment();
-    await testData.setRubricTemplate(created.context, rubricTemplate);
+    const created = await createAssignmentWithRubric(testData);
 
     const reviewerCaller = await createAuthenticatedCaller(
       created.reviewer.email,
@@ -176,8 +239,7 @@ describe.concurrent('saveReviewDraft', () => {
     onTestFinished,
   }) => {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
-    const created = await testData.createReviewAssignment();
-    await testData.setRubricTemplate(created.context, rubricTemplate);
+    const created = await createAssignmentWithRubric(testData);
     const otherReviewer = await testData.createReviewer(created.context);
 
     const otherCaller = await createAuthenticatedCaller(otherReviewer.email);
@@ -200,8 +262,7 @@ describe.concurrent('saveReviewDraft', () => {
     onTestFinished,
   }) => {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
-    const created = await testData.createReviewAssignment();
-    await testData.setRubricTemplate(created.context, rubricTemplate);
+    const created = await createAssignmentWithRubric(testData);
 
     const reviewerCaller = await createAuthenticatedCaller(
       created.reviewer.email,
@@ -226,8 +287,7 @@ describe.concurrent('saveReviewDraft', () => {
     onTestFinished,
   }) => {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
-    const created = await testData.createReviewAssignment();
-    await testData.setRubricTemplate(created.context, rubricTemplate);
+    const created = await createAssignmentWithRubric(testData);
 
     const reviewerCaller = await createAuthenticatedCaller(
       created.reviewer.email,
@@ -264,15 +324,51 @@ describe.concurrent('saveReviewDraft', () => {
     expect(review?.overallComment).toBeNull();
   });
 
+  it('rejects a draft save once the instance advances past the assignment phase', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const created = await createAssignmentWithRubric(testData);
+
+    // Assignments survive a phase advance, so the leftover assignment still
+    // loads — but a first draft must not be written against a closed phase.
+    await testData.setCurrentPhase(
+      created.context.instance.instance.id,
+      'voting',
+    );
+
+    const reviewerCaller = await createAuthenticatedCaller(
+      created.reviewer.email,
+    );
+
+    await expect(
+      reviewerCaller.decision.saveReviewDraft({
+        assignmentId: created.assignment.id,
+        reviewData: { answers: { impact: 2 }, rationales: {} },
+      }),
+    ).rejects.toThrow('the review phase has ended');
+
+    const review = await db.query.proposalReviews.findFirst({
+      where: { assignmentId: created.assignment.id },
+    });
+    expect(review).toBeUndefined();
+
+    // The status stays PENDING: no draft, so no "review started" transition.
+    const assignment = await db.query.proposalReviewAssignments.findFirst({
+      where: { id: created.assignment.id },
+    });
+    expect(assignment?.status).toBe(ProposalReviewAssignmentStatus.PENDING);
+  });
+
   it('does not downgrade non-PENDING assignment statuses', async ({
     task,
     onTestFinished,
   }) => {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
-    const created = await testData.createReviewAssignment({
+    const created = await createAssignmentWithRubric(testData, {
       status: ProposalReviewAssignmentStatus.READY_FOR_RE_REVIEW,
     });
-    await testData.setRubricTemplate(created.context, rubricTemplate);
 
     const reviewerCaller = await createAuthenticatedCaller(
       created.reviewer.email,
@@ -294,6 +390,32 @@ describe.concurrent('saveReviewDraft', () => {
     expect(assignment?.status).toBe(
       ProposalReviewAssignmentStatus.READY_FOR_RE_REVIEW,
     );
+  });
+
+  it('saves the draft with no version anchor when the proposal has no current version', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const created = await createAssignmentWithRubric(testData);
+
+    await closeOpenProposalHistory({ proposalId: created.proposal.id });
+
+    const reviewerCaller = await createAuthenticatedCaller(
+      created.reviewer.email,
+    );
+
+    const result = await reviewerCaller.decision.saveReviewDraft({
+      assignmentId: created.assignment.id,
+      reviewData: { answers: { impact: 2 }, rationales: {} },
+    });
+
+    expect(result.state).toBe(ProposalReviewState.DRAFT);
+
+    const review = await db.query.proposalReviews.findFirst({
+      where: { assignmentId: created.assignment.id },
+    });
+    expect(review?.reviewedProposalHistoryId).toBeNull();
   });
 });
 

@@ -5,10 +5,12 @@ import {
   advancePhase,
   createDecisionRole,
   generateReviewAssignments,
+  parseProposalData,
   reconcileReviewAssignments,
   removeCategoryReviewer,
   updateProposal,
 } from '@op/common';
+import { TestDecisionsDataManager } from '@op/common/testing';
 import { and, db, eq, inArray } from '@op/db/client';
 import {
   ProcessStatus,
@@ -23,8 +25,6 @@ import {
 } from '@op/db/schema';
 import { randomUUID } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
-
-import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
 
 /** The schema shape createDecisionSetup accepts (encoder-inferred, not exported). */
 type TestProcessSchema = NonNullable<
@@ -740,7 +740,11 @@ describe.concurrent('reconcileReviewAssignments — recategorization', () => {
     await updateProposal({
       proposalId: proposal.id,
       data: {
-        proposalData: { title: 'Edited proposal', category: [termB!.label] },
+        proposalData: {
+          ...parseProposalData(proposal.proposalData),
+          title: 'Edited proposal',
+          category: [termB!.label],
+        },
       },
       user: setup.user,
     });

@@ -8,14 +8,14 @@ import {
 import { checkPermission, permission } from 'access-zones';
 import { type SQL, and, desc, eq, inArray, isNull, sql } from 'drizzle-orm';
 
-import { UnauthorizedError } from '../../utils';
+import { PAGE_LIMIT, UnauthorizedError } from '../../utils';
 import {
   assertProfileTypeAccess,
   getCurrentProfileId,
   getProfileAccessRolesWithOrgFallback,
 } from '../access';
 import {
-  getItemsWithReactionsAndComments,
+  getItemsWithLikesAndComments,
   postModerationFilter,
 } from './listPosts';
 
@@ -33,7 +33,7 @@ export const getPosts = async (input: GetPostsInput) => {
   const {
     profileId,
     parentPostId,
-    limit = 20,
+    limit = PAGE_LIMIT.md,
     offset = 0,
     includeChildren = false,
     authUserId,
@@ -221,10 +221,10 @@ export const getPosts = async (input: GetPostsInput) => {
         })
       ).map((post) => ({ post }));
 
-  const itemsWithReactionsAndComments = await getItemsWithReactionsAndComments({
+  const itemsWithLikesAndComments = await getItemsWithLikesAndComments({
     items: postsData.map((item) => ({ post: item.post })),
     profileId: actorProfileId,
   });
 
-  return itemsWithReactionsAndComments.map((item) => item.post);
+  return itemsWithLikesAndComments.map((item) => item.post);
 };

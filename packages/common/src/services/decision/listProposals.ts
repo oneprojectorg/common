@@ -8,16 +8,30 @@ import {
 import { checkPermission, permission } from 'access-zones';
 import { count as countFn } from 'drizzle-orm';
 
-import { decodeCursor, encodeCursor, getCursorCondition } from '../../utils';
+import {
+  PAGE_LIMIT,
+  decodeCursor,
+  encodeCursor,
+  getCursorCondition,
+} from '../../utils';
 import type { AccessUser } from '../access';
 import { getActivelyFlaggedItemIds } from '../moderation/moderationVisibility';
+import type { ProposalAdvanceTarget } from './getProposalAdvanceTarget';
 import { getProposalDocumentsContent } from './getProposalDocumentsContent';
 import { getProposalRelationshipData } from './getProposalRelationshipData';
 import { getSelectedProposalIds } from './getSelectedProposalIds';
+import { resolvePhaseAdvancement } from './proposalAdvancement';
+import {
+  isAnonymousAuthor,
+  proposalAuthorRelation,
+  proposalProfileColumns,
+} from './proposalAuthor';
 import { parseProposalData } from './proposalDataSchema';
 import { buildProposalListPreview } from './proposalListPreview';
 import { resolveProposalListScope } from './resolveProposalListScope';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
+import { getInstancePhases } from './schemas/instanceData';
+import { isPostSubmissionEditingAllowed } from './utils/phaseSettings';
 
 export interface ListProposalsInput {
   processInstanceId: string;
@@ -27,6 +41,11 @@ export interface ListProposalsInput {
   categoryId?: string;
   /** Scope results to a specific phase. Defaults to the current phase when omitted. */
   phaseId?: string;
+  /**
+   * The "Not advanced" filter: rejected proposals plus, on the current phase,
+   * those earlier phases left behind. Without it, the phase's other proposals.
+   */
+  notAdvanced?: boolean;
   /**
    * Restrict results to proposals voted on by this profile. Bypasses phase
    * resolution so a ballot remains accessible after the process advances past
@@ -69,27 +88,6 @@ export interface ListProposalsInput {
   includeDocumentContent?: boolean;
 }
 
-/**
- * Column picks for the `submittedBy`/`profile` relations on list rows. Covers
- * the fields the widest consumer needs — the legacy results encoder
- * (`baseProfileEncoder`, via `getInstanceResults`) requires the full profile
- * shape, while the non-legacy `proposalSchema` encoder narrows further on the
- * wire. Keeps only the generated `search` tsvector and other never-encoded
- * columns out of the lateral joins.
- */
-export const proposalProfileColumns = {
-  id: true,
-  type: true,
-  slug: true,
-  name: true,
-  city: true,
-  state: true,
-  bio: true,
-  mission: true,
-  email: true,
-  website: true,
-} satisfies Record<string, true>;
-
 export const listProposals = async ({
   input,
   user,
@@ -113,6 +111,7 @@ export const listProposals = async ({
     profileRoles,
     isEmpty,
     buildWhereClause,
+    buildIsOutsideCurrentPhase,
   } = await resolveProposalListScope({ input, user });
 
   // Template resolution depends only on the instance row — start it now so
@@ -128,14 +127,20 @@ export const listProposals = async ({
   // still rethrows.
   proposalTemplatePromise.catch(() => {});
 
+  const advanceTargetPromise = getListAdvanceTarget({
+    instance,
+    includesNotAdvanced:
+      canManageProposals && buildIsOutsideCurrentPhase !== undefined,
+  });
+  advanceTargetPromise.catch(() => {});
+
   // The empty short-circuit is split around the cursor decode to preserve
   // pre-existing error semantics: trusted contexts always exited before
   // decoding, while authenticated callers decoded first — so a malformed
   // cursor still throws for them even when the result set is empty.
   const emptyResult = {
-    proposals: [],
+    items: [],
     total: 0,
-    hasMore: false,
     canManageProposals,
     next: null,
   };
@@ -144,7 +149,7 @@ export const listProposals = async ({
     return emptyResult;
   }
 
-  const { limit = 20, orderBy = 'createdAt', dir = 'desc' } = input;
+  const { limit = PAGE_LIMIT.md, orderBy = 'createdAt', dir = 'desc' } = input;
   const decodedCursor = input.cursor
     ? decodeCursor<{ value: string | Date; id: string }>(input.cursor)
     : undefined;
@@ -209,26 +214,23 @@ export const listProposals = async ({
           )!,
       },
       with: {
-        submittedBy: {
-          columns: proposalProfileColumns,
-          with: {
-            avatarImage: true,
-            profileUsers: {
-              columns: {},
-              with: { authUser: { columns: { isAnonymous: true } } },
-            },
-          },
-        },
+        submittedBy: proposalAuthorRelation,
         profile: { columns: proposalProfileColumns },
       },
       // Fetch one extra to detect whether a next page exists.
       limit: limit + 1,
-      ...(effectiveIncludeVoteCounts && {
-        extras: {
+      extras: {
+        ...(effectiveIncludeVoteCounts && {
           voteCount: (table, { sql: sqlOp }) =>
             sqlOp<number>`${voteCountExpr(table)}`.as('vote_count'),
-        },
-      }),
+        }),
+        ...(buildIsOutsideCurrentPhase && {
+          isOutsideCurrentPhase: (table, { sql: sqlOp }) =>
+            sqlOp<boolean>`${buildIsOutsideCurrentPhase(table)}`.as(
+              'is_outside_current_phase',
+            ),
+        }),
+      },
       orderBy: (table, { asc: ascOp, desc: descOp }) => {
         // `id` tie-break: without it, rows sharing the primary sort key
         // return in undefined order and flipping `dir` has no visible effect.
@@ -266,6 +268,7 @@ export const listProposals = async ({
   // Resolved from instanceData (falling back to processSchema) — the promise
   // was started right after the scope resolved, so this await is usually free.
   const proposalTemplate = await proposalTemplatePromise;
+  const advanceTarget = await advanceTargetPromise;
 
   const profileIds = proposalList
     .map((proposal) => proposal.profileId)
@@ -304,6 +307,11 @@ export const listProposals = async ({
     profileRoles,
   );
 
+  const postSubmissionEditingAllowed = isPostSubmissionEditingAllowed({
+    phases: getInstancePhases(instance.instanceData),
+    currentPhaseId: instance.currentStateId,
+  });
+
   const proposalsWithCounts = proposalList.map((proposal: ProposalListItem) => {
     const rawSubmittedBy = Array.isArray(proposal.submittedBy)
       ? proposal.submittedBy[0]
@@ -311,15 +319,7 @@ export const listProposals = async ({
     const submittedBy = rawSubmittedBy
       ? (() => {
           const { profileUsers, ...author } = rawSubmittedBy;
-          return {
-            ...author,
-            isAnonymous: Boolean(
-              profileUsers?.some(
-                (pu: { authUser: { isAnonymous: boolean } | null }) =>
-                  pu.authUser?.isAnonymous,
-              ),
-            ),
-          };
+          return { ...author, isAnonymous: isAnonymousAuthor(profileUsers) };
         })()
       : rawSubmittedBy;
     const profile = Array.isArray(proposal.profile)
@@ -327,18 +327,22 @@ export const listProposals = async ({
       : proposal.profile;
     const relationshipInfo = relationshipData.get(proposal.profileId);
 
-    // In results phase, proposals are never editable.
-    const isOwner = proposal.submittedByProfileId === currentProfileId;
     const isEditable =
-      input.phase === 'results' ? false : isOwner || hasAdminPermission;
+      input.phase !== 'results' &&
+      (hasAdminPermission ||
+        (proposal.submittedByProfileId === currentProfileId &&
+          (proposal.status === ProposalStatus.DRAFT ||
+            postSubmissionEditingAllowed)));
 
     // List rows ship a precomputed plain-text preview plus fragment-resolved
     // system fields instead of the full document fragments; the fragments
     // themselves only ride along for trusted full-content consumers.
     const documentContent = documentContentMap.get(proposal.id);
+    const parsedProposalData = parseProposalData(proposal.proposalData);
     const { previewText, systemFieldOverrides } = buildProposalListPreview({
       documentContent,
       proposalTemplate,
+      existingBudget: parsedProposalData.budget,
     });
 
     // `voteCount` only rides along as an extra when the count was requested.
@@ -350,7 +354,7 @@ export const listProposals = async ({
       id: proposal.id,
       processInstanceId: proposal.processInstanceId,
       proposalData: {
-        ...parseProposalData(proposal.proposalData),
+        ...parsedProposalData,
         ...systemFieldOverrides,
       },
       status: proposal.status,
@@ -373,6 +377,7 @@ export const listProposals = async ({
         ? documentContent
         : undefined,
       proposalTemplate,
+      ...getAdvancementFields({ proposal, advanceTarget }),
       // Ballot reads always carry the field: `null` until results are
       // published (so no live tally leaks), a real count afterwards — where
       // `0` unambiguously means zero recorded votes.
@@ -398,10 +403,55 @@ export const listProposals = async ({
       : null;
 
   return {
-    proposals: proposalsWithCounts,
+    items: proposalsWithCounts,
     total: Number(count),
-    hasMore,
     canManageProposals,
     next,
   };
 };
+
+/**
+ * Where a left-behind row can advance to. The rules past the row's own status
+ * are the same for every row, so this is checked once per page.
+ */
+async function getListAdvanceTarget({
+  instance,
+  includesNotAdvanced,
+}: {
+  instance: Parameters<typeof resolvePhaseAdvancement>[0]['instance'];
+  includesNotAdvanced: boolean;
+}): Promise<ProposalAdvanceTarget | undefined> {
+  if (!includesNotAdvanced) {
+    return undefined;
+  }
+  const advancement = await resolvePhaseAdvancement({ dbClient: db, instance });
+  if (!advancement.ok) {
+    return undefined;
+  }
+  const { phaseId, name } = advancement.currentPhase;
+  return { phaseId, phaseName: name ?? phaseId };
+}
+
+/**
+ * `isOutsideCurrentPhase` is only an extra when the list includes what didn't
+ * advance; a rejected row stays listed but can't advance.
+ */
+function getAdvancementFields({
+  proposal,
+  advanceTarget,
+}: {
+  proposal: { status: string | null; isOutsideCurrentPhase?: unknown };
+  advanceTarget: ProposalAdvanceTarget | undefined;
+}) {
+  if (!('isOutsideCurrentPhase' in proposal)) {
+    return {};
+  }
+  const isOutsideCurrentPhase = Boolean(proposal.isOutsideCurrentPhase);
+  return {
+    isOutsideCurrentPhase,
+    advanceTarget:
+      isOutsideCurrentPhase && proposal.status !== ProposalStatus.REJECTED
+        ? advanceTarget
+        : undefined,
+  };
+}

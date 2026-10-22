@@ -1,4 +1,5 @@
 import { getProfile, listProfiles } from '@op/common';
+import { PAGE_LIMIT, paginated } from '@op/common/client';
 import { EntityType } from '@op/db/schema';
 import { z } from 'zod';
 
@@ -23,14 +24,15 @@ export const getProfileRouter = router({
         })
         .optional(),
     )
-    .output(
-      z.object({
-        items: z.array(universalProfileSchema),
-        next: z.string().nullish(),
-      }),
-    )
+    .output(paginated(universalProfileSchema))
     .query(async ({ input }) => {
-      const { limit = 10, cursor, orderBy, dir, types } = input ?? {};
+      const {
+        limit = PAGE_LIMIT.sm,
+        cursor,
+        orderBy,
+        dir,
+        types,
+      } = input ?? {};
       const { items, next } = await listProfiles({
         cursor,
         limit,

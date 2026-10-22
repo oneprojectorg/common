@@ -13,11 +13,12 @@ export const getForProfile = router({
   })
     .input(getCustomFormForProfileInputSchema)
     .output(customFormEncoder.nullable())
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
       const form = await getCustomFormForProfile({
         profileId: input.profileId,
         phaseId: input.phaseId,
         initialPhaseId: input.initialPhaseId,
+        authUserId: ctx.user.id,
       });
 
       return form ? customFormEncoder.parse(form) : null;

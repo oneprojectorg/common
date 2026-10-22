@@ -1,6 +1,7 @@
 import {
   Channels,
   REVIEW_ASSIGNMENT_SORTS,
+  instancePhaseRefSchema,
   listReviewAssignments,
   reviewAssignmentListSchema,
 } from '@op/common';
@@ -8,20 +9,20 @@ import { ProposalReviewAssignmentStatus } from '@op/db/schema';
 import { z } from 'zod';
 
 import { networkAuthenticatedProcedure, router } from '../../../trpcFactory';
+import { paginationSchema } from '../../../utils';
 
 export const listReviewAssignmentsRouter = router({
   listReviewAssignments: networkAuthenticatedProcedure()
     .input(
-      z.object({
-        processInstanceId: z.uuid(),
-        /** Omit for all phases. */
-        phaseId: z.string().optional(),
-        status: z.enum(ProposalReviewAssignmentStatus).optional(),
-        categoryIds: z.array(z.string()).optional(),
-        /** Limits results to one proposal's assignments. */
-        proposalProfileId: z.uuid().optional(),
-        sort: z.enum(REVIEW_ASSIGNMENT_SORTS).optional(),
-      }),
+      instancePhaseRefSchema
+        .extend({
+          status: z.enum(ProposalReviewAssignmentStatus).optional(),
+          categoryIds: z.array(z.string()).optional(),
+          /** Limits results to one proposal's assignments. */
+          proposalProfileId: z.uuid().optional(),
+          sort: z.enum(REVIEW_ASSIGNMENT_SORTS).optional(),
+        })
+        .merge(paginationSchema),
     )
     .output(reviewAssignmentListSchema)
     .query(async ({ ctx, input }) => {
@@ -36,6 +37,8 @@ export const listReviewAssignmentsRouter = router({
         categoryIds: input.categoryIds,
         proposalProfileId: input.proposalProfileId,
         sort: input.sort,
+        cursor: input.cursor,
+        limit: input.limit,
         user: ctx.user,
       });
     }),

@@ -1,6 +1,7 @@
 'use client';
 
 import { ProposalTemplateSchema } from '@op/common';
+import { DEFAULT_MONEY_CURRENCY, getCurrencySymbol } from '@op/common/client';
 import { CollapsibleConfigCard } from '@op/sense/CollapsibleConfigCard';
 import { Field, FieldLabel } from '@op/sense/Field';
 import { NumberField } from '@op/sense/NumberField';
@@ -25,27 +26,25 @@ import {
   setFieldRequired,
 } from '../../../proposalTemplate';
 
+// The picker's curated option list, not a validation registry — symbols are
+// derived per-viewer via the shared getCurrencySymbol.
 const CURRENCIES = [
-  { code: 'USD', symbol: '$' },
-  { code: 'EUR', symbol: '€' },
-  { code: 'GBP', symbol: '£' },
-  { code: 'JPY', symbol: '¥' },
-  { code: 'CAD', symbol: 'CA$' },
-  { code: 'AUD', symbol: 'A$' },
-  { code: 'CHF', symbol: 'CHF' },
-  { code: 'CNY', symbol: '¥' },
-  { code: 'INR', symbol: '₹' },
-  { code: 'BRL', symbol: 'R$' },
-  { code: 'KRW', symbol: '₩' },
-  { code: 'SGD', symbol: 'S$' },
-  { code: 'MXN', symbol: 'MX$' },
-  { code: 'AED', symbol: 'د.إ' },
-  { code: 'SAR', symbol: '﷼' },
+  'USD',
+  'EUR',
+  'GBP',
+  'JPY',
+  'CAD',
+  'AUD',
+  'CHF',
+  'CNY',
+  'INR',
+  'BRL',
+  'KRW',
+  'SGD',
+  'MXN',
+  'AED',
+  'SAR',
 ] as const;
-
-const CURRENCY_SYMBOL_MAP = new Map<string, string>(
-  CURRENCIES.map((c) => [c.code, c.symbol]),
-);
 
 export function BudgetFieldConfig({
   template,
@@ -56,7 +55,7 @@ export function BudgetFieldConfig({
     React.SetStateAction<ProposalTemplateSchema>
   >;
 }) {
-  const t = useTranslations();
+  const t = useTranslations('decisions');
   const locale = useLocale();
   const showInTemplateId = useId();
   const requiredId = useId();
@@ -67,15 +66,13 @@ export function BudgetFieldConfig({
     [locale],
   );
   const currencyLabel = useCallback(
-    (code: string, symbol: string) =>
-      `${currencyName.of(code) ?? code} (${code} ${symbol})`,
+    (code: string) =>
+      `${currencyName.of(code) ?? code} (${code} ${getCurrencySymbol(code)})`,
     [currencyName],
   );
   const currencyItems = useMemo(
     () =>
-      Object.fromEntries(
-        CURRENCIES.map((c) => [c.code, currencyLabel(c.code, c.symbol)]),
-      ),
+      Object.fromEntries(CURRENCIES.map((code) => [code, currencyLabel(code)])),
     [currencyLabel],
   );
 
@@ -83,15 +80,15 @@ export function BudgetFieldConfig({
   const showBudget = !!budgetSchema;
   const budgetCurrency =
     (budgetSchema?.properties?.currency as { default?: string } | undefined)
-      ?.default ?? 'USD';
-  const budgetCurrencySymbol = CURRENCY_SYMBOL_MAP.get(budgetCurrency) ?? '$';
+      ?.default ?? DEFAULT_MONEY_CURRENCY;
+  const budgetCurrencySymbol = getCurrencySymbol(budgetCurrency);
   const budgetMaxAmount = budgetSchema?.maximum as number | undefined;
   const budgetRequired = isFieldRequired(template, 'budget');
 
   const badgeLabel = showBudget
     ? budgetRequired
-      ? t('Required')
-      : t('Optional')
+      ? t('processBuilder.requiredLabel')
+      : t('processBuilder.optionalLabel')
     : undefined;
 
   const handleShowBudgetChange = useCallback(
@@ -103,11 +100,11 @@ export function BudgetFieldConfig({
             ...prev.properties,
             budget: {
               type: 'object',
-              title: t('Budget'),
+              title: t('budgetLabel'),
               'x-format': 'money',
               properties: {
                 amount: { type: 'number' },
-                currency: { type: 'string', default: 'USD' },
+                currency: { type: 'string', default: DEFAULT_MONEY_CURRENCY },
               },
             },
           },
@@ -195,7 +192,7 @@ export function BudgetFieldConfig({
 
   return (
     <CollapsibleConfigCard
-      label={t('Funding amount')}
+      label={t('proposals.fundingAmountLabel')}
       badgeLabel={badgeLabel}
       isCollapsible
       locked
@@ -204,7 +201,9 @@ export function BudgetFieldConfig({
         {showBudget && (
           <>
             <Field>
-              <FieldLabel htmlFor="budget-currency">{t('Currency')}</FieldLabel>
+              <FieldLabel htmlFor="budget-currency">
+                {t('processBuilder.currencyLabel')}
+              </FieldLabel>
               <Select
                 value={budgetCurrency}
                 onValueChange={(currency) =>
@@ -217,9 +216,9 @@ export function BudgetFieldConfig({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectGroup>
-                    {CURRENCIES.map((c) => (
-                      <SelectItem key={c.code} value={c.code}>
-                        {currencyLabel(c.code, c.symbol)}
+                    {CURRENCIES.map((code) => (
+                      <SelectItem key={code} value={code}>
+                        {currencyLabel(code)}
                       </SelectItem>
                     ))}
                   </SelectGroup>
@@ -228,9 +227,9 @@ export function BudgetFieldConfig({
             </Field>
             <NumberField
               id="budget-max"
-              label={t('Max amount')}
+              label={t('processBuilder.maxAmountLabel')}
               prefixText={budgetCurrencySymbol}
-              placeholder={t('Set maximum amount')}
+              placeholder={t('processBuilder.setMaxAmountLabel')}
               value={budgetMaxAmount ?? null}
               onChange={handleBudgetMaxChange}
             />
@@ -240,12 +239,14 @@ export function BudgetFieldConfig({
         <div className="flex items-center justify-between gap-4 pt-2">
           {showBudget ? (
             <Field orientation="horizontal" className="w-auto">
-              <FieldLabel htmlFor={requiredId}>{t('Required?')}</FieldLabel>
+              <FieldLabel htmlFor={requiredId}>
+                {t('processBuilder.criterionRequiredQuestion')}
+              </FieldLabel>
               <Switch
                 id={requiredId}
                 checked={budgetRequired}
                 onCheckedChange={handleBudgetRequiredChange}
-                aria-label={t('Required?')}
+                aria-label={t('processBuilder.criterionRequiredQuestion')}
               />
             </Field>
           ) : (
@@ -253,13 +254,13 @@ export function BudgetFieldConfig({
           )}
           <Field orientation="horizontal" className="w-auto">
             <FieldLabel htmlFor={showInTemplateId}>
-              {t('Show in template?')}
+              {t('processBuilder.showInTemplateLabel')}
             </FieldLabel>
             <Switch
               id={showInTemplateId}
               checked={showBudget}
               onCheckedChange={handleShowBudgetChange}
-              aria-label={t('Show in template?')}
+              aria-label={t('processBuilder.showInTemplateLabel')}
               data-testid="budget-show-in-template-toggle"
             />
           </Field>

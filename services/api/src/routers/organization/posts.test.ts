@@ -1,9 +1,9 @@
+import { TestOrganizationDataManager } from '@op/common/testing';
 import { db, eq, inArray } from '@op/db/client';
 import { posts, postsToOrganizations } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
 import { organizationRouter } from '.';
-import { TestOrganizationDataManager } from '../../test/helpers/TestOrganizationDataManager';
 import {
   createIsolatedSession,
   createTestContextWithSession,

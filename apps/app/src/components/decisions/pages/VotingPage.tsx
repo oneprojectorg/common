@@ -32,7 +32,7 @@ export function VotingPage({
   const locale = useLocale();
   const translation = useDecisionTranslation();
 
-  const [[instance, voteStatus, { submitters, total }]] =
+  const [[instance, voteStatus, { items: submitters, total }]] =
     trpc.useSuspenseQueries((t) => [
       t.decision.getInstance({ instanceId }),
       t.decision.getVotingStatus({ processInstanceId: instanceId }),
@@ -55,12 +55,11 @@ export function VotingPage({
 
   const hasVoted = voteStatus.hasVoted;
 
-  const description =
-    instance.description ?? instance.instanceData?.templateDescription;
-
   const heroTitle = hasVoted
-    ? t('Your ballot is in.')
-    : (translation?.headline ?? currentPhase?.headline ?? t('TIME TO VOTE.'));
+    ? t('decisions.ballotSubmittedNotice')
+    : (translation?.headline ??
+      currentPhase?.headline ??
+      t('decisions.votingOpenHeading'));
 
   const resultsDate = nextPhase?.startDate
     ? new Date(nextPhase.startDate).toLocaleDateString(locale, {
@@ -71,15 +70,12 @@ export function VotingPage({
 
   const heroDescription = hasVoted
     ? resultsDate
-      ? t('Results will be shared on {date}.', { date: resultsDate })
+      ? t('decisions.resultsShareDate', { date: resultsDate })
       : undefined
     : (translation?.phaseDescription ?? currentPhase?.description);
 
   const actionBarDescription =
-    translation?.additionalInfo ??
-    currentPhase?.additionalInfo ??
-    translation?.description ??
-    description;
+    translation?.additionalInfo ?? currentPhase?.additionalInfo;
   const heroImagePath = instance.instanceData?.overview?.heroImage;
   const hasHeroImage = Boolean(heroImagePath);
 
@@ -119,6 +115,7 @@ export function VotingPage({
               permissions={instance.access}
               currentPhase={currentPhase}
               pinOffset={pinOffset}
+              showFilterTabs
             />
           </Suspense>
         </div>

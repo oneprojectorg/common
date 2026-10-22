@@ -12,7 +12,10 @@ import { waitUntil } from '@vercel/functions';
 import { eq, ne } from 'drizzle-orm';
 
 import { ValidationError } from '../../utils';
-import { assertReviewAssignmentContext } from './reviewHelpers';
+import {
+  assertReviewAssignmentContext,
+  assertReviewAssignmentPhaseIsCurrent,
+} from './reviewHelpers';
 import type { RubricReviewData } from './schemas/reviews';
 
 /**
@@ -44,9 +47,18 @@ export async function saveReviewDraft({
     throw new ValidationError('Review has already been submitted');
   }
 
+  assertReviewAssignmentPhaseIsCurrent(
+    context.instance,
+    context.assignment.phaseId,
+  );
+
   if (!context.rubricTemplate) {
     throw new ValidationError('Rubric template not found for this assignment');
   }
+
+  const reviewedHistoryValues = context.currentProposalHistoryId
+    ? { reviewedProposalHistoryId: context.currentProposalHistoryId }
+    : {};
 
   const review = await db.transaction(async (tx) => {
     const [draft] = await tx
@@ -57,12 +69,14 @@ export async function saveReviewDraft({
         reviewData,
         overallComment: overallComment ?? null,
         submittedAt: null,
+        ...reviewedHistoryValues,
       })
       .onConflictDoUpdate({
         target: proposalReviews.assignmentId,
         set: {
           reviewData,
           overallComment: overallComment ?? null,
+          ...reviewedHistoryValues,
         },
         // Atomic guard against a late-arriving draft overwriting a row that
         // was submitted after this request's early state check passed. When

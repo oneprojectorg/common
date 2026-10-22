@@ -17,7 +17,7 @@ import {
 } from '../access';
 import { hasActiveModerationFlag } from '../moderation/moderationVisibility';
 import {
-  getItemsWithReactionsAndComments,
+  getItemsWithLikesAndComments,
   postModerationFilter,
 } from './listPosts';
 
@@ -171,10 +171,10 @@ export const getPost = async ({
     }
   }
 
-  const itemsWithReactionsAndComments = await getItemsWithReactionsAndComments({
+  const itemsWithLikesAndComments = await getItemsWithLikesAndComments({
     items: [{ post }],
     profileId: actorProfileId,
   });
 
-  return itemsWithReactionsAndComments[0]?.post ?? null;
+  return itemsWithLikesAndComments[0]?.post ?? null;
 };

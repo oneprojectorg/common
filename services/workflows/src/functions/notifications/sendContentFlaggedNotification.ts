@@ -1,3 +1,9 @@
+import {
+  type EmailRecipient,
+  listIndividualProfileRecipients,
+  listProfileRecipients,
+} from '@op/common';
+import { selectEmailRecipients } from '@op/common/client';
 import { db, eq } from '@op/db/client';
 import { posts, profiles, proposals, users } from '@op/db/schema';
 import { Events, inngest } from '@op/events';
@@ -6,13 +12,13 @@ import { logger } from '@op/logging';
 const { contentFlagged } = Events;
 
 type Recipient = {
-  email: string | null;
+  candidates: Array<EmailRecipient>;
   name: string | null;
   contentType: 'post' | 'proposal' | 'comment' | 'account';
 };
 
 /**
- * Resolves the author's email + display name for the flagged item. Returns
+ * Resolves the author's addresses + display name for the flagged item. Returns
  * null when the item or its author can't be found (deleted, anonymous, etc.).
  */
 const resolveRecipient = async (
@@ -22,7 +28,8 @@ const resolveRecipient = async (
   if (itemType === 'post') {
     const [row] = await db
       .select({
-        email: profiles.email,
+        authorProfileId: profiles.id,
+        authorProfileType: profiles.type,
         name: profiles.name,
         parentPostId: posts.parentPostId,
       })
@@ -34,7 +41,13 @@ const resolveRecipient = async (
       return null;
     }
     return {
-      email: row.email,
+      candidates:
+        row.authorProfileId && row.authorProfileType
+          ? await listProfileRecipients({
+              id: row.authorProfileId,
+              type: row.authorProfileType,
+            })
+          : [],
       name: row.name,
       contentType: row.parentPostId ? 'comment' : 'post',
     };
@@ -42,7 +55,11 @@ const resolveRecipient = async (
 
   if (itemType === 'proposal') {
     const [row] = await db
-      .select({ email: profiles.email, name: profiles.name })
+      .select({
+        authorProfileId: profiles.id,
+        authorProfileType: profiles.type,
+        name: profiles.name,
+      })
       .from(proposals)
       .leftJoin(profiles, eq(proposals.submittedByProfileId, profiles.id))
       .where(eq(proposals.id, itemId))
@@ -50,19 +67,36 @@ const resolveRecipient = async (
     if (!row) {
       return null;
     }
-    return { email: row.email, name: row.name, contentType: 'proposal' };
+    return {
+      candidates:
+        row.authorProfileId && row.authorProfileType
+          ? await listProfileRecipients({
+              id: row.authorProfileId,
+              type: row.authorProfileType,
+            })
+          : [],
+      name: row.name,
+      contentType: 'proposal',
+    };
   }
 
   if (itemType === 'user') {
     const [row] = await db
-      .select({ email: users.email, name: users.name })
+      .select({ name: users.name, profileId: users.profileId })
       .from(users)
       .where(eq(users.id, itemId))
       .limit(1);
     if (!row) {
       return null;
     }
-    return { email: row.email, name: row.name, contentType: 'account' };
+
+    return {
+      candidates: row.profileId
+        ? await listIndividualProfileRecipients(row.profileId)
+        : [],
+      name: row.name,
+      contentType: 'account',
+    };
   }
 
   return null;
@@ -79,7 +113,11 @@ export const sendContentFlaggedNotification = inngest.createFunction(
 
     await step.run('send-flagged-email', async () => {
       const recipient = await resolveRecipient(itemType, itemId);
-      if (!recipient?.email) {
+      const recipients = recipient
+        ? selectEmailRecipients(recipient.candidates)
+        : [];
+
+      if (!recipient || recipients.length === 0) {
         logger.info('No recipient email for flagged content', {
           itemType,
           itemId,
@@ -87,17 +125,23 @@ export const sendContentFlaggedNotification = inngest.createFunction(
         return;
       }
 
-      const { OPNodemailer, ContentFlaggedEmail } = await import('@op/emails');
+      const { OPBatchSend, ContentFlaggedEmail } = await import('@op/emails');
 
-      await OPNodemailer({
-        to: recipient.email,
-        subject: `Your ${recipient.contentType} has been flagged`,
-        component: () =>
-          ContentFlaggedEmail({
-            recipientName: recipient.name ?? undefined,
-            contentType: recipient.contentType,
-          }),
-      });
+      const { errors } = await OPBatchSend(
+        recipients.map((to) => ({
+          to,
+          subject: `Your ${recipient.contentType} has been flagged`,
+          component: () =>
+            ContentFlaggedEmail({
+              recipientName: recipient.name ?? undefined,
+              contentType: recipient.contentType,
+            }),
+        })),
+      );
+
+      if (errors.length > 0) {
+        throw new Error(`Email send failed: ${JSON.stringify(errors)}`);
+      }
     });
 
     return { notified: true };

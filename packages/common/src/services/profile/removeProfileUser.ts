@@ -1,15 +1,11 @@
-import { invalidate } from '@op/cache';
 import { db, eq } from '@op/db/client';
-import { profileUsers } from '@op/db/schema';
+import { EntityType, profileUsers } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 
 import { NotFoundError, ValidationError } from '../../utils/error';
-import {
-  getProfileAccessUser,
-  getUserSession,
-  profileUserCacheKey,
-} from '../access';
-import { assertProfileAdmin, assertProfileUser } from '../assert';
+import { invalidateProfileUserAccessCache } from '../access';
+import { assertProfileAdmin } from '../assert';
+import { emitDecisionMemberRolesChanged } from '../decision/events/emitDecisionMemberRolesChanged';
 
 /**
  * Remove a member from a profile
@@ -21,7 +17,18 @@ export const removeProfileUser = async ({
   profileUserId: string;
   user: User;
 }) => {
-  const targetProfileUser = await assertProfileUser(profileUserId);
+  // Roles are read before the delete, which cascades them away.
+  const targetProfileUser = await db.query.profileUsers.findFirst({
+    where: { id: profileUserId },
+    with: {
+      roles: { columns: { accessRoleId: true } },
+      profile: { columns: { type: true } },
+    },
+  });
+
+  if (!targetProfileUser) {
+    throw new NotFoundError('Profile user', profileUserId);
+  }
 
   // Check if user has ADMIN access on the profile
   await assertProfileAdmin({ user, profileId: targetProfileUser.profileId });
@@ -40,24 +47,19 @@ export const removeProfileUser = async ({
     throw new NotFoundError('Profile user', profileUserId);
   }
 
-  await Promise.all([
-    invalidate({
-      type: 'profileUser',
-      params: profileUserCacheKey({
-        user: { id: deletedUser.authUserId },
-        profileId: deletedUser.profileId,
-      }),
-    }),
-    invalidate({
-      type: 'user',
-      params: [deletedUser.authUserId],
-    }),
-  ]);
-  getProfileAccessUser.invalidate({
-    user: { id: deletedUser.authUserId },
+  if (targetProfileUser.profile.type === EntityType.DECISION) {
+    emitDecisionMemberRolesChanged({
+      decisionProfileId: deletedUser.profileId,
+      authUserId: deletedUser.authUserId,
+      addedRoleIds: [],
+      removedRoleIds: targetProfileUser.roles.map((role) => role.accessRoleId),
+    });
+  }
+
+  await invalidateProfileUserAccessCache({
+    authUserId: deletedUser.authUserId,
     profileId: deletedUser.profileId,
   });
-  getUserSession.invalidate({ authUserId: deletedUser.authUserId });
 
   return deletedUser;
 };

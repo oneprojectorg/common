@@ -10,10 +10,13 @@ import type { User } from '@op/supabase/lib';
 
 import { generateUniqueProfileSlug } from './utils';
 
+const textOrNull = (value: string | null | undefined): string | null =>
+  value?.trim() || null;
+
 export interface UpdateUserProfileInput {
   name?: string;
-  bio?: string;
-  title?: string;
+  bio?: string | null;
+  title?: string | null;
   pronouns?: string;
   username?: string;
   email?: string;
@@ -50,14 +53,14 @@ export const updateUserProfile = async ({
   // Prepare profile data
   const profileData: any = {};
   if (name !== undefined) profileData.name = name;
-  if (bio !== undefined) profileData.bio = bio;
+  if (bio !== undefined) profileData.bio = textOrNull(bio);
   if (email !== undefined) profileData.email = email;
   if (website !== undefined) profileData.website = website;
 
   // Prepare user data (username and title stay in users table)
   const userData: any = {};
   if (username !== undefined) userData.username = username;
-  if (title !== undefined) userData.title = title;
+  if (title !== undefined) userData.title = textOrNull(title);
 
   // Check if user already has a profile
   if (currentUser.profile && 'id' in currentUser.profile) {
@@ -81,7 +84,7 @@ export const updateUserProfile = async ({
           type: EntityType.INDIVIDUAL,
           name: name || currentUser.name || 'Unnamed User',
           slug,
-          bio,
+          bio: textOrNull(bio),
           email,
           website,
         })

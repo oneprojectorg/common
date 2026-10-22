@@ -14,6 +14,7 @@ import { useQueryState } from 'nuqs';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { LuPlus } from 'react-icons/lu';
 
+import type { TranslationKey } from '@/lib/i18n';
 import { useTranslations } from '@/lib/i18n';
 
 import { ConfirmDeleteModal } from '@/components/ConfirmDeleteModal';
@@ -34,6 +35,7 @@ import {
   getFieldSchema,
   getFields,
   removeField as removeFieldFromTemplate,
+  renameField,
   reorderFields as reorderTemplateFields,
   setFieldRequired,
   updateFieldDescription,
@@ -82,12 +84,15 @@ export function TemplateEditorContent({
     const base =
       saved && Object.keys(saved.properties ?? {}).length > 0
         ? saved
-        : createDefaultTemplate(t('Proposal summary'), t('Proposal title'));
+        : createDefaultTemplate(
+            t('decisions.processBuilder.proposalSummaryLabel'),
+            t('decisions.processBuilder.proposalTitleLabel'),
+          );
 
     // Ensure locked system fields are present (backward compat)
     return ensureLockedFields(base, {
-      titleLabel: t('Proposal title'),
-      categoryLabel: t('Category'),
+      titleLabel: t('decisions.processBuilder.proposalTitleLabel'),
+      categoryLabel: t('decisions.categoryLabel'),
       categories,
       allowMultipleCategories,
       requireCategorySelection,
@@ -114,8 +119,6 @@ export function TemplateEditorContent({
   // Delete confirmation modal
   const [fieldToDelete, setFieldToDelete] = useState<string | null>(null);
 
-  // Participant preview modal
-
   // Keep locked fields (category) in sync when the upstream config changes
   // (e.g. categories added/removed in the Proposal Categories step).
   // Applied to the current template state so user edits are preserved.
@@ -127,8 +130,8 @@ export function TemplateEditorContent({
     }
     setTemplate((prev) =>
       ensureLockedFields(prev, {
-        titleLabel: t('Proposal title'),
-        categoryLabel: t('Category'),
+        titleLabel: t('decisions.processBuilder.proposalTitleLabel'),
+        categoryLabel: t('decisions.categoryLabel'),
         categories,
         allowMultipleCategories,
         requireCategorySelection,
@@ -139,7 +142,7 @@ export function TemplateEditorContent({
   // "Show on blur, clear on change" validation: errors are snapshotted when
   // a field card loses focus, but resolved errors disappear immediately
   // while editing (see renderFieldCard intersection logic).
-  const [fieldErrors, setFieldErrors] = useState<Map<string, string[]>>(
+  const [fieldErrors, setFieldErrors] = useState<Map<string, TranslationKey[]>>(
     new Map(),
   );
 
@@ -150,6 +153,18 @@ export function TemplateEditorContent({
   const fields = useMemo(
     () => getFields(template).filter((f) => !SYSTEM_FIELD_KEYS.has(f.id)),
     [template],
+  );
+
+  // Location is single-instance: it lives at a fixed key, so a second one
+  // would overwrite the first. Once the template has one, every other card
+  // stops offering the type (the location card keeps it so it reads as the
+  // current selection).
+  const hasLocationField = Boolean(
+    getFieldSchema(template, LOCATION_FIELD_KEY),
+  );
+  const disabledTypes = useMemo<FieldType[]>(
+    () => (hasLocationField ? ['location'] : []),
+    [hasLocationField],
   );
 
   // Save template changes via the shared autosave context.
@@ -163,8 +178,8 @@ export function TemplateEditorContent({
     }
 
     const normalized = ensureLockedFields(template, {
-      titleLabel: t('Proposal title'),
-      categoryLabel: t('Category'),
+      titleLabel: t('decisions.processBuilder.proposalTitleLabel'),
+      categoryLabel: t('decisions.categoryLabel'),
       categories,
       allowMultipleCategories,
       requireCategorySelection,
@@ -174,19 +189,9 @@ export function TemplateEditorContent({
 
   const handleAddField = useCallback(
     (type: FieldType) => {
-      // Location uses a fixed key (single instance, projected to a geometry
-      // column server-side) and is always required.
-      const fieldId =
-        type === 'location'
-          ? LOCATION_FIELD_KEY
-          : crypto.randomUUID().slice(0, 8);
+      const fieldId = createFieldId();
       const label = t(getFieldLabelKey(type));
-      setTemplate((prev) => {
-        const next = addFieldToTemplate(prev, fieldId, type, label);
-        return type === 'location'
-          ? setFieldRequired(next, fieldId, true)
-          : next;
-      });
+      setTemplate((prev) => addFieldToTemplate(prev, fieldId, type, label));
       // Auto-expand the newly added field and mark it as new
       setExpandedFieldIds((prev) => new Set(prev).add(fieldId));
       setNewFieldIds((prev) => new Set(prev).add(fieldId));
@@ -310,14 +315,38 @@ export function TemplateEditorContent({
 
   const handleChangeFieldType = useCallback(
     (fieldId: string, newType: FieldType) => {
-      // Location fields can't change type (and nothing can become one) —
-      // the type selector is hidden for them, this is defense in depth.
-      if (fieldId === LOCATION_FIELD_KEY || newType === 'location') {
+      // The Type select disables a single-instance type once it's taken; this
+      // is defense in depth. Retyping onto an occupied fixed key would
+      // overwrite that field and lose its saved map view.
+      if (fieldId !== LOCATION_FIELD_KEY && disabledTypes.includes(newType)) {
         return;
       }
-      setTemplate((prev) => changeFieldType(prev, fieldId, newType));
+
+      const nextFieldId = getFieldIdForType(fieldId, newType);
+
+      setTemplate((prev) => {
+        const retyped = changeFieldType(prev, fieldId, newType);
+        const rekeyed =
+          nextFieldId === fieldId
+            ? retyped
+            : renameField(retyped, fieldId, nextFieldId);
+
+        // A template that collects a location always requires one — the
+        // toggle is disabled on the card to match.
+        return newType === 'location'
+          ? setFieldRequired(rekeyed, nextFieldId, true)
+          : rekeyed;
+      });
+
+      if (nextFieldId !== fieldId) {
+        // Per-field UI state is keyed by field id, so it has to follow the
+        // rekey or the card collapses and its errors detach mid-edit.
+        setExpandedFieldIds((prev) => renameInSet(prev, fieldId, nextFieldId));
+        setNewFieldIds((prev) => renameInSet(prev, fieldId, nextFieldId));
+        setFieldErrors((prev) => renameInMap(prev, fieldId, nextFieldId));
+      }
     },
-    [],
+    [disabledTypes],
   );
 
   /** Render a FieldCard for a given field view. */
@@ -337,6 +366,9 @@ export function TemplateEditorContent({
         field={field}
         fieldSchema={getFieldSchema(template, field.id) ?? {}}
         errors={displayedErrors}
+        disabledTypes={
+          field.id === LOCATION_FIELD_KEY ? EMPTY_FIELD_TYPES : disabledTypes
+        }
         controls={controls}
         isExpanded={expandedFieldIds.has(field.id)}
         onExpandedChange={(expanded) =>
@@ -361,7 +393,9 @@ export function TemplateEditorContent({
         <div className="mx-auto w-full max-w-160 space-y-8 p-4 pb-24 md:p-8 md:pb-8">
           <div className="space-y-2">
             <div className="flex items-center justify-between gap-2">
-              <Header2>{t('Proposal template')}</Header2>
+              <Header2>
+                {t('decisions.processBuilder.proposalTemplateHeading')}
+              </Header2>
               <div className="flex items-center gap-3">
                 <SaveStatusIndicator
                   status={autosaveStatus.status}
@@ -370,27 +404,29 @@ export function TemplateEditorContent({
               </div>
             </div>
             <p className="text-muted-foreground">
-              {t('Build your proposal using the tools below')}
+              {t('decisions.processBuilder.templateEditorHint')}
             </p>
           </div>
           {/* Locked system fields (stored in schema) */}
           <div className="space-y-4">
             <CollapsibleConfigCard
-              label={t('Proposal title')}
-              badgeLabel={t('Required')}
+              label={t('decisions.processBuilder.proposalTitleLabel')}
+              badgeLabel={t('decisions.processBuilder.requiredLabel')}
               locked
             />
             {hasCategories && (
               <CollapsibleConfigCard
-                label={t('Category')}
+                label={t('decisions.categoryLabel')}
                 badgeLabel={
-                  requireCategorySelection ? t('Required') : t('Optional')
+                  requireCategorySelection
+                    ? t('decisions.processBuilder.requiredLabel')
+                    : t('decisions.processBuilder.optionalLabel')
                 }
                 locked
               >
                 <div className="-mt-3 px-11 pb-4">
                   <p className="m-0 text-sm">
-                    {t('These are the categories you defined in')}{' '}
+                    {t('decisions.processBuilder.templateCategoriesIntro')}{' '}
                     <Button
                       variant="link"
                       size="inline"
@@ -400,7 +436,9 @@ export function TemplateEditorContent({
                         void setSection('proposalCategories');
                       }}
                     >
-                      {t('Proposal Categories')}
+                      {t(
+                        'decisions.processBuilder.proposalCategoriesSectionLabel',
+                      )}
                     </Button>
                     .
                   </p>
@@ -428,7 +466,7 @@ export function TemplateEditorContent({
                 return <FieldCardDragPreview field={field} />;
               }}
               renderDropIndicator={FieldCardDropIndicator}
-              aria-label={t('Form fields')}
+              aria-label={t('decisions.processBuilder.formFieldsHeading')}
             >
               {(field, controls) => renderFieldCard(field, controls)}
             </Sortable>
@@ -439,20 +477,72 @@ export function TemplateEditorContent({
             onClick={() => handleAddField('short_text')}
           >
             <LuPlus className="size-4" />
-            {t('Add field')}
+            {t('decisions.processBuilder.addFieldAction')}
           </Button>
         </div>
       </div>
 
       <ConfirmDeleteModal
         isOpen={fieldToDelete !== null}
-        title={t('Delete field')}
-        message={t(
-          'Are you sure you want to delete this field? This action cannot be undone.',
-        )}
+        title={t('decisions.processBuilder.deleteFieldTitle')}
+        message={t('decisions.processBuilder.deleteFieldConfirm')}
         onConfirm={confirmRemoveField}
         onCancel={() => setFieldToDelete(null)}
       />
     </>
   );
+}
+
+/** Stable identity so a card without disabled types doesn't re-render. */
+const EMPTY_FIELD_TYPES: FieldType[] = [];
+
+function createFieldId(): string {
+  return crypto.randomUUID().slice(0, 8);
+}
+
+/**
+ * The property key a field must use once it is a given type.
+ *
+ * A field becoming a location takes `LOCATION_FIELD_KEY`, and one leaving the
+ * type hands it back and gets a fresh id. The CSV export addresses the
+ * location field by that literal key rather than by its x-format — see
+ * `renameField` for what breaks in each direction if the key doesn't follow.
+ */
+function getFieldIdForType(fieldId: string, type: FieldType): string {
+  if (type === 'location') {
+    return LOCATION_FIELD_KEY;
+  }
+  if (fieldId === LOCATION_FIELD_KEY) {
+    return createFieldId();
+  }
+  return fieldId;
+}
+
+function renameInSet(
+  ids: Set<string>,
+  fromId: string,
+  toId: string,
+): Set<string> {
+  if (!ids.has(fromId)) {
+    return ids;
+  }
+  const next = new Set(ids);
+  next.delete(fromId);
+  next.add(toId);
+  return next;
+}
+
+function renameInMap<T>(
+  entries: Map<string, T>,
+  fromId: string,
+  toId: string,
+): Map<string, T> {
+  const value = entries.get(fromId);
+  if (value === undefined) {
+    return entries;
+  }
+  const next = new Map(entries);
+  next.delete(fromId);
+  next.set(toId, value);
+  return next;
 }

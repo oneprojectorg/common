@@ -6,17 +6,17 @@ import {
   decisionsVoteSubmissions,
   processInstances,
 } from '@op/db/schema';
-import { User } from '@op/supabase/lib';
 import { permission } from 'access-zones';
 import { count as countFn } from 'drizzle-orm';
 
 import {
+  PAGE_LIMIT,
   NotFoundError,
-  type PaginatedResult,
+  type Paginated,
   decodeCursor,
   encodeCursor,
 } from '../../utils';
-import { assertInstanceProfileAccess } from '../access';
+import { type AccessUser, assertInstanceProfileAccess } from '../access';
 import { listProposals } from './listProposals';
 
 // Uses selectionRank with id as tiebreaker for stable ordering
@@ -24,7 +24,7 @@ type SelectionCursor = { selectionRank: number | null; id: string };
 
 type ResultProposalItem = Awaited<
   ReturnType<typeof listProposals>
->['proposals'][number] & {
+>['items'][number] & {
   selectionRank: number | null;
   voteCount: number;
   allocated: string | null;
@@ -33,14 +33,14 @@ type ResultProposalItem = Awaited<
 export const getLatestResultWithProposals = async ({
   processInstanceId,
   user,
-  limit = 20,
+  limit = PAGE_LIMIT.md,
   cursor,
 }: {
   processInstanceId: string;
-  user: User;
+  user?: AccessUser;
   limit?: number;
   cursor?: string | null;
-}): Promise<PaginatedResult<ResultProposalItem> | null> => {
+}): Promise<Paginated<ResultProposalItem> | null> => {
   const instance = await db
     .select({
       id: processInstances.id,
@@ -137,7 +137,7 @@ export const getLatestResultWithProposals = async ({
     : paginatedSelections;
   const paginatedProposalIds = selections.map((s) => s.proposalId);
 
-  const [voteCounts, enrichedProposals] = await Promise.all([
+  const [voteCounts, { items: enrichedProposals }] = await Promise.all([
     db
       .select({
         proposalId: decisionsVoteProposals.proposalId,
@@ -183,9 +183,7 @@ export const getLatestResultWithProposals = async ({
     ]),
   );
 
-  const proposalMap = new Map(
-    enrichedProposals.proposals.map((p) => [p.id, p]),
-  );
+  const proposalMap = new Map(enrichedProposals.map((p) => [p.id, p]));
 
   // Map proposals to match the DB-ordered selection rank
   // The order is maintained from selections which was sorted by selectionRank at DB level

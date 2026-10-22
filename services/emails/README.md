@@ -31,7 +31,7 @@ The `package.json` includes scripts provided by the `react-email` CLI:
 
 **Depends On:**
 
-- **`@op/core`**: For shared configuration used in sending, specifically `APP_NAME` and `genericEmail` used in `index.tsx`.
+- **`@op/core`**: For shared configuration used in sending, specifically `APP_NAME` and `noReplyEmail` used in `index.tsx`.
 
 - **`@op/typescript-config` (Dev)**: Used for TypeScript configuration during development.
 

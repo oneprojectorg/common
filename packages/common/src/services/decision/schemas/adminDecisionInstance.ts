@@ -5,6 +5,9 @@ import {
 } from '@op/db/schema';
 import { z } from 'zod';
 
+import { moneyAmountSchema } from '../../../money';
+import { proposalCategorySchema } from './proposalCategory';
+
 const adminDecisionCurrentPhaseSchema = z.object({
   id: z.string(),
   name: z.string().nullable(),
@@ -21,7 +24,6 @@ export const adminDecisionInstanceSchema = z.object({
   proposalCount: z.number(),
   totalProposalCount: z.number(),
   participantCount: z.number(),
-  instanceData: z.unknown(),
 });
 
 export type AdminDecisionInstance = z.infer<typeof adminDecisionInstanceSchema>;
@@ -53,8 +55,14 @@ export const adminDecisionPhaseSchema = z.object({
   hasVoting: z.boolean(),
   canEditProposals: z.boolean(),
   canEditVotes: z.boolean(),
+  /** Defaults to true — see `allowsComments`. */
+  allowsComments: z.boolean(),
   /** Null = no limit. */
   maxVotesPerMember: z.number().nullable(),
+  voterBudget: z.number().nullable(),
+  /** Field a selection is charged from; null without a voter budget. */
+  voterCostField: z.string().nullable(),
+  ranked: z.boolean().nullable(),
   proposalsHiddenByDefault: z.boolean(),
   /** 'date' | 'manual' | null when unset. */
   advancementMethod: z.string().nullable(),
@@ -84,8 +92,12 @@ export const adminDecisionInstanceDetailSchema = z.object({
   name: z.string(),
   /** Slug of the decision's profile, used for the public decision URL. */
   slug: z.string().nullable(),
+  /** Null on instances created before the column was populated. */
+  profileId: z.string().nullable(),
   status: z.enum(ProcessStatus).nullable(),
   createdAt: z.string().nullable(),
+  /** Whether a visitor with no account can read the decision. */
+  isPublic: z.boolean(),
   owner: adminProfileRefSchema.nullable(),
   steward: adminProfileRefSchema.nullable(),
   reviewsPolicy: z.string().nullable(),
@@ -93,6 +105,8 @@ export const adminDecisionInstanceDetailSchema = z.object({
   processType: z.string().nullable(),
   templateVersion: z.string().nullable(),
   config: adminDecisionConfigSchema,
+  /** Raw and unparsed - admins read shapes our schemas don't model. */
+  instanceData: z.unknown(),
   phases: z.array(adminDecisionPhaseSchema),
 });
 
@@ -109,6 +123,12 @@ export const adminReviewAssignmentSchema = z.object({
   status: z.enum(ProposalReviewAssignmentStatus),
   reviewState: z.enum(ProposalReviewState).nullable(),
   submittedAt: z.string().nullable(),
+  categories: z.array(proposalCategorySchema),
+  author: adminProfileRefSchema.nullable(),
+  /** Plain-text body preview, resolved like the proposal list rows'; null when there is nothing to preview. */
+  previewText: z.string().nullable(),
+  /** Budget from the document fragments, falling back to the proposalData snapshot. */
+  budget: moneyAmountSchema.nullable(),
 });
 
 export type AdminReviewAssignment = z.infer<typeof adminReviewAssignmentSchema>;
@@ -130,13 +150,14 @@ export const adminAssignableProposalSchema = z.object({
   title: z.string().nullable(),
   submittedByProfileId: z.string().nullable(),
   author: adminProfileRefSchema.nullable(),
+  categories: z.array(proposalCategorySchema),
 });
 
 export type AdminAssignableProposal = z.infer<
   typeof adminAssignableProposalSchema
 >;
 
-/** Eligible reviewer candidate; email comes from the member's user record. */
+/** Eligible reviewer candidate; `email` is the profile contact field. */
 export const adminEligibleReviewerSchema = adminProfileRefSchema.extend({
   email: z.string().nullable(),
 });

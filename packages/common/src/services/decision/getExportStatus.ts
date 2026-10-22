@@ -1,46 +1,56 @@
-import { get, set } from '@op/cache';
 import { db, eq } from '@op/db/client';
 import { processInstances } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
-import { createSBServerClient } from '@op/supabase/server';
 import { permission } from 'access-zones';
 
 import { NotFoundError, UnauthorizedError } from '../../utils';
-import { assertProfileAccess } from '../assert';
-import {
-  EXPORTS_BUCKET,
-  EXPORT_CACHE_TTL_SECONDS,
-  EXPORT_URL_TTL_SECONDS,
-  exportFilePath,
-  exportStatusCacheKey,
-} from './exports';
+import { assertInstanceProfileAccess } from '../access';
+import { readExportRecord, refreshStaleSignedUrl } from '../exports';
+import { exportFilePath, exportStatusCacheKey } from './exports';
+import type { ExportStatusData } from './schemas/exportStatus';
+import { exportStatusRecordSchema } from './schemas/exportStatus';
 
-export interface ExportStatusData {
-  exportId: string;
-  processInstanceId: string;
-  userId: string;
-  format: string;
-  status: 'pending' | 'processing' | 'completed' | 'failed';
-  fileName?: string;
-  signedUrl?: string;
-  urlExpiresAt?: string;
-  errorMessage?: string;
-  createdAt: string;
-  completedAt?: string;
-}
+// Re-exported here because this module is where callers already look for it.
+// `schemas/exportStatus.ts` derives the type from the schema that validates the
+// record, so the type and the check cannot drift.
+export type { ExportStatusData } from './schemas/exportStatus';
 
+/**
+ * Reads one proposal export's status, and re-signs its download URL when the
+ * stored one is no longer usable.
+ *
+ * Authorization runs in a fixed order, and all of it before any signing. The
+ * record's own `userId` settles ownership. `assertInstanceProfileAccess` then
+ * settles `decisions: ADMIN` on the profile that owns the export, which is what
+ * stops an admin who lost the role from holding a working download for the rest
+ * of the record's day.
+ *
+ * @param exportId - The export to read. Also the cache key, via
+ *   `exportStatusCacheKey`.
+ * @param user - The calling user, checked for ownership and then for decision
+ *   admin.
+ * @returns The parsed record, whose `signedUrl` may have been refreshed or
+ *   dropped, or `{ status: 'not_found' }` when the cache holds no usable record.
+ * @throws CommonError when the cache did not answer. Reporting that as
+ *   `not_found` would make the client retire a run that is still there.
+ * @throws UnauthorizedError when the caller does not own the export, or no
+ *   longer holds `decisions: ADMIN` on the owning profile.
+ * @throws NotFoundError when the record names a process instance that is gone.
+ */
 export const getExportStatus = async ({
   exportId,
   user,
-  logger,
 }: {
   exportId: string;
   user: User;
-  logger: { info: (message: string, meta?: any) => void };
 }): Promise<ExportStatusData | { status: 'not_found' }> => {
-  // Get export data from cache
   const key = exportStatusCacheKey(exportId);
-  const exportStatus = (await get(key)) as ExportStatusData | null;
+
+  const exportStatus = await readExportRecord({
+    exportId,
+    cacheKey: key,
+    schema: exportStatusRecordSchema,
+  });
 
   if (!exportStatus) {
     return { status: 'not_found' as const };
@@ -64,51 +74,33 @@ export const getExportStatus = async ({
     throw new NotFoundError('Process instance', exportStatus.processInstanceId);
   }
 
-  if (!instance[0].profileId) {
-    throw new NotFoundError('Decision profile', exportStatus.processInstanceId);
-  }
-
-  // Verify user has admin permission on the profile
-  await assertProfileAccess({
+  // Verify the caller still holds decision admin on the profile that owns the
+  // export. This defers to the shared helper so every decision instance decides
+  // access in one place, including the instance that carries no profile: the
+  // helper reports that as unauthorized, where a local branch reported it as a
+  // missing profile and answered an authorization question with the existence
+  // of a record.
+  //
+  // `ownerProfileId` is null to skip the organization fallback. An export holds
+  // the names of every proposal submitter, so it stays readable by an admin of
+  // the decision profile itself, and not by anyone who holds an org-level grant
+  // over that profile. Passing the real column here would widen the boundary
+  // this module exists to narrow.
+  await assertInstanceProfileAccess({
     user,
-    profileId: instance[0].profileId,
-    permissions: [{ decisions: permission.ADMIN }],
+    instance: { profileId: instance[0].profileId, ownerProfileId: null },
+    profilePermissions: { decisions: permission.ADMIN },
+    orgFallbackPermissions: { decisions: permission.ADMIN },
   });
 
-  // Signed URLs are shorter-lived than the export record, so a completed export
-  // is re-signed on read once its current URL has lapsed.
-  if (
-    exportStatus.status === 'completed' &&
-    exportStatus.fileName &&
-    exportStatus.urlExpiresAt
-  ) {
-    const expiresAt = new Date(exportStatus.urlExpiresAt);
-
-    if (expiresAt < new Date()) {
-      logger.info('Refreshing expired signed URL', {
-        exportId,
-      });
-
-      const filePath = exportFilePath(
-        exportStatus.processInstanceId,
-        exportStatus.fileName,
-      );
-
-      const supabase = await createSBServerClient();
-      const { data: urlData, error: urlError } = await supabase.storage
-        .from(EXPORTS_BUCKET)
-        .createSignedUrl(filePath, EXPORT_URL_TTL_SECONDS);
-
-      if (!urlError && urlData) {
-        exportStatus.signedUrl = urlData.signedUrl;
-        exportStatus.urlExpiresAt = new Date(
-          Date.now() + EXPORT_URL_TTL_SECONDS * 1000,
-        ).toISOString();
-
-        await set(key, exportStatus, EXPORT_CACHE_TTL_SECONDS);
-      }
-    }
-  }
+  // Mutates `exportStatus` in place, so the record returned below is current.
+  await refreshStaleSignedUrl({
+    record: exportStatus,
+    exportId,
+    resolveFilePath: (fileName) =>
+      exportFilePath(exportStatus.processInstanceId, fileName),
+    cacheKey: key,
+  });
 
   return exportStatus;
 };

@@ -111,7 +111,7 @@ export const ReviewPhasePanel = ({
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <span className="text-sm text-muted-foreground">
-          {t('{reviewers} reviewers, {assignments} assignments', {
+          {t('admin.reviewPhaseSummary', {
             reviewers: data.reviewers.length,
             assignments: data.totalAssignments,
           })}
@@ -124,7 +124,7 @@ export const ReviewPhasePanel = ({
             disabled={data.totalAssignments === 0}
           >
             <LuDownload data-icon="inline-start" />
-            {t('Download CSV')}
+            {t('admin.downloadCsvAction')}
           </Button>
           {!isCompleted ? (
             <AssignReviewsDialog
@@ -139,7 +139,7 @@ export const ReviewPhasePanel = ({
 
       {data.reviewers.length === 0 ? (
         <p className="rounded-md border border-dashed px-3 py-2 text-sm text-muted-foreground">
-          {t('No review assignments in this phase yet.')}
+          {t('admin.noReviewAssignments')}
         </p>
       ) : (
         <div className="overflow-hidden rounded-md border">
@@ -174,10 +174,12 @@ const ReviewersTable = ({
     <Table>
       <TableHeader>
         <TableRow>
-          <TableHead>{t('Reviewer')}</TableHead>
-          <TableHead>{t('Progress')}</TableHead>
-          <TableHead className="text-end">{t('Drafts')}</TableHead>
-          <TableHead>{t('Last submission')}</TableHead>
+          <TableHead>{t('admin.reviewerLabel')}</TableHead>
+          <TableHead>{t('decisions.review.progressLabel')}</TableHead>
+          <TableHead className="text-end">
+            {t('decisions.draftsFilter')}
+          </TableHead>
+          <TableHead>{t('decisions.review.lastSubmissionLabel')}</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -238,10 +240,10 @@ const ReviewerRow = ({
           <Progress
             value={percent}
             className="w-24"
-            aria-label={t('Review progress')}
+            aria-label={t('decisions.review.reviewProgressLabel')}
           />
           <span className="text-sm whitespace-nowrap text-muted-foreground">
-            {t('{submitted} of {assigned} submitted', {
+            {t('decisions.review.submittedOfAssigned', {
               submitted: reviewer.submittedCount,
               assigned: reviewer.assignedCount,
             })}
@@ -278,7 +280,8 @@ const AssignmentsList = ({
             className="flex items-center justify-between gap-3 text-sm"
           >
             <span className="truncate">
-              {assignment.proposalTitle ?? t('Untitled Proposal')}
+              {assignment.proposalTitle ??
+                t('decisions.proposals.untitledProposal')}
             </span>
             <Badge variant={statusBadgeVariant(assignment.reviewState)}>
               {STATUS_LABEL[state] ?? state}

@@ -1,54 +1,47 @@
 'use client';
 
+import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import type { RouterOutput } from '@op/api';
 import { type InstancePhaseData } from '@op/api/encoders';
-import {
-  Empty,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from '@op/sense/Empty';
+import { getPhaseReviewSettings } from '@op/common/client';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@op/sense/Tabs';
 import { parseAsStringLiteral, useQueryState } from 'nuqs';
-import { Suspense, useMemo } from 'react';
-import { LuLeaf } from 'react-icons/lu';
+import { Suspense } from 'react';
 
 import { useTranslations } from '@/lib/i18n/routing';
 
-import { TranslatedText } from '@/components/TranslatedText';
-
+import { AdminReviewProposalsList } from '../AdminReviewProposalsList';
 import { DecisionActionBar } from '../DecisionActionBar';
 import { DecisionHero } from '../DecisionHero';
 import { DecisionHeroBanner } from '../DecisionHeroBanner';
 import { useDecisionTranslation } from '../DecisionTranslationContext';
 import { ProposalListSkeleton } from '../ProposalListSkeleton';
 import { ProposalsList } from '../ProposalsList';
+import { ProposalsLoadError } from '../ProposalsLoadError';
 import { ReviewProgressStats } from '../Review/ReviewProgressStats';
+import { ReviewersTableSection } from '../ReviewAssignments/ReviewersTableSection';
 import { ReviewAssignmentsList } from '../ReviewAssignmentsList';
-import { useRegisterTranslationSamples } from '../TranslationDetectionContext';
+import { ProposalReviewDecorationProvider } from '../proposalReviewDecoration';
 
 type Instance = RouterOutput['decision']['getInstance'];
 
-const REVIEW_TABS = ['to-review', 'other-proposals'] as const;
+// The admin-without-review variant reuses DEFAULT_REVIEW_TAB for its progress
+// list, so one parser covers every `?tab=` value.
+const REVIEW_TABS = ['to-review', 'other-proposals', 'assignments'] as const;
 const DEFAULT_REVIEW_TAB = 'to-review';
 
-// Shared by the URL state and the change handler so the accepted values stay a
-// single source of truth; an unknown `?tab=` falls back to the default.
 const reviewTabParser = parseAsStringLiteral(REVIEW_TABS);
 
 export function ReviewPage({
   instance,
   decisionSlug,
   slug,
-  decisionProfileId,
   pinOffset,
 }: {
   instance: Instance;
   decisionSlug: string;
   slug: string;
-  decisionProfileId?: string | null;
   /** Sticky filter-bar pin offset, forwarded to ProposalsList. */
   pinOffset?: number;
 }) {
@@ -65,14 +58,31 @@ export function ReviewPage({
   const canReview = Boolean(instance.access?.review);
   const isAdmin = Boolean(instance.access?.admin);
 
-  const t = useTranslations();
+  // Instance admins only; the flag fails closed in prod.
+  const manualAssignmentsEnabled = useFeatureFlag('manual_review_assignments');
+  const showAssignmentsTab = isAdmin && Boolean(manualAssignmentsEnabled);
 
-  // The tab lives in the URL so a reload or a shared link lands on the tab the
-  // reviewer was on, and so the per-tab params (`?sort=`) are unambiguous.
+  // Client-side mirror of the service's `canReadPhaseReviews` gate.
+  const canSeeReviewCounts =
+    isAdmin ||
+    (canReview &&
+      getPhaseReviewSettings({ phases }, currentPhase.phaseId).openReviews);
+
+  const t = useTranslations('decisions');
+
+  // In the URL so a reload or shared link lands on the same tab.
   const [tab, setTab] = useQueryState(
     'tab',
     reviewTabParser.withDefault(DEFAULT_REVIEW_TAB),
   );
+
+  // A stale `?tab=assignments` (non-admin link, flag off) has no panel.
+  const activeTab =
+    tab === 'assignments' && !showAssignmentsTab ? DEFAULT_REVIEW_TAB : tab;
+
+  // The admin variant has no 'other-proposals' panel to land on.
+  const adminActiveTab =
+    activeTab === 'assignments' ? 'assignments' : DEFAULT_REVIEW_TAB;
 
   const handleTabChange = (next: string) => {
     const parsed = reviewTabParser.parse(next);
@@ -86,49 +96,49 @@ export function ReviewPage({
   };
 
   const translation = useDecisionTranslation();
-  const description =
-    instance.description ?? instance.instanceData?.templateDescription;
   const phaseAdditionalInfo =
     translation?.additionalInfo ?? currentPhase.additionalInfo;
-  const actionBarDescription =
-    phaseAdditionalInfo ?? translation?.description ?? description;
   const actionBarLabel = phaseAdditionalInfo
-    ? t('About this phase')
+    ? t('aboutPhaseHeading')
     : undefined;
-  // Admins get the static "Review Progress" heading; only the reviewer-facing
-  // phase copy is author-written, so only it goes through translation.
+  // Only the reviewer-facing phase copy is author-written, so only it
+  // goes through translation.
   const heroHeadline = translation?.headline ?? currentPhase.headline;
   const heroDescription =
     translation?.phaseDescription ?? currentPhase.description;
   const heroImagePath = instance.instanceData?.overview?.heroImage;
   const hasHeroImage = Boolean(heroImagePath);
 
-  // The phase hero is author-written, and `translateDecision` translates it.
-  // Only ProposalsList sampled this copy, and a review phase can render with
-  // that list unmounted (the reviewer's queue is the default tab), so the copy
-  // on screen was undetectable — register it from the screen that renders it.
-  const phaseSamples = useMemo(
-    () => [currentPhase.headline ?? '', currentPhase.description ?? ''],
-    [currentPhase.headline, currentPhase.description],
+  const assignmentsTabTrigger = (
+    <TabsTrigger value="assignments">{t('assignmentsTab')}</TabsTrigger>
   );
-  useRegisterTranslationSamples('review-phase', phaseSamples);
+
+  // Same table as /decisions/[slug]/assignments — the tab and the dedicated
+  // screen are two entry points onto one surface, and reviewer rows link into
+  // the dedicated per-reviewer route from both.
+  const assignmentsTabContent = (
+    <TabsContent value="assignments" className="grow sm:p-0">
+      <ReviewersTableSection
+        decisionSlug={decisionSlug}
+        processInstanceId={instance.id}
+        phaseId={currentPhase.phaseId}
+      />
+    </TabsContent>
+  );
+
+  const adminProgressList = (
+    <AdminReviewProposalsList
+      processInstanceId={instance.id}
+      slug={slug}
+      decisionSlug={decisionSlug}
+      access={instance.access}
+      currentPhase={currentPhase}
+      pinOffset={pinOffset}
+    />
+  );
 
   const proposalsLoadErrorFallback = {
-    default: () => (
-      <Empty>
-        <EmptyHeader>
-          <EmptyMedia variant="icon">
-            <LuLeaf className="size-6" />
-          </EmptyMedia>
-          <EmptyTitle>
-            <TranslatedText text="We couldn't load proposals" />
-          </EmptyTitle>
-          <EmptyDescription>
-            <TranslatedText text="Please refresh the page to try again." />
-          </EmptyDescription>
-        </EmptyHeader>
-      </Empty>
-    ),
+    default: () => <ProposalsLoadError />,
   };
 
   return (
@@ -137,11 +147,9 @@ export function ReviewPage({
         <div className="mx-auto flex max-w-3xl flex-col items-center justify-center gap-4 px-4 pt-16 pb-8 md:pb-16">
           <DecisionHero
             title={
-              isAdmin ? (
-                <TranslatedText text="Review Progress" />
-              ) : (
-                (heroHeadline ?? <TranslatedText text="Review proposals." />)
-              )
+              isAdmin
+                ? t('review.reviewProgressHeading')
+                : (heroHeadline ?? t('reviewProposalsHeading'))
             }
             description={
               !isAdmin && heroDescription ? <p>{heroDescription}</p> : undefined
@@ -158,7 +166,7 @@ export function ReviewPage({
             ) : (
               <DecisionActionBar
                 instanceId={instance.id}
-                description={actionBarDescription}
+                description={phaseAdditionalInfo}
                 label={actionBarLabel}
                 markup={!!translation?.additionalInfo}
                 showSubmitButton={false}
@@ -171,15 +179,20 @@ export function ReviewPage({
       <div className="flex w-full justify-center bg-white">
         <div className="w-full p-4 sm:p-8">
           {canReview ? (
-            <Tabs className="gap-6" value={tab} onValueChange={handleTabChange}>
+            <Tabs
+              className="gap-6"
+              value={activeTab}
+              onValueChange={handleTabChange}
+            >
               <div className="w-full border-b">
                 <TabsList variant="line" className="flex gap-6">
                   <TabsTrigger value="to-review">
-                    {t('Proposals to review')}
+                    {t('proposalsToReviewTab')}
                   </TabsTrigger>
                   <TabsTrigger value="other-proposals">
-                    {t('Other proposals')}
+                    {t('otherProposalsTab')}
                   </TabsTrigger>
+                  {showAssignmentsTab ? assignmentsTabTrigger : null}
                 </TabsList>
               </div>
 
@@ -189,7 +202,6 @@ export function ReviewPage({
                     <ReviewAssignmentsList
                       processInstanceId={instance.id}
                       decisionSlug={decisionSlug}
-                      decisionProfileId={decisionProfileId}
                       access={instance.access}
                       pinOffset={pinOffset}
                     />
@@ -199,21 +211,59 @@ export function ReviewPage({
 
               <TabsContent value="other-proposals" className="grow sm:p-0">
                 <APIErrorBoundary fallbacks={proposalsLoadErrorFallback}>
-                  <Suspense fallback={<ProposalListSkeleton />}>
-                    <ProposalsList
-                      slug={slug}
-                      instanceId={instance.id}
-                      decisionSlug={decisionSlug}
-                      decisionProfileId={decisionProfileId}
-                      permissions={instance.access}
-                      currentPhase={currentPhase}
-                      pinOffset={pinOffset}
-                      excludeAssignedForReview
-                    />
-                  </Suspense>
+                  {/* Outside Suspense so the provider's reported proposals
+                      survive a re-suspend on filter changes. */}
+                  <ProposalReviewDecorationProvider
+                    processInstanceId={instance.id}
+                    decisionSlug={decisionSlug}
+                    phaseId={currentPhase.phaseId}
+                    enabled={canSeeReviewCounts}
+                    canOpenReviews={canSeeReviewCounts}
+                  >
+                    <Suspense fallback={<ProposalListSkeleton />}>
+                      <ProposalsList
+                        slug={slug}
+                        instanceId={instance.id}
+                        decisionSlug={decisionSlug}
+                        permissions={instance.access}
+                        currentPhase={currentPhase}
+                        pinOffset={pinOffset}
+                        excludeAssignedForReview
+                      />
+                    </Suspense>
+                  </ProposalReviewDecorationProvider>
                 </APIErrorBoundary>
               </TabsContent>
+
+              {showAssignmentsTab ? assignmentsTabContent : null}
             </Tabs>
+          ) : isAdmin ? (
+            // Admin without review capability: the progress list is the whole
+            // surface, gaining a sibling tab only when the desk is on.
+            showAssignmentsTab ? (
+              <Tabs
+                className="gap-6"
+                value={adminActiveTab}
+                onValueChange={handleTabChange}
+              >
+                <div className="w-full border-b">
+                  <TabsList variant="line" className="flex gap-6">
+                    <TabsTrigger value={DEFAULT_REVIEW_TAB}>
+                      {t('review.reviewProgressLabel')}
+                    </TabsTrigger>
+                    {assignmentsTabTrigger}
+                  </TabsList>
+                </div>
+
+                <TabsContent value={DEFAULT_REVIEW_TAB} className="grow sm:p-0">
+                  {adminProgressList}
+                </TabsContent>
+
+                {assignmentsTabContent}
+              </Tabs>
+            ) : (
+              adminProgressList
+            )
           ) : (
             <APIErrorBoundary fallbacks={proposalsLoadErrorFallback}>
               <Suspense fallback={<ProposalListSkeleton />}>
@@ -221,7 +271,6 @@ export function ReviewPage({
                   slug={slug}
                   instanceId={instance.id}
                   decisionSlug={decisionSlug}
-                  decisionProfileId={decisionProfileId}
                   permissions={instance.access}
                   currentPhase={currentPhase}
                   pinOffset={pinOffset}

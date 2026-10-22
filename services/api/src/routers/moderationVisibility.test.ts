@@ -1,3 +1,7 @@
+import {
+  TestDecisionsDataManager,
+  TestOrganizationDataManager,
+} from '@op/common/testing';
 import { db, eq, inArray } from '@op/db/client';
 import {
   ModerationFlagStatus,
@@ -13,8 +17,6 @@ import {
 } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
-import { TestDecisionsDataManager } from '../test/helpers/TestDecisionsDataManager';
-import { TestOrganizationDataManager } from '../test/helpers/TestOrganizationDataManager';
 import { createAuthenticatedCaller } from '../test/supabase-utils';
 
 /**
@@ -308,7 +310,7 @@ describe.concurrent('moderation read visibility', () => {
       const before = await otherCaller.posts.getPosts({
         parentPostId: root.id,
       });
-      expect(before.map((post) => post.id)).toContain(comment.id);
+      expect(before.items.map((post) => post.id)).toContain(comment.id);
 
       await flagItem(onTestFinished, ModerationItemType.POST, comment.id);
 
@@ -316,13 +318,15 @@ describe.concurrent('moderation read visibility', () => {
       const otherAfter = await otherCaller.posts.getPosts({
         parentPostId: root.id,
       });
-      expect(otherAfter.map((post) => post.id)).not.toContain(comment.id);
+      expect(otherAfter.items.map((post) => post.id)).not.toContain(comment.id);
 
       // The author still sees their own flagged comment, marked flagged.
       const authorAfter = await authorCaller.posts.getPosts({
         parentPostId: root.id,
       });
-      const authorComment = authorAfter.find((post) => post.id === comment.id);
+      const authorComment = authorAfter.items.find(
+        (post) => post.id === comment.id,
+      );
       expect(authorComment).toBeDefined();
       expect(authorComment?.isFlagged).toBe(true);
 
@@ -330,7 +334,9 @@ describe.concurrent('moderation read visibility', () => {
       const adminAfter = await adminCaller.posts.getPosts({
         parentPostId: root.id,
       });
-      const adminComment = adminAfter.find((post) => post.id === comment.id);
+      const adminComment = adminAfter.items.find(
+        (post) => post.id === comment.id,
+      );
       expect(adminComment).toBeDefined();
       expect(adminComment?.isFlagged).toBe(true);
     });
@@ -406,6 +412,152 @@ describe.concurrent('moderation read visibility', () => {
       });
       expect(adminView.id).toBe(proposal.id);
       expect(adminView.isFlagged).toBe(true);
+    });
+
+    it('keeps the contributing ideas on a flagged proposal loading for the author and admin', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+      const setup = await testData.createDecisionSetup({
+        instanceCount: 1,
+        grantAccess: true,
+      });
+
+      const instance = setup.instance;
+
+      const [submitter, otherMember, adminCaller] = await Promise.all([
+        testData.createMemberUser({
+          organization: setup.organization,
+          instanceProfileIds: [instance.profileId],
+        }),
+        testData.createMemberUser({
+          organization: setup.organization,
+          instanceProfileIds: [instance.profileId],
+        }),
+        createAuthenticatedCaller(setup.userEmail),
+      ]);
+
+      const [contributing, survivor] = await Promise.all([
+        testData.createProposal({
+          userEmail: setup.userEmail,
+          processInstanceId: instance.instance.id,
+          proposalData: { title: 'Contributing idea', description: 'Merges' },
+          status: ProposalStatus.SUBMITTED,
+        }),
+        testData.createProposal({
+          userEmail: submitter.email,
+          processInstanceId: instance.instance.id,
+          proposalData: { title: 'Surviving idea', description: 'Survives' },
+          status: ProposalStatus.SUBMITTED,
+        }),
+      ]);
+
+      // VISIBLE on both ends isolates the moderation gate from the
+      // hidden-by-default visibility gate.
+      await db
+        .update(proposals)
+        .set({ visibility: Visibility.VISIBLE })
+        .where(inArray(proposals.id, [contributing.id, survivor.id]));
+
+      await adminCaller.decision.mergeProposals({
+        sourceProposalId: contributing.id,
+        targetProposalId: survivor.id,
+      });
+
+      await flagItem(onTestFinished, ModerationItemType.PROPOSAL, survivor.id);
+
+      const submitterCaller = await createAuthenticatedCaller(submitter.email);
+      const [authorView, adminView] = await Promise.all([
+        submitterCaller.decision.listContributingProposals({
+          proposalId: survivor.id,
+        }),
+        adminCaller.decision.listContributingProposals({
+          proposalId: survivor.id,
+        }),
+      ]);
+      expect(authorView.items.map((proposal) => proposal.id)).toEqual([
+        contributing.id,
+      ]);
+      expect(adminView.items.map((proposal) => proposal.id)).toEqual([
+        contributing.id,
+      ]);
+
+      const otherCaller = await createAuthenticatedCaller(otherMember.email);
+      await expect(
+        otherCaller.decision.listContributingProposals({
+          proposalId: survivor.id,
+        }),
+      ).rejects.toMatchObject({ cause: { name: 'NotFoundError' } });
+    });
+
+    it('marks a flagged contributing idea as flagged and hides it from other members', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+      const setup = await testData.createDecisionSetup({
+        instanceCount: 1,
+        grantAccess: true,
+      });
+
+      const instance = setup.instance;
+
+      const [otherMember, adminCaller] = await Promise.all([
+        testData.createMemberUser({
+          organization: setup.organization,
+          instanceProfileIds: [instance.profileId],
+        }),
+        createAuthenticatedCaller(setup.userEmail),
+      ]);
+
+      const [contributing, survivor] = await Promise.all([
+        testData.createProposal({
+          userEmail: setup.userEmail,
+          processInstanceId: instance.instance.id,
+          proposalData: { title: 'Contributing idea', description: 'Merges' },
+          status: ProposalStatus.SUBMITTED,
+        }),
+        testData.createProposal({
+          userEmail: setup.userEmail,
+          processInstanceId: instance.instance.id,
+          proposalData: { title: 'Surviving idea', description: 'Survives' },
+          status: ProposalStatus.SUBMITTED,
+        }),
+      ]);
+
+      await db
+        .update(proposals)
+        .set({ visibility: Visibility.VISIBLE })
+        .where(inArray(proposals.id, [contributing.id, survivor.id]));
+
+      await adminCaller.decision.mergeProposals({
+        sourceProposalId: contributing.id,
+        targetProposalId: survivor.id,
+      });
+
+      await flagItem(
+        onTestFinished,
+        ModerationItemType.PROPOSAL,
+        contributing.id,
+      );
+
+      // The section suppresses the candidacy badges, so without this the
+      // card would read as an ordinary contributing idea.
+      const adminView = await adminCaller.decision.listContributingProposals({
+        proposalId: survivor.id,
+      });
+      expect(adminView.items).toMatchObject([
+        { id: contributing.id, isFlagged: true },
+      ]);
+
+      const otherCaller = await createAuthenticatedCaller(otherMember.email);
+      const otherView = await otherCaller.decision.listContributingProposals({
+        proposalId: survivor.id,
+      });
+      expect(otherView.items).toEqual([]);
     });
   });
 });

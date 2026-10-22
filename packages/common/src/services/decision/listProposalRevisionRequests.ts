@@ -1,11 +1,10 @@
-import { and, db, eq, isNull } from '@op/db/client';
 import type { ProposalReviewRequestState } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 
-import { NotFoundError, UnauthorizedError } from '../../utils';
-import { assertUserByAuthId } from '../assert';
-import { getInstance } from './getInstance';
-import { proposalWithRevisionRequestsConfig } from './reviewHelpers';
+import {
+  loadProposalForReviewRead,
+  proposalWithRevisionRequestsConfig,
+} from './reviewHelpers';
 
 /**
  * Proposal-scoped: revision requests on a single proposal. Visible to the
@@ -14,48 +13,27 @@ import { proposalWithRevisionRequestsConfig } from './reviewHelpers';
  * READ) are rejected — revision feedback is reviewer-scoped.
  *
  * For the author's cross-proposal inbox, use listProposalsRevisionRequests.
+ *
+ * `phaseId` narrows to one phase's assignments — pass the current phase on any
+ * screen offering a resubmission, since that is what the submit will answer.
  */
 export async function listProposalRevisionRequests({
+  phaseId,
   proposalId,
   states,
   user,
 }: {
+  phaseId?: string;
   proposalId: string;
   states?: ProposalReviewRequestState[];
   user: User;
 }) {
-  const commonUser = await assertUserByAuthId(user.id);
-
-  if (!commonUser.profileId) {
-    throw new UnauthorizedError('User must have an active profile');
-  }
-
-  const proposal = await db.query.proposals.findFirst({
-    // Detached (CSAM) proposals return 404 — authors and reviewers alike
-    // should not see revision history on a taken-down row.
-    where: {
-      RAW: (table) =>
-        and(eq(table.id, proposalId), isNull(table.moderationDetachedAt))!,
-    },
-    with: proposalWithRevisionRequestsConfig(states),
-  });
-
-  if (!proposal) {
-    throw new NotFoundError('Proposal', proposalId);
-  }
-
-  const instance = await getInstance({
-    instanceId: proposal.processInstanceId,
+  const { proposal } = await loadProposalForReviewRead({
+    proposalId,
+    subject: 'revision requests',
     user,
+    with: proposalWithRevisionRequestsConfig(states, phaseId),
   });
-
-  const isAuthor = proposal.submittedByProfileId === commonUser.profileId;
-
-  if (!isAuthor && !instance.access.admin && !instance.access.review) {
-    throw new UnauthorizedError(
-      "You don't have access to this proposal's revision requests",
-    );
-  }
 
   const decisionProfileSlug = proposal.processInstance.profile?.slug ?? '';
 
@@ -68,7 +46,7 @@ export async function listProposalRevisionRequests({
   );
 
   return {
-    revisionRequests,
+    items: revisionRequests,
     processInstanceId: proposal.processInstanceId,
   };
 }

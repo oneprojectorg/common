@@ -36,7 +36,7 @@ export function AdminOverviewBar({
   const [bannerOpen, setBannerOpen] = useState(false);
 
   const endsLabel = phaseEndDate
-    ? t('ends {date}', {
+    ? t('decisions.review.endsOnDate', {
         date: new Date(phaseEndDate).toLocaleDateString(locale, {
           month: 'long',
           day: 'numeric',
@@ -76,7 +76,7 @@ export function AdminOverviewBar({
       <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
         <SheetContent side="bottom" className="md:hidden">
           <SheetHeader className="sr-only">
-            <SheetTitle>{t('Admin options')}</SheetTitle>
+            <SheetTitle>{t('decisions.review.adminOptionsLabel')}</SheetTitle>
           </SheetHeader>
           {/* TODO(sense-migration): this was an inline action list inside the
               sheet (no trigger/popover). @op/sense
@@ -92,14 +92,14 @@ export function AdminOverviewBar({
                 setBannerOpen(true);
               }}
             >
-              {t('Edit banner')}
+              {t('decisions.processBuilder.editBannerTitle')}
             </button>
             <button
               type="button"
               className="px-6 py-4 text-start text-base hover:bg-secondary"
               onClick={() => router.push(`/decisions/${decisionSlug}/edit`)}
             >
-              {t('Process settings')}
+              {t('decisions.review.processSettingsAction')}
             </button>
           </div>
         </SheetContent>

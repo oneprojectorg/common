@@ -22,12 +22,12 @@ export function ReadonlyTitleField({
   required?: boolean;
   value: string | null;
 }) {
-  const t = useTranslations();
+  const t = useTranslations('decisions.proposals');
 
   return (
     <ReadonlyField title={title} required={required}>
       <ReadonlyValueBox isEmpty={!value}>
-        {value || t('Untitled Proposal')}
+        {value || t('untitledProposal')}
       </ReadonlyValueBox>
     </ReadonlyField>
   );
@@ -43,7 +43,7 @@ export function ReadonlyTextField({
   multiline,
 }: {
   title?: string;
-  description?: string;
+  description?: ReactNode;
   required?: boolean;
   content: JSONContent | null;
   placeholder: string;
@@ -86,7 +86,7 @@ export function ReadonlyDropdownField({
 }: {
   value: string | null;
   title?: string;
-  description?: string;
+  description?: ReactNode;
   required?: boolean;
   placeholder: string;
 }) {
@@ -109,7 +109,7 @@ export function ReadonlyBudgetField({
 }: {
   value: string | null;
   title?: string;
-  description?: string;
+  description?: ReactNode;
   required?: boolean;
   placeholder: string;
 }) {
@@ -140,7 +140,7 @@ function ReadonlyField({
   children,
 }: {
   title?: string;
-  description?: string;
+  description?: ReactNode;
   required?: boolean;
   className?: string;
   children: ReactNode;

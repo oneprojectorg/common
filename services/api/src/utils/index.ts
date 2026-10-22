@@ -1,4 +1,5 @@
 import type { SortDir } from '@op/common';
+import { PAGE_LIMIT } from '@op/common/client';
 import crypto from 'crypto';
 import sanitizeForS3 from 'sanitize-s3-objectkey';
 import { z } from 'zod';
@@ -35,21 +36,9 @@ export type Sortable = z.infer<typeof sortableSchema>;
  */
 export const paginationSchema = z.object({
   cursor: z.string().nullish(),
-  limit: z.number().min(1).max(100).default(25),
+  limit: z.number().min(1).max(PAGE_LIMIT.max).default(25),
 });
 export type Pagination = z.infer<typeof paginationSchema>;
-
-/**
- * Creates a paginated output schema for tRPC endpoints
- * @example
- * const outputSchema = createPaginatedOutput(userEncoder);
- * // Results in: { items: User[], next: string | null }
- */
-export const createPaginatedOutput = <T extends z.ZodTypeAny>(itemSchema: T) =>
-  z.object({
-    items: z.array(itemSchema),
-    next: z.string().nullable(),
-  });
 
 export const dbFilter = sortableSchema.extend({
   limit: z.number().optional(),

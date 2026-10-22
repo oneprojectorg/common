@@ -19,14 +19,14 @@ export const UpdateProfileModal = ({
   setIsOpen: (isOpen: boolean) => void;
 }) => {
   const { user } = useRequiredUser();
-  const t = useTranslations();
+  const t = useTranslations('profile');
   const formRef = useRef<HTMLFormElement>(null);
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogContent className="gap-0 overflow-hidden p-0 sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>{t('Edit Profile')}</DialogTitle>
+          <DialogTitle>{t('editTitle')}</DialogTitle>
         </DialogHeader>
         {user.profile && (
           <UpdateProfileForm

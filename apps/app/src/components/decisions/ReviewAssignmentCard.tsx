@@ -3,29 +3,19 @@
 import { type DecisionAccess } from '@op/api/encoders';
 import {
   type ProposalReviewAggregates,
-  type ProposalReviewAssignment,
   type ReviewAssignmentExtended,
 } from '@op/common/client';
 import { ProposalCard as SenseProposalCard } from '@op/sense/ProposalCard';
-import { StatusBadge, type StatusBadgeProps } from '@op/sense/StatusBadge';
-import type { IconType } from 'react-icons';
-import {
-  LuCircleAlert,
-  LuCircleCheck,
-  LuCircleDashed,
-  LuRefreshCw,
-  LuTimer,
-} from 'react-icons/lu';
+import { StatusBadge } from '@op/sense/StatusBadge';
+import { LuRefreshCw } from 'react-icons/lu';
 
-import type { TranslationKey } from '@/lib/i18n';
 import { Link, useTranslations } from '@/lib/i18n';
 
-import { TranslatedText } from '@/components/TranslatedText';
-
 import { useProposalCardData } from './ProposalCard';
+import { useProposalCardTranslation } from './ProposalCard/useProposalCardTranslation';
 import { ProposalReviewsCount } from './ProposalReviewsCount';
-
-type AssignmentStatus = ProposalReviewAssignment['status'];
+import { ReviewStatusBadge } from './ReviewStatusBadge';
+import { TranslateLink } from './TranslateLink';
 
 type Reviewers = ProposalReviewAggregates['reviewers'];
 
@@ -43,7 +33,7 @@ interface ReviewAssignmentCardProps {
 }
 
 export function ReviewAssignmentCard({
-  assignment: { assignment },
+  assignment: { assignment, isReviewOutOfDate },
   viewHref,
   reviewers,
   reviewsHref,
@@ -51,11 +41,17 @@ export function ReviewAssignmentCard({
   showCategory = true,
   className,
 }: ReviewAssignmentCardProps) {
-  const t = useTranslations();
+  const t = useTranslations('decisions.review');
   const { proposal, status } = assignment;
   const isRevised = status === 'ready_for_re_review';
+  // `ready_for_re_review` already tells the reviewer to look again.
+  const showOutOfDate = isReviewOutOfDate && !isRevised;
+  const translation = useProposalCardTranslation({ proposal });
   const { titleText, budgetText, displayCategories, authors, description } =
-    useProposalCardData(proposal);
+    useProposalCardData({
+      proposal,
+      cardTranslation: translation.translation,
+    });
 
   return (
     <SenseProposalCard
@@ -63,6 +59,7 @@ export function ReviewAssignmentCard({
       title={titleText}
       href={viewHref}
       linkComponent={Link}
+      headerBadge={<TranslateLink translation={translation} />}
       budget={budgetText}
       authors={authors}
       tags={
@@ -74,49 +71,28 @@ export function ReviewAssignmentCard({
       alert={
         isRevised ? (
           <StatusBadge variant="revision" icon={LuRefreshCw}>
-            {t('Revised')}
+            {t('revisedLabel')}
           </StatusBadge>
         ) : undefined
       }
-      status={<ReviewStatusBadge status={status} />}
+      status={
+        showOutOfDate ? (
+          <StatusBadge variant="warning" icon={LuRefreshCw}>
+            {t('reviewOutOfDateLabel')}
+          </StatusBadge>
+        ) : (
+          <ReviewStatusBadge status={status} />
+        )
+      }
       reviewedLabel={
         reviewers ? (
           <ProposalReviewsCount
             reviewers={reviewers}
             href={reviewsHref}
-            access={access}
+            canOpenReviews={Boolean(access?.admin)}
           />
         ) : undefined
       }
     />
-  );
-}
-
-const statusBadge: Record<
-  AssignmentStatus,
-  { variant: StatusBadgeProps['variant']; icon: IconType }
-> = {
-  pending: { variant: 'inactive', icon: LuCircleDashed },
-  in_progress: { variant: 'in-progress', icon: LuTimer },
-  completed: { variant: 'success', icon: LuCircleCheck },
-  awaiting_author_revision: { variant: 'revision', icon: LuRefreshCw },
-  ready_for_re_review: { variant: 'warning', icon: LuCircleAlert },
-};
-
-const statusLabels: Record<AssignmentStatus, TranslationKey> = {
-  pending: 'Not Started',
-  in_progress: 'In Progress',
-  completed: 'Completed',
-  awaiting_author_revision: 'Revision Requested',
-  ready_for_re_review: 'Needs Review',
-};
-
-function ReviewStatusBadge({ status }: { status: AssignmentStatus }) {
-  const { variant, icon } = statusBadge[status];
-
-  return (
-    <StatusBadge variant={variant} icon={icon}>
-      <TranslatedText text={statusLabels[status]} />
-    </StatusBadge>
   );
 }

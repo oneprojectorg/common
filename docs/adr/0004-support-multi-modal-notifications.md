@@ -1,0 +1,202 @@
+# 0004. Support Multi Modal Notifications
+
+Date: 2026-08-25
+
+## Status
+
+Proposed
+
+## Context
+
+Participants must be able to sign up and vote through SMS and WhatsApp.
+Some of them do not use email, and Common carries every notification
+over email today, so those participants cannot join a process or take
+part in a vote.
+
+The current application supports email only. tRPC procedures emit
+events to the Inngest Workflow system. These events trigger Inngest
+Workflow functions. These Workflow functions then interact with
+external services to send emails. The Workflow functions use the
+Inngest `step.run` API to implement retries. Most Workflow functions
+already send emails. For example, the `sendDecisionUpdateNotification`
+Workflow function does this.
+
+Today every notification ends at one channel, email:
+
+```mermaid
+flowchart TD
+  proc["tRPC procedure"] -->|"inngest.send(event)"| inngest["Inngest Workflow system"]
+  inngest --> fn["Workflow function
+(sendDecisionUpdateNotification)"]
+  fn --> read["step.run: read recipients
+(profileUsers.email)"]
+  read --> batch["step.run: OPBatchSend"]
+  batch --> resend["Resend"]
+  resend --> inbox["Participant email"]
+```
+
+The diagram shows one of two recipient sources. Four functions fan
+out to a group of participants and read `profileUsers.email`. They
+are `sendDecisionUpdateNotification`, `sendVoteSubmittedNotification`,
+`sendProposalSubmittedNotification`, and `sendPhaseTransitionNotification`.
+The other functions notify one member and read `profiles.email`.
+
+The `profileUsers.email` column holds a copy of the email address.
+The system writes the copy when it creates a membership row.
+It never updates the copy. A member who changes their email receives
+fan-out mail at the old address. The column is nullable. A member
+without a copy receives no fan-out mail.
+
+The team has experience with Twilio, and Twilio has the features we
+need for both SMS and WhatsApp.
+
+Twilio splits those features across two products, and they carry
+different obligations. Twilio Verify sends verification codes and is
+exempt from A2P 10DLC registration. Programmable Messaging sends free
+text and is not; its campaign review runs ten to fifteen days.
+
+Signup needs only verification codes. Notifications need free text. The
+signup flow can therefore ship before any campaign is approved, and the
+notification work cannot.
+
+Twilio can also process traffic in more than one region, and the region
+is a property of the client and its credentials rather than of the
+call: an EU-region API key is not valid against the US region. Some
+partners and funders will eventually require that a participant's
+messages stay inside the EU. None of them requires it today, and every
+process we run is US-based.
+
+## Decision
+
+We will use Twilio as our WhatsApp and SMS provider. We will use the
+existing Inngest steps for sending and retrying notifications.
+
+For signups and phone number confirmations we will use GoTrue's
+`[auth.sms.twilio_verify]` mode. GoTrue generates the code, sends it
+through Twilio Verify, checks the reply, and issues the session. The
+browser calls GoTrue directly.
+
+We considered Twilio's outgoing webhook and did not use it. The webhook
+would put our API host in the middle of a flow GoTrue already performs,
+and would add a public route that mints sessions.
+
+After this work, the Workflow functions will determine the user's
+notification preference and send the correct notification. The
+functions resolve a recipient from the stored contact and preference.
+They do not read the `profileUsers.email` copy. We will structure
+these notifications as batches. We will send each batch to the
+external provider and retry it with the Inngest Step API.
+
+We will focus on implementing multi-modal support for the signup flow
+first, and then on voting.
+
+## Consequences
+
+Every notification gains a fan-out. The Workflow function reads a
+preference and sends on the channel it names:
+
+```mermaid
+flowchart TD
+  proc["tRPC procedure"] -->|"inngest.send(event)"| inngest["Inngest Workflow system"]
+  inngest --> fn["Workflow function"]
+  fn --> read["step.run: read recipients,
+preference and phone number"]
+  read --> pref{"Notification
+preference"}
+  pref -->|email| ebatch["step.run: email batch"]
+  pref -->|"SMS / WhatsApp"| tbatch["step.run: Twilio batch"]
+  ebatch --> resend["Resend"]
+  tbatch --> factory["client factory
+(region from phone number)"]
+  factory -->|"US (configured)"| twilio["Twilio US region"]
+  factory -.->|"EU (not configured yet)"| twilioeu["Twilio EU region"]
+  resend --> inbox["Participant email"]
+  twilio --> phone["Participant phone"]
+```
+
+The client factory and the EU region are recorded intent rather than
+work this ADR covers.
+
+Our server never observes a verification. GoTrue performs it and issues
+the session, so the platform records nothing about it.
+
+Network membership does not read a phone number. It reads an email
+address: the network domains and the allow list. A phone number
+authenticates a person and admits them nowhere.
+
+Membership must not read `auth.users.phone_confirmed_at`. An account
+holder can set that column on their own row through GoTrue, so an
+account that could already sign in would be able to admit itself.
+
+Network membership admits a participant to the platform. It is not
+access to an organization or to a decision. Anyone who holds a phone can
+create an account, but that account holds no membership and no role. An
+invitation decides what a participant sees: `assertOrgAccess` and
+`assertInstanceProfileAccess` require a role on the owning profile, and
+a new account holds none.
+
+A gate that reads membership alone is wider than a gate that reads a
+role. `assertPostReadAccess` reads roles. The comment path in
+`assertPostWriteAccess` reads membership alone, so any member can
+comment on any organization's post. That rule predates this ADR and
+needs a decision of its own.
+
+We will need to store the notification preference for a user in the
+database.
+
+We will also need to store the user's phone number. Both of these
+values are new. A user already on the platform will have to add their
+phone number.
+
+The four fan-out functions keep reading `profileUsers.email` after
+this work. They send to a stale address when a member changes their
+email, and they skip a member without a copy. A separate change must
+fix that column. Track it in the
+[Asana task](https://app.asana.com/0/1215095416548883/1218263833603355).
+
+We will reuse the existing Inngest Workflow system, so a failed
+notification retries the same way it does today. An SMS or WhatsApp
+retry costs money for each attempt. An email retry does not.
+
+This work configures one Twilio region, the US. It does not build
+region selection. We record how we would add a second region here,
+because the choice is cheap to keep open now and expensive to retrofit.
+
+Sending already runs through one shared batch helper. Nine notification
+functions call `OPBatchSend` rather than construct a client of their
+own, and the Twilio path will follow that shape. The helper will ask a
+client factory for the client that serves a recipient, and the factory
+will resolve a region from the E.164 country calling code. A second
+region therefore costs credentials and a mapping entry in one place,
+not an edit to every Workflow function.
+
+A region we have not enabled resolves to the default region. A region
+we have enabled must fail when its credentials do not work. Falling
+back in that case would send EU traffic through the US and report
+success, which is the outcome the region exists to prevent.
+
+A country calling code is a guess about where someone lives, not a
+fact. A participant in the EU with a US number would be routed to the
+US region, and any real residency commitment will need a stored
+preference on the profile rather than the number alone.
+
+Region selection covers where Twilio processes a message. It does not
+cover where we store the phone number, the notification preference, or
+the message metadata; those sit in our existing US database and a
+genuine EU residency requirement would need its own decision.
+
+Signup stays outside this seam. GoTrue holds the Twilio Verify
+credentials and performs those sends itself, so verification traffic is
+not ours to route and cannot be segmented this way.
+
+One cost comes with GoTrue owning the code. No per-number send limit of
+ours applies, because no request of ours carries the send. Twilio's
+geographic permissions are the remaining control.
+
+SMS autoconfirm has to stay off. With it on, GoTrue sets
+`phone_confirmed_at` on a signup, and on a change, without checking a
+code, and issues a session for it. Anyone who can reach GoTrue could
+then sign in as a number they do not hold. Membership reads an email
+address, so this admits nobody to the closed network. It hands out the
+account instead, which is worse. `enable_confirmations` is true in every
+Supabase config.

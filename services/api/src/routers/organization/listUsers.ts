@@ -1,4 +1,5 @@
 import { getOrganizationUsers } from '@op/common';
+import { list } from '@op/common/client';
 import { z } from 'zod';
 
 import { networkAuthenticatedProcedure, router } from '../../trpcFactory';
@@ -44,7 +45,7 @@ const organizationUserEncoder = z.object({
 export const listUsersRouter = router({
   listUsers: networkAuthenticatedProcedure()
     .input(inputSchema)
-    .output(z.array(organizationUserEncoder))
+    .output(list(organizationUserEncoder))
     .query(async ({ ctx, input }) => {
       const { profileId } = input;
       const { user } = ctx;
@@ -54,6 +55,8 @@ export const listUsersRouter = router({
         user,
       });
 
-      return users.map((user) => organizationUserEncoder.parse(user));
+      return {
+        items: users.map((user) => organizationUserEncoder.parse(user)),
+      };
     }),
 });

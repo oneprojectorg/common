@@ -1,10 +1,13 @@
 'use client';
 
-import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { getDecisionCommonProperties } from '@op/analytics/client-utils';
 import { trpc } from '@op/api/client';
 import type { PhaseDefinition, PhaseRules } from '@op/api/encoders';
-import { isReviewPhase, isVotingPhase } from '@op/common/client';
+import {
+  allowsComments,
+  isReviewPhase,
+  isVotingPhase,
+} from '@op/common/client';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -108,7 +111,6 @@ function PhaseDetailForm({
   );
   const { saveChanges, autosaveStatus } = useProcessBuilderAutosave();
 
-  const reviewsV2Enabled = useFeatureFlag('reviews-v2');
   const posthog = usePostHog();
   // Open reviews opt-in is confirmed via a dialog (enabling it changes reviewer
   // behavior), so turning it ON opens this dialog first.
@@ -215,22 +217,26 @@ function PhaseDetailForm({
     }
     const errors: Record<string, string> = {};
     if (!phase.name?.trim()) {
-      errors.name = t('Phase name is required');
+      errors.name = t('decisions.processBuilder.phaseNameRequiredError');
     }
     if (!phase.headline?.trim()) {
-      errors.headline = t('Headline is required');
+      errors.headline = t(
+        'decisions.processBuilder.phaseHeadlineRequiredError',
+      );
     }
     if (!phase.description?.trim()) {
-      errors.description = t('Description is required');
+      errors.description = t(
+        'decisions.processBuilder.phaseDescriptionRequiredError',
+      );
     }
     if (!phase.endDate) {
-      errors.endDate = t('End date is required');
+      errors.endDate = t('decisions.processBuilder.phaseEndDateRequiredError');
     }
     if (phase.startDate && phase.endDate) {
       const start = safeParseLocal(phase.startDate);
       const end = safeParseLocal(phase.endDate);
       if (start && end && end.getTime() < start.getTime()) {
-        errors.endDate = t('End date must be on or after the start date');
+        errors.endDate = t('decisions.processBuilder.phaseEndDateOrderError');
       }
     }
     return errors;
@@ -249,13 +255,15 @@ function PhaseDetailForm({
       <div className="flex items-start justify-between">
         <div className="flex flex-col gap-4">
           <p className="text-sm text-muted-foreground">
-            {t('Phase {index} of {total}', {
+            {t('decisions.processBuilder.phaseIndexOfTotal', {
               index: phaseIndex,
               total: phaseCount,
             })}
           </p>
           <Header1 className="text-headline">
-            {phase.name?.trim() ? phase.name : t('Add phase')}
+            {phase.name?.trim()
+              ? phase.name
+              : t('decisions.processBuilder.addPhaseAction')}
           </Header1>
         </div>
         <SaveStatusIndicator
@@ -267,15 +275,13 @@ function PhaseDetailForm({
       <div className="space-y-8">
         <PhaseField
           id="phase-name"
-          label={t('Short name')}
+          label={t('decisions.processBuilder.phaseShortNameLabel')}
           isRequired
           value={phase.name ?? ''}
           onChange={(value) => updatePhase({ name: value })}
           onBlur={() => markTouched('name')}
           errorMessage={getErrorMessage('name')}
-          description={t(
-            'A short name to easily recognize the purpose of the phase.',
-          )}
+          description={t('decisions.processBuilder.phaseShortNameHint')}
           maxLength={50}
         />
         <PhaseField
@@ -286,7 +292,7 @@ function PhaseDetailForm({
           onChange={(value) => updatePhase({ headline: value })}
           onBlur={() => markTouched('headline')}
           errorMessage={getErrorMessage('headline')}
-          description={t('This text appears as the header of the page.')}
+          description={t('decisions.processBuilder.phaseHeadlineHint')}
           maxLength={50}
         />
         <PhaseField
@@ -299,14 +305,12 @@ function PhaseDetailForm({
           onChange={(value) => updatePhase({ description: value })}
           onBlur={() => markTouched('description')}
           errorMessage={getErrorMessage('description')}
-          description={t(
-            'This text appears below the headline on the phase page.',
-          )}
+          description={t('decisions.processBuilder.phaseDescriptionHint')}
           maxLength={250}
         />
         <div className="space-y-2">
           <label className="block font-strong">
-            {t('Additional information')}
+            {t('decisions.processBuilder.phaseAdditionalInfoLabel')}
           </label>
           <RichTextEditorWithToolbar
             content={phase.additionalInfo ?? ''}
@@ -316,15 +320,13 @@ function PhaseDetailForm({
             editorClassName="min-h-24 p-3"
           />
           <p className="text-sm text-muted-foreground">
-            {t(
-              'Any additional information will appear in a modal titled "About the process"',
-            )}
+            {t('decisions.processBuilder.phaseAdditionalInfoHint')}
           </p>
         </div>
         <div className="flex flex-wrap gap-4">
           <div className="flex-1">
             <DatePicker
-              label={t('Start date')}
+              label={t('decisions.processBuilder.startDateLabel')}
               value={safeParseLocal(phase.startDate)}
               maxDate={safeParseLocal(phase.endDate)}
               onChange={(date) => {
@@ -351,7 +353,7 @@ function PhaseDetailForm({
             }}
           >
             <DatePicker
-              label={t('End date')}
+              label={t('decisions.processBuilder.endDateLabel')}
               required
               value={safeParseLocal(phase.endDate)}
               minDate={safeParseLocal(phase.startDate)}
@@ -367,10 +369,8 @@ function PhaseDetailForm({
         </div>
 
         <ToggleRow
-          label={t('Proposal submission')}
-          description={t(
-            'Participants can submit new proposals during this phase.',
-          )}
+          label={t('decisions.processBuilder.proposalSubmissionLabel')}
+          description={t('decisions.processBuilder.proposalSubmissionHint')}
         >
           <Switch
             checked={phase.rules?.proposals?.submit ?? false}
@@ -383,10 +383,8 @@ function PhaseDetailForm({
         </ToggleRow>
         {phase.rules?.proposals?.submit && (
           <ToggleRow
-            label={t('Hide proposals by default')}
-            description={t(
-              'New proposals are hidden from other participants until an admin makes them visible.',
-            )}
+            label={t('decisions.processBuilder.hideProposalsLabel')}
+            description={t('decisions.processBuilder.hideProposalsHint')}
           >
             <Switch
               checked={phase.rules?.proposals?.defaults?.hidden ?? false}
@@ -405,8 +403,8 @@ function PhaseDetailForm({
           </ToggleRow>
         )}
         <ToggleRow
-          label={t('Proposal editing')}
-          description={t('Authors can edit their proposals after submitting')}
+          label={t('decisions.processBuilder.proposalEditingLabel')}
+          description={t('decisions.processBuilder.proposalEditingHint')}
         >
           <Switch
             checked={phase.rules?.proposals?.edit ?? false}
@@ -418,10 +416,8 @@ function PhaseDetailForm({
           />
         </ToggleRow>
         <ToggleRow
-          label={t('Proposal review')}
-          description={t(
-            'Proposals can be assessed and scored during this phase.',
-          )}
+          label={t('decisions.processBuilder.proposalReviewLabel')}
+          description={t('decisions.processBuilder.proposalReviewHint')}
         >
           <Switch
             checked={isReviewPhase(phase)}
@@ -440,12 +436,10 @@ function PhaseDetailForm({
             }}
           />
         </ToggleRow>
-        {reviewsV2Enabled && isReviewPhase(phase) && (
+        {isReviewPhase(phase) && (
           <ToggleRow
-            label={t('Open reviews')}
-            description={t(
-              "Reviewers can see each other's reviews on a proposal",
-            )}
+            label={t('decisions.processBuilder.openReviewsLabel')}
+            description={t('decisions.processBuilder.openReviewsHint')}
           >
             <Switch
               checked={phase.rules?.reviews?.openReviews ?? false}
@@ -464,10 +458,8 @@ function PhaseDetailForm({
           </ToggleRow>
         )}
         <ToggleRow
-          label={t('Voting')}
-          description={t(
-            'Participants can vote on proposals during this phase.',
-          )}
+          label={t('decisions.processBuilder.votingLabel')}
+          description={t('decisions.processBuilder.votingHint')}
         >
           <Switch
             checked={isVotingPhase(phase)}
@@ -487,8 +479,8 @@ function PhaseDetailForm({
         </ToggleRow>
         {isVotingPhase(phase) && (
           <ToggleRow
-            label={t('Voting limit')}
-            description={t('Number of proposals each participant can vote on')}
+            label={t('decisions.processBuilder.votingLimitLabel')}
+            description={t('decisions.processBuilder.votingLimitHint')}
           >
             <VoteLimitSelect
               maxVotes={phase.rules?.voting?.maxVotesPerMember}
@@ -500,6 +492,19 @@ function PhaseDetailForm({
             />
           </ToggleRow>
         )}
+        <ToggleRow
+          label={t('decisions.proposals.commentsHeading')}
+          description={t('decisions.processBuilder.commentsHint')}
+        >
+          <Switch
+            checked={allowsComments(phase)}
+            onCheckedChange={(val) =>
+              updateRules({
+                comments: { ...phase.rules?.comments, submit: val },
+              })
+            }
+          />
+        </ToggleRow>
       </div>
 
       <AlertDialog
@@ -508,11 +513,11 @@ function PhaseDetailForm({
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>{t('Turn on Open Reviews?')}</AlertDialogTitle>
+            <AlertDialogTitle>
+              {t('decisions.processBuilder.openReviewsConfirmTitle')}
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              {t(
-                'This can lead reviewers to agree with each other more than they would independently.',
-              )}
+              {t('decisions.processBuilder.openReviewsConfirmWarning')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -526,7 +531,7 @@ function PhaseDetailForm({
                 setShowOpenReviewsModal(false);
               }}
             >
-              {t('Enable')}
+              {t('decisions.processBuilder.enableAction')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -557,8 +562,8 @@ function VoteLimitSelect({
 
   const labelFor = (key: string) =>
     key === 'none'
-      ? t('No limit')
-      : t('{count, plural, one {# vote} other {# votes}}', {
+      ? t('decisions.processBuilder.noLimit')
+      : t('decisions.processBuilder.voteCount', {
           count: Number(key),
         });
 
@@ -571,7 +576,9 @@ function VoteLimitSelect({
         onChange(key === 'none' ? undefined : Number(key));
       }}
     >
-      <SelectTrigger aria-label={t('Voting limit')}>
+      <SelectTrigger
+        aria-label={t('decisions.processBuilder.votingLimitLabel')}
+      >
         <SelectValue />
       </SelectTrigger>
       <SelectContent>

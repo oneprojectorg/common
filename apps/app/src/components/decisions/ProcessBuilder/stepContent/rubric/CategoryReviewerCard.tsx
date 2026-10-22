@@ -26,9 +26,9 @@ import { useTranslations } from '@/lib/i18n';
 type ReviewerOption = { value: string; label: string };
 
 type CategoryWithReviewers =
-  RouterOutput['decision']['listCategoryReviewers']['categories'][number];
+  RouterOutput['decision']['listCategoryReviewers']['items'][number];
 type EligibleReviewer =
-  RouterOutput['decision']['listEligibleReviewers']['reviewers'][number];
+  RouterOutput['decision']['listEligibleReviewers']['items'][number];
 
 export interface CategoryReviewerCardProps {
   processInstanceId: string;
@@ -59,7 +59,7 @@ export function CategoryReviewerCard({
   const addReviewer = trpc.decision.addCategoryReviewer.useMutation({
     onError: (error) => {
       logger.error('Failed to add category reviewer', { error });
-      toast.error(t('Could not add reviewer. Please try again.'));
+      toast.error(t('decisions.processBuilder.addReviewerError'));
     },
     onSettled: () => {
       void invalidate();
@@ -69,7 +69,7 @@ export function CategoryReviewerCard({
   const removeReviewer = trpc.decision.removeCategoryReviewer.useMutation({
     onError: (error) => {
       logger.error('Failed to remove category reviewer', { error });
-      toast.error(t('Could not remove reviewer. Please try again.'));
+      toast.error(t('decisions.processBuilder.removeReviewerError'));
     },
     onSettled: () => {
       void invalidate();
@@ -133,18 +133,17 @@ export function CategoryReviewerCard({
       data-testid={`category-reviewer-card-${category.name}`}
     >
       <div className="flex items-end justify-between gap-2">
-        <span className="font-serif text-sm">{category.name}</span>
+        <span className="font-serif text-sm">
+          <bdi>{category.name}</bdi>
+        </span>
         <span
           className={
             isEmpty ? 'text-sm text-warning' : 'text-sm text-muted-foreground'
           }
         >
-          {t(
-            '{count, plural, =0 {0 reviewers} =1 {1 reviewer} other {# reviewers}}',
-            {
-              count,
-            },
-          )}
+          {t('decisions.processBuilder.reviewerCount', {
+            count,
+          })}
         </span>
       </div>
 
@@ -152,7 +151,9 @@ export function CategoryReviewerCard({
           reviewers render as removable rows below, not as combobox chips. */}
       <Combobox multiple items={options} value={[]} onValueChange={handleAdd}>
         <ComboboxChips>
-          <ComboboxChipsInput placeholder={t('Add reviewer…')} />
+          <ComboboxChipsInput
+            placeholder={t('decisions.processBuilder.addReviewerPlaceholder')}
+          />
         </ComboboxChips>
         <ComboboxContent>
           <ComboboxEmpty>{t('No results')}</ComboboxEmpty>
@@ -168,9 +169,7 @@ export function CategoryReviewerCard({
 
       {isEmpty ? (
         <p className="text-sm text-warning">
-          {t(
-            'No reviewers yet. Proposals in this category can’t be reviewed until someone is added.',
-          )}
+          {t('decisions.processBuilder.noReviewersYet')}
         </p>
       ) : (
         <div className="flex flex-wrap gap-2">
@@ -212,7 +211,7 @@ export function CategoryReviewerCard({
                       reviewerProfileId: reviewer.reviewerProfileId,
                     });
                   }}
-                  aria-label={t('Remove {name}', {
+                  aria-label={t('decisions.removeNamed', {
                     name: reviewer.profile.name,
                   })}
                 >

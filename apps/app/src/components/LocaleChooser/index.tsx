@@ -12,13 +12,15 @@ import { useParams } from 'next/navigation';
 import { LuGlobe } from 'react-icons/lu';
 
 import { usePathname, useTranslations } from '@/lib/i18n';
-import { i18nConfig } from '@/lib/i18n/config';
+import { type Locale, i18nConfig } from '@/lib/i18n/config';
 
 interface LocaleChooserProps {
   onClose?: () => void;
 }
 
-const localeDisplayNames: Record<string, string> = {
+// Keyed on Locale so adding a supported locale without its endonym here is a
+// typecheck failure rather than a raw code (`hu`) rendered in the menu.
+export const localeDisplayNames: Record<Locale, string> = {
   en: 'English',
   es: 'Español',
   fr: 'Français',
@@ -26,6 +28,7 @@ const localeDisplayNames: Record<string, string> = {
   bn: 'বাংলা',
   so: 'Af-Soomaali',
   ar: 'العربية',
+  hu: 'Magyar',
 };
 
 /**
@@ -34,23 +37,11 @@ const localeDisplayNames: Record<string, string> = {
  * form value. DropdownMenuRadioGroup marks the current locale.
  */
 export const LocaleChooser = ({ onClose }: LocaleChooserProps) => {
-  const t = useTranslations();
-  const pathname = usePathname();
-  const params = useParams();
-  const localeParam = params.locale;
-  const currentLocale =
-    (Array.isArray(localeParam) ? localeParam[0] : localeParam) ?? '';
+  const t = useTranslations('shell');
+  const { currentLocale, switchLocale } = useLocaleSwitch();
 
   const handleValueChange = (value: string) => {
-    if (value && value !== currentLocale) {
-      // Hard navigation (not the client router) so the server applies the
-      // vanity URL rewrite. Vanity decision paths like `/columbus` exist only
-      // as a next.config rewrite, so a client-side transition to `/es/columbus`
-      // can't resolve them and bounces anonymous viewers to /login. A full load
-      // resolves the rewrite and keeps the pretty URL. Locale changes are rare,
-      // so the reload is negligible.
-      window.location.assign(`/${value}${pathname}`);
-    }
+    switchLocale(value);
     onClose?.();
   };
 
@@ -61,7 +52,7 @@ export const LocaleChooser = ({ onClose }: LocaleChooserProps) => {
           <Button
             variant="outline"
             size="icon"
-            aria-label={t('Select language')}
+            aria-label={t('localeChooserLabel')}
           />
         }
       >
@@ -74,11 +65,33 @@ export const LocaleChooser = ({ onClose }: LocaleChooserProps) => {
         >
           {i18nConfig.locales.map((locale) => (
             <DropdownMenuRadioItem key={locale} value={locale}>
-              {localeDisplayNames[locale] || locale}
+              {localeDisplayNames[locale]}
             </DropdownMenuRadioItem>
           ))}
         </DropdownMenuRadioGroup>
       </DropdownMenuContent>
     </DropdownMenu>
   );
+};
+
+export const useLocaleSwitch = () => {
+  const pathname = usePathname();
+  const params = useParams();
+  const localeParam = params.locale;
+  const currentLocale =
+    (Array.isArray(localeParam) ? localeParam[0] : localeParam) ?? '';
+
+  const switchLocale = (value: string) => {
+    if (value && value !== currentLocale) {
+      // Hard navigation (not the client router) so the server applies the
+      // vanity URL rewrite. Vanity decision paths like `/columbus` exist only
+      // as a next.config rewrite, so a client-side transition to `/es/columbus`
+      // can't resolve them and bounces anonymous viewers to /login. A full load
+      // resolves the rewrite and keeps the pretty URL. Locale changes are rare,
+      // so the reload is negligible.
+      window.location.assign(`/${value}${pathname}`);
+    }
+  };
+
+  return { currentLocale, switchLocale };
 };

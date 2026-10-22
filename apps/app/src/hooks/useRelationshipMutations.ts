@@ -64,7 +64,7 @@ export function useRelationshipMutations({
   enabled = true,
   invalidateQueries = [],
 }: UseRelationshipMutationsOptions) {
-  const t = useTranslations();
+  const t = useTranslations('decisions.proposals');
   const utils = trpc.useUtils();
 
   const { user } = useUser();
@@ -217,8 +217,8 @@ export function useRelationshipMutations({
         // the pieces don't reassemble into a sentence in every language.
         toast.error(
           variables.relationshipType === ProfileRelationshipType.LIKES
-            ? t("Couldn't like this proposal. Please try again.")
-            : t("Couldn't follow this proposal. Please try again."),
+            ? t('likeError')
+            : t('followError'),
         );
       },
     });
@@ -228,8 +228,8 @@ export function useRelationshipMutations({
       onError: (_error, variables) => {
         toast.error(
           variables.relationshipType === ProfileRelationshipType.LIKES
-            ? t("Couldn't remove your like. Please try again.")
-            : t("Couldn't unfollow this proposal. Please try again."),
+            ? t('unlikeError')
+            : t('unfollowError'),
         );
       },
     });

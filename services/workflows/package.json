@@ -10,10 +10,12 @@
   "scripts": {
     "dev": "inngest-cli dev",
     "format:check": "oxfmt --check",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@op/cache": "workspace:*",
+    "@op/analytics": "workspace:*",
     "@op/common": "workspace:*",
     "@op/core": "workspace:*",
     "@op/db": "workspace:*",
@@ -22,14 +24,17 @@
     "@op/logging": "workspace:*",
     "@op/realtime": "workspace:*",
     "@op/supabase": "workspace:*",
-    "@op/types": "workspace:*",
     "drizzle-orm": "catalog:",
     "inngest": "3.54.0",
     "inngest-cli": "^1.12.1",
     "zod": "catalog:"
   },
   "devDependencies": {
+    "@inngest/test": "^0.1.9",
     "@op/typescript-config": "workspace:*",
-    "typescript": "7.0.2"
+    "@op/vitest-config": "workspace:*",
+    "@vitest/coverage-istanbul": "catalog:",
+    "typescript": "7.0.2",
+    "vitest": "catalog:"
   }
 }

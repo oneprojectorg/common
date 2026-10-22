@@ -1,33 +1,43 @@
 'use client';
 
+import { useFeatureFlag } from '@/hooks/useFeatureFlag';
+import { usePhoneLoginFlow } from '@/hooks/usePhoneLoginFlow';
 import { trpc } from '@op/api/client';
 import { getSafeRedirectPath } from '@op/common/client';
 import { APP_NAME, OPURLConfig } from '@op/core';
 import { useAuthUser, useMount } from '@op/hooks';
+import { Alert, AlertTitle } from '@op/sense/Alert';
 import { Button } from '@op/sense/Button';
 import { SocialLinks } from '@op/sense/SocialLinks';
-import { Spinner } from '@op/sense/Spinner';
-import { CheckIcon } from '@op/sense/icons';
-import { cn } from '@op/sense/lib/utils';
 import { createSBBrowserClient } from '@op/supabase/client';
 import { useSearchParams } from 'next/navigation';
-import React, { useCallback } from 'react';
-import { z } from 'zod';
+import { useCallback } from 'react';
+import { LuCircleAlert } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
 import { ButtonLink } from '@/components/ButtonLink';
+import { WaitlistSignup } from '@/components/WaitlistSignup';
 
 import {
+  type AuthChannel,
   AuthCodeField,
+  AuthCodeStepActions,
+  AuthContactFields,
   AuthDivider,
-  AuthEmailField,
   AuthGoogleButton,
   AuthPanelShell,
+  AuthSendCodeButton,
+  CodeSentAnnouncement,
+  codeSentToLabel,
   isValidOtpLength,
   useAuthPanelStore,
 } from './AuthPanel';
 import { CommonLogo } from './CommonLogo';
+import { isValidEmail } from './decisions/emailUtils';
+
+/** Which of the four screens the panel is showing. */
+type LoginStep = 'phone-code' | 'phone-number' | 'email-address' | 'email-code';
 
 /**
  * Standard login / signup panel.
@@ -49,15 +59,73 @@ export const LoginPanel = () => {
   const {
     email,
     setEmail,
-    emailIsValid,
-    setEmailIsValid,
     token,
     setToken,
     tokenError,
     setTokenError,
     loginSuccess,
     setLoginSuccess,
+    channel,
+    setChannel,
+    phone,
+    setPhone,
+    phoneCodeSent,
+    clearPhoneFlow,
   } = useAuthPanelStore();
+
+  /** Lands the visitor wherever the email flow would have landed them. */
+  const finishSignIn = useCallback(() => {
+    // The phone fields persist, so without this the next visit to /login in
+    // this tab opens on a code field for a code already spent.
+    clearPhoneFlow();
+
+    if (redirectParam !== null) {
+      window.location.href = redirectParam;
+    } else {
+      window.location.reload();
+    }
+  }, [redirectParam, clearPhoneFlow]);
+
+  const phoneFlow = usePhoneLoginFlow({ onSignedIn: () => finishSignIn() });
+
+  // Off hides the option entirely, so the panel is the email-only one it was
+  // before. GoTrue answers the browser directly, so this is the only check on
+  // the request itself. The same flag is read again on the server, where it
+  // decides whether a verified number grants membership.
+  const smsLoginEnabled = useFeatureFlag('sms-login');
+
+  // The channel every branch below agrees on.
+  //
+  // `channel` is restored from sessionStorage, and `useFeatureFlag` reads as
+  // off until PostHog resolves. So a returning phone visitor arrives with the
+  // flag off and the channel set to phone on every production reload. Deriving
+  // one value keeps the rendered
+  // field and the submit button from disagreeing; when they disagreed, the
+  // panel showed the email field behind a button that only a valid phone
+  // number could enable, and neither channel could sign in.
+  const activeChannel = smsLoginEnabled ? channel : 'email';
+
+  // Which of the four screens the panel is on.
+  //
+  // The same question was being asked in four places — the two render
+  // branches, the submit button's `disabled`, and its `onClick` — each with
+  // its own nesting. They disagreed once already, and the panel became
+  // unusable. Deriving it once means a disagreement is no longer expressible.
+  const step: LoginStep =
+    activeChannel === 'phone'
+      ? phoneCodeSent
+        ? 'phone-code'
+        : 'phone-number'
+      : loginSuccess
+        ? 'email-code'
+        : 'email-address';
+
+  const isPhone = activeChannel === 'phone';
+  const isCodeStep = step === 'phone-code' || step === 'email-code';
+
+  const sentTo = isCodeStep
+    ? codeSentToLabel(t, { isPhone, phone: phoneFlow.normalized, email })
+    : undefined;
 
   const handleLogin = async () => {
     const callbackUrl = new URL('/api/auth/callback', location.origin);
@@ -97,7 +165,7 @@ export const LoginPanel = () => {
 
   const combinedError = (login.error?.message || error) ?? undefined;
 
-  const emailParser = z.email();
+  const emailIsValid = isValidEmail(email);
 
   const requestEmailCode = () => {
     void login.refetch().then(({ data }) => {
@@ -119,15 +187,73 @@ export const LoginPanel = () => {
     });
 
     if (data.user && data.session && data.user.role === 'authenticated') {
-      if (redirectParam !== null) {
-        window.location.href = redirectParam;
-      } else {
-        window.location.reload();
-      }
+      finishSignIn();
     } else {
-      setTokenError(error?.message ?? t('Failed to verify code'));
+      setTokenError(error?.message ?? t('auth.verifyCodeError'));
     }
-  }, [email, token]);
+  }, [email, token, supabase, finishSignIn, setTokenError, t]);
+
+  const sendError = isPhone ? phoneFlow.error : undefined;
+
+  const codeError = isCodeStep
+    ? isPhone
+      ? phoneFlow.codeError
+      : tokenError
+    : undefined;
+
+  const changeToken = (next: string) => {
+    setToken(next);
+    if (isPhone) {
+      phoneFlow.clearCodeError();
+    } else {
+      setTokenError(undefined);
+    }
+  };
+
+  // Email code verification runs straight against Supabase, so only the
+  // phone channel has a loading flag for it.
+  const isLoading = isPhone ? phoneFlow.isLoading : login.isFetching;
+
+  const verifyCode = () => {
+    if (isPhone) {
+      void phoneFlow.submitCode();
+    } else {
+      void handleTokenSubmit();
+    }
+  };
+
+  const resendCode = () => {
+    if (isPhone) {
+      void phoneFlow.resend();
+    } else {
+      setToken(undefined);
+      setTokenError(undefined);
+      requestEmailCode();
+    }
+  };
+
+  const backToContact = () => {
+    if (isPhone) {
+      phoneFlow.changeNumber();
+    } else {
+      setLoginSuccess(false);
+      setToken(undefined);
+      setTokenError(undefined);
+    }
+  };
+
+  const switchChannel = (next: AuthChannel) => {
+    if (isPhone) {
+      phoneFlow.changeNumber();
+    } else {
+      setLoginSuccess(false);
+      setToken(undefined);
+    }
+    setChannel(next);
+    setEmail('');
+    setPhone('');
+    setTokenError(undefined);
+  };
 
   if (!mounted) {
     return null;
@@ -140,99 +266,96 @@ export const LoginPanel = () => {
     if (isConnectionError) {
       return t('Connection issue');
     }
-    if (login.isError || error || tokenError) {
+    if (login.isError || error) {
       if (
         combinedError?.includes('invite') ||
         combinedError?.includes('waitlist')
       ) {
-        return t('Stay tuned!');
+        return t('auth.waitlistTitle');
       }
-      return t('Oops!');
+      return t('auth.errorTitle');
     }
-    if (!loginSuccess) {
-      if (isSignup) {
-        return t('Sign up to {appName}', { appName: APP_NAME });
-      }
-      return (
-        <div className="flex flex-col gap-2">
-          <span className="font-sans text-base font-normal tracking-normal text-muted-foreground">
-            {t('Welcome to')}
-          </span>
-          <span>
-            <CommonLogo className="h-8 w-auto" />
-          </span>
-        </div>
-      );
+    if (isCodeStep) {
+      return isPhone ? t('auth.checkTextsTitle') : t('auth.checkEmailTitle');
+    }
+    if (isSignup) {
+      return t('auth.signUpHeading', { appName: APP_NAME });
     }
     return (
-      <div className="flex flex-col items-center justify-center gap-4">
-        <CheckIcon />
-        <span className="text-headline">{t('Email sent!')}</span>
+      <div className="flex flex-col gap-2">
+        <span className="font-sans text-base font-normal tracking-normal text-muted-foreground">
+          {t('auth.welcomeHeading')}
+        </span>
+        <span>
+          <CommonLogo className="h-8 w-auto" />
+        </span>
       </div>
     );
   })();
 
   const subtitle = (() => {
     if (isConnectionError) {
-      return t(
-        "{appName} can't connect to the internet. Please check your internet connection and try again.",
-        { appName: APP_NAME },
-      );
+      return t('auth.offlineError', { appName: APP_NAME });
     }
-    if (combinedError || tokenError) {
-      return (
-        <span className={cn(tokenError && 'text-destructive')}>
-          {combinedError ||
-            tokenError ||
-            t('There was an error signing you in.')}
-        </span>
-      );
+    if (combinedError) {
+      return <span>{combinedError}</span>;
     }
-    if (!loginSuccess) {
-      return t(
-        'Connect with aligned organizations and funders building a new economy together',
-      );
+    if (isCodeStep) {
+      return sentTo;
     }
-    return (
-      <span>
-        {t('A code was sent to {email}. Type the code below to sign in.', {
-          email,
-        })}
-      </span>
-    );
+    return t('auth.marketingTagline');
   })();
 
   return (
     <AuthPanelShell title={title} subtitle={subtitle}>
+      <CodeSentAnnouncement sentTo={sentTo} />
+
       {!isConnectionError && !isErrorState && (
         <div className="flex flex-col gap-8">
-          {!loginSuccess && (
+          {isCodeStep && sendError ? (
+            <Alert variant="destructive">
+              <LuCircleAlert />
+              <AlertTitle>{sendError}</AlertTitle>
+            </Alert>
+          ) : null}
+
+          {!isCodeStep && (
             <>
               <AuthGoogleButton onPress={handleLogin} />
               <AuthDivider />
             </>
           )}
 
-          {!loginSuccess ? (
-            <AuthEmailField
-              label={t('Email')}
-              description={t(
-                'Use the email address associated with your organization',
-              )}
-              value={email}
-              isDisabled={login.isFetching || loginSuccess || !!combinedError}
-              onChange={(val) => {
-                setEmailIsValid(emailParser.safeParse(val).success);
-                setEmail(val);
-              }}
-              onSubmit={requestEmailCode}
+          {isCodeStep ? (
+            <AuthCodeField
+              channel={activeChannel}
+              value={token}
+              isDisabled={isLoading}
+              error={codeError}
+              onChange={changeToken}
+              onSubmit={verifyCode}
             />
           ) : (
-            <AuthCodeField
-              value={token}
-              isDisabled={login.isFetching || !!combinedError}
-              onChange={setToken}
-              onSubmit={handleTokenSubmit}
+            <AuthContactFields
+              smsEnabled={smsLoginEnabled}
+              value={activeChannel}
+              onValueChange={switchChannel}
+              isTriggersDisabled={isLoading}
+              email={{
+                value: email,
+                isDisabled: isLoading,
+                onChange: setEmail,
+                onSubmit: requestEmailCode,
+              }}
+              phone={{
+                value: phone,
+                isDisabled: phoneFlow.isSending,
+                error: sendError,
+                onChange: setPhone,
+                onSubmit: () => {
+                  void phoneFlow.requestCode();
+                },
+              }}
             />
           )}
         </div>
@@ -256,35 +379,37 @@ export const LoginPanel = () => {
                 t('Try again')
               )}
             </Button>
+          ) : isCodeStep ? (
+            <div className="flex flex-col gap-2">
+              <AuthCodeStepActions
+                // Email leaves an empty field enabled; handleTokenSubmit no-ops instead.
+                isVerifyDisabled={
+                  isPhone
+                    ? !isValidOtpLength(token, activeChannel)
+                    : !!token && !isValidOtpLength(token, activeChannel)
+                }
+                isLoading={isLoading}
+                canSwitchChannel={smsLoginEnabled}
+                onVerify={verifyCode}
+                onResend={resendCode}
+                onBack={backToContact}
+              />
+            </div>
           ) : (
-            <Button
-              type="button"
-              className="flex w-full items-center justify-center"
-              disabled={
-                !emailIsValid ||
-                login.isFetching ||
-                (!!token && !isValidOtpLength(token))
+            <AuthSendCodeButton
+              isPhone={isPhone}
+              isLoading={isLoading}
+              isDisabled={
+                isLoading || (isPhone ? !phoneFlow.isValid : !emailIsValid)
               }
-              onClick={async () => {
-                if (!loginSuccess) {
+              onSubmit={() => {
+                if (isPhone) {
+                  void phoneFlow.requestCode();
+                } else {
                   requestEmailCode();
-                } else if (loginSuccess && isValidOtpLength(token)) {
-                  await handleTokenSubmit();
                 }
               }}
-            >
-              {login.isFetching ? (
-                <Spinner className="size-6" />
-              ) : loginSuccess ? (
-                isSignup ? (
-                  t('Sign up')
-                ) : (
-                  t('Login')
-                )
-              ) : (
-                t('Sign in')
-              )}
-            </Button>
+            />
           )
         ) : (
           <div className="flex flex-col items-center justify-center gap-4">
@@ -293,7 +418,7 @@ export const LoginPanel = () => {
               variant="default"
               className="flex w-full items-center justify-center"
             >
-              {t('Back to home')}
+              {t('auth.backToHomeAction')}
             </ButtonLink>
 
             <SocialLinks iconClassName="size-5 stroke-none text-muted-foreground" />
@@ -301,23 +426,24 @@ export const LoginPanel = () => {
         )}
 
         {!isConnectionError && !isErrorState && (
-          <div className="flex flex-col items-center justify-center text-center text-xs text-muted-foreground sm:text-sm">
-            {isSignup ? (
-              <span>
-                {t(
-                  "You'll receive a code to confirm your account. Can't find it? Check your spam folder.",
-                )}
-              </span>
-            ) : (
-              <>
-                <span>{t("Don't have an account?")}</span>
-                <span>
-                  {t(
-                    'We’ll create one for you with your organization’s email.',
-                  )}
-                </span>
-              </>
-            )}
+          <div className="text-center text-xs text-muted-foreground sm:text-sm">
+            {isSignup
+              ? t('auth.codeDeliveryHint')
+              : t.rich('auth.noAccountPrompt', {
+                  waitlist: (chunks: React.ReactNode) => (
+                    <WaitlistSignup
+                      trigger={
+                        <Button
+                          variant="link"
+                          size="inline"
+                          className="whitespace-normal underline [font:inherit] hover:no-underline"
+                        >
+                          {chunks}
+                        </Button>
+                      }
+                    />
+                  ),
+                })}
           </div>
         )}
       </section>

@@ -2,6 +2,8 @@ import { and, db, desc, eq, ilike, sql } from '@op/db/client';
 import { decisionProcesses } from '@op/db/schema';
 import { logger } from '@op/logging';
 
+import { PAGE_LIMIT } from '../../utils/pagination';
+
 export interface ListProcessesInput {
   limit?: number;
   offset?: number;
@@ -10,7 +12,7 @@ export interface ListProcessesInput {
 }
 
 export const listProcesses = async ({
-  limit = 20,
+  limit = PAGE_LIMIT.md,
   offset = 0,
   search,
   createdByProfileId,

@@ -4,18 +4,12 @@ import { trpc } from '@op/api/client';
 import { sanitizeUrl } from '@op/core/utils';
 import { Spinner } from '@op/sense/Spinner';
 import { cn } from '@op/sense/lib/utils';
-import { memo, useEffect, useMemo } from 'react';
+import { memo, useMemo } from 'react';
 import { LuGlobe, LuX } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
-declare global {
-  interface Window {
-    iframely?: {
-      load: () => void;
-    };
-  }
-}
+import { sanitizeEmbedHtml } from './sanitizeEmbedHtml';
 
 interface LinkPreviewProps {
   url: string;
@@ -38,7 +32,7 @@ function getDomain(url: string): string {
 
 export const LinkPreview = memo(
   ({ url, className, onRemove }: LinkPreviewProps) => {
-    const t = useTranslations();
+    const t = useTranslations('editor');
     const {
       data: previewData,
       isLoading: loading,
@@ -53,10 +47,10 @@ export const LinkPreview = memo(
 
     const domain = getDomain(url);
     const safeUrl = useMemo(() => sanitizeUrl(url), [url]);
-
-    useEffect(() => {
-      window.iframely?.load();
-    }, [previewData?.html]);
+    const embedHtml = useMemo(
+      () => sanitizeEmbedHtml(previewData?.html),
+      [previewData?.html],
+    );
 
     // Loading state: show card with spinner and domain
     if (loading) {
@@ -122,7 +116,7 @@ export const LinkPreview = memo(
               onRemove();
             }}
             className="absolute end-2 top-2 z-10 flex size-8 items-center justify-center rounded border border-border bg-white opacity-0 transition-opacity group-hover:opacity-100 hover:bg-secondary focus-visible:opacity-100"
-            aria-label={t('Remove preview')}
+            aria-label={t('removePreviewAction')}
           >
             <LuX className="size-4" />
           </button>
@@ -133,10 +127,13 @@ export const LinkPreview = memo(
           rel="noopener noreferrer"
           className="block outline-none"
         >
-          {previewData.html ? (
+          {embedHtml ? (
+            // The embed scales to the card's width at the ratio the
+            // sanitizer read off it, rather than to the 16:9 box the loading
+            // and thumbnail states use — a player is nothing like a video.
             <div
-              className="aspect-video w-full"
-              dangerouslySetInnerHTML={{ __html: previewData.html }}
+              className="w-full [&_iframe]:h-auto [&_iframe]:w-full"
+              dangerouslySetInnerHTML={{ __html: embedHtml }}
             />
           ) : previewData.thumbnail_url ? (
             <div className="aspect-video w-full">

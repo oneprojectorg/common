@@ -7,6 +7,12 @@ import createNextIntlPlugin from 'next-intl/plugin';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import {
+  REPORTING_ENDPOINTS_HEADER,
+  STATIC_POLICY_SOURCES,
+  getStaticCspHeader,
+} from './src/lib/csp.mjs';
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const withNextIntl = createNextIntlPlugin('./src/lib/i18n/request.ts');
@@ -110,7 +116,8 @@ const config = {
     if (process.env.E2E === 'true') {
       config.resolve.alias = {
         ...(config.resolve.alias || {}),
-        '@op/collab': path.resolve(
+        // `$` keeps the alias off `@op/collab/server`, which the mock lacks.
+        '@op/collab$': path.resolve(
           __dirname,
           '../../services/collab/__mocks__/index.ts',
         ),
@@ -123,31 +130,10 @@ const config = {
     return config;
   },
   async headers() {
-    // Content-Security-Policy is left in Report-Only mode for now while we
-    // enumerate the inline-script needs (next/script, PostHog, TipTap collab,
-    // Supabase). Move to `Content-Security-Policy` (enforcing) once reports
-    // are clean.
-    const reportOnlyCsp = [
-      "default-src 'self'",
-      "base-uri 'self'",
-      "frame-ancestors 'none'",
-      "form-action 'self'",
-      "object-src 'none'",
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://eu-assets.i.posthog.com",
-      "style-src 'self' 'unsafe-inline'",
-      "img-src 'self' data: blob: https:",
-      "font-src 'self' data:",
-      "connect-src 'self' https: wss:",
-      "media-src 'self' blob: https:",
-      "worker-src 'self' blob:",
-      "frame-src 'self' https:",
-      // Ship violations to /api/csp-report, which forwards them to PostHog.
-      // report-uri is deprecated but still the only reporting channel Firefox
-      // honors; report-to (paired with the Reporting-Endpoints header below)
-      // is the modern channel used by Chromium.
-      'report-uri /api/csp-report',
-      'report-to csp-endpoint',
-    ].join('; ');
+    // The nonce policy is emitted per request by `src/proxy.ts`; this covers
+    // the HTML routes its matcher skips. `src/lib/csp.mjs` owns both, header
+    // name included, so CSP_MODE can't apply to only half the responses.
+    const staticCspHeader = getStaticCspHeader();
 
     return [
       {
@@ -161,10 +147,10 @@ const config = {
       },
       {
         // Everything except /api/embeds/*: that route proxies iframely's embed
-        // document and is framed same-origin (embed.js derives its iframe API
-        // base from its own /api/embeds origin), so a global X-Frame-Options:
-        // DENY / frame-ancestors 'none' would blank out every link-preview
-        // embed. The proxy sets its own sandbox CSP instead.
+        // document, which <LinkPreview> frames same-origin, so a global
+        // X-Frame-Options: DENY / frame-ancestors 'none' — both of which deny
+        // same-origin framing too — would blank out every link-preview embed.
+        // The proxy sets its own sandbox CSP instead.
         source: '/((?!api/embeds).*)',
         headers: [
           {
@@ -192,16 +178,17 @@ const config = {
               'camera=(), microphone=(), geolocation=(self), interest-cohort=()',
           },
           {
-            // Names the report-to group referenced by the CSP above.
+            // Names the report-to group both policies reference.
             key: 'Reporting-Endpoints',
-            value: 'csp-endpoint="/api/csp-report"',
-          },
-          {
-            key: 'Content-Security-Policy-Report-Only',
-            value: reportOnlyCsp,
+            value: REPORTING_ENDPOINTS_HEADER,
           },
         ],
       },
+      // The proxy declines these (`isStaticPolicyPath`), so nothing gets two.
+      ...STATIC_POLICY_SOURCES.map((source) => ({
+        source,
+        headers: [staticCspHeader],
+      })),
     ];
   },
   async rewrites() {

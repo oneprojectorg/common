@@ -16,7 +16,7 @@ export const ProcessBuilderSidebar = ({
   instanceId: string;
   decisionProfileId?: string;
 }) => {
-  const t = useTranslations();
+  const t = useTranslations('decisions.processBuilder');
   const navigationConfig = useNavigationConfig(instanceId, decisionProfileId);
   const { sections: validationSections } =
     useProcessBuilderValidation(decisionProfileId);
@@ -30,7 +30,7 @@ export const ProcessBuilderSidebar = ({
 
   return (
     <nav
-      aria-label={t('Section navigation')}
+      aria-label={t('sectionNavigationLabel')}
       className="hidden shrink-0 md:sticky md:top-0 md:flex md:h-full md:w-60 md:flex-col md:overflow-y-auto md:border-e md:border-sidebar-border md:bg-sidebar md:p-4 md:text-sidebar-foreground"
     >
       <SidebarNavItems

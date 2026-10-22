@@ -27,7 +27,39 @@
       "dependsOn": ["^typecheck"]
     },
     "format:check": {},
-    "test": {},
+    // Phantom task: nothing runs it, but depending on it makes a task's hash
+    // include the source files of the packages it depends on. Without it turbo
+    // hashes only the package's own files, so editing shared config in
+    // `@op/vitest-config` leaves every `test:coverage` a cache hit and the run
+    // silently replays coverage measured under the old settings.
+    "topo": {
+      "dependsOn": ["^topo"]
+    },
+    "test": {
+      "dependsOn": ["topo"]
+    },
+    "test:coverage": {
+      "dependsOn": ["topo", "@op/styles#build"],
+      "outputs": ["coverage/**"]
+    },
+    // `@op/common`, `@op/api` and `@op/workflows` run integration tests
+    // against the one test Supabase, so each waits for the one before it. CI
+    // runs `pnpm test:coverage`, so the chain is on both `test` and
+    // `test:coverage`.
+    "@op/api#test": {
+      "dependsOn": ["topo", "@op/common#test"]
+    },
+    "@op/api#test:coverage": {
+      "dependsOn": ["topo", "@op/styles#build", "@op/common#test:coverage"],
+      "outputs": ["coverage/**"]
+    },
+    "@op/workflows#test": {
+      "dependsOn": ["topo", "@op/api#test"]
+    },
+    "@op/workflows#test:coverage": {
+      "dependsOn": ["topo", "@op/styles#build", "@op/api#test:coverage"],
+      "outputs": ["coverage/**"]
+    },
     "dev": {
       "cache": false,
       "persistent": true
@@ -59,6 +91,12 @@
     "OPENL_RAPIDAPI_KEY",
     "AI_API_KEY",
     "AI_BASE_URL",
+    "TWILIO_ACCOUNT_SID",
+    "TWILIO_AUTH_TOKEN",
+    "TWILIO_API_KEY_SID",
+    "TWILIO_API_KEY_SECRET",
+    "TWILIO_VERIFY_SERVICE_SID",
+    "TWILIO_MESSAGING_SERVICE_SID",
     "🌎 ------ PUBLIC VARS ------ 🌎",
     "NEXT_PUBLIC_SUPABASE_URL",
     "NEXT_PUBLIC_SUPABASE_ANON_KEY",
@@ -79,6 +117,8 @@
     "INNGEST_DEV",
     "REDIS_URL",
     "TIPTAP_SECRET",
+    "TIPTAP_PRIVATE_KEY",
+    "TIPTAP_ENVIRONMENT_ID",
     "NEXT_PUBLIC_TIPTAP_APP_ID"
   ]
 }

@@ -1,11 +1,16 @@
 import { db } from '@op/db/client';
 import { logger } from '@op/logging';
 
-import { decodeCursor, encodeCursor, getCursorCondition } from '../../utils';
+import {
+  PAGE_LIMIT,
+  decodeCursor,
+  encodeCursor,
+  getCursorCondition,
+} from '../../utils';
 
 export const listOrganizations = async ({
   cursor,
-  limit = 10,
+  limit = PAGE_LIMIT.sm,
   orderBy = 'updatedAt',
   dir = 'desc',
 }: {

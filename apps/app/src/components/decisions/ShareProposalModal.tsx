@@ -1,6 +1,7 @@
 'use client';
 
 import { getPublicUrl } from '@/utils';
+import { trackProfileInvited } from '@/utils/inviteAnalytics';
 import { trpc } from '@op/api/client';
 import { EntityType } from '@op/api/encoders';
 import { hasEmail } from '@op/common/client';
@@ -79,7 +80,9 @@ export function ShareProposalModal({
     <Dialog open={isOpen} onOpenChange={(open) => !open && onOpenChange(false)}>
       <DialogContent className="overflow-hidden sm:max-w-xl">
         <DialogHeader>
-          <DialogTitle>{t('Share Proposal')}</DialogTitle>
+          <DialogTitle>
+            {t('decisions.proposals.shareProposalTitle')}
+          </DialogTitle>
         </DialogHeader>
 
         <ErrorBoundary>
@@ -110,6 +113,9 @@ function ShareProposalModalContent({
 }) {
   const t = useTranslations();
   const utils = trpc.useUtils();
+  const inviteMutation = trpc.profile.invite.useMutation({
+    onSuccess: trackProfileInvited,
+  });
 
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedQuery] = useDebounce(searchQuery, 200);
@@ -117,15 +123,16 @@ function ShareProposalModalContent({
 
   const [, startTransition] = useTransition();
 
-  const [usersData] = trpc.profile.listUsers.useSuspenseQuery({
+  const [{ items: profileUsers }] = trpc.profile.listUsers.useSuspenseQuery({
     profileId: proposalProfileId,
   });
-  const [serverInvites] = trpc.profile.listProfileInvites.useSuspenseQuery({
-    profileId: proposalProfileId,
-  });
+  const [{ items: serverInvites }] =
+    trpc.profile.listProfileInvites.useSuspenseQuery({
+      profileId: proposalProfileId,
+    });
 
   const [optimisticUsers, dispatchRemoveUser] = useOptimistic(
-    usersData.items,
+    profileUsers,
     (state, profileUserId: string) =>
       state.filter((u) => u.id !== profileUserId),
   );
@@ -135,11 +142,11 @@ function ShareProposalModalContent({
     (state, inviteId: string) => state.filter((i) => i.id !== inviteId),
   );
 
-  const [rolesData] = trpc.profile.listRoles.useSuspenseQuery({});
-  const memberRole = useMemo(() => {
-    const roles = rolesData.items ?? [];
-    return roles.find((r) => r.name === 'Member');
-  }, [rolesData]);
+  const [{ items: roles }] = trpc.profile.listRoles.useSuspenseQuery({});
+  const memberRole = useMemo(
+    () => roles.find((r) => r.name === 'Member'),
+    [roles],
+  );
 
   // Search for users to invite
   const { data: searchResults, isFetching: isSearching } =
@@ -217,7 +224,6 @@ function ShareProposalModalContent({
   );
   type PickerOption = (typeof pickerOptions)[number];
 
-  const inviteMutation = trpc.profile.invite.useMutation();
   const removeUserMutation = trpc.profile.removeUser.useMutation();
   const deleteInviteMutation = trpc.profile.deleteProfileInvite.useMutation();
 
@@ -277,7 +283,7 @@ function ShareProposalModalContent({
       try {
         await removeUserMutation.mutateAsync({ profileUserId });
       } catch {
-        toast.error(t('Failed to remove user'));
+        toast.error(t('decisions.removeUserError'));
       }
       await utils.profile.listUsers.invalidate({
         profileId: proposalProfileId,
@@ -291,7 +297,7 @@ function ShareProposalModalContent({
       try {
         await deleteInviteMutation.mutateAsync({ inviteId });
       } catch {
-        toast.error(t('Failed to cancel invite'));
+        toast.error(t('decisions.cancelInviteError'));
       }
       await utils.profile.listProfileInvites.invalidate({
         profileId: proposalProfileId,
@@ -313,9 +319,9 @@ function ShareProposalModalContent({
           : path;
       const inviteUrl = `${window.location.origin}${basePath}/invite`;
       await navigator.clipboard.writeText(inviteUrl);
-      toast.success(t('Link copied to clipboard'));
+      toast.success(t('decisions.proposals.copyLinkSuccess'));
     } catch {
-      toast.error(t('Failed to copy link'));
+      toast.error(t('decisions.proposals.copyLinkError'));
     }
   };
 
@@ -326,7 +332,7 @@ function ShareProposalModalContent({
     }
 
     if (!memberRole) {
-      toast.error(t('Failed to send invite'));
+      toast.error(t('org.inviteSendError'));
       return;
     }
 
@@ -339,7 +345,7 @@ function ShareProposalModalContent({
         profileId: proposalProfileId,
       });
 
-      toast.success(t('Invite sent successfully'));
+      toast.success(t('decisions.inviteSentSuccess'));
       setPendingInvites([]);
       setSearchQuery('');
       onOpenChange(false);
@@ -349,7 +355,7 @@ function ShareProposalModalContent({
       });
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : t('Failed to send invite');
+        error instanceof Error ? error.message : t('org.inviteSendError');
       toast.error(message);
     }
   };
@@ -415,7 +421,9 @@ function ShareProposalModalContent({
           <ComboboxChips className="w-full" onPaste={handlePaste}>
             <LuSearch className="size-4 shrink-0 self-center text-muted-foreground" />
             <ComboboxChipsInput
-              placeholder={t('Invite collaborators by name or email')}
+              placeholder={t(
+                'decisions.proposals.inviteCollaboratorsPlaceholder',
+              )}
             />
           </ComboboxChips>
           {debouncedQuery.length >= 2 && (
@@ -428,7 +436,9 @@ function ShareProposalModalContent({
                   <ComboboxItem key={option.value} value={option}>
                     {option.addEmail ? (
                       <span className="text-sm">
-                        {t('Invite {email}', { email: debouncedQuery })}
+                        {t('decisions.inviteEmailAction', {
+                          email: debouncedQuery,
+                        })}
                       </span>
                     ) : (
                       <ProfileItem
@@ -453,7 +463,9 @@ function ShareProposalModalContent({
         </Combobox>
 
         <div className="flex flex-col gap-2">
-          <span className="text-sm">{t('People with access')}</span>
+          <span className="text-sm">
+            {t('decisions.peopleWithAccessHeading')}
+          </span>
 
           <div className="flex flex-col gap-2">
             {pendingInvites.map((item) => (
@@ -469,7 +481,7 @@ function ShareProposalModalContent({
                   ) : undefined
                 }
                 onRemove={() => handleRemovePending(item.id)}
-                removeLabel={t('Remove {name}', { name: item.name })}
+                removeLabel={t('decisions.removeNamed', { name: item.name })}
               />
             ))}
 
@@ -492,12 +504,14 @@ function ShareProposalModalContent({
                         </>
                       )}
                       <span className="text-sm text-muted-foreground">
-                        {t('Invited')}
+                        {t('decisions.invitedStatus')}
                       </span>
                     </div>
                   }
                   onRemove={() => handleDeleteInvite(invite.id)}
-                  removeLabel={t('Remove {name}', { name: displayName })}
+                  removeLabel={t('decisions.removeNamed', {
+                    name: displayName,
+                  })}
                 />
               );
             })}
@@ -509,7 +523,7 @@ function ShareProposalModalContent({
                     <LuUsers />
                   </EmptyMedia>
                   <EmptyDescription>
-                    {t('No one has been invited yet')}
+                    {t('decisions.proposals.collaboratorsEmpty')}
                   </EmptyDescription>
                 </EmptyHeader>
               </Empty>
@@ -539,7 +553,9 @@ function ShareProposalModalContent({
                         ? undefined
                         : () => handleRemoveExistingUser(user.id)
                     }
-                    removeLabel={t('Remove {name}', { name: displayName })}
+                    removeLabel={t('decisions.removeNamed', {
+                      name: displayName,
+                    })}
                   />
                 );
               })
@@ -551,7 +567,7 @@ function ShareProposalModalContent({
       <DialogFooter className="flex-row items-center justify-between sm:justify-between">
         <Button variant="outline" onClick={handleCopyLink}>
           <LuLink className="size-4" />
-          {t('Copy link')}
+          {t('decisions.proposals.copyLinkAction')}
         </Button>
         <Button onClick={handleDone} loading={inviteMutation.isPending}>
           {t('Done')}

@@ -3,6 +3,8 @@ import {
   proposalReviewSchema,
   rubricReviewDataSchema,
 } from '@op/common/client';
+import { Events, inngest } from '@op/events';
+import { waitUntil } from '@vercel/functions';
 import { z } from 'zod';
 
 import { networkAuthenticatedProcedure, router } from '../../../trpcFactory';
@@ -29,6 +31,15 @@ export const submitReviewRouter = router({
         Channels.reviewAssignment(input.assignmentId),
         Channels.reviewAssignments(processInstanceId),
       ]);
+
+      waitUntil(
+        inngest.send({
+          name: Events.reviewSubmitted.name,
+          data: {
+            assignmentId: input.assignmentId,
+          },
+        }),
+      );
 
       return proposalReviewSchema.parse(review);
     }),

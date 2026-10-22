@@ -28,13 +28,13 @@ export const OrgMembersModal = ({
 }) => {
   const t = useTranslations();
   const members = org.members ?? [];
-  const orgName = org.profile?.name ?? t('Unknown organization');
+  const orgName = org.profile?.name ?? t('admin.unknownOrganization');
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>{t('Members of {orgName}', { orgName })}</DialogTitle>
+          <DialogTitle>{t('admin.orgMembersTitle', { orgName })}</DialogTitle>
         </DialogHeader>
         <div className="flex flex-col gap-4 px-6 py-4">
           {/* Organization Info */}
@@ -63,7 +63,7 @@ export const OrgMembersModal = ({
           ) : (
             <div>
               <div className="mb-2 text-sm font-medium">
-                {t('Members')} ({members.length})
+                {t('profile.membersTab')} ({members.length})
               </div>
               <div className="space-y-2">
                 {members.map((member) => (
@@ -84,7 +84,7 @@ const MemberRow = ({ member }: { member: Member }) => {
   const roles =
     member.roles && member.roles.length > 0
       ? member.roles.map((r) => r.accessRole.name)
-      : [t('No roles')];
+      : [t('admin.noRoles')];
 
   return (
     <Card className="flex-row items-center gap-3 p-3">

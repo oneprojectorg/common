@@ -1,4 +1,5 @@
 import { categoryTermUri } from '@op/common';
+import { TestDecisionsDataManager } from '@op/common/testing';
 import { db, eq, inArray } from '@op/db/client';
 import {
   organizationUsers,
@@ -10,7 +11,6 @@ import { randomUUID } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
-import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
 import {
   accessTierGatingCell,
   describeDecisionAccessTierGating,
@@ -141,7 +141,7 @@ describe.concurrent('getCategories permissions', () => {
       processInstanceId: instance.instance.id,
     });
 
-    expect(result.categories).toEqual([]);
+    expect(result.items).toEqual([]);
   });
 
   it('should allow access for a member with profile-level permissions', async ({
@@ -168,7 +168,7 @@ describe.concurrent('getCategories permissions', () => {
       processInstanceId: instance.instance.id,
     });
 
-    expect(result.categories).toEqual([]);
+    expect(result.items).toEqual([]);
   });
 
   it('should allow access via org-level fallback when user lacks profile access', async ({
@@ -192,7 +192,7 @@ describe.concurrent('getCategories permissions', () => {
       processInstanceId: instance.instance.id,
     });
 
-    expect(result.categories).toEqual([]);
+    expect(result.items).toEqual([]);
   });
 
   it('should deny access for a user with no profile or org access', async ({
@@ -257,7 +257,7 @@ describe.concurrent('getCategories permissions', () => {
       processInstanceId: instance.instance.id,
     });
 
-    expect(result.categories).toEqual([]);
+    expect(result.items).toEqual([]);
   });
 });
 
@@ -301,8 +301,8 @@ describe.concurrent('getCategories category matching', () => {
       processInstanceId: instance.instance.id,
     });
 
-    expect(result.categories).toHaveLength(2);
-    expect(result.categories).toEqual(
+    expect(result.items).toHaveLength(2);
+    expect(result.items).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
           id: termRecords[0]!.id,
@@ -356,8 +356,8 @@ describe.concurrent('getCategories category matching', () => {
       processInstanceId: instance.instance.id,
     });
 
-    expect(result.categories).toHaveLength(1);
-    expect(result.categories[0]).toEqual(
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0]).toEqual(
       expect.objectContaining({
         id: termRecords[0]!.id,
         name: 'Water Access',
@@ -390,7 +390,7 @@ describe.concurrent('getCategories category matching', () => {
       processInstanceId: instance.instance.id,
     });
 
-    expect(result.categories).toEqual([]);
+    expect(result.items).toEqual([]);
   });
 
   it('should return empty array when no categories match any taxonomy terms', async ({
@@ -423,7 +423,7 @@ describe.concurrent('getCategories category matching', () => {
       processInstanceId: instance.instance.id,
     });
 
-    expect(result.categories).toEqual([]);
+    expect(result.items).toEqual([]);
   });
 
   it('should handle special characters in category labels via termUri conversion', async ({
@@ -461,8 +461,8 @@ describe.concurrent('getCategories category matching', () => {
       processInstanceId: instance.instance.id,
     });
 
-    expect(result.categories).toHaveLength(1);
-    expect(result.categories[0]).toEqual(
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0]).toEqual(
       expect.objectContaining({
         id: termRecords[0]!.id,
         name: 'Health & Wellness',

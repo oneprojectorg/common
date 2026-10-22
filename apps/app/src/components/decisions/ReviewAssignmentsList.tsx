@@ -10,7 +10,9 @@ import {
   ProposalReviewAssignmentStatus,
   REVIEW_ASSIGNMENT_SORTS,
   getPhaseReviewSettings,
+  nextCursor,
 } from '@op/common/client';
+import { useInfiniteScroll } from '@op/hooks';
 import { Card } from '@op/sense/Card';
 import {
   Empty,
@@ -22,7 +24,7 @@ import {
 import { Skeleton } from '@op/sense/Skeleton';
 import { cn } from '@op/sense/lib/utils';
 import { parseAsStringLiteral, useQueryState } from 'nuqs';
-import { Suspense, useCallback, useMemo } from 'react';
+import { type ReactNode, Suspense, useCallback, useMemo } from 'react';
 import {
   LuCircleAlert,
   LuCircleCheck,
@@ -38,21 +40,14 @@ import { useTranslations } from '@/lib/i18n';
 import { MobileViewSwitch } from './MobileViewSwitch';
 import { ProposalCount } from './ProposalCount';
 import { ProposalMasonry } from './ProposalMasonry';
-import { ProposalTranslationProvider } from './ProposalTranslationContext';
-import { ProposalViewToggle } from './ProposalViewToggle';
-import { ProposalsMapView } from './ProposalsMapView';
+import { ProposalsViewSwitch } from './ProposalsFilterBar';
 import { ResponsiveSelect } from './ResponsiveSelect';
 import { ReviewAssignmentCard } from './ReviewAssignmentCard';
+import { ReviewAssignmentsMapWithLocations } from './ReviewAssignmentsMapWithLocations';
 import { StickyFilterBar } from './StickyFilterBar';
-import { TranslateBanner } from './TranslateBanner';
-import {
-  useDecisionNeedsTranslation,
-  useRegisterTranslationSamples,
-} from './TranslationDetectionContext';
-import { TranslationNotice } from './TranslationNotice';
-import { getProposalDetectionText } from './translationDetectionText';
+import { REVIEW_ASSIGNMENT_VIEWS } from './proposalViews';
 import { useProposalViewMode } from './useProposalViewMode';
-import { useTranslateDecision } from './useTranslateDecision';
+import { useReviewersByProposalId } from './useReviewersByProposalId';
 
 const ASSIGNMENT_STATUSES = Object.values(ProposalReviewAssignmentStatus) as [
   string,
@@ -62,14 +57,11 @@ const ASSIGNMENT_STATUSES = Object.values(ProposalReviewAssignmentStatus) as [
 export function ReviewAssignmentsList({
   processInstanceId,
   decisionSlug,
-  decisionProfileId,
   access,
   pinOffset,
 }: {
   processInstanceId: string;
   decisionSlug: string;
-  /** Decision profile whose phase copy, updates and resources translate with the queue. */
-  decisionProfileId?: string | null;
   access?: DecisionAccess;
   /** Px offset where the filter bar pins (clears the floating phase toggle). */
   pinOffset?: number;
@@ -95,52 +87,55 @@ export function ReviewAssignmentsList({
     (phase) => phase.phaseId === instance.currentStateId,
   );
 
-  const { data, isLoading } = trpc.decision.listReviewAssignments.useQuery({
+  // The tab is only mounted on a review phase; a stateless instance is a bug
+  // for the error boundary, not a fallback (same guard as ManualSelectionList).
+  if (!instance.currentStateId) {
+    throw new Error('ReviewAssignmentsList: instance has no currentStateId');
+  }
+  const phaseId = instance.currentStateId;
+
+  const queueInput = {
     processInstanceId,
-    // The queue is this phase's work; omitting phaseId would list every phase.
-    ...(instance.currentStateId && { phaseId: instance.currentStateId }),
+    phaseId,
     ...(statusFilter && {
       status: statusFilter as ProposalReviewAssignmentStatus,
     }),
     sort,
-  });
+  };
 
-  const assignments = data?.assignments ?? [];
+  const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } =
+    trpc.decision.listReviewAssignments.useInfiniteQuery(queueInput, {
+      getNextPageParam: nextCursor,
+    });
+
+  const assignments = useMemo(
+    () => data?.pages.flatMap((page) => page.items) ?? [],
+    [data?.pages],
+  );
+  const total = data?.pages[0]?.total ?? 0;
   const proposalIds = assignments.map((a) => a.assignment.proposal.id);
 
-  // The reviewer's queue renders the same proposal cards as the "Other
-  // proposals" tab, so it gets the same translation wiring — without it the two
-  // tabs disagreed, one offering translation and one not.
+  const loadNextPage = useCallback(() => {
+    fetchNextPage();
+  }, [fetchNextPage]);
+
+  const { ref: infiniteScrollRef, shouldShowTrigger } =
+    useInfiniteScroll<HTMLDivElement>(loadNextPage, {
+      hasNextPage,
+      isFetchingNextPage,
+      threshold: 0.1,
+      rootMargin: '50px',
+    });
+
   const assignedProposals = useMemo(
     () => assignments.map((item) => item.assignment.proposal),
     [assignments],
   );
-  const proposalSamples = useMemo(
-    () => assignedProposals.map(getProposalDetectionText),
-    [assignedProposals],
-  );
-  // A review phase mounts this tab and unmounts the "Other proposals" list
-  // beside it, so this is the only proposal surface on the screen. Detecting
-  // from the queue alone left everything else the control translates — the
-  // decision copy, the updates, the resources — with no way to reach it.
-  useRegisterTranslationSamples('review-assignments', proposalSamples);
-  const needsTranslation = useDecisionNeedsTranslation();
-  const translation = useTranslateDecision({
-    proposals: assignedProposals,
-    decisionProfileId,
-    needsTranslation,
+  const reviewersByProposalId = useReviewersByProposalId({
+    processInstanceId,
+    proposalIds,
+    enabled: canViewReviewers,
   });
-
-  const { data: aggregatesData } =
-    trpc.decision.listWithReviewAggregates.useQuery(
-      {
-        processInstanceId,
-        proposalIds,
-      },
-      {
-        enabled: canViewReviewers && proposalIds.length > 0,
-      },
-    );
   const isByCategory =
     !!currentPhase &&
     getPhaseReviewSettings({ phases }, currentPhase.phaseId).scope ===
@@ -168,20 +163,22 @@ export function ReviewAssignmentsList({
       { enabled: isByCategory },
     );
   const showCategory = isByCategory
-    ? (reviewerCategories?.length ?? 0) > 1
+    ? (reviewerCategories?.items.length ?? 0) > 1
     : true;
 
   // Map mode is offered on the same terms as browse (location field + GIS
   // flag), but leads with the grid: reviewing a queue is sequential work and
   // the map is the secondary lens.
   const {
-    hasLocationField,
     mapView,
+    availableViews,
     effectiveView,
+    hasMapView,
     isMapMode,
     handleViewChange,
   } = useProposalViewMode(instance.instanceData?.proposalTemplate, {
     defaultView: 'grid',
+    views: REVIEW_ASSIGNMENT_VIEWS,
   });
 
   // The proposal-keyed URL resolves per viewer (own review screen for a
@@ -191,17 +188,6 @@ export function ReviewAssignmentsList({
     (proposal: Pick<Proposal, 'profileId'>) =>
       `/decisions/${decisionSlug}/proposal/${proposal.profileId}/reviews`,
     [decisionSlug],
-  );
-
-  const reviewersByProposalId = useMemo(
-    () =>
-      new Map(
-        (aggregatesData?.items ?? []).map((item) => [
-          item.proposal.id,
-          item.aggregates.reviewers,
-        ]),
-      ),
-    [aggregatesData],
   );
 
   // The tab is the filter: pins come from the assignments themselves, so the
@@ -242,6 +228,20 @@ export function ReviewAssignmentsList({
     ],
   );
 
+  // Shared by both views. `aria-hidden` keeps the trigger out of the a11y
+  // tree; the `aria-live` line at the bottom announces loading instead.
+  const renderScrollSentinel = (skeleton: ReactNode) =>
+    shouldShowTrigger ? (
+      <div
+        ref={infiniteScrollRef}
+        aria-hidden
+        className="py-4"
+        data-testid="review-assignments-infinite-scroll-sentinel"
+      >
+        {isFetchingNextPage ? skeleton : null}
+      </div>
+    ) : null;
+
   // Match the "Other proposals" tab: no toolbar when the queue is genuinely
   // empty. A filtered-to-empty result keeps it so the filter can be cleared.
   const showToolbar = assignments.length > 0 || Boolean(statusFilter);
@@ -252,37 +252,37 @@ export function ReviewAssignmentsList({
     [
       {
         id: 'all',
-        label: t('All statuses'),
+        label: t('decisions.review.allStatusesOption'),
         icon: LuListFilter,
         iconClass: 'text-muted-foreground',
       },
       {
         id: 'pending',
-        label: t('Not Started'),
+        label: t('decisions.review.statusNotStarted'),
         icon: LuCircleDashed,
         iconClass: 'text-muted-foreground',
       },
       {
         id: 'in_progress',
-        label: t('In Progress'),
+        label: t('decisions.review.statusInProgress'),
         icon: LuTimer,
         iconClass: 'text-teal-600',
       },
       {
         id: 'completed',
-        label: t('Completed'),
+        label: t('decisions.review.statusCompleted'),
         icon: LuCircleCheck,
         iconClass: 'text-success',
       },
       {
         id: 'awaiting_author_revision',
-        label: t('Revision Requested'),
+        label: t('decisions.review.statusRevisionRequested'),
         icon: LuRefreshCw,
         iconClass: 'text-warning',
       },
       {
         id: 'ready_for_re_review',
-        label: t('Needs Review'),
+        label: t('decisions.review.statusNeedsReview'),
         icon: LuCircleAlert,
         iconClass: 'text-warning',
       },
@@ -304,7 +304,7 @@ export function ReviewAssignmentsList({
         <StickyFilterBar pinOffset={pinOffset}>
           {/* min-w-0 + flex-1 lets the category suffix ellipsize before the filters */}
           <div className="flex min-w-0 flex-1 items-baseline gap-1">
-            <ProposalCount count={assignments.length} />
+            <ProposalCount count={total} />
             {/* decorative — a failed lookup must not take down the queue */}
             <APIErrorBoundary fallbacks={{ default: () => null }}>
               <Suspense fallback={null}>
@@ -320,7 +320,7 @@ export function ReviewAssignmentsList({
               onSelectionChange={(key) =>
                 setStatusFilter(key === 'all' ? null : key)
               }
-              aria-label={t('Filter by status')}
+              aria-label={t('decisions.review.filterByStatusLabel')}
               className="min-w-40"
               items={statusFilterItems}
             />
@@ -329,34 +329,36 @@ export function ReviewAssignmentsList({
               onSelectionChange={(key) =>
                 setSort(key as (typeof REVIEW_ASSIGNMENT_SORTS)[number])
               }
-              aria-label={t('Sort order')}
+              aria-label={t('decisions.review.sortOrderLabel')}
               className="min-w-40"
               items={[
-                { id: 'leastReviewed', label: t('Least reviewed') },
-                { id: 'newest', label: t('Newest First') },
-                { id: 'oldest', label: t('Oldest First') },
+                {
+                  id: 'leastReviewed',
+                  label: t('decisions.review.sortLeastReviewed'),
+                },
+                {
+                  id: 'newest',
+                  label: t('decisions.proposals.sortNewestOption'),
+                },
+                {
+                  id: 'oldest',
+                  label: t('decisions.proposals.sortOldestOption'),
+                },
               ]}
             />
-            {hasLocationField && (
+            {availableViews.length > 1 && (
               // Desktop control; below `sm` the floating MobileViewSwitch
               // below takes over (same split as the proposals list).
-              <div className="hidden items-center gap-4 sm:flex">
-                <span aria-hidden className="h-6 w-px bg-border" />
-                <ProposalViewToggle
-                  value={effectiveView}
-                  onChange={handleViewChange}
-                />
-              </div>
+              <ProposalsViewSwitch
+                view={{
+                  value: effectiveView,
+                  views: availableViews,
+                  onChange: handleViewChange,
+                }}
+              />
             )}
           </div>
         </StickyFilterBar>
-      )}
-
-      {translation.translationState && (
-        <TranslationNotice
-          sourceLanguageName={translation.sourceLanguageName}
-          onViewOriginal={translation.handleViewOriginal}
-        />
       )}
 
       {/* Cards grid */}
@@ -370,34 +372,50 @@ export function ReviewAssignmentsList({
             </EmptyMedia>
             <EmptyTitle>
               {statusFilter
-                ? t('No reviews found matching the current filters.')
-                : t('No reviews assigned yet')}
+                ? t('decisions.review.noReviewsMatchFilters')
+                : t('decisions.review.noReviewsAssigned')}
             </EmptyTitle>
             <EmptyDescription>
               {statusFilter
-                ? t('Try adjusting your filter selection above.')
-                : t(
-                    'Review assignments will appear here once they are created.',
-                  )}
+                ? t('decisions.proposals.adjustFiltersHint')
+                : t('decisions.review.noReviewAssignmentsHint')}
             </EmptyDescription>
           </EmptyHeader>
         </Empty>
       ) : (
-        <ProposalTranslationProvider
-          translations={translation.translationState?.translations ?? {}}
-        >
+        <>
           {isMapMode ? (
-            // Same array for the list column and the pins — the queue is
-            // unpaginated, so there is no wider pin set to fetch.
-            <ProposalsMapView
-              proposals={assignedProposals}
-              pinProposals={assignedProposals}
-              renderCard={renderCard}
-              hrefFor={reviewsHref}
-              mapView={mapView}
-            />
+            // Local boundaries keep the filter bar mounted while pins load or fail.
+            <APIErrorBoundary
+              fallbacks={{
+                default: () => (
+                  <div className="py-8 text-center text-base">
+                    {t('decisions.proposals.mapLoadError')}
+                  </div>
+                ),
+              }}
+            >
+              <Suspense fallback={<ReviewAssignmentListSkeletonGrid />}>
+                {/* Pins come from their own query so the map isn't capped by
+                    the page size; the list column still pages via listFooter. */}
+                <ReviewAssignmentsMapWithLocations
+                  proposals={assignedProposals}
+                  renderCard={renderCard}
+                  hrefFor={reviewsHref}
+                  mapView={mapView}
+                  locationFilter={{
+                    processInstanceId: queueInput.processInstanceId,
+                    phaseId: queueInput.phaseId,
+                    status: queueInput.status,
+                  }}
+                  listFooter={renderScrollSentinel(
+                    <ReviewAssignmentCardSkeleton />,
+                  )}
+                />
+              </Suspense>
+            </APIErrorBoundary>
           ) : (
-            <ProposalMasonry>
+            <ProposalMasonry loadingMore={isFetchingNextPage}>
               {assignments.map((item) => (
                 <ReviewAssignmentCard
                   key={item.assignment.id}
@@ -413,19 +431,17 @@ export function ReviewAssignmentsList({
               ))}
             </ProposalMasonry>
           )}
-        </ProposalTranslationProvider>
+        </>
       )}
 
-      {translation.showBanner && (
-        <TranslateBanner
-          onTranslate={translation.handleTranslate}
-          onDismiss={translation.dismissBanner}
-          isTranslating={translation.isTranslating}
-          languageName={translation.targetLanguageName}
-        />
-      )}
+      {/* Grid mode: the masonry renders its own load-more skeletons. */}
+      {!isMapMode && renderScrollSentinel(null)}
 
-      {hasLocationField && (
+      <p aria-live="polite" className="sr-only">
+        {isFetchingNextPage ? t('decisions.review.loadingMoreProposals') : ''}
+      </p>
+
+      {hasMapView && (
         <MobileViewSwitch view={effectiveView} onChange={handleViewChange} />
       )}
     </div>
@@ -473,16 +489,17 @@ const AssignedCategoriesLabel = ({
 }) => {
   const t = useTranslations();
 
-  const [categories] = trpc.decision.listReviewerCategories.useSuspenseQuery({
-    processInstanceId,
-    phaseId,
-  });
+  const [{ items: categories }] =
+    trpc.decision.listReviewerCategories.useSuspenseQuery({
+      processInstanceId,
+      phaseId,
+    });
 
   if (categories.length === 0) {
     return null;
   }
 
-  const label = t('in {categories}', {
+  const label = t('decisions.review.inCategories', {
     categories: categories.map((category) => category.name).join(', '),
   });
 

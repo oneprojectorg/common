@@ -1,31 +1,45 @@
 'use client';
 
+import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { ProposalStatus } from '@op/api/encoders';
 import type { Proposal } from '@op/common/client';
-import { useState } from 'react';
+import type { ComponentProps } from 'react';
 import { LuEye, LuEyeOff, LuPencil, LuTrash2 } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
+import { useProposalCardDialogs } from '../ProposalCardDialogContext';
 import {
   ProposalOptionsMenu,
   type ProposalOptionsMenuItem,
 } from '../ProposalOptionsMenu';
+import { buildMergeMenuItem } from '../proposals/merge';
+import { buildRejectMenuItem } from '../proposals/reject';
+import { useProposalAdvance } from '../useProposalAdvance';
 import { useProposalModerationActions } from '../useProposalModerationActions';
-import { DeleteProposalDialog } from './DeleteProposalDialog';
+import { useProposalRejectionActions } from '../useProposalRejectionActions';
 
+// Pre-existing: hoisting the merge dialog took this from CRAP 156 to 132, and
+// hoisting delete and reject took it to 56 — still over the threshold. Cutting
+// it further means restructuring the whole menu.
+// fallow-ignore-next-line complexity
 export function ProposalCardMenu({
   proposal,
   editHref,
   canManage = false,
+  triggerProps = { variant: 'ghost', size: 'icon-xs' },
 }: {
   proposal: Proposal;
   /** Enables the Edit item. Drafts keep their Edit/Delete buttons instead. */
   editHref?: string;
   canManage?: boolean;
+  triggerProps?: ComponentProps<typeof ProposalOptionsMenu>['triggerProps'];
 }) {
   const t = useTranslations();
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  // Owned above the grid, so a list refresh that re-parents this card can't
+  // close a dialog in progress — see `ProposalCardDialogContext`.
+  const { openMergeDialog, openRejectDialog, openDeleteDialog } =
+    useProposalCardDialogs();
 
   const {
     toggleVisibility: handleToggleVisibility,
@@ -33,11 +47,34 @@ export function ProposalCardMenu({
     isLoading,
   } = useProposalModerationActions(proposal);
 
+  const canCurate = canManage && proposal.status !== ProposalStatus.DRAFT;
+
+  const rejectEnabled = useFeatureFlag('reject-proposals') ?? false;
+  // Shown once submitted; toggles to Undo once rejected, so it stays put.
+  const canRejectOrUndo =
+    rejectEnabled && canManage && proposal.status !== ProposalStatus.DRAFT;
+  const isRejected = proposal.status === ProposalStatus.REJECTED;
+  // Undo only — it has no dialog. Rejecting runs from the host, whose dialog
+  // owns the confirm button that calls it.
+  const { unreject, isUnrejecting } = useProposalRejectionActions(proposal);
+  // Only an admin's list row carries an advance target.
+  const { advanceItem, isAdvancing } = useProposalAdvance({
+    proposal,
+    lookUpTarget: false,
+  });
+
   const getMenuItems = () => {
     const items: ProposalOptionsMenuItem[] = [];
 
-    // Admin actions (hide) - not for drafts
-    if (canManage && proposal.status !== ProposalStatus.DRAFT) {
+    // Merge leads, per Figma 15311:9078.
+    if (canCurate) {
+      items.push(
+        buildMergeMenuItem({
+          isDisabled: isLoading,
+          mergeLabel: t('decisions.proposals.mergeProposalAction'),
+          onMerge: () => openMergeDialog(proposal),
+        }),
+      );
       items.push({
         key: 'visibility',
         icon: isHidden ? (
@@ -45,10 +82,33 @@ export function ProposalCardMenu({
         ) : (
           <LuEyeOff className="size-5" />
         ),
-        label: isHidden ? t('Unhide proposal') : t('Hide proposal'),
+        label: isHidden
+          ? t('decisions.proposals.unhideProposalAction')
+          : t('decisions.proposals.hideProposalAction'),
         onAction: handleToggleVisibility,
         isDisabled: isLoading,
       });
+    }
+
+    const advance = advanceItem(isLoading || isUnrejecting);
+    if (advance) {
+      items.push(advance);
+    }
+
+    // Reject sits with merge as an admin curation action (Figma flyout), and
+    // becomes Undo once rejected. A proposal that can be advanced gets that
+    // choice instead: "Advance" and "Do not advance" together contradict.
+    if (canRejectOrUndo && !advance) {
+      items.push(
+        buildRejectMenuItem({
+          isDisabled: isLoading || isUnrejecting || isAdvancing,
+          isRejected,
+          rejectLabel: t('decisions.proposals.doNotAdvanceAction'),
+          undoLabel: t('decisions.proposals.undoRejectionAction'),
+          onReject: () => openRejectDialog(proposal),
+          onUndo: unreject,
+        }),
+      );
     }
 
     // Edit is a menu item everywhere except drafts, whose card keeps the
@@ -71,7 +131,7 @@ export function ProposalCardMenu({
         key: 'delete',
         icon: <LuTrash2 className="size-5" />,
         label: t('Delete'),
-        onAction: () => setIsDeleteModalOpen(true),
+        onAction: () => openDeleteDialog(proposal),
         isDisabled: isLoading,
         isDestructive: true,
       });
@@ -85,16 +145,8 @@ export function ProposalCardMenu({
   return (
     <ProposalOptionsMenu
       groups={[menuItems]}
-      label={t('Proposal options')}
-      triggerProps={{ variant: 'ghost', size: 'icon-xs' }}
-    >
-      {(proposal.isEditable || canManage) && (
-        <DeleteProposalDialog
-          proposalId={proposal.id}
-          open={isDeleteModalOpen}
-          onOpenChange={setIsDeleteModalOpen}
-        />
-      )}
-    </ProposalOptionsMenu>
+      label={t('decisions.proposals.proposalOptionsLabel')}
+      triggerProps={triggerProps}
+    />
   );
 }

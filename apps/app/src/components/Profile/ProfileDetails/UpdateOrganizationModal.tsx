@@ -25,7 +25,7 @@ export const UpdateOrganizationModal = ({
   organization,
 }: UpdateOrganizationModalProps) => {
   const { user } = useRequiredUser();
-  const t = useTranslations();
+  const t = useTranslations('profile');
   const [isOpen, setIsOpen] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
 
@@ -42,13 +42,13 @@ export const UpdateOrganizationModal = ({
         render={
           <Button className="min-w-full sm:min-w-fit">
             <LuPencil className="size-4" />
-            {t('Edit Profile')}
+            {t('editTitle')}
           </Button>
         }
       />
       <DialogContent className="gap-0 overflow-hidden p-0 sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>{t('Edit Profile')}</DialogTitle>
+          <DialogTitle>{t('editTitle')}</DialogTitle>
         </DialogHeader>
         <UpdateOrganizationForm
           ref={formRef}

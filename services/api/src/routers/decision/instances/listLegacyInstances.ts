@@ -21,6 +21,6 @@ export const listLegacyInstancesRouter = router({
         (instance) => legacyProcessInstanceEncoder.safeParse(instance).success,
       );
 
-      return legacyInstanceListEncoder.parse(validInstances);
+      return legacyInstanceListEncoder.parse({ items: validInstances });
     }),
 });

@@ -1,3 +1,7 @@
+import {
+  TestDecisionsDataManager,
+  schemaWithPipeline,
+} from '@op/common/testing';
 import { db } from '@op/db/client';
 import {
   ProcessStatus,
@@ -15,13 +19,11 @@ import { randomUUID } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
-import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
 import {
   accessTierGatingCell,
   describeDecisionAccessTierGating,
   expectPassesAccessTierGate,
 } from '../../../test/helpers/gating/decision';
-import { schemaWithPipeline } from '../../../test/helpers/pipelineSchemas';
 import {
   createIsolatedSession,
   createTestContextWithSession,
@@ -108,7 +110,7 @@ describe.concurrent('listAllProposals', () => {
     const phaseScoped = await caller.decision.listProposals({
       processInstanceId: instanceId,
     });
-    expect(phaseScoped.proposals).toHaveLength(2);
+    expect(phaseScoped.items).toHaveLength(2);
 
     const allValid = await caller.decision.listAllProposals({
       processInstanceId: instanceId,
@@ -117,7 +119,49 @@ describe.concurrent('listAllProposals', () => {
     expect(allValid.next).toBeNull();
   });
 
-  it('excludes REJECTED and DUPLICATE proposals for non-admin viewers', async ({
+  it('filters by title search, matching the phase-scoped list', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instanceId = setup.instance.instance.id;
+    const { userEmail } = setup;
+
+    const [matching] = await Promise.all([
+      testData.createProposal({
+        userEmail,
+        processInstanceId: instanceId,
+        proposalData: { title: 'Riverside Bike Path' },
+        status: ProposalStatus.SUBMITTED,
+      }),
+      testData.createProposal({
+        userEmail,
+        processInstanceId: instanceId,
+        proposalData: { title: 'Downtown Mural' },
+        status: ProposalStatus.SUBMITTED,
+      }),
+    ]);
+    const caller = await createAuthenticatedCaller(userEmail);
+
+    const result = await caller.decision.listAllProposals({
+      processInstanceId: instanceId,
+      search: 'bike',
+    });
+    expect(result.items.map((p) => p.id)).toEqual([matching.id]);
+
+    // Same word-order independence as the phase-scoped list.
+    const reversed = await caller.decision.listAllProposals({
+      processInstanceId: instanceId,
+      search: 'path riverside',
+    });
+    expect(reversed.items.map((p) => p.id)).toEqual([matching.id]);
+  });
+
+  it('lists REJECTED only when asked for by status and never DUPLICATE for non-admin viewers', async ({
     task,
     onTestFinished,
   }) => {
@@ -168,17 +212,24 @@ describe.concurrent('listAllProposals', () => {
       ]);
 
     const memberCaller = await createAuthenticatedCaller(memberUser.email);
-    const result = await memberCaller.decision.listAllProposals({
-      processInstanceId: instance.instance.id,
-    });
+    const [result, rejectedResult] = await Promise.all([
+      memberCaller.decision.listAllProposals({
+        processInstanceId: instance.instance.id,
+      }),
+      memberCaller.decision.listAllProposals({
+        processInstanceId: instance.instance.id,
+        status: ProposalStatus.REJECTED,
+      }),
+    ]);
 
     const ids = result.items.map((p) => p.id);
+    // A merged-away duplicate has no page of its own, so it stays out.
     expect(ids).toEqual(
       expect.arrayContaining([submitted.id, approved.id, selected.id]),
     );
-    expect(ids).not.toContain(rejected.id);
     expect(ids).not.toContain(duplicate.id);
     expect(result.items).toHaveLength(3);
+    expect(rejectedResult.items.map((p) => p.id)).toEqual([rejected.id]);
   });
 
   it('excludes DRAFT proposals from non-admin viewers', async ({
@@ -313,7 +364,7 @@ describe.concurrent('listAllProposals', () => {
     expect(memberResult.items.map((p) => p.id)).toEqual([visible.id]);
   });
 
-  it('shows HIDDEN proposals to admin viewers but still hides DRAFT, REJECTED, DUPLICATE, and soft-deleted', async ({
+  it('shows HIDDEN proposals to admin viewers but still hides DRAFT, DUPLICATE, REJECTED, and soft-deleted', async ({
     task,
     onTestFinished,
   }) => {
@@ -382,8 +433,8 @@ describe.concurrent('listAllProposals', () => {
     const ids = result.items.map((p) => p.id);
     expect(ids).toEqual(expect.arrayContaining([submitted.id, hidden.id]));
     expect(ids).not.toContain(draft.id);
-    expect(ids).not.toContain(rejected.id);
     expect(ids).not.toContain(duplicate.id);
+    expect(ids).not.toContain(rejected.id);
     expect(ids).not.toContain(deleted.id);
     expect(result.items).toHaveLength(2);
   });

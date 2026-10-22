@@ -1,12 +1,15 @@
 import {
+  createRevisionRequest,
+  grantDecisionProfileAccess,
+  TestReviewsDataManager,
+} from '@op/common/testing';
+import {
   ProposalReviewAssignmentStatus,
   ProposalReviewRequestState,
 } from '@op/db/schema';
-import { createRevisionRequest } from '@op/test';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
-import { TestReviewsDataManager } from '../../../test/helpers/TestReviewsDataManager';
 import {
   accessTierGatingCell,
   describeAccessTierGating,
@@ -47,11 +50,9 @@ describe.concurrent('listProposalRevisionRequests', () => {
       proposalId: created.proposal.id,
     });
 
-    expect(result.revisionRequests).toHaveLength(1);
-    expect(result.revisionRequests[0]?.revisionRequest.id).toBe(
-      revisionRequest.id,
-    );
-    expect(result.revisionRequests[0]?.proposal.id).toBe(created.proposal.id);
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0]?.revisionRequest.id).toBe(revisionRequest.id);
+    expect(result.items[0]?.proposal.id).toBe(created.proposal.id);
   });
 
   it('returns the proposal revision requests for a decision admin', async ({
@@ -79,9 +80,9 @@ describe.concurrent('listProposalRevisionRequests', () => {
       states: [ProposalReviewRequestState.RESUBMITTED],
     });
 
-    expect(result.revisionRequests).toHaveLength(1);
-    expect(result.revisionRequests[0]?.proposal.id).toBe(created.proposal.id);
-    expect(result.revisionRequests[0]?.revisionRequest.state).toBe(
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0]?.proposal.id).toBe(created.proposal.id);
+    expect(result.items[0]?.revisionRequest.state).toBe(
       ProposalReviewRequestState.RESUBMITTED,
     );
   });
@@ -114,8 +115,8 @@ describe.concurrent('listProposalRevisionRequests', () => {
       proposalId: created.proposal.id,
     });
 
-    expect(result.revisionRequests).toHaveLength(1);
-    expect(result.revisionRequests[0]?.proposal.id).toBe(created.proposal.id);
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0]?.proposal.id).toBe(created.proposal.id);
   });
 
   it('filters by state', async ({ task, onTestFinished }) => {
@@ -142,10 +143,90 @@ describe.concurrent('listProposalRevisionRequests', () => {
       states: [ProposalReviewRequestState.RESUBMITTED],
     });
 
-    expect(result.revisionRequests).toHaveLength(1);
-    expect(result.revisionRequests[0]?.revisionRequest.state).toBe(
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0]?.revisionRequest.state).toBe(
       ProposalReviewRequestState.RESUBMITTED,
     );
+  });
+
+  it('omits a request from an ended phase when the current phase is passed', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const created = await testData.createReviewAssignment({
+      title: 'Ended Phase',
+      status: ProposalReviewAssignmentStatus.AWAITING_AUTHOR_REVISION,
+    });
+
+    await createRevisionRequest({
+      assignmentId: created.assignment.id,
+      state: ProposalReviewRequestState.REQUESTED,
+      requestComment: 'Left open when the review phase ended.',
+    });
+
+    // The assignment stays pinned to 'review' while the instance moves on, so
+    // `submitProposalRevision` can no longer answer this request. A screen
+    // that offers the author that action has to read the same narrowed set.
+    await testData.setCurrentPhase(
+      created.context.instance.instance.id,
+      'voting',
+    );
+
+    const authorCaller = await createAuthenticatedCaller(created.author.email);
+
+    const unfiltered = await authorCaller.decision.listProposalRevisionRequests(
+      {
+        proposalId: created.proposal.id,
+        states: [ProposalReviewRequestState.REQUESTED],
+      },
+    );
+
+    expect(unfiltered.items).toHaveLength(1);
+
+    const currentPhaseOnly =
+      await authorCaller.decision.listProposalRevisionRequests({
+        proposalId: created.proposal.id,
+        states: [ProposalReviewRequestState.REQUESTED],
+        phaseId: 'voting',
+      });
+
+    expect(currentPhaseOnly.items).toEqual([]);
+  });
+
+  it('returns the proposal revision requests to an invited co-author', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const created = await testData.createReviewAssignment({
+      title: 'Co-authored Proposal',
+      status: ProposalReviewAssignmentStatus.AWAITING_AUTHOR_REVISION,
+    });
+
+    const revisionRequest = await createRevisionRequest({
+      assignmentId: created.assignment.id,
+      requestComment: 'Both authors need to act on this.',
+    });
+
+    // A collaborator invited onto the proposal's own profile — what
+    // `acceptProposalInvite` produces. Member role, not admin: plain
+    // proposal-profile membership is what makes them an author here.
+    const coAuthor = await testData.createInstanceMember(created.context);
+    await grantDecisionProfileAccess({
+      profileId: created.proposal.profileId,
+      authUserId: coAuthor.authUserId,
+      email: coAuthor.email,
+      isAdmin: false,
+    });
+
+    const coAuthorCaller = await createAuthenticatedCaller(coAuthor.email);
+    const result = await coAuthorCaller.decision.listProposalRevisionRequests({
+      proposalId: created.proposal.id,
+    });
+
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0]?.revisionRequest.id).toBe(revisionRequest.id);
   });
 
   it('rejects callers with only member (non-reviewer, non-admin) access to the instance', async ({

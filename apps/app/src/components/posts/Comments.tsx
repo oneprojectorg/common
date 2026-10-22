@@ -2,6 +2,7 @@
 
 import { trpc } from '@op/api/client';
 import type { Organization } from '@op/api/encoders';
+import { PAGE_LIMIT } from '@op/common/client';
 import { Skeleton, SkeletonText } from '@op/sense/Skeleton';
 
 import { useTranslations } from '@/lib/i18n';
@@ -36,18 +37,18 @@ export function Comments({
   postId,
   organization,
   user,
-  onReactionClick,
+  onLikeClick,
 }: {
   postId: string;
   organization: Organization | null;
   user: PostFeedUser | undefined;
-  onReactionClick: (postId: string, emoji: string) => void;
+  onLikeClick: (postId: string) => Promise<unknown>;
 }) {
   const t = useTranslations();
 
-  const [comments] = trpc.posts.getPosts.useSuspenseQuery({
+  const [{ items: comments }] = trpc.posts.getPosts.useSuspenseQuery({
     parentPostId: postId,
-    limit: 50,
+    limit: PAGE_LIMIT.lg,
     offset: 0,
     includeChildren: false,
   });
@@ -57,9 +58,9 @@ export function Comments({
       <div
         className="py-8 text-center text-muted-foreground"
         role="status"
-        aria-label={t('No comments yet. Be the first to comment!')}
+        aria-label={t('noCommentsYet')}
       >
-        {t('No comments yet. Be the first to comment!')}
+        {t('noCommentsYet')}
       </div>
     );
   }
@@ -74,7 +75,7 @@ export function Comments({
               organization={organization}
               user={user}
               withLinks={true}
-              onReactionClick={onReactionClick}
+              onLikeClick={onLikeClick}
               className="sm:px-0"
             />
             <hr className="mt-4" />

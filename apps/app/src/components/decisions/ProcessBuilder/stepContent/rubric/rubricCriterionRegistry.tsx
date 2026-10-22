@@ -17,26 +17,38 @@ export const CRITERION_TYPE_REGISTRY: Record<
   CriterionTypeRegistryEntry
 > = {
   scored: {
-    labelKey: 'Rating Scale',
-    descriptionKey:
-      'Reviewers select a number with descriptions for each point value',
+    labelKey: 'decisions.processBuilder.criterionTypeScoredLabel',
+    descriptionKey: 'decisions.processBuilder.criterionTypeScoredHint',
   },
   yes_no: {
-    labelKey: 'Yes/No',
-    descriptionKey: 'Simple binary assessment',
+    labelKey: 'decisions.processBuilder.criterionTypeYesNoLabel',
+    descriptionKey: 'decisions.processBuilder.criterionTypeYesNoHint',
   },
   single_select: {
-    labelKey: 'Multiple choice',
-    descriptionKey: 'Reviewers select one option',
+    labelKey: 'decisions.processBuilder.criterionTypeSingleSelectLabel',
+    descriptionKey: 'decisions.processBuilder.criterionTypeSingleSelectHint',
+  },
+  // Template-authored, like `money`: absent from `CRITERION_TYPES`, so only
+  // the label reaches the UI (the criterion card's type badge).
+  multi_select: {
+    labelKey: 'decisions.processBuilder.criterionTypeMultiSelectLabel',
+    descriptionKey: 'decisions.processBuilder.criterionTypeMultiSelectHint',
   },
   long_text: {
-    labelKey: 'Text response only',
-    descriptionKey: 'No score, just written feedback',
+    labelKey: 'decisions.processBuilder.criterionTypeLongTextLabel',
+    descriptionKey: 'decisions.processBuilder.criterionTypeLongTextHint',
+  },
+  money: {
+    labelKey: 'Amount',
+    descriptionKey: 'decisions.processBuilder.criterionTypeMoneyHint',
   },
 };
 
 /**
  * Ordered list of criterion types for the radio selector.
+ * `money` and `multi_select` are deliberately absent — both are
+ * template-authored for now, so the builder must not offer them.
+ * TODO: add money here once money criteria become builder-editable.
  */
 export const CRITERION_TYPES: RubricCriterionType[] = [
   'scored',

@@ -27,7 +27,7 @@ export function OverviewHeroImageField({
   /** Fires after a successful upload/remove (e.g. to refresh an RSC page). */
   onChange?: () => void;
 }) {
-  const t = useTranslations();
+  const t = useTranslations('decisions.processBuilder');
   const {
     previewUrl,
     fileName,
@@ -46,17 +46,14 @@ export function OverviewHeroImageField({
       fileSizeLabel={fileSizeLabel}
       accept={ACCEPT}
       copy={{
-        label: t('Banner image'),
-        title: t('Upload banner image'),
-        description: t(
-          'PNG, JPG, WebP or GIF · recommended 2400×800px · max {size}MB',
-          { size: Math.floor(IMAGE_UPLOAD_SIZE_LIMIT / 1024 / 1024) },
-        ),
-        helperText: t(
-          'The headline appears centered over a dark overlay. Avoid images with key subjects in the middle.',
-        ),
-        chooseFile: t('Choose file'),
-        remove: t('Remove image'),
+        label: t('bannerImageLabel'),
+        title: t('bannerImageUploadAction'),
+        description: t('bannerImageFormatHint', {
+          size: Math.floor(IMAGE_UPLOAD_SIZE_LIMIT / 1024 / 1024),
+        }),
+        helperText: t('bannerImageCompositionHint'),
+        chooseFile: t('bannerImageChooseFile'),
+        remove: t('bannerImageRemove'),
       }}
       onSelectFile={upload}
       onRemove={remove}

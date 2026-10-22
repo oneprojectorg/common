@@ -1,0 +1,640 @@
+import { describe, expect, it } from 'vitest';
+
+import type { PhaseRules } from '../schemas/types';
+import {
+  allowsComments,
+  areCommentsAllowed,
+  canEditProposals,
+  getPhaseReviewSettings,
+  getPreviousReviewPhases,
+  getVoterCostField,
+  getVoterBudget,
+  hasOpenReviews,
+  hasVotingPhase,
+  isPostSubmissionEditingAllowed,
+  isRankedVoting,
+  isReviewPhase,
+  isVotingPhase,
+  resolveReviewSettings,
+} from './phaseSettings';
+
+describe('isReviewPhase', () => {
+  it('reads reviews.submit as the source of truth', () => {
+    expect(isReviewPhase({ rules: { reviews: { submit: true } } })).toBe(true);
+    expect(
+      isReviewPhase({
+        rules: { reviews: { submit: false }, proposals: { review: true } },
+      }),
+    ).toBe(false);
+  });
+
+  it('falls back to the legacy proposals.review flag', () => {
+    expect(isReviewPhase({ rules: { proposals: { review: true } } })).toBe(
+      true,
+    );
+    expect(isReviewPhase({ rules: { proposals: { review: false } } })).toBe(
+      false,
+    );
+  });
+
+  it('defaults to false when neither flag is set', () => {
+    expect(isReviewPhase({ rules: {} })).toBe(false);
+    expect(isReviewPhase({})).toBe(false);
+  });
+});
+
+describe('canEditProposals', () => {
+  it('reads proposals.edit, defaulting to false', () => {
+    expect(canEditProposals({ rules: { proposals: { edit: true } } })).toBe(
+      true,
+    );
+    expect(canEditProposals({ rules: { proposals: { edit: false } } })).toBe(
+      false,
+    );
+    expect(canEditProposals({ rules: { proposals: {} } })).toBe(false);
+    expect(canEditProposals({})).toBe(false);
+  });
+});
+
+describe('isVotingPhase', () => {
+  it('reads voting.submit, defaulting to false', () => {
+    expect(isVotingPhase({ rules: { voting: { submit: true } } })).toBe(true);
+    expect(isVotingPhase({ rules: { voting: { submit: false } } })).toBe(false);
+    expect(isVotingPhase({})).toBe(false);
+  });
+});
+
+describe('getVoterBudget', () => {
+  it('reads a positive cap', () => {
+    expect(getVoterBudget({ rules: { voting: { voterBudget: 5000 } } })).toBe(
+      5000,
+    );
+    expect(getVoterBudget({ rules: { voting: { voterBudget: 0.5 } } })).toBe(
+      0.5,
+    );
+  });
+
+  it('is undefined when no cap is set', () => {
+    expect(getVoterBudget({ rules: { voting: {} } })).toBe(undefined);
+    expect(getVoterBudget({ rules: {} })).toBe(undefined);
+    expect(getVoterBudget({})).toBe(undefined);
+  });
+
+  it('degrades an unusable cap to no cap', () => {
+    expect(getVoterBudget({ rules: { voting: { voterBudget: 0 } } })).toBe(
+      undefined,
+    );
+    expect(getVoterBudget({ rules: { voting: { voterBudget: -10 } } })).toBe(
+      undefined,
+    );
+    expect(
+      getVoterBudget({ rules: { voting: { voterBudget: Number.NaN } } }),
+    ).toBe(undefined);
+    expect(
+      getVoterBudget({
+        rules: { voting: { voterBudget: Number.POSITIVE_INFINITY } },
+      }),
+    ).toBe(undefined);
+  });
+});
+
+describe('getVoterCostField', () => {
+  it('reads the field the rules name', () => {
+    expect(
+      getVoterCostField({ rules: { voting: { voterCostField: 'cost' } } }),
+    ).toBe('cost');
+  });
+
+  it('defaults to the budget field', () => {
+    expect(getVoterCostField({ rules: { voting: {} } })).toBe('budget');
+    expect(
+      getVoterCostField({ rules: { voting: { voterCostField: '  ' } } }),
+    ).toBe('budget');
+    expect(getVoterCostField({})).toBe('budget');
+  });
+});
+
+describe('isRankedVoting', () => {
+  it('is true only when the rule says so', () => {
+    expect(isRankedVoting({ rules: { voting: { ranked: true } } })).toBe(true);
+    expect(isRankedVoting({ rules: { voting: { ranked: false } } })).toBe(
+      false,
+    );
+    const unrankedVoting: PhaseRules = { voting: { submit: true } };
+    expect(isRankedVoting({ rules: unrankedVoting })).toBe(false);
+    expect(isRankedVoting({ rules: {} })).toBe(false);
+    expect(isRankedVoting({})).toBe(false);
+  });
+});
+
+describe('isPostSubmissionEditingAllowed', () => {
+  const phases = [
+    {
+      phaseId: 'submission',
+      rules: { proposals: { submit: true, edit: true } },
+    },
+    { phaseId: 'review', rules: { proposals: { edit: false } } },
+    { phaseId: 'voting', rules: { proposals: { submit: true } } },
+    { phaseId: 'results', rules: {} },
+  ];
+
+  it('follows the current phase rule', () => {
+    expect(
+      isPostSubmissionEditingAllowed({ phases, currentPhaseId: 'submission' }),
+    ).toBe(true);
+    expect(
+      isPostSubmissionEditingAllowed({ phases, currentPhaseId: 'review' }),
+    ).toBe(false);
+  });
+
+  it('denies when the current phase leaves the rule unset', () => {
+    expect(
+      isPostSubmissionEditingAllowed({ phases, currentPhaseId: 'voting' }),
+    ).toBe(false);
+    expect(
+      isPostSubmissionEditingAllowed({ phases, currentPhaseId: 'results' }),
+    ).toBe(false);
+  });
+
+  it('denies when the current phase is not configured on the instance', () => {
+    expect(
+      isPostSubmissionEditingAllowed({ phases, currentPhaseId: 'unknown' }),
+    ).toBe(false);
+  });
+
+  it('denies when there is no resolvable current phase', () => {
+    expect(
+      isPostSubmissionEditingAllowed({ phases: [], currentPhaseId: 'review' }),
+    ).toBe(false);
+    expect(
+      isPostSubmissionEditingAllowed({ phases, currentPhaseId: null }),
+    ).toBe(false);
+  });
+});
+
+describe('hasVotingPhase', () => {
+  it('returns true when any phase enables voting submission', () => {
+    expect(
+      hasVotingPhase([{ rules: {} }, { rules: { voting: { submit: true } } }]),
+    ).toBe(true);
+  });
+
+  it('returns false when no phase enables voting submission', () => {
+    expect(
+      hasVotingPhase([{ rules: {} }, { rules: { voting: { submit: false } } }]),
+    ).toBe(false);
+  });
+
+  it('returns false for phases with no rules', () => {
+    expect(hasVotingPhase([{}, {}])).toBe(false);
+  });
+
+  it('returns false for an empty phases array', () => {
+    expect(hasVotingPhase([])).toBe(false);
+  });
+});
+
+describe('getPhaseReviewSettings', () => {
+  it('returns defaults when neither phase rules nor config set anything', () => {
+    const result = getPhaseReviewSettings(
+      { phases: [{ phaseId: 'review' }] },
+      'review',
+    );
+
+    expect(result).toEqual({
+      submit: false,
+      policy: 'full_coverage',
+      scope: 'all',
+      allowRevisions: true,
+      anonymousFeedback: true,
+      openReviews: false,
+    });
+  });
+
+  it('resolves submit from reviews.submit or the legacy proposals.review flag', () => {
+    const phases = [
+      { phaseId: 'a', rules: { reviews: { submit: true } } },
+      { phaseId: 'b', rules: { proposals: { review: true } } },
+    ];
+
+    expect(getPhaseReviewSettings({ phases }, 'a').submit).toBe(true);
+    expect(getPhaseReviewSettings({ phases }, 'b').submit).toBe(true);
+  });
+
+  it('falls back to legacy config values when the phase has no reviews block', () => {
+    const result = getPhaseReviewSettings(
+      {
+        config: {
+          reviewsPolicy: 'full_coverage',
+          reviewsAllowRevisions: false,
+          reviewsAnonymousFeedback: true,
+        },
+        phases: [{ phaseId: 'review' }],
+      },
+      'review',
+    );
+
+    expect(result).toEqual({
+      submit: false,
+      policy: 'full_coverage',
+      scope: 'all',
+      allowRevisions: false,
+      anonymousFeedback: true,
+      openReviews: false,
+    });
+  });
+
+  it('prefers the phase rules value over config and defaults', () => {
+    const result = getPhaseReviewSettings(
+      {
+        config: {
+          reviewsAllowRevisions: true,
+          reviewsAnonymousFeedback: false,
+        },
+        phases: [
+          {
+            phaseId: 'review',
+            rules: {
+              reviews: {
+                allowRevisions: false,
+                anonymousFeedback: true,
+              },
+            },
+          },
+        ],
+      },
+      'review',
+    );
+
+    expect(result).toEqual({
+      submit: false,
+      policy: 'full_coverage',
+      scope: 'all',
+      allowRevisions: false,
+      anonymousFeedback: true,
+      openReviews: false,
+    });
+  });
+
+  it('resolves each field independently — phase wins per field, config fills the rest', () => {
+    const result = getPhaseReviewSettings(
+      {
+        config: {
+          reviewsAllowRevisions: false,
+          reviewsAnonymousFeedback: true,
+        },
+        phases: [
+          {
+            phaseId: 'review',
+            // Phase only overrides allowRevisions; anonymousFeedback falls back
+            // to config, policy falls all the way through to the default.
+            rules: { reviews: { allowRevisions: true } },
+          },
+        ],
+      },
+      'review',
+    );
+
+    expect(result).toEqual({
+      submit: false,
+      policy: 'full_coverage',
+      scope: 'all',
+      allowRevisions: true,
+      anonymousFeedback: true,
+      openReviews: false,
+    });
+  });
+
+  it('does not let a phase `false` fall through to a truthy config value', () => {
+    const result = getPhaseReviewSettings(
+      {
+        config: { reviewsAllowRevisions: true },
+        phases: [
+          { phaseId: 'review', rules: { reviews: { allowRevisions: false } } },
+        ],
+      },
+      'review',
+    );
+
+    expect(result.allowRevisions).toBe(false);
+  });
+
+  it('turns anonymousFeedback off from the phase rules, over a truthy config', () => {
+    const result = getPhaseReviewSettings(
+      {
+        config: { reviewsAnonymousFeedback: true },
+        phases: [
+          {
+            phaseId: 'review',
+            rules: { reviews: { anonymousFeedback: false } },
+          },
+        ],
+      },
+      'review',
+    );
+
+    expect(result.anonymousFeedback).toBe(false);
+  });
+
+  it('turns anonymousFeedback off from the legacy config alone', () => {
+    const result = getPhaseReviewSettings(
+      {
+        config: { reviewsAnonymousFeedback: false },
+        phases: [{ phaseId: 'review' }],
+      },
+      'review',
+    );
+
+    expect(result.anonymousFeedback).toBe(false);
+  });
+
+  it('reads the matching phase, not the first one', () => {
+    const result = getPhaseReviewSettings(
+      {
+        phases: [
+          {
+            phaseId: 'submission',
+            rules: { reviews: { allowRevisions: false } },
+          },
+          {
+            phaseId: 'review',
+            rules: { reviews: { allowRevisions: true } },
+          },
+        ],
+      },
+      'review',
+    );
+
+    expect(result.allowRevisions).toBe(true);
+  });
+
+  it('throws when the phase is not configured on the instance', () => {
+    expect(() =>
+      getPhaseReviewSettings(
+        {
+          config: { reviewsAllowRevisions: false },
+          phases: [{ phaseId: 'submission' }],
+        },
+        'review',
+      ),
+    ).toThrow();
+  });
+
+  it("defaults scope to 'all' when the phase has no review setting", () => {
+    const result = getPhaseReviewSettings(
+      { phases: [{ phaseId: 'review', rules: { reviews: { submit: true } } }] },
+      'review',
+    );
+
+    expect(result.scope).toBe('all');
+  });
+
+  it('round-trips a saved phase-level scope (no legacy config fallback)', () => {
+    const result = getPhaseReviewSettings(
+      {
+        phases: [
+          {
+            phaseId: 'review',
+            rules: { reviews: { submit: true, scope: 'by_category' } },
+          },
+        ],
+      },
+      'review',
+    );
+
+    expect(result.scope).toBe('by_category');
+  });
+
+  it('defaults openReviews to false when the phase has no review setting', () => {
+    const result = getPhaseReviewSettings(
+      { phases: [{ phaseId: 'review', rules: { reviews: { submit: true } } }] },
+      'review',
+    );
+
+    expect(result.openReviews).toBe(false);
+  });
+
+  it('resolves openReviews true from the phase rules', () => {
+    const result = getPhaseReviewSettings(
+      {
+        phases: [
+          {
+            phaseId: 'review',
+            rules: { reviews: { submit: true, openReviews: true } },
+          },
+        ],
+      },
+      'review',
+    );
+
+    expect(result.openReviews).toBe(true);
+  });
+
+  it('resolves openReviews false when explicitly set on the phase', () => {
+    const result = getPhaseReviewSettings(
+      {
+        phases: [
+          {
+            phaseId: 'review',
+            rules: { reviews: { submit: true, openReviews: false } },
+          },
+        ],
+      },
+      'review',
+    );
+
+    expect(result.openReviews).toBe(false);
+  });
+
+  it('never reads a legacy config counterpart for openReviews (phase-only)', () => {
+    const result = getPhaseReviewSettings(
+      {
+        // A stray legacy-style flag must not leak into the phase-only resolution.
+        config: { reviewsAllowRevisions: false },
+        phases: [{ phaseId: 'review', rules: { reviews: { submit: true } } }],
+      },
+      'review',
+    );
+
+    expect(result.openReviews).toBe(false);
+  });
+});
+
+describe('resolveReviewSettings', () => {
+  it('matches the throwing variant when the phase exists', () => {
+    const instanceData = {
+      config: { reviewsAllowRevisions: false },
+      phases: [
+        {
+          phaseId: 'review',
+          rules: { reviews: { submit: true, anonymousFeedback: false } },
+        },
+      ],
+    };
+
+    expect(resolveReviewSettings(instanceData, 'review')).toEqual(
+      getPhaseReviewSettings(instanceData, 'review'),
+    );
+  });
+
+  it('falls back to defaults with no phaseId', () => {
+    const result = resolveReviewSettings({}, undefined);
+
+    expect(result).toEqual({
+      submit: false,
+      policy: 'full_coverage',
+      scope: 'all',
+      allowRevisions: true,
+      anonymousFeedback: true,
+      openReviews: false,
+    });
+  });
+
+  it('falls back instead of throwing when the phase is off the list', () => {
+    const result = resolveReviewSettings(
+      { phases: [{ phaseId: 'submission' }] },
+      'review',
+    );
+
+    expect(result.anonymousFeedback).toBe(true);
+    expect(result.submit).toBe(false);
+  });
+
+  it('still honors legacy config in the phaseless fallback', () => {
+    const result = resolveReviewSettings(
+      { config: { reviewsAnonymousFeedback: false } },
+      undefined,
+    );
+
+    expect(result.anonymousFeedback).toBe(false);
+  });
+});
+
+describe('allowsComments', () => {
+  it('reads comments.submit', () => {
+    expect(allowsComments({ rules: { comments: { submit: false } } })).toBe(
+      false,
+    );
+    expect(allowsComments({ rules: { comments: { submit: true } } })).toBe(
+      true,
+    );
+  });
+
+  // The one rule here that is opt-out: phases predating the toggle carry no
+  // `comments` key and all of them allow commenting today.
+  it('defaults to allowed, unlike its sibling rules', () => {
+    expect(allowsComments({ rules: {} })).toBe(true);
+    expect(allowsComments({})).toBe(true);
+  });
+});
+
+describe('areCommentsAllowed', () => {
+  const phases = [
+    { phaseId: 'open', rules: { comments: { submit: true } } },
+    { phaseId: 'voting', rules: { comments: { submit: false } } },
+    { phaseId: 'legacy', rules: {} },
+  ];
+
+  it('resolves the current phase', () => {
+    expect(areCommentsAllowed({ phases, currentPhaseId: 'open' })).toBe(true);
+    expect(areCommentsAllowed({ phases, currentPhaseId: 'voting' })).toBe(
+      false,
+    );
+    expect(areCommentsAllowed({ phases, currentPhaseId: 'legacy' })).toBe(true);
+  });
+
+  it('falls back to allowed when the phase cannot be resolved', () => {
+    expect(areCommentsAllowed({ phases, currentPhaseId: 'gone' })).toBe(true);
+    expect(areCommentsAllowed({ phases, currentPhaseId: null })).toBe(true);
+    expect(areCommentsAllowed({ phases: [], currentPhaseId: 'open' })).toBe(
+      true,
+    );
+  });
+});
+
+describe('getPreviousReviewPhases', () => {
+  const instanceData = {
+    phases: [
+      { phaseId: 'submission', name: 'Submission', rules: {} },
+      {
+        phaseId: 'feasibility',
+        name: 'Feasibility Review',
+        rules: { reviews: { submit: true } },
+      },
+      {
+        phaseId: 'legacy',
+        rules: { proposals: { review: true } },
+      },
+      {
+        phaseId: 'open',
+        name: 'Open Review',
+        rules: { reviews: { submit: true, openReviews: true } },
+      },
+      {
+        phaseId: 'equity',
+        name: 'Impact & Equity',
+        rules: { reviews: { submit: true } },
+      },
+      {
+        phaseId: 'voting',
+        name: 'Voting',
+        rules: { voting: { submit: true } },
+      },
+    ],
+  };
+
+  const phaseIds = (phases: ReadonlyArray<{ phaseId: string }>) =>
+    phases.map((phase) => phase.phaseId);
+
+  it('lists every earlier review phase in phase order', () => {
+    expect(phaseIds(getPreviousReviewPhases(instanceData, 'equity'))).toEqual([
+      'feasibility',
+      'legacy',
+      'open',
+    ]);
+  });
+
+  it('returns the phases themselves, so callers keep their names', () => {
+    expect(getPreviousReviewPhases(instanceData, 'legacy')).toEqual([
+      instanceData.phases[1],
+    ]);
+  });
+
+  it('composes with hasOpenReviews for the phases a reviewer may read', () => {
+    expect(
+      phaseIds(
+        getPreviousReviewPhases(instanceData, 'equity').filter(hasOpenReviews),
+      ),
+    ).toEqual(['open']);
+  });
+
+  it('excludes the phase itself and the phases after it', () => {
+    expect(phaseIds(getPreviousReviewPhases(instanceData, 'open'))).toEqual([
+      'feasibility',
+      'legacy',
+    ]);
+  });
+
+  it('is empty for the first phase and for an unknown phase', () => {
+    expect(getPreviousReviewPhases(instanceData, 'submission')).toEqual([]);
+    expect(getPreviousReviewPhases(instanceData, 'missing')).toEqual([]);
+  });
+});
+
+describe('hasOpenReviews', () => {
+  it('reads reviews.openReviews', () => {
+    expect(hasOpenReviews({ rules: { reviews: { openReviews: true } } })).toBe(
+      true,
+    );
+    expect(hasOpenReviews({ rules: { reviews: { openReviews: false } } })).toBe(
+      false,
+    );
+  });
+
+  it('defaults to closed', () => {
+    expect(hasOpenReviews({})).toBe(false);
+    expect(hasOpenReviews({ rules: { reviews: { submit: true } } })).toBe(
+      false,
+    );
+  });
+});

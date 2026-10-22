@@ -1,6 +1,7 @@
 import { OPURLConfig, getTextPreview } from '@op/core';
 import type { Metadata } from 'next';
-import { getTranslations } from 'next-intl/server';
+
+import { getTranslations } from '@/lib/i18n';
 
 import { DecisionOverview } from '@/components/decisions/DecisionOverview';
 import { RichTextRenderer } from '@/components/decisions/RichTextRenderer';
@@ -20,7 +21,7 @@ export async function generateMetadata({
       loadDecision(slug),
       getTranslations({ locale }),
     ]);
-    const name = decisionProfile.name || t('Decision');
+    const name = decisionProfile.name || t('decisions.decisionLabel');
     const steward = decisionProfile.processInstance?.steward?.name;
     const description =
       getTextPreview({

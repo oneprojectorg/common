@@ -7,6 +7,7 @@ import {
   type RecommendationValue,
 } from '@op/common/client';
 import { useMediaQuery } from '@op/hooks';
+import { Badge } from '@op/sense/Badge';
 import { Skeleton } from '@op/sense/Skeleton';
 import { StatusDot, type StatusDotIntent } from '@op/sense/StatusDot';
 import {
@@ -16,12 +17,16 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  TableRowHeader,
 } from '@op/sense/Table';
+import { cn } from '@op/sense/lib/utils';
 import { screens } from '@op/styles/constants';
+import { LuRefreshCcw } from 'react-icons/lu';
 
 import { Link, useTranslations } from '@/lib/i18n';
 
 import { AdvanceToggleButton } from '../selection/AdvanceToggleButton';
+import { ProposalRowMenu } from '../selection/ProposalRowMenu';
 import { SelectionCard } from '../selection/SelectionCard';
 import { SelectionCategoryChips } from '../selection/SelectionCategoryChips';
 
@@ -34,24 +39,33 @@ const RECOMMENDATION_INTENT: Record<RecommendationValue, StatusDotIntent> = {
 export function ReviewSelectionTable({
   items,
   totalPoints,
+  showScore,
   onAdvance,
   advancingIds,
   decisionSlug,
+  showBudget,
 }: {
   items: ProposalWithAggregates[];
   /** Maximum possible score from the rubric, e.g. 50 → header reads "Score (50pts)". */
   totalPoints: number;
+  /** Rubrics without scored criteria always aggregate to 0, so hide the column. */
+  showScore: boolean;
   onAdvance: (proposalId: string) => void;
   advancingIds: ReadonlySet<string>;
   /** Decision profile slug used to build per-proposal review summary links. */
   decisionSlug: string;
+  /** Show the budget column. False when the proposal template collects no budget. */
+  showBudget: boolean;
 }) {
   const t = useTranslations();
   const isMobile = useMediaQuery(`(max-width: ${screens.md})`);
 
   if (isMobile) {
     return (
-      <ul className="flex flex-col gap-3" aria-label={t('All proposals')}>
+      <ul
+        className="flex flex-col gap-3"
+        aria-label={t('decisions.proposals.allProposalsOption')}
+      >
         {items.map((item) => {
           const advancing = advancingIds.has(item.proposal.id);
           return (
@@ -59,8 +73,10 @@ export function ReviewSelectionTable({
               <ProposalCard
                 item={item}
                 advancing={advancing}
+                showScore={showScore}
                 onAdvance={() => onAdvance(item.proposal.id)}
                 decisionSlug={decisionSlug}
+                showBudget={showBudget}
               />
             </li>
           );
@@ -70,22 +86,33 @@ export function ReviewSelectionTable({
   }
 
   return (
-    <Table aria-label={t('All proposals')}>
+    <Table aria-label={t('decisions.proposals.allProposalsOption')}>
       <TableHeader>
         <TableRow>
           <TableHead scope="col" className="w-56">
-            {t('Proposal')}
+            {t('decisions.proposals.proposalLabel')}
           </TableHead>
-          <TableHead scope="col">{t('Budget')}</TableHead>
-          <TableHead scope="col">{t('Category')}</TableHead>
-          <TableHead scope="col">{t('Overall recommendation')}</TableHead>
+          {showBudget ? (
+            <TableHead scope="col">{t('decisions.budgetLabel')}</TableHead>
+          ) : null}
+          <TableHead scope="col">{t('decisions.categoryLabel')}</TableHead>
           <TableHead scope="col">
-            <span className="underline decoration-dotted">
-              {t('Score ({pts}pts)', { pts: totalPoints })}
-            </span>
+            {t('decisions.review.overallRecommendationLabel')}
           </TableHead>
+          {showScore && (
+            <TableHead scope="col">
+              <span className="underline decoration-dotted">
+                {t('decisions.review.scoreWithPoints', { pts: totalPoints })}
+              </span>
+            </TableHead>
+          )}
           <TableHead scope="col" className="w-28">
-            <span className="sr-only">{t('Advance')}</span>
+            <span className="sr-only">{t('decisions.advanceAction')}</span>
+          </TableHead>
+          <TableHead scope="col" className="w-11">
+            <span className="sr-only">
+              {t('decisions.proposals.proposalOptionsLabel')}
+            </span>
           </TableHead>
         </TableRow>
       </TableHeader>
@@ -100,31 +127,46 @@ export function ReviewSelectionTable({
             <TableRow
               key={item.proposal.id}
               data-state={advancing ? 'selected' : undefined}
+              className="group"
             >
               {/* The cell that names the row, so grid navigation can announce
                   which proposal a value belongs to. */}
-              <TableCell render={<th scope="row" />} className="font-normal">
-                <div className="flex flex-col">
-                  <Link
-                    href={`/decisions/${decisionSlug}/proposal/${item.proposal.profileId}/reviews`}
-                    className="line-clamp-1 text-base text-foreground"
-                  >
-                    <bdi>{title}</bdi>
-                  </Link>
-                  {submitterName && (
-                    <span className="line-clamp-1 text-sm text-muted-foreground">
-                      <bdi>{submitterName}</bdi>
-                    </span>
+              <TableRowHeader>
+                <div className="flex flex-col items-start gap-2">
+                  {item.aggregates.outOfDateReviewsCount > 0 && (
+                    <OutOfDateReviewsBadge
+                      outOfDateCount={item.aggregates.outOfDateReviewsCount}
+                      submittedCount={item.aggregates.reviewsSubmittedCount}
+                    />
                   )}
+                  <div className="flex flex-col">
+                    <Link
+                      href={`/decisions/${decisionSlug}/proposal/${item.proposal.profileId}/reviews`}
+                      className="line-clamp-1 text-base text-foreground"
+                    >
+                      <bdi>{title}</bdi>
+                    </Link>
+                    {submitterName && (
+                      <span className="line-clamp-1 text-sm text-muted-foreground">
+                        <bdi>{submitterName}</bdi>
+                      </span>
+                    )}
+                  </div>
                 </div>
-              </TableCell>
-              <TableCell>
-                <span className="text-base">
-                  {budget
-                    ? formatCurrency(budget.amount, undefined, budget.currency)
-                    : '—'}
-                </span>
-              </TableCell>
+              </TableRowHeader>
+              {showBudget ? (
+                <TableCell>
+                  <span className="text-base">
+                    {budget
+                      ? formatCurrency(
+                          budget.amount,
+                          undefined,
+                          budget.currency,
+                        )
+                      : '—'}
+                  </span>
+                </TableCell>
+              ) : null}
               <TableCell>
                 <SelectionCategoryChips
                   labels={item.categories.map((c) => c.label)}
@@ -135,17 +177,26 @@ export function ReviewSelectionTable({
                   counts={item.aggregates.overallRecommendationCount}
                 />
               </TableCell>
-              <TableCell>
-                <span className="text-base">
-                  <ScoreText value={item.aggregates.averageScore} />
-                </span>
-              </TableCell>
+              {showScore && (
+                <TableCell>
+                  <span className="text-base">
+                    <ScoreText value={item.aggregates.averageScore} />
+                  </span>
+                </TableCell>
+              )}
               <TableCell>
                 <AdvanceToggleButton
                   isSelected={advancing}
                   onPress={() => onAdvance(item.proposal.id)}
                   title={title}
                   className="w-28 justify-center"
+                />
+              </TableCell>
+              <TableCell>
+                <ProposalRowMenu
+                  proposal={item.proposal}
+                  proposalHref={`/decisions/${decisionSlug}/proposal/${item.proposal.profileId}`}
+                  isSelected={advancing}
                 />
               </TableCell>
             </TableRow>
@@ -156,16 +207,22 @@ export function ReviewSelectionTable({
   );
 }
 
-export function ReviewSelectionTableSkeleton() {
+export function ReviewSelectionTableSkeleton({
+  showScore = true,
+  showBudget = true,
+}: {
+  showScore?: boolean;
+  showBudget?: boolean;
+}) {
   return (
     <div className="flex w-full flex-col gap-2">
       <div className="flex w-full items-center justify-between border-b border-border py-2">
         <Skeleton className="h-4 w-20" />
         <div className="hidden gap-8 md:flex">
-          <Skeleton className="h-4 w-12" />
+          {showBudget ? <Skeleton className="h-4 w-12" /> : null}
           <Skeleton className="h-4 w-16" />
           <Skeleton className="h-4 w-32" />
-          <Skeleton className="h-4 w-20" />
+          {showScore && <Skeleton className="h-4 w-20" />}
           <Skeleton className="h-4 w-16" />
         </div>
       </div>
@@ -178,10 +235,12 @@ export function ReviewSelectionTableSkeleton() {
             <Skeleton className="h-4 w-40" />
             <Skeleton className="h-3 w-24" />
           </div>
-          <Skeleton className="hidden h-4 w-12 md:block" />
+          {showBudget ? (
+            <Skeleton className="hidden h-4 w-12 md:block" />
+          ) : null}
           <Skeleton className="hidden h-5 w-32 md:block" />
           <Skeleton className="hidden h-4 w-32 md:block" />
-          <Skeleton className="hidden h-4 w-12 md:block" />
+          {showScore && <Skeleton className="hidden h-4 w-12 md:block" />}
           <Skeleton className="h-8 w-28" />
         </div>
       ))}
@@ -192,21 +251,32 @@ export function ReviewSelectionTableSkeleton() {
 function ProposalCard({
   item,
   advancing,
+  showScore,
   onAdvance,
   decisionSlug,
+  showBudget,
 }: {
   item: ProposalWithAggregates;
   advancing: boolean;
+  showScore: boolean;
   onAdvance: () => void;
   decisionSlug: string;
+  showBudget: boolean;
 }) {
   const t = useTranslations();
-  const title = item.proposal.profile.name || t('Untitled Proposal');
+  const title =
+    item.proposal.profile.name || t('decisions.proposals.untitledProposal');
   const submitterName = item.proposal.submittedBy?.name ?? null;
   const budget = item.proposal.proposalData.budget;
 
   return (
     <SelectionCard isSelected={advancing}>
+      {item.aggregates.outOfDateReviewsCount > 0 && (
+        <OutOfDateReviewsBadge
+          outOfDateCount={item.aggregates.outOfDateReviewsCount}
+          submittedCount={item.aggregates.reviewsSubmittedCount}
+        />
+      )}
       <div className="flex flex-col gap-1">
         <Link
           href={`/decisions/${decisionSlug}/proposal/${item.proposal.profileId}/reviews`}
@@ -220,7 +290,7 @@ function ProposalCard({
       </div>
 
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-        {budget && (
+        {showBudget && budget && (
           <span className="text-base">
             {formatCurrency(budget.amount, undefined, budget.currency)}
           </span>
@@ -232,10 +302,17 @@ function ProposalCard({
         counts={item.aggregates.overallRecommendationCount}
       />
 
-      <div className="flex items-center justify-between">
-        <span className="text-base">
-          <ScoreText value={item.aggregates.averageScore} />
-        </span>
+      <div
+        className={cn(
+          'flex items-center',
+          showScore ? 'justify-between' : 'justify-end',
+        )}
+      >
+        {showScore && (
+          <span className="text-base">
+            <ScoreText value={item.aggregates.averageScore} />
+          </span>
+        )}
         <AdvanceToggleButton
           isSelected={advancing}
           onPress={onAdvance}
@@ -243,6 +320,27 @@ function ProposalCard({
         />
       </div>
     </SelectionCard>
+  );
+}
+
+/** Marks a proposal whose submitted reviews do not all cover the same version. */
+function OutOfDateReviewsBadge({
+  outOfDateCount,
+  submittedCount,
+}: {
+  outOfDateCount: number;
+  submittedCount: number;
+}) {
+  const t = useTranslations();
+
+  return (
+    <Badge variant="warning">
+      <LuRefreshCcw aria-hidden className="text-warning" />
+      {t('decisions.review.reviewsOutOfDateShort', {
+        n: outOfDateCount,
+        total: submittedCount,
+      })}
+    </Badge>
   );
 }
 
@@ -288,5 +386,5 @@ function ScoreText({ value }: { value: number }) {
   // Render with at most one decimal — most rubrics produce integers but
   // averageScore-derived values can drift; keep the column compact.
   const display = Number.isInteger(value) ? value.toString() : value.toFixed(1);
-  return <>{t('{pts} pts', { pts: display })}</>;
+  return <>{t('decisions.review.ptsValue', { pts: display })}</>;
 }

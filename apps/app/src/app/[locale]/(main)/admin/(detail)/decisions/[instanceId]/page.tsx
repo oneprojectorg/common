@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
-import { getTranslations } from 'next-intl/server';
+
+import { getTranslations } from '@/lib/i18n';
 
 import { DecisionInstanceDetail } from '@/components/screens/PlatformAdmin';
 
@@ -10,7 +11,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale });
-  return { title: `${t('Decision')} | ${t('Admin')}` };
+  return { title: `${t('decisions.decisionLabel')} | ${t('Admin')}` };
 }
 
 export default async function AdminDecisionInstancePage({

@@ -3,6 +3,7 @@
 import { trpc } from '@op/api/client';
 import { ProcessStatus } from '@op/api/encoders';
 import {
+  PAGE_LIMIT,
   ProposalReviewRequestState,
   type ProposalRevisionRequestItem,
 } from '@op/common/client';
@@ -33,7 +34,7 @@ const ActiveDecisionsNotificationsSuspense = () => {
     (t) => [
       t.decision.listDecisionProfiles({
         status: [ProcessStatus.PUBLISHED],
-        limit: 10,
+        limit: PAGE_LIMIT.sm,
       }),
       t.decision.listProposalsRevisionRequests({
         states: [ProposalReviewRequestState.REQUESTED],
@@ -41,7 +42,7 @@ const ActiveDecisionsNotificationsSuspense = () => {
     ],
   );
 
-  const revisionRequests = revisionData?.revisionRequests ?? [];
+  const revisionRequests = revisionData?.items ?? [];
   const count = decisions.length + revisionRequests.length;
 
   if (count === 0) {
@@ -50,7 +51,10 @@ const ActiveDecisionsNotificationsSuspense = () => {
 
   return (
     <NotificationPanel>
-      <NotificationPanelHeader title={t('Active Decisions')} count={count} />
+      <NotificationPanelHeader
+        title={t('decisions.activeDecisionsHeading')}
+        count={count}
+      />
       <NotificationPanelList>
         {revisionRequests.map((item) => (
           <RevisionRequestRow key={item.revisionRequest.id} item={item} />
@@ -78,7 +82,7 @@ const ActiveDecisionsNotificationsSuspense = () => {
                   onClick={() => setNavigatingId(decision.id)}
                   loading={isNavigating}
                 >
-                  {t('Participate')}
+                  {t('decisions.participateAction')}
                 </ButtonLink>
               </NotificationPanelActions>
             </NotificationPanelItem>
@@ -119,16 +123,16 @@ const RevisionRequestRow = ({
     return null;
   }
 
-  const { proposal, revisionRequest } = item;
+  const { proposal } = item;
   const title = proposal.profile.name;
-  const editHref = `/decisions/${item.decisionProfileSlug}/proposal/${proposal.profileId}/edit?reviewRevision=${revisionRequest.id}`;
+  const editHref = `/decisions/${item.decisionProfileSlug}/proposal/${proposal.profileId}/edit`;
 
   return (
     <NotificationPanelItem>
       <ProfileItem
         avatar={<RevisionRequestIcon />}
-        title={t('Revision Request')}
-        description={t('A reviewer has requested changes to {proposalName}', {
+        title={t('decisions.revisionRequestLabel')}
+        description={t('decisions.revisionRequestedNotification', {
           proposalName: title,
         })}
       />
@@ -138,7 +142,7 @@ const RevisionRequestRow = ({
           className="w-full sm:w-auto"
           onClick={() => setDismissed(true)}
         >
-          {t('Ignore')}
+          {t('decisions.ignoreAction')}
         </Button>
         <ButtonLink
           href={editHref}
@@ -146,7 +150,7 @@ const RevisionRequestRow = ({
           onClick={() => setNavigating(true)}
           loading={navigating}
         >
-          {t('Revise proposal')}
+          {t('decisions.proposals.reviseProposalAction')}
         </ButtonLink>
       </NotificationPanelActions>
     </NotificationPanelItem>

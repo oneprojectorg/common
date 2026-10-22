@@ -1,6 +1,7 @@
 'use client';
 
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
+import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import { ProposalFilter } from '@op/api/encoders';
 import { hasVotingPhase } from '@op/common/client';
@@ -126,12 +127,16 @@ function ResultsPageContent({
   isLegacy?: boolean;
   pinOffset?: number;
 }) {
-  const t = useTranslations();
+  const t = useTranslations('decisions');
 
   // The "My Ballot" tab only makes sense when a voting phase took place.
   // Legacy instances always had voting, so they keep showing it.
   const showBallotTab =
     isLegacy || hasVotingPhase(instance.instanceData?.phases ?? []);
+
+  // The tab filters on the reader's profile, so it needs one.
+  const { user } = useUser();
+  const showMyProposalsTab = Boolean(user?.currentProfile?.id);
 
   // Organization-specific content
   const heroContent = match<{
@@ -140,21 +145,21 @@ function ResultsPageContent({
     about?: string;
   }>(profileSlug, {
     'people-powered': () => ({
-      title: t('The results are in.'),
+      title: t('resultsReadyHeading'),
       description: `Thank you to everyone who participated in ${instance.name}`,
     }),
     cowop: () => ({
-      title: t('The results are in.'),
-      description: t('COWOPRESULTSHEADER'),
-      about: t('COWOPRESULTSABOUT'),
+      title: t('resultsReadyHeading'),
+      description: t('cowopResultsHeader'),
+      about: t('cowopResultsAbout'),
     }),
     'one-project': () => ({
-      title: t('The results are in.'),
+      title: t('resultsReadyHeading'),
       description: `Thank you to everyone who participated in ${instance.name}`,
-      about: t('HORIZONRESULTSABOUT'),
+      about: t('horizonResultsAbout'),
     }),
     _: () => ({
-      title: t('The results are in.'),
+      title: t('resultsReadyHeading'),
       description: `Thank you to everyone who participated in ${instance.name}`,
     }),
   });
@@ -193,7 +198,10 @@ function ResultsPageContent({
 
       <div className="flex w-full justify-center border-t bg-white">
         <div className="w-full p-4">
-          <DecisionResultsTabs showBallotTab={showBallotTab}>
+          <DecisionResultsTabs
+            showBallotTab={showBallotTab}
+            showMyProposalsTab={showMyProposalsTab}
+          >
             <DecisionResultsTabPanel value="funded">
               <APIErrorBoundary
                 fallbacks={{
@@ -203,11 +211,9 @@ function ResultsPageContent({
                         <EmptyMedia variant="icon">
                           <LuLeaf className="size-6" />
                         </EmptyMedia>
-                        <EmptyTitle>
-                          {t('Results are still being processed.')}
-                        </EmptyTitle>
+                        <EmptyTitle>{t('resultsProcessingNotice')}</EmptyTitle>
                         <EmptyDescription>
-                          {t('Check back again shortly for the results.')}
+                          {t('resultsPendingHint')}
                         </EmptyDescription>
                       </EmptyHeader>
                     </Empty>
@@ -230,12 +236,27 @@ function ResultsPageContent({
                   slug={profileSlug}
                   instanceId={instanceId}
                   decisionSlug={decisionSlug}
-                  initialFilter={ProposalFilter.ALL}
+                  pinnedFilter={ProposalFilter.ALL}
                   phase="results"
                   pinOffset={pinOffset}
                 />
               </Suspense>
             </DecisionResultsTabPanel>
+
+            {showMyProposalsTab ? (
+              <DecisionResultsTabPanel value="my-proposals">
+                <Suspense fallback={<ProposalListSkeleton />}>
+                  <ProposalsList
+                    slug={profileSlug}
+                    instanceId={instanceId}
+                    decisionSlug={decisionSlug}
+                    pinnedFilter={ProposalFilter.MY_PROPOSALS}
+                    phase="results"
+                    pinOffset={pinOffset}
+                  />
+                </Suspense>
+              </DecisionResultsTabPanel>
+            ) : null}
 
             {showBallotTab ? (
               <DecisionResultsTabPanel value="ballot">

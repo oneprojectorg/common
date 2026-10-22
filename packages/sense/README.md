@@ -152,7 +152,9 @@ work around it — if a component fights you, the composition is usually wrong.
 1. **An accessible name on every icon-only control.** `<Button size="icon-sm">`
    with only an icon inside is a nameless button. Pass `aria-label`.
 2. **A real label on every input.** `Field` + `FieldLabel`, or `htmlFor`
-   pointing at the control's `id`. A placeholder is not a label.
+   pointing at the control's `id`, where the design shows a label;
+   `aria-label` where the field stands in for its content (`EditableText`, a
+   search box). A placeholder is not a label.
 3. **Announcements for content that changes without a navigation.** Async
    results, counts, validation errors, save states — `aria-live="polite"`.
 4. **Semantics for anything clickable that isn't a button or link.** A clickable
@@ -225,5 +227,34 @@ published source lags its declared dependency versions. Reapply if you re-run
 
 - `calendar.tsx` — removed the `table:` `className` entry. `react-day-picker`
   v10 dropped `table` from its `ClassNames` type; the registry still emits it.
+- `dialog.tsx`, `alert-dialog.tsx` — the backdrop is rendered with `forceRender`.
+  Base UI skips the backdrop of a nested dialog by default, which left the
+  parent dialog undimmed behind the child.
+- `tabs.tsx` — `Tabs` forwards `orientation` to `TabsPrimitive.Root` as well
+  as setting `data-orientation`. The registry only sets the attribute, so the
+  styling went vertical while Base UI stayed horizontal: arrow keys stayed
+  left/right and the list had no `aria-orientation`.
+- `tabs.tsx` — `TabsList` has a `sidebar` variant (sidebar palette, tinted
+  active tab, no card) for a settings-style nav column. Not in the registry.
 - `scroll-area.tsx` — dropped an unused `import * as React from "react"` that
   fails `noUnusedLocals`.
+- `sheet.tsx` — moved the panel width out of the `data-[side=left|right]:`
+  variants into a plain `side === 'left' || side === 'right'` branch
+  (`w-7/8 sm:max-w-sm`). As a variant it outranked a caller's own `w-*` /
+  `max-w-*` on specificity, and `cn` cannot merge across different variant
+  chains, so `className` was silently ignored (the mobile `Sidebar`'s
+  `w-(--sidebar-width)` lost to `data-[side=left]:w-7/8`). The `data-[side]`
+  variants for insets, borders and translates are stock — keep them.
+- `input.tsx`, `textarea.tsx` — added `unstyled`: drops the chrome (border,
+  fill, padding, radius, height, type size, the focus and invalid rings; the
+  resize grip on `textarea`) and keeps the behaviour, for a field that reads as
+  the text around it (`EditableText`, the process overview). The counterpart of
+  `Button`'s `bare`.
+- `textarea.tsx` — the `ref` goes through `lib/useFieldSizingFallback`, which
+  sizes the box from `scrollHeight` where `field-sizing: content` is
+  unsupported (Firefox) and only merges the ref elsewhere.
+- `sheet.tsx` — added `inline-start` / `inline-end` to `side`, resolved against
+  `useDirection` before the physical variants are applied. Base UI already
+  reports those two as `data-side` values on its positioned surfaces; `Sheet`
+  is the one that did not accept them, which left every RTL caller writing
+  `side={isRtl ? 'left' : 'right'}`.

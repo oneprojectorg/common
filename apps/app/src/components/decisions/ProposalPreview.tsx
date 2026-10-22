@@ -1,6 +1,7 @@
 'use client';
 
 import { useCanLinkToProfile } from '@/hooks/useCanLinkToProfile';
+import type { ProposalEngagement as EngagementState } from '@/hooks/useProposalEngagement';
 import { formatDate } from '@/utils/formatting';
 import { ProposalStatus, Visibility } from '@op/api/encoders';
 import {
@@ -23,6 +24,7 @@ import type { IconType } from 'react-icons';
 import {
   LuBadgeCheck,
   LuBookmark,
+  LuCircleX,
   LuEyeOff,
   LuFlag,
   LuHeart,
@@ -35,19 +37,21 @@ import { Link as NavLink } from '@/lib/i18n/routing';
 import { Bullet } from '../Bullet';
 import { ButtonLink } from '../ButtonLink';
 import { ProfileAvatar } from '../ProfileAvatar';
-import { BudgetDisplay, formatBudget } from './BudgetDisplay';
+import {
+  BudgetDisplay,
+  formatBudget,
+  getAllocatedAmount,
+} from './BudgetDisplay';
 import { DocumentNotAvailable } from './DocumentNotAvailable';
 import { ProposalAttachmentViewList } from './ProposalAttachmentViewList';
 import { PROPOSAL_COMMENTS_ANCHOR_ID } from './ProposalComments';
 import { ProposalContentRenderer } from './ProposalContentRenderer';
 import { ProposalHtmlContent } from './ProposalHtmlContent';
-import { TranslationNotice } from './TranslationNotice';
 import { resolveProposalSystemFields } from './proposalContentUtils';
+import { useCommentsAllowed } from './useCommentsAllowed';
 
 export type ProposalTranslation = {
   htmlContent: Record<string, string | string[]>;
-  sourceLanguageName: string;
-  onViewOriginal: () => void;
 };
 
 /**
@@ -64,14 +68,25 @@ export type ProposalEngagement = {
   isPending?: boolean;
 };
 
+/** `undefined` in, `undefined` out: a viewer who can't act gets plain counts. */
+export const toPreviewEngagement = (
+  engagement: EngagementState | undefined,
+): ProposalEngagement | undefined =>
+  engagement && {
+    isLiked: engagement.isLiked,
+    isFollowing: engagement.isFollowed,
+    onLike: engagement.onLike,
+    onFollow: engagement.onFollow,
+  };
+
 export type ProposalPreviewProps = {
   proposal: Proposal;
   /** See {@link ProposalEngagement}. Absent → static counts. */
   engagement?: ProposalEngagement;
   /** Selection record from the latest confirmed result, if any. */
   selection?: ProposalSelection | null;
-  /** When set, overrides proposal content with translated HTML and shows attribution */
   translation?: ProposalTranslation;
+  translateLink?: ReactNode;
   /** Rendered inline after the "Submitted on {date}" line, separated by a bullet. */
   submissionMetaSuffix?: ReactNode;
   /** Rendered between the header section and the proposal body. */
@@ -91,6 +106,7 @@ export function ProposalPreview({
   engagement,
   selection,
   translation,
+  translateLink,
   submissionMetaSuffix,
   headerBanner,
   documentState = 'ready',
@@ -104,6 +120,7 @@ export function ProposalPreview({
   const isDraft = proposal.status === ProposalStatus.DRAFT;
   // Draft has its own banner above, so don't also badge it as hidden.
   const isHidden = !isDraft && proposal.visibility === Visibility.HIDDEN;
+  const isRejected = proposal.status === ProposalStatus.REJECTED;
 
   const {
     title: originalTitle,
@@ -129,99 +146,93 @@ export function ProposalPreview({
     ? parseTranslatedMeta(translation.htmlContent)
     : null;
 
+  const authorName = proposal.submittedBy?.name || proposal.submittedBy?.slug;
+
   // Legacy proposals store HTML under a single "default" key with no collab doc.
   // Render them directly instead of going through the template-driven renderer.
   const legacyHtml = htmlContent?.default as string | undefined;
 
   return (
-    <div className="flex flex-col gap-4">
-      {/* Draft mode banner */}
-      {isDraft && (
-        <Alert variant="info">
-          <AlertDescription>
-            {t(
-              'This proposal is currently in draft mode, only you and collaborators can access it.',
-            )}
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {/* Figma "Proposal Header" (17924:77055): status row / header / engagement
-          stacked at 24, with the header's own contents at 16. */}
-      <div className="flex flex-col gap-6">
-        {/* Status badges. Unlike ProposalCardView's single-badge
-            `ProposalStatusBadge`, the header shows every applicable state at
-            once, with the longer copy the design spells out. */}
-        {(isHidden || proposal.isFlagged || selection) && (
-          <div className="flex flex-wrap gap-2">
-            {isHidden && (
-              <StatusBadge variant="warning" icon={LuEyeOff}>
-                {t('Hidden from public view')}
-              </StatusBadge>
-            )}
-            {/* Only the author and admins ever receive a flagged proposal. */}
-            {proposal.isFlagged && (
-              <StatusBadge variant="alert" icon={LuFlag}>
-                {t('Hidden from members after a moderation review')}
-              </StatusBadge>
-            )}
-            {selection && (
-              <StatusBadge variant="success" icon={LuBadgeCheck}>
-                {t('Selected')}
-              </StatusBadge>
-            )}
-          </div>
+    <div className="flex flex-col gap-6 sm:gap-10">
+      <div className="flex flex-col gap-10">
+        {isDraft && (
+          <Alert variant="info">
+            <AlertDescription>
+              {t('decisions.proposals.draftModeNotice')}
+            </AlertDescription>
+          </Alert>
         )}
 
-        <div className="flex flex-col gap-4">
-          {/* 30px serif at 300 — `text-headline` at this column's step. */}
-          <Header1 className="text-headline font-light">
-            {title || t('Untitled Proposal')}
-          </Header1>
-
-          {/* Translation attribution */}
-          {translation && (
-            <TranslationNotice
-              sourceLanguageName={translation.sourceLanguageName}
-              onViewOriginal={translation.onViewOriginal}
-            />
+        <div className="flex flex-col gap-6">
+          {(isRejected || isHidden || proposal.isFlagged || selection) && (
+            <div className="flex flex-wrap gap-2">
+              {isRejected && (
+                <StatusBadge variant="alert" icon={LuCircleX}>
+                  {t('decisions.proposals.notAdvancedStatus')}
+                </StatusBadge>
+              )}
+              {isHidden && (
+                <StatusBadge variant="warning" icon={LuEyeOff}>
+                  {t('decisions.proposals.hiddenFromPublicNotice')}
+                </StatusBadge>
+              )}
+              {/* Only the author and admins ever receive a flagged proposal. */}
+              {proposal.isFlagged && (
+                <StatusBadge variant="alert" icon={LuFlag}>
+                  {t('decisions.proposals.hiddenModerationNotice')}
+                </StatusBadge>
+              )}
+              {selection && (
+                <StatusBadge variant="success" icon={LuBadgeCheck}>
+                  {t('decisions.proposals.selectedStatus')}
+                </StatusBadge>
+              )}
+            </div>
           )}
 
-          {/* Budget + categories share a row; either can appear alone. */}
-          {(budget != null ||
-            selection?.allocated != null ||
-            categories.length > 0) && (
-            <TagGroup className="max-w-full">
-              {(budget != null || selection?.allocated != null) && (
-                <Tag size="lg" variant="outline">
-                  <BudgetDisplay
-                    value={
-                      selection?.allocated != null
-                        ? selection.allocated
-                        : budget
-                    }
-                  />
-                </Tag>
-              )}
-              {selection?.allocated != null && budget && (
-                <Tag size="lg">
-                  {t('{amount} requested', {
-                    amount: formatBudget(budget) ?? '',
-                  })}
-                </Tag>
-              )}
-              {categories.map((category) => (
-                <Tag key={category} size="lg">
-                  {category}
-                </Tag>
-              ))}
-            </TagGroup>
-          )}
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-2">
+              {translateLink}
+              <Header1 className="text-headline font-light">
+                {title || t('decisions.proposals.untitledProposal')}
+              </Header1>
+            </div>
 
-          {/* Author and submission info */}
-          <div className="flex items-center gap-2">
+            {(budget != null ||
+              selection?.allocated != null ||
+              categories.length > 0) && (
+              <TagGroup className="max-w-full">
+                {(budget != null || selection?.allocated != null) && (
+                  <Tag size="lg" variant="outline">
+                    <BudgetDisplay
+                      value={
+                        selection?.allocated != null
+                          ? getAllocatedAmount({
+                              allocated: selection.allocated,
+                              budget,
+                            })
+                          : budget
+                      }
+                    />
+                  </Tag>
+                )}
+                {selection?.allocated != null && budget && (
+                  <Tag size="lg">
+                    {t('decisions.proposals.amountRequested', {
+                      amount: formatBudget(budget) ?? '',
+                    })}
+                  </Tag>
+                )}
+                {categories.map((category) => (
+                  <Tag key={category} size="lg">
+                    {category}
+                  </Tag>
+                ))}
+              </TagGroup>
+            )}
+
             {proposal.submittedBy && (
-              <>
+              <div className="flex items-center gap-2">
                 <ProfileAvatar
                   profile={proposal.submittedBy}
                   withLink={!proposal.submittedBy.isAnonymous}
@@ -230,7 +241,7 @@ export function ProposalPreview({
                 <div className="flex flex-col">
                   {proposal.submittedBy.isAnonymous || !canLinkToProfile ? (
                     <span className="text-base">
-                      {proposal.submittedBy.name || proposal.submittedBy.slug}
+                      <bdi>{authorName}</bdi>
                     </span>
                   ) : (
                     <NavLink
@@ -238,13 +249,14 @@ export function ProposalPreview({
                       // Without this it falls through to the browser's ring.
                       className="w-fit rounded-sm text-base font-strong text-foreground outline-none hover:underline focus-visible:ring-3 focus-visible:ring-ring/50"
                     >
-                      {proposal.submittedBy.name || proposal.submittedBy.slug}
+                      <bdi>{authorName}</bdi>
                     </NavLink>
                   )}
                   {!isDraft && (
                     <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
                       <span>
-                        {t('Submitted on')} {formatDate(proposal.createdAt)}
+                        {t('decisions.proposals.submittedOnLabel')}{' '}
+                        {formatDate(proposal.createdAt)}
                       </span>
                       {submissionMetaSuffix && (
                         <>
@@ -255,38 +267,38 @@ export function ProposalPreview({
                     </div>
                   )}
                 </div>
-              </>
+              </div>
             )}
           </div>
+
+          <EngagementRow proposal={proposal} engagement={engagement} />
         </div>
 
-        <EngagementRow proposal={proposal} engagement={engagement} />
+        {headerBanner}
+
+        {documentState === 'pending' ? (
+          <div className="flex justify-center py-8">
+            <Spinner />
+          </div>
+        ) : documentState === 'error' ? (
+          <DocumentNotAvailable className="py-4" />
+        ) : legacyHtml ? (
+          <ProposalHtmlContent html={legacyHtml} />
+        ) : htmlContent && proposalTemplate ? (
+          <ProposalContentRenderer
+            proposalTemplate={proposalTemplate}
+            htmlContent={htmlContent}
+            location={proposal.proposalData?.location}
+            translatedMeta={translatedMeta}
+          />
+        ) : null}
       </div>
 
-      {headerBanner}
-
-      {/* Proposal Content */}
-      {documentState === 'pending' ? (
-        <div className="flex justify-center py-8">
-          <Spinner />
-        </div>
-      ) : documentState === 'error' ? (
-        <DocumentNotAvailable className="py-4" />
-      ) : legacyHtml ? (
-        <ProposalHtmlContent html={legacyHtml} />
-      ) : htmlContent && proposalTemplate ? (
-        <ProposalContentRenderer
-          proposalTemplate={proposalTemplate}
-          htmlContent={htmlContent}
-          location={proposal.proposalData?.location}
-          translatedMeta={translatedMeta}
-        />
-      ) : null}
-
-      {/* Attachments Section */}
       {proposal.attachments && proposal.attachments.length > 0 && (
-        <div className="border-t pt-8">
-          <Header3 className="mb-4 text-label">{t('Attachments')}</Header3>
+        <div className="border-t pt-6 sm:pt-10">
+          <Header3 className="mb-4 text-label">
+            {t('decisions.proposals.attachmentsHeading')}
+          </Header3>
           <ProposalAttachmentViewList attachments={proposal.attachments} />
         </div>
       )}
@@ -306,6 +318,7 @@ function EngagementRow({
   engagement?: ProposalEngagement;
 }) {
   const t = useTranslations();
+  const commentsEnabled = useCommentsAllowed(proposal.processInstanceId);
 
   const likesCount = proposal.likesCount || 0;
   const followersCount = proposal.followersCount || 0;
@@ -313,9 +326,15 @@ function EngagementRow({
 
   // The noun is separate from the number so the number can animate on its own;
   // together they still read as the toggle's accessible name ("3 Likes").
-  const likesNoun = likesCount === 1 ? t('Like') : t('Likes');
+  const likesNoun =
+    likesCount === 1
+      ? t('decisions.proposals.likeAction')
+      : t('decisions.proposals.likesLabel');
   const followersNoun = followersCount === 1 ? t('Follower') : t('Followers');
-  const commentsNoun = commentsCount === 1 ? t('Comment') : t('Comments');
+  const commentsNoun =
+    commentsCount === 1
+      ? t('Comment')
+      : t('decisions.proposals.commentsHeading');
 
   return (
     <div className="flex items-center gap-2 border-t border-b py-2 text-sm text-muted-foreground">
@@ -335,15 +354,17 @@ function EngagementRow({
       />
       {/* A link, not a toggle: jumping to the comments works for any viewer,
           signed in or not. `px-2` matches the ghost toggles' inset. */}
-      <ButtonLink
-        href={`#${PROPOSAL_COMMENTS_ANCHOR_ID}`}
-        variant="ghost"
-        size="sm"
-        className="px-2 text-muted-foreground hover:text-foreground"
-      >
-        <LuMessageCircle aria-hidden />
-        <AnimatedCount value={commentsCount} /> {commentsNoun}
-      </ButtonLink>
+      {commentsEnabled && (
+        <ButtonLink
+          href={`#${PROPOSAL_COMMENTS_ANCHOR_ID}`}
+          variant="ghost"
+          size="sm"
+          className="px-2 text-muted-foreground hover:text-foreground"
+        >
+          <LuMessageCircle aria-hidden />
+          <AnimatedCount value={commentsCount} /> {commentsNoun}
+        </ButtonLink>
+      )}
     </div>
   );
 }

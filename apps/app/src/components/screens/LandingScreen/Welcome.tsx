@@ -8,18 +8,20 @@ import { useMemo } from 'react';
 
 export const Welcome = ({ user }: { user: CommonUser }) => {
   const searchParams = useSearchParams();
-  const t = useTranslations();
+  const t = useTranslations('shell');
 
   const isNew = useMemo(() => {
     return searchParams.get('new') === '1';
   }, []);
 
   const orgName = user.currentProfile?.name;
-  const name = orgName ? `, ${orgName}` : t(' to Common');
+  const name = orgName ? `, ${orgName}` : t('welcomeSuffix');
 
   return (
     <Header1 data-testid="welcome-heading" className="text-center">
-      {isNew ? `${t('Welcome')}${name}!` : `${t('Welcome back')}${name}!`}
+      {isNew
+        ? `${t('welcomeHeading')}${name}!`
+        : `${t('welcomeBackHeading')}${name}!`}
     </Header1>
   );
 };

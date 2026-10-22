@@ -3,7 +3,6 @@ import {
   and,
   db,
   eq,
-  ilike,
   inArray,
   isNull,
   ne,
@@ -17,7 +16,6 @@ import {
   decisionsVoteProposals,
   decisionsVoteSubmissions,
   processInstances,
-  profileUsers,
   proposalCategories,
   proposalReviewAssignments,
   proposals,
@@ -30,6 +28,7 @@ import {
   assertInstanceProfileAccess,
   getCurrentProfileId,
   resolveAccessUserIds,
+  resolveAccountUserId,
 } from '../access';
 import { assertUserByAuthId } from '../assert';
 import { noActiveModerationFlag } from '../moderation/moderationVisibility';
@@ -38,6 +37,12 @@ import {
   getPhaseProposalSqlScope,
 } from './getProposalsForPhase';
 import type { ListProposalsInput } from './listProposals';
+import { notSuperseded } from './proposalSupersession';
+import { buildProposalTitleSearchCondition } from './proposalTitleSearch';
+import {
+  excludeRejectedUnlessAsked,
+  isProposalProfileMember,
+} from './proposalVisibility';
 
 type InstanceScopeRow = Pick<
   typeof processInstances.$inferSelect,
@@ -47,6 +52,7 @@ type InstanceScopeRow = Pick<
   | 'instanceData'
   | 'processId'
   | 'currentStateId'
+  | 'status'
 >;
 
 export interface ProposalListScope {
@@ -66,6 +72,11 @@ export interface ProposalListScope {
    * table) and a plain `db.select().from(proposals)` count query.
    */
   buildWhereClause: (proposalsTable: typeof proposals) => SQL;
+  /**
+   * Set when the list includes proposals left behind in earlier phases (see
+   * `notAdvanced`): true for a row outside the current phase.
+   */
+  buildIsOutsideCurrentPhase?: (proposalsTable: typeof proposals) => SQL;
 }
 
 /**
@@ -156,6 +167,9 @@ const buildBaseConditions = (
     // including admins and even trusted background contexts. Applied in the
     // base conditions so every branch of the query builder inherits it.
     isNull(t.moderationDetachedAt),
+    // Hidden from every listing, admins included; in the base conditions so no
+    // caller-supplied filter can reach around it.
+    notSuperseded({ proposalId: t.id, processInstanceId }),
   ];
 
   if (submittedByProfileId) {
@@ -166,9 +180,9 @@ const buildBaseConditions = (
     conditions.push(eq(t.status, status));
   }
 
-  if (search) {
-    // Search in proposal data (JSONB) - convert to text for searching
-    conditions.push(ilike(sql`${t.proposalData}::text`, `%${search}%`));
+  const searchCondition = buildProposalTitleSearchCondition(t, search);
+  if (searchCondition) {
+    conditions.push(searchCondition);
   }
 
   // "Other proposals" tab: exclude proposals the caller is assigned to review
@@ -231,11 +245,14 @@ export const resolveProposalListScope = async ({
   }
 
   // Caller's own grants unioned with public (GLOBAL_USER_PUBLIC) grants — used
-  // for the draft and HIDDEN visibility subqueries below.
+  // for the draft subquery below.
   // INVARIANT: public grants must only be placed on the process/decision
   // profile, never on an individual proposal profile — otherwise this would
-  // surface every caller's drafts/HIDDEN proposals to the public.
+  // surface every caller's drafts/HIDDEN proposals to the public. The
+  // proposal-profile checks take `accountUserId` alone for that reason: the
+  // sentinel can never match there, so unioning it in only widens the scan.
   const accessUserIds = resolveAccessUserIds(user);
+  const accountUserId = resolveAccountUserId(user);
 
   // Fetch the instance row up front and resolve the explicit ID scope in
   // parallel. The row is reused for the phase-resolution context (instead of
@@ -250,6 +267,7 @@ export const resolveProposalListScope = async ({
         instanceData: processInstances.instanceData,
         processId: processInstances.processId,
         currentStateId: processInstances.currentStateId,
+        status: processInstances.status,
       })
       .from(processInstances)
       .where(eq(processInstances.id, processInstanceId))
@@ -369,6 +387,51 @@ export const resolveProposalListScope = async ({
     }
   }
 
+  // Rejection drops a proposal from later phases' snapshots, so "Not advanced"
+  // on the current phase skips phase scoping and lets the status filter narrow.
+  const includesEarlierPhases =
+    input.notAdvanced === true &&
+    explicitScopeIds === undefined &&
+    input.phaseId === undefined;
+
+  // A submitted proposal outside the current phase was left behind by an
+  // earlier transition.
+  const buildIsOutsideCurrentPhase =
+    includesEarlierPhases && input.phase !== 'results'
+      ? (proposalsTable: typeof proposals): SQL =>
+          and(
+            ne(proposalsTable.status, ProposalStatus.DRAFT),
+            isNull(proposalsTable.deletedAt),
+            // Not `not(...)`: a NULL membership must read as outside.
+            sql`(${phaseScope.buildNonDraftFilter(proposalsTable)}) IS NOT TRUE`,
+          )!
+      : undefined;
+
+  const buildNonDraftScopeFilter = (proposalsTable: typeof proposals): SQL =>
+    and(
+      ne(proposalsTable.status, ProposalStatus.DRAFT),
+      includesEarlierPhases
+        ? isNull(proposalsTable.deletedAt)
+        : phaseScope.buildNonDraftFilter(proposalsTable),
+    )!;
+
+  // Under "Not advanced", only rejected and left-behind rows; otherwise every
+  // row but the rejected ones, unless a status filter asks for them.
+  const buildRejectedAndLeftBehindFilter = (
+    proposalsTable: typeof proposals,
+  ): SQL | undefined => {
+    if (input.notAdvanced) {
+      return or(
+        eq(proposalsTable.status, ProposalStatus.REJECTED),
+        buildIsOutsideCurrentPhase?.(proposalsTable),
+      );
+    }
+    // The trusted export is a full record, not a list a viewer browses.
+    return skipAccessCheck
+      ? undefined
+      : excludeRejectedUnlessAsked({ proposalsTable, status: input.status });
+  };
+
   // Assemble the full WHERE clause. Parameterized on the table reference so
   // the same builder can be used for the v2 relational findMany (where Drizzle
   // passes an aliased `table`) and the plain count query (which passes the
@@ -401,14 +464,12 @@ export const resolveProposalListScope = async ({
     // caller's `profileUsers` access set. Every scope predicate (including
     // the explicit-scope one above) carries the `isNull(deletedAt)` filter,
     // so the outer query stays soft-delete-safe without its own check.
-    const phaseScopedNonDraftIdFilter = and(
-      ne(proposalsTable.status, ProposalStatus.DRAFT),
-      phaseScope.buildNonDraftFilter(proposalsTable),
-    )!;
+    const nonDraftScopeFilter = buildNonDraftScopeFilter(proposalsTable);
+    clause = and(clause, buildRejectedAndLeftBehindFilter(proposalsTable))!;
 
     if (skipAccessCheck) {
-      // Trusted contexts get all phase-scoped non-draft proposals.
-      return and(clause, phaseScopedNonDraftIdFilter)!;
+      // Trusted contexts get all non-draft proposals in scope.
+      return and(clause, nonDraftScopeFilter)!;
     }
 
     // Draft proposals are phase-scoped to their `createdAt` window: a draft
@@ -422,47 +483,31 @@ export const resolveProposalListScope = async ({
       phaseScope.buildDraftFilter(proposalsTable),
     )!;
 
-    // Non-draft proposals: phase-scoped, plus the HIDDEN visibility filter
-    // for non-admins. Hidden proposals stay visible to the creator and any
-    // invited collaborators on the proposal's profile — same pattern the
-    // draft filter uses, so a collaborator's view of a co-authored proposal
-    // doesn't change the moment it's submitted with HIDDEN visibility.
+    // The profile-member arm is what keeps a collaborator's view of a
+    // co-authored proposal from changing the moment it is submitted as HIDDEN.
     const nonDraftVisibilityFilter = canManageProposals
-      ? phaseScopedNonDraftIdFilter
+      ? nonDraftScopeFilter
       : and(
-          phaseScopedNonDraftIdFilter,
+          nonDraftScopeFilter,
           or(
             eq(proposalsTable.visibility, Visibility.VISIBLE),
-            inArray(
-              proposalsTable.profileId,
-              db
-                .select({ profileId: profileUsers.profileId })
-                .from(profileUsers)
-                .where(inArray(profileUsers.authUserId, accessUserIds)),
-            ),
+            isProposalProfileMember(proposalsTable, accountUserId),
           )!,
         )!;
 
-    // Items with an active moderation flag are hidden from everyone except
-    // members of the proposal's own profile (creator + invited collaborators);
-    // instance admins (canManageProposals) skip the filter entirely. The owner
-    // audience is proposal.profileId membership — the same set getProposal
-    // grants the flagged proposal to — so the list and detail views agree
-    // (keying on submittedByProfileId alone would diverge for group-owned
-    // proposals). Applied in SQL so pagination stays correct.
+    // Membership on the proposal's profile, not `submittedByProfileId`, is the
+    // set `getProposal` grants a flagged proposal to — keying on the submitter
+    // would diverge for a group-owned proposal. In SQL so pagination stays
+    // correct.
     const moderationFilter = canManageProposals
       ? undefined
       : or(
           noActiveModerationFlag('proposal', proposalsTable.id),
-          inArray(
-            proposalsTable.profileId,
-            db
-              .select({ profileId: profileUsers.profileId })
-              .from(profileUsers)
-              .where(inArray(profileUsers.authUserId, accessUserIds)),
-          ),
+          isProposalProfileMember(proposalsTable, accountUserId),
         )!;
 
+    // Rejected proposals carry no visibility filter of their own: a rejection
+    // is a public verdict, and `getProposal` has never gated on it.
     return and(
       clause,
       or(draftFilter, nonDraftVisibilityFilter)!,
@@ -477,5 +522,6 @@ export const resolveProposalListScope = async ({
     profileRoles,
     isEmpty,
     buildWhereClause,
+    buildIsOutsideCurrentPhase,
   };
 };

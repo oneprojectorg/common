@@ -15,6 +15,8 @@ import {
 
 import { useTranslations } from '@/lib/i18n';
 
+import { toOverviewInput, toPhasesInput } from './headlinePatch';
+import { trackRubricSaved } from './rubricAnalytics';
 import {
   type ProcessBuilderInstanceData,
   type SaveStatus,
@@ -64,7 +66,7 @@ export function ProcessBuilderAutosaveProvider({
   isDraft: boolean;
   children: React.ReactNode;
 }) {
-  const t = useTranslations();
+  const t = useTranslations('decisions.processBuilder');
   const utils = trpc.useUtils();
 
   // Already cached by section queries — no extra request.
@@ -124,10 +126,15 @@ export function ProcessBuilderAutosaveProvider({
 
   const debouncedSaveRef = useRef<() => boolean>(null);
   const updateInstance = trpc.decision.updateDecisionInstance.useMutation({
-    onSuccess: () => markSaved(decisionProfileId),
+    onSuccess: (_data, variables) => {
+      if (variables.rubricTemplate !== undefined) {
+        trackRubricSaved(instanceId);
+      }
+      markSaved(decisionProfileId);
+    },
     onError: (error) => {
       setSaveStatus(decisionProfileId, 'error');
-      toast.error(t('Failed to save changes'), {
+      toast.error(t('saveChangesError'), {
         description: error.message,
       });
     },
@@ -159,6 +166,12 @@ export function ProcessBuilderAutosaveProvider({
       const promise = updateInstance.mutateAsync({
         instanceId,
         ...payload,
+        // An emptied headline field goes out as an explicit clear; `''` is
+        // rejected by the endpoint.
+        ...(payload.overview && {
+          overview: toOverviewInput(payload.overview),
+        }),
+        ...(payload.phases && { phases: toPhasesInput(payload.phases) }),
       });
       inflightRef.current = promise;
       promise

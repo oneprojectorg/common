@@ -28,12 +28,14 @@ import { ProfileItem } from '@op/sense/ProfileItem';
 import { Separator } from '@op/sense/Separator';
 import { cn } from '@op/sense/lib/utils';
 import { screens } from '@op/styles/constants';
+import dynamic from 'next/dynamic';
 import { ReactNode, useEffect, useRef, useState } from 'react';
 import {
   LuChevronDown,
   LuChevronRight,
   LuCircleHelp,
   LuLogOut,
+  LuSettings,
 } from 'react-icons/lu';
 
 import { Link, useRouter, useTranslations } from '@/lib/i18n';
@@ -46,6 +48,12 @@ import { ProfileSwitchingModal } from '../ProfileSwitchingModal';
 import { ToSContent } from '../ToSContent';
 
 type LegalDialog = 'privacy' | 'tos' | 'community';
+
+// behind a flag and rarely opened, so it stays out of every page's header chunk
+const SettingsModal = dynamic(
+  () => import('../SettingsModal').then((module) => module.SettingsModal),
+  { ssr: false },
+);
 
 /**
  * A profile/org switcher row. Renders as a base-ui `DropdownMenuItem` in the
@@ -289,11 +297,13 @@ const AvatarMenuContent = ({
   onProfileSwitch,
   onOpenLegal,
   onDeleteAccount,
+  onOpenSettings,
 }: {
   asMenuItem?: boolean;
   onClose?: () => void;
   onOpenLegal: (dialog: LegalDialog) => void;
   onDeleteAccount: () => void;
+  onOpenSettings: () => void;
   onProfileSwitch?: (profile: {
     name: string;
     avatarImage?: { name: string } | null;
@@ -302,7 +312,8 @@ const AvatarMenuContent = ({
   const t = useTranslations();
   const logout = useAuthLogout();
 
-  const { data: profiles } = trpc.account.getUserProfiles.useQuery();
+  const { data: profilesData } = trpc.account.getUserProfiles.useQuery();
+  const profiles = profilesData?.items;
 
   const { userProfiles, orgProfiles } =
     profiles?.reduce<{
@@ -330,6 +341,7 @@ const AvatarMenuContent = ({
     ) ?? {};
 
   const deleteOrganizationEnabled = useFeatureFlag('delete_organization');
+  const settingsModalEnabled = useFeatureFlag('settings_modal');
 
   return (
     <>
@@ -361,13 +373,22 @@ const AvatarMenuContent = ({
       <MenuDivider asMenuItem={asMenuItem} />
 
       <MenuSection asMenuItem={asMenuItem} className="flex flex-col gap-1 p-2">
+        {settingsModalEnabled ? (
+          <ActionRow
+            asMenuItem={asMenuItem}
+            className="font-normal text-foreground"
+            onClick={onOpenSettings}
+          >
+            <LuSettings className="size-4" /> {t('settings.title')}
+          </ActionRow>
+        ) : null}
         <LinkRow
           asMenuItem={asMenuItem}
           href="https://oneprojectorg.notion.site/Common-Support-Hub-a9ef0b6622538269927c01e51045638b"
           className="font-normal text-foreground"
           onClick={onClose}
         >
-          <LuCircleHelp className="size-4" /> {t('Feature Requests & Support')}
+          <LuCircleHelp className="size-4" /> {t('shell.supportLinkLabel')}
         </LinkRow>
         <ActionRow
           asMenuItem={asMenuItem}
@@ -375,11 +396,13 @@ const AvatarMenuContent = ({
           onClick={() => {
             // Full-page navigation: client-side routing would re-render the
             // authed tree with a dead session before the redirect lands.
-            void logout.refetch().finally(() => window.location.assign('/'));
+            const goHome = () => window.location.assign('/');
+            void logout.mutateAsync().then(goHome, goHome);
             onClose?.();
           }}
         >
-          <LuLogOut className="size-4 rtl:-scale-x-100" /> {t('Log out')}
+          <LuLogOut className="size-4 rtl:-scale-x-100" />{' '}
+          {t('shell.logOutAction')}
         </ActionRow>
       </MenuSection>
 
@@ -402,7 +425,7 @@ const AvatarMenuContent = ({
           asMenuItem={asMenuItem}
           onClick={() => onOpenLegal('community')}
         >
-          {t('Community Commitments')}
+          {t('shell.communityCommitmentsTitle')}
         </LegalTrigger>
         {deleteOrganizationEnabled ? (
           <ActionRow
@@ -410,7 +433,7 @@ const AvatarMenuContent = ({
             className="justify-start px-2 py-1 text-sm font-strong text-foreground hover:bg-muted hover:underline"
             onClick={onDeleteAccount}
           >
-            {t('Delete my account')}
+            {t('shell.deleteAccountAction')}
           </ActionRow>
         ) : null}
 
@@ -425,7 +448,7 @@ const AvatarMenuContent = ({
               rel="noopener noreferrer"
               className="inline h-auto rounded-none p-0 text-xs hover:bg-transparent hover:underline"
             >
-              {t('Ethical Open Source')}
+              {t('shell.ethicalOpenSourceLink')}
             </DropdownMenuLinkItem>
           ) : (
             <Link
@@ -434,7 +457,7 @@ const AvatarMenuContent = ({
               target="_blank"
               rel="noopener noreferrer"
             >
-              {t('Ethical Open Source')}
+              {t('shell.ethicalOpenSourceLink')}
             </Link>
           )}
           <Bullet />
@@ -450,7 +473,7 @@ const AvatarMenuContent = ({
 const legalTitles = {
   privacy: 'Privacy Policy',
   tos: 'Terms of Service',
-  community: 'Community Commitments',
+  community: 'shell.communityCommitmentsTitle',
 } as const;
 
 const LegalDialogs = ({
@@ -493,6 +516,7 @@ export const UserAvatarMenu = ({ className }: { className?: string }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isOrgDeletionOpen, setIsOrgDeletionOpen] = useState(false);
   const [legalDialog, setLegalDialog] = useState<LegalDialog | null>(null);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isSwitchingProfile, setIsSwitchingProfile] = useState(false);
   const [switchingToProfile, setSwitchingToProfile] = useState<{
     name: string;
@@ -523,7 +547,13 @@ export const UserAvatarMenu = ({ className }: { className?: string }) => {
     setIsOrgDeletionOpen(true);
   };
 
+  const openSettings = () => {
+    closeMenus();
+    setIsSettingsOpen(true);
+  };
+
   const deleteOrganizationEnabled = useFeatureFlag('delete_organization');
+  const settingsModalEnabled = useFeatureFlag('settings_modal');
 
   // Hide modal when profile actually changes
   useEffect(() => {
@@ -581,6 +611,9 @@ export const UserAvatarMenu = ({ className }: { className?: string }) => {
           onOpenChange={setIsOrgDeletionOpen}
         />
       ) : null}
+      {settingsModalEnabled ? (
+        <SettingsModal open={isSettingsOpen} onOpenChange={setIsSettingsOpen} />
+      ) : null}
     </>
   );
 
@@ -604,12 +637,15 @@ export const UserAvatarMenu = ({ className }: { className?: string }) => {
             showCloseButton={false}
             className="top-auto bottom-0 max-h-[85svh] rounded-t p-0"
           >
-            <DialogTitle className="sr-only">{t('Open menu')}</DialogTitle>
+            <DialogTitle className="sr-only">
+              {t('shell.openMenuLabel')}
+            </DialogTitle>
             <div className="pb-safe flex min-h-0 w-full flex-1 flex-col gap-3 overflow-y-auto py-4 pb-8">
               <AvatarMenuContent
                 onClose={() => setIsDrawerOpen(false)}
                 onOpenLegal={openLegal}
                 onDeleteAccount={openDeleteAccount}
+                onOpenSettings={openSettings}
                 onProfileSwitch={handleProfileSwitch}
               />
             </div>
@@ -624,6 +660,7 @@ export const UserAvatarMenu = ({ className }: { className?: string }) => {
     <>
       <DropdownMenu open={isMenuOpen} onOpenChange={setIsMenuOpen}>
         <DropdownMenuTrigger
+          data-testid="user-menu-trigger"
           render={
             <Button
               variant="ghost"
@@ -645,6 +682,7 @@ export const UserAvatarMenu = ({ className }: { className?: string }) => {
             onClose={() => setIsMenuOpen(false)}
             onOpenLegal={openLegal}
             onDeleteAccount={openDeleteAccount}
+            onOpenSettings={openSettings}
             onProfileSwitch={handleProfileSwitch}
           />
         </DropdownMenuContent>

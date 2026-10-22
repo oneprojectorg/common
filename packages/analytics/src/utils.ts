@@ -2,6 +2,7 @@ import PostHogClient from '@op/analytics/client';
 
 import {
   type DecisionCommonProperties,
+  areFeatureFlagsForcedOn,
   getDecisionCommonProperties,
 } from './client-utils';
 
@@ -69,6 +70,17 @@ export async function identifyUser({
     distinctId,
     properties,
   });
+}
+
+export async function isFeatureEnabled(
+  key: string,
+  distinctId: string,
+): Promise<boolean> {
+  if (areFeatureFlagsForcedOn()) {
+    return true;
+  }
+
+  return (await posthog.isFeatureEnabled(key, distinctId)) ?? false;
 }
 
 /**
@@ -430,6 +442,27 @@ export async function trackRevisionRequested(
 }
 
 /**
+ * Track when a reviewer withdraws their own revision request before the author
+ * answers it.
+ */
+export async function trackRevisionRequestCancelled(
+  userId: string,
+  processId: string,
+  proposalId: string,
+  additionalProps?: Record<string, unknown>,
+): Promise<void> {
+  await trackEventWithContext(
+    userId,
+    'review_revision_request_cancelled',
+    getDecisionCommonProperties({
+      decisionInstanceId: processId,
+      proposalId,
+      additionalProps,
+    }),
+  );
+}
+
+/**
  * Track when an author resubmits a proposal in response to a revision request
  */
 export async function trackRevisionResponseSubmitted(
@@ -461,6 +494,27 @@ export async function trackReviewSubmitted(
   await trackEventWithContext(
     userId,
     'review_submitted',
+    getDecisionCommonProperties({
+      decisionInstanceId: processId,
+      proposalId,
+      additionalProps,
+    }),
+  );
+}
+
+/**
+ * Track when a reviewer edits an already-submitted review; `was_out_of_date`
+ * marks the re-affirm after a proposal revision.
+ */
+export async function trackReviewUpdated(
+  userId: string,
+  processId: string,
+  proposalId: string,
+  additionalProps?: Record<string, unknown>,
+): Promise<void> {
+  await trackEventWithContext(
+    userId,
+    'review_updated',
     getDecisionCommonProperties({
       decisionInstanceId: processId,
       proposalId,

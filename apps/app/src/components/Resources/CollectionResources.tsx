@@ -18,9 +18,11 @@ export const CollectionResourcesSuspense = ({
     { staleTime: 30 * 1000 },
   );
 
+  const resources = data.items;
+
   // Managers still get a (droppable) list for empty collections so a file/link
   // can be dropped straight in; readers see nothing when there's nothing.
-  if (data.items.length === 0 && !canManage) {
+  if (resources.length === 0 && !canManage) {
     return null;
   }
 

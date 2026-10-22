@@ -1,14 +1,13 @@
+import { TestDecisionsDataManager } from '@op/common/testing';
 import { db, eq } from '@op/db/client';
 import { postReactions, posts, postsToProfiles } from '@op/db/schema';
-import { randomUUID } from 'crypto';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '..';
-import { TestDecisionsDataManager } from '../../test/helpers/TestDecisionsDataManager';
+import { createNonNetworkUser } from '../../test/helpers/nonNetworkUser';
 import {
   createIsolatedSession,
   createTestContextWithSession,
-  createTestUser,
 } from '../../test/supabase-utils';
 import { createCallerFactory } from '../../trpcFactory';
 
@@ -30,26 +29,8 @@ const createOutsiderCaller = async (testData: TestDecisionsDataManager) => {
   return createAuthenticatedCaller(outsider.email);
 };
 
-// Confirmed, signed-in user with a non-network email — i.e., NOT in the
-// walled garden (no allowedEmailDomains match, no allow-list entry). Used
-// to exercise the walled-garden denial path on `posts.createPost` org
-// comments. Cleanup is registered via the TestDecisionsDataManager so the
-// user / profile row gets torn down with the rest of the test data.
-const createNonNetworkCaller = async (testData: TestDecisionsDataManager) => {
-  const email = `non-network-${randomUUID()}@example.com`;
-  const { user } = await createTestUser(email);
-  if (!user) {
-    throw new Error(`Failed to create non-network user: ${email}`);
-  }
-  testData.trackAuthUserForCleanup(user.id);
-  const userRecord = await db.query.users.findFirst({
-    where: { authUserId: user.id },
-  });
-  if (userRecord?.profileId) {
-    testData.trackProfileForCleanup(userRecord.profileId);
-  }
-  return createAuthenticatedCaller(email);
-};
+const createNonNetworkCaller = async (testData: TestDecisionsDataManager) =>
+  createAuthenticatedCaller(await createNonNetworkUser(testData));
 
 const fetchPostRoots = async (postId: string) => {
   const [row] = await db
@@ -246,7 +227,7 @@ describe.concurrent('decision-profile post authorization', () => {
       offset: 0,
       includeChildren: false,
     });
-    expect(thread.map((p) => p.id)).toContain(comment.id);
+    expect(thread.items.map((p) => p.id)).toContain(comment.id);
 
     const outsiderCaller = await createOutsiderCaller(testData);
     await expect(
@@ -388,14 +369,16 @@ describe.concurrent('decision-profile post authorization', () => {
     const outsiderCaller = await createOutsiderCaller(testData);
 
     await expect(
-      outsiderCaller.organization.toggleReaction({
+      outsiderCaller.organization.toggleLike({
         postId: adminPost.id,
-        reactionType: 'like',
       }),
     ).rejects.toMatchObject({ cause: { name: 'AccessControlException' } });
 
     const reactions = await db
-      .select({ postId: postReactions.postId })
+      .select({
+        postId: postReactions.postId,
+        reactionType: postReactions.reactionType,
+      })
       .from(postReactions)
       .where(eq(postReactions.postId, adminPost.id));
 
@@ -425,17 +408,20 @@ describe.concurrent('decision-profile post authorization', () => {
     });
 
     const memberCaller = await createAuthenticatedCaller(member.email);
-    await memberCaller.organization.toggleReaction({
+    await memberCaller.organization.toggleLike({
       postId: adminPost.id,
-      reactionType: 'like',
     });
 
     const reactions = await db
-      .select({ postId: postReactions.postId })
+      .select({
+        postId: postReactions.postId,
+        reactionType: postReactions.reactionType,
+      })
       .from(postReactions)
       .where(eq(postReactions.postId, adminPost.id));
 
     expect(reactions).toHaveLength(1);
+    expect(reactions[0]?.reactionType).toBe('like');
   });
 
   it('allows a member to react to a comment (gate inherited via rootProfileId)', async ({
@@ -465,17 +451,144 @@ describe.concurrent('decision-profile post authorization', () => {
       parentPostId: adminPost.id,
     });
 
-    await memberCaller.organization.toggleReaction({
+    await memberCaller.organization.toggleLike({
       postId: comment.id,
-      reactionType: 'like',
     });
 
     const reactions = await db
-      .select({ postId: postReactions.postId })
+      .select({
+        postId: postReactions.postId,
+        reactionType: postReactions.reactionType,
+      })
       .from(postReactions)
       .where(eq(postReactions.postId, comment.id));
 
     expect(reactions).toHaveLength(1);
+    expect(reactions[0]?.reactionType).toBe('like');
+  });
+
+  // Reactions predate the like button and were never migrated, so the toggle
+  // has to read a legacy row correctly: a positive type already counts as this
+  // caller's like, a thumbs-down does not.
+  it('unlikes a post the caller had reacted to with a legacy positive type', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instance = setup.instance;
+
+    const adminCaller = await createAuthenticatedCaller(setup.userEmail);
+    const adminPost = await adminCaller.posts.createPost({
+      content: 'Admin update.',
+      profileId: instance.profileId,
+    });
+
+    const member = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [instance.profileId],
+    });
+    await db.insert(postReactions).values({
+      postId: adminPost.id,
+      profileId: member.profileId,
+      reactionType: 'love',
+    });
+
+    const memberCaller = await createAuthenticatedCaller(member.email);
+    const result = await memberCaller.organization.toggleLike({
+      postId: adminPost.id,
+    });
+
+    expect(result.action).toBe('removed');
+    const reactions = await db
+      .select({ postId: postReactions.postId })
+      .from(postReactions)
+      .where(eq(postReactions.postId, adminPost.id));
+
+    expect(reactions).toHaveLength(0);
+  });
+
+  it('replaces a legacy thumbs-down with a like rather than clearing it', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instance = setup.instance;
+
+    const adminCaller = await createAuthenticatedCaller(setup.userEmail);
+    const adminPost = await adminCaller.posts.createPost({
+      content: 'Admin update.',
+      profileId: instance.profileId,
+    });
+
+    const member = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [instance.profileId],
+    });
+    await db.insert(postReactions).values({
+      postId: adminPost.id,
+      profileId: member.profileId,
+      reactionType: 'dislike',
+    });
+
+    const memberCaller = await createAuthenticatedCaller(member.email);
+    const result = await memberCaller.organization.toggleLike({
+      postId: adminPost.id,
+    });
+
+    expect(result.action).toBe('added');
+    const reactions = await db
+      .select({ reactionType: postReactions.reactionType })
+      .from(postReactions)
+      .where(eq(postReactions.postId, adminPost.id));
+
+    expect(reactions).toEqual([{ reactionType: 'like' }]);
+  });
+
+  it('toggles a like off on the second call', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instance = setup.instance;
+
+    const adminCaller = await createAuthenticatedCaller(setup.userEmail);
+    const adminPost = await adminCaller.posts.createPost({
+      content: 'Admin update.',
+      profileId: instance.profileId,
+    });
+
+    const member = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [instance.profileId],
+    });
+
+    const memberCaller = await createAuthenticatedCaller(member.email);
+    const added = await memberCaller.organization.toggleLike({
+      postId: adminPost.id,
+    });
+    const removed = await memberCaller.organization.toggleLike({
+      postId: adminPost.id,
+    });
+
+    expect([added.action, removed.action]).toEqual(['added', 'removed']);
+    const reactions = await db
+      .select({ postId: postReactions.postId })
+      .from(postReactions)
+      .where(eq(postReactions.postId, adminPost.id));
+
+    expect(reactions).toHaveLength(0);
   });
 });
 
@@ -483,7 +596,7 @@ describe.concurrent('decision-profile post authorization', () => {
 // fallback on `organizationUsers`); regular org members and outsiders fail
 // closed at the service-layer write gate, independent of the procedure tier.
 // The feed-read and reaction tests below cover sibling endpoints
-// (`posts.getPosts`, `organization.toggleReaction`) whose org-side authz is
+// (`posts.getPosts`, `organization.toggleLike`) whose org-side authz is
 // out of scope for `assertPostWriteAccess` and is intentionally untouched.
 describe.concurrent('org-feed post authorization', () => {
   it('admits the org admin (creator) posting on the org profile', async ({
@@ -686,13 +799,13 @@ describe.concurrent('org-feed post authorization', () => {
       includeChildren: false,
     });
 
-    expect(result.length).toBeGreaterThanOrEqual(1);
-    expect(result.map((p) => p.content)).toContain(
+    expect(result.items.length).toBeGreaterThanOrEqual(1);
+    expect(result.items.map((p) => p.content)).toContain(
       'Org post visible to outsider.',
     );
   });
 
-  it('does not gate reactions on non-decision posts', async ({
+  it('does not gate likes on non-decision posts', async ({
     task,
     onTestFinished,
   }) => {
@@ -706,17 +819,20 @@ describe.concurrent('org-feed post authorization', () => {
     });
 
     const outsiderCaller = await createOutsiderCaller(testData);
-    await outsiderCaller.organization.toggleReaction({
+    await outsiderCaller.organization.toggleLike({
       postId: orgPost.id,
-      reactionType: 'like',
     });
 
     const reactions = await db
-      .select({ postId: postReactions.postId })
+      .select({
+        postId: postReactions.postId,
+        reactionType: postReactions.reactionType,
+      })
       .from(postReactions)
       .where(eq(postReactions.postId, orgPost.id));
 
     expect(reactions).toHaveLength(1);
+    expect(reactions[0]?.reactionType).toBe('like');
   });
 });
 
@@ -1082,7 +1198,7 @@ describe.concurrent('proposal post authorization', () => {
       offset: 0,
       includeChildren: false,
     });
-    expect(thread.map((p) => p.id)).toContain(comment.id);
+    expect(thread.items.map((p) => p.id)).toContain(comment.id);
 
     const outsiderCaller = await createOutsiderCaller(testData);
     await expect(
@@ -1157,6 +1273,184 @@ describe.concurrent('proposal post authorization', () => {
         profileId: proposal.profileId,
       }),
     ).rejects.toMatchObject({ cause: { name: 'AccessControlException' } });
+  });
+});
+
+describe.concurrent('phase-level comment gating', () => {
+  const setUpPhaseWithComments = async (
+    testData: TestDecisionsDataManager,
+    { allowComments }: { allowComments: boolean },
+  ) => {
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instance = setup.instance;
+    const adminCaller = await createAuthenticatedCaller(setup.userEmail);
+
+    // The gate reads the CURRENT phase, so the rule goes on that phase.
+    // `updateDecisionInstance` replaces a phase's whole `rules` object, so the
+    // existing rules are carried over rather than dropped.
+    const currentPhaseId = instance.instance.currentStateId;
+    const currentPhase = instance.instance.instanceData?.phases?.find(
+      (phase) => phase.phaseId === currentPhaseId,
+    );
+    if (!currentPhaseId || !currentPhase) {
+      throw new Error('Test instance has no current phase');
+    }
+
+    await adminCaller.decision.updateDecisionInstance({
+      instanceId: instance.instance.id,
+      phases: [
+        {
+          phaseId: currentPhaseId,
+          rules: {
+            ...currentPhase.rules,
+            comments: { submit: allowComments },
+          },
+        },
+      ],
+    });
+
+    const member = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [instance.profileId],
+    });
+
+    return {
+      setup,
+      instance,
+      adminCaller,
+      memberCaller: await createAuthenticatedCaller(member.email),
+    };
+  };
+
+  it('rejects a comment on a proposal when the current phase disallows comments', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instance, memberCaller } = await setUpPhaseWithComments(
+      testData,
+      { allowComments: false },
+    );
+    const proposal = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Comments off', description: 'desc' },
+    });
+
+    await expect(
+      memberCaller.posts.createPost({
+        content: 'Comment on a process with comments turned off.',
+        profileId: proposal.profileId,
+      }),
+    ).rejects.toMatchObject({
+      cause: {
+        name: 'UnauthorizedError',
+        message: 'Comments are turned off for this phase',
+      },
+    });
+  });
+
+  it('rejects a reply to a process update when the current phase disallows comments', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { instance, adminCaller, memberCaller } =
+      await setUpPhaseWithComments(testData, { allowComments: false });
+
+    const update = await adminCaller.posts.createPost({
+      content: 'Admin update on a process with comments turned off.',
+      profileId: instance.profileId,
+    });
+
+    await expect(
+      memberCaller.posts.createPost({
+        content: 'Reply that should be refused.',
+        parentPostId: update.id,
+      }),
+    ).rejects.toMatchObject({
+      cause: {
+        name: 'UnauthorizedError',
+        message: 'Comments are turned off for this phase',
+      },
+    });
+  });
+
+  it('still admits an admin update when the current phase disallows comments', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { instance, adminCaller } = await setUpPhaseWithComments(testData, {
+      allowComments: false,
+    });
+
+    const update = await adminCaller.posts.createPost({
+      content: 'Admin update stays available.',
+      profileId: instance.profileId,
+    });
+
+    expect(update.content).toBe('Admin update stays available.');
+  });
+
+  it('admits a comment when the current phase allows comments', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instance, memberCaller } = await setUpPhaseWithComments(
+      testData,
+      { allowComments: true },
+    );
+    const proposal = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Comments on', description: 'desc' },
+    });
+
+    const comment = await memberCaller.posts.createPost({
+      content: 'Comment on a process with comments turned on.',
+      profileId: proposal.profileId,
+    });
+
+    expect(comment.content).toBe(
+      'Comment on a process with comments turned on.',
+    );
+  });
+
+  it('admits a comment when the phase never set the toggle', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instance = setup.instance;
+    const proposal = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Toggle unset', description: 'desc' },
+    });
+
+    const member = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [instance.profileId],
+    });
+    const memberCaller = await createAuthenticatedCaller(member.email);
+
+    const comment = await memberCaller.posts.createPost({
+      content: 'Comment on a process that never set the toggle.',
+      profileId: proposal.profileId,
+    });
+
+    expect(comment.content).toBe(
+      'Comment on a process that never set the toggle.',
+    );
   });
 });
 
@@ -1323,10 +1617,10 @@ describe.concurrent('getPosts pagination', () => {
         offset,
         includeChildren: false,
       });
-      if (page.length === 0) {
+      if (page.items.length === 0) {
         break;
       }
-      page.forEach((post) => {
+      page.items.forEach((post) => {
         expect(post.parentPostId).toBeNull();
         collected.push(post.id);
       });

@@ -3,6 +3,7 @@ import type { AnyValue } from '@opentelemetry/api-logs';
 import { SeverityNumber, logs } from '@opentelemetry/api-logs';
 
 import { getLogContext } from './logContext';
+import { redactEmails } from './redact';
 
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 export type LogData = Record<string, unknown>;
@@ -22,6 +23,7 @@ function toAnyValueMap(
   }
   const result: Record<string, AnyValue> = {};
   for (const [key, value] of Object.entries(data)) {
+    let attribute: AnyValue;
     // Convert unknown to AnyValue (string, number, boolean, or undefined)
     if (
       typeof value === 'string' ||
@@ -30,18 +32,24 @@ function toAnyValueMap(
       value === undefined ||
       value === null
     ) {
-      result[key] = value as AnyValue;
+      attribute = value as AnyValue;
     } else if (value instanceof Error) {
       // JSON.stringify(Error) yields "{}" — keep name/message/stack instead
-      result[key] = value.stack ?? `${value.name}: ${value.message}`;
+      attribute = value.stack ?? `${value.name}: ${value.message}`;
     } else {
       try {
         // Convert complex types to string
-        result[key] = JSON.stringify(value);
+        attribute = JSON.stringify(value);
       } catch (e) {
-        result[key] = '(Could not deserialize value)';
+        attribute = '(Could not deserialize value)';
       }
     }
+
+    // Redact after every branch has collapsed the value to a primitive: an
+    // address can arrive under any key, inside an error message, or nested in a
+    // serialised object, so this is the one place that catches all three.
+    result[key] =
+      typeof attribute === 'string' ? redactEmails(attribute) : attribute;
   }
   return result;
 }
@@ -71,10 +79,16 @@ export class Logger {
       ...(spanId && { spanId }),
     };
 
+    // Both sinks read the same redacted payload, so the development console
+    // cannot show what the exporter strips — a redaction gap stays visible
+    // locally instead of surfacing only once the record reaches PostHog.
+    const attributes = toAnyValueMap(enrichedData);
+    const body = redactEmails(message);
+
     // Always log to console in development
     if (process.env.NODE_ENV === 'development') {
       const consoleMethod = level === 'debug' ? 'log' : level;
-      console[consoleMethod](`[${level.toUpperCase()}]`, message, enrichedData);
+      console[consoleMethod](`[${level.toUpperCase()}]`, body, attributes);
     }
 
     // Emit to OpenTelemetry with trace context
@@ -83,8 +97,8 @@ export class Logger {
       context: activeContext,
       severityNumber: severityMap[level],
       severityText: level.toUpperCase(),
-      body: message,
-      attributes: toAnyValueMap(enrichedData),
+      body,
+      attributes,
     });
   }
 

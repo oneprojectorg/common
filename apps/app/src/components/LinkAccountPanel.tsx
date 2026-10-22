@@ -1,5 +1,6 @@
 'use client';
 
+import { codeFailureMessage } from '@/hooks/phoneAuth/failureMessage';
 import {
   getClaimEmailErrorMessage,
   goToOnboarding,
@@ -11,7 +12,7 @@ import { Button } from '@op/sense/Button';
 import { Spinner } from '@op/sense/Spinner';
 import { CheckIcon } from '@op/sense/icons';
 import { useSearchParams } from 'next/navigation';
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -19,6 +20,7 @@ import {
   AuthCodeField,
   AuthEmailField,
   AuthPanelShell,
+  CodeSentAnnouncement,
   isValidOtpLength,
   useAuthPanelStore,
 } from './AuthPanel';
@@ -48,15 +50,23 @@ export const LinkAccountPanel = () => {
   const {
     email,
     setEmail,
-    emailIsValid,
-    setEmailIsValid,
     token,
     setToken,
     tokenError,
     setTokenError,
     loginSuccess,
     setLoginSuccess,
+    clearPhoneFlow,
   } = useAuthPanelStore();
+  const emailIsValid = isValidEmail(email);
+
+  // This panel links an email onto an anonymous account and offers no phone
+  // channel. The phone fields persist to session storage, so an abandoned
+  // login attempt in the same tab would otherwise leave this panel showing a
+  // code field for a verification that did not start here.
+  useEffect(() => {
+    clearPhoneFlow();
+  }, [clearPhoneFlow]);
 
   // "Already have an account? Log in" — a real full account can't be linked
   // onto the anon user, so that path drops link mode and goes to normal login.
@@ -115,9 +125,9 @@ export const LinkAccountPanel = () => {
         goAfterLink();
         return;
       }
-      setTokenError(result.message ?? t('Failed to verify code'));
+      setTokenError(codeFailureMessage(result.reason, t));
     } catch {
-      setTokenError(t('Failed to verify code'));
+      setTokenError(t('auth.verifyCodeError'));
     }
     setIsSubmitting(false);
   }, [
@@ -145,17 +155,23 @@ export const LinkAccountPanel = () => {
 
   const errorMessage = linkError || tokenError;
 
+  // Rendered by CodeSentAnnouncement on every shell below, so the live region
+  // is mounted (empty) before the code step arrives and its arrival is heard.
+  const sentTo = loginSuccess
+    ? t('auth.createProfileCodeHint', { email })
+    : undefined;
+
   const title = (() => {
     if (errorMessage) {
-      return t('Oops!');
+      return t('auth.errorTitle');
     }
     if (!loginSuccess) {
-      return t('Create an account');
+      return t('auth.createAccountHeading');
     }
     return (
       <div className="flex flex-col items-center justify-center gap-4">
         <CheckIcon />
-        <span className="text-headline">{t('Email sent!')}</span>
+        <span className="text-headline">{t('auth.emailCodeSentTitle')}</span>
       </div>
     );
   })();
@@ -169,7 +185,7 @@ export const LinkAccountPanel = () => {
       );
     }
     if (!loginSuccess) {
-      return t.rich('Already have an account? <login>Log in</login>', {
+      return t.rich('auth.haveAccountPrompt', {
         login: (chunks: React.ReactNode) => (
           <a href={regularLoginHref} className="text-primary underline">
             {chunks}
@@ -177,21 +193,13 @@ export const LinkAccountPanel = () => {
         ),
       });
     }
-    return (
-      <span>
-        {t(
-          'A code was sent to {email}. Type the code below to create your profile.',
-          {
-            email,
-          },
-        )}
-      </span>
-    );
+    return <span>{sentTo}</span>;
   })();
 
   if (errorMessage) {
     return (
       <AuthPanelShell title={title} subtitle={subtitle}>
+        <CodeSentAnnouncement sentTo={sentTo} />
         <Button
           className="flex w-full items-center justify-center"
           onClick={() => {
@@ -210,8 +218,10 @@ export const LinkAccountPanel = () => {
   if (loginSuccess) {
     return (
       <AuthPanelShell title={title} subtitle={subtitle}>
+        <CodeSentAnnouncement sentTo={sentTo} />
         <div className="flex flex-col gap-6">
           <AuthCodeField
+            channel="email"
             value={token}
             isDisabled={isSubmitting}
             onChange={setToken}
@@ -221,9 +231,9 @@ export const LinkAccountPanel = () => {
             <Button
               type="button"
               className="flex w-full items-center justify-center"
-              disabled={isSubmitting || !isValidOtpLength(token)}
+              disabled={isSubmitting || !isValidOtpLength(token, 'email')}
               onClick={async () => {
-                if (isValidOtpLength(token)) {
+                if (isValidOtpLength(token, 'email')) {
                   await handleTokenSubmit();
                 }
               }}
@@ -231,7 +241,7 @@ export const LinkAccountPanel = () => {
               {isSubmitting ? (
                 <Spinner className="size-6" />
               ) : (
-                t('Create profile')
+                t('auth.createProfileAction')
               )}
             </Button>
             <Button
@@ -250,13 +260,13 @@ export const LinkAccountPanel = () => {
   // Create account (email entry) — email + Continue grouped (figma: 16px).
   return (
     <AuthPanelShell title={title} subtitle={subtitle}>
+      <CodeSentAnnouncement sentTo={sentTo} />
       <div className="flex flex-col gap-4">
         <AuthEmailField
           label={t('Email')}
           value={email}
           isDisabled={isSubmitting}
           onChange={(val) => {
-            setEmailIsValid(isValidEmail(val));
             setEmail(val);
           }}
           onSubmit={() => {

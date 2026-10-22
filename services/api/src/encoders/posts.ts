@@ -13,20 +13,17 @@ export const postAttachmentEncoder = createSelectSchema(attachments).extend({
 const basePostsEncoder = createSelectSchema(posts)
   .extend({
     attachments: z.array(postAttachmentEncoder).prefault([]),
-    reactionCounts: z.record(z.string(), z.number()),
-    reactionUsers: z
-      .record(
-        z.string(),
-        z.array(
-          z.object({
-            id: z.string(),
-            name: z.string(),
-            timestamp: z.date(),
-          }),
-        ),
-      )
-      .optional(),
-    userReaction: z.string().nullish(),
+    likeCount: z.number(),
+    userHasLiked: z.boolean(),
+    // Likers the read could name. Fewer than `likeCount` when a reaction's
+    // profile didn't join, so this drives the tooltip and never the count.
+    likeUsers: z.array(
+      z.object({
+        id: z.string(),
+        name: z.string(),
+        timestamp: z.date(),
+      }),
+    ),
     commentCount: z.number(),
     // True only on posts the read filters let through to their author or an
     // admin while an active moderation flag hides them from everyone else;
@@ -48,6 +45,19 @@ export type Post = z.infer<typeof basePostsEncoder> & {
 };
 
 // export type Post = z.infer<typeof postsEncoder>;
+
+export const proposalCommentEncoder = z.object({
+  post: postsEncoder,
+  /**
+   * Set when the comment was written on a proposal that was later merged into
+   * the one being read; null for the proposal's own comments.
+   */
+  originProposal: z
+    .object({ profileId: z.string(), name: z.string() })
+    .nullable(),
+});
+
+export type ProposalComment = z.infer<typeof proposalCommentEncoder>;
 
 export const postsToOrganizationsEncoder = createSelectSchema(
   postsToOrganizations,

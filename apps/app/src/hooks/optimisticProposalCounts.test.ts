@@ -14,20 +14,11 @@ const infinite = (likes: number) => ({
   pages: [flat(likes)],
 });
 
-// listProposals — what the current-phase grid reads — names the array
-// `proposals`, not `items`. Getting this wrong is invisible: the patch simply
-// finds nothing and the count sits still.
-const proposalsShape = (likes: number) => ({
+// The envelope a list procedure actually returns: `items` alongside the
+// per-request metadata. Walking it has to leave `total` alone.
+const pageWithTotal = (likes: number) => ({
   pageParams: [undefined],
-  pages: [
-    {
-      total: 2,
-      proposals: [
-        { profileId: 'p1', likesCount: likes, followersCount: 3 },
-        { profileId: 'p2', likesCount: 99, followersCount: 0 },
-      ],
-    },
-  ],
+  pages: [{ total: 2, ...flat(likes) }],
 });
 
 describe('bumpProposalCount', () => {
@@ -62,21 +53,21 @@ describe('bumpProposalCount', () => {
     });
   });
 
-  it('walks pages that name the array `proposals` (listProposals)', () => {
+  it('leaves the envelope metadata beside `items` untouched', () => {
     expect(
-      bumpProposalCount(proposalsShape(4), 'p1', 'likesCount', 1),
+      bumpProposalCount(pageWithTotal(4), 'p1', 'likesCount', 1),
     ).toMatchObject({
-      pages: [{ proposals: [{ likesCount: 5 }, { likesCount: 99 }] }],
+      pages: [{ total: 2, items: [{ likesCount: 5 }, { likesCount: 99 }] }],
     });
   });
 
-  it('walks a flat `proposals` result (the ballot)', () => {
+  it('walks a flat, non-infinite result (the ballot)', () => {
     const ballot = {
-      proposals: [{ profileId: 'p1', likesCount: 4, followersCount: 3 }],
+      items: [{ profileId: 'p1', likesCount: 4, followersCount: 3 }],
     };
 
     expect(bumpProposalCount(ballot, 'p1', 'followersCount', 1)).toMatchObject({
-      proposals: [{ followersCount: 4 }],
+      items: [{ followersCount: 4 }],
     });
   });
 

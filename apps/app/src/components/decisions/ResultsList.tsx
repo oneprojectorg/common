@@ -1,5 +1,6 @@
 'use client';
 
+import { formatAwardedAmount } from '@/utils/formatting';
 import { trpc } from '@op/api/client';
 import {
   Empty,
@@ -8,16 +9,18 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from '@op/sense/Empty';
-import { Header3 } from '@op/sense/Header';
 import { StatusBadge } from '@op/sense/StatusBadge';
-import { LuBadgeCheck, LuLeaf } from 'react-icons/lu';
+import { LuLeaf } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { formatBudget } from './BudgetDisplay';
+import { getAllocatedAmount } from './BudgetDisplay';
 import { ProposalCardView } from './ProposalCard';
+import { ProposalListSection } from './ProposalListSection';
 import { ProposalMasonry } from './ProposalMasonry';
+import { resolveProposalSystemFields } from './proposalContentUtils';
 import { proposalHref } from './proposalHrefs';
+import { useOpenProposalInSheet } from './proposalSheetState';
 
 export const ResultsList = ({
   slug,
@@ -30,6 +33,7 @@ export const ResultsList = ({
   decisionSlug?: string;
 }) => {
   const t = useTranslations();
+  const openInSheet = useOpenProposalInSheet();
 
   const [[instanceResults, resultStats]] = trpc.useSuspenseQueries((t) => [
     t.decision.getInstanceResults({
@@ -49,11 +53,7 @@ export const ResultsList = ({
   const showVotes = slug !== 'cowop' && Boolean(resultStats?.membersVoted);
 
   return (
-    <div className="flex flex-col gap-4 pb-12">
-      <div className="flex items-center gap-4">
-        <Header3>{t('Selected Proposals')}</Header3>
-      </div>
-
+    <ProposalListSection heading={t('decisions.selectedProposalsHeading')}>
       <ProposalMasonry>
         {proposals.map((proposal) => {
           const viewHref = proposalHref({
@@ -65,7 +65,12 @@ export const ResultsList = ({
 
           const awardedText =
             proposal.allocated != null
-              ? formatBudget(proposal.allocated)
+              ? formatAwardedAmount(
+                  getAllocatedAmount({
+                    allocated: proposal.allocated,
+                    budget: resolveProposalSystemFields(proposal).budget,
+                  }),
+                )
               : undefined;
 
           return (
@@ -73,12 +78,13 @@ export const ResultsList = ({
               key={proposal.id}
               proposal={proposal}
               href={viewHref}
+              onTitleClick={openInSheet(proposal.profileId)}
               showMetrics
               totalVotes={showVotes ? (proposal.voteCount ?? 0) : undefined}
               awardedLabel={
                 awardedText ? (
-                  <StatusBadge variant="success" icon={LuBadgeCheck}>
-                    {t('{amount} Awarded', { amount: awardedText })}
+                  <StatusBadge variant="success" icon={false}>
+                    {t('decisions.amountAwarded', { amount: awardedText })}
                   </StatusBadge>
                 ) : undefined
               }
@@ -86,7 +92,7 @@ export const ResultsList = ({
           );
         })}
       </ProposalMasonry>
-    </div>
+    </ProposalListSection>
   );
 };
 
@@ -98,11 +104,9 @@ const NoProposalsFound = () => {
         <EmptyMedia variant="icon">
           <LuLeaf className="size-6" />
         </EmptyMedia>
-        <EmptyTitle render={<h3 />}>
-          {t('No results yet for this decision.')}
-        </EmptyTitle>
+        <EmptyTitle render={<h3 />}>{t('decisions.noResultsYet')}</EmptyTitle>
         <EmptyDescription>
-          {t('Results are still being worked on.')}
+          {t('decisions.resultsInProgressNotice')}
         </EmptyDescription>
       </EmptyHeader>
     </Empty>

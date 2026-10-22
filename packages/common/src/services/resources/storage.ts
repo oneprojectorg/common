@@ -2,6 +2,7 @@ import { cache, invalidate } from '@op/cache';
 import { createSBServiceClient } from '@op/supabase/server';
 
 import { CommonError } from '../../utils/error';
+import { signStorageDownloadUrlOrNull } from '../../utils/signStorageDownloadUrl';
 import { signStorageUploadUrl } from '../../utils/signStorageUploadUrl';
 import { ASSETS_BUCKET } from '../../utils/storage';
 import { resourcePathPrefix } from './constants';
@@ -39,17 +40,11 @@ export const getResourceSignedUrl = async (
   return cache({
     type: 'resourceSignedUrl',
     params: [filePath],
-    fetch: async () => {
-      const sb = supabase();
-      const { data, error } = await sb.storage
-        .from(ASSETS_BUCKET)
-        .createSignedUrl(filePath, SIGNED_URL_TTL_SECONDS);
-
-      if (error || !data?.signedUrl) {
-        return null;
-      }
-      return data.signedUrl;
-    },
+    fetch: () =>
+      signStorageDownloadUrlOrNull({
+        storagePath: filePath,
+        ttlSeconds: SIGNED_URL_TTL_SECONDS,
+      }),
     options: {
       ttl: SIGNED_URL_CACHE_TTL_MS,
     },
@@ -65,18 +60,13 @@ const EXTERNAL_SIGNED_URL_TTL_SECONDS = 24 * 60 * 60;
 /** Uncached, long-lived signed URL for handing to an external service. Not
  *  for list views — use {@link getResourceSignedUrl} there, where the cache
  *  prevents per-row sign requests. */
-export const getExternalResourceSignedUrl = async (
+export const getExternalResourceSignedUrl = (
   filePath: string,
-): Promise<string | null> => {
-  const { data, error } = await supabase()
-    .storage.from(ASSETS_BUCKET)
-    .createSignedUrl(filePath, EXTERNAL_SIGNED_URL_TTL_SECONDS);
-
-  if (error || !data?.signedUrl) {
-    return null;
-  }
-  return data.signedUrl;
-};
+): Promise<string | null> =>
+  signStorageDownloadUrlOrNull({
+    storagePath: filePath,
+    ttlSeconds: EXTERNAL_SIGNED_URL_TTL_SECONDS,
+  });
 
 export const deleteResourceObject = async (filePath: string): Promise<void> => {
   const sb = supabase();

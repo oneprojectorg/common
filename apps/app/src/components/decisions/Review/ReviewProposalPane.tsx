@@ -4,42 +4,55 @@ import { ProposalReviewRequestState } from '@op/common/client';
 
 import { ProposalComments } from '../ProposalComments';
 import { ProposalPreview } from '../ProposalPreview';
-import { AuthorRevisionNote, RevisedOnBadge } from './AuthorRevisionNote';
+import { TranslateLink } from '../TranslateLink';
+import { useCommentsAllowed } from '../useCommentsAllowed';
+import { useTranslateProposal } from '../useTranslateProposal';
+import { AuthorNotesSection } from './AuthorNotesSection';
+import { RevisedOnBadge } from './AuthorRevisionNote';
 import { useReviewForm } from './ReviewFormContext';
-import { useReviewTranslation } from './ReviewTranslationContext';
 
-export function ReviewProposalPane() {
-  const { assignment, revisionRequest } = useReviewForm();
-  const { proposal: translation } = useReviewTranslation();
+export function ReviewProposalPane({
+  decisionRoot,
+}: {
+  /** Route prefix for sibling proposals, e.g. `/decisions/participatory-budget`. */
+  decisionRoot: string;
+}) {
+  const { assignment, ownLatestRevisionRequest } = useReviewForm();
+  const commentsEnabled = useCommentsAllowed(
+    assignment.proposal.processInstanceId,
+  );
+  const { link, translation } = useTranslateProposal(assignment.proposal);
 
   const respondedAt =
-    revisionRequest?.state === ProposalReviewRequestState.RESUBMITTED
-      ? revisionRequest.respondedAt
+    ownLatestRevisionRequest?.state === ProposalReviewRequestState.RESUBMITTED
+      ? ownLatestRevisionRequest.respondedAt
       : null;
-  const responseComment = respondedAt ? revisionRequest?.responseComment : null;
 
   return (
-    <div className="flex flex-col gap-8">
+    // Same section rhythm as the proposal view: the sections below mirror this
+    // gap in their own `pt`, which keeps each rule centred between them.
+    <div className="flex flex-col gap-6 sm:gap-10">
       <ProposalPreview
         proposal={assignment.proposal}
         translation={translation}
-        // The banner needs a comment to show; the date doesn't. A resubmission
-        // without one would otherwise leave the reviewer no sign it happened
-        // (`responseComment` is null when the author left it empty).
+        translateLink={<TranslateLink translation={link} />}
+        // The badge shows on the date alone, so a note-less resubmission
+        // still shows.
         submissionMetaSuffix={
           respondedAt ? <RevisedOnBadge respondedAt={respondedAt} /> : undefined
         }
         headerBanner={
-          responseComment ? (
-            <AuthorRevisionNote
-              comment={responseComment}
-              respondedAt={respondedAt}
-            />
-          ) : undefined
+          <AuthorNotesSection proposalId={assignment.proposal.id} />
         }
       />
 
-      <ProposalComments proposal={assignment.proposal} readOnly />
+      {commentsEnabled && (
+        <ProposalComments
+          proposal={assignment.proposal}
+          decisionRoot={decisionRoot}
+          readOnly
+        />
+      )}
     </div>
   );
 }

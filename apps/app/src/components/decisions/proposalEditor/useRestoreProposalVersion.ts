@@ -33,15 +33,15 @@ export function useRestoreProposalVersion({
   proposalData,
   fragmentNames,
 }: UseRestoreProposalVersionOptions) {
-  const t = useTranslations();
+  const t = useTranslations('decisions.proposals');
   const { provider } = useCollaborativeDoc();
   const updateProposalMutation = trpc.decision.updateProposal.useMutation({
     onSuccess: () => {
-      toast.success(t('Proposal version restored'));
+      toast.success(t('restoreVersionSuccess'));
     },
     onError: (error) => {
-      toast.error(t('Failed to restore proposal version'), {
-        description: error.message || t('An unexpected error occurred'),
+      toast.error(t('restoreVersionError'), {
+        description: error.message || t('unexpectedError'),
       });
     },
   });
@@ -91,8 +91,8 @@ export function useRestoreProposalVersion({
     fragmentContents: Record<string, JSONContent | null>,
   ): Promise<boolean> {
     if (Object.keys(fragmentContents).length === 0) {
-      toast.error(t('That version is still loading'), {
-        description: t('Wait for the preview to appear, then try again.'),
+      toast.error(t('versionStillLoading'), {
+        description: t('versionPreviewWaitHint'),
       });
       return false;
     }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useFeatureFlag } from '@/hooks/useFeatureFlag';
+import { linkifyText } from '@/utils/linkDetection';
 import type { LocationData, ProposalTemplateSchema } from '@op/common/client';
 import { Header3 } from '@op/sense/Header';
 // viewerStyles subpath, not the @op/sense/RichTextEditor barrel: the barrel
@@ -42,16 +42,12 @@ export function ProposalContentRenderer({
   location,
   translatedMeta,
 }: ProposalContentRendererProps) {
-  const gisMapsEnabled = useFeatureFlag('gis_maps');
   const dynamicFields = useMemo(() => {
     if (!proposalTemplate) {
       return [];
     }
-    // The location field renders a map behind the `gis_maps` flag.
-    return compileProposalSchema(proposalTemplate).filter(
-      (f) => !f.isSystem && (gisMapsEnabled || f.format !== 'location'),
-    );
-  }, [proposalTemplate, gisMapsEnabled]);
+    return compileProposalSchema(proposalTemplate).filter((f) => !f.isSystem);
+  }, [proposalTemplate]);
 
   if (dynamicFields.length === 0) {
     return null;
@@ -117,8 +113,13 @@ function FieldChrome({
         <div className="flex flex-col gap-2">
           {title && <Header3 dir="auto">{title}</Header3>}
           {description && (
-            <p dir="auto" className="text-sm">
-              {description}
+            // The anchor treatment `FieldDescription` gives its links, for a
+            // paragraph that isn't one: a colour-only link fails axe.
+            <p
+              dir="auto"
+              className="text-sm [&>a]:underline [&>a]:underline-offset-4"
+            >
+              {linkifyText(description)}
             </p>
           )}
         </div>

@@ -133,7 +133,7 @@ export const BaseUpdateProfileForm = forwardRef<
               error={bannerUpload.uploadError}
             />
             <AvatarUploader
-              label={t('Profile Picture')}
+              label={t('profile.pictureLabel')}
               className="absolute start-4 bottom-0 aspect-square size-20 sm:size-28"
               value={avatarUpload.url}
               onChange={avatarUpload.upload}
@@ -148,7 +148,7 @@ export const BaseUpdateProfileForm = forwardRef<
                 isRequired
                 label={t('Name')}
                 placeholder={
-                  placeholders?.fullName ?? t('Enter your full name')
+                  placeholders?.fullName ?? t('profile.fullNamePrompt')
                 }
               />
             )}
@@ -157,15 +157,13 @@ export const BaseUpdateProfileForm = forwardRef<
             name="title"
             children={(field) => (
               <field.TextField
-                isRequired
                 label={t('Headline')}
                 description={
-                  placeholders?.titleDescription ??
-                  t(
-                    'Add a descriptive headline for your profile. This could be your professional title at your organization or your focus areas.',
-                  )
+                  placeholders?.titleDescription ?? t('profile.headlineHint')
                 }
-                placeholder={placeholders?.title ?? t('Enter your headline')}
+                placeholder={
+                  placeholders?.title ?? t('profile.headlinePlaceholder')
+                }
               />
             )}
           />
@@ -173,13 +171,13 @@ export const BaseUpdateProfileForm = forwardRef<
             name="pronouns"
             children={(field) => (
               <field.Select
-                label={t('Pronouns')}
-                placeholder={t('Select your preferred pronouns')}
+                label={t('profile.pronounsLabel')}
+                placeholder={t('profile.pronounsPlaceholder')}
                 options={[
-                  { value: 'she/her', label: t('She/Her') },
-                  { value: 'he/him', label: t('He/Him') },
-                  { value: 'they/them', label: t('They/Them') },
-                  { value: 'custom', label: t('Custom') },
+                  { value: 'she/her', label: t('profile.pronounsSheHer') },
+                  { value: 'he/him', label: t('profile.pronounsHeHim') },
+                  { value: 'they/them', label: t('profile.pronounsTheyThem') },
+                  { value: 'custom', label: t('profile.pronounsCustomOption') },
                 ]}
               />
             )}
@@ -192,9 +190,9 @@ export const BaseUpdateProfileForm = forwardRef<
                   name="customPronouns"
                   children={(field) => (
                     <field.TextField
-                      label={t('Custom Pronouns')}
+                      label={t('profile.customPronounsLabel')}
                       isRequired
-                      placeholder={t('Enter your custom pronouns')}
+                      placeholder={t('profile.customPronounsPlaceholder')}
                     />
                   )}
                 />
@@ -209,7 +207,7 @@ export const BaseUpdateProfileForm = forwardRef<
                 isRequired
                 type="email"
                 placeholder={
-                  placeholders?.email ?? t('Enter your email address')
+                  placeholders?.email ?? t('profile.emailPlaceholder')
                 }
               />
             )}
@@ -220,7 +218,7 @@ export const BaseUpdateProfileForm = forwardRef<
               <field.TextField
                 label={t('Website')}
                 placeholder={
-                  placeholders?.website ?? t('Enter your website URL')
+                  placeholders?.website ?? t('profile.websitePlaceholder')
                 }
                 // Not `type="url"`: our zodUrl validation accepts a bare
                 // domain (e.g. "venuecms.com") and auto-prefixes `https://`,
@@ -268,36 +266,31 @@ export const createValidator = (t: TranslateFn) =>
     .object({
       fullName: z
         .string({
-          error: t('Enter your full name'),
+          error: t('profile.fullNamePrompt'),
         })
         .trim()
         .min(1, {
-          error: t('Enter your full name'),
+          error: t('profile.fullNamePrompt'),
         })
         .max(200, {
-          error: t('Must be at most 200 characters'),
+          error: t('maxLength200Error'),
         }),
       title: z
-        .string({
-          error: t('Enter your professional title'),
-        })
+        .string()
         .trim()
-        .min(1, {
-          error: t('Enter your professional title'),
-        })
         .max(200, {
-          error: t('Must be at most 200 characters'),
+          error: t('maxLength200Error'),
         }),
       pronouns: z.string().trim().optional(),
       customPronouns: z.string().trim().optional(),
       email: z
-        .email({ error: t('Enter a valid email address') })
+        .email({ error: t('validEmailError') })
         .trim()
         .refine((val) => val.length <= 255, {
-          error: t('Must be at most 255 characters'),
+          error: t('profile.emailTooLong'),
         }),
       website: zodUrl({
-        error: t('Enter a valid website address'),
+        error: t('validWebsiteError'),
       }),
       focusAreas: z
         .array(
@@ -317,7 +310,7 @@ export const createValidator = (t: TranslateFn) =>
         return true;
       },
       {
-        message: t('Please provide your custom pronouns'),
+        message: t('profile.customPronounsRequired'),
         path: ['customPronouns'],
       },
     );
@@ -327,7 +320,7 @@ export const createValidator = (t: TranslateFn) =>
 export const validator = z
   .object({
     fullName: z.string().trim().min(1).max(200),
-    title: z.string().trim().min(1).max(200),
+    title: z.string().trim().max(200).optional(),
     pronouns: z.string().trim().optional(),
     customPronouns: z.string().trim().optional(),
     email: z

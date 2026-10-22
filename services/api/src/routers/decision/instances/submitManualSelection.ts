@@ -3,6 +3,10 @@ import {
   invalidateDecisionInstance,
   submitManualSelection,
 } from '@op/common';
+import {
+  proposalAllocationSchema,
+  resultNotificationMessagesSchema,
+} from '@op/common/client';
 import { waitUntil } from '@vercel/functions';
 import { z } from 'zod';
 
@@ -12,6 +16,9 @@ import { trackManualSelectionSubmitted } from '../../../utils/analytics';
 const submitManualSelectionInputSchema = z.object({
   processInstanceId: z.uuid(),
   proposalIds: z.array(z.uuid()).min(1),
+  resultNotifications: resultNotificationMessagesSchema.optional(),
+  // Validated in the service.
+  allocations: z.array(proposalAllocationSchema).optional(),
 });
 
 export const submitManualSelectionRouter = router({
@@ -21,6 +28,8 @@ export const submitManualSelectionRouter = router({
       await submitManualSelection({
         processInstanceId: input.processInstanceId,
         proposalIds: input.proposalIds,
+        resultNotifications: input.resultNotifications,
+        allocations: input.allocations,
         user: ctx.user,
       });
 

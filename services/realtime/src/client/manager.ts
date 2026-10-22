@@ -1,4 +1,5 @@
 import { type ChannelName } from '@op/common/realtime';
+import { logger } from '@op/logging/client';
 import { type SupabaseClient, createClient } from '@supabase/supabase-js';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 
@@ -97,10 +98,9 @@ export class RealtimeManager {
 
     // Prevent duplicate handlers
     if (listeners.has(handler)) {
-      console.warn(
-        '[Realtime] Handler already subscribed to channel:',
+      logger.warn('[Realtime] Handler already subscribed to channel', {
         channel,
-      );
+      });
       return () => {};
     }
 
@@ -124,10 +124,10 @@ export class RealtimeManager {
           const parseResult = realtimeMessageSchema.safeParse(payload);
 
           if (!parseResult.success) {
-            console.error(
-              '[Realtime] Invalid message format:',
-              parseResult.error,
-            );
+            logger.error('[Realtime] Invalid message format', {
+              error: parseResult.error,
+              channel,
+            });
             return;
           }
 
@@ -141,18 +141,22 @@ export class RealtimeManager {
         },
       );
 
-      realtimeChannel.subscribe((status) => {
+      realtimeChannel.subscribe((status, err) => {
         if (status === 'SUBSCRIBED') {
-          console.log('[Realtime] Subscribed to channel:', channel);
           this.subscribedChannels.add(channel);
           onSubscribed?.();
           this.connectionListeners.forEach((listener) => listener(true));
         } else if (status === 'CLOSED') {
-          console.log('[Realtime] Unsubscribed from channel:', channel);
           this.subscribedChannels.delete(channel);
           this.connectionListeners.forEach((listener) => listener(false));
-        } else if (status === 'CHANNEL_ERROR') {
-          console.error('[Realtime] Channel error:', channel);
+        } else if (status === 'CHANNEL_ERROR' && err) {
+          // `err` is set only when the server rejected this channel's join.
+          // Without it the status is a socket drop, which realtime-js fans out to
+          // every channel and recovers from itself, so it is not logged.
+          logger.warn('[Realtime] Channel join rejected', {
+            error: err,
+            channel,
+          });
         }
       });
 
@@ -205,8 +209,6 @@ export class RealtimeManager {
     if (!this.supabase) {
       return;
     }
-
-    console.log('[Realtime] Closing all channels...');
 
     this.channels.forEach((realtimeChannel) => {
       this.supabase?.removeChannel(realtimeChannel);

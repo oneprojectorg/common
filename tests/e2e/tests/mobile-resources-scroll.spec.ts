@@ -1,11 +1,14 @@
 import {
+  createDecisionInstance,
+  getSeededTemplate,
+} from '@op/common/testing/data';
+import {
   resourceCollectionItems,
   resourceCollectionProfiles,
   resourceCollections,
   resources,
 } from '@op/db/schema';
 import { db } from '@op/db/test';
-import { createDecisionInstance, getSeededTemplate } from '@op/test';
 import type { Locator } from '@playwright/test';
 import { randomUUID } from 'node:crypto';
 

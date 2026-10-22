@@ -2,6 +2,8 @@ import { GradientHeader, Header1 } from '@op/sense/Header';
 import { cn } from '@op/sense/lib/utils';
 import { ReactNode } from 'react';
 
+import { DecisionTranslateLink } from './DecisionTranslateLink';
+
 export function DecisionHero({
   title,
   description,
@@ -25,6 +27,9 @@ export function DecisionHero({
 }) {
   return (
     <div className="flex flex-col gap-2 text-center">
+      {variant === 'standard' ? (
+        <DecisionTranslateLink hasImage={hasImage} />
+      ) : null}
       {variant === 'results' ? (
         <Header1>
           <bdi>{title}</bdi>

@@ -19,7 +19,7 @@ export function ProposalAttachmentViewList({
 }: {
   attachments: ProposalAttachment[];
 }) {
-  const t = useTranslations();
+  const t = useTranslations('decisions.proposals');
 
   const files = attachments.flatMap((a) =>
     a.attachment
@@ -51,7 +51,9 @@ export function ProposalAttachmentViewList({
               <ButtonLink
                 variant="ghost"
                 size="icon-sm"
-                aria-label={t('Download {name}', { name: file.fileName })}
+                aria-label={t('downloadAttachmentLabel', {
+                  name: file.fileName,
+                })}
                 href={file.url}
                 target="_blank"
                 rel="noopener noreferrer"

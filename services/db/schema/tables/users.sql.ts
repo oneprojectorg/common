@@ -3,6 +3,7 @@ import { relations } from 'drizzle-orm/_relations';
 import {
   boolean,
   index,
+  jsonb,
   pgTable,
   text,
   timestamp,
@@ -17,6 +18,18 @@ import { organizations } from './organizations.sql';
 import { profileUsers } from './profileUsers.sql';
 import { profiles } from './profiles.sql';
 import { objectsInStorage } from './storage.sql';
+
+export type NotificationChannel = 'email' | 'sms';
+
+export type NotificationCategory =
+  | 'proposalsAndComments'
+  | 'thingsYouFollow'
+  | 'processUpdates'
+  | 'relationshipRequests';
+
+export type StoredNotificationPreferences = Partial<
+  Record<NotificationCategory, Partial<Record<NotificationChannel, boolean>>>
+>;
 
 export const users = pgTable(
   'users',
@@ -54,6 +67,7 @@ export const users = pgTable(
     privacyAcceptedOn: timestamp({ withTimezone: true, mode: 'string' }),
     // Used for measuring when a user completed onboarding
     onboardedAt: timestamp({ withTimezone: true, mode: 'string' }),
+    notificationPreferences: jsonb().$type<StoredNotificationPreferences>(),
     ...timestamps,
   },
   (table) => [

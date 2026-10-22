@@ -1,6 +1,7 @@
 import { getUser } from '@/utils/getUser';
 import type { Metadata } from 'next';
-import { getTranslations } from 'next-intl/server';
+
+import { getTranslations } from '@/lib/i18n';
 
 import { OnboardingFlow } from '@/components/Onboarding';
 
@@ -10,8 +11,8 @@ export async function generateMetadata({
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
   const { locale } = await params;
-  const t = await getTranslations({ locale });
-  return { title: t('Get Started') };
+  const t = await getTranslations({ namespace: 'shell', locale });
+  return { title: t('getStartedTitle') };
 }
 
 export default async function OnboardingPage() {

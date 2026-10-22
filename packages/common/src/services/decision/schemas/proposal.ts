@@ -1,7 +1,12 @@
 import { ProposalStatus } from '@op/db/schema';
 import { z } from 'zod';
 
-import { proposalDataSchema } from '../proposalDataSchema';
+import { PAGE_LIMIT, list, paginated, total } from '../../../utils/pagination';
+import {
+  PROPOSAL_TITLE_MAX_LENGTH,
+  proposalDataSchema,
+} from '../proposalDataSchema';
+import { proposalAdvanceTargetSchema } from './advanceProposal';
 
 export const storageItemSchema = z.object({
   id: z.string(),
@@ -132,6 +137,16 @@ export const proposalSchema = z.object({
   isEditable: z.boolean().optional(),
   /** True when this proposal is in the latest results selection set. */
   isSelected: z.boolean().optional(),
+  /**
+   * True when the current-phase list carries this proposal although an earlier
+   * transition left it behind (the `notAdvanced` filter on `listProposals`).
+   */
+  isOutsideCurrentPhase: z.boolean().optional(),
+  /**
+   * Set on such a row when an admin can advance it into the current phase —
+   * the target `getProposalAdvanceTarget` would return, without a per-row call.
+   */
+  advanceTarget: proposalAdvanceTargetSchema.optional(),
   /** True when an active moderation flag hides this proposal from general
    *  readers. Only the creator (+ collaborators) and admins ever receive a
    *  flagged proposal, so this drives their "Flagged" indicator. */
@@ -154,17 +169,43 @@ export const proposalSchema = z.object({
 
 export type Proposal = z.infer<typeof proposalSchema>;
 
+/**
+ * The proposal version a submitted review was written against. `isCurrent` is
+ * false only when an older snapshot was returned, so a client labels the pane
+ * "older version" from it.
+ */
+export const reviewedProposalVersionSchema = z.object({
+  proposal: proposalSchema,
+  isCurrent: z.boolean(),
+});
+
+export type ReviewedProposalVersion = z.infer<
+  typeof reviewedProposalVersionSchema
+>;
+
 /** Paginated proposal list as returned by the API. */
-export const proposalListSchema = z.object({
-  proposals: z.array(proposalSchema),
-  total: z.number(),
-  hasMore: z.boolean(),
+export const proposalListSchema = paginated(proposalSchema).extend({
+  total,
   canManageProposals: z.boolean().prefault(false),
-  // Cursor for the next page, or `null` when there are no further pages.
-  next: z.string().nullable(),
 });
 
 export type ProposalList = z.infer<typeof proposalListSchema>;
+
+/**
+ * Cap on a proposal title search, in characters. Matches the title cap it
+ * searches against — a term longer than any title it could match is only cost.
+ */
+export const PROPOSAL_SEARCH_MAX_LENGTH = PROPOSAL_TITLE_MAX_LENGTH;
+
+/**
+ * Free-text proposal title search, shared by every list endpoint's filter.
+ * Truncated rather than rejected: an over-long paste is normal in a search
+ * field, and the tail past a full title's length could not have matched.
+ */
+export const proposalSearchSchema = z
+  .string()
+  .transform((value) => value.slice(0, PROPOSAL_SEARCH_MAX_LENGTH))
+  .optional();
 
 /**
  * Response from `decision.listProposalLocations`. Every located proposal in the
@@ -173,28 +214,28 @@ export type ProposalList = z.infer<typeof proposalListSchema>;
  * simply left unset — so the map's marker + hovercard render the same
  * `Proposal` type the paginated list produces.
  */
-export const proposalLocationsSchema = z.object({
-  proposals: z.array(proposalSchema),
-});
+export const proposalLocationsSchema = list(proposalSchema);
 
 export type ProposalLocations = z.infer<typeof proposalLocationsSchema>;
 
 /**
  * Input schema for `decision.listAllProposals`. Returns every valid submission
- * regardless of phase scoping, so there are no phase/voting filters. Uses
- * cursor pagination — pass `cursor` from the previous response's `next`.
+ * regardless of phase scoping, so there are no phase/voting filters. Rejected
+ * proposals are left out unless `status` asks for them.
+ * Uses cursor pagination — pass `cursor` from the previous response's `next`.
  */
 export const allProposalsFilterSchema = z.object({
   processInstanceId: z.uuid(),
   status: z.enum(ProposalStatus).optional(),
   categoryId: z.string().optional(),
   submittedByProfileId: z.uuid().optional(),
+  search: proposalSearchSchema,
   // Restrict to the caller's ballot (self-only); used by the "My ballot" filter.
   votedByProfileId: z.uuid().optional(),
   dir: z.enum(['asc', 'desc']).optional(),
   orderBy: z.enum(['createdAt', 'updatedAt']).optional(),
   cursor: z.string().nullish(),
-  limit: z.number().min(1).max(100).prefault(50),
+  limit: z.number().min(1).max(PAGE_LIMIT.max).prefault(PAGE_LIMIT.lg),
 });
 
 export type AllProposalsFilter = z.infer<typeof allProposalsFilterSchema>;
@@ -212,13 +253,13 @@ export const allProposalsListItemSchema = proposalSchema.omit({
 
 export type AllProposalsListItem = z.infer<typeof allProposalsListItemSchema>;
 
-/** Response from `decision.listAllProposals`. */
-export const allProposalsListSchema = z.object({
-  items: z.array(allProposalsListItemSchema),
-  // Full count of all matching proposals, independent of cursor pagination.
-  total: z.number(),
-  next: z.string().nullable(),
-});
+/**
+ * Response from `decision.listAllProposals`. `total` is the full count of
+ * matching proposals, independent of cursor pagination.
+ */
+export const allProposalsListSchema = paginated(
+  allProposalsListItemSchema,
+).extend({ total });
 
 export type AllProposalsList = z.infer<typeof allProposalsListSchema>;
 
@@ -242,11 +283,11 @@ export type ProposalSubmitter = z.infer<typeof proposalSubmitterSchema>;
 // callers (ONE-40 audit #23).
 export const PROPOSAL_SUBMITTER_FACE_PILE_MAX = 20;
 
-export const proposalSubmittersListSchema = z.object({
-  submitters: z
-    .array(proposalSubmitterSchema)
-    .max(PROPOSAL_SUBMITTER_FACE_PILE_MAX),
-  total: z.number(),
+export const proposalSubmittersListSchema = list(
+  proposalSubmitterSchema,
+).extend({
+  items: z.array(proposalSubmitterSchema).max(PROPOSAL_SUBMITTER_FACE_PILE_MAX),
+  total,
 });
 
 export type ProposalSubmittersList = z.infer<

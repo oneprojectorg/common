@@ -1,9 +1,12 @@
 'use client';
 
-import { useRequiredUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
-import { ProposalFilter } from '@op/api/encoders';
-import type { Proposal } from '@op/common/client';
+import type {
+  Proposal,
+  ProposalAllocation,
+  ResultNotificationMessages,
+} from '@op/common/client';
+import { templateCollectsBudget } from '@op/common/client';
 import { Button } from '@op/sense/Button';
 import {
   Empty,
@@ -20,19 +23,15 @@ import { LuLeaf, LuTriangleAlert } from 'react-icons/lu';
 
 import { usePathname, useRouter, useTranslations } from '@/lib/i18n';
 
-import { FinalPhaseSelectionFooter } from './FinalPhaseSelectionFooter';
 import { QUERY_PARAM as RESULTS_LIVE_PARAM } from './FinalPhaseSubmissionSuccessDialog';
 import {
   ManualSelectionToolbar,
   type SelectionFilters,
 } from './ManualSelectionToolbar';
+import { ProposalCardDialogProvider } from './ProposalCardDialogContext';
 import { SelectableProposalsTable } from './SelectableProposalsTable';
-import { StandardSelectionFooter } from './StandardSelectionFooter';
+import { SelectionFooter } from './SelectionFooter';
 import { useManualSelection } from './useManualSelection';
-import { useProposalFilters } from './useProposalFilters';
-
-// Stable reference: useProposalFilters memoizes on `votedProposalIds`.
-const EMPTY_VOTED_IDS: string[] = [];
 
 interface ManualSelectionListProps {
   instanceId: string;
@@ -54,7 +53,6 @@ export const ManualSelectionList = ({
   pinOffset,
 }: ManualSelectionListProps) => {
   const t = useTranslations();
-  const { user } = useRequiredUser();
   const posthog = usePostHog();
   const router = useRouter();
   const pathname = usePathname();
@@ -67,7 +65,7 @@ export const ManualSelectionList = ({
   const categoryId =
     selectedCategory === 'all-categories' ? undefined : selectedCategory;
 
-  const [[categoriesData, instance]] = trpc.useSuspenseQueries((q) => [
+  const [[{ items: categories }, instance]] = trpc.useSuspenseQueries((q) => [
     q.decision.getCategories({ processInstanceId: instanceId }),
     q.decision.getInstance({ instanceId }),
   ]);
@@ -84,7 +82,8 @@ export const ManualSelectionList = ({
     { processInstanceId: instanceId, categoryId, sortOrder },
     { placeholderData: (prev) => prev },
   );
-  const candidates = candidatesQuery.data;
+  const candidates = candidatesQuery.data?.items;
+  const totalCandidates = candidatesQuery.data?.totalCandidates ?? 0;
 
   const [selectedIds, setSelectedIds] = useManualSelection(
     instanceId,
@@ -101,27 +100,42 @@ export const ManualSelectionList = ({
     if (!candidates) return;
     setProposalCache((prev) => {
       const next = { ...prev };
-      for (const p of candidates.proposals) next[p.id] = p;
+      for (const p of candidates) next[p.id] = p;
       return next;
     });
   }, [candidates]);
 
-  const selectedProposals = useMemo(
-    () =>
-      selectedIds
-        .map((id) => proposalCache[id])
-        .filter((p): p is Proposal => Boolean(p)),
-    [selectedIds, proposalCache],
-  );
+  // Unfiltered, the list is the whole pool, so a pick missing from it has left
+  // (merged or deleted) and would make the submit fail.
+  useEffect(() => {
+    if (!candidates || categoryId || candidatesQuery.isFetching) return;
+    const poolIds = new Set(candidates.map((p) => p.id));
+    if (selectedIds.some((id) => !poolIds.has(id))) {
+      setSelectedIds(selectedIds.filter((id) => poolIds.has(id)));
+    }
+  }, [
+    candidates,
+    categoryId,
+    candidatesQuery.isFetching,
+    selectedIds,
+    setSelectedIds,
+  ]);
 
-  const { filteredProposals, proposalFilter, setProposalFilter } =
-    useProposalFilters({
-      proposals: candidates?.proposals ?? [],
-      currentProfileId: user.currentProfile?.id,
-      votedProposalIds: EMPTY_VOTED_IDS,
-      hasVoted: false,
-      initialFilter: ProposalFilter.ALL,
-    });
+  // The cache fills after an effect, so read candidates for the first render.
+  const selectedProposals = useMemo(() => {
+    const candidateById = new Map(
+      candidates?.map((proposal) => [proposal.id, proposal]),
+    );
+    return selectedIds
+      .map((id) => candidateById.get(id) ?? proposalCache[id])
+      .filter((p): p is Proposal => Boolean(p));
+  }, [selectedIds, proposalCache, candidates]);
+
+  // The stored draft can hold ids the service rejects.
+  const confirmIds = useMemo(
+    () => selectedProposals.map((proposal) => proposal.id),
+    [selectedProposals],
+  );
 
   const submitMutation = trpc.decision.submitManualSelection.useMutation({
     onSuccess: () => {
@@ -139,7 +153,6 @@ export const ManualSelectionList = ({
       }
     },
     onError: (error) => {
-      setIsConfirmOpen(false);
       toast.error(error.message);
     },
   });
@@ -149,31 +162,28 @@ export const ManualSelectionList = ({
       if (open) {
         posthog.capture('manual_selection_dialog_opened', {
           process_instance_id: instanceId,
-          proposal_count: selectedIds.length,
+          proposal_count: confirmIds.length,
         });
       } else if (submitMutation.status === 'idle') {
         // Only treat a close as a user-initiated dismiss when no submission
         // has run. Pending → in-flight close, success → already-submitted.
         posthog.capture('manual_selection_dialog_dismissed', {
           process_instance_id: instanceId,
-          proposal_count: selectedIds.length,
+          proposal_count: confirmIds.length,
         });
       }
       setIsConfirmOpen(open);
     },
-    [instanceId, selectedIds.length, submitMutation.status, posthog],
+    [instanceId, confirmIds.length, submitMutation.status, posthog],
   );
 
   const toolbarFilters = useMemo<SelectionFilters>(
-    () => ({ proposalFilter, selectedCategory, sortOrder }),
-    [proposalFilter, selectedCategory, sortOrder],
+    () => ({ selectedCategory, sortOrder }),
+    [selectedCategory, sortOrder],
   );
 
   const handleToolbarChange = useCallback(
     (patch: Partial<SelectionFilters>) => {
-      if (patch.proposalFilter !== undefined) {
-        setProposalFilter(patch.proposalFilter);
-      }
       if (patch.selectedCategory !== undefined) {
         setSelectedCategory(patch.selectedCategory);
       }
@@ -181,19 +191,27 @@ export const ManualSelectionList = ({
         setSortOrder(patch.sortOrder);
       }
     },
-    [setProposalFilter],
+    [],
   );
 
-  const handleConfirmSelection = useCallback(() => {
-    posthog.capture('manual_selection_dialog_confirmed', {
-      process_instance_id: instanceId,
-      proposal_count: selectedIds.length,
-    });
-    submitMutation.mutate({
-      processInstanceId: instanceId,
-      proposalIds: selectedIds,
-    });
-  }, [instanceId, selectedIds, submitMutation, posthog]);
+  const handleConfirmSelection = useCallback(
+    (
+      resultNotifications?: ResultNotificationMessages,
+      allocations?: ProposalAllocation[],
+    ) => {
+      posthog.capture('manual_selection_dialog_confirmed', {
+        process_instance_id: instanceId,
+        proposal_count: confirmIds.length,
+      });
+      submitMutation.mutate({
+        processInstanceId: instanceId,
+        proposalIds: confirmIds,
+        resultNotifications,
+        allocations,
+      });
+    },
+    [instanceId, confirmIds, submitMutation, posthog],
+  );
 
   if (candidatesQuery.isError) {
     return (
@@ -202,7 +220,7 @@ export const ManualSelectionList = ({
           <EmptyMedia variant="icon">
             <LuTriangleAlert className="size-6" />
           </EmptyMedia>
-          <EmptyTitle>{t('Failed to load proposals')}</EmptyTitle>
+          <EmptyTitle>{t('decisions.review.loadProposalsError')}</EmptyTitle>
         </EmptyHeader>
         <EmptyContent>
           <Button
@@ -221,19 +239,18 @@ export const ManualSelectionList = ({
     return null;
   }
 
-  // Full pool empty → dead end, no toolbar. Any narrowing filter keeps
+  // Full pool empty → dead end, no toolbar. A narrowing category filter keeps
   // the toolbar (below) so the admin can loosen it.
-  const isUnfiltered = !categoryId && proposalFilter === ProposalFilter.ALL;
-  if (isUnfiltered && candidates.proposals.length === 0) {
+  if (!categoryId && candidates.length === 0) {
     return (
       <Empty>
         <EmptyHeader>
           <EmptyMedia variant="icon">
             <LuLeaf className="size-6" />
           </EmptyMedia>
-          <EmptyTitle>{t('No proposals available to select')}</EmptyTitle>
+          <EmptyTitle>{t('decisions.review.noProposalsToSelect')}</EmptyTitle>
           <EmptyDescription>
-            {t('The previous phase did not leave any eligible proposals.')}
+            {t('decisions.review.noEligibleProposalsHint')}
           </EmptyDescription>
         </EmptyHeader>
       </Empty>
@@ -248,68 +265,69 @@ export const ManualSelectionList = ({
     );
   };
 
-  const proposals = filteredProposals;
-  const numSelected = selectedIds.length;
-  const currentPhaseName =
-    instance.instanceData?.phases?.find(
-      (p) => p.phaseId === instance.currentStateId,
-    )?.name ?? '';
+  const numSelected = confirmIds.length;
+  // No budget key in the instance's proposal template means the process
+  // collects no budgets, so the column would only ever show "—".
+  const showBudget = templateCollectsBudget(
+    instance.instanceData?.proposalTemplate,
+  );
+  const phases = instance.instanceData?.phases ?? [];
+  const currentPhaseIndex = phases.findIndex(
+    (p) => p.phaseId === instance.currentStateId,
+  );
+  const currentPhaseName = phases[currentPhaseIndex]?.name ?? '';
+  // Candidates come from the previous phase, so merge targets do too.
+  const previousPhaseId = phases[currentPhaseIndex - 1]?.phaseId;
 
   return (
-    <div className="relative flex flex-col gap-6 pb-20">
-      <ManualSelectionToolbar
-        count={proposals.length}
-        total={candidates.proposals.length}
-        currentProfileId={user.currentProfile?.id}
-        categories={categoriesData.categories}
-        filters={toolbarFilters}
-        onChange={handleToolbarChange}
-        pinOffset={pinOffset}
-      />
-
-      {proposals.length === 0 ? (
-        <Empty>
-          <EmptyHeader>
-            <EmptyMedia variant="icon">
-              <LuLeaf className="size-6" />
-            </EmptyMedia>
-            <EmptyTitle>
-              {t('No proposals match the current filter')}
-            </EmptyTitle>
-          </EmptyHeader>
-        </Empty>
-      ) : (
-        <SelectableProposalsTable
-          proposals={proposals}
-          selectedIds={selectedIds}
-          onToggle={toggleProposal}
-          getProposalHref={(p) =>
-            `/decisions/${decisionSlug}/proposal/${p.profileId}`
-          }
-          showVotes={isFinalPhase}
+    <ProposalCardDialogProvider mergePhaseId={previousPhaseId}>
+      <div className="relative flex flex-col gap-6 pb-20">
+        <ManualSelectionToolbar
+          count={candidates.length}
+          categories={categories}
+          filters={toolbarFilters}
+          onChange={handleToolbarChange}
+          pinOffset={pinOffset}
         />
-      )}
 
-      {isFinalPhase ? (
-        <FinalPhaseSelectionFooter
+        {candidates.length === 0 ? (
+          <Empty>
+            <EmptyHeader>
+              <EmptyMedia variant="icon">
+                <LuLeaf className="size-6" />
+              </EmptyMedia>
+              <EmptyTitle>
+                {t('decisions.review.noProposalsMatchFilter')}
+              </EmptyTitle>
+            </EmptyHeader>
+          </Empty>
+        ) : (
+          <SelectableProposalsTable
+            proposals={candidates}
+            selectedIds={selectedIds}
+            onToggle={toggleProposal}
+            getProposalHref={(p) =>
+              `/decisions/${decisionSlug}/proposal/${p.profileId}`
+            }
+            showVotes={isFinalPhase}
+            showBudget={showBudget}
+            canEditProposals={!isFinalPhase}
+          />
+        )}
+
+        <SelectionFooter
           selectedProposals={selectedProposals}
           numSelected={numSelected}
-          isConfirmOpen={isConfirmOpen}
-          onConfirmOpenChange={handleConfirmDialogOpenChange}
-          onConfirm={handleConfirmSelection}
-          isSubmitting={submitMutation.isPending}
-        />
-      ) : (
-        <StandardSelectionFooter
-          selectedProposals={selectedProposals}
-          numSelected={numSelected}
+          totalCandidates={totalCandidates}
+          publishesResults={isFinalPhase}
           phaseName={currentPhaseName}
+          collectsBudget={showBudget}
           isConfirmOpen={isConfirmOpen}
           onConfirmOpenChange={handleConfirmDialogOpenChange}
           onConfirm={handleConfirmSelection}
           isSubmitting={submitMutation.isPending}
         />
-      )}
-    </div>
+      </div>
+    </ProposalCardDialogProvider>
   );
 };

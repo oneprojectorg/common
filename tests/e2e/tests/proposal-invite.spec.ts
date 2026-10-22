@@ -1,12 +1,12 @@
-import { EntityType, profileInvites, users } from '@op/db/schema';
-import { ROLES } from '@op/db/seedData/accessControl';
-import { db, eq } from '@op/db/test';
 import {
   addUserToOrganization,
   createDecisionInstance,
   createProposal,
   getSeededTemplate,
-} from '@op/test';
+} from '@op/common/testing/data';
+import { EntityType, profileInvites, users } from '@op/db/schema';
+import { ROLES } from '@op/db/seedData/accessControl';
+import { db, eq } from '@op/db/test';
 import { randomUUID } from 'node:crypto';
 
 import {

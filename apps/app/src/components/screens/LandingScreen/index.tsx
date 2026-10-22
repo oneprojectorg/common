@@ -5,12 +5,15 @@ import {
   createServerUtils,
   dehydrate,
 } from '@op/api/server';
+import { PAGE_LIMIT } from '@op/common/client';
 import { logger } from '@op/logging';
 import { Card } from '@op/sense/Card';
 import { Header1, Header3 } from '@op/sense/Header';
 import { Skeleton } from '@op/sense/Skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@op/sense/Tabs';
 import { Suspense } from 'react';
+
+import { getTranslations } from '@/lib/i18n';
 
 import { ActiveDecisionsNotifications } from '@/components/ActiveDecisionsNotifications';
 import ErrorBoundary from '@/components/ErrorBoundary';
@@ -23,7 +26,6 @@ import { PendingRelationships } from '@/components/PendingRelationships';
 import { PlatformHighlights } from '@/components/PlatformHighlights';
 import { PostFeedSkeleton } from '@/components/PostFeed';
 import { PostUpdate } from '@/components/PostUpdate';
-import { TranslatedText } from '@/components/TranslatedText';
 
 import { Feed } from './Feed';
 import { Welcome } from './Welcome';
@@ -58,16 +60,18 @@ export const LandingScreen = () => {
 };
 
 export const LandingScreenSkeleton: React.FC = async () => {
+  const t = await getTranslations();
+
   return (
     <div className="mx-auto flex min-h-0 w-full max-w-[1400px] grow flex-col gap-4 px-4 pt-8 sm:gap-10 sm:px-8 sm:pt-14">
       <div className="flex flex-col gap-2">
         <Skeleton>
           <Header1 className="text-center text-transparent">
-            <TranslatedText text="Welcome back, to Common!" />
+            {t('shell.welcomeBackTitle')}
           </Header1>
         </Skeleton>
         <Skeleton className="text-center text-transparent">
-          <TranslatedText text="Explore new connections and strengthen existing relationships." />
+          {t('shell.landingSubtitle')}
         </Skeleton>
       </div>
 
@@ -85,7 +89,7 @@ export const LandingScreenSkeleton: React.FC = async () => {
         <div className="col-span-5">
           <Card className="flex flex-col gap-6 border-0 py-0 sm:border sm:p-6">
             <Skeleton className="text-label text-transparent">
-              <TranslatedText text="New Organizations" />
+              {t('shell.newOrganizationsHeading')}
             </Skeleton>
             <OrganizationListSkeleton />
           </Card>
@@ -94,18 +98,14 @@ export const LandingScreenSkeleton: React.FC = async () => {
 
       <Tabs defaultValue="discover" className="pb-8 sm:hidden">
         <TabsList>
-          <TabsTrigger value="discover">
-            <TranslatedText text="Discover" />
-          </TabsTrigger>
-          <TabsTrigger value="recent">
-            <TranslatedText text="Recent" />
-          </TabsTrigger>
+          <TabsTrigger value="discover">{t('shell.discoverTab')}</TabsTrigger>
+          <TabsTrigger value="recent">{t('shell.recentTab')}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="discover" className="p-0">
           <Card className="flex flex-col gap-6 border-0 py-0 sm:border sm:p-6">
             <Skeleton className="text-label text-transparent">
-              <TranslatedText text="New Organizations" />
+              {t('shell.newOrganizationsHeading')}
             </Skeleton>
             <div className="flex flex-col gap-2">
               <Skeleton className="h-4 w-full" />
@@ -121,11 +121,13 @@ export const LandingScreenSkeleton: React.FC = async () => {
   );
 };
 
-const NewOrganizationsList = () => {
+const NewOrganizationsList = async () => {
+  const t = await getTranslations();
+
   return (
     <div className="flex flex-col gap-6 border-0 py-0 sm:mx-0 sm:border sm:p-5">
       <Header3 className="px-4 text-label sm:px-0">
-        <TranslatedText text="New Organizations" />
+        {t('shell.newOrganizationsHeading')}
       </Header3>
       <NewOrganizations />
     </div>
@@ -139,9 +141,14 @@ const PostFeedSection = async ({
 }) => {
   // Prefetch posts data on server to prevent hydration mismatch
   // If this fails, the client will fetch instead
-  const { utils, queryClient } = await createServerUtils();
+  const [t, { utils, queryClient }] = await Promise.all([
+    getTranslations(),
+    createServerUtils(),
+  ]);
   try {
-    await utils.organization.listAllPosts.fetchInfinite({ limit: 10 });
+    await utils.organization.listAllPosts.fetchInfinite({
+      limit: PAGE_LIMIT.sm,
+    });
   } catch (e) {
     logger.error('Homepage post prefetch failed', { error: e });
   }
@@ -150,15 +157,13 @@ const PostFeedSection = async ({
     <>
       {showPostUpdate ? (
         <Suspense fallback={<Skeleton className="h-full w-full" />}>
-          <PostUpdate label={<TranslatedText text="Post" />} />
+          <PostUpdate label={t('Post')} />
         </Suspense>
       ) : null}
       <ErrorBoundary
         fallback={
           <div className="flex flex-col items-center justify-center py-8">
-            <span>
-              <TranslatedText text="Unable to load posts. Please try refreshing." />
-            </span>
+            <span>{t('shell.feedLoadError')}</span>
           </div>
         }
       >
@@ -170,11 +175,13 @@ const PostFeedSection = async ({
   );
 };
 
-const LandingScreenFeeds = ({
+const LandingScreenFeeds = async ({
   showPostUpdate,
 }: {
   showPostUpdate: boolean;
 }) => {
+  const t = await getTranslations();
+
   return (
     <>
       <div className="hidden grid-cols-15 sm:grid">
@@ -188,12 +195,8 @@ const LandingScreenFeeds = ({
       </div>
       <Tabs defaultValue="discover" className="gap-8 pb-8 sm:hidden">
         <TabsList>
-          <TabsTrigger value="discover">
-            <TranslatedText text="Discover" />
-          </TabsTrigger>
-          <TabsTrigger value="recent">
-            <TranslatedText text="Recent" />
-          </TabsTrigger>
+          <TabsTrigger value="discover">{t('shell.discoverTab')}</TabsTrigger>
+          <TabsTrigger value="recent">{t('shell.recentTab')}</TabsTrigger>
         </TabsList>
         <TabsContent value="discover" className="-mx-4 p-0">
           <NewOrganizationsList />
@@ -212,28 +215,28 @@ const LandingScreenFeeds = ({
  * Async component that fetches user data and renders user-dependent content.
  */
 const WelcomeSection = async () => {
-  const user = await getRequiredUser();
+  const [t, user] = await Promise.all([getTranslations(), getRequiredUser()]);
 
   return (
     <div className="flex flex-col gap-2">
       <Welcome user={user} />
-      <span className="text-center">
-        <TranslatedText text="Explore new connections and strengthen existing relationships." />
-      </span>
+      <span className="text-center">{t('shell.landingSubtitle')}</span>
     </div>
   );
 };
 
-const WelcomeSkeleton = () => {
+const WelcomeSkeleton = async () => {
+  const t = await getTranslations();
+
   return (
     <div className="flex flex-col gap-2">
       <Skeleton>
         <Header1 className="text-center text-transparent">
-          <TranslatedText text="Welcome back, to Common!" />
+          {t('shell.welcomeBackTitle')}
         </Header1>
       </Skeleton>
       <Skeleton className="text-center text-transparent">
-        <TranslatedText text="Explore new connections and strengthen existing relationships." />
+        {t('shell.landingSubtitle')}
       </Skeleton>
     </div>
   );
@@ -274,7 +277,9 @@ export const OrgNotifications = async (props: {
   );
 };
 
-const UserContentSkeleton = () => {
+const UserContentSkeleton = async () => {
+  const t = await getTranslations();
+
   return (
     <>
       <hr />
@@ -286,7 +291,7 @@ const UserContentSkeleton = () => {
         <div className="col-span-5">
           <Card className="flex flex-col gap-6 border-0 py-0 sm:border sm:p-6">
             <Skeleton className="text-label text-transparent">
-              <TranslatedText text="New Organizations" />
+              {t('shell.newOrganizationsHeading')}
             </Skeleton>
             <OrganizationListSkeleton />
           </Card>

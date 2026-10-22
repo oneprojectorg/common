@@ -1,9 +1,7 @@
 import { useTranslations } from '@/lib/i18n';
 
-import { TranslatedText } from '../TranslatedText';
 import { ResponsiveSelect } from './ResponsiveSelect';
-
-export const ALL_CATEGORIES = 'all-categories';
+import { ALL_CATEGORIES } from './proposalFilterQuery';
 
 /**
  * Category filter dropdown shared by the proposals list and the review
@@ -22,7 +20,7 @@ export const CategoryFilterSelect = ({
   onSelectCategory: (category: string) => void;
   className?: string;
 }) => {
-  const t = useTranslations();
+  const t = useTranslations('decisions.proposals');
 
   // TODO: This is a hardcoded, per-decision copy override — the Columbus
   // decision refers to its categories as "districts", matched here on its
@@ -37,19 +35,14 @@ export const CategoryFilterSelect = ({
       onSelectionChange={onSelectCategory}
       className={className}
       aria-label={
-        usesDistricts
-          ? t('Filter proposals by district')
-          : t('Filter proposals by category')
+        usesDistricts ? t('filterByDistrictLabel') : t('filterByCategoryLabel')
       }
       items={[
         {
           id: ALL_CATEGORIES,
-          label: usesDistricts ? (
-            <TranslatedText text="All districts" />
-          ) : (
-            <TranslatedText text="All categories" />
-          ),
-          textValue: usesDistricts ? t('All districts') : t('All categories'),
+          label: usesDistricts
+            ? t('allDistrictsOption')
+            : t('allCategoriesOption'),
         },
         ...categories.map((category) => ({
           id: category.id,

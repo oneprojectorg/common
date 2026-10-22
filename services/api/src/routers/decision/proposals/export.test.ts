@@ -1,6 +1,6 @@
+import { TestDecisionsDataManager } from '@op/common/testing';
 import { expect } from 'vitest';
 
-import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
 import {
   accessTierGatingCell,
   describeDecisionAccessTierGating,

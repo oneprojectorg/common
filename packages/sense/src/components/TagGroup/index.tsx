@@ -85,7 +85,12 @@ function Tag({
         className={cn('max-w-full', tagSizeClasses[size], className)}
         {...props}
       >
-        <span className="truncate">{children}</span>
+        {/* Tags carry user content (categories), so isolate them — a tag whose
+            direction runs counter to the page otherwise reorders against the
+            remove button beside it. */}
+        <span className="truncate">
+          <bdi>{children}</bdi>
+        </span>
         {onRemove ? (
           <button
             type="button"

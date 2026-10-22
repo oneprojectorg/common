@@ -7,6 +7,8 @@ import { listAllDecisionInstancesRouter } from './listAllDecisionInstances';
 import { listAllOrganizationsRouter } from './listAllOrganizations';
 import { listAllUsersRouter } from './listAllUsers';
 import { listDecisionReviewAssignmentsRouter } from './listDecisionReviewAssignments';
+import { makeDecisionPublicRouter } from './makeDecisionPublic';
+import { removeDecisionPublicAccessRouter } from './removeDecisionPublicAccess';
 import { revertDecisionPhaseRouter } from './revertDecisionPhase';
 import { updateUserProfileRouter } from './updateUserProfile';
 
@@ -19,6 +21,8 @@ export const platformAdminRouter = mergeRouters(
   listAllOrganizationsRouter,
   listAllUsersRouter,
   listDecisionReviewAssignmentsRouter,
+  makeDecisionPublicRouter,
+  removeDecisionPublicAccessRouter,
   revertDecisionPhaseRouter,
   updateUserProfileRouter,
 );

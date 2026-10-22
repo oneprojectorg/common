@@ -8,6 +8,7 @@ import type {
   Post,
   PostToOrganization,
 } from '@op/api/encoders';
+import { PAGE_LIMIT, nextCursor } from '@op/common/client';
 import { useInfiniteScroll } from '@op/hooks';
 import { HorizontalList, HorizontalListItem } from '@op/sense/HorizontalList';
 import { SkeletonText } from '@op/sense/Skeleton';
@@ -35,7 +36,7 @@ export type ProfileFeedRenderProps = {
   infiniteScrollRef: RefCallback<HTMLElement>;
   shouldShowTrigger: boolean;
   isFetchingNextPage: boolean;
-  handleReactionClick: (postId: string, emoji: string) => void;
+  handleLikeClick: (postId: string) => Promise<unknown>;
   handleCommentClick: (post: Post, organization: Organization | null) => void;
   discussionModal: DiscussionModalState;
   handleModalClose: () => void;
@@ -43,7 +44,7 @@ export type ProfileFeedRenderProps = {
 
 export const ProfileFeedProvider = ({
   profile,
-  limit = 20,
+  limit = PAGE_LIMIT.md,
   children,
 }: {
   profile: Organization;
@@ -62,7 +63,7 @@ export const ProfileFeedProvider = ({
       limit,
     },
     {
-      getNextPageParam: (lastPage) => lastPage.next,
+      getNextPageParam: nextCursor,
       staleTime: 30 * 1000,
       refetchOnMount: true,
       refetchOnWindowFocus: true,
@@ -74,7 +75,7 @@ export const ProfileFeedProvider = ({
 
   const {
     discussionModal,
-    handleReactionClick,
+    handleLikeClick,
     handleCommentClick,
     handleModalClose,
   } = usePostFeedActions();
@@ -103,7 +104,7 @@ export const ProfileFeedProvider = ({
     infiniteScrollRef: ref,
     shouldShowTrigger,
     isFetchingNextPage,
-    handleReactionClick,
+    handleLikeClick,
     handleCommentClick,
     discussionModal,
     handleModalClose,
@@ -116,7 +117,7 @@ export const ProfileFeedCards = ({
   infiniteScrollRef,
   shouldShowTrigger,
   isFetchingNextPage,
-  handleReactionClick: onReactionClick,
+  handleLikeClick: onLikeClick,
   handleCommentClick: onCommentClick,
   discussionModal,
   handleModalClose: onModalClose,
@@ -142,7 +143,7 @@ export const ProfileFeedCards = ({
                 organization={postToOrg.organization ?? null}
                 user={user}
                 withLinks={false}
-                onReactionClick={onReactionClick}
+                onLikeClick={onLikeClick}
                 onCommentClick={onCommentClick}
               />
             </HorizontalListItem>
@@ -174,7 +175,7 @@ export const ProfileFeedList = ({
   infiniteScrollRef,
   shouldShowTrigger,
   isFetchingNextPage,
-  handleReactionClick: onReactionClick,
+  handleLikeClick: onLikeClick,
   handleCommentClick: onCommentClick,
   discussionModal,
   handleModalClose: onModalClose,
@@ -191,7 +192,7 @@ export const ProfileFeedList = ({
                 organization={postToOrg.organization ?? null}
                 user={user}
                 withLinks={false}
-                onReactionClick={onReactionClick}
+                onLikeClick={onLikeClick}
                 onCommentClick={onCommentClick}
                 className="p-4"
               />

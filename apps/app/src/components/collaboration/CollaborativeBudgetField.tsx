@@ -2,31 +2,19 @@
 
 import { useCollaborativeFragment } from '@/hooks/useCollaborativeFragment';
 import type { BudgetData } from '@op/common/client';
+import { DEFAULT_MONEY_CURRENCY, getCurrencySymbol } from '@op/common/client';
 import { NumberField } from '@op/sense/NumberField';
+import type { ReactNode } from 'react';
 import { useEffect, useMemo, useRef } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
 import { useCollaborativeDoc } from './CollaborativeDocContext';
 
-const DEFAULT_CURRENCY = 'USD';
-
-const getCurrencySymbol = (currency: string) =>
-  (0)
-    .toLocaleString(undefined, {
-      style: 'currency',
-      currency,
-      currencyDisplay: 'narrowSymbol',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    })
-    .replace(/\d/g, '')
-    .trim();
-
 interface CollaborativeBudgetFieldProps {
   /** Visible field label. Falls back to "Funding amount". */
   title?: string;
-  description?: string;
+  description?: ReactNode;
   required?: boolean;
   minAmount?: number;
   maxAmount?: number;
@@ -77,12 +65,12 @@ export function CollaborativeBudgetField({
   }, [onChange]);
 
   const budgetAmount = budget?.amount ?? null;
-  const currency = budget?.currency ?? DEFAULT_CURRENCY;
+  const currency = budget?.currency ?? DEFAULT_MONEY_CURRENCY;
   const currencySymbol = useMemo(() => getCurrencySymbol(currency), [currency]);
 
   const placeholderText = maxAmount
-    ? t('Max {amount}', { amount: maxAmount.toLocaleString() })
-    : t('Enter amount');
+    ? t('editor.budgetMaxHint', { amount: maxAmount.toLocaleString() })
+    : t('editor.budgetPlaceholder');
 
   const handleChange = (value: number | null) => {
     if (value === null) {
@@ -109,7 +97,7 @@ export function CollaborativeBudgetField({
 
   return (
     <NumberField
-      label={title ?? t('Funding amount')}
+      label={title ?? t('decisions.proposals.fundingAmountLabel')}
       description={description}
       required={required}
       aria-required={required || undefined}

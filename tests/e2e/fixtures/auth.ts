@@ -2,7 +2,7 @@ import {
   type CreateOrganizationResult,
   TEST_USER_DEFAULT_PASSWORD,
   createOrganization,
-} from '@op/test';
+} from '@op/common/testing/data';
 import type { Page } from '@playwright/test';
 import { test as base } from '@playwright/test';
 import {
@@ -47,6 +47,22 @@ interface TestFixtures {
   authenticatedPage: Page;
   authenticatedUser: AuthenticatedUser;
   org: CreateOrganizationResult;
+}
+
+/** posthog-js keeps an explicit opt-in/out answer under this key. */
+export const ANALYTICS_CONSENT_KEY_PREFIX = '__ph_opt_in_out_';
+
+/**
+ * The local-storage entry posthog-js writes when a visitor rejects tracking.
+ * Empty when no PostHog key is configured — the app doesn't raise the consent
+ * prompt without one, so there is nothing to answer.
+ */
+function analyticsConsentAnswered(): Array<{ name: string; value: string }> {
+  const token = process.env.NEXT_PUBLIC_POSTHOG_KEY;
+
+  return token
+    ? [{ name: `${ANALYTICS_CONSENT_KEY_PREFIX}${token}`, value: '0' }]
+    : [];
 }
 
 export function createSupabaseAdminClient(): SupabaseClient {
@@ -292,6 +308,10 @@ export const test = base.extend<TestFixtures, WorkerFixtures>({
                 name: storageKey,
                 value: sessionJson,
               },
+              // Answer the analytics consent prompt so it isn't sitting over
+              // the corner of every page in every other spec. Specs about the
+              // prompt itself clear this back out — see analytics-consent.spec.
+              ...analyticsConsentAnswered(),
             ],
           },
         ],

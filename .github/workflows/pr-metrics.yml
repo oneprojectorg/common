@@ -1,0 +1,117 @@
+name: PR metrics
+
+# Publishes what `tests.yml` measured, to the PR body, a sticky comment and a
+# check run. Not a required check.
+
+on:
+  pull_request_target:
+  workflow_run:
+    workflows: [Tests]
+    types: [completed]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pr-metrics-${{ github.event.pull_request.number || github.event.workflow_run.head_sha }}
+  cancel-in-progress: true
+
+jobs:
+  announce:
+    name: Announce
+    if: github.event_name == 'pull_request_target'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: write
+      checks: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PR_NUMBER: ${{ github.event.pull_request.number }}
+      HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+      RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+    steps:
+      - name: Checkout the publishing script from the base branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          sparse-checkout: scripts
+
+      - name: Post the placeholder comment and open the check run
+        run: node scripts/pr-metrics-publish.mjs announce
+
+  publish:
+    name: Publish
+    # Cancelled and skipped runs included: the head-SHA check below tells a
+    # superseded run (skip, the newer one publishes) from one that will never
+    # publish, which must still close out its placeholder.
+    if: >-
+      github.event_name == 'workflow_run' &&
+      github.event.workflow_run.event == 'pull_request_target'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      actions: read
+      contents: read
+      pull-requests: write
+      checks: write
+
+    env:
+      GH_TOKEN: ${{ github.token }}
+      HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+      RUN_URL: ${{ github.event.workflow_run.html_url }}
+
+    steps:
+      - name: Checkout the publishing script from the default branch
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: scripts
+
+      - name: Download the report and the comment
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: pr-metrics
+          path: ${{ runner.temp }}/in
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ github.token }}
+
+      # `pr.txt` left a job that ran the PR's own code, so the number in it is
+      # a claim: reduced to digits, then checked against the API.
+      - name: Resolve and verify the pull request
+        id: pr
+        env:
+          PR_FILE: ${{ runner.temp }}/in/pr.txt
+        run: |
+          set -uo pipefail
+          claimed=$( (tr -cd '0-9' < "$PR_FILE" | head -c 9) 2>/dev/null || true)
+          if [ -z "$claimed" ]; then
+            claimed=$(gh api "/repos/$GITHUB_REPOSITORY/commits/$HEAD_SHA/pulls" \
+              --jq 'map(select(.state == "open")) | first | .number // empty' || true)
+          fi
+          if [ -z "$claimed" ]; then
+            echo "No pull request for $HEAD_SHA; nothing to publish."
+            exit 0
+          fi
+          actual=$(gh api "/repos/$GITHUB_REPOSITORY/pulls/$claimed" --jq .head.sha || true)
+          if [ -z "$actual" ]; then
+            echo "Could not read the head SHA of PR #$claimed." >&2
+            exit 1
+          fi
+          if [ "$actual" != "$HEAD_SHA" ]; then
+            echo "PR #$claimed is at '$actual', not $HEAD_SHA — superseded, skipping."
+            exit 0
+          fi
+          echo "number=$claimed" >> "$GITHUB_OUTPUT"
+
+      # `runner` is a step-level context; naming it in the job's `env` makes
+      # GitHub reject the whole workflow file before any job starts.
+      - name: Rewrite the body line, the comment and the check run
+        if: steps.pr.outputs.number != ''
+        env:
+          PR_NUMBER: ${{ steps.pr.outputs.number }}
+          LINE_FILE: ${{ runner.temp }}/in/line.txt
+          COMMENT_FILE: ${{ runner.temp }}/in/comment.md
+          REPORT_FILE: ${{ runner.temp }}/in/report.md
+        run: node scripts/pr-metrics-publish.mjs publish

@@ -25,7 +25,9 @@ enabled = true
 enabled = false
 
 [inbucket]
-enabled = false
+enabled = true
+port = 56324
+smtp_port = 56325
 
 [storage]
 enabled = true
@@ -37,6 +39,10 @@ public = true
 [storage.buckets.avatars]
 public = true
 objects_path = "./storage/avatars"
+
+# Private. A reader needs a signed URL. See EXPORTS_BUCKET in @op/common.
+[storage.buckets.exports]
+public = false
 
 [auth]
 enabled = true
@@ -55,7 +61,7 @@ double_confirm_changes = true
 enable_confirmations = false
 secure_password_change = false
 max_frequency = "1s"
-otp_length = 6
+otp_length = 10
 otp_expiry = 3600
 
 [auth.email.template.confirmation]
@@ -68,9 +74,63 @@ content_path = "./supabase/templates/magiclink.html"
 
 [auth.sms]
 enable_signup = true
-enable_confirmations = false
+enable_confirmations = true
 template = "Your code is {{ .Code }} ."
 max_frequency = "5s"
+
+# GoTrue delegates the whole code lifecycle to Twilio Verify: Twilio generates
+# the code, sends it, and checks it. Verify is exempt from A2P 10DLC, so this
+# works before a campaign is approved, unlike plain `twilio`, which sends over
+# Programmable Messaging and fails with error 30034 until then.
+#
+# `message_service_sid` holds the VA... Verify service in this mode. The name
+# comes from the shared provider shape, not from a Messaging Service.
+#
+# Verify owns the copy and the expiry here, so `template` and `sms_otp_exp`
+# above do not reach the participant.
+#
+# `enable_confirmations = true` above turns GoTrue's SMS autoconfirm off, and
+# it has to stay off.
+#
+# GoTrue owns verification: it generates the code, sends it through Verify,
+# checks the reply, and issues the session. Our server never sees any of it.
+#
+# Autoconfirm sets `phone_confirmed_at` on a phone signup, and on a phone
+# change, without checking any code, and GoTrue issues a session for it. Anyone
+# who could reach GoTrue would then sign in as a number they do not hold.
+# Signing in by phone grants no network membership either way — that reads an
+# email address — so what autoconfirm hands out is the account itself.
+#
+# `smsAutoconfirm.test.ts` in services/api fails if this is turned back on.
+[auth.sms.twilio_verify]
+enabled = true
+account_sid = "env(TWILIO_ACCOUNT_SID)"
+auth_token = "env(TWILIO_AUTH_TOKEN)"
+message_service_sid = "env(TWILIO_VERIFY_SERVICE_SID)"
+
+# A listed number skips the provider entirely, so no test needs a credential.
+[auth.sms.test_otp]
+# A listed number skips the provider and accepts only its listed code, so
+# tests need no Twilio account and send no real text. One number per
+# concurrent claim: the e2e run is fullyParallel and sharded, and two tests
+# claiming the same number would race for it. 15005550006 is left to the demo
+# scripts; the rest belong to the suite.
+15005550006 = "123456"
+15005550007 = "234567"
+15005550008 = "345678"
+15005550009 = "456789"
+15005550010 = "567890"
+
+# Caps how many codes GoTrue itself sends in an hour, across all numbers.
+# `max_frequency` above only spaces out sends to one number, so it bounds
+# nothing when a caller rotates through many. Our own procedures add a
+# per-number count, but the `supabase` strategy reaches GoTrue directly and
+# never passes through them.
+#
+# This is not the control for premium-rate toll fraud. That one is Twilio's
+# geographic permissions, which decide the countries the account may text.
+[auth.rate_limit]
+sms_sent = 30
 
 [auth.mfa]
 max_enrolled_factors = 10

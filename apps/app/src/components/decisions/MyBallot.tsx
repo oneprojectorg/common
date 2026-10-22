@@ -4,14 +4,15 @@ import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import { Checkbox } from '@op/sense/Checkbox';
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@op/sense/Empty';
-import { Header3 } from '@op/sense/Header';
 import { LuLeaf } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
 import { ProposalCardView } from './ProposalCard';
+import { ProposalListSection } from './ProposalListSection';
 import { ProposalMasonry } from './ProposalMasonry';
 import { proposalHref } from './proposalHrefs';
+import { useOpenProposalInSheet } from './proposalSheetState';
 
 export const NoVoteFound = () => {
   const t = useTranslations();
@@ -21,7 +22,7 @@ export const NoVoteFound = () => {
         <EmptyMedia variant="icon">
           <LuLeaf className="size-6" />
         </EmptyMedia>
-        <EmptyTitle>{t('You did not vote in this process.')}</EmptyTitle>
+        <EmptyTitle>{t('decisions.review.noVoteCast')}</EmptyTitle>
       </EmptyHeader>
     </Empty>
   );
@@ -73,18 +74,17 @@ const MyBallotProposals = ({
   votedByProfileId: string;
 }) => {
   const t = useTranslations();
+  const openInSheet = useOpenProposalInSheet();
 
-  const [proposalsData] = trpc.decision.listProposals.useSuspenseQuery({
+  const [{ items: proposals }] = trpc.decision.listProposals.useSuspenseQuery({
     processInstanceId: instanceId,
     votedByProfileId,
   });
 
   return (
-    <div className="flex flex-col gap-4 pb-12">
-      <Header3>{t('My Ballot')}</Header3>
-
+    <ProposalListSection heading={t('decisions.review.myBallotHeading')}>
       <ProposalMasonry>
-        {proposalsData.proposals.map((proposal) => {
+        {proposals.map((proposal) => {
           const viewHref = proposalHref({
             profileId: proposal.profileId,
             decisionSlug,
@@ -96,8 +96,9 @@ const MyBallotProposals = ({
               key={proposal.id}
               proposal={proposal}
               href={viewHref}
+              onTitleClick={openInSheet(proposal.profileId)}
               selected
-              showStatusBadge={false}
+              headerBadge={null}
               // `voteCount` is null until results are published — a bare
               // "0 Total Votes" then would misreport the tally, so the votes
               // row stays hidden (same rule as the funded-proposals tab).
@@ -109,7 +110,7 @@ const MyBallotProposals = ({
                 <Checkbox
                   checked
                   disabled
-                  aria-label={t('Selected proposal')}
+                  aria-label={t('decisions.proposals.selectedProposalLabel')}
                   className="rounded-full"
                 />
               }
@@ -117,6 +118,6 @@ const MyBallotProposals = ({
           );
         })}
       </ProposalMasonry>
-    </div>
+    </ProposalListSection>
   );
 };

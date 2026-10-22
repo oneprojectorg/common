@@ -1,14 +1,24 @@
 import {
+  PAGE_LIMIT,
+  PROCESS_NAME_MAX_LENGTH,
+  PROCESS_NAME_MIN_LENGTH,
+  proposalSearchSchema,
   PROPOSAL_TITLE_MAX_LENGTH,
   REVIEWS_POLICIES,
   checkpointVersionSchema,
   instanceOptionalPhaseRefSchema,
+  paginated,
   phaseReviewSettingsSchema,
   proposalSchema,
   rubricTemplateSchema,
+  selectionPipelineSchema,
 } from '@op/common/client';
-import type { JSONContent } from '@op/common/client';
-import type { PhaseRules as CommonPhaseRules } from '@op/common/src/services/decision';
+import type { JSONContent, PhaseSettingsSchema } from '@op/common/client';
+import type {
+  PhaseRules as CommonPhaseRules,
+  ProposalTemplateSchema,
+  SelectionPipeline,
+} from '@op/common/src/services/decision';
 import {
   ProcessStatus,
   ProfileRelationshipType,
@@ -75,8 +85,12 @@ const phaseRulesEncoder = z.object({
       submit: z.boolean().optional(),
       edit: z.boolean().optional(),
       maxVotesPerMember: z.number().int().positive().optional(),
+      voterBudget: z.number().finite().positive().optional(),
+      voterCostField: z.string().trim().min(1).optional(),
+      ranked: z.boolean().optional(),
     })
     .optional(),
+  comments: z.object({ submit: z.boolean().optional() }).optional(),
   advancement: z
     .object({
       method: z.enum(['date', 'manual']),
@@ -186,12 +200,39 @@ export const decisionProcessWithSchemaListEncoder = z.object({
   hasMore: z.boolean(),
 });
 
+/**
+ * A stored headline, read back. Writes reject an empty title, so a blank value
+ * here is a row from before that: decode it as absent, and the fallback chains
+ * that render it (`currentPhase?.headline ?? t('...')`) take the default copy
+ * instead of rendering a blank heading.
+ */
+const storedHeadlineEncoder = z
+  .string()
+  .transform((headline) => (headline.trim() ? headline : undefined))
+  .optional();
+
+/**
+ * A headline on the way in. An empty (or whitespace-only) title is not valid
+ * content, so it is rejected rather than coerced. `null` is how a caller says
+ * "clear this headline" — the stored value is deleted and the page falls back
+ * to its default copy — and `undefined` leaves it unchanged.
+ */
+const nonBlankHeadline = z.string().trim().min(1, 'Headline cannot be empty');
+
+const phaseHeadlineInputEncoder = nonBlankHeadline.nullable().optional();
+
+/** Capped at the length the overview editor's character counter enforces. */
+const overviewHeadlineInputEncoder = nonBlankHeadline
+  .max(50)
+  .nullable()
+  .optional();
+
 /** Instance-specific phase data (overrides for dates, rules, settings) */
 export const instancePhaseDataEncoder = z.object({
   phaseId: z.string(),
   name: z.string().optional(),
   description: z.string().optional(),
-  headline: z.string().optional(),
+  headline: storedHeadlineEncoder,
   additionalInfo: z.string().optional(),
   startDate: z.string().optional(),
   endDate: z.string().optional(),
@@ -254,7 +295,7 @@ const overviewBodyInputEncoder = z.union([
  * Length is enforced only on the input encoder below.
  */
 const instanceOverviewEncoder = z.object({
-  headline: z.string().optional(),
+  headline: storedHeadlineEncoder,
   description: z.string().optional(),
   // Scope the read-path degradation to `body` alone: a malformed stored body
   // becomes undefined without taking headline/description down with it.
@@ -267,7 +308,7 @@ const instanceOverviewEncoder = z.object({
  * writes.
  */
 const instanceOverviewInputEncoder = z.object({
-  headline: z.string().max(50).optional(),
+  headline: overviewHeadlineInputEncoder,
   description: z.string().max(500).optional(),
   body: overviewBodyInputEncoder.optional(),
   // `heroImage` is intentionally NOT accepted here: it's a storage path that
@@ -341,10 +382,9 @@ export const decisionProfileWithSchemaEncoder = baseProfileEncoder.extend({
 });
 
 /** Decision profile list encoder  */
-export const decisionProfileWithSchemaListEncoder = z.object({
-  items: z.array(decisionProfileWithSchemaEncoder),
-  next: z.string().nullish(),
-});
+export const decisionProfileWithSchemaListEncoder = paginated(
+  decisionProfileWithSchemaEncoder,
+);
 
 /** Decision statuses visible on profile pages (excludes drafts) */
 export const VISIBLE_DECISION_STATUSES = [
@@ -356,7 +396,7 @@ export const VISIBLE_DECISION_STATUSES = [
 /** Decision profile filter schema */
 export const decisionProfileWithSchemaFilterSchema = z.object({
   cursor: z.string().nullish(),
-  limit: z.number().min(1).max(100).prefault(10),
+  limit: z.number().min(1).max(PAGE_LIMIT.max).prefault(PAGE_LIMIT.sm),
   orderBy: z.enum(['createdAt', 'updatedAt', 'name']).prefault('updatedAt'),
   dir: z.enum(['asc', 'desc']).prefault('desc'),
   search: z.string().optional(),
@@ -500,14 +540,11 @@ export const processInstanceListEncoder = z.object({
   hasMore: z.boolean(),
 });
 
-export const instanceResultsEncoder = z.object({
-  items: z.array(proposalSchema),
-  next: z.string().nullish(),
-});
+export const instanceResultsEncoder = paginated(proposalSchema);
 
 // Input Schemas
 export const createProcessInputSchema = z.object({
-  name: z.string().min(3).max(256),
+  name: z.string().min(PROCESS_NAME_MIN_LENGTH).max(PROCESS_NAME_MAX_LENGTH),
   description: z.string().optional(),
   processSchema: processSchemaEncoder,
 });
@@ -516,22 +553,62 @@ export const updateProcessInputSchema = createProcessInputSchema.partial();
 
 export const createInstanceInputSchema = z.object({
   processId: z.uuid(),
-  name: z.string().min(3).max(256),
+  name: z.string().min(PROCESS_NAME_MIN_LENGTH).max(PROCESS_NAME_MAX_LENGTH),
   description: z.string().optional(),
   instanceData: instanceDataEncoder,
 });
 
 export const createInstanceFromTemplateInputSchema = z.object({
   templateId: z.uuid(),
-  name: z.string().min(3).max(256),
+  name: z.string().min(PROCESS_NAME_MIN_LENGTH).max(PROCESS_NAME_MAX_LENGTH),
 });
 
 /** Input schema for phase overrides with datetime validation */
 const instancePhaseDataInputEncoder = instancePhaseDataEncoder.extend({
   startDate: z.string().datetime({ offset: true }).optional(),
   endDate: z.string().datetime({ offset: true }).optional(),
+  // Overrides the read-path encoder: `''` is rejected here rather than decoded
+  // as absent, and `null` is the explicit "clear this headline".
+  headline: phaseHeadlineInputEncoder,
   // `null` clears the phase-level rubric; omitted leaves it unchanged.
   rubricTemplate: rubricTemplateSchema.nullable().optional(),
+});
+
+const isJsonObject = (value: unknown) =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+
+// selectionPipelineEncoder strips block-specific fields; pass the pipeline whole.
+export const phaseDataEncoder = instancePhaseDataEncoder
+  .omit({ phaseId: true, name: true })
+  .extend({
+    selectionPipeline: z.custom<SelectionPipeline>(isJsonObject).optional(),
+    proposalTemplate: z.custom<ProposalTemplateSchema>(isJsonObject).optional(),
+  });
+
+// name lives on the phase's profile; the service validates both schemas.
+export const phaseDataInputEncoder = instancePhaseDataInputEncoder
+  .omit({ phaseId: true, name: true })
+  .extend({
+    settingsSchema: z.custom<PhaseSettingsSchema>(isJsonObject).optional(),
+    selectionPipeline: selectionPipelineSchema.optional(),
+    proposalTemplate: z
+      .custom<ProposalTemplateSchema>(isJsonObject)
+      .nullable()
+      .optional(),
+  });
+
+// A new phase has nothing to clear, so `null` is dropped here.
+export const createPhaseDataInputEncoder = phaseDataInputEncoder.extend({
+  headline: phaseHeadlineInputEncoder.transform((value) => value ?? undefined),
+  rubricTemplate: rubricTemplateSchema
+    .nullable()
+    .optional()
+    .transform((value) => value ?? undefined),
+  proposalTemplate: z
+    .custom<ProposalTemplateSchema>(isJsonObject)
+    .nullable()
+    .optional()
+    .transform((value) => value ?? undefined),
 });
 
 export const updateDecisionInstanceInputSchema = z.object({
@@ -651,7 +728,7 @@ export const transitionCheckResultEncoder = z.object({
 
 // Pagination Schema
 export const paginationInputSchema = z.object({
-  limit: z.number().min(1).max(100).prefault(20),
+  limit: z.number().min(1).max(PAGE_LIMIT.max).prefault(PAGE_LIMIT.md),
   offset: z.number().min(0).prefault(0),
 });
 
@@ -677,6 +754,7 @@ export const proposalFilterSchema = instanceOptionalPhaseRefSchema.extend({
   submittedByProfileId: z.uuid().optional(),
   status: z.enum(ProposalStatus).optional(),
   categoryId: z.string().optional(),
+  search: proposalSearchSchema,
   dir: z.enum(['asc', 'desc']).optional(),
   /**
    * Restrict results to proposals voted on by this profile. Bypasses phase
@@ -690,11 +768,16 @@ export const proposalFilterSchema = instanceOptionalPhaseRefSchema.extend({
    * the reviewer's "Other proposals" tab.
    */
   excludeAssignedForReview: z.boolean().optional(),
+  /**
+   * The "Not advanced" filter: rejected proposals plus, on the current phase,
+   * those earlier phases left behind. Omitted lists the phase's other proposals.
+   */
+  notAdvanced: z.boolean().optional(),
   /** When set to 'results', all proposals are returned as non-editable */
   phase: z.enum(['results']).optional(),
   /** Keyset pagination cursor from the previous page's `next`. */
   cursor: z.string().nullish(),
-  limit: z.number().min(1).max(100).prefault(20),
+  limit: z.number().min(1).max(PAGE_LIMIT.max).prefault(PAGE_LIMIT.md),
 });
 
 /**
@@ -707,8 +790,10 @@ export const proposalLocationsFilterSchema =
     submittedByProfileId: z.uuid().optional(),
     status: z.enum(ProposalStatus).optional(),
     categoryId: z.string().optional(),
+    search: proposalSearchSchema,
     votedByProfileId: z.uuid().optional(),
     excludeAssignedForReview: z.boolean().optional(),
+    notAdvanced: z.boolean().optional(),
     phase: z.enum(['results']).optional(),
   });
 
@@ -718,15 +803,12 @@ export const decisionProfileEncoder = baseProfileEncoder.extend({
 });
 
 // Decision Profile List Encoder
-export const decisionProfileListEncoder = z.object({
-  items: z.array(decisionProfileEncoder),
-  next: z.string().nullish(),
-});
+export const decisionProfileListEncoder = paginated(decisionProfileEncoder);
 
 // Decision Profile Filter Schema
 export const decisionProfileFilterSchema = z.object({
   cursor: z.string().nullish(),
-  limit: z.number().min(1).max(100).prefault(10),
+  limit: z.number().min(1).max(PAGE_LIMIT.max).prefault(PAGE_LIMIT.sm),
   orderBy: z.enum(['createdAt', 'updatedAt', 'name']).prefault('updatedAt'),
   dir: z.enum(['asc', 'desc']).prefault('desc'),
   search: z.string().optional(),

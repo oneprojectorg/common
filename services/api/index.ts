@@ -10,6 +10,15 @@ export {
   type ModerationWebhookRequest,
 } from './src/moderation/handleModerationWebhookRequest';
 export {
+  handleTwilioStatusWebhookRequest,
+  type TwilioStatusWebhookRequest,
+} from './src/notification/handleTwilioStatusWebhookRequest';
+export {
+  handleTwilioInboundWebhookRequest,
+  type TwilioInboundWebhookRequest,
+} from './src/notification/handleTwilioInboundWebhookRequest';
+export { resolveWebhookUrl } from './src/notification/resolveWebhookUrl';
+export {
   unwrapResponseWithChannels,
   wrapResponseWithChannels,
   type WrappedResponse,
