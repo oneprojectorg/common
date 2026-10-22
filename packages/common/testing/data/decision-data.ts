@@ -6,6 +6,7 @@ import {
   accessRolePermissionsOnAccessZones,
   accessRoles,
   customForms,
+  decisionChatLines,
   decisionProcesses,
   processInstances,
   profileUserToAccessRoles,
@@ -986,4 +987,25 @@ export async function createCustomForm({
   }
 
   return form;
+}
+
+export interface CreateDecisionChatLineOptions {
+  processInstanceId: string;
+  phoneNumber: string;
+}
+
+export async function createDecisionChatLine({
+  processInstanceId,
+  phoneNumber,
+}: CreateDecisionChatLineOptions) {
+  const [line] = await db
+    .insert(decisionChatLines)
+    .values({ processInstanceId, phoneNumber })
+    .returning();
+
+  if (!line) {
+    throw new Error('Failed to create decision chat line');
+  }
+
+  return line;
 }
