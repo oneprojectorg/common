@@ -8,57 +8,46 @@ import {
   createPaginatedRowModel,
   createSortedRowModel,
   filterFn_includesString,
+  globalFilteringFeature,
   rowPaginationFeature,
   rowSelectionFeature,
   rowSortingFeature,
   sortFn_alphanumeric,
   sortFn_basic,
+  sortFn_datetime,
   sortFn_text,
   tableFeatures,
   useTable,
+  type CellData,
   type Column,
   type ColumnDef,
-  type ColumnFiltersState,
-  type ColumnVisibilityState,
-  type ReactTable,
   type RowData,
   type RowSelectionState,
   type SortingState,
+  type TableFeatures,
 } from '@tanstack/react-table';
-import { useId, useState } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import {
-  LuArrowDown,
-  LuArrowUp,
-  LuChevronLeft,
-  LuChevronRight,
-  LuChevronsLeft,
-  LuChevronsRight,
+  LuChevronDown,
+  LuChevronUp,
   LuChevronsUpDown,
-  LuEyeOff,
-  LuSettings2,
+  LuCircleAlert,
 } from 'react-icons/lu';
 
 import { cn } from '../../lib/utils';
+import { PaginationBar, type PaginationBarBounds } from '../PaginationBar';
+import { Alert, AlertTitle } from '../ui/alert';
 import { Button } from '../ui/button';
 import { Checkbox } from '../ui/checkbox';
 import {
-  DropdownMenu,
-  DropdownMenuCheckboxItem,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '../ui/dropdown-menu';
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyTitle,
+} from '../ui/empty';
 import { Input } from '../ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '../ui/select';
+import { Skeleton } from '../ui/skeleton';
 import {
   Table,
   TableBody,
@@ -66,16 +55,25 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  TableRowHeader,
 } from '../ui/table';
 
-/**
- * The TanStack Table v9 features every DataTable uses: sorting, filtering,
- * column visibility, row selection and pagination. Build column definitions
- * against it with `createDataTableColumns`.
- */
+declare module '@tanstack/react-table' {
+  interface ColumnMeta<
+    TFeatures extends TableFeatures,
+    TData extends RowData,
+    TValue extends CellData = CellData,
+  > {
+    /** `end` for numbers and row actions: right-aligned in LTR. */
+    align?: 'start' | 'end';
+  }
+}
+
+/** The TanStack Table v9 features a DataTable uses. */
 export const dataTableFeatures = tableFeatures({
   columnFilteringFeature,
   columnVisibilityFeature,
+  globalFilteringFeature,
   rowPaginationFeature,
   rowSelectionFeature,
   rowSortingFeature,
@@ -86,6 +84,7 @@ export const dataTableFeatures = tableFeatures({
   sortFns: {
     alphanumeric: sortFn_alphanumeric,
     basic: sortFn_basic,
+    datetime: sortFn_datetime,
     text: sortFn_text,
   },
 });
@@ -99,161 +98,337 @@ export type DataTableColumnDef<TData extends RowData> = ColumnDef<
 
 /** Every string the table renders. Sense is i18n-agnostic: pass translations in. */
 export interface DataTableCopy {
+  searchLabel: string;
+  searchPlaceholder: string;
   noResults: string;
-  filterLabel: string;
-  filterPlaceholder: string;
-  view: string;
-  toggleColumns: string;
-  rowsPerPage: string;
-  page: (page: number, pageCount: number) => string;
-  selected: (selected: number, total: number) => string;
-  firstPage: string;
-  previousPage: string;
-  nextPage: string;
-  lastPage: string;
-  sortAscending: string;
-  sortDescending: string;
-  hideColumn: string;
+  noResultsDescription: string;
+  clearSearch: string;
+  selected: (count: number) => string;
+  clearSelection: string;
   selectAll: string;
-  selectRow: string;
+  selectRow: (rowLabel: string) => string;
+  /** The noun in the range readout: "1 - 8 of 12 proposals". */
+  items: string;
+  range?: (bounds: PaginationBarBounds) => ReactNode;
+  previous: string;
+  next: string;
+  pagination: string;
+  loading: string;
 }
 
 export interface DataTableProps<TData extends RowData> {
+  /** Plain-string `header`s become sortable header buttons; `meta.align: 'end'` right-aligns a column. */
   columns: DataTableColumnDef<TData>[];
   data: TData[];
-  /** Id of the column the search box filters. No id, no search box. */
-  filterColumn?: string;
-  /** Show the column-visibility menu. */
-  showViewOptions?: boolean;
-  /** Rows per page at first render. */
+  /** A stable id per row, so a selection survives sorting and paging. */
+  getRowId?: (row: TData) => string;
+  /** Id of the column that names each row; its cells render as row headers. */
+  rowHeader?: string;
+  /** The row's name, for its checkbox's accessible name ("Select …"). */
+  rowLabel?: (row: TData) => string;
+  /** Add a checkbox column and the selection bar. */
+  selectable?: boolean;
+  /** Bulk actions for the selection bar, given the selected rows. */
+  selectionActions?: (selected: TData[]) => ReactNode;
+  /** Secondary actions at the end of the toolbar. */
+  actions?: ReactNode;
+  /** Show the search box. It searches every column. */
+  searchable?: boolean;
+  /** The search text at first render. */
+  initialSearch?: string;
+  /** The sort at first render, e.g. `[{ id: 'updated', desc: true }]`. */
+  initialSorting?: SortingState;
   pageSize?: number;
-  /** Choices in the rows-per-page menu. */
-  pageSizes?: number[];
+  /** Render the real header over five skeleton rows. */
+  loading?: boolean;
+  /** An error shown above the table; the rows stay visible. */
+  error?: ReactNode;
   copy?: Partial<DataTableCopy>;
   className?: string;
 }
 
 const DEFAULT_COPY: DataTableCopy = {
-  noResults: 'No results.',
-  filterLabel: 'Filter',
-  filterPlaceholder: 'Filter…',
-  view: 'View',
-  toggleColumns: 'Toggle columns',
-  rowsPerPage: 'Rows per page',
-  page: (page, pageCount) => `Page ${page} of ${pageCount}`,
-  selected: (selected, total) => `${selected} of ${total} row(s) selected.`,
-  firstPage: 'Go to first page',
-  previousPage: 'Go to previous page',
-  nextPage: 'Go to next page',
-  lastPage: 'Go to last page',
-  sortAscending: 'Asc',
-  sortDescending: 'Desc',
-  hideColumn: 'Hide',
-  selectAll: 'Select all',
-  selectRow: 'Select row',
+  searchLabel: 'Search',
+  searchPlaceholder: 'Search',
+  noResults: 'No results',
+  noResultsDescription: 'Clear the search or try another word.',
+  clearSearch: 'Clear search',
+  selected: (count) => `${count} selected`,
+  clearSelection: 'Clear selection',
+  selectAll: 'Select all on this page',
+  selectRow: (rowLabel) => `Select ${rowLabel}`,
+  items: 'items',
+  previous: 'Previous',
+  next: 'Next',
+  pagination: 'Pages',
+  loading: 'Loading',
 };
 
+const SELECT_COLUMN = 'select';
+const SKELETON_ROWS = [0, 1, 2, 3, 4];
+
 /**
- * A data table: sortable column headers, a search box, column visibility,
- * row selection and pagination, on TanStack Table v9 and the `Table` primitive.
- * Define columns with `createDataTableColumns`; give a column a sortable,
- * hideable header with `DataTableColumnHeader`, and a checkbox column with
- * `dataTableSelectColumn`. Use the plain `Table` for static content.
+ * A table for records people work through: search, sort one column at a time,
+ * select rows and act on the selection, and page. Built on TanStack Table v9
+ * and the `Table`, `Checkbox`, `Button`, `Input`, `PaginationBar`, `Empty`,
+ * `Skeleton` and `Alert` primitives. Use plain `Table` for rows that are read
+ * and never worked on.
  */
 export function DataTable<TData extends RowData>({
   columns,
   data,
-  filterColumn,
-  showViewOptions = true,
+  getRowId,
+  rowHeader,
+  rowLabel,
+  selectable = false,
+  selectionActions,
+  actions,
+  searchable = true,
+  initialSearch = '',
+  initialSorting = [],
   pageSize = 10,
-  pageSizes = [10, 20, 30, 40, 50],
+  loading = false,
+  error,
   copy,
   className,
 }: DataTableProps<TData>) {
   const text = { ...DEFAULT_COPY, ...copy };
-  const [sorting, setSorting] = useState<SortingState>([]);
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
-  const [columnVisibility, setColumnVisibility] =
-    useState<ColumnVisibilityState>({});
+  const [sorting, setSorting] = useState<SortingState>(initialSorting);
+  const [globalFilter, setGlobalFilter] = useState(initialSearch);
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
+
+  const allColumns = useMemo(
+    () => (selectable ? [selectColumn<TData>(), ...columns] : columns),
+    [columns, selectable],
+  );
 
   const table = useTable({
     features: dataTableFeatures,
     data,
-    columns,
-    state: { sorting, columnFilters, columnVisibility, rowSelection },
+    columns: allColumns,
+    getRowId: getRowId ? (row) => getRowId(row) : undefined,
+    state: { sorting, globalFilter, rowSelection },
     initialState: { pagination: { pageIndex: 0, pageSize } },
-    enableRowSelection: true,
+    enableMultiSort: false,
+    enableSortingRemoval: false,
+    enableRowSelection: selectable,
+    globalFilterFn: 'includesString',
     onSortingChange: setSorting,
-    onColumnFiltersChange: setColumnFilters,
-    onColumnVisibilityChange: setColumnVisibility,
+    onGlobalFilterChange: setGlobalFilter,
     onRowSelectionChange: setRowSelection,
   });
 
-  const filter = filterColumn ? table.getColumn(filterColumn) : undefined;
+  const selectedRows = table.getSelectedRowModel().rows;
+  const filteredCount = table.getFilteredRowModel().rows.length;
+  const { pageIndex } = table.state.pagination;
   const rows = table.getRowModel().rows;
+  const columnCount = table.getVisibleLeafColumns().length;
 
   return (
     <div className={cn('flex flex-col gap-4', className)}>
-      {(filter || showViewOptions) && (
-        <div className="flex items-center gap-2">
-          {filter && (
+      {selectedRows.length > 0 ? (
+        <div className="flex min-h-11 items-center gap-3">
+          <span className="text-sm text-muted-foreground" aria-live="polite">
+            {text.selected(selectedRows.length)}
+          </span>
+          {selectionActions?.(selectedRows.map((row) => row.original))}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="ms-auto"
+            onClick={() => table.resetRowSelection(true)}
+          >
+            {text.clearSelection}
+          </Button>
+        </div>
+      ) : searchable || actions ? (
+        <div className="flex min-h-11 items-center gap-3">
+          {searchable && (
             <Input
-              aria-label={text.filterLabel}
-              placeholder={text.filterPlaceholder}
-              value={String(filter.getFilterValue() ?? '')}
-              onChange={(event) => filter.setFilterValue(event.target.value)}
-              className="h-8 max-w-sm"
+              type="search"
+              aria-label={text.searchLabel}
+              placeholder={text.searchPlaceholder}
+              value={globalFilter}
+              disabled={loading}
+              onChange={(event) => table.setGlobalFilter(event.target.value)}
+              className="max-w-sm"
             />
           )}
-          {showViewOptions && (
-            <DataTableViewOptions table={table} copy={copy} />
-          )}
+          {actions && <div className="ms-auto flex gap-2">{actions}</div>}
         </div>
+      ) : null}
+
+      {error && (
+        <Alert variant="destructive">
+          <LuCircleAlert aria-hidden />
+          <AlertTitle>{error}</AlertTitle>
+        </Alert>
       )}
-      <div className="overflow-hidden rounded-lg border">
-        <Table>
-          <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id} colSpan={header.colSpan}>
-                    {header.isPlaceholder ? null : (
-                      <table.FlexRender header={header} />
-                    )}
+
+      <Table aria-busy={loading || undefined}>
+        <TableHeader>
+          {table.getHeaderGroups().map((headerGroup) => (
+            <TableRow key={headerGroup.id}>
+              {headerGroup.headers.map((header) => {
+                const { column } = header;
+                const end = column.columnDef.meta?.align === 'end';
+                if (header.isPlaceholder) {
+                  return <TableHead key={header.id} />;
+                }
+                if (column.id === SELECT_COLUMN) {
+                  return (
+                    <TableHead key={header.id} className="w-10">
+                      <Checkbox
+                        aria-label={text.selectAll}
+                        disabled={loading || rows.length === 0}
+                        checked={table.getIsAllPageRowsSelected()}
+                        indeterminate={table.getIsSomePageRowsSelected()}
+                        onCheckedChange={(checked) =>
+                          table.toggleAllPageRowsSelected(checked)
+                        }
+                      />
+                    </TableHead>
+                  );
+                }
+                const label = <table.FlexRender header={header} />;
+                if (!column.getCanSort() || loading) {
+                  return (
+                    <TableHead
+                      key={header.id}
+                      className={cn(end && 'text-end')}
+                    >
+                      {label}
+                    </TableHead>
+                  );
+                }
+                return (
+                  <TableHead
+                    key={header.id}
+                    aria-sort={ariaSort(column)}
+                    className={cn(end && 'text-end')}
+                  >
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className={cn('gap-1', end ? '-me-2' : '-ms-2')}
+                      onClick={() => column.toggleSorting()}
+                    >
+                      {label}
+                      <SortIcon column={column} />
+                    </Button>
                   </TableHead>
+                );
+              })}
+            </TableRow>
+          ))}
+        </TableHeader>
+        <TableBody>
+          {loading ? (
+            SKELETON_ROWS.map((index) => (
+              <TableRow key={index}>
+                {table.getVisibleLeafColumns().map((column) => (
+                  <TableCell key={column.id}>
+                    <Skeleton
+                      className={cn(
+                        column.id === SELECT_COLUMN ? 'size-4' : 'h-4 w-24',
+                        column.columnDef.meta?.align === 'end' && 'ms-auto',
+                      )}
+                    />
+                  </TableCell>
                 ))}
               </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {rows.length ? (
-              rows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  data-state={row.getIsSelected() ? 'selected' : undefined}
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
-                      <table.FlexRender cell={cell} />
+            ))
+          ) : rows.length ? (
+            rows.map((row) => (
+              <TableRow
+                key={row.id}
+                data-state={row.getIsSelected() ? 'selected' : undefined}
+              >
+                {row.getVisibleCells().map((cell) => {
+                  const end = cell.column.columnDef.meta?.align === 'end';
+                  if (cell.column.id === SELECT_COLUMN) {
+                    return (
+                      <TableCell key={cell.id}>
+                        <Checkbox
+                          aria-label={text.selectRow(
+                            rowLabel ? rowLabel(row.original) : row.id,
+                          )}
+                          checked={row.getIsSelected()}
+                          onCheckedChange={(checked) =>
+                            row.toggleSelected(checked)
+                          }
+                        />
+                      </TableCell>
+                    );
+                  }
+                  const content = <table.FlexRender cell={cell} />;
+                  return cell.column.id === rowHeader ? (
+                    <TableRowHeader
+                      key={cell.id}
+                      className={cn(end && 'text-end')}
+                    >
+                      {content}
+                    </TableRowHeader>
+                  ) : (
+                    <TableCell key={cell.id} className={cn(end && 'text-end')}>
+                      {content}
                     </TableCell>
-                  ))}
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell
-                  colSpan={table.getVisibleLeafColumns().length}
-                  className="h-24 text-center"
-                >
-                  {text.noResults}
-                </TableCell>
+                  );
+                })}
               </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
-      <DataTablePagination table={table} pageSizes={pageSizes} copy={copy} />
+            ))
+          ) : (
+            <TableRow>
+              <TableCell colSpan={columnCount}>
+                <Empty className="border-0">
+                  <EmptyHeader>
+                    <EmptyTitle>{text.noResults}</EmptyTitle>
+                    {globalFilter && (
+                      <EmptyDescription>
+                        {text.noResultsDescription}
+                      </EmptyDescription>
+                    )}
+                  </EmptyHeader>
+                  {globalFilter && (
+                    <EmptyContent>
+                      <Button
+                        variant="outline"
+                        onClick={() => table.setGlobalFilter('')}
+                      >
+                        {text.clearSearch}
+                      </Button>
+                    </EmptyContent>
+                  )}
+                </Empty>
+              </TableCell>
+            </TableRow>
+          )}
+        </TableBody>
+      </Table>
+      {loading && (
+        <span className="sr-only" aria-live="polite">
+          {text.loading}
+        </span>
+      )}
+
+      {!loading && (
+        <PaginationBar
+          range={{
+            totalItems: filteredCount,
+            itemsPerPage: pageSize,
+            page: pageIndex,
+            label: text.items,
+          }}
+          renderRange={text.range}
+          previous={
+            table.getCanPreviousPage() ? () => table.previousPage() : undefined
+          }
+          next={table.getCanNextPage() ? () => table.nextPage() : undefined}
+          previousLabel={text.previous}
+          nextLabel={text.next}
+          navLabel={text.pagination}
+        />
+      )}
     </div>
   );
 }
@@ -263,238 +438,31 @@ export function createDataTableColumns<TData extends RowData>() {
   return createColumnHelper<DataTableFeatures, TData>();
 }
 
-/** A leading checkbox column that selects rows. */
-export function dataTableSelectColumn<TData extends RowData>(
-  copy?: Partial<Pick<DataTableCopy, 'selectAll' | 'selectRow'>>,
-): DataTableColumnDef<TData> {
-  const text = { ...DEFAULT_COPY, ...copy };
+/** The checkbox column; DataTable renders its header and cells itself. */
+function selectColumn<TData extends RowData>(): DataTableColumnDef<TData> {
   return createDataTableColumns<TData>().display({
-    id: 'select',
-    header: ({ table }) => (
-      <Checkbox
-        aria-label={text.selectAll}
-        checked={table.getIsAllPageRowsSelected()}
-        indeterminate={
-          table.getIsSomePageRowsSelected() && !table.getIsAllPageRowsSelected()
-        }
-        onCheckedChange={(checked) => table.toggleAllPageRowsSelected(checked)}
-      />
-    ),
-    cell: ({ row }) => (
-      <Checkbox
-        aria-label={text.selectRow}
-        checked={row.getIsSelected()}
-        onCheckedChange={(checked) => row.toggleSelected(checked)}
-      />
-    ),
+    id: SELECT_COLUMN,
     enableSorting: false,
-    enableHiding: false,
+    enableGlobalFilter: false,
   });
 }
 
-/** A column header that sorts and hides its column from a menu. */
-export function DataTableColumnHeader<TData extends RowData, TValue>({
+function SortIcon<TData extends RowData, TValue extends CellData>({
   column,
-  title,
-  copy,
-  className,
 }: {
   column: Column<DataTableFeatures, TData, TValue>;
-  title: string;
-  copy?: Partial<DataTableCopy>;
-  className?: string;
 }) {
-  const text = { ...DEFAULT_COPY, ...copy };
-  if (!column.getCanSort()) {
-    return <div className={className}>{title}</div>;
-  }
   const sorted = column.getIsSorted();
-
-  return (
-    <div className={cn('flex items-center gap-2', className)}>
-      <DropdownMenu>
-        <DropdownMenuTrigger
-          render={
-            <Button variant="ghost" size="sm" className="-ms-3 font-strong" />
-          }
-        >
-          <span>{title}</span>
-          {sorted === 'desc' ? (
-            <LuArrowDown aria-hidden />
-          ) : sorted === 'asc' ? (
-            <LuArrowUp aria-hidden />
-          ) : (
-            <LuChevronsUpDown aria-hidden />
-          )}
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="start">
-          <DropdownMenuItem onClick={() => column.toggleSorting(false)}>
-            <LuArrowUp aria-hidden />
-            {text.sortAscending}
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => column.toggleSorting(true)}>
-            <LuArrowDown aria-hidden />
-            {text.sortDescending}
-          </DropdownMenuItem>
-          {column.getCanHide() && (
-            <>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => column.toggleVisibility(false)}>
-                <LuEyeOff aria-hidden />
-                {text.hideColumn}
-              </DropdownMenuItem>
-            </>
-          )}
-        </DropdownMenuContent>
-      </DropdownMenu>
-    </div>
-  );
+  if (sorted === 'asc') return <LuChevronUp aria-hidden />;
+  if (sorted === 'desc') return <LuChevronDown aria-hidden />;
+  return <LuChevronsUpDown aria-hidden className="text-muted-foreground" />;
 }
 
-/** The selection count, rows-per-page menu and page controls under a table. */
-export function DataTablePagination<TData extends RowData>({
-  table,
-  pageSizes = [10, 20, 30, 40, 50],
-  copy,
-}: {
-  table: ReactTable<DataTableFeatures, TData>;
-  pageSizes?: number[];
-  copy?: Partial<DataTableCopy>;
-}) {
-  const text = { ...DEFAULT_COPY, ...copy };
-  const rowsPerPageId = useId();
-  const { pageIndex, pageSize } = table.state.pagination;
-  const items = pageSizes.map((size) => ({
-    value: String(size),
-    label: String(size),
-  }));
-
-  return (
-    <div className="flex flex-wrap items-center justify-between gap-4 px-2">
-      <div className="flex-1 text-sm text-muted-foreground" aria-live="polite">
-        {text.selected(
-          table.getFilteredSelectedRowModel().rows.length,
-          table.getFilteredRowModel().rows.length,
-        )}
-      </div>
-      <div className="flex items-center gap-6">
-        <div className="flex items-center gap-2">
-          <span id={rowsPerPageId} className="text-sm font-strong">
-            {text.rowsPerPage}
-          </span>
-          <Select
-            items={items}
-            value={String(pageSize)}
-            onValueChange={(value) => table.setPageSize(Number(value))}
-          >
-            <SelectTrigger
-              size="sm"
-              className="w-20"
-              aria-labelledby={rowsPerPageId}
-            >
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {items.map((item) => (
-                <SelectItem key={item.value} value={item.value}>
-                  {item.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="text-sm font-strong" aria-live="polite">
-          {text.page(pageIndex + 1, Math.max(table.getPageCount(), 1))}
-        </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="icon-sm"
-            className="hidden lg:flex"
-            aria-label={text.firstPage}
-            onClick={() => table.setPageIndex(0)}
-            disabled={!table.getCanPreviousPage()}
-          >
-            <LuChevronsLeft aria-hidden className="rtl:-scale-x-100" />
-          </Button>
-          <Button
-            variant="outline"
-            size="icon-sm"
-            aria-label={text.previousPage}
-            onClick={() => table.previousPage()}
-            disabled={!table.getCanPreviousPage()}
-          >
-            <LuChevronLeft aria-hidden className="rtl:-scale-x-100" />
-          </Button>
-          <Button
-            variant="outline"
-            size="icon-sm"
-            aria-label={text.nextPage}
-            onClick={() => table.nextPage()}
-            disabled={!table.getCanNextPage()}
-          >
-            <LuChevronRight aria-hidden className="rtl:-scale-x-100" />
-          </Button>
-          <Button
-            variant="outline"
-            size="icon-sm"
-            className="hidden lg:flex"
-            aria-label={text.lastPage}
-            onClick={() => table.setPageIndex(table.getPageCount() - 1)}
-            disabled={!table.getCanNextPage()}
-          >
-            <LuChevronsRight aria-hidden className="rtl:-scale-x-100" />
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/** A menu that shows and hides the table's hideable columns. */
-export function DataTableViewOptions<TData extends RowData>({
-  table,
-  copy,
-}: {
-  table: ReactTable<DataTableFeatures, TData>;
-  copy?: Partial<DataTableCopy>;
-}) {
-  const text = { ...DEFAULT_COPY, ...copy };
-  const columns = table
-    .getAllColumns()
-    .filter((column) => column.accessorFn !== undefined && column.getCanHide());
-
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger
-        render={<Button variant="outline" size="sm" className="ms-auto" />}
-      >
-        <LuSettings2 aria-hidden />
-        {text.view}
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-40">
-        <DropdownMenuGroup>
-          <DropdownMenuLabel>{text.toggleColumns}</DropdownMenuLabel>
-          <DropdownMenuSeparator />
-          {columns.map((column) => (
-            <DropdownMenuCheckboxItem
-              key={column.id}
-              checked={column.getIsVisible()}
-              onCheckedChange={(checked) => column.toggleVisibility(checked)}
-            >
-              {columnLabel(column)}
-            </DropdownMenuCheckboxItem>
-          ))}
-        </DropdownMenuGroup>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-}
-
-/** A column's header text when it is a plain string, else its id. */
-function columnLabel<TData extends RowData, TValue>(
+function ariaSort<TData extends RowData, TValue extends CellData>(
   column: Column<DataTableFeatures, TData, TValue>,
-): string {
-  const header = column.columnDef.header;
-  return typeof header === 'string' ? header : column.id;
+): 'ascending' | 'descending' | 'none' {
+  const sorted = column.getIsSorted();
+  if (sorted === 'asc') return 'ascending';
+  if (sorted === 'desc') return 'descending';
+  return 'none';
 }

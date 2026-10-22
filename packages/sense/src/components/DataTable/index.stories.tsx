@@ -1,179 +1,248 @@
-import { Badge } from '@op/sense/Badge';
 import { Button } from '@op/sense/Button';
 import {
   DataTable,
-  DataTableColumnHeader,
   createDataTableColumns,
-  dataTableSelectColumn,
   type DataTableColumnDef,
 } from '@op/sense/DataTable';
 import { DirectionProvider } from '@op/sense/Direction';
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuGroup,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@op/sense/DropdownMenu';
+import { StatusBadge, type StatusBadgeProps } from '@op/sense/StatusBadge';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { LuEllipsis } from 'react-icons/lu';
 
-interface Payment {
+interface Proposal {
   id: string;
-  amount: number;
-  status: 'pending' | 'processing' | 'success' | 'failed';
-  email: string;
+  title: string;
+  organization: string;
+  status: keyof typeof STATUS;
+  votes: number;
+  updated: string;
 }
 
-const payments: Payment[] = [
+const STATUS = {
+  draft: { variant: 'inactive', label: 'Draft' },
+  review: { variant: 'in-progress', label: 'In review' },
+  revision: { variant: 'revision', label: 'Needs revision' },
+  approved: { variant: 'success', label: 'Approved' },
+  rejected: { variant: 'alert', label: 'Rejected' },
+} satisfies Record<
+  string,
+  { variant: StatusBadgeProps['variant']; label: string }
+>;
+
+const proposals: Proposal[] = [
   {
-    id: 'm5gr84i9',
-    amount: 316,
-    status: 'success',
-    email: 'ken99@example.com',
+    id: '1',
+    title: 'Shared tool library for the east side',
+    organization: 'Cully Neighbors Co-op',
+    status: 'review',
+    votes: 128,
+    updated: '2026-10-21',
   },
   {
-    id: '3u1reuv4',
-    amount: 242,
-    status: 'success',
-    email: 'abe45@example.com',
+    id: '2',
+    title: 'Participatory budget for the community kitchen',
+    organization: 'Sunrise Collective',
+    status: 'approved',
+    votes: 342,
+    updated: '2026-10-20',
   },
   {
-    id: 'derv1ws0',
-    amount: 837,
-    status: 'processing',
-    email: 'monserrat44@example.com',
+    id: '3',
+    title: 'Childcare cooperative pilot',
+    organization: 'Lents Families',
+    status: 'revision',
+    votes: 57,
+    updated: '2026-10-19',
   },
   {
-    id: '5kma53ae',
-    amount: 874,
-    status: 'success',
-    email: 'silas22@example.com',
+    id: '4',
+    title: 'Solar on the market roof',
+    organization: 'People’s Market',
+    status: 'review',
+    votes: 211,
+    updated: '2026-10-18',
   },
   {
-    id: 'bhqecj4p',
-    amount: 721,
-    status: 'failed',
-    email: 'carmella@example.com',
+    id: '5',
+    title: 'Mutual aid fund rules, second draft',
+    organization: 'Montavilla Mutual Aid',
+    status: 'draft',
+    votes: 0,
+    updated: '2026-10-17',
   },
   {
-    id: 'p0r8sd2k',
-    amount: 150,
-    status: 'pending',
-    email: 'nadia@example.com',
+    id: '6',
+    title: 'Worker-owned bike delivery service',
+    organization: 'Rose City Riders',
+    status: 'approved',
+    votes: 489,
+    updated: '2026-10-15',
   },
   {
-    id: 'x7t2mq9w',
-    amount: 498,
-    status: 'processing',
-    email: 'omar.f@example.com',
-  },
-  { id: 'c4l9vn1e', amount: 60, status: 'success', email: 'lea.m@example.com' },
-  {
-    id: 'j2h6ty8u',
-    amount: 1210,
-    status: 'pending',
-    email: 'tomas@example.com',
-  },
-  { id: 'q9w3er5t', amount: 333, status: 'failed', email: 'priya@example.com' },
-  {
-    id: 'z8x7c6v5',
-    amount: 905,
-    status: 'success',
-    email: 'yusuf@example.com',
+    id: '7',
+    title: 'Land trust for the garden lots',
+    organization: 'Growing Gardens',
+    status: 'rejected',
+    votes: 96,
+    updated: '2026-10-12',
   },
   {
-    id: 'b1n2m3k4',
-    amount: 47,
-    status: 'processing',
-    email: 'ines@example.com',
+    id: '8',
+    title: 'Open the print shop on weekends',
+    organization: 'Independent Publishing',
+    status: 'review',
+    votes: 24,
+    updated: '2026-10-11',
+  },
+  {
+    id: '9',
+    title: 'Translate the member handbook into Arabic',
+    organization: 'New Roots',
+    status: 'approved',
+    votes: 160,
+    updated: '2026-10-09',
+  },
+  {
+    id: '10',
+    title: 'Community-owned fiber for St. Johns',
+    organization: 'St. Johns Connect',
+    status: 'draft',
+    votes: 8,
+    updated: '2026-10-06',
+  },
+  {
+    id: '11',
+    title: 'Sliding-scale pricing at the tool library',
+    organization: 'Cully Neighbors Co-op',
+    status: 'revision',
+    votes: 73,
+    updated: '2026-10-03',
+  },
+  {
+    id: '12',
+    title: 'Youth council seats on the board',
+    organization: 'Sunrise Collective',
+    status: 'review',
+    votes: 305,
+    updated: '2026-09-30',
   },
 ];
 
-const STATUS_VARIANT = {
-  pending: 'secondary',
-  processing: 'accent',
-  success: 'default',
-  failed: 'destructive',
-} as const;
-
-const money = new Intl.NumberFormat('en-US', {
-  style: 'currency',
-  currency: 'USD',
+const shortDate = new Intl.DateTimeFormat('en-US', {
+  month: 'short',
+  day: 'numeric',
 });
 
-const column = createDataTableColumns<Payment>();
+const column = createDataTableColumns<Proposal>();
 
-const columns: DataTableColumnDef<Payment>[] = column.columns([
-  dataTableSelectColumn<Payment>(),
-  column.accessor('status', {
+const columns: DataTableColumnDef<Proposal>[] = column.columns([
+  column.accessor('title', {
+    header: 'Proposal',
+    cell: ({ row }) => (
+      <div
+        dir="auto"
+        title={row.original.title}
+        className="max-w-sm truncate ltr:text-left rtl:text-right"
+      >
+        {row.original.title}
+      </div>
+    ),
+  }),
+  column.accessor((row) => STATUS[row.status].label, {
+    id: 'status',
     header: 'Status',
     cell: ({ row }) => (
-      <Badge variant={STATUS_VARIANT[row.original.status]}>
-        {row.original.status}
-      </Badge>
+      <StatusBadge variant={STATUS[row.original.status].variant}>
+        {STATUS[row.original.status].label}
+      </StatusBadge>
     ),
   }),
-  column.accessor('email', {
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Email" />
-    ),
-  }),
-  column.accessor('amount', {
-    header: ({ column }) => (
-      <DataTableColumnHeader
-        column={column}
-        title="Amount"
-        className="justify-end"
-      />
-    ),
+  column.accessor('votes', {
+    header: 'Votes',
+    meta: { align: 'end' },
     cell: ({ row }) => (
-      <div className="text-end tabular-nums">
-        {money.format(row.original.amount)}
-      </div>
+      <span className="tabular-nums">
+        {row.original.votes.toLocaleString('en-US')}
+      </span>
+    ),
+  }),
+  column.accessor('updated', {
+    header: 'Updated',
+    sortDescFirst: true,
+    cell: ({ row }) => (
+      <span className="whitespace-nowrap text-muted-foreground">
+        {shortDate.format(new Date(`${row.original.updated}T00:00:00`))}
+      </span>
     ),
   }),
   column.display({
     id: 'actions',
-    enableHiding: false,
+    header: 'Actions',
+    meta: { align: 'end' },
     cell: ({ row }) => (
       <DropdownMenu>
         <DropdownMenuTrigger
           render={
-            <Button variant="ghost" size="icon-sm" aria-label="Open menu" />
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              aria-label={`More actions for ${row.original.title}`}
+            />
           }
         >
           <LuEllipsis aria-hidden />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          <DropdownMenuGroup>
-            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-            <DropdownMenuItem
-              onClick={() => navigator.clipboard.writeText(row.original.id)}
-            >
-              Copy payment ID
-            </DropdownMenuItem>
-          </DropdownMenuGroup>
+          <DropdownMenuItem>Open proposal</DropdownMenuItem>
+          <DropdownMenuItem>Share link</DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem>View customer</DropdownMenuItem>
-          <DropdownMenuItem>View payment details</DropdownMenuItem>
+          <DropdownMenuItem variant="destructive">
+            Archive proposal
+          </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
     ),
   }),
 ]);
 
-const meta: Meta<typeof DataTable<Payment>> = {
+const meta: Meta<typeof DataTable<Proposal>> = {
   title: 'Composites/DataTable',
-  component: DataTable<Payment>,
+  component: DataTable<Proposal>,
   tags: ['autodocs'],
   args: {
     columns,
-    data: payments,
-    filterColumn: 'email',
-    copy: { filterLabel: 'Filter emails', filterPlaceholder: 'Filter emails…' },
+    data: proposals,
+    getRowId: (row) => row.id,
+    rowHeader: 'title',
+    rowLabel: (row) => row.title,
+    selectable: true,
+    initialSorting: [{ id: 'updated', desc: true }],
+    pageSize: 8,
+    actions: <Button variant="outline">Export</Button>,
+    selectionActions: () => (
+      <>
+        <Button variant="outline" size="sm">
+          Export selected
+        </Button>
+        <Button variant="outline" size="sm">
+          Archive selected
+        </Button>
+      </>
+    ),
+    copy: {
+      searchLabel: 'Search proposals',
+      searchPlaceholder: 'Search proposals',
+      noResults: 'No proposals match',
+      items: 'proposals',
+      pagination: 'Proposals pages',
+    },
   },
 };
 
@@ -183,11 +252,17 @@ type Story = StoryObj<typeof meta>;
 export const Default: Story = {};
 
 export const Empty: Story = {
-  args: { data: [] },
+  args: { initialSearch: 'bridge' },
 };
 
-export const WithoutToolbar: Story = {
-  args: { filterColumn: undefined, showViewOptions: false, pageSize: 5 },
+export const Loading: Story = {
+  args: { loading: true },
+};
+
+export const WithError: Story = {
+  args: {
+    error: 'Could not refresh proposals. Showing the last loaded list.',
+  },
 };
 
 export const RightToLeft: Story = {
