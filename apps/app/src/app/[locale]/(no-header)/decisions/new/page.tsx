@@ -24,16 +24,16 @@ export async function generateMetadata({
 const NewDecisionProcessPage = async () => {
   const user = await getRequiredUser();
 
-  const [isEnabled, rollingDecisions] = await Promise.all([
-    isServerFeatureEnabled('new_process_admin_enabled', user.authUserId),
-    isServerFeatureEnabled('rolling_decisions', user.authUserId),
-  ]);
+  const isEnabled = await isServerFeatureEnabled(
+    'new_process_admin_enabled',
+    user.authUserId,
+  );
 
   if (!isEnabled) {
     notFound();
   }
 
-  return <CreateProcessFlow flags={{ rollingDecisions }} />;
+  return <CreateProcessFlow />;
 };
 
 export default NewDecisionProcessPage;
