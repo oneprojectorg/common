@@ -6,10 +6,10 @@ import { ProcessStatus, ProposalStatus } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
+import { createGatingCallers } from '../../../test/helpers/gating/callers';
 import {
   accessTierGatingCell,
   describeDecisionAccessTierGating,
-  expectFailsAccessTierGate,
 } from '../../../test/helpers/gating/decision';
 import {
   createIsolatedSession,
@@ -24,62 +24,73 @@ async function createAuthenticatedCaller(email: string) {
   return createCaller(await createTestContextWithSession(session));
 }
 
+// Submission passes all proposals to review; review's zero-limit pipeline
+// strands them, leaving 'final' awaiting manual selection (which mints the
+// decision_process_results row that getInstanceResults reads).
+const schemaWithZeroSelectingReview = {
+  ...schemaWithoutPipeline,
+  phases: [
+    {
+      id: 'submission',
+      name: 'Submission',
+      rules: {},
+      selectionPipeline: { version: '1.0.0', blocks: [] },
+    },
+    {
+      id: 'review',
+      name: 'Review',
+      rules: {},
+      selectionPipeline: {
+        version: '1.0.0',
+        blocks: [{ id: 'zero', type: 'limit', count: 0 }],
+      },
+    },
+    { id: 'final', name: 'Final', rules: {} },
+  ],
+};
+
+async function createInstanceWithSelectedProposal(
+  testData: TestDecisionsDataManager,
+  taskId: string,
+) {
+  const setup = await testData.createDecisionSetup({
+    processSchema: schemaWithZeroSelectingReview,
+    instanceCount: 1,
+    status: ProcessStatus.PUBLISHED,
+  });
+  const instanceId = setup.instance.instance.id;
+  const caller = await createAuthenticatedCaller(setup.userEmail);
+
+  const proposal = await testData.createProposal({
+    userEmail: setup.userEmail,
+    processInstanceId: instanceId,
+    proposalData: {
+      title: `Selected Proposal ${taskId}`,
+      description: '<p>This is <strong>rich</strong> content</p>',
+    },
+    status: ProposalStatus.APPROVED,
+  });
+
+  await caller.decision.transitionFromPhase({ instanceId });
+  await caller.decision.transitionFromPhase({ instanceId });
+  await caller.decision.submitManualSelection({
+    processInstanceId: instanceId,
+    proposalIds: [proposal.id],
+  });
+
+  return { setup, instanceId, proposal, caller };
+}
+
 describe.concurrent('getInstanceResults', () => {
   it('returns previewText on result items so the results page can render card excerpts', async ({
     task,
     onTestFinished,
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-
-    // Submission passes all proposals to review; review's zero-limit pipeline
-    // strands them, leaving 'final' awaiting manual selection (which mints the
-    // decision_process_results row that getInstanceResults reads).
-    const schemaWithZeroSelectingReview = {
-      ...schemaWithoutPipeline,
-      phases: [
-        {
-          id: 'submission',
-          name: 'Submission',
-          rules: {},
-          selectionPipeline: { version: '1.0.0', blocks: [] },
-        },
-        {
-          id: 'review',
-          name: 'Review',
-          rules: {},
-          selectionPipeline: {
-            version: '1.0.0',
-            blocks: [{ id: 'zero', type: 'limit', count: 0 }],
-          },
-        },
-        { id: 'final', name: 'Final', rules: {} },
-      ],
-    };
-
-    const setup = await testData.createDecisionSetup({
-      processSchema: schemaWithZeroSelectingReview,
-      instanceCount: 1,
-      status: ProcessStatus.PUBLISHED,
-    });
-    const instanceId = setup.instance.instance.id;
-    const caller = await createAuthenticatedCaller(setup.userEmail);
-
-    const proposal = await testData.createProposal({
-      userEmail: setup.userEmail,
-      processInstanceId: instanceId,
-      proposalData: {
-        title: `Selected Proposal ${task.id}`,
-        description: '<p>This is <strong>rich</strong> content</p>',
-      },
-      status: ProposalStatus.APPROVED,
-    });
-
-    await caller.decision.transitionFromPhase({ instanceId });
-    await caller.decision.transitionFromPhase({ instanceId });
-    await caller.decision.submitManualSelection({
-      processInstanceId: instanceId,
-      proposalIds: [proposal.id],
-    });
+    const { caller, instanceId } = await createInstanceWithSelectedProposal(
+      testData,
+      task.id,
+    );
 
     const result = await caller.decision.getInstanceResults({
       instanceId,
@@ -92,11 +103,45 @@ describe.concurrent('getInstanceResults', () => {
     expect(item?.previewText).toBe('This is rich content');
     expect(item?.documentContent).toBeUndefined();
   });
+
+  it('returns the selected proposals to a no-JWT visitor on a public decision', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instanceId, proposal } =
+      await createInstanceWithSelectedProposal(testData, task.id);
+
+    await testData.makeDecisionPublic(setup.instance.profileId);
+
+    const publicCaller = createCaller(await createTestContextWithSession(null));
+    const result = await publicCaller.decision.getInstanceResults({
+      instanceId,
+    });
+
+    expect(result.items.map((item) => item.id)).toEqual([proposal.id]);
+  });
+
+  it('returns the selected proposals to a logged-in user outside the network on a public decision', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instanceId, proposal } =
+      await createInstanceWithSelectedProposal(testData, task.id);
+
+    await testData.makeDecisionPublic(setup.instance.profileId);
+
+    const caller = await createGatingCallers(onTestFinished).userJwt();
+    const result = await caller.decision.getInstanceResults({ instanceId });
+
+    expect(result.items.map((item) => item.id)).toEqual([proposal.id]);
+  });
 });
 
 describeDecisionAccessTierGating('getInstanceResults', {
   noJwtNonPublic: accessTierGatingCell(
-    'rejects no-JWT caller on non-public instance',
+    'admits no-JWT caller past the tier gate and denies them on a non-public instance',
     async ({ task, onTestFinished, callers }) => {
       const testData = new TestDecisionsDataManager(task.id, onTestFinished);
       const setup = await testData.createDecisionSetup({
@@ -107,17 +152,16 @@ describeDecisionAccessTierGating('getInstanceResults', {
 
       const caller = await callers.noJwt();
 
-      await expectFailsAccessTierGate(
+      await expect(
         caller.decision.getInstanceResults({
           instanceId: instance.instance.id,
         }),
-        'none',
-      );
+      ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
     },
   ),
 
   anonJwtNonPublic: accessTierGatingCell(
-    'rejects anon-JWT caller on non-public instance',
+    'admits anon-JWT caller past the tier gate and denies them on a non-public instance',
     async ({ task, onTestFinished, callers }) => {
       const testData = new TestDecisionsDataManager(task.id, onTestFinished);
       const setup = await testData.createDecisionSetup({
@@ -128,17 +172,16 @@ describeDecisionAccessTierGating('getInstanceResults', {
 
       const caller = await callers.anonJwt();
 
-      await expectFailsAccessTierGate(
+      await expect(
         caller.decision.getInstanceResults({
           instanceId: instance.instance.id,
         }),
-        'anon',
-      );
+      ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
     },
   ),
 
   userJwtNonPublic: accessTierGatingCell(
-    'rejects user-JWT caller on non-public instance',
+    'admits user-JWT caller past the tier gate and denies them on a non-public instance',
     async ({ task, onTestFinished, callers }) => {
       const testData = new TestDecisionsDataManager(task.id, onTestFinished);
       const setup = await testData.createDecisionSetup({
@@ -149,12 +192,11 @@ describeDecisionAccessTierGating('getInstanceResults', {
 
       const caller = await callers.userJwt();
 
-      await expectFailsAccessTierGate(
+      await expect(
         caller.decision.getInstanceResults({
           instanceId: instance.instance.id,
         }),
-        'user',
-      );
+      ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
     },
   ),
 

@@ -11,7 +11,6 @@ import { appRouter } from '../..';
 import {
   accessTierGatingCell,
   describeDecisionAccessTierGating,
-  expectFailsAccessTierGate,
 } from '../../../test/helpers/gating/decision';
 import {
   createIsolatedSession,
@@ -24,6 +23,39 @@ const createCaller = createCallerFactory(appRouter);
 async function createAuthenticatedCaller(email: string) {
   const { session } = await createIsolatedSession(email);
   return createCaller(await createTestContextWithSession(session));
+}
+
+/** Mints one successful result (5 voters) with a single selection allocated 1000. */
+async function createResultWithOneSelection(
+  testData: TestDecisionsDataManager,
+  userEmail: string,
+  instanceId: string,
+) {
+  const proposal = await testData.createProposal({
+    userEmail,
+    processInstanceId: instanceId,
+    proposalData: { title: 'Test Proposal' },
+  });
+
+  const [resultRecord] = await db
+    .insert(decisionProcessResults)
+    .values({
+      processInstanceId: instanceId,
+      success: true,
+      voterCount: 5,
+      selectedCount: 1,
+    })
+    .returning();
+  if (!resultRecord) {
+    throw new Error('Failed to insert decision process result');
+  }
+
+  await db.insert(decisionProcessResultSelections).values({
+    processResultId: resultRecord.id,
+    proposalId: proposal.id,
+    allocated: '1000',
+    selectionRank: 1,
+  });
 }
 
 describe.concurrent('getResultsStats', () => {
@@ -244,6 +276,59 @@ describe.concurrent('getResultsStats', () => {
     ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
   });
 
+  it('returns stats to a no-JWT visitor on a public decision', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const { instance, profileId } = setup.instance;
+    await createResultWithOneSelection(testData, setup.userEmail, instance.id);
+
+    await testData.makeDecisionPublic(profileId);
+
+    const publicCaller = createCaller(await createTestContextWithSession(null));
+    const result = await publicCaller.decision.getResultsStats({
+      instanceId: instance.id,
+    });
+
+    expect(result).toEqual({
+      membersVoted: 5,
+      proposalsFunded: 1,
+      totalAllocated: 1000,
+    });
+  });
+
+  it('does not serve cached stats to a no-JWT visitor on a non-public decision', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const { instance } = setup.instance;
+    await createResultWithOneSelection(testData, setup.userEmail, instance.id);
+
+    // A member read fills the per-instance stats cache first.
+    const memberCaller = await createAuthenticatedCaller(setup.userEmail);
+    const memberResult = await memberCaller.decision.getResultsStats({
+      instanceId: instance.id,
+    });
+    expect(memberResult).not.toBeNull();
+
+    const publicCaller = createCaller(await createTestContextWithSession(null));
+    await expect(
+      publicCaller.decision.getResultsStats({ instanceId: instance.id }),
+    ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
+  });
+
   it('should throw for non-existent instance ID', async ({
     task,
     onTestFinished,
@@ -264,7 +349,7 @@ describe.concurrent('getResultsStats', () => {
 
 describeDecisionAccessTierGating('getResultsStats', {
   noJwtNonPublic: accessTierGatingCell(
-    'rejects no-JWT caller on non-public instance',
+    'admits no-JWT caller past the tier gate and denies them on a non-public instance',
     async ({ task, onTestFinished, callers }) => {
       const testData = new TestDecisionsDataManager(task.id, onTestFinished);
       const setup = await testData.createDecisionSetup({
@@ -275,15 +360,14 @@ describeDecisionAccessTierGating('getResultsStats', {
 
       const caller = await callers.noJwt();
 
-      await expectFailsAccessTierGate(
+      await expect(
         caller.decision.getResultsStats({ instanceId: instance.instance.id }),
-        'none',
-      );
+      ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
     },
   ),
 
   anonJwtNonPublic: accessTierGatingCell(
-    'rejects anon-JWT caller on non-public instance',
+    'admits anon-JWT caller past the tier gate and denies them on a non-public instance',
     async ({ task, onTestFinished, callers }) => {
       const testData = new TestDecisionsDataManager(task.id, onTestFinished);
       const setup = await testData.createDecisionSetup({
@@ -294,15 +378,14 @@ describeDecisionAccessTierGating('getResultsStats', {
 
       const caller = await callers.anonJwt();
 
-      await expectFailsAccessTierGate(
+      await expect(
         caller.decision.getResultsStats({ instanceId: instance.instance.id }),
-        'anon',
-      );
+      ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
     },
   ),
 
   userJwtNonPublic: accessTierGatingCell(
-    'rejects user-JWT caller on non-public instance',
+    'admits user-JWT caller past the tier gate and denies them on a non-public instance',
     async ({ task, onTestFinished, callers }) => {
       const testData = new TestDecisionsDataManager(task.id, onTestFinished);
       const setup = await testData.createDecisionSetup({
@@ -313,10 +396,9 @@ describeDecisionAccessTierGating('getResultsStats', {
 
       const caller = await callers.userJwt();
 
-      await expectFailsAccessTierGate(
+      await expect(
         caller.decision.getResultsStats({ instanceId: instance.instance.id }),
-        'user',
-      );
+      ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
     },
   ),
 
