@@ -1,7 +1,7 @@
 {
   "version": "8",
   "dialect": "postgres",
-  "id": "09e39e54-8717-457c-849c-6ad6d725c450",
+  "id": "587f2999-eaca-4ae3-a65c-f261dcae9906",
   "prevIds": [
     "51e07490-f5b9-47a7-a02c-f5afeeecf462"
   ],
@@ -275,12 +275,6 @@
     },
     {
       "isRlsEnabled": true,
-      "name": "decision_sms_lines",
-      "entityType": "tables",
-      "schema": "public"
-    },
-    {
-      "isRlsEnabled": true,
       "name": "decision_transition_proposals",
       "entityType": "tables",
       "schema": "public"
@@ -420,6 +414,12 @@
     {
       "isRlsEnabled": true,
       "name": "decision_process_phases",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": true,
+      "name": "profile_chat_lines",
       "entityType": "tables",
       "schema": "public"
     },
@@ -2217,84 +2217,6 @@
       "entityType": "columns",
       "schema": "public",
       "table": "decision_processes"
-    },
-    {
-      "type": "uuid",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": "gen_random_uuid()",
-      "generated": null,
-      "identity": null,
-      "name": "id",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "decision_sms_lines"
-    },
-    {
-      "type": "uuid",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "process_instance_id",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "decision_sms_lines"
-    },
-    {
-      "type": "varchar(32)",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "phone_number",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "decision_sms_lines"
-    },
-    {
-      "type": "timestamp with time zone",
-      "typeSchema": null,
-      "notNull": false,
-      "dimensions": 0,
-      "default": "(now() AT TIME ZONE 'utc'::text)",
-      "generated": null,
-      "identity": null,
-      "name": "created_at",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "decision_sms_lines"
-    },
-    {
-      "type": "timestamp with time zone",
-      "typeSchema": null,
-      "notNull": false,
-      "dimensions": 0,
-      "default": "(now() AT TIME ZONE 'utc'::text)",
-      "generated": null,
-      "identity": null,
-      "name": "updated_at",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "decision_sms_lines"
-    },
-    {
-      "type": "timestamp with time zone",
-      "typeSchema": null,
-      "notNull": false,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "deleted_at",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "decision_sms_lines"
     },
     {
       "type": "uuid",
@@ -4638,6 +4560,84 @@
       "entityType": "columns",
       "schema": "public",
       "table": "decision_process_phases"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "gen_random_uuid()",
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "profile_chat_lines"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "profile_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "profile_chat_lines"
+    },
+    {
+      "type": "varchar(32)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "phone_number",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "profile_chat_lines"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": "(now() AT TIME ZONE 'utc'::text)",
+      "generated": null,
+      "identity": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "profile_chat_lines"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": "(now() AT TIME ZONE 'utc'::text)",
+      "generated": null,
+      "identity": null,
+      "name": "updated_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "profile_chat_lines"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "deleted_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "profile_chat_lines"
     },
     {
       "type": "uuid",
@@ -8661,48 +8661,6 @@
       "table": "decision_processes"
     },
     {
-      "nameExplicit": true,
-      "columns": [
-        {
-          "value": "process_instance_id",
-          "isExpression": false,
-          "asc": true,
-          "nullsFirst": false,
-          "opclass": null
-        }
-      ],
-      "isUnique": true,
-      "where": null,
-      "with": "",
-      "method": "btree",
-      "concurrently": false,
-      "name": "decision_sms_lines_process_instance_id_uniq",
-      "entityType": "indexes",
-      "schema": "public",
-      "table": "decision_sms_lines"
-    },
-    {
-      "nameExplicit": true,
-      "columns": [
-        {
-          "value": "phone_number",
-          "isExpression": false,
-          "asc": true,
-          "nullsFirst": false,
-          "opclass": null
-        }
-      ],
-      "isUnique": true,
-      "where": null,
-      "with": "",
-      "method": "btree",
-      "concurrently": false,
-      "name": "decision_sms_lines_phone_number_uniq",
-      "entityType": "indexes",
-      "schema": "public",
-      "table": "decision_sms_lines"
-    },
-    {
       "nameExplicit": false,
       "columns": [
         {
@@ -10458,6 +10416,48 @@
       "entityType": "indexes",
       "schema": "public",
       "table": "decision_process_phases"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "profile_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": true,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "profile_chat_lines_profile_id_uniq",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "profile_chat_lines"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "phone_number",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": true,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "profile_chat_lines_phone_number_uniq",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "profile_chat_lines"
     },
     {
       "nameExplicit": true,
@@ -13052,23 +13052,6 @@
       ],
       "onUpdate": "CASCADE",
       "onDelete": "CASCADE",
-      "name": "decision_sms_lines_dpT1NgQ1LMgI_fkey",
-      "entityType": "fks",
-      "schema": "public",
-      "table": "decision_sms_lines"
-    },
-    {
-      "nameExplicit": false,
-      "columns": [
-        "process_instance_id"
-      ],
-      "schemaTo": "public",
-      "tableTo": "decision_process_instances",
-      "columnsTo": [
-        "id"
-      ],
-      "onUpdate": "CASCADE",
-      "onDelete": "CASCADE",
       "name": "decision_transition_proposals_DfIHz26xbtO4_fkey",
       "entityType": "fks",
       "schema": "public",
@@ -13812,6 +13795,23 @@
       "entityType": "fks",
       "schema": "public",
       "table": "decision_process_phases"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "profile_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "profiles",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "CASCADE",
+      "onDelete": "CASCADE",
+      "name": "profile_chat_lines_profile_id_profiles_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "profile_chat_lines"
     },
     {
       "nameExplicit": false,
@@ -15189,16 +15189,6 @@
         "id"
       ],
       "nameExplicit": false,
-      "name": "decision_sms_lines_pkey",
-      "schema": "public",
-      "table": "decision_sms_lines",
-      "entityType": "pks"
-    },
-    {
-      "columns": [
-        "id"
-      ],
-      "nameExplicit": false,
       "name": "decision_transition_proposals_pkey",
       "schema": "public",
       "table": "decision_transition_proposals",
@@ -15352,6 +15342,16 @@
       "name": "decision_process_phases_pkey",
       "schema": "public",
       "table": "decision_process_phases",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "profile_chat_lines_pkey",
+      "schema": "public",
+      "table": "profile_chat_lines",
       "entityType": "pks"
     },
     {
@@ -16011,19 +16011,6 @@
       "name": "service-role",
       "entityType": "policies",
       "schema": "public",
-      "table": "decision_sms_lines"
-    },
-    {
-      "as": "PERMISSIVE",
-      "for": "ALL",
-      "roles": [
-        "service_role"
-      ],
-      "using": null,
-      "withCheck": null,
-      "name": "service-role",
-      "entityType": "policies",
-      "schema": "public",
       "table": "decision_transition_proposals"
     },
     {
@@ -16324,6 +16311,19 @@
       "entityType": "policies",
       "schema": "public",
       "table": "decision_process_phases"
+    },
+    {
+      "as": "PERMISSIVE",
+      "for": "ALL",
+      "roles": [
+        "service_role"
+      ],
+      "using": null,
+      "withCheck": null,
+      "name": "service-role",
+      "entityType": "policies",
+      "schema": "public",
+      "table": "profile_chat_lines"
     },
     {
       "as": "PERMISSIVE",
