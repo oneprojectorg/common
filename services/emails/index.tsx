@@ -93,8 +93,10 @@ const sendSmtpEmail = async (
   email: BatchEmailItem & { renderOptions?: RenderParameter[1] },
 ) => getTransporter().sendMail(await buildSmtpMessage(email));
 
-// Short enough that the fallback still delivers while the person waits.
+// Together these stay under GoTrue's 5s Send Email hook timeout, so a slow
+// transport is reported as a failed send rather than a hook timeout.
 const PRIMARY_SEND_TIMEOUT_MS = 2_000;
+const FALLBACK_SEND_TIMEOUT_MS = 2_500;
 
 let cachedFallbackTransporter: ReturnType<
   typeof nodemailer.createTransport
@@ -123,33 +125,56 @@ export type FallbackSendResult =
  * primary transport fails or is slow, it sends again through
  * `EMAIL_FALLBACK_SMTP_URL`, so a Resend outage does not block sign-in. A slow
  * primary send can still deliver later, so the recipient can get two copies.
+ * Without a fallback, the primary send gets no time limit.
  */
 export const OPNodemailerWithFallback = async (
   email: BatchEmailItem,
 ): Promise<FallbackSendResult> => {
   const message = await buildSmtpMessage(email);
+  const fallbackTransporter = getFallbackTransporter();
+
+  if (!fallbackTransporter) {
+    await getTransporter().sendMail(message);
+    return { transport: 'primary' };
+  }
 
   try {
-    await withTimeout<unknown>(getTransporter().sendMail(message));
+    await withTimeout<unknown>({
+      promise: getTransporter().sendMail(message),
+      timeoutMs: PRIMARY_SEND_TIMEOUT_MS,
+    });
     return { transport: 'primary' };
   } catch (primaryError) {
-    const fallbackTransporter = getFallbackTransporter();
-    if (!fallbackTransporter) {
-      throw primaryError;
-    }
-
-    await fallbackTransporter.sendMail(message);
+    await withTimeout<unknown>({
+      promise: fallbackTransporter.sendMail(message),
+      timeoutMs: FALLBACK_SEND_TIMEOUT_MS,
+    });
     return { transport: 'fallback', primaryError };
   }
 };
 
-const withTimeout = <T,>(promise: Promise<T>): Promise<T> =>
+const withTimeout = <T,>({
+  promise,
+  timeoutMs,
+}: {
+  promise: Promise<T>;
+  timeoutMs: number;
+}): Promise<T> =>
   new Promise((resolve, reject) => {
     const timer = setTimeout(
-      () => reject(new Error('Primary email send timed out')),
-      PRIMARY_SEND_TIMEOUT_MS,
+      () => reject(new Error(`Email send timed out after ${timeoutMs}ms`)),
+      timeoutMs,
     );
-    promise.then(resolve, reject).finally(() => clearTimeout(timer));
+    promise.then(
+      (value) => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      (error: unknown) => {
+        clearTimeout(timer);
+        reject(error);
+      },
+    );
   });
 
 export const OPNodemailer = async ({

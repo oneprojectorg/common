@@ -9,7 +9,7 @@ import {
   getAuthEmailMessages,
 } from './getAuthEmailMessages';
 
-export interface SendEmailHookRequest {
+interface SendEmailHookRequest {
   rawBody: string;
   headers: Record<string, string>;
 }

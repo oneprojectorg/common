@@ -67,6 +67,15 @@ describe('OPNodemailerWithFallback', () => {
     await expect(result).resolves.toMatchObject({ transport: 'fallback' });
   });
 
+  it('rejects when the fallback also fails', async () => {
+    primarySendMail.mockRejectedValue(new Error('Resend is down'));
+    fallbackSendMail.mockRejectedValue(new Error('Fallback is down'));
+
+    await expect(OPNodemailerWithFallback(email)).rejects.toThrow(
+      'Fallback is down',
+    );
+  });
+
   it('throws the primary error when no fallback is configured', async () => {
     vi.stubEnv('EMAIL_FALLBACK_SMTP_URL', '');
     primarySendMail.mockRejectedValue(new Error('Resend is down'));
@@ -75,5 +84,18 @@ describe('OPNodemailerWithFallback', () => {
       'Resend is down',
     );
     expect(fallbackSendMail).not.toHaveBeenCalled();
+  });
+
+  it('waits for a slow primary when no fallback is configured', async () => {
+    vi.useFakeTimers();
+    vi.stubEnv('EMAIL_FALLBACK_SMTP_URL', '');
+    primarySendMail.mockReturnValue(
+      new Promise((resolve) => setTimeout(() => resolve({}), 3_000)),
+    );
+
+    const result = OPNodemailerWithFallback(email);
+    await vi.advanceTimersByTimeAsync(3_000);
+
+    await expect(result).resolves.toEqual({ transport: 'primary' });
   });
 });

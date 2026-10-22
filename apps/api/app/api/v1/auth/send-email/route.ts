@@ -1,5 +1,4 @@
-import { handleSendEmailHookRequest } from '@op/api';
-import { CommonError } from '@op/common';
+import { handleSendEmailHookRequest, readBodyWithLimit } from '@op/api';
 import { logger } from '@op/logging';
 import type { NextRequest } from 'next/server';
 
@@ -10,7 +9,10 @@ const MAX_BODY_BYTES = 64 * 1024;
 /** Supabase Auth's Send Email hook. See `handleSendEmailHookRequest`. */
 export const POST = async (req: NextRequest): Promise<Response> => {
   try {
-    const rawBody = await readBodyWithLimit(req);
+    const rawBody = await readBodyWithLimit({
+      request: req,
+      maxBytes: MAX_BODY_BYTES,
+    });
     if (rawBody === undefined) {
       return Response.json(
         { error: { http_code: 413, message: 'Payload too large' } },
@@ -24,41 +26,10 @@ export const POST = async (req: NextRequest): Promise<Response> => {
     });
     return Response.json(body, { status });
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unknown error';
-    logger.error('Send Email hook unhandled error', {
-      error: new CommonError(message),
-    });
+    logger.error('Send Email hook unhandled error', { error });
     return Response.json(
       { error: { http_code: 500, message: 'Internal error' } },
       { status: 500 },
     );
   }
-};
-
-/** The body as text, or undefined when it is larger than `MAX_BODY_BYTES`. */
-const readBodyWithLimit = async (
-  req: NextRequest,
-): Promise<string | undefined> => {
-  if (!req.body) {
-    return '';
-  }
-
-  const reader = req.body.getReader();
-  const chunks: Array<Uint8Array> = [];
-  let size = 0;
-
-  for (;;) {
-    const { done, value } = await reader.read();
-    if (done) {
-      break;
-    }
-    size += value.byteLength;
-    if (size > MAX_BODY_BYTES) {
-      await reader.cancel();
-      return undefined;
-    }
-    chunks.push(value);
-  }
-
-  return Buffer.concat(chunks).toString('utf8');
 };

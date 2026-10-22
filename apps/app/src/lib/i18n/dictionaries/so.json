@@ -1680,8 +1680,8 @@
   },
   "authEmail": {
     "loginCodeSubject": "Koodhkaaga gelitaanka",
-    "loginCodePreview": "Waa waqtigii aad soo gali lahayd! 🔑",
-    "loginCodeHeading": "Gal",
+    "loginCodePreview": "Aan ku soo gelinno! 🔑",
+    "loginCodeHeading": "Soo gal",
     "loginCodeDescription": "Koodhkaaga gelitaanka waa kan hoose. Ku qor daaqadda browser-ka ee furan, waanu ku soo gelin doonnaa.",
     "confirmEmailSubject": "Xaqiiji iimaylkaaga",
     "confirmEmailPreview": "Xaqiiji iimaylkaaga! 👋",

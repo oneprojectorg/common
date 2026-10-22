@@ -1679,10 +1679,10 @@
     "deleteAccountConfirmBody": "Seu perfil e sua conta serão removidos. Não é possível desfazer."
   },
   "authEmail": {
-    "loginCodeSubject": "Seu código de acesso",
+    "loginCodeSubject": "Seu código de login",
     "loginCodePreview": "Hora de entrar! 🔑",
     "loginCodeHeading": "Entrar",
-    "loginCodeDescription": "Seu código de acesso está abaixo. Digite-o na janela do navegador aberta e faremos seu login.",
+    "loginCodeDescription": "Seu código de login está abaixo. Digite-o na janela do navegador aberta e faremos seu login.",
     "confirmEmailSubject": "Confirme seu e-mail",
     "confirmEmailPreview": "Confirme seu e-mail! 👋",
     "confirmEmailHeading": "Confirme seu e-mail",

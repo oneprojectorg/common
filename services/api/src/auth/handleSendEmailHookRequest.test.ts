@@ -1,5 +1,7 @@
 import { sendAuthCodeEmail, updateUserLocale } from '@op/common';
 import { signUpConfirmedUser } from '@op/common/testing';
+import { db, eq } from '@op/db/client';
+import { users } from '@op/db/schema';
 import { logger } from '@op/logging';
 import { randomBytes, randomUUID } from 'node:crypto';
 import { Webhook } from 'standardwebhooks';
@@ -16,10 +18,12 @@ const sendMock = vi.mocked(sendAuthCodeEmail);
 
 const SECRET = randomBytes(32).toString('base64');
 
-const signedRequest = (payload: unknown, secret = SECRET) => {
+const signedRequest = (
+  payload: unknown,
+  { secret = SECRET, timestamp = new Date() } = {},
+) => {
   const rawBody = JSON.stringify(payload);
   const id = `msg_${randomUUID()}`;
-  const timestamp = new Date();
 
   return {
     rawBody,
@@ -189,7 +193,9 @@ describe('handleSendEmailHookRequest', () => {
 
   it('rejects a request signed with another secret', async () => {
     const result = await handleSendEmailHookRequest(
-      signedRequest(hookPayload(), randomBytes(32).toString('base64')),
+      signedRequest(hookPayload(), {
+        secret: randomBytes(32).toString('base64'),
+      }),
     );
 
     expect(result.status).toBe(401);
@@ -262,5 +268,89 @@ describe('handleSendEmailHookRequest', () => {
       'Auth email sent through the fallback transport',
       { error: primaryError, emailActionType: 'magiclink' },
     );
+  });
+
+  it('sends the login code for the email action type as well', async () => {
+    await handleSendEmailHookRequest(
+      signedRequest(hookPayload({ emailActionType: 'email' })),
+    );
+
+    expect(sentEmails()[0]?.subject).toBe('Your login code');
+  });
+
+  it('skips a stored locale that is no longer supported', async ({
+    onTestFinished,
+  }) => {
+    const { email, user } = await signUpConfirmedUser(
+      `hook-stale-locale-${randomUUID()}@oneproject.org`,
+      onTestFinished,
+    );
+    await db
+      .update(users)
+      .set({ locale: 'de' })
+      .where(eq(users.authUserId, user.id));
+
+    await handleSendEmailHookRequest(
+      signedRequest(
+        hookPayload({
+          user: { id: user.id, email, user_metadata: { locale: 'pt' } },
+        }),
+      ),
+    );
+
+    expect(sentEmails()[0]?.locale).toBe('pt');
+  });
+
+  it('rejects a signed payload that does not match the hook schema', async () => {
+    const result = await handleSendEmailHookRequest(
+      signedRequest({ user: { id: randomUUID() } }),
+    );
+
+    expect(result.status).toBe(400);
+    expect(sendMock).not.toHaveBeenCalled();
+  });
+
+  it('rejects a secure email change when the current address is missing', async () => {
+    const result = await handleSendEmailHookRequest(
+      signedRequest(
+        hookPayload({
+          emailActionType: 'email_change',
+          tokenNew: '2222222222',
+          user: { email: '', new_email: 'new@example.com' },
+        }),
+      ),
+    );
+
+    expect(result.status).toBe(400);
+    expect(sendMock).not.toHaveBeenCalled();
+  });
+
+  it('answers 500 when one of the two email change codes is not sent', async () => {
+    sendMock
+      .mockResolvedValueOnce({ transport: 'primary' })
+      .mockRejectedValueOnce(new Error('Resend is down'));
+
+    const result = await handleSendEmailHookRequest(
+      signedRequest(
+        hookPayload({
+          emailActionType: 'email_change',
+          tokenNew: '2222222222',
+          user: { email: 'old@example.com', new_email: 'new@example.com' },
+        }),
+      ),
+    );
+
+    expect(result.status).toBe(500);
+  });
+
+  it('rejects a replayed request whose signature timestamp is too old', async () => {
+    const result = await handleSendEmailHookRequest(
+      signedRequest(hookPayload(), {
+        timestamp: new Date(Date.now() - 10 * 60 * 1000),
+      }),
+    );
+
+    expect(result.status).toBe(401);
+    expect(sendMock).not.toHaveBeenCalled();
   });
 });
