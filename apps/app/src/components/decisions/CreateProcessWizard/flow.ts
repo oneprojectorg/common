@@ -13,7 +13,7 @@ import {
   type OtherAnswers,
   type OtherStep,
 } from './otherFlow';
-import type { ProcessType, ShapeKey, WizardFlags } from './types';
+import type { ProcessType, ShapeKey } from './types';
 
 export const TOTAL_STEPS = 5;
 
@@ -46,8 +46,6 @@ interface Screen {
   step: number;
   /** Omitted for a screen every type shows. */
   types?: ProcessType[];
-  /** Whether a flag lets it show at all; a screen off here is never reached. */
-  isEnabled?: (flags: WizardFlags) => boolean;
   /** Whether the answers so far call for it, beyond its type. */
   isAsked?: (answers: WizardAnswers) => boolean;
   isComplete: (answers: WizardAnswers) => boolean;
@@ -74,7 +72,6 @@ const SCREEN: Record<ScreenId, Screen> = {
   cadence: {
     step: 3,
     types: ['other'],
-    isEnabled: ({ rollingDecisions }) => rollingDecisions,
     isComplete: ({ other }) => otherCanContinue('cadence', other),
   },
   focus: {
@@ -127,47 +124,31 @@ export const isScreenComplete = (
   answers: WizardAnswers,
 ): boolean => SCREEN[screen].isComplete(answers);
 
-/** Whether the type and the flags could ever show the screen. */
-function isOffered(
-  screen: ScreenId,
-  type: ProcessType | null,
-  flags: WizardFlags,
-): boolean {
-  const { types, isEnabled } = SCREEN[screen];
+function isForType(screen: ScreenId, type: ProcessType | null): boolean {
+  const { types } = SCREEN[screen];
 
-  return (
-    (!types || (type !== null && types.includes(type))) &&
-    (isEnabled?.(flags) ?? true)
-  );
+  return !types || (type !== null && types.includes(type));
 }
 
-function isAsked(
-  screen: ScreenId,
-  answers: WizardAnswers,
-  flags: WizardFlags,
-): boolean {
+function isAsked(screen: ScreenId, answers: WizardAnswers): boolean {
   return (
-    isOffered(screen, answers.type, flags) &&
+    isForType(screen, answers.type) &&
     (SCREEN[screen].isAsked?.(answers) ?? true)
   );
 }
 
 /** The screens these answers lead through, in order. */
-export function screensFor(
-  answers: WizardAnswers,
-  flags: WizardFlags,
-): ScreenId[] {
-  return SCREEN_ORDER.filter((screen) => isAsked(screen, answers, flags));
+export function screensFor(answers: WizardAnswers): ScreenId[] {
+  return SCREEN_ORDER.filter((screen) => isAsked(screen, answers));
 }
 
 export function nextScreen(
   screen: ScreenId,
   answers: WizardAnswers,
-  flags: WizardFlags,
 ): ScreenId | null {
   return (
     SCREEN_ORDER.slice(SCREEN_ORDER.indexOf(screen) + 1).find((candidate) =>
-      isAsked(candidate, answers, flags),
+      isAsked(candidate, answers),
     ) ?? null
   );
 }
@@ -175,12 +156,11 @@ export function nextScreen(
 export function previousScreen(
   screen: ScreenId,
   answers: WizardAnswers,
-  flags: WizardFlags,
 ): ScreenId | null {
   return (
     SCREEN_ORDER.slice(0, SCREEN_ORDER.indexOf(screen))
       .reverse()
-      .find((candidate) => isAsked(candidate, answers, flags)) ?? null
+      .find((candidate) => isAsked(candidate, answers)) ?? null
   );
 }
 
@@ -188,7 +168,6 @@ export function previousScreen(
 export function progressPercent(
   screen: ScreenId,
   type: ProcessType | null,
-  flags: WizardFlags,
 ): number {
   const step = stepOf(screen);
 
@@ -197,7 +176,7 @@ export function progressPercent(
   }
 
   const slots = SCREEN_ORDER.filter(
-    (candidate) => stepOf(candidate) === 3 && isOffered(candidate, type, flags),
+    (candidate) => stepOf(candidate) === 3 && isForType(candidate, type),
   );
   const slot = slots.indexOf(screen);
 
@@ -211,7 +190,6 @@ export function progressPercent(
 /** Run on every change; `previous` is the reconciled state the change was made to. */
 export function reconcileAnswers(
   next: WizardAnswers,
-  flags: WizardFlags,
   previous?: WizardAnswers,
 ): WizardAnswers {
   const { type } = next;
@@ -224,7 +202,6 @@ export function reconcileAnswers(
       type === 'other'
         ? reconcileOther(
             next.other,
-            flags,
             previous?.type === 'other' ? previous.other : undefined,
           )
         : EMPTY_OTHER,
