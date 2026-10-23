@@ -14,10 +14,10 @@ export const loadProcessAdmin = cache(async (slug: string) => {
     forbidden();
   }
 
-  const isEnabled = await isServerFeatureEnabled(
-    'new_process_admin_enabled',
-    user.authUserId,
-  );
+  const isEnabled = await isServerFeatureEnabled({
+    key: 'new_process_admin_enabled',
+    distinctId: user.authUserId,
+  });
 
   if (!isEnabled) {
     notFound();
