@@ -6,6 +6,7 @@ import {
 } from '@op/common/client';
 import { Field, FieldDescription, FieldLabel } from '@op/sense/Field';
 import { Input } from '@op/sense/Input';
+import { useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -24,8 +25,9 @@ export function NameAccessStep({
   onSubmit: () => void;
 }) {
   const t = useTranslations('decisions.createWizard');
-  const trimmed = name.trim();
-  const isNameTooShort = trimmed.length < PROCESS_NAME_MIN_LENGTH;
+  const [hasBlurred, setHasBlurred] = useState(false);
+  const isNameTooShort = name.trim().length < PROCESS_NAME_MIN_LENGTH;
+  const showError = hasBlurred && isNameTooShort;
 
   return (
     <div className="flex flex-col gap-6">
@@ -34,6 +36,7 @@ export function NameAccessStep({
       <form
         onSubmit={(event) => {
           event.preventDefault();
+          setHasBlurred(true);
           onSubmit();
         }}
       >
@@ -43,13 +46,14 @@ export function NameAccessStep({
             id={NAME_ID}
             value={name}
             onChange={(event) => onNameChange(event.target.value)}
+            onBlur={() => setHasBlurred(true)}
             placeholder={t('namePlaceholder')}
             maxLength={PROCESS_NAME_MAX_LENGTH}
-            aria-invalid={trimmed.length > 0 && isNameTooShort}
+            aria-invalid={showError}
             aria-describedby={NAME_HINT_ID}
           />
           <FieldDescription id={NAME_HINT_ID} aria-live="polite">
-            {isNameTooShort
+            {showError
               ? t('nameTooShort', { count: PROCESS_NAME_MIN_LENGTH })
               : null}
           </FieldDescription>
