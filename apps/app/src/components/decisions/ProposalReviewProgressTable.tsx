@@ -84,7 +84,7 @@ function ProposalReviewProgressRow({
   href: string;
 }) {
   const { titleText, displayCategories } = useProposalCardData({ proposal });
-  const aggregates = useProposalReviewAggregates(proposal.id);
+  const review = useProposalReviewAggregates(proposal.id);
   const submitterName = proposal.submittedBy
     ? proposal.submittedBy.name || proposal.submittedBy.slug
     : undefined;
@@ -118,17 +118,17 @@ function ProposalReviewProgressRow({
         )}
       </TableCell>
       <TableCell>
-        {aggregates ? (
-          <ReviewersPile reviewers={aggregates.reviewers} />
+        {review.status === 'ready' ? (
+          <ReviewersPile reviewers={review.aggregates.reviewers} />
         ) : (
-          <Skeleton className="h-6 w-20" />
+          <PendingReviewCell status={review.status} className="h-6 w-20" />
         )}
       </TableCell>
       <TableCell>
-        {aggregates ? (
-          <ReviewsMeter aggregates={aggregates} />
+        {review.status === 'ready' ? (
+          <ReviewsMeter aggregates={review.aggregates} />
         ) : (
-          <Skeleton className="h-5 w-36" />
+          <PendingReviewCell status={review.status} className="h-5 w-36" />
         )}
       </TableCell>
     </TableRow>
@@ -267,6 +267,22 @@ function ReviewsMeter({
       ) : null}
     </span>
   );
+}
+
+function PendingReviewCell({
+  status,
+  className,
+}: {
+  status: 'loading' | 'unavailable';
+  className: string;
+}) {
+  const t = useTranslations('decisions.review');
+
+  if (status === 'loading') {
+    return <Skeleton className={className} />;
+  }
+
+  return <EmptyMark label={t('reviewProgressUnavailable')} />;
 }
 
 function EmptyMark({ label }: { label?: string }) {

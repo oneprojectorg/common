@@ -1184,6 +1184,7 @@
       "districtColumn": "District",
       "categoryColumn": "Catégorie",
       "reviewProgressLabel": "Progression de l’examen",
+      "reviewProgressUnavailable": "Progression de l’examen indisponible",
       "reviewProgressHeading": "Progression de l'examen",
       "lastSubmissionLabel": "Dernier envoi",
       "progressLabel": "Progression",
