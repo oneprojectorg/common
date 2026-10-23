@@ -1,63 +1,77 @@
-// How the other pathway builds its phases and recap from four answers. Read by the mapping step.
+// How the other pathway builds its phases and recap from its answers. Read by the mapping step.
 import { type ReactNode, createElement } from 'react';
 
 import type { TranslateFn } from '@/lib/i18n';
 
+import { VOTE_CAPABILITIES } from './phasePresets';
+import { subjectMeta } from './questions';
 import type {
   Decision,
-  WizardPhase,
-  Subject,
-  SubjectAnswer,
   SubmitKey,
   WizardAnswers,
   WizardCopyKey,
+  WizardPhase,
 } from './types';
 
 export type OtherAnswers = Pick<
   WizardAnswers,
-  'subject' | 'cadence' | 'submits' | 'decision'
+  'subject' | 'subjectText' | 'cadence' | 'submits' | 'decision'
 >;
 
-const SUBJECT_NOUN: Record<Subject, WizardCopyKey> = {
-  funding: 'subjectFundingNoun',
-  ideas: 'subjectIdeasNoun',
-  people: 'subjectPeopleNoun',
-  else: 'subjectElseNoun',
-};
-
 export function subjectPhrase(
-  subject: SubjectAnswer | null,
+  { subject, subjectText }: OtherAnswers,
   t: TranslateFn<'decisions.createWizard'>,
 ): string {
-  if (subject?.kind === 'else' && subject.text.trim()) {
-    return subject.text.trim();
-  }
+  const words = subjectText.trim();
 
-  return t(SUBJECT_NOUN[subject?.kind ?? 'else']);
+  return subject === 'else' && words ? words : t(subjectMeta(subject).noun);
 }
 
-const INTAKE_NAME: Record<SubmitKey, WizardCopyKey> = {
-  applications: 'collectApplications',
-  proposals: 'collectProposals',
-  rough: 'collectIdeas',
-  nominations: 'collectNominations',
-  none: 'collectSubmissions',
+interface Intake {
+  name: WizardCopyKey;
+  phaseName: WizardCopyKey;
+  description: WizardCopyKey;
+  recap: WizardCopyKey;
+}
+
+const INTAKE: Record<SubmitKey, Intake> = {
+  applications: {
+    name: 'collectApplications',
+    phaseName: 'sendYourApplication',
+    description: 'collectApplicationsDescription',
+    recap: 'recapIntakeApplications',
+  },
+  proposals: {
+    name: 'collectProposals',
+    phaseName: 'sendYourProposal',
+    description: 'collectWrittenProposalsDescription',
+    recap: 'recapIntakeWritten',
+  },
+  rough: {
+    name: 'collectIdeas',
+    phaseName: 'shareYourIdeas',
+    description: 'collectIdeasDescription',
+    recap: 'recapIntakeRough',
+  },
+  nominations: {
+    name: 'collectNominations',
+    phaseName: 'makeNomination',
+    description: 'collectNominationsDescription',
+    recap: 'recapIntakeNominations',
+  },
+  none: {
+    name: 'collectSubmissions',
+    phaseName: 'sendYourSubmission',
+    description: 'collectSubmissionsDescription',
+    recap: 'recapIntakeNone',
+  },
 };
 
-const INTAKE_PHASE_NAME: Record<SubmitKey, WizardCopyKey> = {
-  applications: 'sendYourApplication',
-  proposals: 'sendYourProposal',
-  rough: 'shareYourIdeas',
-  nominations: 'makeNomination',
-  none: 'sendYourSubmission',
-};
-
-const INTAKE_DESCRIPTION: Record<SubmitKey, WizardCopyKey> = {
-  applications: 'collectApplicationsDescription',
-  proposals: 'collectWrittenProposalsDescription',
-  rough: 'collectIdeasDescription',
-  nominations: 'collectNominationsDescription',
-  none: 'collectSubmissionsDescription',
+const DECISION_RECAP: Record<Decision, WizardCopyKey> = {
+  vote: 'recapDecisionVote',
+  review: 'recapDecisionReview',
+  both: 'recapDecisionBoth',
+  agree: 'recapDecisionAgree',
 };
 
 const REVIEW_CAPABILITIES: WizardCopyKey[] = [
@@ -71,12 +85,14 @@ export function composeOtherPhases(answers: OtherAnswers): WizardPhase[] {
   const submits = answers.submits ?? 'none';
 
   if (answers.cadence === 'ongoing') {
+    // An always-open process collects something, so nothing to submit reads as proposals.
+    const intake = INTAKE[submits === 'none' ? 'proposals' : submits];
+
     return [
       {
-        name: INTAKE_NAME[submits === 'none' ? 'proposals' : submits],
-        phaseName:
-          INTAKE_PHASE_NAME[submits === 'none' ? 'proposals' : submits],
-        phaseType: 'submissions',
+        name: intake.name,
+        phaseName: intake.phaseName,
+        kind: 'submissions',
         description: 'ongoingIntakeDescription',
         capabilities: [
           'setYourOwnQuestions',
@@ -94,15 +110,16 @@ export function composeOtherPhases(answers: OtherAnswers): WizardPhase[] {
   const phases: WizardPhase[] = [];
 
   if (submits !== 'none') {
+    const intake = INTAKE[submits];
     const supportCapabilities: WizardCopyKey[] = discussionOnly
       ? ['letPeopleCommentLikeShow']
       : [];
 
     phases.push({
-      name: INTAKE_NAME[submits],
-      phaseName: INTAKE_PHASE_NAME[submits],
-      phaseType: 'submissions',
-      description: INTAKE_DESCRIPTION[submits],
+      name: intake.name,
+      phaseName: intake.phaseName,
+      kind: 'submissions',
+      description: intake.description,
       capabilities: [
         'setYourOwnQuestions',
         'openAllInviteOnly',
@@ -116,7 +133,7 @@ export function composeOtherPhases(answers: OtherAnswers): WizardPhase[] {
     phases.push({
       name: 'narrowDown',
       phaseName: 'shortlisting',
-      phaseType: 'review',
+      kind: 'review',
       description:
         decision === 'both'
           ? 'narrowDownDescription'
@@ -129,7 +146,7 @@ export function composeOtherPhases(answers: OtherAnswers): WizardPhase[] {
     phases.push({
       name: 'workThemUp',
       phaseName: 'buildThemUp',
-      phaseType: 'submissions',
+      kind: 'submissions',
       description: 'workThemUpDescription',
       capabilities: [
         'buildWhatWasAlreadySubmitted',
@@ -143,7 +160,7 @@ export function composeOtherPhases(answers: OtherAnswers): WizardPhase[] {
     phases.push({
       name: 'reviewDecide',
       phaseName: 'reviewDecide',
-      phaseType: 'review',
+      kind: 'review',
       description: 'reviewDecideDescription',
       capabilities: REVIEW_CAPABILITIES,
     });
@@ -151,23 +168,18 @@ export function composeOtherPhases(answers: OtherAnswers): WizardPhase[] {
 
   if (decision === 'vote' || decision === 'both') {
     phases.push({
-      name: answers.subject?.kind === 'people' ? 'holdVote' : 'putVote',
+      name: subjectMeta(answers.subject).voteName,
       phaseName: 'votePhase',
-      phaseType: 'voting',
+      kind: 'voting',
       description: 'groupVoteDescription',
-      capabilities: [
-        'chooseHowPeopleVote',
-        'combineWaysVoting',
-        'decideWhoCanVote',
-        'keepVotesAnonymous',
-      ],
+      capabilities: VOTE_CAPABILITIES,
     });
   }
 
   phases.push({
     name: 'shareWhatWasDecided',
     phaseName: 'seeWhatWasDecided',
-    phaseType: 'results',
+    kind: 'results',
     capabilities: [
       discussionOnly ? 'publishWhatGroupLanded' : 'publishOutcome',
       'showTitlesOnlyFullEntries',
@@ -178,26 +190,11 @@ export function composeOtherPhases(answers: OtherAnswers): WizardPhase[] {
   return phases;
 }
 
-const INTAKE_RECAP: Record<SubmitKey, WizardCopyKey> = {
-  none: 'recapIntakeNone',
-  rough: 'recapIntakeRough',
-  nominations: 'recapIntakeNominations',
-  applications: 'recapIntakeApplications',
-  proposals: 'recapIntakeWritten',
-};
-
-const DECISION_RECAP: Record<Decision, WizardCopyKey> = {
-  vote: 'recapDecisionVote',
-  review: 'recapDecisionReview',
-  both: 'recapDecisionBoth',
-  agree: 'recapDecisionAgree',
-};
-
 export function describeOther(
   answers: OtherAnswers,
   t: TranslateFn<'decisions.createWizard'>,
 ): ReactNode {
-  const subject = subjectPhrase(answers.subject, t);
+  const subject = subjectPhrase(answers, t);
   const bdi = (chunks: ReactNode) => createElement('bdi', null, chunks);
 
   if (answers.cadence === 'ongoing') {
@@ -207,7 +204,7 @@ export function describeOther(
   return t.rich('recapTimeline', {
     subject,
     bdi,
-    intake: t(INTAKE_RECAP[answers.submits ?? 'none']),
+    intake: t(INTAKE[answers.submits ?? 'none'].recap),
     call: t(DECISION_RECAP[answers.decision ?? 'vote']),
   });
 }

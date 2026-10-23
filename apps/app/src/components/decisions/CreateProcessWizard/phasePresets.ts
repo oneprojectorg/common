@@ -1,21 +1,58 @@
-// What the wizard offers for a named type and shape: hand-written phase lists, and the grant transform. Read by the mapping step.
+// What the wizard offers for a named shape: hand-written phase lists, and the grant transform. Read by the mapping step.
 import type {
   GrantDecision,
-  GrantShape,
-  PbShape,
-  WizardPhase,
-  ProcessType,
   ShapeKey,
+  WizardCopyKey,
+  WizardPhase,
 } from './types';
 
-type PresetKey = `grant:${GrantShape}` | `pb:${PbShape}`;
+export const VOTE_CAPABILITIES: WizardCopyKey[] = [
+  'chooseHowPeopleVote',
+  'combineWaysVoting',
+  'decideWhoCanVote',
+  'keepVotesAnonymous',
+];
 
-const PRESETS: Record<PresetKey, WizardPhase[]> = {
-  'pb:ideas': [
+const PB_VOTE: WizardPhase = {
+  name: 'putVote',
+  phaseName: 'votePhase',
+  kind: 'voting',
+  capabilities: ['chooseHowPeopleVote', 'setBudgetLimits', 'decideWhoCanVote'],
+  norm: 'pbVoteNorm',
+};
+
+const PB_RESULTS: WizardPhase = {
+  name: 'shareResults',
+  phaseName: 'seeResults',
+  kind: 'results',
+  capabilities: [
+    'publishWhatGotFunded',
+    'notifyParticipants',
+    'shareSummaryPage',
+  ],
+};
+
+const GRANT_AWARDS: WizardPhase = {
+  name: 'shareAwards',
+  phaseName: 'seeAwards',
+  kind: 'results',
+  capabilities: ['publishAwards', 'notifyApplicants', 'shareSummaryPage'],
+};
+
+const GRANT_VOTE: WizardPhase = {
+  name: 'putVote',
+  phaseName: 'votePhase',
+  kind: 'voting',
+  description: 'grantVoteDescription',
+  capabilities: VOTE_CAPABILITIES,
+};
+
+const PRESETS: Record<ShapeKey, WizardPhase[]> = {
+  ideas: [
     {
       name: 'collectIdeas',
       phaseName: 'shareYourIdeas',
-      phaseType: 'submissions',
+      kind: 'submissions',
       description: 'collectIdeasDescription',
       capabilities: [
         'setYourOwnQuestions',
@@ -26,7 +63,7 @@ const PRESETS: Record<PresetKey, WizardPhase[]> = {
     {
       name: 'screenIdeas',
       phaseName: 'reviewIdeas',
-      phaseType: 'review',
+      kind: 'review',
       description: 'screenIdeasDescription',
       capabilities: [
         'checkEligibilityFeasibility',
@@ -38,7 +75,7 @@ const PRESETS: Record<PresetKey, WizardPhase[]> = {
     {
       name: 'buildProposals',
       phaseName: 'buildProposalsPhaseName',
-      phaseType: 'submissions',
+      kind: 'submissions',
       description: 'buildProposalsDescription',
       capabilities: [
         'chooseWhoDevelopsThem',
@@ -46,34 +83,15 @@ const PRESETS: Record<PresetKey, WizardPhase[]> = {
         'addCostBudgetDetails',
       ],
     },
-    {
-      name: 'putVote',
-      phaseName: 'votePhase',
-      phaseType: 'voting',
-      capabilities: [
-        'chooseHowPeopleVote',
-        'setBudgetLimits',
-        'decideWhoCanVote',
-      ],
-      norm: 'pbVoteNorm',
-    },
-    {
-      name: 'shareResults',
-      phaseName: 'seeResults',
-      phaseType: 'results',
-      capabilities: [
-        'publishWhatGotFunded',
-        'notifyParticipants',
-        'shareSummaryPage',
-      ],
-    },
+    PB_VOTE,
+    PB_RESULTS,
   ],
 
-  'pb:proposals': [
+  proposals: [
     {
       name: 'collectProposals',
       phaseName: 'sendYourProposals',
-      phaseType: 'submissions',
+      kind: 'submissions',
       description: 'collectCompleteProposalsDescription',
       capabilities: [
         'setYourOwnQuestions',
@@ -84,41 +102,22 @@ const PRESETS: Record<PresetKey, WizardPhase[]> = {
     {
       name: 'screenProposals',
       phaseName: 'reviewProposals',
-      phaseType: 'review',
+      kind: 'review',
       capabilities: [
         'checkEligibilityFeasibility',
         'addQuestionsReviewers',
         'runMoreThanOneRound',
       ],
     },
-    {
-      name: 'putVote',
-      phaseName: 'votePhase',
-      phaseType: 'voting',
-      capabilities: [
-        'chooseHowPeopleVote',
-        'setBudgetLimits',
-        'decideWhoCanVote',
-      ],
-      norm: 'pbVoteNorm',
-    },
-    {
-      name: 'shareResults',
-      phaseName: 'seeResults',
-      phaseType: 'results',
-      capabilities: [
-        'publishWhatGotFunded',
-        'notifyParticipants',
-        'shareSummaryPage',
-      ],
-    },
+    PB_VOTE,
+    PB_RESULTS,
   ],
 
-  'grant:loi': [
+  loi: [
     {
       name: 'collectLettersIntent',
       phaseName: 'sendLetterIntent',
-      phaseType: 'submissions',
+      kind: 'submissions',
       description: 'collectLettersIntentDescription',
       capabilities: [
         'setWhatLetterShouldCover',
@@ -129,7 +128,7 @@ const PRESETS: Record<PresetKey, WizardPhase[]> = {
     {
       name: 'pickShortlist',
       phaseName: 'shortlisting',
-      phaseType: 'review',
+      kind: 'review',
       description: 'pickShortlistDescription',
       capabilities: [
         'buildScoringRubric',
@@ -141,7 +140,7 @@ const PRESETS: Record<PresetKey, WizardPhase[]> = {
     {
       name: 'collectFullApplications',
       phaseName: 'sendYourApplication',
-      phaseType: 'submissions',
+      kind: 'submissions',
       description: 'collectFullApplicationsDescription',
       capabilities: [
         'buildWhatLetterAsked',
@@ -152,7 +151,7 @@ const PRESETS: Record<PresetKey, WizardPhase[]> = {
     {
       name: 'chooseWhosFunded',
       phaseName: 'reviewDecide',
-      phaseType: 'review',
+      kind: 'review',
       description: 'chooseFromFullApplicationsDescription',
       capabilities: [
         'buildScoringRubric',
@@ -161,19 +160,14 @@ const PRESETS: Record<PresetKey, WizardPhase[]> = {
         'chooseWhatAdvances',
       ],
     },
-    {
-      name: 'shareAwards',
-      phaseName: 'seeAwards',
-      phaseType: 'results',
-      capabilities: ['publishAwards', 'notifyApplicants', 'shareSummaryPage'],
-    },
+    GRANT_AWARDS,
   ],
 
-  'grant:single': [
+  single: [
     {
       name: 'collectApplications',
       phaseName: 'sendYourApplication',
-      phaseType: 'submissions',
+      kind: 'submissions',
       capabilities: [
         'setWhatApplicationAsks',
         'openAllInviteOnly',
@@ -183,7 +177,7 @@ const PRESETS: Record<PresetKey, WizardPhase[]> = {
     {
       name: 'chooseWhosFunded',
       phaseName: 'reviewDecide',
-      phaseType: 'review',
+      kind: 'review',
       description: 'chooseFromApplicationsDescription',
       capabilities: [
         'buildScoringRubric',
@@ -192,66 +186,31 @@ const PRESETS: Record<PresetKey, WizardPhase[]> = {
         'chooseWhatAdvances',
       ],
     },
-    {
-      name: 'shareAwards',
-      phaseName: 'seeAwards',
-      phaseType: 'results',
-      capabilities: ['publishAwards', 'notifyApplicants', 'shareSummaryPage'],
-    },
+    GRANT_AWARDS,
   ],
 };
 
-const isPresetKey = (key: string): key is PresetKey => key in PRESETS;
-
-export function presetPhases(
-  type: ProcessType | null,
-  shape: ShapeKey | null,
-): WizardPhase[] {
-  if (!type || !shape) {
-    return [];
-  }
-
-  const key = `${type}:${shape}`;
-
-  return isPresetKey(key) ? PRESETS[key] : [];
-}
-
-const GRANT_VOTE_PHASE: WizardPhase = {
-  name: 'putVote',
-  phaseName: 'votePhase',
-  phaseType: 'voting',
-  description: 'grantVoteDescription',
-  capabilities: [
-    'chooseHowPeopleVote',
-    'combineWaysVoting',
-    'decideWhoCanVote',
-    'keepVotesAnonymous',
-  ],
-};
+export const presetPhases = (shape: ShapeKey | null): WizardPhase[] =>
+  shape ? PRESETS[shape] : [];
 
 /** Only the last review changes: an earlier one picks who advances, whoever decides. */
 export function applyGrantDecision(
   phases: WizardPhase[],
   decision: GrantDecision | null,
 ): WizardPhase[] {
-  if (!decision || decision === 'rubric' || phases.length === 0) {
+  if (!decision || decision === 'rubric') {
     return phases;
   }
 
-  const lastReview = phases.map((p) => p.phaseType).lastIndexOf('review');
-
-  if (lastReview < 0) {
-    return phases;
-  }
-
-  if (decision === 'applicants') {
-    return phases.map((p, i) => (i === lastReview ? GRANT_VOTE_PHASE : p));
-  }
-
+  const lastReview = phases.map((p) => p.kind).lastIndexOf('review');
   const deciding = phases[lastReview];
 
   if (!deciding) {
     return phases;
+  }
+
+  if (decision === 'applicants') {
+    return phases.map((p, i) => (i === lastReview ? GRANT_VOTE : p));
   }
 
   const narrowed: WizardPhase = {
@@ -264,7 +223,7 @@ export function applyGrantDecision(
   return [
     ...phases.slice(0, lastReview),
     narrowed,
-    GRANT_VOTE_PHASE,
+    GRANT_VOTE,
     ...phases.slice(lastReview + 1),
   ];
 }

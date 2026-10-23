@@ -1,55 +1,36 @@
-// What the wizard asks: the heading and options behind every choice screen. Read by flow.ts.
+// What the wizard asks: the options behind every choice screen, and what each subject changes. Read by flow.ts and composeOther.ts.
+import type { ProcessType } from '@op/common/client';
+
 import type {
   Cadence,
   Choice,
   Decision,
   GrantDecision,
-  ProcessType,
   ShapeKey,
   Subject,
   SubmitKey,
   WizardCopyKey,
 } from './types';
 
-export interface TypeMeta {
-  label: WizardCopyKey;
-  /** A whole noun phrase: articles inflect, so an adjective can't be interpolated. */
-  subjectPhrase: WizardCopyKey;
-  description: WizardCopyKey;
-}
-
-export const TYPE_ORDER: ProcessType[] = ['grant', 'pb', 'other'];
-
-export const TYPE_META: Record<ProcessType, TypeMeta> = {
-  grant: {
+export const TYPE_OPTIONS: Choice<ProcessType>[] = [
+  {
+    key: 'grant',
     label: 'grantTypeLabel',
-    subjectPhrase: 'grantTypeSubject',
     description: 'grantTypeDescription',
   },
-  pb: {
-    label: 'pbTypeLabel',
-    subjectPhrase: 'pbTypeSubject',
-    description: 'pbTypeDescription',
-  },
-  other: {
+  { key: 'pb', label: 'pbTypeLabel', description: 'pbTypeDescription' },
+  {
+    key: 'other',
     label: 'otherTypeLabel',
-    subjectPhrase: 'otherTypeSubject',
     description: 'otherTypeDescription',
   },
-};
-
-export const TYPE_OPTIONS: Choice<ProcessType>[] = TYPE_ORDER.map((type) => ({
-  key: type,
-  label: TYPE_META[type].label,
-  description: TYPE_META[type].description,
-}));
+];
 
 export interface ShapeQuestion {
   heading: WizardCopyKey;
   options: Choice<ShapeKey>[];
 }
 
-/** The other pathway composes its shape from its questions instead. */
 export const SHAPE_QUESTION: Record<
   Exclude<ProcessType, 'other'>,
   ShapeQuestion
@@ -86,52 +67,145 @@ export const SHAPE_QUESTION: Record<
   },
 };
 
-export const GRANT_DECISION_QUESTION: {
-  heading: WizardCopyKey;
-  options: Choice<GrantDecision>[];
-} = {
-  heading: 'grantDecisionHeading',
-  options: [
-    {
-      key: 'rubric',
-      label: 'grantDecisionRubricLabel',
-      description: 'grantDecisionRubricDescription',
-    },
-    {
-      key: 'applicants',
-      label: 'grantDecisionApplicantsLabel',
-      description: 'grantDecisionApplicantsDescription',
-    },
-    {
-      key: 'hybrid',
-      label: 'grantDecisionHybridLabel',
-      description: 'grantDecisionHybridDescription',
-    },
-  ],
-};
-
-export const SUBJECT_OPTIONS: Choice<Subject>[] = [
+export const GRANT_DECISION_OPTIONS: Choice<GrantDecision>[] = [
   {
-    key: 'funding',
-    label: 'subjectFundingLabel',
-    description: 'subjectFundingDescription',
+    key: 'rubric',
+    label: 'grantDecisionRubricLabel',
+    description: 'grantDecisionRubricDescription',
   },
   {
-    key: 'ideas',
-    label: 'subjectIdeasLabel',
-    description: 'subjectIdeasDescription',
+    key: 'applicants',
+    label: 'grantDecisionApplicantsLabel',
+    description: 'grantDecisionApplicantsDescription',
   },
   {
-    key: 'people',
-    label: 'subjectPeopleLabel',
-    description: 'subjectPeopleDescription',
-  },
-  {
-    key: 'else',
-    label: 'subjectElseLabel',
-    description: 'subjectElseDescription',
+    key: 'hybrid',
+    label: 'grantDecisionHybridLabel',
+    description: 'grantDecisionHybridDescription',
   },
 ];
+
+export interface SubjectMeta {
+  label: WizardCopyKey;
+  description: WizardCopyKey;
+  /** The subject as a noun, for the recap. */
+  noun: WizardCopyKey;
+  submitsHeading: WizardCopyKey;
+  submitOptions: Choice<SubmitKey>[];
+  /** How the vote phase is pitched. */
+  voteName: WizardCopyKey;
+}
+
+const SUBJECTS: Subject[] = ['funding', 'ideas', 'people', 'else'];
+
+export const SUBJECT_META: Record<Subject, SubjectMeta> = {
+  funding: {
+    label: 'subjectFundingLabel',
+    description: 'subjectFundingDescription',
+    noun: 'subjectFundingNoun',
+    submitsHeading: 'submitsFundingHeading',
+    submitOptions: [
+      {
+        key: 'applications',
+        label: 'submitsApplicationsLabel',
+        description: 'submitsApplicationsDescription',
+      },
+      {
+        key: 'rough',
+        label: 'submitsRoughLabel',
+        description: 'submitsRoughFundingDescription',
+      },
+      {
+        key: 'none',
+        label: 'submitsNoneLabel',
+        description: 'submitsNoneFundingDescription',
+      },
+    ],
+    voteName: 'putVote',
+  },
+  ideas: {
+    label: 'subjectIdeasLabel',
+    description: 'subjectIdeasDescription',
+    noun: 'subjectIdeasNoun',
+    submitsHeading: 'submitsPutForwardHeading',
+    submitOptions: [
+      {
+        key: 'rough',
+        label: 'submitsIdeasLabel',
+        description: 'submitsRoughIdeasDescription',
+      },
+      {
+        key: 'proposals',
+        label: 'submitsProposalsLabel',
+        description: 'submitsProposalsDescription',
+      },
+      {
+        key: 'none',
+        label: 'submitsNoneLabel',
+        description: 'submitsNoneIdeasDescription',
+      },
+    ],
+    voteName: 'putVote',
+  },
+  people: {
+    label: 'subjectPeopleLabel',
+    description: 'subjectPeopleDescription',
+    noun: 'subjectPeopleNoun',
+    submitsHeading: 'submitsPeopleHeading',
+    submitOptions: [
+      {
+        key: 'nominations',
+        label: 'submitsNominationsLabel',
+        description: 'submitsNominationsDescription',
+      },
+      {
+        key: 'applications',
+        label: 'submitsCandidatesLabel',
+        description: 'submitsCandidatesDescription',
+      },
+      {
+        key: 'none',
+        label: 'submitsNoneLabel',
+        description: 'submitsNonePeopleDescription',
+      },
+    ],
+    voteName: 'holdVote',
+  },
+  else: {
+    label: 'subjectElseLabel',
+    description: 'subjectElseDescription',
+    noun: 'subjectElseNoun',
+    submitsHeading: 'submitsPutForwardHeading',
+    submitOptions: [
+      {
+        key: 'proposals',
+        label: 'submitsWrittenLabel',
+        description: 'submitsProposalsDescription',
+      },
+      {
+        key: 'rough',
+        label: 'submitsRoughLabel',
+        description: 'submitsRoughElseDescription',
+      },
+      {
+        key: 'none',
+        label: 'submitsNoneLabel',
+        description: 'submitsNoneElseDescription',
+      },
+    ],
+    voteName: 'putVote',
+  },
+};
+
+export const SUBJECT_OPTIONS: Choice<Subject>[] = SUBJECTS.map((subject) => ({
+  key: subject,
+  label: SUBJECT_META[subject].label,
+  description: SUBJECT_META[subject].description,
+}));
+
+/** Nothing picked reads as something else. */
+export const subjectMeta = (subject: Subject | null): SubjectMeta =>
+  SUBJECT_META[subject ?? 'else'];
 
 export const CADENCE_OPTIONS: Choice<Cadence>[] = [
   {
@@ -145,84 +219,6 @@ export const CADENCE_OPTIONS: Choice<Cadence>[] = [
     description: 'cadenceOngoingDescription',
   },
 ];
-
-export const SUBMIT_OPTIONS: Record<Subject, Choice<SubmitKey>[]> = {
-  funding: [
-    {
-      key: 'applications',
-      label: 'submitsApplicationsLabel',
-      description: 'submitsApplicationsDescription',
-    },
-    {
-      key: 'rough',
-      label: 'submitsRoughLabel',
-      description: 'submitsRoughFundingDescription',
-    },
-    {
-      key: 'none',
-      label: 'submitsNoneLabel',
-      description: 'submitsNoneFundingDescription',
-    },
-  ],
-  ideas: [
-    {
-      key: 'rough',
-      label: 'submitsIdeasLabel',
-      description: 'submitsRoughIdeasDescription',
-    },
-    {
-      key: 'proposals',
-      label: 'submitsProposalsLabel',
-      description: 'submitsProposalsDescription',
-    },
-    {
-      key: 'none',
-      label: 'submitsNoneLabel',
-      description: 'submitsNoneIdeasDescription',
-    },
-  ],
-  people: [
-    {
-      key: 'nominations',
-      label: 'submitsNominationsLabel',
-      description: 'submitsNominationsDescription',
-    },
-    {
-      key: 'applications',
-      label: 'submitsCandidatesLabel',
-      description: 'submitsCandidatesDescription',
-    },
-    {
-      key: 'none',
-      label: 'submitsNoneLabel',
-      description: 'submitsNonePeopleDescription',
-    },
-  ],
-  else: [
-    {
-      key: 'proposals',
-      label: 'submitsWrittenLabel',
-      description: 'submitsProposalsDescription',
-    },
-    {
-      key: 'rough',
-      label: 'submitsRoughLabel',
-      description: 'submitsRoughElseDescription',
-    },
-    {
-      key: 'none',
-      label: 'submitsNoneLabel',
-      description: 'submitsNoneElseDescription',
-    },
-  ],
-};
-
-export const SUBMIT_HEADING: Record<Subject, WizardCopyKey> = {
-  funding: 'submitsFundingHeading',
-  ideas: 'submitsPutForwardHeading',
-  people: 'submitsPeopleHeading',
-  else: 'submitsPutForwardHeading',
-};
 
 export const DECISION_OPTIONS: Choice<Decision>[] = [
   {

@@ -11,10 +11,11 @@ import {
   subjectPhrase,
   type OtherAnswers,
 } from './composeOther';
-import { DECISION_OPTIONS, SUBMIT_OPTIONS } from './questions';
+import { DECISION_OPTIONS, SUBJECT_META } from './questions';
 
 const EMPTY: OtherAnswers = {
   subject: null,
+  subjectText: '',
   cadence: null,
   submits: null,
   decision: null,
@@ -36,20 +37,20 @@ const copy: Record<string, unknown> = english.decisions.createWizard;
 const markup = (node: ReactNode) => renderToStaticMarkup(<>{node}</>);
 
 const phases = (input: OtherAnswers) =>
-  composeOtherPhases(input).map((phase) => phase.phaseType);
+  composeOtherPhases(input).map((phase) => phase.kind);
 
 describe('composeOtherPhases', () => {
   it('maps an always-open process to a single open-ended intake', () => {
     const phases = composeOtherPhases(
       answers({
-        subject: { kind: 'ideas' },
+        subject: 'ideas',
         cadence: 'ongoing',
         decision: 'agree',
       }),
     );
 
     expect(phases).toHaveLength(1);
-    expect(phases[0]?.phaseType).toBe('submissions');
+    expect(phases[0]?.kind).toBe('submissions');
     expect(phases[0]?.capabilities).toContain('letMembersCommentLikeShow');
   });
 
@@ -92,7 +93,7 @@ describe('composeOtherPhases', () => {
       answers({ cadence: 'timeline', submits: 'rough', decision: 'review' }),
     );
 
-    expect(phases.map((phase) => phase.phaseType)).toEqual([
+    expect(phases.map((phase) => phase.kind)).toEqual([
       'submissions',
       'review',
       'submissions',
@@ -131,33 +132,36 @@ describe('composeOtherPhases', () => {
     const vote = (subject: OtherAnswers['subject']) =>
       composeOtherPhases(
         answers({ subject, cadence: 'timeline', decision: 'vote' }),
-      ).find((phase) => phase.phaseType === 'voting')?.name;
+      ).find((phase) => phase.kind === 'voting')?.name;
 
-    expect(vote({ kind: 'people' })).toBe('holdVote');
-    expect(vote({ kind: 'funding' })).toBe('putVote');
+    expect(vote('people')).toBe('holdVote');
+    expect(vote('funding')).toBe('putVote');
   });
 });
 
 describe('subjectPhrase', () => {
   it('names the subject', () => {
-    expect(subjectPhrase({ kind: 'funding' }, t)).toBe(
+    expect(subjectPhrase(answers({ subject: 'funding' }), t)).toBe(
       english.decisions.createWizard.subjectFundingNoun,
     );
   });
 
   it('speaks something else in the user’s own words', () => {
-    expect(subjectPhrase({ kind: 'else', text: '  A new logo ' }, t)).toBe(
-      'A new logo',
-    );
+    expect(
+      subjectPhrase(
+        answers({ subject: 'else', subjectText: '  A new logo ' }),
+        t,
+      ),
+    ).toBe('A new logo');
   });
 
   it('falls back to the generic noun with nothing picked or written', () => {
-    expect(subjectPhrase(null, t)).toBe(
+    expect(subjectPhrase(EMPTY, t)).toBe(
       english.decisions.createWizard.subjectElseNoun,
     );
-    expect(subjectPhrase({ kind: 'else', text: '  ' }, t)).toBe(
-      english.decisions.createWizard.subjectElseNoun,
-    );
+    expect(
+      subjectPhrase(answers({ subject: 'else', subjectText: '  ' }), t),
+    ).toBe(english.decisions.createWizard.subjectElseNoun);
   });
 });
 
@@ -165,10 +169,7 @@ describe('describeOther', () => {
   it('recaps an always-open process', () => {
     expect(
       markup(
-        describeOther(
-          answers({ subject: { kind: 'funding' }, cadence: 'ongoing' }),
-          t,
-        ),
+        describeOther(answers({ subject: 'funding', cadence: 'ongoing' }), t),
       ),
     ).toMatch(/^Deciding on <bdi>funding<\/bdi>, always open/);
   });
@@ -177,7 +178,7 @@ describe('describeOther', () => {
     const recap = markup(
       describeOther(
         answers({
-          subject: { kind: 'funding' },
+          subject: 'funding',
           cadence: 'timeline',
           submits: 'proposals',
           decision: 'vote',
@@ -197,7 +198,8 @@ describe('describeOther', () => {
       markup(
         describeOther(
           answers({
-            subject: { kind: 'else', text: 'مكان جديد!' },
+            subject: 'else',
+            subjectText: 'مكان جديد!',
             cadence: 'ongoing',
           }),
           t,
@@ -210,7 +212,7 @@ describe('describeOther', () => {
 describe('every process the other questions compose', () => {
   const cases = (['timeline', 'ongoing'] as const).flatMap((cadence) =>
     (['funding', 'ideas', 'people', 'else'] as const).flatMap((subject) =>
-      SUBMIT_OPTIONS[subject].flatMap((submits) =>
+      SUBJECT_META[subject].submitOptions.flatMap((submits) =>
         DECISION_OPTIONS.map(
           (decision) => [cadence, subject, submits.key, decision.key] as const,
         ),
@@ -222,16 +224,14 @@ describe('every process the other questions compose', () => {
     '%s, %s, %s, decided by %s',
     (cadence, subject, submits, decision) => {
       const input = answers({
-        subject:
-          subject === 'else'
-            ? { kind: 'else', text: 'A new logo' }
-            : { kind: subject },
+        subject,
+        subjectText: subject === 'else' ? 'A new logo' : '',
         cadence,
         submits,
         decision,
       });
       const phases = composeOtherPhases(input);
-      const phaseNames = phases.map((phase) => phase.phaseName ?? phase.name);
+      const phaseNames = phases.map((phase) => phase.phaseName);
       const keys = phases.flatMap((phase) => [
         phase.name,
         phase.phaseName,

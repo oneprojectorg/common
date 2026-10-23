@@ -7,6 +7,8 @@ import {
   EMPTY_ANSWERS,
   INITIAL_STATE,
   TOTAL_STEPS,
+  chooseOption,
+  chosenOption,
   isChoiceScreen,
   isScreenComplete,
   nextScreen,
@@ -16,7 +18,6 @@ import {
   screenOf,
   screensFor,
   settleAnswers,
-  shapeOf,
   stepOf,
   wizardReducer,
   type ScreenId,
@@ -36,7 +37,7 @@ const at = (screen: ScreenId, state: WizardAnswers): WizardState => ({
 
 const timeline = answers({
   type: 'other',
-  subject: { kind: 'funding' },
+  subject: 'funding',
   cadence: 'timeline',
   submits: 'applications',
   decision: 'vote',
@@ -166,24 +167,15 @@ describe('isScreenComplete', () => {
   });
 
   it('needs words for something else', () => {
-    const picked = answers({
-      type: 'other',
-      subject: { kind: 'else', text: '' },
-    });
+    const picked = answers({ type: 'other', subject: 'else' });
 
     expect(isScreenComplete('subject', EMPTY_ANSWERS)).toBe(false);
     expect(isScreenComplete('subject', picked)).toBe(false);
+    expect(isScreenComplete('subject', { ...picked, subjectText: '   ' })).toBe(
+      false,
+    );
     expect(
-      isScreenComplete('subject', {
-        ...picked,
-        subject: { kind: 'else', text: '   ' },
-      }),
-    ).toBe(false);
-    expect(
-      isScreenComplete('subject', {
-        ...picked,
-        subject: { kind: 'else', text: 'A new logo' },
-      }),
+      isScreenComplete('subject', { ...picked, subjectText: 'A new logo' }),
     ).toBe(true);
     expect(isScreenComplete('subject', timeline)).toBe(true);
   });
@@ -247,13 +239,6 @@ describe('progressPercent', () => {
   });
 });
 
-describe('shapeOf', () => {
-  it('composes the other pathway’s shape instead of asking for one', () => {
-    expect(shapeOf(timeline)).toBe('custom');
-    expect(shapeOf(answers({ type: 'grant', shape: 'loi' }))).toBe('loi');
-  });
-});
-
 describe('settleAnswers', () => {
   it('drops a shape the new type does not offer', () => {
     expect(
@@ -296,9 +281,22 @@ describe('settleAnswers', () => {
 
   it('drops what is submitted when the subject changes, even to one offering the same key', () => {
     expect(
-      settleAnswers({ ...timeline, subject: { kind: 'people' } }, timeline)
-        .submits,
+      settleAnswers({ ...timeline, subject: 'people' }, timeline).submits,
     ).toBeNull();
+  });
+
+  it('keeps the words for something else across picks', () => {
+    const typed = answers({
+      type: 'other',
+      subject: 'else',
+      subjectText: 'Murals',
+    });
+    const switched = settleAnswers({ ...typed, subject: 'funding' }, typed);
+
+    expect(switched.subjectText).toBe('Murals');
+    expect(
+      settleAnswers({ ...switched, subject: 'else' }, switched).subjectText,
+    ).toBe('Murals');
   });
 
   it('keeps what is submitted when the subject is picked again', () => {
@@ -320,11 +318,11 @@ describe('wizardReducer', () => {
   it('settles each answer against the ones before it', () => {
     const state = wizardReducer(at('subject', timeline), {
       type: 'answer',
-      patch: { subject: { kind: 'people' } },
+      patch: { subject: 'people' },
     });
 
     expect(state.screen).toBe('subject');
-    expect(state.answers.subject).toEqual({ kind: 'people' });
+    expect(state.answers.subject).toBe('people');
     expect(state.answers.submits).toBeNull();
   });
 
@@ -427,42 +425,20 @@ describe('choice screens', () => {
 
       for (const option of options) {
         const picked = settleAnswers(
-          { ...input, ...screen.choose(option.key, input) },
+          chooseOption(screen, option.key, input),
           input,
         );
 
-        expect(screen.chosen(picked)).toBe(option.key);
+        expect(chosenOption(screen, picked)).toBe(option.key);
         expect(screen.options(picked)).toEqual(options);
       }
 
-      expect(screen.choose('not-an-option', input)).toEqual(
-        screen.choose('not-an-option', input),
+      const unoffered = settleAnswers(
+        chooseOption(screen, 'not-an-option', input),
+        input,
       );
+
+      expect(chosenOption(screen, unoffered)).toBeNull();
     },
   );
-
-  it('keeps the words for something else while it stays picked, and drops them once it is not', () => {
-    const subject = screenOf('subject');
-
-    if (!isChoiceScreen(subject)) {
-      throw new Error('subject is a choice');
-    }
-
-    const typed = answers({
-      type: 'other',
-      subject: { kind: 'else', text: 'Murals' },
-    });
-
-    expect(subject.choose('else', typed).subject).toEqual({
-      kind: 'else',
-      text: 'Murals',
-    });
-    expect(subject.choose('funding', typed).subject).toEqual({
-      kind: 'funding',
-    });
-    expect(
-      subject.choose('else', { ...typed, subject: { kind: 'funding' } })
-        .subject,
-    ).toEqual({ kind: 'else', text: '' });
-  });
 });
