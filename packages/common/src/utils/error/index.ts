@@ -123,3 +123,9 @@ export class NotImplementedError extends CommonError {
     super(message ?? defaultMessage);
   }
 }
+
+export class VoterNotEnrolledError extends ValidationError {
+  constructor(message = 'Enrol before voting in this decision') {
+    super(message);
+  }
+}
