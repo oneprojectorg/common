@@ -80,10 +80,14 @@ Messaging Service features.
 
 The inbound handler publishes an `smsInboundReceived` Inngest event keyed on
 `MessageSid`, so Twilio retries of one message do not start two runs. The
-event carries the sender, the `MessageSid`, and the message reduced to a code
-when it is one; the message text never leaves the API. Both handlers reply
-with empty TwiML (`<Response></Response>`, `text/xml`), which Twilio expects
-from a message webhook.
+event carries the sender (`from`), the number texted (`to`), the
+`MessageSid`, the parsed command (`keyword`, `argument`), the digits as a
+signup `code` when the text is only digits, and the message text (`body`).
+The text is on the event because a street address and a list of proposal
+codes are free text; Inngest keeps event payloads for its retention period,
+and nothing writes the text to a table. Both handlers reply with empty TwiML
+(`<Response></Response>`, `text/xml`), which Twilio expects from a message
+webhook.
 
 A carrier keyword — STOP, START or HELP and their aliases, as Twilio lists
 them — is acknowledged and not published. Twilio answers those itself and,
@@ -91,6 +95,61 @@ after STOP, refuses every later send to the number with error 21610, so a
 reply from us would be a second help text or a doomed send. With Advanced
 Opt-Out on the Messaging Service the request carries `OptOutType`; without
 it the handler recognises the keyword from the body.
+
+### Commands
+
+`handleSMSCommand` in `services/workflows` answers a confirmed number. A
+keyword is matched case-insensitively at the start of the text; anything
+else is free text. A decision is named by its slug, or by the line the text
+was sent to (see Decision lines). The keywords live in
+`packages/core/src/sms.ts`; the dispatcher is a `switch` over them, so a
+keyword without a handler fails the typecheck.
+
+| Text                        | Reply                                                                                                                                      |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `JOIN`                      | On a known number: you already have an account. On an unknown number: `handleUnknownSmsSignup` sends the consent text and creates the account. |
+| `SHOW`                      | The decisions the member belongs to; on a line, that decision's phase, voting state and ballot size.                                        |
+| `SHOW <slug>`               | One decision's phase, voting state and ballot size.                                                                                        |
+| `VOTE [<slug>]`             | Starts registration when the voting phase has `voting.enrolment`: asks for the address. Without the rule: no registration is needed.        |
+| a street address            | While a registration waits for it: confirms the district and sends the attestation, or says the address was not found or is outside.      |
+| `AGREE`                     | Affirms the attestation that was sent; the voter is registered.                                                                             |
+| `PROPOSALS [<slug>]`        | The first five proposals of the voter's district ballot with codes and costs.                                                             |
+| `MORE`                      | The next five, from where PROPOSALS left off.                                                                                                |
+| `INFO <code>`               | One proposal's title, cost and summary.                                                                                                     |
+| `<code>` or `<code> <code>` | Adds each proposal to the draft ballot in order and says what is left of the budget; a pick that does not fit is refused with the make-room reply. |
+| `LIST`                      | The draft ballot in rank order with the allocated and unspent amounts.                                                                      |
+| `REMOVE <code>`             | Takes a pick off the draft.                                                                                                                 |
+| `MOVE <code> <position>`    | Reorders a pick; order is rank.                                                                                                             |
+| `DONE`                      | The full ballot, the ranking note and the SUBMIT prompt.                                                                                     |
+| `SUBMIT`                    | Casts the ballot through `submitVote`, or revises it after CHANGE through `reviseVote`. A second SUBMIT says the ballot is already in.      |
+| `CHANGE`                    | Reopens a cast ballot as a draft while the phase has `voting.edit`.                                                                           |
+| anything else               | The help text.                                                                                                                              |
+
+STOP, START and HELP never reach the dispatcher; Twilio answers them (see
+above). Digits from a number with no account are a signup code and belong to
+`handleUnknownSmsSignup`; digits from a confirmed number are proposal codes.
+
+### Decision lines
+
+A decision can own a Twilio number. The binding is a row in
+`decision_chat_lines` (`process_instance_id`, `phone_number` in E.164), and
+nothing in the product writes it yet: an operator inserts it when the number
+is added to the Messaging Service sender pool. On a line, SHOW, VOTE,
+PROPOSALS and the ballot keywords need no slug, and every reply is sent from
+that number. A number bound in the Twilio Console but not in the table
+behaves as the shared number.
+
+```sql
+insert into decision_chat_lines (process_instance_id, phone_number)
+values ('<decision_process_instances.id>', '+16145550130');
+```
+
+### Ballot guide
+
+Each submitted proposal has a short code (`decision_proposals.short_code`,
+from 101 per decision), the number a voter texts. The CSV from
+`decision.export` carries it in the `Code` column beside `Proposal ID`, so
+the printed ballot guide can be produced from the existing export.
 
 ## Webhook failure logs
 
@@ -172,8 +231,7 @@ stay off until the A2P campaign is approved.
 | -------------- | ---------------------------------------------------------------------------------------------------------------- |
 | `sms-login`    | The phone option in `LoginPanel` and `JoinAccountModal`.                                                         |
 | `sms-signup`   | `handleUnknownSmsSignup`: an unknown number that texts the Messaging Service gets a consent text and an account. |
-| `sms-commands` | `handleSMSCommand`: a confirmed number that texts SHOW, JOIN or anything else gets a reply.                      |
-| `sms-commands` | `handleSMSCommand`: a confirmed number that texts SHOW, JOIN or anything else gets a reply.                      |
+| `sms-commands` | `handleSMSCommand`: a confirmed number that texts a command, a proposal code or anything else gets a reply (see Commands). |
 
 ## Local development
 
@@ -185,3 +243,56 @@ collide with it.
 
 GoTrue never autoconfirms a phone. `smsAutoconfirm.test.ts` in `services/api`
 fails if that is turned back on.
+
+### Manual test through ngrok
+
+A text conversation against a local checkout needs a Twilio account with a
+Messaging Service, an approved A2P campaign, and one number in its sender
+pool to bind as a decision line. Nothing here starts or stops the dev
+servers; the API on `:3101` and the app on `:3100` are assumed to be running.
+
+1. Tunnel the API: `ngrok http 3101`. Copy the `https://…ngrok…` host.
+2. In the Twilio Console, on the Messaging Service, set "A message comes in"
+   (POST) to `https://<ngrok host>/api/v1/notifications/twilio/inbound` —
+   exact path, no trailing slash, no query string. Outside production the
+   route rebuilds the signed URL from `x-forwarded-proto` and
+   `x-forwarded-host`, so the signature check passes through the tunnel; in
+   production it trusts only the request URL.
+3. In PostHog, turn on `sms-signup` and `sms-commands` for the server.
+4. Publish a decision whose voting phase has `voting.submit: true`, a
+   `voterBudget`, `ranked: true`, `edit: true` if CHANGE is to be tested, and
+   `voting.enrolment: { attestation, boundary }` if registration is. Import
+   boundaries whose names match proposal categories, and submit proposals
+   whose pins fall inside them; each submitted proposal gets a short code.
+5. Bind the line: insert the `decision_chat_lines` row (see Decision lines)
+   for the decision's `decision_process_instances.id` and the pool number.
+6. From a phone, text the line. The expected conversation, with a
+   `voterBudget` of 1,000,000 and the memo's example titles:
+
+| You text                 | Reply                                                                                                                                      |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `JOIN`                   | The consent text, then a code to confirm the number; reply with the code. (Shared number: `JOIN <slug>`.)                                   |
+| `SHOW`                   | `"<decision>": Voting phase, voting open, N proposals.`                                                                                    |
+| `VOTE`                   | `Welcome to "<decision>". Two quick steps to register: your address, then a short affirmation. No ID needed. What's your address?`         |
+| `375 S High St, …`       | `That's District 5. Reply AGREE to affirm: "<attestation>"`                                                                                 |
+| `AGREE`                  | `You're registered. You have $1,000,000 for District 5 proposals.`                                                                           |
+| `PROPOSALS`              | `District 5 has N proposals. First 5:` then `101 <title> ($85,000)` … and `Reply MORE for the rest, or INFO plus a code.`                   |
+| `MORE`                   | `Next 5:` …                                                                                                                                 |
+| `INFO 101`               | `101 "<title>" ($85,000)` and the summary.                                                                                                  |
+| `101`                    | `Pick 1: "<title>" ($85,000). $915,000 left. Text another code, LIST to see your ballot, or DONE to review.`                                |
+| `102 103`                | `Pick 2: … Pick 3: … $<left> left.`                                                                                                        |
+| a code that does not fit | `"<title>" costs $…. You have $… left. Reply REMOVE plus a code to make room, or pick a smaller project.`                                    |
+| `LIST`                   | `Your District 5 ballot:` numbered picks, `$… allocated, $… unspent.`                                                                        |
+| `REMOVE 103` / `MOVE 102 1` | `Removed "<title>". $… left.` / `"<title>" is now pick 1.`                                                                                |
+| `DONE`                   | The ballot, the ranking note and `Reply SUBMIT to cast your ballot.`                                                                         |
+| `SUBMIT`                 | `Your ballot is in. One ballot per person. How you vote is never public.`                                                                   |
+| `SUBMIT` again           | `Your ballot is already in. One ballot per person.`                                                                                         |
+| `CHANGE`                 | `Your ballot is open for changes…` and the ballot (needs `voting.edit`); then codes, REMOVE, MOVE and `SUBMIT` → `Your ballot is updated…` |
+
+On the shared number the same conversation works with a slug: `SHOW <slug>`,
+`VOTE <slug>`, `PROPOSALS <slug>`; the codes, LIST, DONE, SUBMIT and CHANGE
+then follow the decision you last browsed or voted in.
+
+Read back the result with the voter's profile: one row in
+`decisions_vote_submissions`, its `decisions_vote_proposals` rows in pick
+order, and no row left in `decision_ballot_drafts`.
