@@ -1452,3 +1452,82 @@ describeDecisionAccessTierGating('updateDecisionInstance', {
     },
   ),
 });
+
+describe.concurrent('voting enrolment rule', () => {
+  it('given an admin sets an attestation and the boundary flag on the voting phase, when the instance is read back, then the enrolment rule is stored as written', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instanceId = setup.instance.instance.id;
+    const phaseId = await getFirstPhaseId(instanceId);
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    await caller.decision.updateDecisionInstance({
+      instanceId,
+      phases: [
+        {
+          phaseId,
+          rules: {
+            voting: {
+              submit: true,
+              enrolment: {
+                attestation: 'I affirm that I live in the city.',
+                boundary: true,
+              },
+            },
+          },
+        },
+      ],
+    });
+
+    const reread = await caller.decision.getInstance({ instanceId });
+    const storedRules = reread.instanceData?.phases?.find(
+      (p) => p.phaseId === phaseId,
+    )?.rules;
+
+    expect(storedRules?.voting).toMatchObject({
+      submit: true,
+      enrolment: {
+        attestation: 'I affirm that I live in the city.',
+        boundary: true,
+      },
+    });
+  });
+
+  it('given an admin sets an enrolment rule whose attestation is blank, when the phase is updated, then the request is refused and the rules are unchanged', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instanceId = setup.instance.instance.id;
+    const phaseId = await getFirstPhaseId(instanceId);
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+    const before = await caller.decision.getInstance({ instanceId });
+
+    await expect(
+      caller.decision.updateDecisionInstance({
+        instanceId,
+        phases: [
+          {
+            phaseId,
+            rules: {
+              voting: { submit: true, enrolment: { attestation: '   ' } },
+            },
+          },
+        ],
+      }),
+    ).rejects.toMatchObject({ code: 'BAD_REQUEST' });
+
+    const after = await caller.decision.getInstance({ instanceId });
+    expect(after.instanceData?.phases).toEqual(before.instanceData?.phases);
+  });
+});
