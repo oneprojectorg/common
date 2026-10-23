@@ -44,12 +44,22 @@ export const TYPE_META: Record<ProcessType, TypeMeta> = {
   },
 };
 
+export const TYPE_OPTIONS: Choice<ProcessType>[] = TYPE_ORDER.map((type) => ({
+  key: type,
+  label: TYPE_META[type].label,
+  description: TYPE_META[type].description,
+}));
+
 export interface ShapeQuestion {
   heading: WizardCopyKey;
   options: Choice<ShapeKey>[];
 }
 
-export const SHAPE_QUESTION: Partial<Record<ProcessType, ShapeQuestion>> = {
+/** The other pathway composes its shape from its questions instead. */
+export const SHAPE_QUESTION: Record<
+  Exclude<ProcessType, 'other'>,
+  ShapeQuestion
+> = {
   grant: {
     heading: 'grantShapeHeading',
     options: [

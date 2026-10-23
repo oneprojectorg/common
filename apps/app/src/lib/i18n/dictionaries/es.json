@@ -1699,7 +1699,6 @@
       "decisionBothDescription": "Una revisión reduce las opciones y luego se somete a votación",
       "decisionBothLabel": "Ambas",
       "decisionHeading": "¿Cómo se toma la decisión?",
-      "decisionOngoingDescription": "Para lo que publican las personas del grupo.",
       "decisionReviewDescription": "Un panel o comité toma la decisión",
       "decisionReviewLabel": "Un grupo más pequeño revisa y decide",
       "decisionVoteDescription": "Todo el grupo decide en conjunto",

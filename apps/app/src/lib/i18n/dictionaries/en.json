@@ -1699,7 +1699,6 @@
       "decisionBothDescription": "A review narrows it down, then it goes to a vote",
       "decisionBothLabel": "Both",
       "decisionHeading": "How does the decision get made?",
-      "decisionOngoingDescription": "For the things members post.",
       "decisionReviewDescription": "A panel or committee makes the call",
       "decisionReviewLabel": "A smaller group reviews and decides",
       "decisionVoteDescription": "The whole group decides together",
