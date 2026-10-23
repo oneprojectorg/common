@@ -103,7 +103,7 @@ export interface ProposalsListProps {
   pinOffset?: number;
 }
 
-type ProposalsLoaderRenderProps = {
+export type ProposalsLoaderRenderProps = {
   allProposals: Proposal[];
   /** Full server-side proposal count for the active filter, independent of how many pages are loaded. */
   total: number;
@@ -152,7 +152,7 @@ const useProposalsLoaderRenderProps = (
   };
 };
 
-const CurrentPhaseProposalsLoader = ({
+export const CurrentPhaseProposalsLoader = ({
   queryParams,
   children,
 }: {

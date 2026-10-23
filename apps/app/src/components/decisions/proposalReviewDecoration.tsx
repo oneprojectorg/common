@@ -1,7 +1,10 @@
 'use client';
 
 import { trpc } from '@op/api/client';
-import { type Proposal } from '@op/common/client';
+import {
+  type Proposal,
+  type ProposalReviewAggregates,
+} from '@op/common/client';
 import {
   type ReactNode,
   createContext,
@@ -24,8 +27,18 @@ export interface ProposalReviewDecoration {
 
 const EMPTY_DECORATION: ProposalReviewDecoration = {};
 
+const NO_REVIEW_AGGREGATES: ProposalReviewAggregates = {
+  assignmentsCount: 0,
+  reviewsSubmittedCount: 0,
+  outOfDateReviewsCount: 0,
+  averageScore: 0,
+  overallRecommendationCount: {},
+  reviewers: [],
+};
+
 interface ProposalReviewDecorationContextValue {
   getDecoration: (proposalId: string) => ProposalReviewDecoration;
+  getAggregates: (proposalId: string) => ProposalReviewAggregates | undefined;
   /** The rendered list reports what it has loaded; the fetch follows that set. */
   reportProposals: (proposals: Proposal[]) => void;
 }
@@ -122,9 +135,22 @@ export function ProposalReviewDecorationProvider({
     [enabled, itemsByProposalId, decisionSlug, canOpenReviews],
   );
 
+  // A proposal outside the counted phase gets no item: it has no reviews there.
+  const getAggregates = useCallback(
+    (proposalId: string) => {
+      if (!enabled || aggregates === undefined) {
+        return undefined;
+      }
+      return (
+        itemsByProposalId.get(proposalId)?.aggregates ?? NO_REVIEW_AGGREGATES
+      );
+    },
+    [enabled, aggregates, itemsByProposalId],
+  );
+
   const value = useMemo(
-    () => ({ getDecoration, reportProposals }),
-    [getDecoration, reportProposals],
+    () => ({ getDecoration, getAggregates, reportProposals }),
+    [getDecoration, getAggregates, reportProposals],
   );
 
   return (
@@ -144,6 +170,14 @@ export function useProposalReviewDecoration(
   const context = useContext(ProposalReviewDecorationContext);
 
   return context?.getDecoration(proposalId) ?? EMPTY_DECORATION;
+}
+
+export function useProposalReviewAggregates(
+  proposalId: string,
+): ProposalReviewAggregates | undefined {
+  const context = useContext(ProposalReviewDecorationContext);
+
+  return context?.getAggregates(proposalId);
 }
 
 /**

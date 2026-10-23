@@ -28,7 +28,12 @@ type Instance = RouterOutput['decision']['getInstance'];
 
 // The admin-without-review variant reuses DEFAULT_REVIEW_TAB for its progress
 // list, so one parser covers every `?tab=` value.
-const REVIEW_TABS = ['to-review', 'other-proposals', 'assignments'] as const;
+const REVIEW_TABS = [
+  'to-review',
+  'other-proposals',
+  'all-proposals',
+  'assignments',
+] as const;
 const DEFAULT_REVIEW_TAB = 'to-review';
 
 const reviewTabParser = parseAsStringLiteral(REVIEW_TABS);
@@ -76,9 +81,13 @@ export function ReviewPage({
     reviewTabParser.withDefault(DEFAULT_REVIEW_TAB),
   );
 
-  // A stale `?tab=assignments` (non-admin link, flag off) has no panel.
+  // A stale `?tab=assignments` (non-admin link, flag off) or a non-admin's
+  // `?tab=all-proposals` has no panel.
   const activeTab =
-    tab === 'assignments' && !showAssignmentsTab ? DEFAULT_REVIEW_TAB : tab;
+    (tab === 'assignments' && !showAssignmentsTab) ||
+    (tab === 'all-proposals' && !isAdmin)
+      ? DEFAULT_REVIEW_TAB
+      : tab;
 
   // The admin variant has no 'other-proposals' panel to land on.
   const adminActiveTab =
@@ -129,10 +138,8 @@ export function ReviewPage({
   const adminProgressList = (
     <AdminReviewProposalsList
       processInstanceId={instance.id}
-      slug={slug}
       decisionSlug={decisionSlug}
       access={instance.access}
-      currentPhase={currentPhase}
       pinOffset={pinOffset}
     />
   );
@@ -192,6 +199,11 @@ export function ReviewPage({
                   <TabsTrigger value="other-proposals">
                     {t('otherProposalsTab')}
                   </TabsTrigger>
+                  {isAdmin ? (
+                    <TabsTrigger value="all-proposals">
+                      {t('allProposalsTab')}
+                    </TabsTrigger>
+                  ) : null}
                   {showAssignmentsTab ? assignmentsTabTrigger : null}
                 </TabsList>
               </div>
@@ -235,6 +247,12 @@ export function ReviewPage({
                 </APIErrorBoundary>
               </TabsContent>
 
+              {isAdmin ? (
+                <TabsContent value="all-proposals" className="grow sm:p-0">
+                  {adminProgressList}
+                </TabsContent>
+              ) : null}
+
               {showAssignmentsTab ? assignmentsTabContent : null}
             </Tabs>
           ) : isAdmin ? (
@@ -249,7 +267,7 @@ export function ReviewPage({
                 <div className="w-full border-b">
                   <TabsList variant="line" className="flex gap-6">
                     <TabsTrigger value={DEFAULT_REVIEW_TAB}>
-                      {t('review.reviewProgressLabel')}
+                      {t('allProposalsTab')}
                     </TabsTrigger>
                     {assignmentsTabTrigger}
                   </TabsList>

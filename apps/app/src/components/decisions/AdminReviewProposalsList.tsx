@@ -1,40 +1,49 @@
 'use client';
 
+import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
-import { type DecisionAccess, type InstancePhaseData } from '@op/api/encoders';
-import { Header3 } from '@op/sense/Header';
+import { trpc } from '@op/api/client';
+import type { DecisionAccess } from '@op/api/encoders';
+import { Skeleton } from '@op/sense/Skeleton';
 import { Suspense } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
+import { ExportProposalsButton } from './ExportProposalsButton';
 import { ProposalListSkeleton } from './ProposalListSkeleton';
-import { ProposalsList } from './ProposalsList';
+import { ProposalReviewProgressTable } from './ProposalReviewProgressTable';
+import type {
+  ProposalControls,
+  ProposalSelectControl,
+} from './ProposalsFilterBar';
+import { NoProposalsFound } from './ProposalsGrid';
+import {
+  CurrentPhaseProposalsLoader,
+  type ProposalsLoaderRenderProps,
+} from './ProposalsList';
 import { ProposalsLoadError } from './ProposalsLoadError';
-import { ProposalReviewDecorationProvider } from './proposalReviewDecoration';
+import { ProposalsStickyFilterBar } from './ProposalsStickyFilterBar';
+import {
+  ProposalReviewDecorationProvider,
+  useReportProposalsForReviewDecoration,
+} from './proposalReviewDecoration';
+import {
+  type ProposalFilterState,
+  useProposalFilters,
+} from './useProposalFilters';
 
 interface AdminReviewProposalsListProps {
   processInstanceId: string;
-  slug: string;
   /** Decision profile slug — the per-proposal reviews link is built from it. */
   decisionSlug: string;
   access?: DecisionAccess;
-  /** Current phase; capability flags are derived from `rules`. */
-  currentPhase?: InstancePhaseData;
   /** Px offset where the filter bar pins (clears the floating phase toggle). */
   pinOffset?: number;
 }
 
 /**
- * The admin's "Proposals in review" surface: the ordinary proposals list, with
- * each card's status row carrying the proposal's review progress — the rollup
- * badge and its completed-review count, visible at zero because "0 Reviewed" is
- * the signal an admin is tracking.
- *
- * It is deliberately the same list: pagination, the category filter, sort and
- * map mode all stay with `proposal.list`, exactly as on every other proposal
- * screen. Only the header and the decoration differ, and the decoration arrives
- * through a provider rather than through the list's props — the surface decides
- * who may see review progress, and the cards read it from context.
+ * The admin's "All proposals" surface: the review progress table over the
+ * same paginated, filtered `proposal.list` every other proposal screen uses.
  *
  * This is the whole review surface for an admin who is not also a reviewer —
  * there is no assignment queue to tab against, so the list owns its own
@@ -42,12 +51,12 @@ interface AdminReviewProposalsListProps {
  */
 export function AdminReviewProposalsList({
   processInstanceId,
-  slug,
   decisionSlug,
   access,
-  currentPhase,
   pinOffset,
 }: AdminReviewProposalsListProps) {
+  const isAdmin = Boolean(access?.admin);
+
   return (
     <APIErrorBoundary fallbacks={{ default: () => <ProposalsLoadError /> }}>
       {/* Outside the Suspense boundary so the reported-proposals state survives
@@ -57,18 +66,15 @@ export function AdminReviewProposalsList({
       <ProposalReviewDecorationProvider
         processInstanceId={processInstanceId}
         decisionSlug={decisionSlug}
-        enabled={Boolean(access?.admin)}
-        canOpenReviews={Boolean(access?.admin)}
+        enabled={isAdmin}
+        canOpenReviews={isAdmin}
       >
         <Suspense fallback={<ProposalListSkeleton />}>
-          <ProposalsList
-            slug={slug}
-            instanceId={processInstanceId}
+          <AdminReviewProposalsLoader
+            processInstanceId={processInstanceId}
             decisionSlug={decisionSlug}
-            permissions={access}
-            currentPhase={currentPhase}
+            canExport={isAdmin}
             pinOffset={pinOffset}
-            header={(count) => <AdminReviewHeader count={count} />}
           />
         </Suspense>
       </ProposalReviewDecorationProvider>
@@ -76,14 +82,116 @@ export function AdminReviewProposalsList({
   );
 }
 
-/** "Proposals in review · 30" — replaces the list's plain proposal count. */
-const AdminReviewHeader = ({ count }: { count: number }) => {
-  const t = useTranslations('decisions.review');
+interface AdminReviewProposalsLoaderProps {
+  processInstanceId: string;
+  decisionSlug: string;
+  canExport: boolean;
+  pinOffset?: number;
+}
+
+function AdminReviewProposalsLoader(props: AdminReviewProposalsLoaderProps) {
+  const filters = useProposalFilters({ instanceId: props.processInstanceId });
 
   return (
-    // The count follows the active filter, which changes without a navigation.
-    <Header3 aria-live="polite">
-      {t('proposalsInReviewHeading', { count })}
-    </Header3>
+    <CurrentPhaseProposalsLoader queryParams={filters.queryParams}>
+      {(data) => (
+        <AdminReviewProposalsContent {...props} {...data} filters={filters} />
+      )}
+    </CurrentPhaseProposalsLoader>
   );
-};
+}
+
+function AdminReviewProposalsContent({
+  processInstanceId,
+  decisionSlug,
+  canExport,
+  pinOffset,
+  filters,
+  allProposals,
+  total,
+  totalProposalCount,
+  isFetchingNextPage,
+  shouldShowTrigger,
+  infiniteScrollRef,
+}: AdminReviewProposalsLoaderProps &
+  ProposalsLoaderRenderProps & { filters: ProposalFilterState }) {
+  const t = useTranslations();
+  const [{ items: categories }] = trpc.decision.getCategories.useSuspenseQuery({
+    processInstanceId,
+  });
+  const exportEnabled = useFeatureFlag('export-feature') ?? false;
+
+  useReportProposalsForReviewDecoration(allProposals);
+
+  const controls: ProposalControls = {
+    search: filters.search,
+    setSearch: filters.setSearch,
+    isSearchPending: filters.isSearchFetching,
+    selectedCategory: filters.selectedCategory,
+    setSelectedCategory: filters.setSelectedCategory,
+    sortOrder: filters.sortOrder,
+    setSortOrder: filters.setSortOrder,
+    categories,
+    decisionSlug,
+  };
+
+  const leadingSelect: ProposalSelectControl = {
+    items: filters.availableFilters,
+    value: filters.proposalFilter,
+    onChange: (id) => {
+      const selected = filters.availableFilters.find((item) => item.id === id);
+      if (selected) {
+        filters.setProposalFilter(selected.id);
+      }
+    },
+    label: t('decisions.proposals.filterProposalsLabel'),
+  };
+
+  return (
+    <div
+      aria-busy={filters.isFilterFetching || undefined}
+      className="relative flex flex-col gap-6 pb-12"
+    >
+      <ProposalsStickyFilterBar
+        pinOffset={pinOffset}
+        count={total}
+        total={totalProposalCount}
+        controls={controls}
+        leadingSelect={leadingSelect}
+        exportControl={
+          canExport && exportEnabled ? (
+            <ExportProposalsButton
+              processInstanceId={processInstanceId}
+              isListEmpty={totalProposalCount === 0}
+            />
+          ) : null
+        }
+      />
+
+      {allProposals.length === 0 ? (
+        <NoProposalsFound
+          hasFilter={filters.hasActiveFilter}
+          searchQuery={filters.queryParams.search}
+          onClearFilters={
+            filters.canClearFilters ? filters.clearFilters : undefined
+          }
+        />
+      ) : (
+        <ProposalReviewProgressTable
+          proposals={allProposals}
+          decisionSlug={decisionSlug}
+        />
+      )}
+
+      {shouldShowTrigger ? (
+        <div
+          ref={infiniteScrollRef}
+          className="py-4"
+          data-testid="proposals-infinite-scroll-sentinel"
+        >
+          {isFetchingNextPage ? <Skeleton className="h-16 w-full" /> : null}
+        </div>
+      ) : null}
+    </div>
+  );
+}

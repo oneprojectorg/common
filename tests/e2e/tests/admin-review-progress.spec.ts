@@ -3,12 +3,14 @@ import {
   createDecisionInstance,
   createInstanceMember,
   createProposal,
+  createProposalReview,
   createReviewScenario,
   getSeededTemplate,
   grantInstanceAdminWithoutReviewRole,
 } from '@op/common/testing/data';
 import {
   ProposalReviewAssignmentStatus,
+  ProposalReviewState,
   ProposalStatus,
   processInstances,
 } from '@op/db/schema';
@@ -108,7 +110,6 @@ test.describe('Admin review progress', () => {
       instanceProfileId: instance.profileId,
     });
 
-    // One completed review → "1 Reviewed".
     const reviewed = await createReviewScenario({
       instance: { id: instance.instance.id },
       author,
@@ -118,6 +119,13 @@ test.describe('Admin review progress', () => {
         title: REVIEWED_TITLE,
         collaborationDocId: 'test-proposal-listing-doc',
       },
+    });
+    await createProposalReview({
+      assignmentId: reviewed.assignment.id,
+      state: ProposalReviewState.SUBMITTED,
+      reviewData: { answers: {} },
+      submittedAt: new Date().toISOString(),
+      reviewedProposalHistoryId: reviewed.assignedProposalHistoryId,
     });
 
     // No assignments at all → "0 Reviewed" rather than nothing: the zero is the
@@ -144,16 +152,10 @@ test.describe('Admin review progress', () => {
       page.getByRole('heading', { name: 'Review Progress' }).first(),
     ).toBeVisible({ timeout: 36_000 });
 
-    // "Proposals in review · {total}" replaces the plain proposal count, and
-    // the reviewer tab pair is gone: an admin who is not a reviewer has no
-    // queue to tab against. (The layout's own Overview/Current toggle is a tab
-    // strip too, hence naming the two rather than counting every tab.)
-    // Level 3, like every other proposal-list heading: it stands in for the
-    // count, which is a `Header3` so it matches the sibling tabs.
+    // The reviewer tab pair is gone: an admin who is not a reviewer has no
+    // queue to tab against.
     await expect(
-      page
-        .getByRole('heading', { name: 'Proposals in review · 2', level: 3 })
-        .first(),
+      page.getByRole('heading', { name: '2 proposals', level: 3 }).first(),
     ).toBeVisible({ timeout: 36_000 });
     await expect(
       page.getByRole('tab', { name: 'Proposals to review' }),
@@ -162,33 +164,30 @@ test.describe('Admin review progress', () => {
       page.getByRole('tab', { name: 'Other proposals' }),
     ).toHaveCount(0);
 
-    // The count is a link into the per-proposal Review Progress screen, for the
-    // reviewed proposal and the untouched one alike.
-    const reviewedCount = page
-      .getByRole('link', { name: '1 Reviewed' })
-      .first();
-    await expect(reviewedCount).toBeVisible({ timeout: 36_000 });
-    await expect(reviewedCount).toHaveAttribute(
+    const table = page.getByRole('table', { name: 'All proposals' });
+    await expect(table).toBeVisible({ timeout: 36_000 });
+    await expect(
+      table.getByRole('link', { name: REVIEWED_TITLE }),
+    ).toHaveAttribute(
       'href',
       new RegExp(
         `/decisions/${instance.slug}/proposal/${reviewed.proposal.profileId}/reviews$`,
       ),
     );
+    await expect(table.getByText('1 of 1', { exact: true })).toBeVisible();
 
-    const unreviewedCount = page
-      .getByRole('link', { name: '0 Reviewed' })
-      .first();
-    await expect(unreviewedCount).toBeVisible();
-    await expect(unreviewedCount).toHaveAttribute(
+    // No assignments: a dash in the cell, "No assignments" to a screen reader.
+    const unreviewedRow = table.getByRole('row', {
+      name: new RegExp(UNREVIEWED_TITLE),
+    });
+    await expect(
+      unreviewedRow.getByRole('link', { name: UNREVIEWED_TITLE }),
+    ).toHaveAttribute(
       'href',
       new RegExp(
         `/decisions/${instance.slug}/proposal/${unreviewed.profileId}/reviews$`,
       ),
     );
-
-    // Both cards are on screen, so the two counts above are one per proposal —
-    // the count is the whole decoration these cards carry.
-    await expect(page.getByText(REVIEWED_TITLE).first()).toBeVisible();
-    await expect(page.getByText(UNREVIEWED_TITLE).first()).toBeVisible();
+    await expect(unreviewedRow.getByText('No assignments')).toHaveCount(2);
   });
 });
