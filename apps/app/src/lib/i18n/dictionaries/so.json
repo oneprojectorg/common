@@ -1809,7 +1809,20 @@
     },
     "processAdmin": {
       "pageTitle": "Maamul {decisionName}",
-      "underConstruction": "Maamulka cusub ee habraaca ayaa halkan laga dhisayaa."
+      "backToEditor": "Ku noqo tifaftiraha",
+      "viewProcess": "Eeg habraaca",
+      "stewardedBy": "Waxaa maamula <steward>{name}</steward>",
+      "aboutHeading": "Ku saabsan habka",
+      "statusDraft": "Qabyo",
+      "statusLive": "Socda",
+      "statusCompleted": "Dhammaaday",
+      "statusCancelled": "La joojiyay",
+      "noPhasesTitle": "Weli ma jiraan wajiyo",
+      "noPhasesDescription": "Wajiyada aad ku darto tifaftiraha halkan ayay ka muuqdaan.",
+      "noResourcesTitle": "Ma jiraan agab la dhejiyay",
+      "noResourcesDescription": "Hagayaal, dukumentiyo iyo xiriiriyeyaal ay ka faa'iidaysan karaan ka qaybgalayaashu.",
+      "noAboutTitle": "Weli ma jiro sharraxaad",
+      "noAboutDescription": "Ku sharax habraaca tifaftiraha si ka qaybgalayaashu u ogaadaan waxa uu u jiro."
     }
   },
   "loadingProgress": "Waa la soo rarayaa...",

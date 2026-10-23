@@ -1809,7 +1809,20 @@
     },
     "processAdmin": {
       "pageTitle": "{decisionName} পরিচালনা করুন",
-      "underConstruction": "নতুন প্রক্রিয়া প্রশাসন এখানে তৈরি করা হচ্ছে।"
+      "backToEditor": "এডিটরে ফিরে যান",
+      "viewProcess": "প্রক্রিয়া দেখুন",
+      "stewardedBy": "<steward>{name}</steward>-এর পরিচালনায়",
+      "aboutHeading": "এই প্রক্রিয়া সম্পর্কে",
+      "statusDraft": "খসড়া",
+      "statusLive": "সক্রিয়",
+      "statusCompleted": "সম্পন্ন",
+      "statusCancelled": "বাতিল",
+      "noPhasesTitle": "এখনও কোনো পর্যায় নেই",
+      "noPhasesDescription": "এডিটরে আপনি যে পর্যায়গুলো যোগ করবেন সেগুলো এখানে দেখা যাবে।",
+      "noResourcesTitle": "কোনো পিন করা রিসোর্স নেই",
+      "noResourcesDescription": "গাইড, নথি ও লিঙ্ক যা অংশগ্রহণকারীরা দেখে নিতে পারেন।",
+      "noAboutTitle": "এখনও কোনো বিবরণ নেই",
+      "noAboutDescription": "এডিটরে প্রক্রিয়াটির বিবরণ দিন যাতে অংশগ্রহণকারীরা জানেন এটি কীসের জন্য।"
     }
   },
   "loadingProgress": "লোড হচ্ছে...",
