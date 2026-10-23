@@ -30,6 +30,16 @@ const EmailTemplate = ({
         <Head>
           <meta name="color-scheme" content="light" />
           <meta name="supported-color-schemes" content="light" />
+          <meta
+            name="format-detection"
+            content="telephone=no,date=no,address=no,email=no"
+          />
+          <style>{`
+            a[x-apple-data-detectors] {
+              color: inherit !important;
+              text-decoration: none !important;
+            }
+          `}</style>
           <link rel="preconnect" href="https://fonts.googleapis.com" />
           <link
             rel="preconnect"
@@ -63,9 +73,10 @@ const EmailTemplate = ({
                       <Row>
                         <Column align="left" width={24}>
                           <Img
-                            src="https://common.oneproject.org/Common.png"
-                            width="64"
-                            height="12"
+                            src="https://common.oneproject.org/logo-common@2x.png"
+                            alt="Common"
+                            width="87"
+                            height="16"
                           />
                         </Column>
                       </Row>
