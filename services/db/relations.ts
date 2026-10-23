@@ -389,6 +389,10 @@ export const relations = defineRelations(schema, (r) => ({
    * stewardProfileId and processId are nullable.
    */
   processInstances: {
+    chatLine: r.one.decisionChatLines({
+      from: r.processInstances.id,
+      to: r.decisionChatLines.processInstanceId,
+    }),
     process: r.one.decisionProcesses({
       from: r.processInstances.processId,
       to: r.decisionProcesses.id,
@@ -595,6 +599,14 @@ export const relations = defineRelations(schema, (r) => ({
       from: r.categoryReviewers.reviewerProfileId,
       to: r.profiles.id,
       alias: 'categoryReviewer_reviewer',
+      optional: false,
+    }),
+  },
+
+  decisionChatLines: {
+    processInstance: r.one.processInstances({
+      from: r.decisionChatLines.processInstanceId,
+      to: r.processInstances.id,
       optional: false,
     }),
   },
