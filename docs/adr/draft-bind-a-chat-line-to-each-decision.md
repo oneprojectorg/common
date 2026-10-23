@@ -31,10 +31,11 @@ number, in E.164, bound to one decision instance. Both columns are
 unique, so one number means one decision and a decision owns at most
 one number. Deleting the decision deletes the row and frees the number.
 
-A platform admin binds, changes or unbinds the number from the decision
-detail page. The action is theirs, not the decision admin's, because the
-number must first be added to the Twilio Messaging Service sender pool,
-which is an operations step.
+How a number is bound is not part of this decision. The memo lists admin
+features as a non-goal and says only that the number is printed on the
+ballot guide. The row is written by an operator when the Twilio number is
+added to the Messaging Service sender pool. An admin surface, if one is
+wanted, is a later decision.
 
 The dispatcher resolves `To` once per inbound text. A command with an
 explicit slug keeps it; a command without one takes the line's decision.
