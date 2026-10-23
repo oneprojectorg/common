@@ -20,9 +20,9 @@ const NUMBERS = {
 } as const;
 
 const readLineByNumber = (phoneNumber: string) =>
-  db.query.profileChatLines.findFirst({
+  db.query.decisionChatLines.findFirst({
     where: { phoneNumber },
-    columns: { profileId: true, phoneNumber: true },
+    columns: { processInstanceId: true, phoneNumber: true },
   });
 
 describe.concurrent('decisionChatLine', () => {
@@ -45,20 +45,18 @@ describe.concurrent('decisionChatLine', () => {
     });
   });
 
-  it('given a bound decision, when an admin binds a number, then the line row belongs to the decision profile', async ({
+  it('given a bound decision, when an admin binds a number, then the line row belongs to that decision', async ({
     task,
     onTestFinished,
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
     const setup = await testData.createDecisionSetup({ instanceCount: 1 });
+    const instanceId = setup.instance.instance.id;
 
-    await setDecisionChatLine({
-      instanceId: setup.instance.instance.id,
-      phoneNumber: NUMBERS.owner,
-    });
+    await setDecisionChatLine({ instanceId, phoneNumber: NUMBERS.owner });
 
     await expect(readLineByNumber(NUMBERS.owner)).resolves.toEqual({
-      profileId: setup.instance.profileId,
+      processInstanceId: instanceId,
       phoneNumber: NUMBERS.owner,
     });
   });
@@ -106,7 +104,7 @@ describe.concurrent('decisionChatLine', () => {
       getDecisionChatLine({ instanceId: other.instance.id }),
     ).resolves.toBeNull();
     await expect(readLineByNumber(NUMBERS.shared)).resolves.toMatchObject({
-      profileId: holder.profileId,
+      processInstanceId: holder.instance.id,
     });
   });
 
@@ -142,7 +140,9 @@ describe.concurrent('decisionChatLine', () => {
     expect(rejected).toHaveLength(1);
     expect(rejected[0]?.reason).toMatchObject({ name: 'ConflictError' });
     const holder = await readLineByNumber(NUMBERS.raced);
-    expect([first.profileId, second.profileId]).toContain(holder?.profileId);
+    expect([first.instance.id, second.instance.id]).toContain(
+      holder?.processInstanceId,
+    );
   });
 
   it('given a number that is not E.164, when an admin binds it, then it fails as a validation error and nothing is stored', async ({

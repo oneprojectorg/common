@@ -117,10 +117,10 @@ describe.concurrent('platform.admin.setDecisionChatLine', () => {
       }),
     ).rejects.toMatchObject({ cause: { name: 'ConflictError' } });
 
-    const line = await db.query.profileChatLines.findFirst({
+    const line = await db.query.decisionChatLines.findFirst({
       where: { phoneNumber: NUMBERS.taken },
-      columns: { profileId: true },
+      columns: { processInstanceId: true },
     });
-    expect(line).toEqual({ profileId: holder.profileId });
+    expect(line).toEqual({ processInstanceId: holder.instance.id });
   });
 });
