@@ -3,12 +3,14 @@ import type { InferModel } from 'drizzle-orm';
 import { relations } from 'drizzle-orm/_relations';
 import {
   index,
+  integer,
   jsonb,
   pgEnum,
   pgTable,
   primaryKey,
   timestamp,
   unique,
+  uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core';
 
@@ -127,6 +129,8 @@ export const proposals = pgTable(
 
     // All columns that get copied to history (single source of truth)
     ...proposalColumns,
+
+    shortCode: integer('short_code'),
   },
   (table) => [
     ...serviceRolePolicies,
@@ -134,6 +138,9 @@ export const proposals = pgTable(
       table.processInstanceId,
       table.id,
     ),
+    uniqueIndex('proposals_process_short_code_uniq')
+      .on(table.processInstanceId, table.shortCode)
+      .where(sql`${table.shortCode} IS NOT NULL`),
     index().on(table.id).concurrently(),
     index().on(table.processInstanceId).concurrently(),
     index().on(table.submittedByProfileId).concurrently(),
