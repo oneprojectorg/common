@@ -84,12 +84,14 @@ export const formatSmsBallot = ({
   allocated,
   unspent,
   review,
+  ranked = true,
 }: {
   scope: string;
   picks: ReadonlyArray<SmsFormattedPick>;
   allocated: string | null;
   unspent: string | null;
   review: boolean;
+  ranked?: boolean;
 }): string[] => {
   if (picks.length === 0) {
     return [SMS_BALLOT_EMPTY_MESSAGE];
@@ -104,7 +106,7 @@ export const formatSmsBallot = ({
           `${pick.position}. ${clipSmsText(pick.title, SMS_TITLE_LENGTH)}${pick.cost ? ` ${pick.cost}` : ''}.`,
       ),
       ...(totals ? [totals] : []),
-      ...(review ? [SMS_RANKING_NOTE] : []),
+      ...(review && ranked ? [SMS_RANKING_NOTE] : []),
     ],
     footer: review ? SMS_SUBMIT_PROMPT : SMS_LIST_FOOTER,
   });
@@ -134,3 +136,12 @@ export const formatSmsNotOnYourBallot = (code: number): string =>
 
 export const formatSmsBallotRefused = (reason: string): string =>
   `Your ballot was not cast: ${reason}`;
+
+export const formatSmsPickLimitReached = ({
+  title,
+  limit,
+}: {
+  title: string;
+  limit: number;
+}): string =>
+  `${quoted(title)} was not added: your ballot already holds the most picks allowed (${limit}). REMOVE one to add another.`;

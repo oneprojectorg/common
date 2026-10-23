@@ -153,3 +153,20 @@ describe('pick changes', () => {
     );
   });
 });
+
+describe('formatSmsBallot on an unranked phase', () => {
+  it('given DONE where order is not rank, then the ranking note is left out', () => {
+    expect(
+      formatSmsBallot({
+        scope: 'District 5',
+        picks: [{ position: 1, title: 'Tree planting', cost: null }],
+        allocated: null,
+        unspent: null,
+        review: true,
+        ranked: false,
+      }),
+    ).toEqual([
+      'Your District 5 ballot:\n1. Tree planting.\nReply SUBMIT to cast your ballot.',
+    ]);
+  });
+});

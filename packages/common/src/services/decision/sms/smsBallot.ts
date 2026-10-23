@@ -13,8 +13,13 @@ import { getFieldUnit, isAtMost, sumAmounts } from '../fieldUnit';
 import { getBallotProposalByCode } from '../getBallotProposalByCode';
 import { getProposalCosts } from '../getProposalCosts';
 import { resolveProposalTemplate } from '../resolveProposalTemplate';
-import type { DecisionInstanceData } from '../schemas/instanceData';
-import { getVoterBudget, getVoterCostField } from '../utils/phaseSettings';
+import { getInstancePhases } from '../schemas/instanceData';
+import { getInstanceCurrentPhase } from '../utils/instance';
+import {
+  getVoterBudget,
+  getVoterCostField,
+  isRankedVoting,
+} from '../utils/phaseSettings';
 import { submitVote } from '../voting';
 import { loadBallotScope } from './smsBallotBrowse';
 
@@ -33,6 +38,8 @@ export interface SmsBallotSummary {
   picks: SmsBallotPick[];
   allocated: number;
   remaining: number | null;
+  ranked: boolean;
+  maxPicks: number | null;
 }
 
 interface BallotKey {
@@ -45,18 +52,26 @@ const loadPricing = async (instance: {
   currentStateId: string | null;
   processId: string | null;
 }) => {
-  const phase = (instance.instanceData as DecisionInstanceData).phases?.find(
-    (candidate) => candidate.phaseId === instance.currentStateId,
-  );
+  const phase = getInstanceCurrentPhase({
+    currentStateId: instance.currentStateId,
+    instanceData: { phases: getInstancePhases(instance.instanceData) },
+  });
   const budget = phase ? getVoterBudget(phase) : undefined;
   const voterCostField = phase ? getVoterCostField(phase) : 'budget';
   const proposalTemplate = await resolveProposalTemplate(
-    instance.instanceData as Record<string, unknown> | null,
+    instance.instanceData,
     instance.processId,
   );
   const unit = getFieldUnit(proposalTemplate?.properties?.[voterCostField]);
 
-  return { budget: budget ?? null, voterCostField, proposalTemplate, unit };
+  return {
+    budget: budget ?? null,
+    voterCostField,
+    proposalTemplate,
+    unit,
+    ranked: phase ? isRankedVoting(phase) : false,
+    maxPicks: phase?.rules?.voting?.maxVotesPerMember ?? null,
+  };
 };
 
 const loadPickRows = async (ids: string[]) => {
@@ -116,6 +131,8 @@ const summarize = (
     allocated,
     remaining:
       pricing.budget === null ? null : sumAmounts([pricing.budget, -allocated]),
+    ranked: pricing.ranked,
+    maxPicks: pricing.maxPicks,
   };
 };
 
@@ -140,6 +157,7 @@ export type SmsPickResult =
   | { status: 'added'; position: number; pick: SmsBallotPick }
   | { status: 'duplicate'; position: number; pick: SmsBallotPick }
   | { status: 'over_budget'; pick: SmsBallotPick; remaining: number }
+  | { status: 'limit_reached'; pick: SmsBallotPick; limit: number }
   | { status: 'unknown'; code: number };
 
 const savePicks = async (key: BallotKey, picks: string[]): Promise<void> => {
@@ -206,6 +224,10 @@ export async function addSmsBallotPicks({
       results.push({ status: 'duplicate', position: existing + 1, pick });
       continue;
     }
+    if (pricing.maxPicks !== null && picks.length >= pricing.maxPicks) {
+      results.push({ status: 'limit_reached', pick, limit: pricing.maxPicks });
+      continue;
+    }
     const allocated = sumAmounts(picks.map((id) => costs.get(id) ?? 0));
     if (
       pricing.budget !== null &&
@@ -250,7 +272,8 @@ const findPickByCode = async (
     authUserId: key.authUserId,
   });
   const rows = await loadPickRows(draft.picks);
-  const index = rows.findIndex((row) => row.code === code);
+  const match = rows.find((row) => row.code === code);
+  const index = match ? draft.picks.indexOf(match.id) : -1;
   return index === -1 ? null : { picks: [...draft.picks], index };
 };
 
@@ -361,9 +384,6 @@ export async function submitSmsBallot({
       },
       authUserId,
     });
-    await db
-      .delete(decisionBallotDrafts)
-      .where(eq(decisionBallotDrafts.id, draft.id));
     return { status: 'submitted', voteSubmissionId: result.id };
   } catch (error) {
     if (error instanceof VoterNotEnrolledError) {
@@ -377,4 +397,34 @@ export async function submitSmsBallot({
     }
     throw error;
   }
+}
+
+export async function deleteBallotDraft({
+  authUserId,
+  instanceId,
+}: BallotKey): Promise<void> {
+  const profileId = await getIndividualProfileId(authUserId);
+  await db
+    .delete(decisionBallotDrafts)
+    .where(
+      and(
+        eq(decisionBallotDrafts.processInstanceId, instanceId),
+        eq(decisionBallotDrafts.profileId, profileId),
+      ),
+    );
+}
+
+export async function findLatestCastBallotInstance({
+  authUserId,
+}: {
+  authUserId: string;
+}): Promise<string | null> {
+  const profileId = await getIndividualProfileId(authUserId);
+  const [latest] = await db.query.decisionsVoteSubmissions.findMany({
+    where: { submittedByProfileId: profileId },
+    columns: { processInstanceId: true },
+    orderBy: { createdAt: 'desc' },
+    limit: 1,
+  });
+  return latest?.processInstanceId ?? null;
 }
