@@ -2,6 +2,7 @@ import {
   joinProfileRequests,
   organizationUsers,
   organizations,
+  profiles,
   users,
 } from '@op/db/schema';
 import { and, db, eq } from '@op/db/test';
@@ -224,6 +225,106 @@ test.describe('Onboarding - Organization Search (no domain match)', () => {
       org2.organizationProfile.id,
     ].sort();
     expect(targetProfileIds).toEqual(expectedProfileIds);
+  });
+
+  test('user who adds a new organization accepts policies on the checkbox screen', async ({
+    page,
+  }) => {
+    const testId = randomUUID().slice(0, 6);
+    const orgName = `E2ENewOrg${testId}`;
+    const email = `e2e-org-search-add-${testId}@oneproject.org`;
+    const authUser = await createUser({ supabaseAdmin, email });
+
+    await authenticateAsUser(page, {
+      email,
+      password: TEST_USER_DEFAULT_PASSWORD,
+    });
+
+    await page.goto('/en/start', { waitUntil: 'domcontentloaded' });
+
+    await expect(
+      page.getByRole('heading', { name: 'Add your personal details' }),
+    ).toBeVisible({ timeout: 15000 });
+
+    await page.getByLabel('Full Name').fill('Test User Add Org');
+    await page.getByLabel('Headline').fill('Test Engineer');
+    const emailField = page.getByLabel('Email');
+    await emailField.clear();
+    await emailField.fill(email);
+    await page.getByRole('button', { name: 'Continue' }).click();
+
+    await expect(
+      page.getByRole('heading', {
+        name: 'Find organizations you belong to',
+      }),
+    ).toBeVisible({ timeout: 15000 });
+
+    // Add a new organization from the search input
+    await page
+      .getByRole('textbox', { name: 'Search or add your organization...' })
+      .fill(orgName);
+    await page.getByRole('button', { name: `Add ${orgName}` }).click();
+
+    // Organization details (the name is pre-filled from the search term)
+    await expect(
+      page.getByRole('heading', { name: "Add your organization's details" }),
+    ).toBeVisible({ timeout: 15000 });
+    await expect(page.getByLabel('Organization Name')).toHaveValue(orgName);
+    await page.getByLabel('Website').fill('example.org');
+    await page.getByLabel('Email').fill(email);
+    await page.getByLabel('Organizational Status').click();
+    await page
+      .getByRole('listbox')
+      .getByRole('option', { name: 'Nonprofit' })
+      .click();
+    await page.getByLabel('Organization headline').fill('A test organization');
+    await page.getByRole('button', { name: 'Continue' }).click();
+
+    // Funding information
+    await expect(
+      page.getByRole('heading', { name: 'Funding information' }),
+    ).toBeVisible({ timeout: 15000 });
+    await page.getByRole('button', { name: 'Continue' }).click();
+
+    // Policies are accepted on the same checkbox screen as the other paths
+    await expect(
+      page.getByRole('heading', { name: 'One last step' }),
+    ).toBeVisible({ timeout: 15000 });
+
+    const checkboxes = page.getByRole('checkbox');
+    await checkboxes.nth(0).click({ force: true });
+    await checkboxes.nth(1).click({ force: true });
+
+    await page.getByRole('button', { name: 'Join Common' }).click();
+
+    await page.waitForURL(/new=1/, { timeout: 30000 });
+
+    // The organization from the details step was created with the user in it
+    const [orgUserRecord] = await db
+      .select({ id: organizationUsers.id })
+      .from(organizationUsers)
+      .innerJoin(
+        organizations,
+        eq(organizationUsers.organizationId, organizations.id),
+      )
+      .innerJoin(profiles, eq(organizations.profileId, profiles.id))
+      .where(
+        and(
+          eq(organizationUsers.authUserId, authUser.id),
+          eq(profiles.name, orgName),
+        ),
+      );
+
+    expect(orgUserRecord).toBeTruthy();
+
+    // Policy acceptance was recorded
+    const [userRecord] = await db
+      .select()
+      .from(users)
+      .where(eq(users.authUserId, authUser.id));
+
+    expect(userRecord?.tos).toBe(true);
+    expect(userRecord?.privacy).toBe(true);
   });
 });
 
