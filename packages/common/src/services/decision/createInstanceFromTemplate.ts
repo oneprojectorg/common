@@ -10,11 +10,11 @@ import {
 import type { User } from '@op/supabase/lib';
 import { randomUUID } from 'crypto';
 
-import { CommonError, UnauthorizedError, ValidationError } from '../../utils';
+import { CommonError, UnauthorizedError } from '../../utils';
 import { assertUserByAuthId } from '../assert';
 import { createDefaultDecisionRoles } from './decisionRoles';
 import { getTemplate } from './getTemplate';
-import { MAX_PHASES_PER_DECISION, insertPhase } from './phaseHelpers';
+import { insertPhaseRows } from './phaseRows';
 import type { DecisionInstanceData } from './schemas/instanceData';
 import { createInstanceDataFromTemplate } from './schemas/instanceData';
 
@@ -80,25 +80,11 @@ export const createDecisionInstance = async ({
       throw new CommonError('Failed to create decision process instance');
     }
 
-    if (instanceData.phases.length > MAX_PHASES_PER_DECISION) {
-      throw new ValidationError(
-        `A decision can have at most ${MAX_PHASES_PER_DECISION} phases`,
-        {
-          phases: `Remove ${instanceData.phases.length - MAX_PHASES_PER_DECISION}`,
-        },
-      );
-    }
-
-    for (const [sortOrder, phase] of instanceData.phases.entries()) {
-      const { name: phaseName, ...data } = phase;
-      await insertPhase({
-        tx,
-        processInstanceId: newInstance.id,
-        name: phaseName?.trim() || phase.phaseId,
-        sortOrder,
-        data,
-      });
-    }
+    await insertPhaseRows({
+      db: tx,
+      processInstanceId: newInstance.id,
+      phases: instanceData.phases,
+    });
 
     const { admin: adminRole } = await createDefaultDecisionRoles({
       profileId: instanceProfile.id,
