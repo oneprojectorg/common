@@ -115,3 +115,13 @@ export function getTextPreview({
     ? truncated + '…'
     : truncated;
 }
+
+export function assertNever(
+  value: never,
+  message: string | Error = 'Unhandled discriminated union member',
+): never {
+  if (message instanceof Error) {
+    throw message;
+  }
+  throw new Error(`${message}: ${JSON.stringify(value)}`);
+}
