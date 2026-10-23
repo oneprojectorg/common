@@ -1,7 +1,10 @@
 'use client';
 
 import { trpc } from '@op/api/client';
-import { type Proposal } from '@op/common/client';
+import {
+  type Proposal,
+  type ProposalReviewAggregates,
+} from '@op/common/client';
 import {
   type ReactNode,
   createContext,
@@ -26,6 +29,8 @@ const EMPTY_DECORATION: ProposalReviewDecoration = {};
 
 interface ProposalReviewDecorationContextValue {
   getDecoration: (proposalId: string) => ProposalReviewDecoration;
+  /** Undefined until the aggregates land, or when the viewer may not see them. */
+  getAggregates: (proposalId: string) => ProposalReviewAggregates | undefined;
   /** The rendered list reports what it has loaded; the fetch follows that set. */
   reportProposals: (proposals: Proposal[]) => void;
 }
@@ -122,9 +127,15 @@ export function ProposalReviewDecorationProvider({
     [enabled, itemsByProposalId, decisionSlug, canOpenReviews],
   );
 
+  const getAggregates = useCallback(
+    (proposalId: string) =>
+      enabled ? itemsByProposalId.get(proposalId)?.aggregates : undefined,
+    [enabled, itemsByProposalId],
+  );
+
   const value = useMemo(
-    () => ({ getDecoration, reportProposals }),
-    [getDecoration, reportProposals],
+    () => ({ getDecoration, getAggregates, reportProposals }),
+    [getDecoration, getAggregates, reportProposals],
   );
 
   return (
@@ -144,6 +155,19 @@ export function useProposalReviewDecoration(
   const context = useContext(ProposalReviewDecorationContext);
 
   return context?.getDecoration(proposalId) ?? EMPTY_DECORATION;
+}
+
+/**
+ * One proposal's review aggregates, for surfaces that render more than the
+ * card's count (the review progress table). Undefined outside a provider and
+ * while the aggregates load.
+ */
+export function useProposalReviewAggregates(
+  proposalId: string,
+): ProposalReviewAggregates | undefined {
+  const context = useContext(ProposalReviewDecorationContext);
+
+  return context?.getAggregates(proposalId);
 }
 
 /**

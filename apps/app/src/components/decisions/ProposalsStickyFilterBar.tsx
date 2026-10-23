@@ -15,11 +15,11 @@ export interface ProposalsStickyFilterBarProps {
   count: number;
   /** Unfiltered count for the phase — the "of N" pool. */
   total: number;
-  /** Replaces the proposal count on the left — e.g. the admin review title. */
-  header?: React.ReactNode;
+  /** A narrower search field — see `ProposalsFilterBar`. */
+  compactSearch?: boolean;
   /**
-   * Absent when the phase hides proposals from non-admins: the header falls back
-   * to a plain label and no filters render.
+   * Absent when the phase hides proposals from non-admins: a plain label
+   * replaces the count and no filters render.
    */
   controls?: ProposalControls;
   /** Absent when there is only one view to be in. */
@@ -43,7 +43,7 @@ export interface ProposalsStickyFilterBarProps {
 export const ProposalsStickyFilterBar = ({
   count,
   total,
-  header,
+  compactSearch,
   controls,
   view,
   exportControl,
@@ -57,13 +57,13 @@ export const ProposalsStickyFilterBar = ({
         view={view}
         count={count}
         total={total}
-        header={header}
+        compactSearch={compactSearch}
         exportControl={exportControl}
         leadingSelect={leadingSelect}
       />
     ) : (
       <>
-        {header ?? <MyProposalsHeader />}
+        <MyProposalsHeader />
         {/* No filters here, but still a view to be in — and on a process with
             no map this is the only control that leaves it. */}
         {view && <ProposalsViewSwitch view={view} />}

@@ -2,12 +2,17 @@ import type { Proposal } from '@op/common/client';
 import type { ReactNode } from 'react';
 
 /**
- * The `?view=` URL contract for every proposal browse surface, in the order the
- * view toggle renders them: the masonry grid, the single-column reading feed,
- * then the map. Browse offers all of them.
+ * The `?view=` URL contract for every proposal surface. Each surface passes the
+ * subset it can render, in the order its view toggle shows them.
  */
-export const PROPOSAL_VIEWS = ['grid', 'feed', 'map'] as const;
+export const PROPOSAL_VIEWS = ['table', 'grid', 'feed', 'map'] as const;
 export type ProposalView = (typeof PROPOSAL_VIEWS)[number];
+
+/**
+ * What browse offers: the masonry grid, the single-column reading feed, then
+ * the map. The table is only offered by a surface that supplies one.
+ */
+export const BROWSE_VIEWS = ['grid', 'feed', 'map'] as const;
 
 /**
  * What the review queue offers: it renders assignment cards in a masonry or on

@@ -1,6 +1,7 @@
 'use client';
 
 import { Header3 } from '@op/sense/Header';
+import { cn } from '@op/sense/lib/utils';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -105,7 +106,7 @@ export const ProposalsFilterBar = ({
   view,
   count,
   total,
-  header,
+  compactSearch = false,
   exportControl,
   leadingSelect,
 }: {
@@ -115,8 +116,12 @@ export const ProposalsFilterBar = ({
   count: number;
   /** Unfiltered count for the phase — the "of N" pool. */
   total: number;
-  /** Replaces the count — e.g. the admin review title. */
-  header?: React.ReactNode;
+  /**
+   * Narrows search from md up to the width of the review progress design, for
+   * a surface whose filter row carries more controls. Longer translated
+   * placeholders (French) clip at this width.
+   */
+  compactSearch?: boolean;
   /** Admin-only CSV export control; omitted entirely for non-admins. */
   exportControl?: React.ReactNode;
   leadingSelect: ProposalSelectControl;
@@ -129,9 +134,9 @@ export const ProposalsFilterBar = ({
           from 2xl it grows instead, taking the slack that pushes search to the
           end and putting both boxes on one line. */}
       <div className="flex flex-wrap items-center justify-between gap-4 max-2xl:w-full 2xl:flex-1">
-        {header ?? <ProposalsListHeader count={count} total={total} />}
+        <ProposalsListHeader count={count} total={total} />
         <ProposalSearchField
-          className="ms-auto"
+          className={cn('ms-auto', compactSearch && 'md:w-56')}
           value={controls.search}
           onChange={controls.setSearch}
           isPending={controls.isSearchPending}

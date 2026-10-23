@@ -144,16 +144,12 @@ test.describe('Admin review progress', () => {
       page.getByRole('heading', { name: 'Review Progress' }).first(),
     ).toBeVisible({ timeout: 36_000 });
 
-    // "Proposals in review · {total}" replaces the plain proposal count, and
-    // the reviewer tab pair is gone: an admin who is not a reviewer has no
-    // queue to tab against. (The layout's own Overview/Current toggle is a tab
-    // strip too, hence naming the two rather than counting every tab.)
-    // Level 3, like every other proposal-list heading: it stands in for the
-    // count, which is a `Header3` so it matches the sibling tabs.
+    // The plain proposal count, and the reviewer tab pair is gone: an admin
+    // who is not a reviewer has no queue to tab against. (The layout's own
+    // Overview/Current toggle is a tab strip too, hence naming the two rather
+    // than counting every tab.)
     await expect(
-      page
-        .getByRole('heading', { name: 'Proposals in review · 2', level: 3 })
-        .first(),
+      page.getByRole('heading', { name: '2 proposals', level: 3 }).first(),
     ).toBeVisible({ timeout: 36_000 });
     await expect(
       page.getByRole('tab', { name: 'Proposals to review' }),
@@ -162,8 +158,23 @@ test.describe('Admin review progress', () => {
       page.getByRole('tab', { name: 'Other proposals' }),
     ).toHaveCount(0);
 
-    // The count is a link into the per-proposal Review Progress screen, for the
+    // The table is the default view; each row opens the proposal's Review
+    // Progress screen.
+    const table = page.getByRole('table', { name: 'All proposals' });
+    await expect(table).toBeVisible({ timeout: 36_000 });
+    await expect(
+      table.getByRole('link', { name: REVIEWED_TITLE }),
+    ).toHaveAttribute(
+      'href',
+      new RegExp(
+        `/decisions/${instance.slug}/proposal/${reviewed.proposal.profileId}/reviews$`,
+      ),
+    );
+    await expect(table.getByText('1 of 1', { exact: true })).toBeVisible();
+
+    // In the card view, the count is a link into the same screen, for the
     // reviewed proposal and the untouched one alike.
+    await page.getByRole('button', { name: 'Grid view' }).click();
     const reviewedCount = page
       .getByRole('link', { name: '1 Reviewed' })
       .first();

@@ -29,10 +29,10 @@ function ProgressTrack({ className, ...props }: ProgressPrimitive.Track.Props) {
   return (
     <ProgressPrimitive.Track
       className={cn(
-        // Figma `Progress` (296:4740) stacks two fills on the track: accent,
-        // then primary at 10%. Mixed in srgb to match how Figma composites the
-        // alpha — a plain bg-accent reads too light against the indicator.
-        'relative flex h-1 w-full items-center overflow-x-hidden rounded-full bg-[color-mix(in_srgb,var(--primary)_10%,var(--accent))]',
+        // Our deviation: a 6px neutral track, from the review progress design
+        // (2026-10), replacing the 4px primary-tinted track of Figma `Progress`
+        // (296:4740).
+        'relative flex h-1.5 w-full items-center overflow-x-hidden rounded-full bg-secondary',
         className,
       )}
       data-slot="progress-track"
@@ -48,7 +48,12 @@ function ProgressIndicator({
   return (
     <ProgressPrimitive.Indicator
       data-slot="progress-indicator"
-      className={cn('h-full bg-primary transition-all', className)}
+      // Our deviation: the fill turns success-green once the value reaches
+      // the max (base-ui sets `data-complete` only then).
+      className={cn(
+        'h-full rounded-full bg-primary transition-all data-complete:bg-success',
+        className,
+      )}
       {...props}
     />
   );

@@ -17,6 +17,7 @@ import {
   nextCursor,
 } from '@op/common/client';
 import { useInfiniteScroll } from '@op/hooks';
+import { Skeleton } from '@op/sense/Skeleton';
 import { cn } from '@op/sense/lib/utils';
 import {
   type ReactNode,
@@ -54,8 +55,8 @@ import { getScrollParent } from './StickyFilterBar';
 import { proposalHref } from './proposalHrefs';
 import { useReportProposalsForReviewDecoration } from './proposalReviewDecoration';
 import {
+  BROWSE_VIEWS,
   BROWSE_VIEWS_WITHOUT_FEED,
-  PROPOSAL_VIEWS,
   type ProposalView,
 } from './proposalViews';
 import { useProposalStatusItems } from './useProposalFilterItems';
@@ -90,12 +91,17 @@ export interface ProposalsListProps {
    * filter comes from this rather than the URL.
    */
   pinnedFilter?: ProposalFilter;
+  /** A narrower search field, for a surface with a busier filter row. */
+  compactSearch?: boolean;
   /**
-   * Replaces the "N proposals" count in the filter bar; receives the count for
-   * the active filter. The admin review surface titles itself
-   * "Proposals in review · N".
+   * Adds a table view, offered first and shown by default. The admin review
+   * surface passes its review progress table. Not offered on phones, which
+   * have no view toggle to reach it.
    */
-  header?: (count: number) => ReactNode;
+  renderTable?: (props: {
+    proposals: Proposal[];
+    emptyState: ReactNode;
+  }) => ReactNode;
   /**
    * Px offset where the sticky filter bar pins. Decision-view passes a larger
    * value to clear the Overview/Current toggle; other routes use the default.
@@ -288,7 +294,8 @@ const ProposalsListContent = ({
   currentPhase,
   proposalsHidden,
   excludeAssignedForReview,
-  header,
+  compactSearch,
+  renderTable,
   pinOffset,
   phase,
   showFilterTabs = false,
@@ -369,7 +376,10 @@ const ProposalsListContent = ({
   // Browse offers every view; the map drops out when the process collects no
   // location, and the feed while a ballot is in play or on a phone. It leads
   // with the map when the process has one — users came here to see places,
-  // not titles.
+  // not titles. A surface with a table leads with the table instead.
+  const browseViews: readonly ProposalView[] =
+    isVotingEnabled || isMobile ? BROWSE_VIEWS_WITHOUT_FEED : BROWSE_VIEWS;
+  const hasTableView = !!renderTable && !isMobile;
   const {
     mapView,
     availableViews,
@@ -377,9 +387,8 @@ const ProposalsListContent = ({
     hasMapView,
     handleViewChange,
   } = useProposalViewMode(instance.instanceData?.proposalTemplate, {
-    defaultView: 'map',
-    views:
-      isVotingEnabled || isMobile ? BROWSE_VIEWS_WITHOUT_FEED : PROPOSAL_VIEWS,
+    defaultView: hasTableView ? 'table' : 'map',
+    views: hasTableView ? ['table', ...browseViews] : browseViews,
   });
 
   const selectedProposalIds =
@@ -493,7 +502,12 @@ const ProposalsListContent = ({
 
   // One renderer per view, so a view the toggle can offer always has something
   // to draw — adding to `PROPOSAL_VIEWS` fails to compile until it does.
-  const browseViews: Record<ProposalView, ReactNode> = {
+  const viewRenderers: Record<ProposalView, ReactNode> = {
+    table:
+      renderTable?.({
+        proposals: allProposals,
+        emptyState: <NoProposalsFound {...emptyStateProps} />,
+      }) ?? null,
     map:
       phase === 'results' ? (
         // Results uses the phase-agnostic `listAllProposals` set; source pins
@@ -606,7 +620,7 @@ const ProposalsListContent = ({
         pinOffset={pinOffset}
         count={total}
         total={totalProposalCount}
-        header={header?.(total)}
+        compactSearch={compactSearch}
         // Omitted when the phase hides proposals from non-admins.
         controls={hideFilters ? undefined : controls}
         leadingSelect={leadingSelect}
@@ -632,12 +646,14 @@ const ProposalsListContent = ({
         }
       />
 
-      {browseViews[browseView]}
+      {viewRenderers[browseView]}
 
       {/* Grid mode: the load-more skeletons render inside the masonry (see
           ProposalMasonry `loadingMore`), so the sentinel is just the trigger.
           Map and feed host their own sentinel inside their card column. */}
       {browseView === 'grid' && renderScrollSentinel(null)}
+      {browseView === 'table' &&
+        renderScrollSentinel(<Skeleton className="h-16 w-full" />)}
 
       {hasMapView && (
         <MobileViewSwitch view={effectiveView} onChange={handleViewChange} />

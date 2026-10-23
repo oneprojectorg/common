@@ -115,7 +115,7 @@ test.describe('Other proposals tab', () => {
 
     // Somebody else finished a review on it: this caller is an admin as well as
     // a reviewer, so the "Other proposals" cards carry the same counts the
-    // "Proposals in review" list shows — an admin needs no `openReviews`.
+    // "All proposals" list shows — an admin needs no `openReviews`.
     const otherReviewer = await createInstanceMember({
       supabaseAdmin,
       testId: `other-proposals-reviewer-${Date.now()}`,
@@ -152,7 +152,7 @@ test.describe('Other proposals tab', () => {
     await expect(page.getByText(ASSIGNED_TITLE)).toHaveCount(0);
 
     // The count, linked to the proposal's Review Progress screen. It is the
-    // whole decoration these cards carry — the "Proposals in review" list shows
+    // whole decoration these cards carry — the "All proposals" list shows
     // exactly the same thing.
     const reviewedCount = page
       .getByRole('link', { name: '1 Reviewed' })
