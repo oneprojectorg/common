@@ -1,13 +1,10 @@
 import { isFeatureEnabled } from '@op/analytics';
 import { getPhoneSignupState } from '@op/common';
+import { assertNever } from '@op/core';
 import { Events, inngest } from '@op/events';
 import { logger } from '@op/logging';
 
-import {
-  SMS_COMMAND_HANDLERS,
-  type SmsDeliver,
-  sendSmsHelp,
-} from './smsCommandHandlers';
+import { type SmsDeliver, join, sendSmsHelp, show } from './smsCommandHandlers';
 import {
   SMS_THROTTLE_LIMIT,
   SMS_THROTTLE_PERIOD,
@@ -95,10 +92,17 @@ export const handleSMSCommand = inngest.createFunction(
       return { message: 'reply rejected', reason: sent.reason };
     };
 
-    if (keyword === null) {
-      return sendSmsHelp(deliver);
-    }
+    const context = { step, account, argument, deliver };
 
-    return SMS_COMMAND_HANDLERS[keyword]({ step, account, argument, deliver });
+    switch (keyword) {
+      case null:
+        return sendSmsHelp(deliver);
+      case 'join':
+        return join(context);
+      case 'show':
+        return show(context);
+      default:
+        return assertNever(keyword);
+    }
   },
 );

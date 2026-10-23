@@ -1,6 +1,5 @@
 import { InngestTestEngine } from '@inngest/test';
 import { SMS_MAX_BODY_LENGTH, parsePhoneNumber } from '@op/common';
-import { SMS_KEYWORDS } from '@op/core/sms';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import {
@@ -11,7 +10,6 @@ import {
 import { SmsCommandFixture } from '../../../testing/smsCommandFixture';
 import { smsInboundEvent } from '../../../testing/smsInboundEvent';
 import { handleSMSCommand } from './handleSMSCommand';
-import { SMS_COMMAND_HANDLERS } from './smsCommandHandlers';
 import {
   SMS_ALREADY_JOINED_MESSAGE,
   SMS_COMMAND_HELP_MESSAGE,
@@ -40,12 +38,6 @@ beforeEach(() => {
 });
 
 describe('handleSMSCommand against the database', () => {
-  it('has one handler for every keyword the parser can return, so a new keyword cannot fall through to the help text', () => {
-    expect(Object.keys(SMS_COMMAND_HANDLERS).sort()).toEqual(
-      [...SMS_KEYWORDS].sort(),
-    );
-  });
-
   it('given a member texts SHOW and the slug of a decision in a voting phase, then they get its phase, that voting is open and how many proposals are on the ballot', async ({
     task,
     onTestFinished,

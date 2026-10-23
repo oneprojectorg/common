@@ -7,7 +7,6 @@ import {
   getSmsDecisionDescription,
   listSmsDecisions,
 } from '@op/common';
-import type { SmsKeyword } from '@op/core/sms';
 import type { inngest } from '@op/events';
 import type { GetStepTools } from 'inngest';
 
@@ -46,7 +45,7 @@ export type SmsCommandHandler = (
   context: SmsCommandContext,
 ) => Promise<SmsCommandResult>;
 
-const join: SmsCommandHandler = async ({ deliver }) => {
+export const join: SmsCommandHandler = async ({ deliver }) => {
   const failed = await deliver(
     'send-already-joined-reply',
     'Already joined reply',
@@ -111,15 +110,10 @@ const describeDecision = async (
   return failed ?? { message: 'decision sent' };
 };
 
-const show: SmsCommandHandler = (context) =>
+export const show: SmsCommandHandler = (context) =>
   context.argument
     ? describeDecision(context, context.argument)
     : listDecisions(context);
-
-export const SMS_COMMAND_HANDLERS = { join, show } satisfies Record<
-  SmsKeyword,
-  SmsCommandHandler
->;
 
 export const sendSmsHelp = async (
   deliver: SmsDeliver,
