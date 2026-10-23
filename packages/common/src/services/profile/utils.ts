@@ -4,6 +4,9 @@ import { randomUUID } from 'crypto';
 import { inArray } from 'drizzle-orm';
 import slugify from 'slugify';
 
+// A slug that matches a static route segment would be shadowed by that route.
+const RESERVED_SLUGS = new Set(['new']);
+
 /**
  * Generates a unique profile slug based on a profile name.
  */
@@ -35,7 +38,7 @@ export const generateUniqueProfileSlug = async ({
   }
 
   // Build list of all potential slugs to check
-  const candidateSlugs = [baseSlug];
+  const candidateSlugs = RESERVED_SLUGS.has(baseSlug) ? [] : [baseSlug];
   for (let i = 2; i <= MAX_ATTEMPTS + 1; i++) {
     candidateSlugs.push(`${baseSlug}-${i}`);
   }
