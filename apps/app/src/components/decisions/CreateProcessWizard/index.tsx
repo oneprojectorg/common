@@ -254,8 +254,8 @@ function resolvePhases(answers: WizardAnswers): WizardPhase[] {
   }
 
   if (type === 'grant') {
-    return applyGrantDecision(presetPhases(type, shape), grantDecision);
+    return applyGrantDecision(presetPhases(shape), grantDecision);
   }
 
-  return presetPhases(type, shape);
+  return presetPhases(shape);
 }
