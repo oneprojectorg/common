@@ -135,3 +135,11 @@ export class VoteOutsideDistrictError extends ValidationError {
     super(message);
   }
 }
+
+export class VoteRevisionNotAllowedError extends ValidationError {
+  constructor(
+    message = 'This phase does not allow a cast ballot to be revised',
+  ) {
+    super(message);
+  }
+}
