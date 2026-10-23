@@ -11,6 +11,7 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from '@op/sense/Empty';
+import { Header3 } from '@op/sense/Header';
 import { ProfileAvatar } from '@op/sense/ProfileAvatar';
 import { ProfileItem } from '@op/sense/ProfileItem';
 import { Progress } from '@op/sense/Progress';
@@ -110,12 +111,13 @@ function ReviewersTableContent({
   const totalReviewers = data.pages[0]?.totalReviewers ?? rows.length;
 
   return (
-    <div className="flex flex-col gap-3">
-      <p aria-live="polite">
+    <div className="flex flex-col gap-6">
+      {/* Same heading as the All proposals count, so the two tabs line up. */}
+      <Header3 aria-live="polite">
         {t('decisions.review.reviewerCount', {
           count: totalReviewers,
         })}
-      </p>
+      </Header3>
 
       {rows.length === 0 ? (
         <Empty className="rounded-md border border-dashed">
@@ -138,9 +140,7 @@ function ReviewersTableContent({
             <TableHeader>
               <TableRow>
                 <TableHead>{t('decisions.review.reviewerColumn')}</TableHead>
-                <TableHead className="text-end">
-                  {t('decisions.review.assignedLabel')}
-                </TableHead>
+                <TableHead>{t('decisions.review.assignedLabel')}</TableHead>
                 <TableHead>{t('decisions.review.submittedColumn')}</TableHead>
                 <TableHead>
                   {t('decisions.review.lastSubmissionLabel')}
@@ -222,7 +222,7 @@ function ReviewerRowCells({
           />
         </Link>
       </TableRowHeader>
-      <TableCell className="text-end">{row.assignedCount}</TableCell>
+      <TableCell className="tabular-nums">{row.assignedCount}</TableCell>
       <TableCell>
         {row.assignedCount === 0 ? (
           <span className="text-muted-foreground">—</span>
@@ -233,8 +233,8 @@ function ReviewerRowCells({
               className="w-24"
               aria-label={t('decisions.review.reviewProgressLabel')}
             />
-            <span className="text-sm whitespace-nowrap text-muted-foreground">
-              {t('decisions.review.submittedOfAssigned', {
+            <span className="text-sm whitespace-nowrap tabular-nums">
+              {t('decisions.review.submittedOfAssignedShort', {
                 submitted: row.submittedCount,
                 assigned: row.assignedCount,
               })}
@@ -242,9 +242,9 @@ function ReviewerRowCells({
           </span>
         )}
       </TableCell>
-      <TableCell>
+      <TableCell className="text-muted-foreground tabular-nums">
         {lastSubmittedAt
-          ? format.dateTime(lastSubmittedAt, { dateStyle: 'medium' })
+          ? format.dateTime(lastSubmittedAt, { month: 'short', day: 'numeric' })
           : '—'}
       </TableCell>
       <TableCell>
@@ -256,7 +256,7 @@ function ReviewerRowCells({
           href={href}
           variant="ghost"
           size="icon-sm"
-          className="relative z-10"
+          className="relative z-10 text-muted-foreground"
           aria-label={t('decisions.review.openReviewerAssignmentsAction', {
             name,
           })}
