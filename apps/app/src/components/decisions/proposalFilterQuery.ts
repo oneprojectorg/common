@@ -19,7 +19,7 @@ export const PROPOSAL_STATUS_VALUES = ['all', 'not-advanced'] as const;
 export type ProposalStatusFilter = (typeof PROPOSAL_STATUS_VALUES)[number];
 
 // A multiple of three, to fill the grid rows evenly.
-const PROPOSALS_PAGE_LIMIT = 24;
+export const PROPOSALS_PAGE_LIMIT = 24;
 
 export type ProposalQueryParams = {
   processInstanceId: string;

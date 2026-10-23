@@ -1184,6 +1184,7 @@
       "districtColumn": "Kerület",
       "categoryColumn": "Kategória",
       "reviewProgressLabel": "Az értékelés előrehaladása",
+      "reviewProgressUnavailable": "Az értékelés előrehaladása nem érhető el",
       "reviewProgressHeading": "Az értékelés előrehaladása",
       "lastSubmissionLabel": "Utolsó beadvány",
       "progressLabel": "Előrehaladás",

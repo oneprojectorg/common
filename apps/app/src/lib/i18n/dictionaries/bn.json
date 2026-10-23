@@ -1184,6 +1184,7 @@
       "districtColumn": "জেলা",
       "categoryColumn": "বিভাগ",
       "reviewProgressLabel": "পর্যালোচনার অগ্রগতি",
+      "reviewProgressUnavailable": "পর্যালোচনার অগ্রগতি পাওয়া যায়নি",
       "reviewProgressHeading": "পর্যালোচনার অগ্রগতি",
       "lastSubmissionLabel": "শেষ জমা",
       "progressLabel": "অগ্রগতি",

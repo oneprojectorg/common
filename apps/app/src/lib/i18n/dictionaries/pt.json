@@ -1184,6 +1184,7 @@
       "districtColumn": "Distrito",
       "categoryColumn": "Categoria",
       "reviewProgressLabel": "Progresso da revisão",
+      "reviewProgressUnavailable": "Progresso da revisão indisponível",
       "reviewProgressHeading": "Progresso da revisão",
       "lastSubmissionLabel": "Último envio",
       "progressLabel": "Progresso",

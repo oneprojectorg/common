@@ -1,10 +1,12 @@
 'use client';
 
+import { chunk } from '@/utils/chunk';
 import { trpc } from '@op/api/client';
 import {
   type Proposal,
   type ProposalReviewAggregates,
 } from '@op/common/client';
+import { logger } from '@op/logging/client';
 import {
   type ReactNode,
   createContext,
@@ -12,10 +14,12 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react';
 
 import { ProposalReviewsCount } from './ProposalReviewsCount';
+import { PROPOSALS_PAGE_LIMIT } from './proposalFilterQuery';
 
 /**
  * The card's status-row decoration. Only the count — a status badge here would
@@ -25,7 +29,20 @@ export interface ProposalReviewDecoration {
   reviewedLabel?: ReactNode;
 }
 
+/** One proposal's aggregates as the table reads them: settled, pending, or gone. */
+export type ProposalReviewAggregatesState =
+  | { status: 'loading' }
+  | { status: 'ready'; aggregates: ProposalReviewAggregates }
+  /** The request failed, or this viewer may not see review progress. */
+  | { status: 'unavailable' };
+
 const EMPTY_DECORATION: ProposalReviewDecoration = {};
+
+const LOADING_AGGREGATES: ProposalReviewAggregatesState = { status: 'loading' };
+
+const UNAVAILABLE_AGGREGATES: ProposalReviewAggregatesState = {
+  status: 'unavailable',
+};
 
 const NO_REVIEW_AGGREGATES: ProposalReviewAggregates = {
   assignmentsCount: 0,
@@ -38,7 +55,7 @@ const NO_REVIEW_AGGREGATES: ProposalReviewAggregates = {
 
 interface ProposalReviewDecorationContextValue {
   getDecoration: (proposalId: string) => ProposalReviewDecoration;
-  getAggregates: (proposalId: string) => ProposalReviewAggregates | undefined;
+  getAggregates: (proposalId: string) => ProposalReviewAggregatesState;
   /** The rendered list reports what it has loaded; the fetch follows that set. */
   reportProposals: (proposals: Proposal[]) => void;
 }
@@ -93,22 +110,58 @@ export function ProposalReviewDecorationProvider({
     );
   }, []);
 
-  const { data } = trpc.decision.listWithReviewAggregates.useQuery(
-    {
-      processInstanceId,
-      phaseId,
-      proposalIds,
-    },
-    {
-      enabled: enabled && proposalIds.length > 0,
-    },
+  // One query per list page. A loaded page's ids never move, so its key stays
+  // cached while later pages load, and the ids travel in a GET URL that would
+  // otherwise outgrow the server's header limit around 260 proposals.
+  const pages = useMemo(
+    () => chunk(proposalIds, PROPOSALS_PAGE_LIMIT),
+    [proposalIds],
   );
 
-  const aggregates = data?.items;
+  const results = trpc.useQueries((t) =>
+    pages.map((ids) =>
+      t.decision.listWithReviewAggregates(
+        { processInstanceId, phaseId, proposalIds: ids },
+        { enabled, throwOnError: false },
+      ),
+    ),
+  );
+
+  const loggedErrors = useRef(new WeakSet<object>());
+
+  useEffect(() => {
+    for (const result of results) {
+      if (result.error && !loggedErrors.current.has(result.error)) {
+        loggedErrors.current.add(result.error);
+        logger.error(
+          'Failed to load review aggregates for a page of proposals',
+          {
+            error: result.error,
+            processInstanceId,
+          },
+        );
+      }
+    }
+  }, [results, processInstanceId]);
+
+  const pageIndexByProposalId = useMemo(
+    () =>
+      new Map(
+        pages.flatMap((ids, index) =>
+          ids.map((id): [string, number] => [id, index]),
+        ),
+      ),
+    [pages],
+  );
 
   const itemsByProposalId = useMemo(
-    () => new Map((aggregates ?? []).map((item) => [item.proposal.id, item])),
-    [aggregates],
+    () =>
+      new Map(
+        results
+          .flatMap((result) => result.data?.items ?? [])
+          .map((item) => [item.proposal.id, item]),
+      ),
+    [results],
   );
 
   const getDecoration = useCallback(
@@ -135,17 +188,26 @@ export function ProposalReviewDecorationProvider({
     [enabled, itemsByProposalId, decisionSlug, canOpenReviews],
   );
 
-  // A proposal outside the counted phase gets no item: it has no reviews there.
   const getAggregates = useCallback(
-    (proposalId: string) => {
-      if (!enabled || aggregates === undefined) {
-        return undefined;
+    (proposalId: string): ProposalReviewAggregatesState => {
+      const pageIndex = pageIndexByProposalId.get(proposalId);
+      const result = pageIndex === undefined ? undefined : results[pageIndex];
+
+      if (!enabled || result?.isError) {
+        return UNAVAILABLE_AGGREGATES;
       }
-      return (
-        itemsByProposalId.get(proposalId)?.aggregates ?? NO_REVIEW_AGGREGATES
-      );
+      if (result?.data === undefined) {
+        return LOADING_AGGREGATES;
+      }
+
+      // A proposal outside the counted phase gets no item: it has no reviews there.
+      return {
+        status: 'ready',
+        aggregates:
+          itemsByProposalId.get(proposalId)?.aggregates ?? NO_REVIEW_AGGREGATES,
+      };
     },
-    [enabled, aggregates, itemsByProposalId],
+    [enabled, pageIndexByProposalId, results, itemsByProposalId],
   );
 
   const value = useMemo(
@@ -174,10 +236,10 @@ export function useProposalReviewDecoration(
 
 export function useProposalReviewAggregates(
   proposalId: string,
-): ProposalReviewAggregates | undefined {
+): ProposalReviewAggregatesState {
   const context = useContext(ProposalReviewDecorationContext);
 
-  return context?.getAggregates(proposalId);
+  return context?.getAggregates(proposalId) ?? UNAVAILABLE_AGGREGATES;
 }
 
 /**

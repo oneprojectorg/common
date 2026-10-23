@@ -1184,6 +1184,7 @@
       "districtColumn": "الحي",
       "categoryColumn": "الفئة",
       "reviewProgressLabel": "تقدم المراجعة",
+      "reviewProgressUnavailable": "تقدم المراجعة غير متاح",
       "reviewProgressHeading": "تقدم المراجعة",
       "lastSubmissionLabel": "آخر إرسال",
       "progressLabel": "التقدم",
