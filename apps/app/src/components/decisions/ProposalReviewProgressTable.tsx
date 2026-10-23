@@ -21,7 +21,6 @@ import {
   TableRowHeader,
 } from '@op/sense/Table';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@op/sense/Tooltip';
-import type { ReactNode } from 'react';
 import { LuCircleAlert } from 'react-icons/lu';
 
 import { Link, useTranslations } from '@/lib/i18n';
@@ -37,7 +36,6 @@ type Reviewer = ProposalReviewAggregates['reviewers'][number];
 interface ProposalReviewProgressTableProps {
   proposals: Proposal[];
   decisionSlug: string;
-  emptyState: ReactNode;
 }
 
 const MAX_FACES = 3;
@@ -45,13 +43,8 @@ const MAX_FACES = 3;
 export function ProposalReviewProgressTable({
   proposals,
   decisionSlug,
-  emptyState,
 }: ProposalReviewProgressTableProps) {
   const t = useTranslations('decisions');
-
-  if (proposals.length === 0) {
-    return emptyState;
-  }
 
   return (
     <Table

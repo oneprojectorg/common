@@ -1415,7 +1415,6 @@
       "mapLoadError": "Nem sikerült betölteni a térképet. Frissítsen az újrapróbálkozáshoz.",
       "gridViewOption": "Rácsnézet",
       "feedViewOption": "Hírfolyamnézet",
-      "tableViewOption": "Táblázatnézet",
       "mapViewOption": "Térképnézet",
       "proposalViewLabel": "Javaslatnézet",
       "listViewOption": "Lista",

@@ -17,7 +17,6 @@ import {
   nextCursor,
 } from '@op/common/client';
 import { useInfiniteScroll } from '@op/hooks';
-import { Skeleton } from '@op/sense/Skeleton';
 import { cn } from '@op/sense/lib/utils';
 import {
   type ReactNode,
@@ -55,8 +54,8 @@ import { getScrollParent } from './StickyFilterBar';
 import { proposalHref } from './proposalHrefs';
 import { useReportProposalsForReviewDecoration } from './proposalReviewDecoration';
 import {
-  BROWSE_VIEWS,
   BROWSE_VIEWS_WITHOUT_FEED,
+  PROPOSAL_VIEWS,
   type ProposalView,
 } from './proposalViews';
 import { useProposalStatusItems } from './useProposalFilterItems';
@@ -91,11 +90,6 @@ export interface ProposalsListProps {
    * filter comes from this rather than the URL.
    */
   pinnedFilter?: ProposalFilter;
-  /** Adds a table view, offered first and shown by default. */
-  renderTable?: (props: {
-    proposals: Proposal[];
-    emptyState: ReactNode;
-  }) => ReactNode;
   /**
    * Px offset where the sticky filter bar pins. Decision-view passes a larger
    * value to clear the Overview/Current toggle; other routes use the default.
@@ -103,7 +97,7 @@ export interface ProposalsListProps {
   pinOffset?: number;
 }
 
-type ProposalsLoaderRenderProps = {
+export type ProposalsLoaderRenderProps = {
   allProposals: Proposal[];
   /** Full server-side proposal count for the active filter, independent of how many pages are loaded. */
   total: number;
@@ -152,7 +146,7 @@ const useProposalsLoaderRenderProps = (
   };
 };
 
-const CurrentPhaseProposalsLoader = ({
+export const CurrentPhaseProposalsLoader = ({
   queryParams,
   children,
 }: {
@@ -288,7 +282,6 @@ const ProposalsListContent = ({
   currentPhase,
   proposalsHidden,
   excludeAssignedForReview,
-  renderTable,
   pinOffset,
   phase,
   showFilterTabs = false,
@@ -370,9 +363,6 @@ const ProposalsListContent = ({
   // location, and the feed while a ballot is in play or on a phone. It leads
   // with the map when the process has one — users came here to see places,
   // not titles.
-  const browseViews: readonly ProposalView[] =
-    isVotingEnabled || isMobile ? BROWSE_VIEWS_WITHOUT_FEED : BROWSE_VIEWS;
-  const hasTableView = !!renderTable && !isMobile;
   const {
     mapView,
     availableViews,
@@ -380,8 +370,9 @@ const ProposalsListContent = ({
     hasMapView,
     handleViewChange,
   } = useProposalViewMode(instance.instanceData?.proposalTemplate, {
-    defaultView: hasTableView ? 'table' : 'map',
-    views: hasTableView ? ['table', ...browseViews] : browseViews,
+    defaultView: 'map',
+    views:
+      isVotingEnabled || isMobile ? BROWSE_VIEWS_WITHOUT_FEED : PROPOSAL_VIEWS,
   });
 
   const selectedProposalIds =
@@ -495,12 +486,7 @@ const ProposalsListContent = ({
 
   // One renderer per view, so a view the toggle can offer always has something
   // to draw — adding to `PROPOSAL_VIEWS` fails to compile until it does.
-  const viewRenderers: Record<ProposalView, ReactNode> = {
-    table:
-      renderTable?.({
-        proposals: allProposals,
-        emptyState: <NoProposalsFound {...emptyStateProps} />,
-      }) ?? null,
+  const browseViews: Record<ProposalView, ReactNode> = {
     map:
       phase === 'results' ? (
         // Results uses the phase-agnostic `listAllProposals` set; source pins
@@ -638,14 +624,12 @@ const ProposalsListContent = ({
         }
       />
 
-      {viewRenderers[browseView]}
+      {browseViews[browseView]}
 
       {/* Grid mode: the load-more skeletons render inside the masonry (see
           ProposalMasonry `loadingMore`), so the sentinel is just the trigger.
           Map and feed host their own sentinel inside their card column. */}
       {browseView === 'grid' && renderScrollSentinel(null)}
-      {browseView === 'table' &&
-        renderScrollSentinel(<Skeleton className="h-16 w-full" />)}
 
       {hasMapView && (
         <MobileViewSwitch view={effectiveView} onChange={handleViewChange} />

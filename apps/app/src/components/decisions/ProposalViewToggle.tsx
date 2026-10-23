@@ -2,12 +2,7 @@
 
 import { ToggleGroup, ToggleGroupItem } from '@op/sense/ToggleGroup';
 import type { IconType } from 'react-icons';
-import {
-  LuGalleryVertical,
-  LuLayoutGrid,
-  LuLayoutList,
-  LuMap,
-} from 'react-icons/lu';
+import { LuGalleryVertical, LuLayoutGrid, LuMap } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -22,7 +17,6 @@ interface ProposalViewToggleProps {
 }
 
 const VIEW_OPTIONS = {
-  table: { Icon: LuLayoutList, labelKey: 'tableViewOption' },
   grid: { Icon: LuLayoutGrid, labelKey: 'gridViewOption' },
   feed: { Icon: LuGalleryVertical, labelKey: 'feedViewOption' },
   map: { Icon: LuMap, labelKey: 'mapViewOption' },

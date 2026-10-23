@@ -168,32 +168,18 @@ test.describe('Admin review progress', () => {
     );
     await expect(table.getByText('1 of 1', { exact: true })).toBeVisible();
 
-    await page.getByRole('button', { name: 'Grid view' }).click();
-    const reviewedCount = page
-      .getByRole('link', { name: '1 Reviewed' })
-      .first();
-    await expect(reviewedCount).toBeVisible({ timeout: 36_000 });
-    await expect(reviewedCount).toHaveAttribute(
-      'href',
-      new RegExp(
-        `/decisions/${instance.slug}/proposal/${reviewed.proposal.profileId}/reviews$`,
-      ),
-    );
-
-    const unreviewedCount = page
-      .getByRole('link', { name: '0 Reviewed' })
-      .first();
-    await expect(unreviewedCount).toBeVisible();
-    await expect(unreviewedCount).toHaveAttribute(
+    // No assignments: a dash in the cell, "No assignments" to a screen reader.
+    const unreviewedRow = table.getByRole('row', {
+      name: new RegExp(UNREVIEWED_TITLE),
+    });
+    await expect(
+      unreviewedRow.getByRole('link', { name: UNREVIEWED_TITLE }),
+    ).toHaveAttribute(
       'href',
       new RegExp(
         `/decisions/${instance.slug}/proposal/${unreviewed.profileId}/reviews$`,
       ),
     );
-
-    // Both cards are on screen, so the two counts above are one per proposal —
-    // the count is the whole decoration these cards carry.
-    await expect(page.getByText(REVIEWED_TITLE).first()).toBeVisible();
-    await expect(page.getByText(UNREVIEWED_TITLE).first()).toBeVisible();
+    await expect(unreviewedRow.getByText('No assignments')).toHaveCount(2);
   });
 });

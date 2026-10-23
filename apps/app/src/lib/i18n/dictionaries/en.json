@@ -1415,7 +1415,6 @@
       "mapLoadError": "Couldn't load the map. Refresh to try again.",
       "gridViewOption": "Grid view",
       "feedViewOption": "Feed view",
-      "tableViewOption": "Table view",
       "mapViewOption": "Map view",
       "proposalViewLabel": "Proposal view",
       "listViewOption": "List",

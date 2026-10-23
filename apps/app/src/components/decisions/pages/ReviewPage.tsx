@@ -138,10 +138,8 @@ export function ReviewPage({
   const adminProgressList = (
     <AdminReviewProposalsList
       processInstanceId={instance.id}
-      slug={slug}
       decisionSlug={decisionSlug}
       access={instance.access}
-      currentPhase={currentPhase}
       pinOffset={pinOffset}
     />
   );

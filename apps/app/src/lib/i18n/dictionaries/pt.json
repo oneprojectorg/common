@@ -1415,7 +1415,6 @@
       "mapLoadError": "Não foi possível carregar o mapa. Atualize para tentar novamente.",
       "gridViewOption": "Visualização em grade",
       "feedViewOption": "Visualização em feed",
-      "tableViewOption": "Visualização em tabela",
       "mapViewOption": "Visualização do mapa",
       "proposalViewLabel": "Visualização de propostas",
       "listViewOption": "Lista",

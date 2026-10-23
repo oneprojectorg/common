@@ -1415,7 +1415,6 @@
       "mapLoadError": "Impossible de charger la carte. Actualisez pour réessayer.",
       "gridViewOption": "Vue en grille",
       "feedViewOption": "Vue flux",
-      "tableViewOption": "Vue tableau",
       "mapViewOption": "Vue carte",
       "proposalViewLabel": "Vue des propositions",
       "listViewOption": "Liste",
