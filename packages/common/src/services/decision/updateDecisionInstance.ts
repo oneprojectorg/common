@@ -215,13 +215,6 @@ export const updateDecisionInstance = async ({
       } as DecisionInstanceData;
     }
 
-    if (hasPhaseUpdates || hasProposalTemplateUpdate) {
-      await assertVoterCostField({
-        instanceData: updatedInstanceData,
-        processId: existingInstance.processId,
-      });
-    }
-
     updateData.instanceData = updatedInstanceData;
   }
 
@@ -277,6 +270,14 @@ export const updateDecisionInstance = async ({
         phases: merged.phases,
       };
       updateData.instanceData = updatedInstanceData;
+    }
+
+    // After the merge: a budget on an incoming phase needs a priced field.
+    if (updatedInstanceData && (hasPhaseUpdates || hasProposalTemplateUpdate)) {
+      await assertVoterCostField({
+        instanceData: updatedInstanceData,
+        processId: existingInstance.processId,
+      });
     }
 
     // Update the instance
