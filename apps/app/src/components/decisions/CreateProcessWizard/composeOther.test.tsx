@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest';
 import english from '@/lib/i18n/dictionaries/en.json';
 
 import {
-  composeOtherPieces,
+  composeOtherPhases,
   describeOther,
   subjectPhrase,
   type OtherAnswers,
@@ -36,11 +36,11 @@ const copy: Record<string, unknown> = english.decisions.createWizard;
 const markup = (node: ReactNode) => renderToStaticMarkup(<>{node}</>);
 
 const phases = (input: OtherAnswers) =>
-  composeOtherPieces(input).map((piece) => piece.phaseType);
+  composeOtherPhases(input).map((phase) => phase.phaseType);
 
-describe('composeOtherPieces', () => {
+describe('composeOtherPhases', () => {
   it('maps an always-open process to a single open-ended intake', () => {
-    const pieces = composeOtherPieces(
+    const phases = composeOtherPhases(
       answers({
         subject: { kind: 'ideas' },
         cadence: 'ongoing',
@@ -48,9 +48,9 @@ describe('composeOtherPieces', () => {
       }),
     );
 
-    expect(pieces).toHaveLength(1);
-    expect(pieces[0]?.phaseType).toBe('submissions');
-    expect(pieces[0]?.capabilities).toContain('letMembersCommentLikeShow');
+    expect(phases).toHaveLength(1);
+    expect(phases[0]?.phaseType).toBe('submissions');
+    expect(phases[0]?.capabilities).toContain('letMembersCommentLikeShow');
   });
 
   it('skips the intake when nothing is submitted', () => {
@@ -88,19 +88,19 @@ describe('composeOtherPieces', () => {
   });
 
   it('narrows rough ideas down before the smaller group decides on the fuller versions', () => {
-    const pieces = composeOtherPieces(
+    const phases = composeOtherPhases(
       answers({ cadence: 'timeline', submits: 'rough', decision: 'review' }),
     );
 
-    expect(pieces.map((piece) => piece.phaseType)).toEqual([
+    expect(phases.map((phase) => phase.phaseType)).toEqual([
       'submissions',
       'review',
       'submissions',
       'review',
       'results',
     ]);
-    expect(pieces[1]?.name).toBe('narrowDown');
-    expect(pieces[3]?.name).toBe('reviewDecide');
+    expect(phases[1]?.name).toBe('narrowDown');
+    expect(phases[3]?.name).toBe('reviewDecide');
   });
 
   it('leaves out voting when a smaller group decides', () => {
@@ -116,7 +116,7 @@ describe('composeOtherPieces', () => {
   });
 
   it('carries support into the intake when there is no formal vote', () => {
-    const [intake] = composeOtherPieces(
+    const [intake] = composeOtherPhases(
       answers({
         cadence: 'timeline',
         submits: 'proposals',
@@ -129,9 +129,9 @@ describe('composeOtherPieces', () => {
 
   it('holds a vote on people rather than putting them to one', () => {
     const vote = (subject: OtherAnswers['subject']) =>
-      composeOtherPieces(
+      composeOtherPhases(
         answers({ subject, cadence: 'timeline', decision: 'vote' }),
-      ).find((piece) => piece.phaseType === 'voting')?.name;
+      ).find((phase) => phase.phaseType === 'voting')?.name;
 
     expect(vote({ kind: 'people' })).toBe('holdVote');
     expect(vote({ kind: 'funding' })).toBe('putVote');
@@ -230,17 +230,17 @@ describe('every process the other questions compose', () => {
         submits,
         decision,
       });
-      const pieces = composeOtherPieces(input);
-      const phaseNames = pieces.map((piece) => piece.phaseName ?? piece.name);
-      const keys = pieces.flatMap((piece) => [
-        piece.name,
-        piece.phaseName,
-        piece.description,
-        piece.norm,
-        ...piece.capabilities,
+      const phases = composeOtherPhases(input);
+      const phaseNames = phases.map((phase) => phase.phaseName ?? phase.name);
+      const keys = phases.flatMap((phase) => [
+        phase.name,
+        phase.phaseName,
+        phase.description,
+        phase.norm,
+        ...phase.capabilities,
       ]);
 
-      expect(pieces.length).toBeGreaterThan(0);
+      expect(phases.length).toBeGreaterThan(0);
       expect(new Set(phaseNames).size).toBe(phaseNames.length);
       expect(keys.filter((key) => key !== undefined && !(key in copy))).toEqual(
         [],

@@ -3,14 +3,14 @@ import type {
   GrantDecision,
   GrantShape,
   PbShape,
-  ProcessPiece,
+  WizardPhase,
   ProcessType,
   ShapeKey,
 } from './types';
 
-type PieceSetKey = `grant:${GrantShape}` | `pb:${PbShape}`;
+type PresetKey = `grant:${GrantShape}` | `pb:${PbShape}`;
 
-const PIECE_SETS: Record<PieceSetKey, ProcessPiece[]> = {
+const PRESETS: Record<PresetKey, WizardPhase[]> = {
   'pb:ideas': [
     {
       name: 'collectIdeas',
@@ -201,22 +201,22 @@ const PIECE_SETS: Record<PieceSetKey, ProcessPiece[]> = {
   ],
 };
 
-const isPieceSetKey = (key: string): key is PieceSetKey => key in PIECE_SETS;
+const isPresetKey = (key: string): key is PresetKey => key in PRESETS;
 
-export function piecesFor(
+export function presetPhases(
   type: ProcessType | null,
   shape: ShapeKey | null,
-): ProcessPiece[] {
+): WizardPhase[] {
   if (!type || !shape) {
     return [];
   }
 
   const key = `${type}:${shape}`;
 
-  return isPieceSetKey(key) ? PIECE_SETS[key] : [];
+  return isPresetKey(key) ? PRESETS[key] : [];
 }
 
-const GRANT_VOTE_PIECE: ProcessPiece = {
+const GRANT_VOTE_PHASE: WizardPhase = {
   name: 'putVote',
   phaseName: 'votePhase',
   phaseType: 'voting',
@@ -231,30 +231,30 @@ const GRANT_VOTE_PIECE: ProcessPiece = {
 
 /** Only the last review changes: an earlier one picks who advances, whoever decides. */
 export function applyGrantDecision(
-  pieces: ProcessPiece[],
+  phases: WizardPhase[],
   decision: GrantDecision | null,
-): ProcessPiece[] {
-  if (!decision || decision === 'rubric' || pieces.length === 0) {
-    return pieces;
+): WizardPhase[] {
+  if (!decision || decision === 'rubric' || phases.length === 0) {
+    return phases;
   }
 
-  const lastReview = pieces.map((p) => p.phaseType).lastIndexOf('review');
+  const lastReview = phases.map((p) => p.phaseType).lastIndexOf('review');
 
   if (lastReview < 0) {
-    return pieces;
+    return phases;
   }
 
   if (decision === 'applicants') {
-    return pieces.map((p, i) => (i === lastReview ? GRANT_VOTE_PIECE : p));
+    return phases.map((p, i) => (i === lastReview ? GRANT_VOTE_PHASE : p));
   }
 
-  const deciding = pieces[lastReview];
+  const deciding = phases[lastReview];
 
   if (!deciding) {
-    return pieces;
+    return phases;
   }
 
-  const narrowed: ProcessPiece = {
+  const narrowed: WizardPhase = {
     ...deciding,
     name: 'narrowField',
     phaseName: 'pickFinalists',
@@ -262,9 +262,9 @@ export function applyGrantDecision(
   };
 
   return [
-    ...pieces.slice(0, lastReview),
+    ...phases.slice(0, lastReview),
     narrowed,
-    GRANT_VOTE_PIECE,
-    ...pieces.slice(lastReview + 1),
+    GRANT_VOTE_PHASE,
+    ...phases.slice(lastReview + 1),
   ];
 }

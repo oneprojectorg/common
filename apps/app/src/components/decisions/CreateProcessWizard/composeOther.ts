@@ -5,7 +5,7 @@ import type { TranslateFn } from '@/lib/i18n';
 
 import type {
   Decision,
-  ProcessPiece,
+  WizardPhase,
   Subject,
   SubjectAnswer,
   SubmitKey,
@@ -67,7 +67,7 @@ const REVIEW_CAPABILITIES: WizardCopyKey[] = [
   'chooseWhatAdvances',
 ];
 
-export function composeOtherPieces(answers: OtherAnswers): ProcessPiece[] {
+export function composeOtherPhases(answers: OtherAnswers): WizardPhase[] {
   const submits = answers.submits ?? 'none';
 
   if (answers.cadence === 'ongoing') {
@@ -91,14 +91,14 @@ export function composeOtherPieces(answers: OtherAnswers): ProcessPiece[] {
 
   const decision = answers.decision ?? 'vote';
   const discussionOnly = decision === 'agree';
-  const pieces: ProcessPiece[] = [];
+  const phases: WizardPhase[] = [];
 
   if (submits !== 'none') {
     const supportCapabilities: WizardCopyKey[] = discussionOnly
       ? ['letPeopleCommentLikeShow']
       : [];
 
-    pieces.push({
+    phases.push({
       name: INTAKE_NAME[submits],
       phaseName: INTAKE_PHASE_NAME[submits],
       phaseType: 'submissions',
@@ -113,7 +113,7 @@ export function composeOtherPieces(answers: OtherAnswers): ProcessPiece[] {
   }
 
   if (decision === 'both' || (decision === 'review' && submits === 'rough')) {
-    pieces.push({
+    phases.push({
       name: 'narrowDown',
       phaseName: 'shortlisting',
       phaseType: 'review',
@@ -126,7 +126,7 @@ export function composeOtherPieces(answers: OtherAnswers): ProcessPiece[] {
   }
 
   if (submits === 'rough') {
-    pieces.push({
+    phases.push({
       name: 'workThemUp',
       phaseName: 'buildThemUp',
       phaseType: 'submissions',
@@ -140,7 +140,7 @@ export function composeOtherPieces(answers: OtherAnswers): ProcessPiece[] {
   }
 
   if (decision === 'review') {
-    pieces.push({
+    phases.push({
       name: 'reviewDecide',
       phaseName: 'reviewDecide',
       phaseType: 'review',
@@ -150,7 +150,7 @@ export function composeOtherPieces(answers: OtherAnswers): ProcessPiece[] {
   }
 
   if (decision === 'vote' || decision === 'both') {
-    pieces.push({
+    phases.push({
       name: answers.subject?.kind === 'people' ? 'holdVote' : 'putVote',
       phaseName: 'votePhase',
       phaseType: 'voting',
@@ -164,7 +164,7 @@ export function composeOtherPieces(answers: OtherAnswers): ProcessPiece[] {
     });
   }
 
-  pieces.push({
+  phases.push({
     name: 'shareWhatWasDecided',
     phaseName: 'seeWhatWasDecided',
     phaseType: 'results',
@@ -175,7 +175,7 @@ export function composeOtherPieces(answers: OtherAnswers): ProcessPiece[] {
     ],
   });
 
-  return pieces;
+  return phases;
 }
 
 const INTAKE_RECAP: Record<SubmitKey, WizardCopyKey> = {
