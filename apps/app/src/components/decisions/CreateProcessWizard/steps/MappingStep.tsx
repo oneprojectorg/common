@@ -13,7 +13,6 @@ import { useTranslations } from '@/lib/i18n';
 
 import { Callout } from '../Callout';
 import { StepHeading } from '../StepHeading';
-import { PHASE_TYPE_LABEL } from '../content';
 import type { ProcessPiece } from '../types';
 import { capabilityIcon } from './capabilityIcons';
 
@@ -78,7 +77,7 @@ export function MappingStep({
 function PieceRow({ piece, step }: { piece: ProcessPiece; step: number }) {
   const t = useTranslations('decisions.createWizard');
   const title = t(piece.name);
-  const phase = t(PHASE_TYPE_LABEL[piece.phaseType]);
+  const phase = t(`${piece.phaseType}Phase`);
 
   return (
     <AccordionItem
