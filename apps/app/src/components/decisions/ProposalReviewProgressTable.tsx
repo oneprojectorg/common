@@ -149,8 +149,6 @@ function ReviewersPile({ reviewers }: { reviewers: Reviewer[] }) {
     return <EmptyMark label={t('noAssignments')} />;
   }
 
-  const isSubmitted = (reviewer: Reviewer) =>
-    reviewer.status === ProposalReviewAssignmentStatus.COMPLETED;
   const ordered = [
     ...reviewers.filter(isSubmitted),
     ...reviewers.filter((reviewer) => !isSubmitted(reviewer)),
@@ -160,6 +158,7 @@ function ReviewersPile({ reviewers }: { reviewers: Reviewer[] }) {
     const key = getReviewerStateKey(reviewer);
 
     return {
+      id: reviewer.profile.id,
       label: t.markup(key, {
         name: reviewer.profile.name,
         bdi: (chunks) => chunks,
@@ -216,8 +215,8 @@ function ReviewersPile({ reviewers }: { reviewers: Reviewer[] }) {
       </TooltipTrigger>
       <TooltipContent className="text-sm">
         <ul>
-          {states.map((state, index) => (
-            <li key={ordered[index]?.profile.id ?? index}>{state.line}</li>
+          {states.map((state) => (
+            <li key={state.id}>{state.line}</li>
           ))}
         </ul>
       </TooltipContent>
@@ -286,6 +285,10 @@ function EmptyMark({ label }: { label?: string }) {
       {label ? <span className="sr-only">{label}</span> : null}
     </>
   );
+}
+
+function isSubmitted(reviewer: Reviewer) {
+  return reviewer.status === ProposalReviewAssignmentStatus.COMPLETED;
 }
 
 function getReviewerStateKey(reviewer: Reviewer) {
