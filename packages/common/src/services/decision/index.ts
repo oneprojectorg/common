@@ -244,3 +244,6 @@ export {
   phaseReviewSettingsSchema,
 } from './schemas/types';
 export * from './decisionChatLine';
+export * from './ballotProposalFilter';
+export * from './listBallotProposals';
+export * from './getBallotProposalByCode';
