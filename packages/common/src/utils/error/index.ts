@@ -129,3 +129,9 @@ export class VoterNotEnrolledError extends ValidationError {
     super(message);
   }
 }
+
+export class VoteOutsideDistrictError extends ValidationError {
+  constructor(message = 'A selected proposal is outside your district') {
+    super(message);
+  }
+}
