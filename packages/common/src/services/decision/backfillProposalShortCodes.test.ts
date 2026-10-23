@@ -2,6 +2,7 @@ import { TestDecisionsDataManager } from '@op/common/testing';
 import { db, eq, sql } from '@op/db/client';
 import { ProcessStatus, ProposalStatus, proposals } from '@op/db/schema';
 import { execSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
 const TEST_DATABASE_URL =
@@ -9,8 +10,11 @@ const TEST_DATABASE_URL =
 
 const MINUTE_MS = 60_000;
 
+const REPO_ROOT = fileURLToPath(new URL('../../../../../', import.meta.url));
+
 const runBackfill = (args: string) =>
-  execSync(`pnpm --filter @op/db backfill:proposal-short-codes -- ${args}`, {
+  execSync(`pnpm w:db backfill:proposal-short-codes -- ${args}`, {
+    cwd: REPO_ROOT,
     env: { ...process.env, DATABASE_URL: TEST_DATABASE_URL },
     encoding: 'utf8',
   });

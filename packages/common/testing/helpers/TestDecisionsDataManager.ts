@@ -700,6 +700,7 @@ export class TestDecisionsDataManager {
       return {
         ...proposal,
         ...(nonDefaultStatus ? { status: nonDefaultStatus } : {}),
+        ...(createdAt ? { createdAt: createdAt.toISOString() } : {}),
         ...(legacyProposalData ? { proposalData: legacyProposalData } : {}),
       };
     }
