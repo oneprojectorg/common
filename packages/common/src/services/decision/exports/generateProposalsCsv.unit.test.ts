@@ -44,6 +44,7 @@ const baseProposal: ProposalFromList = {
   processInstanceId: 'instance-1',
   profileId: 'profile-1',
   status: 'submitted',
+  shortCode: null,
   proposalData: { category: [], attachmentIds: [] },
   profile: { name: 'Bike lanes on Main St' },
   submittedBy: { name: 'Ada Lovelace', email: 'ada@example.com' },
@@ -692,5 +693,25 @@ describe('generateProposalsCsv custom template fields', () => {
     expect(parseSingleRow(csv)['Likelihood to recommend']).toBe(
       'Extremely likely',
     );
+  });
+});
+
+describe('generateProposalsCsv code column', () => {
+  it('exports the proposal code next to the id, as printed in the ballot guide', async () => {
+    const row = parseSingleRow(
+      await generateProposalsCsv([makeProposal({ shortCode: 214 })]),
+    );
+
+    expect(row['Code']).toBe('214');
+  });
+
+  it('exports an empty code for a draft, which has none', async () => {
+    const row = parseSingleRow(
+      await generateProposalsCsv([
+        makeProposal({ status: 'draft', shortCode: null }),
+      ]),
+    );
+
+    expect(row['Code']).toBe('');
   });
 });
