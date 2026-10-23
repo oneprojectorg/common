@@ -33,7 +33,7 @@ export interface SmsBallotPage {
   nextCursor: number | null;
 }
 
-const loadBallotScope = async ({
+export const loadBallotScope = async ({
   authUserId,
   instanceId,
 }: {

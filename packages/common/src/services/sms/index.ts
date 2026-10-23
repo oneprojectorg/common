@@ -7,3 +7,4 @@ export * from './formatSmsProposals';
 export * from './formatSmsEnrolment';
 export * from './formatSmsAmount';
 export * from './formatSmsBallotBrowse';
+export * from './formatSmsBallot';
