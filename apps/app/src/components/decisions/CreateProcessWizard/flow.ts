@@ -1,37 +1,25 @@
-import {
-  PROCESS_NAME_MAX_LENGTH,
-  PROCESS_NAME_MIN_LENGTH,
-} from '@op/common/client';
+import { createInstanceSchema } from '@op/common/client';
+import type { ProcessType } from '@op/common/client';
 
 import {
   CADENCE_OPTIONS,
   DECISION_OPTIONS,
-  GRANT_DECISION_QUESTION,
+  GRANT_DECISION_OPTIONS,
   SHAPE_QUESTION,
   SUBJECT_OPTIONS,
-  SUBMIT_HEADING,
-  SUBMIT_OPTIONS,
   TYPE_OPTIONS,
+  subjectMeta,
 } from './questions';
-import type {
-  Choice,
-  ProcessType,
-  ShapeKey,
-  Subject,
-  SubjectAnswer,
-  WizardAnswers,
-  WizardCopyKey,
-} from './types';
+import type { Choice, WizardAnswers, WizardCopyKey } from './types';
 
 export type { WizardAnswers } from './types';
-
-export const TOTAL_STEPS = 5;
 
 export const EMPTY_ANSWERS: WizardAnswers = {
   type: null,
   shape: null,
   grantDecision: null,
   subject: null,
+  subjectText: '',
   cadence: null,
   submits: null,
   decision: null,
@@ -39,6 +27,11 @@ export const EMPTY_ANSWERS: WizardAnswers = {
 };
 
 type AnswerKey = keyof WizardAnswers;
+
+/** An answer picked from options, so one that can be unanswered. */
+type ChoiceKey = {
+  [K in AnswerKey]: null extends WizardAnswers[K] ? K : never;
+}[AnswerKey];
 
 interface ScreenRules {
   step: number;
@@ -57,70 +50,31 @@ interface Question<K extends AnswerKey> extends ScreenRules {
   id: K;
   /** Defaults to an answer being present. */
   isComplete?: (answers: WizardAnswers) => boolean;
-  /**
-   * The answer that still fits the settled earlier answers. `previous` is the
-   * state the change was made to, for a rule that must clear on any change.
-   */
-  reconcile?: (
-    answers: WizardAnswers,
-    previous?: WizardAnswers,
-  ) => WizardAnswers[K];
 }
 
-/** A question answered by picking one option. */
-interface ChoiceQuestion<K extends AnswerKey> extends Question<K> {
+/** Answered by picking one option; an option no longer offered clears. */
+interface ChoiceQuestion<K extends ChoiceKey> extends Question<K> {
   heading: (answers: WizardAnswers) => WizardCopyKey;
   description?: (answers: WizardAnswers) => WizardCopyKey | undefined;
-  options: (answers: WizardAnswers) => Choice<string>[];
-  /** The option picked so far. */
-  chosen: (answers: WizardAnswers) => string | null;
-  /** What picking an option answers. */
-  choose: (key: string, answers: WizardAnswers) => Partial<WizardAnswers>;
+  /** Module constants: a different array is a different question. */
+  options: (answers: WizardAnswers) => Choice<NonNullable<WizardAnswers[K]>>[];
 }
 
-type Screen =
-  | Walkthrough
-  | Question<'name'>
-  | ChoiceQuestion<'type'>
-  | ChoiceQuestion<'shape'>
-  | ChoiceQuestion<'grantDecision'>
-  | ChoiceQuestion<'subject'>
-  | ChoiceQuestion<'cadence'>
-  | ChoiceQuestion<'submits'>
-  | ChoiceQuestion<'decision'>;
+export type ChoiceScreen = { [K in ChoiceKey]: ChoiceQuestion<K> }[ChoiceKey];
+
+type Screen = Walkthrough | Question<'name'> | ChoiceScreen;
 
 export type ScreenId = Screen['id'];
 
-export type ChoiceScreen = Extract<Screen, { options: unknown }>;
-
 /** The option matching `key`, so an answer is always one that was offered. */
 const offered = <K extends string>(
-  options: Choice<K>[] | undefined,
+  options: Choice<K>[],
   key: string | null,
-): K | null => options?.find((option) => option.key === key)?.key ?? null;
+): K | null => options.find((option) => option.key === key)?.key ?? null;
 
 /** Asked only for the types with shapes; `types` below says which. */
 const shapeQuestion = (type: ProcessType | null) =>
   SHAPE_QUESTION[type === 'pb' ? 'pb' : 'grant'];
-
-const submitOptions = ({ subject }: WizardAnswers) =>
-  SUBMIT_OPTIONS[subject?.kind ?? 'else'];
-
-/** Something else keeps the words already typed. */
-function subjectAnswer(
-  kind: Subject | null,
-  previous: SubjectAnswer | null,
-): SubjectAnswer | null {
-  if (kind === null) {
-    return null;
-  }
-
-  if (kind === 'else') {
-    return { kind, text: previous?.kind === 'else' ? previous.text : '' };
-  }
-
-  return { kind };
-}
 
 /** In order. A screen is asked when its type and `isAsked` allow; an unasked answer clears. */
 const SCREENS: Screen[] = [
@@ -131,8 +85,6 @@ const SCREENS: Screen[] = [
     heading: () => 'typeHeading',
     description: () => 'typeDescription',
     options: () => TYPE_OPTIONS,
-    chosen: ({ type }) => type,
-    choose: (key) => ({ type: offered(TYPE_OPTIONS, key) }),
   },
   {
     id: 'shape',
@@ -140,22 +92,13 @@ const SCREENS: Screen[] = [
     types: ['grant', 'pb'],
     heading: ({ type }) => shapeQuestion(type).heading,
     options: ({ type }) => shapeQuestion(type).options,
-    chosen: ({ shape }) => shape,
-    choose: (key, { type }) => ({
-      shape: offered(shapeQuestion(type).options, key),
-    }),
-    reconcile: ({ type, shape }) => offered(shapeQuestion(type).options, shape),
   },
   {
     id: 'grantDecision',
     step: 3,
     types: ['grant'],
-    heading: () => GRANT_DECISION_QUESTION.heading,
-    options: () => GRANT_DECISION_QUESTION.options,
-    chosen: ({ grantDecision }) => grantDecision,
-    choose: (key) => ({
-      grantDecision: offered(GRANT_DECISION_QUESTION.options, key),
-    }),
+    heading: () => 'grantDecisionHeading',
+    options: () => GRANT_DECISION_OPTIONS,
   },
   {
     id: 'subject',
@@ -164,13 +107,8 @@ const SCREENS: Screen[] = [
     heading: () => 'subjectHeading',
     description: () => 'subjectDescription',
     options: () => SUBJECT_OPTIONS,
-    chosen: ({ subject }) => subject?.kind ?? null,
-    choose: (key, { subject }) => ({
-      subject: subjectAnswer(offered(SUBJECT_OPTIONS, key), subject),
-    }),
-    isComplete: ({ subject }) =>
-      subject !== null &&
-      (subject.kind !== 'else' || subject.text.trim().length > 0),
+    isComplete: ({ subject, subjectText }) =>
+      subject !== null && (subject !== 'else' || subjectText.trim().length > 0),
   },
   {
     id: 'cadence',
@@ -178,28 +116,15 @@ const SCREENS: Screen[] = [
     types: ['other'],
     heading: () => 'cadenceHeading',
     options: () => CADENCE_OPTIONS,
-    chosen: ({ cadence }) => cadence,
-    choose: (key) => ({ cadence: offered(CADENCE_OPTIONS, key) }),
   },
   {
     id: 'submits',
     step: 3,
     types: ['other'],
-    heading: ({ subject }) => SUBMIT_HEADING[subject?.kind ?? 'else'],
+    heading: ({ subject }) => subjectMeta(subject).submitsHeading,
     description: ({ cadence }) =>
       cadence === 'ongoing' ? 'submitsOngoingDescription' : undefined,
-    options: submitOptions,
-    chosen: ({ submits }) => submits,
-    choose: (key, answers) => ({
-      submits: offered(submitOptions(answers), key),
-    }),
-    // A key is labelled per subject, so a new subject clears it even when offering the same key.
-    reconcile: (answers, previous) =>
-      answers.subject === null ||
-      (previous !== undefined &&
-        previous.subject?.kind !== answers.subject.kind)
-        ? null
-        : offered(submitOptions(answers), answers.submits),
+    options: ({ subject }) => subjectMeta(subject).submitOptions,
   },
   {
     id: 'decision',
@@ -208,25 +133,20 @@ const SCREENS: Screen[] = [
     isAsked: ({ cadence }) => cadence !== 'ongoing',
     heading: () => 'decisionHeading',
     options: () => DECISION_OPTIONS,
-    chosen: ({ decision }) => decision,
-    choose: (key) => ({ decision: offered(DECISION_OPTIONS, key) }),
   },
   { id: 'mapping', step: 4 },
   {
     id: 'name',
     step: 5,
-    isComplete: ({ name }) => {
-      const length = name.trim().length;
-
-      return (
-        length >= PROCESS_NAME_MIN_LENGTH && length <= PROCESS_NAME_MAX_LENGTH
-      );
-    },
+    isComplete: ({ name }) =>
+      createInstanceSchema.shape.name.safeParse(name).success,
   },
 ];
 
+export const TOTAL_STEPS = Math.max(...SCREENS.map((screen) => screen.step));
+
 const isQuestion = (screen: Screen): screen is Exclude<Screen, Walkthrough> =>
-  screen.id !== 'intro' && screen.id !== 'mapping';
+  screen.id in EMPTY_ANSWERS;
 
 export const isChoiceScreen = (screen: Screen): screen is ChoiceScreen =>
   'options' in screen;
@@ -263,6 +183,19 @@ export function isScreenComplete(
 
   return screen.isComplete?.(answers) ?? answers[screen.id] !== null;
 }
+
+/** The option picked so far. */
+export const chosenOption = (
+  screen: ChoiceScreen,
+  answers: WizardAnswers,
+): string | null => answers[screen.id];
+
+/** What picking an option answers; settle it before use. */
+export const chooseOption = (
+  screen: ChoiceScreen,
+  key: string,
+  answers: WizardAnswers,
+): WizardAnswers => ({ ...answers, [screen.id]: key });
 
 /** The screens these answers lead through, in order. */
 export function screensFor(answers: WizardAnswers): ScreenId[] {
@@ -318,10 +251,6 @@ export function progressPercent(
   return ((2 + (slot + 1) / slots.length) / TOTAL_STEPS) * 100;
 }
 
-/** The other pathway composes its shape from its questions instead of asking. */
-export const shapeOf = ({ type, shape }: WizardAnswers): ShapeKey | null =>
-  type === 'other' ? 'custom' : shape;
-
 /**
  * Settles the answers screen by screen, so each rule sees the earlier answers
  * already settled. `previous` is the settled state the change was made to.
@@ -331,24 +260,34 @@ export function settleAnswers(
   previous?: WizardAnswers,
 ): WizardAnswers {
   return SCREENS.reduce(
-    (settled, screen) =>
-      isQuestion(screen) ? settle(settled, screen, previous) : settled,
+    (answers, screen) =>
+      isQuestion(screen)
+        ? { ...answers, [screen.id]: settledAnswer(screen, answers, previous) }
+        : answers,
     next,
   );
 }
 
-function settle<K extends AnswerKey>(
+function settledAnswer(
+  screen: Exclude<Screen, Walkthrough>,
   answers: WizardAnswers,
-  question: Question<K>,
   previous: WizardAnswers | undefined,
-): WizardAnswers {
-  const value = !isAsked(question, answers)
-    ? EMPTY_ANSWERS[question.id]
-    : question.reconcile
-      ? question.reconcile(answers, previous)
-      : answers[question.id];
+): WizardAnswers[AnswerKey] {
+  if (!isAsked(screen, answers)) {
+    return EMPTY_ANSWERS[screen.id];
+  }
 
-  return { ...answers, [question.id]: value };
+  if (!isChoiceScreen(screen)) {
+    return answers[screen.id];
+  }
+
+  const options = screen.options(answers);
+
+  if (previous && screen.options(previous) !== options) {
+    return null;
+  }
+
+  return offered(options, answers[screen.id]);
 }
 
 export interface WizardState {
