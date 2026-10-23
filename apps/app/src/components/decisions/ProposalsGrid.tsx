@@ -629,7 +629,7 @@ const VotingProposalsList = ({
                   </Button>
                 }
               />
-              <DialogContent className="sm:max-w-2xl">
+              <DialogContent className="sm:max-w-120">
                 <VoteSubmissionModal
                   selectedProposals={selectedProposals}
                   ranked={ranked}

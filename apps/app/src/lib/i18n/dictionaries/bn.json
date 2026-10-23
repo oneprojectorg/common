@@ -1392,6 +1392,8 @@
       "overBudgetHint": "এই প্রস্তাবের খরচ আপনার বাকি {remaining}-এর চেয়ে বেশি। জায়গা করতে একটি বাছাই সরান।",
       "budgetAllocatedLabel": "বরাদ্দকৃত বাজেট",
       "budgetAllocatedSummary": "{budget}-এর মধ্যে {allocated} বরাদ্দ করা হয়েছে",
+      "budgetSpentOfTotal": "{budget}-এর মধ্যে {allocated}",
+      "budgetAllocatedRemaining": "<highlight>{allocated}</highlight> বরাদ্দ করা হয়েছে · {remaining} খরচ হয়নি",
       "budgetAllocatedOfTotal": "{budget}-এর মধ্যে <highlight>{allocated}</highlight> বরাদ্দ করা হয়েছে",
       "budgetAllocatedAmount": "{allocated} বরাদ্দ করা হয়েছে",
       "budgetRemainingAmount": "খরচ করার জন্য {remaining} বাকি",

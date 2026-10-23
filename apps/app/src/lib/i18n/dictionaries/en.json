@@ -1392,6 +1392,8 @@
       "overBudgetHint": "This proposal costs more than your remaining {remaining}. Remove a pick to make room.",
       "budgetAllocatedLabel": "Budget allocated",
       "budgetAllocatedSummary": "{allocated} of {budget} allocated",
+      "budgetSpentOfTotal": "{allocated} of {budget}",
+      "budgetAllocatedRemaining": "<highlight>{allocated}</highlight> allocated · {remaining} left unspent",
       "budgetAllocatedOfTotal": "<highlight>{allocated}</highlight> of {budget} allocated",
       "budgetAllocatedAmount": "{allocated} allocated",
       "budgetRemainingAmount": "{remaining} left to spend",

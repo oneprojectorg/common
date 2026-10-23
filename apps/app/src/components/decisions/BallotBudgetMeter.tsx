@@ -22,10 +22,13 @@ export const BallotBudgetMeter = ({
   ballot,
   budget,
   className,
+  children,
 }: {
   ballot: Proposal[];
   budget: BallotBudget;
   className?: string;
+  /** Replaces the default "$X of $Y allocated" sentence. */
+  children?: ReactNode;
 }) => {
   const t = useTranslations('decisions.proposals');
   const total = getBallotTotal({ proposals: ballot, budget });
@@ -55,13 +58,14 @@ export const BallotBudgetMeter = ({
         className="min-w-0 text-sm text-muted-foreground tabular-nums"
         aria-live="polite"
       >
-        {t.rich('budgetAllocatedOfTotal', {
-          allocated,
-          budget: voterBudget,
-          highlight: (chunks: ReactNode) => (
-            <span className="font-medium text-foreground">{chunks}</span>
-          ),
-        })}
+        {children ??
+          t.rich('budgetAllocatedOfTotal', {
+            allocated,
+            budget: voterBudget,
+            highlight: (chunks: ReactNode) => (
+              <span className="font-medium text-foreground">{chunks}</span>
+            ),
+          })}
       </p>
     </div>
   );
