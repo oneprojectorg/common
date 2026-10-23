@@ -10,7 +10,8 @@ import { getIndividualProfileId } from '../access';
 import { hashAttestation } from './attestationHash';
 import { forwardGeocode } from './forwardGeocode';
 import { hasDecisionBoundaries, resolveBoundary } from './resolveBoundary';
-import type { DecisionInstanceData } from './schemas/instanceData';
+import { getInstancePhases } from './schemas/instanceData';
+import { getInstanceCurrentPhase } from './utils/instance';
 import { getVoterEnrolment } from './utils/phaseSettings';
 
 export type Geocode = (
@@ -50,9 +51,10 @@ const loadEnrolmentContext = async ({
     throw new NotFoundError('Process instance', processInstanceId);
   }
 
-  const phase = (instance.instanceData as DecisionInstanceData).phases?.find(
-    (candidate) => candidate.phaseId === instance.currentStateId,
-  );
+  const phase = getInstanceCurrentPhase({
+    currentStateId: instance.currentStateId,
+    instanceData: { phases: getInstancePhases(instance.instanceData) },
+  });
   const rule = phase ? getVoterEnrolment(phase) : undefined;
 
   if (!rule) {
