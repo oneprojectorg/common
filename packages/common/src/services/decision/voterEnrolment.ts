@@ -203,3 +203,39 @@ export async function affirmVoterAttestation({
 
   return enrolled;
 }
+
+export interface PendingVoterEnrolment {
+  processInstanceId: string;
+  status: DecisionVoterEnrolment['status'];
+  boundaryName: string | null;
+}
+
+export async function findPendingVoterEnrolment({
+  authUserId,
+  processInstanceId,
+}: {
+  authUserId: string;
+  processInstanceId?: string;
+}): Promise<PendingVoterEnrolment | null> {
+  const profileId = await getIndividualProfileId(authUserId);
+  const rows = await db.query.decisionVoterEnrolments.findMany({
+    where: {
+      profileId,
+      status: { ne: DecisionVoterEnrolmentStatus.ENROLLED },
+      ...(processInstanceId ? { processInstanceId } : {}),
+    },
+    columns: { processInstanceId: true, status: true, updatedAt: true },
+    with: { boundary: { columns: { name: true } } },
+    orderBy: { updatedAt: 'desc' },
+    limit: 1,
+  });
+  const [row] = rows;
+
+  return row
+    ? {
+        processInstanceId: row.processInstanceId,
+        status: row.status,
+        boundaryName: row.boundary?.name ?? null,
+      }
+    : null;
+}
