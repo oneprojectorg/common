@@ -42,7 +42,7 @@ export function canEditProposals(phase: {
 
 /** A cast ballot may be revised while this phase is open (`voting.edit`). */
 export function canEditVotes(phase: {
-  rules?: { voting?: { edit?: boolean } };
+  rules?: { voting?: { edit?: boolean; [key: string]: unknown } };
 }): boolean {
   return phase.rules?.voting?.edit ?? false;
 }
