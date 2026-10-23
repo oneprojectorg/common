@@ -57,11 +57,6 @@ export function AdminReviewProposalsList({
 }: AdminReviewProposalsListProps) {
   const isAdmin = Boolean(access?.admin);
 
-  // Both suspend inside the boundary, one component after another; started
-  // here they run alongside the list query instead of ahead of it.
-  void trpc.decision.getVotingStatus.usePrefetchQuery({ processInstanceId });
-  void trpc.decision.getCategories.usePrefetchQuery({ processInstanceId });
-
   return (
     <APIErrorBoundary fallbacks={{ default: () => <ProposalsLoadError /> }}>
       {/* Outside the Suspense boundary so the reported-proposals state survives
