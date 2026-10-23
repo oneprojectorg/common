@@ -1642,7 +1642,6 @@
       "decisionBothDescription": "مراجعة تقلّص الخيارات ثم يُطرح الأمر للتصويت",
       "decisionBothLabel": "كلاهما",
       "decisionHeading": "كيف يُتخذ القرار؟",
-      "decisionOngoingDescription": "لما ينشره الأعضاء.",
       "decisionReviewDescription": "تتخذ لجنة أو هيئة القرار",
       "decisionReviewLabel": "تراجع مجموعة أصغر وتقرّر",
       "decisionVoteDescription": "تقرّر المجموعة كلها معاً",

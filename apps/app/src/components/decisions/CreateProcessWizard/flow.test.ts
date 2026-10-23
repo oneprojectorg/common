@@ -1,15 +1,19 @@
 import { PROCESS_NAME_MAX_LENGTH } from '@op/common/client';
 import { describe, expect, it } from 'vitest';
 
+import english from '@/lib/i18n/dictionaries/en.json';
+
 import {
   EMPTY_ANSWERS,
   INITIAL_STATE,
   TOTAL_STEPS,
+  isChoiceScreen,
   isScreenComplete,
   nextScreen,
   previousScreen,
   progressPercent,
   resumeWizard,
+  screenOf,
   screensFor,
   settleAnswers,
   shapeOf,
@@ -377,5 +381,88 @@ describe('resumeWizard', () => {
 
   it('pulls a screen these answers do not ask back to the one before it', () => {
     expect(resumeWizard(at('decision', ongoing)).screen).toBe('submits');
+  });
+});
+
+describe('choice screens', () => {
+  const copy: Record<string, unknown> = english.decisions.createWizard;
+  const reached = [
+    answers({ type: 'grant' }),
+    answers({ type: 'pb' }),
+    timeline,
+  ]
+    .flatMap((input) => screensFor(input).map((id) => [id, input] as const))
+    .flatMap(([id, input]) => {
+      const screen = screenOf(id);
+
+      return isChoiceScreen(screen) ? [[id, screen, input] as const] : [];
+    });
+
+  it('covers every question except the name', () => {
+    expect(new Set(reached.map(([id]) => id))).toEqual(
+      new Set([
+        'type',
+        'shape',
+        'grantDecision',
+        'subject',
+        'cadence',
+        'submits',
+        'decision',
+      ]),
+    );
+  });
+
+  it.each(reached)(
+    '%s offers copy that exists and reads back every option',
+    (_, screen, input) => {
+      expect(screen.heading(input) in copy).toBe(true);
+
+      const description = screen.description?.(input);
+
+      expect(description === undefined || description in copy).toBe(true);
+
+      const options = screen.options(input);
+
+      expect(options.length).toBeGreaterThan(1);
+
+      for (const option of options) {
+        const picked = settleAnswers(
+          { ...input, ...screen.choose(option.key, input) },
+          input,
+        );
+
+        expect(screen.chosen(picked)).toBe(option.key);
+        expect(screen.options(picked)).toEqual(options);
+      }
+
+      expect(screen.choose('not-an-option', input)).toEqual(
+        screen.choose('not-an-option', input),
+      );
+    },
+  );
+
+  it('keeps the words for something else while it stays picked, and drops them once it is not', () => {
+    const subject = screenOf('subject');
+
+    if (!isChoiceScreen(subject)) {
+      throw new Error('subject is a choice');
+    }
+
+    const typed = answers({
+      type: 'other',
+      subject: { kind: 'else', text: 'Murals' },
+    });
+
+    expect(subject.choose('else', typed).subject).toEqual({
+      kind: 'else',
+      text: 'Murals',
+    });
+    expect(subject.choose('funding', typed).subject).toEqual({
+      kind: 'funding',
+    });
+    expect(
+      subject.choose('else', { ...typed, subject: { kind: 'funding' } })
+        .subject,
+    ).toEqual({ kind: 'else', text: '' });
   });
 });

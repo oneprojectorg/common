@@ -1642,7 +1642,6 @@
       "decisionBothDescription": "Une évaluation réduit le champ, puis on passe au vote",
       "decisionBothLabel": "Les deux",
       "decisionHeading": "Comment la décision est-elle prise ?",
-      "decisionOngoingDescription": "Pour ce que les membres publient.",
       "decisionReviewDescription": "Un comité ou une commission tranche",
       "decisionReviewLabel": "Un groupe plus restreint évalue et décide",
       "decisionVoteDescription": "Le groupe entier décide ensemble",

@@ -1642,7 +1642,6 @@
       "decisionBothDescription": "Egy értékelés leszűkíti a kört, majd szavazás dönt",
       "decisionBothLabel": "Mindkettő",
       "decisionHeading": "Hogyan születik meg a döntés?",
-      "decisionOngoingDescription": "A tagok által közzétett dolgokra.",
       "decisionReviewDescription": "Egy bizottság hozza meg a döntést",
       "decisionReviewLabel": "Egy kisebb csoport értékel és dönt",
       "decisionVoteDescription": "Az egész csoport együtt dönt",
