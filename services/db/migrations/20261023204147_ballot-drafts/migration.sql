@@ -4,6 +4,7 @@ CREATE TABLE "decision_ballot_drafts" (
 	"profile_id" uuid NOT NULL,
 	"picks" jsonb DEFAULT '[]' NOT NULL,
 	"page_cursor" integer,
+	"reopened_at" timestamp with time zone,
 	"created_at" timestamp with time zone DEFAULT (now() AT TIME ZONE 'utc'::text),
 	"updated_at" timestamp with time zone DEFAULT (now() AT TIME ZONE 'utc'::text),
 	"deleted_at" timestamp with time zone,
