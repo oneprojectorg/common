@@ -183,10 +183,10 @@ export const submitProposal = async ({
       db: tx,
       instanceId: instance.id,
     });
-    const [current] = await tx
-      .select({ shortCode: proposals.shortCode })
-      .from(proposals)
-      .where(eq(proposals.id, data.proposalId));
+    const current = await tx.query.proposals.findFirst({
+      where: { id: data.proposalId },
+      columns: { shortCode: true },
+    });
     const assignsCode = current?.shortCode == null;
     const shortCode = current?.shortCode ?? locked.nextShortCode;
 
