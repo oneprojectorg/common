@@ -105,7 +105,7 @@ export const BallotPopover = ({
         align="start"
         sideOffset={32}
         alignOffset={-8}
-        className="max-h-(--available-height) gap-0 overflow-hidden p-0 sm:w-md"
+        className="max-h-(--available-height) gap-0 overflow-hidden p-0 sm:w-115"
       >
         <PopoverHeader className="px-5 pt-4 pb-1.5">
           <PopoverTitle>{t('ballotTitle')}</PopoverTitle>
@@ -193,9 +193,12 @@ const BallotRow = ({
     <div className="flex items-center gap-2.5 bg-background px-1 py-2">
       <DragHandle
         {...dragHandleProps}
+        className="p-0 text-input hover:text-foreground"
         aria-label={t('ballotDragLabel', { title: titleText })}
       />
-      <BadgeNumber aria-hidden>{rank}</BadgeNumber>
+      <BadgeNumber aria-hidden className="h-6 min-w-6 font-medium">
+        {rank}
+      </BadgeNumber>
       <p
         dir="auto"
         className="min-w-0 flex-1 truncate text-sm ltr:text-left rtl:text-right"
@@ -210,38 +213,41 @@ const BallotRow = ({
           })}
         </span>
       )}
-      <Button
-        variant="ghost"
-        size="icon-xs"
-        disabled={!onMoveUp}
-        // Focusable at the edge, or a move to the top drops keyboard focus.
-        focusableWhenDisabled
-        className="aria-disabled:opacity-50"
-        onClick={onMoveUp}
-        aria-label={t('ballotMoveUpLabel', { title: titleText })}
-      >
-        <LuChevronUp />
-      </Button>
-      <Button
-        variant="ghost"
-        size="icon-xs"
-        disabled={!onMoveDown}
-        focusableWhenDisabled
-        className="aria-disabled:opacity-50"
-        onClick={onMoveDown}
-        aria-label={t('ballotMoveDownLabel', { title: titleText })}
-      >
-        <LuChevronDown />
-      </Button>
-      <Button
-        variant="ghost"
-        size="icon-xs"
-        ref={removeButtonRef}
-        onClick={onRemove}
-        aria-label={t('ballotRemoveLabel', { title: titleText })}
-      >
-        <LuX />
-      </Button>
+      <div className="flex shrink-0 gap-0.5">
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          disabled={!onMoveUp}
+          // Focusable at the edge, or a move to the top drops keyboard focus.
+          focusableWhenDisabled
+          className="aria-disabled:opacity-30"
+          onClick={onMoveUp}
+          aria-label={t('ballotMoveUpLabel', { title: titleText })}
+        >
+          <LuChevronUp />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          disabled={!onMoveDown}
+          focusableWhenDisabled
+          className="aria-disabled:opacity-30"
+          onClick={onMoveDown}
+          aria-label={t('ballotMoveDownLabel', { title: titleText })}
+        >
+          <LuChevronDown />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          ref={removeButtonRef}
+          onClick={onRemove}
+          className="hover:bg-destructive-muted hover:text-destructive"
+          aria-label={t('ballotRemoveLabel', { title: titleText })}
+        >
+          <LuX />
+        </Button>
+      </div>
     </div>
   );
 };
