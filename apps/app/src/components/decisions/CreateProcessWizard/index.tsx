@@ -10,7 +10,7 @@ import { useTranslations } from '@/lib/i18n';
 
 import { ChoiceScreen } from './ChoiceScreen';
 import { STEP_HEADING_ID } from './StepHeading';
-import { applyGrantDecision, piecesFor } from './content';
+import { composeOtherPhases, describeOther } from './composeOther';
 import {
   INITIAL_STATE,
   TOTAL_STEPS,
@@ -25,16 +25,16 @@ import {
   type WizardAnswers,
   type WizardState,
 } from './flow';
-import { composeOtherPieces, describeOther } from './otherContent';
+import { applyGrantDecision, presetPhases } from './phasePresets';
 import { IntroBackdrop, IntroStep } from './steps/IntroStep';
 import { MappingStep } from './steps/MappingStep';
 import { NameAccessStep } from './steps/NameAccessStep';
-import type { ProcessDraft, ProcessPiece } from './types';
+import type { ProcessDraft, WizardPhase } from './types';
 
 interface ScreenBodyProps {
   screen: ScreenId;
   answers: WizardAnswers;
-  pieces: ProcessPiece[];
+  phases: WizardPhase[];
   recap?: ReactNode;
   onAnswer: (patch: Partial<WizardAnswers>) => void;
   onStart: () => void;
@@ -71,8 +71,8 @@ export function CreateProcessWizard({
   const step = stepOf(screen);
   // Not before step 4, so answering step 3 doesn't recompose the phases.
   const isResolved = step >= 4;
-  const pieces = useMemo(
-    () => (isResolved ? resolvePieces(answers) : []),
+  const phases = useMemo(
+    () => (isResolved ? resolvePhases(answers) : []),
     [isResolved, answers],
   );
 
@@ -98,7 +98,7 @@ export function CreateProcessWizard({
 
     if (nextScreen(screen, answers) === null) {
       if (type) {
-        onComplete({ type, name: name.trim(), pieces });
+        onComplete({ type, name: name.trim(), phases });
       }
 
       return;
@@ -157,7 +157,7 @@ export function CreateProcessWizard({
               onComplete({
                 type: 'other',
                 name: t('untitledProcessName'),
-                pieces: [],
+                phases: [],
               })
             }
           >
@@ -183,7 +183,7 @@ export function CreateProcessWizard({
           <ScreenBody
             screen={screen}
             answers={answers}
-            pieces={pieces}
+            phases={phases}
             recap={
               type === 'other' && isResolved
                 ? describeOther(answers, t)
@@ -216,7 +216,7 @@ export function CreateProcessWizard({
 function ScreenBody({
   screen,
   answers,
-  pieces,
+  phases,
   recap,
   onAnswer,
   onStart,
@@ -234,7 +234,7 @@ function ScreenBody({
     case 'intro':
       return <IntroStep onStart={onStart} />;
     case 'mapping':
-      return <MappingStep pieces={pieces} recap={recap} />;
+      return <MappingStep phases={phases} recap={recap} />;
     case 'name':
       return (
         <NameAccessStep
@@ -246,16 +246,16 @@ function ScreenBody({
   }
 }
 
-function resolvePieces(answers: WizardAnswers): ProcessPiece[] {
+function resolvePhases(answers: WizardAnswers): WizardPhase[] {
   const { type, shape, grantDecision } = answers;
 
   if (type === 'other') {
-    return composeOtherPieces(answers);
+    return composeOtherPhases(answers);
   }
 
   if (type === 'grant') {
-    return applyGrantDecision(piecesFor(type, shape), grantDecision);
+    return applyGrantDecision(presetPhases(type, shape), grantDecision);
   }
 
-  return piecesFor(type, shape);
+  return presetPhases(type, shape);
 }

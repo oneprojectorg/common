@@ -13,14 +13,14 @@ import { useTranslations } from '@/lib/i18n';
 
 import { Callout } from '../Callout';
 import { StepHeading } from '../StepHeading';
-import type { ProcessPiece } from '../types';
+import type { WizardPhase } from '../types';
 import { capabilityIcon } from './capabilityIcons';
 
 export function MappingStep({
-  pieces,
+  phases,
   recap,
 }: {
-  pieces: ProcessPiece[];
+  phases: WizardPhase[];
   recap?: ReactNode;
 }) {
   const t = useTranslations('decisions.createWizard');
@@ -41,7 +41,7 @@ export function MappingStep({
 
       <div className="relative">
         {/* Outside the `ol`: it may only contain `li`. */}
-        {pieces.length > 1 ? (
+        {phases.length > 1 ? (
           <span
             aria-hidden
             className="absolute start-4.25 top-2.75 bottom-2.75 w-0.5 -translate-x-1/2 bg-border rtl:translate-x-1/2"
@@ -61,10 +61,10 @@ export function MappingStep({
           render={<ol role="list" />}
           className="gap-3"
         >
-          {pieces.map((piece, index) => (
-            <PieceRow
-              key={`${piece.name}-${index}`}
-              piece={piece}
+          {phases.map((phase, index) => (
+            <PhaseRow
+              key={`${phase.name}-${index}`}
+              phase={phase}
               step={index}
             />
           ))}
@@ -74,10 +74,10 @@ export function MappingStep({
   );
 }
 
-function PieceRow({ piece, step }: { piece: ProcessPiece; step: number }) {
+function PhaseRow({ phase, step }: { phase: WizardPhase; step: number }) {
   const t = useTranslations('decisions.createWizard');
-  const title = t(piece.name);
-  const phase = t(`${piece.phaseType}Phase`);
+  const title = t(phase.name);
+  const kind = t(`${phase.phaseType}Phase`);
 
   return (
     <AccordionItem
@@ -101,24 +101,24 @@ function PieceRow({ piece, step }: { piece: ProcessPiece; step: number }) {
           <span className="flex min-w-0 flex-col">
             <span className="truncate">{title}</span>
             <span className="hidden text-sm font-normal text-muted-foreground group-aria-expanded/accordion-trigger:block">
-              {phase}
+              {kind}
             </span>
           </span>
           <span className="shrink-0 text-sm font-normal text-muted-foreground transition-[opacity,visibility] duration-200 ease-out group-aria-expanded/accordion-trigger:invisible group-aria-expanded/accordion-trigger:opacity-0 motion-reduce:transition-none">
-            {phase}
+            {kind}
           </span>
         </AccordionTrigger>
 
         <AccordionContent className="pt-0 pb-0">
           <div className="flex min-w-0 flex-col px-5 pb-5 sm:w-3/5">
-            {piece.description ? (
+            {phase.description ? (
               <p className="mb-4 text-sm text-muted-foreground">
-                {t(piece.description)}
+                {t(phase.description)}
               </p>
             ) : null}
 
             <ul role="list" className="flex flex-col gap-4">
-              {piece.capabilities.map((capability) => {
+              {phase.capabilities.map((capability) => {
                 const Icon = capabilityIcon(capability);
 
                 return (
@@ -133,9 +133,9 @@ function PieceRow({ piece, step }: { piece: ProcessPiece; step: number }) {
               })}
             </ul>
 
-            {piece.norm ? (
+            {phase.norm ? (
               <p className="mt-4 text-sm text-muted-foreground italic">
-                {t(piece.norm)}
+                {t(phase.norm)}
               </p>
             ) : null}
           </div>
