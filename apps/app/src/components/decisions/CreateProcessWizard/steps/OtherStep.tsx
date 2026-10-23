@@ -7,154 +7,139 @@ import { LuInfo } from 'react-icons/lu';
 import { useTranslations } from '@/lib/i18n';
 
 import { Callout } from '../Callout';
-import { CheckList, ChoiceList } from '../ChoiceList';
+import { ChoiceList } from '../ChoiceList';
 import { StepHeading } from '../StepHeading';
+import type { ScreenId } from '../flow';
 import {
   CADENCE_OPTIONS,
   DECISION_OPTIONS,
   SUBJECT_OPTIONS,
   SUBMIT_HEADING,
   SUBMIT_OPTIONS,
-  activeSubject,
   type OtherAnswers,
-  type OtherStep as OtherStepKey,
-  type Subject,
-} from '../otherFlow';
-import type { Choice } from '../types';
+} from '../otherContent';
+
+export type OtherScreenId = Extract<
+  ScreenId,
+  'subject' | 'cadence' | 'submits' | 'decision'
+>;
 
 const ELSE_TEXT_ID = 'other-subject-else-text';
 
 export function OtherStep({
-  step,
+  screen,
   answers,
   onChange,
 }: {
-  step: OtherStepKey;
+  screen: OtherScreenId;
   answers: OtherAnswers;
   onChange: (patch: Partial<OtherAnswers>) => void;
 }) {
   const t = useTranslations('decisions.createWizard');
+  const { subject } = answers;
 
-  if (step === 'subjects') {
-    return (
-      <div className="flex flex-col gap-6">
-        <StepHeading
-          title={t('subjectsHeading')}
-          description={t('subjectsDescription')}
-        />
-        <CheckList
-          idPrefix="other-subject"
-          options={SUBJECT_OPTIONS}
-          values={answers.subjects}
-          onToggle={(key) => {
-            const next = answers.subjects.includes(key)
-              ? answers.subjects.filter((subject) => subject !== key)
-              : [...answers.subjects, key];
-
-            onChange({ subjects: next });
-          }}
-          renderDetail={(key) =>
-            key === 'else' ? (
-              <Field className="ps-6">
-                <FieldLabel htmlFor={ELSE_TEXT_ID} className="sr-only">
-                  {t('elseTextLabel')}
-                </FieldLabel>
-                <Input
-                  id={ELSE_TEXT_ID}
-                  value={answers.elseText}
-                  onChange={(event) =>
-                    onChange({ elseText: event.target.value })
-                  }
-                  placeholder={t('elseTextPlaceholder')}
-                />
-              </Field>
-            ) : null
-          }
-        />
-      </div>
-    );
-  }
-
-  if (step === 'cadence') {
-    return (
-      <div className="flex flex-col gap-6">
-        <StepHeading title={t('cadenceHeading')} />
-        <ChoiceList
-          idPrefix="other-cadence"
-          options={CADENCE_OPTIONS}
-          value={answers.cadence}
-          onChange={(key) => onChange({ cadence: key })}
-        />
-        <div aria-live="polite">
-          {answers.cadence === 'ongoing' ? (
-            <Callout icon={LuInfo}>{t('cadenceOngoingCallout')}</Callout>
-          ) : null}
+  switch (screen) {
+    case 'subject':
+      return (
+        <div className="flex flex-col gap-6">
+          <StepHeading
+            title={t('subjectHeading')}
+            description={t('subjectDescription')}
+          />
+          <ChoiceList
+            idPrefix="other-subject"
+            options={SUBJECT_OPTIONS}
+            value={subject?.kind ?? null}
+            onChange={(kind) =>
+              onChange({
+                subject:
+                  kind === 'else'
+                    ? {
+                        kind,
+                        text: subject?.kind === 'else' ? subject.text : '',
+                      }
+                    : { kind },
+              })
+            }
+            renderDetail={(kind) =>
+              kind === 'else' ? (
+                <Field className="ps-6">
+                  <FieldLabel htmlFor={ELSE_TEXT_ID} className="sr-only">
+                    {t('elseTextLabel')}
+                  </FieldLabel>
+                  <Input
+                    id={ELSE_TEXT_ID}
+                    value={subject?.kind === 'else' ? subject.text : ''}
+                    onChange={(event) =>
+                      onChange({
+                        subject: { kind: 'else', text: event.target.value },
+                      })
+                    }
+                    placeholder={t('elseTextPlaceholder')}
+                  />
+                </Field>
+              ) : null
+            }
+          />
         </div>
-      </div>
-    );
+      );
+    case 'cadence':
+      return (
+        <div className="flex flex-col gap-6">
+          <StepHeading title={t('cadenceHeading')} />
+          <ChoiceList
+            idPrefix="other-cadence"
+            options={CADENCE_OPTIONS}
+            value={answers.cadence}
+            onChange={(cadence) => onChange({ cadence })}
+          />
+          <div aria-live="polite">
+            {answers.cadence === 'ongoing' ? (
+              <Callout icon={LuInfo}>{t('cadenceOngoingCallout')}</Callout>
+            ) : null}
+          </div>
+        </div>
+      );
+    case 'submits': {
+      const kind = subject?.kind ?? 'else';
+
+      return (
+        <div className="flex flex-col gap-6">
+          <StepHeading
+            title={t(SUBMIT_HEADING[kind])}
+            description={
+              answers.cadence === 'ongoing'
+                ? t('submitsOngoingDescription')
+                : undefined
+            }
+          />
+          <ChoiceList
+            idPrefix="other-submits"
+            options={SUBMIT_OPTIONS[kind]}
+            value={answers.submits}
+            onChange={(submits) => onChange({ submits })}
+          />
+        </div>
+      );
+    }
+    case 'decision':
+      return (
+        <div className="flex flex-col gap-6">
+          <StepHeading
+            title={t('decisionHeading')}
+            description={
+              answers.cadence === 'ongoing'
+                ? t('decisionOngoingDescription')
+                : undefined
+            }
+          />
+          <ChoiceList
+            idPrefix="other-decision"
+            options={DECISION_OPTIONS}
+            value={answers.decision}
+            onChange={(decision) => onChange({ decision })}
+          />
+        </div>
+      );
   }
-
-  if (step === 'focus') {
-    const picked: Choice<Subject>[] = SUBJECT_OPTIONS.filter((option) =>
-      answers.subjects.includes(option.key),
-    ).map((option) =>
-      option.key === 'else' && answers.elseText.trim()
-        ? { ...option, userText: answers.elseText.trim() }
-        : option,
-    );
-
-    return (
-      <div className="flex flex-col gap-6">
-        <StepHeading title={t('focusHeading')} />
-        <ChoiceList
-          idPrefix="other-focus"
-          options={picked}
-          value={answers.focus}
-          onChange={(key) => onChange({ focus: key })}
-        />
-      </div>
-    );
-  }
-
-  if (step === 'submits') {
-    const subject = activeSubject(answers);
-
-    return (
-      <div className="flex flex-col gap-6">
-        <StepHeading
-          title={t(SUBMIT_HEADING[subject])}
-          description={
-            answers.cadence === 'ongoing'
-              ? t('submitsOngoingDescription')
-              : undefined
-          }
-        />
-        <ChoiceList
-          idPrefix="other-submits"
-          options={SUBMIT_OPTIONS[subject]}
-          value={answers.submits}
-          onChange={(key) => onChange({ submits: key })}
-        />
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex flex-col gap-6">
-      <StepHeading
-        title={t('decisionHeading')}
-        description={
-          answers.cadence === 'ongoing'
-            ? t('decisionOngoingDescription')
-            : undefined
-        }
-      />
-      <ChoiceList
-        idPrefix="other-decision"
-        options={DECISION_OPTIONS}
-        value={answers.decision}
-        onChange={(key) => onChange({ decision: key })}
-      />
-    </div>
-  );
 }

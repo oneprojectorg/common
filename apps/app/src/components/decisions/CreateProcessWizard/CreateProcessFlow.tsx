@@ -9,9 +9,9 @@ import { useCallback, useRef } from 'react';
 import { useRouter, useTranslations } from '@/lib/i18n';
 
 import { CreateProcessWizard } from '.';
+import type { WizardState } from './flow';
 import type { ProcessDraft } from './types';
 import {
-  type WizardProgress,
   clearWizardProgress,
   saveWizardProgress,
   takeWizardOrigin,
@@ -24,7 +24,7 @@ export function CreateProcessFlow() {
   const router = useRouter();
   const utils = trpc.useUtils();
   const savedProgress = useSavedWizardProgress();
-  const progress = useRef<WizardProgress | null>(null);
+  const progress = useRef<WizardState | null>(null);
 
   const createProcess = useMutation({
     mutationFn: (draft: ProcessDraft) =>
@@ -41,7 +41,7 @@ export function CreateProcessFlow() {
     },
   });
 
-  const saveProgress = useCallback((next: WizardProgress) => {
+  const saveProgress = useCallback((next: WizardState) => {
     progress.current = next;
     saveWizardProgress(next);
   }, []);
