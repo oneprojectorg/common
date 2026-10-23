@@ -124,5 +124,11 @@ export class NotImplementedError extends CommonError {
   }
 }
 
+export class VoterNotEnrolledError extends ValidationError {
+  constructor(message = 'Enrol before voting in this decision') {
+    super(message);
+  }
+}
+
 /** A ballot cannot be priced because one proposal's cost is filled in but unreadable; the message names it. */
 export class BallotCostError extends ValidationError {}

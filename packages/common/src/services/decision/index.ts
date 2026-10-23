@@ -247,3 +247,6 @@ export * from './decisionChatLine';
 export * from './ballotProposalFilter';
 export * from './listBallotProposals';
 export * from './getBallotProposalByCode';
+export * from './forwardGeocode';
+export * from './attestationHash';
+export * from './voterEnrolment';
