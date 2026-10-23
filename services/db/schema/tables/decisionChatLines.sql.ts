@@ -1,4 +1,11 @@
-import { pgTable, uniqueIndex, uuid, varchar } from 'drizzle-orm/pg-core';
+import { sql } from 'drizzle-orm';
+import {
+  check,
+  pgTable,
+  uniqueIndex,
+  uuid,
+  varchar,
+} from 'drizzle-orm/pg-core';
 
 import { autoId, serviceRolePolicies, timestamps } from '../../helpers';
 import { processInstances } from './processInstances.sql';
@@ -22,6 +29,10 @@ export const decisionChatLines = pgTable(
       table.processInstanceId,
     ),
     uniqueIndex('decision_chat_lines_phone_number_uniq').on(table.phoneNumber),
+    check(
+      'decision_chat_lines_phone_number_e164_chk',
+      sql`${table.phoneNumber} ~ '^\\+[1-9][0-9]{1,14}$'`,
+    ),
   ],
 );
 
