@@ -81,6 +81,40 @@ describe.concurrent('getProposal', () => {
     });
   });
 
+  it('given a proposal is submitted, when it is read back, then it carries its short code, and a draft carries none', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instanceId = setup.instance.instance.id;
+    const submitted = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: instanceId,
+      proposalData: { title: 'Gets a code' },
+    });
+    const draft = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: instanceId,
+      proposalData: { title: 'Stays a draft' },
+    });
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+    await caller.decision.submitProposal({ proposalId: submitted.id });
+
+    const coded = await caller.decision.getProposal({
+      profileId: submitted.profileId,
+    });
+    const uncoded = await caller.decision.getProposal({
+      profileId: draft.profileId,
+    });
+
+    expect(coded.shortCode).toBe(101);
+    expect(uncoded.shortCode).toBeNull();
+  });
+
   it('should include isEditable for admin users', async ({
     task,
     onTestFinished,

@@ -120,6 +120,7 @@ export const proposalSchema = z.object({
   proposalData: proposalDataSchema,
   // Timestamps are serialized as strings (drizzle timestamp mode:'string')
   status: z.string().nullish(),
+  shortCode: z.number().int().nullable().optional(),
   visibility: z.string(),
   createdAt: z.string().nullish(),
   updatedAt: z.string().nullish(),
