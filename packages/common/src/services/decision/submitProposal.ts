@@ -183,7 +183,12 @@ export const submitProposal = async ({
       db: tx,
       instanceId: instance.id,
     });
-    const shortCode = existingProposal.shortCode ?? locked.nextShortCode;
+    const [current] = await tx
+      .select({ shortCode: proposals.shortCode })
+      .from(proposals)
+      .where(eq(proposals.id, data.proposalId));
+    const assignsCode = current?.shortCode == null;
+    const shortCode = current?.shortCode ?? locked.nextShortCode;
 
     const proposalDataUpdate =
       collaborationDocVersionId != null || location || categoryLabels
@@ -216,7 +221,7 @@ export const submitProposal = async ({
       throw new CommonError('Failed to submit proposal');
     }
 
-    if (existingProposal.shortCode === null) {
+    if (assignsCode) {
       await tx
         .update(processInstances)
         .set({ nextShortCode: locked.nextShortCode + 1 })
