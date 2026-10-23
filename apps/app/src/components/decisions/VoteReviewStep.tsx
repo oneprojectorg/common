@@ -45,7 +45,7 @@ export const VoteReviewStep = ({
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-baseline justify-between gap-4">
-        <Header4 id={labelId} className="font-sans text-base font-medium">
+        <Header4 id={labelId} className="font-sans text-base font-strong">
           {t('decisions.review.selectedProposalsHeading')}
         </Header4>
         {budget && (
