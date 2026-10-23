@@ -6,3 +6,4 @@ export * from './parseCarrierKeyword';
 export * from './formatSmsProposals';
 export * from './formatSmsEnrolment';
 export * from './formatSmsBallotBrowse';
+export * from './formatSmsBallot';
