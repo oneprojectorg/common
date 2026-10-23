@@ -100,7 +100,13 @@ export async function startVoterEnrolment({
   await db
     .insert(decisionVoterEnrolments)
     .values({ processInstanceId, profileId })
-    .onConflictDoNothing();
+    .onConflictDoUpdate({
+      target: [
+        decisionVoterEnrolments.processInstanceId,
+        decisionVoterEnrolments.profileId,
+      ],
+      set: { updatedAt: new Date().toISOString() },
+    });
   const row = await findRow(processInstanceId, profileId);
 
   if (!row) {
@@ -206,36 +212,42 @@ export async function affirmVoterAttestation({
 
 export interface PendingVoterEnrolment {
   processInstanceId: string;
-  status: DecisionVoterEnrolment['status'];
-  boundaryName: string | null;
+  taxonomyTermId: string | null;
+  districtName: string | null;
 }
 
 export async function findPendingVoterEnrolment({
   authUserId,
   processInstanceId,
+  preferInstanceId,
 }: {
   authUserId: string;
+  /** Only this decision's pending row. */
   processInstanceId?: string;
+  /** This decision's pending row when it has one, else the latest anywhere. */
+  preferInstanceId?: string;
 }): Promise<PendingVoterEnrolment | null> {
   const profileId = await getIndividualProfileId(authUserId);
   const rows = await db.query.decisionVoterEnrolments.findMany({
     where: {
       profileId,
-      status: { ne: DecisionVoterEnrolmentStatus.ENROLLED },
+      enrolledAt: { isNull: true },
       ...(processInstanceId ? { processInstanceId } : {}),
     },
-    columns: { processInstanceId: true, status: true, updatedAt: true },
-    with: { boundary: { columns: { name: true } } },
+    columns: { processInstanceId: true, taxonomyTermId: true, updatedAt: true },
+    with: { taxonomyTerm: { columns: { label: true } } },
     orderBy: { updatedAt: 'desc' },
-    limit: 1,
   });
-  const [row] = rows;
+  const row =
+    rows.find(
+      (candidate) => candidate.processInstanceId === preferInstanceId,
+    ) ?? rows[0];
 
   return row
     ? {
         processInstanceId: row.processInstanceId,
-        status: row.status,
-        boundaryName: row.boundary?.name ?? null,
+        taxonomyTermId: row.taxonomyTermId,
+        districtName: row.taxonomyTerm?.label ?? null,
       }
     : null;
 }
