@@ -6,11 +6,6 @@ import { resumeWizard, type WizardState } from './flow';
 
 const STORAGE_KEY = 'create-process-wizard';
 
-const subjectSchema = z.discriminatedUnion('kind', [
-  z.object({ kind: z.enum(['funding', 'ideas', 'people']) }),
-  z.object({ kind: z.literal('else'), text: z.string() }),
-]);
-
 const progressSchema: z.ZodType<WizardState> = z.object({
   screen: z.enum([
     'intro',
@@ -28,7 +23,8 @@ const progressSchema: z.ZodType<WizardState> = z.object({
     type: z.enum(['grant', 'pb', 'other']).nullable(),
     shape: z.enum(['single', 'loi', 'ideas', 'proposals']).nullable(),
     grantDecision: z.enum(['rubric', 'applicants', 'hybrid']).nullable(),
-    subject: subjectSchema.nullable(),
+    subject: z.enum(['funding', 'ideas', 'people', 'else']).nullable(),
+    subjectText: z.string(),
     cadence: z.enum(['timeline', 'ongoing']).nullable(),
     submits: z
       .enum(['applications', 'proposals', 'rough', 'nominations', 'none'])

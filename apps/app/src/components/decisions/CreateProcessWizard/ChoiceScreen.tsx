@@ -9,7 +9,12 @@ import { useTranslations } from '@/lib/i18n';
 import { Callout } from './Callout';
 import { ChoiceList } from './ChoiceList';
 import { StepHeading } from './StepHeading';
-import type { ChoiceScreen as ChoiceRow, WizardAnswers } from './flow';
+import {
+  type ChoiceScreen as ChoiceRow,
+  type WizardAnswers,
+  chooseOption,
+  chosenOption,
+} from './flow';
 
 interface ChoiceScreenProps {
   screen: ChoiceRow;
@@ -31,8 +36,8 @@ export function ChoiceScreen({ screen, answers, onAnswer }: ChoiceScreenProps) {
       <ChoiceList
         idPrefix={screen.id}
         options={screen.options(answers)}
-        value={screen.chosen(answers)}
-        onChange={(key) => onAnswer(screen.choose(key, answers))}
+        value={chosenOption(screen, answers)}
+        onChange={(key) => onAnswer(chooseOption(screen, key, answers))}
         renderDetail={
           screen.id === 'subject'
             ? (key) =>
@@ -50,7 +55,7 @@ export function ChoiceScreen({ screen, answers, onAnswer }: ChoiceScreenProps) {
 const ELSE_TEXT_ID = 'other-subject-else-text';
 
 function SubjectElseField({
-  answers: { subject },
+  answers: { subjectText },
   onAnswer,
 }: Omit<ChoiceScreenProps, 'screen'>) {
   const t = useTranslations('decisions.createWizard');
@@ -62,10 +67,8 @@ function SubjectElseField({
       </FieldLabel>
       <Input
         id={ELSE_TEXT_ID}
-        value={subject?.kind === 'else' ? subject.text : ''}
-        onChange={(event) =>
-          onAnswer({ subject: { kind: 'else', text: event.target.value } })
-        }
+        value={subjectText}
+        onChange={(event) => onAnswer({ subjectText: event.target.value })}
         placeholder={t('elseTextPlaceholder')}
       />
     </Field>

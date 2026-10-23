@@ -55,6 +55,12 @@ export interface WizardPhase {
   norm?: WizardCopyKey;
 }
 
+export interface ProcessDraft {
+  type: ProcessType;
+  name: string;
+  phases: WizardPhase[];
+}
+
 export interface Choice<K extends string> {
   key: K;
   label: WizardCopyKey;

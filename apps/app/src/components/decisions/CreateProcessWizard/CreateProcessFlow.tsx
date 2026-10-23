@@ -32,8 +32,8 @@ export function CreateProcessFlow() {
         name: draft.name,
         type: draft.type,
         phases: draft.phases.map((phase) => ({
-          kind: phase.phaseType,
-          name: tWizard(phase.phaseName ?? phase.name),
+          kind: phase.kind,
+          name: tWizard(phase.phaseName),
         })),
       }),
     onError: (error) => {

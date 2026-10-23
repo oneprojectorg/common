@@ -77,7 +77,7 @@ export function MappingStep({
 function PhaseRow({ phase, step }: { phase: WizardPhase; step: number }) {
   const t = useTranslations('decisions.createWizard');
   const title = t(phase.name);
-  const kind = t(`${phase.phaseType}Phase`);
+  const kind = t(`${phase.kind}Phase`);
 
   return (
     <AccordionItem

@@ -16,7 +16,8 @@ const progress: WizardState = {
   answers: {
     ...EMPTY_ANSWERS,
     type: 'other',
-    subject: { kind: 'else', text: 'Murals' },
+    subject: 'else',
+    subjectText: 'Murals',
   },
 };
 
