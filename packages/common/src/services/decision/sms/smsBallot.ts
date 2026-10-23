@@ -13,6 +13,7 @@ import {
   UnauthorizedError,
   ValidationError,
   VoteOutsideDistrictError,
+  VoteRevisionNotAllowedError,
   VoterNotEnrolledError,
 } from '../../../utils';
 import { getIndividualProfileId } from '../../access';
@@ -29,7 +30,8 @@ import {
   getVoterCostField,
   isRankedVoting,
 } from '../utils/phaseSettings';
-import { submitVote } from '../voting';
+import { reviseVote, submitVote } from '../voting';
+import { describeEnrolmentDecision } from './getSmsVotingDecision';
 import { loadBallotScope } from './smsBallotBrowse';
 
 export interface SmsBallotPick {
@@ -202,16 +204,16 @@ const summarize = (
   };
 };
 
-export async function findCastBallot(key: BallotKey): Promise<string | null> {
+export async function findCastBallot(key: BallotKey) {
   const profileId = await getIndividualProfileId(key.authUserId);
   const existing = await db.query.decisionsVoteSubmissions.findFirst({
     where: {
       processInstanceId: key.instanceId,
       submittedByProfileId: profileId,
     },
-    columns: { id: true },
+    columns: { id: true, voteData: true },
   });
-  return existing?.id ?? null;
+  return existing ?? null;
 }
 
 export async function summarizeSmsBallot(
@@ -446,37 +448,97 @@ export async function moveSmsBallotPick({
   };
 }
 
+export interface SmsBallotState {
+  submitted: boolean;
+  draftOpen: boolean;
+}
+
+export async function getSmsBallotState(
+  key: BallotKey,
+): Promise<SmsBallotState> {
+  const [cast, draft] = await Promise.all([
+    findCastBallot(key),
+    findBallotDraft({
+      processInstanceId: key.instanceId,
+      authUserId: key.authUserId,
+    }),
+  ]);
+  return { submitted: cast !== null, draftOpen: draft !== null };
+}
+
+export type SmsBallotReopen =
+  | { status: 'reopened'; summary: SmsBallotSummary }
+  | { status: 'no_ballot' }
+  | { status: 'not_allowed' }
+  | { status: 'voting_closed' };
+
+export async function reopenSmsBallot(
+  key: BallotKey,
+): Promise<SmsBallotReopen> {
+  const cast = await findCastBallot(key);
+
+  if (!cast) {
+    return { status: 'no_ballot' };
+  }
+
+  const decision = await describeEnrolmentDecision({
+    instanceId: key.instanceId,
+  });
+
+  if (!decision.votingOpen) {
+    return { status: 'voting_closed' };
+  }
+
+  if (!decision.canEditVotes) {
+    return { status: 'not_allowed' };
+  }
+
+  await ensureBallotDraft({
+    processInstanceId: key.instanceId,
+    authUserId: key.authUserId,
+  });
+  await savePicks(
+    key,
+    (cast.voteData.selections ?? []).map((selection) => selection.proposalId),
+  );
+
+  return { status: 'reopened', summary: await summarizeSmsBallot(key) };
+}
+
 export type SmsBallotSubmission =
-  | { status: 'submitted'; voteSubmissionId: string }
+  | { status: 'submitted' | 'revised'; voteSubmissionId: string }
   | { status: 'already_submitted'; voteSubmissionId: string }
   | { status: 'empty' }
   | { status: 'not_enrolled' }
   | { status: 'outside_scope' }
   | { status: 'unavailable' }
+  | { status: 'not_allowed' }
   | { status: 'refused'; reason: string };
 
 export async function submitSmsBallot({
   authUserId,
   instanceId,
 }: BallotKey): Promise<SmsBallotSubmission> {
-  const existing = await findCastBallot({ authUserId, instanceId });
+  const key = { authUserId, instanceId };
+  const [cast, draft] = await Promise.all([
+    findCastBallot(key),
+    findBallotDraft({ processInstanceId: instanceId, authUserId }),
+  ]);
 
-  if (existing) {
-    return { status: 'already_submitted', voteSubmissionId: existing };
+  if (cast && !draft) {
+    return { status: 'already_submitted', voteSubmissionId: cast.id };
   }
 
-  const draft = await ensureBallotDraft({
-    processInstanceId: instanceId,
-    authUserId,
-  });
-  const { picks } = await getDraftPicks(draft);
+  const picks = draft ? (await getDraftPicks(draft)).picks : [];
 
   if (picks.length === 0) {
     return { status: 'empty' };
   }
 
+  const write = cast ? reviseVote : submitVote;
+
   try {
-    const result = await submitVote({
+    const result = await write({
       data: {
         processInstanceId: instanceId,
         selectedProposalIds: picks,
@@ -484,8 +546,14 @@ export async function submitSmsBallot({
       },
       authUserId,
     });
-    return { status: 'submitted', voteSubmissionId: result.id };
+    return {
+      status: cast ? 'revised' : 'submitted',
+      voteSubmissionId: result.id,
+    };
   } catch (error) {
+    if (error instanceof VoteRevisionNotAllowedError) {
+      return { status: 'not_allowed' };
+    }
     if (error instanceof VoterNotEnrolledError) {
       return { status: 'not_enrolled' };
     }

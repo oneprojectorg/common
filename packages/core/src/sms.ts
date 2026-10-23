@@ -5,6 +5,7 @@ export const SMS_BARE_KEYWORDS = [
   'list',
   'done',
   'submit',
+  'change',
 ] as const;
 
 export const SMS_ARGUMENT_KEYWORDS = [

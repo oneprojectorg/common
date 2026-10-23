@@ -98,6 +98,7 @@ const votingSchema: DecisionSchemaDefinition = {
 
 export interface FixtureVotingRules {
   enrolment?: VoterEnrolmentRule;
+  edit?: boolean;
   voterBudget?: number;
   voterCostField?: string;
   maxVotesPerMember?: number;
