@@ -55,6 +55,8 @@ const NUMBERS = {
   infoUnknown: '+15005550064',
   browseUnenrolled: '+15005550065',
   browseClosed: '+15005550066',
+  infoStranger: '+15005550067',
+  browseOtherSlug: '+15005550068',
   enrolRewrite: '+15005550079',
   enrolSwitch: '+15005550083',
   agreeRewritten: '+15005550027',
@@ -75,6 +77,8 @@ const LINES = {
   infoUnknown: '+16145550141',
   browseUnenrolled: '+16145550142',
   browseClosed: '+16145550143',
+  infoStranger: '+16145550159',
+  browseOtherSlug: '+16145550160',
   enrolRewrite: '+16145550190',
   enrolSwitch: '+16145550191',
   agreeRewritten: '+16145550170',
@@ -1259,5 +1263,105 @@ describe('handleSMSCommand browsing the ballot', () => {
     expect(recordedSms.map((sms) => sms.body)).toEqual([
       `Voting is not open for "${name}".`,
     ]);
+  });
+});
+
+describe('handleSMSCommand browsing: access and decision choice', () => {
+  const PROPOSALS = [
+    { title: 'Crosswalk lighting', budget: 85_000 },
+    { title: 'Bike lane', budget: 310_000 },
+  ];
+
+  const run = (event: ReturnType<typeof smsInboundEvent>) =>
+    new InngestTestEngine({ function: handleSMSCommand }).execute({
+      events: [event],
+    });
+
+  it("given a confirmed number that is not a member texts INFO to a private decision's line, then nothing about the proposal is sent", async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsCommandFixture(task.id, onTestFinished);
+    const owner = await fixture.createPhoneOnlyAccount(
+      parsePhoneNumber('+15005550020'),
+    );
+    const stranger = await fixture.createPhoneOnlyAccount(
+      parsePhoneNumber(NUMBERS.infoStranger),
+    );
+    const { instanceId } = await fixture.createVotingInstance({
+      owner,
+      name: `Private Line ${task.id}`,
+      proposalTitles: PROPOSALS,
+    });
+    await fixture.bindLine(instanceId, parsePhoneNumber(LINES.infoStranger));
+    expect(stranger.authUserId).not.toBe(owner.authUserId);
+
+    const { result } = await run(
+      smsInboundEvent({
+        from: NUMBERS.infoStranger,
+        to: LINES.infoStranger,
+        keyword: 'info',
+        argument: '101',
+      }),
+    );
+
+    expect(result).toEqual({ message: 'decision not found' });
+    expect(recordedSms.map((sms) => sms.body)).toEqual([
+      'That decision is not available to you.',
+    ]);
+  });
+
+  it("given a member browses another decision by slug on a line, when they text MORE, then the next page is that decision's, not the line's", async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsCommandFixture(task.id, onTestFinished);
+    const member = await fixture.createPhoneOnlyAccount(
+      parsePhoneNumber(NUMBERS.browseOtherSlug),
+    );
+    const lineDecision = await fixture.createVotingInstance({
+      owner: member,
+      name: `Line Decision ${task.id}`,
+      proposalTitles: PROPOSALS,
+    });
+    const other = await fixture.createVotingInstance({
+      owner: member,
+      name: `Other Decision ${task.id}`,
+      proposalTitles: [
+        { title: 'Speed humps', budget: 45_000 },
+        { title: 'Bus shelters', budget: 60_000 },
+        { title: 'Alley lighting', budget: 120_000 },
+        { title: 'Tree planting', budget: 150_000 },
+        { title: 'Pool hours', budget: 90_000 },
+        { title: 'Library wifi', budget: 30_000 },
+      ],
+    });
+    await fixture.addMember(lineDecision.instanceProfileId, member);
+    await fixture.addMember(other.instanceProfileId, member);
+    await fixture.bindLine(
+      lineDecision.instanceId,
+      parsePhoneNumber(LINES.browseOtherSlug),
+    );
+    await run(
+      smsInboundEvent({
+        from: NUMBERS.browseOtherSlug,
+        to: LINES.browseOtherSlug,
+        keyword: 'proposals',
+        argument: other.slug,
+      }),
+    );
+
+    const { result } = await run(
+      smsInboundEvent({
+        from: NUMBERS.browseOtherSlug,
+        to: LINES.browseOtherSlug,
+        keyword: 'more',
+      }),
+    );
+
+    expect(result).toEqual({ message: 'next ballot page sent' });
+    expect(recordedSms.at(-1)?.body).toBe(
+      'Next 1:\n106 Library wifi ($30,000)\nReply INFO plus a code for details.',
+    );
   });
 });
