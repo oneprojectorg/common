@@ -6,10 +6,12 @@ import type { PhaseScopedInstance } from './getProposalsForPhase';
 
 export async function countBallotProposals({
   instance,
+  boundaryId,
 }: {
   instance: PhaseScopedInstance;
+  boundaryId?: string | null;
 }): Promise<number> {
-  const filter = await ballotProposalFilter({ instance });
+  const filter = await ballotProposalFilter({ instance, boundaryId });
 
   if (filter.isEmpty) {
     return 0;
