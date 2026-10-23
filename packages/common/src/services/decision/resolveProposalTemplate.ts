@@ -1,6 +1,5 @@
 import { db } from '@op/db/client';
 
-import type { DecisionInstanceData } from './schemas/instanceData';
 import type { ProposalTemplateSchema } from './types';
 
 /**
@@ -14,12 +13,20 @@ import type { ProposalTemplateSchema } from './types';
  * TODO: remove or adapt this function. it seems that we just need to fix the typing since we have the data
  *
  */
+const templateOf = (data: unknown): ProposalTemplateSchema | null =>
+  data !== null &&
+  typeof data === 'object' &&
+  'proposalTemplate' in data &&
+  data.proposalTemplate !== null &&
+  typeof data.proposalTemplate === 'object'
+    ? (data.proposalTemplate as ProposalTemplateSchema)
+    : null;
+
 export async function resolveProposalTemplate(
-  instanceData: DecisionInstanceData | Record<string, unknown> | null,
+  instanceData: unknown,
   processId: string | null,
 ): Promise<ProposalTemplateSchema | null> {
-  const fromInstance =
-    (instanceData?.proposalTemplate as ProposalTemplateSchema) ?? null;
+  const fromInstance = templateOf(instanceData);
 
   if (fromInstance) {
     return fromInstance;
@@ -34,10 +41,5 @@ export async function resolveProposalTemplate(
     columns: { processSchema: true },
   });
 
-  const processSchema = process?.processSchema as Record<
-    string,
-    unknown
-  > | null;
-
-  return (processSchema?.proposalTemplate as ProposalTemplateSchema) ?? null;
+  return templateOf(process?.processSchema);
 }

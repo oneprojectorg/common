@@ -1,7 +1,8 @@
 import { formatUnitAmount, getFieldUnit } from './fieldUnit';
 import { getProposalCosts } from './getProposalCosts';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
-import type { DecisionInstanceData } from './schemas/instanceData';
+import { getInstancePhases } from './schemas/instanceData';
+import { getInstanceCurrentPhase } from './utils/instance';
 import { getVoterBudget, getVoterCostField } from './utils/phaseSettings';
 
 export interface BallotInstance {
@@ -12,9 +13,10 @@ export interface BallotInstance {
 }
 
 const findCurrentPhase = ({ instanceData, currentStateId }: BallotInstance) =>
-  (instanceData as DecisionInstanceData).phases?.find(
-    (phase) => phase.phaseId === currentStateId,
-  );
+  getInstanceCurrentPhase({
+    currentStateId,
+    instanceData: { phases: getInstancePhases(instanceData) },
+  });
 
 export async function priceBallotProposals({
   instance,
@@ -32,7 +34,7 @@ export async function priceBallotProposals({
 
   const voterCostField = getVoterCostField(phase);
   const proposalTemplate = await resolveProposalTemplate(
-    instance.instanceData as Record<string, unknown> | null,
+    instance.instanceData,
     instance.processId,
   );
   const unit = getFieldUnit(proposalTemplate?.properties?.[voterCostField]);

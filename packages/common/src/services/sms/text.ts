@@ -33,6 +33,35 @@ export const clipSmsText = (text: string, max: number): string =>
     ? text
     : `${clipToUnits(text, Math.max(0, max - SMS_ELLIPSIS.length)).trimEnd()}${SMS_ELLIPSIS}`;
 
+const chunkLine = (line: string, room: number): string[] => {
+  if (line.length <= room) {
+    return [line];
+  }
+  const pieces: string[] = [];
+  let current = '';
+  for (const word of line.split(' ')) {
+    const candidate = current ? `${current} ${word}` : word;
+    if (candidate.length <= room) {
+      current = candidate;
+      continue;
+    }
+    if (current) {
+      pieces.push(current);
+    }
+    let rest = word;
+    while (rest.length > room) {
+      const head = clipToUnits(rest, room);
+      pieces.push(head);
+      rest = rest.slice(head.length);
+    }
+    current = rest;
+  }
+  if (current) {
+    pieces.push(current);
+  }
+  return pieces;
+};
+
 export const splitSmsBody = ({
   heading,
   lines,
@@ -45,10 +74,14 @@ export const splitSmsBody = ({
   max?: number;
 }): string[] => {
   const footerRoom = footer ? footer.length + SEPARATOR.length : 0;
+  const room = Math.max(
+    1,
+    max - MARKER_ROOM - footerRoom - (heading?.length ?? 0) - SEPARATOR.length,
+  );
   const groups: string[][] = [[]];
   let used = (heading?.length ?? 0) + MARKER_ROOM + footerRoom;
 
-  for (const line of lines) {
+  for (const line of lines.flatMap((text) => chunkLine(text, room))) {
     const group = groups[groups.length - 1]!;
     const extra = line.length + SEPARATOR.length;
     if (group.length > 0 && used + extra > max) {
