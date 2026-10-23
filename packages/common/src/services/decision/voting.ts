@@ -1,5 +1,5 @@
 import { trackUserVoted } from '@op/analytics';
-import { db } from '@op/db/client';
+import { db, eq } from '@op/db/client';
 import {
   DecisionVoterEnrolmentStatus,
   type VoteData,
@@ -18,6 +18,7 @@ import {
   UnauthorizedError,
   ValidationError,
   VoteOutsideDistrictError,
+  VoteRevisionNotAllowedError,
   VoterNotEnrolledError,
 } from '../../utils';
 import { assertInstanceProfileAccess, getIndividualProfileId } from '../access';
@@ -31,6 +32,7 @@ import { validateVoteBudget, validateVoteSelection } from './schemaValidators';
 import type { DecisionInstanceData } from './schemas/instanceData';
 import type { ProposalTemplateSchema } from './types';
 import {
+  canEditVotes,
   getVoterBudget,
   getVoterCostField,
   getVoterEnrolment,
@@ -49,6 +51,7 @@ interface PhaseConfig {
   voterCostField: string;
   ranked: boolean;
   enrolment: ReturnType<typeof getVoterEnrolment>;
+  canEditVotes: boolean;
 }
 
 /** Extract voting/proposal rules for the current phase. */
@@ -82,6 +85,7 @@ function getCurrentPhaseConfig(processInstance: {
     voterCostField: getVoterCostField(currentPhase),
     ranked: isRankedVoting(currentPhase),
     enrolment: getVoterEnrolment(currentPhase),
+    canEditVotes: canEditVotes(currentPhase),
   };
 }
 
@@ -340,6 +344,175 @@ const createVoteSignature = (proposalIds: string[], userId: string): string => {
   return Buffer.from(JSON.stringify(data)).toString('base64');
 };
 
+interface PreparedBallot {
+  profileId: string;
+  phaseConfig: PhaseConfig;
+  existingVote: { id: string } | null;
+  voteData: VoteData;
+  selectedProposalIds: string[];
+}
+
+// Every gate and validation a ballot passes before it is written, shared by
+// the first submission and a revision; only the write differs.
+const prepareBallot = async ({
+  data,
+  authUserId,
+}: {
+  data: SubmitVoteInput;
+  authUserId: string;
+}): Promise<PreparedBallot> => {
+  const profileId = await getIndividualProfileId(authUserId);
+
+  const processInstance = await getVotingInstance(data.processInstanceId);
+
+  if (!processInstance.profileId) {
+    throw new NotFoundError('Decision profile', data.processInstanceId);
+  }
+
+  // Check user permissions
+  await assertProfileAccess({
+    user: { id: authUserId },
+    profileId: processInstance.profileId,
+    permissions: [
+      { decisions: permission.ADMIN },
+      { decisions: decisionPermission.VOTE },
+    ],
+  });
+
+  const phaseConfig = getCurrentPhaseConfig(processInstance);
+
+  if (!phaseConfig) {
+    throw new ValidationError('Current state not found');
+  }
+
+  const schemaResult = buildVotingSchemaResult(phaseConfig);
+  const { votingConfig } = schemaResult;
+
+  if (!votingConfig.allowDecisions) {
+    throw new ValidationError(
+      'Voting is not currently allowed for this process',
+    );
+  }
+
+  if (phaseConfig.enrolment) {
+    const enrolment = await db.query.decisionVoterEnrolments.findFirst({
+      where: { processInstanceId: data.processInstanceId, profileId },
+    });
+
+    if (enrolment?.status !== DecisionVoterEnrolmentStatus.ENROLLED) {
+      throw new VoterNotEnrolledError();
+    }
+
+    await assertSelectionsInDistrict({
+      boundaryId: enrolment.boundaryId,
+      selectedProposalIds: data.selectedProposalIds,
+    });
+  }
+
+  // Check if user has already voted
+  const existingVote = await db.query.decisionsVoteSubmissions.findFirst({
+    where: {
+      processInstanceId: data.processInstanceId,
+      submittedByProfileId: profileId,
+    },
+    columns: { id: true },
+  });
+
+  // Get available proposals for this process instance. Moderation-detached
+  // (CSAM) rows must never be votable, so we require both
+  // `deletedAt IS NULL` and `moderationDetachedAt IS NULL` at query time —
+  // filtering post-fetch would still leak the row to the eligibility check.
+  const availableProposals = await db.query.proposals.findMany({
+    where: {
+      processInstanceId: data.processInstanceId,
+      deletedAt: { isNull: true },
+      moderationDetachedAt: { isNull: true },
+    },
+  });
+
+  // Filter to eligible proposals for voting
+  const eligibleProposals = availableProposals.filter((p) =>
+    isVotingEligible(p.status),
+  );
+  const eligibleProposalIds = eligibleProposals.map((p) => p.id);
+
+  // Check if all selected proposals are eligible
+  const hasIneligibleSelections = data.selectedProposalIds.some(
+    (id) => !eligibleProposalIds.includes(id),
+  );
+
+  if (hasIneligibleSelections) {
+    throw new ValidationError(
+      'Some of your selections are not eligible for voting.',
+    );
+  }
+
+  const { pricing, selections, totalCost } = await getValidatedBallot({
+    selectedProposalIds: data.selectedProposalIds,
+    phaseConfig,
+    processInstance,
+    eligibleProposals,
+  });
+
+  // Create vote submission record
+  const voteData: VoteData = {
+    schemaVersion: data.schemaVersion || '1.0.0',
+    schemaType: schemaResult.schemaType,
+    submissionMetadata: {
+      timestamp: new Date().toISOString(),
+      userAgent: 'unknown',
+    },
+    validationSignature: createVoteSignature(
+      data.selectedProposalIds,
+      profileId,
+    ),
+    selections,
+    ...(pricing && {
+      voterBudget: pricing.voterBudget,
+      voterCostField: pricing.voterCostField,
+      costUnit: pricing.unit,
+      totalCost,
+    }),
+  };
+
+  return {
+    profileId,
+    phaseConfig,
+    existingVote: existingVote ?? null,
+    voteData,
+    selectedProposalIds: data.selectedProposalIds,
+  };
+};
+
+const toSubmissionResult = (
+  voteSubmission: typeof decisionsVoteSubmissions.$inferSelect,
+  prepared: PreparedBallot,
+): VoteSubmissionResult => ({
+  id: voteSubmission.id,
+  processInstanceId: voteSubmission.processInstanceId,
+  submittedByProfileId: voteSubmission.submittedByProfileId,
+  selectedProposalIds: prepared.selectedProposalIds,
+  createdAt: new Date(voteSubmission.createdAt!),
+  signature: voteSubmission.signature || null,
+  schemaVersion: prepared.voteData.schemaVersion,
+  schemaType: prepared.voteData.schemaType,
+});
+
+const voteProposalRows = (voteSubmissionId: string, prepared: PreparedBallot) =>
+  prepared.selectedProposalIds.map((proposalId, index) => ({
+    voteSubmissionId,
+    proposalId,
+    rank: prepared.phaseConfig.ranked ? index + 1 : null,
+  }));
+
+const rethrowAsCommon = (error: unknown, message: string): never => {
+  if (error instanceof CommonError) {
+    throw error;
+  }
+  logger.error(message, { error });
+  throw new CommonError(message);
+};
+
 export const submitVote = async ({
   data,
   authUserId,
@@ -352,186 +525,103 @@ export const submitVote = async ({
   }
 
   try {
-    const profileId = await getIndividualProfileId(authUserId);
+    const prepared = await prepareBallot({ data, authUserId });
 
-    const processInstance = await getVotingInstance(data.processInstanceId);
-
-    if (!processInstance.profileId) {
-      throw new NotFoundError('Decision profile', data.processInstanceId);
-    }
-
-    // Check user permissions
-    await assertProfileAccess({
-      user: { id: authUserId },
-      profileId: processInstance.profileId,
-      permissions: [
-        { decisions: permission.ADMIN },
-        { decisions: decisionPermission.VOTE },
-      ],
-    });
-
-    const phaseConfig = getCurrentPhaseConfig(processInstance);
-
-    if (!phaseConfig) {
-      throw new ValidationError('Current state not found');
-    }
-
-    const schemaResult = buildVotingSchemaResult(phaseConfig);
-    const { votingConfig } = schemaResult;
-
-    if (!votingConfig.allowDecisions) {
-      throw new ValidationError(
-        'Voting is not currently allowed for this process',
-      );
-    }
-
-    if (phaseConfig.enrolment) {
-      const enrolment = await db.query.decisionVoterEnrolments.findFirst({
-        where: { processInstanceId: data.processInstanceId, profileId },
-      });
-
-      if (enrolment?.status !== DecisionVoterEnrolmentStatus.ENROLLED) {
-        throw new VoterNotEnrolledError();
-      }
-
-      await assertSelectionsInDistrict({
-        boundaryId: enrolment.boundaryId,
-        selectedProposalIds: data.selectedProposalIds,
-      });
-    }
-
-    // Check if user has already voted
-    const existingVote = await db.query.decisionsVoteSubmissions.findFirst({
-      where: {
-        processInstanceId: data.processInstanceId,
-        submittedByProfileId: profileId,
-      },
-    });
-
-    if (existingVote) {
+    if (prepared.existingVote) {
       throw new ValidationError(
         'User has already submitted a vote for this process',
       );
     }
 
-    // Get available proposals for this process instance. Moderation-detached
-    // (CSAM) rows must never be votable, so we require both
-    // `deletedAt IS NULL` and `moderationDetachedAt IS NULL` at query time —
-    // filtering post-fetch would still leak the row to the eligibility check.
-    const availableProposals = await db.query.proposals.findMany({
-      where: {
-        processInstanceId: data.processInstanceId,
-        deletedAt: { isNull: true },
-        moderationDetachedAt: { isNull: true },
-      },
-    });
-
-    // Filter to eligible proposals for voting
-    const eligibleProposals = availableProposals.filter((p) =>
-      isVotingEligible(p.status),
-    );
-    const eligibleProposalIds = eligibleProposals.map((p) => p.id);
-
-    // Check if all selected proposals are eligible
-    const hasIneligibleSelections = data.selectedProposalIds.some(
-      (id) => !eligibleProposalIds.includes(id),
-    );
-
-    if (hasIneligibleSelections) {
-      throw new ValidationError(
-        'Some of your selections are not eligible for voting.',
-      );
-    }
-
-    const { pricing, selections, totalCost } = await getValidatedBallot({
-      selectedProposalIds: data.selectedProposalIds,
-      phaseConfig,
-      processInstance,
-      eligibleProposals,
-    });
-
-    // Create vote submission record
-    const voteData: VoteData = {
-      schemaVersion: data.schemaVersion || '1.0.0',
-      schemaType: schemaResult.schemaType,
-      submissionMetadata: {
-        timestamp: new Date().toISOString(),
-        userAgent: 'unknown',
-      },
-      validationSignature: createVoteSignature(
-        data.selectedProposalIds,
-        profileId,
-      ),
-      selections,
-      ...(pricing && {
-        voterBudget: pricing.voterBudget,
-        voterCostField: pricing.voterCostField,
-        costUnit: pricing.unit,
-        totalCost,
-      }),
-    };
-
-    // Use transaction to create vote submission and join table entries
-    const result = await db.transaction(async (tx) => {
-      // Create the vote submission
-      const [voteSubmission] = await tx
+    const voteSubmission = await db.transaction(async (tx) => {
+      const [created] = await tx
         .insert(decisionsVoteSubmissions)
         .values({
           processInstanceId: data.processInstanceId,
-          submittedByProfileId: profileId,
-          voteData,
+          submittedByProfileId: prepared.profileId,
+          voteData: prepared.voteData,
           customData: data.customData,
-          signature: voteData.validationSignature,
+          signature: prepared.voteData.validationSignature,
         })
         .returning();
 
-      if (!voteSubmission) {
+      if (!created) {
         throw new CommonError('Failed to create vote submission');
       }
 
-      // Create join table entries for selected proposals
-      const voteProposalEntries = data.selectedProposalIds.map(
-        (proposalId, index) => ({
-          voteSubmissionId: voteSubmission.id,
-          proposalId,
-          rank: phaseConfig.ranked ? index + 1 : null,
-        }),
-      );
+      await tx
+        .insert(decisionsVoteProposals)
+        .values(voteProposalRows(created.id, prepared));
 
-      await tx.insert(decisionsVoteProposals).values(voteProposalEntries);
-
-      return {
-        voteSubmission,
-        selectedProposalIds: data.selectedProposalIds,
-      };
+      return created;
     });
 
     try {
-      waitUntil(
-        trackUserVoted(authUserId, result.voteSubmission.processInstanceId),
-      );
+      waitUntil(trackUserVoted(authUserId, voteSubmission.processInstanceId));
     } catch (err) {
       // waitUntil can throw synchronously off-Vercel (no request context).
       // Swallow here so analytics never causes "Failed to submit vote".
       logger.error('Failed to schedule user_voted tracking', { error: err });
     }
 
-    return {
-      id: result.voteSubmission.id,
-      processInstanceId: result.voteSubmission.processInstanceId,
-      submittedByProfileId: result.voteSubmission.submittedByProfileId,
-      selectedProposalIds: result.selectedProposalIds,
-      createdAt: new Date(result.voteSubmission.createdAt!),
-      signature: result.voteSubmission.signature || null,
-      schemaVersion: voteData.schemaVersion,
-      schemaType: voteData.schemaType,
-    };
+    return toSubmissionResult(voteSubmission, prepared);
   } catch (error) {
-    if (error instanceof CommonError) {
-      throw error;
+    return rethrowAsCommon(error, 'Failed to submit vote');
+  }
+};
+
+export const reviseVote = async ({
+  data,
+  authUserId,
+}: {
+  data: SubmitVoteInput;
+  authUserId: string;
+}): Promise<VoteSubmissionResult> => {
+  if (!authUserId) {
+    throw new UnauthorizedError('User must be authenticated');
+  }
+
+  try {
+    const prepared = await prepareBallot({ data, authUserId });
+
+    if (!prepared.existingVote) {
+      throw new ValidationError('No ballot has been cast to revise');
     }
-    logger.error('Error submitting vote', { error });
-    throw new CommonError('Failed to submit vote');
+
+    if (!prepared.phaseConfig.canEditVotes) {
+      throw new VoteRevisionNotAllowedError();
+    }
+
+    const existingId = prepared.existingVote.id;
+    const voteSubmission = await db.transaction(async (tx) => {
+      const [updated] = await tx
+        .update(decisionsVoteSubmissions)
+        .set({
+          voteData: prepared.voteData,
+          customData: data.customData,
+          signature: prepared.voteData.validationSignature,
+          updatedAt: new Date().toISOString(),
+        })
+        .where(eq(decisionsVoteSubmissions.id, existingId))
+        .returning();
+
+      if (!updated) {
+        throw new CommonError('Failed to revise vote submission');
+      }
+
+      await tx
+        .delete(decisionsVoteProposals)
+        .where(eq(decisionsVoteProposals.voteSubmissionId, existingId));
+      await tx
+        .insert(decisionsVoteProposals)
+        .values(voteProposalRows(existingId, prepared));
+
+      return updated;
+    });
+
+    return toSubmissionResult(voteSubmission, prepared);
+  } catch (error) {
+    return rethrowAsCommon(error, 'Failed to revise vote');
   }
 };
 

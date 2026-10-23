@@ -5,6 +5,7 @@ import {
   allowsComments,
   areCommentsAllowed,
   canEditProposals,
+  canEditVotes,
   getPhaseReviewSettings,
   getPreviousReviewPhases,
   getVoterBudget,
@@ -677,5 +678,14 @@ describe('getVoterEnrolment', () => {
         },
       }),
     ).toBe(undefined);
+  });
+});
+
+describe('canEditVotes', () => {
+  it('given voting.edit is set, then a cast ballot may be revised; absent or false, it may not', () => {
+    expect(canEditVotes({ rules: { voting: { edit: true } } })).toBe(true);
+    expect(canEditVotes({ rules: { voting: { edit: false } } })).toBe(false);
+    expect(canEditVotes({ rules: { voting: { submit: true } } })).toBe(false);
+    expect(canEditVotes({})).toBe(false);
   });
 });

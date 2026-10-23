@@ -48,6 +48,8 @@ interface VotingSchemaOptions {
   pricedFields?: PricedField[];
   ranked?: boolean;
   enrolment?: VoterEnrolmentRule;
+  /** `voting.edit`: a cast ballot may be revised while the phase is open. */
+  editVotes?: boolean;
 }
 
 const pricedFieldSchemas = {
@@ -87,6 +89,7 @@ function buildVotingSchema({
   pricedFields,
   ranked,
   enrolment,
+  editVotes,
 }: VotingSchemaOptions = {}) {
   return {
     id: 'voting-test',
@@ -118,6 +121,7 @@ function buildVotingSchema({
             ...(voterCostField !== undefined && { voterCostField }),
             ...(ranked !== undefined && { ranked }),
             ...(enrolment !== undefined && { enrolment }),
+            ...(editVotes !== undefined && { edit: editVotes }),
           },
           advancement: { method: 'manual' as const },
         },
@@ -1177,4 +1181,221 @@ describe.concurrent('submitVote scoped to the voter district', () => {
       }),
     ).resolves.toEqual({ id: result.id });
   });
+});
+
+describe.concurrent('reviseVote', () => {
+  const joinRows = (voteSubmissionId: string) =>
+    db.query.decisionsVoteProposals.findMany({
+      where: { voteSubmissionId },
+      columns: { proposalId: true, rank: true },
+      orderBy: { rank: 'asc' },
+    });
+
+  it('given a cast ballot in a phase that allows vote editing, when the voter revises it, then the one submission row now carries the new picks in rank order', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instance, proposals } = await setupVotingInstance(testData, {
+      proposalCount: 3,
+      ranked: true,
+      editVotes: true,
+    });
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+    const first = await caller.decision.submitVote({
+      processInstanceId: instance.instance.id,
+      selectedProposalIds: [proposals[0]!.id],
+    });
+
+    const revised = await caller.decision.reviseVote({
+      processInstanceId: instance.instance.id,
+      selectedProposalIds: [proposals[2]!.id, proposals[1]!.id],
+    });
+
+    expect(revised.id).toBe(first.id);
+    expect(revised.selectedProposalIds).toEqual([
+      proposals[2]!.id,
+      proposals[1]!.id,
+    ]);
+    await expect(joinRows(first.id)).resolves.toEqual([
+      { proposalId: proposals[2]!.id, rank: 1 },
+      { proposalId: proposals[1]!.id, rank: 2 },
+    ]);
+    await expect(
+      db.query.decisionsVoteSubmissions.findMany({
+        where: { processInstanceId: instance.instance.id },
+        columns: { id: true },
+      }),
+    ).resolves.toEqual([{ id: first.id }]);
+  });
+
+  it('given no ballot has been cast, when the voter revises, then the request is refused and nothing is written', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instance, proposals } = await setupVotingInstance(testData, {
+      proposalCount: 1,
+      editVotes: true,
+    });
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    await expect(
+      caller.decision.reviseVote({
+        processInstanceId: instance.instance.id,
+        selectedProposalIds: [proposals[0]!.id],
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
+    await expect(
+      db.query.decisionsVoteSubmissions.findFirst({
+        where: { processInstanceId: instance.instance.id },
+      }),
+    ).resolves.toBeUndefined();
+  });
+
+  it('given a phase that does not allow vote editing, when the voter revises a cast ballot, then the request is refused as not allowed and the picks are unchanged', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instance, proposals } = await setupVotingInstance(testData, {
+      proposalCount: 2,
+    });
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+    const first = await caller.decision.submitVote({
+      processInstanceId: instance.instance.id,
+      selectedProposalIds: [proposals[0]!.id],
+    });
+
+    await expect(
+      caller.decision.reviseVote({
+        processInstanceId: instance.instance.id,
+        selectedProposalIds: [proposals[1]!.id],
+      }),
+    ).rejects.toMatchObject({
+      cause: { name: 'VoteRevisionNotAllowedError' },
+    });
+    await expect(joinRows(first.id)).resolves.toEqual([
+      { proposalId: proposals[0]!.id, rank: null },
+    ]);
+  });
+
+  it('given voting has closed, when the voter revises a cast ballot, then the request is refused and the picks are unchanged', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instance, proposals } = await setupVotingInstance(testData, {
+      proposalCount: 2,
+      editVotes: true,
+    });
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+    const first = await caller.decision.submitVote({
+      processInstanceId: instance.instance.id,
+      selectedProposalIds: [proposals[0]!.id],
+    });
+    await db
+      .update(processInstances)
+      .set({ currentStateId: 'results' })
+      .where(eq(processInstances.id, instance.instance.id));
+
+    await expect(
+      caller.decision.reviseVote({
+        processInstanceId: instance.instance.id,
+        selectedProposalIds: [proposals[1]!.id],
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
+    await expect(joinRows(first.id)).resolves.toEqual([
+      { proposalId: proposals[0]!.id, rank: null },
+    ]);
+  });
+});
+
+describeDecisionAccessTierGating('reviseVote', {
+  noJwtNonPublic: accessTierGatingCell(
+    'rejects no-JWT caller on non-public instance',
+    async ({ task, onTestFinished, callers }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+      const { instance, proposals } = await setupVotingInstance(testData, {
+        proposalCount: 1,
+        editVotes: true,
+      });
+
+      const caller = await callers.noJwt();
+
+      await expectFailsAccessTierGate(
+        caller.decision.reviseVote({
+          processInstanceId: instance.instance.id,
+          selectedProposalIds: [proposals[0]!.id],
+        }),
+        'none',
+      );
+    },
+  ),
+
+  anonJwtNonPublic: accessTierGatingCell(
+    'rejects anon-JWT caller on non-public instance',
+    async ({ task, onTestFinished, callers }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+      const { instance, proposals } = await setupVotingInstance(testData, {
+        proposalCount: 1,
+        editVotes: true,
+      });
+
+      const caller = await callers.anonJwt();
+
+      await expectFailsAccessTierGate(
+        caller.decision.reviseVote({
+          processInstanceId: instance.instance.id,
+          selectedProposalIds: [proposals[0]!.id],
+        }),
+        'anon',
+      );
+    },
+  ),
+
+  userJwtNonPublic: accessTierGatingCell(
+    'rejects user-JWT caller on non-public instance',
+    async ({ task, onTestFinished, callers }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+      const { instance, proposals } = await setupVotingInstance(testData, {
+        proposalCount: 1,
+        editVotes: true,
+      });
+
+      const caller = await callers.userJwt();
+
+      await expectFailsAccessTierGate(
+        caller.decision.reviseVote({
+          processInstanceId: instance.instance.id,
+          selectedProposalIds: [proposals[0]!.id],
+        }),
+        'user',
+      );
+    },
+  ),
+
+  networkJwtNonPublic: accessTierGatingCell(
+    'admits network-JWT caller on non-public instance and replaces their cast ballot',
+    async ({ task, onTestFinished, callers }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+      const { setup, instance, proposals } = await setupVotingInstance(
+        testData,
+        { proposalCount: 2, editVotes: true },
+      );
+
+      const caller = await callers.networkJwt(setup.userEmail);
+      await caller.decision.submitVote({
+        processInstanceId: instance.instance.id,
+        selectedProposalIds: [proposals[0]!.id],
+      });
+
+      const result = await caller.decision.reviseVote({
+        processInstanceId: instance.instance.id,
+        selectedProposalIds: [proposals[1]!.id],
+      });
+
+      expect(result.selectedProposalIds).toEqual([proposals[1]!.id]);
+    },
+  ),
 });
