@@ -78,6 +78,7 @@ export const handleTwilioInboundWebhookRequest = async ({
       code: extractSmsCode(message.body),
       keyword,
       argument,
+      to: message.to || null,
     },
   });
 
