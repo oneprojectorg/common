@@ -25,7 +25,10 @@ export type PhaseAdvancement =
     }
   | { ok: false; reason: string };
 
-type AdvancementInstance = LockedProcessInstance & { id: string };
+type AdvancementInstance = Pick<
+  LockedProcessInstance,
+  'currentStateId' | 'status' | 'instanceData'
+> & { id: string };
 
 const NO_PHASE_TO_ADVANCE_INTO = 'This decision has no phase to advance into';
 

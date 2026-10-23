@@ -36,6 +36,7 @@ vi.mock('@op/db/client', () => ({
 
 vi.mock('@op/db/schema', () => ({
   ProposalStatus: { DRAFT: 'draft', SUBMITTED: 'submitted' },
+  processInstances: {},
   proposals: {},
 }));
 
@@ -45,6 +46,10 @@ vi.mock('@op/collab', () => ({
 
 vi.mock('../assert', () => ({
   assertProfileAccess: vi.fn(),
+}));
+
+vi.mock('./lockProcessInstance', () => ({
+  lockProcessInstanceOrThrow: vi.fn(async () => ({ nextShortCode: 101 })),
 }));
 
 vi.mock('./resolveBoundary', () => ({
