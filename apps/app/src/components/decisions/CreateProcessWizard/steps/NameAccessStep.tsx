@@ -4,7 +4,7 @@ import {
   PROCESS_NAME_MAX_LENGTH,
   PROCESS_NAME_MIN_LENGTH,
 } from '@op/common/client';
-import { Field, FieldDescription, FieldLabel } from '@op/sense/Field';
+import { Field, FieldError, FieldLabel } from '@op/sense/Field';
 import { Input } from '@op/sense/Input';
 import { useState } from 'react';
 
@@ -13,7 +13,7 @@ import { useTranslations } from '@/lib/i18n';
 import { StepHeading } from '../StepHeading';
 
 const NAME_ID = 'process-name';
-const NAME_HINT_ID = 'process-name-hint';
+const NAME_ERROR_ID = 'process-name-error';
 
 export function NameAccessStep({
   name,
@@ -50,13 +50,13 @@ export function NameAccessStep({
             placeholder={t('namePlaceholder')}
             maxLength={PROCESS_NAME_MAX_LENGTH}
             aria-invalid={showError}
-            aria-describedby={NAME_HINT_ID}
+            aria-describedby={showError ? NAME_ERROR_ID : undefined}
           />
-          <FieldDescription id={NAME_HINT_ID} aria-live="polite">
+          <FieldError id={NAME_ERROR_ID}>
             {showError
               ? t('nameTooShort', { count: PROCESS_NAME_MIN_LENGTH })
               : null}
-          </FieldDescription>
+          </FieldError>
         </Field>
       </form>
     </div>
