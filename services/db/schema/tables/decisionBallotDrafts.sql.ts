@@ -4,6 +4,7 @@ import {
   integer,
   jsonb,
   pgTable,
+  timestamp,
   uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core';
@@ -33,6 +34,7 @@ export const decisionBallotDrafts = pgTable(
       .notNull()
       .default(sql`'[]'::jsonb`),
     pageCursor: integer('page_cursor'),
+    reopenedAt: timestamp('reopened_at', { withTimezone: true }),
     ...timestamps,
   },
   (table) => [

@@ -37,7 +37,11 @@ pick is charged at its current value, as `submitVote` charges it.
 `page_cursor` records where MORE left off while the voter browses. It
 is the one column shaped by the text channel; the web ignores it.
 
-SUBMIT turns the draft into a submission and deletes the row. A
+SUBMIT turns the draft into a submission and deletes the row. After
+that, a text that browses the ballot makes a new row to hold its cursor,
+so a row alone does not mean the voter is editing a cast ballot.
+`reopened_at` records that CHANGE reopened the cast ballot; a pick,
+REMOVE, MOVE or SUBMIT after a cast ballot is refused until it is set. A
 submission is the same ballot one state later, so a web draft can use
 the same row when the web needs one.
 
