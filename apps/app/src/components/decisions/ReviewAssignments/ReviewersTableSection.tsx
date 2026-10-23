@@ -11,10 +11,12 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from '@op/sense/Empty';
+import { Header3 } from '@op/sense/Header';
 import { ProfileAvatar } from '@op/sense/ProfileAvatar';
 import { ProfileItem } from '@op/sense/ProfileItem';
 import { Progress } from '@op/sense/Progress';
 import { Skeleton } from '@op/sense/Skeleton';
+import { StatusBadge, type StatusBadgeProps } from '@op/sense/StatusBadge';
 import {
   Table,
   TableBody,
@@ -29,6 +31,7 @@ import { Suspense, useCallback } from 'react';
 import { LuChevronRight, LuUsers } from 'react-icons/lu';
 
 import { Link, useTranslations } from '@/lib/i18n';
+import type { TranslationKey } from '@/lib/i18n';
 
 import { ButtonLink } from '@/components/ButtonLink';
 
@@ -39,6 +42,12 @@ interface ReviewersTableSectionProps {
   processInstanceId: string;
   phaseId: string;
 }
+
+type ReviewerStatus =
+  | 'unassigned'
+  | 'not_started'
+  | 'in_progress'
+  | 'completed';
 
 export function ReviewersTableSection(props: ReviewersTableSectionProps) {
   const t = useTranslations();
@@ -102,12 +111,13 @@ function ReviewersTableContent({
   const totalReviewers = data.pages[0]?.totalReviewers ?? rows.length;
 
   return (
-    <div className="flex flex-col gap-3">
-      <p aria-live="polite">
+    <div className="flex flex-col gap-6">
+      {/* Same heading as the All proposals count, so the two tabs line up. */}
+      <Header3 aria-live="polite">
         {t('decisions.review.reviewerCount', {
           count: totalReviewers,
         })}
-      </p>
+      </Header3>
 
       {rows.length === 0 ? (
         <Empty className="rounded-md border border-dashed">
@@ -129,14 +139,13 @@ function ReviewersTableContent({
           >
             <TableHeader>
               <TableRow>
-                <TableHead>{t('Name')}</TableHead>
-                <TableHead className="text-end">
-                  {t('decisions.review.assignedLabel')}
-                </TableHead>
-                <TableHead>{t('decisions.review.progressLabel')}</TableHead>
+                <TableHead>{t('decisions.review.reviewerColumn')}</TableHead>
+                <TableHead>{t('decisions.review.assignedLabel')}</TableHead>
+                <TableHead>{t('decisions.review.submittedColumn')}</TableHead>
                 <TableHead>
                   {t('decisions.review.lastSubmissionLabel')}
                 </TableHead>
+                <TableHead>{t('decisions.review.statusColumn')}</TableHead>
                 <TableHead className="text-end">
                   <span className="sr-only">
                     {t('decisions.review.openStatus')}
@@ -189,6 +198,7 @@ function ReviewerRowCells({
     : null;
   const percent =
     row.assignedCount > 0 ? (row.submittedCount / row.assignedCount) * 100 : 0;
+  const status = reviewerStatusBadges[getReviewerStatus(row)];
 
   return (
     // `relative` anchors the name link's stretched ::after (row-wide click).
@@ -212,12 +222,10 @@ function ReviewerRowCells({
           />
         </Link>
       </TableRowHeader>
-      <TableCell className="text-end">{row.assignedCount}</TableCell>
+      <TableCell className="tabular-nums">{row.assignedCount}</TableCell>
       <TableCell>
         {row.assignedCount === 0 ? (
-          <span className="text-sm text-muted-foreground">
-            {t('decisions.review.noAssignments')}
-          </span>
+          <span className="text-muted-foreground">—</span>
         ) : (
           <span className="flex items-center gap-2.5">
             <Progress
@@ -225,8 +233,8 @@ function ReviewerRowCells({
               className="w-24"
               aria-label={t('decisions.review.reviewProgressLabel')}
             />
-            <span className="text-sm whitespace-nowrap text-muted-foreground">
-              {t('decisions.review.submittedOfAssigned', {
+            <span className="text-sm whitespace-nowrap tabular-nums">
+              {t('decisions.review.submittedOfAssignedShort', {
                 submitted: row.submittedCount,
                 assigned: row.assignedCount,
               })}
@@ -234,10 +242,13 @@ function ReviewerRowCells({
           </span>
         )}
       </TableCell>
-      <TableCell>
+      <TableCell className="text-muted-foreground tabular-nums">
         {lastSubmittedAt
-          ? format.dateTime(lastSubmittedAt, { dateStyle: 'medium' })
+          ? format.dateTime(lastSubmittedAt, { month: 'short', day: 'numeric' })
           : '—'}
+      </TableCell>
+      <TableCell>
+        <StatusBadge variant={status.variant}>{t(status.label)}</StatusBadge>
       </TableCell>
       <TableCell className="text-end">
         {/* z-10 keeps the chevron clickable above the stretched target. */}
@@ -245,7 +256,7 @@ function ReviewerRowCells({
           href={href}
           variant="ghost"
           size="icon-sm"
-          className="relative z-10"
+          className="relative z-10 text-muted-foreground"
           aria-label={t('decisions.review.openReviewerAssignmentsAction', {
             name,
           })}
@@ -256,3 +267,42 @@ function ReviewerRowCells({
     </TableRow>
   );
 }
+
+/** One reviewer's phase status, from the counts the summary already carries. */
+function getReviewerStatus({
+  assignedCount,
+  submittedCount,
+  draftCount,
+}: PhaseReviewerSummary): ReviewerStatus {
+  if (assignedCount === 0) {
+    return 'unassigned';
+  }
+
+  if (submittedCount === 0 && draftCount === 0) {
+    return 'not_started';
+  }
+
+  return submittedCount < assignedCount ? 'in_progress' : 'completed';
+}
+
+const reviewerStatusBadges: Record<
+  ReviewerStatus,
+  { variant: StatusBadgeProps['variant']; label: TranslationKey }
+> = {
+  unassigned: {
+    variant: 'inactive',
+    label: 'decisions.review.noAssignments',
+  },
+  not_started: {
+    variant: 'inactive',
+    label: 'decisions.review.statusNotStarted',
+  },
+  in_progress: {
+    variant: 'in-progress',
+    label: 'decisions.review.statusInProgress',
+  },
+  completed: {
+    variant: 'success',
+    label: 'decisions.review.statusCompleted',
+  },
+};
