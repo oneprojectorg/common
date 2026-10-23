@@ -243,6 +243,7 @@ const VotingProposalsList = ({
   const [isVoteReviewOpen, setIsVoteReviewOpen] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showPhaseFormModal, setShowPhaseFormModal] = useState(false);
+  const [footer, setFooter] = useState<HTMLElement | null>(null);
   const t = useTranslations();
   const openInSheet = useOpenProposalInSheet();
 
@@ -576,21 +577,37 @@ const VotingProposalsList = ({
       </ProposalMasonry>
 
       {canVote && !isReadOnly && (
-        <FooterBar position="fixed" className="bg-muted/95">
-          <FooterBarStart>
+        // Room under the last card for the fixed bar, taller once it wraps.
+        <div aria-hidden className="h-16 md:h-8" />
+      )}
+
+      {canVote && !isReadOnly && (
+        <FooterBar
+          ref={setFooter}
+          position="fixed"
+          // On mobile the bar wraps: count and submit share a row, the budget
+          // meter takes the next.
+          className="bg-muted/95 max-md:*:flex-wrap max-md:*:gap-x-3 max-md:*:gap-y-2.5 max-md:*:px-4 max-md:*:py-3"
+        >
+          <FooterBarStart className="max-md:min-w-0 max-md:flex-1 max-md:shrink">
             {ranked ? (
               <BallotPopover
                 ballot={selectedProposals}
                 budget={budget}
                 onBallotChange={setSelectedProposals}
+                footer={footer}
               >
                 {selectionCount}
               </BallotPopover>
             ) : (
-              <span className="text-base">{selectionCount}</span>
+              <span className="text-base max-md:text-sm">{selectionCount}</span>
             )}
           </FooterBarStart>
-          <FooterBarCenter>
+          <FooterBarCenter
+            className={
+              budget ? 'max-md:order-3 max-md:basis-full' : 'max-md:hidden'
+            }
+          >
             {budget && (
               <BallotBudgetMeter
                 ballot={selectedProposals}
@@ -603,7 +620,11 @@ const VotingProposalsList = ({
             <Dialog open={isVoteReviewOpen} onOpenChange={setIsVoteReviewOpen}>
               <DialogTrigger
                 render={
-                  <Button disabled={numSelected === 0} variant="default">
+                  <Button
+                    disabled={numSelected === 0}
+                    variant="default"
+                    className="max-md:h-10 max-md:px-3.5 max-md:text-sm"
+                  >
                     {t('decisions.proposals.submitVotesAction')}
                   </Button>
                 }

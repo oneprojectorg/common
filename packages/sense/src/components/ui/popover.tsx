@@ -21,6 +21,7 @@ function PopoverContent({
   sideOffset = 4,
   anchor,
   positionMethod,
+  collisionPadding,
   container,
   ...props
 }: PopoverPrimitive.Popup.Props &
@@ -32,6 +33,7 @@ function PopoverContent({
     | 'sideOffset'
     | 'anchor'
     | 'positionMethod'
+    | 'collisionPadding'
   > & { container?: PopoverPrimitive.Portal.Props['container'] }) {
   return (
     <PopoverPrimitive.Portal container={container}>
@@ -45,6 +47,8 @@ function PopoverContent({
         // `fixed` for a trigger that holds still on screen while its container
         // scrolls; measured absolutely, the popup jitters chasing it.
         positionMethod={positionMethod}
+        // Space kept from the viewport edges; also narrows `--available-width`.
+        collisionPadding={collisionPadding}
         className="isolate z-50"
       >
         <PopoverPrimitive.Popup

@@ -1,6 +1,7 @@
 'use client';
 
 import type { Proposal } from '@op/common/client';
+import { useMediaQuery } from '@op/hooks';
 import { BadgeNumber } from '@op/sense/Badge';
 import { Button } from '@op/sense/Button';
 import {
@@ -17,6 +18,7 @@ import {
   type SortableItemControls,
 } from '@op/sense/Sortable';
 import { cn } from '@op/sense/lib/utils';
+import { screens } from '@op/styles/constants';
 import { type ReactNode, type RefCallback, useRef } from 'react';
 import { LuChevronDown, LuChevronUp, LuCircleCheck, LuX } from 'react-icons/lu';
 
@@ -40,15 +42,21 @@ export const BallotPopover = ({
   ballot,
   budget,
   onBallotChange,
+  footer,
   children,
 }: {
   ballot: Proposal[];
   budget?: BallotBudget;
   onBallotChange: (ballot: Proposal[]) => void;
+  /** The bar the popover opens above; it keeps a fixed gap from it. */
+  footer: HTMLElement | null;
   /** The trigger's label: the selection count. */
   children: ReactNode;
 }) => {
   const t = useTranslations('decisions.proposals');
+  // The exact complement of `md:`, where the footer stops wrapping.
+  const isBelowMd =
+    useMediaQuery(`not all and (min-width: ${screens.md})`) ?? false;
   const popupRef = useRef<HTMLDivElement>(null);
   const removeButtons = useRef(new Map<string, HTMLButtonElement>());
   const getTitle = (proposal: Proposal) =>
@@ -74,7 +82,8 @@ export const BallotPopover = ({
           <Button
             variant="ghost"
             className={cn(
-              'text-base',
+              // Pulled out by its own padding so the icon lines up with the bar.
+              '-ms-3 text-base max-md:text-sm',
               ballot.length === 0
                 ? 'font-normal text-muted-foreground'
                 : 'font-medium',
@@ -97,15 +106,18 @@ export const BallotPopover = ({
           className="text-muted-foreground transition-transform group-data-popup-open/button:rotate-180 motion-reduce:transition-none"
         />
       </PopoverTrigger>
-      {/* The trigger sits 8px inside the footer; 32px leaves the prototype's
-          24px between the popover and the footer. */}
+      {/* Anchored to the footer, so the gap holds when it wraps on mobile;
+          there the popover spans the screen less its 16px margins and sits
+          further up, as in the prototype. */}
       <PopoverContent
         ref={popupRef}
+        anchor={footer}
         side="top"
         align="start"
-        sideOffset={32}
-        alignOffset={-8}
-        className="max-h-(--available-height) gap-0 overflow-hidden p-0 sm:w-115"
+        sideOffset={isBelowMd ? 34 : 24}
+        alignOffset={16}
+        collisionPadding={16}
+        className="max-h-(--available-height) w-(--available-width) gap-0 overflow-hidden p-0 md:w-115"
       >
         <PopoverHeader className="px-5 pt-4 pb-1.5">
           <PopoverTitle>{t('ballotTitle')}</PopoverTitle>
@@ -199,11 +211,8 @@ const BallotRow = ({
       <BadgeNumber aria-hidden className="h-6 min-w-6 font-medium">
         {rank}
       </BadgeNumber>
-      <p
-        dir="auto"
-        className="min-w-0 flex-1 truncate text-sm ltr:text-left rtl:text-right"
-      >
-        {titleText}
+      <p className="min-w-0 flex-1 text-sm">
+        <bdi>{titleText}</bdi>
       </p>
       {budget && (
         <span className="shrink-0 text-sm text-muted-foreground tabular-nums">
@@ -220,7 +229,7 @@ const BallotRow = ({
           disabled={!onMoveUp}
           // Focusable at the edge, or a move to the top drops keyboard focus.
           focusableWhenDisabled
-          className="aria-disabled:opacity-30"
+          className="aria-disabled:opacity-30 max-md:size-8.5"
           onClick={onMoveUp}
           aria-label={t('ballotMoveUpLabel', { title: titleText })}
         >
@@ -231,7 +240,7 @@ const BallotRow = ({
           size="icon-sm"
           disabled={!onMoveDown}
           focusableWhenDisabled
-          className="aria-disabled:opacity-30"
+          className="aria-disabled:opacity-30 max-md:size-8.5"
           onClick={onMoveDown}
           aria-label={t('ballotMoveDownLabel', { title: titleText })}
         >
