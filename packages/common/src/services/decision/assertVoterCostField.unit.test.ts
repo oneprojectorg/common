@@ -90,16 +90,18 @@ describe('assertVoterCostField', () => {
     ).rejects.toBeInstanceOf(ValidationError);
   });
 
-  it('rejects a cap on a numeric field that declares no unit', async () => {
+  it('rejects a cap on a numeric field that declares no unit, naming it by title', async () => {
     await expect(
       assertVoterCostField({
         instanceData: instanceData({
-          proposalTemplate: template({ cost: { type: 'number' } }),
-          voting: { voterBudget: 10, voterCostField: 'cost' },
+          proposalTemplate: template({
+            f1a2b3c4: { type: 'number', title: 'Points' },
+          }),
+          voting: { voterBudget: 10, voterCostField: 'f1a2b3c4' },
         }),
         processId: PROCESS_ID,
       }),
-    ).rejects.toBeInstanceOf(ValidationError);
+    ).rejects.toThrow('A voter budget charges from "Points"');
   });
 
   it('rejects a default-field cap when the template collects no budget', async () => {
