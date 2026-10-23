@@ -84,3 +84,11 @@ describe('browse refusals', () => {
     );
   });
 });
+
+describe('formatSmsRegisterFirst on the shared number', () => {
+  it('given the slug the member typed, then the text tells them to text VOTE with it', () => {
+    expect(formatSmsRegisterFirst('Park Funding', 'park-funding')).toBe(
+      'Text VOTE park-funding to register for "Park Funding" before browsing its proposals.',
+    );
+  });
+});

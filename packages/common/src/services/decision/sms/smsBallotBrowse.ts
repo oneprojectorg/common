@@ -1,7 +1,13 @@
 import { db } from '@op/db/client';
 import { DecisionVoterEnrolmentStatus } from '@op/db/schema';
+import { permission } from 'access-zones';
 
-import { NotFoundError } from '../../../utils';
+import {
+  NotFoundError,
+  ValidationError,
+  VoterNotEnrolledError,
+} from '../../../utils';
+import { assertProfileAccess } from '../../assert';
 import { ensureBallotDraft, setBallotPageCursor } from '../ballotDraft';
 import { countBallotProposals } from '../countBallotProposals';
 import {
@@ -12,6 +18,9 @@ import {
   type BallotProposalListItem,
   listBallotProposals,
 } from '../listBallotProposals';
+import { getInstancePhases } from '../schemas/instanceData';
+import { getInstanceCurrentPhase } from '../utils/instance';
+import { getVoterEnrolment, isVotingPhase } from '../utils/phaseSettings';
 import { findVoterEnrolment } from '../voterEnrolment';
 
 export const SMS_BALLOT_PAGE_SIZE = 5;
@@ -36,6 +45,7 @@ const loadBallotScope = async ({
       where: { id: instanceId },
       columns: {
         id: true,
+        profileId: true,
         instanceData: true,
         currentStateId: true,
         processId: true,
@@ -45,8 +55,34 @@ const loadBallotScope = async ({
     findVoterEnrolment({ processInstanceId: instanceId, authUserId }),
   ]);
 
-  if (!instance?.profile) {
+  if (!instance?.profile || !instance.profileId) {
     throw new NotFoundError('Process instance', instanceId);
+  }
+
+  await assertProfileAccess({
+    user: { id: authUserId },
+    profileId: instance.profileId,
+    permissions: [
+      { decisions: permission.ADMIN },
+      { decisions: permission.READ },
+    ],
+    notMemberMessage: 'User does not have access to this process',
+  });
+
+  const phase = getInstanceCurrentPhase({
+    currentStateId: instance.currentStateId,
+    instanceData: { phases: getInstancePhases(instance.instanceData) },
+  });
+
+  if (!phase || !isVotingPhase(phase)) {
+    throw new ValidationError('Voting is not open for this decision');
+  }
+
+  if (
+    getVoterEnrolment(phase) &&
+    enrolment?.status !== DecisionVoterEnrolmentStatus.ENROLLED
+  ) {
+    throw new VoterNotEnrolledError();
   }
 
   const boundaryId =

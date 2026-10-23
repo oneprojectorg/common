@@ -39,8 +39,14 @@ export const formatSmsBallotScope = ({
 }): string =>
   district ?? `"${clipSmsText(decisionName, SMS_DECISION_NAME_LENGTH)}"`;
 
-export const formatSmsRegisterFirst = (decisionName: string): string =>
-  `Text VOTE to register for "${clipSmsText(decisionName, SMS_DECISION_NAME_LENGTH)}" before browsing its proposals.`;
+export const SMS_BALLOT_UNAVAILABLE_MESSAGE =
+  'That decision is not available to you.';
+
+export const formatSmsRegisterFirst = (
+  decisionName: string,
+  slug?: string | null,
+): string =>
+  `Text VOTE${slug ? ` ${slug}` : ''} to register for "${clipSmsText(decisionName, SMS_DECISION_NAME_LENGTH)}" before browsing its proposals.`;
 
 export const formatSmsProposalNotOnBallot = (code: number): string =>
   `No proposal with code ${code} is on your ballot.`;
