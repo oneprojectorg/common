@@ -13,7 +13,10 @@ import {
   type SmsDeliver,
   agree,
   freeText,
+  info,
   join,
+  more,
+  proposals,
   show,
   vote,
 } from './smsCommandHandlers';
@@ -138,6 +141,12 @@ export const handleSMSCommand = inngest.createFunction(
         return vote(context);
       case 'agree':
         return agree(context);
+      case 'proposals':
+        return proposals(context);
+      case 'more':
+        return more(context);
+      case 'info':
+        return info(context);
       default:
         return assertNever(keyword);
     }

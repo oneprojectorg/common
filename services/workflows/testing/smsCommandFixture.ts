@@ -1,3 +1,4 @@
+import { mockCollab } from '@op/collab/testing';
 import {
   type DecisionSchemaDefinition,
   type PhoneNumber,
@@ -156,6 +157,17 @@ export class SmsCommandFixture {
         },
       });
       this.profileIds.push(proposal.profileId);
+      const { collaborationDocId } = proposal.proposalData as {
+        collaborationDocId?: string;
+      };
+      if (collaborationDocId) {
+        mockCollab.setDocFragments(collaborationDocId, {
+          title,
+          ...(budget === undefined
+            ? {}
+            : { budget: JSON.stringify({ amount: budget, currency: 'USD' }) }),
+        });
+      }
     }
 
     const phaseIds = schema.phases.map((phase) => phase.id);

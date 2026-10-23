@@ -15,6 +15,7 @@ export {
 } from './test-data';
 
 export {
+  claimShortCode,
   createCustomForm,
   createDecisionBoundary,
   createDecisionChatLine,

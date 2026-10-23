@@ -2,7 +2,8 @@ import { db } from '@op/db/client';
 import { ProcessStatus } from '@op/db/schema';
 
 import { NotFoundError } from '../../../utils';
-import { formatUnitAmount, getFieldUnit } from '../fieldUnit';
+import { formatSmsAmount } from '../../sms/formatSmsAmount';
+import { getFieldUnit } from '../fieldUnit';
 import { getDecisionBySlug } from '../getDecisionBySlug';
 import { resolveProposalTemplate } from '../resolveProposalTemplate';
 import { getInstancePhases } from '../schemas/instanceData';
@@ -55,7 +56,7 @@ const summarizeVotingInstance = async (
     enrolment: (phase && getVoterEnrolment(phase)) ?? null,
     budget:
       voterBudget !== undefined && unit
-        ? formatUnitAmount({ amount: voterBudget, unit })
+        ? formatSmsAmount({ amount: voterBudget, unit })
         : null,
   };
 };
