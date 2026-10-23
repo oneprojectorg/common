@@ -25,7 +25,7 @@ export async function generateMetadata({
   const { locale } = await params;
   const t = await getTranslations({ namespace: 'decisions', locale });
 
-  return { title: t('reviewAssignmentsPageTitle') };
+  return { title: t('review.reviewersHeading') };
 }
 
 /** The reviewers table — admin only. */
@@ -54,11 +54,9 @@ export default async function ReviewAssignmentsPage({
   }
 
   return (
-    <AssignmentsPageShell
-      backHref={`/decisions/${slug}/current?tab=assignments`}
-    >
+    <AssignmentsPageShell backHref={`/decisions/${slug}/current?tab=reviewers`}>
       <Header1 className="text-headline">
-        {t('reviewAssignmentsPageTitle')}
+        {t('review.reviewersHeading')}
       </Header1>
 
       <HydrationBoundary state={dehydrate(queryClient)}>
