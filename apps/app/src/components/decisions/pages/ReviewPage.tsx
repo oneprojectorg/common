@@ -26,14 +26,8 @@ import { ReviewAssignmentsList } from '../ReviewAssignmentsList';
 type Instance = RouterOutput['decision']['getInstance'];
 
 // The admin-without-review variant reuses DEFAULT_REVIEW_TAB for its progress
-// list, so one parser covers every `?tab=` value. `other-proposals` is the
-// retired tab's value, kept so old links land on All proposals.
-const REVIEW_TABS = [
-  'to-review',
-  'all-proposals',
-  'other-proposals',
-  'assignments',
-] as const;
+// list, so one parser covers every `?tab=` value.
+const REVIEW_TABS = ['to-review', 'all-proposals', 'assignments'] as const;
 const DEFAULT_REVIEW_TAB = 'to-review';
 
 const reviewTabParser = parseAsStringLiteral(REVIEW_TABS);
@@ -83,11 +77,7 @@ export function ReviewPage({
 
   // A stale `?tab=assignments` (non-admin link, flag off) has no panel.
   const activeTab =
-    tab === 'other-proposals'
-      ? 'all-proposals'
-      : tab === 'assignments' && !showAssignmentsTab
-        ? DEFAULT_REVIEW_TAB
-        : tab;
+    tab === 'assignments' && !showAssignmentsTab ? DEFAULT_REVIEW_TAB : tab;
 
   // The admin variant shows All proposals under DEFAULT_REVIEW_TAB.
   const adminActiveTab =
