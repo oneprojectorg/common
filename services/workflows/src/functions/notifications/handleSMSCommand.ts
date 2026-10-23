@@ -1,6 +1,7 @@
 import { isFeatureEnabled } from '@op/analytics';
 import {
   findChatLine,
+  getGeocoder,
   getPhoneSignupState,
   parsePhoneNumber,
 } from '@op/common';
@@ -8,7 +9,14 @@ import { assertNever } from '@op/core';
 import { Events, inngest } from '@op/events';
 import { logger } from '@op/logging';
 
-import { type SmsDeliver, join, sendSmsHelp, show } from './smsCommandHandlers';
+import {
+  type SmsDeliver,
+  agree,
+  freeText,
+  join,
+  show,
+  vote,
+} from './smsCommandHandlers';
 import {
   SMS_THROTTLE_LIMIT,
   SMS_THROTTLE_PERIOD,
@@ -42,6 +50,7 @@ export const handleSMSCommand = inngest.createFunction(
       keyword,
       argument,
       code,
+      body,
     } = smsInboundReceived.schema.parse(event.data);
 
     if (code !== null) {
@@ -79,7 +88,9 @@ export const handleSMSCommand = inngest.createFunction(
 
     const line = await step.run('resolve-line', async () => {
       const found = inboundTo ? await findChatLine({ phone: inboundTo }) : null;
-      return found ? { phone: found.phone, slug: found.slug } : null;
+      return found
+        ? { phone: found.phone, slug: found.slug, instanceId: found.instanceId }
+        : null;
     });
 
     const text = createTextSender({
@@ -94,8 +105,8 @@ export const handleSMSCommand = inngest.createFunction(
       return SMS_UNAVAILABLE_RESULT;
     }
 
-    const deliver: SmsDeliver = async (stepId, label, body) => {
-      const sent = await text(stepId, label, body);
+    const deliver: SmsDeliver = async (stepId, label, message) => {
+      const sent = await text(stepId, label, message);
       if (sent.status !== 'rejected') {
         return null;
       }
@@ -110,17 +121,23 @@ export const handleSMSCommand = inngest.createFunction(
       step,
       account,
       argument,
-      line: line ? { slug: line.slug } : null,
+      body,
+      line: line ? { slug: line.slug, instanceId: line.instanceId } : null,
       deliver,
+      geocode: getGeocoder(),
     };
 
     switch (keyword) {
       case null:
-        return sendSmsHelp(deliver);
+        return freeText(context);
       case 'join':
         return join(context);
       case 'show':
         return show(context);
+      case 'vote':
+        return vote(context);
+      case 'agree':
+        return agree(context);
       default:
         return assertNever(keyword);
     }

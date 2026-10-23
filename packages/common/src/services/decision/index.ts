@@ -248,3 +248,4 @@ export * from './getBallotProposalByCode';
 export * from './forwardGeocode';
 export * from './attestationHash';
 export * from './voterEnrolment';
+export * from './geocoder';
