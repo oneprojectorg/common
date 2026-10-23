@@ -122,7 +122,7 @@ keyword without a handler fails the typecheck.
 | `MOVE <code> <position>`    | Reorders a pick; order is rank.                                                                                                             |
 | `DONE`                      | The full ballot, the ranking note and the SUBMIT prompt.                                                                                     |
 | `SUBMIT`                    | Casts the ballot through `submitVote`, or revises it after CHANGE through `reviseVote`. A second SUBMIT says the ballot is already in.      |
-| `CHANGE`                    | Reopens a cast ballot as a draft while the phase has `voting.edit`.                                                                           |
+| `CHANGE`                    | Reopens a cast ballot as a draft while the phase has `voting.edit`. Until then a code, LIST, DONE, REMOVE or MOVE after SUBMIT says to text CHANGE. |
 | anything else               | The help text.                                                                                                                              |
 
 STOP, START and HELP never reach the dispatcher; Twilio answers them (see
@@ -249,9 +249,11 @@ fails if that is turned back on.
 A text conversation against a local checkout needs a Twilio account with a
 Messaging Service, an approved A2P campaign, and one number in its sender
 pool to bind as a decision line. Nothing here starts or stops the dev
-servers; the API on `:3101` and the app on `:3100` are assumed to be running.
+servers. The app runs on `:3100`. The API port depends on how it was
+started: `pnpm docker:dev` publishes it on `:3101`, `pnpm w:api dev` runs
+`next dev -p 3300`. The steps below use `<api port>` for it.
 
-1. Tunnel the API: `ngrok http 3101`. Copy the `https://…ngrok…` host.
+1. Tunnel the API: `ngrok http <api port>`. Copy the `https://…ngrok…` host.
 2. In the Twilio Console, on the Messaging Service, set "A message comes in"
    (POST) to `https://<ngrok host>/api/v1/notifications/twilio/inbound` —
    exact path, no trailing slash, no query string. Outside production the
@@ -271,7 +273,7 @@ servers; the API on `:3101` and the app on `:3100` are assumed to be running.
 
 | You text                 | Reply                                                                                                                                      |
 | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| `JOIN`                   | The consent text, then a code to confirm the number; reply with the code. (Shared number: `JOIN <slug>`.)                                   |
+| `JOIN`                   | The consent text, then a code to confirm the number; reply with the code. `JOIN` takes no argument on either number.                      |
 | `SHOW`                   | `"<decision>": Voting phase, voting open, N proposals.`                                                                                    |
 | `VOTE`                   | `Welcome to "<decision>". Two quick steps to register: your address, then a short affirmation. No ID needed. What's your address?`         |
 | `375 S High St, …`       | `That's District 5. Reply AGREE to affirm: "<attestation>"`                                                                                 |
