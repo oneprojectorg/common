@@ -3,12 +3,14 @@ import {
   createDecisionInstance,
   createInstanceMember,
   createProposal,
+  createProposalReview,
   createReviewScenario,
   getSeededTemplate,
   grantInstanceAdminWithoutReviewRole,
 } from '@op/common/testing/data';
 import {
   ProposalReviewAssignmentStatus,
+  ProposalReviewState,
   ProposalStatus,
   processInstances,
 } from '@op/db/schema';
@@ -108,7 +110,6 @@ test.describe('Admin review progress', () => {
       instanceProfileId: instance.profileId,
     });
 
-    // One completed review → "1 Reviewed".
     const reviewed = await createReviewScenario({
       instance: { id: instance.instance.id },
       author,
@@ -118,6 +119,13 @@ test.describe('Admin review progress', () => {
         title: REVIEWED_TITLE,
         collaborationDocId: 'test-proposal-listing-doc',
       },
+    });
+    await createProposalReview({
+      assignmentId: reviewed.assignment.id,
+      state: ProposalReviewState.SUBMITTED,
+      reviewData: { answers: {} },
+      submittedAt: new Date().toISOString(),
+      reviewedProposalHistoryId: reviewed.assignedProposalHistoryId,
     });
 
     // No assignments at all → "0 Reviewed" rather than nothing: the zero is the
