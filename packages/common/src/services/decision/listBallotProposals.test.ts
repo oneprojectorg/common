@@ -137,9 +137,9 @@ describe.concurrent('listBallotProposals', () => {
     expect(
       page.items.map(({ code, title, cost }) => [code, title, cost]),
     ).toEqual([
-      [101, 'Crosswalk lighting', '$85000'],
-      [102, 'Rec center hours', '$240000'],
-      [103, 'Tree planting', '$150000'],
+      [101, 'Crosswalk lighting', '$85,000'],
+      [102, 'Rec center hours', '$240,000'],
+      [103, 'Tree planting', '$150,000'],
     ]);
     expect(page.nextCursor).toBeNull();
     expect(setup.instance.instance.id).toBe(instanceId);
@@ -235,7 +235,7 @@ describe.concurrent('getBallotProposalByCode', () => {
     expect(proposal).toMatchObject({
       code: 101,
       title: 'Crosswalk lighting',
-      cost: '$85000',
+      cost: '$85,000',
       summary: 'Lights at the Fifth Avenue crossing.',
     });
   });

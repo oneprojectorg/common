@@ -249,3 +249,4 @@ export * from './forwardGeocode';
 export * from './attestationHash';
 export * from './voterEnrolment';
 export * from './geocoder';
+export * from './ballotDraft';

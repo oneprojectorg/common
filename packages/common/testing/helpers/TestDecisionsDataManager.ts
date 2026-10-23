@@ -29,6 +29,7 @@ import {
   joinOrganization,
 } from '../../src';
 import {
+  claimShortCode,
   grantDecisionProfileAccess,
   makeDecisionPublic as makeDecisionPublicShared,
   testMinimalSchema,
@@ -690,17 +691,20 @@ export class TestDecisionsDataManager {
     }
 
     if (nonDefaultStatus || legacyProposalData || createdAt) {
+      const shortCode = nonDefaultStatus
+        ? await claimShortCode(processInstanceId)
+        : undefined;
       await db
         .update(proposals)
         .set({
-          ...(nonDefaultStatus ? { status: nonDefaultStatus } : {}),
+          ...(nonDefaultStatus ? { status: nonDefaultStatus, shortCode } : {}),
           ...(createdAt ? { createdAt: createdAt.toISOString() } : {}),
           ...(legacyProposalData ? { proposalData: legacyProposalData } : {}),
         })
         .where(eq(proposals.id, proposal.id));
       return {
         ...proposal,
-        ...(nonDefaultStatus ? { status: nonDefaultStatus } : {}),
+        ...(nonDefaultStatus ? { status: nonDefaultStatus, shortCode } : {}),
         ...(createdAt ? { createdAt: createdAt.toISOString() } : {}),
         ...(legacyProposalData ? { proposalData: legacyProposalData } : {}),
       };
