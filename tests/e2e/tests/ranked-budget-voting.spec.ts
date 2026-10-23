@@ -104,12 +104,19 @@ test.describe('Ranked voting with a voter budget', () => {
       .filter({ hasText: 'Downtown Mural' });
     await expect(ballotToggle('Downtown Mural')).toBeDisabled();
     await expect(muralCard).toHaveAttribute('aria-disabled', 'true');
-    // Forced: an aria-disabled card still takes a press, which explains why.
+    const overBudgetHint =
+      'This proposal costs more than your remaining $100. Remove a pick to make room.';
+    // Forced: hover and press both reach an aria-disabled card, and each
+    // explains why it can't be picked.
+    await muralCard.hover({ force: true });
+    await expect(
+      authenticatedPage.locator('[data-slot="tooltip-content"]'),
+    ).toHaveText(overBudgetHint);
     await muralCard.click({ force: true });
     await expect(
-      authenticatedPage.getByText(
-        'This proposal costs more than your remaining $100. Remove a pick to make room.',
-      ),
+      authenticatedPage.locator('[data-slot="toast"]', {
+        hasText: overBudgetHint,
+      }),
     ).toBeVisible();
     await expect(meter).toHaveAttribute(
       'aria-valuetext',

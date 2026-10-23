@@ -22,6 +22,7 @@ import {
   FooterBarStart,
 } from '@op/sense/FooterBar';
 import { toast } from '@op/sense/Toast';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@op/sense/Tooltip';
 import { type ComponentProps, type ReactNode, useState } from 'react';
 import { LuLeaf } from 'react-icons/lu';
 
@@ -296,6 +297,13 @@ const VotingProposalsList = ({
   const isProposalSelected = (proposalId: string) =>
     selectedIds.includes(proposalId);
 
+  // Shown on hover over an unaffordable card, and when one is pressed.
+  const overBudgetHint = budget
+    ? t('decisions.proposals.overBudgetHint', {
+        remaining: formatBallotAmount({ amount: remaining, unit: budget.unit }),
+      })
+    : undefined;
+
   const isOverBudget = (proposal: Proposal) =>
     !!budget &&
     !isProposalSelected(proposal.id) &&
@@ -307,15 +315,8 @@ const VotingProposalsList = ({
       return;
     }
 
-    if (budget && isOverBudget(proposal)) {
-      toast.info(
-        t('decisions.proposals.overBudgetHint', {
-          remaining: formatBallotAmount({
-            amount: remaining,
-            unit: budget.unit,
-          }),
-        }),
-      );
+    if (overBudgetHint && isOverBudget(proposal)) {
+      toast.info(overBudgetHint);
       return;
     }
 
@@ -484,7 +485,7 @@ const VotingProposalsList = ({
               toggleLabel = t('decisions.proposals.deselectProposalLabel');
             }
 
-            return (
+            const card = (
               <ProposalCardView
                 key={proposal.id}
                 proposal={proposal}
@@ -537,6 +538,17 @@ const VotingProposalsList = ({
                   />
                 }
               />
+            );
+
+            if (!isUnaffordable || !overBudgetHint) {
+              return card;
+            }
+
+            return (
+              <Tooltip key={proposal.id}>
+                <TooltipTrigger render={card} />
+                <TooltipContent>{overBudgetHint}</TooltipContent>
+              </Tooltip>
             );
           } else {
             return (
