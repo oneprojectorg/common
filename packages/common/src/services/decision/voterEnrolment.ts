@@ -149,6 +149,7 @@ export async function resolveVoterAddress({
     .set({
       status: DecisionVoterEnrolmentStatus.AWAITING_AGREE,
       boundaryId: boundary?.id ?? null,
+      attestationHash: hashAttestation(rule.attestation),
     })
     .where(rowFilter(processInstanceId, profileId));
 
@@ -158,13 +159,39 @@ export async function resolveVoterAddress({
   };
 }
 
+export type AttestationResult =
+  | { status: 'enrolled'; enrolment: DecisionVoterEnrolment }
+  | { status: 'attestation_changed' };
+
+export async function markAttestationSent({
+  processInstanceId,
+  authUserId,
+}: EnrolmentKey): Promise<void> {
+  const { profileId, rule } = await loadEnrolmentContext({
+    processInstanceId,
+    authUserId,
+  });
+  await db
+    .update(decisionVoterEnrolments)
+    .set({ attestationHash: hashAttestation(rule.attestation) })
+    .where(
+      and(
+        rowFilter(processInstanceId, profileId),
+        eq(
+          decisionVoterEnrolments.status,
+          DecisionVoterEnrolmentStatus.AWAITING_AGREE,
+        ),
+      ),
+    );
+}
+
 export async function affirmVoterAttestation({
   processInstanceId,
   authUserId,
   attestationHash,
 }: EnrolmentKey & {
   attestationHash: string;
-}): Promise<DecisionVoterEnrolment> {
+}): Promise<AttestationResult> {
   const { profileId, rule } = await loadEnrolmentContext({
     processInstanceId,
     authUserId,
@@ -176,13 +203,21 @@ export async function affirmVoterAttestation({
   }
 
   if (row.status === DecisionVoterEnrolmentStatus.ENROLLED) {
-    return row;
+    return { status: 'enrolled', enrolment: row };
   }
 
   if (attestationHash !== hashAttestation(rule.attestation)) {
     throw new ValidationError(
-      'The affirmation does not match the attestation that was sent',
+      'The affirmation does not match the current attestation',
     );
+  }
+
+  if (row.attestationHash !== attestationHash) {
+    await db
+      .update(decisionVoterEnrolments)
+      .set({ attestationHash })
+      .where(rowFilter(processInstanceId, profileId));
+    return { status: 'attestation_changed' };
   }
 
   const [enrolled] = await db
@@ -199,5 +234,47 @@ export async function affirmVoterAttestation({
     throw new NotFoundError('Voter enrolment', processInstanceId);
   }
 
-  return enrolled;
+  return { status: 'enrolled', enrolment: enrolled };
+}
+
+export interface PendingVoterEnrolment {
+  processInstanceId: string;
+  status: DecisionVoterEnrolment['status'];
+  boundaryName: string | null;
+}
+
+export async function findPendingVoterEnrolment({
+  authUserId,
+  processInstanceId,
+  preferInstanceId,
+}: {
+  authUserId: string;
+  /** Only this decision's pending row. */
+  processInstanceId?: string;
+  /** This decision's pending row when it has one, else the latest anywhere. */
+  preferInstanceId?: string;
+}): Promise<PendingVoterEnrolment | null> {
+  const profileId = await getIndividualProfileId(authUserId);
+  const rows = await db.query.decisionVoterEnrolments.findMany({
+    where: {
+      profileId,
+      status: { ne: DecisionVoterEnrolmentStatus.ENROLLED },
+      ...(processInstanceId ? { processInstanceId } : {}),
+    },
+    columns: { processInstanceId: true, status: true, updatedAt: true },
+    with: { boundary: { columns: { name: true } } },
+    orderBy: { updatedAt: 'desc' },
+  });
+  const row =
+    rows.find(
+      (candidate) => candidate.processInstanceId === preferInstanceId,
+    ) ?? rows[0];
+
+  return row
+    ? {
+        processInstanceId: row.processInstanceId,
+        status: row.status,
+        boundaryName: row.boundary?.name ?? null,
+      }
+    : null;
 }

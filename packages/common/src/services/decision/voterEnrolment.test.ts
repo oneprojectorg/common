@@ -1,6 +1,11 @@
 import { TestDecisionsDataManager } from '@op/common/testing';
 import { createDecisionBoundary } from '@op/common/testing/data';
-import { DecisionVoterEnrolmentStatus, ProcessStatus } from '@op/db/schema';
+import { db, eq } from '@op/db/client';
+import {
+  DecisionVoterEnrolmentStatus,
+  ProcessStatus,
+  processInstances,
+} from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
 import { hashAttestation } from './attestationHash';
@@ -109,7 +114,7 @@ describe.concurrent('resolveVoterAddress', () => {
     expect(row).toMatchObject({
       status: DecisionVoterEnrolmentStatus.AWAITING_AGREE,
       boundaryId: district!.id,
-      attestationHash: null,
+      attestationHash: hashAttestation(ATTESTATION),
     });
   });
 
@@ -234,20 +239,25 @@ describe.concurrent('affirmVoterAttestation', () => {
       geocode: geocodeTo([INSIDE]),
     });
 
-    const enrolled = await affirmVoterAttestation({
+    const affirmed = await affirmVoterAttestation({
       processInstanceId: instanceId,
       authUserId,
       attestationHash: hashAttestation(ATTESTATION),
     });
 
-    expect(enrolled).toMatchObject({
-      status: DecisionVoterEnrolmentStatus.ENROLLED,
-      attestationHash: hashAttestation(ATTESTATION),
+    expect(affirmed).toMatchObject({
+      status: 'enrolled',
+      enrolment: {
+        status: DecisionVoterEnrolmentStatus.ENROLLED,
+        attestationHash: hashAttestation(ATTESTATION),
+      },
     });
-    expect(enrolled.attestedAt).not.toBeNull();
+    expect(
+      affirmed.status === 'enrolled' ? affirmed.enrolment.attestedAt : null,
+    ).not.toBeNull();
   });
 
-  it('given a hash of different words, when the voter affirms, then the affirmation is refused and the row still waits for it', async ({
+  it('given the attestation text changed after it was sent, planted by rewriting the phase rule, when the voter affirms, then they are not enrolled, the new text is recorded as sent, and affirming it enrols', async ({
     task,
     onTestFinished,
   }) => {
@@ -263,20 +273,44 @@ describe.concurrent('affirmVoterAttestation', () => {
       address: 'anywhere',
       geocode: geocodeTo([INSIDE]),
     });
+    await expect(
+      findVoterEnrolment({ processInstanceId: instanceId, authUserId }),
+    ).resolves.toMatchObject({ attestationHash: hashAttestation(ATTESTATION) });
+    const instance = await db.query.processInstances.findFirst({
+      where: { id: instanceId },
+      columns: { instanceData: true },
+    });
+    const rewritten = JSON.parse(
+      JSON.stringify(instance!.instanceData).replaceAll(
+        ATTESTATION,
+        'New words.',
+      ),
+    );
+    await db
+      .update(processInstances)
+      .set({ instanceData: rewritten })
+      .where(eq(processInstances.id, instanceId));
 
     await expect(
       affirmVoterAttestation({
         processInstanceId: instanceId,
         authUserId,
-        attestationHash: hashAttestation('Other words.'),
+        attestationHash: hashAttestation('New words.'),
       }),
-    ).rejects.toMatchObject({ name: 'ValidationError' });
+    ).resolves.toEqual({ status: 'attestation_changed' });
     await expect(
       findVoterEnrolment({ processInstanceId: instanceId, authUserId }),
     ).resolves.toMatchObject({
       status: DecisionVoterEnrolmentStatus.AWAITING_AGREE,
-      attestationHash: null,
+      attestationHash: hashAttestation('New words.'),
     });
+    await expect(
+      affirmVoterAttestation({
+        processInstanceId: instanceId,
+        authUserId,
+        attestationHash: hashAttestation('New words.'),
+      }),
+    ).resolves.toMatchObject({ status: 'enrolled' });
   });
 
   it('given the voter has not given an address yet, when they affirm, then the affirmation is refused', async ({
