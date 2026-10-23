@@ -72,7 +72,10 @@ export function getVoterBudget(phase: {
 
 export function getVoterEnrolment(phase: {
   rules?: {
-    voting?: { enrolment?: { attestation?: string; boundary?: boolean } };
+    voting?: {
+      enrolment?: { attestation?: string; boundary?: boolean };
+      [key: string]: unknown;
+    };
   };
 }): { attestation: string; boundary: boolean } | undefined {
   const attestation = phase.rules?.voting?.enrolment?.attestation?.trim();
