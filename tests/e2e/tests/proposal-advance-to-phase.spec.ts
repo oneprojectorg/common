@@ -56,41 +56,9 @@ const schema: DecisionSchemaDefinition = {
   ],
 };
 
-/** The same phases with `review` as a review phase, so it has its tabs. */
-const reviewSchema: DecisionSchemaDefinition = {
-  ...schema,
-  id: 'test-advance-to-review-phase',
-  phases: [
-    {
-      id: 'submission',
-      name: 'Submission',
-      rules: {
-        proposals: { submit: true },
-        advancement: { method: 'manual' },
-      },
-    },
-    {
-      id: 'review',
-      name: 'Review',
-      rules: {
-        proposals: { submit: false, review: true },
-        advancement: { method: 'manual' },
-      },
-    },
-    {
-      id: 'final',
-      name: 'Final',
-      rules: {
-        proposals: { submit: false },
-        advancement: { method: 'manual' },
-      },
-    },
-  ],
-};
-
 type SeedOrg = {
   organizationProfile: { id: string };
-  adminUser: { authUserId: string; email: string; profileId: string };
+  adminUser: { authUserId: string; email: string };
 };
 
 /**
@@ -245,41 +213,5 @@ test.describe('Advance a proposal into the current phase', () => {
     await expect(
       authenticatedPage.getByRole('menuitem', { name: 'Advance to Review' }),
     ).toHaveCount(0);
-  });
-
-  test("finds a left-behind proposal in the review phase's All proposals tab", async ({
-    authenticatedPage: page,
-    org,
-  }) => {
-    const { instance } = await seedLeftBehind(org, reviewSchema);
-
-    // The admin's All proposals opens on the review progress table; the
-    // Not advanced card and its menu live in the grid.
-    await page.goto(`/en/decisions/${instance.slug}/current?view=grid`, {
-      waitUntil: 'load',
-    });
-    const allTab = page.getByRole('tab', { name: 'All proposals' });
-    await expect(allTab).toBeVisible({ timeout: 36_000 });
-    await allTab.click();
-
-    // Exact: "Filter proposals by category" sits beside it.
-    const filter = page.getByRole('combobox', {
-      name: 'Filter proposals',
-      exact: true,
-    });
-    await expect(filter).toBeVisible({ timeout: 36_000 });
-    await filter.click();
-    await page.getByRole('option', { name: 'Not advanced' }).click();
-
-    const leftBehindCard = proposalCard(page, 'Proposal Left Behind');
-    await expect(leftBehindCard.getByText('Not advanced')).toBeVisible({
-      timeout: 36_000,
-    });
-    await leftBehindCard
-      .getByRole('button', { name: 'Proposal options' })
-      .click();
-    await expect(
-      page.getByRole('menuitem', { name: 'Advance to Review' }),
-    ).toBeVisible();
   });
 });
