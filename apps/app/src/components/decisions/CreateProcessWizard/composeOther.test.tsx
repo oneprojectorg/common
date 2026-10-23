@@ -6,13 +6,12 @@ import { describe, expect, it } from 'vitest';
 import english from '@/lib/i18n/dictionaries/en.json';
 
 import {
-  DECISION_OPTIONS,
-  SUBMIT_OPTIONS,
   composeOtherPieces,
   describeOther,
   subjectPhrase,
   type OtherAnswers,
-} from './otherContent';
+} from './composeOther';
+import { DECISION_OPTIONS, SUBMIT_OPTIONS } from './questions';
 
 const EMPTY: OtherAnswers = {
   subject: null,
