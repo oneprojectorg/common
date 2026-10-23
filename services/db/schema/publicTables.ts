@@ -219,6 +219,12 @@ export { categoryReviewers } from './tables/categoryReviewers.sql';
 export type { CategoryReviewer } from './tables/categoryReviewers.sql';
 export { decisionChatLines } from './tables/decisionChatLines.sql';
 export type { DecisionChatLine } from './tables/decisionChatLines.sql';
+export {
+  DecisionVoterEnrolmentStatus,
+  decisionVoterEnrolmentStatusEnum,
+  decisionVoterEnrolments,
+} from './tables/decisionVoterEnrolments.sql';
+export type { DecisionVoterEnrolment } from './tables/decisionVoterEnrolments.sql';
 
 export {
   decisionsVoteSubmissions,

@@ -393,6 +393,10 @@ export const relations = defineRelations(schema, (r) => ({
       from: r.processInstances.id,
       to: r.decisionChatLines.processInstanceId,
     }),
+    voterEnrolments: r.many.decisionVoterEnrolments({
+      from: r.processInstances.id,
+      to: r.decisionVoterEnrolments.processInstanceId,
+    }),
     process: r.one.decisionProcesses({
       from: r.processInstances.processId,
       to: r.decisionProcesses.id,
@@ -608,6 +612,24 @@ export const relations = defineRelations(schema, (r) => ({
       from: r.decisionChatLines.processInstanceId,
       to: r.processInstances.id,
       optional: false,
+    }),
+  },
+
+  decisionVoterEnrolments: {
+    processInstance: r.one.processInstances({
+      from: r.decisionVoterEnrolments.processInstanceId,
+      to: r.processInstances.id,
+      optional: false,
+    }),
+    profile: r.one.profiles({
+      from: r.decisionVoterEnrolments.profileId,
+      to: r.profiles.id,
+      optional: false,
+    }),
+    boundary: r.one.decisionBoundaries({
+      from: r.decisionVoterEnrolments.boundaryId,
+      to: r.decisionBoundaries.id,
+      optional: true,
     }),
   },
 
