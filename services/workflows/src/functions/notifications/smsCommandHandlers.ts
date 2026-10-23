@@ -4,6 +4,7 @@ import {
   SMS_BROWSE_END_MESSAGE,
   SMS_BROWSE_LAST_FOOTER,
   SMS_BROWSE_MORE_FOOTER,
+  SMS_BALLOT_UNAVAILABLE_MESSAGE,
   SMS_BROWSE_START_MESSAGE,
   SMS_INFO_NEEDS_CODE_MESSAGE,
   SMS_INFO_NEEDS_DECISION_MESSAGE,
@@ -11,10 +12,11 @@ import {
   SMS_VOTE_NEEDS_DECISION_MESSAGE,
   type SmsBallotPage,
   UnauthorizedError,
+  ValidationError,
+  VoterNotEnrolledError,
   affirmVoterAttestation,
   clipSmsText,
   describeEnrolmentDecision,
-  findBallotDraft,
   findLatestBallotDraft,
   findPendingVoterEnrolment,
   findVoterEnrolment,
@@ -535,7 +537,7 @@ export const proposals: SmsCommandHandler = async (context) => {
         deliver,
         'send-register-first',
         'Register first reply',
-        [formatSmsRegisterFirst(decision.name)],
+        [formatSmsRegisterFirst(decision.name, context.argument)],
         'register first',
       );
     }
@@ -551,15 +553,78 @@ export const proposals: SmsCommandHandler = async (context) => {
   return sendBallotPage(deliver, page, 'first');
 };
 
+type BallotRead<T> =
+  | { ok: true; value: T }
+  | { ok: false; reason: 'unavailable' | 'not_enrolled' | 'closed' };
+
+const readBallot = async <T>(fn: () => Promise<T>): Promise<BallotRead<T>> => {
+  try {
+    return { ok: true, value: await fn() };
+  } catch (error) {
+    if (error instanceof VoterNotEnrolledError) {
+      return { ok: false, reason: 'not_enrolled' };
+    }
+    if (error instanceof NotFoundError || error instanceof UnauthorizedError) {
+      return { ok: false, reason: 'unavailable' };
+    }
+    if (error instanceof ValidationError) {
+      return { ok: false, reason: 'closed' };
+    }
+    throw error;
+  }
+};
+
+const refuseBallotRead = async (
+  { step, deliver }: SmsCommandContext,
+  reason: 'unavailable' | 'not_enrolled' | 'closed',
+  instanceId: string,
+): Promise<SmsCommandResult> => {
+  if (reason === 'unavailable') {
+    return deliverAll(
+      deliver,
+      'send-ballot-unavailable',
+      'Ballot unavailable reply',
+      [SMS_BALLOT_UNAVAILABLE_MESSAGE],
+      'decision not found',
+    );
+  }
+  const decision = await step.run('describe-ballot-decision', () =>
+    describeEnrolmentDecision({ instanceId }),
+  );
+  return reason === 'closed'
+    ? deliverAll(
+        deliver,
+        'send-voting-closed',
+        'Voting closed reply',
+        formatSmsVotingClosed(decision.name),
+        'voting closed',
+      )
+    : deliverAll(
+        deliver,
+        'send-register-first',
+        'Register first reply',
+        [formatSmsRegisterFirst(decision.name)],
+        'register first',
+      );
+};
+
+const resolveBrowseInstance = async ({
+  step,
+  account,
+  line,
+}: SmsCommandContext): Promise<string | null> =>
+  (
+    await step.run('find-latest-draft', () =>
+      findLatestBallotDraft({ authUserId: account.authUserId }),
+    )
+  )?.processInstanceId ??
+  line?.instanceId ??
+  null;
+
 export const more: SmsCommandHandler = async (context) => {
-  const { step, account, line, deliver } = context;
+  const { step, account, deliver } = context;
   const draft = await step.run('find-ballot-draft', () =>
-    line
-      ? findBallotDraft({
-          processInstanceId: line.instanceId,
-          authUserId: account.authUserId,
-        })
-      : findLatestBallotDraft({ authUserId: account.authUserId }),
+    findLatestBallotDraft({ authUserId: account.authUserId }),
   );
 
   if (!draft || draft.pageCursor === null) {
@@ -574,18 +639,22 @@ export const more: SmsCommandHandler = async (context) => {
 
   const after = draft.pageCursor;
   const page = await step.run('list-ballot-page', () =>
-    listSmsBallotPage({
-      authUserId: account.authUserId,
-      instanceId: draft.processInstanceId,
-      after,
-    }),
+    readBallot(() =>
+      listSmsBallotPage({
+        authUserId: account.authUserId,
+        instanceId: draft.processInstanceId,
+        after,
+      }),
+    ),
   );
 
-  return sendBallotPage(deliver, page, 'next');
+  return page.ok
+    ? sendBallotPage(deliver, page.value, 'next')
+    : refuseBallotRead(context, page.reason, draft.processInstanceId);
 };
 
 export const info: SmsCommandHandler = async (context) => {
-  const { step, account, line, deliver } = context;
+  const { step, account, deliver } = context;
   const code =
     context.argument && PROPOSAL_CODE_PATTERN.test(context.argument)
       ? Number(context.argument)
@@ -601,13 +670,7 @@ export const info: SmsCommandHandler = async (context) => {
     );
   }
 
-  const instanceId =
-    line?.instanceId ??
-    (
-      await step.run('find-latest-draft', () =>
-        findLatestBallotDraft({ authUserId: account.authUserId }),
-      )
-    )?.processInstanceId;
+  const instanceId = await resolveBrowseInstance(context);
 
   if (!instanceId) {
     return deliverAll(
@@ -619,13 +682,21 @@ export const info: SmsCommandHandler = async (context) => {
     );
   }
 
-  const proposal = await step.run('get-ballot-proposal', () =>
-    getSmsBallotProposal({
-      authUserId: account.authUserId,
-      instanceId,
-      code,
-    }),
+  const read = await step.run('get-ballot-proposal', () =>
+    readBallot(() =>
+      getSmsBallotProposal({
+        authUserId: account.authUserId,
+        instanceId,
+        code,
+      }),
+    ),
   );
+
+  if (!read.ok) {
+    return refuseBallotRead(context, read.reason, instanceId);
+  }
+
+  const proposal = read.value;
 
   if (!proposal) {
     return deliverAll(
