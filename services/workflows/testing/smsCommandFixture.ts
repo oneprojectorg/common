@@ -1,4 +1,8 @@
-import { type DecisionSchemaDefinition, type PhoneNumber } from '@op/common';
+import {
+  type DecisionSchemaDefinition,
+  type PhoneNumber,
+  type VoterEnrolmentRule,
+} from '@op/common';
 import {
   createDecisionPhoneNumber,
   createDecisionInstance,
@@ -67,6 +71,24 @@ const votingSchema: DecisionSchemaDefinition = {
   ],
 };
 
+const withEnrolment = (
+  schema: DecisionSchemaDefinition,
+  enrolment: VoterEnrolmentRule,
+): DecisionSchemaDefinition => {
+  const withRule = (phase: DecisionSchemaDefinition['phases'][number]) =>
+    phase.id === VOTING_PHASE_ID
+      ? {
+          ...phase,
+          rules: {
+            ...phase.rules,
+            voting: { ...phase.rules?.voting, enrolment },
+          },
+        }
+      : phase;
+  const [first, ...rest] = schema.phases;
+  return { ...schema, phases: [withRule(first), ...rest.map(withRule)] };
+};
+
 export class SmsCommandFixture {
   private readonly phoneAuth: TestPhoneAuthDataManager;
   private readonly profileIds: string[] = [];
@@ -93,15 +115,20 @@ export class SmsCommandFixture {
     proposalTitles,
     name,
     currentPhaseId = VOTING_PHASE_ID,
+    enrolment,
   }: {
     owner: FixtureAccount;
     proposalTitles: Array<string | FixtureProposal>;
     name?: string;
     currentPhaseId?: string;
+    enrolment?: VoterEnrolmentRule;
   }) {
+    const schema = enrolment
+      ? withEnrolment(votingSchema, enrolment)
+      : votingSchema;
     const process = await createDecisionProcess({
       createdByProfileId: owner.profileId,
-      schema: votingSchema,
+      schema,
     });
     const { instance, profileId, slug } = await createDecisionInstance({
       processId: process.id,
@@ -109,7 +136,7 @@ export class SmsCommandFixture {
       authUserId: owner.authUserId,
       email: owner.email,
       name,
-      schema: votingSchema,
+      schema,
       grantAdminAccess: false,
     });
     this.profileIds.push(profileId);
@@ -131,7 +158,7 @@ export class SmsCommandFixture {
       this.profileIds.push(proposal.profileId);
     }
 
-    const phaseIds = votingSchema.phases.map((phase) => phase.id);
+    const phaseIds = schema.phases.map((phase) => phase.id);
     for (let index = 0; index < phaseIds.indexOf(currentPhaseId); index++) {
       const fromPhaseId = phaseIds[index];
       const toPhaseId = phaseIds[index + 1];

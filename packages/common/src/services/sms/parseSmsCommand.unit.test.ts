@@ -58,3 +58,34 @@ describe('parseSmsCommand', () => {
     expect(parseSmsCommand('')).toEqual(none);
   });
 });
+
+describe('parseSmsCommand registration keywords', () => {
+  it('given VOTE alone or with a decision name, when parsed, then it is the vote keyword with that argument', () => {
+    expect(parseSmsCommand('VOTE')).toEqual({
+      keyword: 'vote',
+      argument: null,
+    });
+    expect(parseSmsCommand('vote columbus')).toEqual({
+      keyword: 'vote',
+      argument: 'columbus',
+    });
+  });
+
+  it('given AGREE in any case, when parsed, then it is the agree keyword with no argument', () => {
+    expect(parseSmsCommand('AGREE')).toEqual({
+      keyword: 'agree',
+      argument: null,
+    });
+    expect(parseSmsCommand('agree.')).toEqual({
+      keyword: 'agree',
+      argument: null,
+    });
+  });
+
+  it('given a street address, when parsed, then nothing is recognised so the text reaches the dispatcher as a free reply', () => {
+    expect(parseSmsCommand('375 S High St, Columbus, OH 43215')).toEqual({
+      keyword: null,
+      argument: null,
+    });
+  });
+});

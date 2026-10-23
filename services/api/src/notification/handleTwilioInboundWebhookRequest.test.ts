@@ -59,6 +59,7 @@ describe('handleTwilioInboundWebhookRequest', () => {
         keyword: null,
         argument: null,
         to: '+16145550100',
+        body: 'YES',
       },
     });
   });
@@ -88,6 +89,7 @@ describe('handleTwilioInboundWebhookRequest', () => {
         keyword: null,
         argument: null,
         to: '+16145550100',
+        body: ' 234 567 ',
       },
     });
   });
@@ -114,6 +116,7 @@ describe('handleTwilioInboundWebhookRequest', () => {
         keyword: 'join',
         argument: null,
         to: '+16145550100',
+        body: ' Join! ',
       },
     });
   });
@@ -140,6 +143,7 @@ describe('handleTwilioInboundWebhookRequest', () => {
         keyword: 'show',
         argument: 'columbus',
         to: '+16145550100',
+        body: 'Show Columbus',
       },
     });
   });

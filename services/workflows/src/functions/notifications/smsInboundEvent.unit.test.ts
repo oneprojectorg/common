@@ -17,7 +17,21 @@ describe('sms/inbound.received event schema', () => {
       keyword: 'join',
       argument: null,
       to: null,
+      body: null,
     });
+  });
+
+  it('given an event recorded before the body field existed, when parsed, then it reads as no message text', () => {
+    const parsed = Events.smsInboundReceived.schema.parse({
+      from: '+15005550006',
+      messageSid: 'SM-no-body',
+      code: null,
+      keyword: null,
+      argument: null,
+      to: null,
+    });
+
+    expect(parsed.body).toBeNull();
   });
 
   it('given an event recorded before the to field existed, when parsed, then it reads as sent to no known line', () => {
