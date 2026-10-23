@@ -3,6 +3,7 @@ export * from './realtime';
 export * from './services';
 export * from './utils';
 export { signStorageDownloadUrl } from './utils/signStorageDownloadUrl';
+export * from './utils/featureFlags';
 export * from './services/decision/schemaTypes';
 export * from './services/decision/schemaValidators';
 export * from './services/decision/schemaRegistry';
