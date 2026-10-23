@@ -225,6 +225,8 @@ export {
   decisionVoterEnrolments,
 } from './tables/decisionVoterEnrolments.sql';
 export type { DecisionVoterEnrolment } from './tables/decisionVoterEnrolments.sql';
+export { decisionBallotDrafts } from './tables/decisionBallotDrafts.sql';
+export type { DecisionBallotDraft } from './tables/decisionBallotDrafts.sql';
 
 export {
   decisionsVoteSubmissions,
