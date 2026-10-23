@@ -333,10 +333,6 @@ export const relations = defineRelations(schema, (r) => ({
    * avatarImageId and headerImageId are nullable.
    */
   profiles: {
-    chatLine: r.one.profileChatLines({
-      from: r.profiles.id,
-      to: r.profileChatLines.profileId,
-    }),
     avatarImage: r.one.objectsInStorage({
       from: r.profiles.avatarImageId,
       to: r.objectsInStorage.id,
@@ -393,6 +389,10 @@ export const relations = defineRelations(schema, (r) => ({
    * stewardProfileId and processId are nullable.
    */
   processInstances: {
+    chatLine: r.one.decisionChatLines({
+      from: r.processInstances.id,
+      to: r.decisionChatLines.processInstanceId,
+    }),
     process: r.one.decisionProcesses({
       from: r.processInstances.processId,
       to: r.decisionProcesses.id,
@@ -603,10 +603,10 @@ export const relations = defineRelations(schema, (r) => ({
     }),
   },
 
-  profileChatLines: {
-    profile: r.one.profiles({
-      from: r.profileChatLines.profileId,
-      to: r.profiles.id,
+  decisionChatLines: {
+    processInstance: r.one.processInstances({
+      from: r.decisionChatLines.processInstanceId,
+      to: r.processInstances.id,
       optional: false,
     }),
   },
