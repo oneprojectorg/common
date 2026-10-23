@@ -29,9 +29,6 @@ function ProgressTrack({ className, ...props }: ProgressPrimitive.Track.Props) {
   return (
     <ProgressPrimitive.Track
       className={cn(
-        // Our deviation: a 6px neutral track, from the review progress design
-        // (2026-10), replacing the 4px primary-tinted track of Figma `Progress`
-        // (296:4740).
         'relative flex h-1.5 w-full items-center overflow-x-hidden rounded-full bg-secondary',
         className,
       )}
@@ -48,8 +45,6 @@ function ProgressIndicator({
   return (
     <ProgressPrimitive.Indicator
       data-slot="progress-indicator"
-      // Our deviation: the fill turns success-green once the value reaches
-      // the max (base-ui sets `data-complete` only then).
       className={cn(
         'h-full rounded-full bg-primary transition-all data-complete:bg-success',
         className,

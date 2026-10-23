@@ -116,11 +116,6 @@ export const ProposalsFilterBar = ({
   count: number;
   /** Unfiltered count for the phase — the "of N" pool. */
   total: number;
-  /**
-   * Narrows search from md up to the width of the review progress design, for
-   * a surface whose filter row carries more controls. Longer translated
-   * placeholders (French) clip at this width.
-   */
   compactSearch?: boolean;
   /** Admin-only CSV export control; omitted entirely for non-admins. */
   exportControl?: React.ReactNode;

@@ -144,10 +144,8 @@ test.describe('Admin review progress', () => {
       page.getByRole('heading', { name: 'Review Progress' }).first(),
     ).toBeVisible({ timeout: 36_000 });
 
-    // The plain proposal count, and the reviewer tab pair is gone: an admin
-    // who is not a reviewer has no queue to tab against. (The layout's own
-    // Overview/Current toggle is a tab strip too, hence naming the two rather
-    // than counting every tab.)
+    // The reviewer tab pair is gone: an admin who is not a reviewer has no
+    // queue to tab against.
     await expect(
       page.getByRole('heading', { name: '2 proposals', level: 3 }).first(),
     ).toBeVisible({ timeout: 36_000 });
@@ -158,8 +156,6 @@ test.describe('Admin review progress', () => {
       page.getByRole('tab', { name: 'Other proposals' }),
     ).toHaveCount(0);
 
-    // The table is the default view; each row opens the proposal's Review
-    // Progress screen.
     const table = page.getByRole('table', { name: 'All proposals' });
     await expect(table).toBeVisible({ timeout: 36_000 });
     await expect(
@@ -172,8 +168,6 @@ test.describe('Admin review progress', () => {
     );
     await expect(table.getByText('1 of 1', { exact: true })).toBeVisible();
 
-    // In the card view, the count is a link into the same screen, for the
-    // reviewed proposal and the untouched one alike.
     await page.getByRole('button', { name: 'Grid view' }).click();
     const reviewedCount = page
       .getByRole('link', { name: '1 Reviewed' })

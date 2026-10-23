@@ -38,7 +38,6 @@ const NO_REVIEW_AGGREGATES: ProposalReviewAggregates = {
 
 interface ProposalReviewDecorationContextValue {
   getDecoration: (proposalId: string) => ProposalReviewDecoration;
-  /** Undefined until the aggregates land, or when the viewer may not see them. */
   getAggregates: (proposalId: string) => ProposalReviewAggregates | undefined;
   /** The rendered list reports what it has loaded; the fetch follows that set. */
   reportProposals: (proposals: Proposal[]) => void;
@@ -136,9 +135,7 @@ export function ProposalReviewDecorationProvider({
     [enabled, itemsByProposalId, decisionSlug, canOpenReviews],
   );
 
-  // The endpoint answers only for proposals in the counted phase, so a
-  // rejected or left-behind row never gets an item: once the response is in,
-  // it has no reviews there.
+  // A proposal outside the counted phase gets no item: it has no reviews there.
   const getAggregates = useCallback(
     (proposalId: string) => {
       if (!enabled || aggregates === undefined) {
@@ -175,11 +172,6 @@ export function useProposalReviewDecoration(
   return context?.getDecoration(proposalId) ?? EMPTY_DECORATION;
 }
 
-/**
- * One proposal's review aggregates, for surfaces that render more than the
- * card's count (the review progress table). Undefined outside a provider and
- * while the aggregates load.
- */
 export function useProposalReviewAggregates(
   proposalId: string,
 ): ProposalReviewAggregates | undefined {

@@ -110,7 +110,6 @@ const restrictionOf = ({ status, visibility, isFlagged }: Proposal) => {
 
 interface ProposalBadgeProps {
   proposal: Proposal;
-  /** Merged onto whichever badge renders, so a dense surface can resize it. */
   className?: string;
 }
 

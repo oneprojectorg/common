@@ -91,13 +91,8 @@ export interface ProposalsListProps {
    * filter comes from this rather than the URL.
    */
   pinnedFilter?: ProposalFilter;
-  /** A narrower search field, for a surface with a busier filter row. */
   compactSearch?: boolean;
-  /**
-   * Adds a table view, offered first and shown by default. The admin review
-   * surface passes its review progress table. Not offered on phones, which
-   * have no view toggle to reach it.
-   */
+  /** Adds a table view, offered first and shown by default. */
   renderTable?: (props: {
     proposals: Proposal[];
     emptyState: ReactNode;
@@ -376,7 +371,7 @@ const ProposalsListContent = ({
   // Browse offers every view; the map drops out when the process collects no
   // location, and the feed while a ballot is in play or on a phone. It leads
   // with the map when the process has one — users came here to see places,
-  // not titles. A surface with a table leads with the table instead.
+  // not titles.
   const browseViews: readonly ProposalView[] =
     isVotingEnabled || isMobile ? BROWSE_VIEWS_WITHOUT_FEED : BROWSE_VIEWS;
   const hasTableView = !!renderTable && !isMobile;

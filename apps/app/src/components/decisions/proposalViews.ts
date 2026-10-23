@@ -8,10 +8,7 @@ import type { ReactNode } from 'react';
 export const PROPOSAL_VIEWS = ['table', 'grid', 'feed', 'map'] as const;
 export type ProposalView = (typeof PROPOSAL_VIEWS)[number];
 
-/**
- * What browse offers: the masonry grid, the single-column reading feed, then
- * the map. The table is only offered by a surface that supplies one.
- */
+/** What browse offers; the table is only offered by a surface that supplies one. */
 export const BROWSE_VIEWS = ['grid', 'feed', 'map'] as const;
 
 /**

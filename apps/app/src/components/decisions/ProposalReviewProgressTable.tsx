@@ -26,7 +26,6 @@ import { LuCircleAlert } from 'react-icons/lu';
 
 import { Link, useTranslations } from '@/lib/i18n';
 
-import { usesDistrictLabels } from './CategoryFilterSelect';
 import {
   ProposalStatusBadge,
   useProposalCardData,
@@ -37,21 +36,12 @@ type Reviewer = ProposalReviewAggregates['reviewers'][number];
 
 interface ProposalReviewProgressTableProps {
   proposals: Proposal[];
-  /** Decision profile slug — builds each row's reviews link. */
   decisionSlug: string;
-  /** Shown instead of the table when the filter matches nothing. */
   emptyState: ReactNode;
 }
 
-/** Faces shown before the "+N" bubble. */
 const MAX_FACES = 3;
 
-/**
- * The admin's review progress per proposal: who reviews it and how many
- * reviews are in. Each row opens the proposal's reviews screen. The review data
- * comes from the enclosing `ProposalReviewDecorationProvider`, which fetches
- * the aggregates for the proposals the list has loaded.
- */
 export function ProposalReviewProgressTable({
   proposals,
   decisionSlug,
@@ -72,7 +62,7 @@ export function ProposalReviewProgressTable({
         <TableRow>
           <TableHead>{t('review.proposalColumn')}</TableHead>
           <TableHead className="w-40">
-            {usesDistrictLabels(decisionSlug)
+            {decisionSlug === 'columbus'
               ? t('review.districtColumn')
               : t('review.categoryColumn')}
           </TableHead>
@@ -107,24 +97,19 @@ function ProposalReviewProgressRow({
     : undefined;
 
   return (
-    // `relative` anchors the title link's stretched ::after (row-wide click).
-    // `transform-gpu` is load-bearing: WebKit ignores `position: relative` on a
-    // <tr> as a containing block, so without it the overlay escapes to the
-    // table container in Safari and one row swallows every click.
+    // `transform-gpu` is load-bearing: WebKit ignores `position: relative` on
+    // a <tr>, so without it the link's ::after overlay covers the whole table.
     <TableRow className="relative transform-gpu">
       <TableRowHeader className="whitespace-normal">
         <div className="flex flex-col gap-1">
-          {/* `static` keeps the row the ::after's containing block. */}
           <Link
             href={href}
             className="static text-foreground after:absolute after:inset-0 focus-visible:outline-none focus-visible:after:ring-2 focus-visible:after:ring-ring/50 focus-visible:after:ring-inset"
           >
             <bdi>{titleText}</bdi>
           </Link>
-          {/* The category has its own column; the card's status badge goes here. */}
           <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
             {submitterName ? <bdi>{submitterName}</bdi> : null}
-            {/* One step down from the card's 36px pill so it doesn't set the row height. */}
             <ProposalStatusBadge
               proposal={proposal}
               className="h-7 px-1.5 py-1 text-xs [&>[data-slot=status-badge-icon]]:size-3.5"
@@ -157,10 +142,6 @@ function ProposalReviewProgressRow({
   );
 }
 
-/**
- * The assigned reviewers, submitted ones first and in full, pending ones
- * faded. The tooltip and the accessible name list each reviewer's state.
- */
 function ReviewersPile({ reviewers }: { reviewers: Reviewer[] }) {
   const t = useTranslations('decisions.review');
 
@@ -220,13 +201,9 @@ function ReviewersPile({ reviewers }: { reviewers: Reviewer[] }) {
   }
 
   return (
-    // The root layout provides the tooltip group and delay.
     <Tooltip>
       <TooltipTrigger
         render={
-          // `role="img"` names the pile as one thing and keeps the faces
-          // inside it from being read one by one. z-10 lifts it above the
-          // row's stretched link so it can be hovered and focused.
           <div
             role="img"
             tabIndex={0}
@@ -248,7 +225,6 @@ function ReviewersPile({ reviewers }: { reviewers: Reviewer[] }) {
   );
 }
 
-/** "Submitted of assigned" as a meter, flagged when a review is out of date. */
 function ReviewsMeter({
   aggregates,
 }: {
@@ -301,7 +277,6 @@ function ReviewsMeter({
   );
 }
 
-/** A dash for an empty cell; `label` is what a screen reader hears instead. */
 function EmptyMark({ label }: { label?: string }) {
   return (
     <>
@@ -313,7 +288,6 @@ function EmptyMark({ label }: { label?: string }) {
   );
 }
 
-/** Pending reads as not started; every other open state as in progress. */
 function getReviewerStateKey(reviewer: Reviewer) {
   switch (reviewer.status) {
     case ProposalReviewAssignmentStatus.COMPLETED:
