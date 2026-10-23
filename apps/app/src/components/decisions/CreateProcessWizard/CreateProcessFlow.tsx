@@ -31,9 +31,9 @@ export function CreateProcessFlow() {
       utils.client.decision.createInstance.mutate({
         name: draft.name,
         type: draft.type,
-        phases: draft.pieces.map((piece) => ({
-          kind: piece.phaseType,
-          name: tWizard(piece.phaseName ?? piece.name),
+        phases: draft.phases.map((phase) => ({
+          kind: phase.phaseType,
+          name: tWizard(phase.phaseName ?? phase.name),
         })),
       }),
     onError: (error) => {
