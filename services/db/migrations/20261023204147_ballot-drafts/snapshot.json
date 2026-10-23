@@ -1,7 +1,7 @@
 {
   "version": "8",
   "dialect": "postgres",
-  "id": "8e386b53-148c-42cb-a8f9-69fd77dd03c5",
+  "id": "92023cfa-092d-4c14-9419-8197baec86d3",
   "prevIds": [
     "b0c05c61-c469-4bda-a940-bafb2ca13567"
   ],
@@ -1560,6 +1560,19 @@
       "generated": null,
       "identity": null,
       "name": "page_cursor",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "decision_ballot_drafts"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "reopened_at",
       "entityType": "columns",
       "schema": "public",
       "table": "decision_ballot_drafts"
