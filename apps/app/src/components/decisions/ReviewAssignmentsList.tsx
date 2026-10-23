@@ -242,7 +242,7 @@ export function ReviewAssignmentsList({
       </div>
     ) : null;
 
-  // Match the "Other proposals" tab: no toolbar when the queue is genuinely
+  // Match the "All proposals" tab: no toolbar when the queue is genuinely
   // empty. A filtered-to-empty result keeps it so the filter can be cleared.
   const showToolbar = assignments.length > 0 || Boolean(statusFilter);
 

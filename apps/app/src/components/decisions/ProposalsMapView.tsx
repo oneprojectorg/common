@@ -25,7 +25,6 @@ interface ProposalLocationFilter {
   votedByProfileId?: string;
   status?: ProposalStatus;
   notAdvanced?: boolean;
-  excludeAssignedForReview?: boolean;
   phase?: 'results';
 }
 

@@ -11,7 +11,7 @@ import { Suspense } from 'react';
 
 import { useTranslations } from '@/lib/i18n/routing';
 
-import { AdminReviewProposalsList } from '../AdminReviewProposalsList';
+import { AllProposalsList } from '../AllProposalsList';
 import { DecisionActionBar } from '../DecisionActionBar';
 import { DecisionHero } from '../DecisionHero';
 import { DecisionHeroBanner } from '../DecisionHeroBanner';
@@ -22,16 +22,16 @@ import { ProposalsLoadError } from '../ProposalsLoadError';
 import { ReviewProgressStats } from '../Review/ReviewProgressStats';
 import { ReviewersTableSection } from '../ReviewAssignments/ReviewersTableSection';
 import { ReviewAssignmentsList } from '../ReviewAssignmentsList';
-import { ProposalReviewDecorationProvider } from '../proposalReviewDecoration';
 
 type Instance = RouterOutput['decision']['getInstance'];
 
 // The admin-without-review variant reuses DEFAULT_REVIEW_TAB for its progress
-// list, so one parser covers every `?tab=` value.
+// list, so one parser covers every `?tab=` value. `other-proposals` is the
+// retired tab's value, kept so old links land on All proposals.
 const REVIEW_TABS = [
   'to-review',
-  'other-proposals',
   'all-proposals',
+  'other-proposals',
   'assignments',
 ] as const;
 const DEFAULT_REVIEW_TAB = 'to-review';
@@ -81,15 +81,15 @@ export function ReviewPage({
     reviewTabParser.withDefault(DEFAULT_REVIEW_TAB),
   );
 
-  // A stale `?tab=assignments` (non-admin link, flag off) or a non-admin's
-  // `?tab=all-proposals` has no panel.
+  // A stale `?tab=assignments` (non-admin link, flag off) has no panel.
   const activeTab =
-    (tab === 'assignments' && !showAssignmentsTab) ||
-    (tab === 'all-proposals' && !isAdmin)
-      ? DEFAULT_REVIEW_TAB
-      : tab;
+    tab === 'other-proposals'
+      ? 'all-proposals'
+      : tab === 'assignments' && !showAssignmentsTab
+        ? DEFAULT_REVIEW_TAB
+        : tab;
 
-  // The admin variant has no 'other-proposals' panel to land on.
+  // The admin variant shows All proposals under DEFAULT_REVIEW_TAB.
   const adminActiveTab =
     activeTab === 'assignments' ? 'assignments' : DEFAULT_REVIEW_TAB;
 
@@ -135,11 +135,14 @@ export function ReviewPage({
     </TabsContent>
   );
 
-  const adminProgressList = (
-    <AdminReviewProposalsList
+  const allProposalsList = (
+    <AllProposalsList
       processInstanceId={instance.id}
+      slug={slug}
       decisionSlug={decisionSlug}
       access={instance.access}
+      currentPhase={currentPhase}
+      canSeeReviewProgress={canSeeReviewCounts}
       pinOffset={pinOffset}
     />
   );
@@ -196,14 +199,9 @@ export function ReviewPage({
                   <TabsTrigger value="to-review">
                     {t('proposalsToReviewTab')}
                   </TabsTrigger>
-                  <TabsTrigger value="other-proposals">
-                    {t('otherProposalsTab')}
+                  <TabsTrigger value="all-proposals">
+                    {t('allProposalsTab')}
                   </TabsTrigger>
-                  {isAdmin ? (
-                    <TabsTrigger value="all-proposals">
-                      {t('allProposalsTab')}
-                    </TabsTrigger>
-                  ) : null}
                   {showAssignmentsTab ? assignmentsTabTrigger : null}
                 </TabsList>
               </div>
@@ -221,37 +219,9 @@ export function ReviewPage({
                 </APIErrorBoundary>
               </TabsContent>
 
-              <TabsContent value="other-proposals" className="grow sm:p-0">
-                <APIErrorBoundary fallbacks={proposalsLoadErrorFallback}>
-                  {/* Outside Suspense so the provider's reported proposals
-                      survive a re-suspend on filter changes. */}
-                  <ProposalReviewDecorationProvider
-                    processInstanceId={instance.id}
-                    decisionSlug={decisionSlug}
-                    phaseId={currentPhase.phaseId}
-                    enabled={canSeeReviewCounts}
-                    canOpenReviews={canSeeReviewCounts}
-                  >
-                    <Suspense fallback={<ProposalListSkeleton />}>
-                      <ProposalsList
-                        slug={slug}
-                        instanceId={instance.id}
-                        decisionSlug={decisionSlug}
-                        permissions={instance.access}
-                        currentPhase={currentPhase}
-                        pinOffset={pinOffset}
-                        excludeAssignedForReview
-                      />
-                    </Suspense>
-                  </ProposalReviewDecorationProvider>
-                </APIErrorBoundary>
+              <TabsContent value="all-proposals" className="grow sm:p-0">
+                {allProposalsList}
               </TabsContent>
-
-              {isAdmin ? (
-                <TabsContent value="all-proposals" className="grow sm:p-0">
-                  {adminProgressList}
-                </TabsContent>
-              ) : null}
 
               {showAssignmentsTab ? assignmentsTabContent : null}
             </Tabs>
@@ -274,13 +244,13 @@ export function ReviewPage({
                 </div>
 
                 <TabsContent value={DEFAULT_REVIEW_TAB} className="grow sm:p-0">
-                  {adminProgressList}
+                  {allProposalsList}
                 </TabsContent>
 
                 {assignmentsTabContent}
               </Tabs>
             ) : (
-              adminProgressList
+              allProposalsList
             )
           ) : (
             <APIErrorBoundary fallbacks={proposalsLoadErrorFallback}>

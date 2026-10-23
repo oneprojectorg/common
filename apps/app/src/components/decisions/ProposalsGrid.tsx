@@ -59,8 +59,6 @@ export interface ProposalsProps {
   isVotingPhase?: boolean;
   /** When true, new proposals are hidden by default in the current phase. */
   proposalsHidden?: boolean;
-  /** Reviewer's "Other proposals" tab — tailors the empty state. */
-  excludeAssignedForReview?: boolean;
   /** Next page fetching — appends loading skeletons into the masonry. */
   isFetchingNextPage?: boolean;
 }
@@ -97,7 +95,6 @@ export const ProposalsGrid = ({
 
 export interface NoProposalsFoundProps {
   hasFilter: boolean;
-  excludeAssignedForReview?: boolean;
   /** The applied search term, quoted back so the miss names itself. */
   searchQuery?: string;
   /** Resets search, category and the All/Mine/Shortlisted filter. */
@@ -111,27 +108,10 @@ export interface NoProposalsFoundProps {
  */
 export const NoProposalsFound = ({
   hasFilter,
-  excludeAssignedForReview,
   searchQuery,
   onClearFilters,
 }: NoProposalsFoundProps) => {
   const t = useTranslations();
-
-  if (excludeAssignedForReview && !hasFilter) {
-    return (
-      <Empty className="border-0">
-        <EmptyHeader>
-          <EmptyMedia variant="icon">
-            <LuLeaf className="size-6" />
-          </EmptyMedia>
-          <EmptyTitle>{t('decisions.proposals.noOtherProposals')}</EmptyTitle>
-          <EmptyDescription>
-            {t('decisions.proposals.noProposalsOutsideQueue')}
-          </EmptyDescription>
-        </EmptyHeader>
-      </Empty>
-    );
-  }
 
   // A search names itself; the generic filter copy only has to cover the rest.
   // Curly quotes, not straight: ICU reads `'{` as the start of an escaped
@@ -224,7 +204,6 @@ const VotingProposalsList = ({
   searchQuery,
   onClearFilters,
   proposalsHidden,
-  excludeAssignedForReview,
   isFetchingNextPage,
 }: ProposalsProps) => {
   const canVote = permissions?.vote ?? false;
@@ -349,7 +328,6 @@ const VotingProposalsList = ({
     return (
       <NoProposalsFound
         hasFilter={hasFilter}
-        excludeAssignedForReview={excludeAssignedForReview}
         searchQuery={searchQuery}
         onClearFilters={onClearFilters}
       />
@@ -559,7 +537,6 @@ const ViewProposalsList = ({
   searchQuery,
   onClearFilters,
   proposalsHidden,
-  excludeAssignedForReview,
   isFetchingNextPage,
   proposalIdsWithRevisionRequest,
 }: ProposalsProps & {
@@ -572,7 +549,6 @@ const ViewProposalsList = ({
     return (
       <NoProposalsFound
         hasFilter={hasFilter}
-        excludeAssignedForReview={excludeAssignedForReview}
         searchQuery={searchQuery}
         onClearFilters={onClearFilters}
       />

@@ -81,8 +81,6 @@ export interface ProposalsListProps {
   currentPhase?: InstancePhaseData;
   /** When true, new proposals are hidden by default in the current phase. */
   proposalsHidden?: boolean;
-  /** Exclude proposals the current user is assigned to review (Other proposals tab). */
-  excludeAssignedForReview?: boolean;
   /** Opt-in: a surface with its own tab row would stack two. */
   showFilterTabs?: boolean;
   /**
@@ -177,7 +175,6 @@ export const CurrentPhaseProposalsLoader = ({
       dir: queryParams.dir,
       limit: 1,
       phase: queryParams.phase,
-      excludeAssignedForReview: queryParams.excludeAssignedForReview,
     },
     { staleTime: 30 * 1000 },
   );
@@ -287,7 +284,6 @@ const ProposalsListContent = ({
   permissions,
   currentPhase,
   proposalsHidden,
-  excludeAssignedForReview,
   header,
   pinOffset,
   phase,
@@ -452,7 +448,6 @@ const ProposalsListContent = ({
     hasFilter: hasActiveFilter,
     searchQuery: queryParams.search,
     onClearFilters: canClearFilters ? clearFilters : undefined,
-    excludeAssignedForReview,
   };
 
   // The filter bar's whole state in one object: the URL-backed values and
@@ -536,7 +531,6 @@ const ProposalsListContent = ({
                 votedByProfileId: queryParams.votedByProfileId,
                 status: queryParams.status,
                 notAdvanced: queryParams.notAdvanced,
-                excludeAssignedForReview: queryParams.excludeAssignedForReview,
               }}
               listFooter={renderScrollSentinel(<ProposalCardSkeleton />)}
               emptyState={<NoProposalsFound {...emptyStateProps} />}

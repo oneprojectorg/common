@@ -26,7 +26,6 @@ interface ProposalFilterOptions {
   instanceId: string;
   phase?: 'results';
   initialFilter?: ProposalFilter;
-  excludeAssignedForReview?: boolean;
   showFilterTabs?: boolean;
   pinnedFilter?: ProposalFilter;
 }
@@ -38,7 +37,6 @@ export const useProposalFilters = ({
   instanceId,
   phase,
   initialFilter,
-  excludeAssignedForReview,
   showFilterTabs,
   pinnedFilter,
 }: ProposalFilterOptions) => {
@@ -110,7 +108,6 @@ export const useProposalFilters = ({
       buildQueryParams({
         instanceId,
         phase,
-        excludeAssignedForReview,
         currentProfileId,
         category: appliedCategory,
         search: appliedSearch,
@@ -121,7 +118,6 @@ export const useProposalFilters = ({
     [
       instanceId,
       phase,
-      excludeAssignedForReview,
       currentProfileId,
       appliedCategory,
       appliedSearch,

@@ -3,7 +3,7 @@
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { trpc } from '@op/api/client';
-import type { DecisionAccess } from '@op/api/encoders';
+import type { DecisionAccess, InstancePhaseData } from '@op/api/encoders';
 import { Skeleton } from '@op/sense/Skeleton';
 import { Suspense } from 'react';
 
@@ -19,6 +19,7 @@ import type {
 import { NoProposalsFound } from './ProposalsGrid';
 import {
   CurrentPhaseProposalsLoader,
+  ProposalsList,
   type ProposalsLoaderRenderProps,
 } from './ProposalsList';
 import { ProposalsLoadError } from './ProposalsLoadError';
@@ -32,48 +33,71 @@ import {
   useProposalFilters,
 } from './useProposalFilters';
 
-interface AdminReviewProposalsListProps {
+interface AllProposalsListProps {
   processInstanceId: string;
+  slug: string;
   /** Decision profile slug — the per-proposal reviews link is built from it. */
   decisionSlug: string;
   access?: DecisionAccess;
+  currentPhase: InstancePhaseData;
+  /** Whether this viewer may see review progress; without it the list is plain cards. */
+  canSeeReviewProgress: boolean;
   /** Px offset where the filter bar pins (clears the floating phase toggle). */
   pinOffset?: number;
 }
 
 /**
- * The admin's "All proposals" surface: the review progress table over the
- * same paginated, filtered `proposal.list` every other proposal screen uses.
+ * The review page's "All proposals" surface: the review progress table over
+ * the same paginated, filtered `proposal.list` every other proposal screen
+ * uses. A viewer who may not see review progress gets the plain proposals list.
  *
  * This is the whole review surface for an admin who is not also a reviewer —
  * there is no assignment queue to tab against, so the list owns its own
  * loading and error states rather than leaning on the page's.
  */
-export function AdminReviewProposalsList({
+export function AllProposalsList({
   processInstanceId,
+  slug,
   decisionSlug,
   access,
+  currentPhase,
+  canSeeReviewProgress,
   pinOffset,
-}: AdminReviewProposalsListProps) {
-  const isAdmin = Boolean(access?.admin);
+}: AllProposalsListProps) {
+  if (!canSeeReviewProgress) {
+    return (
+      <APIErrorBoundary fallbacks={{ default: () => <ProposalsLoadError /> }}>
+        <Suspense fallback={<ProposalListSkeleton />}>
+          <ProposalsList
+            slug={slug}
+            instanceId={processInstanceId}
+            decisionSlug={decisionSlug}
+            permissions={access}
+            currentPhase={currentPhase}
+            pinOffset={pinOffset}
+          />
+        </Suspense>
+      </APIErrorBoundary>
+    );
+  }
 
   return (
     <APIErrorBoundary fallbacks={{ default: () => <ProposalsLoadError /> }}>
       {/* Outside the Suspense boundary so the reported-proposals state survives
           a re-suspend (a filter change refetches the list, not the aggregates
-          the provider already holds). The gate is this surface's: an admin
-          needs no `openReviews` to track progress. */}
+          the provider already holds). */}
       <ProposalReviewDecorationProvider
         processInstanceId={processInstanceId}
         decisionSlug={decisionSlug}
-        enabled={isAdmin}
-        canOpenReviews={isAdmin}
+        phaseId={currentPhase.phaseId}
+        enabled
+        canOpenReviews
       >
         <Suspense fallback={<ProposalListSkeleton />}>
-          <AdminReviewProposalsLoader
+          <AllProposalsLoader
             processInstanceId={processInstanceId}
             decisionSlug={decisionSlug}
-            canExport={isAdmin}
+            canExport={Boolean(access?.admin)}
             pinOffset={pinOffset}
           />
         </Suspense>
@@ -82,26 +106,24 @@ export function AdminReviewProposalsList({
   );
 }
 
-interface AdminReviewProposalsLoaderProps {
+interface AllProposalsLoaderProps {
   processInstanceId: string;
   decisionSlug: string;
   canExport: boolean;
   pinOffset?: number;
 }
 
-function AdminReviewProposalsLoader(props: AdminReviewProposalsLoaderProps) {
+function AllProposalsLoader(props: AllProposalsLoaderProps) {
   const filters = useProposalFilters({ instanceId: props.processInstanceId });
 
   return (
     <CurrentPhaseProposalsLoader queryParams={filters.queryParams}>
-      {(data) => (
-        <AdminReviewProposalsContent {...props} {...data} filters={filters} />
-      )}
+      {(data) => <AllProposalsContent {...props} {...data} filters={filters} />}
     </CurrentPhaseProposalsLoader>
   );
 }
 
-function AdminReviewProposalsContent({
+function AllProposalsContent({
   processInstanceId,
   decisionSlug,
   canExport,
@@ -113,7 +135,7 @@ function AdminReviewProposalsContent({
   isFetchingNextPage,
   shouldShowTrigger,
   infiniteScrollRef,
-}: AdminReviewProposalsLoaderProps &
+}: AllProposalsLoaderProps &
   ProposalsLoaderRenderProps & { filters: ProposalFilterState }) {
   const t = useTranslations();
   const [{ items: categories }] = trpc.decision.getCategories.useSuspenseQuery({

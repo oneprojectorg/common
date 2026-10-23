@@ -669,7 +669,7 @@ describe.concurrent('listWithReviewAggregates: openReviews gate', () => {
     );
 
     // A process reviewer who holds REVIEW but not ADMIN, and who is not
-    // assigned to this proposal — the "Other proposals" tab's viewer.
+    // assigned to this proposal — a reviewer on the "All proposals" tab.
     const reviewer = await testData.createInstanceReviewerWithRole(context);
     const reviewerCaller = await createAuthenticatedCaller(reviewer.email);
 

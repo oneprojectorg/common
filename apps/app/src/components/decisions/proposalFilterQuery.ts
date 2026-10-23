@@ -33,7 +33,6 @@ export type ProposalQueryParams = {
   dir: 'asc' | 'desc';
   limit: number;
   phase?: 'results';
-  excludeAssignedForReview?: boolean;
 };
 
 interface ResolvedFilters {
@@ -105,7 +104,6 @@ export const hasPendingChange = (pairs: [string, string][]): boolean =>
 interface QueryParamsInput {
   instanceId: string;
   phase: 'results' | undefined;
-  excludeAssignedForReview: boolean | undefined;
   currentProfileId: string | undefined;
   category: string;
   search: string;
@@ -117,7 +115,6 @@ interface QueryParamsInput {
 export const buildQueryParams = ({
   instanceId,
   phase,
-  excludeAssignedForReview,
   currentProfileId,
   category,
   search,
@@ -130,7 +127,6 @@ export const buildQueryParams = ({
     dir: sortOrder === 'newest' ? 'desc' : 'asc',
     limit: PROPOSALS_PAGE_LIMIT,
     phase,
-    excludeAssignedForReview,
   };
 
   if (category !== ALL_CATEGORIES) {

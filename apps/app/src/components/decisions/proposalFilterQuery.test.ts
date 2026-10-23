@@ -125,7 +125,6 @@ const build = (
   buildQueryParams({
     instanceId: 'instance-1',
     phase: undefined,
-    excludeAssignedForReview: undefined,
     currentProfileId: MY_PROFILE,
     category: 'all-categories',
     search: '',
@@ -154,14 +153,10 @@ describe('buildQueryParams', () => {
     expect(params.status).toBeUndefined();
   });
 
-  it("carries Not advanced into the review phase's Other proposals tab", () => {
-    const params = build({
-      filter: ProposalFilter.REJECTED,
-      excludeAssignedForReview: true,
-    });
+  it('maps the Not advanced filter to the status axis', () => {
+    const params = build({ filter: ProposalFilter.REJECTED });
 
     expect(params.notAdvanced).toBe(true);
-    expect(params.excludeAssignedForReview).toBe(true);
   });
 
   it('keeps the All list to the current phase', () => {

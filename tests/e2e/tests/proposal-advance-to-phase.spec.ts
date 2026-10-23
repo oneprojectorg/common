@@ -2,7 +2,6 @@ import type { DecisionSchemaDefinition } from '@op/common';
 import {
   createDecisionInstance,
   createProposal,
-  createReviewAssignment,
   getSeededTemplate,
 } from '@op/common/testing/data';
 import {
@@ -248,25 +247,20 @@ test.describe('Advance a proposal into the current phase', () => {
     ).toHaveCount(0);
   });
 
-  test("finds a left-behind proposal in the review phase's Other proposals tab", async ({
+  test("finds a left-behind proposal in the review phase's All proposals tab", async ({
     authenticatedPage: page,
     org,
   }) => {
-    const { instance, kept } = await seedLeftBehind(org, reviewSchema);
-    // The kept proposal is the admin's to review, so "Other proposals" has
-    // nothing under All: the filter has to stay to reach "Not advanced".
-    await createReviewAssignment({
-      processInstanceId: instance.instance.id,
-      proposalId: kept.id,
-      reviewerProfileId: org.adminUser.profileId,
-    });
+    const { instance } = await seedLeftBehind(org, reviewSchema);
 
-    await page.goto(`/en/decisions/${instance.slug}/current`, {
+    // The admin's All proposals opens on the review progress table; the
+    // Not advanced card and its menu live in the grid.
+    await page.goto(`/en/decisions/${instance.slug}/current?view=grid`, {
       waitUntil: 'load',
     });
-    const otherTab = page.getByRole('tab', { name: 'Other proposals' });
-    await expect(otherTab).toBeVisible({ timeout: 36_000 });
-    await otherTab.click();
+    const allTab = page.getByRole('tab', { name: 'All proposals' });
+    await expect(allTab).toBeVisible({ timeout: 36_000 });
+    await allTab.click();
 
     // Exact: "Filter proposals by category" sits beside it.
     const filter = page.getByRole('combobox', {
