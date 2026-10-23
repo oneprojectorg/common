@@ -152,16 +152,13 @@ test.describe('Admin review progress', () => {
       page.getByRole('heading', { name: 'Review Progress' }).first(),
     ).toBeVisible({ timeout: 36_000 });
 
-    // The reviewer tab pair is gone: an admin who is not a reviewer has no
+    // The reviewer queue tab is gone: an admin who is not a reviewer has no
     // queue to tab against.
     await expect(
       page.getByRole('heading', { name: '2 proposals', level: 3 }).first(),
     ).toBeVisible({ timeout: 36_000 });
     await expect(
       page.getByRole('tab', { name: 'Proposals to review' }),
-    ).toHaveCount(0);
-    await expect(
-      page.getByRole('tab', { name: 'Other proposals' }),
     ).toHaveCount(0);
 
     const table = page.getByRole('table', { name: 'All proposals' });

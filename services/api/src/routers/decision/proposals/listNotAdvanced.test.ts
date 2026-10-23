@@ -156,27 +156,6 @@ describe.concurrent('listProposals: not advanced', () => {
     ).toEqual({ [leftBehind]: target, [alsoLeftBehind]: target });
   });
 
-  it("lists them in the review phase's Other proposals tab too", async ({
-    task,
-    onTestFinished,
-  }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const { instanceId, admin, leftBehind, alsoLeftBehind } =
-      await seedReviewPhase(testData);
-
-    // "Other proposals" is the list minus the caller's own review queue.
-    const { items } = await admin.decision.listProposals({
-      processInstanceId: instanceId,
-      excludeAssignedForReview: true,
-      notAdvanced: true,
-    });
-
-    expect(outsideById(items)).toEqual({
-      [leftBehind]: true,
-      [alsoLeftBehind]: true,
-    });
-  });
-
   it('lists rejected proposals alongside, and drops one once advanced', async ({
     task,
     onTestFinished,

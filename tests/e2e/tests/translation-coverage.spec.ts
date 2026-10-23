@@ -567,7 +567,7 @@ test.describe('UGC translation coverage', () => {
     const testId = `translation-phase-${testInfo.workerIndex}-${Date.now()}`;
 
     // The phase hero is author-written and `translateDecision` already covers
-    // it, but only the "Other proposals" list sampled it — and a review phase
+    // it, but only the browse list sampled it — and a reviewer's default tab
     // does not mount that list. A reader whose proposals happen to be English
     // could not translate the phase copy in front of them.
     const { instance, author } = await seedDecision({

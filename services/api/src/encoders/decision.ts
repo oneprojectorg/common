@@ -763,12 +763,6 @@ export const proposalFilterSchema = instanceOptionalPhaseRefSchema.extend({
    */
   votedByProfileId: z.uuid().optional(),
   /**
-   * When true, exclude proposals the current user is assigned to review in the
-   * viewed phase. Resolved server-side from the request's user context. Powers
-   * the reviewer's "Other proposals" tab.
-   */
-  excludeAssignedForReview: z.boolean().optional(),
-  /**
    * The "Not advanced" filter: rejected proposals plus, on the current phase,
    * those earlier phases left behind. Omitted lists the phase's other proposals.
    */
@@ -792,7 +786,6 @@ export const proposalLocationsFilterSchema =
     categoryId: z.string().optional(),
     search: proposalSearchSchema,
     votedByProfileId: z.uuid().optional(),
-    excludeAssignedForReview: z.boolean().optional(),
     notAdvanced: z.boolean().optional(),
     phase: z.enum(['results']).optional(),
   });
