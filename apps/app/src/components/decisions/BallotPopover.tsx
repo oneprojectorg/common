@@ -97,19 +97,23 @@ export const BallotPopover = ({
           className="text-muted-foreground transition-transform group-data-popup-open/button:rotate-180 motion-reduce:transition-none"
         />
       </PopoverTrigger>
+      {/* The trigger sits 8px inside the footer; 32px leaves the prototype's
+          24px between the popover and the footer. */}
       <PopoverContent
         ref={popupRef}
         side="top"
         align="start"
-        className="sm:w-96"
+        sideOffset={32}
+        alignOffset={-8}
+        className="max-h-(--available-height) gap-0 overflow-hidden p-0 sm:w-md"
       >
-        <PopoverHeader>
+        <PopoverHeader className="px-5 pt-4 pb-1.5">
           <PopoverTitle>{t('ballotTitle')}</PopoverTitle>
           <PopoverDescription>{t('ballotReorderHint')}</PopoverDescription>
         </PopoverHeader>
 
         {ballot.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
+          <p className="px-5 pt-3.5 pb-5 text-sm text-muted-foreground">
             {t('ballotEmptyHint')}
           </p>
         ) : (
@@ -118,7 +122,8 @@ export const BallotPopover = ({
             onChange={onBallotChange}
             aria-label={t('ballotTitle')}
             getItemLabel={getTitle}
-            className="max-h-80 gap-1 overflow-y-auto"
+            className="min-h-0 flex-1 overflow-y-auto px-3 pt-1.5 pb-2.5"
+            itemClassName="not-first:border-t"
           >
             {(proposal, controls) => {
               const { index } = controls;
@@ -185,7 +190,7 @@ const BallotRow = ({
   const rank = index + 1;
 
   return (
-    <div className="flex items-center gap-2 rounded-md bg-background py-1">
+    <div className="flex items-center gap-2.5 bg-background px-1 py-2">
       <DragHandle
         {...dragHandleProps}
         aria-label={t('ballotDragLabel', { title: titleText })}
@@ -253,7 +258,7 @@ const BallotRemaining = ({
   const remaining = getBallotRemaining({ proposals: ballot, budget });
 
   return (
-    <div className="flex justify-between gap-4 border-t pt-3 text-sm text-muted-foreground tabular-nums">
+    <div className="flex justify-between gap-3 border-t bg-muted px-5 py-2.5 text-sm text-muted-foreground tabular-nums">
       <span>
         {t('budgetAllocatedAmount', {
           allocated: formatBallotAmount({ amount: total, unit: budget.unit }),
