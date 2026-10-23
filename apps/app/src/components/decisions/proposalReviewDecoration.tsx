@@ -29,11 +29,9 @@ export interface ProposalReviewDecoration {
   reviewedLabel?: ReactNode;
 }
 
-/** One proposal's aggregates as the table reads them: settled, pending, or gone. */
 export type ProposalReviewAggregatesState =
   | { status: 'loading' }
   | { status: 'ready'; aggregates: ProposalReviewAggregates }
-  /** The request failed, or this viewer may not see review progress. */
   | { status: 'unavailable' };
 
 const EMPTY_DECORATION: ProposalReviewDecoration = {};
@@ -110,10 +108,6 @@ export function ProposalReviewDecorationProvider({
     );
   }, []);
 
-  // One query per list page. Appending a page leaves the earlier pages' ids in
-  // place, so their keys stay cached while the new page loads, and the ids
-  // travel in a GET URL that would otherwise outgrow the server's header limit
-  // around 260 proposals.
   const pages = useMemo(
     () => chunk(proposalIds, PROPOSALS_PAGE_LIMIT),
     [proposalIds],
@@ -128,8 +122,7 @@ export function ProposalReviewDecorationProvider({
         ),
       ),
     {
-      // Only these fields are read, and the combined value keeps its identity
-      // until one of them changes; the raw result array is new on every render.
+      // The raw result array is new on every render; this projection is not.
       combine: (pageResults) =>
         pageResults.map(({ data, error, isError }) => ({
           data,
@@ -208,10 +201,7 @@ export function ProposalReviewDecorationProvider({
       if (!enabled) {
         return UNAVAILABLE_AGGREGATES;
       }
-      // Counts already on screen outlive a failed refetch: `data` is kept
-      // alongside `isError`, so only a page that never loaded is unavailable.
       if (result?.data !== undefined) {
-        // A proposal outside the counted phase gets no item: it has no reviews there.
         return {
           status: 'ready',
           aggregates:

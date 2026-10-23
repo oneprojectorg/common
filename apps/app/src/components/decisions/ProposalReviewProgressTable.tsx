@@ -269,7 +269,6 @@ function ReviewsMeter({
   );
 }
 
-/** A skeleton while the row's page of aggregates loads; the empty mark once it cannot. */
 function PendingReviewCell({
   status,
   className,

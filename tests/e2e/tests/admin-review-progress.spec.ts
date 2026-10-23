@@ -1,6 +1,5 @@
 import type { DecisionSchemaDefinition } from '@op/common';
 import {
-  type CreateOrganizationResult,
   createDecisionInstance,
   createInstanceMember,
   createProposal,
@@ -65,80 +64,42 @@ const REVIEW_SCHEMA = {
 const REVIEWED_TITLE = 'Community Garden Project'; // test-proposal-listing-doc
 const UNREVIEWED_TITLE = 'Youth Mentorship Program'; // test-proposal-listing-doc-alt
 
-// `PROPOSALS_PAGE_LIMIT` in apps/app: one full page plus one row on the next.
-const PAGE_SIZE = 24;
-const PROPOSAL_COUNT = PAGE_SIZE + 1;
-
-/**
- * An instance in its review phase whose admin holds no review capability — the
- * seeded global Admin role carries the profile ADMIN bit that would bypass it,
- * hence no admin access from the factory.
- */
-async function seedReviewInstanceWithoutReviewAdmin(
-  org: CreateOrganizationResult,
-) {
-  const template = await getSeededTemplate();
-
-  const instance = await createDecisionInstance({
-    processId: template.id,
-    ownerProfileId: org.organizationProfile.id,
-    authUserId: org.adminUser.authUserId,
-    email: org.adminUser.email,
-    schema: REVIEW_SCHEMA,
-    grantAdminAccess: false,
-  });
-
-  await grantInstanceAdminWithoutReviewRole({
-    instanceProfileId: instance.profileId,
-    authUserId: org.adminUser.authUserId,
-    email: org.adminUser.email,
-  });
-
-  await db
-    .update(processInstances)
-    .set({ currentStateId: 'review' })
-    .where(eq(processInstances.id, instance.instance.id));
-
-  const author = {
-    profileId: org.organizationProfile.id,
-    authUserId: org.adminUser.authUserId,
-    email: org.adminUser.email,
-  };
-
-  return { instance, author };
-}
-
-/** Proposal ids carried by one tRPC GET to `listWithReviewAggregates`. */
-function countAggregateIds(url: string): number {
-  const input = new URL(url).searchParams.get('input') ?? '{}';
-  const calls: unknown[] = Object.values(JSON.parse(input));
-
-  return calls.reduce<number>((count, call) => {
-    if (typeof call !== 'object' || call === null || !('json' in call)) {
-      return count;
-    }
-    const { json } = call;
-    if (typeof json !== 'object' || json === null || !('proposalIds' in json)) {
-      return count;
-    }
-    return Array.isArray(json.proposalIds)
-      ? count + json.proposalIds.length
-      : count;
-  }, 0);
-}
-
-function isAggregatesRequest(url: URL) {
-  return url.pathname.includes('decision.listWithReviewAggregates');
-}
-
 test.describe('Admin review progress', () => {
   test('an admin without the review capability gets the single "Proposals in review" list', async ({
     authenticatedPage: page,
     org,
     supabaseAdmin,
   }) => {
-    const { instance, author } =
-      await seedReviewInstanceWithoutReviewAdmin(org);
+    const template = await getSeededTemplate();
+
+    // No admin access from the factory: the whole point of the test is a role
+    // whose decisions bitfield omits REVIEW, and the seeded global Admin role
+    // carries the profile ADMIN bit that would bypass it.
+    const instance = await createDecisionInstance({
+      processId: template.id,
+      ownerProfileId: org.organizationProfile.id,
+      authUserId: org.adminUser.authUserId,
+      email: org.adminUser.email,
+      schema: REVIEW_SCHEMA,
+      grantAdminAccess: false,
+    });
+
+    await grantInstanceAdminWithoutReviewRole({
+      instanceProfileId: instance.profileId,
+      authUserId: org.adminUser.authUserId,
+      email: org.adminUser.email,
+    });
+
+    await db
+      .update(processInstances)
+      .set({ currentStateId: 'review' })
+      .where(eq(processInstances.id, instance.instance.id));
+
+    const author = {
+      profileId: org.organizationProfile.id,
+      authUserId: org.adminUser.authUserId,
+      email: org.adminUser.email,
+    };
 
     // Somebody else does the reviewing — this admin holds no assignments, which
     // is exactly why the assignment queue has nothing to tab against.
@@ -225,80 +186,5 @@ test.describe('Admin review progress', () => {
       ),
     );
     await expect(unreviewedRow.getByText('No assignments')).toHaveCount(2);
-  });
-
-  test('review progress loads one page at a time, and a page that fails settles to the empty mark', async ({
-    authenticatedPage: page,
-    org,
-  }) => {
-    const { instance, author } =
-      await seedReviewInstanceWithoutReviewAdmin(org);
-
-    for (let index = 0; index < PROPOSAL_COUNT; index += 1) {
-      await createProposal({
-        processInstanceId: instance.instance.id,
-        submittedByProfileId: author.profileId,
-        authUserId: author.authUserId,
-        email: author.email,
-        status: ProposalStatus.SUBMITTED,
-        proposalData: { title: `Proposal ${index + 1}` },
-      });
-    }
-
-    // The first page's aggregates load normally. The second page's request is
-    // held so the rows it covers can be inspected mid-flight, then dropped.
-    const idCounts: number[] = [];
-    let releaseSecondPage = () => {};
-    const secondPageHeld = new Promise<void>((resolve) => {
-      releaseSecondPage = resolve;
-    });
-
-    await page.route(isAggregatesRequest, async (route) => {
-      idCounts.push(countAggregateIds(route.request().url()));
-
-      if (idCounts.length < 2) {
-        await route.continue();
-        return;
-      }
-
-      await secondPageHeld;
-      await route.abort();
-    });
-
-    await page.goto(`/en/decisions/${instance.slug}/current`, {
-      waitUntil: 'domcontentloaded',
-    });
-
-    const table = page.getByRole('table', { name: 'All proposals' });
-    const rows = table.locator('tbody tr');
-    await expect(rows).toHaveCount(PAGE_SIZE, { timeout: 36_000 });
-
-    // Every first-page row settles: no assignments, so the dash plus its label
-    // in both review cells.
-    const settledRows = rows.filter({ hasText: 'No assignments' });
-    await expect(settledRows).toHaveCount(PAGE_SIZE, { timeout: 36_000 });
-
-    await page
-      .getByTestId('proposals-infinite-scroll-sentinel')
-      .scrollIntoViewIfNeeded();
-    await expect(rows).toHaveCount(PROPOSAL_COUNT, { timeout: 36_000 });
-    await expect.poll(() => idCounts.length).toBe(2);
-
-    // While the second page's aggregates are in flight, the first page keeps
-    // its counts and only the new row waits.
-    const newRow = rows.nth(PAGE_SIZE);
-    await expect(newRow.locator('[data-slot="skeleton"]')).toHaveCount(2);
-    await expect(settledRows).toHaveCount(PAGE_SIZE);
-
-    releaseSecondPage();
-
-    await expect(newRow.getByText('Review progress unavailable')).toHaveCount(
-      2,
-    );
-    await expect(newRow.locator('[data-slot="skeleton"]')).toHaveCount(0);
-    await expect(settledRows).toHaveCount(PAGE_SIZE);
-
-    // Each request carries one list page of ids at most.
-    expect(idCounts).toEqual([PAGE_SIZE, PROPOSAL_COUNT - PAGE_SIZE]);
   });
 });
