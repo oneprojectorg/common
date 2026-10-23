@@ -20,6 +20,7 @@ import type { ProposalAdvanceTarget } from './getProposalAdvanceTarget';
 import { getProposalDocumentsContent } from './getProposalDocumentsContent';
 import { getProposalRelationshipData } from './getProposalRelationshipData';
 import { getSelectedProposalIds } from './getSelectedProposalIds';
+import { ballotRankPosition } from './getVoterBallot';
 import { resolvePhaseAdvancement } from './proposalAdvancement';
 import {
   isAnonymousAuthor,
@@ -112,6 +113,7 @@ export const listProposals = async ({
     isEmpty,
     buildWhereClause,
     buildIsOutsideCurrentPhase,
+    rankedBallotIds,
   } = await resolveProposalListScope({ input, user });
 
   // Template resolution depends only on the instance row — start it now so
@@ -149,7 +151,10 @@ export const listProposals = async ({
     return emptyResult;
   }
 
-  const { limit = PAGE_LIMIT.md, orderBy = 'createdAt', dir = 'desc' } = input;
+  const { orderBy = 'createdAt', dir = 'desc' } = input;
+  // A ranked ballot comes back whole, in rank order: its ids are already in
+  // hand, so one page holds every row and no cursor is needed.
+  const limit = rankedBallotIds?.length ?? input.limit ?? PAGE_LIMIT.md;
   const decodedCursor = input.cursor
     ? decodeCursor<{ value: string | Date; id: string }>(input.cursor)
     : undefined;
@@ -203,7 +208,7 @@ export const listProposals = async ({
         RAW: (table) =>
           and(
             buildWhereClause(table),
-            orderBy === 'votes'
+            orderBy === 'votes' || rankedBallotIds
               ? undefined
               : getCursorCondition({
                   column: table[orderBy] ?? table.createdAt,
@@ -235,6 +240,17 @@ export const listProposals = async ({
         // `id` tie-break: without it, rows sharing the primary sort key
         // return in undefined order and flipping `dir` has no visible effect.
         const directional = dir === 'asc' ? ascOp : descOp;
+        if (rankedBallotIds) {
+          return [
+            ascOp(
+              ballotRankPosition({
+                rankedProposalIds: rankedBallotIds,
+                proposalId: table.id,
+              }),
+            ),
+            ascOp(table.id),
+          ];
+        }
         if (orderBy === 'votes') {
           return [
             descOp(voteCountExpr(table)),

@@ -203,6 +203,12 @@ test.describe('Ranked voting with a voter budget', () => {
       timeout: 30_000,
     });
     await expect(votedToggle('Downtown Mural')).toHaveText('2');
+    // In rank order, though Downtown Mural is the newest proposal.
+    await expect(
+      authenticatedPage.getByTestId('proposal-card').getByRole('heading', {
+        level: 3,
+      }),
+    ).toHaveText(['Harbor Reading Room', 'Downtown Mural']);
   });
 
   test('shows each pick on My ballot with its rank once results are in', async ({

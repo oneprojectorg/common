@@ -13,8 +13,6 @@ import {
 import {
   ProposalStatus,
   Visibility,
-  decisionsVoteProposals,
-  decisionsVoteSubmissions,
   processInstances,
   proposalCategories,
   proposalReviewAssignments,
@@ -36,6 +34,7 @@ import {
   type PhaseProposalSqlScope,
   getPhaseProposalSqlScope,
 } from './getProposalsForPhase';
+import { getVoterBallot } from './getVoterBallot';
 import type { ListProposalsInput } from './listProposals';
 import { notSuperseded } from './proposalSupersession';
 import { buildProposalTitleSearchCondition } from './proposalTitleSearch';
@@ -77,6 +76,11 @@ export interface ProposalListScope {
    * `notAdvanced`): true for a row outside the current phase.
    */
   buildIsOutsideCurrentPhase?: (proposalsTable: typeof proposals) => SQL;
+  /**
+   * Set when the scope is a ranked ballot (`votedByProfileId`): its proposal
+   * ids in rank order, for callers to sort by.
+   */
+  rankedBallotIds?: string[];
 }
 
 /**
@@ -93,7 +97,7 @@ export interface ProposalListScope {
  *    request their own ballot. The check is skipped for trusted contexts.
  *
  * Returns `undefined` when no explicit scope was requested (caller will fall
- * back to phase scoping).
+ * back to phase scoping). A ranked ballot also returns its ids in rank order.
  */
 const resolveExplicitScope = async ({
   input,
@@ -103,9 +107,9 @@ const resolveExplicitScope = async ({
   input: ListProposalsInput;
   currentProfileId: string | undefined;
   skipAccessCheck: boolean;
-}): Promise<string[] | undefined> => {
+}): Promise<{ ids: string[]; rankedBallotIds?: string[] } | undefined> => {
   if (input.proposalIds !== undefined) {
-    return input.proposalIds;
+    return { ids: input.proposalIds };
   }
 
   if (!input.votedByProfileId) {
@@ -117,24 +121,15 @@ const resolveExplicitScope = async ({
     throw new UnauthorizedError('You can only view your own ballot');
   }
 
-  const votedRows = await db
-    .select({ proposalId: decisionsVoteProposals.proposalId })
-    .from(decisionsVoteSubmissions)
-    .innerJoin(
-      decisionsVoteProposals,
-      eq(decisionsVoteSubmissions.id, decisionsVoteProposals.voteSubmissionId),
-    )
-    .where(
-      and(
-        eq(decisionsVoteSubmissions.processInstanceId, input.processInstanceId),
-        eq(
-          decisionsVoteSubmissions.submittedByProfileId,
-          input.votedByProfileId,
-        ),
-      ),
-    );
+  const ballot = await getVoterBallot({
+    processInstanceId: input.processInstanceId,
+    profileId: input.votedByProfileId,
+  });
 
-  return votedRows.map((row) => row.proposalId);
+  return {
+    ids: ballot.proposalIds,
+    rankedBallotIds: ballot.ranked ? ballot.proposalIds : undefined,
+  };
 };
 
 /**
@@ -258,7 +253,7 @@ export const resolveProposalListScope = async ({
   // parallel. The row is reused for the phase-resolution context (instead of
   // re-reading inside getInstanceContext), the access checks, and template
   // resolution.
-  const [instanceRows, explicitScopeIds] = await Promise.all([
+  const [instanceRows, explicitScope] = await Promise.all([
     db
       .select({
         id: processInstances.id,
@@ -274,6 +269,8 @@ export const resolveProposalListScope = async ({
       .limit(1),
     resolveExplicitScope({ input, currentProfileId, skipAccessCheck }),
   ]);
+
+  const explicitScopeIds = explicitScope?.ids;
 
   const instance = instanceRows[0];
   if (!instance?.profileId) {
@@ -523,5 +520,6 @@ export const resolveProposalListScope = async ({
     isEmpty,
     buildWhereClause,
     buildIsOutsideCurrentPhase,
+    rankedBallotIds: explicitScope?.rankedBallotIds,
   };
 };

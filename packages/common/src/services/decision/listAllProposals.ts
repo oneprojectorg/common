@@ -13,8 +13,6 @@ import {
 import {
   ProposalStatus,
   Visibility,
-  decisionsVoteProposals,
-  decisionsVoteSubmissions,
   proposalCategories,
   proposals,
 } from '@op/db/schema';
@@ -42,6 +40,7 @@ import {
 import { getProposalDocumentsContent } from './getProposalDocumentsContent';
 import { getProposalRelationshipData } from './getProposalRelationshipData';
 import { getSelectedProposalIds } from './getSelectedProposalIds';
+import { ballotRankPosition, getVoterBallot } from './getVoterBallot';
 import {
   isAnonymousAuthor,
   proposalAuthorRelation,
@@ -70,7 +69,6 @@ export const listAllProposals = async ({
   user: User | undefined;
 }) => {
   const { processInstanceId, status, categoryId } = input;
-  const limit = input.limit ?? PAGE_LIMIT.lg;
   const orderBy = input.orderBy ?? 'createdAt';
   const dir = input.dir ?? 'desc';
 
@@ -126,31 +124,22 @@ export const listAllProposals = async ({
 
   // Ballots are private — a caller may only request their own.
   let votedProposalIds: string[] | undefined;
+  let rankedBallotIds: string[] | undefined;
   if (input.votedByProfileId) {
     if (currentProfileId !== input.votedByProfileId) {
       throw new UnauthorizedError('You can only view your own ballot');
     }
-    const votedRows = await db
-      .select({ proposalId: decisionsVoteProposals.proposalId })
-      .from(decisionsVoteSubmissions)
-      .innerJoin(
-        decisionsVoteProposals,
-        eq(
-          decisionsVoteSubmissions.id,
-          decisionsVoteProposals.voteSubmissionId,
-        ),
-      )
-      .where(
-        and(
-          eq(decisionsVoteSubmissions.processInstanceId, processInstanceId),
-          eq(
-            decisionsVoteSubmissions.submittedByProfileId,
-            input.votedByProfileId,
-          ),
-        ),
-      );
-    votedProposalIds = votedRows.map((row) => row.proposalId);
+    const ballot = await getVoterBallot({
+      processInstanceId,
+      profileId: input.votedByProfileId,
+    });
+    votedProposalIds = ballot.proposalIds;
+    rankedBallotIds = ballot.ranked ? ballot.proposalIds : undefined;
   }
+
+  // A ranked ballot comes back whole, in rank order: its ids are already in
+  // hand, so one page holds every row and no cursor is needed.
+  const limit = rankedBallotIds?.length ?? input.limit ?? PAGE_LIMIT.lg;
 
   // Shared by the data and count queries; param'd on the table ref so it works
   // for both the relational `RAW` alias and the plain schema table.
@@ -207,12 +196,14 @@ export const listAllProposals = async ({
         RAW: (table) =>
           and(
             buildBaseConditions(table),
-            getCursorCondition({
-              column: table[orderBy],
-              tieBreakerColumn: table.id,
-              cursor: decodedCursor,
-              direction: dir,
-            }),
+            rankedBallotIds
+              ? undefined
+              : getCursorCondition({
+                  column: table[orderBy],
+                  tieBreakerColumn: table.id,
+                  cursor: decodedCursor,
+                  direction: dir,
+                }),
           )!,
       },
       with: {
@@ -221,10 +212,22 @@ export const listAllProposals = async ({
       },
       limit: limit + 1, // Fetch one extra to check whether there's a next page.
       // `id` tie-break: without it, rows sharing the sort value are skipped at page boundaries.
-      orderBy: (table, { asc, desc }) =>
-        dir === 'asc'
+      orderBy: (table, { asc, desc }) => {
+        if (rankedBallotIds) {
+          return [
+            asc(
+              ballotRankPosition({
+                rankedProposalIds: rankedBallotIds,
+                proposalId: table.id,
+              }),
+            ),
+            asc(table.id),
+          ];
+        }
+        return dir === 'asc'
           ? [asc(table[orderBy]), asc(table.id)]
-          : [desc(table[orderBy]), desc(table.id)],
+          : [desc(table[orderBy]), desc(table.id)];
+      },
     }),
     db
       .select({ count: countFn() })
