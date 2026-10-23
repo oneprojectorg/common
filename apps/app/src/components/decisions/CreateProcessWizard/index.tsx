@@ -8,14 +8,17 @@ import { LuArrowLeft, LuArrowRight, LuX } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
+import { ChoiceScreen } from './ChoiceScreen';
 import { STEP_HEADING_ID } from './StepHeading';
 import { applyGrantDecision, piecesFor } from './content';
 import {
   INITIAL_STATE,
   TOTAL_STEPS,
+  isChoiceScreen,
   isScreenComplete,
   nextScreen,
   progressPercent,
+  screenOf,
   stepOf,
   wizardReducer,
   type ScreenId,
@@ -26,9 +29,6 @@ import { composeOtherPieces, describeOther } from './otherContent';
 import { IntroBackdrop, IntroStep } from './steps/IntroStep';
 import { MappingStep } from './steps/MappingStep';
 import { NameAccessStep } from './steps/NameAccessStep';
-import { OtherStep } from './steps/OtherStep';
-import { GrantDecisionStep, ShapeStep } from './steps/ShapeStep';
-import { TypeStep } from './steps/TypeStep';
 import type { ProcessDraft, ProcessPiece } from './types';
 
 interface ScreenBodyProps {
@@ -222,38 +222,17 @@ function ScreenBody({
   onStart,
   onSubmit,
 }: ScreenBodyProps) {
-  switch (screen) {
+  const current = screenOf(screen);
+
+  if (isChoiceScreen(current)) {
+    return (
+      <ChoiceScreen screen={current} answers={answers} onAnswer={onAnswer} />
+    );
+  }
+
+  switch (current.id) {
     case 'intro':
       return <IntroStep onStart={onStart} />;
-    case 'type':
-      return (
-        <TypeStep
-          value={answers.type}
-          onChange={(type) => onAnswer({ type })}
-        />
-      );
-    case 'shape':
-      return answers.type ? (
-        <ShapeStep
-          type={answers.type}
-          value={answers.shape}
-          onChange={(shape) => onAnswer({ shape })}
-        />
-      ) : null;
-    case 'grantDecision':
-      return (
-        <GrantDecisionStep
-          value={answers.grantDecision}
-          onChange={(grantDecision) => onAnswer({ grantDecision })}
-        />
-      );
-    case 'subject':
-    case 'cadence':
-    case 'submits':
-    case 'decision':
-      return (
-        <OtherStep screen={screen} answers={answers} onChange={onAnswer} />
-      );
     case 'mapping':
       return <MappingStep pieces={pieces} recap={recap} />;
     case 'name':
