@@ -71,6 +71,7 @@ const NUMBERS = {
   pickSubmit: '+15005550047',
   pickUnknown: '+15005550048',
   pickUnenrolled: '+15005550049',
+  pickLimit: '+15005550050',
 } as const;
 
 const LINES = {
@@ -100,6 +101,7 @@ const LINES = {
   pickSubmit: '+16145550151',
   pickUnknown: '+16145550152',
   pickUnenrolled: '+16145550153',
+  pickLimit: '+16145550161',
 } as const;
 
 beforeEach(() => {
@@ -1417,7 +1419,7 @@ describe('handleSMSCommand building and casting the ballot', () => {
     );
   });
 
-  it('given a reviewed ballot, when the member texts SUBMIT, then the vote is cast in pick order, the draft is gone, and a second SUBMIT says the ballot is already in', async ({
+  it('given a reviewed ballot, when the member texts SUBMIT, then the vote is cast in pick order, the draft is gone, and a second SUBMIT from the shared number says the ballot is already in', async ({
     task,
     onTestFinished,
   }) => {
@@ -1468,7 +1470,6 @@ describe('handleSMSCommand building and casting the ballot', () => {
     const { result: again } = await run(
       smsInboundEvent({
         from: NUMBERS.pickSubmit,
-        to: LINES.pickSubmit,
         keyword: 'submit',
         messageSid: `SM-${task.id}-submit-again`,
       }),
@@ -1624,6 +1625,49 @@ describe('handleSMSCommand browsing: access and decision choice', () => {
     expect(result).toEqual({ message: 'next ballot page sent' });
     expect(recordedSms.at(-1)?.body).toBe(
       'Next 1:\n106 Library wifi ($30,000)\nReply INFO plus a code for details.',
+    );
+  });
+});
+
+describe('handleSMSCommand with a pick limit', () => {
+  it('given a phase that allows one pick, when the member texts a second code, then it is not added and the reply says how to make room', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsCommandFixture(task.id, onTestFinished);
+    const member = await fixture.createPhoneOnlyAccount(
+      parsePhoneNumber(NUMBERS.pickLimit),
+    );
+    const { instanceId, instanceProfileId } =
+      await fixture.createVotingInstance({
+        owner: member,
+        name: `Pick Limit ${task.id}`,
+        proposalTitles: [
+          { title: 'Crosswalk lighting', budget: 85_000 },
+          { title: 'Bike lane', budget: 310_000 },
+        ],
+        votingRules: { voterBudget: 1_000_000, maxVotesPerMember: 1 },
+      });
+    await fixture.addMember(instanceProfileId, member);
+    await fixture.bindLine(instanceId, parsePhoneNumber(LINES.pickLimit));
+    const run = (body: string) =>
+      new InngestTestEngine({ function: handleSMSCommand }).execute({
+        events: [
+          smsInboundEvent({
+            from: NUMBERS.pickLimit,
+            to: LINES.pickLimit,
+            body,
+            messageSid: `SM-${task.id}-${body}`,
+          }),
+        ],
+      });
+    await run('101');
+
+    const { result } = await run('102');
+
+    expect(result).toEqual({ message: 'pick limit reached' });
+    expect(recordedSms.at(-1)?.body).toBe(
+      '"Bike lane" was not added: your ballot already holds the most picks allowed (1). REMOVE one to add another.',
     );
   });
 });

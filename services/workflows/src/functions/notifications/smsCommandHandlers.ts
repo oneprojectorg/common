@@ -23,6 +23,8 @@ import {
   VoterNotEnrolledError,
   addSmsBallotPicks,
   affirmVoterAttestation,
+  deleteBallotDraft,
+  findLatestCastBallotInstance,
   clipSmsText,
   describeEnrolmentDecision,
   findLatestBallotDraft,
@@ -45,6 +47,7 @@ import {
   formatSmsNotOnYourBallot,
   formatSmsNothingToAffirm,
   formatSmsPickDuplicate,
+  formatSmsPickLimitReached,
   formatSmsPickMoved,
   formatSmsPickOverBudget,
   formatSmsPickRemoved,
@@ -758,18 +761,21 @@ const money = (
     ? formatSmsAmount({ amount, unit: summary.unit })
     : null;
 
-const resolveBallotInstance = async ({
-  step,
-  account,
-  line,
-}: SmsCommandContext): Promise<string | null> =>
-  line?.instanceId ??
-  (
-    await step.run('find-latest-draft', () =>
-      findLatestBallotDraft({ authUserId: account.authUserId }),
-    )
-  )?.processInstanceId ??
-  null;
+const resolveBallotInstance = async (
+  context: SmsCommandContext,
+): Promise<string | null> => {
+  const { step, account, line } = context;
+  const fromDraft = await resolveBrowseInstance(context);
+  if (fromDraft) {
+    return fromDraft;
+  }
+  return (
+    line?.instanceId ??
+    (await step.run('find-latest-cast-ballot', () =>
+      findLatestCastBallotInstance({ authUserId: account.authUserId }),
+    ))
+  );
+};
 
 const refuseUnlessReadyToPick = async (
   { step, account, deliver }: SmsCommandContext,
@@ -870,6 +876,10 @@ const pickByCodes = async (
               position: r.position,
             }),
           ];
+        case 'limit_reached':
+          return [
+            formatSmsPickLimitReached({ title: r.pick.title, limit: r.limit }),
+          ];
         case 'unknown':
           return [formatSmsProposalNotOnBallot(r.code)];
       }
@@ -880,9 +890,11 @@ const pickByCodes = async (
       ? 'picks added'
       : results.some((r) => r.status === 'over_budget')
         ? 'pick over budget'
-        : results.some((r) => r.status === 'duplicate')
-          ? 'pick repeated'
-          : 'proposal not on ballot';
+        : results.some((r) => r.status === 'limit_reached')
+          ? 'pick limit reached'
+          : results.some((r) => r.status === 'duplicate')
+            ? 'pick repeated'
+            : 'proposal not on ballot';
 
   return deliverAll(deliver, 'send-picks', 'Picks reply', lines, message);
 };
@@ -916,6 +928,7 @@ const sendBallot = async (
       allocated: money(summary, summary.allocated),
       unspent: money(summary, summary.remaining),
       review,
+      ranked: summary.ranked,
     }),
     review ? 'ballot reviewed' : 'ballot sent',
   );
@@ -1045,6 +1058,9 @@ export const submit: SmsCommandHandler = async (context) => {
 
   switch (submission.status) {
     case 'submitted':
+      await step.run('clear-ballot-draft', () =>
+        deleteBallotDraft({ authUserId: account.authUserId, instanceId }),
+      );
       await step.run('send-vote-submitted', () =>
         inngest.send({
           name: Events.voteSubmitted.name,
