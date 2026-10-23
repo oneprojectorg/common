@@ -9,6 +9,7 @@ import {
   ProposalStatus,
   decisionsVoteProposals,
   decisionsVoteSubmissions,
+  processInstances,
 } from '@op/db/schema';
 import { db, eq } from '@op/db/test';
 
@@ -24,6 +25,15 @@ const rankedBudgetSchema = {
       rules: {
         ...votingPhase.rules,
         voting: { submit: true, ranked: true, voterBudget: 1000 },
+      },
+    },
+    {
+      id: 'results',
+      name: 'Results',
+      rules: {
+        proposals: { submit: false },
+        voting: { submit: false },
+        advancement: { method: 'manual' as const },
       },
     },
   ],
@@ -193,5 +203,92 @@ test.describe('Ranked voting with a voter budget', () => {
       timeout: 30_000,
     });
     await expect(votedToggle('Downtown Mural')).toHaveText('2');
+  });
+
+  test('shows each pick on My ballot with its rank once results are in', async ({
+    authenticatedPage,
+    org,
+  }) => {
+    const template = await getSeededTemplate();
+    const { instance, slug } = await createDecisionInstance({
+      processId: template.id,
+      ownerProfileId: org.organizationProfile.id,
+      authUserId: org.adminUser.authUserId,
+      email: org.adminUser.email,
+      schema: rankedBudgetSchema,
+    });
+
+    const [bikePath, readingRoom] = await Promise.all(
+      ['Riverside Bike Path', 'Harbor Reading Room'].map((title) =>
+        createProposal({
+          processInstanceId: instance.id,
+          submittedByProfileId: org.organizationProfile.id,
+          status: ProposalStatus.SUBMITTED,
+          proposalData: { title, description: `<p>${title} details.</p>` },
+        }),
+      ),
+    );
+    if (!bikePath || !readingRoom) {
+      throw new Error('Expected both proposals to be created');
+    }
+
+    // Before the first page load: `getInstance` is cached, so a mid-test phase
+    // change would not be seen.
+    await db
+      .update(processInstances)
+      .set({ currentStateId: 'results' })
+      .where(eq(processInstances.id, instance.id));
+
+    const [submission] = await db
+      .insert(decisionsVoteSubmissions)
+      .values({
+        processInstanceId: instance.id,
+        submittedByProfileId: org.adminUser.profileId,
+        voteData: {
+          schemaVersion: '1.0.0',
+          schemaType: 'simple',
+          submissionMetadata: { timestamp: new Date().toISOString() },
+          validationSignature: 'e2e',
+        },
+      })
+      .returning({ id: decisionsVoteSubmissions.id });
+    if (!submission) {
+      throw new Error('Expected the ballot to be seeded');
+    }
+    await db.insert(decisionsVoteProposals).values([
+      { voteSubmissionId: submission.id, proposalId: readingRoom.id, rank: 1 },
+      { voteSubmissionId: submission.id, proposalId: bikePath.id, rank: 2 },
+    ]);
+
+    // Skip the post-vote survey the results screen opens over the page, by
+    // cookie as `results-proposal-tabs.spec.ts` does.
+    await authenticatedPage.context().addCookies([
+      {
+        name: `survey-skipped-${instance.id}`,
+        value: '1',
+        url: 'http://localhost:4100',
+      },
+    ]);
+
+    await authenticatedPage.goto(`/en/decisions/${slug}/current`, {
+      waitUntil: 'domcontentloaded',
+    });
+    await authenticatedPage
+      .getByRole('tablist', { name: 'Results sections' })
+      .getByRole('tab', { name: 'My ballot' })
+      .click({ timeout: 30_000 });
+
+    const ballotToggle = (title: string) =>
+      authenticatedPage
+        .getByTestId('proposal-card')
+        .filter({ hasText: title })
+        .getByRole('checkbox');
+    await expect(ballotToggle('Harbor Reading Room')).toHaveText('1', {
+      timeout: 30_000,
+    });
+    await expect(ballotToggle('Riverside Bike Path')).toHaveText('2');
+    await expect(
+      authenticatedPage.getByRole('checkbox', { name: 'Your choice number 1' }),
+    ).toBeVisible();
   });
 });

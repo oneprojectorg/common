@@ -280,7 +280,10 @@ export interface VoteSubmissionResult {
   id: string;
   processInstanceId: string;
   submittedByProfileId: string;
+  /** In rank order when `ranked`. */
   selectedProposalIds: string[];
+  /** Whether the ballot was cast on a ranked phase; outlives the phase itself. */
+  ranked: boolean;
   createdAt: Date;
   signature: string | null;
   schemaVersion: string;
@@ -500,6 +503,7 @@ export const submitVote = async ({
       processInstanceId: result.voteSubmission.processInstanceId,
       submittedByProfileId: result.voteSubmission.submittedByProfileId,
       selectedProposalIds: result.selectedProposalIds,
+      ranked: phaseConfig.ranked,
       createdAt: new Date(result.voteSubmission.createdAt!),
       signature: result.voteSubmission.signature || null,
       schemaVersion: voteData.schemaVersion,
@@ -605,6 +609,9 @@ export const getVotingStatus = async ({
             processInstanceId: voteSubmission.processInstanceId,
             submittedByProfileId: voteSubmission.submittedByProfileId,
             selectedProposalIds,
+            ranked: voteSubmission.voteProposals.some(
+              ({ rank }) => rank != null,
+            ),
             createdAt: new Date(voteSubmission.createdAt!),
             signature: voteSubmission.signature,
             schemaVersion: voteSubmission.voteData.schemaVersion,

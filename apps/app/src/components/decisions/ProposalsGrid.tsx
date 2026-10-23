@@ -6,7 +6,6 @@ import type { DecisionAccess } from '@op/api/encoders';
 import { type Proposal, isVotingEligible } from '@op/common/client';
 import { logger } from '@op/logging/client';
 import { Button } from '@op/sense/Button';
-import { Checkbox } from '@op/sense/Checkbox';
 import { Dialog, DialogContent, DialogTrigger } from '@op/sense/Dialog';
 import {
   Empty,
@@ -22,7 +21,6 @@ import {
   FooterBarEnd,
   FooterBarStart,
 } from '@op/sense/FooterBar';
-import { RankCheckbox } from '@op/sense/RankCheckbox';
 import { toast } from '@op/sense/Toast';
 import { type ComponentProps, type ReactNode, useState } from 'react';
 import { LuLeaf } from 'react-icons/lu';
@@ -36,6 +34,7 @@ import { BallotPopover } from './BallotPopover';
 import { ProposalBrowseCard } from './ProposalBrowseCard';
 import { ProposalCardMenu, ProposalCardView } from './ProposalCard';
 import { ProposalMasonry } from './ProposalMasonry';
+import { VoteCheckbox } from './VoteCheckbox';
 import { VoteSubmissionModal } from './VoteSubmissionModal';
 import { VoteSuccessModal } from './VoteSuccessModal';
 import {
@@ -283,6 +282,8 @@ const VotingProposalsList = ({
   const votingConfiguration = voteStatus?.votingConfiguration;
   const maxVotesPerMember = votingConfiguration?.maxVotesPerMember;
   const ranked = votingConfiguration?.ranked ?? false;
+  // A submitted ballot keeps its ranks after the ranked phase closes.
+  const isBallotRanked = voteStatus?.voteSubmission?.ranked ?? false;
   const budget = votingConfiguration
     ? getBallotBudget(votingConfiguration)
     : undefined;
@@ -434,7 +435,7 @@ const VotingProposalsList = ({
 
           // Ballot view: after voting, show a simpler card with clickable title
           if (isEligibleForVote && isReadOnly) {
-            const votedRank = ranked
+            const votedRank = isBallotRanked
               ? getBallotRank({ ballotIds: votedProposalIds, id: proposal.id })
               : undefined;
 
@@ -449,7 +450,7 @@ const VotingProposalsList = ({
                 aside={
                   isVotedFor ? (
                     <VoteCheckbox
-                      ranked={ranked}
+                      ranked={isBallotRanked}
                       checked
                       disabled
                       rank={votedRank}
@@ -626,22 +627,6 @@ const VotingProposalsList = ({
       />
     </>
   );
-};
-
-/** The ballot toggle on a card: a round checkbox, numbered on a ranked vote. */
-const VoteCheckbox = ({
-  ranked,
-  rank,
-  ...props
-}: ComponentProps<typeof RankCheckbox> & { ranked: boolean }) => {
-  // One component for the whole ranked vote, so picking doesn't remount it.
-  if (ranked) {
-    return <RankCheckbox rank={rank} {...props} />;
-  }
-
-  // TODO(sense-migration): sense Checkbox has no shape="circle"/borderColor;
-  // approximated with rounded-full — revisit against Figma vote design.
-  return <Checkbox {...props} className="rounded-full" />;
 };
 
 const ViewProposalsList = ({
