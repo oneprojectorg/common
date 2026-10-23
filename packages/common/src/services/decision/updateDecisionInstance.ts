@@ -141,13 +141,6 @@ export const updateDecisionInstance = async ({
     updateData.instanceData = instanceDataUpdate.instanceData;
   }
 
-  if (hasPhaseUpdates || proposalTemplate) {
-    await assertVoterCostField({
-      instanceData: instanceDataUpdate?.instanceData ?? existingInstanceData,
-      processId: existingInstance.processId,
-    });
-  }
-
   // Only update if there's something to update
   if (Object.keys(updateData).length === 0 && !hasPhaseUpdates) {
     return {
@@ -194,6 +187,16 @@ export const updateDecisionInstance = async ({
 
       // The blob mirrors the rows for the readers still on it.
       updateData.instanceData = phaseUpdate.instanceData;
+    }
+
+    // After the merge: a budget on an incoming phase needs a priced field.
+    const mergedInstanceData =
+      phaseUpdate?.instanceData ?? instanceDataUpdate?.instanceData;
+    if (mergedInstanceData && (hasPhaseUpdates || proposalTemplate)) {
+      await assertVoterCostField({
+        instanceData: mergedInstanceData,
+        processId: existingInstance.processId,
+      });
     }
 
     // Update the instance
