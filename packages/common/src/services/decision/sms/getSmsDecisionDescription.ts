@@ -1,4 +1,4 @@
-import { ProcessStatus } from '@op/db/schema';
+import { DecisionVoterEnrolmentStatus, ProcessStatus } from '@op/db/schema';
 
 import { NotFoundError } from '../../../utils';
 import { countBallotProposals } from '../countBallotProposals';
@@ -7,6 +7,7 @@ import {
   type CurrentPhaseSummary,
   summarizeCurrentPhase,
 } from '../summarizeCurrentPhase';
+import { findVoterEnrolment } from '../voterEnrolment';
 
 export interface SmsDecisionDescription extends CurrentPhaseSummary {
   name: string;
@@ -30,8 +31,16 @@ export async function getSmsDecisionDescription({
   }
 
   const { id, instanceData, currentStateId } = processInstance;
+  const enrolment = await findVoterEnrolment({
+    processInstanceId: id,
+    authUserId,
+  });
   const proposalCount = await countBallotProposals({
     instance: { id, instanceData, currentStateId },
+    boundaryId:
+      enrolment?.status === DecisionVoterEnrolmentStatus.ENROLLED
+        ? enrolment.boundaryId
+        : null,
   });
 
   return {
