@@ -1,11 +1,17 @@
 import { getTipTapClient } from '@op/collab';
 import { db, eq } from '@op/db/client';
-import { type ProcessInstance, ProposalStatus, proposals } from '@op/db/schema';
+import {
+  type ProcessInstance,
+  ProposalStatus,
+  processInstances,
+  proposals,
+} from '@op/db/schema';
 import { logger } from '@op/logging';
 import { permission } from 'access-zones';
 
 import { CommonError, NotFoundError, ValidationError } from '../../utils';
 import { assertProfileAccess } from '../assert';
+import { lockProcessInstanceOrThrow } from './lockProcessInstance';
 import { decisionPermission } from './permissions';
 import {
   normalizeLocation,
@@ -173,6 +179,17 @@ export const submitProposal = async ({
 
   // Update proposal status to submitted and re-query with profile
   const updatedProposal = await db.transaction(async (tx) => {
+    const locked = await lockProcessInstanceOrThrow({
+      db: tx,
+      instanceId: instance.id,
+    });
+    const current = await tx.query.proposals.findFirst({
+      where: { id: data.proposalId },
+      columns: { shortCode: true },
+    });
+    const assignsCode = current?.shortCode == null;
+    const shortCode = current?.shortCode ?? locked.nextShortCode;
+
     const proposalDataUpdate =
       collaborationDocVersionId != null || location || categoryLabels
         ? {
@@ -194,6 +211,7 @@ export const submitProposal = async ({
       .update(proposals)
       .set({
         status: ProposalStatus.SUBMITTED,
+        shortCode,
         ...(proposalDataUpdate ? { proposalData: proposalDataUpdate } : {}),
       })
       .where(eq(proposals.id, data.proposalId))
@@ -201,6 +219,13 @@ export const submitProposal = async ({
 
     if (!submittedProposal) {
       throw new CommonError('Failed to submit proposal');
+    }
+
+    if (assignsCode) {
+      await tx
+        .update(processInstances)
+        .set({ nextShortCode: locked.nextShortCode + 1 })
+        .where(eq(processInstances.id, instance.id));
     }
 
     // Fragments are authoritative at submit — project the validated location

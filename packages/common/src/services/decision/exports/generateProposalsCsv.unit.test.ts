@@ -44,6 +44,7 @@ const baseProposal: ProposalFromList = {
   processInstanceId: 'instance-1',
   profileId: 'profile-1',
   status: 'submitted',
+  shortCode: null,
   proposalData: { category: [], attachmentIds: [] },
   profile: { name: 'Bike lanes on Main St' },
   submittedBy: { name: 'Ada Lovelace', email: 'ada@example.com' },
@@ -692,5 +693,51 @@ describe('generateProposalsCsv custom template fields', () => {
     expect(parseSingleRow(csv)['Likelihood to recommend']).toBe(
       'Extremely likely',
     );
+  });
+});
+
+describe('generateProposalsCsv code column', () => {
+  it('exports the proposal code next to the id, as printed in the ballot guide', async () => {
+    const row = parseSingleRow(
+      await generateProposalsCsv([makeProposal({ shortCode: 214 })]),
+    );
+
+    expect(row['Code']).toBe('214');
+  });
+
+  it('exports an empty code for a draft, which has none', async () => {
+    const row = parseSingleRow(
+      await generateProposalsCsv([
+        makeProposal({ status: 'draft', shortCode: null }),
+      ]),
+    );
+
+    expect(row['Code']).toBe('');
+  });
+});
+
+describe('generateProposalsCsv custom field named like a fixed column', () => {
+  it('given a template field keyed Code, then the fixed Code column keeps the short code and the field gets its own disambiguated column', async () => {
+    const templateWithCodeField: ProposalTemplateSchema = {
+      ...template,
+      properties: {
+        ...template.properties,
+        Code: { type: 'string', title: 'Code', 'x-format': 'short-text' },
+      },
+      'x-field-order': ['title', 'budget', 'summary', 'Code'],
+    };
+
+    const row = parseSingleRow(
+      await generateProposalsCsv([
+        makeProposal({
+          shortCode: 214,
+          proposalTemplate: templateWithCodeField,
+          proposalData: { title: 'Lighting', Code: 'custom answer' },
+        }),
+      ]),
+    );
+
+    expect(row['Code']).toBe('214');
+    expect(row['Code (Code)']).toBe('custom answer');
   });
 });
