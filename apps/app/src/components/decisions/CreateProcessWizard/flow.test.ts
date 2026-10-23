@@ -3,29 +3,42 @@ import { describe, expect, it } from 'vitest';
 
 import {
   EMPTY_ANSWERS,
+  INITIAL_STATE,
   TOTAL_STEPS,
   isScreenComplete,
   nextScreen,
   previousScreen,
   progressPercent,
-  reconcileAnswers,
+  resumeWizard,
   screensFor,
+  settleAnswers,
+  shapeOf,
   stepOf,
+  wizardReducer,
   type ScreenId,
   type WizardAnswers,
+  type WizardState,
 } from './flow';
-import { EMPTY_OTHER, type OtherAnswers } from './otherFlow';
 
 const answers = (patch: Partial<WizardAnswers>): WizardAnswers => ({
   ...EMPTY_ANSWERS,
   ...patch,
 });
 
-const withFocus: OtherAnswers = {
-  ...EMPTY_OTHER,
-  subjects: ['funding', 'ideas'],
+const at = (screen: ScreenId, state: WizardAnswers): WizardState => ({
+  screen,
+  answers: state,
+});
+
+const timeline = answers({
+  type: 'other',
+  subject: { kind: 'funding' },
   cadence: 'timeline',
-};
+  submits: 'applications',
+  decision: 'vote',
+});
+
+const ongoing = answers({ ...timeline, cadence: 'ongoing', decision: null });
 
 describe('screensFor', () => {
   it('asks grantmaking who decides, after the shape', () => {
@@ -53,7 +66,7 @@ describe('screensFor', () => {
     expect(screensFor(answers({ type: 'other' }))).toEqual([
       'intro',
       'type',
-      'subjects',
+      'subject',
       'cadence',
       'submits',
       'decision',
@@ -62,40 +75,11 @@ describe('screensFor', () => {
     ]);
   });
 
-  it('asks which subject to focus on, after cadence, only for several subjects on a timeline', () => {
-    const screens = screensFor(answers({ type: 'other', other: withFocus }));
-
-    expect(screens.indexOf('focus')).toBe(screens.indexOf('cadence') + 1);
-    expect(
-      screensFor(
-        answers({
-          type: 'other',
-          other: { ...withFocus, cadence: 'ongoing' },
-        }),
-      ),
-    ).not.toContain('focus');
-    expect(
-      screensFor(
-        answers({
-          type: 'other',
-          other: { ...withFocus, subjects: ['funding'] },
-        }),
-      ),
-    ).not.toContain('focus');
-  });
-
   it('skips the decision question once the process has no end', () => {
-    expect(
-      screensFor(
-        answers({
-          type: 'other',
-          other: { ...withFocus, cadence: 'ongoing' },
-        }),
-      ),
-    ).toEqual([
+    expect(screensFor(ongoing)).toEqual([
       'intro',
       'type',
-      'subjects',
+      'subject',
       'cadence',
       'submits',
       'mapping',
@@ -111,7 +95,7 @@ describe('screensFor', () => {
     const reached = [
       answers({ type: 'grant' }),
       answers({ type: 'pb' }),
-      answers({ type: 'other', other: withFocus }),
+      timeline,
     ].flatMap(screensFor);
 
     expect(new Set(reached)).toEqual(
@@ -120,9 +104,8 @@ describe('screensFor', () => {
         'type',
         'shape',
         'grantDecision',
-        'subjects',
+        'subject',
         'cadence',
-        'focus',
         'submits',
         'decision',
         'mapping',
@@ -150,14 +133,10 @@ describe('nextScreen and previousScreen', () => {
     expect(previousScreen('mapping', grant)).toBe('grantDecision');
   });
 
-  it('skips the focus screen when it is not asked', () => {
-    const other = answers({ type: 'other', other: EMPTY_OTHER });
-
-    expect(nextScreen('cadence', other)).toBe('submits');
-    expect(previousScreen('submits', other)).toBe('cadence');
-    expect(
-      nextScreen('cadence', answers({ type: 'other', other: withFocus })),
-    ).toBe('focus');
+  it('skips the decision screen when it is not asked', () => {
+    expect(nextScreen('submits', ongoing)).toBe('mapping');
+    expect(previousScreen('mapping', ongoing)).toBe('submits');
+    expect(nextScreen('submits', timeline)).toBe('decision');
   });
 
   it('stops at either end', () => {
@@ -181,6 +160,37 @@ describe('isScreenComplete', () => {
       isScreenComplete('grantDecision', { ...shaped, grantDecision: 'rubric' }),
     ).toBe(true);
   });
+
+  it('needs words for something else', () => {
+    const picked = answers({
+      type: 'other',
+      subject: { kind: 'else', text: '' },
+    });
+
+    expect(isScreenComplete('subject', EMPTY_ANSWERS)).toBe(false);
+    expect(isScreenComplete('subject', picked)).toBe(false);
+    expect(
+      isScreenComplete('subject', {
+        ...picked,
+        subject: { kind: 'else', text: '   ' },
+      }),
+    ).toBe(false);
+    expect(
+      isScreenComplete('subject', {
+        ...picked,
+        subject: { kind: 'else', text: 'A new logo' },
+      }),
+    ).toBe(true);
+    expect(isScreenComplete('subject', timeline)).toBe(true);
+  });
+
+  it.each(['cadence', 'submits', 'decision'] as const)(
+    'needs an answer to %s',
+    (screen) => {
+      expect(isScreenComplete(screen, answers({ type: 'other' }))).toBe(false);
+      expect(isScreenComplete(screen, timeline)).toBe(true);
+    },
+  );
 
   it('holds the name screen until the name is long enough', () => {
     expect(isScreenComplete('name', answers({ name: '  ab  ' }))).toBe(false);
@@ -206,17 +216,26 @@ describe('isScreenComplete', () => {
 
 describe('progressPercent', () => {
   it.each([
-    ['with', withFocus],
-    ['without', EMPTY_OTHER],
-  ])('only moves forward through step 3, %s the focus screen', (_, other) => {
-    const bar = screensFor(answers({ type: 'other', other }))
-      .filter((screen) => stepOf(screen) === 3)
-      .map((screen) => progressPercent(screen, 'other'));
+    ['with', timeline],
+    ['without', ongoing],
+  ])(
+    'only moves forward through step 3, %s the decision screen',
+    (_, other) => {
+      const bar = screensFor(other)
+        .filter((screen) => stepOf(screen) === 3)
+        .map((screen) => progressPercent(screen, 'other'));
 
-    expect(bar).toEqual([...bar].sort((a, b) => a - b));
-    expect(new Set(bar).size).toBe(bar.length);
-    expect(bar[0]).toBeGreaterThan(progressPercent('type', 'other'));
-    expect(bar.at(-1)).toBe((3 / TOTAL_STEPS) * 100);
+      expect(bar).toEqual([...bar].sort((a, b) => a - b));
+      expect(new Set(bar).size).toBe(bar.length);
+      expect(bar[0]).toBeGreaterThan(progressPercent('type', 'other'));
+    },
+  );
+
+  it('fills step 3 only on its last possible screen', () => {
+    expect(progressPercent('decision', 'other')).toBe((3 / TOTAL_STEPS) * 100);
+    expect(progressPercent('submits', 'other')).toBeLessThan(
+      (3 / TOTAL_STEPS) * 100,
+    );
   });
 
   it('fills the bar on the last step', () => {
@@ -224,45 +243,62 @@ describe('progressPercent', () => {
   });
 });
 
-describe('reconcileAnswers', () => {
+describe('shapeOf', () => {
+  it('composes the other pathway’s shape instead of asking for one', () => {
+    expect(shapeOf(timeline)).toBe('custom');
+    expect(shapeOf(answers({ type: 'grant', shape: 'loi' }))).toBe('loi');
+  });
+});
+
+describe('settleAnswers', () => {
   it('drops a shape the new type does not offer', () => {
     expect(
-      reconcileAnswers(answers({ type: 'pb', shape: 'loi' })).shape,
+      settleAnswers(answers({ type: 'pb', shape: 'loi' })).shape,
     ).toBeNull();
-    expect(
-      reconcileAnswers(answers({ type: 'grant', shape: 'loi' })).shape,
-    ).toBe('loi');
-  });
-
-  it('gives the other pathway its composed shape', () => {
-    expect(
-      reconcileAnswers(answers({ type: 'other', shape: 'single' })).shape,
-    ).toBe('custom');
+    expect(settleAnswers(answers({ type: 'grant', shape: 'loi' })).shape).toBe(
+      'loi',
+    );
   });
 
   it('keeps who decides for grantmaking only', () => {
     expect(
-      reconcileAnswers(answers({ type: 'grant', grantDecision: 'hybrid' }))
+      settleAnswers(answers({ type: 'grant', grantDecision: 'hybrid' }))
         .grantDecision,
     ).toBe('hybrid');
     expect(
-      reconcileAnswers(answers({ type: 'pb', grantDecision: 'hybrid' }))
+      settleAnswers(answers({ type: 'pb', grantDecision: 'hybrid' }))
         .grantDecision,
     ).toBeNull();
   });
 
   it('empties the other answers once another type is picked', () => {
-    expect(
-      reconcileAnswers(answers({ type: 'pb', other: withFocus })).other,
-    ).toEqual(EMPTY_OTHER);
+    expect(settleAnswers({ ...timeline, type: 'pb' }, timeline)).toEqual(
+      answers({ type: 'pb' }),
+    );
   });
 
-  it('drops the composed shape when the other pathway is left', () => {
-    const other = answers({ type: 'other', shape: 'custom', other: withFocus });
-
+  it('drops the decision once the process has no end', () => {
     expect(
-      reconcileAnswers({ ...other, type: 'grant' }, other).shape,
+      settleAnswers({ ...timeline, cadence: 'ongoing' }, timeline).decision,
     ).toBeNull();
+  });
+
+  it('drops a submission the subject does not offer, with nothing to compare against', () => {
+    expect(
+      settleAnswers({ ...timeline, submits: 'nominations' }).submits,
+    ).toBeNull();
+    expect(settleAnswers(timeline).submits).toBe('applications');
+  });
+
+  it('drops what is submitted when the subject changes, even to one offering the same key', () => {
+    expect(
+      settleAnswers({ ...timeline, subject: { kind: 'people' } }, timeline)
+        .submits,
+    ).toBeNull();
+  });
+
+  it('keeps what is submitted when the subject is picked again', () => {
+    expect(settleAnswers(timeline, timeline).submits).toBe('applications');
   });
 
   it('keeps every answer when the same type is picked again', () => {
@@ -272,6 +308,74 @@ describe('reconcileAnswers', () => {
       grantDecision: 'applicants',
     });
 
-    expect(reconcileAnswers(answered, answered)).toEqual(answered);
+    expect(settleAnswers(answered, answered)).toEqual(answered);
+  });
+});
+
+describe('wizardReducer', () => {
+  it('settles each answer against the ones before it', () => {
+    const state = wizardReducer(at('subject', timeline), {
+      type: 'answer',
+      patch: { subject: { kind: 'people' } },
+    });
+
+    expect(state.screen).toBe('subject');
+    expect(state.answers.subject).toEqual({ kind: 'people' });
+    expect(state.answers.submits).toBeNull();
+  });
+
+  it('holds the screen until it is complete', () => {
+    expect(wizardReducer(INITIAL_STATE, { type: 'next' }).screen).toBe('type');
+    expect(
+      wizardReducer(at('type', EMPTY_ANSWERS), { type: 'next' }).screen,
+    ).toBe('type');
+  });
+
+  it('walks forward and back through the screens these answers ask', () => {
+    expect(wizardReducer(at('submits', ongoing), { type: 'next' }).screen).toBe(
+      'mapping',
+    );
+    expect(wizardReducer(at('mapping', ongoing), { type: 'back' }).screen).toBe(
+      'submits',
+    );
+  });
+
+  it('stays put at either end', () => {
+    expect(wizardReducer(INITIAL_STATE, { type: 'back' })).toBe(INITIAL_STATE);
+
+    const last = at('name', { ...timeline, name: 'Grants 2026' });
+
+    expect(wizardReducer(last, { type: 'next' })).toBe(last);
+  });
+});
+
+describe('resumeWizard', () => {
+  it('resumes where the creator left off when every answer is there', () => {
+    expect(resumeWizard(at('mapping', timeline)).screen).toBe('mapping');
+  });
+
+  it('sends a creator with no process type back to choosing one', () => {
+    expect(
+      resumeWizard(at('mapping', answers({ shape: 'single' }))).screen,
+    ).toBe('type');
+  });
+
+  it("drops a shape that isn't one of the type's and asks for it again", () => {
+    const resumed = resumeWizard(
+      at('grantDecision', answers({ type: 'pb', shape: 'loi' })),
+    );
+
+    expect(resumed.answers.shape).toBeNull();
+    expect(resumed.screen).toBe('shape');
+  });
+
+  it('stops at the first unanswered question inside step three', () => {
+    expect(
+      resumeWizard(at('name', { ...timeline, submits: null })).screen,
+    ).toBe('submits');
+  });
+
+  it('pulls a screen these answers do not ask back to the one before it', () => {
+    expect(resumeWizard(at('decision', ongoing)).screen).toBe('submits');
   });
 });

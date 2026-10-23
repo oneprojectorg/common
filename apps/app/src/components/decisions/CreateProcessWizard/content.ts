@@ -1,5 +1,6 @@
 import type {
   Choice,
+  GrantDecision,
   GrantShape,
   PbShape,
   PhaseType,
@@ -288,8 +289,6 @@ export function piecesFor(
 
   return isPieceSetKey(key) ? PIECE_SETS[key] : [];
 }
-
-export type GrantDecision = 'rubric' | 'applicants' | 'hybrid';
 
 export const GRANT_DECISION_QUESTION: {
   heading: WizardCopyKey;

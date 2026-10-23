@@ -2,48 +2,22 @@ import { type ReactNode, createElement } from 'react';
 
 import type { TranslateFn } from '@/lib/i18n';
 
-import type { Choice, ProcessPiece, WizardCopyKey } from './types';
+import type {
+  Cadence,
+  Choice,
+  Decision,
+  ProcessPiece,
+  Subject,
+  SubjectAnswer,
+  SubmitKey,
+  WizardAnswers,
+  WizardCopyKey,
+} from './types';
 
-export type Subject = 'funding' | 'ideas' | 'people' | 'else';
-
-export type Cadence = 'timeline' | 'ongoing';
-
-export type SubmitKey =
-  | 'applications'
-  | 'proposals'
-  | 'rough'
-  | 'nominations'
-  | 'none';
-
-export type Decision = 'vote' | 'review' | 'both' | 'agree';
-
-export interface OtherAnswers {
-  subjects: Subject[];
-  elseText: string;
-  focus: Subject | null;
-  cadence: Cadence | null;
-  submits: SubmitKey | null;
-  decision: Decision | null;
-}
-
-export const EMPTY_OTHER: OtherAnswers = {
-  subjects: [],
-  elseText: '',
-  focus: null,
-  cadence: null,
-  submits: null,
-  decision: null,
-};
-
-export const OTHER_STEPS = [
-  'subjects',
-  'cadence',
-  'focus',
-  'submits',
-  'decision',
-] as const;
-
-export type OtherStep = (typeof OTHER_STEPS)[number];
+export type OtherAnswers = Pick<
+  WizardAnswers,
+  'subject' | 'cadence' | 'submits' | 'decision'
+>;
 
 export const SUBJECT_OPTIONS: Choice<Subject>[] = [
   {
@@ -189,104 +163,15 @@ export const DECISION_OPTIONS: Choice<Decision>[] = [
   },
 ];
 
-export const needsFocus = ({ subjects, cadence }: OtherAnswers): boolean =>
-  subjects.length > 1 && cadence === 'timeline';
-
-/**
- * `submits` also clears when the active subject changes: a key is labelled per
- * subject. An always-open process asks no decision question, so it clears too.
- */
-export function reconcileOther(
-  next: OtherAnswers,
-  previous?: OtherAnswers,
-): OtherAnswers {
-  const settled: OtherAnswers = {
-    ...next,
-    decision: next.cadence === 'ongoing' ? null : next.decision,
-    elseText: next.subjects.includes('else') ? next.elseText : '',
-    focus:
-      next.focus && needsFocus(next) && next.subjects.includes(next.focus)
-        ? next.focus
-        : null,
-  };
-  const subject = activeSubject(settled);
-  const isOffered = SUBMIT_OPTIONS[subject].some(
-    (option) => option.key === settled.submits,
-  );
-  const subjectChanged =
-    previous !== undefined && activeSubject(previous) !== subject;
-
-  return {
-    ...settled,
-    submits: isOffered && !subjectChanged ? settled.submits : null,
-  };
-}
-
-export function otherCanContinue(
-  step: OtherStep,
-  answers: OtherAnswers,
-): boolean {
-  switch (step) {
-    case 'subjects':
-      return (
-        answers.subjects.length > 0 &&
-        (!answers.subjects.includes('else') ||
-          answers.elseText.trim().length > 0)
-      );
-    case 'focus':
-      return !!answers.focus;
-    case 'cadence':
-      return !!answers.cadence;
-    case 'submits':
-      return !!answers.submits;
-    case 'decision':
-      return !!answers.decision;
-  }
-}
-
-/** Several subjects at once read as `else`. */
-export function activeSubject(answers: OtherAnswers): Subject {
-  if (answers.focus) {
-    return answers.focus;
-  }
-
-  const [only] = answers.subjects;
-
-  if (answers.subjects.length === 1 && only) {
-    return only;
-  }
-
-  return 'else';
-}
-
 export function subjectPhrase(
-  answers: OtherAnswers,
+  subject: SubjectAnswer | null,
   t: TranslateFn<'decisions.createWizard'>,
-  locale: string,
 ): string {
-  const named = (subject: Subject) =>
-    subject === 'else' && answers.elseText.trim()
-      ? answers.elseText.trim()
-      : t(SUBJECT_NOUN[subject]);
-
-  if (answers.focus) {
-    return named(answers.focus);
+  if (subject?.kind === 'else' && subject.text.trim()) {
+    return subject.text.trim();
   }
 
-  const [only] = answers.subjects;
-
-  if (answers.subjects.length === 1 && only) {
-    return named(only);
-  }
-
-  if (answers.subjects.length === 0) {
-    return t(SUBJECT_NOUN.else);
-  }
-
-  return new Intl.ListFormat(locale, {
-    style: 'long',
-    type: 'conjunction',
-  }).format(answers.subjects.map(named));
+  return t(SUBJECT_NOUN[subject?.kind ?? 'else']);
 }
 
 const INTAKE_NAME: Record<SubmitKey, WizardCopyKey> = {
@@ -321,7 +206,6 @@ const REVIEW_CAPABILITIES: WizardCopyKey[] = [
 ];
 
 export function composeOtherPieces(answers: OtherAnswers): ProcessPiece[] {
-  const subject = activeSubject(answers);
   const submits = answers.submits ?? 'none';
 
   if (answers.cadence === 'ongoing') {
@@ -405,7 +289,7 @@ export function composeOtherPieces(answers: OtherAnswers): ProcessPiece[] {
 
   if (decision === 'vote' || decision === 'both') {
     pieces.push({
-      name: subject === 'people' ? 'holdVote' : 'putVote',
+      name: answers.subject?.kind === 'people' ? 'holdVote' : 'putVote',
       phaseName: 'votePhase',
       phaseType: 'voting',
       description: 'groupVoteDescription',
@@ -450,9 +334,8 @@ const DECISION_RECAP: Record<Decision, WizardCopyKey> = {
 export function describeOther(
   answers: OtherAnswers,
   t: TranslateFn<'decisions.createWizard'>,
-  locale: string,
 ): ReactNode {
-  const subject = subjectPhrase(answers, t, locale);
+  const subject = subjectPhrase(answers.subject, t);
   const bdi = (chunks: ReactNode) => createElement('bdi', null, chunks);
 
   if (answers.cadence === 'ongoing') {
