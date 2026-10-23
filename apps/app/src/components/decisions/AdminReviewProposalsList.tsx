@@ -67,7 +67,6 @@ export function AdminReviewProposalsList({
             permissions={access}
             currentPhase={currentPhase}
             pinOffset={pinOffset}
-            compactSearch
             renderTable={({ proposals, emptyState }) => (
               <ProposalReviewProgressTable
                 proposals={proposals}

@@ -15,7 +15,6 @@ export interface ProposalsStickyFilterBarProps {
   count: number;
   /** Unfiltered count for the phase — the "of N" pool. */
   total: number;
-  compactSearch?: boolean;
   /**
    * Absent when the phase hides proposals from non-admins: a plain label
    * replaces the count and no filters render.
@@ -42,7 +41,6 @@ export interface ProposalsStickyFilterBarProps {
 export const ProposalsStickyFilterBar = ({
   count,
   total,
-  compactSearch,
   controls,
   view,
   exportControl,
@@ -56,7 +54,6 @@ export const ProposalsStickyFilterBar = ({
         view={view}
         count={count}
         total={total}
-        compactSearch={compactSearch}
         exportControl={exportControl}
         leadingSelect={leadingSelect}
       />

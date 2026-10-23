@@ -91,7 +91,6 @@ export interface ProposalsListProps {
    * filter comes from this rather than the URL.
    */
   pinnedFilter?: ProposalFilter;
-  compactSearch?: boolean;
   /** Adds a table view, offered first and shown by default. */
   renderTable?: (props: {
     proposals: Proposal[];
@@ -289,7 +288,6 @@ const ProposalsListContent = ({
   currentPhase,
   proposalsHidden,
   excludeAssignedForReview,
-  compactSearch,
   renderTable,
   pinOffset,
   phase,
@@ -615,7 +613,6 @@ const ProposalsListContent = ({
         pinOffset={pinOffset}
         count={total}
         total={totalProposalCount}
-        compactSearch={compactSearch}
         // Omitted when the phase hides proposals from non-admins.
         controls={hideFilters ? undefined : controls}
         leadingSelect={leadingSelect}

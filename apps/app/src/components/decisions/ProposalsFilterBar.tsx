@@ -1,7 +1,6 @@
 'use client';
 
 import { Header3 } from '@op/sense/Header';
-import { cn } from '@op/sense/lib/utils';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -106,7 +105,6 @@ export const ProposalsFilterBar = ({
   view,
   count,
   total,
-  compactSearch = false,
   exportControl,
   leadingSelect,
 }: {
@@ -116,7 +114,6 @@ export const ProposalsFilterBar = ({
   count: number;
   /** Unfiltered count for the phase — the "of N" pool. */
   total: number;
-  compactSearch?: boolean;
   /** Admin-only CSV export control; omitted entirely for non-admins. */
   exportControl?: React.ReactNode;
   leadingSelect: ProposalSelectControl;
@@ -131,7 +128,7 @@ export const ProposalsFilterBar = ({
       <div className="flex flex-wrap items-center justify-between gap-4 max-2xl:w-full 2xl:flex-1">
         <ProposalsListHeader count={count} total={total} />
         <ProposalSearchField
-          className={cn('ms-auto', compactSearch && 'md:w-56')}
+          className="ms-auto"
           value={controls.search}
           onChange={controls.setSearch}
           isPending={controls.isSearchPending}
