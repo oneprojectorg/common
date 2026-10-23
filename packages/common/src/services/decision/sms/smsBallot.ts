@@ -5,10 +5,15 @@ import type { AmountUnit } from '@op/types/amountUnit';
 import {
   ValidationError,
   VoteOutsideDistrictError,
+  VoteRevisionNotAllowedError,
   VoterNotEnrolledError,
 } from '../../../utils';
 import { getIndividualProfileId } from '../../access';
-import { ensureBallotDraft } from '../ballotDraft';
+import {
+  ensureBallotDraft,
+  findBallotDraft,
+  markBallotDraftReopened,
+} from '../ballotDraft';
 import { getFieldUnit, isAtMost, sumAmounts } from '../fieldUnit';
 import { getBallotProposalByCode } from '../getBallotProposalByCode';
 import { getProposalCosts } from '../getProposalCosts';
@@ -20,7 +25,8 @@ import {
   getVoterCostField,
   isRankedVoting,
 } from '../utils/phaseSettings';
-import { submitVote } from '../voting';
+import { reviseVote, submitVote } from '../voting';
+import { describeEnrolmentDecision } from './getSmsVotingDecision';
 import { loadBallotScope } from './smsBallotBrowse';
 
 export interface SmsBallotPick {
@@ -141,13 +147,13 @@ export async function summarizeSmsBallot(
 ): Promise<SmsBallotSummary> {
   const scope = await loadBallotScope(key);
   const [draft, pricing] = await Promise.all([
-    ensureBallotDraft({
+    findBallotDraft({
       processInstanceId: key.instanceId,
       authUserId: key.authUserId,
     }),
     loadPricing(scope.instance),
   ]);
-  const rows = await loadPickRows(draft.picks);
+  const rows = await loadPickRows(draft?.picks ?? []);
   const costs = await priceRows(rows, pricing);
 
   return summarize(scope, pricing, rows, costs);
@@ -344,39 +350,107 @@ export async function moveSmsBallotPick({
   return { change: { status: 'moved', position: target + 1, pick }, summary };
 }
 
+const findCastBallot = async ({ authUserId, instanceId }: BallotKey) => {
+  const profileId = await getIndividualProfileId(authUserId);
+  const existing = await db.query.decisionsVoteSubmissions.findFirst({
+    where: { processInstanceId: instanceId, submittedByProfileId: profileId },
+    columns: { id: true, voteData: true },
+  });
+  return existing ?? null;
+};
+
+export interface SmsBallotState {
+  submitted: boolean;
+  reopened: boolean;
+}
+
+export async function getSmsBallotState(
+  key: BallotKey,
+): Promise<SmsBallotState> {
+  const [cast, draft] = await Promise.all([
+    findCastBallot(key),
+    findBallotDraft({
+      processInstanceId: key.instanceId,
+      authUserId: key.authUserId,
+    }),
+  ]);
+  return { submitted: cast !== null, reopened: draft?.reopenedAt != null };
+}
+
+export type SmsBallotReopen =
+  | { status: 'reopened'; summary: SmsBallotSummary }
+  | { status: 'no_ballot' }
+  | { status: 'not_allowed' }
+  | { status: 'voting_closed' };
+
+export async function reopenSmsBallot(
+  key: BallotKey,
+): Promise<SmsBallotReopen> {
+  const cast = await findCastBallot(key);
+
+  if (!cast) {
+    return { status: 'no_ballot' };
+  }
+
+  const decision = await describeEnrolmentDecision({
+    instanceId: key.instanceId,
+  });
+
+  if (!decision.votingOpen) {
+    return { status: 'voting_closed' };
+  }
+
+  if (!decision.canEditVotes) {
+    return { status: 'not_allowed' };
+  }
+
+  await ensureBallotDraft({
+    processInstanceId: key.instanceId,
+    authUserId: key.authUserId,
+  });
+  await markBallotDraftReopened({
+    processInstanceId: key.instanceId,
+    authUserId: key.authUserId,
+  });
+  await savePicks(
+    key,
+    (cast.voteData.selections ?? []).map((selection) => selection.proposalId),
+  );
+
+  return { status: 'reopened', summary: await summarizeSmsBallot(key) };
+}
+
 export type SmsBallotSubmission =
-  | { status: 'submitted'; voteSubmissionId: string }
+  | { status: 'submitted' | 'revised'; voteSubmissionId: string }
   | { status: 'already_submitted' }
   | { status: 'empty' }
   | { status: 'not_enrolled' }
   | { status: 'outside_district' }
+  | { status: 'not_allowed' }
   | { status: 'refused'; reason: string };
 
 export async function submitSmsBallot({
   authUserId,
   instanceId,
 }: BallotKey): Promise<SmsBallotSubmission> {
-  const profileId = await getIndividualProfileId(authUserId);
-  const existing = await db.query.decisionsVoteSubmissions.findFirst({
-    where: { processInstanceId: instanceId, submittedByProfileId: profileId },
-    columns: { id: true },
-  });
+  const key = { authUserId, instanceId };
+  const [cast, draft] = await Promise.all([
+    findCastBallot(key),
+    findBallotDraft({ processInstanceId: instanceId, authUserId }),
+  ]);
 
-  if (existing) {
+  if (cast && draft?.reopenedAt == null) {
     return { status: 'already_submitted' };
   }
 
-  const draft = await ensureBallotDraft({
-    processInstanceId: instanceId,
-    authUserId,
-  });
-
-  if (draft.picks.length === 0) {
+  if (!draft || draft.picks.length === 0) {
     return { status: 'empty' };
   }
 
+  const write = cast ? reviseVote : submitVote;
+
   try {
-    const result = await submitVote({
+    const result = await write({
       data: {
         processInstanceId: instanceId,
         selectedProposalIds: draft.picks,
@@ -384,8 +458,14 @@ export async function submitSmsBallot({
       },
       authUserId,
     });
-    return { status: 'submitted', voteSubmissionId: result.id };
+    return {
+      status: cast ? 'revised' : 'submitted',
+      voteSubmissionId: result.id,
+    };
   } catch (error) {
+    if (error instanceof VoteRevisionNotAllowedError) {
+      return { status: 'not_allowed' };
+    }
     if (error instanceof VoterNotEnrolledError) {
       return { status: 'not_enrolled' };
     }

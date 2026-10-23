@@ -10,6 +10,7 @@ import { getInstancePhases } from '../schemas/instanceData';
 import type { VoterEnrolmentRule } from '../schemas/types';
 import { getInstanceCurrentPhase } from '../utils/instance';
 import {
+  canEditVotes,
   getVoterBudget,
   getVoterCostField,
   getVoterEnrolment,
@@ -20,6 +21,7 @@ export interface SmsVotingDecision {
   instanceId: string;
   name: string;
   votingOpen: boolean;
+  canEditVotes: boolean;
   enrolment: Required<VoterEnrolmentRule> | null;
   budget: string | null;
 }
@@ -53,6 +55,7 @@ const summarizeVotingInstance = async (
     instanceId: instance.id,
     name,
     votingOpen: phase ? isVotingPhase(phase) : false,
+    canEditVotes: phase ? canEditVotes(phase) : false,
     enrolment: (phase && getVoterEnrolment(phase)) ?? null,
     budget:
       voterBudget !== undefined && unit

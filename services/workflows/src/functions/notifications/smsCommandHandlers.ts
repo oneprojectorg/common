@@ -2,9 +2,14 @@ import {
   type Geocode,
   NotFoundError,
   SMS_BALLOT_ALREADY_SUBMITTED_MESSAGE,
+  SMS_BALLOT_CHANGE_FIRST_MESSAGE,
+  SMS_BALLOT_CHANGE_NOT_ALLOWED_MESSAGE,
   SMS_BALLOT_EMPTY_SUBMIT_MESSAGE,
   SMS_BALLOT_NEEDS_DECISION_MESSAGE,
+  SMS_BALLOT_NOT_CAST_MESSAGE,
+  SMS_BALLOT_REOPENED_MESSAGE,
   SMS_BALLOT_SUBMITTED_MESSAGE,
+  SMS_BALLOT_UPDATED_MESSAGE,
   SMS_BROWSE_END_MESSAGE,
   SMS_BROWSE_LAST_FOOTER,
   SMS_BROWSE_MORE_FOOTER,
@@ -58,6 +63,7 @@ import {
   formatSmsRegisterFirst,
   formatSmsVotingClosed,
   getSmsBallotProposal,
+  getSmsBallotState,
   getSmsDecisionDescription,
   getSmsVotingDecision,
   hashAttestation,
@@ -65,6 +71,7 @@ import {
   listSmsDecisions,
   moveSmsBallotPick,
   removeSmsBallotPick,
+  reopenSmsBallot,
   resolveVoterAddress,
   startVoterEnrolment,
   submitSmsBallot,
@@ -841,6 +848,11 @@ const pickByCodes = async (
     return refused;
   }
 
+  const castAndClosed = await refuseUntilChange(context, instanceId);
+  if (castAndClosed) {
+    return castAndClosed;
+  }
+
   const { results, summary, hadPicks } = await step.run(
     'add-ballot-picks',
     () =>
@@ -899,6 +911,24 @@ const pickByCodes = async (
   return deliverAll(deliver, 'send-picks', 'Picks reply', lines, message);
 };
 
+const refuseUntilChange = async (
+  { step, account, deliver }: SmsCommandContext,
+  instanceId: string,
+): Promise<SmsCommandResult | null> => {
+  const state = await step.run('ballot-state', () =>
+    getSmsBallotState({ authUserId: account.authUserId, instanceId }),
+  );
+  return state.submitted && !state.reopened
+    ? deliverAll(
+        deliver,
+        'send-change-first',
+        'Change first reply',
+        [SMS_BALLOT_CHANGE_FIRST_MESSAGE],
+        'ballot already in',
+      )
+    : null;
+};
+
 const sendBallot = async (
   context: SmsCommandContext,
   review: boolean,
@@ -908,6 +938,11 @@ const sendBallot = async (
 
   if (!instanceId) {
     return ballotNeedsDecision(deliver);
+  }
+
+  const castAndClosed = await refuseUntilChange(context, instanceId);
+  if (castAndClosed) {
+    return castAndClosed;
   }
 
   const summary = await step.run('summarize-ballot', () =>
@@ -958,6 +993,11 @@ export const remove: SmsCommandHandler = async (context) => {
   const instanceId = await resolveBallotInstance(context);
   if (!instanceId) {
     return ballotNeedsDecision(deliver);
+  }
+
+  const castAndClosed = await refuseUntilChange(context, instanceId);
+  if (castAndClosed) {
+    return castAndClosed;
   }
 
   const { change, summary } = await step.run('remove-ballot-pick', () =>
@@ -1013,6 +1053,11 @@ export const move: SmsCommandHandler = async (context) => {
     return ballotNeedsDecision(deliver);
   }
 
+  const castAndClosed = await refuseUntilChange(context, instanceId);
+  if (castAndClosed) {
+    return castAndClosed;
+  }
+
   const { change } = await step.run('move-ballot-pick', () =>
     moveSmsBallotPick({
       authUserId: account.authUserId,
@@ -1058,12 +1103,14 @@ export const submit: SmsCommandHandler = async (context) => {
 
   switch (submission.status) {
     case 'submitted':
+    case 'revised': {
+      const revised = submission.status === 'revised';
       await step.run('clear-ballot-draft', () =>
         deleteBallotDraft({ authUserId: account.authUserId, instanceId }),
       );
-      await step.run('send-vote-submitted', () =>
+      await step.run('send-vote-event', () =>
         inngest.send({
-          name: Events.voteSubmitted.name,
+          name: revised ? Events.voteRevised.name : Events.voteSubmitted.name,
           data: {
             voteSubmissionId: submission.voteSubmissionId,
             processInstanceId: instanceId,
@@ -1072,11 +1119,12 @@ export const submit: SmsCommandHandler = async (context) => {
       );
       return deliverAll(
         deliver,
-        'send-ballot-submitted',
-        'Ballot submitted reply',
-        [SMS_BALLOT_SUBMITTED_MESSAGE],
-        'ballot submitted',
+        revised ? 'send-ballot-updated' : 'send-ballot-submitted',
+        revised ? 'Ballot updated reply' : 'Ballot submitted reply',
+        [revised ? SMS_BALLOT_UPDATED_MESSAGE : SMS_BALLOT_SUBMITTED_MESSAGE],
+        revised ? 'ballot revised' : 'ballot submitted',
       );
+    }
     case 'already_submitted':
       return deliverAll(
         deliver,
@@ -1113,6 +1161,14 @@ export const submit: SmsCommandHandler = async (context) => {
         ['A pick is outside your district. Text LIST, then REMOVE its code.'],
         'ballot outside district',
       );
+    case 'not_allowed':
+      return deliverAll(
+        deliver,
+        'send-change-not-allowed',
+        'Change not allowed reply',
+        [SMS_BALLOT_CHANGE_NOT_ALLOWED_MESSAGE],
+        'change not allowed',
+      );
     case 'refused':
       return deliverAll(
         deliver,
@@ -1121,5 +1177,72 @@ export const submit: SmsCommandHandler = async (context) => {
         [formatSmsBallotRefused(submission.reason)],
         'ballot refused',
       );
+  }
+};
+
+export const change: SmsCommandHandler = async (context) => {
+  const { step, account, deliver } = context;
+  const instanceId = await resolveBallotInstance(context);
+
+  if (!instanceId) {
+    return ballotNeedsDecision(deliver);
+  }
+
+  const reopened = await step.run('reopen-ballot', () =>
+    reopenSmsBallot({ authUserId: account.authUserId, instanceId }),
+  );
+
+  switch (reopened.status) {
+    case 'no_ballot':
+      return deliverAll(
+        deliver,
+        'send-ballot-not-cast',
+        'Ballot not cast reply',
+        [SMS_BALLOT_NOT_CAST_MESSAGE],
+        'no ballot to change',
+      );
+    case 'voting_closed': {
+      const decision = await step.run('describe-ballot-decision', () =>
+        describeEnrolmentDecision({ instanceId }),
+      );
+      return deliverAll(
+        deliver,
+        'send-voting-closed',
+        'Voting closed reply',
+        formatSmsVotingClosed(decision.name),
+        'voting closed',
+      );
+    }
+    case 'not_allowed':
+      return deliverAll(
+        deliver,
+        'send-change-not-allowed',
+        'Change not allowed reply',
+        [SMS_BALLOT_CHANGE_NOT_ALLOWED_MESSAGE],
+        'change not allowed',
+      );
+    case 'reopened': {
+      const { summary } = reopened;
+      return deliverAll(
+        deliver,
+        'send-ballot-reopened',
+        'Ballot reopened reply',
+        [
+          SMS_BALLOT_REOPENED_MESSAGE,
+          ...formatSmsBallot({
+            scope: formatSmsBallotScope(summary),
+            picks: summary.picks.map((pick, index) => ({
+              position: index + 1,
+              title: pick.title,
+              cost: money(summary, pick.cost),
+            })),
+            allocated: money(summary, summary.allocated),
+            unspent: money(summary, summary.remaining),
+            review: false,
+          }),
+        ],
+        'ballot reopened',
+      );
+    }
   }
 };

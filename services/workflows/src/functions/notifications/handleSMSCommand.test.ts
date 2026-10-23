@@ -72,6 +72,11 @@ const NUMBERS = {
   pickUnknown: '+15005550048',
   pickUnenrolled: '+15005550049',
   pickLimit: '+15005550050',
+  changeReopen: '+15005550030',
+  changeRevise: '+15005550031',
+  changeOff: '+15005550032',
+  changeNoBallot: '+15005550033',
+  changeFirst: '+15005550034',
 } as const;
 
 const LINES = {
@@ -102,6 +107,11 @@ const LINES = {
   pickUnknown: '+16145550152',
   pickUnenrolled: '+16145550153',
   pickLimit: '+16145550161',
+  changeReopen: '+16145550154',
+  changeRevise: '+16145550155',
+  changeOff: '+16145550156',
+  changeNoBallot: '+16145550157',
+  changeFirst: '+16145550158',
 } as const;
 
 beforeEach(() => {
@@ -1669,5 +1679,259 @@ describe('handleSMSCommand with a pick limit', () => {
     expect(recordedSms.at(-1)?.body).toBe(
       '"Bike lane" was not added: your ballot already holds the most picks allowed (1). REMOVE one to add another.',
     );
+  });
+});
+
+describe('handleSMSCommand changing a cast ballot', () => {
+  beforeEach(() => {
+    vi.spyOn(inngest, 'send').mockResolvedValue({ ids: [] });
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  const PROPOSALS = [
+    { title: 'Crosswalk lighting', budget: 85_000 },
+    { title: 'Bike lane', budget: 310_000 },
+    { title: 'Speed humps', budget: 45_000 },
+  ];
+
+  const seed = async (
+    fixture: SmsCommandFixture,
+    {
+      phone,
+      line,
+      name,
+      edit,
+    }: { phone: string; line: string; name: string; edit: boolean },
+  ) => {
+    const member = await fixture.createPhoneOnlyAccount(
+      parsePhoneNumber(phone),
+    );
+    const { instanceId, instanceProfileId } =
+      await fixture.createVotingInstance({
+        owner: member,
+        name,
+        proposalTitles: PROPOSALS,
+        votingRules: {
+          voterBudget: 1_000_000,
+          maxVotesPerMember: 10,
+          ranked: true,
+          edit,
+        },
+      });
+    await fixture.addMember(instanceProfileId, member);
+    await fixture.bindLine(instanceId, parsePhoneNumber(line));
+    return { member, instanceId };
+  };
+
+  const run = (event: ReturnType<typeof smsInboundEvent>) =>
+    new InngestTestEngine({ function: handleSMSCommand }).execute({
+      events: [event],
+    });
+  const text = (from: string, to: string, body: string) =>
+    run(smsInboundEvent({ from, to, body, messageSid: `SM-${from}-${body}` }));
+  const keyword = (
+    from: string,
+    to: string,
+    kw: 'submit' | 'change' | 'remove' | 'list' | 'proposals',
+    argument: string | null = null,
+    tag = '',
+  ) =>
+    run(
+      smsInboundEvent({
+        from,
+        to,
+        keyword: kw,
+        argument,
+        messageSid: `SM-${from}-${kw}-${argument ?? ''}${tag}`,
+      }),
+    );
+
+  it('given a cast ballot in a phase that allows changes, when the member texts CHANGE, then the ballot reopens and is listed', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsCommandFixture(task.id, onTestFinished);
+    const name = `Change Reopen ${task.id}`;
+    await seed(fixture, {
+      phone: NUMBERS.changeReopen,
+      line: LINES.changeReopen,
+      name,
+      edit: true,
+    });
+    await text(NUMBERS.changeReopen, LINES.changeReopen, '101 102');
+    await keyword(NUMBERS.changeReopen, LINES.changeReopen, 'submit');
+
+    const { result } = await keyword(
+      NUMBERS.changeReopen,
+      LINES.changeReopen,
+      'change',
+    );
+
+    expect(result).toEqual({ message: 'ballot reopened' });
+    expect(recordedSms.slice(-2).map((sms) => sms.body)).toEqual([
+      'Your ballot is open for changes. Text codes to add, REMOVE or MOVE to adjust, then SUBMIT.',
+      [
+        `Your "${name}" ballot:`,
+        '1. Crosswalk lighting $85,000.',
+        '2. Bike lane $310,000.',
+        '$395,000 allocated, $605,000 unspent.',
+        'Text DONE to review, or a code to add.',
+      ].join('\n'),
+    ]);
+  });
+
+  it('given a reopened ballot, when the member removes a pick and texts SUBMIT, then the cast ballot is revised in place and a revised event is sent', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsCommandFixture(task.id, onTestFinished);
+    const { instanceId } = await seed(fixture, {
+      phone: NUMBERS.changeRevise,
+      line: LINES.changeRevise,
+      name: `Change Revise ${task.id}`,
+      edit: true,
+    });
+    await text(NUMBERS.changeRevise, LINES.changeRevise, '101 102');
+    await keyword(NUMBERS.changeRevise, LINES.changeRevise, 'submit');
+    await keyword(NUMBERS.changeRevise, LINES.changeRevise, 'change');
+    await keyword(NUMBERS.changeRevise, LINES.changeRevise, 'remove', '101');
+
+    const { result } = await keyword(
+      NUMBERS.changeRevise,
+      LINES.changeRevise,
+      'submit',
+      null,
+      '-again',
+    );
+
+    expect(result).toEqual({ message: 'ballot revised' });
+    expect(recordedSms.at(-1)?.body).toBe(
+      'Your ballot is updated. One ballot per person. How you vote is never public.',
+    );
+    const proposals = await db.query.proposals.findMany({
+      where: { processInstanceId: instanceId },
+      columns: { id: true, shortCode: true },
+    });
+    const submissions = await db.query.decisionsVoteSubmissions.findMany({
+      where: { processInstanceId: instanceId },
+      columns: { id: true, voteData: true },
+    });
+    expect(submissions).toHaveLength(1);
+    expect(
+      submissions[0]!.voteData.selections?.map((s) => s.proposalId),
+    ).toEqual([proposals.find((p) => p.shortCode === 102)!.id]);
+    expect(inngest.send).toHaveBeenCalledWith(
+      expect.objectContaining({ name: Events.voteRevised.name }),
+    );
+    await expect(
+      db.query.decisionBallotDrafts.findFirst({
+        where: { processInstanceId: instanceId },
+      }),
+    ).resolves.toBeUndefined();
+  });
+
+  it('given a phase that does not allow changes, when the member texts CHANGE after SUBMIT, then they are told the ballot cannot be changed', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsCommandFixture(task.id, onTestFinished);
+    await seed(fixture, {
+      phone: NUMBERS.changeOff,
+      line: LINES.changeOff,
+      name: `Change Off ${task.id}`,
+      edit: false,
+    });
+    await text(NUMBERS.changeOff, LINES.changeOff, '101');
+    await keyword(NUMBERS.changeOff, LINES.changeOff, 'submit');
+
+    const { result } = await keyword(
+      NUMBERS.changeOff,
+      LINES.changeOff,
+      'change',
+    );
+
+    expect(result).toEqual({ message: 'change not allowed' });
+    expect(recordedSms.at(-1)?.body).toBe(
+      'This decision does not allow a cast ballot to be changed.',
+    );
+  });
+
+  it('given no cast ballot, when the member texts CHANGE, then they are told to start one', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsCommandFixture(task.id, onTestFinished);
+    await seed(fixture, {
+      phone: NUMBERS.changeNoBallot,
+      line: LINES.changeNoBallot,
+      name: `Change No Ballot ${task.id}`,
+      edit: true,
+    });
+
+    const { result } = await keyword(
+      NUMBERS.changeNoBallot,
+      LINES.changeNoBallot,
+      'change',
+    );
+
+    expect(result).toEqual({ message: 'no ballot to change' });
+    expect(recordedSms.map((sms) => sms.body)).toEqual([
+      'You have not cast a ballot yet. Text a code from your guide to start one.',
+    ]);
+  });
+
+  it('given a cast ballot, when the member browses and then texts a code, LIST or SUBMIT without CHANGE, then the cast ballot stands and they are told to text CHANGE', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsCommandFixture(task.id, onTestFinished);
+    const { instanceId } = await seed(fixture, {
+      phone: NUMBERS.changeFirst,
+      line: LINES.changeFirst,
+      name: `Change First ${task.id}`,
+      edit: true,
+    });
+    await text(NUMBERS.changeFirst, LINES.changeFirst, '101');
+    await keyword(NUMBERS.changeFirst, LINES.changeFirst, 'submit');
+    await keyword(NUMBERS.changeFirst, LINES.changeFirst, 'proposals');
+
+    const { result: picked } = await text(
+      NUMBERS.changeFirst,
+      LINES.changeFirst,
+      '102',
+    );
+    const { result: listed } = await keyword(
+      NUMBERS.changeFirst,
+      LINES.changeFirst,
+      'list',
+    );
+    const { result: submitted } = await keyword(
+      NUMBERS.changeFirst,
+      LINES.changeFirst,
+      'submit',
+    );
+
+    expect(picked).toEqual({ message: 'ballot already in' });
+    expect(listed).toEqual({ message: 'ballot already in' });
+    expect(submitted).toEqual({ message: 'ballot already submitted' });
+    expect(recordedSms.slice(-3).map((sms) => sms.body)).toEqual([
+      'Your ballot is in. Text CHANGE to revise it.',
+      'Your ballot is in. Text CHANGE to revise it.',
+      'Your ballot is already in. One ballot per person.',
+    ]);
+    const proposals = await db.query.proposals.findMany({
+      where: { processInstanceId: instanceId },
+      columns: { id: true, shortCode: true },
+    });
+    const submission = await db.query.decisionsVoteSubmissions.findFirst({
+      where: { processInstanceId: instanceId },
+      columns: { voteData: true },
+    });
+    expect(submission?.voteData.selections?.map((s) => s.proposalId)).toEqual([
+      proposals.find((p) => p.shortCode === 101)?.id,
+    ]);
   });
 });
