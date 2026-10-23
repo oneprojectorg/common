@@ -1,9 +1,10 @@
-import { formatUnitAmount, getFieldUnit } from './fieldUnit';
+import { formatSmsAmount } from '../sms/formatSmsAmount';
+import { getFieldUnit } from './fieldUnit';
 import { getProposalCosts } from './getProposalCosts';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
 import { getInstancePhases } from './schemas/instanceData';
 import { getInstanceCurrentPhase } from './utils/instance';
-import { getVoterBudget, getVoterCostField } from './utils/phaseSettings';
+import { getVoterCostField } from './utils/phaseSettings';
 
 export interface BallotInstance {
   id: string;
@@ -28,7 +29,7 @@ export async function priceBallotProposals({
   const unpriced = new Map(proposals.map(({ id }) => [id, null]));
   const phase = findCurrentPhase(instance);
 
-  if (!phase || getVoterBudget(phase) === undefined) {
+  if (!phase) {
     return unpriced;
   }
 
@@ -58,7 +59,7 @@ export async function priceBallotProposals({
         id,
         amount === null || amount === undefined
           ? null
-          : formatUnitAmount({ amount, unit }),
+          : formatSmsAmount({ amount, unit }),
       ];
     }),
   );
