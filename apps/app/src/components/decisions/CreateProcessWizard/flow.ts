@@ -3,96 +3,105 @@ import {
   PROCESS_NAME_MIN_LENGTH,
 } from '@op/common/client';
 
-import { SHAPE_QUESTION, type GrantDecision } from './content';
-import {
-  EMPTY_OTHER,
-  OTHER_STEPS,
-  needsFocus,
-  otherCanContinue,
-  reconcileOther,
-  type OtherAnswers,
-  type OtherStep,
-} from './otherFlow';
-import type { ProcessType, ShapeKey } from './types';
+import { SHAPE_QUESTION } from './content';
+import { SUBMIT_OPTIONS } from './otherContent';
+import type { Choice, ProcessType, ShapeKey, WizardAnswers } from './types';
+
+export type { WizardAnswers } from './types';
 
 export const TOTAL_STEPS = 5;
-
-export interface WizardAnswers {
-  type: ProcessType | null;
-  shape: ShapeKey | null;
-  grantDecision: GrantDecision | null;
-  other: OtherAnswers;
-  name: string;
-}
 
 export const EMPTY_ANSWERS: WizardAnswers = {
   type: null,
   shape: null,
   grantDecision: null,
-  other: EMPTY_OTHER,
+  subject: null,
+  cadence: null,
+  submits: null,
+  decision: null,
   name: '',
 };
 
-export type ScreenId =
-  | 'intro'
-  | 'type'
-  | 'shape'
-  | 'grantDecision'
-  | OtherStep
-  | 'mapping'
-  | 'name';
+type AnswerKey = keyof WizardAnswers;
 
-interface Screen {
+interface ScreenRules {
   step: number;
   /** Omitted for a screen every type shows. */
   types?: ProcessType[];
   /** Whether the answers so far call for it, beyond its type. */
   isAsked?: (answers: WizardAnswers) => boolean;
-  isComplete: (answers: WizardAnswers) => boolean;
 }
 
-const SCREEN: Record<ScreenId, Screen> = {
-  intro: { step: 1, isComplete: () => true },
-  type: { step: 2, isComplete: ({ type }) => !!type },
-  shape: {
+/** A screen with nothing to answer. */
+interface Walkthrough extends ScreenRules {
+  id: 'intro' | 'mapping';
+}
+
+interface Question<K extends AnswerKey> extends ScreenRules {
+  id: K;
+  /** Defaults to an answer being present. */
+  isComplete?: (answers: WizardAnswers) => boolean;
+  /**
+   * The answer that still fits the settled earlier answers. `previous` is the
+   * state the change was made to, for a rule that must clear on any change.
+   */
+  reconcile?: (
+    answers: WizardAnswers,
+    previous?: WizardAnswers,
+  ) => WizardAnswers[K];
+}
+
+type Screen = Walkthrough | { [K in AnswerKey]: Question<K> }[AnswerKey];
+
+export type ScreenId = Screen['id'];
+
+const offered = <K extends string>(
+  options: Choice<K>[] | undefined,
+  answer: K | null,
+): K | null =>
+  options?.some((option) => option.key === answer) ? answer : null;
+
+/** In order. A screen is asked when its type and `isAsked` allow; an unasked answer clears. */
+const SCREENS: Screen[] = [
+  { id: 'intro', step: 1 },
+  { id: 'type', step: 2 },
+  {
+    id: 'shape',
     step: 3,
     types: ['grant', 'pb'],
-    isComplete: ({ shape }) => !!shape,
+    reconcile: ({ type, shape }) =>
+      offered(type ? SHAPE_QUESTION[type]?.options : undefined, shape),
   },
-  grantDecision: {
-    step: 3,
-    types: ['grant'],
-    isComplete: ({ grantDecision }) => !!grantDecision,
-  },
-  subjects: {
+  { id: 'grantDecision', step: 3, types: ['grant'] },
+  {
+    id: 'subject',
     step: 3,
     types: ['other'],
-    isComplete: ({ other }) => otherCanContinue('subjects', other),
+    isComplete: ({ subject }) =>
+      subject !== null &&
+      (subject.kind !== 'else' || subject.text.trim().length > 0),
   },
-  cadence: {
+  { id: 'cadence', step: 3, types: ['other'] },
+  {
+    id: 'submits',
     step: 3,
     types: ['other'],
-    isComplete: ({ other }) => otherCanContinue('cadence', other),
+    // A key is labelled per subject, so a new subject clears it even when offering the same key.
+    reconcile: ({ subject, submits }, previous) =>
+      subject === null ||
+      (previous !== undefined && previous.subject?.kind !== subject.kind)
+        ? null
+        : offered(SUBMIT_OPTIONS[subject.kind], submits),
   },
-  focus: {
+  {
+    id: 'decision',
     step: 3,
     types: ['other'],
-    isAsked: ({ other }) => needsFocus(other),
-    isComplete: ({ other }) => otherCanContinue('focus', other),
+    isAsked: ({ cadence }) => cadence !== 'ongoing',
   },
-  submits: {
-    step: 3,
-    types: ['other'],
-    isComplete: ({ other }) => otherCanContinue('submits', other),
-  },
-  decision: {
-    step: 3,
-    types: ['other'],
-    isAsked: ({ other }) => other.cadence !== 'ongoing',
-    isComplete: ({ other }) => otherCanContinue('decision', other),
-  },
-  mapping: { step: 4, isComplete: () => true },
-  name: {
+  { id: 'mapping', step: 4 },
+  {
+    id: 'name',
     step: 5,
     isComplete: ({ name }) => {
       const length = name.trim().length;
@@ -102,83 +111,90 @@ const SCREEN: Record<ScreenId, Screen> = {
       );
     },
   },
-};
-
-const SCREEN_ORDER: ScreenId[] = [
-  'intro',
-  'type',
-  'shape',
-  'grantDecision',
-  ...OTHER_STEPS,
-  'mapping',
-  'name',
 ];
 
-export const isOtherScreen = (screen: ScreenId): screen is OtherStep =>
-  OTHER_STEPS.some((step) => step === screen);
+const isQuestion = (screen: Screen): screen is Exclude<Screen, Walkthrough> =>
+  screen.id !== 'intro' && screen.id !== 'mapping';
 
-export const stepOf = (screen: ScreenId): number => SCREEN[screen].step;
+function screenOf(id: ScreenId): Screen {
+  const screen = SCREENS.find((candidate) => candidate.id === id);
 
-export const isScreenComplete = (
-  screen: ScreenId,
-  answers: WizardAnswers,
-): boolean => SCREEN[screen].isComplete(answers);
+  if (!screen) {
+    throw new Error(`Unknown wizard screen: ${id}`);
+  }
 
-function isForType(screen: ScreenId, type: ProcessType | null): boolean {
-  const { types } = SCREEN[screen];
-
-  return !types || (type !== null && types.includes(type));
+  return screen;
 }
 
-function isAsked(screen: ScreenId, answers: WizardAnswers): boolean {
-  return (
-    isForType(screen, answers.type) &&
-    (SCREEN[screen].isAsked?.(answers) ?? true)
-  );
+function isForType(screen: ScreenRules, type: ProcessType | null): boolean {
+  return !screen.types || (type !== null && screen.types.includes(type));
+}
+
+function isAsked(screen: ScreenRules, answers: WizardAnswers): boolean {
+  return isForType(screen, answers.type) && (screen.isAsked?.(answers) ?? true);
+}
+
+export const stepOf = (id: ScreenId): number => screenOf(id).step;
+
+export function isScreenComplete(
+  id: ScreenId,
+  answers: WizardAnswers,
+): boolean {
+  const screen = screenOf(id);
+
+  if (!isQuestion(screen)) {
+    return true;
+  }
+
+  return screen.isComplete?.(answers) ?? answers[screen.id] !== null;
 }
 
 /** The screens these answers lead through, in order. */
 export function screensFor(answers: WizardAnswers): ScreenId[] {
-  return SCREEN_ORDER.filter((screen) => isAsked(screen, answers));
+  return SCREENS.filter((screen) => isAsked(screen, answers)).map(
+    (screen) => screen.id,
+  );
 }
 
+const indexOf = (id: ScreenId): number =>
+  SCREENS.findIndex((screen) => screen.id === id);
+
 export function nextScreen(
-  screen: ScreenId,
+  id: ScreenId,
   answers: WizardAnswers,
 ): ScreenId | null {
   return (
-    SCREEN_ORDER.slice(SCREEN_ORDER.indexOf(screen) + 1).find((candidate) =>
-      isAsked(candidate, answers),
-    ) ?? null
+    SCREENS.slice(indexOf(id) + 1).find((screen) => isAsked(screen, answers))
+      ?.id ?? null
   );
 }
 
 export function previousScreen(
-  screen: ScreenId,
+  id: ScreenId,
   answers: WizardAnswers,
 ): ScreenId | null {
   return (
-    SCREEN_ORDER.slice(0, SCREEN_ORDER.indexOf(screen))
+    SCREENS.slice(0, indexOf(id))
       .reverse()
-      .find((candidate) => isAsked(candidate, answers)) ?? null
+      .find((screen) => isAsked(screen, answers))?.id ?? null
   );
 }
 
 /** Step 3 divides by every screen the type could ask, so an answer that adds one can't move the bar backwards. */
 export function progressPercent(
-  screen: ScreenId,
+  id: ScreenId,
   type: ProcessType | null,
 ): number {
-  const step = stepOf(screen);
+  const step = stepOf(id);
 
   if (step !== 3) {
     return (step / TOTAL_STEPS) * 100;
   }
 
-  const slots = SCREEN_ORDER.filter(
-    (candidate) => stepOf(candidate) === 3 && isForType(candidate, type),
+  const slots = SCREENS.filter(
+    (screen) => screen.step === 3 && isForType(screen, type),
   );
-  const slot = slots.indexOf(screen);
+  const slot = slots.findIndex((screen) => screen.id === id);
 
   if (slot < 0) {
     return (2 / TOTAL_STEPS) * 100;
@@ -187,38 +203,99 @@ export function progressPercent(
   return ((2 + (slot + 1) / slots.length) / TOTAL_STEPS) * 100;
 }
 
-/** Run on every change; `previous` is the reconciled state the change was made to. */
-export function reconcileAnswers(
+/** The other pathway composes its shape from its questions instead of asking. */
+export const shapeOf = ({ type, shape }: WizardAnswers): ShapeKey | null =>
+  type === 'other' ? 'custom' : shape;
+
+/**
+ * Settles the answers screen by screen, so each rule sees the earlier answers
+ * already settled. `previous` is the settled state the change was made to.
+ */
+export function settleAnswers(
   next: WizardAnswers,
   previous?: WizardAnswers,
 ): WizardAnswers {
-  const { type } = next;
-
-  return {
-    ...next,
-    shape: fittingShape(type, next.shape),
-    grantDecision: type === 'grant' ? next.grantDecision : null,
-    other:
-      type === 'other'
-        ? reconcileOther(
-            next.other,
-            previous?.type === 'other' ? previous.other : undefined,
-          )
-        : EMPTY_OTHER,
-  };
+  return SCREENS.reduce(
+    (settled, screen) =>
+      isQuestion(screen) ? settle(settled, screen, previous) : settled,
+    next,
+  );
 }
 
-function fittingShape(
-  type: ProcessType | null,
-  shape: ShapeKey | null,
-): ShapeKey | null {
-  if (type === 'other') {
-    return 'custom';
+function settle<K extends AnswerKey>(
+  answers: WizardAnswers,
+  question: Question<K>,
+  previous: WizardAnswers | undefined,
+): WizardAnswers {
+  const value = !isAsked(question, answers)
+    ? EMPTY_ANSWERS[question.id]
+    : question.reconcile
+      ? question.reconcile(answers, previous)
+      : answers[question.id];
+
+  return { ...answers, [question.id]: value };
+}
+
+export interface WizardState {
+  screen: ScreenId;
+  answers: WizardAnswers;
+}
+
+export const INITIAL_STATE: WizardState = {
+  screen: 'intro',
+  answers: EMPTY_ANSWERS,
+};
+
+export type WizardEvent =
+  | { type: 'answer'; patch: Partial<WizardAnswers> }
+  | { type: 'next' }
+  | { type: 'back' };
+
+export function wizardReducer(
+  state: WizardState,
+  event: WizardEvent,
+): WizardState {
+  switch (event.type) {
+    case 'answer':
+      return {
+        ...state,
+        answers: settleAnswers(
+          { ...state.answers, ...event.patch },
+          state.answers,
+        ),
+      };
+    case 'next': {
+      if (!isScreenComplete(state.screen, state.answers)) {
+        return state;
+      }
+
+      const screen = nextScreen(state.screen, state.answers);
+
+      return screen ? { ...state, screen } : state;
+    }
+    case 'back': {
+      const screen = previousScreen(state.screen, state.answers);
+
+      return screen ? { ...state, screen } : state;
+    }
   }
+}
 
-  const fits =
-    type !== null &&
-    !!SHAPE_QUESTION[type]?.options.some((option) => option.key === shape);
+/**
+ * Pulls saved progress back to the first unanswered question, so answers from
+ * an older wizard can't land the creator past one.
+ */
+export function resumeWizard(saved: WizardState): WizardState {
+  const answers = settleAnswers(saved.answers);
+  const screens = screensFor(answers);
+  const target = screens.includes(saved.screen)
+    ? saved.screen
+    : (previousScreen(saved.screen, answers) ?? 'intro');
+  const screen =
+    screens.find(
+      (candidate) =>
+        candidate === target || !isScreenComplete(candidate, answers),
+    ) ?? target;
 
-  return fits ? shape : null;
+  return { screen, answers };
 }

@@ -7,18 +7,22 @@ import english from '@/lib/i18n/dictionaries/en.json';
 
 import {
   DECISION_OPTIONS,
-  EMPTY_OTHER,
   SUBMIT_OPTIONS,
   composeOtherPieces,
   describeOther,
-  otherCanContinue,
-  reconcileOther,
   subjectPhrase,
   type OtherAnswers,
-} from './otherFlow';
+} from './otherContent';
+
+const EMPTY: OtherAnswers = {
+  subject: null,
+  cadence: null,
+  submits: null,
+  decision: null,
+};
 
 const answers = (patch: Partial<OtherAnswers>): OtherAnswers => ({
-  ...EMPTY_OTHER,
+  ...EMPTY,
   ...patch,
 });
 
@@ -35,75 +39,14 @@ const markup = (node: ReactNode) => renderToStaticMarkup(<>{node}</>);
 const phases = (input: OtherAnswers) =>
   composeOtherPieces(input).map((piece) => piece.phaseType);
 
-describe('reconcileOther', () => {
-  const twoOnTimeline = answers({
-    subjects: ['funding', 'people'],
-    cadence: 'timeline',
-    focus: 'people',
-    submits: 'nominations',
-  });
-
-  it('keeps answers the others still support', () => {
-    expect(reconcileOther(twoOnTimeline, twoOnTimeline)).toEqual(twoOnTimeline);
-  });
-
-  it('drops the focus, and what it asked for, once the process has no end', () => {
-    const ongoing = reconcileOther(
-      { ...twoOnTimeline, cadence: 'ongoing', decision: 'vote' },
-      twoOnTimeline,
-    );
-
-    expect(ongoing.focus).toBeNull();
-    expect(ongoing.submits).toBeNull();
-    expect(ongoing.decision).toBeNull();
-  });
-
-  it('drops a focus that is no longer among the subjects', () => {
-    expect(
-      reconcileOther(
-        { ...twoOnTimeline, subjects: ['funding', 'ideas'] },
-        twoOnTimeline,
-      ).focus,
-    ).toBeNull();
-  });
-
-  it('keeps what is submitted when one subject remains and it was the focus', () => {
-    const narrowed = reconcileOther(
-      { ...twoOnTimeline, subjects: ['people'] },
-      twoOnTimeline,
-    );
-
-    expect(narrowed.focus).toBeNull();
-    expect(narrowed.submits).toBe('nominations');
-  });
-
-  it('drops what is submitted when the subject changes, even to one offering the same key', () => {
-    const funding = answers({ subjects: ['funding'], submits: 'applications' });
-
-    expect(
-      reconcileOther({ ...funding, subjects: ['people'] }, funding).submits,
-    ).toBeNull();
-  });
-
-  it('drops a submission the subject does not offer, with nothing to compare against', () => {
-    expect(
-      reconcileOther(answers({ subjects: ['funding'], submits: 'nominations' }))
-        .submits,
-    ).toBeNull();
-  });
-
-  it('drops the words for something else once it is unticked', () => {
-    expect(
-      reconcileOther(answers({ subjects: ['funding'], elseText: 'A new logo' }))
-        .elseText,
-    ).toBe('');
-  });
-});
-
 describe('composeOtherPieces', () => {
   it('maps an always-open process to a single open-ended intake', () => {
     const pieces = composeOtherPieces(
-      answers({ subjects: ['ideas'], cadence: 'ongoing', decision: 'agree' }),
+      answers({
+        subject: { kind: 'ideas' },
+        cadence: 'ongoing',
+        decision: 'agree',
+      }),
     );
 
     expect(pieces).toHaveLength(1);
@@ -184,72 +127,38 @@ describe('composeOtherPieces', () => {
 
     expect(intake?.capabilities).toContain('letPeopleCommentLikeShow');
   });
-});
 
-describe('otherCanContinue', () => {
-  it('needs at least one subject', () => {
-    expect(otherCanContinue('subjects', EMPTY_OTHER)).toBe(false);
-    expect(
-      otherCanContinue('subjects', answers({ subjects: ['funding'] })),
-    ).toBe(true);
-  });
+  it('holds a vote on people rather than putting them to one', () => {
+    const vote = (subject: OtherAnswers['subject']) =>
+      composeOtherPieces(
+        answers({ subject, cadence: 'timeline', decision: 'vote' }),
+      ).find((piece) => piece.phaseType === 'voting')?.name;
 
-  it('needs words for something else', () => {
-    const picked = answers({ subjects: ['funding', 'else'] });
-
-    expect(otherCanContinue('subjects', picked)).toBe(false);
-    expect(otherCanContinue('subjects', { ...picked, elseText: '   ' })).toBe(
-      false,
-    );
-    expect(
-      otherCanContinue('subjects', { ...picked, elseText: 'A new logo' }),
-    ).toBe(true);
-  });
-
-  it.each([
-    ['focus', { focus: 'funding' }],
-    ['cadence', { cadence: 'timeline' }],
-    ['submits', { submits: 'none' }],
-    ['decision', { decision: 'agree' }],
-  ] as const)('needs an answer to %s', (step, answer) => {
-    expect(otherCanContinue(step, EMPTY_OTHER)).toBe(false);
-    expect(otherCanContinue(step, answers(answer))).toBe(true);
+    expect(vote({ kind: 'people' })).toBe('holdVote');
+    expect(vote({ kind: 'funding' })).toBe('putVote');
   });
 });
 
 describe('subjectPhrase', () => {
-  it('names a single subject', () => {
-    expect(subjectPhrase(answers({ subjects: ['funding'] }), t, 'en')).toBe(
+  it('names the subject', () => {
+    expect(subjectPhrase({ kind: 'funding' }, t)).toBe(
       english.decisions.createWizard.subjectFundingNoun,
     );
   });
 
-  it('joins several subjects as a list', () => {
-    expect(
-      subjectPhrase(answers({ subjects: ['funding', 'ideas'] }), t, 'en'),
-    ).toBe(
-      `${english.decisions.createWizard.subjectFundingNoun} and ${english.decisions.createWizard.subjectIdeasNoun}`,
+  it('speaks something else in the user’s own words', () => {
+    expect(subjectPhrase({ kind: 'else', text: '  A new logo ' }, t)).toBe(
+      'A new logo',
     );
   });
 
-  it('names only the focus when one is picked', () => {
-    expect(
-      subjectPhrase(
-        answers({ subjects: ['funding', 'ideas'], focus: 'ideas' }),
-        t,
-        'en',
-      ),
-    ).toBe(english.decisions.createWizard.subjectIdeasNoun);
-  });
-
-  it('speaks something else in the user’s own words', () => {
-    expect(
-      subjectPhrase(
-        answers({ subjects: ['else'], elseText: '  A new logo ' }),
-        t,
-        'en',
-      ),
-    ).toBe('A new logo');
+  it('falls back to the generic noun with nothing picked or written', () => {
+    expect(subjectPhrase(null, t)).toBe(
+      english.decisions.createWizard.subjectElseNoun,
+    );
+    expect(subjectPhrase({ kind: 'else', text: '  ' }, t)).toBe(
+      english.decisions.createWizard.subjectElseNoun,
+    );
   });
 });
 
@@ -258,9 +167,8 @@ describe('describeOther', () => {
     expect(
       markup(
         describeOther(
-          answers({ subjects: ['funding'], cadence: 'ongoing' }),
+          answers({ subject: { kind: 'funding' }, cadence: 'ongoing' }),
           t,
-          'en',
         ),
       ),
     ).toMatch(/^Deciding on <bdi>funding<\/bdi>, always open/);
@@ -270,13 +178,12 @@ describe('describeOther', () => {
     const recap = markup(
       describeOther(
         answers({
-          subjects: ['funding'],
+          subject: { kind: 'funding' },
           cadence: 'timeline',
           submits: 'proposals',
           decision: 'vote',
         }),
         t,
-        'en',
       ),
     );
 
@@ -291,12 +198,10 @@ describe('describeOther', () => {
       markup(
         describeOther(
           answers({
-            subjects: ['else'],
-            elseText: 'مكان جديد!',
+            subject: { kind: 'else', text: 'مكان جديد!' },
             cadence: 'ongoing',
           }),
           t,
-          'en',
         ),
       ),
     ).toContain('<bdi>مكان جديد!</bdi>');
@@ -318,8 +223,10 @@ describe('every process the other questions compose', () => {
     '%s, %s, %s, decided by %s',
     (cadence, subject, submits, decision) => {
       const input = answers({
-        subjects: [subject],
-        elseText: subject === 'else' ? 'A new logo' : '',
+        subject:
+          subject === 'else'
+            ? { kind: 'else', text: 'A new logo' }
+            : { kind: subject },
         cadence,
         submits,
         decision,
@@ -339,7 +246,7 @@ describe('every process the other questions compose', () => {
       expect(keys.filter((key) => key !== undefined && !(key in copy))).toEqual(
         [],
       );
-      expect(markup(describeOther(input, t, 'en'))).not.toMatch(/[{}]/);
+      expect(markup(describeOther(input, t))).not.toMatch(/[{}]/);
     },
   );
 });

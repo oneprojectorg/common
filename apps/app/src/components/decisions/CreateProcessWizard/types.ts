@@ -18,6 +18,37 @@ export type OtherShape = 'custom' | 'blank';
 
 export type ShapeKey = GrantShape | PbShape | OtherShape;
 
+export type GrantDecision = 'rubric' | 'applicants' | 'hybrid';
+
+export type Subject = 'funding' | 'ideas' | 'people' | 'else';
+
+/** Something else is named in the creator's own words. */
+export type SubjectAnswer =
+  | { kind: Exclude<Subject, 'else'> }
+  | { kind: 'else'; text: string };
+
+export type Cadence = 'timeline' | 'ongoing';
+
+export type SubmitKey =
+  | 'applications'
+  | 'proposals'
+  | 'rough'
+  | 'nominations'
+  | 'none';
+
+export type Decision = 'vote' | 'review' | 'both' | 'agree';
+
+export interface WizardAnswers {
+  type: ProcessType | null;
+  shape: ShapeKey | null;
+  grantDecision: GrantDecision | null;
+  subject: SubjectAnswer | null;
+  cadence: Cadence | null;
+  submits: SubmitKey | null;
+  decision: Decision | null;
+  name: string;
+}
+
 export type PhaseType = 'submissions' | 'review' | 'voting' | 'results';
 
 export interface ProcessPiece {
