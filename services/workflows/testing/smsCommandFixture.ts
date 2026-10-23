@@ -80,9 +80,16 @@ const votingSchema: DecisionSchemaDefinition = {
   ],
 };
 
-const withEnrolment = (
+export interface FixtureVotingRules {
+  enrolment?: VoterEnrolmentRule;
+  voterBudget?: number;
+  maxVotesPerMember?: number;
+  ranked?: boolean;
+}
+
+const withVotingRules = (
   schema: DecisionSchemaDefinition,
-  enrolment: VoterEnrolmentRule,
+  rules: FixtureVotingRules,
 ): DecisionSchemaDefinition => {
   const withRule = (phase: DecisionSchemaDefinition['phases'][number]) =>
     phase.id === VOTING_PHASE_ID
@@ -90,7 +97,7 @@ const withEnrolment = (
           ...phase,
           rules: {
             ...phase.rules,
-            voting: { ...phase.rules?.voting, enrolment },
+            voting: { ...phase.rules?.voting, ...rules },
           },
         }
       : phase;
@@ -126,6 +133,7 @@ export class SmsCommandFixture {
     name,
     currentPhaseId = VOTING_PHASE_ID,
     enrolment,
+    votingRules,
     ownerIsAdmin = false,
   }: {
     owner: FixtureAccount;
@@ -133,12 +141,15 @@ export class SmsCommandFixture {
     name?: string;
     currentPhaseId?: string;
     enrolment?: VoterEnrolmentRule;
+    votingRules?: FixtureVotingRules;
     /** Grant the owner the decision's admin role, as the web creator gets; the default leaves them a plain member. */
     ownerIsAdmin?: boolean;
   }) {
-    const schema = enrolment
-      ? withEnrolment(votingSchema, enrolment)
-      : votingSchema;
+    const rules = { ...votingRules, ...(enrolment ? { enrolment } : {}) };
+    const schema =
+      Object.keys(rules).length > 0
+        ? withVotingRules(votingSchema, rules)
+        : votingSchema;
     const process = await createDecisionProcess({
       createdByProfileId: owner.profileId,
       schema,

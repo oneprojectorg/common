@@ -6,7 +6,8 @@ import {
 } from '@op/common';
 import { db } from '@op/db/client';
 import { ProcessStatus } from '@op/db/schema';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { Events, inngest } from '@op/events';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { memoryGeocoder } from '../../../testing/mocks/geocoder';
 import {
@@ -59,6 +60,16 @@ const NUMBERS = {
   browseClosed: '+15005550066',
   infoStranger: '+15005550067',
   browseOtherSlug: '+15005550068',
+  pickFirst: '+15005550040',
+  pickTwo: '+15005550041',
+  pickOver: '+15005550042',
+  pickList: '+15005550043',
+  pickRemove: '+15005550044',
+  pickMove: '+15005550045',
+  pickDone: '+15005550046',
+  pickSubmit: '+15005550047',
+  pickUnknown: '+15005550048',
+  pickUnenrolled: '+15005550049',
   browseOtherLine: '+15005550069',
   browseUnpublished: '+15005550059',
   browseRewritten: '+15005550057',
@@ -86,6 +97,16 @@ const LINES = {
   browseClosed: '+16145550143',
   infoStranger: '+16145550159',
   browseOtherSlug: '+16145550160',
+  pickFirst: '+16145550144',
+  pickTwo: '+16145550145',
+  pickOver: '+16145550146',
+  pickList: '+16145550147',
+  pickRemove: '+16145550148',
+  pickMove: '+16145550149',
+  pickDone: '+16145550150',
+  pickSubmit: '+16145550151',
+  pickUnknown: '+16145550152',
+  pickUnenrolled: '+16145550153',
   browseOtherLineA: '+16145550192',
   browseOtherLineB: '+16145550193',
   browseUnpublished: '+16145550194',
@@ -320,7 +341,7 @@ describe('handleSMSCommand against the database', () => {
     ]);
   });
 
-  it('given a text that is a signup code, even from a number that is already confirmed, then the command function sends nothing because signup owns code replies', async ({
+  it('given a text that is only digits from a confirmed account, then it is read as proposal codes rather than a signup code, and with no decision known the member is told to text PROPOSALS first', async ({
     task,
     onTestFinished,
   }) => {
@@ -336,12 +357,15 @@ describe('handleSMSCommand against the database', () => {
           keyword: null,
           argument: null,
           code: '123456',
+          body: '123456',
         }),
       ],
     });
 
-    expect(result).toEqual({ message: 'signup code, left to signup' });
-    expect(recordedSms).toEqual([]);
+    expect(result).toEqual({ message: 'ballot needs a decision' });
+    expect(recordedSms.map((sms) => sms.body)).toEqual([
+      'Text PROPOSALS and a decision name first, then pick by code.',
+    ]);
   });
 
   it('given a member texts JOIN, then they are told they already have an account and how to see their decisions', async ({
@@ -1306,6 +1330,371 @@ describe('handleSMSCommand browsing the ballot', () => {
     expect(result).toEqual({ message: 'voting closed' });
     expect(recordedSms.map((sms) => sms.body)).toEqual([
       `Voting is not open for "${name}".`,
+    ]);
+  });
+});
+
+describe('handleSMSCommand building and casting the ballot', () => {
+  beforeEach(() => {
+    vi.spyOn(inngest, 'send').mockResolvedValue({ ids: [] });
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  const PROPOSALS = [
+    { title: 'Crosswalk lighting', budget: 85_000 },
+    { title: 'Bike lane', budget: 310_000 },
+    { title: 'Speed humps', budget: 45_000 },
+    { title: 'Bus shelters', budget: 60_000 },
+    { title: 'Alley lighting', budget: 120_000 },
+    { title: 'Tree planting', budget: 150_000 },
+    { title: 'Main St resurfacing', budget: 950_000 },
+  ];
+
+  const seed = async (
+    fixture: SmsCommandFixture,
+    {
+      phone,
+      line,
+      name,
+      enrolment,
+    }: {
+      phone: string;
+      line: string;
+      name: string;
+      enrolment?: { attestation: string; boundary: boolean };
+    },
+  ) => {
+    const member = await fixture.createPhoneOnlyAccount(
+      parsePhoneNumber(phone),
+    );
+    const { instanceId, instanceProfileId } =
+      await fixture.createVotingInstance({
+        owner: member,
+        name,
+        proposalTitles: PROPOSALS,
+        votingRules: {
+          voterBudget: 1_000_000,
+          maxVotesPerMember: 10,
+          ranked: true,
+        },
+        ...(enrolment ? { enrolment } : {}),
+      });
+    await fixture.addMember(instanceProfileId, member);
+    await fixture.bindLine(instanceId, parsePhoneNumber(line));
+    return { member, instanceId };
+  };
+
+  const run = (event: ReturnType<typeof smsInboundEvent>) =>
+    new InngestTestEngine({ function: handleSMSCommand }).execute({
+      events: [event],
+    });
+
+  const text = (from: string, to: string, body: string) =>
+    run(smsInboundEvent({ from, to, body, messageSid: `SM-${from}-${body}` }));
+
+  const keyword = (
+    from: string,
+    to: string,
+    kw: 'list' | 'done' | 'submit' | 'remove' | 'move',
+    argument: string | null = null,
+  ) =>
+    run(
+      smsInboundEvent({
+        from,
+        to,
+        keyword: kw,
+        argument,
+        messageSid: `SM-${from}-${kw}-${argument ?? ''}`,
+      }),
+    );
+
+  it('given a member texts a code from the guide, then it becomes pick 1 with its cost, what is left and the next steps', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsCommandFixture(task.id, onTestFinished);
+    await seed(fixture, {
+      phone: NUMBERS.pickFirst,
+      line: LINES.pickFirst,
+      name: `Pick First ${task.id}`,
+    });
+
+    const { result } = await text(NUMBERS.pickFirst, LINES.pickFirst, '101');
+
+    expect(result).toEqual({ message: 'picks added' });
+    expect(recordedSms.map((sms) => sms.body)).toEqual([
+      'Pick 1: "Crosswalk lighting" ($85,000). $915,000 left. Text another code, LIST to see your ballot, or DONE to review.',
+    ]);
+  });
+
+  it('given a member texts two codes in one text after a first pick, then both are numbered and the remaining budget follows', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsCommandFixture(task.id, onTestFinished);
+    await seed(fixture, {
+      phone: NUMBERS.pickTwo,
+      line: LINES.pickTwo,
+      name: `Pick Two ${task.id}`,
+    });
+    await text(NUMBERS.pickTwo, LINES.pickTwo, '101');
+
+    const { result } = await text(NUMBERS.pickTwo, LINES.pickTwo, '102 103');
+
+    expect(result).toEqual({ message: 'picks added' });
+    expect(recordedSms.at(-1)?.body).toBe(
+      'Pick 2: "Bike lane" ($310,000). Pick 3: "Speed humps" ($45,000). $560,000 left.',
+    );
+  });
+
+  it('given a pick that does not fit the remaining budget, then nothing is added and the member is told how to make room', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsCommandFixture(task.id, onTestFinished);
+    await seed(fixture, {
+      phone: NUMBERS.pickOver,
+      line: LINES.pickOver,
+      name: `Pick Over ${task.id}`,
+    });
+    await text(NUMBERS.pickOver, LINES.pickOver, '101');
+
+    const { result } = await text(NUMBERS.pickOver, LINES.pickOver, '107');
+
+    expect(result).toEqual({ message: 'pick over budget' });
+    expect(recordedSms.at(-1)?.body).toBe(
+      '"Main St resurfacing" costs $950,000. You have $915,000 left. Reply REMOVE plus a code to make room, or pick a smaller project.',
+    );
+    const { result: listed } = await keyword(
+      NUMBERS.pickOver,
+      LINES.pickOver,
+      'list',
+    );
+    expect(listed).toEqual({ message: 'ballot sent' });
+    expect(recordedSms.at(-1)?.body).toContain(
+      '1. Crosswalk lighting $85,000.',
+    );
+    expect(recordedSms.at(-1)?.body).not.toContain('Main St');
+  });
+
+  it('given two picks, when the member texts LIST, then the ballot is listed in order with its totals', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsCommandFixture(task.id, onTestFinished);
+    const name = `Pick List ${task.id}`;
+    await seed(fixture, {
+      phone: NUMBERS.pickList,
+      line: LINES.pickList,
+      name,
+    });
+    await text(NUMBERS.pickList, LINES.pickList, '101 102');
+
+    const { result } = await keyword(NUMBERS.pickList, LINES.pickList, 'list');
+
+    expect(result).toEqual({ message: 'ballot sent' });
+    expect(recordedSms.at(-1)?.body).toBe(
+      [
+        `Your "${name}" ballot:`,
+        '1. Crosswalk lighting $85,000.',
+        '2. Bike lane $310,000.',
+        '$395,000 allocated, $605,000 unspent.',
+        'Text DONE to review, or a code to add.',
+      ].join('\n'),
+    );
+  });
+
+  it('given a pick, when the member texts REMOVE and its code, then it leaves the ballot and the budget is restored', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsCommandFixture(task.id, onTestFinished);
+    await seed(fixture, {
+      phone: NUMBERS.pickRemove,
+      line: LINES.pickRemove,
+      name: `Pick Remove ${task.id}`,
+    });
+    await text(NUMBERS.pickRemove, LINES.pickRemove, '101');
+
+    const { result } = await keyword(
+      NUMBERS.pickRemove,
+      LINES.pickRemove,
+      'remove',
+      '101',
+    );
+
+    expect(result).toEqual({ message: 'pick removed' });
+    expect(recordedSms.at(-1)?.body).toBe(
+      'Removed "Crosswalk lighting". $1,000,000 left.',
+    );
+  });
+
+  it('given two picks, when the member moves the second to position 1, then the ballot lists it first', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsCommandFixture(task.id, onTestFinished);
+    await seed(fixture, {
+      phone: NUMBERS.pickMove,
+      line: LINES.pickMove,
+      name: `Pick Move ${task.id}`,
+    });
+    await text(NUMBERS.pickMove, LINES.pickMove, '101 102');
+
+    const { result } = await keyword(
+      NUMBERS.pickMove,
+      LINES.pickMove,
+      'move',
+      '102 1',
+    );
+
+    expect(result).toEqual({ message: 'pick moved' });
+    expect(recordedSms.at(-1)?.body).toBe('"Bike lane" is now pick 1.');
+    await keyword(NUMBERS.pickMove, LINES.pickMove, 'list');
+    expect(recordedSms.at(-1)?.body).toContain(
+      '1. Bike lane $310,000.\n2. Crosswalk lighting $85,000.',
+    );
+  });
+
+  it('given three picks, when the member texts DONE, then the full ballot arrives with the ranking note and the SUBMIT prompt', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsCommandFixture(task.id, onTestFinished);
+    const name = `Pick Done ${task.id}`;
+    await seed(fixture, {
+      phone: NUMBERS.pickDone,
+      line: LINES.pickDone,
+      name,
+    });
+    await text(NUMBERS.pickDone, LINES.pickDone, '101 102 106');
+
+    const { result } = await keyword(NUMBERS.pickDone, LINES.pickDone, 'done');
+
+    expect(result).toEqual({ message: 'ballot reviewed' });
+    expect(recordedSms.at(-1)?.body).toBe(
+      [
+        `Your "${name}" ballot:`,
+        '1. Crosswalk lighting $85,000.',
+        '2. Bike lane $310,000.',
+        '3. Tree planting $150,000.',
+        '$545,000 allocated, $455,000 unspent.',
+        "Your order is your ranking: if a pick can't be funded, your support moves to your next choice.",
+        'Reply SUBMIT to cast your ballot.',
+      ].join('\n'),
+    );
+  });
+
+  it('given a reviewed ballot, when the member texts SUBMIT, then the vote is cast in pick order, the draft is gone, and a second SUBMIT says the ballot is already in', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsCommandFixture(task.id, onTestFinished);
+    const { instanceId } = await seed(fixture, {
+      phone: NUMBERS.pickSubmit,
+      line: LINES.pickSubmit,
+      name: `Pick Submit ${task.id}`,
+    });
+    await text(NUMBERS.pickSubmit, LINES.pickSubmit, '102 101');
+
+    const { result } = await keyword(
+      NUMBERS.pickSubmit,
+      LINES.pickSubmit,
+      'submit',
+    );
+
+    expect(result).toEqual({ message: 'ballot submitted' });
+    expect(inngest.send).toHaveBeenCalledWith(
+      expect.objectContaining({
+        name: Events.voteSubmitted.name,
+        data: expect.objectContaining({ processInstanceId: instanceId }),
+      }),
+    );
+    expect(recordedSms.at(-1)?.body).toBe(
+      'Your ballot is in. One ballot per person. How you vote is never public.',
+    );
+    const proposals = await db.query.proposals.findMany({
+      where: { processInstanceId: instanceId },
+      columns: { id: true, shortCode: true },
+    });
+    const idOf = (code: number) =>
+      proposals.find((p) => p.shortCode === code)!.id;
+    const submission = await db.query.decisionsVoteSubmissions.findFirst({
+      where: { processInstanceId: instanceId },
+      columns: { voteData: true },
+    });
+    expect(submission?.voteData.selections?.map((s) => s.proposalId)).toEqual([
+      idOf(102),
+      idOf(101),
+    ]);
+    await expect(
+      db.query.decisionBallotDrafts.findFirst({
+        where: { processInstanceId: instanceId },
+      }),
+    ).resolves.toBeUndefined();
+
+    const { result: again } = await run(
+      smsInboundEvent({
+        from: NUMBERS.pickSubmit,
+        to: LINES.pickSubmit,
+        keyword: 'submit',
+        messageSid: `SM-${task.id}-submit-again`,
+      }),
+    );
+    expect(again).toEqual({ message: 'ballot already submitted' });
+    expect(recordedSms.at(-1)?.body).toBe(
+      'Your ballot is already in. One ballot per person.',
+    );
+  });
+
+  it('given a code no proposal has, then nothing is added and the member is told', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsCommandFixture(task.id, onTestFinished);
+    await seed(fixture, {
+      phone: NUMBERS.pickUnknown,
+      line: LINES.pickUnknown,
+      name: `Pick Unknown ${task.id}`,
+    });
+
+    const { result } = await text(
+      NUMBERS.pickUnknown,
+      LINES.pickUnknown,
+      '999',
+    );
+
+    expect(result).toEqual({ message: 'proposal not on ballot' });
+    expect(recordedSms.map((sms) => sms.body)).toEqual([
+      'No proposal with code 999 is on your ballot.',
+    ]);
+  });
+
+  it('given a decision that requires registration, when an unregistered member texts a code, then they are told to text VOTE first', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsCommandFixture(task.id, onTestFinished);
+    const name = `Pick Unenrolled ${task.id}`;
+    await seed(fixture, {
+      phone: NUMBERS.pickUnenrolled,
+      line: LINES.pickUnenrolled,
+      name,
+      enrolment: { attestation: 'I affirm.', boundary: false },
+    });
+
+    const { result } = await text(
+      NUMBERS.pickUnenrolled,
+      LINES.pickUnenrolled,
+      '101',
+    );
+
+    expect(result).toEqual({ message: 'register first' });
+    expect(recordedSms.map((sms) => sms.body)).toEqual([
+      `Text VOTE to register for "${name}" before browsing its proposals.`,
     ]);
   });
 });
