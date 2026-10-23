@@ -18,7 +18,11 @@ import {
 } from '../../../utils';
 import { getIndividualProfileId } from '../../access';
 import { ensureBallotDraft, findBallotDraft } from '../ballotDraft';
-import { ensureChatSession } from '../chatSession';
+import {
+  ensureChatSession,
+  findChatSession,
+  markChatSessionReopened,
+} from '../chatSession';
 import { getFieldUnit, isAtMost, sumAmounts } from '../fieldUnit';
 import { getBallotProposalByCode } from '../getBallotProposalByCode';
 import { getProposalCosts } from '../getProposalCosts';
@@ -140,23 +144,27 @@ const savePicks = async (draftId: string, picks: string[]): Promise<void> => {
   });
 };
 
-const getDraftPicks = async (
-  draft: { id: string },
-  extraIds: string[] = [],
-) => {
+const storedPickIds = async (draftId: string): Promise<string[]> => {
   const pickRows = await db
     .select({ proposalId: decisionsVoteDraftProposals.proposalId })
     .from(decisionsVoteDraftProposals)
-    .where(eq(decisionsVoteDraftProposals.voteDraftId, draft.id))
+    .where(eq(decisionsVoteDraftProposals.voteDraftId, draftId))
     .orderBy(
       asc(decisionsVoteDraftProposals.rank),
       asc(decisionsVoteDraftProposals.createdAt),
     );
-  const stored = pickRows.map((row) => row.proposalId);
+  return pickRows.map((row) => row.proposalId);
+};
+
+const getDraftPicks = async (
+  draft: { id: string } | null | undefined,
+  extraIds: string[] = [],
+) => {
+  const stored = draft ? await storedPickIds(draft.id) : [];
   const rows = await getPickRows([...stored, ...extraIds]);
   const found = new Set(rows.map((row) => row.id));
   const picks = stored.filter((id) => found.has(id));
-  if (picks.length !== stored.length) {
+  if (draft && picks.length !== stored.length) {
     await savePicks(draft.id, picks);
   }
   return { picks, rows };
@@ -450,20 +458,20 @@ export async function moveSmsBallotPick({
 
 export interface SmsBallotState {
   submitted: boolean;
-  draftOpen: boolean;
+  reopened: boolean;
 }
 
 export async function getSmsBallotState(
   key: BallotKey,
 ): Promise<SmsBallotState> {
-  const [cast, draft] = await Promise.all([
+  const [cast, session] = await Promise.all([
     findCastBallot(key),
-    findBallotDraft({
+    findChatSession({
       processInstanceId: key.instanceId,
       authUserId: key.authUserId,
     }),
   ]);
-  return { submitted: cast !== null, draftOpen: draft !== null };
+  return { submitted: cast !== null, reopened: session?.reopenedAt != null };
 }
 
 export type SmsBallotReopen =
@@ -493,12 +501,20 @@ export async function reopenSmsBallot(
     return { status: 'not_allowed' };
   }
 
-  await ensureBallotDraft({
+  const draft = await ensureBallotDraft({
+    processInstanceId: key.instanceId,
+    authUserId: key.authUserId,
+  });
+  await ensureChatSession({
+    processInstanceId: key.instanceId,
+    authUserId: key.authUserId,
+  });
+  await markChatSessionReopened({
     processInstanceId: key.instanceId,
     authUserId: key.authUserId,
   });
   await savePicks(
-    key,
+    draft.id,
     (cast.voteData.selections ?? []).map((selection) => selection.proposalId),
   );
 
@@ -520,16 +536,17 @@ export async function submitSmsBallot({
   instanceId,
 }: BallotKey): Promise<SmsBallotSubmission> {
   const key = { authUserId, instanceId };
-  const [cast, draft] = await Promise.all([
+  const [cast, draft, session] = await Promise.all([
     findCastBallot(key),
     findBallotDraft({ processInstanceId: instanceId, authUserId }),
+    findChatSession({ processInstanceId: instanceId, authUserId }),
   ]);
 
-  if (cast && !draft) {
+  if (cast && session?.reopenedAt == null) {
     return { status: 'already_submitted', voteSubmissionId: cast.id };
   }
 
-  const picks = draft ? (await getDraftPicks(draft)).picks : [];
+  const { picks } = await getDraftPicks(draft);
 
   if (picks.length === 0) {
     return { status: 'empty' };

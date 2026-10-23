@@ -1034,17 +1034,9 @@ const pickByCodes = async (
     return refused;
   }
 
-  const state = await step.run('ballot-state', () =>
-    getSmsBallotState({ authUserId: account.authUserId, instanceId }),
-  );
-  if (state.submitted && !state.draftOpen) {
-    return deliverAll(
-      deliver,
-      'send-change-first',
-      'Change first reply',
-      [SMS_BALLOT_CHANGE_FIRST_MESSAGE],
-      'ballot already in',
-    );
+  const castAndClosed = await refuseUntilChange(context, instanceId);
+  if (castAndClosed) {
+    return castAndClosed;
   }
 
   const picked = await step.run('add-ballot-picks', () =>
@@ -1122,6 +1114,24 @@ const pickByCodes = async (
   });
 };
 
+const refuseUntilChange = async (
+  { step, account, deliver }: SmsCommandContext,
+  instanceId: string,
+): Promise<SmsCommandResult | null> => {
+  const state = await step.run('ballot-state', () =>
+    getSmsBallotState({ authUserId: account.authUserId, instanceId }),
+  );
+  return state.submitted && !state.reopened
+    ? deliverAll(
+        deliver,
+        'send-change-first',
+        'Change first reply',
+        [SMS_BALLOT_CHANGE_FIRST_MESSAGE],
+        'ballot already in',
+      )
+    : null;
+};
+
 const sendBallot = async (
   context: SmsCommandContext,
   review: boolean,
@@ -1136,6 +1146,11 @@ const sendBallot = async (
   const cast = await refuseIfBallotCast(context, instanceId);
   if (cast) {
     return cast;
+  }
+
+  const castAndClosed = await refuseUntilChange(context, instanceId);
+  if (castAndClosed) {
+    return castAndClosed;
   }
 
   const read = await step.run('summarize-ballot', () =>
@@ -1202,6 +1217,11 @@ export const remove: SmsCommandHandler = async (context) => {
     return cast;
   }
 
+  const castAndClosed = await refuseUntilChange(context, instanceId);
+  if (castAndClosed) {
+    return castAndClosed;
+  }
+
   const removed = await step.run('remove-ballot-pick', () =>
     readBallot(() =>
       removeSmsBallotPick({ authUserId: account.authUserId, instanceId, code }),
@@ -1266,6 +1286,11 @@ export const move: SmsCommandHandler = async (context) => {
   const cast = await refuseIfBallotCast(context, instanceId);
   if (cast) {
     return cast;
+  }
+
+  const castAndClosed = await refuseUntilChange(context, instanceId);
+  if (castAndClosed) {
+    return castAndClosed;
   }
 
   const moved = await step.run('move-ballot-pick', () =>
