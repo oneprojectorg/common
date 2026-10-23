@@ -2,14 +2,10 @@ import { sql } from 'drizzle-orm';
 import type { SQL } from 'drizzle-orm';
 import { relations } from 'drizzle-orm/_relations';
 import {
-  type AnyPgColumn,
-  check,
   index,
-  integer,
   pgTable,
   primaryKey,
   text,
-  uniqueIndex,
   uuid,
   varchar,
 } from 'drizzle-orm/pg-core';
@@ -60,13 +56,6 @@ export const profiles = pgTable(
       onUpdate: 'cascade',
     }),
 
-    shortCode: integer('short_code'),
-    shortCodeScopeId: uuid('short_code_scope_id').references(
-      (): AnyPgColumn => profiles.id,
-      { onUpdate: 'cascade', onDelete: 'cascade' },
-    ),
-    nextShortCode: integer('next_short_code').notNull().default(101),
-
     search: tsvector('search').generatedAlwaysAs(
       (): SQL =>
         sql`setweight(to_tsvector('simple', ${profiles.name}), 'A') || ' ' || setweight(to_tsvector('english', COALESCE(${profiles.bio}, '')), 'B') || ' ' || setweight(to_tsvector('english', COALESCE(${profiles.mission}, '')), 'C')::tsvector`,
@@ -76,13 +65,6 @@ export const profiles = pgTable(
   },
   (table) => [
     ...serviceRolePolicies,
-    uniqueIndex('profiles_short_code_scope_uniq')
-      .on(table.shortCodeScopeId, table.shortCode)
-      .where(sql`${table.shortCode} IS NOT NULL`),
-    check(
-      'profiles_short_code_scope_chk',
-      sql`(${table.shortCode} IS NULL) = (${table.shortCodeScopeId} IS NULL)`,
-    ),
     index().on(table.id).concurrently(),
     index().on(table.slug).concurrently(),
     index().on(table.headerImageId),

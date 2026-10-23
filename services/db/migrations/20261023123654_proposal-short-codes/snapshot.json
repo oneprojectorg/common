@@ -1,7 +1,7 @@
 {
   "version": "8",
   "dialect": "postgres",
-  "id": "30a35b70-f34f-43c1-aafb-5f4c9acbe538",
+  "id": "c28a4eef-e102-4183-be74-478ffd9ed890",
   "prevIds": [
     "51e07490-f5b9-47a7-a02c-f5afeeecf462"
   ],
@@ -4397,6 +4397,19 @@
       "table": "decision_process_instances"
     },
     {
+      "type": "integer",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "101",
+      "generated": null,
+      "identity": null,
+      "name": "next_short_code",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "decision_process_instances"
+    },
+    {
       "type": "tsvector",
       "typeSchema": null,
       "notNull": false,
@@ -5331,45 +5344,6 @@
       "generated": null,
       "identity": null,
       "name": "avatar_image_id",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "profiles"
-    },
-    {
-      "type": "integer",
-      "typeSchema": null,
-      "notNull": false,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "short_code",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "profiles"
-    },
-    {
-      "type": "uuid",
-      "typeSchema": null,
-      "notNull": false,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "short_code_scope_id",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "profiles"
-    },
-    {
-      "type": "integer",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": "101",
-      "generated": null,
-      "identity": null,
-      "name": "next_short_code",
       "entityType": "columns",
       "schema": "public",
       "table": "profiles"
@@ -6634,6 +6608,19 @@
       "generated": null,
       "identity": null,
       "name": "moderation_detached_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "decision_proposals"
+    },
+    {
+      "type": "integer",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "short_code",
       "entityType": "columns",
       "schema": "public",
       "table": "decision_proposals"
@@ -10954,34 +10941,6 @@
       "table": "profile_users"
     },
     {
-      "nameExplicit": true,
-      "columns": [
-        {
-          "value": "short_code_scope_id",
-          "isExpression": false,
-          "asc": true,
-          "nullsFirst": false,
-          "opclass": null
-        },
-        {
-          "value": "short_code",
-          "isExpression": false,
-          "asc": true,
-          "nullsFirst": false,
-          "opclass": null
-        }
-      ],
-      "isUnique": true,
-      "where": "\"short_code\" IS NOT NULL",
-      "with": "",
-      "method": "btree",
-      "concurrently": false,
-      "name": "profiles_short_code_scope_uniq",
-      "entityType": "indexes",
-      "schema": "public",
-      "table": "profiles"
-    },
-    {
       "nameExplicit": false,
       "columns": [
         {
@@ -11694,6 +11653,34 @@
       "entityType": "indexes",
       "schema": "public",
       "table": "decision_proposal_reviews"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "process_instance_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        },
+        {
+          "value": "short_code",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": true,
+      "where": "\"short_code\" IS NOT NULL",
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "proposals_process_short_code_uniq",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "decision_proposals"
     },
     {
       "nameExplicit": false,
@@ -13978,23 +13965,6 @@
     {
       "nameExplicit": false,
       "columns": [
-        "short_code_scope_id"
-      ],
-      "schemaTo": "public",
-      "tableTo": "profiles",
-      "columnsTo": [
-        "id"
-      ],
-      "onUpdate": "CASCADE",
-      "onDelete": "CASCADE",
-      "name": "profiles_short_code_scope_id_profiles_id_fkey",
-      "entityType": "fks",
-      "schema": "public",
-      "table": "profiles"
-    },
-    {
-      "nameExplicit": false,
-      "columns": [
         "profile_id"
       ],
       "schemaTo": "public",
@@ -15708,13 +15678,6 @@
       "schema": "public",
       "table": "users",
       "entityType": "uniques"
-    },
-    {
-      "value": "(\"short_code\" IS NULL) = (\"short_code_scope_id\" IS NULL)",
-      "name": "profiles_short_code_scope_chk",
-      "entityType": "checks",
-      "schema": "public",
-      "table": "profiles"
     },
     {
       "value": "\"source_proposal_id\" <> \"target_proposal_id\"",
