@@ -110,21 +110,33 @@ export function ProposalReviewDecorationProvider({
     );
   }, []);
 
-  // One query per list page. A loaded page's ids never move, so its key stays
-  // cached while later pages load, and the ids travel in a GET URL that would
-  // otherwise outgrow the server's header limit around 260 proposals.
+  // One query per list page. Appending a page leaves the earlier pages' ids in
+  // place, so their keys stay cached while the new page loads, and the ids
+  // travel in a GET URL that would otherwise outgrow the server's header limit
+  // around 260 proposals.
   const pages = useMemo(
     () => chunk(proposalIds, PROPOSALS_PAGE_LIMIT),
     [proposalIds],
   );
 
-  const results = trpc.useQueries((t) =>
-    pages.map((ids) =>
-      t.decision.listWithReviewAggregates(
-        { processInstanceId, phaseId, proposalIds: ids },
-        { enabled, throwOnError: false },
+  const results = trpc.useQueries(
+    (t) =>
+      pages.map((ids) =>
+        t.decision.listWithReviewAggregates(
+          { processInstanceId, phaseId, proposalIds: ids },
+          { enabled, throwOnError: false },
+        ),
       ),
-    ),
+    {
+      // Only these fields are read, and the combined value keeps its identity
+      // until one of them changes; the raw result array is new on every render.
+      combine: (pageResults) =>
+        pageResults.map(({ data, error, isError }) => ({
+          data,
+          error,
+          isError,
+        })),
+    },
   );
 
   const loggedErrors = useRef(new WeakSet<object>());
@@ -193,19 +205,22 @@ export function ProposalReviewDecorationProvider({
       const pageIndex = pageIndexByProposalId.get(proposalId);
       const result = pageIndex === undefined ? undefined : results[pageIndex];
 
-      if (!enabled || result?.isError) {
+      if (!enabled) {
         return UNAVAILABLE_AGGREGATES;
       }
-      if (result?.data === undefined) {
-        return LOADING_AGGREGATES;
+      // Counts already on screen outlive a failed refetch: `data` is kept
+      // alongside `isError`, so only a page that never loaded is unavailable.
+      if (result?.data !== undefined) {
+        // A proposal outside the counted phase gets no item: it has no reviews there.
+        return {
+          status: 'ready',
+          aggregates:
+            itemsByProposalId.get(proposalId)?.aggregates ??
+            NO_REVIEW_AGGREGATES,
+        };
       }
 
-      // A proposal outside the counted phase gets no item: it has no reviews there.
-      return {
-        status: 'ready',
-        aggregates:
-          itemsByProposalId.get(proposalId)?.aggregates ?? NO_REVIEW_AGGREGATES,
-      };
+      return result?.isError ? UNAVAILABLE_AGGREGATES : LOADING_AGGREGATES;
     },
     [enabled, pageIndexByProposalId, results, itemsByProposalId],
   );
