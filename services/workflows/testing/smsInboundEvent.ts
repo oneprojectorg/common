@@ -7,6 +7,7 @@ export const smsInboundEvent = ({
   keyword = null,
   argument = null,
   to = null,
+  body = null,
   messageSid = `SM-${from}-${code ?? argument ?? keyword ?? 'text'}`,
 }: {
   from: string;
@@ -14,8 +15,9 @@ export const smsInboundEvent = ({
   keyword?: SmsKeyword | null;
   argument?: string | null;
   to?: string | null;
+  body?: string | null;
   messageSid?: string;
 }) => ({
   name: Events.smsInboundReceived.name,
-  data: { from, messageSid, code, keyword, argument, to },
+  data: { from, messageSid, code, keyword, argument, to, body },
 });
