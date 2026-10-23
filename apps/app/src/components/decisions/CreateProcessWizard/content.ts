@@ -3,19 +3,11 @@ import type {
   GrantDecision,
   GrantShape,
   PbShape,
-  PhaseType,
   ProcessPiece,
   ProcessType,
   ShapeKey,
   WizardCopyKey,
 } from './types';
-
-export const PHASE_TYPE_LABEL: Record<PhaseType, WizardCopyKey> = {
-  submissions: 'submissionsPhase',
-  review: 'reviewPhase',
-  voting: 'votingPhase',
-  results: 'resultsPhase',
-};
 
 export interface TypeMeta {
   label: WizardCopyKey;
