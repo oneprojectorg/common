@@ -1,5 +1,5 @@
-import { type SQL, and, eq } from '@op/db/client';
-import { proposals } from '@op/db/schema';
+import { type SQL, and, db, eq, inArray } from '@op/db/client';
+import { proposalCategories, proposals } from '@op/db/schema';
 
 import {
   type PhaseScopedInstance,
@@ -13,12 +13,25 @@ export interface BallotProposalFilter {
   where: (t: typeof proposals) => SQL | undefined;
 }
 
+const districtTermId = async (boundaryId: string): Promise<string | null> => {
+  const boundary = await db.query.decisionBoundaries.findFirst({
+    where: { id: boundaryId },
+    columns: { taxonomyTermId: true },
+  });
+  return boundary?.taxonomyTermId ?? null;
+};
+
 export async function ballotProposalFilter({
   instance,
+  boundaryId,
 }: {
   instance: PhaseScopedInstance;
+  boundaryId?: string | null;
 }): Promise<BallotProposalFilter> {
-  const scope = await getPhaseProposalSqlScope({ instance, authUserIds: [] });
+  const [scope, termId] = await Promise.all([
+    getPhaseProposalSqlScope({ instance, authUserIds: [] }),
+    boundaryId ? districtTermId(boundaryId) : null,
+  ]);
 
   return {
     isEmpty: scope.isEmpty,
@@ -28,6 +41,15 @@ export async function ballotProposalFilter({
         isReadableByEveryone(t),
         votingEligiblePredicate(t),
         scope.buildNonDraftFilter(t),
+        termId
+          ? inArray(
+              t.id,
+              db
+                .select({ proposalId: proposalCategories.proposalId })
+                .from(proposalCategories)
+                .where(eq(proposalCategories.taxonomyTermId, termId)),
+            )
+          : undefined,
       ),
   };
 }

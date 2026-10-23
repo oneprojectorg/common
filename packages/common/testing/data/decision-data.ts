@@ -1115,6 +1115,8 @@ export async function createDecisionPhoneNumber({
 export interface CreateDecisionBoundaryOptions {
   profileId: string;
   name: string;
+  /** The proposal category this district tags; omit for an unlinked boundary. */
+  taxonomyTermId?: string;
   /** GeoJSON polygon ring; defaults to the square from (-74, 40) to (-73, 41). */
   ring?: ReadonlyArray<readonly [number, number]>;
   taxonomyTermId?: string | null;
@@ -1131,6 +1133,7 @@ const DEFAULT_BOUNDARY_RING: ReadonlyArray<readonly [number, number]> = [
 export async function createDecisionBoundary({
   profileId,
   name,
+  taxonomyTermId,
   ring = DEFAULT_BOUNDARY_RING,
   taxonomyTermId = null,
 }: CreateDecisionBoundaryOptions) {

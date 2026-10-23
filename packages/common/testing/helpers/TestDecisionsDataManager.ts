@@ -4,6 +4,7 @@ import type { ProcessStatus } from '@op/db/schema';
 import {
   ProposalStatus,
   decisionProcesses,
+  locations,
   processInstances,
   profileUserToAccessRoles,
   profiles,
@@ -769,6 +770,12 @@ export class TestDecisionsDataManager {
       (id): id is string => typeof id === 'string' && id.length > 0,
     );
     if (validProfileIds.length > 0) {
+      await db.delete(locations).where(
+        inArray(
+          locations.placeId,
+          validProfileIds.map((id) => `proposal-location:${id}`),
+        ),
+      );
       await db.delete(profiles).where(inArray(profiles.id, validProfileIds));
     }
 
