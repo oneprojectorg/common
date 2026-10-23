@@ -27,6 +27,15 @@ export interface ProposalReviewDecoration {
 
 const EMPTY_DECORATION: ProposalReviewDecoration = {};
 
+const NO_REVIEW_AGGREGATES: ProposalReviewAggregates = {
+  assignmentsCount: 0,
+  reviewsSubmittedCount: 0,
+  outOfDateReviewsCount: 0,
+  averageScore: 0,
+  overallRecommendationCount: {},
+  reviewers: [],
+};
+
 interface ProposalReviewDecorationContextValue {
   getDecoration: (proposalId: string) => ProposalReviewDecoration;
   /** Undefined until the aggregates land, or when the viewer may not see them. */
@@ -127,10 +136,19 @@ export function ProposalReviewDecorationProvider({
     [enabled, itemsByProposalId, decisionSlug, canOpenReviews],
   );
 
+  // The endpoint answers only for proposals in the counted phase, so a
+  // rejected or left-behind row never gets an item: once the response is in,
+  // it has no reviews there.
   const getAggregates = useCallback(
-    (proposalId: string) =>
-      enabled ? itemsByProposalId.get(proposalId)?.aggregates : undefined,
-    [enabled, itemsByProposalId],
+    (proposalId: string) => {
+      if (!enabled || aggregates === undefined) {
+        return undefined;
+      }
+      return (
+        itemsByProposalId.get(proposalId)?.aggregates ?? NO_REVIEW_AGGREGATES
+      );
+    },
+    [enabled, aggregates, itemsByProposalId],
   );
 
   const value = useMemo(

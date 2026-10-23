@@ -108,23 +108,32 @@ const restrictionOf = ({ status, visibility, isFlagged }: Proposal) => {
   return visibility === Visibility.HIDDEN ? 'hidden' : undefined;
 };
 
+interface ProposalBadgeProps {
+  proposal: Proposal;
+  /** Merged onto whichever badge renders, so a dense surface can resize it. */
+  className?: string;
+}
+
 /** Restricted visibility on its own, for surfaces the candidacy states don't fit. */
 export const ProposalRestrictionBadge = ({
   proposal,
-}: {
-  proposal: Proposal;
-}) => {
+  className,
+}: ProposalBadgeProps) => {
   const t = useTranslations();
 
   return match(restrictionOf(proposal), {
     draft: (
-      <StatusBadge variant="inactive">{t('decisions.draftStatus')}</StatusBadge>
+      <StatusBadge variant="inactive" className={className}>
+        {t('decisions.draftStatus')}
+      </StatusBadge>
     ),
     flagged: (
-      <StatusBadge variant="alert">{t('posts.flaggedBadge')}</StatusBadge>
+      <StatusBadge variant="alert" className={className}>
+        {t('posts.flaggedBadge')}
+      </StatusBadge>
     ),
     hidden: (
-      <StatusBadge variant="warning">
+      <StatusBadge variant="warning" className={className}>
         {t('decisions.proposals.hiddenStatus')}
       </StatusBadge>
     ),
@@ -133,19 +142,24 @@ export const ProposalRestrictionBadge = ({
 };
 
 /** Proposal status/visibility surfaced as the composite's `headerBadge`. */
-export const ProposalStatusBadge = ({ proposal }: { proposal: Proposal }) => {
+export const ProposalStatusBadge = ({
+  proposal,
+  className,
+}: ProposalBadgeProps) => {
   const t = useTranslations();
   const { status, isSelected } = proposal;
 
   // Restricted visibility outranks the candidacy states below it.
   if (restrictionOf(proposal)) {
-    return <ProposalRestrictionBadge proposal={proposal} />;
+    return (
+      <ProposalRestrictionBadge proposal={proposal} className={className} />
+    );
   }
 
   // "Selected" is driven by results selection, not the editable `status`.
   if (isSelected) {
     return (
-      <StatusBadge variant="success">
+      <StatusBadge variant="success" className={className}>
         {t('decisions.proposals.selectedStatus')}
       </StatusBadge>
     );
@@ -153,7 +167,7 @@ export const ProposalStatusBadge = ({ proposal }: { proposal: Proposal }) => {
 
   if (isNotAdvanced(proposal)) {
     return (
-      <StatusBadge variant="alert" icon={LuCircleX}>
+      <StatusBadge variant="alert" icon={LuCircleX} className={className}>
         {t('decisions.proposals.notAdvancedStatus')}
       </StatusBadge>
     );
@@ -161,7 +175,7 @@ export const ProposalStatusBadge = ({ proposal }: { proposal: Proposal }) => {
 
   return match(status, {
     [ProposalStatus.APPROVED]: (
-      <StatusBadge variant="success">
+      <StatusBadge variant="success" className={className}>
         {t('decisions.proposals.shortlistedStatus')}
       </StatusBadge>
     ),

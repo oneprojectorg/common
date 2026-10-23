@@ -7,7 +7,6 @@ import {
   ProposalReviewAssignmentStatus,
 } from '@op/common/client';
 import { Avatar, AvatarFallback } from '@op/sense/Avatar';
-import { Badge } from '@op/sense/Badge';
 import { FacePile } from '@op/sense/FacePile';
 import { ProfileAvatar } from '@op/sense/ProfileAvatar';
 import { Progress } from '@op/sense/Progress';
@@ -28,7 +27,10 @@ import { LuCircleAlert } from 'react-icons/lu';
 import { Link, useTranslations } from '@/lib/i18n';
 
 import { usesDistrictLabels } from './CategoryFilterSelect';
-import { useProposalCardData } from './ProposalCard/ProposalCardView';
+import {
+  ProposalStatusBadge,
+  useProposalCardData,
+} from './ProposalCard/ProposalCardView';
 import { useProposalReviewAggregates } from './proposalReviewDecoration';
 
 type Reviewer = ProposalReviewAggregates['reviewers'][number];
@@ -119,16 +121,15 @@ function ProposalReviewProgressRow({
           >
             <bdi>{titleText}</bdi>
           </Link>
-          {submitterName || displayCategories.length > 0 ? (
-            <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-              {submitterName ? <bdi>{submitterName}</bdi> : null}
-              {displayCategories.map((category) => (
-                <Badge key={category} variant="secondary">
-                  <bdi>{category}</bdi>
-                </Badge>
-              ))}
-            </div>
-          ) : null}
+          {/* The category has its own column; the card's status badge goes here. */}
+          <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+            {submitterName ? <bdi>{submitterName}</bdi> : null}
+            {/* One step down from the card's 36px pill so it doesn't set the row height. */}
+            <ProposalStatusBadge
+              proposal={proposal}
+              className="h-7 px-1.5 py-1 text-xs [&>[data-slot=status-badge-icon]]:size-3.5"
+            />
+          </div>
         </div>
       </TableRowHeader>
       <TableCell className="whitespace-normal">
