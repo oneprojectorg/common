@@ -1,11 +1,18 @@
 import {
   type DecisionInstanceData,
   type DecisionSchemaDefinition,
+  MAX_PHASES_PER_DECISION,
+  MAX_PHASE_NAME_LENGTH,
   simpleVoting,
 } from '@op/common';
 import { TestDecisionsDataManager } from '@op/common/testing';
-import { db, eq } from '@op/db/client';
-import { decisionProcesses, users } from '@op/db/schema';
+import { asc, db, eq } from '@op/db/client';
+import {
+  decisionProcesses,
+  processPhases,
+  profiles,
+  users,
+} from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
@@ -110,6 +117,194 @@ describe.concurrent('createInstanceFromTemplate', () => {
     expect(instanceData.phases).toBeDefined();
     expect(instanceData.phases.length).toBeGreaterThan(0);
     expect(instance!.currentStateId).toBe('submission');
+  });
+
+  it('mints a phase row and profile per template phase, in order', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { templateId, userEmail } = await createSimpleTemplate(
+      testData,
+      task.id,
+    );
+    const caller = await createAuthenticatedCaller(userEmail);
+
+    const result = await caller.decision.createInstanceFromTemplate({
+      templateId,
+      name: `Phase Rows ${task.id}`,
+    });
+    testData.trackProfileForCleanup(result.id);
+
+    const instance = await db.query.processInstances.findFirst({
+      where: { id: result.processInstance.id },
+    });
+    const instanceData = instance!.instanceData as DecisionInstanceData;
+
+    const rows = await db
+      .select({
+        sortOrder: processPhases.sortOrder,
+        data: processPhases.data,
+        name: profiles.name,
+        type: profiles.type,
+      })
+      .from(processPhases)
+      .innerJoin(profiles, eq(profiles.id, processPhases.profileId))
+      .where(eq(processPhases.processInstanceId, result.processInstance.id))
+      .orderBy(asc(processPhases.sortOrder));
+
+    expect(rows).toHaveLength(simpleVoting.phases.length);
+    instanceData.phases.forEach((phase, index) => {
+      const row = rows[index]!;
+      expect(row.sortOrder).toBe(index);
+      expect(row.name).toBe(phase.name);
+      expect(row.type).toBe('phase');
+      expect(row.data).toMatchObject({
+        phaseId: phase.phaseId,
+        rules: phase.rules,
+      });
+      expect(row.data).not.toHaveProperty('name');
+    });
+  });
+
+  it('names a nameless phase after its id', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const [first, ...rest] = simpleVoting.phases;
+    const { templateId, userEmail } = await createSimpleTemplate(
+      testData,
+      task.id,
+      { phases: [{ ...first!, name: '  ' }, ...rest] },
+    );
+    const caller = await createAuthenticatedCaller(userEmail);
+
+    const result = await caller.decision.createInstanceFromTemplate({
+      templateId,
+      name: `Nameless Phase ${task.id}`,
+    });
+    testData.trackProfileForCleanup(result.id);
+
+    const [row] = await db
+      .select({ name: profiles.name })
+      .from(processPhases)
+      .innerJoin(profiles, eq(profiles.id, processPhases.profileId))
+      .where(eq(processPhases.processInstanceId, result.processInstance.id))
+      .orderBy(asc(processPhases.sortOrder))
+      .limit(1);
+
+    expect(row?.name).toBe(first!.id);
+  });
+
+  it('accepts a phase name of exactly the maximum length', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const [first, ...rest] = simpleVoting.phases;
+    // Astral characters: one each to the column, two UTF-16 units to String.length.
+    const phaseName = '😀'.repeat(MAX_PHASE_NAME_LENGTH);
+    const { templateId, userEmail } = await createSimpleTemplate(
+      testData,
+      task.id,
+      { phases: [{ ...first!, name: phaseName }, ...rest] },
+    );
+    const caller = await createAuthenticatedCaller(userEmail);
+
+    const result = await caller.decision.createInstanceFromTemplate({
+      templateId,
+      name: `Max Name ${task.id}`,
+    });
+    testData.trackProfileForCleanup(result.id);
+
+    const [row] = await db
+      .select({ name: profiles.name })
+      .from(processPhases)
+      .innerJoin(profiles, eq(profiles.id, processPhases.profileId))
+      .where(eq(processPhases.processInstanceId, result.processInstance.id))
+      .orderBy(asc(processPhases.sortOrder))
+      .limit(1);
+
+    expect(row?.name).toBe(phaseName);
+  });
+
+  it('rolls the instance back when a phase name does not fit its profile', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    // The last phase is oversized, so the earlier rows exist when it throws.
+    const lastIndex = simpleVoting.phases.length - 1;
+    const nameFor = (index: number) =>
+      index === lastIndex
+        ? 'x'.repeat(MAX_PHASE_NAME_LENGTH + 1)
+        : `Rolled Back Phase ${index} ${task.id}`;
+    const [first, ...rest] = simpleVoting.phases;
+    const phases: DecisionSchemaDefinition['phases'] = [
+      { ...first!, name: nameFor(0) },
+      ...rest.map((phase, index) => ({ ...phase, name: nameFor(index + 1) })),
+    ];
+    const { templateId, userEmail } = await createSimpleTemplate(
+      testData,
+      task.id,
+      { phases },
+    );
+    const caller = await createAuthenticatedCaller(userEmail);
+
+    const name = `Rolled Back ${task.id}`;
+    await expect(
+      caller.decision.createInstanceFromTemplate({ templateId, name }),
+    ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
+
+    const [instances, decisionProfiles, phaseProfiles] = await Promise.all([
+      db.query.processInstances.findMany({
+        where: { name },
+        columns: { id: true },
+      }),
+      db.query.profiles.findMany({ where: { name }, columns: { id: true } }),
+      db.query.profiles.findMany({
+        where: { name: { in: phases.slice(0, lastIndex).map((p) => p.name) } },
+        columns: { id: true },
+      }),
+    ]);
+    expect(instances).toHaveLength(0);
+    expect(decisionProfiles).toHaveLength(0);
+    expect(phaseProfiles).toHaveLength(0);
+  });
+
+  it('refuses a template with more phases than a decision can hold', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const [first] = simpleVoting.phases;
+    const extra = Array.from(
+      { length: MAX_PHASES_PER_DECISION },
+      (_, index) => ({
+        ...first!,
+        id: `phase-${index}`,
+        name: `Phase ${index}`,
+      }),
+    );
+    const phases: DecisionSchemaDefinition['phases'] = [first!, ...extra];
+    const { templateId, userEmail } = await createSimpleTemplate(
+      testData,
+      task.id,
+      { phases },
+    );
+    const caller = await createAuthenticatedCaller(userEmail);
+
+    const name = `Too Many Phases ${task.id}`;
+    await expect(
+      caller.decision.createInstanceFromTemplate({ templateId, name }),
+    ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
+
+    const instances = await db.query.processInstances.findMany({
+      where: { name },
+      columns: { id: true },
+    });
+    expect(instances).toHaveLength(0);
   });
 
   it('should NOT create transitions for DRAFT instances (transitions are created on publish)', async ({

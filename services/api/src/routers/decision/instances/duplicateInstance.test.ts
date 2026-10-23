@@ -1,11 +1,13 @@
 import { type DecisionInstanceData, simpleVoting } from '@op/common';
 import type { DecisionSchemaDefinition } from '@op/common';
 import { TestDecisionsDataManager } from '@op/common/testing';
-import { db, eq } from '@op/db/client';
+import { asc, db, eq } from '@op/db/client';
 import {
   ProcessStatus,
   decisionProcesses,
   processInstances,
+  processPhases,
+  profiles,
   users,
 } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
@@ -90,6 +92,20 @@ async function createSimpleTemplate(
   };
 }
 
+async function loadPhaseRows(processInstanceId: string) {
+  return db
+    .select({
+      sortOrder: processPhases.sortOrder,
+      profileId: processPhases.profileId,
+      data: processPhases.data,
+      name: profiles.name,
+    })
+    .from(processPhases)
+    .innerJoin(profiles, eq(profiles.id, processPhases.profileId))
+    .where(eq(processPhases.processInstanceId, processInstanceId))
+    .orderBy(asc(processPhases.sortOrder));
+}
+
 async function createSourceInstance(
   testData: TestDecisionsDataManager,
   taskId: string,
@@ -140,6 +156,83 @@ describe.concurrent('duplicateInstance', () => {
 
     expect(instanceData.phases.length).toBeGreaterThan(0);
     expect(instanceData.templateId).toBe(simpleVoting.id);
+  });
+
+  it('mints its own phase rows rather than sharing the source phases', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { result: source, caller } = await createSourceInstance(
+      testData,
+      task.id,
+    );
+
+    const duplicate = await caller.decision.duplicateInstance({
+      instanceId: source.processInstance.id,
+      name: `Duplicate of ${source.name}`,
+      include: ALL_INCLUDED,
+    });
+    testData.trackProfileForCleanup(duplicate.id);
+
+    const [instance, sourceRows, duplicateRows] = await Promise.all([
+      db.query.processInstances.findFirst({
+        where: { id: duplicate.processInstance.id },
+      }),
+      loadPhaseRows(source.processInstance.id),
+      loadPhaseRows(duplicate.processInstance.id),
+    ]);
+    const instanceData = instance!.instanceData as DecisionInstanceData;
+
+    expect(duplicateRows).toHaveLength(simpleVoting.phases.length);
+    expect(instanceData.phases).toHaveLength(simpleVoting.phases.length);
+    instanceData.phases.forEach((phase, index) => {
+      const row = duplicateRows[index]!;
+      expect(row.sortOrder).toBe(index);
+      expect(row.name).toBe(phase.name);
+      expect(row.data).toMatchObject({ phaseId: phase.phaseId });
+    });
+
+    const sourceProfileIds = new Set(sourceRows.map((row) => row.profileId));
+    for (const row of duplicateRows) {
+      expect(sourceProfileIds.has(row.profileId)).toBe(false);
+    }
+  });
+
+  it('mints a row per minimal phase when phases are not included', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { result: source, caller } = await createSourceInstance(
+      testData,
+      task.id,
+    );
+
+    const duplicate = await caller.decision.duplicateInstance({
+      instanceId: source.processInstance.id,
+      name: `Bare Duplicate ${task.id}`,
+      include: NONE_INCLUDED,
+    });
+    testData.trackProfileForCleanup(duplicate.id);
+
+    const [instance, rows] = await Promise.all([
+      db.query.processInstances.findFirst({
+        where: { id: duplicate.processInstance.id },
+      }),
+      loadPhaseRows(duplicate.processInstance.id),
+    ]);
+    const instanceData = instance!.instanceData as DecisionInstanceData;
+
+    expect(instanceData.phases).toHaveLength(simpleVoting.phases.length);
+    expect(rows).toHaveLength(instanceData.phases.length);
+    instanceData.phases.forEach((phase, index) => {
+      const row = rows[index]!;
+      expect(row.sortOrder).toBe(index);
+      expect(row.name).toBe(phase.name);
+      expect(row.data).toMatchObject({ phaseId: phase.phaseId });
+      expect(row.data).not.toHaveProperty('rules');
+    });
   });
 
   it('should create a new profile with a unique slug', async ({
