@@ -1,4 +1,4 @@
-import { getVotingStatus, submitVote } from '@op/common';
+import { getVotingStatus, reviseVote, submitVote } from '@op/common';
 import { Events, inngest } from '@op/events';
 import { waitUntil } from '@vercel/functions';
 import { z } from 'zod';
@@ -42,6 +42,36 @@ export const votingRouter = router({
       waitUntil(
         inngest.send({
           name: Events.voteSubmitted.name,
+          data: {
+            voteSubmissionId: result.id,
+            processInstanceId: result.processInstanceId,
+          },
+        }),
+      );
+
+      return result;
+    }),
+
+  // Replace the caller's cast ballot while the phase allows vote editing.
+  reviseVote: networkAuthenticatedProcedure({
+    rateLimit: { windowSize: 10, maxRequests: 5 },
+  })
+    .input(submitVoteInput)
+    .mutation(async ({ input, ctx }) => {
+      const result = await reviseVote({
+        data: {
+          processInstanceId: input.processInstanceId,
+          selectedProposalIds: input.selectedProposalIds,
+          schemaVersion: input.schemaVersion,
+          customData: input.customData,
+          authUserId: ctx.user.id,
+        },
+        authUserId: ctx.user.id,
+      });
+
+      waitUntil(
+        inngest.send({
+          name: Events.voteRevised.name,
           data: {
             voteSubmissionId: result.id,
             processInstanceId: result.processInstanceId,

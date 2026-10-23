@@ -40,6 +40,13 @@ export function canEditProposals(phase: {
   return phase.rules?.proposals?.edit ?? false;
 }
 
+/** A cast ballot may be revised while this phase is open (`voting.edit`). */
+export function canEditVotes(phase: {
+  rules?: { voting?: { edit?: boolean } };
+}): boolean {
+  return phase.rules?.voting?.edit ?? false;
+}
+
 /** Voting happens in this phase. */
 export function isVotingPhase(phase: {
   rules?: { voting?: { submit?: boolean } };
