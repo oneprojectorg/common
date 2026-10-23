@@ -8,6 +8,7 @@ import {
   describeEnrolmentDecision,
   findPendingVoterEnrolment,
   findVoterEnrolment,
+  markAttestationSent,
   formatSmsAddressNotFound,
   formatSmsAddressOutside,
   formatSmsAddressResolved,
@@ -240,6 +241,7 @@ export const vote: SmsCommandHandler = async (context) => {
   );
 
   if (pending?.status === DecisionVoterEnrolmentStatus.AWAITING_AGREE) {
+    await step.run('mark-attestation-sent', () => markAttestationSent(key));
     return deliverAll(
       deliver,
       'send-attestation-again',
@@ -297,7 +299,7 @@ export const agree: SmsCommandHandler = async (context) => {
   const pending = await step.run('find-pending-enrolment', () =>
     findPendingVoterEnrolment({
       authUserId: account.authUserId,
-      processInstanceId: line?.instanceId,
+      preferInstanceId: line?.instanceId,
     }),
   );
 
@@ -314,13 +316,26 @@ export const agree: SmsCommandHandler = async (context) => {
     return nothingToAffirm();
   }
 
-  await step.run('affirm-attestation', () =>
+  const affirmed = await step.run('affirm-attestation', () =>
     affirmVoterAttestation({
       processInstanceId: pending.processInstanceId,
       authUserId: account.authUserId,
       attestationHash: hashAttestation(rule.attestation),
     }),
   );
+
+  if (affirmed.status === 'attestation_changed') {
+    return deliverAll(
+      deliver,
+      'send-attestation-changed',
+      'Attestation changed reply',
+      formatSmsAddressResolved({
+        district: pending.boundaryName,
+        attestation: rule.attestation,
+      }),
+      'attestation changed',
+    );
+  }
 
   return deliverAll(
     deliver,
@@ -346,7 +361,7 @@ export const freeText: SmsCommandHandler = async (context) => {
   const pending = await step.run('find-pending-enrolment', () =>
     findPendingVoterEnrolment({
       authUserId: account.authUserId,
-      processInstanceId: line?.instanceId,
+      preferInstanceId: line?.instanceId,
     }),
   );
 

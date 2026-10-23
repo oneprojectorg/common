@@ -5,8 +5,9 @@ import { NotFoundError } from '../../../utils';
 import { formatUnitAmount, getFieldUnit } from '../fieldUnit';
 import { getDecisionBySlug } from '../getDecisionBySlug';
 import { resolveProposalTemplate } from '../resolveProposalTemplate';
-import type { DecisionInstanceData } from '../schemas/instanceData';
+import { getInstancePhases } from '../schemas/instanceData';
 import type { VoterEnrolmentRule } from '../schemas/types';
+import { getInstanceCurrentPhase } from '../utils/instance';
 import {
   getVoterBudget,
   getVoterCostField,
@@ -33,16 +34,14 @@ const summarizeVotingInstance = async (
   name: string,
   instance: VotingInstance,
 ): Promise<SmsVotingDecision> => {
-  const phase = (instance.instanceData as DecisionInstanceData).phases?.find(
-    (candidate) => candidate.phaseId === instance.currentStateId,
-  );
+  const phase = getInstanceCurrentPhase({
+    currentStateId: instance.currentStateId,
+    instanceData: { phases: getInstancePhases(instance.instanceData) },
+  });
   const voterBudget = phase ? getVoterBudget(phase) : undefined;
   const template =
     phase && voterBudget !== undefined
-      ? await resolveProposalTemplate(
-          instance.instanceData as Record<string, unknown> | null,
-          instance.processId,
-        )
+      ? await resolveProposalTemplate(instance.instanceData, instance.processId)
       : null;
   const unit =
     phase && template
