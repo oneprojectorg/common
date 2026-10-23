@@ -9,7 +9,11 @@ import {
   VoterNotEnrolledError,
 } from '../../../utils';
 import { getIndividualProfileId } from '../../access';
-import { ensureBallotDraft, findBallotDraft } from '../ballotDraft';
+import {
+  ensureBallotDraft,
+  findBallotDraft,
+  markBallotDraftReopened,
+} from '../ballotDraft';
 import { getFieldUnit, isAtMost, sumAmounts } from '../fieldUnit';
 import { getBallotProposalByCode } from '../getBallotProposalByCode';
 import { getProposalCosts } from '../getProposalCosts';
@@ -143,13 +147,13 @@ export async function summarizeSmsBallot(
 ): Promise<SmsBallotSummary> {
   const scope = await loadBallotScope(key);
   const [draft, pricing] = await Promise.all([
-    ensureBallotDraft({
+    findBallotDraft({
       processInstanceId: key.instanceId,
       authUserId: key.authUserId,
     }),
     loadPricing(scope.instance),
   ]);
-  const rows = await loadPickRows(draft.picks);
+  const rows = await loadPickRows(draft?.picks ?? []);
   const costs = await priceRows(rows, pricing);
 
   return summarize(scope, pricing, rows, costs);
@@ -357,7 +361,7 @@ const findCastBallot = async ({ authUserId, instanceId }: BallotKey) => {
 
 export interface SmsBallotState {
   submitted: boolean;
-  draftOpen: boolean;
+  reopened: boolean;
 }
 
 export async function getSmsBallotState(
@@ -370,7 +374,7 @@ export async function getSmsBallotState(
       authUserId: key.authUserId,
     }),
   ]);
-  return { submitted: cast !== null, draftOpen: draft !== null };
+  return { submitted: cast !== null, reopened: draft?.reopenedAt != null };
 }
 
 export type SmsBallotReopen =
@@ -404,6 +408,10 @@ export async function reopenSmsBallot(
     processInstanceId: key.instanceId,
     authUserId: key.authUserId,
   });
+  await markBallotDraftReopened({
+    processInstanceId: key.instanceId,
+    authUserId: key.authUserId,
+  });
   await savePicks(
     key,
     (cast.voteData.selections ?? []).map((selection) => selection.proposalId),
@@ -431,7 +439,7 @@ export async function submitSmsBallot({
     findBallotDraft({ processInstanceId: instanceId, authUserId }),
   ]);
 
-  if (cast && !draft) {
+  if (cast && draft?.reopenedAt == null) {
     return { status: 'already_submitted' };
   }
 

@@ -71,3 +71,14 @@ export async function setBallotPageCursor({
     .set({ pageCursor, updatedAt: new Date().toISOString() })
     .where(draftFilter(processInstanceId, profileId));
 }
+
+export async function markBallotDraftReopened({
+  processInstanceId,
+  authUserId,
+}: DraftKey): Promise<void> {
+  const profileId = await getIndividualProfileId(authUserId);
+  await db
+    .update(decisionBallotDrafts)
+    .set({ reopenedAt: new Date(), updatedAt: new Date().toISOString() })
+    .where(draftFilter(processInstanceId, profileId));
+}
