@@ -2,12 +2,8 @@ import { describe, expect, it } from 'vitest';
 
 import english from '@/lib/i18n/dictionaries/en.json';
 
-import {
-  GRANT_DECISION_QUESTION,
-  SHAPE_QUESTION,
-  applyGrantDecision,
-  piecesFor,
-} from './content';
+import { applyGrantDecision, piecesFor } from './phasePresets';
+import { GRANT_DECISION_QUESTION, SHAPE_QUESTION } from './questions';
 import type { ProcessPiece } from './types';
 
 const copy: Record<string, unknown> = english.decisions.createWizard;

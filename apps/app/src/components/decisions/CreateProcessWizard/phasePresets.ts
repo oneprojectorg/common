@@ -1,88 +1,12 @@
+// What the wizard offers for a named type and shape: hand-written phase lists, and the grant transform. Read by the mapping step.
 import type {
-  Choice,
   GrantDecision,
   GrantShape,
   PbShape,
   ProcessPiece,
   ProcessType,
   ShapeKey,
-  WizardCopyKey,
 } from './types';
-
-export interface TypeMeta {
-  label: WizardCopyKey;
-  /** A whole noun phrase: articles inflect, so an adjective can't be interpolated. */
-  subjectPhrase: WizardCopyKey;
-  description: WizardCopyKey;
-}
-
-export const TYPE_ORDER: ProcessType[] = ['grant', 'pb', 'other'];
-
-export const TYPE_META: Record<ProcessType, TypeMeta> = {
-  grant: {
-    label: 'grantTypeLabel',
-    subjectPhrase: 'grantTypeSubject',
-    description: 'grantTypeDescription',
-  },
-  pb: {
-    label: 'pbTypeLabel',
-    subjectPhrase: 'pbTypeSubject',
-    description: 'pbTypeDescription',
-  },
-  other: {
-    label: 'otherTypeLabel',
-    subjectPhrase: 'otherTypeSubject',
-    description: 'otherTypeDescription',
-  },
-};
-
-export const TYPE_OPTIONS: Choice<ProcessType>[] = TYPE_ORDER.map((type) => ({
-  key: type,
-  label: TYPE_META[type].label,
-  description: TYPE_META[type].description,
-}));
-
-export interface ShapeQuestion {
-  heading: WizardCopyKey;
-  options: Choice<ShapeKey>[];
-}
-
-/** The other pathway composes its shape from its questions instead. */
-export const SHAPE_QUESTION: Record<
-  Exclude<ProcessType, 'other'>,
-  ShapeQuestion
-> = {
-  grant: {
-    heading: 'grantShapeHeading',
-    options: [
-      {
-        key: 'single',
-        label: 'grantShapeSingleLabel',
-        description: 'grantShapeSingleDescription',
-      },
-      {
-        key: 'loi',
-        label: 'grantShapeLoiLabel',
-        description: 'grantShapeLoiDescription',
-      },
-    ],
-  },
-  pb: {
-    heading: 'pbShapeHeading',
-    options: [
-      {
-        key: 'ideas',
-        label: 'pbShapeIdeasLabel',
-        description: 'pbShapeIdeasDescription',
-      },
-      {
-        key: 'proposals',
-        label: 'pbShapeProposalsLabel',
-        description: 'pbShapeProposalsDescription',
-      },
-    ],
-  },
-};
 
 type PieceSetKey = `grant:${GrantShape}` | `pb:${PbShape}`;
 
@@ -291,30 +215,6 @@ export function piecesFor(
 
   return isPieceSetKey(key) ? PIECE_SETS[key] : [];
 }
-
-export const GRANT_DECISION_QUESTION: {
-  heading: WizardCopyKey;
-  options: Choice<GrantDecision>[];
-} = {
-  heading: 'grantDecisionHeading',
-  options: [
-    {
-      key: 'rubric',
-      label: 'grantDecisionRubricLabel',
-      description: 'grantDecisionRubricDescription',
-    },
-    {
-      key: 'applicants',
-      label: 'grantDecisionApplicantsLabel',
-      description: 'grantDecisionApplicantsDescription',
-    },
-    {
-      key: 'hybrid',
-      label: 'grantDecisionHybridLabel',
-      description: 'grantDecisionHybridDescription',
-    },
-  ],
-};
 
 const GRANT_VOTE_PIECE: ProcessPiece = {
   name: 'putVote',

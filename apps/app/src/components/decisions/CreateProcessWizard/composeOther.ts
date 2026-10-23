@@ -1,10 +1,9 @@
+// How the other pathway builds its phases and recap from four answers. Read by the mapping step.
 import { type ReactNode, createElement } from 'react';
 
 import type { TranslateFn } from '@/lib/i18n';
 
 import type {
-  Cadence,
-  Choice,
   Decision,
   ProcessPiece,
   Subject,
@@ -19,149 +18,12 @@ export type OtherAnswers = Pick<
   'subject' | 'cadence' | 'submits' | 'decision'
 >;
 
-export const SUBJECT_OPTIONS: Choice<Subject>[] = [
-  {
-    key: 'funding',
-    label: 'subjectFundingLabel',
-    description: 'subjectFundingDescription',
-  },
-  {
-    key: 'ideas',
-    label: 'subjectIdeasLabel',
-    description: 'subjectIdeasDescription',
-  },
-  {
-    key: 'people',
-    label: 'subjectPeopleLabel',
-    description: 'subjectPeopleDescription',
-  },
-  {
-    key: 'else',
-    label: 'subjectElseLabel',
-    description: 'subjectElseDescription',
-  },
-];
-
 const SUBJECT_NOUN: Record<Subject, WizardCopyKey> = {
   funding: 'subjectFundingNoun',
   ideas: 'subjectIdeasNoun',
   people: 'subjectPeopleNoun',
   else: 'subjectElseNoun',
 };
-
-export const CADENCE_OPTIONS: Choice<Cadence>[] = [
-  {
-    key: 'timeline',
-    label: 'cadenceTimelineLabel',
-    description: 'cadenceTimelineDescription',
-  },
-  {
-    key: 'ongoing',
-    label: 'cadenceOngoingLabel',
-    description: 'cadenceOngoingDescription',
-  },
-];
-
-export const SUBMIT_OPTIONS: Record<Subject, Choice<SubmitKey>[]> = {
-  funding: [
-    {
-      key: 'applications',
-      label: 'submitsApplicationsLabel',
-      description: 'submitsApplicationsDescription',
-    },
-    {
-      key: 'rough',
-      label: 'submitsRoughLabel',
-      description: 'submitsRoughFundingDescription',
-    },
-    {
-      key: 'none',
-      label: 'submitsNoneLabel',
-      description: 'submitsNoneFundingDescription',
-    },
-  ],
-  ideas: [
-    {
-      key: 'rough',
-      label: 'submitsIdeasLabel',
-      description: 'submitsRoughIdeasDescription',
-    },
-    {
-      key: 'proposals',
-      label: 'submitsProposalsLabel',
-      description: 'submitsProposalsDescription',
-    },
-    {
-      key: 'none',
-      label: 'submitsNoneLabel',
-      description: 'submitsNoneIdeasDescription',
-    },
-  ],
-  people: [
-    {
-      key: 'nominations',
-      label: 'submitsNominationsLabel',
-      description: 'submitsNominationsDescription',
-    },
-    {
-      key: 'applications',
-      label: 'submitsCandidatesLabel',
-      description: 'submitsCandidatesDescription',
-    },
-    {
-      key: 'none',
-      label: 'submitsNoneLabel',
-      description: 'submitsNonePeopleDescription',
-    },
-  ],
-  else: [
-    {
-      key: 'proposals',
-      label: 'submitsWrittenLabel',
-      description: 'submitsProposalsDescription',
-    },
-    {
-      key: 'rough',
-      label: 'submitsRoughLabel',
-      description: 'submitsRoughElseDescription',
-    },
-    {
-      key: 'none',
-      label: 'submitsNoneLabel',
-      description: 'submitsNoneElseDescription',
-    },
-  ],
-};
-
-export const SUBMIT_HEADING: Record<Subject, WizardCopyKey> = {
-  funding: 'submitsFundingHeading',
-  ideas: 'submitsPutForwardHeading',
-  people: 'submitsPeopleHeading',
-  else: 'submitsPutForwardHeading',
-};
-
-export const DECISION_OPTIONS: Choice<Decision>[] = [
-  {
-    key: 'vote',
-    label: 'decisionVoteLabel',
-    description: 'decisionVoteDescription',
-  },
-  {
-    key: 'review',
-    label: 'decisionReviewLabel',
-    description: 'decisionReviewDescription',
-  },
-  {
-    key: 'both',
-    label: 'decisionBothLabel',
-    description: 'decisionBothDescription',
-  },
-  {
-    key: 'agree',
-    label: 'decisionAgreeLabel',
-    description: 'decisionAgreeDescription',
-  },
-];
 
 export function subjectPhrase(
   subject: SubjectAnswer | null,

@@ -4,17 +4,15 @@ import {
 } from '@op/common/client';
 
 import {
-  GRANT_DECISION_QUESTION,
-  SHAPE_QUESTION,
-  TYPE_OPTIONS,
-} from './content';
-import {
   CADENCE_OPTIONS,
   DECISION_OPTIONS,
+  GRANT_DECISION_QUESTION,
+  SHAPE_QUESTION,
   SUBJECT_OPTIONS,
   SUBMIT_HEADING,
   SUBMIT_OPTIONS,
-} from './otherContent';
+  TYPE_OPTIONS,
+} from './questions';
 import type {
   Choice,
   ProcessType,
