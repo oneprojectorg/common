@@ -12,6 +12,7 @@ import { logger } from '@op/logging';
 import {
   type SmsDeliver,
   agree,
+  change,
   done,
   freeText,
   info,
@@ -157,6 +158,8 @@ export const handleSMSCommand = inngest.createFunction(
         return remove(context);
       case 'move':
         return move(context);
+      case 'change':
+        return change(context);
       default:
         return assertNever(keyword);
     }
