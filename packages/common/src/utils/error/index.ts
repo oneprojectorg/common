@@ -136,5 +136,13 @@ export class VoteOutsideDistrictError extends ValidationError {
   }
 }
 
+export class VoteRevisionNotAllowedError extends ValidationError {
+  constructor(
+    message = 'This phase does not allow a cast ballot to be revised',
+  ) {
+    super(message);
+  }
+}
+
 /** A ballot cannot be priced because one proposal's cost is filled in but unreadable; the message names it. */
 export class BallotCostError extends ValidationError {}

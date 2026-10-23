@@ -124,6 +124,13 @@ export const Events = {
       processInstanceId: z.string().uuid(),
     }),
   },
+  voteRevised: {
+    name: 'vote/revised' as const,
+    schema: z.object({
+      voteSubmissionId: z.string().uuid(),
+      processInstanceId: z.string().uuid(),
+    }),
+  },
   reviewPhaseEndingSoon: {
     name: 'review/phase-ending-soon' as const,
     schema: z.object({
