@@ -8,6 +8,7 @@ import { randomUUID } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
+import { createGatingCallers } from '../../../test/helpers/gating/callers';
 import {
   accessTierGatingCell,
   describeDecisionAccessTierGating,
@@ -206,32 +207,7 @@ describe.concurrent('getResultsStats', () => {
     });
 
     const { instance } = setup.instance;
-
-    // Create a proposal so we can reference it in result selections
-    const proposal = await testData.createProposal({
-      userEmail: setup.userEmail,
-      processInstanceId: instance.id,
-      proposalData: { title: 'Test Proposal' },
-    });
-
-    // Insert a successful result execution with 5 voters
-    const [resultRecord] = await db
-      .insert(decisionProcessResults)
-      .values({
-        processInstanceId: instance.id,
-        success: true,
-        voterCount: 5,
-        selectedCount: 1,
-      })
-      .returning();
-
-    // Insert a result selection with an allocated amount
-    await db.insert(decisionProcessResultSelections).values({
-      processResultId: resultRecord!.id,
-      proposalId: proposal.id,
-      allocated: '1000',
-      selectionRank: 1,
-    });
+    await createResultWithOneSelection(testData, setup.userEmail, instance.id);
 
     // Create an org member (no profile access) — relies on org-level fallback
     const memberUser = await testData.createMemberUser({
@@ -293,6 +269,33 @@ describe.concurrent('getResultsStats', () => {
 
     const publicCaller = createCaller(await createTestContextWithSession(null));
     const result = await publicCaller.decision.getResultsStats({
+      instanceId: instance.id,
+    });
+
+    expect(result).toEqual({
+      membersVoted: 5,
+      proposalsFunded: 1,
+      totalAllocated: 1000,
+    });
+  });
+
+  it('returns stats to an anonymous session on a public decision', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const { instance, profileId } = setup.instance;
+    await createResultWithOneSelection(testData, setup.userEmail, instance.id);
+
+    await testData.makeDecisionPublic(profileId);
+
+    const caller = await createGatingCallers(onTestFinished).anonJwt();
+    const result = await caller.decision.getResultsStats({
       instanceId: instance.id,
     });
 
