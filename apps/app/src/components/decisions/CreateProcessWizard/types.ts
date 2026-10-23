@@ -51,7 +51,7 @@ export interface WizardAnswers {
 
 export type PhaseType = 'submissions' | 'review' | 'voting' | 'results';
 
-export interface ProcessPiece {
+export interface WizardPhase {
   /** The pitch while choosing; `phaseName` is the timeline label. */
   name: WizardCopyKey;
   phaseName?: WizardCopyKey;
@@ -66,7 +66,7 @@ export interface ProcessDraft {
   shape: ShapeKey;
   name: string;
   stewardProfileId: string;
-  pieces: ProcessPiece[];
+  phases: WizardPhase[];
 }
 
 export interface Choice<K extends string> {

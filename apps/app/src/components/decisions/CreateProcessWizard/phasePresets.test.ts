@@ -2,36 +2,36 @@ import { describe, expect, it } from 'vitest';
 
 import english from '@/lib/i18n/dictionaries/en.json';
 
-import { applyGrantDecision, piecesFor } from './phasePresets';
+import { applyGrantDecision, presetPhases } from './phasePresets';
 import { GRANT_DECISION_QUESTION, SHAPE_QUESTION } from './questions';
-import type { ProcessPiece } from './types';
+import type { WizardPhase } from './types';
 
 const copy: Record<string, unknown> = english.decisions.createWizard;
 
-const keysOf = (piece: ProcessPiece) =>
+const keysOf = (phase: WizardPhase) =>
   [
-    piece.name,
-    piece.phaseName,
-    piece.description,
-    piece.norm,
-    ...piece.capabilities,
+    phase.name,
+    phase.phaseName,
+    phase.description,
+    phase.norm,
+    ...phase.capabilities,
   ].filter((key) => key !== undefined);
 
 describe('applyGrantDecision', () => {
   it('leaves a rubric process alone', () => {
-    const pieces = piecesFor('grant', 'loi');
+    const phases = presetPhases('grant', 'loi');
 
-    expect(applyGrantDecision(pieces, 'rubric')).toBe(pieces);
-    expect(applyGrantDecision(pieces, null)).toBe(pieces);
+    expect(applyGrantDecision(phases, 'rubric')).toBe(phases);
+    expect(applyGrantDecision(phases, null)).toBe(phases);
   });
 
   it('replaces only the last review when the applicants vote', () => {
     const reshaped = applyGrantDecision(
-      piecesFor('grant', 'loi'),
+      presetPhases('grant', 'loi'),
       'applicants',
     );
 
-    expect(reshaped.map((piece) => piece.phaseType)).toEqual([
+    expect(reshaped.map((phase) => phase.phaseType)).toEqual([
       'submissions',
       'review',
       'submissions',
@@ -43,9 +43,12 @@ describe('applyGrantDecision', () => {
   });
 
   it('adds a vote after the narrowing review in the hybrid shape', () => {
-    const reshaped = applyGrantDecision(piecesFor('grant', 'single'), 'hybrid');
+    const reshaped = applyGrantDecision(
+      presetPhases('grant', 'single'),
+      'hybrid',
+    );
 
-    expect(reshaped.map((piece) => piece.phaseType)).toEqual([
+    expect(reshaped.map((phase) => phase.phaseType)).toEqual([
       'submissions',
       'review',
       'voting',
@@ -57,9 +60,9 @@ describe('applyGrantDecision', () => {
   });
 
   it('keeps the letter shortlist apart from the finalists in the hybrid shape', () => {
-    const reshaped = applyGrantDecision(piecesFor('grant', 'loi'), 'hybrid');
+    const reshaped = applyGrantDecision(presetPhases('grant', 'loi'), 'hybrid');
 
-    expect(reshaped.map((piece) => piece.phaseName)).toEqual([
+    expect(reshaped.map((phase) => phase.phaseName)).toEqual([
       'sendLetterIntent',
       'shortlisting',
       'sendYourApplication',
@@ -84,23 +87,23 @@ describe('every grantmaking and budgeting process', () => {
   );
 
   it.each(cases)('%s %s decided by %s', (type, shape, decision) => {
-    const pieces = applyGrantDecision(piecesFor(type, shape), decision);
-    const phaseNames = pieces.map((piece) => piece.phaseName ?? piece.name);
+    const phases = applyGrantDecision(presetPhases(type, shape), decision);
+    const phaseNames = phases.map((phase) => phase.phaseName ?? phase.name);
 
-    expect(pieces.length).toBeGreaterThan(1);
-    expect(pieces.at(-1)?.phaseType).toBe('results');
+    expect(phases.length).toBeGreaterThan(1);
+    expect(phases.at(-1)?.phaseType).toBe('results');
     expect(new Set(phaseNames).size).toBe(phaseNames.length);
-    expect(pieces.flatMap(keysOf).filter((key) => !(key in copy))).toEqual([]);
+    expect(phases.flatMap(keysOf).filter((key) => !(key in copy))).toEqual([]);
   });
 });
 
-describe('piecesFor', () => {
+describe('presetPhases', () => {
   it.each([
     [null, 'single'],
     ['grant', null],
     ['grant', 'ideas'],
     ['other', 'custom'],
   ] as const)('builds nothing for %s %s', (type, shape) => {
-    expect(piecesFor(type, shape)).toEqual([]);
+    expect(presetPhases(type, shape)).toEqual([]);
   });
 });
