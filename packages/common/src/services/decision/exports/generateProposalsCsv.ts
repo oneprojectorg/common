@@ -284,6 +284,7 @@ function buildProposalRow(
 
   return {
     'Proposal ID': p.id,
+    Code: p.shortCode ?? '',
     Title: p.profile?.name || '',
     Description: getDocumentDescription(p, snapshot),
     Budget: proposalData.budget?.amount ?? '',
@@ -358,6 +359,7 @@ function collectCustomFieldColumns(
 
 const FIXED_COLUMNS = [
   'Proposal ID',
+  'Code',
   'Title',
   'Description',
   'Budget',
