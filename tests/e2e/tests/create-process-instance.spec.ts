@@ -268,8 +268,7 @@ test.describe('Create process wizard', () => {
     await choose(page, 'Other process type');
 
     await expectScreen(page, 'What are you deciding?', { scan: false });
-    await page.getByRole('checkbox', { name: /^Funding/ }).click();
-    await page.getByRole('checkbox', { name: /^Something else/ }).click();
+    await page.getByRole('radio', { name: /^Something else/ }).click();
     await page.getByLabel('What are you deciding on?').fill('A venue');
     await expectNoAxeViolations(page);
     await page.getByRole('button', { name: 'Continue' }).click();
@@ -280,14 +279,8 @@ test.describe('Create process wizard', () => {
     );
     await choose(page, 'It has a timeline');
 
-    await expectScreen(
-      page,
-      'Common currently supports one decision per process. Which decision would you like to set up?',
-    );
-    await choose(page, 'Funding');
-
-    await expectScreen(page, 'What do people send in first?');
-    await choose(page, 'Full applications');
+    await expectScreen(page, 'What do people put forward first?');
+    await choose(page, 'Written submissions');
 
     await expectScreen(page, 'How does the decision get made?');
     await choose(page, 'Everyone votes');

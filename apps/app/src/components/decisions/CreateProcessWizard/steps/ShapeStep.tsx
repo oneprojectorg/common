@@ -6,12 +6,8 @@ import { useTranslations } from '@/lib/i18n';
 
 import { ChoiceList } from '../ChoiceList';
 import { StepHeading } from '../StepHeading';
-import {
-  GRANT_DECISION_QUESTION,
-  SHAPE_QUESTION,
-  type GrantDecision,
-} from '../content';
-import type { ShapeKey } from '../types';
+import { GRANT_DECISION_QUESTION, SHAPE_QUESTION } from '../content';
+import type { GrantDecision, ShapeKey } from '../types';
 
 export function ShapeStep({
   type,

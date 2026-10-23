@@ -59,6 +59,4 @@ export interface Choice<K extends string> {
   key: K;
   label: WizardCopyKey;
   description?: WizardCopyKey;
-  /** Shown untranslated in place of `description`. */
-  userText?: string;
 }

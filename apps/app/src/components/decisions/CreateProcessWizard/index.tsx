@@ -1,60 +1,43 @@
 'use client';
 
-import type { ProcessType } from '@op/common';
 import { Button } from '@op/sense/Button';
 import { Progress } from '@op/sense/Progress';
 import { cn } from '@op/sense/lib/utils';
-import { useLocale } from 'next-intl';
-import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
+import { type ReactNode, useEffect, useMemo, useReducer, useRef } from 'react';
 import { LuArrowLeft, LuArrowRight, LuX } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
 import { STEP_HEADING_ID } from './StepHeading';
-import { applyGrantDecision, piecesFor, type GrantDecision } from './content';
+import { applyGrantDecision, piecesFor } from './content';
 import {
-  EMPTY_ANSWERS,
+  INITIAL_STATE,
   TOTAL_STEPS,
-  isOtherScreen,
   isScreenComplete,
   nextScreen,
-  previousScreen,
   progressPercent,
-  reconcileAnswers,
   stepOf,
+  wizardReducer,
   type ScreenId,
   type WizardAnswers,
+  type WizardState,
 } from './flow';
-import {
-  composeOtherPieces,
-  describeOther,
-  type OtherAnswers,
-} from './otherFlow';
+import { composeOtherPieces, describeOther } from './otherContent';
 import { IntroBackdrop, IntroStep } from './steps/IntroStep';
 import { MappingStep } from './steps/MappingStep';
 import { NameAccessStep } from './steps/NameAccessStep';
 import { OtherStep } from './steps/OtherStep';
 import { GrantDecisionStep, ShapeStep } from './steps/ShapeStep';
 import { TypeStep } from './steps/TypeStep';
-import type { ProcessDraft, ProcessPiece, ShapeKey } from './types';
-import type { WizardProgress } from './wizardProgress';
+import type { ProcessDraft, ProcessPiece } from './types';
 
-interface StepBodyProps {
-  step: number;
+interface ScreenBodyProps {
   screen: ScreenId;
-  type: ProcessType | null;
-  shape: ShapeKey | null;
-  grantDecision: GrantDecision | null;
-  other: OtherAnswers;
+  answers: WizardAnswers;
   pieces: ProcessPiece[];
   recap?: ReactNode;
-  name: string;
+  onAnswer: (patch: Partial<WizardAnswers>) => void;
   onStart: () => void;
-  onTypeChange: (type: ProcessType) => void;
-  onShapeChange: (shape: ShapeKey) => void;
-  onGrantDecisionChange: (decision: GrantDecision) => void;
-  onOtherChange: (patch: Partial<OtherAnswers>) => void;
-  onNameChange: (name: string) => void;
   onSubmit: () => void;
 }
 
@@ -65,39 +48,32 @@ export function CreateProcessWizard({
   onComplete,
   isSubmitting = false,
 }: {
-  initial?: WizardProgress | null;
-  onProgressChange?: (progress: WizardProgress) => void;
+  initial?: WizardState | null;
+  onProgressChange?: (state: WizardState) => void;
   onExit: () => void;
   onComplete: (draft: ProcessDraft) => void;
   isSubmitting?: boolean;
 }) {
   const t = useTranslations('decisions.createWizard');
   const tShared = useTranslations();
-  const locale = useLocale();
 
-  const [screen, setScreen] = useState<ScreenId>(initial?.screen ?? 'intro');
-  const [answers, setAnswers] = useState<WizardAnswers>(
-    initial?.answers ?? EMPTY_ANSWERS,
-  );
-  const { type, shape, grantDecision, other, name } = answers;
+  const [state, dispatch] = useReducer(wizardReducer, initial ?? INITIAL_STATE);
+  const { screen, answers } = state;
+  const { type, name } = answers;
 
   useEffect(() => {
-    onProgressChange?.({ screen, answers });
-  }, [onProgressChange, screen, answers]);
+    onProgressChange?.(state);
+  }, [onProgressChange, state]);
 
   const answer = (patch: Partial<WizardAnswers>) =>
-    setAnswers((previous) =>
-      reconcileAnswers({ ...previous, ...patch }, previous),
-    );
+    dispatch({ type: 'answer', patch });
 
   const step = stepOf(screen);
-  const isOther = type === 'other';
   // Not before step 4, so answering step 3 doesn't recompose the phases.
   const isResolved = step >= 4;
   const pieces = useMemo(
-    () =>
-      isResolved ? resolvePieces({ type, shape, grantDecision, other }) : [],
-    [isResolved, type, shape, grantDecision, other],
+    () => (isResolved ? resolvePieces(answers) : []),
+    [isResolved, answers],
   );
 
   const canContinue = isScreenComplete(screen, answers);
@@ -120,26 +96,15 @@ export function CreateProcessWizard({
       return;
     }
 
-    const next = nextScreen(screen, answers);
-
-    if (!next) {
-      if (type && shape) {
-        onComplete({
-          type,
-          shape,
-          name: name.trim(),
-          pieces,
-        });
+    if (nextScreen(screen, answers) === null) {
+      if (type) {
+        onComplete({ type, name: name.trim(), pieces });
       }
 
       return;
     }
 
-    setScreen(next);
-  };
-
-  const back = () => {
-    setScreen(previousScreen(screen, answers) ?? screen);
+    dispatch({ type: 'next' });
   };
 
   let primaryLabel = tShared('Continue');
@@ -174,7 +139,11 @@ export function CreateProcessWizard({
             <LuX className="size-4" aria-hidden />
           </Button>
         ) : (
-          <Button variant="link" disabled={isSubmitting} onClick={back}>
+          <Button
+            variant="link"
+            disabled={isSubmitting}
+            onClick={() => dispatch({ type: 'back' })}
+          >
             <LuArrowLeft className="rtl:-scale-x-100" />
             {tShared('Back')}
           </Button>
@@ -187,7 +156,6 @@ export function CreateProcessWizard({
             onClick={() =>
               onComplete({
                 type: 'other',
-                shape: 'blank',
                 name: t('untitledProcessName'),
                 pieces: [],
               })
@@ -212,33 +180,17 @@ export function CreateProcessWizard({
             step === 4 ? 'max-w-177' : 'max-w-lg',
           )}
         >
-          <StepBody
-            step={step}
+          <ScreenBody
             screen={screen}
-            type={type}
-            shape={shape}
-            grantDecision={grantDecision}
-            other={other}
+            answers={answers}
             pieces={pieces}
             recap={
-              isOther && isResolved
-                ? describeOther(other, t, locale)
+              type === 'other' && isResolved
+                ? describeOther(answers, t)
                 : undefined
             }
-            name={name}
+            onAnswer={answer}
             onStart={advance}
-            onTypeChange={(next) => answer({ type: next })}
-            onShapeChange={(next) => answer({ shape: next })}
-            onGrantDecisionChange={(next) => answer({ grantDecision: next })}
-            onOtherChange={(patch) =>
-              setAnswers((previous) =>
-                reconcileAnswers(
-                  { ...previous, other: { ...previous.other, ...patch } },
-                  previous,
-                ),
-              )
-            }
-            onNameChange={(next) => answer({ name: next })}
             onSubmit={advance}
           />
 
@@ -261,75 +213,65 @@ export function CreateProcessWizard({
   );
 }
 
-function StepBody(props: StepBodyProps) {
-  const { step, type } = props;
-
-  if (step === 1) {
-    return <IntroStep onStart={props.onStart} />;
-  }
-
-  if (step === 2) {
-    return <TypeStep value={type} onChange={props.onTypeChange} />;
-  }
-
-  if (step === 3) {
-    return type ? <StepThree {...props} type={type} /> : null;
-  }
-
-  if (step === 4) {
-    return type ? (
-      <MappingStep pieces={props.pieces} recap={props.recap} />
-    ) : null;
-  }
-
-  return (
-    <NameAccessStep
-      name={props.name}
-      onNameChange={props.onNameChange}
-      onSubmit={props.onSubmit}
-    />
-  );
-}
-
-function StepThree({
+function ScreenBody({
   screen,
-  type,
-  shape,
-  grantDecision,
-  other,
-  onShapeChange,
-  onGrantDecisionChange,
-  onOtherChange,
-}: StepBodyProps & { type: ProcessType }) {
-  if (isOtherScreen(screen)) {
-    return <OtherStep step={screen} answers={other} onChange={onOtherChange} />;
+  answers,
+  pieces,
+  recap,
+  onAnswer,
+  onStart,
+  onSubmit,
+}: ScreenBodyProps) {
+  switch (screen) {
+    case 'intro':
+      return <IntroStep onStart={onStart} />;
+    case 'type':
+      return (
+        <TypeStep
+          value={answers.type}
+          onChange={(type) => onAnswer({ type })}
+        />
+      );
+    case 'shape':
+      return answers.type ? (
+        <ShapeStep
+          type={answers.type}
+          value={answers.shape}
+          onChange={(shape) => onAnswer({ shape })}
+        />
+      ) : null;
+    case 'grantDecision':
+      return (
+        <GrantDecisionStep
+          value={answers.grantDecision}
+          onChange={(grantDecision) => onAnswer({ grantDecision })}
+        />
+      );
+    case 'subject':
+    case 'cadence':
+    case 'submits':
+    case 'decision':
+      return (
+        <OtherStep screen={screen} answers={answers} onChange={onAnswer} />
+      );
+    case 'mapping':
+      return <MappingStep pieces={pieces} recap={recap} />;
+    case 'name':
+      return (
+        <NameAccessStep
+          name={answers.name}
+          onNameChange={(name) => onAnswer({ name })}
+          onSubmit={onSubmit}
+        />
+      );
   }
-
-  if (screen === 'grantDecision') {
-    return (
-      <GrantDecisionStep
-        value={grantDecision}
-        onChange={onGrantDecisionChange}
-      />
-    );
-  }
-
-  return <ShapeStep type={type} value={shape} onChange={onShapeChange} />;
 }
 
-function resolvePieces({
-  type,
-  shape,
-  grantDecision,
-  other,
-}: {
-  type: ProcessType | null;
-  shape: ShapeKey | null;
-  grantDecision: GrantDecision | null;
-  other: OtherAnswers;
-}): ProcessPiece[] {
+function resolvePieces(answers: WizardAnswers): ProcessPiece[] {
+  const { type, shape, grantDecision } = answers;
+
   if (type === 'other') {
-    return composeOtherPieces(other);
+    return composeOtherPieces(answers);
   }
 
   if (type === 'grant') {
