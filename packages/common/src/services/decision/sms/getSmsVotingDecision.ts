@@ -4,7 +4,8 @@ import { permission } from 'access-zones';
 
 import { NotFoundError } from '../../../utils';
 import { assertProfileAccess } from '../../assert';
-import { formatUnitAmount, getFieldUnit } from '../fieldUnit';
+import { formatSmsAmount } from '../../sms/formatSmsAmount';
+import { getFieldUnit } from '../fieldUnit';
 import { getDecisionBySlug } from '../getDecisionBySlug';
 import { resolveProposalTemplate } from '../resolveProposalTemplate';
 import { getInstancePhases } from '../schemas/instanceData';
@@ -57,7 +58,7 @@ const summarizeVotingInstance = async (
     enrolment: (phase && getVoterEnrolment(phase)) ?? null,
     budget:
       voterBudget !== undefined && unit
-        ? formatUnitAmount({ amount: voterBudget, unit })
+        ? formatSmsAmount({ amount: voterBudget, unit })
         : null,
   };
 };

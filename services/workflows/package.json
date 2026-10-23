@@ -31,6 +31,7 @@
   },
   "devDependencies": {
     "@inngest/test": "^0.1.9",
+    "@op/collab": "workspace:*",
     "@op/typescript-config": "workspace:*",
     "@op/vitest-config": "workspace:*",
     "@vitest/coverage-istanbul": "catalog:",

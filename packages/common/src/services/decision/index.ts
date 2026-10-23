@@ -250,3 +250,4 @@ export * from './getBallotProposalByCode';
 export * from './forwardGeocode';
 export * from './voterEnrolment';
 export * from './geocoder';
+export * from './ballotDraft';

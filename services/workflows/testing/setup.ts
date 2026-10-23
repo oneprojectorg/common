@@ -16,6 +16,7 @@ vi.mock('@op/common/src/services/notification/provider', async () =>
 vi.mock('@op/common/src/services/decision/geocoder', async () =>
   (await import('./mocks/geocoder')).geocoderMock(),
 );
+vi.mock('@op/collab', async () => import('@op/collab/testing'));
 // The shared setup's `vi.mock('@op/events')` strips `inngest.createFunction`.
 vi.mock('../../../packages/common/testing/setup', async () => {
   const { createSBServiceClient } = await import('@op/supabase/server');
