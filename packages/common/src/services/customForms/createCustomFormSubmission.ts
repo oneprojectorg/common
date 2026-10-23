@@ -1,19 +1,17 @@
-import { and, db, eq } from '@op/db/client';
-import type { CustomFormSubmission } from '@op/db/schema';
-import {
-  customFormSubmissions,
-  decisionsVoteSubmissions,
-  processInstances,
-} from '@op/db/schema';
+import { db, eq } from '@op/db/client';
+import type { CustomForm, CustomFormSubmission } from '@op/db/schema';
+import { customFormSubmissions } from '@op/db/schema';
 import { permission } from 'access-zones';
 
 import { CommonError, NotFoundError, ValidationError } from '../../utils';
 import { assertProfileAccess } from '../assert';
 import { schemaValidator } from '../decision/schemaValidator';
+import { parseInstancePhases } from './customFormAuth';
 import type {
   CreateCustomFormSubmissionInput,
   CustomFormDefinitionSchema,
 } from './schemas/customForm';
+import { getEffectiveFormPhase } from './utils';
 
 /**
  * Records a submission against a custom form, attached to the target
@@ -22,10 +20,12 @@ import type {
  * Authorization: the caller must hold profile access on the TARGET profile
  * (for a proposal attachment, the proposal's own profile — its creator and
  * collaborators). The target must also belong to the form's owning process,
- * via one of two attachment sites:
- *   - a proposal whose decision process owns the form (submission/edit forms), or
- *   - a participant's own profile that has voted in the process (e.g. a
- *     post-vote form attached to the voter's individual profile).
+ * via one of these attachment sites:
+ *   - a proposal whose decision process owns the form (submission/edit forms),
+ *   - a participant's own profile that has voted in the process (post-vote
+ *     forms), or
+ *   - a reviewer's own profile with a review assignment in the form's phase
+ *     (review-phase forms).
  *
  * Idempotent per (customFormId, profileId): a retry after a failed
  * follow-up mutation updates the existing row instead of inserting a
@@ -65,10 +65,7 @@ export const createCustomFormSubmission = async ({
 
   // The target profile must belong to the process that owns the form
   // (`form.profileId` is the process instance's profile). This stops a caller
-  // from attaching their own entity to an unrelated form. Two attachment sites
-  // are allowed:
-  //   1. a proposal in the form's process (submission/edit forms), or
-  //   2. a participant's own profile that voted in the process (post-vote forms).
+  // from attaching their own entity to an unrelated form.
   const proposal = await db.query.proposals.findFirst({
     where: { profileId: input.profileId },
     with: { processInstance: true },
@@ -77,33 +74,14 @@ export const createCustomFormSubmission = async ({
   const belongsViaProposal =
     !!proposal && proposal.processInstance.profileId === form.profileId;
 
-  let belongsViaParticipation = false;
-  if (!belongsViaProposal) {
-    // Resolve the process instance that owns the form, then confirm the target
-    // profile cast a vote in it. `decisionsVoteSubmissions` is the authoritative
-    // per-voter participation record (unique per instance + voter).
-    const [instance] = await db
-      .select({ id: processInstances.id })
-      .from(processInstances)
-      .where(eq(processInstances.profileId, form.profileId))
-      .limit(1);
+  const belongsToForm =
+    belongsViaProposal ||
+    (await isParticipantInFormProcess({
+      participantProfileId: input.profileId,
+      form,
+    }));
 
-    if (instance) {
-      const [vote] = await db
-        .select({ id: decisionsVoteSubmissions.id })
-        .from(decisionsVoteSubmissions)
-        .where(
-          and(
-            eq(decisionsVoteSubmissions.processInstanceId, instance.id),
-            eq(decisionsVoteSubmissions.submittedByProfileId, input.profileId),
-          ),
-        )
-        .limit(1);
-      belongsViaParticipation = !!vote;
-    }
-  }
-
-  if (!belongsViaProposal && !belongsViaParticipation) {
+  if (!belongsToForm) {
     throw new ValidationError(
       'The submission target does not belong to this form',
     );
@@ -155,4 +133,49 @@ export const createCustomFormSubmission = async ({
   }
 
   return submission;
+};
+
+const isParticipantInFormProcess = async ({
+  participantProfileId,
+  form,
+}: {
+  participantProfileId: string;
+  form: CustomForm;
+}): Promise<boolean> => {
+  const instance = await db.query.processInstances.findFirst({
+    where: { profileId: form.profileId },
+    columns: { id: true, instanceData: true },
+  });
+
+  if (!instance) {
+    return false;
+  }
+
+  // A reviewer answers only the form of a phase they review in.
+  const formPhaseId = getEffectiveFormPhase({
+    schema: form.schema,
+    initialPhaseId: parseInstancePhases(instance.instanceData).initialPhaseId,
+  });
+
+  const [vote, reviewAssignment] = await Promise.all([
+    db.query.decisionsVoteSubmissions.findFirst({
+      where: {
+        processInstanceId: instance.id,
+        submittedByProfileId: participantProfileId,
+      },
+      columns: { id: true },
+    }),
+    formPhaseId
+      ? db.query.proposalReviewAssignments.findFirst({
+          where: {
+            processInstanceId: instance.id,
+            reviewerProfileId: participantProfileId,
+            phaseId: formPhaseId,
+          },
+          columns: { id: true },
+        })
+      : undefined,
+  ]);
+
+  return !!vote || !!reviewAssignment;
 };

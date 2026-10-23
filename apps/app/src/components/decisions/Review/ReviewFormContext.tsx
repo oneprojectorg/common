@@ -1,6 +1,7 @@
 'use client';
 
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
+import { useUser } from '@/utils/UserProvider';
 import { getDecisionCommonProperties } from '@op/analytics/client-utils';
 import { trpc } from '@op/api/client';
 import {
@@ -31,6 +32,7 @@ import {
 
 import { useRouter, useTranslations } from '@/lib/i18n';
 
+import { usePhaseCustomForm } from '../proposalEditor/usePhaseCustomForm';
 import { withYesNoDefaults } from '../rubricTemplate';
 
 const AUTOSAVE_DEBOUNCE_MS = 1000;
@@ -131,6 +133,7 @@ function ReviewFormProviderInner({
   const t = useTranslations('decisions.review');
   const router = useRouter();
   const posthog = usePostHog();
+  const { user } = useUser();
 
   const [reviewAssignment] = trpc.decision.getReviewAssignment.useSuspenseQuery(
     { assignmentId },
@@ -307,13 +310,23 @@ function ReviewFormProviderInner({
 
   // Rejections are swallowed: the mutation's onError owns the message, and
   // callers only await settlement.
-  const handleSubmit = useCallback(async () => {
+  const submitRubric = useCallback(async () => {
     await submitMutate({
       assignmentId,
       reviewData: { answers: values, rationales },
       overallComment: overallComment.trim() ? overallComment : null,
     }).catch(() => {});
   }, [assignmentId, values, rationales, overallComment, submitMutate]);
+
+  // The answers attach to the reviewer's own profile, as post-vote answers do.
+  const { submitWithCustomForm, isSubmittingWithCustomForm, customFormModal } =
+    usePhaseCustomForm({
+      processInstanceId: assignment.processInstanceId,
+      phaseId: assignment.phaseId,
+      targetProfileId: user?.profileId ?? undefined,
+      submitLabel: t('submitReviewAction'),
+      onSubmit: submitRubric,
+    });
 
   const startEditing = useCallback(() => {
     setIsEditRequested(true);
@@ -351,7 +364,7 @@ function ReviewFormProviderInner({
   const canUpdate = isRubricValid && isEditing;
 
   // What a host outside the form needs to drive its primary action.
-  const primaryAction = isEditing ? handleUpdate : handleSubmit;
+  const primaryAction = isEditing ? handleUpdate : submitWithCustomForm;
   const primaryActionEnabled = isEditing ? canUpdate : canSubmit;
 
   useEffect(() => {
@@ -368,7 +381,7 @@ function ReviewFormProviderInner({
       rationales,
       overallComment,
       canSubmit,
-      isSubmitting: submitReview.isPending,
+      isSubmitting: isSubmittingWithCustomForm,
       isSubmitted,
       canEditReview,
       isEditing,
@@ -385,7 +398,7 @@ function ReviewFormProviderInner({
       handleValueChange,
       handleRationaleChange,
       handleOverallCommentChange,
-      handleSubmit,
+      handleSubmit: submitWithCustomForm,
       startEditing,
       handleUpdate,
       requestRevision: handleRequestRevision,
@@ -412,13 +425,13 @@ function ReviewFormProviderInner({
       rubricTemplate,
       review,
       assignment,
-      submitReview.isPending,
+      isSubmittingWithCustomForm,
       requestRevisionMutation.isPending,
       cancelRevisionMutation.isPending,
       handleValueChange,
       handleRationaleChange,
       handleOverallCommentChange,
-      handleSubmit,
+      submitWithCustomForm,
       startEditing,
       handleUpdate,
       handleRequestRevision,
@@ -429,6 +442,7 @@ function ReviewFormProviderInner({
   return (
     <ReviewFormContext.Provider value={state}>
       {children}
+      {customFormModal}
     </ReviewFormContext.Provider>
   );
 }
