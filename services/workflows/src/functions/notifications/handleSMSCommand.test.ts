@@ -2527,7 +2527,7 @@ describe('handleSMSCommand changing a cast ballot', () => {
   const keyword = (
     from: string,
     to: string,
-    kw: 'submit' | 'change' | 'remove',
+    kw: 'submit' | 'change' | 'remove' | 'list' | 'proposals',
     argument: string | null = null,
     tag = '',
   ) =>
@@ -2675,12 +2675,12 @@ describe('handleSMSCommand changing a cast ballot', () => {
     ]);
   });
 
-  it('given a cast ballot, when the member texts a code without CHANGE, then nothing is added and they are told to text CHANGE', async ({
+  it('given a cast ballot, when the member browses and then texts a code, LIST or SUBMIT without CHANGE, then the cast ballot stands and they are told to text CHANGE', async ({
     task,
     onTestFinished,
   }) => {
     const fixture = new SmsCommandFixture(task.id, onTestFinished);
-    await seed(fixture, {
+    const { instanceId } = await seed(fixture, {
       phone: NUMBERS.changeFirst,
       line: LINES.changeFirst,
       name: `Change First ${task.id}`,
@@ -2688,16 +2688,42 @@ describe('handleSMSCommand changing a cast ballot', () => {
     });
     await text(NUMBERS.changeFirst, LINES.changeFirst, '101');
     await keyword(NUMBERS.changeFirst, LINES.changeFirst, 'submit');
+    await keyword(NUMBERS.changeFirst, LINES.changeFirst, 'proposals');
 
-    const { result } = await text(
+    const { result: picked } = await text(
       NUMBERS.changeFirst,
       LINES.changeFirst,
       '102',
     );
-
-    expect(result).toEqual({ message: 'ballot already in' });
-    expect(recordedSms.at(-1)?.body).toBe(
-      'Your ballot is in. Text CHANGE to revise it.',
+    const { result: listed } = await keyword(
+      NUMBERS.changeFirst,
+      LINES.changeFirst,
+      'list',
     );
+    const { result: submitted } = await keyword(
+      NUMBERS.changeFirst,
+      LINES.changeFirst,
+      'submit',
+    );
+
+    expect(picked).toEqual({ message: 'ballot already in' });
+    expect(listed).toEqual({ message: 'ballot already in' });
+    expect(submitted).toEqual({ message: 'ballot already submitted' });
+    expect(recordedSms.slice(-3).map((sms) => sms.body)).toEqual([
+      'Your ballot is in. Text CHANGE to revise it.',
+      'Your ballot is in. Text CHANGE to revise it.',
+      'Your ballot is already in. One ballot per person.',
+    ]);
+    const proposals = await db.query.proposals.findMany({
+      where: { processInstanceId: instanceId },
+      columns: { id: true, shortCode: true },
+    });
+    const submission = await db.query.decisionsVoteSubmissions.findFirst({
+      where: { processInstanceId: instanceId },
+      columns: { voteData: true },
+    });
+    expect(submission?.voteData.selections?.map((s) => s.proposalId)).toEqual([
+      proposals.find((p) => p.shortCode === 101)?.id,
+    ]);
   });
 });
