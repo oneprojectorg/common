@@ -105,6 +105,7 @@ export const ProposalsFilterBar = ({
   view,
   count,
   total,
+  header,
   exportControl,
   leadingSelect,
 }: {
@@ -114,6 +115,8 @@ export const ProposalsFilterBar = ({
   count: number;
   /** Unfiltered count for the phase — the "of N" pool. */
   total: number;
+  /** Replaces the count — e.g. the admin review title. */
+  header?: React.ReactNode;
   /** Admin-only CSV export control; omitted entirely for non-admins. */
   exportControl?: React.ReactNode;
   leadingSelect: ProposalSelectControl;
@@ -126,7 +129,7 @@ export const ProposalsFilterBar = ({
           from 2xl it grows instead, taking the slack that pushes search to the
           end and putting both boxes on one line. */}
       <div className="flex flex-wrap items-center justify-between gap-4 max-2xl:w-full 2xl:flex-1">
-        <ProposalsListHeader count={count} total={total} />
+        {header ?? <ProposalsListHeader count={count} total={total} />}
         <ProposalSearchField
           className="ms-auto"
           value={controls.search}

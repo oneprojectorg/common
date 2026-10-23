@@ -91,6 +91,12 @@ export interface ProposalsListProps {
    */
   pinnedFilter?: ProposalFilter;
   /**
+   * Replaces the "N proposals" count in the filter bar; receives the count for
+   * the active filter. The admin review surface titles itself
+   * "Proposals in review · N".
+   */
+  header?: (count: number) => ReactNode;
+  /**
    * Px offset where the sticky filter bar pins. Decision-view passes a larger
    * value to clear the Overview/Current toggle; other routes use the default.
    */
@@ -282,6 +288,7 @@ const ProposalsListContent = ({
   currentPhase,
   proposalsHidden,
   excludeAssignedForReview,
+  header,
   pinOffset,
   phase,
   showFilterTabs = false,
@@ -599,6 +606,7 @@ const ProposalsListContent = ({
         pinOffset={pinOffset}
         count={total}
         total={totalProposalCount}
+        header={header?.(total)}
         // Omitted when the phase hides proposals from non-admins.
         controls={hideFilters ? undefined : controls}
         leadingSelect={leadingSelect}
