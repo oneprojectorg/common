@@ -56,6 +56,9 @@ purpose and survives a second channel.
   shared number with a slug.
 - The table is the source of truth for routing. A number bound in the
   Twilio Console but not in the table behaves as the shared number.
+- The database checks that `phone_number` is E.164, because the row is
+  written by hand: a number saved as `+1 (500) 555-0098` would pass the
+  unique index and never match Twilio's `To`.
 - Rejected: a webhook URL per number in the Twilio Console, for the
   reasons in Context.
 - Rejected: `profile_chat_lines`, keyed by `profile_id` so one table

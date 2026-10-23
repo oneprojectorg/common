@@ -4,7 +4,8 @@ CREATE TABLE "decision_chat_lines" (
 	"phone_number" varchar(32) NOT NULL,
 	"created_at" timestamp with time zone DEFAULT (now() AT TIME ZONE 'utc'::text),
 	"updated_at" timestamp with time zone DEFAULT (now() AT TIME ZONE 'utc'::text),
-	"deleted_at" timestamp with time zone
+	"deleted_at" timestamp with time zone,
+	CONSTRAINT "decision_chat_lines_phone_number_e164_chk" CHECK ("phone_number" ~ '^\+[1-9][0-9]{1,14}$')
 );
 --> statement-breakpoint
 ALTER TABLE "decision_chat_lines" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint

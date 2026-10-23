@@ -1,7 +1,7 @@
 {
   "version": "8",
   "dialect": "postgres",
-  "id": "aac11532-8fc9-48a5-90c6-d877d3c42ee4",
+  "id": "d6a5e3fe-97e6-48ee-a84e-0d3b106ec855",
   "prevIds": [
     "51e07490-f5b9-47a7-a02c-f5afeeecf462"
   ],
@@ -15777,6 +15777,13 @@
       "schema": "public",
       "table": "users",
       "entityType": "uniques"
+    },
+    {
+      "value": "\"phone_number\" ~ '^\\+[1-9][0-9]{1,14}$'",
+      "name": "decision_chat_lines_phone_number_e164_chk",
+      "entityType": "checks",
+      "schema": "public",
+      "table": "decision_chat_lines"
     },
     {
       "value": "\"source_proposal_id\" <> \"target_proposal_id\"",
