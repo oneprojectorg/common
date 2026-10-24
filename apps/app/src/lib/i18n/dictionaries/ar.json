@@ -1392,8 +1392,6 @@
       "overBudgetHint": "تكلفة هذا المقترح أكبر من المبلغ المتبقي لك {remaining}. أزل أحد اختياراتك لإفساح المجال.",
       "budgetAllocatedLabel": "الميزانية المخصصة",
       "budgetAllocatedSummary": "تم تخصيص {allocated} من {budget}",
-      "budgetSpentOfTotal": "{allocated} من {budget}",
-      "budgetAllocatedRemaining": "تم تخصيص <highlight>{allocated}</highlight> · {remaining} غير مُنفَق",
       "budgetAllocatedOfTotal": "تم تخصيص <highlight>{allocated}</highlight> من {budget}",
       "budgetAllocatedAmount": "تم تخصيص {allocated}",
       "budgetRemainingAmount": "متبقٍ للإنفاق {remaining}",

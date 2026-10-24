@@ -1392,8 +1392,6 @@
       "overBudgetHint": "Esta proposta custa mais do que os {remaining} que restam. Remova uma escolha para abrir espaço.",
       "budgetAllocatedLabel": "Orçamento alocado",
       "budgetAllocatedSummary": "{allocated} de {budget} alocados",
-      "budgetSpentOfTotal": "{allocated} de {budget}",
-      "budgetAllocatedRemaining": "<highlight>{allocated}</highlight> alocados · {remaining} não gastos",
       "budgetAllocatedOfTotal": "<highlight>{allocated}</highlight> de {budget} alocados",
       "budgetAllocatedAmount": "{allocated} alocados",
       "budgetRemainingAmount": "{remaining} para gastar",

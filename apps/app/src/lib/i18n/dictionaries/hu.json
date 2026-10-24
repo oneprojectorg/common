@@ -1392,8 +1392,6 @@
       "overBudgetHint": "Ez a javaslat többe kerül, mint a fennmaradó {remaining}. Távolíts el egy választást, hogy helyet csinálj.",
       "budgetAllocatedLabel": "Kiosztott költségkeret",
       "budgetAllocatedSummary": "{budget} összegből {allocated} kiosztva",
-      "budgetSpentOfTotal": "{budget} összegből {allocated}",
-      "budgetAllocatedRemaining": "<highlight>{allocated}</highlight> kiosztva · {remaining} elköltetlen",
       "budgetAllocatedOfTotal": "{budget} összegből <highlight>{allocated}</highlight> kiosztva",
       "budgetAllocatedAmount": "{allocated} kiosztva",
       "budgetRemainingAmount": "{remaining} maradt elkölteni",

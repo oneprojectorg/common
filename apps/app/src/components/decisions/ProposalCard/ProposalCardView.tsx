@@ -13,6 +13,7 @@ import {
 import { match } from '@op/core';
 import { ProposalCard as SenseProposalCard } from '@op/sense/ProposalCard';
 import { StatusBadge } from '@op/sense/StatusBadge';
+import { cn } from '@op/sense/lib/utils';
 import type { ComponentProps, ReactNode } from 'react';
 import { LuCircleX } from 'react-icons/lu';
 
@@ -352,6 +353,31 @@ function useProposalCardMetrics({
     }),
   };
 }
+
+/**
+ * Compact proposal card for confirm modals and selection lists: title, budget,
+ * category tags, and author only — no preview, status, or actions.
+ */
+export const ProposalMiniCard = ({
+  proposal,
+  className,
+}: {
+  proposal: Proposal;
+  className?: string;
+}) => {
+  const { titleText, budgetText, displayCategories, authors } =
+    useProposalCardData({ proposal });
+
+  return (
+    <SenseProposalCard
+      title={titleText}
+      budget={budgetText}
+      tags={displayCategories.length > 0 ? displayCategories : undefined}
+      authors={authors}
+      className={cn('bg-muted p-4', className)}
+    />
+  );
+};
 
 /** Rejected, or left behind by an earlier transition whatever its status. */
 const isNotAdvanced = ({
