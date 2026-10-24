@@ -1,7 +1,6 @@
 'use client';
 
 import type { Proposal } from '@op/common/client';
-import { useMediaQuery } from '@op/hooks';
 import { BadgeNumber } from '@op/sense/Badge';
 import { Button } from '@op/sense/Button';
 import {
@@ -18,7 +17,6 @@ import {
   type SortableItemControls,
 } from '@op/sense/Sortable';
 import { cn } from '@op/sense/lib/utils';
-import { screens } from '@op/styles/constants';
 import { type ReactNode, type RefCallback, useRef } from 'react';
 import { LuChevronDown, LuChevronUp, LuCircleCheck, LuX } from 'react-icons/lu';
 
@@ -27,8 +25,6 @@ import { useTranslations } from '@/lib/i18n';
 import {
   type BallotBudget,
   formatBallotAmount,
-  getBallotRemaining,
-  getBallotTotal,
   getProposalCost,
   moveBallotItem,
 } from './ballot';
@@ -42,21 +38,15 @@ export const BallotPopover = ({
   ballot,
   budget,
   onBallotChange,
-  footer,
   children,
 }: {
   ballot: Proposal[];
   budget?: BallotBudget;
   onBallotChange: (ballot: Proposal[]) => void;
-  /** The bar the popover opens above; it keeps a fixed gap from it. */
-  footer: HTMLElement | null;
   /** The trigger's label: the selection count. */
   children: ReactNode;
 }) => {
   const t = useTranslations('decisions.proposals');
-  // The exact complement of `md:`, where the footer stops wrapping.
-  const isBelowMd =
-    useMediaQuery(`not all and (min-width: ${screens.md})`) ?? false;
   const popupRef = useRef<HTMLDivElement>(null);
   const removeButtons = useRef(new Map<string, HTMLButtonElement>());
   const getTitle = (proposal: Proposal) =>
@@ -83,7 +73,7 @@ export const BallotPopover = ({
             variant="ghost"
             className={cn(
               // Pulled out by its own padding so the icon lines up with the bar.
-              '-ms-3 text-base max-md:text-sm',
+              '-ms-4 text-base data-popup-open:bg-secondary max-md:text-sm',
               ballot.length === 0
                 ? 'font-normal text-muted-foreground'
                 : 'font-medium',
@@ -92,40 +82,30 @@ export const BallotPopover = ({
         }
       >
         <LuCircleCheck
-          data-icon="inline-start"
           aria-hidden
-          className={cn(
-            'size-5',
-            ballot.length === 0 ? 'text-input' : 'text-primary',
-          )}
+          className={cn('size-5', ballot.length === 0 && 'text-input')}
         />
         {children}
-        <LuChevronDown
-          data-icon="inline-end"
-          aria-hidden
-          className="text-muted-foreground transition-transform group-data-popup-open/button:rotate-180 motion-reduce:transition-none"
-        />
       </PopoverTrigger>
-      {/* Anchored to the footer, so the gap holds when it wraps on mobile;
-          there the popover spans the screen less its 16px margins and sits
-          further up, as in the prototype. */}
       <PopoverContent
         ref={popupRef}
-        anchor={footer}
         side="top"
         align="start"
-        sideOffset={isBelowMd ? 34 : 24}
-        alignOffset={16}
-        collisionPadding={16}
-        className="max-h-(--available-height) w-(--available-width) gap-0 overflow-hidden p-0 md:w-115"
+        sideOffset={8}
+        collisionPadding={8}
+        className="max-h-(--available-height) w-156 max-w-(--available-width) gap-0 overflow-hidden p-0"
       >
-        <PopoverHeader className="px-5 pt-4 pb-1.5">
-          <PopoverTitle>{t('ballotTitle')}</PopoverTitle>
-          <PopoverDescription>{t('ballotReorderHint')}</PopoverDescription>
+        <PopoverHeader className="px-4 pt-3 pb-3">
+          <PopoverTitle className="text-title leading-5">
+            {t('ballotTitle')}
+          </PopoverTitle>
+          <PopoverDescription className="text-base">
+            {t('ballotReorderHint')}
+          </PopoverDescription>
         </PopoverHeader>
 
         {ballot.length === 0 ? (
-          <p className="px-5 pt-3.5 pb-5 text-sm text-muted-foreground">
+          <p className="px-4 pb-4 text-base text-muted-foreground">
             {t('ballotEmptyHint')}
           </p>
         ) : (
@@ -134,7 +114,7 @@ export const BallotPopover = ({
             onChange={onBallotChange}
             aria-label={t('ballotTitle')}
             getItemLabel={getTitle}
-            className="min-h-0 flex-1 overflow-y-auto px-3 pt-1.5 pb-2.5"
+            className="min-h-0 flex-1 overflow-y-auto px-4 pb-4"
             itemClassName="not-first:border-t"
           >
             {(proposal, controls) => {
@@ -169,8 +149,6 @@ export const BallotPopover = ({
             }}
           </Sortable>
         )}
-
-        {budget && <BallotRemaining ballot={ballot} budget={budget} />}
       </PopoverContent>
     </Popover>
   );
@@ -202,34 +180,34 @@ const BallotRow = ({
   const rank = index + 1;
 
   return (
-    <div className="flex items-center gap-2.5 bg-background px-1 py-2">
+    <div className="flex items-center gap-2 bg-background py-2.5">
       <DragHandle
         {...dragHandleProps}
-        className="p-0 text-input hover:text-foreground"
+        className="ms-1 me-3"
         aria-label={t('ballotDragLabel', { title: titleText })}
       />
-      <BadgeNumber aria-hidden className="h-6 min-w-6 font-medium">
+      <BadgeNumber variant="secondary" aria-hidden>
         {rank}
       </BadgeNumber>
-      <p className="min-w-0 flex-1 text-sm">
+      <p className="min-w-0 flex-1 text-base">
         <bdi>{titleText}</bdi>
       </p>
       {budget && (
-        <span className="shrink-0 text-sm text-muted-foreground tabular-nums">
+        <span className="shrink-0 text-base text-muted-foreground tabular-nums">
           {formatBallotAmount({
             amount: getProposalCost({ proposal, budget }),
             unit: budget.unit,
           })}
         </span>
       )}
-      <div className="flex shrink-0 gap-0.5">
+      <div className="ms-2.5 flex shrink-0 gap-0.5">
         <Button
           variant="ghost"
           size="icon-sm"
           disabled={!onMoveUp}
           // Focusable at the edge, or a move to the top drops keyboard focus.
           focusableWhenDisabled
-          className="aria-disabled:opacity-30 max-md:size-8.5"
+          className="aria-disabled:opacity-30"
           onClick={onMoveUp}
           aria-label={t('ballotMoveUpLabel', { title: titleText })}
         >
@@ -240,7 +218,7 @@ const BallotRow = ({
           size="icon-sm"
           disabled={!onMoveDown}
           focusableWhenDisabled
-          className="aria-disabled:opacity-30 max-md:size-8.5"
+          className="aria-disabled:opacity-30"
           onClick={onMoveDown}
           aria-label={t('ballotMoveDownLabel', { title: titleText })}
         >
@@ -257,36 +235,6 @@ const BallotRow = ({
           <LuX />
         </Button>
       </div>
-    </div>
-  );
-};
-
-const BallotRemaining = ({
-  ballot,
-  budget,
-}: {
-  ballot: Proposal[];
-  budget: BallotBudget;
-}) => {
-  const t = useTranslations('decisions.proposals');
-  const total = getBallotTotal({ proposals: ballot, budget });
-  const remaining = getBallotRemaining({ proposals: ballot, budget });
-
-  return (
-    <div className="flex justify-between gap-3 border-t bg-muted px-5 py-2.5 text-sm text-muted-foreground tabular-nums">
-      <span>
-        {t('budgetAllocatedAmount', {
-          allocated: formatBallotAmount({ amount: total, unit: budget.unit }),
-        })}
-      </span>
-      <span>
-        {t('budgetRemainingAmount', {
-          remaining: formatBallotAmount({
-            amount: remaining,
-            unit: budget.unit,
-          }),
-        })}
-      </span>
     </div>
   );
 };

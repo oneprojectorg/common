@@ -243,7 +243,6 @@ const VotingProposalsList = ({
   const [isVoteReviewOpen, setIsVoteReviewOpen] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showPhaseFormModal, setShowPhaseFormModal] = useState(false);
-  const [footer, setFooter] = useState<HTMLElement | null>(null);
   const t = useTranslations();
   const openInSheet = useOpenProposalInSheet();
 
@@ -583,7 +582,6 @@ const VotingProposalsList = ({
 
       {canVote && !isReadOnly && (
         <FooterBar
-          ref={setFooter}
           position="fixed"
           // On mobile the bar wraps: count and submit share a row, the budget
           // meter takes the next.
@@ -595,7 +593,6 @@ const VotingProposalsList = ({
                 ballot={selectedProposals}
                 budget={budget}
                 onBallotChange={setSelectedProposals}
-                footer={footer}
               >
                 {selectionCount}
               </BallotPopover>

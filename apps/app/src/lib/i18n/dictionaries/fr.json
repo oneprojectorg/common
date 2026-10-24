@@ -1393,8 +1393,6 @@
       "budgetAllocatedLabel": "Budget alloué",
       "budgetAllocatedSummary": "{allocated} sur {budget} alloués",
       "budgetAllocatedOfTotal": "<highlight>{allocated}</highlight> sur {budget} alloués",
-      "budgetAllocatedAmount": "{allocated} alloués",
-      "budgetRemainingAmount": "{remaining} restants à dépenser",
       "ballotTitle": "Votre bulletin",
       "ballotReorderHint": "Votre ordre est votre classement. Faites glisser une poignée ou utilisez les flèches pour le modifier.",
       "ballotEmptyHint": "Aucune proposition sélectionnée pour l’instant. Vos choix classés s’affichent ici au fur et à mesure.",
