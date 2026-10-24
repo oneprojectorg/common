@@ -73,12 +73,12 @@ export const VoteSubmissionModal = ({
     <>
       <DialogHeader>
         <DialogTitle>{t('decisions.proposals.voteReviewTitle')}</DialogTitle>
-        <DialogDescription>
-          {t('decisions.proposals.voteConfirmHint')}
-        </DialogDescription>
       </DialogHeader>
 
-      <div className="px-6 py-4">
+      <div className="flex flex-col gap-6 px-6 py-8">
+        <DialogDescription className="text-foreground">
+          {t('decisions.proposals.voteConfirmHint')}
+        </DialogDescription>
         <VoteReviewStep
           proposals={selectedProposals}
           ranked={ranked}

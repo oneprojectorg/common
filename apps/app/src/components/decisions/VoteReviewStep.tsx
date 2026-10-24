@@ -2,16 +2,19 @@
 
 import type { Proposal } from '@op/common/client';
 import { Alert, AlertDescription } from '@op/sense/Alert';
-import { BadgeNumber } from '@op/sense/Badge';
 import { Header4 } from '@op/sense/Header';
-import { useId } from 'react';
+import { Progress } from '@op/sense/Progress';
+import { type ReactNode, useId } from 'react';
 import { LuInfo } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { BallotBudgetMeter } from './BallotBudgetMeter';
 import { ProposalMiniCard } from './ProposalCard';
-import type { BallotBudget } from './ballot';
+import {
+  type BallotBudget,
+  formatBallotAmount,
+  getBallotTotal,
+} from './ballot';
 
 interface VoteReviewStepProps {
   /** In ballot order, which is the rank on a ranked vote. */
@@ -21,9 +24,8 @@ interface VoteReviewStepProps {
 }
 
 /**
- * Body of the vote confirmation dialog: the "Selected proposals" label plus the
- * mini cards for the ballot. The introductory sentence lives in the dialog's
- * `DialogDescription` so screen readers announce it with the title.
+ * Body of the vote confirmation dialog: the "Selected proposals" label, a mini
+ * card per pick (numbered on a ranked vote), and what the ballot spends.
  */
 export const VoteReviewStep = ({
   proposals,
@@ -35,25 +37,24 @@ export const VoteReviewStep = ({
   const List = ranked ? 'ol' : 'ul';
 
   return (
-    <div className="space-y-4">
-      <Header4 id={labelId}>
-        {t('decisions.review.selectedProposalsHeading')}
-      </Header4>
+    <div className="flex flex-col gap-8">
+      <div className="flex flex-col gap-4">
+        <Header4 id={labelId}>
+          {t('decisions.review.selectedProposalsHeading')}
+        </Header4>
+        <List aria-labelledby={labelId} className="flex flex-col gap-4">
+          {proposals.map((proposal, index) => (
+            <li key={proposal.id}>
+              <ProposalMiniCard
+                proposal={proposal}
+                rank={ranked ? index + 1 : undefined}
+              />
+            </li>
+          ))}
+        </List>
+      </div>
 
-      <List aria-labelledby={labelId} className="space-y-4">
-        {proposals.map((proposal, index) => (
-          <li key={proposal.id} className="flex items-start gap-3">
-            {ranked && (
-              <BadgeNumber aria-hidden className="mt-4">
-                {index + 1}
-              </BadgeNumber>
-            )}
-            <ProposalMiniCard proposal={proposal} className="min-w-0 flex-1" />
-          </li>
-        ))}
-      </List>
-
-      {budget && <BallotBudgetMeter ballot={proposals} budget={budget} />}
+      {budget && <BallotSpend proposals={proposals} budget={budget} />}
 
       {ranked && (
         <Alert variant="info" role="note">
@@ -63,6 +64,45 @@ export const VoteReviewStep = ({
           </AlertDescription>
         </Alert>
       )}
+    </div>
+  );
+};
+
+/** A bar of the budget the ballot spends, with "$X of $Y allocated" under it. */
+const BallotSpend = ({
+  proposals,
+  budget,
+}: {
+  proposals: Proposal[];
+  budget: BallotBudget;
+}) => {
+  const t = useTranslations('decisions.proposals');
+  const total = getBallotTotal({ proposals, budget });
+  const allocated = formatBallotAmount({ amount: total, unit: budget.unit });
+  const voterBudget = formatBallotAmount({
+    amount: budget.voterBudget,
+    unit: budget.unit,
+  });
+
+  return (
+    <div className="flex flex-col gap-3">
+      <Progress
+        value={Math.min(total, budget.voterBudget)}
+        max={budget.voterBudget}
+        aria-label={t('budgetAllocatedLabel')}
+        getAriaValueText={() =>
+          t('budgetAllocatedSummary', { allocated, budget: voterBudget })
+        }
+      />
+      <p className="text-muted-foreground tabular-nums">
+        {t.rich('budgetAllocatedOfTotal', {
+          allocated,
+          budget: voterBudget,
+          highlight: (chunks: ReactNode) => (
+            <span className="text-foreground">{chunks}</span>
+          ),
+        })}
+      </p>
     </div>
   );
 };
