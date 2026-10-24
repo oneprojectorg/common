@@ -1393,6 +1393,8 @@
       "budgetAllocatedLabel": "Kiosztott költségkeret",
       "budgetAllocatedSummary": "{budget} összegből {allocated} kiosztva",
       "budgetAllocatedOfTotal": "{budget} összegből <highlight>{allocated}</highlight> kiosztva",
+      "budgetAllocatedAmount": "{allocated} kiosztva",
+      "budgetRemainingAmount": "{remaining} maradt elkölteni",
       "ballotTitle": "A szavazólapod",
       "ballotReorderHint": "A sorrended a rangsorod. Húzz egy fogantyút, vagy használd a nyilakat a módosításhoz.",
       "ballotEmptyHint": "Még nincs kiválasztott javaslat. A rangsorolt választásaid itt jelennek meg, ahogy kiválasztod őket.",

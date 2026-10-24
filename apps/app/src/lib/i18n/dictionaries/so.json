@@ -1393,6 +1393,8 @@
       "budgetAllocatedLabel": "Miisaaniyadda la qoondeeyay",
       "budgetAllocatedSummary": "{allocated} oo ka mid ah {budget} ayaa la qoondeeyay",
       "budgetAllocatedOfTotal": "<highlight>{allocated}</highlight> oo ka mid ah {budget} ayaa la qoondeeyay",
+      "budgetAllocatedAmount": "{allocated} ayaa la qoondeeyay",
+      "budgetRemainingAmount": "{remaining} ayaa kuu hadhay",
       "ballotTitle": "Warqaddaada codbixinta",
       "ballotReorderHint": "Habka aad u kala horaysiiso waa kala sarreyntaada. Jiid gacan-qabadka ama isticmaal fallaadhaha si aad u beddesho.",
       "ballotEmptyHint": "Weli wax soo jeedin ah lama dooran. Doorashooyinkaaga la kala sarreeyay halkan ayay ka muuqdaan markaad doorato.",

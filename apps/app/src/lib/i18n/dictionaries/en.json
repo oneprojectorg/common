@@ -1393,6 +1393,8 @@
       "budgetAllocatedLabel": "Budget allocated",
       "budgetAllocatedSummary": "{allocated} of {budget} allocated",
       "budgetAllocatedOfTotal": "<highlight>{allocated}</highlight> of {budget} allocated",
+      "budgetAllocatedAmount": "{allocated} allocated",
+      "budgetRemainingAmount": "{remaining} left to spend",
       "ballotTitle": "Your ballot",
       "ballotReorderHint": "Your order is your ranking. Drag a handle or use the arrows to change it.",
       "ballotEmptyHint": "No proposals selected yet. Your ranked picks show here as you choose them.",

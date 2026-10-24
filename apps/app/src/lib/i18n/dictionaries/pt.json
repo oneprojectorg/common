@@ -1393,6 +1393,8 @@
       "budgetAllocatedLabel": "Orçamento alocado",
       "budgetAllocatedSummary": "{allocated} de {budget} alocados",
       "budgetAllocatedOfTotal": "<highlight>{allocated}</highlight> de {budget} alocados",
+      "budgetAllocatedAmount": "{allocated} alocados",
+      "budgetRemainingAmount": "{remaining} para gastar",
       "ballotTitle": "Sua cédula",
       "ballotReorderHint": "Sua ordem é sua classificação. Arraste uma alça ou use as setas para alterá-la.",
       "ballotEmptyHint": "Nenhuma proposta selecionada ainda. Suas escolhas classificadas aparecem aqui conforme você as escolhe.",

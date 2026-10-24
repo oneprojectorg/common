@@ -1393,6 +1393,8 @@
       "budgetAllocatedLabel": "Presupuesto asignado",
       "budgetAllocatedSummary": "{allocated} de {budget} asignados",
       "budgetAllocatedOfTotal": "<highlight>{allocated}</highlight> de {budget} asignados",
+      "budgetAllocatedAmount": "{allocated} asignados",
+      "budgetRemainingAmount": "{remaining} por gastar",
       "ballotTitle": "Tu boleta",
       "ballotReorderHint": "Tu orden es tu clasificación. Arrastra un control o usa las flechas para cambiarlo.",
       "ballotEmptyHint": "Aún no has seleccionado propuestas. Tus selecciones clasificadas aparecen aquí a medida que las eliges.",

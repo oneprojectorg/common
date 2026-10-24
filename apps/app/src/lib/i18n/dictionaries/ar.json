@@ -1393,6 +1393,8 @@
       "budgetAllocatedLabel": "الميزانية المخصصة",
       "budgetAllocatedSummary": "تم تخصيص {allocated} من {budget}",
       "budgetAllocatedOfTotal": "تم تخصيص <highlight>{allocated}</highlight> من {budget}",
+      "budgetAllocatedAmount": "تم تخصيص {allocated}",
+      "budgetRemainingAmount": "متبقٍ للإنفاق {remaining}",
       "ballotTitle": "بطاقة اقتراعك",
       "ballotReorderHint": "ترتيبك هو تصنيفك. اسحب المقبض أو استخدم الأسهم لتغييره.",
       "ballotEmptyHint": "لم تحدد أي مقترحات بعد. تظهر اختياراتك المرتبة هنا عند اختيارها.",
