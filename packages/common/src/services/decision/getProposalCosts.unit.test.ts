@@ -186,6 +186,34 @@ describe('getProposalCosts', () => {
     ).rejects.toThrow('The cost of "a" is not a valid amount');
   });
 
+  it('charges the field the rules name by ID when two fields share a title', async () => {
+    const sharedTitles: ProposalTemplateSchema = {
+      type: 'object',
+      properties: {
+        f1a2b3c4: { type: 'number', title: 'Cost', 'x-unit': DOTS },
+        f9e8d7c6: { type: 'number', title: 'Cost', 'x-unit': DOTS },
+      },
+    };
+
+    const costs = await getProposalCosts({
+      proposals: [{ id: 'a', proposalData: { f1a2b3c4: 1, f9e8d7c6: 4 } }],
+      proposalTemplate: sharedTitles,
+      voterCostField: 'f9e8d7c6',
+      unit: DOTS,
+    });
+
+    expect(costs.get('a')).toBe(4);
+
+    await expect(
+      getProposalCosts({
+        proposals: [{ id: 'b', proposalData: { f9e8d7c6: 'four' } }],
+        proposalTemplate: sharedTitles,
+        voterCostField: 'f9e8d7c6',
+        unit: DOTS,
+      }),
+    ).rejects.toThrow('The Cost of "b" is not a valid amount');
+  });
+
   it('charges nothing for a blank cost', async () => {
     const costs = await getProposalCosts({
       proposals: [{ id: 'a', proposalData: { cost: '  ' } }],

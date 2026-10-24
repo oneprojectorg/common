@@ -3,6 +3,7 @@ import type { AmountUnit } from '@op/types/amountUnit';
 import { CommonError, ValidationError } from '../../utils';
 import { getFieldAmount } from './fieldUnit';
 import { getProposalDocumentsContent } from './getProposalDocumentsContent';
+import { getTemplateFieldName } from './getTemplateFieldName';
 import { parseProposalData } from './proposalDataSchema';
 import { resolveDocumentFieldValues } from './proposalListPreview';
 import type { ProposalTemplateSchema } from './types';
@@ -56,7 +57,7 @@ export async function getProposalCosts({
         const title = parseProposalData(proposalData).title ?? id;
 
         throw new ValidationError(
-          `The ${voterCostField} of "${title}" is not a valid amount, so this ballot cannot be priced. Remove it from your ballot, or ask an admin to correct the proposal.`,
+          `The ${getTemplateFieldName({ proposalTemplate, fieldKey: voterCostField })} of "${title}" is not a valid amount, so this ballot cannot be priced. Remove it from your ballot, or ask an admin to correct the proposal.`,
         );
       }
 
