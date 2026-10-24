@@ -11,6 +11,8 @@ import {
   normalizeProposalCategories,
 } from '@op/common/client';
 import { match } from '@op/core';
+import { Badge, BadgeNumber } from '@op/sense/Badge';
+import { Header3 } from '@op/sense/Header';
 import { ProposalCard as SenseProposalCard } from '@op/sense/ProposalCard';
 import { StatusBadge } from '@op/sense/StatusBadge';
 import { cn } from '@op/sense/lib/utils';
@@ -368,27 +370,52 @@ function useProposalCardMetrics({
 }
 
 /**
- * Compact proposal card for confirm modals and selection lists: title, budget,
- * category tags, and author only — no preview, status, or actions.
+ * Compact proposal card for confirm modals: the title, then the author, budget
+ * and category tags in one row. Numbered when the ballot is ranked.
  */
 export const ProposalMiniCard = ({
   proposal,
+  rank,
   className,
 }: {
   proposal: Proposal;
+  /** 1-based position on a ranked ballot. */
+  rank?: number;
   className?: string;
 }) => {
   const { titleText, budgetText, displayCategories, authors } =
     useProposalCardData({ proposal });
+  const author = authors?.[0];
 
   return (
-    <SenseProposalCard
-      title={titleText}
-      budget={budgetText}
-      tags={displayCategories.length > 0 ? displayCategories : undefined}
-      authors={authors}
-      className={cn('bg-muted p-4', className)}
-    />
+    <div className={cn('flex gap-4 rounded-lg border bg-muted p-6', className)}>
+      {rank !== undefined && (
+        // Centred on the title's first line.
+        <BadgeNumber aria-hidden className="mt-1">
+          {rank}
+        </BadgeNumber>
+      )}
+      <div className="flex min-w-0 flex-col gap-3">
+        <Header3>{titleText}</Header3>
+        <div className="flex flex-wrap items-center gap-2">
+          {author && (
+            <span className="text-sm text-muted-foreground">
+              <bdi>{author.name}</bdi>
+            </span>
+          )}
+          {budgetText && (
+            <Badge variant="outline" className="bg-background">
+              {budgetText}
+            </Badge>
+          )}
+          {displayCategories.map((category) => (
+            <Badge key={category} variant="secondary">
+              <bdi>{category}</bdi>
+            </Badge>
+          ))}
+        </div>
+      </div>
+    </div>
   );
 };
 

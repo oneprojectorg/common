@@ -43,10 +43,13 @@ async function seedBallot({
   processInstanceId,
   voterProfileId,
   proposalIds,
+  ranked = false,
 }: {
   processInstanceId: string;
   voterProfileId: string;
+  /** In ballot order, which is the rank when `ranked`. */
   proposalIds: string[];
+  ranked?: boolean;
 }) {
   const [submission] = await db
     .insert(decisionsVoteSubmissions)
@@ -68,9 +71,10 @@ async function seedBallot({
 
   if (proposalIds.length > 0) {
     await db.insert(decisionsVoteProposals).values(
-      proposalIds.map((proposalId) => ({
+      proposalIds.map((proposalId, index) => ({
         voteSubmissionId: submission.id,
         proposalId,
+        rank: ranked ? index + 1 : null,
       })),
     );
   }
@@ -642,6 +646,53 @@ describe.concurrent('listAllProposals', () => {
 
     expect(result.total).toBe(3);
     expect(result.items.map((p) => p.id).sort()).toEqual([...mineIds].sort());
+  });
+
+  it('returns a ranked ballot whole and in rank order', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instance = setup.instance;
+
+    const voter = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [instance.profileId],
+    });
+
+    const created = [];
+    for (let i = 1; i <= 3; i++) {
+      created.push(
+        await testData.createProposal({
+          userEmail: setup.userEmail,
+          processInstanceId: instance.instance.id,
+          proposalData: { title: `Ranked ${i} ${task.id}` },
+          status: ProposalStatus.SUBMITTED,
+        }),
+      );
+    }
+    const ballot = [created[2]!.id, created[0]!.id, created[1]!.id];
+    await seedBallot({
+      processInstanceId: instance.instance.id,
+      voterProfileId: voter.profileId,
+      proposalIds: ballot,
+      ranked: true,
+    });
+
+    const caller = await createAuthenticatedCaller(voter.email);
+    const result = await caller.decision.listAllProposals({
+      processInstanceId: instance.instance.id,
+      votedByProfileId: voter.profileId,
+      limit: 2,
+    });
+
+    expect(result.items.map((p) => p.id)).toEqual(ballot);
+    expect(result.total).toBe(3);
+    expect(result.next).toBeNull();
   });
 
   it('filters by votedByProfileId (own ballot) with an accurate total, paginated', async ({
