@@ -1393,8 +1393,6 @@
       "budgetAllocatedLabel": "বরাদ্দকৃত বাজেট",
       "budgetAllocatedSummary": "{budget}-এর মধ্যে {allocated} বরাদ্দ করা হয়েছে",
       "budgetAllocatedOfTotal": "{budget}-এর মধ্যে <highlight>{allocated}</highlight> বরাদ্দ করা হয়েছে",
-      "budgetAllocatedAmount": "{allocated} বরাদ্দ করা হয়েছে",
-      "budgetRemainingAmount": "খরচ করার জন্য {remaining} বাকি",
       "ballotTitle": "আপনার ব্যালট",
       "ballotReorderHint": "আপনার ক্রমই আপনার র‍্যাঙ্কিং। এটি বদলাতে একটি হ্যান্ডেল টেনে আনুন বা তীরচিহ্ন ব্যবহার করুন।",
       "ballotEmptyHint": "এখনও কোনো প্রস্তাব নির্বাচন করা হয়নি। আপনি বাছাই করলে আপনার র‍্যাঙ্ক করা পছন্দগুলো এখানে দেখা যাবে।",
