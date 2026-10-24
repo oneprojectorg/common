@@ -95,10 +95,8 @@ export const BallotPopover = ({
         collisionPadding={8}
         className="max-h-(--available-height) w-156 max-w-(--available-width) gap-0 overflow-hidden p-0"
       >
-        <PopoverHeader className="px-4 pt-3 pb-3">
-          <PopoverTitle className="text-title leading-5">
-            {t('ballotTitle')}
-          </PopoverTitle>
+        <PopoverHeader className="px-4 pt-4 pb-3">
+          <PopoverTitle className="text-title">{t('ballotTitle')}</PopoverTitle>
           <PopoverDescription className="text-base">
             {t('ballotReorderHint')}
           </PopoverDescription>
