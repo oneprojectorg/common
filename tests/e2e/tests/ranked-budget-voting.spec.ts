@@ -171,9 +171,6 @@ test.describe('Ranked voting with a voter budget', () => {
     await expect(
       dialog.getByRole('progressbar', { name: 'Budget allocated' }),
     ).toHaveAttribute('aria-valuetext', '$800 of $1,000 allocated');
-    await expect(dialog.getByRole('note')).toContainText(
-      'Your order is your ranking',
-    );
 
     await dialog.getByRole('button', { name: 'Submit votes' }).click();
     await expect(dialog).toBeHidden({ timeout: 15_000 });

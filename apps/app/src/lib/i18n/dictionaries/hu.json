@@ -1402,7 +1402,6 @@
       "ballotMoveUpLabel": "{title} feljebb mozgatása",
       "ballotMoveDownLabel": "{title} lejjebb mozgatása",
       "ballotRemoveLabel": "{title} eltávolítása a szavazólapodról",
-      "rankedBallotHint": "A sorrended a rangsorod. Ha valamelyik választásod nem kaphat finanszírozást, a támogatásod a következő választásodra kerül.",
       "selectedStatus": "Kiválasztva",
       "filterProposalsLabel": "Javaslatok szűrése",
       "filterByCategoryLabel": "Javaslatok szűrése kategória szerint",

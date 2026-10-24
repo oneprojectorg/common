@@ -1402,7 +1402,6 @@
       "ballotMoveUpLabel": "{title} উপরে সরান",
       "ballotMoveDownLabel": "{title} নিচে সরান",
       "ballotRemoveLabel": "আপনার ব্যালট থেকে {title} সরান",
-      "rankedBallotHint": "আপনার ক্রমই আপনার র‍্যাঙ্কিং। আপনার কোনো বাছাইয়ে অর্থায়ন করা না গেলে, আপনার সমর্থন আপনার পরবর্তী পছন্দে চলে যায়।",
       "selectedStatus": "নির্বাচিত",
       "filterProposalsLabel": "প্রস্তাবগুলি ফিল্টার করুন",
       "filterByCategoryLabel": "বিভাগ অনুসারে প্রস্তাবগুলি ফিল্টার করুন",

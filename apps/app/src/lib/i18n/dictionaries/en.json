@@ -1402,7 +1402,6 @@
       "ballotMoveUpLabel": "Move {title} up",
       "ballotMoveDownLabel": "Move {title} down",
       "ballotRemoveLabel": "Remove {title} from your ballot",
-      "rankedBallotHint": "Your order is your ranking. If one of your picks cannot be funded, your support moves to your next choice.",
       "selectedStatus": "Selected",
       "filterProposalsLabel": "Filter proposals",
       "filterByCategoryLabel": "Filter proposals by category",

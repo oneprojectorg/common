@@ -1402,7 +1402,6 @@
       "ballotMoveUpLabel": "Mover {title} para cima",
       "ballotMoveDownLabel": "Mover {title} para baixo",
       "ballotRemoveLabel": "Remover {title} da sua cédula",
-      "rankedBallotHint": "Sua ordem é sua classificação. Se uma das suas escolhas não puder ser financiada, seu apoio passa para a sua próxima escolha.",
       "selectedStatus": "Selecionado",
       "filterProposalsLabel": "Filtrar propostas",
       "filterByCategoryLabel": "Filtrar propostas por categoria",

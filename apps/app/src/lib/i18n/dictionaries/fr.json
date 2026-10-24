@@ -1402,7 +1402,6 @@
       "ballotMoveUpLabel": "Monter {title}",
       "ballotMoveDownLabel": "Descendre {title}",
       "ballotRemoveLabel": "Retirer {title} de votre bulletin",
-      "rankedBallotHint": "Votre ordre est votre classement. Si l’un de vos choix ne peut pas être financé, votre soutien passe à votre choix suivant.",
       "selectedStatus": "Sélectionné",
       "filterProposalsLabel": "Filtrer les propositions",
       "filterByCategoryLabel": "Filtrer les propositions par catégorie",

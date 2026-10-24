@@ -1402,7 +1402,6 @@
       "ballotMoveUpLabel": "نقل {title} إلى الأعلى",
       "ballotMoveDownLabel": "نقل {title} إلى الأسفل",
       "ballotRemoveLabel": "إزالة {title} من بطاقة اقتراعك",
-      "rankedBallotHint": "ترتيبك هو تصنيفك. إذا تعذّر تمويل أحد اختياراتك، ينتقل دعمك إلى اختيارك التالي.",
       "selectedStatus": "محدد",
       "filterProposalsLabel": "تصفية المقترحات",
       "filterByCategoryLabel": "تصفية المقترحات حسب الفئة",

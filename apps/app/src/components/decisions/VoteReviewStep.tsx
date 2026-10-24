@@ -1,11 +1,9 @@
 'use client';
 
 import type { Proposal } from '@op/common/client';
-import { Alert, AlertDescription } from '@op/sense/Alert';
 import { Header4 } from '@op/sense/Header';
 import { Progress } from '@op/sense/Progress';
 import { type ReactNode, useId } from 'react';
-import { LuInfo } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -55,15 +53,6 @@ export const VoteReviewStep = ({
       </div>
 
       {budget && <BallotSpend proposals={proposals} budget={budget} />}
-
-      {ranked && (
-        <Alert variant="info" role="note">
-          <LuInfo aria-hidden />
-          <AlertDescription>
-            {t('decisions.proposals.rankedBallotHint')}
-          </AlertDescription>
-        </Alert>
-      )}
     </div>
   );
 };
