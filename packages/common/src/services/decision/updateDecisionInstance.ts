@@ -1,7 +1,8 @@
 import { trackAdminSetProcess, trackAdminSetRubric } from '@op/analytics';
 import { OPURLConfig } from '@op/core';
-import { db, eq } from '@op/db/client';
+import { type TransactionType, db, eq } from '@op/db/client';
 import {
+  type ProcessInstance,
   ProcessStatus,
   decisionProcessTransitions,
   processInstances,
@@ -17,11 +18,14 @@ import { assertProfileAccess, assertProfileAdmin } from '../assert';
 import { generateUniqueProfileSlug } from '../profile/utils';
 import { assertVoterCostField } from './assertVoterCostField';
 import { createTransitionsForProcess } from './createTransitionsForProcess';
+import {
+  getNormalizedCategories,
+  getUpdatedInstanceData,
+} from './getUpdatedInstanceData';
 import { ensureProposalTaxonomyTerms } from './proposalTaxonomy';
 import { schemaValidator } from './schemaValidator';
 import type {
   DecisionInstanceData,
-  InstanceOverview,
   InstanceOverviewUpdate,
   PhaseOverride,
 } from './schemas/instanceData';
@@ -85,30 +89,7 @@ export const updateDecisionInstance = async ({
     permissions: { decisions: permission.ADMIN },
   });
 
-  // Validate proposalTemplate is a structurally valid JSON Schema before persisting
-  if (proposalTemplate !== undefined) {
-    schemaValidator.validateJsonSchema(proposalTemplate);
-  }
-
-  // Phases whose endDate actually changed — emitted to the caller so it can
-  // fire `phase_end_date_changed` analytics events for committed changes only.
-  const phaseEndDateChanges: Array<{
-    phaseId: string;
-    previousEndDate: string | undefined;
-    newEndDate: string;
-  }> = [];
-
-  // Validate rubricTemplate is a structurally valid JSON Schema before persisting
-  if (rubricTemplate !== undefined) {
-    schemaValidator.validateJsonSchema(rubricTemplate);
-  }
-
-  // Same validation for phase-level rubric templates (null = clear, skipped)
-  for (const phase of phases ?? []) {
-    if (phase.rubricTemplate != null) {
-      schemaValidator.validateJsonSchema(phase.rubricTemplate);
-    }
-  }
+  assertValidTemplates({ proposalTemplate, rubricTemplate, phases });
 
   // Build update data
   const updateData: Record<string, unknown> = {};
@@ -129,174 +110,43 @@ export const updateDecisionInstance = async ({
     stewardProfileId !== undefined &&
     stewardProfileId !== existingInstance.stewardProfileId
   ) {
-    if (!existingInstance.ownerProfileId) {
-      throw new UnauthorizedError(
-        'Only the process owner can change the steward',
-      );
-    }
-
-    await assertProfileAdmin({
+    await assertCanChangeSteward({
       user,
-      profileId: existingInstance.ownerProfileId,
+      ownerProfileId: existingInstance.ownerProfileId,
     });
-
     updateData.stewardProfileId = stewardProfileId;
   }
 
-  // Apply config, overview, phase overrides, and/or template updates to existing instanceData
-  const hasConfigUpdate = config !== undefined;
-  const hasOverviewUpdate = overview !== undefined;
-  const hasPhaseUpdates = phases && phases.length > 0;
-  const hasProposalTemplateUpdate = proposalTemplate !== undefined;
-  const hasRubricTemplateUpdate = rubricTemplate !== undefined;
+  const instanceDataUpdate = getUpdatedInstanceData({
+    existing: existingInstance.instanceData as DecisionInstanceData,
+    update: { config, overview, phases, proposalTemplate, rubricTemplate },
+  });
+  const phaseEndDateChanges = instanceDataUpdate?.phaseEndDateChanges ?? [];
 
-  if (
-    hasConfigUpdate ||
-    hasOverviewUpdate ||
-    hasPhaseUpdates ||
-    hasProposalTemplateUpdate ||
-    hasRubricTemplateUpdate
-  ) {
-    const existingInstanceData =
-      existingInstance.instanceData as DecisionInstanceData;
-
-    let updatedInstanceData: DecisionInstanceData = { ...existingInstanceData };
-
-    // Apply config updates (merge with existing config)
-    if (hasConfigUpdate) {
-      const normalizedCategories = (config?.categories ?? []).map(
-        (category) => ({
-          ...category,
-          label: category.label.trim(),
-          description: category.description.trim(),
-        }),
+  if (instanceDataUpdate) {
+    if (config !== undefined) {
+      await ensureProposalTaxonomyTerms(
+        getNormalizedCategories(config).map((category) => category.label),
       );
-      const categories = normalizedCategories.map((category) => category.label);
-
-      await ensureProposalTaxonomyTerms(categories);
-
-      updatedInstanceData.config = {
-        ...existingInstanceData.config,
-        ...config,
-        ...(config?.categories ? { categories: normalizedCategories } : {}),
-      };
     }
 
-    // Apply overview updates (merge with existing overview)
-    if (hasOverviewUpdate) {
-      const { headline, ...overviewPatch } = overview ?? {};
-      const mergedOverview: InstanceOverview = {
-        ...existingInstanceData.overview,
-        ...overviewPatch,
-        ...(typeof headline === 'string' && { headline }),
-      };
-      // `null` clears the headline; so does a legacy `''` on the stored row.
-      if (headline === null || isBlankHeadline(mergedOverview.headline)) {
-        delete mergedOverview.headline;
-      }
-      updatedInstanceData.overview = mergedOverview;
-    }
-
-    // Apply phase updates — replaces the full phases array to accommodate
-    // adding, removing, and reordering phases from the phase editor.
-    // Existing phase data (selectionPipeline, settingsSchema, etc.) is
-    // preserved by merging with the previous phase when a match exists.
-    if (hasPhaseUpdates) {
-      const existingPhaseMap = new Map(
-        existingInstanceData.phases.map((p) => [p.phaseId, p]),
-      );
-
-      for (const phase of phases) {
-        if (phase.endDate === undefined) {
-          continue;
-        }
-        const existing = existingPhaseMap.get(phase.phaseId);
-        if (existing && existing.endDate !== phase.endDate) {
-          phaseEndDateChanges.push({
-            phaseId: phase.phaseId,
-            previousEndDate: existing.endDate,
-            newEndDate: phase.endDate,
-          });
-        }
-      }
-
-      updatedInstanceData.phases = phases.map((phase) => {
-        const existing = existingPhaseMap.get(phase.phaseId);
-        const merged = {
-          ...existing,
-          phaseId: phase.phaseId,
-          ...(phase.name !== undefined && { name: phase.name }),
-          ...(phase.description !== undefined && {
-            description: phase.description,
-          }),
-          ...(typeof phase.headline === 'string' && {
-            headline: phase.headline,
-          }),
-          ...(phase.additionalInfo !== undefined && {
-            additionalInfo: phase.additionalInfo,
-          }),
-          ...(phase.rules !== undefined && { rules: phase.rules }),
-          ...(phase.startDate !== undefined && { startDate: phase.startDate }),
-          ...(phase.endDate !== undefined && { endDate: phase.endDate }),
-          ...(phase.settings !== undefined && { settings: phase.settings }),
-          ...(phase.rubricTemplate != null && {
-            rubricTemplate: phase.rubricTemplate,
-          }),
-        };
-        // `null` clears the phase rubric (falls back to the instance-level template).
-        if (phase.rubricTemplate === null) {
-          delete merged.rubricTemplate;
-        }
-        // Same for the headline — `null` clears it, and a legacy `''` on the
-        // stored phase clears with it.
-        if (phase.headline === null || isBlankHeadline(merged.headline)) {
-          delete merged.headline;
-        }
-        return merged;
-      });
-    }
-
-    // Apply proposal template update (replace entirely)
-    if (hasProposalTemplateUpdate) {
-      updatedInstanceData = {
-        ...updatedInstanceData,
-        proposalTemplate,
-      } as DecisionInstanceData;
-    }
-
-    // Apply rubric template update (replace entirely)
-    if (hasRubricTemplateUpdate) {
-      updatedInstanceData = {
-        ...updatedInstanceData,
-        rubricTemplate,
-      } as DecisionInstanceData;
-    }
-
-    if (hasPhaseUpdates || hasProposalTemplateUpdate) {
+    if ((phases !== undefined && phases.length > 0) || proposalTemplate) {
       await assertVoterCostField({
-        instanceData: updatedInstanceData,
+        instanceData: instanceDataUpdate.instanceData,
         processId: existingInstance.processId,
       });
     }
 
-    updateData.instanceData = updatedInstanceData;
+    updateData.instanceData = instanceDataUpdate.instanceData;
   }
 
   // Only update if there's something to update
   if (Object.keys(updateData).length === 0) {
-    // Nothing to update, just return the existing profile
-    const profile = await db.query.profiles.findFirst({
-      where: { id: profileId },
-      with: {
-        processInstance: true,
-      },
-    });
-
-    if (!profile) {
-      throw new CommonError('Failed to fetch decision profile');
-    }
-
-    return { profile, phaseEndDateChanges, didPublish: false };
+    return {
+      profile: await getDecisionProfile(profileId),
+      phaseEndDateChanges,
+      didPublish: false,
+    };
   }
 
   const isBeingPublished =
@@ -316,112 +166,27 @@ export const updateDecisionInstance = async ({
       throw new CommonError('Failed to update decision process instance');
     }
 
-    // Determine the final status (updated or existing)
-    const finalStatus = status ?? existingInstance.status;
-
-    // Build a single profile update for name sync and/or slug generation.
-    const profileUpdate: Record<string, string> = {};
-
-    // Keep the profile name in sync with the instance name.
-    if (name !== undefined) {
-      profileUpdate.name = name;
-    }
-
-    // Generate a permanent, name-based slug when publishing.
-    // Draft instances keep their original UUID slug so the URL stays stable
-    // while editing. Once published the slug is locked.
-    if (isBeingPublished) {
-      const instanceName = name ?? existingInstance.name;
-      profileUpdate.slug = await generateUniqueProfileSlug({
-        name: `decision-${instanceName}`,
-        db: tx,
-      });
-    }
-
-    if (Object.keys(profileUpdate).length > 0) {
-      await tx
-        .update(profiles)
-        .set(profileUpdate)
-        .where(eq(profiles.id, profileId));
-    }
-
-    // If status is DRAFT, remove all transitions
-    if (finalStatus === ProcessStatus.DRAFT) {
-      await tx
-        .delete(decisionProcessTransitions)
-        .where(eq(decisionProcessTransitions.processInstanceId, instanceId));
-    } else if (isBeingPublished) {
-      // When publishing a draft, create transitions for all date-based phases
-      await createTransitionsForProcess({
-        processInstance: updatedInstance,
-        db: tx,
-      });
-    } else if (phases && phases.length > 0) {
-      // If phases were updated and already published, update the corresponding transitions
-      await updateTransitionsForProcess({
-        processInstance: updatedInstance,
-        db: tx,
-      });
-    }
-  });
-
-  // Fetch the profile with processInstance joined for the response
-  const profile = await db.query.profiles.findFirst({
-    where: { id: profileId },
-    with: {
-      processInstance: true,
-    },
-  });
-
-  if (!profile) {
-    throw new CommonError('Failed to fetch updated decision profile');
-  }
-
-  // When publishing a draft, send queued invite emails for this process instance's profile
-  if (isBeingPublished) {
-    const queuedInvites = await db.query.profileInvites.findMany({
-      where: {
-        profileId,
-        notifiedAt: { isNull: true },
-      },
-      with: {
-        profile: true,
-        inviter: true,
-      },
+    await updateDecisionProfile({
+      tx,
+      profileId,
+      name,
+      instanceName: name ?? existingInstance.name,
+      isBeingPublished,
     });
 
-    if (queuedInvites.length > 0) {
-      const baseUrl = OPURLConfig('APP').ENV_URL;
+    await syncTransitions({
+      tx,
+      updatedInstance,
+      isDraft: (status ?? existingInstance.status) === ProcessStatus.DRAFT,
+      isBeingPublished,
+      phasesChanged: phases !== undefined && phases.length > 0,
+    });
+  });
 
-      const invitations = queuedInvites.map((invite) => ({
-        email: invite.email,
-        inviterName: invite.inviter?.name || 'A team member',
-        profileName: invite.profile.name,
-        inviteUrl: profile.slug
-          ? `${baseUrl}/decisions/${profile.slug}/invite`
-          : baseUrl,
-        personalMessage: invite.message ?? undefined,
-      }));
-
-      // Use the first invite's inviter as the sender
-      const firstInvite = queuedInvites[0];
-      if (firstInvite) {
-        const senderProfileId = firstInvite.invitedBy;
-
-        await event.send({
-          name: Events.profileInviteSent.name,
-          data: {
-            senderProfileId,
-            inviteIds: queuedInvites.map((inv) => inv.id),
-            invitations,
-          },
-        });
-        // notifiedAt is set by the Inngest workflow after successful email delivery
-      }
-    }
-  }
+  const profile = await getDecisionProfile(profileId);
 
   if (isBeingPublished) {
+    await sendQueuedInvites({ profileId, profileSlug: profile.slug });
     waitUntil(trackAdminSetProcess(user.id, instanceId));
   }
 
@@ -432,10 +197,170 @@ export const updateDecisionInstance = async ({
   return { profile, phaseEndDateChanges, didPublish: isBeingPublished };
 };
 
-/**
- * True for a stored headline of `''` (or whitespace only) — the shape rows
- * written before the API rejected an empty title still hold. Dropping it on the
- * next write keeps a blank title from rendering where the default copy belongs.
- */
-const isBlankHeadline = (headline: string | undefined) =>
-  headline?.trim() === '';
+function assertValidTemplates({
+  proposalTemplate,
+  rubricTemplate,
+  phases,
+}: {
+  proposalTemplate?: Record<string, unknown>;
+  rubricTemplate?: RubricTemplateSchema;
+  phases?: PhaseOverride[];
+}) {
+  if (proposalTemplate !== undefined) {
+    schemaValidator.validateJsonSchema(proposalTemplate);
+  }
+
+  if (rubricTemplate !== undefined) {
+    schemaValidator.validateJsonSchema(rubricTemplate);
+  }
+
+  // A null phase rubric clears it, so there is nothing to validate.
+  for (const phase of phases ?? []) {
+    if (phase.rubricTemplate != null) {
+      schemaValidator.validateJsonSchema(phase.rubricTemplate);
+    }
+  }
+}
+
+async function updateDecisionProfile({
+  tx,
+  profileId,
+  name,
+  instanceName,
+  isBeingPublished,
+}: {
+  tx: TransactionType;
+  profileId: string;
+  name?: string;
+  instanceName: string;
+  isBeingPublished: boolean;
+}) {
+  const profileUpdate: Record<string, string> = {};
+
+  if (name !== undefined) {
+    profileUpdate.name = name;
+  }
+
+  // Drafts keep their UUID slug; publishing locks in a name-based one.
+  if (isBeingPublished) {
+    profileUpdate.slug = await generateUniqueProfileSlug({
+      name: `decision-${instanceName}`,
+      db: tx,
+    });
+  }
+
+  if (Object.keys(profileUpdate).length > 0) {
+    await tx
+      .update(profiles)
+      .set(profileUpdate)
+      .where(eq(profiles.id, profileId));
+  }
+}
+
+async function syncTransitions({
+  tx,
+  updatedInstance,
+  isDraft,
+  isBeingPublished,
+  phasesChanged,
+}: {
+  tx: TransactionType;
+  updatedInstance: ProcessInstance;
+  isDraft: boolean;
+  isBeingPublished: boolean;
+  phasesChanged: boolean;
+}) {
+  if (isDraft) {
+    await tx
+      .delete(decisionProcessTransitions)
+      .where(
+        eq(decisionProcessTransitions.processInstanceId, updatedInstance.id),
+      );
+  } else if (isBeingPublished) {
+    await createTransitionsForProcess({
+      processInstance: updatedInstance,
+      db: tx,
+    });
+  } else if (phasesChanged) {
+    await updateTransitionsForProcess({
+      processInstance: updatedInstance,
+      db: tx,
+    });
+  }
+}
+
+async function sendQueuedInvites({
+  profileId,
+  profileSlug,
+}: {
+  profileId: string;
+  profileSlug: string | null;
+}) {
+  const queuedInvites = await db.query.profileInvites.findMany({
+    where: {
+      profileId,
+      notifiedAt: { isNull: true },
+    },
+    with: {
+      profile: true,
+      inviter: true,
+    },
+  });
+
+  const [firstInvite] = queuedInvites;
+  if (!firstInvite) {
+    return;
+  }
+
+  const baseUrl = OPURLConfig('APP').ENV_URL;
+  const inviteUrl = profileSlug
+    ? `${baseUrl}/decisions/${profileSlug}/invite`
+    : baseUrl;
+
+  // notifiedAt is set by the Inngest workflow after successful email delivery
+  await event.send({
+    name: Events.profileInviteSent.name,
+    data: {
+      senderProfileId: firstInvite.invitedBy,
+      inviteIds: queuedInvites.map((invite) => invite.id),
+      invitations: queuedInvites.map((invite) => ({
+        email: invite.email,
+        inviterName: invite.inviter?.name || 'A team member',
+        profileName: invite.profile.name,
+        inviteUrl,
+        personalMessage: invite.message ?? undefined,
+      })),
+    },
+  });
+}
+
+async function assertCanChangeSteward({
+  user,
+  ownerProfileId,
+}: {
+  user: User;
+  ownerProfileId: string | null;
+}) {
+  if (!ownerProfileId) {
+    throw new UnauthorizedError(
+      'Only the process owner can change the steward',
+    );
+  }
+
+  await assertProfileAdmin({ user, profileId: ownerProfileId });
+}
+
+async function getDecisionProfile(profileId: string) {
+  const profile = await db.query.profiles.findFirst({
+    where: { id: profileId },
+    with: {
+      processInstance: true,
+    },
+  });
+
+  if (!profile) {
+    throw new CommonError('Failed to fetch decision profile');
+  }
+
+  return profile;
+}
