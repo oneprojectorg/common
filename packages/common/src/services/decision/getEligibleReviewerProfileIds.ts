@@ -11,9 +11,8 @@ export async function getEligibleReviewerProfileIds({
 }: {
   decisionProfileId: string;
 }): Promise<string[]> {
-  const { profileIds } = await getProfileIdsWithDecisionPermission({
+  return getProfileIdsWithDecisionPermission({
     decisionProfileId,
     permission: decisionPermission.REVIEW,
   });
-  return profileIds;
 }

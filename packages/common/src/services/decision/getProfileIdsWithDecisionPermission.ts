@@ -1,7 +1,6 @@
 import { GLOBAL_USER_PUBLIC } from '@op/core';
-import { and, db, eq, inArray } from '@op/db/client';
+import { and, db, eq, inArray, ne } from '@op/db/client';
 import { profileUserToAccessRoles, profileUsers, users } from '@op/db/schema';
-import { logger } from '@op/logging';
 
 import {
   pickEffectivePermissionRows,
@@ -10,9 +9,8 @@ import {
 
 /**
  * Personal profile ids of every member of the decision profile holding a role
- * with any of the given decisions-zone permission bits. `includesPublic` is
- * true when the public grant holds one of the bits, which extends it to
- * every caller; the public sentinel itself is not in `profileIds`.
+ * with any of the given decisions-zone permission bits. The public sentinel is
+ * not a person, so it is left out; `isDecisionPublic` answers for it.
  *
  * Permission rows are profile-scoped: global rows (profileId IS NULL) are the
  * baseline, and a row scoped to the decision profile overrides them.
@@ -23,22 +21,11 @@ export async function getProfileIdsWithDecisionPermission({
 }: {
   decisionProfileId: string;
   permission: number;
-}): Promise<{ profileIds: string[]; includesPublic: boolean }> {
-  const decisionsZone = await db.query.accessZones.findFirst({
-    where: { name: 'decisions' },
-  });
-
-  if (!decisionsZone) {
-    logger.error(
-      'getProfileIdsWithDecisionPermission: decisions access zone not found',
-    );
-    return { profileIds: [], includesPublic: false };
-  }
-
+}): Promise<string[]> {
   const zonePermissionRows =
     await db.query.accessRolePermissionsOnAccessZones.findMany({
       where: {
-        accessZoneId: decisionsZone.id,
+        accessZone: { name: 'decisions' },
         ...zonePermissionsWhere(decisionProfileId),
         accessRole: {
           OR: [
@@ -59,17 +46,14 @@ export async function getProfileIdsWithDecisionPermission({
     .map((row) => row.accessRoleId);
 
   if (roleIds.length === 0) {
-    return { profileIds: [], includesPublic: false };
+    return [];
   }
 
   // profileUsers (decision membership)
   //   → profileUserToAccessRoles (role assignments)
   //   → users (personal profileId)
   const rows = await db
-    .selectDistinct({
-      authUserId: profileUsers.authUserId,
-      profileId: users.profileId,
-    })
+    .selectDistinct({ profileId: users.profileId })
     .from(profileUsers)
     .innerJoin(users, eq(profileUsers.authUserId, users.authUserId))
     .innerJoin(
@@ -79,15 +63,10 @@ export async function getProfileIdsWithDecisionPermission({
     .where(
       and(
         eq(profileUsers.profileId, decisionProfileId),
+        ne(profileUsers.authUserId, GLOBAL_USER_PUBLIC),
         inArray(profileUserToAccessRoles.accessRoleId, roleIds),
       ),
     );
 
-  return {
-    profileIds: rows
-      .filter((row) => row.authUserId !== GLOBAL_USER_PUBLIC)
-      .map((row) => row.profileId)
-      .filter((id): id is string => id != null),
-    includesPublic: rows.some((row) => row.authUserId === GLOBAL_USER_PUBLIC),
-  };
+  return rows.map((r) => r.profileId).filter((id): id is string => id != null);
 }

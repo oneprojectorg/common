@@ -15,25 +15,13 @@ import { and, db, eq } from '@op/db/test';
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
 
-import { appRouter } from '../..';
 import {
   accessTierGatingCell,
   describeDecisionAccessTierGating,
   expectFailsAccessTierGate,
   expectPassesAccessTierGate,
 } from '../../../test/helpers/gating/decision';
-import {
-  createIsolatedSession,
-  createTestContextWithSession,
-} from '../../../test/supabase-utils';
-import { createCallerFactory } from '../../../trpcFactory';
-
-const createCaller = createCallerFactory(appRouter);
-
-async function createAuthenticatedCaller(email: string) {
-  const { session } = await createIsolatedSession(email);
-  return createCaller(await createTestContextWithSession(session));
-}
+import { createAuthenticatedCaller } from '../../../test/supabase-utils';
 
 const MILLISECONDS_PER_DAY = 86_400_000;
 

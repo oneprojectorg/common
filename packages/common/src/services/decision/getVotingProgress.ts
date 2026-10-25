@@ -2,13 +2,21 @@ import { db } from '@op/db/client';
 import type { User } from '@op/supabase/lib';
 import { permission } from 'access-zones';
 
-import { UnauthorizedError } from '../../utils';
-import { assertProfileAccess } from '../assert';
-import { getInstance } from './getInstance';
+import { NotFoundError } from '../../utils';
+import { getCachedInstance } from './getCachedInstance';
 import { computeDaysLeft } from './getPhaseReviewProgress';
 import { getProfileIdsWithDecisionPermission } from './getProfileIdsWithDecisionPermission';
+import { isDecisionPublic } from './isDecisionPublic';
 import { decisionPermission } from './permissions';
+import { assertDecisionAdmin } from './phaseHelpers';
+import { getInstancePhases } from './schemas/instanceData';
 import type { VotingProgress } from './schemas/votingProgress';
+
+// The permissions submitVote admits.
+const VOTE_PERMISSIONS = [
+  { decisions: permission.ADMIN },
+  { decisions: decisionPermission.VOTE },
+];
 
 export async function getVotingProgress({
   user,
@@ -17,39 +25,41 @@ export async function getVotingProgress({
   user: User;
   processInstanceId: string;
 }): Promise<VotingProgress> {
-  const instance = await getInstance({ instanceId: processInstanceId, user });
+  const instance = await getCachedInstance(processInstanceId);
 
-  if (!instance.profileId) {
-    throw new UnauthorizedError("You don't have access to do this");
+  if (!instance) {
+    throw new NotFoundError('Process instance', processInstanceId);
   }
 
-  await assertProfileAccess({
-    user,
-    profileId: instance.profileId,
-    permissions: { decisions: permission.ADMIN },
-  });
+  // The reads run beside the assert; a denied caller gets its rejection and
+  // never sees their results.
+  const [, memberProfileIds, isPublicVoting, voterProfileIds] =
+    await Promise.all([
+      assertDecisionAdmin({ user, decisionProfileId: instance.profileId }),
+      instance.profileId
+        ? getProfileIdsWithDecisionPermission({
+            decisionProfileId: instance.profileId,
+            permission: permission.ADMIN | decisionPermission.VOTE,
+          })
+        : [],
+      instance.profileId
+        ? isDecisionPublic({
+            profileId: instance.profileId,
+            permissions: VOTE_PERMISSIONS,
+          })
+        : false,
+      getVoterProfileIds({ processInstanceId }),
+    ]);
 
-  // Mirrors the permissions submitVote admits.
-  const [{ profileIds, includesPublic }, voterProfileIds] = await Promise.all([
-    getProfileIdsWithDecisionPermission({
-      decisionProfileId: instance.profileId,
-      permission: permission.ADMIN | decisionPermission.VOTE,
-    }),
-    getVoterProfileIds({ processInstanceId }),
-  ]);
-
-  // With public voting every caller can vote, so every ballot counts and its
-  // voter joins the eligible members. Otherwise a member who voted and then
-  // lost the vote permission is not counted, so turnout stays at most 100%.
-  const eligibleProfileIds = new Set(profileIds);
-  const countedVoterProfileIds = includesPublic
-    ? voterProfileIds
-    : voterProfileIds.filter((id) => eligibleProfileIds.has(id));
-  if (includesPublic) {
+  // Public voting admits every voter; otherwise a voter who lost the vote
+  // permission is not counted, so turnout stays at most 100%.
+  const eligibleProfileIds = new Set(memberProfileIds);
+  if (isPublicVoting) {
     voterProfileIds.forEach((id) => eligibleProfileIds.add(id));
   }
-
-  const participantsVotedCount = countedVoterProfileIds.length;
+  const participantsVotedCount = voterProfileIds.filter((id) =>
+    eligibleProfileIds.has(id),
+  ).length;
   const participantsEligibleCount = eligibleProfileIds.size;
 
   return {
@@ -64,7 +74,7 @@ export async function getVotingProgress({
     daysLeft: instance.currentStateId
       ? computeDaysLeft({
           phaseId: instance.currentStateId,
-          phases: instance.instanceData.phases,
+          phases: getInstancePhases(instance.instanceData),
         })
       : null,
   };
