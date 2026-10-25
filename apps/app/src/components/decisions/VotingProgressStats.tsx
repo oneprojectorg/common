@@ -61,7 +61,10 @@ function VotingProgressStatsSuspense({
       {progress.daysLeft !== null ? (
         <>
           <DecisionStatDivider />
-          <DecisionStat value={progress.daysLeft} label={t('daysLeftStat')} />
+          <DecisionStat
+            value={format.number(progress.daysLeft)}
+            label={t('daysLeftStat')}
+          />
         </>
       ) : null}
     </DecisionStats>
@@ -69,14 +72,20 @@ function VotingProgressStatsSuspense({
 }
 
 function VotingProgressStatsSkeleton() {
+  const placeholder = (
+    <DecisionStat
+      value={<Skeleton className="h-8 w-16" />}
+      label={<Skeleton className="h-4 w-24" />}
+    />
+  );
+
   return (
     <DecisionStats>
-      {Array.from({ length: 3 }).map((_, i) => (
-        <div key={i} className="flex min-w-24 flex-col items-center gap-2">
-          <Skeleton className="h-8 w-16" />
-          <Skeleton className="h-4 w-24" />
-        </div>
-      ))}
+      {placeholder}
+      <DecisionStatDivider />
+      {placeholder}
+      <DecisionStatDivider />
+      {placeholder}
     </DecisionStats>
   );
 }
