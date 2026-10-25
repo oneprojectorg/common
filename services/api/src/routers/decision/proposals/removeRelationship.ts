@@ -1,5 +1,6 @@
 import {
   Channels,
+  getProposalLikesChannels,
   assertProposalEngagementAccess,
   removeProfileRelationship,
 } from '@op/common';
@@ -37,7 +38,10 @@ export const removeProposalRelationshipRouter = router({
           Channels.decisionProposal(processInstanceId, id),
         ),
         ...(relationshipType === ProfileRelationshipType.LIKES
-          ? [Channels.decisionProposalLikes(processInstanceId, sourceProfileId)]
+          ? getProposalLikesChannels({
+              processInstanceId,
+              profileId: sourceProfileId,
+            })
           : []),
       ]);
     }),

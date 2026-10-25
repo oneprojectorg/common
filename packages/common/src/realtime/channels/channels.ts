@@ -42,9 +42,12 @@ export const Channels = {
    * broadcast to by decision.addProposalRelationship and
    * decision.removeProposalRelationship (likes only). Per liker, so a like
    * only refetches that reader's Liked list rather than every viewer's.
+   *
+   * Likes are private, so never build this from a profile id: use
+   * `getProposalLikesChannels`, which keys it on an HMAC of the liker.
    */
-  decisionProposalLikes: (instanceId: string, profileId: string) =>
-    `decisionProposalLikes:${instanceId}:${profileId}` as const,
+  decisionProposalLikes: (instanceId: string, likerKey: string) =>
+    `decisionProposalLikes:${instanceId}:${likerKey}` as const,
 
   reviewAssignment: (assignmentId: string) =>
     `reviewAssignment:${assignmentId}` as const,

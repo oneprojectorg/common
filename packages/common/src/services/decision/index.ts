@@ -159,6 +159,7 @@ export * from './exports';
 export * from './generateProposalHtml';
 export * from './getProposalDocumentsContent';
 export * from './getProposalRelationshipData';
+export * from './getProposalLikesChannels';
 export * from './getProposalFragmentNames';
 export * from './assembleProposalData';
 export * from './syncProposalProfileLocation';
