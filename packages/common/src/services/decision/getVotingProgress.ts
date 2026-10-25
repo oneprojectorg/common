@@ -1,5 +1,4 @@
-import { and, count, db, eq, inArray } from '@op/db/client';
-import { decisionsVoteSubmissions } from '@op/db/schema';
+import { db } from '@op/db/client';
 import type { User } from '@op/supabase/lib';
 import { permission } from 'access-zones';
 
@@ -31,16 +30,27 @@ export async function getVotingProgress({
   });
 
   // Mirrors the permissions submitVote admits.
-  const eligibleProfileIds = await getProfileIdsWithDecisionPermission({
-    decisionProfileId: instance.profileId,
-    permission: permission.ADMIN | decisionPermission.VOTE,
-  });
+  const [{ profileIds, includesPublic }, voterProfileIds] = await Promise.all([
+    getProfileIdsWithDecisionPermission({
+      decisionProfileId: instance.profileId,
+      permission: permission.ADMIN | decisionPermission.VOTE,
+    }),
+    getVoterProfileIds({ processInstanceId }),
+  ]);
 
-  const participantsVotedCount = await getVotedCount({
-    processInstanceId,
-    profileIds: eligibleProfileIds,
-  });
-  const participantsEligibleCount = eligibleProfileIds.length;
+  // With public voting every caller can vote, so every ballot counts and its
+  // voter joins the eligible members. Otherwise a member who voted and then
+  // lost the vote permission is not counted, so turnout stays at most 100%.
+  const eligibleProfileIds = new Set(profileIds);
+  const countedVoterProfileIds = includesPublic
+    ? voterProfileIds
+    : voterProfileIds.filter((id) => eligibleProfileIds.has(id));
+  if (includesPublic) {
+    voterProfileIds.forEach((id) => eligibleProfileIds.add(id));
+  }
+
+  const participantsVotedCount = countedVoterProfileIds.length;
+  const participantsEligibleCount = eligibleProfileIds.size;
 
   return {
     participantsVotedCount,
@@ -60,29 +70,16 @@ export async function getVotingProgress({
   };
 }
 
-// Counts only eligible voters, so a member who voted and then lost the vote
-// permission cannot push turnout past 100%.
-async function getVotedCount({
+// One row per voter: submissions are unique per instance and profile.
+async function getVoterProfileIds({
   processInstanceId,
-  profileIds,
 }: {
   processInstanceId: string;
-  profileIds: string[];
-}): Promise<number> {
-  if (profileIds.length === 0) {
-    return 0;
-  }
+}): Promise<string[]> {
+  const submissions = await db.query.decisionsVoteSubmissions.findMany({
+    where: { processInstanceId },
+    columns: { submittedByProfileId: true },
+  });
 
-  // db.select because db.query cannot express count(*).
-  const [row] = await db
-    .select({ count: count() })
-    .from(decisionsVoteSubmissions)
-    .where(
-      and(
-        eq(decisionsVoteSubmissions.processInstanceId, processInstanceId),
-        inArray(decisionsVoteSubmissions.submittedByProfileId, profileIds),
-      ),
-    );
-
-  return row?.count ?? 0;
+  return submissions.map((submission) => submission.submittedByProfileId);
 }

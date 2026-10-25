@@ -252,6 +252,35 @@ describe.concurrent('getVotingProgress', () => {
     });
   });
 
+  it('counts a non-member who votes through the public grant', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instanceId, proposal } = await setupVotingInstance(testData);
+    await testData.makeDecisionPublic(setup.instance.profileId);
+
+    const visitor = await testData.createMemberUser({
+      organization: setup.organization,
+    });
+    const visitorCaller = await createAuthenticatedCaller(visitor.email);
+    await visitorCaller.decision.submitVote({
+      processInstanceId: instanceId,
+      selectedProposalIds: [proposal.id],
+    });
+
+    const adminCaller = await createAuthenticatedCaller(setup.userEmail);
+
+    // Eligible: the admin and the visitor who voted.
+    await expect(
+      adminCaller.decision.getVotingProgress({ processInstanceId: instanceId }),
+    ).resolves.toMatchObject({
+      participantsVotedCount: 1,
+      participantsEligibleCount: 2,
+      turnoutPercentage: 50,
+    });
+  });
+
   it('returns zero turnout and null daysLeft before anyone votes in a phase with no end date', async ({
     task,
     onTestFinished,
