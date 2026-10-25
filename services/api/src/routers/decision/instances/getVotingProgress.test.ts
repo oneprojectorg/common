@@ -1,13 +1,19 @@
 import { mockCollab } from '@op/collab/testing';
-import { invalidateDecisionInstance } from '@op/common';
+import { createDecisionRole, invalidateDecisionInstance } from '@op/common';
 import {
   TestDecisionsDataManager,
   testSimpleVotingSchema,
 } from '@op/common/testing';
-import { ProposalStatus, processInstances } from '@op/db/schema';
+import {
+  ProposalStatus,
+  processInstances,
+  profileUserToAccessRoles,
+  profileUsers,
+} from '@op/db/schema';
 import { ROLES } from '@op/db/seedData/accessControl';
-import { db, eq } from '@op/db/test';
+import { and, db, eq } from '@op/db/test';
 import { describe, expect, it } from 'vitest';
+import { z } from 'zod';
 
 import { appRouter } from '../..';
 import {
@@ -29,6 +35,16 @@ async function createAuthenticatedCaller(email: string) {
   return createCaller(await createTestContextWithSession(session));
 }
 
+const MILLISECONDS_PER_DAY = 86_400_000;
+
+const proposalDocSchema = z.object({
+  collaborationDocId: z.string().optional(),
+});
+
+const instancePhasesSchema = z.looseObject({
+  phases: z.array(z.looseObject({ phaseId: z.string() })),
+});
+
 async function setupVotingInstance(
   testData: TestDecisionsDataManager,
   { votingEndDate }: { votingEndDate?: string } = {},
@@ -47,9 +63,7 @@ async function setupVotingInstance(
     status: ProposalStatus.SUBMITTED,
   });
 
-  const { collaborationDocId } = proposal.proposalData as {
-    collaborationDocId?: string;
-  };
+  const { collaborationDocId } = proposalDocSchema.parse(proposal.proposalData);
   if (collaborationDocId) {
     mockCollab.setDocFragments(collaborationDocId, {
       title: 'Community Garden',
@@ -60,9 +74,7 @@ async function setupVotingInstance(
     .select({ instanceData: processInstances.instanceData })
     .from(processInstances)
     .where(eq(processInstances.id, instanceId));
-  const instanceData = record?.instanceData as {
-    phases: Array<{ phaseId: string }>;
-  };
+  const instanceData = instancePhasesSchema.parse(record?.instanceData);
 
   await db
     .update(processInstances)
@@ -71,7 +83,9 @@ async function setupVotingInstance(
       instanceData: {
         ...instanceData,
         phases: instanceData.phases.map((phase) =>
-          phase.phaseId === 'voting' ? { ...phase, endDate: votingEndDate } : phase,
+          phase.phaseId === 'voting'
+            ? { ...phase, endDate: votingEndDate }
+            : phase,
         ),
       },
     })
@@ -130,7 +144,7 @@ describe.concurrent('getVotingProgress', () => {
     ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
   });
 
-  it('counts votes from eligible members against every member who can vote', async ({
+  it('counts only votes from members who can still vote', async ({
     task,
     onTestFinished,
   }) => {
@@ -138,12 +152,14 @@ describe.concurrent('getVotingProgress', () => {
     const { setup, instanceId, proposal } = await setupVotingInstance(
       testData,
       {
-        votingEndDate: new Date(Date.now() + 10 * 86_400_000).toISOString(),
+        votingEndDate: new Date(
+          Date.now() + 10 * MILLISECONDS_PER_DAY,
+        ).toISOString(),
       },
     );
     const instanceProfileId = setup.instance.profileId;
 
-    const [voter] = await Promise.all([
+    const [voter, revokedVoter] = await Promise.all([
       testData.createMemberUser({
         organization: setup.organization,
         instanceProfileIds: [instanceProfileId],
@@ -152,28 +168,87 @@ describe.concurrent('getVotingProgress', () => {
         organization: setup.organization,
         instanceProfileIds: [instanceProfileId],
       }),
+      testData.createMemberUser({
+        organization: setup.organization,
+        instanceProfileIds: [instanceProfileId],
+      }),
+      // An organization member without access to the decision cannot vote.
+      testData.createMemberUser({ organization: setup.organization }),
     ]);
 
-    // An organization member without access to the decision cannot vote.
-    await testData.createMemberUser({ organization: setup.organization });
+    for (const { email } of [voter, revokedVoter]) {
+      const caller = await createAuthenticatedCaller(email);
+      await caller.decision.submitVote({
+        processInstanceId: instanceId,
+        selectedProposalIds: [proposal.id],
+      });
+    }
 
-    const voterCaller = await createAuthenticatedCaller(voter.email);
-    await voterCaller.decision.submitVote({
-      processInstanceId: instanceId,
-      selectedProposalIds: [proposal.id],
+    // After voting, the member's role changes to one that can only read.
+    const readOnlyRole = await createDecisionRole({
+      name: `Read only ${task.id}`,
+      profileId: instanceProfileId,
+      permissions: {
+        decisions: {
+          type: 'decision',
+          value: {
+            create: false,
+            read: true,
+            update: false,
+            delete: false,
+            admin: false,
+            inviteMembers: false,
+            review: false,
+            submitProposals: false,
+            vote: false,
+          },
+        },
+      },
     });
+    const [revokedProfileUser] = await db
+      .select({ id: profileUsers.id })
+      .from(profileUsers)
+      .where(
+        and(
+          eq(profileUsers.authUserId, revokedVoter.authUserId),
+          eq(profileUsers.profileId, instanceProfileId),
+        ),
+      );
+    if (!revokedProfileUser) {
+      throw new Error('Revoked voter has no membership on the decision');
+    }
+    await db
+      .delete(profileUserToAccessRoles)
+      .where(eq(profileUserToAccessRoles.profileUserId, revokedProfileUser.id));
+    await testData.assignRole(
+      revokedVoter.authUserId,
+      instanceProfileId,
+      readOnlyRole.id,
+    );
 
     const adminCaller = await createAuthenticatedCaller(setup.userEmail);
-    const result = await adminCaller.decision.getVotingProgress({
-      processInstanceId: instanceId,
-    });
 
-    // Eligible: the admin, the voter and the member who did not vote.
-    expect(result).toEqual({
+    // Eligible: the admin, the voter and the member who has not voted.
+    await expect(
+      adminCaller.decision.getVotingProgress({ processInstanceId: instanceId }),
+    ).resolves.toEqual({
       participantsVotedCount: 1,
       participantsEligibleCount: 3,
       turnoutPercentage: 33,
       daysLeft: 10,
+    });
+
+    await adminCaller.decision.submitVote({
+      processInstanceId: instanceId,
+      selectedProposalIds: [proposal.id],
+    });
+
+    await expect(
+      adminCaller.decision.getVotingProgress({ processInstanceId: instanceId }),
+    ).resolves.toMatchObject({
+      participantsVotedCount: 2,
+      participantsEligibleCount: 3,
+      turnoutPercentage: 67,
     });
   });
 

@@ -7,11 +7,8 @@ export const votingProgressInputSchema = instancePhaseRefSchema.pick({
 });
 
 /**
- * Turnout for the instance's current phase.
- *   - participantsEligibleCount: members whose role can vote (VOTE or ADMIN).
- *   - participantsVotedCount: eligible members with a vote submission.
- *   - turnoutPercentage: voted / eligible, rounded; 0 when nobody is eligible.
- *   - daysLeft: ceil(now → phase endDate); null if no end date or phase.
+ * Turnout counts the instance's vote submissions against the members who can
+ * vote now. daysLeft is for the current phase; null without an end date.
  */
 export const votingProgressSchema = z.object({
   participantsVotedCount: z.number().int(),

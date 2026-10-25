@@ -1,4 +1,5 @@
 import {
+  Channels,
   getVotingProgress,
   votingProgressInputSchema,
   votingProgressSchema,
@@ -11,6 +12,10 @@ export const getVotingProgressRouter = router({
     .input(votingProgressInputSchema)
     .output(votingProgressSchema)
     .query(async ({ ctx, input }) => {
+      ctx.registerQueryChannels([
+        Channels.decisionInstance(input.processInstanceId),
+      ]);
+
       return await getVotingProgress({
         ...input,
         user: ctx.user,
