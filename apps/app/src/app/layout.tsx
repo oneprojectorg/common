@@ -54,6 +54,9 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
+  // Android: shrink the layout viewport for the keyboard. iOS ignores this;
+  // DialogContent follows the visual viewport instead.
+  interactiveWidget: 'resizes-content',
 };
 
 const RootLayout = async ({ children }: { children: React.ReactNode }) => {

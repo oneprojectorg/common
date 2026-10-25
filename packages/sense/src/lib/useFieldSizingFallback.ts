@@ -1,5 +1,7 @@
 import * as React from 'react';
 
+import { attachRef } from './attachRef';
+
 type TextareaRef = React.ComponentProps<'textarea'>['ref'];
 
 /**
@@ -15,7 +17,7 @@ function useFieldSizingFallback(
   const mergedRef = React.useCallback(
     (node: HTMLTextAreaElement | null) => {
       fieldRef.current = node;
-      const release = attach(ref, node);
+      const release = attachRef(ref, node);
       return () => {
         fieldRef.current = null;
         release();
@@ -47,20 +49,6 @@ function useFieldSizingFallback(
   }, []);
 
   return mergedRef;
-}
-
-function attach(ref: TextareaRef, node: HTMLTextAreaElement | null) {
-  if (typeof ref === 'function') {
-    const cleanup = ref(node);
-    return typeof cleanup === 'function' ? cleanup : () => ref(null);
-  }
-  if (ref) {
-    ref.current = node;
-    return () => {
-      ref.current = null;
-    };
-  }
-  return () => {};
 }
 
 function fitToContent(field: HTMLTextAreaElement | null) {

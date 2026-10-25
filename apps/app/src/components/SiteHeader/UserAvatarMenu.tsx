@@ -12,7 +12,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@op/sense/Dialog';
 import {
   DropdownMenu,
@@ -26,6 +25,7 @@ import {
 import { ProfileAvatar } from '@op/sense/ProfileAvatar';
 import { ProfileItem } from '@op/sense/ProfileItem';
 import { Separator } from '@op/sense/Separator';
+import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@op/sense/Sheet';
 import { cn } from '@op/sense/lib/utils';
 import { screens } from '@op/styles/constants';
 import dynamic from 'next/dynamic';
@@ -59,7 +59,7 @@ const SettingsModal = dynamic(
  * A profile/org switcher row. Renders as a base-ui `DropdownMenuItem` in the
  * desktop dropdown (`asMenuItem`) and as a plain button in the mobile bottom
  * sheet — base-ui `Menu.Item` needs a `Menu.Root` context and cannot render
- * inside the sheet's `Dialog`.
+ * inside the `Sheet`.
  */
 const ProfileMenuRow = ({
   profile,
@@ -620,8 +620,8 @@ export const UserAvatarMenu = ({ className }: { className?: string }) => {
   if (isMobile) {
     return (
       <>
-        <Dialog open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
-          <DialogTrigger
+        <Sheet open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
+          <SheetTrigger
             render={
               <Button
                 variant="ghost"
@@ -631,15 +631,15 @@ export const UserAvatarMenu = ({ className }: { className?: string }) => {
             }
           >
             {avatarContent}
-          </DialogTrigger>
-          {/* A bottom sheet, deliberately opting out of the full-screen default. */}
-          <DialogContent
+          </SheetTrigger>
+          <SheetContent
+            side="bottom"
             showCloseButton={false}
-            className="top-auto bottom-0 max-h-[85svh] rounded-t p-0"
+            className="max-h-[85svh] rounded-t"
           >
-            <DialogTitle className="sr-only">
+            <SheetTitle className="sr-only">
               {t('shell.openMenuLabel')}
-            </DialogTitle>
+            </SheetTitle>
             <div className="pb-safe flex min-h-0 w-full flex-1 flex-col gap-3 overflow-y-auto py-4 pb-8">
               <AvatarMenuContent
                 onClose={() => setIsDrawerOpen(false)}
@@ -649,8 +649,8 @@ export const UserAvatarMenu = ({ className }: { className?: string }) => {
                 onProfileSwitch={handleProfileSwitch}
               />
             </div>
-          </DialogContent>
-        </Dialog>
+          </SheetContent>
+        </Sheet>
         {overlays}
       </>
     );
