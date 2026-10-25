@@ -81,6 +81,12 @@ test.describe('Ranked voting with a voter budget', () => {
       authenticatedPage.getByRole('heading', { name, level: 2 }),
     ).toBeVisible({ timeout: 30_000 });
 
+    // The first-visit intro has its own test below.
+    await authenticatedPage
+      .getByRole('dialog', { name: 'Pick proposals within your budget' })
+      .getByRole('button', { name: 'Skip' })
+      .click();
+
     const ballotToggle = (title: string) =>
       authenticatedPage
         .getByRole('button', { name: /select proposal/i })
@@ -213,6 +219,58 @@ test.describe('Ranked voting with a voter budget', () => {
         level: 3,
       }),
     ).toHaveText(['Harbor Reading Room', 'Downtown Mural']);
+  });
+
+  test('walks a first-time voter through the budget and ranking intros, and stays dismissed after a reload', async ({
+    authenticatedPage,
+    org,
+  }) => {
+    const template = await getSeededTemplate();
+    const { instance, slug, name } = await createDecisionInstance({
+      processId: template.id,
+      ownerProfileId: org.organizationProfile.id,
+      authUserId: org.adminUser.authUserId,
+      email: org.adminUser.email,
+      schema: rankedBudgetSchema,
+    });
+    await createProposal({
+      processInstanceId: instance.id,
+      submittedByProfileId: org.organizationProfile.id,
+      status: ProposalStatus.SUBMITTED,
+      proposalData: {
+        title: 'Riverside Bike Path',
+        description: '<p>Riverside Bike Path details.</p>',
+        budget: { amount: PRICES['Riverside Bike Path'], currency: 'USD' },
+      },
+    });
+
+    await authenticatedPage.goto(`/en/decisions/${slug}/current`, {
+      waitUntil: 'domcontentloaded',
+    });
+    await expect(
+      authenticatedPage.getByRole('heading', { name, level: 2 }),
+    ).toBeVisible({ timeout: 30_000 });
+
+    const budgetIntro = authenticatedPage.getByRole('dialog', {
+      name: 'Pick proposals within your budget',
+    });
+    const rankedIntro = authenticatedPage.getByRole('dialog', {
+      name: 'Your order is your ranking',
+    });
+    await expect(budgetIntro).toContainText('You have $1,000 to allocate');
+    await budgetIntro.getByRole('button', { name: 'Next' }).click();
+    await expect(rankedIntro).toBeVisible();
+    await rankedIntro.getByRole('button', { name: 'Back' }).click();
+    await expect(budgetIntro).toBeVisible();
+    await budgetIntro.getByRole('button', { name: 'Next' }).click();
+    await rankedIntro.getByRole('button', { name: /ready to vote/i }).click();
+    await expect(rankedIntro).toBeHidden();
+
+    await authenticatedPage.reload({ waitUntil: 'domcontentloaded' });
+    await expect(
+      authenticatedPage.getByRole('button', { name: '0 proposals selected' }),
+    ).toBeVisible({ timeout: 30_000 });
+    await expect(budgetIntro).toBeHidden();
   });
 
   test('shows each pick on My ballot with its rank once results are in', async ({

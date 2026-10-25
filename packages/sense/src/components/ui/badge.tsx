@@ -23,6 +23,8 @@ const badgeVariants = cva(
           'bg-destructive-muted text-foreground focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 [&:is(a,button)]:hover:after:bg-destructive/10',
         warning:
           'bg-warning-muted text-foreground [&:is(a,button)]:hover:after:bg-warning/10',
+        success:
+          'bg-success-muted text-foreground [&:is(a,button)]:hover:after:bg-success/10',
         accent:
           'bg-accent text-accent-foreground [&:is(a,button)]:hover:after:bg-primary/10',
         // Outline and ghost don't overlay — they swap their fill to `muted`.
