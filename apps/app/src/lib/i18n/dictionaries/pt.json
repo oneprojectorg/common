@@ -1121,8 +1121,6 @@
       "noReviewerAssignments": "Ainda não há nada atribuído a esta pessoa.",
       "olderVersionLabel": "Versão anterior",
       "olderVersionReviewedBy": "Older version reviewed by {name}",
-      "openStatus": "Abrir",
-      "openReviewerAssignmentsAction": "Abrir as atribuições de {name}",
       "otherReviewsTab": "Outras avaliações",
       "overallRecommendationLabel": "Recomendação geral",
       "importPastePlaceholder": "Cole uma coluna de IDs de propostas ou linhas inteiras",

@@ -1121,8 +1121,6 @@
       "noReviewerAssignments": "Ehhez az értékelőhöz még nincs semmi kiosztva.",
       "olderVersionLabel": "Korábbi verzió",
       "olderVersionReviewedBy": "Older version reviewed by {name}",
-      "openStatus": "Megnyitás",
-      "openReviewerAssignmentsAction": "{name} kiosztásainak megnyitása",
       "otherReviewsTab": "Egyéb értékelések",
       "overallRecommendationLabel": "Összesített ajánlás",
       "importPastePlaceholder": "Illesszen be egy oszlopnyi javaslatazonosítót vagy teljes sorokat",

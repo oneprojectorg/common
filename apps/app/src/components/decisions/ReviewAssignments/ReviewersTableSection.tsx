@@ -28,12 +28,10 @@ import {
 } from '@op/sense/Table';
 import { useFormatter } from 'next-intl';
 import { Suspense, useCallback } from 'react';
-import { LuChevronRight, LuUsers } from 'react-icons/lu';
+import { LuUsers } from 'react-icons/lu';
 
 import { Link, useTranslations } from '@/lib/i18n';
 import type { TranslationKey } from '@/lib/i18n';
-
-import { ButtonLink } from '@/components/ButtonLink';
 
 import { ReviewersTableSkeleton } from './ReviewAssignmentsSkeletons';
 
@@ -140,16 +138,17 @@ function ReviewersTableContent({
             <TableHeader>
               <TableRow>
                 <TableHead>{t('decisions.review.reviewerColumn')}</TableHead>
-                <TableHead>{t('decisions.review.assignedLabel')}</TableHead>
-                <TableHead>{t('decisions.review.submittedColumn')}</TableHead>
-                <TableHead>
+                <TableHead className="w-24">
+                  {t('decisions.review.assignedLabel')}
+                </TableHead>
+                <TableHead className="w-56">
+                  {t('decisions.review.submittedColumn')}
+                </TableHead>
+                <TableHead className="w-36">
                   {t('decisions.review.lastSubmissionLabel')}
                 </TableHead>
-                <TableHead>{t('decisions.review.statusColumn')}</TableHead>
-                <TableHead className="text-end">
-                  <span className="sr-only">
-                    {t('decisions.review.openStatus')}
-                  </span>
+                <TableHead className="w-44">
+                  {t('decisions.review.statusColumn')}
                 </TableHead>
               </TableRow>
             </TableHeader>
@@ -222,7 +221,13 @@ function ReviewerRowCells({
           />
         </Link>
       </TableRowHeader>
-      <TableCell className="tabular-nums">{row.assignedCount}</TableCell>
+      <TableCell className="tabular-nums">
+        {row.assignedCount === 0 ? (
+          <span className="text-muted-foreground">—</span>
+        ) : (
+          row.assignedCount
+        )}
+      </TableCell>
       <TableCell>
         {row.assignedCount === 0 ? (
           <span className="text-muted-foreground">—</span>
@@ -249,20 +254,6 @@ function ReviewerRowCells({
       </TableCell>
       <TableCell>
         <StatusBadge variant={status.variant}>{t(status.label)}</StatusBadge>
-      </TableCell>
-      <TableCell className="text-end">
-        {/* z-10 keeps the chevron clickable above the stretched target. */}
-        <ButtonLink
-          href={href}
-          variant="ghost"
-          size="icon-sm"
-          className="relative z-10 text-muted-foreground"
-          aria-label={t('decisions.review.openReviewerAssignmentsAction', {
-            name,
-          })}
-        >
-          <LuChevronRight className="rtl:-scale-x-100" />
-        </ButtonLink>
       </TableCell>
     </TableRow>
   );

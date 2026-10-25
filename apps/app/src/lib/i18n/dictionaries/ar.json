@@ -1121,8 +1121,6 @@
       "noReviewerAssignments": "لم يُعيَّن أي مقترح لهذا المراجع بعد.",
       "olderVersionLabel": "إصدار أقدم",
       "olderVersionReviewedBy": "Older version reviewed by {name}",
-      "openStatus": "فتح",
-      "openReviewerAssignmentsAction": "فتح تعيينات {name}",
       "otherReviewsTab": "مراجعات أخرى",
       "overallRecommendationLabel": "التوصية العامة",
       "importPastePlaceholder": "الصق عمودًا من معرّفات المقترحات أو صفوفًا كاملة",

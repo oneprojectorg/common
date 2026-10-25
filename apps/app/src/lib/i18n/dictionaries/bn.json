@@ -1121,8 +1121,6 @@
       "noReviewerAssignments": "এই পর্যালোচকের জন্য এখনও কিছু নির্ধারণ করা হয়নি।",
       "olderVersionLabel": "পুরোনো সংস্করণ",
       "olderVersionReviewedBy": "Older version reviewed by {name}",
-      "openStatus": "খুলুন",
-      "openReviewerAssignmentsAction": "{name}-এর নির্ধারণ খুলুন",
       "otherReviewsTab": "অন্যান্য পর্যালোচনা",
       "overallRecommendationLabel": "সামগ্রিক সুপারিশ",
       "importPastePlaceholder": "প্রস্তাবনার আইডির একটি কলাম বা পুরো সারি পেস্ট করুন",
