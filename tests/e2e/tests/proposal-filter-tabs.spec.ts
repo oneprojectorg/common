@@ -280,4 +280,70 @@ test.describe('Proposal filter tabs', () => {
     expect(params.get('filter')).toBe('my-proposals');
     expect(params.get('proposalStatus')).toBe('not-advanced');
   });
+
+  /** Liked narrows to the reader's likes, survives a reload, and follows likes made in another tab. */
+  test('narrows to what the reader liked and follows likes made elsewhere', async ({
+    authenticatedPage,
+    org,
+  }) => {
+    const { slug } = await createListingWithOneOwnProposal(org);
+
+    await authenticatedPage.goto(`/en/decisions/${slug}/current?filter=all`, {
+      waitUntil: 'domcontentloaded',
+    });
+
+    const liked = authenticatedPage.getByRole('link', {
+      name: OTHER_PROPOSAL_TITLE,
+    });
+    const notLiked = authenticatedPage.getByRole('link', {
+      name: MY_PROPOSAL_TITLE,
+    });
+    await expect(liked).toBeVisible({ timeout: 30_000 });
+    await expect(notLiked).toBeVisible();
+
+    const likedTab = authenticatedPage.getByRole('tab', { name: 'Liked' });
+    await likedTab.click();
+    await expect(likedTab).toHaveAttribute('aria-selected', 'true');
+    await expect(authenticatedPage).toHaveURL(/[?&]filter=liked(&|$)/);
+    // Nothing liked yet.
+    await expect(liked).toBeHidden({ timeout: 15_000 });
+    await expect(notLiked).toBeHidden();
+
+    const otherTab = await authenticatedPage.context().newPage();
+    await otherTab.goto(`/en/decisions/${slug}/current?filter=all`, {
+      waitUntil: 'domcontentloaded',
+    });
+    const likeToggle = otherTab
+      .getByTestId('proposal-card')
+      .filter({ hasText: OTHER_PROPOSAL_TITLE })
+      .getByRole('button', { name: /^Likes:/ });
+    await expect(likeToggle).toBeEnabled({ timeout: 30_000 });
+
+    const toggleLike = async (relationshipPath: string) => {
+      const written = otherTab.waitForResponse(
+        (response) =>
+          response.url().includes(relationshipPath) && response.ok(),
+        { timeout: 30_000 },
+      );
+      await likeToggle.click();
+      await written;
+    };
+
+    await toggleLike('decision.addProposalRelationship');
+    await expect(liked).toBeVisible({ timeout: 20_000 });
+    await expect(notLiked).toBeHidden();
+
+    // The URL carries the filter, so a reload lands back on the same list.
+    await authenticatedPage.reload({ waitUntil: 'domcontentloaded' });
+    await expect(likedTab).toHaveAttribute('aria-selected', 'true', {
+      timeout: 30_000,
+    });
+    await expect(liked).toBeVisible({ timeout: 30_000 });
+    await expect(notLiked).toBeHidden();
+
+    await toggleLike('decision.removeProposalRelationship');
+    await expect(liked).toBeHidden({ timeout: 20_000 });
+
+    await otherTab.close();
+  });
 });

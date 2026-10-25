@@ -21,7 +21,7 @@ export const addRelationship = async ({
   relationshipType: string;
   authUserId: string;
   pending?: boolean;
-}): Promise<void> => {
+}): Promise<{ sourceProfileId: string }> => {
   const currentProfileId = await getCurrentProfileId(authUserId);
 
   // Prevent self-relationships
@@ -45,6 +45,8 @@ export const addRelationship = async ({
       params: [targetProfileId],
     }),
   ]);
+
+  return { sourceProfileId: currentProfileId };
 };
 
 export const removeRelationship = async ({
@@ -55,7 +57,7 @@ export const removeRelationship = async ({
   targetProfileId: string;
   relationshipType: string;
   authUserId: string;
-}): Promise<void> => {
+}): Promise<{ sourceProfileId: string }> => {
   const currentProfileId = await getCurrentProfileId(authUserId);
 
   if (!currentProfileId) {
@@ -81,6 +83,8 @@ export const removeRelationship = async ({
       params: [targetProfileId],
     }),
   ]);
+
+  return { sourceProfileId: currentProfileId };
 };
 
 export const getRelationships = async ({

@@ -3,6 +3,7 @@ import {
   assertProposalEngagementAccess,
   removeProfileRelationship,
 } from '@op/common';
+import { ProfileRelationshipType } from '@op/db/schema';
 
 import { proposalRelationshipInputSchema } from '../../../encoders/decision';
 import { authenticatedConfirmedProcedure, router } from '../../../trpcFactory';
@@ -25,16 +26,19 @@ export const removeProposalRelationshipRouter = router({
           profileId: targetProfileId,
         });
 
-      await removeProfileRelationship({
+      const { sourceProfileId } = await removeProfileRelationship({
         targetProfileId,
         relationshipType,
         authUserId: ctx.user.id,
       });
 
-      ctx.registerMutationChannels(
-        [proposalId, ...mergeTargetIds].map((id) =>
+      ctx.registerMutationChannels([
+        ...[proposalId, ...mergeTargetIds].map((id) =>
           Channels.decisionProposal(processInstanceId, id),
         ),
-      );
+        ...(relationshipType === ProfileRelationshipType.LIKES
+          ? [Channels.decisionProposalLikes(processInstanceId, sourceProfileId)]
+          : []),
+      ]);
     }),
 });

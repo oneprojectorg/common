@@ -35,6 +35,17 @@ export const Channels = {
   decisionProposal: (instanceId: string, proposalId: string) =>
     `decisionProposal:${instanceId}:${proposalId}` as const,
 
+  /**
+   * Channel for the proposals one profile has liked in an instance — the
+   * Liked filter. Subscribed to by decision.listProposals and
+   * decision.listProposalLocations when they filter by `likedByProfileId`,
+   * broadcast to by decision.addProposalRelationship and
+   * decision.removeProposalRelationship (likes only). Per liker, so a like
+   * only refetches that reader's Liked list rather than every viewer's.
+   */
+  decisionProposalLikes: (instanceId: string, profileId: string) =>
+    `decisionProposalLikes:${instanceId}:${profileId}` as const,
+
   reviewAssignment: (assignmentId: string) =>
     `reviewAssignment:${assignmentId}` as const,
 
@@ -135,6 +146,9 @@ export type DecisionProposalsChannel = ReturnType<
 export type DecisionProposalChannel = ReturnType<
   typeof Channels.decisionProposal
 >;
+export type DecisionProposalLikesChannel = ReturnType<
+  typeof Channels.decisionProposalLikes
+>;
 export type ReviewAssignmentChannel = ReturnType<
   typeof Channels.reviewAssignment
 >;
@@ -173,6 +187,7 @@ export type ChannelName =
   | DecisionInstanceChannel
   | DecisionProposalsChannel
   | DecisionProposalChannel
+  | DecisionProposalLikesChannel
   | ReviewAssignmentChannel
   | ReviewAssignmentsChannel
   | ProfilePostsChannel
