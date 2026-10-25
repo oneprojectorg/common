@@ -4,14 +4,16 @@ import {
   proposalReviewAssignments,
 } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
-import { permission } from 'access-zones';
 
-import { UnauthorizedError } from '../../utils';
-import { assertProfileAccess } from '../assert';
-import { getInstance } from './getInstance';
+import { NotFoundError } from '../../utils';
+import { getCachedInstance } from './getCachedInstance';
 import { getProposalIdsForPhase } from './getProposalsForPhase';
+import { assertDecisionAdmin } from './phaseHelpers';
 import type { InstancePhaseRef } from './schemas/instance';
-import type { PhaseInstanceData } from './schemas/instanceData';
+import {
+  type PhaseInstanceData,
+  getInstancePhases,
+} from './schemas/instanceData';
 import type { PhaseReviewProgress } from './schemas/reviews';
 import { assertInstancePhase } from './utils/instance';
 
@@ -26,21 +28,18 @@ export async function getPhaseReviewProgress(
 ): Promise<PhaseReviewProgress> {
   const { user, processInstanceId, phaseId } = input;
 
-  const instance = await getInstance({ instanceId: processInstanceId, user });
+  const instance = await getCachedInstance(processInstanceId);
 
-  if (!instance.profileId) {
-    throw new UnauthorizedError("You don't have access to do this");
+  if (!instance) {
+    throw new NotFoundError('Process instance', processInstanceId);
   }
 
   // Ahead of `assertInstancePhase` so an unauthorized caller can't probe which
   // phases the instance has.
-  await assertProfileAccess({
-    user,
-    profileId: instance.profileId,
-    permissions: { decisions: permission.ADMIN },
-  });
+  await assertDecisionAdmin({ user, decisionProfileId: instance.profileId });
 
-  assertInstancePhase({ instance, phaseId });
+  const phases = getInstancePhases(instance.instanceData);
+  assertInstancePhase({ instance: { instanceData: { phases } }, phaseId });
 
   const assignedReviewerCountsPromise = getAssignedReviewerCounts({
     processInstanceId,
@@ -61,10 +60,7 @@ export async function getPhaseReviewProgress(
     proposalsTotalCount: phaseProposalIds.length,
     activeReviewersCount: assignedReviewerCounts.active,
     reviewersTotalCount: assignedReviewerCounts.total,
-    daysLeft: computeDaysLeft({
-      phaseId,
-      phases: instance.instanceData.phases,
-    }),
+    daysLeft: computeDaysLeft({ phaseId, phases }),
   };
 }
 
