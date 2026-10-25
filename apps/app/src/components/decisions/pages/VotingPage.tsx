@@ -14,6 +14,7 @@ import { useDecisionTranslation } from '../DecisionTranslationContext';
 import { MemberParticipationFacePile } from '../MemberParticipationFacePile';
 import { ProposalListSkeleton } from '../ProposalListSkeleton';
 import { ProposalsList } from '../ProposalsList';
+import { VotingProgressStats } from '../VotingProgressStats';
 
 export function VotingPage({
   instanceId,
@@ -89,6 +90,13 @@ export function VotingPage({
             variant="standard"
             hasImage={hasHeroImage}
           />
+
+          {instance.access?.admin ? (
+            <VotingProgressStats
+              processInstanceId={instanceId}
+              hasImage={hasHeroImage}
+            />
+          ) : null}
 
           <MemberParticipationFacePile
             submitters={submitters}
