@@ -4,7 +4,8 @@ import { Channels, type DecisionProposalLikesChannel } from '../../realtime';
 
 /**
  * Realtime channels are public, so the reader's Liked-list channel is named by
- * an HMAC of the liker rather than the profile id. Skipped without a key.
+ * an HMAC of the liker rather than the profile id. The key is single-purpose:
+ * leaking it exposes channel names and nothing else. Skipped without a key.
  */
 export const getProposalLikesChannels = ({
   processInstanceId,
@@ -13,7 +14,7 @@ export const getProposalLikesChannels = ({
   processInstanceId: string;
   profileId: string;
 }): DecisionProposalLikesChannel[] => {
-  const key = process.env.SUPABASE_SERVICE_ROLE;
+  const key = process.env.REALTIME_CHANNEL_SECRET;
   if (!key) {
     return [];
   }

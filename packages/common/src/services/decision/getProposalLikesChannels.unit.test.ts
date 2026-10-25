@@ -7,7 +7,7 @@ const PROFILE_ID = 'profile-1';
 
 describe('getProposalLikesChannels', () => {
   beforeEach(() => {
-    vi.stubEnv('SUPABASE_SERVICE_ROLE', 'test-service-role');
+    vi.stubEnv('REALTIME_CHANNEL_SECRET', 'test-channel-secret');
   });
 
   afterEach(() => {
@@ -51,7 +51,7 @@ describe('getProposalLikesChannels', () => {
   });
 
   it('registers nothing without a key to derive the name from', () => {
-    vi.stubEnv('SUPABASE_SERVICE_ROLE', '');
+    vi.stubEnv('REALTIME_CHANNEL_SECRET', '');
 
     expect(
       getProposalLikesChannels({

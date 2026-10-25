@@ -44,7 +44,8 @@ export const Channels = {
    * only refetches that reader's Liked list rather than every viewer's.
    *
    * Likes are private, so never build this from a profile id: use
-   * `getProposalLikesChannels`, which keys it on an HMAC of the liker.
+   * `getProposalLikesChannels`, which keys it on an HMAC of the liker under
+   * `REALTIME_CHANNEL_SECRET`.
    */
   decisionProposalLikes: (instanceId: string, likerKey: string) =>
     `decisionProposalLikes:${instanceId}:${likerKey}` as const,
