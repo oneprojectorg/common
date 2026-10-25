@@ -232,6 +232,8 @@ export const allProposalsFilterSchema = z.object({
   search: proposalSearchSchema,
   // Restrict to the caller's ballot (self-only); used by the "My ballot" filter.
   votedByProfileId: z.uuid().optional(),
+  // Restrict to the caller's likes (self-only); used by the "Liked" filter.
+  likedByProfileId: z.uuid().optional(),
   dir: z.enum(['asc', 'desc']).optional(),
   orderBy: z.enum(['createdAt', 'updatedAt']).optional(),
   cursor: z.string().nullish(),

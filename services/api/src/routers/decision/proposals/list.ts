@@ -54,6 +54,12 @@ export const listProposalsRouter = router({
 
       ctx.registerQueryChannels([
         Channels.decisionProposals(input.processInstanceId),
+        ...(input.likedByProfileId
+          ? getProposalLikesChannels({
+              processInstanceId: input.processInstanceId,
+              profileId: input.likedByProfileId,
+            })
+          : []),
       ]);
 
       return allProposalsListSchema.parse(result);

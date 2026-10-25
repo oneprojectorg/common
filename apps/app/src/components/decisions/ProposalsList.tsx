@@ -213,6 +213,7 @@ const ResultsPhaseProposalsLoader = ({
         status: queryParams.status,
         submittedByProfileId: queryParams.submittedByProfileId,
         votedByProfileId: queryParams.votedByProfileId,
+        likedByProfileId: queryParams.likedByProfileId,
       },
       {
         getNextPageParam: nextCursor,

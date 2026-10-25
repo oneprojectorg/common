@@ -51,7 +51,10 @@ import { parseProposalData } from './proposalDataSchema';
 import { buildProposalListPreview } from './proposalListPreview';
 import { notSuperseded } from './proposalSupersession';
 import { buildProposalTitleSearchCondition } from './proposalTitleSearch';
-import { excludeRejectedUnlessAsked } from './proposalVisibility';
+import {
+  excludeRejectedUnlessAsked,
+  isLikedByProfile,
+} from './proposalVisibility';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
 import type { AllProposalsFilter } from './schemas/proposal';
 
@@ -124,6 +127,11 @@ export const listAllProposals = async ({
     profileRoles,
   );
 
+  // Likes are private, like ballots — a caller may only request their own.
+  if (input.likedByProfileId && currentProfileId !== input.likedByProfileId) {
+    throw new UnauthorizedError('You can only view your own likes');
+  }
+
   // Ballots are private — a caller may only request their own.
   let votedProposalIds: string[] | undefined;
   if (input.votedByProfileId) {
@@ -162,6 +170,9 @@ export const listAllProposals = async ({
       excludeRejectedUnlessAsked({ proposalsTable: t, status }),
       input.submittedByProfileId
         ? eq(t.submittedByProfileId, input.submittedByProfileId)
+        : undefined,
+      input.likedByProfileId
+        ? isLikedByProfile(t, input.likedByProfileId)
         : undefined,
       votedProposalIds
         ? votedProposalIds.length > 0
