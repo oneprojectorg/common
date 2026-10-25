@@ -2,12 +2,14 @@ import { GLOBAL_USER_PUBLIC } from '@op/core';
 import {
   EntityType,
   ProcessStatus,
+  ProfileRelationshipType,
   ProposalStatus,
   accessRolePermissionsOnAccessZones,
   accessRoles,
   customForms,
   decisionProcesses,
   processInstances,
+  profileRelationships,
   profileUserToAccessRoles,
   profileUsers,
   profiles,
@@ -963,6 +965,21 @@ export async function createProposal(
     proposalData: proposal.proposalData as Record<string, unknown>,
     status: proposal.status,
   };
+}
+
+/** Records `profileId`'s like on a proposal, the row the like action writes. */
+export async function likeProposal({
+  profileId,
+  proposalProfileId,
+}: {
+  profileId: string;
+  proposalProfileId: string;
+}): Promise<void> {
+  await db.insert(profileRelationships).values({
+    sourceProfileId: profileId,
+    targetProfileId: proposalProfileId,
+    relationshipType: ProfileRelationshipType.LIKES,
+  });
 }
 
 /**

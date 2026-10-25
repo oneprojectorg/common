@@ -36,16 +36,8 @@ export const Channels = {
     `decisionProposal:${instanceId}:${proposalId}` as const,
 
   /**
-   * Channel for the proposals one profile has liked in an instance — the
-   * Liked filter. Subscribed to by decision.listProposals and
-   * decision.listProposalLocations when they filter by `likedByProfileId`,
-   * broadcast to by decision.addProposalRelationship and
-   * decision.removeProposalRelationship (likes only). Per liker, so a like
-   * only refetches that reader's Liked list rather than every viewer's.
-   *
-   * Likes are private, so never build this from a profile id: use
-   * `getProposalLikesChannels`, which keys it on an HMAC of the liker under
-   * `REALTIME_CHANNEL_SECRET`.
+   * Channel for one reader's Liked list in an instance. Likes are private, so
+   * never build it from a profile id: use `getProposalLikesChannels`.
    */
   decisionProposalLikes: (instanceId: string, likerKey: string) =>
     `decisionProposalLikes:${instanceId}:${likerKey}` as const,

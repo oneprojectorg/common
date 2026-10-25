@@ -27,12 +27,10 @@ export const listProposalLocationsRouter = router({
 
       ctx.registerQueryChannels([
         Channels.decisionProposals(input.processInstanceId),
-        ...(input.likedByProfileId
-          ? getProposalLikesChannels({
-              processInstanceId: input.processInstanceId,
-              profileId: input.likedByProfileId,
-            })
-          : []),
+        ...getProposalLikesChannels({
+          processInstanceId: input.processInstanceId,
+          profileId: input.likedByProfileId,
+        }),
       ]);
 
       return proposalLocationsSchema.parse(result);

@@ -3,13 +3,9 @@ import {
   createDecisionInstance,
   createProposal,
   getSeededTemplate,
+  likeProposal,
 } from '@op/common/testing/data';
-import {
-  ProfileRelationshipType,
-  ProposalStatus,
-  profileRelationships,
-  users,
-} from '@op/db/schema';
+import { ProposalStatus, users } from '@op/db/schema';
 import { db, eq } from '@op/db/test';
 import type { Page } from '@playwright/test';
 
@@ -183,10 +179,9 @@ test.describe('Results screen proposal tabs', () => {
     if (!likedProfileId) {
       throw new Error(`Expected "${THEIR_OPEN_TITLE}" to be seeded`);
     }
-    await db.insert(profileRelationships).values({
-      sourceProfileId: myProfileId,
-      targetProfileId: likedProfileId,
-      relationshipType: ProfileRelationshipType.LIKES,
+    await likeProposal({
+      profileId: myProfileId,
+      proposalProfileId: likedProfileId,
     });
 
     await authenticatedPage.goto(`/en/decisions/${slug}/current`, {

@@ -37,12 +37,13 @@ export const removeProposalRelationshipRouter = router({
         ...[proposalId, ...mergeTargetIds].map((id) =>
           Channels.decisionProposal(processInstanceId, id),
         ),
-        ...(relationshipType === ProfileRelationshipType.LIKES
-          ? getProposalLikesChannels({
-              processInstanceId,
-              profileId: sourceProfileId,
-            })
-          : []),
+        ...getProposalLikesChannels({
+          processInstanceId,
+          profileId:
+            relationshipType === ProfileRelationshipType.LIKES
+              ? sourceProfileId
+              : undefined,
+        }),
       ]);
     }),
 });

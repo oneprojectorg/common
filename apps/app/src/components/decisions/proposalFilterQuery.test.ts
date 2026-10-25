@@ -115,6 +115,9 @@ describe('resolveFilters', () => {
         tabsOwnAudience: false,
       }).proposalFilter,
     ).toBe(ProposalFilter.ALL);
+  });
+
+  it('falls back to all statuses for a liked link from a signed-out reader', () => {
     expect(
       resolve({
         statusParam: 'liked',

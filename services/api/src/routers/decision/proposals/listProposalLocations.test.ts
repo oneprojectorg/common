@@ -1,6 +1,7 @@
 import { TestDecisionsDataManager } from '@op/common/testing';
 import { db } from '@op/db/client';
 import { ProposalStatus, Visibility, proposals } from '@op/db/schema';
+import { TRPCError } from '@trpc/server';
 import { eq } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 
@@ -86,6 +87,33 @@ describe.concurrent('listProposalLocations', () => {
     const first = result.items.find((p) => p.id === located1.id);
     expect(first?.proposalData.location).toEqual({ lat: 40.7, lng: -74 });
     expect(first?.submittedBy).toBeDefined();
+  });
+
+  it("rejects a caller asking for another member's liked pins", async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const createMember = () =>
+      testData.createMemberUser({
+        organization: setup.organization,
+        instanceProfileIds: [setup.instance.profileId],
+      });
+    const [liker, snoop] = await Promise.all([createMember(), createMember()]);
+
+    const snoopCaller = await createAuthenticatedCaller(snoop.email);
+    await expect(
+      snoopCaller.decision.listProposalLocations({
+        processInstanceId: setup.instance.instance.id,
+        likedByProfileId: liker.profileId,
+      }),
+    ).rejects.toThrowError(TRPCError);
   });
 
   it("pins only the caller's liked proposals under Liked", async ({

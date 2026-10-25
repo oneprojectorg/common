@@ -50,6 +50,24 @@ describe('getProposalLikesChannels', () => {
     expect(otherInstance).not.toBe(base);
   });
 
+  it('derives the name from the key, so a different key gives a different one', () => {
+    const args = { processInstanceId: INSTANCE_ID, profileId: PROFILE_ID };
+    const [withTestKey] = getProposalLikesChannels(args);
+
+    vi.stubEnv('REALTIME_CHANNEL_SECRET', 'another-secret');
+
+    expect(getProposalLikesChannels(args)).not.toEqual([withTestKey]);
+  });
+
+  it('registers nothing without a liker', () => {
+    expect(
+      getProposalLikesChannels({
+        processInstanceId: INSTANCE_ID,
+        profileId: undefined,
+      }),
+    ).toEqual([]);
+  });
+
   it('registers nothing without a key to derive the name from', () => {
     vi.stubEnv('REALTIME_CHANNEL_SECRET', '');
 
