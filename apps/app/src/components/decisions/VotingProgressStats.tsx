@@ -23,7 +23,10 @@ export function VotingProgressStats({
   hasImage?: boolean;
 }) {
   return (
-    <div className={hasImage ? 'text-white' : 'text-foreground'}>
+    <div
+      aria-live="polite"
+      className={hasImage ? 'text-white' : 'text-foreground'}
+    >
       <APIErrorBoundary fallbacks={{ default: () => null }}>
         <Suspense fallback={<VotingProgressStatsSkeleton />}>
           <VotingProgressStatsSuspense processInstanceId={processInstanceId} />
