@@ -3,10 +3,13 @@
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { trpc } from '@op/api/client';
 import { Skeleton } from '@op/sense/Skeleton';
+import { cn } from '@op/sense/lib/utils';
 import { useFormatter } from 'next-intl';
 import { Suspense } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
+
+import { ErrorMessage } from '@/components/ErrorMessage';
 
 import {
   DecisionStat,
@@ -25,9 +28,9 @@ export function VotingProgressStats({
   return (
     <div
       aria-live="polite"
-      className={hasImage ? 'text-white' : 'text-foreground'}
+      className={cn('text-center', hasImage ? 'text-white' : 'text-foreground')}
     >
-      <APIErrorBoundary fallbacks={{ default: () => null }}>
+      <APIErrorBoundary fallbacks={{ default: () => <ErrorMessage /> }}>
         <Suspense fallback={<VotingProgressStatsSkeleton />}>
           <VotingProgressStatsSuspense processInstanceId={processInstanceId} />
         </Suspense>

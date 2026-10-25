@@ -61,7 +61,7 @@ describe('VotingProgressStats', () => {
     ).toBeTruthy();
   });
 
-  it('renders nothing when the stats cannot load', () => {
+  it('shows the default error when the stats cannot load', () => {
     // React logs the caught error; keep the test output clean.
     const consoleError = vi
       .spyOn(console, 'error')
@@ -74,7 +74,7 @@ describe('VotingProgressStats', () => {
         <VotingProgressStats processInstanceId="instance" />
       </NextIntlClientProvider>,
     );
-    expect(container.textContent).toBe('');
+    expect(container.textContent).toBe('Something went wrong');
     useSuspenseQuery.mockReset();
     consoleError.mockRestore();
   });
