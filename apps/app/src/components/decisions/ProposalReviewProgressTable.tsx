@@ -7,6 +7,7 @@ import {
   ProposalReviewAssignmentStatus,
 } from '@op/common/client';
 import { Avatar, AvatarFallback } from '@op/sense/Avatar';
+import { Badge } from '@op/sense/Badge';
 import { FacePile } from '@op/sense/FacePile';
 import { ProfileAvatar } from '@op/sense/ProfileAvatar';
 import { Progress } from '@op/sense/Progress';
@@ -21,6 +22,7 @@ import {
   TableRowHeader,
 } from '@op/sense/Table';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@op/sense/Tooltip';
+import { useFormatter } from 'next-intl';
 import { LuCircleAlert } from 'react-icons/lu';
 
 import { Link, useTranslations } from '@/lib/i18n';
@@ -49,18 +51,13 @@ export function ProposalReviewProgressTable({
   return (
     <Table
       aria-label={t('allProposalsTab')}
-      className="w-full [&_tbody_th]:px-5 [&_tbody_th]:py-3 [&_td]:px-5 [&_td]:py-3 [&_th]:px-5 [&_thead_th]:font-normal [&_tr>*:first-child]:ps-3 [&_tr>*:last-child]:pe-3"
+      className="w-full [&_tbody_th]:h-15 [&_td]:h-15 [&_thead_th]:font-normal [&_tr>*:first-child]:ps-0 [&_tr>*:last-child]:pe-0"
     >
       <TableHeader>
         <TableRow>
           <TableHead>{t('review.proposalColumn')}</TableHead>
-          <TableHead className="w-40">
-            {decisionSlug === 'columbus'
-              ? t('review.districtColumn')
-              : t('review.categoryColumn')}
-          </TableHead>
-          <TableHead className="w-36">{t('review.reviewersHeading')}</TableHead>
-          <TableHead className="w-56">{t('review.reviewsLabel')}</TableHead>
+          <TableHead className="w-30">{t('review.reviewersHeading')}</TableHead>
+          <TableHead className="w-45">{t('review.reviewsLabel')}</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -103,6 +100,11 @@ function ProposalReviewProgressRow({
           </Link>
           <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
             {submitterName ? <bdi>{submitterName}</bdi> : null}
+            {displayCategories.map((category) => (
+              <Badge key={category} variant="secondary">
+                <bdi>{category}</bdi>
+              </Badge>
+            ))}
             <ProposalStatusBadge
               proposal={proposal}
               className="h-7 px-1.5 py-1 text-xs [&>[data-slot=status-badge-icon]]:size-3.5"
@@ -110,13 +112,6 @@ function ProposalReviewProgressRow({
           </div>
         </div>
       </TableRowHeader>
-      <TableCell className="whitespace-normal">
-        {displayCategories.length > 0 ? (
-          <bdi>{displayCategories.join(', ')}</bdi>
-        ) : (
-          <EmptyMark />
-        )}
-      </TableCell>
       <TableCell>
         {review.status === 'ready' ? (
           <ReviewersPile reviewers={review.aggregates.reviewers} />
@@ -137,6 +132,7 @@ function ProposalReviewProgressRow({
 
 function ReviewersPile({ reviewers }: { reviewers: Reviewer[] }) {
   const t = useTranslations('decisions.review');
+  const format = useFormatter();
 
   if (reviewers.length === 0) {
     return <EmptyMark label={t('noAssignments')} />;
@@ -148,18 +144,39 @@ function ReviewersPile({ reviewers }: { reviewers: Reviewer[] }) {
   ];
 
   const stateFor = (reviewer: Reviewer) => {
-    const key = getReviewerStateKey(reviewer);
+    const name = reviewer.profile.name;
+
+    if (isSubmitted(reviewer)) {
+      const key = reviewer.isOutOfDate
+        ? 'reviewerSubmittedOutOfDateState'
+        : 'reviewerSubmittedState';
+      const date = reviewer.submittedAt
+        ? format.dateTime(new Date(reviewer.submittedAt), {
+            month: 'short',
+            day: 'numeric',
+          })
+        : '';
+
+      return {
+        id: reviewer.profile.id,
+        label: t.markup(key, { name, date, bdi: (chunks) => chunks }),
+        line: t.rich(key, {
+          name,
+          date,
+          bdi: (chunks) => <bdi>{chunks}</bdi>,
+        }),
+      };
+    }
+
+    const key =
+      reviewer.status === ProposalReviewAssignmentStatus.PENDING
+        ? 'reviewerNotStartedState'
+        : 'reviewerInProgressState';
 
     return {
       id: reviewer.profile.id,
-      label: t.markup(key, {
-        name: reviewer.profile.name,
-        bdi: (chunks) => chunks,
-      }),
-      line: t.rich(key, {
-        name: reviewer.profile.name,
-        bdi: (chunks) => <bdi>{chunks}</bdi>,
-      }),
+      label: t.markup(key, { name, bdi: (chunks) => chunks }),
+      line: t.rich(key, { name, bdi: (chunks) => <bdi>{chunks}</bdi> }),
     };
   };
   const states = ordered.map(stateFor);
@@ -298,15 +315,4 @@ function EmptyMark({ label }: { label?: string }) {
 
 function isSubmitted(reviewer: Reviewer) {
   return reviewer.status === ProposalReviewAssignmentStatus.COMPLETED;
-}
-
-function getReviewerStateKey(reviewer: Reviewer) {
-  switch (reviewer.status) {
-    case ProposalReviewAssignmentStatus.COMPLETED:
-      return 'reviewerSubmittedState';
-    case ProposalReviewAssignmentStatus.PENDING:
-      return 'reviewerNotStartedState';
-    default:
-      return 'reviewerInProgressState';
-  }
 }
