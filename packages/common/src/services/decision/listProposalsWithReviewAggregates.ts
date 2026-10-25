@@ -321,6 +321,7 @@ type ReviewAggregateRow = {
   state: string;
   reviewData: unknown;
   reviewedProposalHistoryId: string | null;
+  submittedAt: string | null;
 };
 
 /**
@@ -406,30 +407,42 @@ export function getComputedReviewAggregates({
   scoredCriterionKeys: string[];
   currentProposalHistoryId: string | null | undefined;
 }) {
-  const reviewers = reviewAssignments.map((a) => ({
-    profile: a.reviewer,
-    status: a.status,
-  }));
-
   let reviewsSubmittedCount = 0;
   let outOfDateReviewsCount = 0;
   let totalScore = 0;
   const overallRecommendationCount: Record<string, number> = {};
+  const reviewers: Array<{
+    profile: unknown;
+    status: string;
+    submittedAt: string | null;
+    isOutOfDate: boolean;
+  }> = [];
 
   for (const assignment of reviewAssignments) {
     const review = assignment.reviews[0];
     const scored = getSubmittedReviewScore(review, scoredCriterionKeys);
     if (!scored) {
+      reviewers.push({
+        profile: assignment.reviewer,
+        status: assignment.status,
+        submittedAt: null,
+        isOutOfDate: false,
+      });
       continue;
     }
+    const isOutOfDate = isReviewOutOfDate({
+      assignment,
+      review: review ?? null,
+      currentProposalHistoryId,
+    });
+    reviewers.push({
+      profile: assignment.reviewer,
+      status: assignment.status,
+      submittedAt: review?.submittedAt ?? null,
+      isOutOfDate,
+    });
     reviewsSubmittedCount += 1;
-    if (
-      isReviewOutOfDate({
-        assignment,
-        review: review ?? null,
-        currentProposalHistoryId,
-      })
-    ) {
+    if (isOutOfDate) {
       outOfDateReviewsCount += 1;
     }
     totalScore += scored.score;

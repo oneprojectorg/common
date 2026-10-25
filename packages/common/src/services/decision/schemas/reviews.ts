@@ -245,6 +245,10 @@ export const proposalReviewAggregatesSchema = z.object({
     z.object({
       profile: proposalProfileSchema,
       status: z.enum(ProposalReviewAssignmentStatus),
+      /** Null unless this reviewer's review is submitted. */
+      submittedAt: z.string().nullable(),
+      /** The submitted review was written against an older proposal version. */
+      isOutOfDate: z.boolean(),
     }),
   ),
 });
