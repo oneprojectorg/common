@@ -141,9 +141,7 @@ export function ProposalView({
       // on any route that renders a proposal, including the legacy one.
       canJoin={currentProposal.access?.submitProposals === true}
       commentsEnabled={commentsEnabled}
-      // The admin overflow menu (shortlist / reject / hide) gates itself on
-      // `proposal.access.admin` and on the proposal having left draft.
-      moderationProposal={currentProposal}
+      moderationProposal={affordances.moderation ? currentProposal : undefined}
       notices={
         <ProposalMergeNotice
           proposal={currentProposal}
