@@ -12,10 +12,9 @@ const TAB_BAR_FILTERS: readonly ProposalFilter[] = [
   ProposalFilter.ALL,
   ProposalFilter.MY_PROPOSALS,
   ProposalFilter.MY_BALLOT,
-  ProposalFilter.LIKED,
 ];
 
-export const PROPOSAL_STATUS_VALUES = ['all', 'not-advanced'] as const;
+export const PROPOSAL_STATUS_VALUES = ['all', 'not-advanced', 'liked'] as const;
 
 export type ProposalStatusFilter = (typeof PROPOSAL_STATUS_VALUES)[number];
 
@@ -51,6 +50,7 @@ export const resolveFilters = ({
   initialFilter,
   hasVoted,
   statusParam,
+  availableStatuses,
 }: {
   everyFilter: ProposalFilterItem[];
   tabsOwnAudience: boolean;
@@ -59,6 +59,8 @@ export const resolveFilters = ({
   initialFilter: ProposalFilter | undefined;
   hasVoted: boolean;
   statusParam: ProposalStatusFilter | null;
+  /** Statuses the reader can pick; Liked needs a profile. */
+  availableStatuses: readonly ProposalStatusFilter[];
 }): ResolvedFilters => {
   const availableFilters = tabsOwnAudience
     ? everyFilter.filter((filter) => TAB_BAR_FILTERS.includes(filter.id))
@@ -79,11 +81,14 @@ export const resolveFilters = ({
   const legacyRejected =
     tabsOwnAudience && filterParam === ProposalFilter.REJECTED;
 
-  return {
-    availableFilters,
-    proposalFilter,
-    proposalStatus: statusParam ?? (legacyRejected ? 'not-advanced' : 'all'),
-  };
+  let proposalStatus: ProposalStatusFilter = 'all';
+  if (statusParam && availableStatuses.includes(statusParam)) {
+    proposalStatus = statusParam;
+  } else if (legacyRejected) {
+    proposalStatus = 'not-advanced';
+  }
+
+  return { availableFilters, proposalFilter, proposalStatus };
 };
 
 // `ignoreAudience` excludes a pinned filter, which cannot be cleared.
@@ -96,10 +101,9 @@ export const isFilterActive = (
     params.categoryId ||
     params.status ||
     params.notAdvanced ||
+    params.likedByProfileId ||
     (!ignoreAudience &&
-      (params.submittedByProfileId ||
-        params.votedByProfileId ||
-        params.likedByProfileId)),
+      (params.submittedByProfileId || params.votedByProfileId)),
   );
 
 export const hasPendingChange = (pairs: [string, string][]): boolean =>
@@ -147,7 +151,14 @@ export const buildQueryParams = ({
     params.submittedByProfileId = currentProfileId;
   } else if (filter === ProposalFilter.MY_BALLOT && currentProfileId) {
     params.votedByProfileId = currentProfileId;
-  } else if (filter === ProposalFilter.LIKED && currentProfileId) {
+  }
+
+  // Liked is a status-axis pick where tabs own the audience, and an audience
+  // pick in the combined select.
+  if (
+    (status === 'liked' || filter === ProposalFilter.LIKED) &&
+    currentProfileId
+  ) {
     params.likedByProfileId = currentProfileId;
   }
 

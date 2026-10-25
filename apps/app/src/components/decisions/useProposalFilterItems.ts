@@ -50,7 +50,11 @@ export const useProposalFilterItems = ({
 };
 
 // Copy is the review queue's, which already names the same concept.
-export const useProposalStatusItems = (): {
+export const useProposalStatusItems = ({
+  currentProfileId,
+}: {
+  currentProfileId: string | undefined;
+}): {
   id: ProposalStatusFilter;
   label: string;
 }[] => {
@@ -59,5 +63,9 @@ export const useProposalStatusItems = (): {
   return [
     { id: 'all', label: t('review.allStatusesOption') },
     { id: 'not-advanced', label: t('proposals.notAdvancedStatus') },
+    // Likes are the reader's own, so there is nothing to show without a profile.
+    ...(currentProfileId
+      ? [{ id: 'liked' as const, label: t('proposals.likedOption') }]
+      : []),
   ];
 };

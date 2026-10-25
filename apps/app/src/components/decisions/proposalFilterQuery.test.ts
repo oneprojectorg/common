@@ -41,6 +41,7 @@ const resolve = (
     initialFilter: undefined,
     hasVoted: false,
     statusParam: null,
+    availableStatuses: ['all', 'not-advanced', 'liked'],
     ...overrides,
   });
 
@@ -49,7 +50,6 @@ describe('resolveFilters', () => {
     expect(resolve().availableFilters.map((item) => item.id)).toEqual([
       ProposalFilter.ALL,
       ProposalFilter.MY_PROPOSALS,
-      ProposalFilter.LIKED,
     ]);
   });
 
@@ -112,8 +112,19 @@ describe('resolveFilters', () => {
       resolve({
         everyFilter: items(false),
         filterParam: ProposalFilter.LIKED,
+        tabsOwnAudience: false,
       }).proposalFilter,
     ).toBe(ProposalFilter.ALL);
+    expect(
+      resolve({
+        statusParam: 'liked',
+        availableStatuses: ['all', 'not-advanced'],
+      }).proposalStatus,
+    ).toBe('all');
+  });
+
+  it('reads Liked from the status axis where tabs own the audience', () => {
+    expect(resolve({ statusParam: 'liked' }).proposalStatus).toBe('liked');
   });
 
   it('falls back to all for a ballot link from someone who has not voted', () => {
@@ -195,6 +206,7 @@ describe('buildQueryParams', () => {
     const params = build({ filter: ProposalFilter.LIKED });
 
     expect(params.likedByProfileId).toBe(MY_PROFILE);
+    expect(build({ status: 'liked' }).likedByProfileId).toBe(MY_PROFILE);
     expect(params.submittedByProfileId).toBeUndefined();
     expect(params.votedByProfileId).toBeUndefined();
   });
@@ -260,12 +272,10 @@ describe('isFilterActive with a pinned audience', () => {
     expect(isFilterActive(params, { ignoreAudience: true })).toBe(false);
   });
 
-  it('treats Liked as part of the audience', () => {
+  it('lets the reader clear Liked picked from the status axis', () => {
     expect(
-      isFilterActive(build({ filter: ProposalFilter.LIKED }), {
-        ignoreAudience: true,
-      }),
-    ).toBe(false);
+      isFilterActive(build({ status: 'liked' }), { ignoreAudience: true }),
+    ).toBe(true);
   });
 
   it('still reports the axes the reader can clear', () => {

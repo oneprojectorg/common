@@ -140,15 +140,13 @@ test.describe('Proposal filter tabs', () => {
     const myTab = authenticatedPage.getByRole('tab', { name: 'My proposals' });
     await expect(allTab).toHaveAttribute('aria-selected', 'true');
 
-    // The tabs are "All proposals", "My proposals" and "Liked" and nothing
-    // else, so there are three. Scoped to the tab bar: the decision view's
-    // Overview/Current toggle is a tablist too, so an unscoped count would read
-    // five.
+    // The tabs are "All proposals" and "My proposals" and nothing else, so there
+    // are two. Scoped to the tab bar: the decision view's Overview/Current
+    // toggle is a tablist too, so an unscoped tab count would read four.
     const filterTabs = authenticatedPage.getByRole('tablist', {
       name: /Filter proposals$/,
     });
-    await expect(filterTabs.getByRole('tab')).toHaveCount(3);
-    await expect(filterTabs.getByRole('tab', { name: 'Liked' })).toBeVisible();
+    await expect(filterTabs.getByRole('tab')).toHaveCount(2);
 
     // Beside them, the status axis as its own select.
     const statusSelect = authenticatedPage.getByRole('combobox', {
@@ -161,6 +159,9 @@ test.describe('Proposal filter tabs', () => {
     // must not also be answerable here.
     await expect(
       authenticatedPage.getByRole('option', { name: 'Not advanced' }),
+    ).toBeVisible();
+    await expect(
+      authenticatedPage.getByRole('option', { name: 'Liked' }),
     ).toBeVisible();
     await expect(
       authenticatedPage.getByRole('option', { name: 'My proposals' }),
@@ -281,7 +282,7 @@ test.describe('Proposal filter tabs', () => {
     expect(params.get('proposalStatus')).toBe('not-advanced');
   });
 
-  /** Liked narrows to the reader's likes, survives a reload, and follows likes made in another tab. */
+  /** Liked in the status select narrows to the reader's likes, survives a reload, and follows likes made in another tab. */
   test('narrows to what the reader liked and follows likes made elsewhere', async ({
     authenticatedPage,
     org,
@@ -301,10 +302,13 @@ test.describe('Proposal filter tabs', () => {
     await expect(liked).toBeVisible({ timeout: 30_000 });
     await expect(notLiked).toBeVisible();
 
-    const likedTab = authenticatedPage.getByRole('tab', { name: 'Liked' });
-    await likedTab.click();
-    await expect(likedTab).toHaveAttribute('aria-selected', 'true');
-    await expect(authenticatedPage).toHaveURL(/[?&]filter=liked(&|$)/);
+    const statusSelect = authenticatedPage.getByRole('combobox', {
+      name: 'Filter by status',
+    });
+    await statusSelect.click();
+    await authenticatedPage.getByRole('option', { name: 'Liked' }).click();
+    await expect(statusSelect).toHaveText(/Liked/);
+    await expect(authenticatedPage).toHaveURL(/[?&]proposalStatus=liked(&|$)/);
     // Nothing liked yet.
     await expect(liked).toBeHidden({ timeout: 15_000 });
     await expect(notLiked).toBeHidden();
@@ -335,9 +339,7 @@ test.describe('Proposal filter tabs', () => {
 
     // The URL carries the filter, so a reload lands back on the same list.
     await authenticatedPage.reload({ waitUntil: 'domcontentloaded' });
-    await expect(likedTab).toHaveAttribute('aria-selected', 'true', {
-      timeout: 30_000,
-    });
+    await expect(statusSelect).toHaveText(/Liked/, { timeout: 30_000 });
     await expect(liked).toBeVisible({ timeout: 30_000 });
     await expect(notLiked).toBeHidden();
 

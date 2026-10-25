@@ -24,8 +24,7 @@ const THEIR_REJECTED_TITLE = 'Their Results Fountain';
  * One phase, nothing enabled on it. The current phase is index 0, so
  * `resolveManualSelectionStatus` reports selections as confirmed and `/current`
  * lands straight on ResultsPage. Voting never happened, so the ballot tab stays
- * off and the tabs are exactly Selected proposals / All proposals / My proposals
- * / Liked.
+ * off and the tabs are exactly Selected proposals / All proposals / My proposals.
  */
 const resultsOnlySchema: DecisionSchemaDefinition = {
   id: 'test-results-proposal-tabs',
@@ -137,7 +136,6 @@ test.describe('Results screen proposal tabs', () => {
     await expect(
       resultsTabs.getByRole('tab', { name: 'All proposals' }),
     ).toBeVisible();
-    await expect(resultsTabs.getByRole('tab', { name: 'Liked' })).toBeVisible();
     await expect(
       resultsTabs.getByRole('tab', { name: 'My ballot' }),
     ).toHaveCount(0);
@@ -171,7 +169,7 @@ test.describe('Results screen proposal tabs', () => {
     await expect(theirRejected).toBeHidden();
     await expect(myRejected).toBeVisible();
   });
-  test('narrows the results to what the reader liked', async ({
+  test('narrows the results to what the reader liked from the status select', async ({
     authenticatedPage,
     org,
   }) => {
@@ -198,7 +196,11 @@ test.describe('Results screen proposal tabs', () => {
     const resultsTabs = authenticatedPage.getByRole('tablist', {
       name: 'Results sections',
     });
-    await resultsTabs.getByRole('tab', { name: 'Liked' }).click();
+    await resultsTabs.getByRole('tab', { name: 'All proposals' }).click();
+    await authenticatedPage
+      .getByRole('combobox', { name: 'Filter by status' })
+      .click();
+    await authenticatedPage.getByRole('option', { name: 'Liked' }).click();
 
     await expect(
       authenticatedPage.getByRole('link', { name: THEIR_OPEN_TITLE }),

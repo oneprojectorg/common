@@ -58,7 +58,6 @@ import {
   PROPOSAL_VIEWS,
   type ProposalView,
 } from './proposalViews';
-import { useProposalStatusItems } from './useProposalFilterItems';
 import {
   type ProposalFilterState,
   type ProposalQueryParams,
@@ -301,6 +300,7 @@ const ProposalsListContent = ({
     queryParams,
     voteStatus,
     availableFilters,
+    statusItems,
     tabsOwnAudience,
     proposalFilter,
     setProposalFilter,
@@ -321,8 +321,6 @@ const ProposalsListContent = ({
   const isInReviewPhase = !!currentPhase && isReviewPhase(currentPhase);
   const isInVotingPhase = !!currentPhase && isVotingPhase(currentPhase);
   const t = useTranslations();
-
-  const statusItems = useProposalStatusItems();
 
   const listRef = useRef<HTMLDivElement>(null);
 

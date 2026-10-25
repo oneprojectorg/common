@@ -17,7 +17,10 @@ import {
   isFilterActive,
   resolveFilters,
 } from './proposalFilterQuery';
-import { useProposalFilterItems } from './useProposalFilterItems';
+import {
+  useProposalFilterItems,
+  useProposalStatusItems,
+} from './useProposalFilterItems';
 
 const PROPOSAL_FILTER_VALUES = Object.values(ProposalFilter);
 const SEARCH_DEBOUNCE_MS = 300;
@@ -75,6 +78,8 @@ export const useProposalFilters = ({
 
   const tabsOwnAudience = showFilterTabs || pinnedFilter !== undefined;
 
+  const statusItems = useProposalStatusItems({ currentProfileId });
+
   const { availableFilters, proposalFilter, proposalStatus } = resolveFilters({
     everyFilter: useProposalFilterItems({ hasVoted, currentProfileId }),
     tabsOwnAudience,
@@ -83,6 +88,7 @@ export const useProposalFilters = ({
     initialFilter,
     hasVoted,
     statusParam,
+    availableStatuses: statusItems.map((item) => item.id),
   });
 
   // Non-urgent, or the suspense boundary swaps the bar (and focus) for a
@@ -154,6 +160,7 @@ export const useProposalFilters = ({
     queryParams,
     voteStatus,
     availableFilters,
+    statusItems,
     tabsOwnAudience,
     proposalFilter,
     setProposalFilter,

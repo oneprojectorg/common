@@ -134,9 +134,9 @@ function ResultsPageContent({
   const showBallotTab =
     isLegacy || hasVotingPhase(instance.instanceData?.phases ?? []);
 
-  // My proposals and Liked filter on the reader's profile, so need one.
+  // The tab filters on the reader's profile, so it needs one.
   const { user } = useUser();
-  const showProfileTabs = Boolean(user?.currentProfile?.id);
+  const showMyProposalsTab = Boolean(user?.currentProfile?.id);
 
   // Organization-specific content
   const heroContent = match<{
@@ -200,7 +200,7 @@ function ResultsPageContent({
         <div className="w-full p-4">
           <DecisionResultsTabs
             showBallotTab={showBallotTab}
-            showProfileTabs={showProfileTabs}
+            showMyProposalsTab={showMyProposalsTab}
           >
             <DecisionResultsTabPanel value="funded">
               <APIErrorBoundary
@@ -243,33 +243,19 @@ function ResultsPageContent({
               </Suspense>
             </DecisionResultsTabPanel>
 
-            {showProfileTabs ? (
-              <>
-                <DecisionResultsTabPanel value="my-proposals">
-                  <Suspense fallback={<ProposalListSkeleton />}>
-                    <ProposalsList
-                      slug={profileSlug}
-                      instanceId={instanceId}
-                      decisionSlug={decisionSlug}
-                      pinnedFilter={ProposalFilter.MY_PROPOSALS}
-                      phase="results"
-                      pinOffset={pinOffset}
-                    />
-                  </Suspense>
-                </DecisionResultsTabPanel>
-                <DecisionResultsTabPanel value="liked">
-                  <Suspense fallback={<ProposalListSkeleton />}>
-                    <ProposalsList
-                      slug={profileSlug}
-                      instanceId={instanceId}
-                      decisionSlug={decisionSlug}
-                      pinnedFilter={ProposalFilter.LIKED}
-                      phase="results"
-                      pinOffset={pinOffset}
-                    />
-                  </Suspense>
-                </DecisionResultsTabPanel>
-              </>
+            {showMyProposalsTab ? (
+              <DecisionResultsTabPanel value="my-proposals">
+                <Suspense fallback={<ProposalListSkeleton />}>
+                  <ProposalsList
+                    slug={profileSlug}
+                    instanceId={instanceId}
+                    decisionSlug={decisionSlug}
+                    pinnedFilter={ProposalFilter.MY_PROPOSALS}
+                    phase="results"
+                    pinOffset={pinOffset}
+                  />
+                </Suspense>
+              </DecisionResultsTabPanel>
             ) : null}
 
             {showBallotTab ? (
