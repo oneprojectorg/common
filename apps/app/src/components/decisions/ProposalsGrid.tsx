@@ -38,6 +38,7 @@ import { ProposalMasonry } from './ProposalMasonry';
 import { VoteCheckbox } from './VoteCheckbox';
 import { VoteSubmissionModal } from './VoteSubmissionModal';
 import { VoteSuccessModal } from './VoteSuccessModal';
+import { VotingIntroDialog } from './VotingIntroDialog';
 import {
   canAffordProposal,
   formatBallotAmount,
@@ -616,6 +617,14 @@ const VotingProposalsList = ({
             </Dialog>
           </FooterBarEnd>
         </FooterBar>
+      )}
+
+      {canVote && !isReadOnly && (
+        <VotingIntroDialog
+          instanceId={instanceId}
+          ranked={ranked}
+          budget={budget}
+        />
       )}
 
       {phaseForm && (
