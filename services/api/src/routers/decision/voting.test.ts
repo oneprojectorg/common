@@ -641,6 +641,39 @@ describe.concurrent('submitVote ranked ballots', () => {
     expect(status.selectedProposals?.map((p) => p.id)).toEqual(ballot);
   });
 
+  it('keeps a ballot marked ranked after the phase moves on', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instance, proposals } = await setupVotingInstance(testData, {
+      ranked: true,
+      proposalCount: 2,
+    });
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+    const ballot = [proposals[1]!.id, proposals[0]!.id];
+
+    const result = await caller.decision.submitVote({
+      processInstanceId: instance.instance.id,
+      selectedProposalIds: ballot,
+    });
+    expect(result.ranked).toBe(true);
+
+    await db
+      .update(processInstances)
+      .set({ currentStateId: 'results' })
+      .where(eq(processInstances.id, instance.instance.id));
+
+    const status = await caller.decision.getVotingStatus({
+      processInstanceId: instance.instance.id,
+    });
+
+    expect(status.votingConfiguration.ranked).toBe(false);
+    expect(status.voteSubmission?.ranked).toBe(true);
+    expect(status.voteSubmission?.selectedProposalIds).toEqual(ballot);
+  });
+
   it('leaves rank null on an unranked phase', async ({
     task,
     onTestFinished,
@@ -661,6 +694,12 @@ describe.concurrent('submitVote ranked ballots', () => {
 
     expect(selections).toHaveLength(2);
     expect(selections.every((s) => s.rank === null)).toBe(true);
+    expect(result.ranked).toBe(false);
+
+    const status = await caller.decision.getVotingStatus({
+      processInstanceId: instance.instance.id,
+    });
+    expect(status.voteSubmission?.ranked).toBe(false);
   });
 
   it('records the rank alongside the cost in the ballot snapshot', async ({

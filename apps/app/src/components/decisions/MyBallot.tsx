@@ -2,7 +2,6 @@
 
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
-import { Checkbox } from '@op/sense/Checkbox';
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@op/sense/Empty';
 import { LuLeaf } from 'react-icons/lu';
 
@@ -11,6 +10,8 @@ import { useTranslations } from '@/lib/i18n';
 import { ProposalCardView } from './ProposalCard';
 import { ProposalListSection } from './ProposalListSection';
 import { ProposalMasonry } from './ProposalMasonry';
+import { VoteCheckbox } from './VoteCheckbox';
+import { getBallotRank } from './ballot';
 import { proposalHref } from './proposalHrefs';
 import { useOpenProposalInSheet } from './proposalSheetState';
 
@@ -58,6 +59,11 @@ export const MyBallot = ({
       instanceId={instanceId}
       decisionSlug={decisionSlug}
       votedByProfileId={voteStatus.voteSubmission.submittedByProfileId}
+      rankedProposalIds={
+        voteStatus.voteSubmission.ranked
+          ? voteStatus.voteSubmission.selectedProposalIds
+          : undefined
+      }
     />
   );
 };
@@ -67,11 +73,14 @@ const MyBallotProposals = ({
   instanceId,
   decisionSlug,
   votedByProfileId,
+  rankedProposalIds,
 }: {
   slug: string;
   instanceId: string;
   decisionSlug?: string;
   votedByProfileId: string;
+  /** The ballot in rank order; undefined when the phase isn't ranked. */
+  rankedProposalIds?: string[];
 }) => {
   const t = useTranslations();
   const openInSheet = useOpenProposalInSheet();
@@ -91,6 +100,10 @@ const MyBallotProposals = ({
             slug,
             instanceId,
           });
+          const rank = rankedProposalIds
+            ? getBallotRank({ ballotIds: rankedProposalIds, id: proposal.id })
+            : undefined;
+
           return (
             <ProposalCardView
               key={proposal.id}
@@ -104,14 +117,18 @@ const MyBallotProposals = ({
               // row stays hidden (same rule as the funded-proposals tab).
               totalVotes={proposal.voteCount ?? undefined}
               aside={
-                // TODO(sense-migration): sense Checkbox has no shape="circle"/
-                // borderColor; approximated with rounded-full — revisit against
-                // Figma vote design.
-                <Checkbox
+                <VoteCheckbox
+                  ranked={!!rankedProposalIds}
+                  rank={rank}
                   checked
                   disabled
-                  aria-label={t('decisions.proposals.selectedProposalLabel')}
-                  className="rounded-full"
+                  aria-label={
+                    rank === undefined
+                      ? t('decisions.proposals.selectedProposalLabel')
+                      : t('decisions.proposals.votedRankedProposalLabel', {
+                          rank,
+                        })
+                  }
                 />
               }
             />
