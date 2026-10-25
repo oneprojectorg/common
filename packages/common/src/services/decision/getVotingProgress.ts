@@ -73,6 +73,7 @@ async function getVotedCount({
     return 0;
   }
 
+  // db.select because db.query cannot express count(*).
   const [row] = await db
     .select({ count: count() })
     .from(decisionsVoteSubmissions)
