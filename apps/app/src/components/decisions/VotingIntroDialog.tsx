@@ -25,6 +25,12 @@ interface VotingIntroDialogProps {
   budget?: BallotBudget;
 }
 
+type SampleBadge = {
+  variant: ComponentProps<typeof Badge>['variant'];
+  share: number;
+  rotation: string;
+};
+
 export const VotingIntroDialog = ({
   instanceId,
   ranked,
@@ -72,11 +78,13 @@ export const VotingIntroDialog = ({
       }}
     >
       <DialogContent showCloseButton={false}>
-        {step.kind === 'budget' ? (
-          <BudgetStep budget={step.budget} />
-        ) : (
-          <RankedStep budget={budget} />
-        )}
+        <div aria-live="polite">
+          {step.kind === 'budget' ? (
+            <BudgetStep budget={step.budget} />
+          ) : (
+            <RankedStep budget={budget} />
+          )}
+        </div>
         <div className="flex items-center px-6 py-4">
           {startAction}
           {isLastStep ? (
@@ -120,12 +128,6 @@ const formatSampleCost = ({
     amount: Math.round(budget.voterBudget * share),
     unit: budget.unit,
   });
-
-type SampleBadge = {
-  variant: ComponentProps<typeof Badge>['variant'];
-  share: number;
-  rotation: string;
-};
 
 const SAMPLE_BADGE_ROWS: { top: SampleBadge[]; bottom: SampleBadge[] } = {
   top: [
