@@ -1,5 +1,6 @@
 import type { DecisionSchemaDefinition } from '@op/common';
 import {
+  type CreateOrganizationResult,
   createDecisionInstance,
   createProposal,
   getSeededTemplate,
@@ -12,32 +13,41 @@ import {
   processInstances,
 } from '@op/db/schema';
 import { db, eq } from '@op/db/test';
+import type { Page } from '@playwright/test';
 
 import { expect, test } from '../fixtures/index.js';
 
 const [votingPhase] = testVotingPhaseSchema.phases;
 
-const rankedBudgetSchema = {
-  ...testVotingPhaseSchema,
-  phases: [
-    {
-      ...votingPhase,
-      rules: {
-        ...votingPhase.rules,
-        voting: { submit: true, ranked: true, voterBudget: 1000 },
+const withVotingRules = (voting: {
+  submit: boolean;
+  ranked?: boolean;
+  voterBudget?: number;
+}) =>
+  ({
+    ...testVotingPhaseSchema,
+    phases: [
+      {
+        ...votingPhase,
+        rules: { ...votingPhase.rules, voting },
       },
-    },
-    {
-      id: 'results',
-      name: 'Results',
-      rules: {
-        proposals: { submit: false },
-        voting: { submit: false },
-        advancement: { method: 'manual' as const },
+      {
+        id: 'results',
+        name: 'Results',
+        rules: {
+          proposals: { submit: false },
+          voting: { submit: false },
+          advancement: { method: 'manual' as const },
+        },
       },
-    },
-  ],
-} satisfies DecisionSchemaDefinition;
+    ],
+  }) satisfies DecisionSchemaDefinition;
+
+const rankedBudgetSchema = withVotingRules({
+  submit: true,
+  ranked: true,
+  voterBudget: 1000,
+});
 
 const PRICES = {
   'Riverside Bike Path': 600,
@@ -225,31 +235,11 @@ test.describe('Ranked voting with a voter budget', () => {
     authenticatedPage,
     org,
   }) => {
-    const template = await getSeededTemplate();
-    const { instance, slug, name } = await createDecisionInstance({
-      processId: template.id,
-      ownerProfileId: org.organizationProfile.id,
-      authUserId: org.adminUser.authUserId,
-      email: org.adminUser.email,
+    await openVotingPhase({
+      authenticatedPage,
+      org,
       schema: rankedBudgetSchema,
     });
-    await createProposal({
-      processInstanceId: instance.id,
-      submittedByProfileId: org.organizationProfile.id,
-      status: ProposalStatus.SUBMITTED,
-      proposalData: {
-        title: 'Riverside Bike Path',
-        description: '<p>Riverside Bike Path details.</p>',
-        budget: { amount: PRICES['Riverside Bike Path'], currency: 'USD' },
-      },
-    });
-
-    await authenticatedPage.goto(`/en/decisions/${slug}/current`, {
-      waitUntil: 'domcontentloaded',
-    });
-    await expect(
-      authenticatedPage.getByRole('heading', { name, level: 2 }),
-    ).toBeVisible({ timeout: 30_000 });
 
     const budgetIntro = authenticatedPage.getByRole('dialog', {
       name: 'Pick proposals within your budget',
@@ -270,6 +260,75 @@ test.describe('Ranked voting with a voter budget', () => {
     await expect(
       authenticatedPage.getByRole('button', { name: '0 proposals selected' }),
     ).toBeVisible({ timeout: 30_000 });
+    await expect(budgetIntro).toBeHidden();
+  });
+
+  test('shows no intro when the phase has neither a voter budget nor ranking', async ({
+    authenticatedPage,
+    org,
+  }) => {
+    await openVotingPhase({
+      authenticatedPage,
+      org,
+      schema: withVotingRules({ submit: true }),
+    });
+
+    // The count only renders once the voting rules are known.
+    await expect(
+      authenticatedPage.getByText('0 proposals selected'),
+    ).toBeVisible({ timeout: 30_000 });
+    await expect(authenticatedPage.getByRole('dialog')).toHaveCount(0);
+  });
+
+  test('shows only the ranking intro, ending in the ready button, on a ranked phase without a budget', async ({
+    authenticatedPage,
+    org,
+  }) => {
+    await openVotingPhase({
+      authenticatedPage,
+      org,
+      schema: withVotingRules({ submit: true, ranked: true }),
+    });
+
+    const rankedIntro = authenticatedPage.getByRole('dialog', {
+      name: 'Your order is your ranking',
+    });
+    await expect(rankedIntro).toBeVisible();
+    await expect(
+      authenticatedPage.getByRole('dialog', {
+        name: 'Pick proposals within your budget',
+      }),
+    ).toBeHidden();
+    await expect(rankedIntro.getByRole('button')).toHaveText([
+      /ready to vote/i,
+    ]);
+    await rankedIntro.getByRole('button', { name: /ready to vote/i }).click();
+    await expect(rankedIntro).toBeHidden();
+  });
+
+  test('shows only the budget intro, ending in the ready button, on a budget phase without ranking', async ({
+    authenticatedPage,
+    org,
+  }) => {
+    await openVotingPhase({
+      authenticatedPage,
+      org,
+      schema: withVotingRules({ submit: true, voterBudget: 1000 }),
+    });
+
+    const budgetIntro = authenticatedPage.getByRole('dialog', {
+      name: 'Pick proposals within your budget',
+    });
+    await expect(budgetIntro).toContainText('You have $1,000 to allocate');
+    await expect(
+      authenticatedPage.getByRole('dialog', {
+        name: 'Your order is your ranking',
+      }),
+    ).toBeHidden();
+    await expect(budgetIntro.getByRole('button')).toHaveText([
+      /ready to vote/i,
+    ]);
+    await budgetIntro.getByRole('button', { name: /ready to vote/i }).click();
     await expect(budgetIntro).toBeHidden();
   });
 
@@ -360,3 +419,40 @@ test.describe('Ranked voting with a voter budget', () => {
     ).toBeVisible();
   });
 });
+
+/** Seeds a voting phase with one priced proposal and opens it as the voter. */
+async function openVotingPhase({
+  authenticatedPage,
+  org,
+  schema,
+}: {
+  authenticatedPage: Page;
+  org: CreateOrganizationResult;
+  schema: DecisionSchemaDefinition;
+}) {
+  const template = await getSeededTemplate();
+  const { instance, slug, name } = await createDecisionInstance({
+    processId: template.id,
+    ownerProfileId: org.organizationProfile.id,
+    authUserId: org.adminUser.authUserId,
+    email: org.adminUser.email,
+    schema,
+  });
+  await createProposal({
+    processInstanceId: instance.id,
+    submittedByProfileId: org.organizationProfile.id,
+    status: ProposalStatus.SUBMITTED,
+    proposalData: {
+      title: 'Riverside Bike Path',
+      description: '<p>Riverside Bike Path details.</p>',
+      budget: { amount: PRICES['Riverside Bike Path'], currency: 'USD' },
+    },
+  });
+
+  await authenticatedPage.goto(`/en/decisions/${slug}/current`, {
+    waitUntil: 'domcontentloaded',
+  });
+  await expect(
+    authenticatedPage.getByRole('heading', { name, level: 2 }),
+  ).toBeVisible({ timeout: 30_000 });
+}
