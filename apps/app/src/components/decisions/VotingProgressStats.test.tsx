@@ -16,7 +16,7 @@ vi.mock('@op/api/client', () => ({
   },
 }));
 
-const renderStats = (daysLeft: number | null) => {
+const renderStats = (daysLeft: number | null, hasImage?: boolean) => {
   useSuspenseQuery.mockReturnValue([
     {
       participantsVotedCount: 412,
@@ -27,7 +27,7 @@ const renderStats = (daysLeft: number | null) => {
   ]);
   render(
     <NextIntlClientProvider locale="en" messages={messages}>
-      <VotingProgressStats processInstanceId="instance" />
+      <VotingProgressStats processInstanceId="instance" hasImage={hasImage} />
     </NextIntlClientProvider>,
   );
 };
@@ -36,10 +36,10 @@ describe('VotingProgressStats', () => {
   afterEach(cleanup);
 
   it('shows who voted, the turnout and the days left in the phase', () => {
-    renderStats(12);
+    renderStats(9);
     expect(screen.getByText('412/581')).toBeTruthy();
     expect(screen.getByText('71%')).toBeTruthy();
-    expect(screen.getByText('12')).toBeTruthy();
+    expect(screen.getByText('9')).toBeTruthy();
     expect(screen.getByText('Days left')).toBeTruthy();
   });
 
@@ -47,5 +47,35 @@ describe('VotingProgressStats', () => {
     renderStats(null);
     expect(screen.getByText('Turnout')).toBeTruthy();
     expect(screen.queryByText('Days left')).toBeNull();
+  });
+
+  it('uses white text over a banner image and the foreground colour otherwise', () => {
+    renderStats(9, true);
+    expect(screen.getByText('Turnout').closest('.text-white')).toBeTruthy();
+    cleanup();
+
+    renderStats(9, false);
+    expect(screen.getByText('Turnout').closest('.text-white')).toBeNull();
+    expect(
+      screen.getByText('Turnout').closest('.text-foreground'),
+    ).toBeTruthy();
+  });
+
+  it('renders nothing when the stats cannot load', () => {
+    // React logs the caught error; keep the test output clean.
+    const consoleError = vi
+      .spyOn(console, 'error')
+      .mockImplementation(() => {});
+    useSuspenseQuery.mockImplementation(() => {
+      throw new Error('Forbidden');
+    });
+    const { container } = render(
+      <NextIntlClientProvider locale="en" messages={messages}>
+        <VotingProgressStats processInstanceId="instance" />
+      </NextIntlClientProvider>,
+    );
+    expect(container.textContent).toBe('');
+    useSuspenseQuery.mockReset();
+    consoleError.mockRestore();
   });
 });

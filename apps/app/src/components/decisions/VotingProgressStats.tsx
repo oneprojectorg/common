@@ -8,7 +8,11 @@ import { Suspense } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { DecisionStat, DecisionStatDivider, DecisionStats } from './DecisionStats';
+import {
+  DecisionStat,
+  DecisionStatDivider,
+  DecisionStats,
+} from './DecisionStats';
 
 export function VotingProgressStats({
   processInstanceId,
@@ -21,7 +25,7 @@ export function VotingProgressStats({
   return (
     <div className={hasImage ? 'text-white' : 'text-foreground'}>
       <APIErrorBoundary fallbacks={{ default: () => null }}>
-        <Suspense fallback={<Skeleton className="h-16 w-full" />}>
+        <Suspense fallback={<VotingProgressStatsSkeleton />}>
           <VotingProgressStatsSuspense processInstanceId={processInstanceId} />
         </Suspense>
       </APIErrorBoundary>
@@ -44,7 +48,7 @@ function VotingProgressStatsSuspense({
   return (
     <DecisionStats>
       <DecisionStat
-        value={`${progress.participantsVotedCount}/${progress.participantsEligibleCount}`}
+        value={`${format.number(progress.participantsVotedCount)}/${format.number(progress.participantsEligibleCount)}`}
         label={t('participantsVotedStat')}
       />
       <DecisionStatDivider />
@@ -60,6 +64,19 @@ function VotingProgressStatsSuspense({
           <DecisionStat value={progress.daysLeft} label={t('daysLeftStat')} />
         </>
       ) : null}
+    </DecisionStats>
+  );
+}
+
+function VotingProgressStatsSkeleton() {
+  return (
+    <DecisionStats>
+      {Array.from({ length: 3 }).map((_, i) => (
+        <div key={i} className="flex min-w-24 flex-col items-center gap-2">
+          <Skeleton className="h-8 w-16" />
+          <Skeleton className="h-4 w-24" />
+        </div>
+      ))}
     </DecisionStats>
   );
 }
