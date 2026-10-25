@@ -1385,6 +1385,7 @@
       "viewAllProposalsAction": "View all proposals",
       "totalVotesLabel": "Total Votes",
       "myBallotOption": "My ballot",
+      "likedOption": "Liked",
       "selectedProposalsCount": "<highlight>{numSelected, plural, one {# proposal} other {# proposals}}</highlight> selected",
       "selectedProposalsOfMaxCount": "<highlight>{numSelected}</highlight> of {max, plural, one {# proposal} other {# proposals}} selected",
       "allCategoriesOption": "All categories",

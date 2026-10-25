@@ -23,6 +23,7 @@ interface ProposalLocationFilter {
   search?: string;
   submittedByProfileId?: string;
   votedByProfileId?: string;
+  likedByProfileId?: string;
   status?: ProposalStatus;
   notAdvanced?: boolean;
   phase?: 'results';

@@ -1,7 +1,9 @@
 import { type SQL, and, db, eq, inArray, isNull, ne, or } from '@op/db/client';
 import {
+  ProfileRelationshipType,
   ProposalStatus,
   Visibility,
+  profileRelationships,
   profileUsers,
   proposals,
 } from '@op/db/schema';
@@ -69,6 +71,30 @@ export const isProposalProfileMember = (
           .from(profileUsers)
           .where(eq(profileUsers.authUserId, accountUserId)),
       );
+
+/**
+ * Proposals the profile has liked directly, matching `isLikedByUser` on the
+ * card: likes carried over from merged proposals don't count.
+ */
+export const isLikedByProfile = (
+  proposalsTable: typeof proposals,
+  profileId: string,
+): SQL =>
+  inArray(
+    proposalsTable.profileId,
+    db
+      .select({ profileId: profileRelationships.targetProfileId })
+      .from(profileRelationships)
+      .where(
+        and(
+          eq(profileRelationships.sourceProfileId, profileId),
+          eq(
+            profileRelationships.relationshipType,
+            ProfileRelationshipType.LIKES,
+          ),
+        ),
+      ),
+  );
 
 /**
  * `getProposal`'s gate expressed in SQL. Apply it to *every* row a list

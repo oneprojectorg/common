@@ -28,6 +28,7 @@ import { notSuperseded } from './proposalSupersession';
 import { buildProposalTitleSearchCondition } from './proposalTitleSearch';
 import {
   excludeRejectedUnlessAsked,
+  isLikedByProfile,
   isProposalProfileMember,
 } from './proposalVisibility';
 
@@ -133,7 +134,13 @@ const buildBaseConditions = (
   t: typeof proposals,
   input: ListProposalsInput,
 ): SQL => {
-  const { processInstanceId, submittedByProfileId, status, search } = input;
+  const {
+    processInstanceId,
+    submittedByProfileId,
+    likedByProfileId,
+    status,
+    search,
+  } = input;
 
   // processInstanceId is always present, so the array is non-empty and the
   // final `and(...)` is guaranteed to return a SQL value.
@@ -150,6 +157,10 @@ const buildBaseConditions = (
 
   if (submittedByProfileId) {
     conditions.push(eq(t.submittedByProfileId, submittedByProfileId));
+  }
+
+  if (likedByProfileId) {
+    conditions.push(isLikedByProfile(t, likedByProfileId));
   }
 
   if (status) {
@@ -180,9 +191,10 @@ export const resolveProposalListScope = async ({
 }): Promise<ProposalListScope> => {
   const { processInstanceId, skipAccessCheck = false } = input;
 
-  // Resolve the caller's profile once; it's reused for ballot auth, the
-  // HIDDEN visibility filter, and owner/editable checks further down. Public
-  // (no-JWT) and anonymous callers have no account profile — treat as none.
+  // Resolve the caller's profile once; it's reused for ballot and likes auth,
+  // the HIDDEN visibility filter, and owner/editable checks further down.
+  // Public (no-JWT) and anonymous callers have no account profile — treat as
+  // none.
   let currentProfileId: string | undefined;
   if (user) {
     try {
@@ -190,6 +202,15 @@ export const resolveProposalListScope = async ({
     } catch {
       currentProfileId = undefined;
     }
+  }
+
+  // Likes are private, like ballots: a caller can only request their own.
+  if (
+    input.likedByProfileId &&
+    !skipAccessCheck &&
+    currentProfileId !== input.likedByProfileId
+  ) {
+    throw new UnauthorizedError('You can only view your own likes');
   }
 
   // Caller's own grants unioned with public (GLOBAL_USER_PUBLIC) grants — used

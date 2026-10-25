@@ -529,6 +529,7 @@ const ProposalsListContent = ({
                 search: queryParams.search,
                 submittedByProfileId: queryParams.submittedByProfileId,
                 votedByProfileId: queryParams.votedByProfileId,
+                likedByProfileId: queryParams.likedByProfileId,
                 status: queryParams.status,
                 notAdvanced: queryParams.notAdvanced,
               }}

@@ -88,6 +88,56 @@ describe.concurrent('listProposalLocations', () => {
     expect(first?.submittedBy).toBeDefined();
   });
 
+  it("pins only the caller's liked proposals under Liked", async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instanceId = setup.instance.instance.id;
+
+    const liker = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [setup.instance.profileId],
+    });
+
+    const [liked, unliked, caller] = await Promise.all([
+      testData.createProposal({
+        userEmail: setup.userEmail,
+        processInstanceId: instanceId,
+        proposalData: { title: 'Liked' },
+        status: ProposalStatus.SUBMITTED,
+      }),
+      testData.createProposal({
+        userEmail: setup.userEmail,
+        processInstanceId: instanceId,
+        proposalData: { title: 'Unliked' },
+        status: ProposalStatus.SUBMITTED,
+      }),
+      createAuthenticatedCaller(liker.email),
+    ]);
+
+    await Promise.all([
+      setLocation(liked.id, { lat: 40.7, lng: -74 }),
+      setLocation(unliked.id, { lat: 34, lng: -118.2 }),
+      caller.decision.addProposalRelationship({
+        targetProfileId: liked.profileId,
+        relationshipType: 'likes',
+      }),
+    ]);
+
+    const result = await caller.decision.listProposalLocations({
+      processInstanceId: instanceId,
+      likedByProfileId: liker.profileId,
+    });
+
+    expect(result.items.map((p) => p.id)).toEqual([liked.id]);
+  });
+
   it('pins a rejected proposal only under Not advanced, for admins and members alike', async ({
     task,
     onTestFinished,
