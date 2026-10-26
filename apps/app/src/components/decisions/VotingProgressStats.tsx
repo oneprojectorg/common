@@ -11,11 +11,7 @@ import { useTranslations } from '@/lib/i18n';
 
 import { ErrorMessage } from '@/components/ErrorMessage';
 
-import {
-  DecisionStat,
-  DecisionStatDivider,
-  DecisionStats,
-} from './DecisionStats';
+import { DecisionStat, DecisionStats } from './DecisionStats';
 
 export function VotingProgressStats({
   processInstanceId,
@@ -57,7 +53,6 @@ function VotingProgressStatsSuspense({
         value={`${format.number(progress.participantsVotedCount)}/${format.number(progress.participantsEligibleCount)}`}
         label={t('participantsVotedStat')}
       />
-      <DecisionStatDivider />
       <DecisionStat
         value={format.number(progress.turnoutPercentage / 100, {
           style: 'percent',
@@ -65,13 +60,10 @@ function VotingProgressStatsSuspense({
         label={t('turnoutStat')}
       />
       {progress.daysLeft !== null ? (
-        <>
-          <DecisionStatDivider />
-          <DecisionStat
-            value={format.number(progress.daysLeft)}
-            label={t('daysLeftStat')}
-          />
-        </>
+        <DecisionStat
+          value={format.number(progress.daysLeft)}
+          label={t('daysLeftStat')}
+        />
       ) : null}
     </DecisionStats>
   );
@@ -88,9 +80,7 @@ function VotingProgressStatsSkeleton() {
   return (
     <DecisionStats>
       {placeholder}
-      <DecisionStatDivider />
       {placeholder}
-      <DecisionStatDivider />
       {placeholder}
     </DecisionStats>
   );

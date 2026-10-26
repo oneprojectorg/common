@@ -5,11 +5,7 @@ import { trpc } from '@op/api/client';
 
 import { useTranslations } from '@/lib/i18n';
 
-import {
-  DecisionStat,
-  DecisionStatDivider,
-  DecisionStats,
-} from './DecisionStats';
+import { DecisionStat, DecisionStats } from './DecisionStats';
 
 interface ResultsStatsProps {
   instanceId: string;
@@ -29,26 +25,20 @@ export function ResultsStats({ instanceId }: ResultsStatsProps) {
   return (
     <DecisionStats>
       {stats.membersVoted > 0 && (
-        <>
-          <DecisionStat
-            value={stats.membersVoted}
-            label={t('membersVotedStat')}
-          />
-          <DecisionStatDivider />
-        </>
+        <DecisionStat
+          value={stats.membersVoted}
+          label={t('membersVotedStat')}
+        />
       )}
       <DecisionStat
         value={stats.proposalsFunded}
         label={t('proposalsSelectedStat')}
       />
       {stats.totalAllocated > 0 && (
-        <>
-          <DecisionStatDivider />
-          <DecisionStat
-            value={formatCurrency(stats.totalAllocated)}
-            label={t('totalAllocatedStat')}
-          />
-        </>
+        <DecisionStat
+          value={formatCurrency(stats.totalAllocated)}
+          label={t('totalAllocatedStat')}
+        />
       )}
     </DecisionStats>
   );
