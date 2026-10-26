@@ -70,6 +70,24 @@ export function getVoterBudget(phase: {
     : undefined;
 }
 
+export function getVoterEnrolment(phase: {
+  rules?: {
+    voting?: {
+      enrolment?: { attestation?: string; boundary?: boolean };
+      [key: string]: unknown;
+    };
+  };
+}): { attestation: string; boundary: boolean } | undefined {
+  const attestation = phase.rules?.voting?.enrolment?.attestation?.trim();
+
+  return attestation
+    ? {
+        attestation,
+        boundary: phase.rules?.voting?.enrolment?.boundary === true,
+      }
+    : undefined;
+}
+
 export function isRankedVoting(phase: {
   rules?: { voting?: { ranked?: boolean } };
 }): boolean {

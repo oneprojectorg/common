@@ -63,6 +63,10 @@ export const adminDecisionPhaseSchema = z.object({
   /** Field a selection is charged from; null without a voter budget. */
   voterCostField: z.string().nullable(),
   ranked: z.boolean().nullable(),
+  /** Registration required before voting; null when the phase has no enrolment step. */
+  enrolment: z
+    .object({ attestation: z.string(), boundary: z.boolean() })
+    .nullable(),
   proposalsHiddenByDefault: z.boolean(),
   /** 'date' | 'manual' | null when unset. */
   advancementMethod: z.string().nullable(),
