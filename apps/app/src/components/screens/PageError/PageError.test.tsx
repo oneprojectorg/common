@@ -51,7 +51,7 @@ describe('PageError', () => {
     // When the error boundary renders it
     renderPageError(error);
 
-    // Then the user sees a 404 (the copy shares one paragraph with its hint)
+    // Then the user sees a 404
     expect(await screen.findByText('404')).toBeTruthy();
     expect(
       screen.getByText(messages.shell.notFoundTitle, { exact: false }),
@@ -65,7 +65,7 @@ describe('PageError', () => {
     // When the error boundary renders it
     renderPageError(error);
 
-    // Then the user sees a 500 (the copy shares one paragraph with its hint)
+    // Then the user sees a 500
     expect(await screen.findByText('500')).toBeTruthy();
     expect(
       screen.getByText(messages.shell.errorTitle, { exact: false }),

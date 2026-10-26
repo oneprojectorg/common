@@ -15,12 +15,6 @@ export interface ErrorProps {
   error: Error & { digest?: string };
 }
 
-/**
- * The `error.tsx` boundary. A server render that fails inside the tRPC caller
- * arrives with its HTTP status on `digest` (see `createCallerForRequest`), so
- * a 403 or 404 keeps its meaning here instead of collapsing into the 500
- * screen. A client-side error that names `UNAUTHORIZED` is treated as a 403.
- */
 export default function PageError({ error }: ErrorProps) {
   const t = useTranslations();
   const statusCode = statusCodeOf(error);
@@ -32,7 +26,6 @@ export default function PageError({ error }: ErrorProps) {
       });
       return;
     }
-    // A denied or missing page is expected traffic, not a defect.
     logger.warn('Page request rejected', {
       statusCode,
       errorDigest: error.digest,
@@ -95,7 +88,6 @@ export default function PageError({ error }: ErrorProps) {
   );
 }
 
-/** The HTTP status the error stands for; 500 when it carries none. */
 const statusCodeOf = (error: ErrorProps['error']): number => {
   const digest = parseErrorDigest(error.digest);
   if (digest) {

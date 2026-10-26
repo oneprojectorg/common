@@ -122,17 +122,8 @@ export const createServerContext = cache(async (): Promise<TContext> => {
 
 const callerFactory = createCallerFactory(appRouter);
 
-/**
- * Carries a failed procedure's HTTP semantics on the error's `digest`.
- *
- * An in-process call skips the HTTP layer, so the `errorFormatter` mapping of
- * a `CommonError` to a status never runs; the Server Component gets a bare
- * `TRPCError` whose only hint of a 403 is on `cause`. In production React
- * strips the message of an error thrown during a server render and forwards
- * only `digest`, so a 403 would reach the browser as a 500. `error.tsx` reads
- * this digest back with `parseErrorDigest` and shows the matching screen.
- * Mirrors the `errorFormatter`: an `AccessControlException` is a 403.
- */
+// Next.js forwards an error's own `digest` to the client; `error.tsx` reads
+// the status from it. Mirrors `errorFormatter`, which skips in-process calls.
 const tagErrorDigest = ({ error }: { error: TRPCError }) => {
   const cause =
     error.cause instanceof AccessControlException
@@ -149,13 +140,7 @@ const tagErrorDigest = ({ error }: { error: TRPCError }) => {
   }
 };
 
-/**
- * Create a server-side tRPC caller for one request's context.
- *
- * Calls procedures directly, without HTTP overhead. A failed call throws the
- * procedure's `TRPCError` tagged by {@link tagErrorDigest}, so the error keeps
- * its 403 / 404 meaning through to the client's error boundary.
- */
+/** Server-side tRPC caller for one request's context. */
 export const createCallerForRequest = (context: TContext) =>
   callerFactory(context, { onError: tagErrorDigest });
 

@@ -8,7 +8,6 @@ import {
   createTestContextWithSession,
 } from './test/supabase-utils';
 
-/** The caller a Server Component gets for a signed-in user's request. */
 const createCallerAs = async (email: string) => {
   const { session } = await createIsolatedSession(email);
   return createCallerForRequest(await createTestContextWithSession(session));
