@@ -29,7 +29,7 @@ import type { CapabilityKey } from '../types';
 
 type IconComponent = ComponentType<{ className?: string }>;
 
-const BY_ID = {
+export const CAPABILITY_ICONS = {
   addCostBudgetDetails: LuBanknote,
   addDeadline: LuClock,
   addDeadlineRunTimer: LuClock,
@@ -72,7 +72,3 @@ const BY_ID = {
   shareSummaryPage: LuShare2,
   showTitlesOnlyFullEntries: LuFileText,
 } satisfies Record<CapabilityKey, IconComponent>;
-
-export function capabilityIcon(id: CapabilityKey): IconComponent {
-  return BY_ID[id];
-}

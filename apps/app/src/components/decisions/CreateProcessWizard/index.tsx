@@ -3,14 +3,13 @@
 import { Button } from '@op/sense/Button';
 import { Progress } from '@op/sense/Progress';
 import { cn } from '@op/sense/lib/utils';
-import { type ReactNode, useEffect, useMemo, useReducer, useRef } from 'react';
+import { useEffect, useMemo, useReducer, useRef } from 'react';
 import { LuArrowLeft, LuArrowRight, LuX } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
 import { ChoiceScreen } from './ChoiceScreen';
 import { STEP_HEADING_ID } from './StepHeading';
-import { composeOtherPhases, describeOther } from './composeOther';
 import {
   INITIAL_STATE,
   TOTAL_STEPS,
@@ -19,27 +18,15 @@ import {
   nextScreen,
   progressPercent,
   screenOf,
-  stepOf,
   wizardReducer,
-  type ScreenId,
   type WizardAnswers,
   type WizardState,
 } from './flow';
-import { applyGrantDecision, presetPhases } from './phasePresets';
+import { phasesFor } from './phases';
 import { IntroBackdrop, IntroStep } from './steps/IntroStep';
 import { MappingStep } from './steps/MappingStep';
 import { NameAccessStep } from './steps/NameAccessStep';
-import type { ProcessDraft, WizardPhase } from './types';
-
-interface ScreenBodyProps {
-  screen: ScreenId;
-  answers: WizardAnswers;
-  phases: WizardPhase[];
-  recap?: ReactNode;
-  onAnswer: (patch: Partial<WizardAnswers>) => void;
-  onStart: () => void;
-  onSubmit: () => void;
-}
+import type { ProcessDraft } from './types';
 
 export function CreateProcessWizard({
   initial,
@@ -68,11 +55,12 @@ export function CreateProcessWizard({
   const answer = (patch: Partial<WizardAnswers>) =>
     dispatch({ type: 'answer', patch });
 
-  const step = stepOf(screen);
+  const current = screenOf(screen);
+  const step = current.step;
   // Not before step 4, so answering step 3 doesn't recompose the phases.
   const isResolved = step >= 4;
   const phases = useMemo(
-    () => (isResolved ? resolvePhases(answers) : []),
+    () => (isResolved ? phasesFor(answers) : []),
     [isResolved, answers],
   );
 
@@ -107,11 +95,23 @@ export function CreateProcessWizard({
     dispatch({ type: 'next' });
   };
 
-  let primaryLabel = tShared('Continue');
-  if (step === 1) {
-    primaryLabel = t('getStartedAction');
-  } else if (step === TOTAL_STEPS) {
-    primaryLabel = t('submitAction');
+  let body;
+  if (isChoiceScreen(current)) {
+    body = (
+      <ChoiceScreen screen={current} answers={answers} onAnswer={answer} />
+    );
+  } else if (current.id === 'intro') {
+    body = <IntroStep onStart={advance} />;
+  } else if (current.id === 'mapping') {
+    body = <MappingStep phases={phases} answers={answers} />;
+  } else {
+    body = (
+      <NameAccessStep
+        name={name}
+        onNameChange={(name) => answer({ name })}
+        onSubmit={advance}
+      />
+    );
   }
 
   return (
@@ -180,19 +180,7 @@ export function CreateProcessWizard({
             step === 4 ? 'max-w-177' : 'max-w-lg',
           )}
         >
-          <ScreenBody
-            screen={screen}
-            answers={answers}
-            phases={phases}
-            recap={
-              type === 'other' && isResolved
-                ? describeOther(answers, t)
-                : undefined
-            }
-            onAnswer={answer}
-            onStart={advance}
-            onSubmit={advance}
-          />
+          {body}
 
           {step > 1 ? (
             <div className="mt-8 flex justify-center">
@@ -202,7 +190,7 @@ export function CreateProcessWizard({
                 loading={isSubmitting}
                 className="min-w-32"
               >
-                {primaryLabel}
+                {step === TOTAL_STEPS ? t('submitAction') : tShared('Continue')}
                 <LuArrowRight className="rtl:-scale-x-100" />
               </Button>
             </div>
@@ -211,51 +199,4 @@ export function CreateProcessWizard({
       </div>
     </div>
   );
-}
-
-function ScreenBody({
-  screen,
-  answers,
-  phases,
-  recap,
-  onAnswer,
-  onStart,
-  onSubmit,
-}: ScreenBodyProps) {
-  const current = screenOf(screen);
-
-  if (isChoiceScreen(current)) {
-    return (
-      <ChoiceScreen screen={current} answers={answers} onAnswer={onAnswer} />
-    );
-  }
-
-  switch (current.id) {
-    case 'intro':
-      return <IntroStep onStart={onStart} />;
-    case 'mapping':
-      return <MappingStep phases={phases} recap={recap} />;
-    case 'name':
-      return (
-        <NameAccessStep
-          name={answers.name}
-          onNameChange={(name) => onAnswer({ name })}
-          onSubmit={onSubmit}
-        />
-      );
-  }
-}
-
-function resolvePhases(answers: WizardAnswers): WizardPhase[] {
-  const { type, shape, grantDecision } = answers;
-
-  if (type === 'other') {
-    return composeOtherPhases(answers);
-  }
-
-  if (type === 'grant') {
-    return applyGrantDecision(presetPhases(shape), grantDecision);
-  }
-
-  return presetPhases(shape);
 }

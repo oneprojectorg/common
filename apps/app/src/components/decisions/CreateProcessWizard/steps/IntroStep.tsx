@@ -34,12 +34,12 @@ export function IntroBackdrop() {
   return (
     <div
       aria-hidden
-      className="pointer-events-none absolute inset-x-0 bottom-0 h-intro-wash animate-intro-wash overflow-hidden mask-t-from-15% mask-t-to-95% opacity-65 motion-reduce:animate-none"
+      className="pointer-events-none absolute inset-x-0 bottom-0 h-3/5 animate-intro-wash overflow-hidden mask-t-from-15% mask-t-to-95% opacity-65 motion-reduce:animate-none"
     >
       <div className="absolute inset-0 bg-gradient opacity-50 blur-3xl" />
 
-      <div className="absolute -start-1/4 -bottom-1/3 size-intro-blob-a animate-intro-blob-a rounded-full bg-gradient opacity-50 blur-3xl motion-reduce:animate-none" />
-      <div className="absolute -end-1/4 -bottom-1/4 size-intro-blob-b animate-intro-blob-b rounded-full bg-gradient opacity-40 blur-3xl motion-reduce:animate-none" />
+      <div className="absolute -start-1/4 -bottom-1/3 size-full animate-intro-blob-a rounded-full bg-gradient opacity-50 blur-3xl motion-reduce:animate-none" />
+      <div className="absolute -end-1/4 -bottom-1/4 size-full animate-intro-blob-b rounded-full bg-gradient opacity-40 blur-3xl motion-reduce:animate-none" />
     </div>
   );
 }

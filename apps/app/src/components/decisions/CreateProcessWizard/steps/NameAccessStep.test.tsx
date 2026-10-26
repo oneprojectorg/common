@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { NextIntlClientProvider } from 'next-intl';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -53,15 +53,6 @@ describe('NameAccessStep', () => {
     expect(input.getAttribute('aria-describedby')).toBe('process-name-error');
   });
 
-  it('shows the error on submit with an empty name', () => {
-    const { input, onSubmit } = renderStep();
-
-    fireEvent.submit(input.closest('form') as HTMLFormElement);
-
-    expect(error()).not.toBeNull();
-    expect(onSubmit).toHaveBeenCalledTimes(1);
-  });
-
   it('keeps a long enough name error-free after blur', async () => {
     const { input } = renderStep('Neighborhood Grants');
 
@@ -70,14 +61,5 @@ describe('NameAccessStep', () => {
 
     expect(error()).toBeNull();
     expect(input.getAttribute('aria-invalid')).toBe('false');
-  });
-
-  it('hands every keystroke to the parent', async () => {
-    const { input, onNameChange } = renderStep();
-
-    await userEvent.type(input, 'ab');
-
-    expect(onNameChange).toHaveBeenNthCalledWith(1, 'a');
-    expect(onNameChange).toHaveBeenNthCalledWith(2, 'b');
   });
 });

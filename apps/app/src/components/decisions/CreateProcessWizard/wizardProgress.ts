@@ -1,35 +1,36 @@
+import { PROCESS_TYPES } from '@op/common/client';
 import { logger } from '@op/logging/client';
 import { useEffect, useRef, useState } from 'react';
 import { z } from 'zod';
 
-import { resumeWizard, type WizardState } from './flow';
+import {
+  SCREEN_IDS,
+  resumeWizard,
+  type ScreenId,
+  type WizardState,
+} from './flow';
+import {
+  CADENCES,
+  DECISIONS,
+  GRANT_DECISIONS,
+  SHAPES,
+  SUBJECTS,
+  SUBMIT_KEYS,
+} from './types';
 
 const STORAGE_KEY = 'create-process-wizard';
 
 const progressSchema: z.ZodType<WizardState> = z.object({
-  screen: z.enum([
-    'intro',
-    'type',
-    'shape',
-    'grantDecision',
-    'subject',
-    'cadence',
-    'submits',
-    'decision',
-    'mapping',
-    'name',
-  ]),
+  screen: z.custom<ScreenId>((id) => SCREEN_IDS.some((known) => known === id)),
   answers: z.object({
-    type: z.enum(['grant', 'pb', 'other']).nullable(),
-    shape: z.enum(['single', 'loi', 'ideas', 'proposals']).nullable(),
-    grantDecision: z.enum(['rubric', 'applicants', 'hybrid']).nullable(),
-    subject: z.enum(['funding', 'ideas', 'people', 'else']).nullable(),
+    type: z.enum(PROCESS_TYPES).nullable(),
+    shape: z.enum(SHAPES).nullable(),
+    grantDecision: z.enum(GRANT_DECISIONS).nullable(),
+    subject: z.enum(SUBJECTS).nullable(),
     subjectText: z.string(),
-    cadence: z.enum(['timeline', 'ongoing']).nullable(),
-    submits: z
-      .enum(['applications', 'proposals', 'rough', 'nominations', 'none'])
-      .nullable(),
-    decision: z.enum(['vote', 'review', 'both', 'agree']).nullable(),
+    cadence: z.enum(CADENCES).nullable(),
+    submits: z.enum(SUBMIT_KEYS).nullable(),
+    decision: z.enum(DECISIONS).nullable(),
     name: z.string(),
   }),
 });

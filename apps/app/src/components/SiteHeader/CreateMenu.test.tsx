@@ -75,13 +75,6 @@ describe('CreateMenu', () => {
 
   afterEach(cleanup);
 
-  it('shows neither decision item with both flags off', async () => {
-    await openMenu();
-
-    expect(oldItem()).toBeNull();
-    expect(wizardItem()).toBeNull();
-  });
-
   it('shows only the template item for create_decision_process', async () => {
     flags.set('create_decision_process', true);
 

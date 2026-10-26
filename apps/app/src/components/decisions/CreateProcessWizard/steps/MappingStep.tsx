@@ -6,25 +6,27 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@op/sense/Accordion';
-import { type ReactNode, useState } from 'react';
+import { useState } from 'react';
 import { LuCircleCheckBig } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
 import { Callout } from '../Callout';
 import { StepHeading } from '../StepHeading';
-import type { WizardPhase } from '../types';
-import { capabilityIcon } from './capabilityIcons';
+import { describeOther } from '../phases';
+import type { WizardAnswers, WizardPhase } from '../types';
+import { CAPABILITY_ICONS } from './capabilityIcons';
 
 export function MappingStep({
   phases,
-  recap,
+  answers,
 }: {
   phases: WizardPhase[];
-  recap?: ReactNode;
+  answers: WizardAnswers;
 }) {
   const t = useTranslations('decisions.createWizard');
   const [open, setOpen] = useState<number | null>(0);
+  const recap = answers.type === 'other' ? describeOther(answers, t) : null;
 
   return (
     <div className="flex flex-col gap-6">
@@ -119,7 +121,7 @@ function PhaseRow({ phase, step }: { phase: WizardPhase; step: number }) {
 
             <ul role="list" className="flex flex-col gap-4">
               {phase.capabilities.map((capability) => {
-                const Icon = capabilityIcon(capability);
+                const Icon = CAPABILITY_ICONS[capability];
 
                 return (
                   <li key={capability} className="flex items-start gap-2.5">
