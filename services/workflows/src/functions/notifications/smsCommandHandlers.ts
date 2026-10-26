@@ -44,6 +44,7 @@ import {
   getSmsDecisionDescription,
   getSmsVotingDecision,
   listSmsBallotPage,
+  setBallotPageCursor,
   listSmsDecisions,
   resolveVoterAddress,
   startVoterEnrolment,
@@ -619,7 +620,7 @@ export const proposals: SmsCommandHandler = async (context) => {
   );
 
   return page.ok
-    ? sendBallotPage(deliver, page.value, 'first')
+    ? deliverBallotPage(context, page.value, 'first', decision.instanceId)
     : refuseBallotRead(context, page.reason, decision.instanceId);
 };
 
@@ -645,7 +646,7 @@ const readBallot = async <T>(fn: () => Promise<T>): Promise<BallotRead<T>> => {
 };
 
 const refuseBallotRead = async (
-  { step, deliver }: SmsCommandContext,
+  { step, deliver, line }: SmsCommandContext,
   reason: 'unavailable' | 'not_enrolled' | 'closed',
   instanceId: string,
 ): Promise<SmsCommandResult> => {
@@ -673,9 +674,35 @@ const refuseBallotRead = async (
         deliver,
         'send-register-first',
         'Register first reply',
-        [formatSmsRegisterFirst(decision.name)],
+        [
+          formatSmsRegisterFirst(
+            decision.name,
+            line?.instanceId === instanceId ? null : decision.slug,
+          ),
+        ],
         'register first',
       );
+};
+
+// The cursor moves only once the page went out, so a reply the carrier
+// refused is sent again on the next MORE instead of being skipped.
+const deliverBallotPage = async (
+  { step, account, deliver }: SmsCommandContext,
+  page: SmsBallotPage,
+  kind: 'first' | 'next',
+  instanceId: string,
+): Promise<SmsCommandResult> => {
+  const sent = await sendBallotPage(deliver, page, kind);
+  if (sent.message !== 'reply rejected') {
+    await step.run(`save-page-cursor-${kind}`, () =>
+      setBallotPageCursor({
+        processInstanceId: instanceId,
+        authUserId: account.authUserId,
+        pageCursor: page.nextCursor,
+      }),
+    );
+  }
+  return sent;
 };
 
 // On a decision line the line's own decision is the default; a decision the
@@ -729,7 +756,7 @@ export const more: SmsCommandHandler = async (context) => {
   );
 
   return page.ok
-    ? sendBallotPage(deliver, page.value, 'next')
+    ? deliverBallotPage(context, page.value, 'next', draft.processInstanceId)
     : refuseBallotRead(context, page.reason, draft.processInstanceId);
 };
 

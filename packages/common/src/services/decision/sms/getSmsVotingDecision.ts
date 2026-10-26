@@ -21,6 +21,7 @@ import {
 export interface SmsVotingDecision {
   instanceId: string;
   name: string;
+  slug: string;
   votingOpen: boolean;
   enrolment: Required<VoterEnrolmentRule> | null;
   budget: string | null;
@@ -35,6 +36,7 @@ interface VotingInstance {
 
 const summarizeVotingInstance = async (
   name: string,
+  slug: string,
   instance: VotingInstance,
 ): Promise<SmsVotingDecision> => {
   const phase = getInstanceCurrentPhase({
@@ -54,6 +56,7 @@ const summarizeVotingInstance = async (
   return {
     instanceId: instance.id,
     name,
+    slug,
     votingOpen: phase ? isVotingPhase(phase) : false,
     enrolment: (phase && getVoterEnrolment(phase)) ?? null,
     budget:
@@ -70,7 +73,7 @@ export async function getSmsVotingDecision({
   authUserId: string;
   decisionSlug: string;
 }): Promise<SmsVotingDecision> {
-  const { name, processInstance } = await getDecisionBySlug({
+  const { name, slug, processInstance } = await getDecisionBySlug({
     user: { id: authUserId },
     slug: decisionSlug,
   });
@@ -79,7 +82,7 @@ export async function getSmsVotingDecision({
     throw new NotFoundError('Decision', decisionSlug);
   }
 
-  return summarizeVotingInstance(name, processInstance);
+  return summarizeVotingInstance(name, slug, processInstance);
 }
 
 export async function describeEnrolmentDecision({
@@ -98,7 +101,7 @@ export async function describeEnrolmentDecision({
       processId: true,
       status: true,
     },
-    with: { profile: { columns: { id: true, name: true } } },
+    with: { profile: { columns: { id: true, name: true, slug: true } } },
   });
 
   if (!instance?.profile || instance.status !== ProcessStatus.PUBLISHED) {
@@ -115,5 +118,9 @@ export async function describeEnrolmentDecision({
     notMemberMessage: 'User does not have access to this process',
   });
 
-  return summarizeVotingInstance(instance.profile.name, instance);
+  return summarizeVotingInstance(
+    instance.profile.name,
+    instance.profile.slug,
+    instance,
+  );
 }
