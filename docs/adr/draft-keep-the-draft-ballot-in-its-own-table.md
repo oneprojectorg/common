@@ -34,8 +34,11 @@ The remaining budget is never stored. Each text recomputes it from the
 picks' costs and the phase's `voterBudget`, so a cost edited after a
 pick is charged at its current value, as `submitVote` charges it.
 
-`page_cursor` records where MORE left off while the voter browses. It
-is the one column shaped by the text channel; the web ignores it.
+`page_cursor` records where MORE left off while the voter browses, and
+`chat_line_id` the decision line the voter last browsed this decision
+on, so a bare MORE, INFO or code on a line follows a decision chosen by
+slug on that same line and never one browsed on another line. These two
+are the columns shaped by the text channel; the web ignores them.
 
 SUBMIT turns the draft into a submission and deletes the row. After
 that, a text that browses the ballot makes a new row to hold its cursor,

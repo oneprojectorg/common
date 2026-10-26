@@ -10,6 +10,7 @@ import {
 } from 'drizzle-orm/pg-core';
 
 import { autoId, serviceRolePolicies, timestamps } from '../../helpers';
+import { decisionChatLines } from './decisionChatLines.sql';
 import { processInstances } from './processInstances.sql';
 import { profiles } from './profiles.sql';
 
@@ -34,6 +35,10 @@ export const decisionBallotDrafts = pgTable(
       .notNull()
       .default(sql`'[]'::jsonb`),
     pageCursor: integer('page_cursor'),
+    chatLineId: uuid('chat_line_id').references(() => decisionChatLines.id, {
+      onUpdate: 'cascade',
+      onDelete: 'set null',
+    }),
     reopenedAt: timestamp('reopened_at', { withTimezone: true }),
     ...timestamps,
   },
