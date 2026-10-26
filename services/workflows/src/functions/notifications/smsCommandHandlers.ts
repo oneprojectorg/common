@@ -1241,6 +1241,14 @@ export const submit: SmsCommandHandler = async (context) => {
         [SMS_BALLOT_EMPTY_SUBMIT_MESSAGE],
         'ballot empty',
       );
+    case 'unavailable':
+      return deliverAll(
+        deliver,
+        'send-ballot-unavailable',
+        'Ballot unavailable reply',
+        [SMS_BALLOT_UNAVAILABLE_MESSAGE],
+        'decision not found',
+      );
     case 'not_enrolled': {
       const decision = await step.run('describe-ballot-decision', () =>
         describeEnrolmentDecision({ instanceId }),

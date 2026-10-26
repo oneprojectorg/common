@@ -3,6 +3,7 @@ import {
   SMS_MAX_BODY_LENGTH,
   findVoterEnrolment,
   parsePhoneNumber,
+  removeDecisionPublicAccess,
   resolveVoterAddress,
   submitVote,
 } from '@op/common';
@@ -78,6 +79,8 @@ const NUMBERS = {
   pickRetry: '+15005550053',
   pickWhilePending: '+15005550054',
   pickStranger: '+15005550055',
+  pickUncapped: '+15005550022',
+  pickRevoked: '+15005550023',
   browseOtherLine: '+15005550069',
   browseUnpublished: '+15005550059',
   browseRewritten: '+15005550057',
@@ -123,6 +126,8 @@ const LINES = {
   pickPendingA: '+16145550162',
   pickPendingB: '+16145550163',
   pickStranger: '+16145550164',
+  pickUncapped: '+16145550166',
+  pickRevoked: '+16145550167',
   browseOtherLineA: '+16145550192',
   browseOtherLineB: '+16145550193',
   browseUnpublished: '+16145550194',
@@ -1933,6 +1938,87 @@ describe('handleSMSCommand building and casting the ballot', () => {
     ]);
     await expect(
       db.query.decisionBallotDrafts.findFirst({
+        where: { processInstanceId: instanceId },
+      }),
+    ).resolves.toBeUndefined();
+  });
+  it('given a voting phase with no budget cap and a proposal whose cost is not an amount, when the voter texts its code, then it becomes a pick with no cost shown', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsCommandFixture(task.id, onTestFinished);
+    const member = await fixture.createPhoneOnlyAccount(
+      parsePhoneNumber(NUMBERS.pickUncapped),
+    );
+    const { instanceId, instanceProfileId } =
+      await fixture.createVotingInstance({
+        owner: member,
+        name: `Pick Uncapped ${task.id}`,
+        proposalTitles: [
+          { title: 'Crosswalk lighting', budget: 85_000 },
+          { title: 'Odd cost', budget: 'about a quarter million' },
+        ],
+        votingRules: { maxVotesPerMember: 10, ranked: true },
+      });
+    await fixture.addMember(instanceProfileId, member);
+    await fixture.bindLine(instanceId, parsePhoneNumber(LINES.pickUncapped));
+
+    const { result } = await text(
+      NUMBERS.pickUncapped,
+      LINES.pickUncapped,
+      '102',
+    );
+
+    expect(result).toEqual({ message: 'picks added' });
+    expect(recordedSms.at(-1)?.body).toContain('Pick 1: "Odd cost"');
+    await expect(
+      db.query.decisionBallotDrafts.findFirst({
+        where: { processInstanceId: instanceId },
+        columns: { picks: true },
+      }),
+    ).resolves.toMatchObject({ picks: [expect.any(String)] });
+  });
+
+  it('given a voter who built a draft through a public decision, when its public access is removed and they text SUBMIT, then they are told the decision is not available and no vote is written', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsCommandFixture(task.id, onTestFinished);
+    const owner = await fixture.createPhoneOnlyAccount(
+      parsePhoneNumber('+15005550024'),
+    );
+    const voter = await fixture.createPhoneOnlyAccount(
+      parsePhoneNumber(NUMBERS.pickRevoked),
+    );
+    const { instanceId, instanceProfileId } =
+      await fixture.createVotingInstance({
+        owner,
+        name: `Pick Revoked ${task.id}`,
+        proposalTitles: PROPOSALS,
+        votingRules: {
+          voterBudget: 1_000_000,
+          maxVotesPerMember: 10,
+          ranked: true,
+        },
+      });
+    await fixture.makePublic(instanceProfileId);
+    await fixture.bindLine(instanceId, parsePhoneNumber(LINES.pickRevoked));
+    await text(NUMBERS.pickRevoked, LINES.pickRevoked, '101');
+    await removeDecisionPublicAccess({ instanceId });
+    expect(voter.authUserId).not.toBe(owner.authUserId);
+
+    const { result } = await keyword(
+      NUMBERS.pickRevoked,
+      LINES.pickRevoked,
+      'submit',
+    );
+
+    expect(result).toEqual({ message: 'decision not found' });
+    expect(recordedSms.at(-1)?.body).toBe(
+      'That decision is not available to you.',
+    );
+    await expect(
+      db.query.decisionsVoteSubmissions.findFirst({
         where: { processInstanceId: instanceId },
       }),
     ).resolves.toBeUndefined();
