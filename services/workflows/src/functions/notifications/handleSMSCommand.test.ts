@@ -53,6 +53,7 @@ const NUMBERS = {
   voteNoSlug: '+15005550078',
   enrolRewrite: '+15005550079',
   enrolSwitch: '+15005550083',
+  agreeRewritten: '+15005550027',
 } as const;
 
 const LINES = {
@@ -66,6 +67,7 @@ const LINES = {
   enrolAgree: '+16145550137',
   enrolRewrite: '+16145550138',
   enrolSwitch: '+16145550139',
+  agreeRewritten: '+16145550170',
 } as const;
 
 beforeEach(() => {
@@ -949,6 +951,75 @@ describe('handleSMSCommand registration over SMS', () => {
       status: DecisionVoterEnrolmentStatus.ENROLLED,
       attestationHash: hashAttestation(rewritten),
       boundaryId: district.id,
+    });
+  });
+
+  it('given the attestation was rewritten after it was sent, when the voter texts AGREE, then the new words are sent and only a second AGREE registers them', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsCommandFixture(task.id, onTestFinished);
+    const name = `Agree Rewritten ${task.id}`;
+    const member = await fixture.createPhoneOnlyAccount(
+      parsePhoneNumber(NUMBERS.agreeRewritten),
+    );
+    const { instanceId, instanceProfileId } =
+      await fixture.createVotingInstance({
+        owner: member,
+        name,
+        proposalTitles: ['Crosswalk lighting'],
+        enrolment: { attestation: ATTESTATION, boundary: true },
+        ownerIsAdmin: true,
+      });
+    const district = await createDecisionBoundary({
+      profileId: instanceProfileId,
+      name: `District 5 ${name}`,
+    });
+    await fixture.bindLine(instanceId, parsePhoneNumber(LINES.agreeRewritten));
+    const address = `375 S High St ${task.id}`;
+    memoryGeocoder.set(address, INSIDE);
+    const text = (
+      event: Omit<Parameters<typeof smsInboundEvent>[0], 'from' | 'to'>,
+    ) =>
+      run(
+        smsInboundEvent({
+          from: NUMBERS.agreeRewritten,
+          to: LINES.agreeRewritten,
+          ...event,
+        }),
+      );
+    await text({ keyword: 'vote' });
+    await text({ body: address, messageSid: `SM-${task.id}-address` });
+    const rewritten = `I affirm the rewritten requirements ${task.id}.`;
+    await fixture.rewriteAttestation({
+      instanceId,
+      owner: member,
+      attestation: rewritten,
+    });
+
+    const first = await text({
+      keyword: 'agree',
+      messageSid: `SM-${task.id}-agree-1`,
+    });
+    const second = await text({
+      keyword: 'agree',
+      messageSid: `SM-${task.id}-agree-2`,
+    });
+
+    expect(first.result).toEqual({ message: 'attestation changed' });
+    expect(second.result).toEqual({ message: 'enrolled' });
+    expect(recordedSms.slice(-2).map((sms) => sms.body)).toEqual([
+      `That's ${district.name}. Reply AGREE to affirm: "${rewritten}"`,
+      `You're registered to vote in "${name}".`,
+    ]);
+    await expect(
+      findVoterEnrolment({
+        processInstanceId: instanceId,
+        authUserId: member.authUserId,
+      }),
+    ).resolves.toMatchObject({
+      status: DecisionVoterEnrolmentStatus.ENROLLED,
+      attestationHash: hashAttestation(rewritten),
     });
   });
 
