@@ -215,6 +215,17 @@ export class SmsCommandFixture {
     return { instanceId: instance.id, instanceProfileId: profileId, slug };
   }
 
+  async closeVoting(instanceId: string) {
+    const result = await advanceInstancePhase({
+      instanceId,
+      fromPhaseId: VOTING_PHASE_ID,
+      toPhaseId: 'results',
+    });
+    if (result.conflict) {
+      throw new Error(`Could not close voting on ${instanceId}`);
+    }
+  }
+
   async bindLine(instanceId: string, phone: PhoneNumber) {
     await createDecisionPhoneNumber({
       processInstanceId: instanceId,
