@@ -81,6 +81,8 @@ const NUMBERS = {
   pickStranger: '+15005550055',
   pickUncapped: '+15005550022',
   pickRevoked: '+15005550023',
+  pickUnpriced: '+15005550025',
+  pickSlugRewritten: '+15005550026',
   browseOtherLine: '+15005550069',
   browseUnpublished: '+15005550059',
   browseRewritten: '+15005550057',
@@ -128,6 +130,7 @@ const LINES = {
   pickStranger: '+16145550164',
   pickUncapped: '+16145550166',
   pickRevoked: '+16145550167',
+  pickUnpriced: '+16145550169',
   browseOtherLineA: '+16145550192',
   browseOtherLineB: '+16145550193',
   browseUnpublished: '+16145550194',
@@ -2022,6 +2025,103 @@ describe('handleSMSCommand building and casting the ballot', () => {
         where: { processInstanceId: instanceId },
       }),
     ).resolves.toBeUndefined();
+  });
+  it('given a capped ballot and a proposal whose cost is not an amount, when the voter texts its code, then the reply names that proposal instead of saying voting is closed', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsCommandFixture(task.id, onTestFinished);
+    const member = await fixture.createPhoneOnlyAccount(
+      parsePhoneNumber(NUMBERS.pickUnpriced),
+    );
+    const { instanceId, instanceProfileId } =
+      await fixture.createVotingInstance({
+        owner: member,
+        name: `Pick Unpriced ${task.id}`,
+        proposalTitles: [
+          { title: 'Crosswalk lighting', budget: 85_000 },
+          { title: 'Odd cost', budget: 'about a quarter million' },
+        ],
+        votingRules: {
+          voterBudget: 1_000_000,
+          maxVotesPerMember: 10,
+          ranked: true,
+        },
+      });
+    await fixture.addMember(instanceProfileId, member);
+    await fixture.bindLine(instanceId, parsePhoneNumber(LINES.pickUnpriced));
+
+    const { result } = await text(
+      NUMBERS.pickUnpriced,
+      LINES.pickUnpriced,
+      '102',
+    );
+
+    expect(result).toEqual({ message: 'ballot unpriced' });
+    expect(recordedSms.at(-1)?.body).toBe(
+      'The budget of "Odd cost" is not a valid amount, so this ballot cannot be priced. Remove it from your ballot, or ask an admin to correct the proposal.',
+    );
+  });
+
+  it('given a member who browsed by slug on the shared number, when the attestation is rewritten and they text a code, then they are told to text VOTE with that slug', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsCommandFixture(task.id, onTestFinished);
+    const name = `Pick Slug Rewritten ${task.id}`;
+    const member = await fixture.createPhoneOnlyAccount(
+      parsePhoneNumber(NUMBERS.pickSlugRewritten),
+    );
+    const { instanceId, slug } = await fixture.createVotingInstance({
+      owner: member,
+      name,
+      proposalTitles: PROPOSALS,
+      votingRules: {
+        voterBudget: 1_000_000,
+        maxVotesPerMember: 10,
+        ranked: true,
+        enrolment: { attestation: 'I live here.', boundary: false },
+      },
+      ownerIsAdmin: true,
+    });
+    const key = {
+      processInstanceId: instanceId,
+      authUserId: member.authUserId,
+    };
+    await resolveVoterAddress({
+      ...key,
+      address: 'anywhere',
+      geocode: async () => [{ lat: 40.5, lng: -73.5 }],
+    });
+    await affirmVoterAttestation({
+      ...key,
+      attestationHash: hashAttestation('I live here.'),
+    });
+    await run(
+      smsInboundEvent({
+        from: NUMBERS.pickSlugRewritten,
+        keyword: 'proposals',
+        argument: slug,
+      }),
+    );
+    await fixture.rewriteAttestation({
+      instanceId,
+      owner: member,
+      attestation: `I still live here ${task.id}.`,
+    });
+
+    const { result } = await run(
+      smsInboundEvent({
+        from: NUMBERS.pickSlugRewritten,
+        body: '101',
+        messageSid: `SM-${task.id}-code`,
+      }),
+    );
+
+    expect(result).toEqual({ message: 'register first' });
+    expect(recordedSms.at(-1)?.body).toBe(
+      `Text VOTE ${slug} to register for "${name}" before browsing its proposals.`,
+    );
   });
 });
 
