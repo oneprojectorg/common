@@ -3,9 +3,11 @@ import {
   createDecisionInstance,
   createProposal,
   getSeededTemplate,
+  likeProposal,
 } from '@op/common/testing/data';
 import { ProposalStatus, users } from '@op/db/schema';
 import { db, eq } from '@op/db/test';
+import type { Page } from '@playwright/test';
 
 import { expect, test } from '../fixtures/index.js';
 
@@ -38,6 +40,66 @@ const resultsOnlySchema: DecisionSchemaDefinition = {
   ],
 };
 
+async function seedResultsListing(
+  page: Page,
+  org: {
+    organizationProfile: { id: string };
+    adminUser: { authUserId: string; email: string };
+  },
+) {
+  const [userRecord] = await db
+    .select({ currentProfileId: users.currentProfileId })
+    .from(users)
+    .where(eq(users.authUserId, org.adminUser.authUserId));
+
+  const myProfileId = userRecord?.currentProfileId;
+  if (!myProfileId) {
+    throw new Error('Expected the test user to have a current profile');
+  }
+
+  const template = await getSeededTemplate();
+  const { instance, slug } = await createDecisionInstance({
+    processId: template.id,
+    ownerProfileId: org.organizationProfile.id,
+    authUserId: org.adminUser.authUserId,
+    email: org.adminUser.email,
+    schema: resultsOnlySchema,
+  });
+
+  const seed = [
+    [myProfileId, MY_OPEN_TITLE, ProposalStatus.SUBMITTED],
+    [org.organizationProfile.id, THEIR_OPEN_TITLE, ProposalStatus.SUBMITTED],
+    [myProfileId, MY_REJECTED_TITLE, ProposalStatus.REJECTED],
+    [org.organizationProfile.id, THEIR_REJECTED_TITLE, ProposalStatus.REJECTED],
+  ] as const;
+
+  const proposalProfileIds = new Map<string, string>();
+  for (const [submittedByProfileId, title, status] of seed) {
+    const proposal = await createProposal({
+      processInstanceId: instance.id,
+      submittedByProfileId,
+      authUserId: org.adminUser.authUserId,
+      email: org.adminUser.email,
+      status,
+      proposalData: { title, description: `<p>${title} details.</p>` },
+    });
+    proposalProfileIds.set(title, proposal.profileId);
+  }
+
+  // ResultsPage mounts the post-vote NPS survey over the page for a user who
+  // has never answered it. Skipping it by cookie rather than by clicking
+  // keeps this test about the tabs.
+  await page.context().addCookies([
+    {
+      name: `survey-skipped-${instance.id}`,
+      value: '1',
+      url: 'http://localhost:4100',
+    },
+  ]);
+
+  return { slug, myProfileId, proposalProfileIds };
+}
+
 test.describe('Results screen proposal tabs', () => {
   /**
    * The results tabs own the audience axis the same way the current-phase tabs
@@ -48,57 +110,7 @@ test.describe('Results screen proposal tabs', () => {
     authenticatedPage,
     org,
   }) => {
-    const [userRecord] = await db
-      .select({ currentProfileId: users.currentProfileId })
-      .from(users)
-      .where(eq(users.authUserId, org.adminUser.authUserId));
-
-    const myProfileId = userRecord?.currentProfileId;
-    if (!myProfileId) {
-      throw new Error('Expected the test user to have a current profile');
-    }
-
-    const template = await getSeededTemplate();
-    const { instance, slug } = await createDecisionInstance({
-      processId: template.id,
-      ownerProfileId: org.organizationProfile.id,
-      authUserId: org.adminUser.authUserId,
-      email: org.adminUser.email,
-      schema: resultsOnlySchema,
-    });
-
-    const seed = [
-      [myProfileId, MY_OPEN_TITLE, ProposalStatus.SUBMITTED],
-      [org.organizationProfile.id, THEIR_OPEN_TITLE, ProposalStatus.SUBMITTED],
-      [myProfileId, MY_REJECTED_TITLE, ProposalStatus.REJECTED],
-      [
-        org.organizationProfile.id,
-        THEIR_REJECTED_TITLE,
-        ProposalStatus.REJECTED,
-      ],
-    ] as const;
-
-    for (const [submittedByProfileId, title, status] of seed) {
-      await createProposal({
-        processInstanceId: instance.id,
-        submittedByProfileId,
-        authUserId: org.adminUser.authUserId,
-        email: org.adminUser.email,
-        status,
-        proposalData: { title, description: `<p>${title} details.</p>` },
-      });
-    }
-
-    // ResultsPage mounts the post-vote NPS survey over the page for a user who
-    // has never answered it. Skipping it by cookie rather than by clicking
-    // keeps this test about the tabs.
-    await authenticatedPage.context().addCookies([
-      {
-        name: `survey-skipped-${instance.id}`,
-        value: '1',
-        url: 'http://localhost:4100',
-      },
-    ]);
+    const { slug } = await seedResultsListing(authenticatedPage, org);
 
     await authenticatedPage.goto(`/en/decisions/${slug}/current`, {
       waitUntil: 'domcontentloaded',
@@ -152,5 +164,44 @@ test.describe('Results screen proposal tabs', () => {
     await expect(myOpen).toBeHidden({ timeout: 15_000 });
     await expect(theirRejected).toBeHidden();
     await expect(myRejected).toBeVisible();
+  });
+  test('narrows the results to what the reader liked from the status select', async ({
+    authenticatedPage,
+    org,
+  }) => {
+    const { slug, myProfileId, proposalProfileIds } = await seedResultsListing(
+      authenticatedPage,
+      org,
+    );
+
+    // Results cards are read-only, so the like is one made in an earlier phase.
+    const likedProfileId = proposalProfileIds.get(THEIR_OPEN_TITLE);
+    if (!likedProfileId) {
+      throw new Error(`Expected "${THEIR_OPEN_TITLE}" to be seeded`);
+    }
+    await likeProposal({
+      profileId: myProfileId,
+      proposalProfileId: likedProfileId,
+    });
+
+    await authenticatedPage.goto(`/en/decisions/${slug}/current`, {
+      waitUntil: 'domcontentloaded',
+    });
+
+    const resultsTabs = authenticatedPage.getByRole('tablist', {
+      name: 'Results sections',
+    });
+    await resultsTabs.getByRole('tab', { name: 'All proposals' }).click();
+    await authenticatedPage
+      .getByRole('combobox', { name: 'Filter by status' })
+      .click();
+    await authenticatedPage.getByRole('option', { name: 'Liked' }).click();
+
+    await expect(
+      authenticatedPage.getByRole('link', { name: THEIR_OPEN_TITLE }),
+    ).toBeVisible({ timeout: 30_000 });
+    await expect(
+      authenticatedPage.getByRole('link', { name: MY_OPEN_TITLE }),
+    ).toBeHidden();
   });
 });

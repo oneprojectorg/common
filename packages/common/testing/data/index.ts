@@ -26,6 +26,7 @@ export {
   grantInstanceAdminWithoutReviewRole,
   grantInstanceReviewerRole,
   grantInstanceRole,
+  likeProposal,
   makeDecisionPublic,
   SEEDED_SIMPLE_VOTING_TEMPLATE_NAME,
   SEEDED_TEMPLATE_PROFILE_SLUG,

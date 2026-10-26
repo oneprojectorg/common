@@ -35,6 +35,13 @@ export const Channels = {
   decisionProposal: (instanceId: string, proposalId: string) =>
     `decisionProposal:${instanceId}:${proposalId}` as const,
 
+  /**
+   * Channel for one reader's Liked list in an instance. Likes are private, so
+   * never build it from a profile id: use `getProposalLikesChannels`.
+   */
+  decisionProposalLikes: (instanceId: string, likerKey: string) =>
+    `decisionProposalLikes:${instanceId}:${likerKey}` as const,
+
   reviewAssignment: (assignmentId: string) =>
     `reviewAssignment:${assignmentId}` as const,
 
@@ -135,6 +142,9 @@ export type DecisionProposalsChannel = ReturnType<
 export type DecisionProposalChannel = ReturnType<
   typeof Channels.decisionProposal
 >;
+export type DecisionProposalLikesChannel = ReturnType<
+  typeof Channels.decisionProposalLikes
+>;
 export type ReviewAssignmentChannel = ReturnType<
   typeof Channels.reviewAssignment
 >;
@@ -173,6 +183,7 @@ export type ChannelName =
   | DecisionInstanceChannel
   | DecisionProposalsChannel
   | DecisionProposalChannel
+  | DecisionProposalLikesChannel
   | ReviewAssignmentChannel
   | ReviewAssignmentsChannel
   | ProfilePostsChannel

@@ -763,6 +763,11 @@ export const proposalFilterSchema = instanceOptionalPhaseRefSchema.extend({
    */
   votedByProfileId: z.uuid().optional(),
   /**
+   * Restrict results to proposals liked by this profile. Subject to the same
+   * self-only check as `votedByProfileId`.
+   */
+  likedByProfileId: z.uuid().optional(),
+  /**
    * The "Not advanced" filter: rejected proposals plus, on the current phase,
    * those earlier phases left behind. Omitted lists the phase's other proposals.
    */
@@ -786,6 +791,7 @@ export const proposalLocationsFilterSchema =
     categoryId: z.string().optional(),
     search: proposalSearchSchema,
     votedByProfileId: z.uuid().optional(),
+    likedByProfileId: z.uuid().optional(),
     notAdvanced: z.boolean().optional(),
     phase: z.enum(['results']).optional(),
   });

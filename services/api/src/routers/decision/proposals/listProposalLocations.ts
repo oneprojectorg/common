@@ -1,4 +1,8 @@
-import { Channels, listProposalLocations } from '@op/common';
+import {
+  Channels,
+  getProposalLikesChannels,
+  listProposalLocations,
+} from '@op/common';
 import { proposalLocationsSchema } from '@op/common/client';
 
 import { proposalLocationsFilterSchema } from '../../../encoders/decision';
@@ -23,6 +27,10 @@ export const listProposalLocationsRouter = router({
 
       ctx.registerQueryChannels([
         Channels.decisionProposals(input.processInstanceId),
+        ...getProposalLikesChannels({
+          processInstanceId: input.processInstanceId,
+          profileId: input.likedByProfileId,
+        }),
       ]);
 
       return proposalLocationsSchema.parse(result);

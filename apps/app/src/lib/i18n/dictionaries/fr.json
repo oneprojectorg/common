@@ -1385,6 +1385,7 @@
       "viewAllProposalsAction": "Voir toutes les propositions",
       "totalVotesLabel": "Total des votes",
       "myBallotOption": "Mon bulletin",
+      "likedOption": "Mes j'aime",
       "selectedProposalsCount": "<highlight>{numSelected, plural, one {# proposition sélectionnée} other {# propositions sélectionnées}}</highlight>",
       "selectedProposalsOfMaxCount": "<highlight>{numSelected}</highlight> sur {max, plural, one {# proposition sélectionnée} other {# propositions sélectionnées}}",
       "allCategoriesOption": "Toutes les catégories",

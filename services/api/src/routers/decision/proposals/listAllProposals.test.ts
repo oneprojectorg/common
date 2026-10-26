@@ -788,6 +788,96 @@ describe.concurrent('listAllProposals', () => {
       }),
     ).rejects.toThrowError(TRPCError);
   });
+
+  it("filters by likedByProfileId (own likes), leaving out another member's", async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instance = setup.instance;
+
+    const [liker, otherLiker] = await Promise.all([
+      testData.createMemberUser({
+        organization: setup.organization,
+        instanceProfileIds: [instance.profileId],
+      }),
+      testData.createMemberUser({
+        organization: setup.organization,
+        instanceProfileIds: [instance.profileId],
+      }),
+    ]);
+
+    const createSubmitted = (title: string) =>
+      testData.createProposal({
+        userEmail: setup.userEmail,
+        processInstanceId: instance.instance.id,
+        proposalData: { title: `${title} ${task.id}` },
+        status: ProposalStatus.SUBMITTED,
+      });
+    const [liked, likedByOther] = await Promise.all([
+      createSubmitted('Liked'),
+      createSubmitted('Liked by other'),
+      createSubmitted('Unliked'),
+    ]);
+
+    const [likerCaller, otherLikerCaller] = await Promise.all([
+      createAuthenticatedCaller(liker.email),
+      createAuthenticatedCaller(otherLiker.email),
+    ]);
+    await Promise.all([
+      likerCaller.decision.addProposalRelationship({
+        targetProfileId: liked.profileId,
+        relationshipType: 'likes',
+      }),
+      otherLikerCaller.decision.addProposalRelationship({
+        targetProfileId: likedByOther.profileId,
+        relationshipType: 'likes',
+      }),
+    ]);
+
+    const result = await likerCaller.decision.listAllProposals({
+      processInstanceId: instance.instance.id,
+      likedByProfileId: liker.profileId,
+    });
+
+    expect(result.total).toBe(1);
+    expect(result.items.map((p) => p.id)).toEqual([liked.id]);
+  });
+
+  it('rejects a caller requesting another member’s likes', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instance = setup.instance;
+
+    const [liker, snoop] = await Promise.all([
+      testData.createMemberUser({
+        organization: setup.organization,
+        instanceProfileIds: [instance.profileId],
+      }),
+      testData.createMemberUser({
+        organization: setup.organization,
+        instanceProfileIds: [instance.profileId],
+      }),
+    ]);
+
+    const snoopCaller = await createAuthenticatedCaller(snoop.email);
+    await expect(
+      snoopCaller.decision.listAllProposals({
+        processInstanceId: instance.instance.id,
+        likedByProfileId: liker.profileId,
+      }),
+    ).rejects.toThrowError(TRPCError);
+  });
 });
 
 describeDecisionAccessTierGating('listAllProposals', {

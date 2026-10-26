@@ -1385,6 +1385,7 @@
       "viewAllProposalsAction": "Összes javaslat megtekintése",
       "totalVotesLabel": "Összes szavazat",
       "myBallotOption": "Az én szavazólapom",
+      "likedOption": "Kedvelt",
       "selectedProposalsCount": "<highlight>{numSelected, plural, one {# javaslat} other {# javaslat}}</highlight> kiválasztva",
       "selectedProposalsOfMaxCount": "<highlight>{numSelected}</highlight> kiválasztva {max, plural, one {# javaslatból} other {# javaslatból}}",
       "allCategoriesOption": "Összes kategória",

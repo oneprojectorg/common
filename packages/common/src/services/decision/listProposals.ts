@@ -54,6 +54,11 @@ export interface ListProposalsInput {
    */
   votedByProfileId?: string;
   /**
+   * Restrict results to proposals liked by this profile. Likes are private: a
+   * caller can only request their own.
+   */
+  likedByProfileId?: string;
+  /**
    * Internal override: skip phase resolution and use this exact set of IDs.
    * Not exposed on the tRPC schema — public callers should use phaseId or
    * votedByProfileId.

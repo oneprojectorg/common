@@ -1,4 +1,9 @@
-import { Channels, listAllProposals, listProposals } from '@op/common';
+import {
+  Channels,
+  getProposalLikesChannels,
+  listAllProposals,
+  listProposals,
+} from '@op/common';
 import {
   allProposalsFilterSchema,
   allProposalsListSchema,
@@ -24,6 +29,10 @@ export const listProposalsRouter = router({
 
       ctx.registerQueryChannels([
         Channels.decisionProposals(input.processInstanceId),
+        ...getProposalLikesChannels({
+          processInstanceId: input.processInstanceId,
+          profileId: input.likedByProfileId,
+        }),
       ]);
 
       return proposalListSchema.parse(result);
@@ -43,6 +52,10 @@ export const listProposalsRouter = router({
 
       ctx.registerQueryChannels([
         Channels.decisionProposals(input.processInstanceId),
+        ...getProposalLikesChannels({
+          processInstanceId: input.processInstanceId,
+          profileId: input.likedByProfileId,
+        }),
       ]);
 
       return allProposalsListSchema.parse(result);

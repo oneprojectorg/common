@@ -58,7 +58,6 @@ import {
   PROPOSAL_VIEWS,
   type ProposalView,
 } from './proposalViews';
-import { useProposalStatusItems } from './useProposalFilterItems';
 import {
   type ProposalFilterState,
   type ProposalQueryParams,
@@ -213,6 +212,7 @@ const ResultsPhaseProposalsLoader = ({
         status: queryParams.status,
         submittedByProfileId: queryParams.submittedByProfileId,
         votedByProfileId: queryParams.votedByProfileId,
+        likedByProfileId: queryParams.likedByProfileId,
       },
       {
         getNextPageParam: nextCursor,
@@ -300,6 +300,7 @@ const ProposalsListContent = ({
     queryParams,
     voteStatus,
     availableFilters,
+    statusItems,
     tabsOwnAudience,
     proposalFilter,
     setProposalFilter,
@@ -320,8 +321,6 @@ const ProposalsListContent = ({
   const isInReviewPhase = !!currentPhase && isReviewPhase(currentPhase);
   const isInVotingPhase = !!currentPhase && isVotingPhase(currentPhase);
   const t = useTranslations();
-
-  const statusItems = useProposalStatusItems();
 
   const listRef = useRef<HTMLDivElement>(null);
 
@@ -529,6 +528,7 @@ const ProposalsListContent = ({
                 search: queryParams.search,
                 submittedByProfileId: queryParams.submittedByProfileId,
                 votedByProfileId: queryParams.votedByProfileId,
+                likedByProfileId: queryParams.likedByProfileId,
                 status: queryParams.status,
                 notAdvanced: queryParams.notAdvanced,
               }}
