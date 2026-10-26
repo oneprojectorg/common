@@ -8,6 +8,8 @@ import type { Metadata } from 'next';
 import { getTranslations } from '@/lib/i18n';
 
 import { ProcessAdminOverview } from '@/components/decisions/ProcessAdmin/ProcessAdminOverview';
+import { getViewableOverviewBody } from '@/components/decisions/ProcessAdmin/getViewableOverviewBody';
+import { RichTextRenderer } from '@/components/decisions/RichTextRenderer';
 import { hasFirstPhaseStarted } from '@/components/decisions/hasFirstPhaseStarted';
 
 import { loadProcessAdmin } from '../loadProcessAdmin';
@@ -44,9 +46,20 @@ const ManageDecisionPage = async ({ params }: ManageDecisionPageProps) => {
   const phases = decisionProfile.processInstance.instanceData.phases ?? [];
   const hasStarted = phases.length > 0 && hasFirstPhaseStarted(phases);
 
+  // Same server render as the public page, so admins and participants see one
+  // renderer and the body is in the HTML instead of appearing after hydration.
+  const body = getViewableOverviewBody(
+    decisionProfile.processInstance.instanceData.overview?.body,
+  );
+  const aboutSlot = body ? <RichTextRenderer content={body} /> : null;
+
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
-      <ProcessAdminOverview slug={slug} hasStarted={hasStarted} />
+      <ProcessAdminOverview
+        slug={slug}
+        hasStarted={hasStarted}
+        aboutSlot={aboutSlot}
+      />
     </HydrationBoundary>
   );
 };

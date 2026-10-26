@@ -2,6 +2,7 @@
 import { ProcessStatus } from '@op/api/encoders';
 import { cleanup, render, screen } from '@testing-library/react';
 import { NextIntlClientProvider } from 'next-intl';
+import type { ReactNode } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import en from '../../../lib/i18n/dictionaries/en.json';
@@ -59,13 +60,11 @@ const seed = ({
   status = ProcessStatus.PUBLISHED,
   description = null,
   phases = [],
-  body,
   steward = null,
 }: {
   status?: string;
   description?: string | null;
   phases?: object[];
-  body?: unknown;
   steward?: object | null;
 }) => {
   query.decisionProfile = {
@@ -77,15 +76,19 @@ const seed = ({
       description,
       currentStateId: null,
       steward,
-      instanceData: { phases, overview: body ? { body } : undefined },
+      instanceData: { phases },
     },
   };
 };
 
-const renderOverview = (hasStarted = false) =>
+const renderOverview = (hasStarted = false, aboutSlot: ReactNode = null) =>
   render(
     <NextIntlClientProvider locale="en" messages={en}>
-      <ProcessAdminOverview slug={SLUG} hasStarted={hasStarted} />
+      <ProcessAdminOverview
+        slug={SLUG}
+        hasStarted={hasStarted}
+        aboutSlot={aboutSlot}
+      />
     </NextIntlClientProvider>,
   );
 
@@ -111,26 +114,11 @@ describe('ProcessAdminOverview', () => {
     expect(screen.queryByTestId('phase-timeline')).toBeNull();
   });
 
-  it('treats a cleared About body as empty', () => {
-    seed({ body: { type: 'doc', content: [{ type: 'paragraph' }] } });
-    renderOverview();
+  it('renders the server-rendered About body over the plain description', () => {
+    seed({ description: 'Plain description' });
+    renderOverview(false, <p>Rich body</p>);
 
-    expect(screen.getByText('No description yet')).toBeTruthy();
-  });
-
-  it('renders the About body over the plain description', async () => {
-    seed({
-      description: 'Plain description',
-      body: {
-        type: 'doc',
-        content: [
-          { type: 'paragraph', content: [{ type: 'text', text: 'Rich body' }] },
-        ],
-      },
-    });
-    renderOverview();
-
-    expect(await screen.findByText('Rich body')).toBeTruthy();
+    expect(screen.getByText('Rich body')).toBeTruthy();
     expect(screen.queryByText('Plain description')).toBeNull();
   });
 
@@ -170,11 +158,12 @@ describe('ProcessAdminOverview', () => {
     expect(screen.queryByRole('link', { name: 'Browse proposals' })).toBeNull();
   });
 
-  it('hides the proposals link on a draft, even with a past start date', () => {
+  it('keeps a draft closed, even with a past start date', () => {
     seed({ status: ProcessStatus.DRAFT, phases: [phase] });
     renderOverview(true);
 
     expect(screen.queryByRole('link', { name: 'Browse proposals' })).toBeNull();
+    expect(screen.getByTestId('phase-timeline').dataset.started).toBe('false');
   });
 
   it('shows the steward with the name isolated', () => {

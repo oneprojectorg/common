@@ -14,19 +14,16 @@ import {
 } from '@op/sense/Empty';
 import { GradientHeader, Header1, Header3 } from '@op/sense/Header';
 import { ProfileAvatar } from '@op/sense/ProfileAvatar';
-import { RichTextViewer } from '@op/sense/RichTextEditor';
 import { StatusBadge } from '@op/sense/StatusBadge';
 import { cn } from '@op/sense/lib/utils';
-import type { JSONContent } from '@tiptap/core';
 import he from 'he';
-import { Suspense, type ReactNode, useMemo } from 'react';
+import { Suspense, type ReactNode } from 'react';
 import { LuArrowLeft, LuTriangleAlert } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 import { Link } from '@/lib/i18n/routing';
 
 import { ButtonLink } from '@/components/ButtonLink';
-import { getViewerExtensions } from '@/components/RichTextEditor';
 
 import { DecisionHeroBanner } from '../DecisionHeroBanner';
 import { DecisionPhaseTimeline } from '../DecisionPhaseTimeline';
@@ -38,7 +35,6 @@ import {
 } from '../OverviewPinnedResources';
 import { toProcessPhases } from '../toProcessPhases';
 import { ProcessAdminOverviewSkeleton } from './ProcessAdminOverviewSkeleton';
-import { getViewableOverviewBody } from './getViewableOverviewBody';
 import {
   type ProcessAdminStatus,
   STATUS_BADGE_VARIANT,
@@ -52,12 +48,18 @@ interface ProcessAdminOverviewProps {
    * check reads the clock and would otherwise differ between server and client.
    */
   hasStarted: boolean;
+  /**
+   * The About body, server-rendered by the page (RichTextRenderer), so it
+   * ships as HTML. Null when the stored body holds nothing to show.
+   */
+  aboutSlot: ReactNode;
 }
 
 /** Read-only admin home for one process, at /decisions/[slug]/manage. */
 export function ProcessAdminOverview({
   slug,
   hasStarted,
+  aboutSlot,
 }: ProcessAdminOverviewProps) {
   const t = useTranslations('decisions');
 
@@ -81,7 +83,11 @@ export function ProcessAdminOverview({
       }}
     >
       <Suspense fallback={<ProcessAdminOverviewSkeleton />}>
-        <ProcessAdminOverviewSuspense slug={slug} hasStarted={hasStarted} />
+        <ProcessAdminOverviewSuspense
+          slug={slug}
+          hasStarted={hasStarted}
+          aboutSlot={aboutSlot}
+        />
       </Suspense>
     </APIErrorBoundary>
   );
@@ -90,12 +96,16 @@ export function ProcessAdminOverview({
 function ProcessAdminOverviewSuspense({
   slug,
   hasStarted,
+  aboutSlot,
 }: ProcessAdminOverviewProps) {
   const [decisionProfile] = trpc.decision.getDecisionBySlug.useSuspenseQuery({
     slug,
   });
   const instance = decisionProfile.processInstance;
   const status = getProcessAdminStatus(instance.status);
+  // A draft is never open, whatever its dates say: the timeline and the
+  // proposals CTA read the same gate so they cannot disagree.
+  const isOpen = hasStarted && status !== 'draft';
 
   return (
     <div className="flex min-h-dvh flex-col bg-background">
@@ -105,14 +115,14 @@ function ProcessAdminOverviewSuspense({
           slug={slug}
           name={decisionProfile.name}
           instance={instance}
-          showBrowseProposals={hasStarted && status !== 'draft'}
+          showBrowseProposals={isOpen}
         />
         <div className="mx-auto grid w-full max-w-6xl grid-cols-1 gap-12 px-4 py-6 md:grid-cols-12 md:gap-x-12 md:px-6 md:py-12">
           <aside className="flex flex-col gap-10 md:col-span-6">
             <ProcessAdminPhaseRail
               slug={slug}
               instance={instance}
-              hasStarted={hasStarted}
+              isOpen={isOpen}
             />
             {instance.profileId ? (
               <APIErrorBoundary
@@ -126,7 +136,10 @@ function ProcessAdminOverviewSuspense({
               </APIErrorBoundary>
             ) : null}
           </aside>
-          <ProcessAdminAbout instance={instance} />
+          <ProcessAdminAbout
+            description={instance.description}
+            aboutSlot={aboutSlot}
+          />
         </div>
       </main>
     </div>
@@ -259,11 +272,11 @@ function ProcessAdminHero({
 function ProcessAdminPhaseRail({
   slug,
   instance,
-  hasStarted,
+  isOpen,
 }: {
   slug: string;
   instance: ProcessInstance;
-  hasStarted: boolean;
+  isOpen: boolean;
 }) {
   const t = useTranslations('decisions');
   const phases = toProcessPhases(instance.instanceData.phases);
@@ -275,7 +288,7 @@ function ProcessAdminPhaseRail({
         <DecisionPhaseTimeline
           phases={phases}
           currentPhaseId={instance.currentStateId ?? ''}
-          hasStarted={hasStarted}
+          hasStarted={isOpen}
           instanceId={instance.id}
           isAdmin={false}
           decisionSlug={slug}
@@ -313,15 +326,20 @@ function ProcessAdminPinnedResourcesSuspense({
   );
 }
 
-function ProcessAdminAbout({ instance }: { instance: ProcessInstance }) {
+function ProcessAdminAbout({
+  description,
+  aboutSlot,
+}: {
+  description: string | null | undefined;
+  aboutSlot: ReactNode;
+}) {
   const t = useTranslations('decisions.processAdmin');
-  const body = getViewableOverviewBody(instance.instanceData.overview?.body);
 
   let content: ReactNode;
-  if (body) {
-    content = <AboutBody body={body} />;
-  } else if (instance.description) {
-    content = <p dir="auto">{he.decode(instance.description)}</p>;
+  if (aboutSlot) {
+    content = aboutSlot;
+  } else if (description) {
+    content = <p dir="auto">{he.decode(description)}</p>;
   } else {
     content = (
       <AdminEmptyState
@@ -337,12 +355,6 @@ function ProcessAdminAbout({ instance }: { instance: ProcessInstance }) {
       {content}
     </section>
   );
-}
-
-function AboutBody({ body }: { body: string | JSONContent }) {
-  const extensions = useMemo(() => getViewerExtensions(), []);
-
-  return <RichTextViewer extensions={extensions} content={body} />;
 }
 
 function AdminEmptyState({
