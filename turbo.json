@@ -60,6 +60,14 @@
       "dependsOn": ["topo", "@op/styles#build", "@op/api#test:coverage"],
       "outputs": ["coverage/**"]
     },
+    // `app` runs `*.integration.test.*` against the same test Supabase.
+    "app#test": {
+      "dependsOn": ["topo", "@op/workflows#test"]
+    },
+    "app#test:coverage": {
+      "dependsOn": ["topo", "@op/styles#build", "@op/workflows#test:coverage"],
+      "outputs": ["coverage/**"]
+    },
     "dev": {
       "cache": false,
       "persistent": true
