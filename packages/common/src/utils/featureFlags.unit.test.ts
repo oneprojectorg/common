@@ -59,6 +59,7 @@ describe('isServerFeatureEnabled', () => {
       expect.objectContaining({
         type: 'featureFlag',
         params: [params.key, params.distinctId],
+        options: expect.objectContaining({ skipMemCache: true }),
       }),
     );
     expect(written).toBe('on');
