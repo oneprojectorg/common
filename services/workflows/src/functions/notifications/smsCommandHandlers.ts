@@ -429,8 +429,12 @@ export const agree: SmsCommandHandler = async (context) => {
   );
 };
 
+// Free text is an address while a registration waits for one, and proposal
+// codes otherwise. On a decision line, codes win over a registration that
+// belongs to another decision, so one unfinished registration elsewhere never
+// swallows a vote here.
 export const freeText: SmsCommandHandler = async (context) => {
-  const { step, account, deliver, geocode } = context;
+  const { step, account, line, deliver, geocode } = context;
   const address = context.body?.trim();
 
   if (!address) {
@@ -440,13 +444,16 @@ export const freeText: SmsCommandHandler = async (context) => {
   const pending = await step.run('find-pending-enrolment', () =>
     findPendingVoterEnrolment({ authUserId: account.authUserId }),
   );
+  const codes = parseProposalCodes(address);
+  const pendingElsewhere =
+    line !== null &&
+    pending !== null &&
+    pending.processInstanceId !== line.instanceId;
 
-  const codesOrHelp = () => {
-    const codes = parseProposalCodes(address);
-    return codes ? pickByCodes(context, codes) : sendSmsHelp(deliver);
-  };
+  const codesOrHelp = () =>
+    codes ? pickByCodes(context, codes) : sendSmsHelp(deliver);
 
-  if (!pending) {
+  if (!pending || (codes && pendingElsewhere)) {
     return codesOrHelp();
   }
 
@@ -974,16 +981,22 @@ const pickByCodes = async (
     return refused;
   }
 
-  const { results, summary, hadPicks } = await step.run(
-    'add-ballot-picks',
-    () =>
+  const picked = await step.run('add-ballot-picks', () =>
+    readBallot(() =>
       addSmsBallotPicks({
         authUserId: account.authUserId,
         instanceId,
         codes,
         chatLineId: context.line?.id ?? null,
       }),
+    ),
   );
+
+  if (!picked.ok) {
+    return refuseBallotRead(context, picked.reason, instanceId);
+  }
+
+  const { results, summary, hadPicks } = picked.value;
   const added = results.flatMap((r) => (r.status === 'added' ? [r] : []));
   const lines = [
     ...(added.length > 0
