@@ -26,6 +26,7 @@ export function CreateProcessFlow() {
   const utils = trpc.useUtils();
   const savedProgress = useSavedWizardProgress();
   const progress = useRef<WizardState | null>(null);
+  const isSubmitting = useRef(false);
 
   const createProcess = useMutation({
     mutationFn: (draft: ProcessDraft) =>
@@ -49,17 +50,25 @@ export function CreateProcessFlow() {
   });
 
   const saveProgress = useCallback((next: WizardState) => {
+    // Not while a request is in flight: a save would undo the clear below.
+    if (isSubmitting.current) {
+      return;
+    }
+
     progress.current = next;
     saveWizardProgress(next);
   }, []);
 
   const submit = (draft: ProcessDraft) => {
     // Cleared before the request, so a reload mid-flight cannot resubmit.
+    isSubmitting.current = true;
     clearWizardProgress();
 
     // Per-call, so it runs only while this screen is still mounted.
     createProcess.mutate(draft, {
       onError: () => {
+        isSubmitting.current = false;
+
         if (progress.current) {
           saveWizardProgress(progress.current);
         }

@@ -110,6 +110,7 @@ export function CreateProcessWizard({
         name={name}
         onNameChange={(name) => answer({ name })}
         onSubmit={advance}
+        disabled={isSubmitting}
       />
     );
   }

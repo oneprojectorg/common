@@ -125,6 +125,22 @@ describe('CreateProcessFlow', () => {
     expect(sessionStorage.getItem(PROGRESS_KEY)).toContain('Murals 2026');
   });
 
+  it('locks the name and stops saving while the request is in flight', async () => {
+    mutate.mockReturnValue(new Promise(() => {}));
+    const input = await renderFlow();
+
+    await userEvent.type(input, 'Murals 2026');
+    await userEvent.click(submitButton());
+
+    await waitFor(() => expect(mutate).toHaveBeenCalled());
+    expect(input).toHaveProperty('disabled', true);
+
+    // Bypasses the disabled attribute, so this exercises the save guard.
+    fireEvent.change(input, { target: { value: 'Murals 2027' } });
+
+    expect(sessionStorage.getItem(PROGRESS_KEY)).toBeNull();
+  });
+
   it('returns to where the wizard was opened from on exit', async () => {
     await renderFlow();
 

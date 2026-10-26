@@ -19,10 +19,12 @@ export function NameAccessStep({
   name,
   onNameChange,
   onSubmit,
+  disabled = false,
 }: {
   name: string;
   onNameChange: (name: string) => void;
   onSubmit: () => void;
+  disabled?: boolean;
 }) {
   const t = useTranslations('decisions.createWizard');
   const [hasBlurred, setHasBlurred] = useState(false);
@@ -49,6 +51,7 @@ export function NameAccessStep({
             onBlur={() => setHasBlurred(true)}
             placeholder={t('namePlaceholder')}
             maxLength={PROCESS_NAME_MAX_LENGTH}
+            disabled={disabled}
             aria-invalid={showError}
             aria-describedby={showError ? NAME_ERROR_ID : undefined}
           />
