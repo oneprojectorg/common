@@ -26,14 +26,8 @@ import { ReviewAssignmentsList } from '../ReviewAssignmentsList';
 type Instance = RouterOutput['decision']['getInstance'];
 
 // The admin-without-review variant reuses DEFAULT_REVIEW_TAB for its progress
-// list, so one parser covers every `?tab=` value. `assignments` is the tab's
-// old name, kept so existing links still land on the reviewers tab.
-const REVIEW_TABS = [
-  'to-review',
-  'all-proposals',
-  'reviewers',
-  'assignments',
-] as const;
+// list, so one parser covers every `?tab=` value.
+const REVIEW_TABS = ['to-review', 'all-proposals', 'reviewers'] as const;
 const DEFAULT_REVIEW_TAB = 'to-review';
 
 const reviewTabParser = parseAsStringLiteral(REVIEW_TABS);
@@ -76,11 +70,10 @@ export function ReviewPage({
   const t = useTranslations('decisions');
 
   // In the URL so a reload or shared link lands on the same tab.
-  const [rawTab, setTab] = useQueryState(
+  const [tab, setTab] = useQueryState(
     'tab',
     reviewTabParser.withDefault(DEFAULT_REVIEW_TAB),
   );
-  const tab = rawTab === 'assignments' ? 'reviewers' : rawTab;
 
   // A stale `?tab=reviewers` (non-admin link, flag off) has no panel.
   const activeTab =

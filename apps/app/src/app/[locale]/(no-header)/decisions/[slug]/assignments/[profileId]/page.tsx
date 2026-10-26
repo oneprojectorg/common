@@ -57,7 +57,7 @@ export default async function ReviewerAssignmentsPage({
 
   return (
     <AssignmentsPageShell
-      backHref={`/decisions/${slug}/current?tab=assignments`}
+      backHref={`/decisions/${slug}/current?tab=reviewers`}
       action={
         <ManageAssignmentsAction
           processInstanceId={processInstanceId}
