@@ -185,7 +185,7 @@ export function ReviewPage({
               onValueChange={handleTabChange}
             >
               <div className="w-full border-b">
-                <TabsList variant="line" className="flex gap-6">
+                <TabsList variant="line">
                   <TabsTrigger value="to-review">
                     {t('proposalsToReviewTab')}
                   </TabsTrigger>
@@ -225,7 +225,7 @@ export function ReviewPage({
                 onValueChange={handleTabChange}
               >
                 <div className="w-full border-b">
-                  <TabsList variant="line" className="flex gap-6">
+                  <TabsList variant="line">
                     <TabsTrigger value={DEFAULT_REVIEW_TAB}>
                       {t('allProposalsTab')}
                     </TabsTrigger>
