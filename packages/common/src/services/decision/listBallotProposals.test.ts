@@ -180,7 +180,7 @@ describe.concurrent('listBallotProposals', () => {
     expect(
       page.items.map(({ code, title, cost }) => [code, title, cost]),
     ).toEqual([
-      [101, 'Crosswalk lighting', '$85000'],
+      [101, 'Crosswalk lighting', '$85,000'],
       [102, 'Rec center hours', null],
     ]);
   });
