@@ -16,6 +16,7 @@ describe('formatSmsPicksAdded', () => {
         picks: [
           {
             position: 1,
+            code: 101,
             title: 'Fifth Ave crosswalk lighting',
             cost: '$85,000',
           },
@@ -34,11 +35,13 @@ describe('formatSmsPicksAdded', () => {
         picks: [
           {
             position: 2,
+            code: 102,
             title: 'Linden rec center evening hours',
             cost: '$240,000',
           },
           {
             position: 3,
+            code: 103,
             title: 'Neighborhood tree planting',
             cost: '$150,000',
           },
@@ -54,7 +57,7 @@ describe('formatSmsPicksAdded', () => {
   it('given no budget cap, then no amount is said to be left', () => {
     expect(
       formatSmsPicksAdded({
-        picks: [{ position: 1, title: 'Tree planting', cost: null }],
+        picks: [{ position: 1, code: 106, title: 'Tree planting', cost: null }],
         remaining: null,
         firstPick: false,
       }),
@@ -78,9 +81,24 @@ describe('formatSmsPickOverBudget', () => {
 
 describe('formatSmsBallot', () => {
   const picks = [
-    { position: 1, title: 'Fifth Ave crosswalk lighting', cost: '$85,000' },
-    { position: 2, title: 'Linden rec center evening hours', cost: '$240,000' },
-    { position: 3, title: 'Neighborhood tree planting', cost: '$150,000' },
+    {
+      position: 1,
+      code: 101,
+      title: 'Fifth Ave crosswalk lighting',
+      cost: '$85,000',
+    },
+    {
+      position: 2,
+      code: 102,
+      title: 'Linden rec center evening hours',
+      cost: '$240,000',
+    },
+    {
+      position: 3,
+      code: 103,
+      title: 'Neighborhood tree planting',
+      cost: '$150,000',
+    },
   ];
 
   it('given DONE, then the ballot is listed in rank order with totals, the ranking note and the SUBMIT prompt', () => {
@@ -95,9 +113,9 @@ describe('formatSmsBallot', () => {
     ).toEqual([
       [
         'Your District 5 ballot:',
-        '1. Fifth Ave crosswalk lighting $85,000.',
-        '2. Linden rec center evening hours $240,000.',
-        '3. Neighborhood tree planting $150,000.',
+        '1. 101 Fifth Ave crosswalk lighting $85,000.',
+        '2. 102 Linden rec center evening hours $240,000.',
+        '3. 103 Neighborhood tree planting $150,000.',
         '$475,000 allocated, $525,000 unspent.',
         "Your order is your ranking: if a pick can't be funded, your support moves to your next choice.",
         'Reply SUBMIT to cast your ballot.',
@@ -115,7 +133,23 @@ describe('formatSmsBallot', () => {
         review: false,
       }),
     ).toEqual([
-      'Your "Park Funding" ballot:\n1. Fifth Ave crosswalk lighting $85,000.\n$85,000 allocated, $915,000 unspent.\nText DONE to review, or a code to add.',
+      'Your "Park Funding" ballot:\n1. 101 Fifth Ave crosswalk lighting $85,000.\n$85,000 allocated, $915,000 unspent.\nText DONE to review, or a code to add.',
+    ]);
+  });
+
+  it('given a pick whose proposal has no code yet, then its line carries the position and title alone', () => {
+    expect(
+      formatSmsBallot({
+        scope: 'District 5',
+        picks: [
+          { position: 1, code: null, title: 'Uncoded project', cost: null },
+        ],
+        allocated: null,
+        unspent: null,
+        review: false,
+      }),
+    ).toEqual([
+      'Your District 5 ballot:\n1. Uncoded project.\nText DONE to review, or a code to add.',
     ]);
   });
 
@@ -159,14 +193,14 @@ describe('formatSmsBallot on an unranked phase', () => {
     expect(
       formatSmsBallot({
         scope: 'District 5',
-        picks: [{ position: 1, title: 'Tree planting', cost: null }],
+        picks: [{ position: 1, code: 106, title: 'Tree planting', cost: null }],
         allocated: null,
         unspent: null,
         review: true,
         ranked: false,
       }),
     ).toEqual([
-      'Your District 5 ballot:\n1. Tree planting.\nReply SUBMIT to cast your ballot.',
+      'Your District 5 ballot:\n1. 106 Tree planting.\nReply SUBMIT to cast your ballot.',
     ]);
   });
 });

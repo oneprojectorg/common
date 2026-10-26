@@ -1008,6 +1008,7 @@ const pickByCodes = async (
       ? formatSmsPicksAdded({
           picks: added.map(({ position, pick }) => ({
             position,
+            code: pick.code,
             title: pick.title,
             cost: money(summary, pick.cost),
           })),
@@ -1086,6 +1087,7 @@ const sendBallot = async (
       scope: formatSmsBallotScope(summary),
       picks: summary.picks.map((pick, index) => ({
         position: index + 1,
+        code: pick.code,
         title: pick.title,
         cost: money(summary, pick.cost),
       })),

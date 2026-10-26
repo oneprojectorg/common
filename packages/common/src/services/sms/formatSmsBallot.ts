@@ -31,6 +31,7 @@ const withCost = (text: string, cost: string | null): string =>
 
 export interface SmsFormattedPick {
   position: number;
+  code: number | null;
   title: string;
   cost: string | null;
 }
@@ -103,7 +104,7 @@ export const formatSmsBallot = ({
     lines: [
       ...picks.map(
         (pick) =>
-          `${pick.position}. ${clipSmsText(pick.title, SMS_TITLE_LENGTH)}${pick.cost ? ` ${pick.cost}` : ''}.`,
+          `${pick.position}. ${pick.code === null ? '' : `${pick.code} `}${clipSmsText(pick.title, SMS_TITLE_LENGTH)}${pick.cost ? ` ${pick.cost}` : ''}.`,
       ),
       ...(totals ? [totals] : []),
       ...(review && ranked ? [SMS_RANKING_NOTE] : []),
