@@ -1,5 +1,6 @@
 import {
   type Geocode,
+  BallotCostError,
   NotFoundError,
   SMS_BROWSE_END_MESSAGE,
   SMS_BROWSE_LAST_FOOTER,
@@ -589,12 +590,14 @@ export const proposals: SmsCommandHandler = async (context) => {
 
   return page.ok
     ? deliverBallotPage(context, page.value, 'first', decision.instanceId)
-    : refuseBallotRead(context, page.reason, decision.instanceId);
+    : refuseBallotRead(context, page, decision.instanceId);
 };
 
-type BallotRead<T> =
-  | { ok: true; value: T }
-  | { ok: false; reason: 'unavailable' | 'not_enrolled' | 'closed' };
+type BallotRefusal =
+  | { reason: 'unavailable' | 'not_enrolled' | 'closed' }
+  | { reason: 'unpriced'; message: string };
+
+type BallotRead<T> = { ok: true; value: T } | ({ ok: false } & BallotRefusal);
 
 const readBallot = async <T>(fn: () => Promise<T>): Promise<BallotRead<T>> => {
   try {
@@ -606,6 +609,9 @@ const readBallot = async <T>(fn: () => Promise<T>): Promise<BallotRead<T>> => {
     if (error instanceof NotFoundError || error instanceof UnauthorizedError) {
       return { ok: false, reason: 'unavailable' };
     }
+    if (error instanceof BallotCostError) {
+      return { ok: false, reason: 'unpriced', message: error.message };
+    }
     if (error instanceof ValidationError) {
       return { ok: false, reason: 'closed' };
     }
@@ -615,9 +621,19 @@ const readBallot = async <T>(fn: () => Promise<T>): Promise<BallotRead<T>> => {
 
 const refuseBallotRead = async (
   { step, deliver, line }: SmsCommandContext,
-  reason: 'unavailable' | 'not_enrolled' | 'closed',
+  refusal: BallotRefusal,
   instanceId: string,
 ): Promise<SmsCommandResult> => {
+  const { reason } = refusal;
+  if (refusal.reason === 'unpriced') {
+    return deliverAll(
+      deliver,
+      'send-ballot-unpriced',
+      'Ballot unpriced reply',
+      [refusal.message],
+      'ballot unpriced',
+    );
+  }
   if (reason === 'unavailable') {
     return deliverAll(
       deliver,
@@ -725,7 +741,7 @@ export const more: SmsCommandHandler = async (context) => {
 
   return page.ok
     ? deliverBallotPage(context, page.value, 'next', draft.processInstanceId)
-    : refuseBallotRead(context, page.reason, draft.processInstanceId);
+    : refuseBallotRead(context, page, draft.processInstanceId);
 };
 
 export const info: SmsCommandHandler = async (context) => {
@@ -768,7 +784,7 @@ export const info: SmsCommandHandler = async (context) => {
   );
 
   if (!read.ok) {
-    return refuseBallotRead(context, read.reason, instanceId);
+    return refuseBallotRead(context, read, instanceId);
   }
 
   const proposal = read.value;
