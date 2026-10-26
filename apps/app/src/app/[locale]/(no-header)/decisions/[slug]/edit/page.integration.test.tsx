@@ -1,13 +1,8 @@
 import { signInAs } from '@/testing/serverRequest';
 import { TestDecisionsDataManager } from '@op/common/testing';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import EditDecisionPage from './page';
-
-vi.mock(
-  'next/headers',
-  async () => (await import('@/testing/serverRequest')).nextHeadersMock,
-);
 
 /** The error `forbidden()` throws; Next.js renders the route's `forbidden.tsx` for it. */
 const FORBIDDEN_DIGEST = 'NEXT_HTTP_ERROR_FALLBACK;403';

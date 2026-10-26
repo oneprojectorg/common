@@ -2,55 +2,9 @@ import { createIsolatedSession } from '@op/common/testing';
 import { createServerClient } from '@op/supabase/lib';
 import type { Session } from '@supabase/supabase-js';
 
-type RequestCookie = { name: string; value: string };
+import { type RequestCookie, mockServerRequest } from './nextHeaders';
 
-/**
- * The cookies and headers a server component sees for the current request.
- * `mockServerRequest` swaps the pair for each test.
- */
-let requestCookies: RequestCookie[] = [];
-let requestHeaders = new Headers();
-
-/**
- * Replacement for `next/headers`. Outside a Next.js request scope `cookies()`
- * and `headers()` throw, so an integration test that calls a server component
- * directly installs this at module top level:
- *
- * ```ts
- * vi.mock('next/headers', async () =>
- *   (await import('@/testing/serverRequest')).nextHeadersMock,
- * );
- * ```
- *
- * Then `signInAs` / `mockServerRequest` set the request per test.
- */
-export const nextHeadersMock = {
-  cookies: async () => ({
-    getAll: () => requestCookies,
-    get: (name: string) =>
-      requestCookies.find((cookie) => cookie.name === name),
-    has: (name: string) =>
-      requestCookies.some((cookie) => cookie.name === name),
-    set: () => {
-      throw new Error('A server component cannot set cookies');
-    },
-  }),
-  headers: async () => requestHeaders,
-};
-
-/**
- * Sets the request a server component under test runs in.
- */
-export const mockServerRequest = ({
-  cookies = [],
-  headers = {},
-}: {
-  cookies?: RequestCookie[];
-  headers?: Record<string, string>;
-} = {}) => {
-  requestCookies = cookies;
-  requestHeaders = new Headers(headers);
-};
+export { mockServerRequest } from './nextHeaders';
 
 /**
  * Converts a Supabase session into the auth cookies the server client reads,

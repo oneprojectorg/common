@@ -12,14 +12,27 @@ const integration = defineIntegrationProject({
 // test. The unit project keeps the existing suffix so its files do not move.
 const INTEGRATION_TESTS = 'src/**/*.integration.test.{ts,tsx}';
 
+const srcAlias = {
+  find: '@',
+  replacement: fileURLToPath(new URL('./src', import.meta.url)),
+};
+
+// A server component under test runs outside a Next.js request scope, where
+// `cookies()` / `headers()` throw. The alias reaches every copy of `next` in
+// the monorepo (`services/api` resolves its own), which `vi.mock` would not.
+const nextHeadersAlias = {
+  find: /^next\/headers$/,
+  replacement: fileURLToPath(
+    new URL('./src/testing/nextHeaders.ts', import.meta.url),
+  ),
+};
+
 export default defineConfig({
   esbuild: {
     jsx: 'automatic',
   },
   resolve: {
-    alias: {
-      '@': fileURLToPath(new URL('./src', import.meta.url)),
-    },
+    alias: [srcAlias],
   },
   test: {
     coverage: coverageConfig(),
@@ -45,6 +58,9 @@ export default defineConfig({
       {
         ...integration,
         extends: true,
+        resolve: {
+          alias: [srcAlias, nextHeadersAlias],
+        },
         test: {
           ...integration.test,
           name: 'integration',
