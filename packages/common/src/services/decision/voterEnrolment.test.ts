@@ -14,8 +14,10 @@ import { updateDecisionInstance } from './updateDecisionInstance';
 import {
   type Geocode,
   affirmVoterAttestation,
+  findPendingVoterEnrolment,
   findVoterEnrolment,
   isEnrolledOnCurrentAttestation,
+  markAttestationSent,
   resolveVoterAddress,
   startVoterEnrolment,
 } from './voterEnrolment';
@@ -436,6 +438,9 @@ describe.concurrent('a rewritten attestation', () => {
       ...key,
       attestationHash: hashAttestation(ATTESTATION),
     });
+    if (first.status !== 'enrolled') {
+      throw new Error('The first affirmation did not enrol the voter');
+    }
     const rewritten = `New words ${task.id}.`;
     await rewrite(setup, instanceId, rewritten);
 
@@ -443,7 +448,7 @@ describe.concurrent('a rewritten attestation', () => {
 
     expect(reopened).toMatchObject({
       status: DecisionVoterEnrolmentStatus.AWAITING_AGREE,
-      boundaryId: first.boundaryId,
+      boundaryId: first.enrolment.boundaryId,
     });
     await expect(
       affirmVoterAttestation({
@@ -451,17 +456,24 @@ describe.concurrent('a rewritten attestation', () => {
         attestationHash: hashAttestation(ATTESTATION),
       }),
     ).rejects.toMatchObject({ name: 'ValidationError' });
+    await markAttestationSent({ ...key, attestation: rewritten });
     const enrolled = await affirmVoterAttestation({
       ...key,
       attestationHash: hashAttestation(rewritten),
     });
     expect(enrolled).toMatchObject({
-      status: DecisionVoterEnrolmentStatus.ENROLLED,
-      attestationHash: hashAttestation(rewritten),
-      boundaryId: first.boundaryId,
+      status: 'enrolled',
+      enrolment: {
+        status: DecisionVoterEnrolmentStatus.ENROLLED,
+        attestationHash: hashAttestation(rewritten),
+        boundaryId: first.enrolment.boundaryId,
+      },
     });
-    expect(enrolled.attestedAt?.getTime()).toBeGreaterThan(
-      first.attestedAt!.getTime(),
+    if (enrolled.status !== 'enrolled') {
+      throw new Error('The second affirmation did not enrol the voter');
+    }
+    expect(enrolled.enrolment.attestedAt?.getTime()).toBeGreaterThan(
+      first.enrolment.attestedAt!.getTime(),
     );
   });
 
@@ -488,6 +500,80 @@ describe.concurrent('a rewritten attestation', () => {
 
     await expect(startVoterEnrolment(key)).resolves.toMatchObject({
       status: DecisionVoterEnrolmentStatus.ENROLLED,
+    });
+  });
+});
+
+describe.concurrent('the words that were sent', () => {
+  it('given the handler sends one attestation text, when the address resolves, then the row stores the hash of those words and not of whatever the rule says now', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { instanceId, authUserId } = await seedVotingDecision(testData, {
+      boundary: false,
+      withBoundaries: false,
+      label: task.id,
+    });
+    const sent = `Words as sent ${task.id}.`;
+
+    await resolveVoterAddress({
+      processInstanceId: instanceId,
+      authUserId,
+      address: 'anywhere',
+      attestation: sent,
+      geocode: geocodeTo([INSIDE]),
+    });
+
+    await expect(
+      findVoterEnrolment({ processInstanceId: instanceId, authUserId }),
+    ).resolves.toMatchObject({
+      status: DecisionVoterEnrolmentStatus.AWAITING_AGREE,
+      attestationHash: hashAttestation(sent),
+    });
+  });
+});
+
+describe.concurrent('which pending registration a reply belongs to', () => {
+  it('given registrations waiting in two decisions, when the voter starts the older one again, then it is the pending registration', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const older = await seedVotingDecision(testData, {
+      boundary: false,
+      withBoundaries: false,
+      label: `older ${task.id}`,
+    });
+    const newer = await seedVotingDecision(testData, {
+      boundary: false,
+      withBoundaries: false,
+      label: `newer ${task.id}`,
+    });
+    const authUserId = older.authUserId;
+    await startVoterEnrolment({
+      processInstanceId: older.instanceId,
+      authUserId,
+    });
+    await startVoterEnrolment({
+      processInstanceId: newer.instanceId,
+      authUserId,
+    });
+    await expect(
+      findPendingVoterEnrolment({ authUserId }),
+    ).resolves.toMatchObject({
+      processInstanceId: newer.instanceId,
+    });
+
+    await startVoterEnrolment({
+      processInstanceId: older.instanceId,
+      authUserId,
+    });
+
+    await expect(
+      findPendingVoterEnrolment({ authUserId }),
+    ).resolves.toMatchObject({
+      processInstanceId: older.instanceId,
     });
   });
 });

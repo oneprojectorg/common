@@ -2,6 +2,7 @@ import {
   type DecisionSchemaDefinition,
   type PhoneNumber,
   type VoterEnrolmentRule,
+  updateDecisionInstance,
 } from '@op/common';
 import {
   createDecisionChatLine,
@@ -116,12 +117,15 @@ export class SmsCommandFixture {
     name,
     currentPhaseId = VOTING_PHASE_ID,
     enrolment,
+    ownerIsAdmin = false,
   }: {
     owner: FixtureAccount;
     proposalTitles: Array<string | FixtureProposal>;
     name?: string;
     currentPhaseId?: string;
     enrolment?: VoterEnrolmentRule;
+    /** Grant the owner the decision's admin role, as the web creator gets; the default leaves them a plain member. */
+    ownerIsAdmin?: boolean;
   }) {
     const schema = enrolment
       ? withEnrolment(votingSchema, enrolment)
@@ -137,7 +141,7 @@ export class SmsCommandFixture {
       email: owner.email,
       name,
       schema,
-      grantAdminAccess: false,
+      grantAdminAccess: ownerIsAdmin,
     });
     this.profileIds.push(profileId);
 
@@ -184,6 +188,38 @@ export class SmsCommandFixture {
     await createDecisionChatLine({
       processInstanceId: instanceId,
       phoneNumber: phone,
+    });
+  }
+
+  async rewriteAttestation({
+    instanceId,
+    owner,
+    phaseId = VOTING_PHASE_ID,
+    attestation,
+  }: {
+    instanceId: string;
+    owner: FixtureAccount;
+    phaseId?: string;
+    attestation: string;
+  }) {
+    await updateDecisionInstance({
+      instanceId,
+      phases: [
+        {
+          phaseId,
+          rules: { voting: { submit: true, enrolment: { attestation } } },
+        },
+      ],
+      user: {
+        id: owner.authUserId,
+        aud: 'authenticated',
+        role: 'authenticated',
+        email: owner.email ?? undefined,
+        phone: undefined,
+        app_metadata: {},
+        user_metadata: {},
+        is_anonymous: false,
+      },
     });
   }
 

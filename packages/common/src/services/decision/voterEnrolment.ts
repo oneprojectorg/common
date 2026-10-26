@@ -1,4 +1,4 @@
-import { and, db, eq } from '@op/db/client';
+import { and, db, eq, sql } from '@op/db/client';
 import {
   type DecisionVoterEnrolment,
   DecisionVoterEnrolmentStatus,
@@ -101,7 +101,13 @@ export async function startVoterEnrolment({
   await db
     .insert(decisionVoterEnrolments)
     .values({ processInstanceId, profileId })
-    .onConflictDoNothing();
+    .onConflictDoUpdate({
+      target: [
+        decisionVoterEnrolments.processInstanceId,
+        decisionVoterEnrolments.profileId,
+      ],
+      set: { updatedAt: sql`(now() AT TIME ZONE 'utc'::text)` },
+    });
   const row = await findRow(processInstanceId, profileId);
 
   if (!row) {
@@ -127,15 +133,19 @@ export async function resolveVoterAddress({
   processInstanceId,
   authUserId,
   address,
+  attestation,
   geocode = defaultGeocode,
 }: EnrolmentKey & {
   address: string;
+  /** The attestation text the voter is sent with the result; defaults to the current rule. */
+  attestation?: string;
   geocode?: Geocode;
 }): Promise<AddressResolution> {
   const { profileId, instance, rule } = await loadEnrolmentContext({
     processInstanceId,
     authUserId,
   });
+  const sentAttestation = attestation ?? rule.attestation;
   await db
     .insert(decisionVoterEnrolments)
     .values({ processInstanceId, profileId })
@@ -168,7 +178,7 @@ export async function resolveVoterAddress({
     .set({
       status: DecisionVoterEnrolmentStatus.AWAITING_AGREE,
       boundaryId: boundary?.id ?? null,
-      attestationHash: hashAttestation(rule.attestation),
+      attestationHash: hashAttestation(sentAttestation),
     })
     .where(rowFilter(processInstanceId, profileId));
 
@@ -185,14 +195,18 @@ export type AttestationResult =
 export async function markAttestationSent({
   processInstanceId,
   authUserId,
-}: EnrolmentKey): Promise<void> {
+  attestation,
+}: EnrolmentKey & {
+  /** The attestation text that was sent; defaults to the current rule. */
+  attestation?: string;
+}): Promise<void> {
   const { profileId, rule } = await loadEnrolmentContext({
     processInstanceId,
     authUserId,
   });
   await db
     .update(decisionVoterEnrolments)
-    .set({ attestationHash: hashAttestation(rule.attestation) })
+    .set({ attestationHash: hashAttestation(attestation ?? rule.attestation) })
     .where(
       and(
         rowFilter(processInstanceId, profileId),
@@ -265,13 +279,10 @@ export interface PendingVoterEnrolment {
 export async function findPendingVoterEnrolment({
   authUserId,
   processInstanceId,
-  preferInstanceId,
 }: {
   authUserId: string;
-  /** Only this decision's pending row. */
+  /** Only this decision's pending row; otherwise the row the voter touched last. */
   processInstanceId?: string;
-  /** This decision's pending row when it has one, else the latest anywhere. */
-  preferInstanceId?: string;
 }): Promise<PendingVoterEnrolment | null> {
   const profileId = await getIndividualProfileId(authUserId);
   const rows = await db.query.decisionVoterEnrolments.findMany({
@@ -284,10 +295,7 @@ export async function findPendingVoterEnrolment({
     with: { boundary: { columns: { name: true } } },
     orderBy: { updatedAt: 'desc' },
   });
-  const row =
-    rows.find(
-      (candidate) => candidate.processInstanceId === preferInstanceId,
-    ) ?? rows[0];
+  const row = rows[0];
 
   return row
     ? {
