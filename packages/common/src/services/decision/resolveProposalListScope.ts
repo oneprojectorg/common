@@ -205,11 +205,7 @@ export const resolveProposalListScope = async ({
   }
 
   // Likes are private, like ballots: a caller can only request their own.
-  if (
-    input.likedByProfileId &&
-    !skipAccessCheck &&
-    currentProfileId !== input.likedByProfileId
-  ) {
+  if (input.likedByProfileId && currentProfileId !== input.likedByProfileId) {
     throw new UnauthorizedError('You can only view your own likes');
   }
 
