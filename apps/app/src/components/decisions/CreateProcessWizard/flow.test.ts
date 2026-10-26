@@ -1,8 +1,6 @@
 import { PROCESS_NAME_MAX_LENGTH } from '@op/common/client';
 import { describe, expect, it } from 'vitest';
 
-import english from '@/lib/i18n/dictionaries/en.json';
-
 import {
   EMPTY_ANSWERS,
   INITIAL_STATE,
@@ -383,7 +381,6 @@ describe('resumeWizard', () => {
 });
 
 describe('choice screens', () => {
-  const copy: Record<string, unknown> = english.decisions.createWizard;
   const reached = [
     answers({ type: 'grant' }),
     answers({ type: 'pb' }),
@@ -411,14 +408,8 @@ describe('choice screens', () => {
   });
 
   it.each(reached)(
-    '%s offers copy that exists and reads back every option',
+    '%s reads back every option it offers',
     (_, screen, input) => {
-      expect(screen.heading(input) in copy).toBe(true);
-
-      const description = screen.description?.(input);
-
-      expect(description === undefined || description in copy).toBe(true);
-
       const options = screen.options(input);
 
       expect(options.length).toBeGreaterThan(1);

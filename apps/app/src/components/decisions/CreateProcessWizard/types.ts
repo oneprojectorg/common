@@ -8,27 +8,36 @@ export type WizardCopyKey = MessageKeys<
   NestedKeyOf<WizardMessages>
 >;
 
-export type GrantShape = 'single' | 'loi';
+/** Grant shapes, then budgeting shapes; the other pathway composes its phases from its questions instead. */
+export const SHAPES = ['single', 'loi', 'ideas', 'proposals'] as const;
 
-export type PbShape = 'ideas' | 'proposals';
+export type ShapeKey = (typeof SHAPES)[number];
 
-/** The other pathway composes its phases from its questions instead of a shape. */
-export type ShapeKey = GrantShape | PbShape;
+export const GRANT_DECISIONS = ['rubric', 'applicants', 'hybrid'] as const;
 
-export type GrantDecision = 'rubric' | 'applicants' | 'hybrid';
+export type GrantDecision = (typeof GRANT_DECISIONS)[number];
 
-export type Subject = 'funding' | 'ideas' | 'people' | 'else';
+export const SUBJECTS = ['funding', 'ideas', 'people', 'else'] as const;
 
-export type Cadence = 'timeline' | 'ongoing';
+export type Subject = (typeof SUBJECTS)[number];
 
-export type SubmitKey =
-  | 'applications'
-  | 'proposals'
-  | 'rough'
-  | 'nominations'
-  | 'none';
+export const CADENCES = ['timeline', 'ongoing'] as const;
 
-export type Decision = 'vote' | 'review' | 'both' | 'agree';
+export type Cadence = (typeof CADENCES)[number];
+
+export const SUBMIT_KEYS = [
+  'applications',
+  'proposals',
+  'rough',
+  'nominations',
+  'none',
+] as const;
+
+export type SubmitKey = (typeof SUBMIT_KEYS)[number];
+
+export const DECISIONS = ['vote', 'review', 'both', 'agree'] as const;
+
+export type Decision = (typeof DECISIONS)[number];
 
 export interface WizardAnswers {
   type: ProcessType | null;

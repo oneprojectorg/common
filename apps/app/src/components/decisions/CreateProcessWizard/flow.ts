@@ -145,6 +145,8 @@ const SCREENS: Screen[] = [
 
 export const TOTAL_STEPS = Math.max(...SCREENS.map((screen) => screen.step));
 
+export const SCREEN_IDS: ScreenId[] = SCREENS.map((screen) => screen.id);
+
 const isQuestion = (screen: Screen): screen is Exclude<Screen, Walkthrough> =>
   screen.id in EMPTY_ANSWERS;
 
@@ -244,10 +246,6 @@ export function progressPercent(
   );
   const slot = slots.findIndex((screen) => screen.id === id);
 
-  if (slot < 0) {
-    return (2 / TOTAL_STEPS) * 100;
-  }
-
   return ((2 + (slot + 1) / slots.length) / TOTAL_STEPS) * 100;
 }
 
@@ -300,7 +298,7 @@ export const INITIAL_STATE: WizardState = {
   answers: EMPTY_ANSWERS,
 };
 
-export type WizardEvent =
+type WizardEvent =
   | { type: 'answer'; patch: Partial<WizardAnswers> }
   | { type: 'next' }
   | { type: 'back' };

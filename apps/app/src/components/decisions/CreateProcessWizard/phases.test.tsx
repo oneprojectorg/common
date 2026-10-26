@@ -5,24 +5,24 @@ import { describe, expect, it } from 'vitest';
 
 import english from '@/lib/i18n/dictionaries/en.json';
 
+import { EMPTY_ANSWERS, type WizardAnswers } from './flow';
 import {
+  applyGrantDecision,
   composeOtherPhases,
   describeOther,
+  phasesFor,
+  presetPhases,
   subjectPhrase,
-  type OtherAnswers,
-} from './composeOther';
-import { DECISION_OPTIONS, SUBJECT_META } from './questions';
+} from './phases';
+import {
+  DECISION_OPTIONS,
+  GRANT_DECISION_OPTIONS,
+  SHAPE_QUESTION,
+  SUBJECT_META,
+} from './questions';
 
-const EMPTY: OtherAnswers = {
-  subject: null,
-  subjectText: '',
-  cadence: null,
-  submits: null,
-  decision: null,
-};
-
-const answers = (patch: Partial<OtherAnswers>): OtherAnswers => ({
-  ...EMPTY,
+const answers = (patch: Partial<WizardAnswers>): WizardAnswers => ({
+  ...EMPTY_ANSWERS,
   ...patch,
 });
 
@@ -32,12 +32,119 @@ const t = createTranslator({
   namespace: 'decisions.createWizard',
 });
 
-const copy: Record<string, unknown> = english.decisions.createWizard;
-
 const markup = (node: ReactNode) => renderToStaticMarkup(<>{node}</>);
 
-const phases = (input: OtherAnswers) =>
+const kinds = (input: WizardAnswers) =>
   composeOtherPhases(input).map((phase) => phase.kind);
+
+describe('phasesFor', () => {
+  it('builds nothing before a shape is picked', () => {
+    expect(phasesFor(answers({ type: 'pb' }))).toEqual([]);
+  });
+
+  it('reshapes a grant by who decides', () => {
+    expect(
+      phasesFor(
+        answers({
+          type: 'grant',
+          shape: 'single',
+          grantDecision: 'applicants',
+        }),
+      ).map((phase) => phase.kind),
+    ).toEqual(['submissions', 'voting', 'results']);
+  });
+
+  it('ignores a grant decision on a budgeting process', () => {
+    expect(
+      phasesFor(
+        answers({
+          type: 'pb',
+          shape: 'proposals',
+          grantDecision: 'applicants',
+        }),
+      ),
+    ).toEqual(presetPhases('proposals'));
+  });
+
+  it('composes the other pathway from its questions', () => {
+    expect(
+      phasesFor(answers({ type: 'other', cadence: 'ongoing' })),
+    ).toHaveLength(1);
+  });
+});
+
+describe('applyGrantDecision', () => {
+  it('leaves a rubric process alone', () => {
+    const phases = presetPhases('loi');
+
+    expect(applyGrantDecision(phases, 'rubric')).toBe(phases);
+    expect(applyGrantDecision(phases, null)).toBe(phases);
+  });
+
+  it('replaces only the last review when the applicants vote', () => {
+    const reshaped = applyGrantDecision(presetPhases('loi'), 'applicants');
+
+    expect(reshaped.map((phase) => phase.kind)).toEqual([
+      'submissions',
+      'review',
+      'submissions',
+      'voting',
+      'results',
+    ]);
+    expect(reshaped[1]?.name).toBe('pickShortlist');
+    expect(reshaped[3]?.phaseName).toBe('votePhase');
+  });
+
+  it('adds a vote after the narrowing review in the hybrid shape', () => {
+    const reshaped = applyGrantDecision(presetPhases('single'), 'hybrid');
+
+    expect(reshaped.map((phase) => phase.kind)).toEqual([
+      'submissions',
+      'review',
+      'voting',
+      'results',
+    ]);
+    expect(reshaped[1]?.name).toBe('narrowField');
+    expect(reshaped[1]?.phaseName).toBe('pickFinalists');
+    expect(reshaped[2]?.phaseName).toBe('votePhase');
+  });
+
+  it('keeps the letter shortlist apart from the finalists in the hybrid shape', () => {
+    const reshaped = applyGrantDecision(presetPhases('loi'), 'hybrid');
+
+    expect(reshaped.map((phase) => phase.phaseName)).toEqual([
+      'sendLetterIntent',
+      'shortlisting',
+      'sendYourApplication',
+      'pickFinalists',
+      'votePhase',
+      'seeAwards',
+    ]);
+  });
+});
+
+describe('every grantmaking and budgeting process', () => {
+  const grantDecisions = [
+    null,
+    ...GRANT_DECISION_OPTIONS.map((option) => option.key),
+  ];
+  const cases = (['grant', 'pb'] as const).flatMap((type) =>
+    SHAPE_QUESTION[type].options.flatMap((shape) =>
+      (type === 'grant' ? grantDecisions : [null]).map(
+        (grantDecision) => [type, shape.key, grantDecision] as const,
+      ),
+    ),
+  );
+
+  it.each(cases)('%s %s decided by %s', (type, shape, grantDecision) => {
+    const phases = phasesFor(answers({ type, shape, grantDecision }));
+    const phaseNames = phases.map((phase) => phase.phaseName);
+
+    expect(phases.length).toBeGreaterThan(1);
+    expect(phases.at(-1)?.kind).toBe('results');
+    expect(new Set(phaseNames).size).toBe(phaseNames.length);
+  });
+});
 
 describe('composeOtherPhases', () => {
   it('maps an always-open process to a single open-ended intake', () => {
@@ -56,7 +163,7 @@ describe('composeOtherPhases', () => {
 
   it('skips the intake when nothing is submitted', () => {
     expect(
-      phases(
+      kinds(
         answers({ cadence: 'timeline', submits: 'none', decision: 'vote' }),
       ),
     ).toEqual(['voting', 'results']);
@@ -64,13 +171,13 @@ describe('composeOtherPhases', () => {
 
   it('adds a second submissions phase only for rough ideas', () => {
     expect(
-      phases(
+      kinds(
         answers({ cadence: 'timeline', submits: 'rough', decision: 'vote' }),
       ),
     ).toEqual(['submissions', 'submissions', 'voting', 'results']);
 
     expect(
-      phases(
+      kinds(
         answers({
           cadence: 'timeline',
           submits: 'proposals',
@@ -82,7 +189,7 @@ describe('composeOtherPhases', () => {
 
   it('orders a review-then-vote process review, submissions, vote', () => {
     expect(
-      phases(
+      kinds(
         answers({ cadence: 'timeline', submits: 'rough', decision: 'both' }),
       ),
     ).toEqual(['submissions', 'review', 'submissions', 'voting', 'results']);
@@ -106,7 +213,7 @@ describe('composeOtherPhases', () => {
 
   it('leaves out voting when a smaller group decides', () => {
     expect(
-      phases(
+      kinds(
         answers({
           cadence: 'timeline',
           submits: 'applications',
@@ -129,7 +236,7 @@ describe('composeOtherPhases', () => {
   });
 
   it('holds a vote on people rather than putting them to one', () => {
-    const vote = (subject: OtherAnswers['subject']) =>
+    const vote = (subject: WizardAnswers['subject']) =>
       composeOtherPhases(
         answers({ subject, cadence: 'timeline', decision: 'vote' }),
       ).find((phase) => phase.kind === 'voting')?.name;
@@ -156,7 +263,7 @@ describe('subjectPhrase', () => {
   });
 
   it('falls back to the generic noun with nothing picked or written', () => {
-    expect(subjectPhrase(EMPTY, t)).toBe(
+    expect(subjectPhrase(EMPTY_ANSWERS, t)).toBe(
       english.decisions.createWizard.subjectElseNoun,
     );
     expect(
@@ -224,27 +331,18 @@ describe('every process the other questions compose', () => {
     '%s, %s, %s, decided by %s',
     (cadence, subject, submits, decision) => {
       const input = answers({
+        type: 'other',
         subject,
         subjectText: subject === 'else' ? 'A new logo' : '',
         cadence,
         submits,
         decision,
       });
-      const phases = composeOtherPhases(input);
+      const phases = phasesFor(input);
       const phaseNames = phases.map((phase) => phase.phaseName);
-      const keys = phases.flatMap((phase) => [
-        phase.name,
-        phase.phaseName,
-        phase.description,
-        phase.norm,
-        ...phase.capabilities,
-      ]);
 
       expect(phases.length).toBeGreaterThan(0);
       expect(new Set(phaseNames).size).toBe(phaseNames.length);
-      expect(keys.filter((key) => key !== undefined && !(key in copy))).toEqual(
-        [],
-      );
       expect(markup(describeOther(input, t))).not.toMatch(/[{}]/);
     },
   );

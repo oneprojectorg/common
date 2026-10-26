@@ -1,15 +1,16 @@
-// What the wizard asks: the options behind every choice screen, and what each subject changes. Read by flow.ts and composeOther.ts.
+// What the wizard asks: the options behind every choice screen, and what each subject changes. Read by flow.ts and phases.ts.
 import type { ProcessType } from '@op/common/client';
 
-import type {
-  Cadence,
-  Choice,
-  Decision,
-  GrantDecision,
-  ShapeKey,
-  Subject,
-  SubmitKey,
-  WizardCopyKey,
+import {
+  SUBJECTS,
+  type Cadence,
+  type Choice,
+  type Decision,
+  type GrantDecision,
+  type ShapeKey,
+  type Subject,
+  type SubmitKey,
+  type WizardCopyKey,
 } from './types';
 
 export const TYPE_OPTIONS: Choice<ProcessType>[] = [
@@ -26,7 +27,7 @@ export const TYPE_OPTIONS: Choice<ProcessType>[] = [
   },
 ];
 
-export interface ShapeQuestion {
+interface ShapeQuestion {
   heading: WizardCopyKey;
   options: Choice<ShapeKey>[];
 }
@@ -85,7 +86,7 @@ export const GRANT_DECISION_OPTIONS: Choice<GrantDecision>[] = [
   },
 ];
 
-export interface SubjectMeta {
+interface SubjectMeta {
   label: WizardCopyKey;
   description: WizardCopyKey;
   /** The subject as a noun, for the recap. */
@@ -95,8 +96,6 @@ export interface SubjectMeta {
   /** How the vote phase is pitched. */
   voteName: WizardCopyKey;
 }
-
-const SUBJECTS: Subject[] = ['funding', 'ideas', 'people', 'else'];
 
 export const SUBJECT_META: Record<Subject, SubjectMeta> = {
   funding: {
