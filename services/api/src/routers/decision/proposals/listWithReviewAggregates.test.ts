@@ -209,6 +209,7 @@ describe.concurrent('listWithReviewAggregates', () => {
       }),
     ]);
 
+    const submittedAt = new Date().toISOString();
     await createProposalReview({
       assignmentId: withReview.assignment.id,
       state: ProposalReviewState.SUBMITTED,
@@ -220,7 +221,7 @@ describe.concurrent('listWithReviewAggregates', () => {
         },
         rationales: {},
       },
-      submittedAt: new Date().toISOString(),
+      submittedAt,
     });
 
     const adminCaller = await createAuthenticatedCaller(
@@ -244,6 +245,11 @@ describe.concurrent('listWithReviewAggregates', () => {
     expect(reviewedItem?.aggregates.overallRecommendationCount).toEqual({
       yes: 1,
     });
+    const [submittedReviewer] = reviewedItem?.aggregates.reviewers ?? [];
+    expect(submittedReviewer?.isOutOfDate).toBe(false);
+    expect(new Date(submittedReviewer?.submittedAt ?? '').getTime()).toBe(
+      new Date(submittedAt).getTime(),
+    );
 
     const unreviewedItem = result.items.find(
       (i) => i.proposal.id === withoutReview.proposal.id,
@@ -254,7 +260,9 @@ describe.concurrent('listWithReviewAggregates', () => {
       averageScore: 0,
       overallRecommendationCount: {},
     });
-    expect(unreviewedItem?.aggregates.reviewers).toHaveLength(1);
+    expect(unreviewedItem?.aggregates.reviewers).toEqual([
+      expect.objectContaining({ submittedAt: null, isOutOfDate: false }),
+    ]);
   });
 
   it('counts out-of-date reviews per proposal in filtered mode', async ({
@@ -318,6 +326,12 @@ describe.concurrent('listWithReviewAggregates', () => {
       reviewsSubmittedCount: 1,
       outOfDateReviewsCount: 0,
     });
+    expect(editedItem?.aggregates.reviewers).toEqual([
+      expect.objectContaining({ isOutOfDate: true }),
+    ]);
+    expect(untouchedItem?.aggregates.reviewers).toEqual([
+      expect.objectContaining({ isOutOfDate: false }),
+    ]);
   });
 
   it('drops proposalIds belonging to a different instance in filtered mode', async ({

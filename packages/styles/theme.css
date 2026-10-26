@@ -80,6 +80,9 @@
    * loaded as a variable font (apps/app root layout). Use `font-strong`. */
   --font-weight-strong: 450;
 
+  /* Tabbed content width on the decision pages */
+  --container-page: 86rem;
+
   /* Animations (used by accordion, collapsible, etc.) */
   --animate-accordion-down: accordion-down 0.2s ease-out;
   --animate-accordion-up: accordion-up 0.2s ease-out;
