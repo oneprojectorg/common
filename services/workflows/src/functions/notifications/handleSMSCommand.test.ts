@@ -2623,6 +2623,36 @@ describe('handleSMSCommand changing a cast ballot', () => {
         where: { processInstanceId: instanceId },
       }),
     ).resolves.toBeUndefined();
+
+    await keyword(
+      NUMBERS.changeRevise,
+      LINES.changeRevise,
+      'change',
+      null,
+      '-2',
+    );
+    await text(NUMBERS.changeRevise, LINES.changeRevise, '101');
+    await keyword(
+      NUMBERS.changeRevise,
+      LINES.changeRevise,
+      'submit',
+      null,
+      '-3',
+    );
+
+    const revisedIds = vi
+      .mocked(inngest.send)
+      .mock.calls.flatMap(([event]) => (Array.isArray(event) ? event : [event]))
+      .flatMap((event) =>
+        event.name === Events.voteRevised.name && 'id' in event && event.id
+          ? [event.id]
+          : [],
+      );
+    expect(revisedIds).toHaveLength(2);
+    expect(new Set(revisedIds).size).toBe(2);
+    expect(revisedIds.every((id) => id.includes(submissions[0]!.id))).toBe(
+      true,
+    );
   });
 
   it('given a phase that does not allow changes, when the member texts CHANGE after SUBMIT, then they are told the ballot cannot be changed', async ({

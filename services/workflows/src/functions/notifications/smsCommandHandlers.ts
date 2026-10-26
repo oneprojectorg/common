@@ -119,6 +119,8 @@ export interface SmsCommandContext {
   account: { authUserId: string };
   argument: string | null;
   body: string | null;
+  /** The inbound text's Twilio id; it keys anything that must happen once per text. */
+  messageSid: string;
   line: ChatLine | null;
   deliver: SmsDeliver;
   geocode: Geocode;
@@ -1229,7 +1231,7 @@ export const move: SmsCommandHandler = async (context) => {
 };
 
 export const submit: SmsCommandHandler = async (context) => {
-  const { step, account, deliver, line } = context;
+  const { step, account, deliver, line, messageSid } = context;
   const instanceId = await resolveBallotInstance(context);
 
   if (!instanceId) {
@@ -1242,7 +1244,8 @@ export const submit: SmsCommandHandler = async (context) => {
 
   // The follow-ups run on a retry too: a run that stopped after submitVote
   // committed comes back as already_submitted with the same submission id, and
-  // the event id keeps Inngest from firing twice for one ballot.
+  // the event id keeps Inngest from firing twice for one ballot. A revision
+  // keeps the submission id, so its event id carries the text that made it.
   const finishSubmission = async (
     voteSubmissionId: string,
     revised: boolean,
@@ -1252,7 +1255,9 @@ export const submit: SmsCommandHandler = async (context) => {
     );
     await step.run('send-vote-event', () =>
       inngest.send({
-        id: `vote-${revised ? 'revised' : 'submitted'}-${voteSubmissionId}`,
+        id: revised
+          ? `vote-revised-${voteSubmissionId}-${messageSid}`
+          : `vote-submitted-${voteSubmissionId}`,
         name: revised ? Events.voteRevised.name : Events.voteSubmitted.name,
         data: { voteSubmissionId, processInstanceId: instanceId },
       }),
