@@ -76,6 +76,8 @@ const NUMBERS = {
   pickOtherLine: '+15005550051',
   pickClosed: '+15005550052',
   pickRetry: '+15005550053',
+  pickWhilePending: '+15005550054',
+  pickStranger: '+15005550055',
   browseOtherLine: '+15005550069',
   browseUnpublished: '+15005550059',
   browseRewritten: '+15005550057',
@@ -118,6 +120,9 @@ const LINES = {
   pickOtherLineB: '+16145550196',
   pickClosed: '+16145550197',
   pickRetry: '+16145550198',
+  pickPendingA: '+16145550162',
+  pickPendingB: '+16145550163',
+  pickStranger: '+16145550164',
   browseOtherLineA: '+16145550192',
   browseOtherLineB: '+16145550193',
   browseUnpublished: '+16145550194',
@@ -1837,6 +1842,100 @@ describe('handleSMSCommand building and casting the ballot', () => {
     expect(recordedSms.at(-1)?.body).toBe(
       'Your ballot is already in. One ballot per person.',
     );
+  });
+  it("given a registration waiting for an address in decision A, when the voter texts a code to decision B's line, then it becomes a pick on B and A still waits for the address", async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsCommandFixture(task.id, onTestFinished);
+    const { member, instanceId: a } = await seed(fixture, {
+      phone: NUMBERS.pickWhilePending,
+      line: LINES.pickPendingA,
+      name: `Pending A ${task.id}`,
+      enrolment: { attestation: 'I live here.', boundary: false },
+    });
+    const b = await fixture.createVotingInstance({
+      owner: member,
+      name: `Pending B ${task.id}`,
+      proposalTitles: PROPOSALS,
+      votingRules: {
+        voterBudget: 1_000_000,
+        maxVotesPerMember: 10,
+        ranked: true,
+      },
+    });
+    await fixture.addMember(b.instanceProfileId, member);
+    await fixture.bindLine(b.instanceId, parsePhoneNumber(LINES.pickPendingB));
+    await run(
+      smsInboundEvent({
+        from: NUMBERS.pickWhilePending,
+        to: LINES.pickPendingA,
+        keyword: 'vote',
+      }),
+    );
+
+    const { result } = await text(
+      NUMBERS.pickWhilePending,
+      LINES.pickPendingB,
+      '103',
+    );
+
+    expect(result).toEqual({ message: 'picks added' });
+    await expect(
+      db.query.decisionBallotDrafts.findFirst({
+        where: { processInstanceId: b.instanceId },
+        columns: { picks: true },
+      }),
+    ).resolves.toMatchObject({ picks: [expect.any(String)] });
+    await expect(
+      findVoterEnrolment({
+        processInstanceId: a,
+        authUserId: member.authUserId,
+      }),
+    ).resolves.toMatchObject({
+      status: DecisionVoterEnrolmentStatus.AWAITING_ADDRESS,
+    });
+  });
+
+  it("given a confirmed number that is not a member texts a code to a private decision's line, then they are told the decision is not available and nothing is written", async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsCommandFixture(task.id, onTestFinished);
+    const owner = await fixture.createPhoneOnlyAccount(
+      parsePhoneNumber('+15005550021'),
+    );
+    const stranger = await fixture.createPhoneOnlyAccount(
+      parsePhoneNumber(NUMBERS.pickStranger),
+    );
+    const { instanceId } = await fixture.createVotingInstance({
+      owner,
+      name: `Private Picks ${task.id}`,
+      proposalTitles: PROPOSALS,
+      votingRules: {
+        voterBudget: 1_000_000,
+        maxVotesPerMember: 10,
+        ranked: true,
+      },
+    });
+    await fixture.bindLine(instanceId, parsePhoneNumber(LINES.pickStranger));
+    expect(stranger.authUserId).not.toBe(owner.authUserId);
+
+    const { result } = await text(
+      NUMBERS.pickStranger,
+      LINES.pickStranger,
+      '101',
+    );
+
+    expect(result).toEqual({ message: 'decision not found' });
+    expect(recordedSms.map((sms) => sms.body)).toEqual([
+      'That decision is not available to you.',
+    ]);
+    await expect(
+      db.query.decisionBallotDrafts.findFirst({
+        where: { processInstanceId: instanceId },
+      }),
+    ).resolves.toBeUndefined();
   });
 });
 
