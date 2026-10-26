@@ -3,6 +3,8 @@ import { decisionBallotDrafts, profiles, proposals } from '@op/db/schema';
 import type { AmountUnit } from '@op/types/amountUnit';
 
 import {
+  NotFoundError,
+  UnauthorizedError,
   ValidationError,
   VoteOutsideDistrictError,
   VoterNotEnrolledError,
@@ -105,6 +107,9 @@ const priceRows = async (
         proposalTemplate: pricing.proposalTemplate,
         voterCostField: pricing.voterCostField,
         unit: pricing.unit,
+        // With no cap a cost is shown, never charged, so one that cannot be
+        // read must not block the pick; submitVote prices nothing then either.
+        unreadable: pricing.budget === null ? 'null' : 'throw',
       })
     : new Map(rows.map(({ id }) => [id, null]));
 
@@ -361,6 +366,7 @@ export type SmsBallotSubmission =
   | { status: 'empty' }
   | { status: 'not_enrolled' }
   | { status: 'outside_district' }
+  | { status: 'unavailable' }
   | { status: 'refused'; reason: string };
 
 export async function submitSmsBallot({
@@ -405,6 +411,9 @@ export async function submitSmsBallot({
     }
     if (error instanceof ValidationError) {
       return { status: 'refused', reason: error.message };
+    }
+    if (error instanceof UnauthorizedError || error instanceof NotFoundError) {
+      return { status: 'unavailable' };
     }
     throw error;
   }

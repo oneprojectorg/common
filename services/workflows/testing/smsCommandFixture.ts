@@ -38,7 +38,8 @@ interface FixtureAccount {
 
 interface FixtureProposal {
   title: string;
-  budget?: number;
+  /** A number is a priced budget; a string is written to the document as it is, an unreadable cost. */
+  budget?: number | string;
 }
 
 const VOTING_PHASE_ID = 'voting';
@@ -174,9 +175,9 @@ export class SmsCommandFixture {
         status: ProposalStatus.SUBMITTED,
         proposalData: {
           title,
-          ...(budget === undefined
-            ? {}
-            : { budget: { amount: budget, currency: 'USD' } }),
+          ...(typeof budget === 'number'
+            ? { budget: { amount: budget, currency: 'USD' } }
+            : {}),
         },
       });
       this.profileIds.push(proposal.profileId);
@@ -188,7 +189,11 @@ export class SmsCommandFixture {
           title,
           ...(budget === undefined
             ? {}
-            : { budget: JSON.stringify({ amount: budget, currency: 'USD' }) }),
+            : typeof budget === 'string'
+              ? { budget }
+              : {
+                  budget: JSON.stringify({ amount: budget, currency: 'USD' }),
+                }),
         });
       }
     }
