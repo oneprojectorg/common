@@ -1501,7 +1501,7 @@ describe('handleSMSCommand building and casting the ballot', () => {
     );
     expect(listed).toEqual({ message: 'ballot sent' });
     expect(recordedSms.at(-1)?.body).toContain(
-      '1. Crosswalk lighting $85,000.',
+      '1. 101 Crosswalk lighting $85,000.',
     );
     expect(recordedSms.at(-1)?.body).not.toContain('Main St');
   });
@@ -1525,8 +1525,8 @@ describe('handleSMSCommand building and casting the ballot', () => {
     expect(recordedSms.at(-1)?.body).toBe(
       [
         `Your "${name}" ballot:`,
-        '1. Crosswalk lighting $85,000.',
-        '2. Bike lane $310,000.',
+        '1. 101 Crosswalk lighting $85,000.',
+        '2. 102 Bike lane $310,000.',
         '$395,000 allocated, $605,000 unspent.',
         'Text DONE to review, or a code to add.',
       ].join('\n'),
@@ -1581,7 +1581,7 @@ describe('handleSMSCommand building and casting the ballot', () => {
     expect(recordedSms.at(-1)?.body).toBe('"Bike lane" is now pick 1.');
     await keyword(NUMBERS.pickMove, LINES.pickMove, 'list');
     expect(recordedSms.at(-1)?.body).toContain(
-      '1. Bike lane $310,000.\n2. Crosswalk lighting $85,000.',
+      '1. 102 Bike lane $310,000.\n2. 101 Crosswalk lighting $85,000.',
     );
   });
 
@@ -1604,9 +1604,9 @@ describe('handleSMSCommand building and casting the ballot', () => {
     expect(recordedSms.at(-1)?.body).toBe(
       [
         `Your "${name}" ballot:`,
-        '1. Crosswalk lighting $85,000.',
-        '2. Bike lane $310,000.',
-        '3. Tree planting $150,000.',
+        '1. 101 Crosswalk lighting $85,000.',
+        '2. 102 Bike lane $310,000.',
+        '3. 106 Tree planting $150,000.',
         '$545,000 allocated, $455,000 unspent.',
         "Your order is your ranking: if a pick can't be funded, your support moves to your next choice.",
         'Reply SUBMIT to cast your ballot.',
@@ -1693,7 +1693,7 @@ describe('handleSMSCommand building and casting the ballot', () => {
     expect(recordedSms.at(-1)?.body).toBe(
       [
         `Your "${name}" ballot:`,
-        '1. Crosswalk lighting $85,000.',
+        '1. 101 Crosswalk lighting $85,000.',
         '$85,000 allocated, $915,000 unspent.',
         'Text DONE to review, or a code to add.',
       ].join('\n'),
