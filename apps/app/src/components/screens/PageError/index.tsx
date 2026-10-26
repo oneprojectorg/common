@@ -9,8 +9,6 @@ import { useEffect } from 'react';
 
 import { useTranslations } from '@/lib/i18n/routing';
 
-import { ButtonLink } from '@/components/ButtonLink';
-
 import { StatusScreen } from '../StatusScreen';
 
 export interface ErrorProps {
@@ -54,7 +52,9 @@ export default function PageError({ error }: ErrorProps) {
         </p>
       ),
       actions: (
-        <ButtonLink href="/">{t('shell.notFoundHomeAction')}</ButtonLink>
+        <Button onClick={() => window.location.assign('/')}>
+          {t('shell.notFoundHomeAction')}
+        </Button>
       ),
     }),
     _: () => ({

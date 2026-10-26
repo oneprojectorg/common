@@ -37,7 +37,9 @@ describe('PageError', () => {
     // Then the user sees a 403, not the generic failure
     expect(await screen.findByText('403')).toBeTruthy();
     expect(screen.getByText(messages.shell.forbiddenTitle)).toBeTruthy();
-    expect(screen.queryByText(messages.shell.errorTitle)).toBeNull();
+    expect(
+      screen.queryByText(messages.shell.errorTitle, { exact: false }),
+    ).toBeNull();
   });
 
   it('shows the not-found screen for a server error that carries a 404', async () => {
@@ -49,9 +51,11 @@ describe('PageError', () => {
     // When the error boundary renders it
     renderPageError(error);
 
-    // Then the user sees a 404
+    // Then the user sees a 404 (the copy shares one paragraph with its hint)
     expect(await screen.findByText('404')).toBeTruthy();
-    expect(screen.getByText(messages.shell.notFoundTitle)).toBeTruthy();
+    expect(
+      screen.getByText(messages.shell.notFoundTitle, { exact: false }),
+    ).toBeTruthy();
   });
 
   it('shows the generic failure for an error without HTTP semantics', async () => {
@@ -61,8 +65,10 @@ describe('PageError', () => {
     // When the error boundary renders it
     renderPageError(error);
 
-    // Then the user sees a 500
+    // Then the user sees a 500 (the copy shares one paragraph with its hint)
     expect(await screen.findByText('500')).toBeTruthy();
-    expect(screen.getByText(messages.shell.errorTitle)).toBeTruthy();
+    expect(
+      screen.getByText(messages.shell.errorTitle, { exact: false }),
+    ).toBeTruthy();
   });
 });
