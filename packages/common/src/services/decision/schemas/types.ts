@@ -12,6 +12,13 @@ import type { ProposalTemplateSchema, RubricTemplateSchema } from '../types';
 /**
  * Phase behavior rules
  */
+export interface VoterEnrolmentRule {
+  /** The attestation text sent verbatim; the voter affirms it. */
+  attestation: string;
+  /** The voter's address must resolve to one of the decision's boundaries. */
+  boundary?: boolean;
+}
+
 export interface PhaseRules {
   proposals?: {
     submit?: boolean;
@@ -33,6 +40,8 @@ export interface PhaseRules {
     voterCostField?: string;
     /** Persists ballot order as a rank. Read through `isRankedVoting`. */
     ranked?: boolean;
+    /** Registration before the first vote; absent = no enrolment step. Read through `getVoterEnrolment`. */
+    enrolment?: VoterEnrolmentRule;
   };
   comments?: {
     /** Unlike its siblings this defaults to TRUE — see `allowsComments`. */
