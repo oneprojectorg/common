@@ -299,7 +299,7 @@ point outside production.
 | `101`                    | `Pick 1: "<title>" ($85,000). $915,000 left. Text another code, LIST to see your ballot, or DONE to review.`                                |
 | `102 103`                | `Pick 2: … Pick 3: … $<left> left.`                                                                                                        |
 | a code that does not fit | `"<title>" costs $…. You have $… left. Reply REMOVE plus a code to make room, or pick a smaller project.`                                    |
-| `LIST`                   | `Your District 5 ballot:` numbered picks, `$… allocated, $… unspent.`                                                                        |
+| `LIST`                   | `Your District 5 ballot:` then `1. 101 <title> $85,000.` per pick, `$… allocated, $… unspent.` The code on each line is what REMOVE and MOVE take. |
 | `REMOVE 103` / `MOVE 102 1` | `Removed "<title>". $… left.` / `"<title>" is now pick 1.`                                                                                |
 | `DONE`                   | The ballot, the ranking note and `Reply SUBMIT to cast your ballot.`                                                                         |
 | `SUBMIT`                 | `Your ballot is in. One ballot per person. However, your vote is never public.`                                                             |
@@ -316,3 +316,29 @@ line; a draft started on another line never takes over.
 Read back the result with the voter's profile: one row in
 `decisions_vote_submissions`, its `decisions_vote_proposals` rows in pick
 order, and no row left in `decision_ballot_drafts`.
+
+### Review and reset the local decision
+
+Two scripts in `packages/common/src/scripts` take the decision's slug through
+`-v slug=…` and read `DATABASE_URL` from `.env.local`. Run them from the
+repo root.
+
+`describeDecisionProcess.sql` prints the whole voting process for one decision
+as one JSON document: the decision and its phase, the chat line, the
+districts, every voter's enrolment, draft and cast ballot. The proposals
+section is commented out; uncomment it to include them.
+
+```bash
+psql "$(grep '^DATABASE_URL=' .env.local | cut -d= -f2-)" -v slug=sms-voting-test -At -f packages/common/src/scripts/describeDecisionProcess.sql | jq .
+```
+
+`resetDecisionVoting.sql` deletes every voter's state on the decision so the
+conversation above runs again from `VOTE`: the cast ballots, the drafts and
+the registrations, in one transaction. Proposals, districts, access and the
+chat line stay. The rows are hard-deleted because the unique keys on
+`(process_instance_id, profile_id)` would otherwise block the same voter
+from registering again.
+
+```bash
+psql "$(grep '^DATABASE_URL=' .env.local | cut -d= -f2-)" -v slug=sms-voting-test -At -f packages/common/src/scripts/resetDecisionVoting.sql
+```
