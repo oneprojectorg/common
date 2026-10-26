@@ -59,6 +59,7 @@ export const handleSMSCommand = inngest.createFunction(
       keyword,
       argument,
       body,
+      messageSid,
     } = smsInboundReceived.schema.parse(event.data);
 
     const flagEnabled = await step.run('check-feature-flag', () =>
@@ -133,6 +134,7 @@ export const handleSMSCommand = inngest.createFunction(
       account,
       argument,
       body,
+      messageSid,
       line: line
         ? { id: line.id, slug: line.slug, instanceId: line.instanceId }
         : null,
