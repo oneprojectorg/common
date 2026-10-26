@@ -394,8 +394,9 @@ export const submitVote = async ({
       });
 
       if (
+        !enrolment ||
         !isEnrolledOnCurrentAttestation(
-          enrolment ?? null,
+          enrolment,
           phaseConfig.enrolment.attestation,
         )
       ) {
