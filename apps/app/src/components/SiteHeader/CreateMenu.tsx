@@ -29,7 +29,7 @@ import {
 
 import { usePathname, useRouter, useTranslations } from '@/lib/i18n';
 
-import { saveWizardOrigin } from '@/components/decisions/CreateProcessWizard';
+import { saveWizardOrigin } from '@/components/decisions/CreateProcessWizard/wizardProgress';
 
 import { InviteUserModal } from '../InviteUserModal';
 import { CreateOrganizationModal } from '../Profile/ProfileDetails/CreateOrganizationModal';
