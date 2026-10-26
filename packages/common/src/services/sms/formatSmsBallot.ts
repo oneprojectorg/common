@@ -3,7 +3,7 @@ import { clipSmsText, splitSmsBody } from './text';
 const SMS_TITLE_LENGTH = 80;
 
 export const SMS_BALLOT_SUBMITTED_MESSAGE =
-  'Your ballot is in. One ballot per person. How you vote is never public.';
+  'Your ballot is in. One ballot per person. However, your vote is never public.';
 export const SMS_BALLOT_ALREADY_SUBMITTED_MESSAGE =
   'Your ballot is already in. One ballot per person.';
 export const SMS_BALLOT_EMPTY_SUBMIT_MESSAGE =

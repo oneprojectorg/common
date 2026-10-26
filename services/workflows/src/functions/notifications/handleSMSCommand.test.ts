@@ -3,6 +3,8 @@ import {
   SMS_MAX_BODY_LENGTH,
   findVoterEnrolment,
   parsePhoneNumber,
+  resolveVoterAddress,
+  submitVote,
 } from '@op/common';
 import { db } from '@op/db/client';
 import { ProcessStatus } from '@op/db/schema';
@@ -71,6 +73,9 @@ const NUMBERS = {
   pickUnknown: '+15005550048',
   pickUnenrolled: '+15005550049',
   pickLimit: '+15005550050',
+  pickOtherLine: '+15005550051',
+  pickClosed: '+15005550052',
+  pickRetry: '+15005550053',
   browseOtherLine: '+15005550069',
   browseUnpublished: '+15005550059',
   browseRewritten: '+15005550057',
@@ -109,6 +114,10 @@ const LINES = {
   pickUnknown: '+16145550152',
   pickUnenrolled: '+16145550153',
   pickLimit: '+16145550161',
+  pickOtherLineA: '+16145550195',
+  pickOtherLineB: '+16145550196',
+  pickClosed: '+16145550197',
+  pickRetry: '+16145550198',
   browseOtherLineA: '+16145550192',
   browseOtherLineB: '+16145550193',
   browseUnpublished: '+16145550194',
@@ -1616,7 +1625,7 @@ describe('handleSMSCommand building and casting the ballot', () => {
       }),
     );
     expect(recordedSms.at(-1)?.body).toBe(
-      'Your ballot is in. One ballot per person. How you vote is never public.',
+      'Your ballot is in. One ballot per person. However, your vote is never public.',
     );
     const proposals = await db.query.proposals.findMany({
       where: { processInstanceId: instanceId },
@@ -1697,6 +1706,137 @@ describe('handleSMSCommand building and casting the ballot', () => {
     expect(recordedSms.map((sms) => sms.body)).toEqual([
       `Text VOTE to register for "${name}" before browsing its proposals.`,
     ]);
+  });
+  it("given a member with a draft on decision A's line, when they text a code and SUBMIT to decision B's line, then B's ballot is built and cast and A's draft is untouched", async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsCommandFixture(task.id, onTestFinished);
+    const { member, instanceId: a } = await seed(fixture, {
+      phone: NUMBERS.pickOtherLine,
+      line: LINES.pickOtherLineA,
+      name: `Pick A ${task.id}`,
+    });
+    const b = await fixture.createVotingInstance({
+      owner: member,
+      name: `Pick B ${task.id}`,
+      proposalTitles: PROPOSALS,
+      votingRules: {
+        voterBudget: 1_000_000,
+        maxVotesPerMember: 10,
+        ranked: true,
+      },
+    });
+    await fixture.addMember(b.instanceProfileId, member);
+    await fixture.bindLine(
+      b.instanceId,
+      parsePhoneNumber(LINES.pickOtherLineB),
+    );
+    await text(NUMBERS.pickOtherLine, LINES.pickOtherLineA, '101');
+
+    await text(NUMBERS.pickOtherLine, LINES.pickOtherLineB, '103');
+    const { result } = await keyword(
+      NUMBERS.pickOtherLine,
+      LINES.pickOtherLineB,
+      'submit',
+    );
+
+    expect(result).toEqual({ message: 'ballot submitted' });
+    const submissions = await db.query.decisionsVoteSubmissions.findMany({
+      where: { processInstanceId: { in: [a, b.instanceId] } },
+      columns: { processInstanceId: true },
+    });
+    expect(submissions.map((row) => row.processInstanceId)).toEqual([
+      b.instanceId,
+    ]);
+    await expect(
+      db.query.decisionBallotDrafts.findFirst({
+        where: { processInstanceId: a },
+        columns: { picks: true },
+      }),
+    ).resolves.toMatchObject({ picks: [expect.any(String)] });
+  });
+
+  it('given voting closed after a member built a draft, when they text LIST, DONE, REMOVE and MOVE, then each says voting is not open and the draft is unchanged', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsCommandFixture(task.id, onTestFinished);
+    const name = `Pick Closed ${task.id}`;
+    const { instanceId } = await seed(fixture, {
+      phone: NUMBERS.pickClosed,
+      line: LINES.pickClosed,
+      name,
+    });
+    await text(NUMBERS.pickClosed, LINES.pickClosed, '101 102');
+    await fixture.closeVoting(instanceId);
+
+    const results = [
+      await keyword(NUMBERS.pickClosed, LINES.pickClosed, 'list'),
+      await keyword(NUMBERS.pickClosed, LINES.pickClosed, 'done'),
+      await keyword(NUMBERS.pickClosed, LINES.pickClosed, 'remove', '101'),
+      await keyword(NUMBERS.pickClosed, LINES.pickClosed, 'move', '102 1'),
+    ];
+
+    expect(results.map((r) => r.result)).toEqual(
+      Array.from({ length: 4 }, () => ({ message: 'voting closed' })),
+    );
+    expect(recordedSms.slice(-4).map((sms) => sms.body)).toEqual(
+      Array.from({ length: 4 }, () => `Voting is not open for "${name}".`),
+    );
+    const draft = await db.query.decisionBallotDrafts.findFirst({
+      where: { processInstanceId: instanceId },
+      columns: { picks: true },
+    });
+    expect(draft?.picks).toHaveLength(2);
+  });
+
+  it('given a SUBMIT run that stopped after the vote was written, when the text runs again, then the draft is cleared, the event carries the ballot as its id, and the reply says the ballot is already in', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsCommandFixture(task.id, onTestFinished);
+    const { member, instanceId } = await seed(fixture, {
+      phone: NUMBERS.pickRetry,
+      line: LINES.pickRetry,
+      name: `Pick Retry ${task.id}`,
+    });
+    await text(NUMBERS.pickRetry, LINES.pickRetry, '102 101');
+    const draft = await db.query.decisionBallotDrafts.findFirst({
+      where: { processInstanceId: instanceId },
+      columns: { picks: true },
+    });
+    const written = await submitVote({
+      data: {
+        processInstanceId: instanceId,
+        selectedProposalIds: draft!.picks,
+        authUserId: member.authUserId,
+      },
+      authUserId: member.authUserId,
+    });
+
+    const { result } = await keyword(
+      NUMBERS.pickRetry,
+      LINES.pickRetry,
+      'submit',
+    );
+
+    expect(result).toEqual({ message: 'ballot already submitted' });
+    expect(inngest.send).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: `vote-submitted-${written.id}`,
+        name: Events.voteSubmitted.name,
+        data: { voteSubmissionId: written.id, processInstanceId: instanceId },
+      }),
+    );
+    await expect(
+      db.query.decisionBallotDrafts.findFirst({
+        where: { processInstanceId: instanceId },
+      }),
+    ).resolves.toBeUndefined();
+    expect(recordedSms.at(-1)?.body).toBe(
+      'Your ballot is already in. One ballot per person.',
+    );
   });
 });
 

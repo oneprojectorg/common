@@ -177,7 +177,12 @@ export async function addSmsBallotPicks({
   authUserId,
   instanceId,
   codes,
-}: BallotKey & { codes: number[] }): Promise<{
+  chatLineId,
+}: BallotKey & {
+  codes: number[];
+  /** The decision line the codes came in on, recorded on the draft. */
+  chatLineId?: string | null;
+}): Promise<{
   results: SmsPickResult[];
   summary: SmsBallotSummary;
   hadPicks: boolean;
@@ -185,7 +190,11 @@ export async function addSmsBallotPicks({
   const key = { authUserId, instanceId };
   const scope = await loadBallotScope(key);
   const [draft, pricing] = await Promise.all([
-    ensureBallotDraft({ processInstanceId: instanceId, authUserId }),
+    ensureBallotDraft({
+      processInstanceId: instanceId,
+      authUserId,
+      chatLineId,
+    }),
     loadPricing(scope.instance),
   ]);
   const candidates = await Promise.all(
@@ -286,6 +295,7 @@ export async function removeSmsBallotPick({
   summary: SmsBallotSummary;
 }> {
   const key = { authUserId, instanceId };
+  await loadBallotScope(key);
   const found = await findPickByCode(key, code);
 
   if (!found) {
@@ -325,6 +335,7 @@ export async function moveSmsBallotPick({
   summary: SmsBallotSummary;
 }> {
   const key = { authUserId, instanceId };
+  await loadBallotScope(key);
   const found = await findPickByCode(key, code);
 
   if (!found) {
@@ -346,7 +357,7 @@ export async function moveSmsBallotPick({
 
 export type SmsBallotSubmission =
   | { status: 'submitted'; voteSubmissionId: string }
-  | { status: 'already_submitted' }
+  | { status: 'already_submitted'; voteSubmissionId: string }
   | { status: 'empty' }
   | { status: 'not_enrolled' }
   | { status: 'outside_district' }
@@ -363,7 +374,7 @@ export async function submitSmsBallot({
   });
 
   if (existing) {
-    return { status: 'already_submitted' };
+    return { status: 'already_submitted', voteSubmissionId: existing.id };
   }
 
   const draft = await ensureBallotDraft({

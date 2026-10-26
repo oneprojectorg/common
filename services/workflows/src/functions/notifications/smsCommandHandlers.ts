@@ -852,19 +852,18 @@ const money = (
     ? formatSmsAmount({ amount, unit: summary.unit })
     : null;
 
+// The same choice as a browse, then the ballot the voter cast last on the
+// shared number, so CHANGE and a second SUBMIT find it after the draft is gone.
 const resolveBallotInstance = async (
   context: SmsCommandContext,
 ): Promise<string | null> => {
   const { step, account, line } = context;
-  const fromDraft = await resolveBrowseInstance(context);
-  if (fromDraft) {
-    return fromDraft;
+  const fromBrowse = await resolveBrowseInstance(context);
+  if (fromBrowse || line) {
+    return fromBrowse;
   }
-  return (
-    line?.instanceId ??
-    (await step.run('find-latest-cast-ballot', () =>
-      findLatestCastBallotInstance({ authUserId: account.authUserId }),
-    ))
+  return step.run('find-latest-cast-ballot', () =>
+    findLatestCastBallotInstance({ authUserId: account.authUserId }),
   );
 };
 
@@ -893,7 +892,9 @@ const refuseUnlessReadyToPick = async (
         authUserId: account.authUserId,
       }),
     );
-    if (enrolment?.status !== DecisionVoterEnrolmentStatus.ENROLLED) {
+    if (
+      !isEnrolledOnCurrentAttestation(enrolment, decision.enrolment.attestation)
+    ) {
       return deliverAll(
         deliver,
         'send-register-first',
@@ -935,7 +936,12 @@ const pickByCodes = async (
   const { results, summary, hadPicks } = await step.run(
     'add-ballot-picks',
     () =>
-      addSmsBallotPicks({ authUserId: account.authUserId, instanceId, codes }),
+      addSmsBallotPicks({
+        authUserId: account.authUserId,
+        instanceId,
+        codes,
+        chatLineId: context.line?.id ?? null,
+      }),
   );
   const added = results.flatMap((r) => (r.status === 'added' ? [r] : []));
   const lines = [
@@ -1001,9 +1007,17 @@ const sendBallot = async (
     return ballotNeedsDecision(deliver);
   }
 
-  const summary = await step.run('summarize-ballot', () =>
-    summarizeSmsBallot({ authUserId: account.authUserId, instanceId }),
+  const read = await step.run('summarize-ballot', () =>
+    readBallot(() =>
+      summarizeSmsBallot({ authUserId: account.authUserId, instanceId }),
+    ),
   );
+
+  if (!read.ok) {
+    return refuseBallotRead(context, read.reason, instanceId);
+  }
+
+  const summary = read.value;
 
   return deliverAll(
     deliver,
@@ -1051,9 +1065,17 @@ export const remove: SmsCommandHandler = async (context) => {
     return ballotNeedsDecision(deliver);
   }
 
-  const { change, summary } = await step.run('remove-ballot-pick', () =>
-    removeSmsBallotPick({ authUserId: account.authUserId, instanceId, code }),
+  const removed = await step.run('remove-ballot-pick', () =>
+    readBallot(() =>
+      removeSmsBallotPick({ authUserId: account.authUserId, instanceId, code }),
+    ),
   );
+
+  if (!removed.ok) {
+    return refuseBallotRead(context, removed.reason, instanceId);
+  }
+
+  const { change, summary } = removed.value;
 
   return change.status === 'not_on_ballot'
     ? deliverAll(
@@ -1104,14 +1126,22 @@ export const move: SmsCommandHandler = async (context) => {
     return ballotNeedsDecision(deliver);
   }
 
-  const { change } = await step.run('move-ballot-pick', () =>
-    moveSmsBallotPick({
-      authUserId: account.authUserId,
-      instanceId,
-      code,
-      position,
-    }),
+  const moved = await step.run('move-ballot-pick', () =>
+    readBallot(() =>
+      moveSmsBallotPick({
+        authUserId: account.authUserId,
+        instanceId,
+        code,
+        position,
+      }),
+    ),
   );
+
+  if (!moved.ok) {
+    return refuseBallotRead(context, moved.reason, instanceId);
+  }
+
+  const { change } = moved.value;
 
   return change.status === 'not_on_ballot'
     ? deliverAll(
@@ -1147,20 +1177,25 @@ export const submit: SmsCommandHandler = async (context) => {
     submitSmsBallot({ authUserId: account.authUserId, instanceId }),
   );
 
+  // The follow-ups run on a retry too: a run that stopped after submitVote
+  // committed comes back as already_submitted with the same submission id, and
+  // the event id keeps Inngest from firing twice for one ballot.
+  const finishSubmission = async (voteSubmissionId: string) => {
+    await step.run('clear-ballot-draft', () =>
+      deleteBallotDraft({ authUserId: account.authUserId, instanceId }),
+    );
+    await step.run('send-vote-submitted', () =>
+      inngest.send({
+        id: `vote-submitted-${voteSubmissionId}`,
+        name: Events.voteSubmitted.name,
+        data: { voteSubmissionId, processInstanceId: instanceId },
+      }),
+    );
+  };
+
   switch (submission.status) {
     case 'submitted':
-      await step.run('clear-ballot-draft', () =>
-        deleteBallotDraft({ authUserId: account.authUserId, instanceId }),
-      );
-      await step.run('send-vote-submitted', () =>
-        inngest.send({
-          name: Events.voteSubmitted.name,
-          data: {
-            voteSubmissionId: submission.voteSubmissionId,
-            processInstanceId: instanceId,
-          },
-        }),
-      );
+      await finishSubmission(submission.voteSubmissionId);
       return deliverAll(
         deliver,
         'send-ballot-submitted',
@@ -1168,7 +1203,16 @@ export const submit: SmsCommandHandler = async (context) => {
         [SMS_BALLOT_SUBMITTED_MESSAGE],
         'ballot submitted',
       );
-    case 'already_submitted':
+    case 'already_submitted': {
+      const draft = await step.run('find-stale-draft', () =>
+        findBallotDraft({
+          processInstanceId: instanceId,
+          authUserId: account.authUserId,
+        }),
+      );
+      if (draft) {
+        await finishSubmission(submission.voteSubmissionId);
+      }
       return deliverAll(
         deliver,
         'send-ballot-already-in',
@@ -1176,6 +1220,7 @@ export const submit: SmsCommandHandler = async (context) => {
         [SMS_BALLOT_ALREADY_SUBMITTED_MESSAGE],
         'ballot already submitted',
       );
+    }
     case 'empty':
       return deliverAll(
         deliver,
