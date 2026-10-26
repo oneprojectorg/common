@@ -1,3 +1,4 @@
+import { logger } from '@op/logging';
 import { and, asc, eq, isNull, ne, sql } from 'drizzle-orm';
 
 import { db } from '.';
@@ -54,7 +55,7 @@ const assignShortCodes = (
     }
 
     const uncoded = await tx
-      .select({ id: proposals.id })
+      .select({ id: proposals.id, updatedAt: proposals.updatedAt })
       .from(proposals)
       .where(
         and(
@@ -75,10 +76,10 @@ const assignShortCodes = (
       return report;
     }
 
-    for (const [index, { id }] of uncoded.entries()) {
+    for (const [index, { id, updatedAt }] of uncoded.entries()) {
       await tx
         .update(proposals)
-        .set({ shortCode: instance.next + index })
+        .set({ shortCode: instance.next + index, updatedAt })
         .where(eq(proposals.id, id));
     }
 
@@ -108,21 +109,37 @@ const run = async (options: Options): Promise<InstanceReport[]> => {
 const options = parseOptions(process.argv.slice(2));
 const mode = options.dryRun ? 'dry run' : 'write';
 
-console.log(`Backfill proposal short codes (${mode})`);
+const say = (line: string) => process.stdout.write(`${line}\n`);
+
+say(`Backfill proposal short codes (${mode})`);
+logger.info('Backfill proposal short codes started', { mode });
 
 const reports = await run(options);
 
 for (const report of reports) {
   const range =
     report.firstCode === null ? '-' : `${report.firstCode}..${report.lastCode}`;
-  console.log(
+  say(
     `${report.instanceId}  ${report.assigned} assigned  ${range}  ${report.name ?? ''}`,
   );
+  logger.info('Backfill proposal short codes assigned', {
+    mode,
+    instanceId: report.instanceId,
+    assigned: report.assigned,
+    firstCode: report.firstCode,
+    lastCode: report.lastCode,
+  });
 }
 
 const total = reports.reduce((sum, report) => sum + report.assigned, 0);
-console.log(
+say(
   `${reports.length} published decisions, ${total} proposals ${options.dryRun ? 'would get' : 'got'} a code`,
 );
+logger.info('Backfill proposal short codes finished', {
+  mode,
+  decisions: reports.length,
+  proposals: total,
+});
 
+await logger.flush();
 await db.$client.end();

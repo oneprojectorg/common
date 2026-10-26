@@ -33,6 +33,7 @@
   },
   "dependencies": {
     "@op/core": "workspace:*",
+    "@op/logging": "workspace:*",
     "@op/supabase": "workspace:^",
     "@op/types": "workspace:*",
     "@types/pg": "^8.11.11",

@@ -20,7 +20,7 @@ const runBackfill = (args: string) =>
   });
 
 describe.concurrent('backfill-proposal-short-codes against the database', () => {
-  it('given a published decision whose proposals were inserted out of creation order, when the script runs, then each submitted proposal gets a code in creation order, a draft gets none, the decision counter moves past them, and a second run assigns nothing', async ({
+  it('given a published decision whose proposals were inserted out of creation order, when the script runs, then each submitted proposal gets a code in creation order with its edit date untouched, a draft gets none, the decision counter moves past them, and a second run assigns nothing', async ({
     task,
     onTestFinished,
   }) => {
@@ -53,6 +53,12 @@ describe.concurrent('backfill-proposal-short-codes against the database', () => 
     await seed('Created second', -1, ProposalStatus.SUBMITTED);
     await seed('Still a draft', -3, ProposalStatus.DRAFT);
 
+    const editDatesBefore = await db
+      .select({ id: proposals.id, updatedAt: proposals.updatedAt })
+      .from(proposals)
+      .where(eq(proposals.processInstanceId, instance.id))
+      .orderBy(proposals.id);
+
     const dryRun = runBackfill(`--dry-run --instance=${instance.id}`);
     runBackfill(`--instance=${instance.id}`);
     const secondDryRun = runBackfill(`--dry-run --instance=${instance.id}`);
@@ -77,6 +83,13 @@ describe.concurrent('backfill-proposal-short-codes against the database', () => 
       { title: 'Still a draft', code: null },
     ]);
     expect(counter).toEqual({ nextShortCode: 104 });
+    await expect(
+      db
+        .select({ id: proposals.id, updatedAt: proposals.updatedAt })
+        .from(proposals)
+        .where(eq(proposals.processInstanceId, instance.id))
+        .orderBy(proposals.id),
+    ).resolves.toEqual(editDatesBefore);
     expect(dryRun).toContain('3 assigned  101..103');
     expect(secondDryRun).toContain('0 assigned');
   });
