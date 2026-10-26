@@ -75,6 +75,13 @@ const rowFilter = (processInstanceId: string, profileId: string) =>
     eq(decisionVoterEnrolments.profileId, profileId),
   );
 
+export const isEnrolledOnCurrentAttestation = (
+  row: Pick<DecisionVoterEnrolment, 'status' | 'attestationHash'> | null,
+  attestation: string,
+): boolean =>
+  row?.status === DecisionVoterEnrolmentStatus.ENROLLED &&
+  row.attestationHash === hashAttestation(attestation);
+
 export async function findVoterEnrolment({
   processInstanceId,
   authUserId,
@@ -87,7 +94,7 @@ export async function startVoterEnrolment({
   processInstanceId,
   authUserId,
 }: EnrolmentKey): Promise<DecisionVoterEnrolment> {
-  const { profileId } = await loadEnrolmentContext({
+  const { profileId, rule } = await loadEnrolmentContext({
     processInstanceId,
     authUserId,
   });
@@ -99,6 +106,18 @@ export async function startVoterEnrolment({
 
   if (!row) {
     throw new NotFoundError('Voter enrolment', processInstanceId);
+  }
+
+  if (
+    row.status === DecisionVoterEnrolmentStatus.ENROLLED &&
+    !isEnrolledOnCurrentAttestation(row, rule.attestation)
+  ) {
+    const [reopened] = await db
+      .update(decisionVoterEnrolments)
+      .set({ status: DecisionVoterEnrolmentStatus.AWAITING_AGREE })
+      .where(rowFilter(processInstanceId, profileId))
+      .returning();
+    return reopened ?? row;
   }
 
   return row;
@@ -175,7 +194,7 @@ export async function affirmVoterAttestation({
     throw new ValidationError('Give an address before affirming');
   }
 
-  if (row.status === DecisionVoterEnrolmentStatus.ENROLLED) {
+  if (isEnrolledOnCurrentAttestation(row, rule.attestation)) {
     return row;
   }
 

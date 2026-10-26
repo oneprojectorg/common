@@ -1,7 +1,6 @@
 import { trackUserVoted } from '@op/analytics';
 import { db } from '@op/db/client';
 import {
-  DecisionVoterEnrolmentStatus,
   type VoteData,
   decisionsVoteProposals,
   decisionsVoteSubmissions,
@@ -36,6 +35,7 @@ import {
   isRankedVoting,
   isVotingPhase,
 } from './utils/phaseSettings';
+import { isEnrolledOnCurrentAttestation } from './voterEnrolment';
 import { isVotingEligible } from './votingEligibility';
 
 type BallotSelections = NonNullable<VoteData['selections']>;
@@ -392,7 +392,12 @@ export const submitVote = async ({
         where: { processInstanceId: data.processInstanceId, profileId },
       });
 
-      if (enrolment?.status !== DecisionVoterEnrolmentStatus.ENROLLED) {
+      if (
+        !isEnrolledOnCurrentAttestation(
+          enrolment ?? null,
+          phaseConfig.enrolment.attestation,
+        )
+      ) {
         throw new VoterNotEnrolledError();
       }
     }
