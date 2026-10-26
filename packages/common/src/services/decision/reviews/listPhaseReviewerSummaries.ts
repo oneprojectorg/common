@@ -10,6 +10,7 @@ import {
   sql,
 } from '@op/db/client';
 import {
+  ProposalReviewAssignmentStatus,
   ProposalReviewState,
   profiles,
   proposalReviewAssignments,
@@ -79,7 +80,7 @@ export async function listPhaseReviewerSummaries({
         .mapWith(Number)
         .as('assigned_count'),
       submittedCount:
-        sql<number>`(count(*) filter (where ${proposalReviews.state} = ${ProposalReviewState.SUBMITTED}))::int`
+        sql<number>`(count(*) filter (where ${proposalReviewAssignments.status} = ${ProposalReviewAssignmentStatus.COMPLETED}))::int`
           .mapWith(Number)
           .as('submitted_count'),
       draftCount:

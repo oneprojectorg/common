@@ -27,7 +27,7 @@ type Instance = RouterOutput['decision']['getInstance'];
 
 // The admin-without-review variant reuses DEFAULT_REVIEW_TAB for its progress
 // list, so one parser covers every `?tab=` value.
-const REVIEW_TABS = ['to-review', 'all-proposals', 'assignments'] as const;
+const REVIEW_TABS = ['to-review', 'all-proposals', 'reviewers'] as const;
 const DEFAULT_REVIEW_TAB = 'to-review';
 
 const reviewTabParser = parseAsStringLiteral(REVIEW_TABS);
@@ -75,13 +75,13 @@ export function ReviewPage({
     reviewTabParser.withDefault(DEFAULT_REVIEW_TAB),
   );
 
-  // A stale `?tab=assignments` (non-admin link, flag off) has no panel.
+  // A stale `?tab=reviewers` (non-admin link, flag off) has no panel.
   const activeTab =
-    tab === 'assignments' && !showAssignmentsTab ? DEFAULT_REVIEW_TAB : tab;
+    tab === 'reviewers' && !showAssignmentsTab ? DEFAULT_REVIEW_TAB : tab;
 
   // The admin variant shows All proposals under DEFAULT_REVIEW_TAB.
   const adminActiveTab =
-    activeTab === 'assignments' ? 'assignments' : DEFAULT_REVIEW_TAB;
+    activeTab === 'reviewers' ? 'reviewers' : DEFAULT_REVIEW_TAB;
 
   const handleTabChange = (next: string) => {
     const parsed = reviewTabParser.parse(next);
@@ -109,14 +109,14 @@ export function ReviewPage({
   const hasHeroImage = Boolean(heroImagePath);
 
   const assignmentsTabTrigger = (
-    <TabsTrigger value="assignments">{t('assignmentsTab')}</TabsTrigger>
+    <TabsTrigger value="reviewers">{t('reviewersTab')}</TabsTrigger>
   );
 
   // Same table as /decisions/[slug]/assignments — the tab and the dedicated
   // screen are two entry points onto one surface, and reviewer rows link into
   // the dedicated per-reviewer route from both.
   const assignmentsTabContent = (
-    <TabsContent value="assignments" className="grow sm:p-0">
+    <TabsContent value="reviewers" className="grow sm:p-0">
       <ReviewersTableSection
         decisionSlug={decisionSlug}
         processInstanceId={instance.id}
