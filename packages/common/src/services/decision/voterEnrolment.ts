@@ -246,10 +246,6 @@ export async function affirmVoterAttestation({
   }
 
   if (row.attestationHash !== attestationHash) {
-    await db
-      .update(decisionVoterEnrolments)
-      .set({ attestationHash })
-      .where(rowFilter(processInstanceId, profileId));
     return { status: 'attestation_changed' };
   }
 

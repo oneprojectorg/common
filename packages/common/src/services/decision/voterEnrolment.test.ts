@@ -262,7 +262,7 @@ describe.concurrent('affirmVoterAttestation', () => {
     ).not.toBeNull();
   });
 
-  it('given the attestation text changed after it was sent, planted by rewriting the phase rule, when the voter affirms, then they are not enrolled, the new text is recorded as sent, and affirming it enrols', async ({
+  it('given the attestation text changed after it was sent, planted by rewriting the phase rule, when the voter affirms, then they are not enrolled and the stored hash stays what was sent; once the new text is sent, affirming it enrols', async ({
     task,
     onTestFinished,
   }) => {
@@ -307,7 +307,19 @@ describe.concurrent('affirmVoterAttestation', () => {
       findVoterEnrolment({ processInstanceId: instanceId, authUserId }),
     ).resolves.toMatchObject({
       status: DecisionVoterEnrolmentStatus.AWAITING_AGREE,
-      attestationHash: hashAttestation('New words.'),
+      attestationHash: hashAttestation(ATTESTATION),
+    });
+    await expect(
+      affirmVoterAttestation({
+        processInstanceId: instanceId,
+        authUserId,
+        attestationHash: hashAttestation('New words.'),
+      }),
+    ).resolves.toEqual({ status: 'attestation_changed' });
+    await markAttestationSent({
+      processInstanceId: instanceId,
+      authUserId,
+      attestation: 'New words.',
     });
     await expect(
       affirmVoterAttestation({
