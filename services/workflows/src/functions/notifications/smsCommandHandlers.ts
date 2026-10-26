@@ -916,7 +916,7 @@ const resolveBallotInstance = async (
 };
 
 const refuseUnlessReadyToPick = async (
-  { step, account, deliver }: SmsCommandContext,
+  { step, account, deliver, line }: SmsCommandContext,
   instanceId: string,
 ): Promise<SmsCommandResult | null> => {
   const decision = await step.run('describe-ballot-decision', () =>
@@ -947,7 +947,12 @@ const refuseUnlessReadyToPick = async (
         deliver,
         'send-register-first',
         'Register first reply',
-        [formatSmsRegisterFirst(decision.name)],
+        [
+          formatSmsRegisterFirst(
+            decision.name,
+            line?.instanceId === instanceId ? null : decision.slug,
+          ),
+        ],
         'register first',
       );
     }
@@ -993,7 +998,7 @@ const pickByCodes = async (
   );
 
   if (!picked.ok) {
-    return refuseBallotRead(context, picked.reason, instanceId);
+    return refuseBallotRead(context, picked, instanceId);
   }
 
   const { results, summary, hadPicks } = picked.value;
@@ -1068,7 +1073,7 @@ const sendBallot = async (
   );
 
   if (!read.ok) {
-    return refuseBallotRead(context, read.reason, instanceId);
+    return refuseBallotRead(context, read, instanceId);
   }
 
   const summary = read.value;
@@ -1126,7 +1131,7 @@ export const remove: SmsCommandHandler = async (context) => {
   );
 
   if (!removed.ok) {
-    return refuseBallotRead(context, removed.reason, instanceId);
+    return refuseBallotRead(context, removed, instanceId);
   }
 
   const { change, summary } = removed.value;
@@ -1192,7 +1197,7 @@ export const move: SmsCommandHandler = async (context) => {
   );
 
   if (!moved.ok) {
-    return refuseBallotRead(context, moved.reason, instanceId);
+    return refuseBallotRead(context, moved, instanceId);
   }
 
   const { change } = moved.value;
@@ -1220,7 +1225,7 @@ export const move: SmsCommandHandler = async (context) => {
 };
 
 export const submit: SmsCommandHandler = async (context) => {
-  const { step, account, deliver } = context;
+  const { step, account, deliver, line } = context;
   const instanceId = await resolveBallotInstance(context);
 
   if (!instanceId) {
@@ -1299,7 +1304,12 @@ export const submit: SmsCommandHandler = async (context) => {
         deliver,
         'send-register-first',
         'Register first reply',
-        [formatSmsRegisterFirst(decision.name)],
+        [
+          formatSmsRegisterFirst(
+            decision.name,
+            line?.instanceId === instanceId ? null : decision.slug,
+          ),
+        ],
         'register first',
       );
     }
