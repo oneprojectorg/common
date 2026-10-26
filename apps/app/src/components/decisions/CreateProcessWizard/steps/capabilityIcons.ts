@@ -25,7 +25,7 @@ import {
   LuWallet,
 } from 'react-icons/lu';
 
-import type { WizardCopyKey } from '../types';
+import type { CapabilityKey } from '../types';
 
 type IconComponent = ComponentType<{ className?: string }>;
 
@@ -71,10 +71,7 @@ const BY_ID = {
   setYourOwnQuestions: LuCirclePlus,
   shareSummaryPage: LuShare2,
   showTitlesOnlyFullEntries: LuFileText,
-} satisfies Partial<Record<WizardCopyKey, IconComponent>>;
-
-/** Every capability a piece may list; a new one needs an icon here. */
-export type CapabilityKey = keyof typeof BY_ID;
+} satisfies Record<CapabilityKey, IconComponent>;
 
 export function capabilityIcon(id: CapabilityKey): IconComponent {
   return BY_ID[id];
