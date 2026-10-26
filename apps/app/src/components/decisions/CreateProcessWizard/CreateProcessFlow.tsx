@@ -12,6 +12,7 @@ import { CreateProcessWizard } from '.';
 import type { WizardState } from './flow';
 import type { ProcessDraft } from './types';
 import {
+  clearWizardOrigin,
   clearWizardProgress,
   saveWizardProgress,
   takeWizardOrigin,
@@ -36,6 +37,12 @@ export function CreateProcessFlow() {
           name: tWizard(phase.phaseName),
         })),
       }),
+    // Hook-level, so leaving the page mid-request still lands on the process.
+    onSuccess: (decisionProfile) => {
+      clearWizardOrigin();
+      // Not push: Back must not reopen the wizard.
+      router.replace(`/decisions/${decisionProfile.slug}/edit`);
+    },
     onError: (error) => {
       logger.error('Failed to create a decision process', { error });
     },
@@ -50,12 +57,8 @@ export function CreateProcessFlow() {
     // Cleared before the request, so a reload mid-flight cannot resubmit.
     clearWizardProgress();
 
-    // Per-call callbacks run only while this component is still mounted.
+    // Per-call, so it runs only while this screen is still mounted.
     createProcess.mutate(draft, {
-      onSuccess: (decisionProfile) => {
-        // Not push: Back must not reopen the wizard.
-        router.replace(`/decisions/${decisionProfile.slug}/edit`);
-      },
       onError: () => {
         if (progress.current) {
           saveWizardProgress(progress.current);

@@ -2,9 +2,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { EMPTY_ANSWERS, type WizardState } from './flow';
 import {
+  clearWizardOrigin,
   clearWizardProgress,
   readWizardProgress,
+  saveWizardOrigin,
   saveWizardProgress,
+  takeWizardOrigin,
 } from './wizardProgress';
 
 vi.mock('@op/logging/client', () => ({
@@ -102,5 +105,39 @@ describe('wizard progress', () => {
     expect(() => saveWizardProgress(progress)).not.toThrow();
     expect(() => clearWizardProgress()).not.toThrow();
     expect(readWizardProgress()).toBeNull();
+  });
+});
+
+describe('wizard origin', () => {
+  it('hands the origin back once', () => {
+    saveWizardOrigin('/org/acme');
+
+    expect(takeWizardOrigin()).toBe('/org/acme');
+    expect(takeWizardOrigin()).toBeNull();
+  });
+
+  it('hands nothing back once cleared', () => {
+    saveWizardOrigin('/org/acme');
+    clearWizardOrigin();
+
+    expect(takeWizardOrigin()).toBeNull();
+  });
+
+  it('does not throw when storage is unavailable', () => {
+    vi.stubGlobal('sessionStorage', {
+      getItem: () => {
+        throw new Error('SecurityError');
+      },
+      setItem: () => {
+        throw new Error('QuotaExceededError');
+      },
+      removeItem: () => {
+        throw new Error('SecurityError');
+      },
+    });
+
+    expect(() => saveWizardOrigin('/org/acme')).not.toThrow();
+    expect(() => clearWizardOrigin()).not.toThrow();
+    expect(takeWizardOrigin()).toBeNull();
   });
 });

@@ -85,11 +85,20 @@ export function saveWizardOrigin(pathname: string) {
 export function takeWizardOrigin(): string | null {
   try {
     const origin = sessionStorage.getItem(ORIGIN_KEY);
-    sessionStorage.removeItem(ORIGIN_KEY);
+    clearWizardOrigin();
 
     return origin;
   } catch {
     return null;
+  }
+}
+
+/** Also on success, or a later direct visit's Exit would return to the old page. */
+export function clearWizardOrigin() {
+  try {
+    sessionStorage.removeItem(ORIGIN_KEY);
+  } catch {
+    // Nothing was saved if storage is unavailable.
   }
 }
 

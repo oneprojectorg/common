@@ -24,6 +24,8 @@ interface RouteScan {
   displayUrl?: string;
   label: string;
   auth: 'public' | 'authenticated';
+  /** For a route that animates under text; axe's contrast reads drift otherwise. */
+  reducedMotion?: boolean;
 }
 
 type RouteResult =
@@ -153,6 +155,7 @@ const STATIC_AUTH_ROUTES: RouteScan[] = [
     url: '/en/decisions/new',
     label: 'Create process wizard',
     auth: 'authenticated',
+    reducedMotion: true,
   },
   { url: '/en/profile', label: 'Profile index', auth: 'authenticated' },
   { url: '/en/search', label: 'Search', auth: 'authenticated' },
@@ -413,6 +416,10 @@ async function scanRoute(page: Page, route: RouteScan): Promise<RouteResult> {
   page.on('console', onConsole);
 
   try {
+    // The page is shared across routes; `null` resets the emulation.
+    await page.emulateMedia({
+      reducedMotion: route.reducedMotion ? 'reduce' : null,
+    });
     await page.goto(route.url, {
       waitUntil: 'domcontentloaded',
       timeout: 30_000,

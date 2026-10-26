@@ -253,6 +253,23 @@ test.describe('Create process wizard', () => {
     await expect(
       page.getByRole('heading', { name: 'Process Settings' }),
     ).toBeVisible({ timeout: 36_000 });
+
+    // The draft opens with the name typed and the single-application phases.
+    await expect(page.getByLabel('Process Name')).toHaveValue(
+      'E2E Wizard Process',
+    );
+    const sidebarNav = page.getByRole('navigation', {
+      name: 'Section navigation',
+    });
+    for (const phase of [
+      'Send in your application',
+      'Review and decide',
+      'See the awards',
+    ]) {
+      await expect(sidebarNav.getByRole('button', { name: phase })).toBeVisible(
+        { timeout: 18_000 },
+      );
+    }
   });
 
   test('walks the other-process questions with no axe violations', async ({
