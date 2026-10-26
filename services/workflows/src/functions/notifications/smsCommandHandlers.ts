@@ -340,7 +340,7 @@ export const agree: SmsCommandHandler = async (context) => {
   );
 
   if (affirmed.status === 'attestation_changed') {
-    return deliverAll(
+    const sent = await deliverAll(
       deliver,
       'send-attestation-changed',
       'Attestation changed reply',
@@ -350,6 +350,16 @@ export const agree: SmsCommandHandler = async (context) => {
       }),
       'attestation changed',
     );
+    if (sent.message === 'attestation changed') {
+      await step.run('mark-attestation-sent', () =>
+        markAttestationSent({
+          processInstanceId: pending.processInstanceId,
+          authUserId: account.authUserId,
+          attestation: rule.attestation,
+        }),
+      );
+    }
+    return sent;
   }
 
   return deliverAll(
