@@ -75,20 +75,24 @@ const ActiveProcessesList = () => {
           </li>
         ))}
       </ul>
+      <span role="status" className="sr-only">
+        {t('shell.visibleDecisionsCount', { count: visible.length })}
+      </span>
       {canSeeMore && (
         <Button
           variant="link"
           className="self-center"
           onClick={seeMore}
           loading={isFetchingNextPage}
-          aria-expanded={false}
+          // Expanded, this only loads more pages
+          aria-expanded={isExpanded ? undefined : false}
           aria-controls={ACTIVE_PROCESSES_LIST_ID}
         >
           {t('shell.seeMoreAction')}
           <LuChevronDown />
         </Button>
       )}
-      {isExpanded && !canSeeMore && (
+      {isExpanded && (
         <Button
           variant="link"
           className="self-center"

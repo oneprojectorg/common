@@ -1,3 +1,4 @@
+import { Button } from '@op/sense/Button';
 import { CommentButton } from '@op/sense/CommentButton';
 import { LikeButton } from '@op/sense/LikeButton';
 import type { Meta, StoryObj } from '@storybook/react-vite';
@@ -51,6 +52,10 @@ export const ReadOnly: Story = {
   ),
 };
 
+/**
+ * Pressing the heart changes the count, which slides to the new number (see
+ * `AnimatedCount`) and is announced politely.
+ */
 export const Interactive: Story = {
   render: function InteractiveLikeButton() {
     const [liked, setLiked] = React.useState(false);
@@ -64,6 +69,36 @@ export const Interactive: Story = {
         tooltip={likers}
         onClick={() => setLiked((current) => !current)}
       />
+    );
+  },
+};
+
+/**
+ * The count also moves when someone else likes the post: the viewer has not
+ * pressed anything, so the slide and the live announcement are the only cues.
+ */
+export const LiveCount: Story = {
+  render: function LiveCountLikeButton() {
+    const [count, setCount] = React.useState(12);
+
+    return (
+      <div className="flex items-center gap-4">
+        <LikeButton count={count} label={`${count} likes`} tooltip={likers} />
+        <Button
+          variant="link"
+          size="sm"
+          onClick={() => setCount((current) => current + 1)}
+        >
+          Someone else likes this
+        </Button>
+        <Button
+          variant="link"
+          size="sm"
+          onClick={() => setCount((current) => Math.max(0, current - 1))}
+        >
+          Someone unlikes this
+        </Button>
+      </div>
     );
   },
 };

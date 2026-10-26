@@ -85,7 +85,9 @@ function LikeButton({
         )}
       />
       {/* The count changes without a navigation when anyone likes the post. */}
-      <AnimatedCount value={count ?? 0} />
+      <span aria-live="polite">
+        <AnimatedCount value={count ?? 0} />
+      </span>
     </button>
   );
 
