@@ -91,6 +91,7 @@ const NUMBERS = {
   enrolRewrite: '+15005550079',
   enrolSwitch: '+15005550083',
   agreeRewritten: '+15005550027',
+  pickDeleted: '+15005550028',
 } as const;
 
 const LINES = {
@@ -139,6 +140,7 @@ const LINES = {
   enrolRewrite: '+16145550190',
   enrolSwitch: '+16145550191',
   agreeRewritten: '+16145550170',
+  pickDeleted: '+16145550171',
 } as const;
 
 beforeEach(() => {
@@ -1671,6 +1673,50 @@ describe('handleSMSCommand building and casting the ballot', () => {
     expect(recordedSms.at(-1)?.body).toBe(
       'Your ballot is already in. One ballot per person.',
     );
+  });
+
+  it('given two picks, when the owner deletes one of the proposals, then LIST shows the other alone and SUBMIT casts it', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsCommandFixture(task.id, onTestFinished);
+    const name = `Pick Deleted ${task.id}`;
+    const { member, instanceId } = await seed(fixture, {
+      phone: NUMBERS.pickDeleted,
+      line: LINES.pickDeleted,
+      name,
+    });
+    await text(NUMBERS.pickDeleted, LINES.pickDeleted, '102 101');
+    await fixture.deleteProposal({ instanceId, owner: member, code: 102 });
+
+    await keyword(NUMBERS.pickDeleted, LINES.pickDeleted, 'list');
+    expect(recordedSms.at(-1)?.body).toBe(
+      [
+        `Your "${name}" ballot:`,
+        '1. Crosswalk lighting $85,000.',
+        '$85,000 allocated, $915,000 unspent.',
+        'Text DONE to review, or a code to add.',
+      ].join('\n'),
+    );
+
+    const { result } = await keyword(
+      NUMBERS.pickDeleted,
+      LINES.pickDeleted,
+      'submit',
+    );
+
+    expect(result).toEqual({ message: 'ballot submitted' });
+    const remaining = await db.query.proposals.findFirst({
+      where: { processInstanceId: instanceId, shortCode: 101 },
+      columns: { id: true },
+    });
+    const submission = await db.query.decisionsVoteSubmissions.findFirst({
+      where: { processInstanceId: instanceId },
+      columns: { voteData: true },
+    });
+    expect(submission?.voteData.selections?.map((s) => s.proposalId)).toEqual([
+      remaining?.id,
+    ]);
   });
 
   it('given a code no proposal has, then nothing is added and the member is told', async ({

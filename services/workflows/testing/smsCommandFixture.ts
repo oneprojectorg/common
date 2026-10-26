@@ -3,6 +3,7 @@ import {
   type DecisionSchemaDefinition,
   type PhoneNumber,
   type VoterEnrolmentRule,
+  deleteProposal,
   updateDecisionInstance,
 } from '@op/common';
 import {
@@ -27,6 +28,7 @@ import {
   profiles,
   taxonomyTerms,
 } from '@op/db/schema';
+import type { User } from '@op/supabase/lib';
 
 type RegisterCleanup = (fn: () => void | Promise<void>) => void;
 
@@ -43,6 +45,17 @@ interface FixtureProposal {
 }
 
 const VOTING_PHASE_ID = 'voting';
+
+const userOf = (account: FixtureAccount): User => ({
+  id: account.authUserId,
+  aud: 'authenticated',
+  role: 'authenticated',
+  email: account.email ?? undefined,
+  phone: undefined,
+  app_metadata: {},
+  user_metadata: {},
+  is_anonymous: false,
+});
 
 const votingSchema: DecisionSchemaDefinition = {
   id: 'sms-voting',
@@ -276,16 +289,7 @@ export class SmsCommandFixture {
           rules: { voting: { submit: true, enrolment: { attestation } } },
         },
       ],
-      user: {
-        id: owner.authUserId,
-        aud: 'authenticated',
-        role: 'authenticated',
-        email: owner.email ?? undefined,
-        phone: undefined,
-        app_metadata: {},
-        user_metadata: {},
-        is_anonymous: false,
-      },
+      user: userOf(owner),
     });
   }
 
@@ -301,17 +305,27 @@ export class SmsCommandFixture {
     await updateDecisionInstance({
       instanceId,
       status,
-      user: {
-        id: owner.authUserId,
-        aud: 'authenticated',
-        role: 'authenticated',
-        email: owner.email ?? undefined,
-        phone: undefined,
-        app_metadata: {},
-        user_metadata: {},
-        is_anonymous: false,
-      },
+      user: userOf(owner),
     });
+  }
+
+  async deleteProposal({
+    instanceId,
+    owner,
+    code,
+  }: {
+    instanceId: string;
+    owner: FixtureAccount;
+    code: number;
+  }) {
+    const proposal = await db.query.proposals.findFirst({
+      where: { processInstanceId: instanceId, shortCode: code },
+      columns: { id: true },
+    });
+    if (!proposal) {
+      throw new Error(`No proposal ${code} on ${instanceId}`);
+    }
+    await deleteProposal({ proposalId: proposal.id, user: userOf(owner) });
   }
 
   async makePublic(instanceProfileId: string) {
