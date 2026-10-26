@@ -21,7 +21,6 @@ vi.mock('@op/cache', () => ({ cache }));
 
 vi.mock('@op/logging', () => ({ logger: { warn, error } }));
 
-// What the cache would have stored, or `undefined` when the write was skipped.
 let written: unknown;
 
 const params = { key: 'new_process_admin_enabled', distinctId: 'auth-1' };

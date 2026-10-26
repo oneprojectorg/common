@@ -34,7 +34,6 @@ export const isServerFeatureEnabled = async ({
       ttl: TTL,
       // The L1 copy of a Redis hit restarts the clock; Redis alone keeps the bound.
       skipMemCache: true,
-      // Never cache an outage, so the next request retries.
       skipCacheWrite: (result) => result === 'unreadable',
     },
   });
