@@ -1,8 +1,10 @@
 import { InngestTestEngine } from '@inngest/test';
 import {
   SMS_MAX_BODY_LENGTH,
+  affirmVoterAttestation,
   findVoterEnrolment,
   parsePhoneNumber,
+  resolveVoterAddress,
 } from '@op/common';
 import { ProcessStatus } from '@op/db/schema';
 import { beforeEach, describe, expect, it } from 'vitest';
@@ -60,6 +62,7 @@ const NUMBERS = {
   browseOtherSlug: '+15005550068',
   browseOtherLine: '+15005550069',
   browseUnpublished: '+15005550059',
+  browseRewritten: '+15005550057',
   enrolRewrite: '+15005550079',
   enrolSwitch: '+15005550083',
   agreeRewritten: '+15005550027',
@@ -85,6 +88,7 @@ const LINES = {
   browseOtherLineA: '+16145550192',
   browseOtherLineB: '+16145550193',
   browseUnpublished: '+16145550194',
+  browseRewritten: '+16145550199',
   enrolRewrite: '+16145550190',
   enrolSwitch: '+16145550191',
   agreeRewritten: '+16145550170',
@@ -1234,6 +1238,56 @@ describe('handleSMSCommand browsing the ballot', () => {
       smsInboundEvent({
         from: NUMBERS.browseUnenrolled,
         to: LINES.browseUnenrolled,
+        keyword: 'proposals',
+      }),
+    );
+
+    expect(result).toEqual({ message: 'register first' });
+    expect(recordedSms.map((sms) => sms.body)).toEqual([
+      `Text VOTE to register for "${name}" before browsing its proposals.`,
+    ]);
+  });
+
+  it("given a registered member whose decision's attestation was rewritten, when they text PROPOSALS, then they are told to text VOTE first instead of nothing", async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsCommandFixture(task.id, onTestFinished);
+    const name = `Browse Rewritten ${task.id}`;
+    const member = await fixture.createPhoneOnlyAccount(
+      parsePhoneNumber(NUMBERS.browseRewritten),
+    );
+    const { instanceId } = await fixture.createVotingInstance({
+      owner: member,
+      name,
+      proposalTitles: PROPOSALS,
+      enrolment: { attestation: 'I live here.', boundary: false },
+      ownerIsAdmin: true,
+    });
+    await fixture.bindLine(instanceId, parsePhoneNumber(LINES.browseRewritten));
+    const key = {
+      processInstanceId: instanceId,
+      authUserId: member.authUserId,
+    };
+    await resolveVoterAddress({
+      ...key,
+      address: 'anywhere',
+      geocode: async () => [{ lat: 40.5, lng: -73.5 }],
+    });
+    await affirmVoterAttestation({
+      ...key,
+      attestationHash: hashAttestation('I live here.'),
+    });
+    await fixture.rewriteAttestation({
+      instanceId,
+      owner: member,
+      attestation: `I still live here ${task.id}.`,
+    });
+
+    const { result } = await run(
+      smsInboundEvent({
+        from: NUMBERS.browseRewritten,
+        to: LINES.browseRewritten,
         keyword: 'proposals',
       }),
     );

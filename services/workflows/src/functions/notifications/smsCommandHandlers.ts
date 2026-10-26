@@ -563,7 +563,9 @@ export const proposals: SmsCommandHandler = async (context) => {
       }),
     );
 
-    if (enrolment?.status !== DecisionVoterEnrolmentStatus.ENROLLED) {
+    if (
+      !isEnrolledOnCurrentAttestation(enrolment, decision.enrolment.attestation)
+    ) {
       return deliverAll(
         deliver,
         'send-register-first',
@@ -575,14 +577,18 @@ export const proposals: SmsCommandHandler = async (context) => {
   }
 
   const page = await step.run('list-ballot-page', () =>
-    listSmsBallotPage({
-      authUserId: account.authUserId,
-      instanceId: decision.instanceId,
-      chatLineId: context.line?.id ?? null,
-    }),
+    readBallot(() =>
+      listSmsBallotPage({
+        authUserId: account.authUserId,
+        instanceId: decision.instanceId,
+        chatLineId: context.line?.id ?? null,
+      }),
+    ),
   );
 
-  return sendBallotPage(deliver, page, 'first');
+  return page.ok
+    ? sendBallotPage(deliver, page.value, 'first')
+    : refuseBallotRead(context, page.reason, decision.instanceId);
 };
 
 type BallotRead<T> =
