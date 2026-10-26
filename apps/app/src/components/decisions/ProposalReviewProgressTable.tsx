@@ -194,7 +194,6 @@ function ReviewersPile({ reviewers }: { reviewers: Reviewer[] }) {
             ? getPublicUrl(reviewer.profile.avatarImage.name)
             : undefined
         }
-        className={isSubmitted(reviewer) ? undefined : 'opacity-50 grayscale'}
       />
     ));
   const overflow = ordered.length - MAX_FACES;
