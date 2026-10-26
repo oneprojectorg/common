@@ -2601,7 +2601,7 @@ describe('handleSMSCommand changing a cast ballot', () => {
 
     expect(result).toEqual({ message: 'ballot revised' });
     expect(recordedSms.at(-1)?.body).toBe(
-      'Your ballot is updated. One ballot per person. How you vote is never public.',
+      'Your ballot is updated. One ballot per person. However, your vote is never public.',
     );
     const proposals = await db.query.proposals.findMany({
       where: { processInstanceId: instanceId },
