@@ -22,6 +22,7 @@ import { useTranslations } from '@/lib/i18n/routing';
 
 import { DecisionActionBar } from '../DecisionActionBar';
 import { DecisionHero } from '../DecisionHero';
+import { DecisionHeroBanner } from '../DecisionHeroBanner';
 import {
   DecisionResultsTabPanel,
   DecisionResultsTabs,
@@ -168,13 +169,11 @@ function ResultsPageContent({
     <>
       <FinalPhaseSubmissionSuccessDialog />
       <ProcessSurveyGate instanceId={instanceId} isLegacy={isLegacy} />
-      {/* Hero section — owns the results gradient; the header above stays neutral */}
-      <div className="bg-redPurple px-4 pt-16 pb-8 text-white md:pt-8">
-        <div className="mx-auto flex max-w-3xl flex-col justify-center gap-4">
+      <DecisionHeroBanner>
+        <div className="mx-auto flex max-w-3xl flex-col justify-center gap-4 px-4 pt-16 pb-8 md:pt-8">
           <DecisionHero
             title={heroContent.title}
             description={heroContent.description}
-            variant="results"
           />
 
           <Suspense fallback={<Skeleton className="h-12 w-full" />}>
@@ -194,7 +193,7 @@ function ResultsPageContent({
             />
           ) : null}
         </div>
-      </div>
+      </DecisionHeroBanner>
 
       <div className="flex w-full justify-center border-t bg-white">
         <div className="w-full p-4">
