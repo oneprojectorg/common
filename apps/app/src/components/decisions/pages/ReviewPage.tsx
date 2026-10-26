@@ -154,7 +154,6 @@ export function ReviewPage({
             description={
               !isAdmin && heroDescription ? <p>{heroDescription}</p> : undefined
             }
-            variant="standard"
             hasImage={hasHeroImage}
           >
             {isAdmin ? (

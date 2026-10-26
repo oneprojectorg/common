@@ -62,7 +62,6 @@ export function ReviewSelectionPage({
                 : t('selectAdvancingHeading')}
             </p>
           }
-          variant="standard"
         />
       </div>
 

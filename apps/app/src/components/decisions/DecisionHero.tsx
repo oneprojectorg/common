@@ -7,14 +7,13 @@ import { DecisionTranslateLink } from './DecisionTranslateLink';
 export function DecisionHero({
   title,
   description,
-  variant = 'standard',
   gradient,
   hasImage = false,
+  showTranslateLink = true,
   children,
 }: {
   title: string | ReactNode;
   description?: string | ReactNode;
-  variant?: 'standard' | 'results';
   /** Override the default teal/green gradient on the gradient-style header. */
   gradient?: string;
   /**
@@ -23,18 +22,14 @@ export function DecisionHero({
    * scrim, so switch the text to white — same rule as the overview hero.
    */
   hasImage?: boolean;
+  /** Hide the translate link on pages that render no translated content. */
+  showTranslateLink?: boolean;
   children?: ReactNode;
 }) {
   return (
     <div className="flex flex-col gap-2 text-center">
-      {variant === 'standard' ? (
-        <DecisionTranslateLink hasImage={hasImage} />
-      ) : null}
-      {variant === 'results' ? (
-        <Header1>
-          <bdi>{title}</bdi>
-        </Header1>
-      ) : hasImage ? (
+      {showTranslateLink ? <DecisionTranslateLink hasImage={hasImage} /> : null}
+      {hasImage ? (
         <Header1 className="text-white">
           <bdi>{title}</bdi>
         </Header1>
@@ -50,8 +45,7 @@ export function DecisionHero({
         <div
           className={cn(
             'flex flex-col gap-2 text-base',
-            variant !== 'results' &&
-              (hasImage ? 'text-white' : 'text-foreground'),
+            hasImage ? 'text-white' : 'text-foreground',
           )}
         >
           {typeof description === 'string' ? (

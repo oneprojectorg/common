@@ -90,7 +90,6 @@ export function StandardDecisionPage({
               description={
                 heroDescription ? <p>{heroDescription}</p> : undefined
               }
-              variant="standard"
               hasImage={hasHeroImage}
             />
 

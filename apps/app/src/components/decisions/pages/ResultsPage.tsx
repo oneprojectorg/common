@@ -14,6 +14,7 @@ import {
   EmptyTitle,
 } from '@op/sense/Empty';
 import { Skeleton } from '@op/sense/Skeleton';
+import { cn } from '@op/sense/lib/utils';
 import { useSearchParams } from 'next/navigation';
 import { Suspense, useState } from 'react';
 import { LuLeaf } from 'react-icons/lu';
@@ -22,6 +23,7 @@ import { useTranslations } from '@/lib/i18n/routing';
 
 import { DecisionActionBar } from '../DecisionActionBar';
 import { DecisionHero } from '../DecisionHero';
+import { DecisionHeroBanner } from '../DecisionHeroBanner';
 import {
   DecisionResultsTabPanel,
   DecisionResultsTabs,
@@ -55,6 +57,7 @@ interface ResultsPageInstance {
       phaseId?: string;
       rules?: { voting?: { submit?: boolean } };
     }[];
+    overview?: { heroImage?: string } | null;
   } | null;
 }
 
@@ -164,17 +167,25 @@ function ResultsPageContent({
     }),
   });
 
+  const heroImagePath = instance.instanceData?.overview?.heroImage;
+  const hasHeroImage = Boolean(heroImagePath);
+
   return (
     <>
       <FinalPhaseSubmissionSuccessDialog />
       <ProcessSurveyGate instanceId={instanceId} isLegacy={isLegacy} />
-      {/* Hero section — owns the results gradient; the header above stays neutral */}
-      <div className="bg-redPurple px-4 pt-16 pb-8 text-white md:pt-8">
-        <div className="mx-auto flex max-w-3xl flex-col justify-center gap-4">
+      <DecisionHeroBanner heroImagePath={heroImagePath}>
+        <div
+          className={cn(
+            'mx-auto flex max-w-3xl flex-col justify-center gap-4 px-4 pt-16 pb-8 md:pt-8',
+            hasHeroImage && 'text-white',
+          )}
+        >
           <DecisionHero
             title={heroContent.title}
             description={heroContent.description}
-            variant="results"
+            hasImage={hasHeroImage}
+            showTranslateLink={false}
           />
 
           <Suspense fallback={<Skeleton className="h-12 w-full" />}>
@@ -194,7 +205,7 @@ function ResultsPageContent({
             />
           ) : null}
         </div>
-      </div>
+      </DecisionHeroBanner>
 
       <div className="flex w-full justify-center border-t bg-white">
         <div className="w-full p-4">

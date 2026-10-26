@@ -36,7 +36,6 @@ export function FinalPhaseManualSelectionPage({
         <DecisionHero
           title={t('confirmWinnersHeading')}
           description={t('suggestedWinnersHint')}
-          variant="standard"
         />
       </div>
 
