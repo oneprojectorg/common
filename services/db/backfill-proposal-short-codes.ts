@@ -55,7 +55,7 @@ const assignShortCodes = (
     }
 
     const uncoded = await tx
-      .select({ id: proposals.id, updatedAt: proposals.updatedAt })
+      .select({ id: proposals.id })
       .from(proposals)
       .where(
         and(
@@ -76,10 +76,13 @@ const assignShortCodes = (
       return report;
     }
 
-    for (const [index, { id, updatedAt }] of uncoded.entries()) {
+    for (const [index, { id }] of uncoded.entries()) {
       await tx
         .update(proposals)
-        .set({ shortCode: instance.next + index, updatedAt })
+        .set({
+          shortCode: instance.next + index,
+          updatedAt: sql`${proposals.updatedAt}`,
+        })
         .where(eq(proposals.id, id));
     }
 
