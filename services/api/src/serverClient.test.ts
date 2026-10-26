@@ -18,7 +18,6 @@ describe.concurrent('createCallerForRequest', () => {
     task,
     onTestFinished,
   }) => {
-    // Given a decision and a confirmed user who is not a member of it
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
     const setup = await testData.createDecisionSetup({
       instanceCount: 1,
@@ -30,12 +29,10 @@ describe.concurrent('createCallerForRequest', () => {
     });
     const caller = await createCallerAs(nonMember.email);
 
-    // When the server component loads the decision for that user
     const call = caller.decision.getDecisionBySlug({
       slug: setup.instance.slug,
     });
 
-    // Then the error still throws, and its digest says 403, not 500
     await expect(call).rejects.toMatchObject({
       cause: { name: 'UnauthorizedError', statusCode: 403 },
       digest: encodeErrorDigest({
@@ -46,7 +43,6 @@ describe.concurrent('createCallerForRequest', () => {
   });
 
   it('returns the decision to its admin', async ({ task, onTestFinished }) => {
-    // Given a decision and its admin
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
     const setup = await testData.createDecisionSetup({
       instanceCount: 1,
@@ -54,12 +50,10 @@ describe.concurrent('createCallerForRequest', () => {
     });
     const caller = await createCallerAs(setup.userEmail);
 
-    // When the server component loads the decision for the admin
     const decision = await caller.decision.getDecisionBySlug({
       slug: setup.instance.slug,
     });
 
-    // Then the call succeeds with admin access
     expect(decision.slug).toBe(setup.instance.slug);
     expect(decision.processInstance.access?.admin).toBe(true);
   });

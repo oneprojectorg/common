@@ -122,8 +122,6 @@ export const createServerContext = cache(async (): Promise<TContext> => {
 
 const callerFactory = createCallerFactory(appRouter);
 
-// Next.js forwards an error's own `digest` to the client; `error.tsx` reads
-// the status from it. Mirrors `errorFormatter`, which skips in-process calls.
 const tagErrorDigest = ({ error }: { error: TRPCError }) => {
   const cause =
     error.cause instanceof AccessControlException
@@ -140,7 +138,6 @@ const tagErrorDigest = ({ error }: { error: TRPCError }) => {
   }
 };
 
-/** Server-side tRPC caller for one request's context. */
 export const createCallerForRequest = (context: TContext) =>
   callerFactory(context, { onError: tagErrorDigest });
 
