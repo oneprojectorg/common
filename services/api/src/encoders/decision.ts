@@ -88,6 +88,12 @@ const phaseRulesEncoder = z.object({
       voterBudget: z.number().finite().positive().optional(),
       voterCostField: z.string().trim().min(1).optional(),
       ranked: z.boolean().optional(),
+      enrolment: z
+        .object({
+          attestation: z.string().trim().min(1),
+          boundary: z.boolean().optional(),
+        })
+        .optional(),
     })
     .optional(),
   comments: z.object({ submit: z.boolean().optional() }).optional(),
