@@ -28,12 +28,15 @@ export async function findBallotDraft({
 
 export async function findLatestBallotDraft({
   authUserId,
+  chatLineId,
 }: {
   authUserId: string;
+  /** Only drafts last browsed on this decision line. */
+  chatLineId?: string;
 }): Promise<DecisionBallotDraft | null> {
   const profileId = await getIndividualProfileId(authUserId);
   const [draft] = await db.query.decisionBallotDrafts.findMany({
-    where: { profileId },
+    where: { profileId, ...(chatLineId ? { chatLineId } : {}) },
     orderBy: { updatedAt: 'desc' },
     limit: 1,
   });
@@ -43,12 +46,25 @@ export async function findLatestBallotDraft({
 export async function ensureBallotDraft({
   processInstanceId,
   authUserId,
-}: DraftKey): Promise<DecisionBallotDraft> {
+  chatLineId,
+}: DraftKey & {
+  /** The decision line this browse came in on; omitted leaves the stored line as it is. */
+  chatLineId?: string | null;
+}): Promise<DecisionBallotDraft> {
   const profileId = await getIndividualProfileId(authUserId);
   await db
     .insert(decisionBallotDrafts)
-    .values({ processInstanceId, profileId })
-    .onConflictDoNothing();
+    .values({ processInstanceId, profileId, chatLineId: chatLineId ?? null })
+    .onConflictDoUpdate({
+      target: [
+        decisionBallotDrafts.processInstanceId,
+        decisionBallotDrafts.profileId,
+      ],
+      set:
+        chatLineId === undefined
+          ? { updatedAt: new Date().toISOString() }
+          : { chatLineId, updatedAt: new Date().toISOString() },
+    });
   const draft = await db.query.decisionBallotDrafts.findFirst({
     where: { processInstanceId, profileId },
   });

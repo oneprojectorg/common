@@ -1,5 +1,5 @@
 import { db } from '@op/db/client';
-import { DecisionVoterEnrolmentStatus } from '@op/db/schema';
+import { DecisionVoterEnrolmentStatus, ProcessStatus } from '@op/db/schema';
 import { permission } from 'access-zones';
 
 import {
@@ -21,7 +21,10 @@ import {
 import { getInstancePhases } from '../schemas/instanceData';
 import { getInstanceCurrentPhase } from '../utils/instance';
 import { getVoterEnrolment, isVotingPhase } from '../utils/phaseSettings';
-import { findVoterEnrolment } from '../voterEnrolment';
+import {
+  findVoterEnrolment,
+  isEnrolledOnCurrentAttestation,
+} from '../voterEnrolment';
 
 export const SMS_BALLOT_PAGE_SIZE = 5;
 
@@ -49,13 +52,18 @@ const loadBallotScope = async ({
         instanceData: true,
         currentStateId: true,
         processId: true,
+        status: true,
       },
       with: { profile: { columns: { name: true } } },
     }),
     findVoterEnrolment({ processInstanceId: instanceId, authUserId }),
   ]);
 
-  if (!instance?.profile || !instance.profileId) {
+  if (
+    !instance?.profile ||
+    !instance.profileId ||
+    instance.status !== ProcessStatus.PUBLISHED
+  ) {
     throw new NotFoundError('Process instance', instanceId);
   }
 
@@ -78,10 +86,9 @@ const loadBallotScope = async ({
     throw new ValidationError('Voting is not open for this decision');
   }
 
-  if (
-    getVoterEnrolment(phase) &&
-    enrolment?.status !== DecisionVoterEnrolmentStatus.ENROLLED
-  ) {
+  const rule = getVoterEnrolment(phase);
+
+  if (rule && !isEnrolledOnCurrentAttestation(enrolment, rule.attestation)) {
     throw new VoterNotEnrolledError();
   }
 
@@ -108,10 +115,13 @@ export async function listSmsBallotPage({
   authUserId,
   instanceId,
   after,
+  chatLineId,
 }: {
   authUserId: string;
   instanceId: string;
   after?: number;
+  /** The decision line the browse came in on, recorded on the draft. */
+  chatLineId?: string | null;
 }): Promise<SmsBallotPage> {
   const { instance, decisionName, boundaryId, district } =
     await loadBallotScope({ authUserId, instanceId });
@@ -125,7 +135,7 @@ export async function listSmsBallotPage({
     }),
   ]);
   const key = { processInstanceId: instanceId, authUserId };
-  await ensureBallotDraft(key);
+  await ensureBallotDraft({ ...key, chatLineId });
   await setBallotPageCursor({ ...key, pageCursor: page.nextCursor });
 
   return {

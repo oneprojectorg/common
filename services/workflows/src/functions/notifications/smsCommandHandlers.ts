@@ -17,6 +17,7 @@ import {
   affirmVoterAttestation,
   clipSmsText,
   describeEnrolmentDecision,
+  findBallotDraft,
   findLatestBallotDraft,
   findPendingVoterEnrolment,
   findVoterEnrolment,
@@ -74,6 +75,7 @@ export type SmsDeliver = (
 ) => Promise<SmsReplyRejected | null>;
 
 export interface ChatLine {
+  id: string;
   slug: string;
   instanceId: string;
 }
@@ -576,6 +578,7 @@ export const proposals: SmsCommandHandler = async (context) => {
     listSmsBallotPage({
       authUserId: account.authUserId,
       instanceId: decision.instanceId,
+      chatLineId: context.line?.id ?? null,
     }),
   );
 
@@ -637,24 +640,34 @@ const refuseBallotRead = async (
       );
 };
 
+// On a decision line the line's own decision is the default; a decision the
+// voter browsed by slug on that same line overrides it, and a draft browsed
+// on another line never does. On the shared number the latest draft wins.
 const resolveBrowseInstance = async ({
   step,
   account,
   line,
-}: SmsCommandContext): Promise<string | null> =>
-  (
-    await step.run('find-latest-draft', () =>
-      findLatestBallotDraft({ authUserId: account.authUserId }),
-    )
-  )?.processInstanceId ??
-  line?.instanceId ??
-  null;
+}: SmsCommandContext): Promise<string | null> => {
+  const draft = await step.run('find-latest-draft', () =>
+    findLatestBallotDraft({
+      authUserId: account.authUserId,
+      ...(line ? { chatLineId: line.id } : {}),
+    }),
+  );
+  return draft?.processInstanceId ?? line?.instanceId ?? null;
+};
 
 export const more: SmsCommandHandler = async (context) => {
   const { step, account, deliver } = context;
-  const draft = await step.run('find-ballot-draft', () =>
-    findLatestBallotDraft({ authUserId: account.authUserId }),
-  );
+  const instanceId = await resolveBrowseInstance(context);
+  const draft = instanceId
+    ? await step.run('find-ballot-draft', () =>
+        findBallotDraft({
+          processInstanceId: instanceId,
+          authUserId: account.authUserId,
+        }),
+      )
+    : null;
 
   if (!draft || draft.pageCursor === null) {
     return deliverAll(
