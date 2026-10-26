@@ -75,10 +75,10 @@ describe('loadProcessAdmin', () => {
     mocks.isServerFeatureEnabled.mockResolvedValue(false);
 
     await expect(loadProcessAdmin('budget')).rejects.toThrow('NOT_FOUND');
-    expect(mocks.isServerFeatureEnabled).toHaveBeenCalledWith(
-      'new_process_admin_enabled',
-      'auth-user-1',
-    );
+    expect(mocks.isServerFeatureEnabled).toHaveBeenCalledWith({
+      key: 'new_process_admin_enabled',
+      distinctId: 'auth-user-1',
+    });
   });
 
   it('returns the decision for an admin with the flag on', async () => {
