@@ -138,6 +138,7 @@ export * from './listProposalsWithReviewAggregates';
 export * from './getProposalWithReviewAggregates';
 export * from './proposal/getReviewedProposalVersion';
 export * from './getPhaseReviewProgress';
+export * from './getVotingProgress';
 export * from './listProposalsRevisionRequests';
 export * from './listProposalFeedback';
 export * from './listProposalRevisionRequests';
