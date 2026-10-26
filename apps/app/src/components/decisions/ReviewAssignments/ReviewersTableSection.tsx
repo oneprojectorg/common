@@ -2,7 +2,11 @@
 
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { trpc } from '@op/api/client';
-import { type PhaseReviewerSummary, nextCursor } from '@op/common/client';
+import {
+  type PhaseReviewerSummary,
+  ProposalReviewAssignmentStatus,
+  nextCursor,
+} from '@op/common/client';
 import { useInfiniteScroll } from '@op/hooks';
 import {
   Empty,
@@ -16,7 +20,7 @@ import { ProfileAvatar } from '@op/sense/ProfileAvatar';
 import { ProfileItem } from '@op/sense/ProfileItem';
 import { Progress } from '@op/sense/Progress';
 import { Skeleton } from '@op/sense/Skeleton';
-import { StatusBadge, type StatusBadgeProps } from '@op/sense/StatusBadge';
+import { StatusBadge } from '@op/sense/StatusBadge';
 import {
   Table,
   TableBody,
@@ -31,8 +35,8 @@ import { Suspense, useCallback } from 'react';
 import { LuUsers } from 'react-icons/lu';
 
 import { Link, useTranslations } from '@/lib/i18n';
-import type { TranslationKey } from '@/lib/i18n';
 
+import { ReviewStatusBadge } from '../ReviewStatusBadge';
 import { ReviewersTableSkeleton } from './ReviewAssignmentsSkeletons';
 
 interface ReviewersTableSectionProps {
@@ -40,12 +44,6 @@ interface ReviewersTableSectionProps {
   processInstanceId: string;
   phaseId: string;
 }
-
-type ReviewerStatus =
-  | 'unassigned'
-  | 'not_started'
-  | 'in_progress'
-  | 'completed';
 
 export function ReviewersTableSection(props: ReviewersTableSectionProps) {
   const t = useTranslations();
@@ -197,7 +195,6 @@ function ReviewerRowCells({
     : null;
   const percent =
     row.assignedCount > 0 ? (row.submittedCount / row.assignedCount) * 100 : 0;
-  const status = reviewerStatusBadges[getReviewerStatus(row)];
 
   return (
     // `relative` anchors the name link's stretched ::after (row-wide click).
@@ -253,47 +250,32 @@ function ReviewerRowCells({
           : '—'}
       </TableCell>
       <TableCell>
-        <StatusBadge variant={status.variant}>{t(status.label)}</StatusBadge>
+        {row.assignedCount === 0 ? (
+          <StatusBadge variant="inactive">
+            {t('decisions.review.noAssignments')}
+          </StatusBadge>
+        ) : (
+          <ReviewStatusBadge status={getReviewerStatus(row)} />
+        )}
       </TableCell>
     </TableRow>
   );
 }
 
-/** One reviewer's phase status, from the counts the summary already carries. */
+/**
+ * One reviewer's phase status, rolled up from the counts the summary already
+ * carries. Only the three assignment statuses a rollup can land on.
+ */
 function getReviewerStatus({
   assignedCount,
   submittedCount,
   draftCount,
-}: PhaseReviewerSummary): ReviewerStatus {
-  if (assignedCount === 0) {
-    return 'unassigned';
-  }
-
+}: PhaseReviewerSummary): ProposalReviewAssignmentStatus {
   if (submittedCount === 0 && draftCount === 0) {
-    return 'not_started';
+    return ProposalReviewAssignmentStatus.PENDING;
   }
 
-  return submittedCount < assignedCount ? 'in_progress' : 'completed';
+  return submittedCount < assignedCount
+    ? ProposalReviewAssignmentStatus.IN_PROGRESS
+    : ProposalReviewAssignmentStatus.COMPLETED;
 }
-
-const reviewerStatusBadges: Record<
-  ReviewerStatus,
-  { variant: StatusBadgeProps['variant']; label: TranslationKey }
-> = {
-  unassigned: {
-    variant: 'inactive',
-    label: 'decisions.review.noAssignments',
-  },
-  not_started: {
-    variant: 'inactive',
-    label: 'decisions.review.statusNotStarted',
-  },
-  in_progress: {
-    variant: 'in-progress',
-    label: 'decisions.review.statusInProgress',
-  },
-  completed: {
-    variant: 'success',
-    label: 'decisions.review.statusCompleted',
-  },
-};
