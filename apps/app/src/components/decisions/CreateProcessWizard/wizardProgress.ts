@@ -55,66 +55,73 @@ export function useSavedWizardProgress(): WizardState | null | undefined {
   return saved;
 }
 
-export function saveWizardProgress(progress: WizardState) {
+/** Storage is best-effort: without it the wizard still runs, it only forgets. */
+function withStorage<T>(run: (storage: Storage) => T, fallback: T): T {
   try {
-    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(progress));
+    return run(sessionStorage);
   } catch (error) {
-    logger.warn('Failed to save create-process wizard progress', { error });
+    logger.warn('Session storage unavailable for the create-process wizard', {
+      error,
+    });
+    return fallback;
   }
 }
 
+export function saveWizardProgress(progress: WizardState) {
+  withStorage(
+    (storage) => storage.setItem(STORAGE_KEY, JSON.stringify(progress)),
+    undefined,
+  );
+}
+
 export function clearWizardProgress() {
-  try {
-    sessionStorage.removeItem(STORAGE_KEY);
-  } catch {
-    // Nothing was saved if storage is unavailable.
-  }
+  withStorage((storage) => storage.removeItem(STORAGE_KEY), undefined);
 }
 
 const ORIGIN_KEY = 'create-process-wizard-origin';
 
 /** The in-app route Exit returns to; `history.back()` could leave the site. */
 export function saveWizardOrigin(pathname: string) {
-  try {
-    sessionStorage.setItem(ORIGIN_KEY, pathname);
-  } catch {
-    // Exit falls back to the home route.
-  }
+  withStorage((storage) => storage.setItem(ORIGIN_KEY, pathname), undefined);
 }
 
 export function takeWizardOrigin(): string | null {
-  try {
-    const origin = sessionStorage.getItem(ORIGIN_KEY);
-    clearWizardOrigin();
+  const origin = withStorage((storage) => storage.getItem(ORIGIN_KEY), null);
+  clearWizardOrigin();
 
-    return origin;
-  } catch {
-    return null;
-  }
+  return origin;
 }
 
 /** Also on success, or a later direct visit's Exit would return to the old page. */
 export function clearWizardOrigin() {
-  try {
-    sessionStorage.removeItem(ORIGIN_KEY);
-  } catch {
-    // Nothing was saved if storage is unavailable.
-  }
+  withStorage((storage) => storage.removeItem(ORIGIN_KEY), undefined);
 }
 
 export function readWizardProgress(): WizardState | null {
-  try {
-    const raw = sessionStorage.getItem(STORAGE_KEY);
+  const raw = withStorage((storage) => storage.getItem(STORAGE_KEY), null);
 
-    if (!raw) {
+  if (!raw) {
+    return null;
+  }
+
+  try {
+    const parsed = progressSchema.safeParse(JSON.parse(raw));
+
+    if (!parsed.success) {
+      logger.warn(
+        'Discarded create-process wizard progress with an unknown shape',
+        {
+          error: parsed.error,
+        },
+      );
       return null;
     }
 
-    const parsed = progressSchema.safeParse(JSON.parse(raw));
-
-    return parsed.success ? resumeWizard(parsed.data) : null;
+    return resumeWizard(parsed.data);
   } catch (error) {
-    logger.warn('Failed to read create-process wizard progress', { error });
+    logger.warn('Discarded unreadable create-process wizard progress', {
+      error,
+    });
     return null;
   }
 }
