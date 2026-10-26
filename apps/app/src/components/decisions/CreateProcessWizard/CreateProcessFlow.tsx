@@ -8,7 +8,7 @@ import { useCallback, useRef } from 'react';
 
 import { useRouter, useTranslations } from '@/lib/i18n';
 
-import { CreateProcessWizard } from '.';
+import { CreateProcessWizard } from './CreateProcessWizard';
 import type { WizardState } from './flow';
 import type { ProcessDraft } from './types';
 import {

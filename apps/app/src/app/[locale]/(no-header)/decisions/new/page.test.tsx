@@ -20,7 +20,7 @@ vi.mock('next/navigation', () => ({ notFound }));
 
 vi.mock('@/lib/i18n', () => ({ getTranslations: vi.fn() }));
 
-vi.mock('@/components/decisions/CreateProcessWizard/CreateProcessFlow', () => ({
+vi.mock('@/components/decisions/CreateProcessWizard', () => ({
   CreateProcessFlow: () => null,
 }));
 

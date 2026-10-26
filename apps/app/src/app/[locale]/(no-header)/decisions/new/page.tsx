@@ -5,7 +5,7 @@ import { notFound } from 'next/navigation';
 
 import { getTranslations } from '@/lib/i18n';
 
-import { CreateProcessFlow } from '@/components/decisions/CreateProcessWizard/CreateProcessFlow';
+import { CreateProcessFlow } from '@/components/decisions/CreateProcessWizard';
 
 export async function generateMetadata({
   params,
