@@ -1363,9 +1363,17 @@ export const change: SmsCommandHandler = async (context) => {
     return ballotNeedsDecision(deliver);
   }
 
-  const reopened = await step.run('reopen-ballot', () =>
-    reopenSmsBallot({ authUserId: account.authUserId, instanceId }),
+  const reopen = await step.run('reopen-ballot', () =>
+    readBallot(() =>
+      reopenSmsBallot({ authUserId: account.authUserId, instanceId }),
+    ),
   );
+
+  if (!reopen.ok) {
+    return refuseBallotRead(context, reopen.reason, instanceId);
+  }
+
+  const reopened = reopen.value;
 
   switch (reopened.status) {
     case 'no_ballot':
