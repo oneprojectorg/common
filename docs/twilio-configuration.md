@@ -250,8 +250,18 @@ A text conversation against a local checkout needs a Twilio account with a
 Messaging Service, an approved A2P campaign, and one number in its sender
 pool to bind as a decision line. Nothing here starts or stops the dev
 servers. The app runs on `:3100`. The API port depends on how it was
-started: `pnpm docker:dev` publishes it on `:3101`, `pnpm w:api dev` runs
-`next dev -p 3300`. The steps below use `<api port>` for it.
+started: `pnpm docker:dev` publishes it on `:3101`, `pnpm -C apps/api dev`
+(what the root `pnpm dev` runs) listens on `:3300`. The steps below use
+`<api port>` for it.
+
+The command handlers run in Inngest, so the webhook alone sends nothing
+back. `pnpm w:workflows dev` starts the Inngest dev server on
+`http://localhost:8288`; `services/workflows/inngest.json` points it at
+`http://localhost:3300/api/v1/workflows`, so under `pnpm docker:dev` pass
+`-u http://localhost:3101/api/v1/workflows`. The address step calls Google
+Places and throws without `GOOGLE_MAPS_API_KEY` in `.env.local`; set
+`SMS_GEOCODE_STUB=<lat>,<lng>` instead to resolve every address to one
+point outside production.
 
 1. Tunnel the API: `ngrok http <api port>`. Copy the `https://…ngrok…` host.
 2. In the Twilio Console, on the Messaging Service, set "A message comes in"
@@ -260,12 +270,17 @@ started: `pnpm docker:dev` publishes it on `:3101`, `pnpm w:api dev` runs
    route rebuilds the signed URL from `x-forwarded-proto` and
    `x-forwarded-host`, so the signature check passes through the tunnel; in
    production it trusts only the request URL.
-3. In PostHog, turn on `sms-signup` and `sms-commands` for the server.
+3. The `sms-signup` and `sms-commands` flags are forced on when
+   `NODE_ENV=development` (`areFeatureFlagsForcedOn` in `@op/analytics`),
+   so a `next dev` server needs nothing in PostHog. A production build
+   reads the flags.
 4. Publish a decision whose voting phase has `voting.submit: true`, a
    `voterBudget`, `ranked: true`, `edit: true` if CHANGE is to be tested, and
    `voting.enrolment: { attestation, boundary }` if registration is. Import
-   boundaries whose names match proposal categories, and submit proposals
-   whose pins fall inside them; each submitted proposal gets a short code.
+   boundaries with `packages/common/src/scripts/importBoundaries.sql` (paste
+   the GeoJSON, set `name_property` and the decision's `profile_id`); it
+   creates the matching proposal category for each. Submit proposals whose
+   pins fall inside them; each submitted proposal gets a short code.
 5. Bind the line: insert the `decision_chat_lines` row (see Decision lines)
    for the decision's `decision_process_instances.id` and the pool number.
 6. From a phone, text the line. The expected conversation, with a
@@ -274,7 +289,7 @@ started: `pnpm docker:dev` publishes it on `:3101`, `pnpm w:api dev` runs
 | You text                 | Reply                                                                                                                                      |
 | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------ |
 | `JOIN`                   | The consent text, then a code to confirm the number; reply with the code. `JOIN` takes no argument on either number.                      |
-| `SHOW`                   | `"<decision>": Voting phase, voting open, N proposals.`                                                                                    |
+| `SHOW`                   | `"<decision>" (<slug>): Voting phase, voting open, N proposals.`                                                                           |
 | `VOTE`                   | `Welcome to "<decision>". Two quick steps to register: your address, then a short affirmation. No ID needed. What's your address?`         |
 | `375 S High St, …`       | `That's District 5. Reply AGREE to affirm: "<attestation>"`                                                                                 |
 | `AGREE`                  | `You're registered. You have $1,000,000 for District 5 proposals.`                                                                           |
@@ -287,13 +302,16 @@ started: `pnpm docker:dev` publishes it on `:3101`, `pnpm w:api dev` runs
 | `LIST`                   | `Your District 5 ballot:` numbered picks, `$… allocated, $… unspent.`                                                                        |
 | `REMOVE 103` / `MOVE 102 1` | `Removed "<title>". $… left.` / `"<title>" is now pick 1.`                                                                                |
 | `DONE`                   | The ballot, the ranking note and `Reply SUBMIT to cast your ballot.`                                                                         |
-| `SUBMIT`                 | `Your ballot is in. One ballot per person. How you vote is never public.`                                                                   |
+| `SUBMIT`                 | `Your ballot is in. One ballot per person. However, your vote is never public.`                                                             |
 | `SUBMIT` again           | `Your ballot is already in. One ballot per person.`                                                                                         |
 | `CHANGE`                 | `Your ballot is open for changes…` and the ballot (needs `voting.edit`); then codes, REMOVE, MOVE and `SUBMIT` → `Your ballot is updated…` |
 
 On the shared number the same conversation works with a slug: `SHOW <slug>`,
-`VOTE <slug>`, `PROPOSALS <slug>`; the codes, LIST, DONE, SUBMIT and CHANGE
-then follow the decision you last browsed or voted in.
+`VOTE <slug>`, `PROPOSALS <slug>`. The codes, LIST, DONE, SUBMIT and CHANGE
+follow the draft you touched last, and the ballot you cast last once no
+draft remains; send `PROPOSALS <slug>` to choose a decision. On a line they
+follow that line's decision, or a decision you chose by slug on that same
+line; a draft started on another line never takes over.
 
 Read back the result with the voter's profile: one row in
 `decisions_vote_submissions`, its `decisions_vote_proposals` rows in pick
