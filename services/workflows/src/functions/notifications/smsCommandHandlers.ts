@@ -8,6 +8,7 @@ import {
   describeEnrolmentDecision,
   findPendingVoterEnrolment,
   findVoterEnrolment,
+  isEnrolledOnCurrentAttestation,
   markAttestationSent,
   formatSmsAddressNotFound,
   formatSmsAddressOutside,
@@ -240,18 +241,20 @@ export const vote: SmsCommandHandler = async (context) => {
     findPendingVoterEnrolment(key),
   );
 
-  if (pending?.status === DecisionVoterEnrolmentStatus.AWAITING_AGREE) {
-    await step.run('mark-attestation-sent', () => markAttestationSent(key));
-    return deliverAll(
+  const resendAttestation = (district: string | null, message: string) =>
+    deliverAll(
       deliver,
       'send-attestation-again',
       'Attestation reply',
-      formatSmsAddressResolved({
-        district: pending.boundaryName,
-        attestation: rule.attestation,
-      }),
-      'attestation resent',
+      formatSmsAddressResolved({ district, attestation: rule.attestation }),
+      message,
     );
+
+  if (pending?.status === DecisionVoterEnrolmentStatus.AWAITING_AGREE) {
+    await step.run('mark-attestation-sent', () =>
+      markAttestationSent({ ...key, attestation: rule.attestation }),
+    );
+    return resendAttestation(pending.boundaryName, 'attestation resent');
   }
 
   if (!pending) {
@@ -259,7 +262,7 @@ export const vote: SmsCommandHandler = async (context) => {
       findVoterEnrolment(key),
     );
 
-    if (existing?.status === DecisionVoterEnrolmentStatus.ENROLLED) {
+    if (isEnrolledOnCurrentAttestation(existing, rule.attestation)) {
       return deliverAll(
         deliver,
         'send-already-enrolled',
@@ -273,7 +276,22 @@ export const vote: SmsCommandHandler = async (context) => {
       );
     }
 
-    await step.run('start-enrolment', () => startVoterEnrolment(key));
+    const started = await step.run('start-enrolment', () =>
+      startVoterEnrolment(key),
+    );
+
+    if (started.status === DecisionVoterEnrolmentStatus.AWAITING_AGREE) {
+      await step.run('mark-attestation-sent', () =>
+        markAttestationSent({ ...key, attestation: rule.attestation }),
+      );
+      const reopened = await step.run('find-pending-enrolment-again', () =>
+        findPendingVoterEnrolment(key),
+      );
+      return resendAttestation(
+        reopened?.boundaryName ?? null,
+        'attestation resent after a change',
+      );
+    }
   }
 
   return deliverAll(
@@ -286,7 +304,7 @@ export const vote: SmsCommandHandler = async (context) => {
 };
 
 export const agree: SmsCommandHandler = async (context) => {
-  const { step, account, line, deliver } = context;
+  const { step, account, deliver } = context;
   const nothingToAffirm = () =>
     deliverAll(
       deliver,
@@ -297,10 +315,7 @@ export const agree: SmsCommandHandler = async (context) => {
     );
 
   const pending = await step.run('find-pending-enrolment', () =>
-    findPendingVoterEnrolment({
-      authUserId: account.authUserId,
-      preferInstanceId: line?.instanceId,
-    }),
+    findPendingVoterEnrolment({ authUserId: account.authUserId }),
   );
 
   if (pending?.status !== DecisionVoterEnrolmentStatus.AWAITING_AGREE) {
@@ -351,7 +366,7 @@ export const agree: SmsCommandHandler = async (context) => {
 };
 
 export const freeText: SmsCommandHandler = async (context) => {
-  const { step, account, line, deliver, geocode } = context;
+  const { step, account, deliver, geocode } = context;
   const address = context.body?.trim();
 
   if (!address) {
@@ -359,10 +374,7 @@ export const freeText: SmsCommandHandler = async (context) => {
   }
 
   const pending = await step.run('find-pending-enrolment', () =>
-    findPendingVoterEnrolment({
-      authUserId: account.authUserId,
-      preferInstanceId: line?.instanceId,
-    }),
+    findPendingVoterEnrolment({ authUserId: account.authUserId }),
   );
 
   if (pending?.status !== DecisionVoterEnrolmentStatus.AWAITING_ADDRESS) {
@@ -383,6 +395,7 @@ export const freeText: SmsCommandHandler = async (context) => {
       processInstanceId: pending.processInstanceId,
       authUserId: account.authUserId,
       address,
+      attestation: rule.attestation,
       geocode,
     }),
   );
