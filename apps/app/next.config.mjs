@@ -68,6 +68,18 @@ const config = {
     minimumCacheTTL: 31536000, // 1 year — assets are content-addressed
   },
   serverExternalPackages: ['sharp', 'onnxruntime-node'],
+  // Next 16.4 type-checks during `next build` by running the TypeScript CLI
+  // (tsgo) alongside webpack, adding ~3.5GB to the build's peak memory and
+  // pushing Vercel builds past their limit. CI already runs `pnpm typecheck`,
+  // and builds before 16.4 skipped this step for @typescript/native-preview.
+  typescript: {
+    ignoreBuildErrors: true,
+  },
+  // Next 16.4 defaults this to true, which starts every page-data and
+  // prerender worker with `--enable-source-maps`. With the server source maps
+  // PostHog asks for on dev/main, that adds ~50% to each worker's memory. It
+  // only affects stack traces of errors thrown during the build.
+  enablePrerenderSourceMaps: false,
   experimental: {
     authInterrupts: true,
   },
