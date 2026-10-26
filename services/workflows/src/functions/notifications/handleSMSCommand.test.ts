@@ -73,7 +73,7 @@ describe('handleSMSCommand against the database', () => {
 
     expect(result).toEqual({ message: 'decision sent' });
     expect(recordedSms.map((sms) => sms.body)).toEqual([
-      `"Park Funding ${task.id}": Voting phase, voting open, 2 proposals.`,
+      `"Park Funding ${task.id}" (${slug}): Voting phase, voting open, 2 proposals.`,
     ]);
   });
 
@@ -101,7 +101,7 @@ describe('handleSMSCommand against the database', () => {
 
     expect(result).toEqual({ message: 'decision sent' });
     expect(recordedSms.map((sms) => sms.body)).toEqual([
-      `"Bike Lanes ${task.id}": Submission phase, voting closed, 1 proposal.`,
+      `"Bike Lanes ${task.id}" (${slug}): Submission phase, voting closed, 1 proposal.`,
     ]);
   });
 
@@ -343,7 +343,7 @@ describe('handleSMSCommand against the database', () => {
     expect(show.result).toEqual({ message: 'decision sent' });
     expect(recordedSms.map((sms) => sms.body)).toEqual([
       'You are not a participant in any decision yet.',
-      `"Open Air ${task.id}": Voting phase, voting open, 1 proposal.`,
+      `"Open Air ${task.id}" (${slug}): Voting phase, voting open, 1 proposal.`,
     ]);
   });
 
@@ -416,7 +416,7 @@ describe('handleSMSCommand on a decision line', () => {
     const phone = parsePhoneNumber(NUMBERS.lineMember);
     const line = parsePhoneNumber(LINES.bare);
     const member = await fixture.createPhoneOnlyAccount(phone);
-    const { instanceId, instanceProfileId } =
+    const { instanceId, instanceProfileId, slug } =
       await fixture.createVotingInstance({
         owner: member,
         name: `Line Funding ${task.id}`,
@@ -435,7 +435,7 @@ describe('handleSMSCommand on a decision line', () => {
       expect.objectContaining({
         to: phone,
         from: line,
-        body: `"Line Funding ${task.id}": Voting phase, voting open, 1 proposal.`,
+        body: `"Line Funding ${task.id}" (${slug}): Voting phase, voting open, 1 proposal.`,
       }),
     ]);
   });
@@ -478,7 +478,7 @@ describe('handleSMSCommand on a decision line', () => {
     expect(recordedSms).toEqual([
       expect.objectContaining({
         from: line,
-        body: `"Other ${task.id}": Voting phase, voting open, 2 proposals.`,
+        body: `"Other ${task.id}" (${other.slug}): Voting phase, voting open, 2 proposals.`,
       }),
     ]);
   });
