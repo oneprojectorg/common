@@ -15,11 +15,18 @@ export async function getProposalCosts({
   proposalTemplate,
   voterCostField,
   unit,
+  unreadable = 'throw',
 }: {
   proposals: Array<{ id: string; proposalData: unknown }>;
   proposalTemplate: ProposalTemplateSchema | null;
   voterCostField: string;
   unit: AmountUnit;
+  /**
+   * What a cost that cannot be read does: `throw` stops a ballot being charged
+   * on it (the default, for every write); `null` leaves that proposal unpriced
+   * so a read still shows the rest of the page.
+   */
+  unreadable?: 'throw' | 'null';
 }): Promise<ProposalCosts> {
   const documentContentMap = await getProposalDocumentsContent(
     proposals.map(({ id, proposalData }) => ({
@@ -36,6 +43,9 @@ export async function getProposalCosts({
 
       // Charging the stale snapshot could let an over-budget ballot through.
       if (documentContent?.type === 'unavailable') {
+        if (unreadable === 'null') {
+          return [id, null];
+        }
         throw new CommonError(
           'Could not read the current cost of a selected proposal. Please try again.',
         );
@@ -53,6 +63,9 @@ export async function getProposalCosts({
 
       // A cost that is filled in but unreadable must not ride free on a capped ballot.
       if (amount === null && typeof value === 'string' && value.trim()) {
+        if (unreadable === 'null') {
+          return [id, null];
+        }
         const title = parseProposalData(proposalData).title ?? id;
 
         throw new ValidationError(

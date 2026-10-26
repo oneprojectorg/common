@@ -48,6 +48,7 @@ export async function priceBallotProposals({
     proposalTemplate,
     voterCostField,
     unit,
+    unreadable: 'null',
   });
 
   return new Map(
