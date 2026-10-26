@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest';
 
 import { getBallotProposalByCode } from './getBallotProposalByCode';
 import { listBallotProposals } from './listBallotProposals';
+import { parseProposalData } from './proposalDataSchema';
 import { rejectProposal } from './rejectProposal';
 import type { DecisionSchemaDefinition } from './schemas/types';
 import { submitProposal } from './submitProposal';
@@ -94,9 +95,12 @@ const seedVotingDecision = async (
       processInstanceId: instanceId,
       proposalData: { title, budget },
     });
-    const { collaborationDocId } = draft.proposalData as {
-      collaborationDocId: string;
-    };
+    const { collaborationDocId } = parseProposalData(draft.proposalData);
+    if (!collaborationDocId) {
+      throw new Error(
+        `Draft ${draft.id} was created without a collaboration document`,
+      );
+    }
     mockCollab.setDocFragmentResponses(collaborationDocId, {
       title: textFragment(title),
       budget: textFragment(JSON.stringify({ amount: budget, currency: 'USD' })),
