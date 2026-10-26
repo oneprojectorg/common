@@ -2,6 +2,7 @@ import { mockCollab } from '@op/collab/testing';
 import {
   affirmVoterAttestation,
   hashAttestation,
+  markAttestationSent,
   resolveVoterAddress,
   startVoterEnrolment,
 } from '@op/common';
@@ -1117,6 +1118,7 @@ describe.concurrent('submitVote with an enrolment rule', () => {
     ).resolves.toBeUndefined();
 
     await startVoterEnrolment(key);
+    await markAttestationSent({ ...key, attestation: rewritten });
     await affirmVoterAttestation({
       ...key,
       attestationHash: hashAttestation(rewritten),
