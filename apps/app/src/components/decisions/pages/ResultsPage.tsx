@@ -174,6 +174,7 @@ function ResultsPageContent({
           <DecisionHero
             title={heroContent.title}
             description={heroContent.description}
+            showTranslateLink={false}
           />
 
           <Suspense fallback={<Skeleton className="h-12 w-full" />}>

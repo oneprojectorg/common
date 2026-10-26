@@ -9,6 +9,7 @@ export function DecisionHero({
   description,
   gradient,
   hasImage = false,
+  showTranslateLink = true,
   children,
 }: {
   title: string | ReactNode;
@@ -21,11 +22,13 @@ export function DecisionHero({
    * scrim, so switch the text to white — same rule as the overview hero.
    */
   hasImage?: boolean;
+  /** Hide the translate link on pages that render no translated content. */
+  showTranslateLink?: boolean;
   children?: ReactNode;
 }) {
   return (
     <div className="flex flex-col gap-2 text-center">
-      <DecisionTranslateLink hasImage={hasImage} />
+      {showTranslateLink ? <DecisionTranslateLink hasImage={hasImage} /> : null}
       {hasImage ? (
         <Header1 className="text-white">
           <bdi>{title}</bdi>
