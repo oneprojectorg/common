@@ -94,7 +94,12 @@ export const handleSMSCommand = inngest.createFunction(
         ? await findDecisionPhoneNumber({ phone: inboundTo })
         : null;
       return found
-        ? { phone: found.phone, slug: found.slug, instanceId: found.instanceId }
+        ? {
+            id: found.id,
+            phone: found.phone,
+            slug: found.slug,
+            instanceId: found.instanceId,
+          }
         : null;
     });
 
@@ -127,7 +132,9 @@ export const handleSMSCommand = inngest.createFunction(
       account,
       argument,
       body,
-      line: line ? { slug: line.slug, instanceId: line.instanceId } : null,
+      line: line
+        ? { id: line.id, slug: line.slug, instanceId: line.instanceId }
+        : null,
       deliver,
       geocode: getGeocoder(),
     };
