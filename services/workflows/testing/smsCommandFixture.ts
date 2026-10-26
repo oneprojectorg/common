@@ -4,6 +4,7 @@ import {
   type PhoneNumber,
   type VoterEnrolmentRule,
   deleteProposal,
+  getInstancePhases,
   updateDecisionInstance,
 } from '@op/common';
 import {
@@ -21,10 +22,11 @@ import {
   TestPhoneAuthDataManager,
   advanceInstancePhase,
 } from '@op/common/testing/helpers';
-import { db, inArray } from '@op/db/client';
+import { db, eq, inArray } from '@op/db/client';
 import {
   ProcessStatus,
   ProposalStatus,
+  processInstances,
   profiles,
   taxonomyTerms,
 } from '@op/db/schema';
@@ -308,6 +310,42 @@ export class SmsCommandFixture {
       status,
       user: userOf(owner),
     });
+  }
+
+  /** Writes the phase's voting rules straight into instance_data, bypassing the admin validation, to plant a state no service produces. */
+  async plantVotingRules({
+    instanceId,
+    phaseId = VOTING_PHASE_ID,
+    voting,
+  }: {
+    instanceId: string;
+    phaseId?: string;
+    voting: FixtureVotingRules;
+  }) {
+    const instance = await db.query.processInstances.findFirst({
+      where: { id: instanceId },
+      columns: { instanceData: true },
+    });
+    const phases = getInstancePhases(instance?.instanceData).map((phase) =>
+      phase.phaseId === phaseId
+        ? {
+            ...phase,
+            rules: {
+              ...phase.rules,
+              voting: { ...phase.rules?.voting, ...voting },
+            },
+          }
+        : phase,
+    );
+    await db
+      .update(processInstances)
+      .set({
+        instanceData: {
+          ...(instance?.instanceData as Record<string, unknown>),
+          phases,
+        },
+      })
+      .where(eq(processInstances.id, instanceId));
   }
 
   async deleteProposal({

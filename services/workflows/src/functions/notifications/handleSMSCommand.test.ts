@@ -93,6 +93,7 @@ const NUMBERS = {
   agreeRewritten: '+15005550027',
   pickDeleted: '+15005550028',
   pickMisconfigured: '+15005550029',
+  pickRepriced: '+15005550030',
 } as const;
 
 const LINES = {
@@ -143,6 +144,7 @@ const LINES = {
   agreeRewritten: '+16145550170',
   pickDeleted: '+16145550171',
   pickMisconfigured: '+16145550172',
+  pickRepriced: '+16145550173',
 } as const;
 
 beforeEach(() => {
@@ -1757,6 +1759,53 @@ describe('handleSMSCommand building and casting the ballot', () => {
       columns: { picks: true },
     });
     expect(draft?.picks ?? []).toEqual([]);
+  });
+
+  it('given two picks and a capped phase whose cost field was pointed at an unpriced template field by a raw instance_data write (the admin update refuses it), when the voter texts REMOVE and MOVE, then each reply names the misconfiguration and the draft is unchanged', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsCommandFixture(task.id, onTestFinished);
+    const { instanceId } = await seed(fixture, {
+      phone: NUMBERS.pickRepriced,
+      line: LINES.pickRepriced,
+      name: `Pick Repriced ${task.id}`,
+    });
+    await text(NUMBERS.pickRepriced, LINES.pickRepriced, '101 102');
+    const before = await db.query.decisionBallotDrafts.findFirst({
+      where: { processInstanceId: instanceId },
+      columns: { picks: true },
+    });
+    await fixture.plantVotingRules({
+      instanceId,
+      voting: { voterCostField: 'cost' },
+    });
+
+    const { result: removed } = await keyword(
+      NUMBERS.pickRepriced,
+      LINES.pickRepriced,
+      'remove',
+      '101',
+    );
+    const { result: moved } = await keyword(
+      NUMBERS.pickRepriced,
+      LINES.pickRepriced,
+      'move',
+      '102 1',
+    );
+
+    expect(removed).toEqual({ message: 'ballot unpriced' });
+    expect(moved).toEqual({ message: 'ballot unpriced' });
+    expect(recordedSms.slice(-2).map((sms) => sms.body)).toEqual([
+      'Voting is misconfigured: "cost" is not a priced field on the proposal template, so no ballot can be cast. Ask an admin to correct the decision.',
+      'Voting is misconfigured: "cost" is not a priced field on the proposal template, so no ballot can be cast. Ask an admin to correct the decision.',
+    ]);
+    await expect(
+      db.query.decisionBallotDrafts.findFirst({
+        where: { processInstanceId: instanceId },
+        columns: { picks: true },
+      }),
+    ).resolves.toEqual(before);
   });
 
   it('given a code no proposal has, then nothing is added and the member is told', async ({

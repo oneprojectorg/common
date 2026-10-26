@@ -326,7 +326,8 @@ export async function removeSmsBallotPick({
   summary: SmsBallotSummary;
 }> {
   const key = { authUserId, instanceId };
-  await loadBallotScope(key);
+  const scope = await loadBallotScope(key);
+  await loadPricing(scope.instance);
   const found = await findPickByCode(key, code);
 
   if (!found) {
@@ -366,7 +367,8 @@ export async function moveSmsBallotPick({
   summary: SmsBallotSummary;
 }> {
   const key = { authUserId, instanceId };
-  await loadBallotScope(key);
+  const scope = await loadBallotScope(key);
+  await loadPricing(scope.instance);
   const found = await findPickByCode(key, code);
 
   if (!found) {
