@@ -1,9 +1,17 @@
-import { CSRF_HEADER, CSRF_HEADER_VALUE, OPURLConfig } from '@op/core';
+import { CommonError, UnauthorizedError } from '@op/common';
+import {
+  CSRF_HEADER,
+  CSRF_HEADER_VALUE,
+  OPURLConfig,
+  encodeErrorDigest,
+} from '@op/core';
 import {
   createTRPCProxyClient,
   loggerLink,
   unstable_httpBatchStreamLink,
 } from '@trpc/client';
+import type { TRPCError } from '@trpc/server';
+import { AccessControlException } from 'access-zones';
 import { customAlphabet } from 'nanoid';
 import { cookies, headers } from 'next/headers';
 import { cache } from 'react';
@@ -112,6 +120,45 @@ export const createServerContext = cache(async (): Promise<TContext> => {
   };
 });
 
+const callerFactory = createCallerFactory(appRouter);
+
+/**
+ * Carries a failed procedure's HTTP semantics on the error's `digest`.
+ *
+ * An in-process call skips the HTTP layer, so the `errorFormatter` mapping of
+ * a `CommonError` to a status never runs; the Server Component gets a bare
+ * `TRPCError` whose only hint of a 403 is on `cause`. In production React
+ * strips the message of an error thrown during a server render and forwards
+ * only `digest`, so a 403 would reach the browser as a 500. `error.tsx` reads
+ * this digest back with `parseErrorDigest` and shows the matching screen.
+ * Mirrors the `errorFormatter`: an `AccessControlException` is a 403.
+ */
+const tagErrorDigest = ({ error }: { error: TRPCError }) => {
+  const cause =
+    error.cause instanceof AccessControlException
+      ? new UnauthorizedError(error.cause.message)
+      : error.cause;
+
+  if (cause instanceof CommonError) {
+    Object.assign(error, {
+      digest: encodeErrorDigest({
+        statusCode: cause.statusCode,
+        name: cause.name,
+      }),
+    });
+  }
+};
+
+/**
+ * Create a server-side tRPC caller for one request's context.
+ *
+ * Calls procedures directly, without HTTP overhead. A failed call throws the
+ * procedure's `TRPCError` tagged by {@link tagErrorDigest}, so the error keeps
+ * its 403 / 404 meaning through to the client's error boundary.
+ */
+export const createCallerForRequest = (context: TContext) =>
+  callerFactory(context, { onError: tagErrorDigest });
+
 /**
  * Create a server-side tRPC client
  *
@@ -120,11 +167,9 @@ export const createServerContext = cache(async (): Promise<TContext> => {
  *
  * Note: Cannot set cookies. For mutations that need to set cookies, use a route handler.
  */
-export const createClient = cache(async () => {
-  const context = await createServerContext();
-  const callerFactory = createCallerFactory(appRouter);
-  return callerFactory(context);
-});
+export const createClient = cache(async () =>
+  createCallerForRequest(await createServerContext()),
+);
 
 /**
  * @deprecated Use `createClient()` from '@op/api/serverClient' instead for better performance
