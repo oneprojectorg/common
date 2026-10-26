@@ -3,6 +3,7 @@ import { decisionBallotDrafts, profiles, proposals } from '@op/db/schema';
 import type { AmountUnit } from '@op/types/amountUnit';
 
 import {
+  BallotCostError,
   NotFoundError,
   UnauthorizedError,
   ValidationError,
@@ -65,6 +66,11 @@ const loadPricing = async (instance: {
     instance.processId,
   );
   const unit = getFieldUnit(proposalTemplate?.properties?.[voterCostField]);
+  if (budget !== undefined && !unit) {
+    throw new BallotCostError(
+      `Voting is misconfigured: "${voterCostField}" is not a priced field on the proposal template, so no ballot can be cast. Ask an admin to correct the decision.`,
+    );
+  }
 
   return {
     budget: budget ?? null,

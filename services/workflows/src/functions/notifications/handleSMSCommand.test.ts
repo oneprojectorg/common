@@ -92,6 +92,7 @@ const NUMBERS = {
   enrolSwitch: '+15005550083',
   agreeRewritten: '+15005550027',
   pickDeleted: '+15005550028',
+  pickMisconfigured: '+15005550029',
 } as const;
 
 const LINES = {
@@ -141,6 +142,7 @@ const LINES = {
   enrolSwitch: '+16145550191',
   agreeRewritten: '+16145550170',
   pickDeleted: '+16145550171',
+  pickMisconfigured: '+16145550172',
 } as const;
 
 beforeEach(() => {
@@ -1717,6 +1719,44 @@ describe('handleSMSCommand building and casting the ballot', () => {
     expect(submission?.voteData.selections?.map((s) => s.proposalId)).toEqual([
       remaining?.id,
     ]);
+  });
+
+  it('given a capped phase that charges a field the proposal template does not price, when the voter texts a code, then nothing is added and the reply says an admin must correct the decision', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsCommandFixture(task.id, onTestFinished);
+    const member = await fixture.createPhoneOnlyAccount(
+      parsePhoneNumber(NUMBERS.pickMisconfigured),
+    );
+    const { instanceId, instanceProfileId } =
+      await fixture.createVotingInstance({
+        owner: member,
+        name: `Pick Misconfigured ${task.id}`,
+        proposalTitles: PROPOSALS,
+        votingRules: { voterBudget: 1_000_000, voterCostField: 'cost' },
+      });
+    await fixture.addMember(instanceProfileId, member);
+    await fixture.bindLine(
+      instanceId,
+      parsePhoneNumber(LINES.pickMisconfigured),
+    );
+
+    const { result } = await text(
+      NUMBERS.pickMisconfigured,
+      LINES.pickMisconfigured,
+      '101',
+    );
+
+    expect(result).toEqual({ message: 'ballot unpriced' });
+    expect(recordedSms.at(-1)?.body).toBe(
+      'Voting is misconfigured: "cost" is not a priced field on the proposal template, so no ballot can be cast. Ask an admin to correct the decision.',
+    );
+    const draft = await db.query.decisionBallotDrafts.findFirst({
+      where: { processInstanceId: instanceId },
+      columns: { picks: true },
+    });
+    expect(draft?.picks ?? []).toEqual([]);
   });
 
   it('given a code no proposal has, then nothing is added and the member is told', async ({
