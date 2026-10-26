@@ -1416,6 +1416,7 @@ export const change: SmsCommandHandler = async (context) => {
             scope: formatSmsBallotScope(summary),
             picks: summary.picks.map((pick, index) => ({
               position: index + 1,
+              code: pick.code,
               title: pick.title,
               cost: money(summary, pick.cost),
             })),

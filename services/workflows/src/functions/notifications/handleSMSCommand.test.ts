@@ -2569,8 +2569,8 @@ describe('handleSMSCommand changing a cast ballot', () => {
       'Your ballot is open for changes. Text codes to add, REMOVE or MOVE to adjust, then SUBMIT.',
       [
         `Your "${name}" ballot:`,
-        '1. Crosswalk lighting $85,000.',
-        '2. Bike lane $310,000.',
+        '1. 101 Crosswalk lighting $85,000.',
+        '2. 102 Bike lane $310,000.',
         '$395,000 allocated, $605,000 unspent.',
         'Text DONE to review, or a code to add.',
       ].join('\n'),
