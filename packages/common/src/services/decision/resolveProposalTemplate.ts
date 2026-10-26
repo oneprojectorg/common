@@ -13,13 +13,19 @@ import type { ProposalTemplateSchema } from './types';
  * TODO: remove or adapt this function. it seems that we just need to fix the typing since we have the data
  *
  */
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  value !== null && typeof value === 'object' && !Array.isArray(value);
+
+const isProposalTemplate = (value: unknown): value is ProposalTemplateSchema =>
+  isRecord(value) &&
+  (value.properties === undefined || isRecord(value.properties)) &&
+  (value['x-field-order'] === undefined ||
+    (Array.isArray(value['x-field-order']) &&
+      value['x-field-order'].every((field) => typeof field === 'string')));
+
 const templateOf = (data: unknown): ProposalTemplateSchema | null =>
-  data !== null &&
-  typeof data === 'object' &&
-  'proposalTemplate' in data &&
-  data.proposalTemplate !== null &&
-  typeof data.proposalTemplate === 'object'
-    ? (data.proposalTemplate as ProposalTemplateSchema)
+  isRecord(data) && isProposalTemplate(data.proposalTemplate)
+    ? data.proposalTemplate
     : null;
 
 export async function resolveProposalTemplate(

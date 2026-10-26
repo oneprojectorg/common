@@ -149,6 +149,42 @@ describe.concurrent('listBallotProposals', () => {
     expect(setup.instance.instance.id).toBe(instanceId);
   });
 
+  it('given one proposal whose cost is not a valid amount, when the ballot is listed, then the page still comes back and only that proposal has no cost', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { instanceId, submitted } = await seedVotingDecision(testData, [
+      { title: 'Crosswalk lighting', budget: 85_000 },
+      { title: 'Rec center hours', budget: 240_000 },
+    ]);
+    await testData.advancePhase({
+      instanceId,
+      fromPhaseId: 'submission',
+      toPhaseId: 'voting',
+    });
+    const broken = parseProposalData(submitted[1]?.proposalData);
+    if (!broken.collaborationDocId) {
+      throw new Error('The second proposal has no collaboration document');
+    }
+    mockCollab.setDocFragmentResponses(broken.collaborationDocId, {
+      title: textFragment('Rec center hours'),
+      budget: textFragment('about a quarter million'),
+    });
+
+    const page = await listBallotProposals({
+      instance: await readInstance(instanceId),
+      limit: 10,
+    });
+
+    expect(
+      page.items.map(({ code, title, cost }) => [code, title, cost]),
+    ).toEqual([
+      [101, 'Crosswalk lighting', '$85000'],
+      [102, 'Rec center hours', null],
+    ]);
+  });
+
   it('given more proposals than one page holds, when the next page is asked for after the cursor, then it starts at the next code and ends the paging', async ({
     task,
     onTestFinished,
