@@ -8,7 +8,7 @@ import {
   VoterNotEnrolledError,
 } from '../../../utils';
 import { assertProfileAccess } from '../../assert';
-import { ensureBallotDraft, setBallotPageCursor } from '../ballotDraft';
+import { ensureBallotDraft } from '../ballotDraft';
 import { countBallotProposals } from '../countBallotProposals';
 import {
   type BallotProposalInfo,
@@ -134,9 +134,11 @@ export async function listSmsBallotPage({
       limit: SMS_BALLOT_PAGE_SIZE,
     }),
   ]);
-  const key = { processInstanceId: instanceId, authUserId };
-  await ensureBallotDraft({ ...key, chatLineId });
-  await setBallotPageCursor({ ...key, pageCursor: page.nextCursor });
+  await ensureBallotDraft({
+    processInstanceId: instanceId,
+    authUserId,
+    chatLineId,
+  });
 
   return {
     decisionName,
