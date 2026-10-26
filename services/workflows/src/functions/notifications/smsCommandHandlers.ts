@@ -1490,7 +1490,7 @@ export const change: SmsCommandHandler = async (context) => {
   );
 
   if (!reopen.ok) {
-    return refuseBallotRead(context, reopen.reason, instanceId);
+    return refuseBallotRead(context, reopen, instanceId);
   }
 
   const reopened = reopen.value;
