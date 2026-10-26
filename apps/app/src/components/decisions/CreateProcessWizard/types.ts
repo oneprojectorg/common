@@ -43,14 +43,67 @@ export interface WizardAnswers {
   name: string;
 }
 
+/** Every capability a phase may list; the UI maps each one to an icon. */
+export type CapabilityKey = Extract<
+  WizardCopyKey,
+  | 'addCostBudgetDetails'
+  | 'addDeadline'
+  | 'addDeadlineRunTimer'
+  | 'addQuestionsFullApplication'
+  | 'addQuestionsFullerVersion'
+  | 'addQuestionsReviewers'
+  | 'buildScoringRubric'
+  | 'buildWhatLetterAsked'
+  | 'buildWhatWasAlreadySubmitted'
+  | 'checkEligibilityFeasibility'
+  | 'chooseHowPeopleVote'
+  | 'chooseWhatAdvances'
+  | 'chooseWhoDevelopsThem'
+  | 'combineWaysVoting'
+  | 'decideWhoCanVote'
+  | 'inviteReviewers'
+  | 'inviteReviewersPanel'
+  | 'inviteYourGroup'
+  | 'keepVotesAnonymous'
+  | 'letMembersCommentLikeShow'
+  | 'letPeopleCommentLikeShow'
+  | 'mergeGroupDuplicates'
+  | 'noClosingDateRunsLong'
+  | 'notifyApplicants'
+  | 'notifyEveryoneWhoTookPart'
+  | 'notifyParticipants'
+  | 'openAllInviteOnly'
+  | 'publishAwards'
+  | 'publishOutcome'
+  | 'publishWhatGotFunded'
+  | 'publishWhatGroupLanded'
+  | 'runMoreThanOneRound'
+  | 'scoreBlindIfYouWant'
+  | 'setBudgetLimits'
+  | 'setDeadline'
+  | 'setWhatApplicationAsks'
+  | 'setWhatLetterShouldCover'
+  | 'setWhatProposalMustInclude'
+  | 'setYourOwnQuestions'
+  | 'shareSummaryPage'
+  | 'showTitlesOnlyFullEntries'
+>;
+
 export interface WizardPhase {
   /** The pitch while choosing; `phaseName` is the timeline label. */
   name: WizardCopyKey;
   phaseName: WizardCopyKey;
   kind: PhaseKind;
   description?: WizardCopyKey;
-  capabilities: WizardCopyKey[];
+  capabilities: CapabilityKey[];
   norm?: WizardCopyKey;
+}
+
+/** What the wizard hands over to create the process. */
+export interface ProcessDraft {
+  type: ProcessType;
+  name: string;
+  phases: WizardPhase[];
 }
 
 export interface Choice<K extends string> {

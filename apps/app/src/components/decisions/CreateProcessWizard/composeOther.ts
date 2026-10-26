@@ -6,6 +6,7 @@ import type { TranslateFn } from '@/lib/i18n';
 import { VOTE_CAPABILITIES } from './phasePresets';
 import { subjectMeta } from './questions';
 import type {
+  CapabilityKey,
   Decision,
   SubmitKey,
   WizardAnswers,
@@ -74,7 +75,7 @@ const DECISION_RECAP: Record<Decision, WizardCopyKey> = {
   agree: 'recapDecisionAgree',
 };
 
-const REVIEW_CAPABILITIES: WizardCopyKey[] = [
+const REVIEW_CAPABILITIES: CapabilityKey[] = [
   'buildScoringRubric',
   'inviteReviewersPanel',
   'scoreBlindIfYouWant',
@@ -111,7 +112,7 @@ export function composeOtherPhases(answers: OtherAnswers): WizardPhase[] {
 
   if (submits !== 'none') {
     const intake = INTAKE[submits];
-    const supportCapabilities: WizardCopyKey[] = discussionOnly
+    const supportCapabilities: CapabilityKey[] = discussionOnly
       ? ['letPeopleCommentLikeShow']
       : [];
 

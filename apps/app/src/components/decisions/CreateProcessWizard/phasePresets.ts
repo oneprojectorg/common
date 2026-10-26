@@ -1,12 +1,12 @@
 // What the wizard offers for a named shape: hand-written phase lists, and the grant transform. Read by the mapping step.
 import type {
+  CapabilityKey,
   GrantDecision,
   ShapeKey,
-  WizardCopyKey,
   WizardPhase,
 } from './types';
 
-export const VOTE_CAPABILITIES: WizardCopyKey[] = [
+export const VOTE_CAPABILITIES: CapabilityKey[] = [
   'chooseHowPeopleVote',
   'combineWaysVoting',
   'decideWhoCanVote',
