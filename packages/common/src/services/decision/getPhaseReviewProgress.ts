@@ -5,7 +5,7 @@ import {
 } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 
-import { NotFoundError } from '../../utils';
+import { NotFoundError, UnauthorizedError } from '../../utils';
 import { getCachedInstance } from './getCachedInstance';
 import { getProposalIdsForPhase } from './getProposalsForPhase';
 import { assertDecisionAdmin } from './phaseHelpers';
@@ -32,6 +32,11 @@ export async function getPhaseReviewProgress(
 
   if (!instance) {
     throw new NotFoundError('Process instance', processInstanceId);
+  }
+
+  // A legacy instance without a profile is a denial, not a server fault.
+  if (!instance.profileId) {
+    throw new UnauthorizedError("You don't have access to do this");
   }
 
   // Ahead of `assertInstancePhase` so an unauthorized caller can't probe which
