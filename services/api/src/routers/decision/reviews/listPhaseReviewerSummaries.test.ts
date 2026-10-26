@@ -35,7 +35,7 @@ describe.concurrent('decision.listPhaseReviewerSummaries', () => {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
     const submitted = await testData.createReviewAssignment({
       title: `Submitted proposal ${task.id}`,
-      status: ProposalReviewAssignmentStatus.IN_PROGRESS,
+      status: ProposalReviewAssignmentStatus.COMPLETED,
     });
     const context = submitted.context;
     const drafted = await testData.createReviewAssignment({
@@ -75,6 +75,43 @@ describe.concurrent('decision.listPhaseReviewerSummaries', () => {
     expect(summary?.assignedCount).toBe(2);
     expect(summary?.submittedCount).toBe(1);
     expect(summary?.draftCount).toBe(1);
+    expect(summary?.lastSubmittedAt).not.toBeNull();
+  });
+
+  it('does not count a submitted review whose assignment awaits a re-review', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const reReview = await testData.createReviewAssignment({
+      title: `Re-review proposal ${task.id}`,
+      status: ProposalReviewAssignmentStatus.READY_FOR_RE_REVIEW,
+    });
+    const context = reReview.context;
+    await testData.setCurrentPhase(context.instance.instance.id, 'review');
+
+    await createProposalReview({
+      assignmentId: reReview.assignment.id,
+      state: ProposalReviewState.SUBMITTED,
+      reviewData: { answers: {}, rationales: {} },
+      submittedAt: new Date().toISOString(),
+    });
+
+    const adminCaller = await createAuthenticatedCaller(
+      context.defaultReviewer.email,
+    );
+
+    const result = await adminCaller.decision.listPhaseReviewerSummaries({
+      processInstanceId: context.instance.instance.id,
+      phaseId: 'review',
+    });
+
+    const summary = result.items.find(
+      (candidate) =>
+        candidate.reviewer.id === context.defaultReviewer.profileId,
+    );
+    expect(summary?.assignedCount).toBe(1);
+    expect(summary?.submittedCount).toBe(0);
     expect(summary?.lastSubmittedAt).not.toBeNull();
   });
 
