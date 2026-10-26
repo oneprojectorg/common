@@ -178,84 +178,89 @@ export function ReviewPage({
 
       <div className="flex w-full justify-center bg-white">
         <div className="w-full p-4 sm:p-8">
-          {canReview ? (
-            <Tabs
-              className="gap-6"
-              value={activeTab}
-              onValueChange={handleTabChange}
-            >
-              <div className="w-full border-b">
-                <TabsList variant="line">
-                  <TabsTrigger value="to-review">
-                    {t('proposalsToReviewTab')}
-                  </TabsTrigger>
-                  <TabsTrigger value="all-proposals">
-                    {t('allProposalsTab')}
-                  </TabsTrigger>
-                  {showAssignmentsTab ? assignmentsTabTrigger : null}
-                </TabsList>
-              </div>
-
-              <TabsContent value="to-review" className="grow sm:p-0">
-                <APIErrorBoundary fallbacks={proposalsLoadErrorFallback}>
-                  <Suspense fallback={<ProposalListSkeleton />}>
-                    <ReviewAssignmentsList
-                      processInstanceId={instance.id}
-                      decisionSlug={decisionSlug}
-                      access={instance.access}
-                      pinOffset={pinOffset}
-                    />
-                  </Suspense>
-                </APIErrorBoundary>
-              </TabsContent>
-
-              <TabsContent value="all-proposals" className="grow sm:p-0">
-                {allProposalsList}
-              </TabsContent>
-
-              {showAssignmentsTab ? assignmentsTabContent : null}
-            </Tabs>
-          ) : isAdmin ? (
-            // Admin without review capability: the progress list is the whole
-            // surface, gaining a sibling tab only when the desk is on.
-            showAssignmentsTab ? (
+          <div className="mx-auto w-full max-w-page">
+            {canReview ? (
               <Tabs
                 className="gap-6"
-                value={adminActiveTab}
+                value={activeTab}
                 onValueChange={handleTabChange}
               >
                 <div className="w-full border-b">
-                  <TabsList variant="line">
-                    <TabsTrigger value={DEFAULT_REVIEW_TAB}>
+                  <TabsList variant="line" className="-ms-3">
+                    <TabsTrigger value="to-review">
+                      {t('proposalsToReviewTab')}
+                    </TabsTrigger>
+                    <TabsTrigger value="all-proposals">
                       {t('allProposalsTab')}
                     </TabsTrigger>
-                    {assignmentsTabTrigger}
+                    {showAssignmentsTab ? assignmentsTabTrigger : null}
                   </TabsList>
                 </div>
 
-                <TabsContent value={DEFAULT_REVIEW_TAB} className="grow sm:p-0">
+                <TabsContent value="to-review" className="grow sm:p-0">
+                  <APIErrorBoundary fallbacks={proposalsLoadErrorFallback}>
+                    <Suspense fallback={<ProposalListSkeleton />}>
+                      <ReviewAssignmentsList
+                        processInstanceId={instance.id}
+                        decisionSlug={decisionSlug}
+                        access={instance.access}
+                        pinOffset={pinOffset}
+                      />
+                    </Suspense>
+                  </APIErrorBoundary>
+                </TabsContent>
+
+                <TabsContent value="all-proposals" className="grow sm:p-0">
                   {allProposalsList}
                 </TabsContent>
 
-                {assignmentsTabContent}
+                {showAssignmentsTab ? assignmentsTabContent : null}
               </Tabs>
+            ) : isAdmin ? (
+              // Admin without review capability: the progress list is the whole
+              // surface, gaining a sibling tab only when the desk is on.
+              showAssignmentsTab ? (
+                <Tabs
+                  className="gap-6"
+                  value={adminActiveTab}
+                  onValueChange={handleTabChange}
+                >
+                  <div className="w-full border-b">
+                    <TabsList variant="line" className="-ms-3">
+                      <TabsTrigger value={DEFAULT_REVIEW_TAB}>
+                        {t('allProposalsTab')}
+                      </TabsTrigger>
+                      {assignmentsTabTrigger}
+                    </TabsList>
+                  </div>
+
+                  <TabsContent
+                    value={DEFAULT_REVIEW_TAB}
+                    className="grow sm:p-0"
+                  >
+                    {allProposalsList}
+                  </TabsContent>
+
+                  {assignmentsTabContent}
+                </Tabs>
+              ) : (
+                allProposalsList
+              )
             ) : (
-              allProposalsList
-            )
-          ) : (
-            <APIErrorBoundary fallbacks={proposalsLoadErrorFallback}>
-              <Suspense fallback={<ProposalListSkeleton />}>
-                <ProposalsList
-                  slug={slug}
-                  instanceId={instance.id}
-                  decisionSlug={decisionSlug}
-                  permissions={instance.access}
-                  currentPhase={currentPhase}
-                  pinOffset={pinOffset}
-                />
-              </Suspense>
-            </APIErrorBoundary>
-          )}
+              <APIErrorBoundary fallbacks={proposalsLoadErrorFallback}>
+                <Suspense fallback={<ProposalListSkeleton />}>
+                  <ProposalsList
+                    slug={slug}
+                    instanceId={instance.id}
+                    decisionSlug={decisionSlug}
+                    permissions={instance.access}
+                    currentPhase={currentPhase}
+                    pinOffset={pinOffset}
+                  />
+                </Suspense>
+              </APIErrorBoundary>
+            )}
+          </div>
         </div>
       </div>
     </div>
