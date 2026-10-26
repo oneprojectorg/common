@@ -131,7 +131,7 @@ function ReviewersTableContent({
         <>
           <Table
             aria-label={t('decisions.review.reviewersHeading')}
-            className="w-full [&_tbody_th]:px-5 [&_tbody_th]:py-3 [&_td]:px-5 [&_td]:py-3 [&_th]:px-5 [&_thead_th]:font-normal [&_tr>*:first-child]:ps-3 [&_tr>*:last-child]:pe-3"
+            className="w-full [&_tbody_th]:h-15 [&_td]:h-15 [&_thead_th]:font-normal [&_tr>*:first-child]:ps-0 [&_tr>*:last-child]:pe-0"
           >
             <TableHeader>
               <TableRow>
