@@ -54,7 +54,7 @@ describe('isServerFeatureEnabled', () => {
     expect(getAllFlags).toHaveBeenCalledWith(params.distinctId);
     expect(cache).toHaveBeenCalledWith(
       expect.objectContaining({
-        type: 'featureFlag',
+        type: 'featureFlags',
         params: [params.distinctId],
         options: expect.objectContaining({ skipMemCache: true }),
       }),

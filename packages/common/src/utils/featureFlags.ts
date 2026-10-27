@@ -32,7 +32,7 @@ export const isServerFeatureEnabled = async ({
   }
 
   const flags = await cache({
-    type: 'featureFlag',
+    type: 'featureFlags',
     params: [distinctId],
     fetch: () => readFlags(distinctId),
     options: {

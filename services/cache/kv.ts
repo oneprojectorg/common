@@ -87,7 +87,7 @@ const TypeMap = {
   decision: 'decision',
   platform: 'platform',
   collabDoc: 'collabDoc',
-  featureFlag: 'featureFlag',
+  featureFlags: 'featureFlags',
 };
 
 /** Allowed types for cache params - will be stringified for key generation */
@@ -105,7 +105,7 @@ const FULL_KEY_TYPES: ReadonlySet<keyof typeof TypeMap> = new Set([
   'resourceSignedUrl',
   'decision',
   'resources',
-  'featureFlag',
+  'featureFlags',
 ]);
 
 const getCacheKey = (
