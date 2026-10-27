@@ -59,6 +59,7 @@ interface ResultsPageInstance {
     }[];
     overview?: { heroImage?: string } | null;
   } | null;
+  access?: { admin?: boolean } | null;
 }
 
 function ResultsPageLegacy({
@@ -169,15 +170,21 @@ function ResultsPageContent({
 
   const heroImagePath = instance.instanceData?.overview?.heroImage;
   const hasHeroImage = Boolean(heroImagePath);
+  // Legacy instances have no editable overview, so no banner controls.
+  const isAdmin = !isLegacy && instance.access?.admin === true;
 
   return (
     <>
       <FinalPhaseSubmissionSuccessDialog />
       <ProcessSurveyGate instanceId={instanceId} isLegacy={isLegacy} />
-      <DecisionHeroBanner heroImagePath={heroImagePath}>
+      <DecisionHeroBanner
+        instanceId={instanceId}
+        heroImagePath={heroImagePath}
+        isAdmin={isAdmin}
+      >
         <div
           className={cn(
-            'mx-auto flex max-w-3xl flex-col justify-center gap-4 px-4 pt-16 pb-8 md:pt-8',
+            'mx-auto flex max-w-3xl flex-col justify-center gap-4 px-4 pt-16 pb-8 md:pb-16',
             hasHeroImage && 'text-white',
           )}
         >

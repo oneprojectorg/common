@@ -143,7 +143,11 @@ export function ReviewPage({
 
   return (
     <div className="min-h-full">
-      <DecisionHeroBanner heroImagePath={heroImagePath}>
+      <DecisionHeroBanner
+        instanceId={instance.id}
+        heroImagePath={heroImagePath}
+        isAdmin={isAdmin}
+      >
         <div className="mx-auto flex max-w-3xl flex-col items-center justify-center gap-4 px-4 pt-16 pb-8 md:pb-16">
           <DecisionHero
             title={
