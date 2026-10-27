@@ -1223,8 +1223,6 @@
       "sentTimeAgo": "أُرسل {timeAgo}",
       "selectedProposalsHeading": "المقترحات المُختارة",
       "awardAmountsDescription": "سيرى جميع المشاركين المقترحات المختارة والمبلغ الممنوح لكل منها.",
-      "adjustAmountsAction": "تعديل المبالغ",
-      "awardedAmountLabel": "المبلغ الممنوح",
       "awardedAmountError": "أدخل مبلغًا أكبر من 0",
       "awardLabel": "الجائزة",
       "awardForProposalLabel": "الجائزة لـ {title}",

@@ -1223,8 +1223,6 @@
       "sentTimeAgo": "La diray {timeAgo}",
       "selectedProposalsHeading": "Soo jeedimaha la xushay",
       "awardAmountsDescription": "Ka-qaybgale kasta wuxuu arki doonaa soo-jeedinta la doortay iyo qadarka la siiyay mid kasta.",
-      "adjustAmountsAction": "Hagaaji qadarrada",
-      "awardedAmountLabel": "Qadarka la bixiyay",
       "awardedAmountError": "Geli qadar ka weyn 0",
       "awardLabel": "Abaalmarin",
       "awardForProposalLabel": "Abaalmarinta {title}",

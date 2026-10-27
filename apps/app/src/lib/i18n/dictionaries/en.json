@@ -1223,8 +1223,6 @@
       "sentTimeAgo": "Sent {timeAgo}",
       "selectedProposalsHeading": "Selected proposals",
       "awardAmountsDescription": "Every participant will see the selected proposals and the amount each one is awarded.",
-      "adjustAmountsAction": "Adjust amounts",
-      "awardedAmountLabel": "Awarded amount",
       "awardedAmountError": "Enter an amount greater than 0",
       "awardLabel": "Award",
       "awardForProposalLabel": "Award for {title}",

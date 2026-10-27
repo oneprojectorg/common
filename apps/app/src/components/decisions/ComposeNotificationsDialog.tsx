@@ -27,26 +27,25 @@ import { LuCircleAlert } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { AwardAmountsStep } from './AwardAmountsStep';
-import { useAwardAmounts } from './useAwardAmounts';
+import { AwardSummaryStep } from './AwardSummaryStep';
+import type { ProposalAwards } from './useProposalAwards';
 
 interface ComposeNotificationsDialogProps {
   selectedProposals: Proposal[];
   selectedCount: number;
   notSelectedCount: number;
   /**
-   * The template collects a budget, so the dialog opens on a step where the
-   * admin confirms the amount each winner is awarded.
+   * The awards typed in the selection table. When present the dialog opens on
+   * a read-only summary of them and publishes their allocations; absent, the
+   * process awards no amounts and the dialog opens on the notifications.
    */
-  awardsAmounts: boolean;
+  awards?: ProposalAwards;
   phaseName: string;
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   onConfirm: ConfirmResultsHandler;
   isSubmitting: boolean;
   triggerLabel: ReactNode;
-  /** The trigger stays disabled while an award in the table is invalid or over budget. */
-  canConfirm?: boolean;
 }
 
 export type ConfirmResultsHandler = (
@@ -79,14 +78,13 @@ export const ComposeNotificationsDialog = ({
   selectedProposals,
   selectedCount,
   notSelectedCount,
-  awardsAmounts,
+  awards,
   phaseName,
   isOpen,
   onOpenChange,
   onConfirm,
   isSubmitting,
   triggerLabel,
-  canConfirm = true,
 }: ComposeNotificationsDialogProps) => {
   const t = useTranslations();
 
@@ -107,12 +105,12 @@ export const ComposeNotificationsDialog = ({
   const fieldIdPrefix = useId();
   const hintId = `${fieldIdPrefix}-hint`;
 
+  const awardsAmounts = awards !== undefined;
   const initialStep = getInitialStep(awardsAmounts);
   const [step, setStep] = useState<Step>(initialStep);
-  const awards = useAwardAmounts({
-    proposals: selectedProposals,
-    isEnabled: awardsAmounts,
-  });
+  // The table owns the awards, so the dialog reads them live; the trigger and
+  // the publish buttons both wait until every advanced award can be published.
+  const canConfirm = awards?.canConfirm ?? true;
 
   const handleOpenChange = (open: boolean) => {
     // Closing mid-submit would discard copy the pending mutation may reject.
@@ -123,7 +121,6 @@ export const ComposeNotificationsDialog = ({
       setCounts({ selected: selectedCount, notSelected: notSelectedCount });
       setActiveTab('selected');
       setStep(initialStep);
-      awards.reset();
     }
     onOpenChange(open);
   };
@@ -135,10 +132,7 @@ export const ComposeNotificationsDialog = ({
   const hasError = invalid.selected || invalid.notSelected;
 
   const confirm = (composed?: ResultNotificationMessages) =>
-    awards.publish({
-      onPublish: (allocations) => onConfirm(composed, allocations),
-      onReopen: () => setStep('amounts'),
-    });
+    onConfirm(composed, awards?.allocations());
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
@@ -155,20 +149,18 @@ export const ComposeNotificationsDialog = ({
           <StepTitle step={step} phaseName={phaseName} />
         </DialogHeader>
 
-        {step === 'amounts' ? (
-          <AwardAmountsStep
+        {step === 'amounts' && awards ? (
+          <AwardSummaryStep
             proposals={selectedProposals}
             awards={awards}
-            onContinue={() =>
-              awards.confirm(() => {
-                // Re-frozen here too: a reopened step may confirm a new set.
-                setCounts({
-                  selected: selectedCount,
-                  notSelected: notSelectedCount,
-                });
-                setStep('notifications');
-              })
-            }
+            onContinue={() => {
+              // Re-frozen here too: the summary may show a changed set.
+              setCounts({
+                selected: selectedCount,
+                notSelected: notSelectedCount,
+              });
+              setStep('notifications');
+            }}
           />
         ) : (
           <>
@@ -256,7 +248,7 @@ export const ComposeNotificationsDialog = ({
                 onSend={() => confirm(messages)}
                 onSkip={() => confirm()}
                 canSend={!hasError}
-                hasSelection={selectedCount > 0}
+                hasSelection={selectedCount > 0 && canConfirm}
                 isSubmitting={isSubmitting}
               />
             </DialogFooter>

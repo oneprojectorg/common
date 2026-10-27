@@ -1223,8 +1223,6 @@
       "sentTimeAgo": "Enviado {timeAgo}",
       "selectedProposalsHeading": "Propostas selecionadas",
       "awardAmountsDescription": "Todos os participantes verão as propostas selecionadas e o valor concedido a cada uma.",
-      "adjustAmountsAction": "Ajustar valores",
-      "awardedAmountLabel": "Valor concedido",
       "awardedAmountError": "Insira um valor maior que 0",
       "awardLabel": "Valor atribuído",
       "awardForProposalLabel": "Valor atribuído a {title}",
