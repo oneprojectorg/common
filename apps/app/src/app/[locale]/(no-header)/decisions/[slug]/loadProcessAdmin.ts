@@ -1,13 +1,18 @@
-import { getRequiredUser } from '@/utils/getUser';
+import { getUser } from '@/utils/getUser';
+import { assertWalledGardenAccess } from '@/utils/walledGarden';
 import { isServerFeatureEnabled } from '@op/common';
 import { forbidden, notFound } from 'next/navigation';
 import { cache } from 'react';
 
 import { loadDecision } from './(decision-view)/loadDecision';
 
-// The flag is read last so only admins cost a PostHog lookup.
+// Any real account may reach the admin gate: membership is decided by the
+// decision's own access, not the network. The flag is read last so only admins
+// cost a PostHog lookup.
 export const loadProcessAdmin = cache(async (slug: string) => {
-  const user = await getRequiredUser();
+  const user = await assertWalledGardenAccess(await getUser(), {
+    allowNonMembers: true,
+  });
   const decision = await loadDecision(slug);
 
   if (!decision.decisionProfile.processInstance.access?.admin) {
