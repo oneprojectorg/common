@@ -1,0 +1,83 @@
+import { describe, expect, it } from 'vitest';
+
+import { getProcessBudget, templateCollectsBudget } from './templateBudget';
+import type { ProposalTemplateSchema } from './types';
+
+describe('templateCollectsBudget', () => {
+  it('returns true when the template has a budget property', () => {
+    const template: ProposalTemplateSchema = {
+      type: 'object',
+      properties: {
+        title: { type: 'string', 'x-format': 'short-text' },
+        budget: { type: 'object', 'x-format': 'money' },
+      },
+    };
+
+    expect(templateCollectsBudget(template)).toBe(true);
+  });
+
+  it('returns false for null, undefined and a template without a budget', () => {
+    expect(templateCollectsBudget(null)).toBe(false);
+    expect(templateCollectsBudget(undefined)).toBe(false);
+    expect(templateCollectsBudget({ type: 'object' })).toBe(false);
+  });
+});
+
+describe('getProcessBudget', () => {
+  const phases = [
+    { phaseId: 'submission', settings: { budget: 25000 } },
+    { phaseId: 'review', settings: {} },
+    { phaseId: 'final', settings: { budget: 30000 } },
+  ];
+
+  it('reads the budget of the current phase', () => {
+    expect(getProcessBudget({ phases, currentPhaseId: 'final' })).toBe(30000);
+  });
+
+  it('falls back to the first phase that has a budget when the current phase has none', () => {
+    expect(getProcessBudget({ phases, currentPhaseId: 'review' })).toBe(25000);
+  });
+
+  it('falls back to the first phase that has a budget when no phase is current', () => {
+    expect(getProcessBudget({ phases, currentPhaseId: null })).toBe(25000);
+    expect(getProcessBudget({ phases, currentPhaseId: undefined })).toBe(25000);
+  });
+
+  it('returns undefined when no phase has a budget', () => {
+    expect(
+      getProcessBudget({
+        phases: [{ phaseId: 'final' }, { phaseId: 'review', settings: {} }],
+        currentPhaseId: 'final',
+      }),
+    ).toBeUndefined();
+    expect(getProcessBudget({ phases: [], currentPhaseId: 'final' })).toBe(
+      undefined,
+    );
+    expect(
+      getProcessBudget({ phases: undefined, currentPhaseId: 'final' }),
+    ).toBeUndefined();
+  });
+
+  it('ignores a budget that is not a positive finite number', () => {
+    expect(
+      getProcessBudget({
+        phases: [
+          { phaseId: 'final', settings: { budget: '25000' } },
+          { phaseId: 'review', settings: { budget: 0 } },
+          { phaseId: 'voting', settings: { budget: Number.NaN } },
+          { phaseId: 'last', settings: { budget: 1200 } },
+        ],
+        currentPhaseId: 'final',
+      }),
+    ).toBe(1200);
+  });
+
+  it('skips the budget stripped to undefined when the instance hides it', () => {
+    expect(
+      getProcessBudget({
+        phases: [{ phaseId: 'final', settings: { budget: undefined } }],
+        currentPhaseId: 'final',
+      }),
+    ).toBeUndefined();
+  });
+});

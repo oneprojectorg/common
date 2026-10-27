@@ -181,7 +181,11 @@ export {
   templateCollectsLocation,
   getLocationFieldMapView,
 } from './services/decision/templateLocation';
-export { templateCollectsBudget } from './services/decision/templateBudget';
+export {
+  getProcessBudget,
+  type ProcessBudgetPhase,
+  templateCollectsBudget,
+} from './services/decision/templateBudget';
 export {
   PROCESS_NAME_MAX_LENGTH,
   PROCESS_NAME_MIN_LENGTH,
