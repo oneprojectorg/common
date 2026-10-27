@@ -5,6 +5,7 @@ import { useRequiredUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import { EntityType } from '@op/api/encoders';
 import { useMediaQuery } from '@op/hooks';
+import { Badge } from '@op/sense/Badge';
 import { Button } from '@op/sense/Button';
 import {
   DropdownMenu,
@@ -18,9 +19,17 @@ import { toast } from '@op/sense/Toast';
 import { screens } from '@op/styles/constants';
 import { useMutation } from '@tanstack/react-query';
 import { useState } from 'react';
-import { LuMessageCircle, LuPlus, LuUserPlus, LuUsers } from 'react-icons/lu';
+import {
+  LuMessageCircle,
+  LuPlus,
+  LuUserPlus,
+  LuUsers,
+  LuWandSparkles,
+} from 'react-icons/lu';
 
-import { useRouter, useTranslations } from '@/lib/i18n';
+import { usePathname, useRouter, useTranslations } from '@/lib/i18n';
+
+import { saveWizardOrigin } from '@/components/decisions/CreateProcessWizard/wizardProgress';
 
 import { InviteUserModal } from '../InviteUserModal';
 import { CreateOrganizationModal } from '../Profile/ProfileDetails/CreateOrganizationModal';
@@ -31,6 +40,7 @@ const SM_BREAKPOINT = screens.sm;
 export const CreateMenu = () => {
   const t = useTranslations();
   const router = useRouter();
+  const pathname = usePathname();
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [isCreateOrganizationModalOpen, setIsCreateOrganizationModalOpen] =
     useState(false);
@@ -38,6 +48,7 @@ export const CreateMenu = () => {
   const isOrg = user.currentProfile?.type === EntityType.ORG;
   const isMobile = useMediaQuery(`(max-width: ${SM_BREAKPOINT})`);
   const createDecisionEnabled = useFeatureFlag('create_decision_process');
+  const newProcessAdminEnabled = useFeatureFlag('new_process_admin_enabled');
   const utils = trpc.useUtils();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
@@ -86,6 +97,7 @@ export const CreateMenu = () => {
           </DropdownMenuItem>
           {createDecisionEnabled && (
             <DropdownMenuItem
+              data-testid="create-decision-process"
               disabled={isCreatingDecision}
               onClick={() => createDecisionMutation.mutate()}
             >
@@ -95,6 +107,23 @@ export const CreateMenu = () => {
                 <LuMessageCircle className="size-4" />
               )}{' '}
               {t('shell.createDecisionAction')}
+            </DropdownMenuItem>
+          )}
+          {newProcessAdminEnabled && (
+            // The badge joins the accessible name, so the two items differ.
+            <DropdownMenuItem
+              data-testid="create-decision-process-wizard"
+              disabled={isCreatingDecision}
+              onClick={() => {
+                saveWizardOrigin(pathname);
+                router.push('/decisions/new');
+              }}
+            >
+              <LuWandSparkles className="size-4" />{' '}
+              {t('shell.createDecisionAction')}
+              <Badge variant="accent" className="ms-auto">
+                {t('Alpha')}
+              </Badge>
             </DropdownMenuItem>
           )}
           {isOrg && (

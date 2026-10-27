@@ -1,0 +1,154 @@
+'use client';
+
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@op/sense/Accordion';
+import { useState } from 'react';
+import { LuCircleCheckBig } from 'react-icons/lu';
+
+import { useTranslations } from '@/lib/i18n';
+
+import { Callout } from '../Callout';
+import { StepHeading } from '../StepHeading';
+import { describeOther } from '../phases';
+import type { WizardAnswers, WizardPhase } from '../types';
+import { CAPABILITY_ICONS } from './capabilityIcons';
+
+export function MappingStep({
+  phases,
+  answers,
+}: {
+  phases: WizardPhase[];
+  answers: WizardAnswers;
+}) {
+  const t = useTranslations('decisions.createWizard');
+  const [open, setOpen] = useState<number | null>(0);
+  const recap = answers.type === 'other' ? describeOther(answers, t) : null;
+
+  return (
+    <div className="flex flex-col gap-6">
+      <StepHeading
+        title={t('mappingHeading')}
+        description={t('mappingDescription')}
+      />
+
+      {recap ? (
+        <Callout icon={LuCircleCheckBig} title={t('recapHeading')}>
+          {recap} {t('recapHint')}
+        </Callout>
+      ) : null}
+
+      <div className="relative">
+        {/* Outside the `ol`: it may only contain `li`. */}
+        {phases.length > 1 ? (
+          <span
+            aria-hidden
+            className="absolute start-4.25 top-2.75 bottom-2.75 w-0.5 -translate-x-1/2 bg-border rtl:translate-x-1/2"
+          />
+        ) : null}
+
+        <Accordion
+          value={open === null ? [] : [open]}
+          onValueChange={(next) => {
+            const added = next.find(
+              (value) => typeof value === 'number' && value !== open,
+            );
+
+            setOpen(typeof added === 'number' ? added : null);
+          }}
+          // WebKit drops the implicit list role from flex lists.
+          render={<ol role="list" />}
+          className="gap-3"
+        >
+          {phases.map((phase, index) => (
+            <PhaseRow
+              key={`${phase.name}-${index}`}
+              phase={phase}
+              step={index}
+            />
+          ))}
+        </Accordion>
+      </div>
+    </div>
+  );
+}
+
+function PhaseRow({ phase, step }: { phase: WizardPhase; step: number }) {
+  const t = useTranslations('decisions.createWizard');
+  const title = t(phase.name);
+  const kind = t(`${phase.kind}Phase`);
+
+  return (
+    <AccordionItem
+      value={step}
+      render={<li role="listitem" />}
+      className="group/item flex items-start gap-4 border-none"
+    >
+      <span
+        aria-hidden
+        className="relative mt-2.75 grid size-8.5 shrink-0 place-items-center rounded-full border-2 border-border bg-background text-sm text-muted-foreground transition-colors group-data-open/item:border-primary group-data-open/item:bg-primary group-data-open/item:font-strong group-data-open/item:text-primary-foreground motion-reduce:transition-none"
+      >
+        {step + 1}
+      </span>
+
+      <div className="relative min-w-0 flex-1 overflow-hidden rounded-lg border bg-background">
+        {/* An aria-label would replace the visible name. */}
+        <AccordionTrigger className="w-full items-baseline gap-4 rounded-none border-0 px-5 py-3.5 hover:bg-muted/40 hover:no-underline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring **:data-[slot=accordion-trigger-icon]:hidden sm:group-data-open/item:w-3/5">
+          <span className="sr-only">
+            {t('stepOrdinal', { step: step + 1 })}
+          </span>
+          <span className="flex min-w-0 flex-col">
+            <span className="truncate">{title}</span>
+            <span className="hidden text-sm font-normal text-muted-foreground group-aria-expanded/accordion-trigger:block">
+              {kind}
+            </span>
+          </span>
+          <span className="shrink-0 text-sm font-normal text-muted-foreground transition-[opacity,visibility] duration-200 ease-out group-aria-expanded/accordion-trigger:invisible group-aria-expanded/accordion-trigger:opacity-0 motion-reduce:transition-none">
+            {kind}
+          </span>
+        </AccordionTrigger>
+
+        <AccordionContent className="pt-0 pb-0">
+          <div className="flex min-w-0 flex-col px-5 pb-5 sm:w-3/5">
+            {phase.description ? (
+              <p className="mb-4 text-sm text-muted-foreground">
+                {t(phase.description)}
+              </p>
+            ) : null}
+
+            <ul role="list" className="flex flex-col gap-4">
+              {phase.capabilities.map((capability) => {
+                const Icon = CAPABILITY_ICONS[capability];
+
+                return (
+                  <li key={capability} className="flex items-start gap-2.5">
+                    <Icon
+                      className="mt-0.5 size-4.5 shrink-0 text-primary"
+                      aria-hidden
+                    />
+                    <span className="text-base">{t(capability)}</span>
+                  </li>
+                );
+              })}
+            </ul>
+
+            {phase.norm ? (
+              <p className="mt-4 text-sm text-muted-foreground italic">
+                {t(phase.norm)}
+              </p>
+            ) : null}
+          </div>
+
+          {/* Placeholder until an asset ships. */}
+          <div
+            aria-hidden
+            className="min-h-32 bg-gradient-to-b from-accent via-primary/15 to-primary/30 transition-opacity duration-200 ease-out in-data-ending-style:opacity-0 in-data-starting-style:opacity-0 motion-reduce:transition-none sm:absolute sm:inset-y-0 sm:end-0 sm:min-h-0 sm:w-2/5"
+          />
+        </AccordionContent>
+      </div>
+    </AccordionItem>
+  );
+}

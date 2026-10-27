@@ -31,7 +31,8 @@ export function useProcessPhases(
       }));
     }
     const instancePhases = instance?.instanceData?.phases;
-    if (instancePhases?.length) {
+    // An empty list is an answer; only an instance without one is still on its template.
+    if (instancePhases) {
       return instancePhases.map((p) => ({
         phaseId: p.phaseId,
         name: p.name ?? '',
