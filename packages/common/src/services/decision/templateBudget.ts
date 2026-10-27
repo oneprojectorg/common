@@ -10,3 +10,42 @@ export function templateCollectsBudget(
 ): boolean {
   return Boolean(template?.properties && 'budget' in template.properties);
 }
+
+export interface ProcessBudgetPhase {
+  phaseId: string;
+  settings?: Record<string, unknown> | null;
+}
+
+/**
+ * The total budget a process can award, read from the phases' `settings.budget`:
+ * the current phase's when it has one, else the first phase that has one.
+ * `undefined` when no phase carries a positive budget, which includes an
+ * instance whose `hideBudget` config stripped it.
+ */
+export function getProcessBudget({
+  phases,
+  currentPhaseId,
+}: {
+  phases: readonly ProcessBudgetPhase[] | null | undefined;
+  currentPhaseId: string | null | undefined;
+}): number | undefined {
+  const budgets = (phases ?? []).map((phase) => ({
+    phaseId: phase.phaseId,
+    budget: readBudget(phase.settings),
+  }));
+  const current = budgets.find(
+    ({ phaseId, budget }) => phaseId === currentPhaseId && budget !== undefined,
+  );
+
+  return (current ?? budgets.find(({ budget }) => budget !== undefined))
+    ?.budget;
+}
+
+const readBudget = (
+  settings: Record<string, unknown> | null | undefined,
+): number | undefined => {
+  const value = settings?.budget;
+  return typeof value === 'number' && Number.isFinite(value) && value > 0
+    ? value
+    : undefined;
+};
