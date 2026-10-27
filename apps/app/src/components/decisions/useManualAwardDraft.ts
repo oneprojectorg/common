@@ -55,8 +55,9 @@ function subscribe(key: string, callback: () => void): () => void {
   if (typeof window === 'undefined') {
     return () => {};
   }
+  snapshots.delete(key);
   const onStorage = (event: StorageEvent) => {
-    if (event.key === key) {
+    if (event.key === key || event.key === null) {
       snapshots.delete(key);
       callback();
     }
