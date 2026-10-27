@@ -205,10 +205,9 @@ function ProcessAdminHero({
   const hasImage = Boolean(getPublicUrl(overview?.heroImage));
   const steward = instance.steward;
   const stewardSlug = canLinkToProfile ? steward?.slug : undefined;
-  const hasDetails = Boolean(
-    steward || overview?.headline || overview?.description,
-  );
 
+  // The design shows the title and the steward only; the summary belongs to
+  // the About section.
   return (
     <DecisionHeroBanner heroImagePath={overview?.heroImage}>
       <div className="mx-auto flex max-w-3xl flex-col items-center gap-8 px-4 pt-16 pb-8 md:px-6 md:pb-16">
@@ -217,45 +216,31 @@ function ProcessAdminHero({
           hasImage={hasImage}
           showTranslateLink={false}
           description={
-            hasDetails ? (
-              <>
-                {steward ? (
-                  <p className="flex items-center justify-center gap-1.5">
-                    <ProfileAvatar
-                      name={steward.name}
-                      src={getPublicUrl(steward.avatarImage?.name)}
-                      alt=""
-                      size="sm"
-                    />
-                    <span>
-                      {t.rich('processAdmin.stewardedBy', {
-                        name: steward.name,
-                        steward: (chunks) =>
-                          stewardSlug ? (
-                            <Link
-                              href={`/profile/${stewardSlug}`}
-                              className="underline"
-                            >
-                              <bdi>{chunks}</bdi>
-                            </Link>
-                          ) : (
-                            <bdi>{chunks}</bdi>
-                          ),
-                      })}
-                    </span>
-                  </p>
-                ) : null}
-                {overview?.headline ? (
-                  <p dir="auto" className="text-title text-balance">
-                    {overview.headline}
-                  </p>
-                ) : null}
-                {overview?.description ? (
-                  <p dir="auto" className="text-balance">
-                    {overview.description}
-                  </p>
-                ) : null}
-              </>
+            steward ? (
+              <p className="flex items-center justify-center gap-1.5">
+                <ProfileAvatar
+                  name={steward.name}
+                  src={getPublicUrl(steward.avatarImage?.name)}
+                  alt=""
+                  size="sm"
+                />
+                <span>
+                  {t.rich('processAdmin.stewardedBy', {
+                    name: steward.name,
+                    steward: (chunks) =>
+                      stewardSlug ? (
+                        <Link
+                          href={`/profile/${stewardSlug}`}
+                          className="underline"
+                        >
+                          <bdi>{chunks}</bdi>
+                        </Link>
+                      ) : (
+                        <bdi>{chunks}</bdi>
+                      ),
+                  })}
+                </span>
+              </p>
             ) : undefined
           }
         >
