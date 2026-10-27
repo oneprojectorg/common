@@ -17,12 +17,6 @@ interface AwardBudgetMeterProps {
   className?: string;
 }
 
-/**
- * How much of the process budget the advanced proposals' awards take: a bar
- * with one segment per advanced row and a sentence, both in the destructive
- * colour once the total passes the budget. Renders nothing while the winners'
- * awards cannot be summed (mixed currencies, nothing selected).
- */
 export const AwardBudgetMeter = ({
   awards,
   selectedIds,
@@ -62,8 +56,6 @@ export const AwardBudgetMeter = ({
             '[&_[data-slot=segmented-progress-segment]]:bg-destructive',
         )}
       />
-      {/* The running total changes on every keystroke, so only the warning is
-          live; the bar's aria-valuetext carries the total on demand. */}
       <p className="flex min-w-0 flex-col text-sm text-muted-foreground tabular-nums">
         <span>
           {t.rich('awardedOfBudget', {

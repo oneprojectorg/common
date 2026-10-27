@@ -100,7 +100,6 @@ export const ManualSelectionList = ({
   const showBudget = templateCollectsBudget(
     instance.instanceData?.proposalTemplate,
   );
-  // Only the final phase awards amounts; other phases advance without them.
   const awardsAmounts = isFinalPhase && showBudget;
   const processBudget = getProcessBudget({
     phases: instance.instanceData?.phases,
@@ -153,8 +152,6 @@ export const ManualSelectionList = ({
     [selectedProposals],
   );
 
-  // Every row the table shows plus the picks a filter hid, so an award typed
-  // on a row survives the filter that scrolls it out of the candidates.
   const awardProposals = useMemo(() => {
     const listed = new Set(candidates?.map((proposal) => proposal.id));
     return [

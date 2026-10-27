@@ -51,8 +51,6 @@ export const useProposalAwards = ({
 }): ProposalAwards => {
   const own = useState<AwardEdits>({});
   const [edits, setEdits] = draft ?? own;
-  // Two edits in one tick (a field's onChange and the caption's reset) must
-  // both land, so each write builds on the newest edits, not on the render's.
   const latest = useRef(edits);
   latest.current = edits;
 
@@ -144,9 +142,6 @@ export const useProposalAwards = ({
   };
 };
 
-// Resolving a proposal's fields can walk its rich-text fragments, so the result
-// is kept per proposal object: the list's identity changes on every toggle,
-// the proposals' does not until a refetch.
 const requestedCache = new WeakMap<AwardProposal, MoneyAmount | undefined>();
 
 const requestedOf = (proposal: AwardProposal): MoneyAmount | undefined => {

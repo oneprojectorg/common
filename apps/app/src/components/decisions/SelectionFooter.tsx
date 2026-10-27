@@ -30,9 +30,7 @@ interface SelectionFooterProps {
   onConfirmOpenChange: (open: boolean) => void;
   onConfirm: ConfirmResultsHandler;
   isSubmitting: boolean;
-  /** The awards typed in the table; the confirm waits until every advanced row is valid and within budget. */
   awards?: ProposalAwards;
-  /** The process budget the awards are measured against; no bar without one. */
   processBudget?: number;
 }
 

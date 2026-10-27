@@ -19,12 +19,6 @@ interface AwardCellProps {
   className?: string;
 }
 
-/**
- * The Award column of the final-phase selection table: the amount a proposal
- * is awarded (starts at what it requested), a "Requested …" caption once the
- * two differ, and the Advance toggle. An empty or non-positive amount shows
- * its error only on an advanced row, since only those publish.
- */
 export const AwardCell = ({
   proposalId,
   title,
@@ -48,8 +42,6 @@ export const AwardCell = ({
         className,
       )}
     >
-      {/* Always mounted: a live region announces changes to its text, not its
-          arrival, so the caption toggles its text instead of its presence. */}
       <span
         className={cn(
           'self-center text-sm text-muted-foreground',

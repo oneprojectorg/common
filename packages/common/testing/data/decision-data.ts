@@ -320,10 +320,6 @@ export interface CreateDecisionInstanceOptions {
   currentStateId?: string;
   /** Rubric every review phase scores against; a review screen needs one. */
   rubricTemplate?: RubricTemplateSchema;
-  /**
-   * Per-phase `settings` values, keyed by phase id — e.g. `{ final: { budget:
-   * 12000 } }` for the process budget the selection footer reads.
-   */
   phaseSettings?: Record<string, Record<string, unknown>>;
 }
 

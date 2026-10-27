@@ -7,7 +7,6 @@ import { useManualAwardDraft } from './useManualAwardDraft';
 const INSTANCE = 'instance-award-draft';
 const KEY = `@op/manual-awards:${INSTANCE}:final`;
 
-// This jsdom build ships no localStorage; a Map-backed Storage stands in.
 class MemoryStorage implements Storage {
   private readonly items = new Map<string, string>();
   get length() {

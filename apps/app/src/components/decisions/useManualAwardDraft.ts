@@ -12,8 +12,6 @@ const storageKey = (instanceId: string, phaseId: string) =>
 
 const EMPTY: AwardEdits = {};
 
-// One parsed value per key so getSnapshot returns a stable reference while
-// nothing changed (useSyncExternalStore re-renders forever otherwise).
 const snapshots = new Map<string, AwardEdits>();
 
 const parseEdits = (raw: string | null): AwardEdits => {
@@ -76,11 +74,6 @@ function subscribe(key: string, callback: () => void): () => void {
   };
 }
 
-/**
- * The award amounts an admin typed in the selection table, kept in
- * localStorage per instance and phase beside the selected ids
- * (`useManualSelection`), so a reload or a second tab shows the same draft.
- */
 export function useManualAwardDraft(
   instanceId: string,
   phaseId: string,

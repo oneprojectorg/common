@@ -166,9 +166,7 @@ async function seedAwaitingInstance(org: SeedOrg, titles: string[]) {
 type ProposalSpec = { title: string; budget?: number };
 
 /** Lands an instance on `submission` with N published proposals — the
- *  starting state for driving the real submission→final advance via the UI.
- *  `processBudget` lands on the final phase's settings, where the selection
- *  footer's budget bar reads it. */
+ *  starting state for driving the real submission→final advance via the UI. */
 async function seedSubmissionPhaseInstance(
   org: SeedOrg,
   specs: ReadonlyArray<string | ProposalSpec>,
@@ -361,9 +359,6 @@ test.describe('Decision Manual Selection — full flow', () => {
       authenticatedPage.getByText('2 winning proposals selected'),
     ).toBeVisible();
 
-    // The template collects a budget, so each row carries an award field that
-    // starts at the proposal's requested budget, and the footer sums the
-    // advanced awards against the process budget: $13,000 asked of $12,000.
     const awardField = (title: string) =>
       authenticatedPage.getByRole('textbox', { name: `Award for ${title}` });
     await expect(awardField('Proposal Alpha')).toHaveValue('5000');
@@ -376,15 +371,12 @@ test.describe('Decision Manual Selection — full flow', () => {
     ).toBeVisible();
     await expect(confirmButton).toBeDisabled();
 
-    // An empty amount on an advanced row flags the row and holds the confirm.
     await awardField('Proposal Alpha').fill('');
     await expect(
       authenticatedPage.getByText('Enter an amount greater than 0'),
     ).toBeVisible();
     await expect(confirmButton).toBeDisabled();
 
-    // Award Alpha less than it asked for and Beta more: both are allowed, and
-    // the total lands exactly on the budget.
     await awardField('Proposal Alpha').fill('3000');
     await expect(authenticatedPage.getByText('Requested $5,000')).toBeVisible();
     await awardField('Proposal Beta').fill('9000');
@@ -394,7 +386,6 @@ test.describe('Decision Manual Selection — full flow', () => {
     await expect(confirmButton).toBeEnabled();
 
     await confirmButton.click();
-    // The confirm opens on a read-only summary of what the table set.
     const amountsDialog = authenticatedPage.getByRole('dialog', {
       name: 'Confirm winning proposals',
     });
