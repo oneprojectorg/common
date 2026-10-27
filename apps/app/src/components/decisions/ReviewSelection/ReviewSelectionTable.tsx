@@ -26,9 +26,11 @@ import { LuRefreshCcw } from 'react-icons/lu';
 import { Link, useTranslations } from '@/lib/i18n';
 
 import { AdvanceToggleButton } from '../selection/AdvanceToggleButton';
+import { AwardCell } from '../selection/AwardCell';
 import { ProposalRowMenu } from '../selection/ProposalRowMenu';
 import { SelectionCard } from '../selection/SelectionCard';
 import { SelectionCategoryChips } from '../selection/SelectionCategoryChips';
+import type { ProposalAwards } from '../useProposalAwards';
 
 const RECOMMENDATION_INTENT: Record<RecommendationValue, StatusDotIntent> = {
   yes: 'success',
@@ -43,7 +45,8 @@ export function ReviewSelectionTable({
   onAdvance,
   advancingIds,
   decisionSlug,
-  showBudget,
+  showBudget: showBudgetColumn,
+  awards,
 }: {
   items: ProposalWithAggregates[];
   /** Maximum possible score from the rubric, e.g. 50 → header reads "Score (50pts)". */
@@ -56,9 +59,15 @@ export function ReviewSelectionTable({
   decisionSlug: string;
   /** Show the budget column. False when the proposal template collects no budget. */
   showBudget: boolean;
+  /**
+   * The final phase awards each winner an amount: the Advance column becomes an
+   * Award column (amount field + toggle) and the read-only budget column goes.
+   */
+  awards?: ProposalAwards;
 }) {
   const t = useTranslations();
   const isMobile = useMediaQuery(`(max-width: ${screens.md})`);
+  const showBudget = showBudgetColumn && !awards;
 
   if (isMobile) {
     return (
@@ -77,6 +86,7 @@ export function ReviewSelectionTable({
                 onAdvance={() => onAdvance(item.proposal.id)}
                 decisionSlug={decisionSlug}
                 showBudget={showBudget}
+                awards={awards}
               />
             </li>
           );
@@ -106,9 +116,15 @@ export function ReviewSelectionTable({
               </span>
             </TableHead>
           )}
-          <TableHead scope="col" className="w-28">
-            <span className="sr-only">{t('decisions.advanceAction')}</span>
-          </TableHead>
+          {awards ? (
+            <TableHead scope="col" className="text-end">
+              {t('decisions.review.awardLabel')}
+            </TableHead>
+          ) : (
+            <TableHead scope="col" className="w-28">
+              <span className="sr-only">{t('decisions.advanceAction')}</span>
+            </TableHead>
+          )}
           <TableHead scope="col" className="w-11">
             <span className="sr-only">
               {t('decisions.proposals.proposalOptionsLabel')}
@@ -184,13 +200,23 @@ export function ReviewSelectionTable({
                   </span>
                 </TableCell>
               )}
-              <TableCell>
-                <AdvanceToggleButton
-                  isSelected={advancing}
-                  onPress={() => onAdvance(item.proposal.id)}
-                  title={title}
-                  className="w-28 justify-center"
-                />
+              <TableCell className={cn(awards && 'text-end')}>
+                {awards ? (
+                  <AwardCell
+                    proposalId={item.proposal.id}
+                    title={title}
+                    awards={awards}
+                    isSelected={advancing}
+                    onToggle={() => onAdvance(item.proposal.id)}
+                  />
+                ) : (
+                  <AdvanceToggleButton
+                    isSelected={advancing}
+                    onPress={() => onAdvance(item.proposal.id)}
+                    title={title}
+                    className="w-28 justify-center"
+                  />
+                )}
               </TableCell>
               <TableCell>
                 <ProposalRowMenu
@@ -255,6 +281,7 @@ function ProposalCard({
   onAdvance,
   decisionSlug,
   showBudget,
+  awards,
 }: {
   item: ProposalWithAggregates;
   advancing: boolean;
@@ -262,6 +289,7 @@ function ProposalCard({
   onAdvance: () => void;
   decisionSlug: string;
   showBudget: boolean;
+  awards?: ProposalAwards;
 }) {
   const t = useTranslations();
   const title =
@@ -313,11 +341,22 @@ function ProposalCard({
             <ScoreText value={item.aggregates.averageScore} />
           </span>
         )}
-        <AdvanceToggleButton
-          isSelected={advancing}
-          onPress={onAdvance}
-          title={title}
-        />
+        {awards ? (
+          <AwardCell
+            proposalId={item.proposal.id}
+            title={title}
+            awards={awards}
+            isSelected={advancing}
+            onToggle={onAdvance}
+            className="justify-start"
+          />
+        ) : (
+          <AdvanceToggleButton
+            isSelected={advancing}
+            onPress={onAdvance}
+            title={title}
+          />
+        )}
       </div>
     </SelectionCard>
   );
