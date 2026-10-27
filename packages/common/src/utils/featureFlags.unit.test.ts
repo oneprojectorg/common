@@ -39,6 +39,14 @@ describe('isServerFeatureEnabled', () => {
     expect(cache).not.toHaveBeenCalled();
   });
 
+  it('is off without asking PostHog for an empty identity', async () => {
+    await expect(
+      isServerFeatureEnabled({ ...params, distinctId: '' }),
+    ).resolves.toBe(false);
+    expect(getAllFlags).not.toHaveBeenCalled();
+    expect(cache).not.toHaveBeenCalled();
+  });
+
   it('caches every flag for a user under one key, outside the L1', async () => {
     getAllFlags.mockResolvedValue({ [params.key]: true, other: false });
 

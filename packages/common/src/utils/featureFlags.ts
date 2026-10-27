@@ -26,6 +26,11 @@ export const isServerFeatureEnabled = async ({
     return true;
   }
 
+  // `cache()` drops a falsy param, so every caller would share one entry.
+  if (!distinctId) {
+    return false;
+  }
+
   const flags = await cache({
     type: 'featureFlag',
     params: [distinctId],
