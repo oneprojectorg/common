@@ -278,7 +278,19 @@
     "accountAvatarAlt": "Avatar do usuário",
     "accountDeletedTitle": "Conta excluída",
     "accountDeletedBody": "{profileName} foi excluída. Todos os dados associados foram removidos permanentemente.",
-    "deleteAccountError": "Falha ao excluir a conta"
+    "deleteAccountError": "Falha ao excluir a conta",
+    "directorySubtitle": "Descubra todas as organizações que fazem parte do Common.",
+    "allFocusAreasOption": "Todas as áreas de atuação",
+    "focusAreaFilterLabel": "Filtrar por área de atuação",
+    "allStrategiesOption": "Todas as estratégias",
+    "strategyFilterLabel": "Filtrar por estratégia",
+    "sortLabel": "Ordenar organizações",
+    "sortNewest": "Mais recentes",
+    "sortOldest": "Mais antigas",
+    "sortName": "Nome (A–Z)",
+    "directoryLoadError": "Não foi possível carregar as organizações.",
+    "directoryEmpty": "Nenhuma organização corresponde a estes filtros.",
+    "directoryResultCount": "{count, plural, one {Mostrando # organização} other {Mostrando # organizações}}"
   },
   "profile": {
     "aboutTab": "Sobre",

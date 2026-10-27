@@ -1,6 +1,13 @@
 import { match } from '@op/core';
-import { and, db, inArray, ne, sql } from '@op/db/client';
-import { EntityType, locations, profiles } from '@op/db/schema';
+import { and, db, eq, inArray, ne, sql } from '@op/db/client';
+import {
+  EntityType,
+  locations,
+  organizations,
+  organizationsStrategies,
+  organizationsTerms,
+  profiles,
+} from '@op/db/schema';
 import { logger } from '@op/logging';
 
 import {
@@ -17,12 +24,16 @@ export const listProfiles = async ({
   orderBy = 'updatedAt',
   dir = 'desc',
   types,
+  focusAreaIds,
+  strategyIds,
 }: {
   cursor?: string | null;
   limit?: number;
   orderBy?: 'createdAt' | 'updatedAt' | 'name';
   dir?: 'asc' | 'desc';
   types?: EntityType[];
+  focusAreaIds?: string[];
+  strategyIds?: string[];
 }) => {
   try {
     const orderByColumn = match(orderBy, {
@@ -31,12 +42,11 @@ export const listProfiles = async ({
       _: profiles.updatedAt,
     });
 
-    // Build cursor condition for pagination
     const cursorCondition = cursor
       ? getCursorCondition({
           column: orderByColumn,
-          tieBreakerColumn: orderBy === 'name' ? profiles.id : undefined,
-          cursor: decodeCursor<{ value: string | Date; id?: string }>(cursor),
+          tieBreakerColumn: profiles.id,
+          cursor: decodeCursor<{ value: string; id?: string }>(cursor),
           direction: dir,
         })
       : undefined;
@@ -45,10 +55,41 @@ export const listProfiles = async ({
     const typeCondition =
       types && types.length > 0 ? inArray(profiles.type, types) : undefined;
 
+    const focusAreaCondition = focusAreaIds?.length
+      ? inArray(
+          profiles.id,
+          db
+            .select({ profileId: organizations.profileId })
+            .from(organizations)
+            .innerJoin(
+              organizationsTerms,
+              eq(organizationsTerms.organizationId, organizations.id),
+            )
+            .where(inArray(organizationsTerms.taxonomyTermId, focusAreaIds)),
+        )
+      : undefined;
+    const strategyCondition = strategyIds?.length
+      ? inArray(
+          profiles.id,
+          db
+            .select({ profileId: organizations.profileId })
+            .from(organizations)
+            .innerJoin(
+              organizationsStrategies,
+              eq(organizationsStrategies.organizationId, organizations.id),
+            )
+            .where(
+              inArray(organizationsStrategies.taxonomyTermId, strategyIds),
+            ),
+        )
+      : undefined;
+
     // Listing has no access check, so phase names would leak across decisions.
     const whereClause = and(
       cursorCondition,
       typeCondition,
+      focusAreaCondition,
+      strategyCondition,
       ne(profiles.type, EntityType.PHASE),
     );
 
@@ -84,7 +125,9 @@ export const listProfiles = async ({
         },
       },
       orderBy: (_, { asc, desc }) =>
-        dir === 'asc' ? asc(orderByColumn) : desc(orderByColumn),
+        dir === 'asc'
+          ? [asc(orderByColumn), asc(profiles.id)]
+          : [desc(orderByColumn), desc(profiles.id)],
       limit: limit + 1, // Fetch one extra to check hasMore
     });
 
@@ -104,17 +147,18 @@ export const listProfiles = async ({
     const items = result.slice(0, limit);
     const lastItem = items[items.length - 1];
 
+    // Raw timestamp string: a Date would drop the microseconds Postgres compares.
     const cursorValue = match(orderBy, {
       name: lastItem?.name ?? null,
-      createdAt: lastItem?.createdAt ? new Date(lastItem.createdAt) : null,
-      _: lastItem?.updatedAt ? new Date(lastItem.updatedAt) : null,
+      createdAt: lastItem?.createdAt ?? null,
+      _: lastItem?.updatedAt ?? null,
     });
 
     const nextCursor =
       hasMore && lastItem && cursorValue
-        ? encodeCursor<{ value: string | Date; id?: string }>({
+        ? encodeCursor<{ value: string; id?: string }>({
             value: cursorValue,
-            id: orderBy === 'name' ? lastItem.id : undefined,
+            id: lastItem.id,
           })
         : null;
 

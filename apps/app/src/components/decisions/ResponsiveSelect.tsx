@@ -71,7 +71,10 @@ export function ResponsiveSelect<T extends string>({
           className={`${className} max-w-48 shrink-0 justify-between shadow-none`}
           onClick={() => setIsOpen(true)}
         >
-          <span className="min-w-0 overflow-hidden whitespace-nowrap">
+          <span
+            dir="auto"
+            className="min-w-0 truncate ltr:text-left rtl:text-right"
+          >
             {displayLabel}
           </span>
           <LuChevronDown className="size-4 shrink-0" />
@@ -122,7 +125,16 @@ export function ResponsiveSelect<T extends string>({
       }}
     >
       <SelectTrigger size={size} className={className} aria-label={ariaLabel}>
-        <SelectValue>{() => displayLabel}</SelectValue>
+        <SelectValue className="min-w-0">
+          {() => (
+            <span
+              dir="auto"
+              className="min-w-0 truncate ltr:text-left rtl:text-right"
+            >
+              {displayLabel}
+            </span>
+          )}
+        </SelectValue>
       </SelectTrigger>
       <SelectContent size={size}>
         <SelectGroup>
