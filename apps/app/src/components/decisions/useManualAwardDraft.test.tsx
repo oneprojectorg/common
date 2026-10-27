@@ -77,6 +77,36 @@ describe('useManualAwardDraft', () => {
     expect(result.current[0]).toEqual({ bike: 8200.5 });
   });
 
+  it('reads what another tab wrote while this tab had the page closed', () => {
+    const first = renderHook(() => useManualAwardDraft(INSTANCE, 'final'));
+    act(() => first.result.current[1]({ solar: 3000 }));
+    first.unmount();
+
+    window.localStorage.setItem(KEY, JSON.stringify({ solar: 2500 }));
+
+    const second = renderHook(() => useManualAwardDraft(INSTANCE, 'final'));
+    expect(second.result.current[0]).toEqual({ solar: 2500 });
+
+    act(() =>
+      second.result.current[1]({ ...second.result.current[0], bike: 100 }),
+    );
+    expect(window.localStorage.getItem(KEY)).toBe(
+      JSON.stringify({ solar: 2500, bike: 100 }),
+    );
+  });
+
+  it('drops its draft when another tab clears the whole storage', () => {
+    const { result } = renderHook(() => useManualAwardDraft(INSTANCE, 'final'));
+    act(() => result.current[1]({ solar: 3000 }));
+
+    act(() => {
+      window.localStorage.clear();
+      window.dispatchEvent(new StorageEvent('storage', { key: null }));
+    });
+
+    expect(result.current[0]).toEqual({});
+  });
+
   it('removes the key when the draft is emptied', () => {
     const { result } = renderHook(() => useManualAwardDraft(INSTANCE, 'final'));
 
