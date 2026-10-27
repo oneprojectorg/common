@@ -32,13 +32,13 @@ test.describe('Process admin shell', () => {
     await expect(
       authenticatedPage.getByRole('heading', {
         name: 'Process Overview',
-        level: 3,
+        level: 2,
       }),
     ).toBeVisible();
     await expect(
       authenticatedPage.getByRole('heading', {
         name: 'About the process',
-        level: 3,
+        level: 2,
       }),
     ).toBeVisible();
     await expect(
