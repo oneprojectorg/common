@@ -34,7 +34,6 @@ export interface ProposalAwards {
   canConfirm: boolean;
   allocations: () => ProposalAllocation[] | undefined;
   setAmount: (proposalId: string, amount: number | null) => void;
-  reset: () => void;
 }
 
 export const useProposalAwards = ({
@@ -61,18 +60,7 @@ export const useProposalAwards = ({
     () =>
       new Map(
         isEnabled
-          ? proposals.map((proposal) => {
-              const { budget } = resolveProposalSystemFields(proposal);
-              return [
-                proposal.id,
-                budget?.amount
-                  ? {
-                      amount: budget.amount,
-                      currency: getBudgetCurrency(budget),
-                    }
-                  : undefined,
-              ];
-            })
+          ? proposals.map((proposal) => [proposal.id, requestedOf(proposal)])
           : [],
       ),
     [proposals, isEnabled],
@@ -153,8 +141,24 @@ export const useProposalAwards = ({
           })
         : undefined,
     setAmount,
-    reset: () => setEdits({}),
   };
+};
+
+// Resolving a proposal's fields can walk its rich-text fragments, so the result
+// is kept per proposal object: the list's identity changes on every toggle,
+// the proposals' does not until a refetch.
+const requestedCache = new WeakMap<AwardProposal, MoneyAmount | undefined>();
+
+const requestedOf = (proposal: AwardProposal): MoneyAmount | undefined => {
+  if (requestedCache.has(proposal)) {
+    return requestedCache.get(proposal);
+  }
+  const { budget } = resolveProposalSystemFields(proposal);
+  const requested = budget?.amount
+    ? { amount: budget.amount, currency: getBudgetCurrency(budget) }
+    : undefined;
+  requestedCache.set(proposal, requested);
+  return requested;
 };
 
 export const isValidAwardAmount = (

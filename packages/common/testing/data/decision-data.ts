@@ -320,6 +320,11 @@ export interface CreateDecisionInstanceOptions {
   currentStateId?: string;
   /** Rubric every review phase scores against; a review screen needs one. */
   rubricTemplate?: RubricTemplateSchema;
+  /**
+   * Per-phase `settings` values, keyed by phase id — e.g. `{ final: { budget:
+   * 12000 } }` for the process budget the selection footer reads.
+   */
+  phaseSettings?: Record<string, Record<string, unknown>>;
 }
 
 export interface CreateDecisionInstanceResult {
@@ -353,6 +358,7 @@ export async function createDecisionInstance(
     phaseHeadlines,
     currentStateId,
     rubricTemplate,
+    phaseSettings,
   } = opts;
 
   const instanceSlug = slug ?? `test-instance-${randomUUID()}`;
@@ -385,6 +391,7 @@ export async function createDecisionInstance(
       description: phase.description,
       rules: phase.rules,
       headline: phaseHeadlines?.[phase.id],
+      settings: phaseSettings?.[phase.id],
       selectionPipeline:
         'selectionPipeline' in phase ? phase.selectionPipeline : undefined,
       startDate: new Date(
