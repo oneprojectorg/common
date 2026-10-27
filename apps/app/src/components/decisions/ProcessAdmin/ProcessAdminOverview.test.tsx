@@ -81,14 +81,10 @@ const seed = ({
   };
 };
 
-const renderOverview = (hasStarted = false, aboutSlot: ReactNode = null) =>
+const renderOverview = (isOpen = false, aboutSlot: ReactNode = null) =>
   render(
     <NextIntlClientProvider locale="en" messages={en}>
-      <ProcessAdminOverview
-        slug={SLUG}
-        hasStarted={hasStarted}
-        aboutSlot={aboutSlot}
-      />
+      <ProcessAdminOverview slug={SLUG} isOpen={isOpen} aboutSlot={aboutSlot} />
     </NextIntlClientProvider>,
   );
 
@@ -140,7 +136,7 @@ describe('ProcessAdminOverview', () => {
     expect(screen.queryByText('No phases yet')).toBeNull();
   });
 
-  it('links to the proposals once a live process has started', () => {
+  it('links to the proposals once the process is open', () => {
     seed({ phases: [phase] });
     renderOverview(true);
 
@@ -151,16 +147,9 @@ describe('ProcessAdminOverview', () => {
     ).toContain(`/decisions/${SLUG}/current`);
   });
 
-  it('hides the proposals link before the process starts', () => {
+  it('keeps the timeline and the proposals link closed until the process is open', () => {
     seed({ phases: [phase] });
     renderOverview(false);
-
-    expect(screen.queryByRole('link', { name: 'Browse proposals' })).toBeNull();
-  });
-
-  it('keeps a draft closed, even with a past start date', () => {
-    seed({ status: ProcessStatus.DRAFT, phases: [phase] });
-    renderOverview(true);
 
     expect(screen.queryByRole('link', { name: 'Browse proposals' })).toBeNull();
     expect(screen.getByTestId('phase-timeline').dataset.started).toBe('false');

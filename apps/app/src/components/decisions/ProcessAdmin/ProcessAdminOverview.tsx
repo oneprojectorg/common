@@ -12,10 +12,9 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from '@op/sense/Empty';
-import { GradientHeader, Header1, Header3 } from '@op/sense/Header';
+import { Header2 } from '@op/sense/Header';
 import { ProfileAvatar } from '@op/sense/ProfileAvatar';
 import { StatusBadge } from '@op/sense/StatusBadge';
-import { cn } from '@op/sense/lib/utils';
 import he from 'he';
 import { Suspense, type ReactNode } from 'react';
 import { LuArrowLeft, LuTriangleAlert } from 'react-icons/lu';
@@ -25,12 +24,12 @@ import { Link } from '@/lib/i18n/routing';
 
 import { ButtonLink } from '@/components/ButtonLink';
 
+import { DecisionHero } from '../DecisionHero';
 import { DecisionHeroBanner } from '../DecisionHeroBanner';
 import { DecisionPhaseTimeline } from '../DecisionPhaseTimeline';
 import {
   OverviewPinnedResourcesSuspense,
   PinnedResourcesError,
-  PinnedResourcesSection,
   PinnedResourcesSkeleton,
 } from '../OverviewPinnedResources';
 import { toProcessPhases } from '../toProcessPhases';
@@ -44,10 +43,11 @@ import {
 interface ProcessAdminOverviewProps {
   slug: string;
   /**
-   * Whether the first phase has started. Computed on the server, because the
-   * check reads the clock and would otherwise differ between server and client.
+   * Whether participants can act on the process (`isProcessOpen`). Computed on
+   * the server, because the check reads the clock and would otherwise differ
+   * between server and client.
    */
-  hasStarted: boolean;
+  isOpen: boolean;
   /**
    * The About body, server-rendered by the page (RichTextRenderer), so it
    * ships as HTML. Null when the stored body holds nothing to show.
@@ -58,7 +58,7 @@ interface ProcessAdminOverviewProps {
 /** Read-only admin home for one process, at /decisions/[slug]/manage. */
 export function ProcessAdminOverview({
   slug,
-  hasStarted,
+  isOpen,
   aboutSlot,
 }: ProcessAdminOverviewProps) {
   const t = useTranslations('decisions');
@@ -85,7 +85,7 @@ export function ProcessAdminOverview({
       <Suspense fallback={<ProcessAdminOverviewSkeleton />}>
         <ProcessAdminOverviewSuspense
           slug={slug}
-          hasStarted={hasStarted}
+          isOpen={isOpen}
           aboutSlot={aboutSlot}
         />
       </Suspense>
@@ -95,7 +95,7 @@ export function ProcessAdminOverview({
 
 function ProcessAdminOverviewSuspense({
   slug,
-  hasStarted,
+  isOpen,
   aboutSlot,
 }: ProcessAdminOverviewProps) {
   const [decisionProfile] = trpc.decision.getDecisionBySlug.useSuspenseQuery({
@@ -103,9 +103,7 @@ function ProcessAdminOverviewSuspense({
   });
   const instance = decisionProfile.processInstance;
   const status = getProcessAdminStatus(instance.status);
-  // A draft is never open, whatever its dates say: the timeline and the
-  // proposals CTA read the same gate so they cannot disagree.
-  const isOpen = hasStarted && status !== 'draft';
+  const t = useTranslations('decisions.processAdmin');
 
   return (
     <div className="flex min-h-dvh flex-col bg-background">
@@ -129,8 +127,14 @@ function ProcessAdminOverviewSuspense({
                 fallbacks={{ default: () => <PinnedResourcesError /> }}
               >
                 <Suspense fallback={<PinnedResourcesSkeleton />}>
-                  <ProcessAdminPinnedResourcesSuspense
+                  <OverviewPinnedResourcesSuspense
                     profileId={instance.profileId}
+                    emptyState={
+                      <AdminEmptyState
+                        title={t('noResourcesTitle')}
+                        description={t('noResourcesDescription')}
+                      />
+                    }
                   />
                 </Suspense>
               </APIErrorBoundary>
@@ -182,8 +186,8 @@ function ProcessAdminTopBar({
   );
 }
 
-// Forked from DecisionOverview's OverviewHero, which also carries translation,
-// proposal CTAs, the banner editor and the owner fallback that this page omits.
+// The shared DecisionHero owns the title and the over-image colour switch; this
+// adds the steward line, the headline and the proposals link.
 function ProcessAdminHero({
   slug,
   name,
@@ -201,69 +205,70 @@ function ProcessAdminHero({
   const hasImage = Boolean(getPublicUrl(overview?.heroImage));
   const steward = instance.steward;
   const stewardSlug = canLinkToProfile ? steward?.slug : undefined;
+  const hasDetails = Boolean(
+    steward || overview?.headline || overview?.description,
+  );
 
   return (
     <DecisionHeroBanner heroImagePath={overview?.heroImage}>
-      <div
-        className={cn(
-          'mx-auto flex max-w-3xl flex-col items-center gap-8 px-4 pt-16 pb-8 text-center md:px-6 md:pb-16',
-          hasImage ? 'text-white' : 'text-foreground',
-        )}
-      >
-        <div className="flex flex-col items-center gap-3">
-          {hasImage ? (
-            <Header1 className="text-white">
-              <bdi>{name}</bdi>
-            </Header1>
-          ) : (
-            <GradientHeader>
-              <Header1>
-                <bdi>{name}</bdi>
-              </Header1>
-            </GradientHeader>
-          )}
-          {steward ? (
-            <p className="flex items-center gap-1.5">
-              <ProfileAvatar
-                name={steward.name}
-                src={getPublicUrl(steward.avatarImage?.name)}
-                alt=""
-                size="sm"
-              />
-              <span>
-                {t.rich('processAdmin.stewardedBy', {
-                  name: steward.name,
-                  steward: (chunks) =>
-                    stewardSlug ? (
-                      <Link
-                        href={`/profile/${stewardSlug}`}
-                        className={cn('underline', hasImage && 'text-white')}
-                      >
-                        <bdi>{chunks}</bdi>
-                      </Link>
-                    ) : (
-                      <bdi>{chunks}</bdi>
-                    ),
-                })}
-              </span>
-            </p>
+      <div className="mx-auto flex max-w-3xl flex-col items-center gap-8 px-4 pt-16 pb-8 md:px-6 md:pb-16">
+        <DecisionHero
+          title={name}
+          hasImage={hasImage}
+          showTranslateLink={false}
+          description={
+            hasDetails ? (
+              <>
+                {steward ? (
+                  <p className="flex items-center justify-center gap-1.5">
+                    <ProfileAvatar
+                      name={steward.name}
+                      src={getPublicUrl(steward.avatarImage?.name)}
+                      alt=""
+                      size="sm"
+                    />
+                    <span>
+                      {t.rich('processAdmin.stewardedBy', {
+                        name: steward.name,
+                        steward: (chunks) =>
+                          stewardSlug ? (
+                            <Link
+                              href={`/profile/${stewardSlug}`}
+                              className="underline"
+                            >
+                              <bdi>{chunks}</bdi>
+                            </Link>
+                          ) : (
+                            <bdi>{chunks}</bdi>
+                          ),
+                      })}
+                    </span>
+                  </p>
+                ) : null}
+                {overview?.headline ? (
+                  <p dir="auto" className="text-title text-balance">
+                    {overview.headline}
+                  </p>
+                ) : null}
+                {overview?.description ? (
+                  <p dir="auto" className="text-balance">
+                    {overview.description}
+                  </p>
+                ) : null}
+              </>
+            ) : undefined
+          }
+        >
+          {showBrowseProposals ? (
+            <ButtonLink
+              href={`/decisions/${slug}/current`}
+              variant="outline"
+              className="mt-6 self-center"
+            >
+              {t('browseProposalsAction')}
+            </ButtonLink>
           ) : null}
-          {overview?.headline ? (
-            <p dir="auto" className="text-title text-balance">
-              {overview.headline}
-            </p>
-          ) : null}
-          {overview?.description ? (
-            <p dir="auto" className="text-balance">
-              {overview.description}
-            </p>
-          ) : null}
-        </div>
-        {showBrowseProposals ? (
-          <ButtonLink href={`/decisions/${slug}/current`} variant="outline">
-            {t('browseProposalsAction')}
-          </ButtonLink>
-        ) : null}
+        </DecisionHero>
       </div>
     </DecisionHeroBanner>
   );
@@ -283,7 +288,7 @@ function ProcessAdminPhaseRail({
 
   return (
     <section className="flex flex-col gap-4">
-      <Header3 className="text-label">{t('processOverviewHeading')}</Header3>
+      <Header2 className="text-label">{t('processOverviewHeading')}</Header2>
       {phases.length > 0 ? (
         <DecisionPhaseTimeline
           phases={phases}
@@ -300,29 +305,6 @@ function ProcessAdminPhaseRail({
         />
       )}
     </section>
-  );
-}
-
-function ProcessAdminPinnedResourcesSuspense({
-  profileId,
-}: {
-  profileId: string;
-}) {
-  const t = useTranslations('decisions.processAdmin');
-  // Same query key as OverviewPinnedResourcesSuspense, so the list is read once.
-  const [{ items }] = trpc.resources.list.useSuspenseQuery({ profileId });
-
-  if (items.length > 0) {
-    return <OverviewPinnedResourcesSuspense profileId={profileId} />;
-  }
-
-  return (
-    <PinnedResourcesSection>
-      <AdminEmptyState
-        title={t('noResourcesTitle')}
-        description={t('noResourcesDescription')}
-      />
-    </PinnedResourcesSection>
   );
 }
 
@@ -351,7 +333,7 @@ function ProcessAdminAbout({
 
   return (
     <section className="flex min-w-0 flex-col gap-4 md:col-span-6">
-      <Header3 className="text-label">{t('aboutHeading')}</Header3>
+      <Header2 className="text-label">{t('aboutHeading')}</Header2>
       {content}
     </section>
   );
