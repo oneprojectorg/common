@@ -1229,6 +1229,9 @@
       "awardLabel": "Odaítélt összeg",
       "awardForProposalLabel": "{title} odaítélt összege",
       "requestedAmount": "Igényelt: {amount}",
+      "awardBudgetLabel": "Felhasznált keret",
+      "awardedOfBudget": "<highlight>{awarded}</highlight> / {budget} felhasználva",
+      "overBudgetWarning": "{amount} összeggel a keret felett",
       "totalAwardedLabel": "Összesen odaítélve"
     },
     "proposals": {

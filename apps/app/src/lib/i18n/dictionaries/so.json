@@ -1229,6 +1229,9 @@
       "awardLabel": "Abaalmarin",
       "awardForProposalLabel": "Abaalmarinta {title}",
       "requestedAmount": "La codsaday {amount}",
+      "awardBudgetLabel": "Miisaaniyadda la qoondeeyey",
+      "awardedOfBudget": "<highlight>{awarded}</highlight> oo ka mid ah {budget} la qoondeeyey",
+      "overBudgetWarning": "Miisaaniyadda waxaa laga badiyey {amount}",
       "totalAwardedLabel": "Wadarta la bixiyay"
     },
     "proposals": {

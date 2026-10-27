@@ -1229,6 +1229,9 @@
       "awardLabel": "الجائزة",
       "awardForProposalLabel": "الجائزة لـ {title}",
       "requestedAmount": "المطلوب {amount}",
+      "awardBudgetLabel": "الميزانية المخصصة",
+      "awardedOfBudget": "<highlight>{awarded}</highlight> من {budget} مخصصة",
+      "overBudgetWarning": "تجاوز الميزانية بمقدار {amount}",
       "totalAwardedLabel": "إجمالي المبالغ الممنوحة"
     },
     "proposals": {

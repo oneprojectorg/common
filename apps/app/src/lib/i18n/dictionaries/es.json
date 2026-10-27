@@ -1229,6 +1229,9 @@
       "awardLabel": "Monto otorgado",
       "awardForProposalLabel": "Monto otorgado a {title}",
       "requestedAmount": "Solicitado: {amount}",
+      "awardBudgetLabel": "Presupuesto asignado",
+      "awardedOfBudget": "<highlight>{awarded}</highlight> de {budget} asignados",
+      "overBudgetWarning": "Supera el presupuesto en {amount}",
       "totalAwardedLabel": "Total otorgado"
     },
     "proposals": {

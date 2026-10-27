@@ -45,6 +45,8 @@ interface ComposeNotificationsDialogProps {
   onConfirm: ConfirmResultsHandler;
   isSubmitting: boolean;
   triggerLabel: ReactNode;
+  /** The trigger stays disabled while an award in the table is invalid or over budget. */
+  canConfirm?: boolean;
 }
 
 export type ConfirmResultsHandler = (
@@ -84,6 +86,7 @@ export const ComposeNotificationsDialog = ({
   onConfirm,
   isSubmitting,
   triggerLabel,
+  canConfirm = true,
 }: ComposeNotificationsDialogProps) => {
   const t = useTranslations();
 
@@ -140,7 +143,11 @@ export const ComposeNotificationsDialog = ({
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger
-        render={<Button disabled={selectedCount === 0}>{triggerLabel}</Button>}
+        render={
+          <Button disabled={selectedCount === 0 || !canConfirm}>
+            {triggerLabel}
+          </Button>
+        }
       />
 
       <DialogContent className={STEP_WIDTH[step]}>

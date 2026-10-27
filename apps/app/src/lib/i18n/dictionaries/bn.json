@@ -1229,6 +1229,9 @@
       "awardLabel": "পুরস্কার",
       "awardForProposalLabel": "{title}-এর জন্য পুরস্কার",
       "requestedAmount": "অনুরোধকৃত {amount}",
+      "awardBudgetLabel": "বরাদ্দকৃত বাজেট",
+      "awardedOfBudget": "{budget}-এর মধ্যে <highlight>{awarded}</highlight> বরাদ্দ",
+      "overBudgetWarning": "বাজেটের চেয়ে {amount} বেশি",
       "totalAwardedLabel": "মোট প্রদত্ত"
     },
     "proposals": {
