@@ -1,6 +1,4 @@
 import { createClient } from '@op/api/serverClient';
-import { isSafeRedirectPath } from '@op/common/client';
-import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { cache } from 'react';
 
@@ -14,25 +12,15 @@ export const getUser = cache(async () => {
 });
 
 /**
- * For server components that need a real account: resolves a signed-in,
- * non-anonymous user or redirects to login, returning here afterwards.
+ * For server components in auth-gated route groups: resolves a non-null user
+ * or redirects to login (mirroring the middleware) if there is no session.
  */
 export const getRequiredUser = async () => {
   const user = await getUser();
 
-  if (!user || user.isAnonymous) {
-    return redirectToLogin();
+  if (!user) {
+    redirect('/login');
   }
 
   return user;
 };
-
-export async function redirectToLogin(): Promise<never> {
-  const pathname = (await headers()).get('x-pathname');
-
-  redirect(
-    isSafeRedirectPath(pathname)
-      ? `/login?redirect=${encodeURIComponent(pathname)}`
-      : '/login',
-  );
-}
