@@ -1226,6 +1226,9 @@
       "adjustAmountsAction": "Hagaaji qadarrada",
       "awardedAmountLabel": "Qadarka la bixiyay",
       "awardedAmountError": "Geli qadar ka weyn 0",
+      "awardLabel": "Abaalmarin",
+      "awardForProposalLabel": "Abaalmarinta {title}",
+      "requestedAmount": "La codsaday {amount}",
       "totalAwardedLabel": "Wadarta la bixiyay"
     },
     "proposals": {

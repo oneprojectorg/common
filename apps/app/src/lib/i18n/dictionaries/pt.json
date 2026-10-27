@@ -1226,6 +1226,9 @@
       "adjustAmountsAction": "Ajustar valores",
       "awardedAmountLabel": "Valor concedido",
       "awardedAmountError": "Insira um valor maior que 0",
+      "awardLabel": "Valor atribuído",
+      "awardForProposalLabel": "Valor atribuído a {title}",
+      "requestedAmount": "Solicitado: {amount}",
       "totalAwardedLabel": "Total concedido"
     },
     "proposals": {

@@ -1226,6 +1226,9 @@
       "adjustAmountsAction": "Ajustar montos",
       "awardedAmountLabel": "Monto otorgado",
       "awardedAmountError": "Ingresa un monto mayor que 0",
+      "awardLabel": "Monto otorgado",
+      "awardForProposalLabel": "Monto otorgado a {title}",
+      "requestedAmount": "Solicitado: {amount}",
       "totalAwardedLabel": "Total otorgado"
     },
     "proposals": {

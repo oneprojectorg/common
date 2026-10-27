@@ -1226,6 +1226,9 @@
       "adjustAmountsAction": "تعديل المبالغ",
       "awardedAmountLabel": "المبلغ الممنوح",
       "awardedAmountError": "أدخل مبلغًا أكبر من 0",
+      "awardLabel": "الجائزة",
+      "awardForProposalLabel": "الجائزة لـ {title}",
+      "requestedAmount": "المطلوب {amount}",
       "totalAwardedLabel": "إجمالي المبالغ الممنوحة"
     },
     "proposals": {

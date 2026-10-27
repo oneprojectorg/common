@@ -1226,6 +1226,9 @@
       "adjustAmountsAction": "পরিমাণ সামঞ্জস্য করুন",
       "awardedAmountLabel": "প্রদত্ত পরিমাণ",
       "awardedAmountError": "0-এর বেশি একটি পরিমাণ লিখুন",
+      "awardLabel": "পুরস্কার",
+      "awardForProposalLabel": "{title}-এর জন্য পুরস্কার",
+      "requestedAmount": "অনুরোধকৃত {amount}",
       "totalAwardedLabel": "মোট প্রদত্ত"
     },
     "proposals": {
