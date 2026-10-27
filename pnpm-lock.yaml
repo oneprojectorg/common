@@ -1428,6 +1428,9 @@ importers:
       '@op/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@op/logging':
+        specifier: workspace:*
+        version: link:../../packages/logging
       '@op/supabase':
         specifier: workspace:^
         version: link:../supabase
