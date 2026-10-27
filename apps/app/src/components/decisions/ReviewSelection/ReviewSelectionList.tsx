@@ -73,7 +73,6 @@ export function ReviewSelectionList({
   const awardDraft = useManualAwardDraft(processInstanceId, previousPhaseId);
   const [, setAwardDraft] = awardDraft;
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
-  // Only the final phase awards amounts; other phases advance without them.
   const awardsAmounts = isFinalPhase && showBudget;
   const processBudget = getProcessBudget({
     phases: instance.instanceData?.phases,

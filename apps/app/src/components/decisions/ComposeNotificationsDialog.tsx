@@ -34,11 +34,6 @@ interface ComposeNotificationsDialogProps {
   selectedProposals: Proposal[];
   selectedCount: number;
   notSelectedCount: number;
-  /**
-   * The awards typed in the selection table. When present the dialog opens on
-   * a read-only summary of them and publishes their allocations; absent, the
-   * process awards no amounts and the dialog opens on the notifications.
-   */
   awards?: ProposalAwards;
   phaseName: string;
   isOpen: boolean;
@@ -108,12 +103,7 @@ export const ComposeNotificationsDialog = ({
   const awardsAmounts = awards !== undefined;
   const initialStep = getInitialStep(awardsAmounts);
   const [step, setStep] = useState<Step>(initialStep);
-  // The table owns the awards, so the dialog reads them live; the trigger and
-  // the publish buttons both wait until every advanced award can be published.
   const canConfirm = awards?.canConfirm ?? true;
-  // The allocations the summary showed when the admin continued, so a draft
-  // or selection that moves afterwards (another tab, a refetch) can't publish
-  // an amount nobody saw: the publish returns to the summary instead.
   const [shownAllocations, setShownAllocations] = useState<
     ProposalAllocation[] | undefined
   >();
@@ -166,7 +156,6 @@ export const ComposeNotificationsDialog = ({
             proposals={selectedProposals}
             awards={awards}
             onContinue={() => {
-              // Re-frozen here too: the summary may show a changed set.
               setCounts({
                 selected: selectedCount,
                 notSelected: notSelectedCount,

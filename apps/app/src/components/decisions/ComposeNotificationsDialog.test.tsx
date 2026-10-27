@@ -56,7 +56,6 @@ const renderDialog = ({
   const onConfirm = vi.fn();
   const Harness = ({ selected, edits }: HarnessState) => {
     const [isOpen, setIsOpen] = useState(false);
-    // The table owns the awards; here the test does, through the draft.
     const awards = useProposalAwards({
       proposals: selected,
       selectedIds: selected.map(({ id }) => id),
@@ -90,7 +89,6 @@ const renderDialog = ({
   return {
     onConfirm,
     user: userEvent.setup(),
-    /** The live selection or awards moving under the open dialog. */
     update: (state: Partial<HarnessState>) =>
       rerender(withProviders({ selected: proposals, edits, ...state })),
   };
@@ -195,7 +193,6 @@ describe('ComposeNotificationsDialog awarded amounts', () => {
     const dialog = confirmDialog();
     expect(within(dialog).getByText('$7,000 Awarded')).toBeTruthy();
 
-    // Read again, the new set publishes and the counts follow it.
     await user.click(within(dialog).getByRole('button', { name: 'Continue' }));
     expect(
       screen.getByRole('tab', { name: /^Advanced\s*2 proposals$/ }),
