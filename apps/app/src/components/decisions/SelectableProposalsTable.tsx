@@ -15,10 +15,12 @@ import { screens } from '@op/styles/constants';
 import { Link, useTranslations } from '@/lib/i18n';
 
 import { AdvanceToggleButton } from './selection/AdvanceToggleButton';
+import { AwardCell } from './selection/AwardCell';
 import { ProposalRowMenu } from './selection/ProposalRowMenu';
 import { SelectionCard } from './selection/SelectionCard';
 import { SelectionCategoryChips } from './selection/SelectionCategoryChips';
 import { resolvePresentationFields } from './selection/proposalPresentation';
+import type { ProposalAwards } from './useProposalAwards';
 
 interface SelectableProposalsTableProps {
   proposals: Proposal[];
@@ -31,6 +33,11 @@ interface SelectableProposalsTableProps {
   showBudget?: boolean;
   /** Offer Edit in the row menu. Proposals can't be edited in the results phase. */
   canEditProposals?: boolean;
+  /**
+   * The final phase awards each winner an amount: the Advance column becomes an
+   * Award column (amount field + toggle) and the read-only budget column goes.
+   */
+  awards?: ProposalAwards;
 }
 
 export const SelectableProposalsTable = ({
@@ -39,12 +46,14 @@ export const SelectableProposalsTable = ({
   onToggle,
   getProposalHref,
   showVotes = false,
-  showBudget = true,
+  showBudget: showBudgetColumn = true,
   canEditProposals = true,
+  awards,
 }: SelectableProposalsTableProps) => {
   const t = useTranslations();
   const isMobile = useMediaQuery(`(max-width: ${screens.md})`);
   const selectedSet = new Set(selectedIds);
+  const showBudget = showBudgetColumn && !awards;
 
   if (isMobile) {
     return (
@@ -61,6 +70,7 @@ export const SelectableProposalsTable = ({
               href={getProposalHref?.(proposal)}
               showVotes={showVotes}
               showBudget={showBudget}
+              awards={awards}
             />
           </li>
         ))}
@@ -83,11 +93,17 @@ export const SelectableProposalsTable = ({
           {showVotes ? (
             <TableHead>{t('decisions.review.votesLabel')}</TableHead>
           ) : null}
-          <TableHead className="w-32 text-end">
-            <span className="sr-only">
-              {t('decisions.proposals.selectProposalLabel')}
-            </span>
-          </TableHead>
+          {awards ? (
+            <TableHead className="text-end">
+              {t('decisions.review.awardLabel')}
+            </TableHead>
+          ) : (
+            <TableHead className="w-32 text-end">
+              <span className="sr-only">
+                {t('decisions.proposals.selectProposalLabel')}
+              </span>
+            </TableHead>
+          )}
           <TableHead className="w-11">
             <span className="sr-only">
               {t('decisions.proposals.proposalOptionsLabel')}
@@ -149,12 +165,22 @@ export const SelectableProposalsTable = ({
                 </TableCell>
               ) : null}
               <TableCell className="text-end">
-                <AdvanceToggleButton
-                  isSelected={isSelected}
-                  title={fields.title}
-                  onPress={() => onToggle(proposal.id)}
-                  className="ms-auto"
-                />
+                {awards ? (
+                  <AwardCell
+                    proposalId={proposal.id}
+                    title={fields.title}
+                    awards={awards}
+                    isSelected={isSelected}
+                    onToggle={() => onToggle(proposal.id)}
+                  />
+                ) : (
+                  <AdvanceToggleButton
+                    isSelected={isSelected}
+                    title={fields.title}
+                    onPress={() => onToggle(proposal.id)}
+                    className="ms-auto"
+                  />
+                )}
               </TableCell>
               <TableCell>
                 <ProposalRowMenu
@@ -178,6 +204,7 @@ const SelectableProposalCard = ({
   href,
   showVotes,
   showBudget,
+  awards,
 }: {
   proposal: Proposal;
   isSelected: boolean;
@@ -185,6 +212,7 @@ const SelectableProposalCard = ({
   href?: string;
   showVotes: boolean;
   showBudget: boolean;
+  awards?: ProposalAwards;
 }) => {
   const t = useTranslations();
   const fields = resolvePresentationFields({
@@ -228,12 +256,23 @@ const SelectableProposalCard = ({
         ) : null}
       </div>
 
-      <AdvanceToggleButton
-        isSelected={isSelected}
-        title={fields.title}
-        onPress={() => onToggle(proposal.id)}
-        className="w-full"
-      />
+      {awards ? (
+        <AwardCell
+          proposalId={proposal.id}
+          title={fields.title}
+          awards={awards}
+          isSelected={isSelected}
+          onToggle={() => onToggle(proposal.id)}
+          className="justify-start"
+        />
+      ) : (
+        <AdvanceToggleButton
+          isSelected={isSelected}
+          title={fields.title}
+          onPress={() => onToggle(proposal.id)}
+          className="w-full"
+        />
+      )}
     </SelectionCard>
   );
 };
