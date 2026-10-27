@@ -91,13 +91,12 @@ export const SelectionFooter = ({
           selectedProposals={selectedProposals}
           selectedCount={numSelected}
           notSelectedCount={Math.max(totalCandidates - numSelected, 0)}
-          awardsAmounts={publishesResults && collectsBudget}
+          awards={publishesResults && collectsBudget ? awards : undefined}
           phaseName={phaseName}
           isOpen={isConfirmOpen}
           onOpenChange={onConfirmOpenChange}
           onConfirm={onConfirm}
           isSubmitting={isSubmitting}
-          canConfirm={awards?.canConfirm ?? true}
           triggerLabel={
             publishesResults ? (
               <>
