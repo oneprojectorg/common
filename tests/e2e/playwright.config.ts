@@ -43,6 +43,9 @@ export default defineConfig({
     baseURL: 'http://localhost:4100',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
+    // Honour the app's motion-reduce variants so axe never scans a colour
+    // transition halfway (the wizard's step badge failed contrast that way).
+    contextOptions: { reducedMotion: 'reduce' },
   },
 
   /**
