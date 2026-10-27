@@ -21,15 +21,20 @@ import { PinnedResourceCard } from '@/components/Resources/PinnedResourceCard';
  */
 export const OverviewPinnedResourcesSuspense = ({
   profileId,
+  emptyState,
 }: {
   profileId: string;
+  /** Rendered in the section when there are no resources; omit to hide it. */
+  emptyState?: ReactNode;
 }) => {
   const [{ items }] = trpc.resources.list.useSuspenseQuery({
     profileId,
   });
 
   if (items.length === 0) {
-    return null;
+    return emptyState ? (
+      <PinnedResourcesSection>{emptyState}</PinnedResourcesSection>
+    ) : null;
   }
 
   return (
