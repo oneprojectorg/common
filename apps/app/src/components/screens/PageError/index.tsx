@@ -1,7 +1,8 @@
 'use client';
 
 import { ClientOnly } from '@/utils/ClientOnly';
-import { match } from '@op/core';
+import { match, parseErrorDigest } from '@op/core';
+import { logger } from '@op/logging/client';
 import { Button } from '@op/sense/Button';
 import posthog from 'posthog-js';
 import { useEffect } from 'react';
@@ -16,19 +17,37 @@ export interface ErrorProps {
 
 export default function PageError({ error }: ErrorProps) {
   const t = useTranslations();
+  const statusCode = statusCodeOf(error);
 
   useEffect(() => {
-    posthog.captureException(error, {
-      error_digest: error.digest,
+    if (statusCode >= 500) {
+      posthog.captureException(error, {
+        error_digest: error.digest,
+      });
+      return;
+    }
+    logger.warn('Page request rejected', {
+      statusCode,
+      errorDigest: error.digest,
     });
-  }, [error]);
+  }, [error, statusCode]);
 
-  const errorData = match(error.message, {
-    UNAUTHORIZED: () => ({
-      code: 403,
-      description: <p className="text-center">{t('shell.forbiddenTitle')}</p>,
+  const errorData = match(statusCode, {
+    401: () => forbidden(),
+    403: () => forbidden(),
+    404: () => ({
+      code: 404,
+      description: (
+        <p className="text-center">
+          {t('shell.notFoundTitle')}
+          <br />
+          {t('shell.notFoundBody')}
+        </p>
+      ),
       actions: (
-        <Button onClick={() => window.history.back()}>{t('Go back')}</Button>
+        <Button onClick={() => window.location.assign('/')}>
+          {t('shell.notFoundHomeAction')}
+        </Button>
       ),
     }),
     _: () => ({
@@ -48,6 +67,16 @@ export default function PageError({ error }: ErrorProps) {
     }),
   });
 
+  function forbidden() {
+    return {
+      code: 403,
+      description: <p className="text-center">{t('shell.forbiddenTitle')}</p>,
+      actions: (
+        <Button onClick={() => window.history.back()}>{t('Go back')}</Button>
+      ),
+    };
+  }
+
   return (
     <ClientOnly>
       <StatusScreen
@@ -58,3 +87,11 @@ export default function PageError({ error }: ErrorProps) {
     </ClientOnly>
   );
 }
+
+const statusCodeOf = (error: ErrorProps['error']): number => {
+  const digest = parseErrorDigest(error.digest);
+  if (digest) {
+    return digest.statusCode;
+  }
+  return error.message === 'UNAUTHORIZED' ? 403 : 500;
+};

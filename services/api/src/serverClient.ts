@@ -1,9 +1,17 @@
-import { CSRF_HEADER, CSRF_HEADER_VALUE, OPURLConfig } from '@op/core';
+import { CommonError, UnauthorizedError } from '@op/common';
+import {
+  CSRF_HEADER,
+  CSRF_HEADER_VALUE,
+  OPURLConfig,
+  encodeErrorDigest,
+} from '@op/core';
 import {
   createTRPCProxyClient,
   loggerLink,
   unstable_httpBatchStreamLink,
 } from '@trpc/client';
+import type { TRPCError } from '@trpc/server';
+import { AccessControlException } from 'access-zones';
 import { customAlphabet } from 'nanoid';
 import { cookies, headers } from 'next/headers';
 import { cache } from 'react';
@@ -112,6 +120,27 @@ export const createServerContext = cache(async (): Promise<TContext> => {
   };
 });
 
+const callerFactory = createCallerFactory(appRouter);
+
+const tagErrorDigest = ({ error }: { error: TRPCError }) => {
+  const cause =
+    error.cause instanceof AccessControlException
+      ? new UnauthorizedError(error.cause.message)
+      : error.cause;
+
+  if (cause instanceof CommonError) {
+    Object.assign(error, {
+      digest: encodeErrorDigest({
+        statusCode: cause.statusCode,
+        name: cause.name,
+      }),
+    });
+  }
+};
+
+export const createCallerForRequest = (context: TContext) =>
+  callerFactory(context, { onError: tagErrorDigest });
+
 /**
  * Create a server-side tRPC client
  *
@@ -120,11 +149,9 @@ export const createServerContext = cache(async (): Promise<TContext> => {
  *
  * Note: Cannot set cookies. For mutations that need to set cookies, use a route handler.
  */
-export const createClient = cache(async () => {
-  const context = await createServerContext();
-  const callerFactory = createCallerFactory(appRouter);
-  return callerFactory(context);
-});
+export const createClient = cache(async () =>
+  createCallerForRequest(await createServerContext()),
+);
 
 /**
  * @deprecated Use `createClient()` from '@op/api/serverClient' instead for better performance
