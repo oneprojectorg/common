@@ -74,7 +74,8 @@ export function ReviewSelectionPage({
               fallback={
                 <ReviewSelectionListSkeleton
                   showScore={showScore}
-                  showBudget={showBudget}
+                  // The final phase swaps the budget column for the award column.
+                  showBudget={showBudget && !isFinalPhase}
                 />
               }
             >

@@ -111,6 +111,12 @@ export const ComposeNotificationsDialog = ({
   // The table owns the awards, so the dialog reads them live; the trigger and
   // the publish buttons both wait until every advanced award can be published.
   const canConfirm = awards?.canConfirm ?? true;
+  // The allocations the summary showed when the admin continued, so a draft
+  // or selection that moves afterwards (another tab, a refetch) can't publish
+  // an amount nobody saw: the publish returns to the summary instead.
+  const [shownAllocations, setShownAllocations] = useState<
+    ProposalAllocation[] | undefined
+  >();
 
   const handleOpenChange = (open: boolean) => {
     // Closing mid-submit would discard copy the pending mutation may reject.
@@ -131,8 +137,14 @@ export const ComposeNotificationsDialog = ({
   };
   const hasError = invalid.selected || invalid.notSelected;
 
-  const confirm = (composed?: ResultNotificationMessages) =>
-    onConfirm(composed, awards?.allocations());
+  const confirm = (composed?: ResultNotificationMessages) => {
+    const allocations = awards?.allocations();
+    if (awards && !sameAllocations(allocations, shownAllocations)) {
+      setStep('amounts');
+      return;
+    }
+    onConfirm(composed, allocations);
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
@@ -159,6 +171,7 @@ export const ComposeNotificationsDialog = ({
                 selected: selectedCount,
                 notSelected: notSelectedCount,
               });
+              setShownAllocations(awards.allocations());
               setStep('notifications');
             }}
           />
@@ -325,6 +338,19 @@ const getPlaceholderHintKey = (awardsAmounts: boolean) =>
 
 const getInitialStep = (awardsAmounts: boolean): Step =>
   awardsAmounts ? 'amounts' : 'notifications';
+
+const sameAllocations = (
+  current: ProposalAllocation[] | undefined,
+  shown: ProposalAllocation[] | undefined,
+): boolean =>
+  current !== undefined &&
+  shown !== undefined &&
+  current.length === shown.length &&
+  current.every(
+    (allocation, index) =>
+      allocation.proposalId === shown[index]?.proposalId &&
+      allocation.amount === shown[index]?.amount,
+  );
 
 const BackButton = ({
   isShown,
