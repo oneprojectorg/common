@@ -10,7 +10,6 @@ import { Button } from '@op/sense/Button';
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
   DialogTitle,
   DialogTrigger,
 } from '@op/sense/Dialog';
@@ -19,35 +18,29 @@ import {
   DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuLinkItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@op/sense/DropdownMenu';
 import { ProfileAvatar } from '@op/sense/ProfileAvatar';
-import { ProfileItem } from '@op/sense/ProfileItem';
 import { Separator } from '@op/sense/Separator';
 import { cn } from '@op/sense/lib/utils';
 import { screens } from '@op/styles/constants';
 import dynamic from 'next/dynamic';
 import { ReactNode, useEffect, useRef, useState } from 'react';
 import {
+  LuArrowLeftToLine,
   LuChevronDown,
-  LuChevronRight,
   LuCircleHelp,
-  LuLogOut,
+  LuPencil,
   LuSettings,
 } from 'react-icons/lu';
 
-import { Link, useRouter, useTranslations } from '@/lib/i18n';
+import { useRouter, useTranslations } from '@/lib/i18n';
 
-import { Bullet } from '../Bullet';
-import { CommunityCommitmentsContent } from '../CommunityCommitmentsContent';
-import { DeleteOrganizationModal } from '../DeleteOrganizationModal';
-import { PrivacyPolicyContent } from '../PrivacyPolicyContent';
+import { UpdateProfileModal } from '../Profile/ProfileDetails/UpdateProfile/UpdateProfileModal';
 import { ProfileSwitchingModal } from '../ProfileSwitchingModal';
-import { ToSContent } from '../ToSContent';
-
-type LegalDialog = 'privacy' | 'tos' | 'community';
 
 // behind a flag and rarely opened, so it stays out of every page's header chunk
 const SettingsModal = dynamic(
@@ -56,20 +49,18 @@ const SettingsModal = dynamic(
 );
 
 /**
- * A profile/org switcher row. Renders as a base-ui `DropdownMenuItem` in the
+ * A compact profile/org switcher row. Renders as a base-ui `DropdownMenuItem` in the
  * desktop dropdown (`asMenuItem`) and as a plain button in the mobile bottom
  * sheet — base-ui `Menu.Item` needs a `Menu.Root` context and cannot render
  * inside the sheet's `Dialog`.
  */
 const ProfileMenuRow = ({
   profile,
-  description,
   asMenuItem = false,
   onClose,
   onProfileSwitch,
 }: {
   profile: Profile;
-  description?: string;
   asMenuItem?: boolean;
   onClose?: () => void;
   onProfileSwitch?: (profile: {
@@ -113,31 +104,32 @@ const ProfileMenuRow = ({
     });
   };
 
-  const className = cn(
-    'group/row grid h-auto w-full cursor-pointer grid-cols-[1fr_auto] items-center gap-4 rounded-lg border p-4 text-start outline-none hover:border-input hover:bg-muted',
-    isCurrent ? 'border-accent-foreground bg-accent' : 'border-border',
-  );
+  const t = useTranslations();
+  const className = MENU_ROW_CLASS;
 
   const content = (
     <>
-      <ProfileItem
-        avatar={
-          <ProfileAvatar
-            name={profile.name}
-            src={
-              profile.avatarImage?.name
-                ? (getPublicUrl(profile.avatarImage.name) ?? undefined)
-                : undefined
-            }
-            alt={profile.name}
-            size="lg"
-          />
+      <ProfileAvatar
+        name={profile.name}
+        src={
+          profile.avatarImage?.name
+            ? (getPublicUrl(profile.avatarImage.name) ?? undefined)
+            : undefined
         }
-        title={profile.name}
-        titleClassName="font-normal"
-        description={description}
+        alt=""
+        size="sm"
       />
-      <LuChevronRight className="size-4 rtl:-scale-x-100" />
+      <span
+        dir="auto"
+        className="min-w-0 flex-1 truncate ltr:text-left rtl:text-right"
+      >
+        {profile.name}
+      </span>
+      {isCurrent ? (
+        <span className="shrink-0 text-sm text-primary">
+          {t('shell.activeProfileLabel')}
+        </span>
+      ) : null}
     </>
   );
 
@@ -150,11 +142,19 @@ const ProfileMenuRow = ({
   }
 
   return (
-    <Button variant="ghost" className={className} onClick={handleSelect}>
+    <Button
+      variant="ghost"
+      className={cn(className, 'hover:bg-muted')}
+      onClick={handleSelect}
+    >
       {content}
     </Button>
   );
 };
+
+// `font-normal` undoes Button's `font-strong` in the mobile sheet.
+const MENU_ROW_CLASS =
+  'flex h-10 w-full cursor-pointer items-center justify-start gap-2 rounded-xs px-2 py-0 text-start text-sm font-normal text-foreground outline-none';
 
 // On desktop the rows are real menu items (roving keyboard focus); in the
 // mobile sheet base-ui menu items can't mount, so they fall back to buttons /
@@ -178,6 +178,21 @@ const MenuSection = ({
     <div className={className}>{children}</div>
   );
 
+const MenuLabel = ({
+  asMenuItem,
+  children,
+}: {
+  asMenuItem?: boolean;
+  children: ReactNode;
+}) => {
+  const className = 'px-2 py-1.5 text-sm font-strong text-muted-foreground';
+  return asMenuItem ? (
+    <DropdownMenuLabel className={className}>{children}</DropdownMenuLabel>
+  ) : (
+    <div className={className}>{children}</div>
+  );
+};
+
 const ActionRow = ({
   asMenuItem,
   className,
@@ -189,10 +204,7 @@ const ActionRow = ({
   onClick: () => void;
   children: ReactNode;
 }) => {
-  const shared = cn(
-    'flex h-auto w-full cursor-pointer items-center justify-start gap-1.5 rounded-md px-3 py-2 text-start outline-none',
-    className,
-  );
+  const shared = cn(MENU_ROW_CLASS, className);
 
   if (asMenuItem) {
     return (
@@ -208,36 +220,6 @@ const ActionRow = ({
       className={cn(shared, 'hover:bg-muted')}
       onClick={onClick}
     >
-      {children}
-    </Button>
-  );
-};
-
-// The legal links are `link`-variant Buttons (teal, underline on hover). On
-// desktop the Button is composed onto a DropdownMenuItem (base-ui `render`) so
-// it stays in the menu's roving keyboard focus.
-const LegalTrigger = ({
-  asMenuItem,
-  onClick,
-  children,
-}: {
-  asMenuItem?: boolean;
-  onClick: () => void;
-  children: ReactNode;
-}) => {
-  const className =
-    'h-auto w-full justify-start py-1 px-2 text-sm font-strong text-primary';
-
-  if (asMenuItem) {
-    return (
-      <DropdownMenuItem className={className} onClick={onClick}>
-        {children}
-      </DropdownMenuItem>
-    );
-  }
-
-  return (
-    <Button variant="link" className={className} onClick={onClick}>
       {children}
     </Button>
   );
@@ -260,7 +242,8 @@ const LinkRow = ({
   children: ReactNode;
 }) => {
   const shared = cn(
-    'flex h-auto w-full cursor-pointer items-center gap-1.5 rounded-md px-3 py-2 text-start no-underline outline-none hover:no-underline',
+    MENU_ROW_CLASS,
+    'no-underline hover:no-underline',
     className,
   );
 
@@ -295,14 +278,12 @@ const AvatarMenuContent = ({
   asMenuItem = false,
   onClose,
   onProfileSwitch,
-  onOpenLegal,
-  onDeleteAccount,
+  onEditProfile,
   onOpenSettings,
 }: {
   asMenuItem?: boolean;
   onClose?: () => void;
-  onOpenLegal: (dialog: LegalDialog) => void;
-  onDeleteAccount: () => void;
+  onEditProfile: () => void;
   onOpenSettings: () => void;
   onProfileSwitch?: (profile: {
     name: string;
@@ -310,7 +291,9 @@ const AvatarMenuContent = ({
   }) => void;
 }) => {
   const t = useTranslations();
+  const { user } = useRequiredUser();
   const logout = useAuthLogout();
+  const isSettingsEnabled = useFeatureFlag('settings_modal');
 
   const { data: profilesData } = trpc.account.getUserProfiles.useQuery();
   const profiles = profilesData?.items;
@@ -340,59 +323,90 @@ const AvatarMenuContent = ({
       },
     ) ?? {};
 
-  const deleteOrganizationEnabled = useFeatureFlag('delete_organization');
-  const settingsModalEnabled = useFeatureFlag('settings_modal');
-
   return (
     <>
-      <MenuSection asMenuItem={asMenuItem} className="flex flex-col gap-3 px-3">
-        {userProfiles?.map((profile) => (
-          <ProfileMenuRow
-            key={profile.id}
-            profile={profile}
-            description={profile.bio ?? undefined}
-            asMenuItem={asMenuItem}
-            onClose={onClose}
-            onProfileSwitch={onProfileSwitch}
+      {user.profile ? (
+        <div className="flex items-center gap-2 p-2">
+          <ProfileAvatar
+            name={user.profile.name}
+            src={
+              user.profile.avatarImage?.name
+                ? (getPublicUrl(user.profile.avatarImage.name) ?? undefined)
+                : undefined
+            }
+            alt=""
           />
-        ))}
-
-        {orgProfiles?.length ? <MenuDivider asMenuItem={asMenuItem} /> : null}
-        {orgProfiles?.map((profile) => (
-          <ProfileMenuRow
-            key={profile.id}
-            profile={profile}
-            description={t('Organization')}
-            asMenuItem={asMenuItem}
-            onClose={onClose}
-            onProfileSwitch={onProfileSwitch}
-          />
-        ))}
-      </MenuSection>
+          <div className="flex min-w-0 flex-1 flex-col">
+            <span
+              dir="auto"
+              className="truncate font-strong ltr:text-left rtl:text-right"
+            >
+              {user.profile.name}
+            </span>
+            {user.profile.bio ? (
+              <span
+                dir="auto"
+                className="truncate text-sm text-muted-foreground ltr:text-left rtl:text-right"
+              >
+                {user.profile.bio}
+              </span>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
 
       <MenuDivider asMenuItem={asMenuItem} />
 
-      <MenuSection asMenuItem={asMenuItem} className="flex flex-col gap-1 p-2">
-        {settingsModalEnabled ? (
-          <ActionRow
-            asMenuItem={asMenuItem}
-            className="font-normal text-foreground"
-            onClick={onOpenSettings}
-          >
-            <LuSettings className="size-4" /> {t('settings.title')}
+      <MenuSection asMenuItem={asMenuItem} className="flex flex-col">
+        <ActionRow asMenuItem={asMenuItem} onClick={onEditProfile}>
+          <LuPencil className="size-4" /> {t('shell.editProfileAction')}
+        </ActionRow>
+        {isSettingsEnabled && (
+          <ActionRow asMenuItem={asMenuItem} onClick={onOpenSettings}>
+            <LuSettings className="size-4" /> {t('shell.settingsAction')}
           </ActionRow>
-        ) : null}
+        )}
+      </MenuSection>
+
+      {profiles?.length ? (
+        <>
+          <MenuDivider asMenuItem={asMenuItem} />
+          <MenuSection asMenuItem={asMenuItem} className="flex flex-col">
+            <MenuLabel asMenuItem={asMenuItem}>
+              {t('shell.profilesMenuHeading')}
+            </MenuLabel>
+            {[...(orgProfiles ?? []), ...(userProfiles ?? [])].map(
+              (profile) => (
+                <ProfileMenuRow
+                  key={profile.id}
+                  profile={profile}
+                  asMenuItem={asMenuItem}
+                  onClose={onClose}
+                  onProfileSwitch={onProfileSwitch}
+                />
+              ),
+            )}
+          </MenuSection>
+        </>
+      ) : null}
+
+      <MenuDivider asMenuItem={asMenuItem} />
+
+      <MenuSection asMenuItem={asMenuItem} className="flex flex-col">
         <LinkRow
           asMenuItem={asMenuItem}
           href="https://oneprojectorg.notion.site/Common-Support-Hub-a9ef0b6622538269927c01e51045638b"
-          className="font-normal text-foreground"
           onClick={onClose}
         >
           <LuCircleHelp className="size-4" /> {t('shell.supportLinkLabel')}
         </LinkRow>
+      </MenuSection>
+
+      <MenuDivider asMenuItem={asMenuItem} />
+
+      <MenuSection asMenuItem={asMenuItem} className="flex flex-col">
         <ActionRow
           asMenuItem={asMenuItem}
-          className="font-normal text-foreground"
           onClick={() => {
             // Full-page navigation: client-side routing would re-render the
             // authed tree with a dead session before the redirect lands.
@@ -401,110 +415,11 @@ const AvatarMenuContent = ({
             onClose?.();
           }}
         >
-          <LuLogOut className="size-4 rtl:-scale-x-100" />{' '}
+          <LuArrowLeftToLine className="size-4 rtl:-scale-x-100" />{' '}
           {t('shell.logOutAction')}
         </ActionRow>
       </MenuSection>
-
-      <MenuDivider asMenuItem={asMenuItem} />
-
-      <MenuSection asMenuItem={asMenuItem} className="flex flex-col gap-2 px-3">
-        <LegalTrigger
-          asMenuItem={asMenuItem}
-          onClick={() => onOpenLegal('privacy')}
-        >
-          {t('Privacy Policy')}
-        </LegalTrigger>
-        <LegalTrigger
-          asMenuItem={asMenuItem}
-          onClick={() => onOpenLegal('tos')}
-        >
-          {t('Terms of Service')}
-        </LegalTrigger>
-        <LegalTrigger
-          asMenuItem={asMenuItem}
-          onClick={() => onOpenLegal('community')}
-        >
-          {t('shell.communityCommitmentsTitle')}
-        </LegalTrigger>
-        {deleteOrganizationEnabled ? (
-          <ActionRow
-            asMenuItem={asMenuItem}
-            className="justify-start px-2 py-1 text-sm font-strong text-foreground hover:bg-muted hover:underline"
-            onClick={onDeleteAccount}
-          >
-            {t('shell.deleteAccountAction')}
-          </ActionRow>
-        ) : null}
-
-        <div className="flex gap-1 px-2 text-xs text-muted-foreground">
-          {asMenuItem ? (
-            // A real menu link item (base-ui Menu.LinkItem) so it joins the
-            // menu's roving focus — a bare link at the bottom made the menu
-            // open scrolled down (initial focus jumped to it).
-            <DropdownMenuLinkItem
-              href="https://github.com/oneprojectorg/common"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline h-auto rounded-none p-0 text-xs hover:bg-transparent hover:underline"
-            >
-              {t('shell.ethicalOpenSourceLink')}
-            </DropdownMenuLinkItem>
-          ) : (
-            <Link
-              className="cursor-pointer hover:underline"
-              href="https://github.com/oneprojectorg/common"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              {t('shell.ethicalOpenSourceLink')}
-            </Link>
-          )}
-          <Bullet />
-          <span>One Project</span>
-          <Bullet />
-          <span>{new Date().getFullYear()}</span>
-        </div>
-      </MenuSection>
     </>
-  );
-};
-
-const legalTitles = {
-  privacy: 'Privacy Policy',
-  tos: 'Terms of Service',
-  community: 'shell.communityCommitmentsTitle',
-} as const;
-
-const LegalDialogs = ({
-  open,
-  onOpenChange,
-}: {
-  open: LegalDialog | null;
-  onOpenChange: (open: boolean) => void;
-}) => {
-  const t = useTranslations();
-  const scrollRef = useRef<HTMLDivElement>(null);
-
-  return (
-    <Dialog open={open !== null} onOpenChange={onOpenChange}>
-      {/* `initialFocus` on the scroll container, else base-ui focuses the first
-          link deep in the legal text and opens the dialog scrolled. */}
-      <DialogContent className="p-0 sm:max-w-xl" initialFocus={scrollRef}>
-        <DialogHeader>
-          <DialogTitle>{open ? t(legalTitles[open]) : ''}</DialogTitle>
-        </DialogHeader>
-        <div
-          ref={scrollRef}
-          tabIndex={-1}
-          className="min-h-0 flex-1 overflow-y-auto px-6 py-4 outline-none"
-        >
-          {open === 'privacy' ? <PrivacyPolicyContent /> : null}
-          {open === 'tos' ? <ToSContent /> : null}
-          {open === 'community' ? <CommunityCommitmentsContent /> : null}
-        </div>
-      </DialogContent>
-    </Dialog>
   );
 };
 
@@ -514,8 +429,7 @@ export const UserAvatarMenu = ({ className }: { className?: string }) => {
   const isMobile = useMediaQuery(`(max-width: ${screens.sm})`);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isOrgDeletionOpen, setIsOrgDeletionOpen] = useState(false);
-  const [legalDialog, setLegalDialog] = useState<LegalDialog | null>(null);
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isSwitchingProfile, setIsSwitchingProfile] = useState(false);
   const [switchingToProfile, setSwitchingToProfile] = useState<{
@@ -537,23 +451,17 @@ export const UserAvatarMenu = ({ className }: { className?: string }) => {
     setIsDrawerOpen(false);
   };
 
-  const openLegal = (dialog: LegalDialog) => {
-    closeMenus();
-    setLegalDialog(dialog);
-  };
-
-  const openDeleteAccount = () => {
-    closeMenus();
-    setIsOrgDeletionOpen(true);
-  };
-
   const openSettings = () => {
     closeMenus();
     setIsSettingsOpen(true);
   };
 
-  const deleteOrganizationEnabled = useFeatureFlag('delete_organization');
   const settingsModalEnabled = useFeatureFlag('settings_modal');
+
+  const openEditProfile = () => {
+    closeMenus();
+    setIsEditingProfile(true);
+  };
 
   // Hide modal when profile actually changes
   useEffect(() => {
@@ -591,13 +499,9 @@ export const UserAvatarMenu = ({ className }: { className?: string }) => {
   // shadcn "menu item opens a dialog" pattern).
   const overlays = (
     <>
-      <LegalDialogs
-        open={legalDialog}
-        onOpenChange={(next) => {
-          if (!next) {
-            setLegalDialog(null);
-          }
-        }}
+      <UpdateProfileModal
+        isOpen={isEditingProfile}
+        setIsOpen={setIsEditingProfile}
       />
       <ProfileSwitchingModal
         isOpen={isSwitchingProfile}
@@ -605,12 +509,6 @@ export const UserAvatarMenu = ({ className }: { className?: string }) => {
         profileName={switchingToProfile?.name}
         onOpenChange={setIsSwitchingProfile}
       />
-      {deleteOrganizationEnabled ? (
-        <DeleteOrganizationModal
-          isOpen={isOrgDeletionOpen}
-          onOpenChange={setIsOrgDeletionOpen}
-        />
-      ) : null}
       {settingsModalEnabled ? (
         <SettingsModal open={isSettingsOpen} onOpenChange={setIsSettingsOpen} />
       ) : null}
@@ -640,11 +538,10 @@ export const UserAvatarMenu = ({ className }: { className?: string }) => {
             <DialogTitle className="sr-only">
               {t('shell.openMenuLabel')}
             </DialogTitle>
-            <div className="pb-safe flex min-h-0 w-full flex-1 flex-col gap-3 overflow-y-auto py-4 pb-8">
+            <div className="pb-safe flex min-h-0 w-full flex-1 flex-col gap-0.5 overflow-y-auto p-2 pb-8">
               <AvatarMenuContent
                 onClose={() => setIsDrawerOpen(false)}
-                onOpenLegal={openLegal}
-                onDeleteAccount={openDeleteAccount}
+                onEditProfile={openEditProfile}
                 onOpenSettings={openSettings}
                 onProfileSwitch={handleProfileSwitch}
               />
@@ -675,13 +572,12 @@ export const UserAvatarMenu = ({ className }: { className?: string }) => {
           side="bottom"
           sideOffset={6}
           align="end"
-          className="flex w-86 flex-col gap-3 p-0 py-4"
+          className="flex w-66 flex-col gap-0.5 rounded-md p-1"
         >
           <AvatarMenuContent
             asMenuItem
             onClose={() => setIsMenuOpen(false)}
-            onOpenLegal={openLegal}
-            onDeleteAccount={openDeleteAccount}
+            onEditProfile={openEditProfile}
             onOpenSettings={openSettings}
             onProfileSwitch={handleProfileSwitch}
           />

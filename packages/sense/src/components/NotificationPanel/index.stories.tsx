@@ -51,33 +51,75 @@ export const ResponsiveActions: Story = {
   ),
 };
 
+/**
+ * The heading sits above the bordered surface, not inside it, so it reads as a
+ * page section title; only the list carries the border, with a rule between
+ * items.
+ */
 export const Default: Story = {
   render: () => (
     <div className="w-[36rem]">
+      <RequestsPanel />
+    </div>
+  ),
+};
+
+/**
+ * Stacked panels, as on the homepage. The headings outside the surfaces give
+ * each section its own label without nesting a card inside a card.
+ */
+export const Stacked: Story = {
+  render: () => (
+    <div className="flex w-[36rem] flex-col gap-8">
+      <RequestsPanel />
       <NotificationPanel>
-        <NotificationPanelHeader title="Requests" count={people.length} />
+        <NotificationPanelHeader title="Active Decisions" count={1} />
         <NotificationPanelList>
-          {people.map((name) => (
-            <NotificationPanelItem key={name}>
-              <ProfileItem
-                avatar={
-                  <Avatar>
-                    <AvatarFallback name={name} />
-                  </Avatar>
-                }
-                title={name}
-                description="Wants to join Climate Assembly"
-              />
-              <NotificationPanelActions>
-                <Button variant="outline" size="sm">
-                  Decline
-                </Button>
-                <Button size="sm">Approve</Button>
-              </NotificationPanelActions>
-            </NotificationPanelItem>
-          ))}
+          <NotificationPanelItem>
+            <ProfileItem
+              avatar={
+                <Avatar>
+                  <AvatarFallback name="Community Solar" />
+                </Avatar>
+              }
+              title="Community Solar"
+              description="Voting closes in 3 days"
+            />
+            <NotificationPanelActions>
+              <Button size="sm">Vote</Button>
+            </NotificationPanelActions>
+          </NotificationPanelItem>
         </NotificationPanelList>
       </NotificationPanel>
     </div>
   ),
 };
+
+function RequestsPanel() {
+  return (
+    <NotificationPanel>
+      <NotificationPanelHeader title="Requests" count={people.length} />
+      <NotificationPanelList>
+        {people.map((name) => (
+          <NotificationPanelItem key={name}>
+            <ProfileItem
+              avatar={
+                <Avatar>
+                  <AvatarFallback name={name} />
+                </Avatar>
+              }
+              title={name}
+              description="Wants to join Climate Assembly"
+            />
+            <NotificationPanelActions>
+              <Button variant="outline" size="sm">
+                Decline
+              </Button>
+              <Button size="sm">Approve</Button>
+            </NotificationPanelActions>
+          </NotificationPanelItem>
+        ))}
+      </NotificationPanelList>
+    </NotificationPanel>
+  );
+}

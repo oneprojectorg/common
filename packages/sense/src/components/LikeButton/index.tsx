@@ -8,6 +8,7 @@ import {
   footerButtonInteractiveClasses,
 } from '../../lib/footerButton';
 import { cn } from '../../lib/utils';
+import { AnimatedCount } from '../AnimatedCount';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
 
 interface LikeButtonProps extends Omit<
@@ -84,7 +85,9 @@ function LikeButton({
         )}
       />
       {/* The count changes without a navigation when anyone likes the post. */}
-      <span aria-live="polite">{count}</span>
+      <span aria-live="polite">
+        <AnimatedCount value={count ?? 0} />
+      </span>
     </button>
   );
 
