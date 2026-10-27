@@ -1,3 +1,4 @@
+import { setupSSR } from '@/utils/setupSSR';
 import { createClient } from '@op/api/serverClient';
 import type { Metadata } from 'next';
 
@@ -32,8 +33,9 @@ export async function generateMetadata({
 export default async function ProposalReviewsPage({
   params,
 }: {
-  params: Promise<{ slug: string; profileId: string }>;
+  params: Promise<{ slug: string; profileId: string; locale: string }>;
 }) {
+  await setupSSR({ params });
   const { slug, profileId: proposalProfileId } = await params;
 
   return (
