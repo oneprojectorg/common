@@ -232,8 +232,6 @@ test.describe('Results phase notifications — every predecessor phase kind', ()
         page.getByText('2 winning proposals selected'),
       ).toBeVisible();
 
-      // The seeded proposals request no budget, so each award is typed in the
-      // table before the confirm opens; until then it holds.
       await expect(confirmButton).toBeDisabled();
       await page
         .getByRole('textbox', { name: 'Award for Proposal Alpha' })

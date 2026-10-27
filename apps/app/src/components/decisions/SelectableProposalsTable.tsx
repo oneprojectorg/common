@@ -33,10 +33,6 @@ interface SelectableProposalsTableProps {
   showBudget?: boolean;
   /** Offer Edit in the row menu. Proposals can't be edited in the results phase. */
   canEditProposals?: boolean;
-  /**
-   * The final phase awards each winner an amount: the Advance column becomes an
-   * Award column (amount field + toggle) and the read-only budget column goes.
-   */
   awards?: ProposalAwards;
 }
 

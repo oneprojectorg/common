@@ -21,12 +21,6 @@ interface AwardSummaryStepProps {
   onContinue: () => void;
 }
 
-/**
- * First step of the final-phase confirm dialog: the winning proposals with the
- * amount each is awarded, read-only. The amounts are set in the selection
- * table; this step shows what the table set, with the requested total when
- * the awards differ from it.
- */
 export const AwardSummaryStep = ({
   proposals,
   awards,

@@ -59,10 +59,6 @@ export function ReviewSelectionTable({
   decisionSlug: string;
   /** Show the budget column. False when the proposal template collects no budget. */
   showBudget: boolean;
-  /**
-   * The final phase awards each winner an amount: the Advance column becomes an
-   * Award column (amount field + toggle) and the read-only budget column goes.
-   */
   awards?: ProposalAwards;
 }) {
   const t = useTranslations();

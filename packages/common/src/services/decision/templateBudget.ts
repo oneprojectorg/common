@@ -16,12 +16,6 @@ export interface ProcessBudgetPhase {
   settings?: Record<string, unknown> | null;
 }
 
-/**
- * The total budget a process can award, read from the phases' `settings.budget`:
- * the current phase's when it has one, else the first phase that has one.
- * `undefined` when no phase carries a positive budget, which includes an
- * instance whose `hideBudget` config stripped it.
- */
 export function getProcessBudget({
   phases,
   currentPhaseId,
