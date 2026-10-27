@@ -231,21 +231,23 @@ test.describe('Results phase notifications — every predecessor phase kind', ()
       await expect(
         page.getByText('2 winning proposals selected'),
       ).toBeVisible();
+
+      // The seeded proposals request no budget, so each award is typed in the
+      // table before the confirm opens; until then it holds.
+      await expect(confirmButton).toBeDisabled();
+      await page
+        .getByRole('textbox', { name: 'Award for Proposal Alpha' })
+        .fill('1000');
+      await page
+        .getByRole('textbox', { name: 'Award for Proposal Beta' })
+        .fill('2000');
       await expect(confirmButton).toBeEnabled();
 
       await confirmButton.click();
-      // The seeded proposals request no budget, so each award has to be
-      // entered before the notifications step.
       const amountsDialog = page.getByRole('dialog', {
         name: 'Confirm winning proposals',
       });
-      await amountsDialog.getByRole('button', { name: 'Continue' }).click();
-      const amountFields = amountsDialog.getByRole('textbox', {
-        name: 'Awarded amount',
-      });
-      await expect(amountFields).toHaveCount(2);
-      await amountFields.nth(0).fill('1000');
-      await amountFields.nth(1).fill('2000');
+      await expect(amountsDialog.getByText('$1,000 Awarded')).toBeVisible();
       await amountsDialog.getByRole('button', { name: 'Continue' }).click();
 
       const dialog = page.getByRole('dialog', {

@@ -166,10 +166,13 @@ async function seedAwaitingInstance(org: SeedOrg, titles: string[]) {
 type ProposalSpec = { title: string; budget?: number };
 
 /** Lands an instance on `submission` with N published proposals — the
- *  starting state for driving the real submission→final advance via the UI. */
+ *  starting state for driving the real submission→final advance via the UI.
+ *  `processBudget` lands on the final phase's settings, where the selection
+ *  footer's budget bar reads it. */
 async function seedSubmissionPhaseInstance(
   org: SeedOrg,
   specs: ReadonlyArray<string | ProposalSpec>,
+  { processBudget }: { processBudget?: number } = {},
 ) {
   const template = await getSeededTemplate();
   const instance = await createDecisionInstance({
@@ -179,6 +182,28 @@ async function seedSubmissionPhaseInstance(
     email: org.adminUser.email,
     schema: lastPhaseZeroSelectingSchema,
   });
+
+  if (processBudget !== undefined) {
+    const data = instance.instance.instanceData as {
+      phases: Array<{ phaseId: string; settings?: Record<string, unknown> }>;
+    };
+    await db
+      .update(processInstances)
+      .set({
+        instanceData: {
+          ...data,
+          phases: data.phases.map((phase) =>
+            phase.phaseId === 'final'
+              ? {
+                  ...phase,
+                  settings: { ...phase.settings, budget: processBudget },
+                }
+              : phase,
+          ),
+        },
+      })
+      .where(eq(processInstances.id, instance.instance.id));
+  }
 
   // INSERT-as-DRAFT then UPDATE to SUBMITTED so the proposal_history AFTER
   // UPDATE trigger fires; submitManualSelection joins against those snapshots.
@@ -298,11 +323,15 @@ test.describe('Decision Manual Selection — full flow', () => {
   }) => {
     // Distinct budgets per proposal so the rendered "$X requested" labels can
     // be unambiguously attributed to the right card during assertions.
-    const { instance, proposals } = await seedSubmissionPhaseInstance(org, [
-      { title: 'Proposal Alpha', budget: 5000 },
-      { title: 'Proposal Beta', budget: 8000 },
-      { title: 'Proposal Gamma', budget: 7000 },
-    ]);
+    const { instance, proposals } = await seedSubmissionPhaseInstance(
+      org,
+      [
+        { title: 'Proposal Alpha', budget: 5000 },
+        { title: 'Proposal Beta', budget: 8000 },
+        { title: 'Proposal Gamma', budget: 7000 },
+      ],
+      { processBudget: 12000 },
+    );
     const [alpha, beta, gamma] = proposals;
     if (!alpha || !beta || !gamma) {
       throw new Error('Expected three seeded proposals');
@@ -351,37 +380,49 @@ test.describe('Decision Manual Selection — full flow', () => {
     ).toBeVisible();
     await expect(confirmButton).toBeEnabled();
 
+    // The template collects a budget, so each row carries an award field that
+    // starts at the proposal's requested budget, and the footer sums the
+    // advanced awards against the process budget: $13,000 asked of $12,000.
+    const awardField = (title: string) =>
+      authenticatedPage.getByRole('textbox', { name: `Award for ${title}` });
+    await expect(awardField('Proposal Alpha')).toHaveValue('5000');
+    await expect(awardField('Proposal Beta')).toHaveValue('8000');
+    await expect(
+      authenticatedPage.getByText('$13,000 of $12,000 allocated'),
+    ).toBeVisible();
+    await expect(
+      authenticatedPage.getByText('Over budget by $1,000'),
+    ).toBeVisible();
+    await expect(confirmButton).toBeDisabled();
+
+    // An empty amount on an advanced row flags the row and holds the confirm.
+    await awardField('Proposal Alpha').fill('');
+    await expect(
+      authenticatedPage.getByText('Enter an amount greater than 0'),
+    ).toBeVisible();
+    await expect(confirmButton).toBeDisabled();
+
+    // Award Alpha less than it asked for and Beta more: both are allowed, and
+    // the total lands exactly on the budget.
+    await awardField('Proposal Alpha').fill('3000');
+    await expect(authenticatedPage.getByText('Requested $5,000')).toBeVisible();
+    await awardField('Proposal Beta').fill('9000');
+    await expect(
+      authenticatedPage.getByText('$12,000 of $12,000 allocated'),
+    ).toBeVisible();
+    await expect(confirmButton).toBeEnabled();
+
     await confirmButton.click();
-    // The template collects a budget, so the confirm opens on the awarded
-    // amounts, each defaulting to the proposal's requested budget.
+    // The confirm opens on a read-only summary of what the table set.
     const amountsDialog = authenticatedPage.getByRole('dialog', {
       name: 'Confirm winning proposals',
     });
     await expect(amountsDialog).toBeVisible();
-    await expect(amountsDialog.getByText('$5,000 Awarded')).toBeVisible();
-    await expect(amountsDialog.getByText('$8,000 Awarded')).toBeVisible();
-    await expect(amountsDialog.getByText('$13,000')).toBeVisible();
-
-    // Award Alpha less than it asked for and Beta more: both are allowed.
-    await amountsDialog.getByRole('button', { name: 'Adjust amounts' }).click();
-    const amountField = (title: string) =>
-      amountsDialog
-        .getByRole('listitem')
-        .filter({ hasText: title })
-        .getByRole('textbox', { name: 'Awarded amount' });
-    await expect(amountField('Proposal Alpha')).toBeFocused();
-
-    // An empty amount blocks the step and sends focus to it.
-    await amountField('Proposal Alpha').fill('');
-    await amountsDialog.getByRole('button', { name: 'Continue' }).click();
-    await expect(
-      amountsDialog.getByText('Enter an amount greater than 0'),
-    ).toBeVisible();
-    await expect(amountField('Proposal Alpha')).toBeFocused();
-
-    await amountField('Proposal Alpha').fill('3000');
-    await amountField('Proposal Beta').fill('9000');
+    await expect(amountsDialog.getByText('$3,000 Awarded')).toBeVisible();
+    await expect(amountsDialog.getByText('$9,000 Awarded')).toBeVisible();
     await expect(amountsDialog.getByText('$12,000')).toBeVisible();
+    await expect(amountsDialog.getByText('Requested $13,000')).toBeVisible();
+    await expect(amountsDialog.getByRole('textbox')).toHaveCount(0);
     await amountsDialog.getByRole('button', { name: 'Continue' }).click();
 
     // Then the notifications step: one editable message per outcome,
