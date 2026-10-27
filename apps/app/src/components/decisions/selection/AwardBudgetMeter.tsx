@@ -62,10 +62,9 @@ export const AwardBudgetMeter = ({
             '[&_[data-slot=segmented-progress-segment]]:bg-destructive',
         )}
       />
-      <p
-        className="flex min-w-0 flex-col text-sm text-muted-foreground tabular-nums"
-        aria-live="polite"
-      >
+      {/* The running total changes on every keystroke, so only the warning is
+          live; the bar's aria-valuetext carries the total on demand. */}
+      <p className="flex min-w-0 flex-col text-sm text-muted-foreground tabular-nums">
         <span>
           {t.rich('awardedOfBudget', {
             awarded,
@@ -82,13 +81,16 @@ export const AwardBudgetMeter = ({
             ),
           })}
         </span>
-        {awards.isOverBudget ? (
-          <span className="text-destructive">
-            {t('overBudgetWarning', {
-              amount: format(sumAmounts([total.amount, -processBudget])),
-            })}
-          </span>
-        ) : null}
+        <span
+          className={cn('text-destructive', !awards.isOverBudget && 'sr-only')}
+          aria-live="polite"
+        >
+          {awards.isOverBudget
+            ? t('overBudgetWarning', {
+                amount: format(sumAmounts([total.amount, -processBudget])),
+              })
+            : ''}
+        </span>
       </p>
     </div>
   );

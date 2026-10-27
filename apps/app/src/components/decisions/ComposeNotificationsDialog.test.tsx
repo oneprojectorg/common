@@ -183,7 +183,7 @@ describe('ComposeNotificationsDialog awarded amounts', () => {
     expect(within(confirmDialog()).getByText('$4,200 Awarded')).toBeTruthy();
   });
 
-  it('publishes the live selection and amounts when they change under the open dialog', async () => {
+  it('returns to the summary instead of publishing when the selection or an amount moved since it was read', async () => {
     const { onConfirm, user, update } = renderDialog({ proposals: [alpha] });
 
     await user.click(screen.getByRole('button', { name: 'Open' }));
@@ -191,6 +191,16 @@ describe('ComposeNotificationsDialog awarded amounts', () => {
     update({ selected: [alpha, beta], edits: { beta: 7000 } });
     await user.click(screen.getByRole('button', { name: 'Send & advance' }));
 
+    expect(onConfirm).not.toHaveBeenCalled();
+    const dialog = confirmDialog();
+    expect(within(dialog).getByText('$7,000 Awarded')).toBeTruthy();
+
+    // Read again, the new set publishes and the counts follow it.
+    await user.click(within(dialog).getByRole('button', { name: 'Continue' }));
+    expect(
+      screen.getByRole('tab', { name: /^Advanced\s*2 proposals$/ }),
+    ).toBeTruthy();
+    await user.click(screen.getByRole('button', { name: 'Send & advance' }));
     expect(onConfirm).toHaveBeenCalledWith(expect.any(Object), [
       { proposalId: 'alpha', amount: 5000 },
       { proposalId: 'beta', amount: 7000 },

@@ -48,20 +48,25 @@ export const AwardCell = ({
         className,
       )}
     >
-      {showRequested ? (
-        <span
-          className="self-center text-sm text-muted-foreground"
-          aria-live="polite"
-        >
-          {t('requestedAmount', {
-            amount: formatCurrency(
-              requested.amount,
-              undefined,
-              requested.currency,
-            ),
-          })}
-        </span>
-      ) : null}
+      {/* Always mounted: a live region announces changes to its text, not its
+          arrival, so the caption toggles its text instead of its presence. */}
+      <span
+        className={cn(
+          'self-center text-sm text-muted-foreground',
+          !showRequested && 'sr-only',
+        )}
+        aria-live="polite"
+      >
+        {showRequested
+          ? t('requestedAmount', {
+              amount: formatCurrency(
+                requested.amount,
+                undefined,
+                requested.currency,
+              ),
+            })
+          : ''}
+      </span>
       <NumberField
         aria-label={t('awardForProposalLabel', { title })}
         prefixText={getCurrencySymbol(currency)}

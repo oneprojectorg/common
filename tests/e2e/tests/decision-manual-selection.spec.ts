@@ -181,29 +181,11 @@ async function seedSubmissionPhaseInstance(
     authUserId: org.adminUser.authUserId,
     email: org.adminUser.email,
     schema: lastPhaseZeroSelectingSchema,
+    phaseSettings:
+      processBudget === undefined
+        ? undefined
+        : { final: { budget: processBudget } },
   });
-
-  if (processBudget !== undefined) {
-    const data = instance.instance.instanceData as {
-      phases: Array<{ phaseId: string; settings?: Record<string, unknown> }>;
-    };
-    await db
-      .update(processInstances)
-      .set({
-        instanceData: {
-          ...data,
-          phases: data.phases.map((phase) =>
-            phase.phaseId === 'final'
-              ? {
-                  ...phase,
-                  settings: { ...phase.settings, budget: processBudget },
-                }
-              : phase,
-          ),
-        },
-      })
-      .where(eq(processInstances.id, instance.instance.id));
-  }
 
   // INSERT-as-DRAFT then UPDATE to SUBMITTED so the proposal_history AFTER
   // UPDATE trigger fires; submitManualSelection joins against those snapshots.

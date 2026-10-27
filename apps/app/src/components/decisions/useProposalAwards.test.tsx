@@ -190,16 +190,6 @@ describe('useProposalAwards', () => {
     expect(result.current.allocations()).toBeUndefined();
   });
 
-  it('returns every award to its requested amount on reset', () => {
-    const { result } = renderAwards();
-
-    act(() => result.current.setAmount('solar', 1));
-    act(() => result.current.reset());
-
-    expect(result.current.amounts.get('solar')).toBe(12000);
-    expect(result.current.hasAdjusted('solar')).toBe(false);
-  });
-
   it('reads and writes the draft it is given instead of its own state', () => {
     const { result } = renderHook(() => {
       const [edits, setEdits] = useState<AwardEdits>({ bike: 100 });
@@ -217,10 +207,6 @@ describe('useProposalAwards', () => {
     act(() => result.current.awards.setAmount('solar', 500));
 
     expect(result.current.edits).toEqual({ bike: 100, solar: 500 });
-
-    act(() => result.current.awards.reset());
-
-    expect(result.current.edits).toEqual({});
   });
 
   it('ignores a draft entry for a proposal that is no longer listed', () => {
