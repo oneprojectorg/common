@@ -1,0 +1,113 @@
+'use client';
+
+import { useCallback, useSyncExternalStore } from 'react';
+
+import type { AwardDraft, AwardEdits } from './useProposalAwards';
+
+const KEY_PREFIX = '@op/manual-awards';
+const CHANGE_EVENT = '@op/manual-awards:change';
+
+const storageKey = (instanceId: string, phaseId: string) =>
+  `${KEY_PREFIX}:${instanceId}:${phaseId}`;
+
+const EMPTY: AwardEdits = {};
+
+// One parsed value per key so getSnapshot returns a stable reference while
+// nothing changed (useSyncExternalStore re-renders forever otherwise).
+const snapshots = new Map<string, AwardEdits>();
+
+const parseEdits = (raw: string | null): AwardEdits => {
+  if (raw === null) {
+    return EMPTY;
+  }
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    if (
+      typeof parsed !== 'object' ||
+      parsed === null ||
+      Array.isArray(parsed)
+    ) {
+      return EMPTY;
+    }
+    return Object.fromEntries(
+      Object.entries(parsed).filter(
+        (entry): entry is [string, number | null] =>
+          entry[1] === null || typeof entry[1] === 'number',
+      ),
+    );
+  } catch {
+    return EMPTY;
+  }
+};
+
+function getSnapshot(key: string): AwardEdits {
+  if (typeof window === 'undefined') {
+    return EMPTY;
+  }
+  const cached = snapshots.get(key);
+  if (cached) {
+    return cached;
+  }
+  const edits = parseEdits(window.localStorage.getItem(key));
+  snapshots.set(key, edits);
+  return edits;
+}
+
+function subscribe(key: string, callback: () => void): () => void {
+  if (typeof window === 'undefined') {
+    return () => {};
+  }
+  const onStorage = (event: StorageEvent) => {
+    if (event.key === key) {
+      snapshots.delete(key);
+      callback();
+    }
+  };
+  const onChange = (event: Event) => {
+    if (event instanceof CustomEvent && event.detail === key) {
+      callback();
+    }
+  };
+  window.addEventListener('storage', onStorage);
+  window.addEventListener(CHANGE_EVENT, onChange);
+  return () => {
+    window.removeEventListener('storage', onStorage);
+    window.removeEventListener(CHANGE_EVENT, onChange);
+  };
+}
+
+/**
+ * The award amounts an admin typed in the selection table, kept in
+ * localStorage per instance and phase beside the selected ids
+ * (`useManualSelection`), so a reload or a second tab shows the same draft.
+ */
+export function useManualAwardDraft(
+  instanceId: string,
+  phaseId: string,
+): AwardDraft {
+  const key = storageKey(instanceId, phaseId);
+
+  const edits = useSyncExternalStore(
+    useCallback((cb) => subscribe(key, cb), [key]),
+    useCallback(() => getSnapshot(key), [key]),
+    () => EMPTY,
+  );
+
+  const setEdits = useCallback(
+    (next: AwardEdits) => {
+      if (typeof window === 'undefined') {
+        return;
+      }
+      if (Object.keys(next).length === 0) {
+        window.localStorage.removeItem(key);
+      } else {
+        window.localStorage.setItem(key, JSON.stringify(next));
+      }
+      snapshots.delete(key);
+      window.dispatchEvent(new CustomEvent(CHANGE_EVENT, { detail: key }));
+    },
+    [key],
+  );
+
+  return [edits, setEdits];
+}
