@@ -14,11 +14,13 @@ import { forbidden, redirect } from 'next/navigation';
  *
  * `allowNonMembers` admits a real (non-anonymous) account that isn't a network
  * member — used by the promote/anon-upgrade onboarding. Anonymous still redirects.
+ *
+ * Returns the admitted user, since an async function cannot narrow its argument.
  */
 export async function assertWalledGardenAccess(
   user: CommonUser | null | undefined,
   { allowNonMembers = false }: { allowNonMembers?: boolean } = {},
-) {
+): Promise<CommonUser> {
   if (!user || user.isAnonymous) {
     const pathname = (await headers()).get('x-pathname');
 
@@ -32,4 +34,6 @@ export async function assertWalledGardenAccess(
   if (!allowNonMembers && !user.isNetworkMember) {
     forbidden();
   }
+
+  return user;
 }

@@ -1,4 +1,5 @@
-import { getRequiredUser } from '@/utils/getUser';
+import { getUser } from '@/utils/getUser';
+import { assertWalledGardenAccess } from '@/utils/walledGarden';
 import { isServerFeatureEnabled } from '@op/common';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
@@ -22,12 +23,10 @@ export async function generateMetadata({
 }
 
 const NewDecisionProcessPage = async () => {
-  const user = await getRequiredUser();
-
-  // `decision.createInstance` admits only the closed network.
-  if (!user.isNetworkMember) {
-    notFound();
-  }
+  // (no-header) hosts public decision pages too, so the closed-network gate
+  // sits on this page rather than in the layout. `decision.createInstance`
+  // admits only the closed network.
+  const user = await assertWalledGardenAccess(await getUser());
 
   const isEnabled = await isServerFeatureEnabled({
     key: 'new_process_admin_enabled',
