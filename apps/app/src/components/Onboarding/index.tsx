@@ -49,29 +49,6 @@ export type FormValues = z.infer<typeof PersonalDetailsFormValidator> &
 type OrgCreationFormValues = z.infer<typeof OrganizationDetailsFormValidator> &
   z.infer<typeof FundingInformationFormValidator>;
 
-const ProgressInPortal = (props: ProgressComponentProps) => (
-  <Portal id="top-slot">
-    <StepperProgressIndicator {...props} />
-  </Portal>
-);
-
-// Accepting the policies is the last step, so `onNext` submits the organization.
-const ToSStep = ({ onNext, onBack }: StepProps) => (
-  <ToSAcceptanceScreen onAccept={() => onNext({})} onGoBack={onBack} />
-);
-
-// Prefetch for the org-search step. Only on the org-search branch: the promote
-// flow skips it, and prefetching there fires a network-tier 403 for the new user.
-const PrefetchDomainOrganizations = () => {
-  void trpc.account.listMatchingDomainOrganizations.usePrefetchQuery();
-  return null;
-};
-
-const processOrgInputs = (data: OrgCreationFormValues) => ({
-  ...data,
-  website: data.website ?? '',
-});
-
 export const OnboardingFlow = ({
   isNetworkMember,
 }: {
@@ -347,3 +324,25 @@ export const OnboardingFlow = ({
     </>
   );
 };
+
+const ProgressInPortal = (props: ProgressComponentProps) => (
+  <Portal id="top-slot">
+    <StepperProgressIndicator {...props} />
+  </Portal>
+);
+
+const ToSStep = ({ onNext, onBack }: StepProps) => (
+  <ToSAcceptanceScreen onAccept={() => onNext({})} onGoBack={onBack} />
+);
+
+// Prefetch for the org-search step. Only on the org-search branch: the promote
+// flow skips it, and prefetching there fires a network-tier 403 for the new user.
+const PrefetchDomainOrganizations = () => {
+  void trpc.account.listMatchingDomainOrganizations.usePrefetchQuery();
+  return null;
+};
+
+const processOrgInputs = (data: OrgCreationFormValues) => ({
+  ...data,
+  website: data.website ?? '',
+});

@@ -20,7 +20,6 @@ import { ToSContent } from '@/components/ToSContent';
 
 import { OnboardingCenterLayout } from './OnboardingCenterLayout';
 
-// The ToS step collects no form values of its own.
 export const validator = z.object({});
 
 export type ToSAcceptanceScreenProps = {

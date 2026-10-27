@@ -25,6 +25,20 @@ test.describe('Onboarding - Organization Search (no domain match)', () => {
     supabaseAdmin = createSupabaseAdminClient();
   });
 
+  const createdAuthUserIds: string[] = [];
+  const createdProfileIds: string[] = [];
+
+  test.afterAll(async () => {
+    await Promise.all(
+      createdAuthUserIds.map((id) => supabaseAdmin.auth.admin.deleteUser(id)),
+    );
+    await Promise.all(
+      createdProfileIds.map((id) =>
+        db.delete(profiles).where(eq(profiles.id, id)),
+      ),
+    );
+  });
+
   test('user sees search screen and can skip to app', async ({ page }) => {
     const email = `e2e-org-search-skip-${randomUUID().slice(0, 6)}@oneproject.org`;
     await createUser({ supabaseAdmin, email });
@@ -234,6 +248,7 @@ test.describe('Onboarding - Organization Search (no domain match)', () => {
     const orgName = `E2ENewOrg${testId}`;
     const email = `e2e-org-search-add-${testId}@oneproject.org`;
     const authUser = await createUser({ supabaseAdmin, email });
+    createdAuthUserIds.push(authUser.id);
 
     await authenticateAsUser(page, {
       email,
@@ -301,7 +316,7 @@ test.describe('Onboarding - Organization Search (no domain match)', () => {
 
     // The organization from the details step was created with the user in it
     const [orgUserRecord] = await db
-      .select({ id: organizationUsers.id })
+      .select({ id: organizationUsers.id, profileId: profiles.id })
       .from(organizationUsers)
       .innerJoin(
         organizations,
@@ -316,6 +331,9 @@ test.describe('Onboarding - Organization Search (no domain match)', () => {
       );
 
     expect(orgUserRecord).toBeTruthy();
+    if (orgUserRecord) {
+      createdProfileIds.push(orgUserRecord.profileId);
+    }
 
     // Policy acceptance was recorded
     const [userRecord] = await db
