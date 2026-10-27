@@ -1,8 +1,11 @@
 import { PostHogClient } from '@op/analytics';
 import { areFeatureFlagsForcedOn } from '@op/analytics/client-utils';
 import { cache } from '@op/cache';
+import { logger } from '@op/logging';
 
 const TTL = 60 * 1000;
+
+type Flags = Record<string, string | boolean>;
 
 /**
  * Agrees with `useFeatureFlag` only for person or cohort targeting: the browser
@@ -26,7 +29,7 @@ export const isServerFeatureEnabled = async ({
   const flags = await cache({
     type: 'featureFlag',
     params: [distinctId],
-    fetch: () => PostHogClient().getAllFlags(distinctId),
+    fetch: () => readFlags(distinctId),
     options: {
       ttl: TTL,
       // The L1 copy of a Redis hit restarts the clock; Redis alone keeps the bound.
@@ -36,4 +39,14 @@ export const isServerFeatureEnabled = async ({
 
   // A variant string counts as on, as it does for `isFeatureEnabled`.
   return Boolean(flags[key]);
+};
+
+const readFlags = async (distinctId: string): Promise<Flags> => {
+  try {
+    return await PostHogClient().getAllFlags(distinctId);
+  } catch (error) {
+    // posthog-node swallows request errors; this is a missing API key or a bug.
+    logger.error('Feature flag lookup failed', { error });
+    return {};
+  }
 };

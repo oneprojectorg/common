@@ -2,12 +2,15 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { isServerFeatureEnabled } from './featureFlags';
 
-const { getAllFlags, areFeatureFlagsForcedOn, cache } = vi.hoisted(() => ({
-  getAllFlags:
-    vi.fn<(id: string) => Promise<Record<string, string | boolean>>>(),
-  areFeatureFlagsForcedOn: vi.fn<() => boolean>(),
-  cache: vi.fn<(typeof import('@op/cache'))['cache']>(),
-}));
+const { getAllFlags, areFeatureFlagsForcedOn, cache, error } = vi.hoisted(
+  () => ({
+    getAllFlags:
+      vi.fn<(id: string) => Promise<Record<string, string | boolean>>>(),
+    areFeatureFlagsForcedOn: vi.fn<() => boolean>(),
+    cache: vi.fn<(typeof import('@op/cache'))['cache']>(),
+    error: vi.fn(),
+  }),
+);
 
 vi.mock('@op/analytics', () => ({
   PostHogClient: () => ({ getAllFlags }),
@@ -16,6 +19,8 @@ vi.mock('@op/analytics', () => ({
 vi.mock('@op/analytics/client-utils', () => ({ areFeatureFlagsForcedOn }));
 
 vi.mock('@op/cache', () => ({ cache }));
+
+vi.mock('@op/logging', () => ({ logger: { error } }));
 
 const params = { key: 'new_process_admin_enabled', distinctId: 'auth-1' };
 
@@ -70,5 +75,16 @@ describe('isServerFeatureEnabled', () => {
     getAllFlags.mockResolvedValue({});
 
     await expect(isServerFeatureEnabled(params)).resolves.toBe(false);
+  });
+
+  it('is off and logs when the lookup throws', async () => {
+    const failure = new Error('no api key');
+    getAllFlags.mockRejectedValue(failure);
+
+    await expect(isServerFeatureEnabled(params)).resolves.toBe(false);
+    expect(error).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({ error: failure }),
+    );
   });
 });
