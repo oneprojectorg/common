@@ -39,9 +39,11 @@ const beta = proposal({
 const renderDialog = ({
   proposals,
   awardsAmounts = true,
+  canConfirm,
 }: {
   proposals: Proposal[];
   awardsAmounts?: boolean;
+  canConfirm?: boolean;
 }) => {
   const onConfirm = vi.fn();
   const Harness = ({ selected }: { selected: Proposal[] }) => {
@@ -58,6 +60,7 @@ const renderDialog = ({
         onConfirm={onConfirm}
         isSubmitting={false}
         triggerLabel="Open"
+        canConfirm={canConfirm}
       />
     );
   };
@@ -261,6 +264,17 @@ describe('ComposeNotificationsDialog awarded amounts', () => {
 
     expect(onConfirm).not.toHaveBeenCalled();
     expect(screen.getByText('$6,000 Awarded')).toBeTruthy();
+  });
+});
+
+describe('ComposeNotificationsDialog trigger', () => {
+  it('keeps the trigger disabled while the table says the awards cannot be confirmed', () => {
+    renderDialog({ proposals: [alpha], canConfirm: false });
+
+    expect(screen.getByRole('button', { name: 'Open' })).toHaveProperty(
+      'disabled',
+      true,
+    );
   });
 });
 
