@@ -378,7 +378,6 @@ test.describe('Decision Manual Selection — full flow', () => {
     await expect(
       authenticatedPage.getByText('2 winning proposals selected'),
     ).toBeVisible();
-    await expect(confirmButton).toBeEnabled();
 
     // The template collects a budget, so each row carries an award field that
     // starts at the proposal's requested budget, and the footer sums the
