@@ -16,35 +16,16 @@ interface LikeButtonProps extends Omit<
   'children'
 > {
   count?: number;
-  /** Fills the heart — the viewer has already liked. */
   isLiked?: boolean;
-  /**
-   * Translated accessible name (e.g. "3 likes"). Only the count is drawn, so
-   * this is what a screen reader announces; it should contain the count so the
-   * name still matches the visible text. Consumers pass an i18n-translated
-   * string since this package is locale-agnostic.
-   */
+  /** Translated accessible name, including the count (e.g. "3 likes"). */
   label?: string;
-  /**
-   * Already-translated hover content naming recent likers. Composed by the
-   * caller — naming and joining people is locale-specific and this package has
-   * no translations. Omit it and no tooltip renders.
-   */
+  /** Translated hover content naming recent likers. Omit for no tooltip. */
   tooltip?: React.ReactNode;
-  /**
-   * When false the button renders as a read-only count: no press affordances,
-   * but still focusable so the tooltip stays reachable by keyboard.
-   */
+  /** False renders a read-only count that stays focusable for the tooltip. */
   canLike?: boolean;
 }
 
-/**
- * The like half of a post's footer — a heart and a count, sized to sit beside
- * `CommentButton`. Pass `tooltip` to name recent likers on hover.
- */
-// What's left is five prop defaults, the read-only fork, the filled-heart
-// styling, and the tooltip bail — flat, and sense has no headless runner to
-// score coverage against (see packages/sense/README.md).
+/** The like half of a post's footer — a heart and a count beside `CommentButton`. */
 // fallow-ignore-next-line complexity
 function LikeButton({
   count = 0,
@@ -62,13 +43,9 @@ function LikeButton({
       type="button"
       data-slot="like-button"
       dir={dir}
-      // Only the count is drawn, so the number alone would be the whole
-      // accessible name. The label carries it plus the noun.
       aria-label={label ?? `${count} likes`}
       aria-pressed={canLike ? isLiked : undefined}
-      // Read-only buttons stay enabled (aria-disabled, no press affordances) so
-      // they keep tab order and the liker tooltip stays reachable — native
-      // disabled would suppress both.
+      // Not native disabled: keeps tab order so the tooltip stays reachable.
       aria-disabled={canLike ? undefined : true}
       onClick={canLike ? onClick : undefined}
       className={cn(
@@ -84,19 +61,14 @@ function LikeButton({
           isLiked && 'fill-current text-primary',
         )}
       />
-      {/* The count changes without a navigation when anyone likes the post. */}
       <span aria-live="polite">
         <AnimatedCount value={count ?? 0} />
       </span>
     </button>
   );
 
-  if (!tooltip) {
-    return button;
-  }
-
   return (
-    <Tooltip>
+    <Tooltip disabled={!tooltip}>
       <TooltipTrigger render={button} />
       <TooltipContent>{tooltip}</TooltipContent>
     </Tooltip>

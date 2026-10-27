@@ -73,6 +73,24 @@ export const Interactive: Story = {
   },
 };
 
+/** The first like: the count goes 0 → 1 and a tooltip appears with it. */
+export const FirstLike: Story = {
+  render: function FirstLikeLikeButton() {
+    const [liked, setLiked] = React.useState(false);
+    const count = liked ? 1 : 0;
+
+    return (
+      <LikeButton
+        count={count}
+        label={count === 1 ? '1 like' : '0 likes'}
+        isLiked={liked}
+        tooltip={liked ? 'You' : undefined}
+        onClick={() => setLiked((current) => !current)}
+      />
+    );
+  },
+};
+
 /**
  * The count also moves when someone else likes the post: the viewer has not
  * pressed anything, so the slide and the live announcement are the only cues.
