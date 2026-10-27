@@ -1,0 +1,2 @@
+ALTER TABLE "decision_ballot_drafts" ADD COLUMN "chat_line_id" uuid;--> statement-breakpoint
+ALTER TABLE "decision_ballot_drafts" ADD CONSTRAINT "decision_ballot_drafts_chat_line_id_decision_chat_lines_id_fkey" FOREIGN KEY ("chat_line_id") REFERENCES "decision_chat_lines"("id") ON DELETE SET NULL ON UPDATE CASCADE;
