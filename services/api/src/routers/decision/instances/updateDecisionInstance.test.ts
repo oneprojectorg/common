@@ -14,7 +14,7 @@ import {
   processPhases,
   profiles,
 } from '@op/db/schema';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { appRouter } from '../..';
 import {
@@ -72,6 +72,24 @@ async function loadBlobPhases(instanceId: string) {
   });
   return (instance?.instanceData as DecisionInstanceData).phases;
 }
+
+// Counts the backends queued behind `pid`, directly or behind another waiter.
+async function countBackendsWaitingOn(pid: number) {
+  const [row] = await db.execute(sql`
+    with recursive waiting(pid) as (
+      select pid from pg_stat_activity
+      where ${pid}::int = any(pg_blocking_pids(pid))
+      union
+      select activity.pid from pg_stat_activity activity
+      join waiting on waiting.pid = any(pg_blocking_pids(activity.pid))
+    )
+    select count(*)::int as count from waiting
+  `);
+  return Number(row?.count);
+}
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
 
 async function loadPhaseState(instanceId: string) {
   const [rows, instance] = await Promise.all([
@@ -784,11 +802,12 @@ describe.concurrent('updateDecisionInstance', () => {
       where: { id: instanceId },
     });
     const instanceData = updated?.instanceData as DecisionInstanceData;
-    expect(instanceData.phases.map((p) => [p.phaseId, p.name])).toEqual([
-      ['final', 'Decide'],
-      ['initial', 'Initial Phase'],
-      ['extra', extraName],
-    ]);
+    expect(instanceData.phases).toEqual(
+      synced.map(({ data, name }) => ({
+        ...(isRecord(data) ? data : {}),
+        name,
+      })),
+    );
 
     const extraRow = synced[2];
     if (!extraRow) {
@@ -1088,8 +1107,8 @@ describe.concurrent('updateDecisionInstance', () => {
     await testData.removePhaseRows(instanceId);
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
-    let markLocked = () => {};
-    const locked = new Promise<void>((resolve) => {
+    let markLocked = (_pid: number) => {};
+    const locked = new Promise<number>((resolve) => {
       markLocked = resolve;
     });
     let releaseLock = () => {};
@@ -1097,15 +1116,16 @@ describe.concurrent('updateDecisionInstance', () => {
       releaseLock = resolve;
     });
     const holder = db.transaction(async (tx) => {
+      const [backend] = await tx.execute(sql`select pg_backend_pid() as pid`);
       await tx
         .select({ id: processInstances.id })
         .from(processInstances)
         .where(eq(processInstances.id, instanceId))
         .for('update');
-      markLocked();
+      markLocked(Number(backend?.pid));
       await released;
     });
-    await locked;
+    const holderPid = await locked;
 
     const phases = [{ phaseId: 'initial' }, { phaseId: 'final' }];
     // Unlocked, both saves would read no rows and each insert a full set.
@@ -1113,9 +1133,15 @@ describe.concurrent('updateDecisionInstance', () => {
       caller.decision.updateDecisionInstance({ instanceId, phases }),
       caller.decision.updateDecisionInstance({ instanceId, phases }),
     ]);
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    releaseLock();
-    await holder;
+    try {
+      await vi.waitFor(
+        async () => expect(await countBackendsWaitingOn(holderPid)).toBe(2),
+        { timeout: 10_000, interval: 25 },
+      );
+    } finally {
+      releaseLock();
+      await holder;
+    }
 
     expect((await saves).map((result) => result.status)).toEqual([
       'fulfilled',
