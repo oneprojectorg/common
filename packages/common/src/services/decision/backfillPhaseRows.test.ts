@@ -310,13 +310,11 @@ describe.concurrent('backfill-phase-rows migration', () => {
       throw new Error('Failed to create phase profile');
     }
     testData.trackProfileForCleanup(profile.id);
-    await db
-      .insert(processPhases)
-      .values({
-        processInstanceId: instanceId,
-        sortOrder: 0,
-        profileId: profile.id,
-      });
+    await db.insert(processPhases).values({
+      processInstanceId: instanceId,
+      sortOrder: 0,
+      profileId: profile.id,
+    });
 
     await runBackfill(testData, instanceId);
 
