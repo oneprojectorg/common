@@ -1,4 +1,4 @@
-import type { PhaseData } from '@op/common';
+import { MAX_PHASE_NAME_LENGTH, type PhaseData } from '@op/common';
 import { db, eq } from '@op/db/client';
 import { processPhases } from '@op/db/schema';
 import { randomUUID } from 'node:crypto';
@@ -317,6 +317,27 @@ describe.concurrent('updatePhase', () => {
     }
 
     await expectPhase(phase, UNCHANGED);
+  });
+
+  it('measures the name in characters, not UTF-16 units', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { phase, adminCaller } = await setupPhase(task, onTestFinished);
+    const longest = '😀'.repeat(MAX_PHASE_NAME_LENGTH);
+
+    const result = await adminCaller.decision.updatePhase({
+      phaseId: phase.id,
+      name: longest,
+    });
+    expect(result.name).toBe(longest);
+
+    await expect(
+      adminCaller.decision.updatePhase({
+        phaseId: phase.id,
+        name: `${longest}😀`,
+      }),
+    ).rejects.toMatchObject({ code: 'BAD_REQUEST' });
   });
 
   it('checks new settings against the stored settings schema', async ({
