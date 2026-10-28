@@ -3,9 +3,8 @@ import { ProposalStatus, proposals } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 
 import { ConflictError, ValidationError } from '../../utils';
-import { assertProfileAccess } from '../assert';
 import { getProposalAccessContext } from './getProposalAccessContext';
-import { decisionAdminPermissions } from './permissions';
+import { assertDecisionAdmin } from './phaseHelpers';
 import type { UnrejectProposalInput } from './schemas/rejectProposal';
 
 export type UnrejectProposalResult = {
@@ -30,10 +29,9 @@ export async function unrejectProposal({
 }: UnrejectProposalInput & { user: User }): Promise<UnrejectProposalResult> {
   const context = await getProposalAccessContext(proposalId);
 
-  await assertProfileAccess({
+  await assertDecisionAdmin({
     user,
-    profileId: context.instance.profileId,
-    permissions: decisionAdminPermissions,
+    decisionProfileId: context.instance.profileId,
   });
 
   if (context.status !== ProposalStatus.REJECTED) {

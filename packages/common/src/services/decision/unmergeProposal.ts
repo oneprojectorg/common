@@ -3,9 +3,8 @@ import { proposalRelationships } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 
 import { ConflictError, NotFoundError } from '../../utils';
-import { assertProfileAccess } from '../assert';
 import { getProposalAccessContext } from './getProposalAccessContext';
-import { decisionAdminPermissions } from './permissions';
+import { assertDecisionAdmin } from './phaseHelpers';
 import { findLiveMergedEdge } from './proposalSupersession';
 import type { UnmergeProposalInput } from './schemas/proposalRelationships';
 
@@ -29,10 +28,9 @@ export async function unmergeProposal({
   // `Promise.all` rejects with the assert's error the moment it throws, so an
   // unauthorized caller learns nothing from the parallel lookup.
   const [, relationship] = await Promise.all([
-    assertProfileAccess({
+    assertDecisionAdmin({
       user,
-      profileId: source.instance.profileId,
-      permissions: decisionAdminPermissions,
+      decisionProfileId: source.instance.profileId,
     }),
     findLiveMergedEdge({
       processInstanceId: source.processInstanceId,
