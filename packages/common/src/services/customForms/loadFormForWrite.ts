@@ -21,6 +21,7 @@ export const loadFormForWrite = async ({
     .select({
       formId: customForms.id,
       formProfileId: customForms.profileId,
+      instanceId: processInstances.id,
       instanceProfileId: processInstances.profileId,
       ownerProfileId: processInstances.ownerProfileId,
       instanceData: processInstances.instanceData,
@@ -37,13 +38,14 @@ export const loadFormForWrite = async ({
     throw new NotFoundError('Custom form', id);
   }
 
-  if (!row.instanceProfileId) {
+  if (!row.instanceId || !row.instanceProfileId) {
     throw new NotFoundError('Decision process', row.formProfileId);
   }
 
   const process = await assertCustomFormAdminForInstance({
     user,
     instance: {
+      id: row.instanceId,
       profileId: row.instanceProfileId,
       ownerProfileId: row.ownerProfileId,
       instanceData: row.instanceData,

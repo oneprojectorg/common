@@ -9,7 +9,7 @@ import { getProfileIdsWithDecisionPermission } from './getProfileIdsWithDecision
 import { isDecisionPublic } from './isDecisionPublic';
 import { decisionPermission } from './permissions';
 import { assertDecisionAdmin } from './phaseHelpers';
-import { getInstancePhases } from './schemas/instanceData';
+import { readInstancePhases } from './readInstancePhases';
 import type { VotingProgress } from './schemas/votingProgress';
 
 // The permissions submitVote admits.
@@ -74,7 +74,7 @@ export async function getVotingProgress({
     daysLeft: instance.currentStateId
       ? computeDaysLeft({
           phaseId: instance.currentStateId,
-          phases: getInstancePhases(instance.instanceData),
+          phases: await readInstancePhases({ instance }),
         })
       : null,
   };

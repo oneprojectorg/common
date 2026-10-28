@@ -33,7 +33,11 @@ vi.mock('@op/db/client', () => ({
 }));
 
 vi.mock('@op/db/schema', () => ({
-  processInstances: { profileId: 'profile_id', instanceData: 'instance_data' },
+  processInstances: {
+    id: 'id',
+    profileId: 'profile_id',
+    instanceData: 'instance_data',
+  },
 }));
 
 const { assertPhaseAvailable, lockProfileForms, writeWithPhaseLock } =
