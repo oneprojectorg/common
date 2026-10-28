@@ -57,13 +57,14 @@ test.describe('Create Process Instance', () => {
     await overviewSaved;
 
     const budgetSaved = waitForAutoSave(authenticatedPage);
-    await authenticatedPage.getByLabel('Total budget').fill('25000');
+    await authenticatedPage
+      .getByLabel('Total budget', { exact: true })
+      .fill('25000');
     await budgetSaved;
     await authenticatedPage.reload();
-    await expect(authenticatedPage.getByLabel('Total budget')).toHaveValue(
-      '25000',
-      { timeout: 18_000 },
-    );
+    await expect(
+      authenticatedPage.getByLabel('Total budget', { exact: true }),
+    ).toHaveValue('25000', { timeout: 18_000 });
 
     const hideBudget = authenticatedPage.getByRole('switch', {
       name: 'Hide the total budget from members',
