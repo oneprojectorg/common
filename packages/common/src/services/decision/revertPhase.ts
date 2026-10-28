@@ -28,7 +28,6 @@ import {
 } from '../../utils';
 import { deletePendingReviewAssignments } from './deletePendingReviewAssignments';
 import { lockProcessInstance } from './lockProcessInstance';
-import { ensurePhaseRows } from './phaseRows';
 import type {
   DecisionInstanceData,
   PhaseInstanceData,
@@ -205,13 +204,12 @@ async function lockCurrentPhase({
     );
   }
 
-  const phases =
-    (lockedInstance.instanceData as DecisionInstanceData | null)?.phases ?? [];
-
-  // Rows are the source of truth; a decision that has none converts here.
-  await ensurePhaseRows({ db: tx, processInstanceId: instanceId, phases });
-
-  return { revertedPhaseId, phases };
+  return {
+    revertedPhaseId,
+    phases:
+      (lockedInstance.instanceData as DecisionInstanceData | null)?.phases ??
+      [],
+  };
 }
 
 /**

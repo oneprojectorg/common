@@ -49,6 +49,8 @@ async function getFirstPhaseId(instanceId: string) {
 async function loadPhaseRows(instanceId: string) {
   return db
     .select({
+      id: processPhases.id,
+      profileId: processPhases.profileId,
       sortOrder: processPhases.sortOrder,
       data: processPhases.data,
       name: profiles.name,
@@ -687,7 +689,7 @@ describe.concurrent('updateDecisionInstance', () => {
     expect(firstPhase?.settings?.maxProposalsPerMember).toBe(10);
   });
 
-  it('mints the phase rows of a decision that has none on its first save', async ({
+  it('inserts every phase row on a save of a decision that has none', async ({
     task,
     onTestFinished,
   }) => {
@@ -702,17 +704,16 @@ describe.concurrent('updateDecisionInstance', () => {
 
     await caller.decision.updateDecisionInstance({
       instanceId,
-      name: `Converted ${task.id}`,
+      phases: [{ phaseId: 'initial' }, { phaseId: 'final', name: 'Decide' }],
     });
 
-    const rows = await loadPhaseRows(instanceId);
-    expect(rows.map((row) => [row.name, row.sortOrder])).toEqual([
-      ['Initial Phase', 0],
-      ['Final Phase', 1],
+    expect(await loadPhaseRows(instanceId)).toMatchObject([
+      { name: 'Initial Phase', sortOrder: 0, data: { phaseId: 'initial' } },
+      { name: 'Decide', sortOrder: 1, data: { phaseId: 'final' } },
     ]);
   });
 
-  it('writes phase edits to the rows and mirrors them back into the instance data', async ({
+  it('syncs the phase rows with the phases a save sends', async ({
     task,
     onTestFinished,
   }) => {
@@ -724,19 +725,31 @@ describe.concurrent('updateDecisionInstance', () => {
     const instanceId = setup.instance.instance.id;
     const caller = await createAuthenticatedCaller(setup.userEmail);
     const extraName = `Extra ${task.id}`;
+    const [initialRow, finalRow] = await loadPhaseRows(instanceId);
 
     await caller.decision.updateDecisionInstance({
       instanceId,
       phases: [
         { phaseId: 'final', name: 'Decide' },
-        { phaseId: 'initial' },
+        { phaseId: 'initial', description: 'Updated' },
         { phaseId: 'extra', name: extraName, description: 'One more' },
       ],
     });
 
-    expect(await loadPhaseRows(instanceId)).toMatchObject([
-      { name: 'Decide', sortOrder: 0, data: { phaseId: 'final' } },
-      { name: 'Initial Phase', sortOrder: 1, data: { phaseId: 'initial' } },
+    const synced = await loadPhaseRows(instanceId);
+    expect(synced).toMatchObject([
+      {
+        id: finalRow?.id,
+        name: 'Decide',
+        sortOrder: 0,
+        data: { phaseId: 'final' },
+      },
+      {
+        id: initialRow?.id,
+        name: 'Initial Phase',
+        sortOrder: 1,
+        data: { phaseId: 'initial', description: 'Updated' },
+      },
       {
         name: extraName,
         sortOrder: 2,
@@ -747,12 +760,17 @@ describe.concurrent('updateDecisionInstance', () => {
     const updated = await db.query.processInstances.findFirst({
       where: { id: instanceId },
     });
-    const instanceData = updated!.instanceData as DecisionInstanceData;
+    const instanceData = updated?.instanceData as DecisionInstanceData;
     expect(instanceData.phases.map((p) => [p.phaseId, p.name])).toEqual([
       ['final', 'Decide'],
       ['initial', 'Initial Phase'],
       ['extra', extraName],
     ]);
+
+    const extraRow = synced[2];
+    if (!extraRow) {
+      throw new Error('Expected a row for the added phase');
+    }
 
     await caller.decision.updateDecisionInstance({
       instanceId,
@@ -763,11 +781,81 @@ describe.concurrent('updateDecisionInstance', () => {
       'Decide',
       'Initial Phase',
     ]);
-    const leftover = await db.query.profiles.findMany({
-      where: { name: extraName },
+    const droppedProfile = await db.query.profiles.findFirst({
+      where: { id: extraRow.profileId },
       columns: { id: true },
     });
-    expect(leftover).toHaveLength(0);
+    expect(droppedProfile).toBeUndefined();
+
+    await caller.decision.updateDecisionInstance({
+      instanceId,
+      phases: [
+        { phaseId: 'final' },
+        { phaseId: 'initial' },
+        { phaseId: 'extra', name: extraName },
+      ],
+    });
+
+    const readded = (await loadPhaseRows(instanceId))[2];
+    expect(readded).toMatchObject({
+      name: extraName,
+      sortOrder: 2,
+      data: { phaseId: 'extra' },
+    });
+    expect(readded?.id).not.toBe(extraRow.id);
+    expect(readded?.profileId).not.toBe(extraRow.profileId);
+  });
+
+  it('serializes concurrent saves on the instance lock', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instanceId = setup.instance.instance.id;
+    await testData.removePhaseRows(instanceId);
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    let markLocked = () => {};
+    const locked = new Promise<void>((resolve) => {
+      markLocked = resolve;
+    });
+    let releaseLock = () => {};
+    const released = new Promise<void>((resolve) => {
+      releaseLock = resolve;
+    });
+    const holder = db.transaction(async (tx) => {
+      await tx
+        .select({ id: processInstances.id })
+        .from(processInstances)
+        .where(eq(processInstances.id, instanceId))
+        .for('update');
+      markLocked();
+      await released;
+    });
+    await locked;
+
+    const phases = [{ phaseId: 'initial' }, { phaseId: 'final' }];
+    // Unlocked, both saves would read no rows and each insert a full set.
+    const saves = Promise.allSettled([
+      caller.decision.updateDecisionInstance({ instanceId, phases }),
+      caller.decision.updateDecisionInstance({ instanceId, phases }),
+    ]);
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    releaseLock();
+    await holder;
+
+    expect((await saves).map((result) => result.status)).toEqual([
+      'fulfilled',
+      'fulfilled',
+    ]);
+    expect(await loadPhaseRows(instanceId)).toMatchObject([
+      { sortOrder: 0, data: { phaseId: 'initial' } },
+      { sortOrder: 1, data: { phaseId: 'final' } },
+    ]);
   });
 
   it('should update multiple fields at once', async ({

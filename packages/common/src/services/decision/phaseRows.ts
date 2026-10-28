@@ -85,29 +85,6 @@ const assertPhaseCountFits = (count: number): void => {
 };
 
 /**
- * Converts a decision on its first write: a decision with no rows gets them
- * from its `instance_data`, once. Returns the phases as the rows hold them.
- */
-export const ensurePhaseRows = async ({
-  db,
-  processInstanceId,
-  phases,
-}: {
-  db: DbClient;
-  processInstanceId: string;
-  phases: PhaseInstanceData[];
-}): Promise<PhaseInstanceData[]> => {
-  const existing = await loadPhaseRows({ db, processInstanceId });
-  if (existing.length > 0) {
-    return projectPhaseRows(existing);
-  }
-
-  await insertPhaseRows({ db, processInstanceId, phases });
-
-  return projectPhaseRows(await loadPhaseRows({ db, processInstanceId }));
-};
-
-/**
  * Makes the rows match `phases`, in that order. A phase the list leaves out
  * is deleted with its profile.
  */
