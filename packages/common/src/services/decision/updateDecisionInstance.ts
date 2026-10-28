@@ -182,16 +182,15 @@ export const updateDecisionInstance = async ({
       phaseEndDateChanges.push(...instanceDataUpdate.phaseEndDateChanges);
 
       if (rows) {
-        await reconcilePhaseRows({
+        const reconciled = await reconcilePhaseRows({
           db: tx,
           processInstanceId: instanceId,
+          rows,
           phases: instanceDataUpdate.instanceData.phases,
         });
 
         // The blob mirrors the rows for the readers still on it.
-        instanceDataUpdate.instanceData.phases = projectPhaseRows(
-          await loadPhaseRows({ db: tx, processInstanceId: instanceId }),
-        );
+        instanceDataUpdate.instanceData.phases = projectPhaseRows(reconciled);
       }
 
       // After the merge: a budget on an incoming phase needs a priced field.
