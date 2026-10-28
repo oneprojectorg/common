@@ -24,7 +24,7 @@ agent-browser --headed open >/dev/null
 
 cat > "$S/batch-$LABEL.json" <<JSON
 [
-  ["set", "viewport", "1440", "900"],
+  ["set", "viewport", "1440", "760"],
   ["cookies", "set", "--curl", "$S/cookies-$LABEL.json", "--domain", "localhost"],
   ["open", "http://localhost:3100/en/"],
   ["wait", "--text", "Welcome back"],
