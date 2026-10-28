@@ -6,7 +6,7 @@ import {
   proposalCategories,
   proposals,
 } from '@op/db/schema';
-import { type NormalizedRole, checkPermission, permission } from 'access-zones';
+import { checkPermission, permission } from 'access-zones';
 
 import { UnauthorizedError } from '../../utils';
 import {
@@ -48,7 +48,6 @@ export interface ProposalListScope {
   instance: InstanceScopeRow;
   currentProfileId: string | undefined;
   canManageProposals: boolean;
-  profileRoles: NormalizedRole[];
   /**
    * True when the resolved scope can't match any proposal (unreached phase or
    * an empty category). Callers should short-circuit to an empty result.
@@ -281,12 +280,9 @@ export const resolveProposalListScope = async ({
   // Run access checks in parallel with the phase-IDs resolution. Both depend
   // only on the instance row (already fetched), so there's no ordering
   // dependency — the auth check still throws on failure, just slightly later.
-  const accessPromise: Promise<{
-    profileRoles: NormalizedRole[];
-    canManageProposals: boolean;
-  }> = (async () => {
+  const accessPromise: Promise<{ canManageProposals: boolean }> = (async () => {
     if (skipAccessCheck) {
-      return { profileRoles: [], canManageProposals: false };
+      return { canManageProposals: false };
     }
     const profileRoles = await assertInstanceProfileAccess({
       user,
@@ -301,7 +297,6 @@ export const resolveProposalListScope = async ({
       ],
     });
     return {
-      profileRoles,
       canManageProposals: checkPermission(
         decisionAdminPermissions,
         profileRoles,
@@ -309,7 +304,7 @@ export const resolveProposalListScope = async ({
     };
   })();
 
-  const [phaseScope, { profileRoles, canManageProposals }] = await Promise.all([
+  const [phaseScope, { canManageProposals }] = await Promise.all([
     phaseScopePromise,
     accessPromise,
   ]);
@@ -463,7 +458,6 @@ export const resolveProposalListScope = async ({
     instance,
     currentProfileId,
     canManageProposals,
-    profileRoles,
     isEmpty,
     buildWhereClause,
     buildIsOutsideCurrentPhase,
