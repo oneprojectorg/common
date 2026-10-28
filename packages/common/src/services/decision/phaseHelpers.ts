@@ -18,6 +18,8 @@ import {
   type PhaseSettingsSchema,
   assertSettingsMatchSchema,
 } from './schemas/instanceData';
+import { MAX_PHASE_NAME_LENGTH, isPhaseNameTooLong } from './schemas/phaseName';
+import { MAX_PHASES_PER_DECISION } from './utils/phaseOrder';
 
 // phaseId and name live on the phase's profile.
 export type PhaseData = Omit<PhaseInstanceData, 'phaseId' | 'name'>;
@@ -26,10 +28,9 @@ export type PhaseData = Omit<PhaseInstanceData, 'phaseId' | 'name'>;
 // instance-scoped id; a row minted from it keeps that id so the two join.
 export type PhaseRowData = PhaseData & { phaseId?: string };
 
-export { MAX_PHASES_PER_DECISION } from './utils/phaseOrder';
+export { MAX_PHASES_PER_DECISION, MAX_PHASE_NAME_LENGTH };
 
-// The profile's name column.
-export const MAX_PHASE_NAME_LENGTH = 256;
+type InstanceDataPhase = Pick<PhaseInstanceData, 'phaseId' | 'name'>;
 
 const SLUG_ATTEMPTS = 3;
 
@@ -51,12 +52,10 @@ export const insertPhase = async ({
   // Only tests pass this, to force slug clashes.
   generateSlug?: () => string;
 }): Promise<{ phase: ProcessPhase; profile: Profile }> => {
-  // Counts code points: `varchar(256)` does, `String.length` counts UTF-16 units.
-  const chars = [...name];
-  if (chars.length > MAX_PHASE_NAME_LENGTH) {
+  if (isPhaseNameTooLong(name)) {
     throw new ValidationError(
       `A phase name can have at most ${MAX_PHASE_NAME_LENGTH} characters`,
-      { name: `Shorten "${chars.slice(0, 40).join('')}…"` },
+      { name: `Shorten "${previewPhaseName(name)}…"` },
     );
   }
 
@@ -77,6 +76,34 @@ export const insertPhase = async ({
   }
 
   return { phase, profile };
+};
+
+export const getPhaseProfileName = ({
+  phaseId,
+  name,
+}: InstanceDataPhase): string => name?.trim() || phaseId;
+
+// Instance data can predate the phase limits, so a copy of it is checked
+// before anything is written.
+export const assertPhasesCanBeMinted = (
+  phases: readonly InstanceDataPhase[],
+): void => {
+  if (phases.length > MAX_PHASES_PER_DECISION) {
+    throw new ValidationError(
+      `The source decision has ${phases.length} phases; the limit is ${MAX_PHASES_PER_DECISION}`,
+      { phases: `Remove ${phases.length - MAX_PHASES_PER_DECISION}` },
+    );
+  }
+
+  for (const phase of phases) {
+    const name = getPhaseProfileName(phase);
+    if (isPhaseNameTooLong(name)) {
+      throw new ValidationError(
+        `Phase "${previewPhaseName(name)}…" has a name longer than ${MAX_PHASE_NAME_LENGTH} characters`,
+        { name: `Shorten "${previewPhaseName(name)}…"` },
+      );
+    }
+  }
 };
 
 export const assertPhaseSchemasCompile = ({
@@ -209,6 +236,8 @@ const insertPhaseProfile = async ({
 
   throw new CommonError('Failed to create phase profile');
 };
+
+const previewPhaseName = (name: string) => [...name].slice(0, 40).join('');
 
 const generatePhaseSlug = () => randomUUID().slice(0, 8);
 

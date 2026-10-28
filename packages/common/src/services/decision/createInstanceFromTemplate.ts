@@ -10,11 +10,15 @@ import {
 import type { User } from '@op/supabase/lib';
 import { randomUUID } from 'crypto';
 
-import { CommonError, UnauthorizedError, ValidationError } from '../../utils';
+import { CommonError, UnauthorizedError } from '../../utils';
 import { assertUserByAuthId } from '../assert';
 import { createDefaultDecisionRoles } from './decisionRoles';
 import { getTemplate } from './getTemplate';
-import { MAX_PHASES_PER_DECISION, insertPhase } from './phaseHelpers';
+import {
+  assertPhasesCanBeMinted,
+  getPhaseProfileName,
+  insertPhase,
+} from './phaseHelpers';
 import type { DecisionInstanceData } from './schemas/instanceData';
 import { createInstanceDataFromTemplate } from './schemas/instanceData';
 
@@ -43,6 +47,8 @@ export const createDecisionInstance = async ({
   creatorEmail,
   status = ProcessStatus.DRAFT,
 }: CreateDecisionInstanceOptions) => {
+  assertPhasesCanBeMinted(instanceData.phases);
+
   const instance = await db.transaction(async (tx) => {
     // Create a DECISION profile for the instance
     const slug = `decision-${randomUUID()}`;
@@ -80,21 +86,12 @@ export const createDecisionInstance = async ({
       throw new CommonError('Failed to create decision process instance');
     }
 
-    if (instanceData.phases.length > MAX_PHASES_PER_DECISION) {
-      throw new ValidationError(
-        `A decision can have at most ${MAX_PHASES_PER_DECISION} phases`,
-        {
-          phases: `Remove ${instanceData.phases.length - MAX_PHASES_PER_DECISION}`,
-        },
-      );
-    }
-
     for (const [sortOrder, phase] of instanceData.phases.entries()) {
-      const { name: phaseName, ...data } = phase;
+      const { name: _name, ...data } = phase;
       await insertPhase({
         tx,
         processInstanceId: newInstance.id,
-        name: phaseName?.trim() || phase.phaseId,
+        name: getPhaseProfileName(phase),
         sortOrder,
         data,
       });
