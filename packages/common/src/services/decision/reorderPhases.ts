@@ -5,6 +5,7 @@ import type { User } from '@op/supabase/lib';
 import { NotFoundError, ValidationError } from '../../utils';
 import { lockProcessInstanceOrThrow } from './lockProcessInstance';
 import { assertDecisionAdmin } from './phaseHelpers';
+import { writePhaseRowsToInstanceData } from './phaseRows';
 
 export interface PhasePlacement {
   phaseId: string;
@@ -51,7 +52,10 @@ export const reorderPhases = async ({
   }
 
   return db.transaction(async (tx) => {
-    await lockProcessInstanceOrThrow({ db: tx, instanceId: processInstanceId });
+    const locked = await lockProcessInstanceOrThrow({
+      db: tx,
+      instanceId: processInstanceId,
+    });
 
     const stored = await tx
       .select({ id: processPhases.id })
@@ -83,6 +87,12 @@ export const reorderPhases = async ({
         })
         .where(eq(processPhases.id, phaseId));
     }
+
+    await writePhaseRowsToInstanceData({
+      db: tx,
+      processInstanceId,
+      instanceData: locked.instanceData,
+    });
 
     return tx
       .select({

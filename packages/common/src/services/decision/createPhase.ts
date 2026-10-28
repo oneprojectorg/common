@@ -12,7 +12,7 @@ import {
   assertPhaseSettings,
   insertPhase,
 } from './phaseHelpers';
-import { MAX_PHASES_PER_DECISION } from './utils/phaseOrder';
+import { writePhaseRowsToInstanceData } from './phaseRows';
 
 export const createPhase = async ({
   user,
@@ -43,7 +43,10 @@ export const createPhase = async ({
   assertPhaseSettings({ data: phaseData, phaseLabel: name });
 
   return db.transaction(async (tx) => {
-    await lockProcessInstanceOrThrow({ db: tx, instanceId: processInstanceId });
+    const locked = await lockProcessInstanceOrThrow({
+      db: tx,
+      instanceId: processInstanceId,
+    });
 
     const [existing] = await tx
       .select({ value: count() })
@@ -52,12 +55,20 @@ export const createPhase = async ({
 
     assertPhaseCountFits((existing?.value ?? 0) + 1);
 
-    return insertPhase({
+    const created = await insertPhase({
       tx,
       processInstanceId,
       name,
       sortOrder,
       data: phaseData,
     });
+
+    await writePhaseRowsToInstanceData({
+      db: tx,
+      processInstanceId,
+      instanceData: locked.instanceData,
+    });
+
+    return created;
   });
 };
