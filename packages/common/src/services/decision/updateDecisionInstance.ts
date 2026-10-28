@@ -25,12 +25,13 @@ import {
   hasInstanceDataUpdate,
 } from './getUpdatedInstanceData';
 import { lockProcessInstanceOrThrow } from './lockProcessInstance';
+import { getPhaseProfileName } from './phaseHelpers';
+import { isPhasesFromRowsEnabled } from './readInstancePhases';
 import {
-  getPhaseProfileName,
-  listPhases,
-  reconcilePhases,
-} from './phaseHelpers';
-import { mergePhasesWithInstanceData } from './phaseMirror';
+  getStoredPhases,
+  loadPhaseRows,
+  reconcilePhaseRows,
+} from './phaseRows';
 import { ensureProposalTaxonomyTerms } from './proposalTaxonomy';
 import { schemaValidator } from './schemaValidator';
 import {
@@ -158,21 +159,28 @@ export const updateDecisionInstance = async ({
     status === ProcessStatus.PUBLISHED &&
     existingInstance.status === ProcessStatus.DRAFT;
 
+  // Resolved before the lock. A save with phases rebuilds the blob from the
+  // rows it reconciles, so its transitions read the blob.
+  const transitionsFromRows =
+    isBeingPublished && !hasPhaseUpdates
+      ? await isPhasesFromRowsEnabled()
+      : false;
+
   // Use a transaction for updating the instance and transitions together
   await db.transaction(async (tx) => {
     const locked = await lockProcessInstanceOrThrow({ db: tx, instanceId });
     const lockedInstanceData = locked.instanceData as DecisionInstanceData;
 
-    const existingPhases = hasPhaseUpdates
-      ? await listPhases({ db: tx, processInstanceId: instanceId })
+    const rows = hasPhaseUpdates
+      ? await loadPhaseRows({ db: tx, processInstanceId: instanceId })
       : undefined;
 
     const instanceDataUpdate = getUpdatedInstanceData({
-      existing: existingPhases
+      existing: rows
         ? {
             ...lockedInstanceData,
-            phases: mergePhasesWithInstanceData({
-              phases: existingPhases,
+            phases: getStoredPhases({
+              rows,
               blobPhases: getInstancePhases(locked.instanceData),
             }),
           }
@@ -183,12 +191,12 @@ export const updateDecisionInstance = async ({
     if (instanceDataUpdate) {
       phaseEndDateChanges.push(...instanceDataUpdate.phaseEndDateChanges);
 
-      if (existingPhases) {
+      if (rows) {
         const { phases: merged } = instanceDataUpdate.instanceData;
-        await reconcilePhases({
+        await reconcilePhaseRows({
           db: tx,
           processInstanceId: instanceId,
-          existing: existingPhases,
+          rows,
           phases: merged,
         });
 
@@ -234,6 +242,7 @@ export const updateDecisionInstance = async ({
       isDraft: (status ?? existingInstance.status) === ProcessStatus.DRAFT,
       isBeingPublished,
       phasesChanged: hasPhaseUpdates,
+      fromRows: transitionsFromRows,
     });
   });
 
@@ -317,12 +326,14 @@ async function syncTransitions({
   isDraft,
   isBeingPublished,
   phasesChanged,
+  fromRows,
 }: {
   tx: TransactionType;
   updatedInstance: ProcessInstance;
   isDraft: boolean;
   isBeingPublished: boolean;
   phasesChanged: boolean;
+  fromRows: boolean;
 }) {
   if (isDraft) {
     await tx
@@ -334,11 +345,13 @@ async function syncTransitions({
     await createTransitionsForProcess({
       processInstance: updatedInstance,
       db: tx,
+      fromRows,
     });
   } else if (phasesChanged) {
     await updateTransitionsForProcess({
       processInstance: updatedInstance,
       db: tx,
+      fromRows,
     });
   }
 }

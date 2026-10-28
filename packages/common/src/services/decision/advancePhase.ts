@@ -31,6 +31,8 @@ export interface AdvancePhaseInput {
   transitionData?: TransitionData;
   /** Shared timestamp for all writes. Defaults to now. */
   now?: string;
+  /** Resolved before the caller's transaction opens. */
+  fromRows?: boolean;
 }
 
 export type AdvancePhaseResult =
@@ -71,10 +73,11 @@ export async function advancePhase(
     triggeredByProfileId,
     transitionData = {},
     now = new Date().toISOString(),
+    fromRows,
   } = input;
 
   const instanceId = instance.id;
-  const phases = await readInstancePhases({ instance, db });
+  const phases = await readInstancePhases({ instance, db, fromRows });
   const departingPhase = phases.find((p) => p.phaseId === fromPhaseId);
 
   if (!departingPhase) {
