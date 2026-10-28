@@ -11,7 +11,10 @@ import { CommonError } from '../../utils';
 import { advancePhase } from './advancePhase';
 import { invalidateDecisionInstance } from './decisionCache';
 import { onPhaseAdvanced } from './onPhaseAdvanced';
-import { readInstancePhases } from './readInstancePhases';
+import {
+  isPhasesFromRowsEnabled,
+  readInstancePhases,
+} from './readInstancePhases';
 import type {
   DecisionInstanceData,
   PhaseInstanceData,
@@ -44,8 +47,14 @@ type DueTransition = {
  * Process all due scheduled transitions. Called by cron.
  * Delegates each transition to `advancePhase`.
  */
-export async function processDecisionsTransitions(): Promise<ProcessDecisionsTransitionsResult> {
-  const now = new Date().toISOString();
+export async function processDecisionsTransitions({
+  processInstanceId,
+  now = new Date().toISOString(),
+}: {
+  /** Limits the sweep to one decision. */
+  processInstanceId?: string;
+  now?: string;
+} = {}): Promise<ProcessDecisionsTransitionsResult> {
   const result: ProcessDecisionsTransitionsResult = {
     processed: 0,
     failed: 0,
@@ -75,6 +84,9 @@ export async function processDecisionsTransitions(): Promise<ProcessDecisionsTra
           isNull(decisionProcessTransitions.completedAt),
           lte(decisionProcessTransitions.scheduledDate, now),
           eq(processInstances.status, ProcessStatus.PUBLISHED),
+          processInstanceId
+            ? eq(decisionProcessTransitions.processInstanceId, processInstanceId)
+            : undefined,
         ),
       )
       .orderBy(decisionProcessTransitions.scheduledDate);
@@ -84,6 +96,7 @@ export async function processDecisionsTransitions(): Promise<ProcessDecisionsTra
     }
 
     const transitionsByInstance = groupTransitionsByInstance(dueTransitions);
+    const fromRows = await isPhasesFromRowsEnabled();
 
     await pMap(
       Array.from(transitionsByInstance.entries()),
@@ -93,6 +106,7 @@ export async function processDecisionsTransitions(): Promise<ProcessDecisionsTra
             id: processInstanceId,
             instanceData: transitions[0]!.instance.instanceData,
           },
+          fromRows,
         });
 
         if (phases.length === 0) {
@@ -113,6 +127,7 @@ export async function processDecisionsTransitions(): Promise<ProcessDecisionsTra
           phases,
           now,
           result,
+          fromRows,
         });
       },
       { concurrency: 5 },
@@ -155,12 +170,14 @@ async function advanceInstanceTransitions({
   phases,
   now,
   result,
+  fromRows,
 }: {
   processInstanceId: string;
   transitions: DueTransition[];
   phases: PhaseInstanceData[];
   now: string;
   result: ProcessDecisionsTransitionsResult;
+  fromRows: boolean;
 }): Promise<void> {
   let currentInstanceData = transitions[0]!.instance
     .instanceData as DecisionInstanceData;
@@ -190,6 +207,7 @@ async function advanceInstanceTransitions({
           triggeredByProfileId: null,
           transitionData: {},
           now,
+          fromRows,
         }),
       );
 

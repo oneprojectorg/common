@@ -22,7 +22,10 @@ import { getProposalIdsForPhase } from './getProposalsForPhase';
 import { isLegacyInstanceData } from './isLegacyInstance';
 import { lockProcessInstance } from './lockProcessInstance';
 import { processResults } from './processResults';
-import { readInstancePhases } from './readInstancePhases';
+import {
+  isPhasesFromRowsEnabled,
+  readInstancePhases,
+} from './readInstancePhases';
 import {
   RESULT_NOTIFICATION_MESSAGE_MAX_LENGTH,
   type ResultNotificationMessages,
@@ -132,6 +135,7 @@ export async function submitManualSelection({
   let reviewAssignmentInput:
     | Parameters<typeof runGenerateReviewAssignments>[0]
     | null = null;
+  const fromRows = await isPhasesFromRowsEnabled();
 
   await db.transaction(async (tx) => {
     // Lock the instance row so a concurrent advancePhase can't move the
@@ -163,6 +167,7 @@ export async function submitManualSelection({
         instanceData: lockedInstance.instanceData,
       },
       db: tx,
+      fromRows,
     });
     const lockedPhaseIndex = lockedPhases.findIndex(
       (p) => p.phaseId === currentStateId,

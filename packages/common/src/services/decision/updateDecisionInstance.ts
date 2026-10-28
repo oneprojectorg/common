@@ -24,6 +24,7 @@ import {
   getUpdatedInstanceData,
 } from './getUpdatedInstanceData';
 import { lockProcessInstanceOrThrow } from './lockProcessInstance';
+import { isPhasesFromRowsEnabled } from './readInstancePhases';
 import {
   getInstanceDataPhases,
   getStoredPhases,
@@ -154,6 +155,13 @@ export const updateDecisionInstance = async ({
     status === ProcessStatus.PUBLISHED &&
     existingInstance.status === ProcessStatus.DRAFT;
 
+  // Resolved before the lock. A save with phases rebuilds the blob from the
+  // rows it reconciles, so its transitions read the blob.
+  const transitionsFromRows =
+    isBeingPublished && !hasPhaseUpdates
+      ? await isPhasesFromRowsEnabled()
+      : false;
+
   // Use a transaction for updating the instance and transitions together
   await db.transaction(async (tx) => {
     const locked = await lockProcessInstanceOrThrow({ db: tx, instanceId });
@@ -229,6 +237,7 @@ export const updateDecisionInstance = async ({
       isDraft: (status ?? existingInstance.status) === ProcessStatus.DRAFT,
       isBeingPublished,
       phasesChanged: hasPhaseUpdates,
+      fromRows: transitionsFromRows,
     });
   });
 
@@ -312,12 +321,14 @@ async function syncTransitions({
   isDraft,
   isBeingPublished,
   phasesChanged,
+  fromRows,
 }: {
   tx: TransactionType;
   updatedInstance: ProcessInstance;
   isDraft: boolean;
   isBeingPublished: boolean;
   phasesChanged: boolean;
+  fromRows: boolean;
 }) {
   if (isDraft) {
     await tx
@@ -329,11 +340,13 @@ async function syncTransitions({
     await createTransitionsForProcess({
       processInstance: updatedInstance,
       db: tx,
+      fromRows,
     });
   } else if (phasesChanged) {
     await updateTransitionsForProcess({
       processInstance: updatedInstance,
       db: tx,
+      fromRows,
     });
   }
 }

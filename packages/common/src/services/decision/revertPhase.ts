@@ -27,7 +27,10 @@ import {
   ValidationError,
 } from '../../utils';
 import { lockProcessInstance } from './lockProcessInstance';
-import { readInstancePhases } from './readInstancePhases';
+import {
+  isPhasesFromRowsEnabled,
+  readInstancePhases,
+} from './readInstancePhases';
 import type { PhaseInstanceData } from './schemas/instanceData';
 
 export interface RevertPhaseInput {
@@ -131,9 +134,15 @@ export async function revertPhase({
 
   const observedPhaseId = instance.currentStateId;
   const now = new Date().toISOString();
+  const fromRows = await isPhasesFromRowsEnabled();
 
   const target = await db.transaction(async (tx) => {
-    const locked = await lockCurrentPhase({ tx, instanceId, observedPhaseId });
+    const locked = await lockCurrentPhase({
+      tx,
+      instanceId,
+      observedPhaseId,
+      fromRows,
+    });
     const revertTarget = await resolveTransitionToUndo({
       tx,
       instanceId,
@@ -174,10 +183,12 @@ async function lockCurrentPhase({
   tx,
   instanceId,
   observedPhaseId,
+  fromRows,
 }: {
   tx: DbClient;
   instanceId: string;
   observedPhaseId: string;
+  fromRows: boolean;
 }): Promise<{ revertedPhaseId: string; phases: PhaseInstanceData[] }> {
   // Same lock order as advancePhase and submitManualSelection — instance
   // first, then the transition row — so the three can't deadlock.
@@ -206,6 +217,7 @@ async function lockCurrentPhase({
     phases: await readInstancePhases({
       instance: { id: instanceId, instanceData: lockedInstance.instanceData },
       db: tx,
+      fromRows,
     }),
   };
 }
