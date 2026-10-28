@@ -25,8 +25,9 @@ import { useProposalModerationActions } from './useProposalModerationActions';
 import { useProposalRejectionActions } from './useProposalRejectionActions';
 
 /**
- * Admin overflow menu (`…`) for the proposal page's action row: hide / unhide,
- * delete, and "Advance to [phase]" for a proposal outside the current phase.
+ * Admin overflow menu (`…`) in the action row of the proposal page and the
+ * review screen: hide / unhide, delete, and "Advance to [phase]" for a proposal
+ * outside the current phase.
  * Mirrors the browse-card kebab (`ProposalCard/ProposalCardMenu`) and shares its
  * mutation + toast copy via {@link useProposalModerationActions}, so the two
  * surfaces can't drift.
@@ -40,7 +41,7 @@ export function ProposalAdminMenu({
   backHref,
 }: {
   proposal: Proposal;
-  /** Where to go after deleting — this page is about to 404. */
+  /** Where to go after deleting; the current page is about to 404. */
   backHref: string;
 }) {
   const t = useTranslations();
