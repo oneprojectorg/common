@@ -1,5 +1,5 @@
 import { ProposalStatus } from '@op/db/schema';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Boundary mock: drive the one read and the recipient lookup, assert the skip
 // rules.
@@ -65,6 +65,15 @@ const run = () =>
     proposalId: PROPOSAL_ID,
     actorAuthUserId: ACTOR_AUTH_USER_ID,
   });
+
+// Phases are read from the blob: the rows flag is off.
+beforeEach(() => {
+  vi.stubEnv('NEXT_PUBLIC_E2E', '');
+});
+
+afterEach(() => {
+  vi.unstubAllEnvs();
+});
 
 describe('listProposalRejectionRecipients', () => {
   beforeEach(() => {
