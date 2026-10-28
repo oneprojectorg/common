@@ -4,8 +4,9 @@ import { processInstances } from '@op/db/schema';
 import { sql } from 'drizzle-orm';
 
 import { NotFoundError, ValidationError } from '../../utils';
+import { isPhasesFromRowsEnabled } from '../decision/readInstancePhases';
 import type { CustomFormProcessContext } from './customFormAuth';
-import { parseInstancePhases } from './customFormAuth';
+import { readInstancePhaseSet } from './customFormAuth';
 import { getEffectiveFormPhase } from './utils';
 
 /** The only write path, so no insert can skip the lock the check depends on. */
@@ -19,8 +20,10 @@ export const writeWithPhaseLock = async <TResult>({
   phaseId: string;
   excludeFormId?: string;
   write: (tx: TransactionType) => Promise<TResult>;
-}): Promise<TResult> =>
-  db.transaction(async (tx) => {
+}): Promise<TResult> => {
+  const fromRows = await isPhasesFromRowsEnabled();
+
+  return db.transaction(async (tx) => {
     await lockProfileForms({ tx, profileId: process.profileId });
 
     // Re-read under the instance's row lock: the phase set was resolved before
@@ -28,6 +31,7 @@ export const writeWithPhaseLock = async <TResult>({
     const phases = await lockInstancePhases({
       tx,
       profileId: process.profileId,
+      fromRows,
     });
 
     await assertPhaseAvailable({
@@ -39,6 +43,7 @@ export const writeWithPhaseLock = async <TResult>({
 
     return write(tx);
   });
+};
 
 /**
  * The instance's current phase set, holding the row until the transaction ends
@@ -47,12 +52,17 @@ export const writeWithPhaseLock = async <TResult>({
 const lockInstancePhases = async ({
   tx,
   profileId,
+  fromRows,
 }: {
   tx: TransactionType;
   profileId: string;
+  fromRows: boolean;
 }) => {
   const [instance] = await tx
-    .select({ instanceData: processInstances.instanceData })
+    .select({
+      id: processInstances.id,
+      instanceData: processInstances.instanceData,
+    })
     .from(processInstances)
     .where(eq(processInstances.profileId, profileId))
     .for('update')
@@ -62,7 +72,7 @@ const lockInstancePhases = async ({
     throw new NotFoundError('Decision process', profileId);
   }
 
-  return parseInstancePhases(instance.instanceData);
+  return readInstancePhaseSet({ instance, db: tx, fromRows });
 };
 
 /**
