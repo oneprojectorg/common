@@ -95,7 +95,21 @@ export const assertPhasesCanBeMinted = (
     );
   }
 
+  const phaseIds = new Set<string>();
   for (const phase of phases) {
+    if (!phase.phaseId) {
+      throw new ValidationError('The source decision has a phase with no id', {
+        phaseId: 'Required',
+      });
+    }
+    if (phaseIds.has(phase.phaseId)) {
+      throw new ValidationError(
+        `The source decision has two phases with the id "${phase.phaseId}"`,
+        { phaseId: 'Must be unique' },
+      );
+    }
+    phaseIds.add(phase.phaseId);
+
     const name = getPhaseProfileName(phase);
     if (isPhaseNameTooLong(name)) {
       throw new ValidationError(
