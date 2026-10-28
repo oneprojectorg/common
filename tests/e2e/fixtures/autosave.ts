@@ -7,11 +7,17 @@ import type { Page } from '@playwright/test';
  * the process builder autosaves in the background, so asserting straight after
  * a click races the write.
  *
+ * The API streams batch responses, so the headers land before the mutation has
+ * run; `finished()` waits for the body, which is written once it has.
+ *
  * Pass `requestBodyIncludes` to wait for a specific save rather than whichever
  * one lands first — the builder saves several fields independently.
  */
-export function waitForAutoSave(page: Page, requestBodyIncludes?: string) {
-  return page.waitForResponse(
+export async function waitForAutoSave(
+  page: Page,
+  requestBodyIncludes?: string,
+) {
+  const response = await page.waitForResponse(
     (resp) => {
       if (
         !resp.url().includes('decision.updateDecisionInstance') ||
@@ -28,4 +34,6 @@ export function waitForAutoSave(page: Page, requestBodyIncludes?: string) {
     },
     { timeout: 12_000 },
   );
+  await response.finished();
+  return response;
 }
