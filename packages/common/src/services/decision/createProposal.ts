@@ -25,6 +25,7 @@ import {
   type ProposalDataInput,
   parseProposalData,
 } from './proposalDataSchema';
+import { withInstancePhases } from './readInstancePhases';
 import type { DecisionInstanceData } from './schemas/instanceData';
 import { syncProposalProfileLocation } from './syncProposalProfileLocation';
 import { assertInstancePhase } from './utils/instance';
@@ -46,13 +47,15 @@ export const createProposal = async ({
   const authUserId = user.id;
 
   // Verify the process instance exists
-  const instance = await db.query.processInstances.findFirst({
+  const instanceRow = await db.query.processInstances.findFirst({
     where: { id: data.processInstanceId },
   });
 
-  if (!instance) {
+  if (!instanceRow) {
     throw new NotFoundError('Process instance', data.processInstanceId);
   }
+
+  const instance = await withInstancePhases({ instance: instanceRow });
 
   await assertInstanceProfileAccess({
     user: { id: authUserId },

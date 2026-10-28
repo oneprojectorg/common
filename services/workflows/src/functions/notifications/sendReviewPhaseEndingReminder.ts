@@ -4,6 +4,7 @@ import {
   getInstancePhases,
   isInstanceCurrentPhase,
   listIndividualProfileRecipientsByProfileId,
+  withInstancePhases,
 } from '@op/common';
 import { selectEmailRecipients } from '@op/common/client';
 import { OPURLConfig } from '@op/core';
@@ -51,7 +52,7 @@ export const sendReviewPhaseEndingReminder = inngest.createFunction(
         return undefined;
       }
 
-      return instance;
+      return withInstancePhases({ instance });
     });
 
     if (!instanceData) {
