@@ -512,7 +512,7 @@ export class TestDecisionsDataManager {
     this.createdProfileIds.push(profileId);
   }
 
-  /** Drops the rows a create minted, so the decision reads as not yet converted. */
+  /** Drops the rows a create minted, like a decision made before phase rows. */
   async removePhaseRows(instanceId: string): Promise<void> {
     const rows = await db
       .select({ profileId: processPhases.profileId })
