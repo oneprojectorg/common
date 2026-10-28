@@ -198,32 +198,22 @@ function buildConfig(
   source: DecisionInstanceData,
   include: DuplicateInstanceIncludeFlags,
 ): ProcessConfig | undefined {
-  if (!source.config) {
+  if (
+    !source.config ||
+    !(include.processSettings || include.proposalCategories)
+  ) {
     return undefined;
   }
 
-  if (include.processSettings) {
-    const config: ProcessConfig = { ...source.config };
-    if (!include.proposalCategories) {
-      for (const key of CATEGORY_KEYS) {
-        delete config[key];
-      }
-    }
-    return config;
-  }
-
-  if (!include.proposalCategories) {
-    return undefined;
-  }
-
-  const config: ProcessConfig = {};
-  for (const key of CATEGORY_KEYS) {
-    if (source.config[key] !== undefined) {
-      (config as any)[key] = source.config[key];
-    }
-  }
-  return config;
+  return Object.fromEntries(
+    Object.entries(source.config).filter(([key]) =>
+      isCategoryKey(key) ? include.proposalCategories : include.processSettings,
+    ),
+  );
 }
+
+const isCategoryKey = (key: string): boolean =>
+  CATEGORY_KEYS.some((categoryKey) => categoryKey === key);
 
 /** Full phase copies when phases are included; otherwise identity-only references. */
 function buildPhases(
