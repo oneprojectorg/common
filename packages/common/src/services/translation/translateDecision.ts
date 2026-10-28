@@ -61,11 +61,13 @@ export async function translateDecision({
     )
     .limit(1);
 
-  if (instances.length === 0) {
+  const [instance] = instances;
+
+  if (!instance) {
     throw new NotFoundError('Decision profile', decisionProfileId);
   }
 
-  const processInstance = await withInstancePhases({ instance: instances[0]! });
+  const processInstance = await withInstancePhases({ instance });
 
   // Start the permission check immediately so it runs in parallel with translation
   const authPromise = assertInstanceProfileAccess({
