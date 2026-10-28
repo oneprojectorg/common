@@ -52,6 +52,7 @@ cat > "$S/batch-$LABEL.json" <<JSON
   ["screenshot", "$S/selection-5-within-budget.png"],
   ["find", "role", "button", "click", "--name", "Confirm winning proposals"],
   ["wait", "--text", "Awarded"],
+  ["wait", "800"],
   ["screenshot", "$S/selection-6-confirm-dialog.png"],
   ["find", "role", "button", "click", "--name", "Continue"],
   ["wait", "--text", "Not advanced"],
