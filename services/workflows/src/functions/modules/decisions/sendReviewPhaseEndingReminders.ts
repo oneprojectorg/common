@@ -1,4 +1,8 @@
-import { getInstanceCurrentPhase, readInstancePhases } from '@op/common';
+import {
+  getInstanceCurrentPhase,
+  getInstancePhases,
+  withInstancesPhases,
+} from '@op/common';
 import { db } from '@op/db/client';
 import { ProcessStatus, processPhases } from '@op/db/schema';
 import { Events, inngest } from '@op/events';
@@ -52,17 +56,14 @@ export const sendReviewPhaseEndingReminders = inngest.createFunction(
         },
       });
 
-      const instancesWithPhases = await Promise.all(
-        reviewPhaseInstances.map(async (instance) => ({
-          instance,
-          phases: await readInstancePhases({ instance }),
-        })),
-      );
+      const instances = await withInstancesPhases({
+        instances: reviewPhaseInstances,
+      });
 
-      return instancesWithPhases.flatMap(({ instance, phases }) => {
+      return instances.flatMap((instance) => {
         const phase = getInstanceCurrentPhase({
           currentStateId: instance.currentStateId,
-          instanceData: { phases },
+          instanceData: { phases: getInstancePhases(instance.instanceData) },
         });
 
         if (phase?.rules?.reviews?.submit !== true || !phase.endDate) {
