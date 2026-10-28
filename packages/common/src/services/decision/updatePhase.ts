@@ -8,6 +8,7 @@ import {
 import type { User } from '@op/supabase/lib';
 
 import { NotFoundError, ValidationError } from '../../utils';
+import { lockProcessInstanceOrThrow } from './lockProcessInstance';
 import {
   type PhaseData,
   assertPhaseSchemasCompile,
@@ -15,6 +16,7 @@ import {
   getPhaseAsDecisionAdmin,
   readPhaseSettings,
 } from './phaseHelpers';
+import { writePhaseRowsToInstanceData } from './phaseRows';
 import type { PhaseOverride } from './schemas/instanceData';
 import type { ProposalTemplateSchema } from './types';
 
@@ -41,7 +43,10 @@ export const updatePhase = async ({
     throw new ValidationError('Nothing to update');
   }
 
-  const { profileId } = await getPhaseAsDecisionAdmin({ user, phaseId });
+  const { profileId, processInstanceId } = await getPhaseAsDecisionAdmin({
+    user,
+    phaseId,
+  });
 
   const patch = data === undefined ? undefined : toPhaseDataPatch(data);
   // Only when touched: converted legacy phases can hold settings with no schema.
@@ -51,6 +56,11 @@ export const updatePhase = async ({
       patch.set.settingsSchema !== undefined);
 
   return db.transaction(async (tx) => {
+    const locked = await lockProcessInstanceOrThrow({
+      db: tx,
+      instanceId: processInstanceId,
+    });
+
     const [profile] =
       name === undefined
         ? await tx.select().from(profiles).where(eq(profiles.id, profileId))
@@ -88,6 +98,12 @@ export const updatePhase = async ({
         phaseLabel: profile.name,
       });
     }
+
+    await writePhaseRowsToInstanceData({
+      db: tx,
+      processInstanceId,
+      instanceData: locked.instanceData,
+    });
 
     return { phase, profile };
   });
