@@ -196,6 +196,7 @@ export {
 } from './services/decision/schemas/createInstance';
 export {
   MAX_PHASE_NAME_LENGTH,
+  phaseNameInputSchema,
   phaseNameLengthSchema,
 } from './services/decision/schemas/phaseName';
 export {

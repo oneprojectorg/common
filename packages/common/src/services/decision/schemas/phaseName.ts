@@ -12,3 +12,9 @@ export const phaseNameLengthSchema = z
   .refine((name) => !isPhaseNameTooLong(name), {
     message: `A phase name can have at most ${MAX_PHASE_NAME_LENGTH} characters`,
   });
+
+export const phaseNameInputSchema = z
+  .string()
+  .trim()
+  .min(1)
+  .pipe(phaseNameLengthSchema);
