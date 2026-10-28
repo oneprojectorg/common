@@ -1,5 +1,6 @@
 import { ValidationError } from '../../utils';
 import { getFieldUnit } from './fieldUnit';
+import { getTemplateFieldName } from './getTemplateFieldName';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
 import type { DecisionInstanceData } from './schemas/instanceData';
 import { getVoterCostField, getVoterBudget } from './utils/phaseSettings';
@@ -27,7 +28,7 @@ export async function assertVoterCostField({
 
     if (!getFieldUnit(template?.properties?.[voterCostField])) {
       throw new ValidationError(
-        `A voter budget charges from "${voterCostField}", which is not a money field or a numeric field with a unit on the proposal template.`,
+        `A voter budget charges from "${getTemplateFieldName({ proposalTemplate: template, fieldKey: voterCostField })}", which is not a money field or a numeric field with a unit on the proposal template.`,
         { voterCostField: 'Must name a priced field on the proposal template' },
       );
     }

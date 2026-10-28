@@ -21,6 +21,7 @@ import { assertInstanceProfileAccess, getIndividualProfileId } from '../access';
 import { assertProfileAccess } from '../assert';
 import { getFieldUnit } from './fieldUnit';
 import { type ProposalCosts, getProposalCosts } from './getProposalCosts';
+import { getTemplateFieldName } from './getTemplateFieldName';
 import { decisionPermission } from './permissions';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
 import { processDecisionProcessSchema } from './schemaRegistry';
@@ -153,7 +154,7 @@ async function getBallotPricing({
       },
     );
     throw new ValidationError(
-      `Voting is misconfigured: "${cap.voterCostField}" is not a priced field on the proposal template.`,
+      `Voting is misconfigured: "${getTemplateFieldName({ proposalTemplate, fieldKey: cap.voterCostField })}" is not a priced field on the proposal template.`,
     );
   }
 
