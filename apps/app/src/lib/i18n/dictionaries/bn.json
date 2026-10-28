@@ -1230,6 +1230,7 @@
       "awardBudgetLabel": "বরাদ্দকৃত বাজেট",
       "awardedOfBudget": "{budget}-এর মধ্যে <highlight>{awarded}</highlight> বরাদ্দ",
       "overBudgetWarning": "বাজেটের চেয়ে {amount} বেশি",
+      "mixedCurrencyWarning": "পুরস্কারগুলো একাধিক মুদ্রা ব্যবহার করে, তাই মোট পরিমাণ বাজেটের সাথে যাচাই করা যাচ্ছে না",
       "totalAwardedLabel": "মোট প্রদত্ত"
     },
     "proposals": {

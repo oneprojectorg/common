@@ -1230,6 +1230,7 @@
       "awardBudgetLabel": "Felhasznált keret",
       "awardedOfBudget": "<highlight>{awarded}</highlight> / {budget} felhasználva",
       "overBudgetWarning": "{amount} összeggel a keret felett",
+      "mixedCurrencyWarning": "A díjak több pénznemet használnak, ezért az összeg nem vethető össze a kerettel",
       "totalAwardedLabel": "Összesen odaítélve"
     },
     "proposals": {

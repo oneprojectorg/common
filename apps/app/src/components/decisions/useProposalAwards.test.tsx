@@ -159,6 +159,45 @@ describe('useProposalAwards', () => {
     expect(result.current.total).toBeNull();
     expect(result.current.totalRequested).toBeNull();
     expect(result.current.isOverBudget).toBe(false);
+    expect(result.current.hasMixedCurrencies).toBe(true);
+    expect(result.current.canConfirm).toBe(true);
+  });
+
+  it('blocks the confirm against a process budget when the winners asked in different currencies', () => {
+    const { result } = renderAwards({
+      proposals: [solar, euro],
+      selectedIds: ['solar', 'euro'],
+      processBudget: 25000,
+    });
+
+    expect(result.current.hasMixedCurrencies).toBe(true);
+    expect(result.current.canConfirm).toBe(false);
+
+    act(() => result.current.setAmount('euro', 1));
+
+    expect(result.current.canConfirm).toBe(false);
+  });
+
+  it('blocks the confirm against a process budget when a winner without a requested budget joins winners in another currency', () => {
+    const { result } = renderAwards({
+      proposals: [euro, unbudgeted],
+      selectedIds: ['euro', 'blank'],
+      processBudget: 25000,
+    });
+
+    act(() => result.current.setAmount('blank', 50000));
+
+    expect(result.current.invalidSelectedIds).toEqual([]);
+    expect(result.current.total).toBeNull();
+    expect(result.current.hasMixedCurrencies).toBe(true);
+    expect(result.current.canConfirm).toBe(false);
+  });
+
+  it('does not report mixed currencies when nothing is selected', () => {
+    const { result } = renderAwards({ selectedIds: [], processBudget: 25000 });
+
+    expect(result.current.hasMixedCurrencies).toBe(false);
+    expect(result.current.canConfirm).toBe(true);
   });
 
   it('gives no total when nothing is selected', () => {

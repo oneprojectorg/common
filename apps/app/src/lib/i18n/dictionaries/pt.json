@@ -1230,6 +1230,7 @@
       "awardBudgetLabel": "Orçamento alocado",
       "awardedOfBudget": "<highlight>{awarded}</highlight> de {budget} alocados",
       "overBudgetWarning": "Excede o orçamento em {amount}",
+      "mixedCurrencyWarning": "As atribuições usam mais de uma moeda, por isso o total não pode ser comparado com o orçamento",
       "totalAwardedLabel": "Total concedido"
     },
     "proposals": {

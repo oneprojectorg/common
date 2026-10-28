@@ -30,6 +30,7 @@ export interface ProposalAwards {
   invalidSelectedIds: string[];
   total: MoneyAmount | null;
   totalRequested: MoneyAmount | null;
+  hasMixedCurrencies: boolean;
   isOverBudget: boolean;
   canConfirm: boolean;
   allocations: () => ProposalAllocation[] | undefined;
@@ -93,6 +94,8 @@ export const useProposalAwards = ({
       (id) => requested.get(id)?.currency ?? getBudgetCurrency(undefined),
     ),
   );
+  const hasMixedCurrencies =
+    isEnabled && selected.length > 0 && currency === undefined;
   const total = isEnabled && currency ? sum(selected, amounts, currency) : null;
   const totalRequested =
     isEnabled && currency
@@ -109,6 +112,7 @@ export const useProposalAwards = ({
     processBudget !== undefined &&
     total !== null &&
     total.amount > processBudget;
+  const isUncheckable = processBudget !== undefined && hasMixedCurrencies;
 
   const setAmount = useCallback(
     (proposalId: string, amount: number | null) => {
@@ -128,9 +132,11 @@ export const useProposalAwards = ({
     invalidSelectedIds,
     total,
     totalRequested,
+    hasMixedCurrencies,
     isOverBudget,
     canConfirm:
-      !isEnabled || (invalidSelectedIds.length === 0 && !isOverBudget),
+      !isEnabled ||
+      (invalidSelectedIds.length === 0 && !isOverBudget && !isUncheckable),
     allocations: () =>
       isEnabled
         ? selected.flatMap((proposalId): ProposalAllocation[] => {

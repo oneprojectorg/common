@@ -27,7 +27,14 @@ export const AwardBudgetMeter = ({
   const { total } = awards;
 
   if (total === null) {
-    return null;
+    return awards.hasMixedCurrencies ? (
+      <p
+        className={cn('text-sm text-destructive', className)}
+        aria-live="polite"
+      >
+        {t('mixedCurrencyWarning')}
+      </p>
+    ) : null;
   }
 
   const format = (amount: number) =>
