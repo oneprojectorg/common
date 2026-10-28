@@ -25,6 +25,7 @@ import {
 } from './getUpdatedInstanceData';
 import { lockProcessInstanceOrThrow } from './lockProcessInstance';
 import {
+  getInstanceDataPhases,
   getStoredPhases,
   loadPhaseRows,
   projectPhaseRows,
@@ -172,8 +173,7 @@ export const updateDecisionInstance = async ({
       });
       const currentPhases = getStoredPhases({
         rows,
-        blobPhases:
-          (locked.instanceData as DecisionInstanceData | null)?.phases ?? [],
+        blobPhases: getInstanceDataPhases(locked.instanceData),
       });
 
       phaseUpdate = getUpdatedInstanceData({

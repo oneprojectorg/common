@@ -64,6 +64,14 @@ async function loadPhaseRows(instanceId: string) {
     .orderBy(asc(processPhases.sortOrder));
 }
 
+async function loadBlobPhases(instanceId: string) {
+  const instance = await db.query.processInstances.findFirst({
+    where: { id: instanceId },
+    columns: { instanceData: true },
+  });
+  return (instance?.instanceData as DecisionInstanceData).phases;
+}
+
 async function loadPhaseState(instanceId: string) {
   const [rows, instance] = await Promise.all([
     loadPhaseRows(instanceId),
@@ -873,6 +881,91 @@ describe.concurrent('updateDecisionInstance', () => {
       },
       { sortOrder: 1, data: { phaseId: 'final' } },
       { id: created.id, sortOrder: 2, name: `Endpoint ${task.id}` },
+    ]);
+  });
+
+  it('keeps a phase the phase endpoints made and moved across a builder save', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instanceId = setup.instance.instance.id;
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+    const [initialRow, finalRow] = await loadPhaseRows(instanceId);
+    if (!initialRow || !finalRow) {
+      throw new Error('Expected the template phase rows');
+    }
+
+    const created = await caller.decision.createPhase({
+      instanceId,
+      name: `Endpoint ${task.id}`,
+      sortOrder: 2,
+    });
+    testData.trackProfileForCleanup(created.profileId);
+    await caller.decision.reorderPhases({
+      instanceId,
+      phases: [
+        { phaseId: created.id },
+        { phaseId: initialRow.id },
+        { phaseId: finalRow.id },
+      ],
+    });
+    await caller.decision.updatePhase({
+      phaseId: created.id,
+      name: `Renamed ${task.id}`,
+    });
+
+    const blobPhases = await loadBlobPhases(instanceId);
+    expect(blobPhases.map(({ phaseId, name }) => [phaseId, name])).toEqual([
+      [created.slug, `Renamed ${task.id}`],
+      ['initial', initialRow.name],
+      ['final', finalRow.name],
+    ]);
+
+    await caller.decision.updateDecisionInstance({
+      instanceId,
+      phases: blobPhases.map(({ phaseId }) => ({ phaseId })),
+    });
+
+    expect(await loadPhaseRows(instanceId)).toMatchObject([
+      { id: created.id, name: `Renamed ${task.id}`, sortOrder: 0 },
+      { id: initialRow.id, sortOrder: 1 },
+      { id: finalRow.id, sortOrder: 2 },
+    ]);
+  });
+
+  it('does not bring back a phase deletePhase removed on the next builder save', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instanceId = setup.instance.instance.id;
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+    const [initialRow, finalRow] = await loadPhaseRows(instanceId);
+    if (!finalRow) {
+      throw new Error('Expected the template phase rows');
+    }
+
+    await caller.decision.deletePhase({ phaseId: finalRow.id });
+
+    const blobPhases = await loadBlobPhases(instanceId);
+    expect(blobPhases.map(({ phaseId }) => phaseId)).toEqual(['initial']);
+
+    await caller.decision.updateDecisionInstance({
+      instanceId,
+      phases: blobPhases.map(({ phaseId }) => ({ phaseId })),
+    });
+
+    expect(await loadPhaseRows(instanceId)).toMatchObject([
+      { id: initialRow?.id, data: { phaseId: 'initial' } },
     ]);
   });
 
