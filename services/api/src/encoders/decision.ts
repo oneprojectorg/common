@@ -624,7 +624,7 @@ export const updateDecisionInstanceInputSchema = z.object({
   config: processConfigEncoder.optional(),
   /** Public-facing overview content (headline, short description, rich text body) */
   overview: instanceOverviewInputEncoder.optional(),
-  /** Phase overrides for dates, rules, and settings */
+  /** The full ordered phase list; omitted phases are deleted. Omit it to leave phases untouched. */
   phases: z
     .array(instancePhaseDataInputEncoder)
     .max(MAX_PHASES_PER_DECISION)
