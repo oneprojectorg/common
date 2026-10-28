@@ -29,6 +29,7 @@ import { randomUUID } from 'node:crypto';
 import type {
   DecisionSchemaDefinition,
   ProposalTemplateSchema,
+  RubricTemplateSchema,
 } from '../../src';
 import {
   addUserToOrganization,
@@ -176,6 +177,57 @@ export const testVotingPhaseSchema = {
   ],
 } satisfies DecisionSchemaDefinition;
 
+/** Submission phase followed by a review phase (`proposals.review: true`). */
+export const testReviewPhaseSchema = {
+  id: 'test-review',
+  version: '1.0.0',
+  name: 'Test Review Schema',
+  description: 'Schema for testing a review phase',
+  phases: [
+    {
+      id: 'submission',
+      name: 'Proposal Submission',
+      description: 'Members submit proposals.',
+      rules: {
+        proposals: { submit: true },
+        voting: { submit: false },
+        advancement: { method: 'manual' as const },
+      },
+    },
+    {
+      id: 'review',
+      name: 'Review',
+      description: 'Reviewers evaluate proposals.',
+      rules: {
+        proposals: { submit: false, review: true },
+        voting: { submit: false },
+        advancement: { method: 'manual' as const },
+      },
+    },
+  ],
+} satisfies DecisionSchemaDefinition;
+
+/** One scored criterion: enough for a review screen to render its form. */
+export const testRubricTemplate = {
+  type: 'object',
+  required: ['feasibility'],
+  'x-field-order': ['feasibility'],
+  properties: {
+    feasibility: {
+      type: 'integer',
+      title: 'Feasibility',
+      'x-format': 'dropdown',
+      minimum: 1,
+      maximum: 3,
+      oneOf: [
+        { const: 1, title: '1' },
+        { const: 2, title: '2' },
+        { const: 3, title: '3' },
+      ],
+    },
+  },
+} as const satisfies RubricTemplateSchema;
+
 export interface CreateDecisionProcessOptions {
   /** Profile ID of the user creating the process */
   createdByProfileId: string;
@@ -264,6 +316,10 @@ export interface CreateDecisionInstanceOptions {
    * API rejects one now, but rows written before it does still hold `''`.
    */
   phaseHeadlines?: Record<string, string>;
+  /** Phase the instance starts in. Defaults to the schema's first phase. */
+  currentStateId?: string;
+  /** Rubric every review phase scores against; a review screen needs one. */
+  rubricTemplate?: RubricTemplateSchema;
 }
 
 export interface CreateDecisionInstanceResult {
@@ -295,6 +351,8 @@ export async function createDecisionInstance(
     proposalTemplate: proposalTemplateOverride,
     slug,
     phaseHeadlines,
+    currentStateId,
+    rubricTemplate,
   } = opts;
 
   const instanceSlug = slug ?? `test-instance-${randomUUID()}`;
@@ -320,6 +378,7 @@ export async function createDecisionInstance(
     templateVersion: schema.version,
     templateName: schema.name,
     templateDescription: schema.description,
+    rubricTemplate,
     phases: schema.phases.map((phase, index) => ({
       phaseId: phase.id,
       name: phase.name,
@@ -370,7 +429,7 @@ export async function createDecisionInstance(
       processId,
       profileId: instanceProfile.id,
       instanceData,
-      currentStateId: firstPhaseId,
+      currentStateId: currentStateId ?? firstPhaseId,
       status,
       ownerProfileId,
       stewardProfileId: ownerProfileId,
@@ -655,6 +714,28 @@ export async function grantInstanceAdminWithoutReviewRole(opts: {
       SUBMIT_PROPOSALS |
       VOTE,
     profilePermission: DELETE | UPDATE | READ | CREATE,
+  });
+}
+
+/**
+ * Grants the user a role that is an admin of the decision's profile but holds
+ * no decisions ADMIN bit — what the process role editor writes with "Manage
+ * Process" switched off. `resolveInstanceAccess` still reports this user as a
+ * decision admin, so every surface that reads `access.admin` must agree.
+ */
+export async function grantInstanceProfileAdminRole(opts: {
+  instanceProfileId: string;
+  authUserId: string;
+  email: string;
+}): Promise<void> {
+  const { ADMIN, CREATE, DELETE, READ, SUBMIT_PROPOSALS, UPDATE, VOTE } =
+    TEST_PERMISSION_BITS;
+
+  await grantInstanceRole({
+    ...opts,
+    roleName: 'Profile admin',
+    decisionsPermission: READ | SUBMIT_PROPOSALS | VOTE,
+    profilePermission: DELETE | UPDATE | READ | CREATE | ADMIN,
   });
 }
 

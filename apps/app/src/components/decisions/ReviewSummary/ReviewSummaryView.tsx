@@ -16,6 +16,7 @@ import { LuCheck, LuPencil } from 'react-icons/lu';
 import { useTranslations } from '@/lib/i18n';
 
 import { DecisionSubpageHeader } from '../DecisionSubpageHeader';
+import { ProposalModerationMenu } from '../ProposalModerationMenu';
 import { ProposalPreview } from '../ProposalPreview';
 import { AuthorNotesSection } from '../Review/AuthorNotesSection';
 import type { ReviewFormStatus } from '../Review/ReviewFormContext';
@@ -61,8 +62,9 @@ export function ReviewSummaryView({
   const t = useTranslations();
   const { user } = useRequiredUser();
   const utils = trpc.useUtils();
+  const backHref = `/decisions/${decisionSlug}/current`;
 
-  const [[proposalWithReviews, proposal, { items: ownAssignments }]] =
+  const [[proposalWithReviews, proposal, { items: ownAssignments }, instance]] =
     trpc.useSuspenseQueries((t) => [
       t.decision.getProposalWithReviewAggregates(
         {
@@ -84,6 +86,8 @@ export function ReviewSummaryView({
         },
         { refetchOnMount: 'always' },
       ),
+      // Hydrated by ReviewSummaryLayout; carries the viewer's `access`.
+      t.decision.getInstance({ instanceId }),
     ]);
 
   const rubricTemplate = proposalWithReviews.rubricTemplate;
@@ -249,10 +253,7 @@ export function ReviewSummaryView({
         showAdvanceFooter && 'pb-14',
       )}
     >
-      <DecisionSubpageHeader
-        backHref={`/decisions/${decisionSlug}/current`}
-        backLabel={t('Back')}
-      >
+      <DecisionSubpageHeader backHref={backHref} backLabel={t('Back')}>
         {/* Swaps without a navigation. */}
         <div aria-live="polite">
           {isOwnFormOnScreen
@@ -277,6 +278,11 @@ export function ReviewSummaryView({
                 </Button>
               )}
         </div>
+        <ProposalModerationMenu
+          instance={instance}
+          proposal={proposal}
+          backHref={backHref}
+        />
       </DecisionSubpageHeader>
 
       <SplitPane className="mx-auto max-w-6xl" defaultMobileTabId="summary">

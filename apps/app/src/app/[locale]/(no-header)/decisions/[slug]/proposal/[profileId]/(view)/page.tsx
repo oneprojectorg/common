@@ -55,7 +55,7 @@ const ProposalViewPage = async ({
   params: Promise<{ slug: string; profileId: string }>;
 }) => {
   const { slug, profileId } = await params;
-  const { queryClient } = await createServerUtils();
+  const { utils, queryClient } = await createServerUtils();
 
   // Shares the cache()-wrapped fetch with generateMetadata above, so the
   // resolver (and its view event) runs once and the data is hydrated.
@@ -64,7 +64,11 @@ const ProposalViewPage = async ({
   // crash the route.
   await Promise.all([
     fetchProposal(profileId),
-    fetchDecisionBySlug(slug),
+    fetchDecisionBySlug(slug).then((decisionProfile) =>
+      utils.decision.getInstance.fetch({
+        instanceId: decisionProfile.processInstance.id,
+      }),
+    ),
   ]).catch(() => {});
 
   return (

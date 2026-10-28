@@ -27,7 +27,11 @@ function ProposalViewPageContent({
     notFound();
   }
 
-  const instance = decisionProfile.processInstance;
+  // getInstance, as on the review screen: its `access` also admits an admin
+  // of the decision's profile, which the slug read's bitfield does not.
+  const [instance] = trpc.decision.getInstance.useSuspenseQuery({
+    instanceId: decisionProfile.processInstance.id,
+  });
   const { user } = useUser();
 
   const phases = instance.instanceData?.phases ?? [];
