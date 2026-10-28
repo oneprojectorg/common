@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // `eq`/`inArray` record (column, value) pairs so the tests can pin which row
 // each query addresses.
@@ -178,6 +178,15 @@ const run = () =>
     transitionHistoryId: TRANSITION_ID,
     previousPhaseId: PREVIOUS_PHASE_ID,
   });
+
+// Phases are read from the blob: the rows flag is off.
+beforeEach(() => {
+  vi.stubEnv('NEXT_PUBLIC_E2E', '');
+});
+
+afterEach(() => {
+  vi.unstubAllEnvs();
+});
 
 describe('listResultNotificationRecipients', () => {
   beforeEach(() => {

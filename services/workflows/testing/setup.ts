@@ -7,6 +7,9 @@ vi.mock('@op/analytics/client', () => ({
     async isFeatureEnabled() {
       return false;
     },
+    async getAllFlags() {
+      return {};
+    },
     async shutdown() {},
   }),
 }));

@@ -4,9 +4,21 @@ import { processInstances, processPhases, profiles } from '@op/db/schema';
 import { logger } from '@op/logging';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { readInstancePhases, withInstancePhases } from './readInstancePhases';
+import { insertPhase } from './phaseHelpers';
+import {
+  readInstancePhases,
+  withInstancePhases,
+  withInstancesPhases,
+} from './readInstancePhases';
 
 const forceFlagOn = () => vi.stubEnv('NEXT_PUBLIC_E2E', 'true');
+const forceFlagOff = () => vi.stubEnv('NEXT_PUBLIC_E2E', '');
+
+const expectNoRowsWarning = (processInstanceIds: string[]) =>
+  expect(logger.warn).toHaveBeenCalledWith(
+    expect.stringContaining('no phase rows'),
+    { processInstanceIds },
+  );
 
 // Not concurrent: the flag is forced through the environment.
 describe('readInstancePhases', () => {
@@ -20,6 +32,7 @@ describe('readInstancePhases', () => {
   }) => {
     const { instanceId } = await createInstance(task.id, onTestFinished);
     await renameBlobPhases(instanceId);
+    forceFlagOff();
 
     const phases = await readInstancePhases({
       instance: await loadInstance(instanceId),
@@ -51,6 +64,10 @@ describe('readInstancePhases', () => {
       { phaseId: 'initial', name: 'Initial Phase' },
     ]);
     expect(phases[1]?.rules?.proposals?.submit).toBe(true);
+    expect(logger.warn).not.toHaveBeenCalledWith(
+      expect.stringContaining('no phase rows'),
+      expect.anything(),
+    );
   });
 
   it("takes a row's phaseId from its data, else from its profile slug", async ({
@@ -58,6 +75,7 @@ describe('readInstancePhases', () => {
     onTestFinished,
   }) => {
     const { instanceId } = await createInstance(task.id, onTestFinished);
+    await emptyBlobPhases(instanceId);
     const rows = await loadRows(instanceId);
     await db
       .update(processPhases)
@@ -95,9 +113,82 @@ describe('readInstancePhases', () => {
       'Blob initial',
       'Blob final',
     ]);
-    expect(logger.warn).toHaveBeenCalledWith(expect.any(String), {
-      processInstanceId: instanceId,
+    expectNoRowsWarning([instanceId]);
+  });
+
+  it('keeps the blob phases that have no row yet, in blob order', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { instanceId } = await createInstance(task.id, onTestFinished);
+    await renameBlobPhases(instanceId);
+    const rows = await loadRows(instanceId);
+    await db.delete(profiles).where(eq(profiles.id, rows.initial.profileId));
+    const { profile: added } = await db.transaction((tx) =>
+      insertPhase({
+        tx,
+        processInstanceId: instanceId,
+        name: 'Added phase',
+        sortOrder: 2,
+      }),
+    );
+    forceFlagOn();
+
+    const phases = await readInstancePhases({
+      instance: await loadInstance(instanceId),
     });
+
+    expect(phases.map(({ phaseId, name }) => ({ phaseId, name }))).toEqual([
+      { phaseId: 'initial', name: 'Blob initial' },
+      { phaseId: 'final', name: 'Final Phase' },
+      { phaseId: added.slug, name: 'Added phase' },
+    ]);
+  });
+
+  it('leaves the instance as it is when it has no rows', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { instanceId, testData } = await createInstance(
+      task.id,
+      onTestFinished,
+    );
+    await testData.removePhaseRows(instanceId);
+    const instance = await loadInstance(instanceId);
+    forceFlagOn();
+
+    expect(await withInstancePhases({ instance })).toBe(instance);
+    expectNoRowsWarning([instanceId]);
+  });
+
+  it('reads a list in one pass and warns once for the instances without rows', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({ instanceCount: 2 });
+    const [withRows, withoutRows] = setup.instances.map(
+      ({ instance }) => instance.id,
+    );
+    if (!withRows || !withoutRows) {
+      throw new Error('Expected two instances');
+    }
+    await testData.removePhaseRows(withoutRows);
+    await emptyBlobPhases(withRows);
+    const instances = [
+      await loadInstance(withRows),
+      await loadInstance(withoutRows),
+    ];
+    forceFlagOn();
+
+    const [first, second] = await withInstancesPhases({ instances });
+
+    expect(first?.instanceData).toMatchObject({
+      phases: [{ phaseId: 'initial' }, { phaseId: 'final' }],
+    });
+    expect(second).toBe(instances[1]);
+    expect(logger.warn).toHaveBeenCalledTimes(1);
+    expectNoRowsWarning([withoutRows]);
   });
 
   it('puts the rows on instanceData and keeps its other keys', async ({
@@ -107,6 +198,7 @@ describe('readInstancePhases', () => {
     const { instanceId } = await createInstance(task.id, onTestFinished);
     await emptyBlobPhases(instanceId);
     const instance = await loadInstance(instanceId);
+    forceFlagOff();
 
     expect(await withInstancePhases({ instance })).toBe(instance);
 
@@ -147,6 +239,7 @@ async function loadRows(instanceId: string) {
   const rows = await db
     .select({
       id: processPhases.id,
+      profileId: processPhases.profileId,
       phaseId: sql<string | null>`${processPhases.data} ->> 'phaseId'`,
       slug: profiles.slug,
     })
