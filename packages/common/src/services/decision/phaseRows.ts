@@ -1,5 +1,5 @@
-import { type DbClient, asc, eq, inArray } from '@op/db/client';
-import { processPhases, profiles } from '@op/db/schema';
+import { type DbClient, asc, eq, inArray, sql } from '@op/db/client';
+import { processInstances, processPhases, profiles } from '@op/db/schema';
 
 import {
   type PhaseRowData,
@@ -8,7 +8,10 @@ import {
   getPhaseProfileName,
   insertPhase,
 } from './phaseHelpers';
-import type { PhaseInstanceData } from './schemas/instanceData';
+import type {
+  DecisionInstanceData,
+  PhaseInstanceData,
+} from './schemas/instanceData';
 
 interface PhaseRow {
   id: string;
@@ -46,11 +49,12 @@ export const loadPhaseRows = async ({
 
 /** The rows in the shape `instance_data` keeps, for the readers still on it. */
 export const projectPhaseRows = (rows: PhaseRow[]): PhaseInstanceData[] =>
-  rows.map((row) => ({
-    ...row.data,
-    phaseId: phaseIdOf(row),
-    name: row.name,
-  }));
+  rows.map(projectPhaseRow);
+
+export const getInstanceDataPhases = (
+  instanceData: unknown,
+): PhaseInstanceData[] =>
+  (instanceData as DecisionInstanceData | null)?.phases ?? [];
 
 /**
  * The phases a decision holds: its rows, plus each `instance_data` phase that
@@ -63,13 +67,53 @@ export const getStoredPhases = ({
   rows: PhaseRow[];
   blobPhases: PhaseInstanceData[];
 }): PhaseInstanceData[] => {
-  const projected = projectPhaseRows(rows);
-  const rowPhaseIds = new Set(projected.map(({ phaseId }) => phaseId));
-
-  return [
-    ...projected,
-    ...blobPhases.filter(({ phaseId }) => !rowPhaseIds.has(phaseId)),
+  const rowPhaseIds = new Set(rows.map(phaseIdOf));
+  // A blob phase has no sortOrder; its index stands in, and a row wins a tie.
+  const placed = [
+    ...rows.map((row) => ({
+      position: row.sortOrder,
+      rank: 0,
+      phase: projectPhaseRow(row),
+    })),
+    ...blobPhases.flatMap((phase, position) =>
+      rowPhaseIds.has(phase.phaseId) ? [] : [{ position, rank: 1, phase }],
+    ),
   ];
+
+  return placed
+    .sort((a, b) => a.position - b.position || a.rank - b.rank)
+    .map(({ phase }) => phase);
+};
+
+/**
+ * Mirrors the rows onto `instance_data.phases` after a phase endpoint writes,
+ * so the builder's next save lists them. The caller holds the instance lock.
+ */
+export const writePhaseRowsToInstanceData = async ({
+  db,
+  processInstanceId,
+  instanceData,
+  removedPhaseId,
+}: {
+  db: DbClient;
+  processInstanceId: string;
+  /** Read under the lock. */
+  instanceData: unknown;
+  removedPhaseId?: string;
+}): Promise<void> => {
+  const phases = getStoredPhases({
+    rows: await loadPhaseRows({ db, processInstanceId }),
+    blobPhases: getInstanceDataPhases(instanceData).filter(
+      ({ phaseId }) => phaseId !== removedPhaseId,
+    ),
+  });
+
+  await db
+    .update(processInstances)
+    .set({
+      instanceData: sql`jsonb_set(${processInstances.instanceData}, '{phases}', ${JSON.stringify(phases)}::jsonb)`,
+    })
+    .where(eq(processInstances.id, processInstanceId));
 };
 
 export const insertPhaseRows = async ({
@@ -149,7 +193,14 @@ export const reconcilePhaseRows = async ({
 
 // A row minted from `instance_data` carries that phase's id; one made by the
 // phase endpoints has only its slug, which is just as stable.
-const phaseIdOf = (row: PhaseRow): string => row.data.phaseId ?? row.slug;
+export const phaseIdOf = (row: PhaseRow): string =>
+  row.data.phaseId ?? row.slug;
+
+const projectPhaseRow = (row: PhaseRow): PhaseInstanceData => ({
+  ...row.data,
+  phaseId: phaseIdOf(row),
+  name: row.name,
+});
 
 const readPhaseRowData = (data: unknown): PhaseRowData =>
   typeof data === 'object' && data !== null && !Array.isArray(data)
