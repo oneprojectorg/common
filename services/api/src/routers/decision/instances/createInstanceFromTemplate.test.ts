@@ -124,9 +124,12 @@ describe.concurrent('createInstanceFromTemplate', () => {
     onTestFinished,
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const [first, ...rest] = simpleVoting.phases;
+    const firstName = `Ideas Wanted ${task.id}`;
     const { templateId, userEmail } = await createSimpleTemplate(
       testData,
       task.id,
+      { phases: [{ ...first!, name: firstName }, ...rest] },
     );
     const caller = await createAuthenticatedCaller(userEmail);
 
@@ -164,6 +167,14 @@ describe.concurrent('createInstanceFromTemplate', () => {
         rules: phase.rules,
       });
       expect(row.data).not.toHaveProperty('name');
+    });
+
+    expect(rows[0]!.name).toBe(firstName);
+    expect(rows[0]!.data).toMatchObject({
+      phaseId: first!.id,
+      description: first!.description,
+      selectionPipeline: first!.selectionPipeline,
+      settingsSchema: first!.settings,
     });
   });
 
@@ -229,12 +240,11 @@ describe.concurrent('createInstanceFromTemplate', () => {
     expect(row?.name).toBe(phaseName);
   });
 
-  it('rolls the instance back when a phase name does not fit its profile', async ({
+  it('refuses a phase name that does not fit its profile before writing anything', async ({
     task,
     onTestFinished,
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    // The last phase is oversized, so the earlier rows exist when it throws.
     const lastIndex = simpleVoting.phases.length - 1;
     const nameFor = (index: number) =>
       index === lastIndex
@@ -255,7 +265,14 @@ describe.concurrent('createInstanceFromTemplate', () => {
     const name = `Rolled Back ${task.id}`;
     await expect(
       caller.decision.createInstanceFromTemplate({ templateId, name }),
-    ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
+    ).rejects.toMatchObject({
+      cause: {
+        name: 'ValidationError',
+        message: expect.stringContaining(
+          `has a name longer than ${MAX_PHASE_NAME_LENGTH} characters`,
+        ),
+      },
+    });
 
     const [instances, decisionProfiles, phaseProfiles] = await Promise.all([
       db.query.processInstances.findMany({
@@ -298,7 +315,13 @@ describe.concurrent('createInstanceFromTemplate', () => {
     const name = `Too Many Phases ${task.id}`;
     await expect(
       caller.decision.createInstanceFromTemplate({ templateId, name }),
-    ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
+    ).rejects.toMatchObject({
+      cause: {
+        name: 'ValidationError',
+        message: `The source decision has ${phases.length} phases; the limit is ${MAX_PHASES_PER_DECISION}`,
+        fieldErrors: { phases: 'Remove 1' },
+      },
+    });
 
     const instances = await db.query.processInstances.findMany({
       where: { name },
