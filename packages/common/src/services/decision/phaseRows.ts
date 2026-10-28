@@ -73,7 +73,10 @@ export const loadPhaseRowsByInstance = async ({
     .from(processPhases)
     .innerJoin(profiles, eq(profiles.id, processPhases.profileId))
     .where(inArray(processPhases.processInstanceId, processInstanceIds))
-    .orderBy(asc(processPhases.processInstanceId), asc(processPhases.sortOrder));
+    .orderBy(
+      asc(processPhases.processInstanceId),
+      asc(processPhases.sortOrder),
+    );
 
   for (const { processInstanceId, ...row } of rows) {
     const instanceRows = rowsByInstance.get(processInstanceId) ?? [];

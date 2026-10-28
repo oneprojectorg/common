@@ -24,7 +24,6 @@ import {
   getUpdatedInstanceData,
 } from './getUpdatedInstanceData';
 import { lockProcessInstanceOrThrow } from './lockProcessInstance';
-import { isPhasesFromRowsEnabled } from './readInstancePhases';
 import {
   getInstanceDataPhases,
   getStoredPhases,
@@ -33,6 +32,7 @@ import {
   reconcilePhaseRows,
 } from './phaseRows';
 import { ensureProposalTaxonomyTerms } from './proposalTaxonomy';
+import { isPhasesFromRowsEnabled } from './readInstancePhases';
 import { schemaValidator } from './schemaValidator';
 import type {
   DecisionInstanceData,

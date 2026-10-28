@@ -183,43 +183,42 @@ export const listDecisionProfiles = async ({
 
   // Transform profiles to include proposal/participant counts and access permissions
   const profilesWithCounts = profileList.map((profile) => {
-      const { profileUsers: _, ...profileWithoutUsers } = profile;
+    const { profileUsers: _, ...profileWithoutUsers } = profile;
 
-      if (profile.processInstance) {
-        const { proposals, ...instanceRest } =
-          instanceById.get(profile.processInstance.id) ??
-          profile.processInstance;
-        const nonDraftProposals =
-          proposals?.filter(
-            (proposal) => proposal.status !== ProposalStatus.DRAFT,
-          ) ?? [];
-        const proposalCount = nonDraftProposals.length;
-        const uniqueParticipants = new Set(
-          nonDraftProposals.map((proposal) => proposal.submittedByProfileId),
-        );
-        const participantCount = uniqueParticipants.size;
+    if (profile.processInstance) {
+      const { proposals, ...instanceRest } =
+        instanceById.get(profile.processInstance.id) ?? profile.processInstance;
+      const nonDraftProposals =
+        proposals?.filter(
+          (proposal) => proposal.status !== ProposalStatus.DRAFT,
+        ) ?? [];
+      const proposalCount = nonDraftProposals.length;
+      const uniqueParticipants = new Set(
+        nonDraftProposals.map((proposal) => proposal.submittedByProfileId),
+      );
+      const participantCount = uniqueParticipants.size;
 
-        // Compute decision access from the joined profileUser roles
-        const profileUser = profile.profileUsers?.[0];
-        const roles = profileUser
-          ? getNormalizedRoles(profileUser.roles, { profileId: profile.id })
-          : [];
-        const collapsed = collapseRoles(roles);
-        const access = fromDecisionBitField(collapsed.decisions ?? 0);
+      // Compute decision access from the joined profileUser roles
+      const profileUser = profile.profileUsers?.[0];
+      const roles = profileUser
+        ? getNormalizedRoles(profileUser.roles, { profileId: profile.id })
+        : [];
+      const collapsed = collapseRoles(roles);
+      const access = fromDecisionBitField(collapsed.decisions ?? 0);
 
-        return {
-          ...profileWithoutUsers,
-          processInstance: {
-            ...instanceRest,
-            proposals,
-            proposalCount,
-            participantCount,
-            access,
-          },
-        };
-      }
+      return {
+        ...profileWithoutUsers,
+        processInstance: {
+          ...instanceRest,
+          proposals,
+          proposalCount,
+          participantCount,
+          access,
+        },
+      };
+    }
 
-      return profileWithoutUsers;
+    return profileWithoutUsers;
   });
 
   const hasMore = profilesWithCounts.length > limit;
