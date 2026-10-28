@@ -1,10 +1,18 @@
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { existsSync, readFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
 
-const envText = readFileSync(
-  resolve(import.meta.dirname, '../../../../.env.local'),
-  'utf8',
-);
+const here = import.meta.dirname;
+const repoRoot = (() => {
+  let dir = here;
+  while (!existsSync(resolve(dir, 'pnpm-workspace.yaml'))) {
+    const parent = dirname(dir);
+    if (parent === dir) throw new Error(`repo root not found above ${here}`);
+    dir = parent;
+  }
+  return dir;
+})();
+
+const envText = readFileSync(resolve(repoRoot, '.env.local'), 'utf8');
 const env = Object.fromEntries(
   envText
     .split('\n')

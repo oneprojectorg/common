@@ -1,9 +1,18 @@
 import { randomUUID } from 'node:crypto';
-import { readFileSync, writeFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
 
 const here = import.meta.dirname;
-const envPath = resolve(here, '../../../../.env.local');
+const repoRoot = (() => {
+  let dir = here;
+  while (!existsSync(resolve(dir, 'pnpm-workspace.yaml'))) {
+    const parent = dirname(dir);
+    if (parent === dir) throw new Error(`repo root not found above ${here}`);
+    dir = parent;
+  }
+  return dir;
+})();
+const envPath = resolve(repoRoot, '.env.local');
 
 const envText = readFileSync(envPath, 'utf8');
 const env = Object.fromEntries(
