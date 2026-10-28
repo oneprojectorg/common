@@ -25,6 +25,7 @@ import {
 } from './getUpdatedInstanceData';
 import { lockProcessInstanceOrThrow } from './lockProcessInstance';
 import {
+  getStoredPhases,
   loadPhaseRows,
   projectPhaseRows,
   reconcilePhaseRows,
@@ -169,12 +170,11 @@ export const updateDecisionInstance = async ({
         db: tx,
         processInstanceId: instanceId,
       });
-      // A decision not yet backfilled has no rows; its blob is the base.
-      const currentPhases =
-        rows.length > 0
-          ? projectPhaseRows(rows)
-          : ((locked.instanceData as DecisionInstanceData | null)?.phases ??
-            []);
+      const currentPhases = getStoredPhases({
+        rows,
+        blobPhases:
+          (locked.instanceData as DecisionInstanceData | null)?.phases ?? [],
+      });
 
       phaseUpdate = getUpdatedInstanceData({
         existing: {
