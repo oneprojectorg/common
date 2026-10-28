@@ -1,10 +1,9 @@
 import { type DbClient, asc, eq, inArray } from '@op/db/client';
 import { processPhases, profiles } from '@op/db/schema';
 
-import { ValidationError } from '../../utils';
 import {
-  MAX_PHASES_PER_DECISION,
   type PhaseRowData,
+  assertPhaseListFits,
   assertPhaseNameFits,
   getPhaseProfileName,
   insertPhase,
@@ -62,7 +61,7 @@ export const insertPhaseRows = async ({
   processInstanceId: string;
   phases: PhaseInstanceData[];
 }): Promise<void> => {
-  assertPhaseCountFits(phases.length);
+  assertPhaseListFits(phases);
 
   for (const [sortOrder, phase] of phases.entries()) {
     const { name: _name, ...data } = phase;
@@ -73,15 +72,6 @@ export const insertPhaseRows = async ({
       sortOrder,
       data,
     });
-  }
-};
-
-const assertPhaseCountFits = (count: number): void => {
-  if (count > MAX_PHASES_PER_DECISION) {
-    throw new ValidationError(
-      `A decision can have at most ${MAX_PHASES_PER_DECISION} phases`,
-      { phases: `Remove ${count - MAX_PHASES_PER_DECISION}` },
-    );
   }
 };
 
@@ -98,7 +88,7 @@ export const reconcilePhaseRows = async ({
   processInstanceId: string;
   phases: PhaseInstanceData[];
 }): Promise<void> => {
-  assertPhaseCountFits(phases.length);
+  assertPhaseListFits(phases);
 
   const rows = await loadPhaseRows({ db, processInstanceId });
   const rowByPhaseId = new Map(rows.map((row) => [phaseIdOf(row), row]));

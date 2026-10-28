@@ -215,12 +215,12 @@ describe.concurrent('duplicateInstance', () => {
 
   it.for([
     {
-      label: 'a phase with no id',
-      message: /A phase has no id/,
-      phases: [
-        { phaseId: '', name: 'Submission' },
-        { phaseId: 'voting', name: 'Voting' },
-      ],
+      label: 'more phases than a decision can hold',
+      message: `A decision can have at most ${MAX_PHASES_PER_DECISION} phases`,
+      phases: Array.from({ length: MAX_PHASES_PER_DECISION + 1 }, (_, i) => ({
+        phaseId: `phase-${i}`,
+        name: `Phase ${i}`,
+      })),
     },
     {
       label: 'two phases with one id',
@@ -231,7 +231,7 @@ describe.concurrent('duplicateInstance', () => {
       ],
     },
   ])(
-    'refuses a legacy source with $label before writing anything',
+    'refuses a legacy source with $label',
     async ({ message, phases }, { task, onTestFinished }) => {
       const testData = new TestDecisionsDataManager(task.id, onTestFinished);
       const { result: source, caller } = await createSourceInstance(
