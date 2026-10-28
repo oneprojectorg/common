@@ -7,7 +7,7 @@ LABEL="${1:-main}"
 DB="postgresql://postgres:postgres@127.0.0.1:54322/postgres"
 BUDGET="${BUDGET:-12000}"
 
-echo "Branch served on :3100 right now: $(cd "$S" && git rev-parse --abbrev-ref HEAD 2>/dev/null || echo unknown)"
+echo "Served on :3100 right now: $(git -C "$S" log -1 --format='%h %s' 2>&- || echo unknown) ($(git -C "$S" rev-parse --abbrev-ref HEAD 2>&-))"
 echo
 
 # ── 1. Builder: no Total budget field, no hide toggle ──────────────────────
@@ -135,7 +135,7 @@ phases_for() {
         console.log(`${process.argv[1]} (admin=${data.access?.admin}): ${phases}`);
       });' "$who"
 }
-psql "$DB" -At -c "update decision_process_instances set instance_data = jsonb_set(instance_data, '{config,hideBudget}', 'true'::jsonb, true) where id = '$INSTANCE_ID'" >/dev/null
+psql "$DB" -At -c "update decision_process_instances set instance_data = jsonb_set(jsonb_set(instance_data, '{config}', coalesce(instance_data->'config', '{}'::jsonb), true), '{config,hideBudget}', 'true'::jsonb, true) where id = '$INSTANCE_ID'" >/dev/null
 echo "getInstance phase settings with hideBudget on (budget $BUDGET stored on the final phase):"
 phases_for admin "$ADMIN_EMAIL"
 phases_for member "$(field member.email)"
