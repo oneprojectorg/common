@@ -140,23 +140,25 @@ export const insertPhaseRows = async ({
 };
 
 /**
- * Makes the rows match `phases`, in that order. A phase the list leaves out
- * is deleted with its profile.
+ * Makes `rows`, loaded under the instance lock, match `phases` in that order,
+ * and returns the result. A phase the list leaves out is deleted with its
+ * profile.
  */
 export const reconcilePhaseRows = async ({
   db,
   processInstanceId,
+  rows,
   phases,
 }: {
   db: DbClient;
   processInstanceId: string;
+  rows: PhaseRow[];
   phases: PhaseInstanceData[];
-}): Promise<void> => {
+}): Promise<PhaseRow[]> => {
   assertPhaseListFits(phases);
 
-  const rows = await loadPhaseRows({ db, processInstanceId });
   const rowByPhaseId = new Map(rows.map((row) => [phaseIdOf(row), row]));
-  const kept = new Set<string>();
+  const reconciled: PhaseRow[] = [];
 
   for (const [sortOrder, phase] of phases.entries()) {
     const row = rowByPhaseId.get(phase.phaseId);
@@ -164,11 +166,24 @@ export const reconcilePhaseRows = async ({
     const name = getPhaseProfileName(phase);
 
     if (!row) {
-      await insertPhase({ tx: db, processInstanceId, name, sortOrder, data });
+      const inserted = await insertPhase({
+        tx: db,
+        processInstanceId,
+        name,
+        sortOrder,
+        data,
+      });
+      reconciled.push({
+        id: inserted.phase.id,
+        profileId: inserted.profile.id,
+        sortOrder,
+        data,
+        name: inserted.profile.name,
+        slug: inserted.profile.slug,
+      });
       continue;
     }
 
-    kept.add(row.id);
     await db
       .update(processPhases)
       .set({ sortOrder, data })
@@ -181,14 +196,19 @@ export const reconcilePhaseRows = async ({
         .set({ name })
         .where(eq(profiles.id, row.profileId));
     }
+
+    reconciled.push({ ...row, sortOrder, data, name });
   }
 
+  const kept = new Set(reconciled.map(({ id }) => id));
   const removed = rows
     .filter((row) => !kept.has(row.id))
     .map((row) => row.profileId);
   if (removed.length > 0) {
     await db.delete(profiles).where(inArray(profiles.id, removed));
   }
+
+  return reconciled;
 };
 
 // A row minted from `instance_data` carries that phase's id; one made by the
