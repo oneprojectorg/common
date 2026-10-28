@@ -74,6 +74,40 @@ async function readStatus(proposalId: string) {
 }
 
 describe.concurrent('mergeProposals', () => {
+  it('lets a profile admin without Manage Process merge and unmerge', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, source, target } = await createMergeableProposals(testData);
+    const profileAdmin = await testData.createProfileAdminUser({
+      organization: setup.organization,
+      instanceProfileId: setup.instance.profileId,
+    });
+    const profileAdminCaller = await createAuthenticatedCaller(
+      profileAdmin.email,
+    );
+
+    await profileAdminCaller.decision.mergeProposals({
+      sourceProposalId: source.id,
+      targetProposalId: target.id,
+    });
+    await profileAdminCaller.decision.unmergeProposal({
+      sourceProposalId: source.id,
+    });
+
+    const liveEdges = await db
+      .select({ id: proposalRelationships.id })
+      .from(proposalRelationships)
+      .where(
+        and(
+          eq(proposalRelationships.sourceProposalId, source.id),
+          isNull(proposalRelationships.deletedAt),
+        ),
+      );
+    expect(liveEdges).toHaveLength(0);
+  });
+
   it('records the edge and leaves both statuses alone', async ({
     task,
     onTestFinished,

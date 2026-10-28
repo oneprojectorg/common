@@ -11,6 +11,7 @@ import {
   ValidationError,
 } from '../../utils';
 import { getProfileAccessRoles, getUserSession } from '../access';
+import { decisionAdminPermissions } from './permissions';
 
 export const deleteProposal = async ({
   proposalId,
@@ -71,7 +72,7 @@ export const deleteProposal = async ({
     );
 
     const hasInstanceAdmin = checkPermission(
-      { decisions: permission.ADMIN },
+      decisionAdminPermissions,
       instanceRoles,
     );
 

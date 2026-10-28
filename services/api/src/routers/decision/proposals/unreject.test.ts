@@ -7,6 +7,45 @@ import { describe, expect, it } from 'vitest';
 import { createAuthenticatedCaller } from '../../../test/supabase-utils';
 
 describe.concurrent('unrejectProposal', () => {
+  it('lets a profile admin without Manage Process restore a rejected proposal', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const profileAdmin = await testData.createProfileAdminUser({
+      organization: setup.organization,
+      instanceProfileId: setup.instance.profileId,
+    });
+    const [proposal, adminCaller, profileAdminCaller] = await Promise.all([
+      testData.createProposal({
+        userEmail: setup.userEmail,
+        processInstanceId: setup.instance.instance.id,
+        proposalData: { title: 'Proposal' },
+        status: ProposalStatus.SUBMITTED,
+      }),
+      createAuthenticatedCaller(setup.userEmail),
+      createAuthenticatedCaller(profileAdmin.email),
+    ]);
+    await adminCaller.decision.rejectProposal({
+      proposalId: proposal.id,
+      reason: RejectionReason.INELIGIBLE,
+    });
+
+    await profileAdminCaller.decision.unrejectProposal({
+      proposalId: proposal.id,
+    });
+
+    const row = await db.query.proposals.findFirst({
+      where: { id: proposal.id },
+      columns: { status: true },
+    });
+    expect(row?.status).toBe(ProposalStatus.SUBMITTED);
+  });
+
   it("rejects the proposal's author, who is admin of the proposal but not the decision", async ({
     task,
     onTestFinished,

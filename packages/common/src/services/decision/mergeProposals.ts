@@ -5,11 +5,11 @@ import {
   proposalRelationships,
 } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
-import { permission } from 'access-zones';
 
 import { ConflictError, ValidationError } from '../../utils';
 import { assertProfileAccess } from '../assert';
 import { getProposalAccessContext } from './getProposalAccessContext';
+import { decisionAdminPermissions } from './permissions';
 import { findLiveMergedEdge } from './proposalSupersession';
 import type { MergeProposalsInput } from './schemas/proposalRelationships';
 
@@ -51,7 +51,7 @@ export async function mergeProposals({
   await assertProfileAccess({
     user,
     profileId: source.instance.profileId,
-    permissions: { decisions: permission.ADMIN },
+    permissions: decisionAdminPermissions,
   });
 
   const [target, targetAlreadyMerged] = await Promise.all([

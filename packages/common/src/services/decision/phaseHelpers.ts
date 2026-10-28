@@ -7,11 +7,11 @@ import {
   profiles,
 } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
-import { permission } from 'access-zones';
 import { randomUUID } from 'node:crypto';
 
 import { CommonError, NotFoundError, ValidationError } from '../../utils';
 import { assertProfileAccess } from '../assert';
+import { decisionAdminPermissions } from './permissions';
 import { schemaValidator } from './schemaValidator';
 import {
   type PhaseInstanceData,
@@ -162,7 +162,7 @@ export const assertDecisionAdmin = async ({
   await assertProfileAccess({
     user,
     profileId: decisionProfileId,
-    permissions: { decisions: permission.ADMIN },
+    permissions: decisionAdminPermissions,
   });
 };
 

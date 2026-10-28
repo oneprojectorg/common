@@ -1,10 +1,9 @@
 import {
   Channels,
-  fromDecisionBitField,
   getDecisionBySlug,
   getProfileAccessRoles,
+  resolveDecisionAccess,
 } from '@op/common';
-import { collapseRoles } from 'access-zones';
 import { z } from 'zod';
 
 import { decisionProfileWithSchemaEncoder } from '../../../encoders/decision';
@@ -41,8 +40,6 @@ export const getDecisionBySlugRouter = router({
         profileId,
       });
 
-      const decisionsBitField = collapseRoles(roles)['decisions'] ?? 0;
-
       ctx.registerQueryChannels([
         Channels.decisionInstance(parsed.processInstance.id),
       ]);
@@ -51,7 +48,7 @@ export const getDecisionBySlugRouter = router({
         ...parsed,
         processInstance: {
           ...parsed.processInstance,
-          access: fromDecisionBitField(decisionsBitField),
+          access: resolveDecisionAccess(roles),
         },
       });
     }),

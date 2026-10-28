@@ -37,17 +37,24 @@ const ALL_TRUE_ACCESS: DecisionRolePermissions = {
 const getRolesDecisionBits = (roles: NormalizedRole[]): number =>
   collapseRoles(roles)['decisions'] ?? 0;
 
+/** The caller's capabilities from their roles on the decision's profile. */
+export const resolveDecisionAccess = (
+  profileRoles: NormalizedRole[],
+): DecisionRolePermissions => {
+  // Profile admins bypass decision-zone role checks — they have full access
+  if (checkPermission({ profile: permission.ADMIN }, profileRoles)) {
+    return ALL_TRUE_ACCESS;
+  }
+  return fromDecisionBitField(getRolesDecisionBits(profileRoles));
+};
+
 const resolveInstanceAccess = async (
   user: AccessUser | undefined,
   instance: { profileId: string; ownerProfileId: string | null },
   profileRoles: NormalizedRole[],
 ): Promise<DecisionRolePermissions> => {
   if (profileRoles.length > 0) {
-    // Profile admins bypass decision-zone role checks — they have full access
-    if (checkPermission({ profile: permission.ADMIN }, profileRoles)) {
-      return ALL_TRUE_ACCESS;
-    }
-    return fromDecisionBitField(getRolesDecisionBits(profileRoles));
+    return resolveDecisionAccess(profileRoles);
   }
 
   // Fall back to org-level roles

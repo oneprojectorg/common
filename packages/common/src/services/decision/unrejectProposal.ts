@@ -1,11 +1,11 @@
 import { and, db, eq } from '@op/db/client';
 import { ProposalStatus, proposals } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
-import { permission } from 'access-zones';
 
 import { ConflictError, ValidationError } from '../../utils';
 import { assertProfileAccess } from '../assert';
 import { getProposalAccessContext } from './getProposalAccessContext';
+import { decisionAdminPermissions } from './permissions';
 import type { UnrejectProposalInput } from './schemas/rejectProposal';
 
 export type UnrejectProposalResult = {
@@ -33,7 +33,7 @@ export async function unrejectProposal({
   await assertProfileAccess({
     user,
     profileId: context.instance.profileId,
-    permissions: { decisions: permission.ADMIN },
+    permissions: decisionAdminPermissions,
   });
 
   if (context.status !== ProposalStatus.REJECTED) {

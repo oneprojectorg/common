@@ -19,6 +19,15 @@ export const decisionPermission = {
   VOTE: 0b1000_00000,
 } as const;
 
+/**
+ * Who administers a decision: an admin of its profile, or a role with
+ * "Manage Process". Matches the `admin` that `getInstance` reports.
+ */
+export const decisionAdminPermissions = [
+  { profile: permission.ADMIN },
+  { decisions: permission.ADMIN },
+];
+
 export type DecisionRolePermissions = {
   delete: boolean;
   update: boolean;

@@ -73,6 +73,36 @@ async function setProposalEditingRule(
 }
 
 describe.concurrent('updateProposal visibility', () => {
+  it('should allow a profile admin without Manage Process to hide a proposal', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const profileAdmin = await testData.createProfileAdminUser({
+      organization: setup.organization,
+      instanceProfileId: setup.instance.profileId,
+    });
+    const [proposal, profileAdminCaller] = await Promise.all([
+      testData.createProposal({
+        userEmail: setup.userEmail,
+        processInstanceId: setup.instance.instance.id,
+        proposalData: { title: 'Test Proposal', description: 'A test' },
+      }),
+      createAuthenticatedCaller(profileAdmin.email),
+    ]);
+
+    const result = await profileAdminCaller.decision.updateProposal({
+      proposalId: proposal.id,
+      data: { visibility: Visibility.HIDDEN },
+    });
+
+    expect(result.visibility).toBe(Visibility.HIDDEN);
+  });
+
   it('should allow admin to hide a proposal', async ({
     task,
     onTestFinished,

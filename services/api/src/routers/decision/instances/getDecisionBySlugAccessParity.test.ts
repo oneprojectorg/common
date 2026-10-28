@@ -17,26 +17,8 @@ async function createAuthenticatedCaller(email: string) {
 
 /**
  * /overview is single-fetch: it reads per-user `access` from getDecisionBySlug
- * (router derives it via getProfileAccessRoles -> decisions bitfield) instead of
- * getInstance (resolveInstanceAccess, which adds a profile-admin ALL_TRUE bypass
- * + org fallback). Safe only if the two derivations agree for the capabilities
- * the overview gates on (admin, submitProposals).
- *
- * SCOPE (be honest about what this proves): this pins parity for the DEFAULT
- * Admin role only. That role grants `profile.admin` AND the full decisions
- * bitfield, so BOTH paths return admin=true — getInstance via the profile-admin
- * bypass, getDecisionBySlug via the bitfield. They agree, but for different
- * reasons, so this case does NOT exercise the bypass itself.
- *
- * KNOWN LIMITATIONS this test does NOT cover (see PR #1417 review):
- *  - A custom role granting `profile.admin` WITHOUT decisions-admin/submit bits:
- *    getInstance would return admin=true (bypass), getDecisionBySlug admin=false
- *    (bitfield) → /overview would under-report CTAs. Reachable via custom roles
- *    (createDecisionRole); unverified whether such roles exist in production.
- *  - Org-only viewers (org role, no profile grant): NOT relevant to /overview —
- *    its gate (assertProfileAccess, profile-only) already 403s them before render.
- *  If custom profile-admin roles are in use, fix the router to derive access like
- *  getInstance (getProfileAccessRolesWithOrgFallback + profile-admin bypass).
+ * instead of getInstance, so the two must agree on the capabilities the
+ * overview gates on (admin, submitProposals).
  */
 describe.concurrent('getDecisionBySlug access parity with getInstance', () => {
   it('admin user: access matches getInstance for overview-gated fields', async ({
@@ -74,5 +56,28 @@ describe.concurrent('getDecisionBySlug access parity with getInstance', () => {
     // And concretely: an admin can submit + administer.
     expect(slugAccess?.admin).toBe(true);
     expect(slugAccess?.submitProposals).toBe(true);
+  });
+
+  it('profile admin without the decisions ADMIN bit: both report admin', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({ instanceCount: 1 });
+    const profileAdmin = await testData.createProfileAdminUser({
+      organization: setup.organization,
+      instanceProfileId: setup.instance.profileId,
+    });
+    const caller = await createAuthenticatedCaller(profileAdmin.email);
+
+    const [bySlug, byInstance] = await Promise.all([
+      caller.decision.getDecisionBySlug({ slug: setup.instance.slug }),
+      caller.decision.getInstance({
+        instanceId: setup.instance.instance.id,
+      }),
+    ]);
+
+    expect(bySlug.processInstance.access).toEqual(byInstance.access);
+    expect(bySlug.processInstance.access?.admin).toBe(true);
   });
 });

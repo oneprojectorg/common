@@ -1,11 +1,11 @@
 import { and, db, eq, isNull } from '@op/db/client';
 import { proposalRelationships } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
-import { permission } from 'access-zones';
 
 import { ConflictError, NotFoundError } from '../../utils';
 import { assertProfileAccess } from '../assert';
 import { getProposalAccessContext } from './getProposalAccessContext';
+import { decisionAdminPermissions } from './permissions';
 import { findLiveMergedEdge } from './proposalSupersession';
 import type { UnmergeProposalInput } from './schemas/proposalRelationships';
 
@@ -32,7 +32,7 @@ export async function unmergeProposal({
     assertProfileAccess({
       user,
       profileId: source.instance.profileId,
-      permissions: { decisions: permission.ADMIN },
+      permissions: decisionAdminPermissions,
     }),
     findLiveMergedEdge({
       processInstanceId: source.processInstanceId,
