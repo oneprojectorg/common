@@ -32,12 +32,11 @@ import {
   PersonalDetailsForm,
   validator as PersonalDetailsFormValidator,
 } from './PersonalDetailsForm';
-import {
-  PrivacyPolicyForm,
-  validator as PrivacyPolicyFormValidator,
-} from './PrivacyPolicyForm';
 import { PromoteOnboardingFlow } from './PromoteOnboardingFlow';
-import { ToSForm, validator as ToSFormValidator } from './ToSForm';
+import {
+  ToSAcceptanceScreen,
+  validator as ToSStepValidator,
+} from './ToSAcceptanceScreen';
 import { organizationFormValidator as OrganizationDetailsFormValidator } from './shared/organizationValidation';
 import { useOnboardingFormStore } from './useOnboardingFormStore';
 import { sendOnboardingAnalytics } from './utils';
@@ -48,27 +47,7 @@ export type FormValues = z.infer<typeof PersonalDetailsFormValidator> &
   z.infer<typeof OrganizationSearchStepValidator>;
 
 type OrgCreationFormValues = z.infer<typeof OrganizationDetailsFormValidator> &
-  z.infer<typeof FundingInformationFormValidator> &
-  z.infer<typeof ToSFormValidator> &
-  z.infer<typeof PrivacyPolicyFormValidator>;
-
-const ProgressInPortal = (props: ProgressComponentProps) => (
-  <Portal id="top-slot">
-    <StepperProgressIndicator {...props} />
-  </Portal>
-);
-
-// Prefetch for the org-search step. Only on the org-search branch: the promote
-// flow skips it, and prefetching there fires a network-tier 403 for the new user.
-const PrefetchDomainOrganizations = () => {
-  void trpc.account.listMatchingDomainOrganizations.usePrefetchQuery();
-  return null;
-};
-
-const processOrgInputs = (data: OrgCreationFormValues) => ({
-  ...data,
-  website: data.website ?? '',
-});
+  z.infer<typeof FundingInformationFormValidator>;
 
 export const OnboardingFlow = ({
   isNetworkMember,
@@ -94,8 +73,6 @@ export const OnboardingFlow = ({
     personalDetails,
     organizationDetails,
     fundingInformation,
-    tos,
-    privacyPolicy,
     setOrganizationDetails,
   } = useOnboardingFormStore();
   const trpcUtils = trpc.useUtils();
@@ -232,8 +209,8 @@ export const OnboardingFlow = ({
 
   // Get step values for org creation flow
   const getOrgCreationStepValues = useCallback(() => {
-    return [organizationDetails, fundingInformation, tos, privacyPolicy];
-  }, [organizationDetails, fundingInformation, tos, privacyPolicy]);
+    return [organizationDetails, fundingInformation, {}];
+  }, [organizationDetails, fundingInformation]);
 
   // Submit org creation
   const submitOrganization = useCallback(() => {
@@ -317,17 +294,11 @@ export const OnboardingFlow = ({
   if (createOrgMode) {
     return (
       <MultiStepForm
-        steps={[
-          OrganizationDetailsForm,
-          FundingInformationForm,
-          ToSForm,
-          PrivacyPolicyForm,
-        ]}
+        steps={[OrganizationDetailsForm, FundingInformationForm, ToSStep]}
         schemas={[
           OrganizationDetailsFormValidator,
           FundingInformationFormValidator,
-          ToSFormValidator,
-          PrivacyPolicyFormValidator,
+          ToSStepValidator,
         ]}
         onFinish={submitOrganization}
         ProgressComponent={ProgressInPortal}
@@ -353,3 +324,25 @@ export const OnboardingFlow = ({
     </>
   );
 };
+
+const ProgressInPortal = (props: ProgressComponentProps) => (
+  <Portal id="top-slot">
+    <StepperProgressIndicator {...props} />
+  </Portal>
+);
+
+const ToSStep = ({ onNext, onBack }: StepProps) => (
+  <ToSAcceptanceScreen onAccept={() => onNext({})} onGoBack={onBack} />
+);
+
+// Prefetch for the org-search step. Only on the org-search branch: the promote
+// flow skips it, and prefetching there fires a network-tier 403 for the new user.
+const PrefetchDomainOrganizations = () => {
+  void trpc.account.listMatchingDomainOrganizations.usePrefetchQuery();
+  return null;
+};
+
+const processOrgInputs = (data: OrgCreationFormValues) => ({
+  ...data,
+  website: data.website ?? '',
+});
