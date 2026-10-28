@@ -193,6 +193,28 @@ describe('useProposalAwards', () => {
     expect(result.current.canConfirm).toBe(false);
   });
 
+  it('keeps the currency of a winner whose requested amount is zero', () => {
+    const zero = proposal('zero', { amount: 0, currency: 'EUR' });
+    const { result } = renderAwards({
+      proposals: [euro, zero],
+      selectedIds: ['euro', 'zero'],
+      processBudget: 25000,
+    });
+
+    expect(result.current.getRequested('zero')).toEqual({
+      amount: 0,
+      currency: 'EUR',
+    });
+    expect(result.current.getCurrency('zero')).toBe('EUR');
+    expect(result.current.hasMixedCurrencies).toBe(false);
+    expect(result.current.invalidSelectedIds).toEqual(['zero']);
+
+    act(() => result.current.setAmount('zero', 500));
+
+    expect(result.current.total).toEqual({ amount: 4500, currency: 'EUR' });
+    expect(result.current.canConfirm).toBe(true);
+  });
+
   it('does not report mixed currencies when nothing is selected', () => {
     const { result } = renderAwards({ selectedIds: [], processBudget: 25000 });
 

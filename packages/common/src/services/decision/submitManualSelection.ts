@@ -186,6 +186,13 @@ export async function submitManualSelection({
       );
     }
     const lockedPreviousPhaseId = lockedPreviousPhase.phaseId;
+    assertAllocationsWithinBudget({
+      allocations,
+      processBudget: getProcessBudget({
+        phases: lockedPhases,
+        currentPhaseId: currentStateId,
+      }),
+    });
 
     const [latestRow] = await tx
       .select({

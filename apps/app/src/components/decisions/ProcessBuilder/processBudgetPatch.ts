@@ -19,3 +19,6 @@ export const toPhasesWithBudget = (
     ...rest,
   ];
 };
+
+export const isSavableProcessBudget = (budget: number | null): boolean =>
+  budget === null || (Number.isFinite(budget) && budget > 0);

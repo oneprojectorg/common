@@ -18,7 +18,10 @@ import type { TranslateFn } from '@/lib/i18n';
 import { useProcessBuilderAutosave } from '@/components/decisions/ProcessBuilder/ProcessBuilderAutosaveContext';
 import { SaveStatusIndicator } from '@/components/decisions/ProcessBuilder/components/SaveStatusIndicator';
 import type { SectionProps } from '@/components/decisions/ProcessBuilder/contentRegistry';
-import { toPhasesWithBudget } from '@/components/decisions/ProcessBuilder/processBudgetPatch';
+import {
+  isSavableProcessBudget,
+  toPhasesWithBudget,
+} from '@/components/decisions/ProcessBuilder/processBudgetPatch';
 import { useProcessBuilderStore } from '@/components/decisions/ProcessBuilder/stores/useProcessBuilderStore';
 import { getFieldSchema } from '@/components/decisions/proposalTemplate';
 import { getFieldErrorMessage, useAppForm } from '@/components/form/utils';
@@ -165,9 +168,10 @@ export function ProcessSettingsForm({
         requireCollaborativeProposals: values.requireCollaborativeProposals,
         isPrivate: values.isPrivate,
       },
-      ...(values.totalBudget !== currentBudget && {
-        phases: toPhasesWithBudget(phases, values.totalBudget),
-      }),
+      ...(isSavableProcessBudget(values.totalBudget) &&
+        values.totalBudget !== currentBudget && {
+          phases: toPhasesWithBudget(phases, values.totalBudget),
+        }),
     });
   };
 

@@ -155,9 +155,10 @@ const requestedOf = (proposal: AwardProposal): MoneyAmount | undefined => {
     return requestedCache.get(proposal);
   }
   const { budget } = resolveProposalSystemFields(proposal);
-  const requested = budget?.amount
-    ? { amount: budget.amount, currency: getBudgetCurrency(budget) }
-    : undefined;
+  const requested =
+    budget && typeof budget.amount === 'number'
+      ? { amount: budget.amount, currency: getBudgetCurrency(budget) }
+      : undefined;
   requestedCache.set(proposal, requested);
   return requested;
 };
