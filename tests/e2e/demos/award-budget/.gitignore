@@ -1,0 +1,7 @@
+*.png
+cookies-*.json
+session-*.json
+batch-*.json
+batch-*.result.json
+seed-*.json
+draft-*.slug

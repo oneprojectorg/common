@@ -1,0 +1,40 @@
+set shell := ["bash", "-euo", "pipefail", "-c"]
+
+here := justfile_directory()
+db := "postgresql://postgres:postgres@127.0.0.1:54322/postgres"
+
+# List the recipes
+default:
+    @just --list --unsorted
+
+# Builder: create a draft process in a visible browser, set the total budget and the hide-budget toggle, reload, read the phase settings back
+builder label="builder":
+    "{{here}}/demo-builder.sh" "{{label}}"
+
+# Selection table: seed a final-phase decision with proposals, drive the award fields (over budget, mixed currency, empty, within budget), confirm, read the allocations back
+selection label="selection":
+    "{{here}}/demo-selection.sh" "{{label}}"
+
+# Member view: seed a hidden-budget decision and compare getInstance phase settings for the admin and a member
+member label="member":
+    "{{here}}/demo-member.sh" "{{label}}"
+
+# Seed only: a final-phase decision with four proposals; prints the seed JSON (BUDGET and HIDE_BUDGET as args)
+seed label="seed" budget="12000" hide="false":
+    "{{here}}/seed.sh" "{{label}}" "{{budget}}" "{{hide}}"
+
+# Delete the demo users, organizations and drafts, the session files, and close the browser; no label = every run
+cleanup label="":
+    "{{here}}/cleanup-demo.sh" "{{label}}"
+
+# Run all three demos, then clean everything up
+all: (builder "all-builder") (selection "all-selection") (member "all-member") (cleanup "all-builder") (cleanup "all-selection") (cleanup "all-member")
+
+# Show the demo users, organizations and drafts still in the local database
+status:
+    @psql "{{db}}" -At -F " | " -c "select email, auth_user_id from users where email like 'award-demo-%' or email like 'screenshot-%'"
+    @psql "{{db}}" -At -c "select name from profiles where name like 'Award Demo Org %' or name like 'Award demo %'"
+
+# Open the screenshots folder
+screenshots:
+    open "{{here}}"
