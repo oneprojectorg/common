@@ -10,6 +10,7 @@ import {
   getCurrentProfileId,
   getProfileAccessRoles,
 } from '../access';
+import { decisionAdminPermissions } from '../decision/permissions';
 import { hasActiveModerationFlag } from './moderationVisibility';
 import type { ModerationItemType } from './types';
 
@@ -136,7 +137,7 @@ export const assertModerationItemAccess = async ({
         profileId: proposal.profileId,
       });
       const isInstanceAdmin = checkPermission(
-        { profile: permission.ADMIN },
+        decisionAdminPermissions,
         instanceRoles,
       );
       if (proposalRoles.length === 0 && !isInstanceAdmin) {

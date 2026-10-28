@@ -7,8 +7,8 @@ import {
 import type { User } from '@op/supabase/lib';
 
 import { ConflictError, ValidationError } from '../../utils';
+import { assertDecisionAdmin } from './decisionAuth';
 import { getProposalAccessContext } from './getProposalAccessContext';
-import { assertDecisionAdmin } from './phaseHelpers';
 import { findLiveMergedEdge } from './proposalSupersession';
 import type { MergeProposalsInput } from './schemas/proposalRelationships';
 

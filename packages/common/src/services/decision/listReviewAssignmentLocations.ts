@@ -1,12 +1,11 @@
 import { db } from '@op/db/client';
 import type { ProposalReviewAssignmentStatus } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
-import { permission } from 'access-zones';
 
 import { CommonError, UnauthorizedError } from '../../utils';
 import { assertProfileAccess, assertUserByAuthId } from '../assert';
 import { getInstance } from './getInstance';
-import { decisionPermission } from './permissions';
+import { decisionAdminPermissions, decisionPermission } from './permissions';
 import {
   projectProposalLocation,
   proposalLocationColumns,
@@ -57,7 +56,7 @@ export const listReviewAssignmentLocations = async ({
     profileId: instance.profileId,
     permissions: [
       { decisions: decisionPermission.REVIEW },
-      { decisions: permission.ADMIN },
+      ...decisionAdminPermissions,
     ],
   });
 

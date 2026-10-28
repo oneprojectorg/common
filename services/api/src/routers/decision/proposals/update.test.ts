@@ -73,7 +73,7 @@ async function setProposalEditingRule(
 }
 
 describe.concurrent('updateProposal visibility', () => {
-  it('should allow a profile admin without Manage Process to hide a proposal', async ({
+  it('lets a profile admin without Manage Process hide a proposal', async ({
     task,
     onTestFinished,
   }) => {

@@ -7,6 +7,7 @@ import { CommonError, NotFoundError, UnauthorizedError } from '../../utils';
 import { getProfileAccessRolesWithOrgFallback } from '../access';
 import { assertProfileAccess, assertUserByAuthId } from '../assert';
 import { createDecisionInstance } from './createInstanceFromTemplate';
+import { decisionAdminPermissions } from './permissions';
 import type {
   DecisionInstanceData,
   InstanceOverview,
@@ -82,7 +83,7 @@ export const duplicateInstance = async ({
   await assertProfileAccess({
     user,
     profileId: sourceInstance.profileId,
-    permissions: { decisions: permission.ADMIN },
+    permissions: decisionAdminPermissions,
   });
 
   // Org-fallback because org grants live on organizationUsers, not

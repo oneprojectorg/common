@@ -2,7 +2,7 @@ import { db, eq } from '@op/db/client';
 import { organizations } from '@op/db/schema';
 import { logger } from '@op/logging';
 import { User } from '@op/supabase/lib';
-import { collapseRoles, permission } from 'access-zones';
+import { permission } from 'access-zones';
 import type { NormalizedRole } from 'access-zones';
 
 import { NotFoundError, UnauthorizedError } from '../../utils';
@@ -13,7 +13,11 @@ import {
 } from '../access';
 import { getCachedInstance } from './getCachedInstance';
 import type { DecisionRolePermissions } from './permissions';
-import { fromDecisionBitField, resolveDecisionAccess } from './permissions';
+import {
+  fromDecisionBitField,
+  getRolesDecisionBits,
+  resolveDecisionAccess,
+} from './permissions';
 import { resolveManualSelectionStatus } from './resolveManualSelectionStatus';
 import type { DecisionInstanceData } from './schemas/instanceData';
 
@@ -21,9 +25,6 @@ export interface GetInstanceInput {
   instanceId: string;
   user: User | undefined;
 }
-
-const getRolesDecisionBits = (roles: NormalizedRole[]): number =>
-  collapseRoles(roles)['decisions'] ?? 0;
 
 const resolveInstanceAccess = async (
   user: AccessUser | undefined,

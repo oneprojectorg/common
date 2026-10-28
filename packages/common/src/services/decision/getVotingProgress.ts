@@ -3,12 +3,12 @@ import type { User } from '@op/supabase/lib';
 import { permission } from 'access-zones';
 
 import { NotFoundError } from '../../utils';
+import { assertDecisionAdmin } from './decisionAuth';
 import { getCachedInstance } from './getCachedInstance';
 import { computeDaysLeft } from './getPhaseReviewProgress';
 import { getProfileIdsWithDecisionPermission } from './getProfileIdsWithDecisionPermission';
 import { isDecisionPublic } from './isDecisionPublic';
 import { decisionPermission } from './permissions';
-import { assertDecisionAdmin } from './phaseHelpers';
 import { getInstancePhases } from './schemas/instanceData';
 import type { VotingProgress } from './schemas/votingProgress';
 

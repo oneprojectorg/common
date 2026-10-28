@@ -84,6 +84,23 @@ async function setupVotingInstance(
 }
 
 describe.concurrent('getVotingProgress', () => {
+  it('lets a profile admin without Manage Process read voting progress', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instanceId } = await setupVotingInstance(testData);
+    const profileAdmin = await testData.createProfileAdminUser({
+      organization: setup.organization,
+      instanceProfileId: setup.instance.profileId,
+    });
+    const caller = await createAuthenticatedCaller(profileAdmin.email);
+
+    await expect(
+      caller.decision.getVotingProgress({ processInstanceId: instanceId }),
+    ).resolves.toBeDefined();
+  });
+
   it('rejects a voting member who is not an admin of the instance', async ({
     task,
     onTestFinished,

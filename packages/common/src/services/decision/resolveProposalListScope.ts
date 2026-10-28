@@ -23,6 +23,7 @@ import {
 } from './getProposalsForPhase';
 import { getVoterBallot } from './getVoterBallot';
 import type { ListProposalsInput } from './listProposals';
+import { decisionAdminPermissions } from './permissions';
 import { notSuperseded } from './proposalSupersession';
 import { buildProposalTitleSearchCondition } from './proposalTitleSearch';
 import {
@@ -302,7 +303,7 @@ export const resolveProposalListScope = async ({
     return {
       profileRoles,
       canManageProposals: checkPermission(
-        { profile: permission.ADMIN },
+        decisionAdminPermissions,
         profileRoles,
       ),
     };

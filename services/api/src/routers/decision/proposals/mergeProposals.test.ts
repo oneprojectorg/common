@@ -92,6 +92,11 @@ describe.concurrent('mergeProposals', () => {
       sourceProposalId: source.id,
       targetProposalId: target.id,
     });
+    await expect(
+      profileAdminCaller.decision.listProposalRelationships({
+        sourceProposalId: source.id,
+      }),
+    ).resolves.toMatchObject({ items: [expect.anything()] });
     await profileAdminCaller.decision.unmergeProposal({
       sourceProposalId: source.id,
     });

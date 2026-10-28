@@ -3,8 +3,8 @@ import { ProposalStatus, proposals } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 
 import { CommonError, ValidationError } from '../../utils';
+import { assertDecisionAdmin } from './decisionAuth';
 import { getProposalAccessContext } from './getProposalAccessContext';
-import { assertDecisionAdmin } from './phaseHelpers';
 
 export type RejectProposalResult = {
   processInstanceId: string;

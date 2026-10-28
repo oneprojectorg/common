@@ -10,8 +10,7 @@ import type { User } from '@op/supabase/lib';
 import { randomUUID } from 'node:crypto';
 
 import { CommonError, NotFoundError, ValidationError } from '../../utils';
-import { assertProfileAccess } from '../assert';
-import { decisionAdminPermissions } from './permissions';
+import { assertDecisionAdmin } from './decisionAuth';
 import { schemaValidator } from './schemaValidator';
 import {
   type PhaseInstanceData,
@@ -145,25 +144,6 @@ export const getPhaseAsDecisionAdmin = async ({
     profileId: phase.profileId,
     processInstanceId: phase.processInstanceId,
   };
-};
-
-export const assertDecisionAdmin = async ({
-  user,
-  decisionProfileId,
-}: {
-  user: User;
-  decisionProfileId: string | null;
-}): Promise<void> => {
-  // Legacy instances can lack a profile.
-  if (!decisionProfileId) {
-    throw new CommonError('Decision profile not found');
-  }
-
-  await assertProfileAccess({
-    user,
-    profileId: decisionProfileId,
-    permissions: decisionAdminPermissions,
-  });
 };
 
 const insertPhaseProfile = async ({

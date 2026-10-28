@@ -22,7 +22,7 @@ export const decisionPermission = {
 
 /**
  * Who administers a decision: an admin of its profile, or a role with
- * "Manage Process". Matches the `admin` that `getInstance` reports.
+ * "Manage Process".
  */
 export const decisionAdminPermissions = [
   { profile: permission.ADMIN },
@@ -100,6 +100,9 @@ export function fromDecisionBitField(
   };
 }
 
+export const getRolesDecisionBits = (roles: NormalizedRole[]): number =>
+  collapseRoles(roles)['decisions'] ?? 0;
+
 const ALL_TRUE_ACCESS: DecisionRolePermissions = {
   delete: true,
   update: true,
@@ -120,5 +123,5 @@ export function resolveDecisionAccess(
   if (checkPermission({ profile: permission.ADMIN }, profileRoles)) {
     return ALL_TRUE_ACCESS;
   }
-  return fromDecisionBitField(collapseRoles(profileRoles)['decisions'] ?? 0);
+  return fromDecisionBitField(getRolesDecisionBits(profileRoles));
 }

@@ -1,4 +1,5 @@
 import { TestDecisionsDataManager } from '@op/common/testing';
+import { db } from '@op/db/client';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -134,5 +135,8 @@ describe.concurrent('deleteProposal', () => {
     });
 
     expect(result.deletedId).toBe(proposal.id);
+    await expect(
+      db.query.proposals.findFirst({ where: { id: proposal.id } }),
+    ).resolves.toBeUndefined();
   });
 });

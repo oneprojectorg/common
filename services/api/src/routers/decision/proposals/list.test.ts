@@ -2,6 +2,7 @@ import { mockCollab, textFragment } from '@op/collab/testing';
 import { PROPOSAL_SEARCH_MAX_LENGTH, RejectionReason } from '@op/common/client';
 import {
   TestDecisionsDataManager,
+  grantInstanceAdminWithoutReviewRole,
   schemaWithPipeline,
   schemaWithThreePhases,
   schemaWithoutPipeline,
@@ -118,6 +119,29 @@ describe.concurrent('listProposals', () => {
 
     const result = await adminCaller.decision.listProposals({
       processInstanceId: instance.instance.id,
+    });
+
+    expect(result.canManageProposals).toBe(true);
+  });
+
+  it('sets canManageProposals for a Manage Process holder who is not a profile admin', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({ instanceCount: 1 });
+    const manager = await testData.createMemberUser({
+      organization: setup.organization,
+    });
+    await grantInstanceAdminWithoutReviewRole({
+      instanceProfileId: setup.instance.profileId,
+      authUserId: manager.authUserId,
+      email: manager.email,
+    });
+    const caller = await createAuthenticatedCaller(manager.email);
+
+    const result = await caller.decision.listProposals({
+      processInstanceId: setup.instance.instance.id,
     });
 
     expect(result.canManageProposals).toBe(true);

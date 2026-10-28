@@ -12,6 +12,30 @@ type OnTestFinished = (fn: () => void | Promise<void>) => void;
 type Caller = Awaited<ReturnType<typeof createAuthenticatedCaller>>;
 
 describe.concurrent('createPhase', () => {
+  it('lets a profile admin without Manage Process create a phase', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { testData, setup, instanceId } = await setupDecision(
+      task,
+      onTestFinished,
+    );
+    const profileAdmin = await testData.createProfileAdminUser({
+      organization: setup.organization,
+      instanceProfileId: setup.instance.profileId,
+    });
+    const caller = await createAuthenticatedCaller(profileAdmin.email);
+
+    const result = await caller.decision.createPhase({
+      instanceId,
+      name: 'Submissions',
+      sortOrder: 0,
+    });
+    testData.trackProfileForCleanup(result.profileId);
+
+    expect(result.processInstanceId).toBe(instanceId);
+  });
+
   it('creates a phase and its profile as a decision admin', async ({
     task,
     onTestFinished,

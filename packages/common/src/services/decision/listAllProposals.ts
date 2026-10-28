@@ -41,6 +41,7 @@ import { getProposalDocumentsContent } from './getProposalDocumentsContent';
 import { getProposalRelationshipData } from './getProposalRelationshipData';
 import { getSelectedProposalIds } from './getSelectedProposalIds';
 import { ballotRankPosition, getVoterBallot } from './getVoterBallot';
+import { decisionAdminPermissions } from './permissions';
 import {
   isAnonymousAuthor,
   proposalAuthorRelation,
@@ -120,10 +121,7 @@ export const listAllProposals = async ({
     ],
   });
 
-  const isAdmin = checkPermission(
-    { decisions: permission.ADMIN },
-    profileRoles,
-  );
+  const isAdmin = checkPermission(decisionAdminPermissions, profileRoles);
 
   // Likes are private, like ballots — a caller may only request their own.
   if (input.likedByProfileId && currentProfileId !== input.likedByProfileId) {

@@ -1,11 +1,11 @@
 import { db } from '@op/db/client';
 import type { User } from '@op/supabase/lib';
-import { permission } from 'access-zones';
 
 import { NotFoundError } from '../../utils';
 import { deleteStorageObject } from '../../utils/deleteStorageObject';
 import { assertProfileAccess } from '../assert';
 import { invalidateDecisionInstance } from './decisionCache';
+import { decisionAdminPermissions } from './permissions';
 import type { DecisionInstanceData } from './schemas/instanceData';
 import { updateDecisionInstance } from './updateDecisionInstance';
 
@@ -45,7 +45,7 @@ export async function removeOverviewHeroImage({
   await assertProfileAccess({
     user: { id: user.id },
     profileId: instance.profileId,
-    permissions: { decisions: permission.ADMIN },
+    permissions: decisionAdminPermissions,
   });
 
   const previousPath = (instance.instanceData as DecisionInstanceData)?.overview

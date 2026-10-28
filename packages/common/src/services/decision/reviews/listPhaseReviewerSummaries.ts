@@ -17,7 +17,6 @@ import {
   proposalReviews,
 } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
-import { permission } from 'access-zones';
 import { z } from 'zod';
 
 import {
@@ -30,6 +29,7 @@ import {
 import { assertProfileAccess } from '../../assert';
 import { getEligibleReviewerProfileIds } from '../getEligibleReviewerProfileIds';
 import { getInstance } from '../getInstance';
+import { decisionAdminPermissions } from '../permissions';
 import type { InstancePhaseRef } from '../schemas/instance';
 import {
   type PhaseReviewerSummaries,
@@ -56,7 +56,7 @@ export async function listPhaseReviewerSummaries({
   await assertProfileAccess({
     user,
     profileId: instance.profileId,
-    permissions: { decisions: permission.ADMIN },
+    permissions: decisionAdminPermissions,
   });
 
   assertInstancePhase({ instance, phaseId });

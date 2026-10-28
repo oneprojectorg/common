@@ -11,7 +11,6 @@ import {
 import { Events, event } from '@op/events';
 import type { User } from '@op/supabase/lib';
 import { waitUntil } from '@vercel/functions';
-import { permission } from 'access-zones';
 
 import { CommonError, NotFoundError, UnauthorizedError } from '../../utils';
 import { assertProfileAccess, assertProfileAdmin } from '../assert';
@@ -22,6 +21,7 @@ import {
   getNormalizedCategories,
   getUpdatedInstanceData,
 } from './getUpdatedInstanceData';
+import { decisionAdminPermissions } from './permissions';
 import { ensureProposalTaxonomyTerms } from './proposalTaxonomy';
 import { schemaValidator } from './schemaValidator';
 import type {
@@ -86,7 +86,7 @@ export const updateDecisionInstance = async ({
   await assertProfileAccess({
     user,
     profileId,
-    permissions: { decisions: permission.ADMIN },
+    permissions: decisionAdminPermissions,
   });
 
   assertValidTemplates({ proposalTemplate, rubricTemplate, phases });

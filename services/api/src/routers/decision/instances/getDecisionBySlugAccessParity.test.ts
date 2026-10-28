@@ -80,4 +80,27 @@ describe.concurrent('getDecisionBySlug access parity with getInstance', () => {
     expect(bySlug.processInstance.access).toEqual(byInstance.access);
     expect(bySlug.processInstance.access?.admin).toBe(true);
   });
+
+  it('member without admin grants: both report the same non-admin access', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({ instanceCount: 1 });
+    const member = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [setup.instance.profileId],
+    });
+    const caller = await createAuthenticatedCaller(member.email);
+
+    const [bySlug, byInstance] = await Promise.all([
+      caller.decision.getDecisionBySlug({ slug: setup.instance.slug }),
+      caller.decision.getInstance({
+        instanceId: setup.instance.instance.id,
+      }),
+    ]);
+
+    expect(bySlug.processInstance.access).toEqual(byInstance.access);
+    expect(bySlug.processInstance.access?.admin).toBe(false);
+  });
 });

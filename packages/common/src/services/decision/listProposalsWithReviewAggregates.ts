@@ -18,6 +18,7 @@ import {
   OVERALL_RECOMMENDATION_KEY,
   getRubricScoringInfo,
 } from './getRubricScoringInfo';
+import { decisionAdminPermissions } from './permissions';
 import { getCurrentProposalHistoryIds } from './proposal/history';
 import { parseProposalData } from './proposalDataSchema';
 import { buildProposalListPreview } from './proposalListPreview';
@@ -115,7 +116,7 @@ export async function listProposalsWithReviewAggregates(
     assertProfileAccess({
       user,
       profileId: instance.profileId,
-      permissions: { decisions: permission.ADMIN },
+      permissions: decisionAdminPermissions,
     }),
   ]);
 
