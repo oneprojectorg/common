@@ -19,6 +19,7 @@ import {
   normalizeProposalCategories,
   parseProposalData,
 } from './proposalDataSchema';
+import { readInstancePhases } from './readInstancePhases';
 import { reconcileReviewAssignments } from './reconcileReviewAssignments';
 import { hasDecisionBoundaries, resolveBoundary } from './resolveBoundary';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
@@ -86,7 +87,9 @@ export const submitProposal = async ({
   }
 
   assertProposalsAllowed({
-    instance: { instanceData },
+    instance: {
+      instanceData: { phases: await readInstancePhases({ instance }) },
+    },
     phaseId: currentPhaseId,
   });
 

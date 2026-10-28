@@ -1,6 +1,6 @@
 import {
-  type DecisionInstanceData,
   listProcessParticipants,
+  readInstancePhases,
   resolveManualSelectionStatus,
 } from '@op/common';
 import { selectEmailRecipients } from '@op/common/client';
@@ -46,7 +46,17 @@ export const sendPhaseTransitionNotification = inngest.createFunction(
         .where(eq(processInstances.id, processInstanceId))
         .limit(1);
 
-      return instance[0];
+      const [row] = instance;
+      if (!row) {
+        return undefined;
+      }
+
+      return {
+        ...row,
+        phases: await readInstancePhases({
+          instance: { id: processInstanceId, instanceData: row.instanceData },
+        }),
+      };
     });
 
     if (!processData) {
@@ -85,8 +95,7 @@ export const sendPhaseTransitionNotification = inngest.createFunction(
     }
 
     // Resolve phase name and position from instance data
-    const instanceData = processData.instanceData as DecisionInstanceData;
-    const phases = instanceData?.phases ?? [];
+    const { phases } = processData;
     const toPhaseIndex = phases.findIndex((p) => p.phaseId === toPhaseId);
     const toPhaseName = phases[toPhaseIndex]?.name ?? toPhaseId;
     const phaseNumber = toPhaseIndex !== -1 ? toPhaseIndex + 1 : 1;
