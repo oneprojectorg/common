@@ -1,5 +1,8 @@
 import { mockCollab, textFragment } from '@op/collab/testing';
-import { TestDecisionsDataManager } from '@op/common/testing';
+import {
+  TestDecisionsDataManager,
+  grantInstanceAdminWithoutReviewRole,
+} from '@op/common/testing';
 import { db } from '@op/db/client';
 import {
   ProposalStatus,
@@ -332,6 +335,45 @@ describe.concurrent('getProposal', () => {
     });
 
     expect(result.id).toBe(proposal.id);
+    expect(result.visibility).toBe(Visibility.HIDDEN);
+  });
+
+  it('returns a hidden proposal to a Manage Process holder who is not a profile admin', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const manager = await testData.createMemberUser({
+      organization: setup.organization,
+    });
+    const [proposal, adminCaller, managerCaller] = await Promise.all([
+      testData.createProposal({
+        userEmail: setup.userEmail,
+        processInstanceId: setup.instance.instance.id,
+        proposalData: { title: 'Hidden Proposal', description: 'A test' },
+        status: ProposalStatus.SUBMITTED,
+      }),
+      createAuthenticatedCaller(setup.userEmail),
+      createAuthenticatedCaller(manager.email),
+      grantInstanceAdminWithoutReviewRole({
+        instanceProfileId: setup.instance.profileId,
+        authUserId: manager.authUserId,
+        email: manager.email,
+      }),
+    ]);
+    await adminCaller.decision.updateProposal({
+      proposalId: proposal.id,
+      data: { visibility: Visibility.HIDDEN },
+    });
+
+    const result = await managerCaller.decision.getProposal({
+      profileId: proposal.profileId,
+    });
+
     expect(result.visibility).toBe(Visibility.HIDDEN);
   });
 

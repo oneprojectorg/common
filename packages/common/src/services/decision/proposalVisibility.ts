@@ -7,10 +7,11 @@ import {
   profileUsers,
   proposals,
 } from '@op/db/schema';
-import { type NormalizedRole, checkPermission, permission } from 'access-zones';
+import { type NormalizedRole, checkPermission } from 'access-zones';
 
 import { type AccessUser, resolveAccountUserId } from '../access';
 import { noActiveModerationFlag } from '../moderation/moderationVisibility';
+import { decisionAdminPermissions } from './permissions';
 
 export type ProposalReadContext = {
   /** `undefined` for a caller with no account of their own. */
@@ -28,10 +29,7 @@ export const getProposalReadContext = ({
   decisionRoles: NormalizedRole[];
 }): ProposalReadContext => ({
   accountUserId: resolveAccountUserId(user),
-  isInstanceAdmin: checkPermission(
-    { profile: permission.ADMIN },
-    decisionRoles,
-  ),
+  isInstanceAdmin: checkPermission(decisionAdminPermissions, decisionRoles),
 });
 
 /** Gone for everyone, admins included — no exception reaches these. */

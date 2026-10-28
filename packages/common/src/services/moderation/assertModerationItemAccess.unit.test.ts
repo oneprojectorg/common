@@ -26,7 +26,9 @@ vi.mock('./moderationVisibility', () => ({
 }));
 
 import { db } from '@op/db/client';
+import { permission } from 'access-zones';
 
+import { NotFoundError } from '../../utils';
 import {
   assertInstanceProfileAccess,
   assertProfileTypeAccess,
@@ -204,6 +206,48 @@ describe('assertModerationItemAccess — proposal', () => {
         user,
       }),
     ).rejects.toThrow();
+  });
+
+  it('lets a Manage Process holder flag a HIDDEN proposal', async () => {
+    proposalFindFirst.mockResolvedValue({
+      id: PROPOSAL_ID,
+      profileId: 'prop-profile',
+      visibility: 'hidden',
+      processInstance: { profileId: 'instance-profile' },
+    } as never);
+    vi.mocked(assertInstanceProfileAccess).mockResolvedValueOnce([
+      {
+        id: 'role-1',
+        name: 'Manager',
+        access: { decisions: permission.ADMIN },
+      },
+    ]);
+    await expect(
+      assertModerationItemAccess({
+        itemType: 'proposal',
+        itemId: PROPOSAL_ID,
+        user,
+      }),
+    ).resolves.toBeUndefined();
+  });
+
+  it('hides a HIDDEN proposal from an instance member with read access only', async () => {
+    proposalFindFirst.mockResolvedValue({
+      id: PROPOSAL_ID,
+      profileId: 'prop-profile',
+      visibility: 'hidden',
+      processInstance: { profileId: 'instance-profile' },
+    } as never);
+    vi.mocked(assertInstanceProfileAccess).mockResolvedValueOnce([
+      { id: 'role-1', name: 'Member', access: { decisions: permission.READ } },
+    ]);
+    await expect(
+      assertModerationItemAccess({
+        itemType: 'proposal',
+        itemId: PROPOSAL_ID,
+        user,
+      }),
+    ).rejects.toThrow(NotFoundError);
   });
 
   it('lets a proposal-level member flag a HIDDEN proposal', async () => {

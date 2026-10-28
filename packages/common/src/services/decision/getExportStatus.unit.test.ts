@@ -46,6 +46,7 @@ import {
 import { exportFilePath } from './exports';
 import type { ExportStatusData } from './getExportStatus';
 import { getExportStatus } from './getExportStatus';
+import { decisionAdminPermissions } from './permissions';
 
 const EXPORT_ID = '11111111-1111-4111-8111-111111111111';
 const INSTANCE_ID = '22222222-2222-4222-8222-222222222222';
@@ -506,7 +507,7 @@ describe('getExportStatus', () => {
       // `ownerProfileId: null` is the org fallback being skipped. An org-level
       // grant must not reach a CSV of submitter names.
       instance: { profileId: 'profile-1', ownerProfileId: null },
-      profilePermissions: { decisions: permission.ADMIN },
+      profilePermissions: decisionAdminPermissions,
       orgFallbackPermissions: { decisions: permission.ADMIN },
     });
   });
