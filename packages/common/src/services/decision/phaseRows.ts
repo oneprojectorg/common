@@ -6,6 +6,7 @@ import {
   MAX_PHASES_PER_DECISION,
   type PhaseRowData,
   assertPhaseNameFits,
+  getPhaseProfileName,
   insertPhase,
 } from './phaseHelpers';
 import type { PhaseInstanceData } from './schemas/instanceData';
@@ -68,7 +69,7 @@ export const insertPhaseRows = async ({
     await insertPhase({
       tx: db,
       processInstanceId,
-      name: phaseRowName(phase),
+      name: getPhaseProfileName(phase),
       sortOrder,
       data,
     });
@@ -106,7 +107,7 @@ export const reconcilePhaseRows = async ({
   for (const [sortOrder, phase] of phases.entries()) {
     const row = rowByPhaseId.get(phase.phaseId);
     const { name: _name, ...data } = phase;
-    const name = phaseRowName(phase);
+    const name = getPhaseProfileName(phase);
 
     if (!row) {
       await insertPhase({ tx: db, processInstanceId, name, sortOrder, data });
@@ -139,9 +140,6 @@ export const reconcilePhaseRows = async ({
 // A row minted from `instance_data` carries that phase's id; one made by the
 // phase endpoints has only its slug, which is just as stable.
 const phaseIdOf = (row: PhaseRow): string => row.data.phaseId ?? row.slug;
-
-const phaseRowName = ({ name, phaseId }: PhaseInstanceData): string =>
-  name?.trim() || phaseId;
 
 const readPhaseRowData = (data: unknown): PhaseRowData =>
   typeof data === 'object' && data !== null && !Array.isArray(data)

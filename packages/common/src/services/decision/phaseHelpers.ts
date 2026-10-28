@@ -117,12 +117,10 @@ export const assertPhasesCanBeMinted = (
 };
 
 export const assertPhaseNameFits = (name: string): void => {
-  // Counts code points: `varchar(256)` does, `String.length` counts UTF-16 units.
-  const chars = [...name];
-  if (chars.length > MAX_PHASE_NAME_LENGTH) {
+  if (isPhaseNameTooLong(name)) {
     throw new ValidationError(
       `A phase name can have at most ${MAX_PHASE_NAME_LENGTH} characters`,
-      { name: `Shorten "${chars.slice(0, 40).join('')}…"` },
+      { name: `Shorten "${previewPhaseName(name)}…"` },
     );
   }
 };
