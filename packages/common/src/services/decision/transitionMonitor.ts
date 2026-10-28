@@ -85,7 +85,10 @@ export async function processDecisionsTransitions({
           lte(decisionProcessTransitions.scheduledDate, now),
           eq(processInstances.status, ProcessStatus.PUBLISHED),
           processInstanceId
-            ? eq(decisionProcessTransitions.processInstanceId, processInstanceId)
+            ? eq(
+                decisionProcessTransitions.processInstanceId,
+                processInstanceId,
+              )
             : undefined,
         ),
       )
