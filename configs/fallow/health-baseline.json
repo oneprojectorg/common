@@ -79,7 +79,7 @@
     "scripts/merge-coverage.mjs:normalizeReport:69",
     "apps/app/src/components/decisions/Review/ReviewRubricForm.tsx:RubricFieldInput:472",
     "packages/common/src/services/decision/updateProposal.ts:updatedProposal:139",
-    "packages/common/src/services/decision/updateProposal.ts:updateProposal:53",
+    "packages/common/src/services/decision/updateProposal.ts:updateProposal:54",
     "apps/app/src/components/PostUpdate/index.tsx:createNewPostUpdate:502",
     "apps/app/src/components/decisions/Review/ReviewRubricForm.tsx:RubricCriterionSection:236",
     "packages/common/src/services/access/getRoles.ts:getRoles:78",
