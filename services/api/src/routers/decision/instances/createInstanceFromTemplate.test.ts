@@ -307,6 +307,56 @@ describe.concurrent('createInstanceFromTemplate', () => {
     expect(instances).toHaveLength(0);
   });
 
+  it.for([
+    {
+      label: 'a phase with no id',
+      message: /phase with no id/,
+      phaseIds: (ids: string[]) => ['', ...ids.slice(1)],
+    },
+    {
+      label: 'two phases with one id',
+      message: /two phases with the id "submission"/,
+      phaseIds: (ids: string[]) => [ids[0]!, ids[0]!, ...ids.slice(2)],
+    },
+  ])(
+    'refuses a template with $label before writing anything',
+    async ({ message, phaseIds }, { task, onTestFinished }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+      const ids = phaseIds(simpleVoting.phases.map((phase) => phase.id));
+      const [first, ...rest] = simpleVoting.phases;
+      const phases: DecisionSchemaDefinition['phases'] = [
+        { ...first!, id: ids[0]! },
+        ...rest.map((phase, index) => ({ ...phase, id: ids[index + 1]! })),
+      ];
+      const { templateId, userEmail } = await createSimpleTemplate(
+        testData,
+        task.id,
+        { phases },
+      );
+      const caller = await createAuthenticatedCaller(userEmail);
+
+      const name = `Bad Phase Ids ${task.id}`;
+      await expect(
+        caller.decision.createInstanceFromTemplate({ templateId, name }),
+      ).rejects.toMatchObject({
+        cause: {
+          name: 'ValidationError',
+          message: expect.stringMatching(message),
+        },
+      });
+
+      const [instances, decisionProfiles] = await Promise.all([
+        db.query.processInstances.findMany({
+          where: { name },
+          columns: { id: true },
+        }),
+        db.query.profiles.findMany({ where: { name }, columns: { id: true } }),
+      ]);
+      expect(instances).toHaveLength(0);
+      expect(decisionProfiles).toHaveLength(0);
+    },
+  );
+
   it('should NOT create transitions for DRAFT instances (transitions are created on publish)', async ({
     task,
     onTestFinished,
