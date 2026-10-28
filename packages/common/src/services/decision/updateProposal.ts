@@ -314,7 +314,10 @@ export async function assertProposalUpdateAccess({
 
   if (
     !checkPermission({ profile: permission.UPDATE }, proposalRoles) &&
-    !checkPermission({ decisions: permission.UPDATE }, instanceRoles)
+    !checkPermission(
+      [{ decisions: permission.UPDATE }, ...decisionAdminPermissions],
+      instanceRoles,
+    )
   ) {
     throw new UnauthorizedError("You don't have access to do this");
   }
