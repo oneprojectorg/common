@@ -1,6 +1,10 @@
 import {
   type DecisionSchemaDefinition,
+  assertCustomFormAdmin,
+  duplicateInstance,
+  getVotingProgress,
   processDecisionsTransitions,
+  revertPhase,
 } from '@op/common';
 import { TestDecisionsDataManager } from '@op/common/testing';
 import { db, eq, sql } from '@op/db/client';
@@ -9,6 +13,8 @@ import {
   ProposalStatus,
   decisionProcessTransitions,
   processInstances,
+  processPhases,
+  profiles,
   proposalReviewAssignments,
   users,
 } from '@op/db/schema';
@@ -142,6 +148,40 @@ const emptyBlobPhases = (instanceId: string) =>
     })
     .where(eq(processInstances.id, instanceId));
 
+const ROW_START = '2031-01-01T00:00:00.000Z';
+const ROW_END = '2031-02-01T00:00:00.000Z';
+
+/** Gives every row a name and dates the blob never held. */
+const rewriteRows = async (instanceId: string) => {
+  await db
+    .update(processPhases)
+    .set({
+      data: sql`${processPhases.data} || ${JSON.stringify({ startDate: ROW_START, endDate: ROW_END })}::jsonb`,
+    })
+    .where(eq(processPhases.processInstanceId, instanceId));
+  await db
+    .update(profiles)
+    .set({ name: sql`'Row ' || (${processPhases.data} ->> 'phaseId')` })
+    .from(processPhases)
+    .where(
+      sql`${profiles.id} = ${processPhases.profileId} AND ${processPhases.processInstanceId} = ${instanceId}`,
+    );
+};
+
+/** Rows rewritten, blob phases emptied: only the rows can answer. */
+const leaveOnlyRows = async (instanceId: string) => {
+  await rewriteRows(instanceId);
+  await emptyBlobPhases(instanceId);
+};
+
+const rowPhases = (phaseIds: string[]) =>
+  phaseIds.map((phaseId) => ({
+    phaseId,
+    name: `Row ${phaseId}`,
+    startDate: ROW_START,
+    endDate: ROW_END,
+  }));
+
 // Not concurrent: the transitions sweep is global, and the flag is forced
 // through the environment for the whole file.
 describe('with process_phases_from_rows on and instanceData.phases empty', () => {
@@ -165,7 +205,7 @@ describe('with process_phases_from_rows on and instanceData.phases empty', () =>
       processSchema: manualSchema,
     });
     const instanceId = setup.instance.instance.id;
-    await emptyBlobPhases(instanceId);
+    await leaveOnlyRows(instanceId);
 
     const caller = await createAuthenticatedCaller(setup.userEmail);
     const result = await caller.decision.transitionFromPhase({ instanceId });
@@ -176,10 +216,16 @@ describe('with process_phases_from_rows on and instanceData.phases empty', () =>
     });
 
     const instance = await caller.decision.getInstance({ instanceId });
-    expect(instance.instanceData.phases?.map((p) => p.phaseId)).toEqual([
-      'initial',
-      'final',
-    ]);
+    expect(
+      instance.instanceData.phases?.map(
+        ({ phaseId, name, startDate, endDate }) => ({
+          phaseId,
+          name,
+          startDate,
+          endDate,
+        }),
+      ),
+    ).toEqual(rowPhases(['initial', 'final']));
   });
 
   it('runs a due transition in the sweep', async ({ task, onTestFinished }) => {
@@ -191,18 +237,20 @@ describe('with process_phases_from_rows on and instanceData.phases empty', () =>
     });
     const instanceId = setup.instance.instance.id;
     await emptyBlobPhases(instanceId);
+    // Not yet due, so no other worker's sweep can take it.
     await db.insert(decisionProcessTransitions).values({
       processInstanceId: instanceId,
       fromStateId: 'initial',
       toStateId: 'final',
-      scheduledDate: new Date(Date.now() - 60 * 60 * 1000).toISOString(),
+      scheduledDate: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
     });
 
-    const result = await processDecisionsTransitions();
+    const result = await processDecisionsTransitions({
+      processInstanceId: instanceId,
+      now: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(),
+    });
 
-    expect(
-      result.errors.filter((error) => error.processInstanceId === instanceId),
-    ).toEqual([]);
+    expect(result).toMatchObject({ processed: 1, failed: 0 });
     const instance = await db.query.processInstances.findFirst({
       where: { id: instanceId },
       columns: { currentStateId: true },
@@ -304,5 +352,132 @@ describe('with process_phases_from_rows on and instanceData.phases empty', () =>
     expect(assignments).toEqual([
       { proposalId: proposal.id, reviewerProfileId: creator?.profileId },
     ]);
+  });
+  it('reports days left on the voting progress', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+      status: ProcessStatus.PUBLISHED,
+      processSchema: manualSchema,
+    });
+    const instanceId = setup.instance.instance.id;
+    await leaveOnlyRows(instanceId);
+
+    const progress = await getVotingProgress({
+      user: setup.user,
+      processInstanceId: instanceId,
+    });
+
+    expect(progress.daysLeft).toBeGreaterThan(0);
+  });
+
+  it('lists the decision with its row phases', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+      processSchema: manualSchema,
+    });
+    const instanceId = setup.instance.instance.id;
+    await leaveOnlyRows(instanceId);
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+    const list = await caller.decision.listDecisionProfiles({});
+    const listed = list.items.find(
+      (item) => item.processInstance.id === instanceId,
+    );
+
+    expect(
+      listed?.processInstance.instanceData.phases?.map(({ name }) => name),
+    ).toEqual(['Row initial', 'Row final']);
+  });
+
+  it('reverts a phase', async ({ task, onTestFinished }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+      status: ProcessStatus.PUBLISHED,
+      processSchema: manualSchema,
+    });
+    const instanceId = setup.instance.instance.id;
+    await leaveOnlyRows(instanceId);
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+    await caller.decision.transitionFromPhase({ instanceId });
+
+    const result = await revertPhase({ instanceId });
+
+    expect(result).toEqual({
+      currentPhaseId: 'initial',
+      revertedPhaseId: 'final',
+    });
+  });
+
+  it('duplicates the row phases', async ({ task, onTestFinished }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+      processSchema: manualSchema,
+    });
+    const instanceId = setup.instance.instance.id;
+    await leaveOnlyRows(instanceId);
+
+    const copy = await duplicateInstance({
+      instanceId,
+      name: `Copy ${task.id}`,
+      include: {
+        processSettings: true,
+        phases: true,
+        proposalCategories: true,
+        proposalTemplate: true,
+        reviewSettings: true,
+        reviewRubric: true,
+        roles: false,
+      },
+      user: setup.user,
+    });
+    testData.trackProfileForCleanup(copy.id);
+
+    const copied = await db.query.processInstances.findFirst({
+      where: { profileId: copy.id },
+      columns: { instanceData: true },
+    });
+    expect(copied?.instanceData).toMatchObject({
+      phases: [
+        { phaseId: 'initial', name: 'Row initial' },
+        { phaseId: 'final', name: 'Row final' },
+      ],
+    });
+  });
+
+  it('lets a custom form name a row phase', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+      processSchema: manualSchema,
+    });
+    await leaveOnlyRows(setup.instance.instance.id);
+
+    const context = await assertCustomFormAdmin({
+      user: setup.user,
+      profileId: setup.instance.profileId,
+    });
+
+    expect(context).toMatchObject({
+      initialPhaseId: 'initial',
+      phaseIds: ['initial', 'final'],
+    });
   });
 });
