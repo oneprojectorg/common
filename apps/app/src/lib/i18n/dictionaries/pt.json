@@ -782,6 +782,8 @@
       "processNameLabel": "Nome do processo",
       "totalBudgetLabel": "Orçamento total",
       "totalBudgetHint": "O valor disponível para atribuir às propostas que este processo selecionar",
+      "hideBudgetLabel": "Ocultar o orçamento total dos membros",
+      "hideBudgetHint": "Apenas os administradores veem o orçamento total. Os membros continuam a ver o valor pedido por cada proposta.",
       "duplicateIncludeLabel": "Incluir",
       "duplicatingProgress": "Duplicando...",
       "stewardQuestion": "Quem está administrando este processo?",

@@ -65,6 +65,20 @@ test.describe('Create Process Instance', () => {
       { timeout: 18_000 },
     );
 
+    const hideBudget = authenticatedPage.getByRole('switch', {
+      name: 'Hide the total budget from members',
+    });
+    const hideBudgetWasOn = await hideBudget.isChecked();
+    const hideBudgetSaved = waitForAutoSave(authenticatedPage);
+    await hideBudget.click();
+    await hideBudgetSaved;
+    await authenticatedPage.reload();
+    await expect(
+      authenticatedPage.getByRole('switch', {
+        name: 'Hide the total budget from members',
+      }),
+    ).toBeChecked({ checked: !hideBudgetWasOn, timeout: 18_000 });
+
     // ── Step 1: General – Phases ────────────────────────────────────────
 
     // 6. Navigate to the Phases section

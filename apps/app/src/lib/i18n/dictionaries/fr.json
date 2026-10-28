@@ -782,6 +782,8 @@
       "processNameLabel": "Nom du processus",
       "totalBudgetLabel": "Budget total",
       "totalBudgetHint": "Le montant disponible à attribuer aux propositions retenues par ce processus",
+      "hideBudgetLabel": "Masquer le budget total aux membres",
+      "hideBudgetHint": "Seuls les administrateurs voient le budget total. Les membres voient toujours le montant demandé par chaque proposition.",
       "duplicateIncludeLabel": "Inclure",
       "duplicatingProgress": "Duplication en cours...",
       "stewardQuestion": "Qui gère ce processus ?",

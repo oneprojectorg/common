@@ -43,6 +43,7 @@ const createProcessSettingsValidator = (t: TranslateFn) =>
       .number({ message: t('decisions.processBuilder.totalBudgetHint') })
       .positive({ message: t('decisions.processBuilder.totalBudgetHint') })
       .nullable(),
+    hideBudget: z.boolean(),
     organizeByCategories: z.boolean(),
     requireCollaborativeProposals: z.boolean(),
     isPrivate: z.boolean(),
@@ -159,6 +160,7 @@ export function ProcessSettingsForm({
         ? values.stewardProfileId || undefined
         : undefined,
       config: {
+        hideBudget: values.hideBudget,
         organizeByCategories: values.organizeByCategories,
         requireCollaborativeProposals: values.requireCollaborativeProposals,
         isPrivate: values.isPrivate,
@@ -183,6 +185,7 @@ export function ProcessSettingsForm({
       name: initialName,
       description: initialDescription,
       totalBudget: currentBudget,
+      hideBudget: instanceData?.config?.hideBudget ?? false,
       organizeByCategories: instanceData?.config?.organizeByCategories ?? true,
       requireCollaborativeProposals:
         instanceData?.config?.requireCollaborativeProposals ?? false,
@@ -292,6 +295,18 @@ export function ProcessSettingsForm({
 
             {/* Toggle Options */}
             <div className="space-y-4">
+              <form.AppField
+                name="hideBudget"
+                children={(field) => (
+                  <ToggleRow
+                    label={t('decisions.processBuilder.hideBudgetLabel')}
+                    description={t('decisions.processBuilder.hideBudgetHint')}
+                  >
+                    <field.Switch />
+                  </ToggleRow>
+                )}
+              />
+
               <form.AppField
                 name="organizeByCategories"
                 children={(field) => (

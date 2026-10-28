@@ -782,6 +782,8 @@
       "processNameLabel": "اسم العملية",
       "totalBudgetLabel": "إجمالي الميزانية",
       "totalBudgetHint": "المبلغ المتاح لمنحه للمقترحات التي تختارها هذه العملية",
+      "hideBudgetLabel": "إخفاء إجمالي الميزانية عن الأعضاء",
+      "hideBudgetHint": "يرى المسؤولون فقط إجمالي الميزانية. يظل الأعضاء يرون المبلغ الذي يطلبه كل مقترح.",
       "duplicateIncludeLabel": "تضمين",
       "duplicatingProgress": "جارٍ التكرار...",
       "stewardQuestion": "من يشرف على هذه العملية؟",

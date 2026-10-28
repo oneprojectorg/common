@@ -782,6 +782,8 @@
       "processNameLabel": "A folyamat neve",
       "totalBudgetLabel": "Teljes keret",
       "totalBudgetHint": "A folyamat által kiválasztott javaslatok között szétosztható összeg",
+      "hideBudgetLabel": "A teljes keret elrejtése a tagok elől",
+      "hideBudgetHint": "A teljes keretet csak az adminok látják. A tagok továbbra is látják az egyes javaslatok kért összegét.",
       "duplicateIncludeLabel": "Tartalmazza",
       "duplicatingProgress": "Másolás...",
       "stewardQuestion": "Ki gondozza ezt a folyamatot?",
