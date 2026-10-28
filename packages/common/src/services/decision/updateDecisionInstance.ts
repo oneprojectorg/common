@@ -127,28 +127,22 @@ export const updateDecisionInstance = async ({
   }
 
   const hasPhaseUpdates = phases !== undefined && phases.length > 0;
-  const existingInstanceData =
-    existingInstance.instanceData as DecisionInstanceData;
-
-  // Phase overrides are applied inside the transaction, against the rows.
-  const instanceDataUpdate = getUpdatedInstanceData({
-    existing: existingInstanceData,
-    update: { config, overview, proposalTemplate, rubricTemplate },
-  });
+  const hasInstanceDataUpdate =
+    config !== undefined ||
+    overview !== undefined ||
+    hasPhaseUpdates ||
+    proposalTemplate !== undefined ||
+    rubricTemplate !== undefined;
   const phaseEndDateChanges: PhaseEndDateChange[] = [];
 
-  if (instanceDataUpdate) {
-    if (config !== undefined) {
-      await ensureProposalTaxonomyTerms(
-        getNormalizedCategories(config).map((category) => category.label),
-      );
-    }
-
-    updateData.instanceData = instanceDataUpdate.instanceData;
+  if (config !== undefined) {
+    await ensureProposalTaxonomyTerms(
+      getNormalizedCategories(config).map((category) => category.label),
+    );
   }
 
   // Only update if there's something to update
-  if (Object.keys(updateData).length === 0 && !hasPhaseUpdates) {
+  if (Object.keys(updateData).length === 0 && !hasInstanceDataUpdate) {
     return {
       profile: await getDecisionProfile(profileId),
       phaseEndDateChanges,
@@ -163,52 +157,52 @@ export const updateDecisionInstance = async ({
   // Use a transaction for updating the instance and transitions together
   await db.transaction(async (tx) => {
     const locked = await lockProcessInstanceOrThrow({ db: tx, instanceId });
+    const lockedInstanceData = locked.instanceData as DecisionInstanceData;
 
-    let phaseUpdate: ReturnType<typeof getUpdatedInstanceData>;
+    const rows = hasPhaseUpdates
+      ? await loadPhaseRows({ db: tx, processInstanceId: instanceId })
+      : undefined;
 
-    if (hasPhaseUpdates) {
-      const rows = await loadPhaseRows({
-        db: tx,
-        processInstanceId: instanceId,
-      });
-      const currentPhases = getStoredPhases({
-        rows,
-        blobPhases: getInstanceDataPhases(locked.instanceData),
-      });
+    // Built from the row read under the lock, so a concurrent save is kept.
+    // Phase overrides merge onto the rows, and the blob phases that have none.
+    const instanceDataUpdate = getUpdatedInstanceData({
+      existing: rows
+        ? {
+            ...lockedInstanceData,
+            phases: getStoredPhases({
+              rows,
+              blobPhases: getInstanceDataPhases(locked.instanceData),
+            }),
+          }
+        : lockedInstanceData,
+      update: { config, overview, phases, proposalTemplate, rubricTemplate },
+    });
 
-      phaseUpdate = getUpdatedInstanceData({
-        existing: {
-          ...(instanceDataUpdate?.instanceData ?? existingInstanceData),
-          phases: currentPhases,
-        },
-        update: { phases },
-      });
-    }
+    if (instanceDataUpdate) {
+      phaseEndDateChanges.push(...instanceDataUpdate.phaseEndDateChanges);
 
-    if (phaseUpdate) {
-      phaseEndDateChanges.push(...phaseUpdate.phaseEndDateChanges);
+      if (rows) {
+        await reconcilePhaseRows({
+          db: tx,
+          processInstanceId: instanceId,
+          phases: instanceDataUpdate.instanceData.phases,
+        });
 
-      await reconcilePhaseRows({
-        db: tx,
-        processInstanceId: instanceId,
-        phases: phaseUpdate.instanceData.phases,
-      });
+        // The blob mirrors the rows for the readers still on it.
+        instanceDataUpdate.instanceData.phases = projectPhaseRows(
+          await loadPhaseRows({ db: tx, processInstanceId: instanceId }),
+        );
+      }
 
-      // The blob mirrors the rows for the readers still on it.
-      phaseUpdate.instanceData.phases = projectPhaseRows(
-        await loadPhaseRows({ db: tx, processInstanceId: instanceId }),
-      );
-      updateData.instanceData = phaseUpdate.instanceData;
-    }
+      // After the merge: a budget on an incoming phase needs a priced field.
+      if (hasPhaseUpdates || proposalTemplate) {
+        await assertVoterCostField({
+          instanceData: instanceDataUpdate.instanceData,
+          processId: existingInstance.processId,
+        });
+      }
 
-    // After the merge: a budget on an incoming phase needs a priced field.
-    const mergedInstanceData =
-      phaseUpdate?.instanceData ?? instanceDataUpdate?.instanceData;
-    if (mergedInstanceData && (hasPhaseUpdates || proposalTemplate)) {
-      await assertVoterCostField({
-        instanceData: mergedInstanceData,
-        processId: existingInstance.processId,
-      });
+      updateData.instanceData = instanceDataUpdate.instanceData;
     }
 
     // Update the instance
