@@ -2,12 +2,12 @@ import { count, db, eq } from '@op/db/client';
 import { type ProcessPhase, type Profile, processPhases } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 
-import { NotFoundError, ValidationError } from '../../utils';
+import { NotFoundError } from '../../utils';
 import { lockProcessInstanceOrThrow } from './lockProcessInstance';
 import {
-  MAX_PHASES_PER_DECISION,
   type PhaseData,
   assertDecisionAdmin,
+  assertPhaseCountFits,
   assertPhaseSchemasCompile,
   assertPhaseSettings,
   insertPhase,
@@ -49,11 +49,7 @@ export const createPhase = async ({
       .from(processPhases)
       .where(eq(processPhases.processInstanceId, processInstanceId));
 
-    if ((existing?.value ?? 0) >= MAX_PHASES_PER_DECISION) {
-      throw new ValidationError(
-        `A decision can have at most ${MAX_PHASES_PER_DECISION} phases`,
-      );
-    }
+    assertPhaseCountFits((existing?.value ?? 0) + 1);
 
     return insertPhase({
       tx,

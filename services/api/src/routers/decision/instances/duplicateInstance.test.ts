@@ -236,7 +236,7 @@ describe.concurrent('duplicateInstance', () => {
   it.for([
     {
       label: 'more phases than a decision can hold',
-      message: `The source decision has ${MAX_PHASES_PER_DECISION + 1} phases; the limit is ${MAX_PHASES_PER_DECISION}`,
+      message: `A decision can have at most ${MAX_PHASES_PER_DECISION} phases`,
       phases: Array.from({ length: MAX_PHASES_PER_DECISION + 1 }, (_, i) => ({
         phaseId: `phase-${i}`,
         name: `Phase ${i}`,
@@ -250,7 +250,7 @@ describe.concurrent('duplicateInstance', () => {
       ],
     },
   ])(
-    'refuses a legacy source with $label, naming the source',
+    'refuses a legacy source with $label',
     async ({ message, phases }, { task, onTestFinished }) => {
       const testData = new TestDecisionsDataManager(task.id, onTestFinished);
       const { result: source, caller } = await createSourceInstance(
