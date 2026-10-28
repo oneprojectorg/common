@@ -19,7 +19,8 @@ interface InstanceWithData {
   instanceData: unknown;
 }
 
-const NO_ROWS_WARNING = 'Decision has no phase rows; reading instanceData.phases';
+const NO_ROWS_WARNING =
+  'Decision has no phase rows; reading instanceData.phases';
 
 /**
  * Whether phases are read from `decision_process_phases`. One switch for the
