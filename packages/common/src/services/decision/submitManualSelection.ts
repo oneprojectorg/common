@@ -28,7 +28,11 @@ import {
   resultNotificationMessagesSchema,
 } from './resultNotificationTemplate';
 import { runGenerateReviewAssignments } from './runGenerateReviewAssignments';
-import { type DecisionInstanceData, isLastPhase } from './schemas/instanceData';
+import {
+  type DecisionInstanceData,
+  getInstancePhases,
+  isLastPhase,
+} from './schemas/instanceData';
 import {
   type ProposalAllocation,
   proposalAllocationSchema,
@@ -37,6 +41,10 @@ import type {
   ManualSelectionAudit,
   TransitionData,
 } from './schemas/transitionData';
+import {
+  assertAllocationsWithinBudget,
+  getProcessBudget,
+} from './templateBudget';
 import { isReviewPhase } from './utils/phaseSettings';
 
 export interface SubmitManualSelectionInput {
@@ -121,6 +129,13 @@ export async function submitManualSelection({
   const allocatedByProposalId = parseAllocations({
     allocations,
     proposalIds: uniqueProposalIds,
+  });
+  assertAllocationsWithinBudget({
+    allocations,
+    processBudget: getProcessBudget({
+      phases: getInstancePhases(instance.instanceData),
+      currentPhaseId: currentStateId,
+    }),
   });
 
   const now = new Date().toISOString();

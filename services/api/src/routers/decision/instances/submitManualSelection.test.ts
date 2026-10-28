@@ -706,6 +706,109 @@ describe.concurrent('submitManualSelection', () => {
     expect(notifiedCalls).toHaveLength(0);
   });
 
+  it('rejects awarded amounts whose total exceeds the process budget and publishes nothing', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { instanceId, userEmail, caller } = await seedInstance(testData);
+
+    const [p1, p2] = await Promise.all([
+      testData.createProposal({
+        userEmail,
+        processInstanceId: instanceId,
+        proposalData: { title: `Proposal 1 ${task.id}` },
+        status: ProposalStatus.SUBMITTED,
+      }),
+      testData.createProposal({
+        userEmail,
+        processInstanceId: instanceId,
+        proposalData: { title: `Proposal 2 ${task.id}` },
+        status: ProposalStatus.SUBMITTED,
+      }),
+    ]);
+
+    await testData.advancePhase({
+      instanceId,
+      fromPhaseId: 'submission',
+      toPhaseId: 'review',
+    });
+    await db
+      .delete(decisionTransitionProposals)
+      .where(eq(decisionTransitionProposals.processInstanceId, instanceId));
+
+    // seedInstance's default phase budget is 50,000.
+    await expect(
+      caller.decision.submitManualSelection({
+        processInstanceId: instanceId,
+        proposalIds: [p1.id, p2.id],
+        allocations: [
+          { proposalId: p1.id, amount: 40000 },
+          { proposalId: p2.id, amount: 10000.01 },
+        ],
+      }),
+    ).rejects.toMatchObject({
+      cause: {
+        name: 'ValidationError',
+        message:
+          'Awarded amounts total 50000.01, over the process budget of 50000',
+      },
+    });
+
+    const results = await db
+      .select({ id: decisionProcessResults.id })
+      .from(decisionProcessResults)
+      .where(eq(decisionProcessResults.processInstanceId, instanceId));
+    expect(results).toEqual([]);
+  });
+
+  it('publishes awarded amounts that exactly meet the process budget', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { instanceId, userEmail, caller } = await seedInstance(testData);
+
+    const [p1, p2] = await Promise.all([
+      testData.createProposal({
+        userEmail,
+        processInstanceId: instanceId,
+        proposalData: { title: `Proposal 1 ${task.id}` },
+        status: ProposalStatus.SUBMITTED,
+      }),
+      testData.createProposal({
+        userEmail,
+        processInstanceId: instanceId,
+        proposalData: { title: `Proposal 2 ${task.id}` },
+        status: ProposalStatus.SUBMITTED,
+      }),
+    ]);
+
+    await testData.advancePhase({
+      instanceId,
+      fromPhaseId: 'submission',
+      toPhaseId: 'review',
+    });
+    await db
+      .delete(decisionTransitionProposals)
+      .where(eq(decisionTransitionProposals.processInstanceId, instanceId));
+
+    await caller.decision.submitManualSelection({
+      processInstanceId: instanceId,
+      proposalIds: [p1.id, p2.id],
+      allocations: [
+        { proposalId: p1.id, amount: 30000 },
+        { proposalId: p2.id, amount: 20000 },
+      ],
+    });
+
+    const results = await db
+      .select({ id: decisionProcessResults.id })
+      .from(decisionProcessResults)
+      .where(eq(decisionProcessResults.processInstanceId, instanceId));
+    expect(results).toHaveLength(1);
+  });
+
   it('stores the awarded amount on each selection row', async ({
     task,
     onTestFinished,

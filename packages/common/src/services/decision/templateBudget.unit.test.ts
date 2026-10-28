@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import { getProcessBudget, templateCollectsBudget } from './templateBudget';
+import {
+  assertAllocationsWithinBudget,
+  getProcessBudget,
+  templateCollectsBudget,
+} from './templateBudget';
 import type { ProposalTemplateSchema } from './types';
 
 describe('templateCollectsBudget', () => {
@@ -79,5 +83,39 @@ describe('getProcessBudget', () => {
         currentPhaseId: 'final',
       }),
     ).toBeUndefined();
+  });
+});
+
+describe('assertAllocationsWithinBudget', () => {
+  const allocations = [
+    { proposalId: 'a', amount: 12000 },
+    { proposalId: 'b', amount: 8200 },
+  ];
+
+  it('rejects awards whose total exceeds the process budget', () => {
+    expect(() =>
+      assertAllocationsWithinBudget({ allocations, processBudget: 20000 }),
+    ).toThrow('Awarded amounts total 20200, over the process budget of 20000');
+  });
+
+  it('accepts awards that exactly meet the process budget', () => {
+    expect(() =>
+      assertAllocationsWithinBudget({ allocations, processBudget: 20200 }),
+    ).not.toThrow();
+  });
+
+  it('accepts any total when the process has no budget', () => {
+    expect(() =>
+      assertAllocationsWithinBudget({ allocations, processBudget: undefined }),
+    ).not.toThrow();
+  });
+
+  it('accepts a submission that carries no awards', () => {
+    expect(() =>
+      assertAllocationsWithinBudget({
+        allocations: undefined,
+        processBudget: 1,
+      }),
+    ).not.toThrow();
   });
 });

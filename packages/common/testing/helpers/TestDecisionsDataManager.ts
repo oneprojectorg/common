@@ -374,9 +374,13 @@ export class TestDecisionsDataManager {
     }
 
     const template = await getTemplate(resolvedProcessId);
+    const firstPhaseId = template.phases[0]?.id;
     const templateInstanceData = createInstanceDataFromTemplate({
       template,
       phaseOverrides: [
+        ...(firstPhaseId && firstPhaseId !== 'initial'
+          ? [{ phaseId: firstPhaseId, settings: { budget } }]
+          : []),
         {
           phaseId: 'initial',
           settings: { budget },

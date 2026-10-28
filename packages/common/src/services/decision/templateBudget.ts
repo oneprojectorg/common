@@ -1,3 +1,6 @@
+import { ValidationError } from '../../utils/error';
+import { sumAmounts } from './fieldUnit';
+import type { ProposalAllocation } from './schemas/selection';
 import type { ProposalTemplateSchema } from './types';
 
 /**
@@ -43,3 +46,21 @@ const readBudget = (
     ? value
     : undefined;
 };
+
+export function assertAllocationsWithinBudget({
+  allocations,
+  processBudget,
+}: {
+  allocations: readonly ProposalAllocation[] | undefined;
+  processBudget: number | undefined;
+}): void {
+  if (!allocations || processBudget === undefined) {
+    return;
+  }
+  const total = sumAmounts(allocations.map(({ amount }) => amount));
+  if (total > processBudget) {
+    throw new ValidationError(
+      `Awarded amounts total ${total}, over the process budget of ${processBudget}`,
+    );
+  }
+}
