@@ -52,6 +52,26 @@ export const projectPhaseRows = (rows: PhaseRow[]): PhaseInstanceData[] =>
     name: row.name,
   }));
 
+/**
+ * The phases a decision holds: its rows, plus each `instance_data` phase that
+ * has no row yet (the phase endpoints can write rows before the backfill).
+ */
+export const getStoredPhases = ({
+  rows,
+  blobPhases,
+}: {
+  rows: PhaseRow[];
+  blobPhases: PhaseInstanceData[];
+}): PhaseInstanceData[] => {
+  const projected = projectPhaseRows(rows);
+  const rowPhaseIds = new Set(projected.map(({ phaseId }) => phaseId));
+
+  return [
+    ...projected,
+    ...blobPhases.filter(({ phaseId }) => !rowPhaseIds.has(phaseId)),
+  ];
+};
+
 export const insertPhaseRows = async ({
   db,
   processInstanceId,

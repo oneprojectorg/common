@@ -6,7 +6,7 @@ import {
   updateDecisionInstance,
 } from '@op/common';
 import { TestDecisionsDataManager } from '@op/common/testing';
-import { asc, db, eq } from '@op/db/client';
+import { asc, db, eq, sql } from '@op/db/client';
 import {
   ProcessStatus,
   processInstances,
@@ -818,6 +818,62 @@ describe.concurrent('updateDecisionInstance', () => {
     });
     expect(readded?.id).not.toBe(extraRow.id);
     expect(readded?.profileId).not.toBe(extraRow.profileId);
+  });
+
+  it('keeps the stored fields of a phase that has no row when another phase has one', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instanceId = setup.instance.instance.id;
+    await testData.removePhaseRows(instanceId);
+    const stored = {
+      selectionPipeline: { version: '1.0.0', blocks: [] },
+      settingsSchema: {
+        type: 'object',
+        properties: { maxProposalsPerMember: { type: 'number' } },
+      },
+      proposalTemplate: {
+        type: 'object',
+        properties: { title: { type: 'string' } },
+      },
+    };
+    await db
+      .update(processInstances)
+      .set({
+        instanceData: sql`jsonb_set(${processInstances.instanceData}, '{phases,0}', (${processInstances.instanceData} -> 'phases' -> 0) || ${JSON.stringify(stored)}::jsonb)`,
+      })
+      .where(eq(processInstances.id, instanceId));
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const created = await caller.decision.createPhase({
+      instanceId,
+      name: `Endpoint ${task.id}`,
+      sortOrder: 2,
+    });
+    testData.trackProfileForCleanup(created.profileId);
+
+    await caller.decision.updateDecisionInstance({
+      instanceId,
+      phases: [
+        { phaseId: 'initial', description: 'Updated' },
+        { phaseId: 'final' },
+        { phaseId: created.slug },
+      ],
+    });
+
+    expect(await loadPhaseRows(instanceId)).toMatchObject([
+      {
+        sortOrder: 0,
+        data: { ...stored, phaseId: 'initial', description: 'Updated' },
+      },
+      { sortOrder: 1, data: { phaseId: 'final' } },
+      { id: created.id, sortOrder: 2, name: `Endpoint ${task.id}` },
+    ]);
   });
 
   it('rejects a save that lists a phase id twice or leaves one blank', async ({
