@@ -1,7 +1,7 @@
 import { getTipTapClient } from '@op/collab';
 import { db } from '@op/db/client';
 import { ProposalStatus } from '@op/db/schema';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ValidationError } from '../../utils/error';
 import { assertProfileAccess } from '../assert';
@@ -124,6 +124,15 @@ function draftProposal(proposalData: Record<string, unknown>) {
     },
   };
 }
+
+// Phases are read from the blob: the rows flag is off.
+beforeEach(() => {
+  vi.stubEnv('NEXT_PUBLIC_E2E', '');
+});
+
+afterEach(() => {
+  vi.unstubAllEnvs();
+});
 
 describe('submitProposal — location/boundary enforcement', () => {
   beforeEach(() => {
