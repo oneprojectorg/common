@@ -6,7 +6,7 @@
 DO $$
 DECLARE
   -- JS String.prototype.trim's whitespace
-  v_trim CONSTANT text := '^[\u0009-\u000d    -     　﻿]+|[\u0009-\u000d    -     　﻿]+$';
+  v_trim CONSTANT text := '^[\u0009-\u000d\u0020\u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\ufeff]+|[\u0009-\u000d\u0020\u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\ufeff]+$';
   v_scope uuid[] := nullif(current_setting('op_backfill.instance_ids', true), '')::uuid[];
   v_instance record;
   v_phase record;
@@ -19,6 +19,35 @@ DECLARE
   v_skipped integer := 0;
   v_unlinked integer;
 BEGIN
+  -- Rows made by the phase endpoints that do not cover every JSON phase
+  FOR v_instance IN
+    SELECT i.id
+    FROM decision_process_instances i
+    WHERE EXISTS (
+        SELECT 1 FROM decision_process_phases p WHERE p.process_instance_id = i.id
+      )
+      AND (v_scope IS NULL OR i.id = ANY (v_scope))
+      AND (
+        jsonb_typeof(i.instance_data -> 'phases') IS DISTINCT FROM 'array'
+        OR (SELECT count(*) FROM decision_process_phases p WHERE p.process_instance_id = i.id)
+          <> jsonb_array_length(i.instance_data -> 'phases')
+        OR EXISTS (
+          SELECT 1 FROM jsonb_array_elements(i.instance_data -> 'phases') ph
+          WHERE NOT EXISTS (
+            SELECT 1
+            FROM decision_process_phases p
+            JOIN profiles pr ON pr.id = p.profile_id
+            WHERE p.process_instance_id = i.id
+              AND coalesce(p.data ->> 'phaseId', pr.slug) = ph ->> 'phaseId'
+          )
+        )
+      )
+    ORDER BY i.created_at, i.id
+  LOOP
+    RAISE NOTICE 'backfill-phase-rows: skipped instance % (partial rows)', v_instance.id;
+    v_skipped := v_skipped + 1;
+  END LOOP;
+
   FOR v_instance IN
     SELECT i.id
     FROM decision_process_instances i
