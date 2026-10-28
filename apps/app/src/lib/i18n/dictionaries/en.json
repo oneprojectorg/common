@@ -780,6 +780,8 @@
       "duplicateProcessSuccess": "Decision duplicated successfully",
       "duplicateProcessError": "Failed to duplicate decision",
       "processNameLabel": "Process Name",
+      "totalBudgetLabel": "Total budget",
+      "totalBudgetHint": "The amount available to award across the proposals this process selects",
       "duplicateIncludeLabel": "Include",
       "duplicatingProgress": "Duplicating...",
       "stewardQuestion": "Who is stewarding this process?",

@@ -780,6 +780,8 @@
       "duplicateProcessSuccess": "A döntésről sikeresen másolatot készítettünk",
       "duplicateProcessError": "Nem sikerült másolatot készíteni a döntésről",
       "processNameLabel": "A folyamat neve",
+      "totalBudgetLabel": "Teljes keret",
+      "totalBudgetHint": "A folyamat által kiválasztott javaslatok között szétosztható összeg",
       "duplicateIncludeLabel": "Tartalmazza",
       "duplicatingProgress": "Másolás...",
       "stewardQuestion": "Ki gondozza ezt a folyamatot?",

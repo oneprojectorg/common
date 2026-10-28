@@ -780,6 +780,8 @@
       "duplicateProcessSuccess": "Go'aanka si guul ah ayaa loo laba-laabay",
       "duplicateProcessError": "Ku guuldareystay laba-laabka go'aanka",
       "processNameLabel": "Magaca Habka",
+      "totalBudgetLabel": "Wadarta miisaaniyadda",
+      "totalBudgetHint": "Lacagta loo heli karo in loo qoondeeyo soo-jeedinta uu habkani doorto",
       "duplicateIncludeLabel": "Ku dar",
       "duplicatingProgress": "Waa la laba-laabayaa...",
       "stewardQuestion": "Yaa ilaaliya habkan?",

@@ -780,6 +780,8 @@
       "duplicateProcessSuccess": "সিদ্ধান্ত সফলভাবে ডুপ্লিকেট করা হয়েছে",
       "duplicateProcessError": "সিদ্ধান্ত ডুপ্লিকেট করতে ব্যর্থ",
       "processNameLabel": "প্রক্রিয়ার নাম",
+      "totalBudgetLabel": "মোট বাজেট",
+      "totalBudgetHint": "এই প্রক্রিয়া যে প্রস্তাবগুলো নির্বাচন করে সেগুলোর মধ্যে বরাদ্দের জন্য উপলব্ধ পরিমাণ",
       "duplicateIncludeLabel": "অন্তর্ভুক্ত করুন",
       "duplicatingProgress": "নকল করা হচ্ছে...",
       "stewardQuestion": "এই প্রক্রিয়াটি কে পরিচালনা করছে?",

@@ -104,17 +104,18 @@ export const getInstance = async ({ instanceId, user }: GetInstanceInput) => {
 
     // Filter budget from phase settings if hideBudget is true
     const instanceData = instance.instanceData as DecisionInstanceData;
-    const filteredInstanceData = instanceData.config?.hideBudget
-      ? {
-          ...instanceData,
-          phases: instanceData.phases.map((phase) => ({
-            ...phase,
-            settings: phase.settings
-              ? { ...phase.settings, budget: undefined }
-              : phase.settings,
-          })),
-        }
-      : instanceData;
+    const filteredInstanceData =
+      instanceData.config?.hideBudget && !access.admin
+        ? {
+            ...instanceData,
+            phases: instanceData.phases.map((phase) => ({
+              ...phase,
+              settings: phase.settings
+                ? { ...phase.settings, budget: undefined }
+                : phase.settings,
+            })),
+          }
+        : instanceData;
 
     const manualSelectionStatus = await resolveManualSelectionStatus({
       instance: {

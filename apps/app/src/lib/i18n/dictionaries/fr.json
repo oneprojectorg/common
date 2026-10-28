@@ -780,6 +780,8 @@
       "duplicateProcessSuccess": "Décision dupliquée avec succès",
       "duplicateProcessError": "Échec de la duplication de la décision",
       "processNameLabel": "Nom du processus",
+      "totalBudgetLabel": "Budget total",
+      "totalBudgetHint": "Le montant disponible à attribuer aux propositions retenues par ce processus",
       "duplicateIncludeLabel": "Inclure",
       "duplicatingProgress": "Duplication en cours...",
       "stewardQuestion": "Qui gère ce processus ?",

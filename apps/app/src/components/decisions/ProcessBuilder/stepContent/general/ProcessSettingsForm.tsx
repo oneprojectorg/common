@@ -1,9 +1,15 @@
 'use client';
 
 import { trpc } from '@op/api/client';
+import {
+  DEFAULT_MONEY_CURRENCY,
+  getCurrencySymbol,
+  getProcessBudget,
+} from '@op/common/client';
 import { Header1, Header3 } from '@op/sense/Header';
+import { NumberField } from '@op/sense/NumberField';
 import { Switch } from '@op/sense/Switch';
-import { useEffect, useRef } from 'react';
+import { useEffect, useId, useRef } from 'react';
 import { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
@@ -12,8 +18,10 @@ import type { TranslateFn } from '@/lib/i18n';
 import { useProcessBuilderAutosave } from '@/components/decisions/ProcessBuilder/ProcessBuilderAutosaveContext';
 import { SaveStatusIndicator } from '@/components/decisions/ProcessBuilder/components/SaveStatusIndicator';
 import type { SectionProps } from '@/components/decisions/ProcessBuilder/contentRegistry';
+import { toPhasesWithBudget } from '@/components/decisions/ProcessBuilder/processBudgetPatch';
 import { useProcessBuilderStore } from '@/components/decisions/ProcessBuilder/stores/useProcessBuilderStore';
-import { useAppForm } from '@/components/form/utils';
+import { getFieldSchema } from '@/components/decisions/proposalTemplate';
+import { getFieldErrorMessage, useAppForm } from '@/components/form/utils';
 import { ToggleRow } from '@/components/layout/split/form/ToggleRow';
 
 const createProcessSettingsValidator = (t: TranslateFn) =>
@@ -31,6 +39,10 @@ const createProcessSettingsValidator = (t: TranslateFn) =>
       .min(1, {
         message: t('decisions.processBuilder.processDescriptionPlaceholder'),
       }),
+    totalBudget: z
+      .number({ message: t('decisions.processBuilder.totalBudgetHint') })
+      .positive({ message: t('decisions.processBuilder.totalBudgetHint') })
+      .nullable(),
     organizeByCategories: z.boolean(),
     requireCollaborativeProposals: z.boolean(),
     isPrivate: z.boolean(),
@@ -40,6 +52,19 @@ const createProcessSettingsValidator = (t: TranslateFn) =>
 type ProcessSettingsFormData = z.infer<
   ReturnType<typeof createProcessSettingsValidator>
 >;
+
+const templateCurrency = (
+  template: Parameters<typeof getFieldSchema>[0] | undefined,
+): string => {
+  const currency = template
+    ? getFieldSchema(template, 'budget')?.properties?.currency
+    : undefined;
+  return typeof currency === 'object' &&
+    currency !== null &&
+    typeof currency.default === 'string'
+    ? currency.default
+    : DEFAULT_MONEY_CURRENCY;
+};
 
 // Watches form values and triggers debounced save on changes
 function FormValueWatcher({
@@ -111,6 +136,21 @@ export function ProcessSettingsForm({
   // Only the process owner can change the steward
   const isProcessOwner = userProfiles?.some((p) => p.id === instance.owner?.id);
 
+  const apiPhases = instance.instanceData?.phases ?? [];
+  const phases = (instanceData?.phases ?? apiPhases).map((phase) => ({
+    ...phase,
+    settings:
+      phase.settings ??
+      apiPhases.find((apiPhase) => apiPhase.phaseId === phase.phaseId)
+        ?.settings,
+  }));
+  const currentBudget =
+    getProcessBudget({ phases, currentPhaseId: null }) ?? null;
+  const budgetCurrency = templateCurrency(
+    instanceData?.proposalTemplate ?? instance.instanceData?.proposalTemplate,
+  );
+  const totalBudgetId = useId();
+
   const handleValuesChange = (values: ProcessSettingsFormData) => {
     saveChanges({
       name: values.name,
@@ -123,6 +163,9 @@ export function ProcessSettingsForm({
         requireCollaborativeProposals: values.requireCollaborativeProposals,
         isPrivate: values.isPrivate,
       },
+      ...(values.totalBudget !== currentBudget && {
+        phases: toPhasesWithBudget(phases, values.totalBudget),
+      }),
     });
   };
 
@@ -139,6 +182,7 @@ export function ProcessSettingsForm({
       stewardProfileId: initialStewardProfileId,
       name: initialName,
       description: initialDescription,
+      totalBudget: currentBudget,
       organizeByCategories: instanceData?.config?.organizeByCategories ?? true,
       requireCollaborativeProposals:
         instanceData?.config?.requireCollaborativeProposals ?? false,
@@ -226,6 +270,22 @@ export function ProcessSettingsForm({
                   )}
                   maxLength={250}
                   description={t('decisions.processBuilder.processAboutHint')}
+                />
+              )}
+            />
+
+            <form.AppField
+              name="totalBudget"
+              children={(field) => (
+                <NumberField
+                  id={totalBudgetId}
+                  label={t('decisions.processBuilder.totalBudgetLabel')}
+                  description={t('decisions.processBuilder.totalBudgetHint')}
+                  prefixText={getCurrencySymbol(budgetCurrency)}
+                  value={field.state.value}
+                  onChange={(next) => field.handleChange(next)}
+                  onBlur={field.handleBlur}
+                  errorMessage={getFieldErrorMessage(field)}
                 />
               )}
             />

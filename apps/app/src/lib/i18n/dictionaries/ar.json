@@ -780,6 +780,8 @@
       "duplicateProcessSuccess": "تم تكرار القرار بنجاح",
       "duplicateProcessError": "فشل تكرار القرار",
       "processNameLabel": "اسم العملية",
+      "totalBudgetLabel": "إجمالي الميزانية",
+      "totalBudgetHint": "المبلغ المتاح لمنحه للمقترحات التي تختارها هذه العملية",
       "duplicateIncludeLabel": "تضمين",
       "duplicatingProgress": "جارٍ التكرار...",
       "stewardQuestion": "من يشرف على هذه العملية؟",

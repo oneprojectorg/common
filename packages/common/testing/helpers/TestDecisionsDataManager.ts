@@ -20,6 +20,7 @@ import {
   type DecisionInstanceData,
   type DecisionSchemaDefinition as DecisionSchemaDefinitionStrict,
   type PhaseDefinition,
+  type ProcessConfig,
   createDecisionInstance,
   createInstanceDataFromTemplate,
   createOrganization as createOrganizationService,
@@ -337,6 +338,7 @@ export class TestDecisionsDataManager {
       name,
       budget = 50000,
       status,
+      config,
     }: {
       processId?: string;
       process?: CreatedDecisionProcess;
@@ -344,6 +346,7 @@ export class TestDecisionsDataManager {
       name: string;
       budget?: number;
       status?: ProcessStatus;
+      config?: ProcessConfig;
     },
   ): Promise<CreatedInstance> {
     this.ensureCleanupRegistered();
@@ -371,11 +374,12 @@ export class TestDecisionsDataManager {
     }
 
     const template = await getTemplate(resolvedProcessId);
-    const instanceData = createInstanceDataFromTemplate({
+    const templateInstanceData = createInstanceDataFromTemplate({
       template,
       phaseOverrides: [
         {
           phaseId: 'initial',
+          settings: { budget },
           startDate: new Date().toISOString(),
           endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
         },
@@ -390,6 +394,12 @@ export class TestDecisionsDataManager {
         },
       ],
     });
+    const instanceData = config
+      ? {
+          ...templateInstanceData,
+          config: { ...templateInstanceData.config, ...config },
+        }
+      : templateInstanceData;
 
     const profile = await createDecisionInstance({
       processId: resolvedProcessId,

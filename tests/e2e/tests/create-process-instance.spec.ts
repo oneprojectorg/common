@@ -56,6 +56,15 @@ test.describe('Create Process Instance', () => {
       .fill('A process created by E2E tests');
     await overviewSaved;
 
+    const budgetSaved = waitForAutoSave(authenticatedPage);
+    await authenticatedPage.getByLabel('Total budget').fill('25000');
+    await budgetSaved;
+    await authenticatedPage.reload();
+    await expect(authenticatedPage.getByLabel('Total budget')).toHaveValue(
+      '25000',
+      { timeout: 18_000 },
+    );
+
     // ── Step 1: General – Phases ────────────────────────────────────────
 
     // 6. Navigate to the Phases section
