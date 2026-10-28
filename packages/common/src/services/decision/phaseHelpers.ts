@@ -26,7 +26,7 @@ export type PhaseData = Omit<PhaseInstanceData, 'phaseId' | 'name'>;
 
 // Until readers move to rows, `instance_data` still keys a phase by its
 // instance-scoped id; a row minted from it keeps that id so the two join.
-export type PhaseRowData = PhaseData & { phaseId?: string };
+type PhaseRowData = PhaseData & { phaseId?: string };
 
 export { MAX_PHASES_PER_DECISION, MAX_PHASE_NAME_LENGTH };
 
