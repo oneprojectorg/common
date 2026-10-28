@@ -122,6 +122,46 @@ just status
 Expected after cleanup: `remaining: users=0 orgs=0`, `browser closed`,
 and `just status` prints nothing.
 
+### Before and after: the base-branch demo
+
+`just main-demo` shows the same three flows as the base branch (`dev`)
+serves them, so a talk can run it first and the PR demo second. The
+checkout is yours to do by hand; the recipes only copy the scripts out of
+the tracked tree so they survive it.
+
+```sh
+just main-demo-stage                 # copies the scripts to screenshots/award-budget-main-demo
+git switch dev                       # :3100 now serves the base branch
+# restart the API dev server (pnpm w:api dev) so it drops the PR's modules
+just --justfile screenshots/award-budget-main-demo/Justfile main-demo
+```
+
+Expected on the base branch:
+
+```
+Total budget field present: false
+Hide budget switch present: false
+Award column in the table: false
+Budget bar in the footer: false
+Awards shown in the dialog: $5,000 Awarded, $8,000 Awarded
+Editable award fields in the dialog: 2
+Proposal Alpha | 5000
+Proposal Beta | 8000
+admin (admin=true): submission=null ; final={"budget":null}
+member (admin=false): submission=null ; final={"budget":null}
+```
+
+Read against the PR: no budget controls in the builder, awards edited in
+the confirm dialog instead of the table, no bar, and `getInstance` hides
+the budget from the admin too. Then:
+
+```sh
+git switch issue-1219945945589459   # back to the PR branch; restart the API again
+just --justfile screenshots/award-budget-main-demo/Justfile cleanup main
+just main-demo-unstage
+just all                             # the after
+```
+
 ### The same in one command
 
 ```
