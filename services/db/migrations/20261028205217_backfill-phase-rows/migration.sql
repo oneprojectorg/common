@@ -19,7 +19,7 @@ DECLARE
   v_skipped integer := 0;
   v_unlinked integer;
 BEGIN
-  -- Rows made by the phase endpoints that do not cover every JSON phase
+  -- Rows made by the phase endpoints that leave a JSON phase without a row
   FOR v_instance IN
     SELECT i.id
     FROM decision_process_instances i
@@ -27,11 +27,8 @@ BEGIN
         SELECT 1 FROM decision_process_phases p WHERE p.process_instance_id = i.id
       )
       AND (v_scope IS NULL OR i.id = ANY (v_scope))
-      AND (
-        jsonb_typeof(i.instance_data -> 'phases') IS DISTINCT FROM 'array'
-        OR (SELECT count(*) FROM decision_process_phases p WHERE p.process_instance_id = i.id)
-          <> jsonb_array_length(i.instance_data -> 'phases')
-        OR EXISTS (
+      AND CASE
+        WHEN jsonb_typeof(i.instance_data -> 'phases') = 'array' THEN EXISTS (
           SELECT 1 FROM jsonb_array_elements(i.instance_data -> 'phases') ph
           WHERE NOT EXISTS (
             SELECT 1
@@ -41,7 +38,8 @@ BEGIN
               AND coalesce(p.data ->> 'phaseId', pr.slug) = ph ->> 'phaseId'
           )
         )
-      )
+        ELSE false
+      END
     ORDER BY i.created_at, i.id
   LOOP
     RAISE NOTICE 'backfill-phase-rows: skipped instance % (partial rows)', v_instance.id;
@@ -65,9 +63,15 @@ BEGIN
     WHERE i.id = v_instance.id
     FOR UPDATE OF i;
 
-    CONTINUE WHEN NOT FOUND OR EXISTS (
+    CONTINUE WHEN NOT FOUND;
+
+    IF EXISTS (
       SELECT 1 FROM decision_process_phases p WHERE p.process_instance_id = v_instance.id
-    );
+    ) THEN
+      RAISE NOTICE 'backfill-phase-rows: skipped instance % (rows appeared)', v_instance.id;
+      v_skipped := v_skipped + 1;
+      CONTINUE;
+    END IF;
 
     SELECT CASE
       WHEN jsonb_typeof(v_data -> 'phases') IS DISTINCT FROM 'array'
