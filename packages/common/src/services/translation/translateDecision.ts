@@ -8,6 +8,7 @@ import { permission } from 'access-zones';
 
 import { NotFoundError } from '../../utils';
 import { assertInstanceProfileAccess } from '../access';
+import { withInstancePhases } from '../decision/readInstancePhases';
 import type { DecisionInstanceData } from '../decision/schemas/instanceData';
 import { serverExtensions } from '../decision/tiptapExtensions';
 import type { SupportedLocale } from './locales';
@@ -43,6 +44,7 @@ export async function translateDecision({
 }): Promise<DecisionTranslationResult> {
   const instances = await db
     .select({
+      id: processInstances.id,
       description: processInstances.description,
       instanceData: processInstances.instanceData,
       currentStateId: processInstances.currentStateId,
@@ -63,7 +65,7 @@ export async function translateDecision({
     throw new NotFoundError('Decision profile', decisionProfileId);
   }
 
-  const processInstance = instances[0]!;
+  const processInstance = await withInstancePhases({ instance: instances[0]! });
 
   // Start the permission check immediately so it runs in parallel with translation
   const authPromise = assertInstanceProfileAccess({

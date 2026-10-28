@@ -2,6 +2,7 @@ import {
   decodeCursor,
   encodeCursor,
   getGenericCursorCondition,
+  withInstancePhases,
 } from '@op/common';
 import {
   adminDecisionInstanceSchema,
@@ -180,8 +181,12 @@ export const listAllDecisionInstancesRouter = router({
         proposalStats.map((row) => [row.processInstanceId, row]),
       );
 
+      const itemsWithPhases = await Promise.all(
+        items.map((instance) => withInstancePhases({ instance })),
+      );
+
       return {
-        items: items.map((instance) => {
+        items: itemsWithPhases.map((instance) => {
           const stats = statsByInstance.get(instance.id);
           return adminDecisionInstanceSchema.parse({
             id: instance.id,

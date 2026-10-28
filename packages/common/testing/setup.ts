@@ -8,6 +8,9 @@ vi.mock('@op/analytics/client', () => ({
   default: () => ({
     capture() {},
     identify() {},
+    async getAllFlags() {
+      return {};
+    },
     async shutdown() {},
   }),
 }));

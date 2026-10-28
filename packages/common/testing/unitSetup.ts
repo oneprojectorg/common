@@ -6,6 +6,17 @@ const UNIT_DATABASE_GUARD_MESSAGE =
 // Each factory throws on import, so a unit test that pulls in the real client
 // through any entry of @op/db fails instead of quietly opening a connection to
 // the test database.
+// `@op/analytics` builds its PostHog client on import, which needs a key.
+vi.mock('@op/analytics/client', () => ({
+  default: () => ({
+    capture() {},
+    identify() {},
+    async getAllFlags() {
+      return {};
+    },
+    async shutdown() {},
+  }),
+}));
 vi.mock('@op/db', () => {
   throw new Error(UNIT_DATABASE_GUARD_MESSAGE);
 });

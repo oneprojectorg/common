@@ -1,4 +1,8 @@
-import { NotFoundError, isDecisionPublic } from '@op/common';
+import {
+  NotFoundError,
+  isDecisionPublic,
+  withInstancePhases,
+} from '@op/common';
 import {
   adminDecisionInstanceDetailSchema,
   allowsComments,
@@ -103,7 +107,7 @@ export const getDecisionInstanceRouter = router({
     .input(z.object({ instanceId: z.uuid() }))
     .output(adminDecisionInstanceDetailSchema)
     .query(async ({ input }) => {
-      const instance = await db.query.processInstances.findFirst({
+      const instanceRow = await db.query.processInstances.findFirst({
         where: { id: input.instanceId },
         with: {
           owner: { columns: { id: true, name: true, slug: true } },
@@ -113,9 +117,11 @@ export const getDecisionInstanceRouter = router({
         },
       });
 
-      if (!instance) {
+      if (!instanceRow) {
         throw new NotFoundError('Decision instance not found');
       }
+
+      const instance = await withInstancePhases({ instance: instanceRow });
 
       const parsed = detailInstanceData.safeParse(instance.instanceData);
       const instanceData = parsed.success ? parsed.data : {};

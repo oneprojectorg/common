@@ -12,6 +12,7 @@ import {
   normalizeProposalCategories,
   parseProposalData,
 } from './proposalDataSchema';
+import { readInstancePhases } from './readInstancePhases';
 import { reconcileReviewAssignments } from './reconcileReviewAssignments';
 import { hasDecisionBoundaries, resolveBoundary } from './resolveBoundary';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
@@ -81,7 +82,7 @@ export const submitProposal = async ({
 
   // Check if proposals are allowed in current phase
   const { allowed, phaseName } = checkProposalsAllowed(
-    instanceData.phases,
+    await readInstancePhases({ instance }),
     currentPhaseId,
   );
 

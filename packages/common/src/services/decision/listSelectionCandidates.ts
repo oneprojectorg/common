@@ -8,7 +8,7 @@ import { assertProfileAccess } from '../assert';
 import { getProposalIdsForPhase } from './getProposalsForPhase';
 import { isLegacyInstanceData } from './isLegacyInstance';
 import { listProposals } from './listProposals';
-import type { DecisionInstanceData } from './schemas/instanceData';
+import { readInstancePhases } from './readInstancePhases';
 import type { Proposal } from './schemas/proposal';
 
 export interface SelectionCandidates {
@@ -63,7 +63,7 @@ export async function listSelectionCandidates({
     permissions: { decisions: permission.ADMIN },
   });
 
-  const previousPhaseId = resolvePreviousPhaseId(instance);
+  const previousPhaseId = await resolvePreviousPhaseId({ instance, db });
   if (!previousPhaseId) {
     return { items: [], totalCandidates: 0 };
   }
@@ -114,10 +114,17 @@ export async function listSelectionCandidates({
   return { items, totalCandidates };
 }
 
-function resolvePreviousPhaseId(instance: {
-  instanceData: unknown;
-  currentStateId: string | null;
-}): string | undefined {
+async function resolvePreviousPhaseId({
+  instance,
+  db,
+}: {
+  instance: {
+    id: string;
+    instanceData: unknown;
+    currentStateId: string | null;
+  };
+  db: DbClient;
+}): Promise<string | undefined> {
   if (isLegacyInstanceData(instance.instanceData)) {
     return undefined;
   }
@@ -127,8 +134,8 @@ function resolvePreviousPhaseId(instance: {
     return undefined;
   }
 
-  const phases = (instance.instanceData as DecisionInstanceData | null)?.phases;
-  if (!phases || phases.length === 0) {
+  const phases = await readInstancePhases({ instance, db });
+  if (phases.length === 0) {
     return undefined;
   }
 
