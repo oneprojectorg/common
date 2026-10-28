@@ -107,7 +107,7 @@ describe.concurrent('advancePhase', () => {
     expect(history!.triggeredByProfileId).toBeNull();
   });
 
-  it('mints the phase rows of a decision that has none when it advances', async ({
+  it('advances a decision that has no phase rows without creating any', async ({
     task,
     onTestFinished,
   }) => {
@@ -123,9 +123,9 @@ describe.concurrent('advancePhase', () => {
 
     const rows = await db.query.processPhases.findMany({
       where: { processInstanceId: loaded.dbInstance.id },
-      columns: { sortOrder: true },
+      columns: { id: true },
     });
-    expect(rows.map((row) => row.sortOrder).sort()).toEqual([0, 1]);
+    expect(rows).toHaveLength(0);
   });
 
   it('returns conflict when fromPhaseId does not match current state', async ({

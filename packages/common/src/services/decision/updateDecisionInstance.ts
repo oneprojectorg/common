@@ -24,7 +24,11 @@ import {
   getUpdatedInstanceData,
 } from './getUpdatedInstanceData';
 import { lockProcessInstanceOrThrow } from './lockProcessInstance';
-import { ensurePhaseRows, reconcilePhaseRows } from './phaseRows';
+import {
+  loadPhaseRows,
+  projectPhaseRows,
+  reconcilePhaseRows,
+} from './phaseRows';
 import { ensureProposalTaxonomyTerms } from './proposalTaxonomy';
 import { schemaValidator } from './schemaValidator';
 import type {
@@ -158,23 +162,28 @@ export const updateDecisionInstance = async ({
   await db.transaction(async (tx) => {
     const locked = await lockProcessInstanceOrThrow({ db: tx, instanceId });
 
-    // Rows are the source of truth; a decision that has none converts here.
-    const currentPhases = await ensurePhaseRows({
-      db: tx,
-      processInstanceId: instanceId,
-      phases:
-        (locked.instanceData as DecisionInstanceData | null)?.phases ?? [],
-    });
+    let phaseUpdate: ReturnType<typeof getUpdatedInstanceData>;
 
-    const phaseUpdate = hasPhaseUpdates
-      ? getUpdatedInstanceData({
-          existing: {
-            ...(instanceDataUpdate?.instanceData ?? existingInstanceData),
-            phases: currentPhases,
-          },
-          update: { phases },
-        })
-      : undefined;
+    if (hasPhaseUpdates) {
+      const rows = await loadPhaseRows({
+        db: tx,
+        processInstanceId: instanceId,
+      });
+      // A decision not yet backfilled has no rows; its blob is the base.
+      const currentPhases =
+        rows.length > 0
+          ? projectPhaseRows(rows)
+          : ((locked.instanceData as DecisionInstanceData | null)?.phases ??
+            []);
+
+      phaseUpdate = getUpdatedInstanceData({
+        existing: {
+          ...(instanceDataUpdate?.instanceData ?? existingInstanceData),
+          phases: currentPhases,
+        },
+        update: { phases },
+      });
+    }
 
     if (phaseUpdate) {
       phaseEndDateChanges.push(...phaseUpdate.phaseEndDateChanges);
@@ -186,6 +195,9 @@ export const updateDecisionInstance = async ({
       });
 
       // The blob mirrors the rows for the readers still on it.
+      phaseUpdate.instanceData.phases = projectPhaseRows(
+        await loadPhaseRows({ db: tx, processInstanceId: instanceId }),
+      );
       updateData.instanceData = phaseUpdate.instanceData;
     }
 
