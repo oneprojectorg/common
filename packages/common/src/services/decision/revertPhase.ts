@@ -27,10 +27,8 @@ import {
   ValidationError,
 } from '../../utils';
 import { lockProcessInstance } from './lockProcessInstance';
-import type {
-  DecisionInstanceData,
-  PhaseInstanceData,
-} from './schemas/instanceData';
+import { readInstancePhases } from './readInstancePhases';
+import type { PhaseInstanceData } from './schemas/instanceData';
 
 export interface RevertPhaseInput {
   instanceId: string;
@@ -205,9 +203,10 @@ async function lockCurrentPhase({
 
   return {
     revertedPhaseId,
-    phases:
-      (lockedInstance.instanceData as DecisionInstanceData | null)?.phases ??
-      [],
+    phases: await readInstancePhases({
+      instance: { id: instanceId, instanceData: lockedInstance.instanceData },
+      db: tx,
+    }),
   };
 }
 

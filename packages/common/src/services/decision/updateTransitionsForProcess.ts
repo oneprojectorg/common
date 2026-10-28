@@ -5,6 +5,7 @@ import { logger } from '@op/logging';
 
 import { CommonError } from '../../utils';
 import { buildExpectedTransitions } from './buildExpectedTransitions';
+import { withInstancePhases } from './readInstancePhases';
 
 export interface UpdateTransitionsInput {
   processInstance: ProcessInstance;
@@ -31,7 +32,9 @@ export async function updateTransitionsForProcess({
   db = defaultDb,
 }: UpdateTransitionsInput): Promise<UpdateTransitionsResult> {
   try {
-    const expectedTransitions = buildExpectedTransitions(processInstance);
+    const expectedTransitions = buildExpectedTransitions(
+      await withInstancePhases({ instance: processInstance, db }),
+    );
 
     // Get existing transitions
     const existingTransitions =

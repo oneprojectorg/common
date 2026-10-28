@@ -11,6 +11,7 @@ import { CommonError } from '../../utils';
 import { advancePhase } from './advancePhase';
 import { invalidateDecisionInstance } from './decisionCache';
 import { onPhaseAdvanced } from './onPhaseAdvanced';
+import { readInstancePhases } from './readInstancePhases';
 import type {
   DecisionInstanceData,
   PhaseInstanceData,
@@ -87,11 +88,14 @@ export async function processDecisionsTransitions(): Promise<ProcessDecisionsTra
     await pMap(
       Array.from(transitionsByInstance.entries()),
       async ([processInstanceId, transitions]) => {
-        const instanceData = transitions[0]!.instance
-          .instanceData as DecisionInstanceData;
-        const phases = instanceData.phases;
+        const phases = await readInstancePhases({
+          instance: {
+            id: processInstanceId,
+            instanceData: transitions[0]!.instance.instanceData,
+          },
+        });
 
-        if (!phases || phases.length === 0) {
+        if (phases.length === 0) {
           for (const transition of transitions) {
             result.failed++;
             result.errors.push({
@@ -169,9 +173,7 @@ async function advanceInstanceTransitions({
       const fromPhaseId = transition.fromStateId;
 
       // Only auto-advance phases with date-based advancement.
-      const departingPhase = currentInstanceData.phases?.find(
-        (p) => p.phaseId === fromPhaseId,
-      );
+      const departingPhase = phases.find((p) => p.phaseId === fromPhaseId);
       if (departingPhase?.rules?.advancement?.method !== 'date') {
         continue;
       }

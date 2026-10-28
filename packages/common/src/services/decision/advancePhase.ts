@@ -8,10 +8,8 @@ import {
 
 import { attachProposalsToTransition } from './attachProposalsToTransition';
 import { getProposalsForPhase } from './getProposalsForPhase';
-import type {
-  DecisionInstanceData,
-  PhaseInstanceData,
-} from './schemas/instanceData';
+import { readInstancePhases } from './readInstancePhases';
+import type { DecisionInstanceData } from './schemas/instanceData';
 import type { TransitionData } from './schemas/transitionData';
 import {
   aggregateProposalMetrics,
@@ -76,11 +74,8 @@ export async function advancePhase(
   } = input;
 
   const instanceId = instance.id;
-  const instanceData = instance.instanceData as DecisionInstanceData;
-
-  const departingPhase = instanceData.phases?.find(
-    (p: PhaseInstanceData) => p.phaseId === fromPhaseId,
-  );
+  const phases = await readInstancePhases({ instance, db });
+  const departingPhase = phases.find((p) => p.phaseId === fromPhaseId);
 
   if (!departingPhase) {
     throw new Error(

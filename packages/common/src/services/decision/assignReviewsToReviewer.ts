@@ -4,17 +4,13 @@ import {
   proposals,
   stateTransitionHistory,
 } from '@op/db/schema';
-import { z } from 'zod';
 
 import { NotFoundError, ValidationError } from '../../utils';
 import { getEligibleReviewerProfileIds } from './getEligibleReviewerProfileIds';
 import { getProposalIdsForPhase } from './getProposalsForPhase';
 import { insertReviewAssignments } from './insertReviewAssignments';
+import { readInstancePhases } from './readInstancePhases';
 import { getPhaseIndex } from './utils/phaseOrder';
-
-const phaseOrderData = z
-  .object({ phases: z.array(z.object({ phaseId: z.string() })).optional() })
-  .partial();
 
 export interface AssignReviewsToReviewerInput {
   instanceId: string;
@@ -79,9 +75,8 @@ export async function assignReviewsToReviewer({
     );
   }
 
-  const parsedPhases = phaseOrderData.safeParse(instance.instanceData);
-  const phaseData = parsedPhases.success ? parsedPhases.data : {};
-  const phaseCount = phaseData.phases?.length ?? 0;
+  const phaseData = { phases: await readInstancePhases({ instance }) };
+  const phaseCount = phaseData.phases.length;
   const currentPhaseIndex = instance.currentStateId
     ? getPhaseIndex(phaseData, instance.currentStateId)
     : -1;
