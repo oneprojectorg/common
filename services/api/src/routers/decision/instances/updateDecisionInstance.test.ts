@@ -1,6 +1,7 @@
 import {
   type DecisionInstanceData,
   MAX_PHASES_PER_DECISION,
+  MAX_PHASE_NAME_LENGTH,
   type RubricTemplateSchema,
   ValidationError,
   updateDecisionInstance,
@@ -1028,6 +1029,51 @@ describe.concurrent('updateDecisionInstance', () => {
 
     expect(await loadPhaseState(instanceId)).toEqual(before);
   });
+
+  it.for([
+    {
+      label: 'a stored phase renamed to',
+      phases: (name: string) => [
+        { phaseId: 'initial', description: 'Changed' },
+        { phaseId: 'final', name },
+      ],
+    },
+    {
+      label: 'a new phase named',
+      phases: (name: string) => [
+        { phaseId: 'initial', description: 'Changed' },
+        { phaseId: 'final' },
+        { phaseId: 'extra', name },
+      ],
+    },
+  ])(
+    `rejects $label a name past ${MAX_PHASE_NAME_LENGTH} code points, writing nothing`,
+    async ({ phases }, { task, onTestFinished }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+      const setup = await testData.createDecisionSetup({
+        instanceCount: 1,
+        grantAccess: true,
+      });
+      const instanceId = setup.instance.instance.id;
+      const before = await loadPhaseState(instanceId);
+      const name = task.id.padEnd(MAX_PHASE_NAME_LENGTH + 1, 'x');
+
+      await expect(
+        updateDecisionInstance({
+          instanceId,
+          phases: phases(name),
+          user: setup.user,
+        }),
+      ).rejects.toBeInstanceOf(ValidationError);
+
+      expect(await loadPhaseState(instanceId)).toEqual(before);
+      const named = await db.query.profiles.findMany({
+        where: { name },
+        columns: { id: true },
+      });
+      expect(named).toHaveLength(0);
+    },
+  );
 
   it('serializes concurrent saves on the instance lock', async ({
     task,
