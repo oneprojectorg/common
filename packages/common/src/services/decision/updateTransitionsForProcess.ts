@@ -10,6 +10,8 @@ import { withInstancePhases } from './readInstancePhases';
 export interface UpdateTransitionsInput {
   processInstance: ProcessInstance;
   db?: DbClient;
+  /** Pass it in when holding the instance lock. */
+  fromRows?: boolean;
 }
 
 export interface UpdateTransitionsResult {
@@ -30,10 +32,11 @@ export interface UpdateTransitionsResult {
 export async function updateTransitionsForProcess({
   processInstance,
   db = defaultDb,
+  fromRows,
 }: UpdateTransitionsInput): Promise<UpdateTransitionsResult> {
   try {
     const expectedTransitions = buildExpectedTransitions(
-      await withInstancePhases({ instance: processInstance, db }),
+      await withInstancePhases({ instance: processInstance, db, fromRows }),
     );
 
     // Get existing transitions
