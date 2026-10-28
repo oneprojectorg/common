@@ -5,6 +5,7 @@ import { index, pgTable, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
 
 import { autoId, serviceRolePolicies, timestamps } from '../../helpers';
 import { processInstances } from './processInstances.sql';
+import { processPhases } from './processPhases.sql';
 
 export const decisionProcessTransitions = pgTable(
   'decision_process_transitions',
@@ -19,6 +20,15 @@ export const decisionProcessTransitions = pgTable(
 
     fromStateId: varchar('from_state_id', { length: 256 }),
     toStateId: varchar('to_state_id', { length: 256 }).notNull(),
+
+    fromPhaseId: uuid('from_phase_id').references(() => processPhases.id, {
+      onUpdate: 'cascade',
+      onDelete: 'set null',
+    }),
+    toPhaseId: uuid('to_phase_id').references(() => processPhases.id, {
+      onUpdate: 'cascade',
+      onDelete: 'set null',
+    }),
 
     scheduledDate: timestamp('scheduled_date', {
       withTimezone: true,
@@ -44,6 +54,8 @@ export const decisionProcessTransitions = pgTable(
     index('idx_transitions_state')
       .on(table.processInstanceId, table.toStateId)
       .concurrently(),
+    index('idx_transitions_from_phase').on(table.fromPhaseId),
+    index('idx_transitions_to_phase').on(table.toPhaseId),
   ],
 );
 
