@@ -1,6 +1,9 @@
 import {
   type DecisionInstanceData,
+  MAX_PHASES_PER_DECISION,
   type RubricTemplateSchema,
+  ValidationError,
+  updateDecisionInstance,
 } from '@op/common';
 import { TestDecisionsDataManager } from '@op/common/testing';
 import { asc, db, eq } from '@op/db/client';
@@ -59,6 +62,17 @@ async function loadPhaseRows(instanceId: string) {
     .innerJoin(profiles, eq(profiles.id, processPhases.profileId))
     .where(eq(processPhases.processInstanceId, instanceId))
     .orderBy(asc(processPhases.sortOrder));
+}
+
+async function loadPhaseState(instanceId: string) {
+  const [rows, instance] = await Promise.all([
+    loadPhaseRows(instanceId),
+    db.query.processInstances.findFirst({
+      where: { id: instanceId },
+      columns: { instanceData: true },
+    }),
+  ]);
+  return { rows, instanceData: instance?.instanceData };
 }
 
 describe.concurrent('updateDecisionInstance', () => {
@@ -804,6 +818,66 @@ describe.concurrent('updateDecisionInstance', () => {
     });
     expect(readded?.id).not.toBe(extraRow.id);
     expect(readded?.profileId).not.toBe(extraRow.profileId);
+  });
+
+  it('rejects a save that lists a phase id twice or leaves one blank', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instanceId = setup.instance.instance.id;
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+    const before = await loadPhaseState(instanceId);
+
+    for (const phases of [
+      [{ phaseId: 'initial' }, { phaseId: 'initial', name: 'Copy' }],
+      [{ phaseId: 'initial' }, { phaseId: '' }],
+    ]) {
+      await expect(
+        caller.decision.updateDecisionInstance({ instanceId, phases }),
+      ).rejects.toMatchObject({ code: 'BAD_REQUEST' });
+      await expect(
+        updateDecisionInstance({ instanceId, phases, user: setup.user }),
+      ).rejects.toBeInstanceOf(ValidationError);
+    }
+
+    expect(await loadPhaseState(instanceId)).toEqual(before);
+  });
+
+  it(`rejects a save of more than ${MAX_PHASES_PER_DECISION} phases, writing nothing`, async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instanceId = setup.instance.instance.id;
+    const before = await loadPhaseState(instanceId);
+
+    await expect(
+      updateDecisionInstance({
+        instanceId,
+        phases: [
+          { phaseId: 'initial', description: 'Changed' },
+          { phaseId: 'final' },
+          ...Array.from({ length: MAX_PHASES_PER_DECISION - 1 }, (_, i) => ({
+            phaseId: `extra-${i}`,
+          })),
+        ],
+        user: setup.user,
+      }),
+    ).rejects.toMatchObject({
+      message: `A decision can have at most ${MAX_PHASES_PER_DECISION} phases`,
+      fieldErrors: { phases: 'Remove 1' },
+    });
+
+    expect(await loadPhaseState(instanceId)).toEqual(before);
   });
 
   it('serializes concurrent saves on the instance lock', async ({

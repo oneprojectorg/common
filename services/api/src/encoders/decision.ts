@@ -628,6 +628,12 @@ export const updateDecisionInstanceInputSchema = z.object({
   phases: z
     .array(instancePhaseDataInputEncoder)
     .max(MAX_PHASES_PER_DECISION)
+    .refine(
+      (phases) =>
+        phases.every(({ phaseId }) => phaseId !== '') &&
+        new Set(phases.map(({ phaseId }) => phaseId)).size === phases.length,
+      { message: 'Each phase needs a unique, non-empty id' },
+    )
     .optional(),
   /** Proposal template (JSON Schema) */
   proposalTemplate: jsonSchemaEncoder.optional(),
