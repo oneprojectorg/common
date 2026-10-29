@@ -1859,6 +1859,10 @@
       "votingPhase": "Codbixin",
       "workThemUp": "Horumar kuwa",
       "workThemUpDescription": "Waxa hore u socda waxaa laga dhigaa wax ka dhameystiran."
+    },
+    "processAdmin": {
+      "pageTitle": "Maamul {decisionName}",
+      "underConstruction": "Maamulka cusub ee habraaca ayaa halkan laga dhisayaa."
     }
   },
   "loadingProgress": "Waa la soo rarayaa...",

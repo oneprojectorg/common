@@ -1859,6 +1859,10 @@
       "votingPhase": "Votação",
       "workThemUp": "Desenvolvê-las",
       "workThemUpDescription": "O que avança é transformado em algo mais completo."
+    },
+    "processAdmin": {
+      "pageTitle": "Gerenciar {decisionName}",
+      "underConstruction": "A nova administração do processo está sendo construída aqui."
     }
   },
   "loadingProgress": "Carregando...",
