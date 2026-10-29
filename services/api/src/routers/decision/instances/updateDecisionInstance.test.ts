@@ -1,11 +1,11 @@
 import {
   type DecisionInstanceData,
   MAX_PHASES_PER_DECISION,
-  MAX_PHASE_NAME_LENGTH,
   type RubricTemplateSchema,
   ValidationError,
   updateDecisionInstance,
 } from '@op/common';
+import { MAX_PHASE_NAME_LENGTH } from '@op/common/client';
 import { TestDecisionsDataManager } from '@op/common/testing';
 import { asc, db, eq, sql } from '@op/db/client';
 import {
@@ -1066,7 +1066,7 @@ describe.concurrent('updateDecisionInstance', () => {
       ],
     },
   ])(
-    `rejects $label a name past ${MAX_PHASE_NAME_LENGTH} code points, writing nothing`,
+    `rejects $label a name past ${MAX_PHASE_NAME_LENGTH} characters, writing nothing`,
     async ({ phases }, { task, onTestFinished }) => {
       const testData = new TestDecisionsDataManager(task.id, onTestFinished);
       const setup = await testData.createDecisionSetup({
