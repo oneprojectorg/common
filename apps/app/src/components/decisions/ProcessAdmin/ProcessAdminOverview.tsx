@@ -15,6 +15,7 @@ import {
 import { Header2 } from '@op/sense/Header';
 import { ProfileAvatar } from '@op/sense/ProfileAvatar';
 import { StatusBadge } from '@op/sense/StatusBadge';
+import { cn } from '@op/sense/lib/utils';
 import he from 'he';
 import { Suspense, type ReactNode } from 'react';
 import { LuArrowLeft, LuTriangleAlert } from 'react-icons/lu';
@@ -33,7 +34,12 @@ import {
   PinnedResourcesSkeleton,
 } from '../OverviewPinnedResources';
 import { toProcessPhases } from '../toProcessPhases';
+import { ProcessAdminBanner } from './ProcessAdminBanner';
+import { ProcessAdminLaunchButton } from './ProcessAdminLaunchButton';
 import { ProcessAdminOverviewSkeleton } from './ProcessAdminOverviewSkeleton';
+import { ProcessAdminSettingsDialog } from './ProcessAdminSettingsDialog';
+import { ProcessAdminTitle } from './ProcessAdminTitle';
+import { ProcessAdminsDialog } from './ProcessAdminsDialog';
 import {
   type ProcessAdminStatus,
   STATUS_BADGE_VARIANT,
@@ -107,12 +113,18 @@ function ProcessAdminOverviewSuspense({
 
   return (
     <div className="flex min-h-dvh flex-col bg-background">
-      <ProcessAdminTopBar slug={slug} status={status} />
+      <ProcessAdminTopBar
+        slug={slug}
+        status={status}
+        name={decisionProfile.name}
+        instance={instance}
+      />
       <main className="flex flex-col">
         <ProcessAdminHero
           slug={slug}
           name={decisionProfile.name}
           instance={instance}
+          status={status}
           showBrowseProposals={isOpen}
         />
         <div className="mx-auto grid w-full max-w-6xl grid-cols-1 gap-12 px-4 py-6 md:grid-cols-12 md:gap-x-12 md:px-6 md:py-12">
@@ -150,13 +162,19 @@ function ProcessAdminOverviewSuspense({
   );
 }
 
+// A draft manages its admins from the bar and cannot launch from here yet; a
+// live process gets Settings and a link to what participants see.
 function ProcessAdminTopBar({
   slug,
   status,
+  name,
+  instance,
 }: {
   slug: string;
-  /** Omitted when the process failed to load: the bar then shows no badge. */
+  /** Omitted when the process failed to load: the bar then shows no badge and no actions. */
   status?: ProcessAdminStatus;
+  name?: string;
+  instance?: ProcessInstance;
 }) {
   const t = useTranslations('decisions.processAdmin');
   const statusLabels: Record<ProcessAdminStatus, string> = {
@@ -166,37 +184,66 @@ function ProcessAdminTopBar({
     cancelled: t('statusCancelled'),
   };
 
+  let actions: ReactNode = null;
+  if (status === 'draft' && instance) {
+    actions = (
+      <>
+        {instance.profileId ? (
+          <ProcessAdminsDialog profileId={instance.profileId} />
+        ) : null}
+        <ProcessAdminLaunchButton />
+      </>
+    );
+  } else if (status && instance && name !== undefined) {
+    actions = (
+      <>
+        <ProcessAdminSettingsDialog
+          slug={slug}
+          name={name}
+          instance={instance}
+        />
+        <ButtonLink href={`/decisions/${slug}`} variant="link">
+          {t('viewProcess')}
+        </ButtonLink>
+      </>
+    );
+  }
+
   return (
     <header className="sticky top-0 z-30 border-b bg-accent">
-      <div className="flex h-14 items-center justify-between gap-3 px-4 md:px-6">
-        <ButtonLink href={`/decisions/${slug}/edit`} variant="link">
-          <LuArrowLeft className="size-4 rtl:-scale-x-100" aria-hidden />
-          {t('backToEditor')}
-        </ButtonLink>
+      <div className="grid h-14 grid-cols-[1fr_auto_1fr] items-center gap-3 px-4 md:px-6">
+        <div className="flex justify-start">
+          <ButtonLink href={`/decisions/${slug}/edit`} variant="link">
+            <LuArrowLeft className="size-4 rtl:-scale-x-100" aria-hidden />
+            {t('backToEditor')}
+          </ButtonLink>
+        </div>
         {status ? (
           <StatusBadge variant={STATUS_BADGE_VARIANT[status]} icon={false}>
             {statusLabels[status]}
           </StatusBadge>
-        ) : null}
-        <ButtonLink href={`/decisions/${slug}`} variant="link">
-          {t('viewProcess')}
-        </ButtonLink>
+        ) : (
+          <span />
+        )}
+        <div className="flex items-center justify-end gap-3">{actions}</div>
       </div>
     </header>
   );
 }
 
-// The shared DecisionHero owns the title and the over-image colour switch; this
-// adds the steward line, the headline and the proposals link.
+// A draft's title is edited in place; a live title is read-only and changes
+// from Settings. The steward line and the banner control are shared.
 function ProcessAdminHero({
   slug,
   name,
   instance,
+  status,
   showBrowseProposals,
 }: {
   slug: string;
   name: string;
   instance: ProcessInstance;
+  status: ProcessAdminStatus;
   showBrowseProposals: boolean;
 }) {
   const t = useTranslations('decisions');
@@ -206,54 +253,77 @@ function ProcessAdminHero({
   const steward = instance.steward;
   const stewardSlug = canLinkToProfile ? steward?.slug : undefined;
 
+  const stewardLine = steward ? (
+    <p className="flex items-center justify-center gap-1.5">
+      <ProfileAvatar
+        name={steward.name}
+        src={getPublicUrl(steward.avatarImage?.name)}
+        alt=""
+        size="sm"
+      />
+      <span>
+        {t.rich('processAdmin.stewardedBy', {
+          name: steward.name,
+          steward: (chunks) =>
+            stewardSlug ? (
+              <Link href={`/profile/${stewardSlug}`} className="underline">
+                <bdi>{chunks}</bdi>
+              </Link>
+            ) : (
+              <bdi>{chunks}</bdi>
+            ),
+        })}
+      </span>
+    </p>
+  ) : undefined;
+
   // The design shows the title and the steward only; the summary belongs to
   // the About section.
   return (
     <DecisionHeroBanner heroImagePath={overview?.heroImage}>
+      <ProcessAdminBanner
+        slug={slug}
+        instanceId={instance.id}
+        heroImagePath={overview?.heroImage}
+      />
       <div className="mx-auto flex max-w-3xl flex-col items-center gap-8 px-4 pt-16 pb-8 md:px-6 md:pb-16">
-        <DecisionHero
-          title={name}
-          hasImage={hasImage}
-          showTranslateLink={false}
-          description={
-            steward ? (
-              <p className="flex items-center justify-center gap-1.5">
-                <ProfileAvatar
-                  name={steward.name}
-                  src={getPublicUrl(steward.avatarImage?.name)}
-                  alt=""
-                  size="sm"
-                />
-                <span>
-                  {t.rich('processAdmin.stewardedBy', {
-                    name: steward.name,
-                    steward: (chunks) =>
-                      stewardSlug ? (
-                        <Link
-                          href={`/profile/${stewardSlug}`}
-                          className="underline"
-                        >
-                          <bdi>{chunks}</bdi>
-                        </Link>
-                      ) : (
-                        <bdi>{chunks}</bdi>
-                      ),
-                  })}
-                </span>
-              </p>
-            ) : undefined
-          }
-        >
-          {showBrowseProposals ? (
-            <ButtonLink
-              href={`/decisions/${slug}/current`}
-              variant="outline"
-              className="mt-6 self-center"
-            >
-              {t('browseProposalsAction')}
-            </ButtonLink>
-          ) : null}
-        </DecisionHero>
+        {status === 'draft' ? (
+          <div className="flex w-full flex-col gap-2 text-center">
+            <ProcessAdminTitle
+              slug={slug}
+              instanceId={instance.id}
+              name={name}
+              hasImage={hasImage}
+            />
+            {stewardLine ? (
+              <div
+                className={cn(
+                  'flex flex-col gap-2 text-base',
+                  hasImage ? 'text-white' : 'text-foreground',
+                )}
+              >
+                {stewardLine}
+              </div>
+            ) : null}
+          </div>
+        ) : (
+          <DecisionHero
+            title={name}
+            hasImage={hasImage}
+            showTranslateLink={false}
+            description={stewardLine}
+          >
+            {showBrowseProposals ? (
+              <ButtonLink
+                href={`/decisions/${slug}/current`}
+                variant="outline"
+                className="mt-6 self-center"
+              >
+                {t('browseProposalsAction')}
+              </ButtonLink>
+            ) : null}
+          </DecisionHero>
+        )}
       </div>
     </DecisionHeroBanner>
   );
