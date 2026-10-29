@@ -389,7 +389,7 @@ export const relations = defineRelations(schema, (r) => ({
    * stewardProfileId and processId are nullable.
    */
   processInstances: {
-    phoneNumber: r.one.decisionPhoneNumbers({
+    phoneNumbers: r.many.decisionPhoneNumbers({
       from: r.processInstances.id,
       to: r.decisionPhoneNumbers.processInstanceId,
     }),
