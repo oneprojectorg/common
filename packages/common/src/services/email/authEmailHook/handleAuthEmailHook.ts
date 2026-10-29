@@ -33,7 +33,7 @@ export interface AuthEmailHookResult {
 }
 
 /** Supabase caps the hook payload at 20KB uncompressed; anything larger is not GoTrue. */
-export const AUTH_EMAIL_HOOK_MAX_BODY_BYTES = 32_000;
+const MAX_BODY_BYTES = 32_000;
 
 const payloadSchema = z.object({
   user: z.object({
@@ -125,7 +125,7 @@ export const handleAuthEmailHook = async ({
     return failure(503, 'The Send Email hook is not configured');
   }
 
-  if (Buffer.byteLength(rawBody) > AUTH_EMAIL_HOOK_MAX_BODY_BYTES) {
+  if (Buffer.byteLength(rawBody) > MAX_BODY_BYTES) {
     return failure(400, 'Payload too large');
   }
 

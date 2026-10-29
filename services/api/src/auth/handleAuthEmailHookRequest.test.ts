@@ -109,7 +109,7 @@ describe('handleAuthEmailHookRequest', () => {
     expect(send).not.toHaveBeenCalled();
   });
 
-  it('answers 400 for a body over the cap without reading it all', async () => {
+  it('answers 400 for a body over the size cap', async () => {
     const result = await handleAuthEmailHookRequest({
       request: post('x'.repeat(40_000)),
       send,

@@ -1,10 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { signStandardWebhook } from '../../../../testing/helpers/signStandardWebhook';
-import {
-  AUTH_EMAIL_HOOK_MAX_BODY_BYTES,
-  handleAuthEmailHook,
-} from './handleAuthEmailHook';
+import { handleAuthEmailHook } from './handleAuthEmailHook';
 
 vi.mock('@op/logging', () => ({
   logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
@@ -203,9 +200,7 @@ describe('handleAuthEmailHook', () => {
   });
 
   it('refuses a body over the size cap without checking the signature', async () => {
-    const result = await run(
-      signedRawBody('x'.repeat(AUTH_EMAIL_HOOK_MAX_BODY_BYTES + 1)),
-    );
+    const result = await run(signedRawBody('x'.repeat(32_001)));
 
     expect(result.status).toBe(400);
     expect(result.body).toMatchObject({

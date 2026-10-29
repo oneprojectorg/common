@@ -2,14 +2,14 @@ import {
   type AuthEmailHookResult,
   type AuthEmailSend,
   handleAuthEmailHook,
-  readAuthEmailHookRequest,
   sendAuthEmail,
 } from '@op/common';
 
 /**
  * Wires the Supabase Auth "Send Email" hook handler with the configured
  * secrets and the real mailer. The HTTP route (apps/api) passes the request
- * through and turns the result into a response.
+ * through and turns the result into a response. The body is read verbatim
+ * because the signature covers its exact bytes.
  */
 export const handleAuthEmailHookRequest = async ({
   request,
@@ -19,16 +19,15 @@ export const handleAuthEmailHookRequest = async ({
   /** Test seam; production uses the real mailer. */
   send?: (send: AuthEmailSend) => Promise<void>;
 }): Promise<AuthEmailHookResult> => {
-  const read = await readAuthEmailHookRequest(request);
-  if (!read) {
-    return {
-      status: 400,
-      body: { error: { http_code: 400, message: 'Payload too large' } },
-    };
-  }
+  const rawBody = await request.text();
+  const headers: Record<string, string> = {};
+  request.headers.forEach((value, key) => {
+    headers[key] = value;
+  });
 
   return handleAuthEmailHook({
-    ...read,
+    rawBody,
+    headers,
     secrets: process.env.SEND_EMAIL_HOOK_SECRETS,
     sendAuthEmail: send,
   });
