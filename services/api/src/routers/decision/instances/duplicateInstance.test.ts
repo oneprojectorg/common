@@ -1,11 +1,18 @@
-import { type DecisionInstanceData, simpleVoting } from '@op/common';
+import {
+  type DecisionInstanceData,
+  MAX_PHASES_PER_DECISION,
+  simpleVoting,
+} from '@op/common';
 import type { DecisionSchemaDefinition } from '@op/common';
+import { MAX_PHASE_NAME_LENGTH } from '@op/common/client';
 import { TestDecisionsDataManager } from '@op/common/testing';
-import { db, eq } from '@op/db/client';
+import { asc, db, eq, sql } from '@op/db/client';
 import {
   ProcessStatus,
   decisionProcesses,
   processInstances,
+  processPhases,
+  profiles,
   users,
 } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
@@ -90,6 +97,31 @@ async function createSimpleTemplate(
   };
 }
 
+async function loadPhaseRows(processInstanceId: string) {
+  return db
+    .select({
+      sortOrder: processPhases.sortOrder,
+      profileId: processPhases.profileId,
+      data: processPhases.data,
+      name: profiles.name,
+    })
+    .from(processPhases)
+    .innerJoin(profiles, eq(profiles.id, processPhases.profileId))
+    .where(eq(processPhases.processInstanceId, processInstanceId))
+    .orderBy(asc(processPhases.sortOrder));
+}
+
+function withoutDates(data: unknown) {
+  if (typeof data !== 'object' || data === null) {
+    return data;
+  }
+  return Object.fromEntries(
+    Object.entries(data).filter(
+      ([key]) => key !== 'startDate' && key !== 'endDate',
+    ),
+  );
+}
+
 async function createSourceInstance(
   testData: TestDecisionsDataManager,
   taskId: string,
@@ -140,6 +172,159 @@ describe.concurrent('duplicateInstance', () => {
 
     expect(instanceData.phases.length).toBeGreaterThan(0);
     expect(instanceData.templateId).toBe(simpleVoting.id);
+  });
+
+  it('mints its own phase rows rather than sharing the source phases', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { result: source, caller } = await createSourceInstance(
+      testData,
+      task.id,
+    );
+
+    await caller.decision.updateDecisionInstance({
+      instanceId: source.processInstance.id,
+      phases: simpleVoting.phases.map((phase) => ({
+        phaseId: phase.id,
+        startDate: new Date().toISOString(),
+        endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+      })),
+    });
+
+    const duplicate = await caller.decision.duplicateInstance({
+      instanceId: source.processInstance.id,
+      name: `Duplicate of ${source.name}`,
+      include: ALL_INCLUDED,
+    });
+    testData.trackProfileForCleanup(duplicate.id);
+
+    const [instance, sourceRows, duplicateRows] = await Promise.all([
+      db.query.processInstances.findFirst({
+        where: { id: duplicate.processInstance.id },
+      }),
+      loadPhaseRows(source.processInstance.id),
+      loadPhaseRows(duplicate.processInstance.id),
+    ]);
+    const instanceData = instance!.instanceData as DecisionInstanceData;
+
+    expect(duplicateRows).toHaveLength(simpleVoting.phases.length);
+    expect(instanceData.phases).toHaveLength(simpleVoting.phases.length);
+    instanceData.phases.forEach((phase, index) => {
+      const row = duplicateRows[index]!;
+      expect(row.sortOrder).toBe(index);
+      expect(row.name).toBe(phase.name);
+      expect(row.data).toMatchObject({ phaseId: phase.phaseId });
+    });
+
+    expect(duplicateRows).toHaveLength(sourceRows.length);
+    duplicateRows.forEach((row, index) => {
+      const sourceRow = sourceRows[index]!;
+      expect(row.name).toBe(sourceRow.name);
+      expect(row.data).toEqual(withoutDates(sourceRow.data));
+      expect(row.data).not.toHaveProperty('startDate');
+      expect(row.data).not.toHaveProperty('endDate');
+    });
+
+    const sourceProfileIds = new Set(sourceRows.map((row) => row.profileId));
+    for (const row of duplicateRows) {
+      expect(sourceProfileIds.has(row.profileId)).toBe(false);
+    }
+  });
+
+  it.for([
+    {
+      label: 'more phases than a decision can hold',
+      message: `The source decision has ${MAX_PHASES_PER_DECISION + 1} phases; the limit is ${MAX_PHASES_PER_DECISION}`,
+      phases: Array.from({ length: MAX_PHASES_PER_DECISION + 1 }, (_, i) => ({
+        phaseId: `phase-${i}`,
+        name: `Phase ${i}`,
+      })),
+    },
+    {
+      label: 'a phase name longer than a profile can hold',
+      message: `a phase name can have at most ${MAX_PHASE_NAME_LENGTH} characters`,
+      phases: [
+        { phaseId: 'long', name: 'x'.repeat(MAX_PHASE_NAME_LENGTH + 1) },
+      ],
+    },
+  ])(
+    'refuses a legacy source with $label, naming the source',
+    async ({ message, phases }, { task, onTestFinished }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+      const { result: source, caller } = await createSourceInstance(
+        testData,
+        task.id,
+      );
+
+      await db
+        .update(processInstances)
+        .set({
+          instanceData: sql`jsonb_set(${processInstances.instanceData}, '{phases}', ${JSON.stringify(phases)}::jsonb)`,
+        })
+        .where(eq(processInstances.id, source.processInstance.id));
+
+      const name = `Legacy Duplicate ${task.id}`;
+      await expect(
+        caller.decision.duplicateInstance({
+          instanceId: source.processInstance.id,
+          name,
+          include: ALL_INCLUDED,
+        }),
+      ).rejects.toMatchObject({
+        cause: {
+          name: 'ValidationError',
+          message: expect.stringContaining(message),
+        },
+      });
+
+      const [instances, decisionProfiles] = await Promise.all([
+        db.query.processInstances.findMany({
+          where: { name },
+          columns: { id: true },
+        }),
+        db.query.profiles.findMany({ where: { name }, columns: { id: true } }),
+      ]);
+      expect(instances).toHaveLength(0);
+      expect(decisionProfiles).toHaveLength(0);
+    },
+  );
+
+  it('mints a row per minimal phase when phases are not included', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { result: source, caller } = await createSourceInstance(
+      testData,
+      task.id,
+    );
+
+    const duplicate = await caller.decision.duplicateInstance({
+      instanceId: source.processInstance.id,
+      name: `Bare Duplicate ${task.id}`,
+      include: NONE_INCLUDED,
+    });
+    testData.trackProfileForCleanup(duplicate.id);
+
+    const [instance, rows] = await Promise.all([
+      db.query.processInstances.findFirst({
+        where: { id: duplicate.processInstance.id },
+      }),
+      loadPhaseRows(duplicate.processInstance.id),
+    ]);
+    const instanceData = instance!.instanceData as DecisionInstanceData;
+
+    expect(instanceData.phases).toHaveLength(simpleVoting.phases.length);
+    expect(rows).toHaveLength(instanceData.phases.length);
+    instanceData.phases.forEach((phase, index) => {
+      const row = rows[index]!;
+      expect(row.sortOrder).toBe(index);
+      expect(row.name).toBe(phase.name);
+      expect(row.data).toMatchObject({ phaseId: phase.phaseId });
+      expect(row.data).not.toHaveProperty('rules');
+    });
   });
 
   it('should create a new profile with a unique slug', async ({

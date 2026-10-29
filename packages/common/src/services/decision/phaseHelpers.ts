@@ -18,11 +18,22 @@ import {
   type PhaseSettingsSchema,
   assertSettingsMatchSchema,
 } from './schemas/instanceData';
+import {
+  MAX_PHASE_NAME_LENGTH,
+  phaseNameLengthSchema,
+} from './schemas/phaseName';
+import { MAX_PHASES_PER_DECISION } from './utils/phaseOrder';
 
 // phaseId and name live on the phase's profile.
 export type PhaseData = Omit<PhaseInstanceData, 'phaseId' | 'name'>;
 
-export { MAX_PHASES_PER_DECISION } from './utils/phaseOrder';
+// Until readers move to rows, `instance_data` still keys a phase by its
+// instance-scoped id; a row minted from it keeps that id so the two join.
+type PhaseRowData = PhaseData & { phaseId?: string };
+
+export { MAX_PHASES_PER_DECISION };
+
+type InstanceDataPhase = Pick<PhaseInstanceData, 'phaseId' | 'name'>;
 
 const SLUG_ATTEMPTS = 3;
 
@@ -40,7 +51,7 @@ export const insertPhase = async ({
   processInstanceId: string;
   name: string;
   sortOrder: number;
-  data?: PhaseData;
+  data?: PhaseRowData;
   // Only tests pass this, to force slug clashes.
   generateSlug?: () => string;
 }): Promise<{ phase: ProcessPhase; profile: Profile }> => {
@@ -61,6 +72,48 @@ export const insertPhase = async ({
   }
 
   return { phase, profile };
+};
+
+export const getPhaseProfileName = ({
+  phaseId,
+  name,
+}: InstanceDataPhase): string => name?.trim() || phaseId;
+
+// Instance data can predate the phase limits, so a copy of it is checked
+// before anything is written.
+export const assertPhasesCanBeMinted = (
+  phases: readonly InstanceDataPhase[],
+): void => {
+  if (phases.length > MAX_PHASES_PER_DECISION) {
+    throw new ValidationError(
+      `The source decision has ${phases.length} phases; the limit is ${MAX_PHASES_PER_DECISION}`,
+      { phases: `Remove ${phases.length - MAX_PHASES_PER_DECISION}` },
+    );
+  }
+
+  const phaseIds = new Set<string>();
+  for (const phase of phases) {
+    if (!phase.phaseId) {
+      throw new ValidationError('The source decision has a phase with no id', {
+        phaseId: 'Required',
+      });
+    }
+    if (phaseIds.has(phase.phaseId)) {
+      throw new ValidationError(
+        `The source decision has two phases with the id "${phase.phaseId}"`,
+        { phaseId: 'Must be unique' },
+      );
+    }
+    phaseIds.add(phase.phaseId);
+
+    const name = getPhaseProfileName(phase);
+    if (!phaseNameLengthSchema.safeParse(name).success) {
+      throw new ValidationError(
+        `Phase "${previewPhaseName(name)}…": a phase name can have at most ${MAX_PHASE_NAME_LENGTH} characters`,
+        { name: `Shorten "${previewPhaseName(name)}…"` },
+      );
+    }
+  }
 };
 
 export const assertPhaseSchemasCompile = ({
@@ -193,6 +246,8 @@ const insertPhaseProfile = async ({
 
   throw new CommonError('Failed to create phase profile');
 };
+
+const previewPhaseName = (name: string) => [...name].slice(0, 40).join('');
 
 const generatePhaseSlug = () => randomUUID().slice(0, 8);
 

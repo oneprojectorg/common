@@ -7,7 +7,9 @@ import {
   REVIEWS_POLICIES,
   checkpointVersionSchema,
   instanceOptionalPhaseRefSchema,
+  MAX_PHASES_PER_DECISION,
   paginated,
+  phaseNameLengthSchema,
   phaseReviewSettingsSchema,
   proposalSchema,
   rubricTemplateSchema,
@@ -565,6 +567,7 @@ export const createInstanceFromTemplateInputSchema = z.object({
 
 /** Input schema for phase overrides with datetime validation */
 const instancePhaseDataInputEncoder = instancePhaseDataEncoder.extend({
+  name: phaseNameLengthSchema.optional(),
   startDate: z.string().datetime({ offset: true }).optional(),
   endDate: z.string().datetime({ offset: true }).optional(),
   // Overrides the read-path encoder: `''` is rejected here rather than decoded
@@ -622,7 +625,10 @@ export const updateDecisionInstanceInputSchema = z.object({
   /** Public-facing overview content (headline, short description, rich text body) */
   overview: instanceOverviewInputEncoder.optional(),
   /** Phase overrides for dates, rules, and settings */
-  phases: z.array(instancePhaseDataInputEncoder).optional(),
+  phases: z
+    .array(instancePhaseDataInputEncoder)
+    .max(MAX_PHASES_PER_DECISION)
+    .optional(),
   /** Proposal template (JSON Schema) */
   proposalTemplate: jsonSchemaEncoder.optional(),
   /** Rubric template (JSON Schema defining evaluation criteria) */

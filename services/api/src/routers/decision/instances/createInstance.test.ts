@@ -5,7 +5,8 @@ import {
   PROCESS_NAME_MIN_LENGTH,
 } from '@op/common';
 import { TestDecisionsDataManager } from '@op/common/testing';
-import { db } from '@op/db/client';
+import { asc, db, eq } from '@op/db/client';
+import { processPhases, profiles } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -37,6 +38,19 @@ async function loadInstanceData(instanceId: string) {
     instance,
     instanceData: instance.instanceData as DecisionInstanceData,
   };
+}
+
+async function loadPhaseRows(processInstanceId: string) {
+  return db
+    .select({
+      sortOrder: processPhases.sortOrder,
+      data: processPhases.data,
+      name: profiles.name,
+    })
+    .from(processPhases)
+    .innerJoin(profiles, eq(profiles.id, processPhases.profileId))
+    .where(eq(processPhases.processInstanceId, processInstanceId))
+    .orderBy(asc(processPhases.sortOrder));
 }
 
 describe.concurrent('createInstance', () => {
@@ -73,6 +87,34 @@ describe.concurrent('createInstance', () => {
     expect(instance.currentStateId).toBe(instanceData.phases[0]?.phaseId);
   });
 
+  it('mints a phase row and profile per phase it is given', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({ instanceCount: 0 });
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const result = await caller.decision.createInstance({
+      ...grantDraft,
+      name: `Grant Rows ${task.id}`,
+    });
+    testData.trackProfileForCleanup(result.id);
+
+    const [{ instanceData }, rows] = await Promise.all([
+      loadInstanceData(result.processInstance.id),
+      loadPhaseRows(result.processInstance.id),
+    ]);
+
+    expect(rows).toHaveLength(grantDraft.phases.length);
+    instanceData.phases.forEach((phase, index) => {
+      const row = rows[index]!;
+      expect(row.sortOrder).toBe(index);
+      expect(row.name).toBe(grantDraft.phases[index]!.name);
+      expect(row.data).toMatchObject({ phaseId: phase.phaseId });
+    });
+  });
+
   it('creates a blank draft with no phases', async ({
     task,
     onTestFinished,
@@ -94,6 +136,7 @@ describe.concurrent('createInstance', () => {
 
     expect(instanceData.phases).toEqual([]);
     expect(instance.currentStateId).toBeNull();
+    expect(await loadPhaseRows(result.processInstance.id)).toHaveLength(0);
   });
 
   it('is stewarded by the profile the creator is acting as', async ({
