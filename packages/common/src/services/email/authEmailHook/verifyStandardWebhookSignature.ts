@@ -47,8 +47,9 @@ const sign = (key: Buffer, content: string): string =>
 /**
  * Checks a Standard Webhooks signature (https://www.standardwebhooks.com):
  * HMAC-SHA256 over `<webhook-id>.<webhook-timestamp>.<body>` with the decoded
- * secret, offered as `v1,<base64>` entries separated by spaces. Any secret
- * matching any entry passes, so a rotation keeps the old secret valid.
+ * secret, offered as `v1,<base64>` entries separated by spaces (or GoTrue's
+ * ", "). Any secret matching any entry passes, so a rotation keeps the old
+ * secret valid.
  */
 export const verifyStandardWebhookSignature = ({
   rawBody,
@@ -77,10 +78,13 @@ export const verifyStandardWebhookSignature = ({
     return false;
   }
 
+  // GoTrue joins several signatures with ", " rather than the spec's space, so
+  // an entry may carry a trailing comma; split on the comma instead of slicing.
   const offered = signature
-    .split(' ')
-    .filter((entry) => entry.startsWith('v1,'))
-    .map((entry) => entry.slice(3));
+    .split(/\s+/)
+    .map((entry) => entry.split(','))
+    .filter((parts) => parts[0] === 'v1' && parts[1])
+    .map((parts) => parts[1] ?? '');
   if (offered.length === 0) {
     return false;
   }

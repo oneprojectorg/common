@@ -64,6 +64,18 @@ describe('verifyStandardWebhookSignature', () => {
     );
   });
 
+  it('accepts the signature list GoTrue sends during a rotation, in either order', () => {
+    // GoTrue joins the entries with ", ", so all but the last carry a trailing comma.
+    for (const signature of [
+      `${signatureFor(SECRET)}, ${signatureFor(OTHER_SECRET)}`,
+      `${signatureFor(OTHER_SECRET)}, ${signatureFor(SECRET)}`,
+    ]) {
+      expect(
+        verify(headersFor(SECRET, { 'webhook-signature': signature })),
+      ).toBe(true);
+    }
+  });
+
   it('rejects a signature made with another secret', () => {
     expect(verify(headersFor(OTHER_SECRET))).toBe(false);
   });
