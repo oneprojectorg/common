@@ -100,9 +100,24 @@ export type ProposalSystemFieldSource = Pick<
  * the version that was actually submitted; the document fragments are
  * the source of truth for submitted proposals.
  */
+const systemFieldsCache = new WeakMap<
+  ProposalSystemFieldSource,
+  ReturnType<typeof computeProposalSystemFields>
+>();
+
 export function resolveProposalSystemFields(
   proposal: ProposalSystemFieldSource,
 ) {
+  const cached = systemFieldsCache.get(proposal);
+  if (cached) {
+    return cached;
+  }
+  const resolved = computeProposalSystemFields(proposal);
+  systemFieldsCache.set(proposal, resolved);
+  return resolved;
+}
+
+function computeProposalSystemFields(proposal: ProposalSystemFieldSource) {
   const fallback = parseProposalData(proposal.proposalData);
 
   const template = proposal.proposalTemplate as ProposalTemplateSchema | null;
