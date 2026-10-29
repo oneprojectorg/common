@@ -1,11 +1,15 @@
 'use client';
 
 import { trpc } from '@op/api/client';
-import { PROCESS_NAME_MAX_LENGTH } from '@op/common/client';
+import {
+  PROCESS_NAME_MAX_LENGTH,
+  PROCESS_NAME_MIN_LENGTH,
+} from '@op/common/client';
+import { logger } from '@op/logging/client';
 import { EditableText } from '@op/sense/EditableText';
 import { toast } from '@op/sense/Toast';
 import { cn } from '@op/sense/lib/utils';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -28,16 +32,40 @@ export function ProcessAdminTitle({
   const tShared = useTranslations();
   const utils = trpc.useUtils();
   const [pendingName, setPendingName] = useState<string | null>(null);
+  // Only the latest commit may clear the pending name, or an earlier save
+  // settling would show its stale value while a later one is in flight.
+  const commitCount = useRef(0);
 
   const updateInstance = trpc.decision.updateDecisionInstance.useMutation({
     onSuccess: async () => {
       await utils.decision.getDecisionBySlug.invalidate({ slug });
     },
     onError: (error) => {
-      toast.error(t('saveError'), { description: error.message });
+      logger.error('Process rename failed', { error });
+      toast.error(t('saveError'));
     },
-    onSettled: () => setPendingName(null),
   });
+
+  const commit = (nextName: string) => {
+    // The server has no minimum; Settings does, so the two paths must agree.
+    if (nextName.length < PROCESS_NAME_MIN_LENGTH) {
+      toast.error(t('processNameTooShort', { min: PROCESS_NAME_MIN_LENGTH }));
+      return;
+    }
+    commitCount.current += 1;
+    const commitId = commitCount.current;
+    setPendingName(nextName);
+    updateInstance.mutate(
+      { instanceId, name: nextName },
+      {
+        onSettled: () => {
+          if (commitCount.current === commitId) {
+            setPendingName(null);
+          }
+        },
+      },
+    );
+  };
 
   return (
     <div className="flex w-full justify-center">
@@ -55,10 +83,7 @@ export function ProcessAdminTitle({
           'justify-center text-center font-serif text-display font-light',
           hasImage && 'text-white',
         )}
-        onCommit={(nextName) => {
-          setPendingName(nextName);
-          updateInstance.mutate({ instanceId, name: nextName });
-        }}
+        onCommit={commit}
       />
     </div>
   );

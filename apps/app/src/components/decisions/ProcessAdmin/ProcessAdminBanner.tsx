@@ -2,19 +2,12 @@
 
 import { trpc } from '@op/api/client';
 import { Button } from '@op/sense/Button';
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@op/sense/Dialog';
 import { useState } from 'react';
 import { LuImage } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { OverviewHeroImageField } from '../OverviewHeroImageField';
+import { BannerUploadModal } from '../BannerUploadModal';
 
 interface ProcessAdminBannerProps {
   slug: string;
@@ -23,14 +16,13 @@ interface ProcessAdminBannerProps {
   heroImagePath?: string;
 }
 
-/** The "Add banner" / "Edit banner" control in the hero's top end corner, and its upload dialog. */
+/** The "Add banner" / "Edit banner" control in the hero's top end corner. The page reads the hero from the query, so a change refetches instead of reloading. */
 export function ProcessAdminBanner({
   slug,
   instanceId,
   heroImagePath,
 }: ProcessAdminBannerProps) {
   const t = useTranslations('decisions');
-  const tShared = useTranslations();
   const utils = trpc.useUtils();
   const [isOpen, setIsOpen] = useState(false);
   const label = heroImagePath
@@ -48,27 +40,15 @@ export function ProcessAdminBanner({
         <LuImage className="size-4" aria-hidden />
         {label}
       </Button>
-      <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>{t('processBuilder.editBannerTitle')}</DialogTitle>
-          </DialogHeader>
-          <div className="px-6 py-4">
-            <OverviewHeroImageField
-              instanceId={instanceId}
-              initialPath={heroImagePath}
-              onChange={() => {
-                void utils.decision.getDecisionBySlug.invalidate({ slug });
-              }}
-            />
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsOpen(false)}>
-              {tShared('Done')}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <BannerUploadModal
+        instanceId={instanceId}
+        heroImagePath={heroImagePath}
+        isOpen={isOpen}
+        onOpenChange={setIsOpen}
+        onChange={() => {
+          void utils.decision.getDecisionBySlug.invalidate({ slug });
+        }}
+      />
     </>
   );
 }

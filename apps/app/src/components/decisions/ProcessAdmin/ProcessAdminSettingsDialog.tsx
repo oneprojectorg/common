@@ -6,6 +6,7 @@ import {
   PROCESS_NAME_MAX_LENGTH,
   PROCESS_NAME_MIN_LENGTH,
 } from '@op/common/client';
+import { logger } from '@op/logging/client';
 import { Button } from '@op/sense/Button';
 import {
   Dialog,
@@ -24,18 +25,22 @@ import {
 import { Input } from '@op/sense/Input';
 import { OptionBox } from '@op/sense/OptionBox';
 import { RadioGroup, RadioGroupItem } from '@op/sense/RadioGroup';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@op/sense/Tabs';
 import { toast } from '@op/sense/Toast';
-import { cn } from '@op/sense/lib/utils';
 import { useId, useState } from 'react';
-import { LuCopy, LuGlobe, LuLink, LuSettings } from 'react-icons/lu';
+import { LuCopy, LuGlobe, LuLock, LuSettings } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
 import { ProcessAdminsPanel } from './ProcessAdminsPanel';
 
-type SettingsSection = 'details' | 'admins' | 'visibility';
+const SECTIONS = ['details', 'admins', 'visibility'] as const;
+type SettingsSection = (typeof SECTIONS)[number];
 
-const SECTIONS: SettingsSection[] = ['details', 'admins', 'visibility'];
+const isSection = (value: unknown): value is SettingsSection =>
+  SECTIONS.some((section) => section === value);
+
+const PANEL_CLASSNAME = 'min-w-0 flex-1 overflow-y-auto p-6';
 
 interface ProcessAdminSettingsDialogProps {
   slug: string;
@@ -73,50 +78,48 @@ export function ProcessAdminSettingsDialog({
         <DialogHeader className="border-b px-6 py-4">
           <DialogTitle>{t('settingsAction')}</DialogTitle>
         </DialogHeader>
-        <div className="flex min-h-0 flex-col sm:h-130 sm:flex-row">
-          <nav
+        <Tabs
+          value={section}
+          onValueChange={(value) => {
+            if (isSection(value)) {
+              setSection(value);
+            }
+          }}
+          orientation="vertical"
+          className="flex min-h-0 flex-col gap-0 sm:h-130 sm:flex-row"
+        >
+          <TabsList
+            variant="sidebar"
             aria-label={t('processAdmin.settingsSectionsLabel')}
-            className="flex shrink-0 gap-1 overflow-x-auto border-b bg-muted/40 p-2 sm:w-48 sm:flex-col sm:border-e sm:border-b-0"
+            className="w-full shrink-0 border-b p-2 sm:w-48 sm:border-e sm:border-b-0"
           >
             {SECTIONS.map((item) => (
-              <Button
-                key={item}
-                variant={item === section ? 'secondary' : 'ghost'}
-                aria-current={item === section ? 'page' : undefined}
-                className="justify-start"
-                onClick={() => setSection(item)}
-              >
+              <TabsTrigger key={item} value={item}>
                 {sectionLabels[item]}
-              </Button>
+              </TabsTrigger>
             ))}
-          </nav>
-          <div className="min-w-0 flex-1 overflow-y-auto p-6">
-            {section === 'details' ? (
-              <DetailsSection
-                slug={slug}
-                name={name}
-                instanceId={instance.id}
-              />
-            ) : null}
-            {section === 'admins' ? (
-              <div className="flex flex-col gap-4">
-                <p className="text-sm text-muted-foreground">
-                  {t('processAdmin.manageAdminsDescription')}
-                </p>
-                {instance.profileId ? (
-                  <ProcessAdminsPanel profileId={instance.profileId} />
-                ) : null}
-              </div>
-            ) : null}
-            {section === 'visibility' ? (
-              <VisibilitySection
-                slug={slug}
-                instanceId={instance.id}
-                isPrivate={Boolean(instance.instanceData.config?.isPrivate)}
-              />
-            ) : null}
-          </div>
-        </div>
+          </TabsList>
+          <TabsContent value="details" className={PANEL_CLASSNAME}>
+            <DetailsSection slug={slug} name={name} instanceId={instance.id} />
+          </TabsContent>
+          <TabsContent value="admins" className={PANEL_CLASSNAME}>
+            <div className="flex flex-col gap-4">
+              <p className="text-sm text-muted-foreground">
+                {t('processAdmin.manageAdminsDescription')}
+              </p>
+              {instance.profileId ? (
+                <ProcessAdminsPanel profileId={instance.profileId} />
+              ) : null}
+            </div>
+          </TabsContent>
+          <TabsContent value="visibility" className={PANEL_CLASSNAME}>
+            <VisibilitySection
+              slug={slug}
+              instanceId={instance.id}
+              isPrivate={Boolean(instance.instanceData.config?.isPrivate)}
+            />
+          </TabsContent>
+        </Tabs>
       </DialogContent>
     </Dialog>
   );
@@ -131,7 +134,8 @@ function useSaveInstance(slug: string) {
       await utils.decision.getDecisionBySlug.invalidate({ slug });
     },
     onError: (error) => {
-      toast.error(t('saveError'), { description: error.message });
+      logger.error('Process settings save failed', { error });
+      toast.error(t('saveError'));
     },
   });
 }
@@ -150,14 +154,30 @@ function DetailsSection({
   const nameId = useId();
   const errorId = useId();
   const [draft, setDraft] = useState(name);
+  const [isDirty, setIsDirty] = useState(false);
+  const [seenName, setSeenName] = useState(name);
   const saveInstance = useSaveInstance(slug);
+
+  // A rename that lands from elsewhere replaces an untouched draft; a draft
+  // being typed keeps the user's text.
+  if (name !== seenName) {
+    setSeenName(name);
+    if (!isDirty) {
+      setDraft(name);
+    }
+  }
+
   const trimmed = draft.trim();
   const isTooShort = trimmed.length < PROCESS_NAME_MIN_LENGTH;
 
+  // Enter and the blur that follows both land here; the dirty flag makes the
+  // second a no-op.
   const commitName = () => {
-    if (isTooShort) {
+    if (!isDirty || isTooShort) {
       return;
     }
+    setIsDirty(false);
+    setDraft(trimmed);
     if (trimmed !== name) {
       saveInstance.mutate({ instanceId, name: trimmed });
     }
@@ -189,7 +209,10 @@ function DetailsSection({
           dir="auto"
           aria-invalid={isTooShort || undefined}
           aria-describedby={isTooShort ? errorId : undefined}
-          onChange={(event) => setDraft(event.target.value)}
+          onChange={(event) => {
+            setDraft(event.target.value);
+            setIsDirty(true);
+          }}
           onBlur={commitName}
           onKeyDown={(event) => {
             if (event.key === 'Enter') {
@@ -213,7 +236,7 @@ function DetailsSection({
       <div className="flex flex-col gap-2">
         <FieldTitle>{t('processLinkLabel')}</FieldTitle>
         <div className="flex items-center gap-2 rounded-md border px-3 py-2">
-          <LuLink
+          <LuGlobe
             className="size-4 shrink-0 text-muted-foreground"
             aria-hidden
           />
@@ -241,7 +264,7 @@ function VisibilitySection({
 }) {
   const t = useTranslations('decisions.processAdmin');
   const publicId = useId();
-  const unlistedId = useId();
+  const privateId = useId();
   const [pending, setPending] = useState<boolean | null>(null);
   const saveInstance = useSaveInstance(slug);
   const shownPrivate = pending ?? isPrivate;
@@ -252,11 +275,14 @@ function VisibilitySection({
         {t('visibilityDescription')}
       </p>
       <RadioGroup
-        value={shownPrivate ? 'unlisted' : 'public'}
+        value={shownPrivate ? 'private' : 'public'}
         aria-label={t('visibilitySection')}
+        // Locked while a save runs, so two quick choices cannot race and the
+        // last one to finish win over the last one chosen.
+        disabled={saveInstance.isPending}
         className="gap-3"
         onValueChange={(value) => {
-          const nextPrivate = value === 'unlisted';
+          const nextPrivate = value === 'private';
           setPending(nextPrivate);
           saveInstance.mutate(
             { instanceId, config: { isPrivate: nextPrivate } },
@@ -275,19 +301,19 @@ function VisibilitySection({
             </span>
           }
           description={t('visibilityPublicHint')}
-          className={cn('rounded-xl p-4')}
+          className="rounded-xl p-4"
         />
         <OptionBox
-          htmlFor={unlistedId}
-          control={<RadioGroupItem id={unlistedId} value="unlisted" />}
+          htmlFor={privateId}
+          control={<RadioGroupItem id={privateId} value="private" />}
           controlPlacement="end"
           label={
             <span className="flex items-center gap-2">
-              <LuLink className="size-4" aria-hidden />
-              {t('visibilityUnlisted')}
+              <LuLock className="size-4" aria-hidden />
+              {t('visibilityPrivate')}
             </span>
           }
-          description={t('visibilityUnlistedHint')}
+          description={t('visibilityPrivateHint')}
           className="rounded-xl p-4"
         />
       </RadioGroup>

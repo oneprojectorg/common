@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { ProcessStatus } from '@op/api/encoders';
 import { cleanup, render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { NextIntlClientProvider } from 'next-intl';
 import type { ReactNode } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -8,12 +9,12 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import en from '../../../lib/i18n/dictionaries/en.json';
 import { ProcessAdminOverview } from './ProcessAdminOverview';
 
-const { query } = vi.hoisted(() => {
+const { query, updateInstance } = vi.hoisted(() => {
   const query: { decisionProfile: unknown; resources: unknown[] } = {
     decisionProfile: null,
     resources: [],
   };
-  return { query };
+  return { query, updateInstance: vi.fn() };
 });
 
 vi.mock('@op/api/client', () => ({
@@ -26,7 +27,7 @@ vi.mock('@op/api/client', () => ({
         useSuspenseQuery: () => [query.decisionProfile],
       },
       updateDecisionInstance: {
-        useMutation: () => ({ mutate: () => {}, isPending: false }),
+        useMutation: () => ({ mutate: updateInstance, isPending: false }),
       },
     },
     resources: {
@@ -59,6 +60,7 @@ vi.mock('@/hooks/useForesight', () => ({
 vi.mock('@/hooks/useCanLinkToProfile', () => ({
   useCanLinkToProfile: () => false,
 }));
+vi.mock('@op/logging/client', () => ({ logger: { error: () => {} } }));
 
 const SLUG = 'community-fund';
 
@@ -68,12 +70,14 @@ const seed = ({
   phases = [],
   steward = null,
   heroImage,
+  isPrivate = false,
 }: {
   status?: string;
   description?: string | null;
   phases?: object[];
   steward?: object | null;
   heroImage?: string;
+  isPrivate?: boolean;
 }) => {
   query.decisionProfile = {
     name: 'Community Fund',
@@ -84,7 +88,11 @@ const seed = ({
       description,
       currentStateId: null,
       steward,
-      instanceData: { phases, overview: heroImage ? { heroImage } : undefined },
+      instanceData: {
+        phases,
+        config: { isPrivate },
+        overview: heroImage ? { heroImage } : undefined,
+      },
     },
   };
 };
@@ -105,6 +113,7 @@ const phase = {
 afterEach(() => {
   cleanup();
   query.resources = [];
+  updateInstance.mockClear();
 });
 
 describe('ProcessAdminOverview', () => {
@@ -239,6 +248,80 @@ describe('ProcessAdminOverview', () => {
     expect(
       screen.queryByRole('button', { name: 'Edit Community Fund' }),
     ).toBeNull();
+  });
+
+  it('saves a renamed draft title on Enter and refuses one below the minimum', async () => {
+    seed({ status: ProcessStatus.DRAFT });
+    renderOverview();
+    const user = userEvent.setup();
+
+    await user.click(
+      screen.getByRole('button', { name: 'Edit Community Fund' }),
+    );
+    await user.keyboard('Neighbourhood Fund{Enter}');
+
+    expect(updateInstance).toHaveBeenCalledTimes(1);
+    expect(updateInstance.mock.calls[0]?.[0]).toEqual({
+      instanceId: 'instance-1',
+      name: 'Neighbourhood Fund',
+    });
+
+    await user.click(
+      screen.getByRole('button', { name: 'Edit Neighbourhood Fund' }),
+    );
+    await user.keyboard('ab{Enter}');
+
+    expect(updateInstance).toHaveBeenCalledTimes(1);
+  });
+
+  it('saves the name from Settings once for Enter and the blur after it', async () => {
+    seed({});
+    renderOverview();
+    const user = userEvent.setup();
+
+    await user.click(screen.getByRole('button', { name: 'Settings' }));
+    const field = await screen.findByRole('textbox', { name: 'Process name' });
+    await user.clear(field);
+    await user.type(field, 'New Fund{Enter}');
+    await user.tab();
+
+    expect(updateInstance).toHaveBeenCalledTimes(1);
+    expect(updateInstance).toHaveBeenCalledWith({
+      instanceId: 'instance-1',
+      name: 'New Fund',
+    });
+  });
+
+  it('keeps a too-short name out of Settings saves and says why', async () => {
+    seed({});
+    renderOverview();
+    const user = userEvent.setup();
+
+    await user.click(screen.getByRole('button', { name: 'Settings' }));
+    const field = await screen.findByRole('textbox', { name: 'Process name' });
+    await user.clear(field);
+    await user.type(field, 'ab');
+    await user.tab();
+
+    expect(
+      screen.getByText('The name needs at least 3 characters.'),
+    ).toBeTruthy();
+    expect(updateInstance).not.toHaveBeenCalled();
+  });
+
+  it('saves the visibility as it is chosen', async () => {
+    seed({});
+    renderOverview();
+    const user = userEvent.setup();
+
+    await user.click(screen.getByRole('button', { name: 'Settings' }));
+    await user.click(await screen.findByRole('tab', { name: 'Visibility' }));
+    await user.click(await screen.findByRole('radio', { name: /Private/ }));
+
+    expect(updateInstance.mock.calls[0]?.[0]).toEqual({
+      instanceId: 'instance-1',
+      config: { isPrivate: true },
+    });
   });
 
   it('names the banner control by whether there is a banner', () => {

@@ -8,6 +8,7 @@ import { EntityType } from '@op/api/encoders';
 import type { ProfileInvite, ProfileSearchResult } from '@op/api/encoders';
 import { PAGE_LIMIT, type ProfileUser, hasEmail } from '@op/common/client';
 import { useDebounce } from '@op/hooks';
+import { logger } from '@op/logging/client';
 import { Avatar, AvatarFallback, AvatarImage } from '@op/sense/Avatar';
 import { Badge } from '@op/sense/Badge';
 import { Button } from '@op/sense/Button';
@@ -36,22 +37,22 @@ import { LuEllipsisVertical, LuSearch, LuTrash2 } from 'react-icons/lu';
 import { useTranslations } from '@/lib/i18n';
 
 import { isValidEmail } from '../emailUtils';
+import {
+  type AdminPickerOption,
+  canRemoveAdmin,
+  findAdminRole,
+  getAdminPickAction,
+  getAdminRemoveAction,
+} from './processAdminActions';
 
 interface ProcessAdminsPanelProps {
   /** The process profile the admin role belongs to. */
   profileId: string;
 }
 
-type PickerOption =
-  | {
-      value: string;
-      kind: 'person';
-      result: ProfileSearchResult;
-      email: string;
-    }
-  | { value: string; kind: 'email'; email: string };
+type PickerOption = AdminPickerOption<ProfileSearchResult>;
 
-/** The admins of a process: a search-or-email picker that invites on pick, over the list of who has the admin role. */
+/** The admins of a process: a search-or-email picker that grants the role on pick, over the list of who holds it. */
 export function ProcessAdminsPanel({ profileId }: ProcessAdminsPanelProps) {
   const t = useTranslations('decisions.processAdmin');
 
@@ -72,7 +73,7 @@ export function ProcessAdminsPanel({ profileId }: ProcessAdminsPanelProps) {
   );
 }
 
-export function ProcessAdminsPanelSkeleton() {
+function ProcessAdminsPanelSkeleton() {
   return (
     <div aria-hidden className="flex flex-col gap-4">
       <Skeleton className="h-9 w-full" />
@@ -88,9 +89,7 @@ function ProcessAdminsPanelSuspense({ profileId }: ProcessAdminsPanelProps) {
     profileId,
     zoneName: 'decisions',
   });
-  const adminRole =
-    roles.items.find((role) => role.permissions?.admin) ??
-    roles.items.find((role) => role.name === 'Admin');
+  const adminRole = findAdminRole(roles.items);
 
   if (!adminRole) {
     return (
@@ -112,33 +111,47 @@ function AdminsList({
 }) {
   const t = useTranslations('decisions.processAdmin');
   const utils = trpc.useUtils();
+  // Every member, not only the admins: a participant picked in the search is
+  // promoted, not invited again.
   const [users] = trpc.profile.listUsers.useSuspenseQuery({
     profileId,
-    roleId,
     limit: PAGE_LIMIT.max,
   });
   const [allInvites] = trpc.profile.listProfileInvites.useSuspenseQuery({
     profileId,
   });
-  const admins = users.items;
-  const invites = allInvites.items.filter(
-    (invite) => invite.accessRoleId === roleId,
+  const members = users.items;
+  const admins = useMemo(
+    () =>
+      members.filter((member) =>
+        member.roles.some((role) => role.id === roleId),
+      ),
+    [members, roleId],
   );
-
+  const adminInvites = useMemo(
+    () => allInvites.items.filter((invite) => invite.accessRoleId === roleId),
+    [allInvites, roleId],
+  );
   const takenEmails = useMemo(
     () =>
       new Set([
         ...admins.filter(hasEmail).map((admin) => admin.email.toLowerCase()),
-        ...invites.map((invite) => invite.email.toLowerCase()),
+        ...adminInvites.map((invite) => invite.email.toLowerCase()),
       ]),
-    [admins, invites],
+    [admins, adminInvites],
   );
 
+  // The member mutations broadcast the profileMembers channel; the
+  // invalidation covers the gap before the client is subscribed.
   const refresh = async () => {
     await Promise.all([
       utils.profile.listUsers.invalidate({ profileId }),
       utils.profile.listProfileInvites.invalidate({ profileId }),
     ]);
+  };
+  const reportFailure = (email: string, error: unknown) => {
+    logger.error('Process admin grant failed', { error });
+    toast.error(t('inviteFailed', { email }));
   };
 
   const invite = trpc.profile.invite.useMutation({
@@ -146,40 +159,79 @@ function AdminsList({
       await refresh();
       const email = variables.invitations[0]?.email ?? '';
       if (data.details.failed.length > 0) {
-        toast.error(t('inviteFailed', { email }), {
-          description: data.details.failed[0]?.reason,
-        });
+        toast.error(t('inviteFailed', { email }));
       } else {
         toast.success(t('inviteSent', { email }));
       }
     },
-    onError: (error, variables) => {
-      toast.error(
-        t('inviteFailed', { email: variables.invitations[0]?.email ?? '' }),
-        { description: error.message },
-      );
-    },
+    onError: (error, variables) =>
+      reportFailure(variables.invitations[0]?.email ?? '', error),
   });
+  const promote = trpc.profile.updateUserRoles.useMutation({
+    onSuccess: refresh,
+  });
+  const moveInvite = trpc.profile.updateProfileInvite.useMutation({
+    onSuccess: refresh,
+  });
+  const isGranting =
+    invite.isPending || promote.isPending || moveInvite.isPending;
+
+  const handlePick = (option: PickerOption) => {
+    const action = getAdminPickAction({
+      option,
+      members,
+      invites: allInvites.items,
+      roleId,
+    });
+    switch (action.kind) {
+      case 'promote': {
+        const name =
+          option.kind === 'person' ? option.result.name : option.email;
+        promote.mutate(
+          { profileUserId: action.profileUserId, roleIds: action.roleIds },
+          {
+            onSuccess: () => toast.success(t('adminAdded', { name })),
+            onError: (error) => reportFailure(option.email, error),
+          },
+        );
+        return;
+      }
+      case 'moveInvite':
+        moveInvite.mutate(
+          { inviteId: action.inviteId, accessRoleId: roleId },
+          {
+            onSuccess: () =>
+              toast.success(t('inviteSent', { email: option.email })),
+            onError: (error) => reportFailure(option.email, error),
+          },
+        );
+        return;
+      case 'invite':
+        invite.mutate({
+          profileId,
+          invitations: [{ email: action.email, roleId }],
+        });
+    }
+  };
 
   return (
     <div className="flex flex-col gap-4">
       <AdminPicker
         takenEmails={takenEmails}
-        disabled={invite.isPending}
-        onPick={(email) =>
-          invite.mutate({ profileId, invitations: [{ email, roleId }] })
-        }
+        disabled={isGranting}
+        onPick={handlePick}
       />
-      <ul className="flex flex-col divide-y border-t" aria-live="polite">
+      <ul className="flex flex-col divide-y border-t">
         {admins.map((admin) => (
           <AdminRow
             key={admin.id}
             admin={admin}
-            isOnlyAdmin={admins.length <= 1}
+            roleId={roleId}
+            adminCount={admins.length}
             onRemoved={refresh}
           />
         ))}
-        {invites.map((pendingInvite) => (
+        {adminInvites.map((pendingInvite) => (
           <InviteRow
             key={pendingInvite.id}
             invite={pendingInvite}
@@ -198,7 +250,7 @@ function AdminPicker({
 }: {
   takenEmails: Set<string>;
   disabled: boolean;
-  onPick: (email: string) => void;
+  onPick: (option: PickerOption) => void;
 }) {
   const t = useTranslations('decisions.processAdmin');
   const tDecisions = useTranslations('decisions');
@@ -251,7 +303,7 @@ function AdminPicker({
       onValueChange={(picked: PickerOption[]) => {
         const option = picked[picked.length - 1];
         if (option) {
-          onPick(option.email);
+          onPick(option);
           setQuery('');
         }
       }}
@@ -289,24 +341,17 @@ function AdminPicker({
               <ComboboxItem key={option.value} value={option}>
                 {option.kind === 'email' ? (
                   <span className="text-sm">
-                    {tDecisions('inviteEmailAction', { email: option.email })}
+                    {tDecisions.rich('inviteEmailAction', {
+                      email: () => <bdi dir="ltr">{option.email}</bdi>,
+                    })}
                   </span>
                 ) : (
                   <ProfileItem
                     avatar={
-                      <Avatar className="size-8 shrink-0">
-                        {option.result.avatarImage?.name ? (
-                          <AvatarImage
-                            src={
-                              getPublicUrl(option.result.avatarImage.name) ?? ''
-                            }
-                            alt=""
-                          />
-                        ) : null}
-                        <AvatarFallback>
-                          {option.result.name.slice(0, 1).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
+                      <AdminAvatar
+                        name={option.result.name}
+                        imageName={option.result.avatarImage?.name}
+                      />
                     }
                     title={option.result.name}
                     description={option.email}
@@ -323,29 +368,46 @@ function AdminPicker({
 
 function AdminRow({
   admin,
-  isOnlyAdmin,
+  roleId,
+  adminCount,
   onRemoved,
 }: {
   admin: ProfileUser;
-  isOnlyAdmin: boolean;
+  roleId: string;
+  adminCount: number;
   onRemoved: () => Promise<void>;
 }) {
   const t = useTranslations('decisions.processAdmin');
   const user = useMaybeUser();
   const name = admin.profile?.name || admin.name || admin.email || '';
   const isSelf =
-    (admin.profile?.id !== undefined &&
-      admin.profile?.id === user?.profileId) ||
+    (admin.profile?.id !== undefined && admin.profile.id === user?.profileId) ||
     (hasEmail(admin) && admin.email === user?.email);
-  // The owner and the last admin keep their access; the server refuses both anyway.
-  const canRemove = !isSelf && !admin.isOwner && !isOnlyAdmin;
 
+  const reportFailure = (error: unknown) => {
+    logger.error('Process admin removal failed', { error });
+    toast.error(t('removeAdminError'));
+  };
+  const demote = trpc.profile.updateUserRoles.useMutation({
+    onSuccess: onRemoved,
+    onError: reportFailure,
+  });
   const removeUser = trpc.profile.removeUser.useMutation({
     onSuccess: onRemoved,
-    onError: (error) => {
-      toast.error(t('removeAdminError'), { description: error.message });
-    },
+    onError: reportFailure,
   });
+
+  const remove = () => {
+    const action = getAdminRemoveAction(admin, roleId);
+    if (action.kind === 'demote') {
+      demote.mutate({
+        profileUserId: action.profileUserId,
+        roleIds: action.roleIds,
+      });
+    } else {
+      removeUser.mutate({ profileUserId: action.profileUserId });
+    }
+  };
 
   return (
     <li className="flex items-center justify-between gap-3 py-3">
@@ -363,11 +425,11 @@ function AdminRow({
       />
       {isSelf ? (
         <Badge variant="secondary">{t('youBadge')}</Badge>
-      ) : canRemove ? (
+      ) : canRemoveAdmin({ admin, isSelf, adminCount }) ? (
         <RemoveMenu
           label={t('manageAdminLabel', { name })}
-          disabled={removeUser.isPending}
-          onRemove={() => removeUser.mutate({ profileUserId: admin.id })}
+          disabled={demote.isPending || removeUser.isPending}
+          onRemove={remove}
         />
       ) : null}
     </li>
@@ -387,7 +449,8 @@ function InviteRow({
   const deleteInvite = trpc.profile.deleteProfileInvite.useMutation({
     onSuccess: onRemoved,
     onError: (error) => {
-      toast.error(t('removeAdminError'), { description: error.message });
+      logger.error('Process admin invite removal failed', { error });
+      toast.error(t('removeAdminError'));
     },
   });
 
@@ -422,7 +485,7 @@ function AdminAvatar({
   return (
     <Avatar className="size-8 shrink-0">
       {imageName ? (
-        <AvatarImage src={getPublicUrl(imageName) ?? ''} alt="" />
+        <AvatarImage src={getPublicUrl(imageName) ?? undefined} alt="" />
       ) : null}
       <AvatarFallback>{name.slice(0, 1).toUpperCase()}</AvatarFallback>
     </Avatar>

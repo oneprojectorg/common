@@ -211,8 +211,8 @@ function ProcessAdminTopBar({
 
   return (
     <header className="sticky top-0 z-30 border-b bg-accent">
-      <div className="grid h-14 grid-cols-[1fr_auto_1fr] items-center gap-3 px-4 md:px-6">
-        <div className="flex justify-start">
+      <div className="flex h-14 items-center gap-3 px-4 md:px-6">
+        <div className="flex flex-1 justify-start">
           <ButtonLink href={`/decisions/${slug}/edit`} variant="link">
             <LuArrowLeft className="size-4 rtl:-scale-x-100" aria-hidden />
             {t('backToEditor')}
@@ -222,10 +222,10 @@ function ProcessAdminTopBar({
           <StatusBadge variant={STATUS_BADGE_VARIANT[status]} icon={false}>
             {statusLabels[status]}
           </StatusBadge>
-        ) : (
-          <span />
-        )}
-        <div className="flex items-center justify-end gap-3">{actions}</div>
+        ) : null}
+        <div className="flex flex-1 items-center justify-end gap-3">
+          {actions}
+        </div>
       </div>
     </header>
   );
