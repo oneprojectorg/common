@@ -1,6 +1,12 @@
 // @vitest-environment jsdom
 import { ProcessStatus } from '@op/api/encoders';
-import { cleanup, render, screen } from '@testing-library/react';
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  within,
+} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { NextIntlClientProvider } from 'next-intl';
 import type { ReactNode } from 'react';
@@ -37,7 +43,18 @@ vi.mock('@op/api/client', () => ({
         useSuspenseQuery: () => [query.decisionProfile],
       },
       updateDecisionInstance: {
-        useMutation: () => ({ mutate: updateInstance, isPending: false }),
+        // Records the input, then settles at once so callers' callbacks run.
+        useMutation: () => ({
+          mutate: (
+            input: object,
+            options?: { onSuccess?: () => void; onSettled?: () => void },
+          ) => {
+            updateInstance(input);
+            options?.onSuccess?.();
+            options?.onSettled?.();
+          },
+          isPending: false,
+        }),
       },
     },
     resources: {
@@ -72,30 +89,35 @@ vi.mock('@/hooks/useCanLinkToProfile', () => ({
 }));
 vi.mock('@op/logging/client', () => ({ logger: { error: () => {} } }));
 
-// TipTap needs a real DOM selection; a textarea that emits a one-paragraph doc
-// is enough to drive the About section's open, type and commit.
+// TipTap needs a real DOM selection; a textarea seeded from `content` that
+// emits a one-paragraph doc is enough to drive open, type and commit.
+const paragraphDoc = (text: string) => ({
+  type: 'doc',
+  content: [{ type: 'paragraph', content: [{ type: 'text', text }] }],
+});
+vi.mock('@tiptap/core', async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  generateJSON: (html: string) => paragraphDoc(html),
+}));
 vi.mock('@op/sense/RichTextEditor', () => ({
   RichTextEditor: ({
+    content,
     placeholder,
+    ariaLabelledBy,
     onChangeJSON,
   }: {
+    content?: string | object;
     placeholder?: string;
+    ariaLabelledBy?: string;
     onChangeJSON?: (json: object) => void;
   }) => (
     <textarea
-      aria-label="About body"
+      aria-labelledby={ariaLabelledBy}
       placeholder={placeholder}
-      onChange={(event) =>
-        onChangeJSON?.({
-          type: 'doc',
-          content: [
-            {
-              type: 'paragraph',
-              content: [{ type: 'text', text: event.target.value }],
-            },
-          ],
-        })
+      defaultValue={
+        typeof content === 'string' ? content : JSON.stringify(content)
       }
+      onChange={(event) => onChangeJSON?.(paragraphDoc(event.target.value))}
     />
   ),
   RichTextViewer: ({ content }: { content: object }) => (
@@ -118,6 +140,7 @@ const seed = ({
   steward = null,
   owner = null,
   heroImage,
+  body,
   isPrivate = false,
 }: {
   status?: string;
@@ -126,6 +149,7 @@ const seed = ({
   steward?: object | null;
   owner?: object | null;
   heroImage?: string;
+  body?: string | object;
   isPrivate?: boolean;
 }) => {
   query.decisionProfile = {
@@ -141,7 +165,7 @@ const seed = ({
       instanceData: {
         phases,
         config: { isPrivate },
-        overview: heroImage ? { heroImage } : undefined,
+        overview: heroImage || body ? { heroImage, body } : undefined,
       },
     },
   };
@@ -317,8 +341,10 @@ describe('ProcessAdminOverview', () => {
       name: 'Neighbourhood Fund',
     });
 
+    // The mock settles at once and the query is not refetched, so the title
+    // reads the stored name again.
     await user.click(
-      screen.getByRole('button', { name: 'Edit Neighbourhood Fund' }),
+      screen.getByRole('button', { name: 'Edit Community Fund' }),
     );
     await user.keyboard('ab{Enter}');
 
@@ -375,71 +401,147 @@ describe('ProcessAdminOverview', () => {
     });
   });
 
-  it('lets an admin of the owner change a draft steward in place', async () => {
-    query.userProfiles = [{ id: 'org-1', name: 'East Side Collective' }];
+  it('lets an admin of the owner pick a draft steward from their profiles', async () => {
+    query.userProfiles = [
+      { id: 'me', name: 'Me' },
+      { id: 'org-1', name: 'East Side Collective' },
+      { id: 'org-2', name: 'West End Trust' },
+    ];
     seed({
       status: ProcessStatus.DRAFT,
       steward: { id: 'org-1', name: 'East Side Collective' },
       owner: { id: 'org-1' },
     });
     renderOverview();
+    const user = userEvent.setup();
 
-    expect(
-      await screen.findByRole('button', {
-        name: 'Change who is stewarding this',
-      }),
-    ).toBeTruthy();
+    const trigger = await screen.findByRole('button', {
+      name: 'East Side Collective',
+      description: 'Change who is stewarding this',
+    });
+    await user.click(trigger);
+    await user.click(
+      await screen.findByRole('menuitem', { name: /West End Trust/ }),
+    );
+
+    expect(updateInstance).toHaveBeenCalledWith({
+      instanceId: 'instance-1',
+      stewardProfileId: 'org-2',
+    });
   });
 
-  it('shows the steward as plain text when the admin cannot change it', async () => {
-    query.userProfiles = [{ id: 'me', name: 'Me' }];
+  it('shows the steward as plain text when the admin does not administer the owner', async () => {
+    query.userProfiles = [
+      { id: 'me', name: 'Me' },
+      { id: 'org-1', name: 'East Side Collective' },
+    ];
     seed({
       status: ProcessStatus.DRAFT,
       steward: { id: 'org-1', name: 'East Side Collective' },
-      owner: { id: 'org-1' },
+      owner: { id: 'org-9' },
     });
     renderOverview();
 
-    expect(await screen.findByText('East Side Collective')).toBeTruthy();
-    expect(
-      screen.queryByRole('button', { name: 'Change who is stewarding this' }),
-    ).toBeNull();
+    const name = await screen.findByText('East Side Collective');
+    expect(name.closest('button')).toBeNull();
   });
+
+  const aboutField = () =>
+    screen.getByRole('textbox', { name: 'About the process' });
 
   it('edits the About body of a live process behind Edit and saves on Done', async () => {
     seed({ description: 'Plain description' });
     renderOverview();
     const user = userEvent.setup();
 
-    expect(screen.queryByRole('textbox', { name: 'About body' })).toBeNull();
-    await user.click(
-      screen.getByRole('button', { name: 'Edit the about section' }),
-    );
-    await user.type(
-      screen.getByRole('textbox', { name: 'About body' }),
-      'Grants for the neighbourhood',
-    );
-    await user.click(
-      screen.getByRole('button', { name: 'Finish editing the about section' }),
-    );
+    expect(
+      screen.queryByRole('textbox', { name: 'About the process' }),
+    ).toBeNull();
+    await user.click(screen.getByRole('button', { name: 'Edit' }));
+    await user.type(aboutField(), 'Grants for the neighbourhood');
+    await user.click(screen.getByRole('button', { name: 'Done' }));
 
     expect(updateInstance).toHaveBeenCalledTimes(1);
-    expect(updateInstance.mock.calls[0]?.[0]).toMatchObject({
+    expect(updateInstance.mock.calls[0]?.[0]).toEqual({
       instanceId: 'instance-1',
-      overview: { body: { type: 'doc' } },
+      overview: { body: paragraphDoc('Grants for the neighbourhood') },
     });
-    expect(screen.queryByRole('textbox', { name: 'About body' })).toBeNull();
+    expect(
+      screen.queryByRole('textbox', { name: 'About the process' }),
+    ).toBeNull();
+    expect(screen.getByTestId('about-viewer').textContent).toContain(
+      'Grants for the neighbourhood',
+    );
   });
 
-  it('keeps a draft About body always editable with no Edit control', () => {
-    seed({ status: ProcessStatus.DRAFT });
+  it('seeds the editor from a legacy HTML body and saves nothing on an unchanged Done', async () => {
+    seed({ body: '<p>Legacy body</p>' });
     renderOverview();
+    const user = userEvent.setup();
 
-    expect(screen.getByRole('textbox', { name: 'About body' })).toBeTruthy();
+    await user.click(screen.getByRole('button', { name: 'Edit' }));
+    expect(screen.getByDisplayValue('<p>Legacy body</p>')).toBeTruthy();
+    await user.click(screen.getByRole('button', { name: 'Done' }));
+
+    expect(updateInstance).not.toHaveBeenCalled();
+  });
+
+  it('asks before a dirty edit is abandoned by a click elsewhere', async () => {
+    seed({});
+    renderOverview();
+    const user = userEvent.setup();
+
+    await user.click(screen.getByRole('button', { name: 'Edit' }));
+    await user.type(aboutField(), 'Half a sentence');
+    await user.click(screen.getByRole('link', { name: 'View process' }));
+
+    const dialog = await screen.findByRole('alertdialog', {
+      name: 'Keep your changes?',
+    });
+    expect(updateInstance).not.toHaveBeenCalled();
+    await user.click(within(dialog).getByRole('button', { name: 'Discard' }));
+
+    expect(updateInstance).not.toHaveBeenCalled();
     expect(
-      screen.queryByRole('button', { name: 'Edit the about section' }),
+      screen.queryByRole('textbox', { name: 'About the process' }),
     ).toBeNull();
-    expect(screen.queryByText('No description yet')).toBeNull();
+  });
+
+  it('closes a clean edit silently on a click elsewhere', async () => {
+    seed({});
+    renderOverview();
+    const user = userEvent.setup();
+
+    await user.click(screen.getByRole('button', { name: 'Edit' }));
+    await user.click(screen.getByRole('link', { name: 'View process' }));
+
+    expect(screen.queryByRole('alertdialog')).toBeNull();
+    expect(
+      screen.queryByRole('textbox', { name: 'About the process' }),
+    ).toBeNull();
+  });
+
+  it('saves a draft About body after a pause, once, with the last text', () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    try {
+      seed({ status: ProcessStatus.DRAFT });
+      renderOverview();
+
+      expect(screen.queryByRole('button', { name: 'Edit' })).toBeNull();
+      fireEvent.change(aboutField(), { target: { value: 'a' } });
+      fireEvent.change(aboutField(), { target: { value: 'ab' } });
+      vi.advanceTimersByTime(999);
+      expect(updateInstance).not.toHaveBeenCalled();
+      vi.advanceTimersByTime(1);
+
+      expect(updateInstance).toHaveBeenCalledTimes(1);
+      expect(updateInstance.mock.calls[0]?.[0]).toEqual({
+        instanceId: 'instance-1',
+        overview: { body: paragraphDoc('ab') },
+      });
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('names the banner control by whether there is a banner', () => {

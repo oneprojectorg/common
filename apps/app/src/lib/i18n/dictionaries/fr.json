@@ -1916,11 +1916,11 @@
       "changeStewardLabel": "Changer la personne qui gère ce processus",
       "stewardLabel": "Géré par",
       "aboutPlaceholder": "Écrivez ce que les participants doivent savoir sur ce processus — ses objectifs, son calendrier, qui le pilote, comment participer.",
-      "editAboutLabel": "Modifier la section À propos",
-      "finishEditingAboutLabel": "Terminer la modification de la section À propos",
       "keepChangesTitle": "Conserver vos modifications ?",
       "keepChangesDescription": "Vous avez modifié la section À propos sans l’enregistrer. Si vous conservez les modifications, elles apparaîtront sur la page lue par les participants.",
-      "discardAction": "Annuler les modifications"
+      "discardAction": "Annuler les modifications",
+      "savingStatus": "Enregistrement…",
+      "savedStatus": "Enregistré"
     }
   },
   "loadingProgress": "En train de charger…",

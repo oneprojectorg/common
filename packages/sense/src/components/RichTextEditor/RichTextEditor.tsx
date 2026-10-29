@@ -38,6 +38,8 @@ export const RichTextEditor = forwardRef<
     onEditorReady?: (editor: Editor) => void;
     /** Sets `aria-required` on the editable region for assistive tech. */
     required?: boolean;
+    /** The id of the element that names the editable region. */
+    ariaLabelledBy?: string;
     className?: string;
     editorClassName?: string;
   }
@@ -53,6 +55,7 @@ export const RichTextEditor = forwardRef<
       onChangeJSON,
       onEditorReady,
       required,
+      ariaLabelledBy,
       className = '',
       editorClassName = '',
     },
@@ -69,6 +72,7 @@ export const RichTextEditor = forwardRef<
       onChangeJSON,
       onEditorReady,
       required,
+      ariaLabelledBy,
     });
 
     // Expose editor methods through ref

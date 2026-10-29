@@ -262,25 +262,27 @@ function ProcessAdminHero({
   // A draft changes its steward in place, from the profiles the admin
   // administers; the static name stands in until that list has loaded.
   const renderStewardName = (chunks: ReactNode) => {
-    if (status === 'draft' && steward) {
-      return (
-        <APIErrorBoundary fallbacks={{ default: () => <bdi>{chunks}</bdi> }}>
-          <Suspense fallback={<bdi>{chunks}</bdi>}>
-            <ProcessAdminStewardMenu
-              slug={slug}
-              instance={instance}
-              name={steward.name}
-            />
-          </Suspense>
-        </APIErrorBoundary>
-      );
-    }
-    return stewardSlug ? (
+    const plain = stewardSlug ? (
       <Link href={`/profile/${stewardSlug}`} className="underline">
         <bdi>{chunks}</bdi>
       </Link>
     ) : (
       <bdi>{chunks}</bdi>
+    );
+    if (status !== 'draft' || !steward) {
+      return plain;
+    }
+    return (
+      <APIErrorBoundary fallbacks={{ default: () => plain }}>
+        <Suspense fallback={plain}>
+          <ProcessAdminStewardMenu
+            slug={slug}
+            instance={instance}
+            name={steward.name}
+            fallback={plain}
+          />
+        </Suspense>
+      </APIErrorBoundary>
     );
   };
 

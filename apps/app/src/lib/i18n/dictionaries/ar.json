@@ -1916,11 +1916,11 @@
       "changeStewardLabel": "تغيير من يشرف على هذه العملية",
       "stewardLabel": "بإشراف",
       "aboutPlaceholder": "اكتب ما يحتاج المشاركون إلى معرفته عن هذه العملية — أهدافها وجدولها الزمني ومن يديرها وكيفية المشاركة.",
-      "editAboutLabel": "تحرير قسم «عن العملية»",
-      "finishEditingAboutLabel": "إنهاء تحرير قسم «عن العملية»",
       "keepChangesTitle": "هل تريد الاحتفاظ بتغييراتك؟",
       "keepChangesDescription": "لقد عدّلت قسم «عن العملية» دون حفظ. الاحتفاظ بالتغييرات سيضعها في الصفحة التي يقرؤها المشاركون.",
-      "discardAction": "تجاهل"
+      "discardAction": "تجاهل",
+      "savingStatus": "جارٍ الحفظ…",
+      "savedStatus": "تم الحفظ"
     }
   },
   "loadingProgress": "جارٍ التحميل...",

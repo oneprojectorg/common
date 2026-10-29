@@ -1916,11 +1916,11 @@
       "changeStewardLabel": "Cambiar quién gestiona este proceso",
       "stewardLabel": "Gestionado por",
       "aboutPlaceholder": "Escribe lo que los participantes necesitan saber sobre este proceso — sus objetivos, el calendario, quién lo dirige y cómo participar.",
-      "editAboutLabel": "Editar la sección Acerca de",
-      "finishEditingAboutLabel": "Terminar de editar la sección Acerca de",
       "keepChangesTitle": "¿Conservar los cambios?",
       "keepChangesDescription": "Has editado la sección Acerca de sin guardar. Si conservas los cambios, aparecerán en la página que leen los participantes.",
-      "discardAction": "Descartar"
+      "discardAction": "Descartar",
+      "savingStatus": "Guardando…",
+      "savedStatus": "Guardado"
     }
   },
   "loadingProgress": "Cargando...",
