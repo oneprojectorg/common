@@ -1907,11 +1907,11 @@
       "processLinkLabel": "رابط العملية",
       "linkCopied": "تم نسخ الرابط",
       "linkCopyFailed": "النسخ محظور هنا — حدّد الرابط بدلًا من ذلك.",
-      "visibilityDescription": "هل تظهر العملية كعامة أم خاصة — وهذا منفصل عمّن يمكنه المشاركة.",
+      "visibilityDescription": "من يمكنه العثور على صفحة هذه العملية ورؤيتها — وهذا منفصل عمّن يمكنه المشاركة.",
       "visibilityPublic": "عامة",
-      "visibilityPublicHint": "يمكن لأي شخص على Common عرض صفحة هذه العملية.",
-      "visibilityPrivate": "خاصة",
-      "visibilityPrivateHint": "تظهر كعملية خاصة. يبقى الوصول محددًا بمن تدعوهم.",
+      "visibilityPublicHint": "مدرجة وقابلة للبحث ضمن عمليات Common.",
+      "visibilityUnlisted": "غير مدرجة",
+      "visibilityUnlistedHint": "لا يصل إليها إلا من تتم مشاركتها معهم.",
       "adminAdded": "أصبح {name} مسؤولًا الآن."
     }
   },

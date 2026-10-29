@@ -1907,11 +1907,11 @@
       "processLinkLabel": "Folyamat linkje",
       "linkCopied": "Link kimásolva",
       "linkCopyFailed": "A másolás itt le van tiltva — jelölje ki inkább a linket.",
-      "visibilityDescription": "A folyamat nyilvánosként vagy privátként jelenik-e meg — ez független attól, hogy ki vehet részt.",
+      "visibilityDescription": "Ki találhatja meg és láthatja a folyamat oldalát — ez független attól, hogy ki vehet részt.",
       "visibilityPublic": "Nyilvános",
-      "visibilityPublicHint": "A Commonon bárki megtekintheti a folyamat oldalát.",
-      "visibilityPrivate": "Privát",
-      "visibilityPrivateHint": "Privát folyamatként jelenik meg. A hozzáférést továbbra is az dönti el, hogy kit hív meg.",
+      "visibilityPublicHint": "Szerepel a Common folyamatai között, és kereshető.",
+      "visibilityUnlisted": "Nem listázott",
+      "visibilityUnlistedHint": "Csak azok érhetik el, akikkel megosztották.",
       "adminAdded": "{name} mostantól adminisztrátor."
     }
   },

@@ -1907,11 +1907,11 @@
       "processLinkLabel": "Enlace del proceso",
       "linkCopied": "Enlace copiado",
       "linkCopyFailed": "Aquí no se puede copiar — selecciona el enlace en su lugar.",
-      "visibilityDescription": "Si el proceso se presenta como público o privado, independientemente de quién puede participar.",
+      "visibilityDescription": "Quién puede encontrar y ver la página de este proceso, independientemente de quién puede participar.",
       "visibilityPublic": "Público",
-      "visibilityPublicHint": "Cualquier persona en Common puede ver la página de este proceso.",
-      "visibilityPrivate": "Privado",
-      "visibilityPrivateHint": "Se muestra como un proceso privado. El acceso sigue dependiendo de a quién invites.",
+      "visibilityPublicHint": "Aparece en los procesos de Common y se puede buscar.",
+      "visibilityUnlisted": "No listado",
+      "visibilityUnlistedHint": "Solo accesible para quienes reciben el enlace.",
       "adminAdded": "{name} ahora es administrador."
     }
   },

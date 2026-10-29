@@ -1907,11 +1907,11 @@
       "processLinkLabel": "Process link",
       "linkCopied": "Link copied",
       "linkCopyFailed": "Copying is blocked here — select the link instead.",
-      "visibilityDescription": "Whether the process presents itself as public or private — separate from who can take part.",
+      "visibilityDescription": "Who can find and see this process page — separate from who can take part.",
       "visibilityPublic": "Public",
-      "visibilityPublicHint": "Anyone on Common can view this process page.",
-      "visibilityPrivate": "Private",
-      "visibilityPrivateHint": "Shown as a private process. Access is still decided by who you invite.",
+      "visibilityPublicHint": "Listed and searchable in Common's processes.",
+      "visibilityUnlisted": "Unlisted",
+      "visibilityUnlistedHint": "Only reachable by people it's shared with.",
       "adminAdded": "{name} is now an admin."
     }
   },
