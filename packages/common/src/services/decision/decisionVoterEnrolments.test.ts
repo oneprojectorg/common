@@ -1,9 +1,8 @@
 import { TestDecisionsDataManager } from '@op/common/testing';
-import { db, sql } from '@op/db/client';
-import {
-  DecisionVoterEnrolmentStatus,
-  decisionVoterEnrolments,
-} from '@op/db/schema';
+import { db } from '@op/db/client';
+import { decisionVoterEnrolments, taxonomyTerms } from '@op/db/schema';
+import { eq } from 'drizzle-orm';
+import { randomUUID } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 
 import { getIndividualProfileId } from '../access';
@@ -20,7 +19,7 @@ const seedVoter = async (testData: TestDecisionsDataManager) => {
 };
 
 describe.concurrent('decision_voter_enrolments', () => {
-  it('given a registration row with no status, when it is read back, then it awaits an address with no district and no attestation', async ({
+  it('given a fresh registration row, when it is read back, then no district is resolved and the voter has not agreed', async ({
     task,
     onTestFinished,
   }) => {
@@ -32,10 +31,8 @@ describe.concurrent('decision_voter_enrolments', () => {
     await expect(
       db.query.decisionVoterEnrolments.findFirst({ where: key }),
     ).resolves.toMatchObject({
-      status: DecisionVoterEnrolmentStatus.AWAITING_ADDRESS,
-      boundaryId: null,
-      attestationHash: null,
-      attestedAt: null,
+      taxonomyTermId: null,
+      enrolledAt: null,
     });
   });
 
@@ -52,25 +49,27 @@ describe.concurrent('decision_voter_enrolments', () => {
     ).rejects.toMatchObject({ cause: { code: '23505' } });
   });
 
-  it('given an enrolled row without its attestation hash or time, planted with a raw insert because no service writes one, then the check constraint refuses it', async ({
+  it('given an enrolment resolved to a district term, when the term is deleted, then the enrolment stays and its district clears', async ({
     task,
     onTestFinished,
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
     const key = await seedVoter(testData);
+    const [term] = await db
+      .insert(taxonomyTerms)
+      .values({ termUri: randomUUID(), label: 'District 1' })
+      .returning({ id: taxonomyTerms.id });
+    if (!term) {
+      throw new Error('term insert returned no row');
+    }
+    await db
+      .insert(decisionVoterEnrolments)
+      .values({ ...key, taxonomyTermId: term.id, enrolledAt: new Date() });
+
+    await db.delete(taxonomyTerms).where(eq(taxonomyTerms.id, term.id));
 
     await expect(
-      db.execute(
-        sql`insert into decision_voter_enrolments (process_instance_id, profile_id, status) values (${key.processInstanceId}, ${key.profileId}, 'enrolled')`,
-      ),
-    ).rejects.toMatchObject({ cause: { code: '23514' } });
-    await expect(
-      db.execute(
-        sql`insert into decision_voter_enrolments (process_instance_id, profile_id, status, attestation_hash) values (${key.processInstanceId}, ${key.profileId}, 'enrolled', 'abc')`,
-      ),
-    ).rejects.toMatchObject({ cause: { code: '23514' } });
-    await expect(
       db.query.decisionVoterEnrolments.findFirst({ where: key }),
-    ).resolves.toBeUndefined();
+    ).resolves.toMatchObject({ taxonomyTermId: null });
   });
 });

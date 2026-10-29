@@ -630,9 +630,11 @@ export const relations = defineRelations(schema, (r) => ({
       to: r.profiles.id,
       optional: false,
     }),
-    boundary: r.one.decisionBoundaries({
-      from: r.decisionVoterEnrolments.boundaryId,
-      to: r.decisionBoundaries.id,
+    // @ts-expect-error - taxonomyTerms self-referential parentId breaks inference
+    taxonomyTerm: r.one.taxonomyTerms({
+      from: r.decisionVoterEnrolments.taxonomyTermId,
+      // @ts-expect-error - see above
+      to: r.taxonomyTerms.id,
       optional: true,
     }),
   },

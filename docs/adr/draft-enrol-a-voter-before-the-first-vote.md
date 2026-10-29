@@ -28,18 +28,23 @@ We will store one row per voter and decision in
 `decision_voter_enrolments`, keyed by `(process_instance_id,
 profile_id)`.
 
-The row holds `boundary_id`, the district the address resolved to, and
-not the address. A decision with no boundaries enrols the voter with a
-null boundary.
+The row holds `taxonomy_term_id`, the district category the address
+resolved to, and not the address. The boundary is the lookup step, not
+the stored fact: the address falls inside a boundary, and the boundary
+carries its term (`decision_boundaries.taxonomy_term_id`). A decision
+with no boundaries enrols the voter with a null term, and a
+non-geographic grouping is a term like any other (`taxonomy_terms`
+carries a `facet` for that).
 
-The row holds `attestation_hash`, the SHA-256 of the attestation text
-the voter was sent, and `attested_at`. A hash binds the affirmation to
-the exact words without storing them twice; the words live in the phase
-rule.
+The row holds `enrolled_at`, stamped when the voter affirms the
+attestation with AGREE. The affirmation is a bare timestamp, the shape
+of `users.tosAcceptedOn`; the attestation words live in the phase rule.
 
-`status` is the pending step of the conversation: `awaiting_address`,
-`awaiting_agree`, `enrolled`. A check constraint refuses an `enrolled`
-row without its hash and timestamp.
+Status is derived from nullability, not stored: no row is not started,
+a null `taxonomy_term_id` awaits an address, a term with a null
+`enrolled_at` awaits AGREE, and a set `enrolled_at` is enrolled. There
+is no check constraint: an attestation-only decision enrols with a
+null term.
 
 Whether a decision requires enrolment is a phase rule,
 `voting.enrolment: { attestation, boundary }`, beside the ballot caps
@@ -49,17 +54,20 @@ decision's boundaries.
 
 ## Consequences
 
-- `submitVote` refuses a ballot from a voter without an `enrolled` row
-  when the rule is set, on the web and over SMS alike.
-- Deleting a decision deletes its enrolments. Deleting a boundary keeps
-  the enrolment and clears its district.
+- `submitVote` refuses a ballot from a voter whose row has no
+  `enrolled_at` when the rule is set, on the web and over SMS alike.
+- Deleting a decision deletes its enrolments. Deleting the category
+  term keeps the enrolment and clears its district.
 - The address passes through the webhook and the Inngest event payload
   and is never written to a table. Inngest keeps event payloads for its
   retention period.
-- Changing the attestation text after voters have affirmed it leaves
-  their hashes pointing at the old words. The rule is written once per
-  phase.
-- Rejected: an address column. Nothing reads it after the boundary is
+- The row does not say which attestation words were affirmed. A
+  verifications table, or a shared acceptances table that also absorbs
+  `users.tosAcceptedOn`, can add that later; both are deferred.
+- Rejected: a `status` enum and an `attestation_hash` with its check.
+  The enum repeats what nullability already says, and the hash is a
+  verification record this table does not need yet.
+- Rejected: an address column. Nothing reads it after the district is
   known, and a stored address is a record to protect.
 - Rejected: enrolment on `decisions_vote_submissions`. A voter is
   enrolled before any submission exists, and the nine readers of that
