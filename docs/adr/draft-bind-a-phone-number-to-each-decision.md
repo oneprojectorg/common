@@ -1,4 +1,4 @@
-# NNNN. Bind a chat line to each decision
+# NNNN. Bind a phone number to each decision
 
 Date: 2026-10-23
 
@@ -26,7 +26,7 @@ the Twilio Console is invisible to admins, untested and hard to reverse.
 
 ## Decision
 
-We will store the binding as a row in `decision_chat_lines`: one Twilio
+We will store the binding as a row in `decision_phone_numbers`: one Twilio
 number, in E.164, bound to one decision instance. Both columns are
 unique, so one number means one decision and a decision owns at most
 one number. Deleting the decision deletes the row and frees the number.
@@ -42,8 +42,11 @@ explicit slug keeps it; a command without one takes the line's decision.
 Every reply on a line is sent from that number, so the member sees one
 number per decision. The shared number behaves as before.
 
-The feature is a _chat line_, not an SMS line: the word names the
-purpose and survives a second channel.
+The table is named for what the row is: a phone number. The number is
+channel-agnostic — one E.164 Twilio number serves SMS and WhatsApp at
+once — so no `channel` column is needed yet. If a decision ever carries
+a second number per channel, a `channel` column is added and the unique
+index widens to `(process_instance_id, channel)`.
 
 ## Consequences
 

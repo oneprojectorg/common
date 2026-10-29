@@ -1,6 +1,6 @@
 import { TestDecisionsDataManager } from '@op/common/testing';
 import { db, sql } from '@op/db/client';
-import { decisionChatLines } from '@op/db/schema';
+import { decisionPhoneNumbers } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
 const NUMBERS = {
@@ -20,20 +20,20 @@ const seedDecisions = async (
   return setup.instances.map((entry) => entry.instance.id);
 };
 
-describe.concurrent('decision_chat_lines', () => {
+describe.concurrent('decision_phone_numbers', () => {
   it('given a decision already has a line, when a second line is inserted for it, then the unique index refuses the row', async ({
     task,
     onTestFinished,
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
     const [processInstanceId] = await seedDecisions(testData, 1);
-    await db.insert(decisionChatLines).values({
+    await db.insert(decisionPhoneNumbers).values({
       processInstanceId: processInstanceId!,
       phoneNumber: NUMBERS.second,
     });
 
     await expect(
-      db.insert(decisionChatLines).values({
+      db.insert(decisionPhoneNumbers).values({
         processInstanceId: processInstanceId!,
         phoneNumber: '+17405550199',
       }),
@@ -47,16 +47,16 @@ describe.concurrent('decision_chat_lines', () => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
     const [first, second] = await seedDecisions(testData, 2);
     await db
-      .insert(decisionChatLines)
+      .insert(decisionPhoneNumbers)
       .values({ processInstanceId: first!, phoneNumber: NUMBERS.shared });
 
     await expect(
       db
-        .insert(decisionChatLines)
+        .insert(decisionPhoneNumbers)
         .values({ processInstanceId: second!, phoneNumber: NUMBERS.shared }),
     ).rejects.toMatchObject({ cause: { code: '23505' } });
     await expect(
-      db.query.decisionChatLines.findFirst({
+      db.query.decisionPhoneNumbers.findFirst({
         where: { processInstanceId: second! },
       }),
     ).resolves.toBeUndefined();
@@ -71,11 +71,11 @@ describe.concurrent('decision_chat_lines', () => {
 
     await expect(
       db.execute(
-        sql`insert into decision_chat_lines (process_instance_id, phone_number) values (${processInstanceId}, ${NUMBERS.malformed.slice(1)})`,
+        sql`insert into decision_phone_numbers (process_instance_id, phone_number) values (${processInstanceId}, ${NUMBERS.malformed.slice(1)})`,
       ),
     ).rejects.toMatchObject({ cause: { code: '23514' } });
     await expect(
-      db.query.decisionChatLines.findFirst({
+      db.query.decisionPhoneNumbers.findFirst({
         where: { processInstanceId: processInstanceId! },
       }),
     ).resolves.toBeUndefined();
