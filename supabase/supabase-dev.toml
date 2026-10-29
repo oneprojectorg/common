@@ -93,6 +93,18 @@ content_path = "./supabase/templates/magiclink.html"
 subject = "Confirm your email"
 content_path = "./supabase/templates/email_change.html"
 
+# The three templates above are rendered from services/emails/emails/*.tsx
+# (`pnpm w:emails test -- -u` regenerates them). With the Send Email hook on,
+# GoTrue skips them and POSTs the code to the API, which renders the same
+# sources and sends the email itself; the hosted project runs this way. Off
+# by default here because GoTrue must reach a running API server from inside
+# its container, and the test/CI/e2e configs have none. To turn it on, start
+# the API, set SEND_EMAIL_HOOK_SECRETS to the same value, and enable it.
+[auth.hook.send_email]
+enabled = false
+uri = "http://host.docker.internal:3300/api/v1/auth/send-email"
+secrets = "env(SEND_EMAIL_HOOK_SECRETS)"
+
 [auth.sms]
 enable_signup = true
 enable_confirmations = true
