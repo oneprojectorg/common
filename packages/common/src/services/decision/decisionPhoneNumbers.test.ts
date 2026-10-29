@@ -7,6 +7,8 @@ const NUMBERS = {
   second: '+17405550101',
   shared: '+17405550102',
   malformed: '+17405550103',
+  dual: '+17405550104',
+  badChannel: '+17405550105',
 } as const;
 
 const seedDecisions = async (
@@ -21,7 +23,7 @@ const seedDecisions = async (
 };
 
 describe.concurrent('decision_phone_numbers', () => {
-  it('given a decision already has a line, when a second line is inserted for it, then the unique index refuses the row', async ({
+  it('given a decision already has a number for a channel, when a second number is inserted for the same channel, then the unique index refuses the row', async ({
     task,
     onTestFinished,
   }) => {
@@ -40,7 +42,7 @@ describe.concurrent('decision_phone_numbers', () => {
     ).rejects.toMatchObject({ cause: { code: '23505' } });
   });
 
-  it('given a number bound to one decision, when it is bound to a second decision, then the unique index refuses the row', async ({
+  it('given a number bound to one decision, when it is bound to a second decision on the same channel, then the unique index refuses the row', async ({
     task,
     onTestFinished,
   }) => {
@@ -58,6 +60,48 @@ describe.concurrent('decision_phone_numbers', () => {
     await expect(
       db.query.decisionPhoneNumbers.findFirst({
         where: { processInstanceId: second! },
+      }),
+    ).resolves.toBeUndefined();
+  });
+
+  it('given a decision with an sms number, when the same number is bound for whatsapp, then both channel rows stand', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const [processInstanceId] = await seedDecisions(testData, 1);
+    await db.insert(decisionPhoneNumbers).values({
+      processInstanceId: processInstanceId!,
+      phoneNumber: NUMBERS.dual,
+    });
+
+    await db.insert(decisionPhoneNumbers).values({
+      processInstanceId: processInstanceId!,
+      phoneNumber: NUMBERS.dual,
+      channel: 'whatsapp',
+    });
+
+    const rows = await db.query.decisionPhoneNumbers.findMany({
+      where: { processInstanceId: processInstanceId! },
+    });
+    expect(rows.map((row) => row.channel).sort()).toEqual(['sms', 'whatsapp']);
+  });
+
+  it('given a channel outside sms and whatsapp, planted with a raw insert because no service writes one, then the check constraint refuses the row', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const [processInstanceId] = await seedDecisions(testData, 1);
+
+    await expect(
+      db.execute(
+        sql`insert into decision_phone_numbers (process_instance_id, phone_number, channel) values (${processInstanceId}, ${NUMBERS.badChannel}, 'fax')`,
+      ),
+    ).rejects.toMatchObject({ cause: { code: '23514' } });
+    await expect(
+      db.query.decisionPhoneNumbers.findFirst({
+        where: { processInstanceId: processInstanceId! },
       }),
     ).resolves.toBeUndefined();
   });

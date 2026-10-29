@@ -27,9 +27,8 @@ the Twilio Console is invisible to admins, untested and hard to reverse.
 ## Decision
 
 We will store the binding as a row in `decision_phone_numbers`: one Twilio
-number, in E.164, bound to one decision instance. Both columns are
-unique, so one number means one decision and a decision owns at most
-one number. Deleting the decision deletes the row and frees the number.
+number, in E.164, bound to one decision instance for one channel.
+Deleting the decision deletes its rows and frees the number.
 
 How a number is bound is not part of this decision. The memo lists admin
 features as a non-goal and says only that the number is printed on the
@@ -42,11 +41,12 @@ explicit slug keeps it; a command without one takes the line's decision.
 Every reply on a line is sent from that number, so the member sees one
 number per decision. The shared number behaves as before.
 
-The table is named for what the row is: a phone number. The number is
-channel-agnostic — one E.164 Twilio number serves SMS and WhatsApp at
-once — so no `channel` column is needed yet. If a decision ever carries
-a second number per channel, a `channel` column is added and the unique
-index widens to `(process_instance_id, channel)`.
+The table is named for what the row is: a phone number. Each row binds
+the number for one `channel` — `sms` (the default) or `whatsapp`, a
+check holds the set. Uniqueness is per channel: a decision carries one
+number per channel (`process_instance_id, channel`), and a number
+routes to one decision per channel (`phone_number, channel`), so the
+same number serves both channels for one decision as two rows.
 
 ## Consequences
 
@@ -54,7 +54,7 @@ index widens to `(process_instance_id, channel)`.
   the shared number a slug is still required.
 - A decision needs a Twilio number of its own in the Messaging Service
   pool. That is a cost and an operations step per decision.
-- One number maps to one decision. A programme that runs several
+- One number maps to one decision per channel. A programme that runs several
   decisions behind one number is not supported; its members use the
   shared number with a slug.
 - The table is the source of truth for routing. A number bound in the

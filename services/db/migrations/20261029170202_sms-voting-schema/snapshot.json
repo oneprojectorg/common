@@ -1,7 +1,7 @@
 {
   "version": "8",
   "dialect": "postgres",
-  "id": "fd7cab09-afa3-4a67-a772-4f0c965a46c9",
+  "id": "3514f83c-8ae0-4adb-877f-dd570d7d4148",
   "prevIds": [
     "51e07490-f5b9-47a7-a02c-f5afeeecf462"
   ],
@@ -1770,6 +1770,19 @@
       "generated": null,
       "identity": null,
       "name": "phone_number",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "decision_phone_numbers"
+    },
+    {
+      "type": "varchar(16)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "'sms'",
+      "generated": null,
+      "identity": null,
+      "name": "channel",
       "entityType": "columns",
       "schema": "public",
       "table": "decision_phone_numbers"
@@ -8760,6 +8773,13 @@
           "asc": true,
           "nullsFirst": false,
           "opclass": null
+        },
+        {
+          "value": "channel",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
         }
       ],
       "isUnique": true,
@@ -8767,7 +8787,7 @@
       "with": "",
       "method": "btree",
       "concurrently": false,
-      "name": "decision_phone_numbers_process_instance_id_uniq",
+      "name": "decision_phone_numbers_instance_channel_uniq",
       "entityType": "indexes",
       "schema": "public",
       "table": "decision_phone_numbers"
@@ -8781,6 +8801,13 @@
           "asc": true,
           "nullsFirst": false,
           "opclass": null
+        },
+        {
+          "value": "channel",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
         }
       ],
       "isUnique": true,
@@ -8788,7 +8815,7 @@
       "with": "",
       "method": "btree",
       "concurrently": false,
-      "name": "decision_phone_numbers_phone_number_uniq",
+      "name": "decision_phone_numbers_number_channel_uniq",
       "entityType": "indexes",
       "schema": "public",
       "table": "decision_phone_numbers"
@@ -16601,6 +16628,13 @@
     {
       "value": "\"phone_number\" ~ '^\\+[1-9][0-9]{1,14}$'",
       "name": "decision_phone_numbers_phone_number_e164_chk",
+      "entityType": "checks",
+      "schema": "public",
+      "table": "decision_phone_numbers"
+    },
+    {
+      "value": "\"channel\" IN ('sms', 'whatsapp')",
+      "name": "decision_phone_numbers_channel_chk",
       "entityType": "checks",
       "schema": "public",
       "table": "decision_phone_numbers"
