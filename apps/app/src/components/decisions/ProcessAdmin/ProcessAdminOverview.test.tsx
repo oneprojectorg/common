@@ -18,9 +18,15 @@ const { query } = vi.hoisted(() => {
 
 vi.mock('@op/api/client', () => ({
   trpc: {
+    useUtils: () => ({
+      decision: { getDecisionBySlug: { invalidate: async () => {} } },
+    }),
     decision: {
       getDecisionBySlug: {
         useSuspenseQuery: () => [query.decisionProfile],
+      },
+      updateDecisionInstance: {
+        useMutation: () => ({ mutate: () => {}, isPending: false }),
       },
     },
     resources: {
@@ -61,11 +67,13 @@ const seed = ({
   description = null,
   phases = [],
   steward = null,
+  heroImage,
 }: {
   status?: string;
   description?: string | null;
   phases?: object[];
   steward?: object | null;
+  heroImage?: string;
 }) => {
   query.decisionProfile = {
     name: 'Community Fund',
@@ -76,7 +84,7 @@ const seed = ({
       description,
       currentStateId: null,
       steward,
-      instanceData: { phases },
+      instanceData: { phases, overview: heroImage ? { heroImage } : undefined },
     },
   };
 };
@@ -182,5 +190,67 @@ describe('ProcessAdminOverview', () => {
     expect(
       screen.getByRole('link', { name: 'Back to editor' }).getAttribute('href'),
     ).toContain(`/decisions/${SLUG}/edit`);
+  });
+
+  it('gives a draft its admins and an inert launch, not Settings', () => {
+    seed({ status: ProcessStatus.DRAFT });
+    renderOverview();
+
+    expect(screen.getByRole('button', { name: 'Manage admins' })).toBeTruthy();
+    expect(
+      screen
+        .getByRole('button', { name: 'Launch process' })
+        .getAttribute('aria-disabled'),
+    ).toBe('true');
+    expect(screen.queryByRole('button', { name: 'Settings' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'View process' })).toBeNull();
+  });
+
+  it('gives a live process Settings and the public view, not a launch', () => {
+    seed({});
+    renderOverview();
+
+    expect(screen.getByRole('button', { name: 'Settings' })).toBeTruthy();
+    expect(
+      screen.getByRole('link', { name: 'View process' }).getAttribute('href'),
+    ).toContain(`/decisions/${SLUG}`);
+    expect(screen.queryByRole('button', { name: 'Launch process' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Manage admins' })).toBeNull();
+  });
+
+  it('edits a draft title in place and keeps a live title read-only', () => {
+    seed({ status: ProcessStatus.DRAFT });
+    const { unmount } = renderOverview();
+
+    expect(
+      screen.getByRole('heading', { name: 'Community Fund', level: 1 }),
+    ).toBeTruthy();
+    expect(
+      screen.getByRole('button', { name: 'Edit Community Fund' }),
+    ).toBeTruthy();
+    unmount();
+
+    seed({});
+    renderOverview();
+
+    expect(
+      screen.getByRole('heading', { name: 'Community Fund', level: 1 }),
+    ).toBeTruthy();
+    expect(
+      screen.queryByRole('button', { name: 'Edit Community Fund' }),
+    ).toBeNull();
+  });
+
+  it('names the banner control by whether there is a banner', () => {
+    seed({});
+    const { unmount } = renderOverview();
+
+    expect(screen.getByRole('button', { name: 'Add banner' })).toBeTruthy();
+    unmount();
+
+    seed({ heroImage: 'instance-1/overview/hero.jpg' });
+    renderOverview();
+
+    expect(screen.getByRole('button', { name: 'Edit banner' })).toBeTruthy();
   });
 });
