@@ -22,7 +22,7 @@ import {
   SelectValue,
 } from '@op/sense/Select';
 import { toast } from '@op/sense/Toast';
-import { useId, useMemo } from 'react';
+import { type ReactNode, useId, useMemo, useState } from 'react';
 import { LuChevronDown } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -33,12 +33,134 @@ interface StewardOption {
   avatarImageName?: string | null;
 }
 
-/**
- * Who may steward: the caller's own profile and the organisations they
- * administer, plus the current steward so the control never shows a blank.
- * Only an admin of the owning profile may change it; the server enforces the
- * same rule (assertCanChangeSteward).
- */
+/** The draft hero's steward name as a menu of the profiles you administer. Renders `fallback` when you may not change it. */
+export function ProcessAdminStewardMenu({
+  slug,
+  instance,
+  name,
+  fallback,
+}: {
+  slug: string;
+  instance: ProcessInstance;
+  name: string;
+  fallback: ReactNode;
+}) {
+  const t = useTranslations('decisions.processAdmin');
+  const hintId = useId();
+  const { options, canChange } = useStewardOptions(instance);
+  const { save, isPending } = useSaveSteward(slug, instance.id);
+
+  if (!canChange) {
+    return fallback;
+  }
+
+  return (
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          render={
+            <Button
+              variant="bare"
+              disabled={isPending}
+              aria-describedby={hintId}
+              className="h-auto gap-1 rounded-md px-1.5 py-0.5 text-base font-normal underline hover:bg-muted"
+            />
+          }
+        >
+          <bdi>{name}</bdi>
+          <LuChevronDown className="size-4" aria-hidden />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="center">
+          {options.map((option) => (
+            <DropdownMenuItem
+              key={option.id}
+              disabled={option.id === instance.steward?.id}
+              onClick={() => save(option.id)}
+            >
+              <StewardAvatar option={option} />
+              <bdi>{option.name}</bdi>
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
+      <span id={hintId} className="sr-only">
+        {t('changeStewardLabel')}
+      </span>
+    </>
+  );
+}
+
+/** Settings → Process details: the same choice as a labelled select for a live process. */
+export function ProcessAdminStewardSelect({
+  slug,
+  instance,
+}: {
+  slug: string;
+  instance: ProcessInstance;
+}) {
+  const t = useTranslations('decisions.processAdmin');
+  const selectId = useId();
+  const { options, canChange } = useStewardOptions(instance);
+  const { save, isPending } = useSaveSteward(slug, instance.id);
+  // Holds the choice until the refetch lands, so the select does not jump back.
+  const [pendingId, setPendingId] = useState<string | null>(null);
+  const stewardId = instance.steward?.id ?? null;
+  if (pendingId !== null && !isPending && pendingId === stewardId) {
+    setPendingId(null);
+  }
+
+  return (
+    <Field>
+      <FieldLabel htmlFor={selectId}>{t('stewardLabel')}</FieldLabel>
+      <Select
+        value={pendingId ?? stewardId}
+        disabled={!canChange || isPending}
+        onValueChange={(value) => {
+          if (typeof value === 'string' && value !== stewardId) {
+            setPendingId(value);
+            save(value);
+          }
+        }}
+        // Without `items`, SelectValue renders the raw id.
+        items={Object.fromEntries(
+          options.map((option) => [option.id, option.name]),
+        )}
+      >
+        <SelectTrigger id={selectId} className="w-full">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectGroup>
+            {options.map((option) => (
+              <SelectItem key={option.id} value={option.id}>
+                <StewardAvatar option={option} />
+                <bdi>{option.name}</bdi>
+              </SelectItem>
+            ))}
+          </SelectGroup>
+        </SelectContent>
+      </Select>
+    </Field>
+  );
+}
+
+function StewardAvatar({ option }: { option: StewardOption }) {
+  return (
+    <Avatar className="size-6 shrink-0">
+      {option.avatarImageName ? (
+        <AvatarImage
+          src={getPublicUrl(option.avatarImageName) ?? undefined}
+          alt=""
+        />
+      ) : null}
+      <AvatarFallback>{option.name.slice(0, 1).toUpperCase()}</AvatarFallback>
+    </Avatar>
+  );
+}
+
+// The caller's own profile and the organisations they administer, plus the
+// current steward so the control never shows a blank. Only an admin of the
+// owning profile may change it.
 function useStewardOptions(instance: ProcessInstance): {
   options: StewardOption[];
   canChange: boolean;
@@ -89,115 +211,4 @@ function useSaveSteward(slug: string, instanceId: string) {
       updateInstance.mutate({ instanceId, stewardProfileId }),
     isPending: updateInstance.isPending,
   };
-}
-
-/** The draft hero's steward name as a menu: one of the profiles you administer, not free text. Renders the name alone when you may not change it. */
-export function ProcessAdminStewardMenu({
-  slug,
-  instance,
-  name,
-}: {
-  slug: string;
-  instance: ProcessInstance;
-  /** The steward's name, already isolated by the caller. */
-  name: string;
-}) {
-  const t = useTranslations('decisions.processAdmin');
-  const { options, canChange } = useStewardOptions(instance);
-  const { save, isPending } = useSaveSteward(slug, instance.id);
-
-  if (!canChange) {
-    return <bdi>{name}</bdi>;
-  }
-
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger
-        render={
-          <Button
-            variant="bare"
-            disabled={isPending}
-            aria-label={t('changeStewardLabel')}
-            className="h-auto gap-1 rounded-md px-1.5 py-0.5 text-base font-normal underline hover:bg-muted"
-          />
-        }
-      >
-        <bdi>{name}</bdi>
-        <LuChevronDown className="size-4" aria-hidden />
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="center">
-        {options.map((option) => (
-          <DropdownMenuItem
-            key={option.id}
-            disabled={option.id === instance.steward?.id}
-            onClick={() => save(option.id)}
-          >
-            <StewardAvatar option={option} />
-            <bdi>{option.name}</bdi>
-          </DropdownMenuItem>
-        ))}
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-}
-
-/** Settings → Process details: the same choice as a labelled select for a live process. */
-export function ProcessAdminStewardSelect({
-  slug,
-  instance,
-}: {
-  slug: string;
-  instance: ProcessInstance;
-}) {
-  const t = useTranslations('decisions.processAdmin');
-  const selectId = useId();
-  const { options, canChange } = useStewardOptions(instance);
-  const { save, isPending } = useSaveSteward(slug, instance.id);
-
-  return (
-    <Field>
-      <FieldLabel htmlFor={selectId}>{t('stewardLabel')}</FieldLabel>
-      <Select
-        value={instance.steward?.id ?? null}
-        disabled={!canChange || isPending}
-        onValueChange={(value) => {
-          if (typeof value === 'string' && value !== instance.steward?.id) {
-            save(value);
-          }
-        }}
-        // Without `items`, SelectValue renders the raw id.
-        items={Object.fromEntries(
-          options.map((option) => [option.id, option.name]),
-        )}
-      >
-        <SelectTrigger id={selectId} className="w-full">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectGroup>
-            {options.map((option) => (
-              <SelectItem key={option.id} value={option.id}>
-                <StewardAvatar option={option} />
-                <bdi>{option.name}</bdi>
-              </SelectItem>
-            ))}
-          </SelectGroup>
-        </SelectContent>
-      </Select>
-    </Field>
-  );
-}
-
-function StewardAvatar({ option }: { option: StewardOption }) {
-  return (
-    <Avatar className="size-6 shrink-0">
-      {option.avatarImageName ? (
-        <AvatarImage
-          src={getPublicUrl(option.avatarImageName) ?? undefined}
-          alt=""
-        />
-      ) : null}
-      <AvatarFallback>{option.name.slice(0, 1).toUpperCase()}</AvatarFallback>
-    </Avatar>
-  );
 }
