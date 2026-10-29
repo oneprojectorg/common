@@ -316,7 +316,7 @@ describe('ProcessAdminOverview', () => {
 
     await user.click(screen.getByRole('button', { name: 'Settings' }));
     await user.click(await screen.findByRole('tab', { name: 'Visibility' }));
-    await user.click(await screen.findByRole('radio', { name: /Private/ }));
+    await user.click(await screen.findByRole('radio', { name: /Unlisted/ }));
 
     expect(updateInstance.mock.calls[0]?.[0]).toEqual({
       instanceId: 'instance-1',

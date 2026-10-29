@@ -28,7 +28,7 @@ import { RadioGroup, RadioGroupItem } from '@op/sense/RadioGroup';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@op/sense/Tabs';
 import { toast } from '@op/sense/Toast';
 import { useId, useState } from 'react';
-import { LuCopy, LuGlobe, LuLock, LuSettings } from 'react-icons/lu';
+import { LuCopy, LuGlobe, LuLink, LuSettings } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -264,7 +264,7 @@ function VisibilitySection({
 }) {
   const t = useTranslations('decisions.processAdmin');
   const publicId = useId();
-  const privateId = useId();
+  const unlistedId = useId();
   const [pending, setPending] = useState<boolean | null>(null);
   const saveInstance = useSaveInstance(slug);
   const shownPrivate = pending ?? isPrivate;
@@ -275,14 +275,14 @@ function VisibilitySection({
         {t('visibilityDescription')}
       </p>
       <RadioGroup
-        value={shownPrivate ? 'private' : 'public'}
+        value={shownPrivate ? 'unlisted' : 'public'}
         aria-label={t('visibilitySection')}
         // Locked while a save runs, so two quick choices cannot race and the
         // last one to finish win over the last one chosen.
         disabled={saveInstance.isPending}
         className="gap-3"
         onValueChange={(value) => {
-          const nextPrivate = value === 'private';
+          const nextPrivate = value === 'unlisted';
           setPending(nextPrivate);
           saveInstance.mutate(
             { instanceId, config: { isPrivate: nextPrivate } },
@@ -304,16 +304,16 @@ function VisibilitySection({
           className="rounded-xl p-4"
         />
         <OptionBox
-          htmlFor={privateId}
-          control={<RadioGroupItem id={privateId} value="private" />}
+          htmlFor={unlistedId}
+          control={<RadioGroupItem id={unlistedId} value="unlisted" />}
           controlPlacement="end"
           label={
             <span className="flex items-center gap-2">
-              <LuLock className="size-4" aria-hidden />
-              {t('visibilityPrivate')}
+              <LuLink className="size-4" aria-hidden />
+              {t('visibilityUnlisted')}
             </span>
           }
-          description={t('visibilityPrivateHint')}
+          description={t('visibilityUnlistedHint')}
           className="rounded-xl p-4"
         />
       </RadioGroup>
