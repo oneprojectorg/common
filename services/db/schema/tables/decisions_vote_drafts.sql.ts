@@ -1,13 +1,6 @@
-import {
-  integer,
-  pgTable,
-  timestamp,
-  uniqueIndex,
-  uuid,
-} from 'drizzle-orm/pg-core';
+import { pgTable, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
 
 import { autoId, serviceRolePolicies, timestamps } from '../../helpers';
-import { decisionPhoneNumbers } from './decisionPhoneNumbers.sql';
 import { processInstances } from './processInstances.sql';
 import { profiles } from './profiles.sql';
 
@@ -27,12 +20,6 @@ export const decisionsVoteDrafts = pgTable(
         onUpdate: 'cascade',
         onDelete: 'cascade',
       }),
-    pageCursor: integer('page_cursor'),
-    chatLineId: uuid('chat_line_id').references(() => decisionPhoneNumbers.id, {
-      onUpdate: 'cascade',
-      onDelete: 'set null',
-    }),
-    reopenedAt: timestamp('reopened_at', { withTimezone: true }),
     ...timestamps,
   },
   (table) => [

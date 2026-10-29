@@ -39,19 +39,19 @@ The remaining budget is never stored. Each text recomputes it from the
 picks' costs and the phase's `voterBudget`, so a cost edited after a
 pick is charged at its current value, as `submitVote` charges it.
 
-`page_cursor` records where MORE left off while the voter browses, and
-`chat_line_id` the decision line the voter last browsed this decision
-on, so a bare MORE, INFO or code on a line follows a decision chosen by
-slug on that same line and never one browsed on another line. These two
-are the columns shaped by the text channel; the web ignores them.
+The channel state lives apart, in `decision_chat_sessions`: one
+ephemeral row per voter and decision. `page_cursor` records where MORE
+left off. `phone_number_id` records the line the voter last browsed
+this decision on, so a bare MORE, INFO or code on a line follows a
+decision chosen by slug on that same line and never one browsed on
+another line. `reopened_at` records that CHANGE reopened the cast
+ballot; a pick, REMOVE, MOVE or SUBMIT after a cast ballot is refused
+until it is set. A session row is deletable without touching a draft;
+the web ignores the table.
 
-SUBMIT turns the draft into a submission and deletes the row. After
-that, a text that browses the ballot makes a new row to hold its cursor,
-so a row alone does not mean the voter is editing a cast ballot.
-`reopened_at` records that CHANGE reopened the cast ballot; a pick,
-REMOVE, MOVE or SUBMIT after a cast ballot is refused until it is set. A
-submission is the same ballot one state later, so a web draft can use
-the same row when the web needs one.
+SUBMIT turns the draft into a submission and deletes the draft row and
+its picks. The draft holds identity alone — instance, profile and the
+pick rows — so a web draft uses the same rows unchanged.
 
 ## Consequences
 
