@@ -1912,7 +1912,15 @@
       "visibilityPublicHint": "Listed and searchable in Common's processes.",
       "visibilityUnlisted": "Unlisted",
       "visibilityUnlistedHint": "Only reachable by people it's shared with.",
-      "adminAdded": "{name} is now an admin."
+      "adminAdded": "{name} is now an admin.",
+      "changeStewardLabel": "Change who is stewarding this",
+      "stewardLabel": "Stewarded by",
+      "aboutPlaceholder": "Write what participants need to know about this process — its goals, timeline, who's running it, how to participate.",
+      "editAboutLabel": "Edit the about section",
+      "finishEditingAboutLabel": "Finish editing the about section",
+      "keepChangesTitle": "Keep your changes?",
+      "keepChangesDescription": "You have edited the about section without saving. Keeping the changes puts them on the page participants read.",
+      "discardAction": "Discard"
     }
   },
   "loadingProgress": "Loading...",

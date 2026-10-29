@@ -10,9 +10,14 @@ import en from '../../../lib/i18n/dictionaries/en.json';
 import { ProcessAdminOverview } from './ProcessAdminOverview';
 
 const { query, updateInstance } = vi.hoisted(() => {
-  const query: { decisionProfile: unknown; resources: unknown[] } = {
+  const query: {
+    decisionProfile: unknown;
+    resources: unknown[];
+    userProfiles: { id: string; name: string }[];
+  } = {
     decisionProfile: null,
     resources: [],
+    userProfiles: [],
   };
   return { query, updateInstance: vi.fn() };
 });
@@ -22,6 +27,11 @@ vi.mock('@op/api/client', () => ({
     useUtils: () => ({
       decision: { getDecisionBySlug: { invalidate: async () => {} } },
     }),
+    account: {
+      getUserProfiles: {
+        useSuspenseQuery: () => [{ items: query.userProfiles }],
+      },
+    },
     decision: {
       getDecisionBySlug: {
         useSuspenseQuery: () => [query.decisionProfile],
@@ -62,6 +72,43 @@ vi.mock('@/hooks/useCanLinkToProfile', () => ({
 }));
 vi.mock('@op/logging/client', () => ({ logger: { error: () => {} } }));
 
+// TipTap needs a real DOM selection; a textarea that emits a one-paragraph doc
+// is enough to drive the About section's open, type and commit.
+vi.mock('@op/sense/RichTextEditor', () => ({
+  RichTextEditor: ({
+    placeholder,
+    onChangeJSON,
+  }: {
+    placeholder?: string;
+    onChangeJSON?: (json: object) => void;
+  }) => (
+    <textarea
+      aria-label="About body"
+      placeholder={placeholder}
+      onChange={(event) =>
+        onChangeJSON?.({
+          type: 'doc',
+          content: [
+            {
+              type: 'paragraph',
+              content: [{ type: 'text', text: event.target.value }],
+            },
+          ],
+        })
+      }
+    />
+  ),
+  RichTextViewer: ({ content }: { content: object }) => (
+    <div data-testid="about-viewer">{JSON.stringify(content)}</div>
+  ),
+}));
+vi.mock('@/components/RichTextEditor', () => ({
+  RichTextEditorBubbleMenu: () => null,
+}));
+vi.mock('@/components/RichTextEditor/editorConfig', () => ({
+  getProposalExtensions: () => [],
+}));
+
 const SLUG = 'community-fund';
 
 const seed = ({
@@ -69,6 +116,7 @@ const seed = ({
   description = null,
   phases = [],
   steward = null,
+  owner = null,
   heroImage,
   isPrivate = false,
 }: {
@@ -76,6 +124,7 @@ const seed = ({
   description?: string | null;
   phases?: object[];
   steward?: object | null;
+  owner?: object | null;
   heroImage?: string;
   isPrivate?: boolean;
 }) => {
@@ -88,6 +137,7 @@ const seed = ({
       description,
       currentStateId: null,
       steward,
+      owner,
       instanceData: {
         phases,
         config: { isPrivate },
@@ -113,6 +163,7 @@ const phase = {
 afterEach(() => {
   cleanup();
   query.resources = [];
+  query.userProfiles = [];
   updateInstance.mockClear();
 });
 
@@ -322,6 +373,73 @@ describe('ProcessAdminOverview', () => {
       instanceId: 'instance-1',
       config: { isPrivate: true },
     });
+  });
+
+  it('lets an admin of the owner change a draft steward in place', async () => {
+    query.userProfiles = [{ id: 'org-1', name: 'East Side Collective' }];
+    seed({
+      status: ProcessStatus.DRAFT,
+      steward: { id: 'org-1', name: 'East Side Collective' },
+      owner: { id: 'org-1' },
+    });
+    renderOverview();
+
+    expect(
+      await screen.findByRole('button', {
+        name: 'Change who is stewarding this',
+      }),
+    ).toBeTruthy();
+  });
+
+  it('shows the steward as plain text when the admin cannot change it', async () => {
+    query.userProfiles = [{ id: 'me', name: 'Me' }];
+    seed({
+      status: ProcessStatus.DRAFT,
+      steward: { id: 'org-1', name: 'East Side Collective' },
+      owner: { id: 'org-1' },
+    });
+    renderOverview();
+
+    expect(await screen.findByText('East Side Collective')).toBeTruthy();
+    expect(
+      screen.queryByRole('button', { name: 'Change who is stewarding this' }),
+    ).toBeNull();
+  });
+
+  it('edits the About body of a live process behind Edit and saves on Done', async () => {
+    seed({ description: 'Plain description' });
+    renderOverview();
+    const user = userEvent.setup();
+
+    expect(screen.queryByRole('textbox', { name: 'About body' })).toBeNull();
+    await user.click(
+      screen.getByRole('button', { name: 'Edit the about section' }),
+    );
+    await user.type(
+      screen.getByRole('textbox', { name: 'About body' }),
+      'Grants for the neighbourhood',
+    );
+    await user.click(
+      screen.getByRole('button', { name: 'Finish editing the about section' }),
+    );
+
+    expect(updateInstance).toHaveBeenCalledTimes(1);
+    expect(updateInstance.mock.calls[0]?.[0]).toMatchObject({
+      instanceId: 'instance-1',
+      overview: { body: { type: 'doc' } },
+    });
+    expect(screen.queryByRole('textbox', { name: 'About body' })).toBeNull();
+  });
+
+  it('keeps a draft About body always editable with no Edit control', () => {
+    seed({ status: ProcessStatus.DRAFT });
+    renderOverview();
+
+    expect(screen.getByRole('textbox', { name: 'About body' })).toBeTruthy();
+    expect(
+      screen.queryByRole('button', { name: 'Edit the about section' }),
+    ).toBeNull();
+    expect(screen.queryByText('No description yet')).toBeNull();
   });
 
   it('names the banner control by whether there is a banner', () => {

@@ -1912,7 +1912,15 @@
       "visibilityPublicHint": "Listado e pesquisável nos processos do Common.",
       "visibilityUnlisted": "Não listado",
       "visibilityUnlistedHint": "Acessível apenas por quem recebeu o link.",
-      "adminAdded": "{name} agora é administrador."
+      "adminAdded": "{name} agora é administrador.",
+      "changeStewardLabel": "Alterar quem gerencia este processo",
+      "stewardLabel": "Gerenciado por",
+      "aboutPlaceholder": "Escreva o que os participantes precisam saber sobre este processo — seus objetivos, cronograma, quem o conduz e como participar.",
+      "editAboutLabel": "Editar a seção Sobre",
+      "finishEditingAboutLabel": "Concluir a edição da seção Sobre",
+      "keepChangesTitle": "Manter suas alterações?",
+      "keepChangesDescription": "Você editou a seção Sobre sem salvar. Manter as alterações as coloca na página que os participantes leem.",
+      "discardAction": "Descartar"
     }
   },
   "loadingProgress": "Carregando...",
