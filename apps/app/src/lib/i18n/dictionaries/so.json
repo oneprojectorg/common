@@ -1907,11 +1907,12 @@
       "processLinkLabel": "Xiriiriyaha habraaca",
       "linkCopied": "Xiriiriyaha waa la koobiyeeyay",
       "linkCopyFailed": "Koobiyeynta halkan waa la xannibay — ka dooro xiriiriyaha meesha.",
-      "visibilityDescription": "Yaa heli kara oo arki kara boggan habraaca — waxay ka duwan tahay yaa ka qaybgali kara.",
+      "visibilityDescription": "Habka uu u muuqdo mid dadweyne ama mid gaar ah — taas oo ka duwan cidda ka qaybqaadan karta.",
       "visibilityPublic": "Dadweyne",
-      "visibilityPublicHint": "Waa la liis gareeyay waana la raadin karaa habraacyada Common.",
-      "visibilityUnlisted": "Aan liiska ku jirin",
-      "visibilityUnlistedHint": "Waxaa gaari kara oo keliya dadka lala wadaagay."
+      "visibilityPublicHint": "Qof kasta oo Common ku jira wuu arki karaa bogga habkan.",
+      "visibilityPrivate": "Gaar ah",
+      "visibilityPrivateHint": "Waxaa loo muujiyaa hab gaar ah. Helitaanka waxaa weli go'aamiya cidda aad casuunto.",
+      "adminAdded": "{name} hadda waa maamule."
     }
   },
   "loadingProgress": "Waa la soo rarayaa...",
