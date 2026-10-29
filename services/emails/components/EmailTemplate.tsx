@@ -35,7 +35,8 @@ const EmailTemplate = ({
             content="telephone=no,date=no,address=no,email=no"
           />
           <style>{`
-            a[x-apple-data-detectors] {
+            a[x-apple-data-detectors],
+            .login-code a {
               color: inherit !important;
               text-decoration: none !important;
             }
