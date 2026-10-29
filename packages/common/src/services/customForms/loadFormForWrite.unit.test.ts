@@ -23,7 +23,7 @@ vi.mock('@op/db/client', () => ({
 
 vi.mock('@op/db/schema', () => ({
   customForms: { id: 'id', profileId: 'profile_id', deletedAt: 'deleted_at' },
-  processInstances: { profileId: 'profile_id' },
+  processInstances: { id: 'id', profileId: 'profile_id' },
 }));
 
 const assertCustomFormAdminForInstance = vi.fn();
@@ -55,6 +55,7 @@ describe('loadFormForWrite', () => {
       {
         formId: 'form-1',
         formProfileId: 'decision-profile',
+        instanceId: 'instance-1',
         instanceProfileId: 'decision-profile',
         ownerProfileId: 'org-profile',
         instanceData: { phases: [{ phaseId: 'submission' }] },
@@ -72,6 +73,7 @@ describe('loadFormForWrite', () => {
       {
         formId: 'form-1',
         formProfileId: 'decision-profile',
+        instanceId: 'instance-1',
         instanceProfileId: 'decision-profile',
         ownerProfileId: 'org-profile',
         instanceData: { phases: [] },
@@ -83,6 +85,7 @@ describe('loadFormForWrite', () => {
     expect(assertCustomFormAdminForInstance).toHaveBeenCalledWith({
       user,
       instance: {
+        id: 'instance-1',
         profileId: 'decision-profile',
         ownerProfileId: 'org-profile',
         instanceData: { phases: [] },
@@ -105,6 +108,7 @@ describe('loadFormForWrite', () => {
       {
         formId: 'form-1',
         formProfileId: 'orphan-profile',
+        instanceId: null,
         instanceProfileId: null,
         ownerProfileId: null,
         instanceData: null,

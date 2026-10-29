@@ -59,6 +59,7 @@ export * from './resolvePublicGrantTarget';
 export * from './buildExpectedTransitions';
 export * from './createTransitionsForProcess';
 export * from './updateTransitionsForProcess';
+export * from './readInstancePhases';
 export * from './transitionMonitor';
 
 // Results processing

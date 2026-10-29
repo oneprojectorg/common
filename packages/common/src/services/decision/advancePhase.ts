@@ -8,10 +8,8 @@ import {
 
 import { attachProposalsToTransition } from './attachProposalsToTransition';
 import { getProposalsForPhase } from './getProposalsForPhase';
-import type {
-  DecisionInstanceData,
-  PhaseInstanceData,
-} from './schemas/instanceData';
+import { readInstancePhases } from './readInstancePhases';
+import type { DecisionInstanceData } from './schemas/instanceData';
 import type { TransitionData } from './schemas/transitionData';
 import {
   aggregateProposalMetrics,
@@ -33,6 +31,8 @@ export interface AdvancePhaseInput {
   transitionData?: TransitionData;
   /** Shared timestamp for all writes. Defaults to now. */
   now?: string;
+  /** Resolved before the caller's transaction opens. */
+  fromRows?: boolean;
 }
 
 export type AdvancePhaseResult =
@@ -73,14 +73,12 @@ export async function advancePhase(
     triggeredByProfileId,
     transitionData = {},
     now = new Date().toISOString(),
+    fromRows,
   } = input;
 
   const instanceId = instance.id;
-  const instanceData = instance.instanceData as DecisionInstanceData;
-
-  const departingPhase = instanceData.phases?.find(
-    (p: PhaseInstanceData) => p.phaseId === fromPhaseId,
-  );
+  const phases = await readInstancePhases({ instance, db, fromRows });
+  const departingPhase = phases.find((p) => p.phaseId === fromPhaseId);
 
   if (!departingPhase) {
     throw new Error(

@@ -3,6 +3,7 @@ import {
   Channels,
   invalidateDecisionInstance,
   updateDecisionInstance,
+  withProfileInstancePhases,
 } from '@op/common';
 import { waitUntil } from '@vercel/functions';
 import { z } from 'zod';
@@ -50,7 +51,7 @@ export const updateDecisionInstanceRouter = router({
       }
 
       return updateDecisionInstanceOutputSchema.parse({
-        ...profile,
+        ...(await withProfileInstancePhases({ profile })),
         didPublish,
       });
     }),

@@ -14,6 +14,7 @@ import {
 import { getCachedInstance } from './getCachedInstance';
 import type { DecisionRolePermissions } from './permissions';
 import { fromDecisionBitField } from './permissions';
+import { withInstancePhases } from './readInstancePhases';
 import { resolveManualSelectionStatus } from './resolveManualSelectionStatus';
 import type { DecisionInstanceData } from './schemas/instanceData';
 
@@ -74,11 +75,13 @@ export const getInstance = async ({ instanceId, user }: GetInstanceInput) => {
   try {
     // Cached and viewer-independent; the access check + per-user access bits
     // below run on every call, outside the cache.
-    const instance = await getCachedInstance(instanceId);
+    const cached = await getCachedInstance(instanceId);
 
-    if (!instance) {
+    if (!cached) {
       throw new NotFoundError('Process instance', instanceId);
     }
+
+    const instance = await withInstancePhases({ instance: cached });
 
     // Assert read access and reuse the profile-level roles it resolves.
     const profileRoles = await assertInstanceProfileAccess({

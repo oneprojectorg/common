@@ -1,5 +1,5 @@
 import type { TransactionType } from '@op/db/client';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ValidationError } from '../../utils';
 import type { CustomFormProcessContext } from './customFormAuth';
@@ -33,7 +33,11 @@ vi.mock('@op/db/client', () => ({
 }));
 
 vi.mock('@op/db/schema', () => ({
-  processInstances: { profileId: 'profile_id', instanceData: 'instance_data' },
+  processInstances: {
+    id: 'id',
+    profileId: 'profile_id',
+    instanceData: 'instance_data',
+  },
 }));
 
 const { assertPhaseAvailable, lockProfileForms, writeWithPhaseLock } =
@@ -44,6 +48,15 @@ const process: CustomFormProcessContext = {
   initialPhaseId: 'submission',
   phaseIds: ['submission', 'review', 'voting'],
 };
+
+// Phases are read from the blob: the rows flag is off.
+beforeEach(() => {
+  vi.stubEnv('NEXT_PUBLIC_E2E', '');
+});
+
+afterEach(() => {
+  vi.unstubAllEnvs();
+});
 
 describe('writeWithPhaseLock', () => {
   beforeEach(() => {

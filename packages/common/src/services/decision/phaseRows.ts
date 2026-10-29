@@ -46,6 +46,47 @@ export const loadPhaseRows = async ({
   return rows.map((row) => ({ ...row, data: readPhaseRowData(row.data) }));
 };
 
+/** {@link loadPhaseRows} for several decisions in one query, keyed by instance. */
+export const loadPhaseRowsByInstance = async ({
+  db,
+  processInstanceIds,
+}: {
+  db: DbClient;
+  processInstanceIds: string[];
+}): Promise<Map<string, PhaseRow[]>> => {
+  const rowsByInstance = new Map<string, PhaseRow[]>();
+
+  if (processInstanceIds.length === 0) {
+    return rowsByInstance;
+  }
+
+  const rows = await db
+    .select({
+      processInstanceId: processPhases.processInstanceId,
+      id: processPhases.id,
+      profileId: processPhases.profileId,
+      sortOrder: processPhases.sortOrder,
+      data: processPhases.data,
+      name: profiles.name,
+      slug: profiles.slug,
+    })
+    .from(processPhases)
+    .innerJoin(profiles, eq(profiles.id, processPhases.profileId))
+    .where(inArray(processPhases.processInstanceId, processInstanceIds))
+    .orderBy(
+      asc(processPhases.processInstanceId),
+      asc(processPhases.sortOrder),
+    );
+
+  for (const { processInstanceId, ...row } of rows) {
+    const instanceRows = rowsByInstance.get(processInstanceId) ?? [];
+    instanceRows.push({ ...row, data: readPhaseRowData(row.data) });
+    rowsByInstance.set(processInstanceId, instanceRows);
+  }
+
+  return rowsByInstance;
+};
+
 /** The rows in the shape `instance_data` keeps, for the readers still on it. */
 export const projectPhaseRows = (rows: PhaseRow[]): PhaseInstanceData[] =>
   rows.map(projectPhaseRow);

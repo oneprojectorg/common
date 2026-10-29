@@ -5,6 +5,7 @@ import { logger } from '@op/logging';
 
 import { CommonError } from '../../utils';
 import { buildExpectedTransitions } from './buildExpectedTransitions';
+import { withInstancePhases } from './readInstancePhases';
 
 /**
  * Creates scheduled transition records for phases with date-based advancement.
@@ -16,9 +17,12 @@ import { buildExpectedTransitions } from './buildExpectedTransitions';
 export async function createTransitionsForProcess({
   processInstance,
   db = defaultDb,
+  fromRows,
 }: {
   processInstance: ProcessInstance;
   db?: DbClient;
+  /** Pass it in when holding the instance lock. */
+  fromRows?: boolean;
 }): Promise<{
   transitions: Array<{
     id: string;
@@ -28,7 +32,9 @@ export async function createTransitionsForProcess({
   }>;
 }> {
   try {
-    const transitionsToCreate = buildExpectedTransitions(processInstance);
+    const transitionsToCreate = buildExpectedTransitions(
+      await withInstancePhases({ instance: processInstance, db, fromRows }),
+    );
 
     if (transitionsToCreate.length === 0) {
       return { transitions: [] };

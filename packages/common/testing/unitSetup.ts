@@ -3,6 +3,18 @@ import { vi } from 'vitest';
 const UNIT_DATABASE_GUARD_MESSAGE =
   'Unit tests must not open a database connection. Remove the .unit marker so this file runs in the integration project, or mock the @op/db entry in the test.';
 
+// `@op/analytics` builds its PostHog client on import, which needs a key.
+vi.mock('@op/analytics/client', () => ({
+  default: () => ({
+    capture() {},
+    identify() {},
+    async getAllFlags() {
+      return {};
+    },
+    async shutdown() {},
+  }),
+}));
+
 // Each factory throws on import, so a unit test that pulls in the real client
 // through any entry of @op/db fails instead of quietly opening a connection to
 // the test database.

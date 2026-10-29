@@ -1,7 +1,7 @@
 import { db } from '@op/db/client';
 import { event } from '@op/events';
 import type { User } from '@op/supabase/lib';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { assertProfileAccess, assertUserByAuthId } from '../assert';
 import { getProposalIdsForPhase } from './getProposalsForPhase';
@@ -176,6 +176,15 @@ function happyPathResults() {
     undefined,
   ];
 }
+
+// Phases are read from the blob: the rows flag is off.
+beforeEach(() => {
+  vi.stubEnv('NEXT_PUBLIC_E2E', '');
+});
+
+afterEach(() => {
+  vi.unstubAllEnvs();
+});
 
 describe('submitManualSelection', () => {
   beforeEach(() => {

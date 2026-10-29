@@ -22,6 +22,7 @@ import {
   type DecisionRolePermissions,
   fromDecisionBitField,
 } from './permissions';
+import { withInstancesPhases } from './readInstancePhases';
 
 export const listDecisionProfiles = async ({
   user,
@@ -171,12 +172,22 @@ export const listDecisionProfiles = async ({
     };
   };
 
+  const instancesWithPhases = await withInstancesPhases({
+    instances: profileList.flatMap(({ processInstance }) =>
+      processInstance ? [processInstance] : [],
+    ),
+  });
+  const instanceById = new Map(
+    instancesWithPhases.map((instance) => [instance.id, instance]),
+  );
+
   // Transform profiles to include proposal/participant counts and access permissions
   const profilesWithCounts = profileList.map((profile) => {
     const { profileUsers: _, ...profileWithoutUsers } = profile;
 
     if (profile.processInstance) {
-      const { proposals, ...instanceRest } = profile.processInstance;
+      const { proposals, ...instanceRest } =
+        instanceById.get(profile.processInstance.id) ?? profile.processInstance;
       const nonDraftProposals =
         proposals?.filter(
           (proposal) => proposal.status !== ProposalStatus.DRAFT,
