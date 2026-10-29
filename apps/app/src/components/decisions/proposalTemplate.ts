@@ -13,6 +13,7 @@
  * via vendor extensions (`x-*` properties).
  */
 import {
+  DEFAULT_MONEY_CURRENCY,
   type ProposalTemplateSchema,
   SYSTEM_FIELD_KEYS,
   buildCategorySchema,
@@ -168,6 +169,19 @@ export function getFieldSchema(
     return undefined;
   }
   return asSchema(props[fieldId]);
+}
+
+export function getTemplateCurrency(
+  template: ProposalTemplateSchema | null | undefined,
+): string {
+  const currency = template
+    ? getFieldSchema(template, 'budget')?.properties?.currency
+    : undefined;
+  return typeof currency === 'object' &&
+    currency !== null &&
+    typeof currency.default === 'string'
+    ? currency.default
+    : DEFAULT_MONEY_CURRENCY;
 }
 
 export function getFieldType(

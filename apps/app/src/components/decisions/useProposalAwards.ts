@@ -43,12 +43,14 @@ export const useProposalAwards = ({
   isEnabled,
   processBudget,
   draft,
+  fallbackCurrency,
 }: {
   proposals: readonly AwardProposal[];
   selectedIds: readonly string[];
   isEnabled: boolean;
   processBudget?: number;
   draft?: AwardDraft;
+  fallbackCurrency?: string;
 }): ProposalAwards => {
   const own = useState<AwardEdits>({});
   const [edits, setEdits] = draft ?? own;
@@ -89,10 +91,9 @@ export const useProposalAwards = ({
     ? selected.filter((id) => !isValid(id))
     : [];
 
+  const defaultCurrency = fallbackCurrency ?? getBudgetCurrency(undefined);
   const currency = singleCurrency(
-    selected.map(
-      (id) => requested.get(id)?.currency ?? getBudgetCurrency(undefined),
-    ),
+    selected.map((id) => requested.get(id)?.currency ?? defaultCurrency),
   );
   const hasMixedCurrencies =
     isEnabled && selected.length > 0 && currency === undefined;
@@ -125,7 +126,8 @@ export const useProposalAwards = ({
   return {
     amounts,
     getRequested: (proposalId) => requested.get(proposalId),
-    getCurrency: (proposalId) => getBudgetCurrency(requested.get(proposalId)),
+    getCurrency: (proposalId) =>
+      requested.get(proposalId)?.currency ?? defaultCurrency,
     hasAdjusted: (proposalId) =>
       amounts.get(proposalId) !== (requested.get(proposalId)?.amount ?? null),
     isValid,

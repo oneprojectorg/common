@@ -22,20 +22,25 @@ const solar: AwardProposal = {
 const Harness = ({
   initiallySelected,
   onToggle,
+  proposal = solar,
+  fallbackCurrency,
 }: {
   initiallySelected: boolean;
   onToggle?: () => void;
+  proposal?: AwardProposal;
+  fallbackCurrency?: string;
 }) => {
   const [isSelected, setIsSelected] = useState(initiallySelected);
   const awards = useProposalAwards({
-    proposals: [solar],
-    selectedIds: isSelected ? ['solar'] : [],
+    proposals: [proposal],
+    selectedIds: isSelected ? [proposal.id] : [],
     isEnabled: true,
+    fallbackCurrency,
   });
 
   return (
     <AwardCell
-      proposalId="solar"
+      proposalId={proposal.id}
       title="Solar Panel Installation"
       awards={awards}
       isSelected={isSelected}
@@ -50,6 +55,8 @@ const Harness = ({
 const renderCell = (props: {
   initiallySelected: boolean;
   onToggle?: () => void;
+  proposal?: AwardProposal;
+  fallbackCurrency?: string;
 }) =>
   render(
     <NextIntlClientProvider locale="en" messages={messages}>
@@ -69,6 +76,24 @@ describe('AwardCell', () => {
     expect(field()).toHaveProperty('value', '12000');
     expect(screen.getByText('$')).toBeTruthy();
     expect(screen.queryByText(/^Requested/)).toBeNull();
+  });
+
+  it('prefixes a proposal without a requested budget with the fallback currency', () => {
+    renderCell({
+      initiallySelected: true,
+      proposal: {
+        id: 'blank',
+        proposalData: {
+          title: 'Solar Panel Installation',
+          category: [],
+          attachmentIds: [],
+        },
+      },
+      fallbackCurrency: 'EUR',
+    });
+
+    expect(screen.getByText('€')).toBeTruthy();
+    expect(screen.queryByText('$')).toBeNull();
   });
 
   it('shows the requested amount once the award differs and hides it when they match again', async () => {

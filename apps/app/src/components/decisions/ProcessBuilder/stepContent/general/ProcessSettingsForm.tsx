@@ -23,7 +23,7 @@ import {
   toPhasesWithBudget,
 } from '@/components/decisions/ProcessBuilder/processBudgetPatch';
 import { useProcessBuilderStore } from '@/components/decisions/ProcessBuilder/stores/useProcessBuilderStore';
-import { getFieldSchema } from '@/components/decisions/proposalTemplate';
+import { getTemplateCurrency } from '@/components/decisions/proposalTemplate';
 import { getFieldErrorMessage, useAppForm } from '@/components/form/utils';
 import { ToggleRow } from '@/components/layout/split/form/ToggleRow';
 
@@ -56,19 +56,6 @@ const createProcessSettingsValidator = (t: TranslateFn) =>
 type ProcessSettingsFormData = z.infer<
   ReturnType<typeof createProcessSettingsValidator>
 >;
-
-const templateCurrency = (
-  template: Parameters<typeof getFieldSchema>[0] | undefined,
-): string => {
-  const currency = template
-    ? getFieldSchema(template, 'budget')?.properties?.currency
-    : undefined;
-  return typeof currency === 'object' &&
-    currency !== null &&
-    typeof currency.default === 'string'
-    ? currency.default
-    : DEFAULT_MONEY_CURRENCY;
-};
 
 // Watches form values and triggers debounced save on changes
 function FormValueWatcher({
@@ -150,7 +137,7 @@ export function ProcessSettingsForm({
   }));
   const currentBudget =
     getProcessBudget({ phases, currentPhaseId: null }) ?? null;
-  const budgetCurrency = templateCurrency(
+  const budgetCurrency = getTemplateCurrency(
     instanceData?.proposalTemplate ?? instance.instanceData?.proposalTemplate,
   );
   const totalBudgetId = useId();

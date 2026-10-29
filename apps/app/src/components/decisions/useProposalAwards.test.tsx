@@ -193,6 +193,33 @@ describe('useProposalAwards', () => {
     expect(result.current.canConfirm).toBe(false);
   });
 
+  it('measures a winner without a requested budget in the fallback currency when one is given', () => {
+    const { result } = renderAwards({
+      proposals: [euro, unbudgeted],
+      selectedIds: ['euro', 'blank'],
+      processBudget: 25000,
+      fallbackCurrency: 'EUR',
+    });
+
+    act(() => result.current.setAmount('blank', 500));
+
+    expect(result.current.hasMixedCurrencies).toBe(false);
+    expect(result.current.getCurrency('blank')).toBe('EUR');
+    expect(result.current.total).toEqual({ amount: 4500, currency: 'EUR' });
+    expect(result.current.canConfirm).toBe(true);
+  });
+
+  it('keeps the requested currency of a winner over the fallback currency', () => {
+    const { result } = renderAwards({
+      proposals: [solar, bike],
+      selectedIds: ['solar', 'bike'],
+      fallbackCurrency: 'EUR',
+    });
+
+    expect(result.current.getCurrency('solar')).toBe('USD');
+    expect(result.current.total).toEqual({ amount: 20200, currency: 'USD' });
+  });
+
   it('keeps the currency of a winner whose requested amount is zero', () => {
     const zero = proposal('zero', { amount: 0, currency: 'EUR' });
     const { result } = renderAwards({

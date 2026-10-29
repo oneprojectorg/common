@@ -31,6 +31,7 @@ import {
 import { ProposalCardDialogProvider } from './ProposalCardDialogContext';
 import { SelectableProposalsTable } from './SelectableProposalsTable';
 import { SelectionFooter } from './SelectionFooter';
+import { getTemplateCurrency } from './proposalTemplate';
 import { useManualAwardDraft } from './useManualAwardDraft';
 import { useManualSelection } from './useManualSelection';
 import { useProposalAwards } from './useProposalAwards';
@@ -165,6 +166,9 @@ export const ManualSelectionList = ({
     isEnabled: awardsAmounts,
     processBudget,
     draft: awardDraft,
+    fallbackCurrency: getTemplateCurrency(
+      instance.instanceData?.proposalTemplate,
+    ),
   });
 
   const submitMutation = trpc.decision.submitManualSelection.useMutation({

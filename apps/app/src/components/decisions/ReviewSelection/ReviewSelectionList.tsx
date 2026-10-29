@@ -23,6 +23,7 @@ import { LuLeaf } from 'react-icons/lu';
 import { useTranslations } from '@/lib/i18n';
 
 import { Bullet } from '@/components/Bullet';
+import { getTemplateCurrency } from '@/components/decisions/proposalTemplate';
 
 import { ProposalCardDialogProvider } from '../ProposalCardDialogContext';
 import { SelectionFooter } from '../SelectionFooter';
@@ -115,6 +116,9 @@ export function ReviewSelectionList({
     isEnabled: awardsAmounts,
     processBudget,
     draft: awardDraft,
+    fallbackCurrency: getTemplateCurrency(
+      instance.instanceData?.proposalTemplate,
+    ),
   });
 
   const currentPhaseName =
