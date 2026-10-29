@@ -24,11 +24,16 @@ notification among them) treat every row as a cast ballot, and
 
 We will store the ballot before submission in `decisions_vote_drafts`,
 one row per voter and decision, keyed by
-`(process_instance_id, profile_id)`.
+`(process_instance_id, profile_id)`, with its picks in
+`decisions_vote_draft_proposals`.
 
-`picks` is an ordered JSON array of proposal ids. Position is rank, so
-MOVE and REMOVE are one row update, and SUBMIT passes the array to
-`submitVote` in that order.
+Each pick is a row in `decisions_vote_draft_proposals`, keyed by
+`(vote_draft_id, proposal_id)` with a nullable 1-based `rank` — the
+shape of `decisions_vote_proposals`. A draft pick and a cast pick carry
+the same row shape, so SUBMIT hands `submitVote` the picks in rank
+order, and a deleted proposal leaves every draft by FK instead of by
+validate-on-read. In an unranked phase `rank` is null and `created_at`
+orders the picks.
 
 The remaining budget is never stored. Each text recomputes it from the
 picks' costs and the phase's `voterBudget`, so a cost edited after a
@@ -59,6 +64,10 @@ the same row when the web needs one.
 - Rejected: a `status` column on `decisions_vote_submissions`. Every
   reader would need a `submitted` filter, and the one-ballot rule in
   `submitVote` would have to tell a draft from a cast ballot.
+- Rejected: a `picks` jsonb array on the draft row. One write per text
+  is cheaper than row updates, but a deleted proposal would linger as a
+  dangling id until read-time validation, and the draft and the cast
+  ballot would carry two formats for the same picks.
 - Rejected: holding the picks in an Inngest workflow. A workflow that
   waits across texts holds the conversation in memory, and the memo's
   voter may take days between texts.

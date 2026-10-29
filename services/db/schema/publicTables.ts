@@ -227,6 +227,8 @@ export {
 export type { DecisionVoterEnrolment } from './tables/decisionVoterEnrolments.sql';
 export { decisionsVoteDrafts } from './tables/decisions_vote_drafts.sql';
 export type { DecisionsVoteDraft } from './tables/decisions_vote_drafts.sql';
+export { decisionsVoteDraftProposals } from './tables/decisions_vote_draft_proposals.sql';
+export type { DecisionsVoteDraftProposal } from './tables/decisions_vote_draft_proposals.sql';
 
 export {
   decisionsVoteSubmissions,

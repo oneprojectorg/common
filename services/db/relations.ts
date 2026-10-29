@@ -648,6 +648,24 @@ export const relations = defineRelations(schema, (r) => ({
       to: r.profiles.id,
       optional: false,
     }),
+    draftProposals: r.many.decisionsVoteDraftProposals({
+      from: r.decisionsVoteDrafts.id,
+      to: r.decisionsVoteDraftProposals.voteDraftId,
+    }),
+  },
+
+  decisionsVoteDraftProposals: {
+    voteDraft: r.one.decisionsVoteDrafts({
+      from: r.decisionsVoteDraftProposals.voteDraftId,
+      to: r.decisionsVoteDrafts.id,
+      optional: false,
+    }),
+    proposal: r.one.proposals({
+      from: r.decisionsVoteDraftProposals.proposalId,
+      to: r.proposals.id,
+      alias: 'decisionsVoteDraftProposal_proposal',
+      optional: false,
+    }),
   },
 
   /**

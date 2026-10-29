@@ -1,8 +1,5 @@
-import { sql } from 'drizzle-orm';
 import {
-  check,
   integer,
-  jsonb,
   pgTable,
   timestamp,
   uniqueIndex,
@@ -30,10 +27,6 @@ export const decisionsVoteDrafts = pgTable(
         onUpdate: 'cascade',
         onDelete: 'cascade',
       }),
-    picks: jsonb('picks')
-      .$type<string[]>()
-      .notNull()
-      .default(sql`'[]'::jsonb`),
     pageCursor: integer('page_cursor'),
     chatLineId: uuid('chat_line_id').references(() => decisionChatLines.id, {
       onUpdate: 'cascade',
@@ -47,10 +40,6 @@ export const decisionsVoteDrafts = pgTable(
     uniqueIndex('decisions_vote_drafts_instance_profile_uniq').on(
       table.processInstanceId,
       table.profileId,
-    ),
-    check(
-      'decisions_vote_drafts_picks_chk',
-      sql`jsonb_typeof(${table.picks}) = 'array'`,
     ),
   ],
 );
