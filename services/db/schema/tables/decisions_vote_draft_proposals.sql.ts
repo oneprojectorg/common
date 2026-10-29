@@ -36,8 +36,8 @@ export const decisionsVoteDraftProposals = pgTable(
   (table) => [
     ...serviceRolePolicies,
     primaryKey({ columns: [table.voteDraftId, table.proposalId] }),
-    index().on(table.voteDraftId).concurrently(),
-    index().on(table.proposalId).concurrently(),
+    index().on(table.voteDraftId),
+    index().on(table.proposalId),
     uniqueIndex()
       .on(table.voteDraftId, table.rank)
       .where(sql`rank IS NOT NULL`),
