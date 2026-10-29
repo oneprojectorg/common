@@ -118,7 +118,7 @@ export function ProcessAdminStewardSelect({
         onValueChange={(value) => {
           if (typeof value === 'string' && value !== stewardId) {
             setPendingId(value);
-            save(value);
+            save(value, () => setPendingId(null));
           }
         }}
         // Without `items`, SelectValue renders the raw id.
@@ -207,8 +207,8 @@ function useSaveSteward(slug: string, instanceId: string) {
   });
 
   return {
-    save: (stewardProfileId: string) =>
-      updateInstance.mutate({ instanceId, stewardProfileId }),
+    save: (stewardProfileId: string, onError?: () => void) =>
+      updateInstance.mutate({ instanceId, stewardProfileId }, { onError }),
     isPending: updateInstance.isPending,
   };
 }

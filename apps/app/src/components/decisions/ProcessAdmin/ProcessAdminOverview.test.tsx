@@ -43,15 +43,21 @@ vi.mock('@op/api/client', () => ({
         useSuspenseQuery: () => [query.decisionProfile],
       },
       updateDecisionInstance: {
-        // Records the input, then settles at once so callers' callbacks run.
-        useMutation: () => ({
+        // Records the input, then settles at once so the hook-level and the
+        // per-call callbacks both run.
+        useMutation: (hookOptions?: {
+          onSuccess?: (data: undefined, input: object) => void;
+          onSettled?: (data: undefined, error: null) => void;
+        }) => ({
           mutate: (
             input: object,
-            options?: { onSuccess?: () => void; onSettled?: () => void },
+            callOptions?: { onSuccess?: () => void; onSettled?: () => void },
           ) => {
             updateInstance(input);
-            options?.onSuccess?.();
-            options?.onSettled?.();
+            hookOptions?.onSuccess?.(undefined, input);
+            callOptions?.onSuccess?.();
+            hookOptions?.onSettled?.(undefined, null);
+            callOptions?.onSettled?.();
           },
           isPending: false,
         }),
