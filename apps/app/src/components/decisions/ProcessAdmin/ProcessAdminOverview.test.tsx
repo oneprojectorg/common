@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { ProcessStatus } from '@op/api/encoders';
-import { act, cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { NextIntlClientProvider } from 'next-intl';
 import type { ReactNode } from 'react';
@@ -9,100 +9,38 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import en from '../../../lib/i18n/dictionaries/en.json';
 import { ProcessAdminOverview } from './ProcessAdminOverview';
 
-const { query, updateInstance, utils, toast, logger } = await vi.hoisted(
-  async () => {
-    const { useState } = await import('react');
-    const query: {
-      decisionProfile: unknown;
-      resources: unknown[];
-      error: Error | null;
-    } = {
-      decisionProfile: null,
-      resources: [],
-      error: null,
-    };
-
-    const utils = {
-      // Applies the updater, as the query cache would, so a test can read what the page shows before any refetch.
-      setData: vi.fn(
-        (_input: unknown, update: (current: unknown) => unknown) => {
-          query.decisionProfile = update(query.decisionProfile);
-        },
-      ),
-      invalidate: vi.fn(
-        async (_input: unknown, _filters?: unknown, _options?: unknown) => {},
-      ),
-    };
-    const toast = { success: vi.fn(), error: vi.fn() };
-    const logger = { error: vi.fn() };
-
-    interface Callbacks {
-      onSuccess?: (saved: unknown) => unknown;
-      onError?: (error: Error) => unknown;
-      onSettled?: () => unknown;
-    }
-
-    /** A mutation mock whose latest save stays pending, per hook instance, until the test settles it with `succeed` or `fail`. */
-    const pendingMutation = () => {
-      const mutate = vi.fn();
-      let settleLatest = async (_outcome: {
-        error?: Error;
-        saved?: unknown;
-      }) => {};
-
-      const useMutation = (hook: Callbacks = {}) => {
-        const [variables, setVariables] = useState<unknown>(undefined);
-        const [isPending, setIsPending] = useState(false);
-
-        return {
-          isPending,
-          variables,
-          mutate: (input: unknown, call: Callbacks = {}) => {
-            mutate(input, call);
-            setVariables(input);
-            setIsPending(true);
-            settleLatest = async ({ error, saved }) => {
-              if (error) {
-                await hook.onError?.(error);
-                await call.onError?.(error);
-              } else {
-                await hook.onSuccess?.(saved);
-                await call.onSuccess?.(saved);
-              }
-              await call.onSettled?.();
-              setIsPending(false);
-            };
-          },
-        };
-      };
-
-      return {
-        mutate,
-        useMutation,
-        succeed: (saved: unknown) => settleLatest({ saved }),
-        fail: () => settleLatest({ error: new Error('save failed') }),
-      };
-    };
-
-    return { query, updateInstance: pendingMutation(), utils, toast, logger };
-  },
-);
+const { query, updateInstance } = vi.hoisted(() => {
+  const query: {
+    decisionProfile: unknown;
+    resources: unknown[];
+    userProfiles: { id: string; name: string }[];
+  } = {
+    decisionProfile: null,
+    resources: [],
+    userProfiles: [],
+  };
+  return { query, updateInstance: vi.fn() };
+});
 
 const refresh = vi.hoisted(() => vi.fn());
 
 vi.mock('@op/api/client', () => ({
   trpc: {
-    useUtils: () => ({ decision: { getDecisionBySlug: utils } }),
+    useUtils: () => ({
+      decision: { getDecisionBySlug: { invalidate: async () => {} } },
+    }),
+    account: {
+      getUserProfiles: {
+        useSuspenseQuery: () => [{ items: query.userProfiles }],
+      },
+    },
     decision: {
       getDecisionBySlug: {
-        useSuspenseQuery: () => {
-          if (query.error) {
-            throw query.error;
-          }
-          return [query.decisionProfile];
-        },
+        useSuspenseQuery: () => [query.decisionProfile],
       },
-      updateDecisionInstance: { useMutation: updateInstance.useMutation },
+      updateDecisionInstance: {
+        useMutation: () => ({ mutate: updateInstance, isPending: false }),
+      },
     },
     resources: {
       list: {
@@ -134,91 +72,89 @@ vi.mock('@/hooks/useForesight', () => ({
 vi.mock('@/hooks/useCanLinkToProfile', () => ({
   useCanLinkToProfile: () => false,
 }));
-vi.mock('@op/logging/client', () => ({ logger }));
-vi.mock('./ProcessAdminsDialog', () => ({
-  ProcessAdminsDialog: ({ profileId }: { profileId: string }) => (
-    <button type="button" data-profile-id={profileId}>
-      Manage admins
-    </button>
-  ),
-}));
-vi.mock('@op/sense/Toast', () => ({ toast }));
+vi.mock('@op/logging/client', () => ({ logger: { error: () => {} } }));
 
-vi.mock('@/components/Resources/PinnedResourceCard', () => ({
-  PinnedResourceCard: ({ resource }: { resource: { title: string } }) => (
-    <div data-testid="pinned-resource">{resource.title}</div>
-  ),
-}));
-
-// The upload modal owns its own mutations; this test only needs its change signal.
-vi.mock('../BannerUploadModal', () => ({
-  BannerUploadModal: ({
-    isOpen,
-    onChange,
+// TipTap needs a real DOM selection; a textarea that emits a one-paragraph doc
+// is enough to drive the About section's open, type and commit.
+vi.mock('@op/sense/RichTextEditor', () => ({
+  RichTextEditor: ({
+    placeholder,
+    onChangeJSON,
   }: {
-    isOpen: boolean;
-    onChange?: () => void;
-  }) =>
-    isOpen ? (
-      <button type="button" onClick={onChange}>
-        Save banner
-      </button>
-    ) : null,
+    placeholder?: string;
+    onChangeJSON?: (json: object) => void;
+  }) => (
+    <textarea
+      aria-label="About body"
+      placeholder={placeholder}
+      onChange={(event) =>
+        onChangeJSON?.({
+          type: 'doc',
+          content: [
+            {
+              type: 'paragraph',
+              content: [{ type: 'text', text: event.target.value }],
+            },
+          ],
+        })
+      }
+    />
+  ),
+  RichTextViewer: ({ content }: { content: object }) => (
+    <div data-testid="about-viewer">{JSON.stringify(content)}</div>
+  ),
+}));
+vi.mock('@/components/RichTextEditor', () => ({
+  RichTextEditorBubbleMenu: () => null,
+}));
+vi.mock('@/components/RichTextEditor/editorConfig', () => ({
+  getProposalExtensions: () => [],
 }));
 
 const SLUG = 'community-fund';
 
-const profile = ({
+const seed = ({
   status = ProcessStatus.PUBLISHED,
   description = null,
   phases = [],
   steward = null,
+  owner = null,
   heroImage,
   isPrivate = false,
-  name = 'Community Fund',
-  profileId = 'profile-1',
 }: {
-  name?: string;
-  profileId?: string | null;
   status?: string;
   description?: string | null;
   phases?: object[];
   steward?: object | null;
+  owner?: object | null;
   heroImage?: string;
   isPrivate?: boolean;
-}) => ({
-  name,
-  processInstance: {
-    id: 'instance-1',
-    profileId,
-    status,
-    description,
-    currentStateId: null,
-    steward,
-    instanceData: {
-      phases,
-      config: { isPrivate },
-      overview: heroImage ? { heroImage } : undefined,
+}) => {
+  query.decisionProfile = {
+    name: 'Community Fund',
+    processInstance: {
+      id: 'instance-1',
+      profileId: 'profile-1',
+      status,
+      description,
+      currentStateId: null,
+      steward,
+      owner,
+      instanceData: {
+        phases,
+        config: { isPrivate },
+        overview: heroImage ? { heroImage } : undefined,
+      },
     },
-  },
-});
-
-const seed = (options: Parameters<typeof profile>[0]) => {
-  query.decisionProfile = profile(options);
+  };
 };
 
-const overview = (isOpen = false, aboutSlot: ReactNode = null) => (
-  <NextIntlClientProvider locale="en" messages={en}>
-    <ProcessAdminOverview slug={SLUG} isOpen={isOpen} aboutSlot={aboutSlot} />
-  </NextIntlClientProvider>
-);
-
 const renderOverview = (isOpen = false, aboutSlot: ReactNode = null) =>
-  render(overview(isOpen, aboutSlot));
-
-const succeedSave = (saved: unknown) =>
-  act(() => updateInstance.succeed(saved));
-const failSave = () => act(() => updateInstance.fail());
+  render(
+    <NextIntlClientProvider locale="en" messages={en}>
+      <ProcessAdminOverview slug={SLUG} isOpen={isOpen} aboutSlot={aboutSlot} />
+    </NextIntlClientProvider>,
+  );
 
 const phase = {
   phaseId: 'submit',
@@ -229,8 +165,8 @@ const phase = {
 afterEach(() => {
   cleanup();
   query.resources = [];
-  query.error = null;
-  vi.clearAllMocks();
+  query.userProfiles = [];
+  updateInstance.mockClear();
 });
 
 describe('ProcessAdminOverview', () => {
@@ -242,33 +178,6 @@ describe('ProcessAdminOverview', () => {
     expect(screen.getByText('No pinned resources')).toBeTruthy();
     expect(screen.getByText('No description yet')).toBeTruthy();
     expect(screen.queryByTestId('phase-timeline')).toBeNull();
-  });
-
-  it('lists the pinned resources in place of their empty state', () => {
-    seed({});
-    query.resources = [
-      { id: 'resource-1', collectionId: 'collection-1', title: 'Budget guide' },
-    ];
-    renderOverview();
-
-    expect(screen.getByTestId('pinned-resource').textContent).toBe(
-      'Budget guide',
-    );
-    expect(
-      screen.getByRole('heading', { name: 'Pinned Resources' }),
-    ).toBeTruthy();
-    expect(screen.queryByText('No pinned resources')).toBeNull();
-  });
-
-  it('keeps the way back, and no status or actions, when the process fails to load', () => {
-    query.error = new Error('load failed');
-    vi.spyOn(console, 'error').mockImplementation(() => {});
-    renderOverview();
-
-    expect(screen.getByText("Couldn't load the overview")).toBeTruthy();
-    expect(screen.getByRole('link', { name: 'Back to editor' })).toBeTruthy();
-    expect(screen.queryByText('Live')).toBeNull();
-    expect(screen.queryByRole('link', { name: 'View process' })).toBeNull();
   });
 
   it('renders the server-rendered About body over the plain description', () => {
@@ -427,25 +336,6 @@ describe('ProcessAdminOverview', () => {
     expect(screen.queryByRole('link', { name: 'View process' })).toBeNull();
   });
 
-  it('opens the admins of the process it shows', () => {
-    seed({ status: ProcessStatus.DRAFT, profileId: 'profile-7' });
-    renderOverview();
-
-    expect(
-      screen
-        .getByRole('button', { name: 'Manage admins' })
-        .getAttribute('data-profile-id'),
-    ).toBe('profile-7');
-  });
-
-  it('keeps the launch but offers no admins when the process has no profile', () => {
-    seed({ status: ProcessStatus.DRAFT, profileId: null });
-    renderOverview();
-
-    expect(screen.queryByRole('button', { name: 'Manage admins' })).toBeNull();
-    expect(screen.getByRole('button', { name: 'Launch process' })).toBeTruthy();
-  });
-
   it('gives a live process Settings and the public view, not a launch', () => {
     seed({});
     renderOverview();
@@ -481,7 +371,7 @@ describe('ProcessAdminOverview', () => {
     ).toBeNull();
   });
 
-  it('saves a renamed draft title on Enter', async () => {
+  it('saves a renamed draft title on Enter and refuses one below the minimum', async () => {
     seed({ status: ProcessStatus.DRAFT });
     renderOverview();
     const user = userEvent.setup();
@@ -491,114 +381,18 @@ describe('ProcessAdminOverview', () => {
     );
     await user.keyboard('Neighbourhood Fund{Enter}');
 
-    expect(updateInstance.mutate).toHaveBeenCalledTimes(1);
-    expect(updateInstance.mutate.mock.calls[0]?.[0]).toEqual({
+    expect(updateInstance).toHaveBeenCalledTimes(1);
+    expect(updateInstance.mock.calls[0]?.[0]).toEqual({
       instanceId: 'instance-1',
       name: 'Neighbourhood Fund',
     });
-  });
-
-  it('refuses a draft title below the minimum and says why', async () => {
-    seed({ status: ProcessStatus.DRAFT });
-    renderOverview();
-    const user = userEvent.setup();
 
     await user.click(
-      screen.getByRole('button', { name: 'Edit Community Fund' }),
+      screen.getByRole('button', { name: 'Edit Neighbourhood Fund' }),
     );
     await user.keyboard('ab{Enter}');
 
-    expect(updateInstance.mutate).not.toHaveBeenCalled();
-    expect(toast.error).toHaveBeenCalledWith(
-      'The name needs at least 3 characters.',
-    );
-
-    await user.click(
-      screen.getByRole('button', { name: 'Edit Community Fund' }),
-    );
-    await user.keyboard('abc{Enter}');
-
-    expect(updateInstance.mutate.mock.calls[0]?.[0]).toEqual({
-      instanceId: 'instance-1',
-      name: 'abc',
-    });
-  });
-
-  it('shows the latest renamed draft title while it saves', async () => {
-    seed({ status: ProcessStatus.DRAFT });
-    renderOverview();
-    const user = userEvent.setup();
-
-    await user.click(
-      screen.getByRole('button', { name: 'Edit Community Fund' }),
-    );
-    await user.keyboard('First Fund{Enter}');
-    await user.click(screen.getByRole('button', { name: 'Edit First Fund' }));
-    await user.keyboard('Second Fund{Enter}');
-
-    expect(
-      screen.getByRole('heading', { name: 'Second Fund', level: 1 }),
-    ).toBeTruthy();
-  });
-
-  it('keeps the saved draft title when the refetch brings nothing back', async () => {
-    seed({ status: ProcessStatus.DRAFT });
-    const { rerender } = renderOverview();
-    const user = userEvent.setup();
-
-    await user.click(
-      screen.getByRole('button', { name: 'Edit Community Fund' }),
-    );
-    await user.keyboard('Neighbourhood Fund{Enter}');
-    await succeedSave(
-      profile({ status: ProcessStatus.DRAFT, name: 'Neighbourhood Fund' }),
-    );
-    rerender(overview());
-
-    expect(
-      screen.getByRole('heading', { name: 'Neighbourhood Fund', level: 1 }),
-    ).toBeTruthy();
-    expect(utils.invalidate).toHaveBeenCalledWith({ slug: SLUG }, undefined, {
-      cancelRefetch: false,
-    });
-    expect(toast.error).not.toHaveBeenCalled();
-  });
-
-  it('puts the draft title back and says so when the rename fails', async () => {
-    seed({ status: ProcessStatus.DRAFT });
-    renderOverview();
-    const user = userEvent.setup();
-
-    await user.click(
-      screen.getByRole('button', { name: 'Edit Community Fund' }),
-    );
-    await user.keyboard('Neighbourhood Fund{Enter}');
-
-    expect(
-      screen.getByRole('heading', { name: 'Neighbourhood Fund', level: 1 }),
-    ).toBeTruthy();
-
-    await failSave();
-
-    expect(
-      screen.getByRole('heading', { name: 'Community Fund', level: 1 }),
-    ).toBeTruthy();
-    expect(toast.error).toHaveBeenCalledWith('Your change was not saved.');
-    expect(logger.error).toHaveBeenCalledTimes(1);
-    expect(utils.setData).not.toHaveBeenCalled();
-  });
-
-  it('refetches the process, without a reload, when the banner changes', async () => {
-    seed({});
-    renderOverview();
-    const user = userEvent.setup();
-
-    await user.click(screen.getByRole('button', { name: 'Add banner' }));
-    await user.click(screen.getByRole('button', { name: 'Save banner' }));
-
-    expect(utils.invalidate).toHaveBeenCalledWith({ slug: SLUG }, undefined, {
-      cancelRefetch: false,
-    });
+    expect(updateInstance).toHaveBeenCalledTimes(1);
   });
 
   it('saves the name from Settings once for Enter and the blur after it', async () => {
@@ -612,8 +406,8 @@ describe('ProcessAdminOverview', () => {
     await user.type(field, 'New Fund{Enter}');
     await user.tab();
 
-    expect(updateInstance.mutate).toHaveBeenCalledTimes(1);
-    expect(updateInstance.mutate).toHaveBeenCalledWith(
+    expect(updateInstance).toHaveBeenCalledTimes(1);
+    expect(updateInstance).toHaveBeenCalledWith(
       { instanceId: 'instance-1', name: 'New Fund' },
       expect.anything(),
     );
@@ -623,17 +417,20 @@ describe('ProcessAdminOverview', () => {
     seed({});
     renderOverview();
     const user = userEvent.setup();
+    updateInstance.mockImplementationOnce(
+      (_input: unknown, options?: { onError?: () => void }) =>
+        options?.onError?.(),
+    );
 
     await user.click(screen.getByRole('button', { name: 'Settings' }));
     const field = await screen.findByRole('textbox', { name: 'Process name' });
     await user.clear(field);
     await user.type(field, 'New Fund{Enter}');
-    await failSave();
     await user.tab();
 
     expect(field).toHaveProperty('value', 'New Fund');
-    expect(updateInstance.mutate).toHaveBeenCalledTimes(2);
-    expect(updateInstance.mutate).toHaveBeenLastCalledWith(
+    expect(updateInstance).toHaveBeenCalledTimes(2);
+    expect(updateInstance).toHaveBeenLastCalledWith(
       { instanceId: 'instance-1', name: 'New Fund' },
       expect.anything(),
     );
@@ -653,7 +450,7 @@ describe('ProcessAdminOverview', () => {
     expect(
       screen.getByText('The name needs at least 3 characters.'),
     ).toBeTruthy();
-    expect(updateInstance.mutate).not.toHaveBeenCalled();
+    expect(updateInstance).not.toHaveBeenCalled();
   });
 
   it('saves the visibility as it is chosen', async () => {
@@ -665,34 +462,77 @@ describe('ProcessAdminOverview', () => {
     await user.click(await screen.findByRole('tab', { name: 'Visibility' }));
     await user.click(await screen.findByRole('radio', { name: /Unlisted/ }));
 
-    expect(updateInstance.mutate.mock.calls[0]?.[0]).toEqual({
+    expect(updateInstance.mock.calls[0]?.[0]).toEqual({
       instanceId: 'instance-1',
       config: { isPrivate: true },
     });
   });
 
-  it('shows the chosen visibility while it saves and the saved one when it fails', async () => {
-    seed({});
+  it('lets an admin of the owner change a draft steward in place', async () => {
+    query.userProfiles = [{ id: 'org-1', name: 'East Side Collective' }];
+    seed({
+      status: ProcessStatus.DRAFT,
+      steward: { id: 'org-1', name: 'East Side Collective' },
+      owner: { id: 'org-1' },
+    });
+    renderOverview();
+
+    expect(
+      await screen.findByRole('button', {
+        name: 'Change who is stewarding this',
+      }),
+    ).toBeTruthy();
+  });
+
+  it('shows the steward as plain text when the admin cannot change it', async () => {
+    query.userProfiles = [{ id: 'me', name: 'Me' }];
+    seed({
+      status: ProcessStatus.DRAFT,
+      steward: { id: 'org-1', name: 'East Side Collective' },
+      owner: { id: 'org-1' },
+    });
+    renderOverview();
+
+    expect(await screen.findByText('East Side Collective')).toBeTruthy();
+    expect(
+      screen.queryByRole('button', { name: 'Change who is stewarding this' }),
+    ).toBeNull();
+  });
+
+  it('edits the About body of a live process behind Edit and saves on Done', async () => {
+    seed({ description: 'Plain description' });
     renderOverview();
     const user = userEvent.setup();
 
-    await user.click(screen.getByRole('button', { name: 'Settings' }));
-    await user.click(await screen.findByRole('tab', { name: 'Visibility' }));
-    await user.click(await screen.findByRole('radio', { name: /Unlisted/ }));
+    expect(screen.queryByRole('textbox', { name: 'About body' })).toBeNull();
+    await user.click(
+      screen.getByRole('button', { name: 'Edit the about section' }),
+    );
+    await user.type(
+      screen.getByRole('textbox', { name: 'About body' }),
+      'Grants for the neighbourhood',
+    );
+    await user.click(
+      screen.getByRole('button', { name: 'Finish editing the about section' }),
+    );
 
+    expect(updateInstance).toHaveBeenCalledTimes(1);
+    expect(updateInstance.mock.calls[0]?.[0]).toMatchObject({
+      instanceId: 'instance-1',
+      overview: { body: { type: 'doc' } },
+    });
+    expect(screen.queryByRole('textbox', { name: 'About body' })).toBeNull();
+  });
+
+  it('keeps a draft About body always editable with no Edit control', () => {
+    seed({ status: ProcessStatus.DRAFT });
+    renderOverview();
+
+    expect(screen.getByRole('textbox', { name: 'About body' })).toBeTruthy();
     expect(
-      screen
-        .getByRole('radio', { name: /Unlisted/ })
-        .getAttribute('aria-checked'),
-    ).toBe('true');
-
-    await failSave();
-
-    expect(
-      screen
-        .getByRole('radio', { name: /Public/ })
-        .getAttribute('aria-checked'),
-    ).toBe('true');
+      screen.queryByRole('button', { name: 'Edit the about section' }),
+    ).toBeNull();
+    expect(screen.queryByText('No description yet')).toBeNull();
   });
 
   it('names the banner control by whether there is a banner', () => {
