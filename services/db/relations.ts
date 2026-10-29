@@ -448,6 +448,34 @@ export const relations = defineRelations(schema, (r) => ({
       alias: 'processPhase_profile',
       optional: false,
     }),
+    outgoingTransitions: r.many.decisionProcessTransitions({
+      from: r.processPhases.id,
+      to: r.decisionProcessTransitions.fromPhaseId,
+      alias: 'decisionProcessTransition_fromPhase',
+    }),
+    incomingTransitions: r.many.decisionProcessTransitions({
+      from: r.processPhases.id,
+      to: r.decisionProcessTransitions.toPhaseId,
+      alias: 'decisionProcessTransition_toPhase',
+    }),
+  },
+
+  /**
+   * Decision process transition relations
+   *
+   * fromPhaseId and toPhaseId are nullable.
+   */
+  decisionProcessTransitions: {
+    fromPhase: r.one.processPhases({
+      from: r.decisionProcessTransitions.fromPhaseId,
+      to: r.processPhases.id,
+      alias: 'decisionProcessTransition_fromPhase',
+    }),
+    toPhase: r.one.processPhases({
+      from: r.decisionProcessTransitions.toPhaseId,
+      to: r.processPhases.id,
+      alias: 'decisionProcessTransition_toPhase',
+    }),
   },
 
   decisionsVoteSubmissions: {
