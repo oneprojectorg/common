@@ -83,12 +83,15 @@ const sendSmtpEmail = async ({
   renderOptions,
 }: BatchEmailItem & { renderOptions?: RenderParameter[1] }) => {
   const html = await render(component(), renderOptions);
+  // Text-only clients and spam scoring both read the plain-text part.
+  const text = await render(component(), { ...renderOptions, plainText: true });
 
   return getTransporter().sendMail({
     from: formatFromAddress(from),
     to: safeEmailSchema.parse(to),
     subject,
     html,
+    text,
   });
 };
 

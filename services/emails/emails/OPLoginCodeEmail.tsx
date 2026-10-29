@@ -1,11 +1,9 @@
-import { OP_EMAIL_HELP } from '@op/core';
 import { Text } from 'react-email';
 
 import EmailTemplate from '../components/EmailTemplate';
-import { Footnote } from '../components/Footnote';
 import { Header } from '../components/Header';
-import { InlineLink } from '../components/InlineLink';
 import { OtpCode } from '../components/OtpCode';
+import { OtpFootnote } from '../components/OtpFootnote';
 
 interface OPLoginCodeEmailProps {
   /** Preview only. GoTrue fills `{{ .Token }}` itself when this is absent. */
@@ -29,11 +27,7 @@ export const OPLoginCodeEmail = ({ token }: OPLoginCodeEmailProps = {}) => {
 
       <OtpCode token={token} />
 
-      <Footnote>
-        This code will only be valid for the next 10 minutes. If you’re having
-        problems, send us an{' '}
-        <InlineLink href={`mailto:${OP_EMAIL_HELP}`}>email</InlineLink>.
-      </Footnote>
+      <OtpFootnote />
     </EmailTemplate>
   );
 };

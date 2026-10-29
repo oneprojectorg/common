@@ -1,11 +1,9 @@
-import { OP_EMAIL_HELP } from '@op/core';
 import { Text } from 'react-email';
 
 import EmailTemplate from '../components/EmailTemplate';
-import { Footnote } from '../components/Footnote';
 import { Header } from '../components/Header';
-import { InlineLink } from '../components/InlineLink';
 import { OtpCode } from '../components/OtpCode';
+import { OtpFootnote } from '../components/OtpFootnote';
 
 interface OPSignupCodeEmailProps {
   /** Preview only. GoTrue fills `{{ .Token }}` itself when this is absent. */
@@ -20,7 +18,7 @@ interface OPSignupCodeEmailProps {
  */
 export const OPSignupCodeEmail = ({ token }: OPSignupCodeEmailProps = {}) => {
   return (
-    <EmailTemplate previewText="Confirm your email! 👋">
+    <EmailTemplate previewText="Your Common confirmation code">
       <Header>Confirm your email</Header>
       <Text className="mt-8 text-lg">
         Your confirmation code is ready below. Enter it in your open browser
@@ -29,11 +27,7 @@ export const OPSignupCodeEmail = ({ token }: OPSignupCodeEmailProps = {}) => {
 
       <OtpCode token={token} />
 
-      <Footnote>
-        This code will only be valid for the next 10 minutes. If you’re having
-        problems, send us an{' '}
-        <InlineLink href={`mailto:${OP_EMAIL_HELP}`}>email</InlineLink>.
-      </Footnote>
+      <OtpFootnote />
     </EmailTemplate>
   );
 };
