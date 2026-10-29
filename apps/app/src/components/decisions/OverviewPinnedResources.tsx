@@ -4,6 +4,7 @@ import { trpc } from '@op/api/client';
 import { Header3 } from '@op/sense/Header';
 import { Separator } from '@op/sense/Separator';
 import { Skeleton } from '@op/sense/Skeleton';
+import type { ReactNode } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -20,36 +21,55 @@ import { PinnedResourceCard } from '@/components/Resources/PinnedResourceCard';
  */
 export const OverviewPinnedResourcesSuspense = ({
   profileId,
+  emptyState,
 }: {
   profileId: string;
+  /** Rendered in the section when there are no resources; omit to hide it. */
+  emptyState?: ReactNode;
 }) => {
-  const t = useTranslations();
   const [{ items }] = trpc.resources.list.useSuspenseQuery({
     profileId,
   });
 
   if (items.length === 0) {
-    return null;
+    return emptyState ? (
+      <PinnedResourcesSection>{emptyState}</PinnedResourcesSection>
+    ) : null;
   }
 
   return (
+    <PinnedResourcesSection>
+      {items.map((resource) => (
+        <PinnedResourceCard
+          // A resource can sit in more than one collection, so scope the key
+          // by collection to stay unique across the flattened list.
+          key={`${resource.collectionId}:${resource.id}`}
+          resource={resource}
+          signedUrl={resource.signedUrl}
+        />
+      ))}
+    </PinnedResourcesSection>
+  );
+};
+
+/**
+ * The divider and "Pinned Resources" heading around the section's content. The
+ * divider lives here (not in the parent) so it renders only with the section.
+ */
+export const PinnedResourcesSection = ({
+  children,
+}: {
+  children: ReactNode;
+}) => {
+  const t = useTranslations();
+  return (
     <>
-      {/* Divider lives here (not in the parent) so it renders only alongside
-          actual resources — an empty list returns null above, no orphan rule. */}
       <Separator />
       <section className="flex flex-col gap-2">
         <Header3 className="font-sans text-sm text-muted-foreground">
           {t('decisions.pinnedResourcesHeading')}
         </Header3>
-        {items.map((resource) => (
-          <PinnedResourceCard
-            // A resource can sit in more than one collection, so scope the key
-            // by collection to stay unique across the flattened list.
-            key={`${resource.collectionId}:${resource.id}`}
-            resource={resource}
-            signedUrl={resource.signedUrl}
-          />
-        ))}
+        {children}
       </section>
     </>
   );
@@ -67,14 +87,8 @@ export const PinnedResourcesSkeleton = () => (
 export const PinnedResourcesError = () => {
   const t = useTranslations();
   return (
-    <>
-      <Separator />
-      <section className="flex flex-col gap-2">
-        <Header3 className="font-sans text-sm text-muted-foreground">
-          {t('decisions.pinnedResourcesHeading')}
-        </Header3>
-        <p>{t('decisions.pinnedResourcesLoadError')}</p>
-      </section>
-    </>
+    <PinnedResourcesSection>
+      <p>{t('decisions.pinnedResourcesLoadError')}</p>
+    </PinnedResourcesSection>
   );
 };

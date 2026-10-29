@@ -23,12 +23,15 @@ export function BannerUploadModal({
   heroImagePath,
   isOpen,
   onOpenChange,
+  onChange,
 }: {
   instanceId: string;
   /** Stored storage path of the current hero image, if any. */
   heroImagePath?: string;
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
+  /** Fires after an upload or removal; defaults to the hard reload described below. */
+  onChange?: () => void;
 }) {
   const t = useTranslations();
 
@@ -52,7 +55,7 @@ export function BannerUploadModal({
             // and 404s (prod only; dev re-applies rewrites per request). A full
             // load lets the server resolve the rewrite — same as a manual
             // refresh. Banner edits are rare, so the reload cost is negligible.
-            onChange={() => window.location.reload()}
+            onChange={onChange ?? (() => window.location.reload())}
           />
         </div>
         <DialogFooter>
