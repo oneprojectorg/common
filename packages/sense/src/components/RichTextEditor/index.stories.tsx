@@ -1,3 +1,4 @@
+import { Header2 } from '@op/sense/Header';
 import {
   RichTextEditor,
   RichTextEditorSkeleton,
@@ -41,6 +42,22 @@ export const EmptyWithPlaceholder: Story = {
       className="min-h-32 w-full max-w-xl rounded-lg border p-4"
       placeholder="Write your proposal…"
     />
+  ),
+};
+
+/** An editor named by a visible heading, for a section edited where it sits. */
+export const NamedByHeading: Story = {
+  render: () => (
+    <section className="flex w-full max-w-xl flex-col gap-3">
+      <Header2 id="about-heading" className="text-label">
+        About the process
+      </Header2>
+      <RichTextEditor
+        className="min-h-32 rounded-lg border p-4"
+        content={sampleContent}
+        ariaLabelledBy="about-heading"
+      />
+    </section>
   ),
 };
 
