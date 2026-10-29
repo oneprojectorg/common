@@ -102,7 +102,7 @@ export function ProcessAdminAbout({
     slug,
     instanceId,
     onSaved: setSaved,
-    onIdle: isDraft ? () => setDraftStatus('saved') : undefined,
+    onIdle: isDraft ? (ok) => setDraftStatus(ok ? 'saved' : 'idle') : undefined,
   });
 
   const seed = saved ?? storedContent ?? '';
@@ -352,7 +352,8 @@ function useOrderedBodySaves({
   slug: string;
   instanceId: string;
   onSaved: (body: JSONContent) => void;
-  onIdle?: () => void;
+  /** Fires once the queue drains; `ok` is false when the last save failed. */
+  onIdle?: (ok: boolean) => void;
 }) {
   const t = useTranslations('decisions.processAdmin');
   const utils = trpc.useUtils();
@@ -360,10 +361,30 @@ function useOrderedBodySaves({
   const waiting = useRef<JSONContent | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
+  // The queue drains and the query refreshes from the hook-level callbacks,
+  // which still run after this component unmounts; per-call ones do not.
   const updateInstance = trpc.decision.updateDecisionInstance.useMutation({
+    onSuccess: (_data, variables) => {
+      const savedBody = variables.overview?.body;
+      if (typeof savedBody === 'object') {
+        onSaved(savedBody);
+      }
+    },
     onError: (error) => {
       logger.error('Process About save failed', { error });
       toast.error(t('saveError'));
+    },
+    onSettled: (_data, error) => {
+      inFlight.current = false;
+      const next = waiting.current;
+      waiting.current = null;
+      if (next) {
+        sendSave(next);
+        return;
+      }
+      setIsSaving(false);
+      onIdle?.(error === null);
+      void utils.decision.getDecisionBySlug.invalidate({ slug });
     },
   });
 
@@ -376,24 +397,7 @@ function useOrderedBodySaves({
     setIsSaving(true);
     updateInstance.mutate(
       { instanceId, overview: { body: nextBody } },
-      {
-        onSuccess: () => {
-          onSaved(nextBody);
-          onSuccess?.();
-        },
-        onSettled: () => {
-          inFlight.current = false;
-          const next = waiting.current;
-          waiting.current = null;
-          if (next) {
-            sendSave(next);
-            return;
-          }
-          setIsSaving(false);
-          onIdle?.();
-          void utils.decision.getDecisionBySlug.invalidate({ slug });
-        },
-      },
+      { onSuccess },
     );
   };
 
