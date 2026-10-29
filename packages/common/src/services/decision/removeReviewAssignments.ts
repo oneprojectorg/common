@@ -4,11 +4,11 @@ import {
   proposalReviewAssignments,
 } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
-import { permission } from 'access-zones';
 
 import { CommonError, NotFoundError } from '../../utils';
 import { assertProfileAccess } from '../assert';
 import { getInstance } from './getInstance';
+import { decisionAdminPermissions } from './permissions';
 import { assertReviewAssignmentPhaseIsCurrent } from './reviewHelpers';
 import type { InstancePhaseRef } from './schemas/instance';
 import { assertInstancePhase } from './utils/instance';
@@ -46,7 +46,7 @@ export async function removeReviewAssignments({
   await assertProfileAccess({
     user,
     profileId: instance.profileId,
-    permissions: { decisions: permission.ADMIN },
+    permissions: decisionAdminPermissions,
   });
 
   assertInstancePhase({ instance, phaseId });

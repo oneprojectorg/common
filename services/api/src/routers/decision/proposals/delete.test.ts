@@ -1,5 +1,6 @@
 import { TestDecisionsDataManager } from '@op/common/testing';
-import { expect } from 'vitest';
+import { db } from '@op/db/client';
+import { describe, expect, it } from 'vitest';
 
 import {
   accessTierGatingCell,
@@ -7,6 +8,7 @@ import {
   expectFailsAccessTierGate,
   expectPassesAccessTierGate,
 } from '../../../test/helpers/gating/decision';
+import { createAuthenticatedCaller } from '../../../test/supabase-utils';
 
 describeDecisionAccessTierGating('deleteProposal', {
   noJwtNonPublic: accessTierGatingCell(
@@ -103,4 +105,38 @@ describeDecisionAccessTierGating('deleteProposal', {
       expect(result.deletedId).toBe(proposal.id);
     },
   ),
+});
+
+describe.concurrent('deleteProposal', () => {
+  it('lets a profile admin without Manage Process delete a proposal', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const profileAdmin = await testData.createProfileAdminUser({
+      organization: setup.organization,
+      instanceProfileId: setup.instance.profileId,
+    });
+    const [proposal, profileAdminCaller] = await Promise.all([
+      testData.createProposal({
+        userEmail: setup.userEmail,
+        processInstanceId: setup.instance.instance.id,
+        proposalData: { title: 'Proposal' },
+      }),
+      createAuthenticatedCaller(profileAdmin.email),
+    ]);
+
+    const result = await profileAdminCaller.decision.deleteProposal({
+      proposalId: proposal.id,
+    });
+
+    expect(result.deletedId).toBe(proposal.id);
+    await expect(
+      db.query.proposals.findFirst({ where: { id: proposal.id } }),
+    ).resolves.toBeUndefined();
+  });
 });

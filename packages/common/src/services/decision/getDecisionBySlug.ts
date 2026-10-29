@@ -6,6 +6,10 @@ import { permission } from 'access-zones';
 import { UnauthorizedError } from '../../utils';
 import type { AccessUser } from '../access/cacheKeys';
 import { assertProfileAccess } from '../assert';
+import {
+  type DecisionRolePermissions,
+  resolveDecisionAccess,
+} from './permissions';
 
 const decisionProfileQueryConfig = {
   with: {
@@ -30,7 +34,9 @@ type LoadedDecisionProfile = NonNullable<
 >;
 
 type DecisionProfileItem = Omit<LoadedDecisionProfile, 'processInstance'> & {
-  processInstance: NonNullable<LoadedDecisionProfile['processInstance']>;
+  processInstance: NonNullable<LoadedDecisionProfile['processInstance']> & {
+    access: DecisionRolePermissions;
+  };
 };
 
 // Short TTL on purpose (mirrors the resources list cache): @op/cache
@@ -89,7 +95,7 @@ export const getDecisionBySlug = async ({
   // listDecisionProfiles, and the SMS SHOW path (getSmsDecisionDescription) counts
   // its ballot itself. Keeping the hot-path slug fetch aggregate-free saves a
   // proposals table scan per view.
-  await assertProfileAccess({
+  const roles = await assertProfileAccess({
     user,
     profileId: profile.id,
     permissions: [
@@ -101,6 +107,6 @@ export const getDecisionBySlug = async ({
 
   return {
     ...profile,
-    processInstance: instance,
+    processInstance: { ...instance, access: resolveDecisionAccess(roles) },
   };
 };

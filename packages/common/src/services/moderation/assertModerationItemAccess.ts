@@ -10,6 +10,7 @@ import {
   getCurrentProfileId,
   getProfileAccessRoles,
 } from '../access';
+import { decisionAdminPermissions } from '../decision/permissions';
 import { hasActiveModerationFlag } from './moderationVisibility';
 import type { ModerationItemType } from './types';
 
@@ -42,111 +43,131 @@ export const assertModerationItemAccess = async ({
   user?: User;
 }): Promise<void> => {
   if (itemType === 'post') {
-    const post = await db.query.posts.findFirst({
-      where: { id: itemId },
-      columns: {
-        id: true,
-        profileId: true,
-        rootProfileId: true,
-      },
-    });
-    if (!post) {
-      throw new NotFoundError('Post', itemId);
-    }
+    return assertPostItemAccess({ itemId, user });
+  }
+  if (itemType === 'proposal') {
+    return assertProposalItemAccess({ itemId, user });
+  }
+  return assertUserItemExists(itemId);
+};
 
-    // Prefer the pinned rootProfileId gate when present; legacy posts written
-    // before the gate fall back to the postsToProfiles index (same as getPost).
-    const profileIds = post.rootProfileId
-      ? [post.rootProfileId]
-      : (
-          await db.query.postsToProfiles.findMany({
-            where: { postId: itemId },
-            columns: { profileId: true },
-          })
-        ).map((row) => row.profileId);
-
-    await assertProfileTypeAccess({
-      user,
-      profileIds,
-      policies: {
-        [EntityType.DECISION]: { decisions: permission.READ },
-      },
-    });
-
-    // An already-flagged post is restricted to its author + root-profile admins
-    // (see getPost's gate); only that audience may flag it, so hidden content
-    // can't be shipped to the vendor by re-flagging. A sessionless caller is
-    // neither. getCurrentProfileId is memoized, sharing submitUserFlag's lookup.
-    if (await hasActiveModerationFlag('post', post.id)) {
-      const actorProfileId = user
-        ? await getCurrentProfileId(user.id)
-        : undefined;
-      const isAuthor =
-        actorProfileId !== undefined && post.profileId === actorProfileId;
-      if (!isAuthor) {
-        const rootProfileRoles =
-          user && post.rootProfileId
-            ? await getProfileAccessRoles({
-                user,
-                profileId: post.rootProfileId,
-              })
-            : [];
-        const isAdmin = checkPermission(
-          { profile: permission.ADMIN },
-          rootProfileRoles,
-        );
-        if (!isAdmin) {
-          throw new NotFoundError('Post', itemId);
-        }
-      }
-    }
-    return;
+const assertPostItemAccess = async ({
+  itemId,
+  user,
+}: {
+  itemId: string;
+  user?: User;
+}): Promise<void> => {
+  const post = await db.query.posts.findFirst({
+    where: { id: itemId },
+    columns: {
+      id: true,
+      profileId: true,
+      rootProfileId: true,
+    },
+  });
+  if (!post) {
+    throw new NotFoundError('Post', itemId);
   }
 
-  if (itemType === 'proposal') {
-    const proposal = await db.query.proposals.findFirst({
-      where: { id: itemId },
-      with: { processInstance: true },
+  // Prefer the pinned rootProfileId gate when present; legacy posts written
+  // before the gate fall back to the postsToProfiles index (same as getPost).
+  const profileIds = post.rootProfileId
+    ? [post.rootProfileId]
+    : (
+        await db.query.postsToProfiles.findMany({
+          where: { postId: itemId },
+          columns: { profileId: true },
+        })
+      ).map((row) => row.profileId);
+
+  await assertProfileTypeAccess({
+    user,
+    profileIds,
+    policies: {
+      [EntityType.DECISION]: { decisions: permission.READ },
+    },
+  });
+
+  // An already-flagged post is restricted to its author + root-profile admins
+  // (see getPost's gate); only that audience may flag it, so hidden content
+  // can't be shipped to the vendor by re-flagging. A sessionless caller is
+  // neither. getCurrentProfileId is memoized, sharing submitUserFlag's lookup.
+  if (await hasActiveModerationFlag('post', post.id)) {
+    const actorProfileId = user
+      ? await getCurrentProfileId(user.id)
+      : undefined;
+    const isAuthor =
+      actorProfileId !== undefined && post.profileId === actorProfileId;
+    if (!isAuthor) {
+      const rootProfileRoles =
+        user && post.rootProfileId
+          ? await getProfileAccessRoles({
+              user,
+              profileId: post.rootProfileId,
+            })
+          : [];
+      const isAdmin = checkPermission(
+        { profile: permission.ADMIN },
+        rootProfileRoles,
+      );
+      if (!isAdmin) {
+        throw new NotFoundError('Post', itemId);
+      }
+    }
+  }
+};
+
+const assertProposalItemAccess = async ({
+  itemId,
+  user,
+}: {
+  itemId: string;
+  user?: User;
+}): Promise<void> => {
+  const proposal = await db.query.proposals.findFirst({
+    where: { id: itemId },
+    with: { processInstance: true },
+  });
+  if (!proposal) {
+    throw new NotFoundError('Proposal', itemId);
+  }
+
+  // Reused for the instance-admin check below, mirroring getProposal.
+  const instanceRoles = await assertInstanceProfileAccess({
+    user,
+    instance: proposal.processInstance,
+    profilePermissions: { decisions: permission.READ },
+    orgFallbackPermissions: [
+      { decisions: permission.READ },
+      { decisions: permission.ADMIN },
+    ],
+  });
+
+  // HIDDEN or already-flagged proposals are restricted beyond plain instance
+  // read — visible only to proposal-level members or instance admins (mirrors
+  // getProposal), so restricted content can't be shipped to the vendor by an
+  // instance member with only process read. DRAFT stays reportable.
+  const isRestricted =
+    proposal.visibility === Visibility.HIDDEN ||
+    (await hasActiveModerationFlag('proposal', proposal.id));
+  if (isRestricted) {
+    const proposalRoles = await getProfileAccessRoles({
+      user,
+      profileId: proposal.profileId,
     });
-    if (!proposal) {
+    const isInstanceAdmin = checkPermission(
+      decisionAdminPermissions,
+      instanceRoles,
+    );
+    if (proposalRoles.length === 0 && !isInstanceAdmin) {
       throw new NotFoundError('Proposal', itemId);
     }
-
-    // Reused for the instance-admin check below, mirroring getProposal.
-    const instanceRoles = await assertInstanceProfileAccess({
-      user,
-      instance: proposal.processInstance,
-      profilePermissions: { decisions: permission.READ },
-      orgFallbackPermissions: [
-        { decisions: permission.READ },
-        { decisions: permission.ADMIN },
-      ],
-    });
-
-    // HIDDEN or already-flagged proposals are restricted beyond plain instance
-    // read — visible only to proposal-level members or instance admins (mirrors
-    // getProposal), so restricted content can't be shipped to the vendor by an
-    // instance member with only process read. DRAFT stays reportable.
-    const isRestricted =
-      proposal.visibility === Visibility.HIDDEN ||
-      (await hasActiveModerationFlag('proposal', proposal.id));
-    if (isRestricted) {
-      const proposalRoles = await getProfileAccessRoles({
-        user,
-        profileId: proposal.profileId,
-      });
-      const isInstanceAdmin = checkPermission(
-        { profile: permission.ADMIN },
-        instanceRoles,
-      );
-      if (proposalRoles.length === 0 && !isInstanceAdmin) {
-        throw new NotFoundError('Proposal', itemId);
-      }
-    }
-    return;
   }
+};
 
-  // itemType === 'user': profiles are platform-visible, so existence is the
+const assertUserItemExists = async (itemId: string): Promise<void> => {
+  // Profiles are platform-visible, so existence is the
   // only gate — a nonexistent id must not create a queue entry or an email.
   const row = await db.query.users.findFirst({
     where: { id: itemId },

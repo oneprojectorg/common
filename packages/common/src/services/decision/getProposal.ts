@@ -21,6 +21,7 @@ import {
 import { getProposalRelationshipData } from './getProposalRelationshipData';
 import {
   type DecisionRolePermissions,
+  decisionAdminPermissions,
   decisionPermission,
   fromDecisionBitField,
 } from './permissions';
@@ -146,7 +147,7 @@ export const getProposal = async ({
     });
     const hasProposalAccess = proposalRoles.length > 0;
     const isInstanceAdmin = checkPermission(
-      { profile: permission.ADMIN },
+      decisionAdminPermissions,
       instanceRoles,
     );
 

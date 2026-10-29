@@ -5,7 +5,6 @@ import {
   decisionsVoteSubmissions,
   proposals,
 } from '@op/db/schema';
-import { checkPermission, permission } from 'access-zones';
 import { count as countFn } from 'drizzle-orm';
 
 import {
@@ -108,7 +107,6 @@ export const listProposals = async ({
     instance,
     currentProfileId,
     canManageProposals,
-    profileRoles,
     isEmpty,
     buildWhereClause,
     buildIsOutsideCurrentPhase,
@@ -317,11 +315,6 @@ export const listProposals = async ({
       ),
     ]);
 
-  const hasAdminPermission = checkPermission(
-    { profile: permission.ADMIN },
-    profileRoles,
-  );
-
   const postSubmissionEditingAllowed = isPostSubmissionEditingAllowed({
     phases: getInstancePhases(instance.instanceData),
     currentPhaseId: instance.currentStateId,
@@ -344,7 +337,7 @@ export const listProposals = async ({
 
     const isEditable =
       input.phase !== 'results' &&
-      (hasAdminPermission ||
+      (canManageProposals ||
         (proposal.submittedByProfileId === currentProfileId &&
           (proposal.status === ProposalStatus.DRAFT ||
             postSubmissionEditingAllowed)));

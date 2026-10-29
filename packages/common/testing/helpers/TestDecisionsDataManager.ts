@@ -29,6 +29,7 @@ import {
 } from '../../src';
 import {
   grantDecisionProfileAccess,
+  grantInstanceProfileAdminRole,
   makeDecisionPublic as makeDecisionPublicShared,
   testMinimalSchema,
 } from '../data/decision-data';
@@ -612,6 +613,26 @@ export class TestDecisionsDataManager {
       authUserId: authUser.id,
       profileId: userRecord.profileId!,
     };
+  }
+
+  /**
+   * Creates an organization member who admins the decision's profile without
+   * the decisions ADMIN bit ("Manage Process" off).
+   */
+  async createProfileAdminUser({
+    organization,
+    instanceProfileId,
+  }: {
+    organization: { id: string };
+    instanceProfileId: string;
+  }): Promise<MemberUserOutput> {
+    const member = await this.createMemberUser({ organization });
+    await grantInstanceProfileAdminRole({
+      instanceProfileId,
+      authUserId: member.authUserId,
+      email: member.email,
+    });
+    return member;
   }
 
   /**

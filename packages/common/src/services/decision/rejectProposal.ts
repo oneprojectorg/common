@@ -1,10 +1,9 @@
 import { db, eq } from '@op/db/client';
 import { ProposalStatus, proposals } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
-import { permission } from 'access-zones';
 
 import { CommonError, ValidationError } from '../../utils';
-import { assertProfileAccess } from '../assert';
+import { assertDecisionAdmin } from './decisionAuth';
 import { getProposalAccessContext } from './getProposalAccessContext';
 
 export type RejectProposalResult = {
@@ -39,10 +38,9 @@ export async function rejectProposal({
 }): Promise<RejectProposalResult> {
   const context = await getProposalAccessContext(proposalId);
 
-  await assertProfileAccess({
+  await assertDecisionAdmin({
     user,
-    profileId: context.instance.profileId,
-    permissions: { decisions: permission.ADMIN },
+    decisionProfileId: context.instance.profileId,
   });
 
   if (context.status === ProposalStatus.DRAFT) {

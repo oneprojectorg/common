@@ -5,6 +5,7 @@ import { permission } from 'access-zones';
 
 import { CommonError, NotFoundError } from '../../utils';
 import { assertProfileAccess } from '../assert';
+import { decisionAdminPermissions } from './permissions';
 
 export const deleteDecision = async ({
   instanceId,
@@ -30,7 +31,7 @@ export const deleteDecision = async ({
     profileId: instance.profileId,
     permissions: [
       { decisions: permission.DELETE },
-      { decisions: permission.ADMIN },
+      ...decisionAdminPermissions,
     ],
   });
 

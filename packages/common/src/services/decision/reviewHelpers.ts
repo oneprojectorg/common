@@ -6,13 +6,13 @@ import {
 } from '@op/db/schema';
 import { logger } from '@op/logging';
 import type { User } from '@op/supabase/lib';
-import { checkPermission, permission } from 'access-zones';
+import { checkPermission } from 'access-zones';
 
 import { NotFoundError, UnauthorizedError, ValidationError } from '../../utils';
 import { type AccessUser, getProfileAccessRoles } from '../access';
 import { assertProfileAccess, assertUserByAuthId } from '../assert';
 import { getInstance } from './getInstance';
-import { decisionPermission } from './permissions';
+import { decisionAdminPermissions, decisionPermission } from './permissions';
 import { getCurrentProposalHistoryIdForAssignment } from './proposal/history';
 import { type ProposalData, parseProposalData } from './proposalDataSchema';
 import { isReviewOutOfDate } from './review/staleness';
@@ -122,10 +122,7 @@ export async function assertProposalReviewReadAccess({
   if (
     instanceRoles.length > 0 &&
     checkPermission(
-      [
-        { decisions: decisionPermission.REVIEW },
-        { decisions: permission.ADMIN },
-      ],
+      [{ decisions: decisionPermission.REVIEW }, ...decisionAdminPermissions],
       instanceRoles,
     )
   ) {
@@ -286,7 +283,7 @@ export async function canReadPhaseReviews({
     return false;
   }
 
-  if (checkPermission({ decisions: permission.ADMIN }, instanceRoles)) {
+  if (checkPermission(decisionAdminPermissions, instanceRoles)) {
     return true;
   }
 
@@ -354,7 +351,7 @@ export async function assertCanReadReview({
     profileId: instance.profileId,
     permissions: [
       { decisions: decisionPermission.REVIEW },
-      { decisions: permission.ADMIN },
+      ...decisionAdminPermissions,
     ],
   });
 }
@@ -428,7 +425,7 @@ export async function assertReviewAssignmentContext({
     profileId: instance.profileId,
     permissions: [
       { decisions: decisionPermission.REVIEW },
-      { decisions: permission.ADMIN },
+      ...decisionAdminPermissions,
     ],
   });
 

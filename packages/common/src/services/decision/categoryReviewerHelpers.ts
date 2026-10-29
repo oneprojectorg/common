@@ -4,8 +4,9 @@ import { permission } from 'access-zones';
 
 import { NotFoundError } from '../../utils';
 import { assertInstanceProfileAccess } from '../access';
+import { decisionAdminPermissions } from './permissions';
 
-/** Loads a process instance and asserts the caller holds decisions ADMIN on it. */
+/** Loads a process instance and asserts the caller is a decision admin on it. */
 export async function assertCategoryReviewerAdmin({
   processInstanceId,
   user,
@@ -28,7 +29,7 @@ export async function assertCategoryReviewerAdmin({
       profileId: instance.profileId,
       ownerProfileId: instance.ownerProfileId,
     },
-    profilePermissions: { decisions: permission.ADMIN },
+    profilePermissions: decisionAdminPermissions,
     orgFallbackPermissions: { decisions: permission.ADMIN },
   });
 

@@ -4,6 +4,7 @@ import { permission } from 'access-zones';
 import { assertInstanceProfileAccess } from '../access';
 import { getDecisionReviewAssignments } from './getDecisionReviewAssignments';
 import { getInstance } from './getInstance';
+import { decisionAdminPermissions } from './permissions';
 import type { AdminDecisionReviewAssignments } from './schemas/adminDecisionInstance';
 import type { InstancePhaseRef } from './schemas/instance';
 import { assertInstancePhase } from './utils/instance';
@@ -22,7 +23,7 @@ export async function getPhaseReviewAssignments(
   await assertInstanceProfileAccess({
     user,
     instance,
-    profilePermissions: { decisions: permission.ADMIN },
+    profilePermissions: decisionAdminPermissions,
     orgFallbackPermissions: { decisions: permission.ADMIN },
   });
 

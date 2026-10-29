@@ -7,6 +7,7 @@ import { NotFoundError, UnauthorizedError } from '../../utils';
 import { assertInstanceProfileAccess } from '../access';
 import { readExportRecord, refreshStaleSignedUrl } from '../exports';
 import { exportFilePath, exportStatusCacheKey } from './exports';
+import { decisionAdminPermissions } from './permissions';
 import type { ExportStatusData } from './schemas/exportStatus';
 import { exportStatusRecordSchema } from './schemas/exportStatus';
 
@@ -21,7 +22,7 @@ export type { ExportStatusData } from './schemas/exportStatus';
  *
  * Authorization runs in a fixed order, and all of it before any signing. The
  * record's own `userId` settles ownership. `assertInstanceProfileAccess` then
- * settles `decisions: ADMIN` on the profile that owns the export, which is what
+ * settles decision admin on the profile that owns the export, which is what
  * stops an admin who lost the role from holding a working download for the rest
  * of the record's day.
  *
@@ -34,7 +35,7 @@ export type { ExportStatusData } from './schemas/exportStatus';
  * @throws CommonError when the cache did not answer. Reporting that as
  *   `not_found` would make the client retire a run that is still there.
  * @throws UnauthorizedError when the caller does not own the export, or no
- *   longer holds `decisions: ADMIN` on the owning profile.
+ *   longer is a decision admin on the owning profile.
  * @throws NotFoundError when the record names a process instance that is gone.
  */
 export const getExportStatus = async ({
@@ -89,7 +90,7 @@ export const getExportStatus = async ({
   await assertInstanceProfileAccess({
     user,
     instance: { profileId: instance[0].profileId, ownerProfileId: null },
-    profilePermissions: { decisions: permission.ADMIN },
+    profilePermissions: decisionAdminPermissions,
     orgFallbackPermissions: { decisions: permission.ADMIN },
   });
 

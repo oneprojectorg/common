@@ -8,6 +8,7 @@ import {
   assertInstanceProfileAccess,
   isUserEmailPlatformAdmin,
 } from '../access';
+import { decisionAdminPermissions } from '../decision/permissions';
 
 const instancePhasesSchema = z
   .object({
@@ -67,7 +68,7 @@ export const assertCustomFormAdminForInstance = async ({
     await assertInstanceProfileAccess({
       user: { id: user.id },
       instance,
-      profilePermissions: { decisions: permission.ADMIN },
+      profilePermissions: decisionAdminPermissions,
       orgFallbackPermissions: { decisions: permission.ADMIN },
     });
   }

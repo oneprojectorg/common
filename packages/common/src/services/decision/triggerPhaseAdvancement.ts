@@ -1,7 +1,6 @@
 import { db } from '@op/db/client';
 import { ProcessStatus } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
-import { permission } from 'access-zones';
 
 import {
   CommonError,
@@ -13,6 +12,7 @@ import {
 import { assertProfileAccess, assertUserByAuthId } from '../assert';
 import { advancePhase } from './advancePhase';
 import { onPhaseAdvanced } from './onPhaseAdvanced';
+import { decisionAdminPermissions } from './permissions';
 import type { DecisionInstanceData } from './schemas/instanceData';
 
 export interface TriggerPhaseAdvancementInput {
@@ -66,7 +66,7 @@ export async function triggerPhaseAdvancement({
   await assertProfileAccess({
     user,
     profileId: instance.profileId,
-    permissions: { decisions: permission.ADMIN },
+    permissions: decisionAdminPermissions,
   });
 
   if (instance.status !== ProcessStatus.PUBLISHED) {

@@ -2,7 +2,7 @@ import { db, eq } from '@op/db/client';
 import { organizations } from '@op/db/schema';
 import { logger } from '@op/logging';
 import { User } from '@op/supabase/lib';
-import { checkPermission, collapseRoles, permission } from 'access-zones';
+import { permission } from 'access-zones';
 import type { NormalizedRole } from 'access-zones';
 
 import { NotFoundError, UnauthorizedError } from '../../utils';
@@ -13,7 +13,11 @@ import {
 } from '../access';
 import { getCachedInstance } from './getCachedInstance';
 import type { DecisionRolePermissions } from './permissions';
-import { fromDecisionBitField } from './permissions';
+import {
+  fromDecisionBitField,
+  getRolesDecisionBits,
+  resolveDecisionAccess,
+} from './permissions';
 import { resolveManualSelectionStatus } from './resolveManualSelectionStatus';
 import type { DecisionInstanceData } from './schemas/instanceData';
 
@@ -22,32 +26,13 @@ export interface GetInstanceInput {
   user: User | undefined;
 }
 
-const ALL_TRUE_ACCESS: DecisionRolePermissions = {
-  delete: true,
-  update: true,
-  read: true,
-  create: true,
-  admin: true,
-  inviteMembers: true,
-  review: true,
-  submitProposals: true,
-  vote: true,
-};
-
-const getRolesDecisionBits = (roles: NormalizedRole[]): number =>
-  collapseRoles(roles)['decisions'] ?? 0;
-
 const resolveInstanceAccess = async (
   user: AccessUser | undefined,
   instance: { profileId: string; ownerProfileId: string | null },
   profileRoles: NormalizedRole[],
 ): Promise<DecisionRolePermissions> => {
   if (profileRoles.length > 0) {
-    // Profile admins bypass decision-zone role checks — they have full access
-    if (checkPermission({ profile: permission.ADMIN }, profileRoles)) {
-      return ALL_TRUE_ACCESS;
-    }
-    return fromDecisionBitField(getRolesDecisionBits(profileRoles));
+    return resolveDecisionAccess(profileRoles);
   }
 
   // Fall back to org-level roles

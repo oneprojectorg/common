@@ -7,6 +7,41 @@ import { describe, expect, it } from 'vitest';
 import { createAuthenticatedCaller } from '../../../test/supabase-utils';
 
 describe.concurrent('rejectProposal', () => {
+  it('lets a profile admin without Manage Process reject a proposal', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const profileAdmin = await testData.createProfileAdminUser({
+      organization: setup.organization,
+      instanceProfileId: setup.instance.profileId,
+    });
+    const [proposal, profileAdminCaller] = await Promise.all([
+      testData.createProposal({
+        userEmail: setup.userEmail,
+        processInstanceId: setup.instance.instance.id,
+        proposalData: { title: 'Proposal' },
+        status: ProposalStatus.SUBMITTED,
+      }),
+      createAuthenticatedCaller(profileAdmin.email),
+    ]);
+
+    await profileAdminCaller.decision.rejectProposal({
+      proposalId: proposal.id,
+      reason: RejectionReason.INELIGIBLE,
+    });
+
+    const row = await db.query.proposals.findFirst({
+      where: { id: proposal.id },
+      columns: { status: true },
+    });
+    expect(row?.status).toBe(ProposalStatus.REJECTED);
+  });
+
   it("rejects the proposal's author, who is admin of the proposal but not the decision", async ({
     task,
     onTestFinished,

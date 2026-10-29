@@ -3,8 +3,8 @@ import { processPhases, profiles } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 
 import { NotFoundError, ValidationError } from '../../utils';
+import { assertDecisionAdmin } from './decisionAuth';
 import { lockProcessInstanceOrThrow } from './lockProcessInstance';
-import { assertDecisionAdmin } from './phaseHelpers';
 
 export interface PhasePlacement {
   phaseId: string;

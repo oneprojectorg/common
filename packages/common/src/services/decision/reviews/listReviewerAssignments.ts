@@ -5,13 +5,13 @@ import {
   proposalReviews,
 } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
-import { permission } from 'access-zones';
 
 import { UnauthorizedError } from '../../../utils';
 import { assertProfileAccess } from '../../assert';
 import { getEligibleReviewerProfileIds } from '../getEligibleReviewerProfileIds';
 import { getInstance } from '../getInstance';
 import { listAssignmentsForReviewer } from '../listReviewAssignments';
+import { decisionAdminPermissions } from '../permissions';
 import type { InstancePhaseRef } from '../schemas/instance';
 import {
   type ReviewerAssignments,
@@ -52,7 +52,7 @@ export async function listReviewerAssignments({
   await assertProfileAccess({
     user,
     profileId: instance.profileId,
-    permissions: { decisions: permission.ADMIN },
+    permissions: decisionAdminPermissions,
   });
 
   assertInstancePhase({ instance, phaseId });

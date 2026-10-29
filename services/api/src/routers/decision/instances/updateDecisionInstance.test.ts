@@ -42,6 +42,27 @@ async function getFirstPhaseId(instanceId: string) {
 }
 
 describe.concurrent('updateDecisionInstance', () => {
+  it('lets a profile admin without Manage Process rename the instance', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({ instanceCount: 1 });
+    const profileAdmin = await testData.createProfileAdminUser({
+      organization: setup.organization,
+      instanceProfileId: setup.instance.profileId,
+    });
+    const caller = await createAuthenticatedCaller(profileAdmin.email);
+
+    const newName = `Renamed ${task.id}`;
+    const result = await caller.decision.updateDecisionInstance({
+      instanceId: setup.instance.instance.id,
+      name: newName,
+    });
+
+    expect(result.processInstance.name).toBe(newName);
+  });
+
   it('should update instance name', async ({ task, onTestFinished }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
 

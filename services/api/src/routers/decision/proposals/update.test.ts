@@ -73,6 +73,36 @@ async function setProposalEditingRule(
 }
 
 describe.concurrent('updateProposal visibility', () => {
+  it('lets a profile admin without Manage Process hide a proposal', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const profileAdmin = await testData.createProfileAdminUser({
+      organization: setup.organization,
+      instanceProfileId: setup.instance.profileId,
+    });
+    const [proposal, profileAdminCaller] = await Promise.all([
+      testData.createProposal({
+        userEmail: setup.userEmail,
+        processInstanceId: setup.instance.instance.id,
+        proposalData: { title: 'Test Proposal', description: 'A test' },
+      }),
+      createAuthenticatedCaller(profileAdmin.email),
+    ]);
+
+    const result = await profileAdminCaller.decision.updateProposal({
+      proposalId: proposal.id,
+      data: { visibility: Visibility.HIDDEN },
+    });
+
+    expect(result.visibility).toBe(Visibility.HIDDEN);
+  });
+
   it('should allow admin to hide a proposal', async ({
     task,
     onTestFinished,
@@ -652,6 +682,38 @@ describe.concurrent('updateProposal post-submission editing rule', () => {
     });
 
     expect(result.profile.name).toBe('Edited Draft');
+  });
+
+  it("lets a profile admin without Manage Process edit another member's proposal", async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const profileAdmin = await testData.createProfileAdminUser({
+      organization: setup.organization,
+      instanceProfileId: setup.instance.profileId,
+    });
+    const [proposal, profileAdminCaller] = await Promise.all([
+      testData.createProposal({
+        userEmail: setup.userEmail,
+        processInstanceId: setup.instance.instance.id,
+        proposalData: { title: 'Submitted Proposal' },
+        status: ProposalStatus.SUBMITTED,
+      }),
+      createAuthenticatedCaller(profileAdmin.email),
+    ]);
+    await setProposalEditingRule(setup.instance.instance.id, false);
+
+    const result = await profileAdminCaller.decision.updateProposal({
+      proposalId: proposal.id,
+      data: { title: 'Profile Admin Edit' },
+    });
+
+    expect(result.profile.name).toBe('Profile Admin Edit');
   });
 
   it('should still allow an instance admin to edit a submitted proposal when the phase disables editing', async ({

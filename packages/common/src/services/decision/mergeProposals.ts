@@ -5,10 +5,9 @@ import {
   proposalRelationships,
 } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
-import { permission } from 'access-zones';
 
 import { ConflictError, ValidationError } from '../../utils';
-import { assertProfileAccess } from '../assert';
+import { assertDecisionAdmin } from './decisionAuth';
 import { getProposalAccessContext } from './getProposalAccessContext';
 import { findLiveMergedEdge } from './proposalSupersession';
 import type { MergeProposalsInput } from './schemas/proposalRelationships';
@@ -48,10 +47,9 @@ export async function mergeProposals({
   // against; everything the target could reveal waits behind that assert.
   const source = await getProposalAccessContext(sourceProposalId);
 
-  await assertProfileAccess({
+  await assertDecisionAdmin({
     user,
-    profileId: source.instance.profileId,
-    permissions: { decisions: permission.ADMIN },
+    decisionProfileId: source.instance.profileId,
   });
 
   const [target, targetAlreadyMerged] = await Promise.all([

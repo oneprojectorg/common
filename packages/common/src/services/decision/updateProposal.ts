@@ -24,6 +24,7 @@ import { getProfileAccessRoles } from '../access';
 import { assertUserByAuthId } from '../assert';
 import { withBoundaryCategoryLabel } from './boundaryCategory';
 import { getProposalFragmentNames } from './getProposalFragmentNames';
+import { decisionAdminPermissions } from './permissions';
 import type {
   CheckpointVersion,
   ProposalDataInput,
@@ -300,7 +301,7 @@ export async function assertProposalUpdateAccess({
   });
 
   if (data.status || data.visibility) {
-    if (!checkPermission({ decisions: permission.ADMIN }, instanceRoles)) {
+    if (!checkPermission(decisionAdminPermissions, instanceRoles)) {
       throw new UnauthorizedError("You don't have access to do this");
     }
     return;
@@ -313,7 +314,10 @@ export async function assertProposalUpdateAccess({
 
   if (
     !checkPermission({ profile: permission.UPDATE }, proposalRoles) &&
-    !checkPermission({ decisions: permission.UPDATE }, instanceRoles)
+    !checkPermission(
+      [{ decisions: permission.UPDATE }, ...decisionAdminPermissions],
+      instanceRoles,
+    )
   ) {
     throw new UnauthorizedError("You don't have access to do this");
   }
@@ -329,7 +333,7 @@ export async function assertProposalUpdateAccess({
   }
 
   const isInstanceAdmin = checkPermission(
-    [{ profile: permission.ADMIN }, { decisions: permission.ADMIN }],
+    decisionAdminPermissions,
     instanceRoles,
   );
 

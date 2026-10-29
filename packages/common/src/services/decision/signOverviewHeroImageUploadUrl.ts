@@ -1,11 +1,11 @@
 import { db } from '@op/db/client';
 import type { User } from '@op/supabase/lib';
-import { permission } from 'access-zones';
 
 import { NotFoundError } from '../../utils';
 import { signStorageUploadUrl } from '../../utils/signStorageUploadUrl';
 import { assertProfileAccess } from '../assert';
 import { overviewHeroImagePathPrefix } from './overviewHeroImageStorage';
+import { decisionAdminPermissions } from './permissions';
 
 export interface SignOverviewHeroImageUploadUrlInput {
   instanceId: string;
@@ -20,7 +20,7 @@ export interface SignOverviewHeroImageUploadUrlResult {
 
 /**
  * Issues a Supabase signed upload URL for a decision overview's hero image.
- * Admin-only: the caller must hold decisions ADMIN on the instance's profile,
+ * Admin-only: the caller must be a decision admin on the instance's profile,
  * asserted before any storage access so non-admins can't mint upload URLs.
  * The client PUTs the file binary straight to storage, then calls
  * `updateOverviewHeroImage` to validate + persist the path — the same
@@ -45,7 +45,7 @@ export async function signOverviewHeroImageUploadUrl({
   await assertProfileAccess({
     user: { id: user.id },
     profileId: instance.profileId,
-    permissions: { decisions: permission.ADMIN },
+    permissions: decisionAdminPermissions,
   });
 
   return signStorageUploadUrl({

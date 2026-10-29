@@ -2,12 +2,12 @@ import { type DbClient, and, eq, isNull, sql } from '@op/db/client';
 import { ProcessStatus, proposals } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 
+import { assertDecisionAdmin } from './decisionAuth';
 import { getProposalAccessContext } from './getProposalAccessContext';
 import { getPhaseProposalSqlScope } from './getProposalsForPhase';
 import { isLegacyInstanceData } from './isLegacyInstance';
 import type { LockedProcessInstance } from './lockProcessInstance';
 import { phaseEligiblePredicate } from './phaseEligibility';
-import { assertDecisionAdmin } from './phaseHelpers';
 import { resolveManualSelectionStatus } from './resolveManualSelectionStatus';
 import {
   type PhaseInstanceData,

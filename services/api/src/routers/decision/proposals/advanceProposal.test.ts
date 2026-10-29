@@ -130,6 +130,8 @@ async function seedInstance(
 
   return {
     instanceId,
+    organization: setup.organization,
+    instanceProfileId: setup.instance.profileId,
     author,
     caller,
     creatorProfileId: creator?.profileId,
@@ -196,6 +198,39 @@ type IneligibleSetup = {
 };
 
 describe.concurrent('advanceProposal', () => {
+  it('lets a profile admin without Manage Process advance a proposal', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { instanceId, organization, instanceProfileId, proposalIds } =
+      await seedInstance(testData);
+    const { leftBehind } = await advanceLeavingOneBehind(
+      testData,
+      instanceId,
+      proposalIds,
+    );
+    const profileAdmin = await testData.createProfileAdminUser({
+      organization,
+      instanceProfileId,
+    });
+    const profileAdminCaller = await createAuthenticatedCaller(
+      profileAdmin.email,
+    );
+
+    await expect(
+      profileAdminCaller.decision.getProposalAdvanceTarget({
+        proposalId: leftBehind,
+      }),
+    ).resolves.toEqual({ phaseId: 'review', phaseName: 'Review' });
+    await profileAdminCaller.decision.advanceProposal({
+      proposalId: leftBehind,
+      phaseId: 'review',
+    });
+
+    expect(await getReviewPhaseIds(instanceId)).toContain(leftBehind);
+  });
+
   it('offers the current phase only for a proposal outside it', async ({
     task,
     onTestFinished,

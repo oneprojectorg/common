@@ -1,4 +1,5 @@
-import { permission } from 'access-zones';
+import { checkPermission, collapseRoles, permission } from 'access-zones';
+import type { NormalizedRole } from 'access-zones';
 
 /**
  * Decision permission capabilities.
@@ -18,6 +19,15 @@ export const decisionPermission = {
   SUBMIT_PROPOSALS: 0b100_00000,
   VOTE: 0b1000_00000,
 } as const;
+
+/**
+ * Who administers a decision: an admin of its profile, or a role with
+ * "Manage Process".
+ */
+export const decisionAdminPermissions = [
+  { profile: permission.ADMIN },
+  { decisions: permission.ADMIN },
+];
 
 export type DecisionRolePermissions = {
   delete: boolean;
@@ -88,4 +98,30 @@ export function fromDecisionBitField(
     submitProposals: (bitField & decisionPermission.SUBMIT_PROPOSALS) !== 0,
     vote: (bitField & decisionPermission.VOTE) !== 0,
   };
+}
+
+export const getRolesDecisionBits = (roles: NormalizedRole[]): number =>
+  collapseRoles(roles)['decisions'] ?? 0;
+
+const ALL_TRUE_ACCESS: DecisionRolePermissions = {
+  delete: true,
+  update: true,
+  read: true,
+  create: true,
+  admin: true,
+  inviteMembers: true,
+  review: true,
+  submitProposals: true,
+  vote: true,
+};
+
+/** Capabilities from the caller's roles on the decision's profile. */
+export function resolveDecisionAccess(
+  profileRoles: NormalizedRole[],
+): DecisionRolePermissions {
+  // Profile admins bypass decision-zone role checks — they have full access
+  if (checkPermission({ profile: permission.ADMIN }, profileRoles)) {
+    return ALL_TRUE_ACCESS;
+  }
+  return fromDecisionBitField(getRolesDecisionBits(profileRoles));
 }

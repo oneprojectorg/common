@@ -6,7 +6,7 @@ import { permission } from 'access-zones';
 import { NotFoundError, UnauthorizedError } from '../../utils';
 import { assertInstanceProfileAccess } from '../access';
 import { assertUserByAuthId } from '../assert';
-import { decisionPermission } from './permissions';
+import { decisionAdminPermissions, decisionPermission } from './permissions';
 import type { ReviewerCategory } from './schemas/reviews';
 
 /**
@@ -46,7 +46,10 @@ export async function listReviewerCategories({
   await assertInstanceProfileAccess({
     user,
     instance,
-    profilePermissions: reviewOrAdmin,
+    profilePermissions: [
+      { decisions: decisionPermission.REVIEW },
+      ...decisionAdminPermissions,
+    ],
     orgFallbackPermissions: reviewOrAdmin,
   });
 

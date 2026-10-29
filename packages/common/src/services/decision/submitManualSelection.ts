@@ -7,7 +7,6 @@ import {
 import { Events, event } from '@op/events';
 import { logger } from '@op/logging';
 import type { User } from '@op/supabase/lib';
-import { permission } from 'access-zones';
 
 import {
   CommonError,
@@ -21,6 +20,7 @@ import { attachProposalsToTransition } from './attachProposalsToTransition';
 import { getProposalIdsForPhase } from './getProposalsForPhase';
 import { isLegacyInstanceData } from './isLegacyInstance';
 import { lockProcessInstance } from './lockProcessInstance';
+import { decisionAdminPermissions } from './permissions';
 import { processResults } from './processResults';
 import {
   RESULT_NOTIFICATION_MESSAGE_MAX_LENGTH,
@@ -93,7 +93,7 @@ export async function submitManualSelection({
   await assertProfileAccess({
     user,
     profileId: instance.profileId,
-    permissions: { decisions: permission.ADMIN },
+    permissions: decisionAdminPermissions,
   });
 
   if (instance.status !== ProcessStatus.PUBLISHED) {

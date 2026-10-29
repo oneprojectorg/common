@@ -3,11 +3,11 @@ import { type ProcessPhase, type Profile, processPhases } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 
 import { NotFoundError, ValidationError } from '../../utils';
+import { assertDecisionAdmin } from './decisionAuth';
 import { lockProcessInstanceOrThrow } from './lockProcessInstance';
 import {
   MAX_PHASES_PER_DECISION,
   type PhaseData,
-  assertDecisionAdmin,
   assertPhaseSchemasCompile,
   assertPhaseSettings,
   insertPhase,
