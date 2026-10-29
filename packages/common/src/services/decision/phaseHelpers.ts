@@ -18,7 +18,10 @@ import {
   type PhaseSettingsSchema,
   assertSettingsMatchSchema,
 } from './schemas/instanceData';
-import { MAX_PHASE_NAME_LENGTH, isPhaseNameTooLong } from './schemas/phaseName';
+import {
+  MAX_PHASE_NAME_LENGTH,
+  phaseNameLengthSchema,
+} from './schemas/phaseName';
 import { MAX_PHASES_PER_DECISION } from './utils/phaseOrder';
 
 // phaseId and name live on the phase's profile.
@@ -28,7 +31,7 @@ export type PhaseData = Omit<PhaseInstanceData, 'phaseId' | 'name'>;
 // instance-scoped id; a row minted from it keeps that id so the two join.
 type PhaseRowData = PhaseData & { phaseId?: string };
 
-export { MAX_PHASES_PER_DECISION, MAX_PHASE_NAME_LENGTH };
+export { MAX_PHASES_PER_DECISION };
 
 type InstanceDataPhase = Pick<PhaseInstanceData, 'phaseId' | 'name'>;
 
@@ -52,13 +55,6 @@ export const insertPhase = async ({
   // Only tests pass this, to force slug clashes.
   generateSlug?: () => string;
 }): Promise<{ phase: ProcessPhase; profile: Profile }> => {
-  if (isPhaseNameTooLong(name)) {
-    throw new ValidationError(
-      `A phase name can have at most ${MAX_PHASE_NAME_LENGTH} characters`,
-      { name: `Shorten "${previewPhaseName(name)}…"` },
-    );
-  }
-
   const profile = await insertPhaseProfile({ tx, name, generateSlug });
 
   const [phase] = await tx
@@ -111,9 +107,9 @@ export const assertPhasesCanBeMinted = (
     phaseIds.add(phase.phaseId);
 
     const name = getPhaseProfileName(phase);
-    if (isPhaseNameTooLong(name)) {
+    if (!phaseNameLengthSchema.safeParse(name).success) {
       throw new ValidationError(
-        `Phase "${previewPhaseName(name)}…" has a name longer than ${MAX_PHASE_NAME_LENGTH} characters`,
+        `Phase "${previewPhaseName(name)}…": a phase name can have at most ${MAX_PHASE_NAME_LENGTH} characters`,
         { name: `Shorten "${previewPhaseName(name)}…"` },
       );
     }
