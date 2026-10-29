@@ -16,6 +16,7 @@ import {
 } from 'react-email';
 
 import TailwindConfig from '../tailwind.config';
+import { InlineLink } from './InlineLink';
 
 const EmailTemplate = ({
   children,
@@ -90,7 +91,11 @@ const EmailTemplate = ({
             </Container>
             <Container className="mx-auto mb-0 max-w-[600px] p-8 font-sans font-normal">
               <Text className="mt-0 mb-0 text-sm">
-                Common is maintained by One Project.
+                Common is maintained by{' '}
+                <InlineLink href="https://oneproject.org">
+                  One Project
+                </InlineLink>
+                .
               </Text>
               <Text className="mt-2 mb-0 text-sm">
                 You’re receiving this email as part of our authentication and
