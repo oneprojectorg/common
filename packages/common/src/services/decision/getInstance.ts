@@ -16,6 +16,7 @@ import type { DecisionRolePermissions } from './permissions';
 import { fromDecisionBitField } from './permissions';
 import { resolveManualSelectionStatus } from './resolveManualSelectionStatus';
 import type { DecisionInstanceData } from './schemas/instanceData';
+import { redactHiddenBudget } from './templateBudget';
 
 export interface GetInstanceInput {
   instanceId: string;
@@ -102,20 +103,10 @@ export const getInstance = async ({ instanceId, user }: GetInstanceInput) => {
       profileRoles,
     );
 
-    // Filter budget from phase settings if hideBudget is true
     const instanceData = instance.instanceData as DecisionInstanceData;
-    const filteredInstanceData =
-      instanceData.config?.hideBudget && !access.admin
-        ? {
-            ...instanceData,
-            phases: instanceData.phases.map((phase) => ({
-              ...phase,
-              settings: phase.settings
-                ? { ...phase.settings, budget: undefined }
-                : phase.settings,
-            })),
-          }
-        : instanceData;
+    const filteredInstanceData = access.admin
+      ? instanceData
+      : redactHiddenBudget(instanceData);
 
     const manualSelectionStatus = await resolveManualSelectionStatus({
       instance: {

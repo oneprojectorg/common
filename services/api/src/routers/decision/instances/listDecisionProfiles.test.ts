@@ -56,6 +56,64 @@ describe.concurrent('listDecisionProfiles', () => {
     });
   });
 
+  it('hides the phase budget from a member in the list when the process hides the budget', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup();
+    const instance = await testData.createInstanceForProcess({
+      process: setup.process,
+      user: setup.user,
+      name: 'Hidden budget list',
+      budget: 25000,
+      config: { hideBudget: true },
+    });
+    const member = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [instance.profileId],
+    });
+
+    const caller = await createAuthenticatedCaller(member.email);
+    const result = await caller.decision.listDecisionProfiles({ limit: 10 });
+
+    const item = result.items.find((p) => p.id === instance.profileId);
+    expect(item).toBeDefined();
+    expect(item?.processInstance.access?.admin).toBe(false);
+    expect(
+      item?.processInstance.instanceData.phases?.[0]?.settings?.budget,
+    ).toBeUndefined();
+  });
+
+  it('keeps the phase budget for an admin in the list when the process hides the budget', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({ grantAccess: true });
+    const instance = await testData.createInstanceForProcess({
+      process: setup.process,
+      user: setup.user,
+      name: 'Hidden budget list admin',
+      budget: 25000,
+      config: { hideBudget: true },
+    });
+    await testData.grantProfileAccess(
+      instance.profileId,
+      setup.user.id,
+      setup.userEmail,
+    );
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+    const result = await caller.decision.listDecisionProfiles({ limit: 10 });
+
+    const item = result.items.find((p) => p.id === instance.profileId);
+    expect(item).toBeDefined();
+    expect(
+      item?.processInstance.instanceData.phases?.[0]?.settings?.budget,
+    ).toBe(25000);
+  });
+
   it('should filter by status', async ({ task, onTestFinished }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
 

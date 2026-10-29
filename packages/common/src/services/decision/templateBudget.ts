@@ -47,6 +47,39 @@ const readBudget = (
     : undefined;
 };
 
+export interface RedactablePhase {
+  settings?: Record<string, unknown> | null;
+}
+
+export interface RedactableInstanceData {
+  config?: { hideBudget?: boolean } | null;
+  hideBudget?: boolean;
+  budget?: number;
+  phases?: RedactablePhase[] | null;
+}
+
+export function redactHiddenBudget<T extends RedactableInstanceData>(
+  instanceData: T,
+): T {
+  const hideBudget =
+    instanceData.config?.hideBudget === true ||
+    instanceData.hideBudget === true;
+  if (!hideBudget) {
+    return instanceData;
+  }
+  return Object.assign({}, instanceData, {
+    budget: undefined,
+    phases:
+      instanceData.phases?.map((phase) =>
+        Object.assign({}, phase, {
+          settings: phase.settings
+            ? { ...phase.settings, budget: undefined }
+            : phase.settings,
+        }),
+      ) ?? instanceData.phases,
+  });
+}
+
 export function assertAllocationsWithinBudget({
   allocations,
   processBudget,

@@ -1,11 +1,13 @@
 import { cache } from '@op/cache';
 import { db } from '@op/db/client';
 import { EntityType } from '@op/db/schema';
-import { permission } from 'access-zones';
+import { checkPermission, permission } from 'access-zones';
 
 import { UnauthorizedError } from '../../utils';
 import type { AccessUser } from '../access/cacheKeys';
 import { assertProfileAccess } from '../assert';
+import type { DecisionInstanceData } from './schemas/instanceData';
+import { redactHiddenBudget } from './templateBudget';
 
 const decisionProfileQueryConfig = {
   with: {
@@ -89,7 +91,7 @@ export const getDecisionBySlug = async ({
   // listDecisionProfiles, and the SMS SHOW path (getSmsDecisionDescription) counts
   // its ballot itself. Keeping the hot-path slug fetch aggregate-free saves a
   // proposals table scan per view.
-  await assertProfileAccess({
+  const roles = await assertProfileAccess({
     user,
     profileId: profile.id,
     permissions: [
@@ -99,8 +101,19 @@ export const getDecisionBySlug = async ({
     notMemberMessage: 'User does not have access to this process',
   });
 
+  const isAdmin =
+    checkPermission({ profile: permission.ADMIN }, roles) ||
+    checkPermission({ decisions: permission.ADMIN }, roles);
+
   return {
     ...profile,
-    processInstance: instance,
+    processInstance: isAdmin
+      ? instance
+      : {
+          ...instance,
+          instanceData: redactHiddenBudget(
+            instance.instanceData as DecisionInstanceData,
+          ),
+        },
   };
 };

@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   assertAllocationsWithinBudget,
   getProcessBudget,
+  redactHiddenBudget,
   templateCollectsBudget,
 } from './templateBudget';
 import type { ProposalTemplateSchema } from './types';
@@ -117,5 +118,46 @@ describe('assertAllocationsWithinBudget', () => {
         processBudget: 1,
       }),
     ).not.toThrow();
+  });
+});
+
+describe('redactHiddenBudget', () => {
+  it('strips every phase budget and the top-level budget when the config hides the budget', () => {
+    const redacted = redactHiddenBudget({
+      config: { hideBudget: true },
+      budget: 25000,
+      phases: [
+        { settings: { budget: 25000, other: 'kept' } },
+        { settings: { budget: 9000 } },
+        { settings: undefined },
+      ],
+    });
+
+    expect(redacted.budget).toBeUndefined();
+    expect(redacted.phases?.[0]?.settings).toMatchObject({ other: 'kept' });
+    expect(redacted.phases?.[0]?.settings?.budget).toBeUndefined();
+    expect(redacted.phases?.[1]?.settings?.budget).toBeUndefined();
+    expect(redacted.phases?.[2]?.settings).toBeUndefined();
+  });
+
+  it('strips the budgets when only the legacy top-level hideBudget flag is set', () => {
+    const redacted = redactHiddenBudget({
+      hideBudget: true,
+      budget: 25000,
+      phases: [{ settings: { budget: 25000 } }],
+    });
+
+    expect(redacted.budget).toBeUndefined();
+    expect(redacted.phases?.[0]?.settings?.budget).toBeUndefined();
+  });
+
+  it('returns the input untouched when the budget is not hidden', () => {
+    const instanceData = {
+      config: { hideBudget: false },
+      budget: 25000,
+      phases: [{ settings: { budget: 25000 } }],
+    };
+
+    expect(redactHiddenBudget(instanceData)).toBe(instanceData);
   });
 });

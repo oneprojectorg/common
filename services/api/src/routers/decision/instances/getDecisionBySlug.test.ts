@@ -115,6 +115,85 @@ describe.concurrent('getDecisionBySlug', () => {
     expect(result.processInstance.owner?.id).toBe(setup.organization.profileId);
   });
 
+  it('hides the phase budget from a member when the process hides the budget', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup();
+    const instance = await testData.createInstanceForProcess({
+      process: setup.process,
+      user: setup.user,
+      name: 'Hidden budget slug',
+      budget: 25000,
+      config: { hideBudget: true },
+    });
+    const member = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [instance.profileId],
+    });
+
+    const caller = await createAuthenticatedCaller(member.email);
+    const result = await caller.decision.getDecisionBySlug({
+      slug: instance.slug,
+    });
+
+    const phases = result.processInstance.instanceData.phases;
+    expect(phases?.[0]?.settings?.budget).toBeUndefined();
+  });
+
+  it('keeps the phase budget for an admin when the process hides the budget', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({ grantAccess: true });
+    const instance = await testData.createInstanceForProcess({
+      process: setup.process,
+      user: setup.user,
+      name: 'Hidden budget slug admin',
+      budget: 25000,
+      config: { hideBudget: true },
+    });
+    await testData.grantProfileAccess(
+      instance.profileId,
+      setup.user.id,
+      setup.userEmail,
+    );
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+    const result = await caller.decision.getDecisionBySlug({
+      slug: instance.slug,
+    });
+
+    const phases = result.processInstance.instanceData.phases;
+    expect(phases?.[0]?.settings?.budget).toBe(25000);
+  });
+
+  it('hides the phase budget from a no-JWT visitor on a public decision', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup();
+    const instance = await testData.createInstanceForProcess({
+      process: setup.process,
+      user: setup.user,
+      name: 'Hidden budget public',
+      budget: 25000,
+      config: { hideBudget: true },
+    });
+    await testData.makeDecisionPublic(instance.profileId);
+
+    const caller = createCaller(await createTestContextWithSession(null));
+    const result = await caller.decision.getDecisionBySlug({
+      slug: instance.slug,
+    });
+
+    const phases = result.processInstance.instanceData.phases;
+    expect(phases?.[0]?.settings?.budget).toBeUndefined();
+  });
+
   it('reflects instance updates immediately (slug-snapshot cache invalidation)', async ({
     task,
     onTestFinished,

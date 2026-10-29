@@ -7,7 +7,7 @@ import {
   profileUsers,
 } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
-import { collapseRoles } from 'access-zones';
+import { checkPermission, collapseRoles, permission } from 'access-zones';
 
 import {
   PAGE_LIMIT,
@@ -22,6 +22,8 @@ import {
   type DecisionRolePermissions,
   fromDecisionBitField,
 } from './permissions';
+import type { DecisionInstanceData } from './schemas/instanceData';
+import { redactHiddenBudget } from './templateBudget';
 
 export const listDecisionProfiles = async ({
   user,
@@ -194,11 +196,17 @@ export const listDecisionProfiles = async ({
         : [];
       const collapsed = collapseRoles(roles);
       const access = fromDecisionBitField(collapsed.decisions ?? 0);
+      const isAdmin =
+        access.admin || checkPermission({ profile: permission.ADMIN }, roles);
+      const instanceData = isAdmin
+        ? instanceRest.instanceData
+        : redactHiddenBudget(instanceRest.instanceData as DecisionInstanceData);
 
       return {
         ...profileWithoutUsers,
         processInstance: {
           ...instanceRest,
+          instanceData,
           proposals,
           proposalCount,
           participantCount,
