@@ -22,7 +22,7 @@ notification among them) treat every row as a cast ballot, and
 
 ## Decision
 
-We will store the ballot before submission in `decision_ballot_drafts`,
+We will store the ballot before submission in `decisions_vote_drafts`,
 one row per voter and decision, keyed by
 `(process_instance_id, profile_id)`.
 

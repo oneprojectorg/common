@@ -14,8 +14,8 @@ import { decisionChatLines } from './decisionChatLines.sql';
 import { processInstances } from './processInstances.sql';
 import { profiles } from './profiles.sql';
 
-export const decisionBallotDrafts = pgTable(
-  'decision_ballot_drafts',
+export const decisionsVoteDrafts = pgTable(
+  'decisions_vote_drafts',
   {
     id: autoId().primaryKey(),
     processInstanceId: uuid('process_instance_id')
@@ -44,15 +44,15 @@ export const decisionBallotDrafts = pgTable(
   },
   (table) => [
     ...serviceRolePolicies,
-    uniqueIndex('decision_ballot_drafts_instance_profile_uniq').on(
+    uniqueIndex('decisions_vote_drafts_instance_profile_uniq').on(
       table.processInstanceId,
       table.profileId,
     ),
     check(
-      'decision_ballot_drafts_picks_chk',
+      'decisions_vote_drafts_picks_chk',
       sql`jsonb_typeof(${table.picks}) = 'array'`,
     ),
   ],
 );
 
-export type DecisionBallotDraft = typeof decisionBallotDrafts.$inferSelect;
+export type DecisionsVoteDraft = typeof decisionsVoteDrafts.$inferSelect;

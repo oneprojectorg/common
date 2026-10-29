@@ -397,9 +397,9 @@ export const relations = defineRelations(schema, (r) => ({
       from: r.processInstances.id,
       to: r.decisionVoterEnrolments.processInstanceId,
     }),
-    ballotDrafts: r.many.decisionBallotDrafts({
+    voteDrafts: r.many.decisionsVoteDrafts({
       from: r.processInstances.id,
-      to: r.decisionBallotDrafts.processInstanceId,
+      to: r.decisionsVoteDrafts.processInstanceId,
     }),
     process: r.one.decisionProcesses({
       from: r.processInstances.processId,
@@ -637,14 +637,14 @@ export const relations = defineRelations(schema, (r) => ({
     }),
   },
 
-  decisionBallotDrafts: {
+  decisionsVoteDrafts: {
     processInstance: r.one.processInstances({
-      from: r.decisionBallotDrafts.processInstanceId,
+      from: r.decisionsVoteDrafts.processInstanceId,
       to: r.processInstances.id,
       optional: false,
     }),
     profile: r.one.profiles({
-      from: r.decisionBallotDrafts.profileId,
+      from: r.decisionsVoteDrafts.profileId,
       to: r.profiles.id,
       optional: false,
     }),

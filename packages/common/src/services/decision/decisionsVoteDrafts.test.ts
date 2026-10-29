@@ -1,6 +1,6 @@
 import { TestDecisionsDataManager } from '@op/common/testing';
 import { db, sql } from '@op/db/client';
-import { decisionBallotDrafts } from '@op/db/schema';
+import { decisionsVoteDrafts } from '@op/db/schema';
 import { randomUUID } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 
@@ -17,7 +17,7 @@ const seedVoter = async (testData: TestDecisionsDataManager) => {
   };
 };
 
-describe.concurrent('decision_ballot_drafts', () => {
+describe.concurrent('decisions_vote_drafts', () => {
   it('given a draft with three picks, when it is read back, then the picks keep their order and the cursor is null', async ({
     task,
     onTestFinished,
@@ -26,10 +26,10 @@ describe.concurrent('decision_ballot_drafts', () => {
     const key = await seedVoter(testData);
     const picks = [randomUUID(), randomUUID(), randomUUID()];
 
-    await db.insert(decisionBallotDrafts).values({ ...key, picks });
+    await db.insert(decisionsVoteDrafts).values({ ...key, picks });
 
     await expect(
-      db.query.decisionBallotDrafts.findFirst({ where: key }),
+      db.query.decisionsVoteDrafts.findFirst({ where: key }),
     ).resolves.toMatchObject({ picks, pageCursor: null });
   });
 
@@ -39,10 +39,10 @@ describe.concurrent('decision_ballot_drafts', () => {
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
     const key = await seedVoter(testData);
-    await db.insert(decisionBallotDrafts).values({ ...key, picks: [] });
+    await db.insert(decisionsVoteDrafts).values({ ...key, picks: [] });
 
     await expect(
-      db.insert(decisionBallotDrafts).values({ ...key, picks: [] }),
+      db.insert(decisionsVoteDrafts).values({ ...key, picks: [] }),
     ).rejects.toMatchObject({ cause: { code: '23505' } });
   });
 
@@ -55,11 +55,11 @@ describe.concurrent('decision_ballot_drafts', () => {
 
     await expect(
       db.execute(
-        sql`insert into decision_ballot_drafts (process_instance_id, profile_id, picks) values (${key.processInstanceId}, ${key.profileId}, '{"a":1}'::jsonb)`,
+        sql`insert into decisions_vote_drafts (process_instance_id, profile_id, picks) values (${key.processInstanceId}, ${key.profileId}, '{"a":1}'::jsonb)`,
       ),
     ).rejects.toMatchObject({ cause: { code: '23514' } });
     await expect(
-      db.query.decisionBallotDrafts.findFirst({ where: key }),
+      db.query.decisionsVoteDrafts.findFirst({ where: key }),
     ).resolves.toBeUndefined();
   });
 });
