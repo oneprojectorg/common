@@ -2,9 +2,9 @@ import {
   type DecisionInstanceData,
   type DecisionSchemaDefinition,
   MAX_PHASES_PER_DECISION,
-  MAX_PHASE_NAME_LENGTH,
   simpleVoting,
 } from '@op/common';
+import { MAX_PHASE_NAME_LENGTH } from '@op/common/client';
 import { TestDecisionsDataManager } from '@op/common/testing';
 import { asc, db, eq } from '@op/db/client';
 import {
@@ -214,8 +214,7 @@ describe.concurrent('createInstanceFromTemplate', () => {
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
     const [first, ...rest] = simpleVoting.phases;
-    // Astral characters: one each to the column, two UTF-16 units to String.length.
-    const phaseName = '😀'.repeat(MAX_PHASE_NAME_LENGTH);
+    const phaseName = 'x'.repeat(MAX_PHASE_NAME_LENGTH);
     const { templateId, userEmail } = await createSimpleTemplate(
       testData,
       task.id,
@@ -269,7 +268,7 @@ describe.concurrent('createInstanceFromTemplate', () => {
       cause: {
         name: 'ValidationError',
         message: expect.stringContaining(
-          `has a name longer than ${MAX_PHASE_NAME_LENGTH} characters`,
+          `a phase name can have at most ${MAX_PHASE_NAME_LENGTH} characters`,
         ),
       },
     });

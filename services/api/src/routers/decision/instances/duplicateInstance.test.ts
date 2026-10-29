@@ -1,10 +1,10 @@
 import {
   type DecisionInstanceData,
   MAX_PHASES_PER_DECISION,
-  MAX_PHASE_NAME_LENGTH,
   simpleVoting,
 } from '@op/common';
 import type { DecisionSchemaDefinition } from '@op/common';
+import { MAX_PHASE_NAME_LENGTH } from '@op/common/client';
 import { TestDecisionsDataManager } from '@op/common/testing';
 import { asc, db, eq, sql } from '@op/db/client';
 import {
@@ -244,7 +244,7 @@ describe.concurrent('duplicateInstance', () => {
     },
     {
       label: 'a phase name longer than a profile can hold',
-      message: `has a name longer than ${MAX_PHASE_NAME_LENGTH} characters`,
+      message: `a phase name can have at most ${MAX_PHASE_NAME_LENGTH} characters`,
       phases: [
         { phaseId: 'long', name: 'x'.repeat(MAX_PHASE_NAME_LENGTH + 1) },
       ],
