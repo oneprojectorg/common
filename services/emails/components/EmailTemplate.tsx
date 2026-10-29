@@ -73,7 +73,7 @@ const EmailTemplate = ({
                       <Row>
                         <Column align="left" width={24}>
                           <Img
-                            src="https://common.oneproject.org/logo-common@2x.png"
+                            src="https://common.oneproject.org/Common.png"
                             alt="Common"
                             width="87"
                             height="16"
