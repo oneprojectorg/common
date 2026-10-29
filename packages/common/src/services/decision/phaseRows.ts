@@ -3,8 +3,7 @@ import { processInstances, processPhases, profiles } from '@op/db/schema';
 
 import {
   type PhaseRowData,
-  assertPhaseListFits,
-  assertPhaseNameFits,
+  assertPhasesCanBeMinted,
   getPhaseProfileName,
   insertPhase,
 } from './phaseHelpers';
@@ -125,7 +124,7 @@ export const insertPhaseRows = async ({
   processInstanceId: string;
   phases: PhaseInstanceData[];
 }): Promise<void> => {
-  assertPhaseListFits(phases);
+  assertPhasesCanBeMinted(phases);
 
   for (const [sortOrder, phase] of phases.entries()) {
     const { name: _name, ...data } = phase;
@@ -155,7 +154,7 @@ export const reconcilePhaseRows = async ({
   rows: PhaseRow[];
   phases: PhaseInstanceData[];
 }): Promise<PhaseRow[]> => {
-  assertPhaseListFits(phases);
+  assertPhasesCanBeMinted(phases);
 
   const rowByPhaseId = new Map(rows.map((row) => [phaseIdOf(row), row]));
   const reconciled: PhaseRow[] = [];
@@ -190,7 +189,6 @@ export const reconcilePhaseRows = async ({
       .where(eq(processPhases.id, row.id));
 
     if (row.name !== name) {
-      assertPhaseNameFits(name);
       await db
         .update(profiles)
         .set({ name })

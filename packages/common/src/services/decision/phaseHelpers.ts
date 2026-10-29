@@ -129,15 +129,6 @@ export const assertPhasesCanBeMinted = (
   }
 };
 
-export const assertPhaseNameFits = (name: string): void => {
-  if (isPhaseNameTooLong(name)) {
-    throw new ValidationError(
-      `A phase name can have at most ${MAX_PHASE_NAME_LENGTH} characters`,
-      { name: `Shorten "${previewPhaseName(name)}…"` },
-    );
-  }
-};
-
 export const assertPhaseSchemasCompile = ({
   rubricTemplate,
   proposalTemplate,
