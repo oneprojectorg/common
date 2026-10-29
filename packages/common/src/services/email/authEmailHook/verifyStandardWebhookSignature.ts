@@ -44,26 +44,6 @@ const safeEqual = (a: string, b: string): boolean => {
 const sign = (key: Buffer, content: string): string =>
   createHmac('sha256', key).update(content).digest('base64');
 
-/** Builds the `webhook-signature` value for a request. Tests and fixtures only. */
-export const signStandardWebhook = ({
-  id,
-  timestamp,
-  rawBody,
-  secret,
-}: {
-  id: string;
-  /** Unix seconds. */
-  timestamp: number;
-  rawBody: string;
-  secret: string;
-}): string => {
-  const [key] = parseSecrets(secret);
-  if (!key) {
-    throw new Error('signStandardWebhook: the secret decodes to nothing');
-  }
-  return `v1,${sign(key, `${id}.${timestamp}.${rawBody}`)}`;
-};
-
 /**
  * Checks a Standard Webhooks signature (https://www.standardwebhooks.com):
  * HMAC-SHA256 over `<webhook-id>.<webhook-timestamp>.<body>` with the decoded

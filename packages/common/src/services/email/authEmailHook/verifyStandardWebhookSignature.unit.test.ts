@@ -1,9 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import {
-  signStandardWebhook,
-  verifyStandardWebhookSignature,
-} from './verifyStandardWebhookSignature';
+import { signStandardWebhook } from '../../../../testing/helpers/signStandardWebhook';
+import { verifyStandardWebhookSignature } from './verifyStandardWebhookSignature';
 
 /** Built at runtime so no `whsec_` literal sits in the source for scanners to flag. */
 const hookSecret = (phrase: string) =>
@@ -16,31 +14,27 @@ const NOW_SECONDS = 1_800_000_000;
 const now = NOW_SECONDS * 1000;
 const rawBody = '{"email_data":{"token":"123456"}}';
 
+const signatureFor = (secret: string, timestamp = NOW_SECONDS) =>
+  signStandardWebhook({ id: 'msg_1', timestamp, rawBody, secret });
+
 const headersFor = (
   secret: string,
   overrides: Record<string, string> = {},
 ): Record<string, string> => ({
   'webhook-id': 'msg_1',
   'webhook-timestamp': String(NOW_SECONDS),
-  'webhook-signature': signStandardWebhook({
-    id: 'msg_1',
-    timestamp: NOW_SECONDS,
-    rawBody,
-    secret,
-  }),
+  'webhook-signature': signatureFor(secret),
   ...overrides,
 });
 
+const verify = (
+  headers: Record<string, string>,
+  { secrets = SECRET, at = now }: { secrets?: string; at?: number } = {},
+) => verifyStandardWebhookSignature({ rawBody, headers, secrets, now: at });
+
 describe('verifyStandardWebhookSignature', () => {
   it('accepts a request signed with the configured secret', () => {
-    expect(
-      verifyStandardWebhookSignature({
-        rawBody,
-        headers: headersFor(SECRET),
-        secrets: SECRET,
-        now,
-      }),
-    ).toBe(true);
+    expect(verify(headersFor(SECRET))).toBe(true);
   });
 
   it('reads the headers case-insensitively', () => {
@@ -50,36 +44,28 @@ describe('verifyStandardWebhookSignature', () => {
       'Webhook-Timestamp': lower['webhook-timestamp'] ?? '',
       'Webhook-Signature': lower['webhook-signature'] ?? '',
     };
-    expect(
-      verifyStandardWebhookSignature({
-        rawBody,
-        headers,
-        secrets: SECRET,
-        now,
-      }),
-    ).toBe(true);
+
+    expect(verify(headers)).toBe(true);
   });
 
   it('accepts the old secret during a rotation', () => {
     expect(
-      verifyStandardWebhookSignature({
-        rawBody,
-        headers: headersFor(SECRET),
-        secrets: `${OTHER_SECRET}|${SECRET}`,
-        now,
+      verify(headersFor(OTHER_SECRET), {
+        secrets: `${SECRET}|${OTHER_SECRET}`,
       }),
     ).toBe(true);
   });
 
+  it('accepts a header that offers several signatures when one matches', () => {
+    const signature = `${signatureFor(OTHER_SECRET)} ${signatureFor(SECRET)}`;
+
+    expect(verify(headersFor(SECRET, { 'webhook-signature': signature }))).toBe(
+      true,
+    );
+  });
+
   it('rejects a signature made with another secret', () => {
-    expect(
-      verifyStandardWebhookSignature({
-        rawBody,
-        headers: headersFor(OTHER_SECRET),
-        secrets: SECRET,
-        now,
-      }),
-    ).toBe(false);
+    expect(verify(headersFor(OTHER_SECRET))).toBe(false);
   });
 
   it('rejects a body that changed after signing', () => {
@@ -93,15 +79,25 @@ describe('verifyStandardWebhookSignature', () => {
     ).toBe(false);
   });
 
-  it('rejects a timestamp outside the five-minute window', () => {
-    expect(
-      verifyStandardWebhookSignature({
-        rawBody,
-        headers: headersFor(SECRET),
-        secrets: SECRET,
-        now: now + 6 * 60 * 1000,
-      }),
-    ).toBe(false);
+  it('rejects a timestamp more than five minutes in the past', () => {
+    expect(verify(headersFor(SECRET), { at: now + 6 * 60 * 1000 })).toBe(false);
+  });
+
+  it('rejects a timestamp more than five minutes in the future', () => {
+    expect(verify(headersFor(SECRET), { at: now - 6 * 60 * 1000 })).toBe(false);
+  });
+
+  it('accepts a timestamp inside the five-minute window', () => {
+    expect(verify(headersFor(SECRET), { at: now + 4 * 60 * 1000 })).toBe(true);
+    expect(verify(headersFor(SECRET), { at: now - 4 * 60 * 1000 })).toBe(true);
+  });
+
+  it('rejects a timestamp that is not a whole number of seconds', () => {
+    for (const timestamp of ['abc', '', '1800000000.5', 'NaN']) {
+      expect(
+        verify(headersFor(SECRET, { 'webhook-timestamp': timestamp })),
+      ).toBe(false);
+    }
   });
 
   it('rejects a request missing any of the three headers', () => {
@@ -112,36 +108,33 @@ describe('verifyStandardWebhookSignature', () => {
     ]) {
       const headers = headersFor(SECRET);
       delete headers[name];
-      expect(
-        verifyStandardWebhookSignature({
-          rawBody,
-          headers,
-          secrets: SECRET,
-          now,
-        }),
-      ).toBe(false);
+      expect(verify(headers)).toBe(false);
     }
   });
 
   it('rejects a signature list with no v1 entry', () => {
-    expect(
-      verifyStandardWebhookSignature({
-        rawBody,
-        headers: headersFor(SECRET, { 'webhook-signature': 'v2,abc' }),
-        secrets: SECRET,
-        now,
-      }),
-    ).toBe(false);
+    expect(verify(headersFor(SECRET, { 'webhook-signature': 'v2,abc' }))).toBe(
+      false,
+    );
+  });
+
+  it('rejects a v1 entry that is not a signature', () => {
+    for (const signature of ['v1,', 'v1,abc', 'v1,!!!not-base64!!!']) {
+      expect(
+        verify(headersFor(SECRET, { 'webhook-signature': signature })),
+      ).toBe(false);
+    }
+  });
+
+  it('rejects a signature truncated by one character', () => {
+    const signature = signatureFor(SECRET).slice(0, -1);
+
+    expect(verify(headersFor(SECRET, { 'webhook-signature': signature }))).toBe(
+      false,
+    );
   });
 
   it('rejects everything when the secret decodes to nothing', () => {
-    expect(
-      verifyStandardWebhookSignature({
-        rawBody,
-        headers: headersFor(SECRET),
-        secrets: hookSecret(''),
-        now,
-      }),
-    ).toBe(false);
+    expect(verify(headersFor(SECRET), { secrets: hookSecret('') })).toBe(false);
   });
 });

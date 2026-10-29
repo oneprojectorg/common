@@ -5,11 +5,7 @@ import type { AppRouter } from './src/routers';
 
 export * from './src/routers';
 export * from './src/trpcFactory';
-export {
-  handleAuthEmailHookRequest,
-  type AuthEmailHookRequest,
-  type AuthEmailHookResult,
-} from './src/auth/handleAuthEmailHookRequest';
+export { handleAuthEmailHookRequest } from './src/auth/handleAuthEmailHookRequest';
 export {
   handleModerationWebhookRequest,
   type ModerationWebhookRequest,

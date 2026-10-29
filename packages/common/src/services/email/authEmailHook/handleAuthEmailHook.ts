@@ -16,7 +16,7 @@ export interface AuthEmailSend {
   token: string;
 }
 
-export interface AuthEmailHookDeps {
+export interface AuthEmailHookParams extends AuthEmailHookRequest {
   /** The hook's `v1,whsec_…` secrets, `|`-separated during a rotation. */
   secrets: string | undefined;
   sendAuthEmail: (send: AuthEmailSend) => Promise<void>;
@@ -25,12 +25,15 @@ export interface AuthEmailHookDeps {
 
 export interface AuthEmailHookResult {
   status: 200 | 400 | 401 | 500 | 503;
-  /** GoTrue reads `error.message` from a non-2xx body and reports it to the caller. */
+  /**
+   * GoTrue ignores the body of a non-2xx response and reports a fixed message
+   * per status; the `error` shape here is for our own logs and tests.
+   */
   body: Record<string, unknown>;
 }
 
-// Supabase caps the hook payload at 20KB uncompressed; anything larger is not GoTrue.
-const MAX_BODY_BYTES = 32_000;
+/** Supabase caps the hook payload at 20KB uncompressed; anything larger is not GoTrue. */
+export const AUTH_EMAIL_HOOK_MAX_BODY_BYTES = 32_000;
 
 const payloadSchema = z.object({
   user: z.object({
@@ -56,7 +59,7 @@ const failure = (
 
 /**
  * Which emails a GoTrue payload asks for. `undefined` means the action type is
- * one this app never triggers; an empty list means a supported type arrived
+ * one this app never triggers; an empty list means a supported action arrived
  * with nothing to send.
  */
 const planSends = ({
@@ -77,21 +80,27 @@ const planSends = ({
         ? [{ to: user.email, kind: 'login', token }]
         : [];
     case 'email_change': {
-      // GoTrue pairs `token` with the current address and `token_new` with the
-      // new one. An anonymous account claiming an email has no current address,
-      // so only the second send applies.
-      const sends: AuthEmailSend[] = [];
-      if (user.email && token) {
-        sends.push({ to: user.email, kind: 'emailChange', token });
+      // With secure email change on and a current address, GoTrue pairs
+      // `token` with the current address and `token_new` with the new one.
+      // Otherwise (an anonymous account claiming an email, or secure change
+      // off) the only code sits in `token` and belongs to the new address.
+      if (tokenNew) {
+        const sends: AuthEmailSend[] = [];
+        if (user.email && token) {
+          sends.push({ to: user.email, kind: 'emailChange', token });
+        }
+        if (user.new_email) {
+          sends.push({
+            to: user.new_email,
+            kind: 'emailChange',
+            token: tokenNew,
+          });
+        }
+        return sends;
       }
-      if (user.new_email && tokenNew) {
-        sends.push({
-          to: user.new_email,
-          kind: 'emailChange',
-          token: tokenNew,
-        });
-      }
-      return sends;
+      return user.new_email && token
+        ? [{ to: user.new_email, kind: 'emailChange', token }]
+        : [];
     }
     default:
       return undefined;
@@ -104,16 +113,19 @@ const planSends = ({
  * Pure apart from the injected sender, so the route and the tests share it.
  * Logs never carry the address or the code.
  */
-export const handleAuthEmailHook = async (
-  { rawBody, headers }: AuthEmailHookRequest,
-  { secrets, sendAuthEmail, now = Date.now }: AuthEmailHookDeps,
-): Promise<AuthEmailHookResult> => {
+export const handleAuthEmailHook = async ({
+  rawBody,
+  headers,
+  secrets,
+  sendAuthEmail,
+  now = Date.now,
+}: AuthEmailHookParams): Promise<AuthEmailHookResult> => {
   if (!secrets) {
     logger.error('Auth email hook called without SEND_EMAIL_HOOK_SECRETS');
     return failure(503, 'The Send Email hook is not configured');
   }
 
-  if (Buffer.byteLength(rawBody) > MAX_BODY_BYTES) {
+  if (Buffer.byteLength(rawBody) > AUTH_EMAIL_HOOK_MAX_BODY_BYTES) {
     return failure(400, 'Payload too large');
   }
 
@@ -148,17 +160,20 @@ export const handleAuthEmailHook = async (
     return failure(400, `No recipient or code for ${actionType}`);
   }
 
-  for (const send of sends) {
-    try {
-      await sendAuthEmail(send);
-    } catch (error) {
-      logger.error('Auth email hook: send failed', {
-        error,
-        actionType,
-        kind: send.kind,
-      });
-      return failure(500, 'The email could not be sent');
+  // GoTrue allows 5s for the whole hook, so the two email-change sends go out together.
+  const outcomes = await Promise.allSettled(
+    sends.map((send) => sendAuthEmail(send)),
+  );
+  const failed = outcomes.flatMap((outcome, index) =>
+    outcome.status === 'rejected'
+      ? [{ error: outcome.reason, kind: sends[index]?.kind }]
+      : [],
+  );
+  if (failed.length > 0) {
+    for (const { error, kind } of failed) {
+      logger.error('Auth email hook: send failed', { error, actionType, kind });
     }
+    return failure(500, 'The email could not be sent');
   }
 
   logger.info('Auth email hook sent', { actionType, count: sends.length });
