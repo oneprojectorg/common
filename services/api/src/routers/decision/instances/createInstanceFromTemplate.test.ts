@@ -317,7 +317,7 @@ describe.concurrent('createInstanceFromTemplate', () => {
     ).rejects.toMatchObject({
       cause: {
         name: 'ValidationError',
-        message: `The source decision has ${phases.length} phases; the limit is ${MAX_PHASES_PER_DECISION}`,
+        message: `A decision can have at most ${MAX_PHASES_PER_DECISION} phases`,
         fieldErrors: { phases: 'Remove 1' },
       },
     });

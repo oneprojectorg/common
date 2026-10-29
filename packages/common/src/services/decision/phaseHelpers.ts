@@ -1,4 +1,4 @@
-import { type TransactionType, db } from '@op/db/client';
+import { type DbClient, db } from '@op/db/client';
 import {
   EntityType,
   type ProcessPhase,
@@ -29,7 +29,7 @@ export type PhaseData = Omit<PhaseInstanceData, 'phaseId' | 'name'>;
 
 // Until readers move to rows, `instance_data` still keys a phase by its
 // instance-scoped id; a row minted from it keeps that id so the two join.
-type PhaseRowData = PhaseData & { phaseId?: string };
+export type PhaseRowData = PhaseData & { phaseId?: string };
 
 export { MAX_PHASES_PER_DECISION };
 
@@ -47,7 +47,7 @@ export const insertPhase = async ({
   data,
   generateSlug = generatePhaseSlug,
 }: {
-  tx: TransactionType;
+  tx: DbClient;
   processInstanceId: string;
   name: string;
   sortOrder: number;
@@ -79,33 +79,46 @@ export const getPhaseProfileName = ({
   name,
 }: InstanceDataPhase): string => name?.trim() || phaseId;
 
+export const assertPhaseCountFits = (count: number): void => {
+  if (count > MAX_PHASES_PER_DECISION) {
+    throw new ValidationError(
+      `A decision can have at most ${MAX_PHASES_PER_DECISION} phases`,
+      { phases: `Remove ${count - MAX_PHASES_PER_DECISION}` },
+    );
+  }
+};
+
+// A blank or repeated `phaseId` would write two phases onto one key.
+export const assertPhaseListFits = (
+  phases: readonly Pick<PhaseInstanceData, 'phaseId'>[],
+): void => {
+  assertPhaseCountFits(phases.length);
+
+  const phaseIds = new Set<string>();
+  for (const { phaseId } of phases) {
+    if (!phaseId) {
+      throw new ValidationError('There is a phase with no id', {
+        phaseId: 'Required',
+      });
+    }
+    if (phaseIds.has(phaseId)) {
+      throw new ValidationError(
+        `There are two phases with the id "${phaseId}"`,
+        { phaseId: 'Must be unique' },
+      );
+    }
+    phaseIds.add(phaseId);
+  }
+};
+
 // Instance data can predate the phase limits, so a copy of it is checked
 // before anything is written.
 export const assertPhasesCanBeMinted = (
   phases: readonly InstanceDataPhase[],
 ): void => {
-  if (phases.length > MAX_PHASES_PER_DECISION) {
-    throw new ValidationError(
-      `The source decision has ${phases.length} phases; the limit is ${MAX_PHASES_PER_DECISION}`,
-      { phases: `Remove ${phases.length - MAX_PHASES_PER_DECISION}` },
-    );
-  }
+  assertPhaseListFits(phases);
 
-  const phaseIds = new Set<string>();
   for (const phase of phases) {
-    if (!phase.phaseId) {
-      throw new ValidationError('The source decision has a phase with no id', {
-        phaseId: 'Required',
-      });
-    }
-    if (phaseIds.has(phase.phaseId)) {
-      throw new ValidationError(
-        `The source decision has two phases with the id "${phase.phaseId}"`,
-        { phaseId: 'Must be unique' },
-      );
-    }
-    phaseIds.add(phase.phaseId);
-
     const name = getPhaseProfileName(phase);
     if (!phaseNameLengthSchema.safeParse(name).success) {
       throw new ValidationError(
@@ -224,7 +237,7 @@ const insertPhaseProfile = async ({
   name,
   generateSlug,
 }: {
-  tx: TransactionType;
+  tx: DbClient;
   name: string;
   generateSlug: () => string;
 }): Promise<Profile> => {

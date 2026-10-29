@@ -1,11 +1,20 @@
 import {
   type DecisionInstanceData,
+  MAX_PHASES_PER_DECISION,
   type RubricTemplateSchema,
+  ValidationError,
+  updateDecisionInstance,
 } from '@op/common';
+import { MAX_PHASE_NAME_LENGTH } from '@op/common/client';
 import { TestDecisionsDataManager } from '@op/common/testing';
-import { db, eq } from '@op/db/client';
-import { ProcessStatus, processInstances } from '@op/db/schema';
-import { describe, expect, it } from 'vitest';
+import { asc, db, eq, sql } from '@op/db/client';
+import {
+  ProcessStatus,
+  processInstances,
+  processPhases,
+  profiles,
+} from '@op/db/schema';
+import { describe, expect, it, vi } from 'vitest';
 
 import { appRouter } from '../..';
 import {
@@ -39,6 +48,58 @@ async function getFirstPhaseId(instanceId: string) {
   }
 
   return phaseId;
+}
+
+async function loadPhaseRows(instanceId: string) {
+  return db
+    .select({
+      id: processPhases.id,
+      profileId: processPhases.profileId,
+      sortOrder: processPhases.sortOrder,
+      data: processPhases.data,
+      name: profiles.name,
+    })
+    .from(processPhases)
+    .innerJoin(profiles, eq(profiles.id, processPhases.profileId))
+    .where(eq(processPhases.processInstanceId, instanceId))
+    .orderBy(asc(processPhases.sortOrder));
+}
+
+async function loadBlobPhases(instanceId: string) {
+  const instance = await db.query.processInstances.findFirst({
+    where: { id: instanceId },
+    columns: { instanceData: true },
+  });
+  return (instance?.instanceData as DecisionInstanceData).phases;
+}
+
+// Counts the backends queued behind `pid`, directly or behind another waiter.
+async function countBackendsWaitingOn(pid: number) {
+  const [row] = await db.execute(sql`
+    with recursive waiting(pid) as (
+      select pid from pg_stat_activity
+      where ${pid}::int = any(pg_blocking_pids(pid))
+      union
+      select activity.pid from pg_stat_activity activity
+      join waiting on waiting.pid = any(pg_blocking_pids(activity.pid))
+    )
+    select count(*)::int as count from waiting
+  `);
+  return Number(row?.count);
+}
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+
+async function loadPhaseState(instanceId: string) {
+  const [rows, instance] = await Promise.all([
+    loadPhaseRows(instanceId),
+    db.query.processInstances.findFirst({
+      where: { id: instanceId },
+      columns: { instanceData: true },
+    }),
+  ]);
+  return { rows, instanceData: instance?.instanceData };
 }
 
 describe.concurrent('updateDecisionInstance', () => {
@@ -667,6 +728,429 @@ describe.concurrent('updateDecisionInstance', () => {
       (p) => p.phaseId === firstPhaseId,
     );
     expect(firstPhase?.settings?.maxProposalsPerMember).toBe(10);
+  });
+
+  it('inserts every phase row on a save of a decision that has none', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instanceId = setup.instance.instance.id;
+    await testData.removePhaseRows(instanceId);
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    await caller.decision.updateDecisionInstance({
+      instanceId,
+      phases: [{ phaseId: 'initial' }, { phaseId: 'final', name: 'Decide' }],
+    });
+
+    expect(await loadPhaseRows(instanceId)).toMatchObject([
+      { name: 'Initial Phase', sortOrder: 0, data: { phaseId: 'initial' } },
+      { name: 'Decide', sortOrder: 1, data: { phaseId: 'final' } },
+    ]);
+  });
+
+  it('syncs the phase rows with the phases a save sends', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instanceId = setup.instance.instance.id;
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+    const extraName = `Extra ${task.id}`;
+    const [initialRow, finalRow] = await loadPhaseRows(instanceId);
+
+    await caller.decision.updateDecisionInstance({
+      instanceId,
+      phases: [
+        { phaseId: 'final', name: 'Decide' },
+        { phaseId: 'initial', description: 'Updated' },
+        { phaseId: 'extra', name: extraName, description: 'One more' },
+      ],
+    });
+
+    const synced = await loadPhaseRows(instanceId);
+    expect(synced).toMatchObject([
+      {
+        id: finalRow?.id,
+        name: 'Decide',
+        sortOrder: 0,
+        data: { phaseId: 'final' },
+      },
+      {
+        id: initialRow?.id,
+        name: 'Initial Phase',
+        sortOrder: 1,
+        data: { phaseId: 'initial', description: 'Updated' },
+      },
+      {
+        name: extraName,
+        sortOrder: 2,
+        data: { phaseId: 'extra', description: 'One more' },
+      },
+    ]);
+
+    const updated = await db.query.processInstances.findFirst({
+      where: { id: instanceId },
+    });
+    const instanceData = updated?.instanceData as DecisionInstanceData;
+    expect(instanceData.phases).toEqual(
+      synced.map(({ data, name }) => ({
+        ...(isRecord(data) ? data : {}),
+        name,
+      })),
+    );
+
+    const extraRow = synced[2];
+    if (!extraRow) {
+      throw new Error('Expected a row for the added phase');
+    }
+
+    await caller.decision.updateDecisionInstance({
+      instanceId,
+      phases: [{ phaseId: 'final' }, { phaseId: 'initial' }],
+    });
+
+    expect((await loadPhaseRows(instanceId)).map((row) => row.name)).toEqual([
+      'Decide',
+      'Initial Phase',
+    ]);
+    const droppedProfile = await db.query.profiles.findFirst({
+      where: { id: extraRow.profileId },
+      columns: { id: true },
+    });
+    expect(droppedProfile).toBeUndefined();
+
+    await caller.decision.updateDecisionInstance({
+      instanceId,
+      phases: [
+        { phaseId: 'final' },
+        { phaseId: 'initial' },
+        { phaseId: 'extra', name: extraName },
+      ],
+    });
+
+    const readded = (await loadPhaseRows(instanceId))[2];
+    expect(readded).toMatchObject({
+      name: extraName,
+      sortOrder: 2,
+      data: { phaseId: 'extra' },
+    });
+    expect(readded?.id).not.toBe(extraRow.id);
+    expect(readded?.profileId).not.toBe(extraRow.profileId);
+  });
+
+  it('keeps the stored fields of a phase that has no row when another phase has one', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instanceId = setup.instance.instance.id;
+    await testData.removePhaseRows(instanceId);
+    const stored = {
+      selectionPipeline: { version: '1.0.0', blocks: [] },
+      settingsSchema: {
+        type: 'object',
+        properties: { maxProposalsPerMember: { type: 'number' } },
+      },
+      proposalTemplate: {
+        type: 'object',
+        properties: { title: { type: 'string' } },
+      },
+    };
+    await db
+      .update(processInstances)
+      .set({
+        instanceData: sql`jsonb_set(${processInstances.instanceData}, '{phases,0}', (${processInstances.instanceData} -> 'phases' -> 0) || ${JSON.stringify(stored)}::jsonb)`,
+      })
+      .where(eq(processInstances.id, instanceId));
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const created = await caller.decision.createPhase({
+      instanceId,
+      name: `Endpoint ${task.id}`,
+      sortOrder: 2,
+    });
+    testData.trackProfileForCleanup(created.profileId);
+
+    await caller.decision.updateDecisionInstance({
+      instanceId,
+      phases: [
+        { phaseId: 'initial', description: 'Updated' },
+        { phaseId: 'final' },
+        { phaseId: created.slug },
+      ],
+    });
+
+    expect(await loadPhaseRows(instanceId)).toMatchObject([
+      {
+        sortOrder: 0,
+        data: { ...stored, phaseId: 'initial', description: 'Updated' },
+      },
+      { sortOrder: 1, data: { phaseId: 'final' } },
+      { id: created.id, sortOrder: 2, name: `Endpoint ${task.id}` },
+    ]);
+  });
+
+  it('keeps a phase the phase endpoints made and moved across a builder save', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instanceId = setup.instance.instance.id;
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+    const [initialRow, finalRow] = await loadPhaseRows(instanceId);
+    if (!initialRow || !finalRow) {
+      throw new Error('Expected the template phase rows');
+    }
+
+    const created = await caller.decision.createPhase({
+      instanceId,
+      name: `Endpoint ${task.id}`,
+      sortOrder: 2,
+    });
+    testData.trackProfileForCleanup(created.profileId);
+    await caller.decision.reorderPhases({
+      instanceId,
+      phases: [
+        { phaseId: created.id },
+        { phaseId: initialRow.id },
+        { phaseId: finalRow.id },
+      ],
+    });
+    await caller.decision.updatePhase({
+      phaseId: created.id,
+      name: `Renamed ${task.id}`,
+    });
+
+    const blobPhases = await loadBlobPhases(instanceId);
+    expect(blobPhases.map(({ phaseId, name }) => [phaseId, name])).toEqual([
+      [created.slug, `Renamed ${task.id}`],
+      ['initial', initialRow.name],
+      ['final', finalRow.name],
+    ]);
+
+    await caller.decision.updateDecisionInstance({
+      instanceId,
+      phases: blobPhases.map(({ phaseId }) => ({ phaseId })),
+    });
+
+    expect(await loadPhaseRows(instanceId)).toMatchObject([
+      { id: created.id, name: `Renamed ${task.id}`, sortOrder: 0 },
+      { id: initialRow.id, sortOrder: 1 },
+      { id: finalRow.id, sortOrder: 2 },
+    ]);
+  });
+
+  it('does not bring back a phase deletePhase removed on the next builder save', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instanceId = setup.instance.instance.id;
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+    const [initialRow, finalRow] = await loadPhaseRows(instanceId);
+    if (!finalRow) {
+      throw new Error('Expected the template phase rows');
+    }
+
+    await caller.decision.deletePhase({ phaseId: finalRow.id });
+
+    const blobPhases = await loadBlobPhases(instanceId);
+    expect(blobPhases.map(({ phaseId }) => phaseId)).toEqual(['initial']);
+
+    await caller.decision.updateDecisionInstance({
+      instanceId,
+      phases: blobPhases.map(({ phaseId }) => ({ phaseId })),
+    });
+
+    expect(await loadPhaseRows(instanceId)).toMatchObject([
+      { id: initialRow?.id, data: { phaseId: 'initial' } },
+    ]);
+  });
+
+  it('rejects a save that lists a phase id twice or leaves one blank', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instanceId = setup.instance.instance.id;
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+    const before = await loadPhaseState(instanceId);
+
+    for (const phases of [
+      [{ phaseId: 'initial' }, { phaseId: 'initial', name: 'Copy' }],
+      [{ phaseId: 'initial' }, { phaseId: '' }],
+    ]) {
+      await expect(
+        caller.decision.updateDecisionInstance({ instanceId, phases }),
+      ).rejects.toMatchObject({ code: 'BAD_REQUEST' });
+      await expect(
+        updateDecisionInstance({ instanceId, phases, user: setup.user }),
+      ).rejects.toBeInstanceOf(ValidationError);
+    }
+
+    expect(await loadPhaseState(instanceId)).toEqual(before);
+  });
+
+  it(`rejects a save of more than ${MAX_PHASES_PER_DECISION} phases, writing nothing`, async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instanceId = setup.instance.instance.id;
+    const before = await loadPhaseState(instanceId);
+
+    await expect(
+      updateDecisionInstance({
+        instanceId,
+        phases: [
+          { phaseId: 'initial', description: 'Changed' },
+          { phaseId: 'final' },
+          ...Array.from({ length: MAX_PHASES_PER_DECISION - 1 }, (_, i) => ({
+            phaseId: `extra-${i}`,
+          })),
+        ],
+        user: setup.user,
+      }),
+    ).rejects.toMatchObject({
+      message: `A decision can have at most ${MAX_PHASES_PER_DECISION} phases`,
+      fieldErrors: { phases: 'Remove 1' },
+    });
+
+    expect(await loadPhaseState(instanceId)).toEqual(before);
+  });
+
+  it.for([
+    {
+      label: 'a stored phase renamed to',
+      phases: (name: string) => [
+        { phaseId: 'initial', description: 'Changed' },
+        { phaseId: 'final', name },
+      ],
+    },
+    {
+      label: 'a new phase named',
+      phases: (name: string) => [
+        { phaseId: 'initial', description: 'Changed' },
+        { phaseId: 'final' },
+        { phaseId: 'extra', name },
+      ],
+    },
+  ])(
+    `rejects $label a name past ${MAX_PHASE_NAME_LENGTH} characters, writing nothing`,
+    async ({ phases }, { task, onTestFinished }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+      const setup = await testData.createDecisionSetup({
+        instanceCount: 1,
+        grantAccess: true,
+      });
+      const instanceId = setup.instance.instance.id;
+      const before = await loadPhaseState(instanceId);
+      const name = task.id.padEnd(MAX_PHASE_NAME_LENGTH + 1, 'x');
+
+      await expect(
+        updateDecisionInstance({
+          instanceId,
+          phases: phases(name),
+          user: setup.user,
+        }),
+      ).rejects.toBeInstanceOf(ValidationError);
+
+      expect(await loadPhaseState(instanceId)).toEqual(before);
+      const named = await db.query.profiles.findMany({
+        where: { name },
+        columns: { id: true },
+      });
+      expect(named).toHaveLength(0);
+    },
+  );
+
+  it('serializes concurrent saves on the instance lock', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instanceId = setup.instance.instance.id;
+    await testData.removePhaseRows(instanceId);
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    let markLocked = (_pid: number) => {};
+    const locked = new Promise<number>((resolve) => {
+      markLocked = resolve;
+    });
+    let releaseLock = () => {};
+    const released = new Promise<void>((resolve) => {
+      releaseLock = resolve;
+    });
+    const holder = db.transaction(async (tx) => {
+      const [backend] = await tx.execute(sql`select pg_backend_pid() as pid`);
+      await tx
+        .select({ id: processInstances.id })
+        .from(processInstances)
+        .where(eq(processInstances.id, instanceId))
+        .for('update');
+      markLocked(Number(backend?.pid));
+      await released;
+    });
+    const holderPid = await locked;
+
+    const phases = [{ phaseId: 'initial' }, { phaseId: 'final' }];
+    // Unlocked, both saves would read no rows and each insert a full set.
+    const saves = Promise.allSettled([
+      caller.decision.updateDecisionInstance({ instanceId, phases }),
+      caller.decision.updateDecisionInstance({ instanceId, phases }),
+    ]);
+    try {
+      await vi.waitFor(
+        async () => expect(await countBackendsWaitingOn(holderPid)).toBe(2),
+        { timeout: 10_000, interval: 25 },
+      );
+    } finally {
+      releaseLock();
+      await holder;
+    }
+
+    expect((await saves).map((result) => result.status)).toEqual([
+      'fulfilled',
+      'fulfilled',
+    ]);
+    expect(await loadPhaseRows(instanceId)).toMatchObject([
+      { sortOrder: 0, data: { phaseId: 'initial' } },
+      { sortOrder: 1, data: { phaseId: 'final' } },
+    ]);
   });
 
   it('should update multiple fields at once', async ({
