@@ -16,6 +16,7 @@ import {
 } from 'react-email';
 
 import TailwindConfig from '../tailwind.config';
+import { InlineLink } from './InlineLink';
 
 const EmailTemplate = ({
   children,
@@ -30,6 +31,17 @@ const EmailTemplate = ({
         <Head>
           <meta name="color-scheme" content="light" />
           <meta name="supported-color-schemes" content="light" />
+          <meta
+            name="format-detection"
+            content="telephone=no,date=no,address=no,email=no"
+          />
+          <style>{`
+            a[x-apple-data-detectors],
+            .login-code a {
+              color: inherit !important;
+              text-decoration: none !important;
+            }
+          `}</style>
           <link rel="preconnect" href="https://fonts.googleapis.com" />
           <link
             rel="preconnect"
@@ -64,8 +76,9 @@ const EmailTemplate = ({
                         <Column align="left" width={24}>
                           <Img
                             src="https://common.oneproject.org/Common.png"
-                            width="64"
-                            height="12"
+                            alt="Common"
+                            width="87"
+                            height="16"
                           />
                         </Column>
                       </Row>
@@ -78,7 +91,11 @@ const EmailTemplate = ({
             </Container>
             <Container className="mx-auto mb-0 max-w-[600px] p-8 font-sans font-normal">
               <Text className="mt-0 mb-0 text-sm">
-                Common is maintained by One Project.
+                Common is maintained by{' '}
+                <InlineLink href="https://oneproject.org">
+                  One Project
+                </InlineLink>
+                .
               </Text>
               <Text className="mt-2 mb-0 text-sm">
                 You’re receiving this email as part of our authentication and
