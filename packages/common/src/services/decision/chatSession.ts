@@ -54,7 +54,11 @@ export async function ensureChatSession({
   const profileId = await getIndividualProfileId(authUserId);
   await db
     .insert(decisionChatSessions)
-    .values({ processInstanceId, profileId, phoneNumberId: phoneNumberId ?? null })
+    .values({
+      processInstanceId,
+      profileId,
+      phoneNumberId: phoneNumberId ?? null,
+    })
     .onConflictDoUpdate({
       target: [
         decisionChatSessions.processInstanceId,
