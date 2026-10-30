@@ -94,7 +94,7 @@ subject = "Confirm your email"
 content_path = "./supabase/templates/email_change.html"
 
 # The three templates above are rendered from services/emails/emails/*.tsx
-# (`pnpm w:emails test -- -u` regenerates them). With the Send Email hook on,
+# (`pnpm w:emails exec vitest run -u` regenerates them). With the Send Email hook on,
 # GoTrue skips them and POSTs the code to the API, which renders the same
 # sources and sends the email itself; the hosted project runs this way.
 # GoTrue then sends every email type through the hook and has no template

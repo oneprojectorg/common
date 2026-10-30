@@ -12,10 +12,8 @@ interface OPEmailChangeCodeEmailProps {
 
 /**
  * The `email_change` auth email: an anonymous visitor attaching an email to
- * claim their account. Sent by the Send Email hook. Also the source of
- * `supabase/templates/email_change.html` for the configs without a hook; the
- * snapshot test keeps the two in sync and `pnpm w:emails test -- -u`
- * regenerates the HTML.
+ * claim their account. Also the source of `supabase/templates/email_change.html`
+ * (see authCodeEmails.test.ts).
  *
  * The copy assumes the claim flow. A signed-in user changing an existing
  * email gets this same email at both addresses, so that flow needs its own

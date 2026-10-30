@@ -1,36 +1,26 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { signStandardWebhook } from '../../../../testing/helpers/signStandardWebhook';
+import {
+  hookSecret,
+  signedWebhookHeaders,
+} from '../../../../testing/helpers/signStandardWebhook';
 import { handleAuthEmailHook } from './handleAuthEmailHook';
 
 vi.mock('@op/logging', () => ({
   logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
 
-/** Built at runtime so no `whsec_` literal sits in the source for scanners to flag. */
-const hookSecret = (phrase: string) =>
-  `v1,whsec_${Buffer.from(phrase).toString('base64')}`;
-
 const SECRET = hookSecret('secret-one-secret-one-secret-one');
 const NOW_SECONDS = 1_800_000_000;
 const now = () => NOW_SECONDS * 1000;
 
-const signedRequest = (payload: unknown, secret = SECRET) =>
-  signedRawBody(JSON.stringify(payload), secret);
-
 const signedRawBody = (rawBody: string, secret = SECRET) => ({
   rawBody,
-  headers: {
-    'webhook-id': 'msg_1',
-    'webhook-timestamp': String(NOW_SECONDS),
-    'webhook-signature': signStandardWebhook({
-      id: 'msg_1',
-      timestamp: NOW_SECONDS,
-      rawBody,
-      secret,
-    }),
-  },
+  headers: signedWebhookHeaders({ rawBody, secret, timestamp: NOW_SECONDS }),
 });
+
+const signedRequest = (payload: unknown, secret = SECRET) =>
+  signedRawBody(JSON.stringify(payload), secret);
 
 const payload = (
   emailActionType: string,
@@ -54,7 +44,7 @@ const payload = (
 
 const sendAuthEmail = vi.fn<(send: unknown) => Promise<void>>();
 
-const run = (request: { rawBody: string; headers: Record<string, string> }) =>
+const run = (request: { rawBody: string; headers: Headers }) =>
   handleAuthEmailHook({ ...request, secrets: SECRET, sendAuthEmail, now });
 
 const sentTo = () => sendAuthEmail.mock.calls.map(([send]) => send);

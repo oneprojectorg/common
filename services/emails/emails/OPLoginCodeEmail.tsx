@@ -10,12 +10,7 @@ interface OPLoginCodeEmailProps {
   token?: string;
 }
 
-/**
- * The `magiclink` auth email, sent by the Send Email hook. Also the source of
- * `supabase/templates/magiclink.html` for the configs without a hook; the
- * snapshot test keeps the two in sync and `pnpm w:emails test -- -u`
- * regenerates the HTML.
- */
+/** The `magiclink` auth email; also the source of `supabase/templates/magiclink.html` (see authCodeEmails.test.ts). */
 export const OPLoginCodeEmail = ({ token }: OPLoginCodeEmailProps = {}) => {
   return (
     <EmailTemplate previewText="Your Common login code">

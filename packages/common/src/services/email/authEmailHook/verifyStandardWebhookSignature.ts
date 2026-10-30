@@ -1,4 +1,6 @@
-import { createHmac, timingSafeEqual } from 'node:crypto';
+import { createHmac } from 'node:crypto';
+
+import { timingSafeStringEqual } from '../../../utils/timingSafeStringEqual';
 
 /** How far a `webhook-timestamp` may sit from now before a replayed request is refused. */
 const TOLERANCE_SECONDS = 5 * 60;
@@ -22,25 +24,6 @@ const parseSecrets = (secrets: string): Buffer[] =>
     })
     .filter((key) => key.length > 0);
 
-const headerValue = (
-  headers: Record<string, string>,
-  name: string,
-): string | undefined => {
-  const lower = name.toLowerCase();
-  for (const [key, value] of Object.entries(headers)) {
-    if (key.toLowerCase() === lower) {
-      return value;
-    }
-  }
-  return undefined;
-};
-
-const safeEqual = (a: string, b: string): boolean => {
-  const bufferA = Buffer.from(a);
-  const bufferB = Buffer.from(b);
-  return bufferA.length === bufferB.length && timingSafeEqual(bufferA, bufferB);
-};
-
 const sign = (key: Buffer, content: string): string =>
   createHmac('sha256', key).update(content).digest('base64');
 
@@ -58,14 +41,14 @@ export const verifyStandardWebhookSignature = ({
   now,
 }: {
   rawBody: string;
-  headers: Record<string, string>;
+  headers: Headers;
   secrets: string;
   /** Milliseconds since the epoch. */
   now: number;
 }): boolean => {
-  const id = headerValue(headers, 'webhook-id');
-  const timestamp = headerValue(headers, 'webhook-timestamp');
-  const signature = headerValue(headers, 'webhook-signature');
+  const id = headers.get('webhook-id');
+  const timestamp = headers.get('webhook-timestamp');
+  const signature = headers.get('webhook-signature');
   if (!id || !timestamp || !signature) {
     return false;
   }
@@ -92,6 +75,6 @@ export const verifyStandardWebhookSignature = ({
   const content = `${id}.${timestamp}.${rawBody}`;
   return parseSecrets(secrets).some((key) => {
     const expected = sign(key, content);
-    return offered.some((entry) => safeEqual(entry, expected));
+    return offered.some((entry) => timingSafeStringEqual(entry, expected));
   });
 };

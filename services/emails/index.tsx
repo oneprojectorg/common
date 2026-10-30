@@ -1,6 +1,6 @@
 import { APP_NAME, noReplyEmail } from '@op/core';
 import nodemailer from 'nodemailer';
-import { render } from 'react-email';
+import { render, toPlainText } from 'react-email';
 import { Resend } from 'resend';
 import z from 'zod';
 
@@ -84,7 +84,7 @@ const sendSmtpEmail = async ({
 }: BatchEmailItem & { renderOptions?: RenderParameter[1] }) => {
   const html = await render(component(), renderOptions);
   // Text-only clients and spam scoring both read the plain-text part.
-  const text = await render(component(), { ...renderOptions, plainText: true });
+  const text = toPlainText(html);
 
   return getTransporter().sendMail({
     from: formatFromAddress(from),

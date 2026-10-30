@@ -4,7 +4,7 @@ import { Footnote } from './Footnote';
 import { InlineLink } from './InlineLink';
 
 /** The validity the copy states; GoTrue's `otp_expiry` is the real limit. */
-export const OTP_VALID_MINUTES = 10;
+const OTP_VALID_MINUTES = 10;
 
 /** The footnote under every one-time code: how long it lasts and where to get help. */
 export const OtpFootnote = () => (

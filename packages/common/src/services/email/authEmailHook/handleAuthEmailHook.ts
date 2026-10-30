@@ -3,11 +3,6 @@ import { z } from 'zod';
 
 import { verifyStandardWebhookSignature } from './verifyStandardWebhookSignature';
 
-export interface AuthEmailHookRequest {
-  rawBody: string;
-  headers: Record<string, string>;
-}
-
 export type AuthEmailKind = 'signup' | 'login' | 'emailChange';
 
 export interface AuthEmailSend {
@@ -16,7 +11,9 @@ export interface AuthEmailSend {
   token: string;
 }
 
-export interface AuthEmailHookParams extends AuthEmailHookRequest {
+export interface AuthEmailHookParams {
+  rawBody: string;
+  headers: Headers;
   /** The hook's `v1,whsec_…` secrets, `|`-separated during a rotation. */
   secrets: string | undefined;
   sendAuthEmail: (send: AuthEmailSend) => Promise<void>;
@@ -80,27 +77,22 @@ const planSends = ({
         ? [{ to: user.email, kind: 'login', token }]
         : [];
     case 'email_change': {
-      // With secure email change on and a current address, GoTrue pairs
-      // `token` with the current address and `token_new` with the new one.
-      // Otherwise (an anonymous account claiming an email, or secure change
-      // off) the only code sits in `token` and belongs to the new address.
-      if (tokenNew) {
-        const sends: AuthEmailSend[] = [];
-        if (user.email && token) {
-          sends.push({ to: user.email, kind: 'emailChange', token });
-        }
-        if (user.new_email) {
-          sends.push({
-            to: user.new_email,
-            kind: 'emailChange',
-            token: tokenNew,
-          });
-        }
-        return sends;
+      // GoTrue sends `token_new` for the new address only when the current
+      // address must confirm too (secure change on, account has an email).
+      // Otherwise the one code, in `token`, belongs to the new address.
+      const newToken = tokenNew || token;
+      const sends: AuthEmailSend[] = [];
+      if (tokenNew && user.email && token) {
+        sends.push({ to: user.email, kind: 'emailChange', token });
       }
-      return user.new_email && token
-        ? [{ to: user.new_email, kind: 'emailChange', token }]
-        : [];
+      if (user.new_email && newToken) {
+        sends.push({
+          to: user.new_email,
+          kind: 'emailChange',
+          token: newToken,
+        });
+      }
+      return sends;
     }
     default:
       return undefined;
@@ -164,15 +156,14 @@ export const handleAuthEmailHook = async ({
   const outcomes = await Promise.allSettled(
     sends.map((send) => sendAuthEmail(send)),
   );
-  const failed = outcomes.flatMap((outcome, index) =>
-    outcome.status === 'rejected'
-      ? [{ error: outcome.reason, kind: sends[index]?.kind }]
-      : [],
+  const rejected = outcomes.filter(
+    (outcome): outcome is PromiseRejectedResult =>
+      outcome.status === 'rejected',
   );
-  if (failed.length > 0) {
-    for (const { error, kind } of failed) {
-      logger.error('Auth email hook: send failed', { error, actionType, kind });
-    }
+  for (const { reason: error } of rejected) {
+    logger.error('Auth email hook: send failed', { error, actionType });
+  }
+  if (rejected.length > 0) {
     return failure(500, 'The email could not be sent');
   }
 

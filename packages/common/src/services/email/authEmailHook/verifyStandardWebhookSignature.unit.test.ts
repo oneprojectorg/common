@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
-import { signStandardWebhook } from '../../../../testing/helpers/signStandardWebhook';
+import {
+  hookSecret,
+  signStandardWebhook,
+  signedWebhookHeaders,
+} from '../../../../testing/helpers/signStandardWebhook';
 import { verifyStandardWebhookSignature } from './verifyStandardWebhookSignature';
-
-/** Built at runtime so no `whsec_` literal sits in the source for scanners to flag. */
-const hookSecret = (phrase: string) =>
-  `v1,whsec_${Buffer.from(phrase).toString('base64')}`;
 
 const SECRET = hookSecret('secret-one-secret-one-secret-one');
 const OTHER_SECRET = hookSecret('secret-two-secret-two-secret-two');
@@ -14,38 +14,32 @@ const NOW_SECONDS = 1_800_000_000;
 const now = NOW_SECONDS * 1000;
 const rawBody = '{"email_data":{"token":"123456"}}';
 
-const signatureFor = (secret: string, timestamp = NOW_SECONDS) =>
-  signStandardWebhook({ id: 'msg_1', timestamp, rawBody, secret });
+const signatureFor = (secret: string) =>
+  signStandardWebhook({ id: 'msg_1', timestamp: NOW_SECONDS, rawBody, secret });
 
 const headersFor = (
   secret: string,
   overrides: Record<string, string> = {},
-): Record<string, string> => ({
-  'webhook-id': 'msg_1',
-  'webhook-timestamp': String(NOW_SECONDS),
-  'webhook-signature': signatureFor(secret),
-  ...overrides,
-});
+): Headers => {
+  const headers = signedWebhookHeaders({
+    rawBody,
+    secret,
+    timestamp: NOW_SECONDS,
+  });
+  for (const [name, value] of Object.entries(overrides)) {
+    headers.set(name, value);
+  }
+  return headers;
+};
 
 const verify = (
-  headers: Record<string, string>,
+  headers: Headers,
   { secrets = SECRET, at = now }: { secrets?: string; at?: number } = {},
 ) => verifyStandardWebhookSignature({ rawBody, headers, secrets, now: at });
 
 describe('verifyStandardWebhookSignature', () => {
   it('accepts a request signed with the configured secret', () => {
     expect(verify(headersFor(SECRET))).toBe(true);
-  });
-
-  it('reads the headers case-insensitively', () => {
-    const lower = headersFor(SECRET);
-    const headers = {
-      'Webhook-Id': lower['webhook-id'] ?? '',
-      'Webhook-Timestamp': lower['webhook-timestamp'] ?? '',
-      'Webhook-Signature': lower['webhook-signature'] ?? '',
-    };
-
-    expect(verify(headers)).toBe(true);
   });
 
   it('accepts the old secret during a rotation', () => {
@@ -119,7 +113,7 @@ describe('verifyStandardWebhookSignature', () => {
       'webhook-signature',
     ]) {
       const headers = headersFor(SECRET);
-      delete headers[name];
+      headers.delete(name);
       expect(verify(headers)).toBe(false);
     }
   });

@@ -13,4 +13,3 @@
  */
 export { TestPhoneAuthDataManager } from './TestPhoneAuthDataManager';
 export { advanceInstancePhase } from './advanceInstancePhase';
-export { signStandardWebhook } from './signStandardWebhook';

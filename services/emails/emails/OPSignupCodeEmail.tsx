@@ -10,12 +10,7 @@ interface OPSignupCodeEmailProps {
   token?: string;
 }
 
-/**
- * The `signup` auth email (first sign-in of a new account), sent by the Send
- * Email hook. Also the source of `supabase/templates/confirm.html` for the
- * configs without a hook; the snapshot test keeps the two in sync and
- * `pnpm w:emails test -- -u` regenerates the HTML.
- */
+/** The `signup` auth email (first sign-in of a new account); also the source of `supabase/templates/confirm.html` (see authCodeEmails.test.ts). */
 export const OPSignupCodeEmail = ({ token }: OPSignupCodeEmailProps = {}) => {
   return (
     <EmailTemplate previewText="Your Common confirmation code">
