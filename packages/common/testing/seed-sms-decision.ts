@@ -28,7 +28,12 @@ const ATTESTATION =
 
 type Ring = ReadonlyArray<readonly [number, number]>;
 
-const box = (west: number, south: number, east: number, north: number): Ring => [
+const box = (
+  west: number,
+  south: number,
+  east: number,
+  north: number,
+): Ring => [
   [west, south],
   [east, south],
   [east, north],
@@ -42,14 +47,62 @@ const DISTRICTS = [
 ] as const;
 
 const PROPOSALS = [
-  { title: 'Shade trees on Parsons Ave', amount: 85_000, district: 'District 5', lat: 39.955, lng: -82.985 },
-  { title: 'Lit crosswalks at Livingston & 18th', amount: 120_000, district: 'District 5', lat: 39.951, lng: -82.98 },
-  { title: 'Schiller Park splash pad', amount: 450_000, district: 'District 5', lat: 39.942, lng: -82.99 },
-  { title: 'Mobile food market, four stops a week', amount: 300_000, district: 'District 5', lat: 39.96, lng: -83.0 },
-  { title: 'Little free pantries at six corners', amount: 60_000, district: 'District 5', lat: 39.948, lng: -82.995 },
-  { title: 'Protected bike lane on Whittier St', amount: 200_000, district: 'District 5', lat: 39.945, lng: -83.01 },
-  { title: 'Playground resurfacing, Nelson Park', amount: 150_000, district: 'District 3', lat: 39.96, lng: -82.93 },
-  { title: 'Bus shelter on E Main at Champion', amount: 95_000, district: 'District 3', lat: 39.957, lng: -82.95 },
+  {
+    title: 'Shade trees on Parsons Ave',
+    amount: 85_000,
+    district: 'District 5',
+    lat: 39.955,
+    lng: -82.985,
+  },
+  {
+    title: 'Lit crosswalks at Livingston & 18th',
+    amount: 120_000,
+    district: 'District 5',
+    lat: 39.951,
+    lng: -82.98,
+  },
+  {
+    title: 'Schiller Park splash pad',
+    amount: 450_000,
+    district: 'District 5',
+    lat: 39.942,
+    lng: -82.99,
+  },
+  {
+    title: 'Mobile food market, four stops a week',
+    amount: 300_000,
+    district: 'District 5',
+    lat: 39.96,
+    lng: -83.0,
+  },
+  {
+    title: 'Little free pantries at six corners',
+    amount: 60_000,
+    district: 'District 5',
+    lat: 39.948,
+    lng: -82.995,
+  },
+  {
+    title: 'Protected bike lane on Whittier St',
+    amount: 200_000,
+    district: 'District 5',
+    lat: 39.945,
+    lng: -83.01,
+  },
+  {
+    title: 'Playground resurfacing, Nelson Park',
+    amount: 150_000,
+    district: 'District 3',
+    lat: 39.96,
+    lng: -82.93,
+  },
+  {
+    title: 'Bus shelter on E Main at Champion',
+    amount: 95_000,
+    district: 'District 3',
+    lat: 39.957,
+    lng: -82.95,
+  },
 ] as const;
 
 const schema = {
@@ -90,7 +143,11 @@ const ensureTerm = async (label: string): Promise<string> => {
   if (!taxonomy) {
     throw new Error('Could not create the proposal taxonomy');
   }
-  const termUri = slugify(label.trim(), { lower: true, strict: true, trim: true });
+  const termUri = slugify(label.trim(), {
+    lower: true,
+    strict: true,
+    trim: true,
+  });
   const existing = await db.query.taxonomyTerms.findFirst({
     where: { taxonomyId: taxonomy.id, termUri },
   });
@@ -113,7 +170,9 @@ const main = async () => {
     columns: { id: true },
   });
   if (existing) {
-    throw new Error(`A profile with slug ${SLUG} already exists: ${existing.id}`);
+    throw new Error(
+      `A profile with slug ${SLUG} already exists: ${existing.id}`,
+    );
   }
 
   const template = await createDecisionProcess({
@@ -144,7 +203,8 @@ const main = async () => {
     });
   }
 
-  const codes: Array<{ code: number | null; title: string; district: string }> = [];
+  const codes: Array<{ code: number | null; title: string; district: string }> =
+    [];
   for (const item of PROPOSALS) {
     const proposal = await createProposal({
       processInstanceId: decision.instance.id,
@@ -164,12 +224,18 @@ const main = async () => {
     if (!taxonomyTermId) {
       throw new Error(`No term for ${item.district}`);
     }
-    await db.insert(proposalCategories).values({ proposalId: proposal.id, taxonomyTermId });
+    await db
+      .insert(proposalCategories)
+      .values({ proposalId: proposal.id, taxonomyTermId });
     const [row] = await db.query.proposals.findMany({
       where: { id: proposal.id },
       columns: { shortCode: true },
     });
-    codes.push({ code: row?.shortCode ?? null, title: item.title, district: item.district });
+    codes.push({
+      code: row?.shortCode ?? null,
+      title: item.title,
+      district: item.district,
+    });
   }
 
   await makeDecisionPublic({ profileId: decision.profileId });
