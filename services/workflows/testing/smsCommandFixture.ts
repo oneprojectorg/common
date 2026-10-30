@@ -98,6 +98,7 @@ const votingSchema: DecisionSchemaDefinition = {
 
 export interface FixtureVotingRules {
   enrolment?: VoterEnrolmentRule;
+  edit?: boolean;
   voterBudget?: number;
   voterCostField?: string;
   maxVotesPerMember?: number;
@@ -284,12 +285,26 @@ export class SmsCommandFixture {
     phaseId?: string;
     attestation: string;
   }) {
+    const instance = await db.query.processInstances.findFirst({
+      where: { id: instanceId },
+      columns: { instanceData: true },
+    });
+    const voting =
+      getInstancePhases(instance?.instanceData).find(
+        (phase) => phase.phaseId === phaseId,
+      )?.rules?.voting ?? {};
     await updateDecisionInstance({
       instanceId,
       phases: [
         {
           phaseId,
-          rules: { voting: { submit: true, enrolment: { attestation } } },
+          rules: {
+            voting: {
+              ...voting,
+              submit: true,
+              enrolment: { ...voting.enrolment, attestation },
+            },
+          },
         },
       ],
       user: userOf(owner),

@@ -146,3 +146,14 @@ export const formatSmsPickLimitReached = ({
   limit: number;
 }): string =>
   `${quoted(title)} was not added: your ballot already holds the most picks allowed (${limit}). REMOVE one to add another.`;
+
+export const SMS_BALLOT_UPDATED_MESSAGE =
+  'Your ballot is updated. One ballot per person. However, your vote is never public.';
+export const SMS_BALLOT_REOPENED_MESSAGE =
+  'Your ballot is open for changes. Text codes to add, REMOVE or MOVE to adjust, then SUBMIT.';
+export const SMS_BALLOT_NOT_CAST_MESSAGE =
+  'You have not cast a ballot yet. Text a code from your guide to start one.';
+export const SMS_BALLOT_CHANGE_FIRST_MESSAGE =
+  'Your ballot is in. Text CHANGE to revise it.';
+export const SMS_BALLOT_CHANGE_NOT_ALLOWED_MESSAGE =
+  'This decision does not allow a cast ballot to be changed.';
