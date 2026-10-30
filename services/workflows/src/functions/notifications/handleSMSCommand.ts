@@ -13,7 +13,10 @@ import {
   type SmsDeliver,
   agree,
   freeText,
+  info,
   join,
+  more,
+  proposals,
   show,
   vote,
 } from './smsCommandHandlers';
@@ -91,7 +94,12 @@ export const handleSMSCommand = inngest.createFunction(
         ? await findDecisionPhoneNumber({ phone: inboundTo })
         : null;
       return found
-        ? { phone: found.phone, slug: found.slug, instanceId: found.instanceId }
+        ? {
+            id: found.id,
+            phone: found.phone,
+            slug: found.slug,
+            instanceId: found.instanceId,
+          }
         : null;
     });
 
@@ -124,7 +132,9 @@ export const handleSMSCommand = inngest.createFunction(
       account,
       argument,
       body,
-      line: line ? { slug: line.slug, instanceId: line.instanceId } : null,
+      line: line
+        ? { id: line.id, slug: line.slug, instanceId: line.instanceId }
+        : null,
       deliver,
       geocode: getGeocoder(),
     };
@@ -140,6 +150,12 @@ export const handleSMSCommand = inngest.createFunction(
         return vote(context);
       case 'agree':
         return agree(context);
+      case 'proposals':
+        return proposals(context);
+      case 'more':
+        return more(context);
+      case 'info':
+        return info(context);
       default:
         return assertNever(keyword);
     }

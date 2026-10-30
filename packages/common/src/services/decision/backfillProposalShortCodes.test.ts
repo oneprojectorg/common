@@ -1,6 +1,11 @@
 import { TestDecisionsDataManager } from '@op/common/testing';
 import { db, eq, sql } from '@op/db/client';
-import { ProcessStatus, ProposalStatus, proposals } from '@op/db/schema';
+import {
+  ProcessStatus,
+  ProposalStatus,
+  processInstances,
+  proposals,
+} from '@op/db/schema';
 import { execSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
@@ -20,7 +25,7 @@ const runBackfill = (args: string) =>
   });
 
 describe.concurrent('backfill-proposal-short-codes against the database', () => {
-  it('given a published decision whose proposals were inserted out of creation order, when the script runs, then each submitted proposal gets a code in creation order with its edit date untouched, a draft gets none, the decision counter moves past them, and a second run assigns nothing', async ({
+  it('given a published decision whose proposals were inserted out of creation order and planted without codes, as rows from before the column were, when the script runs, then each submitted proposal gets a code in creation order with its edit date untouched, a draft gets none, the decision counter moves past them, and a second run assigns nothing', async ({
     task,
     onTestFinished,
   }) => {
@@ -52,6 +57,14 @@ describe.concurrent('backfill-proposal-short-codes against the database', () => 
     await seed('Created first', -2, ProposalStatus.SUBMITTED);
     await seed('Created second', -1, ProposalStatus.SUBMITTED);
     await seed('Still a draft', -3, ProposalStatus.DRAFT);
+    await db
+      .update(proposals)
+      .set({ shortCode: null })
+      .where(eq(proposals.processInstanceId, instance.id));
+    await db
+      .update(processInstances)
+      .set({ nextShortCode: 101 })
+      .where(eq(processInstances.id, instance.id));
 
     const editDatesBefore = await db
       .select({ id: proposals.id, updatedAt: proposals.updatedAt })

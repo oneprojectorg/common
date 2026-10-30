@@ -6,6 +6,7 @@ import {
 } from '../notification/schemas';
 
 export interface DecisionPhoneNumberTarget {
+  id: string;
   phone: PhoneNumber;
   instanceId: string;
   slug: string;
@@ -25,7 +26,7 @@ export const findDecisionPhoneNumber = async ({
 
   const number = await db.query.decisionPhoneNumbers.findFirst({
     where: { phoneNumber: parsed.data, channel },
-    columns: { processInstanceId: true },
+    columns: { id: true, processInstanceId: true },
     with: {
       processInstance: {
         columns: { id: true },
@@ -39,6 +40,7 @@ export const findDecisionPhoneNumber = async ({
   }
 
   return {
+    id: number.id,
     phone: parsed.data,
     instanceId: number.processInstanceId,
     slug: number.processInstance.profile.slug,

@@ -4,6 +4,8 @@ import {
   findVoterEnrolment,
   parsePhoneNumber,
 } from '@op/common';
+import { db } from '@op/db/client';
+import { ProcessStatus } from '@op/db/schema';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { memoryGeocoder } from '../../../testing/mocks/geocoder';
@@ -48,6 +50,20 @@ const NUMBERS = {
   voteNoRule: '+15005550076',
   freeNothing: '+15005550077',
   voteNoSlug: '+15005550078',
+  browseFirst: '+15005550060',
+  browseMore: '+15005550061',
+  browseNoCursor: '+15005550062',
+  infoFound: '+15005550063',
+  infoUnknown: '+15005550064',
+  browseUnenrolled: '+15005550065',
+  browseClosed: '+15005550066',
+  infoStranger: '+15005550067',
+  browseOtherSlug: '+15005550068',
+  browseOtherLine: '+15005550069',
+  browseUnpublished: '+15005550059',
+  browseRewritten: '+15005550057',
+  browseRejected: '+15005550056',
+  browseSlugRewritten: '+15005550058',
   enrolRewrite: '+15005550079',
   enrolSwitch: '+15005550083',
   agreeRewritten: '+15005550027',
@@ -62,8 +78,21 @@ const LINES = {
   enrolNotFound: '+16145550135',
   enrolOutside: '+16145550136',
   enrolAgree: '+16145550137',
-  enrolRewrite: '+16145550138',
-  enrolSwitch: '+16145550139',
+  browseFirst: '+16145550138',
+  browseMore: '+16145550139',
+  infoFound: '+16145550140',
+  infoUnknown: '+16145550141',
+  browseUnenrolled: '+16145550142',
+  browseClosed: '+16145550143',
+  infoStranger: '+16145550159',
+  browseOtherSlug: '+16145550160',
+  browseOtherLineA: '+16145550192',
+  browseOtherLineB: '+16145550193',
+  browseUnpublished: '+16145550194',
+  browseRewritten: '+16145550199',
+  browseRejected: '+16145550165',
+  enrolRewrite: '+16145550190',
+  enrolSwitch: '+16145550191',
   agreeRewritten: '+16145550170',
 } as const;
 
@@ -1000,5 +1029,525 @@ describe('handleSMSCommand registration over SMS', () => {
       taxonomyTermId: null,
       enrolledAt: null,
     });
+  });
+});
+
+describe('handleSMSCommand browsing the ballot', () => {
+  const PROPOSALS = [
+    { title: 'Crosswalk lighting', budget: 85_000 },
+    { title: 'Bike lane', budget: 310_000 },
+    { title: 'Speed humps', budget: 45_000 },
+    { title: 'Bus shelters', budget: 60_000 },
+    { title: 'Alley lighting', budget: 120_000 },
+    { title: 'Tree planting', budget: 150_000 },
+  ];
+  const FIRST_PAGE_LINES = [
+    '101 Crosswalk lighting ($85,000)',
+    '102 Bike lane ($310,000)',
+    '103 Speed humps ($45,000)',
+    '104 Bus shelters ($60,000)',
+    '105 Alley lighting ($120,000)',
+  ];
+
+  const seed = async (
+    fixture: SmsCommandFixture,
+    {
+      phone,
+      line,
+      name,
+      enrolment,
+      currentPhaseId,
+    }: {
+      phone: string;
+      line: string | null;
+      name: string;
+      enrolment?: { attestation: string; boundary: boolean };
+      currentPhaseId?: string;
+    },
+  ) => {
+    const member = await fixture.createPhoneOnlyAccount(
+      parsePhoneNumber(phone),
+    );
+    const { instanceId, instanceProfileId, slug } =
+      await fixture.createVotingInstance({
+        owner: member,
+        name,
+        proposalTitles: PROPOSALS,
+        ...(enrolment ? { enrolment } : {}),
+        ...(currentPhaseId ? { currentPhaseId } : {}),
+      });
+    await fixture.addMember(instanceProfileId, member);
+    if (line) {
+      await fixture.bindLine(instanceId, parsePhoneNumber(line));
+    }
+    return { member, instanceId, slug };
+  };
+
+  const run = (event: ReturnType<typeof smsInboundEvent>) =>
+    new InngestTestEngine({ function: handleSMSCommand }).execute({
+      events: [event],
+    });
+
+  it('given a member texts PROPOSALS to the line of a decision with six proposals, then the first five arrive with codes and costs and a MORE footer', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsCommandFixture(task.id, onTestFinished);
+    const name = `Browse First ${task.id}`;
+    await seed(fixture, {
+      phone: NUMBERS.browseFirst,
+      line: LINES.browseFirst,
+      name,
+    });
+
+    const { result } = await run(
+      smsInboundEvent({
+        from: NUMBERS.browseFirst,
+        to: LINES.browseFirst,
+        keyword: 'proposals',
+      }),
+    );
+
+    expect(result).toEqual({ message: 'ballot page sent' });
+    expect(recordedSms.map((sms) => sms.body)).toEqual([
+      [
+        `"${name}" has 6 proposals. First 5:`,
+        ...FIRST_PAGE_LINES,
+        'Reply MORE for the rest, or INFO plus a code.',
+      ].join('\n'),
+    ]);
+  });
+
+  it('given a member has seen the first page, when they text MORE, then the last proposal arrives and the footer no longer offers MORE', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsCommandFixture(task.id, onTestFinished);
+    await seed(fixture, {
+      phone: NUMBERS.browseMore,
+      line: LINES.browseMore,
+      name: `Browse More ${task.id}`,
+    });
+    await run(
+      smsInboundEvent({
+        from: NUMBERS.browseMore,
+        to: LINES.browseMore,
+        keyword: 'proposals',
+      }),
+    );
+
+    const { result } = await run(
+      smsInboundEvent({
+        from: NUMBERS.browseMore,
+        to: LINES.browseMore,
+        keyword: 'more',
+      }),
+    );
+
+    expect(result).toEqual({ message: 'next ballot page sent' });
+    expect(recordedSms.at(-1)?.body).toBe(
+      'Next 1:\n106 Tree planting ($150,000)\nReply INFO plus a code for details.',
+    );
+  });
+
+  it('given a member who has not browsed texts MORE, then they are told to text PROPOSALS first', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsCommandFixture(task.id, onTestFinished);
+    await seed(fixture, {
+      phone: NUMBERS.browseNoCursor,
+      line: null,
+      name: `Browse No Cursor ${task.id}`,
+    });
+
+    const { result } = await run(
+      smsInboundEvent({ from: NUMBERS.browseNoCursor, keyword: 'more' }),
+    );
+
+    expect(result).toEqual({ message: 'browse not started' });
+    expect(recordedSms.map((sms) => sms.body)).toEqual([
+      'Text PROPOSALS to start browsing.',
+    ]);
+  });
+
+  it('given a member texts INFO and a code on the line, then that proposal arrives with its cost and summary', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsCommandFixture(task.id, onTestFinished);
+    await seed(fixture, {
+      phone: NUMBERS.infoFound,
+      line: LINES.infoFound,
+      name: `Info Found ${task.id}`,
+    });
+
+    const { result } = await run(
+      smsInboundEvent({
+        from: NUMBERS.infoFound,
+        to: LINES.infoFound,
+        keyword: 'info',
+        argument: '101',
+      }),
+    );
+
+    expect(result).toEqual({ message: 'proposal info sent' });
+    expect(recordedSms.map((sms) => sms.body)).toEqual([
+      '101 "Crosswalk lighting" ($85,000)\nNo summary.',
+    ]);
+  });
+
+  it('given a member texts INFO and a code no proposal has, then they are told it is not on their ballot', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsCommandFixture(task.id, onTestFinished);
+    await seed(fixture, {
+      phone: NUMBERS.infoUnknown,
+      line: LINES.infoUnknown,
+      name: `Info Unknown ${task.id}`,
+    });
+
+    const { result } = await run(
+      smsInboundEvent({
+        from: NUMBERS.infoUnknown,
+        to: LINES.infoUnknown,
+        keyword: 'info',
+        argument: '999',
+      }),
+    );
+
+    expect(result).toEqual({ message: 'proposal not on ballot' });
+    expect(recordedSms.map((sms) => sms.body)).toEqual([
+      'No proposal with code 999 is on your ballot.',
+    ]);
+  });
+
+  it('given a decision that requires registration, when an unregistered member texts PROPOSALS, then they are told to text VOTE first', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsCommandFixture(task.id, onTestFinished);
+    const name = `Browse Unenrolled ${task.id}`;
+    await seed(fixture, {
+      phone: NUMBERS.browseUnenrolled,
+      line: LINES.browseUnenrolled,
+      name,
+      enrolment: { attestation: 'I affirm.', boundary: false },
+    });
+
+    const { result } = await run(
+      smsInboundEvent({
+        from: NUMBERS.browseUnenrolled,
+        to: LINES.browseUnenrolled,
+        keyword: 'proposals',
+      }),
+    );
+
+    expect(result).toEqual({ message: 'register first' });
+    expect(recordedSms.map((sms) => sms.body)).toEqual([
+      `Text VOTE to register for "${name}" before browsing its proposals.`,
+    ]);
+  });
+
+  it('given the carrier refuses the first page, when a member texts PROPOSALS, then no cursor is saved so the page is not skipped later', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsCommandFixture(task.id, onTestFinished);
+    const { instanceId } = await seed(fixture, {
+      phone: NUMBERS.browseRejected,
+      line: LINES.browseRejected,
+      name: `Browse Rejected ${task.id}`,
+    });
+    refuseSmsTo(parsePhoneNumber(NUMBERS.browseRejected), {
+      reason: 'opted_out',
+      retryable: false,
+    });
+
+    const { result } = await run(
+      smsInboundEvent({
+        from: NUMBERS.browseRejected,
+        to: LINES.browseRejected,
+        keyword: 'proposals',
+      }),
+    );
+
+    expect(result).toMatchObject({ message: 'reply rejected' });
+    await expect(
+      db.query.decisionChatSessions.findFirst({
+        where: { processInstanceId: instanceId },
+        columns: { pageCursor: true },
+      }),
+    ).resolves.toMatchObject({ pageCursor: null });
+  });
+
+  it('given a decision still taking submissions, when a member texts PROPOSALS, then they are told voting is not open', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsCommandFixture(task.id, onTestFinished);
+    const name = `Browse Closed ${task.id}`;
+    await seed(fixture, {
+      phone: NUMBERS.browseClosed,
+      line: LINES.browseClosed,
+      name,
+      currentPhaseId: 'submission',
+    });
+
+    const { result } = await run(
+      smsInboundEvent({
+        from: NUMBERS.browseClosed,
+        to: LINES.browseClosed,
+        keyword: 'proposals',
+      }),
+    );
+
+    expect(result).toEqual({ message: 'voting closed' });
+    expect(recordedSms.map((sms) => sms.body)).toEqual([
+      `Voting is not open for "${name}".`,
+    ]);
+  });
+});
+
+describe('handleSMSCommand browsing: access and decision choice', () => {
+  const PROPOSALS = [
+    { title: 'Crosswalk lighting', budget: 85_000 },
+    { title: 'Bike lane', budget: 310_000 },
+  ];
+
+  const run = (event: ReturnType<typeof smsInboundEvent>) =>
+    new InngestTestEngine({ function: handleSMSCommand }).execute({
+      events: [event],
+    });
+
+  it("given a confirmed number that is not a member texts INFO to a private decision's line, then nothing about the proposal is sent", async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsCommandFixture(task.id, onTestFinished);
+    const owner = await fixture.createPhoneOnlyAccount(
+      parsePhoneNumber('+15005550020'),
+    );
+    const stranger = await fixture.createPhoneOnlyAccount(
+      parsePhoneNumber(NUMBERS.infoStranger),
+    );
+    const { instanceId } = await fixture.createVotingInstance({
+      owner,
+      name: `Private Line ${task.id}`,
+      proposalTitles: PROPOSALS,
+    });
+    await fixture.bindLine(instanceId, parsePhoneNumber(LINES.infoStranger));
+    expect(stranger.authUserId).not.toBe(owner.authUserId);
+
+    const { result } = await run(
+      smsInboundEvent({
+        from: NUMBERS.infoStranger,
+        to: LINES.infoStranger,
+        keyword: 'info',
+        argument: '101',
+      }),
+    );
+
+    expect(result).toEqual({ message: 'decision not found' });
+    expect(recordedSms.map((sms) => sms.body)).toEqual([
+      'That decision is not available to you.',
+    ]);
+  });
+
+  it("given a member browses another decision by slug on a line, when they text MORE, then the next page is that decision's, not the line's", async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsCommandFixture(task.id, onTestFinished);
+    const member = await fixture.createPhoneOnlyAccount(
+      parsePhoneNumber(NUMBERS.browseOtherSlug),
+    );
+    const lineDecision = await fixture.createVotingInstance({
+      owner: member,
+      name: `Line Decision ${task.id}`,
+      proposalTitles: PROPOSALS,
+    });
+    const other = await fixture.createVotingInstance({
+      owner: member,
+      name: `Other Decision ${task.id}`,
+      proposalTitles: [
+        { title: 'Speed humps', budget: 45_000 },
+        { title: 'Bus shelters', budget: 60_000 },
+        { title: 'Alley lighting', budget: 120_000 },
+        { title: 'Tree planting', budget: 150_000 },
+        { title: 'Pool hours', budget: 90_000 },
+        { title: 'Library wifi', budget: 30_000 },
+      ],
+    });
+    await fixture.addMember(lineDecision.instanceProfileId, member);
+    await fixture.addMember(other.instanceProfileId, member);
+    await fixture.bindLine(
+      lineDecision.instanceId,
+      parsePhoneNumber(LINES.browseOtherSlug),
+    );
+    await run(
+      smsInboundEvent({
+        from: NUMBERS.browseOtherSlug,
+        to: LINES.browseOtherSlug,
+        keyword: 'proposals',
+        argument: other.slug,
+      }),
+    );
+
+    const { result } = await run(
+      smsInboundEvent({
+        from: NUMBERS.browseOtherSlug,
+        to: LINES.browseOtherSlug,
+        keyword: 'more',
+      }),
+    );
+
+    expect(result).toEqual({ message: 'next ballot page sent' });
+    expect(recordedSms.at(-1)?.body).toBe(
+      'Next 1:\n106 Library wifi ($30,000)\nReply INFO plus a code for details.',
+    );
+  });
+
+  it("given a member who browsed decision A on its own line, when they text INFO 101 and then MORE to decision B's line, then both answer about B", async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsCommandFixture(task.id, onTestFinished);
+    const member = await fixture.createPhoneOnlyAccount(
+      parsePhoneNumber(NUMBERS.browseOtherLine),
+    );
+    const a = await fixture.createVotingInstance({
+      owner: member,
+      name: `Decision A ${task.id}`,
+      proposalTitles: PROPOSALS,
+    });
+    const b = await fixture.createVotingInstance({
+      owner: member,
+      name: `Decision B ${task.id}`,
+      proposalTitles: [
+        { title: 'Speed humps', budget: 45_000 },
+        { title: 'Bus shelters', budget: 60_000 },
+        { title: 'Alley lighting', budget: 120_000 },
+        { title: 'Tree planting', budget: 150_000 },
+        { title: 'Pool hours', budget: 90_000 },
+        { title: 'Library wifi', budget: 30_000 },
+      ],
+    });
+    await fixture.addMember(a.instanceProfileId, member);
+    await fixture.addMember(b.instanceProfileId, member);
+    await fixture.bindLine(
+      a.instanceId,
+      parsePhoneNumber(LINES.browseOtherLineA),
+    );
+    await fixture.bindLine(
+      b.instanceId,
+      parsePhoneNumber(LINES.browseOtherLineB),
+    );
+    await run(
+      smsInboundEvent({
+        from: NUMBERS.browseOtherLine,
+        to: LINES.browseOtherLineA,
+        keyword: 'proposals',
+      }),
+    );
+
+    const info = await run(
+      smsInboundEvent({
+        from: NUMBERS.browseOtherLine,
+        to: LINES.browseOtherLineB,
+        keyword: 'info',
+        argument: '101',
+        messageSid: `SM-${task.id}-info`,
+      }),
+    );
+    await run(
+      smsInboundEvent({
+        from: NUMBERS.browseOtherLine,
+        to: LINES.browseOtherLineB,
+        keyword: 'proposals',
+        messageSid: `SM-${task.id}-proposals-b`,
+      }),
+    );
+    const more = await run(
+      smsInboundEvent({
+        from: NUMBERS.browseOtherLine,
+        to: LINES.browseOtherLineB,
+        keyword: 'more',
+        messageSid: `SM-${task.id}-more`,
+      }),
+    );
+
+    expect(info.result).toEqual({ message: 'proposal info sent' });
+    expect(more.result).toEqual({ message: 'next ballot page sent' });
+    expect(recordedSms.map((sms) => sms.body).slice(1)).toEqual([
+      '101 "Speed humps" ($45,000)\nNo summary.',
+      expect.stringContaining('101 Speed humps ($45,000)'),
+      'Next 1:\n106 Library wifi ($30,000)\nReply INFO plus a code for details.',
+    ]);
+  });
+
+  it('given a decision a member browsed is cancelled, when they text MORE and INFO to its line, then both say it is not available', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsCommandFixture(task.id, onTestFinished);
+    const member = await fixture.createPhoneOnlyAccount(
+      parsePhoneNumber(NUMBERS.browseUnpublished),
+    );
+    const { instanceId } = await fixture.createVotingInstance({
+      owner: member,
+      name: `Cancelled ${task.id}`,
+      proposalTitles: [
+        { title: 'Speed humps', budget: 45_000 },
+        { title: 'Bus shelters', budget: 60_000 },
+        { title: 'Alley lighting', budget: 120_000 },
+        { title: 'Tree planting', budget: 150_000 },
+        { title: 'Pool hours', budget: 90_000 },
+        { title: 'Library wifi', budget: 30_000 },
+      ],
+      ownerIsAdmin: true,
+    });
+    await fixture.bindLine(
+      instanceId,
+      parsePhoneNumber(LINES.browseUnpublished),
+    );
+    await run(
+      smsInboundEvent({
+        from: NUMBERS.browseUnpublished,
+        to: LINES.browseUnpublished,
+        keyword: 'proposals',
+      }),
+    );
+    await fixture.setStatus({
+      instanceId,
+      owner: member,
+      status: ProcessStatus.CANCELLED,
+    });
+
+    const more = await run(
+      smsInboundEvent({
+        from: NUMBERS.browseUnpublished,
+        to: LINES.browseUnpublished,
+        keyword: 'more',
+        messageSid: `SM-${task.id}-more`,
+      }),
+    );
+    const info = await run(
+      smsInboundEvent({
+        from: NUMBERS.browseUnpublished,
+        to: LINES.browseUnpublished,
+        keyword: 'info',
+        argument: '101',
+        messageSid: `SM-${task.id}-info`,
+      }),
+    );
+
+    expect(more.result).toEqual({ message: 'decision not found' });
+    expect(info.result).toEqual({ message: 'decision not found' });
+    expect(recordedSms.map((sms) => sms.body).slice(1)).toEqual([
+      'That decision is not available to you.',
+      'That decision is not available to you.',
+    ]);
   });
 });
