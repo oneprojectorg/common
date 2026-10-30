@@ -5,10 +5,12 @@ import {
   updateDecisionInstance,
 } from '@op/common';
 import {
+  createDecisionBoundary,
   createDecisionPhoneNumber,
   createDecisionInstance,
   createDecisionProcess,
   createProposal,
+  ensureProposalCategoryTerms,
   grantDecisionProfileAccess,
   makeDecisionPublic,
   readProfileIdForAuthUser,
@@ -18,7 +20,7 @@ import {
   advanceInstancePhase,
 } from '@op/common/testing/helpers';
 import { db, inArray } from '@op/db/client';
-import { ProposalStatus, profiles } from '@op/db/schema';
+import { ProposalStatus, profiles, taxonomyTerms } from '@op/db/schema';
 
 type RegisterCleanup = (fn: () => void | Promise<void>) => void;
 
@@ -93,6 +95,7 @@ const withEnrolment = (
 export class SmsCommandFixture {
   private readonly phoneAuth: TestPhoneAuthDataManager;
   private readonly profileIds: string[] = [];
+  private readonly termIds: string[] = [];
 
   constructor(testId: string, onTestFinished: RegisterCleanup) {
     this.phoneAuth = new TestPhoneAuthDataManager(testId, onTestFinished);
@@ -191,6 +194,25 @@ export class SmsCommandFixture {
     });
   }
 
+  async createDistrict({
+    profileId,
+    name,
+  }: {
+    profileId: string;
+    name: string;
+  }) {
+    const [term] = await ensureProposalCategoryTerms([name]);
+    if (!term) {
+      throw new Error(`Failed to ensure a district term for ${name}`);
+    }
+    this.termIds.push(term.taxonomyTermId);
+    return createDecisionBoundary({
+      profileId,
+      name,
+      taxonomyTermId: term.taxonomyTermId,
+    });
+  }
+
   async rewriteAttestation({
     instanceId,
     owner,
@@ -239,6 +261,11 @@ export class SmsCommandFixture {
   private async cleanup() {
     if (this.profileIds.length > 0) {
       await db.delete(profiles).where(inArray(profiles.id, this.profileIds));
+    }
+    if (this.termIds.length > 0) {
+      await db
+        .delete(taxonomyTerms)
+        .where(inArray(taxonomyTerms.id, this.termIds));
     }
   }
 }
