@@ -1,6 +1,6 @@
 import { isFeatureEnabled } from '@op/analytics';
 import {
-  findChatLine,
+  findDecisionPhoneNumber,
   getPhoneSignupState,
   parsePhoneNumber,
 } from '@op/common';
@@ -78,7 +78,9 @@ export const handleSMSCommand = inngest.createFunction(
     }
 
     const line = await step.run('resolve-line', async () => {
-      const found = inboundTo ? await findChatLine({ phone: inboundTo }) : null;
+      const found = inboundTo
+        ? await findDecisionPhoneNumber({ phone: inboundTo })
+        : null;
       return found ? { phone: found.phone, slug: found.slug } : null;
     });
 

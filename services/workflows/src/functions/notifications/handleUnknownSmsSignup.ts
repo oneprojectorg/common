@@ -3,7 +3,7 @@ import {
   type PhoneSignupConfirmation,
   confirmPhoneSignupCode,
   discardUnconfirmedPhoneSignup,
-  findChatLine,
+  findDecisionPhoneNumber,
   getPhoneSignupState,
   parsePhoneNumber,
   PHONE_SIGNUP_REPLY_WINDOW_MINUTES,
@@ -103,7 +103,7 @@ export const handleUnknownSmsSignup = inngest.createFunction(
     }
 
     const line = await step.run('resolve-line', async () =>
-      inboundTo ? await findChatLine({ phone: inboundTo }) : null,
+      inboundTo ? await findDecisionPhoneNumber({ phone: inboundTo }) : null,
     );
 
     const sendText = createTextSender({

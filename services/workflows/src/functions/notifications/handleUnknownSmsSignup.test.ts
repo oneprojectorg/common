@@ -6,7 +6,7 @@ import {
   toGoTruePhoneFormat,
 } from '@op/common';
 import { TestDecisionsDataManager } from '@op/common/testing';
-import { createDecisionChatLine } from '@op/common/testing/data';
+import { createDecisionPhoneNumber } from '@op/common/testing/data';
 import { TestPhoneAuthDataManager } from '@op/common/testing/helpers';
 import { db, eq } from '@op/db/client';
 import { authUsers, profiles, users } from '@op/db/schema';
@@ -158,7 +158,7 @@ describe('handleUnknownSmsSignup against the database', () => {
     const { phone, code } = claimNumber('+15005550010', testData);
     const line = parsePhoneNumber(LINE);
     const setup = await decisions.createDecisionSetup({ instanceCount: 1 });
-    await createDecisionChatLine({
+    await createDecisionPhoneNumber({
       processInstanceId: setup.instance.instance.id,
       phoneNumber: line,
     });

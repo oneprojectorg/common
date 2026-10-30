@@ -5,24 +5,26 @@ import {
   safeParsePhoneNumber,
 } from '../notification/schemas';
 
-export interface ChatLineTarget {
+export interface DecisionPhoneNumberTarget {
   phone: PhoneNumber;
   instanceId: string;
   slug: string;
 }
 
-export const findChatLine = async ({
+export const findDecisionPhoneNumber = async ({
   phone,
+  channel = 'sms',
 }: {
   phone: string;
-}): Promise<ChatLineTarget | null> => {
+  channel?: 'sms' | 'whatsapp';
+}): Promise<DecisionPhoneNumberTarget | null> => {
   const parsed = safeParsePhoneNumber(phone);
   if (!parsed.success) {
     return null;
   }
 
-  const line = await db.query.decisionChatLines.findFirst({
-    where: { phoneNumber: parsed.data },
+  const number = await db.query.decisionPhoneNumbers.findFirst({
+    where: { phoneNumber: parsed.data, channel },
     columns: { processInstanceId: true },
     with: {
       processInstance: {
@@ -32,13 +34,13 @@ export const findChatLine = async ({
     },
   });
 
-  if (!line?.processInstance.profile) {
+  if (!number?.processInstance.profile) {
     return null;
   }
 
   return {
     phone: parsed.data,
-    instanceId: line.processInstanceId,
-    slug: line.processInstance.profile.slug,
+    instanceId: number.processInstanceId,
+    slug: number.processInstance.profile.slug,
   };
 };

@@ -7,7 +7,7 @@ import {
   accessRolePermissionsOnAccessZones,
   accessRoles,
   customForms,
-  decisionChatLines,
+  decisionPhoneNumbers,
   decisionProcesses,
   processInstances,
   profileRelationships,
@@ -1087,23 +1087,25 @@ export async function createCustomForm({
   return form;
 }
 
-export interface CreateDecisionChatLineOptions {
+export interface CreateDecisionPhoneNumberOptions {
   processInstanceId: string;
   phoneNumber: string;
+  channel?: 'sms' | 'whatsapp';
 }
 
-export async function createDecisionChatLine({
+export async function createDecisionPhoneNumber({
   processInstanceId,
   phoneNumber,
-}: CreateDecisionChatLineOptions) {
-  const [line] = await db
-    .insert(decisionChatLines)
-    .values({ processInstanceId, phoneNumber })
+  channel = 'sms',
+}: CreateDecisionPhoneNumberOptions) {
+  const [number] = await db
+    .insert(decisionPhoneNumbers)
+    .values({ processInstanceId, phoneNumber, channel })
     .returning();
 
-  if (!line) {
-    throw new Error('Failed to create decision chat line');
+  if (!number) {
+    throw new Error('Failed to create decision phone number');
   }
 
-  return line;
+  return number;
 }
