@@ -1,14 +1,12 @@
 import { db, desc, eq } from '@op/db/client';
 import { ProposalStatus, organizations, processInstances } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
-import { checkPermission, permission } from 'access-zones';
+import { permission } from 'access-zones';
 
 import { UnauthorizedError } from '../../utils';
 import { assertOrgAccess } from '../assert';
-import {
-  type RedactableInstanceData,
-  redactHiddenBudget,
-} from './templateBudget';
+import { redactHiddenBudgetForViewer } from './budgetVisibility';
+import type { RedactableInstanceData } from './templateBudget';
 
 export const listLegacyInstances = async ({
   ownerProfileId,
@@ -31,10 +29,6 @@ export const listLegacyInstances = async ({
     organizationId: org[0].id,
     permissions: { decisions: permission.READ },
   });
-  const isAdmin = checkPermission(
-    { decisions: permission.ADMIN },
-    orgUser.roles,
-  );
 
   const instanceList = await db._query.processInstances.findMany({
     where: eq(processInstances.ownerProfileId, ownerProfileId),
@@ -69,9 +63,10 @@ export const listLegacyInstances = async ({
 
     return {
       ...instance,
-      instanceData: isAdmin
-        ? instance.instanceData
-        : redactHiddenBudget(instance.instanceData as RedactableInstanceData),
+      instanceData: redactHiddenBudgetForViewer(
+        instance.instanceData as RedactableInstanceData,
+        orgUser.roles,
+      ),
       proposalCount,
       participantCount,
     };

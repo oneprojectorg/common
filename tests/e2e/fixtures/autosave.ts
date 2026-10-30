@@ -8,8 +8,10 @@ import type { Page } from '@playwright/test';
  * a click races the write.
  *
  * The API streams batch responses, so the headers land before the mutation has
- * run. The body completes only after the server has written the result, so the
- * fully streamed body is the signal that the write has landed.
+ * run. The client refetches getInstance once it has read the result from the
+ * body, so that request is the signal that the write has landed. (Do not wait
+ * on `response.finished()` instead: Chromium never reports loadingFinished for
+ * these streamed bodies, so it hangs — see a317d0f67.)
  *
  * Pass `requestBodyIncludes` to wait for a specific save rather than whichever
  * one lands first — the builder saves several fields independently.
@@ -35,6 +37,9 @@ export async function waitForAutoSave(
     },
     { timeout: 12_000 },
   );
-  await response.finished();
+  await page.waitForRequest(
+    (req) => /decision\.getInstance(\?|,|$)/.test(req.url()),
+    { timeout: 12_000 },
+  );
   return response;
 }

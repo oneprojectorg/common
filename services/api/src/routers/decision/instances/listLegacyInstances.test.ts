@@ -81,6 +81,37 @@ const legacyInstanceData = {
   ],
 };
 
+async function seedLegacyInstance({
+  ownerProfileId,
+  taskId,
+  name,
+  instanceData = legacyInstanceData,
+}: {
+  ownerProfileId: string;
+  taskId: string;
+  name: string;
+  instanceData?: Record<string, unknown>;
+}) {
+  const [process] = await db
+    .insert(decisionProcesses)
+    .values({
+      name: `Legacy Process ${taskId}`,
+      processSchema: legacyProcessSchema,
+      createdByProfileId: ownerProfileId,
+    })
+    .returning();
+
+  await db.insert(processInstances).values({
+    name,
+    processId: process!.id,
+    ownerProfileId,
+    instanceData,
+    currentStateId: 'submission',
+    status: ProcessStatus.PUBLISHED,
+    profileId: null,
+  });
+}
+
 describe.concurrent('listLegacyInstances', () => {
   it('should list legacy instances for an org', async ({
     task,
@@ -273,23 +304,11 @@ describe.concurrent('listLegacyInstances', () => {
       instanceCount: 0,
     });
 
-    const [process] = await db
-      .insert(decisionProcesses)
-      .values({
-        name: `Legacy Process ${task.id}`,
-        processSchema: legacyProcessSchema,
-        createdByProfileId: setup.organization.profileId,
-      })
-      .returning();
-
-    await db.insert(processInstances).values({
-      name: 'Legacy Hidden Budget',
-      processId: process!.id,
+    await seedLegacyInstance({
       ownerProfileId: setup.organization.profileId,
+      taskId: task.id,
+      name: 'Legacy Hidden Budget',
       instanceData: { ...legacyInstanceData, budget: 50000, hideBudget: true },
-      currentStateId: 'submission',
-      status: ProcessStatus.PUBLISHED,
-      profileId: null,
     });
 
     const member = await testData.createMemberUser({
@@ -316,23 +335,11 @@ describe.concurrent('listLegacyInstances', () => {
       instanceCount: 0,
     });
 
-    const [process] = await db
-      .insert(decisionProcesses)
-      .values({
-        name: `Legacy Process ${task.id}`,
-        processSchema: legacyProcessSchema,
-        createdByProfileId: setup.organization.profileId,
-      })
-      .returning();
-
-    await db.insert(processInstances).values({
-      name: 'Legacy Hidden Budget Admin',
-      processId: process!.id,
+    await seedLegacyInstance({
       ownerProfileId: setup.organization.profileId,
+      taskId: task.id,
+      name: 'Legacy Hidden Budget Admin',
       instanceData: { ...legacyInstanceData, budget: 50000, hideBudget: true },
-      currentStateId: 'submission',
-      status: ProcessStatus.PUBLISHED,
-      profileId: null,
     });
 
     const caller = await createAuthenticatedCaller(setup.userEmail);

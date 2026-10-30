@@ -3,6 +3,7 @@ import {
   DEFAULT_REVIEWS_SCOPE,
 } from '../schemas/types';
 import type { PhaseReviewSettings, ReviewsPolicy } from '../schemas/types';
+import { isValidProcessBudget } from '../templateBudget';
 import { assertInstancePhase } from './instance';
 import { getPreviousPhases } from './phaseOrder';
 
@@ -63,11 +64,7 @@ export function getVoterBudget(phase: {
 }): number | undefined {
   const voterBudget = phase.rules?.voting?.voterBudget;
 
-  return typeof voterBudget === 'number' &&
-    Number.isFinite(voterBudget) &&
-    voterBudget > 0
-    ? voterBudget
-    : undefined;
+  return isValidProcessBudget(voterBudget) ? voterBudget : undefined;
 }
 
 export function isRankedVoting(phase: {

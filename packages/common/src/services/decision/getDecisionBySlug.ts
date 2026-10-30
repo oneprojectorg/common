@@ -1,11 +1,12 @@
 import { cache } from '@op/cache';
 import { db } from '@op/db/client';
 import { EntityType } from '@op/db/schema';
-import { checkPermission, permission } from 'access-zones';
+import { permission } from 'access-zones';
 
 import { UnauthorizedError } from '../../utils';
 import type { AccessUser } from '../access/cacheKeys';
 import { assertProfileAccess } from '../assert';
+import { canSeeHiddenBudget } from './budgetVisibility';
 import type { DecisionInstanceData } from './schemas/instanceData';
 import { redactHiddenBudget } from './templateBudget';
 
@@ -101,9 +102,7 @@ export const getDecisionBySlug = async ({
     notMemberMessage: 'User does not have access to this process',
   });
 
-  const isAdmin =
-    checkPermission({ profile: permission.ADMIN }, roles) ||
-    checkPermission({ decisions: permission.ADMIN }, roles);
+  const isAdmin = canSeeHiddenBudget(roles);
 
   return {
     ...profile,

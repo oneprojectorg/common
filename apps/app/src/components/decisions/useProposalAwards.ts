@@ -94,7 +94,7 @@ export const useProposalAwards = ({
     [setEdits],
   );
 
-  const defaultCurrency = fallbackCurrency ?? getBudgetCurrency(undefined);
+  const defaultCurrency = fallbackCurrency ?? DEFAULT_AWARD_CURRENCY;
 
   return useMemo(() => {
     const isValid = (proposalId: string) =>
@@ -162,6 +162,8 @@ export const useProposalAwards = ({
     setAmount,
   ]);
 };
+
+const DEFAULT_AWARD_CURRENCY = getBudgetCurrency(undefined);
 
 const requestedCache = new WeakMap<AwardProposal, MoneyAmount | undefined>();
 

@@ -92,13 +92,13 @@ export function useManualAwardDraft(
       if (typeof window === 'undefined') {
         return;
       }
-      if (Object.keys(next).length === 0) {
+      const isEmpty = Object.keys(next).length === 0;
+      if (isEmpty) {
         window.localStorage.removeItem(key);
-        snapshots.set(key, EMPTY);
       } else {
         window.localStorage.setItem(key, JSON.stringify(next));
-        snapshots.set(key, next);
       }
+      snapshots.set(key, isEmpty ? EMPTY : next);
       window.dispatchEvent(new CustomEvent(CHANGE_EVENT, { detail: key }));
     },
     [key],
