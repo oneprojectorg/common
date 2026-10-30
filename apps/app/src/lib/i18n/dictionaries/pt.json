@@ -782,6 +782,7 @@
       "processNameLabel": "Nome do processo",
       "totalBudgetLabel": "Orçamento total",
       "totalBudgetHint": "O valor disponível para atribuir às propostas que este processo selecionar",
+      "totalBudgetError": "Insira um valor maior que 0",
       "hideBudgetLabel": "Ocultar o orçamento total dos membros",
       "hideBudgetHint": "Apenas os administradores veem o orçamento total. Os membros continuam a ver o valor pedido por cada proposta.",
       "duplicateIncludeLabel": "Incluir",
@@ -1235,6 +1236,7 @@
       "awardedOfBudget": "<highlight>{awarded}</highlight> de {budget} alocados",
       "overBudgetWarning": "Excede o orçamento em {amount}",
       "mixedCurrencyWarning": "As atribuições usam mais de uma moeda, por isso o total não pode ser comparado com o orçamento",
+      "budgetCurrencyMismatchWarning": "As atribuições e o orçamento do processo usam moedas diferentes, por isso o total não pode ser comparado com o orçamento",
       "totalAwardedLabel": "Total concedido"
     },
     "proposals": {

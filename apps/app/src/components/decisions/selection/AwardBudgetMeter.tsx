@@ -26,19 +26,34 @@ export const AwardBudgetMeter = ({
   const t = useTranslations('decisions.review');
   const { total } = awards;
 
-  if (total === null) {
-    return awards.hasMixedCurrencies ? (
+  const format = (amount: number) =>
+    formatCurrency(amount, undefined, total?.currency ?? '');
+  const showMeter = total !== null && !awards.hasBudgetCurrencyMismatch;
+  const warning = awards.hasMixedCurrencies
+    ? t('mixedCurrencyWarning')
+    : awards.hasBudgetCurrencyMismatch
+      ? t('budgetCurrencyMismatchWarning')
+      : awards.isOverBudget && total !== null
+        ? t('overBudgetWarning', {
+            amount: format(sumAmounts([total.amount, -processBudget])),
+          })
+        : '';
+
+  if (!showMeter) {
+    return (
       <p
-        className={cn('text-sm text-destructive', className)}
+        className={cn(
+          'text-sm text-destructive',
+          !warning && 'sr-only',
+          className,
+        )}
         aria-live="polite"
       >
-        {t('mixedCurrencyWarning')}
+        {warning}
       </p>
-    ) : null;
+    );
   }
 
-  const format = (amount: number) =>
-    formatCurrency(amount, undefined, total.currency);
   const awarded = format(total.amount);
   const budget = format(processBudget);
   const summary = t.markup('awardedOfBudget', {
@@ -81,14 +96,10 @@ export const AwardBudgetMeter = ({
           })}
         </span>
         <span
-          className={cn('text-destructive', !awards.isOverBudget && 'sr-only')}
+          className={cn('text-destructive', !warning && 'sr-only')}
           aria-live="polite"
         >
-          {awards.isOverBudget
-            ? t('overBudgetWarning', {
-                amount: format(sumAmounts([total.amount, -processBudget])),
-              })
-            : ''}
+          {warning}
         </span>
       </p>
     </div>

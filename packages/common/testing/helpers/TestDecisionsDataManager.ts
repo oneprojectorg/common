@@ -71,6 +71,8 @@ interface CreateDecisionSetupOptions {
   grantAccess?: boolean;
   /** Status to assign to created instances. Defaults to DRAFT. */
   status?: ProcessStatus;
+  /** Phase budget per instance; `null` seeds without a budget. Defaults to 50000 * (index + 1). */
+  budget?: number | null;
   /** JSON Schema to validate proposal data against on submit/update */
   proposalTemplate?: Record<string, unknown>;
   /** Custom process schema definition. Defaults to testMinimalSchema. */
@@ -206,6 +208,7 @@ export class TestDecisionsDataManager {
       instanceCount = 0,
       grantAccess = false,
       status,
+      budget,
       proposalTemplate,
       processSchema,
     } = opts || {};
@@ -292,7 +295,7 @@ export class TestDecisionsDataManager {
         processId: process.id,
         user,
         name: `Instance ${i + 1}`,
-        budget: 50000 * (i + 1),
+        budget: budget === undefined ? 50000 * (i + 1) : budget,
         status,
       });
 
@@ -344,7 +347,7 @@ export class TestDecisionsDataManager {
       process?: CreatedDecisionProcess;
       user?: User;
       name: string;
-      budget?: number;
+      budget?: number | null;
       status?: ProcessStatus;
       config?: ProcessConfig;
     },
@@ -379,11 +382,16 @@ export class TestDecisionsDataManager {
       template,
       phaseOverrides: [
         ...(firstPhaseId && firstPhaseId !== 'initial'
-          ? [{ phaseId: firstPhaseId, settings: { budget } }]
+          ? [
+              {
+                phaseId: firstPhaseId,
+                ...(budget !== null && { settings: { budget } }),
+              },
+            ]
           : []),
         {
           phaseId: 'initial',
-          settings: { budget },
+          ...(budget !== null && { settings: { budget } }),
           startDate: new Date().toISOString(),
           endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
         },

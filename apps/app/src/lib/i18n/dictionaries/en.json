@@ -782,6 +782,7 @@
       "processNameLabel": "Process Name",
       "totalBudgetLabel": "Total budget",
       "totalBudgetHint": "The amount available to award across the proposals this process selects",
+      "totalBudgetError": "Enter an amount greater than 0",
       "hideBudgetLabel": "Hide the total budget from members",
       "hideBudgetHint": "Only admins see the total budget. Members still see the amount each proposal requests.",
       "duplicateIncludeLabel": "Include",
@@ -1235,6 +1236,7 @@
       "awardedOfBudget": "<highlight>{awarded}</highlight> of {budget} allocated",
       "overBudgetWarning": "Over budget by {amount}",
       "mixedCurrencyWarning": "The awards use more than one currency, so the total cannot be checked against the budget",
+      "budgetCurrencyMismatchWarning": "The awards and the process budget use different currencies, so the total cannot be checked against the budget",
       "totalAwardedLabel": "Total awarded"
     },
     "proposals": {

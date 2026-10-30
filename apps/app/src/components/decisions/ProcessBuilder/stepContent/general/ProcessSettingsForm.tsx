@@ -36,8 +36,8 @@ const createProcessSettingsValidator = (t: TranslateFn) =>
         message: t('decisions.processBuilder.processDescriptionPlaceholder'),
       }),
     totalBudget: z
-      .number({ message: t('decisions.processBuilder.totalBudgetHint') })
-      .positive({ message: t('decisions.processBuilder.totalBudgetHint') })
+      .number({ message: t('decisions.processBuilder.totalBudgetError') })
+      .positive({ message: t('decisions.processBuilder.totalBudgetError') })
       .nullable(),
     hideBudget: z.boolean(),
     organizeByCategories: z.boolean(),

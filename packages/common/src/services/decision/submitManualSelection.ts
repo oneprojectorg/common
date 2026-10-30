@@ -171,9 +171,9 @@ export async function submitManualSelection({
       );
     }
 
-    const lockedData =
-      lockedInstance.instanceData as DecisionInstanceData | null;
-    const lockedPhases = lockedData?.phases;
+    const lockedPhases = getInstancePhases(
+      lockedInstance.instanceData as DecisionInstanceData | null,
+    );
     const lockedPhaseIndex =
       lockedPhases?.findIndex((p) => p.phaseId === currentStateId) ?? -1;
     const lockedPreviousPhase =
@@ -297,7 +297,7 @@ export async function submitManualSelection({
         instanceId: processInstanceId,
         fromPhaseId: lockedPreviousPhaseId,
         toPhaseId: currentStateId,
-        phases: lockedPhases,
+        phases: [...lockedPhases],
         advanceResult: {
           conflict: false,
           transitionHistoryId: latestRow.id,

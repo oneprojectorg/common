@@ -226,6 +226,7 @@ describe('useProposalAwards', () => {
       proposals: [euro, zero],
       selectedIds: ['euro', 'zero'],
       processBudget: 25000,
+      fallbackCurrency: 'EUR',
     });
 
     expect(result.current.getRequested('zero')).toEqual({
@@ -239,6 +240,31 @@ describe('useProposalAwards', () => {
     act(() => result.current.setAmount('zero', 500));
 
     expect(result.current.total).toEqual({ amount: 4500, currency: 'EUR' });
+    expect(result.current.canConfirm).toBe(true);
+  });
+
+  it('blocks the confirm when the winners ask in a currency the budget was not set in', () => {
+    const { result } = renderAwards({
+      proposals: [euro],
+      selectedIds: ['euro'],
+      processBudget: 25000,
+      fallbackCurrency: 'USD',
+    });
+
+    expect(result.current.hasBudgetCurrencyMismatch).toBe(true);
+    expect(result.current.total).toEqual({ amount: 4000, currency: 'EUR' });
+    expect(result.current.isOverBudget).toBe(false);
+    expect(result.current.canConfirm).toBe(false);
+  });
+
+  it('confirms winners in a foreign currency when the process has no budget', () => {
+    const { result } = renderAwards({
+      proposals: [euro],
+      selectedIds: ['euro'],
+      fallbackCurrency: 'USD',
+    });
+
+    expect(result.current.hasBudgetCurrencyMismatch).toBe(false);
     expect(result.current.canConfirm).toBe(true);
   });
 

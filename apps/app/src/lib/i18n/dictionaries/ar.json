@@ -782,6 +782,7 @@
       "processNameLabel": "اسم العملية",
       "totalBudgetLabel": "إجمالي الميزانية",
       "totalBudgetHint": "المبلغ المتاح لمنحه للمقترحات التي تختارها هذه العملية",
+      "totalBudgetError": "أدخل مبلغًا أكبر من 0",
       "hideBudgetLabel": "إخفاء إجمالي الميزانية عن الأعضاء",
       "hideBudgetHint": "يرى المسؤولون فقط إجمالي الميزانية. يظل الأعضاء يرون المبلغ الذي يطلبه كل مقترح.",
       "duplicateIncludeLabel": "تضمين",
@@ -1235,6 +1236,7 @@
       "awardedOfBudget": "<highlight>{awarded}</highlight> من {budget} مخصصة",
       "overBudgetWarning": "تجاوز الميزانية بمقدار {amount}",
       "mixedCurrencyWarning": "تستخدم المبالغ الممنوحة أكثر من عملة واحدة، لذا لا يمكن مقارنة الإجمالي بالميزانية",
+      "budgetCurrencyMismatchWarning": "تستخدم المبالغ الممنوحة والميزانية عملتين مختلفتين، لذا لا يمكن مقارنة الإجمالي بالميزانية",
       "totalAwardedLabel": "إجمالي المبالغ الممنوحة"
     },
     "proposals": {

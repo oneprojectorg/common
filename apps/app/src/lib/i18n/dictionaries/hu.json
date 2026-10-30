@@ -782,6 +782,7 @@
       "processNameLabel": "A folyamat neve",
       "totalBudgetLabel": "Teljes keret",
       "totalBudgetHint": "A folyamat által kiválasztott javaslatok között szétosztható összeg",
+      "totalBudgetError": "Adjon meg 0-nál nagyobb összeget",
       "hideBudgetLabel": "A teljes keret elrejtése a tagok elől",
       "hideBudgetHint": "A teljes keretet csak az adminok látják. A tagok továbbra is látják az egyes javaslatok kért összegét.",
       "duplicateIncludeLabel": "Tartalmazza",
@@ -1235,6 +1236,7 @@
       "awardedOfBudget": "<highlight>{awarded}</highlight> / {budget} felhasználva",
       "overBudgetWarning": "{amount} összeggel a keret felett",
       "mixedCurrencyWarning": "A díjak több pénznemet használnak, ezért az összeg nem vethető össze a kerettel",
+      "budgetCurrencyMismatchWarning": "A díjak és a folyamat kerete eltérő pénznemet használnak, ezért az összeg nem vethető össze a kerettel",
       "totalAwardedLabel": "Összesen odaítélve"
     },
     "proposals": {

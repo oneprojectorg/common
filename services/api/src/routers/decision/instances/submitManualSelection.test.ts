@@ -809,6 +809,50 @@ describe.concurrent('submitManualSelection', () => {
     expect(results).toHaveLength(1);
   });
 
+  it('accepts any awarded total when the process has no budget', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      processSchema: schemaWithoutPipeline,
+      instanceCount: 1,
+      status: ProcessStatus.PUBLISHED,
+      budget: null,
+    });
+    const instanceId = setup.instance.instance.id;
+    const userEmail = setup.userEmail;
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const proposal = await testData.createProposal({
+      userEmail,
+      processInstanceId: instanceId,
+      proposalData: { title: `Proposal 1 ${task.id}` },
+      status: ProposalStatus.SUBMITTED,
+    });
+
+    await testData.advancePhase({
+      instanceId,
+      fromPhaseId: 'submission',
+      toPhaseId: 'review',
+    });
+    await db
+      .delete(decisionTransitionProposals)
+      .where(eq(decisionTransitionProposals.processInstanceId, instanceId));
+
+    await caller.decision.submitManualSelection({
+      processInstanceId: instanceId,
+      proposalIds: [proposal.id],
+      allocations: [{ proposalId: proposal.id, amount: 1_000_000 }],
+    });
+
+    const results = await db
+      .select({ id: decisionProcessResults.id })
+      .from(decisionProcessResults)
+      .where(eq(decisionProcessResults.processInstanceId, instanceId));
+    expect(results).toHaveLength(1);
+  });
+
   it('stores the awarded amount on each selection row', async ({
     task,
     onTestFinished,

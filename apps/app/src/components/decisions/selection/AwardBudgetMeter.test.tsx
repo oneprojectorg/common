@@ -24,11 +24,13 @@ const Harness = ({
   selectedIds,
   processBudget,
   edits = {},
+  fallbackCurrency,
 }: {
   proposals: AwardProposal[];
   selectedIds: string[];
   processBudget: number;
   edits?: Record<string, number | null>;
+  fallbackCurrency?: string;
 }) => {
   const awards = useProposalAwards({
     proposals,
@@ -36,6 +38,7 @@ const Harness = ({
     isEnabled: true,
     processBudget,
     draft: [edits, () => {}],
+    fallbackCurrency,
   });
 
   return (
@@ -57,6 +60,22 @@ const renderMeter = (props: Parameters<typeof Harness>[0]) =>
 afterEach(cleanup);
 
 describe('AwardBudgetMeter', () => {
+  it('warns instead of measuring when the winners and the budget use different currencies', () => {
+    renderMeter({
+      proposals: [euro],
+      selectedIds: ['euro'],
+      processBudget: 25000,
+      fallbackCurrency: 'USD',
+    });
+
+    expect(
+      screen.getByText(
+        'The awards and the process budget use different currencies, so the total cannot be checked against the budget',
+      ),
+    ).toBeDefined();
+    expect(screen.queryByRole('progressbar')).toBeNull();
+  });
+
   it('sums the advanced awards against the process budget', () => {
     renderMeter({
       proposals: [solar, bike],

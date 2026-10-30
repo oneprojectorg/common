@@ -32,6 +32,7 @@ export interface ProposalAwards {
   total: MoneyAmount | null;
   totalRequested: MoneyAmount | null;
   hasMixedCurrencies: boolean;
+  hasBudgetCurrencyMismatch: boolean;
   isOverBudget: boolean;
   canConfirm: boolean;
   allocations: () => ProposalAllocation[] | undefined;
@@ -120,12 +121,20 @@ export const useProposalAwards = ({
             currency,
           )
         : null;
+    const hasBudgetCurrencyMismatch =
+      isEnabled &&
+      processBudget !== undefined &&
+      currency !== undefined &&
+      currency !== defaultCurrency;
     const isOverBudget =
       isEnabled &&
       processBudget !== undefined &&
       total !== null &&
+      !hasBudgetCurrencyMismatch &&
       !isAtMost({ amount: total.amount, limit: processBudget });
-    const isUncheckable = processBudget !== undefined && hasMixedCurrencies;
+    const isUncheckable =
+      processBudget !== undefined &&
+      (hasMixedCurrencies || hasBudgetCurrencyMismatch);
 
     return {
       amounts,
@@ -139,6 +148,7 @@ export const useProposalAwards = ({
       total,
       totalRequested,
       hasMixedCurrencies,
+      hasBudgetCurrencyMismatch,
       isOverBudget,
       canConfirm:
         !isEnabled ||
