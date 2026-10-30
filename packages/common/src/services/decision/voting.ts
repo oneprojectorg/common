@@ -35,7 +35,7 @@ import {
   isRankedVoting,
   isVotingPhase,
 } from './utils/phaseSettings';
-import { isEnrolledOnCurrentAttestation } from './voterEnrolment';
+import { isVoterEnrolled } from './voterEnrolment';
 import { isVotingEligible } from './votingEligibility';
 
 type BallotSelections = NonNullable<VoteData['selections']>;
@@ -392,12 +392,7 @@ export const submitVote = async ({
         where: { processInstanceId: data.processInstanceId, profileId },
       });
 
-      if (
-        !isEnrolledOnCurrentAttestation(
-          enrolment ?? null,
-          phaseConfig.enrolment.attestation,
-        )
-      ) {
+      if (!isVoterEnrolled(enrolment)) {
         throw new VoterNotEnrolledError();
       }
     }

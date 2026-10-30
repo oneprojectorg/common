@@ -1,13 +1,11 @@
 import { and, db, eq } from '@op/db/client';
 import {
   type DecisionVoterEnrolment,
-  DecisionVoterEnrolmentStatus,
   decisionVoterEnrolments,
 } from '@op/db/schema';
 
 import { NotFoundError, ValidationError } from '../../utils';
 import { getIndividualProfileId } from '../access';
-import { hashAttestation } from './attestationHash';
 import { forwardGeocode } from './forwardGeocode';
 import { hasDecisionBoundaries, resolveBoundary } from './resolveBoundary';
 import { getInstancePhases } from './schemas/instanceData';
@@ -75,12 +73,9 @@ const rowFilter = (processInstanceId: string, profileId: string) =>
     eq(decisionVoterEnrolments.profileId, profileId),
   );
 
-export const isEnrolledOnCurrentAttestation = (
-  row: Pick<DecisionVoterEnrolment, 'status' | 'attestationHash'> | null,
-  attestation: string,
-): boolean =>
-  row?.status === DecisionVoterEnrolmentStatus.ENROLLED &&
-  row.attestationHash === hashAttestation(attestation);
+export const isVoterEnrolled = (
+  row: Pick<DecisionVoterEnrolment, 'enrolledAt'> | null | undefined,
+): boolean => row?.enrolledAt != null;
 
 export async function findVoterEnrolment({
   processInstanceId,
@@ -94,7 +89,7 @@ export async function startVoterEnrolment({
   processInstanceId,
   authUserId,
 }: EnrolmentKey): Promise<DecisionVoterEnrolment> {
-  const { profileId, rule } = await loadEnrolmentContext({
+  const { profileId } = await loadEnrolmentContext({
     processInstanceId,
     authUserId,
   });
@@ -106,18 +101,6 @@ export async function startVoterEnrolment({
 
   if (!row) {
     throw new NotFoundError('Voter enrolment', processInstanceId);
-  }
-
-  if (
-    row.status === DecisionVoterEnrolmentStatus.ENROLLED &&
-    !isEnrolledOnCurrentAttestation(row, rule.attestation)
-  ) {
-    const [reopened] = await db
-      .update(decisionVoterEnrolments)
-      .set({ status: DecisionVoterEnrolmentStatus.AWAITING_AGREE })
-      .where(rowFilter(processInstanceId, profileId))
-      .returning();
-    return reopened ?? row;
   }
 
   return row;
@@ -165,10 +148,7 @@ export async function resolveVoterAddress({
 
   await db
     .update(decisionVoterEnrolments)
-    .set({
-      status: DecisionVoterEnrolmentStatus.AWAITING_AGREE,
-      boundaryId: boundary?.id ?? null,
-    })
+    .set({ taxonomyTermId: boundary?.taxonomyTermId ?? null })
     .where(rowFilter(processInstanceId, profileId));
 
   return {
@@ -180,37 +160,33 @@ export async function resolveVoterAddress({
 export async function affirmVoterAttestation({
   processInstanceId,
   authUserId,
-  attestationHash,
-}: EnrolmentKey & {
-  attestationHash: string;
-}): Promise<DecisionVoterEnrolment> {
-  const { profileId, rule } = await loadEnrolmentContext({
+}: EnrolmentKey): Promise<DecisionVoterEnrolment> {
+  const { profileId, instance, rule } = await loadEnrolmentContext({
     processInstanceId,
     authUserId,
   });
   const row = await findRow(processInstanceId, profileId);
 
-  if (!row || row.status === DecisionVoterEnrolmentStatus.AWAITING_ADDRESS) {
-    throw new ValidationError('Give an address before affirming');
+  if (!row) {
+    throw new ValidationError('Start enrolment before affirming');
   }
 
-  if (isEnrolledOnCurrentAttestation(row, rule.attestation)) {
+  if (isVoterEnrolled(row)) {
     return row;
   }
 
-  if (attestationHash !== hashAttestation(rule.attestation)) {
-    throw new ValidationError(
-      'The affirmation does not match the attestation that was sent',
-    );
+  if (rule.boundary && !row.taxonomyTermId) {
+    const boundariesConfigured = instance.profileId
+      ? await hasDecisionBoundaries({ profileId: instance.profileId })
+      : false;
+    if (boundariesConfigured) {
+      throw new ValidationError('Give an address before affirming');
+    }
   }
 
   const [enrolled] = await db
     .update(decisionVoterEnrolments)
-    .set({
-      status: DecisionVoterEnrolmentStatus.ENROLLED,
-      attestationHash,
-      attestedAt: new Date(),
-    })
+    .set({ enrolledAt: new Date() })
     .where(rowFilter(processInstanceId, profileId))
     .returning();
 
