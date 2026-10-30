@@ -263,6 +263,88 @@ describe.concurrent('listLegacyInstances', () => {
     expect(result.items[0]?.name).toBe('Legacy Instance');
   });
 
+  it('hides the budget from an org member when a legacy instance hides it', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 0,
+    });
+
+    const [process] = await db
+      .insert(decisionProcesses)
+      .values({
+        name: `Legacy Process ${task.id}`,
+        processSchema: legacyProcessSchema,
+        createdByProfileId: setup.organization.profileId,
+      })
+      .returning();
+
+    await db.insert(processInstances).values({
+      name: 'Legacy Hidden Budget',
+      processId: process!.id,
+      ownerProfileId: setup.organization.profileId,
+      instanceData: { ...legacyInstanceData, budget: 50000, hideBudget: true },
+      currentStateId: 'submission',
+      status: ProcessStatus.PUBLISHED,
+      profileId: null,
+    });
+
+    const member = await testData.createMemberUser({
+      organization: setup.organization,
+    });
+
+    const caller = await createAuthenticatedCaller(member.email);
+
+    const result = await caller.decision.listLegacyInstances({
+      ownerProfileId: setup.organization.profileId,
+    });
+
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0]?.instanceData.budget).toBeUndefined();
+  });
+
+  it('keeps the budget for an org admin when a legacy instance hides it', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 0,
+    });
+
+    const [process] = await db
+      .insert(decisionProcesses)
+      .values({
+        name: `Legacy Process ${task.id}`,
+        processSchema: legacyProcessSchema,
+        createdByProfileId: setup.organization.profileId,
+      })
+      .returning();
+
+    await db.insert(processInstances).values({
+      name: 'Legacy Hidden Budget Admin',
+      processId: process!.id,
+      ownerProfileId: setup.organization.profileId,
+      instanceData: { ...legacyInstanceData, budget: 50000, hideBudget: true },
+      currentStateId: 'submission',
+      status: ProcessStatus.PUBLISHED,
+      profileId: null,
+    });
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const result = await caller.decision.listLegacyInstances({
+      ownerProfileId: setup.organization.profileId,
+    });
+
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0]?.instanceData.budget).toBe(50000);
+  });
+
   it('should throw for users without org access', async ({
     task,
     onTestFinished,

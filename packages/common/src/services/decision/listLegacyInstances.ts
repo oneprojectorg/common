@@ -1,10 +1,14 @@
 import { db, desc, eq } from '@op/db/client';
 import { ProposalStatus, organizations, processInstances } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
-import { permission } from 'access-zones';
+import { checkPermission, permission } from 'access-zones';
 
 import { UnauthorizedError } from '../../utils';
 import { assertOrgAccess } from '../assert';
+import {
+  type RedactableInstanceData,
+  redactHiddenBudget,
+} from './templateBudget';
 
 export const listLegacyInstances = async ({
   ownerProfileId,
@@ -22,11 +26,15 @@ export const listLegacyInstances = async ({
     throw new UnauthorizedError("You don't have access to do this");
   }
 
-  await assertOrgAccess({
+  const orgUser = await assertOrgAccess({
     user,
     organizationId: org[0].id,
     permissions: { decisions: permission.READ },
   });
+  const isAdmin = checkPermission(
+    { decisions: permission.ADMIN },
+    orgUser.roles,
+  );
 
   const instanceList = await db._query.processInstances.findMany({
     where: eq(processInstances.ownerProfileId, ownerProfileId),
@@ -61,6 +69,9 @@ export const listLegacyInstances = async ({
 
     return {
       ...instance,
+      instanceData: isAdmin
+        ? instance.instanceData
+        : redactHiddenBudget(instance.instanceData as RedactableInstanceData),
       proposalCount,
       participantCount,
     };
