@@ -1,4 +1,4 @@
-import { and, db, eq } from '@op/db/client';
+import { and, db, eq, sql } from '@op/db/client';
 import {
   type DecisionVoterEnrolment,
   decisionVoterEnrolments,
@@ -105,7 +105,7 @@ export async function startVoterEnrolment({
         decisionVoterEnrolments.processInstanceId,
         decisionVoterEnrolments.profileId,
       ],
-      set: { updatedAt: new Date().toISOString() },
+      set: { updatedAt: sql`(now() AT TIME ZONE 'utc'::text)` },
     });
   const row = await findRow(processInstanceId, profileId);
 
