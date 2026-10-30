@@ -21,12 +21,14 @@ export interface BallotProposalInfo {
 
 export async function getBallotProposalByCode({
   instance,
+  taxonomyTermId,
   code,
 }: {
   instance: BallotInstance;
+  taxonomyTermId?: string | null;
   code: number;
 }): Promise<BallotProposalInfo | null> {
-  const filter = await ballotProposalFilter({ instance });
+  const filter = await ballotProposalFilter({ instance, taxonomyTermId });
 
   if (filter.isEmpty) {
     return null;

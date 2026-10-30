@@ -2,8 +2,12 @@ import { mockCollab } from '@op/collab/testing';
 import { affirmVoterAttestation, resolveVoterAddress } from '@op/common';
 import type { BudgetData, VoterEnrolmentRule } from '@op/common/client';
 import { TestDecisionsDataManager } from '@op/common/testing';
-import { ProposalStatus, processInstances } from '@op/db/schema';
-import { db, eq } from '@op/db/test';
+import {
+  createDecisionBoundary,
+  ensureProposalCategoryTerms,
+} from '@op/common/testing/data';
+import { ProposalStatus, processInstances, taxonomyTerms } from '@op/db/schema';
+import { db, eq, inArray } from '@op/db/test';
 import type { AmountUnit } from '@op/types/amountUnit';
 import { describe, expect, it } from 'vitest';
 
@@ -134,6 +138,12 @@ async function setupVotingInstance(
     votingEnabled?: boolean;
     /** Per-proposal priced values; `budget` is money, `cost` a dot count. */
     proposalPrices?: Array<{ budget?: BudgetData; cost?: number } | undefined>;
+    /** Per-proposal pin, so the boundary tags the proposal with its district. */
+    proposalLocations?: Array<{ lat: number; lng: number } | undefined>;
+    /** Runs after the decision exists and before its proposals, e.g. to import boundaries. */
+    beforeProposals?: (setup: {
+      instance: { instance: { id: string; profileId: string | null } };
+    }) => Promise<void>;
   },
 ) {
   const setup = await testData.createDecisionSetup({
@@ -143,6 +153,7 @@ async function setupVotingInstance(
   });
 
   const instance = setup.instance;
+  await opts.beforeProposals?.(setup);
 
   const proposals = await Promise.all(
     Array.from({ length: opts.proposalCount }, (_, i) =>
@@ -152,6 +163,9 @@ async function setupVotingInstance(
         proposalData: {
           title: `Proposal ${i + 1}`,
           ...opts.proposalPrices?.[i],
+          ...(opts.proposalLocations?.[i]
+            ? { location: opts.proposalLocations[i] }
+            : {}),
         },
         status: ProposalStatus.SUBMITTED,
       }),
@@ -1147,5 +1161,99 @@ describe.concurrent('submitVote with an enrolment rule', () => {
       id: result.id,
       processInstanceId: instance.instance.id,
     });
+  });
+});
+
+describe.concurrent('submitVote scoped to the voter district', () => {
+  const ATTESTATION = 'I affirm that I live in the city.';
+
+  const enrolInDistrictFive = async (
+    testData: TestDecisionsDataManager,
+    label: string,
+    onTestFinished: (fn: () => Promise<void>) => void,
+  ) => {
+    const five = `District 5 ${label}`;
+    const { setup, instance, proposals } = await setupVotingInstance(testData, {
+      proposalCount: 2,
+      enrolment: { attestation: ATTESTATION, boundary: true },
+      proposalLocations: [
+        { lat: 40.5, lng: -73.5 },
+        { lat: 10.5, lng: 10.5 },
+      ],
+      beforeProposals: async (created) => {
+        const [termFive] = await ensureProposalCategoryTerms([five]);
+        onTestFinished(async () => {
+          await db
+            .delete(taxonomyTerms)
+            .where(inArray(taxonomyTerms.id, [termFive!.taxonomyTermId]));
+        });
+        await createDecisionBoundary({
+          profileId: created.instance.instance.profileId!,
+          name: five,
+          taxonomyTermId: termFive!.taxonomyTermId,
+        });
+      },
+    });
+    const key = {
+      processInstanceId: instance.instance.id,
+      authUserId: setup.user.id,
+    };
+    await resolveVoterAddress({
+      ...key,
+      address: 'inside district five',
+      geocode: async () => [{ lat: 40.5, lng: -73.5 }],
+    });
+    await affirmVoterAttestation(key);
+    return { setup, instance, proposals };
+  };
+
+  it('given a District 5 voter picks a District 7 proposal, then the vote is refused as outside their district and nothing is written', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instance, proposals } = await enrolInDistrictFive(
+      testData,
+      task.id,
+      onTestFinished,
+    );
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    await expect(
+      caller.decision.submitVote({
+        processInstanceId: instance.instance.id,
+        selectedProposalIds: [proposals[1]!.id],
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'VoteOutsideDistrictError' } });
+    await expect(
+      db.query.decisionsVoteSubmissions.findFirst({
+        where: { processInstanceId: instance.instance.id },
+      }),
+    ).resolves.toBeUndefined();
+  });
+
+  it('given a District 5 voter picks a District 5 proposal, then the vote is written', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instance, proposals } = await enrolInDistrictFive(
+      testData,
+      task.id,
+      onTestFinished,
+    );
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const result = await caller.decision.submitVote({
+      processInstanceId: instance.instance.id,
+      selectedProposalIds: [proposals[0]!.id],
+    });
+
+    await expect(
+      db.query.decisionsVoteSubmissions.findFirst({
+        where: { id: result.id },
+        columns: { id: true },
+      }),
+    ).resolves.toEqual({ id: result.id });
   });
 });
