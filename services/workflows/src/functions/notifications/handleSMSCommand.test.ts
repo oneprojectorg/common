@@ -2,11 +2,8 @@ import { InngestTestEngine } from '@inngest/test';
 import {
   SMS_MAX_BODY_LENGTH,
   findVoterEnrolment,
-  hashAttestation,
   parsePhoneNumber,
 } from '@op/common';
-import { createDecisionBoundary } from '@op/common/testing/data';
-import { DecisionVoterEnrolmentStatus } from '@op/db/schema';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { memoryGeocoder } from '../../../testing/mocks/geocoder';
@@ -565,7 +562,7 @@ describe('handleSMSCommand registration over SMS', () => {
           : {}),
       });
     await fixture.addMember(instanceProfileId, member);
-    const district = await createDecisionBoundary({
+    const district = await fixture.createDistrict({
       profileId: instanceProfileId,
       name: `District 5 ${name}`,
     });
@@ -610,7 +607,8 @@ describe('handleSMSCommand registration over SMS', () => {
         authUserId: member.authUserId,
       }),
     ).resolves.toMatchObject({
-      status: DecisionVoterEnrolmentStatus.AWAITING_ADDRESS,
+      taxonomyTermId: null,
+      enrolledAt: null,
     });
   });
 
@@ -654,8 +652,8 @@ describe('handleSMSCommand registration over SMS', () => {
         authUserId: member.authUserId,
       }),
     ).resolves.toMatchObject({
-      status: DecisionVoterEnrolmentStatus.AWAITING_AGREE,
-      boundaryId: district.id,
+      taxonomyTermId: district.taxonomyTermId,
+      enrolledAt: null,
     });
   });
 
@@ -696,7 +694,8 @@ describe('handleSMSCommand registration over SMS', () => {
         authUserId: member.authUserId,
       }),
     ).resolves.toMatchObject({
-      status: DecisionVoterEnrolmentStatus.AWAITING_ADDRESS,
+      taxonomyTermId: null,
+      enrolledAt: null,
     });
   });
 
@@ -777,14 +776,11 @@ describe('handleSMSCommand registration over SMS', () => {
     expect(recordedSms.at(-1)?.body).toBe(
       `You're registered to vote in "${name}".`,
     );
-    await expect(
-      findVoterEnrolment({
-        processInstanceId: instanceId,
-        authUserId: member.authUserId,
-      }),
-    ).resolves.toMatchObject({
-      status: DecisionVoterEnrolmentStatus.ENROLLED,
+    const row = await findVoterEnrolment({
+      processInstanceId: instanceId,
+      authUserId: member.authUserId,
     });
+    expect(row?.enrolledAt).not.toBeNull();
   });
 
   it('given a member with no registration in progress texts AGREE, then they are told there is nothing to affirm', async ({
@@ -881,7 +877,7 @@ describe('handleSMSCommand registration over SMS', () => {
     ]);
   });
 
-  it("given a registered member whose decision's attestation was rewritten, when they text VOTE, then the new words are sent for affirmation and AGREE registers them on those words", async ({
+  it("given a registered member whose decision's attestation was rewritten, when they text VOTE, then they are still registered because enrolment records only the time", async ({
     task,
     onTestFinished,
   }) => {
@@ -898,7 +894,7 @@ describe('handleSMSCommand registration over SMS', () => {
         enrolment: { attestation: ATTESTATION, boundary: true },
         ownerIsAdmin: true,
       });
-    const district = await createDecisionBoundary({
+    await fixture.createDistrict({
       profileId: instanceProfileId,
       name: `District 5 ${name}`,
     });
@@ -918,109 +914,26 @@ describe('handleSMSCommand registration over SMS', () => {
     await text({ keyword: 'vote' });
     await text({ body: address, messageSid: `SM-${task.id}-address` });
     await text({ keyword: 'agree', messageSid: `SM-${task.id}-agree` });
-    const rewritten = `I affirm the rewritten requirements ${task.id}.`;
     await fixture.rewriteAttestation({
       instanceId,
       owner: member,
-      attestation: rewritten,
+      attestation: `I affirm the rewritten requirements ${task.id}.`,
     });
 
-    const resent = await text({
+    const again = await text({
       keyword: 'vote',
       messageSid: `SM-${task.id}-vote-again`,
     });
-    const affirmed = await text({
-      keyword: 'agree',
-      messageSid: `SM-${task.id}-agree-again`,
-    });
 
-    expect(resent.result).toEqual({
-      message: 'attestation resent after a change',
-    });
-    expect(affirmed.result).toEqual({ message: 'enrolled' });
-    expect(recordedSms.slice(-2).map((sms) => sms.body)).toEqual([
-      `That's ${district.name}. Reply AGREE to affirm: "${rewritten}"`,
+    expect(again.result).toEqual({ message: 'already enrolled' });
+    expect(recordedSms.at(-1)?.body).toBe(
       `You're registered to vote in "${name}".`,
-    ]);
-    await expect(
-      findVoterEnrolment({
-        processInstanceId: instanceId,
-        authUserId: member.authUserId,
-      }),
-    ).resolves.toMatchObject({
-      status: DecisionVoterEnrolmentStatus.ENROLLED,
-      attestationHash: hashAttestation(rewritten),
-      boundaryId: district.id,
-    });
-  });
-
-  it('given the attestation was rewritten after it was sent, when the voter texts AGREE, then the new words are sent and only a second AGREE registers them', async ({
-    task,
-    onTestFinished,
-  }) => {
-    const fixture = new SmsCommandFixture(task.id, onTestFinished);
-    const name = `Agree Rewritten ${task.id}`;
-    const member = await fixture.createPhoneOnlyAccount(
-      parsePhoneNumber(NUMBERS.agreeRewritten),
     );
-    const { instanceId, instanceProfileId } =
-      await fixture.createVotingInstance({
-        owner: member,
-        name,
-        proposalTitles: ['Crosswalk lighting'],
-        enrolment: { attestation: ATTESTATION, boundary: true },
-        ownerIsAdmin: true,
-      });
-    const district = await createDecisionBoundary({
-      profileId: instanceProfileId,
-      name: `District 5 ${name}`,
+    const row = await findVoterEnrolment({
+      processInstanceId: instanceId,
+      authUserId: member.authUserId,
     });
-    await fixture.bindLine(instanceId, parsePhoneNumber(LINES.agreeRewritten));
-    const address = `375 S High St ${task.id}`;
-    memoryGeocoder.set(address, INSIDE);
-    const text = (
-      event: Omit<Parameters<typeof smsInboundEvent>[0], 'from' | 'to'>,
-    ) =>
-      run(
-        smsInboundEvent({
-          from: NUMBERS.agreeRewritten,
-          to: LINES.agreeRewritten,
-          ...event,
-        }),
-      );
-    await text({ keyword: 'vote' });
-    await text({ body: address, messageSid: `SM-${task.id}-address` });
-    const rewritten = `I affirm the rewritten requirements ${task.id}.`;
-    await fixture.rewriteAttestation({
-      instanceId,
-      owner: member,
-      attestation: rewritten,
-    });
-
-    const first = await text({
-      keyword: 'agree',
-      messageSid: `SM-${task.id}-agree-1`,
-    });
-    const second = await text({
-      keyword: 'agree',
-      messageSid: `SM-${task.id}-agree-2`,
-    });
-
-    expect(first.result).toEqual({ message: 'attestation changed' });
-    expect(second.result).toEqual({ message: 'enrolled' });
-    expect(recordedSms.slice(-2).map((sms) => sms.body)).toEqual([
-      `That's ${district.name}. Reply AGREE to affirm: "${rewritten}"`,
-      `You're registered to vote in "${name}".`,
-    ]);
-    await expect(
-      findVoterEnrolment({
-        processInstanceId: instanceId,
-        authUserId: member.authUserId,
-      }),
-    ).resolves.toMatchObject({
-      status: DecisionVoterEnrolmentStatus.ENROLLED,
-      attestationHash: hashAttestation(rewritten),
-    });
+    expect(row?.enrolledAt).not.toBeNull();
   });
 
   it("given a member asked for an address by one decision, when they text VOTE and another decision's slug to the first one's line and then an address, then the address registers them for the decision they named", async ({
@@ -1037,9 +950,13 @@ describe('handleSMSCommand registration over SMS', () => {
       owner: first.member,
       name: `Enrol Other ${task.id}`,
       proposalTitles: ['Bike racks'],
-      enrolment: { attestation: ATTESTATION, boundary: false },
+      enrolment: { attestation: ATTESTATION, boundary: true },
     });
     await fixture.addMember(other.instanceProfileId, first.member);
+    const otherDistrict = await fixture.createDistrict({
+      profileId: other.instanceProfileId,
+      name: `Other District ${task.id}`,
+    });
     const address = `375 S High St ${task.id}`;
     memoryGeocoder.set(address, INSIDE);
     const text = (
@@ -1071,7 +988,8 @@ describe('handleSMSCommand registration over SMS', () => {
         authUserId: first.member.authUserId,
       }),
     ).resolves.toMatchObject({
-      status: DecisionVoterEnrolmentStatus.AWAITING_AGREE,
+      taxonomyTermId: otherDistrict.taxonomyTermId,
+      enrolledAt: null,
     });
     await expect(
       findVoterEnrolment({
@@ -1079,7 +997,8 @@ describe('handleSMSCommand registration over SMS', () => {
         authUserId: first.member.authUserId,
       }),
     ).resolves.toMatchObject({
-      status: DecisionVoterEnrolmentStatus.AWAITING_ADDRESS,
+      taxonomyTermId: null,
+      enrolledAt: null,
     });
   });
 });

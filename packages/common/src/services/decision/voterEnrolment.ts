@@ -78,7 +78,7 @@ const rowFilter = (processInstanceId: string, profileId: string) =>
   );
 
 export const isVoterEnrolled = (
-  row: Pick<DecisionVoterEnrolment, 'enrolledAt'> | null | undefined,
+  row: { enrolledAt: Date | string | null } | null | undefined,
 ): boolean => row?.enrolledAt != null;
 
 export async function findVoterEnrolment({
@@ -250,4 +250,28 @@ export async function findPendingVoterEnrolment({
         districtName: row.taxonomyTerm?.label ?? null,
       }
     : null;
+}
+
+export type VoterEnrolmentStep = 'awaiting_address' | 'awaiting_agree';
+
+export async function pendingEnrolmentStep({
+  processInstanceId,
+  taxonomyTermId,
+  rule,
+}: {
+  processInstanceId: string;
+  taxonomyTermId: string | null;
+  rule: { boundary: boolean };
+}): Promise<VoterEnrolmentStep> {
+  if (!rule.boundary || taxonomyTermId) {
+    return 'awaiting_agree';
+  }
+  const instance = await db.query.processInstances.findFirst({
+    where: { id: processInstanceId },
+    columns: { profileId: true },
+  });
+  const boundariesConfigured = instance?.profileId
+    ? await hasDecisionBoundaries({ profileId: instance.profileId })
+    : false;
+  return boundariesConfigured ? 'awaiting_address' : 'awaiting_agree';
 }

@@ -8,8 +8,8 @@ import {
   describeEnrolmentDecision,
   findPendingVoterEnrolment,
   findVoterEnrolment,
-  isEnrolledOnCurrentAttestation,
-  markAttestationSent,
+  isVoterEnrolled,
+  pendingEnrolmentStep,
   formatSmsAddressNotFound,
   formatSmsAddressOutside,
   formatSmsAddressResolved,
@@ -22,12 +22,10 @@ import {
   formatSmsVotingClosed,
   getSmsDecisionDescription,
   getSmsVotingDecision,
-  hashAttestation,
   listSmsDecisions,
   resolveVoterAddress,
   startVoterEnrolment,
 } from '@op/common';
-import { DecisionVoterEnrolmentStatus } from '@op/db/schema';
 import type { inngest } from '@op/events';
 import type { GetStepTools } from 'inngest';
 
@@ -242,48 +240,57 @@ export const vote: SmsCommandHandler = async (context) => {
       message,
     );
 
-  if (pending?.status === DecisionVoterEnrolmentStatus.AWAITING_AGREE) {
-    await step.run('mark-attestation-sent', () =>
-      markAttestationSent({ ...key, attestation: rule.attestation }),
+  if (pending) {
+    const waitingOn = await step.run('derive-enrolment-step', () =>
+      pendingEnrolmentStep({
+        processInstanceId: decision.instanceId,
+        taxonomyTermId: pending.taxonomyTermId,
+        rule,
+      }),
     );
-    return resendAttestation(pending.boundaryName, 'attestation resent');
+    if (waitingOn === 'awaiting_agree') {
+      return resendAttestation(pending.districtName, 'attestation resent');
+    }
+    return deliverAll(
+      deliver,
+      'send-enrolment-welcome',
+      'Registration welcome',
+      formatSmsEnrolmentWelcome(decision.name),
+      'enrolment started',
+    );
   }
 
-  if (!pending) {
-    const existing = await step.run('find-enrolment', () =>
-      findVoterEnrolment(key),
+  const existing = await step.run('find-enrolment', () =>
+    findVoterEnrolment(key),
+  );
+
+  if (isVoterEnrolled(existing)) {
+    return deliverAll(
+      deliver,
+      'send-already-enrolled',
+      'Already registered reply',
+      formatSmsEnrolled({
+        decisionName: decision.name,
+        district: null,
+        budget: decision.budget,
+      }),
+      'already enrolled',
     );
+  }
 
-    if (isEnrolledOnCurrentAttestation(existing, rule.attestation)) {
-      return deliverAll(
-        deliver,
-        'send-already-enrolled',
-        'Already registered reply',
-        formatSmsEnrolled({
-          decisionName: decision.name,
-          district: null,
-          budget: decision.budget,
-        }),
-        'already enrolled',
-      );
-    }
+  const started = await step.run('start-enrolment', () =>
+    startVoterEnrolment(key),
+  );
+  const waitingOn = await step.run('derive-enrolment-step', () =>
+    pendingEnrolmentStep({
+      processInstanceId: decision.instanceId,
+      taxonomyTermId: started.taxonomyTermId,
+      rule,
+    }),
+  );
 
-    const started = await step.run('start-enrolment', () =>
-      startVoterEnrolment(key),
-    );
-
-    if (started.status === DecisionVoterEnrolmentStatus.AWAITING_AGREE) {
-      await step.run('mark-attestation-sent', () =>
-        markAttestationSent({ ...key, attestation: rule.attestation }),
-      );
-      const reopened = await step.run('find-pending-enrolment-again', () =>
-        findPendingVoterEnrolment(key),
-      );
-      return resendAttestation(
-        reopened?.boundaryName ?? null,
-        'attestation resent after a change',
-      );
-    }
+  if (waitingOn === 'awaiting_agree') {
+    return resendAttestation(null, 'attestation sent');
   }
 
   return deliverAll(
@@ -310,7 +317,7 @@ export const agree: SmsCommandHandler = async (context) => {
     findPendingVoterEnrolment({ authUserId: account.authUserId }),
   );
 
-  if (pending?.status !== DecisionVoterEnrolmentStatus.AWAITING_AGREE) {
+  if (!pending) {
     return nothingToAffirm();
   }
 
@@ -323,36 +330,24 @@ export const agree: SmsCommandHandler = async (context) => {
     return nothingToAffirm();
   }
 
-  const affirmed = await step.run('affirm-attestation', () =>
-    affirmVoterAttestation({
+  const waitingOn = await step.run('derive-enrolment-step', () =>
+    pendingEnrolmentStep({
       processInstanceId: pending.processInstanceId,
-      authUserId: account.authUserId,
-      attestationHash: hashAttestation(rule.attestation),
+      taxonomyTermId: pending.taxonomyTermId,
+      rule,
     }),
   );
 
-  if (affirmed.status === 'attestation_changed') {
-    const sent = await deliverAll(
-      deliver,
-      'send-attestation-changed',
-      'Attestation changed reply',
-      formatSmsAddressResolved({
-        district: pending.boundaryName,
-        attestation: rule.attestation,
-      }),
-      'attestation changed',
-    );
-    if (sent.message === 'attestation changed') {
-      await step.run('mark-attestation-sent', () =>
-        markAttestationSent({
-          processInstanceId: pending.processInstanceId,
-          authUserId: account.authUserId,
-          attestation: rule.attestation,
-        }),
-      );
-    }
-    return sent;
+  if (waitingOn !== 'awaiting_agree') {
+    return nothingToAffirm();
   }
+
+  await step.run('affirm-attestation', () =>
+    affirmVoterAttestation({
+      processInstanceId: pending.processInstanceId,
+      authUserId: account.authUserId,
+    }),
+  );
 
   return deliverAll(
     deliver,
@@ -360,7 +355,7 @@ export const agree: SmsCommandHandler = async (context) => {
     'Registered reply',
     formatSmsEnrolled({
       decisionName: decision.name,
-      district: pending.boundaryName,
+      district: pending.districtName,
       budget: decision.budget,
     }),
     'enrolled',
@@ -379,7 +374,7 @@ export const freeText: SmsCommandHandler = async (context) => {
     findPendingVoterEnrolment({ authUserId: account.authUserId }),
   );
 
-  if (pending?.status !== DecisionVoterEnrolmentStatus.AWAITING_ADDRESS) {
+  if (!pending) {
     return sendSmsHelp(deliver);
   }
 
@@ -392,12 +387,23 @@ export const freeText: SmsCommandHandler = async (context) => {
     return sendSmsHelp(deliver);
   }
 
+  const waitingOn = await step.run('derive-enrolment-step', () =>
+    pendingEnrolmentStep({
+      processInstanceId: pending.processInstanceId,
+      taxonomyTermId: pending.taxonomyTermId,
+      rule,
+    }),
+  );
+
+  if (waitingOn !== 'awaiting_address') {
+    return sendSmsHelp(deliver);
+  }
+
   const resolution = await step.run('resolve-address', () =>
     resolveVoterAddress({
       processInstanceId: pending.processInstanceId,
       authUserId: account.authUserId,
       address,
-      attestation: rule.attestation,
       geocode,
     }),
   );
