@@ -3,7 +3,9 @@ import {
   type PhoneSignupConfirmation,
   confirmPhoneSignupCode,
   discardUnconfirmedPhoneSignup,
+  findDecisionPhoneNumber,
   getPhoneSignupState,
+  parsePhoneNumber,
   PHONE_SIGNUP_REPLY_WINDOW_MINUTES,
   requestPhoneSignupCode,
 } from '@op/common';
@@ -58,7 +60,11 @@ export const handleUnknownSmsSignup = inngest.createFunction(
   },
   { event: smsInboundReceived.name },
   async ({ event, step }) => {
-    const { from, keyword } = smsInboundReceived.schema.parse(event.data);
+    const {
+      from,
+      to: inboundTo,
+      keyword,
+    } = smsInboundReceived.schema.parse(event.data);
 
     logger.info('SMS Signup trigger');
 
@@ -96,9 +102,14 @@ export const handleUnknownSmsSignup = inngest.createFunction(
       return { message: 'signup attempt in progress, skipped' };
     }
 
+    const line = await step.run('resolve-line', async () =>
+      inboundTo ? await findDecisionPhoneNumber({ phone: inboundTo }) : null,
+    );
+
     const sendText = createTextSender({
       step,
       to,
+      from: line ? parsePhoneNumber(line.phone) : undefined,
       purpose: 'start SMS signup',
     });
 

@@ -389,6 +389,22 @@ export const relations = defineRelations(schema, (r) => ({
    * stewardProfileId and processId are nullable.
    */
   processInstances: {
+    phoneNumbers: r.many.decisionPhoneNumbers({
+      from: r.processInstances.id,
+      to: r.decisionPhoneNumbers.processInstanceId,
+    }),
+    voterEnrolments: r.many.decisionVoterEnrolments({
+      from: r.processInstances.id,
+      to: r.decisionVoterEnrolments.processInstanceId,
+    }),
+    voteDrafts: r.many.decisionsVoteDrafts({
+      from: r.processInstances.id,
+      to: r.decisionsVoteDrafts.processInstanceId,
+    }),
+    chatSessions: r.many.decisionChatSessions({
+      from: r.processInstances.id,
+      to: r.decisionChatSessions.processInstanceId,
+    }),
     process: r.one.decisionProcesses({
       from: r.processInstances.processId,
       to: r.decisionProcesses.id,
@@ -595,6 +611,83 @@ export const relations = defineRelations(schema, (r) => ({
       from: r.categoryReviewers.reviewerProfileId,
       to: r.profiles.id,
       alias: 'categoryReviewer_reviewer',
+      optional: false,
+    }),
+  },
+
+  decisionPhoneNumbers: {
+    processInstance: r.one.processInstances({
+      from: r.decisionPhoneNumbers.processInstanceId,
+      to: r.processInstances.id,
+      optional: false,
+    }),
+  },
+
+  decisionChatSessions: {
+    processInstance: r.one.processInstances({
+      from: r.decisionChatSessions.processInstanceId,
+      to: r.processInstances.id,
+      optional: false,
+    }),
+    profile: r.one.profiles({
+      from: r.decisionChatSessions.profileId,
+      to: r.profiles.id,
+      optional: false,
+    }),
+    phoneNumber: r.one.decisionPhoneNumbers({
+      from: r.decisionChatSessions.phoneNumberId,
+      to: r.decisionPhoneNumbers.id,
+      optional: true,
+    }),
+  },
+
+  decisionVoterEnrolments: {
+    processInstance: r.one.processInstances({
+      from: r.decisionVoterEnrolments.processInstanceId,
+      to: r.processInstances.id,
+      optional: false,
+    }),
+    profile: r.one.profiles({
+      from: r.decisionVoterEnrolments.profileId,
+      to: r.profiles.id,
+      optional: false,
+    }),
+    // @ts-expect-error - taxonomyTerms self-referential parentId breaks inference
+    taxonomyTerm: r.one.taxonomyTerms({
+      from: r.decisionVoterEnrolments.taxonomyTermId,
+      // @ts-expect-error - see above
+      to: r.taxonomyTerms.id,
+      optional: true,
+    }),
+  },
+
+  decisionsVoteDrafts: {
+    processInstance: r.one.processInstances({
+      from: r.decisionsVoteDrafts.processInstanceId,
+      to: r.processInstances.id,
+      optional: false,
+    }),
+    profile: r.one.profiles({
+      from: r.decisionsVoteDrafts.profileId,
+      to: r.profiles.id,
+      optional: false,
+    }),
+    draftProposals: r.many.decisionsVoteDraftProposals({
+      from: r.decisionsVoteDrafts.id,
+      to: r.decisionsVoteDraftProposals.voteDraftId,
+    }),
+  },
+
+  decisionsVoteDraftProposals: {
+    voteDraft: r.one.decisionsVoteDrafts({
+      from: r.decisionsVoteDraftProposals.voteDraftId,
+      to: r.decisionsVoteDrafts.id,
+      optional: false,
+    }),
+    proposal: r.one.proposals({
+      from: r.decisionsVoteDraftProposals.proposalId,
+      to: r.proposals.id,
+      alias: 'decisionsVoteDraftProposal_proposal',
       optional: false,
     }),
   },

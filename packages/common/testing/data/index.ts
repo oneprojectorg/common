@@ -16,6 +16,7 @@ export {
 
 export {
   createCustomForm,
+  createDecisionPhoneNumber,
   createDecisionInstance,
   createDecisionProcess,
   createInstanceMember,
@@ -37,6 +38,7 @@ export {
   testRubricTemplate,
   testSimpleVotingSchema,
   testVotingPhaseSchema,
+  type CreateDecisionPhoneNumberOptions,
   type CreateDecisionInstanceOptions,
   type CreateDecisionInstanceResult,
   type CreateDecisionProcessOptions,

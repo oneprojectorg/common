@@ -217,6 +217,16 @@ export type {
 } from './tables/proposalReviews.sql';
 export { categoryReviewers } from './tables/categoryReviewers.sql';
 export type { CategoryReviewer } from './tables/categoryReviewers.sql';
+export { decisionPhoneNumbers } from './tables/decisionPhoneNumbers.sql';
+export type { DecisionPhoneNumber } from './tables/decisionPhoneNumbers.sql';
+export { decisionChatSessions } from './tables/decisionChatSessions.sql';
+export type { DecisionChatSession } from './tables/decisionChatSessions.sql';
+export { decisionVoterEnrolments } from './tables/decisionVoterEnrolments.sql';
+export type { DecisionVoterEnrolment } from './tables/decisionVoterEnrolments.sql';
+export { decisionsVoteDrafts } from './tables/decisions_vote_drafts.sql';
+export type { DecisionsVoteDraft } from './tables/decisions_vote_drafts.sql';
+export { decisionsVoteDraftProposals } from './tables/decisions_vote_draft_proposals.sql';
+export type { DecisionsVoteDraftProposal } from './tables/decisions_vote_draft_proposals.sql';
 
 export {
   decisionsVoteSubmissions,

@@ -5,6 +5,8 @@ import {
   PHONE_SIGNUP_REPLY_WINDOW_MINUTES,
   toGoTruePhoneFormat,
 } from '@op/common';
+import { TestDecisionsDataManager } from '@op/common/testing';
+import { createDecisionPhoneNumber } from '@op/common/testing/data';
 import { TestPhoneAuthDataManager } from '@op/common/testing/helpers';
 import { db, eq } from '@op/db/client';
 import { authUsers, profiles, users } from '@op/db/schema';
@@ -52,6 +54,8 @@ const replyingWith = (from: PhoneNumber, code: string) => [
 ];
 
 const noReply = [silence(1)];
+
+const LINE = '+16145550140';
 
 const readAuthUser = async (phone: PhoneNumber) => {
   const [row] = await db
@@ -143,6 +147,33 @@ describe('handleUnknownSmsSignup against the database', () => {
     });
     expect(await readProfileId(authUser!.id)).toEqual(expect.any(String));
     expect(recordedSms.map((message) => message.to)).toEqual([phone, phone]);
+  });
+
+  it('given a stranger texts JOIN to a bound line, when they reply with the code, then the consent text and the welcome both come from that line', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestPhoneAuthDataManager(task.id, onTestFinished);
+    const decisions = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { phone, code } = claimNumber('+15005550010', testData);
+    const line = parsePhoneNumber(LINE);
+    const setup = await decisions.createDecisionSetup({ instanceCount: 1 });
+    await createDecisionPhoneNumber({
+      processInstanceId: setup.instance.instance.id,
+      phoneNumber: line,
+    });
+    const t = new InngestTestEngine({ function: handleUnknownSmsSignup });
+
+    const { result } = await t.execute({
+      events: [smsInboundEvent({ from: phone, to: line, keyword: 'join' })],
+      steps: replyingWith(phone, code),
+    });
+
+    expect(result).toMatchObject({ message: 'account created' });
+    expect(recordedSms.map((message) => [message.to, message.from])).toEqual([
+      [phone, line],
+      [phone, line],
+    ]);
   });
 
   it('given an abandoned attempt whose code is older than the reply window, when the number texts again and nobody replies, then the consent text is sent and the unconfirmed account is discarded', async ({
