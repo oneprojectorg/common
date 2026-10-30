@@ -6,11 +6,12 @@ import {
   taxonomyTerms,
 } from '@op/db/schema';
 import { db, eq } from '@op/db/test';
+import { logger } from '@op/logging';
 import slugify from 'slugify';
 
 import {
   createDecisionBoundary,
-  createDecisionChatLine,
+  createDecisionPhoneNumber,
   createDecisionInstance,
   createDecisionProcess,
   createProposal,
@@ -18,10 +19,23 @@ import {
   testSimpleVotingSchema,
 } from './data';
 
-const ADMIN_AUTH_USER_ID = '7224d58a-f460-4c0f-934a-27ea96127b18';
-const ADMIN_EMAIL = 'ivan@oneproject.org';
-const OWNER_PROFILE_ID = 'aaf7451a-86e8-4963-9597-2c595a6de15a';
-const LINE_NUMBER = '+13306254729';
+const ADMIN_EMAIL = process.env.SEED_SMS_ADMIN_EMAIL ?? 'ivan@oneproject.org';
+const LINE_NUMBER = process.env.SEED_SMS_LINE ?? '+13306254729';
+
+const findAdminAccount = async () => {
+  const account = await db.query.users.findFirst({
+    where: { email: ADMIN_EMAIL },
+    columns: { authUserId: true, profileId: true },
+  });
+  if (!account?.authUserId || !account.profileId) {
+    throw new Error(
+      `No account with an individual profile exists for ${ADMIN_EMAIL}. ` +
+        'Sign that account up in the local app first, or point ' +
+        'SEED_SMS_ADMIN_EMAIL at an existing local account.',
+    );
+  }
+  return { authUserId: account.authUserId, profileId: account.profileId };
+};
 const SLUG = 'sms-voting-test';
 const ATTESTATION =
   'I live in Columbus and I am 16 or older. I will vote once.';
@@ -175,16 +189,17 @@ const main = async () => {
     );
   }
 
+  const admin = await findAdminAccount();
   const template = await createDecisionProcess({
-    createdByProfileId: OWNER_PROFILE_ID,
+    createdByProfileId: admin.profileId,
     name: schema.name,
     schema,
   });
 
   const decision = await createDecisionInstance({
     processId: template.id,
-    ownerProfileId: OWNER_PROFILE_ID,
-    authUserId: ADMIN_AUTH_USER_ID,
+    ownerProfileId: admin.profileId,
+    authUserId: admin.authUserId,
     email: ADMIN_EMAIL,
     name: schema.name,
     schema,
@@ -208,8 +223,8 @@ const main = async () => {
   for (const item of PROPOSALS) {
     const proposal = await createProposal({
       processInstanceId: decision.instance.id,
-      submittedByProfileId: OWNER_PROFILE_ID,
-      authUserId: ADMIN_AUTH_USER_ID,
+      submittedByProfileId: admin.profileId,
+      authUserId: admin.authUserId,
       email: ADMIN_EMAIL,
       status: ProposalStatus.SUBMITTED,
       proposalData: {
@@ -245,12 +260,12 @@ const main = async () => {
     .set({ currentStateId: 'voting' })
     .where(eq(processInstances.id, decision.instance.id));
 
-  await createDecisionChatLine({
+  await createDecisionPhoneNumber({
     processInstanceId: decision.instance.id,
     phoneNumber: LINE_NUMBER,
   });
 
-  console.log(
+  process.stdout.write(
     JSON.stringify(
       {
         instanceId: decision.instance.id,
@@ -262,13 +277,13 @@ const main = async () => {
       },
       null,
       2,
-    ),
+    ) + '\n',
   );
 };
 
 main()
   .then(() => process.exit(0))
   .catch((error) => {
-    console.error(error);
+    logger.error('Seeding the SMS demo decision failed', { error });
     process.exit(1);
   });

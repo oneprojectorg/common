@@ -309,10 +309,11 @@ point outside production.
 
 On the shared number the same conversation works with a slug: `SHOW <slug>`,
 `VOTE <slug>`, `PROPOSALS <slug>`. The codes, LIST, DONE, SUBMIT and CHANGE
-follow the draft you touched last, and the ballot you cast last once no
-draft remains; send `PROPOSALS <slug>` to choose a decision. On a line they
-follow that line's decision, or a decision you chose by slug on that same
-line; a draft started on another line never takes over.
+follow the decision you touched last — its chat session, which outlives
+SUBMIT — and the ballot you cast last when no session remains; send
+`PROPOSALS <slug>` to choose a decision. On a line they follow that line's
+decision, or a decision you chose by slug on that same line; a session
+started on another line never takes over.
 
 Read back the result with the voter's profile: one row in
 `decisions_vote_submissions`, its `decisions_vote_proposals` rows in pick
