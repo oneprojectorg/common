@@ -1117,6 +1117,7 @@ export interface CreateDecisionBoundaryOptions {
   name: string;
   /** GeoJSON polygon ring; defaults to the square from (-74, 40) to (-73, 41). */
   ring?: ReadonlyArray<readonly [number, number]>;
+  taxonomyTermId?: string | null;
 }
 
 const DEFAULT_BOUNDARY_RING: ReadonlyArray<readonly [number, number]> = [
@@ -1131,6 +1132,7 @@ export async function createDecisionBoundary({
   profileId,
   name,
   ring = DEFAULT_BOUNDARY_RING,
+  taxonomyTermId = null,
 }: CreateDecisionBoundaryOptions) {
   const geoJson = JSON.stringify({
     type: 'Polygon',
@@ -1141,9 +1143,14 @@ export async function createDecisionBoundary({
     .values({
       profileId,
       name,
+      taxonomyTermId,
       boundary: sql`ST_SetSRID(ST_Multi(ST_GeomFromGeoJSON(${geoJson})), 4326)`,
     })
-    .returning({ id: decisionBoundaries.id, name: decisionBoundaries.name });
+    .returning({
+      id: decisionBoundaries.id,
+      name: decisionBoundaries.name,
+      taxonomyTermId: decisionBoundaries.taxonomyTermId,
+    });
 
   if (!boundary) {
     throw new Error('Failed to create decision boundary');

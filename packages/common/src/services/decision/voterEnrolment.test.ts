@@ -1,16 +1,18 @@
 import { TestDecisionsDataManager } from '@op/common/testing';
-import { createDecisionBoundary } from '@op/common/testing/data';
-import { DecisionVoterEnrolmentStatus, ProcessStatus } from '@op/db/schema';
+import {
+  createDecisionBoundary,
+  ensureProposalCategoryTerms,
+} from '@op/common/testing/data';
+import { ProcessStatus } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
-import { hashAttestation } from './attestationHash';
 import type { DecisionSchemaDefinition } from './schemas/types';
 import { updateDecisionInstance } from './updateDecisionInstance';
 import {
   type Geocode,
   affirmVoterAttestation,
   findVoterEnrolment,
-  isEnrolledOnCurrentAttestation,
+  isVoterEnrolled,
   resolveVoterAddress,
   startVoterEnrolment,
 } from './voterEnrolment';
@@ -69,12 +71,16 @@ const seedVotingDecision = async (
   if (!instanceProfileId) {
     throw new Error('Instance has no profile');
   }
-  const district = withBoundaries
-    ? await createDecisionBoundary({
-        profileId: instanceProfileId,
-        name: `District 5 ${label}`,
-      })
-    : null;
+  let district: Awaited<ReturnType<typeof createDecisionBoundary>> | null =
+    null;
+  if (withBoundaries) {
+    const [term] = await ensureProposalCategoryTerms([`District 5 ${label}`]);
+    district = await createDecisionBoundary({
+      profileId: instanceProfileId,
+      name: `District 5 ${label}`,
+      taxonomyTermId: term!.taxonomyTermId,
+    });
+  }
   await testData.advancePhase({
     instanceId,
     fromPhaseId: 'submission',
@@ -84,7 +90,7 @@ const seedVotingDecision = async (
 };
 
 describe.concurrent('resolveVoterAddress', () => {
-  it('given a decision that requires a district, when the address geocodes inside a boundary, then the row waits for the attestation with that boundary', async ({
+  it('given a decision that requires a district, when the address geocodes inside a boundary, then the row stores that district term and awaits the affirmation', async ({
     task,
     onTestFinished,
   }) => {
@@ -110,13 +116,13 @@ describe.concurrent('resolveVoterAddress', () => {
       authUserId,
     });
     expect(row).toMatchObject({
-      status: DecisionVoterEnrolmentStatus.AWAITING_AGREE,
-      boundaryId: district!.id,
-      attestationHash: null,
+      taxonomyTermId: district!.taxonomyTermId,
+      enrolledAt: null,
     });
+    expect(isVoterEnrolled(row)).toBe(false);
   });
 
-  it('given the address geocodes to nothing, then the result says so and the row still waits for an address', async ({
+  it('given the address geocodes to nothing, then the result says so and the row stores no district', async ({
     task,
     onTestFinished,
   }) => {
@@ -137,13 +143,10 @@ describe.concurrent('resolveVoterAddress', () => {
     expect(result).toEqual({ status: 'not_found' });
     await expect(
       findVoterEnrolment({ processInstanceId: instanceId, authUserId }),
-    ).resolves.toMatchObject({
-      status: DecisionVoterEnrolmentStatus.AWAITING_ADDRESS,
-      boundaryId: null,
-    });
+    ).resolves.toMatchObject({ taxonomyTermId: null, enrolledAt: null });
   });
 
-  it('given a decision that requires a district, when the address falls outside every boundary, then the result says so and the row still waits for an address', async ({
+  it('given a decision that requires a district, when the address falls outside every boundary, then the result says so and the row stores no district', async ({
     task,
     onTestFinished,
   }) => {
@@ -164,13 +167,10 @@ describe.concurrent('resolveVoterAddress', () => {
     expect(result).toEqual({ status: 'outside' });
     await expect(
       findVoterEnrolment({ processInstanceId: instanceId, authUserId }),
-    ).resolves.toMatchObject({
-      status: DecisionVoterEnrolmentStatus.AWAITING_ADDRESS,
-      boundaryId: null,
-    });
+    ).resolves.toMatchObject({ taxonomyTermId: null, enrolledAt: null });
   });
 
-  it('given a decision that requires a district but has imported no boundaries, when the address is found, then the voter is enrolled with no district', async ({
+  it('given a decision that requires a district but has imported no boundaries, when the address is found, then the voter moves on with no district and can enrol', async ({
     task,
     onTestFinished,
   }) => {
@@ -189,12 +189,12 @@ describe.concurrent('resolveVoterAddress', () => {
     });
 
     expect(result).toEqual({ status: 'resolved', boundary: null });
-    await expect(
-      findVoterEnrolment({ processInstanceId: instanceId, authUserId }),
-    ).resolves.toMatchObject({
-      status: DecisionVoterEnrolmentStatus.AWAITING_AGREE,
-      boundaryId: null,
+    const enrolled = await affirmVoterAttestation({
+      processInstanceId: instanceId,
+      authUserId,
     });
+    expect(enrolled.taxonomyTermId).toBeNull();
+    expect(enrolled.enrolledAt).not.toBeNull();
   });
 
   it('given a decision that does not require a district, when the address falls outside every boundary, then the voter still moves on to the attestation', async ({
@@ -220,7 +220,7 @@ describe.concurrent('resolveVoterAddress', () => {
 });
 
 describe.concurrent('affirmVoterAttestation', () => {
-  it('given the voter has given an address, when they affirm the attestation that was sent, then the row is enrolled with the hash and the time', async ({
+  it('given the voter has given an address, when they affirm, then the row is enrolled with the time and a second affirmation changes nothing', async ({
     task,
     onTestFinished,
   }) => {
@@ -230,27 +230,23 @@ describe.concurrent('affirmVoterAttestation', () => {
       withBoundaries: false,
       label: task.id,
     });
+    const key = { processInstanceId: instanceId, authUserId };
     await resolveVoterAddress({
-      processInstanceId: instanceId,
-      authUserId,
+      ...key,
       address: 'anywhere',
       geocode: geocodeTo([INSIDE]),
     });
 
-    const enrolled = await affirmVoterAttestation({
-      processInstanceId: instanceId,
-      authUserId,
-      attestationHash: hashAttestation(ATTESTATION),
-    });
+    const enrolled = await affirmVoterAttestation(key);
 
-    expect(enrolled).toMatchObject({
-      status: DecisionVoterEnrolmentStatus.ENROLLED,
-      attestationHash: hashAttestation(ATTESTATION),
+    expect(enrolled.enrolledAt).not.toBeNull();
+    expect(isVoterEnrolled(enrolled)).toBe(true);
+    await expect(affirmVoterAttestation(key)).resolves.toMatchObject({
+      enrolledAt: enrolled.enrolledAt,
     });
-    expect(enrolled.attestedAt).not.toBeNull();
   });
 
-  it('given a hash of different words, when the voter affirms, then the affirmation is refused and the row still waits for it', async ({
+  it('given no enrolment row yet, when the voter affirms, then the affirmation is refused', async ({
     task,
     onTestFinished,
   }) => {
@@ -259,47 +255,35 @@ describe.concurrent('affirmVoterAttestation', () => {
       boundary: false,
       withBoundaries: false,
       label: task.id,
-    });
-    await resolveVoterAddress({
-      processInstanceId: instanceId,
-      authUserId,
-      address: 'anywhere',
-      geocode: geocodeTo([INSIDE]),
     });
 
     await expect(
-      affirmVoterAttestation({
-        processInstanceId: instanceId,
-        authUserId,
-        attestationHash: hashAttestation('Other words.'),
-      }),
+      affirmVoterAttestation({ processInstanceId: instanceId, authUserId }),
     ).rejects.toMatchObject({ name: 'ValidationError' });
     await expect(
       findVoterEnrolment({ processInstanceId: instanceId, authUserId }),
-    ).resolves.toMatchObject({
-      status: DecisionVoterEnrolmentStatus.AWAITING_AGREE,
-      attestationHash: null,
-    });
+    ).resolves.toBeNull();
   });
 
-  it('given the voter has not given an address yet, when they affirm, then the affirmation is refused', async ({
+  it('given a decision that requires a district, when the voter affirms before their address resolved, then the affirmation is refused', async ({
     task,
     onTestFinished,
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
     const { instanceId, authUserId } = await seedVotingDecision(testData, {
-      boundary: false,
-      withBoundaries: false,
+      boundary: true,
+      withBoundaries: true,
       label: task.id,
     });
+    const key = { processInstanceId: instanceId, authUserId };
+    await startVoterEnrolment(key);
 
-    await expect(
-      affirmVoterAttestation({
-        processInstanceId: instanceId,
-        authUserId,
-        attestationHash: hashAttestation(ATTESTATION),
-      }),
-    ).rejects.toMatchObject({ name: 'ValidationError' });
+    await expect(affirmVoterAttestation(key)).rejects.toMatchObject({
+      name: 'ValidationError',
+    });
+    await expect(findVoterEnrolment(key)).resolves.toMatchObject({
+      enrolledAt: null,
+    });
   });
 
   it('given a decision with no enrolment rule, when an address is offered, then the service refuses because there is no step to take', async ({
@@ -331,129 +315,43 @@ describe.concurrent('affirmVoterAttestation', () => {
 });
 
 describe.concurrent('a rewritten attestation', () => {
-  const rewrite = (
-    setup: { user: Parameters<typeof updateDecisionInstance>[0]['user'] },
-    instanceId: string,
-    attestation: string,
-  ) =>
-    updateDecisionInstance({
+  it('given an enrolled voter, when an admin rewrites the attestation, then the voter stays enrolled because the row records only the time', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instanceId, authUserId } = await seedVotingDecision(
+      testData,
+      { boundary: false, withBoundaries: false, label: task.id },
+    );
+    const key = { processInstanceId: instanceId, authUserId };
+    await resolveVoterAddress({
+      ...key,
+      address: 'anywhere',
+      geocode: geocodeTo([INSIDE]),
+    });
+    await affirmVoterAttestation(key);
+
+    await updateDecisionInstance({
       instanceId,
       phases: [
         {
           phaseId: 'voting',
-          rules: { voting: { submit: true, enrolment: { attestation } } },
+          rules: {
+            voting: {
+              submit: true,
+              enrolment: { attestation: `New words ${task.id}.` },
+            },
+          },
         },
       ],
       user: setup.user,
     });
 
-  it('given an enrolled voter, when an admin rewrites the attestation, then the voter no longer counts as enrolled on the current words', async ({
-    task,
-    onTestFinished,
-  }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const { setup, instanceId, authUserId } = await seedVotingDecision(
-      testData,
-      {
-        boundary: false,
-        withBoundaries: false,
-        label: task.id,
-      },
-    );
-    const key = { processInstanceId: instanceId, authUserId };
-    await resolveVoterAddress({
-      ...key,
-      address: 'anywhere',
-      geocode: geocodeTo([INSIDE]),
-    });
-    await affirmVoterAttestation({
-      ...key,
-      attestationHash: hashAttestation(ATTESTATION),
-    });
-    const rewritten = `New words ${task.id}.`;
-
-    await rewrite(setup, instanceId, rewritten);
-
     const row = await findVoterEnrolment(key);
-    expect(isEnrolledOnCurrentAttestation(row, ATTESTATION)).toBe(true);
-    expect(isEnrolledOnCurrentAttestation(row, rewritten)).toBe(false);
-  });
-
-  it('given an enrolled voter whose attestation was rewritten, when they start again, then the row waits for the new affirmation, keeps its district, and affirming the new words enrols them again', async ({
-    task,
-    onTestFinished,
-  }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const { setup, instanceId, authUserId } = await seedVotingDecision(
-      testData,
-      {
-        boundary: true,
-        withBoundaries: true,
-        label: task.id,
-      },
-    );
-    const key = { processInstanceId: instanceId, authUserId };
-    await resolveVoterAddress({
-      ...key,
-      address: 'anywhere',
-      geocode: geocodeTo([INSIDE]),
-    });
-    const first = await affirmVoterAttestation({
-      ...key,
-      attestationHash: hashAttestation(ATTESTATION),
-    });
-    const rewritten = `New words ${task.id}.`;
-    await rewrite(setup, instanceId, rewritten);
-
-    const reopened = await startVoterEnrolment(key);
-
-    expect(reopened).toMatchObject({
-      status: DecisionVoterEnrolmentStatus.AWAITING_AGREE,
-      boundaryId: first.boundaryId,
-    });
-    await expect(
-      affirmVoterAttestation({
-        ...key,
-        attestationHash: hashAttestation(ATTESTATION),
-      }),
-    ).rejects.toMatchObject({ name: 'ValidationError' });
-    const enrolled = await affirmVoterAttestation({
-      ...key,
-      attestationHash: hashAttestation(rewritten),
-    });
-    expect(enrolled).toMatchObject({
-      status: DecisionVoterEnrolmentStatus.ENROLLED,
-      attestationHash: hashAttestation(rewritten),
-      boundaryId: first.boundaryId,
-    });
-    expect(enrolled.attestedAt?.getTime()).toBeGreaterThan(
-      first.attestedAt!.getTime(),
-    );
-  });
-
-  it('given an enrolled voter whose attestation is unchanged, when they start again, then the row stays enrolled', async ({
-    task,
-    onTestFinished,
-  }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const { instanceId, authUserId } = await seedVotingDecision(testData, {
-      boundary: false,
-      withBoundaries: false,
-      label: task.id,
-    });
-    const key = { processInstanceId: instanceId, authUserId };
-    await resolveVoterAddress({
-      ...key,
-      address: 'anywhere',
-      geocode: geocodeTo([INSIDE]),
-    });
-    await affirmVoterAttestation({
-      ...key,
-      attestationHash: hashAttestation(ATTESTATION),
-    });
-
+    expect(isVoterEnrolled(row)).toBe(true);
     await expect(startVoterEnrolment(key)).resolves.toMatchObject({
-      status: DecisionVoterEnrolmentStatus.ENROLLED,
+      enrolledAt: row!.enrolledAt,
     });
   });
 });
