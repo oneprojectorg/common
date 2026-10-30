@@ -1,6 +1,6 @@
 -- Reset every voter's state on one decision so the SMS flow can be demoed again:
--- cast ballots, draft ballots and registrations. Proposals, districts, access and
--- the chat line stay. Rows are hard-deleted because the unique keys on
+-- cast ballots, draft ballots, chat sessions and registrations. Proposals,
+-- districts, access and the phone number stay. Rows are hard-deleted because the unique keys on
 -- (process_instance_id, profile_id) would block a voter from registering again.
 -- Usage:
 --   psql "$DATABASE_URL" -v slug=sms-voting-test -At -f packages/common/src/scripts/resetDecisionVoting.sql
@@ -26,11 +26,23 @@ ballots as (
    where s.process_instance_id = d.instance_id
   returning s.id
 ),
+draft_picks as (
+  delete from decisions_vote_draft_proposals dp
+   using decisions_vote_drafts bd, decision d
+   where dp.vote_draft_id = bd.id and bd.process_instance_id = d.instance_id
+  returning dp.proposal_id
+),
 drafts as (
-  delete from decision_ballot_drafts bd
+  delete from decisions_vote_drafts bd
    using decision d
    where bd.process_instance_id = d.instance_id
   returning bd.id
+),
+sessions as (
+  delete from decision_chat_sessions cs
+   using decision d
+   where cs.process_instance_id = d.instance_id
+  returning cs.id
 ),
 registrations as (
   delete from decision_voter_enrolments e
@@ -43,7 +55,9 @@ select jsonb_pretty(jsonb_build_object(
   'deleted', jsonb_build_object(
     'vote_picks', (select count(*) from picks),
     'cast_ballots', (select count(*) from ballots),
+    'draft_picks', (select count(*) from draft_picks),
     'ballot_drafts', (select count(*) from drafts),
+    'chat_sessions', (select count(*) from sessions),
     'registrations', (select count(*) from registrations)
   )
 ));

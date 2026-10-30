@@ -65,17 +65,18 @@ select jsonb_pretty(jsonb_build_object(
     left join "profileUser_to_access_roles" pr on pr.profile_user_id = pu.id
     left join access_roles r on r.id = pr.access_role_id),
 
-  'chat_lines', (select coalesce(jsonb_agg(jsonb_build_object(
-      'line_id', l.id,
+  'phone_numbers', (select coalesce(jsonb_agg(jsonb_build_object(
+      'phone_number_id', l.id,
       'phone_number', l.phone_number,
+      'channel', l.channel,
       'bound_to', jsonb_build_object(
         'process_instance_id', l.process_instance_id,
         'decision', d.name, 'slug', d.slug, 'status', d.status,
         'process_id', d.process_id, 'current_phase', d.current_state_id),
-      'drafts_browsed_on_this_line', (select count(*) from decision_ballot_drafts bd where bd.chat_line_id = l.id),
+      'sessions_on_this_line', (select count(*) from decision_chat_sessions cs2 where cs2.phone_number_id = l.id),
       'bound_at', l.created_at
     ) order by l.created_at), '[]'::jsonb)
-    from decision d join decision_chat_lines l on l.process_instance_id = d.instance_id and l.deleted_at is null),
+    from decision d join decision_phone_numbers l on l.process_instance_id = d.instance_id and l.deleted_at is null),
 
   'districts', (select jsonb_agg(jsonb_build_object(
       'boundary_id', b.id, 'name', b.name, 'category_term', t.label,
@@ -111,53 +112,63 @@ select jsonb_pretty(jsonb_build_object(
                'last_sign_in_at', au.last_sign_in_at,
                'on_this_decision', case when e.id is null and bd.id is null and cs.id is null then to_jsonb('nothing yet'::text)
                  else jsonb_build_object(
-                   'enrolment', case when e.id is null then null else jsonb_build_object('status', e.status,
-                       'district', (select b.name from decision_boundaries b where b.id = e.boundary_id)) end,
-                   'draft_picks', case when bd.id is null then null else jsonb_array_length(bd.picks) end,
+                   'enrolment', case when e.id is null then null else jsonb_build_object(
+                       'enrolled_at', e.enrolled_at,
+                       'district', (select t.label from "taxonomyTerms" t where t.id = e.taxonomy_term_id)) end,
+                   'draft_picks', case when bd.id is null then null else (select count(*) from decisions_vote_draft_proposals dp where dp.vote_draft_id = bd.id) end,
                    'cast_ballot_id', cs.id) end
              ) as acct
         from auth.users au
         left join users u on u.auth_user_id = au.id
         left join profiles vp on vp.id = u.current_profile_id
         left join decision_voter_enrolments e on e.process_instance_id = d.instance_id and e.profile_id = u.current_profile_id and e.deleted_at is null
-        left join decision_ballot_drafts bd on bd.process_instance_id = d.instance_id and bd.profile_id = u.current_profile_id and bd.deleted_at is null
+        left join decisions_vote_drafts bd on bd.process_instance_id = d.instance_id and bd.profile_id = u.current_profile_id and bd.deleted_at is null
         left join lateral (select cs.id from decisions_vote_submissions cs
                             where cs.process_instance_id = d.instance_id and cs.submitted_by_profile_id = u.current_profile_id and cs.deleted_at is null
                             order by cs.created_at desc limit 1) cs on true
        where au.phone is not null and au.deleted_at is null) x),
 
-  -- One row per voter and decision: where the registration conversation is.
+  -- One row per voter and decision. The step derives from nullability: a
+  -- null taxonomy_term_id awaits an address (when the rule requires a
+  -- district), a null enrolled_at awaits AGREE, a set enrolled_at is enrolled.
   'decision_voter_enrolments', (select coalesce(jsonb_agg(jsonb_build_object(
       'id', e.id,
       'voter_profile', (select vp.slug from profiles vp where vp.id = e.profile_id),
       'voter_phone', (select '+' || au.phone from users u join auth.users au on au.id = u.auth_user_id where u.current_profile_id = e.profile_id limit 1),
       'profile_id', e.profile_id,
-      'status', e.status,
-      'boundary_id', e.boundary_id,
-      'district', (select b.name from decision_boundaries b where b.id = e.boundary_id),
-      'attestation_hash', e.attestation_hash,
-      'attested_at', e.attested_at,
+      'taxonomy_term_id', e.taxonomy_term_id,
+      'district', (select t.label from "taxonomyTerms" t where t.id = e.taxonomy_term_id),
+      'enrolled_at', e.enrolled_at,
       'created_at', e.created_at, 'updated_at', e.updated_at
     ) order by e.created_at), '[]'::jsonb)
     from decision d join decision_voter_enrolments e on e.process_instance_id = d.instance_id and e.deleted_at is null),
 
-  -- One row per voter and decision: the ballot between the first code and SUBMIT.
-  'decision_ballot_drafts', (select coalesce(jsonb_agg(jsonb_build_object(
+  -- One row per voter and decision: the ballot between the first code and
+  -- SUBMIT, its picks as rows in decisions_vote_draft_proposals.
+  'decisions_vote_drafts', (select coalesce(jsonb_agg(jsonb_build_object(
       'id', bd.id,
       'voter_profile', (select vp.slug from profiles vp where vp.id = bd.profile_id),
       'voter_phone', (select '+' || au.phone from users u join auth.users au on au.id = u.auth_user_id where u.current_profile_id = bd.profile_id limit 1),
       'profile_id', bd.profile_id,
-      'picks', bd.picks,
-      'picks_resolved', (select coalesce(jsonb_agg(jsonb_build_object('rank', pk.ordinality, 'code', p2.short_code, 'title', p2.proposal_data->>'title') order by pk.ordinality), '[]'::jsonb)
-                           from jsonb_array_elements_text(bd.picks) with ordinality as pk(proposal_id, ordinality)
-                           left join decision_proposals p2 on p2.id::text = pk.proposal_id),
-      'page_cursor', bd.page_cursor,
-      'chat_line_id', bd.chat_line_id,
-      'chat_line', (select l.phone_number from decision_chat_lines l where l.id = bd.chat_line_id),
-      'reopened_at', bd.reopened_at,
+      'picks', (select coalesce(jsonb_agg(jsonb_build_object('rank', dp.rank, 'code', p2.short_code, 'title', p2.proposal_data->>'title') order by dp.rank nulls last, dp.created_at), '[]'::jsonb)
+                  from decisions_vote_draft_proposals dp
+                  join decision_proposals p2 on p2.id = dp.proposal_id
+                 where dp.vote_draft_id = bd.id and dp.deleted_at is null),
       'created_at', bd.created_at, 'updated_at', bd.updated_at
     ) order by bd.created_at), '[]'::jsonb)
-    from decision d join decision_ballot_drafts bd on bd.process_instance_id = d.instance_id and bd.deleted_at is null),
+    from decision d join decisions_vote_drafts bd on bd.process_instance_id = d.instance_id and bd.deleted_at is null),
+
+  -- One ephemeral row per voter and decision: the channel state.
+  'decision_chat_sessions', (select coalesce(jsonb_agg(jsonb_build_object(
+      'id', cs2.id,
+      'voter_profile', (select vp.slug from profiles vp where vp.id = cs2.profile_id),
+      'page_cursor', cs2.page_cursor,
+      'phone_number_id', cs2.phone_number_id,
+      'phone_number', (select l.phone_number from decision_phone_numbers l where l.id = cs2.phone_number_id),
+      'reopened_at', cs2.reopened_at,
+      'created_at', cs2.created_at, 'updated_at', cs2.updated_at
+    ) order by cs2.created_at), '[]'::jsonb)
+    from decision d join decision_chat_sessions cs2 on cs2.process_instance_id = d.instance_id and cs2.deleted_at is null),
 
   -- The cast ballots: one decisions_vote_submissions row per voter (SUBMIT
   -- deletes the draft and writes this; CHANGE + SUBMIT revises it in place),
@@ -172,8 +183,8 @@ select jsonb_pretty(jsonb_build_object(
       'revised', s.updated_at > s.created_at + interval '1 second',
       'voter_was_enrolled', exists (select 1 from decision_voter_enrolments e
                                       where e.process_instance_id = s.process_instance_id and e.profile_id = s.submitted_by_profile_id
-                                        and e.status = 'enrolled' and e.deleted_at is null),
-      'draft_still_present', exists (select 1 from decision_ballot_drafts bd
+                                        and e.enrolled_at is not null and e.deleted_at is null),
+      'draft_still_present', exists (select 1 from decisions_vote_drafts bd
                                        where bd.process_instance_id = s.process_instance_id and bd.profile_id = s.submitted_by_profile_id and bd.deleted_at is null),
       'vote_data', s.vote_data,
       'selections', (select coalesce(jsonb_agg(jsonb_build_object(
@@ -190,8 +201,8 @@ select jsonb_pretty(jsonb_build_object(
   -- where the web tally reads.
   'tally', (select jsonb_build_object(
       'ballots', (select count(*) from decisions_vote_submissions s where s.process_instance_id = d.instance_id and s.deleted_at is null),
-      'voters_enrolled', (select count(*) from decision_voter_enrolments e where e.process_instance_id = d.instance_id and e.status = 'enrolled' and e.deleted_at is null),
-      'drafts_open', (select count(*) from decision_ballot_drafts bd where bd.process_instance_id = d.instance_id and bd.deleted_at is null),
+      'voters_enrolled', (select count(*) from decision_voter_enrolments e where e.process_instance_id = d.instance_id and e.enrolled_at is not null and e.deleted_at is null),
+      'drafts_open', (select count(*) from decisions_vote_drafts bd where bd.process_instance_id = d.instance_id and bd.deleted_at is null),
       'by_proposal', (select coalesce(jsonb_agg(jsonb_build_object(
             'code', t.code, 'title', t.title, 'votes', t.votes, 'ranks', t.ranks, 'first_choices', t.first_choices
           ) order by t.votes desc, t.code), '[]'::jsonb)
