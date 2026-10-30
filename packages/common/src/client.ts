@@ -183,6 +183,7 @@ export {
 } from './services/decision/templateLocation';
 export {
   getProcessBudget,
+  isValidProcessBudget,
   type ProcessBudgetPhase,
   templateCollectsBudget,
 } from './services/decision/templateBudget';

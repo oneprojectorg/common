@@ -4,6 +4,7 @@ import {
   type MoneyAmount,
   type Proposal,
   type ProposalAllocation,
+  isAtMost,
   proposalAllocationSchema,
   sumAmounts,
 } from '@op/common/client';
@@ -85,36 +86,6 @@ export const useProposalAwards = ({
     return selectedIds.filter((id) => listed.has(id));
   }, [proposals, selectedIds]);
 
-  const isValid = (proposalId: string) =>
-    isValidAwardAmount(amounts.get(proposalId));
-  const invalidSelectedIds = isEnabled
-    ? selected.filter((id) => !isValid(id))
-    : [];
-
-  const defaultCurrency = fallbackCurrency ?? getBudgetCurrency(undefined);
-  const currency = singleCurrency(
-    selected.map((id) => requested.get(id)?.currency ?? defaultCurrency),
-  );
-  const hasMixedCurrencies =
-    isEnabled && selected.length > 0 && currency === undefined;
-  const total = isEnabled && currency ? sum(selected, amounts, currency) : null;
-  const totalRequested =
-    isEnabled && currency
-      ? sum(
-          selected,
-          new Map(
-            selected.map((id) => [id, requested.get(id)?.amount ?? null]),
-          ),
-          currency,
-        )
-      : null;
-  const isOverBudget =
-    isEnabled &&
-    processBudget !== undefined &&
-    total !== null &&
-    total.amount > processBudget;
-  const isUncheckable = processBudget !== undefined && hasMixedCurrencies;
-
   const setAmount = useCallback(
     (proposalId: string, amount: number | null) => {
       latest.current = { ...latest.current, [proposalId]: amount };
@@ -123,31 +94,73 @@ export const useProposalAwards = ({
     [setEdits],
   );
 
-  return {
+  const defaultCurrency = fallbackCurrency ?? getBudgetCurrency(undefined);
+
+  return useMemo(() => {
+    const isValid = (proposalId: string) =>
+      isValidAwardAmount(amounts.get(proposalId));
+    const invalidSelectedIds = isEnabled
+      ? selected.filter((id) => !isValid(id))
+      : [];
+
+    const currency = singleCurrency(
+      selected.map((id) => requested.get(id)?.currency ?? defaultCurrency),
+    );
+    const hasMixedCurrencies =
+      isEnabled && selected.length > 0 && currency === undefined;
+    const total =
+      isEnabled && currency ? sum(selected, amounts, currency) : null;
+    const totalRequested =
+      isEnabled && currency
+        ? sum(
+            selected,
+            new Map(
+              selected.map((id) => [id, requested.get(id)?.amount ?? null]),
+            ),
+            currency,
+          )
+        : null;
+    const isOverBudget =
+      isEnabled &&
+      processBudget !== undefined &&
+      total !== null &&
+      !isAtMost({ amount: total.amount, limit: processBudget });
+    const isUncheckable = processBudget !== undefined && hasMixedCurrencies;
+
+    return {
+      amounts,
+      getRequested: (proposalId) => requested.get(proposalId),
+      getCurrency: (proposalId) =>
+        requested.get(proposalId)?.currency ?? defaultCurrency,
+      hasAdjusted: (proposalId) =>
+        amounts.get(proposalId) !== (requested.get(proposalId)?.amount ?? null),
+      isValid,
+      invalidSelectedIds,
+      total,
+      totalRequested,
+      hasMixedCurrencies,
+      isOverBudget,
+      canConfirm:
+        !isEnabled ||
+        (invalidSelectedIds.length === 0 && !isOverBudget && !isUncheckable),
+      allocations: () =>
+        isEnabled
+          ? selected.flatMap((proposalId): ProposalAllocation[] => {
+              const amount = amounts.get(proposalId);
+              return isValidAwardAmount(amount) ? [{ proposalId, amount }] : [];
+            })
+          : undefined,
+      setAmount,
+    } satisfies ProposalAwards;
+  }, [
     amounts,
-    getRequested: (proposalId) => requested.get(proposalId),
-    getCurrency: (proposalId) =>
-      requested.get(proposalId)?.currency ?? defaultCurrency,
-    hasAdjusted: (proposalId) =>
-      amounts.get(proposalId) !== (requested.get(proposalId)?.amount ?? null),
-    isValid,
-    invalidSelectedIds,
-    total,
-    totalRequested,
-    hasMixedCurrencies,
-    isOverBudget,
-    canConfirm:
-      !isEnabled ||
-      (invalidSelectedIds.length === 0 && !isOverBudget && !isUncheckable),
-    allocations: () =>
-      isEnabled
-        ? selected.flatMap((proposalId): ProposalAllocation[] => {
-            const amount = amounts.get(proposalId);
-            return isValidAwardAmount(amount) ? [{ proposalId, amount }] : [];
-          })
-        : undefined,
+    requested,
+    selected,
+    defaultCurrency,
+    isEnabled,
+    processBudget,
     setAmount,
-  };
+  ]);
 };
 
 const requestedCache = new WeakMap<AwardProposal, MoneyAmount | undefined>();

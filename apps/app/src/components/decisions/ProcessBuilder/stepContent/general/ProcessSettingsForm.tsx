@@ -5,7 +5,7 @@ import { getCurrencySymbol, getProcessBudget } from '@op/common/client';
 import { Header1, Header3 } from '@op/sense/Header';
 import { NumberField } from '@op/sense/NumberField';
 import { Switch } from '@op/sense/Switch';
-import { useEffect, useId, useRef } from 'react';
+import { useEffect, useId, useMemo, useRef } from 'react';
 import { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
@@ -123,14 +123,18 @@ export function ProcessSettingsForm({
   // Only the process owner can change the steward
   const isProcessOwner = userProfiles?.some((p) => p.id === instance.owner?.id);
 
-  const apiPhases = instance.instanceData?.phases ?? [];
-  const phases = (instanceData?.phases ?? apiPhases).map((phase) => ({
-    ...phase,
-    settings:
-      phase.settings ??
-      apiPhases.find((apiPhase) => apiPhase.phaseId === phase.phaseId)
-        ?.settings,
-  }));
+  const storePhases = instanceData?.phases;
+  const apiPhasesSource = instance.instanceData?.phases;
+  const phases = useMemo(() => {
+    const apiPhases = apiPhasesSource ?? [];
+    return (storePhases ?? apiPhases).map((phase) => ({
+      ...phase,
+      settings:
+        phase.settings ??
+        apiPhases.find((apiPhase) => apiPhase.phaseId === phase.phaseId)
+          ?.settings,
+    }));
+  }, [storePhases, apiPhasesSource]);
   const currentBudget =
     getProcessBudget({ phases, currentPhaseId: null }) ?? null;
   const budgetCurrency = getTemplateCurrency(

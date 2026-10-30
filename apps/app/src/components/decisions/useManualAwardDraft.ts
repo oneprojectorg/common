@@ -94,10 +94,11 @@ export function useManualAwardDraft(
       }
       if (Object.keys(next).length === 0) {
         window.localStorage.removeItem(key);
+        snapshots.set(key, EMPTY);
       } else {
         window.localStorage.setItem(key, JSON.stringify(next));
+        snapshots.set(key, next);
       }
-      snapshots.delete(key);
       window.dispatchEvent(new CustomEvent(CHANGE_EVENT, { detail: key }));
     },
     [key],

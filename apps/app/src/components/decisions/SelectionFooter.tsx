@@ -8,6 +8,7 @@ import {
   FooterBarStart,
 } from '@op/sense/FooterBar';
 import { cn } from '@op/sense/lib/utils';
+import { useMemo } from 'react';
 import { LuCircleCheck } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -50,6 +51,10 @@ export const SelectionFooter = ({
 }: SelectionFooterProps) => {
   const t = useTranslations('decisions.review');
   const showMeter = awards !== undefined && processBudget !== undefined;
+  const selectedIds = useMemo(
+    () => selectedProposals.map((proposal) => proposal.id),
+    [selectedProposals],
+  );
 
   return (
     <FooterBar
@@ -78,7 +83,7 @@ export const SelectionFooter = ({
         {showMeter ? (
           <AwardBudgetMeter
             awards={awards}
-            selectedIds={selectedProposals.map((proposal) => proposal.id)}
+            selectedIds={selectedIds}
             processBudget={processBudget}
             className="max-w-xl"
           />

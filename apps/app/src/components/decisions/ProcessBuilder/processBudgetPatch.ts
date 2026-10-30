@@ -1,4 +1,5 @@
 import type { InstancePhaseData } from '@op/api/encoders';
+import { isValidProcessBudget } from '@op/common/client';
 
 export const toPhasesWithBudget = (
   phases: readonly InstancePhaseData[],
@@ -21,4 +22,4 @@ export const toPhasesWithBudget = (
 };
 
 export const isSavableProcessBudget = (budget: number | null): boolean =>
-  budget === null || (Number.isFinite(budget) && budget > 0);
+  budget === null || isValidProcessBudget(budget);

@@ -1,5 +1,5 @@
 import { ValidationError } from '../../utils/error';
-import { sumAmounts } from './fieldUnit';
+import { isAtMost, sumAmounts } from './fieldUnit';
 import type { ProposalAllocation } from './schemas/selection';
 import type { ProposalTemplateSchema } from './types';
 
@@ -38,13 +38,14 @@ export function getProcessBudget({
     ?.budget;
 }
 
+export const isValidProcessBudget = (value: unknown): value is number =>
+  typeof value === 'number' && Number.isFinite(value) && value > 0;
+
 const readBudget = (
   settings: Record<string, unknown> | null | undefined,
 ): number | undefined => {
   const value = settings?.budget;
-  return typeof value === 'number' && Number.isFinite(value) && value > 0
-    ? value
-    : undefined;
+  return isValidProcessBudget(value) ? value : undefined;
 };
 
 export interface RedactablePhase {
@@ -91,7 +92,7 @@ export function assertAllocationsWithinBudget({
     return;
   }
   const total = sumAmounts(allocations.map(({ amount }) => amount));
-  if (total > processBudget) {
+  if (!isAtMost({ amount: total, limit: processBudget })) {
     throw new ValidationError(
       `Awarded amounts total ${total}, over the process budget of ${processBudget}`,
     );

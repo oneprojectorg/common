@@ -17,6 +17,7 @@ import {
   type ProposalTemplateSchema,
   SYSTEM_FIELD_KEYS,
   buildCategorySchema,
+  getMoneyFieldCurrency,
   parseSchemaOptions,
   schemaHasOptions,
 } from '@op/common/client';
@@ -174,14 +175,13 @@ export function getFieldSchema(
 export function getTemplateCurrency(
   template: ProposalTemplateSchema | null | undefined,
 ): string {
-  const currency = template
-    ? getFieldSchema(template, 'budget')?.properties?.currency
+  const budgetSchema = template
+    ? getFieldSchema(template, 'budget')
     : undefined;
-  return typeof currency === 'object' &&
-    currency !== null &&
-    typeof currency.default === 'string'
-    ? currency.default
-    : DEFAULT_MONEY_CURRENCY;
+  return (
+    (budgetSchema ? getMoneyFieldCurrency(budgetSchema) : undefined) ??
+    DEFAULT_MONEY_CURRENCY
+  );
 }
 
 export function getFieldType(

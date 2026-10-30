@@ -45,6 +45,8 @@ export function getMoneyCurrency(value: unknown): string | undefined {
   return isValidCurrencyCode(currency) ? currency : undefined;
 }
 
+const currencySymbols = new Map<string, string>();
+
 // formatToParts, not string-stripping: locales with non-ASCII numerals would
 // leave digits behind in the symbol.
 export function getCurrencySymbol(currency: string): string {
@@ -53,6 +55,10 @@ export function getCurrencySymbol(currency: string): string {
   if (!isValidCurrencyCode(currency)) {
     return currency;
   }
+  const cached = currencySymbols.get(currency);
+  if (cached !== undefined) {
+    return cached;
+  }
   const part = new Intl.NumberFormat(undefined, {
     style: 'currency',
     currency,
@@ -60,5 +66,7 @@ export function getCurrencySymbol(currency: string): string {
   })
     .formatToParts(0)
     .find(({ type }) => type === 'currency');
-  return part?.value ?? currency;
+  const symbol = part?.value ?? currency;
+  currencySymbols.set(currency, symbol);
+  return symbol;
 }
