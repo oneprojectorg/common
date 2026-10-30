@@ -1,0 +1,289 @@
+import {
+  processInstances,
+  proposalCategories,
+  ProposalStatus,
+  taxonomies,
+  taxonomyTerms,
+} from '@op/db/schema';
+import { db, eq } from '@op/db/test';
+import { logger } from '@op/logging';
+import slugify from 'slugify';
+
+import {
+  createDecisionBoundary,
+  createDecisionPhoneNumber,
+  createDecisionInstance,
+  createDecisionProcess,
+  createProposal,
+  makeDecisionPublic,
+  testSimpleVotingSchema,
+} from './data';
+
+const ADMIN_EMAIL = process.env.SEED_SMS_ADMIN_EMAIL ?? 'ivan@oneproject.org';
+const LINE_NUMBER = process.env.SEED_SMS_LINE ?? '+13306254729';
+
+const findAdminAccount = async () => {
+  const account = await db.query.users.findFirst({
+    where: { email: ADMIN_EMAIL },
+    columns: { authUserId: true, profileId: true },
+  });
+  if (!account?.authUserId || !account.profileId) {
+    throw new Error(
+      `No account with an individual profile exists for ${ADMIN_EMAIL}. ` +
+        'Sign that account up in the local app first, or point ' +
+        'SEED_SMS_ADMIN_EMAIL at an existing local account.',
+    );
+  }
+  return { authUserId: account.authUserId, profileId: account.profileId };
+};
+const SLUG = 'sms-voting-test';
+const ATTESTATION =
+  'I live in Columbus and I am 16 or older. I will vote once.';
+
+type Ring = ReadonlyArray<readonly [number, number]>;
+
+const box = (
+  west: number,
+  south: number,
+  east: number,
+  north: number,
+): Ring => [
+  [west, south],
+  [east, south],
+  [east, north],
+  [west, north],
+  [west, south],
+];
+
+const DISTRICTS = [
+  { name: 'District 5', ring: box(-83.04, 39.93, -82.97, 39.99) },
+  { name: 'District 3', ring: box(-82.97, 39.93, -82.9, 39.99) },
+] as const;
+
+const PROPOSALS = [
+  {
+    title: 'Shade trees on Parsons Ave',
+    amount: 85_000,
+    district: 'District 5',
+    lat: 39.955,
+    lng: -82.985,
+  },
+  {
+    title: 'Lit crosswalks at Livingston & 18th',
+    amount: 120_000,
+    district: 'District 5',
+    lat: 39.951,
+    lng: -82.98,
+  },
+  {
+    title: 'Schiller Park splash pad',
+    amount: 450_000,
+    district: 'District 5',
+    lat: 39.942,
+    lng: -82.99,
+  },
+  {
+    title: 'Mobile food market, four stops a week',
+    amount: 300_000,
+    district: 'District 5',
+    lat: 39.96,
+    lng: -83.0,
+  },
+  {
+    title: 'Little free pantries at six corners',
+    amount: 60_000,
+    district: 'District 5',
+    lat: 39.948,
+    lng: -82.995,
+  },
+  {
+    title: 'Protected bike lane on Whittier St',
+    amount: 200_000,
+    district: 'District 5',
+    lat: 39.945,
+    lng: -83.01,
+  },
+  {
+    title: 'Playground resurfacing, Nelson Park',
+    amount: 150_000,
+    district: 'District 3',
+    lat: 39.96,
+    lng: -82.93,
+  },
+  {
+    title: 'Bus shelter on E Main at Champion',
+    amount: 95_000,
+    district: 'District 3',
+    lat: 39.957,
+    lng: -82.95,
+  },
+] as const;
+
+const schema = {
+  ...testSimpleVotingSchema,
+  id: 'sms-voting-test',
+  name: 'SMS Voting Test',
+  description: 'Participatory budget vote by text message.',
+  phases: testSimpleVotingSchema.phases.map((phase) =>
+    phase.id === 'voting'
+      ? {
+          ...phase,
+          rules: {
+            ...phase.rules,
+            voting: {
+              submit: true,
+              edit: true,
+              ranked: true,
+              voterBudget: 1_000_000,
+              voterCostField: 'budget',
+              enrolment: { attestation: ATTESTATION, boundary: true },
+            },
+          },
+        }
+      : phase,
+  ),
+};
+
+const ensureTerm = async (label: string): Promise<string> => {
+  let taxonomy = await db.query.taxonomies.findFirst({
+    where: { name: 'proposal' },
+  });
+  if (!taxonomy) {
+    [taxonomy] = await db
+      .insert(taxonomies)
+      .values({ name: 'proposal', description: 'Proposal categories' })
+      .returning();
+  }
+  if (!taxonomy) {
+    throw new Error('Could not create the proposal taxonomy');
+  }
+  const termUri = slugify(label.trim(), {
+    lower: true,
+    strict: true,
+    trim: true,
+  });
+  const existing = await db.query.taxonomyTerms.findFirst({
+    where: { taxonomyId: taxonomy.id, termUri },
+  });
+  if (existing) {
+    return existing.id;
+  }
+  const [term] = await db
+    .insert(taxonomyTerms)
+    .values({ taxonomyId: taxonomy.id, termUri, label, facet: 'category' })
+    .returning();
+  if (!term) {
+    throw new Error(`Could not create the term ${label}`);
+  }
+  return term.id;
+};
+
+const main = async () => {
+  const existing = await db.query.profiles.findFirst({
+    where: { slug: SLUG },
+    columns: { id: true },
+  });
+  if (existing) {
+    throw new Error(
+      `A profile with slug ${SLUG} already exists: ${existing.id}`,
+    );
+  }
+
+  const admin = await findAdminAccount();
+  const template = await createDecisionProcess({
+    createdByProfileId: admin.profileId,
+    name: schema.name,
+    schema,
+  });
+
+  const decision = await createDecisionInstance({
+    processId: template.id,
+    ownerProfileId: admin.profileId,
+    authUserId: admin.authUserId,
+    email: ADMIN_EMAIL,
+    name: schema.name,
+    schema,
+    slug: SLUG,
+  });
+
+  const termByDistrict = new Map<string, string>();
+  for (const district of DISTRICTS) {
+    const taxonomyTermId = await ensureTerm(district.name);
+    termByDistrict.set(district.name, taxonomyTermId);
+    await createDecisionBoundary({
+      profileId: decision.profileId,
+      name: district.name,
+      taxonomyTermId,
+      ring: district.ring,
+    });
+  }
+
+  const codes: Array<{ code: number | null; title: string; district: string }> =
+    [];
+  for (const item of PROPOSALS) {
+    const proposal = await createProposal({
+      processInstanceId: decision.instance.id,
+      submittedByProfileId: admin.profileId,
+      authUserId: admin.authUserId,
+      email: ADMIN_EMAIL,
+      status: ProposalStatus.SUBMITTED,
+      proposalData: {
+        title: item.title,
+        description: `<p>${item.title} for ${item.district}.</p>`,
+        budget: { amount: item.amount, currency: 'USD' },
+        category: [item.district],
+        location: { lat: item.lat, lng: item.lng },
+      },
+    });
+    const taxonomyTermId = termByDistrict.get(item.district);
+    if (!taxonomyTermId) {
+      throw new Error(`No term for ${item.district}`);
+    }
+    await db
+      .insert(proposalCategories)
+      .values({ proposalId: proposal.id, taxonomyTermId });
+    const [row] = await db.query.proposals.findMany({
+      where: { id: proposal.id },
+      columns: { shortCode: true },
+    });
+    codes.push({
+      code: row?.shortCode ?? null,
+      title: item.title,
+      district: item.district,
+    });
+  }
+
+  await makeDecisionPublic({ profileId: decision.profileId });
+
+  await db
+    .update(processInstances)
+    .set({ currentStateId: 'voting' })
+    .where(eq(processInstances.id, decision.instance.id));
+
+  await createDecisionPhoneNumber({
+    processInstanceId: decision.instance.id,
+    phoneNumber: LINE_NUMBER,
+  });
+
+  process.stdout.write(
+    JSON.stringify(
+      {
+        instanceId: decision.instance.id,
+        profileId: decision.profileId,
+        slug: decision.slug,
+        line: LINE_NUMBER,
+        url: `http://localhost:3100/en/decisions/${decision.slug}`,
+        proposals: codes,
+      },
+      null,
+      2,
+    ) + '\n',
+  );
+};
+
+main()
+  .then(() => process.exit(0))
+  .catch((error) => {
+    logger.error('Seeding the SMS demo decision failed', { error });
+    process.exit(1);
+  });
