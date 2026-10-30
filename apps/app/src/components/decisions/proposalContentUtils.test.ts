@@ -10,7 +10,12 @@ const textFragment = (text: string) => ({
 });
 
 const makeProposal = (): ProposalSystemFieldSource => ({
-  proposalData: { title: 'Fallback title', budget: 1000 },
+  proposalData: {
+    title: 'Fallback title',
+    budget: { amount: 1000, currency: 'USD' },
+    category: [],
+    attachmentIds: [],
+  },
   proposalTemplate: {
     type: 'object',
     properties: {

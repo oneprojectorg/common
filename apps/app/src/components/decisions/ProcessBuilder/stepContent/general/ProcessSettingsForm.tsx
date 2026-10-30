@@ -1,11 +1,7 @@
 'use client';
 
 import { trpc } from '@op/api/client';
-import {
-  DEFAULT_MONEY_CURRENCY,
-  getCurrencySymbol,
-  getProcessBudget,
-} from '@op/common/client';
+import { getCurrencySymbol, getProcessBudget } from '@op/common/client';
 import { Header1, Header3 } from '@op/sense/Header';
 import { NumberField } from '@op/sense/NumberField';
 import { Switch } from '@op/sense/Switch';
