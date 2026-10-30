@@ -18,10 +18,13 @@ import {
   getCursorCondition,
 } from '../../utils';
 import { getNormalizedRoles } from '../access';
+import { canSeeHiddenBudget } from './budgetVisibility';
 import {
   type DecisionRolePermissions,
   fromDecisionBitField,
 } from './permissions';
+import type { DecisionInstanceData } from './schemas/instanceData';
+import { redactHiddenBudget } from './templateBudget';
 
 export const listDecisionProfiles = async ({
   user,
@@ -194,11 +197,16 @@ export const listDecisionProfiles = async ({
         : [];
       const collapsed = collapseRoles(roles);
       const access = fromDecisionBitField(collapsed.decisions ?? 0);
+      const isAdmin = access.admin || canSeeHiddenBudget(roles);
+      const instanceData = isAdmin
+        ? instanceRest.instanceData
+        : redactHiddenBudget(instanceRest.instanceData as DecisionInstanceData);
 
       return {
         ...profileWithoutUsers,
         processInstance: {
           ...instanceRest,
+          instanceData,
           proposals,
           proposalCount,
           participantCount,

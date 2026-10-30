@@ -194,6 +194,90 @@ describe.concurrent('getInstance', () => {
 
     expect(result.process).toBeNull();
   });
+
+  it('keeps the phase budget for an admin when the process hides the budget', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({ grantAccess: true });
+    const instance = await testData.createInstanceForProcess({
+      process: setup.process,
+      user: setup.user,
+      name: 'Hidden budget',
+      budget: 25000,
+      config: { hideBudget: true },
+    });
+    await testData.grantProfileAccess(
+      instance.profileId,
+      setup.user.id,
+      setup.userEmail,
+    );
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+    const result = await caller.decision.getInstance({
+      instanceId: instance.instance.id,
+    });
+
+    expect(result.access?.admin).toBe(true);
+    expect(result.instanceData.phases?.[0]?.settings).toMatchObject({
+      budget: 25000,
+    });
+  });
+
+  it('hides the phase budget from a member when the process hides the budget', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup();
+    const instance = await testData.createInstanceForProcess({
+      process: setup.process,
+      user: setup.user,
+      name: 'Hidden budget',
+      budget: 25000,
+      config: { hideBudget: true },
+    });
+    const member = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [instance.profileId],
+    });
+
+    const caller = await createAuthenticatedCaller(member.email);
+    const result = await caller.decision.getInstance({
+      instanceId: instance.instance.id,
+    });
+
+    expect(result.access?.admin).toBe(false);
+    expect(result.instanceData.phases?.[0]?.settings?.budget).toBeUndefined();
+  });
+
+  it('returns the phase budget to a member when the process does not hide it', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup();
+    const instance = await testData.createInstanceForProcess({
+      process: setup.process,
+      user: setup.user,
+      name: 'Open budget',
+      budget: 25000,
+    });
+    const member = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [instance.profileId],
+    });
+
+    const caller = await createAuthenticatedCaller(member.email);
+    const result = await caller.decision.getInstance({
+      instanceId: instance.instance.id,
+    });
+
+    expect(result.instanceData.phases?.[0]?.settings).toMatchObject({
+      budget: 25000,
+    });
+  });
 });
 
 describeDecisionAccessTierGating('getInstance', {

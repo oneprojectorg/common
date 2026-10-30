@@ -28,6 +28,7 @@ import { useProcessBuilderAutosave } from '../../ProcessBuilderAutosaveContext';
 import { SaveStatusIndicator } from '../../components/SaveStatusIndicator';
 import type { SectionProps } from '../../contentRegistry';
 import { phaseToSectionId } from '../../navigationConfig';
+import { toEditablePhases, toPhasesPayload } from '../../phaseEditing';
 import { useProcessBuilderStore } from '../../stores/useProcessBuilderStore';
 
 export function PhasesSectionContent({
@@ -45,20 +46,7 @@ export function PhasesSectionContent({
 
   const initialPhases: PhaseDefinition[] = (() => {
     const source = storePhases?.length ? storePhases : instancePhases;
-    return (
-      source?.map((p) => ({
-        id: p.phaseId,
-        name: p.name ?? '',
-        description: p.description,
-        headline: p.headline,
-        additionalInfo: p.additionalInfo,
-        rules: p.rules ?? {},
-        startDate: p.startDate,
-        endDate: p.endDate,
-      })) ??
-      templatePhases ??
-      []
-    );
+    return source ? toEditablePhases(source) : (templatePhases ?? []);
   })();
   const [phases, setPhases] = useState<PhaseDefinition[]>(initialPhases);
   const t = useTranslations();
@@ -86,20 +74,8 @@ export function PhasesSectionContent({
     return dateFormat.format(end);
   };
 
-  const toPayload = (data: PhaseDefinition[]) =>
-    data.map((phase) => ({
-      phaseId: phase.id,
-      name: phase.name,
-      description: phase.description,
-      headline: phase.headline,
-      additionalInfo: phase.additionalInfo,
-      startDate: phase.startDate,
-      endDate: phase.endDate,
-      rules: phase.rules,
-    }));
-
   const savePhasesPayload = (data: PhaseDefinition[]) => {
-    saveChanges({ phases: toPayload(data) });
+    saveChanges({ phases: toPhasesPayload(data) });
   };
 
   const updatePhases = (

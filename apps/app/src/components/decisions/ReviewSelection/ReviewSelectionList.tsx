@@ -6,7 +6,7 @@ import type {
   ProposalAllocation,
   ResultNotificationMessages,
 } from '@op/common/client';
-import { getRubricScoringInfo } from '@op/common/client';
+import { getProcessBudget, getRubricScoringInfo } from '@op/common/client';
 import {
   Empty,
   EmptyDescription,
@@ -23,10 +23,13 @@ import { LuLeaf } from 'react-icons/lu';
 import { useTranslations } from '@/lib/i18n';
 
 import { Bullet } from '@/components/Bullet';
+import { getTemplateCurrency } from '@/components/decisions/proposalTemplate';
 
 import { ProposalCardDialogProvider } from '../ProposalCardDialogContext';
 import { SelectionFooter } from '../SelectionFooter';
+import { useManualAwardDraft } from '../useManualAwardDraft';
 import { useManualSelection } from '../useManualSelection';
+import { useProposalAwards } from '../useProposalAwards';
 import {
   ReviewSelectionTable,
   ReviewSelectionTableSkeleton,
@@ -68,7 +71,14 @@ export function ReviewSelectionList({
     previousPhaseId,
   );
   const advancing = useMemo(() => new Set(advancingIds), [advancingIds]);
+  const awardDraft = useManualAwardDraft(processInstanceId, previousPhaseId);
+  const [, setAwardDraft] = awardDraft;
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const awardsAmounts = isFinalPhase && showBudget;
+  const processBudget = getProcessBudget({
+    phases: instance.instanceData?.phases,
+    currentPhaseId: instance.currentStateId,
+  });
 
   const [{ items, rubricTemplate }] =
     trpc.decision.listWithReviewAggregates.useSuspenseQuery({
@@ -95,6 +105,21 @@ export function ReviewSelectionList({
         .map((item) => item.proposal),
     [items, advancing],
   );
+  const proposals = useMemo(() => items.map((item) => item.proposal), [items]);
+  const selectedIds = useMemo(
+    () => selectedProposals.map((proposal) => proposal.id),
+    [selectedProposals],
+  );
+  const awards = useProposalAwards({
+    proposals,
+    selectedIds,
+    isEnabled: awardsAmounts,
+    processBudget,
+    draft: awardDraft,
+    fallbackCurrency: getTemplateCurrency(
+      instance.instanceData?.proposalTemplate,
+    ),
+  });
 
   const currentPhaseName =
     instance.instanceData?.phases?.find(
@@ -105,6 +130,7 @@ export function ReviewSelectionList({
     onSuccess: () => {
       utils.decision.getInstance.invalidate({ instanceId: processInstanceId });
       setAdvancingIds([]);
+      setAwardDraft({});
       setIsConfirmOpen(false);
     },
     onError: (error) => {
@@ -178,6 +204,7 @@ export function ReviewSelectionList({
             advancingIds={advancing}
             decisionSlug={decisionSlug}
             showBudget={showBudget}
+            awards={awardsAmounts ? awards : undefined}
           />
         )}
 
@@ -192,6 +219,8 @@ export function ReviewSelectionList({
           onConfirmOpenChange={setIsConfirmOpen}
           onConfirm={handleConfirm}
           isSubmitting={submitMutation.isPending}
+          awards={awardsAmounts ? awards : undefined}
+          processBudget={processBudget}
         />
       </div>
     </ProposalCardDialogProvider>

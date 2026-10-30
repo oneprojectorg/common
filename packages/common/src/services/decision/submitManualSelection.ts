@@ -28,7 +28,11 @@ import {
   resultNotificationMessagesSchema,
 } from './resultNotificationTemplate';
 import { runGenerateReviewAssignments } from './runGenerateReviewAssignments';
-import { type DecisionInstanceData, isLastPhase } from './schemas/instanceData';
+import {
+  type DecisionInstanceData,
+  getInstancePhases,
+  isLastPhase,
+} from './schemas/instanceData';
 import {
   type ProposalAllocation,
   proposalAllocationSchema,
@@ -37,6 +41,10 @@ import type {
   ManualSelectionAudit,
   TransitionData,
 } from './schemas/transitionData';
+import {
+  assertAllocationsWithinBudget,
+  getProcessBudget,
+} from './templateBudget';
 import { isReviewPhase } from './utils/phaseSettings';
 
 export interface SubmitManualSelectionInput {
@@ -122,6 +130,13 @@ export async function submitManualSelection({
     allocations,
     proposalIds: uniqueProposalIds,
   });
+  assertAllocationsWithinBudget({
+    allocations,
+    processBudget: getProcessBudget({
+      phases: getInstancePhases(instance.instanceData),
+      currentPhaseId: currentStateId,
+    }),
+  });
 
   const now = new Date().toISOString();
   const byProfileId = dbUser.profileId;
@@ -156,9 +171,9 @@ export async function submitManualSelection({
       );
     }
 
-    const lockedData =
-      lockedInstance.instanceData as DecisionInstanceData | null;
-    const lockedPhases = lockedData?.phases;
+    const lockedPhases = getInstancePhases(
+      lockedInstance.instanceData as DecisionInstanceData | null,
+    );
     const lockedPhaseIndex =
       lockedPhases?.findIndex((p) => p.phaseId === currentStateId) ?? -1;
     const lockedPreviousPhase =
@@ -171,6 +186,13 @@ export async function submitManualSelection({
       );
     }
     const lockedPreviousPhaseId = lockedPreviousPhase.phaseId;
+    assertAllocationsWithinBudget({
+      allocations,
+      processBudget: getProcessBudget({
+        phases: lockedPhases,
+        currentPhaseId: currentStateId,
+      }),
+    });
 
     const [latestRow] = await tx
       .select({
@@ -275,7 +297,7 @@ export async function submitManualSelection({
         instanceId: processInstanceId,
         fromPhaseId: lockedPreviousPhaseId,
         toPhaseId: currentStateId,
-        phases: lockedPhases,
+        phases: [...lockedPhases],
         advanceResult: {
           conflict: false,
           transitionHistoryId: latestRow.id,

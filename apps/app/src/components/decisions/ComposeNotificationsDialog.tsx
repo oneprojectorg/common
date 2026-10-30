@@ -27,18 +27,14 @@ import { LuCircleAlert } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { AwardAmountsStep } from './AwardAmountsStep';
-import { useAwardAmounts } from './useAwardAmounts';
+import { AwardSummaryStep } from './AwardSummaryStep';
+import type { ProposalAwards } from './useProposalAwards';
 
 interface ComposeNotificationsDialogProps {
   selectedProposals: Proposal[];
   selectedCount: number;
   notSelectedCount: number;
-  /**
-   * The template collects a budget, so the dialog opens on a step where the
-   * admin confirms the amount each winner is awarded.
-   */
-  awardsAmounts: boolean;
+  awards?: ProposalAwards;
   phaseName: string;
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
@@ -77,7 +73,7 @@ export const ComposeNotificationsDialog = ({
   selectedProposals,
   selectedCount,
   notSelectedCount,
-  awardsAmounts,
+  awards,
   phaseName,
   isOpen,
   onOpenChange,
@@ -104,12 +100,13 @@ export const ComposeNotificationsDialog = ({
   const fieldIdPrefix = useId();
   const hintId = `${fieldIdPrefix}-hint`;
 
+  const awardsAmounts = awards !== undefined;
   const initialStep = getInitialStep(awardsAmounts);
   const [step, setStep] = useState<Step>(initialStep);
-  const awards = useAwardAmounts({
-    proposals: selectedProposals,
-    isEnabled: awardsAmounts,
-  });
+  const canConfirm = awards?.canConfirm ?? true;
+  const [shownAllocations, setShownAllocations] = useState<
+    ProposalAllocation[] | undefined
+  >();
 
   const handleOpenChange = (open: boolean) => {
     // Closing mid-submit would discard copy the pending mutation may reject.
@@ -120,7 +117,6 @@ export const ComposeNotificationsDialog = ({
       setCounts({ selected: selectedCount, notSelected: notSelectedCount });
       setActiveTab('selected');
       setStep(initialStep);
-      awards.reset();
     }
     onOpenChange(open);
   };
@@ -131,16 +127,23 @@ export const ComposeNotificationsDialog = ({
   };
   const hasError = invalid.selected || invalid.notSelected;
 
-  const confirm = (composed?: ResultNotificationMessages) =>
-    awards.publish({
-      onPublish: (allocations) => onConfirm(composed, allocations),
-      onReopen: () => setStep('amounts'),
-    });
+  const confirm = (composed?: ResultNotificationMessages) => {
+    const allocations = awards?.allocations();
+    if (awards && !sameAllocations(allocations, shownAllocations)) {
+      setStep('amounts');
+      return;
+    }
+    onConfirm(composed, allocations);
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger
-        render={<Button disabled={selectedCount === 0}>{triggerLabel}</Button>}
+        render={
+          <Button disabled={selectedCount === 0 || !canConfirm}>
+            {triggerLabel}
+          </Button>
+        }
       />
 
       <DialogContent className={STEP_WIDTH[step]}>
@@ -148,20 +151,18 @@ export const ComposeNotificationsDialog = ({
           <StepTitle step={step} phaseName={phaseName} />
         </DialogHeader>
 
-        {step === 'amounts' ? (
-          <AwardAmountsStep
+        {step === 'amounts' && awards ? (
+          <AwardSummaryStep
             proposals={selectedProposals}
             awards={awards}
-            onContinue={() =>
-              awards.confirm(() => {
-                // Re-frozen here too: a reopened step may confirm a new set.
-                setCounts({
-                  selected: selectedCount,
-                  notSelected: notSelectedCount,
-                });
-                setStep('notifications');
-              })
-            }
+            onContinue={() => {
+              setCounts({
+                selected: selectedCount,
+                notSelected: notSelectedCount,
+              });
+              setShownAllocations(awards.allocations());
+              setStep('notifications');
+            }}
           />
         ) : (
           <>
@@ -249,7 +250,7 @@ export const ComposeNotificationsDialog = ({
                 onSend={() => confirm(messages)}
                 onSkip={() => confirm()}
                 canSend={!hasError}
-                hasSelection={selectedCount > 0}
+                hasSelection={selectedCount > 0 && canConfirm}
                 isSubmitting={isSubmitting}
               />
             </DialogFooter>
@@ -326,6 +327,19 @@ const getPlaceholderHintKey = (awardsAmounts: boolean) =>
 
 const getInitialStep = (awardsAmounts: boolean): Step =>
   awardsAmounts ? 'amounts' : 'notifications';
+
+const sameAllocations = (
+  current: ProposalAllocation[] | undefined,
+  shown: ProposalAllocation[] | undefined,
+): boolean =>
+  current !== undefined &&
+  shown !== undefined &&
+  current.length === shown.length &&
+  current.every(
+    (allocation, index) =>
+      allocation.proposalId === shown[index]?.proposalId &&
+      allocation.amount === shown[index]?.amount,
+  );
 
 const BackButton = ({
   isShown,

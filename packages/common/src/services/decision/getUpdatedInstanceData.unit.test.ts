@@ -200,4 +200,70 @@ describe('getUpdatedInstanceData', () => {
     expect(result?.instanceData.rubricTemplate).toBe(rubricTemplate);
     expect(result?.phaseEndDateChanges).toEqual([]);
   });
+
+  describe('processBudget', () => {
+    const existingWithBudget = (): DecisionInstanceData => {
+      const data = existing();
+      data.phases[0]!.settings = { budget: 25000, allowProposals: true };
+      return data;
+    };
+
+    it('sets the budget on the first stored phase and touches nothing else', () => {
+      const stored = existingWithBudget();
+      const result = getUpdatedInstanceData({
+        existing: stored,
+        update: { processBudget: 31000 },
+      });
+
+      expect(result?.instanceData.phases[0]).toEqual({
+        ...stored.phases[0],
+        settings: { budget: 31000, allowProposals: true },
+      });
+      expect(result?.instanceData.phases.slice(1)).toEqual(
+        stored.phases.slice(1),
+      );
+      expect(result?.phaseEndDateChanges).toEqual([]);
+    });
+
+    it('clears the budget with null and keeps the other settings', () => {
+      const result = getUpdatedInstanceData({
+        existing: existingWithBudget(),
+        update: { processBudget: null },
+      });
+
+      expect(result?.instanceData.phases[0]?.settings).toEqual({
+        allowProposals: true,
+      });
+    });
+
+    it('applies on top of phase overrides in the same update', () => {
+      const result = getUpdatedInstanceData({
+        existing: existingWithBudget(),
+        update: {
+          processBudget: 31000,
+          phases: [
+            { phaseId: 'submission', name: 'Applications' },
+            { phaseId: 'voting' },
+          ],
+        },
+      });
+
+      expect(result?.instanceData.phases[0]).toMatchObject({
+        name: 'Applications',
+        settings: { budget: 31000, allowProposals: true },
+      });
+    });
+
+    it('leaves the phases alone when the instance has none', () => {
+      const stored = existing();
+      stored.phases = [];
+
+      const result = getUpdatedInstanceData({
+        existing: stored,
+        update: { processBudget: 31000 },
+      });
+
+      expect(result?.instanceData.phases).toEqual([]);
+    });
+  });
 });

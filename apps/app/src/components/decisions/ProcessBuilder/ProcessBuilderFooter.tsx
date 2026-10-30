@@ -119,6 +119,7 @@ export const ProcessBuilderFooter = ({
         stewardProfileId: dirtyFields?.stewardProfileId || undefined,
         overview: toOverviewInput(dirtyFields?.overview),
         phases: toPhasesInput(dirtyFields?.phases),
+        processBudget: dirtyFields?.processBudget,
         proposalTemplate: dirtyFields?.proposalTemplate,
         rubricTemplate: dirtyFields?.rubricTemplate,
         config: dirtyFields?.config,

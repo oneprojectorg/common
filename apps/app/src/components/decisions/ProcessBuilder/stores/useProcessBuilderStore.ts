@@ -45,6 +45,7 @@ export interface ProcessBuilderInstanceData extends Omit<
   name?: string;
   description?: string;
   stewardProfileId?: string;
+  processBudget?: number | null;
 
   // Override InstanceData's generic JSON Schema types with specific ones
   proposalTemplate?: ProposalTemplateSchema;

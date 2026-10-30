@@ -64,6 +64,79 @@ describe.concurrent('updateDecisionInstance', () => {
     expect(result.processInstance.id).toBe(instance.instance.id);
   });
 
+  it('sets the process budget without touching phase edits another admin saved', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instanceId = setup.instance.instance.id;
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const before = await db.query.processInstances.findFirst({
+      where: { id: instanceId },
+    });
+    const storedPhases = (before!.instanceData as DecisionInstanceData).phases;
+    const renamed = `Renamed by another admin ${task.id}`;
+    await caller.decision.updateDecisionInstance({
+      instanceId,
+      phases: storedPhases.map((phase, index) =>
+        index === 0
+          ? { phaseId: phase.phaseId, name: renamed }
+          : {
+              phaseId: phase.phaseId,
+            },
+      ),
+    });
+
+    await caller.decision.updateDecisionInstance({
+      instanceId,
+      processBudget: 31000,
+    });
+
+    const after = await db.query.processInstances.findFirst({
+      where: { id: instanceId },
+    });
+    const phases = (after!.instanceData as DecisionInstanceData).phases;
+    expect(phases[0]?.name).toBe(renamed);
+    expect(phases[0]?.settings?.budget).toBe(31000);
+    expect(phases.map((phase) => phase.phaseId)).toEqual(
+      storedPhases.map((phase) => phase.phaseId),
+    );
+  });
+
+  it('clears the process budget with null and keeps the first phase otherwise intact', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instanceId = setup.instance.instance.id;
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    await caller.decision.updateDecisionInstance({
+      instanceId,
+      processBudget: 31000,
+    });
+    await caller.decision.updateDecisionInstance({
+      instanceId,
+      processBudget: null,
+    });
+
+    const after = await db.query.processInstances.findFirst({
+      where: { id: instanceId },
+    });
+    const first = (after!.instanceData as DecisionInstanceData).phases[0];
+    expect(first?.settings?.budget).toBeUndefined();
+    expect(first?.phaseId).toBe(await getFirstPhaseId(instanceId));
+  });
+
   it('should not update slug when renaming a draft instance', async ({
     task,
     onTestFinished,

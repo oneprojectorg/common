@@ -5,6 +5,8 @@ import { permission } from 'access-zones';
 
 import { UnauthorizedError } from '../../utils';
 import { assertOrgAccess } from '../assert';
+import { redactHiddenBudgetForViewer } from './budgetVisibility';
+import type { RedactableInstanceData } from './templateBudget';
 
 export const listLegacyInstances = async ({
   ownerProfileId,
@@ -22,7 +24,7 @@ export const listLegacyInstances = async ({
     throw new UnauthorizedError("You don't have access to do this");
   }
 
-  await assertOrgAccess({
+  const orgUser = await assertOrgAccess({
     user,
     organizationId: org[0].id,
     permissions: { decisions: permission.READ },
@@ -61,6 +63,10 @@ export const listLegacyInstances = async ({
 
     return {
       ...instance,
+      instanceData: redactHiddenBudgetForViewer(
+        instance.instanceData as RedactableInstanceData,
+        orgUser.roles,
+      ),
       proposalCount,
       participantCount,
     };

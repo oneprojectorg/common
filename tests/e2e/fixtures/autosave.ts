@@ -7,11 +7,20 @@ import type { Page } from '@playwright/test';
  * the process builder autosaves in the background, so asserting straight after
  * a click races the write.
  *
+ * The API streams batch responses, so the headers land before the mutation has
+ * run. The client refetches getInstance once it has read the result from the
+ * body, so that request is the signal that the write has landed. (Do not wait
+ * on `response.finished()` instead: Chromium never reports loadingFinished for
+ * these streamed bodies, so it hangs — see a317d0f67.)
+ *
  * Pass `requestBodyIncludes` to wait for a specific save rather than whichever
  * one lands first — the builder saves several fields independently.
  */
-export function waitForAutoSave(page: Page, requestBodyIncludes?: string) {
-  return page.waitForResponse(
+export async function waitForAutoSave(
+  page: Page,
+  requestBodyIncludes?: string,
+) {
+  const response = await page.waitForResponse(
     (resp) => {
       if (
         !resp.url().includes('decision.updateDecisionInstance') ||
@@ -28,4 +37,9 @@ export function waitForAutoSave(page: Page, requestBodyIncludes?: string) {
     },
     { timeout: 12_000 },
   );
+  await page.waitForRequest(
+    (req) => /decision\.getInstance(\?|,|$)/.test(req.url()),
+    { timeout: 12_000 },
+  );
+  return response;
 }

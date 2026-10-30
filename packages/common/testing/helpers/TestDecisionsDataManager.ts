@@ -20,6 +20,7 @@ import {
   type DecisionInstanceData,
   type DecisionSchemaDefinition as DecisionSchemaDefinitionStrict,
   type PhaseDefinition,
+  type ProcessConfig,
   createDecisionInstance,
   createInstanceDataFromTemplate,
   createOrganization as createOrganizationService,
@@ -70,6 +71,8 @@ interface CreateDecisionSetupOptions {
   grantAccess?: boolean;
   /** Status to assign to created instances. Defaults to DRAFT. */
   status?: ProcessStatus;
+  /** Phase budget per instance; `null` seeds without a budget. Defaults to 50000 * (index + 1). */
+  budget?: number | null;
   /** JSON Schema to validate proposal data against on submit/update */
   proposalTemplate?: Record<string, unknown>;
   /** Custom process schema definition. Defaults to testMinimalSchema. */
@@ -205,6 +208,7 @@ export class TestDecisionsDataManager {
       instanceCount = 0,
       grantAccess = false,
       status,
+      budget,
       proposalTemplate,
       processSchema,
     } = opts || {};
@@ -291,7 +295,7 @@ export class TestDecisionsDataManager {
         processId: process.id,
         user,
         name: `Instance ${i + 1}`,
-        budget: 50000 * (i + 1),
+        budget: budget === undefined ? 50000 * (i + 1) : budget,
         status,
       });
 
@@ -337,13 +341,15 @@ export class TestDecisionsDataManager {
       name,
       budget = 50000,
       status,
+      config,
     }: {
       processId?: string;
       process?: CreatedDecisionProcess;
       user?: User;
       name: string;
-      budget?: number;
+      budget?: number | null;
       status?: ProcessStatus;
+      config?: ProcessConfig;
     },
   ): Promise<CreatedInstance> {
     this.ensureCleanupRegistered();
@@ -371,11 +377,21 @@ export class TestDecisionsDataManager {
     }
 
     const template = await getTemplate(resolvedProcessId);
-    const instanceData = createInstanceDataFromTemplate({
+    const firstPhaseId = template.phases[0]?.id;
+    const templateInstanceData = createInstanceDataFromTemplate({
       template,
       phaseOverrides: [
+        ...(firstPhaseId && firstPhaseId !== 'initial'
+          ? [
+              {
+                phaseId: firstPhaseId,
+                ...(budget !== null && { settings: { budget } }),
+              },
+            ]
+          : []),
         {
           phaseId: 'initial',
+          ...(budget !== null && { settings: { budget } }),
           startDate: new Date().toISOString(),
           endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
         },
@@ -390,6 +406,12 @@ export class TestDecisionsDataManager {
         },
       ],
     });
+    const instanceData = config
+      ? {
+          ...templateInstanceData,
+          config: { ...templateInstanceData.config, ...config },
+        }
+      : templateInstanceData;
 
     const profile = await createDecisionInstance({
       processId: resolvedProcessId,

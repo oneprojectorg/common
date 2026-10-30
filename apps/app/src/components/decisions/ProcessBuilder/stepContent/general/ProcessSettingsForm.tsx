@@ -1,9 +1,11 @@
 'use client';
 
 import { trpc } from '@op/api/client';
+import { getCurrencySymbol, getProcessBudget } from '@op/common/client';
 import { Header1, Header3 } from '@op/sense/Header';
+import { NumberField } from '@op/sense/NumberField';
 import { Switch } from '@op/sense/Switch';
-import { useEffect, useRef } from 'react';
+import { useEffect, useId, useMemo, useRef } from 'react';
 import { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
@@ -12,8 +14,10 @@ import type { TranslateFn } from '@/lib/i18n';
 import { useProcessBuilderAutosave } from '@/components/decisions/ProcessBuilder/ProcessBuilderAutosaveContext';
 import { SaveStatusIndicator } from '@/components/decisions/ProcessBuilder/components/SaveStatusIndicator';
 import type { SectionProps } from '@/components/decisions/ProcessBuilder/contentRegistry';
+import { isSavableProcessBudget } from '@/components/decisions/ProcessBuilder/processBudgetPatch';
 import { useProcessBuilderStore } from '@/components/decisions/ProcessBuilder/stores/useProcessBuilderStore';
-import { useAppForm } from '@/components/form/utils';
+import { getTemplateCurrency } from '@/components/decisions/proposalTemplate';
+import { getFieldErrorMessage, useAppForm } from '@/components/form/utils';
 import { ToggleRow } from '@/components/layout/split/form/ToggleRow';
 
 const createProcessSettingsValidator = (t: TranslateFn) =>
@@ -31,6 +35,11 @@ const createProcessSettingsValidator = (t: TranslateFn) =>
       .min(1, {
         message: t('decisions.processBuilder.processDescriptionPlaceholder'),
       }),
+    totalBudget: z
+      .number({ message: t('decisions.processBuilder.totalBudgetError') })
+      .positive({ message: t('decisions.processBuilder.totalBudgetError') })
+      .nullable(),
+    hideBudget: z.boolean(),
     organizeByCategories: z.boolean(),
     requireCollaborativeProposals: z.boolean(),
     isPrivate: z.boolean(),
@@ -111,6 +120,28 @@ export function ProcessSettingsForm({
   // Only the process owner can change the steward
   const isProcessOwner = userProfiles?.some((p) => p.id === instance.owner?.id);
 
+  const storePhases = instanceData?.phases;
+  const apiPhasesSource = instance.instanceData?.phases;
+  const phases = useMemo(() => {
+    const apiPhases = apiPhasesSource ?? [];
+    return (storePhases ?? apiPhases).map((phase) => ({
+      ...phase,
+      settings:
+        phase.settings ??
+        apiPhases.find((apiPhase) => apiPhase.phaseId === phase.phaseId)
+          ?.settings,
+    }));
+  }, [storePhases, apiPhasesSource]);
+  const pendingBudget = instanceData?.processBudget;
+  const currentBudget =
+    pendingBudget !== undefined
+      ? pendingBudget
+      : (getProcessBudget({ phases, currentPhaseId: null }) ?? null);
+  const budgetCurrency = getTemplateCurrency(
+    instanceData?.proposalTemplate ?? instance.instanceData?.proposalTemplate,
+  );
+  const totalBudgetId = useId();
+
   const handleValuesChange = (values: ProcessSettingsFormData) => {
     saveChanges({
       name: values.name,
@@ -119,10 +150,15 @@ export function ProcessSettingsForm({
         ? values.stewardProfileId || undefined
         : undefined,
       config: {
+        hideBudget: values.hideBudget,
         organizeByCategories: values.organizeByCategories,
         requireCollaborativeProposals: values.requireCollaborativeProposals,
         isPrivate: values.isPrivate,
       },
+      ...(isSavableProcessBudget(values.totalBudget) &&
+        values.totalBudget !== currentBudget && {
+          processBudget: values.totalBudget,
+        }),
     });
   };
 
@@ -139,6 +175,8 @@ export function ProcessSettingsForm({
       stewardProfileId: initialStewardProfileId,
       name: initialName,
       description: initialDescription,
+      totalBudget: currentBudget,
+      hideBudget: instanceData?.config?.hideBudget ?? false,
       organizeByCategories: instanceData?.config?.organizeByCategories ?? true,
       requireCollaborativeProposals:
         instanceData?.config?.requireCollaborativeProposals ?? false,
@@ -230,8 +268,36 @@ export function ProcessSettingsForm({
               )}
             />
 
+            <form.AppField
+              name="totalBudget"
+              children={(field) => (
+                <NumberField
+                  id={totalBudgetId}
+                  label={t('decisions.processBuilder.totalBudgetLabel')}
+                  description={t('decisions.processBuilder.totalBudgetHint')}
+                  prefixText={getCurrencySymbol(budgetCurrency)}
+                  value={field.state.value}
+                  onChange={(next) => field.handleChange(next)}
+                  onBlur={field.handleBlur}
+                  errorMessage={getFieldErrorMessage(field)}
+                />
+              )}
+            />
+
             {/* Toggle Options */}
             <div className="space-y-4">
+              <form.AppField
+                name="hideBudget"
+                children={(field) => (
+                  <ToggleRow
+                    label={t('decisions.processBuilder.hideBudgetLabel')}
+                    description={t('decisions.processBuilder.hideBudgetHint')}
+                  >
+                    <field.Switch />
+                  </ToggleRow>
+                )}
+              />
+
               <form.AppField
                 name="organizeByCategories"
                 children={(field) => (

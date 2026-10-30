@@ -56,6 +56,30 @@ test.describe('Create Process Instance', () => {
       .fill('A process created by E2E tests');
     await overviewSaved;
 
+    const budgetSaved = waitForAutoSave(authenticatedPage);
+    await authenticatedPage
+      .getByLabel('Total budget', { exact: true })
+      .fill('25000');
+    await budgetSaved;
+    await authenticatedPage.reload();
+    await expect(
+      authenticatedPage.getByLabel('Total budget', { exact: true }),
+    ).toHaveValue('25000', { timeout: 18_000 });
+
+    const hideBudget = authenticatedPage.getByRole('switch', {
+      name: 'Hide the total budget from members',
+    });
+    const hideBudgetWasOn = await hideBudget.isChecked();
+    const hideBudgetSaved = waitForAutoSave(authenticatedPage);
+    await hideBudget.click();
+    await hideBudgetSaved;
+    await authenticatedPage.reload();
+    await expect(
+      authenticatedPage.getByRole('switch', {
+        name: 'Hide the total budget from members',
+      }),
+    ).toBeChecked({ checked: !hideBudgetWasOn, timeout: 18_000 });
+
     // ── Step 1: General – Phases ────────────────────────────────────────
 
     // 6. Navigate to the Phases section

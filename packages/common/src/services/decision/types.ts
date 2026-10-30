@@ -157,7 +157,7 @@ export interface TransitionAction {
 // Instance Data Structure
 export interface InstanceData {
   budget?: number;
-  hideBudget?: boolean; // Whether to hide the budget from non-owners
+  hideBudget?: boolean; // Whether to hide the total budget from non-admins
   fieldValues?: Record<string, unknown>; // Values for process fields schema
   phases?: PhaseConfiguration[];
 }
