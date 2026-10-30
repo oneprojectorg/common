@@ -14,10 +14,7 @@ import type { TranslateFn } from '@/lib/i18n';
 import { useProcessBuilderAutosave } from '@/components/decisions/ProcessBuilder/ProcessBuilderAutosaveContext';
 import { SaveStatusIndicator } from '@/components/decisions/ProcessBuilder/components/SaveStatusIndicator';
 import type { SectionProps } from '@/components/decisions/ProcessBuilder/contentRegistry';
-import {
-  isSavableProcessBudget,
-  toPhasesWithBudget,
-} from '@/components/decisions/ProcessBuilder/processBudgetPatch';
+import { isSavableProcessBudget } from '@/components/decisions/ProcessBuilder/processBudgetPatch';
 import { useProcessBuilderStore } from '@/components/decisions/ProcessBuilder/stores/useProcessBuilderStore';
 import { getTemplateCurrency } from '@/components/decisions/proposalTemplate';
 import { getFieldErrorMessage, useAppForm } from '@/components/form/utils';
@@ -135,8 +132,11 @@ export function ProcessSettingsForm({
           ?.settings,
     }));
   }, [storePhases, apiPhasesSource]);
+  const pendingBudget = instanceData?.processBudget;
   const currentBudget =
-    getProcessBudget({ phases, currentPhaseId: null }) ?? null;
+    pendingBudget !== undefined
+      ? pendingBudget
+      : (getProcessBudget({ phases, currentPhaseId: null }) ?? null);
   const budgetCurrency = getTemplateCurrency(
     instanceData?.proposalTemplate ?? instance.instanceData?.proposalTemplate,
   );
@@ -157,7 +157,7 @@ export function ProcessSettingsForm({
       },
       ...(isSavableProcessBudget(values.totalBudget) &&
         values.totalBudget !== currentBudget && {
-          phases: toPhasesWithBudget(phases, values.totalBudget),
+          processBudget: values.totalBudget,
         }),
     });
   };

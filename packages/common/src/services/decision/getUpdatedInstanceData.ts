@@ -11,6 +11,7 @@ export interface InstanceDataUpdate {
   config?: ProcessConfig;
   overview?: InstanceOverviewUpdate;
   phases?: PhaseOverride[];
+  processBudget?: number | null;
   proposalTemplate?: Record<string, unknown>;
   rubricTemplate?: RubricTemplateSchema;
 }
@@ -39,13 +40,21 @@ export function getUpdatedInstanceData({
       phaseEndDateChanges: PhaseEndDateChange[];
     }
   | undefined {
-  const { config, overview, phases, proposalTemplate, rubricTemplate } = update;
+  const {
+    config,
+    overview,
+    phases,
+    processBudget,
+    proposalTemplate,
+    rubricTemplate,
+  } = update;
   const hasPhaseUpdates = phases !== undefined && phases.length > 0;
 
   if (
     config === undefined &&
     overview === undefined &&
     !hasPhaseUpdates &&
+    processBudget === undefined &&
     proposalTemplate === undefined &&
     rubricTemplate === undefined
   ) {
@@ -64,6 +73,13 @@ export function getUpdatedInstanceData({
 
   if (hasPhaseUpdates) {
     instanceData.phases = mergePhases(existing.phases, phases);
+  }
+
+  if (processBudget !== undefined) {
+    instanceData.phases = patchProcessBudget(
+      instanceData.phases,
+      processBudget,
+    );
   }
 
   if (proposalTemplate !== undefined) {
@@ -123,6 +139,24 @@ function mergeOverview(
   }
 
   return merged;
+}
+
+function patchProcessBudget(
+  phases: PhaseInstanceData[],
+  budget: number | null,
+): PhaseInstanceData[] {
+  const [first, ...rest] = phases;
+  if (!first) {
+    return phases;
+  }
+  const { budget: _previous, ...settings } = first.settings ?? {};
+  return [
+    {
+      ...first,
+      settings: budget === null ? settings : { ...settings, budget },
+    },
+    ...rest,
+  ];
 }
 
 // Replaces the full phases array so phases can be added, removed and

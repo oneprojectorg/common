@@ -13,7 +13,12 @@ import type { User } from '@op/supabase/lib';
 import { waitUntil } from '@vercel/functions';
 import { permission } from 'access-zones';
 
-import { CommonError, NotFoundError, UnauthorizedError } from '../../utils';
+import {
+  CommonError,
+  NotFoundError,
+  UnauthorizedError,
+  ValidationError,
+} from '../../utils';
 import { assertProfileAccess, assertProfileAdmin } from '../assert';
 import { generateUniqueProfileSlug } from '../profile/utils';
 import { assertVoterCostField } from './assertVoterCostField';
@@ -30,6 +35,7 @@ import type {
   PhaseOverride,
 } from './schemas/instanceData';
 import type { ProcessConfig } from './schemas/types';
+import { isValidProcessBudget } from './templateBudget';
 import type { RubricTemplateSchema } from './types';
 import { updateTransitionsForProcess } from './updateTransitionsForProcess';
 
@@ -45,6 +51,7 @@ export const updateDecisionInstance = async ({
   config,
   overview,
   phases,
+  processBudget,
   proposalTemplate,
   rubricTemplate,
   user,
@@ -60,6 +67,8 @@ export const updateDecisionInstance = async ({
   overview?: InstanceOverviewUpdate;
   /** Optional phase overrides (dates and settings) */
   phases?: PhaseOverride[];
+  /** The process budget (`phases[0].settings.budget`); `null` clears it */
+  processBudget?: number | null;
   /** Proposal template (JSON Schema) */
   proposalTemplate?: Record<string, unknown>;
   /** Rubric template (JSON Schema defining evaluation criteria) */
@@ -117,9 +126,24 @@ export const updateDecisionInstance = async ({
     updateData.stewardProfileId = stewardProfileId;
   }
 
+  if (
+    processBudget !== undefined &&
+    processBudget !== null &&
+    !isValidProcessBudget(processBudget)
+  ) {
+    throw new ValidationError('The process budget must be a positive amount');
+  }
+
   const instanceDataUpdate = getUpdatedInstanceData({
     existing: existingInstance.instanceData as DecisionInstanceData,
-    update: { config, overview, phases, proposalTemplate, rubricTemplate },
+    update: {
+      config,
+      overview,
+      phases,
+      processBudget,
+      proposalTemplate,
+      rubricTemplate,
+    },
   });
   const phaseEndDateChanges = instanceDataUpdate?.phaseEndDateChanges ?? [];
 

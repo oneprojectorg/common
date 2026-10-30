@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
 import { toEditablePhases, toPhasesPayload } from './phaseEditing';
-import { toPhasesWithBudget } from './processBudgetPatch';
 
 const storedPhases = [
   {
@@ -21,10 +20,16 @@ const storedPhases = [
 ];
 
 describe('phase editing keeps pending phase settings without echoing stored ones', () => {
-  it('keeps a pending budget patch when a phase is edited before Update Process', () => {
-    const pending = toPhasesWithBudget(storedPhases, 31000);
+  it('sends settings that differ from the snapshot alongside the phase edit', () => {
+    const pending = [
+      {
+        ...storedPhases[0]!,
+        settings: { budget: 31000, allowProposals: true },
+      },
+      storedPhases[1]!,
+    ];
 
-    const edited = toEditablePhases(pending!).map((phase) =>
+    const edited = toEditablePhases(pending).map((phase) =>
       phase.id === 'review' ? { ...phase, name: 'Final review' } : phase,
     );
 

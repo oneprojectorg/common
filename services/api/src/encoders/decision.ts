@@ -623,6 +623,8 @@ export const updateDecisionInstanceInputSchema = z.object({
   overview: instanceOverviewInputEncoder.optional(),
   /** Phase overrides for dates, rules, and settings */
   phases: z.array(instancePhaseDataInputEncoder).optional(),
+  /** The process budget (stored as the first phase's settings.budget); null clears it */
+  processBudget: z.number().finite().positive().nullable().optional(),
   /** Proposal template (JSON Schema) */
   proposalTemplate: jsonSchemaEncoder.optional(),
   /** Rubric template (JSON Schema defining evaluation criteria) */
