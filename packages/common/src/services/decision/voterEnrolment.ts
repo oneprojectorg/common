@@ -1,4 +1,4 @@
-import { and, db, eq } from '@op/db/client';
+import { and, db, eq, sql } from '@op/db/client';
 import {
   type DecisionVoterEnrolment,
   decisionVoterEnrolments,
@@ -78,7 +78,7 @@ const rowFilter = (processInstanceId: string, profileId: string) =>
   );
 
 export const isVoterEnrolled = (
-  row: Pick<DecisionVoterEnrolment, 'enrolledAt'> | null | undefined,
+  row: { enrolledAt: Date | string | null } | null | undefined,
 ): boolean => row?.enrolledAt != null;
 
 export async function findVoterEnrolment({
@@ -100,7 +100,13 @@ export async function startVoterEnrolment({
   await db
     .insert(decisionVoterEnrolments)
     .values({ processInstanceId, profileId })
-    .onConflictDoNothing();
+    .onConflictDoUpdate({
+      target: [
+        decisionVoterEnrolments.processInstanceId,
+        decisionVoterEnrolments.profileId,
+      ],
+      set: { updatedAt: sql`(now() AT TIME ZONE 'utc'::text)` },
+    });
   const row = await findRow(processInstanceId, profileId);
 
   if (!row) {
@@ -202,4 +208,70 @@ export async function affirmVoterAttestation({
   }
 
   return enrolled;
+}
+
+export interface PendingVoterEnrolment {
+  processInstanceId: string;
+  taxonomyTermId: string | null;
+  districtName: string | null;
+}
+
+export async function findPendingVoterEnrolment({
+  authUserId,
+  processInstanceId,
+  preferInstanceId,
+}: {
+  authUserId: string;
+  /** Only this decision's pending row. */
+  processInstanceId?: string;
+  /** This decision's pending row when it has one, else the latest anywhere. */
+  preferInstanceId?: string;
+}): Promise<PendingVoterEnrolment | null> {
+  const profileId = await getIndividualProfileId(authUserId);
+  const rows = await db.query.decisionVoterEnrolments.findMany({
+    where: {
+      profileId,
+      enrolledAt: { isNull: true },
+      ...(processInstanceId ? { processInstanceId } : {}),
+    },
+    columns: { processInstanceId: true, taxonomyTermId: true, updatedAt: true },
+    with: { taxonomyTerm: { columns: { label: true } } },
+    orderBy: { updatedAt: 'desc' },
+  });
+  const row =
+    rows.find(
+      (candidate) => candidate.processInstanceId === preferInstanceId,
+    ) ?? rows[0];
+
+  return row
+    ? {
+        processInstanceId: row.processInstanceId,
+        taxonomyTermId: row.taxonomyTermId,
+        districtName: row.taxonomyTerm?.label ?? null,
+      }
+    : null;
+}
+
+export type VoterEnrolmentStep = 'awaiting_address' | 'awaiting_agree';
+
+export async function pendingEnrolmentStep({
+  processInstanceId,
+  taxonomyTermId,
+  rule,
+}: {
+  processInstanceId: string;
+  taxonomyTermId: string | null;
+  rule: { boundary: boolean };
+}): Promise<VoterEnrolmentStep> {
+  if (!rule.boundary || taxonomyTermId) {
+    return 'awaiting_agree';
+  }
+  const instance = await db.query.processInstances.findFirst({
+    where: { id: processInstanceId },
+    columns: { profileId: true },
+  });
+  const linkedConfigured = instance?.profileId
+    ? await hasLinkedDecisionBoundaries({ profileId: instance.profileId })
+    : false;
+  return linkedConfigured ? 'awaiting_address' : 'awaiting_agree';
 }

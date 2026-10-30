@@ -12,6 +12,7 @@ import { updateDecisionInstance } from './updateDecisionInstance';
 import {
   type Geocode,
   affirmVoterAttestation,
+  findPendingVoterEnrolment,
   findVoterEnrolment,
   isVoterEnrolled,
   resolveVoterAddress,
@@ -353,6 +354,50 @@ describe.concurrent('a rewritten attestation', () => {
     expect(isVoterEnrolled(row)).toBe(true);
     await expect(startVoterEnrolment(key)).resolves.toMatchObject({
       enrolledAt: row!.enrolledAt,
+    });
+  });
+});
+
+describe.concurrent('which pending registration a reply belongs to', () => {
+  it('given registrations waiting in two decisions, when the voter starts the older one again, then it is the pending registration', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const older = await seedVotingDecision(testData, {
+      boundary: false,
+      withBoundaries: false,
+      label: `older ${task.id}`,
+    });
+    const newer = await seedVotingDecision(testData, {
+      boundary: false,
+      withBoundaries: false,
+      label: `newer ${task.id}`,
+    });
+    const authUserId = older.authUserId;
+    await startVoterEnrolment({
+      processInstanceId: older.instanceId,
+      authUserId,
+    });
+    await startVoterEnrolment({
+      processInstanceId: newer.instanceId,
+      authUserId,
+    });
+    await expect(
+      findPendingVoterEnrolment({ authUserId }),
+    ).resolves.toMatchObject({
+      processInstanceId: newer.instanceId,
+    });
+
+    await startVoterEnrolment({
+      processInstanceId: older.instanceId,
+      authUserId,
+    });
+
+    await expect(
+      findPendingVoterEnrolment({ authUserId }),
+    ).resolves.toMatchObject({
+      processInstanceId: older.instanceId,
     });
   });
 });

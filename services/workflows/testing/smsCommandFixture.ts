@@ -1,9 +1,16 @@
-import { type DecisionSchemaDefinition, type PhoneNumber } from '@op/common';
 import {
+  type DecisionSchemaDefinition,
+  type PhoneNumber,
+  type VoterEnrolmentRule,
+  updateDecisionInstance,
+} from '@op/common';
+import {
+  createDecisionBoundary,
   createDecisionPhoneNumber,
   createDecisionInstance,
   createDecisionProcess,
   createProposal,
+  ensureProposalCategoryTerms,
   grantDecisionProfileAccess,
   makeDecisionPublic,
   readProfileIdForAuthUser,
@@ -13,7 +20,7 @@ import {
   advanceInstancePhase,
 } from '@op/common/testing/helpers';
 import { db, inArray } from '@op/db/client';
-import { ProposalStatus, profiles } from '@op/db/schema';
+import { ProposalStatus, profiles, taxonomyTerms } from '@op/db/schema';
 
 type RegisterCleanup = (fn: () => void | Promise<void>) => void;
 
@@ -67,9 +74,28 @@ const votingSchema: DecisionSchemaDefinition = {
   ],
 };
 
+const withEnrolment = (
+  schema: DecisionSchemaDefinition,
+  enrolment: VoterEnrolmentRule,
+): DecisionSchemaDefinition => {
+  const withRule = (phase: DecisionSchemaDefinition['phases'][number]) =>
+    phase.id === VOTING_PHASE_ID
+      ? {
+          ...phase,
+          rules: {
+            ...phase.rules,
+            voting: { ...phase.rules?.voting, enrolment },
+          },
+        }
+      : phase;
+  const [first, ...rest] = schema.phases;
+  return { ...schema, phases: [withRule(first), ...rest.map(withRule)] };
+};
+
 export class SmsCommandFixture {
   private readonly phoneAuth: TestPhoneAuthDataManager;
   private readonly profileIds: string[] = [];
+  private readonly termIds: string[] = [];
 
   constructor(testId: string, onTestFinished: RegisterCleanup) {
     this.phoneAuth = new TestPhoneAuthDataManager(testId, onTestFinished);
@@ -93,15 +119,23 @@ export class SmsCommandFixture {
     proposalTitles,
     name,
     currentPhaseId = VOTING_PHASE_ID,
+    enrolment,
+    ownerIsAdmin = false,
   }: {
     owner: FixtureAccount;
     proposalTitles: Array<string | FixtureProposal>;
     name?: string;
     currentPhaseId?: string;
+    enrolment?: VoterEnrolmentRule;
+    /** Grant the owner the decision's admin role, as the web creator gets; the default leaves them a plain member. */
+    ownerIsAdmin?: boolean;
   }) {
+    const schema = enrolment
+      ? withEnrolment(votingSchema, enrolment)
+      : votingSchema;
     const process = await createDecisionProcess({
       createdByProfileId: owner.profileId,
-      schema: votingSchema,
+      schema,
     });
     const { instance, profileId, slug } = await createDecisionInstance({
       processId: process.id,
@@ -109,8 +143,8 @@ export class SmsCommandFixture {
       authUserId: owner.authUserId,
       email: owner.email,
       name,
-      schema: votingSchema,
-      grantAdminAccess: false,
+      schema,
+      grantAdminAccess: ownerIsAdmin,
     });
     this.profileIds.push(profileId);
 
@@ -131,7 +165,7 @@ export class SmsCommandFixture {
       this.profileIds.push(proposal.profileId);
     }
 
-    const phaseIds = votingSchema.phases.map((phase) => phase.id);
+    const phaseIds = schema.phases.map((phase) => phase.id);
     for (let index = 0; index < phaseIds.indexOf(currentPhaseId); index++) {
       const fromPhaseId = phaseIds[index];
       const toPhaseId = phaseIds[index + 1];
@@ -160,6 +194,57 @@ export class SmsCommandFixture {
     });
   }
 
+  async createDistrict({
+    profileId,
+    name,
+  }: {
+    profileId: string;
+    name: string;
+  }) {
+    const [term] = await ensureProposalCategoryTerms([name]);
+    if (!term) {
+      throw new Error(`Failed to ensure a district term for ${name}`);
+    }
+    this.termIds.push(term.taxonomyTermId);
+    return createDecisionBoundary({
+      profileId,
+      name,
+      taxonomyTermId: term.taxonomyTermId,
+    });
+  }
+
+  async rewriteAttestation({
+    instanceId,
+    owner,
+    phaseId = VOTING_PHASE_ID,
+    attestation,
+  }: {
+    instanceId: string;
+    owner: FixtureAccount;
+    phaseId?: string;
+    attestation: string;
+  }) {
+    await updateDecisionInstance({
+      instanceId,
+      phases: [
+        {
+          phaseId,
+          rules: { voting: { submit: true, enrolment: { attestation } } },
+        },
+      ],
+      user: {
+        id: owner.authUserId,
+        aud: 'authenticated',
+        role: 'authenticated',
+        email: owner.email ?? undefined,
+        phone: undefined,
+        app_metadata: {},
+        user_metadata: {},
+        is_anonymous: false,
+      },
+    });
+  }
+
   async makePublic(instanceProfileId: string) {
     await makeDecisionPublic({ profileId: instanceProfileId });
   }
@@ -176,6 +261,11 @@ export class SmsCommandFixture {
   private async cleanup() {
     if (this.profileIds.length > 0) {
       await db.delete(profiles).where(inArray(profiles.id, this.profileIds));
+    }
+    if (this.termIds.length > 0) {
+      await db
+        .delete(taxonomyTerms)
+        .where(inArray(taxonomyTerms.id, this.termIds));
     }
   }
 }
