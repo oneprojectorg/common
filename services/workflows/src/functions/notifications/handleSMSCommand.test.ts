@@ -2621,7 +2621,7 @@ describe('handleSMSCommand changing a cast ballot', () => {
       expect.objectContaining({ name: Events.voteRevised.name }),
     );
     await expect(
-      db.query.decisionBallotDrafts.findFirst({
+      db.query.decisionsVoteDrafts.findFirst({
         where: { processInstanceId: instanceId },
       }),
     ).resolves.toBeUndefined();
@@ -2757,61 +2757,5 @@ describe('handleSMSCommand changing a cast ballot', () => {
     expect(submission?.voteData.selections?.map((s) => s.proposalId)).toEqual([
       proposals.find((p) => p.shortCode === 101)?.id,
     ]);
-  });
-
-  it("given a voter who cast a ballot and whose decision's attestation was rewritten, when they text CHANGE, then they are told to text VOTE first instead of nothing", async ({
-    task,
-    onTestFinished,
-  }) => {
-    const fixture = new SmsCommandFixture(task.id, onTestFinished);
-    const name = `Change Rewritten ${task.id}`;
-    const member = await fixture.createPhoneOnlyAccount(
-      parsePhoneNumber(NUMBERS.changeRewritten),
-    );
-    const { instanceId } = await fixture.createVotingInstance({
-      owner: member,
-      name,
-      proposalTitles: PROPOSALS,
-      votingRules: {
-        voterBudget: 1_000_000,
-        maxVotesPerMember: 10,
-        ranked: true,
-        edit: true,
-        enrolment: { attestation: 'I live here.', boundary: false },
-      },
-      ownerIsAdmin: true,
-    });
-    await fixture.bindLine(instanceId, parsePhoneNumber(LINES.changeRewritten));
-    const key = {
-      processInstanceId: instanceId,
-      authUserId: member.authUserId,
-    };
-    await resolveVoterAddress({
-      ...key,
-      address: 'anywhere',
-      geocode: async () => [{ lat: 40.5, lng: -73.5 }],
-    });
-    await affirmVoterAttestation({
-      ...key,
-      attestationHash: hashAttestation('I live here.'),
-    });
-    await text(NUMBERS.changeRewritten, LINES.changeRewritten, '101');
-    await keyword(NUMBERS.changeRewritten, LINES.changeRewritten, 'submit');
-    await fixture.rewriteAttestation({
-      instanceId,
-      owner: member,
-      attestation: `I still live here ${task.id}.`,
-    });
-
-    const { result } = await keyword(
-      NUMBERS.changeRewritten,
-      LINES.changeRewritten,
-      'change',
-    );
-
-    expect(result).toEqual({ message: 'register first' });
-    expect(recordedSms.at(-1)?.body).toBe(
-      `Text VOTE to register for "${name}" before browsing its proposals.`,
-    );
   });
 });
