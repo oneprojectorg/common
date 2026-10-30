@@ -3,6 +3,7 @@ import {
   adminDecisionInstanceDetailSchema,
   allowsComments,
   getVoterCostField,
+  getVoterEnrolment,
   getVoterBudget,
   isRankedVoting,
   isReviewPhase,
@@ -36,6 +37,13 @@ const phaseRulesSchema = z
         voterBudget: z.number().optional(),
         voterCostField: z.string().optional(),
         ranked: z.boolean().optional(),
+        enrolment: z
+          .object({
+            attestation: z.string().optional(),
+            boundary: z.boolean().optional(),
+          })
+          .partial()
+          .optional(),
       })
       .partial()
       .optional(),
@@ -191,6 +199,7 @@ export const getDecisionInstanceRouter = router({
             voterCostField:
               voterBudget === undefined ? null : getVoterCostField({ rules }),
             ranked: isRankedVoting({ rules }),
+            enrolment: getVoterEnrolment({ rules }) ?? null,
             proposalsHiddenByDefault:
               rules?.proposals?.defaults?.hidden ?? false,
             advancementMethod: rules?.advancement?.method ?? null,

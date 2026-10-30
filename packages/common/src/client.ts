@@ -19,6 +19,7 @@ export {
   getPhaseReviewSettings,
   getPreviousReviewPhases,
   getVoterCostField,
+  getVoterEnrolment,
   getVoterBudget,
   hasOpenReviews,
   hasVotingPhase,
