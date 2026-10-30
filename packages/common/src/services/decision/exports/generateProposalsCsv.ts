@@ -142,6 +142,8 @@ interface CustomFieldColumn {
   header: string;
 }
 
+const customRowKey = (key: string): string => `custom:${key}`;
+
 /**
  * One column per template field beyond the fixed set above, including
  * `short-text`/`long-text` fields: `collectProposalBodyDoc` folds those into
@@ -238,7 +240,7 @@ function resolveCustomFieldValues(
     // `Object.prototype` keys (`toString`, ...), which a field key could
     // collide with.
     const raw = Object.hasOwn(overrides, key) ? overrides[key] : snapshot[key];
-    values[key] = formatCustomFieldValue(
+    values[customRowKey(key)] = formatCustomFieldValue(
       raw,
       proposalTemplate?.properties?.[key],
     );
@@ -284,6 +286,7 @@ function buildProposalRow(
 
   return {
     'Proposal ID': p.id,
+    Code: p.shortCode ?? '',
     Title: p.profile?.name || '',
     Description: getDocumentDescription(p, snapshot),
     Budget: proposalData.budget?.amount ?? '',
@@ -358,6 +361,7 @@ function collectCustomFieldColumns(
 
 const FIXED_COLUMNS = [
   'Proposal ID',
+  'Code',
   'Title',
   'Description',
   'Budget',
@@ -387,7 +391,10 @@ export async function generateProposalsCsv(
     quoted: true,
     columns: [
       ...FIXED_COLUMNS.map((header) => ({ key: header, header })),
-      ...customFieldColumns.map(({ key, header }) => ({ key, header })),
+      ...customFieldColumns.map(({ key, header }) => ({
+        key: customRowKey(key),
+        header,
+      })),
     ],
   });
 }

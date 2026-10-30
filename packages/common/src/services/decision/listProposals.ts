@@ -373,6 +373,7 @@ export const listProposals = async ({
         ...systemFieldOverrides,
       },
       status: proposal.status,
+      shortCode: proposal.shortCode,
       visibility: proposal.visibility,
       createdAt: proposal.createdAt,
       updatedAt: proposal.updatedAt,

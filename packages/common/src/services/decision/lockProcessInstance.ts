@@ -5,7 +5,7 @@ import { NotFoundError } from '../../utils';
 
 export type LockedProcessInstance = Pick<
   typeof processInstances.$inferSelect,
-  'currentStateId' | 'status' | 'instanceData'
+  'currentStateId' | 'status' | 'instanceData' | 'nextShortCode'
 >;
 
 /**
@@ -29,6 +29,7 @@ export async function lockProcessInstance({
       currentStateId: processInstances.currentStateId,
       status: processInstances.status,
       instanceData: processInstances.instanceData,
+      nextShortCode: processInstances.nextShortCode,
     })
     .from(processInstances)
     .where(eq(processInstances.id, instanceId))

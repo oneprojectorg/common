@@ -207,6 +207,7 @@ const legacyProposalEncoder = createSelectSchema(proposals)
     processInstanceId: true,
     proposalData: true,
     status: true,
+    shortCode: true,
     visibility: true,
     createdAt: true,
     updatedAt: true,
