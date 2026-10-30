@@ -3,6 +3,8 @@ import {
   type DecisionSchemaDefinition,
   type PhoneNumber,
   type VoterEnrolmentRule,
+  deleteProposal,
+  getInstancePhases,
   updateDecisionInstance,
 } from '@op/common';
 import {
@@ -20,13 +22,15 @@ import {
   TestPhoneAuthDataManager,
   advanceInstancePhase,
 } from '@op/common/testing/helpers';
-import { db, inArray } from '@op/db/client';
+import { db, eq, inArray } from '@op/db/client';
 import {
   ProcessStatus,
   ProposalStatus,
+  processInstances,
   profiles,
   taxonomyTerms,
 } from '@op/db/schema';
+import type { User } from '@op/supabase/lib';
 
 type RegisterCleanup = (fn: () => void | Promise<void>) => void;
 
@@ -38,10 +42,22 @@ interface FixtureAccount {
 
 interface FixtureProposal {
   title: string;
-  budget?: number;
+  /** A number is a priced budget; a string is written to the document as it is, an unreadable cost. */
+  budget?: number | string;
 }
 
 const VOTING_PHASE_ID = 'voting';
+
+const userOf = (account: FixtureAccount): User => ({
+  id: account.authUserId,
+  aud: 'authenticated',
+  role: 'authenticated',
+  email: account.email ?? undefined,
+  phone: undefined,
+  app_metadata: {},
+  user_metadata: {},
+  is_anonymous: false,
+});
 
 const votingSchema: DecisionSchemaDefinition = {
   id: 'sms-voting',
@@ -80,9 +96,17 @@ const votingSchema: DecisionSchemaDefinition = {
   ],
 };
 
-const withEnrolment = (
+export interface FixtureVotingRules {
+  enrolment?: VoterEnrolmentRule;
+  voterBudget?: number;
+  voterCostField?: string;
+  maxVotesPerMember?: number;
+  ranked?: boolean;
+}
+
+const withVotingRules = (
   schema: DecisionSchemaDefinition,
-  enrolment: VoterEnrolmentRule,
+  rules: FixtureVotingRules,
 ): DecisionSchemaDefinition => {
   const withRule = (phase: DecisionSchemaDefinition['phases'][number]) =>
     phase.id === VOTING_PHASE_ID
@@ -90,7 +114,7 @@ const withEnrolment = (
           ...phase,
           rules: {
             ...phase.rules,
-            voting: { ...phase.rules?.voting, enrolment },
+            voting: { ...phase.rules?.voting, ...rules },
           },
         }
       : phase;
@@ -126,6 +150,7 @@ export class SmsCommandFixture {
     name,
     currentPhaseId = VOTING_PHASE_ID,
     enrolment,
+    votingRules,
     ownerIsAdmin = false,
   }: {
     owner: FixtureAccount;
@@ -133,12 +158,15 @@ export class SmsCommandFixture {
     name?: string;
     currentPhaseId?: string;
     enrolment?: VoterEnrolmentRule;
+    votingRules?: FixtureVotingRules;
     /** Grant the owner the decision's admin role, as the web creator gets; the default leaves them a plain member. */
     ownerIsAdmin?: boolean;
   }) {
-    const schema = enrolment
-      ? withEnrolment(votingSchema, enrolment)
-      : votingSchema;
+    const rules = { ...votingRules, ...(enrolment ? { enrolment } : {}) };
+    const schema =
+      Object.keys(rules).length > 0
+        ? withVotingRules(votingSchema, rules)
+        : votingSchema;
     const process = await createDecisionProcess({
       createdByProfileId: owner.profileId,
       schema,
@@ -163,9 +191,9 @@ export class SmsCommandFixture {
         status: ProposalStatus.SUBMITTED,
         proposalData: {
           title,
-          ...(budget === undefined
-            ? {}
-            : { budget: { amount: budget, currency: 'USD' } }),
+          ...(typeof budget === 'number'
+            ? { budget: { amount: budget, currency: 'USD' } }
+            : {}),
         },
       });
       this.profileIds.push(proposal.profileId);
@@ -177,7 +205,11 @@ export class SmsCommandFixture {
           title,
           ...(budget === undefined
             ? {}
-            : { budget: JSON.stringify({ amount: budget, currency: 'USD' }) }),
+            : typeof budget === 'string'
+              ? { budget }
+              : {
+                  budget: JSON.stringify({ amount: budget, currency: 'USD' }),
+                }),
         });
       }
     }
@@ -202,6 +234,17 @@ export class SmsCommandFixture {
     }
 
     return { instanceId: instance.id, instanceProfileId: profileId, slug };
+  }
+
+  async closeVoting(instanceId: string) {
+    const result = await advanceInstancePhase({
+      instanceId,
+      fromPhaseId: VOTING_PHASE_ID,
+      toPhaseId: 'results',
+    });
+    if (result.conflict) {
+      throw new Error(`Could not close voting on ${instanceId}`);
+    }
   }
 
   async bindLine(instanceId: string, phone: PhoneNumber) {
@@ -249,16 +292,7 @@ export class SmsCommandFixture {
           rules: { voting: { submit: true, enrolment: { attestation } } },
         },
       ],
-      user: {
-        id: owner.authUserId,
-        aud: 'authenticated',
-        role: 'authenticated',
-        email: owner.email ?? undefined,
-        phone: undefined,
-        app_metadata: {},
-        user_metadata: {},
-        is_anonymous: false,
-      },
+      user: userOf(owner),
     });
   }
 
@@ -274,17 +308,63 @@ export class SmsCommandFixture {
     await updateDecisionInstance({
       instanceId,
       status,
-      user: {
-        id: owner.authUserId,
-        aud: 'authenticated',
-        role: 'authenticated',
-        email: owner.email ?? undefined,
-        phone: undefined,
-        app_metadata: {},
-        user_metadata: {},
-        is_anonymous: false,
-      },
+      user: userOf(owner),
     });
+  }
+
+  /** Writes the phase's voting rules straight into instance_data, bypassing the admin validation, to plant a state no service produces. */
+  async plantVotingRules({
+    instanceId,
+    phaseId = VOTING_PHASE_ID,
+    voting,
+  }: {
+    instanceId: string;
+    phaseId?: string;
+    voting: FixtureVotingRules;
+  }) {
+    const instance = await db.query.processInstances.findFirst({
+      where: { id: instanceId },
+      columns: { instanceData: true },
+    });
+    const phases = getInstancePhases(instance?.instanceData).map((phase) =>
+      phase.phaseId === phaseId
+        ? {
+            ...phase,
+            rules: {
+              ...phase.rules,
+              voting: { ...phase.rules?.voting, ...voting },
+            },
+          }
+        : phase,
+    );
+    await db
+      .update(processInstances)
+      .set({
+        instanceData: {
+          ...(instance?.instanceData as Record<string, unknown>),
+          phases,
+        },
+      })
+      .where(eq(processInstances.id, instanceId));
+  }
+
+  async deleteProposal({
+    instanceId,
+    owner,
+    code,
+  }: {
+    instanceId: string;
+    owner: FixtureAccount;
+    code: number;
+  }) {
+    const proposal = await db.query.proposals.findFirst({
+      where: { processInstanceId: instanceId, shortCode: code },
+      columns: { id: true },
+    });
+    if (!proposal) {
+      throw new Error(`No proposal ${code} on ${instanceId}`);
+    }
+    await deleteProposal({ proposalId: proposal.id, user: userOf(owner) });
   }
 
   async makePublic(instanceProfileId: string) {

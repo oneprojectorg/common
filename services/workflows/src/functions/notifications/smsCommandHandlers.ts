@@ -2,6 +2,10 @@ import {
   type Geocode,
   BallotCostError,
   NotFoundError,
+  SMS_BALLOT_ALREADY_SUBMITTED_MESSAGE,
+  SMS_BALLOT_EMPTY_SUBMIT_MESSAGE,
+  SMS_BALLOT_NEEDS_DECISION_MESSAGE,
+  SMS_BALLOT_SUBMITTED_MESSAGE,
   SMS_BROWSE_END_MESSAGE,
   SMS_BROWSE_LAST_FOOTER,
   SMS_BROWSE_MORE_FOOTER,
@@ -9,15 +13,22 @@ import {
   SMS_BROWSE_START_MESSAGE,
   SMS_INFO_NEEDS_CODE_MESSAGE,
   SMS_INFO_NEEDS_DECISION_MESSAGE,
+  SMS_MOVE_USAGE_MESSAGE,
   SMS_PROPOSALS_NEEDS_DECISION_MESSAGE,
+  SMS_REMOVE_USAGE_MESSAGE,
   SMS_VOTE_NEEDS_DECISION_MESSAGE,
   type SmsBallotPage,
+  type SmsBallotSummary,
   UnauthorizedError,
   ValidationError,
   VoterNotEnrolledError,
+  addSmsBallotPicks,
   affirmVoterAttestation,
+  deleteBallotDraft,
+  findLatestCastBallotInstance,
   clipSmsText,
   describeEnrolmentDecision,
+  findBallotDraft,
   findChatSession,
   findLatestChatSession,
   findPendingVoterEnrolment,
@@ -27,14 +38,24 @@ import {
   formatSmsAddressNotFound,
   formatSmsAddressOutside,
   formatSmsAddressResolved,
+  formatSmsAmount,
+  formatSmsBallot,
   formatSmsBallotPageHeading,
+  formatSmsBallotRefused,
   formatSmsBallotScope,
   formatSmsDecisionInfo,
   formatSmsDecisionList,
   formatSmsEnrolled,
   formatSmsEnrolmentWelcome,
   formatSmsNoEnrolmentNeeded,
+  formatSmsNotOnYourBallot,
   formatSmsNothingToAffirm,
+  formatSmsPickDuplicate,
+  formatSmsPickLimitReached,
+  formatSmsPickMoved,
+  formatSmsPickOverBudget,
+  formatSmsPickRemoved,
+  formatSmsPicksAdded,
   formatSmsProposalInfo,
   formatSmsProposalNotOnBallot,
   formatSmsProposalPage,
@@ -46,10 +67,14 @@ import {
   listSmsBallotPage,
   setSessionPageCursor,
   listSmsDecisions,
+  moveSmsBallotPick,
+  removeSmsBallotPick,
   resolveVoterAddress,
   startVoterEnrolment,
+  submitSmsBallot,
+  summarizeSmsBallot,
 } from '@op/common';
-import type { inngest } from '@op/events';
+import { Events, inngest } from '@op/events';
 import type { GetStepTools } from 'inngest';
 
 import {
@@ -386,8 +411,12 @@ export const agree: SmsCommandHandler = async (context) => {
   );
 };
 
+// Free text is an address while a registration waits for one, and proposal
+// codes otherwise. On a decision line, codes win over a registration that
+// belongs to another decision, so one unfinished registration elsewhere never
+// swallows a vote here.
 export const freeText: SmsCommandHandler = async (context) => {
-  const { step, account, deliver, geocode } = context;
+  const { step, account, line, deliver, geocode } = context;
   const address = context.body?.trim();
 
   if (!address) {
@@ -397,9 +426,14 @@ export const freeText: SmsCommandHandler = async (context) => {
   const pending = await step.run('find-pending-enrolment', () =>
     findPendingVoterEnrolment({ authUserId: account.authUserId }),
   );
+  const codes = parseProposalCodes(address);
+  const pendingElsewhere =
+    line !== null &&
+    pending !== null &&
+    pending.processInstanceId !== line.instanceId;
 
-  if (!pending) {
-    return sendSmsHelp(deliver);
+  if (!pending || (codes && pendingElsewhere)) {
+    return codes ? pickByCodes(context, codes) : sendSmsHelp(deliver);
   }
 
   const decision = await step.run('describe-enrolment-decision', () =>
@@ -408,7 +442,7 @@ export const freeText: SmsCommandHandler = async (context) => {
   const rule = decision.enrolment;
 
   if (!rule) {
-    return sendSmsHelp(deliver);
+    return codes ? pickByCodes(context, codes) : sendSmsHelp(deliver);
   }
 
   const waitingOn = await step.run('derive-enrolment-step', () =>
@@ -420,7 +454,7 @@ export const freeText: SmsCommandHandler = async (context) => {
   );
 
   if (waitingOn !== 'awaiting_address') {
-    return sendSmsHelp(deliver);
+    return codes ? pickByCodes(context, codes) : sendSmsHelp(deliver);
   }
 
   const resolution = await step.run('resolve-address', () =>
@@ -804,4 +838,455 @@ export const info: SmsCommandHandler = async (context) => {
     formatSmsProposalInfo(proposal),
     'proposal info sent',
   );
+};
+
+const parseProposalCodes = (body: string): number[] | null => {
+  const tokens = body.split(/[\s,]+/).filter(Boolean);
+  if (
+    tokens.length === 0 ||
+    !tokens.every((t) => PROPOSAL_CODE_PATTERN.test(t))
+  ) {
+    return null;
+  }
+  return [...new Set(tokens.map(Number))];
+};
+
+const money = (
+  summary: SmsBallotSummary,
+  amount: number | null,
+): string | null =>
+  summary.unit && amount !== null
+    ? formatSmsAmount({ amount, unit: summary.unit })
+    : null;
+
+// The same choice as a browse, then the ballot the voter cast last on the
+// shared number, so CHANGE and a second SUBMIT find it after the draft is gone.
+const resolveBallotInstance = async (
+  context: SmsCommandContext,
+): Promise<string | null> => {
+  const { step, account, line } = context;
+  const fromBrowse = await resolveBrowseInstance(context);
+  if (fromBrowse || line) {
+    return fromBrowse;
+  }
+  return step.run('find-latest-cast-ballot', () =>
+    findLatestCastBallotInstance({ authUserId: account.authUserId }),
+  );
+};
+
+const refuseUnlessReadyToPick = async (
+  { step, account, deliver, line }: SmsCommandContext,
+  instanceId: string,
+): Promise<SmsCommandResult | null> => {
+  const decision = await step.run('describe-ballot-decision', () =>
+    describeEnrolmentDecision({ instanceId }),
+  );
+
+  if (!decision.votingOpen) {
+    return deliverAll(
+      deliver,
+      'send-voting-closed',
+      'Voting closed reply',
+      formatSmsVotingClosed(decision.name),
+      'voting closed',
+    );
+  }
+
+  if (decision.enrolment) {
+    const enrolment = await step.run('find-enrolment', () =>
+      findVoterEnrolment({
+        processInstanceId: instanceId,
+        authUserId: account.authUserId,
+      }),
+    );
+    if (!isVoterEnrolled(enrolment)) {
+      return deliverAll(
+        deliver,
+        'send-register-first',
+        'Register first reply',
+        [
+          formatSmsRegisterFirst(
+            decision.name,
+            line?.instanceId === instanceId ? null : decision.slug,
+          ),
+        ],
+        'register first',
+      );
+    }
+  }
+
+  return null;
+};
+
+const ballotNeedsDecision = (deliver: SmsDeliver) =>
+  deliverAll(
+    deliver,
+    'send-ballot-needs-decision',
+    'Ballot needs a decision',
+    [SMS_BALLOT_NEEDS_DECISION_MESSAGE],
+    'ballot needs a decision',
+  );
+
+const pickByCodes = async (
+  context: SmsCommandContext,
+  codes: number[],
+): Promise<SmsCommandResult> => {
+  const { step, account, deliver } = context;
+  const instanceId = await resolveBallotInstance(context);
+
+  if (!instanceId) {
+    return ballotNeedsDecision(deliver);
+  }
+
+  const refused = await refuseUnlessReadyToPick(context, instanceId);
+  if (refused) {
+    return refused;
+  }
+
+  const picked = await step.run('add-ballot-picks', () =>
+    readBallot(() =>
+      addSmsBallotPicks({
+        authUserId: account.authUserId,
+        instanceId,
+        codes,
+        phoneNumberId: context.line?.id ?? null,
+      }),
+    ),
+  );
+
+  if (!picked.ok) {
+    return refuseBallotRead(context, picked, instanceId);
+  }
+
+  const { results, summary, hadPicks } = picked.value;
+  const added = results.flatMap((r) => (r.status === 'added' ? [r] : []));
+  const lines = [
+    ...(added.length > 0
+      ? formatSmsPicksAdded({
+          picks: added.map(({ position, pick }) => ({
+            position,
+            code: pick.code,
+            title: pick.title,
+            cost: money(summary, pick.cost),
+          })),
+          remaining: money(summary, summary.remaining),
+          firstPick: !hadPicks,
+        })
+      : []),
+    ...results.flatMap((r) => {
+      switch (r.status) {
+        case 'added':
+          return [];
+        case 'over_budget':
+          return formatSmsPickOverBudget({
+            title: r.pick.title,
+            cost: money(summary, r.pick.cost) ?? '',
+            remaining: money(summary, r.remaining) ?? '',
+          });
+        case 'duplicate':
+          return [
+            formatSmsPickDuplicate({
+              title: r.pick.title,
+              position: r.position,
+            }),
+          ];
+        case 'limit_reached':
+          return [
+            formatSmsPickLimitReached({ title: r.pick.title, limit: r.limit }),
+          ];
+        case 'unknown':
+          return [formatSmsProposalNotOnBallot(r.code)];
+      }
+    }),
+  ];
+  const message =
+    added.length > 0
+      ? 'picks added'
+      : results.some((r) => r.status === 'over_budget')
+        ? 'pick over budget'
+        : results.some((r) => r.status === 'limit_reached')
+          ? 'pick limit reached'
+          : results.some((r) => r.status === 'duplicate')
+            ? 'pick repeated'
+            : 'proposal not on ballot';
+
+  return deliverAll(deliver, 'send-picks', 'Picks reply', lines, message);
+};
+
+const sendBallot = async (
+  context: SmsCommandContext,
+  review: boolean,
+): Promise<SmsCommandResult> => {
+  const { step, account, deliver } = context;
+  const instanceId = await resolveBallotInstance(context);
+
+  if (!instanceId) {
+    return ballotNeedsDecision(deliver);
+  }
+
+  const read = await step.run('summarize-ballot', () =>
+    readBallot(() =>
+      summarizeSmsBallot({ authUserId: account.authUserId, instanceId }),
+    ),
+  );
+
+  if (!read.ok) {
+    return refuseBallotRead(context, read, instanceId);
+  }
+
+  const summary = read.value;
+
+  return deliverAll(
+    deliver,
+    'send-ballot',
+    review ? 'Ballot review' : 'Ballot list',
+    formatSmsBallot({
+      scope: formatSmsBallotScope(summary),
+      picks: summary.picks.map((pick, index) => ({
+        position: index + 1,
+        code: pick.code,
+        title: pick.title,
+        cost: money(summary, pick.cost),
+      })),
+      allocated: money(summary, summary.allocated),
+      unspent: money(summary, summary.remaining),
+      review,
+      ranked: summary.ranked,
+    }),
+    review ? 'ballot reviewed' : 'ballot sent',
+  );
+};
+
+export const list: SmsCommandHandler = (context) => sendBallot(context, false);
+
+export const done: SmsCommandHandler = (context) => sendBallot(context, true);
+
+export const remove: SmsCommandHandler = async (context) => {
+  const { step, account, deliver } = context;
+  const code =
+    context.argument && PROPOSAL_CODE_PATTERN.test(context.argument)
+      ? Number(context.argument)
+      : null;
+
+  if (code === null) {
+    return deliverAll(
+      deliver,
+      'send-remove-usage',
+      'Remove usage',
+      [SMS_REMOVE_USAGE_MESSAGE],
+      'remove needs a code',
+    );
+  }
+
+  const instanceId = await resolveBallotInstance(context);
+  if (!instanceId) {
+    return ballotNeedsDecision(deliver);
+  }
+
+  const removed = await step.run('remove-ballot-pick', () =>
+    readBallot(() =>
+      removeSmsBallotPick({ authUserId: account.authUserId, instanceId, code }),
+    ),
+  );
+
+  if (!removed.ok) {
+    return refuseBallotRead(context, removed, instanceId);
+  }
+
+  const { change, summary } = removed.value;
+
+  return change.status === 'not_on_ballot'
+    ? deliverAll(
+        deliver,
+        'send-not-on-ballot',
+        'Not on ballot reply',
+        [formatSmsNotOnYourBallot(code)],
+        'pick not on ballot',
+      )
+    : deliverAll(
+        deliver,
+        'send-pick-removed',
+        'Pick removed reply',
+        [
+          formatSmsPickRemoved({
+            title: change.pick.title,
+            remaining: money(summary, summary.remaining),
+          }),
+        ],
+        'pick removed',
+      );
+};
+
+export const move: SmsCommandHandler = async (context) => {
+  const { step, account, deliver } = context;
+  const [codeText, positionText, ...rest] = (context.argument ?? '')
+    .split(/\s+/)
+    .filter(Boolean);
+  const code =
+    codeText && PROPOSAL_CODE_PATTERN.test(codeText) ? Number(codeText) : null;
+  const position =
+    positionText && /^\d{1,3}$/.test(positionText)
+      ? Number(positionText)
+      : null;
+
+  if (code === null || position === null || position < 1 || rest.length > 0) {
+    return deliverAll(
+      deliver,
+      'send-move-usage',
+      'Move usage',
+      [SMS_MOVE_USAGE_MESSAGE],
+      'move needs a code and a position',
+    );
+  }
+
+  const instanceId = await resolveBallotInstance(context);
+  if (!instanceId) {
+    return ballotNeedsDecision(deliver);
+  }
+
+  const moved = await step.run('move-ballot-pick', () =>
+    readBallot(() =>
+      moveSmsBallotPick({
+        authUserId: account.authUserId,
+        instanceId,
+        code,
+        position,
+      }),
+    ),
+  );
+
+  if (!moved.ok) {
+    return refuseBallotRead(context, moved, instanceId);
+  }
+
+  const { change } = moved.value;
+
+  return change.status === 'not_on_ballot'
+    ? deliverAll(
+        deliver,
+        'send-not-on-ballot',
+        'Not on ballot reply',
+        [formatSmsNotOnYourBallot(code)],
+        'pick not on ballot',
+      )
+    : deliverAll(
+        deliver,
+        'send-pick-moved',
+        'Pick moved reply',
+        [
+          formatSmsPickMoved({
+            title: change.pick.title,
+            position: change.position,
+          }),
+        ],
+        'pick moved',
+      );
+};
+
+export const submit: SmsCommandHandler = async (context) => {
+  const { step, account, deliver, line } = context;
+  const instanceId = await resolveBallotInstance(context);
+
+  if (!instanceId) {
+    return ballotNeedsDecision(deliver);
+  }
+
+  const submission = await step.run('submit-ballot', () =>
+    submitSmsBallot({ authUserId: account.authUserId, instanceId }),
+  );
+
+  // The follow-ups run on a retry too: a run that stopped after submitVote
+  // committed comes back as already_submitted with the same submission id, and
+  // the event id keeps Inngest from firing twice for one ballot.
+  const finishSubmission = async (voteSubmissionId: string) => {
+    await step.run('clear-ballot-draft', () =>
+      deleteBallotDraft({ authUserId: account.authUserId, instanceId }),
+    );
+    await step.run('send-vote-submitted', () =>
+      inngest.send({
+        id: `vote-submitted-${voteSubmissionId}`,
+        name: Events.voteSubmitted.name,
+        data: { voteSubmissionId, processInstanceId: instanceId },
+      }),
+    );
+  };
+
+  switch (submission.status) {
+    case 'submitted':
+      await finishSubmission(submission.voteSubmissionId);
+      return deliverAll(
+        deliver,
+        'send-ballot-submitted',
+        'Ballot submitted reply',
+        [SMS_BALLOT_SUBMITTED_MESSAGE],
+        'ballot submitted',
+      );
+    case 'already_submitted': {
+      const draft = await step.run('find-stale-draft', () =>
+        findBallotDraft({
+          processInstanceId: instanceId,
+          authUserId: account.authUserId,
+        }),
+      );
+      if (draft) {
+        await finishSubmission(submission.voteSubmissionId);
+      }
+      return deliverAll(
+        deliver,
+        'send-ballot-already-in',
+        'Ballot already in reply',
+        [SMS_BALLOT_ALREADY_SUBMITTED_MESSAGE],
+        'ballot already submitted',
+      );
+    }
+    case 'empty':
+      return deliverAll(
+        deliver,
+        'send-ballot-empty',
+        'Ballot empty reply',
+        [SMS_BALLOT_EMPTY_SUBMIT_MESSAGE],
+        'ballot empty',
+      );
+    case 'unavailable':
+      return deliverAll(
+        deliver,
+        'send-ballot-unavailable',
+        'Ballot unavailable reply',
+        [SMS_BALLOT_UNAVAILABLE_MESSAGE],
+        'decision not found',
+      );
+    case 'not_enrolled': {
+      const decision = await step.run('describe-ballot-decision', () =>
+        describeEnrolmentDecision({ instanceId }),
+      );
+      return deliverAll(
+        deliver,
+        'send-register-first',
+        'Register first reply',
+        [
+          formatSmsRegisterFirst(
+            decision.name,
+            line?.instanceId === instanceId ? null : decision.slug,
+          ),
+        ],
+        'register first',
+      );
+    }
+    case 'outside_district':
+      return deliverAll(
+        deliver,
+        'send-ballot-outside-district',
+        'Ballot outside district reply',
+        ['A pick is outside your district. Text LIST, then REMOVE its code.'],
+        'ballot outside district',
+      );
+    case 'refused':
+      return deliverAll(
+        deliver,
+        'send-ballot-refused',
+        'Ballot refused reply',
+        [formatSmsBallotRefused(submission.reason)],
+        'ballot refused',
+      );
+  }
 };

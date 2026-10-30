@@ -12,12 +12,17 @@ import { logger } from '@op/logging';
 import {
   type SmsDeliver,
   agree,
+  done,
   freeText,
   info,
   join,
+  list,
   more,
+  move,
   proposals,
+  remove,
   show,
+  submit,
   vote,
 } from './smsCommandHandlers';
 import {
@@ -52,13 +57,8 @@ export const handleSMSCommand = inngest.createFunction(
       to: inboundTo,
       keyword,
       argument,
-      code,
       body,
     } = smsInboundReceived.schema.parse(event.data);
-
-    if (code !== null) {
-      return { message: 'signup code, left to signup' };
-    }
 
     const flagEnabled = await step.run('check-feature-flag', () =>
       isFeatureEnabled(SMS_COMMANDS_FEATURE_FLAG, 'server'),
@@ -156,6 +156,16 @@ export const handleSMSCommand = inngest.createFunction(
         return more(context);
       case 'info':
         return info(context);
+      case 'list':
+        return list(context);
+      case 'done':
+        return done(context);
+      case 'submit':
+        return submit(context);
+      case 'remove':
+        return remove(context);
+      case 'move':
+        return move(context);
       default:
         return assertNever(keyword);
     }
