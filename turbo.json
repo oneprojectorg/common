@@ -73,6 +73,7 @@
     "🔑 ------ PRIVATE VARS ------ 🔑",
     "RESEND_PASSWORD",
     "EMAIL_SMTP_URL",
+    "SEND_EMAIL_HOOK_SECRETS",
     "SUPABASE_SERVICE_ROLE",
     "DATABASE_URL",
     "IFRAMELY_KEY",

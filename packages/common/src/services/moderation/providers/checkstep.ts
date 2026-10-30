@@ -2,6 +2,7 @@ import { logger } from '@op/logging';
 import { createHash, createHmac } from 'node:crypto';
 import { z } from 'zod';
 
+import { timingSafeStringEqual } from '../../../utils/timingSafeStringEqual';
 import { decodeContentRef, encodeContentRef } from '../contentRef';
 import type {
   ModerationCategory,
@@ -17,7 +18,7 @@ import {
   type ModerationFetchOptions,
   moderationFetch,
 } from './moderationFetch';
-import { headerValue, timingSafeStringEqual } from './verify';
+import { headerValue } from './verify';
 
 // External input driving DB writes: validate the shape instead of casting.
 // Every field is nullish — an unfamiliar payload (wrong webhook_type, missing
