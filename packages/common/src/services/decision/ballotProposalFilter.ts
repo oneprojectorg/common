@@ -13,25 +13,15 @@ export interface BallotProposalFilter {
   where: (t: typeof proposals) => SQL | undefined;
 }
 
-const districtTermId = async (boundaryId: string): Promise<string | null> => {
-  const boundary = await db.query.decisionBoundaries.findFirst({
-    where: { id: boundaryId },
-    columns: { taxonomyTermId: true },
-  });
-  return boundary?.taxonomyTermId ?? null;
-};
-
 export async function ballotProposalFilter({
   instance,
-  boundaryId,
+  taxonomyTermId,
 }: {
   instance: PhaseScopedInstance;
-  boundaryId?: string | null;
+  taxonomyTermId?: string | null;
 }): Promise<BallotProposalFilter> {
-  const [scope, termId] = await Promise.all([
-    getPhaseProposalSqlScope({ instance, authUserIds: [] }),
-    boundaryId ? districtTermId(boundaryId) : null,
-  ]);
+  const scope = await getPhaseProposalSqlScope({ instance, authUserIds: [] });
+  const termId = taxonomyTermId ?? null;
 
   return {
     isEmpty: scope.isEmpty,

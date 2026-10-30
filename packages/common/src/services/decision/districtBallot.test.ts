@@ -181,12 +181,12 @@ describe.concurrent('the district-scoped ballot', () => {
 
     const page = await listBallotProposals({
       instance,
-      boundaryId: boundaries.five.id,
+      taxonomyTermId: boundaries.five.taxonomyTermId,
       limit: 10,
     });
     const count = await countBallotProposals({
       instance,
-      boundaryId: boundaries.five.id,
+      taxonomyTermId: boundaries.five.taxonomyTermId,
     });
 
     expect(page.items.map(({ title }) => title)).toEqual([
@@ -213,7 +213,7 @@ describe.concurrent('the district-scoped ballot', () => {
     await expect(countBallotProposals({ instance })).resolves.toBe(3);
   });
 
-  it('given a boundary with no linked category, when the ballot is listed for it, then it is not narrowed because no proposal can carry that district', async ({
+  it('given an enrolment that resolved an unlinked boundary, so its stored term is null, when the ballot is counted, then it is not narrowed', async ({
     task,
     onTestFinished,
   }) => {
@@ -224,8 +224,12 @@ describe.concurrent('the district-scoped ballot', () => {
       onTestFinished,
     );
 
+    expect(boundaries.unlinked.taxonomyTermId).toBeNull();
     await expect(
-      countBallotProposals({ instance, boundaryId: boundaries.unlinked.id }),
+      countBallotProposals({
+        instance,
+        taxonomyTermId: boundaries.unlinked.taxonomyTermId,
+      }),
     ).resolves.toBe(3);
   });
 
@@ -243,14 +247,14 @@ describe.concurrent('the district-scoped ballot', () => {
     await expect(
       getBallotProposalByCode({
         instance,
-        boundaryId: boundaries.five.id,
+        taxonomyTermId: boundaries.five.taxonomyTermId,
         code: proposals.rec.shortCode!,
       }),
     ).resolves.toBeNull();
     await expect(
       getBallotProposalByCode({
         instance,
-        boundaryId: boundaries.five.id,
+        taxonomyTermId: boundaries.five.taxonomyTermId,
         code: proposals.lighting.shortCode!,
       }),
     ).resolves.toMatchObject({ title: 'Crosswalk lighting' });

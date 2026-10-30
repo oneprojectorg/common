@@ -21,16 +21,16 @@ export interface BallotProposalPage {
 
 export async function listBallotProposals({
   instance,
-  boundaryId,
+  taxonomyTermId,
   after,
   limit,
 }: {
   instance: BallotInstance;
-  boundaryId?: string | null;
+  taxonomyTermId?: string | null;
   after?: number;
   limit: number;
 }): Promise<BallotProposalPage> {
-  const filter = await ballotProposalFilter({ instance, boundaryId });
+  const filter = await ballotProposalFilter({ instance, taxonomyTermId });
 
   if (filter.isEmpty) {
     return { items: [], nextCursor: null };

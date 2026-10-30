@@ -1203,10 +1203,7 @@ describe.concurrent('submitVote scoped to the voter district', () => {
       address: 'inside district five',
       geocode: async () => [{ lat: 40.5, lng: -73.5 }],
     });
-    await affirmVoterAttestation({
-      ...key,
-      attestationHash: hashAttestation(ATTESTATION),
-    });
+    await affirmVoterAttestation(key);
     return { setup, instance, proposals };
   };
 

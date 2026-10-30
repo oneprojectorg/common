@@ -7,7 +7,6 @@ import { db, inArray } from '@op/db/client';
 import { ProcessStatus, ProposalStatus, taxonomyTerms } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
-import { hashAttestation } from '../attestationHash';
 import { affirmVoterAttestation, resolveVoterAddress } from '../voterEnrolment';
 import { getSmsDecisionDescription } from './getSmsDecisionDescription';
 
@@ -167,10 +166,7 @@ describe.concurrent('getSmsDecisionDescription for an enrolled voter', () => {
       address: 'inside district five',
       geocode: async () => [{ lat: 40.5, lng: -73.5 }],
     });
-    await affirmVoterAttestation({
-      ...key,
-      attestationHash: hashAttestation('I affirm.'),
-    });
+    await affirmVoterAttestation(key);
 
     await expect(
       getSmsDecisionDescription({

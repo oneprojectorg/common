@@ -398,7 +398,7 @@ export const submitVote = async ({
       }
 
       await assertSelectionsInDistrict({
-        boundaryId: enrolment.boundaryId,
+        taxonomyTermId: enrolment?.taxonomyTermId ?? null,
         selectedProposalIds: data.selectedProposalIds,
       });
     }
@@ -661,28 +661,19 @@ export const getVotingStatus = async ({
 };
 
 async function assertSelectionsInDistrict({
-  boundaryId,
+  taxonomyTermId,
   selectedProposalIds,
 }: {
-  boundaryId: string | null;
+  taxonomyTermId: string | null;
   selectedProposalIds: string[];
 }): Promise<void> {
-  if (!boundaryId || selectedProposalIds.length === 0) {
-    return;
-  }
-
-  const boundary = await db.query.decisionBoundaries.findFirst({
-    where: { id: boundaryId },
-    columns: { taxonomyTermId: true },
-  });
-
-  if (!boundary?.taxonomyTermId) {
+  if (!taxonomyTermId || selectedProposalIds.length === 0) {
     return;
   }
 
   const tagged = await db.query.proposalCategories.findMany({
     where: {
-      taxonomyTermId: boundary.taxonomyTermId,
+      taxonomyTermId,
       proposalId: { in: selectedProposalIds },
     },
     columns: { proposalId: true },
