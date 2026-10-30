@@ -34,6 +34,7 @@ import {
   clipSmsText,
   describeEnrolmentDecision,
   findBallotDraft,
+  clearChatSessionReopened,
   findChatSession,
   findLatestChatSession,
   findPendingVoterEnrolment,
@@ -1246,10 +1247,22 @@ export const submit: SmsCommandHandler = async (context) => {
   // committed comes back as already_submitted with the same submission id, and
   // the event id keeps Inngest from firing twice for one ballot. A revision
   // keeps the submission id, so its event id carries the text that made it.
+  // The reopened window closes in its own step AFTER the cast recorded: a
+  // run that stopped between reviseVote and that step retries into the
+  // revise path again (reviseVote rewrites the same ballot), so the revised
+  // event and reply are never lost to a half-saved step.
   const finishSubmission = async (
     voteSubmissionId: string,
     revised: boolean,
   ) => {
+    if (revised) {
+      await step.run('close-reopened-window', () =>
+        clearChatSessionReopened({
+          processInstanceId: instanceId,
+          authUserId: account.authUserId,
+        }),
+      );
+    }
     await step.run('clear-ballot-draft', () =>
       deleteBallotDraft({ authUserId: account.authUserId, instanceId }),
     );
