@@ -52,6 +52,7 @@ import { useProcessBuilderAutosave } from '../../ProcessBuilderAutosaveContext';
 import { SaveStatusIndicator } from '../../components/SaveStatusIndicator';
 import type { SectionProps } from '../../contentRegistry';
 import { isPhaseSection, sectionIdToPhaseId } from '../../navigationConfig';
+import { toEditablePhases, toPhasesPayload } from '../../phaseEditing';
 import { useProcessBuilderStore } from '../../stores/useProcessBuilderStore';
 
 export function PhaseDetailPage({
@@ -79,18 +80,6 @@ export function PhaseDetailPage({
     />
   );
 }
-
-const toPayload = (phases: PhaseDefinition[]) =>
-  phases.map((p) => ({
-    phaseId: p.id,
-    name: p.name,
-    description: p.description,
-    headline: p.headline,
-    additionalInfo: p.additionalInfo,
-    startDate: p.startDate,
-    endDate: p.endDate,
-    rules: p.rules,
-  }));
 
 function PhaseDetailForm({
   instanceId,
@@ -127,20 +116,7 @@ function PhaseDetailForm({
   // Resolve the initial phase data (same priority as PhasesSectionContent)
   const allPhases: PhaseDefinition[] = (() => {
     const source = storePhases?.length ? storePhases : instancePhases;
-    return (
-      source?.map((p) => ({
-        id: p.phaseId,
-        name: p.name ?? '',
-        description: p.description,
-        headline: p.headline,
-        additionalInfo: p.additionalInfo,
-        rules: p.rules ?? {},
-        startDate: p.startDate,
-        endDate: p.endDate,
-      })) ??
-      templatePhases ??
-      []
-    );
+    return source ? toEditablePhases(source) : (templatePhases ?? []);
   })();
 
   const phaseIndex = allPhases.findIndex((p) => p.id === phaseId) + 1;
@@ -165,7 +141,7 @@ function PhaseDetailForm({
     const updated = { ...phase, ...updates };
     setPhase(updated);
     saveChanges({
-      phases: toPayload(
+      phases: toPhasesPayload(
         allPhasesRef.current.map((p) => (p.id === phaseId ? updated : p)),
       ),
     });
