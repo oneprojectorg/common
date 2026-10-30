@@ -7,6 +7,7 @@ import {
   accessRolePermissionsOnAccessZones,
   accessRoles,
   customForms,
+  decisionBoundaries,
   decisionPhoneNumbers,
   decisionProcesses,
   processInstances,
@@ -25,6 +26,7 @@ import {
 } from '@op/db/seedData/accessControl';
 import { db, eq } from '@op/db/test';
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { sql } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
 
 import type {
@@ -1108,4 +1110,51 @@ export async function createDecisionPhoneNumber({
   }
 
   return number;
+}
+
+export interface CreateDecisionBoundaryOptions {
+  profileId: string;
+  name: string;
+  /** GeoJSON polygon ring; defaults to the square from (-74, 40) to (-73, 41). */
+  ring?: ReadonlyArray<readonly [number, number]>;
+  taxonomyTermId?: string | null;
+}
+
+const DEFAULT_BOUNDARY_RING: ReadonlyArray<readonly [number, number]> = [
+  [-74, 40],
+  [-73, 40],
+  [-73, 41],
+  [-74, 41],
+  [-74, 40],
+];
+
+export async function createDecisionBoundary({
+  profileId,
+  name,
+  ring = DEFAULT_BOUNDARY_RING,
+  taxonomyTermId = null,
+}: CreateDecisionBoundaryOptions) {
+  const geoJson = JSON.stringify({
+    type: 'Polygon',
+    coordinates: [ring.map(([lng, lat]) => [lng, lat])],
+  });
+  const [boundary] = await db
+    .insert(decisionBoundaries)
+    .values({
+      profileId,
+      name,
+      taxonomyTermId,
+      boundary: sql`ST_SetSRID(ST_Multi(ST_GeomFromGeoJSON(${geoJson})), 4326)`,
+    })
+    .returning({
+      id: decisionBoundaries.id,
+      name: decisionBoundaries.name,
+      taxonomyTermId: decisionBoundaries.taxonomyTermId,
+    });
+
+  if (!boundary) {
+    throw new Error('Failed to create decision boundary');
+  }
+
+  return boundary;
 }

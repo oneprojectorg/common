@@ -16,6 +16,7 @@ export {
 
 export {
   createCustomForm,
+  createDecisionBoundary,
   createDecisionPhoneNumber,
   createDecisionInstance,
   createDecisionProcess,

@@ -1,5 +1,6 @@
 import { mockCollab } from '@op/collab/testing';
-import type { BudgetData } from '@op/common/client';
+import { affirmVoterAttestation, resolveVoterAddress } from '@op/common';
+import type { BudgetData, VoterEnrolmentRule } from '@op/common/client';
 import { TestDecisionsDataManager } from '@op/common/testing';
 import { ProposalStatus, processInstances } from '@op/db/schema';
 import { db, eq } from '@op/db/test';
@@ -38,6 +39,7 @@ interface VotingSchemaOptions {
   /** Priced fields on the template; omit to leave it unpriced. */
   pricedFields?: PricedField[];
   ranked?: boolean;
+  enrolment?: VoterEnrolmentRule;
 }
 
 const pricedFieldSchemas = {
@@ -76,6 +78,7 @@ function buildVotingSchema({
   voterCostField,
   pricedFields,
   ranked,
+  enrolment,
 }: VotingSchemaOptions = {}) {
   return {
     id: 'voting-test',
@@ -106,6 +109,7 @@ function buildVotingSchema({
             ...(voterBudget !== undefined && { voterBudget }),
             ...(voterCostField !== undefined && { voterCostField }),
             ...(ranked !== undefined && { ranked }),
+            ...(enrolment !== undefined && { enrolment }),
           },
           advancement: { method: 'manual' as const },
         },
@@ -1028,4 +1032,120 @@ describeDecisionAccessTierGating('getVotingStatus', {
       expect(status.votingConfiguration).toBeDefined();
     },
   ),
+});
+
+describe.concurrent('submitVote with an enrolment rule', () => {
+  const ATTESTATION = 'I affirm that I meet the eligibility requirements.';
+
+  it('given the voting phase requires enrolment, when a member who has not enrolled votes, then the vote is refused as not enrolled and no submission is written', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instance, proposals } = await setupVotingInstance(testData, {
+      proposalCount: 1,
+      enrolment: { attestation: ATTESTATION },
+    });
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    await expect(
+      caller.decision.submitVote({
+        processInstanceId: instance.instance.id,
+        selectedProposalIds: proposals.map((p) => p.id),
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'VoterNotEnrolledError' } });
+
+    await expect(
+      db.query.decisionsVoteSubmissions.findFirst({
+        where: { processInstanceId: instance.instance.id },
+      }),
+    ).resolves.toBeUndefined();
+  });
+
+  it('given a member enrolled before an admin rewrites the attestation, when they vote, then the vote is accepted because enrolment records only the time', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instance, proposals } = await setupVotingInstance(testData, {
+      proposalCount: 1,
+      enrolment: { attestation: ATTESTATION },
+    });
+    const key = {
+      processInstanceId: instance.instance.id,
+      authUserId: setup.user.id,
+    };
+    await resolveVoterAddress({
+      ...key,
+      address: 'anywhere',
+      geocode: async () => [{ lat: 40.5, lng: -73.5 }],
+    });
+    await affirmVoterAttestation(key);
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+    await caller.decision.updateDecisionInstance({
+      instanceId: instance.instance.id,
+      phases: [
+        {
+          phaseId: 'voting',
+          rules: {
+            voting: {
+              submit: true,
+              enrolment: {
+                attestation: `I affirm the rewritten requirements ${task.id}.`,
+              },
+            },
+          },
+        },
+      ],
+    });
+
+    const result = await caller.decision.submitVote({
+      processInstanceId: instance.instance.id,
+      selectedProposalIds: proposals.map((p) => p.id),
+    });
+
+    await expect(
+      db.query.decisionsVoteSubmissions.findFirst({
+        where: { id: result.id },
+        columns: { id: true },
+      }),
+    ).resolves.toEqual({ id: result.id });
+  });
+
+  it('given the voting phase requires enrolment, when an enrolled member votes, then the submission is written', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instance, proposals } = await setupVotingInstance(testData, {
+      proposalCount: 1,
+      enrolment: { attestation: ATTESTATION },
+    });
+    const key = {
+      processInstanceId: instance.instance.id,
+      authUserId: setup.user.id,
+    };
+    await resolveVoterAddress({
+      ...key,
+      address: 'anywhere',
+      geocode: async () => [{ lat: 40.5, lng: -73.5 }],
+    });
+    await affirmVoterAttestation(key);
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const result = await caller.decision.submitVote({
+      processInstanceId: instance.instance.id,
+      selectedProposalIds: proposals.map((p) => p.id),
+    });
+
+    await expect(
+      db.query.decisionsVoteSubmissions.findFirst({
+        where: { id: result.id },
+        columns: { id: true, processInstanceId: true },
+      }),
+    ).resolves.toEqual({
+      id: result.id,
+      processInstanceId: instance.instance.id,
+    });
+  });
 });
