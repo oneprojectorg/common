@@ -4,7 +4,6 @@ import {
   findVoterEnrolment,
   parsePhoneNumber,
   removeDecisionPublicAccess,
-  resolveVoterAddress,
   submitVote,
 } from '@op/common';
 import { db } from '@op/db/client';
@@ -146,6 +145,19 @@ const LINES = {
   pickMisconfigured: '+16145550172',
   pickRepriced: '+16145550173',
 } as const;
+
+const readDraftPicks = async (instanceId: string): Promise<string[] | null> => {
+  const draft = await db.query.decisionsVoteDrafts.findFirst({
+    where: { processInstanceId: instanceId },
+    with: {
+      draftProposals: {
+        columns: { proposalId: true },
+        orderBy: { rank: 'asc' },
+      },
+    },
+  });
+  return draft ? draft.draftProposals.map((row) => row.proposalId) : null;
+};
 
 beforeEach(() => {
   resetRecordedSms();
@@ -1661,7 +1673,7 @@ describe('handleSMSCommand building and casting the ballot', () => {
       idOf(101),
     ]);
     await expect(
-      db.query.decisionBallotDrafts.findFirst({
+      db.query.decisionsVoteDrafts.findFirst({
         where: { processInstanceId: instanceId },
       }),
     ).resolves.toBeUndefined();
@@ -1754,11 +1766,7 @@ describe('handleSMSCommand building and casting the ballot', () => {
     expect(recordedSms.at(-1)?.body).toBe(
       'Voting is misconfigured: "cost" is not a priced field on the proposal template, so no ballot can be cast. Ask an admin to correct the decision.',
     );
-    const draft = await db.query.decisionBallotDrafts.findFirst({
-      where: { processInstanceId: instanceId },
-      columns: { picks: true },
-    });
-    expect(draft?.picks ?? []).toEqual([]);
+    expect((await readDraftPicks(instanceId)) ?? []).toEqual([]);
   });
 
   it('given two picks and a capped phase whose cost field was pointed at an unpriced template field by a raw instance_data write (the admin update refuses it), when the voter texts REMOVE and MOVE, then each reply names the misconfiguration and the draft is unchanged', async ({
@@ -1772,10 +1780,7 @@ describe('handleSMSCommand building and casting the ballot', () => {
       name: `Pick Repriced ${task.id}`,
     });
     await text(NUMBERS.pickRepriced, LINES.pickRepriced, '101 102');
-    const before = await db.query.decisionBallotDrafts.findFirst({
-      where: { processInstanceId: instanceId },
-      columns: { picks: true },
-    });
+    const before = await readDraftPicks(instanceId);
     await fixture.plantVotingRules({
       instanceId,
       voting: { voterCostField: 'cost' },
@@ -1800,12 +1805,7 @@ describe('handleSMSCommand building and casting the ballot', () => {
       'Voting is misconfigured: "cost" is not a priced field on the proposal template, so no ballot can be cast. Ask an admin to correct the decision.',
       'Voting is misconfigured: "cost" is not a priced field on the proposal template, so no ballot can be cast. Ask an admin to correct the decision.',
     ]);
-    await expect(
-      db.query.decisionBallotDrafts.findFirst({
-        where: { processInstanceId: instanceId },
-        columns: { picks: true },
-      }),
-    ).resolves.toEqual(before);
+    await expect(readDraftPicks(instanceId)).resolves.toEqual(before);
   });
 
   it('given a code no proposal has, then nothing is added and the member is told', async ({
@@ -1897,12 +1897,7 @@ describe('handleSMSCommand building and casting the ballot', () => {
     expect(submissions.map((row) => row.processInstanceId)).toEqual([
       b.instanceId,
     ]);
-    await expect(
-      db.query.decisionBallotDrafts.findFirst({
-        where: { processInstanceId: a },
-        columns: { picks: true },
-      }),
-    ).resolves.toMatchObject({ picks: [expect.any(String)] });
+    await expect(readDraftPicks(a)).resolves.toEqual([expect.any(String)]);
   });
 
   it('given voting closed after a member built a draft, when they text LIST, DONE, REMOVE and MOVE, then each says voting is not open and the draft is unchanged', async ({
@@ -1932,11 +1927,7 @@ describe('handleSMSCommand building and casting the ballot', () => {
     expect(recordedSms.slice(-4).map((sms) => sms.body)).toEqual(
       Array.from({ length: 4 }, () => `Voting is not open for "${name}".`),
     );
-    const draft = await db.query.decisionBallotDrafts.findFirst({
-      where: { processInstanceId: instanceId },
-      columns: { picks: true },
-    });
-    expect(draft?.picks).toHaveLength(2);
+    await expect(readDraftPicks(instanceId)).resolves.toHaveLength(2);
   });
 
   it('given a SUBMIT run that stopped after the vote was written, when the text runs again, then the draft is cleared, the event carries the ballot as its id, and the reply says the ballot is already in', async ({
@@ -1950,14 +1941,11 @@ describe('handleSMSCommand building and casting the ballot', () => {
       name: `Pick Retry ${task.id}`,
     });
     await text(NUMBERS.pickRetry, LINES.pickRetry, '102 101');
-    const draft = await db.query.decisionBallotDrafts.findFirst({
-      where: { processInstanceId: instanceId },
-      columns: { picks: true },
-    });
+    const picks = await readDraftPicks(instanceId);
     const written = await submitVote({
       data: {
         processInstanceId: instanceId,
-        selectedProposalIds: draft!.picks,
+        selectedProposalIds: picks!,
         authUserId: member.authUserId,
       },
       authUserId: member.authUserId,
@@ -1978,7 +1966,7 @@ describe('handleSMSCommand building and casting the ballot', () => {
       }),
     );
     await expect(
-      db.query.decisionBallotDrafts.findFirst({
+      db.query.decisionsVoteDrafts.findFirst({
         where: { processInstanceId: instanceId },
       }),
     ).resolves.toBeUndefined();
@@ -2024,20 +2012,15 @@ describe('handleSMSCommand building and casting the ballot', () => {
     );
 
     expect(result).toEqual({ message: 'picks added' });
-    await expect(
-      db.query.decisionBallotDrafts.findFirst({
-        where: { processInstanceId: b.instanceId },
-        columns: { picks: true },
-      }),
-    ).resolves.toMatchObject({ picks: [expect.any(String)] });
+    await expect(readDraftPicks(b.instanceId)).resolves.toEqual([
+      expect.any(String),
+    ]);
     await expect(
       findVoterEnrolment({
         processInstanceId: a,
         authUserId: member.authUserId,
       }),
-    ).resolves.toMatchObject({
-      status: DecisionVoterEnrolmentStatus.AWAITING_ADDRESS,
-    });
+    ).resolves.toMatchObject({ taxonomyTermId: null, enrolledAt: null });
   });
 
   it("given a confirmed number that is not a member texts a code to a private decision's line, then they are told the decision is not available and nothing is written", async ({
@@ -2075,7 +2058,7 @@ describe('handleSMSCommand building and casting the ballot', () => {
       'That decision is not available to you.',
     ]);
     await expect(
-      db.query.decisionBallotDrafts.findFirst({
+      db.query.decisionsVoteDrafts.findFirst({
         where: { processInstanceId: instanceId },
       }),
     ).resolves.toBeUndefined();
@@ -2109,12 +2092,9 @@ describe('handleSMSCommand building and casting the ballot', () => {
 
     expect(result).toEqual({ message: 'picks added' });
     expect(recordedSms.at(-1)?.body).toContain('Pick 1: "Odd cost"');
-    await expect(
-      db.query.decisionBallotDrafts.findFirst({
-        where: { processInstanceId: instanceId },
-        columns: { picks: true },
-      }),
-    ).resolves.toMatchObject({ picks: [expect.any(String)] });
+    await expect(readDraftPicks(instanceId)).resolves.toEqual([
+      expect.any(String),
+    ]);
   });
 
   it('given a voter who built a draft through a public decision, when its public access is removed and they text SUBMIT, then they are told the decision is not available and no vote is written', async ({
@@ -2195,67 +2175,6 @@ describe('handleSMSCommand building and casting the ballot', () => {
     expect(result).toEqual({ message: 'ballot unpriced' });
     expect(recordedSms.at(-1)?.body).toBe(
       'The budget of "Odd cost" is not a valid amount, so this ballot cannot be priced. Remove it from your ballot, or ask an admin to correct the proposal.',
-    );
-  });
-
-  it('given a member who browsed by slug on the shared number, when the attestation is rewritten and they text a code, then they are told to text VOTE with that slug', async ({
-    task,
-    onTestFinished,
-  }) => {
-    const fixture = new SmsCommandFixture(task.id, onTestFinished);
-    const name = `Pick Slug Rewritten ${task.id}`;
-    const member = await fixture.createPhoneOnlyAccount(
-      parsePhoneNumber(NUMBERS.pickSlugRewritten),
-    );
-    const { instanceId, slug } = await fixture.createVotingInstance({
-      owner: member,
-      name,
-      proposalTitles: PROPOSALS,
-      votingRules: {
-        voterBudget: 1_000_000,
-        maxVotesPerMember: 10,
-        ranked: true,
-        enrolment: { attestation: 'I live here.', boundary: false },
-      },
-      ownerIsAdmin: true,
-    });
-    const key = {
-      processInstanceId: instanceId,
-      authUserId: member.authUserId,
-    };
-    await resolveVoterAddress({
-      ...key,
-      address: 'anywhere',
-      geocode: async () => [{ lat: 40.5, lng: -73.5 }],
-    });
-    await affirmVoterAttestation({
-      ...key,
-      attestationHash: hashAttestation('I live here.'),
-    });
-    await run(
-      smsInboundEvent({
-        from: NUMBERS.pickSlugRewritten,
-        keyword: 'proposals',
-        argument: slug,
-      }),
-    );
-    await fixture.rewriteAttestation({
-      instanceId,
-      owner: member,
-      attestation: `I still live here ${task.id}.`,
-    });
-
-    const { result } = await run(
-      smsInboundEvent({
-        from: NUMBERS.pickSlugRewritten,
-        body: '101',
-        messageSid: `SM-${task.id}-code`,
-      }),
-    );
-
-    expect(result).toEqual({ message: 'register first' });
-    expect(recordedSms.at(-1)?.body).toBe(
-      `Text VOTE ${slug} to register for "${name}" before browsing its proposals.`,
     );
   });
 });

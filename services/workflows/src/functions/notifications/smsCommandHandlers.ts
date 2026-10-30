@@ -28,6 +28,7 @@ import {
   findLatestCastBallotInstance,
   clipSmsText,
   describeEnrolmentDecision,
+  findBallotDraft,
   findChatSession,
   findLatestChatSession,
   findPendingVoterEnrolment,
@@ -898,9 +899,7 @@ const refuseUnlessReadyToPick = async (
         authUserId: account.authUserId,
       }),
     );
-    if (
-      !isEnrolledOnCurrentAttestation(enrolment, decision.enrolment.attestation)
-    ) {
+    if (!isVoterEnrolled(enrolment)) {
       return deliverAll(
         deliver,
         'send-register-first',
@@ -950,7 +949,7 @@ const pickByCodes = async (
         authUserId: account.authUserId,
         instanceId,
         codes,
-        chatLineId: context.line?.id ?? null,
+        phoneNumberId: context.line?.id ?? null,
       }),
     ),
   );
