@@ -143,6 +143,7 @@ function PhaseDetailForm({
     saveChanges({
       phases: toPhasesPayload(
         allPhasesRef.current.map((p) => (p.id === phaseId ? updated : p)),
+        instancePhases,
       ),
     });
   };

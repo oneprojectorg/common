@@ -75,7 +75,7 @@ export function PhasesSectionContent({
   };
 
   const savePhasesPayload = (data: PhaseDefinition[]) => {
-    saveChanges({ phases: toPhasesPayload(data) });
+    saveChanges({ phases: toPhasesPayload(data, instancePhases) });
   };
 
   const updatePhases = (

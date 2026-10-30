@@ -20,7 +20,7 @@ const storedPhases = [
   },
 ];
 
-describe('phase editing keeps phase settings', () => {
+describe('phase editing keeps pending phase settings without echoing stored ones', () => {
   it('keeps a pending budget patch when a phase is edited before Update Process', () => {
     const pending = toPhasesWithBudget(storedPhases, 31000);
 
@@ -28,7 +28,7 @@ describe('phase editing keeps phase settings', () => {
       phase.id === 'review' ? { ...phase, name: 'Final review' } : phase,
     );
 
-    const payload = toPhasesPayload(edited);
+    const payload = toPhasesPayload(edited, storedPhases);
 
     expect(payload[0]?.settings).toEqual({
       budget: 31000,
@@ -40,8 +40,22 @@ describe('phase editing keeps phase settings', () => {
     });
   });
 
+  it('omits settings that only echo the loaded snapshot, so another admin’s saved budget survives a phase edit', () => {
+    const edited = toEditablePhases(storedPhases).map((phase) =>
+      phase.id === 'submission' ? { ...phase, name: 'Applications' } : phase,
+    );
+
+    const payload = toPhasesPayload(edited, storedPhases);
+
+    expect(payload[0]).toMatchObject({
+      phaseId: 'submission',
+      name: 'Applications',
+    });
+    expect(payload[0]).not.toHaveProperty('settings');
+  });
+
   it('round-trips every phase field the editors use', () => {
-    const payload = toPhasesPayload(toEditablePhases(storedPhases));
+    const payload = toPhasesPayload(toEditablePhases(storedPhases), []);
 
     expect(payload[0]).toEqual({
       phaseId: 'submission',
@@ -57,7 +71,7 @@ describe('phase editing keeps phase settings', () => {
   });
 
   it('leaves the settings key out for a phase that has none, so the server keeps its stored settings', () => {
-    const payload = toPhasesPayload(toEditablePhases(storedPhases));
+    const payload = toPhasesPayload(toEditablePhases(storedPhases), []);
 
     expect(payload[1]).not.toHaveProperty('settings');
   });
@@ -67,8 +81,21 @@ describe('phase editing keeps phase settings', () => {
       (phase) => phase.id !== 'submission',
     );
 
-    expect(toPhasesPayload(edited)).toEqual([
+    expect(toPhasesPayload(edited, storedPhases)).toEqual([
       expect.objectContaining({ phaseId: 'review' }),
     ]);
+  });
+
+  it('omits unchanged settings regardless of key order in the snapshot', () => {
+    const reordered = [
+      {
+        ...storedPhases[0]!,
+        settings: { allowProposals: true, budget: 25000 },
+      },
+    ];
+
+    const payload = toPhasesPayload(toEditablePhases(storedPhases), reordered);
+
+    expect(payload[0]).not.toHaveProperty('settings');
   });
 });
