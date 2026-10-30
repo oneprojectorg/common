@@ -1,10 +1,8 @@
 import { InngestTestEngine } from '@inngest/test';
 import {
   SMS_MAX_BODY_LENGTH,
-  affirmVoterAttestation,
   findVoterEnrolment,
   parsePhoneNumber,
-  resolveVoterAddress,
 } from '@op/common';
 import { db } from '@op/db/client';
 import { ProcessStatus } from '@op/db/schema';
@@ -1252,56 +1250,6 @@ describe('handleSMSCommand browsing the ballot', () => {
     ]);
   });
 
-  it("given a registered member whose decision's attestation was rewritten, when they text PROPOSALS, then they are told to text VOTE first instead of nothing", async ({
-    task,
-    onTestFinished,
-  }) => {
-    const fixture = new SmsCommandFixture(task.id, onTestFinished);
-    const name = `Browse Rewritten ${task.id}`;
-    const member = await fixture.createPhoneOnlyAccount(
-      parsePhoneNumber(NUMBERS.browseRewritten),
-    );
-    const { instanceId } = await fixture.createVotingInstance({
-      owner: member,
-      name,
-      proposalTitles: PROPOSALS,
-      enrolment: { attestation: 'I live here.', boundary: false },
-      ownerIsAdmin: true,
-    });
-    await fixture.bindLine(instanceId, parsePhoneNumber(LINES.browseRewritten));
-    const key = {
-      processInstanceId: instanceId,
-      authUserId: member.authUserId,
-    };
-    await resolveVoterAddress({
-      ...key,
-      address: 'anywhere',
-      geocode: async () => [{ lat: 40.5, lng: -73.5 }],
-    });
-    await affirmVoterAttestation({
-      ...key,
-      attestationHash: hashAttestation('I live here.'),
-    });
-    await fixture.rewriteAttestation({
-      instanceId,
-      owner: member,
-      attestation: `I still live here ${task.id}.`,
-    });
-
-    const { result } = await run(
-      smsInboundEvent({
-        from: NUMBERS.browseRewritten,
-        to: LINES.browseRewritten,
-        keyword: 'proposals',
-      }),
-    );
-
-    expect(result).toEqual({ message: 'register first' });
-    expect(recordedSms.map((sms) => sms.body)).toEqual([
-      `Text VOTE to register for "${name}" before browsing its proposals.`,
-    ]);
-  });
-
   it('given the carrier refuses the first page, when a member texts PROPOSALS, then no cursor is saved so the page is not skipped later', async ({
     task,
     onTestFinished,
@@ -1327,67 +1275,11 @@ describe('handleSMSCommand browsing the ballot', () => {
 
     expect(result).toMatchObject({ message: 'reply rejected' });
     await expect(
-      db.query.decisionBallotDrafts.findFirst({
+      db.query.decisionChatSessions.findFirst({
         where: { processInstanceId: instanceId },
         columns: { pageCursor: true },
       }),
     ).resolves.toMatchObject({ pageCursor: null });
-  });
-
-  it('given a member who browsed by slug on the shared number, when the attestation is rewritten and they text MORE, then they are told to text VOTE with that slug', async ({
-    task,
-    onTestFinished,
-  }) => {
-    const fixture = new SmsCommandFixture(task.id, onTestFinished);
-    const name = `Browse Slug Rewritten ${task.id}`;
-    const member = await fixture.createPhoneOnlyAccount(
-      parsePhoneNumber(NUMBERS.browseSlugRewritten),
-    );
-    const { instanceId, slug } = await fixture.createVotingInstance({
-      owner: member,
-      name,
-      proposalTitles: PROPOSALS,
-      enrolment: { attestation: 'I live here.', boundary: false },
-      ownerIsAdmin: true,
-    });
-    const key = {
-      processInstanceId: instanceId,
-      authUserId: member.authUserId,
-    };
-    await resolveVoterAddress({
-      ...key,
-      address: 'anywhere',
-      geocode: async () => [{ lat: 40.5, lng: -73.5 }],
-    });
-    await affirmVoterAttestation({
-      ...key,
-      attestationHash: hashAttestation('I live here.'),
-    });
-    await run(
-      smsInboundEvent({
-        from: NUMBERS.browseSlugRewritten,
-        keyword: 'proposals',
-        argument: slug,
-      }),
-    );
-    await fixture.rewriteAttestation({
-      instanceId,
-      owner: member,
-      attestation: `I still live here ${task.id}.`,
-    });
-
-    const { result } = await run(
-      smsInboundEvent({
-        from: NUMBERS.browseSlugRewritten,
-        keyword: 'more',
-        messageSid: `SM-${task.id}-more`,
-      }),
-    );
-
-    expect(result).toEqual({ message: 'register first' });
-    expect(recordedSms.at(-1)?.body).toBe(
-      `Text VOTE ${slug} to register for "${name}" before browsing its proposals.`,
-    );
   });
 
   it('given a decision still taking submissions, when a member texts PROPOSALS, then they are told voting is not open', async ({

@@ -251,3 +251,4 @@ export * from './forwardGeocode';
 export * from './voterEnrolment';
 export * from './geocoder';
 export * from './ballotDraft';
+export * from './chatSession';

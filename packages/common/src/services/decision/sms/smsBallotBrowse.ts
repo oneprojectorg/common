@@ -1,5 +1,5 @@
 import { db } from '@op/db/client';
-import { DecisionVoterEnrolmentStatus, ProcessStatus } from '@op/db/schema';
+import { ProcessStatus } from '@op/db/schema';
 import { permission } from 'access-zones';
 
 import {
@@ -8,7 +8,7 @@ import {
   VoterNotEnrolledError,
 } from '../../../utils';
 import { assertProfileAccess } from '../../assert';
-import { ensureBallotDraft } from '../ballotDraft';
+import { ensureChatSession } from '../chatSession';
 import { countBallotProposals } from '../countBallotProposals';
 import {
   type BallotProposalInfo,
@@ -21,10 +21,7 @@ import {
 import { getInstancePhases } from '../schemas/instanceData';
 import { getInstanceCurrentPhase } from '../utils/instance';
 import { getVoterEnrolment, isVotingPhase } from '../utils/phaseSettings';
-import {
-  findVoterEnrolment,
-  isEnrolledOnCurrentAttestation,
-} from '../voterEnrolment';
+import { findVoterEnrolment, isVoterEnrolled } from '../voterEnrolment';
 
 export const SMS_BALLOT_PAGE_SIZE = 5;
 
@@ -88,26 +85,25 @@ const loadBallotScope = async ({
 
   const rule = getVoterEnrolment(phase);
 
-  if (rule && !isEnrolledOnCurrentAttestation(enrolment, rule.attestation)) {
+  if (rule && !isVoterEnrolled(enrolment)) {
     throw new VoterNotEnrolledError();
   }
 
-  const boundaryId =
-    enrolment?.status === DecisionVoterEnrolmentStatus.ENROLLED
-      ? enrolment.boundaryId
-      : null;
-  const boundary = boundaryId
-    ? await db.query.decisionBoundaries.findFirst({
-        where: { id: boundaryId },
-        columns: { name: true },
+  const taxonomyTermId = isVoterEnrolled(enrolment)
+    ? (enrolment?.taxonomyTermId ?? null)
+    : null;
+  const term = taxonomyTermId
+    ? await db.query.taxonomyTerms.findFirst({
+        where: { id: taxonomyTermId },
+        columns: { label: true },
       })
     : null;
 
   return {
     instance,
     decisionName: instance.profile.name,
-    boundaryId,
-    district: boundary?.name ?? null,
+    taxonomyTermId,
+    district: term?.label ?? null,
   };
 };
 
@@ -115,29 +111,29 @@ export async function listSmsBallotPage({
   authUserId,
   instanceId,
   after,
-  chatLineId,
+  phoneNumberId,
 }: {
   authUserId: string;
   instanceId: string;
   after?: number;
-  /** The decision line the browse came in on, recorded on the draft. */
-  chatLineId?: string | null;
+  /** The decision line the browse came in on, recorded on the session. */
+  phoneNumberId?: string | null;
 }): Promise<SmsBallotPage> {
-  const { instance, decisionName, boundaryId, district } =
+  const { instance, decisionName, taxonomyTermId, district } =
     await loadBallotScope({ authUserId, instanceId });
   const [total, page] = await Promise.all([
-    countBallotProposals({ instance, boundaryId }),
+    countBallotProposals({ instance, taxonomyTermId }),
     listBallotProposals({
       instance,
-      boundaryId,
+      taxonomyTermId,
       after,
       limit: SMS_BALLOT_PAGE_SIZE,
     }),
   ]);
-  await ensureBallotDraft({
+  await ensureChatSession({
     processInstanceId: instanceId,
     authUserId,
-    chatLineId,
+    phoneNumberId,
   });
 
   return {
@@ -158,9 +154,9 @@ export async function getSmsBallotProposal({
   instanceId: string;
   code: number;
 }): Promise<BallotProposalInfo | null> {
-  const { instance, boundaryId } = await loadBallotScope({
+  const { instance, taxonomyTermId } = await loadBallotScope({
     authUserId,
     instanceId,
   });
-  return getBallotProposalByCode({ instance, boundaryId, code });
+  return getBallotProposalByCode({ instance, taxonomyTermId, code });
 }
