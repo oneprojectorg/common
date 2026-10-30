@@ -19,6 +19,7 @@ import {
 import { getIndividualProfileId } from '../../access';
 import { ensureBallotDraft, findBallotDraft } from '../ballotDraft';
 import {
+  clearChatSessionReopened,
   ensureChatSession,
   findChatSession,
   markChatSessionReopened,
@@ -531,6 +532,10 @@ export async function submitSmsBallot({
         selectedProposalIds: picks,
         authUserId,
       },
+      authUserId,
+    });
+    await clearChatSessionReopened({
+      processInstanceId: instanceId,
       authUserId,
     });
     return {

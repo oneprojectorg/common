@@ -102,3 +102,17 @@ export async function markChatSessionReopened({
     .set({ reopenedAt: new Date(), updatedAt: new Date().toISOString() })
     .where(sessionFilter(processInstanceId, profileId));
 }
+
+export async function clearChatSessionReopened({
+  processInstanceId,
+  authUserId,
+}: SessionKey): Promise<void> {
+  const profileId = await getIndividualProfileId(authUserId);
+  await db
+    .update(decisionChatSessions)
+    .set({
+      reopenedAt: null,
+      updatedAt: sql`(now() AT TIME ZONE 'utc'::text)`,
+    })
+    .where(sessionFilter(processInstanceId, profileId));
+}

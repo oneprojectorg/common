@@ -2626,6 +2626,16 @@ describe('handleSMSCommand changing a cast ballot', () => {
       }),
     ).resolves.toBeUndefined();
 
+    const withoutChange = await text(
+      NUMBERS.changeRevise,
+      LINES.changeRevise,
+      '103',
+    );
+    expect(withoutChange.result).toEqual({ message: 'ballot already in' });
+    expect(recordedSms.at(-1)?.body).toBe(
+      'Your ballot is in. Text CHANGE to revise it.',
+    );
+
     await keyword(
       NUMBERS.changeRevise,
       LINES.changeRevise,
