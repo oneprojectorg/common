@@ -270,8 +270,8 @@ export async function pendingEnrolmentStep({
     where: { id: processInstanceId },
     columns: { profileId: true },
   });
-  const boundariesConfigured = instance?.profileId
-    ? await hasDecisionBoundaries({ profileId: instance.profileId })
+  const linkedConfigured = instance?.profileId
+    ? await hasLinkedDecisionBoundaries({ profileId: instance.profileId })
     : false;
-  return boundariesConfigured ? 'awaiting_address' : 'awaiting_agree';
+  return linkedConfigured ? 'awaiting_address' : 'awaiting_agree';
 }
