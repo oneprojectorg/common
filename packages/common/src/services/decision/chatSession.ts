@@ -1,4 +1,4 @@
-import { and, db, eq } from '@op/db/client';
+import { and, db, eq, sql } from '@op/db/client';
 import { type DecisionChatSession, decisionChatSessions } from '@op/db/schema';
 
 import { NotFoundError } from '../../utils';
@@ -66,8 +66,8 @@ export async function ensureChatSession({
       ],
       set:
         phoneNumberId === undefined
-          ? { updatedAt: new Date().toISOString() }
-          : { phoneNumberId, updatedAt: new Date().toISOString() },
+          ? { updatedAt: sql`(now() AT TIME ZONE 'utc'::text)` }
+          : { phoneNumberId, updatedAt: sql`(now() AT TIME ZONE 'utc'::text)` },
     });
   const session = await db.query.decisionChatSessions.findFirst({
     where: { processInstanceId, profileId },
