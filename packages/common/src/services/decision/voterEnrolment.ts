@@ -7,7 +7,11 @@ import {
 import { NotFoundError, ValidationError } from '../../utils';
 import { getIndividualProfileId } from '../access';
 import { forwardGeocode } from './forwardGeocode';
-import { hasDecisionBoundaries, resolveBoundary } from './resolveBoundary';
+import {
+  hasDecisionBoundaries,
+  hasLinkedDecisionBoundaries,
+  resolveBoundary,
+} from './resolveBoundary';
 import { getInstancePhases } from './schemas/instanceData';
 import { getInstanceCurrentPhase } from './utils/instance';
 import { getVoterEnrolment } from './utils/phaseSettings';
@@ -130,9 +134,12 @@ export async function resolveVoterAddress({
     return { status: 'not_found' };
   }
 
-  const boundariesConfigured = instance.profileId
-    ? await hasDecisionBoundaries({ profileId: instance.profileId })
-    : false;
+  const [boundariesConfigured, linkedConfigured] = instance.profileId
+    ? await Promise.all([
+        hasDecisionBoundaries({ profileId: instance.profileId }),
+        hasLinkedDecisionBoundaries({ profileId: instance.profileId }),
+      ])
+    : [false, false];
   const boundary =
     boundariesConfigured && instance.profileId
       ? await resolveBoundary({
@@ -142,7 +149,7 @@ export async function resolveVoterAddress({
         })
       : null;
 
-  if (rule.boundary && boundariesConfigured && !boundary) {
+  if (rule.boundary && linkedConfigured && !boundary?.taxonomyTermId) {
     return { status: 'outside' };
   }
 
@@ -176,10 +183,10 @@ export async function affirmVoterAttestation({
   }
 
   if (rule.boundary && !row.taxonomyTermId) {
-    const boundariesConfigured = instance.profileId
-      ? await hasDecisionBoundaries({ profileId: instance.profileId })
+    const linkedConfigured = instance.profileId
+      ? await hasLinkedDecisionBoundaries({ profileId: instance.profileId })
       : false;
-    if (boundariesConfigured) {
+    if (linkedConfigured) {
       throw new ValidationError('Give an address before affirming');
     }
   }
