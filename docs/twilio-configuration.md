@@ -132,7 +132,8 @@ above). Digits from a number with no account are a signup code and belong to
 ### Decision lines
 
 A decision can own a Twilio number. The binding is a row in
-`decision_chat_lines` (`process_instance_id`, `phone_number` in E.164), and
+`decision_phone_numbers` (`process_instance_id`, `phone_number` in E.164,
+`channel` — `sms` or `whatsapp`, one row per channel), and
 nothing in the product writes it yet: an operator inserts it when the number
 is added to the Messaging Service sender pool. On a line, SHOW, VOTE,
 PROPOSALS and the ballot keywords need no slug, and every reply is sent from
@@ -140,8 +141,8 @@ that number. A number bound in the Twilio Console but not in the table
 behaves as the shared number.
 
 ```sql
-insert into decision_chat_lines (process_instance_id, phone_number)
-values ('<decision_process_instances.id>', '+16145550130');
+insert into decision_phone_numbers (process_instance_id, phone_number, channel)
+values ('<decision_process_instances.id>', '+16145550130', 'sms');
 ```
 
 ### Ballot guide
@@ -281,7 +282,7 @@ point outside production.
    the GeoJSON, set `name_property` and the decision's `profile_id`); it
    creates the matching proposal category for each. Submit proposals whose
    pins fall inside them; each submitted proposal gets a short code.
-5. Bind the line: insert the `decision_chat_lines` row (see Decision lines)
+5. Bind the line: insert the `decision_phone_numbers` row (see Decision lines)
    for the decision's `decision_process_instances.id` and the pool number.
 6. From a phone, text the line. The expected conversation, with a
    `voterBudget` of 1,000,000 and the memo's example titles:
@@ -315,7 +316,7 @@ line; a draft started on another line never takes over.
 
 Read back the result with the voter's profile: one row in
 `decisions_vote_submissions`, its `decisions_vote_proposals` rows in pick
-order, and no row left in `decision_ballot_drafts`.
+order, and no row left in `decisions_vote_drafts`.
 
 ### Review and reset the local decision
 
