@@ -1,6 +1,6 @@
 import { db, sql } from '@op/db/client';
 import { decisionBoundaries } from '@op/db/schema';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, isNotNull } from 'drizzle-orm';
 
 export interface ResolvedBoundary {
   id: string;
@@ -57,6 +57,32 @@ export async function hasDecisionBoundaries({
     .select({ one: sql`1` })
     .from(decisionBoundaries)
     .where(eq(decisionBoundaries.profileId, profileId))
+    .limit(1);
+
+  return row != null;
+}
+
+/**
+ * Whether any boundary of the given decision profile carries a linked
+ * category term. Only a linked boundary can give an enrolment its district
+ * term, so district gating applies only when one exists; a decision whose
+ * boundaries are all unlinked can never scope a ballot and enrols with a
+ * null term, like a decision with no boundaries.
+ */
+export async function hasLinkedDecisionBoundaries({
+  profileId,
+}: {
+  profileId: string;
+}): Promise<boolean> {
+  const [row] = await db
+    .select({ one: sql`1` })
+    .from(decisionBoundaries)
+    .where(
+      and(
+        eq(decisionBoundaries.profileId, profileId),
+        isNotNull(decisionBoundaries.taxonomyTermId),
+      ),
+    )
     .limit(1);
 
   return row != null;

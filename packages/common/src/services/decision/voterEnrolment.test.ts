@@ -3,6 +3,7 @@ import {
   createDecisionBoundary,
   ensureProposalCategoryTerms,
 } from '@op/common/testing/data';
+import { db } from '@op/db/client';
 import { ProcessStatus } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
@@ -353,5 +354,80 @@ describe.concurrent('a rewritten attestation', () => {
     await expect(startVoterEnrolment(key)).resolves.toMatchObject({
       enrolledAt: row!.enrolledAt,
     });
+  });
+});
+
+describe.concurrent('district gating follows linked boundaries', () => {
+  it('given a district decision whose boundaries carry no linked category, when the address matches one, then the voter moves on and enrols with no district', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+      status: ProcessStatus.PUBLISHED,
+      processSchema: enrolmentSchema(true),
+    });
+    const instanceId = setup.instance.instance.id;
+    await createDecisionBoundary({
+      profileId: setup.instance.instance.profileId!,
+      name: `Unlinked ${task.id}`,
+    });
+    await testData.advancePhase({
+      instanceId,
+      fromPhaseId: 'submission',
+      toPhaseId: 'voting',
+    });
+    const key = { processInstanceId: instanceId, authUserId: setup.user.id };
+
+    const result = await resolveVoterAddress({
+      ...key,
+      address: 'inside the unlinked boundary',
+      geocode: geocodeTo([INSIDE]),
+    });
+
+    expect(result).toMatchObject({ status: 'resolved' });
+    const enrolled = await affirmVoterAttestation(key);
+    expect(enrolled.taxonomyTermId).toBeNull();
+    expect(enrolled.enrolledAt).not.toBeNull();
+  });
+
+  it('given a district decision with linked districts, when the address falls in a boundary with no linked category, then the result says outside', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { instanceId, authUserId } = await seedVotingDecision(testData, {
+      boundary: true,
+      withBoundaries: true,
+      label: task.id,
+    });
+    const instanceProfileId = await db.query.processInstances
+      .findFirst({ where: { id: instanceId }, columns: { profileId: true } })
+      .then((row) => row?.profileId);
+    await createDecisionBoundary({
+      profileId: instanceProfileId!,
+      name: `Unlinked ${task.id}`,
+      ring: [
+        [10, 10],
+        [11, 10],
+        [11, 11],
+        [10, 11],
+        [10, 10],
+      ],
+    });
+
+    const result = await resolveVoterAddress({
+      processInstanceId: instanceId,
+      authUserId,
+      address: 'inside the unlinked boundary',
+      geocode: geocodeTo([OUTSIDE]),
+    });
+
+    expect(result).toEqual({ status: 'outside' });
+    await expect(
+      affirmVoterAttestation({ processInstanceId: instanceId, authUserId }),
+    ).rejects.toMatchObject({ name: 'ValidationError' });
   });
 });
