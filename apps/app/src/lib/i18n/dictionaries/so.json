@@ -2090,6 +2090,7 @@
       "discardAction": "Tuur",
       "savingStatus": "Waa la kaydinayaa…",
       "savedStatus": "La kaydiyey",
+      "fixtureNotice": "Waxaa la muujinayaa fixture-ka {name}. Wejiyadan waa xog tusaale ah, ma aha wejiyada hannaankan.",
       "removeAdminError": "Maamulahan lama saari karin.",
       "adminAdded": "<bdi>{name}</bdi> hadda waa maamule.",
       "adminRemoved": "<bdi>{name}</bdi> mar dambe maamule ma aha.",

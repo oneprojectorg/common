@@ -2091,6 +2091,7 @@
       "discardAction": "Elvetés",
       "savingStatus": "Mentés…",
       "savedStatus": "Mentve",
+      "fixtureNotice": "A(z) {name} fixture látható. Ezek a fázisok mintaadatok, nem ennek a folyamatnak a fázisai.",
       "adminAdded": "<bdi>{name}</bdi> mostantól adminisztrátor.",
       "adminRemoved": "<bdi>{name}</bdi> már nem adminisztrátor.",
       "adminInviteWithdrawn": "<bdi>{name}</bdi> meghívója visszavonva.",

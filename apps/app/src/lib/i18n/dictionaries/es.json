@@ -2091,6 +2091,7 @@
       "discardAction": "Descartar",
       "savingStatus": "Guardando…",
       "savedStatus": "Guardado",
+      "fixtureNotice": "Mostrando el fixture {name}. Estas fases son datos de muestra, no las fases de este proceso.",
       "adminAdded": "<bdi>{name}</bdi> ahora es administrador.",
       "adminRemoved": "<bdi>{name}</bdi> ya no es administrador.",
       "adminInviteWithdrawn": "Se retiró la invitación a <bdi>{name}</bdi>.",
