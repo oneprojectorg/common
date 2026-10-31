@@ -1924,7 +1924,8 @@
       "keepChangesDescription": "Has editado la sección Acerca de sin guardar. Si conservas los cambios, aparecerán en la página que leen los participantes.",
       "discardAction": "Descartar",
       "savingStatus": "Guardando…",
-      "savedStatus": "Guardado"
+      "savedStatus": "Guardado",
+      "fixtureNotice": "Mostrando el fixture {name}. Estas fases son datos de muestra, no las fases de este proceso."
     }
   },
   "loadingProgress": "Cargando...",

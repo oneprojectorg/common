@@ -1924,7 +1924,8 @@
       "keepChangesDescription": "Você editou a seção Sobre sem salvar. Manter as alterações as coloca na página que os participantes leem.",
       "discardAction": "Descartar",
       "savingStatus": "Salvando…",
-      "savedStatus": "Salvo"
+      "savedStatus": "Salvo",
+      "fixtureNotice": "Exibindo o fixture {name}. Estas fases são dados de exemplo, não as fases deste processo."
     }
   },
   "loadingProgress": "Carregando...",
