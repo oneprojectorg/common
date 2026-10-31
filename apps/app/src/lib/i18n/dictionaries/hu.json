@@ -1912,7 +1912,15 @@
       "visibilityPublicHint": "Szerepel a Common folyamatai között, és kereshető.",
       "visibilityUnlisted": "Nem listázott",
       "visibilityUnlistedHint": "Csak azok érhetik el, akikkel megosztották.",
-      "adminAdded": "{name} mostantól adminisztrátor."
+      "adminAdded": "{name} mostantól adminisztrátor.",
+      "changeStewardLabel": "Módosítsa, ki gondozza ezt a folyamatot",
+      "stewardLabel": "Gondozza",
+      "aboutPlaceholder": "Írja le, mit kell tudniuk a résztvevőknek erről a folyamatról — céljait, időbeosztását, kik vezetik, és hogyan lehet részt venni.",
+      "keepChangesTitle": "Megtartja a módosításokat?",
+      "keepChangesDescription": "Mentés nélkül szerkesztette a folyamatról szóló szakaszt. A módosítások megtartásával azok megjelennek a résztvevők által olvasott oldalon.",
+      "discardAction": "Elvetés",
+      "savingStatus": "Mentés…",
+      "savedStatus": "Mentve"
     }
   },
   "loadingProgress": "Betöltés...",

@@ -1912,7 +1912,15 @@
       "visibilityPublicHint": "Waa la liis gareeyay waana la raadin karaa habraacyada Common.",
       "visibilityUnlisted": "Aan liiska ku jirin",
       "visibilityUnlistedHint": "Waxaa gaari kara oo keliya dadka lala wadaagay.",
-      "adminAdded": "{name} hadda waa maamule."
+      "adminAdded": "{name} hadda waa maamule.",
+      "changeStewardLabel": "Beddel cidda maamulaysa habkan",
+      "stewardLabel": "Waxaa maamula",
+      "aboutPlaceholder": "Qor waxa ka qaybgalayaashu u baahan yihiin inay ka ogaadaan habkan — hadafyadiisa, jadwalka, cidda hagaysa iyo sida loo ka qaybgalo.",
+      "keepChangesTitle": "Ma haysaa isbeddellada?",
+      "keepChangesDescription": "Waxaad wax ka beddeshay qaybta Ku saabsan adigoon kaydin. Haynta isbeddellada waxay galinaysaa bogga ka qaybgalayaashu akhriyaan.",
+      "discardAction": "Tuur",
+      "savingStatus": "Waa la kaydinayaa…",
+      "savedStatus": "La kaydiyey"
     }
   },
   "loadingProgress": "Waa la soo rarayaa...",

@@ -1912,7 +1912,15 @@
       "visibilityPublicHint": "Répertorié et consultable parmi les processus de Common.",
       "visibilityUnlisted": "Non répertorié",
       "visibilityUnlistedHint": "Accessible uniquement aux personnes avec qui il est partagé.",
-      "adminAdded": "{name} est maintenant administrateur."
+      "adminAdded": "{name} est maintenant administrateur.",
+      "changeStewardLabel": "Changer la personne qui gère ce processus",
+      "stewardLabel": "Géré par",
+      "aboutPlaceholder": "Écrivez ce que les participants doivent savoir sur ce processus — ses objectifs, son calendrier, qui le pilote, comment participer.",
+      "keepChangesTitle": "Conserver vos modifications ?",
+      "keepChangesDescription": "Vous avez modifié la section À propos sans l’enregistrer. Si vous conservez les modifications, elles apparaîtront sur la page lue par les participants.",
+      "discardAction": "Annuler les modifications",
+      "savingStatus": "Enregistrement…",
+      "savedStatus": "Enregistré"
     }
   },
   "loadingProgress": "En train de charger…",

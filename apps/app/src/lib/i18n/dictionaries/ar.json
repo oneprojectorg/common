@@ -1912,7 +1912,15 @@
       "visibilityPublicHint": "مدرجة وقابلة للبحث ضمن عمليات Common.",
       "visibilityUnlisted": "غير مدرجة",
       "visibilityUnlistedHint": "لا يصل إليها إلا من تتم مشاركتها معهم.",
-      "adminAdded": "أصبح {name} مسؤولًا الآن."
+      "adminAdded": "أصبح {name} مسؤولًا الآن.",
+      "changeStewardLabel": "تغيير من يشرف على هذه العملية",
+      "stewardLabel": "بإشراف",
+      "aboutPlaceholder": "اكتب ما يحتاج المشاركون إلى معرفته عن هذه العملية — أهدافها وجدولها الزمني ومن يديرها وكيفية المشاركة.",
+      "keepChangesTitle": "هل تريد الاحتفاظ بتغييراتك؟",
+      "keepChangesDescription": "لقد عدّلت قسم «عن العملية» دون حفظ. الاحتفاظ بالتغييرات سيضعها في الصفحة التي يقرؤها المشاركون.",
+      "discardAction": "تجاهل",
+      "savingStatus": "جارٍ الحفظ…",
+      "savedStatus": "تم الحفظ"
     }
   },
   "loadingProgress": "جارٍ التحميل...",
