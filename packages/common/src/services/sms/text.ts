@@ -51,8 +51,10 @@ const chunkLine = (line: string, room: number): string[] => {
     let rest = word;
     while (rest.length > room) {
       const head = clipToUnits(rest, room);
-      pieces.push(head);
-      rest = rest.slice(head.length);
+      const take =
+        head.length > 0 ? head : String.fromCodePoint(rest.codePointAt(0)!);
+      pieces.push(take);
+      rest = rest.slice(take.length);
     }
     current = rest;
   }

@@ -105,6 +105,15 @@ describe('splitSmsBody', () => {
   });
 });
 
+describe('splitSmsBody with a character wider than the remaining room', () => {
+  it('takes the whole character instead of looping forever', () => {
+    const bodies = splitSmsBody({ lines: ['\u{1F600}\u{1F600}'], max: 10 });
+
+    expect(bodies.join('')).toContain('\u{1F600}');
+    expect(bodies.length).toBeGreaterThan(0);
+  });
+});
+
 describe('splitSmsBody with one line longer than a text', () => {
   it('given a single line of 4000 characters, then it is cut at word boundaries into numbered texts that each fit', () => {
     const line = Array.from({ length: 500 }, (_, i) => `word${i}`).join(' ');
