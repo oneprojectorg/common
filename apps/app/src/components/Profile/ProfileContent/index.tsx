@@ -327,7 +327,7 @@ export const OrganizationProfileGrid = ({
             <PostUpdate
               organization={profile}
               label={t('Post')}
-              className="rounded-lg p-4"
+              className="rounded-lg p-4 empty:hidden"
             />
           </Suspense>
         ) : null}
@@ -490,9 +490,9 @@ export const ProfileTabsMobile = ({
             <hr />
             <Suspense fallback={<Skeleton className="min-h-20 w-full" />}>
               <div className="-mx-4">
-                <Header2 className="px-4 py-2 text-label leading-normal">
+                <ProfileSectionHeading className="px-4 py-2">
                   {t('profile.postsTab')}
-                </Header2>
+                </ProfileSectionHeading>
                 <ProfileFeedProvider profile={profile}>
                   {(props) => <ProfileFeedCards {...props} />}
                 </ProfileFeedProvider>
@@ -542,6 +542,10 @@ export const ProfileTabsMobile = ({
   );
 };
 
-const ProfileSectionHeading = ({ children }: { children: ReactNode }) => (
-  <Header2 className="text-title">{children}</Header2>
-);
+const ProfileSectionHeading = ({
+  children,
+  className,
+}: {
+  children: ReactNode;
+  className?: string;
+}) => <Header2 className={cn('text-title', className)}>{children}</Header2>;
