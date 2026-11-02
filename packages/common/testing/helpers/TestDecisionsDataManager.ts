@@ -766,7 +766,6 @@ export class TestDecisionsDataManager {
       (id): id is string => typeof id === 'string' && id.length > 0,
     );
     if (validProfileIds.length > 0) {
-      // Phase profiles don't cascade; the subquery finds them before the cascade drops their rows.
       await db
         .delete(profiles)
         .where(
