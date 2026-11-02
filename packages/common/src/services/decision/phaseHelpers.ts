@@ -71,7 +71,6 @@ export const getPhaseProfileName = ({
   name,
 }: InstanceDataPhase): string => name?.trim() || phaseId;
 
-// Nothing in the database keeps phaseId unique, so check it before minting rows.
 // TODO: remove once rows stop carrying phaseId and nothing mints from instance_data.
 export const assertPhasesCanBeMinted = (
   phases: readonly InstanceDataPhase[],

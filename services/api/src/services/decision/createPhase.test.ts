@@ -241,7 +241,6 @@ describe.concurrent('createPhase', () => {
   }) => {
     const { instanceId, user, testData } = await setup(task, onTestFinished);
 
-    // The decision already holds its template's phases.
     const existing = await listPhaseIds(instanceId);
 
     for (

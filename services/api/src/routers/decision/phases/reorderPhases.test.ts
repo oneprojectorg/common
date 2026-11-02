@@ -250,7 +250,6 @@ const setupPhases = async (
   const setup = await setupPhase(task, onTestFinished);
   const instanceId = setup.phase.processInstanceId;
 
-  // Reordering lists every phase, so drop the ones the template minted.
   const minted = await listPhaseIds(instanceId);
   await Promise.all(
     minted
