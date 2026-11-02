@@ -1,3 +1,4 @@
+import type { DecisionInstanceData } from '@op/common';
 import { TestDecisionsDataManager } from '@op/common/testing';
 import { asc, db, eq } from '@op/db/client';
 import { processPhases, profiles } from '@op/db/schema';
@@ -33,6 +34,14 @@ export async function setupPhase(
     sortOrder: 0,
   });
   testData.trackProfileForCleanup(phase.profileId);
+
+  // The fixture mints a row per template phase; phase tests expect only their own.
+  const minted = await listPhaseIds(setup.instance.instance.id);
+  await Promise.all(
+    minted
+      .filter((phaseId) => phaseId !== phase.id)
+      .map((phaseId) => adminCaller.decision.deletePhase({ phaseId })),
+  );
 
   const createMemberCaller = async () => {
     const member = await testData.createMemberUser({
@@ -96,14 +105,49 @@ export const listPhaseIds = async (processInstanceId: string) =>
     })
   ).map((phase) => phase.id);
 
+export async function loadInstanceData(instanceId: string) {
+  const instance = await db.query.processInstances.findFirst({
+    where: { id: instanceId },
+  });
+
+  if (!instance) {
+    throw new Error(`Instance ${instanceId} was not created`);
+  }
+
+  return {
+    instance,
+    instanceData: instance.instanceData as DecisionInstanceData,
+  };
+}
+
+export const expectRowsMirrorPhases = (
+  rows: Awaited<ReturnType<typeof loadPhaseRows>>,
+  phases: readonly { phaseId: string; name?: string }[],
+) =>
+  expect(rows).toMatchObject(
+    phases.map((phase, sortOrder) => ({
+      sortOrder,
+      name: phase.name ?? phase.phaseId,
+      type: 'phase',
+      data: { phaseId: phase.phaseId },
+    })),
+  );
+
+export const expectNoProfileNamed = async (name: string) => {
+  const leftover = await db.query.profiles.findMany({
+    where: { name },
+    columns: { id: true },
+  });
+  expect(leftover).toHaveLength(0);
+};
+
 export const expectNothingNamed = async (name: string) => {
-  const [instances, decisionProfiles] = await Promise.all([
+  const [instances] = await Promise.all([
     db.query.processInstances.findMany({
       where: { name },
       columns: { id: true },
     }),
-    db.query.profiles.findMany({ where: { name }, columns: { id: true } }),
+    expectNoProfileNamed(name),
   ]);
   expect(instances).toHaveLength(0);
-  expect(decisionProfiles).toHaveLength(0);
 };

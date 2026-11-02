@@ -6,7 +6,6 @@ import {
   PHASE_NAME,
   createUnauthenticatedCaller,
   setupPhase,
-  listPhaseIds,
 } from '../../../test/helpers/phaseTestUtils';
 
 describe.concurrent('reorderPhases', () => {
@@ -249,13 +248,6 @@ const setupPhases = async (
 ) => {
   const setup = await setupPhase(task, onTestFinished);
   const instanceId = setup.phase.processInstanceId;
-
-  const minted = await listPhaseIds(instanceId);
-  await Promise.all(
-    minted
-      .filter((phaseId) => phaseId !== setup.phase.id)
-      .map((phaseId) => setup.adminCaller.decision.deletePhase({ phaseId })),
-  );
 
   const [vote, results] = await Promise.all(
     ['Vote', 'Results'].map((name, index) =>
