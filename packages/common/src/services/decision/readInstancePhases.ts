@@ -2,11 +2,7 @@ import { type DbClient, db as defaultDb } from '@op/db/client';
 import { logger } from '@op/logging';
 
 import { isServerFeatureEnabled } from '../../utils/featureFlags';
-import {
-  getStoredPhases,
-  loadPhaseRows,
-  loadPhaseRowsByInstance,
-} from './phaseRows';
+import { getStoredPhases, loadPhaseRowsByInstance } from './phaseRows';
 import {
   type PhaseInstanceData,
   getInstancePhases,
@@ -47,7 +43,7 @@ export const readInstancePhases = async ({
   db?: DbClient;
   fromRows?: boolean;
 }): Promise<PhaseInstanceData[]> =>
-  (await readRowPhases({ instance, db, fromRows })) ?? getBlobPhases(instance);
+  getBlobPhases(await withInstancePhases({ instance, db, fromRows }));
 
 /**
  * The instance with `instanceData.phases` replaced by {@link readInstancePhases},
@@ -61,11 +57,14 @@ export const withInstancePhases = async <T extends InstanceWithData>({
   instance: T;
   db?: DbClient;
   fromRows?: boolean;
-}): Promise<T> =>
-  replacePhases({
-    instance,
-    phases: await readRowPhases({ instance, db, fromRows }),
+}): Promise<T> => {
+  const [resolved] = await withInstancesPhases({
+    instances: [instance],
+    db,
+    fromRows,
   });
+  return resolved ?? instance;
+};
 
 /** {@link withInstancePhases} for a list: one flag check, one rows query. */
 export const withInstancesPhases = async <T extends InstanceWithData>({
@@ -127,29 +126,6 @@ export const withProfileInstancePhases = async <
       instance: profile.processInstance,
     }),
   };
-};
-
-const readRowPhases = async ({
-  instance,
-  db,
-  fromRows,
-}: {
-  instance: InstanceWithData;
-  db: DbClient;
-  fromRows?: boolean;
-}): Promise<PhaseInstanceData[] | null> => {
-  if (!(fromRows ?? (await isPhasesFromRowsEnabled()))) {
-    return null;
-  }
-
-  const rows = await loadPhaseRows({ db, processInstanceId: instance.id });
-
-  if (rows.length === 0) {
-    logger.warn(NO_ROWS_WARNING, { processInstanceIds: [instance.id] });
-    return null;
-  }
-
-  return getStoredPhases({ rows, blobPhases: getBlobPhases(instance) });
 };
 
 const getBlobPhases = (instance: InstanceWithData): PhaseInstanceData[] => [

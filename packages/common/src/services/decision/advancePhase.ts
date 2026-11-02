@@ -8,7 +8,6 @@ import {
 
 import { attachProposalsToTransition } from './attachProposalsToTransition';
 import { getProposalsForPhase } from './getProposalsForPhase';
-import { readInstancePhases } from './readInstancePhases';
 import type { DecisionInstanceData } from './schemas/instanceData';
 import type { TransitionData } from './schemas/transitionData';
 import {
@@ -19,7 +18,10 @@ import type { ExecutionContext } from './selectionPipeline/types';
 
 export interface AdvancePhaseInput {
   db: DbClient;
-  /** Pre-loaded instance row. Stale snapshots are safe — writes use optimistic locks. */
+  /**
+   * Pre-loaded instance row with its phases resolved (`withInstancePhases`).
+   * Stale snapshots are safe — writes use optimistic locks.
+   */
   instance: {
     id: string;
     instanceData: DecisionInstanceData;
@@ -31,8 +33,6 @@ export interface AdvancePhaseInput {
   transitionData?: TransitionData;
   /** Shared timestamp for all writes. Defaults to now. */
   now?: string;
-  /** Resolved before the caller's transaction opens. */
-  fromRows?: boolean;
 }
 
 export type AdvancePhaseResult =
@@ -73,11 +73,10 @@ export async function advancePhase(
     triggeredByProfileId,
     transitionData = {},
     now = new Date().toISOString(),
-    fromRows,
   } = input;
 
   const instanceId = instance.id;
-  const phases = await readInstancePhases({ instance, db, fromRows });
+  const phases = instance.instanceData.phases;
   const departingPhase = phases.find((p) => p.phaseId === fromPhaseId);
 
   if (!departingPhase) {

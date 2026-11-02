@@ -5,13 +5,11 @@ import { logger } from '@op/logging';
 
 import { CommonError } from '../../utils';
 import { buildExpectedTransitions } from './buildExpectedTransitions';
-import { withInstancePhases } from './readInstancePhases';
 
 export interface UpdateTransitionsInput {
+  /** From a save, whose blob was rebuilt from the rows it reconciled. */
   processInstance: ProcessInstance;
   db?: DbClient;
-  /** Pass it in when holding the instance lock. */
-  fromRows?: boolean;
 }
 
 export interface UpdateTransitionsResult {
@@ -32,12 +30,9 @@ export interface UpdateTransitionsResult {
 export async function updateTransitionsForProcess({
   processInstance,
   db = defaultDb,
-  fromRows,
 }: UpdateTransitionsInput): Promise<UpdateTransitionsResult> {
   try {
-    const expectedTransitions = buildExpectedTransitions(
-      await withInstancePhases({ instance: processInstance, db, fromRows }),
-    );
+    const expectedTransitions = buildExpectedTransitions(processInstance);
 
     // Get existing transitions
     const existingTransitions =

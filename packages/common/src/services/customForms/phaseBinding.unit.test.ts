@@ -49,15 +49,6 @@ const process: CustomFormProcessContext = {
   phaseIds: ['submission', 'review', 'voting'],
 };
 
-// Phases are read from the blob: the rows flag is off.
-beforeEach(() => {
-  vi.stubEnv('NEXT_PUBLIC_E2E', '');
-});
-
-afterEach(() => {
-  vi.unstubAllEnvs();
-});
-
 describe('writeWithPhaseLock', () => {
   beforeEach(() => {
     findMany.mockReset();

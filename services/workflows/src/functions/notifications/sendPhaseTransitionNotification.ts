@@ -1,7 +1,8 @@
 import {
+  getInstancePhases,
   listProcessParticipants,
-  readInstancePhases,
   resolveManualSelectionStatus,
+  withInstancePhases,
 } from '@op/common';
 import { selectEmailRecipients } from '@op/common/client';
 import { OPURLConfig } from '@op/core';
@@ -51,11 +52,12 @@ export const sendPhaseTransitionNotification = inngest.createFunction(
         return undefined;
       }
 
+      const resolved = await withInstancePhases({
+        instance: { ...row, id: processInstanceId },
+      });
       return {
-        ...row,
-        phases: await readInstancePhases({
-          instance: { id: processInstanceId, instanceData: row.instanceData },
-        }),
+        ...resolved,
+        phases: [...getInstancePhases(resolved.instanceData)],
       };
     });
 

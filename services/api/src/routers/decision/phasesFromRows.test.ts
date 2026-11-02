@@ -6,33 +6,23 @@ import {
   processDecisionsTransitions,
   revertPhase,
 } from '@op/common';
-import { TestDecisionsDataManager } from '@op/common/testing';
-import { db, eq, sql } from '@op/db/client';
+import {
+  TestDecisionsDataManager,
+  emptyBlobPhases,
+  leaveOnlyPhaseRows,
+} from '@op/common/testing';
+import { db, eq } from '@op/db/client';
 import {
   ProcessStatus,
   ProposalStatus,
   decisionProcessTransitions,
   processInstances,
-  processPhases,
-  profiles,
   proposalReviewAssignments,
   users,
 } from '@op/db/schema';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
-import { appRouter } from '..';
-import {
-  createIsolatedSession,
-  createTestContextWithSession,
-} from '../../test/supabase-utils';
-import { createCallerFactory } from '../../trpcFactory';
-
-const createCaller = createCallerFactory(appRouter);
-
-async function createAuthenticatedCaller(email: string) {
-  const { session } = await createIsolatedSession(email);
-  return createCaller(await createTestContextWithSession(session));
-}
+import { createAuthenticatedCaller } from '../../test/supabase-utils';
 
 const passAll = { version: '1.0.0' as const, blocks: [] };
 
@@ -139,40 +129,12 @@ const reviewSchema = {
   ],
 } satisfies DecisionSchemaDefinition;
 
-/** Leaves the phase rows as the only record of the decision's phases. */
-const emptyBlobPhases = (instanceId: string) =>
-  db
-    .update(processInstances)
-    .set({
-      instanceData: sql`jsonb_set(${processInstances.instanceData}, '{phases}', '[]')`,
-    })
-    .where(eq(processInstances.id, instanceId));
-
 const ROW_START = '2031-01-01T00:00:00.000Z';
 const ROW_END = '2031-02-01T00:00:00.000Z';
 
-/** Gives every row a name and dates the blob never held. */
-const rewriteRows = async (instanceId: string) => {
-  await db
-    .update(processPhases)
-    .set({
-      data: sql`${processPhases.data} || ${JSON.stringify({ startDate: ROW_START, endDate: ROW_END })}::jsonb`,
-    })
-    .where(eq(processPhases.processInstanceId, instanceId));
-  await db
-    .update(profiles)
-    .set({ name: sql`'Row ' || (${processPhases.data} ->> 'phaseId')` })
-    .from(processPhases)
-    .where(
-      sql`${profiles.id} = ${processPhases.profileId} AND ${processPhases.processInstanceId} = ${instanceId}`,
-    );
-};
-
-/** Rows rewritten, blob phases emptied: only the rows can answer. */
-const leaveOnlyRows = async (instanceId: string) => {
-  await rewriteRows(instanceId);
-  await emptyBlobPhases(instanceId);
-};
+/** Rows named and dated as the blob never was, blob phases emptied. */
+const leaveOnlyRows = (instanceId: string) =>
+  leaveOnlyPhaseRows(instanceId, { startDate: ROW_START, endDate: ROW_END });
 
 const rowPhases = (phaseIds: string[]) =>
   phaseIds.map((phaseId) => ({

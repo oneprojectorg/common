@@ -8,9 +8,13 @@ import { isLegacyInstanceData } from './isLegacyInstance';
 import type { LockedProcessInstance } from './lockProcessInstance';
 import { phaseEligiblePredicate } from './phaseEligibility';
 import { assertDecisionAdmin } from './phaseHelpers';
-import { readInstancePhases } from './readInstancePhases';
+import { withInstancePhases } from './readInstancePhases';
 import { resolveManualSelectionStatus } from './resolveManualSelectionStatus';
-import { type PhaseInstanceData, isLastPhase } from './schemas/instanceData';
+import {
+  type PhaseInstanceData,
+  getInstancePhases,
+  isLastPhase,
+} from './schemas/instanceData';
 
 export type PhaseAdvancement =
   | {
@@ -74,11 +78,12 @@ export async function resolvePhaseAdvancement({
     return { ok: false, reason: NO_PHASE_TO_ADVANCE_INTO };
   }
 
-  const phases = await readInstancePhases({
+  const resolved = await withInstancePhases({
     instance,
     db: dbClient,
     fromRows,
   });
+  const phases = getInstancePhases(resolved.instanceData);
   const currentIndex = phases.findIndex((p) => p.phaseId === currentStateId);
   const currentPhase = phases[currentIndex];
   const previousPhase = phases[currentIndex - 1];
@@ -104,9 +109,12 @@ export async function resolvePhaseAdvancement({
       columns: { id: true, toStateId: true },
     }),
     resolveManualSelectionStatus({
-      instance: { id: instance.id, instanceData, currentStateId },
+      instance: {
+        id: instance.id,
+        instanceData: resolved.instanceData,
+        currentStateId,
+      },
       dbClient,
-      fromRows,
     }),
   ]);
 

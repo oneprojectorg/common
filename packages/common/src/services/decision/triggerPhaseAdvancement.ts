@@ -13,10 +13,7 @@ import {
 import { assertProfileAccess, assertUserByAuthId } from '../assert';
 import { advancePhase } from './advancePhase';
 import { onPhaseAdvanced } from './onPhaseAdvanced';
-import {
-  isPhasesFromRowsEnabled,
-  readInstancePhases,
-} from './readInstancePhases';
+import { withInstancePhases } from './readInstancePhases';
 import type { DecisionInstanceData } from './schemas/instanceData';
 
 export interface TriggerPhaseAdvancementInput {
@@ -77,9 +74,9 @@ export async function triggerPhaseAdvancement({
     throw new ValidationError('Instance must be published');
   }
 
-  const instanceData = instance.instanceData as DecisionInstanceData;
-  const fromRows = await isPhasesFromRowsEnabled();
-  const phases = await readInstancePhases({ instance, fromRows });
+  const instanceData = (await withInstancePhases({ instance }))
+    .instanceData as DecisionInstanceData;
+  const phases = instanceData.phases;
 
   if (phases.length === 0) {
     throw new CommonError('Instance has no phases defined');
@@ -120,7 +117,6 @@ export async function triggerPhaseAdvancement({
       toPhaseId,
       triggeredByProfileId: dbUser.profileId,
       transitionData: { manual: true },
-      fromRows,
     });
 
     if (result.conflict) {

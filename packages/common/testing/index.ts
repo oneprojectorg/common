@@ -12,6 +12,11 @@ export {
 } from './supabase';
 
 export { TestDecisionsDataManager } from './helpers/TestDecisionsDataManager';
+export { forceServerFlags } from './helpers/featureFlags';
+export {
+  emptyBlobPhases,
+  leaveOnlyPhaseRows,
+} from './helpers/phaseRowFixtures';
 export { TestJoinProfileRequestDataManager } from './helpers/TestJoinProfileRequestDataManager';
 export { TestOrganizationDataManager } from './helpers/TestOrganizationDataManager';
 export { TestPhoneAuthDataManager } from './helpers/TestPhoneAuthDataManager';

@@ -1,13 +1,15 @@
 import { InngestTestEngine } from '@inngest/test';
 import type { DecisionSchemaDefinition } from '@op/common';
-import { TestDecisionsDataManager } from '@op/common/testing';
-import { db, eq, sql } from '@op/db/client';
+import {
+  TestDecisionsDataManager,
+  forceServerFlags,
+  leaveOnlyPhaseRows,
+} from '@op/common/testing';
+import { db, eq } from '@op/db/client';
 import {
   ProcessStatus,
   decisionsVoteSubmissions,
   processInstances,
-  processPhases,
-  profiles,
   users,
 } from '@op/db/schema';
 import { Events } from '@op/events';
@@ -40,35 +42,6 @@ const reviewSchema = {
   ],
 } satisfies DecisionSchemaDefinition;
 
-const forceFlag = (on: boolean) =>
-  vi.stubEnv('NEXT_PUBLIC_E2E', on ? 'true' : '');
-
-/** Renames every row and empties the blob phases: only the rows can answer. */
-const leaveOnlyRows = async (
-  instanceId: string,
-  rowData: Record<string, unknown> = {},
-) => {
-  await db
-    .update(processPhases)
-    .set({
-      data: sql`${processPhases.data} || ${JSON.stringify(rowData)}::jsonb`,
-    })
-    .where(eq(processPhases.processInstanceId, instanceId));
-  await db
-    .update(profiles)
-    .set({ name: sql`'Row ' || (${processPhases.data} ->> 'phaseId')` })
-    .from(processPhases)
-    .where(
-      sql`${profiles.id} = ${processPhases.profileId} AND ${processPhases.processInstanceId} = ${instanceId}`,
-    );
-  await db
-    .update(processInstances)
-    .set({
-      instanceData: sql`jsonb_set(${processInstances.instanceData}, '{phases}', '[]')`,
-    })
-    .where(eq(processInstances.id, instanceId));
-};
-
 const createPublishedInstance = async (
   testData: TestDecisionsDataManager,
   processSchema?: typeof reviewSchema,
@@ -97,8 +70,8 @@ describe.each([
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
     const { instanceId } = await createPublishedInstance(testData);
-    await leaveOnlyRows(instanceId);
-    forceFlag(on);
+    await leaveOnlyPhaseRows(instanceId);
+    forceServerFlags(on);
 
     const { result } = await new InngestTestEngine({
       function: sendPhaseTransitionNotification,
@@ -149,8 +122,8 @@ describe.each([
     if (!vote) {
       throw new Error('Failed to insert the vote');
     }
-    await leaveOnlyRows(instanceId);
-    forceFlag(on);
+    await leaveOnlyPhaseRows(instanceId);
+    forceServerFlags(on);
 
     const { result } = await new InngestTestEngine({
       function: sendVoteSubmittedNotification,
@@ -182,10 +155,10 @@ describe.each([
       .update(processInstances)
       .set({ currentStateId: 'review' })
       .where(eq(processInstances.id, instanceId));
-    await leaveOnlyRows(instanceId, {
+    await leaveOnlyPhaseRows(instanceId, {
       endDate: new Date(midnightUtc + 2.5 * MS_PER_DAY).toISOString(),
     });
-    forceFlag(on);
+    forceServerFlags(on);
 
     const { result } = await new InngestTestEngine({
       function: sendReviewPhaseEndingReminders,

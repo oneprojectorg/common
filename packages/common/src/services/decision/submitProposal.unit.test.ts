@@ -131,15 +131,6 @@ function draftProposal(proposalData: Record<string, unknown>) {
   };
 }
 
-// Phases are read from the blob: the rows flag is off.
-beforeEach(() => {
-  vi.stubEnv('NEXT_PUBLIC_E2E', '');
-});
-
-afterEach(() => {
-  vi.unstubAllEnvs();
-});
-
 describe('submitProposal — location/boundary enforcement', () => {
   beforeEach(() => {
     vi.clearAllMocks();
