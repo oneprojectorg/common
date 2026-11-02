@@ -81,15 +81,17 @@ export const getInstance = async ({ instanceId, user }: GetInstanceInput) => {
       throw new NotFoundError('Process instance', instanceId);
     }
 
-    const instance = await withInstancePhases({ instance: cached });
-
-    // Assert read access and reuse the profile-level roles it resolves.
-    const profileRoles = await assertInstanceProfileAccess({
-      user,
-      instance,
-      profilePermissions: { decisions: permission.READ },
-      orgFallbackPermissions: { decisions: permission.READ },
-    });
+    // The phase read runs beside the access assert, which also yields the
+    // profile-level roles; a denied caller never sees the phases.
+    const [instance, profileRoles] = await Promise.all([
+      withInstancePhases({ instance: cached }),
+      assertInstanceProfileAccess({
+        user,
+        instance: cached,
+        profilePermissions: { decisions: permission.READ },
+        orgFallbackPermissions: { decisions: permission.READ },
+      }),
+    ]);
 
     // Resolve access capabilities for the current user.
     // profileId is guaranteed non-null here: assertInstanceProfileAccess throws above if null.

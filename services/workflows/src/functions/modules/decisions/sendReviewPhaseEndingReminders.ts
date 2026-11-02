@@ -4,7 +4,7 @@ import {
   withInstancesPhases,
 } from '@op/common';
 import { db } from '@op/db/client';
-import { ProcessStatus, processPhases } from '@op/db/schema';
+import { ProcessStatus, processPhases, profiles } from '@op/db/schema';
 import { Events, inngest } from '@op/events';
 import { sql } from 'drizzle-orm';
 
@@ -45,7 +45,9 @@ export const sendReviewPhaseEndingReminders = inngest.createFunction(
             )) OR EXISTS (
               SELECT 1
               FROM ${processPhases}
+              JOIN ${profiles} ON ${profiles.id} = ${processPhases.profileId}
               WHERE ${processPhases.processInstanceId} = ${table.id}
+                AND coalesce(${processPhases.data} ->> 'phaseId', ${profiles.slug}) = ${table.currentStateId}
                 AND (${processPhases.data} -> 'rules' -> 'reviews' ->> 'submit')::boolean IS TRUE
             ))`,
         },
