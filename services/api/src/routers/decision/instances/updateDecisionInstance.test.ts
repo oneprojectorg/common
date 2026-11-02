@@ -773,11 +773,7 @@ describe.concurrent('updateDecisionInstance', () => {
       },
     ]);
 
-    const updated = await db.query.processInstances.findFirst({
-      where: { id: instanceId },
-    });
-    const instanceData = updated?.instanceData as DecisionInstanceData;
-    expect(instanceData.phases).toEqual(
+    expect(await loadBlobPhases(instanceId)).toEqual(
       synced.map(({ data, name }) => ({
         ...(isRecord(data) ? data : {}),
         name,
