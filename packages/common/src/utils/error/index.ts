@@ -124,5 +124,4 @@ export class NotImplementedError extends CommonError {
   }
 }
 
-/** A ballot cannot be priced because one proposal's cost is filled in but unreadable; the message names it. */
 export class BallotCostError extends ValidationError {}
