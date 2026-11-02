@@ -215,16 +215,16 @@ describe.concurrent('duplicateInstance', () => {
 
   it.for([
     {
-      label: 'more phases than a decision can hold',
-      message: `A decision can have at most ${MAX_PHASES_PER_DECISION} phases`,
-      phases: Array.from({ length: MAX_PHASES_PER_DECISION + 1 }, (_, i) => ({
-        phaseId: `phase-${i}`,
-        name: `Phase ${i}`,
-      })),
+      label: 'a phase with no id',
+      message: /There is a phase with no id/,
+      phases: [
+        { phaseId: '', name: 'Submission' },
+        { phaseId: 'voting', name: 'Voting' },
+      ],
     },
     {
       label: 'two phases with one id',
-      message: /Two phases share the id "submission"/,
+      message: /There are two phases with the id "submission"/,
       phases: [
         { phaseId: 'submission', name: 'Submission' },
         { phaseId: 'submission', name: 'Voting' },
