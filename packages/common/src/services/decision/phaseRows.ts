@@ -80,9 +80,9 @@ export const getStoredPhases = ({
 
 /**
  * Locks the decision, hands its phase rows to `mutate`, then mirrors the rows
- * onto `instance_data.phases` so the builder's next save lists them. The blob
- * phases without a row are noted before the write, so a deleted row does not
- * come back through the blob.
+ * onto `instance_data.phases` so the builder's next save lists them. The
+ * mirror places the blob phases by their index in the whole blob, and drops a
+ * phase whose row `mutate` deleted so it does not come back through the blob.
  */
 export const mutatePhaseRows = async <T>({
   db,
@@ -102,14 +102,22 @@ export const mutatePhaseRows = async <T>({
   });
   const rows = await loadPhaseRows({ db, processInstanceId });
   const rowPhaseIds = new Set(rows.map(phaseIdOf));
-  const rowlessPhases = getInstancePhases(locked.instanceData).filter(
+  const blobPhases = getInstancePhases(locked.instanceData);
+  const rowlessPhases = blobPhases.filter(
     ({ phaseId }) => !rowPhaseIds.has(phaseId),
   );
 
   const result = await mutate({ rows, rowlessPhases });
 
   const written = await loadPhaseRows({ db, processInstanceId });
-  const phases = getStoredPhases({ rows: written, blobPhases: rowlessPhases });
+  const writtenPhaseIds = new Set(written.map(phaseIdOf));
+  const phases = getStoredPhases({
+    rows: written,
+    blobPhases: blobPhases.filter(
+      ({ phaseId }) =>
+        writtenPhaseIds.has(phaseId) || !rowPhaseIds.has(phaseId),
+    ),
+  });
   await db
     .update(processInstances)
     .set({

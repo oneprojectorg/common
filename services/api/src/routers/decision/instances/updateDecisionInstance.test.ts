@@ -3,7 +3,6 @@ import {
   MAX_PHASES_PER_DECISION,
   type RubricTemplateSchema,
   ValidationError,
-  getInstancePhases,
   updateDecisionInstance,
 } from '@op/common';
 import { MAX_PHASE_NAME_LENGTH } from '@op/common/client';
@@ -19,7 +18,10 @@ import {
   expectFailsAccessTierGate,
   expectPassesAccessTierGate,
 } from '../../../test/helpers/gating/decision';
-import { loadPhaseRows } from '../../../test/helpers/phaseTestUtils';
+import {
+  loadBlobPhases,
+  loadPhaseRows,
+} from '../../../test/helpers/phaseTestUtils';
 import {
   createIsolatedSession,
   createTestContextWithSession,
@@ -45,14 +47,6 @@ async function getFirstPhaseId(instanceId: string) {
   }
 
   return phaseId;
-}
-
-async function loadBlobPhases(instanceId: string) {
-  const instance = await db.query.processInstances.findFirst({
-    where: { id: instanceId },
-    columns: { instanceData: true },
-  });
-  return getInstancePhases(instance?.instanceData);
 }
 
 // Counts the backends queued behind `pid`, directly or behind another waiter.
