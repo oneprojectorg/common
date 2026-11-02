@@ -3,8 +3,13 @@ import {
   createDecisionBoundary,
   ensureProposalCategoryTerms,
 } from '@op/common/testing/data';
-import { db, inArray } from '@op/db/client';
-import { ProcessStatus, ProposalStatus, taxonomyTerms } from '@op/db/schema';
+import { db, eq, inArray } from '@op/db/client';
+import {
+  ProcessStatus,
+  ProposalStatus,
+  proposals,
+  taxonomyTerms,
+} from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
 import { affirmVoterAttestation, resolveVoterAddress } from '../voterEnrolment';
@@ -40,6 +45,41 @@ describe.concurrent('getSmsDecisionDescription', () => {
       votingOpen: false,
       proposalCount: 1,
     });
+  });
+
+  it('given a proposal without a short code, planted by raw update, then the count excludes it because SMS cannot name it', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+      status: ProcessStatus.PUBLISHED,
+    });
+    await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: setup.instance.instance.id,
+      proposalData: { title: `Coded ${task.id}` },
+      status: ProposalStatus.SUBMITTED,
+    });
+    const uncoded = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: setup.instance.instance.id,
+      proposalData: { title: `Uncoded ${task.id}` },
+      status: ProposalStatus.SUBMITTED,
+    });
+    await db
+      .update(proposals)
+      .set({ shortCode: null })
+      .where(eq(proposals.id, uncoded.id));
+
+    await expect(
+      getSmsDecisionDescription({
+        authUserId: setup.user.id,
+        decisionSlug: setup.instance.slug,
+      }),
+    ).resolves.toMatchObject({ proposalCount: 1 });
   });
 
   it('given a decision that is not published, when a member asks for it by slug, then it is not found', async ({

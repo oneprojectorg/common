@@ -613,7 +613,7 @@ export const proposals: SmsCommandHandler = async (context) => {
       listSmsBallotPage({
         authUserId: account.authUserId,
         instanceId: decision.instanceId,
-        phoneNumberId: context.line?.id ?? null,
+        phoneNumberId: context.line?.id,
       }),
     ),
   );
