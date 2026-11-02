@@ -1519,8 +1519,22 @@ export const change: SmsCommandHandler = async (context) => {
       );
     case 'voting_closed': {
       const decision = await step.run('describe-ballot-decision', () =>
-        describeEnrolmentDecision({ instanceId }),
+        swallowUnreadable(() =>
+          describeEnrolmentDecision({
+            instanceId,
+            authUserId: account.authUserId,
+          }),
+        ),
       );
+      if (!decision) {
+        return deliverAll(
+          deliver,
+          'send-ballot-unavailable',
+          'Ballot unavailable reply',
+          [SMS_BALLOT_UNAVAILABLE_MESSAGE],
+          'decision not found',
+        );
+      }
       return deliverAll(
         deliver,
         'send-voting-closed',

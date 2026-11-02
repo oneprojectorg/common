@@ -56,6 +56,7 @@ const NUMBERS = {
   agreeRemoved: '+15005550012',
   pickStrangerEnrolment: '+15005550013',
   pickOwnerOnly: '+15005550014',
+  changeDeleted: '+15005550016',
   enrolStart: '+15005550070',
   enrolAddress: '+15005550071',
   enrolNotFound: '+15005550072',
@@ -115,7 +116,7 @@ const NUMBERS = {
   agreeRewritten: '+15005550027',
   pickDeleted: '+15005550028',
   pickMisconfigured: '+15005550029',
-  pickRepriced: '+15005550030',
+  pickRepriced: '+15005550015',
 } as const;
 
 const LINES = {
@@ -126,6 +127,7 @@ const LINES = {
   agreeRemoved: '+16145550181',
   agreeClosed: '+16145550188',
   pickStrangerEnrolment: '+16145550182',
+  changeDeleted: '+16145550183',
   enrolStart: '+16145550133',
   enrolAddress: '+16145550134',
   enrolNotFound: '+16145550135',
@@ -2991,6 +2993,39 @@ describe('handleSMSCommand changing a cast ballot', () => {
         'Text DONE to review, or a code to add.',
       ].join('\n'),
     ]);
+  });
+
+  it('given a pick whose proposal was deleted after the ballot was cast, when the member texts CHANGE, then the ballot reopens without the deleted pick', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsCommandFixture(task.id, onTestFinished);
+    const name = `Change Deleted ${task.id}`;
+    const { member, instanceId } = await seed(fixture, {
+      phone: NUMBERS.changeDeleted,
+      line: LINES.changeDeleted,
+      name,
+      edit: true,
+    });
+    await text(NUMBERS.changeDeleted, LINES.changeDeleted, '101 102');
+    await keyword(NUMBERS.changeDeleted, LINES.changeDeleted, 'submit');
+    await fixture.deleteProposal({ instanceId, owner: member, code: 102 });
+
+    const { result } = await keyword(
+      NUMBERS.changeDeleted,
+      LINES.changeDeleted,
+      'change',
+    );
+
+    expect(result).toEqual({ message: 'ballot reopened' });
+    expect(recordedSms.at(-1)?.body).toBe(
+      [
+        `Your "${name}" ballot:`,
+        '1. 101 Crosswalk lighting $85,000.',
+        '$85,000 allocated, $915,000 unspent.',
+        'Text DONE to review, or a code to add.',
+      ].join('\n'),
+    );
   });
 
   it('given a reopened ballot, when the member removes a pick and texts SUBMIT, then the cast ballot is revised in place and a revised event is sent', async ({

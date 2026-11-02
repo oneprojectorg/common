@@ -491,6 +491,7 @@ export async function reopenSmsBallot(
 
   const decision = await describeEnrolmentDecision({
     instanceId: key.instanceId,
+    authUserId: key.authUserId,
   });
 
   if (!decision.votingOpen) {
@@ -513,9 +514,14 @@ export async function reopenSmsBallot(
     processInstanceId: key.instanceId,
     authUserId: key.authUserId,
   });
+  const castIds = (cast.voteData.selections ?? []).map(
+    (selection) => selection.proposalId,
+  );
+  const liveRows = await loadPickRows(castIds);
+  const live = new Set(liveRows.map((row) => row.id));
   await savePicks(
     draft.id,
-    (cast.voteData.selections ?? []).map((selection) => selection.proposalId),
+    castIds.filter((id) => live.has(id)),
   );
 
   return { status: 'reopened', summary: await summarizeSmsBallot(key) };
