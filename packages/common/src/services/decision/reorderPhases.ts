@@ -4,7 +4,7 @@ import type { User } from '@op/supabase/lib';
 
 import { NotFoundError, ValidationError } from '../../utils';
 import { assertDecisionAdmin } from './phaseHelpers';
-import { mutatePhaseRows } from './phaseRows';
+import { mutatePhases } from './phaseMirror';
 
 export interface PhasePlacement {
   phaseId: string;
@@ -51,10 +51,10 @@ export const reorderPhases = async ({
   }
 
   return db.transaction(async (tx) => {
-    const { rows } = await mutatePhaseRows({
+    const { phases: reordered } = await mutatePhases({
       db: tx,
       processInstanceId,
-      mutate: async ({ rows: stored }) => {
+      mutate: async ({ phases: stored }) => {
         if (
           stored.length !== requestedIds.size ||
           !stored.every((phase) => requestedIds.has(phase.id))
@@ -82,6 +82,6 @@ export const reorderPhases = async ({
         }
       },
     });
-    return rows;
+    return reordered;
   });
 };

@@ -11,7 +11,7 @@ import {
   assertPhaseSettings,
   insertPhase,
 } from './phaseHelpers';
-import { mutatePhaseRows } from './phaseRows';
+import { mutatePhases } from './phaseMirror';
 
 export const createPhase = async ({
   user,
@@ -42,11 +42,11 @@ export const createPhase = async ({
   assertPhaseSettings({ data: phaseData, phaseLabel: name });
 
   return db.transaction(async (tx) => {
-    const { result } = await mutatePhaseRows({
+    const { result } = await mutatePhases({
       db: tx,
       processInstanceId,
-      mutate: ({ rows, rowlessPhases }) => {
-        assertPhaseCountFits(rows.length + rowlessPhases.length + 1);
+      mutate: ({ phases, unmintedPhases }) => {
+        assertPhaseCountFits(phases.length + unmintedPhases.length + 1);
         return insertPhase({
           tx,
           processInstanceId,
