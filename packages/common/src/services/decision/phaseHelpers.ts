@@ -104,7 +104,6 @@ export const listPhases = async ({
   }));
 };
 
-// `existing` must be loaded under the instance lock.
 export const reconcilePhases = async ({
   db,
   processInstanceId,
