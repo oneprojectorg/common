@@ -82,7 +82,7 @@ export const submitProposal = async ({
 
   // Check if proposals are allowed in current phase
   const { allowed, phaseName } = checkProposalsAllowed(
-    await readInstancePhases({ instance }),
+    await readInstancePhases({ db, processInstanceId: instance.id }),
     currentPhaseId,
   );
 

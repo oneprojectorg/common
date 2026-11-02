@@ -8,13 +8,9 @@ import { isLegacyInstanceData } from './isLegacyInstance';
 import type { LockedProcessInstance } from './lockProcessInstance';
 import { phaseEligiblePredicate } from './phaseEligibility';
 import { assertDecisionAdmin } from './phaseHelpers';
-import { isPhasesResolved, withInstancePhases } from './readInstancePhases';
+import { readInstancePhases } from './readInstancePhases';
 import { resolveManualSelectionStatus } from './resolveManualSelectionStatus';
-import {
-  type PhaseInstanceData,
-  getInstancePhases,
-  isLastPhase,
-} from './schemas/instanceData';
+import { type PhaseInstanceData, isLastPhase } from './schemas/instanceData';
 
 export type PhaseAdvancement =
   | {
@@ -58,26 +54,18 @@ export async function assertProposalAdmin({
 export async function resolvePhaseAdvancement({
   dbClient,
   instance,
-  fromRows,
+  phases,
 }: {
   dbClient: DbClient;
   instance: AdvancementInstance;
-  fromRows?: boolean;
+  phases: readonly PhaseInstanceData[];
 }): Promise<PhaseAdvancement> {
-  const { currentStateId, instanceData } = instance;
+  const { currentStateId } = instance;
 
-  if (
-    instance.status !== ProcessStatus.PUBLISHED ||
-    !currentStateId ||
-    isLegacyInstanceData(instanceData)
-  ) {
+  if (!currentStateId || !hasPhaseToAdvanceInto(instance)) {
     return { ok: false, reason: NO_PHASE_TO_ADVANCE_INTO };
   }
 
-  const resolved = isPhasesResolved(instance)
-    ? instance
-    : await withInstancePhases({ instance, db: dbClient, fromRows });
-  const phases = getInstancePhases(resolved.instanceData);
   const currentIndex = phases.findIndex((p) => p.phaseId === currentStateId);
   const currentPhase = phases[currentIndex];
   const previousPhase = phases[currentIndex - 1];
@@ -102,7 +90,7 @@ export async function resolvePhaseAdvancement({
       orderBy: { transitionedAt: 'desc' },
       columns: { id: true, toStateId: true },
     }),
-    resolveManualSelectionStatus({ instance: resolved, dbClient }),
+    resolveManualSelectionStatus({ instance, phases, dbClient }),
   ]);
 
   if (latestTransition?.toStateId !== currentStateId) {
@@ -128,23 +116,29 @@ export async function resolvePhaseAdvancement({
 /**
  * {@link resolvePhaseAdvancement} for one proposal, which must also be
  * phase-eligible (not deleted, draft, rejected or superseded) and not already
- * in the phase.
+ * in the phase. Reads the phase rows on `dbClient`: inside a transaction, pass
+ * its `tx` after taking the instance lock.
  */
 export async function resolveAdvancement({
   dbClient,
   instance,
   proposalId,
-  fromRows,
 }: {
   dbClient: DbClient;
   instance: AdvancementInstance;
   proposalId: string;
-  fromRows?: boolean;
 }): Promise<PhaseAdvancement> {
+  if (!hasPhaseToAdvanceInto(instance)) {
+    return { ok: false, reason: NO_PHASE_TO_ADVANCE_INTO };
+  }
+
   const advancement = await resolvePhaseAdvancement({
     dbClient,
     instance,
-    fromRows,
+    phases: await readInstancePhases({
+      db: dbClient,
+      processInstanceId: instance.id,
+    }),
   });
   if (!advancement.ok) {
     return advancement;
@@ -186,3 +180,12 @@ export async function resolveAdvancement({
 
   return advancement;
 }
+
+const hasPhaseToAdvanceInto = ({
+  status,
+  currentStateId,
+  instanceData,
+}: AdvancementInstance): boolean =>
+  status === ProcessStatus.PUBLISHED &&
+  Boolean(currentStateId) &&
+  !isLegacyInstanceData(instanceData);

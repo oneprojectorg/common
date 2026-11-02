@@ -49,7 +49,7 @@ export async function getVotingProgress({
           })
         : false,
       getVoterProfileIds({ processInstanceId }),
-      readInstancePhases({ instance }),
+      readInstancePhases({ db, processInstanceId: instance.id }),
     ]);
 
   // Public voting admits every voter; otherwise a voter who lost the vote

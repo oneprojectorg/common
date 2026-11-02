@@ -9,7 +9,10 @@ import { db } from '@op/db/client';
 
 import { ValidationError } from '../../utils';
 import { assertVoterCostField } from './assertVoterCostField';
-import type { DecisionInstanceData } from './schemas/instanceData';
+import type {
+  DecisionInstanceData,
+  PhaseInstanceData,
+} from './schemas/instanceData';
 import type { ProposalTemplateSchema } from './types';
 
 const PROCESS_ID = 'process-1';
@@ -31,23 +34,27 @@ const dotsTemplate = template({
   cost: { type: 'number', 'x-unit': { kind: 'custom', label: 'dots' } },
 });
 
-const instanceData = ({
+// The caps ride on `phases`; the blob's phases stay empty so a read of them
+// finds no cap.
+const costFieldInput = ({
   proposalTemplate,
   voting,
 }: {
   proposalTemplate?: ProposalTemplateSchema;
   voting?: { voterBudget?: number; voterCostField?: string };
-}): DecisionInstanceData =>
-  ({
+}): { phases: PhaseInstanceData[]; instanceData: DecisionInstanceData } => ({
+  phases: [
+    { phaseId: 'submission', rules: { proposals: { submit: true } } },
+    {
+      phaseId: 'voting',
+      rules: { voting: { submit: true, maxVotesPerMember: 3, ...voting } },
+    },
+  ],
+  instanceData: {
     ...(proposalTemplate ? { proposalTemplate } : {}),
-    phases: [
-      { phaseId: 'submission', rules: { proposals: { submit: true } } },
-      {
-        phaseId: 'voting',
-        rules: { voting: { submit: true, maxVotesPerMember: 3, ...voting } },
-      },
-    ],
-  }) as DecisionInstanceData;
+    phases: [],
+  },
+});
 
 describe('assertVoterCostField', () => {
   beforeEach(() => {
@@ -57,7 +64,7 @@ describe('assertVoterCostField', () => {
   it('accepts a cap on the default budget field', async () => {
     await expect(
       assertVoterCostField({
-        instanceData: instanceData({
+        ...costFieldInput({
           proposalTemplate: budgetTemplate,
           voting: { voterBudget: 5000 },
         }),
@@ -69,7 +76,7 @@ describe('assertVoterCostField', () => {
   it('accepts a cap on a numeric field the rules name', async () => {
     await expect(
       assertVoterCostField({
-        instanceData: instanceData({
+        ...costFieldInput({
           proposalTemplate: dotsTemplate,
           voting: { voterBudget: 10, voterCostField: 'cost' },
         }),
@@ -81,7 +88,7 @@ describe('assertVoterCostField', () => {
   it('rejects a cap whose cost field is missing from the template', async () => {
     await expect(
       assertVoterCostField({
-        instanceData: instanceData({
+        ...costFieldInput({
           proposalTemplate: budgetTemplate,
           voting: { voterBudget: 10, voterCostField: 'cost' },
         }),
@@ -93,7 +100,7 @@ describe('assertVoterCostField', () => {
   it('rejects a cap on a numeric field that declares no unit', async () => {
     await expect(
       assertVoterCostField({
-        instanceData: instanceData({
+        ...costFieldInput({
           proposalTemplate: template({ cost: { type: 'number' } }),
           voting: { voterBudget: 10, voterCostField: 'cost' },
         }),
@@ -105,7 +112,7 @@ describe('assertVoterCostField', () => {
   it('rejects a default-field cap when the template collects no budget', async () => {
     await expect(
       assertVoterCostField({
-        instanceData: instanceData({
+        ...costFieldInput({
           proposalTemplate: template({}),
           voting: { voterBudget: 5000 },
         }),
@@ -121,7 +128,7 @@ describe('assertVoterCostField', () => {
 
     await expect(
       assertVoterCostField({
-        instanceData: instanceData({ voting: { voterBudget: 5000 } }),
+        ...costFieldInput({ voting: { voterBudget: 5000 } }),
         processId: PROCESS_ID,
       }),
     ).resolves.toBeUndefined();
@@ -129,7 +136,7 @@ describe('assertVoterCostField', () => {
 
   it('does not read the process schema when no phase carries a cap', async () => {
     await assertVoterCostField({
-      instanceData: instanceData({ proposalTemplate: template({}) }),
+      ...costFieldInput({ proposalTemplate: template({}) }),
       processId: PROCESS_ID,
     });
 

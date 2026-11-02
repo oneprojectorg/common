@@ -1,4 +1,4 @@
-import { createProposal } from '@op/common/testing/data';
+import { createProposal, insertPhaseRows } from '@op/common/testing/data';
 import {
   EntityType,
   ProcessStatus,
@@ -404,6 +404,11 @@ async function createProcessAndInstance({
   if (!instance) {
     throw new Error('Failed to create process instance');
   }
+
+  await insertPhaseRows({
+    processInstanceId: instance.id,
+    phases: instanceData.phases,
+  });
 
   const [profileUser] = await db
     .insert(profileUsers)

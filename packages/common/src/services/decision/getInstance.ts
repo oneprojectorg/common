@@ -14,7 +14,7 @@ import {
 import { getCachedInstance } from './getCachedInstance';
 import type { DecisionRolePermissions } from './permissions';
 import { fromDecisionBitField } from './permissions';
-import { withInstancePhases } from './readInstancePhases';
+import { readInstancePhases } from './readInstancePhases';
 import { resolveManualSelectionStatus } from './resolveManualSelectionStatus';
 import type { DecisionInstanceData } from './schemas/instanceData';
 
@@ -75,17 +75,19 @@ export const getInstance = async ({ instanceId, user }: GetInstanceInput) => {
   try {
     // Cached and viewer-independent; the access check + per-user access bits
     // below run on every call, outside the cache.
-    const cached = await getCachedInstance(instanceId);
+    const instance = await getCachedInstance(instanceId);
 
-    if (!cached) {
+    if (!instance) {
       throw new NotFoundError('Process instance', instanceId);
     }
 
-    const [instance, profileRoles] = await Promise.all([
-      withInstancePhases({ instance: cached }),
+    // The phase read runs beside the access assert, which also yields the
+    // profile-level roles; a denied caller never sees the phases.
+    const [phases, profileRoles] = await Promise.all([
+      readInstancePhases({ db, processInstanceId: instanceId }),
       assertInstanceProfileAccess({
         user,
-        instance: cached,
+        instance,
         profilePermissions: { decisions: permission.READ },
         orgFallbackPermissions: { decisions: permission.READ },
       }),
@@ -107,20 +109,21 @@ export const getInstance = async ({ instanceId, user }: GetInstanceInput) => {
 
     // Filter budget from phase settings if hideBudget is true
     const instanceData = instance.instanceData as DecisionInstanceData;
-    const filteredInstanceData = instanceData.config?.hideBudget
-      ? {
-          ...instanceData,
-          phases: instanceData.phases.map((phase) => ({
+    const filteredInstanceData: DecisionInstanceData = {
+      ...instanceData,
+      phases: instanceData.config?.hideBudget
+        ? phases.map((phase) => ({
             ...phase,
             settings: phase.settings
               ? { ...phase.settings, budget: undefined }
               : phase.settings,
-          })),
-        }
-      : instanceData;
+          }))
+        : phases,
+    };
 
     const manualSelectionStatus = await resolveManualSelectionStatus({
       instance,
+      phases,
     });
 
     return {

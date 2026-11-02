@@ -87,7 +87,8 @@ export const updateProposal = async ({
 
   // Reject updates when the instance is in the final (results) phase
   const instancePhases = await readInstancePhases({
-    instance: processInstance,
+    db,
+    processInstanceId: processInstance.id,
   });
   if (isLastPhase(processInstance.currentStateId, instancePhases)) {
     throw new ValidationError(

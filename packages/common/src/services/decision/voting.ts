@@ -22,11 +22,11 @@ import { assertProfileAccess } from '../assert';
 import { getFieldUnit } from './fieldUnit';
 import { type ProposalCosts, getProposalCosts } from './getProposalCosts';
 import { decisionPermission } from './permissions';
-import { withInstancePhases } from './readInstancePhases';
+import { readInstancePhases } from './readInstancePhases';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
 import { processDecisionProcessSchema } from './schemaRegistry';
 import { validateVoteBudget, validateVoteSelection } from './schemaValidators';
-import type { DecisionInstanceData } from './schemas/instanceData';
+import type { PhaseInstanceData } from './schemas/instanceData';
 import type { ProposalTemplateSchema } from './types';
 import {
   getVoterCostField,
@@ -48,23 +48,18 @@ interface PhaseConfig {
 }
 
 /** Extract voting/proposal rules for the current phase. */
-function getCurrentPhaseConfig(processInstance: {
-  instanceData: unknown;
+function getCurrentPhaseConfig({
+  phases,
+  currentStateId,
+}: {
+  phases: readonly PhaseInstanceData[];
   currentStateId: string | null;
 }): PhaseConfig | undefined {
-  const instanceData = processInstance.instanceData as DecisionInstanceData;
-  const currentPhaseId = processInstance.currentStateId;
-
-  if (!currentPhaseId) {
+  if (!currentStateId) {
     return undefined;
   }
 
-  const currentPhase = instanceData.phases.find(
-    (p) =>
-      p.phaseId === currentPhaseId ||
-      // @ts-expect-error  Remove p.stateId in a migration before undoing p.stateId
-      p.stateId === currentPhaseId,
-  );
+  const currentPhase = phases.find((p) => p.phaseId === currentStateId);
 
   if (!currentPhase) {
     return undefined;
@@ -189,7 +184,10 @@ async function getVotingInstance(processInstanceId: string) {
     throw new NotFoundError('Process instance', processInstanceId);
   }
 
-  return withInstancePhases({ instance: processInstance });
+  return {
+    ...processInstance,
+    phases: await readInstancePhases({ db, processInstanceId }),
+  };
 }
 
 // Runs both caps so the voter sees every problem at once.

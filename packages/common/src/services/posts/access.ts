@@ -180,7 +180,7 @@ const assertPhaseAllowsComments = async (
   }
 
   const allowed = areCommentsAllowed({
-    phases: await readInstancePhases({ instance }),
+    phases: await readInstancePhases({ db, processInstanceId: instance.id }),
     currentPhaseId: instance.currentStateId,
   });
 

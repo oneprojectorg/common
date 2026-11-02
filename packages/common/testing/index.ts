@@ -16,6 +16,8 @@ export { forceServerFlags } from './helpers/featureFlags';
 export {
   emptyBlobPhases,
   leaveOnlyPhaseRows,
+  updateInstancePhase,
+  updateInstancePhases,
 } from './helpers/phaseRowFixtures';
 export { TestJoinProfileRequestDataManager } from './helpers/TestJoinProfileRequestDataManager';
 export { TestOrganizationDataManager } from './helpers/TestOrganizationDataManager';
@@ -63,6 +65,7 @@ export {
   grantInstanceAdminWithoutReviewRole,
   grantInstanceReviewerRole,
   grantInstanceRole,
+  insertPhaseRows,
   makeDecisionPublic,
   SEEDED_SIMPLE_VOTING_TEMPLATE_NAME,
   SEEDED_TEMPLATE_PROFILE_SLUG,

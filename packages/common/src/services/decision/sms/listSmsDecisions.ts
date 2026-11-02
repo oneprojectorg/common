@@ -8,6 +8,7 @@ import {
 
 import { memberProfileIds } from '../../access';
 import { withInstancesPhases } from '../readInstancePhases';
+import { getInstancePhases } from '../schemas/instanceData';
 import { summarizeCurrentPhase } from '../summarizeCurrentPhase';
 
 export interface SmsDecisionListItem {
@@ -46,8 +47,10 @@ export async function listSmsDecisions({
     .map(({ name, slug, instanceData, currentStateId }) => ({
       name,
       slug,
-      votingOpen: summarizeCurrentPhase({ instanceData, currentStateId })
-        .votingOpen,
+      votingOpen: summarizeCurrentPhase({
+        phases: getInstancePhases(instanceData),
+        currentStateId,
+      }).votingOpen,
     }))
     .sort((a, b) => Number(b.votingOpen) - Number(a.votingOpen));
 }

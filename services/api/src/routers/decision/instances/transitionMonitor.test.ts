@@ -11,6 +11,7 @@ import {
   decisionProcesses,
   decisionTransitionProposals,
   processInstances,
+  processPhases,
   proposals,
   stateTransitionHistory,
   users,
@@ -664,13 +665,10 @@ describe('processDecisionsTransitions', () => {
         .where(eq(decisionProcessTransitions.id, badTransitions[i]!.id));
     }
 
-    // Corrupt the bad instance's data by setting instanceData to have empty phases
+    // Corrupt the bad instance by deleting its phase rows
     await db
-      .update(processInstances)
-      .set({
-        instanceData: { phases: [] },
-      })
-      .where(eq(processInstances.id, badInstanceId));
+      .delete(processPhases)
+      .where(eq(processPhases.processInstanceId, badInstanceId));
 
     const monitorResult = await processDecisionsTransitions();
 

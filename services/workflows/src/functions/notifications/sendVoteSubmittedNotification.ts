@@ -69,7 +69,6 @@ export const sendVoteSubmittedNotification = inngest.createFunction(
           processProfileName: processProfile.name,
           processProfileSlug: processProfile.slug,
           instanceId: processInstances.id,
-          instanceData: processInstances.instanceData,
           currentStateId: processInstances.currentStateId,
         })
         .from(decisionsVoteSubmissions)
@@ -93,11 +92,12 @@ export const sendVoteSubmittedNotification = inngest.createFunction(
         return undefined;
       }
 
-      const { instanceId, instanceData, ...vote } = row;
+      const { instanceId, ...vote } = row;
       return {
         ...vote,
         phases: await readInstancePhases({
-          instance: { id: instanceId, instanceData },
+          db,
+          processInstanceId: instanceId,
         }),
       };
     });

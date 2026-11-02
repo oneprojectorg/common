@@ -2,7 +2,6 @@ import { trackAdminSetProcess, trackAdminSetRubric } from '@op/analytics';
 import { OPURLConfig } from '@op/core';
 import { type TransactionType, db, eq } from '@op/db/client';
 import {
-  type ProcessInstance,
   ProcessStatus,
   decisionProcessTransitions,
   processInstances,
@@ -30,15 +29,13 @@ import {
   listPhases,
   reconcilePhases,
 } from './phaseHelpers';
-import { mergePhasesWithInstanceData } from './phaseMirror';
 import { ensureProposalTaxonomyTerms } from './proposalTaxonomy';
-import { isPhasesFromRowsEnabled, withBlobPhases } from './readInstancePhases';
+import { dropDuplicatePhases, readInstancePhases } from './readInstancePhases';
 import { schemaValidator } from './schemaValidator';
-import {
-  type DecisionInstanceData,
-  type InstanceOverviewUpdate,
-  type PhaseOverride,
-  getInstancePhases,
+import type {
+  DecisionInstanceData,
+  InstanceOverviewUpdate,
+  PhaseOverride,
 } from './schemas/instanceData';
 import type { ProcessConfig } from './schemas/types';
 import type { RubricTemplateSchema } from './types';
@@ -159,11 +156,6 @@ export const updateDecisionInstance = async ({
     status === ProcessStatus.PUBLISHED &&
     existingInstance.status === ProcessStatus.DRAFT;
 
-  const transitionsFromRows =
-    isBeingPublished && !hasPhaseUpdates
-      ? await isPhasesFromRowsEnabled()
-      : false;
-
   // Use a transaction for updating the instance and transitions together
   await db.transaction(async (tx) => {
     const locked = await lockProcessInstanceOrThrow({ db: tx, instanceId });
@@ -173,13 +165,15 @@ export const updateDecisionInstance = async ({
       ? await listPhases({ db: tx, processInstanceId: instanceId })
       : undefined;
 
+    // Built from the read under the lock, so a concurrent save is kept.
+    // Phase overrides merge onto the rows.
     const instanceDataUpdate = getUpdatedInstanceData({
       existing: existingPhases
         ? {
             ...lockedInstanceData,
-            phases: mergePhasesWithInstanceData({
-              phases: existingPhases,
-              blobPhases: getInstancePhases(locked.instanceData),
+            phases: dropDuplicatePhases({
+              processInstanceId: instanceId,
+              rows: existingPhases,
             }),
           }
         : lockedInstanceData,
@@ -207,6 +201,10 @@ export const updateDecisionInstance = async ({
 
       if (hasPhaseUpdates || proposalTemplate) {
         await assertVoterCostField({
+          phases: await readInstancePhases({
+            db: tx,
+            processInstanceId: instanceId,
+          }),
           instanceData: instanceDataUpdate.instanceData,
           processId: existingInstance.processId,
         });
@@ -236,11 +234,10 @@ export const updateDecisionInstance = async ({
 
     await syncTransitions({
       tx,
-      updatedInstance,
+      processInstanceId: instanceId,
       isDraft: (status ?? existingInstance.status) === ProcessStatus.DRAFT,
       isBeingPublished,
       phasesChanged: hasPhaseUpdates,
-      fromRows: transitionsFromRows,
     });
   });
 
@@ -318,36 +315,36 @@ async function updateDecisionProfile({
   }
 }
 
+// Runs under the instance lock, after the save reconciled its phase rows.
 async function syncTransitions({
   tx,
-  updatedInstance,
+  processInstanceId,
   isDraft,
   isBeingPublished,
   phasesChanged,
-  fromRows,
 }: {
   tx: TransactionType;
-  updatedInstance: ProcessInstance;
+  processInstanceId: string;
   isDraft: boolean;
   isBeingPublished: boolean;
   phasesChanged: boolean;
-  fromRows: boolean;
 }) {
   if (isDraft) {
     await tx
       .delete(decisionProcessTransitions)
       .where(
-        eq(decisionProcessTransitions.processInstanceId, updatedInstance.id),
+        eq(decisionProcessTransitions.processInstanceId, processInstanceId),
       );
   } else if (isBeingPublished) {
     await createTransitionsForProcess({
-      processInstance: updatedInstance,
+      processInstanceId,
+      phases: await readInstancePhases({ db: tx, processInstanceId }),
       db: tx,
-      fromRows,
     });
   } else if (phasesChanged) {
     await updateTransitionsForProcess({
-      processInstance: withBlobPhases({ instance: updatedInstance }),
+      processInstanceId,
+      phases: await readInstancePhases({ db: tx, processInstanceId }),
       db: tx,
     });
   }

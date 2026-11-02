@@ -27,26 +27,38 @@ vi.mock('../access', () => ({
     isUserEmailPlatformAdmin(...args),
 }));
 
+const readPhases = vi.fn();
+
+vi.mock('../decision/readInstancePhases', () => ({
+  readInstancePhases: (...args: unknown[]) => readPhases(...args),
+}));
+
 import { assertCustomFormAdmin, readInstancePhaseSet } from './customFormAuth';
 
 const user = (email?: string) => ({ id: 'auth-user', email }) as User;
 
-const instance = (phaseIds: string[]) => ({
+const instance = {
+  id: 'decision-instance',
   profileId: 'decision-profile',
   ownerProfileId: 'org-profile',
-  instanceData: { phases: phaseIds.map((phaseId) => ({ phaseId })) },
-});
+};
+
+const seedInstance = (phaseIds: string[]) => {
+  findFirst.mockResolvedValue(instance);
+  readPhases.mockResolvedValue(phaseIds.map((phaseId) => ({ phaseId })));
+};
 
 describe('assertCustomFormAdmin', () => {
   beforeEach(() => {
     findFirst.mockReset();
+    readPhases.mockReset();
     assertInstanceProfileAccess.mockReset();
     isUserEmailPlatformAdmin.mockReset();
     isUserEmailPlatformAdmin.mockReturnValue(false);
   });
 
   it('admits a platform admin without consulting the process grant', async () => {
-    findFirst.mockResolvedValue(instance(['submission', 'voting']));
+    seedInstance(['submission', 'voting']);
     isUserEmailPlatformAdmin.mockReturnValue(true);
 
     const context = await assertCustomFormAdmin({
@@ -57,10 +69,13 @@ describe('assertCustomFormAdmin', () => {
     expect(assertInstanceProfileAccess).not.toHaveBeenCalled();
     const phaseSet = await readInstancePhaseSet({ instance: context.instance });
     expect(phaseSet.phaseIds).toEqual(['submission', 'voting']);
+    expect(readPhases).toHaveBeenCalledWith(
+      expect.objectContaining({ processInstanceId: 'decision-instance' }),
+    );
   });
 
   it('admits a decision-process admin', async () => {
-    findFirst.mockResolvedValue(instance(['submission']));
+    seedInstance(['submission']);
     assertInstanceProfileAccess.mockResolvedValue([]);
 
     const context = await assertCustomFormAdmin({
@@ -73,7 +88,7 @@ describe('assertCustomFormAdmin', () => {
   });
 
   it('refuses a caller who is neither', async () => {
-    findFirst.mockResolvedValue(instance(['submission']));
+    seedInstance(['submission']);
     assertInstanceProfileAccess.mockRejectedValue(new UnauthorizedError());
 
     await expect(
@@ -85,7 +100,7 @@ describe('assertCustomFormAdmin', () => {
   });
 
   it('treats a user with no email as not a platform admin', async () => {
-    findFirst.mockResolvedValue(instance(['submission']));
+    seedInstance(['submission']);
     assertInstanceProfileAccess.mockResolvedValue([]);
 
     await assertCustomFormAdmin({
@@ -110,7 +125,7 @@ describe('assertCustomFormAdmin', () => {
   });
 
   it('resolves the initial phase legacy forms belong to', async () => {
-    findFirst.mockResolvedValue(instance(['submission', 'review', 'voting']));
+    seedInstance(['submission', 'review', 'voting']);
     isUserEmailPlatformAdmin.mockReturnValue(true);
 
     const context = await assertCustomFormAdmin({
@@ -122,12 +137,8 @@ describe('assertCustomFormAdmin', () => {
     expect(phaseSet.initialPhaseId).toBe('submission');
   });
 
-  it('reports no phases when instanceData has none to parse', async () => {
-    findFirst.mockResolvedValue({
-      profileId: 'decision-profile',
-      ownerProfileId: 'org-profile',
-      instanceData: { config: {} },
-    });
+  it('reports no phases when the decision has none', async () => {
+    seedInstance([]);
     isUserEmailPlatformAdmin.mockReturnValue(true);
 
     const context = await assertCustomFormAdmin({
@@ -141,11 +152,7 @@ describe('assertCustomFormAdmin', () => {
   });
 
   it('refuses a platform admin when the instance has no profile of its own', async () => {
-    findFirst.mockResolvedValue({
-      profileId: null,
-      ownerProfileId: 'org-profile',
-      instanceData: { phases: [{ phaseId: 'submission' }] },
-    });
+    findFirst.mockResolvedValue({ ...instance, profileId: null });
     isUserEmailPlatformAdmin.mockReturnValue(true);
 
     await expect(

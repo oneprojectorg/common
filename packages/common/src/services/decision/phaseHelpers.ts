@@ -187,6 +187,14 @@ export const reconcilePhases = async ({
 export const phaseIdOf = (phase: DecisionPhase): string =>
   phase.data.phaseId ?? phase.slug;
 
+export const toPhaseInstanceData = (
+  phase: DecisionPhase,
+): PhaseInstanceData => ({
+  ...phase.data,
+  phaseId: phaseIdOf(phase),
+  name: phase.name,
+});
+
 export const getPhaseProfileName = ({
   phaseId,
   name,

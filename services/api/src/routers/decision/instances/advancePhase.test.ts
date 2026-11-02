@@ -1,4 +1,4 @@
-import { advancePhase, withInstancePhases } from '@op/common';
+import { advancePhase, readInstancePhases } from '@op/common';
 import { TestDecisionsDataManager } from '@op/common/testing';
 import { db, eq } from '@op/db/client';
 import {
@@ -9,7 +9,6 @@ import {
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
-import { listPhaseIds } from '../../../test/helpers/phaseTestUtils';
 import {
   createIsolatedSession,
   createTestContextWithSession,
@@ -65,7 +64,11 @@ async function callAdvancePhase(
   return db.transaction(async (tx) =>
     advancePhase({
       db: tx,
-      instance: await withInstancePhases({ instance: dbInstance }),
+      instance: dbInstance,
+      phases: await readInstancePhases({
+        db: tx,
+        processInstanceId: dbInstance.id,
+      }),
       triggeredByProfileId: null,
       ...overrides,
     }),
@@ -103,22 +106,6 @@ describe.concurrent('advancePhase', () => {
     expect(history!.fromStateId).toBe('initial');
     expect(history!.toStateId).toBe('final');
     expect(history!.triggeredByProfileId).toBeNull();
-  });
-
-  it('advances a decision that has no phase rows without creating any', async ({
-    task,
-    onTestFinished,
-  }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const loaded = await loadPublishedInstance(testData);
-    await testData.removePhaseRows(loaded.dbInstance.id);
-
-    const result = await callAdvancePhase(loaded, {
-      fromPhaseId: 'initial',
-      toPhaseId: 'final',
-    });
-    expect(result.conflict).toBe(false);
-    expect(await listPhaseIds(loaded.dbInstance.id)).toEqual([]);
   });
 
   it('returns conflict when fromPhaseId does not match current state', async ({

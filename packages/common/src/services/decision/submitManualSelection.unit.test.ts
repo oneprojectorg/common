@@ -1,11 +1,12 @@
 import { db } from '@op/db/client';
 import { event } from '@op/events';
 import type { User } from '@op/supabase/lib';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { assertProfileAccess, assertUserByAuthId } from '../assert';
 import { getProposalIdsForPhase } from './getProposalsForPhase';
 import { processResults } from './processResults';
+import { readInstancePhases } from './readInstancePhases';
 import { runGenerateReviewAssignments } from './runGenerateReviewAssignments';
 import { submitManualSelection } from './submitManualSelection';
 
@@ -67,6 +68,10 @@ vi.mock('./runGenerateReviewAssignments', () => ({
   runGenerateReviewAssignments: vi.fn(() => Promise.resolve()),
 }));
 
+vi.mock('./readInstancePhases', () => ({
+  readInstancePhases: vi.fn(),
+}));
+
 const mockFindFirst = vi.mocked(db.query.processInstances.findFirst);
 const mockTransaction = vi.mocked(db.transaction);
 const mockAssertUserByAuthId = vi.mocked(assertUserByAuthId);
@@ -76,6 +81,7 @@ const mockProcessResults = vi.mocked(processResults);
 const mockRunGenerateReviewAssignments = vi.mocked(
   runGenerateReviewAssignments,
 );
+const mockReadPhases = vi.mocked(readInstancePhases);
 
 const AUTH_USER_ID = 'auth-1';
 const USER_PROFILE_ID = 'user-profile-1';
@@ -191,6 +197,7 @@ describe('submitManualSelection', () => {
       currentStateId: CURRENT_PHASE_ID,
       instanceData: instanceData(true),
     } as never);
+    mockReadPhases.mockResolvedValue(instanceData(true).phases);
   });
 
   it('generates review assignments after the transaction commits', async () => {
@@ -236,6 +243,7 @@ describe('submitManualSelection', () => {
       currentStateId: CURRENT_PHASE_ID,
       instanceData: instanceData(false),
     } as never);
+    mockReadPhases.mockResolvedValue(instanceData(false).phases);
     const results = happyPathResults();
     results[0] = [
       {
@@ -334,6 +342,7 @@ describe('submitManualSelection author notifications', () => {
       currentStateId: CURRENT_PHASE_ID,
       instanceData: lastPhaseInstanceData(),
     } as never);
+    mockReadPhases.mockResolvedValue(lastPhaseInstanceData().phases);
   });
 
   it('stamps the messages on the transition row and announces the result row', async () => {
@@ -462,6 +471,7 @@ describe('submitManualSelection author notifications', () => {
       currentStateId: CURRENT_PHASE_ID,
       instanceData: instanceData(false),
     } as never);
+    mockReadPhases.mockResolvedValue(instanceData(false).phases);
     const results = happyPathResults();
     results[0] = [
       {
@@ -532,13 +542,16 @@ describe('submitManualSelection allocations', () => {
   const PROPOSAL_C = '00000000-0000-4000-8000-00000000000c';
 
   /** Points both the pre-check read and the locked read at `data`. */
-  const mockInstance = (data: unknown) => {
+  const mockInstance = (
+    data: ReturnType<typeof instanceData | typeof lastPhaseInstanceData>,
+  ) => {
     mockFindFirst.mockResolvedValue({
       profileId: DECISION_PROFILE_ID,
       status: 'published',
       currentStateId: CURRENT_PHASE_ID,
       instanceData: data,
     } as never);
+    mockReadPhases.mockResolvedValue(data.phases);
     mockTransaction.mockImplementation(
       async (cb) =>
         await (cb as (tx: unknown) => Promise<unknown>)(

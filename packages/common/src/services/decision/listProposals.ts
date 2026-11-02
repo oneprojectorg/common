@@ -29,10 +29,9 @@ import {
 } from './proposalAuthor';
 import { parseProposalData } from './proposalDataSchema';
 import { buildProposalListPreview } from './proposalListPreview';
-import type { PhasesResolved } from './readInstancePhases';
 import { resolveProposalListScope } from './resolveProposalListScope';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
-import { getInstancePhases } from './schemas/instanceData';
+import type { PhaseInstanceData } from './schemas/instanceData';
 import { isPostSubmissionEditingAllowed } from './utils/phaseSettings';
 
 export interface ListProposalsInput {
@@ -107,6 +106,7 @@ export const listProposals = async ({
   // so this paginated read and `listProposalLocations` filter identically.
   const {
     instance,
+    phases,
     currentProfileId,
     canManageProposals,
     profileRoles,
@@ -131,6 +131,7 @@ export const listProposals = async ({
 
   const advanceTargetPromise = getListAdvanceTarget({
     instance,
+    phases,
     includesNotAdvanced:
       canManageProposals && buildIsOutsideCurrentPhase !== undefined,
   });
@@ -324,7 +325,7 @@ export const listProposals = async ({
   );
 
   const postSubmissionEditingAllowed = isPostSubmissionEditingAllowed({
-    phases: getInstancePhases(instance.instanceData),
+    phases,
     currentPhaseId: instance.currentStateId,
   });
 
@@ -432,17 +433,21 @@ export const listProposals = async ({
  */
 async function getListAdvanceTarget({
   instance,
+  phases,
   includesNotAdvanced,
 }: {
-  instance: PhasesResolved<
-    Parameters<typeof resolvePhaseAdvancement>[0]['instance']
-  >;
+  instance: Parameters<typeof resolvePhaseAdvancement>[0]['instance'];
+  phases: readonly PhaseInstanceData[];
   includesNotAdvanced: boolean;
 }): Promise<ProposalAdvanceTarget | undefined> {
   if (!includesNotAdvanced) {
     return undefined;
   }
-  const advancement = await resolvePhaseAdvancement({ dbClient: db, instance });
+  const advancement = await resolvePhaseAdvancement({
+    dbClient: db,
+    instance,
+    phases,
+  });
   if (!advancement.ok) {
     return undefined;
   }

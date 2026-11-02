@@ -134,7 +134,10 @@ async function resolvePreviousPhaseId({
     return undefined;
   }
 
-  const phases = await readInstancePhases({ instance, db });
+  const phases = await readInstancePhases({
+    db,
+    processInstanceId: instance.id,
+  });
   if (phases.length === 0) {
     return undefined;
   }

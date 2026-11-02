@@ -1,15 +1,11 @@
-import { TestDecisionsDataManager } from '@op/common/testing';
 import { db } from '@op/db/client';
 import { randomUUID } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 
 import {
   createUnauthenticatedCaller,
-  loadBlobPhases,
-  reorderBlobPhases,
   setupPhase,
 } from '../../../test/helpers/phaseTestUtils';
-import { createAuthenticatedCaller } from '../../../test/supabase-utils';
 
 describe.concurrent('deletePhase', () => {
   it('deletes the phase and its profile', async ({ task, onTestFinished }) => {
@@ -29,48 +25,6 @@ describe.concurrent('deletePhase', () => {
     ]);
     expect(row).toBeUndefined();
     expect(profile).toBeUndefined();
-  });
-
-  it('keeps the blob order of the phases that have no row', async ({
-    task,
-    onTestFinished,
-  }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const setup = await testData.createDecisionSetup({
-      instanceCount: 1,
-      grantAccess: true,
-    });
-    const instanceId = setup.instance.instance.id;
-    await testData.removePhaseRows(instanceId);
-    const adminCaller = await createAuthenticatedCaller(setup.userEmail);
-
-    const first = await adminCaller.decision.createPhase({
-      instanceId,
-      name: 'First',
-      sortOrder: 0,
-    });
-    testData.trackProfileForCleanup(first.profileId);
-    const second = await adminCaller.decision.createPhase({
-      instanceId,
-      name: 'Second',
-      sortOrder: 1,
-    });
-    testData.trackProfileForCleanup(second.profileId);
-    await reorderBlobPhases(instanceId, [
-      first.slug,
-      second.slug,
-      'initial',
-      'final',
-    ]);
-
-    await adminCaller.decision.deletePhase({ phaseId: first.id });
-
-    const blobPhases = await loadBlobPhases(instanceId);
-    expect(blobPhases.map(({ phaseId }) => phaseId)).toEqual([
-      second.slug,
-      'initial',
-      'final',
-    ]);
   });
 
   it('rejects a member without decisions ADMIN', async ({

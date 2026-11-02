@@ -1,27 +1,23 @@
 import { type DbClient, db as defaultDb } from '@op/db/client';
 import { decisionProcessTransitions } from '@op/db/schema';
-import type { ProcessInstance } from '@op/db/schema';
 import { logger } from '@op/logging';
 
 import { CommonError } from '../../utils';
 import { buildExpectedTransitions } from './buildExpectedTransitions';
-import { withInstancePhases } from './readInstancePhases';
+import type { PhaseInstanceData } from './schemas/instanceData';
 
 /**
  * Creates scheduled transition records for phases with date-based advancement.
  * Each transition fires when the current phase's end date arrives.
- *
- * Rules are read from the instance's phase data (instanceData.phases[].rules),
- * which are populated from the template when the instance is created.
  */
 export async function createTransitionsForProcess({
-  processInstance,
+  processInstanceId,
+  phases,
   db = defaultDb,
-  fromRows,
 }: {
-  processInstance: ProcessInstance;
+  processInstanceId: string;
+  phases: readonly PhaseInstanceData[];
   db?: DbClient;
-  fromRows?: boolean;
 }): Promise<{
   transitions: Array<{
     id: string;
@@ -31,9 +27,10 @@ export async function createTransitionsForProcess({
   }>;
 }> {
   try {
-    const transitionsToCreate = buildExpectedTransitions(
-      await withInstancePhases({ instance: processInstance, db, fromRows }),
-    );
+    const transitionsToCreate = buildExpectedTransitions({
+      processInstanceId,
+      phases,
+    });
 
     if (transitionsToCreate.length === 0) {
       return { transitions: [] };

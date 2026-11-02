@@ -6,7 +6,10 @@ import {
   updateDecisionInstance,
 } from '@op/common';
 import { MAX_PHASE_NAME_LENGTH } from '@op/common/client';
-import { TestDecisionsDataManager } from '@op/common/testing';
+import {
+  TestDecisionsDataManager,
+  updateInstancePhase,
+} from '@op/common/testing';
 import { db, eq, sql } from '@op/db/client';
 import { ProcessStatus, processInstances } from '@op/db/schema';
 import { describe, expect, it, vi } from 'vitest';
@@ -572,29 +575,17 @@ describe.concurrent('updateDecisionInstance', () => {
 
     // Rows written before the endpoint rejected an empty title hold
     // `headline: ''`. Plant one directly and read it back.
-    const dbInstance = await db.query.processInstances.findFirst({
-      where: { id: instance.instance.id },
-    });
-    const seededData = dbInstance!.instanceData as DecisionInstanceData;
-    const firstPhase = seededData.phases[0];
-
-    if (!firstPhase) {
-      throw new Error('No phases found in instance');
-    }
-
     await db
       .update(processInstances)
       .set({
-        instanceData: {
-          ...seededData,
-          overview: { headline: '', description: 'Kept' },
-          phases: [
-            { ...firstPhase, headline: '' },
-            ...seededData.phases.slice(1),
-          ],
-        },
+        instanceData: sql`${processInstances.instanceData} || ${JSON.stringify({ overview: { headline: '', description: 'Kept' } })}::jsonb`,
       })
       .where(eq(processInstances.id, instance.instance.id));
+    await updateInstancePhase({
+      instanceId: instance.instance.id,
+      phaseId: 'initial',
+      update: (phase) => ({ ...phase, headline: '' }),
+    });
 
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
@@ -606,9 +597,8 @@ describe.concurrent('updateDecisionInstance', () => {
     expect(fetched.instanceData?.overview?.headline).toBeUndefined();
     expect(fetched.instanceData?.overview?.description).toBe('Kept');
     expect(
-      fetched.instanceData?.phases?.find(
-        (phase) => phase.phaseId === firstPhase.phaseId,
-      )?.headline,
+      fetched.instanceData?.phases?.find((phase) => phase.phaseId === 'initial')
+        ?.headline,
     ).toBeUndefined();
   });
 
@@ -705,7 +695,7 @@ describe.concurrent('updateDecisionInstance', () => {
     expect(firstPhase?.settings?.maxProposalsPerMember).toBe(10);
   });
 
-  it('inserts every phase row on a save of a decision that has none', async ({
+  it('inserts the phases a save sends on a decision that has no rows, taking nothing from the blob', async ({
     task,
     onTestFinished,
   }) => {
@@ -724,7 +714,7 @@ describe.concurrent('updateDecisionInstance', () => {
     });
 
     expect(await loadPhaseRows(instanceId)).toMatchObject([
-      { name: 'Initial Phase', sortOrder: 0, data: { phaseId: 'initial' } },
+      { name: 'initial', sortOrder: 0, data: { phaseId: 'initial' } },
       { name: 'Decide', sortOrder: 1, data: { phaseId: 'final' } },
     ]);
   });
@@ -821,62 +811,6 @@ describe.concurrent('updateDecisionInstance', () => {
     });
     expect(readded?.id).not.toBe(extraRow.id);
     expect(readded?.profileId).not.toBe(extraRow.profileId);
-  });
-
-  it('keeps the stored fields of a phase that has no row when another phase has one', async ({
-    task,
-    onTestFinished,
-  }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const setup = await testData.createDecisionSetup({
-      instanceCount: 1,
-      grantAccess: true,
-    });
-    const instanceId = setup.instance.instance.id;
-    await testData.removePhaseRows(instanceId);
-    const stored = {
-      selectionPipeline: { version: '1.0.0', blocks: [] },
-      settingsSchema: {
-        type: 'object',
-        properties: { maxProposalsPerMember: { type: 'number' } },
-      },
-      proposalTemplate: {
-        type: 'object',
-        properties: { title: { type: 'string' } },
-      },
-    };
-    await db
-      .update(processInstances)
-      .set({
-        instanceData: sql`jsonb_set(${processInstances.instanceData}, '{phases,0}', (${processInstances.instanceData} -> 'phases' -> 0) || ${JSON.stringify(stored)}::jsonb)`,
-      })
-      .where(eq(processInstances.id, instanceId));
-    const caller = await createAuthenticatedCaller(setup.userEmail);
-
-    const created = await caller.decision.createPhase({
-      instanceId,
-      name: `Endpoint ${task.id}`,
-      sortOrder: 2,
-    });
-    testData.trackProfileForCleanup(created.profileId);
-
-    await caller.decision.updateDecisionInstance({
-      instanceId,
-      phases: [
-        { phaseId: 'initial', description: 'Updated' },
-        { phaseId: 'final' },
-        { phaseId: created.slug },
-      ],
-    });
-
-    expect(await loadPhaseRows(instanceId)).toMatchObject([
-      {
-        sortOrder: 0,
-        data: { ...stored, phaseId: 'initial', description: 'Updated' },
-      },
-      { sortOrder: 1, data: { phaseId: 'final' } },
-      { id: created.id, sortOrder: 2, name: `Endpoint ${task.id}` },
-    ]);
   });
 
   it('keeps a phase the phase endpoints made and moved across a builder save', async ({

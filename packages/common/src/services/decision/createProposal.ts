@@ -25,8 +25,7 @@ import {
   type ProposalDataInput,
   parseProposalData,
 } from './proposalDataSchema';
-import { withInstancePhases } from './readInstancePhases';
-import type { DecisionInstanceData } from './schemas/instanceData';
+import { readInstancePhases } from './readInstancePhases';
 import { syncProposalProfileLocation } from './syncProposalProfileLocation';
 import { assertInstancePhase } from './utils/instance';
 import { checkProposalsAllowed } from './utils/proposal';
@@ -47,27 +46,27 @@ export const createProposal = async ({
   const authUserId = user.id;
 
   // Verify the process instance exists
-  const instanceRow = await db.query.processInstances.findFirst({
+  const instance = await db.query.processInstances.findFirst({
     where: { id: data.processInstanceId },
   });
 
-  if (!instanceRow) {
+  if (!instance) {
     throw new NotFoundError('Process instance', data.processInstanceId);
   }
 
-  const instance = await withInstancePhases({ instance: instanceRow });
+  const [phases] = await Promise.all([
+    readInstancePhases({ db, processInstanceId: instance.id }),
+    assertInstanceProfileAccess({
+      user: { id: authUserId },
+      instance,
+      profilePermissions: [
+        { profile: permission.ADMIN },
+        { decisions: decisionPermission.SUBMIT_PROPOSALS },
+      ],
+      orgFallbackPermissions: { profile: permission.ADMIN },
+    }),
+  ]);
 
-  await assertInstanceProfileAccess({
-    user: { id: authUserId },
-    instance,
-    profilePermissions: [
-      { profile: permission.ADMIN },
-      { decisions: decisionPermission.SUBMIT_PROPOSALS },
-    ],
-    orgFallbackPermissions: { profile: permission.ADMIN },
-  });
-
-  const instanceData = instance.instanceData as DecisionInstanceData;
   const currentPhaseId = instance.currentStateId;
 
   if (!currentPhaseId) {
@@ -75,10 +74,7 @@ export const createProposal = async ({
   }
 
   // Check if proposals are allowed in current phase
-  const { allowed, phaseName } = checkProposalsAllowed(
-    instanceData.phases,
-    currentPhaseId,
-  );
+  const { allowed, phaseName } = checkProposalsAllowed(phases, currentPhaseId);
 
   if (!allowed) {
     throw new ValidationError(
@@ -91,7 +87,7 @@ export const createProposal = async ({
   // a hidden-by-default phase remains hidden even if the rule is edited
   // before submit.
   const currentPhase = assertInstancePhase({
-    instance: { instanceData },
+    instance: { instanceData: { phases } },
     phaseId: currentPhaseId,
   });
   const defaultHidden =

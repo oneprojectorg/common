@@ -45,8 +45,8 @@ export const createPhase = async ({
     const { result } = await mutatePhases({
       db: tx,
       processInstanceId,
-      mutate: ({ phases, unmintedPhases }) => {
-        assertPhaseCountFits(phases.length + unmintedPhases.length + 1);
+      mutate: ({ phases }) => {
+        assertPhaseCountFits(phases.length + 1);
         return insertPhase({
           tx,
           processInstanceId,

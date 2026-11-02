@@ -1,9 +1,7 @@
 import {
-  getInstancePhases,
   listProcessParticipants,
+  readInstancePhases,
   resolveManualSelectionStatus,
-  withBlobPhases,
-  withInstancePhases,
 } from '@op/common';
 import { selectEmailRecipients } from '@op/common/client';
 import { OPURLConfig } from '@op/core';
@@ -53,12 +51,9 @@ export const sendPhaseTransitionNotification = inngest.createFunction(
         return undefined;
       }
 
-      const resolved = await withInstancePhases({
-        instance: { ...row, id: processInstanceId },
-      });
       return {
-        ...resolved,
-        phases: [...getInstancePhases(resolved.instanceData)],
+        ...row,
+        phases: await readInstancePhases({ db, processInstanceId }),
       };
     });
 
@@ -83,13 +78,13 @@ export const sendPhaseTransitionNotification = inngest.createFunction(
       'check-manual-selection',
       async () =>
         resolveManualSelectionStatus({
-          instance: withBlobPhases({
-            instance: {
-              id: processInstanceId,
-              instanceData: processData.instanceData,
-              currentStateId: processData.currentStateId,
-            },
-          }),
+          instance: {
+            id: processInstanceId,
+            instanceData: processData.instanceData,
+            currentStateId: processData.currentStateId,
+          },
+          // Step output is serialized JSON, so read the typed rows again.
+          phases: await readInstancePhases({ db, processInstanceId }),
         }),
     );
 

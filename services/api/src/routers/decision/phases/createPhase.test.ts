@@ -8,7 +8,6 @@ import { describe, expect, it } from 'vitest';
 import {
   createUnauthenticatedCaller,
   listPhaseIds,
-  loadBlobPhases,
 } from '../../../test/helpers/phaseTestUtils';
 import { createAuthenticatedCaller } from '../../../test/supabase-utils';
 
@@ -396,38 +395,6 @@ describe.concurrent('createPhase', () => {
         },
       }),
     ).rejects.toMatchObject({ code: 'BAD_REQUEST' });
-  });
-
-  it('mirrors a new phase between rows and blob phases that have none', async ({
-    task,
-    onTestFinished,
-  }) => {
-    const { testData, instanceId, adminCaller } = await setupDecision(
-      task,
-      onTestFinished,
-    );
-    await testData.removePhaseRows(instanceId);
-
-    const first = await adminCaller.decision.createPhase({
-      instanceId,
-      name: 'First',
-      sortOrder: 0,
-    });
-    testData.trackProfileForCleanup(first.profileId);
-    const second = await adminCaller.decision.createPhase({
-      instanceId,
-      name: 'Second',
-      sortOrder: 1,
-    });
-    testData.trackProfileForCleanup(second.profileId);
-
-    const blobPhases = await loadBlobPhases(instanceId);
-    expect(blobPhases.map(({ phaseId }) => phaseId)).toEqual([
-      first.slug,
-      second.slug,
-      'initial',
-      'final',
-    ]);
   });
 
   it('requires authentication', async () => {

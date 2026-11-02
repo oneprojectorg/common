@@ -4,7 +4,6 @@ import { processInstances } from '@op/db/schema';
 import { sql } from 'drizzle-orm';
 
 import { NotFoundError, ValidationError } from '../../utils';
-import { isPhasesFromRowsEnabled } from '../decision/readInstancePhases';
 import type {
   CustomFormPhaseSet,
   CustomFormProcessContext,
@@ -24,15 +23,12 @@ export const writeWithPhaseLock = async <TResult>({
   excludeFormId?: string;
   write: (tx: TransactionType) => Promise<TResult>;
 }): Promise<TResult> => {
-  const fromRows = await isPhasesFromRowsEnabled();
-
   return db.transaction(async (tx) => {
     await lockProfileForms({ tx, profileId: process.profileId });
 
     const phases = await lockInstancePhases({
       tx,
       profileId: process.profileId,
-      fromRows,
     });
 
     await assertPhaseAvailable({
@@ -53,17 +49,12 @@ export const writeWithPhaseLock = async <TResult>({
 const lockInstancePhases = async ({
   tx,
   profileId,
-  fromRows,
 }: {
   tx: TransactionType;
   profileId: string;
-  fromRows: boolean;
 }) => {
   const [instance] = await tx
-    .select({
-      id: processInstances.id,
-      instanceData: processInstances.instanceData,
-    })
+    .select({ id: processInstances.id })
     .from(processInstances)
     .where(eq(processInstances.profileId, profileId))
     .for('update')
@@ -73,7 +64,7 @@ const lockInstancePhases = async ({
     throw new NotFoundError('Decision process', profileId);
   }
 
-  return readInstancePhaseSet({ instance, db: tx, fromRows });
+  return readInstancePhaseSet({ instance, db: tx });
 };
 
 /**

@@ -1,126 +1,116 @@
 import { type DbClient, db as defaultDb } from '@op/db/client';
 import { logger } from '@op/logging';
 
-import { isServerFeatureEnabled } from '../../utils/featureFlags';
-import { listPhasesByInstance } from './phaseHelpers';
-import { mergePhasesWithInstanceData } from './phaseMirror';
 import {
-  type PhaseInstanceData,
-  getInstancePhases,
-} from './schemas/instanceData';
-
-// TODO: remove this flag and every fromRows param when instanceData.phases is dropped.
-export const PHASES_FROM_ROWS_FLAG = 'process_phases_from_rows';
+  type DecisionPhase,
+  listPhasesByInstance,
+  phaseIdOf,
+  toPhaseInstanceData,
+} from './phaseHelpers';
+import type { PhaseInstanceData } from './schemas/instanceData';
 
 interface InstanceWithData {
   id: string;
   instanceData: unknown;
 }
 
-const resolvedPhases = Symbol('resolvedPhases');
-
-// TODO: remove this brand when readers stop taking phases off instanceData.
-export type PhasesResolved<T> = T & { readonly [resolvedPhases]: true };
-
-const NO_ROWS_WARNING =
-  'Decision has no phase rows; reading instanceData.phases';
-
-export const isPhasesFromRowsEnabled = (): Promise<boolean> =>
-  isServerFeatureEnabled({
-    key: PHASES_FROM_ROWS_FLAG,
-    distinctId: PHASES_FROM_ROWS_FLAG,
-  });
-
-export const readInstancePhases = async ({
-  instance,
-  db = defaultDb,
-  fromRows,
+/**
+ * Each decision's phases in order, read from `decision_process_phases`. A
+ * decision with no rows maps to `[]`.
+ */
+export const listInstancePhases = async ({
+  db,
+  processInstanceIds,
 }: {
-  instance: InstanceWithData;
-  db?: DbClient;
-  fromRows?: boolean;
-}): Promise<PhaseInstanceData[]> =>
-  getBlobPhases(await withInstancePhases({ instance, db, fromRows }));
+  db: DbClient;
+  processInstanceIds: string[];
+}): Promise<Map<string, PhaseInstanceData[]>> => {
+  const phasesByInstance = new Map<string, PhaseInstanceData[]>();
 
+  if (processInstanceIds.length === 0) {
+    return phasesByInstance;
+  }
+
+  const rowsByInstance = await listPhasesByInstance({ db, processInstanceIds });
+  const withoutRows: string[] = [];
+
+  for (const processInstanceId of new Set(processInstanceIds)) {
+    const rows = rowsByInstance.get(processInstanceId);
+    if (!rows) {
+      withoutRows.push(processInstanceId);
+    }
+    phasesByInstance.set(
+      processInstanceId,
+      dropDuplicatePhases({ processInstanceId, rows: rows ?? [] }),
+    );
+  }
+
+  if (withoutRows.length > 0) {
+    logger.warn('Decision has no phase rows', {
+      processInstanceIds: withoutRows,
+    });
+  }
+
+  return phasesByInstance;
+};
+
+/** The decision's phases in order. Inside a transaction, pass its `tx`. */
+export const readInstancePhases = async ({
+  db,
+  processInstanceId,
+}: {
+  db: DbClient;
+  processInstanceId: string;
+}): Promise<PhaseInstanceData[]> =>
+  (
+    await listInstancePhases({ db, processInstanceIds: [processInstanceId] })
+  ).get(processInstanceId) ?? [];
+
+/**
+ * The instance with `instanceData.phases` replaced by its rows, for the
+ * encoders that emit the blob shape.
+ */
 export const withInstancePhases = async <T extends InstanceWithData>({
   instance,
   db = defaultDb,
-  fromRows,
 }: {
   instance: T;
   db?: DbClient;
-  fromRows?: boolean;
-}): Promise<PhasesResolved<T>> => {
-  const [resolved] = await withInstancesPhases({
-    instances: [instance],
-    db,
-    fromRows,
-  });
-  return resolved ?? markResolved(instance);
+}): Promise<T> => {
+  const [resolved] = await withInstancesPhases({ instances: [instance], db });
+  return resolved ?? instance;
 };
 
-// TODO: remove when instanceData.phases is dropped.
-export const withBlobPhases = <T extends InstanceWithData>({
-  instance,
-}: {
-  instance: T;
-}): PhasesResolved<T> => markResolved(instance);
-
-export const isPhasesResolved = <T extends object>(
-  instance: T,
-): instance is PhasesResolved<T> => resolvedPhases in instance;
-
+/** {@link withInstancePhases} for a list, in one rows query. */
 export const withInstancesPhases = async <T extends InstanceWithData>({
   instances,
   db = defaultDb,
-  fromRows,
 }: {
   instances: T[];
   db?: DbClient;
-  fromRows?: boolean;
-}): Promise<PhasesResolved<T>[]> => {
-  if (instances.length === 0) {
-    return [];
-  }
-
-  if (!(fromRows ?? (await isPhasesFromRowsEnabled()))) {
-    return instances.map(markResolved);
-  }
-
-  const phasesByInstance = await listPhasesByInstance({
+}): Promise<T[]> => {
+  const phasesByInstance = await listInstancePhases({
     db,
     processInstanceIds: instances.map(({ id }) => id),
   });
 
-  // TODO: drop the blob fallback and merge when instanceData.phases is dropped.
-  const withoutRows = instances
-    .filter(({ id }) => !phasesByInstance.has(id))
-    .map(({ id }) => id);
-  if (withoutRows.length > 0) {
-    logger.warn(NO_ROWS_WARNING, { processInstanceIds: withoutRows });
-  }
-
-  return instances.map((instance) => {
-    const minted = phasesByInstance.get(instance.id);
-
-    return replacePhases({
-      instance,
-      phases: minted
-        ? mergePhasesWithInstanceData({
-            phases: minted,
-            blobPhases: getBlobPhases(instance),
-          })
-        : null,
-    });
-  });
+  return instances.map((instance) => ({
+    ...instance,
+    instanceData: {
+      ...asRecord(instance.instanceData),
+      phases: phasesByInstance.get(instance.id) ?? [],
+    },
+  }));
 };
 
 export const withProfileInstancePhases = async <
   T extends { processInstance: InstanceWithData | null },
 >({
   profile,
+  db = defaultDb,
 }: {
   profile: T;
+  db?: DbClient;
 }): Promise<T> => {
   if (!profile.processInstance) {
     return profile;
@@ -130,33 +120,43 @@ export const withProfileInstancePhases = async <
     ...profile,
     processInstance: await withInstancePhases({
       instance: profile.processInstance,
+      db,
     }),
   };
 };
 
-const getBlobPhases = (instance: InstanceWithData): PhaseInstanceData[] => [
-  ...getInstancePhases(instance.instanceData),
-];
-
-const replacePhases = <T extends InstanceWithData>({
-  instance,
-  phases,
+// No unique index guards a phase id. The rows arrive in sort order, so the
+// first row for an id has the lowest sortOrder.
+export const dropDuplicatePhases = ({
+  processInstanceId,
+  rows,
 }: {
-  instance: T;
-  phases: PhaseInstanceData[] | null;
-}): PhasesResolved<T> =>
-  markResolved(
-    phases
-      ? {
-          ...instance,
-          instanceData: { ...asRecord(instance.instanceData), phases },
-        }
-      : instance,
-  );
+  processInstanceId: string;
+  rows: DecisionPhase[];
+}): PhaseInstanceData[] => {
+  const phaseIds = new Set<string>();
+  const duplicatePhaseIds = new Set<string>();
+  const phases: PhaseInstanceData[] = [];
 
-const markResolved = <T extends InstanceWithData>(
-  instance: T,
-): PhasesResolved<T> => ({ ...instance, [resolvedPhases]: true });
+  for (const row of rows) {
+    const phaseId = phaseIdOf(row);
+    if (phaseIds.has(phaseId)) {
+      duplicatePhaseIds.add(phaseId);
+      continue;
+    }
+    phaseIds.add(phaseId);
+    phases.push(toPhaseInstanceData(row));
+  }
+
+  if (duplicatePhaseIds.size > 0) {
+    logger.warn('Decision has two phase rows with one phase id', {
+      processInstanceId,
+      phaseIds: [...duplicatePhaseIds],
+    });
+  }
+
+  return phases;
+};
 
 const asRecord = (value: unknown): object =>
   typeof value === 'object' && value !== null ? value : {};

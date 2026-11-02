@@ -324,7 +324,8 @@ export const getPermissionsOnProposal = async ({
   }
 
   const instancePhases = await readInstancePhases({
-    instance: proposal.processInstance,
+    db,
+    processInstanceId: proposal.processInstance.id,
   });
   const isEditable =
     access.update &&

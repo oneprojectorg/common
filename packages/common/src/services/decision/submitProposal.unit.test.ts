@@ -1,7 +1,7 @@
 import { getTipTapClient } from '@op/collab';
 import { db } from '@op/db/client';
 import { ProposalStatus } from '@op/db/schema';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ValidationError } from '../../utils/error';
 import { assertProfileAccess } from '../assert';
@@ -72,6 +72,13 @@ vi.mock('./syncProposalProfileLocation', () => ({
   syncProposalProfileLocation: vi.fn(),
 }));
 
+// The current phase allows proposal submission (rules.proposals.submit !== false).
+vi.mock('./readInstancePhases', () => ({
+  readInstancePhases: vi.fn(async () => [
+    { phaseId: 'phase-1', name: 'Submission', rules: {} },
+  ]),
+}));
+
 const mockFindFirst = vi.mocked(db.query.proposals.findFirst);
 const mockTransaction = vi.mocked(db.transaction);
 const mockAssertProfileAccess = vi.mocked(assertProfileAccess);
@@ -117,10 +124,7 @@ function draftProposal(proposalData: Record<string, unknown>) {
       profileId: PROFILE_ID,
       processId: 'process-1',
       currentStateId: 'phase-1',
-      // Phase allows proposal submission (rules.proposals.submit !== false).
-      instanceData: {
-        phases: [{ phaseId: 'phase-1', name: 'Submission', rules: {} }],
-      },
+      instanceData: {},
     },
   };
 }

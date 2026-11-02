@@ -1,7 +1,7 @@
 import { type DecisionInstanceData, simpleVoting } from '@op/common';
 import type { DecisionSchemaDefinition } from '@op/common';
-import { TestDecisionsDataManager } from '@op/common/testing';
-import { db, eq, sql } from '@op/db/client';
+import { TestDecisionsDataManager, insertPhaseRows } from '@op/common/testing';
+import { db, eq } from '@op/db/client';
 import {
   ProcessStatus,
   decisionProcesses,
@@ -213,56 +213,42 @@ describe.concurrent('duplicateInstance', () => {
     }
   });
 
-  it.for([
-    {
-      label: 'a phase with no id',
-      message: /There is a phase with no id/,
-      phases: [
-        { phaseId: '', name: 'Submission' },
-        { phaseId: 'voting', name: 'Voting' },
-      ],
-    },
-    {
-      label: 'two phases with one id',
-      message: /There are two phases with the id "submission"/,
-      phases: [
-        { phaseId: 'submission', name: 'Submission' },
-        { phaseId: 'submission', name: 'Voting' },
-      ],
-    },
-  ])(
-    'refuses a legacy source with $label',
-    async ({ message, phases }, { task, onTestFinished }) => {
-      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-      const { result: source, caller } = await createSourceInstance(
-        testData,
-        task.id,
-      );
+  it('refuses a legacy source with more phases than a decision can hold', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { result: source, caller } = await createSourceInstance(
+      testData,
+      task.id,
+    );
+    await testData.removePhaseRows(source.processInstance.id);
+    await insertPhaseRows({
+      processInstanceId: source.processInstance.id,
+      phases: Array.from({ length: MAX_PHASES_PER_DECISION + 1 }, (_, i) => ({
+        phaseId: `phase-${i}`,
+        name: `Phase ${i}`,
+      })),
+    });
 
-      await db
-        .update(processInstances)
-        .set({
-          instanceData: sql`jsonb_set(${processInstances.instanceData}, '{phases}', ${JSON.stringify(phases)}::jsonb)`,
-        })
-        .where(eq(processInstances.id, source.processInstance.id));
+    const name = `Legacy Duplicate ${task.id}`;
+    await expect(
+      caller.decision.duplicateInstance({
+        instanceId: source.processInstance.id,
+        name,
+        include: ALL_INCLUDED,
+      }),
+    ).rejects.toMatchObject({
+      cause: {
+        name: 'ValidationError',
+        message: expect.stringContaining(
+          `A decision can have at most ${MAX_PHASES_PER_DECISION} phases`,
+        ),
+      },
+    });
 
-      const name = `Legacy Duplicate ${task.id}`;
-      await expect(
-        caller.decision.duplicateInstance({
-          instanceId: source.processInstance.id,
-          name,
-          include: ALL_INCLUDED,
-        }),
-      ).rejects.toMatchObject({
-        cause: {
-          name: 'ValidationError',
-          message: expect.stringMatching(message),
-        },
-      });
-
-      await expectNothingNamed(name);
-    },
-  );
+    await expectNothingNamed(name);
+  });
 
   it('mints a row per minimal phase when phases are not included', async ({
     task,

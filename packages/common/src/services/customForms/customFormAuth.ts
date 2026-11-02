@@ -1,4 +1,4 @@
-import { type DbClient, db } from '@op/db/client';
+import { type DbClient, db as defaultDb } from '@op/db/client';
 import type { User } from '@op/supabase/lib';
 import { permission } from 'access-zones';
 
@@ -36,7 +36,7 @@ export const assertCustomFormAdmin = async ({
   profileId: string;
 }): Promise<CustomFormProcessContext & { instance: CustomFormInstance }> => {
   // One instance per profile: the column holds the instance's own profile.
-  const instance = await db.query.processInstances.findFirst({
+  const instance = await defaultDb.query.processInstances.findFirst({
     where: { profileId },
     columns: {
       id: true,
@@ -86,18 +86,17 @@ export const assertCustomFormAdminForInstance = async ({
   return { profileId: instance.profileId };
 };
 
+/** Inside a transaction, pass its `tx`. */
 export const readInstancePhaseSet = async ({
   instance,
-  db,
-  fromRows,
+  db = defaultDb,
 }: {
-  instance: { id: string; instanceData: unknown };
+  instance: { id: string };
   db?: DbClient;
-  fromRows?: boolean;
 }): Promise<CustomFormPhaseSet> => {
-  const phaseIds = (await readInstancePhases({ instance, db, fromRows })).map(
-    (phase) => phase.phaseId,
-  );
+  const phaseIds = (
+    await readInstancePhases({ db, processInstanceId: instance.id })
+  ).map((phase) => phase.phaseId);
 
   return { initialPhaseId: phaseIds[0] ?? null, phaseIds };
 };

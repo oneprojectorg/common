@@ -5,7 +5,6 @@ import { ConflictError, ValidationError } from '../../utils';
 import { attachProposalsToTransition } from './attachProposalsToTransition';
 import { lockProcessInstance } from './lockProcessInstance';
 import { assertProposalAdmin, resolveAdvancement } from './proposalAdvancement';
-import { isPhasesFromRowsEnabled } from './readInstancePhases';
 import { runGenerateReviewAssignments } from './runGenerateReviewAssignments';
 import { isReviewPhase } from './utils/phaseSettings';
 
@@ -28,7 +27,6 @@ export async function advanceProposal({
   user: User;
 }): Promise<{ processInstanceId: string }> {
   const processInstanceId = await assertProposalAdmin({ proposalId, user });
-  const fromRows = await isPhasesFromRowsEnabled();
 
   const reviewAssignmentInput = await db.transaction(async (tx) => {
     // Same lock every phase writer takes, so a concurrent advance, revert or
@@ -45,11 +43,11 @@ export async function advanceProposal({
       );
     }
 
+    // Reads the phase rows on `tx`, under the lock.
     const advancement = await resolveAdvancement({
       dbClient: tx,
       instance: { id: processInstanceId, ...lockedInstance },
       proposalId,
-      fromRows,
     });
 
     if (!advancement.ok) {

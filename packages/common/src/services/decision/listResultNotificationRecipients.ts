@@ -148,7 +148,7 @@ export async function listResultNotificationRecipients({
   );
 
   const phase =
-    (await readInstancePhases({ instance })).find(
+    (await readInstancePhases({ db, processInstanceId: instance.id })).find(
       ({ phaseId }) => phaseId === composed.toStateId,
     )?.name ?? '';
   const recipients = reachable.flatMap((proposal) =>

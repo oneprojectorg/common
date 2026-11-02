@@ -1,10 +1,9 @@
 import {
   computeDaysLeft,
   getInstanceCurrentPhase,
-  getInstancePhases,
   isInstanceCurrentPhase,
   listIndividualProfileRecipientsByProfileId,
-  withInstancePhases,
+  readInstancePhases,
 } from '@op/common';
 import { selectEmailRecipients } from '@op/common/client';
 import { OPURLConfig } from '@op/core';
@@ -40,7 +39,6 @@ export const sendReviewPhaseEndingReminder = inngest.createFunction(
           name: true,
           status: true,
           currentStateId: true,
-          instanceData: true,
           deletedAt: true,
         },
         with: {
@@ -52,7 +50,10 @@ export const sendReviewPhaseEndingReminder = inngest.createFunction(
         return undefined;
       }
 
-      return withInstancePhases({ instance });
+      return {
+        ...instance,
+        phases: await readInstancePhases({ db, processInstanceId }),
+      };
     });
 
     if (!instanceData) {
@@ -83,7 +84,7 @@ export const sendReviewPhaseEndingReminder = inngest.createFunction(
       return;
     }
 
-    const phases = getInstancePhases(instanceData.instanceData);
+    const { phases } = instanceData;
     const phase = getInstanceCurrentPhase({
       currentStateId: instanceData.currentStateId,
       instanceData: { phases },

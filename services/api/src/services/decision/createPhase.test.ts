@@ -9,10 +9,7 @@ import { EntityType } from '@op/db/schema';
 import { randomUUID } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 
-import {
-  listPhaseIds,
-  loadBlobPhases,
-} from '../../test/helpers/phaseTestUtils';
+import { listPhaseIds } from '../../test/helpers/phaseTestUtils';
 
 describe.concurrent('createPhase', () => {
   it('mints a profile of type PHASE that owns the name', async ({
@@ -271,45 +268,6 @@ describe.concurrent('createPhase', () => {
     ).rejects.toBeInstanceOf(ValidationError);
 
     await expectNoProfileNamed(name);
-  });
-
-  it(`counts the phases that have no row yet against the ${MAX_PHASES_PER_DECISION} cap`, async ({
-    task,
-    onTestFinished,
-  }) => {
-    const { instanceId, user, testData } = await setup(task, onTestFinished);
-    await testData.removePhaseRows(instanceId);
-    const rowless = await loadBlobPhases(instanceId);
-    expect(rowless.length).toBeGreaterThan(0);
-
-    for (
-      let sortOrder = rowless.length;
-      sortOrder < MAX_PHASES_PER_DECISION;
-      sortOrder++
-    ) {
-      const { profile } = await createPhase({
-        user,
-        processInstanceId: instanceId,
-        name: `Phase ${sortOrder}`,
-        sortOrder,
-      });
-      testData.trackProfileForCleanup(profile.id);
-    }
-
-    const name = `One Too Many ${randomUUID()}`;
-    await expect(
-      createPhase({
-        user,
-        processInstanceId: instanceId,
-        name,
-        sortOrder: MAX_PHASES_PER_DECISION,
-      }),
-    ).rejects.toBeInstanceOf(ValidationError);
-
-    await expectNoProfileNamed(name);
-    expect(await listPhaseIds(instanceId)).toHaveLength(
-      MAX_PHASES_PER_DECISION - rowless.length,
-    );
   });
 });
 

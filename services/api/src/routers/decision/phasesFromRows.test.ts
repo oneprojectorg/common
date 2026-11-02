@@ -21,7 +21,7 @@ import {
   proposalReviewAssignments,
   users,
 } from '@op/db/schema';
-import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { createAuthenticatedCaller } from '../../test/supabase-utils';
 
@@ -144,15 +144,8 @@ const rowPhases = (phaseIds: string[]) =>
     endDate: ROW_END,
   }));
 
-describe('with process_phases_from_rows on and instanceData.phases empty', () => {
-  beforeAll(() => {
-    vi.stubEnv('NEXT_PUBLIC_E2E', 'true');
-  });
-
-  afterAll(() => {
-    vi.unstubAllEnvs();
-  });
-
+// Not concurrent: the transitions sweep is global.
+describe('with instanceData.phases empty', () => {
   it('advances a phase and reads the phases back from the rows', async ({
     task,
     onTestFinished,

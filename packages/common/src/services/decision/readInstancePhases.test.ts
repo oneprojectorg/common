@@ -1,12 +1,8 @@
-import {
-  TestDecisionsDataManager,
-  emptyBlobPhases,
-  forceServerFlags,
-} from '@op/common/testing';
+import { TestDecisionsDataManager, emptyBlobPhases } from '@op/common/testing';
 import { db, eq, sql } from '@op/db/client';
-import { processInstances, processPhases, profiles } from '@op/db/schema';
+import { processInstances, processPhases } from '@op/db/schema';
 import { logger } from '@op/logging';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { insertPhase, listPhases, phaseIdOf } from './phaseHelpers';
 import {
@@ -22,41 +18,16 @@ const expectNoRowsWarning = (processInstanceIds: string[]) =>
   );
 
 describe('readInstancePhases', () => {
-  afterEach(() => {
-    vi.unstubAllEnvs();
-  });
-
-  it('reads instanceData.phases while the flag is off', async ({
-    task,
-    onTestFinished,
-  }) => {
-    const { instanceId } = await createInstance(task.id, onTestFinished);
-    await renameBlobPhases(instanceId);
-    forceServerFlags(false);
-
-    const phases = await readInstancePhases({
-      instance: await loadInstance(instanceId),
-    });
-
-    expect(phases.map(({ phaseId, name }) => ({ phaseId, name }))).toEqual([
-      { phaseId: 'initial', name: 'Blob initial' },
-      { phaseId: 'final', name: 'Blob final' },
-    ]);
-  });
-
-  it('reads the rows in sort order while the flag is on', async ({
-    task,
-    onTestFinished,
-  }) => {
+  it('reads the rows in sort order', async ({ task, onTestFinished }) => {
     const { instanceId } = await createInstance(task.id, onTestFinished);
     await renameBlobPhases(instanceId);
     const rows = await loadRows(instanceId);
     await setSortOrder(rows.initial.id, 1);
     await setSortOrder(rows.final.id, 0);
-    forceServerFlags(true);
 
     const phases = await readInstancePhases({
-      instance: await loadInstance(instanceId),
+      db,
+      processInstanceId: instanceId,
     });
 
     expect(phases.map(({ phaseId, name }) => ({ phaseId, name }))).toEqual([
@@ -81,10 +52,10 @@ describe('readInstancePhases', () => {
       .update(processPhases)
       .set({ data: sql`${processPhases.data} - 'phaseId'` })
       .where(eq(processPhases.id, rows.final.id));
-    forceServerFlags(true);
 
     const phases = await readInstancePhases({
-      instance: await loadInstance(instanceId),
+      db,
+      processInstanceId: instanceId,
     });
 
     expect(phases.map(({ phaseId }) => phaseId)).toEqual([
@@ -93,77 +64,39 @@ describe('readInstancePhases', () => {
     ]);
   });
 
-  it('falls back to instanceData.phases and warns when there are no rows', async ({
-    task,
-    onTestFinished,
-  }) => {
-    const { instanceId, testData } = await createInstance(
-      task.id,
-      onTestFinished,
-    );
-    await testData.removePhaseRows(instanceId);
-    await renameBlobPhases(instanceId);
-    forceServerFlags(true);
-
-    const phases = await readInstancePhases({
-      instance: await loadInstance(instanceId),
-    });
-
-    expect(phases.map(({ name }) => name)).toEqual([
-      'Blob initial',
-      'Blob final',
-    ]);
-    expectNoRowsWarning([instanceId]);
-  });
-
-  it('keeps the blob phases that have no row yet, in blob order', async ({
+  it('keeps the row with the lowest sortOrder when two share a phase id, and warns', async ({
     task,
     onTestFinished,
   }) => {
     const { instanceId } = await createInstance(task.id, onTestFinished);
-    await renameBlobPhases(instanceId);
     const rows = await loadRows(instanceId);
-    await db.delete(profiles).where(eq(profiles.id, rows.initial.profileId));
-    const { profile: added } = await db.transaction((tx) =>
+    await setSortOrder(rows.initial.id, 3);
+    await db.transaction((tx) =>
       insertPhase({
         tx,
         processInstanceId: instanceId,
-        name: 'Added phase',
+        name: 'Duplicate initial',
         sortOrder: 2,
+        data: { phaseId: 'initial' },
       }),
     );
-    forceServerFlags(true);
 
     const phases = await readInstancePhases({
-      instance: await loadInstance(instanceId),
+      db,
+      processInstanceId: instanceId,
     });
 
     expect(phases.map(({ phaseId, name }) => ({ phaseId, name }))).toEqual([
-      { phaseId: 'initial', name: 'Blob initial' },
       { phaseId: 'final', name: 'Final Phase' },
-      { phaseId: added.slug, name: 'Added phase' },
+      { phaseId: 'initial', name: 'Duplicate initial' },
     ]);
+    expect(logger.warn).toHaveBeenCalledWith(
+      expect.stringContaining('two phase rows'),
+      { processInstanceId: instanceId, phaseIds: ['initial'] },
+    );
   });
 
-  it('leaves the instance as it is when it has no rows', async ({
-    task,
-    onTestFinished,
-  }) => {
-    const { instanceId, testData } = await createInstance(
-      task.id,
-      onTestFinished,
-    );
-    await testData.removePhaseRows(instanceId);
-    const instance = await loadInstance(instanceId);
-    forceServerFlags(true);
-
-    expect((await withInstancePhases({ instance })).instanceData).toBe(
-      instance.instanceData,
-    );
-    expectNoRowsWarning([instanceId]);
-  });
-
-  it('reads a list in one pass and warns once for the instances without rows', async ({
+  it('reads a list in one pass, gives [] to the instances without rows and warns once', async ({
     task,
     onTestFinished,
   }) => {
@@ -181,37 +114,33 @@ describe('readInstancePhases', () => {
       await loadInstance(withRows),
       await loadInstance(withoutRows),
     ];
-    forceServerFlags(true);
 
     const [first, second] = await withInstancesPhases({ instances });
 
     expect(first?.instanceData).toMatchObject({
       phases: [{ phaseId: 'initial' }, { phaseId: 'final' }],
     });
-    expect(second?.instanceData).toBe(instances[1]?.instanceData);
+    expect(second?.instanceData).toMatchObject({ phases: [] });
     expect(logger.warn).toHaveBeenCalledTimes(1);
     expectNoRowsWarning([withoutRows]);
   });
 
-  it('puts the rows on instanceData and keeps its other keys', async ({
+  it('puts the rows on instanceData over the blob and keeps its other keys', async ({
     task,
     onTestFinished,
   }) => {
     const { instanceId } = await createInstance(task.id, onTestFinished);
-    await emptyBlobPhases(instanceId);
+    await renameBlobPhases(instanceId);
     const instance = await loadInstance(instanceId);
-    forceServerFlags(false);
 
-    expect((await withInstancePhases({ instance })).instanceData).toBe(
-      instance.instanceData,
-    );
-
-    forceServerFlags(true);
     const resolved = await withInstancePhases({ instance });
 
     expect(resolved.instanceData).toMatchObject({
       templateId: expect.any(String),
-      phases: [{ phaseId: 'initial' }, { phaseId: 'final' }],
+      phases: [
+        { phaseId: 'initial', name: 'Initial Phase' },
+        { phaseId: 'final', name: 'Final Phase' },
+      ],
     });
   });
 });

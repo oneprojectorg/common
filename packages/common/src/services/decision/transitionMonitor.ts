@@ -11,12 +11,8 @@ import { CommonError } from '../../utils';
 import { advancePhase } from './advancePhase';
 import { invalidateDecisionInstance } from './decisionCache';
 import { onPhaseAdvanced } from './onPhaseAdvanced';
-import {
-  type PhasesResolved,
-  withInstancePhases,
-  withInstancesPhases,
-} from './readInstancePhases';
-import { getInstancePhases } from './schemas/instanceData';
+import { listInstancePhases, readInstancePhases } from './readInstancePhases';
+import type { PhaseInstanceData } from './schemas/instanceData';
 
 export interface ProcessDecisionsTransitionsResult {
   processed: number;
@@ -36,9 +32,6 @@ type DueTransition = {
   toStateId: string;
   scheduledDate: string;
   completedAt: string | null;
-  instance: {
-    instanceData: unknown;
-  };
 };
 
 /**
@@ -67,9 +60,6 @@ export async function processDecisionsTransitions({
         toStateId: decisionProcessTransitions.toStateId,
         scheduledDate: decisionProcessTransitions.scheduledDate,
         completedAt: decisionProcessTransitions.completedAt,
-        instance: {
-          instanceData: processInstances.instanceData,
-        },
       })
       .from(decisionProcessTransitions)
       .innerJoin(
@@ -96,33 +86,32 @@ export async function processDecisionsTransitions({
     }
 
     const transitionsByInstance = groupTransitionsByInstance(dueTransitions);
-    const instances = await withInstancesPhases({
-      instances: Array.from(transitionsByInstance, ([id, transitions]) => ({
-        id,
-        instanceData: transitions[0]!.instance.instanceData,
-      })),
+    // One rows query for the whole sweep.
+    const phasesByInstance = await listInstancePhases({
+      db,
+      processInstanceIds: [...transitionsByInstance.keys()],
     });
 
     await pMap(
-      instances,
-      async (instance) => {
-        const processInstanceId = instance.id;
-        const transitions = transitionsByInstance.get(processInstanceId) ?? [];
+      transitionsByInstance,
+      async ([processInstanceId, transitions]) => {
+        const phases = phasesByInstance.get(processInstanceId) ?? [];
 
-        if (getInstancePhases(instance.instanceData).length === 0) {
+        if (phases.length === 0) {
           for (const transition of transitions) {
             result.failed++;
             result.errors.push({
               transitionId: transition.id,
               processInstanceId,
-              error: `Process instance ${processInstanceId} has no phases defined in instanceData`,
+              error: `Process instance ${processInstanceId} has no phases`,
             });
           }
           return;
         }
 
         await advanceInstanceTransitions({
-          instance,
+          processInstanceId,
+          phases,
           transitions,
           now,
           result,
@@ -163,19 +152,19 @@ function groupTransitionsByInstance(
  * Returns the last successfully reached phase ID, or null if nothing advanced.
  */
 async function advanceInstanceTransitions({
-  instance,
+  processInstanceId,
+  phases: sweepPhases,
   transitions,
   now,
   result,
 }: {
-  instance: PhasesResolved<{ id: string; instanceData: unknown }>;
+  processInstanceId: string;
+  phases: PhaseInstanceData[];
   transitions: DueTransition[];
   now: string;
   result: ProcessDecisionsTransitionsResult;
 }): Promise<void> {
-  const processInstanceId = instance.id;
-  const phases = [...getInstancePhases(instance.instanceData)];
-  let currentInstance = instance;
+  let phases = sweepPhases;
 
   for (const transition of transitions) {
     try {
@@ -193,7 +182,8 @@ async function advanceInstanceTransitions({
       const advanceResult = await db.transaction(async (tx) =>
         advancePhase({
           db: tx,
-          instance: currentInstance,
+          instance: { id: processInstanceId },
+          phases,
           fromPhaseId,
           toPhaseId: transition.toStateId,
           triggeredByProfileId: null,
@@ -209,7 +199,7 @@ async function advanceInstanceTransitions({
       result.processed++;
 
       // Cron-driven advance: no router runs here, so invalidate the cached
-      // instance snapshot directly. The loop below re-fetches the row for the
+      // instance snapshot directly. The loop below re-reads the phases for the
       // next iteration; the cache invalidation keeps external readers fresh.
       await invalidateDecisionInstance(processInstanceId);
 
@@ -221,13 +211,8 @@ async function advanceInstanceTransitions({
         advanceResult,
       });
 
-      // Re-fetch so the next iteration sees the committed state.
-      const refreshed = await db.query.processInstances.findFirst({
-        where: { id: processInstanceId },
-      });
-      if (refreshed) {
-        currentInstance = await withInstancePhases({ instance: refreshed });
-      }
+      // Re-read so the next iteration sees the committed state.
+      phases = await readInstancePhases({ db, processInstanceId });
     } catch (error) {
       result.failed++;
       result.errors.push({

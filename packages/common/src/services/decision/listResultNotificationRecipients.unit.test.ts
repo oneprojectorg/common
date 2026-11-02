@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // `eq`/`inArray` record (column, value) pairs so the tests can pin which row
 // each query addresses.
@@ -95,6 +95,10 @@ vi.mock('./getProposalsForPhase', () => ({
   getProposalIdsForPhase: vi.fn(),
 }));
 
+vi.mock('./readInstancePhases', () => ({
+  readInstancePhases: vi.fn(),
+}));
+
 import { db } from '@op/db/client';
 
 import {
@@ -106,6 +110,7 @@ import {
   getProposalIdsForPhase,
 } from './getProposalsForPhase';
 import { listResultNotificationRecipients } from './listResultNotificationRecipients';
+import { readInstancePhases } from './readInstancePhases';
 
 const INSTANCE_ID = '11111111-1111-4111-8111-111111111111';
 const RESULT_ID = '22222222-2222-4222-8222-222222222222';
@@ -130,6 +135,7 @@ const findInstance = vi.mocked(db.query.processInstances.findFirst);
 const findProposals = vi.mocked(db.query.proposals.findMany);
 const mockPhaseIds = vi.mocked(getProposalIdsForPhase);
 const mockAttachedIds = vi.mocked(getAttachedProposalIds);
+const mockReadPhases = vi.mocked(readInstancePhases);
 const mockAudiences = vi.mocked(listMemberProfileRecipientsByProfile);
 
 const ADA: EmailRecipient = {
@@ -200,10 +206,10 @@ describe('listResultNotificationRecipients', () => {
     findInstance.mockResolvedValue({
       id: INSTANCE_ID,
       name: 'Participatory Budgeting 2026',
-      instanceData: { phases: [{ phaseId: 'voting', name: 'Voting' }] },
       currentStateId: 'voting',
       profile: { slug: 'pb-2026' },
     } as never);
+    mockReadPhases.mockResolvedValue([{ phaseId: 'voting', name: 'Voting' }]);
     mockPhaseIds.mockResolvedValue(['selected-1', 'not-selected-1']);
     findProposals.mockResolvedValue([
       proposal({

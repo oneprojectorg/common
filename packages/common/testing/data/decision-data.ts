@@ -9,6 +9,7 @@ import {
   customForms,
   decisionProcesses,
   processInstances,
+  processPhases,
   profileRelationships,
   profileUserToAccessRoles,
   profileUsers,
@@ -28,6 +29,7 @@ import { randomUUID } from 'node:crypto';
 
 import type {
   DecisionSchemaDefinition,
+  PhaseInstanceData,
   ProposalTemplateSchema,
   RubricTemplateSchema,
 } from '../../src';
@@ -316,6 +318,8 @@ export interface CreateDecisionInstanceOptions {
    * API rejects one now, but rows written before it does still hold `''`.
    */
   phaseHeadlines?: Record<string, string>;
+  /** Per-phase `description` overrides, keyed by phase id. */
+  phaseDescriptions?: Record<string, string>;
   /** Phase the instance starts in. Defaults to the schema's first phase. */
   currentStateId?: string;
   /** Rubric every review phase scores against; a review screen needs one. */
@@ -351,6 +355,7 @@ export async function createDecisionInstance(
     proposalTemplate: proposalTemplateOverride,
     slug,
     phaseHeadlines,
+    phaseDescriptions,
     currentStateId,
     rubricTemplate,
   } = opts;
@@ -382,7 +387,7 @@ export async function createDecisionInstance(
     phases: schema.phases.map((phase, index) => ({
       phaseId: phase.id,
       name: phase.name,
-      description: phase.description,
+      description: phaseDescriptions?.[phase.id] ?? phase.description,
       rules: phase.rules,
       headline: phaseHeadlines?.[phase.id],
       selectionPipeline:
@@ -440,6 +445,11 @@ export async function createDecisionInstance(
     throw new Error('Failed to create process instance');
   }
 
+  await insertPhaseRows({
+    processInstanceId: processInstance.id,
+    phases: instanceData.phases,
+  });
+
   // 3. Grant the user access to the decision profile
   if (grantAdminAccess) {
     await grantDecisionProfileAccess({
@@ -456,6 +466,41 @@ export async function createDecisionInstance(
     slug: instanceSlug,
     name,
   };
+}
+
+/**
+ * Mints a phase profile and a `decision_process_phases` row for each phase, in
+ * order. Mirrors what `reconcilePhases` in @op/common writes: this module
+ * loads in Playwright, where that service's server-only db client throws.
+ */
+export async function insertPhaseRows({
+  processInstanceId,
+  phases,
+}: {
+  processInstanceId: string;
+  phases: readonly PhaseInstanceData[];
+}): Promise<void> {
+  for (const [sortOrder, { name, ...data }] of phases.entries()) {
+    const [phaseProfile] = await db
+      .insert(profiles)
+      .values({
+        type: EntityType.PHASE,
+        name: name?.trim() || data.phaseId,
+        slug: `phase-${randomUUID()}`,
+      })
+      .returning({ id: profiles.id });
+
+    if (!phaseProfile) {
+      throw new Error(`Failed to create phase profile for ${data.phaseId}`);
+    }
+
+    await db.insert(processPhases).values({
+      processInstanceId,
+      sortOrder,
+      profileId: phaseProfile.id,
+      data,
+    });
+  }
 }
 
 export interface GrantDecisionProfileAccessOptions {

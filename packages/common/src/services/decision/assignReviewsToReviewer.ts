@@ -75,7 +75,9 @@ export async function assignReviewsToReviewer({
     );
   }
 
-  const phaseData = { phases: await readInstancePhases({ instance }) };
+  const phaseData = {
+    phases: await readInstancePhases({ db, processInstanceId: instance.id }),
+  };
   const phaseCount = phaseData.phases.length;
   const currentPhaseIndex = instance.currentStateId
     ? getPhaseIndex(phaseData, instance.currentStateId)

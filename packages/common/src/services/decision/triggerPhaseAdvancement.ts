@@ -13,8 +13,7 @@ import {
 import { assertProfileAccess, assertUserByAuthId } from '../assert';
 import { advancePhase } from './advancePhase';
 import { onPhaseAdvanced } from './onPhaseAdvanced';
-import { withInstancePhases } from './readInstancePhases';
-import { getInstancePhases } from './schemas/instanceData';
+import { readInstancePhases } from './readInstancePhases';
 
 export interface TriggerPhaseAdvancementInput {
   instanceId: string;
@@ -74,8 +73,10 @@ export async function triggerPhaseAdvancement({
     throw new ValidationError('Instance must be published');
   }
 
-  const resolved = await withInstancePhases({ instance });
-  const phases = [...getInstancePhases(resolved.instanceData)];
+  const phases = await readInstancePhases({
+    db,
+    processInstanceId: instanceId,
+  });
 
   if (phases.length === 0) {
     throw new CommonError('Instance has no phases defined');
@@ -99,16 +100,19 @@ export async function triggerPhaseAdvancement({
     throw new CommonError('Current phase not found in instance phases');
   }
 
-  if (currentPhaseIndex === phases.length - 1) {
+  const toPhase = phases[currentPhaseIndex + 1];
+
+  if (!toPhase) {
     throw new ValidationError('Already on final phase');
   }
 
-  const toPhaseId = phases[currentPhaseIndex + 1]!.phaseId;
+  const toPhaseId = toPhase.phaseId;
 
   const advanceResult = await db.transaction(async (tx) => {
     const result = await advancePhase({
       db: tx,
-      instance: resolved,
+      instance,
+      phases,
       fromPhaseId,
       toPhaseId,
       triggeredByProfileId: dbUser.profileId,

@@ -1,25 +1,22 @@
-import type { ProcessInstance } from '@op/db/schema';
-
 import { CommonError } from '../../utils';
-import type { DecisionInstanceData } from './schemas/instanceData';
+import type { PhaseInstanceData } from './schemas/instanceData';
 import type { ScheduledTransition } from './types';
 
 /**
- * Builds expected transition records from a process instance's phase data.
+ * Builds expected transition records from a process instance's phases.
  * Only creates transitions for phases with date-based advancement
  * (rules.advancement.method === 'date').
  *
  * Shared by both `createTransitionsForProcess` and `updateTransitionsForProcess`.
  */
-export function buildExpectedTransitions(
-  processInstance: ProcessInstance,
-): ScheduledTransition[] {
-  // Type assertion: instanceData is `unknown` in DB to support legacy formats for viewing,
-  // but this function is only called for new DecisionInstanceData processes
-  const instanceData = processInstance.instanceData as DecisionInstanceData;
-  const phases = instanceData.phases;
-
-  if (!phases || phases.length === 0) {
+export function buildExpectedTransitions({
+  processInstanceId,
+  phases,
+}: {
+  processInstanceId: string;
+  phases: readonly PhaseInstanceData[];
+}): ScheduledTransition[] {
+  if (phases.length === 0) {
     throw new CommonError(
       'Process instance must have at least one phase configured',
     );
@@ -44,13 +41,13 @@ export function buildExpectedTransitions(
 
     if (!scheduledDate) {
       throw new CommonError(
-        `Phase "${currentPhase.phaseId}" must have an end date for date-based advancement (instance: ${processInstance.id})`,
+        `Phase "${currentPhase.phaseId}" must have an end date for date-based advancement (instance: ${processInstanceId})`,
       );
     }
 
     // DB columns are named fromStateId/toStateId but store phase IDs
     transitions.push({
-      processInstanceId: processInstance.id,
+      processInstanceId,
       fromStateId: currentPhase.phaseId,
       toStateId: nextPhase.phaseId,
       scheduledDate: new Date(scheduledDate).toISOString(),

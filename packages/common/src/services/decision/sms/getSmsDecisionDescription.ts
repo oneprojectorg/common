@@ -3,6 +3,7 @@ import { ProcessStatus } from '@op/db/schema';
 import { NotFoundError } from '../../../utils';
 import { countBallotProposals } from '../countBallotProposals';
 import { getDecisionBySlug } from '../getDecisionBySlug';
+import { getInstancePhases } from '../schemas/instanceData';
 import {
   type CurrentPhaseSummary,
   summarizeCurrentPhase,
@@ -37,6 +38,9 @@ export async function getSmsDecisionDescription({
   return {
     name,
     proposalCount,
-    ...summarizeCurrentPhase({ instanceData, currentStateId }),
+    ...summarizeCurrentPhase({
+      phases: getInstancePhases(instanceData),
+      currentStateId,
+    }),
   };
 }

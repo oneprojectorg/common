@@ -8,8 +8,11 @@ import { permission } from 'access-zones';
 
 import { NotFoundError } from '../../utils';
 import { assertInstanceProfileAccess } from '../access';
-import { withInstancePhases } from '../decision/readInstancePhases';
-import type { DecisionInstanceData } from '../decision/schemas/instanceData';
+import { readInstancePhases } from '../decision/readInstancePhases';
+import type {
+  DecisionInstanceData,
+  PhaseInstanceData,
+} from '../decision/schemas/instanceData';
 import { serverExtensions } from '../decision/tiptapExtensions';
 import type { SupportedLocale } from './locales';
 import { runTranslateBatch } from './runTranslateBatch';
@@ -61,13 +64,16 @@ export async function translateDecision({
     )
     .limit(1);
 
-  const [instance] = instances;
+  const [processInstance] = instances;
 
-  if (!instance) {
+  if (!processInstance) {
     throw new NotFoundError('Decision profile', decisionProfileId);
   }
 
-  const processInstance = await withInstancePhases({ instance });
+  const phases = await readInstancePhases({
+    db,
+    processInstanceId: processInstance.id,
+  });
 
   // Start the permission check immediately so it runs in parallel with translation
   const authPromise = assertInstanceProfileAccess({
@@ -82,12 +88,13 @@ export async function translateDecision({
 
   const instanceData =
     processInstance.instanceData as DecisionInstanceData | null;
-  const entries = buildEntries(
+  const entries = buildEntries({
     decisionProfileId,
-    instanceData,
-    processInstance.currentStateId,
-    processInstance.description,
-  );
+    phases,
+    overview: instanceData?.overview,
+    currentStateId: processInstance.currentStateId,
+    processDescription: processInstance.description,
+  });
 
   if (entries.length === 0) {
     await authPromise;
@@ -128,17 +135,24 @@ function renderBodyToHtml(content: string | JSONContent): string {
   return generateHTML(content, serverExtensions);
 }
 
-function buildEntries(
-  decisionProfileId: string,
-  instanceData: DecisionInstanceData | null,
-  currentStateId: string | null,
-  processDescription: string | null,
-): TranslatableEntry[] {
+function buildEntries({
+  decisionProfileId,
+  phases,
+  overview,
+  currentStateId,
+  processDescription,
+}: {
+  decisionProfileId: string;
+  phases: readonly PhaseInstanceData[];
+  overview: DecisionInstanceData['overview'];
+  currentStateId: string | null;
+  processDescription: string | null;
+}): TranslatableEntry[] {
   const prefix = `decision:${decisionProfileId}`;
   const entries: TranslatableEntry[] = [];
 
   const currentPhase = currentStateId
-    ? instanceData?.phases?.find((p) => p.phaseId === currentStateId)
+    ? phases.find((p) => p.phaseId === currentStateId)
     : undefined;
 
   if (currentPhase?.headline) {
@@ -160,7 +174,7 @@ function buildEntries(
     });
   }
 
-  for (const phase of instanceData?.phases ?? []) {
+  for (const phase of phases) {
     if (phase.name) {
       entries.push({
         contentKey: `${prefix}:phase:${phase.phaseId}:name`,
@@ -176,7 +190,6 @@ function buildEntries(
     });
   }
 
-  const overview = instanceData?.overview;
   if (overview?.headline) {
     entries.push({
       contentKey: `${prefix}:overviewHeadline`,

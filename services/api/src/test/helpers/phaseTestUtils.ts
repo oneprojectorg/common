@@ -1,7 +1,7 @@
 import { getInstancePhases } from '@op/common';
 import { TestDecisionsDataManager } from '@op/common/testing';
-import { asc, db, eq, sql } from '@op/db/client';
-import { processInstances, processPhases, profiles } from '@op/db/schema';
+import { asc, db, eq } from '@op/db/client';
+import { processPhases, profiles } from '@op/db/schema';
 import { expect } from 'vitest';
 
 import { appRouter } from '../../routers';
@@ -96,21 +96,6 @@ export const loadBlobPhases = async (processInstanceId: string) => {
     columns: { instanceData: true },
   });
   return getInstancePhases(instance?.instanceData);
-};
-
-export const reorderBlobPhases = async (
-  processInstanceId: string,
-  phaseIds: string[],
-) => {
-  const phases = [...(await loadBlobPhases(processInstanceId))].sort(
-    (a, b) => phaseIds.indexOf(a.phaseId) - phaseIds.indexOf(b.phaseId),
-  );
-  await db
-    .update(processInstances)
-    .set({
-      instanceData: sql`jsonb_set(${processInstances.instanceData}, '{phases}', ${JSON.stringify(phases)}::jsonb)`,
-    })
-    .where(eq(processInstances.id, processInstanceId));
 };
 
 export const listPhaseIds = async (processInstanceId: string) =>

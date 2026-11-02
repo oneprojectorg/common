@@ -1,14 +1,14 @@
 import { type DbClient, db as defaultDb, eq, inArray } from '@op/db/client';
 import { decisionProcessTransitions } from '@op/db/schema';
-import type { ProcessInstance } from '@op/db/schema';
 import { logger } from '@op/logging';
 
 import { CommonError } from '../../utils';
 import { buildExpectedTransitions } from './buildExpectedTransitions';
-import type { PhasesResolved } from './readInstancePhases';
+import type { PhaseInstanceData } from './schemas/instanceData';
 
 export interface UpdateTransitionsInput {
-  processInstance: PhasesResolved<ProcessInstance>;
+  processInstanceId: string;
+  phases: readonly PhaseInstanceData[];
   db?: DbClient;
 }
 
@@ -28,18 +28,22 @@ export interface UpdateTransitionsResult {
  * - Prevents updates to completed transitions (results phase is locked)
  */
 export async function updateTransitionsForProcess({
-  processInstance,
+  processInstanceId,
+  phases,
   db = defaultDb,
 }: UpdateTransitionsInput): Promise<UpdateTransitionsResult> {
   try {
-    const expectedTransitions = buildExpectedTransitions(processInstance);
+    const expectedTransitions = buildExpectedTransitions({
+      processInstanceId,
+      phases,
+    });
 
     // Get existing transitions
     const existingTransitions =
       await db._query.decisionProcessTransitions.findMany({
         where: eq(
           decisionProcessTransitions.processInstanceId,
-          processInstance.id,
+          processInstanceId,
         ),
         orderBy: (transitions, { asc }) => [asc(transitions.scheduledDate)],
       });

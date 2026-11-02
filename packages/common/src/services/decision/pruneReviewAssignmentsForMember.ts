@@ -50,7 +50,12 @@ export async function pruneReviewAssignmentsForMember({
 
   const currentPhase = assertInstancePhase({
     instance: {
-      instanceData: { phases: await readInstancePhases({ instance }) },
+      instanceData: {
+        phases: await readInstancePhases({
+          db,
+          processInstanceId: instance.id,
+        }),
+      },
     },
     phaseId: currentPhaseId,
   });

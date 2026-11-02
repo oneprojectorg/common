@@ -25,7 +25,7 @@ import { resolveProposalTemplate } from './resolveProposalTemplate';
 import { isReviewOutOfDate } from './review/staleness';
 import { assertCanReadPhaseReviews } from './reviewHelpers';
 import { instanceOptionalPhaseRefSchema } from './schemas/instance';
-import { getInstancePhases, isLastPhase } from './schemas/instanceData';
+import { isLastPhase } from './schemas/instanceData';
 import {
   type ProposalCategoryItem,
   type ProposalsWithReviewAggregatesList,
@@ -125,10 +125,7 @@ export async function listProposalsWithReviewAggregates(
     // Mirrors `updateProposal`, which also refuses every edit in the results phase.
     isEditable:
       checkPermission({ decisions: permission.UPDATE }, roles) &&
-      !isLastPhase(
-        instance.currentStateId,
-        getInstancePhases(instance.instanceData),
-      ),
+      !isLastPhase(instance.currentStateId, instance.instanceData.phases),
     phaseProposalIds,
     scoredCriterionKeys,
     rubricTemplate,

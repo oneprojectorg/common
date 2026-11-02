@@ -1,6 +1,7 @@
 import {
   TestDecisionsDataManager,
   TestTranslationDataManager,
+  updateInstancePhase,
 } from '@op/common/testing';
 import { db } from '@op/db/client';
 import { contentTranslations, processInstances } from '@op/db/schema';
@@ -97,28 +98,21 @@ describe('translation.translateDecision', () => {
 
     const instance = setup.instance;
 
-    // Patch instanceData to add translatable phase content
-    const instanceRecord = await db.query.processInstances.findFirst({
-      where: { id: instance.instance.id },
+    await updateInstancePhase({
+      instanceId: instance.instance.id,
+      phaseId: 'initial',
+      update: (phase) => ({
+        ...phase,
+        headline: 'Submit Your Ideas',
+        description: 'Tell us about your proposal',
+        name: 'Idea Collection',
+      }),
     });
-    if (!instanceRecord) {
-      throw new Error('Instance record not found');
-    }
-
-    const instanceData = instanceRecord.instanceData as Record<string, unknown>;
-    const phases = instanceData.phases as Array<Record<string, unknown>>;
-    phases[0] = {
-      ...phases[0],
-      headline: 'Submit Your Ideas',
-      description: 'Tell us about your proposal',
-      name: 'Idea Collection',
-    };
-    phases[1] = { ...phases[1], name: 'Final Review' };
-
-    await db
-      .update(processInstances)
-      .set({ instanceData: { ...instanceData, phases } })
-      .where(eq(processInstances.id, instance.instance.id));
+    await updateInstancePhase({
+      instanceId: instance.instance.id,
+      phaseId: 'final',
+      update: (phase) => ({ ...phase, name: 'Final Review' }),
+    });
 
     // Clean up translations created by the test
     onTestFinished(async () => {
@@ -164,15 +158,6 @@ describe('translation.translateDecision', () => {
 
     const instance = setup.instance;
 
-    const instanceRecord = await db.query.processInstances.findFirst({
-      where: { id: instance.instance.id },
-    });
-    if (!instanceRecord) {
-      throw new Error('Instance record not found');
-    }
-
-    const instanceData = instanceRecord.instanceData as Record<string, unknown>;
-    const phases = instanceData.phases as Array<Record<string, unknown>>;
     const tiptapJson = JSON.stringify({
       type: 'doc',
       content: [
@@ -182,12 +167,11 @@ describe('translation.translateDecision', () => {
         },
       ],
     });
-    phases[0] = { ...phases[0], additionalInfo: tiptapJson };
-
-    await db
-      .update(processInstances)
-      .set({ instanceData: { ...instanceData, phases } })
-      .where(eq(processInstances.id, instance.instance.id));
+    await updateInstancePhase({
+      instanceId: instance.instance.id,
+      phaseId: 'initial',
+      update: (phase) => ({ ...phase, additionalInfo: tiptapJson }),
+    });
 
     onTestFinished(async () => {
       await db
@@ -301,29 +285,12 @@ describe('translation.translateDecision', () => {
 
     const instance = setup.instance;
 
-    // Remove phase names from instanceData to produce an instance with no translatable content
-    const instanceRecord = await db.query.processInstances.findFirst({
-      where: { id: instance.instance.id },
-    });
-    if (!instanceRecord) {
-      throw new Error('Instance record not found');
-    }
-
-    const instanceData = instanceRecord.instanceData as Record<string, unknown>;
-    const phases = (instanceData.phases as Array<Record<string, unknown>>).map(
-      ({
-        name: _name,
-        headline: _h,
-        description: _d,
-        additionalInfo: _a,
-        ...rest
-      }) => rest,
-    );
-
-    // Also null out the processInstances.description column (separate from instanceData)
+    // Every phase row carries a name, so only a decision with no phases has
+    // nothing to translate.
+    await testData.removePhaseRows(instance.instance.id);
     await db
       .update(processInstances)
-      .set({ instanceData: { ...instanceData, phases }, description: null })
+      .set({ description: null })
       .where(eq(processInstances.id, instance.instance.id));
 
     const caller = await createAuthenticatedCaller(setup.userEmail);
@@ -355,25 +322,15 @@ describe('translation.translateDecision', () => {
 
     const instance = setup.instance;
 
-    const instanceRecord = await db.query.processInstances.findFirst({
-      where: { id: instance.instance.id },
+    await updateInstancePhase({
+      instanceId: instance.instance.id,
+      phaseId: 'initial',
+      update: (phase) => ({
+        ...phase,
+        headline: 'Share Your Vision',
+        name: 'Ideation',
+      }),
     });
-    if (!instanceRecord) {
-      throw new Error('Instance record not found');
-    }
-
-    const instanceData = instanceRecord.instanceData as Record<string, unknown>;
-    const phases = instanceData.phases as Array<Record<string, unknown>>;
-    phases[0] = {
-      ...phases[0],
-      headline: 'Share Your Vision',
-      name: 'Ideation',
-    };
-
-    await db
-      .update(processInstances)
-      .set({ instanceData: { ...instanceData, phases } })
-      .where(eq(processInstances.id, instance.instance.id));
 
     // Pre-seed the headline translation in cache
     await translationData.seedTranslation({
@@ -442,22 +399,11 @@ describe('translation.translateDecision', () => {
       throw new Error('No instance created');
     }
 
-    // Give the decision some translatable content.
-    const instanceRecord = await db.query.processInstances.findFirst({
-      where: { id: instance.instance.id },
+    await updateInstancePhase({
+      instanceId: instance.instance.id,
+      phaseId: 'initial',
+      update: (phase) => ({ ...phase, headline: 'Public Headline' }),
     });
-    if (!instanceRecord) {
-      throw new Error('Instance record not found');
-    }
-
-    const instanceData = instanceRecord.instanceData as Record<string, unknown>;
-    const phases = instanceData.phases as Array<Record<string, unknown>>;
-    phases[0] = { ...phases[0], headline: 'Public Headline' };
-
-    await db
-      .update(processInstances)
-      .set({ instanceData: { ...instanceData, phases } })
-      .where(eq(processInstances.id, instance.instance.id));
 
     // Open the decision to visitors: GLOBAL_USER_PUBLIC gets the Public role
     // (decisions READ), which a no-JWT caller resolves to via the sentinel.
@@ -587,22 +533,11 @@ describe('translation.translateDecision', () => {
 
     const instance = setup.instance;
 
-    // Patch instance with some content so we get a non-empty result
-    const instanceRecord = await db.query.processInstances.findFirst({
-      where: { id: instance.instance.id },
+    await updateInstancePhase({
+      instanceId: instance.instance.id,
+      phaseId: 'initial',
+      update: (phase) => ({ ...phase, headline: 'Org Member Test' }),
     });
-    if (!instanceRecord) {
-      throw new Error('Instance record not found');
-    }
-
-    const instanceData = instanceRecord.instanceData as Record<string, unknown>;
-    const phases = instanceData.phases as Array<Record<string, unknown>>;
-    phases[0] = { ...phases[0], headline: 'Org Member Test' };
-
-    await db
-      .update(processInstances)
-      .set({ instanceData: { ...instanceData, phases } })
-      .where(eq(processInstances.id, instance.instance.id));
 
     onTestFinished(async () => {
       await db

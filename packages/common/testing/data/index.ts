@@ -27,6 +27,7 @@ export {
   grantInstanceProfileAdminRole,
   grantInstanceReviewerRole,
   grantInstanceRole,
+  insertPhaseRows,
   likeProposal,
   makeDecisionPublic,
   SEEDED_SIMPLE_VOTING_TEMPLATE_NAME,

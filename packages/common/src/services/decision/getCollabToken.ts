@@ -46,7 +46,10 @@ export const getCollabToken = async ({
     data: {},
     proposal,
     processInstance,
-    instancePhases: await readInstancePhases({ instance: processInstance }),
+    instancePhases: await readInstancePhases({
+      db,
+      processInstanceId: processInstance.id,
+    }),
   });
 
   const { collaborationDocId } = parseProposalData(proposal.proposalData);

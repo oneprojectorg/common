@@ -2,7 +2,6 @@ import { InngestTestEngine } from '@inngest/test';
 import type { DecisionSchemaDefinition } from '@op/common';
 import {
   TestDecisionsDataManager,
-  forceServerFlags,
   leaveOnlyPhaseRows,
 } from '@op/common/testing';
 import { db, eq } from '@op/db/client';
@@ -13,7 +12,7 @@ import {
   users,
 } from '@op/db/schema';
 import { Events } from '@op/events';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { sendReviewPhaseEndingReminders } from './modules/decisions/sendReviewPhaseEndingReminders';
 import { sendPhaseTransitionNotification } from './notifications/sendPhaseTransitionNotification';
@@ -55,14 +54,7 @@ const createPublishedInstance = async (
   return { setup, instanceId: setup.instance.instance.id };
 };
 
-describe.each([
-  { flag: 'on', on: true },
-  { flag: 'off', on: false },
-])('with process_phases_from_rows $flag and the blob emptied', ({ on }) => {
-  afterEach(() => {
-    vi.unstubAllEnvs();
-  });
-
+describe('with the blob phases emptied', () => {
   it('names the phases in the phase transition email', async ({
     task,
     onTestFinished,
@@ -70,7 +62,6 @@ describe.each([
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
     const { instanceId } = await createPublishedInstance(testData);
     await leaveOnlyPhaseRows(instanceId);
-    forceServerFlags(on);
 
     const { result } = await new InngestTestEngine({
       function: sendPhaseTransitionNotification,
@@ -88,7 +79,7 @@ describe.each([
     });
 
     expect(result).toMatchObject({
-      phases: on ? [{ name: 'Row initial' }, { name: 'Row final' }] : [],
+      phases: [{ name: 'Row initial' }, { name: 'Row final' }],
     });
   });
 
@@ -122,7 +113,6 @@ describe.each([
       throw new Error('Failed to insert the vote');
     }
     await leaveOnlyPhaseRows(instanceId);
-    forceServerFlags(on);
 
     const { result } = await new InngestTestEngine({
       function: sendVoteSubmittedNotification,
@@ -136,7 +126,7 @@ describe.each([
     });
 
     expect(result).toMatchObject({
-      phases: on ? [{ name: 'Row initial' }, { name: 'Row final' }] : [],
+      phases: [{ name: 'Row initial' }, { name: 'Row final' }],
     });
   });
 
@@ -157,7 +147,6 @@ describe.each([
     await leaveOnlyPhaseRows(instanceId, {
       endDate: new Date(midnightUtc + 2.5 * MS_PER_DAY).toISOString(),
     });
-    forceServerFlags(on);
 
     const { result } = await new InngestTestEngine({
       function: sendReviewPhaseEndingReminders,
@@ -171,8 +160,6 @@ describe.each([
         (reminder: { processInstanceId?: string }) =>
           reminder.processInstanceId === instanceId,
       ),
-    ).toEqual(
-      on ? [expect.objectContaining({ processInstanceId: instanceId })] : [],
-    );
+    ).toEqual([expect.objectContaining({ processInstanceId: instanceId })]);
   });
 });

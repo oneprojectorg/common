@@ -22,7 +22,7 @@ import {
   postsToProfiles,
   processInstances,
 } from '@op/db/schema';
-import { db, eq } from '@op/db/test';
+import { db, eq, sql } from '@op/db/test';
 import type { BrowserContext, Page } from '@playwright/test';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
@@ -1034,37 +1034,22 @@ async function seedDecision({
     authUserId: org.adminUser.authUserId,
     email: org.adminUser.email,
     schema: REVIEW_SCHEMA,
+    currentStateId,
+    rubricTemplate,
+    ...(phaseCopy && {
+      phaseHeadlines: { [phaseCopy.phaseId]: phaseCopy.headline },
+      phaseDescriptions: { [phaseCopy.phaseId]: phaseCopy.description },
+    }),
   });
 
-  const seededData = instance.instance.instanceData as Record<string, unknown>;
-  const seededPhases = (seededData.phases ?? []) as Array<
-    Record<string, unknown>
-  >;
-
-  await db
-    .update(processInstances)
-    .set({
-      instanceData: {
-        ...seededData,
-        ...(rubricTemplate ? { rubricTemplate } : {}),
-        ...(overview ? { overview } : {}),
-        ...(phaseCopy
-          ? {
-              phases: seededPhases.map((phase) =>
-                phase.phaseId === phaseCopy.phaseId
-                  ? {
-                      ...phase,
-                      headline: phaseCopy.headline,
-                      description: phaseCopy.description,
-                    }
-                  : phase,
-              ),
-            }
-          : {}),
-      },
-      currentStateId,
-    })
-    .where(eq(processInstances.id, instance.instance.id));
+  if (overview) {
+    await db
+      .update(processInstances)
+      .set({
+        instanceData: sql`${processInstances.instanceData} || ${JSON.stringify({ overview })}::jsonb`,
+      })
+      .where(eq(processInstances.id, instance.instance.id));
+  }
 
   const { user: author } = await createInstanceMember({
     supabaseAdmin,

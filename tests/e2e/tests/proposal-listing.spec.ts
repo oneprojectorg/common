@@ -1,4 +1,5 @@
-import { createProposal } from '@op/common/testing/data';
+import type { PhaseInstanceData } from '@op/common';
+import { createProposal, insertPhaseRows } from '@op/common/testing/data';
 import {
   EntityType,
   ProcessStatus,
@@ -37,7 +38,7 @@ async function createProcessAndInstance({
     adminUser: { authUserId: string; email: string };
   };
   processSchema: Record<string, unknown>;
-  instanceData: Record<string, unknown>;
+  instanceData: Record<string, unknown> & { phases: PhaseInstanceData[] };
   processName: string;
 }) {
   const [process] = await db
@@ -73,9 +74,7 @@ async function createProcessAndInstance({
       processId: process.id,
       profileId: profile.id,
       instanceData,
-      currentStateId:
-        (instanceData as { phases?: { phaseId: string }[] }).phases?.[0]
-          ?.phaseId ?? 'proposalSubmission',
+      currentStateId: instanceData.phases[0]?.phaseId ?? 'proposalSubmission',
       status: ProcessStatus.PUBLISHED,
       ownerProfileId: org.organizationProfile.id,
     })
@@ -84,6 +83,11 @@ async function createProcessAndInstance({
   if (!instance) {
     throw new Error('Failed to create process instance');
   }
+
+  await insertPhaseRows({
+    processInstanceId: instance.id,
+    phases: instanceData.phases,
+  });
 
   const [profileUser] = await db
     .insert(profileUsers)

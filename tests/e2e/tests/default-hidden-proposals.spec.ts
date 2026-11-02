@@ -2,6 +2,7 @@ import {
   createOrganization,
   createProposal,
   grantDecisionProfileAccess,
+  insertPhaseRows,
 } from '@op/common/testing/data';
 import {
   EntityType,
@@ -148,6 +149,11 @@ async function createProcessWithDefaultHidden({
   if (!instance) {
     throw new Error('Failed to create process instance');
   }
+
+  await insertPhaseRows({
+    processInstanceId: instance.id,
+    phases: instanceData.phases,
+  });
 
   const [profileUser] = await db
     .insert(profileUsers)

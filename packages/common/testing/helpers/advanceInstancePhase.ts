@@ -1,6 +1,6 @@
 import { db } from '@op/db/client';
 
-import { advancePhase, withInstancePhases } from '../../src';
+import { advancePhase, readInstancePhases } from '../../src';
 
 export async function advanceInstancePhase({
   instanceId,
@@ -11,18 +11,14 @@ export async function advanceInstancePhase({
   fromPhaseId: string;
   toPhaseId: string;
 }) {
-  const processInstance = await db.query.processInstances.findFirst({
-    where: { id: instanceId },
-    columns: { id: true, instanceData: true },
-  });
-  if (!processInstance) {
-    throw new Error(`Instance ${instanceId} not found`);
-  }
-  const instance = await withInstancePhases({ instance: processInstance });
-  return db.transaction((tx) =>
+  return db.transaction(async (tx) =>
     advancePhase({
       db: tx,
-      instance,
+      instance: { id: instanceId },
+      phases: await readInstancePhases({
+        db: tx,
+        processInstanceId: instanceId,
+      }),
       fromPhaseId,
       toPhaseId,
       triggeredByProfileId: null,
