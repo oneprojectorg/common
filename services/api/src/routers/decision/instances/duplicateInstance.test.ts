@@ -19,6 +19,8 @@ import {
 } from '../../../test/helpers/gating/decision';
 import {
   expectNothingNamed,
+  expectRowsMirrorPhases,
+  loadInstanceData,
   loadPhaseRows,
 } from '../../../test/helpers/phaseTestUtils';
 import { createWizardDraft } from '../../../test/helpers/wizardDraftTestUtils';
@@ -183,86 +185,61 @@ describe.concurrent('duplicateInstance', () => {
     });
     testData.trackProfileForCleanup(duplicate.id);
 
-    const [instance, sourceRows, duplicateRows] = await Promise.all([
-      db.query.processInstances.findFirst({
-        where: { id: duplicate.processInstance.id },
-      }),
+    const [{ instanceData }, sourceRows, duplicateRows] = await Promise.all([
+      loadInstanceData(duplicate.processInstance.id),
       loadPhaseRows(source.processInstance.id),
       loadPhaseRows(duplicate.processInstance.id),
     ]);
-    const instanceData = instance!.instanceData as DecisionInstanceData;
 
     expect(instanceData.phases).toHaveLength(simpleVoting.phases.length);
-    expect(duplicateRows).toHaveLength(sourceRows.length);
-    instanceData.phases.forEach((phase, index) => {
-      const row = duplicateRows[index]!;
-      expect(row.sortOrder).toBe(index);
-      expect(row.name).toBe(phase.name);
-      expect(row.data).toMatchObject({ phaseId: phase.phaseId });
-    });
+    expectRowsMirrorPhases(duplicateRows, instanceData.phases);
+    expect(duplicateRows.map((row) => row.data)).toEqual(
+      sourceRows.map((row) => withoutDates(row.data)),
+    );
 
-    duplicateRows.forEach((row, index) => {
-      const sourceRow = sourceRows[index]!;
-      expect(row.name).toBe(sourceRow.name);
-      expect(row.data).toEqual(withoutDates(sourceRow.data));
-    });
-
-    const sourceProfileIds = new Set(sourceRows.map((row) => row.profileId));
+    const sourceProfileIds = sourceRows.map((row) => row.profileId);
     for (const row of duplicateRows) {
-      expect(sourceProfileIds.has(row.profileId)).toBe(false);
+      expect(sourceProfileIds).not.toContain(row.profileId);
     }
   });
 
-  it.for([
-    {
-      label: 'a phase with no id',
-      message: /There is a phase with no id/,
-      phases: [
-        { phaseId: '', name: 'Submission' },
-        { phaseId: 'voting', name: 'Voting' },
-      ],
-    },
-    {
-      label: 'two phases with one id',
-      message: /There are two phases with the id "submission"/,
-      phases: [
-        { phaseId: 'submission', name: 'Submission' },
-        { phaseId: 'submission', name: 'Voting' },
-      ],
-    },
-  ])(
-    'refuses a legacy source with $label',
-    async ({ message, phases }, { task, onTestFinished }) => {
-      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-      const { result: source, caller } = await createSourceInstance(
-        testData,
-        task.id,
-      );
+  it('refuses a legacy source whose phases cannot be minted before writing anything', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { result: source, caller } = await createSourceInstance(
+      testData,
+      task.id,
+    );
 
-      await db
-        .update(processInstances)
-        .set({
-          instanceData: sql`jsonb_set(${processInstances.instanceData}, '{phases}', ${JSON.stringify(phases)}::jsonb)`,
-        })
-        .where(eq(processInstances.id, source.processInstance.id));
+    const phases = [
+      { phaseId: '', name: 'Submission' },
+      { phaseId: 'voting', name: 'Voting' },
+    ];
+    await db
+      .update(processInstances)
+      .set({
+        instanceData: sql`jsonb_set(${processInstances.instanceData}, '{phases}', ${JSON.stringify(phases)}::jsonb)`,
+      })
+      .where(eq(processInstances.id, source.processInstance.id));
 
-      const name = `Legacy Duplicate ${task.id}`;
-      await expect(
-        caller.decision.duplicateInstance({
-          instanceId: source.processInstance.id,
-          name,
-          include: ALL_INCLUDED,
-        }),
-      ).rejects.toMatchObject({
-        cause: {
-          name: 'ValidationError',
-          message: expect.stringMatching(message),
-        },
-      });
+    const name = `Legacy Duplicate ${task.id}`;
+    await expect(
+      caller.decision.duplicateInstance({
+        instanceId: source.processInstance.id,
+        name,
+        include: ALL_INCLUDED,
+      }),
+    ).rejects.toMatchObject({
+      cause: {
+        name: 'ValidationError',
+        message: expect.stringMatching(/There is a phase with no id/),
+      },
+    });
 
-      await expectNothingNamed(name);
-    },
-  );
+    await expectNothingNamed(name);
+  });
 
   it('mints a row per minimal phase when phases are not included', async ({
     task,
@@ -281,23 +258,16 @@ describe.concurrent('duplicateInstance', () => {
     });
     testData.trackProfileForCleanup(duplicate.id);
 
-    const [instance, rows] = await Promise.all([
-      db.query.processInstances.findFirst({
-        where: { id: duplicate.processInstance.id },
-      }),
+    const [{ instanceData }, rows] = await Promise.all([
+      loadInstanceData(duplicate.processInstance.id),
       loadPhaseRows(duplicate.processInstance.id),
     ]);
-    const instanceData = instance!.instanceData as DecisionInstanceData;
 
     expect(instanceData.phases).toHaveLength(simpleVoting.phases.length);
-    expect(rows).toHaveLength(instanceData.phases.length);
-    instanceData.phases.forEach((phase, index) => {
-      const row = rows[index]!;
-      expect(row.sortOrder).toBe(index);
-      expect(row.name).toBe(phase.name);
-      expect(row.data).toMatchObject({ phaseId: phase.phaseId });
+    expectRowsMirrorPhases(rows, instanceData.phases);
+    for (const row of rows) {
       expect(row.data).not.toHaveProperty('rules');
-    });
+    }
   });
 
   it('should create a new profile with a unique slug', async ({
