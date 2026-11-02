@@ -2,7 +2,8 @@ import { type DbClient, db as defaultDb } from '@op/db/client';
 import { logger } from '@op/logging';
 
 import { isServerFeatureEnabled } from '../../utils/featureFlags';
-import { getStoredPhases, loadPhaseRowsByInstance } from './phaseRows';
+import { listPhasesByInstance } from './phaseHelpers';
+import { mergePhasesWithInstanceData } from './phaseMirror';
 import {
   type PhaseInstanceData,
   getInstancePhases,
@@ -103,25 +104,28 @@ export const withInstancesPhases = async <T extends InstanceWithData>({
     return instances.map(markResolved);
   }
 
-  const rowsByInstance = await loadPhaseRowsByInstance({
+  const phasesByInstance = await listPhasesByInstance({
     db,
     processInstanceIds: instances.map(({ id }) => id),
   });
 
   const withoutRows = instances
-    .filter(({ id }) => !rowsByInstance.has(id))
+    .filter(({ id }) => !phasesByInstance.has(id))
     .map(({ id }) => id);
   if (withoutRows.length > 0) {
     logger.warn(NO_ROWS_WARNING, { processInstanceIds: withoutRows });
   }
 
   return instances.map((instance) => {
-    const rows = rowsByInstance.get(instance.id);
+    const minted = phasesByInstance.get(instance.id);
 
     return replacePhases({
       instance,
-      phases: rows
-        ? getStoredPhases({ rows, blobPhases: getBlobPhases(instance) })
+      phases: minted
+        ? mergePhasesWithInstanceData({
+            phases: minted,
+            blobPhases: getBlobPhases(instance),
+          })
         : null,
     });
   });
