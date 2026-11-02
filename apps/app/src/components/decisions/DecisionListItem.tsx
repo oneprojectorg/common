@@ -17,6 +17,7 @@ import {
   DropdownMenuLinkItem,
   DropdownMenuTrigger,
 } from '@op/sense/DropdownMenu';
+import { Header3 } from '@op/sense/Header';
 import { StatusBadge } from '@op/sense/StatusBadge';
 import { toast } from '@op/sense/Toast';
 import { cn } from '@op/sense/lib/utils';
@@ -28,7 +29,7 @@ import { useTranslations } from '@/lib/i18n';
 import { Link } from '@/lib/i18n';
 import type { TranslationKey } from '@/lib/i18n';
 
-import { DecisionCardHeader } from './DecisionCardHeader';
+import { DecisionCardHeader, DecisionPhaseBadge } from './DecisionCardHeader';
 import { DuplicateProcessModal } from './DuplicateProcessModal';
 
 const formatDateShort = (dateString: string, locale: string) => {
@@ -233,6 +234,7 @@ export const ProfileDecisionListItem = ({
   item: DecisionProfile;
   className?: string;
 }) => {
+  const t = useTranslations();
   const { processInstance } = item;
 
   // Get current phase from instanceData phases
@@ -245,30 +247,27 @@ export const ProfileDecisionListItem = ({
   return (
     <Link
       href={`/decisions/${item.slug}`}
-      className={cn('flex flex-col gap-4 pb-4 hover:no-underline', className)}
+      className={cn('flex flex-col gap-2 hover:no-underline', className)}
     >
-      <DecisionCardHeader
-        name={processInstance.name || item.name}
-        currentState={currentPhaseName}
-      >
-        {/* `w-full` so this takes its own line under the phase chip, which now
-            shares the header's last row. */}
-        <div className="flex w-full flex-col flex-wrap gap-2 sm:flex-row sm:items-center sm:justify-between">
-          {closingDate && <DecisionClosingDate closingDate={closingDate} />}
-          <div className="flex items-end gap-4">
-            <DecisionStat
-              number={processInstance.participantCount ?? 0}
-              label="decisions.participantsLabel"
-              className="sm:flex-row"
-            />
-            <DecisionStat
-              number={processInstance.proposalCount ?? 0}
-              label="decisions.proposalsLabel"
-              className="sm:flex-row"
-            />
-          </div>
-        </div>
-      </DecisionCardHeader>
+      <div className="flex flex-wrap items-center gap-2">
+        <Header3 className="font-sans text-title font-normal">
+          {processInstance.name || item.name}
+        </Header3>
+        {currentPhaseName ? (
+          <DecisionPhaseBadge phaseName={currentPhaseName} />
+        ) : null}
+      </div>
+      <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+        {closingDate ? (
+          <>
+            <DecisionClosingDate closingDate={closingDate} />
+            <span aria-hidden="true">·</span>
+          </>
+        ) : null}
+        {t('decisions.participantCount', {
+          count: processInstance.participantCount ?? 0,
+        })}
+      </div>
     </Link>
   );
 };
