@@ -121,7 +121,7 @@ const searchPlaces = async ({
     return [...byPlaceId.values()];
   } catch (error) {
     logger.error('Maps API error', { error });
-    return [];
+    throw error;
   }
 };
 

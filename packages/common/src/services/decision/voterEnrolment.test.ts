@@ -147,6 +147,30 @@ describe.concurrent('resolveVoterAddress', () => {
     ).resolves.toMatchObject({ taxonomyTermId: null, enrolledAt: null });
   });
 
+  it('given the geocoder is down, then the result says the lookup failed instead of blaming the address', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { instanceId, authUserId } = await seedVotingDecision(testData, {
+      boundary: true,
+      withBoundaries: true,
+      label: task.id,
+    });
+
+    const result = await resolveVoterAddress({
+      processInstanceId: instanceId,
+      authUserId,
+      address: '375 S High St',
+      geocode: () => Promise.reject(new Error('quota exhausted')),
+    });
+
+    expect(result).toEqual({ status: 'lookup_failed' });
+    await expect(
+      findVoterEnrolment({ processInstanceId: instanceId, authUserId }),
+    ).resolves.toMatchObject({ taxonomyTermId: null, enrolledAt: null });
+  });
+
   it('given a decision that requires a district, when the address falls outside every boundary, then the result says so and the row stores no district', async ({
     task,
     onTestFinished,

@@ -3,6 +3,7 @@ import {
   type DecisionVoterEnrolment,
   decisionVoterEnrolments,
 } from '@op/db/schema';
+import { logger } from '@op/logging';
 
 import { NotFoundError, ValidationError } from '../../utils';
 import { getIndividualProfileId } from '../access';
@@ -23,6 +24,7 @@ export type Geocode = (
 export type AddressResolution =
   | { status: 'resolved'; boundary: { id: string; name: string } | null }
   | { status: 'not_found' }
+  | { status: 'lookup_failed' }
   | { status: 'outside' };
 
 interface EnrolmentKey {
@@ -128,7 +130,13 @@ export async function resolveVoterAddress({
     .values({ processInstanceId, profileId })
     .onConflictDoNothing();
 
-  const [point] = await geocode(address);
+  let point: Awaited<ReturnType<Geocode>>[number] | undefined;
+  try {
+    [point] = await geocode(address);
+  } catch (error) {
+    logger.error('Address lookup failed', { error });
+    return { status: 'lookup_failed' };
+  }
 
   if (!point) {
     return { status: 'not_found' };
