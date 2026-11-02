@@ -4,17 +4,16 @@ import { useRequiredUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import { type Organization, ProcessStatus } from '@op/api/encoders';
 import { formatToUrl } from '@op/common/validation';
-import { Button } from '@op/sense/Button';
+import { Card, CardContent, CardFooter, CardHeader } from '@op/sense/Card';
 import { Header2, Header3 } from '@op/sense/Header';
 import { Skeleton } from '@op/sense/Skeleton';
 import { TabsContent, TabsList, TabsTrigger } from '@op/sense/Tabs';
 import { Tag, TagGroup } from '@op/sense/TagGroup';
-import { toast } from '@op/sense/Toast';
 import { cn } from '@op/sense/lib/utils';
 import { Fragment, ReactNode, Suspense } from 'react';
-import { LuCopy, LuGlobe, LuMail } from 'react-icons/lu';
+import { LuGlobe, LuMail } from 'react-icons/lu';
 
-import { Link, useTranslations } from '@/lib/i18n';
+import { Link, usePathname, useTranslations } from '@/lib/i18n';
 
 import { ContactLink } from '@/components/ContactLink';
 import ErrorBoundary from '@/components/ErrorBoundary';
@@ -27,6 +26,7 @@ import {
   ProfileFeedList,
   ProfileFeedProvider,
 } from '../ProfileFeed';
+import { CopyEmailButton } from './CopyEmailButton';
 import {
   DecisionsTab,
   DecisionsTabPanel,
@@ -153,22 +153,7 @@ const ProfileAbout = ({
                 </ContactLink>
               ) : null}
               {email ? (
-                <ContactLink
-                  button={
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        navigator.clipboard.writeText(email);
-                        toast.success(t('profile.emailCopiedToast'), {
-                          dismissible: false,
-                        });
-                      }}
-                    >
-                      <LuCopy /> {t('Copy')}
-                    </Button>
-                  }
-                >
+                <ContactLink button={<CopyEmailButton email={email} />}>
                   <LuMail className="min-w-4" />
                   <Link
                     href={`mailto:${email}`}
@@ -270,6 +255,7 @@ const ProfileAbout = ({
 
 const ProfileDecisions = ({ profileId }: { profileId: string }) => {
   const t = useTranslations();
+  const pathname = usePathname();
 
   const [{ items: decisionProfiles }] =
     trpc.decision.listDecisionProfiles.useSuspenseQuery({
@@ -283,22 +269,26 @@ const ProfileDecisions = ({ profileId }: { profileId: string }) => {
   }
 
   return (
-    <div className="flex flex-col gap-2 py-6 pb-2 sm:gap-0 sm:border-b sm:pt-4">
-      <Header2 className="text-label leading-normal sm:px-6">
-        {t('decisions.decisionsLabel')}
-      </Header2>
-      {decisionProfiles.map((item, index) => (
-        <Fragment key={item.id}>
-          <ProfileDecisionListItem
-            item={item}
-            className="rounded border p-4 transition-colors sm:rounded-none sm:border-none sm:p-6 hover:sm:bg-accent"
-          />
-          {index < decisionProfiles.length - 1 && (
-            <hr className="hidden sm:block" />
-          )}
-        </Fragment>
-      ))}
-    </div>
+    <Card>
+      <CardHeader>
+        <Header2 className="text-label leading-normal">
+          {t('decisions.decisionsLabel')}
+        </Header2>
+      </CardHeader>
+      <CardContent className="flex flex-col">
+        {decisionProfiles.map((item, index) => (
+          <Fragment key={item.id}>
+            {index > 0 && <hr />}
+            <ProfileDecisionListItem item={item} className="py-4" />
+          </Fragment>
+        ))}
+      </CardContent>
+      <CardFooter>
+        <Link href={`${pathname}?tab=decisions`} className="text-primary">
+          {t('profile.seeAllDecisionsAction')}
+        </Link>
+      </CardFooter>
+    </Card>
   );
 };
 
@@ -328,34 +318,34 @@ export const OrganizationProfileGrid = ({
   const isOrg = user.currentProfile?.type === 'org';
 
   return (
-    <ProfileGridWrapper>
-      <div className="col-span-9 flex flex-col">
+    <div className="mx-auto hidden w-full max-w-248 gap-6 p-6 sm:flex sm:flex-col lg:flex-row lg:items-start">
+      <div className="flex min-w-0 flex-1 flex-col">
         {isOrg ? (
           <Suspense fallback={null}>
             <PostUpdate
               organization={profile}
               label={t('Post')}
-              className="rounded-none border-x-0 border-t-0 border-b px-4 pt-6 pb-8"
+              className="rounded-none border-x-0 border-t-0 border-b px-0 pt-0 pb-6"
             />
           </Suspense>
-        ) : (
-          <div></div>
-        )}
+        ) : null}
         <Suspense fallback={<PostFeedSkeleton className="px-4" numPosts={3} />}>
           <ProfileFeedProvider profile={profile}>
             {(props) => <ProfileFeedList {...props} />}
           </ProfileFeedProvider>
         </Suspense>
       </div>
-      <div className="col-span-6 h-full border-s">
+      <div className="flex flex-col gap-4 lg:w-90 lg:shrink-0 xl:w-104">
         <Suspense fallback={null}>
           <ProfileDecisions profileId={profile.profile.id} />
         </Suspense>
-        <div className="flex flex-col gap-4 px-6 py-4">
-          <ProfileAbout profile={profile} />
-        </div>
+        <Card>
+          <CardContent>
+            <ProfileAbout profile={profile} />
+          </CardContent>
+        </Card>
       </div>
-    </ProfileGridWrapper>
+    </div>
   );
 };
 
