@@ -80,36 +80,27 @@ export const assertPhaseCountFits = (count: number): void => {
   }
 };
 
-// A blank or repeated `phaseId` would write two phases onto one key.
-export const assertPhaseListFits = (
-  phases: readonly Pick<PhaseInstanceData, 'phaseId'>[],
-): void => {
-  assertPhaseCountFits(phases.length);
-
-  const phaseIds = new Set<string>();
-  for (const { phaseId } of phases) {
-    if (!phaseId) {
-      throw new ValidationError('There is a phase with no id', {
-        phaseId: 'Required',
-      });
-    }
-    if (phaseIds.has(phaseId)) {
-      throw new ValidationError(
-        `There are two phases with the id "${phaseId}"`,
-        { phaseId: 'Must be unique' },
-      );
-    }
-    phaseIds.add(phaseId);
-  }
-};
-
 // TODO: remove once rows stop carrying phaseId and nothing mints from instance_data.
 export const assertPhasesCanBeMinted = (
   phases: readonly InstanceDataPhase[],
 ): void => {
-  assertPhaseListFits(phases);
+  assertPhaseCountFits(phases.length);
 
+  const phaseIds = new Set<string>();
   for (const phase of phases) {
+    if (!phase.phaseId) {
+      throw new ValidationError('There is a phase with no id', {
+        phaseId: 'Required',
+      });
+    }
+    if (phaseIds.has(phase.phaseId)) {
+      throw new ValidationError(
+        `There are two phases with the id "${phase.phaseId}"`,
+        { phaseId: 'Must be unique' },
+      );
+    }
+    phaseIds.add(phase.phaseId);
+
     const name = getPhaseProfileName(phase);
     if (!phaseNameLengthSchema.safeParse(name).success) {
       const preview = previewPhaseName(name);
@@ -254,7 +245,9 @@ const insertPhaseProfile = async ({
 
 const generatePhaseSlug = () => randomUUID().slice(0, 8);
 
-const isJsonObject = (value: unknown): value is Record<string, unknown> =>
+export const isJsonObject = (
+  value: unknown,
+): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
 
 // Shape only; Ajv compiles it when the settings are checked.

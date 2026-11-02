@@ -1,11 +1,10 @@
-import { asc, db, eq, sql } from '@op/db/client';
-import { processPhases, profiles } from '@op/db/schema';
+import { db, eq, sql } from '@op/db/client';
+import { processPhases } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 
 import { NotFoundError, ValidationError } from '../../utils';
-import { lockProcessInstanceOrThrow } from './lockProcessInstance';
 import { assertDecisionAdmin } from './phaseHelpers';
-import { writePhaseRowsToInstanceData } from './phaseRows';
+import { mutatePhaseRows } from './phaseRows';
 
 export interface PhasePlacement {
   phaseId: string;
@@ -52,60 +51,37 @@ export const reorderPhases = async ({
   }
 
   return db.transaction(async (tx) => {
-    const locked = await lockProcessInstanceOrThrow({
-      db: tx,
-      instanceId: processInstanceId,
-    });
-
-    const stored = await tx
-      .select({ id: processPhases.id })
-      .from(processPhases)
-      .where(eq(processPhases.processInstanceId, processInstanceId));
-
-    if (
-      stored.length !== requestedIds.size ||
-      !stored.every((phase) => requestedIds.has(phase.id))
-    ) {
-      throw new ValidationError("The phases don't match the decision's", {
-        phases: 'List every phase of this decision, and only those',
-      });
-    }
-
-    for (const [
-      sortOrder,
-      { phaseId, startDate, endDate },
-    ] of phases.entries()) {
-      const dates = {
-        ...(startDate !== undefined && { startDate }),
-        ...(endDate !== undefined && { endDate }),
-      };
-      await tx
-        .update(processPhases)
-        .set({
-          sortOrder,
-          data: sql`${processPhases.data} || ${JSON.stringify(dates)}::jsonb`,
-        })
-        .where(eq(processPhases.id, phaseId));
-    }
-
-    await writePhaseRowsToInstanceData({
+    const { rows } = await mutatePhaseRows({
       db: tx,
       processInstanceId,
-      instanceData: locked.instanceData,
-    });
+      mutate: async ({ rows: stored }) => {
+        if (
+          stored.length !== requestedIds.size ||
+          !stored.every((phase) => requestedIds.has(phase.id))
+        ) {
+          throw new ValidationError("The phases don't match the decision's", {
+            phases: 'List every phase of this decision, and only those',
+          });
+        }
 
-    return tx
-      .select({
-        id: processPhases.id,
-        profileId: processPhases.profileId,
-        name: profiles.name,
-        slug: profiles.slug,
-        sortOrder: processPhases.sortOrder,
-        data: processPhases.data,
-      })
-      .from(processPhases)
-      .innerJoin(profiles, eq(profiles.id, processPhases.profileId))
-      .where(eq(processPhases.processInstanceId, processInstanceId))
-      .orderBy(asc(processPhases.sortOrder), asc(processPhases.id));
+        for (const [
+          sortOrder,
+          { phaseId, startDate, endDate },
+        ] of phases.entries()) {
+          const dates = {
+            ...(startDate !== undefined && { startDate }),
+            ...(endDate !== undefined && { endDate }),
+          };
+          await tx
+            .update(processPhases)
+            .set({
+              sortOrder,
+              data: sql`${processPhases.data} || ${JSON.stringify(dates)}::jsonb`,
+            })
+            .where(eq(processPhases.id, phaseId));
+        }
+      },
+    });
+    return rows;
   });
 };

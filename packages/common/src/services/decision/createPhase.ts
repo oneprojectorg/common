@@ -1,9 +1,8 @@
-import { count, db, eq } from '@op/db/client';
-import { type ProcessPhase, type Profile, processPhases } from '@op/db/schema';
+import { db } from '@op/db/client';
+import type { ProcessPhase, Profile } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 
 import { NotFoundError } from '../../utils';
-import { lockProcessInstanceOrThrow } from './lockProcessInstance';
 import {
   type PhaseData,
   assertDecisionAdmin,
@@ -12,7 +11,7 @@ import {
   assertPhaseSettings,
   insertPhase,
 } from './phaseHelpers';
-import { writePhaseRowsToInstanceData } from './phaseRows';
+import { mutatePhaseRows } from './phaseRows';
 
 export const createPhase = async ({
   user,
@@ -43,32 +42,20 @@ export const createPhase = async ({
   assertPhaseSettings({ data: phaseData, phaseLabel: name });
 
   return db.transaction(async (tx) => {
-    const locked = await lockProcessInstanceOrThrow({
-      db: tx,
-      instanceId: processInstanceId,
-    });
-
-    const [existing] = await tx
-      .select({ value: count() })
-      .from(processPhases)
-      .where(eq(processPhases.processInstanceId, processInstanceId));
-
-    assertPhaseCountFits((existing?.value ?? 0) + 1);
-
-    const created = await insertPhase({
-      tx,
-      processInstanceId,
-      name,
-      sortOrder,
-      data: phaseData,
-    });
-
-    await writePhaseRowsToInstanceData({
+    const { result } = await mutatePhaseRows({
       db: tx,
       processInstanceId,
-      instanceData: locked.instanceData,
+      mutate: ({ rows, rowlessPhases }) => {
+        assertPhaseCountFits(rows.length + rowlessPhases.length + 1);
+        return insertPhase({
+          tx,
+          processInstanceId,
+          name,
+          sortOrder,
+          data: phaseData,
+        });
+      },
     });
-
-    return created;
+    return result;
   });
 };
