@@ -64,7 +64,6 @@ export async function resolvePhaseAdvancement({
   fromRows,
 }: {
   dbClient: DbClient;
-  /** Used as is when its phases are resolved already. */
   instance: AdvancementInstance;
   /** Pass it in when holding the instance lock. */
   fromRows?: boolean;

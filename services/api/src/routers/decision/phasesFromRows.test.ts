@@ -133,7 +133,7 @@ const reviewSchema = {
 const ROW_START = '2031-01-01T00:00:00.000Z';
 const ROW_END = '2031-02-01T00:00:00.000Z';
 
-/** Rows named and dated as the blob never was, blob phases emptied. */
+/** Dates the blob never had, so only a row read can return them. */
 const leaveOnlyRows = (instanceId: string) =>
   leaveOnlyPhaseRows(instanceId, { startDate: ROW_START, endDate: ROW_END });
 
@@ -145,8 +145,7 @@ const rowPhases = (phaseIds: string[]) =>
     endDate: ROW_END,
   }));
 
-// Not concurrent: the transitions sweep is global, and the flag is forced
-// through the environment for the whole file.
+// Not concurrent: the sweep is global and the flag is forced through the environment.
 describe('with process_phases_from_rows on and instanceData.phases empty', () => {
   beforeAll(() => {
     vi.stubEnv('NEXT_PUBLIC_E2E', 'true');
