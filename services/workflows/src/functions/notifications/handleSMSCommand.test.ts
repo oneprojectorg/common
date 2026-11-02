@@ -34,12 +34,15 @@ const NUMBERS = {
   lineMember: '+15005550080',
   lineSlugMember: '+15005550081',
   unboundLineMember: '+15005550082',
+  lineStranger: '+15005550083',
+  linePrivateOwner: '+15005550078',
 } as const;
 
 const LINES = {
   bare: '+16145550130',
   slug: '+16145550131',
   unbound: '+16145550132',
+  private: '+16145550133',
 } as const;
 
 beforeEach(() => {
@@ -408,6 +411,40 @@ describe('handleSMSCommand against the database', () => {
 });
 
 describe('handleSMSCommand on a decision line', () => {
+  it("given a confirmed non-member texts SHOW alone to a private decision's line, then the reply names no decision and leaks no slug", async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsCommandFixture(task.id, onTestFinished);
+    const phone = parsePhoneNumber(NUMBERS.lineStranger);
+    const line = parsePhoneNumber(LINES.private);
+    const stranger = await fixture.createPhoneOnlyAccount(phone);
+    const owner = await fixture.createPhoneOnlyAccount(
+      parsePhoneNumber(NUMBERS.linePrivateOwner),
+    );
+    const { instanceId, slug } = await fixture.createVotingInstance({
+      owner,
+      name: `Private Line Funding ${task.id}`,
+      proposalTitles: ['Crosswalk lighting'],
+    });
+    void stranger;
+    await fixture.bindLine(instanceId, line);
+    const t = new InngestTestEngine({ function: handleSMSCommand });
+
+    const { result } = await t.execute({
+      events: [smsInboundEvent({ from: phone, to: line, keyword: 'show' })],
+    });
+
+    expect(result).toEqual({ message: 'decision not found' });
+    expect(recordedSms).toEqual([
+      expect.objectContaining({
+        to: phone,
+        body: 'No decision was found.',
+      }),
+    ]);
+    expect(recordedSms[0]!.body).not.toContain(slug);
+  });
+
   it("given a member texts SHOW alone to a decision's own line, then that decision is described and the reply comes from the line", async ({
     task,
     onTestFinished,

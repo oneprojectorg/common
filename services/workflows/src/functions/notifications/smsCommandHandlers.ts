@@ -80,6 +80,7 @@ const listDecisions: SmsCommandHandler = async ({ step, account, deliver }) => {
 const describeDecision = async (
   { step, account, deliver }: SmsCommandContext,
   decisionSlug: string,
+  echoSlug: boolean,
 ): Promise<SmsCommandResult> => {
   const decision = await step.run('describe-decision', async () => {
     try {
@@ -102,7 +103,9 @@ const describeDecision = async (
     const failed = await deliver(
       'send-not-found-reply',
       'Not-found reply',
-      `No decision named "${clipSmsText(decisionSlug, SMS_SLUG_LENGTH)}" was found.`,
+      echoSlug
+        ? `No decision named "${clipSmsText(decisionSlug, SMS_SLUG_LENGTH)}" was found.`
+        : 'No decision was found.',
     );
     return failed ?? { message: 'decision not found' };
   }
@@ -116,8 +119,13 @@ const describeDecision = async (
 };
 
 export const show: SmsCommandHandler = (context) => {
-  const slug = context.argument ?? context.line?.slug;
-  return slug ? describeDecision(context, slug) : listDecisions(context);
+  if (context.argument) {
+    return describeDecision(context, context.argument, true);
+  }
+  if (context.line?.slug) {
+    return describeDecision(context, context.line.slug, false);
+  }
+  return listDecisions(context);
 };
 
 export const sendSmsHelp = async (
