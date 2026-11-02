@@ -24,7 +24,7 @@ import {
 export type PhaseData = Omit<PhaseInstanceData, 'phaseId' | 'name'>;
 
 // TODO: drop phaseId from row data once every reference uses the row id.
-export type PhaseRowData = PhaseData & { phaseId?: string };
+type PhaseRowData = PhaseData & { phaseId?: string };
 
 type InstanceDataPhase = Pick<PhaseInstanceData, 'phaseId' | 'name'>;
 
