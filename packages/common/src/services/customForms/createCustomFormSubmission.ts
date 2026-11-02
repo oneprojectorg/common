@@ -151,8 +151,7 @@ const isParticipantInFormProcess = async ({
     return false;
   }
 
-  // A reviewer answers only the form of a phase they review in. The phase set
-  // is read only for a form with no `x-phase`.
+  // A reviewer answers only the form of a phase they review in.
   const formPhaseId =
     getEffectiveFormPhase({ schema: form.schema }) ??
     (await readInstancePhaseSet({ instance })).initialPhaseId;

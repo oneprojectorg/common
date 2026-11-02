@@ -159,8 +159,7 @@ export const updateDecisionInstance = async ({
     status === ProcessStatus.PUBLISHED &&
     existingInstance.status === ProcessStatus.DRAFT;
 
-  // Resolved before the lock. A save with phases rebuilds the blob from the
-  // rows it reconciles, so its transitions read the blob.
+  // Before the lock; a phase save rebuilds the blob from the rows, so it reads the blob.
   const transitionsFromRows =
     isBeingPublished && !hasPhaseUpdates
       ? await isPhasesFromRowsEnabled()

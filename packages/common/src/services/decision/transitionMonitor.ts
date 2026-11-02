@@ -49,7 +49,6 @@ export async function processDecisionsTransitions({
   processInstanceId,
   now = new Date().toISOString(),
 }: {
-  /** Limits the sweep to one decision. */
   processInstanceId?: string;
   now?: string;
 } = {}): Promise<ProcessDecisionsTransitionsResult> {
@@ -97,7 +96,6 @@ export async function processDecisionsTransitions({
     }
 
     const transitionsByInstance = groupTransitionsByInstance(dueTransitions);
-    // One flag check and one rows query for the whole sweep.
     const instances = await withInstancesPhases({
       instances: Array.from(transitionsByInstance, ([id, transitions]) => ({
         id,

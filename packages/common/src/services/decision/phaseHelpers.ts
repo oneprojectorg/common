@@ -92,7 +92,6 @@ export const listPhases = async ({
     await listPhasesByInstance({ db, processInstanceIds: [processInstanceId] })
   ).get(processInstanceId) ?? [];
 
-/** {@link listPhases} for several decisions in one query, keyed by instance. */
 export const listPhasesByInstance = async ({
   db,
   processInstanceIds,
