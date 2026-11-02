@@ -23,7 +23,6 @@ export interface PhaseEndDateChange {
 
 type PhaseInstanceData = DecisionInstanceData['phases'][number];
 
-/** Whether the update carries anything for instanceData. */
 export const hasInstanceDataUpdate = ({
   config,
   overview,

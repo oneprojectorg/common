@@ -89,6 +89,7 @@ export const loadPhaseRows = (processInstanceId: string) =>
     .where(eq(processPhases.processInstanceId, processInstanceId))
     .orderBy(asc(processPhases.sortOrder));
 
+// TODO: remove the blob helpers below when instance_data.phases is dropped.
 export const loadBlobPhases = async (processInstanceId: string) => {
   const instance = await db.query.processInstances.findFirst({
     where: { id: processInstanceId },
