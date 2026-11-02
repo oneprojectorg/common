@@ -55,7 +55,6 @@ const createPublishedInstance = async (
   return { setup, instanceId: setup.instance.instance.id };
 };
 
-// Not concurrent: the flag is forced through the environment.
 describe.each([
   { flag: 'on', on: true },
   { flag: 'off', on: false },

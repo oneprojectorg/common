@@ -21,7 +21,6 @@ const expectNoRowsWarning = (processInstanceIds: string[]) =>
     { processInstanceIds },
   );
 
-// Not concurrent: the flag is forced through the environment.
 describe('readInstancePhases', () => {
   afterEach(() => {
     vi.unstubAllEnvs();

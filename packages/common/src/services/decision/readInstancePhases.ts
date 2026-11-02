@@ -25,7 +25,6 @@ export type PhasesResolved<T> = T & { readonly [resolvedPhases]: true };
 const NO_ROWS_WARNING =
   'Decision has no phase rows; reading instanceData.phases';
 
-/** Resolve before taking an instance lock: an uncached answer waits on PostHog. */
 export const isPhasesFromRowsEnabled = (): Promise<boolean> =>
   isServerFeatureEnabled({
     key: PHASES_FROM_ROWS_FLAG,
@@ -61,7 +60,6 @@ export const withInstancePhases = async <T extends InstanceWithData>({
 };
 
 // TODO: remove when instanceData.phases is dropped.
-/** Only for a blob already rebuilt from the rows, by a save or an earlier workflow step. */
 export const withBlobPhases = <T extends InstanceWithData>({
   instance,
 }: {
