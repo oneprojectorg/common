@@ -144,7 +144,6 @@ const rowPhases = (phaseIds: string[]) =>
     endDate: ROW_END,
   }));
 
-// Not concurrent: the sweep is global and the flag is forced through the environment.
 describe('with process_phases_from_rows on and instanceData.phases empty', () => {
   beforeAll(() => {
     vi.stubEnv('NEXT_PUBLIC_E2E', 'true');
@@ -198,7 +197,6 @@ describe('with process_phases_from_rows on and instanceData.phases empty', () =>
     });
     const instanceId = setup.instance.instance.id;
     await emptyBlobPhases(instanceId);
-    // Not yet due, so no other worker's sweep can take it.
     await db.insert(decisionProcessTransitions).values({
       processInstanceId: instanceId,
       fromStateId: 'initial',
