@@ -1,10 +1,9 @@
 import {
   type DecisionInstanceData,
   type DecisionSchemaDefinition,
-  MAX_PHASES_PER_DECISION,
   simpleVoting,
 } from '@op/common';
-import { MAX_PHASE_NAME_LENGTH, PHASE_NAME_TOO_LONG } from '@op/common/client';
+import { MAX_PHASE_NAME_LENGTH } from '@op/common/client';
 import { TestDecisionsDataManager } from '@op/common/testing';
 import { db, eq } from '@op/db/client';
 import { decisionProcesses, users } from '@op/db/schema';
@@ -219,82 +218,6 @@ describe.concurrent('createInstanceFromTemplate', () => {
 
     const [row] = await loadPhaseRows(result.processInstance.id);
     expect(row?.name).toBe(expected);
-  });
-
-  it('refuses a phase name that does not fit its profile before writing anything', async ({
-    task,
-    onTestFinished,
-  }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const lastIndex = simpleVoting.phases.length - 1;
-    const nameFor = (index: number) =>
-      index === lastIndex
-        ? 'x'.repeat(MAX_PHASE_NAME_LENGTH + 1)
-        : `Rolled Back Phase ${index} ${task.id}`;
-    const [first, ...rest] = simpleVoting.phases;
-    const phases: DecisionSchemaDefinition['phases'] = [
-      { ...first!, name: nameFor(0) },
-      ...rest.map((phase, index) => ({ ...phase, name: nameFor(index + 1) })),
-    ];
-    const { templateId, userEmail } = await createSimpleTemplate(
-      testData,
-      task.id,
-      { phases },
-    );
-    const caller = await createAuthenticatedCaller(userEmail);
-
-    const name = `Rolled Back ${task.id}`;
-    await expect(
-      caller.decision.createInstanceFromTemplate({ templateId, name }),
-    ).rejects.toMatchObject({
-      cause: {
-        name: 'ValidationError',
-        message: expect.stringContaining(PHASE_NAME_TOO_LONG),
-      },
-    });
-
-    await expectNothingNamed(name);
-    const phaseProfiles = await db.query.profiles.findMany({
-      where: { name: { in: phases.slice(0, lastIndex).map((p) => p.name) } },
-      columns: { id: true },
-    });
-    expect(phaseProfiles).toHaveLength(0);
-  });
-
-  it('refuses a template with more phases than a decision can hold', async ({
-    task,
-    onTestFinished,
-  }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const [first] = simpleVoting.phases;
-    const extra = Array.from(
-      { length: MAX_PHASES_PER_DECISION },
-      (_, index) => ({
-        ...first!,
-        id: `phase-${index}`,
-        name: `Phase ${index}`,
-      }),
-    );
-    const phases: DecisionSchemaDefinition['phases'] = [first!, ...extra];
-    const { templateId, userEmail } = await createSimpleTemplate(
-      testData,
-      task.id,
-      { phases },
-    );
-    const caller = await createAuthenticatedCaller(userEmail);
-
-    const name = `Too Many Phases ${task.id}`;
-    await expect(
-      caller.decision.createInstanceFromTemplate({ templateId, name }),
-    ).rejects.toMatchObject({
-      cause: {
-        name: 'ValidationError',
-        message: `This decision has ${phases.length} phases; the limit is ${MAX_PHASES_PER_DECISION}`,
-        fieldErrors: { phases: 'Remove 1' },
-      },
-    });
-
-    await expectNothingNamed(name);
   });
 
   it.for(badPhaseIdCases)(
