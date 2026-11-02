@@ -23,6 +23,20 @@ export interface PhaseEndDateChange {
 
 type PhaseInstanceData = DecisionInstanceData['phases'][number];
 
+/** Whether the update carries anything for instanceData. */
+export const hasInstanceDataUpdate = ({
+  config,
+  overview,
+  phases,
+  proposalTemplate,
+  rubricTemplate,
+}: InstanceDataUpdate): boolean =>
+  config !== undefined ||
+  overview !== undefined ||
+  (phases !== undefined && phases.length > 0) ||
+  proposalTemplate !== undefined ||
+  rubricTemplate !== undefined;
+
 /**
  * Applies an admin update to stored instance data without touching the
  * database. Undefined when the update carries nothing for instanceData.
@@ -42,13 +56,7 @@ export function getUpdatedInstanceData({
   const { config, overview, phases, proposalTemplate, rubricTemplate } = update;
   const hasPhaseUpdates = phases !== undefined && phases.length > 0;
 
-  if (
-    config === undefined &&
-    overview === undefined &&
-    !hasPhaseUpdates &&
-    proposalTemplate === undefined &&
-    rubricTemplate === undefined
-  ) {
+  if (!hasInstanceDataUpdate(update)) {
     return undefined;
   }
 

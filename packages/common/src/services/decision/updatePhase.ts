@@ -1,4 +1,4 @@
-import { db, eq, sql } from '@op/db/client';
+import { type DbClient, db, eq, sql } from '@op/db/client';
 import {
   type ProcessPhase,
   type Profile,
@@ -8,7 +8,6 @@ import {
 import type { User } from '@op/supabase/lib';
 
 import { NotFoundError, ValidationError } from '../../utils';
-import { lockProcessInstanceOrThrow } from './lockProcessInstance';
 import {
   type PhaseData,
   assertPhaseSchemasCompile,
@@ -16,7 +15,7 @@ import {
   getPhaseAsDecisionAdmin,
   readPhaseSettings,
 } from './phaseHelpers';
-import { writePhaseRowsToInstanceData } from './phaseRows';
+import { mutatePhaseRows } from './phaseRows';
 import type { PhaseOverride } from './schemas/instanceData';
 import type { ProposalTemplateSchema } from './types';
 
@@ -55,12 +54,7 @@ export const updatePhase = async ({
     (patch.set.settings !== undefined ||
       patch.set.settingsSchema !== undefined);
 
-  return db.transaction(async (tx) => {
-    const locked = await lockProcessInstanceOrThrow({
-      db: tx,
-      instanceId: processInstanceId,
-    });
-
+  const write = async (tx: DbClient) => {
     const [profile] =
       name === undefined
         ? await tx.select().from(profiles).where(eq(profiles.id, profileId))
@@ -99,13 +93,16 @@ export const updatePhase = async ({
       });
     }
 
-    await writePhaseRowsToInstanceData({
+    return { phase, profile };
+  };
+
+  return db.transaction(async (tx) => {
+    const { result } = await mutatePhaseRows({
       db: tx,
       processInstanceId,
-      instanceData: locked.instanceData,
+      mutate: () => write(tx),
     });
-
-    return { phase, profile };
+    return result;
   });
 };
 
