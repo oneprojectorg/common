@@ -23,7 +23,7 @@ import { toast } from '@op/sense/Toast';
 import { cn } from '@op/sense/lib/utils';
 import { useLocale } from 'next-intl';
 import { useState } from 'react';
-import { LuCalendar, LuEllipsis } from 'react-icons/lu';
+import { LuCalendar, LuClock, LuEllipsis } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 import { Link } from '@/lib/i18n';
@@ -233,6 +233,7 @@ export const ProfileDecisionListItem = ({
   item: DecisionProfile;
 }) => {
   const t = useTranslations();
+  const locale = useLocale();
   const { processInstance } = item;
 
   // Get current phase from instanceData phases
@@ -255,10 +256,15 @@ export const ProfileDecisionListItem = ({
           <DecisionPhaseBadge phaseName={currentPhaseName} />
         ) : null}
       </div>
-      <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+      <div className="flex flex-wrap items-center gap-2 text-base text-muted-foreground">
         {closingDate ? (
           <>
-            <DecisionClosingDate closingDate={closingDate} />
+            <span className="flex items-center gap-2">
+              <LuClock className="size-4" aria-hidden />
+              {t('profile.decisionClosesDate', {
+                date: formatDateShort(closingDate, locale),
+              })}
+            </span>
             <span aria-hidden="true">·</span>
           </>
         ) : null}

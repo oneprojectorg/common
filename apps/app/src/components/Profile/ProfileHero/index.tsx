@@ -118,14 +118,14 @@ const ProfileHeroCountsSuspense = ({
         href={`/org/${profile.slug}/relationships`}
         className={linkClassName}
       >
-        {t('relationshipCount', { count: relationships.count })}
+        {t('heroRelationshipCount', { count: relationships.count })}
       </Link>
       <span aria-hidden="true">•</span>
       <Link
         href={`/org/${profile.slug}?tab=followers`}
         className={linkClassName}
       >
-        {t('followerCount', { count: followers.following?.length ?? 0 })}
+        {t('heroFollowerCount', { count: followers.following?.length ?? 0 })}
       </Link>
     </p>
   );

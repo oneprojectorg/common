@@ -66,7 +66,7 @@ export const ProfileTabsRenderer = ({
 
   return (
     <ProfileTabs initialTab={initialTab} profileType="org">
-      <ProfileColumn className="flex grow flex-col gap-6">
+      <ProfileColumn className="flex grow flex-col gap-8">
         <div className="border-b">
           <ProfileTabList className="px-0 sm:px-0">
             <DesktopOrganizationTabs />
