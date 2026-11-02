@@ -229,10 +229,8 @@ export const DecisionListItem = ({
 
 export const ProfileDecisionListItem = ({
   item,
-  className,
 }: {
   item: DecisionProfile;
-  className?: string;
 }) => {
   const t = useTranslations();
   const { processInstance } = item;
@@ -247,7 +245,7 @@ export const ProfileDecisionListItem = ({
   return (
     <Link
       href={`/decisions/${item.slug}`}
-      className={cn('flex flex-col gap-2 hover:no-underline', className)}
+      className="flex flex-col gap-2 hover:no-underline"
     >
       <div className="flex flex-wrap items-center gap-2">
         <Header3 className="font-sans text-title font-normal">
