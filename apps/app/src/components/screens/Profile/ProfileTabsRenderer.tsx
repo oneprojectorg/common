@@ -68,7 +68,7 @@ export const ProfileTabsRenderer = ({
     <ProfileTabs initialTab={initialTab} profileType="org">
       <ProfileColumn className="flex grow flex-col gap-6">
         <div className="border-b">
-          <ProfileTabList className="sm:px-0">
+          <ProfileTabList className="px-0 sm:px-0">
             <DesktopOrganizationTabs />
             <FollowersTab />
             <MembersTab profileId={profile.id} />
@@ -86,13 +86,13 @@ export const ProfileTabsRenderer = ({
             />
           </ProfileOrganizations>
         </TabsContent>
-        <FollowersTabPanel className="sm:px-0">
+        <FollowersTabPanel className="px-0 sm:px-0">
           <ProfileFollowers profileId={profile.id} />
         </FollowersTabPanel>
         <DecisionsTabPanel>
           <ProfileDecisionsSuspense profileId={profile.id} />
         </DecisionsTabPanel>
-        <MembersTabPanel profileId={profile.id} className="sm:px-0" />
+        <MembersTabPanel profileId={profile.id} className="px-0 sm:px-0" />
       </ProfileColumn>
     </ProfileTabs>
   );
