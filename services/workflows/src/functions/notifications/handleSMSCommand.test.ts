@@ -57,6 +57,7 @@ const NUMBERS = {
   pickStrangerEnrolment: '+15005550013',
   pickOwnerOnly: '+15005550014',
   changeDeleted: '+15005550016',
+  changeTwice: '+15005550017',
   enrolStart: '+15005550070',
   enrolAddress: '+15005550071',
   enrolNotFound: '+15005550072',
@@ -128,6 +129,7 @@ const LINES = {
   agreeClosed: '+16145550188',
   pickStrangerEnrolment: '+16145550182',
   changeDeleted: '+16145550183',
+  changeTwice: '+16145550184',
   enrolStart: '+16145550133',
   enrolAddress: '+16145550134',
   enrolNotFound: '+16145550135',
@@ -2993,6 +2995,40 @@ describe('handleSMSCommand changing a cast ballot', () => {
         'Text DONE to review, or a code to add.',
       ].join('\n'),
     ]);
+  });
+
+  it('given a reopened ballot with an edit in progress, when the member texts CHANGE again, then the draft keeps the edit instead of resetting to the cast ballot', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsCommandFixture(task.id, onTestFinished);
+    const name = `Change Twice ${task.id}`;
+    await seed(fixture, {
+      phone: NUMBERS.changeTwice,
+      line: LINES.changeTwice,
+      name,
+      edit: true,
+    });
+    await text(NUMBERS.changeTwice, LINES.changeTwice, '101 102');
+    await keyword(NUMBERS.changeTwice, LINES.changeTwice, 'submit');
+    await keyword(NUMBERS.changeTwice, LINES.changeTwice, 'change');
+    await keyword(NUMBERS.changeTwice, LINES.changeTwice, 'remove', '101');
+
+    const { result } = await keyword(
+      NUMBERS.changeTwice,
+      LINES.changeTwice,
+      'change',
+    );
+
+    expect(result).toEqual({ message: 'ballot reopened' });
+    expect(recordedSms.at(-1)?.body).toBe(
+      [
+        `Your "${name}" ballot:`,
+        '1. 102 Bike lane $310,000.',
+        '$310,000 allocated, $690,000 unspent.',
+        'Text DONE to review, or a code to add.',
+      ].join('\n'),
+    );
   });
 
   it('given a pick whose proposal was deleted after the ballot was cast, when the member texts CHANGE, then the ballot reopens without the deleted pick', async ({

@@ -502,6 +502,15 @@ export async function reopenSmsBallot(
     return { status: 'not_allowed' };
   }
 
+  const session = await findChatSession({
+    processInstanceId: key.instanceId,
+    authUserId: key.authUserId,
+  });
+
+  if (session?.reopenedAt != null) {
+    return { status: 'reopened', summary: await summarizeSmsBallot(key) };
+  }
+
   const draft = await ensureBallotDraft({
     processInstanceId: key.instanceId,
     authUserId: key.authUserId,
