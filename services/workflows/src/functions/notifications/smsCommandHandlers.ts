@@ -83,6 +83,7 @@ import type { GetStepTools } from 'inngest';
 import {
   SMS_ALREADY_JOINED_MESSAGE,
   SMS_COMMAND_HELP_MESSAGE,
+  SMS_COMMAND_LIST_MESSAGE,
 } from './smsReply';
 
 const SMS_SLUG_LENGTH = 100;
@@ -186,6 +187,15 @@ export const join: SmsCommandHandler = async ({ deliver }) => {
     SMS_ALREADY_JOINED_MESSAGE,
   );
   return failed ?? { message: 'already joined' };
+};
+
+export const infoHelp: SmsCommandHandler = async ({ deliver }) => {
+  const failed = await deliver(
+    'send-command-list',
+    'Command list reply',
+    SMS_COMMAND_LIST_MESSAGE,
+  );
+  return failed ?? { message: 'command list sent' };
 };
 
 const listDecisions: SmsCommandHandler = async ({ step, account, deliver }) => {
