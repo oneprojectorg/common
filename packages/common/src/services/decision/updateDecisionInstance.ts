@@ -186,14 +186,6 @@ export const updateDecisionInstance = async ({
     if (instanceDataUpdate) {
       phaseEndDateChanges.push(...instanceDataUpdate.phaseEndDateChanges);
 
-      // After the merge: a budget on an incoming phase needs a priced field.
-      if (hasPhaseUpdates || proposalTemplate) {
-        await assertVoterCostField({
-          instanceData: instanceDataUpdate.instanceData,
-          processId: existingInstance.processId,
-        });
-      }
-
       if (rows) {
         const { phases: merged } = instanceDataUpdate.instanceData;
         await reconcilePhaseRows({
@@ -208,6 +200,14 @@ export const updateDecisionInstance = async ({
           ...phase,
           name: getPhaseProfileName(phase),
         }));
+      }
+
+      // After the merge: a budget on an incoming phase needs a priced field.
+      if (hasPhaseUpdates || proposalTemplate) {
+        await assertVoterCostField({
+          instanceData: instanceDataUpdate.instanceData,
+          processId: existingInstance.processId,
+        });
       }
 
       updateData.instanceData = instanceDataUpdate.instanceData;
