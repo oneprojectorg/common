@@ -433,7 +433,12 @@ async function getListAdvanceTarget({
   if (!includesNotAdvanced) {
     return undefined;
   }
-  const advancement = await resolvePhaseAdvancement({ dbClient: db, instance });
+  // `instance` comes from resolveProposalListScope with its phases resolved.
+  const advancement = await resolvePhaseAdvancement({
+    dbClient: db,
+    instance,
+    fromRows: false,
+  });
   if (!advancement.ok) {
     return undefined;
   }

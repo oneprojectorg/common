@@ -11,6 +11,10 @@ import { readInstancePhases } from '../decision/readInstancePhases';
 
 export type CustomFormProcessContext = {
   profileId: string;
+};
+
+/** The phase set an `x-phase` may name, in order. */
+export type CustomFormPhaseSet = {
   /** Phase a form with no `x-phase` falls back to. */
   initialPhaseId: string | null;
   phaseIds: string[];
@@ -31,7 +35,7 @@ export const assertCustomFormAdmin = async ({
 }: {
   user: User;
   profileId: string;
-}): Promise<CustomFormProcessContext> => {
+}): Promise<CustomFormProcessContext & { instance: CustomFormInstance }> => {
   // One instance per profile: the column holds the instance's own profile.
   const instance = await db.query.processInstances.findFirst({
     where: { profileId },
@@ -47,7 +51,10 @@ export const assertCustomFormAdmin = async ({
     throw new NotFoundError('Decision process', profileId);
   }
 
-  return assertCustomFormAdminForInstance({ user, instance });
+  return {
+    ...(await assertCustomFormAdminForInstance({ user, instance })),
+    instance,
+  };
 };
 
 /**
@@ -77,13 +84,9 @@ export const assertCustomFormAdminForInstance = async ({
     throw new UnauthorizedError("You don't have access to do this");
   }
 
-  return {
-    profileId: instance.profileId,
-    ...(await readInstancePhaseSet({ instance })),
-  };
+  return { profileId: instance.profileId };
 };
 
-/** The phase set an `x-phase` may name, in order. */
 export const readInstancePhaseSet = async ({
   instance,
   db,
@@ -92,7 +95,7 @@ export const readInstancePhaseSet = async ({
   instance: { id: string; instanceData: unknown };
   db?: DbClient;
   fromRows?: boolean;
-}): Promise<Pick<CustomFormProcessContext, 'initialPhaseId' | 'phaseIds'>> => {
+}): Promise<CustomFormPhaseSet> => {
   const phaseIds = (await readInstancePhases({ instance, db, fromRows })).map(
     (phase) => phase.phaseId,
   );

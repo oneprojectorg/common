@@ -2,7 +2,10 @@ import type { TransactionType } from '@op/db/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ValidationError } from '../../utils';
-import type { CustomFormProcessContext } from './customFormAuth';
+import type {
+  CustomFormPhaseSet,
+  CustomFormProcessContext,
+} from './customFormAuth';
 
 const findMany = vi.fn();
 const execute = vi.fn();
@@ -43,7 +46,7 @@ vi.mock('@op/db/schema', () => ({
 const { assertPhaseAvailable, lockProfileForms, writeWithPhaseLock } =
   await import('./phaseBinding');
 
-const process: CustomFormProcessContext = {
+const process: CustomFormProcessContext & CustomFormPhaseSet = {
   profileId: 'decision-profile',
   initialPhaseId: 'submission',
   phaseIds: ['submission', 'review', 'voting'],

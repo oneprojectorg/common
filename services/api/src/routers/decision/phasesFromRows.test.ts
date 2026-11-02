@@ -4,6 +4,7 @@ import {
   duplicateInstance,
   getVotingProgress,
   processDecisionsTransitions,
+  readInstancePhaseSet,
   revertPhase,
 } from '@op/common';
 import {
@@ -437,7 +438,7 @@ describe('with process_phases_from_rows on and instanceData.phases empty', () =>
       profileId: setup.instance.profileId,
     });
 
-    expect(context).toMatchObject({
+    expect(await readInstancePhaseSet({ instance: context.instance })).toEqual({
       initialPhaseId: 'initial',
       phaseIds: ['initial', 'final'],
     });

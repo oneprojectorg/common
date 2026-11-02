@@ -104,6 +104,7 @@ export async function reconcileReviewAssignments({
 
   const { instanceData: resolvedInstanceData } = await withInstancePhases({
     instance,
+    db,
   });
   const instanceData = resolvedInstanceData as DecisionInstanceData;
   const currentPhase = assertInstancePhase({

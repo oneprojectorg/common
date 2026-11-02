@@ -37,11 +37,7 @@ const { loadFormForWrite } = await import('./loadFormForWrite');
 
 const user = { id: 'auth-user', email: 'admin@oneproject.org' } as User;
 
-const context = {
-  profileId: 'decision-profile',
-  initialPhaseId: 'submission',
-  phaseIds: ['submission', 'voting'],
-};
+const context = { profileId: 'decision-profile' };
 
 describe('loadFormForWrite', () => {
   beforeEach(() => {
