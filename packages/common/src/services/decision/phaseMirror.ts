@@ -63,7 +63,6 @@ export const mutatePhases = async <T>({
   const writtenPhaseIds = new Set(written.map(phaseIdOf));
   const mirrored = mergePhasesWithInstanceData({
     phases: written,
-    // Drop deleted phases, or the builder's next save restores them.
     blobPhases: blobPhases.filter(
       ({ phaseId }) =>
         writtenPhaseIds.has(phaseId) || !mintedPhaseIds.has(phaseId),

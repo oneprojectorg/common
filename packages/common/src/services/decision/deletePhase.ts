@@ -25,7 +25,6 @@ export const deletePhase = async ({
           throw new NotFoundError('Phase', phaseId);
         }
 
-        // The profile cascades to the phase row, not the other way round.
         await tx.delete(profiles).where(eq(profiles.id, phase.profileId));
       },
     }),

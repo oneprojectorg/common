@@ -167,7 +167,6 @@ export const updateDecisionInstance = async ({
       ? await listPhases({ db: tx, processInstanceId: instanceId })
       : undefined;
 
-    // Read under the lock so a concurrent save is not lost.
     const instanceDataUpdate = getUpdatedInstanceData({
       existing: existingPhases
         ? {
@@ -200,7 +199,6 @@ export const updateDecisionInstance = async ({
         }));
       }
 
-      // After the merge: a budget on an incoming phase needs a priced field.
       if (hasPhaseUpdates || proposalTemplate) {
         await assertVoterCostField({
           instanceData: instanceDataUpdate.instanceData,
