@@ -17,6 +17,7 @@ import { Link, useTranslations } from '@/lib/i18n';
 
 import { OrganizationAvatar } from '@/components/OrganizationAvatar';
 
+import { ProfileColumn } from '../ProfileContent';
 import { ProfileInteractions } from '../ProfileDetails';
 
 export const ProfileHero = ({
@@ -30,46 +31,48 @@ export const ProfileHero = ({
     .join(' • ');
 
   return (
-    <section className="relative isolate flex flex-col md:min-h-46 md:justify-end">
+    <section className="relative isolate">
       <ProfileHeroCover profile={profile} />
 
-      <div className="relative flex flex-col gap-2 px-4 pb-4 md:static md:px-6 md:pt-6 md:pb-6 md:text-hero-foreground">
-        <div className="-mt-8 flex flex-wrap items-end justify-between gap-3 md:mt-0">
+      <ProfileColumn className="relative flex flex-col gap-2 pb-4 md:min-h-46 md:flex-row md:items-start md:gap-4 md:py-8 md:text-hero-foreground">
+        <div className="-mt-8 flex flex-wrap items-end justify-between gap-3 md:contents">
           <OrganizationAvatar
             profile={profile}
             withLink={false}
-            className="size-16 ring-3 ring-background md:ring-2 md:ring-hero-foreground"
+            className="size-16 shrink-0 ring-3 ring-background md:ring-2 md:ring-hero-foreground"
           />
-          <div className="md:absolute md:end-6 md:top-4">
+          <div className="md:order-last md:ms-auto md:shrink-0">
             <ProfileInteractions profile={organization} />
           </div>
         </div>
 
-        <Header1 className="text-title font-normal md:text-headline">
-          {profile.name}
-        </Header1>
+        <div className="flex min-w-0 flex-col gap-1">
+          <Header1 className="text-title font-normal md:text-headline">
+            {profile.name}
+          </Header1>
 
-        {location ? (
-          <p className="text-base opacity-80">
-            <bdi>{location}</bdi>
-          </p>
-        ) : null}
+          {location ? (
+            <p className="text-base opacity-80">
+              <bdi>{location}</bdi>
+            </p>
+          ) : null}
 
-        {profile.bio ? (
-          <p
-            dir="auto"
-            className="text-base lg:truncate ltr:text-left rtl:text-right"
-          >
-            {profile.bio}
-          </p>
-        ) : null}
+          {profile.bio ? (
+            <p
+              dir="auto"
+              className="text-base lg:truncate ltr:text-left rtl:text-right"
+            >
+              {profile.bio}
+            </p>
+          ) : null}
 
-        <APIErrorBoundary fallbacks={{ default: () => null }}>
-          <Suspense fallback={<Skeleton className="h-5 w-48" />}>
-            <ProfileHeroCountsSuspense organization={organization} />
-          </Suspense>
-        </APIErrorBoundary>
-      </div>
+          <APIErrorBoundary fallbacks={{ default: () => null }}>
+            <Suspense fallback={<Skeleton className="mt-2 h-5 w-48" />}>
+              <ProfileHeroCountsSuspense organization={organization} />
+            </Suspense>
+          </APIErrorBoundary>
+        </div>
+      </ProfileColumn>
     </section>
   );
 };
@@ -82,7 +85,7 @@ const ProfileHeroCover = ({ profile }: { profile: Profile }) => {
       {headerUrl ? (
         <Image src={headerUrl} alt="" fill className="object-cover" />
       ) : null}
-      <div className="absolute inset-0 hidden bg-linear-to-t from-hero/80 to-transparent md:block" />
+      <div className="absolute inset-0 hidden bg-hero/50 md:block" />
     </div>
   );
 };

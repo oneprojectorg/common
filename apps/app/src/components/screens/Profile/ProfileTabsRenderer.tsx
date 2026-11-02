@@ -7,6 +7,7 @@ import { screens } from '@op/styles/constants';
 
 import {
   OrganizationProfileGrid,
+  ProfileColumn,
   ProfileGrid,
   ProfileTabList,
   ProfileTabs,
@@ -65,20 +66,19 @@ export const ProfileTabsRenderer = ({
 
   return (
     <ProfileTabs initialTab={initialTab} profileType="org">
-      <ProfileTabList>
-        <DesktopOrganizationTabs />
-        <FollowersTab />
-        <MembersTab profileId={profile.id} />
-        <DecisionsTab profileId={profile.id} />
-      </ProfileTabList>
-      <div className="border-t">
+      <ProfileColumn className="flex grow flex-col gap-6">
+        <div className="border-b">
+          <ProfileTabList className="sm:px-0">
+            <DesktopOrganizationTabs />
+            <FollowersTab />
+            <MembersTab profileId={profile.id} />
+            <DecisionsTab profileId={profile.id} />
+          </ProfileTabList>
+        </div>
         <TabsContent value="home" className="flex grow flex-col sm:p-0">
           <OrganizationProfileGrid profile={organization} />
         </TabsContent>
-        <TabsContent
-          value="relationships"
-          className="grow px-4 sm:px-6 sm:py-0"
-        >
+        <TabsContent value="relationships" className="grow">
           <ProfileOrganizations>
             <ProfileRelationshipsSuspense
               slug={profile.slug}
@@ -86,14 +86,14 @@ export const ProfileTabsRenderer = ({
             />
           </ProfileOrganizations>
         </TabsContent>
-        <FollowersTabPanel>
+        <FollowersTabPanel className="sm:px-0">
           <ProfileFollowers profileId={profile.id} />
         </FollowersTabPanel>
         <DecisionsTabPanel>
           <ProfileDecisionsSuspense profileId={profile.id} />
         </DecisionsTabPanel>
-        <MembersTabPanel profileId={profile.id} />
-      </div>
+        <MembersTabPanel profileId={profile.id} className="sm:px-0" />
+      </ProfileColumn>
     </ProfileTabs>
   );
 };

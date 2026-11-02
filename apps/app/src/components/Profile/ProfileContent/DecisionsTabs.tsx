@@ -86,9 +86,18 @@ export const MembersTab = ({ profileId }: { profileId: string }) => {
   );
 };
 
-export const MembersTabPanel = ({ profileId }: { profileId: string }) => {
+export const MembersTabPanel = ({
+  profileId,
+  className,
+}: {
+  profileId: string;
+  className?: string;
+}) => {
   return (
-    <TabsContent value="members" className="grow px-4 sm:px-6 sm:py-0">
+    <TabsContent
+      value="members"
+      className={cn('grow px-4 sm:px-6 sm:py-0', className)}
+    >
       <ProfileOrganizations>
         <MembersList profileId={profileId} />
       </ProfileOrganizations>
