@@ -15,8 +15,7 @@ import { invalidateProfileUserAccessCache } from '../access';
 import { assertUserByAuthId } from '../assert';
 import { createDefaultDecisionRoles } from './decisionRoles';
 import { getTemplate } from './getTemplate';
-import { assertPhasesCanBeMinted } from './phaseHelpers';
-import { reconcilePhaseRows } from './phaseRows';
+import { assertPhasesCanBeMinted, reconcilePhases } from './phaseHelpers';
 import type { DecisionInstanceData } from './schemas/instanceData';
 import { createInstanceDataFromTemplate } from './schemas/instanceData';
 
@@ -85,10 +84,10 @@ export const createDecisionInstance = async ({
     }
 
     // TODO: stop writing phases to instance_data once readers move to rows.
-    await reconcilePhaseRows({
+    await reconcilePhases({
       db: tx,
       processInstanceId: newInstance.id,
-      rows: [],
+      existing: [],
       phases: instanceData.phases,
     });
 

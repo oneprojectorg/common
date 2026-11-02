@@ -1,4 +1,4 @@
-import { type DbClient, db } from '@op/db/client';
+import { type DbClient, asc, db, eq, inArray } from '@op/db/client';
 import {
   EntityType,
   type ProcessPhase,
@@ -9,6 +9,7 @@ import {
 import type { User } from '@op/supabase/lib';
 import { permission } from 'access-zones';
 import { randomUUID } from 'node:crypto';
+import { isDeepStrictEqual } from 'node:util';
 
 import { CommonError, NotFoundError, ValidationError } from '../../utils';
 import { assertProfileAccess } from '../assert';
@@ -26,6 +27,15 @@ export type PhaseData = Omit<PhaseInstanceData, 'phaseId' | 'name'>;
 export type PhaseRowData = PhaseData & { phaseId?: string };
 
 type InstanceDataPhase = Pick<PhaseInstanceData, 'phaseId' | 'name'>;
+
+export interface DecisionPhase {
+  id: string;
+  profileId: string;
+  sortOrder: number;
+  data: PhaseRowData;
+  name: string;
+  slug: string;
+}
 
 const SLUG_ATTEMPTS = 3;
 
@@ -65,6 +75,98 @@ export const insertPhase = async ({
 
   return { phase, profile };
 };
+
+/** The decision's phases in order, each with the name its profile holds. */
+export const listPhases = async ({
+  db,
+  processInstanceId,
+}: {
+  db: DbClient;
+  processInstanceId: string;
+}): Promise<DecisionPhase[]> => {
+  const phases = await db
+    .select({
+      id: processPhases.id,
+      profileId: processPhases.profileId,
+      sortOrder: processPhases.sortOrder,
+      data: processPhases.data,
+      name: profiles.name,
+      slug: profiles.slug,
+    })
+    .from(processPhases)
+    .innerJoin(profiles, eq(profiles.id, processPhases.profileId))
+    .where(eq(processPhases.processInstanceId, processInstanceId))
+    .orderBy(asc(processPhases.sortOrder), asc(processPhases.id));
+
+  return phases.map((phase) => ({
+    ...phase,
+    data: readPhaseRowData(phase.data),
+  }));
+};
+
+/**
+ * Makes `existing`, loaded under the instance lock, match `phases` in that
+ * order. A phase the list leaves out is deleted with its profile; one the list
+ * leaves as it is stays untouched.
+ */
+export const reconcilePhases = async ({
+  db,
+  processInstanceId,
+  existing,
+  phases,
+}: {
+  db: DbClient;
+  processInstanceId: string;
+  existing: DecisionPhase[];
+  phases: PhaseInstanceData[];
+}): Promise<void> => {
+  assertPhasesCanBeMinted(phases);
+
+  const existingByPhaseId = new Map(
+    existing.map((phase) => [phaseIdOf(phase), phase]),
+  );
+
+  for (const [sortOrder, phase] of phases.entries()) {
+    const current = existingByPhaseId.get(phase.phaseId);
+    const { name: _name, ...data } = phase;
+    const name = getPhaseProfileName(phase);
+
+    if (!current) {
+      await insertPhase({ tx: db, processInstanceId, name, sortOrder, data });
+      continue;
+    }
+
+    if (
+      current.sortOrder !== sortOrder ||
+      !isDeepStrictEqual(current.data, data)
+    ) {
+      await db
+        .update(processPhases)
+        .set({ sortOrder, data })
+        .where(eq(processPhases.id, current.id));
+    }
+
+    if (current.name !== name) {
+      await db
+        .update(profiles)
+        .set({ name })
+        .where(eq(profiles.id, current.profileId));
+    }
+  }
+
+  const listed = new Set(phases.map(({ phaseId }) => phaseId));
+  const removed = existing
+    .filter((phase) => !listed.has(phaseIdOf(phase)))
+    .map((phase) => phase.profileId);
+  if (removed.length > 0) {
+    await db.delete(profiles).where(inArray(profiles.id, removed));
+  }
+};
+
+// A phase minted from `instance_data` carries that phase's id; one made by the
+// phase endpoints has only its slug, which is just as stable.
+export const phaseIdOf = (phase: DecisionPhase): string =>
+  phase.data.phaseId ?? phase.slug;
 
 export const getPhaseProfileName = ({
   phaseId,
@@ -245,10 +347,15 @@ const insertPhaseProfile = async ({
 
 const generatePhaseSlug = () => randomUUID().slice(0, 8);
 
-export const isJsonObject = (
-  value: unknown,
-): value is Record<string, unknown> =>
+const isJsonObject = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
+
+// Shape only; the fields are checked where they are used.
+const isPhaseRowData = (value: unknown): value is PhaseRowData =>
+  isJsonObject(value);
+
+const readPhaseRowData = (data: unknown): PhaseRowData =>
+  isPhaseRowData(data) ? data : {};
 
 // Shape only; Ajv compiles it when the settings are checked.
 const isSettingsSchema = (value: unknown): value is PhaseSettingsSchema =>
