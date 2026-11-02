@@ -10,6 +10,7 @@ import {
   findVoterEnrolment,
   isVoterEnrolled,
   pendingEnrolmentStep,
+  formatSmsAddressLookupFailed,
   formatSmsAddressNotFound,
   formatSmsAddressOutside,
   formatSmsAddressResolved,
@@ -244,7 +245,11 @@ export const vote: SmsCommandHandler = async (context) => {
       deliver,
       'send-attestation-again',
       'Attestation reply',
-      formatSmsAddressResolved({ district, attestation: rule.attestation }),
+      formatSmsAddressResolved({
+        district,
+        decisionName: decision.name,
+        attestation: rule.attestation,
+      }),
       message,
     );
 
@@ -435,6 +440,14 @@ export const freeText: SmsCommandHandler = async (context) => {
         formatSmsAddressNotFound(),
         'address not found',
       );
+    case 'lookup_failed':
+      return deliverAll(
+        deliver,
+        'send-address-lookup-failed',
+        'Address lookup failed reply',
+        formatSmsAddressLookupFailed(),
+        'address lookup failed',
+      );
     case 'outside':
       return deliverAll(
         deliver,
@@ -450,6 +463,7 @@ export const freeText: SmsCommandHandler = async (context) => {
         'Attestation reply',
         formatSmsAddressResolved({
           district: resolution.boundary?.name ?? null,
+          decisionName: decision.name,
           attestation: rule.attestation,
         }),
         'address resolved',

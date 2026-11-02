@@ -15,19 +15,25 @@ export const formatSmsEnrolmentWelcome = (decisionName: string): string[] =>
 
 export const formatSmsAddressResolved = ({
   district,
+  decisionName,
   attestation,
 }: {
   district: string | null;
+  decisionName: string;
   attestation: string;
 }): string[] =>
   splitSmsBody({
     lines: [
-      `${district ? `That's ${clipSmsText(district, SMS_DISTRICT_LENGTH)}.` : 'Address found.'} Reply AGREE to affirm: "${attestation}"`,
+      `${district ? `That's ${clipSmsText(district, SMS_DISTRICT_LENGTH)}.` : 'Address found.'} Reply AGREE to register for ${quoted(decisionName)}: "${attestation}"`,
     ],
   });
 
 export const formatSmsAddressNotFound = (): string[] => [
   'That address was not found. Text it again with the street, city and ZIP.',
+];
+
+export const formatSmsAddressLookupFailed = (): string[] => [
+  'The address lookup is not working right now. Text your address again in a few minutes.',
 ];
 
 export const formatSmsAddressOutside = (decisionName: string): string[] =>

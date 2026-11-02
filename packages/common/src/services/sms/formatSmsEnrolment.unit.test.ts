@@ -24,17 +24,24 @@ describe('formatSmsAddressResolved', () => {
     expect(
       formatSmsAddressResolved({
         district: 'Council District 5',
+        decisionName: 'City Budget',
         attestation: 'I affirm that I meet the eligibility requirements.',
       }),
     ).toEqual([
-      'That\'s Council District 5. Reply AGREE to affirm: "I affirm that I meet the eligibility requirements."',
+      'That\'s Council District 5. Reply AGREE to register for "City Budget": "I affirm that I meet the eligibility requirements."',
     ]);
   });
 
   it('given no district, then the text says the address was found and still asks for AGREE', () => {
     expect(
-      formatSmsAddressResolved({ district: null, attestation: 'I affirm.' }),
-    ).toEqual(['Address found. Reply AGREE to affirm: "I affirm."']);
+      formatSmsAddressResolved({
+        district: null,
+        decisionName: 'City Budget',
+        attestation: 'I affirm.',
+      }),
+    ).toEqual([
+      'Address found. Reply AGREE to register for "City Budget": "I affirm."',
+    ]);
   });
 });
 
