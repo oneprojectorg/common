@@ -92,6 +92,7 @@ export const listPhaseIds = async (processInstanceId: string) =>
     await db.query.processPhases.findMany({
       where: { processInstanceId },
       columns: { id: true },
+      orderBy: { id: 'asc' },
     })
   ).map((phase) => phase.id);
 
