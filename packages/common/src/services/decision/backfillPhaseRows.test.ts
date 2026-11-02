@@ -15,7 +15,7 @@ import type { DecisionInstanceData } from './schemas/instanceData';
 
 const backfillSql = readFileSync(
   new URL(
-    '../../../../../services/db/migrations/20261028205217_backfill-phase-rows/migration.sql',
+    '../../../../../services/db/migrations/20261102144734_backfill-phase-rows/migration.sql',
     import.meta.url,
   ),
   'utf8',

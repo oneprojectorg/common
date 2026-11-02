@@ -1,7 +1,7 @@
 {
-  "id": "505952fb-749c-45cd-976a-05fd2a9ebb43",
+  "id": "04e454cd-0290-4a27-9262-055f426676f7",
   "prevIds": [
-    "64ffd4cb-da57-472a-93fd-8a3bccb1728e"
+    "ca27f2a7-cfca-4131-9dcb-ede17a649c71"
   ],
   "version": "8",
   "dialect": "postgres",
@@ -239,6 +239,18 @@
     },
     {
       "isRlsEnabled": true,
+      "name": "decision_chat_sessions",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": true,
+      "name": "decision_phone_numbers",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": true,
       "name": "decision_process_result_selections",
       "entityType": "tables",
       "schema": "public"
@@ -276,6 +288,24 @@
     {
       "isRlsEnabled": true,
       "name": "decision_transition_proposals",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": true,
+      "name": "decision_voter_enrolments",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": true,
+      "name": "decisions_vote_draft_proposals",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": true,
+      "name": "decisions_vote_drafts",
       "entityType": "tables",
       "schema": "public"
     },
@@ -1599,6 +1629,214 @@
       "name": "id",
       "entityType": "columns",
       "schema": "public",
+      "table": "decision_chat_sessions"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "process_instance_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "decision_chat_sessions"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "profile_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "decision_chat_sessions"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "phone_number_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "decision_chat_sessions"
+    },
+    {
+      "type": "integer",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "page_cursor",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "decision_chat_sessions"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "reopened_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "decision_chat_sessions"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": "(now() AT TIME ZONE 'utc'::text)",
+      "generated": null,
+      "identity": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "decision_chat_sessions"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": "(now() AT TIME ZONE 'utc'::text)",
+      "generated": null,
+      "identity": null,
+      "name": "updated_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "decision_chat_sessions"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "deleted_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "decision_chat_sessions"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "gen_random_uuid()",
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "decision_phone_numbers"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "process_instance_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "decision_phone_numbers"
+    },
+    {
+      "type": "varchar(32)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "phone_number",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "decision_phone_numbers"
+    },
+    {
+      "type": "varchar(16)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "'sms'",
+      "generated": null,
+      "identity": null,
+      "name": "channel",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "decision_phone_numbers"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": "(now() AT TIME ZONE 'utc'::text)",
+      "generated": null,
+      "identity": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "decision_phone_numbers"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": "(now() AT TIME ZONE 'utc'::text)",
+      "generated": null,
+      "identity": null,
+      "name": "updated_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "decision_phone_numbers"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "deleted_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "decision_phone_numbers"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "gen_random_uuid()",
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "public",
       "table": "decision_process_result_selections"
     },
     {
@@ -2315,6 +2553,266 @@
       "entityType": "columns",
       "schema": "public",
       "table": "decision_transition_proposals"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "gen_random_uuid()",
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "decision_voter_enrolments"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "process_instance_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "decision_voter_enrolments"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "profile_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "decision_voter_enrolments"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "taxonomy_term_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "decision_voter_enrolments"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "enrolled_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "decision_voter_enrolments"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": "(now() AT TIME ZONE 'utc'::text)",
+      "generated": null,
+      "identity": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "decision_voter_enrolments"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": "(now() AT TIME ZONE 'utc'::text)",
+      "generated": null,
+      "identity": null,
+      "name": "updated_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "decision_voter_enrolments"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "deleted_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "decision_voter_enrolments"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "vote_draft_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "decisions_vote_draft_proposals"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "proposal_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "decisions_vote_draft_proposals"
+    },
+    {
+      "type": "integer",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "rank",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "decisions_vote_draft_proposals"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": "(now() AT TIME ZONE 'utc'::text)",
+      "generated": null,
+      "identity": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "decisions_vote_draft_proposals"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": "(now() AT TIME ZONE 'utc'::text)",
+      "generated": null,
+      "identity": null,
+      "name": "updated_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "decisions_vote_draft_proposals"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "deleted_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "decisions_vote_draft_proposals"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "gen_random_uuid()",
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "decisions_vote_drafts"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "process_instance_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "decisions_vote_drafts"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "profile_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "decisions_vote_drafts"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": "(now() AT TIME ZONE 'utc'::text)",
+      "generated": null,
+      "identity": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "decisions_vote_drafts"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": "(now() AT TIME ZONE 'utc'::text)",
+      "generated": null,
+      "identity": null,
+      "name": "updated_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "decisions_vote_drafts"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "deleted_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "decisions_vote_drafts"
     },
     {
       "type": "uuid",
@@ -4418,6 +4916,19 @@
       "generated": null,
       "identity": null,
       "name": "status",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "decision_process_instances"
+    },
+    {
+      "type": "integer",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "101",
+      "generated": null,
+      "identity": null,
+      "name": "next_short_code",
       "entityType": "columns",
       "schema": "public",
       "table": "decision_process_instances"
@@ -6626,6 +7137,19 @@
       "table": "decision_proposals"
     },
     {
+      "type": "integer",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "short_code",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "decision_proposals"
+    },
+    {
       "type": "uuid",
       "typeSchema": null,
       "notNull": true,
@@ -8242,6 +8766,90 @@
       "nameExplicit": true,
       "columns": [
         {
+          "value": "process_instance_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        },
+        {
+          "value": "profile_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": true,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "decision_chat_sessions_instance_profile_uniq",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "decision_chat_sessions"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "process_instance_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        },
+        {
+          "value": "channel",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": true,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "decision_phone_numbers_instance_channel_uniq",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "decision_phone_numbers"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "phone_number",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        },
+        {
+          "value": "channel",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": true,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "decision_phone_numbers_number_channel_uniq",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "decision_phone_numbers"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
           "value": "process_result_id",
           "isExpression": false,
           "asc": true,
@@ -8727,6 +9335,132 @@
       "entityType": "indexes",
       "schema": "public",
       "table": "decision_transition_proposals"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "process_instance_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        },
+        {
+          "value": "profile_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": true,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "decision_voter_enrolments_instance_profile_uniq",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "decision_voter_enrolments"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        {
+          "value": "vote_draft_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "decisions_vote_draft_proposals_vote_draft_id_index",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "decisions_vote_draft_proposals"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        {
+          "value": "proposal_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "decisions_vote_draft_proposals_proposal_id_index",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "decisions_vote_draft_proposals"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        {
+          "value": "vote_draft_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        },
+        {
+          "value": "rank",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": true,
+      "where": "rank IS NOT NULL",
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "decisions_vote_draft_proposals_vote_draft_id_rank_index",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "decisions_vote_draft_proposals"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "process_instance_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        },
+        {
+          "value": "profile_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": true,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "decisions_vote_drafts_instance_profile_uniq",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "decisions_vote_drafts"
     },
     {
       "nameExplicit": false,
@@ -11697,6 +12431,34 @@
       "table": "decision_proposal_reviews"
     },
     {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "process_instance_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        },
+        {
+          "value": "short_code",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": true,
+      "where": "\"short_code\" IS NOT NULL",
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "proposals_process_short_code_uniq",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "decision_proposals"
+    },
+    {
       "nameExplicit": false,
       "columns": [
         {
@@ -12849,6 +13611,74 @@
     {
       "nameExplicit": false,
       "columns": [
+        "process_instance_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "decision_process_instances",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "CASCADE",
+      "onDelete": "CASCADE",
+      "name": "decision_chat_sessions_Kbpe7lKWNIOx_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "decision_chat_sessions"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "profile_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "profiles",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "CASCADE",
+      "onDelete": "CASCADE",
+      "name": "decision_chat_sessions_profile_id_profiles_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "decision_chat_sessions"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "phone_number_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "decision_phone_numbers",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "CASCADE",
+      "onDelete": "SET NULL",
+      "name": "decision_chat_sessions_pRlSY8KMsXm7_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "decision_chat_sessions"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "process_instance_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "decision_process_instances",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "CASCADE",
+      "onDelete": "CASCADE",
+      "name": "decision_phone_numbers_WKVwzwXngt7m_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "decision_phone_numbers"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
         "process_result_id"
       ],
       "schemaTo": "public",
@@ -13091,6 +13921,125 @@
       "entityType": "fks",
       "schema": "public",
       "table": "decision_transition_proposals"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "process_instance_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "decision_process_instances",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "CASCADE",
+      "onDelete": "CASCADE",
+      "name": "decision_voter_enrolments_PbJbomW5dZtL_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "decision_voter_enrolments"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "profile_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "profiles",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "CASCADE",
+      "onDelete": "CASCADE",
+      "name": "decision_voter_enrolments_profile_id_profiles_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "decision_voter_enrolments"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "taxonomy_term_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "taxonomyTerms",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "CASCADE",
+      "onDelete": "SET NULL",
+      "name": "decision_voter_enrolments_ulF7ZHLm8K4r_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "decision_voter_enrolments"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "vote_draft_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "decisions_vote_drafts",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "CASCADE",
+      "onDelete": "CASCADE",
+      "name": "decisions_vote_draft_proposals_K7Sgp5zr8aYL_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "decisions_vote_draft_proposals"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "proposal_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "decision_proposals",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "CASCADE",
+      "onDelete": "CASCADE",
+      "name": "decisions_vote_draft_proposals_zHeniAafVdhG_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "decisions_vote_draft_proposals"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "process_instance_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "decision_process_instances",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "CASCADE",
+      "onDelete": "CASCADE",
+      "name": "decisions_vote_drafts_GRfbnDOwsttl_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "decisions_vote_drafts"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "profile_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "profiles",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "CASCADE",
+      "onDelete": "CASCADE",
+      "name": "decisions_vote_drafts_profile_id_profiles_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "decisions_vote_drafts"
     },
     {
       "nameExplicit": false,
@@ -14853,6 +15802,17 @@
     },
     {
       "columns": [
+        "vote_draft_id",
+        "proposal_id"
+      ],
+      "nameExplicit": false,
+      "name": "decisions_vote_draft_proposals_pkey",
+      "entityType": "pks",
+      "schema": "public",
+      "table": "decisions_vote_draft_proposals"
+    },
+    {
+      "columns": [
         "vote_submission_id",
         "proposal_id"
       ],
@@ -15088,6 +16048,26 @@
         "id"
       ],
       "nameExplicit": false,
+      "name": "decision_chat_sessions_pkey",
+      "schema": "public",
+      "table": "decision_chat_sessions",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "decision_phone_numbers_pkey",
+      "schema": "public",
+      "table": "decision_phone_numbers",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
       "name": "decision_process_result_selections_pkey",
       "schema": "public",
       "table": "decision_process_result_selections",
@@ -15151,6 +16131,26 @@
       "name": "decision_transition_proposals_pkey",
       "schema": "public",
       "table": "decision_transition_proposals",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "decision_voter_enrolments_pkey",
+      "schema": "public",
+      "table": "decision_voter_enrolments",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "decisions_vote_drafts_pkey",
+      "schema": "public",
+      "table": "decisions_vote_drafts",
       "entityType": "pks"
     },
     {
@@ -15728,6 +16728,20 @@
       "entityType": "uniques"
     },
     {
+      "value": "\"phone_number\" ~ '^\\+[1-9][0-9]{1,14}$'",
+      "name": "decision_phone_numbers_phone_number_e164_chk",
+      "entityType": "checks",
+      "schema": "public",
+      "table": "decision_phone_numbers"
+    },
+    {
+      "value": "\"channel\" IN ('sms', 'whatsapp')",
+      "name": "decision_phone_numbers_channel_chk",
+      "entityType": "checks",
+      "schema": "public",
+      "table": "decision_phone_numbers"
+    },
+    {
       "value": "\"source_proposal_id\" <> \"target_proposal_id\"",
       "name": "proposal_rel_no_self_link",
       "entityType": "checks",
@@ -15882,6 +16896,32 @@
       "name": "service-role",
       "entityType": "policies",
       "schema": "public",
+      "table": "decision_chat_sessions"
+    },
+    {
+      "as": "PERMISSIVE",
+      "for": "ALL",
+      "roles": [
+        "service_role"
+      ],
+      "using": null,
+      "withCheck": null,
+      "name": "service-role",
+      "entityType": "policies",
+      "schema": "public",
+      "table": "decision_phone_numbers"
+    },
+    {
+      "as": "PERMISSIVE",
+      "for": "ALL",
+      "roles": [
+        "service_role"
+      ],
+      "using": null,
+      "withCheck": null,
+      "name": "service-role",
+      "entityType": "policies",
+      "schema": "public",
       "table": "decision_process_result_selections"
     },
     {
@@ -15961,6 +17001,45 @@
       "entityType": "policies",
       "schema": "public",
       "table": "decision_transition_proposals"
+    },
+    {
+      "as": "PERMISSIVE",
+      "for": "ALL",
+      "roles": [
+        "service_role"
+      ],
+      "using": null,
+      "withCheck": null,
+      "name": "service-role",
+      "entityType": "policies",
+      "schema": "public",
+      "table": "decision_voter_enrolments"
+    },
+    {
+      "as": "PERMISSIVE",
+      "for": "ALL",
+      "roles": [
+        "service_role"
+      ],
+      "using": null,
+      "withCheck": null,
+      "name": "service-role",
+      "entityType": "policies",
+      "schema": "public",
+      "table": "decisions_vote_draft_proposals"
+    },
+    {
+      "as": "PERMISSIVE",
+      "for": "ALL",
+      "roles": [
+        "service_role"
+      ],
+      "using": null,
+      "withCheck": null,
+      "name": "service-role",
+      "entityType": "policies",
+      "schema": "public",
+      "table": "decisions_vote_drafts"
     },
     {
       "as": "PERMISSIVE",
