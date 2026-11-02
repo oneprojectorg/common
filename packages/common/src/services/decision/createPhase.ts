@@ -3,6 +3,7 @@ import type { ProcessPhase, Profile } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 
 import { NotFoundError } from '../../utils';
+import { invalidateDecisionInstance } from './decisionCache';
 import {
   type PhaseData,
   assertDecisionAdmin,
@@ -41,7 +42,7 @@ export const createPhase = async ({
   assertPhaseSchemasCompile(phaseData);
   assertPhaseSettings({ data: phaseData, phaseLabel: name });
 
-  return db.transaction(async (tx) => {
+  const created = await db.transaction(async (tx) => {
     const { result } = await mutatePhases({
       db: tx,
       processInstanceId,
@@ -58,4 +59,8 @@ export const createPhase = async ({
     });
     return result;
   });
+
+  await invalidateDecisionInstance(processInstanceId);
+
+  return created;
 };

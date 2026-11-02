@@ -3,6 +3,7 @@ import { processPhases } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 
 import { NotFoundError, ValidationError } from '../../utils';
+import { invalidateDecisionInstance } from './decisionCache';
 import { assertDecisionAdmin } from './phaseHelpers';
 import { mutatePhases } from './phaseMirror';
 
@@ -50,7 +51,7 @@ export const reorderPhases = async ({
     });
   }
 
-  return db.transaction(async (tx) => {
+  const reordered = await db.transaction(async (tx) => {
     const { phases: reordered } = await mutatePhases({
       db: tx,
       processInstanceId,
@@ -84,4 +85,8 @@ export const reorderPhases = async ({
     });
     return reordered;
   });
+
+  await invalidateDecisionInstance(processInstanceId);
+
+  return reordered;
 };
