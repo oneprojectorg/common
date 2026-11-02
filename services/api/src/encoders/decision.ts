@@ -635,8 +635,7 @@ export const updateDecisionInstanceInputSchema = z.object({
   phases: z
     .array(instancePhaseDataInputEncoder)
     .max(MAX_PHASES_PER_DECISION)
-    // Checked here so the client gets a BAD_REQUEST; the service checks the
-    // merged list again before it writes.
+    // Fails fast as BAD_REQUEST; the service re-checks the merged list.
     .refine(
       (phases) =>
         phases.every(({ phaseId }) => phaseId !== '') &&
