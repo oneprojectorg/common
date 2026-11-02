@@ -85,6 +85,7 @@ export async function createUnauthenticatedCaller() {
 export const loadPhaseRows = (processInstanceId: string) =>
   db
     .select({
+      id: processPhases.id,
       sortOrder: processPhases.sortOrder,
       profileId: processPhases.profileId,
       data: processPhases.data,

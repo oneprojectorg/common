@@ -3,17 +3,13 @@ import {
   MAX_PHASES_PER_DECISION,
   type RubricTemplateSchema,
   ValidationError,
+  getInstancePhases,
   updateDecisionInstance,
 } from '@op/common';
 import { MAX_PHASE_NAME_LENGTH } from '@op/common/client';
 import { TestDecisionsDataManager } from '@op/common/testing';
-import { asc, db, eq, sql } from '@op/db/client';
-import {
-  ProcessStatus,
-  processInstances,
-  processPhases,
-  profiles,
-} from '@op/db/schema';
+import { db, eq, sql } from '@op/db/client';
+import { ProcessStatus, processInstances } from '@op/db/schema';
 import { describe, expect, it, vi } from 'vitest';
 
 import { appRouter } from '../..';
@@ -23,6 +19,7 @@ import {
   expectFailsAccessTierGate,
   expectPassesAccessTierGate,
 } from '../../../test/helpers/gating/decision';
+import { loadPhaseRows } from '../../../test/helpers/phaseTestUtils';
 import {
   createIsolatedSession,
   createTestContextWithSession,
@@ -50,27 +47,12 @@ async function getFirstPhaseId(instanceId: string) {
   return phaseId;
 }
 
-async function loadPhaseRows(instanceId: string) {
-  return db
-    .select({
-      id: processPhases.id,
-      profileId: processPhases.profileId,
-      sortOrder: processPhases.sortOrder,
-      data: processPhases.data,
-      name: profiles.name,
-    })
-    .from(processPhases)
-    .innerJoin(profiles, eq(profiles.id, processPhases.profileId))
-    .where(eq(processPhases.processInstanceId, instanceId))
-    .orderBy(asc(processPhases.sortOrder));
-}
-
 async function loadBlobPhases(instanceId: string) {
   const instance = await db.query.processInstances.findFirst({
     where: { id: instanceId },
     columns: { instanceData: true },
   });
-  return (instance?.instanceData as DecisionInstanceData).phases;
+  return getInstancePhases(instance?.instanceData);
 }
 
 // Counts the backends queued behind `pid`, directly or behind another waiter.

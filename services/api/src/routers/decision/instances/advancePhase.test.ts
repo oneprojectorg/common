@@ -9,6 +9,7 @@ import {
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
+import { listPhaseIds } from '../../../test/helpers/phaseTestUtils';
 import {
   createIsolatedSession,
   createTestContextWithSession,
@@ -120,12 +121,7 @@ describe.concurrent('advancePhase', () => {
       toPhaseId: 'final',
     });
     expect(result.conflict).toBe(false);
-
-    const rows = await db.query.processPhases.findMany({
-      where: { processInstanceId: loaded.dbInstance.id },
-      columns: { id: true },
-    });
-    expect(rows).toHaveLength(0);
+    expect(await listPhaseIds(loaded.dbInstance.id)).toEqual([]);
   });
 
   it('returns conflict when fromPhaseId does not match current state', async ({

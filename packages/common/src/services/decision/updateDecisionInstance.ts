@@ -22,21 +22,22 @@ import {
   type PhaseEndDateChange,
   getNormalizedCategories,
   getUpdatedInstanceData,
+  hasInstanceDataUpdate,
 } from './getUpdatedInstanceData';
 import { lockProcessInstanceOrThrow } from './lockProcessInstance';
+import { getPhaseProfileName } from './phaseHelpers';
 import {
-  getInstanceDataPhases,
   getStoredPhases,
   loadPhaseRows,
-  projectPhaseRows,
   reconcilePhaseRows,
 } from './phaseRows';
 import { ensureProposalTaxonomyTerms } from './proposalTaxonomy';
 import { schemaValidator } from './schemaValidator';
-import type {
-  DecisionInstanceData,
-  InstanceOverviewUpdate,
-  PhaseOverride,
+import {
+  type DecisionInstanceData,
+  type InstanceOverviewUpdate,
+  type PhaseOverride,
+  getInstancePhases,
 } from './schemas/instanceData';
 import type { ProcessConfig } from './schemas/types';
 import type { RubricTemplateSchema } from './types';
@@ -127,12 +128,13 @@ export const updateDecisionInstance = async ({
   }
 
   const hasPhaseUpdates = phases !== undefined && phases.length > 0;
-  const hasInstanceDataUpdate =
-    config !== undefined ||
-    overview !== undefined ||
-    hasPhaseUpdates ||
-    proposalTemplate !== undefined ||
-    rubricTemplate !== undefined;
+  const instanceDataFields = {
+    config,
+    overview,
+    phases,
+    proposalTemplate,
+    rubricTemplate,
+  };
   const phaseEndDateChanges: PhaseEndDateChange[] = [];
 
   if (config !== undefined) {
@@ -142,7 +144,10 @@ export const updateDecisionInstance = async ({
   }
 
   // Only update if there's something to update
-  if (Object.keys(updateData).length === 0 && !hasInstanceDataUpdate) {
+  if (
+    Object.keys(updateData).length === 0 &&
+    !hasInstanceDataUpdate(instanceDataFields)
+  ) {
     return {
       profile: await getDecisionProfile(profileId),
       phaseEndDateChanges,
@@ -171,27 +176,15 @@ export const updateDecisionInstance = async ({
             ...lockedInstanceData,
             phases: getStoredPhases({
               rows,
-              blobPhases: getInstanceDataPhases(locked.instanceData),
+              blobPhases: getInstancePhases(locked.instanceData),
             }),
           }
         : lockedInstanceData,
-      update: { config, overview, phases, proposalTemplate, rubricTemplate },
+      update: instanceDataFields,
     });
 
     if (instanceDataUpdate) {
       phaseEndDateChanges.push(...instanceDataUpdate.phaseEndDateChanges);
-
-      if (rows) {
-        const reconciled = await reconcilePhaseRows({
-          db: tx,
-          processInstanceId: instanceId,
-          rows,
-          phases: instanceDataUpdate.instanceData.phases,
-        });
-
-        // The blob mirrors the rows for the readers still on it.
-        instanceDataUpdate.instanceData.phases = projectPhaseRows(reconciled);
-      }
 
       // After the merge: a budget on an incoming phase needs a priced field.
       if (hasPhaseUpdates || proposalTemplate) {
@@ -199,6 +192,22 @@ export const updateDecisionInstance = async ({
           instanceData: instanceDataUpdate.instanceData,
           processId: existingInstance.processId,
         });
+      }
+
+      if (rows) {
+        const { phases: merged } = instanceDataUpdate.instanceData;
+        await reconcilePhaseRows({
+          db: tx,
+          processInstanceId: instanceId,
+          rows,
+          phases: merged,
+        });
+
+        // The blob mirrors the rows for the readers still on it.
+        instanceDataUpdate.instanceData.phases = merged.map((phase) => ({
+          ...phase,
+          name: getPhaseProfileName(phase),
+        }));
       }
 
       updateData.instanceData = instanceDataUpdate.instanceData;

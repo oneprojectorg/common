@@ -1,18 +1,21 @@
 import { type DbClient, asc, eq, inArray, sql } from '@op/db/client';
 import { processInstances, processPhases, profiles } from '@op/db/schema';
+import { isDeepStrictEqual } from 'node:util';
 
+import { lockProcessInstanceOrThrow } from './lockProcessInstance';
 import {
   type PhaseRowData,
   assertPhasesCanBeMinted,
   getPhaseProfileName,
   insertPhase,
+  isJsonObject,
 } from './phaseHelpers';
-import type {
-  DecisionInstanceData,
-  PhaseInstanceData,
+import {
+  type PhaseInstanceData,
+  getInstancePhases,
 } from './schemas/instanceData';
 
-interface PhaseRow {
+export interface PhaseRow {
   id: string;
   profileId: string;
   sortOrder: number;
@@ -41,19 +44,10 @@ export const loadPhaseRows = async ({
     .from(processPhases)
     .innerJoin(profiles, eq(profiles.id, processPhases.profileId))
     .where(eq(processPhases.processInstanceId, processInstanceId))
-    .orderBy(asc(processPhases.sortOrder));
+    .orderBy(asc(processPhases.sortOrder), asc(processPhases.id));
 
   return rows.map((row) => ({ ...row, data: readPhaseRowData(row.data) }));
 };
-
-/** The rows in the shape `instance_data` keeps, for the readers still on it. */
-export const projectPhaseRows = (rows: PhaseRow[]): PhaseInstanceData[] =>
-  rows.map(projectPhaseRow);
-
-export const getInstanceDataPhases = (
-  instanceData: unknown,
-): PhaseInstanceData[] =>
-  (instanceData as DecisionInstanceData | null)?.phases ?? [];
 
 /**
  * The phases a decision holds: its rows, plus each `instance_data` phase that
@@ -64,7 +58,7 @@ export const getStoredPhases = ({
   blobPhases,
 }: {
   rows: PhaseRow[];
-  blobPhases: PhaseInstanceData[];
+  blobPhases: readonly PhaseInstanceData[];
 }): PhaseInstanceData[] => {
   const rowPhaseIds = new Set(rows.map(phaseIdOf));
   // A blob phase has no sortOrder; its index stands in, and a row wins a tie.
@@ -85,63 +79,51 @@ export const getStoredPhases = ({
 };
 
 /**
- * Mirrors the rows onto `instance_data.phases` after a phase endpoint writes,
- * so the builder's next save lists them. The caller holds the instance lock.
+ * Locks the decision, hands its phase rows to `mutate`, then mirrors the rows
+ * onto `instance_data.phases` so the builder's next save lists them. The blob
+ * phases without a row are noted before the write, so a deleted row does not
+ * come back through the blob.
  */
-export const writePhaseRowsToInstanceData = async ({
+export const mutatePhaseRows = async <T>({
   db,
   processInstanceId,
-  instanceData,
-  removedPhaseId,
+  mutate,
 }: {
   db: DbClient;
   processInstanceId: string;
-  /** Read under the lock. */
-  instanceData: unknown;
-  removedPhaseId?: string;
-}): Promise<void> => {
-  const phases = getStoredPhases({
-    rows: await loadPhaseRows({ db, processInstanceId }),
-    blobPhases: getInstanceDataPhases(instanceData).filter(
-      ({ phaseId }) => phaseId !== removedPhaseId,
-    ),
+  mutate: (stored: {
+    rows: PhaseRow[];
+    rowlessPhases: PhaseInstanceData[];
+  }) => Promise<T>;
+}): Promise<{ result: T; rows: PhaseRow[] }> => {
+  const locked = await lockProcessInstanceOrThrow({
+    db,
+    instanceId: processInstanceId,
   });
+  const rows = await loadPhaseRows({ db, processInstanceId });
+  const rowPhaseIds = new Set(rows.map(phaseIdOf));
+  const rowlessPhases = getInstancePhases(locked.instanceData).filter(
+    ({ phaseId }) => !rowPhaseIds.has(phaseId),
+  );
 
+  const result = await mutate({ rows, rowlessPhases });
+
+  const written = await loadPhaseRows({ db, processInstanceId });
+  const phases = getStoredPhases({ rows: written, blobPhases: rowlessPhases });
   await db
     .update(processInstances)
     .set({
       instanceData: sql`jsonb_set(${processInstances.instanceData}, '{phases}', ${JSON.stringify(phases)}::jsonb)`,
     })
     .where(eq(processInstances.id, processInstanceId));
-};
 
-export const insertPhaseRows = async ({
-  db,
-  processInstanceId,
-  phases,
-}: {
-  db: DbClient;
-  processInstanceId: string;
-  phases: PhaseInstanceData[];
-}): Promise<void> => {
-  assertPhasesCanBeMinted(phases);
-
-  for (const [sortOrder, phase] of phases.entries()) {
-    const { name: _name, ...data } = phase;
-    await insertPhase({
-      tx: db,
-      processInstanceId,
-      name: getPhaseProfileName(phase),
-      sortOrder,
-      data,
-    });
-  }
+  return { result, rows: written };
 };
 
 /**
- * Makes `rows`, loaded under the instance lock, match `phases` in that order,
- * and returns the result. A phase the list leaves out is deleted with its
- * profile.
+ * Makes `rows`, loaded under the instance lock, match `phases` in that order.
+ * A phase the list leaves out is deleted with its profile; a row the list
+ * leaves as it is stays untouched.
  */
 export const reconcilePhaseRows = async ({
   db,
@@ -153,11 +135,10 @@ export const reconcilePhaseRows = async ({
   processInstanceId: string;
   rows: PhaseRow[];
   phases: PhaseInstanceData[];
-}): Promise<PhaseRow[]> => {
+}): Promise<void> => {
   assertPhasesCanBeMinted(phases);
 
   const rowByPhaseId = new Map(rows.map((row) => [phaseIdOf(row), row]));
-  const reconciled: PhaseRow[] = [];
 
   for (const [sortOrder, phase] of phases.entries()) {
     const row = rowByPhaseId.get(phase.phaseId);
@@ -165,28 +146,16 @@ export const reconcilePhaseRows = async ({
     const name = getPhaseProfileName(phase);
 
     if (!row) {
-      const inserted = await insertPhase({
-        tx: db,
-        processInstanceId,
-        name,
-        sortOrder,
-        data,
-      });
-      reconciled.push({
-        id: inserted.phase.id,
-        profileId: inserted.profile.id,
-        sortOrder,
-        data,
-        name: inserted.profile.name,
-        slug: inserted.profile.slug,
-      });
+      await insertPhase({ tx: db, processInstanceId, name, sortOrder, data });
       continue;
     }
 
-    await db
-      .update(processPhases)
-      .set({ sortOrder, data })
-      .where(eq(processPhases.id, row.id));
+    if (row.sortOrder !== sortOrder || !isDeepStrictEqual(row.data, data)) {
+      await db
+        .update(processPhases)
+        .set({ sortOrder, data })
+        .where(eq(processPhases.id, row.id));
+    }
 
     if (row.name !== name) {
       await db
@@ -194,19 +163,15 @@ export const reconcilePhaseRows = async ({
         .set({ name })
         .where(eq(profiles.id, row.profileId));
     }
-
-    reconciled.push({ ...row, sortOrder, data, name });
   }
 
-  const kept = new Set(reconciled.map(({ id }) => id));
+  const listed = new Set(phases.map(({ phaseId }) => phaseId));
   const removed = rows
-    .filter((row) => !kept.has(row.id))
+    .filter((row) => !listed.has(phaseIdOf(row)))
     .map((row) => row.profileId);
   if (removed.length > 0) {
     await db.delete(profiles).where(inArray(profiles.id, removed));
   }
-
-  return reconciled;
 };
 
 // A row minted from `instance_data` carries that phase's id; one made by the
@@ -220,7 +185,9 @@ const projectPhaseRow = (row: PhaseRow): PhaseInstanceData => ({
   name: row.name,
 });
 
+// Shape only; the fields are checked where they are used.
+const isPhaseRowData = (value: unknown): value is PhaseRowData =>
+  isJsonObject(value);
+
 const readPhaseRowData = (data: unknown): PhaseRowData =>
-  typeof data === 'object' && data !== null && !Array.isArray(data)
-    ? (data as PhaseRowData)
-    : {};
+  isPhaseRowData(data) ? data : {};
