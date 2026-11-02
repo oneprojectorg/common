@@ -12,7 +12,6 @@ export const emptyBlobPhases = (instanceId: string) =>
     })
     .where(eq(processInstances.id, instanceId));
 
-/** Names each row "Row <phaseId>" so a test can tell a row read from a blob read. */
 export const leaveOnlyPhaseRows = async (
   instanceId: string,
   rowData: Record<string, unknown> = {},

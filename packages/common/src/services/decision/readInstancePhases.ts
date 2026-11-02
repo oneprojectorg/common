@@ -20,7 +20,6 @@ interface InstanceWithData {
 const resolvedPhases = Symbol('resolvedPhases');
 
 // TODO: remove this brand when readers stop taking phases off instanceData.
-/** An instance whose `instanceData.phases` holds its resolved phases. */
 export type PhasesResolved<T> = T & { readonly [resolvedPhases]: true };
 
 const NO_ROWS_WARNING =
@@ -30,7 +29,6 @@ const NO_ROWS_WARNING =
 export const isPhasesFromRowsEnabled = (): Promise<boolean> =>
   isServerFeatureEnabled({
     key: PHASES_FROM_ROWS_FLAG,
-    // One id server-wide, so a percentage rollout is all or nothing.
     distinctId: PHASES_FROM_ROWS_FLAG,
   });
 
@@ -45,7 +43,6 @@ export const readInstancePhases = async ({
 }): Promise<PhaseInstanceData[]> =>
   getBlobPhases(await withInstancePhases({ instance, db, fromRows }));
 
-/** For the synchronous readers and encoders that still take phases off the blob. */
 export const withInstancePhases = async <T extends InstanceWithData>({
   instance,
   db = defaultDb,

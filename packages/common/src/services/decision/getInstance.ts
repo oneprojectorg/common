@@ -81,7 +81,6 @@ export const getInstance = async ({ instanceId, user }: GetInstanceInput) => {
       throw new NotFoundError('Process instance', instanceId);
     }
 
-    // Safe beside the assert: a denied caller throws before the phases are returned.
     const [instance, profileRoles] = await Promise.all([
       withInstancePhases({ instance: cached }),
       assertInstanceProfileAccess({

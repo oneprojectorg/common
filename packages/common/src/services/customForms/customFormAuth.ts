@@ -13,7 +13,6 @@ export type CustomFormProcessContext = {
   profileId: string;
 };
 
-/** The phase set an `x-phase` may name, in order. */
 export type CustomFormPhaseSet = {
   /** Phase a form with no `x-phase` falls back to. */
   initialPhaseId: string | null;

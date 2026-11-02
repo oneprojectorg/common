@@ -19,7 +19,6 @@ import type { ExecutionContext } from './selectionPipeline/types';
 
 export interface AdvancePhaseInput {
   db: DbClient;
-  /** Stale snapshots are safe — writes use optimistic locks. */
   instance: PhasesResolved<{
     id: string;
     instanceData: unknown;
