@@ -10,7 +10,6 @@ import {
 
 // TODO: delete this file when instance_data.phases is dropped.
 
-/** Includes blob phases not yet minted: the phase endpoints can mint before the backfill. */
 export const mergePhasesWithInstanceData = ({
   phases,
   blobPhases,
@@ -19,7 +18,6 @@ export const mergePhasesWithInstanceData = ({
   blobPhases: readonly PhaseInstanceData[];
 }): PhaseInstanceData[] => {
   const mintedPhaseIds = new Set(phases.map(phaseIdOf));
-  // A blob phase's index stands in for its sortOrder; a minted phase wins a tie.
   const placed = [
     ...phases.map((phase) => ({
       position: phase.sortOrder,
@@ -36,7 +34,6 @@ export const mergePhasesWithInstanceData = ({
     .map(({ phase }) => phase);
 };
 
-/** Mirrors onto the blob, dropping phases `mutate` deleted so the builder's next save can't restore them. */
 export const mutatePhases = async <T>({
   db,
   processInstanceId,
@@ -66,6 +63,7 @@ export const mutatePhases = async <T>({
   const writtenPhaseIds = new Set(written.map(phaseIdOf));
   const mirrored = mergePhasesWithInstanceData({
     phases: written,
+    // Drop deleted phases, or the builder's next save restores them.
     blobPhases: blobPhases.filter(
       ({ phaseId }) =>
         writtenPhaseIds.has(phaseId) || !mintedPhaseIds.has(phaseId),

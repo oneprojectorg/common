@@ -49,7 +49,6 @@ async function getFirstPhaseId(instanceId: string) {
   return phaseId;
 }
 
-// Transitive: also counts backends queued behind another waiter.
 async function countBackendsWaitingOn(pid: number) {
   const [row] = await db.execute(sql`
     with recursive waiting(pid) as (
@@ -1104,7 +1103,6 @@ describe.concurrent('updateDecisionInstance', () => {
     const holderPid = await locked;
 
     const phases = [{ phaseId: 'initial' }, { phaseId: 'final' }];
-    // Unlocked, both saves would read no rows and each insert a full set.
     const saves = Promise.allSettled([
       caller.decision.updateDecisionInstance({ instanceId, phases }),
       caller.decision.updateDecisionInstance({ instanceId, phases }),
