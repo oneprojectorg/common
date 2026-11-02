@@ -19,6 +19,10 @@ import {
   type PhaseSettingsSchema,
   assertSettingsMatchSchema,
 } from './schemas/instanceData';
+import {
+  PHASE_NAME_TOO_LONG,
+  phaseNameLengthSchema,
+} from './schemas/phaseName';
 import { MAX_PHASES_PER_DECISION } from './utils/phaseOrder';
 
 // phaseId and name live on the phase's profile.
@@ -115,7 +119,9 @@ export const reconcilePhases = async ({
   existing: DecisionPhase[];
   phases: PhaseInstanceData[];
 }): Promise<void> => {
+  assertPhaseCountFits(phases.length);
   assertPhasesCanBeMinted(phases);
+  assertPhaseNamesFit(phases);
 
   const existingByPhaseId = new Map(
     existing.map((phase) => [phaseIdOf(phase), phase]),
@@ -194,6 +200,19 @@ export const assertPhasesCanBeMinted = (
       );
     }
     phaseIds.add(phase.phaseId);
+  }
+};
+
+export const assertPhaseNamesFit = (
+  phases: readonly InstanceDataPhase[],
+): void => {
+  for (const phase of phases) {
+    const name = getPhaseProfileName(phase);
+    if (!phaseNameLengthSchema.safeParse(name).success) {
+      throw new ValidationError(PHASE_NAME_TOO_LONG, {
+        name: `Shorten "${name.slice(0, 24)}…"`,
+      });
+    }
   }
 };
 
