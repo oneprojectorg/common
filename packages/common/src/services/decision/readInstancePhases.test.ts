@@ -8,8 +8,7 @@ import { processInstances, processPhases, profiles } from '@op/db/schema';
 import { logger } from '@op/logging';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { insertPhase } from './phaseHelpers';
-import { loadPhaseRows, phaseIdOf } from './phaseRows';
+import { insertPhase, listPhases, phaseIdOf } from './phaseHelpers';
 import {
   readInstancePhases,
   withInstancePhases,
@@ -242,7 +241,7 @@ async function loadInstance(instanceId: string) {
 }
 
 async function loadRows(instanceId: string) {
-  const rows = await loadPhaseRows({ db, processInstanceId: instanceId });
+  const rows = await listPhases({ db, processInstanceId: instanceId });
   const initial = rows.find((row) => phaseIdOf(row) === 'initial');
   const final = rows.find((row) => phaseIdOf(row) === 'final');
 

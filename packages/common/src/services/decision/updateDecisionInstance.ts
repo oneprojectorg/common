@@ -25,12 +25,12 @@ import {
   hasInstanceDataUpdate,
 } from './getUpdatedInstanceData';
 import { lockProcessInstanceOrThrow } from './lockProcessInstance';
-import { getPhaseProfileName } from './phaseHelpers';
 import {
-  getStoredPhases,
-  loadPhaseRows,
-  reconcilePhaseRows,
-} from './phaseRows';
+  getPhaseProfileName,
+  listPhases,
+  reconcilePhases,
+} from './phaseHelpers';
+import { mergePhasesWithInstanceData } from './phaseMirror';
 import { ensureProposalTaxonomyTerms } from './proposalTaxonomy';
 import { isPhasesFromRowsEnabled, withBlobPhases } from './readInstancePhases';
 import { schemaValidator } from './schemaValidator';
@@ -171,16 +171,16 @@ export const updateDecisionInstance = async ({
     const locked = await lockProcessInstanceOrThrow({ db: tx, instanceId });
     const lockedInstanceData = locked.instanceData as DecisionInstanceData;
 
-    const rows = hasPhaseUpdates
-      ? await loadPhaseRows({ db: tx, processInstanceId: instanceId })
+    const existingPhases = hasPhaseUpdates
+      ? await listPhases({ db: tx, processInstanceId: instanceId })
       : undefined;
 
     const instanceDataUpdate = getUpdatedInstanceData({
-      existing: rows
+      existing: existingPhases
         ? {
             ...lockedInstanceData,
-            phases: getStoredPhases({
-              rows,
+            phases: mergePhasesWithInstanceData({
+              phases: existingPhases,
               blobPhases: getInstancePhases(locked.instanceData),
             }),
           }
@@ -191,12 +191,12 @@ export const updateDecisionInstance = async ({
     if (instanceDataUpdate) {
       phaseEndDateChanges.push(...instanceDataUpdate.phaseEndDateChanges);
 
-      if (rows) {
+      if (existingPhases) {
         const { phases: merged } = instanceDataUpdate.instanceData;
-        await reconcilePhaseRows({
+        await reconcilePhases({
           db: tx,
           processInstanceId: instanceId,
-          rows,
+          existing: existingPhases,
           phases: merged,
         });
 
