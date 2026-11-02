@@ -15,7 +15,7 @@ import {
   getPhaseAsDecisionAdmin,
   readPhaseSettings,
 } from './phaseHelpers';
-import { mutatePhaseRows } from './phaseRows';
+import { mutatePhases } from './phaseMirror';
 import type { PhaseOverride } from './schemas/instanceData';
 import type { ProposalTemplateSchema } from './types';
 
@@ -97,7 +97,7 @@ export const updatePhase = async ({
   };
 
   return db.transaction(async (tx) => {
-    const { result } = await mutatePhaseRows({
+    const { result } = await mutatePhases({
       db: tx,
       processInstanceId,
       mutate: () => write(tx),

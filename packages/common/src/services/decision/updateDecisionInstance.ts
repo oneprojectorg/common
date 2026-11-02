@@ -25,12 +25,12 @@ import {
   hasInstanceDataUpdate,
 } from './getUpdatedInstanceData';
 import { lockProcessInstanceOrThrow } from './lockProcessInstance';
-import { getPhaseProfileName } from './phaseHelpers';
 import {
-  getStoredPhases,
-  loadPhaseRows,
-  reconcilePhaseRows,
-} from './phaseRows';
+  getPhaseProfileName,
+  listPhases,
+  reconcilePhases,
+} from './phaseHelpers';
+import { mergePhasesWithInstanceData } from './phaseMirror';
 import { ensureProposalTaxonomyTerms } from './proposalTaxonomy';
 import { schemaValidator } from './schemaValidator';
 import {
@@ -164,18 +164,19 @@ export const updateDecisionInstance = async ({
     const locked = await lockProcessInstanceOrThrow({ db: tx, instanceId });
     const lockedInstanceData = locked.instanceData as DecisionInstanceData;
 
-    const rows = hasPhaseUpdates
-      ? await loadPhaseRows({ db: tx, processInstanceId: instanceId })
+    const existingPhases = hasPhaseUpdates
+      ? await listPhases({ db: tx, processInstanceId: instanceId })
       : undefined;
 
-    // Built from the row read under the lock, so a concurrent save is kept.
-    // Phase overrides merge onto the rows, and the blob phases that have none.
+    // Built from the read under the lock, so a concurrent save is kept.
+    // Phase overrides merge onto the minted phases, and the blob phases that
+    // have none.
     const instanceDataUpdate = getUpdatedInstanceData({
-      existing: rows
+      existing: existingPhases
         ? {
             ...lockedInstanceData,
-            phases: getStoredPhases({
-              rows,
+            phases: mergePhasesWithInstanceData({
+              phases: existingPhases,
               blobPhases: getInstancePhases(locked.instanceData),
             }),
           }
@@ -186,16 +187,16 @@ export const updateDecisionInstance = async ({
     if (instanceDataUpdate) {
       phaseEndDateChanges.push(...instanceDataUpdate.phaseEndDateChanges);
 
-      if (rows) {
+      if (existingPhases) {
         const { phases: merged } = instanceDataUpdate.instanceData;
-        await reconcilePhaseRows({
+        await reconcilePhases({
           db: tx,
           processInstanceId: instanceId,
-          rows,
+          existing: existingPhases,
           phases: merged,
         });
 
-        // The blob mirrors the rows for the readers still on it.
+        // The blob mirrors the minted phases for the readers still on it.
         instanceDataUpdate.instanceData.phases = merged.map((phase) => ({
           ...phase,
           name: getPhaseProfileName(phase),
