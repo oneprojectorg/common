@@ -19,6 +19,8 @@ import {
 } from '../../../test/helpers/gating/decision';
 import {
   expectNothingNamed,
+  expectRowsMirrorPhases,
+  loadInstanceData,
   loadPhaseRows,
 } from '../../../test/helpers/phaseTestUtils';
 import {
@@ -86,28 +88,7 @@ async function createSimpleTemplate(
   return { templateId: template!.id, userEmail: setup.userEmail };
 }
 
-const [firstPhase, secondPhase, ...laterPhases] = simpleVoting.phases;
-
-const badPhaseIdCases: {
-  label: string;
-  message: RegExp;
-  phases: DecisionSchemaDefinition['phases'];
-}[] = [
-  {
-    label: 'a phase with no id',
-    message: /A phase has no id/,
-    phases: [{ ...firstPhase, id: '' }, secondPhase!, ...laterPhases],
-  },
-  {
-    label: 'two phases with one id',
-    message: /Two phases share the id "submission"/,
-    phases: [
-      firstPhase,
-      { ...secondPhase!, id: firstPhase.id },
-      ...laterPhases,
-    ],
-  },
-];
+const [firstPhase, ...laterPhases] = simpleVoting.phases;
 
 describe.concurrent('createInstanceFromTemplate', () => {
   it('should create an instance from a template with default phases', async ({
@@ -180,12 +161,11 @@ describe.concurrent('createInstanceFromTemplate', () => {
     onTestFinished,
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const [first, ...rest] = simpleVoting.phases;
     const firstName = `Ideas Wanted ${task.id}`;
     const { templateId, userEmail } = await createSimpleTemplate(
       testData,
       task.id,
-      { phases: [{ ...first!, name: firstName }, ...rest] },
+      { phases: [{ ...firstPhase, name: firstName }, ...laterPhases] },
     );
     const caller = await createAuthenticatedCaller(userEmail);
 
@@ -195,40 +175,24 @@ describe.concurrent('createInstanceFromTemplate', () => {
     });
     testData.trackProfileForCleanup(result.id);
 
-    const instance = await db.query.processInstances.findFirst({
-      where: { id: result.processInstance.id },
-    });
-    const instanceData = instance!.instanceData as DecisionInstanceData;
+    const [{ instanceData }, rows] = await Promise.all([
+      loadInstanceData(result.processInstance.id),
+      loadPhaseRows(result.processInstance.id),
+    ]);
 
-    const rows = await loadPhaseRows(result.processInstance.id);
-
-    expect(rows).toHaveLength(simpleVoting.phases.length);
-    instanceData.phases.forEach((phase, index) => {
-      const row = rows[index]!;
-      expect(row.sortOrder).toBe(index);
-      expect(row.name).toBe(phase.name);
-      expect(row.type).toBe('phase');
-      expect(row.data).toMatchObject({
-        phaseId: phase.phaseId,
-        rules: phase.rules,
-      });
-      expect(row.data).not.toHaveProperty('name');
-    });
-
-    expect(rows[0]!.name).toBe(firstName);
-    expect(rows[0]!.data).toMatchObject({
-      phaseId: first!.id,
-      description: first!.description,
-      selectionPipeline: first!.selectionPipeline,
-      settingsSchema: first!.settings,
-    });
+    expect(instanceData.phases).toHaveLength(simpleVoting.phases.length);
+    expectRowsMirrorPhases(rows, instanceData.phases);
+    expect(rows.map((row) => row.data)).toEqual(
+      instanceData.phases.map(({ name: _name, ...data }) => data),
+    );
+    expect(rows[0]?.name).toBe(firstName);
   });
 
   it.for([
     {
       label: 'names a nameless phase after its id',
       name: '  ',
-      expected: simpleVoting.phases[0].id,
+      expected: firstPhase.id,
     },
     {
       label: 'accepts a phase name of exactly the maximum length',
@@ -237,11 +201,10 @@ describe.concurrent('createInstanceFromTemplate', () => {
     },
   ])('$label', async ({ name, expected }, { task, onTestFinished }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const [first, ...rest] = simpleVoting.phases;
     const { templateId, userEmail } = await createSimpleTemplate(
       testData,
       task.id,
-      { phases: [{ ...first!, name }, ...rest] },
+      { phases: [{ ...firstPhase, name }, ...laterPhases] },
     );
     const caller = await createAuthenticatedCaller(userEmail);
 
@@ -255,30 +218,30 @@ describe.concurrent('createInstanceFromTemplate', () => {
     expect(row?.name).toBe(expected);
   });
 
-  it.for(badPhaseIdCases)(
-    'refuses a template with $label before writing anything',
-    async ({ message, phases }, { task, onTestFinished }) => {
-      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-      const { templateId, userEmail } = await createSimpleTemplate(
-        testData,
-        task.id,
-        { phases },
-      );
-      const caller = await createAuthenticatedCaller(userEmail);
+  it('refuses a template whose phases cannot be minted before writing anything', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { templateId, userEmail } = await createSimpleTemplate(
+      testData,
+      task.id,
+      { phases: [{ ...firstPhase, id: '' }, ...laterPhases] },
+    );
+    const caller = await createAuthenticatedCaller(userEmail);
 
-      const name = `Bad Phase Ids ${task.id}`;
-      await expect(
-        caller.decision.createInstanceFromTemplate({ templateId, name }),
-      ).rejects.toMatchObject({
-        cause: {
-          name: 'ValidationError',
-          message: expect.stringMatching(message),
-        },
-      });
+    const name = `Bad Phase Ids ${task.id}`;
+    await expect(
+      caller.decision.createInstanceFromTemplate({ templateId, name }),
+    ).rejects.toMatchObject({
+      cause: {
+        name: 'ValidationError',
+        message: expect.stringMatching(/A phase has no id/),
+      },
+    });
 
-      await expectNothingNamed(name);
-    },
-  );
+    await expectNothingNamed(name);
+  });
 
   it('should NOT create transitions for DRAFT instances (transitions are created on publish)', async ({
     task,

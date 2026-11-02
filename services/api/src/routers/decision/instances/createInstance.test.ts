@@ -1,11 +1,9 @@
 import {
-  type DecisionInstanceData,
   MAX_PHASES_PER_DECISION,
   PROCESS_NAME_MAX_LENGTH,
   PROCESS_NAME_MIN_LENGTH,
 } from '@op/common';
 import { TestDecisionsDataManager } from '@op/common/testing';
-import { db } from '@op/db/client';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -13,7 +11,11 @@ import {
   describeDecisionAccessTierGating,
   expectFailsAccessTierGate,
 } from '../../../test/helpers/gating/decision';
-import { loadPhaseRows } from '../../../test/helpers/phaseTestUtils';
+import {
+  expectRowsMirrorPhases,
+  loadInstanceData,
+  loadPhaseRows,
+} from '../../../test/helpers/phaseTestUtils';
 import { createAuthenticatedCaller } from '../../../test/supabase-utils';
 
 const grantDraft = {
@@ -24,21 +26,6 @@ const grantDraft = {
     { kind: 'results' as const, name: 'See awards' },
   ],
 };
-
-async function loadInstanceData(instanceId: string) {
-  const instance = await db.query.processInstances.findFirst({
-    where: { id: instanceId },
-  });
-
-  if (!instance) {
-    throw new Error(`Instance ${instanceId} was not created`);
-  }
-
-  return {
-    instance,
-    instanceData: instance.instanceData as DecisionInstanceData,
-  };
-}
 
 describe.concurrent('createInstance', () => {
   it('creates a draft from the phases it is given', async ({
@@ -93,13 +80,8 @@ describe.concurrent('createInstance', () => {
       loadPhaseRows(result.processInstance.id),
     ]);
 
-    expect(rows).toHaveLength(grantDraft.phases.length);
-    instanceData.phases.forEach((phase, index) => {
-      const row = rows[index]!;
-      expect(row.sortOrder).toBe(index);
-      expect(row.name).toBe(grantDraft.phases[index]!.name);
-      expect(row.data).toMatchObject({ phaseId: phase.phaseId });
-    });
+    expect(instanceData.phases).toHaveLength(grantDraft.phases.length);
+    expectRowsMirrorPhases(rows, instanceData.phases);
   });
 
   it('creates a blank draft with no phases', async ({

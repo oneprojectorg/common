@@ -7,6 +7,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   createUnauthenticatedCaller,
+  expectNoProfileNamed,
   listPhaseIds,
 } from '../../../test/helpers/phaseTestUtils';
 import { createAuthenticatedCaller } from '../../../test/supabase-utils';
@@ -312,11 +313,7 @@ describe.concurrent('createPhase', () => {
     ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
 
     expect(await listPhaseIds(instanceId)).toEqual(before);
-    const profiles = await db.query.profiles.findMany({
-      where: { name },
-      columns: { id: true },
-    });
-    expect(profiles).toHaveLength(0);
+    await expectNoProfileNamed(name);
   });
 
   it('accepts a settings schema, settings and a pipeline from the client', async ({
@@ -444,9 +441,5 @@ const expectRejectedAndNothingWritten = async (
     }),
   ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
 
-  const leftover = await db.query.profiles.findMany({
-    where: { name },
-    columns: { id: true },
-  });
-  expect(leftover).toHaveLength(0);
+  await expectNoProfileNamed(name);
 };

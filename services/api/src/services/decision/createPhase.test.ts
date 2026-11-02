@@ -9,7 +9,10 @@ import { EntityType } from '@op/db/schema';
 import { randomUUID } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 
-import { listPhaseIds } from '../../test/helpers/phaseTestUtils';
+import {
+  expectNoProfileNamed,
+  listPhaseIds,
+} from '../../test/helpers/phaseTestUtils';
 
 describe.concurrent('createPhase', () => {
   it('mints a profile of type PHASE that owns the name', async ({
@@ -286,12 +289,4 @@ const setup = async (
     user: decisionSetup.user,
     testData,
   };
-};
-
-const expectNoProfileNamed = async (name: string) => {
-  const leftover = await db.query.profiles.findMany({
-    where: { name },
-    columns: { id: true },
-  });
-  expect(leftover).toHaveLength(0);
 };
