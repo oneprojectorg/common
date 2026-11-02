@@ -26,7 +26,6 @@ import {
 } from './getUpdatedInstanceData';
 import { lockProcessInstanceOrThrow } from './lockProcessInstance';
 import { getPhaseProfileName } from './phaseHelpers';
-import { isPhasesFromRowsEnabled } from './readInstancePhases';
 import {
   getStoredPhases,
   loadPhaseRows,
