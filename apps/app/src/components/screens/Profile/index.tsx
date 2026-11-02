@@ -9,6 +9,7 @@ import { Link } from '@/lib/i18n';
 
 import { ImageHeader } from '@/components/ImageHeader';
 import { ProfileDetails } from '@/components/Profile/ProfileDetails';
+import { ProfileHero } from '@/components/Profile/ProfileHero';
 
 import {
   IndividualProfileTabsRenderer,
@@ -45,37 +46,7 @@ const ProfileWithData = async ({
     if (profile.type === 'org') {
       return organization ? (
         <>
-          <ImageHeader
-            headerImage={
-              headerUrl ? (
-                <Image
-                  src={headerUrl}
-                  alt=""
-                  fill
-                  priority
-                  sizes="(max-width: 639px) 100vw, 1088px"
-                  className="object-cover"
-                />
-              ) : (
-                <div className={cn('h-full w-full', gradientBgHeader)} />
-              )
-            }
-            avatarImage={
-              avatarUrl ? (
-                <Image
-                  src={avatarUrl}
-                  alt=""
-                  fill
-                  sizes="(max-width: 639px) 64px, 120px"
-                  className="object-cover"
-                />
-              ) : (
-                <div className={cn('h-full w-full', gradientBg)} />
-              )
-            }
-          />
-
-          <ProfileDetails organization={organization} />
+          <ProfileHero organization={organization} />
           <ProfileTabsRenderer
             organization={organization}
             profile={profile}
