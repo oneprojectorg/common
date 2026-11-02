@@ -107,7 +107,10 @@ const ProfileHeroCountsSuspense = ({
   const linkClassName = 'text-primary md:text-hero-foreground';
 
   return (
-    <p className="flex flex-wrap items-center gap-1 text-base">
+    <p
+      aria-live="polite"
+      className="flex flex-wrap items-center gap-1 text-base"
+    >
       <Link
         href={`/org/${profile.slug}/relationships`}
         className={linkClassName}
