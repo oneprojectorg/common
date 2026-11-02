@@ -5,7 +5,7 @@ import {
   parsePhoneNumber,
 } from '@op/common';
 import { and, db, eq } from '@op/db/client';
-import { processInstances, profileUsers } from '@op/db/schema';
+import { ProcessStatus, processInstances, profileUsers } from '@op/db/schema';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { memoryGeocoder } from '../../../testing/mocks/geocoder';
@@ -52,6 +52,7 @@ const NUMBERS = {
   enrolTwoLines: '+15005550019',
   enrolAgree: '+15005550074',
   agreeNothing: '+15005550075',
+  agreeClosed: '+15005550035',
   voteNoRule: '+15005550076',
   freeNothing: '+15005550077',
   voteNoSlug: '+15005550078',
@@ -980,6 +981,55 @@ describe('handleSMSCommand registration over SMS', () => {
     expect(recordedSms.at(-1)?.body).toBe(
       'There is nothing to affirm. Text VOTE and a decision name to register.',
     );
+    const row = await findVoterEnrolment({
+      processInstanceId: instanceId,
+      authUserId: member.authUserId,
+    });
+    expect(row?.enrolledAt ?? null).toBeNull();
+  });
+
+  it('given the decision was cancelled after the attestation was sent, status planted by raw update, when the voter texts AGREE, then nothing is affirmed', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsCommandFixture(task.id, onTestFinished);
+    const name = `Agree Closed ${task.id}`;
+    const { member, instanceId } = await seed(fixture, {
+      phone: NUMBERS.agreeClosed,
+      line: LINES.agreeClosed,
+      name,
+    });
+    const address = `375 S High St ${task.id}`;
+    memoryGeocoder.set(address, INSIDE);
+    await run(
+      smsInboundEvent({
+        from: NUMBERS.agreeClosed,
+        to: LINES.agreeClosed,
+        keyword: 'vote',
+      }),
+    );
+    await run(
+      smsInboundEvent({
+        from: NUMBERS.agreeClosed,
+        to: LINES.agreeClosed,
+        body: address,
+        messageSid: `SM-${task.id}-closed-address`,
+      }),
+    );
+    await db
+      .update(processInstances)
+      .set({ status: ProcessStatus.CANCELLED })
+      .where(eq(processInstances.id, instanceId));
+
+    const { result } = await run(
+      smsInboundEvent({
+        from: NUMBERS.agreeClosed,
+        to: LINES.agreeClosed,
+        keyword: 'agree',
+      }),
+    );
+
+    expect(result).toEqual({ message: 'nothing to affirm' });
     const row = await findVoterEnrolment({
       processInstanceId: instanceId,
       authUserId: member.authUserId,

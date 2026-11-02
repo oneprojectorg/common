@@ -95,11 +95,12 @@ export async function describeEnrolmentDecision({
       instanceData: true,
       currentStateId: true,
       processId: true,
+      status: true,
     },
     with: { profile: { columns: { id: true, name: true } } },
   });
 
-  if (!instance?.profile) {
+  if (!instance?.profile || instance.status !== ProcessStatus.PUBLISHED) {
     throw new NotFoundError('Process instance', instanceId);
   }
 

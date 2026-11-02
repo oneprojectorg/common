@@ -344,7 +344,7 @@ export const agree: SmsCommandHandler = async (context) => {
   );
   const rule = decision?.enrolment;
 
-  if (!decision || !rule) {
+  if (!decision || !rule || !decision.votingOpen) {
     return nothingToAffirm();
   }
 
@@ -406,7 +406,7 @@ export const freeText: SmsCommandHandler = async (context) => {
   );
   const rule = decision?.enrolment;
 
-  if (!decision || !rule) {
+  if (!decision || !rule || !decision.votingOpen) {
     return sendSmsHelp(deliver);
   }
 
