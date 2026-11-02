@@ -19,6 +19,7 @@ import {
   type PhaseSettingsSchema,
   assertSettingsMatchSchema,
 } from './schemas/instanceData';
+import { MAX_PHASES_PER_DECISION } from './utils/phaseOrder';
 
 // phaseId and name live on the phase's profile.
 export type PhaseData = Omit<PhaseInstanceData, 'phaseId' | 'name'>;
@@ -186,8 +187,6 @@ export const assertPhaseCountFits = (count: number): void => {
 export const assertPhasesCanBeMinted = (
   phases: readonly InstanceDataPhase[],
 ): void => {
-  assertPhaseCountFits(phases.length);
-
   const phaseIds = new Set<string>();
   for (const phase of phases) {
     if (!phase.phaseId) {
@@ -202,15 +201,6 @@ export const assertPhasesCanBeMinted = (
       );
     }
     phaseIds.add(phase.phaseId);
-
-    const name = getPhaseProfileName(phase);
-    if (!phaseNameLengthSchema.safeParse(name).success) {
-      const preview = previewPhaseName(name);
-      throw new ValidationError(
-        `${PHASE_NAME_TOO_LONG}; phase "${preview}…" is longer`,
-        { name: `Shorten "${preview}…"` },
-      );
-    }
   }
 };
 
