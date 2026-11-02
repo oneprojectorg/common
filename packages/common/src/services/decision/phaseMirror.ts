@@ -1,12 +1,14 @@
 import { type DbClient, eq, sql } from '@op/db/client';
-import { processInstances } from '@op/db/schema';
+import { ProcessStatus, processInstances } from '@op/db/schema';
 
+import { CommonError } from '../../utils';
 import { lockProcessInstanceOrThrow } from './lockProcessInstance';
 import { type DecisionPhase, listPhases, phaseIdOf } from './phaseHelpers';
 import {
   type PhaseInstanceData,
   getInstancePhases,
 } from './schemas/instanceData';
+import { updateTransitionsForProcess } from './updateTransitionsForProcess';
 
 // TODO: delete this file when instance_data.phases is dropped.
 
@@ -68,12 +70,22 @@ export const mutatePhases = async <T>({
         writtenPhaseIds.has(phaseId) || !mintedPhaseIds.has(phaseId),
     ),
   });
-  await db
+  const [updated] = await db
     .update(processInstances)
     .set({
       instanceData: sql`jsonb_set(${processInstances.instanceData}, '{phases}', ${JSON.stringify(mirrored)}::jsonb)`,
     })
-    .where(eq(processInstances.id, processInstanceId));
+    .where(eq(processInstances.id, processInstanceId))
+    .returning();
+
+  if (!updated) {
+    throw new CommonError('Failed to update decision process instance');
+  }
+
+  // Drafts hold no transitions; a save deletes them.
+  if (updated.status !== ProcessStatus.DRAFT) {
+    await updateTransitionsForProcess({ processInstance: updated, db });
+  }
 
   return { result, phases: written };
 };
