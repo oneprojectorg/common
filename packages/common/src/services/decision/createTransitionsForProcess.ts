@@ -21,7 +21,6 @@ export async function createTransitionsForProcess({
 }: {
   processInstance: ProcessInstance;
   db?: DbClient;
-  /** Pass it in when holding the instance lock. */
   fromRows?: boolean;
 }): Promise<{
   transitions: Array<{
