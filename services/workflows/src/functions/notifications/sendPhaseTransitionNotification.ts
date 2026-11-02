@@ -83,7 +83,6 @@ export const sendPhaseTransitionNotification = inngest.createFunction(
       'check-manual-selection',
       async () =>
         resolveManualSelectionStatus({
-          // Resolved in get-process-data; the brand does not survive step serialization.
           instance: withBlobPhases({
             instance: {
               id: processInstanceId,
