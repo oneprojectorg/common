@@ -67,6 +67,7 @@ const LINES = {
   unbound: '+16145550132',
   private: '+16145550138',
   agreeRemoved: '+16145550139',
+  agreeClosed: '+16145550188',
   enrolStart: '+16145550133',
   enrolAddress: '+16145550134',
   enrolNotFound: '+16145550135',
@@ -1008,7 +1009,7 @@ describe('handleSMSCommand registration over SMS', () => {
         keyword: 'vote',
       }),
     );
-    await run(
+    const resolved = await run(
       smsInboundEvent({
         from: NUMBERS.agreeClosed,
         to: LINES.agreeClosed,
@@ -1016,6 +1017,7 @@ describe('handleSMSCommand registration over SMS', () => {
         messageSid: `SM-${task.id}-closed-address`,
       }),
     );
+    expect(resolved.result).toEqual({ message: 'address resolved' });
     await db
       .update(processInstances)
       .set({ status: ProcessStatus.CANCELLED })
