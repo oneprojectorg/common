@@ -77,7 +77,6 @@ export const insertPhase = async ({
   return { phase, profile };
 };
 
-/** The decision's phases in order, each with the name its profile holds. */
 export const listPhases = async ({
   db,
   processInstanceId,
@@ -105,11 +104,7 @@ export const listPhases = async ({
   }));
 };
 
-/**
- * Makes `existing`, loaded under the instance lock, match `phases` in that
- * order. A phase the list leaves out is deleted with its profile; one the list
- * leaves as it is stays untouched.
- */
+/** `existing` must be loaded under the instance lock; a phase `phases` omits is deleted. */
 export const reconcilePhases = async ({
   db,
   processInstanceId,
@@ -164,8 +159,8 @@ export const reconcilePhases = async ({
   }
 };
 
-// A phase minted from `instance_data` carries that phase's id; one made by the
-// phase endpoints has only its slug, which is just as stable.
+// TODO: remove once references store the row id instead of data.phaseId.
+// An endpoint-made phase has no data.phaseId; its slug is just as stable.
 export const phaseIdOf = (phase: DecisionPhase): string =>
   phase.data.phaseId ?? phase.slug;
 

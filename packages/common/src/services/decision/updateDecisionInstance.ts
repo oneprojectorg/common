@@ -168,9 +168,7 @@ export const updateDecisionInstance = async ({
       ? await listPhases({ db: tx, processInstanceId: instanceId })
       : undefined;
 
-    // Built from the read under the lock, so a concurrent save is kept.
-    // Phase overrides merge onto the minted phases, and the blob phases that
-    // have none.
+    // Read under the lock so a concurrent save is not lost.
     const instanceDataUpdate = getUpdatedInstanceData({
       existing: existingPhases
         ? {
@@ -196,7 +194,7 @@ export const updateDecisionInstance = async ({
           phases: merged,
         });
 
-        // The blob mirrors the minted phases for the readers still on it.
+        // TODO: remove this blob mirror when instance_data.phases is dropped.
         instanceDataUpdate.instanceData.phases = merged.map((phase) => ({
           ...phase,
           name: getPhaseProfileName(phase),

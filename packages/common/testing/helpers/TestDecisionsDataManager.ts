@@ -512,7 +512,8 @@ export class TestDecisionsDataManager {
     this.createdProfileIds.push(profileId);
   }
 
-  /** Drops the rows a create minted, like a decision made before phase rows. */
+  // TODO: remove once the backfill gives every decision phase rows.
+  /** Simulates a decision made before phase rows. */
   async removePhaseRows(instanceId: string): Promise<void> {
     const rows = await db
       .select({ profileId: processPhases.profileId })

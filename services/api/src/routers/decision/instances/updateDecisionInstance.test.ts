@@ -49,7 +49,7 @@ async function getFirstPhaseId(instanceId: string) {
   return phaseId;
 }
 
-// Counts the backends queued behind `pid`, directly or behind another waiter.
+// Transitive: also counts backends queued behind another waiter.
 async function countBackendsWaitingOn(pid: number) {
   const [row] = await db.execute(sql`
     with recursive waiting(pid) as (
