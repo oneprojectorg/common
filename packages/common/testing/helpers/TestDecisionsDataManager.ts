@@ -515,7 +515,6 @@ export class TestDecisionsDataManager {
   }
 
   // TODO: remove once the backfill gives every decision phase rows.
-  /** Simulates a decision made before phase rows. */
   async removePhaseRows(instanceId: string): Promise<void> {
     const rows = await db
       .select({ profileId: processPhases.profileId })

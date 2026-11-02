@@ -68,7 +68,6 @@ export const updateDecisionInstance = async ({
   config?: ProcessConfig;
   /** Public-facing overview content (headline, short description, rich text body) */
   overview?: InstanceOverviewUpdate;
-  /** The full ordered phase list; omitted phases are deleted. Omit it to leave phases untouched. */
   phases?: PhaseOverride[];
   /** Proposal template (JSON Schema) */
   proposalTemplate?: Record<string, unknown>;
