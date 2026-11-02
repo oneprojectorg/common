@@ -21,11 +21,6 @@ export async function getProposalCosts({
   proposalTemplate: ProposalTemplateSchema | null;
   voterCostField: string;
   unit: AmountUnit;
-  /**
-   * What a cost that cannot be read does: `throw` stops a ballot being charged
-   * on it (the default, for every write); `null` leaves that proposal unpriced
-   * so a read still shows the rest of the page.
-   */
   unreadable?: 'throw' | 'null';
 }): Promise<ProposalCosts> {
   const documentContentMap = await getProposalDocumentsContent(
