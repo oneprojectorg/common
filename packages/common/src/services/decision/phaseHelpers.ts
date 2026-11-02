@@ -19,7 +19,7 @@ import {
   assertSettingsMatchSchema,
 } from './schemas/instanceData';
 import {
-  MAX_PHASE_NAME_LENGTH,
+  PHASE_NAME_TOO_LONG,
   phaseNameLengthSchema,
 } from './schemas/phaseName';
 import { MAX_PHASES_PER_DECISION } from './utils/phaseOrder';
@@ -30,8 +30,6 @@ export type PhaseData = Omit<PhaseInstanceData, 'phaseId' | 'name'>;
 // Until readers move to rows, `instance_data` still keys a phase by its
 // instance-scoped id; a row minted from it keeps that id so the two join.
 type PhaseRowData = PhaseData & { phaseId?: string };
-
-export { MAX_PHASES_PER_DECISION };
 
 type InstanceDataPhase = Pick<PhaseInstanceData, 'phaseId' | 'name'>;
 
@@ -86,7 +84,7 @@ export const assertPhasesCanBeMinted = (
 ): void => {
   if (phases.length > MAX_PHASES_PER_DECISION) {
     throw new ValidationError(
-      `The source decision has ${phases.length} phases; the limit is ${MAX_PHASES_PER_DECISION}`,
+      `This decision has ${phases.length} phases; the limit is ${MAX_PHASES_PER_DECISION}`,
       { phases: `Remove ${phases.length - MAX_PHASES_PER_DECISION}` },
     );
   }
@@ -94,23 +92,21 @@ export const assertPhasesCanBeMinted = (
   const phaseIds = new Set<string>();
   for (const phase of phases) {
     if (!phase.phaseId) {
-      throw new ValidationError('The source decision has a phase with no id', {
-        phaseId: 'Required',
-      });
+      throw new ValidationError('A phase has no id', { phaseId: 'Required' });
     }
     if (phaseIds.has(phase.phaseId)) {
-      throw new ValidationError(
-        `The source decision has two phases with the id "${phase.phaseId}"`,
-        { phaseId: 'Must be unique' },
-      );
+      throw new ValidationError(`Two phases share the id "${phase.phaseId}"`, {
+        phaseId: 'Must be unique',
+      });
     }
     phaseIds.add(phase.phaseId);
 
     const name = getPhaseProfileName(phase);
     if (!phaseNameLengthSchema.safeParse(name).success) {
+      const preview = previewPhaseName(name);
       throw new ValidationError(
-        `Phase "${previewPhaseName(name)}…": a phase name can have at most ${MAX_PHASE_NAME_LENGTH} characters`,
-        { name: `Shorten "${previewPhaseName(name)}…"` },
+        `${PHASE_NAME_TOO_LONG}; phase "${preview}…" is longer`,
+        { name: `Shorten "${preview}…"` },
       );
     }
   }

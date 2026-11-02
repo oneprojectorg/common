@@ -14,7 +14,7 @@ import {
 } from '@op/db/schema';
 import { ROLES } from '@op/db/seedData/accessControl';
 import type { User } from '@op/supabase/lib';
-import { eq, inArray } from 'drizzle-orm';
+import { eq, inArray, or } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
 
 import {
@@ -781,24 +781,25 @@ export class TestDecisionsDataManager {
           validProfileIds.map((id) => `proposal-location:${id}`),
         ),
       );
-      // A phase profile doesn't cascade from its decision's profile, so collect
-      // them before the instance rows go.
-      const phaseProfiles = await db
-        .select({ profileId: processPhases.profileId })
-        .from(processPhases)
-        .innerJoin(
-          processInstances,
-          eq(processInstances.id, processPhases.processInstanceId),
-        )
-        .where(inArray(processInstances.profileId, validProfileIds));
-
+      // A phase profile doesn't cascade from its decision's profile; the
+      // subquery reads the phase rows before the cascade removes them.
       await db
         .delete(profiles)
         .where(
-          inArray(profiles.id, [
-            ...validProfileIds,
-            ...phaseProfiles.map((row) => row.profileId),
-          ]),
+          or(
+            inArray(profiles.id, validProfileIds),
+            inArray(
+              profiles.id,
+              db
+                .select({ id: processPhases.profileId })
+                .from(processPhases)
+                .innerJoin(
+                  processInstances,
+                  eq(processInstances.id, processPhases.processInstanceId),
+                )
+                .where(inArray(processInstances.profileId, validProfileIds)),
+            ),
+          ),
         );
     }
 

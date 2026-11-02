@@ -1,5 +1,4 @@
 import { MAX_PHASES_PER_DECISION } from '@op/common';
-import { db } from '@op/db/client';
 import { randomUUID } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 
@@ -7,6 +6,7 @@ import {
   PHASE_NAME,
   createUnauthenticatedCaller,
   setupPhase,
+  listPhaseIds,
 } from '../../../test/helpers/phaseTestUtils';
 
 describe.concurrent('reorderPhases', () => {
@@ -251,16 +251,11 @@ const setupPhases = async (
   const instanceId = setup.phase.processInstanceId;
 
   // Reordering lists every phase, so drop the ones the template minted.
-  const minted = await db.query.processPhases.findMany({
-    where: { processInstanceId: instanceId },
-    columns: { id: true },
-  });
+  const minted = await listPhaseIds(instanceId);
   await Promise.all(
     minted
-      .filter((phase) => phase.id !== setup.phase.id)
-      .map((phase) =>
-        setup.adminCaller.decision.deletePhase({ phaseId: phase.id }),
-      ),
+      .filter((phaseId) => phaseId !== setup.phase.id)
+      .map((phaseId) => setup.adminCaller.decision.deletePhase({ phaseId })),
   );
 
   const [vote, results] = await Promise.all(

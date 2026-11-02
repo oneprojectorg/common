@@ -5,8 +5,7 @@ import {
   PROCESS_NAME_MIN_LENGTH,
 } from '@op/common';
 import { TestDecisionsDataManager } from '@op/common/testing';
-import { asc, db, eq } from '@op/db/client';
-import { processPhases, profiles } from '@op/db/schema';
+import { db } from '@op/db/client';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -14,6 +13,7 @@ import {
   describeDecisionAccessTierGating,
   expectFailsAccessTierGate,
 } from '../../../test/helpers/gating/decision';
+import { loadPhaseRows } from '../../../test/helpers/phaseTestUtils';
 import { createAuthenticatedCaller } from '../../../test/supabase-utils';
 
 const grantDraft = {
@@ -38,19 +38,6 @@ async function loadInstanceData(instanceId: string) {
     instance,
     instanceData: instance.instanceData as DecisionInstanceData,
   };
-}
-
-async function loadPhaseRows(processInstanceId: string) {
-  return db
-    .select({
-      sortOrder: processPhases.sortOrder,
-      data: processPhases.data,
-      name: profiles.name,
-    })
-    .from(processPhases)
-    .innerJoin(profiles, eq(profiles.id, processPhases.profileId))
-    .where(eq(processPhases.processInstanceId, processInstanceId))
-    .orderBy(asc(processPhases.sortOrder));
 }
 
 describe.concurrent('createInstance', () => {
