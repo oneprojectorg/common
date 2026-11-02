@@ -41,6 +41,7 @@ export const votingRouter = router({
       // Send vote submitted event for notification workflow
       waitUntil(
         inngest.send({
+          id: `vote-submitted-${result.id}`,
           name: Events.voteSubmitted.name,
           data: {
             voteSubmissionId: result.id,

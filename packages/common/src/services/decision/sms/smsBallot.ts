@@ -430,16 +430,20 @@ export async function moveSmsBallotPick({
   found.picks.splice(target, 0, found.row.id);
   await savePicks(found.draftId, found.picks);
   const summary = await summarizeSmsBallot(key);
-  const pick = summary.picks[target];
+  const pick = summary.picks.find((entry) => entry.code === code);
 
   if (!pick) {
-    return {
-      change: { status: 'not_on_ballot', code },
-      summary,
-    };
+    return { change: { status: 'not_on_ballot', code }, summary };
   }
 
-  return { change: { status: 'moved', position: target + 1, pick }, summary };
+  return {
+    change: {
+      status: 'moved',
+      position: summary.picks.indexOf(pick) + 1,
+      pick,
+    },
+    summary,
+  };
 }
 
 export type SmsBallotSubmission =
