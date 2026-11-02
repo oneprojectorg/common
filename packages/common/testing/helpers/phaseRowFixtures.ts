@@ -2,7 +2,8 @@ import { db } from '@op/db/client';
 import { processInstances, processPhases, profiles } from '@op/db/schema';
 import { eq, sql } from 'drizzle-orm';
 
-/** Empties `instanceData.phases`, leaving the rows as the only record of them. */
+// TODO: remove these fixtures when instanceData.phases is dropped.
+
 export const emptyBlobPhases = (instanceId: string) =>
   db
     .update(processInstances)
@@ -11,10 +12,7 @@ export const emptyBlobPhases = (instanceId: string) =>
     })
     .where(eq(processInstances.id, instanceId));
 
-/**
- * Names every row "Row <phaseId>", merges `rowData` into its data and empties
- * the blob phases, so only the rows can answer a phase read.
- */
+/** Names each row "Row <phaseId>" so a test can tell a row read from a blob read. */
 export const leaveOnlyPhaseRows = async (
   instanceId: string,
   rowData: Record<string, unknown> = {},

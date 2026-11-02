@@ -9,6 +9,7 @@ import {
   getInstancePhases,
 } from './schemas/instanceData';
 
+// TODO: remove this flag and every fromRows param when instanceData.phases is dropped.
 export const PHASES_FROM_ROWS_FLAG = 'process_phases_from_rows';
 
 interface InstanceWithData {
@@ -18,28 +19,21 @@ interface InstanceWithData {
 
 const resolvedPhases = Symbol('resolvedPhases');
 
+// TODO: remove this brand when readers stop taking phases off instanceData.
 /** An instance whose `instanceData.phases` holds its resolved phases. */
 export type PhasesResolved<T> = T & { readonly [resolvedPhases]: true };
 
 const NO_ROWS_WARNING =
   'Decision has no phase rows; reading instanceData.phases';
 
-/**
- * Whether phases are read from `decision_process_phases`. One switch for the
- * whole server, so a percentage rollout is all or nothing. Resolve it before
- * taking an instance lock: an uncached answer waits on PostHog.
- */
+/** Resolve before taking an instance lock: an uncached answer waits on PostHog. */
 export const isPhasesFromRowsEnabled = (): Promise<boolean> =>
   isServerFeatureEnabled({
     key: PHASES_FROM_ROWS_FLAG,
+    // One id server-wide, so a percentage rollout is all or nothing.
     distinctId: PHASES_FROM_ROWS_FLAG,
   });
 
-/**
- * The decision's phases in order: its rows plus any `instanceData.phases` entry
- * without one while {@link PHASES_FROM_ROWS_FLAG} is on, else
- * `instanceData.phases`. Pass `fromRows` when the flag is already resolved.
- */
 export const readInstancePhases = async ({
   instance,
   db = defaultDb,
@@ -51,10 +45,7 @@ export const readInstancePhases = async ({
 }): Promise<PhaseInstanceData[]> =>
   getBlobPhases(await withInstancePhases({ instance, db, fromRows }));
 
-/**
- * The instance with `instanceData.phases` replaced by {@link readInstancePhases},
- * for the synchronous readers and encoders that take the blob.
- */
+/** For the synchronous readers and encoders that still take phases off the blob. */
 export const withInstancePhases = async <T extends InstanceWithData>({
   instance,
   db = defaultDb,
@@ -72,10 +63,8 @@ export const withInstancePhases = async <T extends InstanceWithData>({
   return resolved ?? markResolved(instance);
 };
 
-/**
- * The instance as resolved, for a blob that already holds its phases: rebuilt
- * from the rows by a save, or resolved in an earlier workflow step.
- */
+// TODO: remove when instanceData.phases is dropped.
+/** Only for a blob already rebuilt from the rows, by a save or an earlier workflow step. */
 export const withBlobPhases = <T extends InstanceWithData>({
   instance,
 }: {
@@ -86,7 +75,6 @@ export const isPhasesResolved = <T extends object>(
   instance: T,
 ): instance is PhasesResolved<T> => resolvedPhases in instance;
 
-/** {@link withInstancePhases} for a list: one flag check, one rows query. */
 export const withInstancesPhases = async <T extends InstanceWithData>({
   instances,
   db = defaultDb,
@@ -109,6 +97,7 @@ export const withInstancesPhases = async <T extends InstanceWithData>({
     processInstanceIds: instances.map(({ id }) => id),
   });
 
+  // TODO: drop the blob fallback and merge when instanceData.phases is dropped.
   const withoutRows = instances
     .filter(({ id }) => !phasesByInstance.has(id))
     .map(({ id }) => id);
@@ -131,7 +120,6 @@ export const withInstancesPhases = async <T extends InstanceWithData>({
   });
 };
 
-/** {@link withInstancePhases} on a decision profile's joined instance. */
 export const withProfileInstancePhases = async <
   T extends { processInstance: InstanceWithData | null },
 >({
