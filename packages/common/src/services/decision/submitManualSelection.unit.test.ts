@@ -177,15 +177,6 @@ function happyPathResults() {
   ];
 }
 
-// Phases are read from the blob: the rows flag is off.
-beforeEach(() => {
-  vi.stubEnv('NEXT_PUBLIC_E2E', '');
-});
-
-afterEach(() => {
-  vi.unstubAllEnvs();
-});
-
 describe('submitManualSelection', () => {
   beforeEach(() => {
     vi.clearAllMocks();

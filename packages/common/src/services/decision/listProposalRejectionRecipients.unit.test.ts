@@ -66,15 +66,6 @@ const run = () =>
     actorAuthUserId: ACTOR_AUTH_USER_ID,
   });
 
-// Phases are read from the blob: the rows flag is off.
-beforeEach(() => {
-  vi.stubEnv('NEXT_PUBLIC_E2E', '');
-});
-
-afterEach(() => {
-  vi.unstubAllEnvs();
-});
-
 describe('listProposalRejectionRecipients', () => {
   beforeEach(() => {
     vi.clearAllMocks();

@@ -11,13 +11,11 @@ import { CommonError } from '../../utils';
 import { advancePhase } from './advancePhase';
 import { invalidateDecisionInstance } from './decisionCache';
 import { onPhaseAdvanced } from './onPhaseAdvanced';
+import { withInstancePhases, withInstancesPhases } from './readInstancePhases';
 import {
-  isPhasesFromRowsEnabled,
-  readInstancePhases,
-} from './readInstancePhases';
-import type {
-  DecisionInstanceData,
-  PhaseInstanceData,
+  type DecisionInstanceData,
+  type PhaseInstanceData,
+  getInstancePhases,
 } from './schemas/instanceData';
 
 export interface ProcessDecisionsTransitionsResult {
@@ -99,18 +97,19 @@ export async function processDecisionsTransitions({
     }
 
     const transitionsByInstance = groupTransitionsByInstance(dueTransitions);
-    const fromRows = await isPhasesFromRowsEnabled();
+    // One flag check and one rows query for the whole sweep.
+    const instances = await withInstancesPhases({
+      instances: Array.from(transitionsByInstance, ([id, transitions]) => ({
+        id,
+        instanceData: transitions[0]!.instance.instanceData,
+      })),
+    });
 
     await pMap(
-      Array.from(transitionsByInstance.entries()),
-      async ([processInstanceId, transitions]) => {
-        const phases = await readInstancePhases({
-          instance: {
-            id: processInstanceId,
-            instanceData: transitions[0]!.instance.instanceData,
-          },
-          fromRows,
-        });
+      instances,
+      async ({ id: processInstanceId, instanceData }) => {
+        const transitions = transitionsByInstance.get(processInstanceId) ?? [];
+        const phases = [...getInstancePhases(instanceData)];
 
         if (phases.length === 0) {
           for (const transition of transitions) {
@@ -130,7 +129,7 @@ export async function processDecisionsTransitions({
           phases,
           now,
           result,
-          fromRows,
+          instanceData,
         });
       },
       { concurrency: 5 },
@@ -173,17 +172,17 @@ async function advanceInstanceTransitions({
   phases,
   now,
   result,
-  fromRows,
+  instanceData,
 }: {
   processInstanceId: string;
   transitions: DueTransition[];
   phases: PhaseInstanceData[];
   now: string;
   result: ProcessDecisionsTransitionsResult;
-  fromRows: boolean;
+  /** With its phases resolved. */
+  instanceData: unknown;
 }): Promise<void> {
-  let currentInstanceData = transitions[0]!.instance
-    .instanceData as DecisionInstanceData;
+  let currentInstanceData = instanceData as DecisionInstanceData;
 
   for (const transition of transitions) {
     try {
@@ -210,7 +209,6 @@ async function advanceInstanceTransitions({
           triggeredByProfileId: null,
           transitionData: {},
           now,
-          fromRows,
         }),
       );
 
@@ -238,7 +236,9 @@ async function advanceInstanceTransitions({
         where: { id: processInstanceId },
       });
       if (refreshed) {
-        currentInstanceData = refreshed.instanceData as DecisionInstanceData;
+        currentInstanceData = (
+          await withInstancePhases({ instance: refreshed })
+        ).instanceData as DecisionInstanceData;
       }
     } catch (error) {
       result.failed++;

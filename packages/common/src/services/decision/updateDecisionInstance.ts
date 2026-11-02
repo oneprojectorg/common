@@ -351,7 +351,6 @@ async function syncTransitions({
     await updateTransitionsForProcess({
       processInstance: updatedInstance,
       db: tx,
-      fromRows,
     });
   }
 }

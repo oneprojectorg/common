@@ -179,15 +179,6 @@ const run = () =>
     previousPhaseId: PREVIOUS_PHASE_ID,
   });
 
-// Phases are read from the blob: the rows flag is off.
-beforeEach(() => {
-  vi.stubEnv('NEXT_PUBLIC_E2E', '');
-});
-
-afterEach(() => {
-  vi.unstubAllEnvs();
-});
-
 describe('listResultNotificationRecipients', () => {
   beforeEach(() => {
     vi.clearAllMocks();

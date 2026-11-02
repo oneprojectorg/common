@@ -2,7 +2,7 @@ import { db } from '@op/db/client';
 import type { DbClient } from '@op/db/client';
 
 import { isLegacyInstanceData } from './isLegacyInstance';
-import { readInstancePhases } from './readInstancePhases';
+import { getInstancePhases } from './schemas/instanceData';
 import type { TransitionData } from './schemas/transitionData';
 
 export type InstanceForStatusResolution = {
@@ -21,16 +21,15 @@ export type ManualSelectionStatus =
  * `selectionsAreConfirmed: false` means the UI should prompt an admin to pick
  * proposals — the transition exists but has zero attachments and no
  * `manualSelection` stamp. Any other shape (legacy instance, initial phase,
- * already-stamped, already-attached) resolves to `true`.
+ * already-stamped, already-attached) resolves to `true`. The instance's
+ * phases must be resolved already (`withInstancePhases`).
  */
 export async function resolveManualSelectionStatus({
   instance,
   dbClient = db,
-  fromRows,
 }: {
   instance: InstanceForStatusResolution;
   dbClient?: DbClient;
-  fromRows?: boolean;
 }): Promise<ManualSelectionStatus> {
   if (isLegacyInstanceData(instance.instanceData)) {
     return { selectionsAreConfirmed: true };
@@ -41,11 +40,7 @@ export async function resolveManualSelectionStatus({
     return { selectionsAreConfirmed: true };
   }
 
-  const phases = await readInstancePhases({
-    instance,
-    db: dbClient,
-    fromRows,
-  });
+  const phases = getInstancePhases(instance.instanceData);
   if (phases.length === 0) {
     return { selectionsAreConfirmed: true };
   }
