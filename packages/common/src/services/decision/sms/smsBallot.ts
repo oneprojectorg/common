@@ -519,10 +519,6 @@ export async function reopenSmsBallot(
     processInstanceId: key.instanceId,
     authUserId: key.authUserId,
   });
-  await markChatSessionReopened({
-    processInstanceId: key.instanceId,
-    authUserId: key.authUserId,
-  });
   const castIds = (cast.voteData.selections ?? []).map(
     (selection) => selection.proposalId,
   );
@@ -532,6 +528,10 @@ export async function reopenSmsBallot(
     draft.id,
     castIds.filter((id) => live.has(id)),
   );
+  await markChatSessionReopened({
+    processInstanceId: key.instanceId,
+    authUserId: key.authUserId,
+  });
 
   return { status: 'reopened', summary: await summarizeSmsBallot(key) };
 }
