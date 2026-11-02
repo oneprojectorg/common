@@ -96,7 +96,6 @@ export const listPhaseIds = async (processInstanceId: string) =>
     })
   ).map((phase) => phase.id);
 
-// A refused create leaves no decision instance or profile with its name.
 export const expectNothingNamed = async (name: string) => {
   const [instances, decisionProfiles] = await Promise.all([
     db.query.processInstances.findMany({

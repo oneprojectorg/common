@@ -22,8 +22,7 @@ import {
 // phaseId and name live on the phase's profile.
 export type PhaseData = Omit<PhaseInstanceData, 'phaseId' | 'name'>;
 
-// Until readers move to rows, `instance_data` still keys a phase by its
-// instance-scoped id; a row minted from it keeps that id so the two join.
+// TODO: drop phaseId from row data once every reference uses the row id.
 type PhaseRowData = PhaseData & { phaseId?: string };
 
 type InstanceDataPhase = Pick<PhaseInstanceData, 'phaseId' | 'name'>;
@@ -72,8 +71,8 @@ export const getPhaseProfileName = ({
   name,
 }: InstanceDataPhase): string => name?.trim() || phaseId;
 
-// Rows are keyed by phaseId and nothing in the database keeps it unique, so
-// stored instance data is checked before any row is minted from it.
+// Nothing in the database keeps phaseId unique, so check it before minting rows.
+// TODO: remove once rows stop carrying phaseId and nothing mints from instance_data.
 export const assertPhasesCanBeMinted = (
   phases: readonly InstanceDataPhase[],
 ): void => {

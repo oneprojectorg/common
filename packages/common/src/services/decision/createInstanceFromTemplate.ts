@@ -87,6 +87,7 @@ export const createDecisionInstance = async ({
       throw new CommonError('Failed to create decision process instance');
     }
 
+    // TODO: stop writing phases to instance_data once readers move to rows.
     for (const [sortOrder, phase] of instanceData.phases.entries()) {
       const { name: _name, ...data } = phase;
       await insertPhase({
