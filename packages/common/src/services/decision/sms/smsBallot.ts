@@ -522,7 +522,7 @@ export async function reopenSmsBallot(
   const castIds = (cast.voteData.selections ?? []).map(
     (selection) => selection.proposalId,
   );
-  const liveRows = await loadPickRows(castIds);
+  const liveRows = await getPickRows(castIds);
   const live = new Set(liveRows.map((row) => row.id));
   await savePicks(
     draft.id,

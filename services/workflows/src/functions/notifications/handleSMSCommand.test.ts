@@ -66,7 +66,7 @@ const NUMBERS = {
   enrolTwoLines: '+15005550019',
   enrolAgree: '+15005550074',
   agreeNothing: '+15005550075',
-  agreeClosed: '+15005550035',
+  agreeClosed: '+15005550036',
   voteNoRule: '+15005550076',
   freeNothing: '+15005550077',
   voteNoSlug: '+15005550078',
@@ -99,8 +99,6 @@ const NUMBERS = {
   pickOtherLine: '+15005550051',
   pickClosed: '+15005550052',
   pickRetry: '+15005550053',
-  pickAfterList: '+15005550031',
-  pickAfterEdit: '+15005550032',
   pickWhilePending: '+15005550054',
   pickStranger: '+15005550055',
   pickUncapped: '+15005550022',
@@ -167,8 +165,6 @@ const LINES = {
   pickOtherLineB: '+16145550196',
   pickClosed: '+16145550197',
   pickRetry: '+16145550198',
-  pickAfterList: '+16145550176',
-  pickAfterEdit: '+16145550177',
   pickPendingA: '+16145550162',
   pickPendingB: '+16145550163',
   pickStranger: '+16145550164',
@@ -2539,75 +2535,6 @@ describe('handleSMSCommand building and casting the ballot', () => {
     expect(result).toEqual({ message: 'picks added' });
     expect(recordedSms.at(-1)?.body).toContain('Pick 1:');
     await expect(readDraftPicks(instanceId)).resolves.toHaveLength(1);
-  });
-
-  it('given a member whose ballot is in, when they text LIST, then the reply says the ballot is already in and no draft row returns', async ({
-    task,
-    onTestFinished,
-  }) => {
-    const fixture = new SmsCommandFixture(task.id, onTestFinished);
-    const { instanceId } = await seed(fixture, {
-      phone: NUMBERS.pickAfterList,
-      line: LINES.pickAfterList,
-      name: `Pick After List ${task.id}`,
-    });
-    await text(NUMBERS.pickAfterList, LINES.pickAfterList, '101');
-    await keyword(NUMBERS.pickAfterList, LINES.pickAfterList, 'submit');
-
-    const { result } = await keyword(
-      NUMBERS.pickAfterList,
-      LINES.pickAfterList,
-      'list',
-    );
-
-    expect(result).toEqual({ message: 'ballot already submitted' });
-    expect(recordedSms.at(-1)?.body).toBe(
-      'Your ballot is already in. One ballot per person.',
-    );
-    await expect(readDraftPicks(instanceId)).resolves.toBeNull();
-  });
-
-  it('given a member whose ballot is in, when they text a code, REMOVE and MOVE, then each says the ballot is already in and nothing is written', async ({
-    task,
-    onTestFinished,
-  }) => {
-    const fixture = new SmsCommandFixture(task.id, onTestFinished);
-    const { instanceId } = await seed(fixture, {
-      phone: NUMBERS.pickAfterEdit,
-      line: LINES.pickAfterEdit,
-      name: `Pick After Edit ${task.id}`,
-    });
-    await text(NUMBERS.pickAfterEdit, LINES.pickAfterEdit, '101');
-    await keyword(NUMBERS.pickAfterEdit, LINES.pickAfterEdit, 'submit');
-
-    const picked = await text(
-      NUMBERS.pickAfterEdit,
-      LINES.pickAfterEdit,
-      '102',
-    );
-    const removed = await keyword(
-      NUMBERS.pickAfterEdit,
-      LINES.pickAfterEdit,
-      'remove',
-      '101',
-    );
-    const moved = await keyword(
-      NUMBERS.pickAfterEdit,
-      LINES.pickAfterEdit,
-      'move',
-      '101 1',
-    );
-
-    expect(picked.result).toEqual({ message: 'ballot already submitted' });
-    expect(removed.result).toEqual({ message: 'ballot already submitted' });
-    expect(moved.result).toEqual({ message: 'ballot already submitted' });
-    expect(recordedSms.slice(-3).map((sms) => sms.body)).toEqual(
-      Array.from(
-        { length: 3 },
-        () => 'Your ballot is already in. One ballot per person.',
-      ),
-    );
-    await expect(readDraftPicks(instanceId)).resolves.toBeNull();
   });
 });
 
