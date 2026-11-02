@@ -2,7 +2,11 @@
 
 import { useRequiredUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
-import { type Organization, ProcessStatus } from '@op/api/encoders';
+import {
+  type Organization,
+  ProcessStatus,
+  type Profile,
+} from '@op/api/encoders';
 import { formatToUrl } from '@op/common/validation';
 import { Card, CardContent, CardFooter, CardHeader } from '@op/sense/Card';
 import { Header2, Header3 } from '@op/sense/Header';
@@ -13,7 +17,7 @@ import { cn } from '@op/sense/lib/utils';
 import { Fragment, ReactNode, Suspense } from 'react';
 import { LuGlobe, LuMail } from 'react-icons/lu';
 
-import { Link, usePathname, useTranslations } from '@/lib/i18n';
+import { Link, useTranslations } from '@/lib/i18n';
 
 import { ContactLink } from '@/components/ContactLink';
 import ErrorBoundary from '@/components/ErrorBoundary';
@@ -253,14 +257,13 @@ const ProfileAbout = ({
   );
 };
 
-const ProfileDecisions = ({ profileId }: { profileId: string }) => {
+const ProfileDecisions = ({ profile }: { profile: Profile }) => {
   const t = useTranslations();
-  const pathname = usePathname();
 
   const [{ items: decisionProfiles }] =
     trpc.decision.listDecisionProfiles.useSuspenseQuery({
       limit: 3,
-      stewardProfileId: profileId,
+      stewardProfileId: profile.id,
       status: [ProcessStatus.PUBLISHED],
     });
 
@@ -284,7 +287,10 @@ const ProfileDecisions = ({ profileId }: { profileId: string }) => {
         ))}
       </CardContent>
       <CardFooter>
-        <Link href={`${pathname}?tab=decisions`} className="text-primary">
+        <Link
+          href={`/org/${profile.slug}?tab=decisions`}
+          className="text-primary"
+        >
           {t('profile.seeAllDecisionsAction')}
         </Link>
       </CardFooter>
@@ -337,7 +343,7 @@ export const OrganizationProfileGrid = ({
       </div>
       <div className="flex flex-col gap-4 lg:w-90 lg:shrink-0 xl:w-104">
         <Suspense fallback={null}>
-          <ProfileDecisions profileId={profile.profile.id} />
+          <ProfileDecisions profile={profile.profile} />
         </Suspense>
         <Card>
           <CardContent>
@@ -454,7 +460,7 @@ export const ProfileTabsMobile = ({
         <>
           <TabsContent value="home" className="flex flex-col gap-6 px-4">
             <Suspense fallback={null}>
-              <ProfileDecisions profileId={profile.profile.id} />
+              <ProfileDecisions profile={profile.profile} />
             </Suspense>
             <hr />
             <ProfileAbout profile={profile} />

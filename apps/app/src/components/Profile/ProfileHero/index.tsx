@@ -47,12 +47,12 @@ export const ProfileHero = ({
           </div>
         </div>
 
-        <Header1 className="text-title font-normal text-foreground md:text-headline md:text-hero-foreground">
+        <Header1 className="text-title font-normal md:text-headline">
           {profile.name}
         </Header1>
 
         {location ? (
-          <p className="text-base text-muted-foreground md:text-hero-foreground md:opacity-80">
+          <p className="text-base opacity-80">
             <bdi>{location}</bdi>
           </p>
         ) : null}
@@ -60,7 +60,7 @@ export const ProfileHero = ({
         {profile.bio ? (
           <p
             dir="auto"
-            className="text-base ltr:text-left rtl:text-right lg:truncate"
+            className="text-base lg:truncate ltr:text-left rtl:text-right"
           >
             {profile.bio}
           </p>
@@ -104,7 +104,10 @@ const ProfileHeroCountsSuspense = ({
         {t('relationshipCount', { count: relationships.count })}
       </Link>
       <span aria-hidden="true">•</span>
-      <Link href={`/org/${profile.slug}?tab=followers`} className={linkClassName}>
+      <Link
+        href={`/org/${profile.slug}?tab=followers`}
+        className={linkClassName}
+      >
         {t('followerCount', { count: followers.following?.length ?? 0 })}
       </Link>
     </p>
