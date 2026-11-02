@@ -4,15 +4,13 @@ import {
   simpleVoting,
 } from '@op/common';
 import type { DecisionSchemaDefinition } from '@op/common';
-import { MAX_PHASE_NAME_LENGTH } from '@op/common/client';
+import { MAX_PHASE_NAME_LENGTH, PHASE_NAME_TOO_LONG } from '@op/common/client';
 import { TestDecisionsDataManager } from '@op/common/testing';
-import { asc, db, eq, sql } from '@op/db/client';
+import { db, eq, sql } from '@op/db/client';
 import {
   ProcessStatus,
   decisionProcesses,
   processInstances,
-  processPhases,
-  profiles,
   users,
 } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
@@ -24,6 +22,10 @@ import {
   expectFailsAccessTierGate,
   expectPassesAccessTierGate,
 } from '../../../test/helpers/gating/decision';
+import {
+  expectNothingNamed,
+  loadPhaseRows,
+} from '../../../test/helpers/phaseTestUtils';
 import { createWizardDraft } from '../../../test/helpers/wizardDraftTestUtils';
 import {
   createIsolatedSession,
@@ -95,20 +97,6 @@ async function createSimpleTemplate(
     // The setup makes this user an admin of a fresh organization.
     organizationProfileId: setup.organization.profileId,
   };
-}
-
-async function loadPhaseRows(processInstanceId: string) {
-  return db
-    .select({
-      sortOrder: processPhases.sortOrder,
-      profileId: processPhases.profileId,
-      data: processPhases.data,
-      name: profiles.name,
-    })
-    .from(processPhases)
-    .innerJoin(profiles, eq(profiles.id, processPhases.profileId))
-    .where(eq(processPhases.processInstanceId, processInstanceId))
-    .orderBy(asc(processPhases.sortOrder));
 }
 
 function withoutDates(data: unknown) {
@@ -209,8 +197,8 @@ describe.concurrent('duplicateInstance', () => {
     ]);
     const instanceData = instance!.instanceData as DecisionInstanceData;
 
-    expect(duplicateRows).toHaveLength(simpleVoting.phases.length);
     expect(instanceData.phases).toHaveLength(simpleVoting.phases.length);
+    expect(duplicateRows).toHaveLength(sourceRows.length);
     instanceData.phases.forEach((phase, index) => {
       const row = duplicateRows[index]!;
       expect(row.sortOrder).toBe(index);
@@ -218,13 +206,10 @@ describe.concurrent('duplicateInstance', () => {
       expect(row.data).toMatchObject({ phaseId: phase.phaseId });
     });
 
-    expect(duplicateRows).toHaveLength(sourceRows.length);
     duplicateRows.forEach((row, index) => {
       const sourceRow = sourceRows[index]!;
       expect(row.name).toBe(sourceRow.name);
       expect(row.data).toEqual(withoutDates(sourceRow.data));
-      expect(row.data).not.toHaveProperty('startDate');
-      expect(row.data).not.toHaveProperty('endDate');
     });
 
     const sourceProfileIds = new Set(sourceRows.map((row) => row.profileId));
@@ -236,7 +221,7 @@ describe.concurrent('duplicateInstance', () => {
   it.for([
     {
       label: 'more phases than a decision can hold',
-      message: `The source decision has ${MAX_PHASES_PER_DECISION + 1} phases; the limit is ${MAX_PHASES_PER_DECISION}`,
+      message: `This decision has ${MAX_PHASES_PER_DECISION + 1} phases; the limit is ${MAX_PHASES_PER_DECISION}`,
       phases: Array.from({ length: MAX_PHASES_PER_DECISION + 1 }, (_, i) => ({
         phaseId: `phase-${i}`,
         name: `Phase ${i}`,
@@ -244,13 +229,13 @@ describe.concurrent('duplicateInstance', () => {
     },
     {
       label: 'a phase name longer than a profile can hold',
-      message: `a phase name can have at most ${MAX_PHASE_NAME_LENGTH} characters`,
+      message: PHASE_NAME_TOO_LONG,
       phases: [
         { phaseId: 'long', name: 'x'.repeat(MAX_PHASE_NAME_LENGTH + 1) },
       ],
     },
   ])(
-    'refuses a legacy source with $label, naming the source',
+    'refuses a legacy source with $label before writing anything',
     async ({ message, phases }, { task, onTestFinished }) => {
       const testData = new TestDecisionsDataManager(task.id, onTestFinished);
       const { result: source, caller } = await createSourceInstance(
@@ -279,15 +264,7 @@ describe.concurrent('duplicateInstance', () => {
         },
       });
 
-      const [instances, decisionProfiles] = await Promise.all([
-        db.query.processInstances.findMany({
-          where: { name },
-          columns: { id: true },
-        }),
-        db.query.profiles.findMany({ where: { name }, columns: { id: true } }),
-      ]);
-      expect(instances).toHaveLength(0);
-      expect(decisionProfiles).toHaveLength(0);
+      await expectNothingNamed(name);
     },
   );
 

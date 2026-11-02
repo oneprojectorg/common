@@ -9,6 +9,8 @@ import { EntityType } from '@op/db/schema';
 import { randomUUID } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 
+import { listPhaseIds } from '../../test/helpers/phaseTestUtils';
+
 describe.concurrent('createPhase', () => {
   it('mints a profile of type PHASE that owns the name', async ({
     task,
@@ -240,10 +242,7 @@ describe.concurrent('createPhase', () => {
     const { instanceId, user, testData } = await setup(task, onTestFinished);
 
     // The decision already holds its template's phases.
-    const existing = await db.query.processPhases.findMany({
-      where: { processInstanceId: instanceId },
-      columns: { id: true },
-    });
+    const existing = await listPhaseIds(instanceId);
 
     for (
       let sortOrder = existing.length;

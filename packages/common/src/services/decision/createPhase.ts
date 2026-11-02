@@ -5,13 +5,13 @@ import type { User } from '@op/supabase/lib';
 import { NotFoundError, ValidationError } from '../../utils';
 import { lockProcessInstanceOrThrow } from './lockProcessInstance';
 import {
-  MAX_PHASES_PER_DECISION,
   type PhaseData,
   assertDecisionAdmin,
   assertPhaseSchemasCompile,
   assertPhaseSettings,
   insertPhase,
 } from './phaseHelpers';
+import { MAX_PHASES_PER_DECISION } from './utils/phaseOrder';
 
 export const createPhase = async ({
   user,

@@ -1,4 +1,7 @@
 import { TestDecisionsDataManager } from '@op/common/testing';
+import { asc, db, eq } from '@op/db/client';
+import { processPhases, profiles } from '@op/db/schema';
+import { expect } from 'vitest';
 
 import { appRouter } from '../../routers';
 import { createCallerFactory } from '../../trpcFactory';
@@ -69,3 +72,38 @@ export async function setupPhase(
 export async function createUnauthenticatedCaller() {
   return createCaller(await createTestContextWithSession(null));
 }
+
+export const loadPhaseRows = (processInstanceId: string) =>
+  db
+    .select({
+      sortOrder: processPhases.sortOrder,
+      profileId: processPhases.profileId,
+      data: processPhases.data,
+      name: profiles.name,
+      type: profiles.type,
+    })
+    .from(processPhases)
+    .innerJoin(profiles, eq(profiles.id, processPhases.profileId))
+    .where(eq(processPhases.processInstanceId, processInstanceId))
+    .orderBy(asc(processPhases.sortOrder));
+
+export const listPhaseIds = async (processInstanceId: string) =>
+  (
+    await db.query.processPhases.findMany({
+      where: { processInstanceId },
+      columns: { id: true },
+    })
+  ).map((phase) => phase.id);
+
+// A refused create leaves no decision instance or profile with its name.
+export const expectNothingNamed = async (name: string) => {
+  const [instances, decisionProfiles] = await Promise.all([
+    db.query.processInstances.findMany({
+      where: { name },
+      columns: { id: true },
+    }),
+    db.query.profiles.findMany({ where: { name }, columns: { id: true } }),
+  ]);
+  expect(instances).toHaveLength(0);
+  expect(decisionProfiles).toHaveLength(0);
+};

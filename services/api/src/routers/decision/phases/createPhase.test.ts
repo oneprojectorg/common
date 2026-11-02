@@ -5,7 +5,10 @@ import { ROLES } from '@op/db/seedData/accessControl';
 import { randomUUID } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 
-import { createUnauthenticatedCaller } from '../../../test/helpers/phaseTestUtils';
+import {
+  createUnauthenticatedCaller,
+  listPhaseIds,
+} from '../../../test/helpers/phaseTestUtils';
 import { createAuthenticatedCaller } from '../../../test/supabase-utils';
 
 type OnTestFinished = (fn: () => void | Promise<void>) => void;
@@ -296,14 +299,7 @@ describe.concurrent('createPhase', () => {
       onTestFinished,
     );
 
-    const countPhases = async () =>
-      (
-        await db.query.processPhases.findMany({
-          where: { processInstanceId: instanceId },
-          columns: { id: true },
-        })
-      ).length;
-    const before = await countPhases();
+    const before = await listPhaseIds(instanceId);
 
     const name = `Bad Form ${randomUUID()}`;
     await expect(
@@ -315,7 +311,7 @@ describe.concurrent('createPhase', () => {
       }),
     ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
 
-    expect(await countPhases()).toBe(before);
+    expect(await listPhaseIds(instanceId)).toEqual(before);
     const profiles = await db.query.profiles.findMany({
       where: { name },
       columns: { id: true },
