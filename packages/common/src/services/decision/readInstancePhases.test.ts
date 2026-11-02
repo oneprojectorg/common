@@ -1,18 +1,20 @@
-import { TestDecisionsDataManager } from '@op/common/testing';
+import {
+  TestDecisionsDataManager,
+  emptyBlobPhases,
+  forceServerFlags,
+} from '@op/common/testing';
 import { db, eq, sql } from '@op/db/client';
 import { processInstances, processPhases, profiles } from '@op/db/schema';
 import { logger } from '@op/logging';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { insertPhase } from './phaseHelpers';
+import { loadPhaseRows, phaseIdOf } from './phaseRows';
 import {
   readInstancePhases,
   withInstancePhases,
   withInstancesPhases,
 } from './readInstancePhases';
-
-const forceFlagOn = () => vi.stubEnv('NEXT_PUBLIC_E2E', 'true');
-const forceFlagOff = () => vi.stubEnv('NEXT_PUBLIC_E2E', '');
 
 const expectNoRowsWarning = (processInstanceIds: string[]) =>
   expect(logger.warn).toHaveBeenCalledWith(
@@ -32,7 +34,7 @@ describe('readInstancePhases', () => {
   }) => {
     const { instanceId } = await createInstance(task.id, onTestFinished);
     await renameBlobPhases(instanceId);
-    forceFlagOff();
+    forceServerFlags(false);
 
     const phases = await readInstancePhases({
       instance: await loadInstance(instanceId),
@@ -53,7 +55,7 @@ describe('readInstancePhases', () => {
     const rows = await loadRows(instanceId);
     await setSortOrder(rows.initial.id, 1);
     await setSortOrder(rows.final.id, 0);
-    forceFlagOn();
+    forceServerFlags(true);
 
     const phases = await readInstancePhases({
       instance: await loadInstance(instanceId),
@@ -81,7 +83,7 @@ describe('readInstancePhases', () => {
       .update(processPhases)
       .set({ data: sql`${processPhases.data} - 'phaseId'` })
       .where(eq(processPhases.id, rows.final.id));
-    forceFlagOn();
+    forceServerFlags(true);
 
     const phases = await readInstancePhases({
       instance: await loadInstance(instanceId),
@@ -103,7 +105,7 @@ describe('readInstancePhases', () => {
     );
     await testData.removePhaseRows(instanceId);
     await renameBlobPhases(instanceId);
-    forceFlagOn();
+    forceServerFlags(true);
 
     const phases = await readInstancePhases({
       instance: await loadInstance(instanceId),
@@ -132,7 +134,7 @@ describe('readInstancePhases', () => {
         sortOrder: 2,
       }),
     );
-    forceFlagOn();
+    forceServerFlags(true);
 
     const phases = await readInstancePhases({
       instance: await loadInstance(instanceId),
@@ -155,7 +157,7 @@ describe('readInstancePhases', () => {
     );
     await testData.removePhaseRows(instanceId);
     const instance = await loadInstance(instanceId);
-    forceFlagOn();
+    forceServerFlags(true);
 
     expect(await withInstancePhases({ instance })).toBe(instance);
     expectNoRowsWarning([instanceId]);
@@ -179,7 +181,7 @@ describe('readInstancePhases', () => {
       await loadInstance(withRows),
       await loadInstance(withoutRows),
     ];
-    forceFlagOn();
+    forceServerFlags(true);
 
     const [first, second] = await withInstancesPhases({ instances });
 
@@ -198,11 +200,11 @@ describe('readInstancePhases', () => {
     const { instanceId } = await createInstance(task.id, onTestFinished);
     await emptyBlobPhases(instanceId);
     const instance = await loadInstance(instanceId);
-    forceFlagOff();
+    forceServerFlags(false);
 
     expect(await withInstancePhases({ instance })).toBe(instance);
 
-    forceFlagOn();
+    forceServerFlags(true);
     const resolved = await withInstancePhases({ instance });
 
     expect(resolved.instanceData).toMatchObject({
@@ -236,19 +238,9 @@ async function loadInstance(instanceId: string) {
 }
 
 async function loadRows(instanceId: string) {
-  const rows = await db
-    .select({
-      id: processPhases.id,
-      profileId: processPhases.profileId,
-      phaseId: sql<string | null>`${processPhases.data} ->> 'phaseId'`,
-      slug: profiles.slug,
-    })
-    .from(processPhases)
-    .innerJoin(profiles, eq(profiles.id, processPhases.profileId))
-    .where(eq(processPhases.processInstanceId, instanceId));
-
-  const initial = rows.find((row) => row.phaseId === 'initial');
-  const final = rows.find((row) => row.phaseId === 'final');
+  const rows = await loadPhaseRows({ db, processInstanceId: instanceId });
+  const initial = rows.find((row) => phaseIdOf(row) === 'initial');
+  const final = rows.find((row) => phaseIdOf(row) === 'final');
 
   if (!initial || !final) {
     throw new Error(`Instance ${instanceId} is missing its phase rows`);
@@ -271,13 +263,5 @@ const renameBlobPhases = (instanceId: string) =>
         jsonb_set(${processInstances.instanceData}, '{phases,0,name}', '"Blob initial"'),
         '{phases,1,name}', '"Blob final"'
       )`,
-    })
-    .where(eq(processInstances.id, instanceId));
-
-const emptyBlobPhases = (instanceId: string) =>
-  db
-    .update(processInstances)
-    .set({
-      instanceData: sql`jsonb_set(${processInstances.instanceData}, '{phases}', '[]')`,
     })
     .where(eq(processInstances.id, instanceId));
