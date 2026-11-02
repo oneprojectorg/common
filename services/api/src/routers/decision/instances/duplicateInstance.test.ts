@@ -213,7 +213,7 @@ describe.concurrent('duplicateInstance', () => {
     }
   });
 
-  it('refuses a legacy source with more phases than a decision can hold', async ({
+  it('refuses a legacy source with a phase that has no id', async ({
     task,
     onTestFinished,
   }) => {
@@ -225,10 +225,10 @@ describe.concurrent('duplicateInstance', () => {
     await testData.removePhaseRows(source.processInstance.id);
     await insertPhaseRows({
       processInstanceId: source.processInstance.id,
-      phases: Array.from({ length: MAX_PHASES_PER_DECISION + 1 }, (_, i) => ({
-        phaseId: `phase-${i}`,
-        name: `Phase ${i}`,
-      })),
+      phases: [
+        { phaseId: '', name: 'Submission' },
+        { phaseId: 'voting', name: 'Voting' },
+      ],
     });
 
     const name = `Legacy Duplicate ${task.id}`;
@@ -241,9 +241,7 @@ describe.concurrent('duplicateInstance', () => {
     ).rejects.toMatchObject({
       cause: {
         name: 'ValidationError',
-        message: expect.stringContaining(
-          `A decision can have at most ${MAX_PHASES_PER_DECISION} phases`,
-        ),
+        message: expect.stringContaining('There is a phase with no id'),
       },
     });
 
