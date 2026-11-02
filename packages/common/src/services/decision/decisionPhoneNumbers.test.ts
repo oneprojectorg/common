@@ -1,0 +1,127 @@
+import { TestDecisionsDataManager } from '@op/common/testing';
+import { db, sql } from '@op/db/client';
+import { decisionPhoneNumbers } from '@op/db/schema';
+import { describe, expect, it } from 'vitest';
+
+const NUMBERS = {
+  second: '+17405550101',
+  shared: '+17405550102',
+  malformed: '+17405550103',
+  dual: '+17405550104',
+  badChannel: '+17405550105',
+} as const;
+
+const seedDecisions = async (
+  testData: TestDecisionsDataManager,
+  instanceCount: number,
+) => {
+  const setup = await testData.createDecisionSetup({
+    instanceCount,
+    grantAccess: true,
+  });
+  return setup.instances.map((entry) => entry.instance.id);
+};
+
+describe.concurrent('decision_phone_numbers', () => {
+  it('given a decision already has a number for a channel, when a second number is inserted for the same channel, then the unique index refuses the row', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const [processInstanceId] = await seedDecisions(testData, 1);
+    await db.insert(decisionPhoneNumbers).values({
+      processInstanceId: processInstanceId!,
+      phoneNumber: NUMBERS.second,
+    });
+
+    await expect(
+      db.insert(decisionPhoneNumbers).values({
+        processInstanceId: processInstanceId!,
+        phoneNumber: '+17405550199',
+      }),
+    ).rejects.toMatchObject({ cause: { code: '23505' } });
+  });
+
+  it('given a number bound to one decision, when it is bound to a second decision on the same channel, then the unique index refuses the row', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const [first, second] = await seedDecisions(testData, 2);
+    await db
+      .insert(decisionPhoneNumbers)
+      .values({ processInstanceId: first!, phoneNumber: NUMBERS.shared });
+
+    await expect(
+      db
+        .insert(decisionPhoneNumbers)
+        .values({ processInstanceId: second!, phoneNumber: NUMBERS.shared }),
+    ).rejects.toMatchObject({ cause: { code: '23505' } });
+    await expect(
+      db.query.decisionPhoneNumbers.findFirst({
+        where: { processInstanceId: second! },
+      }),
+    ).resolves.toBeUndefined();
+  });
+
+  it('given a decision with an sms number, when the same number is bound for whatsapp, then both channel rows stand', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const [processInstanceId] = await seedDecisions(testData, 1);
+    await db.insert(decisionPhoneNumbers).values({
+      processInstanceId: processInstanceId!,
+      phoneNumber: NUMBERS.dual,
+    });
+
+    await db.insert(decisionPhoneNumbers).values({
+      processInstanceId: processInstanceId!,
+      phoneNumber: NUMBERS.dual,
+      channel: 'whatsapp',
+    });
+
+    const rows = await db.query.decisionPhoneNumbers.findMany({
+      where: { processInstanceId: processInstanceId! },
+    });
+    expect(rows.map((row) => row.channel).sort()).toEqual(['sms', 'whatsapp']);
+  });
+
+  it('given a channel outside sms and whatsapp, planted with a raw insert because no service writes one, then the check constraint refuses the row', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const [processInstanceId] = await seedDecisions(testData, 1);
+
+    await expect(
+      db.execute(
+        sql`insert into decision_phone_numbers (process_instance_id, phone_number, channel) values (${processInstanceId}, ${NUMBERS.badChannel}, 'fax')`,
+      ),
+    ).rejects.toMatchObject({ cause: { code: '23514' } });
+    await expect(
+      db.query.decisionPhoneNumbers.findFirst({
+        where: { processInstanceId: processInstanceId! },
+      }),
+    ).resolves.toBeUndefined();
+  });
+
+  it('given a number that is not E.164, planted with a raw insert because no service writes one, then the check constraint refuses the row', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const [processInstanceId] = await seedDecisions(testData, 1);
+
+    await expect(
+      db.execute(
+        sql`insert into decision_phone_numbers (process_instance_id, phone_number) values (${processInstanceId}, ${NUMBERS.malformed.slice(1)})`,
+      ),
+    ).rejects.toMatchObject({ cause: { code: '23514' } });
+    await expect(
+      db.query.decisionPhoneNumbers.findFirst({
+        where: { processInstanceId: processInstanceId! },
+      }),
+    ).resolves.toBeUndefined();
+  });
+});

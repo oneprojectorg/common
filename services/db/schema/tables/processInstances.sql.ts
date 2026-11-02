@@ -3,6 +3,7 @@ import type { InferModel, SQL } from 'drizzle-orm';
 import { relations } from 'drizzle-orm/_relations';
 import {
   index,
+  integer,
   jsonb,
   pgEnum,
   pgTable,
@@ -81,6 +82,9 @@ export const processInstances = pgTable(
     // .notNull(), // TODO: This needs to temporarily be nullable so that we can create a migration on current decision processes
 
     status: processStatusEnum('status').default(ProcessStatus.DRAFT),
+    // On the instance so submission can SELECT ... FOR UPDATE this row and
+    // assign proposal short codes race-free.
+    nextShortCode: integer('next_short_code').notNull().default(101),
     search: tsvector('search').generatedAlwaysAs(
       (): SQL =>
         sql`setweight(to_tsvector('simple', ${processInstances.name}), 'A') || ' ' || setweight(to_tsvector('english', COALESCE(${processInstances.description}, '')), 'B')::tsvector`,
