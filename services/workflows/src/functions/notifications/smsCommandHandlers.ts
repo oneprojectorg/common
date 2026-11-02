@@ -330,11 +330,16 @@ export const agree: SmsCommandHandler = async (context) => {
   }
 
   const decision = await step.run('describe-enrolment-decision', () =>
-    describeEnrolmentDecision({ instanceId: pending.processInstanceId }),
+    swallowUnreadable(() =>
+      describeEnrolmentDecision({
+        instanceId: pending.processInstanceId,
+        authUserId: account.authUserId,
+      }),
+    ),
   );
-  const rule = decision.enrolment;
+  const rule = decision?.enrolment;
 
-  if (!rule) {
+  if (!decision || !rule) {
     return nothingToAffirm();
   }
 
@@ -387,11 +392,16 @@ export const freeText: SmsCommandHandler = async (context) => {
   }
 
   const decision = await step.run('describe-enrolment-decision', () =>
-    describeEnrolmentDecision({ instanceId: pending.processInstanceId }),
+    swallowUnreadable(() =>
+      describeEnrolmentDecision({
+        instanceId: pending.processInstanceId,
+        authUserId: account.authUserId,
+      }),
+    ),
   );
-  const rule = decision.enrolment;
+  const rule = decision?.enrolment;
 
-  if (!rule) {
+  if (!decision || !rule) {
     return sendSmsHelp(deliver);
   }
 

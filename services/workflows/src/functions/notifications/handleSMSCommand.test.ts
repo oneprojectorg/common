@@ -4,6 +4,8 @@ import {
   findVoterEnrolment,
   parsePhoneNumber,
 } from '@op/common';
+import { and, db, eq } from '@op/db/client';
+import { processInstances, profileUsers } from '@op/db/schema';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { memoryGeocoder } from '../../../testing/mocks/geocoder';
@@ -41,6 +43,7 @@ const NUMBERS = {
   unboundLineMember: '+15005550082',
   lineStranger: '+15005550083',
   linePrivateOwner: '+15005550069',
+  agreeRemoved: '+15005550068',
   enrolStart: '+15005550070',
   enrolAddress: '+15005550071',
   enrolNotFound: '+15005550072',
@@ -60,6 +63,7 @@ const LINES = {
   slug: '+16145550131',
   unbound: '+16145550132',
   private: '+16145550138',
+  agreeRemoved: '+16145550139',
   enrolStart: '+16145550133',
   enrolAddress: '+16145550134',
   enrolNotFound: '+16145550135',
@@ -818,6 +822,67 @@ describe('handleSMSCommand registration over SMS', () => {
       authUserId: member.authUserId,
     });
     expect(row?.enrolledAt).not.toBeNull();
+  });
+
+  it('given a voter removed from the decision after starting registration texts AGREE, membership deleted by raw delete, then nothing is affirmed and no attestation is revealed', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsCommandFixture(task.id, onTestFinished);
+    const name = `Agree Removed ${task.id}`;
+    const { member, instanceId } = await seed(fixture, {
+      phone: NUMBERS.agreeRemoved,
+      line: LINES.agreeRemoved,
+      name,
+    });
+    const address = `375 S High St ${task.id}`;
+    memoryGeocoder.set(address, INSIDE);
+    await run(
+      smsInboundEvent({
+        from: NUMBERS.agreeRemoved,
+        to: LINES.agreeRemoved,
+        keyword: 'vote',
+      }),
+    );
+    await run(
+      smsInboundEvent({
+        from: NUMBERS.agreeRemoved,
+        to: LINES.agreeRemoved,
+        body: address,
+        messageSid: `SM-${task.id}-removed-address`,
+      }),
+    );
+
+    const [instance] = await db
+      .select({ profileId: processInstances.profileId })
+      .from(processInstances)
+      .where(eq(processInstances.id, instanceId));
+    await db
+      .delete(profileUsers)
+      .where(
+        and(
+          eq(profileUsers.profileId, instance!.profileId!),
+          eq(profileUsers.authUserId, member.authUserId),
+        ),
+      );
+
+    const { result } = await run(
+      smsInboundEvent({
+        from: NUMBERS.agreeRemoved,
+        to: LINES.agreeRemoved,
+        keyword: 'agree',
+      }),
+    );
+
+    expect(result).toEqual({ message: 'nothing to affirm' });
+    expect(recordedSms.at(-1)?.body).toBe(
+      'There is nothing to affirm. Text VOTE and a decision name to register.',
+    );
+    const row = await findVoterEnrolment({
+      processInstanceId: instanceId,
+      authUserId: member.authUserId,
+    });
+    expect(row?.enrolledAt ?? null).toBeNull();
   });
 
   it('given a member with no registration in progress texts AGREE, then they are told there is nothing to affirm', async ({

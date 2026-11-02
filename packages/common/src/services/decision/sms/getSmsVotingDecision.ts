@@ -1,7 +1,9 @@
 import { db } from '@op/db/client';
 import { ProcessStatus } from '@op/db/schema';
+import { permission } from 'access-zones';
 
 import { NotFoundError } from '../../../utils';
+import { assertProfileAccess } from '../../assert';
 import { formatUnitAmount, getFieldUnit } from '../fieldUnit';
 import { getDecisionBySlug } from '../getDecisionBySlug';
 import { resolveProposalTemplate } from '../resolveProposalTemplate';
@@ -81,8 +83,10 @@ export async function getSmsVotingDecision({
 
 export async function describeEnrolmentDecision({
   instanceId,
+  authUserId,
 }: {
   instanceId: string;
+  authUserId: string;
 }): Promise<SmsVotingDecision> {
   const instance = await db.query.processInstances.findFirst({
     where: { id: instanceId },
@@ -92,12 +96,22 @@ export async function describeEnrolmentDecision({
       currentStateId: true,
       processId: true,
     },
-    with: { profile: { columns: { name: true } } },
+    with: { profile: { columns: { id: true, name: true } } },
   });
 
   if (!instance?.profile) {
     throw new NotFoundError('Process instance', instanceId);
   }
+
+  await assertProfileAccess({
+    user: { id: authUserId },
+    profileId: instance.profile.id,
+    permissions: [
+      { decisions: permission.ADMIN },
+      { decisions: permission.READ },
+    ],
+    notMemberMessage: 'User does not have access to this process',
+  });
 
   return summarizeVotingInstance(instance.profile.name, instance);
 }
