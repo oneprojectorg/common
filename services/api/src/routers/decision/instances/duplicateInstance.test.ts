@@ -1,10 +1,5 @@
-import {
-  type DecisionInstanceData,
-  MAX_PHASES_PER_DECISION,
-  simpleVoting,
-} from '@op/common';
+import { type DecisionInstanceData, simpleVoting } from '@op/common';
 import type { DecisionSchemaDefinition } from '@op/common';
-import { MAX_PHASE_NAME_LENGTH, PHASE_NAME_TOO_LONG } from '@op/common/client';
 import { TestDecisionsDataManager } from '@op/common/testing';
 import { db, eq, sql } from '@op/db/client';
 import {
@@ -220,18 +215,19 @@ describe.concurrent('duplicateInstance', () => {
 
   it.for([
     {
-      label: 'more phases than a decision can hold',
-      message: `This decision has ${MAX_PHASES_PER_DECISION + 1} phases; the limit is ${MAX_PHASES_PER_DECISION}`,
-      phases: Array.from({ length: MAX_PHASES_PER_DECISION + 1 }, (_, i) => ({
-        phaseId: `phase-${i}`,
-        name: `Phase ${i}`,
-      })),
+      label: 'a phase with no id',
+      message: /A phase has no id/,
+      phases: [
+        { phaseId: '', name: 'Submission' },
+        { phaseId: 'voting', name: 'Voting' },
+      ],
     },
     {
-      label: 'a phase name longer than a profile can hold',
-      message: PHASE_NAME_TOO_LONG,
+      label: 'two phases with one id',
+      message: /Two phases share the id "submission"/,
       phases: [
-        { phaseId: 'long', name: 'x'.repeat(MAX_PHASE_NAME_LENGTH + 1) },
+        { phaseId: 'submission', name: 'Submission' },
+        { phaseId: 'submission', name: 'Voting' },
       ],
     },
   ])(
@@ -260,7 +256,7 @@ describe.concurrent('duplicateInstance', () => {
       ).rejects.toMatchObject({
         cause: {
           name: 'ValidationError',
-          message: expect.stringContaining(message),
+          message: expect.stringMatching(message),
         },
       });
 

@@ -18,11 +18,6 @@ import {
   type PhaseSettingsSchema,
   assertSettingsMatchSchema,
 } from './schemas/instanceData';
-import {
-  PHASE_NAME_TOO_LONG,
-  phaseNameLengthSchema,
-} from './schemas/phaseName';
-import { MAX_PHASES_PER_DECISION } from './utils/phaseOrder';
 
 // phaseId and name live on the phase's profile.
 export type PhaseData = Omit<PhaseInstanceData, 'phaseId' | 'name'>;
@@ -77,18 +72,11 @@ export const getPhaseProfileName = ({
   name,
 }: InstanceDataPhase): string => name?.trim() || phaseId;
 
-// Instance data can predate the phase limits, so a copy of it is checked
-// before anything is written.
+// Rows are keyed by phaseId and nothing in the database keeps it unique, so
+// stored instance data is checked before any row is minted from it.
 export const assertPhasesCanBeMinted = (
   phases: readonly InstanceDataPhase[],
 ): void => {
-  if (phases.length > MAX_PHASES_PER_DECISION) {
-    throw new ValidationError(
-      `This decision has ${phases.length} phases; the limit is ${MAX_PHASES_PER_DECISION}`,
-      { phases: `Remove ${phases.length - MAX_PHASES_PER_DECISION}` },
-    );
-  }
-
   const phaseIds = new Set<string>();
   for (const phase of phases) {
     if (!phase.phaseId) {
@@ -100,15 +88,6 @@ export const assertPhasesCanBeMinted = (
       });
     }
     phaseIds.add(phase.phaseId);
-
-    const name = getPhaseProfileName(phase);
-    if (!phaseNameLengthSchema.safeParse(name).success) {
-      const preview = previewPhaseName(name);
-      throw new ValidationError(
-        `${PHASE_NAME_TOO_LONG}; phase "${preview}…" is longer`,
-        { name: `Shorten "${preview}…"` },
-      );
-    }
   }
 };
 
@@ -242,8 +221,6 @@ const insertPhaseProfile = async ({
 
   throw new CommonError('Failed to create phase profile');
 };
-
-const previewPhaseName = (name: string) => [...name].slice(0, 40).join('');
 
 const generatePhaseSlug = () => randomUUID().slice(0, 8);
 
