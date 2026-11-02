@@ -32,7 +32,7 @@ import {
   reconcilePhaseRows,
 } from './phaseRows';
 import { ensureProposalTaxonomyTerms } from './proposalTaxonomy';
-import { isPhasesFromRowsEnabled } from './readInstancePhases';
+import { isPhasesFromRowsEnabled, withBlobPhases } from './readInstancePhases';
 import { schemaValidator } from './schemaValidator';
 import {
   type DecisionInstanceData,
@@ -349,7 +349,8 @@ async function syncTransitions({
     });
   } else if (phasesChanged) {
     await updateTransitionsForProcess({
-      processInstance: updatedInstance,
+      // The save rebuilt the blob from the rows it reconciled.
+      processInstance: withBlobPhases({ instance: updatedInstance }),
       db: tx,
     });
   }

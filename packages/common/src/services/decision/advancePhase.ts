@@ -8,7 +8,8 @@ import {
 
 import { attachProposalsToTransition } from './attachProposalsToTransition';
 import { getProposalsForPhase } from './getProposalsForPhase';
-import type { DecisionInstanceData } from './schemas/instanceData';
+import type { PhasesResolved } from './readInstancePhases';
+import { getInstancePhases } from './schemas/instanceData';
 import type { TransitionData } from './schemas/transitionData';
 import {
   aggregateProposalMetrics,
@@ -18,14 +19,11 @@ import type { ExecutionContext } from './selectionPipeline/types';
 
 export interface AdvancePhaseInput {
   db: DbClient;
-  /**
-   * Pre-loaded instance row with its phases resolved (`withInstancePhases`).
-   * Stale snapshots are safe — writes use optimistic locks.
-   */
-  instance: {
+  /** Stale snapshots are safe — writes use optimistic locks. */
+  instance: PhasesResolved<{
     id: string;
-    instanceData: DecisionInstanceData;
-  };
+    instanceData: unknown;
+  }>;
   fromPhaseId: string;
   toPhaseId: string;
   /** Null for cron / system-triggered transitions. */
@@ -76,7 +74,7 @@ export async function advancePhase(
   } = input;
 
   const instanceId = instance.id;
-  const phases = instance.instanceData.phases;
+  const phases = getInstancePhases(instance.instanceData);
   const departingPhase = phases.find((p) => p.phaseId === fromPhaseId);
 
   if (!departingPhase) {

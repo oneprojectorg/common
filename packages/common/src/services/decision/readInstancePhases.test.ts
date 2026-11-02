@@ -159,7 +159,9 @@ describe('readInstancePhases', () => {
     const instance = await loadInstance(instanceId);
     forceServerFlags(true);
 
-    expect(await withInstancePhases({ instance })).toBe(instance);
+    expect((await withInstancePhases({ instance })).instanceData).toBe(
+      instance.instanceData,
+    );
     expectNoRowsWarning([instanceId]);
   });
 
@@ -188,7 +190,7 @@ describe('readInstancePhases', () => {
     expect(first?.instanceData).toMatchObject({
       phases: [{ phaseId: 'initial' }, { phaseId: 'final' }],
     });
-    expect(second).toBe(instances[1]);
+    expect(second?.instanceData).toBe(instances[1]?.instanceData);
     expect(logger.warn).toHaveBeenCalledTimes(1);
     expectNoRowsWarning([withoutRows]);
   });
@@ -202,7 +204,9 @@ describe('readInstancePhases', () => {
     const instance = await loadInstance(instanceId);
     forceServerFlags(false);
 
-    expect(await withInstancePhases({ instance })).toBe(instance);
+    expect((await withInstancePhases({ instance })).instanceData).toBe(
+      instance.instanceData,
+    );
 
     forceServerFlags(true);
     const resolved = await withInstancePhases({ instance });
