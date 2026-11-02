@@ -324,7 +324,7 @@ export const OrganizationProfileGrid = ({
   const isOrg = user.currentProfile?.type === 'org';
 
   return (
-    <div className="mx-auto hidden w-full max-w-248 gap-6 p-6 sm:flex sm:flex-col lg:flex-row lg:items-start">
+    <div className="hidden w-full gap-6 pb-6 sm:flex sm:flex-col lg:flex-row lg:items-start">
       <div className="flex min-w-0 flex-1 flex-col">
         {isOrg ? (
           <Suspense fallback={null}>
@@ -355,8 +355,27 @@ export const OrganizationProfileGrid = ({
   );
 };
 
-export const ProfileTabList = ({ children }: { children: React.ReactNode }) => (
-  <TabsList variant="line" className="shrink-0 px-4 sm:px-6">
+/** The 992px column the org profile hero, tabs and body share. */
+export const ProfileColumn = ({
+  children,
+  className,
+}: {
+  children: ReactNode;
+  className?: string;
+}) => (
+  <div className={cn('mx-auto w-full max-w-260 px-4 sm:px-6', className)}>
+    {children}
+  </div>
+);
+
+export const ProfileTabList = ({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) => (
+  <TabsList variant="line" className={cn('shrink-0 px-4 sm:px-6', className)}>
     {children}
   </TabsList>
 );

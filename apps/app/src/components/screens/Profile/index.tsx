@@ -36,14 +36,17 @@ const ProfileWithData = async ({
 
     if (profile.type === 'org') {
       return organization ? (
-        <>
+        <div
+          data-layout="full-bleed"
+          className="-mt-[3.05rem] flex w-full flex-col gap-3 sm:mt-0 sm:gap-8"
+        >
           <ProfileHero organization={organization} />
           <ProfileTabsRenderer
             organization={organization}
             profile={profile}
             initialTab={initialTab}
           />
-        </>
+        </div>
       ) : null;
     }
 
@@ -84,7 +87,7 @@ const ProfileWithData = async ({
     };
 
     return (
-      <>
+      <div className="-mt-[3.05rem] flex w-full flex-col gap-3 border-border border-b-transparent sm:mt-0 sm:min-h-[calc(100vh-3.5rem)] sm:gap-4 sm:border sm:border-border">
         <ImageHeader
           headerImage={
             headerUrl ? (
@@ -121,7 +124,7 @@ const ProfileWithData = async ({
           profile={profile}
           initialTab={initialTab}
         />
-      </>
+      </div>
     );
   } catch (error) {
     // A missing/forbidden profile becomes a 404/403; anything else is a
@@ -145,9 +148,7 @@ export const Profile = ({
           <LuArrowLeft className="size-6 text-white rtl:-scale-x-100" />
         </Link>
       </header>
-      <div className="-mt-[3.05rem] flex w-full flex-col gap-3 border-border border-b-transparent sm:mt-0 sm:min-h-[calc(100vh-3.5rem)] sm:gap-4 sm:border sm:border-border">
-        <ProfileWithData slug={slug} initialTab={initialTab} />
-      </div>
+      <ProfileWithData slug={slug} initialTab={initialTab} />
     </>
   );
 };
