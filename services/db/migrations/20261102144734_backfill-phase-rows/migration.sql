@@ -97,7 +97,7 @@ BEGIN
           WHERE jsonb_typeof(ph -> 'name') NOT IN ('string', 'null')
         )
         THEN 'name is not a string'
-      -- assertPhaseNameFits: at most 256 code points
+      -- assertPhasesCanBeMinted: at most MAX_PHASE_NAME_LENGTH (256) characters
       WHEN EXISTS (
           SELECT 1 FROM jsonb_array_elements(v_data -> 'phases') ph
           WHERE char_length(coalesce(
@@ -129,7 +129,7 @@ BEGIN
       FROM jsonb_array_elements(v_data -> 'phases') WITH ORDINALITY e
       ORDER BY e.ordinality
     LOOP
-      -- phaseRowName: the trimmed name, else the phaseId
+      -- getPhaseProfileName: the trimmed name, else the phaseId
       v_name := coalesce(
         nullif(regexp_replace(v_phase.phase ->> 'name', v_trim, '', 'g'), ''),
         v_phase.phase ->> 'phaseId'
@@ -150,7 +150,7 @@ BEGIN
         RAISE EXCEPTION 'backfill-phase-rows: no free phase profile slug for instance %', v_instance.id;
       END IF;
 
-      -- insertPhaseRows: sort_order is the array index, data is the phase without its name
+      -- insertPhase: sort_order is the array index, data is the phase without its name
       INSERT INTO decision_process_phases (process_instance_id, sort_order, profile_id, data)
       VALUES (v_instance.id, v_phase.sort_order, v_profile_id, v_phase.phase - 'name');
     END LOOP;
