@@ -62,13 +62,6 @@ export async function hasDecisionBoundaries({
   return row != null;
 }
 
-/**
- * Whether any boundary of the given decision profile carries a linked
- * category term. Only a linked boundary can give an enrolment its district
- * term, so district gating applies only when one exists; a decision whose
- * boundaries are all unlinked can never scope a ballot and enrols with a
- * null term, like a decision with no boundaries.
- */
 export async function hasLinkedDecisionBoundaries({
   profileId,
 }: {
