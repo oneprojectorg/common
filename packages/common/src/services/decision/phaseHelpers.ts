@@ -104,7 +104,7 @@ export const listPhases = async ({
   }));
 };
 
-/** `existing` must be loaded under the instance lock; a phase `phases` omits is deleted. */
+// `existing` must be loaded under the instance lock.
 export const reconcilePhases = async ({
   db,
   processInstanceId,
@@ -160,7 +160,6 @@ export const reconcilePhases = async ({
 };
 
 // TODO: remove once references store the row id instead of data.phaseId.
-// An endpoint-made phase has no data.phaseId; its slug is just as stable.
 export const phaseIdOf = (phase: DecisionPhase): string =>
   phase.data.phaseId ?? phase.slug;
 
@@ -335,7 +334,6 @@ const generatePhaseSlug = () => randomUUID().slice(0, 8);
 const isJsonObject = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
 
-// Shape only; the fields are checked where they are used.
 const isPhaseRowData = (value: unknown): value is PhaseRowData =>
   isJsonObject(value);
 

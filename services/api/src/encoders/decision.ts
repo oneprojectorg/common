@@ -624,11 +624,10 @@ export const updateDecisionInstanceInputSchema = z.object({
   config: processConfigEncoder.optional(),
   /** Public-facing overview content (headline, short description, rich text body) */
   overview: instanceOverviewInputEncoder.optional(),
-  /** The full ordered phase list; omitted phases are deleted. Omit it to leave phases untouched. */
+  /** The full ordered list: a phase left out is deleted. */
   phases: z
     .array(instancePhaseDataInputEncoder)
     .max(MAX_PHASES_PER_DECISION)
-    // Fails fast as BAD_REQUEST; the service re-checks the merged list.
     .refine(
       (phases) =>
         phases.every(({ phaseId }) => phaseId !== '') &&
