@@ -3,6 +3,7 @@ import { profiles } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 
 import { NotFoundError } from '../../utils';
+import { invalidateDecisionInstance } from './decisionCache';
 import { getPhaseAsDecisionAdmin } from './phaseHelpers';
 import { mutatePhases } from './phaseMirror';
 
@@ -29,4 +30,6 @@ export const deletePhase = async ({
       },
     }),
   );
+
+  await invalidateDecisionInstance(phase.processInstanceId);
 };

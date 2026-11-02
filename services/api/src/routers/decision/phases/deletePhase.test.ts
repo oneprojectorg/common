@@ -4,6 +4,7 @@ import { randomUUID } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 
 import {
+  PHASE_NAME,
   createUnauthenticatedCaller,
   loadBlobPhases,
   reorderBlobPhases,
@@ -151,6 +152,26 @@ describe.concurrent('deletePhase', () => {
     ).rejects.toMatchObject({
       cause: { name: 'AccessTierError', callerTier: 'none' },
     });
+  });
+
+  it('drops the deleted phase from the cached instance', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { phase, adminCaller } = await setupPhase(task, onTestFinished);
+    const instanceId = phase.processInstanceId;
+
+    const before = await adminCaller.decision.getInstance({ instanceId });
+    expect(before.instanceData?.phases?.map(({ name }) => name)).toContain(
+      PHASE_NAME,
+    );
+
+    await adminCaller.decision.deletePhase({ phaseId: phase.id });
+
+    const after = await adminCaller.decision.getInstance({ instanceId });
+    expect(after.instanceData?.phases?.map(({ name }) => name)).not.toContain(
+      PHASE_NAME,
+    );
   });
 });
 

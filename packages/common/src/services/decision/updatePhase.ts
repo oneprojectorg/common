@@ -8,6 +8,7 @@ import {
 import type { User } from '@op/supabase/lib';
 
 import { NotFoundError, ValidationError } from '../../utils';
+import { invalidateDecisionInstance } from './decisionCache';
 import {
   type PhaseData,
   assertPhaseSchemasCompile,
@@ -96,7 +97,7 @@ export const updatePhase = async ({
     return { phase, profile };
   };
 
-  return db.transaction(async (tx) => {
+  const updated = await db.transaction(async (tx) => {
     const { result } = await mutatePhases({
       db: tx,
       processInstanceId,
@@ -104,6 +105,10 @@ export const updatePhase = async ({
     });
     return result;
   });
+
+  await invalidateDecisionInstance(processInstanceId);
+
+  return updated;
 };
 
 const toPhaseDataPatch = (
