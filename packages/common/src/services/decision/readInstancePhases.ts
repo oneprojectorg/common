@@ -15,6 +15,11 @@ interface InstanceWithData {
   instanceData: unknown;
 }
 
+const resolvedPhases = Symbol('resolvedPhases');
+
+/** An instance whose `instanceData.phases` holds its resolved phases. */
+export type PhasesResolved<T> = T & { readonly [resolvedPhases]: true };
+
 const NO_ROWS_WARNING =
   'Decision has no phase rows; reading instanceData.phases';
 
@@ -57,14 +62,28 @@ export const withInstancePhases = async <T extends InstanceWithData>({
   instance: T;
   db?: DbClient;
   fromRows?: boolean;
-}): Promise<T> => {
+}): Promise<PhasesResolved<T>> => {
   const [resolved] = await withInstancesPhases({
     instances: [instance],
     db,
     fromRows,
   });
-  return resolved ?? instance;
+  return resolved ?? markResolved(instance);
 };
+
+/**
+ * The instance as resolved, for a blob that already holds its phases: rebuilt
+ * from the rows by a save, or resolved in an earlier workflow step.
+ */
+export const withBlobPhases = <T extends InstanceWithData>({
+  instance,
+}: {
+  instance: T;
+}): PhasesResolved<T> => markResolved(instance);
+
+export const isPhasesResolved = <T extends object>(
+  instance: T,
+): instance is PhasesResolved<T> => resolvedPhases in instance;
 
 /** {@link withInstancePhases} for a list: one flag check, one rows query. */
 export const withInstancesPhases = async <T extends InstanceWithData>({
@@ -75,13 +94,13 @@ export const withInstancesPhases = async <T extends InstanceWithData>({
   instances: T[];
   db?: DbClient;
   fromRows?: boolean;
-}): Promise<T[]> => {
+}): Promise<PhasesResolved<T>[]> => {
   if (instances.length === 0) {
-    return instances;
+    return [];
   }
 
   if (!(fromRows ?? (await isPhasesFromRowsEnabled()))) {
-    return instances;
+    return instances.map(markResolved);
   }
 
   const rowsByInstance = await loadPhaseRowsByInstance({
@@ -138,13 +157,19 @@ const replacePhases = <T extends InstanceWithData>({
 }: {
   instance: T;
   phases: PhaseInstanceData[] | null;
-}): T =>
-  phases
-    ? {
-        ...instance,
-        instanceData: { ...asRecord(instance.instanceData), phases },
-      }
-    : instance;
+}): PhasesResolved<T> =>
+  markResolved(
+    phases
+      ? {
+          ...instance,
+          instanceData: { ...asRecord(instance.instanceData), phases },
+        }
+      : instance,
+  );
+
+const markResolved = <T extends InstanceWithData>(
+  instance: T,
+): PhasesResolved<T> => ({ ...instance, [resolvedPhases]: true });
 
 const asRecord = (value: unknown): object =>
   typeof value === 'object' && value !== null ? value : {};

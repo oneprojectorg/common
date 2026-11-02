@@ -30,7 +30,7 @@ import {
   isLikedByProfile,
   isProposalProfileMember,
 } from './proposalVisibility';
-import { withInstancePhases } from './readInstancePhases';
+import { type PhasesResolved, withInstancePhases } from './readInstancePhases';
 
 type InstanceScopeRow = Pick<
   typeof processInstances.$inferSelect,
@@ -45,7 +45,7 @@ type InstanceScopeRow = Pick<
 
 export interface ProposalListScope {
   /** Instance row reused by callers for template resolution and enrichment. */
-  instance: InstanceScopeRow;
+  instance: PhasesResolved<InstanceScopeRow>;
   currentProfileId: string | undefined;
   canManageProposals: boolean;
   profileRoles: NormalizedRole[];

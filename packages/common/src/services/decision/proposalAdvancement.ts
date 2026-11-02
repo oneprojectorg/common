@@ -8,7 +8,7 @@ import { isLegacyInstanceData } from './isLegacyInstance';
 import type { LockedProcessInstance } from './lockProcessInstance';
 import { phaseEligiblePredicate } from './phaseEligibility';
 import { assertDecisionAdmin } from './phaseHelpers';
-import { withInstancePhases } from './readInstancePhases';
+import { isPhasesResolved, withInstancePhases } from './readInstancePhases';
 import { resolveManualSelectionStatus } from './resolveManualSelectionStatus';
 import {
   type PhaseInstanceData,
@@ -64,6 +64,7 @@ export async function resolvePhaseAdvancement({
   fromRows,
 }: {
   dbClient: DbClient;
+  /** Used as is when its phases are resolved already. */
   instance: AdvancementInstance;
   /** Pass it in when holding the instance lock. */
   fromRows?: boolean;
@@ -78,11 +79,9 @@ export async function resolvePhaseAdvancement({
     return { ok: false, reason: NO_PHASE_TO_ADVANCE_INTO };
   }
 
-  const resolved = await withInstancePhases({
-    instance,
-    db: dbClient,
-    fromRows,
-  });
+  const resolved = isPhasesResolved(instance)
+    ? instance
+    : await withInstancePhases({ instance, db: dbClient, fromRows });
   const phases = getInstancePhases(resolved.instanceData);
   const currentIndex = phases.findIndex((p) => p.phaseId === currentStateId);
   const currentPhase = phases[currentIndex];
@@ -108,14 +107,7 @@ export async function resolvePhaseAdvancement({
       orderBy: { transitionedAt: 'desc' },
       columns: { id: true, toStateId: true },
     }),
-    resolveManualSelectionStatus({
-      instance: {
-        id: instance.id,
-        instanceData: resolved.instanceData,
-        currentStateId,
-      },
-      dbClient,
-    }),
+    resolveManualSelectionStatus({ instance: resolved, dbClient }),
   ]);
 
   if (latestTransition?.toStateId !== currentStateId) {

@@ -122,11 +122,7 @@ export const getInstance = async ({ instanceId, user }: GetInstanceInput) => {
       : instanceData;
 
     const manualSelectionStatus = await resolveManualSelectionStatus({
-      instance: {
-        id: instance.id,
-        instanceData: instance.instanceData,
-        currentStateId: instance.currentStateId,
-      },
+      instance,
     });
 
     return {

@@ -29,6 +29,7 @@ import {
 } from './proposalAuthor';
 import { parseProposalData } from './proposalDataSchema';
 import { buildProposalListPreview } from './proposalListPreview';
+import type { PhasesResolved } from './readInstancePhases';
 import { resolveProposalListScope } from './resolveProposalListScope';
 import { resolveProposalTemplatesByFormSchemaId } from './resolveProposalTemplate';
 import { getInstancePhases } from './schemas/instanceData';
@@ -427,18 +428,15 @@ async function getListAdvanceTarget({
   instance,
   includesNotAdvanced,
 }: {
-  instance: Parameters<typeof resolvePhaseAdvancement>[0]['instance'];
+  instance: PhasesResolved<
+    Parameters<typeof resolvePhaseAdvancement>[0]['instance']
+  >;
   includesNotAdvanced: boolean;
 }): Promise<ProposalAdvanceTarget | undefined> {
   if (!includesNotAdvanced) {
     return undefined;
   }
-  // `instance` comes from resolveProposalListScope with its phases resolved.
-  const advancement = await resolvePhaseAdvancement({
-    dbClient: db,
-    instance,
-    fromRows: false,
-  });
+  const advancement = await resolvePhaseAdvancement({ dbClient: db, instance });
   if (!advancement.ok) {
     return undefined;
   }
