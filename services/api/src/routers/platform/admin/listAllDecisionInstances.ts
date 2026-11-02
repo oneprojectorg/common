@@ -160,9 +160,9 @@ export const listAllDecisionInstancesRouter = router({
 
       const instanceIds = items.map((i) => i.id);
 
-      const proposalStats =
+      const [proposalStats, itemsWithPhases] = await Promise.all([
         instanceIds.length > 0
-          ? await db
+          ? db
               .select({
                 processInstanceId: proposals.processInstanceId,
                 proposalCount:
@@ -175,13 +175,13 @@ export const listAllDecisionInstancesRouter = router({
               .from(proposals)
               .where(inArray(proposals.processInstanceId, instanceIds))
               .groupBy(proposals.processInstanceId)
-          : [];
+          : [],
+        withInstancesPhases({ instances: items }),
+      ]);
 
       const statsByInstance = new Map(
         proposalStats.map((row) => [row.processInstanceId, row]),
       );
-
-      const itemsWithPhases = await withInstancesPhases({ instances: items });
 
       return {
         items: itemsWithPhases.map((instance) => {

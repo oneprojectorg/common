@@ -5,7 +5,10 @@ import { sql } from 'drizzle-orm';
 
 import { NotFoundError, ValidationError } from '../../utils';
 import { isPhasesFromRowsEnabled } from '../decision/readInstancePhases';
-import type { CustomFormProcessContext } from './customFormAuth';
+import type {
+  CustomFormPhaseSet,
+  CustomFormProcessContext,
+} from './customFormAuth';
 import { readInstancePhaseSet } from './customFormAuth';
 import { getEffectiveFormPhase } from './utils';
 
@@ -100,7 +103,7 @@ export const assertPhaseAvailable = async ({
   excludeFormId,
 }: {
   tx: TransactionType;
-  process: CustomFormProcessContext;
+  process: CustomFormProcessContext & CustomFormPhaseSet;
   phaseId: string;
   excludeFormId?: string;
 }): Promise<void> => {

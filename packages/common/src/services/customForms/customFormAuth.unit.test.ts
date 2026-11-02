@@ -27,7 +27,7 @@ vi.mock('../access', () => ({
     isUserEmailPlatformAdmin(...args),
 }));
 
-import { assertCustomFormAdmin } from './customFormAuth';
+import { assertCustomFormAdmin, readInstancePhaseSet } from './customFormAuth';
 
 const user = (email?: string) => ({ id: 'auth-user', email }) as User;
 
@@ -55,7 +55,8 @@ describe('assertCustomFormAdmin', () => {
     });
 
     expect(assertInstanceProfileAccess).not.toHaveBeenCalled();
-    expect(context.phaseIds).toEqual(['submission', 'voting']);
+    const phaseSet = await readInstancePhaseSet({ instance: context.instance });
+    expect(phaseSet.phaseIds).toEqual(['submission', 'voting']);
   });
 
   it('admits a decision-process admin', async () => {
@@ -117,7 +118,8 @@ describe('assertCustomFormAdmin', () => {
       profileId: 'decision-profile',
     });
 
-    expect(context.initialPhaseId).toBe('submission');
+    const phaseSet = await readInstancePhaseSet({ instance: context.instance });
+    expect(phaseSet.initialPhaseId).toBe('submission');
   });
 
   it('reports no phases when instanceData has none to parse', async () => {
@@ -133,8 +135,9 @@ describe('assertCustomFormAdmin', () => {
       profileId: 'decision-profile',
     });
 
-    expect(context.phaseIds).toEqual([]);
-    expect(context.initialPhaseId).toBeNull();
+    const phaseSet = await readInstancePhaseSet({ instance: context.instance });
+    expect(phaseSet.phaseIds).toEqual([]);
+    expect(phaseSet.initialPhaseId).toBeNull();
   });
 
   it('refuses a platform admin when the instance has no profile of its own', async () => {
