@@ -15,6 +15,7 @@ import {
   done,
   freeText,
   info,
+  infoHelp,
   join,
   list,
   more,
@@ -156,6 +157,8 @@ export const handleSMSCommand = inngest.createFunction(
         return more(context);
       case 'info':
         return info(context);
+      case 'info-help':
+        return infoHelp(context);
       case 'list':
         return list(context);
       case 'done':

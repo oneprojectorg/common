@@ -8,6 +8,7 @@ import {
   resolveVoterAddress,
   submitVote,
 } from '@op/common';
+import { SMS_KEYWORDS } from '@op/core/sms';
 import { and, asc, db, eq } from '@op/db/client';
 import {
   ProcessStatus,
@@ -40,6 +41,7 @@ const NUMBERS = {
   chatter: '+15005550095',
   joiner: '+15005550096',
   bareInfo: '+15005550097',
+  infoHelp: '+15005550038',
   owner: '+15005550098',
   outsider: '+15005550099',
   codeReply: '+15005550089',
@@ -206,6 +208,28 @@ describe('handleSMSCommand against the database', () => {
     expect(recordedSms.map((sms) => sms.body)).toEqual([
       `"Park Funding ${task.id}" (${slug}): Voting phase, voting open, 2 proposals.`,
     ]);
+  });
+
+  it('given a member texts INFO-HELP, then one reply names every command', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsCommandFixture(task.id, onTestFinished);
+    const phone = parsePhoneNumber(NUMBERS.infoHelp);
+    await fixture.createPhoneOnlyAccount(phone);
+    const t = new InngestTestEngine({ function: handleSMSCommand });
+
+    const { result } = await t.execute({
+      events: [smsInboundEvent({ from: phone, keyword: 'info-help' })],
+    });
+
+    expect(result).toEqual({ message: 'command list sent' });
+    expect(recordedSms).toHaveLength(1);
+    const [body] = recordedSms.map((sms) => sms.body);
+    for (const keyword of SMS_KEYWORDS) {
+      expect(body).toContain(keyword.toUpperCase());
+    }
+    expect(body!.length).toBeLessThanOrEqual(SMS_MAX_BODY_LENGTH);
   });
 
   it('given a member texts SHOW and the slug of a decision still taking submissions, then they are told voting is closed', async ({
