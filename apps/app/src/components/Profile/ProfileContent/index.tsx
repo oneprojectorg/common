@@ -271,8 +271,8 @@ const ProfileDecisions = ({ profile }: { profile: Profile }) => {
       <ProfileSectionHeading>
         {t('decisions.decisionsLabel')}
       </ProfileSectionHeading>
-      <Card>
-        <CardContent className="flex flex-col">
+      <Card className="py-6">
+        <CardContent className="flex flex-col px-6">
           {decisionProfiles.map((item, index) => (
             <Fragment key={item.id}>
               {index > 0 && <hr className="my-4" />}
@@ -337,14 +337,14 @@ export const OrganizationProfileGrid = ({
           </ProfileFeedProvider>
         </Suspense>
       </section>
-      <div className="flex flex-col gap-8 lg:w-90 lg:shrink-0 xl:w-104">
+      <div className="flex flex-col gap-10 lg:w-90 lg:shrink-0 xl:w-104">
         <Suspense fallback={null}>
           <ProfileDecisions profile={profile.profile} />
         </Suspense>
         <section className="flex flex-col gap-4">
           <ProfileSectionHeading>{t('profile.aboutTab')}</ProfileSectionHeading>
-          <Card>
-            <CardContent>
+          <Card className="py-6">
+            <CardContent className="px-6">
               <ProfileAbout profile={profile} />
             </CardContent>
           </Card>
