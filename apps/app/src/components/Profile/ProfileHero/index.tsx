@@ -3,7 +3,11 @@
 import { getPublicUrl } from '@/utils';
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { skipBatch, trpc } from '@op/api/client';
-import { type Organization, ProfileRelationshipType } from '@op/api/encoders';
+import {
+  type Organization,
+  type Profile,
+  ProfileRelationshipType,
+} from '@op/api/encoders';
 import { Header1 } from '@op/sense/Header';
 import { Skeleton } from '@op/sense/Skeleton';
 import Image from 'next/image';
@@ -21,19 +25,13 @@ export const ProfileHero = ({
   organization: Organization;
 }) => {
   const { profile } = organization;
-  const headerUrl = getPublicUrl(profile.headerImage?.name);
   const location = organization.whereWeWork
     .map((place) => place.name)
     .join(' • ');
 
   return (
     <section className="relative isolate flex flex-col md:min-h-46 md:justify-end">
-      <div className="relative h-30 bg-hero md:absolute md:inset-0 md:-z-10 md:h-auto">
-        {headerUrl ? (
-          <Image src={headerUrl} alt="" fill className="object-cover" />
-        ) : null}
-        <div className="absolute inset-0 hidden bg-linear-to-t from-hero/80 to-transparent md:block" />
-      </div>
+      <ProfileHeroCover profile={profile} />
 
       <div className="relative flex flex-col gap-2 px-4 pb-4 md:static md:px-6 md:pt-6 md:pb-6 md:text-hero-foreground">
         <div className="-mt-8 flex flex-wrap items-end justify-between gap-3 md:mt-0">
@@ -73,6 +71,19 @@ export const ProfileHero = ({
         </APIErrorBoundary>
       </div>
     </section>
+  );
+};
+
+const ProfileHeroCover = ({ profile }: { profile: Profile }) => {
+  const headerUrl = getPublicUrl(profile.headerImage?.name);
+
+  return (
+    <div className="relative h-30 bg-hero md:absolute md:inset-0 md:-z-10 md:h-auto">
+      {headerUrl ? (
+        <Image src={headerUrl} alt="" fill className="object-cover" />
+      ) : null}
+      <div className="absolute inset-0 hidden bg-linear-to-t from-hero/80 to-transparent md:block" />
+    </div>
   );
 };
 
