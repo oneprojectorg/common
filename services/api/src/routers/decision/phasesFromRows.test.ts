@@ -133,7 +133,6 @@ const reviewSchema = {
 const ROW_START = '2031-01-01T00:00:00.000Z';
 const ROW_END = '2031-02-01T00:00:00.000Z';
 
-/** Dates the blob never had, so only a row read can return them. */
 const leaveOnlyRows = (instanceId: string) =>
   leaveOnlyPhaseRows(instanceId, { startDate: ROW_START, endDate: ROW_END });
 

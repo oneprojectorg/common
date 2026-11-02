@@ -62,7 +62,6 @@ export async function resolvePhaseAdvancement({
 }: {
   dbClient: DbClient;
   instance: AdvancementInstance;
-  /** Pass it in when holding the instance lock. */
   fromRows?: boolean;
 }): Promise<PhaseAdvancement> {
   const { currentStateId, instanceData } = instance;

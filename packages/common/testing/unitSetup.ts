@@ -1,6 +1,5 @@
 import { vi } from 'vitest';
 
-// Server flags read as off; a test that needs one on stubs the switch itself.
 process.env.NEXT_PUBLIC_E2E = '';
 
 const UNIT_DATABASE_GUARD_MESSAGE =
