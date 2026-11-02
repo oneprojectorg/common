@@ -4,6 +4,7 @@ import { ProcessStatus, processInstances } from '@op/db/schema';
 import { CommonError } from '../../utils';
 import { lockProcessInstanceOrThrow } from './lockProcessInstance';
 import { type DecisionPhase, listPhases, phaseIdOf } from './phaseHelpers';
+import { withBlobPhases } from './readInstancePhases';
 import {
   type PhaseInstanceData,
   getInstancePhases,
@@ -84,7 +85,10 @@ export const mutatePhases = async <T>({
 
   // Drafts hold no transitions; a save deletes them.
   if (updated.status !== ProcessStatus.DRAFT) {
-    await updateTransitionsForProcess({ processInstance: updated, db });
+    await updateTransitionsForProcess({
+      processInstance: withBlobPhases({ instance: updated }),
+      db,
+    });
   }
 
   return { result, phases: written };
