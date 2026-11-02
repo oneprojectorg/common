@@ -8,7 +8,7 @@ import {
   type Profile,
 } from '@op/api/encoders';
 import { formatToUrl } from '@op/common/validation';
-import { Card, CardContent, CardFooter, CardHeader } from '@op/sense/Card';
+import { Card, CardContent } from '@op/sense/Card';
 import { Header2, Header3 } from '@op/sense/Header';
 import { Skeleton } from '@op/sense/Skeleton';
 import { TabsContent, TabsList, TabsTrigger } from '@op/sense/Tabs';
@@ -132,11 +132,6 @@ const ProfileAbout = ({
 
   return (
     <div className={cn('flex flex-col gap-2 sm:gap-6', className)}>
-      {orgType ? (
-        <Header2 className="text-label leading-normal">
-          {t('profile.aboutTab')}
-        </Header2>
-      ) : null}
       <div className="flex flex-col gap-10 rounded border p-4 sm:rounded-none sm:border-none sm:p-0">
         {email || website ? (
           <section className="flex flex-col gap-2">
@@ -272,29 +267,27 @@ const ProfileDecisions = ({ profile }: { profile: Profile }) => {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <Header2 className="text-label leading-normal">
-          {t('decisions.decisionsLabel')}
-        </Header2>
-      </CardHeader>
-      <CardContent className="flex flex-col">
-        {decisionProfiles.map((item, index) => (
-          <Fragment key={item.id}>
-            {index > 0 && <hr />}
-            <ProfileDecisionListItem item={item} className="py-4" />
-          </Fragment>
-        ))}
-      </CardContent>
-      <CardFooter>
-        <Link
-          href={`/org/${profile.slug}?tab=decisions`}
-          className="text-primary"
-        >
-          {t('profile.seeAllDecisionsAction')}
-        </Link>
-      </CardFooter>
-    </Card>
+    <section className="flex flex-col gap-4">
+      <ProfileSectionHeading>
+        {t('decisions.decisionsLabel')}
+      </ProfileSectionHeading>
+      <Card>
+        <CardContent className="flex flex-col">
+          {decisionProfiles.map((item, index) => (
+            <Fragment key={item.id}>
+              {index > 0 && <hr className="my-4" />}
+              <ProfileDecisionListItem item={item} />
+            </Fragment>
+          ))}
+        </CardContent>
+      </Card>
+      <Link
+        href={`/org/${profile.slug}?tab=decisions`}
+        className="text-primary"
+      >
+        {t('profile.seeAllDecisionsAction')}
+      </Link>
+    </section>
   );
 };
 
@@ -325,13 +318,16 @@ export const OrganizationProfileGrid = ({
 
   return (
     <div className="hidden w-full gap-6 pb-6 sm:flex sm:flex-col lg:flex-row lg:items-start">
-      <div className="flex min-w-0 flex-1 flex-col">
+      <section className="flex min-w-0 flex-1 flex-col gap-4">
+        <ProfileSectionHeading>
+          {t('profile.updatesHeading')}
+        </ProfileSectionHeading>
         {isOrg ? (
           <Suspense fallback={null}>
             <PostUpdate
               organization={profile}
               label={t('Post')}
-              className="rounded-none border-x-0 border-t-0 border-b px-0 pt-0 pb-6"
+              className="rounded-lg p-4"
             />
           </Suspense>
         ) : null}
@@ -340,16 +336,19 @@ export const OrganizationProfileGrid = ({
             {(props) => <ProfileFeedList {...props} />}
           </ProfileFeedProvider>
         </Suspense>
-      </div>
-      <div className="flex flex-col gap-4 lg:w-90 lg:shrink-0 xl:w-104">
+      </section>
+      <div className="flex flex-col gap-8 lg:w-90 lg:shrink-0 xl:w-104">
         <Suspense fallback={null}>
           <ProfileDecisions profile={profile.profile} />
         </Suspense>
-        <Card>
-          <CardContent>
-            <ProfileAbout profile={profile} />
-          </CardContent>
-        </Card>
+        <section className="flex flex-col gap-4">
+          <ProfileSectionHeading>{t('profile.aboutTab')}</ProfileSectionHeading>
+          <Card>
+            <CardContent>
+              <ProfileAbout profile={profile} />
+            </CardContent>
+          </Card>
+        </section>
       </div>
     </div>
   );
@@ -482,7 +481,12 @@ export const ProfileTabsMobile = ({
               <ProfileDecisions profile={profile.profile} />
             </Suspense>
             <hr />
-            <ProfileAbout profile={profile} />
+            <section className="flex flex-col gap-2">
+              <ProfileSectionHeading>
+                {t('profile.aboutTab')}
+              </ProfileSectionHeading>
+              <ProfileAbout profile={profile} />
+            </section>
             <hr />
             <Suspense fallback={<Skeleton className="min-h-20 w-full" />}>
               <div className="-mx-4">
@@ -537,3 +541,7 @@ export const ProfileTabsMobile = ({
     </ProfileTabsWithQuery>
   );
 };
+
+const ProfileSectionHeading = ({ children }: { children: ReactNode }) => (
+  <Header2 className="text-title">{children}</Header2>
+);
