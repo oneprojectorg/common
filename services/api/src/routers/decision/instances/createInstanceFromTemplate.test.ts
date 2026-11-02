@@ -86,12 +86,12 @@ const badPhaseIdCases: {
 }[] = [
   {
     label: 'a phase with no id',
-    message: /A phase has no id/,
+    message: /There is a phase with no id/,
     phases: [{ ...firstPhase, id: '' }, secondPhase!, ...laterPhases],
   },
   {
     label: 'two phases with one id',
-    message: /Two phases share the id "submission"/,
+    message: /There are two phases with the id "submission"/,
     phases: [
       firstPhase,
       { ...secondPhase!, id: firstPhase.id },
