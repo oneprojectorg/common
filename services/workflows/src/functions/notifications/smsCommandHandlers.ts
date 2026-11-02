@@ -650,7 +650,7 @@ const readBallot = async <T>(fn: () => Promise<T>): Promise<BallotRead<T>> => {
 };
 
 const refuseBallotRead = async (
-  { step, deliver, line }: SmsCommandContext,
+  { step, account, deliver, line }: SmsCommandContext,
   refusal: BallotRefusal,
   instanceId: string,
 ): Promise<SmsCommandResult> => {
@@ -674,8 +674,19 @@ const refuseBallotRead = async (
     );
   }
   const decision = await step.run('describe-ballot-decision', () =>
-    describeEnrolmentDecision({ instanceId }),
+    swallowUnreadable(() =>
+      describeEnrolmentDecision({ instanceId, authUserId: account.authUserId }),
+    ),
   );
+  if (!decision) {
+    return deliverAll(
+      deliver,
+      'send-ballot-unavailable',
+      'Ballot unavailable reply',
+      [SMS_BALLOT_UNAVAILABLE_MESSAGE],
+      'decision not found',
+    );
+  }
   return reason === 'closed'
     ? deliverAll(
         deliver,
