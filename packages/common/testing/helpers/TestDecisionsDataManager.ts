@@ -781,7 +781,6 @@ export class TestDecisionsDataManager {
           validProfileIds.map((id) => `proposal-location:${id}`),
         ),
       );
-      // Phase profiles don't cascade; the subquery finds them before the cascade drops their rows.
       await db
         .delete(profiles)
         .where(
