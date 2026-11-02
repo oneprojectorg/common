@@ -34,15 +34,6 @@ const ProfileWithData = async ({
       fetchOrganizationBySlug(slug).catch(() => null),
     ]);
 
-    const { headerImage, avatarImage } = profile;
-    const headerUrl = getPublicUrl(headerImage?.name);
-    const avatarUrl = getPublicUrl(avatarImage?.name);
-
-    const gradientBg = getGradientForString(profile.name || 'Common');
-    const gradientBgHeader = getGradientForString(
-      profile.name + 'C' || 'Common',
-    );
-
     if (profile.type === 'org') {
       return organization ? (
         <>
@@ -55,6 +46,15 @@ const ProfileWithData = async ({
         </>
       ) : null;
     }
+
+    const { headerImage, avatarImage } = profile;
+    const headerUrl = getPublicUrl(headerImage?.name);
+    const avatarUrl = getPublicUrl(avatarImage?.name);
+
+    const gradientBg = getGradientForString(profile.name || 'Common');
+    const gradientBgHeader = getGradientForString(
+      profile.name + 'C' || 'Common',
+    );
 
     // For user profiles, create a simplified profile object based on the profile data
     // TODO: this is jammed in until we update the individual profile and a better typing
