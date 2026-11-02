@@ -18,6 +18,10 @@ import {
   type PhaseSettingsSchema,
   assertSettingsMatchSchema,
 } from './schemas/instanceData';
+import {
+  MAX_PHASE_NAME_LENGTH,
+  PHASE_NAME_TOO_LONG,
+} from './schemas/phaseName';
 
 // phaseId and name live on the phase's profile.
 export type PhaseData = Omit<PhaseInstanceData, 'phaseId' | 'name'>;
@@ -86,6 +90,9 @@ export const assertPhasesCanBeMinted = (
       });
     }
     phaseIds.add(phase.phaseId);
+    if (getPhaseProfileName(phase).length > MAX_PHASE_NAME_LENGTH) {
+      throw new ValidationError(PHASE_NAME_TOO_LONG, { name: 'Too long' });
+    }
   }
 };
 
