@@ -1239,6 +1239,7 @@
       "awardedOfBudget": "<highlight>{awarded}</highlight> oo ka mid ah {budget} la qoondeeyey",
       "overBudgetWarning": "Miisaaniyadda waxaa laga badiyey {amount}",
       "mixedCurrenciesWarning": "Lacagaha la bixiyey waxay isticmaalaan lacago kala duwan, sidaas darteed wadarta laguma hubin karo miisaaniyadda",
+      "awardsChangedWarning": "Lacagaha la bixiyey way isbeddeleen tan iyo markii ugu dambeysay ee aad eegtay. Hubi, kadibna sii wad",
       "totalAwardedLabel": "Wadarta la bixiyay"
     },
     "proposals": {

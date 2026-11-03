@@ -1239,6 +1239,7 @@
       "awardedOfBudget": "{budget}-এর মধ্যে <highlight>{awarded}</highlight> বরাদ্দ",
       "overBudgetWarning": "বাজেটের চেয়ে {amount} বেশি",
       "mixedCurrenciesWarning": "প্রদত্ত অর্থ ভিন্ন ভিন্ন মুদ্রায় রয়েছে, তাই মোট পরিমাণ বাজেটের সাথে যাচাই করা যাচ্ছে না",
+      "awardsChangedWarning": "আপনি শেষবার দেখার পর প্রদত্ত অর্থের পরিমাণ পরিবর্তিত হয়েছে। সেগুলি যাচাই করে এগিয়ে যান",
       "totalAwardedLabel": "মোট প্রদত্ত"
     },
     "proposals": {

@@ -192,8 +192,14 @@ describe('ComposeNotificationsDialog awarded amounts', () => {
     expect(onConfirm).not.toHaveBeenCalled();
     const dialog = confirmDialog();
     expect(within(dialog).getByText('$7,000 Awarded')).toBeTruthy();
+    const warning = within(dialog).getByRole('alert');
+    expect(warning.textContent).toContain(
+      'The award amounts changed since you last reviewed them',
+    );
+    expect(document.activeElement).toBe(warning);
 
     await user.click(within(dialog).getByRole('button', { name: 'Continue' }));
+    expect(screen.queryByRole('alert')).toBeNull();
     expect(
       screen.getByRole('tab', { name: /^Advanced\s*2 proposals$/ }),
     ).toBeTruthy();

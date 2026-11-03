@@ -1239,6 +1239,7 @@
       "awardedOfBudget": "<highlight>{awarded}</highlight> / {budget} felhasználva",
       "overBudgetWarning": "{amount} összeggel a keret felett",
       "mixedCurrenciesWarning": "Az odaítélt összegek eltérő pénznemben vannak, így a végösszeg nem vethető össze a kerettel",
+      "awardsChangedWarning": "Az odaítélt összegek megváltoztak az utolsó áttekintés óta. Ellenőrizd őket, majd folytasd",
       "totalAwardedLabel": "Összesen odaítélve"
     },
     "proposals": {

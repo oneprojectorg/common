@@ -1239,6 +1239,7 @@
       "awardedOfBudget": "<highlight>{awarded}</highlight> of {budget} allocated",
       "overBudgetWarning": "Over budget by {amount}",
       "mixedCurrenciesWarning": "The awards use different currencies, so the total cannot be checked against the budget",
+      "awardsChangedWarning": "The award amounts changed since you last reviewed them. Check them, then continue",
       "totalAwardedLabel": "Total awarded"
     },
     "proposals": {

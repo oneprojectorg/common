@@ -1239,6 +1239,7 @@
       "awardedOfBudget": "<highlight>{awarded}</highlight> sur {budget} alloués",
       "overBudgetWarning": "Dépassement du budget de {amount}",
       "mixedCurrenciesWarning": "Les montants attribués utilisent des devises différentes, le total ne peut donc pas être comparé au budget",
+      "awardsChangedWarning": "Les montants attribués ont changé depuis votre dernière vérification. Vérifiez-les, puis continuez",
       "totalAwardedLabel": "Total attribué"
     },
     "proposals": {
