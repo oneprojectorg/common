@@ -9,6 +9,7 @@ import {
   insertReviewAssignments,
 } from './insertReviewAssignments';
 import { pickSingleReviewerAssignments } from './pickSingleReviewerAssignments';
+import { withInstancePhases } from './readInstancePhases';
 import type { DecisionInstanceData } from './schemas/instanceData';
 import { getPhaseReviewSettings } from './utils/phaseSettings';
 
@@ -67,8 +68,9 @@ export async function generateReviewAssignments({
     return;
   }
 
+  const { instanceData } = await withInstancePhases({ instance });
   const { scope, policy } = getPhaseReviewSettings(
-    instance.instanceData as DecisionInstanceData,
+    instanceData as DecisionInstanceData,
     phaseId,
   );
 

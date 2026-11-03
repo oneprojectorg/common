@@ -1,7 +1,9 @@
 import {
-  type DecisionInstanceData,
+  getInstancePhases,
   listProcessParticipants,
   resolveManualSelectionStatus,
+  withBlobPhases,
+  withInstancePhases,
 } from '@op/common';
 import { selectEmailRecipients } from '@op/common/client';
 import { OPURLConfig } from '@op/core';
@@ -46,7 +48,18 @@ export const sendPhaseTransitionNotification = inngest.createFunction(
         .where(eq(processInstances.id, processInstanceId))
         .limit(1);
 
-      return instance[0];
+      const [row] = instance;
+      if (!row) {
+        return undefined;
+      }
+
+      const resolved = await withInstancePhases({
+        instance: { ...row, id: processInstanceId },
+      });
+      return {
+        ...resolved,
+        phases: [...getInstancePhases(resolved.instanceData)],
+      };
     });
 
     if (!processData) {
@@ -70,11 +83,13 @@ export const sendPhaseTransitionNotification = inngest.createFunction(
       'check-manual-selection',
       async () =>
         resolveManualSelectionStatus({
-          instance: {
-            id: processInstanceId,
-            instanceData: processData.instanceData,
-            currentStateId: processData.currentStateId,
-          },
+          instance: withBlobPhases({
+            instance: {
+              id: processInstanceId,
+              instanceData: processData.instanceData,
+              currentStateId: processData.currentStateId,
+            },
+          }),
         }),
     );
 
@@ -85,8 +100,7 @@ export const sendPhaseTransitionNotification = inngest.createFunction(
     }
 
     // Resolve phase name and position from instance data
-    const instanceData = processData.instanceData as DecisionInstanceData;
-    const phases = instanceData?.phases ?? [];
+    const { phases } = processData;
     const toPhaseIndex = phases.findIndex((p) => p.phaseId === toPhaseId);
     const toPhaseName = phases[toPhaseIndex]?.name ?? toPhaseId;
     const phaseNumber = toPhaseIndex !== -1 ? toPhaseIndex + 1 : 1;

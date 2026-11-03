@@ -6,6 +6,7 @@ import { permission } from 'access-zones';
 import { UnauthorizedError } from '../../utils';
 import type { AccessUser } from '../access/cacheKeys';
 import { assertProfileAccess } from '../assert';
+import { withInstancePhases } from './readInstancePhases';
 
 const decisionProfileQueryConfig = {
   with: {
@@ -101,6 +102,6 @@ export const getDecisionBySlug = async ({
 
   return {
     ...profile,
-    processInstance: instance,
+    processInstance: await withInstancePhases({ instance }),
   };
 };

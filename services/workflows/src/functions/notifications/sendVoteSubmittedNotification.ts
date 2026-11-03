@@ -1,4 +1,4 @@
-import { listProfileRecipients } from '@op/common';
+import { listProfileRecipients, readInstancePhases } from '@op/common';
 import { selectEmailRecipients } from '@op/common/client';
 import { OPURLConfig } from '@op/core';
 import { db } from '@op/db/client';
@@ -68,6 +68,7 @@ export const sendVoteSubmittedNotification = inngest.createFunction(
           voterProfileType: voterProfile.type,
           processProfileName: processProfile.name,
           processProfileSlug: processProfile.slug,
+          instanceId: processInstances.id,
           instanceData: processInstances.instanceData,
           currentStateId: processInstances.currentStateId,
         })
@@ -87,7 +88,18 @@ export const sendVoteSubmittedNotification = inngest.createFunction(
         .where(eq(decisionsVoteSubmissions.id, voteSubmissionId))
         .limit(1);
 
-      return result[0];
+      const [row] = result;
+      if (!row) {
+        return undefined;
+      }
+
+      const { instanceId, instanceData, ...vote } = row;
+      return {
+        ...vote,
+        phases: await readInstancePhases({
+          instance: { id: instanceId, instanceData },
+        }),
+      };
     });
 
     if (!voteData) {
@@ -114,11 +126,7 @@ export const sendVoteSubmittedNotification = inngest.createFunction(
 
     const decisionUrl = `${OPURLConfig('APP').ENV_URL}/decisions/${voteData.processProfileSlug}`;
 
-    const instanceData = voteData.instanceData as {
-      phases?: PhaseData[];
-    } | null;
-    const phases = instanceData?.phases ?? [];
-    const nextSteps = getNextSteps(phases, voteData.currentStateId);
+    const nextSteps = getNextSteps(voteData.phases, voteData.currentStateId);
 
     // Step 3: Send notification email
     await step.run('send-email', async () => {

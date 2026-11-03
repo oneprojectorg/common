@@ -1,4 +1,11 @@
-import { type TransactionType, db } from '@op/db/client';
+import {
+  type DbClient,
+  type TransactionType,
+  asc,
+  db,
+  eq,
+  inArray,
+} from '@op/db/client';
 import {
   EntityType,
   type ProcessPhase,
@@ -21,6 +28,18 @@ import {
 
 // phaseId and name live on the phase's profile.
 export type PhaseData = Omit<PhaseInstanceData, 'phaseId' | 'name'>;
+
+// TODO: drop phaseId from row data once every reference uses the row id.
+type PhaseRowData = PhaseData & { phaseId?: string };
+
+export interface DecisionPhase {
+  id: string;
+  profileId: string;
+  sortOrder: number;
+  data: PhaseRowData;
+  name: string;
+  slug: string;
+}
 
 export { MAX_PHASES_PER_DECISION } from './utils/phaseOrder';
 
@@ -62,6 +81,51 @@ export const insertPhase = async ({
 
   return { phase, profile };
 };
+
+export const listPhasesByInstance = async ({
+  db,
+  processInstanceIds,
+}: {
+  db: DbClient;
+  processInstanceIds: string[];
+}): Promise<Map<string, DecisionPhase[]>> => {
+  const phasesByInstance = new Map<string, DecisionPhase[]>();
+
+  if (processInstanceIds.length === 0) {
+    return phasesByInstance;
+  }
+
+  const rows = await db
+    .select({
+      processInstanceId: processPhases.processInstanceId,
+      id: processPhases.id,
+      profileId: processPhases.profileId,
+      sortOrder: processPhases.sortOrder,
+      data: processPhases.data,
+      name: profiles.name,
+      slug: profiles.slug,
+    })
+    .from(processPhases)
+    .innerJoin(profiles, eq(profiles.id, processPhases.profileId))
+    .where(inArray(processPhases.processInstanceId, processInstanceIds))
+    .orderBy(
+      asc(processPhases.processInstanceId),
+      asc(processPhases.sortOrder),
+      asc(processPhases.id),
+    );
+
+  for (const { processInstanceId, ...phase } of rows) {
+    const phases = phasesByInstance.get(processInstanceId) ?? [];
+    phases.push({ ...phase, data: readPhaseRowData(phase.data) });
+    phasesByInstance.set(processInstanceId, phases);
+  }
+
+  return phasesByInstance;
+};
+
+// TODO: remove once references store the row id instead of data.phaseId.
+export const phaseIdOf = (phase: DecisionPhase): string =>
+  phase.data.phaseId ?? phase.slug;
 
 export const assertPhaseSchemasCompile = ({
   rubricTemplate,
@@ -198,6 +262,12 @@ const generatePhaseSlug = () => randomUUID().slice(0, 8);
 
 const isJsonObject = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
+
+const isPhaseRowData = (value: unknown): value is PhaseRowData =>
+  isJsonObject(value);
+
+const readPhaseRowData = (data: unknown): PhaseRowData =>
+  isPhaseRowData(data) ? data : {};
 
 // Shape only; Ajv compiles it when the settings are checked.
 const isSettingsSchema = (value: unknown): value is PhaseSettingsSchema =>

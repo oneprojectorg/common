@@ -30,6 +30,7 @@ import {
   isLikedByProfile,
   isProposalProfileMember,
 } from './proposalVisibility';
+import { type PhasesResolved, withInstancePhases } from './readInstancePhases';
 
 type InstanceScopeRow = Pick<
   typeof processInstances.$inferSelect,
@@ -44,7 +45,7 @@ type InstanceScopeRow = Pick<
 
 export interface ProposalListScope {
   /** Instance row reused by callers for template resolution and enrichment. */
-  instance: InstanceScopeRow;
+  instance: PhasesResolved<InstanceScopeRow>;
   currentProfileId: string | undefined;
   canManageProposals: boolean;
   profileRoles: NormalizedRole[];
@@ -237,10 +238,11 @@ export const resolveProposalListScope = async ({
 
   const explicitScopeIds = explicitScope?.ids;
 
-  const instance = instanceRows[0];
-  if (!instance?.profileId) {
+  const instanceRow = instanceRows[0];
+  if (!instanceRow?.profileId) {
     throw new UnauthorizedError('User does not have access to this process');
   }
+  const instance = await withInstancePhases({ instance: instanceRow });
 
   // Resolve phase-scope SQL predicates for non-drafts and drafts. Drafts are
   // phase-scoped via a `createdAt` window since they're never attached to

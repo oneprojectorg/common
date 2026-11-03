@@ -13,6 +13,7 @@ import {
   hasLinkedDecisionBoundaries,
   resolveBoundary,
 } from './resolveBoundary';
+import { withInstancePhases } from './readInstancePhases';
 import { getInstancePhases } from './schemas/instanceData';
 import { getInstanceCurrentPhase } from './utils/instance';
 import { getVoterEnrolment } from './utils/phaseSettings';
@@ -38,7 +39,7 @@ const loadEnrolmentContext = async ({
   processInstanceId,
   authUserId,
 }: EnrolmentKey) => {
-  const [profileId, instance] = await Promise.all([
+  const [profileId, row] = await Promise.all([
     getIndividualProfileId(authUserId),
     db.query.processInstances.findFirst({
       where: { id: processInstanceId },
@@ -51,9 +52,11 @@ const loadEnrolmentContext = async ({
     }),
   ]);
 
-  if (!instance) {
+  if (!row) {
     throw new NotFoundError('Process instance', processInstanceId);
   }
+
+  const instance = await withInstancePhases({ instance: row });
 
   const phase = getInstanceCurrentPhase({
     currentStateId: instance.currentStateId,

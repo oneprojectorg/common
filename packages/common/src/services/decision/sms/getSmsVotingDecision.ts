@@ -6,6 +6,7 @@ import { NotFoundError } from '../../../utils';
 import { assertProfileAccess } from '../../assert';
 import { formatUnitAmount, getFieldUnit } from '../fieldUnit';
 import { getDecisionBySlug } from '../getDecisionBySlug';
+import { withInstancePhases } from '../readInstancePhases';
 import { resolveProposalTemplate } from '../resolveProposalTemplate';
 import { getInstancePhases } from '../schemas/instanceData';
 import type { VoterEnrolmentRule } from '../schemas/types';
@@ -120,6 +121,6 @@ export async function describeEnrolmentDecision({
   return summarizeVotingInstance(
     instance.profile.name,
     instance.profile.slug,
-    instance,
+    await withInstancePhases({ instance }),
   );
 }

@@ -1,5 +1,5 @@
 import { ProposalStatus } from '@op/db/schema';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Boundary mock: drive the one read and the recipient lookup, assert the skip
 // rules.

@@ -2,7 +2,8 @@ import { db } from '@op/db/client';
 import type { DbClient } from '@op/db/client';
 
 import { isLegacyInstanceData } from './isLegacyInstance';
-import type { DecisionInstanceData } from './schemas/instanceData';
+import type { PhasesResolved } from './readInstancePhases';
+import { getInstancePhases } from './schemas/instanceData';
 import type { TransitionData } from './schemas/transitionData';
 
 export type InstanceForStatusResolution = {
@@ -27,7 +28,7 @@ export async function resolveManualSelectionStatus({
   instance,
   dbClient = db,
 }: {
-  instance: InstanceForStatusResolution;
+  instance: PhasesResolved<InstanceForStatusResolution>;
   dbClient?: DbClient;
 }): Promise<ManualSelectionStatus> {
   if (isLegacyInstanceData(instance.instanceData)) {
@@ -39,9 +40,8 @@ export async function resolveManualSelectionStatus({
     return { selectionsAreConfirmed: true };
   }
 
-  const instanceData = instance.instanceData as DecisionInstanceData | null;
-  const phases = instanceData?.phases;
-  if (!phases || phases.length === 0) {
+  const phases = getInstancePhases(instance.instanceData);
+  if (phases.length === 0) {
     return { selectionsAreConfirmed: true };
   }
 

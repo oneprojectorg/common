@@ -23,12 +23,16 @@ import { isLegacyInstanceData } from './isLegacyInstance';
 import { lockProcessInstance } from './lockProcessInstance';
 import { processResults } from './processResults';
 import {
+  isPhasesFromRowsEnabled,
+  readInstancePhases,
+} from './readInstancePhases';
+import {
   RESULT_NOTIFICATION_MESSAGE_MAX_LENGTH,
   type ResultNotificationMessages,
   resultNotificationMessagesSchema,
 } from './resultNotificationTemplate';
 import { runGenerateReviewAssignments } from './runGenerateReviewAssignments';
-import { type DecisionInstanceData, isLastPhase } from './schemas/instanceData';
+import { isLastPhase } from './schemas/instanceData';
 import {
   type ProposalAllocation,
   proposalAllocationSchema,
@@ -131,6 +135,7 @@ export async function submitManualSelection({
   let reviewAssignmentInput:
     | Parameters<typeof runGenerateReviewAssignments>[0]
     | null = null;
+  const fromRows = await isPhasesFromRowsEnabled();
 
   await db.transaction(async (tx) => {
     // Lock the instance row so a concurrent advancePhase can't move the
@@ -156,15 +161,19 @@ export async function submitManualSelection({
       );
     }
 
-    const lockedData =
-      lockedInstance.instanceData as DecisionInstanceData | null;
-    const lockedPhases = lockedData?.phases;
-    const lockedPhaseIndex =
-      lockedPhases?.findIndex((p) => p.phaseId === currentStateId) ?? -1;
+    const lockedPhases = await readInstancePhases({
+      instance: {
+        id: processInstanceId,
+        instanceData: lockedInstance.instanceData,
+      },
+      db: tx,
+      fromRows,
+    });
+    const lockedPhaseIndex = lockedPhases.findIndex(
+      (p) => p.phaseId === currentStateId,
+    );
     const lockedPreviousPhase =
-      lockedPhases && lockedPhaseIndex > 0
-        ? lockedPhases[lockedPhaseIndex - 1]
-        : undefined;
+      lockedPhaseIndex > 0 ? lockedPhases[lockedPhaseIndex - 1] : undefined;
     if (!lockedPreviousPhase) {
       throw new ValidationError(
         'Manual selection is not available for this instance',
@@ -269,8 +278,8 @@ export async function submitManualSelection({
     // generateReviewAssignments reads the just-attached decisionTransitionProposals
     // rows and writes assignments on the pooled `db` connection, which can't see
     // this transaction's uncommitted writes (mirrors onPhaseAdvanced's ordering).
-    const currentPhase = lockedPhases?.[lockedPhaseIndex];
-    if (lockedPhases && currentPhase && isReviewPhase(currentPhase)) {
+    const currentPhase = lockedPhases[lockedPhaseIndex];
+    if (currentPhase && isReviewPhase(currentPhase)) {
       reviewAssignmentInput = {
         instanceId: processInstanceId,
         fromPhaseId: lockedPreviousPhaseId,
@@ -284,7 +293,7 @@ export async function submitManualSelection({
       };
     }
 
-    const publishesResults = isLastPhase(currentStateId, lockedPhases ?? []);
+    const publishesResults = isLastPhase(currentStateId, lockedPhases);
     if (!publishesResults && allocatedByProposalId) {
       throw new ValidationError(
         'Amounts are only awarded when confirming the final phase',

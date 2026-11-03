@@ -1,6 +1,6 @@
 import { db } from '@op/db/client';
 
-import { advancePhase, getInstancePhases } from '../../src';
+import { advancePhase, withInstancePhases } from '../../src';
 
 export async function advanceInstancePhase({
   instanceId,
@@ -18,15 +18,11 @@ export async function advanceInstancePhase({
   if (!processInstance) {
     throw new Error(`Instance ${instanceId} not found`);
   }
+  const instance = await withInstancePhases({ instance: processInstance });
   return db.transaction((tx) =>
     advancePhase({
       db: tx,
-      instance: {
-        id: processInstance.id,
-        instanceData: {
-          phases: [...getInstancePhases(processInstance.instanceData)],
-        },
-      },
+      instance,
       fromPhaseId,
       toPhaseId,
       triggeredByProfileId: null,

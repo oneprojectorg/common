@@ -17,6 +17,7 @@ import {
   getProposalIdsForPhase,
 } from './getProposalsForPhase';
 import { normalizeBudget } from './proposalDataSchema';
+import { readInstancePhases } from './readInstancePhases';
 import {
   type ResultNotificationMessages,
   type ResultNotificationOutcome,
@@ -24,7 +25,6 @@ import {
   formatResultAmount,
   resultNotificationMessagesSchema,
 } from './resultNotificationTemplate';
-import { getInstancePhases } from './schemas/instanceData';
 import type { TransitionData } from './schemas/transitionData';
 import { isProposalReachable } from './utils/proposal';
 
@@ -148,7 +148,7 @@ export async function listResultNotificationRecipients({
   );
 
   const phase =
-    getInstancePhases(instance.instanceData).find(
+    (await readInstancePhases({ instance })).find(
       ({ phaseId }) => phaseId === composed.toStateId,
     )?.name ?? '';
   const recipients = reachable.flatMap((proposal) =>
