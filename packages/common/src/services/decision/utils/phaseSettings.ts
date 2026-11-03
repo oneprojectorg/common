@@ -2,7 +2,12 @@ import {
   DEFAULT_REVIEWS_POLICY,
   DEFAULT_REVIEWS_SCOPE,
 } from '../schemas/types';
-import type { PhaseReviewSettings, ReviewsPolicy } from '../schemas/types';
+import type {
+  PhaseReviewSettings,
+  PhaseRules,
+  ReviewsPolicy,
+  VoterEnrolmentRule,
+} from '../schemas/types';
 import { assertInstancePhase } from './instance';
 import { getPreviousPhases } from './phaseOrder';
 
@@ -16,6 +21,11 @@ import { getPreviousPhases } from './phaseOrder';
 interface ReviewPhaseRules {
   reviews?: PhaseReviewSettings;
   proposals?: { review?: boolean };
+}
+
+/** The canonical `rules.voting` slice; every voting helper reads through it. */
+interface VotingPhase {
+  rules?: Pick<PhaseRules, 'voting'>;
 }
 
 /** Reviewing happens in this phase (`reviews.submit`, legacy `proposals.review`). */
@@ -41,26 +51,20 @@ export function canEditProposals(phase: {
 }
 
 /** Voting happens in this phase. */
-export function isVotingPhase(phase: {
-  rules?: { voting?: { submit?: boolean } };
-}): boolean {
+export function isVotingPhase(phase: VotingPhase): boolean {
   return phase.rules?.voting?.submit ?? false;
 }
 
 const DEFAULT_VOTER_COST_FIELD = 'budget';
 
-export function getVoterCostField(phase: {
-  rules?: { voting?: { voterCostField?: string } };
-}): string {
+export function getVoterCostField(phase: VotingPhase): string {
   const voterCostField = phase.rules?.voting?.voterCostField?.trim();
 
   return voterCostField ? voterCostField : DEFAULT_VOTER_COST_FIELD;
 }
 
 // Invalid values mean no cap rather than an error.
-export function getVoterBudget(phase: {
-  rules?: { voting?: { voterBudget?: number } };
-}): number | undefined {
+export function getVoterBudget(phase: VotingPhase): number | undefined {
   const voterBudget = phase.rules?.voting?.voterBudget;
 
   return typeof voterBudget === 'number' &&
@@ -70,14 +74,9 @@ export function getVoterBudget(phase: {
     : undefined;
 }
 
-export function getVoterEnrolment(phase: {
-  rules?: {
-    voting?: {
-      enrolment?: { attestation?: string; boundary?: boolean };
-      [key: string]: unknown;
-    };
-  };
-}): { attestation: string; boundary: boolean } | undefined {
+export function getVoterEnrolment(
+  phase: VotingPhase,
+): Required<VoterEnrolmentRule> | undefined {
   const attestation = phase.rules?.voting?.enrolment?.attestation?.trim();
 
   return attestation
@@ -88,9 +87,7 @@ export function getVoterEnrolment(phase: {
     : undefined;
 }
 
-export function isRankedVoting(phase: {
-  rules?: { voting?: { ranked?: boolean } };
-}): boolean {
+export function isRankedVoting(phase: VotingPhase): boolean {
   return phase.rules?.voting?.ranked === true;
 }
 

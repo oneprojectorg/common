@@ -37,13 +37,16 @@ const phaseRulesSchema = z
         voterBudget: z.number().optional(),
         voterCostField: z.string().optional(),
         ranked: z.boolean().optional(),
+        // Strict where the canonical VoterEnrolmentRule is strict; a stored
+        // rule without an attestation reads as no rule, the same answer
+        // getVoterEnrolment gives at runtime.
         enrolment: z
           .object({
-            attestation: z.string().optional(),
+            attestation: z.string(),
             boundary: z.boolean().optional(),
           })
-          .partial()
-          .optional(),
+          .optional()
+          .catch(undefined),
       })
       .partial()
       .optional(),
