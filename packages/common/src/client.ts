@@ -270,6 +270,7 @@ export {
   phaseReviewSettingsSchema,
   type PhaseReviewSettings,
   type ReviewsScope,
+  type VoterEnrolmentRule,
 } from './services/decision/schemas/types';
 export {
   isLastPhase,

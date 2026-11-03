@@ -16,6 +16,7 @@ import {
   NotFoundError,
   UnauthorizedError,
   ValidationError,
+  VoterNotEnrolledError,
 } from '../../utils';
 import { assertInstanceProfileAccess, getIndividualProfileId } from '../access';
 import { assertProfileAccess } from '../assert';
@@ -28,11 +29,13 @@ import { validateVoteBudget, validateVoteSelection } from './schemaValidators';
 import type { DecisionInstanceData } from './schemas/instanceData';
 import type { ProposalTemplateSchema } from './types';
 import {
-  getVoterCostField,
   getVoterBudget,
+  getVoterCostField,
+  getVoterEnrolment,
   isRankedVoting,
   isVotingPhase,
 } from './utils/phaseSettings';
+import { isVoterEnrolled } from './voterEnrolment';
 import { isVotingEligible } from './votingEligibility';
 
 type BallotSelections = NonNullable<VoteData['selections']>;
@@ -44,6 +47,7 @@ interface PhaseConfig {
   voterBudget: number | undefined;
   voterCostField: string;
   ranked: boolean;
+  enrolment: ReturnType<typeof getVoterEnrolment>;
 }
 
 /** Extract voting/proposal rules for the current phase. */
@@ -76,6 +80,7 @@ function getCurrentPhaseConfig(processInstance: {
     voterBudget: getVoterBudget(currentPhase),
     voterCostField: getVoterCostField(currentPhase),
     ranked: isRankedVoting(currentPhase),
+    enrolment: getVoterEnrolment(currentPhase),
   };
 }
 
@@ -380,6 +385,16 @@ export const submitVote = async ({
       throw new ValidationError(
         'Voting is not currently allowed for this process',
       );
+    }
+
+    if (phaseConfig.enrolment) {
+      const enrolment = await db.query.decisionVoterEnrolments.findFirst({
+        where: { processInstanceId: data.processInstanceId, profileId },
+      });
+
+      if (!isVoterEnrolled(enrolment)) {
+        throw new VoterNotEnrolledError();
+      }
     }
 
     // Check if user has already voted
