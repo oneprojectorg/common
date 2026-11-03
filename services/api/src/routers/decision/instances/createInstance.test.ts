@@ -1,11 +1,9 @@
 import {
-  type DecisionInstanceData,
   MAX_PHASES_PER_DECISION,
   PROCESS_NAME_MAX_LENGTH,
   PROCESS_NAME_MIN_LENGTH,
 } from '@op/common';
 import { TestDecisionsDataManager } from '@op/common/testing';
-import { db } from '@op/db/client';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -13,6 +11,11 @@ import {
   describeDecisionAccessTierGating,
   expectFailsAccessTierGate,
 } from '../../../test/helpers/gating/decision';
+import {
+  expectRowsMirrorPhases,
+  loadInstanceData,
+  loadPhaseRows,
+} from '../../../test/helpers/phaseTestUtils';
 import { createAuthenticatedCaller } from '../../../test/supabase-utils';
 
 const grantDraft = {
@@ -23,21 +26,6 @@ const grantDraft = {
     { kind: 'results' as const, name: 'See awards' },
   ],
 };
-
-async function loadInstanceData(instanceId: string) {
-  const instance = await db.query.processInstances.findFirst({
-    where: { id: instanceId },
-  });
-
-  if (!instance) {
-    throw new Error(`Instance ${instanceId} was not created`);
-  }
-
-  return {
-    instance,
-    instanceData: instance.instanceData as DecisionInstanceData,
-  };
-}
 
 describe.concurrent('createInstance', () => {
   it('creates a draft from the phases it is given', async ({
@@ -73,6 +61,29 @@ describe.concurrent('createInstance', () => {
     expect(instance.currentStateId).toBe(instanceData.phases[0]?.phaseId);
   });
 
+  it('mints a phase row and profile per phase it is given', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({ instanceCount: 0 });
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const result = await caller.decision.createInstance({
+      ...grantDraft,
+      name: `Grant Rows ${task.id}`,
+    });
+    testData.trackProfileForCleanup(result.id);
+
+    const [{ instanceData }, rows] = await Promise.all([
+      loadInstanceData(result.processInstance.id),
+      loadPhaseRows(result.processInstance.id),
+    ]);
+
+    expect(instanceData.phases).toHaveLength(grantDraft.phases.length);
+    expectRowsMirrorPhases(rows, instanceData.phases);
+  });
+
   it('creates a blank draft with no phases', async ({
     task,
     onTestFinished,
@@ -94,6 +105,7 @@ describe.concurrent('createInstance', () => {
 
     expect(instanceData.phases).toEqual([]);
     expect(instance.currentStateId).toBeNull();
+    expect(await loadPhaseRows(result.processInstance.id)).toHaveLength(0);
   });
 
   it('is stewarded by the profile the creator is acting as', async ({

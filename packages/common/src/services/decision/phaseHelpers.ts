@@ -18,11 +18,18 @@ import {
   type PhaseSettingsSchema,
   assertSettingsMatchSchema,
 } from './schemas/instanceData';
+import {
+  MAX_PHASE_NAME_LENGTH,
+  PHASE_NAME_TOO_LONG,
+} from './schemas/phaseName';
 
 // phaseId and name live on the phase's profile.
 export type PhaseData = Omit<PhaseInstanceData, 'phaseId' | 'name'>;
 
-export { MAX_PHASES_PER_DECISION } from './utils/phaseOrder';
+// TODO: drop phaseId from row data once every reference uses the row id.
+type PhaseRowData = PhaseData & { phaseId?: string };
+
+type InstanceDataPhase = Pick<PhaseInstanceData, 'phaseId' | 'name'>;
 
 const SLUG_ATTEMPTS = 3;
 
@@ -40,7 +47,7 @@ export const insertPhase = async ({
   processInstanceId: string;
   name: string;
   sortOrder: number;
-  data?: PhaseData;
+  data?: PhaseRowData;
   // Only tests pass this, to force slug clashes.
   generateSlug?: () => string;
 }): Promise<{ phase: ProcessPhase; profile: Profile }> => {
@@ -61,6 +68,32 @@ export const insertPhase = async ({
   }
 
   return { phase, profile };
+};
+
+export const getPhaseProfileName = ({
+  phaseId,
+  name,
+}: InstanceDataPhase): string => name?.trim() || phaseId;
+
+// TODO: remove once rows stop carrying phaseId and nothing mints from instance_data.
+export const assertPhasesCanBeMinted = (
+  phases: readonly InstanceDataPhase[],
+): void => {
+  const phaseIds = new Set<string>();
+  for (const phase of phases) {
+    if (!phase.phaseId) {
+      throw new ValidationError('A phase has no id', { phaseId: 'Required' });
+    }
+    if (phaseIds.has(phase.phaseId)) {
+      throw new ValidationError(`Two phases share the id "${phase.phaseId}"`, {
+        phaseId: 'Must be unique',
+      });
+    }
+    phaseIds.add(phase.phaseId);
+    if (getPhaseProfileName(phase).length > MAX_PHASE_NAME_LENGTH) {
+      throw new ValidationError(PHASE_NAME_TOO_LONG, { name: 'Too long' });
+    }
+  }
 };
 
 export const assertPhaseSchemasCompile = ({
