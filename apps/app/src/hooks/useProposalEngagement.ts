@@ -8,6 +8,12 @@ import type { DecisionAccess } from '@op/api/encoders';
 import type { Proposal } from '@op/common/client';
 import { usePathname, useRouter } from 'next/navigation';
 
+import {
+  type EngagementAction,
+  PENDING_ENGAGEMENT_PARAM,
+  serializePendingEngagement,
+} from '@/components/decisions/pendingEngagement';
+
 /**
  * Whether the viewer's access on a decision admits Like/Follow.
  *
@@ -73,17 +79,21 @@ export function useProposalEngagement({
     if (canEngage && isJoinEligible(user)) {
       // Plain navigation, not nuqs' useQueryState — this list-rendered path
       // must not need a Suspense boundary of its own.
-      const openJoinModal = () => {
+      const openJoinModal = (action: EngagementAction) => () => {
         const params = new URLSearchParams(window.location.search);
-        params.set('join', '1');
+        params.set('join', action);
+        params.set(
+          PENDING_ENGAGEMENT_PARAM,
+          serializePendingEngagement({ action, profileId: proposal.profileId }),
+        );
         router.push(`${pathname}?${params.toString()}`);
       };
 
       return {
         isLiked: false,
         isFollowed: false,
-        onLike: openJoinModal,
-        onFollow: openJoinModal,
+        onLike: openJoinModal('like'),
+        onFollow: openJoinModal('follow'),
       };
     }
     return undefined;

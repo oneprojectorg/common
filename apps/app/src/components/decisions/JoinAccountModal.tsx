@@ -47,6 +47,13 @@ import {
 } from '../AuthPanel';
 import { HeaderUserMenu } from '../SiteHeader';
 import { isValidEmail } from './emailUtils';
+import {
+  type JoinTrigger,
+  PENDING_ENGAGEMENT_PARAM,
+  joinPromptKeys,
+  parseJoinParam,
+  withPendingEngagement,
+} from './pendingEngagement';
 
 /**
  * "Join" flow for public decision processes: claims a full account for the
@@ -63,17 +70,20 @@ import { isValidEmail } from './emailUtils';
 export const JoinAccountModal = () => {
   const { user } = useUser();
   const [join, setJoin] = useQueryState('join');
+  const [, setResume] = useQueryState(PENDING_ENGAGEMENT_PARAM);
 
-  const isOpen = isJoinEligible(user) && join === '1';
+  const trigger = parseJoinParam(join);
+  const isOpen = isJoinEligible(user) && trigger !== null;
 
   const close = () => {
     void setJoin(null);
+    void setResume(null);
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => (open ? null : close())}>
       <DialogContent className="sm:max-w-128">
-        <JoinAccountModalContent close={close} />
+        <JoinAccountModalContent trigger={trigger ?? 'generic'} close={close} />
       </DialogContent>
     </Dialog>
   );
@@ -145,7 +155,13 @@ export const JoinOrUserMenu = ({
   return <HeaderUserMenu className={userMenuClassName} />;
 };
 
-const JoinAccountModalContent = ({ close }: { close: () => void }) => {
+const JoinAccountModalContent = ({
+  trigger,
+  close,
+}: {
+  trigger: JoinTrigger;
+  close: () => void;
+}) => {
   const t = useTranslations();
   const supabase = createSBBrowserClient();
   const {
@@ -180,10 +196,17 @@ const JoinAccountModalContent = ({ close }: { close: () => void }) => {
   const phoneIsValid = isValidTypedPhoneNumber(phone);
   const contactIsValid = isPhone ? phoneIsValid : emailIsValid;
 
-  // Return to this decision page after onboarding. Query params are dropped
-  // deliberately — `join=1` must not re-open the modal on the way back.
+  // Return to this decision page after onboarding. The `join` param is dropped
+  // deliberately — it must not re-open the modal on the way back — while a
+  // valid pending engagement is carried through so the replay can apply it.
+  const claimDest = () =>
+    withPendingEngagement(
+      pathname,
+      new URLSearchParams(window.location.search).get(PENDING_ENGAGEMENT_PARAM),
+    );
+
   const goAfterClaim = () => {
-    goToOnboarding(pathname);
+    goToOnboarding(claimDest());
   };
 
   // Google is a redirect flow, not an in-page OTP exchange, so it can't call
@@ -199,7 +222,7 @@ const JoinAccountModalContent = ({ close }: { close: () => void }) => {
   // equivalent (linkIdentity) before this is correct for public processes.
   const joinWithGoogle = async () => {
     const callbackUrl = new URL('/api/auth/callback', window.location.origin);
-    callbackUrl.searchParams.set('redirect', getOnboardingPath(pathname));
+    callbackUrl.searchParams.set('redirect', getOnboardingPath(claimDest()));
     await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: { redirectTo: callbackUrl.toString() },
@@ -312,10 +335,10 @@ const JoinAccountModalContent = ({ close }: { close: () => void }) => {
             ? isPhone
               ? t('auth.checkTextsTitle')
               : t('auth.checkEmailTitle')
-            : t('decisions.joinPromptTitle')}
+            : t(joinPromptKeys(trigger).title)}
         </DialogTitle>
         <DialogDescription className="text-center">
-          {sentTo ?? t('decisions.joinPromptDescription')}
+          {sentTo ?? t(joinPromptKeys(trigger).description)}
         </DialogDescription>
       </DialogHeader>
 
