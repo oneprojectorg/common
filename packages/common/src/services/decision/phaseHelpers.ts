@@ -87,9 +87,27 @@ export const listPhases = async ({
 }: {
   db: DbClient;
   processInstanceId: string;
-}): Promise<DecisionPhase[]> => {
-  const phases = await db
+}): Promise<DecisionPhase[]> =>
+  (
+    await listPhasesByInstance({ db, processInstanceIds: [processInstanceId] })
+  ).get(processInstanceId) ?? [];
+
+export const listPhasesByInstance = async ({
+  db,
+  processInstanceIds,
+}: {
+  db: DbClient;
+  processInstanceIds: string[];
+}): Promise<Map<string, DecisionPhase[]>> => {
+  const phasesByInstance = new Map<string, DecisionPhase[]>();
+
+  if (processInstanceIds.length === 0) {
+    return phasesByInstance;
+  }
+
+  const rows = await db
     .select({
+      processInstanceId: processPhases.processInstanceId,
       id: processPhases.id,
       profileId: processPhases.profileId,
       sortOrder: processPhases.sortOrder,
@@ -99,13 +117,20 @@ export const listPhases = async ({
     })
     .from(processPhases)
     .innerJoin(profiles, eq(profiles.id, processPhases.profileId))
-    .where(eq(processPhases.processInstanceId, processInstanceId))
-    .orderBy(asc(processPhases.sortOrder), asc(processPhases.id));
+    .where(inArray(processPhases.processInstanceId, processInstanceIds))
+    .orderBy(
+      asc(processPhases.processInstanceId),
+      asc(processPhases.sortOrder),
+      asc(processPhases.id),
+    );
 
-  return phases.map((phase) => ({
-    ...phase,
-    data: readPhaseRowData(phase.data),
-  }));
+  for (const { processInstanceId, ...phase } of rows) {
+    const phases = phasesByInstance.get(processInstanceId) ?? [];
+    phases.push({ ...phase, data: readPhaseRowData(phase.data) });
+    phasesByInstance.set(processInstanceId, phases);
+  }
+
+  return phasesByInstance;
 };
 
 export const reconcilePhases = async ({

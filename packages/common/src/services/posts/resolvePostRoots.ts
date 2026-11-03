@@ -19,6 +19,7 @@ export type ResolvedPostRoots = {
    * `instanceData` so "not resolved" can't be confused with a null column.
    */
   resolvedInstance: {
+    id: string;
     instanceData: unknown;
     currentStateId: string | null;
   } | null;
@@ -81,6 +82,7 @@ export const resolvePostRoots = async ({
       const [parent] = await db
         .select({
           decisionProfileId: processInstances.profileId,
+          instanceId: processInstances.id,
           instanceData: processInstances.instanceData,
           currentStateId: processInstances.currentStateId,
         })
@@ -99,6 +101,7 @@ export const resolvePostRoots = async ({
         rootProfileId: parent.decisionProfileId,
         rootPostId: null,
         resolvedInstance: {
+          id: parent.instanceId,
           instanceData: parent.instanceData,
           currentStateId: parent.currentStateId,
         },

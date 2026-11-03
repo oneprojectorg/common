@@ -32,6 +32,7 @@ import {
 } from './phaseHelpers';
 import { mergePhasesWithInstanceData } from './phaseMirror';
 import { ensureProposalTaxonomyTerms } from './proposalTaxonomy';
+import { isPhasesFromRowsEnabled, withBlobPhases } from './readInstancePhases';
 import { schemaValidator } from './schemaValidator';
 import {
   type DecisionInstanceData,
@@ -158,6 +159,11 @@ export const updateDecisionInstance = async ({
     status === ProcessStatus.PUBLISHED &&
     existingInstance.status === ProcessStatus.DRAFT;
 
+  const transitionsFromRows =
+    isBeingPublished && !hasPhaseUpdates
+      ? await isPhasesFromRowsEnabled()
+      : false;
+
   // Use a transaction for updating the instance and transitions together
   await db.transaction(async (tx) => {
     const locked = await lockProcessInstanceOrThrow({ db: tx, instanceId });
@@ -234,6 +240,7 @@ export const updateDecisionInstance = async ({
       isDraft: (status ?? existingInstance.status) === ProcessStatus.DRAFT,
       isBeingPublished,
       phasesChanged: hasPhaseUpdates,
+      fromRows: transitionsFromRows,
     });
   });
 
@@ -317,12 +324,14 @@ async function syncTransitions({
   isDraft,
   isBeingPublished,
   phasesChanged,
+  fromRows,
 }: {
   tx: TransactionType;
   updatedInstance: ProcessInstance;
   isDraft: boolean;
   isBeingPublished: boolean;
   phasesChanged: boolean;
+  fromRows: boolean;
 }) {
   if (isDraft) {
     await tx
@@ -334,10 +343,11 @@ async function syncTransitions({
     await createTransitionsForProcess({
       processInstance: updatedInstance,
       db: tx,
+      fromRows,
     });
   } else if (phasesChanged) {
     await updateTransitionsForProcess({
-      processInstance: updatedInstance,
+      processInstance: withBlobPhases({ instance: updatedInstance }),
       db: tx,
     });
   }

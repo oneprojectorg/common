@@ -14,6 +14,7 @@ import {
 import { getCachedInstance } from './getCachedInstance';
 import type { DecisionRolePermissions } from './permissions';
 import { fromDecisionBitField } from './permissions';
+import { withInstancePhases } from './readInstancePhases';
 import { resolveManualSelectionStatus } from './resolveManualSelectionStatus';
 import type { DecisionInstanceData } from './schemas/instanceData';
 
@@ -74,19 +75,21 @@ export const getInstance = async ({ instanceId, user }: GetInstanceInput) => {
   try {
     // Cached and viewer-independent; the access check + per-user access bits
     // below run on every call, outside the cache.
-    const instance = await getCachedInstance(instanceId);
+    const cached = await getCachedInstance(instanceId);
 
-    if (!instance) {
+    if (!cached) {
       throw new NotFoundError('Process instance', instanceId);
     }
 
-    // Assert read access and reuse the profile-level roles it resolves.
-    const profileRoles = await assertInstanceProfileAccess({
-      user,
-      instance,
-      profilePermissions: { decisions: permission.READ },
-      orgFallbackPermissions: { decisions: permission.READ },
-    });
+    const [instance, profileRoles] = await Promise.all([
+      withInstancePhases({ instance: cached }),
+      assertInstanceProfileAccess({
+        user,
+        instance: cached,
+        profilePermissions: { decisions: permission.READ },
+        orgFallbackPermissions: { decisions: permission.READ },
+      }),
+    ]);
 
     // Resolve access capabilities for the current user.
     // profileId is guaranteed non-null here: assertInstanceProfileAccess throws above if null.
@@ -117,11 +120,7 @@ export const getInstance = async ({ instanceId, user }: GetInstanceInput) => {
       : instanceData;
 
     const manualSelectionStatus = await resolveManualSelectionStatus({
-      instance: {
-        id: instance.id,
-        instanceData: instance.instanceData,
-        currentStateId: instance.currentStateId,
-      },
+      instance,
     });
 
     return {
