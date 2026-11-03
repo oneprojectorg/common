@@ -83,13 +83,13 @@ test.describe('Anonymous account upgrade (promote flow)', () => {
       page.getByText('You do not have permission to view this page'),
     ).not.toBeVisible();
 
-    // PromoteOnboardingFlow — step 1: personal details.
+    // PromoteOnboardingFlow — step 1: the visibility choice. A claimed
+    // anonymous account carries the trigger's "Participant <n>" name, so the
+    // flow offers show-my-name / stay-anonymous instead of personal details.
     await expect(
-      page.getByRole('heading', { name: 'Add your personal details' }),
+      page.getByRole('heading', { name: "How you'll appear in this process" }),
     ).toBeVisible({ timeout: 15000 });
-    await page.getByLabel('Full Name').fill('Promo Tester');
-    await page.getByLabel('Headline').fill('Community member');
-    await page.getByLabel('Email').fill(email);
+    await page.getByLabel('Full name').fill('Promo Tester');
     await page.getByRole('button', { name: 'Continue' }).click();
 
     // Step 2: accept Terms of Service + Privacy Policy.

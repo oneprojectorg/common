@@ -143,9 +143,10 @@ test.describe('Join account flow (public decision header)', () => {
   /**
    * The Figma annotation on "Add your voice to this idea" is that the dialog
    * appears when the user clicks Like, so the toggle is a second door into the
-   * claim flow rather than a dead count. Without the hook handing `join=1` to
-   * the layout's modal, a visitor who can't like would press an unresponsive
-   * button — the state this replaces, and the one no other spec asserts.
+   * claim flow rather than a dead count. Without the hook handing the trigger
+   * (`join=like` plus the pending action) to the layout's modal, a visitor who
+   * can't like would press an unresponsive button — the state this replaces,
+   * and the one no other spec asserts.
    *
    * Given a logged-out visitor on a public decision's proposal page
    * When they press Like
@@ -182,7 +183,10 @@ test.describe('Join account flow (public decision header)', () => {
     await expect(
       page.getByRole('heading', { name: 'Add your voice to this idea' }),
     ).toBeVisible({ timeout: 15000 });
-    await expect(page).toHaveURL(/join=1/);
+    await expect(page).toHaveURL(/join=like/);
+    // The pending action rides beside the trigger, ready to replay after the
+    // claim.
+    await expect(page).toHaveURL(/resume=like%3A/);
 
     const dialog = page
       .getByRole('dialog')

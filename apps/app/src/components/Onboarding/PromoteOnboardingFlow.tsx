@@ -20,11 +20,16 @@ import {
 } from '../MultiStepForm';
 import { Portal } from '../Portal';
 import {
+  PersonalDetailsForm,
+  validator as PersonalDetailsFormValidator,
+} from './PersonalDetailsForm';
+import {
   ToSAcceptanceScreen,
   validator as ToSStepValidator,
 } from './ToSAcceptanceScreen';
 import {
   VisibilityStep,
+  parseParticipantNumber,
   validator as VisibilityStepValidator,
 } from './VisibilityStep';
 import { useOnboardingFormStore } from './useOnboardingFormStore';
@@ -53,6 +58,15 @@ export const PromoteOnboardingFlow = ({
   const { personalDetails } = useOnboardingFormStore();
   const trpcUtils = trpc.useUtils();
   const completeOnboarding = useCompleteOnboarding();
+
+  // Every non-network-member lands in this flow, not only claimed visitors
+  // (see OnboardingFlow). Only a claimed anonymous account carries the signup
+  // trigger's "Participant <n>" profile name, and only there is the visibility
+  // choice meaningful — an ordinary signup keeps the personal-details step.
+  const { data: userAccount, isPending: accountPending } =
+    trpc.account.getMyAccount.useQuery();
+  const isClaimedAnonymous =
+    parseParticipantNumber(userAccount?.profile?.name ?? '') !== null;
 
   const searchParams = useSearchParams();
   const redirectParam = searchParams.get('redirect');
@@ -124,14 +138,22 @@ export const PromoteOnboardingFlow = ({
     return Step;
   }, [handleComplete, isSubmitting]);
 
-  if (isSubmitting) {
+  if (isSubmitting || accountPending) {
     return <Spinner className="size-6" />;
   }
 
   return (
     <MultiStepForm
-      steps={[VisibilityStep, ToSStep]}
-      schemas={[VisibilityStepValidator, ToSStepValidator]}
+      steps={[
+        isClaimedAnonymous ? VisibilityStep : PersonalDetailsForm,
+        ToSStep,
+      ]}
+      schemas={[
+        isClaimedAnonymous
+          ? VisibilityStepValidator
+          : PersonalDetailsFormValidator,
+        ToSStepValidator,
+      ]}
       ProgressComponent={ProgressInPortal}
       getStepValues={getStepValues}
       hasHydrated={hasHydrated}
