@@ -107,6 +107,26 @@ describe('useManualAwardDraft', () => {
     expect(result.current[0]).toEqual({});
   });
 
+  it('merges a functional write with the stored draft', () => {
+    const { result } = renderHook(() => useManualAwardDraft(INSTANCE, 'final'));
+
+    act(() => result.current[1]({ solar: 3000 }));
+    act(() => result.current[1]((prev) => ({ ...prev, bike: 100 })));
+
+    expect(result.current[0]).toEqual({ solar: 3000, bike: 100 });
+  });
+
+  it('keeps both edits when two awards change before the next render', () => {
+    const { result } = renderHook(() => useManualAwardDraft(INSTANCE, 'final'));
+
+    act(() => {
+      result.current[1]((prev) => ({ ...prev, solar: 1 }));
+      result.current[1]((prev) => ({ ...prev, bike: 2 }));
+    });
+
+    expect(result.current[0]).toEqual({ solar: 1, bike: 2 });
+  });
+
   it('removes the key when the draft is emptied', () => {
     const { result } = renderHook(() => useManualAwardDraft(INSTANCE, 'final'));
 
