@@ -14,6 +14,24 @@ const EMPTY: AwardEdits = {};
 
 const snapshots = new Map<string, AwardEdits>();
 
+const readItem = (key: string): string | null => {
+  try {
+    return window.localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+};
+
+const writeItem = (key: string, edits: AwardEdits): void => {
+  try {
+    if (Object.keys(edits).length === 0) {
+      window.localStorage.removeItem(key);
+    } else {
+      window.localStorage.setItem(key, JSON.stringify(edits));
+    }
+  } catch {}
+};
+
 const parseEdits = (raw: string | null): AwardEdits => {
   if (raw === null) {
     return EMPTY;
@@ -46,7 +64,7 @@ function getSnapshot(key: string): AwardEdits {
   if (cached) {
     return cached;
   }
-  const edits = parseEdits(window.localStorage.getItem(key));
+  const edits = parseEdits(readItem(key));
   snapshots.set(key, edits);
   return edits;
 }
@@ -94,12 +112,8 @@ export function useManualAwardDraft(
       }
       const resolved =
         typeof next === 'function' ? next(getSnapshot(key)) : next;
-      if (Object.keys(resolved).length === 0) {
-        window.localStorage.removeItem(key);
-      } else {
-        window.localStorage.setItem(key, JSON.stringify(resolved));
-      }
-      snapshots.delete(key);
+      writeItem(key, resolved);
+      snapshots.set(key, resolved);
       window.dispatchEvent(new CustomEvent(CHANGE_EVENT, { detail: key }));
     },
     [key],
