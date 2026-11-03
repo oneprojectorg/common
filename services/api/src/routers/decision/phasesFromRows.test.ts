@@ -7,10 +7,7 @@ import {
   readInstancePhaseSet,
   revertPhase,
 } from '@op/common';
-import {
-  TestDecisionsDataManager,
-  emptyBlobPhases,
-} from '@op/common/testing';
+import { TestDecisionsDataManager, emptyBlobPhases } from '@op/common/testing';
 import { db, eq } from '@op/db/client';
 import {
   ProcessStatus,

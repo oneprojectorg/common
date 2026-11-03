@@ -8,12 +8,12 @@ import { logger } from '@op/logging';
 import { NotFoundError, ValidationError } from '../../utils';
 import { getIndividualProfileId } from '../access';
 import { forwardGeocode } from './forwardGeocode';
+import { withInstancePhases } from './readInstancePhases';
 import {
   hasDecisionBoundaries,
   hasLinkedDecisionBoundaries,
   resolveBoundary,
 } from './resolveBoundary';
-import { withInstancePhases } from './readInstancePhases';
 import { getInstancePhases } from './schemas/instanceData';
 import { getInstanceCurrentPhase } from './utils/instance';
 import { getVoterEnrolment } from './utils/phaseSettings';
