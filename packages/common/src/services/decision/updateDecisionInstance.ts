@@ -23,6 +23,7 @@ import {
   getUpdatedInstanceData,
 } from './getUpdatedInstanceData';
 import { ensureProposalTaxonomyTerms } from './proposalTaxonomy';
+import { isPhasesFromRowsEnabled, withBlobPhases } from './readInstancePhases';
 import { schemaValidator } from './schemaValidator';
 import type {
   DecisionInstanceData,
@@ -117,6 +118,7 @@ export const updateDecisionInstance = async ({
     updateData.stewardProfileId = stewardProfileId;
   }
 
+  const hasPhaseUpdates = phases !== undefined && phases.length > 0;
   const instanceDataUpdate = getUpdatedInstanceData({
     existing: existingInstance.instanceData as DecisionInstanceData,
     update: { config, overview, phases, proposalTemplate, rubricTemplate },
@@ -130,7 +132,7 @@ export const updateDecisionInstance = async ({
       );
     }
 
-    if ((phases !== undefined && phases.length > 0) || proposalTemplate) {
+    if (hasPhaseUpdates || proposalTemplate) {
       await assertVoterCostField({
         instanceData: instanceDataUpdate.instanceData,
         processId: existingInstance.processId,
@@ -152,6 +154,11 @@ export const updateDecisionInstance = async ({
   const isBeingPublished =
     status === ProcessStatus.PUBLISHED &&
     existingInstance.status === ProcessStatus.DRAFT;
+
+  const transitionsFromRows =
+    isBeingPublished && !hasPhaseUpdates
+      ? await isPhasesFromRowsEnabled()
+      : false;
 
   // Use a transaction for updating the instance and transitions together
   await db.transaction(async (tx) => {
@@ -179,7 +186,8 @@ export const updateDecisionInstance = async ({
       updatedInstance,
       isDraft: (status ?? existingInstance.status) === ProcessStatus.DRAFT,
       isBeingPublished,
-      phasesChanged: phases !== undefined && phases.length > 0,
+      phasesChanged: hasPhaseUpdates,
+      fromRows: transitionsFromRows,
     });
   });
 
@@ -263,12 +271,14 @@ async function syncTransitions({
   isDraft,
   isBeingPublished,
   phasesChanged,
+  fromRows,
 }: {
   tx: TransactionType;
   updatedInstance: ProcessInstance;
   isDraft: boolean;
   isBeingPublished: boolean;
   phasesChanged: boolean;
+  fromRows: boolean;
 }) {
   if (isDraft) {
     await tx
@@ -280,10 +290,11 @@ async function syncTransitions({
     await createTransitionsForProcess({
       processInstance: updatedInstance,
       db: tx,
+      fromRows,
     });
   } else if (phasesChanged) {
     await updateTransitionsForProcess({
-      processInstance: updatedInstance,
+      processInstance: withBlobPhases({ instance: updatedInstance }),
       db: tx,
     });
   }
