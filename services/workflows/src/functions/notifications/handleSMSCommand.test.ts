@@ -1,7 +1,14 @@
 import { InngestTestEngine } from '@inngest/test';
-import { SMS_MAX_BODY_LENGTH, parsePhoneNumber } from '@op/common';
+import {
+  SMS_MAX_BODY_LENGTH,
+  findVoterEnrolment,
+  parsePhoneNumber,
+} from '@op/common';
+import { and, db, eq } from '@op/db/client';
+import { ProcessStatus, processInstances, profileUsers } from '@op/db/schema';
 import { beforeEach, describe, expect, it } from 'vitest';
 
+import { memoryGeocoder } from '../../../testing/mocks/geocoder';
 import {
   recordedSms,
   refuseSmsTo,
@@ -35,18 +42,48 @@ const NUMBERS = {
   lineSlugMember: '+15005550081',
   unboundLineMember: '+15005550082',
   lineStranger: '+15005550083',
-  linePrivateOwner: '+15005550078',
+  linePrivateOwner: '+15005550069',
+  agreeRemoved: '+15005550068',
+  enrolStart: '+15005550070',
+  enrolAddress: '+15005550071',
+  enrolNotFound: '+15005550072',
+  enrolOutside: '+15005550073',
+  enrolDown: '+15005550018',
+  enrolTwoLines: '+15005550019',
+  enrolAgree: '+15005550074',
+  agreeNothing: '+15005550075',
+  agreeClosed: '+15005550035',
+  voteNoRule: '+15005550076',
+  freeNothing: '+15005550077',
+  voteNoSlug: '+15005550078',
+  enrolRewrite: '+15005550079',
+  enrolSwitch: '+15005550083',
+  agreeRewritten: '+15005550027',
 } as const;
 
 const LINES = {
   bare: '+16145550130',
   slug: '+16145550131',
   unbound: '+16145550132',
-  private: '+16145550133',
+  private: '+16145550138',
+  agreeRemoved: '+16145550139',
+  agreeClosed: '+16145550188',
+  enrolStart: '+16145550133',
+  enrolAddress: '+16145550134',
+  enrolNotFound: '+16145550135',
+  enrolOutside: '+16145550136',
+  enrolDown: '+16145550185',
+  enrolTwoA: '+16145550186',
+  enrolTwoB: '+16145550187',
+  enrolAgree: '+16145550137',
+  enrolRewrite: '+16145550138',
+  enrolSwitch: '+16145550139',
+  agreeRewritten: '+16145550170',
 } as const;
 
 beforeEach(() => {
   resetRecordedSms();
+  memoryGeocoder.reset();
 });
 
 describe('handleSMSCommand against the database', () => {
@@ -538,5 +575,686 @@ describe('handleSMSCommand on a decision line', () => {
     expect(recordedSms).toEqual([
       expect.objectContaining({ to: phone, from: null }),
     ]);
+  });
+});
+
+describe('handleSMSCommand registration over SMS', () => {
+  const ATTESTATION = 'I affirm that I meet the eligibility requirements.';
+  const INSIDE = [{ lat: 40.5, lng: -73.5 }];
+  const OUTSIDE = [{ lat: 10, lng: 10 }];
+
+  const seed = async (
+    fixture: SmsCommandFixture,
+    {
+      phone,
+      member: existingMember,
+      line,
+      name,
+      withRule = true,
+    }: {
+      phone: string | null;
+      member?: Awaited<ReturnType<SmsCommandFixture['createPhoneOnlyAccount']>>;
+      line: string | null;
+      name: string;
+      withRule?: boolean;
+    },
+  ) => {
+    const member =
+      existingMember ??
+      (await fixture.createPhoneOnlyAccount(parsePhoneNumber(phone!)));
+    const { instanceId, instanceProfileId, slug } =
+      await fixture.createVotingInstance({
+        owner: member,
+        name,
+        proposalTitles: ['Crosswalk lighting'],
+        ...(withRule
+          ? { enrolment: { attestation: ATTESTATION, boundary: true } }
+          : {}),
+      });
+    await fixture.addMember(instanceProfileId, member);
+    const district = await fixture.createDistrict({
+      profileId: instanceProfileId,
+      name: `District 5 ${name}`,
+    });
+    if (line) {
+      await fixture.bindLine(instanceId, parsePhoneNumber(line));
+    }
+    return { member, instanceId, slug, district };
+  };
+
+  const run = (event: ReturnType<typeof smsInboundEvent>) =>
+    new InngestTestEngine({ function: handleSMSCommand }).execute({
+      events: [event],
+    });
+
+  it('given a member texts VOTE to the line of a decision that requires registration, then they are welcomed and asked for their address, and a row waits for it', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsCommandFixture(task.id, onTestFinished);
+    const name = `Enrol Start ${task.id}`;
+    const { member, instanceId } = await seed(fixture, {
+      phone: NUMBERS.enrolStart,
+      line: LINES.enrolStart,
+      name,
+    });
+
+    const { result } = await run(
+      smsInboundEvent({
+        from: NUMBERS.enrolStart,
+        to: LINES.enrolStart,
+        keyword: 'vote',
+      }),
+    );
+
+    expect(result).toEqual({ message: 'enrolment started' });
+    expect(recordedSms.map((sms) => sms.body)).toEqual([
+      `Welcome to "${name}". Two quick steps to register: your address, then a short affirmation. No ID needed. What's your address?`,
+    ]);
+    await expect(
+      findVoterEnrolment({
+        processInstanceId: instanceId,
+        authUserId: member.authUserId,
+      }),
+    ).resolves.toMatchObject({
+      taxonomyTermId: null,
+      enrolledAt: null,
+    });
+  });
+
+  it('given a member who was asked for an address texts one inside a district, then the district is confirmed with the attestation and the row waits for AGREE', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsCommandFixture(task.id, onTestFinished);
+    const name = `Enrol Address ${task.id}`;
+    const { member, instanceId, district } = await seed(fixture, {
+      phone: NUMBERS.enrolAddress,
+      line: LINES.enrolAddress,
+      name,
+    });
+    const address = `375 S High St ${task.id}`;
+    memoryGeocoder.set(address, INSIDE);
+    await run(
+      smsInboundEvent({
+        from: NUMBERS.enrolAddress,
+        to: LINES.enrolAddress,
+        keyword: 'vote',
+      }),
+    );
+
+    const { result } = await run(
+      smsInboundEvent({
+        from: NUMBERS.enrolAddress,
+        to: LINES.enrolAddress,
+        body: address,
+        messageSid: `SM-${task.id}-address`,
+      }),
+    );
+
+    expect(result).toEqual({ message: 'address resolved' });
+    expect(recordedSms.at(-1)?.body).toBe(
+      `That's ${district.name}. Reply AGREE to register for "${name}": "${ATTESTATION}"`,
+    );
+    await expect(
+      findVoterEnrolment({
+        processInstanceId: instanceId,
+        authUserId: member.authUserId,
+      }),
+    ).resolves.toMatchObject({
+      taxonomyTermId: district.taxonomyTermId,
+      enrolledAt: null,
+    });
+  });
+
+  it('given a member who was asked for an address texts one that geocodes to nothing, then they are asked to text it again and the row still waits for an address', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsCommandFixture(task.id, onTestFinished);
+    const { member, instanceId } = await seed(fixture, {
+      phone: NUMBERS.enrolNotFound,
+      line: LINES.enrolNotFound,
+      name: `Enrol Not Found ${task.id}`,
+    });
+    await run(
+      smsInboundEvent({
+        from: NUMBERS.enrolNotFound,
+        to: LINES.enrolNotFound,
+        keyword: 'vote',
+      }),
+    );
+
+    const { result } = await run(
+      smsInboundEvent({
+        from: NUMBERS.enrolNotFound,
+        to: LINES.enrolNotFound,
+        body: `nowhere ${task.id}`,
+        messageSid: `SM-${task.id}-nowhere`,
+      }),
+    );
+
+    expect(result).toEqual({ message: 'address not found' });
+    expect(recordedSms.at(-1)?.body).toBe(
+      'That address was not found. Text it again with the street, city and ZIP.',
+    );
+    await expect(
+      findVoterEnrolment({
+        processInstanceId: instanceId,
+        authUserId: member.authUserId,
+      }),
+    ).resolves.toMatchObject({
+      taxonomyTermId: null,
+      enrolledAt: null,
+    });
+  });
+
+  it('given a member who was asked for an address texts one outside every district, then they are told so and the row still waits for an address', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsCommandFixture(task.id, onTestFinished);
+    const name = `Enrol Outside ${task.id}`;
+    await seed(fixture, {
+      phone: NUMBERS.enrolOutside,
+      line: LINES.enrolOutside,
+      name,
+    });
+    const address = `far away ${task.id}`;
+    memoryGeocoder.set(address, OUTSIDE);
+    await run(
+      smsInboundEvent({
+        from: NUMBERS.enrolOutside,
+        to: LINES.enrolOutside,
+        keyword: 'vote',
+      }),
+    );
+
+    const { result } = await run(
+      smsInboundEvent({
+        from: NUMBERS.enrolOutside,
+        to: LINES.enrolOutside,
+        body: address,
+        messageSid: `SM-${task.id}-outside`,
+      }),
+    );
+
+    expect(result).toEqual({ message: 'address outside' });
+    expect(recordedSms.at(-1)?.body).toBe(
+      `That address is outside the districts of "${name}", so you cannot register for it.`,
+    );
+  });
+
+  it('given the geocoder is down, when the voter texts their address, then the reply says to try again rather than blaming the address', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsCommandFixture(task.id, onTestFinished);
+    const name = `Enrol Down ${task.id}`;
+    await seed(fixture, {
+      phone: NUMBERS.enrolDown,
+      line: LINES.enrolDown,
+      name,
+    });
+    const address = `375 S High St ${task.id}`;
+    memoryGeocoder.fail(address);
+    await run(
+      smsInboundEvent({
+        from: NUMBERS.enrolDown,
+        to: LINES.enrolDown,
+        keyword: 'vote',
+      }),
+    );
+
+    const { result } = await run(
+      smsInboundEvent({
+        from: NUMBERS.enrolDown,
+        to: LINES.enrolDown,
+        body: address,
+        messageSid: `SM-${task.id}-down`,
+      }),
+    );
+
+    expect(result).toEqual({ message: 'address lookup failed' });
+    expect(recordedSms.at(-1)?.body).toBe(
+      'The address lookup is not working right now. Text your address again in a few minutes.',
+    );
+  });
+
+  it('given pending registrations on two decisions, when the voter texts an address on the other line, then the reply names which decision the address registered', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsCommandFixture(task.id, onTestFinished);
+    const nameB = `Enrol Two B ${task.id}`;
+    const { member, instanceId: instanceA } = await seed(fixture, {
+      phone: NUMBERS.enrolTwoLines,
+      line: LINES.enrolTwoA,
+      name: `Enrol Two A ${task.id}`,
+    });
+    const { instanceId: instanceB } = await seed(fixture, {
+      phone: null,
+      member,
+      line: LINES.enrolTwoB,
+      name: nameB,
+    });
+    const address = `375 S High St ${task.id}`;
+    memoryGeocoder.set(address, INSIDE);
+    await run(
+      smsInboundEvent({
+        from: NUMBERS.enrolTwoLines,
+        to: LINES.enrolTwoA,
+        keyword: 'vote',
+      }),
+    );
+    await run(
+      smsInboundEvent({
+        from: NUMBERS.enrolTwoLines,
+        to: LINES.enrolTwoB,
+        keyword: 'vote',
+      }),
+    );
+
+    const { result } = await run(
+      smsInboundEvent({
+        from: NUMBERS.enrolTwoLines,
+        to: LINES.enrolTwoA,
+        body: address,
+        messageSid: `SM-${task.id}-two-lines`,
+      }),
+    );
+
+    expect(result).toEqual({ message: 'address resolved' });
+    expect(recordedSms.at(-1)?.body).toContain(`register for "${nameB}"`);
+    await expect(
+      findVoterEnrolment({
+        processInstanceId: instanceB,
+        authUserId: member.authUserId,
+      }),
+    ).resolves.toMatchObject({ taxonomyTermId: expect.any(String) });
+    await expect(
+      findVoterEnrolment({
+        processInstanceId: instanceA,
+        authUserId: member.authUserId,
+      }),
+    ).resolves.toMatchObject({ taxonomyTermId: null });
+  });
+
+  it('given a member who was sent the attestation texts AGREE, then they are registered and the row is enrolled', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsCommandFixture(task.id, onTestFinished);
+    const name = `Enrol Agree ${task.id}`;
+    const { member, instanceId } = await seed(fixture, {
+      phone: NUMBERS.enrolAgree,
+      line: LINES.enrolAgree,
+      name,
+    });
+    const address = `375 S High St ${task.id}`;
+    memoryGeocoder.set(address, INSIDE);
+    await run(
+      smsInboundEvent({
+        from: NUMBERS.enrolAgree,
+        to: LINES.enrolAgree,
+        keyword: 'vote',
+      }),
+    );
+    await run(
+      smsInboundEvent({
+        from: NUMBERS.enrolAgree,
+        to: LINES.enrolAgree,
+        body: address,
+        messageSid: `SM-${task.id}-address`,
+      }),
+    );
+
+    const { result } = await run(
+      smsInboundEvent({
+        from: NUMBERS.enrolAgree,
+        to: LINES.enrolAgree,
+        keyword: 'agree',
+      }),
+    );
+
+    expect(result).toEqual({ message: 'enrolled' });
+    expect(recordedSms.at(-1)?.body).toBe(
+      `You're registered to vote in "${name}".`,
+    );
+    const row = await findVoterEnrolment({
+      processInstanceId: instanceId,
+      authUserId: member.authUserId,
+    });
+    expect(row?.enrolledAt).not.toBeNull();
+  });
+
+  it('given a voter removed from the decision after starting registration texts AGREE, membership deleted by raw delete, then nothing is affirmed and no attestation is revealed', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsCommandFixture(task.id, onTestFinished);
+    const name = `Agree Removed ${task.id}`;
+    const { member, instanceId } = await seed(fixture, {
+      phone: NUMBERS.agreeRemoved,
+      line: LINES.agreeRemoved,
+      name,
+    });
+    const address = `375 S High St ${task.id}`;
+    memoryGeocoder.set(address, INSIDE);
+    await run(
+      smsInboundEvent({
+        from: NUMBERS.agreeRemoved,
+        to: LINES.agreeRemoved,
+        keyword: 'vote',
+      }),
+    );
+    await run(
+      smsInboundEvent({
+        from: NUMBERS.agreeRemoved,
+        to: LINES.agreeRemoved,
+        body: address,
+        messageSid: `SM-${task.id}-removed-address`,
+      }),
+    );
+
+    const [instance] = await db
+      .select({ profileId: processInstances.profileId })
+      .from(processInstances)
+      .where(eq(processInstances.id, instanceId));
+    await db
+      .delete(profileUsers)
+      .where(
+        and(
+          eq(profileUsers.profileId, instance!.profileId!),
+          eq(profileUsers.authUserId, member.authUserId),
+        ),
+      );
+
+    const { result } = await run(
+      smsInboundEvent({
+        from: NUMBERS.agreeRemoved,
+        to: LINES.agreeRemoved,
+        keyword: 'agree',
+      }),
+    );
+
+    expect(result).toEqual({ message: 'nothing to affirm' });
+    expect(recordedSms.at(-1)?.body).toBe(
+      'There is nothing to affirm. Text VOTE and a decision name to register.',
+    );
+    const row = await findVoterEnrolment({
+      processInstanceId: instanceId,
+      authUserId: member.authUserId,
+    });
+    expect(row?.enrolledAt ?? null).toBeNull();
+  });
+
+  it('given the decision was cancelled after the attestation was sent, status planted by raw update, when the voter texts AGREE, then nothing is affirmed', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsCommandFixture(task.id, onTestFinished);
+    const name = `Agree Closed ${task.id}`;
+    const { member, instanceId } = await seed(fixture, {
+      phone: NUMBERS.agreeClosed,
+      line: LINES.agreeClosed,
+      name,
+    });
+    const address = `375 S High St ${task.id}`;
+    memoryGeocoder.set(address, INSIDE);
+    await run(
+      smsInboundEvent({
+        from: NUMBERS.agreeClosed,
+        to: LINES.agreeClosed,
+        keyword: 'vote',
+      }),
+    );
+    const resolved = await run(
+      smsInboundEvent({
+        from: NUMBERS.agreeClosed,
+        to: LINES.agreeClosed,
+        body: address,
+        messageSid: `SM-${task.id}-closed-address`,
+      }),
+    );
+    expect(resolved.result).toEqual({ message: 'address resolved' });
+    await db
+      .update(processInstances)
+      .set({ status: ProcessStatus.CANCELLED })
+      .where(eq(processInstances.id, instanceId));
+
+    const { result } = await run(
+      smsInboundEvent({
+        from: NUMBERS.agreeClosed,
+        to: LINES.agreeClosed,
+        keyword: 'agree',
+      }),
+    );
+
+    expect(result).toEqual({ message: 'nothing to affirm' });
+    const row = await findVoterEnrolment({
+      processInstanceId: instanceId,
+      authUserId: member.authUserId,
+    });
+    expect(row?.enrolledAt ?? null).toBeNull();
+  });
+
+  it('given a member with no registration in progress texts AGREE, then they are told there is nothing to affirm', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsCommandFixture(task.id, onTestFinished);
+    await seed(fixture, {
+      phone: NUMBERS.agreeNothing,
+      line: null,
+      name: `Agree Nothing ${task.id}`,
+    });
+
+    const { result } = await run(
+      smsInboundEvent({ from: NUMBERS.agreeNothing, keyword: 'agree' }),
+    );
+
+    expect(result).toEqual({ message: 'nothing to affirm' });
+    expect(recordedSms.map((sms) => sms.body)).toEqual([
+      'There is nothing to affirm. Text VOTE and a decision name to register.',
+    ]);
+  });
+
+  it('given a member texts VOTE and the slug of a decision with no registration step, then they are told none is needed', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsCommandFixture(task.id, onTestFinished);
+    const name = `Vote No Rule ${task.id}`;
+    const { slug } = await seed(fixture, {
+      phone: NUMBERS.voteNoRule,
+      line: null,
+      name,
+      withRule: false,
+    });
+
+    const { result } = await run(
+      smsInboundEvent({
+        from: NUMBERS.voteNoRule,
+        keyword: 'vote',
+        argument: slug,
+      }),
+    );
+
+    expect(result).toEqual({ message: 'no enrolment needed' });
+    expect(recordedSms.map((sms) => sms.body)).toEqual([
+      `No registration is needed for "${name}". Voting is open.`,
+    ]);
+  });
+
+  it('given a member with no registration in progress texts free text, then they get the help reply as before', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsCommandFixture(task.id, onTestFinished);
+    await seed(fixture, {
+      phone: NUMBERS.freeNothing,
+      line: null,
+      name: `Free Nothing ${task.id}`,
+    });
+
+    const { result } = await run(
+      smsInboundEvent({
+        from: NUMBERS.freeNothing,
+        body: 'hello there',
+        messageSid: `SM-${task.id}-hello`,
+      }),
+    );
+
+    expect(result).toEqual({ message: 'help sent' });
+    expect(recordedSms.map((sms) => sms.body)).toEqual([
+      SMS_COMMAND_HELP_MESSAGE,
+    ]);
+  });
+
+  it('given a member texts VOTE alone to the shared number, then they are asked for a decision name', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsCommandFixture(task.id, onTestFinished);
+    await seed(fixture, {
+      phone: NUMBERS.voteNoSlug,
+      line: null,
+      name: `Vote No Slug ${task.id}`,
+    });
+
+    const { result } = await run(
+      smsInboundEvent({ from: NUMBERS.voteNoSlug, keyword: 'vote' }),
+    );
+
+    expect(result).toEqual({ message: 'vote needs a decision' });
+    expect(recordedSms.map((sms) => sms.body)).toEqual([
+      'Text VOTE and a decision name, for example VOTE columbus.',
+    ]);
+  });
+
+  it("given a registered member whose decision's attestation was rewritten, when they text VOTE, then they are still registered because enrolment records only the time", async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsCommandFixture(task.id, onTestFinished);
+    const name = `Enrol Rewrite ${task.id}`;
+    const member = await fixture.createPhoneOnlyAccount(
+      parsePhoneNumber(NUMBERS.enrolRewrite),
+    );
+    const { instanceId, instanceProfileId } =
+      await fixture.createVotingInstance({
+        owner: member,
+        name,
+        proposalTitles: ['Crosswalk lighting'],
+        enrolment: { attestation: ATTESTATION, boundary: true },
+        ownerIsAdmin: true,
+      });
+    await fixture.createDistrict({
+      profileId: instanceProfileId,
+      name: `District 5 ${name}`,
+    });
+    await fixture.bindLine(instanceId, parsePhoneNumber(LINES.enrolRewrite));
+    const address = `375 S High St ${task.id}`;
+    memoryGeocoder.set(address, INSIDE);
+    const text = (
+      event: Omit<Parameters<typeof smsInboundEvent>[0], 'from' | 'to'>,
+    ) =>
+      run(
+        smsInboundEvent({
+          from: NUMBERS.enrolRewrite,
+          to: LINES.enrolRewrite,
+          ...event,
+        }),
+      );
+    await text({ keyword: 'vote' });
+    await text({ body: address, messageSid: `SM-${task.id}-address` });
+    await text({ keyword: 'agree', messageSid: `SM-${task.id}-agree` });
+    await fixture.rewriteAttestation({
+      instanceId,
+      owner: member,
+      attestation: `I affirm the rewritten requirements ${task.id}.`,
+    });
+
+    const again = await text({
+      keyword: 'vote',
+      messageSid: `SM-${task.id}-vote-again`,
+    });
+
+    expect(again.result).toEqual({ message: 'already enrolled' });
+    expect(recordedSms.at(-1)?.body).toBe(
+      `You're registered to vote in "${name}".`,
+    );
+    const row = await findVoterEnrolment({
+      processInstanceId: instanceId,
+      authUserId: member.authUserId,
+    });
+    expect(row?.enrolledAt).not.toBeNull();
+  });
+
+  it("given a member asked for an address by one decision, when they text VOTE and another decision's slug to the first one's line and then an address, then the address registers them for the decision they named", async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsCommandFixture(task.id, onTestFinished);
+    const first = await seed(fixture, {
+      phone: NUMBERS.enrolSwitch,
+      line: LINES.enrolSwitch,
+      name: `Enrol First ${task.id}`,
+    });
+    const other = await fixture.createVotingInstance({
+      owner: first.member,
+      name: `Enrol Other ${task.id}`,
+      proposalTitles: ['Bike racks'],
+      enrolment: { attestation: ATTESTATION, boundary: true },
+    });
+    await fixture.addMember(other.instanceProfileId, first.member);
+    const otherDistrict = await fixture.createDistrict({
+      profileId: other.instanceProfileId,
+      name: `Other District ${task.id}`,
+    });
+    const address = `375 S High St ${task.id}`;
+    memoryGeocoder.set(address, INSIDE);
+    const text = (
+      event: Omit<Parameters<typeof smsInboundEvent>[0], 'from' | 'to'>,
+    ) =>
+      run(
+        smsInboundEvent({
+          from: NUMBERS.enrolSwitch,
+          to: LINES.enrolSwitch,
+          ...event,
+        }),
+      );
+    await text({ keyword: 'vote' });
+
+    await text({
+      keyword: 'vote',
+      argument: other.slug,
+      messageSid: `SM-${task.id}-vote-other`,
+    });
+    const { result } = await text({
+      body: address,
+      messageSid: `SM-${task.id}-address`,
+    });
+
+    expect(result).toEqual({ message: 'address resolved' });
+    await expect(
+      findVoterEnrolment({
+        processInstanceId: other.instanceId,
+        authUserId: first.member.authUserId,
+      }),
+    ).resolves.toMatchObject({
+      taxonomyTermId: otherDistrict.taxonomyTermId,
+      enrolledAt: null,
+    });
+    await expect(
+      findVoterEnrolment({
+        processInstanceId: first.instanceId,
+        authUserId: first.member.authUserId,
+      }),
+    ).resolves.toMatchObject({
+      taxonomyTermId: null,
+      enrolledAt: null,
+    });
   });
 });

@@ -79,6 +79,7 @@ export const handleTwilioInboundWebhookRequest = async ({
       keyword,
       argument,
       to: message.to || null,
+      body: message.body,
     },
   });
 
