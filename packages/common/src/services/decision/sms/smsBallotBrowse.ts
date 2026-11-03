@@ -116,7 +116,6 @@ export async function listSmsBallotPage({
   authUserId: string;
   instanceId: string;
   after?: number;
-  /** The decision line the browse came in on, recorded on the session. */
   phoneNumberId?: string | null;
 }): Promise<SmsBallotPage> {
   const { instance, decisionName, taxonomyTermId, district } =

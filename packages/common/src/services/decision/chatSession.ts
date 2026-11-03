@@ -31,7 +31,6 @@ export async function findLatestChatSession({
   phoneNumberId,
 }: {
   authUserId: string;
-  /** Only sessions last browsed on this decision line. */
   phoneNumberId?: string;
 }): Promise<DecisionChatSession | null> {
   const profileId = await getIndividualProfileId(authUserId);
@@ -48,7 +47,6 @@ export async function ensureChatSession({
   authUserId,
   phoneNumberId,
 }: SessionKey & {
-  /** The decision line this browse came in on; omitted leaves the stored line as it is. */
   phoneNumberId?: string | null;
 }): Promise<DecisionChatSession> {
   const profileId = await getIndividualProfileId(authUserId);

@@ -1160,10 +1160,6 @@ export async function createDecisionBoundary({
   return boundary;
 }
 
-/**
- * Takes the next short code off the decision's counter, as `submitProposal`
- * does, for a factory that writes a submitted proposal without the service.
- */
 export async function claimShortCode(processInstanceId: string) {
   const [row] = await db
     .update(processInstances)

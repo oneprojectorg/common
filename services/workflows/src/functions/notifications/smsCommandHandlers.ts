@@ -709,8 +709,6 @@ const refuseBallotRead = async (
       );
 };
 
-// The cursor moves only once the page went out, so a reply the carrier
-// refused is sent again on the next MORE instead of being skipped.
 const deliverBallotPage = async (
   { step, account, deliver }: SmsCommandContext,
   page: SmsBallotPage,
@@ -730,9 +728,6 @@ const deliverBallotPage = async (
   return sent;
 };
 
-// On a decision line the line's own decision is the default; a decision the
-// voter browsed by slug on that same line overrides it, and a session browsed
-// on another line never does. On the shared number the latest session wins.
 const resolveBrowseInstance = async ({
   step,
   account,
