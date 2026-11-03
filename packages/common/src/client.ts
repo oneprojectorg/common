@@ -96,6 +96,8 @@ export {
   type PhaseReviewerSummariesParams,
   reviewerStatusSchema,
   type ReviewerStatus,
+  reviewerSortSchema,
+  type ReviewerSort,
   phaseReviewerSummarySchema,
   type PhaseReviewerSummary,
   phaseReviewerSummariesSchema,

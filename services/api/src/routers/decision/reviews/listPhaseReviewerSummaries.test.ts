@@ -1,4 +1,11 @@
-import { type ReviewerStatus, reviewerStatusSchema } from '@op/common/client';
+import {
+  type PhaseReviewerSummaries,
+  type PhaseReviewerSummariesInput,
+  type PhaseReviewerSummary,
+  type ReviewerSort,
+  type ReviewerStatus,
+  reviewerStatusSchema,
+} from '@op/common/client';
 import {
   createProposalReview,
   TestReviewsDataManager,
@@ -118,103 +125,201 @@ describe.concurrent('decision.listPhaseReviewerSummaries', () => {
     expect(summary?.lastSubmittedAt).not.toBeNull();
   });
 
-  it('orders by assigned count then id, and lists idle reviewers last with zero', async ({
+  it('pages every sort in order, without repeats or gaps', async ({
     task,
     onTestFinished,
   }) => {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
-    const first = await testData.createReviewAssignment({
-      title: `Ordered proposal A1 ${task.id}`,
-      status: ProposalReviewAssignmentStatus.PENDING,
-    });
-    const context = first.context;
-    await testData.createReviewAssignment({
-      context,
-      title: `Ordered proposal A2 ${task.id}`,
-      status: ProposalReviewAssignmentStatus.PENDING,
-    });
-
-    const ties = [
-      await testData.createInstanceMember(context),
-      await testData.createInstanceMember(context),
-    ];
-    for (const [reviewer, title] of [
-      [ties[0], `Ordered proposal B ${task.id}`],
-      [ties[1], `Ordered proposal C ${task.id}`],
-    ] as const) {
-      await testData.createReviewAssignment({
-        context,
-        reviewer,
-        title,
-        status: ProposalReviewAssignmentStatus.PENDING,
-      });
-    }
-    const idle = await testData.createInstanceReviewerWithRole(context);
-    await testData.setCurrentPhase(context.instance.instance.id, 'review');
+    const { context, reviewers } = await seedSortedReviewers(testData, task.id);
+    const { half, full, third, zeroLow, zeroHigh, idle } = reviewers;
 
     const adminCaller = await createAuthenticatedCaller(
       context.defaultReviewer.email,
     );
-    const result = await adminCaller.decision.listPhaseReviewerSummaries({
+    const input = {
       processInstanceId: context.instance.instance.id,
       phaseId: 'review',
-    });
+    };
+    const seededIds = Object.values(reviewers);
 
-    const expected = [
-      context.defaultReviewer.profileId,
-      ...ties.map((tie) => tie.profileId).sort(),
-      idle.profileId,
+    const cases: { sort: ReviewerSort; expected: string[] }[] = [
+      {
+        sort: 'leastComplete',
+        expected: [zeroLow, zeroHigh, third, half, full, idle],
+      },
+      {
+        sort: 'mostComplete',
+        expected: [full, half, third, zeroLow, zeroHigh, idle],
+      },
+      {
+        sort: 'recentActivity',
+        // Only `third` and `full` have a submitted review; the rest tie on
+        // null and fall back to id.
+        expected: [third, full, ...[half, zeroLow, zeroHigh, idle].sort()],
+      },
+      {
+        sort: 'name',
+        // `zeroLow` and `zeroHigh` share a name, so id breaks the tie.
+        expected: [full, half, zeroLow, zeroHigh, third, idle],
+      },
     ];
-    const ordered = result.items.filter((summary) =>
-      expected.includes(summary.reviewer.id),
-    );
-    expect(ordered.map((summary) => summary.reviewer.id)).toEqual(expected);
-    expect(ordered.map((summary) => summary.assignedCount)).toEqual([
-      2, 1, 1, 0,
-    ]);
+
+    for (const { sort, expected } of cases) {
+      const [walked, unpaged] = await Promise.all([
+        walkAllPages({ caller: adminCaller, input: { ...input, sort } }),
+        adminCaller.decision.listPhaseReviewerSummaries({
+          ...input,
+          sort,
+          limit: 100,
+        }),
+      ]);
+      const walkedIds = walked.map((row) => row.reviewer.id);
+
+      expect(walkedIds, sort).toEqual(
+        unpaged.items.map((row) => row.reviewer.id),
+      );
+      expect(new Set(walkedIds).size, sort).toBe(walkedIds.length);
+      expect(walkedIds.length, sort).toBe(unpaged.total);
+      expect(
+        walkedIds.filter((id) => seededIds.includes(id)),
+        sort,
+      ).toEqual(expected);
+    }
   });
 
-  it('pages in order without repeats or gaps, with phase-wide totals on every page', async ({
+  it('lists reviewers with nothing assigned last under both completion sorts', async ({
     task,
     onTestFinished,
   }) => {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
-    const seeded = await seedPagedReviewers(testData, task.id);
-    const { context, expectedProfileIds } = seeded;
+    const { context } = await seedSortedReviewers(testData, task.id);
 
     const adminCaller = await createAuthenticatedCaller(
       context.defaultReviewer.email,
     );
 
-    const firstPage = await adminCaller.decision.listPhaseReviewerSummaries({
+    for (const sort of ['leastComplete', 'mostComplete'] as const) {
+      const rows = await walkAllPages({
+        caller: adminCaller,
+        input: {
+          processInstanceId: context.instance.instance.id,
+          phaseId: 'review',
+          sort,
+        },
+      });
+      const firstUnassigned = rows.findIndex((row) => row.assignedCount === 0);
+
+      expect(firstUnassigned, sort).toBeGreaterThan(0);
+      expect(
+        rows.slice(firstUnassigned).every((row) => row.assignedCount === 0),
+        sort,
+      ).toBe(true);
+    }
+  });
+
+  it('keeps paging when a page ends on a completion ratio of 0', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const { context, reviewers } = await seedSortedReviewers(testData, task.id);
+
+    const adminCaller = await createAuthenticatedCaller(
+      context.defaultReviewer.email,
+    );
+    const input = {
       processInstanceId: context.instance.instance.id,
       phaseId: 'review',
-      limit: 2,
-    });
+      sort: 'leastComplete' as const,
+    };
 
-    expect(firstPage.items.map((row) => row.reviewer.id)).toEqual(
-      expectedProfileIds.slice(0, 2),
-    );
-    expect(firstPage.items.map((row) => row.assignedCount)).toEqual([2, 1]);
+    // A page of one ends between the two reviewers at 0.
+    const firstPage = await adminCaller.decision.listPhaseReviewerSummaries({
+      ...input,
+      limit: 1,
+    });
+    expect(firstPage.items.map((row) => row.reviewer.id)).toEqual([
+      reviewers.zeroLow,
+    ]);
     expect(firstPage.next).not.toBeNull();
 
     const secondPage = await adminCaller.decision.listPhaseReviewerSummaries({
-      processInstanceId: context.instance.instance.id,
-      phaseId: 'review',
-      limit: 2,
+      ...input,
+      limit: 1,
       cursor: firstPage.next,
     });
+    expect(secondPage.items.map((row) => row.reviewer.id)).toEqual([
+      reviewers.zeroHigh,
+    ]);
 
-    expect(secondPage.items.map((row) => row.reviewer.id)).toEqual(
-      expectedProfileIds.slice(2, 4),
+    // A page of two ends on the second reviewer at 0.
+    const pageOfTwo = await adminCaller.decision.listPhaseReviewerSummaries({
+      ...input,
+      limit: 2,
+    });
+    const afterZero = await adminCaller.decision.listPhaseReviewerSummaries({
+      ...input,
+      limit: 2,
+      cursor: pageOfTwo.next,
+    });
+    expect(afterZero.items[0]?.reviewer.id).toBe(reviewers.third);
+  });
+
+  it('rejects a cursor whose sort value does not fit its cast', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const context = await testData.createContext();
+
+    const adminCaller = await createAuthenticatedCaller(
+      context.defaultReviewer.email,
     );
-    expect(secondPage.items.map((row) => row.assignedCount)).toEqual([1, 1]);
+    const id = context.defaultReviewer.profileId;
+    const cases = [
+      { sort: 'leastComplete', completionRatio: 'abc', id },
+      { sort: 'mostComplete', completionRatio: '-1', id },
+      { sort: 'recentActivity', lastSubmittedAt: 'abc', id },
+      { sort: 'recentActivity', lastSubmittedAt: '2026-02-30 10:00:00+00', id },
+    ] as const;
 
-    // Totals describe the phase, not the page, so both pages agree.
-    expect(firstPage.totalAssignments).toBe(5);
-    expect(secondPage.totalAssignments).toBe(5);
-    expect(secondPage.totalReviewers).toBe(firstPage.totalReviewers);
-    expect(secondPage.totalReviewers).toBeGreaterThanOrEqual(4);
+    for (const cursor of cases) {
+      await expect(
+        adminCaller.decision.listPhaseReviewerSummaries({
+          processInstanceId: context.instance.instance.id,
+          phaseId: 'review',
+          sort: cursor.sort,
+          cursor: Buffer.from(JSON.stringify(cursor)).toString('base64'),
+        }),
+        JSON.stringify(cursor),
+      ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
+    }
+  });
+
+  it('rejects a cursor from another sort', async ({ task, onTestFinished }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const { context } = await seedSortedReviewers(testData, task.id);
+
+    const adminCaller = await createAuthenticatedCaller(
+      context.defaultReviewer.email,
+    );
+    const input = {
+      processInstanceId: context.instance.instance.id,
+      phaseId: 'review',
+    };
+    const firstPage = await adminCaller.decision.listPhaseReviewerSummaries({
+      ...input,
+      limit: 1,
+    });
+
+    await expect(
+      adminCaller.decision.listPhaseReviewerSummaries({
+        ...input,
+        sort: 'name',
+        limit: 1,
+        cursor: firstPage.next,
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
   });
 
   it('returns each reviewer status and filters on it, with a filtered total beside the phase-wide one', async ({
@@ -382,52 +487,140 @@ describe.concurrent('decision.listPhaseReviewerSummaries', () => {
   });
 });
 
+type PhaseReviewerSummariesCaller = Awaited<
+  ReturnType<typeof createAuthenticatedCaller>
+>;
+
+/** Follows `next` from the first page to the last, two rows at a time. */
+async function walkAllPages({
+  caller,
+  input,
+}: {
+  caller: PhaseReviewerSummariesCaller;
+  input: Omit<PhaseReviewerSummariesInput, 'cursor' | 'limit'>;
+}) {
+  const rows: PhaseReviewerSummary[] = [];
+  let cursor: string | null = null;
+
+  do {
+    const page: PhaseReviewerSummaries =
+      await caller.decision.listPhaseReviewerSummaries({
+        ...input,
+        limit: 2,
+        cursor,
+      });
+    rows.push(...page.items);
+    cursor = page.next;
+  } while (cursor);
+
+  return rows;
+}
+
 /**
- * Four reviewers carrying 2/1/1/1 assignments. The three ties sort by id.
+ * Six reviewers, one per sort position. Completion: `full` 1/1, `half` 1/2,
+ * `third` 1/3, `zeroLow` and `zeroHigh` 0/1 (ordered by id), `idle` nothing
+ * assigned. Only `third` (newest) and `full` have a submitted review. Names
+ * order them full, half, zero, zero, third, idle.
  */
-async function seedPagedReviewers(
+async function seedSortedReviewers(
   testData: TestReviewsDataManager,
   testId: string,
 ) {
-  const first = await testData.createReviewAssignment({
-    title: `Paged proposal A1 ${testId}`,
-    status: ProposalReviewAssignmentStatus.PENDING,
+  const halfDone = await testData.createReviewAssignment({
+    title: `Sorted proposal half done ${testId}`,
+    status: ProposalReviewAssignmentStatus.COMPLETED,
   });
-  const context = first.context;
+  const context = halfDone.context;
   await testData.createReviewAssignment({
     context,
-    title: `Paged proposal A2 ${testId}`,
+    title: `Sorted proposal half open ${testId}`,
     status: ProposalReviewAssignmentStatus.PENDING,
   });
 
-  const ties = [
-    await testData.createInstanceMember(context),
-    await testData.createInstanceMember(context),
-    await testData.createInstanceMember(context),
-  ];
+  const fullReviewer = await testData.createInstanceMember(context);
+  const fullDone = await testData.createReviewAssignment({
+    context,
+    reviewer: fullReviewer,
+    title: `Sorted proposal full ${testId}`,
+    status: ProposalReviewAssignmentStatus.COMPLETED,
+  });
 
-  for (const [reviewer, title] of [
-    [ties[0], `Paged proposal N ${testId}`],
-    [ties[1], `Paged proposal B ${testId}`],
-    [ties[2], `Paged proposal C ${testId}`],
-  ] as const) {
+  const thirdReviewer = await testData.createInstanceMember(context);
+  const thirdDone = await testData.createReviewAssignment({
+    context,
+    reviewer: thirdReviewer,
+    title: `Sorted proposal third done ${testId}`,
+    status: ProposalReviewAssignmentStatus.COMPLETED,
+  });
+  for (const suffix of ['a', 'b']) {
     await testData.createReviewAssignment({
       context,
-      reviewer,
-      title,
+      reviewer: thirdReviewer,
+      title: `Sorted proposal third open ${suffix} ${testId}`,
       status: ProposalReviewAssignmentStatus.PENDING,
     });
   }
 
+  const zeroReviewers = [
+    await testData.createInstanceMember(context),
+    await testData.createInstanceMember(context),
+  ];
+  for (const [index, reviewer] of zeroReviewers.entries()) {
+    await testData.createReviewAssignment({
+      context,
+      reviewer,
+      title: `Sorted proposal zero ${index} ${testId}`,
+      status: ProposalReviewAssignmentStatus.PENDING,
+    });
+  }
+  const [zeroLow, zeroHigh] = zeroReviewers
+    .map((reviewer) => reviewer.profileId)
+    .sort();
+
+  const idle = await testData.createInstanceReviewerWithRole(context);
   await testData.setCurrentPhase(context.instance.instance.id, 'review');
 
-  return {
-    context,
-    expectedProfileIds: [
-      context.defaultReviewer.profileId,
-      ...ties.map((tie) => tie.profileId).sort(),
-    ],
+  const now = Date.now();
+  await createProposalReview({
+    assignmentId: fullDone.assignment.id,
+    state: ProposalReviewState.SUBMITTED,
+    reviewData: { answers: {}, rationales: {} },
+    submittedAt: new Date(now - 60 * 60 * 1000).toISOString(),
+  });
+  await createProposalReview({
+    assignmentId: thirdDone.assignment.id,
+    state: ProposalReviewState.SUBMITTED,
+    reviewData: { answers: {}, rationales: {} },
+    submittedAt: new Date(now).toISOString(),
+  });
+
+  if (!zeroLow || !zeroHigh) {
+    throw new Error('Expected two reviewers at a completion ratio of 0');
+  }
+
+  const reviewers = {
+    half: context.defaultReviewer.profileId,
+    full: fullReviewer.profileId,
+    third: thirdReviewer.profileId,
+    zeroLow,
+    zeroHigh,
+    idle: idle.profileId,
   };
+
+  const nameToken = `Sorted ${testId.slice(0, 8)}`;
+  const names: Record<string, string> = {
+    [reviewers.full]: `${nameToken} A`,
+    [reviewers.half]: `${nameToken} B`,
+    [reviewers.zeroLow]: `${nameToken} C`,
+    [reviewers.zeroHigh]: `${nameToken} C`,
+    [reviewers.third]: `${nameToken} D`,
+    [reviewers.idle]: `${nameToken} E`,
+  };
+  for (const [profileId, name] of Object.entries(names)) {
+    await db.update(profiles).set({ name }).where(eq(profiles.id, profileId));
+  }
+
+  return { context, reviewers };
 }
 
 async function seedReviewerStatuses(
