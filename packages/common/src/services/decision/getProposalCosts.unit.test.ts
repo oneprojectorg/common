@@ -172,7 +172,12 @@ describe('getProposalCosts', () => {
         voterCostField: 'budget',
         unit: USD,
       }),
-    ).rejects.toThrow('The budget of "Community garden" is not a valid amount');
+    ).rejects.toMatchObject({
+      name: 'BallotCostError',
+      message: expect.stringContaining(
+        'The budget of "Community garden" is not a valid amount',
+      ),
+    });
   });
 
   it('rejects the ballot when a snapshot cost is filled in but not an amount', async () => {

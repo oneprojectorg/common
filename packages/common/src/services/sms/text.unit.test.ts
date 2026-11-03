@@ -104,3 +104,38 @@ describe('splitSmsBody', () => {
     ).toEqual(['Head:\nFoot.']);
   });
 });
+
+describe('splitSmsBody with a character wider than the remaining room', () => {
+  it('takes the whole character instead of looping forever', () => {
+    const bodies = splitSmsBody({ lines: ['\u{1F600}\u{1F600}'], max: 10 });
+
+    expect(bodies.join('')).toContain('\u{1F600}');
+    expect(bodies.length).toBeGreaterThan(0);
+  });
+});
+
+describe('splitSmsBody with one line longer than a text', () => {
+  it('given a single line of 4000 characters, then it is cut at word boundaries into numbered texts that each fit', () => {
+    const line = Array.from({ length: 500 }, (_, i) => `word${i}`).join(' ');
+
+    const bodies = splitSmsBody({ lines: [line] });
+
+    expect(bodies.length).toBeGreaterThan(1);
+    for (const body of bodies) {
+      expect(body.length).toBeLessThanOrEqual(1600);
+      expect(body).toMatch(/^\(\d+\/\d+\)\n/);
+    }
+    expect(bodies.map((b) => b.replace(/^\(\d+\/\d+\)\n/, '')).join(' ')).toBe(
+      line,
+    );
+  });
+
+  it('given a single word longer than a text, then it is hard-cut so no text exceeds the limit', () => {
+    const bodies = splitSmsBody({ lines: ['x'.repeat(3300)] });
+
+    expect(bodies).toHaveLength(3);
+    for (const body of bodies) {
+      expect(body.length).toBeLessThanOrEqual(1600);
+    }
+  });
+});

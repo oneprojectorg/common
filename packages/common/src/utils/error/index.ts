@@ -123,3 +123,5 @@ export class NotImplementedError extends CommonError {
     super(message ?? defaultMessage);
   }
 }
+
+export class BallotCostError extends ValidationError {}

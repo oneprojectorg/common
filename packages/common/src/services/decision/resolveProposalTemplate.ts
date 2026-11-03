@@ -1,6 +1,5 @@
 import { db } from '@op/db/client';
 
-import type { DecisionInstanceData } from './schemas/instanceData';
 import type { ProposalTemplateSchema } from './types';
 
 /**
@@ -14,12 +13,26 @@ import type { ProposalTemplateSchema } from './types';
  * TODO: remove or adapt this function. it seems that we just need to fix the typing since we have the data
  *
  */
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  value !== null && typeof value === 'object' && !Array.isArray(value);
+
+const isProposalTemplate = (value: unknown): value is ProposalTemplateSchema =>
+  isRecord(value) &&
+  (value.properties === undefined || isRecord(value.properties)) &&
+  (value['x-field-order'] === undefined ||
+    (Array.isArray(value['x-field-order']) &&
+      value['x-field-order'].every((field) => typeof field === 'string')));
+
+const templateOf = (data: unknown): ProposalTemplateSchema | null =>
+  isRecord(data) && isProposalTemplate(data.proposalTemplate)
+    ? data.proposalTemplate
+    : null;
+
 export async function resolveProposalTemplate(
-  instanceData: DecisionInstanceData | Record<string, unknown> | null,
+  instanceData: unknown,
   processId: string | null,
 ): Promise<ProposalTemplateSchema | null> {
-  const fromInstance =
-    (instanceData?.proposalTemplate as ProposalTemplateSchema) ?? null;
+  const fromInstance = templateOf(instanceData);
 
   if (fromInstance) {
     return fromInstance;
@@ -34,10 +47,5 @@ export async function resolveProposalTemplate(
     columns: { processSchema: true },
   });
 
-  const processSchema = process?.processSchema as Record<
-    string,
-    unknown
-  > | null;
-
-  return (processSchema?.proposalTemplate as ProposalTemplateSchema) ?? null;
+  return templateOf(process?.processSchema);
 }
