@@ -23,8 +23,6 @@ interface ManualSelectionToolbarProps {
   categories: Category[];
   filters: SelectionFilters;
   onChange: (patch: Partial<SelectionFilters>) => void;
-  /** Px offset where the bar pins (clears the floating phase toggle). */
-  pinOffset?: number;
 }
 
 export const ManualSelectionToolbar = ({
@@ -32,13 +30,12 @@ export const ManualSelectionToolbar = ({
   categories,
   filters,
   onChange,
-  pinOffset,
 }: ManualSelectionToolbarProps) => {
   const t = useTranslations();
   const { selectedCategory, sortOrder } = filters;
 
   return (
-    <StickyFilterBar pinOffset={pinOffset}>
+    <StickyFilterBar>
       <ProposalCount count={count} />
       <div className="scrollbar-none flex items-center gap-4 max-md:-mx-4 max-md:w-screen max-md:overflow-x-scroll max-md:px-4">
         <ResponsiveSelect

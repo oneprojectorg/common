@@ -12,13 +12,6 @@ import { ReviewSelectionPage } from './pages/ReviewSelectionPage';
 import { StandardDecisionPage } from './pages/StandardDecisionPage';
 import { VotingPage } from './pages/VotingPage';
 
-// Sticky filter-bar pin offset (px) for the decision-view layout — the clearance
-// below the scroll container's top for the floating Overview/Current toggle that
-// overhangs the header bottom on mobile. The bar pins just under the toggle;
-// content above the bar (the phase header) scrolls up behind the toggle.
-// The legacy /profile route has no toggle and falls back to the bar's 0 default.
-const DECISION_VIEW_PIN_OFFSET = 56;
-
 function DecisionStateRouterLegacy({
   instanceId,
   slug,
@@ -80,7 +73,6 @@ function DecisionStateRouterNew({
         instanceId={instanceId}
         slug={slug}
         decisionSlug={decisionSlug}
-        pinOffset={DECISION_VIEW_PIN_OFFSET}
       />
     );
   }
@@ -90,12 +82,7 @@ function DecisionStateRouterNew({
       notFound();
     }
     return (
-      <ReviewPage
-        instance={instance}
-        decisionSlug={decisionSlug}
-        slug={slug}
-        pinOffset={DECISION_VIEW_PIN_OFFSET}
-      />
+      <ReviewPage instance={instance} decisionSlug={decisionSlug} slug={slug} />
     );
   }
 
@@ -105,7 +92,6 @@ function DecisionStateRouterNew({
         instanceId={instanceId}
         slug={slug}
         decisionSlug={decisionSlug}
-        pinOffset={DECISION_VIEW_PIN_OFFSET}
       />
     );
   }
@@ -118,7 +104,6 @@ function DecisionStateRouterNew({
         instanceId={instanceId}
         profileSlug={slug}
         decisionSlug={decisionSlug}
-        pinOffset={DECISION_VIEW_PIN_OFFSET}
       />
     );
   }
@@ -128,7 +113,6 @@ function DecisionStateRouterNew({
       instanceId={instanceId}
       slug={slug}
       decisionSlug={decisionSlug}
-      pinOffset={DECISION_VIEW_PIN_OFFSET}
     />
   );
 }
