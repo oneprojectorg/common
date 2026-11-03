@@ -159,6 +159,33 @@ describe('useProposalAwards', () => {
     expect(result.current.total).toBeNull();
     expect(result.current.totalRequested).toBeNull();
     expect(result.current.isOverBudget).toBe(false);
+    expect(result.current.hasMixedCurrencies).toBe(true);
+    expect(result.current.canConfirm).toBe(true);
+  });
+
+  it('blocks the confirm when a budget exists but the winners cannot be summed', () => {
+    const { result } = renderAwards({
+      proposals: [solar, euro],
+      selectedIds: ['solar', 'euro'],
+      processBudget: 10000,
+    });
+
+    expect(result.current.hasMixedCurrencies).toBe(true);
+    expect(result.current.canConfirm).toBe(false);
+  });
+
+  it('blocks the confirm when an unbudgeted winner joins a non-default currency under a budget', () => {
+    const { result } = renderAwards({
+      proposals: [euro, unbudgeted],
+      selectedIds: ['euro', 'blank'],
+      processBudget: 10000,
+    });
+
+    act(() => result.current.setAmount('blank', 9000));
+
+    expect(result.current.hasMixedCurrencies).toBe(true);
+    expect(result.current.isOverBudget).toBe(false);
+    expect(result.current.canConfirm).toBe(false);
   });
 
   it('gives no total when nothing is selected', () => {

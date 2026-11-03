@@ -98,7 +98,7 @@ describe('AwardBudgetMeter', () => {
     );
   });
 
-  it('shows nothing when the winners asked in different currencies', () => {
+  it('warns instead of a bar when the winners asked in different currencies', () => {
     renderMeter({
       proposals: [solar, euro],
       selectedIds: ['solar', 'euro'],
@@ -106,5 +106,8 @@ describe('AwardBudgetMeter', () => {
     });
 
     expect(screen.queryByRole('progressbar')).toBeNull();
+    expect(screen.getByRole('status').textContent).toBe(
+      'The awards use different currencies, so the total cannot be checked against the budget',
+    );
   });
 });

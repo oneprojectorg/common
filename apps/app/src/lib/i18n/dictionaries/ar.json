@@ -1238,6 +1238,7 @@
       "awardBudgetLabel": "الميزانية المخصصة",
       "awardedOfBudget": "<highlight>{awarded}</highlight> من {budget} مخصصة",
       "overBudgetWarning": "تجاوز الميزانية بمقدار {amount}",
+      "mixedCurrenciesWarning": "تستخدم المبالغ الممنوحة عملات مختلفة، لذا يتعذر التحقق من الإجمالي مقابل الميزانية",
       "totalAwardedLabel": "إجمالي المبالغ الممنوحة"
     },
     "proposals": {
