@@ -3,6 +3,7 @@ import {
   adminDecisionInstanceDetailSchema,
   allowsComments,
   getVoterCostField,
+  getVoterEnrolment,
   getVoterBudget,
   isRankedVoting,
   isReviewPhase,
@@ -36,6 +37,16 @@ const phaseRulesSchema = z
         voterBudget: z.number().optional(),
         voterCostField: z.string().optional(),
         ranked: z.boolean().optional(),
+        // Strict where the canonical VoterEnrolmentRule is strict; a stored
+        // rule without an attestation reads as no rule, the same answer
+        // getVoterEnrolment gives at runtime.
+        enrolment: z
+          .object({
+            attestation: z.string(),
+            boundary: z.boolean().optional(),
+          })
+          .optional()
+          .catch(undefined),
       })
       .partial()
       .optional(),
@@ -191,6 +202,7 @@ export const getDecisionInstanceRouter = router({
             voterCostField:
               voterBudget === undefined ? null : getVoterCostField({ rules }),
             ranked: isRankedVoting({ rules }),
+            enrolment: getVoterEnrolment({ rules }) ?? null,
             proposalsHiddenByDefault:
               rules?.proposals?.defaults?.hidden ?? false,
             advancementMethod: rules?.advancement?.method ?? null,

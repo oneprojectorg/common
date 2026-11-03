@@ -7,8 +7,9 @@ import {
   canEditProposals,
   getPhaseReviewSettings,
   getPreviousReviewPhases,
-  getVoterCostField,
   getVoterBudget,
+  getVoterCostField,
+  getVoterEnrolment,
   hasOpenReviews,
   hasVotingPhase,
   isPostSubmissionEditingAllowed,
@@ -636,5 +637,45 @@ describe('hasOpenReviews', () => {
     expect(hasOpenReviews({ rules: { reviews: { submit: true } } })).toBe(
       false,
     );
+  });
+});
+
+describe('getVoterEnrolment', () => {
+  it('returns the attestation text and the boundary flag when the rule is set', () => {
+    expect(
+      getVoterEnrolment({
+        rules: {
+          voting: {
+            submit: true,
+            enrolment: { attestation: 'I affirm.', boundary: true },
+          },
+        },
+      }),
+    ).toEqual({ attestation: 'I affirm.', boundary: true });
+  });
+
+  it('treats a rule without the boundary flag as not requiring a boundary', () => {
+    expect(
+      getVoterEnrolment({
+        rules: { voting: { enrolment: { attestation: 'I affirm.' } } },
+      }),
+    ).toEqual({ attestation: 'I affirm.', boundary: false });
+  });
+
+  it('returns undefined when the rule is absent, so no enrolment step applies', () => {
+    expect(getVoterEnrolment({ rules: { voting: { submit: true } } })).toBe(
+      undefined,
+    );
+    expect(getVoterEnrolment({})).toBe(undefined);
+  });
+
+  it('returns undefined when the attestation text is blank', () => {
+    expect(
+      getVoterEnrolment({
+        rules: {
+          voting: { enrolment: { attestation: '   ', boundary: true } },
+        },
+      }),
+    ).toBe(undefined);
   });
 });
