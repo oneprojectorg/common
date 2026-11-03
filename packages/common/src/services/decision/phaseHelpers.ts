@@ -1,4 +1,4 @@
-import { type TransactionType, db } from '@op/db/client';
+import { type DbClient, asc, db, eq, inArray } from '@op/db/client';
 import {
   EntityType,
   type ProcessPhase,
@@ -9,6 +9,7 @@ import {
 import type { User } from '@op/supabase/lib';
 import { permission } from 'access-zones';
 import { randomUUID } from 'node:crypto';
+import { isDeepStrictEqual } from 'node:util';
 
 import { CommonError, NotFoundError, ValidationError } from '../../utils';
 import { assertProfileAccess } from '../assert';
@@ -19,9 +20,10 @@ import {
   assertSettingsMatchSchema,
 } from './schemas/instanceData';
 import {
-  MAX_PHASE_NAME_LENGTH,
   PHASE_NAME_TOO_LONG,
+  phaseNameLengthSchema,
 } from './schemas/phaseName';
+import { MAX_PHASES_PER_DECISION } from './utils/phaseOrder';
 
 // phaseId and name live on the phase's profile.
 export type PhaseData = Omit<PhaseInstanceData, 'phaseId' | 'name'>;
@@ -30,6 +32,15 @@ export type PhaseData = Omit<PhaseInstanceData, 'phaseId' | 'name'>;
 type PhaseRowData = PhaseData & { phaseId?: string };
 
 type InstanceDataPhase = Pick<PhaseInstanceData, 'phaseId' | 'name'>;
+
+export interface DecisionPhase {
+  id: string;
+  profileId: string;
+  sortOrder: number;
+  data: PhaseRowData;
+  name: string;
+  slug: string;
+}
 
 const SLUG_ATTEMPTS = 3;
 
@@ -43,7 +54,7 @@ export const insertPhase = async ({
   data,
   generateSlug = generatePhaseSlug,
 }: {
-  tx: TransactionType;
+  tx: DbClient;
   processInstanceId: string;
   name: string;
   sortOrder: number;
@@ -70,10 +81,106 @@ export const insertPhase = async ({
   return { phase, profile };
 };
 
+export const listPhases = async ({
+  db,
+  processInstanceId,
+}: {
+  db: DbClient;
+  processInstanceId: string;
+}): Promise<DecisionPhase[]> => {
+  const phases = await db
+    .select({
+      id: processPhases.id,
+      profileId: processPhases.profileId,
+      sortOrder: processPhases.sortOrder,
+      data: processPhases.data,
+      name: profiles.name,
+      slug: profiles.slug,
+    })
+    .from(processPhases)
+    .innerJoin(profiles, eq(profiles.id, processPhases.profileId))
+    .where(eq(processPhases.processInstanceId, processInstanceId))
+    .orderBy(asc(processPhases.sortOrder), asc(processPhases.id));
+
+  return phases.map((phase) => ({
+    ...phase,
+    data: readPhaseRowData(phase.data),
+  }));
+};
+
+export const reconcilePhases = async ({
+  db,
+  processInstanceId,
+  existing,
+  phases,
+}: {
+  db: DbClient;
+  processInstanceId: string;
+  existing: DecisionPhase[];
+  phases: PhaseInstanceData[];
+}): Promise<void> => {
+  assertPhaseCountFits(phases.length);
+  assertPhasesCanBeMinted(phases);
+  assertPhaseNamesFit(phases);
+
+  const existingByPhaseId = new Map(
+    existing.map((phase) => [phaseIdOf(phase), phase]),
+  );
+
+  for (const [sortOrder, phase] of phases.entries()) {
+    const current = existingByPhaseId.get(phase.phaseId);
+    const { name: _name, ...data } = phase;
+    const name = getPhaseProfileName(phase);
+
+    if (!current) {
+      await insertPhase({ tx: db, processInstanceId, name, sortOrder, data });
+      continue;
+    }
+
+    if (
+      current.sortOrder !== sortOrder ||
+      !isDeepStrictEqual(current.data, data)
+    ) {
+      await db
+        .update(processPhases)
+        .set({ sortOrder, data })
+        .where(eq(processPhases.id, current.id));
+    }
+
+    if (current.name !== name) {
+      await db
+        .update(profiles)
+        .set({ name })
+        .where(eq(profiles.id, current.profileId));
+    }
+  }
+
+  const listed = new Set(phases.map(({ phaseId }) => phaseId));
+  const removed = existing
+    .filter((phase) => !listed.has(phaseIdOf(phase)))
+    .map((phase) => phase.profileId);
+  if (removed.length > 0) {
+    await db.delete(profiles).where(inArray(profiles.id, removed));
+  }
+};
+
+// TODO: remove once references store the row id instead of data.phaseId.
+export const phaseIdOf = (phase: DecisionPhase): string =>
+  phase.data.phaseId ?? phase.slug;
+
 export const getPhaseProfileName = ({
   phaseId,
   name,
 }: InstanceDataPhase): string => name?.trim() || phaseId;
+
+export const assertPhaseCountFits = (count: number): void => {
+  if (count > MAX_PHASES_PER_DECISION) {
+    throw new ValidationError(
+      `A decision can have at most ${MAX_PHASES_PER_DECISION} phases`,
+      { phases: `Remove ${count - MAX_PHASES_PER_DECISION}` },
+    );
+  }
+};
 
 // TODO: remove once rows stop carrying phaseId and nothing mints from instance_data.
 export const assertPhasesCanBeMinted = (
@@ -82,16 +189,29 @@ export const assertPhasesCanBeMinted = (
   const phaseIds = new Set<string>();
   for (const phase of phases) {
     if (!phase.phaseId) {
-      throw new ValidationError('A phase has no id', { phaseId: 'Required' });
-    }
-    if (phaseIds.has(phase.phaseId)) {
-      throw new ValidationError(`Two phases share the id "${phase.phaseId}"`, {
-        phaseId: 'Must be unique',
+      throw new ValidationError('There is a phase with no id', {
+        phaseId: 'Required',
       });
     }
+    if (phaseIds.has(phase.phaseId)) {
+      throw new ValidationError(
+        `There are two phases with the id "${phase.phaseId}"`,
+        { phaseId: 'Must be unique' },
+      );
+    }
     phaseIds.add(phase.phaseId);
-    if (getPhaseProfileName(phase).length > MAX_PHASE_NAME_LENGTH) {
-      throw new ValidationError(PHASE_NAME_TOO_LONG, { name: 'Too long' });
+  }
+};
+
+export const assertPhaseNamesFit = (
+  phases: readonly InstanceDataPhase[],
+): void => {
+  for (const phase of phases) {
+    const name = getPhaseProfileName(phase);
+    if (!phaseNameLengthSchema.safeParse(name).success) {
+      throw new ValidationError(PHASE_NAME_TOO_LONG, {
+        name: `Shorten "${name.slice(0, 24)}…"`,
+      });
     }
   }
 };
@@ -204,7 +324,7 @@ const insertPhaseProfile = async ({
   name,
   generateSlug,
 }: {
-  tx: TransactionType;
+  tx: DbClient;
   name: string;
   generateSlug: () => string;
 }): Promise<Profile> => {
@@ -231,6 +351,12 @@ const generatePhaseSlug = () => randomUUID().slice(0, 8);
 
 const isJsonObject = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
+
+const isPhaseRowData = (value: unknown): value is PhaseRowData =>
+  isJsonObject(value);
+
+const readPhaseRowData = (data: unknown): PhaseRowData =>
+  isPhaseRowData(data) ? data : {};
 
 // Shape only; Ajv compiles it when the settings are checked.
 const isSettingsSchema = (value: unknown): value is PhaseSettingsSchema =>

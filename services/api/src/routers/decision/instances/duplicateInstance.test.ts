@@ -96,6 +96,17 @@ async function createSimpleTemplate(
   };
 }
 
+function withoutDates(data: unknown) {
+  if (typeof data !== 'object' || data === null) {
+    return data;
+  }
+  return Object.fromEntries(
+    Object.entries(data).filter(
+      ([key]) => key !== 'startDate' && key !== 'endDate',
+    ),
+  );
+}
+
 async function createSourceInstance(
   testData: TestDecisionsDataManager,
   taskId: string,
@@ -158,6 +169,15 @@ describe.concurrent('duplicateInstance', () => {
       task.id,
     );
 
+    await caller.decision.updateDecisionInstance({
+      instanceId: source.processInstance.id,
+      phases: simpleVoting.phases.map((phase) => ({
+        phaseId: phase.id,
+        startDate: new Date().toISOString(),
+        endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+      })),
+    });
+
     const duplicate = await caller.decision.duplicateInstance({
       instanceId: source.processInstance.id,
       name: `Duplicate of ${source.name}`,
@@ -174,7 +194,7 @@ describe.concurrent('duplicateInstance', () => {
     expect(instanceData.phases).toHaveLength(simpleVoting.phases.length);
     expectRowsMirrorPhases(duplicateRows, instanceData.phases);
     expect(duplicateRows.map((row) => row.data)).toEqual(
-      sourceRows.map((row) => row.data),
+      sourceRows.map((row) => withoutDates(row.data)),
     );
 
     const sourceProfileIds = sourceRows.map((row) => row.profileId);
@@ -214,7 +234,7 @@ describe.concurrent('duplicateInstance', () => {
     ).rejects.toMatchObject({
       cause: {
         name: 'ValidationError',
-        message: expect.stringMatching(/A phase has no id/),
+        message: expect.stringMatching(/There is a phase with no id/),
       },
     });
 

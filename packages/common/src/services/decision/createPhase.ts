@@ -1,17 +1,18 @@
-import { count, db, eq } from '@op/db/client';
-import { type ProcessPhase, type Profile, processPhases } from '@op/db/schema';
+import { db } from '@op/db/client';
+import type { ProcessPhase, Profile } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 
-import { NotFoundError, ValidationError } from '../../utils';
-import { lockProcessInstanceOrThrow } from './lockProcessInstance';
+import { NotFoundError } from '../../utils';
+import { invalidateDecisionInstance } from './decisionCache';
 import {
   type PhaseData,
   assertDecisionAdmin,
+  assertPhaseCountFits,
   assertPhaseSchemasCompile,
   assertPhaseSettings,
   insertPhase,
 } from './phaseHelpers';
-import { MAX_PHASES_PER_DECISION } from './utils/phaseOrder';
+import { mutatePhases } from './phaseMirror';
 
 export const createPhase = async ({
   user,
@@ -41,26 +42,25 @@ export const createPhase = async ({
   assertPhaseSchemasCompile(phaseData);
   assertPhaseSettings({ data: phaseData, phaseLabel: name });
 
-  return db.transaction(async (tx) => {
-    await lockProcessInstanceOrThrow({ db: tx, instanceId: processInstanceId });
-
-    const [existing] = await tx
-      .select({ value: count() })
-      .from(processPhases)
-      .where(eq(processPhases.processInstanceId, processInstanceId));
-
-    if ((existing?.value ?? 0) >= MAX_PHASES_PER_DECISION) {
-      throw new ValidationError(
-        `A decision can have at most ${MAX_PHASES_PER_DECISION} phases`,
-      );
-    }
-
-    return insertPhase({
-      tx,
+  const created = await db.transaction(async (tx) => {
+    const { result } = await mutatePhases({
+      db: tx,
       processInstanceId,
-      name,
-      sortOrder,
-      data: phaseData,
+      mutate: ({ phases, unmintedPhases }) => {
+        assertPhaseCountFits(phases.length + unmintedPhases.length + 1);
+        return insertPhase({
+          tx,
+          processInstanceId,
+          name,
+          sortOrder,
+          data: phaseData,
+        });
+      },
     });
+    return result;
   });
+
+  await invalidateDecisionInstance(processInstanceId);
+
+  return created;
 };

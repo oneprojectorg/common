@@ -1,14 +1,21 @@
 import type { PhaseData } from '@op/common';
+import { TestDecisionsDataManager } from '@op/common/testing';
 import { db, eq } from '@op/db/client';
-import { processPhases } from '@op/db/schema';
+import {
+  ProcessStatus,
+  decisionProcessTransitions,
+  processPhases,
+} from '@op/db/schema';
 import { randomUUID } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 
 import {
   PHASE_NAME,
   createUnauthenticatedCaller,
+  loadPhaseRows,
   setupPhase,
 } from '../../../test/helpers/phaseTestUtils';
+import { createAuthenticatedCaller } from '../../../test/supabase-utils';
 
 describe.concurrent('updatePhase', () => {
   it('renames the phase and keeps the slug and data', async ({
@@ -547,7 +554,77 @@ describe.concurrent('updatePhase', () => {
       cause: { name: 'AccessTierError', callerTier: 'none' },
     });
   });
+
+  it('reschedules the transition when a published phase gets a new end date', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      processSchema: dateAdvancementSchema,
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instanceId = setup.instance.instance.id;
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+    await caller.decision.updateDecisionInstance({
+      instanceId,
+      status: ProcessStatus.PUBLISHED,
+    });
+    const [initial] = await loadPhaseRows(instanceId);
+    if (!initial) {
+      throw new Error('Expected a row for the initial phase');
+    }
+
+    const endDate = new Date(
+      Date.now() + 3 * 24 * 60 * 60 * 1000,
+    ).toISOString();
+    await caller.decision.updatePhase({
+      phaseId: initial.id,
+      data: { endDate },
+    });
+
+    const transitions = await db
+      .select({
+        fromStateId: decisionProcessTransitions.fromStateId,
+        toStateId: decisionProcessTransitions.toStateId,
+        scheduledDate: decisionProcessTransitions.scheduledDate,
+      })
+      .from(decisionProcessTransitions)
+      .where(eq(decisionProcessTransitions.processInstanceId, instanceId));
+    expect(
+      transitions.map((transition) => ({
+        ...transition,
+        scheduledDate: new Date(transition.scheduledDate).toISOString(),
+      })),
+    ).toEqual([
+      { fromStateId: 'initial', toStateId: 'final', scheduledDate: endDate },
+    ]);
+  });
 });
+
+const dateAdvancementSchema = {
+  id: 'date-advancement',
+  version: '1.0.0',
+  name: 'Date Advancement',
+  description: 'The initial phase advances on its end date.',
+  phases: [
+    {
+      id: 'initial',
+      name: 'Initial Phase',
+      rules: {
+        proposals: { submit: true },
+        advancement: { method: 'date' as const },
+      },
+      selectionPipeline: { version: '1.0.0' as const, blocks: [] },
+    },
+    {
+      id: 'final',
+      name: 'Final Phase',
+      rules: { advancement: { method: 'manual' as const } },
+    },
+  ],
+};
 
 const UNCHANGED = { name: PHASE_NAME, data: {} };
 

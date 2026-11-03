@@ -1,7 +1,7 @@
-import type { DecisionInstanceData } from '@op/common';
+import { type DecisionInstanceData, getInstancePhases } from '@op/common';
 import { TestDecisionsDataManager } from '@op/common/testing';
-import { asc, db, eq } from '@op/db/client';
-import { processPhases, profiles } from '@op/db/schema';
+import { asc, db, eq, sql } from '@op/db/client';
+import { processInstances, processPhases, profiles } from '@op/db/schema';
 import { expect } from 'vitest';
 
 import { appRouter } from '../../routers';
@@ -85,6 +85,7 @@ export async function createUnauthenticatedCaller() {
 export const loadPhaseRows = (processInstanceId: string) =>
   db
     .select({
+      id: processPhases.id,
       sortOrder: processPhases.sortOrder,
       profileId: processPhases.profileId,
       data: processPhases.data,
@@ -95,6 +96,30 @@ export const loadPhaseRows = (processInstanceId: string) =>
     .innerJoin(profiles, eq(profiles.id, processPhases.profileId))
     .where(eq(processPhases.processInstanceId, processInstanceId))
     .orderBy(asc(processPhases.sortOrder));
+
+// TODO: remove the blob helpers below when instance_data.phases is dropped.
+export const loadBlobPhases = async (processInstanceId: string) => {
+  const instance = await db.query.processInstances.findFirst({
+    where: { id: processInstanceId },
+    columns: { instanceData: true },
+  });
+  return getInstancePhases(instance?.instanceData);
+};
+
+export const reorderBlobPhases = async (
+  processInstanceId: string,
+  phaseIds: string[],
+) => {
+  const phases = [...(await loadBlobPhases(processInstanceId))].sort(
+    (a, b) => phaseIds.indexOf(a.phaseId) - phaseIds.indexOf(b.phaseId),
+  );
+  await db
+    .update(processInstances)
+    .set({
+      instanceData: sql`jsonb_set(${processInstances.instanceData}, '{phases}', ${JSON.stringify(phases)}::jsonb)`,
+    })
+    .where(eq(processInstances.id, processInstanceId));
+};
 
 export const listPhaseIds = async (processInstanceId: string) =>
   (

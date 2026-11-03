@@ -1,10 +1,11 @@
-import { asc, db, eq, sql } from '@op/db/client';
-import { processPhases, profiles } from '@op/db/schema';
+import { db, eq, sql } from '@op/db/client';
+import { processPhases } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 
 import { NotFoundError, ValidationError } from '../../utils';
-import { lockProcessInstanceOrThrow } from './lockProcessInstance';
+import { invalidateDecisionInstance } from './decisionCache';
 import { assertDecisionAdmin } from './phaseHelpers';
+import { mutatePhases } from './phaseMirror';
 
 export interface PhasePlacement {
   phaseId: string;
@@ -50,52 +51,42 @@ export const reorderPhases = async ({
     });
   }
 
-  return db.transaction(async (tx) => {
-    await lockProcessInstanceOrThrow({ db: tx, instanceId: processInstanceId });
+  const reordered = await db.transaction(async (tx) => {
+    const { phases: reordered } = await mutatePhases({
+      db: tx,
+      processInstanceId,
+      mutate: async ({ phases: stored }) => {
+        if (
+          stored.length !== requestedIds.size ||
+          !stored.every((phase) => requestedIds.has(phase.id))
+        ) {
+          throw new ValidationError("The phases don't match the decision's", {
+            phases: 'List every phase of this decision, and only those',
+          });
+        }
 
-    const stored = await tx
-      .select({ id: processPhases.id })
-      .from(processPhases)
-      .where(eq(processPhases.processInstanceId, processInstanceId));
-
-    if (
-      stored.length !== requestedIds.size ||
-      !stored.every((phase) => requestedIds.has(phase.id))
-    ) {
-      throw new ValidationError("The phases don't match the decision's", {
-        phases: 'List every phase of this decision, and only those',
-      });
-    }
-
-    for (const [
-      sortOrder,
-      { phaseId, startDate, endDate },
-    ] of phases.entries()) {
-      const dates = {
-        ...(startDate !== undefined && { startDate }),
-        ...(endDate !== undefined && { endDate }),
-      };
-      await tx
-        .update(processPhases)
-        .set({
+        for (const [
           sortOrder,
-          data: sql`${processPhases.data} || ${JSON.stringify(dates)}::jsonb`,
-        })
-        .where(eq(processPhases.id, phaseId));
-    }
-
-    return tx
-      .select({
-        id: processPhases.id,
-        profileId: processPhases.profileId,
-        name: profiles.name,
-        slug: profiles.slug,
-        sortOrder: processPhases.sortOrder,
-        data: processPhases.data,
-      })
-      .from(processPhases)
-      .innerJoin(profiles, eq(profiles.id, processPhases.profileId))
-      .where(eq(processPhases.processInstanceId, processInstanceId))
-      .orderBy(asc(processPhases.sortOrder), asc(processPhases.id));
+          { phaseId, startDate, endDate },
+        ] of phases.entries()) {
+          const dates = {
+            ...(startDate !== undefined && { startDate }),
+            ...(endDate !== undefined && { endDate }),
+          };
+          await tx
+            .update(processPhases)
+            .set({
+              sortOrder,
+              data: sql`${processPhases.data} || ${JSON.stringify(dates)}::jsonb`,
+            })
+            .where(eq(processPhases.id, phaseId));
+        }
+      },
+    });
+    return reordered;
   });
+
+  await invalidateDecisionInstance(processInstanceId);
+
+  return reordered;
 };

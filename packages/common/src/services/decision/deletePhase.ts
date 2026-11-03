@@ -3,8 +3,9 @@ import { profiles } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 
 import { NotFoundError } from '../../utils';
-import { lockProcessInstanceOrThrow } from './lockProcessInstance';
+import { invalidateDecisionInstance } from './decisionCache';
 import { getPhaseAsDecisionAdmin } from './phaseHelpers';
+import { mutatePhases } from './phaseMirror';
 
 export const deletePhase = async ({
   user,
@@ -15,20 +16,20 @@ export const deletePhase = async ({
 }): Promise<void> => {
   const phase = await getPhaseAsDecisionAdmin({ user, phaseId });
 
-  const [deleted] = await db.transaction(async (tx) => {
-    await lockProcessInstanceOrThrow({
+  await db.transaction((tx) =>
+    mutatePhases({
       db: tx,
-      instanceId: phase.processInstanceId,
-    });
+      processInstanceId: phase.processInstanceId,
+      mutate: async ({ phases }) => {
+        const phase = phases.find(({ id }) => id === phaseId);
+        if (!phase) {
+          throw new NotFoundError('Phase', phaseId);
+        }
 
-    // The profile cascades to the phase row, not the other way round.
-    return tx
-      .delete(profiles)
-      .where(eq(profiles.id, phase.profileId))
-      .returning({ id: profiles.id });
-  });
+        await tx.delete(profiles).where(eq(profiles.id, phase.profileId));
+      },
+    }),
+  );
 
-  if (!deleted) {
-    throw new NotFoundError('Phase', phaseId);
-  }
+  await invalidateDecisionInstance(phase.processInstanceId);
 };

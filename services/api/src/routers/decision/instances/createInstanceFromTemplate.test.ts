@@ -201,7 +201,7 @@ describe.concurrent('createInstanceFromTemplate', () => {
     ).rejects.toMatchObject({
       cause: {
         name: 'ValidationError',
-        message: expect.stringMatching(/A phase has no id/),
+        message: expect.stringMatching(/There is a phase with no id/),
       },
     });
 
