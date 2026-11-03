@@ -8,6 +8,7 @@ const AUTH_TOKEN = 'test-auth-token';
 const URL = 'https://example.org/api/v1/notifications/twilio/inbound';
 const MESSAGE_PARAMS = {
   From: '+15005550006',
+  To: '+16145550100',
   Body: 'YES',
   MessageSid: 'SM456',
 };
@@ -57,6 +58,7 @@ describe('handleTwilioInboundWebhookRequest', () => {
         code: null,
         keyword: null,
         argument: null,
+        to: '+16145550100',
       },
     });
   });
@@ -85,6 +87,7 @@ describe('handleTwilioInboundWebhookRequest', () => {
         code: '234567',
         keyword: null,
         argument: null,
+        to: '+16145550100',
       },
     });
   });
@@ -110,6 +113,7 @@ describe('handleTwilioInboundWebhookRequest', () => {
         code: null,
         keyword: 'join',
         argument: null,
+        to: '+16145550100',
       },
     });
   });
@@ -135,6 +139,7 @@ describe('handleTwilioInboundWebhookRequest', () => {
         code: null,
         keyword: 'show',
         argument: 'columbus',
+        to: '+16145550100',
       },
     });
   });

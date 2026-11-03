@@ -10,6 +10,7 @@ import {
 
 export interface SmsDecisionDescription extends CurrentPhaseSummary {
   name: string;
+  slug: string;
   proposalCount: number;
 }
 
@@ -20,7 +21,7 @@ export async function getSmsDecisionDescription({
   authUserId: string;
   decisionSlug: string;
 }): Promise<SmsDecisionDescription> {
-  const { name, processInstance } = await getDecisionBySlug({
+  const { name, slug, processInstance } = await getDecisionBySlug({
     user: { id: authUserId },
     slug: decisionSlug,
   });
@@ -36,6 +37,7 @@ export async function getSmsDecisionDescription({
 
   return {
     name,
+    slug,
     proposalCount,
     ...summarizeCurrentPhase({ instanceData, currentStateId }),
   };

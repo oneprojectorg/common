@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { getSmsDecisionDescription } from './getSmsDecisionDescription';
 
 describe.concurrent('getSmsDecisionDescription', () => {
-  it('given a published decision with one submitted proposal, when a member asks for it by slug, then they get its name, phase, voting state and ballot count', async ({
+  it('given a published decision with one submitted proposal, when a member asks for it by slug, then they get its name, slug, phase, voting state and ballot count', async ({
     task,
     onTestFinished,
   }) => {
@@ -29,6 +29,7 @@ describe.concurrent('getSmsDecisionDescription', () => {
       }),
     ).resolves.toEqual({
       name: setup.instance.instance.name,
+      slug: setup.instance.slug,
       phaseName: 'Initial Phase',
       votingOpen: false,
       proposalCount: 1,

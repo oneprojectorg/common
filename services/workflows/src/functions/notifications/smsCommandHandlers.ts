@@ -34,10 +34,15 @@ export type SmsDeliver = (
   body: string,
 ) => Promise<SmsReplyRejected | null>;
 
+export interface ChatLine {
+  slug: string;
+}
+
 export interface SmsCommandContext {
   step: GetStepTools<typeof inngest>;
   account: { authUserId: string };
   argument: string | null;
+  line: ChatLine | null;
   deliver: SmsDeliver;
 }
 
@@ -75,6 +80,7 @@ const listDecisions: SmsCommandHandler = async ({ step, account, deliver }) => {
 const describeDecision = async (
   { step, account, deliver }: SmsCommandContext,
   decisionSlug: string,
+  echoSlug: boolean,
 ): Promise<SmsCommandResult> => {
   const decision = await step.run('describe-decision', async () => {
     try {
@@ -97,7 +103,9 @@ const describeDecision = async (
     const failed = await deliver(
       'send-not-found-reply',
       'Not-found reply',
-      `No decision named "${clipSmsText(decisionSlug, SMS_SLUG_LENGTH)}" was found.`,
+      echoSlug
+        ? `No decision named "${clipSmsText(decisionSlug, SMS_SLUG_LENGTH)}" was found.`
+        : 'No decision was found.',
     );
     return failed ?? { message: 'decision not found' };
   }
@@ -110,10 +118,15 @@ const describeDecision = async (
   return failed ?? { message: 'decision sent' };
 };
 
-export const show: SmsCommandHandler = (context) =>
-  context.argument
-    ? describeDecision(context, context.argument)
-    : listDecisions(context);
+export const show: SmsCommandHandler = (context) => {
+  if (context.argument) {
+    return describeDecision(context, context.argument, true);
+  }
+  if (context.line?.slug) {
+    return describeDecision(context, context.line.slug, false);
+  }
+  return listDecisions(context);
+};
 
 export const sendSmsHelp = async (
   deliver: SmsDeliver,

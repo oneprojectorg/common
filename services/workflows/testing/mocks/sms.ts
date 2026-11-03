@@ -2,6 +2,7 @@ import type { PhoneNumber, SmsProvider, SmsSendResult } from '@op/common';
 
 export interface RecordedSms {
   to: PhoneNumber;
+  from: PhoneNumber | null;
   body: string;
   providerMessageId: string;
 }
@@ -27,13 +28,13 @@ export const refuseSmsTo = (
 };
 
 export const recordingSmsProvider: SmsProvider = {
-  sendSms: async ({ to, body }): Promise<SmsSendResult> => {
+  sendSms: async ({ to, body, from }): Promise<SmsSendResult> => {
     const refusal = refusals.get(to);
     if (refusal) {
       return refusal;
     }
     const providerMessageId = `recorded-${sent.length + 1}`;
-    sent.push({ to, body, providerMessageId });
+    sent.push({ to, from: from ?? null, body, providerMessageId });
     return { status: 'accepted', providerMessageId };
   },
 };

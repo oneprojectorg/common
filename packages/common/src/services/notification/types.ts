@@ -111,5 +111,9 @@ export interface SmsProvider {
    * @returns Acceptance and a vendor message id, or a rejection. See
    *   {@link SmsSendResult} on why acceptance is not delivery.
    */
-  sendSms?(input: { to: PhoneNumber; body: string }): Promise<SmsSendResult>;
+  sendSms?(input: {
+    to: PhoneNumber;
+    body: string;
+    from?: PhoneNumber;
+  }): Promise<SmsSendResult>;
 }

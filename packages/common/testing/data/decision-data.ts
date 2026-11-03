@@ -7,6 +7,7 @@ import {
   accessRolePermissionsOnAccessZones,
   accessRoles,
   customForms,
+  decisionPhoneNumbers,
   decisionProcesses,
   processInstances,
   profileRelationships,
@@ -1084,4 +1085,27 @@ export async function createCustomForm({
   }
 
   return form;
+}
+
+export interface CreateDecisionPhoneNumberOptions {
+  processInstanceId: string;
+  phoneNumber: string;
+  channel?: 'sms' | 'whatsapp';
+}
+
+export async function createDecisionPhoneNumber({
+  processInstanceId,
+  phoneNumber,
+  channel = 'sms',
+}: CreateDecisionPhoneNumberOptions) {
+  const [number] = await db
+    .insert(decisionPhoneNumbers)
+    .values({ processInstanceId, phoneNumber, channel })
+    .returning();
+
+  if (!number) {
+    throw new Error('Failed to create decision phone number');
+  }
+
+  return number;
 }

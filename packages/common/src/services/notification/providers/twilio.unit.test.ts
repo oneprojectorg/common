@@ -89,6 +89,23 @@ describe('createTwilioProvider', () => {
       });
     });
 
+    it('given a reply from a decision line, when sent, then the line is the from number beside the Messaging Service', async () => {
+      const { client, messageCreate } = fakeClient();
+      const line = parsePhoneNumber('+16145550100');
+
+      await capabilityOf(
+        { client, messagingServiceSid: 'MG1' },
+        'sendSms',
+      )({ to: TO, body: 'hello', from: line });
+
+      expect(messageCreate).toHaveBeenCalledWith({
+        to: '+15005550006',
+        body: 'hello',
+        from: '+16145550100',
+        messagingServiceSid: 'MG1',
+      });
+    });
+
     it('reports acceptance, not delivery', async () => {
       const { client } = fakeClient();
 
@@ -279,15 +296,17 @@ describe('parseTwilioStatusCallback', () => {
 });
 
 describe('parseTwilioInboundMessage', () => {
-  it('extracts the sender, body, and message sid', () => {
+  it('extracts the sender, the number texted, the body and the message sid', () => {
     expect(
       parseTwilioInboundMessage({
         From: '+15005550006',
+        To: '+16145550100',
         Body: 'YES',
         MessageSid: 'SM456',
       }),
     ).toEqual({
       from: '+15005550006',
+      to: '+16145550100',
       body: 'YES',
       messageSid: 'SM456',
       optOutType: null,
@@ -304,6 +323,7 @@ describe('parseTwilioInboundMessage', () => {
       }),
     ).toEqual({
       from: '+15005550006',
+      to: '',
       body: 'STOP',
       messageSid: 'SM789',
       optOutType: 'STOP',
@@ -313,6 +333,7 @@ describe('parseTwilioInboundMessage', () => {
   it('falls back to empty strings rather than throwing on a malformed message', () => {
     expect(parseTwilioInboundMessage({})).toEqual({
       from: '',
+      to: '',
       body: '',
       messageSid: '',
       optOutType: null,
