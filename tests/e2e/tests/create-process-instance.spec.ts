@@ -333,6 +333,20 @@ async function choose(page: Page, label: string) {
 
 async function expectNoAxeViolations(page: Page) {
   await page.evaluate(() => document.fonts.ready);
+  await page.evaluate(async () => {
+    for (let pass = 0; pass < 4; pass++) {
+      const settling = document.getAnimations().flatMap((animation) => {
+        const timing = animation.effect?.getComputedTiming();
+        return timing && Number.isFinite(timing.endTime)
+          ? [animation.finished.catch(() => undefined)]
+          : [];
+      });
+      if (settling.length === 0) {
+        return;
+      }
+      await Promise.all(settling);
+    }
+  });
   const { violations } = await new AxeBuilder({ page })
     .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
     .analyze();
