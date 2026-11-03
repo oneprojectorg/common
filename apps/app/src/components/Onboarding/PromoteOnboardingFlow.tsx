@@ -20,13 +20,13 @@ import {
 } from '../MultiStepForm';
 import { Portal } from '../Portal';
 import {
-  PersonalDetailsForm,
-  validator as PersonalDetailsFormValidator,
-} from './PersonalDetailsForm';
-import {
   ToSAcceptanceScreen,
   validator as ToSStepValidator,
 } from './ToSAcceptanceScreen';
+import {
+  VisibilityStep,
+  validator as VisibilityStepValidator,
+} from './VisibilityStep';
 import { useOnboardingFormStore } from './useOnboardingFormStore';
 
 const ProgressInPortal = (props: ProgressComponentProps) => (
@@ -37,9 +37,9 @@ const ProgressInPortal = (props: ProgressComponentProps) => (
 
 /**
  * Onboarding for an anonymous visitor who just upgraded (see LinkAccountPanel /
- * PromoteAccountModal), reached at `/start?promote=1`. Skips org joining:
- * personal details, accept ToS, then hard-navigate back to the decision with a
- * fresh cache.
+ * PromoteAccountModal), reached at `/start?promote=1`. Skips org joining: the
+ * visibility choice (show my name / stay anonymous), accept ToS, then
+ * hard-navigate back to the decision with a fresh cache.
  */
 export const PromoteOnboardingFlow = ({
   hasHydrated,
@@ -130,8 +130,8 @@ export const PromoteOnboardingFlow = ({
 
   return (
     <MultiStepForm
-      steps={[PersonalDetailsForm, ToSStep]}
-      schemas={[PersonalDetailsFormValidator, ToSStepValidator]}
+      steps={[VisibilityStep, ToSStep]}
+      schemas={[VisibilityStepValidator, ToSStepValidator]}
       ProgressComponent={ProgressInPortal}
       getStepValues={getStepValues}
       hasHydrated={hasHydrated}
