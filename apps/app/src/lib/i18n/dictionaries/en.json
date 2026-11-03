@@ -1240,6 +1240,8 @@
       "overBudgetWarning": "Over budget by {amount}",
       "mixedCurrenciesWarning": "The awards use different currencies, so the total cannot be checked against the budget",
       "awardsChangedWarning": "The award amounts changed since you last reviewed them. Check them, then continue",
+      "hiddenSelectedWarning": "{count, plural, one {# selected proposal is hidden by the current filter, so its award cannot be edited} other {# selected proposals are hidden by the current filter, so their awards cannot be edited}}",
+      "showAllProposalsAction": "Show all proposals",
       "totalAwardedLabel": "Total awarded"
     },
     "proposals": {

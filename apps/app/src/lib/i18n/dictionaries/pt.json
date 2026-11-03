@@ -1240,6 +1240,8 @@
       "overBudgetWarning": "Excede o orçamento em {amount}",
       "mixedCurrenciesWarning": "Os valores concedidos usam moedas diferentes, então o total não pode ser comparado com o orçamento",
       "awardsChangedWarning": "Os valores concedidos mudaram desde a última revisão. Confira-os e continue",
+      "hiddenSelectedWarning": "{count, plural, one {# proposta selecionada está oculta pelo filtro atual, então seu valor não pode ser editado} other {# propostas selecionadas estão ocultas pelo filtro atual, então seus valores não podem ser editados}}",
+      "showAllProposalsAction": "Mostrar todas as propostas",
       "totalAwardedLabel": "Total concedido"
     },
     "proposals": {

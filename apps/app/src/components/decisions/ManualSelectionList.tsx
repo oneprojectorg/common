@@ -7,6 +7,7 @@ import type {
   ResultNotificationMessages,
 } from '@op/common/client';
 import { getProcessBudget, templateCollectsBudget } from '@op/common/client';
+import { Alert, AlertAction, AlertDescription } from '@op/sense/Alert';
 import { Button } from '@op/sense/Button';
 import {
   Empty,
@@ -297,6 +298,11 @@ export const ManualSelectionList = ({
   };
 
   const numSelected = confirmIds.length;
+  const listedIds = new Set(candidates.map((proposal) => proposal.id));
+  const hiddenSelectedCount =
+    awardsAmounts && categoryId
+      ? confirmIds.filter((id) => !listedIds.has(id)).length
+      : 0;
   const phases = instance.instanceData?.phases ?? [];
   const currentPhaseIndex = phases.findIndex(
     (p) => p.phaseId === instance.currentStateId,
@@ -315,6 +321,26 @@ export const ManualSelectionList = ({
           onChange={handleToolbarChange}
           pinOffset={pinOffset}
         />
+
+        {hiddenSelectedCount > 0 ? (
+          <Alert variant="warning">
+            <LuTriangleAlert aria-hidden />
+            <AlertDescription>
+              {t('decisions.review.hiddenSelectedWarning', {
+                count: hiddenSelectedCount,
+              })}
+            </AlertDescription>
+            <AlertAction>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setSelectedCategory('all-categories')}
+              >
+                {t('decisions.review.showAllProposalsAction')}
+              </Button>
+            </AlertAction>
+          </Alert>
+        ) : null}
 
         {candidates.length === 0 ? (
           <Empty>

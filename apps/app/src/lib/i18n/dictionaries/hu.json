@@ -1240,6 +1240,8 @@
       "overBudgetWarning": "{amount} összeggel a keret felett",
       "mixedCurrenciesWarning": "Az odaítélt összegek eltérő pénznemben vannak, így a végösszeg nem vethető össze a kerettel",
       "awardsChangedWarning": "Az odaítélt összegek megváltoztak az utolsó áttekintés óta. Ellenőrizd őket, majd folytasd",
+      "hiddenSelectedWarning": "{count, plural, one {# kiválasztott javaslatot elrejt a jelenlegi szűrő, így az összege nem szerkeszthető} other {# kiválasztott javaslatot elrejt a jelenlegi szűrő, így az összegeik nem szerkeszthetők}}",
+      "showAllProposalsAction": "Összes javaslat megjelenítése",
       "totalAwardedLabel": "Összesen odaítélve"
     },
     "proposals": {

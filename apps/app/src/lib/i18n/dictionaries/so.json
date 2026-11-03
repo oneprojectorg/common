@@ -1240,6 +1240,8 @@
       "overBudgetWarning": "Miisaaniyadda waxaa laga badiyey {amount}",
       "mixedCurrenciesWarning": "Lacagaha la bixiyey waxay isticmaalaan lacago kala duwan, sidaas darteed wadarta laguma hubin karo miisaaniyadda",
       "awardsChangedWarning": "Lacagaha la bixiyey way isbeddeleen tan iyo markii ugu dambeysay ee aad eegtay. Hubi, kadibna sii wad",
+      "hiddenSelectedWarning": "{count, plural, one {# soo jeedin oo la doortay ayaa ku qarsoon shaandhaynta hadda jirta, sidaas darteed lacagteeda lama beddeli karo} other {# soo jeedin oo la doortay ayaa ku qarsoon shaandhaynta hadda jirta, sidaas darteed lacagahooda lama beddeli karo}}",
+      "showAllProposalsAction": "Muuji dhammaan soo jeedinta",
       "totalAwardedLabel": "Wadarta la bixiyay"
     },
     "proposals": {
