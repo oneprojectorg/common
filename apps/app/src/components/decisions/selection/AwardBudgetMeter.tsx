@@ -26,6 +26,14 @@ export const AwardBudgetMeter = ({
   const t = useTranslations('decisions.review');
   const { total } = awards;
 
+  if (awards.hasMixedCurrencies) {
+    return (
+      <p role="status" className={cn('text-sm text-destructive', className)}>
+        {t('mixedCurrenciesWarning')}
+      </p>
+    );
+  }
+
   if (total === null) {
     return null;
   }
