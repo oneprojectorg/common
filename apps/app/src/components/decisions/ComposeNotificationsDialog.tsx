@@ -22,7 +22,7 @@ import { Field, FieldError, FieldLabel } from '@op/sense/Field';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@op/sense/Tabs';
 import { Textarea } from '@op/sense/Textarea';
 import { cn } from '@op/sense/lib/utils';
-import { type ReactNode, useId, useState } from 'react';
+import { type ReactNode, useEffect, useId, useRef, useState } from 'react';
 import { LuCircleAlert } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -107,6 +107,14 @@ export const ComposeNotificationsDialog = ({
   const [shownAllocations, setShownAllocations] = useState<
     ProposalAllocation[] | undefined
   >();
+  const [isStale, setIsStale] = useState(false);
+  const staleAlertRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (isStale && step === 'amounts') {
+      staleAlertRef.current?.focus();
+    }
+  }, [isStale, step]);
 
   const handleOpenChange = (open: boolean) => {
     // Closing mid-submit would discard copy the pending mutation may reject.
@@ -117,6 +125,7 @@ export const ComposeNotificationsDialog = ({
       setCounts({ selected: selectedCount, notSelected: notSelectedCount });
       setActiveTab('selected');
       setStep(initialStep);
+      setIsStale(false);
     }
     onOpenChange(open);
   };
@@ -130,6 +139,7 @@ export const ComposeNotificationsDialog = ({
   const confirm = (composed?: ResultNotificationMessages) => {
     const allocations = awards?.allocations();
     if (awards && !sameAllocations(allocations, shownAllocations)) {
+      setIsStale(true);
       setStep('amounts');
       return;
     }
@@ -152,18 +162,34 @@ export const ComposeNotificationsDialog = ({
         </DialogHeader>
 
         {step === 'amounts' && awards ? (
-          <AwardSummaryStep
-            proposals={selectedProposals}
-            awards={awards}
-            onContinue={() => {
-              setCounts({
-                selected: selectedCount,
-                notSelected: notSelectedCount,
-              });
-              setShownAllocations(awards.allocations());
-              setStep('notifications');
-            }}
-          />
+          <>
+            {isStale ? (
+              <Alert
+                variant="destructive"
+                ref={staleAlertRef}
+                tabIndex={-1}
+                className="mx-6"
+              >
+                <LuCircleAlert aria-hidden />
+                <AlertDescription>
+                  {t('decisions.review.awardsChangedWarning')}
+                </AlertDescription>
+              </Alert>
+            ) : null}
+            <AwardSummaryStep
+              proposals={selectedProposals}
+              awards={awards}
+              onContinue={() => {
+                setCounts({
+                  selected: selectedCount,
+                  notSelected: notSelectedCount,
+                });
+                setShownAllocations(awards.allocations());
+                setIsStale(false);
+                setStep('notifications');
+              }}
+            />
+          </>
         ) : (
           <>
             <Tabs
