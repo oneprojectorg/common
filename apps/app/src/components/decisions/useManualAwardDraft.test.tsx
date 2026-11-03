@@ -140,6 +140,42 @@ describe('useManualAwardDraft', () => {
     expect(result.current[0]).toEqual({});
   });
 
+  it('renders and keeps edits in memory when storage access is denied', () => {
+    const denied: Storage = {
+      length: 0,
+      key: () => {
+        throw new Error('denied');
+      },
+      getItem: () => {
+        throw new Error('denied');
+      },
+      setItem: () => {
+        throw new Error('denied');
+      },
+      removeItem: () => {
+        throw new Error('denied');
+      },
+      clear: () => {
+        throw new Error('denied');
+      },
+    };
+    Object.defineProperty(window, 'localStorage', {
+      value: denied,
+      configurable: true,
+    });
+
+    const { result } = renderHook(() =>
+      useManualAwardDraft('instance-storage-denied', 'final'),
+    );
+    expect(result.current[0]).toEqual({});
+
+    act(() => result.current[1]({ solar: 3000 }));
+    expect(result.current[0]).toEqual({ solar: 3000 });
+
+    act(() => result.current[1]((prev) => ({ ...prev, bike: 100 })));
+    expect(result.current[0]).toEqual({ solar: 3000, bike: 100 });
+  });
+
   it('reads a corrupt or foreign value as an empty draft', () => {
     window.localStorage.setItem(KEY, '{not json');
     const corrupt = renderHook(() => useManualAwardDraft(INSTANCE, 'final'));
