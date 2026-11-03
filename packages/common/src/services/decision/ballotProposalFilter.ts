@@ -1,5 +1,5 @@
-import { type SQL, and, eq } from '@op/db/client';
-import { proposals } from '@op/db/schema';
+import { type SQL, and, db, eq, inArray } from '@op/db/client';
+import { proposalCategories, proposals } from '@op/db/schema';
 
 import {
   type PhaseScopedInstance,
@@ -15,10 +15,13 @@ export interface BallotProposalFilter {
 
 export async function ballotProposalFilter({
   instance,
+  taxonomyTermId,
 }: {
   instance: PhaseScopedInstance;
+  taxonomyTermId?: string | null;
 }): Promise<BallotProposalFilter> {
   const scope = await getPhaseProposalSqlScope({ instance, authUserIds: [] });
+  const termId = taxonomyTermId ?? null;
 
   return {
     isEmpty: scope.isEmpty,
@@ -28,6 +31,15 @@ export async function ballotProposalFilter({
         isReadableByEveryone(t),
         votingEligiblePredicate(t),
         scope.buildNonDraftFilter(t),
+        termId
+          ? inArray(
+              t.id,
+              db
+                .select({ proposalId: proposalCategories.proposalId })
+                .from(proposalCategories)
+                .where(eq(proposalCategories.taxonomyTermId, termId)),
+            )
+          : undefined,
       ),
   };
 }

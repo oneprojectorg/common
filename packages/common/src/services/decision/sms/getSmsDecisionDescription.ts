@@ -7,6 +7,7 @@ import {
   type CurrentPhaseSummary,
   summarizeCurrentPhase,
 } from '../summarizeCurrentPhase';
+import { findVoterEnrolment, isVoterEnrolled } from '../voterEnrolment';
 
 export interface SmsDecisionDescription extends CurrentPhaseSummary {
   name: string;
@@ -31,8 +32,15 @@ export async function getSmsDecisionDescription({
   }
 
   const { id, instanceData, currentStateId } = processInstance;
+  const enrolment = await findVoterEnrolment({
+    processInstanceId: id,
+    authUserId,
+  });
   const proposalCount = await countBallotProposals({
     instance: { id, instanceData, currentStateId },
+    taxonomyTermId: isVoterEnrolled(enrolment)
+      ? (enrolment?.taxonomyTermId ?? null)
+      : null,
   });
 
   return {

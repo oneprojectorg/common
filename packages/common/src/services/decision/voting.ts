@@ -16,6 +16,7 @@ import {
   NotFoundError,
   UnauthorizedError,
   ValidationError,
+  VoteOutsideDistrictError,
   VoterNotEnrolledError,
 } from '../../utils';
 import { assertInstanceProfileAccess, getIndividualProfileId } from '../access';
@@ -395,6 +396,11 @@ export const submitVote = async ({
       if (!isVoterEnrolled(enrolment)) {
         throw new VoterNotEnrolledError();
       }
+
+      await assertSelectionsInDistrict({
+        taxonomyTermId: enrolment?.taxonomyTermId ?? null,
+        selectedProposalIds: data.selectedProposalIds,
+      });
     }
 
     // Check if user has already voted
@@ -653,3 +659,28 @@ export const getVotingStatus = async ({
     throw new CommonError('Failed to get voting status');
   }
 };
+
+async function assertSelectionsInDistrict({
+  taxonomyTermId,
+  selectedProposalIds,
+}: {
+  taxonomyTermId: string | null;
+  selectedProposalIds: string[];
+}): Promise<void> {
+  if (!taxonomyTermId || selectedProposalIds.length === 0) {
+    return;
+  }
+
+  const tagged = await db.query.proposalCategories.findMany({
+    where: {
+      taxonomyTermId,
+      proposalId: { in: selectedProposalIds },
+    },
+    columns: { proposalId: true },
+  });
+  const inDistrict = new Set(tagged.map((row) => row.proposalId));
+
+  if (selectedProposalIds.some((id) => !inDistrict.has(id))) {
+    throw new VoteOutsideDistrictError();
+  }
+}
