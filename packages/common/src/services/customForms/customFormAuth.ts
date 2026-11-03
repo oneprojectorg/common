@@ -1,22 +1,19 @@
-import { db } from '@op/db/client';
+import { type DbClient, db } from '@op/db/client';
 import type { User } from '@op/supabase/lib';
 import { permission } from 'access-zones';
-import { z } from 'zod';
 
 import { NotFoundError, UnauthorizedError } from '../../utils';
 import {
   assertInstanceProfileAccess,
   isUserEmailPlatformAdmin,
 } from '../access';
-
-const instancePhasesSchema = z
-  .object({
-    phases: z.array(z.object({ phaseId: z.string() })).optional(),
-  })
-  .partial();
+import { readInstancePhases } from '../decision/readInstancePhases';
 
 export type CustomFormProcessContext = {
   profileId: string;
+};
+
+export type CustomFormPhaseSet = {
   /** Phase a form with no `x-phase` falls back to. */
   initialPhaseId: string | null;
   phaseIds: string[];
@@ -24,6 +21,7 @@ export type CustomFormProcessContext = {
 
 /** The instance columns the authorization rule reads. */
 export type CustomFormInstance = {
+  id: string;
   profileId: string | null;
   ownerProfileId: string | null;
   instanceData: unknown;
@@ -36,18 +34,26 @@ export const assertCustomFormAdmin = async ({
 }: {
   user: User;
   profileId: string;
-}): Promise<CustomFormProcessContext> => {
+}): Promise<CustomFormProcessContext & { instance: CustomFormInstance }> => {
   // One instance per profile: the column holds the instance's own profile.
   const instance = await db.query.processInstances.findFirst({
     where: { profileId },
-    columns: { profileId: true, ownerProfileId: true, instanceData: true },
+    columns: {
+      id: true,
+      profileId: true,
+      ownerProfileId: true,
+      instanceData: true,
+    },
   });
 
   if (!instance) {
     throw new NotFoundError('Decision process', profileId);
   }
 
-  return assertCustomFormAdminForInstance({ user, instance });
+  return {
+    ...(await assertCustomFormAdminForInstance({ user, instance })),
+    instance,
+  };
 };
 
 /**
@@ -77,18 +83,19 @@ export const assertCustomFormAdminForInstance = async ({
     throw new UnauthorizedError("You don't have access to do this");
   }
 
-  return {
-    profileId: instance.profileId,
-    ...parseInstancePhases(instance.instanceData),
-  };
+  return { profileId: instance.profileId };
 };
 
-/** The phase set an `x-phase` may name, in order. */
-export const parseInstancePhases = (
-  instanceData: unknown,
-): Pick<CustomFormProcessContext, 'initialPhaseId' | 'phaseIds'> => {
-  const parsed = instancePhasesSchema.safeParse(instanceData);
-  const phaseIds = (parsed.success ? (parsed.data.phases ?? []) : []).map(
+export const readInstancePhaseSet = async ({
+  instance,
+  db,
+  fromRows,
+}: {
+  instance: { id: string; instanceData: unknown };
+  db?: DbClient;
+  fromRows?: boolean;
+}): Promise<CustomFormPhaseSet> => {
+  const phaseIds = (await readInstancePhases({ instance, db, fromRows })).map(
     (phase) => phase.phaseId,
   );
 

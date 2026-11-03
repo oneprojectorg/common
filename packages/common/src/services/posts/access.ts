@@ -13,7 +13,7 @@ import {
   getUserSession,
 } from '../access';
 import { decisionPermission } from '../decision/permissions';
-import { getInstancePhases } from '../decision/schemas/instanceData';
+import { readInstancePhases } from '../decision/readInstancePhases';
 import { areCommentsAllowed } from '../decision/utils/phaseSettings';
 import { getNetworkMembership } from '../user';
 
@@ -149,6 +149,7 @@ export const assertCanReadFlaggedPost = async ({
 };
 
 type ResolvedInstance = {
+  id: string;
   instanceData: unknown;
   currentStateId: string | null;
 };
@@ -166,7 +167,7 @@ const assertPhaseAllowsComments = async (
     resolvedInstance ??
     (await db.query.processInstances.findFirst({
       where: { profileId: decisionProfileId },
-      columns: { instanceData: true, currentStateId: true },
+      columns: { id: true, instanceData: true, currentStateId: true },
     }));
 
   // Deny rather than fall through to the permissive default: a DECISION
@@ -179,7 +180,7 @@ const assertPhaseAllowsComments = async (
   }
 
   const allowed = areCommentsAllowed({
-    phases: getInstancePhases(instance.instanceData),
+    phases: await readInstancePhases({ instance }),
     currentPhaseId: instance.currentStateId,
   });
 
