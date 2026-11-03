@@ -7,7 +7,7 @@ import {
   proposalAllocationSchema,
   sumAmounts,
 } from '@op/common/client';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 
 import { getBudgetCurrency } from './BudgetDisplay';
 import { resolveProposalSystemFields } from './proposalContentUtils';
@@ -19,7 +19,10 @@ export type AwardProposal = Pick<
 
 export type AwardEdits = Readonly<Record<string, number | null>>;
 
-export type AwardDraft = readonly [AwardEdits, (next: AwardEdits) => void];
+export type AwardDraft = readonly [
+  AwardEdits,
+  (next: AwardEdits | ((prev: AwardEdits) => AwardEdits)) => void,
+];
 
 export interface ProposalAwards {
   amounts: ReadonlyMap<string, number | null>;
@@ -51,8 +54,6 @@ export const useProposalAwards = ({
 }): ProposalAwards => {
   const own = useState<AwardEdits>({});
   const [edits, setEdits] = draft ?? own;
-  const latest = useRef(edits);
-  latest.current = edits;
 
   const requested = useMemo(
     () =>
@@ -112,8 +113,7 @@ export const useProposalAwards = ({
 
   const setAmount = useCallback(
     (proposalId: string, amount: number | null) => {
-      latest.current = { ...latest.current, [proposalId]: amount };
-      setEdits(latest.current);
+      setEdits((prev) => ({ ...prev, [proposalId]: amount }));
     },
     [setEdits],
   );

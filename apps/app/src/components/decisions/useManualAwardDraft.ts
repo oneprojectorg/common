@@ -88,14 +88,16 @@ export function useManualAwardDraft(
   );
 
   const setEdits = useCallback(
-    (next: AwardEdits) => {
+    (next: AwardEdits | ((prev: AwardEdits) => AwardEdits)) => {
       if (typeof window === 'undefined') {
         return;
       }
-      if (Object.keys(next).length === 0) {
+      const resolved =
+        typeof next === 'function' ? next(getSnapshot(key)) : next;
+      if (Object.keys(resolved).length === 0) {
         window.localStorage.removeItem(key);
       } else {
-        window.localStorage.setItem(key, JSON.stringify(next));
+        window.localStorage.setItem(key, JSON.stringify(resolved));
       }
       snapshots.delete(key);
       window.dispatchEvent(new CustomEvent(CHANGE_EVENT, { detail: key }));
