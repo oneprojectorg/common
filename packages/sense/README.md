@@ -270,5 +270,5 @@ published source lags its declared dependency versions. Reapply if you re-run
   would match the avatar group's `has-data-[size]` selectors.
 - every primitive that moves — `motion-reduce:transition-none` next to each
   transform, size or position transition and each `transition-all`; every
-  popup's `data-open:animate-in` / `data-closed:animate-out` prefixed with
-  `motion-safe:`. See the motion note in `CLAUDE.md`.
+  popup carries `motion-reduce:data-open:animate-none
+  motion-reduce:data-closed:animate-none`. See the motion note in `CLAUDE.md`.
