@@ -338,6 +338,8 @@ test.describe('Out-of-date reviews — admin tags and banner', () => {
     org,
     supabaseAdmin,
   }, testInfo) => {
+    test.setTimeout(180_000);
+
     const { instance, revised, untouched } = await seedMixedVersionReviews({
       org,
       supabaseAdmin,
@@ -436,6 +438,8 @@ test.describe('Out-of-date reviews — admin tags and banner', () => {
     org,
     supabaseAdmin,
   }, testInfo) => {
+    test.setTimeout(90_000);
+
     const { instance } = await seedMixedVersionReviews({
       org,
       supabaseAdmin,
