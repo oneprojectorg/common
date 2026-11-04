@@ -107,17 +107,14 @@ export const getInstance = async ({ instanceId, user }: GetInstanceInput) => {
 
     // Filter budget from phase settings if hideBudget is true
     const instanceData = instance.instanceData as DecisionInstanceData;
-    const filteredInstanceData = instanceData.config?.hideBudget
-      ? {
-          ...instanceData,
-          phases: instanceData.phases.map((phase) => ({
-            ...phase,
-            settings: phase.settings
-              ? { ...phase.settings, budget: undefined }
-              : phase.settings,
-          })),
-        }
-      : instanceData;
+    const phases = instanceData.config?.hideBudget
+      ? instance.phases.map((phase) => ({
+          ...phase,
+          settings: phase.settings
+            ? { ...phase.settings, budget: undefined }
+            : phase.settings,
+        }))
+      : instance.phases;
 
     const manualSelectionStatus = await resolveManualSelectionStatus({
       instance,
@@ -126,7 +123,8 @@ export const getInstance = async ({ instanceId, user }: GetInstanceInput) => {
     return {
       ...instance,
       slug: instance.profile?.slug ?? null,
-      instanceData: filteredInstanceData,
+      instanceData,
+      phases,
       access,
       selectionsAreConfirmed: manualSelectionStatus.selectionsAreConfirmed,
     };

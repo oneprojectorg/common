@@ -101,16 +101,17 @@ export const duplicateInstance = async ({
     }
   }
 
-  const { instanceData: sourceInstanceData } = await resolvePhases({
-    instance: sourceInstance,
-  });
-  const sourceData = sourceInstanceData as DecisionInstanceData | null;
+  const source = await resolvePhases({ instance: sourceInstance });
+  const sourceData = source.instanceData as DecisionInstanceData | null;
   if (!sourceData) {
     throw new CommonError('Source instance has no instance data');
   }
 
-  // Build new instance data based on include flags
-  const newInstanceData = buildInstanceData(sourceData, include);
+  // The copy's blob carries the source's resolved phases.
+  const newInstanceData = buildInstanceData(
+    { ...sourceData, phases: source.phases },
+    include,
+  );
 
   // Delegate core creation (profile, instance, default roles, profile user)
   const profile = await createDecisionInstance({

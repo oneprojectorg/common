@@ -30,7 +30,6 @@ import {
   type ProposalDataInput,
   parseProposalData,
 } from './proposalDataSchema';
-import type { DecisionInstanceData } from './schemas/instanceData';
 import { syncProposalProfileLocation } from './syncProposalProfileLocation';
 import { assertInstancePhase } from './utils/instance';
 import { checkProposalsAllowed } from './utils/proposal';
@@ -71,7 +70,6 @@ export const createProposal = async ({
     orgFallbackPermissions: { profile: permission.ADMIN },
   });
 
-  const instanceData = instance.instanceData as DecisionInstanceData;
   const currentPhaseId = instance.currentStateId;
 
   if (!currentPhaseId) {
@@ -80,7 +78,7 @@ export const createProposal = async ({
 
   // Check if proposals are allowed in current phase
   const { allowed, phaseName } = checkProposalsAllowed(
-    instanceData.phases,
+    instance.phases,
     currentPhaseId,
   );
 
@@ -95,7 +93,7 @@ export const createProposal = async ({
   // a hidden-by-default phase remains hidden even if the rule is edited
   // before submit.
   const currentPhase = assertInstancePhase({
-    instance: { instanceData },
+    instance,
     phaseId: currentPhaseId,
   });
   const defaultHidden =

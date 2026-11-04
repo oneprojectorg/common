@@ -1,8 +1,9 @@
 /**
- * Phase-scoped template resolution over `instanceData.phases`: a phase's own
- * template wins, else the instance-level template, else null. Structural like
- * `phaseOrder.ts`, so domain instance data and the API-encoder shape both
- * pass. Client-safe: no server-only imports.
+ * Phase-scoped template resolution over a phase list: a phase's own template
+ * wins, else the instance-level template, else null. Structural like
+ * `phaseOrder.ts`: the server passes resolved phases plus the instance-level
+ * template, the client its wire `instanceData`. Client-safe: no server-only
+ * imports.
  */
 import type { ProposalTemplateSchema, RubricTemplateSchema } from '../types';
 
@@ -15,13 +16,13 @@ export function resolvePhaseTemplate<
   Template,
   Phase extends { phaseId: string },
 >(
-  instanceData: { phases?: readonly Phase[] },
+  source: { phases?: readonly Phase[] },
   phaseId: string | undefined,
   selectPhaseTemplate: (phase: Phase) => Template | undefined,
   instanceTemplate: Template | undefined,
 ): Template | null {
   if (phaseId != null) {
-    const phase = instanceData.phases?.find((p) => p.phaseId === phaseId);
+    const phase = source.phases?.find((p) => p.phaseId === phaseId);
     const phaseTemplate = phase ? selectPhaseTemplate(phase) : undefined;
     if (phaseTemplate !== undefined) {
       return phaseTemplate;
@@ -37,7 +38,7 @@ export function resolvePhaseTemplate<
  * always interpreted against the rubric of the phase they belong to.
  */
 export function getPhaseRubricTemplate(
-  instanceData: {
+  source: {
     rubricTemplate?: RubricTemplateSchema;
     phases?: ReadonlyArray<{
       phaseId: string;
@@ -47,15 +48,15 @@ export function getPhaseRubricTemplate(
   phaseId: string | undefined,
 ): RubricTemplateSchema | null {
   return resolvePhaseTemplate(
-    instanceData,
+    source,
     phaseId,
     (phase) => phase.rubricTemplate,
-    instanceData.rubricTemplate,
+    source.rubricTemplate,
   );
 }
 
 export function getPhaseProposalTemplate(
-  instanceData: {
+  source: {
     proposalTemplate?: ProposalTemplateSchema;
     phases?: ReadonlyArray<{
       phaseId: string;
@@ -65,9 +66,9 @@ export function getPhaseProposalTemplate(
   phaseId: string | undefined,
 ): ProposalTemplateSchema | null {
   return resolvePhaseTemplate(
-    instanceData,
+    source,
     phaseId,
     (phase) => phase.proposalTemplate,
-    instanceData.proposalTemplate,
+    source.proposalTemplate,
   );
 }

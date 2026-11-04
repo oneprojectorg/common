@@ -58,11 +58,7 @@ export async function listProposalFeedback({
 
   const items = proposal.reviewAssignments
     .filter((assignment) =>
-      hasPhaseEnded(
-        instance.instanceData,
-        assignment.phaseId,
-        instance.currentStateId,
-      ),
+      hasPhaseEnded(instance, assignment.phaseId, instance.currentStateId),
     )
     .flatMap((assignment) =>
       assignment.reviews

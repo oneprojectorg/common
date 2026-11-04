@@ -1,22 +1,22 @@
 /**
- * Phase-order navigation over `instanceData.phases`. Phase order IS the array
- * order (first = initial, last = final) — phases carry no explicit rank.
- * Generic/structural like `assertInstancePhase`, so domain instance data and
- * the API-encoder shape both pass. Client-safe: no server-only imports.
+ * Phase-order navigation over a phase list. Phase order IS the array order
+ * (first = initial, last = final) — phases carry no explicit rank. Takes any
+ * `{ phases }` source: the server passes a resolved instance, the client its
+ * wire `instanceData`. Client-safe: no server-only imports.
  */
 
 export const MAX_PHASES_PER_DECISION = 30;
 
-interface PhaseOrderInstanceData<Phase extends { phaseId: string }> {
+export interface PhaseSource<Phase extends { phaseId: string }> {
   phases?: readonly Phase[];
 }
 
 /** Index of `phaseId` in the instance's phase ordering; `-1` when absent. */
 export function getPhaseIndex(
-  instanceData: PhaseOrderInstanceData<{ phaseId: string }>,
+  source: PhaseSource<{ phaseId: string }>,
   phaseId: string,
 ): number {
-  return (instanceData.phases ?? []).findIndex((p) => p.phaseId === phaseId);
+  return (source.phases ?? []).findIndex((p) => p.phaseId === phaseId);
 }
 
 /**
@@ -25,12 +25,12 @@ export function getPhaseIndex(
  * gates using this fail closed on unknown phases.
  */
 export function isPhaseAtOrBefore(
-  instanceData: PhaseOrderInstanceData<{ phaseId: string }>,
+  source: PhaseSource<{ phaseId: string }>,
   phaseId: string,
   referencePhaseId: string,
 ): boolean {
-  const target = getPhaseIndex(instanceData, phaseId);
-  const reference = getPhaseIndex(instanceData, referencePhaseId);
+  const target = getPhaseIndex(source, phaseId);
+  const reference = getPhaseIndex(source, referencePhaseId);
   return target !== -1 && reference !== -1 && target <= reference;
 }
 
@@ -39,14 +39,14 @@ export function isPhaseAtOrBefore(
  * Empty when `phaseId` is the first phase or is not configured.
  */
 export function getPreviousPhases<Phase extends { phaseId: string }>(
-  instanceData: PhaseOrderInstanceData<Phase>,
+  source: PhaseSource<Phase>,
   phaseId: string,
 ): Phase[] {
-  const index = getPhaseIndex(instanceData, phaseId);
+  const index = getPhaseIndex(source, phaseId);
   if (index <= 0) {
     return [];
   }
-  return (instanceData.phases ?? []).slice(0, index);
+  return (source.phases ?? []).slice(0, index);
 }
 
 /**
@@ -57,14 +57,14 @@ export function getPreviousPhases<Phase extends { phaseId: string }>(
  * closed.
  */
 export function hasPhaseEnded(
-  instanceData: PhaseOrderInstanceData<{ phaseId: string }>,
+  source: PhaseSource<{ phaseId: string }>,
   phaseId: string,
   currentStateId: string | null | undefined,
 ): boolean {
   if (!currentStateId) {
     return false;
   }
-  const target = getPhaseIndex(instanceData, phaseId);
-  const current = getPhaseIndex(instanceData, currentStateId);
+  const target = getPhaseIndex(source, phaseId);
+  const current = getPhaseIndex(source, currentStateId);
   return target !== -1 && current !== -1 && target < current;
 }

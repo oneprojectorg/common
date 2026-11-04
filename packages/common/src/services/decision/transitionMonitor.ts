@@ -10,9 +10,8 @@ import pMap from 'p-map';
 import { CommonError } from '../../utils';
 import { advancePhase } from './advancePhase';
 import { invalidateDecisionInstance } from './decisionCache';
-import { type PhasesResolved, resolvePhasesForAll } from './instancePhases';
+import { type WithPhases, resolvePhasesForAll } from './instancePhases';
 import { onPhaseAdvanced } from './onPhaseAdvanced';
-import { getInstancePhases } from './schemas/instanceData';
 
 export interface ProcessDecisionsTransitionsResult {
   processed: number;
@@ -105,7 +104,7 @@ export async function processDecisionsTransitions({
         const processInstanceId = instance.id;
         const transitions = transitionsByInstance.get(processInstanceId) ?? [];
 
-        if (getInstancePhases(instance.instanceData).length === 0) {
+        if (instance.phases.length === 0) {
           for (const transition of transitions) {
             result.failed++;
             result.errors.push({
@@ -164,13 +163,13 @@ async function advanceInstanceTransitions({
   now,
   result,
 }: {
-  instance: PhasesResolved<{ id: string; instanceData: unknown }>;
+  instance: WithPhases<{ id: string; instanceData: unknown }>;
   transitions: DueTransition[];
   now: string;
   result: ProcessDecisionsTransitionsResult;
 }): Promise<void> {
   const processInstanceId = instance.id;
-  const phases = [...getInstancePhases(instance.instanceData)];
+  const { phases } = instance;
 
   for (const transition of transitions) {
     try {

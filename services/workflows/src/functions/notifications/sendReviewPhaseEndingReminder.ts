@@ -1,7 +1,6 @@
 import {
   computeDaysLeft,
   getInstanceCurrentPhase,
-  getInstancePhases,
   isInstanceCurrentPhase,
   resolvePhases,
 } from '@op/common';
@@ -71,10 +70,10 @@ export const sendReviewPhaseEndingReminder = inngest.createFunction(
       return;
     }
 
-    const phases = getInstancePhases(instanceData.instanceData);
+    const { phases } = instanceData;
     const phase = getInstanceCurrentPhase({
       currentStateId: instanceData.currentStateId,
-      instanceData: { phases },
+      phases,
     });
 
     if (phase?.rules?.reviews?.submit !== true) {
