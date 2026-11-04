@@ -17,8 +17,9 @@ import { Suspense, useEffect, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
+import { SearchField } from '@/components/SearchField';
+
 import { OrgsRowCells } from './OrgsRow';
-import { TableSearchField } from './TableSearchField';
 
 /** Main organizations table component with suspense boundary */
 export const OrgsTable = () => {
@@ -32,10 +33,9 @@ export const OrgsTable = () => {
         <Header2 className="text-title">
           {t('admin.allOrganizationsTitle')}
         </Header2>
-        <TableSearchField
+        <SearchField
           className="w-64"
-          aria-label={t('admin.searchOrganizationsLabel')}
-          placeholder={t('admin.searchOrganizationsLabel')}
+          label={t('admin.searchOrganizationsLabel')}
           value={searchQuery}
           onChange={setSearchQuery}
         />

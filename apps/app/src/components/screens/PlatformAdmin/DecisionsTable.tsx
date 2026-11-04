@@ -17,8 +17,9 @@ import { Suspense, useEffect, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
+import { SearchField } from '@/components/SearchField';
+
 import { DecisionsRowCells } from './DecisionsRow';
-import { TableSearchField } from './TableSearchField';
 
 /** Main decisions table component with suspense boundary */
 export const DecisionsTable = () => {
@@ -30,10 +31,9 @@ export const DecisionsTable = () => {
     <div className="mt-8">
       <div className="mb-4 flex items-center justify-between gap-4">
         <Header2 className="text-title">{t('admin.allDecisionsTitle')}</Header2>
-        <TableSearchField
+        <SearchField
           className="w-64"
-          aria-label={t('admin.searchDecisionsLabel')}
-          placeholder={t('admin.searchDecisionsLabel')}
+          label={t('admin.searchDecisionsLabel')}
           value={searchQuery}
           onChange={setSearchQuery}
         />

@@ -1,12 +1,14 @@
 'use client';
 
+import { PROPOSAL_SEARCH_MAX_LENGTH } from '@op/common/client';
 import { Header3 } from '@op/sense/Header';
 
 import { useTranslations } from '@/lib/i18n';
 
+import { SearchField } from '@/components/SearchField';
+
 import { CategoryFilterSelect } from './CategoryFilterSelect';
 import { ProposalCount } from './ProposalCount';
-import { ProposalSearchField } from './ProposalSearchField';
 import { ProposalViewToggle } from './ProposalViewToggle';
 import { ResponsiveSelect } from './ResponsiveSelect';
 import type { ProposalView } from './proposalViews';
@@ -130,11 +132,13 @@ export const ProposalsFilterBar = ({
           end and putting both boxes on one line. */}
       <div className="flex flex-wrap items-center justify-between gap-4 max-2xl:w-full 2xl:flex-1">
         {header ?? <ProposalsListHeader count={count} total={total} />}
-        <ProposalSearchField
+        <SearchField
           className="ms-auto"
           value={controls.search}
           onChange={controls.setSearch}
           isPending={controls.isSearchPending}
+          label={t('decisions.proposals.searchProposalsLabel')}
+          maxLength={PROPOSAL_SEARCH_MAX_LENGTH}
         />
       </div>
       {/* Grows to claim its row below 2xl so `ms-auto` has slack to push
