@@ -268,13 +268,7 @@ published source lags its declared dependency versions. Reapply if you re-run
   `variant` and `size` are typed non-nullable, since cva emits no classes for
   `null`. `size` stays out of the `useRender` state: a `data-size` on a badge
   would match the avatar group's `has-data-[size]` selectors.
-- every primitive that moves — `motion-reduce:transition-none` sits next to
-  each transform, size or position transition and each `transition-all`
-  (`button`, `badge`, `tabs`, `toggle`, `switch`, `accordion`, `input-otp`,
-  `navigation-menu`, `sidebar`, `progress`, `sheet`, `drawer`), and every
-  animated popup (`dialog`, `alert-dialog`, `popover`, `hover-card`, `tooltip`,
-  `menubar`, `context-menu`, `dropdown-menu`, `select`, `combobox`) carries
-  `motion-reduce:data-open:animate-none motion-reduce:data-closed:animate-none`.
-  The stacked form is deliberate: Tailwind compiles `data-open:animate-in` to
-  `.x[data-open]`, which outranks a bare `motion-reduce:animate-none`. Colour,
-  opacity and shadow fades, the backdrops and the loaders are left animating.
+- every primitive that moves — `motion-reduce:transition-none` next to each
+  transform, size or position transition and each `transition-all`; every
+  popup's `data-open:animate-in` / `data-closed:animate-out` prefixed with
+  `motion-safe:`. See the motion note in `CLAUDE.md`.
