@@ -1,16 +1,17 @@
 import { InngestTestEngine } from '@inngest/test';
 import {
   SMS_MAX_BODY_LENGTH,
+  affirmVoterAttestation,
   findVoterEnrolment,
   parsePhoneNumber,
   removeDecisionPublicAccess,
   resolveVoterAddress,
   submitVote,
 } from '@op/common';
-import { and, db, eq } from '@op/db/client';
+import { and, asc, db, eq } from '@op/db/client';
 import {
-  DecisionVoterEnrolmentStatus,
   ProcessStatus,
+  decisionsVoteDraftProposals,
   processInstances,
   profileUsers,
 } from '@op/db/schema';
@@ -1676,6 +1677,24 @@ describe('handleSMSCommand building and casting the ballot', () => {
     return { member, instanceId };
   };
 
+  const readDraftPicks = async (
+    instanceId: string,
+  ): Promise<string[] | null> => {
+    const draft = await db.query.decisionsVoteDrafts.findFirst({
+      where: { processInstanceId: instanceId },
+      columns: { id: true },
+    });
+    if (!draft) {
+      return null;
+    }
+    const rows = await db
+      .select({ proposalId: decisionsVoteDraftProposals.proposalId })
+      .from(decisionsVoteDraftProposals)
+      .where(eq(decisionsVoteDraftProposals.voteDraftId, draft.id))
+      .orderBy(asc(decisionsVoteDraftProposals.rank));
+    return rows.map((row) => row.proposalId);
+  };
+
   const run = (event: ReturnType<typeof smsInboundEvent>) =>
     new InngestTestEngine({ function: handleSMSCommand }).execute({
       events: [event],
@@ -1919,11 +1938,7 @@ describe('handleSMSCommand building and casting the ballot', () => {
       idOf(102),
       idOf(101),
     ]);
-    await expect(
-      db.query.decisionBallotDrafts.findFirst({
-        where: { processInstanceId: instanceId },
-      }),
-    ).resolves.toBeUndefined();
+    await expect(readDraftPicks(instanceId)).resolves.toBeNull();
 
     const { result: again } = await run(
       smsInboundEvent({
@@ -2013,11 +2028,7 @@ describe('handleSMSCommand building and casting the ballot', () => {
     expect(recordedSms.at(-1)?.body).toBe(
       'Voting is misconfigured: "cost" is not a priced field on the proposal template, so no ballot can be cast. Ask an admin to correct the decision.',
     );
-    const draft = await db.query.decisionBallotDrafts.findFirst({
-      where: { processInstanceId: instanceId },
-      columns: { picks: true },
-    });
-    expect(draft?.picks ?? []).toEqual([]);
+    expect((await readDraftPicks(instanceId)) ?? []).toEqual([]);
   });
 
   it('given two picks and a capped phase whose cost field was pointed at an unpriced template field by a raw instance_data write (the admin update refuses it), when the voter texts REMOVE and MOVE, then each reply names the misconfiguration and the draft is unchanged', async ({
@@ -2031,10 +2042,7 @@ describe('handleSMSCommand building and casting the ballot', () => {
       name: `Pick Repriced ${task.id}`,
     });
     await text(NUMBERS.pickRepriced, LINES.pickRepriced, '101 102');
-    const before = await db.query.decisionBallotDrafts.findFirst({
-      where: { processInstanceId: instanceId },
-      columns: { picks: true },
-    });
+    const before = await readDraftPicks(instanceId);
     await fixture.plantVotingRules({
       instanceId,
       voting: { voterCostField: 'cost' },
@@ -2059,12 +2067,7 @@ describe('handleSMSCommand building and casting the ballot', () => {
       'Voting is misconfigured: "cost" is not a priced field on the proposal template, so no ballot can be cast. Ask an admin to correct the decision.',
       'Voting is misconfigured: "cost" is not a priced field on the proposal template, so no ballot can be cast. Ask an admin to correct the decision.',
     ]);
-    await expect(
-      db.query.decisionBallotDrafts.findFirst({
-        where: { processInstanceId: instanceId },
-        columns: { picks: true },
-      }),
-    ).resolves.toEqual(before);
+    await expect(readDraftPicks(instanceId)).resolves.toEqual(before);
   });
 
   it('given a code no proposal has, then nothing is added and the member is told', async ({
@@ -2156,12 +2159,7 @@ describe('handleSMSCommand building and casting the ballot', () => {
     expect(submissions.map((row) => row.processInstanceId)).toEqual([
       b.instanceId,
     ]);
-    await expect(
-      db.query.decisionBallotDrafts.findFirst({
-        where: { processInstanceId: a },
-        columns: { picks: true },
-      }),
-    ).resolves.toMatchObject({ picks: [expect.any(String)] });
+    await expect(readDraftPicks(a)).resolves.toEqual([expect.any(String)]);
   });
 
   it('given voting closed after a member built a draft, when they text LIST, DONE, REMOVE and MOVE, then each says voting is not open and the draft is unchanged', async ({
@@ -2191,11 +2189,7 @@ describe('handleSMSCommand building and casting the ballot', () => {
     expect(recordedSms.slice(-4).map((sms) => sms.body)).toEqual(
       Array.from({ length: 4 }, () => `Voting is not open for "${name}".`),
     );
-    const draft = await db.query.decisionBallotDrafts.findFirst({
-      where: { processInstanceId: instanceId },
-      columns: { picks: true },
-    });
-    expect(draft?.picks).toHaveLength(2);
+    await expect(readDraftPicks(instanceId)).resolves.toHaveLength(2);
   });
 
   it('given a SUBMIT run that stopped after the vote was written, when the text runs again, then the draft is cleared, the event carries the ballot as its id, and the reply says the ballot is already in', async ({
@@ -2209,14 +2203,11 @@ describe('handleSMSCommand building and casting the ballot', () => {
       name: `Pick Retry ${task.id}`,
     });
     await text(NUMBERS.pickRetry, LINES.pickRetry, '102 101');
-    const draft = await db.query.decisionBallotDrafts.findFirst({
-      where: { processInstanceId: instanceId },
-      columns: { picks: true },
-    });
+    const picks = await readDraftPicks(instanceId);
     const written = await submitVote({
       data: {
         processInstanceId: instanceId,
-        selectedProposalIds: draft!.picks,
+        selectedProposalIds: picks!,
         authUserId: member.authUserId,
       },
       authUserId: member.authUserId,
@@ -2236,11 +2227,7 @@ describe('handleSMSCommand building and casting the ballot', () => {
         data: { voteSubmissionId: written.id, processInstanceId: instanceId },
       }),
     );
-    await expect(
-      db.query.decisionBallotDrafts.findFirst({
-        where: { processInstanceId: instanceId },
-      }),
-    ).resolves.toBeUndefined();
+    await expect(readDraftPicks(instanceId)).resolves.toBeNull();
     expect(recordedSms.at(-1)?.body).toBe(
       'Your ballot is already in. One ballot per person.',
     );
@@ -2283,20 +2270,15 @@ describe('handleSMSCommand building and casting the ballot', () => {
     );
 
     expect(result).toEqual({ message: 'picks added' });
-    await expect(
-      db.query.decisionBallotDrafts.findFirst({
-        where: { processInstanceId: b.instanceId },
-        columns: { picks: true },
-      }),
-    ).resolves.toMatchObject({ picks: [expect.any(String)] });
+    await expect(readDraftPicks(b.instanceId)).resolves.toEqual([
+      expect.any(String),
+    ]);
     await expect(
       findVoterEnrolment({
         processInstanceId: a,
         authUserId: member.authUserId,
       }),
-    ).resolves.toMatchObject({
-      status: DecisionVoterEnrolmentStatus.AWAITING_ADDRESS,
-    });
+    ).resolves.toMatchObject({ enrolledAt: null });
   });
 
   it("given a confirmed number that is not a member texts a code to a private decision's line, then they are told the decision is not available and nothing is written", async ({
@@ -2333,11 +2315,7 @@ describe('handleSMSCommand building and casting the ballot', () => {
     expect(recordedSms.map((sms) => sms.body)).toEqual([
       'That decision is not available to you.',
     ]);
-    await expect(
-      db.query.decisionBallotDrafts.findFirst({
-        where: { processInstanceId: instanceId },
-      }),
-    ).resolves.toBeUndefined();
+    await expect(readDraftPicks(instanceId)).resolves.toBeNull();
   });
   it('given a voting phase with no budget cap and a proposal whose cost is not an amount, when the voter texts its code, then it becomes a pick with no cost shown', async ({
     task,
@@ -2368,12 +2346,9 @@ describe('handleSMSCommand building and casting the ballot', () => {
 
     expect(result).toEqual({ message: 'picks added' });
     expect(recordedSms.at(-1)?.body).toContain('Pick 1: "Odd cost"');
-    await expect(
-      db.query.decisionBallotDrafts.findFirst({
-        where: { processInstanceId: instanceId },
-        columns: { picks: true },
-      }),
-    ).resolves.toMatchObject({ picks: [expect.any(String)] });
+    await expect(readDraftPicks(instanceId)).resolves.toEqual([
+      expect.any(String),
+    ]);
   });
 
   it('given a voter who built a draft through a public decision, when its public access is removed and they text SUBMIT, then they are told the decision is not available and no vote is written', async ({
@@ -2457,7 +2432,7 @@ describe('handleSMSCommand building and casting the ballot', () => {
     );
   });
 
-  it('given a member who browsed by slug on the shared number, when the attestation is rewritten and they text a code, then they are told to text VOTE with that slug', async ({
+  it('given a member who registered before the attestation was rewritten, when they text a code, then the pick lands because enrolment records only the time', async ({
     task,
     onTestFinished,
   }) => {
@@ -2487,10 +2462,7 @@ describe('handleSMSCommand building and casting the ballot', () => {
       address: 'anywhere',
       geocode: async () => [{ lat: 40.5, lng: -73.5 }],
     });
-    await affirmVoterAttestation({
-      ...key,
-      attestationHash: hashAttestation('I live here.'),
-    });
+    await affirmVoterAttestation(key);
     await run(
       smsInboundEvent({
         from: NUMBERS.pickSlugRewritten,
@@ -2512,10 +2484,9 @@ describe('handleSMSCommand building and casting the ballot', () => {
       }),
     );
 
-    expect(result).toEqual({ message: 'register first' });
-    expect(recordedSms.at(-1)?.body).toBe(
-      `Text VOTE ${slug} to register for "${name}" before browsing its proposals.`,
-    );
+    expect(result).toEqual({ message: 'picks added' });
+    expect(recordedSms.at(-1)?.body).toContain('Pick 1:');
+    await expect(readDraftPicks(instanceId)).resolves.toHaveLength(1);
   });
 });
 

@@ -31,14 +31,15 @@ import {
   findChatSession,
   findLatestChatSession,
   findPendingVoterEnrolment,
+  findBallotDraft,
   findVoterEnrolment,
+  formatUnitAmount,
   isVoterEnrolled,
   pendingEnrolmentStep,
   formatSmsAddressLookupFailed,
   formatSmsAddressNotFound,
   formatSmsAddressOutside,
   formatSmsAddressResolved,
-  formatSmsAmount,
   formatSmsBallot,
   formatSmsBallotPageHeading,
   formatSmsBallotRefused,
@@ -74,7 +75,6 @@ import {
   submitSmsBallot,
   summarizeSmsBallot,
 } from '@op/common';
-import { DecisionVoterEnrolmentStatus } from '@op/db/schema';
 import { Events, inngest } from '@op/events';
 import type { GetStepTools } from 'inngest';
 
@@ -897,7 +897,7 @@ const money = (
   amount: number | null,
 ): string | null =>
   summary.unit && amount !== null
-    ? formatSmsAmount({ amount, unit: summary.unit })
+    ? formatUnitAmount({ amount, unit: summary.unit })
     : null;
 
 // The same choice as a browse, then the ballot the voter cast last on the
@@ -920,8 +920,20 @@ const refuseUnlessReadyToPick = async (
   instanceId: string,
 ): Promise<SmsCommandResult | null> => {
   const decision = await step.run('describe-ballot-decision', () =>
-    describeEnrolmentDecision({ instanceId }),
+    swallowUnreadable(() =>
+      describeEnrolmentDecision({ instanceId, authUserId: account.authUserId }),
+    ),
   );
+
+  if (!decision) {
+    return deliverAll(
+      deliver,
+      'send-ballot-unavailable',
+      'Ballot unavailable reply',
+      [SMS_BALLOT_UNAVAILABLE_MESSAGE],
+      'decision not found',
+    );
+  }
 
   if (!decision.votingOpen) {
     return deliverAll(
@@ -940,9 +952,7 @@ const refuseUnlessReadyToPick = async (
         authUserId: account.authUserId,
       }),
     );
-    if (
-      !isEnrolledOnCurrentAttestation(enrolment, decision.enrolment.attestation)
-    ) {
+    if (!isVoterEnrolled(enrolment)) {
       return deliverAll(
         deliver,
         'send-register-first',
@@ -992,7 +1002,7 @@ const pickByCodes = async (
         authUserId: account.authUserId,
         instanceId,
         codes,
-        chatLineId: context.line?.id ?? null,
+        phoneNumberId: context.line?.id ?? null,
       }),
     ),
   );
@@ -1300,7 +1310,10 @@ export const submit: SmsCommandHandler = async (context) => {
       );
     case 'not_enrolled': {
       const decision = await step.run('describe-ballot-decision', () =>
-        describeEnrolmentDecision({ instanceId }),
+        describeEnrolmentDecision({
+          instanceId,
+          authUserId: account.authUserId,
+        }),
       );
       return deliverAll(
         deliver,

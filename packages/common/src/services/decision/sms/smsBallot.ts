@@ -1,5 +1,10 @@
-import { and, db, eq, inArray, isNull } from '@op/db/client';
-import { decisionBallotDrafts, profiles, proposals } from '@op/db/schema';
+import { and, asc, db, eq, inArray, isNull } from '@op/db/client';
+import {
+  decisionsVoteDraftProposals,
+  decisionsVoteDrafts,
+  profiles,
+  proposals,
+} from '@op/db/schema';
 import type { AmountUnit } from '@op/types/amountUnit';
 
 import {
@@ -12,6 +17,7 @@ import {
 } from '../../../utils';
 import { getIndividualProfileId } from '../../access';
 import { ensureBallotDraft } from '../ballotDraft';
+import { ensureChatSession } from '../chatSession';
 import { getFieldUnit, isAtMost, sumAmounts } from '../fieldUnit';
 import { getBallotProposalByCode } from '../getBallotProposalByCode';
 import { getProposalCosts } from '../getProposalCosts';
@@ -35,7 +41,7 @@ export interface SmsBallotPick {
 
 export interface SmsBallotSummary {
   decisionName: string;
-  district: string | null;
+  termLabel: string | null;
   unit: AmountUnit | null;
   budget: number | null;
   picks: SmsBallotPick[];
@@ -109,29 +115,41 @@ const loadPickRows = async (ids: string[]) => {
   });
 };
 
-const savePicks = async (key: BallotKey, picks: string[]): Promise<void> => {
-  const profileId = await getIndividualProfileId(key.authUserId);
-  await db
-    .update(decisionBallotDrafts)
-    .set({ picks, updatedAt: new Date().toISOString() })
-    .where(
-      and(
-        eq(decisionBallotDrafts.processInstanceId, key.instanceId),
-        eq(decisionBallotDrafts.profileId, profileId),
-      ),
-    );
+const savePicks = async (draftId: string, picks: string[]): Promise<void> => {
+  await db.transaction(async (tx) => {
+    await tx
+      .delete(decisionsVoteDraftProposals)
+      .where(eq(decisionsVoteDraftProposals.voteDraftId, draftId));
+    if (picks.length > 0) {
+      await tx.insert(decisionsVoteDraftProposals).values(
+        picks.map((proposalId, index) => ({
+          voteDraftId: draftId,
+          proposalId,
+          rank: index + 1,
+        })),
+      );
+    }
+  });
 };
 
 const loadDraftPicks = async (
-  key: BallotKey,
-  draft: { picks: string[] },
+  draft: { id: string },
   extraIds: string[] = [],
 ) => {
-  const rows = await loadPickRows([...draft.picks, ...extraIds]);
+  const pickRows = await db
+    .select({ proposalId: decisionsVoteDraftProposals.proposalId })
+    .from(decisionsVoteDraftProposals)
+    .where(eq(decisionsVoteDraftProposals.voteDraftId, draft.id))
+    .orderBy(
+      asc(decisionsVoteDraftProposals.rank),
+      asc(decisionsVoteDraftProposals.createdAt),
+    );
+  const stored = pickRows.map((row) => row.proposalId);
+  const rows = await loadPickRows([...stored, ...extraIds]);
   const found = new Set(rows.map((row) => row.id));
-  const picks = draft.picks.filter((id) => found.has(id));
-  if (picks.length !== draft.picks.length) {
-    await savePicks(key, picks);
+  const picks = stored.filter((id) => found.has(id));
+  if (picks.length !== stored.length) {
+    await savePicks(draft.id, picks);
   }
   return { picks, rows };
 };
@@ -153,7 +171,7 @@ const priceRows = async (
     : new Map(rows.map(({ id }) => [id, null]));
 
 const summarize = (
-  scope: { decisionName: string; district: string | null },
+  scope: { decisionName: string; termLabel: string | null },
   pricing: Awaited<ReturnType<typeof loadPricing>>,
   rows: ReadonlyArray<{ id: string; code: number | null; title: string }>,
   costs: ReadonlyMap<string, number | null>,
@@ -168,7 +186,7 @@ const summarize = (
 
   return {
     decisionName: scope.decisionName,
-    district: scope.district,
+    termLabel: scope.termLabel,
     unit: pricing.unit ?? null,
     budget: pricing.budget,
     picks,
@@ -191,7 +209,7 @@ export async function summarizeSmsBallot(
     }),
     loadPricing(scope.instance),
   ]);
-  const { rows } = await loadDraftPicks(key, draft);
+  const { rows } = await loadDraftPicks(draft);
   const costs = await priceRows(rows, pricing);
 
   return summarize(scope, pricing, rows, costs);
@@ -208,11 +226,11 @@ export async function addSmsBallotPicks({
   authUserId,
   instanceId,
   codes,
-  chatLineId,
+  phoneNumberId,
 }: BallotKey & {
   codes: number[];
-  /** The decision line the codes came in on, recorded on the draft. */
-  chatLineId?: string | null;
+  /** The decision line the codes came in on, recorded on the session. */
+  phoneNumberId?: string | null;
 }): Promise<{
   results: SmsPickResult[];
   summary: SmsBallotSummary;
@@ -224,16 +242,20 @@ export async function addSmsBallotPicks({
     ensureBallotDraft({
       processInstanceId: instanceId,
       authUserId,
-      chatLineId,
     }),
     loadPricing(scope.instance),
+    ensureChatSession({
+      processInstanceId: instanceId,
+      authUserId,
+      phoneNumberId,
+    }),
   ]);
   const candidates = await Promise.all(
     codes.map(async (code) => ({
       code,
       proposal: await getBallotProposalByCode({
         instance: scope.instance,
-        boundaryId: scope.boundaryId,
+        taxonomyTermId: scope.taxonomyTermId,
         code,
       }),
     })),
@@ -241,7 +263,7 @@ export async function addSmsBallotPicks({
   const candidateIds = candidates.flatMap(({ proposal }) =>
     proposal ? [proposal.id] : [],
   );
-  const { picks: kept, rows } = await loadDraftPicks(key, draft, candidateIds);
+  const { picks: kept, rows } = await loadDraftPicks(draft, candidateIds);
   const costs = await priceRows(rows, pricing);
   const rowById = new Map(rows.map((row) => [row.id, row]));
 
@@ -289,7 +311,7 @@ export async function addSmsBallotPicks({
   }
 
   if (picks.length !== kept.length) {
-    await savePicks(key, picks);
+    await savePicks(draft.id, picks);
   }
 
   return {
@@ -306,15 +328,15 @@ export type SmsPickChange =
 const findPickByCode = async (
   key: BallotKey,
   code: number,
-): Promise<{ picks: string[]; index: number } | null> => {
+): Promise<{ draftId: string; picks: string[]; index: number } | null> => {
   const draft = await ensureBallotDraft({
     processInstanceId: key.instanceId,
     authUserId: key.authUserId,
   });
-  const { picks, rows } = await loadDraftPicks(key, draft);
+  const { picks, rows } = await loadDraftPicks(draft);
   const match = rows.find((row) => row.code === code);
   const index = match ? picks.indexOf(match.id) : -1;
-  return index === -1 ? null : { picks, index };
+  return index === -1 ? null : { draftId: draft.id, picks, index };
 };
 
 export async function removeSmsBallotPick({
@@ -338,7 +360,7 @@ export async function removeSmsBallotPick({
   }
 
   const [removedId] = found.picks.splice(found.index, 1);
-  await savePicks(key, found.picks);
+  await savePicks(found.draftId, found.picks);
   const summary = await summarizeSmsBallot(key);
   const [removedRow] = await loadPickRows(removedId ? [removedId] : []);
 
@@ -381,7 +403,7 @@ export async function moveSmsBallotPick({
   const target = Math.min(Math.max(position, 1), found.picks.length) - 1;
   const [movedId] = found.picks.splice(found.index, 1);
   found.picks.splice(target, 0, movedId!);
-  await savePicks(key, found.picks);
+  await savePicks(found.draftId, found.picks);
   const summary = await summarizeSmsBallot(key);
   const pick = summary.picks[target]!;
 
@@ -411,12 +433,11 @@ export async function submitSmsBallot({
     return { status: 'already_submitted', voteSubmissionId: existing.id };
   }
 
-  const key = { authUserId, instanceId };
   const draft = await ensureBallotDraft({
     processInstanceId: instanceId,
     authUserId,
   });
-  const { picks } = await loadDraftPicks(key, draft);
+  const { picks } = await loadDraftPicks(draft);
 
   if (picks.length === 0) {
     return { status: 'empty' };
@@ -455,11 +476,11 @@ export async function deleteBallotDraft({
 }: BallotKey): Promise<void> {
   const profileId = await getIndividualProfileId(authUserId);
   await db
-    .delete(decisionBallotDrafts)
+    .delete(decisionsVoteDrafts)
     .where(
       and(
-        eq(decisionBallotDrafts.processInstanceId, instanceId),
-        eq(decisionBallotDrafts.profileId, profileId),
+        eq(decisionsVoteDrafts.processInstanceId, instanceId),
+        eq(decisionsVoteDrafts.profileId, profileId),
       ),
     );
 }
