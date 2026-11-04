@@ -31,9 +31,8 @@ export const ProposalSearchField = ({
   const inputRef = useRef<HTMLInputElement>(null);
 
   return (
-    // Sized to hold the longest translated placeholder rather than the English
-    // one — French runs to "Rechercher des propositions".
-    <InputGroup className={cn('w-full shrink-0 md:w-96', className)}>
+    // 256px holds the longest translated placeholder, not only the English one.
+    <InputGroup className={cn('w-full shrink-0 md:w-64', className)}>
       <InputGroupAddon>
         {isPending ? <Spinner /> : <LuSearch />}
       </InputGroupAddon>
