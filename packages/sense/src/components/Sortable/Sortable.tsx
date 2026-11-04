@@ -35,6 +35,9 @@ import type {
 
 const containerClasses = 'flex flex-col outline-none';
 
+// dnd-kit's default eases the overlay 250ms per keyboard step.
+const noOverlayTransition = () => undefined;
+
 // Not `none`: TouchSensor's delay constraint already cancels a pending drag past
 // its tolerance, so `manipulation` lets a swipe scroll while a long press drags.
 const itemClasses = (hasDragHandle: boolean) =>
@@ -267,6 +270,7 @@ export function Sortable<T extends SortableItem>({
           <DragOverlay
             className="sense"
             dropAnimation={reducedMotion ? null : undefined}
+            transition={reducedMotion ? noOverlayTransition : undefined}
           >
             {activeItem ? (
               renderDragPreview ? (
