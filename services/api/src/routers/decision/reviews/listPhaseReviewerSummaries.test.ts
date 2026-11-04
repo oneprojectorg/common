@@ -365,6 +365,214 @@ describe.concurrent('decision.listPhaseReviewerSummaries', () => {
     }
   });
 
+  it('pages a status filter under a sort, with only that status and a filtered total', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const { context, inProgress } = await seedInProgressReviewers(
+      testData,
+      task.id,
+    );
+
+    const adminCaller = await createAuthenticatedCaller(
+      context.defaultReviewer.email,
+    );
+    const input = {
+      processInstanceId: context.instance.instance.id,
+      phaseId: 'review',
+    };
+    const [rows, firstPage, unfiltered] = await Promise.all([
+      walkAllPages({
+        caller: adminCaller,
+        input: {
+          ...input,
+          status: ProposalReviewAssignmentStatus.IN_PROGRESS,
+          sort: 'mostComplete',
+        },
+      }),
+      adminCaller.decision.listPhaseReviewerSummaries({
+        ...input,
+        status: ProposalReviewAssignmentStatus.IN_PROGRESS,
+        sort: 'mostComplete',
+        limit: 2,
+      }),
+      adminCaller.decision.listPhaseReviewerSummaries(input),
+    ]);
+    const rowIds = rows.map((row) => row.reviewer.id);
+
+    expect(firstPage.next).not.toBeNull();
+    expect(rows.map((row) => row.status)).toEqual(
+      rows.map(() => ProposalReviewAssignmentStatus.IN_PROGRESS),
+    );
+    expect(rowIds).toEqual([
+      inProgress.twoThirds,
+      inProgress.half,
+      inProgress.third,
+      inProgress.draftLow,
+      inProgress.draftHigh,
+    ]);
+    expect(new Set(rowIds).size).toBe(rowIds.length);
+    expect(firstPage.total).toBe(rowIds.length);
+    expect(firstPage.totalReviewers).toBe(unfiltered.totalReviewers);
+    expect(firstPage.totalReviewers).toBeGreaterThan(firstPage.total);
+  });
+
+  it('pages the not-started filter under the least-complete sort through a run of equal keys', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const first = await testData.createReviewAssignment({
+      title: `Pending sort proposal ${task.id}`,
+      status: ProposalReviewAssignmentStatus.PENDING,
+    });
+    const context = first.context;
+    const pendingIds = [context.defaultReviewer.profileId];
+    for (const index of [0, 1, 2, 3]) {
+      const member = await testData.createInstanceMember(context);
+      await testData.createReviewAssignment({
+        context,
+        reviewer: member,
+        title: `Pending sort proposal ${index} ${task.id}`,
+        status: ProposalReviewAssignmentStatus.PENDING,
+      });
+      pendingIds.push(member.profileId);
+    }
+
+    // Reviewers in the other statuses, so the filter has rows to drop.
+    const completedReviewer = await testData.createInstanceMember(context);
+    const completed = await testData.createReviewAssignment({
+      context,
+      reviewer: completedReviewer,
+      title: `Pending sort proposal completed ${task.id}`,
+      status: ProposalReviewAssignmentStatus.COMPLETED,
+    });
+    const draftReviewer = await testData.createInstanceMember(context);
+    const drafted = await testData.createReviewAssignment({
+      context,
+      reviewer: draftReviewer,
+      title: `Pending sort proposal drafted ${task.id}`,
+      status: ProposalReviewAssignmentStatus.IN_PROGRESS,
+    });
+    await testData.createInstanceReviewerWithRole(context);
+    await testData.setCurrentPhase(context.instance.instance.id, 'review');
+
+    await createProposalReview({
+      assignmentId: completed.assignment.id,
+      state: ProposalReviewState.SUBMITTED,
+      reviewData: { answers: {}, rationales: {} },
+      submittedAt: new Date().toISOString(),
+    });
+    await createProposalReview({
+      assignmentId: drafted.assignment.id,
+      state: ProposalReviewState.DRAFT,
+      reviewData: { answers: {}, rationales: {} },
+    });
+
+    const adminCaller = await createAuthenticatedCaller(
+      context.defaultReviewer.email,
+    );
+    const input = {
+      processInstanceId: context.instance.instance.id,
+      phaseId: 'review',
+    };
+    const filtered: Omit<PhaseReviewerSummariesInput, 'cursor' | 'limit'> = {
+      ...input,
+      status: ProposalReviewAssignmentStatus.PENDING,
+      sort: 'leastComplete',
+    };
+    const [rows, firstPage, unfiltered] = await Promise.all([
+      walkAllPages({ caller: adminCaller, input: filtered }),
+      adminCaller.decision.listPhaseReviewerSummaries({
+        ...filtered,
+        limit: 2,
+      }),
+      adminCaller.decision.listPhaseReviewerSummaries(input),
+    ]);
+    const rowIds = rows.map((row) => row.reviewer.id);
+
+    // Every row has a completion ratio of 0, so only the id orders them and
+    // each cursor resumes inside the run of equal keys.
+    expect(firstPage.next).not.toBeNull();
+    expect(rows.map((row) => row.status)).toEqual(
+      rows.map(() => ProposalReviewAssignmentStatus.PENDING),
+    );
+    expect(rowIds).toEqual([...pendingIds].sort());
+    expect(new Set(rowIds).size).toBe(rowIds.length);
+    expect(firstPage.total).toBe(pendingIds.length);
+    expect(firstPage.totalReviewers).toBe(unfiltered.totalReviewers);
+    expect(firstPage.totalReviewers).toBeGreaterThan(firstPage.total);
+  });
+
+  it('pages a search under the name sort, with only matching rows', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const first = await testData.createReviewAssignment({
+      title: `Search sort proposal ${task.id}`,
+      status: ProposalReviewAssignmentStatus.PENDING,
+    });
+    const context = first.context;
+    const members = [];
+    for (const index of [0, 1, 2, 3]) {
+      const member = await testData.createInstanceMember(context);
+      await testData.createReviewAssignment({
+        context,
+        reviewer: member,
+        title: `Search sort proposal ${index} ${task.id}`,
+        status: ProposalReviewAssignmentStatus.PENDING,
+      });
+      members.push(member.profileId);
+    }
+    const idle = await testData.createInstanceReviewerWithRole(context);
+    await testData.setCurrentPhase(context.instance.instance.id, 'review');
+
+    const [memberA, memberB, memberC, memberD] = members;
+    if (!memberA || !memberB || !memberC || !memberD) {
+      throw new Error('Expected four seeded members');
+    }
+
+    // The names that match are given out of creation order, and the rows that
+    // do not match sort between them.
+    const searchToken = `Quillon ${task.id.slice(0, 8)}`;
+    const names: Record<string, string> = {
+      [memberA]: `${searchToken} C`,
+      [memberB]: `Other ${task.id.slice(0, 8)} B`,
+      [idle.profileId]: `${searchToken} A`,
+      [memberC]: `${searchToken} B`,
+      [memberD]: `Quill ${task.id.slice(0, 8)} D`,
+      [context.defaultReviewer.profileId]: `Other ${task.id.slice(0, 8)} A`,
+    };
+    for (const [profileId, name] of Object.entries(names)) {
+      await db.update(profiles).set({ name }).where(eq(profiles.id, profileId));
+    }
+
+    const adminCaller = await createAuthenticatedCaller(
+      context.defaultReviewer.email,
+    );
+    const input = {
+      processInstanceId: context.instance.instance.id,
+      phaseId: 'review',
+      search: searchToken.toLowerCase(),
+      sort: 'name' as const,
+    };
+    const [rows, firstPage] = await Promise.all([
+      walkAllPages({ caller: adminCaller, input }),
+      adminCaller.decision.listPhaseReviewerSummaries({ ...input, limit: 2 }),
+    ]);
+
+    expect(firstPage.next).not.toBeNull();
+    expect(rows.map((row) => row.reviewer.id)).toEqual([
+      idle.profileId,
+      memberC,
+      memberA,
+    ]);
+    expect(firstPage.total).toBe(3);
+    expect(firstPage.totalReviewers).toBeGreaterThanOrEqual(6);
+  });
+
   it('searches reviewers by name and by email, case-insensitively', async ({
     task,
     onTestFinished,
@@ -621,6 +829,145 @@ async function seedSortedReviewers(
   }
 
   return { context, reviewers };
+}
+
+/**
+ * Five reviewers in progress, by completion: `twoThirds` 2/3, `half` 1/2,
+ * `third` 1/3, `draftLow` and `draftHigh` 0/1 with a draft (ordered by id).
+ * Beside them, one reviewer per other status: completed, not started, and
+ * without assignments.
+ */
+async function seedInProgressReviewers(
+  testData: TestReviewsDataManager,
+  testId: string,
+) {
+  const halfDone = await testData.createReviewAssignment({
+    title: `In progress proposal half done ${testId}`,
+    status: ProposalReviewAssignmentStatus.COMPLETED,
+  });
+  const context = halfDone.context;
+  const completedAssignmentIds = [halfDone.assignment.id];
+  const draftAssignmentIds: string[] = [];
+
+  const assign = async ({
+    reviewer,
+    completed,
+    pending,
+    drafted = 0,
+    label,
+  }: {
+    reviewer?: Awaited<ReturnType<typeof testData.createInstanceMember>>;
+    completed: number;
+    pending: number;
+    drafted?: number;
+    label: string;
+  }) => {
+    const plan = [
+      ...Array.from({ length: completed }, () => 'completed' as const),
+      ...Array.from({ length: pending }, () => 'pending' as const),
+      ...Array.from({ length: drafted }, () => 'drafted' as const),
+    ];
+    for (const [index, kind] of plan.entries()) {
+      const { assignment } = await testData.createReviewAssignment({
+        context,
+        reviewer,
+        title: `In progress proposal ${label} ${kind} ${index} ${testId}`,
+        status:
+          kind === 'completed'
+            ? ProposalReviewAssignmentStatus.COMPLETED
+            : kind === 'drafted'
+              ? ProposalReviewAssignmentStatus.IN_PROGRESS
+              : ProposalReviewAssignmentStatus.PENDING,
+      });
+      if (kind === 'completed') {
+        completedAssignmentIds.push(assignment.id);
+      }
+      if (kind === 'drafted') {
+        draftAssignmentIds.push(assignment.id);
+      }
+    }
+  };
+
+  await assign({ completed: 0, pending: 1, label: 'half' });
+
+  const twoThirds = await testData.createInstanceMember(context);
+  await assign({
+    reviewer: twoThirds,
+    completed: 2,
+    pending: 1,
+    label: 'two thirds',
+  });
+
+  const third = await testData.createInstanceMember(context);
+  await assign({ reviewer: third, completed: 1, pending: 2, label: 'third' });
+
+  const drafters = [
+    await testData.createInstanceMember(context),
+    await testData.createInstanceMember(context),
+  ];
+  for (const [index, reviewer] of drafters.entries()) {
+    await assign({
+      reviewer,
+      completed: 0,
+      pending: 0,
+      drafted: 1,
+      label: `draft ${index}`,
+    });
+  }
+  const [draftLow, draftHigh] = drafters
+    .map((reviewer) => reviewer.profileId)
+    .sort();
+
+  const completedReviewer = await testData.createInstanceMember(context);
+  await assign({
+    reviewer: completedReviewer,
+    completed: 1,
+    pending: 0,
+    label: 'completed',
+  });
+
+  const pendingReviewer = await testData.createInstanceMember(context);
+  await assign({
+    reviewer: pendingReviewer,
+    completed: 0,
+    pending: 1,
+    label: 'pending',
+  });
+
+  await testData.createInstanceReviewerWithRole(context);
+  await testData.setCurrentPhase(context.instance.instance.id, 'review');
+
+  const submittedAt = new Date().toISOString();
+  for (const assignmentId of completedAssignmentIds) {
+    await createProposalReview({
+      assignmentId,
+      state: ProposalReviewState.SUBMITTED,
+      reviewData: { answers: {}, rationales: {} },
+      submittedAt,
+    });
+  }
+  for (const assignmentId of draftAssignmentIds) {
+    await createProposalReview({
+      assignmentId,
+      state: ProposalReviewState.DRAFT,
+      reviewData: { answers: {}, rationales: {} },
+    });
+  }
+
+  if (!draftLow || !draftHigh) {
+    throw new Error('Expected two reviewers with only a draft');
+  }
+
+  return {
+    context,
+    inProgress: {
+      twoThirds: twoThirds.profileId,
+      half: context.defaultReviewer.profileId,
+      third: third.profileId,
+      draftLow,
+      draftHigh,
+    },
+  };
 }
 
 async function seedReviewerStatuses(
