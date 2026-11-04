@@ -62,26 +62,48 @@ BEGIN
     RAISE EXCEPTION 'backfill-phase-rows: op_backfill.fill_partial needs op_backfill.instance_ids';
   END IF;
 
+  -- Session-only helpers. They are made here, not above the DO, because a
+  -- multi-statement query string runs as one transaction and COMMIT then fails.
+
+  -- instance_data.phases if it is an array, else an empty array
+  CREATE OR REPLACE FUNCTION pg_temp.blob_phases(p_instance_data jsonb)
+  RETURNS jsonb LANGUAGE sql IMMUTABLE
+  AS $fn$
+    SELECT CASE jsonb_typeof(p_instance_data -> 'phases')
+      WHEN 'array' THEN p_instance_data -> 'phases'
+      ELSE '[]'::jsonb
+    END
+  $fn$;
+
+  -- phaseIdOf: the row whose data.phaseId, else profile slug, is p_phase_id
+  CREATE OR REPLACE FUNCTION pg_temp.phase_row_id(p_instance_id uuid, p_phase_id text)
+  RETURNS uuid LANGUAGE sql STABLE
+  AS $fn$
+    SELECT p.id
+    FROM decision_process_phases p
+    JOIN profiles pr ON pr.id = p.profile_id
+    WHERE p.process_instance_id = p_instance_id
+      AND coalesce(p.data ->> 'phaseId', pr.slug) = p_phase_id
+    LIMIT 1
+  $fn$;
+
+  -- The blob phases that have no row, with their array index
+  CREATE OR REPLACE FUNCTION pg_temp.uncovered_phases(p_instance_id uuid, p_instance_data jsonb)
+  RETURNS TABLE (phase jsonb, sort_order bigint) LANGUAGE sql STABLE
+  AS $fn$
+    SELECT e.value, e.ordinality - 1
+    FROM jsonb_array_elements(pg_temp.blob_phases(p_instance_data)) WITH ORDINALITY e
+    WHERE pg_temp.phase_row_id(p_instance_id, e.value ->> 'phaseId') IS NULL
+  $fn$;
+
   -- Rows made by the phase endpoints that leave a JSON phase without a row
   FOR v_instance IN
     SELECT gap.id, gap.missing
     FROM (
       SELECT i.id, i.created_at, ARRAY(
-          SELECT ph ->> 'phaseId'
-          FROM jsonb_array_elements(
-            CASE
-              WHEN jsonb_typeof(i.instance_data -> 'phases') = 'array'
-                THEN i.instance_data -> 'phases'
-              ELSE '[]'::jsonb
-            END
-          ) ph
-          WHERE NOT EXISTS (
-            SELECT 1
-            FROM decision_process_phases p
-            JOIN profiles pr ON pr.id = p.profile_id
-            WHERE p.process_instance_id = i.id
-              AND coalesce(p.data ->> 'phaseId', pr.slug) = ph ->> 'phaseId'
-          )
+          SELECT u.phase ->> 'phaseId'
+          FROM pg_temp.uncovered_phases(i.id, i.instance_data) u
+          ORDER BY u.sort_order
         ) AS missing
       FROM decision_process_instances i
       WHERE NOT v_fill_partial
@@ -130,20 +152,7 @@ BEGIN
       END IF;
 
       EXIT one_instance WHEN v_row_count > 0 AND NOT EXISTS (
-        SELECT 1
-        FROM jsonb_array_elements(
-          CASE
-            WHEN jsonb_typeof(v_data -> 'phases') = 'array' THEN v_data -> 'phases'
-            ELSE '[]'::jsonb
-          END
-        ) ph
-        WHERE NOT EXISTS (
-          SELECT 1
-          FROM decision_process_phases p
-          JOIN profiles pr ON pr.id = p.profile_id
-          WHERE p.process_instance_id = v_instance.id
-            AND coalesce(p.data ->> 'phaseId', pr.slug) = ph ->> 'phaseId'
-        )
+        SELECT 1 FROM pg_temp.uncovered_phases(v_instance.id, v_data)
       );
 
       SELECT CASE
@@ -199,16 +208,9 @@ BEGIN
 
       -- With no rows this is every phase; with fill_partial, only the uncovered ones
       FOR v_phase IN
-        SELECT e.value AS phase, e.ordinality - 1 AS sort_order
-        FROM jsonb_array_elements(v_data -> 'phases') WITH ORDINALITY e
-        WHERE NOT EXISTS (
-          SELECT 1
-          FROM decision_process_phases p
-          JOIN profiles pr ON pr.id = p.profile_id
-          WHERE p.process_instance_id = v_instance.id
-            AND coalesce(p.data ->> 'phaseId', pr.slug) = e.value ->> 'phaseId'
-        )
-        ORDER BY e.ordinality
+        SELECT u.phase, u.sort_order
+        FROM pg_temp.uncovered_phases(v_instance.id, v_data) u
+        ORDER BY u.sort_order
       LOOP
         -- getPhaseProfileName: the trimmed name, else the phaseId
         v_name := coalesce(
@@ -246,35 +248,30 @@ BEGIN
     COMMIT;
   END LOOP;
 
-  -- phaseIdOf: a row's data.phaseId, else its profile slug
-  UPDATE decision_process_transitions t
-  SET from_phase_id = r.id
-  FROM decision_process_phases r
-  JOIN profiles pr ON pr.id = r.profile_id
-  WHERE t.from_phase_id IS NULL
-    AND r.process_instance_id = t.process_instance_id
-    AND coalesce(r.data ->> 'phaseId', pr.slug) = t.from_state_id
-    AND (v_scope IS NULL OR t.process_instance_id = ANY (v_scope));
-
-  UPDATE decision_process_transitions t
-  SET to_phase_id = r.id
-  FROM decision_process_phases r
-  JOIN profiles pr ON pr.id = r.profile_id
-  WHERE t.to_phase_id IS NULL
-    AND r.process_instance_id = t.process_instance_id
-    AND coalesce(r.data ->> 'phaseId', pr.slug) = t.to_state_id
-    AND (v_scope IS NULL OR t.process_instance_id = ANY (v_scope));
-
+  -- Link each unlinked transition and count the ones still unmatched after
+  WITH linked AS (
+    UPDATE decision_process_transitions t
+    SET
+      from_phase_id = coalesce(
+        t.from_phase_id, pg_temp.phase_row_id(t.process_instance_id, t.from_state_id)
+      ),
+      to_phase_id = coalesce(
+        t.to_phase_id, pg_temp.phase_row_id(t.process_instance_id, t.to_state_id)
+      )
+    WHERE (v_scope IS NULL OR t.process_instance_id = ANY (v_scope))
+      AND EXISTS (
+        SELECT 1 FROM decision_process_phases r WHERE r.process_instance_id = t.process_instance_id
+      )
+      AND (
+        t.to_phase_id IS NULL
+        OR (t.from_state_id IS NOT NULL AND t.from_phase_id IS NULL)
+      )
+    RETURNING t.from_state_id, t.from_phase_id, t.to_phase_id
+  )
   SELECT count(*) INTO v_unlinked
-  FROM decision_process_transitions t
-  WHERE (v_scope IS NULL OR t.process_instance_id = ANY (v_scope))
-    AND EXISTS (
-      SELECT 1 FROM decision_process_phases r WHERE r.process_instance_id = t.process_instance_id
-    )
-    AND (
-      t.to_phase_id IS NULL
-      OR (t.from_state_id IS NOT NULL AND t.from_phase_id IS NULL)
-    );
+  FROM linked l
+  WHERE l.to_phase_id IS NULL
+    OR (l.from_state_id IS NOT NULL AND l.from_phase_id IS NULL);
 
   RAISE NOTICE 'backfill-phase-rows: backfilled % instances, filled % partial, skipped %, % transitions on instances with phase rows still have an unmatched state id',
     v_backfilled, v_filled, v_skipped, v_unlinked;

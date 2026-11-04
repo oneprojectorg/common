@@ -9,15 +9,16 @@
 --   psql "$DATABASE_URL" -f services/db/data/strip-blob-phases.sql
 --
 -- op_backfill.instance_ids = '<uuid>,<uuid>' limits it to those decisions.
+WITH settings AS (
+  SELECT string_to_array(
+    replace(nullif(btrim(current_setting('op_backfill.instance_ids', true)), ''), ' ', ''), ','
+  )::uuid[] AS instance_ids
+)
 UPDATE decision_process_instances i
 SET instance_data = i.instance_data - 'phases'
+FROM settings
 WHERE i.instance_data ? 'phases'
   AND EXISTS (
     SELECT 1 FROM decision_process_phases p WHERE p.process_instance_id = i.id
   )
-  AND (
-    nullif(btrim(current_setting('op_backfill.instance_ids', true)), '') IS NULL
-    OR i.id = ANY (string_to_array(
-      replace(nullif(btrim(current_setting('op_backfill.instance_ids', true)), ''), ' ', ''), ','
-    )::uuid[])
-  );
+  AND (settings.instance_ids IS NULL OR i.id = ANY (settings.instance_ids));
