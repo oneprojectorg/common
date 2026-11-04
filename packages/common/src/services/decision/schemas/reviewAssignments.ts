@@ -18,10 +18,6 @@ export const reviewerStatusSchema = z.enum([
 
 export type ReviewerStatus = z.infer<typeof reviewerStatusSchema>;
 
-/**
- * Orders for the reviewers table. The two completion sorts compare submitted
- * over assigned reviews; reviewers with nothing assigned come last in both.
- */
 export const reviewerSortSchema = z.enum([
   'leastComplete',
   'mostComplete',
@@ -39,7 +35,6 @@ export const phaseReviewerSummariesInputSchema = instancePhaseRefSchema
       .transform((value) => value.trim().slice(0, SEARCH_MAX_LENGTH))
       .optional(),
     status: reviewerStatusSchema.optional(),
-    /** Defaults to `leastComplete`. */
     sort: reviewerSortSchema.optional(),
   });
 
