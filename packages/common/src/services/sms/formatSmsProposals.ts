@@ -13,23 +13,27 @@ const withCost = (text: string, cost: string | null): string =>
 export const formatSmsProposalPage = ({
   items,
   hasMore,
+  heading = 'Proposals:',
+  footer,
 }: {
   items: ReadonlyArray<{ code: number; title: string; cost: string | null }>;
   hasMore: boolean;
+  heading?: string;
+  footer?: string;
 }): string[] => {
   if (items.length === 0) {
     return [EMPTY_BALLOT_MESSAGE];
   }
 
   return splitSmsBody({
-    heading: 'Proposals:',
+    heading,
     lines: items.map(({ code, title, cost }) =>
       withCost(
         `${code} ${clipSmsText(title, SMS_PROPOSAL_TITLE_LENGTH)}`,
         cost,
       ),
     ),
-    footer: hasMore ? MORE_FOOTER : undefined,
+    footer: footer ?? (hasMore ? MORE_FOOTER : undefined),
   });
 };
 

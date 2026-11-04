@@ -221,7 +221,7 @@ export async function affirmVoterAttestation({
 export interface PendingVoterEnrolment {
   processInstanceId: string;
   taxonomyTermId: string | null;
-  districtName: string | null;
+  termLabel: string | null;
 }
 
 export async function findPendingVoterEnrolment({
@@ -255,7 +255,7 @@ export async function findPendingVoterEnrolment({
     ? {
         processInstanceId: row.processInstanceId,
         taxonomyTermId: row.taxonomyTermId,
-        districtName: row.taxonomyTerm?.label ?? null,
+        termLabel: row.taxonomyTerm?.label ?? null,
       }
     : null;
 }

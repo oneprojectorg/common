@@ -23,7 +23,7 @@ describe.concurrent('findDecisionPhoneNumber', () => {
       where: { id: setup.instance.profileId },
       columns: { slug: true },
     });
-    await createDecisionPhoneNumber({
+    const number = await createDecisionPhoneNumber({
       processInstanceId: instanceId,
       phoneNumber: NUMBERS.lookup,
     });
@@ -31,6 +31,7 @@ describe.concurrent('findDecisionPhoneNumber', () => {
     await expect(
       findDecisionPhoneNumber({ phone: NUMBERS.lookup }),
     ).resolves.toEqual({
+      id: number.id,
       phone: NUMBERS.lookup,
       instanceId,
       slug: profile?.slug,

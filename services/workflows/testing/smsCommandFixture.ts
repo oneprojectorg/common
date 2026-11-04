@@ -19,8 +19,14 @@ import {
   TestPhoneAuthDataManager,
   advanceInstancePhase,
 } from '@op/common/testing/helpers';
+import { mockCollab } from '@op/common/testing/mocks/collab';
 import { db, inArray } from '@op/db/client';
-import { ProposalStatus, profiles, taxonomyTerms } from '@op/db/schema';
+import {
+  ProcessStatus,
+  ProposalStatus,
+  profiles,
+  taxonomyTerms,
+} from '@op/db/schema';
 
 type RegisterCleanup = (fn: () => void | Promise<void>) => void;
 
@@ -163,6 +169,17 @@ export class SmsCommandFixture {
         },
       });
       this.profileIds.push(proposal.profileId);
+      const { collaborationDocId } = proposal.proposalData as {
+        collaborationDocId?: string;
+      };
+      if (collaborationDocId) {
+        mockCollab.setDocFragments(collaborationDocId, {
+          title,
+          ...(budget === undefined
+            ? {}
+            : { budget: JSON.stringify({ amount: budget, currency: 'USD' }) }),
+        });
+      }
     }
 
     const phaseIds = schema.phases.map((phase) => phase.id);
@@ -232,6 +249,31 @@ export class SmsCommandFixture {
           rules: { voting: { submit: true, enrolment: { attestation } } },
         },
       ],
+      user: {
+        id: owner.authUserId,
+        aud: 'authenticated',
+        role: 'authenticated',
+        email: owner.email ?? undefined,
+        phone: undefined,
+        app_metadata: {},
+        user_metadata: {},
+        is_anonymous: false,
+      },
+    });
+  }
+
+  async setStatus({
+    instanceId,
+    owner,
+    status,
+  }: {
+    instanceId: string;
+    owner: FixtureAccount;
+    status: ProcessStatus;
+  }) {
+    await updateDecisionInstance({
+      instanceId,
+      status,
       user: {
         id: owner.authUserId,
         aud: 'authenticated',

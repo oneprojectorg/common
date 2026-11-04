@@ -1,11 +1,25 @@
 import {
   type Geocode,
+  BallotCostError,
   NotFoundError,
+  SMS_BROWSE_END_MESSAGE,
+  SMS_BROWSE_LAST_FOOTER,
+  SMS_BROWSE_MORE_FOOTER,
+  SMS_BALLOT_UNAVAILABLE_MESSAGE,
+  SMS_BROWSE_START_MESSAGE,
+  SMS_INFO_NEEDS_CODE_MESSAGE,
+  SMS_INFO_NEEDS_DECISION_MESSAGE,
+  SMS_PROPOSALS_NEEDS_DECISION_MESSAGE,
   SMS_VOTE_NEEDS_DECISION_MESSAGE,
+  type SmsBallotPage,
   UnauthorizedError,
+  ValidationError,
+  VoterNotEnrolledError,
   affirmVoterAttestation,
   clipSmsText,
   describeEnrolmentDecision,
+  findChatSession,
+  findLatestChatSession,
   findPendingVoterEnrolment,
   findVoterEnrolment,
   isVoterEnrolled,
@@ -14,15 +28,24 @@ import {
   formatSmsAddressNotFound,
   formatSmsAddressOutside,
   formatSmsAddressResolved,
+  formatSmsBallotPageHeading,
+  formatSmsBallotScope,
   formatSmsDecisionInfo,
   formatSmsDecisionList,
   formatSmsEnrolled,
   formatSmsEnrolmentWelcome,
   formatSmsNoEnrolmentNeeded,
   formatSmsNothingToAffirm,
+  formatSmsProposalInfo,
+  formatSmsProposalNotOnBallot,
+  formatSmsProposalPage,
+  formatSmsRegisterFirst,
   formatSmsVotingClosed,
+  getSmsBallotProposal,
   getSmsDecisionDescription,
   getSmsVotingDecision,
+  listSmsBallotPage,
+  setSessionPageCursor,
   listSmsDecisions,
   resolveVoterAddress,
   startVoterEnrolment,
@@ -55,6 +78,7 @@ export type SmsDeliver = (
 ) => Promise<SmsReplyRejected | null>;
 
 export interface ChatLine {
+  id: string;
   slug: string;
   instanceId: string;
 }
@@ -240,13 +264,13 @@ export const vote: SmsCommandHandler = async (context) => {
     findPendingVoterEnrolment(key),
   );
 
-  const resendAttestation = (district: string | null, message: string) =>
+  const resendAttestation = (termLabel: string | null, message: string) =>
     deliverAll(
       deliver,
       'send-attestation-again',
       'Attestation reply',
       formatSmsAddressResolved({
-        district,
+        termLabel,
         decisionName: decision.name,
         attestation: rule.attestation,
       }),
@@ -262,7 +286,7 @@ export const vote: SmsCommandHandler = async (context) => {
       }),
     );
     if (waitingOn === 'awaiting_agree') {
-      return resendAttestation(pending.districtName, 'attestation resent');
+      return resendAttestation(pending.termLabel, 'attestation resent');
     }
     return deliverAll(
       deliver,
@@ -284,7 +308,7 @@ export const vote: SmsCommandHandler = async (context) => {
       'Already registered reply',
       formatSmsEnrolled({
         decisionName: decision.name,
-        district: null,
+        termLabel: null,
         budget: decision.budget,
       }),
       'already enrolled',
@@ -373,7 +397,7 @@ export const agree: SmsCommandHandler = async (context) => {
     'Registered reply',
     formatSmsEnrolled({
       decisionName: decision.name,
-      district: pending.districtName,
+      termLabel: pending.termLabel,
       budget: decision.budget,
     }),
     'enrolled',
@@ -462,7 +486,7 @@ export const freeText: SmsCommandHandler = async (context) => {
         'send-attestation',
         'Attestation reply',
         formatSmsAddressResolved({
-          district: resolution.boundary?.name ?? null,
+          termLabel: resolution.boundary?.name ?? null,
           decisionName: decision.name,
           attestation: rule.attestation,
         }),
@@ -480,4 +504,342 @@ export const sendSmsHelp = async (
     SMS_COMMAND_HELP_MESSAGE,
   );
   return failed ?? { message: 'help sent' };
+};
+
+const PROPOSAL_CODE_PATTERN = /^\d{3,10}$/;
+
+const sendBallotPage = (
+  deliver: SmsDeliver,
+  page: SmsBallotPage,
+  kind: 'first' | 'next',
+): Promise<SmsCommandResult> => {
+  if (page.items.length === 0) {
+    return kind === 'first'
+      ? deliverAll(
+          deliver,
+          'send-ballot-page',
+          'Ballot page',
+          formatSmsProposalPage({ items: [], hasMore: false }),
+          'ballot empty',
+        )
+      : deliverAll(
+          deliver,
+          'send-browse-ended',
+          'Browse ended reply',
+          [SMS_BROWSE_END_MESSAGE],
+          'browse ended',
+        );
+  }
+
+  const hasMore = page.nextCursor !== null;
+
+  return deliverAll(
+    deliver,
+    'send-ballot-page',
+    'Ballot page',
+    formatSmsProposalPage({
+      items: page.items,
+      hasMore,
+      heading: formatSmsBallotPageHeading({
+        scope: formatSmsBallotScope(page),
+        total: page.total,
+        count: page.items.length,
+        continued: kind === 'next',
+      }),
+      footer: hasMore ? SMS_BROWSE_MORE_FOOTER : SMS_BROWSE_LAST_FOOTER,
+    }),
+    kind === 'first' ? 'ballot page sent' : 'next ballot page sent',
+  );
+};
+
+export const proposals: SmsCommandHandler = async (context) => {
+  const { step, account, deliver } = context;
+  const slug = context.argument ?? context.line?.slug;
+
+  if (!slug) {
+    return deliverAll(
+      deliver,
+      'send-proposals-needs-decision',
+      'Proposals needs a decision',
+      [SMS_PROPOSALS_NEEDS_DECISION_MESSAGE],
+      'proposals needs a decision',
+    );
+  }
+
+  const decision = await step.run('resolve-voting-decision', () =>
+    swallowUnreadable(() =>
+      getSmsVotingDecision({
+        authUserId: account.authUserId,
+        decisionSlug: slug,
+      }),
+    ),
+  );
+
+  if (!decision) {
+    return notFoundReply(deliver, slug);
+  }
+
+  if (!decision.votingOpen) {
+    return deliverAll(
+      deliver,
+      'send-voting-closed',
+      'Voting closed reply',
+      formatSmsVotingClosed(decision.name),
+      'voting closed',
+    );
+  }
+
+  if (decision.enrolment) {
+    const enrolment = await step.run('find-enrolment', () =>
+      findVoterEnrolment({
+        processInstanceId: decision.instanceId,
+        authUserId: account.authUserId,
+      }),
+    );
+
+    if (!isVoterEnrolled(enrolment)) {
+      return deliverAll(
+        deliver,
+        'send-register-first',
+        'Register first reply',
+        [formatSmsRegisterFirst(decision.name, context.argument)],
+        'register first',
+      );
+    }
+  }
+
+  const page = await step.run('list-ballot-page', () =>
+    readBallot(() =>
+      listSmsBallotPage({
+        authUserId: account.authUserId,
+        instanceId: decision.instanceId,
+        phoneNumberId: context.line?.id,
+      }),
+    ),
+  );
+
+  return page.ok
+    ? deliverBallotPage(context, page.value, 'first', decision.instanceId)
+    : refuseBallotRead(context, page, decision.instanceId);
+};
+
+type BallotRefusal =
+  | { reason: 'unavailable' | 'not_enrolled' | 'closed' }
+  | { reason: 'unpriced'; message: string };
+
+type BallotRead<T> = { ok: true; value: T } | ({ ok: false } & BallotRefusal);
+
+const readBallot = async <T>(fn: () => Promise<T>): Promise<BallotRead<T>> => {
+  try {
+    return { ok: true, value: await fn() };
+  } catch (error) {
+    if (error instanceof VoterNotEnrolledError) {
+      return { ok: false, reason: 'not_enrolled' };
+    }
+    if (error instanceof NotFoundError || error instanceof UnauthorizedError) {
+      return { ok: false, reason: 'unavailable' };
+    }
+    if (error instanceof BallotCostError) {
+      return { ok: false, reason: 'unpriced', message: error.message };
+    }
+    if (error instanceof ValidationError) {
+      return { ok: false, reason: 'closed' };
+    }
+    throw error;
+  }
+};
+
+const refuseBallotRead = async (
+  { step, account, deliver, line }: SmsCommandContext,
+  refusal: BallotRefusal,
+  instanceId: string,
+): Promise<SmsCommandResult> => {
+  const { reason } = refusal;
+  if (refusal.reason === 'unpriced') {
+    return deliverAll(
+      deliver,
+      'send-ballot-unpriced',
+      'Ballot unpriced reply',
+      [refusal.message],
+      'ballot unpriced',
+    );
+  }
+  if (reason === 'unavailable') {
+    return deliverAll(
+      deliver,
+      'send-ballot-unavailable',
+      'Ballot unavailable reply',
+      [SMS_BALLOT_UNAVAILABLE_MESSAGE],
+      'decision not found',
+    );
+  }
+  const decision = await step.run('describe-ballot-decision', () =>
+    swallowUnreadable(() =>
+      describeEnrolmentDecision({ instanceId, authUserId: account.authUserId }),
+    ),
+  );
+  if (!decision) {
+    return deliverAll(
+      deliver,
+      'send-ballot-unavailable',
+      'Ballot unavailable reply',
+      [SMS_BALLOT_UNAVAILABLE_MESSAGE],
+      'decision not found',
+    );
+  }
+  return reason === 'closed'
+    ? deliverAll(
+        deliver,
+        'send-voting-closed',
+        'Voting closed reply',
+        formatSmsVotingClosed(decision.name),
+        'voting closed',
+      )
+    : deliverAll(
+        deliver,
+        'send-register-first',
+        'Register first reply',
+        [
+          formatSmsRegisterFirst(
+            decision.name,
+            line?.instanceId === instanceId ? null : decision.slug,
+          ),
+        ],
+        'register first',
+      );
+};
+
+const deliverBallotPage = async (
+  { step, account, deliver }: SmsCommandContext,
+  page: SmsBallotPage,
+  kind: 'first' | 'next',
+  instanceId: string,
+): Promise<SmsCommandResult> => {
+  const sent = await sendBallotPage(deliver, page, kind);
+  if (sent.message !== 'reply rejected') {
+    await step.run(`save-page-cursor-${kind}`, () =>
+      setSessionPageCursor({
+        processInstanceId: instanceId,
+        authUserId: account.authUserId,
+        pageCursor: page.nextCursor,
+      }),
+    );
+  }
+  return sent;
+};
+
+const resolveBrowseInstance = async ({
+  step,
+  account,
+  line,
+}: SmsCommandContext): Promise<string | null> => {
+  const session = await step.run('find-latest-session', () =>
+    findLatestChatSession({
+      authUserId: account.authUserId,
+      ...(line ? { phoneNumberId: line.id } : {}),
+    }),
+  );
+  return session?.processInstanceId ?? line?.instanceId ?? null;
+};
+
+export const more: SmsCommandHandler = async (context) => {
+  const { step, account, deliver } = context;
+  const instanceId = await resolveBrowseInstance(context);
+  const session = instanceId
+    ? await step.run('find-chat-session', () =>
+        findChatSession({
+          processInstanceId: instanceId,
+          authUserId: account.authUserId,
+        }),
+      )
+    : null;
+
+  if (!session || session.pageCursor === null) {
+    return deliverAll(
+      deliver,
+      'send-browse-start',
+      'Browse start reply',
+      [SMS_BROWSE_START_MESSAGE],
+      'browse not started',
+    );
+  }
+
+  const after = session.pageCursor;
+  const page = await step.run('list-ballot-page', () =>
+    readBallot(() =>
+      listSmsBallotPage({
+        authUserId: account.authUserId,
+        instanceId: session.processInstanceId,
+        after,
+      }),
+    ),
+  );
+
+  return page.ok
+    ? deliverBallotPage(context, page.value, 'next', session.processInstanceId)
+    : refuseBallotRead(context, page, session.processInstanceId);
+};
+
+export const info: SmsCommandHandler = async (context) => {
+  const { step, account, deliver } = context;
+  const code =
+    context.argument && PROPOSAL_CODE_PATTERN.test(context.argument)
+      ? Number(context.argument)
+      : null;
+
+  if (code === null) {
+    return deliverAll(
+      deliver,
+      'send-info-needs-code',
+      'Info needs a code',
+      [SMS_INFO_NEEDS_CODE_MESSAGE],
+      'info needs a code',
+    );
+  }
+
+  const instanceId = await resolveBrowseInstance(context);
+
+  if (!instanceId) {
+    return deliverAll(
+      deliver,
+      'send-info-needs-decision',
+      'Info needs a decision',
+      [SMS_INFO_NEEDS_DECISION_MESSAGE],
+      'info needs a decision',
+    );
+  }
+
+  const read = await step.run('get-ballot-proposal', () =>
+    readBallot(() =>
+      getSmsBallotProposal({
+        authUserId: account.authUserId,
+        instanceId,
+        code,
+      }),
+    ),
+  );
+
+  if (!read.ok) {
+    return refuseBallotRead(context, read, instanceId);
+  }
+
+  const proposal = read.value;
+
+  if (!proposal) {
+    return deliverAll(
+      deliver,
+      'send-proposal-not-on-ballot',
+      'Proposal not on ballot reply',
+      [formatSmsProposalNotOnBallot(code)],
+      'proposal not on ballot',
+    );
+  }
+
+  return deliverAll(
+    deliver,
+    'send-proposal-info',
+    'Proposal info',
+    formatSmsProposalInfo(proposal),
+    'proposal info sent',
+  );
 };

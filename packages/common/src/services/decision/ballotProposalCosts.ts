@@ -3,7 +3,7 @@ import { getProposalCosts } from './getProposalCosts';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
 import { getInstancePhases } from './schemas/instanceData';
 import { getInstanceCurrentPhase } from './utils/instance';
-import { getVoterBudget, getVoterCostField } from './utils/phaseSettings';
+import { getVoterCostField } from './utils/phaseSettings';
 
 export interface BallotInstance {
   id: string;
@@ -28,7 +28,7 @@ export async function priceBallotProposals({
   const unpriced = new Map(proposals.map(({ id }) => [id, null]));
   const phase = findCurrentPhase(instance);
 
-  if (!phase || getVoterBudget(phase) === undefined) {
+  if (!phase) {
     return unpriced;
   }
 

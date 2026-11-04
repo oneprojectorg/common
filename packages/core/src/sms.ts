@@ -1,6 +1,11 @@
-export const SMS_BARE_KEYWORDS = ['join', 'agree'] as const;
+export const SMS_BARE_KEYWORDS = ['join', 'agree', 'more'] as const;
 
-export const SMS_ARGUMENT_KEYWORDS = ['show', 'vote'] as const;
+export const SMS_ARGUMENT_KEYWORDS = [
+  'show',
+  'vote',
+  'proposals',
+  'info',
+] as const;
 
 export const SMS_KEYWORDS = [
   ...SMS_BARE_KEYWORDS,

@@ -1,4 +1,4 @@
-import { count, db } from '@op/db/client';
+import { and, count, db, isNotNull } from '@op/db/client';
 import { proposals } from '@op/db/schema';
 
 import { ballotProposalFilter } from './ballotProposalFilter';
@@ -20,7 +20,7 @@ export async function countBallotProposals({
   const [row] = await db
     .select({ total: count() })
     .from(proposals)
-    .where(filter.where(proposals));
+    .where(and(filter.where(proposals), isNotNull(proposals.shortCode)));
 
   return row?.total ?? 0;
 }

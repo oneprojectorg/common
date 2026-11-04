@@ -1,7 +1,7 @@
 import { clipSmsText, splitSmsBody } from './text';
 
 const SMS_DECISION_NAME_LENGTH = 80;
-const SMS_DISTRICT_LENGTH = 80;
+const SMS_TERM_LABEL_LENGTH = 80;
 
 const quoted = (name: string): string =>
   `"${clipSmsText(name, SMS_DECISION_NAME_LENGTH)}"`;
@@ -14,17 +14,17 @@ export const formatSmsEnrolmentWelcome = (decisionName: string): string[] =>
   });
 
 export const formatSmsAddressResolved = ({
-  district,
+  termLabel,
   decisionName,
   attestation,
 }: {
-  district: string | null;
+  termLabel: string | null;
   decisionName: string;
   attestation: string;
 }): string[] =>
   splitSmsBody({
     lines: [
-      `${district ? `That's ${clipSmsText(district, SMS_DISTRICT_LENGTH)}.` : 'Address found.'} Reply AGREE to register for ${quoted(decisionName)}: "${attestation}"`,
+      `${termLabel ? `That's ${clipSmsText(termLabel, SMS_TERM_LABEL_LENGTH)}.` : 'Address found.'} Reply AGREE to register for ${quoted(decisionName)}: "${attestation}"`,
     ],
   });
 
@@ -45,15 +45,15 @@ export const formatSmsAddressOutside = (decisionName: string): string[] =>
 
 export const formatSmsEnrolled = ({
   decisionName,
-  district,
+  termLabel,
   budget,
 }: {
   decisionName: string;
-  district: string | null;
+  termLabel: string | null;
   budget: string | null;
 }): string[] => {
-  const scope = district
-    ? clipSmsText(district, SMS_DISTRICT_LENGTH)
+  const scope = termLabel
+    ? clipSmsText(termLabel, SMS_TERM_LABEL_LENGTH)
     : quoted(decisionName);
   return splitSmsBody({
     lines: [

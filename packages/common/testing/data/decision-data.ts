@@ -1034,7 +1034,7 @@ export async function createProposal(
       ? [draft]
       : await db
           .update(proposals)
-          .set({ status })
+          .set({ status, shortCode: await claimShortCode(processInstanceId) })
           .where(eq(proposals.id, draft.id))
           .returning();
 
@@ -1158,4 +1158,18 @@ export async function createDecisionBoundary({
   }
 
   return boundary;
+}
+
+export async function claimShortCode(processInstanceId: string) {
+  const [row] = await db
+    .update(processInstances)
+    .set({ nextShortCode: sql`${processInstances.nextShortCode} + 1` })
+    .where(eq(processInstances.id, processInstanceId))
+    .returning({ nextShortCode: processInstances.nextShortCode });
+
+  if (!row) {
+    throw new Error(`Process instance ${processInstanceId} not found`);
+  }
+
+  return row.nextShortCode - 1;
 }
