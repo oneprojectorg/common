@@ -41,7 +41,8 @@ import { LuDownload, LuEllipsis } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { TableSearchField } from './TableSearchField';
+import { SearchField } from '@/components/SearchField';
+
 import { UsersRowCells } from './UsersRow';
 
 /** Anonymous-account filter options for the users list */
@@ -123,10 +124,9 @@ export const UsersTable = () => {
       <div className="mb-4 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <Header2 className="text-title">{t('admin.allUsersTitle')}</Header2>
         <div className="flex flex-wrap items-center gap-2">
-          <TableSearchField
+          <SearchField
             className="w-full sm:w-64"
-            aria-label={t('admin.searchUsersLabel')}
-            placeholder={t('admin.searchUsersLabel')}
+            label={t('admin.searchUsersLabel')}
             value={searchQuery}
             onChange={setSearchQuery}
           />

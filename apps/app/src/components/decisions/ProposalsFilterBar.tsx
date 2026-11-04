@@ -5,8 +5,9 @@ import { Header3 } from '@op/sense/Header';
 
 import { useTranslations } from '@/lib/i18n';
 
+import { SearchField } from '@/components/SearchField';
+
 import { CategoryFilterSelect } from './CategoryFilterSelect';
-import { ListSearchField } from './ListSearchField';
 import { ProposalCount } from './ProposalCount';
 import { ProposalViewToggle } from './ProposalViewToggle';
 import { ResponsiveSelect } from './ResponsiveSelect';
@@ -131,7 +132,7 @@ export const ProposalsFilterBar = ({
           end and putting both boxes on one line. */}
       <div className="flex flex-wrap items-center justify-between gap-4 max-2xl:w-full 2xl:flex-1">
         {header ?? <ProposalsListHeader count={count} total={total} />}
-        <ListSearchField
+        <SearchField
           className="ms-auto"
           value={controls.search}
           onChange={controls.setSearch}

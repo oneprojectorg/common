@@ -13,20 +13,20 @@ import { LuSearch, LuX } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
-export const ListSearchField = ({
+export const SearchField = ({
   value,
   onChange,
   isPending,
   className,
   label,
-  maxLength,
+  maxLength = 200,
 }: {
   value: string;
   onChange: (next: string) => void;
   isPending?: boolean;
   className?: string;
   label: string;
-  maxLength: number;
+  maxLength?: number;
 }) => {
   const t = useTranslations();
   const inputRef = useRef<HTMLInputElement>(null);
