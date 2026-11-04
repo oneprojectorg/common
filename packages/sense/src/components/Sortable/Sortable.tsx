@@ -24,6 +24,7 @@ import { CSS } from '@dnd-kit/utilities';
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 
+import { usePrefersReducedMotion } from '../../hooks/use-reduced-motion';
 import { cn } from '../../lib/utils';
 import type {
   DropIndicatorProps,
@@ -61,6 +62,7 @@ function SortableItemWrapper<T extends SortableItem>({
   getItemLabel,
   renderDropIndicator,
 }: SortableItemWrapperProps<T>) {
+  const reducedMotion = usePrefersReducedMotion();
   const {
     attributes,
     listeners,
@@ -72,6 +74,7 @@ function SortableItemWrapper<T extends SortableItem>({
     isOver,
   } = useSortable({
     id: String(item.id),
+    transition: reducedMotion ? null : undefined,
   });
 
   const style: React.CSSProperties = {
@@ -168,6 +171,7 @@ export function Sortable<T extends SortableItem>({
   'aria-label': ariaLabel = 'Sortable list',
   renderDropIndicator,
 }: SortableProps<T>) {
+  const reducedMotion = usePrefersReducedMotion();
   const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null);
 
   // dnd-kit's default context id is a module-level counter, which produces
@@ -258,7 +262,10 @@ export function Sortable<T extends SortableItem>({
         createPortal(
           // Portals to document.body, outside any `.sense` wrapper — the
           // overlay re-scopes itself so the preview matches the in-list item.
-          <DragOverlay className="sense">
+          <DragOverlay
+            className="sense"
+            dropAnimation={reducedMotion ? null : undefined}
+          >
             {activeItem ? (
               renderDragPreview ? (
                 renderDragPreview([activeItem])

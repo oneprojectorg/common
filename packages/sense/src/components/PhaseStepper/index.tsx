@@ -66,7 +66,7 @@ function StepIndicator({
   const [isHovered, setIsHovered] = useState(false);
 
   const baseStyles = cn(
-    'flex size-6 items-center justify-center rounded-full font-serif transition-all',
+    'flex size-6 items-center justify-center rounded-full font-serif transition-all motion-reduce:transition-none',
     stepState === 'completed' && 'bg-success-muted text-success',
     stepState === 'current' && 'bg-foreground text-background',
     stepState === 'upcoming' &&
