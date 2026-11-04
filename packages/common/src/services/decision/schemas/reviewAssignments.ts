@@ -18,6 +18,17 @@ export const reviewerStatusSchema = z.enum([
 
 export type ReviewerStatus = z.infer<typeof reviewerStatusSchema>;
 
+export const reviewerSortSchema = z.enum([
+  'leastComplete',
+  'mostComplete',
+  'recentActivity',
+  'name',
+]);
+
+export type ReviewerSort = z.infer<typeof reviewerSortSchema>;
+
+export const DEFAULT_REVIEWER_SORT: ReviewerSort = 'leastComplete';
+
 export const phaseReviewerSummariesInputSchema = instancePhaseRefSchema
   .extend(paginationInput('lg').shape)
   .extend({
@@ -26,6 +37,7 @@ export const phaseReviewerSummariesInputSchema = instancePhaseRefSchema
       .transform((value) => value.trim().slice(0, SEARCH_MAX_LENGTH))
       .optional(),
     status: reviewerStatusSchema.optional(),
+    sort: reviewerSortSchema.optional(),
   });
 
 export type PhaseReviewerSummariesInput = z.infer<

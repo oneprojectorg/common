@@ -1,9 +1,9 @@
 import {
   type SQL,
+  type SQLWrapper,
   and,
   asc,
   db,
-  desc,
   eq,
   exists,
   ilike,
@@ -33,8 +33,10 @@ import { assertProfileAccess } from '../../assert';
 import { getEligibleReviewerProfileIds } from '../getEligibleReviewerProfileIds';
 import { getInstance } from '../getInstance';
 import {
+  DEFAULT_REVIEWER_SORT,
   type PhaseReviewerSummaries,
   type PhaseReviewerSummariesParams,
+  type ReviewerSort,
   type ReviewerStatus,
   phaseReviewerSummariesSchema,
 } from '../schemas/reviewAssignments';
@@ -49,6 +51,7 @@ export async function listPhaseReviewerSummaries({
   limit = PAGE_LIMIT.lg,
   search,
   status,
+  sort = DEFAULT_REVIEWER_SORT,
 }: PhaseReviewerSummariesParams & {
   user: User;
 }): Promise<PhaseReviewerSummaries> {
@@ -65,7 +68,7 @@ export async function listPhaseReviewerSummaries({
 
   assertInstancePhase({ instance, phaseId });
 
-  const decodedCursor = decodePhaseReviewerCursor(cursor);
+  const decodedCursor = decodePhaseReviewerCursor(cursor, sort);
 
   const eligibleProfileIds = await getEligibleReviewerProfileIds({
     decisionProfileId: instance.profileId,
@@ -104,6 +107,10 @@ export async function listPhaseReviewerSummaries({
       >`max(${proposalReviews.submittedAt}) filter (where ${proposalReviews.state} = ${ProposalReviewState.SUBMITTED})`.as(
         'last_submitted_at',
       ),
+      completionRatio: completionRatio({
+        submitted: submittedCount,
+        assigned: assignedCount,
+      }).as('completion_ratio'),
     })
     .from(profiles)
     // The phase filters stay in the join condition: as WHERE predicates they
@@ -149,17 +156,11 @@ export async function listPhaseReviewerSummaries({
     .groupBy(profiles.id)
     .as('rollup');
 
-  // Sort: most assignments first, id as the tiebreaker. Mixed directions rule
-  // out a row-value comparison, so the cursor condition is expanded by hand.
-  const afterCursor = decodedCursor
-    ? or(
-        sql`${rollup.assignedCount} < ${decodedCursor.assignedCount}`,
-        and(
-          sql`${rollup.assignedCount} = ${decodedCursor.assignedCount}`,
-          sql`${rollup.id} > ${decodedCursor.id}`,
-        ),
-      )
-    : undefined;
+  const { orderBy, afterCursor } = getReviewerOrder({
+    rollup,
+    sort,
+    cursor: decodedCursor,
+  });
 
   const filters: SQL | undefined = and(
     status ? eq(rollup.status, status) : undefined,
@@ -174,7 +175,7 @@ export async function listPhaseReviewerSummaries({
       .select()
       .from(rollup)
       .where(and(filters, afterCursor))
-      .orderBy(desc(rollup.assignedCount), asc(rollup.id))
+      .orderBy(...orderBy)
       .limit(limit + 1),
     db
       .select({
@@ -212,10 +213,9 @@ export async function listPhaseReviewerSummaries({
     })),
     next:
       hasMore && lastRow
-        ? encodePhaseReviewerCursor({
-            assignedCount: lastRow.assignedCount,
-            id: lastRow.id,
-          })
+        ? encodePhaseReviewerCursor(
+            toPhaseReviewerCursor({ sort, row: lastRow }),
+          )
         : null,
     total: totals?.total ?? 0,
     totalReviewers: totals?.totalReviewers ?? 0,
@@ -223,19 +223,172 @@ export async function listPhaseReviewerSummaries({
   });
 }
 
-const phaseReviewerCursorSchema = z.object({
-  assignedCount: z.number().int().nonnegative(),
-  id: z.uuid(),
-});
+const countSchema = z.number().int().nonnegative();
+
+const phaseReviewerCursorSchema = z.discriminatedUnion('sort', [
+  z.object({
+    sort: z.enum(['leastComplete', 'mostComplete']),
+    submittedCount: countSchema,
+    assignedCount: countSchema,
+    id: z.uuid(),
+  }),
+  z.object({
+    sort: z.literal('recentActivity'),
+    lastSubmittedAt: z.string().nullable(),
+    id: z.uuid(),
+  }),
+  z.object({
+    sort: z.literal('name'),
+    name: z.string(),
+    id: z.uuid(),
+  }),
+]);
 
 type PhaseReviewerCursor = z.infer<typeof phaseReviewerCursorSchema>;
+
+function completionRatio({
+  submitted,
+  assigned,
+}: {
+  submitted: SQLWrapper;
+  assigned: SQLWrapper;
+}): SQL<string | null> {
+  return sql`(${submitted})::numeric / nullif(${assigned}, 0)`;
+}
+
+type ReviewerRollup = Record<
+  'id' | 'name' | 'lastSubmittedAt' | 'completionRatio',
+  SQLWrapper
+>;
+
+function getReviewerOrder({
+  rollup,
+  sort,
+  cursor,
+}: {
+  rollup: ReviewerRollup;
+  sort: ReviewerSort;
+  cursor: PhaseReviewerCursor | undefined;
+}): { orderBy: SQL[]; afterCursor: SQL | undefined } {
+  switch (sort) {
+    case 'leastComplete':
+    case 'mostComplete': {
+      const direction = sort === 'leastComplete' ? sql`asc` : sql`desc`;
+      return {
+        orderBy: [
+          sql`${rollup.completionRatio} ${direction} nulls last`,
+          asc(rollup.id),
+        ],
+        afterCursor:
+          cursor && 'assignedCount' in cursor
+            ? afterNullsLast({
+                column: rollup.completionRatio,
+                value:
+                  cursor.assignedCount > 0
+                    ? completionRatio({
+                        submitted: sql`${cursor.submittedCount}::int`,
+                        assigned: sql`${cursor.assignedCount}::int`,
+                      })
+                    : null,
+                direction: sort === 'leastComplete' ? 'asc' : 'desc',
+                id: rollup.id,
+                cursorId: cursor.id,
+              })
+            : undefined,
+      };
+    }
+    case 'recentActivity':
+      return {
+        orderBy: [
+          sql`${rollup.lastSubmittedAt} desc nulls last`,
+          asc(rollup.id),
+        ],
+        afterCursor:
+          cursor && 'lastSubmittedAt' in cursor
+            ? afterNullsLast({
+                column: rollup.lastSubmittedAt,
+                value:
+                  cursor.lastSubmittedAt != null
+                    ? sql`${cursor.lastSubmittedAt}::timestamptz`
+                    : null,
+                direction: 'desc',
+                id: rollup.id,
+                cursorId: cursor.id,
+              })
+            : undefined,
+      };
+    case 'name':
+      return {
+        orderBy: [asc(rollup.name), asc(rollup.id)],
+        afterCursor:
+          cursor && 'name' in cursor
+            ? sql`(${rollup.name}, ${rollup.id}) > (${cursor.name}, ${cursor.id})`
+            : undefined,
+      };
+  }
+}
+
+/** A null cursor value means the previous page ended inside the null rows. */
+function afterNullsLast({
+  column,
+  value,
+  direction,
+  id,
+  cursorId,
+}: {
+  column: SQLWrapper;
+  value: SQL | null;
+  direction: 'asc' | 'desc';
+  id: SQLWrapper;
+  cursorId: string;
+}): SQL | undefined {
+  if (value == null) {
+    return and(sql`${column} is null`, sql`${id} > ${cursorId}`);
+  }
+
+  return or(
+    direction === 'asc' ? sql`${column} > ${value}` : sql`${column} < ${value}`,
+    and(sql`${column} = ${value}`, sql`${id} > ${cursorId}`),
+    sql`${column} is null`,
+  );
+}
+
+function toPhaseReviewerCursor({
+  sort,
+  row,
+}: {
+  sort: ReviewerSort;
+  row: {
+    id: string;
+    name: string;
+    lastSubmittedAt: string | null;
+    submittedCount: number;
+    assignedCount: number;
+  };
+}): PhaseReviewerCursor {
+  switch (sort) {
+    case 'leastComplete':
+    case 'mostComplete':
+      return {
+        sort,
+        submittedCount: row.submittedCount,
+        assignedCount: row.assignedCount,
+        id: row.id,
+      };
+    case 'recentActivity':
+      return { sort, lastSubmittedAt: row.lastSubmittedAt, id: row.id };
+    case 'name':
+      return { sort, name: row.name, id: row.id };
+  }
+}
 
 function encodePhaseReviewerCursor(cursor: PhaseReviewerCursor): string {
   return encodeCursor<PhaseReviewerCursor>(cursor);
 }
 
 function decodePhaseReviewerCursor(
-  cursor?: string | null,
+  cursor: string | null | undefined,
+  sort: ReviewerSort,
 ): PhaseReviewerCursor | undefined {
   if (!cursor) {
     return undefined;
@@ -254,7 +407,7 @@ function decodePhaseReviewerCursor(
 
   const result = phaseReviewerCursorSchema.safeParse(decoded);
 
-  if (!result.success) {
+  if (!result.success || result.data.sort !== sort) {
     throw new ValidationError('Invalid cursor');
   }
 

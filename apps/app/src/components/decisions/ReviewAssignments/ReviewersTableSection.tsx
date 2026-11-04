@@ -3,10 +3,13 @@
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { trpc } from '@op/api/client';
 import {
+  DEFAULT_REVIEWER_SORT,
   type PhaseReviewerSummary,
   ProposalReviewAssignmentStatus,
+  type ReviewerSort,
   type ReviewerStatus,
   nextCursor,
+  reviewerSortSchema,
   reviewerStatusSchema,
 } from '@op/common/client';
 import { useInfiniteScroll } from '@op/hooks';
@@ -54,6 +57,9 @@ interface ReviewersTableSectionProps {
 }
 
 const reviewerStatusParser = parseAsStringLiteral(reviewerStatusSchema.options);
+const reviewerSortParser = parseAsStringLiteral(
+  reviewerSortSchema.options,
+).withDefault(DEFAULT_REVIEWER_SORT);
 
 export function ReviewersTableSection(props: ReviewersTableSectionProps) {
   const t = useTranslations();
@@ -99,8 +105,10 @@ function ReviewersTableContent({
     'reviewerStatus',
     reviewerStatusParser,
   );
+  const [sort, setSort] = useQueryState('reviewerSort', reviewerSortParser);
 
   const appliedStatus = useDeferredValue(status);
+  const appliedSort = useDeferredValue(sort);
 
   const [data, query] =
     trpc.decision.listPhaseReviewerSummaries.useSuspenseInfiniteQuery(
@@ -109,6 +117,7 @@ function ReviewersTableContent({
         phaseId,
         ...(appliedSearch ? { search: appliedSearch } : {}),
         ...(appliedStatus ? { status: appliedStatus } : {}),
+        ...(appliedSort !== DEFAULT_REVIEWER_SORT ? { sort: appliedSort } : {}),
       },
       {
         getNextPageParam: nextCursor,
@@ -151,6 +160,19 @@ function ReviewersTableContent({
     },
   ];
 
+  const sortItems: { id: ReviewerSort; label: string }[] = [
+    {
+      id: 'leastComplete',
+      label: t('decisions.review.sortLeastComplete'),
+    },
+    { id: 'mostComplete', label: t('decisions.review.sortMostComplete') },
+    {
+      id: 'recentActivity',
+      label: t('decisions.review.sortRecentActivity'),
+    },
+    { id: 'name', label: t('decisions.review.sortName') },
+  ];
+
   const reviewerCount = (
     <ReviewerCount total={total} totalReviewers={totalReviewers} />
   );
@@ -175,6 +197,13 @@ function ReviewersTableContent({
               aria-label={t('decisions.review.filterByStatusLabel')}
               className="min-w-40"
               items={statusItems}
+            />
+            <ResponsiveSelect
+              selectedKey={sort}
+              onSelectionChange={(key) => void setSort(key)}
+              aria-label={t('decisions.review.sortReviewersLabel')}
+              className="min-w-40"
+              items={sortItems}
             />
           </div>
         </StickyFilterBar>
