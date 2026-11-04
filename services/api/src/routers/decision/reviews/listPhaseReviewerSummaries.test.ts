@@ -203,7 +203,6 @@ describe.concurrent('decision.listPhaseReviewerSummaries', () => {
       sort: 'leastComplete' as const,
     };
 
-    // A page of one ends between the two reviewers at 0.
     const firstPage = await adminCaller.decision.listPhaseReviewerSummaries({
       ...input,
       limit: 1,
@@ -222,7 +221,6 @@ describe.concurrent('decision.listPhaseReviewerSummaries', () => {
       reviewers.zeroHigh,
     ]);
 
-    // A page of two ends on the second reviewer at 0.
     const pageOfTwo = await adminCaller.decision.listPhaseReviewerSummaries({
       ...input,
       limit: 2,
@@ -368,7 +366,6 @@ describe.concurrent('decision.listPhaseReviewerSummaries', () => {
       pendingIds.push(member.profileId);
     }
 
-    // Reviewers in the other statuses, so the filter has rows to drop.
     const completedReviewer = await testData.createInstanceMember(context);
     const completed = await testData.createReviewAssignment({
       context,
@@ -627,7 +624,6 @@ type PhaseReviewerSummariesCaller = Awaited<
   ReturnType<typeof createAuthenticatedCaller>
 >;
 
-/** Follows `next` from the first page to the last, two rows at a time. */
 async function walkAllPages({
   caller,
   input,
