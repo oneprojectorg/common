@@ -48,9 +48,8 @@ FROM (
       count(*)::int AS n,
       coalesce(array_agg(e.phase ->> 'phaseId' ORDER BY e.ord), '{}') AS ids
     FROM jsonb_array_elements(
-      CASE
-        WHEN jsonb_typeof(i.instance_data -> 'phases') = 'array'
-          THEN i.instance_data -> 'phases'
+      CASE jsonb_typeof(i.instance_data -> 'phases')
+        WHEN 'array' THEN i.instance_data -> 'phases'
         ELSE '[]'::jsonb
       END
     ) WITH ORDINALITY e (phase, ord)
