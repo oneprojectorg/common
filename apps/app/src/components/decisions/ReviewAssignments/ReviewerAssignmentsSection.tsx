@@ -148,6 +148,9 @@ function ReviewerAssignmentsContent({
         {summary.total > 0 ? manageAssignments : null}
       </div>
 
+      {/* `total` drops merged-away proposals; the counts still hold their reviews. */}
+      {summary.assignedCount > 0 ? <ReviewerStats reviewer={summary} /> : null}
+
       {summary.total === 0 ? (
         <Empty className="rounded-md border border-dashed">
           <EmptyHeader>
@@ -164,44 +167,40 @@ function ReviewerAssignmentsContent({
           <EmptyContent>{manageAssignments}</EmptyContent>
         </Empty>
       ) : (
-        <>
-          <ReviewerStats reviewer={summary} />
+        <div className="flex flex-col gap-4">
+          <Header3 id={headingId} className="font-light">
+            {t('decisions.review.assignedProposalsHeading', {
+              count: summary.total,
+            })}
+          </Header3>
 
-          <div className="flex flex-col gap-4">
-            <Header3 id={headingId} className="font-light">
-              {t('decisions.review.assignedProposalsHeading', {
-                count: summary.total,
-              })}
-            </Header3>
+          <ReviewerAssignmentsTable
+            assignments={assignments}
+            route={{
+              decisionSlug,
+              slug: ownerSlug,
+              instanceId: processInstanceId,
+            }}
+            labelledBy={headingId}
+          />
 
-            <ReviewerAssignmentsTable
-              assignments={assignments}
-              route={{
-                decisionSlug,
-                slug: ownerSlug,
-                instanceId: processInstanceId,
-              }}
-              labelledBy={headingId}
-            />
-
-            {/* Hidden from the a11y tree; the `aria-live` line below announces loading. */}
-            {shouldShowTrigger ? (
-              <div ref={scrollTriggerRef} aria-hidden>
-                {isFetchingNextPage ? (
-                  <div className="flex flex-col gap-2">
-                    <Skeleton className="h-15 w-full" />
-                    <Skeleton className="h-15 w-full" />
-                  </div>
-                ) : null}
-              </div>
-            ) : null}
-            <p aria-live="polite" className="sr-only">
-              {isFetchingNextPage
-                ? t('decisions.review.loadingMoreProposals')
-                : ''}
-            </p>
-          </div>
-        </>
+          {/* Hidden from the a11y tree; the `aria-live` line below announces loading. */}
+          {shouldShowTrigger ? (
+            <div ref={scrollTriggerRef} aria-hidden>
+              {isFetchingNextPage ? (
+                <div className="flex flex-col gap-2">
+                  <Skeleton className="h-15 w-full" />
+                  <Skeleton className="h-15 w-full" />
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+          <p aria-live="polite" className="sr-only">
+            {isFetchingNextPage
+              ? t('decisions.review.loadingMoreProposals')
+              : ''}
+          </p>
+        </div>
       )}
     </>
   );

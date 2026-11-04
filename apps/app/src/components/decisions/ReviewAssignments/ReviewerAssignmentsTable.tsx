@@ -1,6 +1,7 @@
 'use client';
 
 import {
+  ProposalReviewAssignmentStatus,
   ProposalReviewState,
   type ReviewAssignmentExtended,
 } from '@op/common/client';
@@ -35,6 +36,7 @@ import {
 } from '../ReviewStatusBadge';
 import { proposalHref } from '../proposalHrefs';
 import { useOpenProposalInSheet } from '../proposalSheetState';
+import type { AssignmentStatusValue } from './assignmentStatusSpecs';
 
 interface ReviewerAssignmentsTableProps {
   assignments: ReviewAssignmentExtended[];
@@ -137,7 +139,10 @@ function ReviewerAssignmentRow({
       </TableRowHeader>
       <TableCell>
         <ReviewStatusBadge
-          status={review?.state ?? assignment.status}
+          status={getRowStatus({
+            assignmentStatus: assignment.status,
+            reviewState: review?.state,
+          })}
           isOutOfDate={isReviewShownOutOfDate({
             isReviewOutOfDate,
             assignmentStatus: assignment.status,
@@ -176,4 +181,23 @@ function ReviewerAssignmentRow({
       </TableCell>
     </TableRow>
   );
+}
+
+/** A draft review survives a revision round, so the round's status wins over it. */
+function getRowStatus({
+  assignmentStatus,
+  reviewState,
+}: {
+  assignmentStatus: ProposalReviewAssignmentStatus;
+  reviewState: ProposalReviewState | undefined;
+}): AssignmentStatusValue {
+  if (
+    assignmentStatus ===
+      ProposalReviewAssignmentStatus.AWAITING_AUTHOR_REVISION ||
+    assignmentStatus === ProposalReviewAssignmentStatus.READY_FOR_RE_REVIEW
+  ) {
+    return assignmentStatus;
+  }
+
+  return reviewState ?? assignmentStatus;
 }
