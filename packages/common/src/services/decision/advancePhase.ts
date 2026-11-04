@@ -8,7 +8,7 @@ import {
 
 import { attachProposalsToTransition } from './attachProposalsToTransition';
 import { getProposalsForPhase } from './getProposalsForPhase';
-import type { PhasesResolved } from './readInstancePhases';
+import type { PhasesResolved } from './instancePhases';
 import { getInstancePhases } from './schemas/instanceData';
 import type { TransitionData } from './schemas/transitionData';
 import {

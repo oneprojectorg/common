@@ -22,8 +22,11 @@ import {
   getNormalizedCategories,
   getUpdatedInstanceData,
 } from './getUpdatedInstanceData';
+import {
+  isPhasesFromRowsEnabled,
+  markBlobPhasesResolved,
+} from './instancePhases';
 import { ensureProposalTaxonomyTerms } from './proposalTaxonomy';
-import { isPhasesFromRowsEnabled, withBlobPhases } from './readInstancePhases';
 import { schemaValidator } from './schemaValidator';
 import type {
   DecisionInstanceData,
@@ -294,7 +297,7 @@ async function syncTransitions({
     });
   } else if (phasesChanged) {
     await updateTransitionsForProcess({
-      processInstance: withBlobPhases({ instance: updatedInstance }),
+      processInstance: markBlobPhasesResolved({ instance: updatedInstance }),
       db: tx,
     });
   }

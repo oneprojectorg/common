@@ -6,7 +6,7 @@ import { permission } from 'access-zones';
 import { UnauthorizedError } from '../../utils';
 import type { AccessUser } from '../access/cacheKeys';
 import { assertProfileAccess } from '../assert';
-import { withInstancePhases } from './readInstancePhases';
+import { resolvePhases } from './instancePhases';
 
 const decisionProfileQueryConfig = {
   with: {
@@ -91,7 +91,7 @@ export const getDecisionBySlug = async ({
   // its ballot itself. Keeping the hot-path slug fetch aggregate-free saves a
   // proposals table scan per view.
   const [processInstance] = await Promise.all([
-    withInstancePhases({ instance }),
+    resolvePhases({ instance }),
     assertProfileAccess({
       user,
       profileId: profile.id,

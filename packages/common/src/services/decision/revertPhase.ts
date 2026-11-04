@@ -27,11 +27,8 @@ import {
   ValidationError,
 } from '../../utils';
 import { deletePendingReviewAssignments } from './deletePendingReviewAssignments';
+import { isPhasesFromRowsEnabled, getPhases } from './instancePhases';
 import { lockProcessInstance } from './lockProcessInstance';
-import {
-  isPhasesFromRowsEnabled,
-  readInstancePhases,
-} from './readInstancePhases';
 import type { PhaseInstanceData } from './schemas/instanceData';
 
 export interface RevertPhaseInput {
@@ -215,7 +212,7 @@ async function lockCurrentPhase({
 
   return {
     revertedPhaseId,
-    phases: await readInstancePhases({
+    phases: await getPhases({
       instance: { id: instanceId, instanceData: lockedInstance.instanceData },
       db: tx,
       fromRows,

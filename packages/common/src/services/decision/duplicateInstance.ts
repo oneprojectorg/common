@@ -7,7 +7,7 @@ import { CommonError, NotFoundError, UnauthorizedError } from '../../utils';
 import { getProfileAccessRolesWithOrgFallback } from '../access';
 import { assertProfileAccess, assertUserByAuthId } from '../assert';
 import { createDecisionInstance } from './createInstanceFromTemplate';
-import { withInstancePhases } from './readInstancePhases';
+import { resolvePhases } from './instancePhases';
 import type {
   DecisionInstanceData,
   InstanceOverview,
@@ -101,7 +101,7 @@ export const duplicateInstance = async ({
     }
   }
 
-  const { instanceData: sourceInstanceData } = await withInstancePhases({
+  const { instanceData: sourceInstanceData } = await resolvePhases({
     instance: sourceInstance,
   });
   const sourceData = sourceInstanceData as DecisionInstanceData | null;

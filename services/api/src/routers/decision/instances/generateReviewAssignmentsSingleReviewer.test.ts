@@ -6,7 +6,7 @@ import {
   createDecisionRole,
   generateReviewAssignments,
   reconcileReviewAssignments,
-  withInstancePhases,
+  resolvePhases,
 } from '@op/common';
 import { TestDecisionsDataManager } from '@op/common/testing';
 import { db, eq, inArray } from '@op/db/client';
@@ -303,7 +303,7 @@ async function advanceBetween(
   const result = await db.transaction(async (tx) =>
     advancePhase({
       db: tx,
-      instance: await withInstancePhases({ instance: dbInstance }),
+      instance: await resolvePhases({ instance: dbInstance }),
       fromPhaseId,
       toPhaseId,
       triggeredByProfileId: null,

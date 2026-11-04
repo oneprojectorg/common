@@ -4,7 +4,7 @@ import { processInstances } from '@op/db/schema';
 import { sql } from 'drizzle-orm';
 
 import { NotFoundError, ValidationError } from '../../utils';
-import { isPhasesFromRowsEnabled } from '../decision/readInstancePhases';
+import { isPhasesFromRowsEnabled } from '../decision/instancePhases';
 import type {
   CustomFormPhaseSet,
   CustomFormProcessContext,

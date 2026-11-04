@@ -34,7 +34,7 @@ export const isPhasesFromRowsEnabled = (): Promise<boolean> =>
     distinctId: PHASES_FROM_ROWS_FLAG,
   });
 
-export const readInstancePhases = async ({
+export const getPhases = async ({
   instance,
   db = defaultDb,
   fromRows,
@@ -43,9 +43,9 @@ export const readInstancePhases = async ({
   db?: DbClient;
   fromRows?: boolean;
 }): Promise<PhaseInstanceData[]> =>
-  getBlobPhases(await withInstancePhases({ instance, db, fromRows }));
+  getBlobPhases(await resolvePhases({ instance, db, fromRows }));
 
-export const withInstancePhases = async <T extends InstanceWithData>({
+export const resolvePhases = async <T extends InstanceWithData>({
   instance,
   db = defaultDb,
   fromRows,
@@ -54,7 +54,7 @@ export const withInstancePhases = async <T extends InstanceWithData>({
   db?: DbClient;
   fromRows?: boolean;
 }): Promise<PhasesResolved<T>> => {
-  const [resolved] = await withInstancesPhases({
+  const [resolved] = await resolvePhasesForAll({
     instances: [instance],
     db,
     fromRows,
@@ -63,7 +63,7 @@ export const withInstancePhases = async <T extends InstanceWithData>({
 };
 
 // TODO: remove when instanceData.phases is dropped.
-export const withBlobPhases = <T extends InstanceWithData>({
+export const markBlobPhasesResolved = <T extends InstanceWithData>({
   instance,
 }: {
   instance: T;
@@ -73,7 +73,7 @@ export const isPhasesResolved = <T extends object>(
   instance: T,
 ): instance is PhasesResolved<T> => resolvedPhases in instance;
 
-export const withInstancesPhases = async <T extends InstanceWithData>({
+export const resolvePhasesForAll = async <T extends InstanceWithData>({
   instances,
   db = defaultDb,
   fromRows,
@@ -111,7 +111,7 @@ export const withInstancesPhases = async <T extends InstanceWithData>({
   );
 };
 
-export const withProfileInstancePhases = async <
+export const resolveProfilePhases = async <
   T extends { processInstance: InstanceWithData | null },
 >({
   profile,
@@ -124,7 +124,7 @@ export const withProfileInstancePhases = async <
 
   return {
     ...profile,
-    processInstance: await withInstancePhases({
+    processInstance: await resolvePhases({
       instance: profile.processInstance,
     }),
   };

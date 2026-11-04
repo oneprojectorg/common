@@ -3,9 +3,9 @@ import type { User } from '@op/supabase/lib';
 
 import { ConflictError, ValidationError } from '../../utils';
 import { attachProposalsToTransition } from './attachProposalsToTransition';
+import { isPhasesFromRowsEnabled } from './instancePhases';
 import { lockProcessInstance } from './lockProcessInstance';
 import { assertProposalAdmin, resolveAdvancement } from './proposalAdvancement';
-import { isPhasesFromRowsEnabled } from './readInstancePhases';
 import { runGenerateReviewAssignments } from './runGenerateReviewAssignments';
 import { isReviewPhase } from './utils/phaseSettings';
 

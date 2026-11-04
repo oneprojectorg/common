@@ -7,7 +7,7 @@ import {
   assertInstanceProfileAccess,
   isUserEmailPlatformAdmin,
 } from '../access';
-import { readInstancePhases } from '../decision/readInstancePhases';
+import { getPhases } from '../decision/instancePhases';
 
 export type CustomFormProcessContext = {
   profileId: string;
@@ -95,7 +95,7 @@ export const readInstancePhaseSet = async ({
   db?: DbClient;
   fromRows?: boolean;
 }): Promise<CustomFormPhaseSet> => {
-  const phaseIds = (await readInstancePhases({ instance, db, fromRows })).map(
+  const phaseIds = (await getPhases({ instance, db, fromRows })).map(
     (phase) => phase.phaseId,
   );
 

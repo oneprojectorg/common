@@ -1,8 +1,8 @@
 import { db } from '@op/db/client';
 import type { DbClient } from '@op/db/client';
 
+import type { PhasesResolved } from './instancePhases';
 import { isLegacyInstanceData } from './isLegacyInstance';
-import type { PhasesResolved } from './readInstancePhases';
 import { getInstancePhases } from './schemas/instanceData';
 import type { TransitionData } from './schemas/transitionData';
 

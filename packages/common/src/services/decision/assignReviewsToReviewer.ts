@@ -9,7 +9,7 @@ import { NotFoundError, ValidationError } from '../../utils';
 import { getEligibleReviewerProfileIds } from './getEligibleReviewerProfileIds';
 import { getProposalIdsForPhase } from './getProposalsForPhase';
 import { insertReviewAssignments } from './insertReviewAssignments';
-import { readInstancePhases } from './readInstancePhases';
+import { getPhases } from './instancePhases';
 import { getPhaseIndex } from './utils/phaseOrder';
 
 export interface AssignReviewsToReviewerInput {
@@ -75,7 +75,7 @@ export async function assignReviewsToReviewer({
     );
   }
 
-  const phaseData = { phases: await readInstancePhases({ instance }) };
+  const phaseData = { phases: await getPhases({ instance }) };
   const phaseCount = phaseData.phases.length;
   const currentPhaseIndex = instance.currentStateId
     ? getPhaseIndex(phaseData, instance.currentStateId)

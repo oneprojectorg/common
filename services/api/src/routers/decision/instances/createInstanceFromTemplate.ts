@@ -1,7 +1,4 @@
-import {
-  createInstanceFromTemplate,
-  withProfileInstancePhases,
-} from '@op/common';
+import { createInstanceFromTemplate, resolveProfilePhases } from '@op/common';
 
 import {
   createInstanceFromTemplateInputSchema,
@@ -22,7 +19,7 @@ export const createInstanceFromTemplateRouter = router({
       });
 
       return decisionProfileWithSchemaEncoder.parse(
-        await withProfileInstancePhases({ profile }),
+        await resolveProfilePhases({ profile }),
       );
     }),
 });

@@ -1,4 +1,4 @@
-import { advancePhase, withInstancePhases } from '@op/common';
+import { advancePhase, resolvePhases } from '@op/common';
 import { TestDecisionsDataManager } from '@op/common/testing';
 import { db, eq } from '@op/db/client';
 import {
@@ -64,7 +64,7 @@ async function callAdvancePhase(
   return db.transaction(async (tx) =>
     advancePhase({
       db: tx,
-      instance: await withInstancePhases({ instance: dbInstance }),
+      instance: await resolvePhases({ instance: dbInstance }),
       triggeredByProfileId: null,
       ...overrides,
     }),

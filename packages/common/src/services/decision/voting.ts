@@ -24,8 +24,8 @@ import { assertProfileAccess } from '../assert';
 import { getFieldUnit } from './fieldUnit';
 import { getBallotProposalFilter } from './getBallotProposalFilter';
 import { type ProposalCosts, getProposalCosts } from './getProposalCosts';
+import { resolvePhases } from './instancePhases';
 import { decisionPermission } from './permissions';
-import { withInstancePhases } from './readInstancePhases';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
 import { processDecisionProcessSchema } from './schemaRegistry';
 import { validateVoteBudget, validateVoteSelection } from './schemaValidators';
@@ -195,7 +195,7 @@ async function getVotingInstance(processInstanceId: string) {
     throw new NotFoundError('Process instance', processInstanceId);
   }
 
-  return withInstancePhases({ instance: processInstance });
+  return resolvePhases({ instance: processInstance });
 }
 
 // Runs both caps so the voter sees every problem at once.

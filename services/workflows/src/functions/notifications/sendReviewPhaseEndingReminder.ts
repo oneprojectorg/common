@@ -3,7 +3,7 @@ import {
   getInstanceCurrentPhase,
   getInstancePhases,
   isInstanceCurrentPhase,
-  withInstancePhases,
+  resolvePhases,
 } from '@op/common';
 import { db } from '@op/db/client';
 import { ProcessStatus } from '@op/db/schema';
@@ -40,7 +40,7 @@ export const sendReviewPhaseEndingReminder = inngest.createFunction(
         return undefined;
       }
 
-      return withInstancePhases({ instance });
+      return resolvePhases({ instance });
     });
 
     if (!instanceData) {
