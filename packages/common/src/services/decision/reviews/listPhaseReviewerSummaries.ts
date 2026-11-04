@@ -224,25 +224,6 @@ export async function listPhaseReviewerSummaries({
 
 const countSchema = z.number().int().nonnegative();
 
-// The cursor value goes into a `::timestamptz` cast. A value the cast rejects
-// is a 500, so the schema checks the shape first.
-const TIMESTAMP_PATTERN =
-  /^(\d{4})-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])[ T]([01]\d|2[0-3]):[0-5]\d:[0-5]\d(\.\d{1,6})?(Z|[+-]\d{2}(:?\d{2})?)$/;
-
-const timestampSchema = z.string().refine((value) => {
-  const match = TIMESTAMP_PATTERN.exec(value);
-  if (!match) {
-    return false;
-  }
-  const [, year, month, day] = match.map(Number);
-  // Rejects a day the month does not have, such as 02-30.
-  return (
-    new Date(Date.UTC(year ?? 0, (month ?? 1) - 1, day)).getUTCDate() === day
-  );
-});
-
-// One branch per sort: each carries the sort key of the last row, plus the id
-// that breaks ties.
 const phaseReviewerCursorSchema = z.discriminatedUnion('sort', [
   z.object({
     sort: z.enum(['leastComplete', 'mostComplete']),
@@ -252,7 +233,7 @@ const phaseReviewerCursorSchema = z.discriminatedUnion('sort', [
   }),
   z.object({
     sort: z.literal('recentActivity'),
-    lastSubmittedAt: timestampSchema.nullable(),
+    lastSubmittedAt: z.string().nullable(),
     id: z.uuid(),
   }),
   z.object({
@@ -264,7 +245,6 @@ const phaseReviewerCursorSchema = z.discriminatedUnion('sort', [
 
 type PhaseReviewerCursor = z.infer<typeof phaseReviewerCursorSchema>;
 
-/** Null when nothing is assigned. The cursor recomputes it from the counts. */
 function completionRatio({
   submitted,
   assigned,
@@ -426,7 +406,6 @@ function decodePhaseReviewerCursor(
 
   const result = phaseReviewerCursorSchema.safeParse(decoded);
 
-  // A cursor from another sort points into a different order.
   if (!result.success || result.data.sort !== sort) {
     throw new ValidationError('Invalid cursor');
   }

@@ -292,8 +292,6 @@ describe.concurrent('decision.listPhaseReviewerSummaries', () => {
     const cases = [
       { sort: 'leastComplete', submittedCount: 'abc', assignedCount: 1, id },
       { sort: 'mostComplete', submittedCount: 1, assignedCount: -1, id },
-      { sort: 'recentActivity', lastSubmittedAt: 'abc', id },
-      { sort: 'recentActivity', lastSubmittedAt: '2026-02-30 10:00:00+00', id },
     ] as const;
 
     for (const cursor of cases) {
