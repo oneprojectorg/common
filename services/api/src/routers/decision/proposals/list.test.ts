@@ -1,5 +1,5 @@
 import { mockCollab, textFragment } from '@op/collab/testing';
-import { PROPOSAL_SEARCH_MAX_LENGTH, RejectionReason } from '@op/common/client';
+import { SEARCH_MAX_LENGTH, RejectionReason } from '@op/common/client';
 import {
   TestDecisionsDataManager,
   schemaWithPipeline,
@@ -2756,9 +2756,8 @@ describe.concurrent('listProposals: search', () => {
 
     // The non-matching word sits entirely past the cap: truncation drops it
     // and the title still matches, rejection would throw.
-    const overCap =
-      `Bike`.padEnd(PROPOSAL_SEARCH_MAX_LENGTH, ' ') + 'zzzznomatch';
-    expect(overCap.length).toBeGreaterThan(PROPOSAL_SEARCH_MAX_LENGTH);
+    const overCap = `Bike`.padEnd(SEARCH_MAX_LENGTH, ' ') + 'zzzznomatch';
+    expect(overCap.length).toBeGreaterThan(SEARCH_MAX_LENGTH);
 
     const result = await caller.decision.listProposals({
       processInstanceId: instanceId,

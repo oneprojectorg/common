@@ -3,7 +3,6 @@
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import { ProposalFilter } from '@op/api/encoders';
-import { PROPOSAL_SEARCH_MAX_LENGTH } from '@op/common/client';
 import { parseAsString, parseAsStringLiteral, useQueryState } from 'nuqs';
 import { useCallback, useDeferredValue, useMemo } from 'react';
 
@@ -64,7 +63,7 @@ export const useProposalFilters = ({
     debouncedSearch,
     appliedSearch,
     isSearchPending: isSearchFetching,
-  } = useSearchParam({ key: 'q', maxLength: PROPOSAL_SEARCH_MAX_LENGTH });
+  } = useSearchParam({ key: 'q' });
   const [filterParam, setProposalFilter] = useQueryState(
     'filter',
     parseAsStringLiteral(PROPOSAL_FILTER_VALUES),

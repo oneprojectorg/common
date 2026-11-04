@@ -14,3 +14,4 @@ export * from './reviewAssignments';
 export * from './transitionData';
 export * from './exportStatus';
 export * from './votingProgress';
+export * from './search';

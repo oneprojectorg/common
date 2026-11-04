@@ -1,5 +1,6 @@
 'use client';
 
+import { SEARCH_MAX_LENGTH } from '@op/common/client';
 import { useDebounce } from '@op/hooks';
 import { parseAsString, useQueryState } from 'nuqs';
 import { useDeferredValue } from 'react';
@@ -8,10 +9,10 @@ const SEARCH_DEBOUNCE_MS = 300;
 
 export const useSearchParam = ({
   key,
-  maxLength,
+  maxLength = SEARCH_MAX_LENGTH,
 }: {
   key: string;
-  maxLength: number;
+  maxLength?: number;
 }) => {
   const [urlSearch, setSearch] = useQueryState(
     key,

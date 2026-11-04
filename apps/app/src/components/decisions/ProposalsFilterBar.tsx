@@ -1,6 +1,6 @@
 'use client';
 
-import { PROPOSAL_SEARCH_MAX_LENGTH } from '@op/common/client';
+import { SEARCH_MAX_LENGTH } from '@op/common/client';
 import { Header3 } from '@op/sense/Header';
 
 import { useTranslations } from '@/lib/i18n';
@@ -138,7 +138,7 @@ export const ProposalsFilterBar = ({
           onChange={controls.setSearch}
           isPending={controls.isSearchPending}
           label={t('decisions.proposals.searchProposalsLabel')}
-          maxLength={PROPOSAL_SEARCH_MAX_LENGTH}
+          maxLength={SEARCH_MAX_LENGTH}
         />
       </div>
       {/* Grows to claim its row below 2xl so `ms-auto` has slack to push
