@@ -1,6 +1,5 @@
 'use client';
 
-import { PROPOSAL_SEARCH_MAX_LENGTH } from '@op/common/client';
 import {
   InputGroup,
   InputGroupAddon,
@@ -14,18 +13,20 @@ import { LuSearch, LuX } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
-/** Title search for the proposals filter bar. Debounced by the caller. */
-export const ProposalSearchField = ({
+export const ListSearchField = ({
   value,
   onChange,
   isPending,
   className,
+  label,
+  maxLength,
 }: {
   value: string;
   onChange: (next: string) => void;
-  /** A query is in flight — results on screen are for an earlier term. */
   isPending?: boolean;
   className?: string;
+  label: string;
+  maxLength: number;
 }) => {
   const t = useTranslations();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -41,11 +42,9 @@ export const ProposalSearchField = ({
         // WebKit paints its own cancel button beside ours.
         className="[&::-webkit-search-cancel-button]:hidden"
         value={value}
-        // Matches the endpoint's cap: over it the query fails input validation
-        // and the error boundary swallows the list — this field included.
-        maxLength={PROPOSAL_SEARCH_MAX_LENGTH}
-        placeholder={t('decisions.proposals.searchProposalsLabel')}
-        aria-label={t('decisions.proposals.searchProposalsLabel')}
+        maxLength={maxLength}
+        placeholder={label}
+        aria-label={label}
         onChange={(event) => onChange(event.target.value)}
       />
       {value && (
