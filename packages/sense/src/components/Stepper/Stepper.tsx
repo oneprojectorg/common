@@ -44,7 +44,7 @@ export const StepperProgressIndicator = ({
     <div className="relative z-40 flex h-1 w-full gap-0 bg-gradient">
       <div className="absolute inset-0 bg-background/65" />
       <div
-        className="absolute start-0 top-0 h-full bg-gradient transition-[width] duration-500"
+        className="absolute start-0 top-0 h-full bg-gradient transition-[width] duration-500 motion-reduce:transition-none"
         style={{ width: `${progress}%` }}
       />
     </div>
