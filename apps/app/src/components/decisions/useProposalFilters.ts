@@ -3,8 +3,6 @@
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import { ProposalFilter } from '@op/api/encoders';
-import { PROPOSAL_SEARCH_MAX_LENGTH } from '@op/common/client';
-import { useDebounce } from '@op/hooks';
 import { parseAsString, parseAsStringLiteral, useQueryState } from 'nuqs';
 import { useCallback, useDeferredValue, useMemo } from 'react';
 
@@ -21,9 +19,9 @@ import {
   useProposalFilterItems,
   useProposalStatusItems,
 } from './useProposalFilterItems';
+import { useSearchParam } from './useSearchParam';
 
 const PROPOSAL_FILTER_VALUES = Object.values(ProposalFilter);
-const SEARCH_DEBOUNCE_MS = 300;
 
 interface ProposalFilterOptions {
   instanceId: string;
@@ -59,10 +57,13 @@ export const useProposalFilters = ({
     'sort',
     parseAsString.withDefault('newest'),
   );
-  const [urlSearch, setSearch] = useQueryState(
-    'q',
-    parseAsString.withDefault(''),
-  );
+  const {
+    search,
+    setSearch,
+    debouncedSearch,
+    appliedSearch,
+    isSearchPending: isSearchFetching,
+  } = useSearchParam({ key: 'q' });
   const [filterParam, setProposalFilter] = useQueryState(
     'filter',
     parseAsStringLiteral(PROPOSAL_FILTER_VALUES),
@@ -71,10 +72,6 @@ export const useProposalFilters = ({
     'proposalStatus',
     parseAsStringLiteral(PROPOSAL_STATUS_VALUES),
   );
-
-  // Past the cap the endpoint rejects the query and takes the list down.
-  const search = urlSearch.slice(0, PROPOSAL_SEARCH_MAX_LENGTH);
-  const [debouncedSearch] = useDebounce(search.trim(), SEARCH_DEBOUNCE_MS);
 
   const tabsOwnAudience = showFilterTabs || pinnedFilter !== undefined;
 
@@ -93,14 +90,11 @@ export const useProposalFilters = ({
 
   // Non-urgent, or the suspense boundary swaps the bar (and focus) for a
   // skeleton. One primitive per call: `useDeferredValue` uses `Object.is`.
-  const appliedSearch = useDeferredValue(debouncedSearch);
   const appliedCategory = useDeferredValue(selectedCategory);
   const appliedSortOrder = useDeferredValue(sortOrder);
   const appliedFilter = useDeferredValue(proposalFilter);
   const appliedStatus = useDeferredValue(proposalStatus);
 
-  // Debounced, not raw: otherwise the spinner lights on the first keystroke.
-  const isSearchFetching = appliedSearch !== debouncedSearch;
   const isFilterFetching = hasPendingChange([
     [appliedSearch, debouncedSearch],
     [appliedCategory, selectedCategory],

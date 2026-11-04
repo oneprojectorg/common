@@ -57,7 +57,6 @@ export {
   allProposalsFilterSchema,
   allProposalsListItemSchema,
   allProposalsListSchema,
-  PROPOSAL_SEARCH_MAX_LENGTH,
   proposalSearchSchema,
   type Proposal,
   type ReviewedProposalVersion,
@@ -68,6 +67,7 @@ export {
   type AllProposalsListItem,
   type AllProposalsList,
 } from './services/decision/schemas/proposal';
+export { SEARCH_MAX_LENGTH } from './services/decision/schemas/search';
 export {
   adminDecisionInstanceSchema,
   type AdminDecisionInstance,
