@@ -8,8 +8,8 @@ import {
   type AssignableProposal,
   insertReviewAssignments,
 } from './insertReviewAssignments';
+import { getPhases } from './instancePhases';
 import { pickSingleReviewerAssignments } from './pickSingleReviewerAssignments';
-import { readInstancePhases } from './readInstancePhases';
 import type {
   DecisionInstanceData,
   PhaseInstanceData,
@@ -76,7 +76,7 @@ export async function generateReviewAssignments({
 
   const { config } = instance.instanceData as DecisionInstanceData;
   const { scope, policy } = getPhaseReviewSettings(
-    { config, phases: phases ?? (await readInstancePhases({ instance })) },
+    { config, phases: phases ?? (await getPhases({ instance })) },
     phaseId,
   );
 

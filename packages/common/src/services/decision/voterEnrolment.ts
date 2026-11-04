@@ -8,7 +8,7 @@ import { logger } from '@op/logging';
 import { NotFoundError, ValidationError } from '../../utils';
 import { getIndividualProfileId } from '../access';
 import { forwardGeocode } from './forwardGeocode';
-import { withInstancePhases } from './readInstancePhases';
+import { resolvePhases } from './instancePhases';
 import {
   hasDecisionBoundaries,
   hasLinkedDecisionBoundaries,
@@ -56,7 +56,7 @@ const loadEnrolmentContext = async ({
     throw new NotFoundError('Process instance', processInstanceId);
   }
 
-  const instance = await withInstancePhases({ instance: row });
+  const instance = await resolvePhases({ instance: row });
 
   const phase = getInstanceCurrentPhase({
     currentStateId: instance.currentStateId,

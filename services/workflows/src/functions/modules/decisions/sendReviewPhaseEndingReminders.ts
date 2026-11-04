@@ -1,7 +1,7 @@
 import {
   getInstanceCurrentPhase,
   getInstancePhases,
-  withInstancesPhases,
+  resolvePhasesForAll,
 } from '@op/common';
 import { db } from '@op/db/client';
 import { ProcessStatus, processPhases, profiles } from '@op/db/schema';
@@ -58,7 +58,7 @@ export const sendReviewPhaseEndingReminders = inngest.createFunction(
         },
       });
 
-      const instances = await withInstancesPhases({
+      const instances = await resolvePhasesForAll({
         instances: reviewPhaseInstances,
       });
 

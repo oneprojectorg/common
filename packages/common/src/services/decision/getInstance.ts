@@ -12,9 +12,9 @@ import {
   getOrgAccessUser,
 } from '../access';
 import { getCachedInstance } from './getCachedInstance';
+import { resolvePhases } from './instancePhases';
 import type { DecisionRolePermissions } from './permissions';
 import { fromDecisionBitField } from './permissions';
-import { withInstancePhases } from './readInstancePhases';
 import { resolveManualSelectionStatus } from './resolveManualSelectionStatus';
 import type { DecisionInstanceData } from './schemas/instanceData';
 
@@ -83,7 +83,7 @@ export const getInstance = async ({ instanceId, user }: GetInstanceInput) => {
     }
 
     const [instance, profileRoles] = await Promise.all([
-      withInstancePhases({ instance: cached }),
+      resolvePhases({ instance: cached }),
       assertInstanceProfileAccess({
         user,
         instance: cached,

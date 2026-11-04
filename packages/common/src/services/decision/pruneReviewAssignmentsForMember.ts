@@ -3,7 +3,7 @@ import { ProcessStatus } from '@op/db/schema';
 
 import { deletePendingReviewAssignments } from './deletePendingReviewAssignments';
 import { getEligibleReviewerProfileIds } from './getEligibleReviewerProfileIds';
-import { readInstancePhases } from './readInstancePhases';
+import { getPhases } from './instancePhases';
 import { assertInstancePhase } from './utils/instance';
 import { isReviewPhase } from './utils/phaseSettings';
 
@@ -47,7 +47,7 @@ export async function pruneReviewAssignmentsForMember({
 
   const currentPhase = assertInstancePhase({
     instance: {
-      instanceData: { phases: await readInstancePhases({ instance }) },
+      instanceData: { phases: await getPhases({ instance }) },
     },
     phaseId: currentPhaseId,
   });

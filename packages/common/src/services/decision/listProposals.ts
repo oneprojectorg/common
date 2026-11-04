@@ -21,6 +21,7 @@ import { getProposalDocumentsContent } from './getProposalDocumentsContent';
 import { getProposalRelationshipData } from './getProposalRelationshipData';
 import { getSelectedProposalIds } from './getSelectedProposalIds';
 import { ballotRankPosition } from './getVoterBallot';
+import type { PhasesResolved } from './instancePhases';
 import { resolvePhaseAdvancement } from './proposalAdvancement';
 import {
   isAnonymousAuthor,
@@ -29,7 +30,6 @@ import {
 } from './proposalAuthor';
 import { parseProposalData } from './proposalDataSchema';
 import { buildProposalListPreview } from './proposalListPreview';
-import type { PhasesResolved } from './readInstancePhases';
 import { resolveProposalListScope } from './resolveProposalListScope';
 import { resolveProposalTemplatesByFormSchemaId } from './resolveProposalTemplate';
 import { getInstancePhases } from './schemas/instanceData';

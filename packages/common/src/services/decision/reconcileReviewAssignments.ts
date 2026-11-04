@@ -20,7 +20,7 @@ import {
   type AssignableProposal,
   insertReviewAssignments,
 } from './insertReviewAssignments';
-import { withInstancePhases } from './readInstancePhases';
+import { resolvePhases } from './instancePhases';
 import type { DecisionInstanceData } from './schemas/instanceData';
 import { assertInstancePhase } from './utils/instance';
 import { getPhaseReviewSettings, isReviewPhase } from './utils/phaseSettings';
@@ -102,7 +102,7 @@ export async function reconcileReviewAssignments({
     return skip('instance has no current phase');
   }
 
-  const { instanceData: resolvedInstanceData } = await withInstancePhases({
+  const { instanceData: resolvedInstanceData } = await resolvePhases({
     instance,
     db,
   });

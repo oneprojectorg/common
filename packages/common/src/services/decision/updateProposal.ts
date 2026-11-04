@@ -24,12 +24,12 @@ import { getProfileAccessRoles } from '../access';
 import { assertUserByAuthId } from '../assert';
 import { withBoundaryCategoryLabel } from './boundaryCategory';
 import { getProposalFragmentNames } from './getProposalFragmentNames';
+import { getPhases } from './instancePhases';
 import type {
   CheckpointVersion,
   ProposalDataInput,
 } from './proposalDataSchema';
 import { parseProposalData } from './proposalDataSchema';
-import { readInstancePhases } from './readInstancePhases';
 import { reconcileReviewAssignments } from './reconcileReviewAssignments';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
 import {
@@ -85,7 +85,7 @@ export const updateProposal = async ({
   const processInstance = existingProposal.processInstance;
 
   // Reject updates when the instance is in the final (results) phase
-  const instancePhases = await readInstancePhases({
+  const instancePhases = await getPhases({
     instance: processInstance,
   });
   if (isLastPhase(processInstance.currentStateId, instancePhases)) {

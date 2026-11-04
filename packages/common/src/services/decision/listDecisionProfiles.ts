@@ -18,11 +18,11 @@ import {
   getCursorCondition,
 } from '../../utils';
 import { getNormalizedRoles } from '../access';
+import { resolvePhasesForAll } from './instancePhases';
 import {
   type DecisionRolePermissions,
   fromDecisionBitField,
 } from './permissions';
-import { withInstancesPhases } from './readInstancePhases';
 
 export const listDecisionProfiles = async ({
   user,
@@ -172,7 +172,7 @@ export const listDecisionProfiles = async ({
     };
   };
 
-  const instancesWithPhases = await withInstancesPhases({
+  const instancesWithPhases = await resolvePhasesForAll({
     instances: profileList.flatMap(({ processInstance }) =>
       processInstance ? [processInstance] : [],
     ),

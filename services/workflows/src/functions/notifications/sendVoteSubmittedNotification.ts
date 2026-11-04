@@ -1,4 +1,4 @@
-import { listProfileRecipients, readInstancePhases } from '@op/common';
+import { listProfileRecipients, getPhases } from '@op/common';
 import { selectEmailRecipients } from '@op/common/client';
 import { OPURLConfig } from '@op/core';
 import { db } from '@op/db/client';
@@ -96,7 +96,7 @@ export const sendVoteSubmittedNotification = inngest.createFunction(
       const { instanceId, instanceData, ...vote } = row;
       return {
         ...vote,
-        phases: await readInstancePhases({
+        phases: await getPhases({
           instance: { id: instanceId, instanceData },
         }),
       };

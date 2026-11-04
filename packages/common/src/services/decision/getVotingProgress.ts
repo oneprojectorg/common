@@ -6,10 +6,10 @@ import { NotFoundError } from '../../utils';
 import { getCachedInstance } from './getCachedInstance';
 import { computeDaysLeft } from './getPhaseReviewProgress';
 import { getProfileIdsWithDecisionPermission } from './getProfileIdsWithDecisionPermission';
+import { getPhases } from './instancePhases';
 import { isDecisionPublic } from './isDecisionPublic';
 import { decisionPermission } from './permissions';
 import { assertDecisionAdmin } from './phaseHelpers';
-import { readInstancePhases } from './readInstancePhases';
 import type { VotingProgress } from './schemas/votingProgress';
 
 // The permissions submitVote admits.
@@ -49,7 +49,7 @@ export async function getVotingProgress({
           })
         : false,
       getVoterProfileIds({ processInstanceId }),
-      readInstancePhases({ instance }),
+      getPhases({ instance }),
     ]);
 
   // Public voting admits every voter; otherwise a voter who lost the vote

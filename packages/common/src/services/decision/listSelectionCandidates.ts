@@ -6,9 +6,9 @@ import { permission } from 'access-zones';
 import { CommonError, NotFoundError } from '../../utils';
 import { assertProfileAccess } from '../assert';
 import { getProposalIdsForPhase } from './getProposalsForPhase';
+import { getPhases } from './instancePhases';
 import { isLegacyInstanceData } from './isLegacyInstance';
 import { listProposals } from './listProposals';
-import { readInstancePhases } from './readInstancePhases';
 import type { Proposal } from './schemas/proposal';
 
 export interface SelectionCandidates {
@@ -134,7 +134,7 @@ async function resolvePreviousPhaseId({
     return undefined;
   }
 
-  const phases = await readInstancePhases({ instance, db });
+  const phases = await getPhases({ instance, db });
   if (phases.length === 0) {
     return undefined;
   }
