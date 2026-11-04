@@ -90,18 +90,18 @@ export const getDecisionBySlug = async ({
   // listDecisionProfiles, and the SMS SHOW path (getSmsDecisionDescription) counts
   // its ballot itself. Keeping the hot-path slug fetch aggregate-free saves a
   // proposals table scan per view.
-  await assertProfileAccess({
-    user,
-    profileId: profile.id,
-    permissions: [
-      { decisions: permission.ADMIN },
-      { decisions: permission.READ },
-    ],
-    notMemberMessage: 'User does not have access to this process',
-  });
+  const [processInstance] = await Promise.all([
+    withInstancePhases({ instance }),
+    assertProfileAccess({
+      user,
+      profileId: profile.id,
+      permissions: [
+        { decisions: permission.ADMIN },
+        { decisions: permission.READ },
+      ],
+      notMemberMessage: 'User does not have access to this process',
+    }),
+  ]);
 
-  return {
-    ...profile,
-    processInstance: await withInstancePhases({ instance }),
-  };
+  return { ...profile, processInstance };
 };

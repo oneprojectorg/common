@@ -323,14 +323,13 @@ export const getPermissionsOnProposal = async ({
     }
   }
 
-  const instancePhases = await readInstancePhases({
-    instance: proposal.processInstance,
-  });
   const isEditable =
     access.update &&
     (proposal.status === ProposalStatus.DRAFT ||
       isPostSubmissionEditingAllowed({
-        phases: instancePhases,
+        phases: await readInstancePhases({
+          instance: proposal.processInstance,
+        }),
         currentPhaseId: proposal.processInstance.currentStateId,
       }));
 
