@@ -8,12 +8,12 @@ import { processInstances, processPhases, profiles } from '@op/db/schema';
 import { logger } from '@op/logging';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { insertPhase, listPhasesByInstance, phaseIdOf } from './phaseHelpers';
 import {
-  readInstancePhases,
-  withInstancePhases,
-  withInstancesPhases,
-} from './readInstancePhases';
+  getPhases,
+  resolvePhases,
+  resolvePhasesForAll,
+} from './instancePhases';
+import { insertPhase, listPhasesByInstance, phaseIdOf } from './phaseHelpers';
 
 const expectNoRowsMessage = (processInstanceIds: string[]) =>
   expect(logger.debug).toHaveBeenCalledWith(
@@ -21,7 +21,7 @@ const expectNoRowsMessage = (processInstanceIds: string[]) =>
     { processInstanceIds },
   );
 
-describe('readInstancePhases', () => {
+describe('instancePhases', () => {
   afterEach(() => {
     vi.unstubAllEnvs();
   });
@@ -38,7 +38,7 @@ describe('readInstancePhases', () => {
     await renameBlobPhases(instanceId);
     forceServerFlags(false);
 
-    const phases = await readInstancePhases({
+    const phases = await getPhases({
       instance: await loadInstance(instanceId),
     });
 
@@ -63,7 +63,7 @@ describe('readInstancePhases', () => {
     await setSortOrder(rows.final.id, 0);
     forceServerFlags(true);
 
-    const phases = await readInstancePhases({
+    const phases = await getPhases({
       instance: await loadInstance(instanceId),
     });
 
@@ -95,7 +95,7 @@ describe('readInstancePhases', () => {
       .where(eq(processPhases.id, rows.final.id));
     forceServerFlags(true);
 
-    const phases = await readInstancePhases({
+    const phases = await getPhases({
       instance: await loadInstance(instanceId),
     });
 
@@ -113,7 +113,7 @@ describe('readInstancePhases', () => {
     await renameBlobPhases(instanceId);
     forceServerFlags(true);
 
-    const phases = await readInstancePhases({
+    const phases = await getPhases({
       instance: await loadInstance(instanceId),
     });
 
@@ -147,7 +147,7 @@ describe('readInstancePhases', () => {
     testData.trackProfileForCleanup(added.id);
     forceServerFlags(true);
 
-    const phases = await readInstancePhases({
+    const phases = await getPhases({
       instance: await loadInstance(instanceId),
     });
 
@@ -165,7 +165,7 @@ describe('readInstancePhases', () => {
     const instance = await loadInstance(instanceId);
     forceServerFlags(true);
 
-    expect((await withInstancePhases({ instance })).instanceData).toBe(
+    expect((await resolvePhases({ instance })).instanceData).toBe(
       instance.instanceData,
     );
     expectNoRowsMessage([instanceId]);
@@ -191,7 +191,7 @@ describe('readInstancePhases', () => {
     ];
     forceServerFlags(true);
 
-    const [first, second] = await withInstancesPhases({ instances });
+    const [first, second] = await resolvePhasesForAll({ instances });
 
     expect(first?.instanceData).toMatchObject({
       phases: [{ phaseId: 'initial' }, { phaseId: 'final' }],
@@ -214,12 +214,12 @@ describe('readInstancePhases', () => {
     const instance = await loadInstance(instanceId);
     forceServerFlags(false);
 
-    expect((await withInstancePhases({ instance })).instanceData).toBe(
+    expect((await resolvePhases({ instance })).instanceData).toBe(
       instance.instanceData,
     );
 
     forceServerFlags(true);
-    const resolved = await withInstancePhases({ instance });
+    const resolved = await resolvePhases({ instance });
 
     expect(resolved.instanceData).toMatchObject({
       templateId: expect.any(String),

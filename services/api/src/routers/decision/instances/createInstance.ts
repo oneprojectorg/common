@@ -1,4 +1,4 @@
-import { createInstance, withProfileInstancePhases } from '@op/common';
+import { createInstance, resolveProfilePhases } from '@op/common';
 import { createInstanceSchema } from '@op/common/client';
 
 import { decisionProfileWithSchemaEncoder } from '../../../encoders/decision';
@@ -15,7 +15,7 @@ export const createInstanceRouter = router({
       });
 
       return decisionProfileWithSchemaEncoder.parse(
-        await withProfileInstancePhases({ profile }),
+        await resolveProfilePhases({ profile }),
       );
     }),
 });

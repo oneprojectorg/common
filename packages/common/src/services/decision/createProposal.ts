@@ -23,13 +23,13 @@ import {
 import { assertGlobalRole } from '../assert';
 import { generateUniqueProfileSlug } from '../profile/utils';
 import { withBoundaryCategoryLabel } from './boundaryCategory';
+import { resolvePhases } from './instancePhases';
 import { decisionPermission } from './permissions';
 import { processProposalContent } from './proposalContentProcessor';
 import {
   type ProposalDataInput,
   parseProposalData,
 } from './proposalDataSchema';
-import { withInstancePhases } from './readInstancePhases';
 import type { DecisionInstanceData } from './schemas/instanceData';
 import { syncProposalProfileLocation } from './syncProposalProfileLocation';
 import { assertInstancePhase } from './utils/instance';
@@ -59,7 +59,7 @@ export const createProposal = async ({
     throw new NotFoundError('Process instance', data.processInstanceId);
   }
 
-  const instance = await withInstancePhases({ instance: instanceRow });
+  const instance = await resolvePhases({ instance: instanceRow });
 
   await assertInstanceProfileAccess({
     user: { id: authUserId },

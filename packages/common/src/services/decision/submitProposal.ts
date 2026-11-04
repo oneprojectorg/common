@@ -11,6 +11,7 @@ import { permission } from 'access-zones';
 
 import { CommonError, NotFoundError, ValidationError } from '../../utils';
 import { assertProfileAccess } from '../assert';
+import { getPhases } from './instancePhases';
 import { lockProcessInstanceOrThrow } from './lockProcessInstance';
 import { decisionPermission } from './permissions';
 import {
@@ -18,7 +19,6 @@ import {
   normalizeProposalCategories,
   parseProposalData,
 } from './proposalDataSchema';
-import { readInstancePhases } from './readInstancePhases';
 import { reconcileReviewAssignments } from './reconcileReviewAssignments';
 import { hasDecisionBoundaries, resolveBoundary } from './resolveBoundary';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
@@ -88,7 +88,7 @@ export const submitProposal = async ({
 
   // Check if proposals are allowed in current phase
   const { allowed, phaseName } = checkProposalsAllowed(
-    await readInstancePhases({ instance }),
+    await getPhases({ instance }),
     currentPhaseId,
   );
 

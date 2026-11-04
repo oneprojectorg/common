@@ -12,8 +12,8 @@ import {
   getProfileAccessRolesWithOrgFallback,
   getUserSession,
 } from '../access';
+import { getPhases } from '../decision/instancePhases';
 import { decisionPermission } from '../decision/permissions';
-import { readInstancePhases } from '../decision/readInstancePhases';
 import { areCommentsAllowed } from '../decision/utils/phaseSettings';
 import { getNetworkMembership } from '../user';
 
@@ -180,7 +180,7 @@ const assertPhaseAllowsComments = async (
   }
 
   const allowed = areCommentsAllowed({
-    phases: await readInstancePhases({ instance }),
+    phases: await getPhases({ instance }),
     currentPhaseId: instance.currentStateId,
   });
 

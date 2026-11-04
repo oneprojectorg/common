@@ -3,8 +3,8 @@ import { db } from '@op/db/client';
 import type { User } from '@op/supabase/lib';
 
 import { NotFoundError, ValidationError } from '../../utils';
+import { getPhases } from './instancePhases';
 import { parseProposalData } from './proposalDataSchema';
-import { readInstancePhases } from './readInstancePhases';
 import { assertProposalUpdateAccess } from './updateProposal';
 
 /** Mint a Tiptap token for one proposal's document, under the `updateProposal` gate. */
@@ -46,7 +46,7 @@ export const getCollabToken = async ({
     data: {},
     proposal,
     processInstance,
-    instancePhases: await readInstancePhases({ instance: processInstance }),
+    instancePhases: await getPhases({ instance: processInstance }),
   });
 
   const { collaborationDocId } = parseProposalData(proposal.proposalData);

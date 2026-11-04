@@ -5,7 +5,7 @@ import { logger } from '@op/logging';
 
 import { CommonError } from '../../utils';
 import { buildExpectedTransitions } from './buildExpectedTransitions';
-import type { PhasesResolved } from './readInstancePhases';
+import type { PhasesResolved } from './instancePhases';
 
 export interface UpdateTransitionsInput {
   processInstance: PhasesResolved<ProcessInstance>;

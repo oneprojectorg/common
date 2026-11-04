@@ -4,11 +4,11 @@ import type { User } from '@op/supabase/lib';
 
 import { getProposalAccessContext } from './getProposalAccessContext';
 import { getPhaseProposalSqlScope } from './getProposalsForPhase';
+import { isPhasesResolved, resolvePhases } from './instancePhases';
 import { isLegacyInstanceData } from './isLegacyInstance';
 import type { LockedProcessInstance } from './lockProcessInstance';
 import { phaseEligiblePredicate } from './phaseEligibility';
 import { assertDecisionAdmin } from './phaseHelpers';
-import { isPhasesResolved, withInstancePhases } from './readInstancePhases';
 import { resolveManualSelectionStatus } from './resolveManualSelectionStatus';
 import {
   type PhaseInstanceData,
@@ -79,7 +79,7 @@ export async function resolvePhaseAdvancement({
 
   const resolved = isPhasesResolved(instance)
     ? instance
-    : await withInstancePhases({ instance, db: dbClient, fromRows });
+    : await resolvePhases({ instance, db: dbClient, fromRows });
   const phases = getInstancePhases(resolved.instanceData);
   const currentIndex = phases.findIndex((p) => p.phaseId === currentStateId);
   const currentPhase = phases[currentIndex];

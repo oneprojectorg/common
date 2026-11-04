@@ -12,8 +12,8 @@ import {
 } from '../../utils';
 import { assertProfileAccess, assertUserByAuthId } from '../assert';
 import { advancePhase } from './advancePhase';
+import { resolvePhases } from './instancePhases';
 import { onPhaseAdvanced } from './onPhaseAdvanced';
-import { withInstancePhases } from './readInstancePhases';
 import { getInstancePhases } from './schemas/instanceData';
 
 export interface TriggerPhaseAdvancementInput {
@@ -74,7 +74,7 @@ export async function triggerPhaseAdvancement({
     throw new ValidationError('Instance must be published');
   }
 
-  const resolved = await withInstancePhases({ instance });
+  const resolved = await resolvePhases({ instance });
   const phases = [...getInstancePhases(resolved.instanceData)];
 
   if (phases.length === 0) {

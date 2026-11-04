@@ -4,7 +4,7 @@ import {
   backfillReviewAssignments,
   createDecisionRole,
   generateReviewAssignments,
-  withInstancePhases,
+  resolvePhases,
 } from '@op/common';
 import { TestDecisionsDataManager } from '@op/common/testing';
 import { db, eq, inArray } from '@op/db/client';
@@ -206,7 +206,7 @@ async function advanceToReviewPhase(instanceId: string) {
   const result = await db.transaction(async (tx) =>
     advancePhase({
       db: tx,
-      instance: await withInstancePhases({ instance: dbInstance }),
+      instance: await resolvePhases({ instance: dbInstance }),
       fromPhaseId: 'submission',
       toPhaseId: 'review',
       triggeredByProfileId: null,

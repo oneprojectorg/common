@@ -19,13 +19,10 @@ import {
 import { assertProfileAccess, assertUserByAuthId } from '../assert';
 import { attachProposalsToTransition } from './attachProposalsToTransition';
 import { getProposalIdsForPhase } from './getProposalsForPhase';
+import { isPhasesFromRowsEnabled, getPhases } from './instancePhases';
 import { isLegacyInstanceData } from './isLegacyInstance';
 import { lockProcessInstance } from './lockProcessInstance';
 import { processResults } from './processResults';
-import {
-  isPhasesFromRowsEnabled,
-  readInstancePhases,
-} from './readInstancePhases';
 import {
   RESULT_NOTIFICATION_MESSAGE_MAX_LENGTH,
   type ResultNotificationMessages,
@@ -161,7 +158,7 @@ export async function submitManualSelection({
       );
     }
 
-    const lockedPhases = await readInstancePhases({
+    const lockedPhases = await getPhases({
       instance: {
         id: processInstanceId,
         instanceData: lockedInstance.instanceData,

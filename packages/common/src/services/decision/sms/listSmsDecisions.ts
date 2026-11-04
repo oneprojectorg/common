@@ -7,7 +7,7 @@ import {
 } from '@op/db/schema';
 
 import { memberProfileIds } from '../../access';
-import { withInstancesPhases } from '../readInstancePhases';
+import { resolvePhasesForAll } from '../instancePhases';
 import { summarizeCurrentPhase } from '../summarizeCurrentPhase';
 
 export interface SmsDecisionListItem {
@@ -40,7 +40,7 @@ export async function listSmsDecisions({
     )
     .orderBy(asc(profiles.name), asc(profiles.id));
 
-  const instances = await withInstancesPhases({ instances: rows });
+  const instances = await resolvePhasesForAll({ instances: rows });
 
   return instances
     .map(({ name, slug, instanceData, currentStateId }) => ({

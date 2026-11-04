@@ -1,8 +1,4 @@
-import {
-  NotFoundError,
-  isDecisionPublic,
-  withInstancePhases,
-} from '@op/common';
+import { NotFoundError, isDecisionPublic, resolvePhases } from '@op/common';
 import {
   adminDecisionInstanceDetailSchema,
   allowsComments,
@@ -132,7 +128,7 @@ export const getDecisionInstanceRouter = router({
         throw new NotFoundError('Decision instance not found');
       }
 
-      const instance = await withInstancePhases({ instance: instanceRow });
+      const instance = await resolvePhases({ instance: instanceRow });
 
       const parsed = detailInstanceData.safeParse(instance.instanceData);
       const instanceData = parsed.success ? parsed.data : {};
