@@ -20,6 +20,8 @@
     "./testing/helpers": "./testing/helpers/index.ts",
     "./testing/vitest": "./testing/vitest.ts",
     "./testing/mocks/deepl": "./testing/mocks/deepl.ts",
+    "./testing/mocks/collab": "./testing/mocks/collab.ts",
+    "./testing/mocks/registerCollab": "./testing/mocks/registerCollab.ts",
     "./src/*": "./src/*"
   },
   "main": "src/index.ts",

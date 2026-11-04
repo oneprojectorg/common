@@ -1,4 +1,3 @@
-import { mockCollab } from '@op/collab/testing';
 import {
   type DecisionSchemaDefinition,
   type PhoneNumber,
@@ -20,6 +19,7 @@ import {
   TestPhoneAuthDataManager,
   advanceInstancePhase,
 } from '@op/common/testing/helpers';
+import { mockCollab } from '@op/common/testing/mocks/collab';
 import { db, inArray } from '@op/db/client';
 import {
   ProcessStatus,
