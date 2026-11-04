@@ -27,6 +27,8 @@ export const reviewerSortSchema = z.enum([
 
 export type ReviewerSort = z.infer<typeof reviewerSortSchema>;
 
+export const DEFAULT_REVIEWER_SORT: ReviewerSort = 'leastComplete';
+
 export const phaseReviewerSummariesInputSchema = instancePhaseRefSchema
   .extend(paginationInput('lg').shape)
   .extend({

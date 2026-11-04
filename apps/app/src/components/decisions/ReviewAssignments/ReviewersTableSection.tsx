@@ -3,6 +3,7 @@
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { trpc } from '@op/api/client';
 import {
+  DEFAULT_REVIEWER_SORT,
   type PhaseReviewerSummary,
   ProposalReviewAssignmentStatus,
   type ReviewerSort,
@@ -56,7 +57,6 @@ interface ReviewersTableSectionProps {
 }
 
 const reviewerStatusParser = parseAsStringLiteral(reviewerStatusSchema.options);
-const DEFAULT_REVIEWER_SORT: ReviewerSort = 'leastComplete';
 const reviewerSortParser = parseAsStringLiteral(
   reviewerSortSchema.options,
 ).withDefault(DEFAULT_REVIEWER_SORT);
@@ -200,9 +200,7 @@ function ReviewersTableContent({
             />
             <ResponsiveSelect
               selectedKey={sort}
-              onSelectionChange={(key) =>
-                void setSort(key === DEFAULT_REVIEWER_SORT ? null : key)
-              }
+              onSelectionChange={(key) => void setSort(key)}
               aria-label={t('decisions.review.sortReviewersLabel')}
               className="min-w-40"
               items={sortItems}

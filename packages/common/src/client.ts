@@ -98,6 +98,7 @@ export {
   type ReviewerStatus,
   reviewerSortSchema,
   type ReviewerSort,
+  DEFAULT_REVIEWER_SORT,
   phaseReviewerSummarySchema,
   type PhaseReviewerSummary,
   phaseReviewerSummariesSchema,

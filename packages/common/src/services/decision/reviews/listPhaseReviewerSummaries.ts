@@ -33,6 +33,7 @@ import { assertProfileAccess } from '../../assert';
 import { getEligibleReviewerProfileIds } from '../getEligibleReviewerProfileIds';
 import { getInstance } from '../getInstance';
 import {
+  DEFAULT_REVIEWER_SORT,
   type PhaseReviewerSummaries,
   type PhaseReviewerSummariesParams,
   type ReviewerSort,
@@ -50,7 +51,7 @@ export async function listPhaseReviewerSummaries({
   limit = PAGE_LIMIT.lg,
   search,
   status,
-  sort = 'leastComplete',
+  sort = DEFAULT_REVIEWER_SORT,
 }: PhaseReviewerSummariesParams & {
   user: User;
 }): Promise<PhaseReviewerSummaries> {
