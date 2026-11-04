@@ -1,5 +1,7 @@
 import type { CommonUser } from '@op/api/encoders';
-import { isSafeRedirectPath } from '@op/common/client';
+import { isSafeRedirectPath, isSupportedLocale } from '@op/common/client';
+
+import { i18nConfig } from '@/lib/i18n/config';
 
 /**
  * Whether a viewer must be sent through the onboarding flow at /start.
@@ -16,14 +18,20 @@ export const shouldRedirectToOnboarding = (
  * The `/start` redirect target, preserving the full destination (the proxy's
  * `x-pathname` + `x-search` headers) via `?redirect=` so the user returns there
  * — query string and all — after onboarding.
+ *
+ * Onboarding stays in the visitor's locale: an English /start in front of a
+ * non-English visitor invites a browser translator to rewrite the DOM, and
+ * React then crashes on the next navigation.
  */
 export const buildOnboardingRedirect = (
+  locale: string,
   pathname: string | null,
   search?: string | null,
 ): string => {
+  const start = `/${isSupportedLocale(locale) ? locale : i18nConfig.defaultLocale}/start`;
   const dest = pathname ? `${pathname}${search ?? ''}` : pathname;
 
   return isSafeRedirectPath(dest)
-    ? `/en/start?redirect=${encodeURIComponent(dest)}`
-    : '/en/start';
+    ? `${start}?redirect=${encodeURIComponent(dest)}`
+    : start;
 };
