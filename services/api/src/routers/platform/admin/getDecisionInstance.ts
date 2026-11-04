@@ -11,6 +11,7 @@ import {
 import { db } from '@op/db/client';
 import { z } from 'zod';
 
+import { putPhasesOnInstanceData } from '../../../encoders/phasesOnWire';
 import { withAuthenticatedPlatformAdmin } from '../../../middlewares/withAuthenticatedPlatformAdmin';
 import withRateLimited from '../../../middlewares/withRateLimited';
 import { commonProcedure, router } from '../../../trpcFactory';
@@ -130,8 +131,14 @@ export const getDecisionInstanceRouter = router({
 
       const instance = await resolvePhases({ instance: instanceRow });
 
-      const parsed = detailInstanceData.safeParse(instance.instanceData);
-      const instanceData = parsed.success ? parsed.data : {};
+      const wireInstanceData = putPhasesOnInstanceData({
+        instanceData: instance.instanceData,
+        phases: instance.phases,
+      });
+      const parsed = detailInstanceData.safeParse(wireInstanceData);
+      const { phases = [], ...instanceData } = parsed.success
+        ? parsed.data
+        : {};
 
       // No profile of its own means no grant to carry.
       const isPublic = instance.profileId
@@ -181,8 +188,8 @@ export const getDecisionInstanceRouter = router({
             instanceData.config?.requireCollaborativeProposals ?? false,
           categoriesCount: instanceData.config?.categories?.length ?? 0,
         },
-        instanceData: instance.instanceData,
-        phases: (instanceData.phases ?? []).map((phase) => {
+        instanceData: wireInstanceData,
+        phases: phases.map((phase) => {
           // Instance rules win; fall back to the process schema definition
           // (older instances don't copy every rule into instanceData).
           const rules = phase.rules ?? schemaRulesByPhaseId.get(phase.phaseId);

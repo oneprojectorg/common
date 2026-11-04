@@ -29,7 +29,7 @@ import { decisionPermission } from './permissions';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
 import { processDecisionProcessSchema } from './schemaRegistry';
 import { validateVoteBudget, validateVoteSelection } from './schemaValidators';
-import type { DecisionInstanceData } from './schemas/instanceData';
+import type { PhaseInstanceData } from './schemas/instanceData';
 import type { ProposalTemplateSchema } from './types';
 import {
   getVoterBudget,
@@ -54,17 +54,16 @@ interface PhaseConfig {
 
 /** Extract voting/proposal rules for the current phase. */
 function getCurrentPhaseConfig(processInstance: {
-  instanceData: unknown;
+  phases: readonly PhaseInstanceData[];
   currentStateId: string | null;
 }): PhaseConfig | undefined {
-  const instanceData = processInstance.instanceData as DecisionInstanceData;
   const currentPhaseId = processInstance.currentStateId;
 
   if (!currentPhaseId) {
     return undefined;
   }
 
-  const currentPhase = instanceData.phases.find(
+  const currentPhase = processInstance.phases.find(
     (p) =>
       p.phaseId === currentPhaseId ||
       // @ts-expect-error  Remove p.stateId in a migration before undoing p.stateId

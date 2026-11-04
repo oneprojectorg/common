@@ -64,20 +64,21 @@ export async function backfillReviewAssignments({
     return skip('instance has no current phase');
   }
 
-  const { instanceData: resolvedInstanceData } = await resolvePhases({
-    instance,
-  });
-  const instanceData = resolvedInstanceData as DecisionInstanceData;
+  const resolved = await resolvePhases({ instance });
+  const { config } = resolved.instanceData as DecisionInstanceData;
 
   const currentPhase = assertInstancePhase({
-    instance: { instanceData },
+    instance: resolved,
     phaseId: currentPhaseId,
   });
   if (!isReviewPhase(currentPhase)) {
     return skip('current phase is not review-capable');
   }
 
-  const reviewSettings = getPhaseReviewSettings(instanceData, currentPhaseId);
+  const reviewSettings = getPhaseReviewSettings(
+    { config, phases: resolved.phases },
+    currentPhaseId,
+  );
 
   // Backfill only makes sense under `full_coverage`: under `single_reviewer` a
   // mid-phase reviewer would land as a second reviewer on every proposal they

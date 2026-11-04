@@ -9,7 +9,10 @@ import { permission } from 'access-zones';
 import { NotFoundError } from '../../utils';
 import { assertInstanceProfileAccess } from '../access';
 import { resolvePhases } from '../decision/instancePhases';
-import type { DecisionInstanceData } from '../decision/schemas/instanceData';
+import type {
+  DecisionInstanceData,
+  PhaseInstanceData,
+} from '../decision/schemas/instanceData';
 import { serverExtensions } from '../decision/tiptapExtensions';
 import type { SupportedLocale } from './locales';
 import { runTranslateBatch } from './runTranslateBatch';
@@ -85,6 +88,7 @@ export async function translateDecision({
   const entries = buildEntries(
     decisionProfileId,
     instanceData,
+    processInstance.phases,
     processInstance.currentStateId,
     processInstance.description,
   );
@@ -131,6 +135,7 @@ function renderBodyToHtml(content: string | JSONContent): string {
 function buildEntries(
   decisionProfileId: string,
   instanceData: DecisionInstanceData | null,
+  phases: readonly PhaseInstanceData[],
   currentStateId: string | null,
   processDescription: string | null,
 ): TranslatableEntry[] {
@@ -138,7 +143,7 @@ function buildEntries(
   const entries: TranslatableEntry[] = [];
 
   const currentPhase = currentStateId
-    ? instanceData?.phases?.find((p) => p.phaseId === currentStateId)
+    ? phases.find((p) => p.phaseId === currentStateId)
     : undefined;
 
   if (currentPhase?.headline) {
@@ -160,7 +165,7 @@ function buildEntries(
     });
   }
 
-  for (const phase of instanceData?.phases ?? []) {
+  for (const phase of phases) {
     if (phase.name) {
       entries.push({
         contentKey: `${prefix}:phase:${phase.phaseId}:name`,

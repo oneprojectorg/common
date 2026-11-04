@@ -14,7 +14,6 @@ import { assertProfileAccess, assertUserByAuthId } from '../assert';
 import { advancePhase } from './advancePhase';
 import { resolvePhases } from './instancePhases';
 import { onPhaseAdvanced } from './onPhaseAdvanced';
-import { getInstancePhases } from './schemas/instanceData';
 
 export interface TriggerPhaseAdvancementInput {
   instanceId: string;
@@ -75,7 +74,7 @@ export async function triggerPhaseAdvancement({
   }
 
   const resolved = await resolvePhases({ instance });
-  const phases = [...getInstancePhases(resolved.instanceData)];
+  const { phases } = resolved;
 
   if (phases.length === 0) {
     throw new CommonError('Instance has no phases defined');

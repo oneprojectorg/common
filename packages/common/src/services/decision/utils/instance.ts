@@ -2,21 +2,29 @@
 import { NotFoundError } from '../../../utils/error';
 
 /**
- * Throws NotFoundError when `phaseId` is not configured on the instance's
- * `instanceData.phases`, so an unknown phase fails loudly instead of silently
- * resolving to empty results. Returns the matched phase. Generic/structural so
- * it accepts both domain and API-encoder instance data.
+ * An instance whose phases are readable: a server instance with resolved
+ * `phases`, or a client wire instance whose `instanceData` carries them.
+ */
+export type PhasedInstance<Phase extends { phaseId: string }> =
+  | { phases: readonly Phase[] }
+  | {
+      phases?: undefined;
+      instanceData?: { phases?: readonly Phase[] } | null;
+    };
+
+/**
+ * Throws NotFoundError when `phaseId` is not configured on the instance, so an
+ * unknown phase fails loudly instead of silently resolving to empty results.
+ * Returns the matched phase.
  */
 export function assertInstancePhase<Phase extends { phaseId: string }>({
   instance,
   phaseId,
 }: {
-  instance: { instanceData: { phases?: readonly Phase[] } };
+  instance: PhasedInstance<Phase>;
   phaseId: string;
 }): Phase {
-  const phase = instance.instanceData.phases?.find(
-    (p) => p.phaseId === phaseId,
-  );
+  const phase = getPhasesOf(instance).find((p) => p.phaseId === phaseId);
   if (!phase) {
     throw new NotFoundError('Phase', phaseId);
   }
@@ -27,14 +35,11 @@ export function assertInstancePhase<Phase extends { phaseId: string }>({
  * The instance's current phase, or null when it has none configured. Never
  * throws: visibility callers must fail closed rather than break the page.
  */
-export function getInstanceCurrentPhase<
-  Phase extends { phaseId: string },
->(instance: {
-  currentStateId: string | null;
-  instanceData?: { phases?: readonly Phase[] } | null;
-}): Phase | null {
+export function getInstanceCurrentPhase<Phase extends { phaseId: string }>(
+  instance: PhasedInstance<Phase> & { currentStateId: string | null },
+): Phase | null {
   return (
-    instance.instanceData?.phases?.find((p) =>
+    getPhasesOf(instance).find((p) =>
       isInstanceCurrentPhase(instance, p.phaseId),
     ) ?? null
   );
@@ -49,4 +54,13 @@ export function isInstanceCurrentPhase(
   phaseId: string,
 ): boolean {
   return instance.currentStateId != null && instance.currentStateId === phaseId;
+}
+
+function getPhasesOf<Phase extends { phaseId: string }>(
+  instance: PhasedInstance<Phase>,
+): readonly Phase[] {
+  if (instance.phases !== undefined) {
+    return instance.phases;
+  }
+  return instance.instanceData?.phases ?? [];
 }

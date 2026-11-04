@@ -9,11 +9,13 @@ import { logger } from '@op/logging';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import {
+  attachBlobPhases,
   getPhases,
   resolvePhases,
   resolvePhasesForAll,
 } from './instancePhases';
 import { insertPhase, listPhasesByInstance, phaseIdOf } from './phaseHelpers';
+import { getInstancePhases } from './schemas/instanceData';
 
 const expectNoRowsMessage = (processInstanceIds: string[]) =>
   expect(logger.debug).toHaveBeenCalledWith(
@@ -157,7 +159,7 @@ describe('instancePhases', () => {
     ]);
   });
 
-  it('leaves the instance as it is when it has no rows', async ({
+  it('attaches the blob phases when it has no rows', async ({
     task,
     onTestFinished,
   }) => {
@@ -165,9 +167,10 @@ describe('instancePhases', () => {
     const instance = await loadInstance(instanceId);
     forceServerFlags(true);
 
-    expect((await resolvePhases({ instance })).instanceData).toBe(
-      instance.instanceData,
-    );
+    const resolved = await resolvePhases({ instance });
+
+    expect(resolved.instanceData).toBe(instance.instanceData);
+    expect(resolved.phases).toEqual(getInstancePhases(instance.instanceData));
     expectNoRowsMessage([instanceId]);
   });
 
@@ -193,15 +196,20 @@ describe('instancePhases', () => {
 
     const [first, second] = await resolvePhasesForAll({ instances });
 
-    expect(first?.instanceData).toMatchObject({
-      phases: [{ phaseId: 'initial' }, { phaseId: 'final' }],
-    });
+    expect(first?.phases).toMatchObject([
+      { phaseId: 'initial' },
+      { phaseId: 'final' },
+    ]);
+    expect(first?.instanceData).toBe(instances[0]?.instanceData);
+    expect(second?.phases).toEqual(
+      getInstancePhases(instances[1]?.instanceData),
+    );
     expect(second?.instanceData).toBe(instances[1]?.instanceData);
     expect(logger.debug).toHaveBeenCalledTimes(1);
     expectNoRowsMessage([withoutRows]);
   });
 
-  it('puts the rows on instanceData and keeps its other keys', async ({
+  it('attaches the rows as phases and never touches instanceData', async ({
     task,
     onTestFinished,
   }) => {
@@ -214,17 +222,42 @@ describe('instancePhases', () => {
     const instance = await loadInstance(instanceId);
     forceServerFlags(false);
 
-    expect((await resolvePhases({ instance })).instanceData).toBe(
-      instance.instanceData,
-    );
+    const fromBlob = await resolvePhases({ instance });
+
+    expect(fromBlob.instanceData).toBe(instance.instanceData);
+    expect(fromBlob.phases).toEqual([]);
 
     forceServerFlags(true);
-    const resolved = await resolvePhases({ instance });
+    const fromRows = await resolvePhases({ instance });
 
-    expect(resolved.instanceData).toMatchObject({
-      templateId: expect.any(String),
-      phases: [{ phaseId: 'initial' }, { phaseId: 'final' }],
-    });
+    expect(fromRows.instanceData).toBe(instance.instanceData);
+    expect(fromRows.instanceData).toMatchObject({ phases: [] });
+    expect(fromRows.phases).toMatchObject([
+      { phaseId: 'initial' },
+      { phaseId: 'final' },
+    ]);
+  });
+
+  it('attaches the blob phases without a flag check', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { instanceId, testData } = await createInstance(
+      task.id,
+      onTestFinished,
+    );
+    await testData.createPhaseRows(instanceId);
+    await renameBlobPhases(instanceId);
+    const instance = await loadInstance(instanceId);
+    forceServerFlags(true);
+
+    const attached = attachBlobPhases({ instance });
+
+    expect(attached.instanceData).toBe(instance.instanceData);
+    expect(attached.phases.map(({ name }) => name)).toEqual([
+      'Blob initial',
+      'Blob final',
+    ]);
   });
 });
 
