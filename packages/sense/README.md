@@ -161,8 +161,8 @@ work around it — if a component fights you, the composition is usually wrong.
    card or row needs a real control inside it, not a click handler on a `div`.
 
 **Colour and motion.** Use semantic tokens and contrast comes with them; a
-hand-picked colour is where contrast failures enter. Anything that animates
-needs a `motion-reduce:` branch.
+hand-picked colour is where contrast failures enter. Anything that moves needs
+a `motion-reduce:` branch; colour, opacity and shadow fades do not.
 
 **RTL.** Use logical properties everywhere — `ms-`/`me-`, `ps-`/`pe-`,
 `start-`/`end-`, `text-start`/`text-end` — never `ml-`/`pl-`/`left-`. Directional
@@ -261,3 +261,13 @@ published source lags its declared dependency versions. Reapply if you re-run
 - `sidebar.tsx` — `SidebarGroupLabel` is `text-sm text-muted-foreground`
   instead of the registry's `text-xs text-sidebar-foreground`. We don't use a
   12px size, and every sidebar was overriding both at the call site.
+- every primitive that moves — `motion-reduce:transition-none` sits next to
+  each transform, size or position transition and each `transition-all`
+  (`button`, `badge`, `tabs`, `toggle`, `switch`, `accordion`, `input-otp`,
+  `navigation-menu`, `sidebar`, `progress`, `sheet`, `drawer`), and every
+  animated popup (`dialog`, `alert-dialog`, `popover`, `hover-card`, `tooltip`,
+  `menubar`, `context-menu`, `dropdown-menu`, `select`, `combobox`) carries
+  `motion-reduce:data-open:animate-none motion-reduce:data-closed:animate-none`.
+  The stacked form is deliberate: Tailwind compiles `data-open:animate-in` to
+  `.x[data-open]`, which outranks a bare `motion-reduce:animate-none`. Colour,
+  opacity and shadow fades, the backdrops and the loaders are left animating.

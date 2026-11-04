@@ -12,6 +12,7 @@
     "./lib/utils": "./src/lib/utils.ts",
     "./lib/textDirection": "./src/lib/textDirection.ts",
     "./hooks/use-mobile": "./src/hooks/use-mobile.ts",
+    "./hooks/use-reduced-motion": "./src/hooks/use-reduced-motion.ts",
     "./Accordion": "./src/components/ui/accordion.tsx",
     "./Alert": "./src/components/ui/alert.tsx",
     "./AlertDialog": "./src/components/ui/alert-dialog.tsx",

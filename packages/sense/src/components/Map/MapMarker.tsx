@@ -169,7 +169,7 @@ function MapPinSvg({
     <svg
       viewBox="0 0 24 24"
       className={cn(
-        'drop-shadow transition-all duration-150',
+        'drop-shadow transition-all duration-150 motion-reduce:transition-none',
         isActive ? 'h-10 w-10' : 'h-8 w-8',
         clickable ? 'cursor-pointer' : 'cursor-grab',
         draggable && 'active:cursor-grabbing',
