@@ -1,4 +1,4 @@
-import { TestDecisionsDataManager } from '@op/common/testing';
+import { TestDecisionsDataManager, emptyBlobPhases } from '@op/common/testing';
 
 import { appRouter } from '../../routers';
 import { createCallerFactory } from '../../trpcFactory';
@@ -22,6 +22,7 @@ export async function setupPhase(
     instanceCount: 1,
     grantAccess: true,
   });
+  await emptyBlobPhases(setup.instance.instance.id);
 
   const adminCaller = await createAuthenticatedCaller(setup.userEmail);
   const phase = await adminCaller.decision.createPhase({

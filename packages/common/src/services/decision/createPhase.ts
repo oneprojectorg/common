@@ -12,6 +12,7 @@ import {
   assertPhaseSettings,
   insertPhase,
 } from './phaseHelpers';
+import { getInstancePhases } from './schemas/instanceData';
 
 export const createPhase = async ({
   user,
@@ -42,14 +43,25 @@ export const createPhase = async ({
   assertPhaseSettings({ data: phaseData, phaseLabel: name });
 
   return db.transaction(async (tx) => {
-    await lockProcessInstanceOrThrow({ db: tx, instanceId: processInstanceId });
+    const locked = await lockProcessInstanceOrThrow({
+      db: tx,
+      instanceId: processInstanceId,
+    });
 
     const [existing] = await tx
       .select({ value: count() })
       .from(processPhases)
       .where(eq(processPhases.processInstanceId, processInstanceId));
+    const rowCount = existing?.value ?? 0;
 
-    if ((existing?.value ?? 0) >= MAX_PHASES_PER_DECISION) {
+    // A first row would hide every blob phase from readers on rows.
+    if (rowCount === 0 && getInstancePhases(locked.instanceData).length > 0) {
+      throw new ValidationError(
+        'Phases for this decision have not been moved to rows yet',
+      );
+    }
+
+    if (rowCount >= MAX_PHASES_PER_DECISION) {
       throw new ValidationError(
         `A decision can have at most ${MAX_PHASES_PER_DECISION} phases`,
       );
