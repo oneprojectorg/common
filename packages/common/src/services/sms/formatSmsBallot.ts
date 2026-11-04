@@ -8,6 +8,8 @@ export const SMS_BALLOT_ALREADY_SUBMITTED_MESSAGE =
   'Your ballot is already in. One ballot per person.';
 export const SMS_BALLOT_EMPTY_SUBMIT_MESSAGE =
   'Your ballot is empty. Add a pick before you SUBMIT.';
+export const SMS_BALLOT_OUTSIDE_SCOPE_MESSAGE =
+  'A pick is outside your district. Text LIST, then REMOVE its code.';
 export const SMS_BALLOT_EMPTY_MESSAGE =
   'Your ballot is empty. Text a code from your guide, or PROPOSALS to browse.';
 export const SMS_BALLOT_NEEDS_DECISION_MESSAGE =

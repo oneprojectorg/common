@@ -3,6 +3,7 @@ import {
   BallotCostError,
   NotFoundError,
   SMS_BALLOT_ALREADY_SUBMITTED_MESSAGE,
+  SMS_BALLOT_OUTSIDE_SCOPE_MESSAGE,
   SMS_BALLOT_EMPTY_SUBMIT_MESSAGE,
   SMS_BALLOT_NEEDS_DECISION_MESSAGE,
   SMS_BALLOT_SUBMITTED_MESSAGE,
@@ -25,6 +26,7 @@ import {
   addSmsBallotPicks,
   affirmVoterAttestation,
   deleteBallotDraft,
+  findCastBallot,
   findLatestCastBallotInstance,
   clipSmsText,
   describeEnrolmentDecision,
@@ -122,13 +124,19 @@ export type SmsCommandHandler = (
   context: SmsCommandContext,
 ) => Promise<SmsCommandResult>;
 
-const deliverAll = async (
-  deliver: SmsDeliver,
-  stepId: string,
-  label: string,
-  bodies: string[],
-  message: string,
-): Promise<SmsCommandResult> => {
+const deliverAll = async ({
+  deliver,
+  stepId,
+  label,
+  bodies,
+  message,
+}: {
+  deliver: SmsDeliver;
+  stepId: string;
+  label: string;
+  bodies: string[];
+  message: string;
+}): Promise<SmsCommandResult> => {
   for (const [index, body] of bodies.entries()) {
     const failed = await deliver(
       index === 0 ? stepId : `${stepId}-${index + 1}`,
@@ -146,17 +154,17 @@ const notFoundReply = (
   deliver: SmsDeliver,
   echoedSlug: string | null,
 ): Promise<SmsCommandResult> =>
-  deliverAll(
+  deliverAll({
     deliver,
-    'send-not-found-reply',
-    'Not-found reply',
-    [
+    stepId: 'send-not-found-reply',
+    label: 'Not-found reply',
+    bodies: [
       echoedSlug === null
         ? 'No decision was found.'
         : `No decision named "${clipSmsText(echoedSlug, SMS_SLUG_LENGTH)}" was found.`,
     ],
-    'decision not found',
-  );
+    message: 'decision not found',
+  });
 
 const swallowUnreadable = async <T>(
   lookup: () => Promise<T>,
@@ -184,13 +192,13 @@ const listDecisions: SmsCommandHandler = async ({ step, account, deliver }) => {
   const decisions = await step.run('list-decisions', () =>
     listSmsDecisions({ authUserId: account.authUserId }),
   );
-  const result = await deliverAll(
+  const result = await deliverAll({
     deliver,
-    'send-decision-list',
-    'Decision list',
-    formatSmsDecisionList(decisions),
-    'decisions sent',
-  );
+    stepId: 'send-decision-list',
+    label: 'Decision list',
+    bodies: formatSmsDecisionList(decisions),
+    message: 'decisions sent',
+  });
   return result.message === 'decisions sent'
     ? { ...result, count: decisions.length }
     : result;
@@ -237,13 +245,13 @@ export const vote: SmsCommandHandler = async (context) => {
   const slug = context.argument ?? context.line?.slug;
 
   if (!slug) {
-    return deliverAll(
+    return deliverAll({
       deliver,
-      'send-vote-needs-decision',
-      'Vote needs a decision',
-      [SMS_VOTE_NEEDS_DECISION_MESSAGE],
-      'vote needs a decision',
-    );
+      stepId: 'send-vote-needs-decision',
+      label: 'Vote needs a decision',
+      bodies: [SMS_VOTE_NEEDS_DECISION_MESSAGE],
+      message: 'vote needs a decision',
+    });
   }
 
   const decision = await step.run('resolve-voting-decision', () =>
@@ -260,25 +268,25 @@ export const vote: SmsCommandHandler = async (context) => {
   }
 
   if (!decision.votingOpen) {
-    return deliverAll(
+    return deliverAll({
       deliver,
-      'send-voting-closed',
-      'Voting closed reply',
-      formatSmsVotingClosed(decision.name),
-      'voting closed',
-    );
+      stepId: 'send-voting-closed',
+      label: 'Voting closed reply',
+      bodies: formatSmsVotingClosed(decision.name),
+      message: 'voting closed',
+    });
   }
 
   const rule = decision.enrolment;
 
   if (!rule) {
-    return deliverAll(
+    return deliverAll({
       deliver,
-      'send-no-enrolment-needed',
-      'No enrolment needed reply',
-      formatSmsNoEnrolmentNeeded(decision.name),
-      'no enrolment needed',
-    );
+      stepId: 'send-no-enrolment-needed',
+      label: 'No enrolment needed reply',
+      bodies: formatSmsNoEnrolmentNeeded(decision.name),
+      message: 'no enrolment needed',
+    });
   }
 
   const key = {
@@ -290,17 +298,17 @@ export const vote: SmsCommandHandler = async (context) => {
   );
 
   const resendAttestation = (termLabel: string | null, message: string) =>
-    deliverAll(
+    deliverAll({
       deliver,
-      'send-attestation-again',
-      'Attestation reply',
-      formatSmsAddressResolved({
+      stepId: 'send-attestation-again',
+      label: 'Attestation reply',
+      bodies: formatSmsAddressResolved({
         termLabel,
         decisionName: decision.name,
         attestation: rule.attestation,
       }),
       message,
-    );
+    });
 
   if (pending) {
     const waitingOn = await step.run('derive-enrolment-step', () =>
@@ -313,13 +321,13 @@ export const vote: SmsCommandHandler = async (context) => {
     if (waitingOn === 'awaiting_agree') {
       return resendAttestation(pending.termLabel, 'attestation resent');
     }
-    return deliverAll(
+    return deliverAll({
       deliver,
-      'send-enrolment-welcome',
-      'Registration welcome',
-      formatSmsEnrolmentWelcome(decision.name),
-      'enrolment started',
-    );
+      stepId: 'send-enrolment-welcome',
+      label: 'Registration welcome',
+      bodies: formatSmsEnrolmentWelcome(decision.name),
+      message: 'enrolment started',
+    });
   }
 
   const existing = await step.run('find-enrolment', () =>
@@ -327,17 +335,17 @@ export const vote: SmsCommandHandler = async (context) => {
   );
 
   if (isVoterEnrolled(existing)) {
-    return deliverAll(
+    return deliverAll({
       deliver,
-      'send-already-enrolled',
-      'Already registered reply',
-      formatSmsEnrolled({
+      stepId: 'send-already-enrolled',
+      label: 'Already registered reply',
+      bodies: formatSmsEnrolled({
         decisionName: decision.name,
         termLabel: null,
         budget: decision.budget,
       }),
-      'already enrolled',
-    );
+      message: 'already enrolled',
+    });
   }
 
   const started = await step.run('start-enrolment', () =>
@@ -355,25 +363,25 @@ export const vote: SmsCommandHandler = async (context) => {
     return resendAttestation(null, 'attestation sent');
   }
 
-  return deliverAll(
+  return deliverAll({
     deliver,
-    'send-enrolment-welcome',
-    'Registration welcome',
-    formatSmsEnrolmentWelcome(decision.name),
-    'enrolment started',
-  );
+    stepId: 'send-enrolment-welcome',
+    label: 'Registration welcome',
+    bodies: formatSmsEnrolmentWelcome(decision.name),
+    message: 'enrolment started',
+  });
 };
 
 export const agree: SmsCommandHandler = async (context) => {
   const { step, account, deliver } = context;
   const nothingToAffirm = () =>
-    deliverAll(
+    deliverAll({
       deliver,
-      'send-nothing-to-affirm',
-      'Nothing to affirm reply',
-      formatSmsNothingToAffirm(),
-      'nothing to affirm',
-    );
+      stepId: 'send-nothing-to-affirm',
+      label: 'Nothing to affirm reply',
+      bodies: formatSmsNothingToAffirm(),
+      message: 'nothing to affirm',
+    });
 
   const pending = await step.run('find-pending-enrolment', () =>
     findPendingVoterEnrolment({ authUserId: account.authUserId }),
@@ -416,17 +424,17 @@ export const agree: SmsCommandHandler = async (context) => {
     }),
   );
 
-  return deliverAll(
+  return deliverAll({
     deliver,
-    'send-enrolled',
-    'Registered reply',
-    formatSmsEnrolled({
+    stepId: 'send-enrolled',
+    label: 'Registered reply',
+    bodies: formatSmsEnrolled({
       decisionName: decision.name,
       termLabel: pending.termLabel,
       budget: decision.budget,
     }),
-    'enrolled',
-  );
+    message: 'enrolled',
+  });
 };
 
 // Free text is an address while a registration waits for one, and proposal
@@ -494,41 +502,41 @@ export const freeText: SmsCommandHandler = async (context) => {
 
   switch (resolution.status) {
     case 'not_found':
-      return deliverAll(
+      return deliverAll({
         deliver,
-        'send-address-not-found',
-        'Address not found reply',
-        formatSmsAddressNotFound(),
-        'address not found',
-      );
+        stepId: 'send-address-not-found',
+        label: 'Address not found reply',
+        bodies: formatSmsAddressNotFound(),
+        message: 'address not found',
+      });
     case 'lookup_failed':
-      return deliverAll(
+      return deliverAll({
         deliver,
-        'send-address-lookup-failed',
-        'Address lookup failed reply',
-        formatSmsAddressLookupFailed(),
-        'address lookup failed',
-      );
+        stepId: 'send-address-lookup-failed',
+        label: 'Address lookup failed reply',
+        bodies: formatSmsAddressLookupFailed(),
+        message: 'address lookup failed',
+      });
     case 'outside':
-      return deliverAll(
+      return deliverAll({
         deliver,
-        'send-address-outside',
-        'Address outside reply',
-        formatSmsAddressOutside(decision.name),
-        'address outside',
-      );
+        stepId: 'send-address-outside',
+        label: 'Address outside reply',
+        bodies: formatSmsAddressOutside(decision.name),
+        message: 'address outside',
+      });
     case 'resolved':
-      return deliverAll(
+      return deliverAll({
         deliver,
-        'send-attestation',
-        'Attestation reply',
-        formatSmsAddressResolved({
+        stepId: 'send-attestation',
+        label: 'Attestation reply',
+        bodies: formatSmsAddressResolved({
           termLabel: resolution.boundary?.name ?? null,
           decisionName: decision.name,
           attestation: rule.attestation,
         }),
-        'address resolved',
-      );
+        message: 'address resolved',
+      });
   }
 };
 
@@ -552,29 +560,29 @@ const sendBallotPage = (
 ): Promise<SmsCommandResult> => {
   if (page.items.length === 0) {
     return kind === 'first'
-      ? deliverAll(
+      ? deliverAll({
           deliver,
-          'send-ballot-page',
-          'Ballot page',
-          formatSmsProposalPage({ items: [], hasMore: false }),
-          'ballot empty',
-        )
-      : deliverAll(
+          stepId: 'send-ballot-page',
+          label: 'Ballot page',
+          bodies: formatSmsProposalPage({ items: [], hasMore: false }),
+          message: 'ballot empty',
+        })
+      : deliverAll({
           deliver,
-          'send-browse-ended',
-          'Browse ended reply',
-          [SMS_BROWSE_END_MESSAGE],
-          'browse ended',
-        );
+          stepId: 'send-browse-ended',
+          label: 'Browse ended reply',
+          bodies: [SMS_BROWSE_END_MESSAGE],
+          message: 'browse ended',
+        });
   }
 
   const hasMore = page.nextCursor !== null;
 
-  return deliverAll(
+  return deliverAll({
     deliver,
-    'send-ballot-page',
-    'Ballot page',
-    formatSmsProposalPage({
+    stepId: 'send-ballot-page',
+    label: 'Ballot page',
+    bodies: formatSmsProposalPage({
       items: page.items,
       hasMore,
       heading: formatSmsBallotPageHeading({
@@ -585,8 +593,8 @@ const sendBallotPage = (
       }),
       footer: hasMore ? SMS_BROWSE_MORE_FOOTER : SMS_BROWSE_LAST_FOOTER,
     }),
-    kind === 'first' ? 'ballot page sent' : 'next ballot page sent',
-  );
+    message: kind === 'first' ? 'ballot page sent' : 'next ballot page sent',
+  });
 };
 
 export const proposals: SmsCommandHandler = async (context) => {
@@ -594,13 +602,13 @@ export const proposals: SmsCommandHandler = async (context) => {
   const slug = context.argument ?? context.line?.slug;
 
   if (!slug) {
-    return deliverAll(
+    return deliverAll({
       deliver,
-      'send-proposals-needs-decision',
-      'Proposals needs a decision',
-      [SMS_PROPOSALS_NEEDS_DECISION_MESSAGE],
-      'proposals needs a decision',
-    );
+      stepId: 'send-proposals-needs-decision',
+      label: 'Proposals needs a decision',
+      bodies: [SMS_PROPOSALS_NEEDS_DECISION_MESSAGE],
+      message: 'proposals needs a decision',
+    });
   }
 
   const decision = await step.run('resolve-voting-decision', () =>
@@ -617,13 +625,13 @@ export const proposals: SmsCommandHandler = async (context) => {
   }
 
   if (!decision.votingOpen) {
-    return deliverAll(
+    return deliverAll({
       deliver,
-      'send-voting-closed',
-      'Voting closed reply',
-      formatSmsVotingClosed(decision.name),
-      'voting closed',
-    );
+      stepId: 'send-voting-closed',
+      label: 'Voting closed reply',
+      bodies: formatSmsVotingClosed(decision.name),
+      message: 'voting closed',
+    });
   }
 
   if (decision.enrolment) {
@@ -635,13 +643,13 @@ export const proposals: SmsCommandHandler = async (context) => {
     );
 
     if (!isVoterEnrolled(enrolment)) {
-      return deliverAll(
+      return deliverAll({
         deliver,
-        'send-register-first',
-        'Register first reply',
-        [formatSmsRegisterFirst(decision.name, context.argument)],
-        'register first',
-      );
+        stepId: 'send-register-first',
+        label: 'Register first reply',
+        bodies: [formatSmsRegisterFirst(decision.name, context.argument)],
+        message: 'register first',
+      });
     }
   }
 
@@ -693,57 +701,57 @@ const refuseBallotRead = async (
 ): Promise<SmsCommandResult> => {
   const { reason } = refusal;
   if (refusal.reason === 'unpriced') {
-    return deliverAll(
+    return deliverAll({
       deliver,
-      'send-ballot-unpriced',
-      'Ballot unpriced reply',
-      [refusal.message],
-      'ballot unpriced',
-    );
+      stepId: 'send-ballot-unpriced',
+      label: 'Ballot unpriced reply',
+      bodies: [refusal.message],
+      message: 'ballot unpriced',
+    });
   }
   if (reason === 'unavailable') {
-    return deliverAll(
+    return deliverAll({
       deliver,
-      'send-ballot-unavailable',
-      'Ballot unavailable reply',
-      [SMS_BALLOT_UNAVAILABLE_MESSAGE],
-      'decision not found',
-    );
+      stepId: 'send-ballot-unavailable',
+      label: 'Ballot unavailable reply',
+      bodies: [SMS_BALLOT_UNAVAILABLE_MESSAGE],
+      message: 'decision not found',
+    });
   }
-  const decision = await step.run('describe-ballot-decision', () =>
+  const decision = await step.run('describe-refused-decision', () =>
     swallowUnreadable(() =>
       describeEnrolmentDecision({ instanceId, authUserId: account.authUserId }),
     ),
   );
   if (!decision) {
-    return deliverAll(
+    return deliverAll({
       deliver,
-      'send-ballot-unavailable',
-      'Ballot unavailable reply',
-      [SMS_BALLOT_UNAVAILABLE_MESSAGE],
-      'decision not found',
-    );
+      stepId: 'send-ballot-unavailable',
+      label: 'Ballot unavailable reply',
+      bodies: [SMS_BALLOT_UNAVAILABLE_MESSAGE],
+      message: 'decision not found',
+    });
   }
   return reason === 'closed'
-    ? deliverAll(
+    ? deliverAll({
         deliver,
-        'send-voting-closed',
-        'Voting closed reply',
-        formatSmsVotingClosed(decision.name),
-        'voting closed',
-      )
-    : deliverAll(
+        stepId: 'send-voting-closed',
+        label: 'Voting closed reply',
+        bodies: formatSmsVotingClosed(decision.name),
+        message: 'voting closed',
+      })
+    : deliverAll({
         deliver,
-        'send-register-first',
-        'Register first reply',
-        [
+        stepId: 'send-register-first',
+        label: 'Register first reply',
+        bodies: [
           formatSmsRegisterFirst(
             decision.name,
             line?.instanceId === instanceId ? null : decision.slug,
           ),
         ],
-        'register first',
-      );
+        message: 'register first',
+      });
 };
 
 const deliverBallotPage = async (
@@ -792,13 +800,13 @@ export const more: SmsCommandHandler = async (context) => {
     : null;
 
   if (!session || session.pageCursor === null) {
-    return deliverAll(
+    return deliverAll({
       deliver,
-      'send-browse-start',
-      'Browse start reply',
-      [SMS_BROWSE_START_MESSAGE],
-      'browse not started',
-    );
+      stepId: 'send-browse-start',
+      label: 'Browse start reply',
+      bodies: [SMS_BROWSE_START_MESSAGE],
+      message: 'browse not started',
+    });
   }
 
   const after = session.pageCursor;
@@ -825,25 +833,25 @@ export const info: SmsCommandHandler = async (context) => {
       : null;
 
   if (code === null) {
-    return deliverAll(
+    return deliverAll({
       deliver,
-      'send-info-needs-code',
-      'Info needs a code',
-      [SMS_INFO_NEEDS_CODE_MESSAGE],
-      'info needs a code',
-    );
+      stepId: 'send-info-needs-code',
+      label: 'Info needs a code',
+      bodies: [SMS_INFO_NEEDS_CODE_MESSAGE],
+      message: 'info needs a code',
+    });
   }
 
   const instanceId = await resolveBrowseInstance(context);
 
   if (!instanceId) {
-    return deliverAll(
+    return deliverAll({
       deliver,
-      'send-info-needs-decision',
-      'Info needs a decision',
-      [SMS_INFO_NEEDS_DECISION_MESSAGE],
-      'info needs a decision',
-    );
+      stepId: 'send-info-needs-decision',
+      label: 'Info needs a decision',
+      bodies: [SMS_INFO_NEEDS_DECISION_MESSAGE],
+      message: 'info needs a decision',
+    });
   }
 
   const read = await step.run('get-ballot-proposal', () =>
@@ -863,22 +871,22 @@ export const info: SmsCommandHandler = async (context) => {
   const proposal = read.value;
 
   if (!proposal) {
-    return deliverAll(
+    return deliverAll({
       deliver,
-      'send-proposal-not-on-ballot',
-      'Proposal not on ballot reply',
-      [formatSmsProposalNotOnBallot(code)],
-      'proposal not on ballot',
-    );
+      stepId: 'send-proposal-not-on-ballot',
+      label: 'Proposal not on ballot reply',
+      bodies: [formatSmsProposalNotOnBallot(code)],
+      message: 'proposal not on ballot',
+    });
   }
 
-  return deliverAll(
+  return deliverAll({
     deliver,
-    'send-proposal-info',
-    'Proposal info',
-    formatSmsProposalInfo(proposal),
-    'proposal info sent',
-  );
+    stepId: 'send-proposal-info',
+    label: 'Proposal info',
+    bodies: formatSmsProposalInfo(proposal),
+    message: 'proposal info sent',
+  });
 };
 
 const parseProposalCodes = (body: string): number[] | null => {
@@ -892,7 +900,7 @@ const parseProposalCodes = (body: string): number[] | null => {
   return [...new Set(tokens.map(Number))];
 };
 
-const money = (
+const formatMoney = (
   summary: SmsBallotSummary,
   amount: number | null,
 ): string | null =>
@@ -915,6 +923,24 @@ const resolveBallotInstance = async (
   );
 };
 
+const refuseIfBallotCast = async (
+  { step, account, deliver }: SmsCommandContext,
+  instanceId: string,
+): Promise<SmsCommandResult | null> => {
+  const castId = await step.run('find-cast-ballot', () =>
+    findCastBallot({ authUserId: account.authUserId, instanceId }),
+  );
+  return castId
+    ? deliverAll({
+        deliver,
+        stepId: 'send-ballot-cast-guard',
+        label: 'Ballot already in reply',
+        bodies: [SMS_BALLOT_ALREADY_SUBMITTED_MESSAGE],
+        message: 'ballot already submitted',
+      })
+    : null;
+};
+
 const refuseUnlessReadyToPick = async (
   { step, account, deliver, line }: SmsCommandContext,
   instanceId: string,
@@ -926,23 +952,23 @@ const refuseUnlessReadyToPick = async (
   );
 
   if (!decision) {
-    return deliverAll(
+    return deliverAll({
       deliver,
-      'send-ballot-unavailable',
-      'Ballot unavailable reply',
-      [SMS_BALLOT_UNAVAILABLE_MESSAGE],
-      'decision not found',
-    );
+      stepId: 'send-ballot-unavailable',
+      label: 'Ballot unavailable reply',
+      bodies: [SMS_BALLOT_UNAVAILABLE_MESSAGE],
+      message: 'decision not found',
+    });
   }
 
   if (!decision.votingOpen) {
-    return deliverAll(
+    return deliverAll({
       deliver,
-      'send-voting-closed',
-      'Voting closed reply',
-      formatSmsVotingClosed(decision.name),
-      'voting closed',
-    );
+      stepId: 'send-voting-closed',
+      label: 'Voting closed reply',
+      bodies: formatSmsVotingClosed(decision.name),
+      message: 'voting closed',
+    });
   }
 
   if (decision.enrolment) {
@@ -953,32 +979,32 @@ const refuseUnlessReadyToPick = async (
       }),
     );
     if (!isVoterEnrolled(enrolment)) {
-      return deliverAll(
+      return deliverAll({
         deliver,
-        'send-register-first',
-        'Register first reply',
-        [
+        stepId: 'send-register-first',
+        label: 'Register first reply',
+        bodies: [
           formatSmsRegisterFirst(
             decision.name,
             line?.instanceId === instanceId ? null : decision.slug,
           ),
         ],
-        'register first',
-      );
+        message: 'register first',
+      });
     }
   }
 
   return null;
 };
 
-const ballotNeedsDecision = (deliver: SmsDeliver) =>
-  deliverAll(
+const sendBallotNeedsDecision = (deliver: SmsDeliver) =>
+  deliverAll({
     deliver,
-    'send-ballot-needs-decision',
-    'Ballot needs a decision',
-    [SMS_BALLOT_NEEDS_DECISION_MESSAGE],
-    'ballot needs a decision',
-  );
+    stepId: 'send-ballot-needs-decision',
+    label: 'Ballot needs a decision',
+    bodies: [SMS_BALLOT_NEEDS_DECISION_MESSAGE],
+    message: 'ballot needs a decision',
+  });
 
 const pickByCodes = async (
   context: SmsCommandContext,
@@ -988,7 +1014,12 @@ const pickByCodes = async (
   const instanceId = await resolveBallotInstance(context);
 
   if (!instanceId) {
-    return ballotNeedsDecision(deliver);
+    return sendBallotNeedsDecision(deliver);
+  }
+
+  const cast = await refuseIfBallotCast(context, instanceId);
+  if (cast) {
+    return cast;
   }
 
   const refused = await refuseUnlessReadyToPick(context, instanceId);
@@ -1020,9 +1051,9 @@ const pickByCodes = async (
             position,
             code: pick.code,
             title: pick.title,
-            cost: money(summary, pick.cost),
+            cost: formatMoney(summary, pick.cost),
           })),
-          remaining: money(summary, summary.remaining),
+          remaining: formatMoney(summary, summary.remaining),
           firstPick: !hadPicks,
         })
       : []),
@@ -1033,22 +1064,21 @@ const pickByCodes = async (
         case 'over_budget':
           return formatSmsPickOverBudget({
             title: r.pick.title,
-            cost: money(summary, r.pick.cost) ?? '',
-            remaining: money(summary, r.remaining) ?? '',
+            cost: formatMoney(summary, r.pick.cost) ?? '',
+            remaining: formatMoney(summary, r.remaining) ?? '',
           });
         case 'duplicate':
-          return [
-            formatSmsPickDuplicate({
-              title: r.pick.title,
-              position: r.position,
-            }),
-          ];
+          return formatSmsPickDuplicate({
+            title: r.pick.title,
+            position: r.position,
+          });
         case 'limit_reached':
-          return [
-            formatSmsPickLimitReached({ title: r.pick.title, limit: r.limit }),
-          ];
+          return formatSmsPickLimitReached({
+            title: r.pick.title,
+            limit: r.limit,
+          });
         case 'unknown':
-          return [formatSmsProposalNotOnBallot(r.code)];
+          return formatSmsProposalNotOnBallot(r.code);
       }
     }),
   ];
@@ -1063,7 +1093,13 @@ const pickByCodes = async (
             ? 'pick repeated'
             : 'proposal not on ballot';
 
-  return deliverAll(deliver, 'send-picks', 'Picks reply', lines, message);
+  return deliverAll({
+    deliver,
+    stepId: 'send-picks',
+    label: 'Picks reply',
+    bodies: lines,
+    message,
+  });
 };
 
 const sendBallot = async (
@@ -1074,7 +1110,12 @@ const sendBallot = async (
   const instanceId = await resolveBallotInstance(context);
 
   if (!instanceId) {
-    return ballotNeedsDecision(deliver);
+    return sendBallotNeedsDecision(deliver);
+  }
+
+  const cast = await refuseIfBallotCast(context, instanceId);
+  if (cast) {
+    return cast;
   }
 
   const read = await step.run('summarize-ballot', () =>
@@ -1089,25 +1130,25 @@ const sendBallot = async (
 
   const summary = read.value;
 
-  return deliverAll(
+  return deliverAll({
     deliver,
-    'send-ballot',
-    review ? 'Ballot review' : 'Ballot list',
-    formatSmsBallot({
+    stepId: 'send-ballot',
+    label: review ? 'Ballot review' : 'Ballot list',
+    bodies: formatSmsBallot({
       scope: formatSmsBallotScope(summary),
       picks: summary.picks.map((pick, index) => ({
         position: index + 1,
         code: pick.code,
         title: pick.title,
-        cost: money(summary, pick.cost),
+        cost: formatMoney(summary, pick.cost),
       })),
-      allocated: money(summary, summary.allocated),
-      unspent: money(summary, summary.remaining),
+      allocated: formatMoney(summary, summary.allocated),
+      unspent: formatMoney(summary, summary.remaining),
       review,
       ranked: summary.ranked,
     }),
-    review ? 'ballot reviewed' : 'ballot sent',
-  );
+    message: review ? 'ballot reviewed' : 'ballot sent',
+  });
 };
 
 export const list: SmsCommandHandler = (context) => sendBallot(context, false);
@@ -1122,18 +1163,23 @@ export const remove: SmsCommandHandler = async (context) => {
       : null;
 
   if (code === null) {
-    return deliverAll(
+    return deliverAll({
       deliver,
-      'send-remove-usage',
-      'Remove usage',
-      [SMS_REMOVE_USAGE_MESSAGE],
-      'remove needs a code',
-    );
+      stepId: 'send-remove-usage',
+      label: 'Remove usage',
+      bodies: [SMS_REMOVE_USAGE_MESSAGE],
+      message: 'remove needs a code',
+    });
   }
 
   const instanceId = await resolveBallotInstance(context);
   if (!instanceId) {
-    return ballotNeedsDecision(deliver);
+    return sendBallotNeedsDecision(deliver);
+  }
+
+  const cast = await refuseIfBallotCast(context, instanceId);
+  if (cast) {
+    return cast;
   }
 
   const removed = await step.run('remove-ballot-pick', () =>
@@ -1149,25 +1195,25 @@ export const remove: SmsCommandHandler = async (context) => {
   const { change, summary } = removed.value;
 
   return change.status === 'not_on_ballot'
-    ? deliverAll(
+    ? deliverAll({
         deliver,
-        'send-not-on-ballot',
-        'Not on ballot reply',
-        [formatSmsNotOnYourBallot(code)],
-        'pick not on ballot',
-      )
-    : deliverAll(
+        stepId: 'send-not-on-ballot',
+        label: 'Not on ballot reply',
+        bodies: [formatSmsNotOnYourBallot(code)],
+        message: 'pick not on ballot',
+      })
+    : deliverAll({
         deliver,
-        'send-pick-removed',
-        'Pick removed reply',
-        [
+        stepId: 'send-pick-removed',
+        label: 'Pick removed reply',
+        bodies: [
           formatSmsPickRemoved({
             title: change.pick.title,
-            remaining: money(summary, summary.remaining),
+            remaining: formatMoney(summary, summary.remaining),
           }),
         ],
-        'pick removed',
-      );
+        message: 'pick removed',
+      });
 };
 
 export const move: SmsCommandHandler = async (context) => {
@@ -1183,18 +1229,23 @@ export const move: SmsCommandHandler = async (context) => {
       : null;
 
   if (code === null || position === null || position < 1 || rest.length > 0) {
-    return deliverAll(
+    return deliverAll({
       deliver,
-      'send-move-usage',
-      'Move usage',
-      [SMS_MOVE_USAGE_MESSAGE],
-      'move needs a code and a position',
-    );
+      stepId: 'send-move-usage',
+      label: 'Move usage',
+      bodies: [SMS_MOVE_USAGE_MESSAGE],
+      message: 'move needs a code and a position',
+    });
   }
 
   const instanceId = await resolveBallotInstance(context);
   if (!instanceId) {
-    return ballotNeedsDecision(deliver);
+    return sendBallotNeedsDecision(deliver);
+  }
+
+  const cast = await refuseIfBallotCast(context, instanceId);
+  if (cast) {
+    return cast;
   }
 
   const moved = await step.run('move-ballot-pick', () =>
@@ -1215,25 +1266,25 @@ export const move: SmsCommandHandler = async (context) => {
   const { change } = moved.value;
 
   return change.status === 'not_on_ballot'
-    ? deliverAll(
+    ? deliverAll({
         deliver,
-        'send-not-on-ballot',
-        'Not on ballot reply',
-        [formatSmsNotOnYourBallot(code)],
-        'pick not on ballot',
-      )
-    : deliverAll(
+        stepId: 'send-not-on-ballot',
+        label: 'Not on ballot reply',
+        bodies: [formatSmsNotOnYourBallot(code)],
+        message: 'pick not on ballot',
+      })
+    : deliverAll({
         deliver,
-        'send-pick-moved',
-        'Pick moved reply',
-        [
+        stepId: 'send-pick-moved',
+        label: 'Pick moved reply',
+        bodies: [
           formatSmsPickMoved({
             title: change.pick.title,
             position: change.position,
           }),
         ],
-        'pick moved',
-      );
+        message: 'pick moved',
+      });
 };
 
 export const submit: SmsCommandHandler = async (context) => {
@@ -1241,7 +1292,7 @@ export const submit: SmsCommandHandler = async (context) => {
   const instanceId = await resolveBallotInstance(context);
 
   if (!instanceId) {
-    return ballotNeedsDecision(deliver);
+    return sendBallotNeedsDecision(deliver);
   }
 
   const submission = await step.run('submit-ballot', () =>
@@ -1252,9 +1303,6 @@ export const submit: SmsCommandHandler = async (context) => {
   // committed comes back as already_submitted with the same submission id, and
   // the event id keeps Inngest from firing twice for one ballot.
   const finishSubmission = async (voteSubmissionId: string) => {
-    await step.run('clear-ballot-draft', () =>
-      deleteBallotDraft({ authUserId: account.authUserId, instanceId }),
-    );
     await step.run('send-vote-submitted', () =>
       inngest.send({
         id: `vote-submitted-${voteSubmissionId}`,
@@ -1262,18 +1310,21 @@ export const submit: SmsCommandHandler = async (context) => {
         data: { voteSubmissionId, processInstanceId: instanceId },
       }),
     );
+    await step.run('clear-ballot-draft', () =>
+      deleteBallotDraft({ authUserId: account.authUserId, instanceId }),
+    );
   };
 
   switch (submission.status) {
     case 'submitted':
       await finishSubmission(submission.voteSubmissionId);
-      return deliverAll(
+      return deliverAll({
         deliver,
-        'send-ballot-submitted',
-        'Ballot submitted reply',
-        [SMS_BALLOT_SUBMITTED_MESSAGE],
-        'ballot submitted',
-      );
+        stepId: 'send-ballot-submitted',
+        label: 'Ballot submitted reply',
+        bodies: [SMS_BALLOT_SUBMITTED_MESSAGE],
+        message: 'ballot submitted',
+      });
     case 'already_submitted': {
       const draft = await step.run('find-stale-draft', () =>
         findBallotDraft({
@@ -1284,65 +1335,76 @@ export const submit: SmsCommandHandler = async (context) => {
       if (draft) {
         await finishSubmission(submission.voteSubmissionId);
       }
-      return deliverAll(
+      return deliverAll({
         deliver,
-        'send-ballot-already-in',
-        'Ballot already in reply',
-        [SMS_BALLOT_ALREADY_SUBMITTED_MESSAGE],
-        'ballot already submitted',
-      );
+        stepId: 'send-ballot-already-in',
+        label: 'Ballot already in reply',
+        bodies: [SMS_BALLOT_ALREADY_SUBMITTED_MESSAGE],
+        message: 'ballot already submitted',
+      });
     }
     case 'empty':
-      return deliverAll(
+      return deliverAll({
         deliver,
-        'send-ballot-empty',
-        'Ballot empty reply',
-        [SMS_BALLOT_EMPTY_SUBMIT_MESSAGE],
-        'ballot empty',
-      );
+        stepId: 'send-ballot-empty',
+        label: 'Ballot empty reply',
+        bodies: [SMS_BALLOT_EMPTY_SUBMIT_MESSAGE],
+        message: 'ballot empty',
+      });
     case 'unavailable':
-      return deliverAll(
+      return deliverAll({
         deliver,
-        'send-ballot-unavailable',
-        'Ballot unavailable reply',
-        [SMS_BALLOT_UNAVAILABLE_MESSAGE],
-        'decision not found',
-      );
+        stepId: 'send-ballot-unavailable',
+        label: 'Ballot unavailable reply',
+        bodies: [SMS_BALLOT_UNAVAILABLE_MESSAGE],
+        message: 'decision not found',
+      });
     case 'not_enrolled': {
-      const decision = await step.run('describe-ballot-decision', () =>
-        describeEnrolmentDecision({
-          instanceId,
-          authUserId: account.authUserId,
-        }),
+      const decision = await step.run('describe-register-decision', () =>
+        swallowUnreadable(() =>
+          describeEnrolmentDecision({
+            instanceId,
+            authUserId: account.authUserId,
+          }),
+        ),
       );
-      return deliverAll(
+      if (!decision) {
+        return deliverAll({
+          deliver,
+          stepId: 'send-ballot-unavailable',
+          label: 'Ballot unavailable reply',
+          bodies: [SMS_BALLOT_UNAVAILABLE_MESSAGE],
+          message: 'decision not found',
+        });
+      }
+      return deliverAll({
         deliver,
-        'send-register-first',
-        'Register first reply',
-        [
+        stepId: 'send-register-first',
+        label: 'Register first reply',
+        bodies: [
           formatSmsRegisterFirst(
             decision.name,
             line?.instanceId === instanceId ? null : decision.slug,
           ),
         ],
-        'register first',
-      );
+        message: 'register first',
+      });
     }
-    case 'outside_district':
-      return deliverAll(
+    case 'outside_scope':
+      return deliverAll({
         deliver,
-        'send-ballot-outside-district',
-        'Ballot outside district reply',
-        ['A pick is outside your district. Text LIST, then REMOVE its code.'],
-        'ballot outside district',
-      );
+        stepId: 'send-ballot-outside-scope',
+        label: 'Ballot outside scope reply',
+        bodies: [SMS_BALLOT_OUTSIDE_SCOPE_MESSAGE],
+        message: 'ballot outside scope',
+      });
     case 'refused':
-      return deliverAll(
+      return deliverAll({
         deliver,
-        'send-ballot-refused',
-        'Ballot refused reply',
-        [formatSmsBallotRefused(submission.reason)],
-        'ballot refused',
-      );
+        stepId: 'send-ballot-refused',
+        label: 'Ballot refused reply',
+        bodies: [formatSmsBallotRefused(submission.reason)],
+        message: 'ballot refused',
+      });
   }
 };

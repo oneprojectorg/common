@@ -16,7 +16,7 @@ import {
   VoterNotEnrolledError,
 } from '../../../utils';
 import { getIndividualProfileId } from '../../access';
-import { ensureBallotDraft } from '../ballotDraft';
+import { ensureBallotDraft, findBallotDraft } from '../ballotDraft';
 import { ensureChatSession } from '../chatSession';
 import { getFieldUnit, isAtMost, sumAmounts } from '../fieldUnit';
 import { getBallotProposalByCode } from '../getBallotProposalByCode';
@@ -56,7 +56,7 @@ interface BallotKey {
   instanceId: string;
 }
 
-const loadPricing = async (instance: {
+const getPricing = async (instance: {
   instanceData: unknown;
   currentStateId: string | null;
   processId: string | null;
@@ -88,7 +88,13 @@ const loadPricing = async (instance: {
   };
 };
 
-const loadPickRows = async (ids: string[]) => {
+const assertBallotPriceable = async (
+  instance: Parameters<typeof getPricing>[0],
+): Promise<void> => {
+  await getPricing(instance);
+};
+
+const getPickRows = async (ids: string[]) => {
   if (ids.length === 0) {
     return [];
   }
@@ -132,7 +138,7 @@ const savePicks = async (draftId: string, picks: string[]): Promise<void> => {
   });
 };
 
-const loadDraftPicks = async (
+const getDraftPicks = async (
   draft: { id: string },
   extraIds: string[] = [],
 ) => {
@@ -145,7 +151,7 @@ const loadDraftPicks = async (
       asc(decisionsVoteDraftProposals.createdAt),
     );
   const stored = pickRows.map((row) => row.proposalId);
-  const rows = await loadPickRows([...stored, ...extraIds]);
+  const rows = await getPickRows([...stored, ...extraIds]);
   const found = new Set(rows.map((row) => row.id));
   const picks = stored.filter((id) => found.has(id));
   if (picks.length !== stored.length) {
@@ -156,7 +162,7 @@ const loadDraftPicks = async (
 
 const priceRows = async (
   rows: ReadonlyArray<{ id: string; proposalData: unknown }>,
-  pricing: Awaited<ReturnType<typeof loadPricing>>,
+  pricing: Awaited<ReturnType<typeof getPricing>>,
 ): Promise<ReadonlyMap<string, number | null>> =>
   pricing.unit && rows.length > 0
     ? getProposalCosts({
@@ -164,15 +170,13 @@ const priceRows = async (
         proposalTemplate: pricing.proposalTemplate,
         voterCostField: pricing.voterCostField,
         unit: pricing.unit,
-        // With no cap a cost is shown, never charged, so one that cannot be
-        // read must not block the pick; submitVote prices nothing then either.
         unreadable: pricing.budget === null ? 'null' : 'throw',
       })
     : new Map(rows.map(({ id }) => [id, null]));
 
 const summarize = (
   scope: { decisionName: string; termLabel: string | null },
-  pricing: Awaited<ReturnType<typeof loadPricing>>,
+  pricing: Awaited<ReturnType<typeof getPricing>>,
   rows: ReadonlyArray<{ id: string; code: number | null; title: string }>,
   costs: ReadonlyMap<string, number | null>,
 ): SmsBallotSummary => {
@@ -198,18 +202,30 @@ const summarize = (
   };
 };
 
+export async function findCastBallot(key: BallotKey): Promise<string | null> {
+  const profileId = await getIndividualProfileId(key.authUserId);
+  const existing = await db.query.decisionsVoteSubmissions.findFirst({
+    where: {
+      processInstanceId: key.instanceId,
+      submittedByProfileId: profileId,
+    },
+    columns: { id: true },
+  });
+  return existing?.id ?? null;
+}
+
 export async function summarizeSmsBallot(
   key: BallotKey,
 ): Promise<SmsBallotSummary> {
   const scope = await loadBallotScope(key);
   const [draft, pricing] = await Promise.all([
-    ensureBallotDraft({
+    findBallotDraft({
       processInstanceId: key.instanceId,
       authUserId: key.authUserId,
     }),
-    loadPricing(scope.instance),
+    getPricing(scope.instance),
   ]);
-  const { rows } = await loadDraftPicks(draft);
+  const { rows } = draft ? await getDraftPicks(draft) : { rows: [] };
   const costs = await priceRows(rows, pricing);
 
   return summarize(scope, pricing, rows, costs);
@@ -243,7 +259,7 @@ export async function addSmsBallotPicks({
       processInstanceId: instanceId,
       authUserId,
     }),
-    loadPricing(scope.instance),
+    getPricing(scope.instance),
     ensureChatSession({
       processInstanceId: instanceId,
       authUserId,
@@ -263,7 +279,7 @@ export async function addSmsBallotPicks({
   const candidateIds = candidates.flatMap(({ proposal }) =>
     proposal ? [proposal.id] : [],
   );
-  const { picks: kept, rows } = await loadDraftPicks(draft, candidateIds);
+  const { picks: kept, rows } = await getDraftPicks(draft, candidateIds);
   const costs = await priceRows(rows, pricing);
   const rowById = new Map(rows.map((row) => [row.id, row]));
 
@@ -317,7 +333,7 @@ export async function addSmsBallotPicks({
   return {
     results,
     hadPicks: kept.length > 0,
-    summary: summarize(scope, pricing, await loadPickRows(picks), costs),
+    summary: summarize(scope, pricing, await getPickRows(picks), costs),
   };
 }
 
@@ -328,15 +344,25 @@ export type SmsPickChange =
 const findPickByCode = async (
   key: BallotKey,
   code: number,
-): Promise<{ draftId: string; picks: string[]; index: number } | null> => {
-  const draft = await ensureBallotDraft({
+): Promise<{
+  draftId: string;
+  picks: string[];
+  index: number;
+  row: { id: string; code: number | null; title: string };
+} | null> => {
+  const draft = await findBallotDraft({
     processInstanceId: key.instanceId,
     authUserId: key.authUserId,
   });
-  const { picks, rows } = await loadDraftPicks(draft);
+  if (!draft) {
+    return null;
+  }
+  const { picks, rows } = await getDraftPicks(draft);
   const match = rows.find((row) => row.code === code);
   const index = match ? picks.indexOf(match.id) : -1;
-  return index === -1 ? null : { draftId: draft.id, picks, index };
+  return index === -1 || !match
+    ? null
+    : { draftId: draft.id, picks, index, row: match };
 };
 
 export async function removeSmsBallotPick({
@@ -349,7 +375,7 @@ export async function removeSmsBallotPick({
 }> {
   const key = { authUserId, instanceId };
   const scope = await loadBallotScope(key);
-  await loadPricing(scope.instance);
+  await assertBallotPriceable(scope.instance);
   const found = await findPickByCode(key, code);
 
   if (!found) {
@@ -359,19 +385,18 @@ export async function removeSmsBallotPick({
     };
   }
 
-  const [removedId] = found.picks.splice(found.index, 1);
+  found.picks.splice(found.index, 1);
   await savePicks(found.draftId, found.picks);
   const summary = await summarizeSmsBallot(key);
-  const [removedRow] = await loadPickRows(removedId ? [removedId] : []);
 
   return {
     change: {
       status: 'removed',
       position: found.index + 1,
       pick: {
-        id: removedId ?? '',
+        id: found.row.id,
         code,
-        title: removedRow?.title ?? '',
+        title: found.row.title,
         cost: null,
       },
     },
@@ -390,7 +415,7 @@ export async function moveSmsBallotPick({
 }> {
   const key = { authUserId, instanceId };
   const scope = await loadBallotScope(key);
-  await loadPricing(scope.instance);
+  await assertBallotPriceable(scope.instance);
   const found = await findPickByCode(key, code);
 
   if (!found) {
@@ -401,11 +426,18 @@ export async function moveSmsBallotPick({
   }
 
   const target = Math.min(Math.max(position, 1), found.picks.length) - 1;
-  const [movedId] = found.picks.splice(found.index, 1);
-  found.picks.splice(target, 0, movedId!);
+  found.picks.splice(found.index, 1);
+  found.picks.splice(target, 0, found.row.id);
   await savePicks(found.draftId, found.picks);
   const summary = await summarizeSmsBallot(key);
-  const pick = summary.picks[target]!;
+  const pick = summary.picks[target];
+
+  if (!pick) {
+    return {
+      change: { status: 'not_on_ballot', code },
+      summary,
+    };
+  }
 
   return { change: { status: 'moved', position: target + 1, pick }, summary };
 }
@@ -415,7 +447,7 @@ export type SmsBallotSubmission =
   | { status: 'already_submitted'; voteSubmissionId: string }
   | { status: 'empty' }
   | { status: 'not_enrolled' }
-  | { status: 'outside_district' }
+  | { status: 'outside_scope' }
   | { status: 'unavailable' }
   | { status: 'refused'; reason: string };
 
@@ -423,21 +455,17 @@ export async function submitSmsBallot({
   authUserId,
   instanceId,
 }: BallotKey): Promise<SmsBallotSubmission> {
-  const profileId = await getIndividualProfileId(authUserId);
-  const existing = await db.query.decisionsVoteSubmissions.findFirst({
-    where: { processInstanceId: instanceId, submittedByProfileId: profileId },
-    columns: { id: true },
-  });
+  const existing = await findCastBallot({ authUserId, instanceId });
 
   if (existing) {
-    return { status: 'already_submitted', voteSubmissionId: existing.id };
+    return { status: 'already_submitted', voteSubmissionId: existing };
   }
 
   const draft = await ensureBallotDraft({
     processInstanceId: instanceId,
     authUserId,
   });
-  const { picks } = await loadDraftPicks(draft);
+  const { picks } = await getDraftPicks(draft);
 
   if (picks.length === 0) {
     return { status: 'empty' };
@@ -458,7 +486,7 @@ export async function submitSmsBallot({
       return { status: 'not_enrolled' };
     }
     if (error instanceof VoteOutsideDistrictError) {
-      return { status: 'outside_district' };
+      return { status: 'outside_scope' };
     }
     if (error instanceof ValidationError) {
       return { status: 'refused', reason: error.message };
