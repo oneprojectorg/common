@@ -51,6 +51,7 @@ interface SortableItemWrapperProps<T extends SortableItem> {
   itemClassName?: string;
   getItemLabel?: (item: T) => string;
   renderDropIndicator?: (props: DropIndicatorProps<T>) => React.ReactNode;
+  reducedMotion: boolean;
 }
 
 function SortableItemWrapper<T extends SortableItem>({
@@ -61,8 +62,8 @@ function SortableItemWrapper<T extends SortableItem>({
   itemClassName,
   getItemLabel,
   renderDropIndicator,
+  reducedMotion,
 }: SortableItemWrapperProps<T>) {
-  const reducedMotion = usePrefersReducedMotion();
   const {
     attributes,
     listeners,
@@ -251,6 +252,7 @@ export function Sortable<T extends SortableItem>({
               itemClassName={itemClassName}
               getItemLabel={getItemLabel}
               renderDropIndicator={renderDropIndicator}
+              reducedMotion={reducedMotion}
             >
               {children}
             </SortableItemWrapper>
