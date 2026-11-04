@@ -280,10 +280,6 @@ type ReviewerRollup = Record<
   SQLWrapper
 >;
 
-/**
- * The ORDER BY for a sort and the WHERE that resumes after the cursor row.
- * Every sort ends on `id asc`, so rows with the same key keep one order.
- */
 function getReviewerOrder({
   rollup,
   sort,
@@ -343,7 +339,6 @@ function getReviewerOrder({
     case 'name':
       return {
         orderBy: [asc(rollup.name), asc(rollup.id)],
-        // Both keys ascend, so a row-value comparison is enough.
         afterCursor:
           cursor && 'name' in cursor
             ? sql`(${rollup.name}, ${rollup.id}) > (${cursor.name}, ${cursor.id})`
@@ -352,10 +347,7 @@ function getReviewerOrder({
   }
 }
 
-/**
- * Rows after the cursor under `<column> <direction> nulls last, id asc`. A
- * null cursor value means the previous page ended inside the null rows.
- */
+/** A null cursor value means the previous page ended inside the null rows. */
 function afterNullsLast({
   column,
   value,
