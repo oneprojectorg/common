@@ -102,11 +102,11 @@ function PhaseRow({ phase, step }: { phase: WizardPhase; step: number }) {
           </span>
           <span className="flex min-w-0 flex-col">
             <span className="truncate">{title}</span>
-            <span className="hidden text-sm font-normal text-muted-foreground group-aria-expanded/accordion-trigger:block">
+            <span className="hidden font-sans text-sm font-normal tracking-normal text-muted-foreground group-aria-expanded/accordion-trigger:block">
               {kind}
             </span>
           </span>
-          <span className="shrink-0 text-sm font-normal text-muted-foreground transition-[opacity,visibility] duration-200 ease-out group-aria-expanded/accordion-trigger:invisible group-aria-expanded/accordion-trigger:opacity-0 motion-reduce:transition-none">
+          <span className="shrink-0 font-sans text-sm font-normal tracking-normal text-muted-foreground transition-[opacity,visibility] duration-200 ease-out group-aria-expanded/accordion-trigger:invisible group-aria-expanded/accordion-trigger:opacity-0 motion-reduce:transition-none">
             {kind}
           </span>
         </AccordionTrigger>
