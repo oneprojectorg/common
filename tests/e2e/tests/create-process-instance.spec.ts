@@ -333,6 +333,7 @@ async function choose(page: Page, label: string) {
 
 async function expectNoAxeViolations(page: Page) {
   await page.evaluate(() => document.fonts.ready);
+  await page.screenshot({ animations: 'disabled' });
   const { violations } = await new AxeBuilder({ page })
     .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
     .analyze();
