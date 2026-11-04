@@ -217,7 +217,7 @@ describe.concurrent('decision.listPhaseReviewerSummaries', () => {
     }
   });
 
-  it('keeps paging when a page ends on a completion ratio of 0', async ({
+  it('keeps paging when a page ends on a ratio of 0 or a repeating fraction', async ({
     task,
     onTestFinished,
   }) => {
@@ -263,9 +263,22 @@ describe.concurrent('decision.listPhaseReviewerSummaries', () => {
       cursor: pageOfTwo.next,
     });
     expect(afterZero.items[0]?.reviewer.id).toBe(reviewers.third);
+
+    // A page of three ends on `third` at 1/3, which no decimal holds exactly.
+    const pageOfThree = await adminCaller.decision.listPhaseReviewerSummaries({
+      ...input,
+      limit: 3,
+    });
+    const afterThird = await adminCaller.decision.listPhaseReviewerSummaries({
+      ...input,
+      limit: 3,
+      cursor: pageOfThree.next,
+    });
+    expect(pageOfThree.items.at(-1)?.reviewer.id).toBe(reviewers.third);
+    expect(afterThird.items[0]?.reviewer.id).toBe(reviewers.half);
   });
 
-  it('rejects a cursor whose sort value does not fit its cast', async ({
+  it('rejects a cursor whose sort key is malformed', async ({
     task,
     onTestFinished,
   }) => {
@@ -277,8 +290,8 @@ describe.concurrent('decision.listPhaseReviewerSummaries', () => {
     );
     const id = context.defaultReviewer.profileId;
     const cases = [
-      { sort: 'leastComplete', completionRatio: 'abc', id },
-      { sort: 'mostComplete', completionRatio: '-1', id },
+      { sort: 'leastComplete', submittedCount: 'abc', assignedCount: 1, id },
+      { sort: 'mostComplete', submittedCount: 1, assignedCount: -1, id },
       { sort: 'recentActivity', lastSubmittedAt: 'abc', id },
       { sort: 'recentActivity', lastSubmittedAt: '2026-02-30 10:00:00+00', id },
     ] as const;

@@ -106,13 +106,10 @@ export async function listPhaseReviewerSummaries({
       >`max(${proposalReviews.submittedAt}) filter (where ${proposalReviews.state} = ${ProposalReviewState.SUBMITTED})`.as(
         'last_submitted_at',
       ),
-      // Null when nothing is assigned. Numeric, not float, so the value the
-      // cursor carries as a string compares equal to the row it came from.
-      completionRatio: sql<
-        string | null
-      >`(${submittedCount})::numeric / nullif(${assignedCount}, 0)`
-        .mapWith(String)
-        .as('completion_ratio'),
+      completionRatio: completionRatio({
+        submitted: submittedCount,
+        assigned: assignedCount,
+      }).as('completion_ratio'),
     })
     .from(profiles)
     // The phase filters stay in the join condition: as WHERE predicates they
@@ -225,10 +222,10 @@ export async function listPhaseReviewerSummaries({
   });
 }
 
-// The cursor values go into `::numeric` and `::timestamptz` casts. A value the
-// cast rejects is a 500, so the schema checks the shape first.
-const completionRatioSchema = z.string().regex(/^\d+(\.\d+)?$/);
+const countSchema = z.number().int().nonnegative();
 
+// The cursor value goes into a `::timestamptz` cast. A value the cast rejects
+// is a 500, so the schema checks the shape first.
 const TIMESTAMP_PATTERN =
   /^(\d{4})-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])[ T]([01]\d|2[0-3]):[0-5]\d:[0-5]\d(\.\d{1,6})?(Z|[+-]\d{2}(:?\d{2})?)$/;
 
@@ -249,7 +246,8 @@ const timestampSchema = z.string().refine((value) => {
 const phaseReviewerCursorSchema = z.discriminatedUnion('sort', [
   z.object({
     sort: z.enum(['leastComplete', 'mostComplete']),
-    completionRatio: completionRatioSchema.nullable(),
+    submittedCount: countSchema,
+    assignedCount: countSchema,
     id: z.uuid(),
   }),
   z.object({
@@ -265,6 +263,17 @@ const phaseReviewerCursorSchema = z.discriminatedUnion('sort', [
 ]);
 
 type PhaseReviewerCursor = z.infer<typeof phaseReviewerCursorSchema>;
+
+/** Null when nothing is assigned. The cursor recomputes it from the counts. */
+function completionRatio({
+  submitted,
+  assigned,
+}: {
+  submitted: SQLWrapper;
+  assigned: SQLWrapper;
+}): SQL<string | null> {
+  return sql`(${submitted})::numeric / nullif(${assigned}, 0)`;
+}
 
 type ReviewerRollup = Record<
   'id' | 'name' | 'lastSubmittedAt' | 'completionRatio',
@@ -294,12 +303,15 @@ function getReviewerOrder({
           asc(rollup.id),
         ],
         afterCursor:
-          cursor && 'completionRatio' in cursor
+          cursor && 'assignedCount' in cursor
             ? afterNullsLast({
                 column: rollup.completionRatio,
                 value:
-                  cursor.completionRatio != null
-                    ? sql`${cursor.completionRatio}::numeric`
+                  cursor.assignedCount > 0
+                    ? completionRatio({
+                        submitted: sql`${cursor.submittedCount}::int`,
+                        assigned: sql`${cursor.assignedCount}::int`,
+                      })
                     : null,
                 direction: sort === 'leastComplete' ? 'asc' : 'desc',
                 id: rollup.id,
@@ -377,13 +389,19 @@ function toPhaseReviewerCursor({
     id: string;
     name: string;
     lastSubmittedAt: string | null;
-    completionRatio: string | null;
+    submittedCount: number;
+    assignedCount: number;
   };
 }): PhaseReviewerCursor {
   switch (sort) {
     case 'leastComplete':
     case 'mostComplete':
-      return { sort, completionRatio: row.completionRatio, id: row.id };
+      return {
+        sort,
+        submittedCount: row.submittedCount,
+        assignedCount: row.assignedCount,
+        id: row.id,
+      };
     case 'recentActivity':
       return { sort, lastSubmittedAt: row.lastSubmittedAt, id: row.id };
     case 'name':
