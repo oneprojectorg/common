@@ -30,17 +30,20 @@ export function ReviewerHeaderSkeleton() {
 
 export function ReviewerAssignmentsBodySkeleton() {
   return (
-    <div className="flex flex-col gap-8 lg:flex-row">
-      <div className="flex min-w-0 flex-1 flex-col gap-4">
-        {Array.from({ length: 3 }).map((_, index) => (
-          <Skeleton key={index} className="h-40 w-full rounded-lg" />
-        ))}
+    <>
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <Skeleton className="h-18 w-full rounded-lg" />
+        <Skeleton className="h-18 w-full rounded-lg" />
       </div>
-      <div className="flex w-full flex-col gap-4 lg:w-80 lg:shrink-0">
-        <Skeleton className="h-16 w-full rounded-lg" />
-        <Skeleton className="h-24 w-full rounded-lg" />
+      <div className="flex flex-col gap-4">
+        <Skeleton className="h-7 w-56" />
+        <div className="flex flex-col gap-2">
+          {Array.from({ length: 5 }).map((_, index) => (
+            <Skeleton key={index} className="h-15 w-full" />
+          ))}
+        </div>
       </div>
-    </div>
+    </>
   );
 }
 

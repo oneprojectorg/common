@@ -2,44 +2,40 @@
 
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { trpc } from '@op/api/client';
-import type { DecisionAccess } from '@op/api/encoders';
 import type { ReviewerAssignments } from '@op/common/client';
 import { useInfiniteScroll } from '@op/hooks';
+import { Card } from '@op/sense/Card';
 import {
   Empty,
+  EmptyContent,
   EmptyDescription,
   EmptyHeader,
   EmptyMedia,
   EmptyTitle,
 } from '@op/sense/Empty';
 import { Header3 } from '@op/sense/Header';
-import { Item, ItemContent, ItemTitle } from '@op/sense/Item';
 import { Skeleton } from '@op/sense/Skeleton';
-import { StatusDot } from '@op/sense/StatusDot';
 import { useFormatter } from 'next-intl';
-import { Suspense, useCallback, useMemo } from 'react';
-import { LuUserX, LuUsers } from 'react-icons/lu';
+import { type ReactNode, Suspense, useCallback, useId, useMemo } from 'react';
+import { LuListChecks, LuUserX, LuUsers } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { ReviewAssignmentCard } from '../ReviewAssignmentCard';
-import { useReviewersByProposalId } from '../useReviewersByProposalId';
+import { ManageAssignmentsAction } from './ManageAssignmentsAction';
 import {
   ReviewerAssignmentsBodySkeleton,
   ReviewerHeaderSkeleton,
 } from './ReviewAssignmentsSkeletons';
+import { ReviewerAssignmentsTable } from './ReviewerAssignmentsTable';
 import { ReviewerHeader } from './ReviewerHeader';
-import {
-  assignmentStatusRank,
-  assignmentStatusSpecs,
-} from './assignmentStatusSpecs';
 
 interface ReviewerAssignmentsSectionProps {
   processInstanceId: string;
   phaseId: string;
   reviewerProfileId: string;
   decisionSlug: string;
-  access: DecisionAccess;
+  /** Owning profile slug, for the proposal route. */
+  ownerSlug: string;
 }
 
 export function ReviewerAssignmentsSection(
@@ -86,9 +82,10 @@ function ReviewerAssignmentsContent({
   phaseId,
   reviewerProfileId,
   decisionSlug,
-  access,
+  ownerSlug,
 }: ReviewerAssignmentsSectionProps) {
   const t = useTranslations();
+  const headingId = useId();
 
   const [data, query] =
     trpc.decision.listReviewerAssignments.useSuspenseInfiniteQuery(
@@ -117,13 +114,6 @@ function ReviewerAssignmentsContent({
     [data.pages],
   );
 
-  const reviewersByProposalId = useReviewersByProposalId({
-    processInstanceId,
-    phaseId,
-    proposalIds: assignments.map((item) => item.assignment.proposal.id),
-    enabled: access.admin,
-  });
-
   // Reached only when the server prefetch failed, or the tie was removed since.
   if (!summary?.reviewer) {
     return (
@@ -143,135 +133,117 @@ function ReviewerAssignmentsContent({
 
   const { reviewer } = summary;
   const name = reviewer.name ?? reviewer.slug ?? reviewer.id;
+  const manageAssignments = (
+    <ManageAssignmentsAction
+      processInstanceId={processInstanceId}
+      phaseId={phaseId}
+      reviewerProfileId={reviewerProfileId}
+    />
+  );
 
   return (
     <>
-      <ReviewerHeader name={name} email={reviewer.email} />
-
-      <div className="flex flex-col gap-8 lg:flex-row lg:gap-10">
-        <ReviewProgressRail reviewer={summary} />
-
-        <div className="flex min-w-0 flex-1 flex-col gap-5">
-          <Header3 className="font-light">
-            {t('decisions.review.assignedProposalsHeading', {
-              count: summary.total,
-            })}
-          </Header3>
-
-          {assignments.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              {t('decisions.review.noReviewerAssignments')}
-            </p>
-          ) : (
-            <ul className="flex flex-col gap-3">
-              {assignments.map((item) => {
-                const href = `/decisions/${decisionSlug}/proposal/${item.assignment.proposal.profileId}/reviews`;
-
-                return (
-                  <li key={item.assignment.id}>
-                    <ReviewAssignmentCard
-                      assignment={item}
-                      viewHref={href}
-                      reviewsHref={href}
-                      reviewers={reviewersByProposalId.get(
-                        item.assignment.proposal.id,
-                      )}
-                      access={access}
-                    />
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-
-          {/* Hidden from the a11y tree; the `aria-live` line below announces loading. */}
-          {shouldShowTrigger ? (
-            <div ref={scrollTriggerRef} aria-hidden>
-              {isFetchingNextPage ? (
-                <Skeleton className="h-40 w-full rounded-lg" />
-              ) : null}
-            </div>
-          ) : null}
-          <p aria-live="polite" className="sr-only">
-            {isFetchingNextPage
-              ? t('decisions.review.loadingMoreProposals')
-              : ''}
-          </p>
-        </div>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <ReviewerHeader name={name} email={reviewer.email} />
+        {summary.total > 0 ? manageAssignments : null}
       </div>
+
+      {summary.total === 0 ? (
+        <Empty className="rounded-md border border-dashed">
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <LuListChecks className="size-6" />
+            </EmptyMedia>
+            <EmptyTitle>
+              {t('decisions.review.noProposalsAssignedTitle')}
+            </EmptyTitle>
+            <EmptyDescription>
+              {t('decisions.review.noReviewerAssignments')}
+            </EmptyDescription>
+          </EmptyHeader>
+          <EmptyContent>{manageAssignments}</EmptyContent>
+        </Empty>
+      ) : (
+        <>
+          <ReviewerStats reviewer={summary} />
+
+          <div className="flex flex-col gap-4">
+            <Header3 id={headingId} className="font-light">
+              {t('decisions.review.assignedProposalsHeading', {
+                count: summary.total,
+              })}
+            </Header3>
+
+            <ReviewerAssignmentsTable
+              assignments={assignments}
+              route={{
+                decisionSlug,
+                slug: ownerSlug,
+                instanceId: processInstanceId,
+              }}
+              labelledBy={headingId}
+            />
+
+            {/* Hidden from the a11y tree; the `aria-live` line below announces loading. */}
+            {shouldShowTrigger ? (
+              <div ref={scrollTriggerRef} aria-hidden>
+                {isFetchingNextPage ? (
+                  <div className="flex flex-col gap-2">
+                    <Skeleton className="h-15 w-full" />
+                    <Skeleton className="h-15 w-full" />
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
+            <p aria-live="polite" className="sr-only">
+              {isFetchingNextPage
+                ? t('decisions.review.loadingMoreProposals')
+                : ''}
+            </p>
+          </div>
+        </>
+      )}
     </>
   );
 }
 
-function ReviewProgressRail({ reviewer }: { reviewer: ReviewerAssignments }) {
+/** Four columns at `lg`, so later cards (started, reminders) slot in without a relayout. */
+function ReviewerStats({ reviewer }: { reviewer: ReviewerAssignments }) {
   const t = useTranslations();
   const format = useFormatter();
-
-  const breakdown = useMemo(
-    () =>
-      [...reviewer.statusBreakdown].sort(
-        (a, b) =>
-          assignmentStatusRank[a.status] - assignmentStatusRank[b.status],
-      ),
-    [reviewer.statusBreakdown],
-  );
 
   const lastSubmittedAt = reviewer.lastSubmittedAt
     ? new Date(reviewer.lastSubmittedAt)
     : null;
 
   return (
-    <div className="flex w-full flex-col gap-3 lg:order-last lg:w-80 lg:shrink-0">
-      <Header3 className="font-light">
-        {t('decisions.review.reviewProgressLabel')}
-      </Header3>
-      <p aria-live="polite" className="text-sm text-muted-foreground">
-        {t('decisions.review.assignedReviewsSubmittedProgress', {
+    <div
+      aria-live="polite"
+      className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4"
+    >
+      <StatCard label={t('decisions.review.reviewsSubmittedLabel')}>
+        {t.rich('decisions.review.reviewsSubmittedFigure', {
           submitted: reviewer.submittedCount,
           assigned: reviewer.assignedCount,
+          total: (chunks) => (
+            <span className="font-normal text-muted-foreground">{chunks}</span>
+          ),
         })}
-      </p>
-
-      <StatCard
-        label={t('decisions.review.statusSubmitted')}
-        value={t('decisions.review.reviewsSubmittedRatio', {
-          submitted: reviewer.submittedCount,
-          assigned: reviewer.assignedCount,
-        })}
-      />
-
-      {breakdown.length > 0 ? (
-        <ul className="flex flex-col gap-1.5">
-          {breakdown.map(({ status, count }) => (
-            <li key={status} className="flex items-center gap-2 py-1.5 text-sm">
-              <StatusDot intent={assignmentStatusSpecs[status].intent}>
-                {t(assignmentStatusSpecs[status].label)}
-              </StatusDot>
-              <span className="ms-auto text-muted-foreground">{count}</span>
-            </li>
-          ))}
-        </ul>
-      ) : null}
-
-      <StatCard
-        label={t('decisions.review.lastSubmissionLabel')}
-        value={
-          lastSubmittedAt
-            ? format.dateTime(lastSubmittedAt, { dateStyle: 'medium' })
-            : '—'
-        }
-      />
+      </StatCard>
+      <StatCard label={t('decisions.review.lastSubmissionLabel')}>
+        {lastSubmittedAt
+          ? format.dateTime(lastSubmittedAt, { dateStyle: 'medium' })
+          : '—'}
+      </StatCard>
     </div>
   );
 }
 
-function StatCard({ label, value }: { label: string; value: string }) {
+function StatCard({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <Item variant="muted" className="gap-3 border-border px-4 py-3 text-sm">
-      <ItemContent>
-        <ItemTitle className="text-sm font-normal">{label}</ItemTitle>
-      </ItemContent>
-      <span className="font-strong">{value}</span>
-    </Item>
+    <Card className="gap-1 px-4 py-3">
+      <span className="text-sm text-muted-foreground">{label}</span>
+      <span className="text-title font-strong tabular-nums">{children}</span>
+    </Card>
   );
 }

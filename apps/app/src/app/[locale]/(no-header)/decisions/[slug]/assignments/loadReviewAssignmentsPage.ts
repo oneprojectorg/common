@@ -7,6 +7,8 @@ export interface ReviewAssignmentsPageContext {
   processInstanceId: string;
   phaseId: string;
   access: DecisionAccess;
+  /** Owning profile slug; `ProposalSheetRoute` needs it for the legacy route. */
+  ownerSlug: string;
 }
 
 /** The admin gate both screens share. */
@@ -32,6 +34,11 @@ export async function loadReviewAssignmentsPage(
     forbidden();
   }
 
+  const ownerSlug = decisionProfile.processInstance.owner?.slug;
+  if (!ownerSlug) {
+    notFound();
+  }
+
   // A stateless instance has no phase to assign in.
   const phaseId = decisionProfile.processInstance.currentStateId;
   if (!phaseId) {
@@ -42,6 +49,7 @@ export async function loadReviewAssignmentsPage(
     processInstanceId: decisionProfile.processInstance.id,
     phaseId,
     access,
+    ownerSlug,
   };
 }
 

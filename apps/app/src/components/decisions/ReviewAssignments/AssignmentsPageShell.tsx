@@ -6,14 +6,12 @@ import { getTranslations } from '@/lib/i18n';
 import { ButtonLink } from '@/components/ButtonLink';
 import { LocaleChooser } from '@/components/LocaleChooser';
 
-/** Shared shell: the Back + action row inside the content column, then the body. */
+/** Shared shell: the Back row inside the content column, then the body. */
 export async function AssignmentsPageShell({
   backHref,
-  action,
   children,
 }: {
   backHref: string;
-  action?: ReactNode;
   children: ReactNode;
 }) {
   const t = await getTranslations();
@@ -30,10 +28,7 @@ export async function AssignmentsPageShell({
             <LuArrowLeft className="size-4 rtl:-scale-x-100" />
             {t('Back')}
           </ButtonLink>
-          <div className="flex items-center gap-4">
-            {action}
-            <LocaleChooser />
-          </div>
+          <LocaleChooser />
         </div>
         {children}
       </AssignmentsMain>

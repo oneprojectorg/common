@@ -14,7 +14,7 @@ import { Link, useTranslations } from '@/lib/i18n';
 import { useProposalCardData } from './ProposalCard';
 import { useProposalCardTranslation } from './ProposalCard/useProposalCardTranslation';
 import { ProposalReviewsCount } from './ProposalReviewsCount';
-import { ReviewStatusBadge } from './ReviewStatusBadge';
+import { ReviewStatusBadge, isReviewShownOutOfDate } from './ReviewStatusBadge';
 import { TranslateLink } from './TranslateLink';
 
 type Reviewers = ProposalReviewAggregates['reviewers'];
@@ -44,8 +44,6 @@ export function ReviewAssignmentCard({
   const t = useTranslations('decisions.review');
   const { proposal, status } = assignment;
   const isRevised = status === 'ready_for_re_review';
-  // `ready_for_re_review` already tells the reviewer to look again.
-  const showOutOfDate = isReviewOutOfDate && !isRevised;
   const translation = useProposalCardTranslation({ proposal });
   const { titleText, budgetText, displayCategories, authors, description } =
     useProposalCardData({
@@ -76,13 +74,13 @@ export function ReviewAssignmentCard({
         ) : undefined
       }
       status={
-        showOutOfDate ? (
-          <StatusBadge variant="warning" icon={LuRefreshCw}>
-            {t('reviewOutOfDateLabel')}
-          </StatusBadge>
-        ) : (
-          <ReviewStatusBadge status={status} />
-        )
+        <ReviewStatusBadge
+          status={status}
+          isOutOfDate={isReviewShownOutOfDate({
+            isReviewOutOfDate,
+            assignmentStatus: status,
+          })}
+        />
       }
       reviewedLabel={
         reviewers ? (

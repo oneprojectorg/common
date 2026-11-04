@@ -9,8 +9,8 @@ import { notFound } from 'next/navigation';
 
 import { getTranslations } from '@/lib/i18n';
 
+import { ProposalSheetProvider } from '@/components/decisions/ProposalSheetProvider';
 import { AssignmentsPageShell } from '@/components/decisions/ReviewAssignments/AssignmentsPageShell';
-import { ManageAssignmentsAction } from '@/components/decisions/ReviewAssignments/ManageAssignmentsAction';
 import { ReviewerAssignmentsSection } from '@/components/decisions/ReviewAssignments/ReviewerAssignmentsSection';
 
 import { loadReviewAssignmentsPage } from '../loadReviewAssignmentsPage';
@@ -33,7 +33,7 @@ export default async function ReviewerAssignmentsPage({
 }: ReviewerAssignmentsPageProps) {
   const { slug, profileId } = await params;
 
-  const { processInstanceId, phaseId, access } =
+  const { processInstanceId, phaseId, ownerSlug } =
     await loadReviewAssignmentsPage(slug);
 
   // The SSR render has no browser client, so the suspending input needs a seed.
@@ -56,24 +56,21 @@ export default async function ReviewerAssignmentsPage({
   }
 
   return (
-    <AssignmentsPageShell
-      backHref={`/decisions/${slug}/current?tab=reviewers`}
-      action={
-        <ManageAssignmentsAction
-          processInstanceId={processInstanceId}
-          phaseId={phaseId}
-          reviewerProfileId={profileId}
-        />
-      }
-    >
+    <AssignmentsPageShell backHref={`/decisions/${slug}/current?tab=reviewers`}>
       <HydrationBoundary state={dehydrate(queryClient)}>
-        <ReviewerAssignmentsSection
-          processInstanceId={processInstanceId}
-          phaseId={phaseId}
-          reviewerProfileId={profileId}
+        <ProposalSheetProvider
+          slug={ownerSlug}
+          instanceId={processInstanceId}
           decisionSlug={slug}
-          access={access}
-        />
+        >
+          <ReviewerAssignmentsSection
+            processInstanceId={processInstanceId}
+            phaseId={phaseId}
+            reviewerProfileId={profileId}
+            decisionSlug={slug}
+            ownerSlug={ownerSlug}
+          />
+        </ProposalSheetProvider>
       </HydrationBoundary>
     </AssignmentsPageShell>
   );
