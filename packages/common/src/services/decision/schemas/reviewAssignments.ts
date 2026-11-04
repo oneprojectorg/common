@@ -4,8 +4,37 @@ import {
 } from '@op/db/schema';
 import { z } from 'zod';
 
-import { paginated, total } from '../../../utils/pagination';
+import { paginated, paginationInput, total } from '../../../utils/pagination';
+import { instancePhaseRefSchema } from './instance';
 import { eligibleReviewerSchema, reviewAssignmentListSchema } from './reviews';
+import { SEARCH_MAX_LENGTH } from './search';
+
+export const reviewerStatusSchema = z.enum([
+  'none',
+  ProposalReviewAssignmentStatus.PENDING,
+  ProposalReviewAssignmentStatus.IN_PROGRESS,
+  ProposalReviewAssignmentStatus.COMPLETED,
+]);
+
+export type ReviewerStatus = z.infer<typeof reviewerStatusSchema>;
+
+export const phaseReviewerSummariesInputSchema = instancePhaseRefSchema
+  .extend(paginationInput('lg').shape)
+  .extend({
+    search: z
+      .string()
+      .transform((value) => value.trim().slice(0, SEARCH_MAX_LENGTH))
+      .optional(),
+    status: reviewerStatusSchema.optional(),
+  });
+
+export type PhaseReviewerSummariesInput = z.infer<
+  typeof phaseReviewerSummariesInputSchema
+>;
+
+export type PhaseReviewerSummariesParams = z.input<
+  typeof phaseReviewerSummariesInputSchema
+>;
 
 export const phaseReviewerSummarySchema = z.object({
   reviewer: eligibleReviewerSchema,
@@ -13,6 +42,7 @@ export const phaseReviewerSummarySchema = z.object({
   submittedCount: z.number(),
   draftCount: z.number(),
   lastSubmittedAt: z.string().nullable(),
+  status: reviewerStatusSchema,
 });
 
 export type PhaseReviewerSummary = z.infer<typeof phaseReviewerSummarySchema>;
@@ -20,7 +50,7 @@ export type PhaseReviewerSummary = z.infer<typeof phaseReviewerSummarySchema>;
 export const phaseReviewerSummariesSchema = paginated(
   phaseReviewerSummarySchema,
 ).extend({
-  /** Phase-wide counts, independent of the page. */
+  total,
   totalReviewers: total,
   totalAssignments: total,
 });

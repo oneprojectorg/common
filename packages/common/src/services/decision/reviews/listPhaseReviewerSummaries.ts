@@ -1,10 +1,12 @@
 import {
+  type SQL,
   and,
   asc,
   db,
   desc,
   eq,
   exists,
+  ilike,
   inArray,
   or,
   sql,
@@ -30,12 +32,14 @@ import {
 import { assertProfileAccess } from '../../assert';
 import { getEligibleReviewerProfileIds } from '../getEligibleReviewerProfileIds';
 import { getInstance } from '../getInstance';
-import type { InstancePhaseRef } from '../schemas/instance';
 import {
   type PhaseReviewerSummaries,
+  type PhaseReviewerSummariesParams,
+  type ReviewerStatus,
   phaseReviewerSummariesSchema,
 } from '../schemas/reviewAssignments';
 import { assertInstancePhase } from '../utils/instance';
+import { escapeLikePattern, splitSearchWords } from '../utils/search';
 
 export async function listPhaseReviewerSummaries({
   user,
@@ -43,10 +47,10 @@ export async function listPhaseReviewerSummaries({
   phaseId,
   cursor,
   limit = PAGE_LIMIT.lg,
-}: InstancePhaseRef & {
+  search,
+  status,
+}: PhaseReviewerSummariesParams & {
   user: User;
-  cursor?: string | null;
-  limit?: number;
 }): Promise<PhaseReviewerSummaries> {
   const instance = await getInstance({ instanceId: processInstanceId, user });
 
@@ -67,6 +71,10 @@ export async function listPhaseReviewerSummaries({
     decisionProfileId: instance.profileId,
   });
 
+  const assignedCount = sql`count(${proposalReviewAssignments.id})`;
+  const submittedCount = sql`count(*) filter (where ${proposalReviewAssignments.status} = ${ProposalReviewAssignmentStatus.COMPLETED})`;
+  const draftCount = sql`count(*) filter (where ${proposalReviews.state} = ${ProposalReviewState.DRAFT})`;
+
   // One row per reviewer: the profile columns plus the counts over their
   // assignments in this phase.
   const rollup = db
@@ -76,17 +84,21 @@ export async function listPhaseReviewerSummaries({
       slug: profiles.slug,
       avatarImageId: profiles.avatarImageId,
       email: profiles.email,
-      assignedCount: sql<number>`count(${proposalReviewAssignments.id})::int`
+      assignedCount: sql<number>`(${assignedCount})::int`
         .mapWith(Number)
         .as('assigned_count'),
-      submittedCount:
-        sql<number>`(count(*) filter (where ${proposalReviewAssignments.status} = ${ProposalReviewAssignmentStatus.COMPLETED}))::int`
-          .mapWith(Number)
-          .as('submitted_count'),
-      draftCount:
-        sql<number>`(count(*) filter (where ${proposalReviews.state} = ${ProposalReviewState.DRAFT}))::int`
-          .mapWith(Number)
-          .as('draft_count'),
+      submittedCount: sql<number>`(${submittedCount})::int`
+        .mapWith(Number)
+        .as('submitted_count'),
+      draftCount: sql<number>`(${draftCount})::int`
+        .mapWith(Number)
+        .as('draft_count'),
+      status: sql<ReviewerStatus>`case
+        when ${assignedCount} = 0 then 'none'
+        when ${submittedCount} = 0 and ${draftCount} = 0 then ${ProposalReviewAssignmentStatus.PENDING}
+        when ${submittedCount} < ${assignedCount} then ${ProposalReviewAssignmentStatus.IN_PROGRESS}
+        else ${ProposalReviewAssignmentStatus.COMPLETED}
+      end`.as('status'),
       lastSubmittedAt: sql<
         string | null
       >`max(${proposalReviews.submittedAt}) filter (where ${proposalReviews.state} = ${ProposalReviewState.SUBMITTED})`.as(
@@ -149,17 +161,27 @@ export async function listPhaseReviewerSummaries({
       )
     : undefined;
 
+  const filters: SQL | undefined = and(
+    status ? eq(rollup.status, status) : undefined,
+    ...splitSearchWords(search).map((word) => {
+      const pattern = `%${escapeLikePattern(word)}%`;
+      return or(ilike(rollup.name, pattern), ilike(rollup.email, pattern));
+    }),
+  );
+
   const [rows, [totals]] = await Promise.all([
     db
       .select()
       .from(rollup)
-      .where(afterCursor)
+      .where(and(filters, afterCursor))
       .orderBy(desc(rollup.assignedCount), asc(rollup.id))
       .limit(limit + 1),
-    // The header shows the phase-wide reviewer count, which the page alone
-    // cannot provide.
     db
       .select({
+        total: (filters
+          ? sql<number>`(count(*) filter (where ${filters}))::int`
+          : sql<number>`count(*)::int`
+        ).mapWith(Number),
         totalReviewers: sql<number>`count(*)::int`.mapWith(Number),
         totalAssignments:
           sql<number>`COALESCE(sum(${rollup.assignedCount}), 0)::int`.mapWith(
@@ -186,6 +208,7 @@ export async function listPhaseReviewerSummaries({
       submittedCount: row.submittedCount,
       draftCount: row.draftCount,
       lastSubmittedAt: row.lastSubmittedAt,
+      status: row.status,
     })),
     next:
       hasMore && lastRow
@@ -194,6 +217,7 @@ export async function listPhaseReviewerSummaries({
             id: lastRow.id,
           })
         : null,
+    total: totals?.total ?? 0,
     totalReviewers: totals?.totalReviewers ?? 0,
     totalAssignments: totals?.totalAssignments ?? 0,
   });

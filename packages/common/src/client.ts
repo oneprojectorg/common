@@ -91,6 +91,11 @@ export {
   type AdminDecisionReviewAssignments,
 } from './services/decision/schemas/adminDecisionInstance';
 export {
+  phaseReviewerSummariesInputSchema,
+  type PhaseReviewerSummariesInput,
+  type PhaseReviewerSummariesParams,
+  reviewerStatusSchema,
+  type ReviewerStatus,
   phaseReviewerSummarySchema,
   type PhaseReviewerSummary,
   phaseReviewerSummariesSchema,

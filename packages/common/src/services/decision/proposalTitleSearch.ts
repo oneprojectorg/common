@@ -1,16 +1,7 @@
 import { SQL, and, db, eq, exists, ilike } from '@op/db/client';
 import { profiles, proposals } from '@op/db/schema';
 
-// Unescaped, `%` and `_` in the query act as wildcards.
-const escapeLikePattern = (value: string): string =>
-  value.replace(/[\\%_]/g, (char) => `\\${char}`);
-
-// Extra words are dropped, not rejected. Dropping a conjunct only widens the
-// match, so the result stays a superset of what was asked for.
-const MAX_SEARCH_WORDS = 10;
-
-const splitSearchWords = (search: string | undefined): string[] =>
-  (search ?? '').split(/\s+/).filter(Boolean).slice(0, MAX_SEARCH_WORDS);
+import { escapeLikePattern, splitSearchWords } from './utils/search';
 
 /**
  * Title-search predicate for a proposal list query; `undefined` for an empty or
