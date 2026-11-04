@@ -13,9 +13,22 @@
 -- missing_rows holds the blob phase ids with no row; extra_rows holds the
 -- row phase ids with no blob phase.
 --
--- To limit it to some decisions, set this first in the same session:
---   SET op_backfill.instance_ids = '<uuid>,<uuid>';
-SELECT *
+-- After release 3 the blob is frozen, so partial and drift are expected. The
+-- gate before release 4 is zero no_rows rows:
+--   psql "$DATABASE_URL" -c "SET op_backfill.drift_kind = 'no_rows'" \
+--     -f services/db/data/check-phase-drift.sql
+--
+-- Settings, each blank means all:
+--   op_backfill.instance_ids  '<uuid>,<uuid>' limits it to those decisions
+--   op_backfill.drift_kind    limits it to one kind
+WITH settings AS (
+  SELECT
+    string_to_array(
+      replace(nullif(btrim(current_setting('op_backfill.instance_ids', true)), ''), ' ', ''), ','
+    )::uuid[] AS instance_ids,
+    nullif(btrim(current_setting('op_backfill.drift_kind', true)), '') AS kind
+)
+SELECT checked.*
 FROM (
   SELECT
     i.id AS instance_id,
@@ -29,6 +42,7 @@ FROM (
     diff.missing_rows,
     diff.extra_rows
   FROM decision_process_instances i
+  CROSS JOIN settings
   CROSS JOIN LATERAL (
     SELECT
       count(*)::int AS n,
@@ -61,15 +75,14 @@ FROM (
         SELECT unnest(phase_rows.ids) EXCEPT SELECT unnest(blob.ids) ORDER BY 1
       ) AS extra_rows
   ) diff
-  WHERE (
-      nullif(current_setting('op_backfill.instance_ids', true), '') IS NULL
-      OR i.id = ANY (string_to_array(
-        replace(current_setting('op_backfill.instance_ids', true), ' ', ''), ','
-      )::uuid[])
-    )
+  WHERE (settings.instance_ids IS NULL OR i.id = ANY (settings.instance_ids))
     AND (blob.n > 0 OR phase_rows.n > 0)
 ) checked
-WHERE kind = 'no_rows'
-  OR cardinality(missing_rows) > 0
-  OR cardinality(extra_rows) > 0
-ORDER BY instance_id;
+CROSS JOIN settings
+WHERE (
+    checked.kind = 'no_rows'
+    OR cardinality(checked.missing_rows) > 0
+    OR cardinality(checked.extra_rows) > 0
+  )
+  AND (settings.kind IS NULL OR checked.kind = settings.kind)
+ORDER BY checked.instance_id;

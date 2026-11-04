@@ -1,5 +1,5 @@
 import { TestDecisionsDataManager } from '@op/common/testing';
-import { type TransactionType, asc, db, eq, inArray, sql } from '@op/db/client';
+import { asc, db, eq, inArray, sql } from '@op/db/client';
 import {
   EntityType,
   decisionProcessTransitions,
@@ -309,30 +309,98 @@ describe.concurrent('backfill-phase-rows data script', () => {
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
     const instanceId = await seedDecision(testData, {});
-
-    const [profile] = await db
-      .insert(profiles)
-      .values({
-        type: EntityType.PHASE,
-        name: 'Endpoint phase',
-        slug: randomUUID().slice(0, 8),
-      })
-      .returning({ id: profiles.id });
-    if (!profile) {
-      throw new Error('Failed to create phase profile');
-    }
-    testData.trackProfileForCleanup(profile.id);
-    await db.insert(processPhases).values({
-      processInstanceId: instanceId,
-      sortOrder: 0,
-      profileId: profile.id,
-    });
+    const profileId = await insertPhaseRow(testData, instanceId, {});
 
     await runBackfill(testData, instanceId);
 
     expect(
       (await readPhaseRows(instanceId)).map((row) => row.profileId),
-    ).toEqual([profile.id]);
+    ).toEqual([profileId]);
+  });
+
+  it('given fill_partial and rows that cover one of two phases, then the uncovered phase gets a row and a second run changes nothing', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const instanceId = await seedDecision(testData, {});
+    const profileId = await insertPhaseRow(testData, instanceId, {
+      phaseId: 'initial',
+    });
+    const fillPartial = { 'op_backfill.fill_partial': 'true' };
+
+    await runBackfill(testData, instanceId, fillPartial);
+    const rows = await readPhaseRows(instanceId);
+
+    expect(rows.map((row) => row.data)).toEqual([
+      { phaseId: 'initial' },
+      expect.objectContaining({ phaseId: 'final' }),
+    ]);
+    expect(rows.map((row) => row.sortOrder)).toEqual([0, 1]);
+    expect(rows[0]?.profileId).toBe(profileId);
+    expect(rows[1]?.type).toBe(EntityType.PHASE);
+    expect(rows[1]?.slug).toMatch(/^[0-9a-f]{8}$/);
+
+    await runBackfill(testData, instanceId, fillPartial);
+
+    expect(await readPhaseRows(instanceId)).toEqual(rows);
+  });
+
+  it('given fill_partial and a blank instance_ids, then the run fails before it changes anything', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const instanceId = await seedDecision(testData, {});
+
+    await expect(
+      runBackfill(testData, instanceId, {
+        'op_backfill.instance_ids': ' ',
+        'op_backfill.fill_partial': 'true',
+      }),
+    ).rejects.toThrow(/fill_partial needs op_backfill\.instance_ids/);
+
+    expect(await readPhaseRows(instanceId)).toEqual([]);
+  });
+
+  it('given a decision locked by another session, then the run stops there and the decision before it stays backfilled', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const first = await seedDecision(testData, {});
+    const locked = await seedDecision(testData, {});
+
+    let releaseLock = () => {};
+    const lockReleased = new Promise<void>((resolve) => {
+      releaseLock = resolve;
+    });
+    let markLockTaken = () => {};
+    const lockTaken = new Promise<void>((resolve) => {
+      markLockTaken = resolve;
+    });
+    const holder = db.transaction(async (tx) => {
+      await tx
+        .select({ id: processInstances.id })
+        .from(processInstances)
+        .where(eq(processInstances.id, locked))
+        .for('update');
+      markLockTaken();
+      await lockReleased;
+    });
+    await lockTaken;
+
+    try {
+      await expect(
+        runBackfill(testData, [first, locked], { lock_timeout: '200ms' }),
+      ).rejects.toThrow(/lock timeout/);
+    } finally {
+      releaseLock();
+      await holder;
+    }
+
+    expect(await readPhaseRows(first)).toHaveLength(2);
+    expect(await readPhaseRows(locked)).toEqual([]);
   });
 
   it('given instance_ids naming two of three decisions, then only those two get rows', async ({
@@ -409,12 +477,42 @@ describe.concurrent('backfill-phase-rows data script', () => {
         },
       ]),
     );
+    expect(
+      await runDriftCheck(ids, { 'op_backfill.drift_kind': 'no_rows' }),
+    ).toEqual([]);
   });
 
-  it('plans the release-4 strip script against the current schema', async () => {
-    const plan = await db.execute(sql.raw(`EXPLAIN ${stripSql}`));
+  it('given a blank instance_ids, then the drift check covers every decision', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const instanceId = await seedDecision(testData, {});
 
-    expect(plan.length).toBeGreaterThan(0);
+    const rows = await runDriftCheck([], {
+      'op_backfill.instance_ids': ' ',
+      'op_backfill.drift_kind': 'no_rows',
+    });
+
+    expect(rows.map((row) => row.instance_id)).toContain(instanceId);
+    expect(rows.every((row) => row.kind === 'no_rows')).toBe(true);
+  });
+
+  it('given one decision with phase rows and one without, then the strip removes the blob phases from the first only', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const withRows = await seedDecision(testData, {});
+    const withoutRows = await seedDecision(testData, {});
+    await runBackfill(testData, withRows);
+    const withoutRowsBefore = await readInstanceData(withoutRows);
+
+    await runStrip([withRows, withoutRows]);
+
+    expect(await readInstanceData(withRows)).not.toHaveProperty('phases');
+    expect(await readInstanceData(withoutRows)).toEqual(withoutRowsBefore);
+    expect(withoutRowsBefore).toHaveProperty('phases');
   });
 });
 
@@ -461,34 +559,78 @@ const seedDecision = async (
   return id;
 };
 
-// Both scripts read this setting, so a run touches only this test's decisions.
-const scopeTo = (tx: TransactionType, instanceIds: string[]) =>
-  tx.execute(
-    sql`select set_config('op_backfill.instance_ids', ${instanceIds.join(', ')}, true)`,
-  );
+type Settings = Record<string, string>;
 
+// Every script reads instance_ids, so a run touches only this test's decisions.
+const scopedSettings = (instanceIds: string[], settings: Settings) =>
+  Object.entries({
+    'op_backfill.instance_ids': instanceIds.join(', '),
+    ...settings,
+  });
+
+const runInScope = async (
+  script: string,
+  instanceIds: string[],
+  settings: Settings = {},
+) =>
+  db.transaction(async (tx) => {
+    for (const [name, value] of scopedSettings(instanceIds, settings)) {
+      await tx.execute(sql`select set_config(${name}, ${value}, true)`);
+    }
+    return tx.execute(sql.raw(script));
+  });
+
+// The backfill commits per decision, so it needs its own session outside a transaction.
 const runBackfill = async (
   testData: TestDecisionsDataManager,
   instanceIds: string | string[],
+  settings: Settings = {},
 ) => {
   const ids = [instanceIds].flat();
-  await db.transaction(async (tx) => {
-    await scopeTo(tx, ids);
-    await tx.execute(sql.raw(backfillSql));
-  });
-
-  for (const instanceId of ids) {
-    const rows = await readPhaseRows(instanceId);
-    rows.forEach((row) => testData.trackProfileForCleanup(row.profileId));
+  const connection = await db.$client.reserve();
+  try {
+    for (const [name, value] of scopedSettings(ids, settings)) {
+      await connection`select set_config(${name}, ${value}, false)`;
+    }
+    await connection.unsafe(backfillSql);
+  } finally {
+    await connection`reset all`;
+    connection.release();
+    for (const instanceId of ids) {
+      const rows = await readPhaseRows(instanceId);
+      rows.forEach((row) => testData.trackProfileForCleanup(row.profileId));
+    }
   }
 };
 
-const runDriftCheck = async (instanceIds: string[]) => {
-  const rows = await db.transaction(async (tx) => {
-    await scopeTo(tx, instanceIds);
-    return tx.execute(sql.raw(driftSql));
-  });
+const runDriftCheck = async (instanceIds: string[], settings?: Settings) => {
+  const rows = await runInScope(driftSql, instanceIds, settings);
   return z.array(driftRowSchema).parse([...rows]);
+};
+
+const runStrip = (instanceIds: string[]) => runInScope(stripSql, instanceIds);
+
+const insertPhaseRow = async (
+  testData: TestDecisionsDataManager,
+  processInstanceId: string,
+  data: Record<string, unknown>,
+) => {
+  const [profile] = await db
+    .insert(profiles)
+    .values({
+      type: EntityType.PHASE,
+      name: 'Endpoint phase',
+      slug: randomUUID().slice(0, 8),
+    })
+    .returning({ id: profiles.id });
+  if (!profile) {
+    throw new Error('Failed to create phase profile');
+  }
+  testData.trackProfileForCleanup(profile.id);
+  await db
+    .insert(processPhases)
+    .values({ processInstanceId, sortOrder: 0, profileId: profile.id, data });
+  return profile.id;
 };
 
 const sortByInstance = <T extends { instance_id: string }>(rows: T[]) =>
