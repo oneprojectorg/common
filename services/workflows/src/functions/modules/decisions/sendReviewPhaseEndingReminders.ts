@@ -1,8 +1,4 @@
-import {
-  getInstanceCurrentPhase,
-  getInstancePhases,
-  resolvePhasesForAll,
-} from '@op/common';
+import { getInstanceCurrentPhase, resolvePhasesForAll } from '@op/common';
 import { db } from '@op/db/client';
 import { ProcessStatus, processPhases, profiles } from '@op/db/schema';
 import { Events, inngest } from '@op/events';
@@ -63,10 +59,7 @@ export const sendReviewPhaseEndingReminders = inngest.createFunction(
       });
 
       return instances.flatMap((instance) => {
-        const phase = getInstanceCurrentPhase({
-          currentStateId: instance.currentStateId,
-          instanceData: { phases: getInstancePhases(instance.instanceData) },
-        });
+        const phase = getInstanceCurrentPhase(instance);
 
         if (phase?.rules?.reviews?.submit !== true || !phase.endDate) {
           return [];

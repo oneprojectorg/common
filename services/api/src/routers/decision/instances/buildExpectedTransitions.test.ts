@@ -1,16 +1,9 @@
-import { buildExpectedTransitions } from '@op/common';
-import type { ProcessInstance } from '@op/db/schema';
+import { attachBlobPhases, buildExpectedTransitions } from '@op/common';
 import { describe, expect, it } from 'vitest';
 
-/**
- * Creates a minimal ProcessInstance stub for testing buildExpectedTransitions.
- * Only `id` and `instanceData` are used by the function.
- */
-function stubInstance(
-  instanceData: unknown,
-  id = 'test-instance-id',
-): ProcessInstance {
-  return { id, instanceData } as ProcessInstance;
+/** A minimal instance stub whose phases come from `instanceData`. */
+function stubInstance(instanceData: unknown, id = 'test-instance-id') {
+  return attachBlobPhases({ instance: { id, instanceData } });
 }
 
 describe('buildExpectedTransitions', () => {

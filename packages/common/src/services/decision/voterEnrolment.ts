@@ -14,7 +14,6 @@ import {
   hasLinkedDecisionBoundaries,
   resolveBoundary,
 } from './resolveBoundary';
-import { getInstancePhases } from './schemas/instanceData';
 import { getInstanceCurrentPhase } from './utils/instance';
 import { getVoterEnrolment } from './utils/phaseSettings';
 
@@ -58,10 +57,7 @@ const loadEnrolmentContext = async ({
 
   const instance = await resolvePhases({ instance: row });
 
-  const phase = getInstanceCurrentPhase({
-    currentStateId: instance.currentStateId,
-    instanceData: { phases: getInstancePhases(instance.instanceData) },
-  });
+  const phase = getInstanceCurrentPhase(instance);
   const rule = phase ? getVoterEnrolment(phase) : undefined;
 
   if (!rule) {

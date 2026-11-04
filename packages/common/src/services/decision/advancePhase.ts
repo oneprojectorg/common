@@ -8,8 +8,7 @@ import {
 
 import { attachProposalsToTransition } from './attachProposalsToTransition';
 import { getProposalsForPhase } from './getProposalsForPhase';
-import type { PhasesResolved } from './instancePhases';
-import { getInstancePhases } from './schemas/instanceData';
+import type { WithPhases } from './instancePhases';
 import type { TransitionData } from './schemas/transitionData';
 import {
   aggregateProposalMetrics,
@@ -19,7 +18,7 @@ import type { ExecutionContext } from './selectionPipeline/types';
 
 export interface AdvancePhaseInput {
   db: DbClient;
-  instance: PhasesResolved<{
+  instance: WithPhases<{
     id: string;
     instanceData: unknown;
   }>;
@@ -73,7 +72,7 @@ export async function advancePhase(
   } = input;
 
   const instanceId = instance.id;
-  const phases = getInstancePhases(instance.instanceData);
+  const { phases } = instance;
   const departingPhase = phases.find((p) => p.phaseId === fromPhaseId);
 
   if (!departingPhase) {

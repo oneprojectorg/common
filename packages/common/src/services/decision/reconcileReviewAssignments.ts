@@ -102,19 +102,19 @@ export async function reconcileReviewAssignments({
     return skip('instance has no current phase');
   }
 
-  const { instanceData: resolvedInstanceData } = await resolvePhases({
-    instance,
-    db,
-  });
-  const instanceData = resolvedInstanceData as DecisionInstanceData;
+  const resolved = await resolvePhases({ instance, db });
+  const { config } = resolved.instanceData as DecisionInstanceData;
   const currentPhase = assertInstancePhase({
-    instance: { instanceData },
+    instance: resolved,
     phaseId: currentPhaseId,
   });
   if (!isReviewPhase(currentPhase)) {
     return skip('current phase is not review-capable');
   }
-  const reviewSettings = getPhaseReviewSettings(instanceData, currentPhaseId);
+  const reviewSettings = getPhaseReviewSettings(
+    { config, phases: resolved.phases },
+    currentPhaseId,
+  );
 
   // Reconcile only runs under `full_coverage`: its expected set is the whole
   // scope⨝eligibility intersection, so under `single_reviewer` it would fan out

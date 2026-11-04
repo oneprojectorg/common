@@ -20,10 +20,13 @@ interface InstanceWithData {
   instanceData: unknown;
 }
 
-const resolvedPhases = Symbol('resolvedPhases');
+export type WithPhases<T> = T & { readonly phases: PhaseInstanceData[] };
 
-// TODO: remove this brand when readers stop taking phases off instanceData.
-export type PhasesResolved<T> = T & { readonly [resolvedPhases]: true };
+export type WithProfilePhases<
+  T extends { processInstance: InstanceWithData | null },
+> = Omit<T, 'processInstance'> & {
+  processInstance: WithPhases<NonNullable<T['processInstance']>> | null;
+};
 
 const NO_ROWS_MESSAGE =
   'Decision has no phase rows; reading instanceData.phases';
@@ -43,7 +46,7 @@ export const getPhases = async ({
   db?: DbClient;
   fromRows?: boolean;
 }): Promise<PhaseInstanceData[]> =>
-  getBlobPhases(await resolvePhases({ instance, db, fromRows }));
+  (await resolvePhases({ instance, db, fromRows })).phases;
 
 export const resolvePhases = async <T extends InstanceWithData>({
   instance,
@@ -53,25 +56,24 @@ export const resolvePhases = async <T extends InstanceWithData>({
   instance: T;
   db?: DbClient;
   fromRows?: boolean;
-}): Promise<PhasesResolved<T>> => {
+}): Promise<WithPhases<T>> => {
   const [resolved] = await resolvePhasesForAll({
     instances: [instance],
     db,
     fromRows,
   });
-  return resolved ?? markResolved(instance);
+  return resolved ?? attachBlobPhases({ instance });
 };
 
 // TODO: remove when instanceData.phases is dropped.
-export const markBlobPhasesResolved = <T extends InstanceWithData>({
+export const attachBlobPhases = <T extends InstanceWithData>({
   instance,
 }: {
   instance: T;
-}): PhasesResolved<T> => markResolved(instance);
-
-export const isPhasesResolved = <T extends object>(
-  instance: T,
-): instance is PhasesResolved<T> => resolvedPhases in instance;
+}): WithPhases<T> => ({
+  ...instance,
+  phases: [...getInstancePhases(instance.instanceData)],
+});
 
 export const resolvePhasesForAll = async <T extends InstanceWithData>({
   instances,
@@ -81,13 +83,13 @@ export const resolvePhasesForAll = async <T extends InstanceWithData>({
   instances: T[];
   db?: DbClient;
   fromRows?: boolean;
-}): Promise<PhasesResolved<T>[]> => {
+}): Promise<WithPhases<T>[]> => {
   if (instances.length === 0) {
     return [];
   }
 
   if (!(fromRows ?? (await isPhasesFromRowsEnabled()))) {
-    return instances.map(markResolved);
+    return instances.map((instance) => attachBlobPhases({ instance }));
   }
 
   const phasesByInstance = await listPhasesByInstance({
@@ -103,12 +105,12 @@ export const resolvePhasesForAll = async <T extends InstanceWithData>({
     logger.debug(NO_ROWS_MESSAGE, { processInstanceIds: withoutRows });
   }
 
-  return instances.map((instance) =>
-    replacePhases({
-      instance,
-      phases: phasesByInstance.get(instance.id)?.map(toInstanceDataPhase),
-    }),
-  );
+  return instances.map((instance) => {
+    const rows = phasesByInstance.get(instance.id);
+    return rows
+      ? { ...instance, phases: rows.map(toInstanceDataPhase) }
+      : attachBlobPhases({ instance });
+  });
 };
 
 export const resolveProfilePhases = async <
@@ -117,48 +119,15 @@ export const resolveProfilePhases = async <
   profile,
 }: {
   profile: T;
-}): Promise<T> => {
-  if (!profile.processInstance) {
-    return profile;
-  }
-
-  return {
-    ...profile,
-    processInstance: await resolvePhases({
-      instance: profile.processInstance,
-    }),
-  };
-};
-
-const getBlobPhases = (instance: InstanceWithData): PhaseInstanceData[] => [
-  ...getInstancePhases(instance.instanceData),
-];
-
-const replacePhases = <T extends InstanceWithData>({
-  instance,
-  phases,
-}: {
-  instance: T;
-  phases?: PhaseInstanceData[];
-}): PhasesResolved<T> =>
-  markResolved(
-    phases
-      ? {
-          ...instance,
-          instanceData: { ...asRecord(instance.instanceData), phases },
-        }
-      : instance,
-  );
+}): Promise<WithProfilePhases<T>> => ({
+  ...profile,
+  processInstance: profile.processInstance
+    ? await resolvePhases({ instance: profile.processInstance })
+    : null,
+});
 
 const toInstanceDataPhase = (phase: DecisionPhase): PhaseInstanceData => ({
   ...phase.data,
   phaseId: phaseIdOf(phase),
   name: phase.name,
 });
-
-const markResolved = <T extends InstanceWithData>(
-  instance: T,
-): PhasesResolved<T> => ({ ...instance, [resolvedPhases]: true });
-
-const asRecord = (value: unknown): object =>
-  typeof value === 'object' && value !== null ? value : {};

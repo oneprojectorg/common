@@ -1,8 +1,6 @@
 import {
-  getInstancePhases,
   listProcessParticipants,
   resolveManualSelectionStatus,
-  markBlobPhasesResolved,
   resolvePhases,
 } from '@op/common';
 import { selectEmailRecipients } from '@op/common/client';
@@ -53,13 +51,7 @@ export const sendPhaseTransitionNotification = inngest.createFunction(
         return undefined;
       }
 
-      const resolved = await resolvePhases({
-        instance: { ...row, id: processInstanceId },
-      });
-      return {
-        ...resolved,
-        phases: [...getInstancePhases(resolved.instanceData)],
-      };
+      return resolvePhases({ instance: { ...row, id: processInstanceId } });
     });
 
     if (!processData) {
@@ -83,7 +75,7 @@ export const sendPhaseTransitionNotification = inngest.createFunction(
       'check-manual-selection',
       async () =>
         resolveManualSelectionStatus({
-          instance: markBlobPhasesResolved({
+          instance: await resolvePhases({
             instance: {
               id: processInstanceId,
               instanceData: processData.instanceData,

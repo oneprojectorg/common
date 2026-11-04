@@ -43,11 +43,10 @@ export async function listSmsDecisions({
   const instances = await resolvePhasesForAll({ instances: rows });
 
   return instances
-    .map(({ name, slug, instanceData, currentStateId }) => ({
+    .map(({ name, slug, phases, currentStateId }) => ({
       name,
       slug,
-      votingOpen: summarizeCurrentPhase({ instanceData, currentStateId })
-        .votingOpen,
+      votingOpen: summarizeCurrentPhase({ phases, currentStateId }).votingOpen,
     }))
     .sort((a, b) => Number(b.votingOpen) - Number(a.votingOpen));
 }

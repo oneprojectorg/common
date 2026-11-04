@@ -6,9 +6,8 @@ import { NotFoundError } from '../../../utils';
 import { assertProfileAccess } from '../../assert';
 import { formatUnitAmount, getFieldUnit } from '../fieldUnit';
 import { getDecisionBySlug } from '../getDecisionBySlug';
-import { resolvePhases } from '../instancePhases';
+import { type WithPhases, resolvePhases } from '../instancePhases';
 import { resolveProposalTemplate } from '../resolveProposalTemplate';
-import { getInstancePhases } from '../schemas/instanceData';
 import type { VoterEnrolmentRule } from '../schemas/types';
 import { getInstanceCurrentPhase } from '../utils/instance';
 import {
@@ -27,22 +26,19 @@ export interface SmsVotingDecision {
   budget: string | null;
 }
 
-interface VotingInstance {
+type VotingInstance = WithPhases<{
   id: string;
   instanceData: unknown;
   currentStateId: string | null;
   processId: string | null;
-}
+}>;
 
 const summarizeVotingInstance = async (
   name: string,
   slug: string,
   instance: VotingInstance,
 ): Promise<SmsVotingDecision> => {
-  const phase = getInstanceCurrentPhase({
-    currentStateId: instance.currentStateId,
-    instanceData: { phases: getInstancePhases(instance.instanceData) },
-  });
+  const phase = getInstanceCurrentPhase(instance);
   const voterBudget = phase ? getVoterBudget(phase) : undefined;
   const template =
     phase && voterBudget !== undefined

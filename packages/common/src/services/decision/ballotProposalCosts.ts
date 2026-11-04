@@ -1,22 +1,16 @@
 import { formatUnitAmount, getFieldUnit } from './fieldUnit';
 import { getProposalCosts } from './getProposalCosts';
+import type { WithPhases } from './instancePhases';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
-import { getInstancePhases } from './schemas/instanceData';
 import { getInstanceCurrentPhase } from './utils/instance';
 import { getVoterCostField } from './utils/phaseSettings';
 
-export interface BallotInstance {
+export type BallotInstance = WithPhases<{
   id: string;
   instanceData: unknown;
   currentStateId: string | null;
   processId: string | null;
-}
-
-const findCurrentPhase = ({ instanceData, currentStateId }: BallotInstance) =>
-  getInstanceCurrentPhase({
-    currentStateId,
-    instanceData: { phases: getInstancePhases(instanceData) },
-  });
+}>;
 
 export async function priceBallotProposals({
   instance,
@@ -26,7 +20,7 @@ export async function priceBallotProposals({
   proposals: ReadonlyArray<{ id: string; proposalData: unknown }>;
 }): Promise<ReadonlyMap<string, string | null>> {
   const unpriced = new Map(proposals.map(({ id }) => [id, null]));
-  const phase = findCurrentPhase(instance);
+  const phase = getInstanceCurrentPhase(instance);
 
   if (!phase) {
     return unpriced;

@@ -22,7 +22,7 @@ import {
   getPhaseProposalSqlScope,
 } from './getProposalsForPhase';
 import { getVoterBallot } from './getVoterBallot';
-import { type PhasesResolved, resolvePhases } from './instancePhases';
+import { type WithPhases, resolvePhases } from './instancePhases';
 import type { ListProposalsInput } from './listProposals';
 import { notSuperseded } from './proposalSupersession';
 import { buildProposalTitleSearchCondition } from './proposalTitleSearch';
@@ -45,7 +45,7 @@ type InstanceScopeRow = Pick<
 
 export interface ProposalListScope {
   /** Instance row reused by callers for template resolution and enrichment. */
-  instance: PhasesResolved<InstanceScopeRow>;
+  instance: WithPhases<InstanceScopeRow>;
   currentProfileId: string | undefined;
   canManageProposals: boolean;
   profileRoles: NormalizedRole[];

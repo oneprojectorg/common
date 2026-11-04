@@ -6,7 +6,7 @@ import { permission } from 'access-zones';
 import { UnauthorizedError } from '../../utils';
 import type { AccessUser } from '../access/cacheKeys';
 import { assertProfileAccess } from '../assert';
-import { resolvePhases } from './instancePhases';
+import { type WithPhases, resolvePhases } from './instancePhases';
 
 const decisionProfileQueryConfig = {
   with: {
@@ -31,7 +31,9 @@ type LoadedDecisionProfile = NonNullable<
 >;
 
 type DecisionProfileItem = Omit<LoadedDecisionProfile, 'processInstance'> & {
-  processInstance: NonNullable<LoadedDecisionProfile['processInstance']>;
+  processInstance: WithPhases<
+    NonNullable<LoadedDecisionProfile['processInstance']>
+  >;
 };
 
 // Short TTL on purpose (mirrors the resources list cache): @op/cache
