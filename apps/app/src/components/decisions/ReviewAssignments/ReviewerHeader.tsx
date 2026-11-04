@@ -11,7 +11,15 @@ export function ReviewerHeader({
 }) {
   return (
     <ProfileItem
-      avatar={<ProfileAvatar name={name} alt={name} size="lg" />}
+      avatar={
+        // Sense stops at `lg` (40px); the design's header avatar is 64px.
+        <ProfileAvatar
+          name={name}
+          alt={name}
+          size="lg"
+          className="data-[size=lg]:size-16 *:data-[slot=avatar-fallback]:text-title"
+        />
+      }
       title={name}
       titleClassName="font-serif text-headline font-light"
       description={email ?? undefined}

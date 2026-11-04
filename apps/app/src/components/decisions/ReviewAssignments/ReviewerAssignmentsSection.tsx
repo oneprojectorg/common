@@ -133,38 +133,39 @@ function ReviewerAssignmentsContent({
 
   const { reviewer } = summary;
   const name = reviewer.name ?? reviewer.slug ?? reviewer.id;
-  const manageAssignments = (
-    <ManageAssignmentsAction
-      processInstanceId={processInstanceId}
-      phaseId={phaseId}
-      reviewerProfileId={reviewerProfileId}
-    />
-  );
+  const actionProps = { processInstanceId, phaseId, reviewerProfileId };
 
   return (
     <>
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <ReviewerHeader name={name} email={reviewer.email} />
-        {summary.total > 0 ? manageAssignments : null}
+        {summary.total > 0 ? (
+          <ManageAssignmentsAction {...actionProps} />
+        ) : null}
       </div>
 
       {/* `total` drops merged-away proposals; the counts still hold their reviews. */}
       {summary.assignedCount > 0 ? <ReviewerStats reviewer={summary} /> : null}
 
       {summary.total === 0 ? (
-        <Empty className="rounded-md border border-dashed">
+        <Empty>
           <EmptyHeader>
             <EmptyMedia variant="icon">
               <LuListChecks className="size-6" />
             </EmptyMedia>
-            <EmptyTitle>
+            <EmptyTitle className="text-headline font-light">
               {t('decisions.review.noProposalsAssignedTitle')}
             </EmptyTitle>
             <EmptyDescription>
-              {t('decisions.review.noReviewerAssignments')}
+              {t.rich('decisions.review.reviewerNothingToReview', {
+                name: getFirstName(name),
+                bdi: (chunks) => <bdi>{chunks}</bdi>,
+              })}
             </EmptyDescription>
           </EmptyHeader>
-          <EmptyContent>{manageAssignments}</EmptyContent>
+          <EmptyContent>
+            <ManageAssignmentsAction {...actionProps} intent="assign" />
+          </EmptyContent>
         </Empty>
       ) : (
         <div className="flex flex-col gap-4">
@@ -216,16 +217,13 @@ function ReviewerStats({ reviewer }: { reviewer: ReviewerAssignments }) {
     : null;
 
   return (
-    <div
-      aria-live="polite"
-      className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4"
-    >
+    <div aria-live="polite" className="grid grid-cols-2 gap-3 lg:grid-cols-4">
       <StatCard label={t('decisions.review.reviewsSubmittedLabel')}>
         {t.rich('decisions.review.reviewsSubmittedFigure', {
           submitted: reviewer.submittedCount,
           assigned: reviewer.assignedCount,
           total: (chunks) => (
-            <span className="font-normal text-muted-foreground">{chunks}</span>
+            <span className="text-muted-foreground">{chunks}</span>
           ),
         })}
       </StatCard>
@@ -240,9 +238,16 @@ function ReviewerStats({ reviewer }: { reviewer: ReviewerAssignments }) {
 
 function StatCard({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <Card className="gap-1 px-4 py-3">
-      <span className="text-sm text-muted-foreground">{label}</span>
-      <span className="text-title font-strong tabular-nums">{children}</span>
+    <Card className="gap-2 p-5">
+      <span>{label}</span>
+      <span className="font-serif text-headline font-light tabular-nums">
+        {children}
+      </span>
     </Card>
   );
+}
+
+/** The design's empty state greets the reviewer by first name. */
+function getFirstName(name: string): string {
+  return name.trim().split(/\s+/)[0] ?? name;
 }

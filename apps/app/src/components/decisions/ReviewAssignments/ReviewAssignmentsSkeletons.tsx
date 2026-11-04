@@ -1,7 +1,7 @@
 import { Skeleton } from '@op/sense/Skeleton';
 import type { ReactNode } from 'react';
 
-import { AssignmentsMain } from './AssignmentsPageShell';
+import { AssignmentsMain, AssignmentsTopRow } from './AssignmentsPageShell';
 
 export function ReviewersTableSkeleton() {
   return (
@@ -18,8 +18,8 @@ export function ReviewersTableSkeleton() {
 
 export function ReviewerHeaderSkeleton() {
   return (
-    <div className="flex gap-3">
-      <Skeleton className="size-12 rounded-full" />
+    <div className="flex items-center gap-3">
+      <Skeleton className="size-16 rounded-full" />
       <div className="flex flex-col gap-2">
         <Skeleton className="h-7 w-48" />
         <Skeleton className="h-4 w-64" />
@@ -32,8 +32,8 @@ export function ReviewerAssignmentsBodySkeleton() {
   return (
     <>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Skeleton className="h-18 w-full rounded-lg" />
-        <Skeleton className="h-18 w-full rounded-lg" />
+        <Skeleton className="h-24 w-full rounded-lg" />
+        <Skeleton className="h-24 w-full rounded-lg" />
       </div>
       <div className="flex flex-col gap-4">
         <Skeleton className="h-7 w-56" />
@@ -69,12 +69,11 @@ export function ReviewerAssignmentsPageSkeleton() {
 function PageShellSkeleton({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-dvh flex-col bg-background">
-      <AssignmentsMain>
-        <div className="flex h-9 items-center">
-          <Skeleton className="h-5 w-16" />
-        </div>
-        {children}
-      </AssignmentsMain>
+      <AssignmentsTopRow>
+        <Skeleton className="h-5 w-16" />
+        <Skeleton className="size-8 rounded-full" />
+      </AssignmentsTopRow>
+      <AssignmentsMain>{children}</AssignmentsMain>
     </div>
   );
 }
