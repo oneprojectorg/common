@@ -5,7 +5,9 @@ import { trpc } from '@op/api/client';
 import {
   type PhaseReviewerSummary,
   ProposalReviewAssignmentStatus,
+  type ReviewerStatus,
   nextCursor,
+  reviewerStatusSchema,
 } from '@op/common/client';
 import { useInfiniteScroll } from '@op/hooks';
 import {
@@ -31,12 +33,18 @@ import {
   TableRowHeader,
 } from '@op/sense/Table';
 import { useFormatter } from 'next-intl';
-import { Suspense, useCallback } from 'react';
+import { parseAsStringLiteral, useQueryState } from 'nuqs';
+import { Suspense, useCallback, useDeferredValue } from 'react';
 import { LuUsers } from 'react-icons/lu';
 
 import { Link, useTranslations } from '@/lib/i18n';
 
+import { SearchField } from '@/components/SearchField';
+
+import { ResponsiveSelect } from '../ResponsiveSelect';
 import { ReviewStatusBadge } from '../ReviewStatusBadge';
+import { StickyFilterBar } from '../StickyFilterBar';
+import { useSearchParam } from '../useSearchParam';
 import { ReviewersTableSkeleton } from './ReviewAssignmentsSkeletons';
 
 interface ReviewersTableSectionProps {
@@ -44,6 +52,8 @@ interface ReviewersTableSectionProps {
   processInstanceId: string;
   phaseId: string;
 }
+
+const reviewerStatusParser = parseAsStringLiteral(reviewerStatusSchema.options);
 
 export function ReviewersTableSection(props: ReviewersTableSectionProps) {
   const t = useTranslations();
@@ -82,9 +92,24 @@ function ReviewersTableContent({
 }: ReviewersTableSectionProps) {
   const t = useTranslations();
 
+  const { search, setSearch, appliedSearch, isSearchPending } = useSearchParam({
+    key: 'reviewerSearch',
+  });
+  const [status, setStatus] = useQueryState(
+    'reviewerStatus',
+    reviewerStatusParser,
+  );
+
+  const appliedStatus = useDeferredValue(status);
+
   const [data, query] =
     trpc.decision.listPhaseReviewerSummaries.useSuspenseInfiniteQuery(
-      { processInstanceId, phaseId },
+      {
+        processInstanceId,
+        phaseId,
+        ...(appliedSearch ? { search: appliedSearch } : {}),
+        ...(appliedStatus ? { status: appliedStatus } : {}),
+      },
       {
         getNextPageParam: nextCursor,
         // An SSR-seeded entry never registers the realtime channel; refetch.
@@ -105,15 +130,57 @@ function ReviewersTableContent({
 
   const rows = data.pages.flatMap((page) => page.items);
   const totalReviewers = data.pages[0]?.totalReviewers ?? rows.length;
+  const total = data.pages[0]?.total ?? rows.length;
+
+  const showToolbar = totalReviewers > 0 || Boolean(search || status);
+
+  const statusItems: { id: 'all' | ReviewerStatus; label: string }[] = [
+    { id: 'all', label: t('decisions.review.allStatusesOption') },
+    { id: 'none', label: t('decisions.review.noAssignments') },
+    {
+      id: ProposalReviewAssignmentStatus.PENDING,
+      label: t('decisions.review.statusNotStarted'),
+    },
+    {
+      id: ProposalReviewAssignmentStatus.IN_PROGRESS,
+      label: t('decisions.review.statusInProgress'),
+    },
+    {
+      id: ProposalReviewAssignmentStatus.COMPLETED,
+      label: t('decisions.review.statusCompleted'),
+    },
+  ];
+
+  const reviewerCount = (
+    <ReviewerCount total={total} totalReviewers={totalReviewers} />
+  );
 
   return (
-    <div className="flex flex-col gap-6">
-      {/* Same heading as the All proposals count, so the two tabs line up. */}
-      <Header3 aria-live="polite">
-        {t('decisions.review.reviewerCount', {
-          count: totalReviewers,
-        })}
-      </Header3>
+    <div className="relative flex flex-col gap-6">
+      {showToolbar ? (
+        <StickyFilterBar>
+          {reviewerCount}
+          <div className="flex flex-wrap items-center gap-4 max-md:w-full">
+            <SearchField
+              value={search}
+              onChange={(next) => void setSearch(next === '' ? null : next)}
+              isPending={isSearchPending}
+              label={t('decisions.review.searchReviewersLabel')}
+            />
+            <ResponsiveSelect
+              selectedKey={status ?? 'all'}
+              onSelectionChange={(key) =>
+                void setStatus(key === 'all' ? null : key)
+              }
+              aria-label={t('decisions.review.filterByStatusLabel')}
+              className="min-w-40"
+              items={statusItems}
+            />
+          </div>
+        </StickyFilterBar>
+      ) : (
+        reviewerCount
+      )}
 
       {rows.length === 0 ? (
         <Empty className="rounded-md border border-dashed">
@@ -121,10 +188,23 @@ function ReviewersTableContent({
             <EmptyMedia variant="icon">
               <LuUsers className="size-6" />
             </EmptyMedia>
-            <EmptyTitle>{t('decisions.review.noReviewers')}</EmptyTitle>
-            <EmptyDescription>
-              {t('decisions.review.noReviewersHint')}
-            </EmptyDescription>
+            {totalReviewers === 0 ? (
+              <>
+                <EmptyTitle>{t('decisions.review.noReviewers')}</EmptyTitle>
+                <EmptyDescription>
+                  {t('decisions.review.noReviewersHint')}
+                </EmptyDescription>
+              </>
+            ) : (
+              <>
+                <EmptyTitle>
+                  {t('decisions.review.noReviewersMatchFilters')}
+                </EmptyTitle>
+                <EmptyDescription>
+                  {t('decisions.proposals.adjustFiltersHint')}
+                </EmptyDescription>
+              </>
+            )}
           </EmptyHeader>
         </Empty>
       ) : (
@@ -175,6 +255,35 @@ function ReviewersTableContent({
             </div>
           ) : null}
         </>
+      )}
+    </div>
+  );
+}
+
+function ReviewerCount({
+  total,
+  totalReviewers,
+}: {
+  total: number;
+  totalReviewers: number;
+}) {
+  const t = useTranslations();
+
+  return (
+    <div role="status" aria-live="polite" className="flex items-baseline gap-1">
+      {total < totalReviewers ? (
+        t.rich('decisions.review.filteredReviewerCount', {
+          count: total,
+          total: totalReviewers,
+          heading: (chunks) => <Header3>{chunks}</Header3>,
+          muted: (chunks) => (
+            <span className="text-base text-muted-foreground">{chunks}</span>
+          ),
+        })
+      ) : (
+        <Header3>
+          {t('decisions.review.reviewerCount', { count: totalReviewers })}
+        </Header3>
       )}
     </div>
   );
@@ -250,32 +359,14 @@ function ReviewerRowCells({
           : '—'}
       </TableCell>
       <TableCell>
-        {row.assignedCount === 0 ? (
+        {row.status === 'none' ? (
           <StatusBadge variant="inactive">
             {t('decisions.review.noAssignments')}
           </StatusBadge>
         ) : (
-          <ReviewStatusBadge status={getReviewerStatus(row)} />
+          <ReviewStatusBadge status={row.status} />
         )}
       </TableCell>
     </TableRow>
   );
-}
-
-/**
- * One reviewer's phase status, rolled up from the counts the summary already
- * carries. Only the three assignment statuses a rollup can land on.
- */
-function getReviewerStatus({
-  assignedCount,
-  submittedCount,
-  draftCount,
-}: PhaseReviewerSummary): ProposalReviewAssignmentStatus {
-  if (submittedCount === 0 && draftCount === 0) {
-    return ProposalReviewAssignmentStatus.PENDING;
-  }
-
-  return submittedCount < assignedCount
-    ? ProposalReviewAssignmentStatus.IN_PROGRESS
-    : ProposalReviewAssignmentStatus.COMPLETED;
 }

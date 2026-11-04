@@ -1,21 +1,14 @@
+import { Channels, listPhaseReviewerSummaries } from '@op/common';
 import {
-  Channels,
-  instancePhaseRefSchema,
-  listPhaseReviewerSummaries,
-} from '@op/common';
-import { PAGE_LIMIT, phaseReviewerSummariesSchema } from '@op/common/client';
-import { z } from 'zod';
+  phaseReviewerSummariesInputSchema,
+  phaseReviewerSummariesSchema,
+} from '@op/common/client';
 
 import { networkAuthenticatedProcedure, router } from '../../../trpcFactory';
 
 export const listPhaseReviewerSummariesRouter = router({
   listPhaseReviewerSummaries: networkAuthenticatedProcedure()
-    .input(
-      instancePhaseRefSchema.extend({
-        cursor: z.string().nullish(),
-        limit: z.number().min(1).max(PAGE_LIMIT.max).optional(),
-      }),
-    )
+    .input(phaseReviewerSummariesInputSchema)
     .output(phaseReviewerSummariesSchema)
     .query(async ({ ctx, input }) => {
       // Assignment writes publish here, so the table refetches on assign.

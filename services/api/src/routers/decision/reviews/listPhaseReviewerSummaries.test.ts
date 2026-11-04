@@ -1,10 +1,13 @@
+import { type ReviewerStatus, reviewerStatusSchema } from '@op/common/client';
 import {
   createProposalReview,
   TestReviewsDataManager,
 } from '@op/common/testing';
+import { db, eq } from '@op/db/client';
 import {
   ProposalReviewAssignmentStatus,
   ProposalReviewState,
+  profiles,
 } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
@@ -214,6 +217,113 @@ describe.concurrent('decision.listPhaseReviewerSummaries', () => {
     expect(secondPage.totalReviewers).toBeGreaterThanOrEqual(4);
   });
 
+  it('returns each reviewer status and filters on it, with a filtered total beside the phase-wide one', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const seeded = await seedReviewerStatuses(testData, task.id);
+    const { context, profileIdByStatus } = seeded;
+
+    const adminCaller = await createAuthenticatedCaller(
+      context.defaultReviewer.email,
+    );
+    const unfiltered = await adminCaller.decision.listPhaseReviewerSummaries({
+      processInstanceId: context.instance.instance.id,
+      phaseId: 'review',
+    });
+
+    for (const [status, profileId] of Object.entries(profileIdByStatus)) {
+      expect(
+        unfiltered.items.find((row) => row.reviewer.id === profileId)?.status,
+      ).toBe(status);
+    }
+    expect(unfiltered.total).toBe(unfiltered.totalReviewers);
+
+    for (const status of reviewerStatusSchema.options) {
+      const filtered = await adminCaller.decision.listPhaseReviewerSummaries({
+        processInstanceId: context.instance.instance.id,
+        phaseId: 'review',
+        status,
+      });
+
+      expect(filtered.items.map((row) => row.status)).toEqual(
+        filtered.items.map(() => status),
+      );
+      expect(filtered.items.map((row) => row.reviewer.id)).toContain(
+        profileIdByStatus[status],
+      );
+      expect(filtered.total).toBe(filtered.items.length);
+      expect(filtered.totalReviewers).toBe(unfiltered.totalReviewers);
+      expect(filtered.totalAssignments).toBe(unfiltered.totalAssignments);
+      expect(filtered.total).toBeLessThan(filtered.totalReviewers);
+    }
+  });
+
+  it('searches reviewers by name and by email, case-insensitively', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const first = await testData.createReviewAssignment({
+      title: `Search proposal ${task.id}`,
+      status: ProposalReviewAssignmentStatus.PENDING,
+    });
+    const context = first.context;
+    const named = await testData.createInstanceReviewerWithRole(context);
+    const other = await testData.createInstanceMember(context);
+    await testData.createReviewAssignment({
+      context,
+      reviewer: other,
+      title: `Search proposal other ${task.id}`,
+      status: ProposalReviewAssignmentStatus.PENDING,
+    });
+    await testData.setCurrentPhase(context.instance.instance.id, 'review');
+
+    const nameToken = `Zephyrine ${task.id.slice(0, 8)}`;
+    await db
+      .update(profiles)
+      .set({ name: nameToken })
+      .where(eq(profiles.id, named.profileId));
+
+    const adminCaller = await createAuthenticatedCaller(
+      context.defaultReviewer.email,
+    );
+    const listFor = (search: string) =>
+      adminCaller.decision.listPhaseReviewerSummaries({
+        processInstanceId: context.instance.instance.id,
+        phaseId: 'review',
+        search,
+      });
+
+    const byName = await listFor(`  ${nameToken.toUpperCase()}  `);
+    expect(byName.items.map((row) => row.reviewer.id)).toEqual([
+      named.profileId,
+    ]);
+    expect(byName.total).toBe(1);
+    expect(byName.totalReviewers).toBeGreaterThanOrEqual(3);
+
+    const reversed = await listFor(nameToken.split(' ').reverse().join(' '));
+    expect(reversed.items.map((row) => row.reviewer.id)).toEqual([
+      named.profileId,
+    ]);
+    const extraWord = await listFor(`${nameToken} nomatch`);
+    expect(extraWord.items).toEqual([]);
+
+    const byEmail = await listFor(other.email.split('@')[0] ?? other.email);
+    expect(byEmail.items.map((row) => row.reviewer.id)).toEqual([
+      other.profileId,
+    ]);
+    expect(byEmail.total).toBe(1);
+
+    const wildcard = await listFor('%');
+    expect(wildcard.items).toEqual([]);
+    expect(wildcard.total).toBe(0);
+
+    const blank = await listFor('   ');
+    expect(blank.total).toBe(blank.totalReviewers);
+  });
+
   it('rejects a cursor that did not come from a previous page', async ({
     task,
     onTestFinished,
@@ -317,6 +427,70 @@ async function seedPagedReviewers(
       context.defaultReviewer.profileId,
       ...ties.map((tie) => tie.profileId).sort(),
     ],
+  };
+}
+
+async function seedReviewerStatuses(
+  testData: TestReviewsDataManager,
+  testId: string,
+) {
+  const submitted = await testData.createReviewAssignment({
+    title: `Status proposal submitted ${testId}`,
+    status: ProposalReviewAssignmentStatus.COMPLETED,
+  });
+  const context = submitted.context;
+  const drafted = await testData.createReviewAssignment({
+    context,
+    title: `Status proposal drafted ${testId}`,
+    status: ProposalReviewAssignmentStatus.IN_PROGRESS,
+  });
+
+  const completedReviewer = await testData.createInstanceMember(context);
+  const completed = await testData.createReviewAssignment({
+    context,
+    reviewer: completedReviewer,
+    title: `Status proposal completed ${testId}`,
+    status: ProposalReviewAssignmentStatus.COMPLETED,
+  });
+
+  const pendingReviewer = await testData.createInstanceMember(context);
+  await testData.createReviewAssignment({
+    context,
+    reviewer: pendingReviewer,
+    title: `Status proposal pending ${testId}`,
+    status: ProposalReviewAssignmentStatus.PENDING,
+  });
+
+  const idle = await testData.createInstanceReviewerWithRole(context);
+  await testData.setCurrentPhase(context.instance.instance.id, 'review');
+
+  const submittedAt = new Date().toISOString();
+  for (const assignmentId of [
+    submitted.assignment.id,
+    completed.assignment.id,
+  ]) {
+    await createProposalReview({
+      assignmentId,
+      state: ProposalReviewState.SUBMITTED,
+      reviewData: { answers: {}, rationales: {} },
+      submittedAt,
+    });
+  }
+  await createProposalReview({
+    assignmentId: drafted.assignment.id,
+    state: ProposalReviewState.DRAFT,
+    reviewData: { answers: {}, rationales: {} },
+  });
+
+  return {
+    context,
+    profileIdByStatus: {
+      none: idle.profileId,
+      [ProposalReviewAssignmentStatus.PENDING]: pendingReviewer.profileId,
+      [ProposalReviewAssignmentStatus.IN_PROGRESS]:
+        context.defaultReviewer.profileId,
+      [ProposalReviewAssignmentStatus.COMPLETED]: completedReviewer.profileId,
+    } satisfies Record<ReviewerStatus, string>,
   };
 }
 
