@@ -28,17 +28,18 @@ async function gotoUntilVisible(
   ready: Locator,
   options?: Parameters<Page['goto']>[1],
 ) {
+  const bounded = { ...options, timeout: 10_000 };
   for (let attempt = 0; attempt < 2; attempt++) {
-    await page.goto(url, options);
     try {
-      await ready.waitFor({ state: 'visible', timeout: 12_000 });
+      await page.goto(url, bounded);
+      await ready.waitFor({ state: 'visible', timeout: 10_000 });
       return;
     } catch {
       continue;
     }
   }
-  await page.goto(url, options);
-  await expect(ready).toBeVisible({ timeout: 36_000 });
+  await page.goto(url, bounded).catch(() => undefined);
+  await expect(ready).toBeVisible({ timeout: 30_000 });
 }
 
 // Inlined from @op/common/client: loading it in the e2e runner breaks on
