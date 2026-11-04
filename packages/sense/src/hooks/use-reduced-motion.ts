@@ -2,9 +2,9 @@ import { useSyncExternalStore } from 'react';
 
 const QUERY = '(prefers-reduced-motion: reduce)';
 
-/** Synchronous read for imperative callers (camera moves, timers). False on the server. */
+/** Synchronous read for imperative client callers (camera moves, timers). */
 export function prefersReducedMotion(): boolean {
-  return typeof window !== 'undefined' && window.matchMedia(QUERY).matches;
+  return window.matchMedia(QUERY).matches;
 }
 
 function subscribe(onChange: () => void) {
