@@ -9,8 +9,11 @@ import {
   insertReviewAssignments,
 } from './insertReviewAssignments';
 import { pickSingleReviewerAssignments } from './pickSingleReviewerAssignments';
-import { withInstancePhases } from './readInstancePhases';
-import type { DecisionInstanceData } from './schemas/instanceData';
+import { readInstancePhases } from './readInstancePhases';
+import type {
+  DecisionInstanceData,
+  PhaseInstanceData,
+} from './schemas/instanceData';
 import { getPhaseReviewSettings } from './utils/phaseSettings';
 
 export interface GenerateReviewAssignmentsInput {
@@ -18,6 +21,8 @@ export interface GenerateReviewAssignmentsInput {
   phaseId: string;
   selectedProposalIds: string[];
   transitionHistoryId: string;
+  /** Already-resolved phases; read from the instance when omitted. */
+  phases?: readonly PhaseInstanceData[];
 }
 
 interface SelectedProposal {
@@ -44,6 +49,7 @@ export async function generateReviewAssignments({
   phaseId,
   selectedProposalIds,
   transitionHistoryId,
+  phases,
 }: GenerateReviewAssignmentsInput): Promise<void> {
   if (selectedProposalIds.length === 0) {
     return;
@@ -68,9 +74,9 @@ export async function generateReviewAssignments({
     return;
   }
 
-  const { instanceData } = await withInstancePhases({ instance });
+  const { config } = instance.instanceData as DecisionInstanceData;
   const { scope, policy } = getPhaseReviewSettings(
-    instanceData as DecisionInstanceData,
+    { config, phases: phases ?? (await readInstancePhases({ instance })) },
     phaseId,
   );
 

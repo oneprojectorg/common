@@ -11,11 +11,7 @@ import { CommonError } from '../../utils';
 import { advancePhase } from './advancePhase';
 import { invalidateDecisionInstance } from './decisionCache';
 import { onPhaseAdvanced } from './onPhaseAdvanced';
-import {
-  type PhasesResolved,
-  withInstancePhases,
-  withInstancesPhases,
-} from './readInstancePhases';
+import { type PhasesResolved, withInstancesPhases } from './readInstancePhases';
 import { getInstancePhases } from './schemas/instanceData';
 
 export interface ProcessDecisionsTransitionsResult {
@@ -175,7 +171,6 @@ async function advanceInstanceTransitions({
 }): Promise<void> {
   const processInstanceId = instance.id;
   const phases = [...getInstancePhases(instance.instanceData)];
-  let currentInstance = instance;
 
   for (const transition of transitions) {
     try {
@@ -193,7 +188,7 @@ async function advanceInstanceTransitions({
       const advanceResult = await db.transaction(async (tx) =>
         advancePhase({
           db: tx,
-          instance: currentInstance,
+          instance,
           fromPhaseId,
           toPhaseId: transition.toStateId,
           triggeredByProfileId: null,
@@ -209,8 +204,7 @@ async function advanceInstanceTransitions({
       result.processed++;
 
       // Cron-driven advance: no router runs here, so invalidate the cached
-      // instance snapshot directly. The loop below re-fetches the row for the
-      // next iteration; the cache invalidation keeps external readers fresh.
+      // instance snapshot directly to keep external readers fresh.
       await invalidateDecisionInstance(processInstanceId);
 
       await onPhaseAdvanced({
@@ -220,14 +214,6 @@ async function advanceInstanceTransitions({
         phases,
         advanceResult,
       });
-
-      // Re-fetch so the next iteration sees the committed state.
-      const refreshed = await db.query.processInstances.findFirst({
-        where: { id: processInstanceId },
-      });
-      if (refreshed) {
-        currentInstance = await withInstancePhases({ instance: refreshed });
-      }
     } catch (error) {
       result.failed++;
       result.errors.push({
