@@ -5,10 +5,11 @@
 --     -f services/db/data/backfill-phase-rows.sql
 --
 -- Release 2: run it on every environment, development too, for frozen
--- decisions only (completed or cancelled), scoped with op_backfill.instance_ids. Run it unscoped only
--- after release 3 is live. Until then the app still writes
--- instance_data.phases, so an edit to a backfilled decision shows stale rows
--- while the read flag is on, and is lost when release 3 ships.
+-- decisions only (completed or cancelled), scoped with
+-- op_backfill.instance_ids. Run it unscoped only after release 3 is live.
+-- Until then the app still writes instance_data.phases, so an edit to a
+-- backfilled decision shows stale rows while the read flag is on, and is lost
+-- when release 3 ships.
 --
 -- For each decision with no phase rows, it:
 --   - adds one PHASE profile and one decision_process_phases row per
