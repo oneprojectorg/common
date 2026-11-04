@@ -140,11 +140,14 @@ export function getUnitLabel(unit: AmountUnit): string {
 export function formatUnitAmount({
   amount,
   unit,
+  locale = 'en-US',
 }: {
   amount: number;
   unit: AmountUnit;
+  locale?: string;
 }): string {
+  const grouped = amount.toLocaleString(locale, { maximumFractionDigits: 10 });
   return unit.kind === 'currency'
-    ? `${getUnitLabel(unit)}${amount}`
-    : `${amount} ${getUnitLabel(unit)}`;
+    ? `${getUnitLabel(unit)}${grouped}`
+    : `${grouped} ${getUnitLabel(unit)}`;
 }

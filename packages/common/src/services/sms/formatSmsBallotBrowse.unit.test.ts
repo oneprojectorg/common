@@ -46,11 +46,11 @@ describe('formatSmsBallotPageHeading', () => {
 describe('formatSmsBallotScope', () => {
   it('given a district, then the scope is the district; without one it is the quoted decision name', () => {
     expect(
-      formatSmsBallotScope({ district: 'District 5', decisionName: 'Park' }),
+      formatSmsBallotScope({ termLabel: 'District 5', decisionName: 'Park' }),
     ).toBe('District 5');
-    expect(formatSmsBallotScope({ district: null, decisionName: 'Park' })).toBe(
-      '"Park"',
-    );
+    expect(
+      formatSmsBallotScope({ termLabel: null, decisionName: 'Park' }),
+    ).toBe('"Park"');
   });
 });
 

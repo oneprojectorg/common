@@ -27,7 +27,7 @@ export const SMS_BALLOT_PAGE_SIZE = 5;
 
 export interface SmsBallotPage {
   decisionName: string;
-  district: string | null;
+  termLabel: string | null;
   total: number;
   items: BallotProposalListItem[];
   nextCursor: number | null;
@@ -40,21 +40,18 @@ const loadBallotScope = async ({
   authUserId: string;
   instanceId: string;
 }) => {
-  const [instance, enrolment] = await Promise.all([
-    db.query.processInstances.findFirst({
-      where: { id: instanceId },
-      columns: {
-        id: true,
-        profileId: true,
-        instanceData: true,
-        currentStateId: true,
-        processId: true,
-        status: true,
-      },
-      with: { profile: { columns: { name: true } } },
-    }),
-    findVoterEnrolment({ processInstanceId: instanceId, authUserId }),
-  ]);
+  const instance = await db.query.processInstances.findFirst({
+    where: { id: instanceId },
+    columns: {
+      id: true,
+      profileId: true,
+      instanceData: true,
+      currentStateId: true,
+      processId: true,
+      status: true,
+    },
+    with: { profile: { columns: { name: true } } },
+  });
 
   if (
     !instance?.profile ||
@@ -64,15 +61,18 @@ const loadBallotScope = async ({
     throw new NotFoundError('Process instance', instanceId);
   }
 
-  await assertProfileAccess({
-    user: { id: authUserId },
-    profileId: instance.profileId,
-    permissions: [
-      { decisions: permission.ADMIN },
-      { decisions: permission.READ },
-    ],
-    notMemberMessage: 'User does not have access to this process',
-  });
+  const [enrolment] = await Promise.all([
+    findVoterEnrolment({ processInstanceId: instanceId, authUserId }),
+    assertProfileAccess({
+      user: { id: authUserId },
+      profileId: instance.profileId,
+      permissions: [
+        { decisions: permission.ADMIN },
+        { decisions: permission.READ },
+      ],
+      notMemberMessage: 'User does not have access to this process',
+    }),
+  ]);
 
   const phase = getInstanceCurrentPhase({
     currentStateId: instance.currentStateId,
@@ -103,7 +103,7 @@ const loadBallotScope = async ({
     instance,
     decisionName: instance.profile.name,
     taxonomyTermId,
-    district: term?.label ?? null,
+    termLabel: term?.label ?? null,
   };
 };
 
@@ -118,7 +118,7 @@ export async function listSmsBallotPage({
   after?: number;
   phoneNumberId?: string | null;
 }): Promise<SmsBallotPage> {
-  const { instance, decisionName, taxonomyTermId, district } =
+  const { instance, decisionName, taxonomyTermId, termLabel } =
     await loadBallotScope({ authUserId, instanceId });
   const [total, page] = await Promise.all([
     countBallotProposals({ instance, taxonomyTermId }),
@@ -137,7 +137,7 @@ export async function listSmsBallotPage({
 
   return {
     decisionName,
-    district,
+    termLabel,
     total,
     items: page.items,
     nextCursor: page.nextCursor,

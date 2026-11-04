@@ -73,11 +73,12 @@ const seedVotingDecision = async (
   if (!instanceProfileId) {
     throw new Error('Instance has no profile');
   }
-  let district: Awaited<ReturnType<typeof createDecisionBoundary>> | null =
-    null;
+  let seededBoundary: Awaited<
+    ReturnType<typeof createDecisionBoundary>
+  > | null = null;
   if (withBoundaries) {
     const [term] = await ensureProposalCategoryTerms([`District 5 ${label}`]);
-    district = await createDecisionBoundary({
+    seededBoundary = await createDecisionBoundary({
       profileId: instanceProfileId,
       name: `District 5 ${label}`,
       taxonomyTermId: term!.taxonomyTermId,
@@ -88,7 +89,7 @@ const seedVotingDecision = async (
     fromPhaseId: 'submission',
     toPhaseId: 'voting',
   });
-  return { setup, instanceId, authUserId: setup.user.id, district };
+  return { setup, instanceId, authUserId: setup.user.id, seededBoundary };
 };
 
 describe.concurrent('resolveVoterAddress', () => {
@@ -97,7 +98,7 @@ describe.concurrent('resolveVoterAddress', () => {
     onTestFinished,
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const { instanceId, authUserId, district } = await seedVotingDecision(
+    const { instanceId, authUserId, seededBoundary } = await seedVotingDecision(
       testData,
       { boundary: true, withBoundaries: true, label: task.id },
     );
@@ -111,14 +112,14 @@ describe.concurrent('resolveVoterAddress', () => {
 
     expect(result).toEqual({
       status: 'resolved',
-      boundary: { id: district!.id, name: district!.name },
+      boundary: { id: seededBoundary!.id, name: seededBoundary!.name },
     });
     const row = await findVoterEnrolment({
       processInstanceId: instanceId,
       authUserId,
     });
     expect(row).toMatchObject({
-      taxonomyTermId: district!.taxonomyTermId,
+      taxonomyTermId: seededBoundary!.taxonomyTermId,
       enrolledAt: null,
     });
     expect(isVoterEnrolled(row)).toBe(false);

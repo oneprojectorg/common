@@ -4,8 +4,7 @@ import { permission } from 'access-zones';
 
 import { NotFoundError } from '../../../utils';
 import { assertProfileAccess } from '../../assert';
-import { formatSmsAmount } from '../../sms/formatSmsAmount';
-import { getFieldUnit } from '../fieldUnit';
+import { formatUnitAmount, getFieldUnit } from '../fieldUnit';
 import { getDecisionBySlug } from '../getDecisionBySlug';
 import { resolveProposalTemplate } from '../resolveProposalTemplate';
 import { getInstancePhases } from '../schemas/instanceData';
@@ -61,7 +60,7 @@ const summarizeVotingInstance = async (
     enrolment: (phase && getVoterEnrolment(phase)) ?? null,
     budget:
       voterBudget !== undefined && unit
-        ? formatSmsAmount({ amount: voterBudget, unit })
+        ? formatUnitAmount({ amount: voterBudget, unit })
         : null,
   };
 };
@@ -73,7 +72,7 @@ export async function getSmsVotingDecision({
   authUserId: string;
   decisionSlug: string;
 }): Promise<SmsVotingDecision> {
-  const { name, slug, processInstance } = await getDecisionBySlug({
+  const { name, processInstance } = await getDecisionBySlug({
     user: { id: authUserId },
     slug: decisionSlug,
   });
@@ -82,7 +81,7 @@ export async function getSmsVotingDecision({
     throw new NotFoundError('Decision', decisionSlug);
   }
 
-  return summarizeVotingInstance(name, slug, processInstance);
+  return summarizeVotingInstance(name, decisionSlug, processInstance);
 }
 
 export async function describeEnrolmentDecision({

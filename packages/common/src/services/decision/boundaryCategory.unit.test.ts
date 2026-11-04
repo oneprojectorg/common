@@ -15,7 +15,7 @@ vi.mock('./resolveBoundary', () => ({
 const mockResolveBoundary = vi.mocked(resolveBoundary);
 const mockListBoundaryLabels = vi.mocked(listBoundaryLabels);
 
-const district = { id: 'b1', name: 'District 7', taxonomyTermId: 't7' };
+const boundary = { id: 'b1', name: 'District 7', taxonomyTermId: 't7' };
 const located = { location: { lat: 39.96, lng: -82.99 } };
 
 function resetBoundaryMocks(labels: string[] = []): void {
@@ -48,7 +48,7 @@ describe('fillCategoryFromBoundary', () => {
   const scope = { profileId: 'profile-1' };
 
   it('fills a single-select category with the district label', async () => {
-    mockResolveBoundary.mockResolvedValue(district);
+    mockResolveBoundary.mockResolvedValue(boundary);
 
     const result = await fillCategoryFromBoundary(
       template('single'),
@@ -60,7 +60,7 @@ describe('fillCategoryFromBoundary', () => {
   });
 
   it('adds the district to a multi-select category, deduplicated', async () => {
-    mockResolveBoundary.mockResolvedValue(district);
+    mockResolveBoundary.mockResolvedValue(boundary);
 
     const added = await fillCategoryFromBoundary(
       template('multi'),
@@ -135,7 +135,7 @@ describe('fillCategoryFromBoundary', () => {
   });
 
   it('scopes the lookup to the given decision profile', async () => {
-    mockResolveBoundary.mockResolvedValue(district);
+    mockResolveBoundary.mockResolvedValue(boundary);
 
     await fillCategoryFromBoundary(template('single'), located, scope);
 
@@ -153,7 +153,7 @@ describe('withBoundaryCategoryLabel', () => {
   beforeEach(() => resetBoundaryMocks(['District 7']));
 
   it('appends the district label, deduplicated', async () => {
-    mockResolveBoundary.mockResolvedValue(district);
+    mockResolveBoundary.mockResolvedValue(boundary);
 
     expect(await withBoundaryCategoryLabel(['Parks'], located, scope)).toEqual([
       'Parks',

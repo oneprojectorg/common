@@ -264,13 +264,13 @@ export const vote: SmsCommandHandler = async (context) => {
     findPendingVoterEnrolment(key),
   );
 
-  const resendAttestation = (district: string | null, message: string) =>
+  const resendAttestation = (termLabel: string | null, message: string) =>
     deliverAll(
       deliver,
       'send-attestation-again',
       'Attestation reply',
       formatSmsAddressResolved({
-        district,
+        termLabel,
         decisionName: decision.name,
         attestation: rule.attestation,
       }),
@@ -286,7 +286,7 @@ export const vote: SmsCommandHandler = async (context) => {
       }),
     );
     if (waitingOn === 'awaiting_agree') {
-      return resendAttestation(pending.districtName, 'attestation resent');
+      return resendAttestation(pending.termLabel, 'attestation resent');
     }
     return deliverAll(
       deliver,
@@ -308,7 +308,7 @@ export const vote: SmsCommandHandler = async (context) => {
       'Already registered reply',
       formatSmsEnrolled({
         decisionName: decision.name,
-        district: null,
+        termLabel: null,
         budget: decision.budget,
       }),
       'already enrolled',
@@ -397,7 +397,7 @@ export const agree: SmsCommandHandler = async (context) => {
     'Registered reply',
     formatSmsEnrolled({
       decisionName: decision.name,
-      district: pending.districtName,
+      termLabel: pending.termLabel,
       budget: decision.budget,
     }),
     'enrolled',
@@ -486,7 +486,7 @@ export const freeText: SmsCommandHandler = async (context) => {
         'send-attestation',
         'Attestation reply',
         formatSmsAddressResolved({
-          district: resolution.boundary?.name ?? null,
+          termLabel: resolution.boundary?.name ?? null,
           decisionName: decision.name,
           attestation: rule.attestation,
         }),

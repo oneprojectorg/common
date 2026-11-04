@@ -31,13 +31,13 @@ export const formatSmsBallotPageHeading = ({
     : `${scope} has ${total} ${total === 1 ? 'proposal' : 'proposals'}. First ${count}:`;
 
 export const formatSmsBallotScope = ({
-  district,
+  termLabel,
   decisionName,
 }: {
-  district: string | null;
+  termLabel: string | null;
   decisionName: string;
 }): string =>
-  district ?? `"${clipSmsText(decisionName, SMS_DECISION_NAME_LENGTH)}"`;
+  termLabel ?? `"${clipSmsText(decisionName, SMS_DECISION_NAME_LENGTH)}"`;
 
 export const SMS_BALLOT_UNAVAILABLE_MESSAGE =
   'That decision is not available to you.';

@@ -209,6 +209,27 @@ describe('formatUnitAmount', () => {
   it('puts a custom unit after the amount', () => {
     expect(formatUnitAmount({ amount: 12, unit: DOTS })).toBe('12 dots');
   });
+
+  it('given a dollar amount, then it is grouped in thousands behind the symbol', () => {
+    expect(formatUnitAmount({ amount: 85_000, unit: USD })).toBe('$85,000');
+    expect(formatUnitAmount({ amount: 1_000_000, unit: USD })).toBe(
+      '$1,000,000',
+    );
+  });
+
+  it('given a fractional amount, then the cents survive the grouping', () => {
+    expect(formatUnitAmount({ amount: 1234.5, unit: USD })).toBe('$1,234.5');
+  });
+
+  it('given a custom unit, then the grouped amount comes before the label', () => {
+    expect(formatUnitAmount({ amount: 1500, unit: DOTS })).toBe('1,500 dots');
+  });
+
+  it('given a locale that groups with dots, then the grouping follows it', () => {
+    expect(
+      formatUnitAmount({ amount: 85_000, unit: USD, locale: 'de-DE' }),
+    ).toBe('$85.000');
+  });
 });
 
 describe('getUnitLabel', () => {

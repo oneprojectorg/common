@@ -1,5 +1,4 @@
-import { formatSmsAmount } from '../sms/formatSmsAmount';
-import { getFieldUnit } from './fieldUnit';
+import { formatUnitAmount, getFieldUnit } from './fieldUnit';
 import { getProposalCosts } from './getProposalCosts';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
 import { getInstancePhases } from './schemas/instanceData';
@@ -59,7 +58,7 @@ export async function priceBallotProposals({
         id,
         amount === null || amount === undefined
           ? null
-          : formatSmsAmount({ amount, unit }),
+          : formatUnitAmount({ amount, unit }),
       ];
     }),
   );

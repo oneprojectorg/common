@@ -639,14 +639,14 @@ describe('handleSMSCommand registration over SMS', () => {
           : {}),
       });
     await fixture.addMember(instanceProfileId, member);
-    const district = await fixture.createDistrict({
+    const boundary = await fixture.createDistrict({
       profileId: instanceProfileId,
       name: `District 5 ${name}`,
     });
     if (line) {
       await fixture.bindLine(instanceId, parsePhoneNumber(line));
     }
-    return { member, instanceId, slug, district };
+    return { member, instanceId, slug, boundary };
   };
 
   const run = (event: ReturnType<typeof smsInboundEvent>) =>
@@ -695,7 +695,7 @@ describe('handleSMSCommand registration over SMS', () => {
   }) => {
     const fixture = new SmsCommandFixture(task.id, onTestFinished);
     const name = `Enrol Address ${task.id}`;
-    const { member, instanceId, district } = await seed(fixture, {
+    const { member, instanceId, boundary } = await seed(fixture, {
       phone: NUMBERS.enrolAddress,
       line: LINES.enrolAddress,
       name,
@@ -721,7 +721,7 @@ describe('handleSMSCommand registration over SMS', () => {
 
     expect(result).toEqual({ message: 'address resolved' });
     expect(recordedSms.at(-1)?.body).toBe(
-      `That's ${district.name}. Reply AGREE to register for "${name}": "${ATTESTATION}"`,
+      `That's ${boundary.name}. Reply AGREE to register for "${name}": "${ATTESTATION}"`,
     );
     await expect(
       findVoterEnrolment({
@@ -729,7 +729,7 @@ describe('handleSMSCommand registration over SMS', () => {
         authUserId: member.authUserId,
       }),
     ).resolves.toMatchObject({
-      taxonomyTermId: district.taxonomyTermId,
+      taxonomyTermId: boundary.taxonomyTermId,
       enrolledAt: null,
     });
   });

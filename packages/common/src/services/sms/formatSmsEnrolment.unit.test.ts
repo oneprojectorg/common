@@ -23,7 +23,7 @@ describe('formatSmsAddressResolved', () => {
   it('given a district and the attestation, then the text names the district and quotes the attestation after the AGREE instruction', () => {
     expect(
       formatSmsAddressResolved({
-        district: 'Council District 5',
+        termLabel: 'Council District 5',
         decisionName: 'City Budget',
         attestation: 'I affirm that I meet the eligibility requirements.',
       }),
@@ -35,7 +35,7 @@ describe('formatSmsAddressResolved', () => {
   it('given no district, then the text says the address was found and still asks for AGREE', () => {
     expect(
       formatSmsAddressResolved({
-        district: null,
+        termLabel: null,
         decisionName: 'City Budget',
         attestation: 'I affirm.',
       }),
@@ -64,7 +64,7 @@ describe('formatSmsEnrolled', () => {
     expect(
       formatSmsEnrolled({
         decisionName: 'Park Funding',
-        district: 'Council District 5',
+        termLabel: 'Council District 5',
         budget: '$1000000',
       }),
     ).toEqual([
@@ -76,7 +76,7 @@ describe('formatSmsEnrolled', () => {
     expect(
       formatSmsEnrolled({
         decisionName: 'Park Funding',
-        district: null,
+        termLabel: null,
         budget: null,
       }),
     ).toEqual(['You\'re registered to vote in "Park Funding".']);
@@ -86,7 +86,7 @@ describe('formatSmsEnrolled', () => {
     expect(
       formatSmsEnrolled({
         decisionName: 'Park Funding',
-        district: null,
+        termLabel: null,
         budget: '$500',
       }),
     ).toEqual([
