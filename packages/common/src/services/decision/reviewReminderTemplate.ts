@@ -4,6 +4,10 @@ export const REVIEW_REMINDER_TOKENS = ['firstName', 'proposalsLeft'] as const;
 
 export type ReviewReminderToken = (typeof REVIEW_REMINDER_TOKENS)[number];
 
+export const REVIEW_REMINDER_MESSAGE_MAX_LENGTH = 4000;
+
+export const REVIEW_REMINDER_MAX_RECIPIENTS = 1000;
+
 export function getReviewerFirstName(name: string): string {
   const trimmed = name.trim();
   const [firstWord] = trimmed.split(/\s+/);

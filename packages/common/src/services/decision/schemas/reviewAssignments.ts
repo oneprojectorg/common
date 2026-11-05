@@ -5,6 +5,10 @@ import {
 import { z } from 'zod';
 
 import { paginated, paginationInput, total } from '../../../utils/pagination';
+import {
+  REVIEW_REMINDER_MAX_RECIPIENTS,
+  REVIEW_REMINDER_MESSAGE_MAX_LENGTH,
+} from '../reviewReminderTemplate';
 import { instancePhaseRefSchema } from './instance';
 import { eligibleReviewerSchema, reviewAssignmentListSchema } from './reviews';
 import { SEARCH_MAX_LENGTH } from './search';
@@ -93,3 +97,23 @@ export const reviewerAssignmentsSchema = reviewAssignmentListSchema.extend({
 });
 
 export type ReviewerAssignments = z.infer<typeof reviewerAssignmentsSchema>;
+
+export const sendReviewReminderInputSchema = instancePhaseRefSchema.extend({
+  reviewerProfileIds: z
+    .array(z.uuid())
+    .min(1)
+    .max(REVIEW_REMINDER_MAX_RECIPIENTS),
+  message: z.string().trim().min(1).max(REVIEW_REMINDER_MESSAGE_MAX_LENGTH),
+});
+
+export type SendReviewReminderInput = z.infer<
+  typeof sendReviewReminderInputSchema
+>;
+
+export const sendReviewReminderResultSchema = z.object({
+  batchId: z.uuid(),
+});
+
+export type SendReviewReminderResult = z.infer<
+  typeof sendReviewReminderResultSchema
+>;

@@ -106,7 +106,15 @@ export {
   reviewerAssignmentsSchema,
   type ReviewerAssignments,
   type ReviewerQueueStatus,
+  sendReviewReminderInputSchema,
+  type SendReviewReminderInput,
+  sendReviewReminderResultSchema,
+  type SendReviewReminderResult,
 } from './services/decision/schemas/reviewAssignments';
+export {
+  REVIEW_REMINDER_MAX_RECIPIENTS,
+  REVIEW_REMINDER_MESSAGE_MAX_LENGTH,
+} from './services/decision/reviewReminderTemplate';
 export {
   proposalAllocationSchema,
   type ProposalAllocation,
