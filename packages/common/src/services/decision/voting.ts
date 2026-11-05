@@ -194,7 +194,7 @@ async function getVotingInstance(processInstanceId: string) {
     throw new NotFoundError('Process instance', processInstanceId);
   }
 
-  return resolvePhases({ instance: instanceRow });
+  return instanceRow;
 }
 
 // Runs both caps so the voter sees every problem at once.
@@ -357,21 +357,24 @@ export const submitVote = async ({
   try {
     const profileId = await getIndividualProfileId(authUserId);
 
-    const processInstance = await getVotingInstance(data.processInstanceId);
+    const instanceRow = await getVotingInstance(data.processInstanceId);
 
-    if (!processInstance.profileId) {
+    if (!instanceRow.profileId) {
       throw new NotFoundError('Decision profile', data.processInstanceId);
     }
 
     // Check user permissions
-    await assertProfileAccess({
-      user: { id: authUserId },
-      profileId: processInstance.profileId,
-      permissions: [
-        { decisions: permission.ADMIN },
-        { decisions: decisionPermission.VOTE },
-      ],
-    });
+    const [processInstance] = await Promise.all([
+      resolvePhases({ instance: instanceRow }),
+      assertProfileAccess({
+        user: { id: authUserId },
+        profileId: instanceRow.profileId,
+        permissions: [
+          { decisions: permission.ADMIN },
+          { decisions: decisionPermission.VOTE },
+        ],
+      }),
+    ]);
 
     const phaseConfig = getCurrentPhaseConfig(processInstance);
 
@@ -557,14 +560,17 @@ export const getVotingStatus = async ({
       }
     }
 
-    const processInstance = await getVotingInstance(data.processInstanceId);
+    const instanceRow = await getVotingInstance(data.processInstanceId);
 
-    await assertInstanceProfileAccess({
-      user,
-      instance: processInstance,
-      profilePermissions: { decisions: permission.READ },
-      orgFallbackPermissions: [{ decisions: permission.READ }],
-    });
+    const [processInstance] = await Promise.all([
+      resolvePhases({ instance: instanceRow }),
+      assertInstanceProfileAccess({
+        user,
+        instance: instanceRow,
+        profilePermissions: { decisions: permission.READ },
+        orgFallbackPermissions: [{ decisions: permission.READ }],
+      }),
+    ]);
 
     const phaseConfig = getCurrentPhaseConfig(processInstance);
 

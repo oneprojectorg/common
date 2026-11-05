@@ -58,17 +58,18 @@ export const createProposal = async ({
     throw new NotFoundError('Process instance', data.processInstanceId);
   }
 
-  await assertInstanceProfileAccess({
-    user: { id: authUserId },
-    instance: instanceRow,
-    profilePermissions: [
-      { profile: permission.ADMIN },
-      { decisions: decisionPermission.SUBMIT_PROPOSALS },
-    ],
-    orgFallbackPermissions: { profile: permission.ADMIN },
-  });
-
-  const resolvedInstance = await resolvePhases({ instance: instanceRow });
+  const [resolvedInstance] = await Promise.all([
+    resolvePhases({ instance: instanceRow }),
+    assertInstanceProfileAccess({
+      user: { id: authUserId },
+      instance: instanceRow,
+      profilePermissions: [
+        { profile: permission.ADMIN },
+        { decisions: decisionPermission.SUBMIT_PROPOSALS },
+      ],
+      orgFallbackPermissions: { profile: permission.ADMIN },
+    }),
+  ]);
 
   const currentPhaseId = resolvedInstance.currentStateId;
 
