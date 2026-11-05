@@ -10,7 +10,6 @@ import { User } from '@op/supabase/lib';
 import { collapseRoles } from 'access-zones';
 
 import {
-  CommonError,
   PAGE_LIMIT,
   type Paginated,
   constructTextSearch,
@@ -19,7 +18,7 @@ import {
   getCursorCondition,
 } from '../../utils';
 import { getNormalizedRoles } from '../access';
-import { resolvePhasesForAll } from './instancePhases';
+import { resolveProfilePhasesForAll } from './instancePhases';
 import {
   type DecisionRolePermissions,
   fromDecisionBitField,
@@ -173,27 +172,16 @@ export const listDecisionProfiles = async ({
     };
   };
 
-  const instancesWithPhases = await resolvePhasesForAll({
-    instances: profileList.flatMap(({ processInstance }) =>
-      processInstance ? [processInstance] : [],
-    ),
+  const profilesWithPhases = await resolveProfilePhasesForAll({
+    profiles: profileList,
   });
-  const instanceById = new Map(
-    instancesWithPhases.map((instance) => [instance.id, instance]),
-  );
 
   // Transform profiles to include proposal/participant counts and access permissions
-  const profilesWithCounts = profileList.map((profile) => {
+  const profilesWithCounts = profilesWithPhases.map((profile) => {
     const { profileUsers: _, ...profileWithoutUsers } = profile;
 
     if (profile.processInstance) {
-      const resolvedInstance = instanceById.get(profile.processInstance.id);
-      if (!resolvedInstance) {
-        throw new CommonError(
-          'Resolved instance missing for ' + profile.processInstance.id,
-        );
-      }
-      const { proposals, ...instanceRest } = resolvedInstance;
+      const { proposals, ...instanceRest } = profile.processInstance;
       const nonDraftProposals =
         proposals?.filter(
           (proposal) => proposal.status !== ProposalStatus.DRAFT,

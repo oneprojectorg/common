@@ -43,6 +43,7 @@ export const sendReviewPhaseEndingReminders = inngest.createFunction(
               FROM ${processPhases}
               JOIN ${profiles} ON ${profiles.id} = ${processPhases.profileId}
               WHERE ${processPhases.processInstanceId} = ${table.id}
+                -- Same id rule as phaseIdOf in phaseHelpers.
                 AND coalesce(${processPhases.data} ->> 'phaseId', ${profiles.slug}) = ${table.currentStateId}
                 AND (${processPhases.data} -> 'rules' -> 'reviews' ->> 'submit')::boolean IS TRUE
             ))`,

@@ -37,6 +37,7 @@ type DueTransition = {
 };
 
 type InstanceTransitions = {
+  id: string;
   instanceData: unknown;
   transitions: DueTransition[];
 };
@@ -95,23 +96,14 @@ export async function processDecisionsTransitions({
       return result;
     }
 
-    const transitionsByInstance = groupTransitionsByInstance(dueTransitions);
     const instances = await resolvePhasesForAll({
-      instances: Array.from(
-        transitionsByInstance,
-        ([id, { instanceData }]) => ({
-          id,
-          instanceData,
-        }),
-      ),
+      instances: groupTransitionsByInstance(dueTransitions),
     });
 
     await pMap(
       instances,
       async (instance) => {
-        const processInstanceId = instance.id;
-        const transitions =
-          transitionsByInstance.get(processInstanceId)?.transitions ?? [];
+        const { id: processInstanceId, transitions } = instance;
 
         if (instance.phases.length === 0) {
           for (const transition of transitions) {
@@ -147,7 +139,7 @@ export async function processDecisionsTransitions({
 /** Group transitions by instance so each instance's phases advance sequentially. */
 function groupTransitionsByInstance(
   dueTransitions: DueTransition[],
-): Map<string, InstanceTransitions> {
+): InstanceTransitions[] {
   const transitionsByInstance = new Map<string, InstanceTransitions>();
 
   for (const transition of dueTransitions) {
@@ -156,13 +148,14 @@ function groupTransitionsByInstance(
       existing.transitions.push(transition);
     } else {
       transitionsByInstance.set(transition.processInstanceId, {
+        id: transition.processInstanceId,
         instanceData: transition.instance.instanceData,
         transitions: [transition],
       });
     }
   }
 
-  return transitionsByInstance;
+  return [...transitionsByInstance.values()];
 }
 
 /**

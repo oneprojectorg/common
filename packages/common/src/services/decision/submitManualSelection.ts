@@ -38,6 +38,8 @@ import type {
   ManualSelectionAudit,
   TransitionData,
 } from './schemas/transitionData';
+import { getInstanceCurrentPhase } from './utils/instance';
+import { getPreviousPhases } from './utils/phaseOrder';
 import { isReviewPhase } from './utils/phaseSettings';
 
 export interface SubmitManualSelectionInput {
@@ -166,11 +168,10 @@ export async function submitManualSelection({
       db: tx,
       fromRows,
     });
-    const lockedPhaseIndex = lockedPhases.findIndex(
-      (p) => p.phaseId === currentStateId,
-    );
-    const lockedPreviousPhase =
-      lockedPhaseIndex > 0 ? lockedPhases[lockedPhaseIndex - 1] : undefined;
+    const lockedPreviousPhase = getPreviousPhases(
+      { phases: lockedPhases },
+      currentStateId,
+    ).at(-1);
     if (!lockedPreviousPhase) {
       throw new ValidationError(
         'Manual selection is not available for this instance',
@@ -275,7 +276,10 @@ export async function submitManualSelection({
     // generateReviewAssignments reads the just-attached decisionTransitionProposals
     // rows and writes assignments on the pooled `db` connection, which can't see
     // this transaction's uncommitted writes (mirrors onPhaseAdvanced's ordering).
-    const currentPhase = lockedPhases[lockedPhaseIndex];
+    const currentPhase = getInstanceCurrentPhase({
+      phases: lockedPhases,
+      currentStateId,
+    });
     if (currentPhase && isReviewPhase(currentPhase)) {
       reviewAssignmentInput = {
         instanceId: processInstanceId,

@@ -14,6 +14,7 @@ import type {
   PhaseInstanceData,
 } from '../decision/schemas/instanceData';
 import { serverExtensions } from '../decision/tiptapExtensions';
+import { getInstanceCurrentPhase } from '../decision/utils/instance';
 import type { SupportedLocale } from './locales';
 import { runTranslateBatch } from './runTranslateBatch';
 
@@ -142,9 +143,7 @@ function buildEntries(
   const prefix = `decision:${decisionProfileId}`;
   const entries: TranslatableEntry[] = [];
 
-  const currentPhase = currentStateId
-    ? phases.find((p) => p.phaseId === currentStateId)
-    : undefined;
+  const currentPhase = getInstanceCurrentPhase({ phases, currentStateId });
 
   if (currentPhase?.headline) {
     entries.push({

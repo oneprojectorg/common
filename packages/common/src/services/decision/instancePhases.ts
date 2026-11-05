@@ -1,6 +1,8 @@
+import { areFeatureFlagsForcedOn } from '@op/analytics/client-utils';
 import { type DbClient, db as defaultDb } from '@op/db/client';
 import { logger } from '@op/logging';
 
+import { CommonError } from '../../utils';
 import { isServerFeatureEnabled } from '../../utils/featureFlags';
 import {
   type ProcessPhaseWithProfile,
@@ -32,11 +34,27 @@ export type WithProfilePhases<
 const NO_ROWS_MESSAGE =
   'Decision has no phase rows; reading instanceData.phases';
 
-export const isPhasesFromRowsEnabled = (): Promise<boolean> =>
-  isServerFeatureEnabled({
-    key: PHASES_FROM_ROWS_FLAG,
-    distinctId: PHASES_FROM_ROWS_FLAG,
-  });
+// The flag read is a Redis round trip on every decision read; the value is global.
+const FLAG_MEMO_MS = 15_000;
+let flagMemo: { value: Promise<boolean>; expiresAt: number } | undefined;
+
+export const isPhasesFromRowsEnabled = (): Promise<boolean> => {
+  if (areFeatureFlagsForcedOn()) {
+    return Promise.resolve(true);
+  }
+  const now = Date.now();
+  if (!flagMemo || flagMemo.expiresAt <= now) {
+    const value = isServerFeatureEnabled({
+      key: PHASES_FROM_ROWS_FLAG,
+      distinctId: PHASES_FROM_ROWS_FLAG,
+    });
+    flagMemo = { value, expiresAt: now + FLAG_MEMO_MS };
+    value.catch(() => {
+      flagMemo = undefined;
+    });
+  }
+  return flagMemo.value;
+};
 
 export const getPhases = async ({
   instance,
@@ -63,7 +81,10 @@ export const resolvePhases = async <T extends InstanceWithData>({
     db,
     fromRows,
   });
-  return resolved ?? attachBlobPhases({ instance });
+  if (!resolved) {
+    throw new CommonError(`Phases did not resolve for instance ${instance.id}`);
+  }
+  return resolved;
 };
 
 // TODO: remove when instanceData.phases is dropped.
@@ -126,6 +147,37 @@ export const resolveProfilePhases = async <
     ? await resolvePhases({ instance: profile.processInstance })
     : null,
 });
+
+export const resolveProfilePhasesForAll = async <
+  T extends { processInstance: InstanceWithData | null },
+>({
+  profiles,
+  db = defaultDb,
+}: {
+  profiles: T[];
+  db?: DbClient;
+}): Promise<WithProfilePhases<T>[]> => {
+  const resolved = await resolvePhasesForAll({
+    instances: profiles.flatMap(({ processInstance }) =>
+      processInstance ? [processInstance] : [],
+    ),
+    db,
+  });
+  const byId = new Map(resolved.map((instance) => [instance.id, instance]));
+
+  return profiles.map((profile) => {
+    if (!profile.processInstance) {
+      return { ...profile, processInstance: null };
+    }
+    const instance = byId.get(profile.processInstance.id);
+    if (!instance) {
+      throw new CommonError(
+        `Phases did not resolve for instance ${profile.processInstance.id}`,
+      );
+    }
+    return { ...profile, processInstance: instance };
+  });
+};
 
 const toInstanceDataPhase = (
   phase: ProcessPhaseWithProfile,
