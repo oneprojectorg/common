@@ -1,4 +1,4 @@
-import { TestDecisionsDataManager } from '@op/common/testing';
+import { TestDecisionsDataManager, emptyBlobPhases } from '@op/common/testing';
 import { db, eq, sql } from '@op/db/client';
 import { processPhases, profiles } from '@op/db/schema';
 import { logger } from '@op/logging';
@@ -28,7 +28,7 @@ describe('instancePhases', () => {
       task.id,
       onTestFinished,
     );
-    await testData.createPhaseRows(instanceId);
+    await testData.renamePhaseRows(instanceId);
     const rows = await loadRows(instanceId);
     await setSortOrder(rows.initial.id, 1);
     await setSortOrder(rows.final.id, 0);
@@ -52,11 +52,8 @@ describe('instancePhases', () => {
     task,
     onTestFinished,
   }) => {
-    const { instanceId, testData } = await createInstance(
-      task.id,
-      onTestFinished,
-    );
-    await testData.leaveOnlyPhaseRows(instanceId);
+    const { instanceId } = await createInstance(task.id, onTestFinished);
+    await emptyBlobPhases(instanceId);
     const rows = await loadRows(instanceId);
     await db
       .update(processPhases)
@@ -77,7 +74,11 @@ describe('instancePhases', () => {
     task,
     onTestFinished,
   }) => {
-    const { instanceId } = await createInstance(task.id, onTestFinished);
+    const { instanceId, testData } = await createInstance(
+      task.id,
+      onTestFinished,
+    );
+    await testData.removePhaseRows(instanceId);
 
     const phases = await getPhases({
       instance: await loadInstance(instanceId),
@@ -98,7 +99,7 @@ describe('instancePhases', () => {
       task.id,
       onTestFinished,
     );
-    await testData.createPhaseRows(instanceId);
+    await testData.renamePhaseRows(instanceId);
     const rows = await loadRows(instanceId);
     await db.delete(profiles).where(eq(profiles.id, rows.initial.profileId));
     const { profile: added } = await db.transaction((tx) =>
@@ -125,7 +126,11 @@ describe('instancePhases', () => {
     task,
     onTestFinished,
   }) => {
-    const { instanceId } = await createInstance(task.id, onTestFinished);
+    const { instanceId, testData } = await createInstance(
+      task.id,
+      onTestFinished,
+    );
+    await testData.removePhaseRows(instanceId);
     const instance = await loadInstance(instanceId);
 
     const resolved = await resolvePhases({ instance });
@@ -147,7 +152,8 @@ describe('instancePhases', () => {
     if (!withRows || !withoutRows) {
       throw new Error('Expected two instances');
     }
-    await testData.leaveOnlyPhaseRows(withRows);
+    await emptyBlobPhases(withRows);
+    await testData.removePhaseRows(withoutRows);
     const instances = [
       await loadInstance(withRows),
       await loadInstance(withoutRows),
@@ -172,11 +178,8 @@ describe('instancePhases', () => {
     task,
     onTestFinished,
   }) => {
-    const { instanceId, testData } = await createInstance(
-      task.id,
-      onTestFinished,
-    );
-    await testData.leaveOnlyPhaseRows(instanceId);
+    const { instanceId } = await createInstance(task.id, onTestFinished);
+    await emptyBlobPhases(instanceId);
     const instance = await loadInstance(instanceId);
 
     const resolved = await resolvePhases({ instance });
@@ -189,7 +192,7 @@ describe('instancePhases', () => {
     ]);
   });
 
-  it('attaches the blob phases without reading the rows', async ({
+  it('attaches the blob phases even when rows exist', async ({
     task,
     onTestFinished,
   }) => {
@@ -197,7 +200,7 @@ describe('instancePhases', () => {
       task.id,
       onTestFinished,
     );
-    await testData.createPhaseRows(instanceId);
+    await testData.renamePhaseRows(instanceId);
     const instance = await loadInstance(instanceId);
 
     const attached = attachBlobPhases({ instance });

@@ -5,6 +5,7 @@ import { permission } from 'access-zones';
 
 import { UnauthorizedError } from '../../utils';
 import { assertOrgAccess } from '../assert';
+import { resolvePhasesForAll } from './instancePhases';
 
 export const listLegacyInstances = async ({
   ownerProfileId,
@@ -48,7 +49,11 @@ export const listLegacyInstances = async ({
     orderBy: desc(processInstances.createdAt),
   });
 
-  return instanceList.map((instance) => {
+  const instancesWithPhases = await resolvePhasesForAll({
+    instances: instanceList,
+  });
+
+  return instancesWithPhases.map((instance) => {
     const nonDraftProposals =
       instance.proposals?.filter(
         (proposal) => proposal.status !== ProposalStatus.DRAFT,

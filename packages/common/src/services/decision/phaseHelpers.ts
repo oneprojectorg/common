@@ -1,24 +1,17 @@
-import {
-  type DbClient,
-  type TransactionType,
-  asc,
-  db,
-  eq,
-  inArray,
-} from '@op/db/client';
-import {
-  EntityType,
-  type ProcessPhase,
-  type Profile,
-  processPhases,
-  profiles,
-} from '@op/db/schema';
+import { type DbClient, asc, db, eq, inArray } from '@op/db/client';
+import { ProcessStatus, processPhases, profiles } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 import { permission } from 'access-zones';
-import { randomUUID } from 'node:crypto';
 
 import { CommonError, NotFoundError, ValidationError } from '../../utils';
 import { assertProfileAccess } from '../assert';
+import {
+  type ProcessPhaseWithProfile,
+  type PhaseData,
+  type PhaseRowData,
+  assertPhaseCountFits,
+  phaseIdOf,
+} from './phaseRowWrites';
 import { schemaValidator } from './schemaValidator';
 import {
   type PhaseInstanceData,
@@ -26,52 +19,18 @@ import {
   assertSettingsMatchSchema,
 } from './schemas/instanceData';
 
-// phaseId and name live on the phase's profile.
-export type PhaseData = Omit<PhaseInstanceData, 'phaseId' | 'name'>;
-
-// TODO: drop phaseId from row data once every reference uses the row id.
-type PhaseRowData = PhaseData & { phaseId?: string };
+export {
+  type ProcessPhaseWithProfile,
+  type PhaseData,
+  assertPhaseCountFits,
+  assertPhaseNamesFit,
+  assertPhasesCanBeMinted,
+  insertPhase,
+  phaseIdOf,
+  reconcilePhases,
+} from './phaseRowWrites';
 
 export { MAX_PHASES_PER_DECISION } from './utils/phaseOrder';
-
-const SLUG_ATTEMPTS = 3;
-
-// Callers authorize first. Settings are unchecked: legacy instance data can
-// hold settings without a schema, and conversion copies it.
-export const insertPhase = async ({
-  tx,
-  processInstanceId,
-  name,
-  sortOrder,
-  data,
-  generateSlug = generatePhaseSlug,
-}: {
-  tx: TransactionType;
-  processInstanceId: string;
-  name: string;
-  sortOrder: number;
-  data?: PhaseData;
-  // Only tests pass this, to force slug clashes.
-  generateSlug?: () => string;
-}): Promise<{ phase: ProcessPhase; profile: Profile }> => {
-  const profile = await insertPhaseProfile({ tx, name, generateSlug });
-
-  const [phase] = await tx
-    .insert(processPhases)
-    .values({
-      processInstanceId,
-      sortOrder,
-      profileId: profile.id,
-      data: data ?? {},
-    })
-    .returning();
-
-  if (!phase) {
-    throw new CommonError('Failed to create phase');
-  }
-
-  return { phase, profile };
-};
 
 export const listPhasesByInstance = async ({
   db,
@@ -80,37 +39,94 @@ export const listPhasesByInstance = async ({
   db: DbClient;
   processInstanceIds: string[];
 }): Promise<Map<string, PhaseInstanceData[]>> => {
-  const phasesByInstance = new Map<string, PhaseInstanceData[]>();
+  const rowsByInstance = await listPhaseRowsByInstance({
+    db,
+    processInstanceIds,
+  });
 
-  if (processInstanceIds.length === 0) {
-    return phasesByInstance;
-  }
+  return new Map(
+    [...rowsByInstance].map(([processInstanceId, rows]) => [
+      processInstanceId,
+      rows.map(toInstanceDataPhase),
+    ]),
+  );
+};
 
-  const rows = await db
-    .select({
-      processInstanceId: processPhases.processInstanceId,
-      data: processPhases.data,
-      name: profiles.name,
-      slug: profiles.slug,
+export const listPhases = async ({
+  db,
+  processInstanceId,
+}: {
+  db: DbClient;
+  processInstanceId: string;
+}): Promise<ProcessPhaseWithProfile[]> =>
+  (
+    await listPhaseRowsByInstance({
+      db,
+      processInstanceIds: [processInstanceId],
     })
-    .from(processPhases)
-    .innerJoin(profiles, eq(profiles.id, processPhases.profileId))
-    .where(inArray(processPhases.processInstanceId, processInstanceIds))
-    .orderBy(
-      asc(processPhases.processInstanceId),
-      asc(processPhases.sortOrder),
-      asc(processPhases.id),
-    );
+  ).get(processInstanceId) ?? [];
 
-  for (const { processInstanceId, data: rawData, name, slug } of rows) {
-    const data: PhaseRowData = isPhaseRowData(rawData) ? rawData : {};
-    const phases = phasesByInstance.get(processInstanceId) ?? [];
-    // TODO: use the row id once references stop storing data.phaseId.
-    phases.push({ ...data, phaseId: data.phaseId ?? slug, name });
-    phasesByInstance.set(processInstanceId, phases);
+// Checked on the rows a write leaves, so every writer refuses the same states.
+export const assertPhaseRowInvariants = ({
+  rows,
+  previousPhaseIds,
+  instance,
+}: {
+  rows: ProcessPhaseWithProfile[];
+  previousPhaseIds: readonly string[];
+  instance: { status: string | null; currentStateId: string | null };
+}): void => {
+  // With no rows, readers fall back to instanceData.phases and resurrect them.
+  if (rows.length === 0) {
+    throw new ValidationError('A decision must keep at least one phase', {
+      phases: 'Keep at least one phase',
+    });
   }
+  assertPhaseCountFits(rows.length);
 
-  return phasesByInstance;
+  const { status, currentStateId } = instance;
+  if (
+    status !== ProcessStatus.DRAFT &&
+    currentStateId !== null &&
+    previousPhaseIds.includes(currentStateId) &&
+    !rows.some((row) => phaseIdOf(row) === currentStateId)
+  ) {
+    throw new ValidationError('The current phase cannot be deleted', {
+      phases: 'Move the decision to another phase first',
+    });
+  }
+};
+
+export const toInstanceDataPhase = (
+  phase: ProcessPhaseWithProfile,
+): PhaseInstanceData => ({
+  ...phase.data,
+  phaseId: phaseIdOf(phase),
+  name: phase.name,
+});
+
+// TODO: drop once transitions are keyed on phase rows alone.
+export const resolveTransitionPhaseRowIds = <
+  T extends { fromStateId: string | null; toStateId: string },
+>({
+  phases,
+  transitions,
+}: {
+  phases: ProcessPhaseWithProfile[];
+  transitions: T[];
+}): (T & { fromPhaseId: string | null; toPhaseId: string | null })[] => {
+  const rowIdByPhaseId = new Map(
+    phases.map((phase) => [phaseIdOf(phase), phase.id]),
+  );
+
+  return transitions.map((transition) => ({
+    ...transition,
+    fromPhaseId:
+      transition.fromStateId === null
+        ? null
+        : (rowIdByPhaseId.get(transition.fromStateId) ?? null),
+    toPhaseId: rowIdByPhaseId.get(transition.toStateId) ?? null,
+  }));
 };
 
 export const assertPhaseSchemasCompile = ({
@@ -216,35 +232,48 @@ export const assertDecisionAdmin = async ({
   });
 };
 
-const insertPhaseProfile = async ({
-  tx,
-  name,
-  generateSlug,
+// Writers need the row and profile ids, so they read the rows unconverted.
+const listPhaseRowsByInstance = async ({
+  db,
+  processInstanceIds,
 }: {
-  tx: TransactionType;
-  name: string;
-  generateSlug: () => string;
-}): Promise<Profile> => {
-  for (let attempt = 0; attempt < SLUG_ATTEMPTS; attempt++) {
-    const [profile] = await tx
-      .insert(profiles)
-      .values({
-        type: EntityType.PHASE,
-        name,
-        slug: generateSlug(),
-      })
-      .onConflictDoNothing({ target: profiles.slug })
-      .returning();
+  db: DbClient;
+  processInstanceIds: string[];
+}): Promise<Map<string, ProcessPhaseWithProfile[]>> => {
+  const phasesByInstance = new Map<string, ProcessPhaseWithProfile[]>();
 
-    if (profile) {
-      return profile;
-    }
+  if (processInstanceIds.length === 0) {
+    return phasesByInstance;
   }
 
-  throw new CommonError('Failed to create phase profile');
-};
+  const rows = await db
+    .select({
+      processInstanceId: processPhases.processInstanceId,
+      id: processPhases.id,
+      profileId: processPhases.profileId,
+      sortOrder: processPhases.sortOrder,
+      data: processPhases.data,
+      name: profiles.name,
+      slug: profiles.slug,
+    })
+    .from(processPhases)
+    .innerJoin(profiles, eq(profiles.id, processPhases.profileId))
+    .where(inArray(processPhases.processInstanceId, processInstanceIds))
+    .orderBy(
+      asc(processPhases.processInstanceId),
+      asc(processPhases.sortOrder),
+      asc(processPhases.createdAt),
+      asc(processPhases.id),
+    );
 
-const generatePhaseSlug = () => randomUUID().slice(0, 8);
+  for (const { processInstanceId, data, ...phase } of rows) {
+    const phases = phasesByInstance.get(processInstanceId) ?? [];
+    phases.push({ ...phase, data: isPhaseRowData(data) ? data : {} });
+    phasesByInstance.set(processInstanceId, phases);
+  }
+
+  return phasesByInstance;
+};
 
 const isJsonObject = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);

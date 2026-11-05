@@ -15,6 +15,7 @@ import { invalidateProfileUserAccessCache } from '../access';
 import { assertUserByAuthId } from '../assert';
 import { createDefaultDecisionRoles } from './decisionRoles';
 import { getTemplate } from './getTemplate';
+import { reconcilePhases } from './phaseHelpers';
 import type { DecisionInstanceData } from './schemas/instanceData';
 import { createInstanceDataFromTemplate } from './schemas/instanceData';
 
@@ -67,6 +68,7 @@ export const createDecisionInstance = async ({
         processId,
         name,
         description,
+        // TODO: leave phases out once instanceData.phases is dropped.
         instanceData,
         currentStateId: instanceData.phases[0]?.phaseId ?? null,
         ownerProfileId,
@@ -79,6 +81,13 @@ export const createDecisionInstance = async ({
     if (!newInstance) {
       throw new CommonError('Failed to create decision process instance');
     }
+
+    await reconcilePhases({
+      tx,
+      processInstanceId: newInstance.id,
+      existing: [],
+      phases: instanceData.phases,
+    });
 
     const { admin: adminRole } = await createDefaultDecisionRoles({
       profileId: instanceProfile.id,

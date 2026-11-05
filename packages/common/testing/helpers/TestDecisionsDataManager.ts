@@ -14,7 +14,7 @@ import {
 } from '@op/db/schema';
 import { ROLES } from '@op/db/seedData/accessControl';
 import type { User } from '@op/supabase/lib';
-import { eq, inArray, sql } from 'drizzle-orm';
+import { and, eq, inArray, ne, or, sql } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
 
 import {
@@ -27,11 +27,9 @@ import {
   createOrganization as createOrganizationService,
   createProposal as createProposalService,
   type PhaseData,
-  getInstancePhases,
   getTemplate,
   joinOrganization,
 } from '../../src';
-import { insertPhase } from '../../src/services/decision/phaseHelpers';
 import {
   claimShortCode,
   grantDecisionProfileAccess,
@@ -731,48 +729,51 @@ export class TestDecisionsDataManager {
   }
 
   // TODO: remove the phase-row fixtures below when instanceData.phases is dropped.
-  async createPhaseRows(
+  async removePhaseRows(
     instanceId: string,
-    rowData: PhaseData = {},
+    { exceptRowId }: { exceptRowId?: string } = {},
   ): Promise<void> {
-    const instance = await db.query.processInstances.findFirst({
-      where: { id: instanceId },
-      columns: { instanceData: true },
-    });
-    if (!instance) {
-      throw new Error(`Instance ${instanceId} not found`);
-    }
-
-    const phases = getInstancePhases(instance.instanceData);
-    await db.transaction(async (tx) => {
-      for (const [
-        sortOrder,
-        { phaseId, name: _name, ...data },
-      ] of phases.entries()) {
-        const { phase, profile } = await insertPhase({
-          tx,
-          processInstanceId: instanceId,
-          name: `Row ${phaseId}`,
-          sortOrder,
-          data: { ...data, ...rowData },
-        });
-        this.trackProfileForCleanup(profile.id);
-        await tx
-          .update(processPhases)
-          .set({
-            data: sql`${processPhases.data} || ${JSON.stringify({ phaseId })}::jsonb`,
-          })
-          .where(eq(processPhases.id, phase.id));
-      }
-    });
+    await db.delete(profiles).where(
+      inArray(
+        profiles.id,
+        db
+          .select({ id: processPhases.profileId })
+          .from(processPhases)
+          .where(
+            and(
+              eq(processPhases.processInstanceId, instanceId),
+              exceptRowId === undefined
+                ? undefined
+                : ne(processPhases.id, exceptRowId),
+            ),
+          ),
+      ),
+    );
   }
 
   async leaveOnlyPhaseRows(
     instanceId: string,
     rowData: PhaseData = {},
   ): Promise<void> {
-    await this.createPhaseRows(instanceId, rowData);
+    await db
+      .update(processPhases)
+      .set({
+        data: sql`${processPhases.data} || ${JSON.stringify(rowData)}::jsonb`,
+      })
+      .where(eq(processPhases.processInstanceId, instanceId));
+    await this.renamePhaseRows(instanceId);
     await emptyBlobPhases(instanceId);
+  }
+
+  // Names each row `Row <phaseId>` so a read shows whether it came from the rows or the blob.
+  async renamePhaseRows(instanceId: string): Promise<void> {
+    await db
+      .update(profiles)
+      .set({ name: sql`'Row ' || (${processPhases.data} ->> 'phaseId')` })
+      .from(processPhases)
+      .where(
+        sql`${profiles.id} = ${processPhases.profileId} AND ${processPhases.processInstanceId} = ${instanceId}`,
+      );
   }
 
   /**
@@ -830,7 +831,25 @@ export class TestDecisionsDataManager {
           validProfileIds.map((id) => `proposal-location:${id}`),
         ),
       );
-      await db.delete(profiles).where(inArray(profiles.id, validProfileIds));
+      // An instance's phase profiles outlive it unless deleted with it.
+      await db
+        .delete(profiles)
+        .where(
+          or(
+            inArray(profiles.id, validProfileIds),
+            inArray(
+              profiles.id,
+              db
+                .select({ id: processPhases.profileId })
+                .from(processPhases)
+                .innerJoin(
+                  processInstances,
+                  eq(processInstances.id, processPhases.processInstanceId),
+                )
+                .where(inArray(processInstances.profileId, validProfileIds)),
+            ),
+          ),
+        );
     }
 
     // 2. Delete users table rows by auth user IDs
