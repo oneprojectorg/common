@@ -126,6 +126,8 @@ async function openLandingPageWithRevisionRequest({
     authUserId: org.adminUser.authUserId,
     email: org.adminUser.email,
     schema: REVIEW_SCHEMA,
+    // The homepage lists only revision requests from the current phase.
+    currentStateId: 'review',
   });
 
   const { user: author } = await createInstanceMember({

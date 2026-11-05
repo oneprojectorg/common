@@ -22,9 +22,12 @@ export const listProposalsRevisionRequestsRouter = router({
         user: ctx.user,
       });
 
-      ctx.registerQueryChannels(
-        result.processInstanceIds.map(Channels.reviewAssignments),
-      );
+      // The list follows each instance's current phase, which phase
+      // transitions publish on decisionInstance.
+      ctx.registerQueryChannels([
+        ...result.processInstanceIds.map(Channels.reviewAssignments),
+        ...result.processInstanceIds.map(Channels.decisionInstance),
+      ]);
 
       return proposalRevisionRequestListSchema.parse(result);
     }),
