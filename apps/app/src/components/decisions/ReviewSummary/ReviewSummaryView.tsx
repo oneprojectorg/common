@@ -28,6 +28,7 @@ import {
 import type { OwnReviewEntry } from '../ReviewsPanel/ReviewsPanel';
 import { ReviewsPanel } from '../ReviewsPanel/ReviewsPanel';
 import { TranslateLink } from '../TranslateLink';
+import { getPendingSelectionSourcePhase } from '../pendingSelection';
 import { useTranslateProposal } from '../useTranslateProposal';
 import { OwnReviewPanel } from './OwnReviewPanel';
 import { ReviewSummaryAdvanceFooter } from './ReviewSummaryAdvanceFooter';
@@ -196,7 +197,13 @@ export function ReviewSummaryView({
       )
     : undefined;
 
-  const showAdvanceFooter = isAdmin && !isPhaseInProgress;
+  const pendingSelectionSourcePhase = getPendingSelectionSourcePhase({
+    phases: instance.instanceData?.phases,
+    currentPhaseId: instance.currentStateId,
+    selectionsAreConfirmed: instance.selectionsAreConfirmed,
+  });
+  const showAdvanceFooter =
+    isAdmin && pendingSelectionSourcePhase?.phaseId === phaseId;
 
   const currentProposalPane = (
     <ProposalPreview
