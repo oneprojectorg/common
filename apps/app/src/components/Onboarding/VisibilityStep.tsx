@@ -67,8 +67,13 @@ export const VisibilityStep = ({ onNext }: StepProps): ReactNode => {
   const profileName = userAccount?.profile?.name ?? '';
   const participantNumber = parseParticipantNumber(profileName) ?? profileName;
 
+  // <bdi>: the interpolated value is "Participant <n>" today, but the
+  // fallback is the raw profile name — user-authored text, which must be
+  // bidi-isolated inside an RTL paragraph.
   const strong = (chunks: ReactNode) => (
-    <span className="font-strong text-foreground">{chunks}</span>
+    <span className="font-strong text-foreground">
+      <bdi>{chunks}</bdi>
+    </span>
   );
 
   const submit = () => {
@@ -120,6 +125,10 @@ export const VisibilityStep = ({ onNext }: StepProps): ReactNode => {
             description={tSettings('showNameHint')}
             className="rounded-xl p-4"
           />
+          {/* Inside the radiogroup on purpose: this field is a disclosure of
+              the "Show my name" radio, so the focus order (radio → its field →
+              next radio) matters more than the letter of the owned-elements
+              table; axe accepts extra non-radio children in a radiogroup. */}
           {mode === 'name' ? (
             <Field className="ps-10">
               <FieldLabel htmlFor={nameFieldId}>
