@@ -178,6 +178,9 @@ const JoinAccountModalContent = ({
   // next/navigation (not the i18n router): the locale prefix must stay — the
   // promote-onboarding redirect and the locale-less /login route both need it.
   const pathname = usePathname();
+  // Read-only here; the modal's owner clears it on close. nuqs rather than
+  // window.location so the render stays SSR-safe.
+  const [pendingRaw] = useQueryState(PENDING_ENGAGEMENT_PARAM);
 
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -321,8 +324,13 @@ const JoinAccountModalContent = ({
   };
 
   // Native anchor: /login is outside the [locale] tree, so a RAC link 404s at
-  // /en/login (same as HeaderUserMenu).
-  const loginHref = `/login?redirect=${encodeURIComponent(pathname)}`;
+  // /en/login (same as HeaderUserMenu). The pending engagement rides along as
+  // the claim paths carry it — an existing-account user who clicked Like must
+  // not lose the action by choosing Log in. Their proof is already saved, so
+  // the replay applies once they are back.
+  const loginHref = `/login?redirect=${encodeURIComponent(
+    withPendingEngagement(pathname, pendingRaw),
+  )}`;
 
   const sentTo = otpSent
     ? codeSentToLabel(t, { isPhone, phone: normalizePhoneNumber(phone), email })
