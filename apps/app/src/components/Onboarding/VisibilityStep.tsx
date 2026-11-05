@@ -16,33 +16,6 @@ import { FormContainer } from '../form/FormContainer';
 import { FormHeader } from '../form/FormHeader';
 import { useOnboardingFormStore } from './useOnboardingFormStore';
 
-export const MAX_FULL_NAME_LENGTH = 200;
-
-export const validator = z
-  .object({
-    mode: z.enum(['name', 'anonymous']),
-    fullName: z.string().trim().max(MAX_FULL_NAME_LENGTH).optional(),
-  })
-  .refine((v) => v.mode === 'anonymous' || Boolean(v.fullName?.trim()), {
-    path: ['fullName'],
-  });
-
-export const fullNameIssue = (value: string): 'required' | 'tooLong' | null => {
-  const trimmed = value.trim();
-  if (!trimmed) {
-    return 'required';
-  }
-  if (trimmed.length > MAX_FULL_NAME_LENGTH) {
-    return 'tooLong';
-  }
-  return null;
-};
-
-export const parseParticipantNumber = (profileName: string): string | null => {
-  const match = /^Participant (\d+)$/.exec(profileName);
-  return match?.[1] ?? null;
-};
-
 export const VisibilityStep = ({ onNext }: StepProps): ReactNode => {
   const t = useTranslations();
   const tSettings = useTranslations('settings');
@@ -168,4 +141,34 @@ export const VisibilityStep = ({ onNext }: StepProps): ReactNode => {
       </FormContainer>
     </form>
   );
+};
+
+export const MAX_FULL_NAME_LENGTH = 200;
+
+/** Step-gate schema for MultiStepForm; the component pre-validates with
+ * translated copy via `fullNameIssue`, matching the PersonalDetailsForm
+ * pattern. */
+export const validator = z
+  .object({
+    mode: z.enum(['name', 'anonymous']),
+    fullName: z.string().trim().max(MAX_FULL_NAME_LENGTH).optional(),
+  })
+  .refine((v) => v.mode === 'anonymous' || Boolean(v.fullName?.trim()), {
+    path: ['fullName'],
+  });
+
+export const fullNameIssue = (value: string): 'required' | 'tooLong' | null => {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return 'required';
+  }
+  if (trimmed.length > MAX_FULL_NAME_LENGTH) {
+    return 'tooLong';
+  }
+  return null;
+};
+
+export const parseParticipantNumber = (profileName: string): string | null => {
+  const match = /^Participant (\d+)$/.exec(profileName);
+  return match?.[1] ?? null;
 };
