@@ -129,7 +129,13 @@ export const getDecisionInstanceRouter = router({
         throw new NotFoundError('Decision instance not found');
       }
 
-      const resolvedInstance = await resolvePhases({ instance: instanceRow });
+      // No profile of its own means no grant to carry.
+      const [resolvedInstance, isPublic] = await Promise.all([
+        resolvePhases({ instance: instanceRow }),
+        instanceRow.profileId
+          ? isDecisionPublic({ profileId: instanceRow.profileId })
+          : false,
+      ]);
 
       const wireInstanceData = putPhasesOnInstanceData({
         instanceData: resolvedInstance.instanceData,
@@ -139,11 +145,6 @@ export const getDecisionInstanceRouter = router({
       const { phases = [], ...instanceData } = parsed.success
         ? parsed.data
         : {};
-
-      // No profile of its own means no grant to carry.
-      const isPublic = resolvedInstance.profileId
-        ? await isDecisionPublic({ profileId: resolvedInstance.profileId })
-        : false;
 
       const schemaParsed = detailProcessSchema.safeParse(
         resolvedInstance.process?.processSchema,

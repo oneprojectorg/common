@@ -63,8 +63,9 @@ export const loadBallotScope = async ({
 
   const { profile, profileId } = instanceRow;
 
-  const [enrolment] = await Promise.all([
+  const [enrolment, resolvedInstance] = await Promise.all([
     findVoterEnrolment({ processInstanceId: instanceId, authUserId }),
+    resolvePhases({ instance: instanceRow }),
     assertProfileAccess({
       user: { id: authUserId },
       profileId,
@@ -75,8 +76,6 @@ export const loadBallotScope = async ({
       notMemberMessage: 'User does not have access to this process',
     }),
   ]);
-
-  const resolvedInstance = await resolvePhases({ instance: instanceRow });
 
   const phase = getInstanceCurrentPhase(resolvedInstance);
 

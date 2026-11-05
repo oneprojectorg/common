@@ -35,7 +35,6 @@ type PhaseRowData = PhaseData & { phaseId?: string };
 export interface ProcessPhaseWithProfile {
   id: string;
   profileId: string;
-  sortOrder: number;
   data: PhaseRowData;
   name: string;
   slug: string;
@@ -100,7 +99,6 @@ export const listPhasesByInstance = async ({
       processInstanceId: processPhases.processInstanceId,
       id: processPhases.id,
       profileId: processPhases.profileId,
-      sortOrder: processPhases.sortOrder,
       data: processPhases.data,
       name: profiles.name,
       slug: profiles.slug,

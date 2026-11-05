@@ -168,7 +168,7 @@ const rowPhases = (phaseIds: string[]) =>
 
 describe('with process_phases_from_rows on and instanceData.phases empty', () => {
   beforeAll(() => {
-    vi.stubEnv('NEXT_PUBLIC_E2E', 'true');
+    forceServerFlags(true);
   });
 
   afterAll(() => {

@@ -3,6 +3,7 @@ import {
   decodeCursor,
   encodeCursor,
   getGenericCursorCondition,
+  getInstanceCurrentPhase,
   resolvePhasesForAll,
 } from '@op/common';
 import {
@@ -56,7 +57,7 @@ const resolveCurrentPhase = ({
 
   const schema = phaseLookupProcessSchema.safeParse(processSchema);
 
-  const instancePhase = phases.find((p) => p.phaseId === currentStateId);
+  const instancePhase = getInstanceCurrentPhase({ phases, currentStateId });
   const schemaPhase = schema.success
     ? schema.data.phases?.find((p) => p.id === currentStateId)
     : undefined;

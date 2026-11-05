@@ -104,19 +104,22 @@ export async function describeEnrolmentDecision({
     throw new NotFoundError('Process instance', instanceId);
   }
 
-  await assertProfileAccess({
-    user: { id: authUserId },
-    profileId: instanceRow.profile.id,
-    permissions: [
-      { decisions: permission.ADMIN },
-      { decisions: permission.READ },
-    ],
-    notMemberMessage: 'User does not have access to this process',
-  });
+  const [resolvedInstance] = await Promise.all([
+    resolvePhases({ instance: instanceRow }),
+    assertProfileAccess({
+      user: { id: authUserId },
+      profileId: instanceRow.profile.id,
+      permissions: [
+        { decisions: permission.ADMIN },
+        { decisions: permission.READ },
+      ],
+      notMemberMessage: 'User does not have access to this process',
+    }),
+  ]);
 
   return summarizeVotingInstance(
     instanceRow.profile.name,
     instanceRow.profile.slug,
-    await resolvePhases({ instance: instanceRow }),
+    resolvedInstance,
   );
 }
