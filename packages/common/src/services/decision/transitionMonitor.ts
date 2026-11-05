@@ -36,6 +36,11 @@ type DueTransition = {
   };
 };
 
+type InstanceTransitions = {
+  instanceData: unknown;
+  transitions: DueTransition[];
+};
+
 /**
  * Process all due scheduled transitions. Called by cron.
  * Delegates each transition to `advancePhase`.
@@ -92,17 +97,21 @@ export async function processDecisionsTransitions({
 
     const transitionsByInstance = groupTransitionsByInstance(dueTransitions);
     const instances = await resolvePhasesForAll({
-      instances: Array.from(transitionsByInstance, ([id, transitions]) => ({
-        id,
-        instanceData: transitions[0]!.instance.instanceData,
-      })),
+      instances: Array.from(
+        transitionsByInstance,
+        ([id, { instanceData }]) => ({
+          id,
+          instanceData,
+        }),
+      ),
     });
 
     await pMap(
       instances,
       async (instance) => {
         const processInstanceId = instance.id;
-        const transitions = transitionsByInstance.get(processInstanceId) ?? [];
+        const transitions =
+          transitionsByInstance.get(processInstanceId)?.transitions ?? [];
 
         if (instance.phases.length === 0) {
           for (const transition of transitions) {
@@ -138,15 +147,18 @@ export async function processDecisionsTransitions({
 /** Group transitions by instance so each instance's phases advance sequentially. */
 function groupTransitionsByInstance(
   dueTransitions: DueTransition[],
-): Map<string, DueTransition[]> {
-  const transitionsByInstance = new Map<string, DueTransition[]>();
+): Map<string, InstanceTransitions> {
+  const transitionsByInstance = new Map<string, InstanceTransitions>();
 
   for (const transition of dueTransitions) {
     const existing = transitionsByInstance.get(transition.processInstanceId);
     if (existing) {
-      existing.push(transition);
+      existing.transitions.push(transition);
     } else {
-      transitionsByInstance.set(transition.processInstanceId, [transition]);
+      transitionsByInstance.set(transition.processInstanceId, {
+        instanceData: transition.instance.instanceData,
+        transitions: [transition],
+      });
     }
   }
 

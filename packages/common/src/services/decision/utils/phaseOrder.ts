@@ -1,6 +1,7 @@
 /**
  * Phase-order navigation over a phase list. Phase order IS the array order
- * (first = initial, last = final) — phases carry no explicit rank. Takes any
+ * (first = initial, last = final): the blob has no rank, and a list built from
+ * rows is already in `sortOrder` order (see `listPhasesByInstance`). Takes any
  * `{ phases }` source: the server passes a resolved instance, the client its
  * wire `instanceData`. Client-safe: no server-only imports.
  */

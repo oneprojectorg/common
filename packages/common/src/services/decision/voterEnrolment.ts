@@ -38,7 +38,7 @@ const loadEnrolmentContext = async ({
   processInstanceId,
   authUserId,
 }: EnrolmentKey) => {
-  const [profileId, row] = await Promise.all([
+  const [profileId, instanceRow] = await Promise.all([
     getIndividualProfileId(authUserId),
     db.query.processInstances.findFirst({
       where: { id: processInstanceId },
@@ -51,20 +51,20 @@ const loadEnrolmentContext = async ({
     }),
   ]);
 
-  if (!row) {
+  if (!instanceRow) {
     throw new NotFoundError('Process instance', processInstanceId);
   }
 
-  const instance = await resolvePhases({ instance: row });
+  const resolvedInstance = await resolvePhases({ instance: instanceRow });
 
-  const phase = getInstanceCurrentPhase(instance);
+  const phase = getInstanceCurrentPhase(resolvedInstance);
   const rule = phase ? getVoterEnrolment(phase) : undefined;
 
   if (!rule) {
     throw new ValidationError('This decision has no enrolment step');
   }
 
-  return { profileId, instance, rule };
+  return { profileId, instance: resolvedInstance, rule };
 };
 
 const findRow = (processInstanceId: string, profileId: string) =>
