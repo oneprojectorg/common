@@ -16,7 +16,6 @@ import { Header2 } from '@op/sense/Header';
 import { ProfileAvatar } from '@op/sense/ProfileAvatar';
 import { StatusBadge } from '@op/sense/StatusBadge';
 import { cn } from '@op/sense/lib/utils';
-import he from 'he';
 import { Suspense, type ReactNode } from 'react';
 import { LuArrowLeft, LuTriangleAlert } from 'react-icons/lu';
 
@@ -34,10 +33,13 @@ import {
   PinnedResourcesSkeleton,
 } from '../OverviewPinnedResources';
 import { toProcessPhases } from '../toProcessPhases';
+import { AdminEmptyState } from './AdminEmptyState';
+import { ProcessAdminAbout } from './ProcessAdminAbout';
 import { ProcessAdminBanner } from './ProcessAdminBanner';
 import { ProcessAdminLaunchButton } from './ProcessAdminLaunchButton';
 import { ProcessAdminOverviewSkeleton } from './ProcessAdminOverviewSkeleton';
 import { ProcessAdminSettingsDialog } from './ProcessAdminSettingsDialog';
+import { ProcessAdminStewardMenu } from './ProcessAdminSteward';
 import { ProcessAdminTitle } from './ProcessAdminTitle';
 import { ProcessAdminsDialog } from './ProcessAdminsDialog';
 import {
@@ -153,6 +155,10 @@ function ProcessAdminOverviewSuspense({
             ) : null}
           </aside>
           <ProcessAdminAbout
+            slug={slug}
+            instanceId={instance.id}
+            isDraft={status === 'draft'}
+            body={instance.instanceData.overview?.body}
             description={instance.description}
             aboutSlot={aboutSlot}
           />
@@ -253,6 +259,33 @@ function ProcessAdminHero({
   const steward = instance.steward;
   const stewardSlug = canLinkToProfile ? steward?.slug : undefined;
 
+  // A draft changes its steward in place, from the profiles the admin
+  // administers; the static name stands in until that list has loaded.
+  const renderStewardName = (chunks: ReactNode) => {
+    const plain = stewardSlug ? (
+      <Link href={`/profile/${stewardSlug}`} className="underline">
+        <bdi>{chunks}</bdi>
+      </Link>
+    ) : (
+      <bdi>{chunks}</bdi>
+    );
+    if (status !== 'draft' || !steward) {
+      return plain;
+    }
+    return (
+      <APIErrorBoundary fallbacks={{ default: () => plain }}>
+        <Suspense fallback={plain}>
+          <ProcessAdminStewardMenu
+            slug={slug}
+            instance={instance}
+            name={steward.name}
+            fallback={plain}
+          />
+        </Suspense>
+      </APIErrorBoundary>
+    );
+  };
+
   const stewardLine = steward ? (
     <p className="flex items-center justify-center gap-1.5">
       <ProfileAvatar
@@ -261,17 +294,10 @@ function ProcessAdminHero({
         alt=""
         size="sm"
       />
-      <span>
+      <span className="flex items-center gap-1">
         {t.rich('processAdmin.stewardedBy', {
           name: steward.name,
-          steward: (chunks) =>
-            stewardSlug ? (
-              <Link href={`/profile/${stewardSlug}`} className="underline">
-                <bdi>{chunks}</bdi>
-              </Link>
-            ) : (
-              <bdi>{chunks}</bdi>
-            ),
+          steward: renderStewardName,
         })}
       </span>
     </p>
@@ -360,53 +386,5 @@ function ProcessAdminPhaseRail({
         />
       )}
     </section>
-  );
-}
-
-function ProcessAdminAbout({
-  description,
-  aboutSlot,
-}: {
-  description: string | null | undefined;
-  aboutSlot: ReactNode;
-}) {
-  const t = useTranslations('decisions.processAdmin');
-
-  let content: ReactNode;
-  if (aboutSlot) {
-    content = aboutSlot;
-  } else if (description) {
-    content = <p dir="auto">{he.decode(description)}</p>;
-  } else {
-    content = (
-      <AdminEmptyState
-        title={t('noAboutTitle')}
-        description={t('noAboutDescription')}
-      />
-    );
-  }
-
-  return (
-    <section className="flex min-w-0 flex-col gap-4 md:col-span-6">
-      <Header2 className="text-label">{t('aboutHeading')}</Header2>
-      {content}
-    </section>
-  );
-}
-
-function AdminEmptyState({
-  title,
-  description,
-}: {
-  title: string;
-  description: string;
-}) {
-  return (
-    <Empty className="border border-dashed">
-      <EmptyHeader>
-        <EmptyTitle>{title}</EmptyTitle>
-        <EmptyDescription>{description}</EmptyDescription>
-      </EmptyHeader>
-    </Empty>
   );
 }
