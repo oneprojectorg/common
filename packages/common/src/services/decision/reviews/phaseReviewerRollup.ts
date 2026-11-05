@@ -24,10 +24,6 @@ import { escapeLikePattern, splitSearchWords } from '../utils/search';
 
 export type PhaseReviewerRollup = ReturnType<typeof buildPhaseReviewerRollup>;
 
-/**
- * One row per reviewer of the phase: the profile columns, the counts over
- * their assignments in the phase, and the status rule of the Reviewers tab.
- */
 export function buildPhaseReviewerRollup({
   processInstanceId,
   phaseId,
@@ -132,7 +128,6 @@ export function buildPhaseReviewerRollup({
   );
 }
 
-/** The search and status predicates of the Reviewers tab over the rollup. */
 export function getPhaseReviewerFilters({
   rollup,
   search,

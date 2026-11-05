@@ -17,10 +17,6 @@ import {
   getPhaseReviewerFilters,
 } from './phaseReviewerRollup';
 
-/**
- * The reviewers of the Reviewers tab, under the same search and status, who
- * still have an open assignment in the phase. Unpaginated, capped.
- */
 export async function listReviewReminderRecipients({
   user,
   processInstanceId,
