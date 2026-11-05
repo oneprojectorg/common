@@ -50,6 +50,8 @@ describe('sendReviewPhaseEndingReminder', () => {
 
     const { error, result, ctx } = await new InngestTestEngine({
       function: sendReviewPhaseEndingReminder,
+      // The emit is a real Inngest call otherwise, and CI has no event key.
+      steps: [{ id: 'request-review-reminder', handler: () => ({ ids: [] }) }],
     }).execute({
       events: [
         {
