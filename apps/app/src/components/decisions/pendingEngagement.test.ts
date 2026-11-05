@@ -1,11 +1,14 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import {
   PENDING_ENGAGEMENT_PARAM,
+  clearPendingEngagementProof,
   decideResumeStep,
   joinPromptKeys,
   parseJoinParam,
   parsePendingEngagement,
+  readPendingEngagementProof,
+  savePendingEngagementProof,
   serializePendingEngagement,
   withPendingEngagement,
 } from './pendingEngagement';
@@ -89,14 +92,68 @@ describe('withPendingEngagement', () => {
   });
 });
 
+describe('pending engagement proof storage', () => {
+  const makeStorage = () => {
+    const entries = new Map<string, string>();
+    return {
+      getItem: (key: string) => entries.get(key) ?? null,
+      setItem: (key: string, value: string) => {
+        entries.set(key, value);
+      },
+      removeItem: (key: string) => {
+        entries.delete(key);
+      },
+    };
+  };
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('round-trips a saved proof and clears it', () => {
+    vi.stubGlobal('sessionStorage', makeStorage());
+    const raw = serializePendingEngagement({ action: 'like', profileId });
+    savePendingEngagementProof(raw);
+    expect(readPendingEngagementProof()).toBe(raw);
+    clearPendingEngagementProof();
+    expect(readPendingEngagementProof()).toBeNull();
+  });
+
+  it('degrades to no proof when storage is unavailable', () => {
+    vi.stubGlobal('sessionStorage', undefined);
+    expect(() => savePendingEngagementProof('like:x')).not.toThrow();
+    expect(readPendingEngagementProof()).toBeNull();
+    expect(() => clearPendingEngagementProof()).not.toThrow();
+  });
+
+  it('degrades to no proof when storage throws', () => {
+    vi.stubGlobal('sessionStorage', {
+      getItem: () => {
+        throw new Error('denied');
+      },
+      setItem: () => {
+        throw new Error('denied');
+      },
+      removeItem: () => {
+        throw new Error('denied');
+      },
+    });
+    expect(() => savePendingEngagementProof('like:x')).not.toThrow();
+    expect(readPendingEngagementProof()).toBeNull();
+    expect(() => clearPendingEngagementProof()).not.toThrow();
+  });
+});
+
 describe('decideResumeStep', () => {
   const base = {
     raw: serializePendingEngagement({ action: 'like', profileId }),
     pending: { action: 'like', profileId } as const,
+    hasProof: true,
     isJoinEligible: false,
     canInteract: true,
     canEngage: true,
     stateUnknown: false,
+    lookupFailed: false,
     isLiked: false,
     isFollowed: false,
   };
@@ -113,6 +170,12 @@ describe('decideResumeStep', () => {
     });
   });
 
+  it('clears a crafted link that this browser never saved', () => {
+    expect(decideResumeStep({ ...base, hasProof: false })).toEqual({
+      type: 'clear',
+    });
+  });
+
   it('waits while the viewer is still join-eligible', () => {
     expect(decideResumeStep({ ...base, isJoinEligible: true })).toEqual({
       type: 'wait',
@@ -123,6 +186,12 @@ describe('decideResumeStep', () => {
     expect(decideResumeStep({ ...base, stateUnknown: true })).toEqual({
       type: 'wait',
     });
+  });
+
+  it('fails instead of waiting once the relationship lookup has failed', () => {
+    expect(
+      decideResumeStep({ ...base, stateUnknown: true, lookupFailed: true }),
+    ).toEqual({ type: 'fail' });
   });
 
   it('fails when the member cannot engage on this decision', () => {

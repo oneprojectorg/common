@@ -16,14 +16,27 @@ import { FormContainer } from '../form/FormContainer';
 import { FormHeader } from '../form/FormHeader';
 import { useOnboardingFormStore } from './useOnboardingFormStore';
 
+export const MAX_FULL_NAME_LENGTH = 200;
+
 export const validator = z
   .object({
     mode: z.enum(['name', 'anonymous']),
-    fullName: z.string().trim().max(200).optional(),
+    fullName: z.string().trim().max(MAX_FULL_NAME_LENGTH).optional(),
   })
   .refine((v) => v.mode === 'anonymous' || Boolean(v.fullName?.trim()), {
     path: ['fullName'],
   });
+
+export const fullNameIssue = (value: string): 'required' | 'tooLong' | null => {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return 'required';
+  }
+  if (trimmed.length > MAX_FULL_NAME_LENGTH) {
+    return 'tooLong';
+  }
+  return null;
+};
 
 export const parseParticipantNumber = (profileName: string): string | null => {
   const match = /^Participant (\d+)$/.exec(profileName);
@@ -38,8 +51,6 @@ export const VisibilityStep = ({ onNext }: StepProps): ReactNode => {
   const setPersonalDetails = useOnboardingFormStore(
     (s) => s.setPersonalDetails,
   );
-  const utils = trpc.useUtils();
-  const updateProfile = trpc.account.updateUserProfile.useMutation();
 
   const nameOptionId = useId();
   const anonymousOptionId = useId();
@@ -52,7 +63,6 @@ export const VisibilityStep = ({ onNext }: StepProps): ReactNode => {
     personalDetails?.fullName ?? '',
   );
   const [nameError, setNameError] = useState<string | undefined>();
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const profileName = userAccount?.profile?.name ?? '';
   const participantNumber = parseParticipantNumber(profileName) ?? profileName;
@@ -61,31 +71,22 @@ export const VisibilityStep = ({ onNext }: StepProps): ReactNode => {
     <span className="font-strong text-foreground">{chunks}</span>
   );
 
-  const submit = async () => {
-    if (isSubmitting) {
-      return;
+  const submit = () => {
+    if (mode === 'name') {
+      const issue = fullNameIssue(fullName);
+      if (issue) {
+        setNameError(
+          issue === 'required'
+            ? t('onboarding.fullNameRequired')
+            : t('onboarding.fullNameTooLong'),
+        );
+        return;
+      }
     }
     const trimmed = fullName.trim();
-    if (mode === 'name' && !trimmed) {
-      setNameError(t('onboarding.fullNameRequired'));
-      return;
-    }
-    setIsSubmitting(true);
-    try {
-      if (mode === 'name') {
-        await updateProfile.mutateAsync({ name: trimmed });
-        await Promise.all([
-          utils.account.getMyAccount.invalidate(),
-          utils.account.getUserProfiles.invalidate(),
-        ]);
-      }
-      const value = { mode, fullName: mode === 'name' ? trimmed : undefined };
-      setPersonalDetails(value);
-      onNext(value);
-    } catch {
-      setNameError(t("That didn't work"));
-      setIsSubmitting(false);
-    }
+    const value = { mode, fullName: mode === 'name' ? trimmed : undefined };
+    setPersonalDetails(value);
+    onNext(value);
   };
 
   return (
@@ -93,7 +94,7 @@ export const VisibilityStep = ({ onNext }: StepProps): ReactNode => {
       noValidate
       onSubmit={(e) => {
         e.preventDefault();
-        void submit();
+        submit();
       }}
     >
       <FormContainer className="max-w-lg">
@@ -134,7 +135,6 @@ export const VisibilityStep = ({ onNext }: StepProps): ReactNode => {
                   setFullName(e.target.value);
                   setNameError(undefined);
                 }}
-                disabled={isSubmitting}
               />
               {nameError ? <FieldError>{nameError}</FieldError> : null}
             </Field>
@@ -153,7 +153,7 @@ export const VisibilityStep = ({ onNext }: StepProps): ReactNode => {
           />
         </RadioGroup>
 
-        <Button type="submit" disabled={isSubmitting} className="w-full">
+        <Button type="submit" className="w-full">
           {t('Continue')}
         </Button>
       </FormContainer>

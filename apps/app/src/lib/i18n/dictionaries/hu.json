@@ -110,6 +110,7 @@
     "visibilitySubtitle": "Válassza ki, hogyan lássák a többi résztvevők.",
     "fullNamePlaceholder": "Keresztnév és vezetéknév",
     "fullNameRequired": "Adja meg a nevét",
+    "fullNameTooLong": "A név legfeljebb 200 karakter lehet",
     "orgSearchTitle": "Keresse meg azokat a szervezeteket, amelyekhez tartozik",
     "orgSearchSubtitle": "Válassza ki azokat a szervezeteket, amelyeket a Common-profiljához szeretne kapcsolni. Továbbiakat később is hozzáadhat a profiljából.",
     "orgSearchPlaceholder": "Keresse meg vagy adja hozzá a szervezetét...",

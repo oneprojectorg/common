@@ -50,6 +50,7 @@ import { isValidEmail } from './emailUtils';
 import {
   type JoinTrigger,
   PENDING_ENGAGEMENT_PARAM,
+  clearPendingEngagementProof,
   joinPromptKeys,
   parseJoinParam,
   withPendingEngagement,
@@ -76,6 +77,7 @@ export const JoinAccountModal = () => {
   const isOpen = isJoinEligible(user) && trigger !== null;
 
   const close = () => {
+    clearPendingEngagementProof();
     void setJoin(null);
     void setResume(null);
   };

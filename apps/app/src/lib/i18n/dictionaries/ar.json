@@ -110,6 +110,7 @@
     "visibilitySubtitle": "اختر كيف يراك المشاركون الآخرون.",
     "fullNamePlaceholder": "الاسم الأول واسم العائلة",
     "fullNameRequired": "أدخل اسمك",
+    "fullNameTooLong": "يجب ألا يتجاوز الاسم 200 حرف",
     "orgSearchTitle": "ابحث عن المؤسسات التي تنتمي إليها",
     "orgSearchSubtitle": "اختر المؤسسة (المؤسسات) التي تريد ربطها بملفك الشخصي على Common. يمكنك إضافة المزيد لاحقًا من ملفك الشخصي.",
     "orgSearchPlaceholder": "ابحث أو أضف مؤسستك...",

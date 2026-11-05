@@ -110,6 +110,7 @@
     "visibilitySubtitle": "Dooro sida kaqeybgalayaasha kale kuu arkaan.",
     "fullNamePlaceholder": "Magaca hore iyo magaca dambe",
     "fullNameRequired": "Geli magacaaga",
+    "fullNameTooLong": "Magacu waa inuusan ka badnayn 200 xaraf",
     "orgSearchTitle": "Hel ururada aad ka tirsan tahay",
     "orgSearchSubtitle": "Dooro ururka/ururada aad rabto inaad ku xirto bogga shakhsigaaga Common. Wax badan ayaad ku dari kartaa hadhow bogga shakhsigaaga.",
     "orgSearchPlaceholder": "Raadi ama ku dar ururkaaga...",

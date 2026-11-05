@@ -11,6 +11,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import {
   type EngagementAction,
   PENDING_ENGAGEMENT_PARAM,
+  savePendingEngagementProof,
   serializePendingEngagement,
 } from '@/components/decisions/pendingEngagement';
 
@@ -81,11 +82,13 @@ export function useProposalEngagement({
       // must not need a Suspense boundary of its own.
       const openJoinModal = (action: EngagementAction) => () => {
         const params = new URLSearchParams(window.location.search);
+        const serialized = serializePendingEngagement({
+          action,
+          profileId: proposal.profileId,
+        });
         params.set('join', action);
-        params.set(
-          PENDING_ENGAGEMENT_PARAM,
-          serializePendingEngagement({ action, profileId: proposal.profileId }),
-        );
+        params.set(PENDING_ENGAGEMENT_PARAM, serialized);
+        savePendingEngagementProof(serialized);
         router.push(`${pathname}?${params.toString()}`);
       };
 

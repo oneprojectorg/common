@@ -12,8 +12,10 @@ import { useTranslations } from '@/lib/i18n';
 
 import {
   PENDING_ENGAGEMENT_PARAM,
+  clearPendingEngagementProof,
   decideResumeStep,
   parsePendingEngagement,
+  readPendingEngagementProof,
 } from './pendingEngagement';
 
 export const ResumePendingEngagement = ({
@@ -28,11 +30,18 @@ export const ResumePendingEngagement = ({
   const settledRef = useRef(false);
   const [announcement, setAnnouncement] = useState('');
 
-  const { isLiked, isFollowed, stateUnknown, handleLike, handleFollow } =
-    useRelationshipMutations({
-      targetProfileId: pending?.profileId,
-      enabled: Boolean(pending) && userCanInteract(user) && canEngage,
-    });
+  const {
+    isLiked,
+    isFollowed,
+    stateUnknown,
+    lookupFailed,
+    handleLike,
+    handleFollow,
+  } = useRelationshipMutations({
+    targetProfileId: pending?.profileId,
+    enabled: Boolean(pending) && userCanInteract(user) && canEngage,
+    errorToasts: false,
+  });
 
   useEffect(() => {
     if (settledRef.current) {
@@ -41,10 +50,12 @@ export const ResumePendingEngagement = ({
     const step = decideResumeStep({
       raw,
       pending,
+      hasProof: raw !== null && readPendingEngagementProof() === raw,
       isJoinEligible: isJoinEligible(user),
       canInteract: userCanInteract(user),
       canEngage,
       stateUnknown,
+      lookupFailed,
       isLiked,
       isFollowed,
     });
@@ -52,29 +63,45 @@ export const ResumePendingEngagement = ({
       return;
     }
     settledRef.current = true;
-    if (step.type === 'fail' && pending) {
-      toast.error(
-        pending.action === 'like'
-          ? t('resumeLikeFailed')
-          : t('resumeFollowFailed'),
-      );
+    const settle = () => {
+      clearPendingEngagementProof();
+      void setRaw(null);
+    };
+    if (step.type === 'clear' || !pending) {
+      settle();
+      return;
     }
-    if (step.type === 'apply' && pending) {
-      if (step.shouldWrite) {
-        if (pending.action === 'like') {
-          handleLike();
-        } else {
-          handleFollow();
-        }
-      }
+    const failureMessage =
+      pending.action === 'like'
+        ? t('resumeLikeFailed')
+        : t('resumeFollowFailed');
+    if (step.type === 'fail') {
+      toast.error(failureMessage);
+      settle();
+      return;
+    }
+    const announce = () => {
       const message =
         pending.action === 'like'
           ? t('resumeLikeCounted')
           : t('resumeFollowCounted');
       toast.success(message);
       setAnnouncement(message);
+    };
+    if (!step.shouldWrite) {
+      announce();
+      settle();
+      return;
     }
-    void setRaw(null);
+    const write = pending.action === 'like' ? handleLike : handleFollow;
+    void write().then((succeeded) => {
+      if (succeeded) {
+        announce();
+      } else {
+        toast.error(failureMessage);
+      }
+      settle();
+    });
   });
 
   return (

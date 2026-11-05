@@ -110,6 +110,7 @@
     "visibilitySubtitle": "Choisissez comment les autres participants vous voient.",
     "fullNamePlaceholder": "Prénom et nom",
     "fullNameRequired": "Saisissez votre nom",
+    "fullNameTooLong": "Le nom doit comporter 200 caractères ou moins",
     "orgSearchTitle": "Trouvez les organisations auxquelles vous appartenez",
     "orgSearchSubtitle": "Sélectionnez la ou les organisations que vous souhaitez associer à votre profil Common. Vous pourrez en ajouter d'autres plus tard depuis votre profil.",
     "orgSearchPlaceholder": "Rechercher ou ajouter votre organisation...",

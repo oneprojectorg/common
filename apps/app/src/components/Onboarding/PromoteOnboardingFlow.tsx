@@ -58,6 +58,8 @@ export const PromoteOnboardingFlow = ({
   const { personalDetails } = useOnboardingFormStore();
   const trpcUtils = trpc.useUtils();
   const completeOnboarding = useCompleteOnboarding();
+  const { mutateAsync: renameProfile } =
+    trpc.account.updateUserProfile.useMutation();
 
   // Every non-network-member lands in this flow, not only claimed visitors
   // (see OnboardingFlow). Only a claimed anonymous account carries the signup
@@ -91,6 +93,13 @@ export const PromoteOnboardingFlow = ({
     setIsSubmitting(true);
 
     try {
+      if (
+        isClaimedAnonymous &&
+        personalDetails?.mode === 'name' &&
+        personalDetails.fullName
+      ) {
+        await renameProfile({ name: personalDetails.fullName });
+      }
       await completeOnboarding();
       await trpcUtils.account.getMyAccount.invalidate();
       if (!isSafeRedirectPath(redirectParam)) {
@@ -119,6 +128,9 @@ export const PromoteOnboardingFlow = ({
   }, [
     isOnline,
     completeOnboarding,
+    renameProfile,
+    isClaimedAnonymous,
+    personalDetails,
     trpcUtils,
     promoteRedirect,
     redirectParam,

@@ -1,5 +1,31 @@
 export const PENDING_ENGAGEMENT_PARAM = 'resume';
 
+const PENDING_ENGAGEMENT_STORAGE_KEY = 'pendingEngagementProof';
+
+export const savePendingEngagementProof = (raw: string): void => {
+  try {
+    globalThis.sessionStorage.setItem(PENDING_ENGAGEMENT_STORAGE_KEY, raw);
+  } catch {
+    return;
+  }
+};
+
+export const readPendingEngagementProof = (): string | null => {
+  try {
+    return globalThis.sessionStorage.getItem(PENDING_ENGAGEMENT_STORAGE_KEY);
+  } catch {
+    return null;
+  }
+};
+
+export const clearPendingEngagementProof = (): void => {
+  try {
+    globalThis.sessionStorage.removeItem(PENDING_ENGAGEMENT_STORAGE_KEY);
+  } catch {
+    return;
+  }
+};
+
 export type EngagementAction = 'like' | 'follow';
 
 export interface PendingEngagement {
@@ -81,19 +107,23 @@ export type ResumeStep =
 export const decideResumeStep = ({
   raw,
   pending,
+  hasProof,
   isJoinEligible,
   canInteract,
   canEngage,
   stateUnknown,
+  lookupFailed,
   isLiked,
   isFollowed,
 }: {
   raw: string | null;
   pending: PendingEngagement | null;
+  hasProof: boolean;
   isJoinEligible: boolean;
   canInteract: boolean;
   canEngage: boolean;
   stateUnknown: boolean;
+  lookupFailed: boolean;
   isLiked: boolean;
   isFollowed: boolean;
 }): ResumeStep => {
@@ -103,10 +133,16 @@ export const decideResumeStep = ({
   if (!pending) {
     return { type: 'clear' };
   }
+  if (!hasProof) {
+    return { type: 'clear' };
+  }
   if (isJoinEligible) {
     return { type: 'wait' };
   }
   if (!canInteract || !canEngage) {
+    return { type: 'fail' };
+  }
+  if (lookupFailed) {
     return { type: 'fail' };
   }
   if (stateUnknown) {
