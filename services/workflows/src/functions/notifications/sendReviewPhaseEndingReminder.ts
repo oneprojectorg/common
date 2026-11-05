@@ -3,22 +3,13 @@ import {
   getInstanceCurrentPhase,
   getInstancePhases,
   isInstanceCurrentPhase,
-  listIndividualProfileRecipientsByProfileId,
 } from '@op/common';
-import { selectEmailRecipients } from '@op/common/client';
-import { OPURLConfig } from '@op/core';
 import { db } from '@op/db/client';
-import {
-  ProcessStatus,
-  ProposalReviewAssignmentStatus,
-  proposalReviewAssignments,
-} from '@op/db/schema';
-import { OPBatchSend, ReviewPhaseEndingReminderEmail } from '@op/emails';
+import { ProcessStatus } from '@op/db/schema';
 import { Events, inngest } from '@op/events';
 import { logger } from '@op/logging';
-import { and, count, eq, inArray, isNull } from 'drizzle-orm';
 
-const { reviewPhaseEndingSoon } = Events;
+const { reviewPhaseEndingSoon, reviewReminderRequested } = Events;
 
 export const sendReviewPhaseEndingReminder = inngest.createFunction(
   {
@@ -27,7 +18,7 @@ export const sendReviewPhaseEndingReminder = inngest.createFunction(
       'event.data.processInstanceId + "-" + event.data.phaseId + "-" + event.data.reminderWindowEnd',
   },
   { event: reviewPhaseEndingSoon.name },
-  async ({ event, step, runId }) => {
+  async ({ event, step }) => {
     const { processInstanceId, phaseId, reminderWindowEnd } =
       reviewPhaseEndingSoon.schema.parse(event.data);
 
@@ -41,9 +32,6 @@ export const sendReviewPhaseEndingReminder = inngest.createFunction(
           currentStateId: true,
           instanceData: true,
           deletedAt: true,
-        },
-        with: {
-          profile: { columns: { slug: true } },
         },
       });
 
@@ -127,79 +115,9 @@ export const sendReviewPhaseEndingReminder = inngest.createFunction(
       return;
     }
 
-    const profileSlug = instanceData.profile?.slug;
+    const daysLeft = computeDaysLeft({ phaseId, phases, now });
 
-    if (!profileSlug) {
-      logger.error('No profile slug found for process instance', {
-        processInstanceId,
-      });
-      return;
-    }
-
-    const processTitle = instanceData.name;
-    const phaseName = phase.name || phaseId;
-    const reviewsUrl = `${OPURLConfig('APP').ENV_URL}/decisions/${profileSlug}/current`;
-
-    const plan = await step.run('plan-reviewer-emails', async () => {
-      // Computed inside the step so a retry renders the same email: the
-      // Resend idempotency key rejects a retry whose payload differs.
-      const daysLeft = computeDaysLeft({ phaseId, phases });
-
-      const remainingByReviewer = await db
-        .select({
-          reviewerProfileId: proposalReviewAssignments.reviewerProfileId,
-          remaining: count(),
-        })
-        .from(proposalReviewAssignments)
-        .where(
-          and(
-            eq(proposalReviewAssignments.processInstanceId, processInstanceId),
-            eq(proposalReviewAssignments.phaseId, phaseId),
-            inArray(proposalReviewAssignments.status, [
-              ProposalReviewAssignmentStatus.PENDING,
-              ProposalReviewAssignmentStatus.IN_PROGRESS,
-              ProposalReviewAssignmentStatus.READY_FOR_RE_REVIEW,
-            ]),
-            isNull(proposalReviewAssignments.deletedAt),
-          ),
-        )
-        .groupBy(proposalReviewAssignments.reviewerProfileId);
-
-      const recipientsByProfileId =
-        await listIndividualProfileRecipientsByProfileId(
-          remainingByReviewer.map(({ reviewerProfileId }) => reviewerProfileId),
-        );
-
-      const planned: Array<{ to: string; remainingCount: number }> = [];
-      const reviewerProfileIdsWithoutAddress: Array<string> = [];
-
-      for (const { reviewerProfileId, remaining } of remainingByReviewer) {
-        const recipients = selectEmailRecipients(
-          recipientsByProfileId.get(reviewerProfileId) ?? [],
-        );
-
-        if (recipients.length === 0) {
-          reviewerProfileIdsWithoutAddress.push(reviewerProfileId);
-          continue;
-        }
-
-        for (const to of recipients) {
-          planned.push({ to, remainingCount: remaining });
-        }
-      }
-
-      if (reviewerProfileIdsWithoutAddress.length > 0) {
-        logger.warn('Skipped reviewers with no delivery address', {
-          processInstanceId,
-          phaseId,
-          reviewerProfileIds: reviewerProfileIdsWithoutAddress,
-        });
-      }
-
-      return { daysLeft, emails: planned };
-    });
-
-    if (!plan.daysLeft) {
+    if (!daysLeft) {
       logger.info('Skipping review phase reminder: no days left to report', {
         processInstanceId,
         phaseId,
@@ -207,52 +125,21 @@ export const sendReviewPhaseEndingReminder = inngest.createFunction(
       return;
     }
 
-    const { daysLeft, emails } = plan;
+    const processTitle = instanceData.name;
+    const phaseName = phase.name || phaseId;
+    const daysLeftText = daysLeft === 1 ? '1 day' : `${daysLeft} days`;
+    const batchId = `${processInstanceId}-${phaseId}-${reminderWindowEnd}`;
 
-    if (emails.length === 0) {
-      return {
-        message: `Skipped: no reviewers to remind for phase ${phaseId}`,
-      };
-    }
-
-    const result = await step.run('send-emails', async () => {
-      const { data, errors } = await OPBatchSend(
-        emails.map(({ to, remainingCount }) => ({
-          to,
-          subject: ReviewPhaseEndingReminderEmail.subject(
-            processTitle,
-            daysLeft,
-          ),
-          component: () =>
-            ReviewPhaseEndingReminderEmail({
-              processTitle,
-              phaseName,
-              remainingCount,
-              daysLeft,
-              reviewsUrl,
-            }),
-        })),
-        {
-          idempotencyKeyPrefix: `review-phase-ending-reminder/${runId}`,
-        },
-      );
-
-      if (errors.length > 0) {
-        logger.error('Some review phase ending reminders failed to send', {
-          processInstanceId,
-          phaseId,
-          failedCount: errors.length,
-        });
-        throw new Error(
-          `Review phase ending reminder email batch failed for ${errors.length} recipient(s)`,
-        );
-      }
-
-      return { sent: data.length };
+    await step.sendEvent('request-review-reminder', {
+      name: reviewReminderRequested.name,
+      data: {
+        batchId,
+        processInstanceId,
+        phaseId,
+        message: `Hi {{firstName}},\n\nThe ${phaseName} phase of ${processTitle} is planned to end in ${daysLeftText}. You still have {{proposalsLeft}} left to complete.`,
+      },
     });
 
-    return {
-      message: `${result.sent} review phase ending reminder(s) sent`,
-    };
+    return { batchId };
   },
 );
