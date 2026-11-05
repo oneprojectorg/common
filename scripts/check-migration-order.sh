@@ -20,8 +20,9 @@ cd "$(git rev-parse --show-toplevel)"
 newest_on_base=$(git ls-tree --name-only "$base" "$MIGRATIONS_DIR/" | sed 's#.*/##' | sort | tail -1)
 newest_timestamp=${newest_on_base:0:14}
 
-# --no-renames so a renamed migration directory shows up as an add.
-added=$(git diff --name-only --diff-filter=A --no-renames "$base...HEAD" -- "$MIGRATIONS_DIR/*/migration.sql")
+# Two dots, not three: a migration that a squash merge already put on the base
+# is not an add. --no-renames so a renamed migration directory shows up as one.
+added=$(git diff --name-only --diff-filter=A --no-renames "$base" HEAD -- "$MIGRATIONS_DIR/*/migration.sql")
 
 stale=()
 while IFS= read -r file; do

@@ -101,6 +101,17 @@ migration 20260401000000_same_second
 rejects trunk || fail "equal timestamp should have failed"
 pass "rejects a migration with the newest timestamp on the base"
 
+# A stacked branch passes after its parent is squash-merged to the base.
+git checkout -q -b parent trunk
+migration 20260601000000_parent
+git checkout -q -b child parent
+migration 20260602000000_child
+git checkout -q trunk
+git merge -q --squash parent > /dev/null && git commit -qm "squash parent"
+git checkout -q child
+run trunk || fail "migration already on the base should not count as added"
+pass "ignores migrations a squash merge already put on the base"
+
 # Fails on a base ref that does not exist.
 run no-such-ref && fail "unknown base should have failed"
 out_has "fatal" || fail "expected the git error"
