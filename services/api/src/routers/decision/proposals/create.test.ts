@@ -1,13 +1,51 @@
+import { cache } from '@op/cache';
 import { TestDecisionsDataManager } from '@op/common/testing';
 import { ProposalStatus } from '@op/db/schema';
-import { expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
+import { appRouter } from '../..';
 import {
   accessTierGatingCell,
   describeDecisionAccessTierGating,
   expectFailsAccessTierGate,
   expectPassesAccessTierGate,
 } from '../../../test/helpers/gating/decision';
+import {
+  createIsolatedSession,
+  createTestContextWithSession,
+} from '../../../test/supabase-utils';
+import { createCallerFactory } from '../../../trpcFactory';
+
+const createCaller = createCallerFactory(appRouter);
+
+/** Read the `user` cache entry, falling back to `fresh` when it is gone. */
+const readCachedUser = (authUserId: string, fresh: string) =>
+  cache({ type: 'user', params: [authUserId], fetch: async () => fresh });
+
+describe.concurrent('createProposal', () => {
+  it('drops the cached access of the author so their admin role on the proposal applies at once', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const { session } = await createIsolatedSession(setup.userEmail);
+    const caller = createCaller(await createTestContextWithSession(session));
+    // A `user` entry cached before the membership exists.
+    await readCachedUser(session.user.id, 'stale');
+
+    const proposal = await caller.decision.createProposal({
+      processInstanceId: setup.instance.instance.id,
+      proposalData: { title: 'Cache Proposal' },
+    });
+    testData.trackProfileForCleanup(proposal.profileId);
+
+    expect(await readCachedUser(session.user.id, 'fresh')).toBe('fresh');
+  });
+});
 
 describeDecisionAccessTierGating('createProposal', {
   noJwtNonPublic: accessTierGatingCell(

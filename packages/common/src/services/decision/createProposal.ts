@@ -15,7 +15,11 @@ import type { User } from '@op/supabase/lib';
 import { permission } from 'access-zones';
 
 import { CommonError, NotFoundError, ValidationError } from '../../utils';
-import { assertInstanceProfileAccess, getCurrentProfileId } from '../access';
+import {
+  assertInstanceProfileAccess,
+  getCurrentProfileId,
+  invalidateProfileUserAccessCache,
+} from '../access';
 import { assertGlobalRole } from '../assert';
 import { generateUniqueProfileSlug } from '../profile/utils';
 import { withBoundaryCategoryLabel } from './boundaryCategory';
@@ -273,6 +277,13 @@ export const createProposal = async ({
     }
 
     return proposal;
+  });
+
+  // The author may hold a cached `user` entry whose membership list predates
+  // this proposal — drop it so the admin role applies on the next request.
+  await invalidateProfileUserAccessCache({
+    authUserId,
+    profileId: createdProposal.profileId,
   });
 
   return createdProposal;
