@@ -94,14 +94,21 @@ export const ResumePendingEngagement = ({
       return;
     }
     const write = pending.action === 'like' ? handleLike : handleFollow;
-    void write().then((succeeded) => {
-      if (succeeded) {
-        announce();
-      } else {
-        toast.error(failureMessage);
-      }
-      settle();
-    });
+    void write()
+      .then(
+        (succeeded) => {
+          if (succeeded) {
+            announce();
+          } else {
+            toast.error(failureMessage);
+          }
+        },
+        // The drain can reject (a reconcile that throws escapes its try). The
+        // param and the proof must still clear, or the replay re-arms on the
+        // next mount.
+        () => toast.error(failureMessage),
+      )
+      .finally(settle);
   });
 
   return (
