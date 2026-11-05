@@ -24,7 +24,8 @@ const createCaller = createCallerFactory(appRouter);
 
 async function createAuthenticatedCaller(email: string) {
   const { session } = await createIsolatedSession(email);
-  return createCaller(await createTestContextWithSession(session));
+  const caller = createCaller(await createTestContextWithSession(session));
+  return { caller, session };
 }
 
 const readCachedUser = ({
@@ -45,8 +46,9 @@ describe.concurrent('createProposal', () => {
       instanceCount: 1,
       grantAccess: true,
     });
-    const { session } = await createIsolatedSession(setup.userEmail);
-    const caller = createCaller(await createTestContextWithSession(session));
+    const { caller, session } = await createAuthenticatedCaller(
+      setup.userEmail,
+    );
     // A `user` entry cached before the membership exists.
     await readCachedUser({ authUserId: session.user.id, fresh: 'stale' });
 
@@ -74,7 +76,7 @@ describe.concurrent('createProposal', () => {
     if (!knownTerm) {
       throw new Error('Failed to seed a proposal category term');
     }
-    const caller = await createAuthenticatedCaller(setup.userEmail);
+    const { caller } = await createAuthenticatedCaller(setup.userEmail);
 
     const proposal = await caller.decision.createProposal({
       processInstanceId: setup.instance.instance.id,
