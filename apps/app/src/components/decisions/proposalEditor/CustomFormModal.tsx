@@ -236,12 +236,11 @@ function CustomFormField({
   onChange,
 }: CustomFormFieldProps) {
   const fieldId = useId();
-  const label = translation?.fieldTitles[name] ?? field.title ?? name;
-  const description = linkifyText(
-    translation?.fieldDescriptions[name] ?? field.description,
-  );
-  const getOptionLabel = (option: string) =>
-    translation?.optionLabels[name]?.[option] ?? option;
+  const { label, description, getOptionLabel } = getFieldText({
+    name,
+    field,
+    translation,
+  });
   const descriptionNode = description ? (
     <FieldDescription>{description}</FieldDescription>
   ) : null;
@@ -524,6 +523,34 @@ const CHOICE_FORMATS = new Set<XFormatPropertySchema['x-format']>([
   'radio',
   'dropdown',
 ]);
+
+/** The field's label, description and option labels, translated when available. */
+function getFieldText({
+  name,
+  field,
+  translation,
+}: {
+  name: string;
+  field: XFormatPropertySchema;
+  translation?: CustomFormTranslation;
+}) {
+  if (!translation) {
+    return {
+      label: field.title ?? name,
+      description: linkifyText(field.description),
+      getOptionLabel: (option: string) => option,
+    };
+  }
+
+  const optionLabels = translation.optionLabels[name] ?? {};
+  return {
+    label: translation.fieldTitles[name] ?? field.title ?? name,
+    description: linkifyText(
+      translation.fieldDescriptions[name] ?? field.description,
+    ),
+    getOptionLabel: (option: string) => optionLabels[option] ?? option,
+  };
+}
 
 /** False for a control that would draw with nothing to choose from. */
 function canRenderField(field: XFormatPropertySchema): boolean {
