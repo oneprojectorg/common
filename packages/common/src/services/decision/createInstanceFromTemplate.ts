@@ -108,8 +108,7 @@ export const createDecisionInstance = async ({
     return instanceProfile.id;
   });
 
-  // The creator may hold a cached `user` entry whose membership list predates
-  // this decision — drop it so the admin role applies on the next request.
+  // The creator's cached `user` entry predates this membership.
   await invalidateProfileUserAccessCache({
     authUserId: creatorAuthUserId,
     profileId,

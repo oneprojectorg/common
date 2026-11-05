@@ -24,9 +24,13 @@ import { createCallerFactory } from '../../../trpcFactory';
 
 const createCaller = createCallerFactory(appRouter);
 
-/** Read the `user` cache entry, falling back to `fresh` when it is gone. */
-const readCachedUser = (authUserId: string, fresh: string) =>
-  cache({ type: 'user', params: [authUserId], fetch: async () => fresh });
+const readCachedUser = ({
+  authUserId,
+  fresh,
+}: {
+  authUserId: string;
+  fresh: string;
+}) => cache({ type: 'user', params: [authUserId], fetch: async () => fresh });
 
 async function createAuthenticatedCaller(email: string) {
   const { session } = await createIsolatedSession(email);
@@ -130,7 +134,7 @@ describe.concurrent('createInstanceFromTemplate', () => {
     const { session } = await createIsolatedSession(userEmail);
     const caller = createCaller(await createTestContextWithSession(session));
     // A `user` entry cached before the membership exists.
-    await readCachedUser(session.user.id, 'stale');
+    await readCachedUser({ authUserId: session.user.id, fresh: 'stale' });
 
     const result = await caller.decision.createInstanceFromTemplate({
       templateId,
@@ -138,7 +142,9 @@ describe.concurrent('createInstanceFromTemplate', () => {
     });
     testData.trackProfileForCleanup(result.id);
 
-    expect(await readCachedUser(session.user.id, 'fresh')).toBe('fresh');
+    expect(
+      await readCachedUser({ authUserId: session.user.id, fresh: 'fresh' }),
+    ).toBe('fresh');
   });
 
   it('should NOT create transitions for DRAFT instances (transitions are created on publish)', async ({

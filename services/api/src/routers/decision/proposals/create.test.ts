@@ -18,9 +18,13 @@ import { createCallerFactory } from '../../../trpcFactory';
 
 const createCaller = createCallerFactory(appRouter);
 
-/** Read the `user` cache entry, falling back to `fresh` when it is gone. */
-const readCachedUser = (authUserId: string, fresh: string) =>
-  cache({ type: 'user', params: [authUserId], fetch: async () => fresh });
+const readCachedUser = ({
+  authUserId,
+  fresh,
+}: {
+  authUserId: string;
+  fresh: string;
+}) => cache({ type: 'user', params: [authUserId], fetch: async () => fresh });
 
 describe.concurrent('createProposal', () => {
   it('drops the cached access of the author so their admin role on the proposal applies at once', async ({
@@ -35,7 +39,7 @@ describe.concurrent('createProposal', () => {
     const { session } = await createIsolatedSession(setup.userEmail);
     const caller = createCaller(await createTestContextWithSession(session));
     // A `user` entry cached before the membership exists.
-    await readCachedUser(session.user.id, 'stale');
+    await readCachedUser({ authUserId: session.user.id, fresh: 'stale' });
 
     const proposal = await caller.decision.createProposal({
       processInstanceId: setup.instance.instance.id,
@@ -43,7 +47,9 @@ describe.concurrent('createProposal', () => {
     });
     testData.trackProfileForCleanup(proposal.profileId);
 
-    expect(await readCachedUser(session.user.id, 'fresh')).toBe('fresh');
+    expect(
+      await readCachedUser({ authUserId: session.user.id, fresh: 'fresh' }),
+    ).toBe('fresh');
   });
 });
 
