@@ -1,20 +1,23 @@
 import { ValidationError } from '../../utils';
 import { getFieldUnit } from './fieldUnit';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
-import type { DecisionInstanceData } from './schemas/instanceData';
+import type {
+  DecisionInstanceData,
+  PhaseInstanceData,
+} from './schemas/instanceData';
 import { getVoterCostField, getVoterBudget } from './utils/phaseSettings';
 
 // Every phase with a voter budget must charge from a template field that has a unit.
 export async function assertVoterCostField({
   instanceData,
+  phases,
   processId,
 }: {
   instanceData: DecisionInstanceData;
+  phases: PhaseInstanceData[];
   processId: string | null;
 }): Promise<void> {
-  const capped = instanceData.phases.filter(
-    (phase) => getVoterBudget(phase) !== undefined,
-  );
+  const capped = phases.filter((phase) => getVoterBudget(phase) !== undefined);
 
   if (capped.length === 0) {
     return;

@@ -1,11 +1,11 @@
-import { attachBlobPhases, buildExpectedTransitions } from '@op/common';
+import { type PhaseInstanceData, buildExpectedTransitions } from '@op/common';
 import { describe, expect, it } from 'vitest';
 
-/** A minimal instance stub whose phases come from `instanceData`. */
-function stubInstance(instanceData: unknown, id = 'test-instance-id') {
-  return attachBlobPhases({
-    instance: { id, instanceData, currentStateId: null },
-  });
+function stubInstance(
+  { phases }: { phases: PhaseInstanceData[] },
+  id = 'test-instance-id',
+) {
+  return { id, phases, currentStateId: null };
 }
 
 describe('buildExpectedTransitions', () => {
@@ -108,14 +108,6 @@ describe('buildExpectedTransitions', () => {
     const instance = stubInstance({
       phases: [],
     });
-
-    expect(() => buildExpectedTransitions(instance)).toThrow(
-      'Process instance must have at least one phase configured',
-    );
-  });
-
-  it('should throw when phases is undefined', () => {
-    const instance = stubInstance({});
 
     expect(() => buildExpectedTransitions(instance)).toThrow(
       'Process instance must have at least one phase configured',

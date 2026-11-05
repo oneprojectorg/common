@@ -1,12 +1,12 @@
 import { mockCollab } from '@op/collab/testing';
-import { getInstancePhases, parseProposalData } from '@op/common';
+import { parseProposalData } from '@op/common';
 import {
   TestDecisionsDataManager,
   TestReviewsDataManager,
   createDevelopPhaseSetup,
   createDevelopProposalsMember,
   createRevisionRequest,
-  syncPhaseRows,
+  updateInstancePhase,
 } from '@op/common/testing';
 import { db, eq } from '@op/db/client';
 import {
@@ -14,7 +14,6 @@ import {
   ProposalReviewRequestState,
   ProposalStatus,
   Visibility,
-  processInstances,
 } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
@@ -38,58 +37,31 @@ async function createAuthenticatedCaller(email: string) {
   return createCaller(await createTestContextWithSession(session));
 }
 
-/** Rewrites the instance's phase list. */
-async function updateInstancePhases(
-  processInstanceId: string,
-  update: (
-    phases: ReturnType<typeof getInstancePhases>,
-    currentStateId: string | null,
-  ) => unknown[],
-): Promise<void> {
-  const instanceRecord = await db.query.processInstances.findFirst({
-    where: { id: processInstanceId },
-  });
-
-  if (!instanceRecord) {
-    throw new Error(`Instance ${processInstanceId} not found`);
-  }
-
-  const { instanceData } = instanceRecord;
-
-  if (instanceData === null || typeof instanceData !== 'object') {
-    throw new Error(`Instance ${processInstanceId} has no instanceData`);
-  }
-
-  const phases = update(
-    getInstancePhases(instanceData),
-    instanceRecord.currentStateId,
-  );
-
-  await db
-    .update(processInstances)
-    .set({ instanceData: { ...instanceData, phases } })
-    .where(eq(processInstances.id, processInstanceId));
-  await syncPhaseRows(processInstanceId);
-}
-
 /** Sets the "Proposal editing" rule on the instance's current phase. */
 async function setProposalEditingRule(
   processInstanceId: string,
   edit: boolean,
 ): Promise<void> {
-  await updateInstancePhases(processInstanceId, (phases, currentStateId) =>
-    phases.map((phase) =>
-      phase.phaseId === currentStateId
-        ? {
-            ...phase,
-            rules: {
-              ...phase.rules,
-              proposals: { ...phase.rules?.proposals, edit },
-            },
-          }
-        : phase,
-    ),
-  );
+  const instanceRecord = await db.query.processInstances.findFirst({
+    where: { id: processInstanceId },
+    columns: { currentStateId: true },
+  });
+
+  if (!instanceRecord?.currentStateId) {
+    throw new Error(`Instance ${processInstanceId} has no current phase`);
+  }
+
+  await updateInstancePhase({
+    instanceId: processInstanceId,
+    phaseId: instanceRecord.currentStateId,
+    update: (phase) => ({
+      ...phase,
+      rules: {
+        ...phase.rules,
+        proposals: { ...phase.rules?.proposals, edit },
+      },
+    }),
+  });
 }
 
 describe.concurrent('updateProposal visibility', () => {
