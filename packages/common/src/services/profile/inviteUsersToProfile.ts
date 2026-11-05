@@ -310,8 +310,9 @@ export const inviteUsersToProfile = async ({
       continue;
     }
 
-    // Collect allowList entry if needed (new user without existing allowList entry)
-    if (!existingUser && !allowListEmailsSet.has(email)) {
+    // An existing account can come from a public process registration and
+    // still be outside the network, so it needs an allowList entry too.
+    if (!allowListEmailsSet.has(email)) {
       allowListEntries.push({
         email,
         organizationId: null,

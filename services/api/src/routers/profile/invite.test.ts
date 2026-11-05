@@ -188,7 +188,7 @@ describe.concurrent('Profile Invite Integration Tests', () => {
     );
   });
 
-  it('should not add existing user to allowList', async ({
+  it('adds an existing account to the allow list when it is missing', async ({
     task,
     onTestFinished,
   }) => {
@@ -197,8 +197,7 @@ describe.concurrent('Profile Invite Integration Tests', () => {
       users: { admin: 1 },
     });
 
-    // Create a standalone user to be invited
-    const standaloneUser = await testData.createStandaloneUser();
+    const standaloneUser = await testData.createStandaloneUser('example.com');
     testData.trackProfileInvite(standaloneUser.email, profile.id);
 
     const { session } = await createIsolatedSession(adminUser.email);
@@ -209,12 +208,40 @@ describe.concurrent('Profile Invite Integration Tests', () => {
       profileId: profile.id,
     });
 
-    // Verify existing user was NOT added to allowList (they already have an account)
     const allowListEntry = await db.query.allowList.findFirst({
       where: { email: standaloneUser.email.toLowerCase() },
     });
 
-    expect(allowListEntry).toBeUndefined();
+    expect(allowListEntry).toBeDefined();
+  });
+
+  it('does not duplicate an allow-list row for an existing account already on it', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestProfileUserDataManager(task.id, onTestFinished);
+    const { profile, adminUser } = await testData.createProfile({
+      users: { admin: 1 },
+    });
+
+    const standaloneUser = await testData.createStandaloneUser('example.com');
+    const email = standaloneUser.email.toLowerCase();
+    testData.trackProfileInvite(email, profile.id);
+    await db.insert(allowList).values({ email });
+
+    const { session } = await createIsolatedSession(adminUser.email);
+    const caller = createCaller(await createTestContextWithSession(session));
+
+    await caller.invite({
+      invitations: [{ email: standaloneUser.email, roleId: ROLES.MEMBER.id }],
+      profileId: profile.id,
+    });
+
+    const allowListEntries = await db.query.allowList.findMany({
+      where: { email },
+    });
+
+    expect(allowListEntries).toHaveLength(1);
   });
 
   it('should handle multiple invitations with mixed results', async ({
