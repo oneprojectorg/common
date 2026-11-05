@@ -33,7 +33,7 @@ export const sendPhaseTransitionNotification = inngest.createFunction(
     );
 
     const processData = await step.run('get-process-data', async () => {
-      const instance = await db
+      const instanceRows = await db
         .select({
           name: processInstances.name,
           profileId: processInstances.profileId,
@@ -46,12 +46,14 @@ export const sendPhaseTransitionNotification = inngest.createFunction(
         .where(eq(processInstances.id, processInstanceId))
         .limit(1);
 
-      const [row] = instance;
-      if (!row) {
+      const [instanceRow] = instanceRows;
+      if (!instanceRow) {
         return undefined;
       }
 
-      return resolvePhases({ instance: { ...row, id: processInstanceId } });
+      return resolvePhases({
+        instance: { ...instanceRow, id: processInstanceId },
+      });
     });
 
     if (!processData) {

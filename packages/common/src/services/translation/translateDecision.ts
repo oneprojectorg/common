@@ -64,33 +64,33 @@ export async function translateDecision({
     )
     .limit(1);
 
-  const [instance] = instances;
+  const [instanceRow] = instances;
 
-  if (!instance) {
+  if (!instanceRow) {
     throw new NotFoundError('Decision profile', decisionProfileId);
   }
 
-  const processInstance = await resolvePhases({ instance });
+  const resolvedInstance = await resolvePhases({ instance: instanceRow });
 
   // Start the permission check immediately so it runs in parallel with translation
   const authPromise = assertInstanceProfileAccess({
     user,
     instance: {
-      profileId: processInstance.profileId,
-      ownerProfileId: processInstance.ownerProfileId,
+      profileId: resolvedInstance.profileId,
+      ownerProfileId: resolvedInstance.ownerProfileId,
     },
     profilePermissions: { decisions: permission.READ },
     orgFallbackPermissions: { decisions: permission.READ },
   });
 
   const instanceData =
-    processInstance.instanceData as DecisionInstanceData | null;
+    resolvedInstance.instanceData as DecisionInstanceData | null;
   const entries = buildEntries(
     decisionProfileId,
     instanceData,
-    processInstance.phases,
-    processInstance.currentStateId,
-    processInstance.description,
+    resolvedInstance.phases,
+    resolvedInstance.currentStateId,
+    resolvedInstance.description,
   );
 
   if (entries.length === 0) {

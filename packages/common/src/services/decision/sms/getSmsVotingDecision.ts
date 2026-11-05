@@ -88,7 +88,7 @@ export async function describeEnrolmentDecision({
   instanceId: string;
   authUserId: string;
 }): Promise<SmsVotingDecision> {
-  const instance = await db.query.processInstances.findFirst({
+  const instanceRow = await db.query.processInstances.findFirst({
     where: { id: instanceId },
     columns: {
       id: true,
@@ -100,13 +100,13 @@ export async function describeEnrolmentDecision({
     with: { profile: { columns: { id: true, name: true, slug: true } } },
   });
 
-  if (!instance?.profile || instance.status !== ProcessStatus.PUBLISHED) {
+  if (!instanceRow?.profile || instanceRow.status !== ProcessStatus.PUBLISHED) {
     throw new NotFoundError('Process instance', instanceId);
   }
 
   await assertProfileAccess({
     user: { id: authUserId },
-    profileId: instance.profile.id,
+    profileId: instanceRow.profile.id,
     permissions: [
       { decisions: permission.ADMIN },
       { decisions: permission.READ },
@@ -115,8 +115,8 @@ export async function describeEnrolmentDecision({
   });
 
   return summarizeVotingInstance(
-    instance.profile.name,
-    instance.profile.slug,
-    await resolvePhases({ instance }),
+    instanceRow.profile.name,
+    instanceRow.profile.slug,
+    await resolvePhases({ instance: instanceRow }),
   );
 }

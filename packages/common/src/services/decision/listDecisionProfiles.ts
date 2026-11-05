@@ -10,6 +10,7 @@ import { User } from '@op/supabase/lib';
 import { collapseRoles } from 'access-zones';
 
 import {
+  CommonError,
   PAGE_LIMIT,
   type Paginated,
   constructTextSearch,
@@ -186,8 +187,13 @@ export const listDecisionProfiles = async ({
     const { profileUsers: _, ...profileWithoutUsers } = profile;
 
     if (profile.processInstance) {
-      const { proposals, ...instanceRest } =
-        instanceById.get(profile.processInstance.id) ?? profile.processInstance;
+      const resolvedInstance = instanceById.get(profile.processInstance.id);
+      if (!resolvedInstance) {
+        throw new CommonError(
+          'Resolved instance missing for ' + profile.processInstance.id,
+        );
+      }
+      const { proposals, ...instanceRest } = resolvedInstance;
       const nonDraftProposals =
         proposals?.filter(
           (proposal) => proposal.status !== ProposalStatus.DRAFT,

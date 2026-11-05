@@ -42,7 +42,7 @@ export async function triggerPhaseAdvancement({
   user,
   fromPhaseId: expectedFromPhaseId,
 }: TriggerPhaseAdvancementInput): Promise<TriggerPhaseAdvancementResult> {
-  const [dbUser, instance] = await Promise.all([
+  const [dbUser, instanceRow] = await Promise.all([
     assertUserByAuthId(user.id),
     db.query.processInstances.findFirst({
       where: { id: instanceId },
@@ -53,11 +53,11 @@ export async function triggerPhaseAdvancement({
     throw new UnauthorizedError('User must have an active profile');
   }
 
-  if (!instance) {
+  if (!instanceRow) {
     throw new NotFoundError('Process instance', instanceId);
   }
 
-  if (!instance.profileId) {
+  if (!instanceRow.profileId) {
     throw new CommonError(
       'Decision instance does not have an associated profile',
     );
@@ -65,22 +65,22 @@ export async function triggerPhaseAdvancement({
 
   await assertProfileAccess({
     user,
-    profileId: instance.profileId,
+    profileId: instanceRow.profileId,
     permissions: { decisions: permission.ADMIN },
   });
 
-  if (instance.status !== ProcessStatus.PUBLISHED) {
+  if (instanceRow.status !== ProcessStatus.PUBLISHED) {
     throw new ValidationError('Instance must be published');
   }
 
-  const resolved = await resolvePhases({ instance });
-  const { phases } = resolved;
+  const resolvedInstance = await resolvePhases({ instance: instanceRow });
+  const { phases } = resolvedInstance;
 
   if (phases.length === 0) {
     throw new CommonError('Instance has no phases defined');
   }
 
-  const fromPhaseId = instance.currentStateId;
+  const fromPhaseId = instanceRow.currentStateId;
 
   if (!fromPhaseId) {
     throw new CommonError('Instance has no current phase set');
@@ -107,7 +107,7 @@ export async function triggerPhaseAdvancement({
   const advanceResult = await db.transaction(async (tx) => {
     const result = await advancePhase({
       db: tx,
-      instance: resolved,
+      instance: resolvedInstance,
       fromPhaseId,
       toPhaseId,
       triggeredByProfileId: dbUser.profileId,

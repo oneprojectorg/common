@@ -7,6 +7,7 @@ import { NotFoundError } from '../../../utils/error';
  */
 export type PhasedInstance<Phase extends { phaseId: string }> =
   | { phases: readonly Phase[] }
+  // TODO: remove this arm and the instanceData read in getPhasesOf once the client reads phases off the instance.
   | {
       phases?: undefined;
       instanceData?: { phases?: readonly Phase[] } | null;

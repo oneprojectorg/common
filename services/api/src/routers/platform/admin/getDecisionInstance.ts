@@ -129,11 +129,11 @@ export const getDecisionInstanceRouter = router({
         throw new NotFoundError('Decision instance not found');
       }
 
-      const instance = await resolvePhases({ instance: instanceRow });
+      const resolvedInstance = await resolvePhases({ instance: instanceRow });
 
       const wireInstanceData = putPhasesOnInstanceData({
-        instanceData: instance.instanceData,
-        phases: instance.phases,
+        instanceData: resolvedInstance.instanceData,
+        phases: resolvedInstance.phases,
       });
       const parsed = detailInstanceData.safeParse(wireInstanceData);
       const { phases = [], ...instanceData } = parsed.success
@@ -141,12 +141,12 @@ export const getDecisionInstanceRouter = router({
         : {};
 
       // No profile of its own means no grant to carry.
-      const isPublic = instance.profileId
-        ? await isDecisionPublic({ profileId: instance.profileId })
+      const isPublic = resolvedInstance.profileId
+        ? await isDecisionPublic({ profileId: resolvedInstance.profileId })
         : false;
 
       const schemaParsed = detailProcessSchema.safeParse(
-        instance.process?.processSchema,
+        resolvedInstance.process?.processSchema,
       );
       const schemaRulesByPhaseId = new Map(
         (schemaParsed.success ? (schemaParsed.data.phases ?? []) : []).map(
@@ -155,18 +155,18 @@ export const getDecisionInstanceRouter = router({
       );
 
       return adminDecisionInstanceDetailSchema.parse({
-        id: instance.id,
-        name: instance.name,
-        slug: instance.profile?.slug ?? null,
-        profileId: instance.profileId,
-        status: instance.status,
-        createdAt: instance.createdAt,
+        id: resolvedInstance.id,
+        name: resolvedInstance.name,
+        slug: resolvedInstance.profile?.slug ?? null,
+        profileId: resolvedInstance.profileId,
+        status: resolvedInstance.status,
+        createdAt: resolvedInstance.createdAt,
         isPublic,
-        owner: instance.owner ?? null,
-        steward: instance.steward ?? null,
+        owner: resolvedInstance.owner ?? null,
+        steward: resolvedInstance.steward ?? null,
         reviewsPolicy: instanceData.config?.reviewsPolicy ?? null,
         processType:
-          instanceData.templateName ?? instance.process?.name ?? null,
+          instanceData.templateName ?? resolvedInstance.process?.name ?? null,
         templateVersion: instanceData.templateVersion ?? null,
         config: {
           isPrivate: instanceData.config?.isPrivate ?? false,
@@ -199,7 +199,7 @@ export const getDecisionInstanceRouter = router({
             name: phase.name ?? null,
             startDate: phase.startDate ?? null,
             endDate: phase.endDate ?? null,
-            isCurrent: phase.phaseId === instance.currentStateId,
+            isCurrent: phase.phaseId === resolvedInstance.currentStateId,
             hasProposals: rules?.proposals?.submit ?? false,
             hasReviews: isReviewPhase({ rules }),
             hasVoting: rules?.voting?.submit ?? false,

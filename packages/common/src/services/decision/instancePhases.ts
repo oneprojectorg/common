@@ -3,7 +3,7 @@ import { logger } from '@op/logging';
 
 import { isServerFeatureEnabled } from '../../utils/featureFlags';
 import {
-  type DecisionPhase,
+  type ProcessPhaseWithProfile,
   listPhasesByInstance,
   phaseIdOf,
 } from './phaseHelpers';
@@ -20,6 +20,7 @@ interface InstanceWithData {
   instanceData: unknown;
 }
 
+// Stays after the migration: an instance whose phases are loaded, by the resolver now or a query relation later.
 export type WithPhases<T> = T & { readonly phases: PhaseInstanceData[] };
 
 export type WithProfilePhases<
@@ -126,7 +127,9 @@ export const resolveProfilePhases = async <
     : null,
 });
 
-const toInstanceDataPhase = (phase: DecisionPhase): PhaseInstanceData => ({
+const toInstanceDataPhase = (
+  phase: ProcessPhaseWithProfile,
+): PhaseInstanceData => ({
   ...phase.data,
   phaseId: phaseIdOf(phase),
   name: phase.name,

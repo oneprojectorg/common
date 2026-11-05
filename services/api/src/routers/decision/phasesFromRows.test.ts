@@ -7,7 +7,11 @@ import {
   readInstancePhaseSet,
   revertPhase,
 } from '@op/common';
-import { TestDecisionsDataManager, emptyBlobPhases } from '@op/common/testing';
+import {
+  TestDecisionsDataManager,
+  emptyBlobPhases,
+  forceServerFlags,
+} from '@op/common/testing';
 import { db, eq } from '@op/db/client';
 import {
   ProcessStatus,
@@ -17,7 +21,15 @@ import {
   proposalReviewAssignments,
   users,
 } from '@op/db/schema';
-import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vitest';
 
 import { createAuthenticatedCaller } from '../../test/supabase-utils';
 
@@ -448,5 +460,66 @@ describe('with process_phases_from_rows on and instanceData.phases empty', () =>
       initialPhaseId: 'initial',
       phaseIds: ['initial', 'final'],
     });
+  });
+});
+
+describe('getInstance with hideBudget', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  const createHiddenBudgetDecision = async (
+    testData: TestDecisionsDataManager,
+  ) => {
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+      status: ProcessStatus.PUBLISHED,
+      processSchema: manualSchema,
+    });
+    const { id: instanceId, instanceData } = setup.instance.instance;
+    await db
+      .update(processInstances)
+      .set({
+        instanceData: {
+          ...instanceData,
+          config: { ...instanceData.config, hideBudget: true },
+          phases: instanceData.phases.map((phase) => ({
+            ...phase,
+            settings: { budget: 1000 },
+          })),
+        },
+      })
+      .where(eq(processInstances.id, instanceId));
+
+    return {
+      instanceId,
+      caller: await createAuthenticatedCaller(setup.userEmail),
+    };
+  };
+
+  it('strips phase budgets from the blob', async ({ task, onTestFinished }) => {
+    forceServerFlags(false);
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { instanceId, caller } = await createHiddenBudgetDecision(testData);
+
+    const instance = await caller.decision.getInstance({ instanceId });
+
+    expect(
+      instance.instanceData.phases?.map(({ settings }) => settings),
+    ).toEqual([{}, {}]);
+  });
+
+  it('strips phase budgets from the rows', async ({ task, onTestFinished }) => {
+    forceServerFlags(true);
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { instanceId, caller } = await createHiddenBudgetDecision(testData);
+    await moveToRows(testData, instanceId);
+
+    const instance = await caller.decision.getInstance({ instanceId });
+
+    expect(
+      instance.instanceData.phases?.map(({ settings }) => settings),
+    ).toEqual([{}, {}]);
   });
 });

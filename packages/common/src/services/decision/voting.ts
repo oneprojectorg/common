@@ -178,7 +178,7 @@ async function getBallotPricing({
 }
 
 async function getVotingInstance(processInstanceId: string) {
-  const processInstance = await db.query.processInstances.findFirst({
+  const instanceRow = await db.query.processInstances.findFirst({
     where: { id: processInstanceId },
     columns: {
       id: true,
@@ -190,11 +190,11 @@ async function getVotingInstance(processInstanceId: string) {
     },
   });
 
-  if (!processInstance) {
+  if (!instanceRow) {
     throw new NotFoundError('Process instance', processInstanceId);
   }
 
-  return resolvePhases({ instance: processInstance });
+  return resolvePhases({ instance: instanceRow });
 }
 
 // Runs both caps so the voter sees every problem at once.

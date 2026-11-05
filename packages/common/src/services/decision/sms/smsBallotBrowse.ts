@@ -40,7 +40,7 @@ export const loadBallotScope = async ({
   authUserId: string;
   instanceId: string;
 }) => {
-  const row = await db.query.processInstances.findFirst({
+  const instanceRow = await db.query.processInstances.findFirst({
     where: { id: instanceId },
     columns: {
       id: true,
@@ -54,15 +54,14 @@ export const loadBallotScope = async ({
   });
 
   if (
-    !row?.profile ||
-    !row.profileId ||
-    row.status !== ProcessStatus.PUBLISHED
+    !instanceRow?.profile ||
+    !instanceRow.profileId ||
+    instanceRow.status !== ProcessStatus.PUBLISHED
   ) {
     throw new NotFoundError('Process instance', instanceId);
   }
 
-  const { profile, profileId } = row;
-  const instance = await resolvePhases({ instance: row });
+  const { profile, profileId } = instanceRow;
 
   const [enrolment] = await Promise.all([
     findVoterEnrolment({ processInstanceId: instanceId, authUserId }),
@@ -77,7 +76,9 @@ export const loadBallotScope = async ({
     }),
   ]);
 
-  const phase = getInstanceCurrentPhase(instance);
+  const resolvedInstance = await resolvePhases({ instance: instanceRow });
+
+  const phase = getInstanceCurrentPhase(resolvedInstance);
 
   if (!phase || !isVotingPhase(phase)) {
     throw new ValidationError('Voting is not open for this decision');
@@ -100,7 +101,7 @@ export const loadBallotScope = async ({
     : null;
 
   return {
-    instance,
+    instance: resolvedInstance,
     decisionName: profile.name,
     taxonomyTermId,
     termLabel: term?.label ?? null,
