@@ -275,8 +275,7 @@ function getReviewerOrder({
     case 'leastComplete':
     case 'mostComplete': {
       const direction = sort === 'leastComplete' ? sql`asc` : sql`desc`;
-      // On an equal ratio the reviewer with more assignments comes first:
-      // 0 of 13 is less complete than 0 of 4, and 13 of 13 more than 4 of 4.
+      // On an equal ratio the reviewer with more assignments comes first.
       return {
         orderBy: [
           sql`${rollup.completionRatio} ${direction} nulls last`,
