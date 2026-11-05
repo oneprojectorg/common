@@ -1924,7 +1924,8 @@
       "keepChangesDescription": "You have edited the about section without saving. Keeping the changes puts them on the page participants read.",
       "discardAction": "Discard",
       "savingStatus": "Saving…",
-      "savedStatus": "Saved"
+      "savedStatus": "Saved",
+      "fixtureNotice": "Showing the {name} fixture. These phases are sample data, not this process's phases."
     }
   },
   "loadingProgress": "Loading...",

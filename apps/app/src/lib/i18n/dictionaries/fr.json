@@ -1924,7 +1924,8 @@
       "keepChangesDescription": "Vous avez modifié la section À propos sans l’enregistrer. Si vous conservez les modifications, elles apparaîtront sur la page lue par les participants.",
       "discardAction": "Annuler les modifications",
       "savingStatus": "Enregistrement…",
-      "savedStatus": "Enregistré"
+      "savedStatus": "Enregistré",
+      "fixtureNotice": "Affichage du fixture {name}. Ces phases sont des données d'exemple, pas celles de ce processus."
     }
   },
   "loadingProgress": "En train de charger…",

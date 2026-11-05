@@ -14,6 +14,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import en from '../../../lib/i18n/dictionaries/en.json';
 import { ProcessAdminOverview } from './ProcessAdminOverview';
+import type { ProcessAdminPhase } from './types';
 
 const { query, updateInstance } = vi.hoisted(() => {
   const query: {
@@ -177,15 +178,26 @@ const seed = ({
   };
 };
 
-const renderOverview = (isOpen = false, aboutSlot: ReactNode = null) =>
+const renderOverview = (
+  isOpen = false,
+  aboutSlot: ReactNode = null,
+  phases: ProcessAdminPhase[] = [],
+) =>
   render(
     <NextIntlClientProvider locale="en" messages={en}>
-      <ProcessAdminOverview slug={SLUG} isOpen={isOpen} aboutSlot={aboutSlot} />
+      <ProcessAdminOverview
+        slug={SLUG}
+        phases={phases}
+        isOpen={isOpen}
+        aboutSlot={aboutSlot}
+      />
     </NextIntlClientProvider>,
   );
 
-const phase = {
-  phaseId: 'submit',
+const phase: ProcessAdminPhase = {
+  id: 'submit',
+  isCurrent: false,
+  sortOrder: 0,
   name: 'Submit',
   startDate: '2026-01-01T00:00:00.000Z',
 };
@@ -227,16 +239,16 @@ describe('ProcessAdminOverview', () => {
   });
 
   it('renders the phase timeline when the process has phases', () => {
-    seed({ phases: [phase] });
-    renderOverview(true);
+    seed({});
+    renderOverview(true, null, [phase]);
 
     expect(screen.getByTestId('phase-timeline').dataset.started).toBe('true');
     expect(screen.queryByText('No phases yet')).toBeNull();
   });
 
   it('links to the proposals once the process is open', () => {
-    seed({ phases: [phase] });
-    renderOverview(true);
+    seed({});
+    renderOverview(true, null, [phase]);
 
     expect(
       screen
@@ -246,8 +258,8 @@ describe('ProcessAdminOverview', () => {
   });
 
   it('keeps the timeline and the proposals link closed until the process is open', () => {
-    seed({ phases: [phase] });
-    renderOverview(false);
+    seed({});
+    renderOverview(false, null, [phase]);
 
     expect(screen.queryByRole('link', { name: 'Browse proposals' })).toBeNull();
     expect(screen.getByTestId('phase-timeline').dataset.started).toBe('false');

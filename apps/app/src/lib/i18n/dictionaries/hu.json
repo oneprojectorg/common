@@ -1924,7 +1924,8 @@
       "keepChangesDescription": "Mentés nélkül szerkesztette a folyamatról szóló szakaszt. A módosítások megtartásával azok megjelennek a résztvevők által olvasott oldalon.",
       "discardAction": "Elvetés",
       "savingStatus": "Mentés…",
-      "savedStatus": "Mentve"
+      "savedStatus": "Mentve",
+      "fixtureNotice": "A(z) {name} fixture látható. Ezek a fázisok mintaadatok, nem ennek a folyamatnak a fázisai."
     }
   },
   "loadingProgress": "Betöltés...",
