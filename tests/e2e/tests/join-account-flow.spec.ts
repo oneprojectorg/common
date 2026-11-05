@@ -205,6 +205,97 @@ test.describe('Join account flow (public decision header)', () => {
     await expect(like).toHaveAccessibleName('0 Likes');
   });
 
+  /**
+   * The replay seam no other test stitches together: the pending like must
+   * survive the whole claim round trip — modal, promote onboarding, the
+   * return redirect — and apply exactly once when the new member lands back.
+   * This also exercises the stay-anonymous branch, which writes nothing.
+   *
+   * Given a logged-out visitor who pressed Like on a public proposal
+   * When they claim an account and finish onboarding staying anonymous
+   * Then they return to the proposal with the like applied and announced,
+   * the carrier param is stripped, and a reload does not replay it
+   */
+  test("a visitor's Like replays once after the claim completes", async ({
+    page,
+  }) => {
+    const { org, instance } = await seedPublicDecision('join-resume');
+    const proposal = await createProposal({
+      processInstanceId: instance.instance.id,
+      submittedByProfileId: org.organizationProfile.id,
+      authUserId: org.adminUser.authUserId,
+      email: org.adminUser.email,
+      proposalData: {
+        title: `Resume replay proposal ${randomUUID().slice(0, 6)}`,
+      },
+      status: ProposalStatus.SUBMITTED,
+    });
+
+    await page.goto(
+      `/en/decisions/${instance.slug}/proposal/${proposal.profileId}`,
+      { waitUntil: 'networkidle' },
+    );
+
+    const like = page.getByRole('button', { name: /^\d+ Likes?$/ });
+    await expect(like).toBeVisible({ timeout: 15000 });
+    await like.click();
+
+    await expect(
+      page.getByRole('heading', { name: 'Add your voice to this idea' }),
+    ).toBeVisible({ timeout: 15000 });
+
+    const email = `join-${randomUUID().slice(0, 8)}@example.com`;
+    const dialog = page
+      .getByRole('dialog')
+      .and(page.locator(':not([data-slot="toast"])'));
+    await dialog.getByRole('textbox', { name: 'Email' }).fill(email);
+    // Confirmations are off in e2e, so this claims the account immediately and
+    // navigates to the promote onboarding with the pending action in tow.
+    await dialog.getByRole('button', { name: 'Email me a code' }).click();
+    await page.waitForURL(/\/start\?.*promote=1/, { timeout: 20000 });
+
+    // Visibility step: stay anonymous. The replay must not depend on the
+    // rename path.
+    await expect(
+      page.getByRole('heading', { name: "How you'll appear in this process" }),
+    ).toBeVisible({ timeout: 15000 });
+    // React Aria renders a decorative box over the input, so force the click
+    // past it rather than targeting the visually-hidden radio center.
+    await page
+      .getByRole('radio', { name: 'Stay anonymous' })
+      .check({ force: true });
+    await page.getByRole('button', { name: 'Continue' }).click();
+
+    // ToS step.
+    await expect(
+      page.getByRole('heading', { name: 'One last step' }),
+    ).toBeVisible({ timeout: 15000 });
+    const accept = page.getByRole('checkbox', { name: 'I accept the' });
+    await accept.nth(0).check({ force: true });
+    await accept.nth(1).check({ force: true });
+    await page.getByRole('button', { name: 'Join Common' }).click();
+
+    // Back on the proposal page, the pending like applies and is announced.
+    // .first(): the toast and the sr-only live region carry the same text.
+    await expect(page).toHaveURL(
+      new RegExp(`/proposal/${proposal.profileId}`),
+      { timeout: 20000 },
+    );
+    await expect(page.getByText('Your like was counted').first()).toBeVisible({
+      timeout: 15000,
+    });
+    await expect(like).toHaveAccessibleName('1 Like');
+    // Settling strips the carrier, so history can't re-arm the replay.
+    await expect(page).not.toHaveURL(/resume=/);
+
+    // One-shot: a reload reads the count back from the server and must not
+    // write again.
+    await page.reload({ waitUntil: 'networkidle' });
+    await expect(
+      page.getByRole('button', { name: /^\d+ Likes?$/ }),
+    ).toHaveAccessibleName('1 Like');
+  });
+
   test('a full account sees the user menu, not Join, and ?join=1 opens nothing', async ({
     page,
   }) => {
