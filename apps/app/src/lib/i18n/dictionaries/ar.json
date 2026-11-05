@@ -1041,7 +1041,6 @@
       "remindAction": "تذكير",
       "remindReviewerLabel": "تذكير {name}",
       "sendReminderAction": "إرسال تذكير",
-      "sendReminderToShownLabel": "{count, plural, one {إرسال تذكير إلى المراجع المعروض} other {إرسال تذكير إلى # مراجعين معروضين}}",
       "sendReminderTitle": "إرسال تذكير",
       "reminderSenderSubtitle": "يُرسل عبر البريد الإلكتروني من <bdi>{organization}</bdi>.",
       "reminderToLabel": "إلى",

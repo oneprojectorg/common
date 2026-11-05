@@ -1041,7 +1041,6 @@
       "remindAction": "Relancer",
       "remindReviewerLabel": "Relancer {name}",
       "sendReminderAction": "Envoyer un rappel",
-      "sendReminderToShownLabel": "{count, plural, one {Envoyer un rappel à # évaluateur affiché} other {Envoyer un rappel aux # évaluateurs affichés}}",
       "sendReminderTitle": "Envoyer un rappel",
       "reminderSenderSubtitle": "Envoyé par e-mail de la part de <bdi>{organization}</bdi>.",
       "reminderToLabel": "À",

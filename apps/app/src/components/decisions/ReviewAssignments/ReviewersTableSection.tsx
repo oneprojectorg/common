@@ -228,9 +228,6 @@ function ReviewersTableContent({
             {showSendReminder ? (
               <Button
                 variant="outline"
-                aria-label={t('decisions.review.sendReminderToShownLabel', {
-                  count: total,
-                })}
                 onClick={() =>
                   openReminder({
                     kind: 'batch',

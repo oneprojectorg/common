@@ -1041,7 +1041,6 @@
       "remindAction": "Emlékeztetés",
       "remindReviewerLabel": "{name} emlékeztetése",
       "sendReminderAction": "Emlékeztető küldése",
-      "sendReminderToShownLabel": "{count, plural, one {Emlékeztető küldése a megjelenített # értékelőnek} other {Emlékeztető küldése a megjelenített # értékelőnek}}",
       "sendReminderTitle": "Emlékeztető küldése",
       "reminderSenderSubtitle": "E-mailben küldi: <bdi>{organization}</bdi>.",
       "reminderToLabel": "Címzett",

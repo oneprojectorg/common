@@ -1041,7 +1041,6 @@
       "remindAction": "Remind",
       "remindReviewerLabel": "Remind {name}",
       "sendReminderAction": "Send reminder",
-      "sendReminderToShownLabel": "{count, plural, one {Send a reminder to the # reviewer shown} other {Send a reminder to the # reviewers shown}}",
       "sendReminderTitle": "Send a reminder",
       "reminderSenderSubtitle": "Sent by email from <bdi>{organization}</bdi>.",
       "reminderToLabel": "To",

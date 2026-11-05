@@ -1041,7 +1041,6 @@
       "remindAction": "Lembrar",
       "remindReviewerLabel": "Lembrar {name}",
       "sendReminderAction": "Enviar lembrete",
-      "sendReminderToShownLabel": "{count, plural, one {Enviar um lembrete ao # revisor exibido} other {Enviar um lembrete aos # revisores exibidos}}",
       "sendReminderTitle": "Enviar um lembrete",
       "reminderSenderSubtitle": "Enviado por e-mail por <bdi>{organization}</bdi>.",
       "reminderToLabel": "Para",

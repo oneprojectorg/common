@@ -1041,7 +1041,6 @@
       "remindAction": "মনে করিয়ে দিন",
       "remindReviewerLabel": "{name}-কে মনে করিয়ে দিন",
       "sendReminderAction": "রিমাইন্ডার পাঠান",
-      "sendReminderToShownLabel": "{count, plural, one {দেখানো # জন পর্যালোচককে রিমাইন্ডার পাঠান} other {দেখানো # জন পর্যালোচককে রিমাইন্ডার পাঠান}}",
       "sendReminderTitle": "একটি রিমাইন্ডার পাঠান",
       "reminderSenderSubtitle": "<bdi>{organization}</bdi>-এর পক্ষ থেকে ইমেইলে পাঠানো হয়।",
       "reminderToLabel": "প্রাপক",

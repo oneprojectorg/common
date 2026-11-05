@@ -1041,7 +1041,6 @@
       "remindAction": "Xusuusi",
       "remindReviewerLabel": "Xusuusi {name}",
       "sendReminderAction": "Dir xusuusin",
-      "sendReminderToShownLabel": "{count, plural, one {U dir xusuusin # dib-u-eegaha la muujiyay} other {U dir xusuusin # dib-u-eegayaasha la muujiyay}}",
       "sendReminderTitle": "Dir xusuusin",
       "reminderSenderSubtitle": "Iimayl ahaan waxaa u soo diray <bdi>{organization}</bdi>.",
       "reminderToLabel": "Loo dirayo",
