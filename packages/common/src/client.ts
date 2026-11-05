@@ -106,6 +106,12 @@ export {
   reviewerAssignmentsSchema,
   type ReviewerAssignments,
   type ReviewerQueueStatus,
+  reviewReminderRecipientsInputSchema,
+  type ReviewReminderRecipientsParams,
+  reviewReminderRecipientSchema,
+  type ReviewReminderRecipient,
+  reviewReminderRecipientsSchema,
+  type ReviewReminderRecipients,
   sendReviewReminderInputSchema,
   type SendReviewReminderInput,
   sendReviewReminderResultSchema,
@@ -114,6 +120,8 @@ export {
 export {
   REVIEW_REMINDER_MAX_RECIPIENTS,
   REVIEW_REMINDER_MESSAGE_MAX_LENGTH,
+  type ReviewReminderToken,
+  getReviewerFirstName,
 } from './services/decision/reviewReminderTemplate';
 export {
   proposalAllocationSchema,

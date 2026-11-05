@@ -52,11 +52,43 @@ export type PhaseReviewerSummariesParams = z.input<
   typeof phaseReviewerSummariesInputSchema
 >;
 
+export const reviewReminderRecipientsInputSchema =
+  phaseReviewerSummariesInputSchema.pick({
+    processInstanceId: true,
+    phaseId: true,
+    search: true,
+    status: true,
+  });
+
+export type ReviewReminderRecipientsParams = z.input<
+  typeof reviewReminderRecipientsInputSchema
+>;
+
+export const reviewReminderRecipientSchema = z.object({
+  reviewer: eligibleReviewerSchema,
+  remainingCount: z.number().int(),
+  lastRemindedAt: z.string().nullable(),
+});
+
+export type ReviewReminderRecipient = z.infer<
+  typeof reviewReminderRecipientSchema
+>;
+
+export const reviewReminderRecipientsSchema = z.object({
+  items: z.array(reviewReminderRecipientSchema),
+});
+
+export type ReviewReminderRecipients = z.infer<
+  typeof reviewReminderRecipientsSchema
+>;
+
 export const phaseReviewerSummarySchema = z.object({
   reviewer: eligibleReviewerSchema,
   assignedCount: z.number(),
   submittedCount: z.number(),
   draftCount: z.number(),
+  /** Assignments the reviewer can still act on: what a reminder counts. */
+  openCount: z.number(),
   lastSubmittedAt: z.string().nullable(),
   status: reviewerStatusSchema,
 });
