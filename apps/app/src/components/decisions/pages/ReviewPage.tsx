@@ -70,7 +70,6 @@ export function ReviewPage({
     reviewTabParser.withDefault(DEFAULT_REVIEW_TAB),
   );
 
-  // A stale `?tab=reviewers` (non-admin link) has no panel.
   const activeTab = tab === 'reviewers' && !isAdmin ? DEFAULT_REVIEW_TAB : tab;
 
   // The admin variant shows All proposals under DEFAULT_REVIEW_TAB.
@@ -210,8 +209,6 @@ export function ReviewPage({
                 {isAdmin ? assignmentsTabContent : null}
               </Tabs>
             ) : isAdmin ? (
-              // Admin without review capability: the progress list and the
-              // Reviewers tab are the whole surface.
               <Tabs
                 className="gap-6"
                 value={adminActiveTab}
