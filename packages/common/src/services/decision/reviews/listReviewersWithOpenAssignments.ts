@@ -3,12 +3,17 @@ import {
   ProposalReviewAssignmentStatus,
   proposalReviewAssignments,
 } from '@op/db/schema';
-import { and, asc, count, eq, inArray, isNull } from 'drizzle-orm';
 
 export interface ReviewerWithOpenAssignments {
   reviewerProfileId: string;
   remainingCount: number;
 }
+
+const OPEN_ASSIGNMENT_STATUSES = [
+  ProposalReviewAssignmentStatus.PENDING,
+  ProposalReviewAssignmentStatus.IN_PROGRESS,
+  ProposalReviewAssignmentStatus.READY_FOR_RE_REVIEW,
+];
 
 export async function listReviewersWithOpenAssignments({
   processInstanceId,
@@ -23,29 +28,34 @@ export async function listReviewersWithOpenAssignments({
     return [];
   }
 
-  return db
-    .select({
-      reviewerProfileId: proposalReviewAssignments.reviewerProfileId,
-      remainingCount: count(),
-    })
-    .from(proposalReviewAssignments)
-    .where(
-      and(
-        eq(proposalReviewAssignments.processInstanceId, processInstanceId),
-        eq(proposalReviewAssignments.phaseId, phaseId),
-        inArray(proposalReviewAssignments.status, [
-          ProposalReviewAssignmentStatus.PENDING,
-          ProposalReviewAssignmentStatus.IN_PROGRESS,
-          ProposalReviewAssignmentStatus.READY_FOR_RE_REVIEW,
-        ]),
-        isNull(proposalReviewAssignments.deletedAt),
-        reviewerProfileIds
-          ? inArray(proposalReviewAssignments.reviewerProfileId, [
-              ...reviewerProfileIds,
-            ])
-          : undefined,
-      ),
-    )
-    .groupBy(proposalReviewAssignments.reviewerProfileId)
-    .orderBy(asc(proposalReviewAssignments.reviewerProfileId));
+  const reviewers = await db.query.profiles.findMany({
+    where: {
+      ...(reviewerProfileIds && { id: { in: [...reviewerProfileIds] } }),
+      reviewerAssignments: {
+        processInstanceId,
+        phaseId,
+        status: { in: OPEN_ASSIGNMENT_STATUSES },
+        deletedAt: { isNull: true },
+      },
+    },
+    columns: { id: true },
+    extras: {
+      remainingCount: (table, { sql }) =>
+        sql<number>`(
+          select count(*)::int
+          from ${proposalReviewAssignments}
+          where ${proposalReviewAssignments.reviewerProfileId} = ${table.id}
+            and ${proposalReviewAssignments.processInstanceId} = ${processInstanceId}
+            and ${proposalReviewAssignments.phaseId} = ${phaseId}
+            and ${proposalReviewAssignments.status} in ${OPEN_ASSIGNMENT_STATUSES}
+            and ${proposalReviewAssignments.deletedAt} is null
+        )`.as('remaining_count'),
+    },
+    orderBy: { id: 'asc' },
+  });
+
+  return reviewers.map(({ id, remainingCount }) => ({
+    reviewerProfileId: id,
+    remainingCount,
+  }));
 }
