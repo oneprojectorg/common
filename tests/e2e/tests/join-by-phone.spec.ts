@@ -139,7 +139,7 @@ test.describe('Join by phone (public decision)', () => {
     expect(await findAuthUserByPhone(phone)).toBeNull();
   });
 
-  test('the code claims the account, and the account can propose', async ({
+  test('the code claims the account, the account can propose, and the same number then signs its owner in instead of claiming again', async ({
     page,
   }) => {
     // Two navigations and a full onboarding pass sit inside this one test,
@@ -225,6 +225,32 @@ test.describe('Join by phone (public decision)', () => {
     await page.getByRole('button', { name: 'Start a proposal' }).click();
     await page.waitForURL(/\/proposal\/[^/]+\/edit/, { timeout: 30000 });
     await expect(page.getByText('Failed to create proposal')).not.toBeVisible();
+
+    await page.context().clearCookies();
+    await page.goto(`/en/decisions/${instance.slug}`, {
+      waitUntil: 'networkidle',
+    });
+    await page.getByRole('button', { name: 'Join' }).click();
+    await dialog.getByRole('tab', { name: 'Phone number' }).click();
+    await dialog.getByRole('textbox', { name: 'Phone number' }).fill(phone);
+    await dialog.getByRole('button', { name: 'Text me a code' }).click();
+
+    await expect(
+      page.getByRole('heading', { name: 'Check your texts' }),
+    ).toBeVisible({ timeout: 20000 });
+    await expect(dialog.getByRole('alert')).toHaveCount(0);
+
+    await dialog
+      .getByRole('textbox', { name: 'Enter verification code' })
+      .fill(code);
+    await expect(page).toHaveURL(new RegExp(`/decisions/${instance.slug}`), {
+      timeout: 30000,
+    });
+    await expect(page).not.toHaveURL(/\/start/);
+    await expect(page.getByRole('button', { name: 'Join' })).not.toBeVisible();
+    await expect(
+      page.getByRole('button', { name: 'Start a proposal' }),
+    ).toBeVisible();
   });
 });
 

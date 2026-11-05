@@ -5,9 +5,22 @@ import en from '../lib/i18n/dictionaries/en.json';
 import {
   getClaimEmailErrorMessage,
   getClaimPhoneErrorMessage,
+  otpTypeFor,
 } from './useClaimAccount';
 
 const t = createTranslator({ locale: 'en', messages: en });
+
+describe('otpTypeFor', () => {
+  it('given a contact the anonymous user is claiming, then the code is verified as a change on that user', () => {
+    expect(otpTypeFor('phone', 'claim')).toBe('phone_change');
+    expect(otpTypeFor('email', 'claim')).toBe('email_change');
+  });
+
+  it('given a contact that already has an account, then the code is verified as a login to that account', () => {
+    expect(otpTypeFor('phone', 'login')).toBe('sms');
+    expect(otpTypeFor('email', 'login')).toBe('email');
+  });
+});
 
 describe('getClaimPhoneErrorMessage', () => {
   it('given the number already has an account, then the message is the one every other failed request gets', () => {
