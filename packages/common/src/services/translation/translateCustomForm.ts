@@ -8,7 +8,6 @@ import {
   type TranslatedFields,
   flattenSchemaFields,
   flattenTranslatableFields,
-  unflattenTranslatedFields,
 } from './translatedFields';
 
 /**
@@ -55,5 +54,14 @@ export async function translateCustomForm({
 
   const results = await runTranslateBatch(entries, targetLocale);
 
-  return { ...unflattenTranslatedFields(prefix, results), targetLocale };
+  // Every key is scalar. `unflattenTranslatedFields` would read an option
+  // value such as `Tier[2]` as an array element.
+  const translated: TranslatedFields = {};
+  let sourceLocale = '';
+  for (const result of results) {
+    translated[result.contentKey.slice(prefix.length)] = result.translatedText;
+    sourceLocale ||= result.sourceLocale ?? '';
+  }
+
+  return { translated, sourceLocale, targetLocale };
 }

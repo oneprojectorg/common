@@ -80,7 +80,7 @@ describe('translation.translateCustomForm', () => {
           interests: {
             type: 'array',
             title: 'Interests',
-            items: { type: 'string', enum: ['Food', 'Water'] },
+            items: { type: 'string', enum: ['Food', 'Water', 'Tier[2]'] },
           },
           tier: {
             type: 'string',
@@ -108,6 +108,7 @@ describe('translation.translateCustomForm', () => {
         'field_title:interests': '[ES] Interests',
         'option:interests:Food': '[ES] Food',
         'option:interests:Water': '[ES] Water',
+        'option:interests:Tier[2]': '[ES] Tier[2]',
         'option:tier:gold': '[ES] Gold tier',
       },
       sourceLocale: 'EN',
