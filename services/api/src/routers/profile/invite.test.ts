@@ -21,10 +21,12 @@ import {
   createTestContextWithSession,
 } from '../../test/supabase-utils';
 import { createCallerFactory } from '../../trpcFactory';
+import { acceptInviteRouter } from './acceptInvite';
 import { inviteProfileUserRouter } from './invite';
 
 describe.concurrent('Profile Invite Integration Tests', () => {
   const createCaller = createCallerFactory(inviteProfileUserRouter);
+  const createAcceptCaller = createCallerFactory(acceptInviteRouter);
 
   it('should create a pending invite for existing user (not add them directly)', async ({
     task,
@@ -188,7 +190,7 @@ describe.concurrent('Profile Invite Integration Tests', () => {
     );
   });
 
-  it('adds an existing account to the allow list when it is missing', async ({
+  it('lets an invited existing account outside the network accept the invite', async ({
     task,
     onTestFinished,
   }) => {
@@ -198,7 +200,9 @@ describe.concurrent('Profile Invite Integration Tests', () => {
     });
 
     const standaloneUser = await testData.createStandaloneUser('example.com');
-    testData.trackProfileInvite(standaloneUser.email, profile.id);
+    const email = standaloneUser.email.toLowerCase();
+    testData.trackProfileInvite(email, profile.id);
+    testData.trackAllowListEmail(email);
 
     const { session } = await createIsolatedSession(adminUser.email);
     const caller = createCaller(await createTestContextWithSession(session));
@@ -208,8 +212,33 @@ describe.concurrent('Profile Invite Integration Tests', () => {
       profileId: profile.id,
     });
 
+    const invite = await db.query.profileInvites.findFirst({
+      where: { email, profileId: profile.id },
+    });
+
+    if (!invite) {
+      throw new Error('Expected the invite to exist');
+    }
+
+    const { session: inviteeSession } = await createIsolatedSession(
+      standaloneUser.email,
+    );
+    const acceptCaller = createAcceptCaller(
+      await createTestContextWithSession(inviteeSession),
+    );
+
+    const result = await acceptCaller.acceptInvite({ inviteId: invite.id });
+
+    expect(result.profileId).toBe(profile.id);
+
+    const profileUser = await db.query.profileUsers.findFirst({
+      where: { profileId: profile.id, authUserId: standaloneUser.authUserId },
+    });
+
+    expect(profileUser).toBeDefined();
+
     const allowListEntry = await db.query.allowList.findFirst({
-      where: { email: standaloneUser.email.toLowerCase() },
+      where: { email },
     });
 
     expect(allowListEntry).toBeDefined();
