@@ -96,6 +96,35 @@ jobs:
       - name: Test the numbering script
         run: scripts/number-adrs.test.sh
 
+  # Runs the base branch's copy of the script, so a PR cannot edit the check
+  # it is judged by. Falls back to the PR's copy until the script is on base.
+  migration-order:
+    name: Migration order
+    runs-on: ubuntu-latest
+    steps:
+      # No secrets, a read-only token, and no persisted credentials or cache.
+      # nosemgrep: yaml.github-actions.security.pull-request-target-code-checkout.pull-request-target-code-checkout
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Check new migrations are newer than the base branch
+        env:
+          BASE: origin/${{ github.base_ref }}
+          SCRIPT: scripts/check-migration-order.sh
+        run: |
+          if git cat-file -e "$BASE:$SCRIPT" 2>/dev/null; then
+            git show "$BASE:$SCRIPT" | bash -s -- "$BASE"
+          else
+            bash "$SCRIPT" "$BASE"
+          fi
+
+      - name: Test the migration order script
+        run: scripts/check-migration-order.test.sh
+
   design-system:
     name: Design system
     runs-on: blacksmith-2vcpu-ubuntu-2204
