@@ -206,6 +206,62 @@ test.describe('Join account flow (public decision header)', () => {
   });
 
   /**
+   * The follow half of the trigger: nothing else presses Follow as a visitor,
+   * so the hook wiring and the follow-keyed modal copy are otherwise
+   * unexercised above the pure functions. Dismissing the dialog must also
+   * cancel the carried action — both params, or a later claim replays it.
+   *
+   * Given a logged-out visitor on a public decision's proposal page
+   * When they press Follow and then dismiss the claim dialog
+   * Then the dialog shows the follow copy with join=follow and
+   * resume=follow: carried, and dismissing strips both without following
+   */
+  test("a visitor's Follow opens the claim dialog with follow copy, and closing cancels it", async ({
+    page,
+  }) => {
+    const { org, instance } = await seedPublicDecision('join-follow');
+    const proposal = await createProposal({
+      processInstanceId: instance.instance.id,
+      submittedByProfileId: org.organizationProfile.id,
+      authUserId: org.adminUser.authUserId,
+      email: org.adminUser.email,
+      proposalData: {
+        title: `Follow prompt proposal ${randomUUID().slice(0, 6)}`,
+      },
+      status: ProposalStatus.SUBMITTED,
+    });
+
+    await page.goto(
+      `/en/decisions/${instance.slug}/proposal/${proposal.profileId}`,
+      { waitUntil: 'networkidle' },
+    );
+
+    const follow = page.getByRole('button', { name: /^\d+ Followers?$/ });
+    await expect(follow).toBeVisible({ timeout: 15000 });
+    await follow.click();
+
+    // Follow-keyed copy, not the generic like pair.
+    await expect(
+      page.getByRole('heading', { name: "Don't lose track of this idea" }),
+    ).toBeVisible({ timeout: 15000 });
+    await expect(page).toHaveURL(/join=follow/);
+    await expect(page).toHaveURL(/resume=follow%3A/);
+
+    const dialog = page
+      .getByRole('dialog')
+      .and(page.locator(':not([data-slot="toast"])'));
+    await dialog
+      .getByRole('button', { name: 'Browse proposals for now' })
+      .click();
+
+    // Dismissing cancels the whole pending action: nothing followed, and
+    // neither param survives to re-open the modal or arm a later replay.
+    await expect(follow).toHaveAccessibleName('0 Followers');
+    await expect(page).not.toHaveURL(/join=/);
+    await expect(page).not.toHaveURL(/resume=/);
+  });
+
+  /**
    * The replay seam no other test stitches together: the pending like must
    * survive the whole claim round trip — modal, promote onboarding, the
    * return redirect — and apply exactly once when the new member lands back.
