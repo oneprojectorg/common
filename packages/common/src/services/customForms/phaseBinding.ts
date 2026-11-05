@@ -29,6 +29,7 @@ export const writeWithPhaseLock = async <TResult>({
   return db.transaction(async (tx) => {
     await lockProfileForms({ tx, profileId: process.profileId });
 
+    // Re-read under the instance's row lock: the builder can remove a phase between the pre-check and this write.
     const phases = await lockInstancePhases({
       tx,
       profileId: process.profileId,

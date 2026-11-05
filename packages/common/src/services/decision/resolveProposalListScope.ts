@@ -242,7 +242,7 @@ export const resolveProposalListScope = async ({
   if (!instanceRow?.profileId) {
     throw new UnauthorizedError('User does not have access to this process');
   }
-  const instance = await resolvePhases({ instance: instanceRow });
+  const resolvedInstance = await resolvePhases({ instance: instanceRow });
 
   // Resolve phase-scope SQL predicates for non-drafts and drafts. Drafts are
   // phase-scoped via a `createdAt` window since they're never attached to
@@ -270,7 +270,7 @@ export const resolveProposalListScope = async ({
       };
     }
     return getPhaseProposalSqlScope({
-      instance,
+      instance: resolvedInstance,
       phaseId: input.phaseId,
       // Trusted (`skipAccessCheck`) callers never surface drafts. The helper
       // still returns a draft predicate using an empty access set, but the
@@ -291,7 +291,7 @@ export const resolveProposalListScope = async ({
     }
     const profileRoles = await assertInstanceProfileAccess({
       user,
-      instance,
+      instance: resolvedInstance,
       profilePermissions: [
         { decisions: permission.ADMIN },
         { decisions: permission.READ },
@@ -461,7 +461,7 @@ export const resolveProposalListScope = async ({
   };
 
   return {
-    instance,
+    instance: resolvedInstance,
     currentProfileId,
     canManageProposals,
     profileRoles,

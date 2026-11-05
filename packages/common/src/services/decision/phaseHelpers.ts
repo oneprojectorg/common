@@ -32,7 +32,7 @@ export type PhaseData = Omit<PhaseInstanceData, 'phaseId' | 'name'>;
 // TODO: drop phaseId from row data once every reference uses the row id.
 type PhaseRowData = PhaseData & { phaseId?: string };
 
-export interface DecisionPhase {
+export interface ProcessPhaseWithProfile {
   id: string;
   profileId: string;
   sortOrder: number;
@@ -88,8 +88,8 @@ export const listPhasesByInstance = async ({
 }: {
   db: DbClient;
   processInstanceIds: string[];
-}): Promise<Map<string, DecisionPhase[]>> => {
-  const phasesByInstance = new Map<string, DecisionPhase[]>();
+}): Promise<Map<string, ProcessPhaseWithProfile[]>> => {
+  const phasesByInstance = new Map<string, ProcessPhaseWithProfile[]>();
 
   if (processInstanceIds.length === 0) {
     return phasesByInstance;
@@ -124,7 +124,7 @@ export const listPhasesByInstance = async ({
 };
 
 // TODO: remove once references store the row id instead of data.phaseId.
-export const phaseIdOf = (phase: DecisionPhase): string =>
+export const phaseIdOf = (phase: ProcessPhaseWithProfile): string =>
   phase.data.phaseId ?? phase.slug;
 
 export const assertPhaseSchemasCompile = ({

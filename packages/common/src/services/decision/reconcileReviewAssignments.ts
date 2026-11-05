@@ -84,35 +84,35 @@ export async function reconcileReviewAssignments({
     return { skipped: reason };
   };
 
-  const instance = await db.query.processInstances.findFirst({
+  const instanceRow = await db.query.processInstances.findFirst({
     where: { id: instanceId },
   });
 
-  if (!instance) {
+  if (!instanceRow) {
     return skip('instance not found');
   }
-  if (instance.status !== ProcessStatus.PUBLISHED) {
-    return skip(`instance is not published (status: ${instance.status})`);
+  if (instanceRow.status !== ProcessStatus.PUBLISHED) {
+    return skip(`instance is not published (status: ${instanceRow.status})`);
   }
-  if (!instance.profileId) {
+  if (!instanceRow.profileId) {
     return skip('instance has no profileId');
   }
-  const currentPhaseId = instance.currentStateId;
+  const currentPhaseId = instanceRow.currentStateId;
   if (!currentPhaseId) {
     return skip('instance has no current phase');
   }
 
-  const resolved = await resolvePhases({ instance, db });
-  const { config } = resolved.instanceData as DecisionInstanceData;
+  const resolvedInstance = await resolvePhases({ instance: instanceRow, db });
+  const { config } = resolvedInstance.instanceData as DecisionInstanceData;
   const currentPhase = assertInstancePhase({
-    instance: resolved,
+    instance: resolvedInstance,
     phaseId: currentPhaseId,
   });
   if (!isReviewPhase(currentPhase)) {
     return skip('current phase is not review-capable');
   }
   const reviewSettings = getPhaseReviewSettings(
-    { config, phases: resolved.phases },
+    { config, phases: resolvedInstance.phases },
     currentPhaseId,
   );
 
@@ -168,7 +168,9 @@ export async function reconcileReviewAssignments({
         phaseId: currentPhaseId,
         proposalIds: affectedIds,
       }),
-      getEligibleReviewerProfileIds({ decisionProfileId: instance.profileId }),
+      getEligibleReviewerProfileIds({
+        decisionProfileId: instanceRow.profileId,
+      }),
       db.query.proposalReviewAssignments.findMany({
         where: {
           processInstanceId: instanceId,
