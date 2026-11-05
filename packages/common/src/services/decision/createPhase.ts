@@ -1,18 +1,16 @@
-import { count, db, eq } from '@op/db/client';
-import { type ProcessPhase, type Profile, processPhases } from '@op/db/schema';
+import { db } from '@op/db/client';
+import type { ProcessPhase, Profile } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 
-import { NotFoundError, ValidationError } from '../../utils';
-import { lockProcessInstanceOrThrow } from './lockProcessInstance';
+import { NotFoundError } from '../../utils';
 import {
-  MAX_PHASES_PER_DECISION,
   type PhaseData,
   assertDecisionAdmin,
   assertPhaseSchemasCompile,
   assertPhaseSettings,
   insertPhase,
 } from './phaseHelpers';
-import { getInstancePhases } from './schemas/instanceData';
+import { writePhases } from './phaseWrites';
 
 export const createPhase = async ({
   user,
@@ -42,37 +40,21 @@ export const createPhase = async ({
   assertPhaseSchemasCompile(phaseData);
   assertPhaseSettings({ data: phaseData, phaseLabel: name });
 
-  return db.transaction(async (tx) => {
-    const locked = await lockProcessInstanceOrThrow({
-      db: tx,
-      instanceId: processInstanceId,
-    });
-
-    const [existing] = await tx
-      .select({ value: count() })
-      .from(processPhases)
-      .where(eq(processPhases.processInstanceId, processInstanceId));
-    const rowCount = existing?.value ?? 0;
-
-    // A first row would hide every blob phase from readers on rows.
-    if (rowCount === 0 && getInstancePhases(locked.instanceData).length > 0) {
-      throw new ValidationError(
-        'Phases for this decision have not been moved to rows yet',
-      );
-    }
-
-    if (rowCount >= MAX_PHASES_PER_DECISION) {
-      throw new ValidationError(
-        `A decision can have at most ${MAX_PHASES_PER_DECISION} phases`,
-      );
-    }
-
-    return insertPhase({
-      tx,
-      processInstanceId,
-      name,
-      sortOrder,
-      data: phaseData,
-    });
+  const { result: created, phases } = await writePhases({
+    processInstanceId,
+    write: (tx) =>
+      insertPhase({
+        tx,
+        processInstanceId,
+        name,
+        sortOrder,
+        data: phaseData,
+      }),
   });
+  const placed = phases.find(({ id }) => id === created.phase.id);
+
+  return {
+    ...created,
+    phase: { ...created.phase, sortOrder: placed?.sortOrder ?? sortOrder },
+  };
 };

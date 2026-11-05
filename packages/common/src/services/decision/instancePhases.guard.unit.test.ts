@@ -34,14 +34,14 @@ const ALLOWED: Record<string, string> = {
     'defines getInstancePhases',
   'packages/common/src/services/decision/createInstanceFromTemplate.ts':
     'writes the blob',
-  'packages/common/src/services/decision/getUpdatedInstanceData.ts':
-    'writes the blob',
   'packages/common/src/services/decision/assertVoterCostField.ts':
     'validates the blob about to be written',
-  'packages/common/src/services/decision/createPhase.ts':
-    'checks the blob before minting the first row',
+  'packages/common/src/services/decision/phaseWrites.ts':
+    'mints rows from the blob for a blob-only decision before a write',
   'packages/common/src/services/decision/utils/instance.ts':
     "reads the client's wire instanceData",
+  'services/api/src/test/helpers/phaseTestUtils.ts':
+    'test helper: asserts writers leave the blob as created',
 };
 
 describe('phase reads', () => {

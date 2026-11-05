@@ -1,4 +1,4 @@
-import { db, eq, sql } from '@op/db/client';
+import { eq, sql } from '@op/db/client';
 import {
   type ProcessPhase,
   type Profile,
@@ -15,6 +15,7 @@ import {
   getPhaseAsDecisionAdmin,
   readPhaseSettings,
 } from './phaseHelpers';
+import { writePhases } from './phaseWrites';
 import type { PhaseOverride } from './schemas/instanceData';
 import type { ProposalTemplateSchema } from './types';
 
@@ -41,7 +42,10 @@ export const updatePhase = async ({
     throw new ValidationError('Nothing to update');
   }
 
-  const { profileId } = await getPhaseAsDecisionAdmin({ user, phaseId });
+  const { profileId, processInstanceId } = await getPhaseAsDecisionAdmin({
+    user,
+    phaseId,
+  });
 
   const patch = data === undefined ? undefined : toPhaseDataPatch(data);
   // Only when touched: converted legacy phases can hold settings with no schema.
@@ -50,47 +54,52 @@ export const updatePhase = async ({
     (patch.set.settings !== undefined ||
       patch.set.settingsSchema !== undefined);
 
-  return db.transaction(async (tx) => {
-    const [profile] =
-      name === undefined
-        ? await tx.select().from(profiles).where(eq(profiles.id, profileId))
-        : await tx
-            .update(profiles)
-            .set({ name })
-            .where(eq(profiles.id, profileId))
-            .returning();
+  const { result } = await writePhases({
+    processInstanceId,
+    write: async (tx) => {
+      const [profile] =
+        name === undefined
+          ? await tx.select().from(profiles).where(eq(profiles.id, profileId))
+          : await tx
+              .update(profiles)
+              .set({ name })
+              .where(eq(profiles.id, profileId))
+              .returning();
 
-    const [phase] =
-      patch === undefined
-        ? await tx
-            .select()
-            .from(processPhases)
-            .where(eq(processPhases.id, phaseId))
-        : await tx
-            .update(processPhases)
-            .set({
-              data: patch.clear.reduce(
-                (merged, key) => sql`${merged} - ${key}::text`,
-                sql`(${processPhases.data} || ${JSON.stringify(patch.set)}::jsonb)`,
-              ),
-            })
-            .where(eq(processPhases.id, phaseId))
-            .returning();
+      const [phase] =
+        patch === undefined
+          ? await tx
+              .select()
+              .from(processPhases)
+              .where(eq(processPhases.id, phaseId))
+          : await tx
+              .update(processPhases)
+              .set({
+                data: patch.clear.reduce(
+                  (merged, key) => sql`${merged} - ${key}::text`,
+                  sql`(${processPhases.data} || ${JSON.stringify(patch.set)}::jsonb)`,
+                ),
+              })
+              .where(eq(processPhases.id, phaseId))
+              .returning();
 
-    if (!profile || !phase) {
-      throw new NotFoundError('Phase', phaseId);
-    }
+      if (!profile || !phase) {
+        throw new NotFoundError('Phase', phaseId);
+      }
 
-    // Checked on the merged row so a failure rolls the write back.
-    if (touchesSettings) {
-      assertPhaseSettings({
-        data: readPhaseSettings(phase.data),
-        phaseLabel: profile.name,
-      });
-    }
+      // Checked on the merged row so a failure rolls the write back.
+      if (touchesSettings) {
+        assertPhaseSettings({
+          data: readPhaseSettings(phase.data),
+          phaseLabel: profile.name,
+        });
+      }
 
-    return { phase, profile };
+      return { phase, profile };
+    },
   });
+
+  return result;
 };
 
 const toPhaseDataPatch = (

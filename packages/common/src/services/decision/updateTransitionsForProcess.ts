@@ -5,10 +5,16 @@ import { logger } from '@op/logging';
 
 import { CommonError } from '../../utils';
 import { buildExpectedTransitions } from './buildExpectedTransitions';
-import type { InstanceWithPhases } from './instancePhases';
+import { attachPhaseRows } from './instancePhases';
+import {
+  type ProcessPhaseWithProfile,
+  resolveTransitionPhaseRowIds,
+} from './phaseHelpers';
 
 export interface UpdateTransitionsInput {
-  processInstance: InstanceWithPhases<ProcessInstance>;
+  processInstance: Pick<ProcessInstance, 'id' | 'instanceData'>;
+  // The instance's rows as the caller's write left them.
+  phases: ProcessPhaseWithProfile[];
   db?: DbClient;
 }
 
@@ -29,10 +35,16 @@ export interface UpdateTransitionsResult {
  */
 export async function updateTransitionsForProcess({
   processInstance,
+  phases,
   db = defaultDb,
 }: UpdateTransitionsInput): Promise<UpdateTransitionsResult> {
   try {
-    const expectedTransitions = buildExpectedTransitions(processInstance);
+    const expectedTransitions = resolveTransitionPhaseRowIds({
+      phases,
+      transitions: buildExpectedTransitions(
+        attachPhaseRows({ instance: processInstance, phases }),
+      ),
+    });
 
     // Get existing transitions
     const existingTransitions =
@@ -66,7 +78,12 @@ export async function updateTransitionsForProcess({
 
     // Partition expected transitions into updates and creates
     const toCreate: typeof expectedTransitions = [];
-    const toUpdate: { id: string; scheduledDate: string }[] = [];
+    const toUpdate: {
+      id: string;
+      scheduledDate: string;
+      fromPhaseId: string | null;
+      toPhaseId: string | null;
+    }[] = [];
 
     for (const expected of expectedTransitions) {
       const existing = existingTransitions.find(
@@ -81,11 +98,16 @@ export async function updateTransitionsForProcess({
           continue;
         }
 
-        // Update the scheduled date if it changed
-        if (existing.scheduledDate !== expected.scheduledDate) {
+        if (
+          existing.scheduledDate !== expected.scheduledDate ||
+          existing.fromPhaseId !== expected.fromPhaseId ||
+          existing.toPhaseId !== expected.toPhaseId
+        ) {
           toUpdate.push({
             id: existing.id,
             scheduledDate: expected.scheduledDate,
+            fromPhaseId: expected.fromPhaseId,
+            toPhaseId: expected.toPhaseId,
           });
         }
       } else {
@@ -118,12 +140,12 @@ export async function updateTransitionsForProcess({
     }
 
     // Updates must remain individual (different values per row)
-    for (const update of toUpdate) {
+    for (const { id, ...update } of toUpdate) {
       ops.push(
         db
           .update(decisionProcessTransitions)
-          .set({ scheduledDate: update.scheduledDate })
-          .where(eq(decisionProcessTransitions.id, update.id))
+          .set(update)
+          .where(eq(decisionProcessTransitions.id, id))
           .then(() => {}),
       );
     }

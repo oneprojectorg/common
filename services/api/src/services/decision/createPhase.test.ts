@@ -9,6 +9,13 @@ import { EntityType } from '@op/db/schema';
 import { randomUUID } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 
+import {
+  expectNoProfileNamed,
+  listPhaseIds,
+  loadBlobPhases,
+  loadPhaseRows,
+} from '../../test/helpers/phaseTestUtils';
+
 describe.concurrent('createPhase', () => {
   it('mints a profile of type PHASE that owns the name', async ({
     task,
@@ -47,6 +54,30 @@ describe.concurrent('createPhase', () => {
     testData.trackProfileForCleanup(profile.id);
 
     expect(profile.slug).toMatch(/^[0-9a-f]{8}$/);
+  });
+
+  it('shifts the phases from a taken sortOrder down to make room', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { instanceId, user, testData } = await setup(task, onTestFinished);
+    const before = await loadPhaseRows(instanceId);
+
+    const { phase, profile } = await createPhase({
+      user,
+      processInstanceId: instanceId,
+      name: 'Inserted',
+      sortOrder: 1,
+    });
+    testData.trackProfileForCleanup(profile.id);
+
+    expect(await loadPhaseRows(instanceId)).toEqual([
+      before[0],
+      expect.objectContaining({ id: phase.id, sortOrder: 1 }),
+      ...before
+        .slice(1)
+        .map((row) => ({ ...row, sortOrder: row.sortOrder + 1 })),
+    ]);
   });
 
   it('stores the given data', async ({ task, onTestFinished }) => {
@@ -239,7 +270,13 @@ describe.concurrent('createPhase', () => {
   }) => {
     const { instanceId, user, testData } = await setup(task, onTestFinished);
 
-    for (let sortOrder = 0; sortOrder < MAX_PHASES_PER_DECISION; sortOrder++) {
+    const existing = await listPhaseIds(instanceId);
+
+    for (
+      let sortOrder = existing.length;
+      sortOrder < MAX_PHASES_PER_DECISION;
+      sortOrder++
+    ) {
       const { profile } = await createPhase({
         user,
         processInstanceId: instanceId,
@@ -262,46 +299,66 @@ describe.concurrent('createPhase', () => {
     await expectNoProfileNamed(name);
   });
 
-  it('refuses a decision whose phases are only in instanceData and writes nothing', async ({
+  it(`counts the phases converted from instanceData against the ${MAX_PHASES_PER_DECISION} cap`, async ({
     task,
     onTestFinished,
   }) => {
-    const { instanceId, user } = await setupWithBlobPhases(
-      task,
-      onTestFinished,
-    );
+    const { instanceId, user, testData } = await setup(task, onTestFinished);
+    await testData.removePhaseRows(instanceId);
+    const rowless = await loadBlobPhases(instanceId);
+    expect(rowless.length).toBeGreaterThan(0);
 
-    const name = `Blob Only ${randomUUID()}`;
+    for (
+      let sortOrder = rowless.length;
+      sortOrder < MAX_PHASES_PER_DECISION;
+      sortOrder++
+    ) {
+      const { profile } = await createPhase({
+        user,
+        processInstanceId: instanceId,
+        name: `Phase ${sortOrder}`,
+        sortOrder,
+      });
+      testData.trackProfileForCleanup(profile.id);
+    }
+
+    const name = `One Too Many ${randomUUID()}`;
     await expect(
-      createPhase({ user, processInstanceId: instanceId, name, sortOrder: 0 }),
-    ).rejects.toThrow(ValidationError);
+      createPhase({
+        user,
+        processInstanceId: instanceId,
+        name,
+        sortOrder: MAX_PHASES_PER_DECISION,
+      }),
+    ).rejects.toBeInstanceOf(ValidationError);
 
-    expect(await listPhaseRows(instanceId)).toHaveLength(0);
     await expectNoProfileNamed(name);
+    expect(await listPhaseIds(instanceId)).toHaveLength(
+      MAX_PHASES_PER_DECISION,
+    );
   });
 
-  it('adds a phase to a decision that already has phase rows', async ({
+  it('converts a decision whose phases are only in instanceData into rows plus the new one', async ({
     task,
     onTestFinished,
   }) => {
-    const { instanceId, user, testData } = await setupWithBlobPhases(
-      task,
-      onTestFinished,
-    );
-    await testData.createPhaseRows(instanceId);
-    const before = await listPhaseRows(instanceId);
+    const { instanceId, user, testData } = await setup(task, onTestFinished);
+    await testData.removePhaseRows(instanceId);
+    const blobPhases = await loadBlobPhases(instanceId);
+    expect(blobPhases.length).toBeGreaterThan(0);
 
     const { phase, profile } = await createPhase({
       user,
       processInstanceId: instanceId,
       name: 'Results',
-      sortOrder: before.length,
+      sortOrder: blobPhases.length,
     });
     testData.trackProfileForCleanup(profile.id);
 
-    const after = await listPhaseRows(instanceId);
-    expect(after).toHaveLength(before.length + 1);
-    expect(after.map(({ id }) => id)).toContain(phase.id);
+    expect(await loadPhaseRows(instanceId)).toMatchObject([
+      ...blobPhases.map(({ phaseId }) => ({ data: { phaseId } })),
+      { id: phase.id, data: {} },
+    ]);
   });
 
   it('mints the first phase row of a decision with no phases', async ({
@@ -309,6 +366,8 @@ describe.concurrent('createPhase', () => {
     onTestFinished,
   }) => {
     const { instanceId, user, testData } = await setup(task, onTestFinished);
+    await testData.removePhaseRows(instanceId);
+    await emptyBlobPhases(instanceId);
 
     const { phase, profile } = await createPhase({
       user,
@@ -318,20 +377,11 @@ describe.concurrent('createPhase', () => {
     });
     testData.trackProfileForCleanup(profile.id);
 
-    expect(await listPhaseRows(instanceId)).toEqual([{ id: phase.id }]);
+    expect(await listPhaseIds(instanceId)).toEqual([phase.id]);
   });
 });
 
 const setup = async (
-  task: { id: string },
-  onTestFinished: (fn: () => void | Promise<void>) => void,
-) => {
-  const decision = await setupWithBlobPhases(task, onTestFinished);
-  await emptyBlobPhases(decision.instanceId);
-  return decision;
-};
-
-const setupWithBlobPhases = async (
   task: { id: string },
   onTestFinished: (fn: () => void | Promise<void>) => void,
 ) => {
@@ -346,18 +396,4 @@ const setupWithBlobPhases = async (
     user: decisionSetup.user,
     testData,
   };
-};
-
-const listPhaseRows = (instanceId: string) =>
-  db.query.processPhases.findMany({
-    where: { processInstanceId: instanceId },
-    columns: { id: true },
-  });
-
-const expectNoProfileNamed = async (name: string) => {
-  const leftover = await db.query.profiles.findMany({
-    where: { name },
-    columns: { id: true },
-  });
-  expect(leftover).toHaveLength(0);
 };

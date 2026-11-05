@@ -1,4 +1,5 @@
 import { updatePhase } from '@op/common';
+import { phaseNameInputSchema } from '@op/common/client';
 import { z } from 'zod';
 
 import {
@@ -21,7 +22,7 @@ export const updatePhaseRouter = router({
       z
         .object({
           phaseId: z.uuid(),
-          name: z.string().trim().min(1).max(256).optional(),
+          name: phaseNameInputSchema.optional(),
           data: phaseDataInputEncoder.optional(),
         })
         .refine(

@@ -1,11 +1,17 @@
-import { TestDecisionsDataManager, emptyBlobPhases } from '@op/common/testing';
+import { TestDecisionsDataManager } from '@op/common/testing';
 import { db } from '@op/db/client';
 import { EntityType } from '@op/db/schema';
 import { ROLES } from '@op/db/seedData/accessControl';
 import { randomUUID } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 
-import { createUnauthenticatedCaller } from '../../../test/helpers/phaseTestUtils';
+import {
+  createUnauthenticatedCaller,
+  expectNoProfileNamed,
+  listPhaseIds,
+  loadBlobPhases,
+  loadInstancePhases,
+} from '../../../test/helpers/phaseTestUtils';
 import { createAuthenticatedCaller } from '../../../test/supabase-utils';
 
 type OnTestFinished = (fn: () => void | Promise<void>) => void;
@@ -296,6 +302,8 @@ describe.concurrent('createPhase', () => {
       onTestFinished,
     );
 
+    const before = await listPhaseIds(instanceId);
+
     const name = `Bad Form ${randomUUID()}`;
     await expect(
       adminCaller.decision.createPhase({
@@ -306,15 +314,8 @@ describe.concurrent('createPhase', () => {
       }),
     ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
 
-    const [phases, profiles] = await Promise.all([
-      db.query.processPhases.findMany({
-        where: { processInstanceId: instanceId },
-        columns: { id: true },
-      }),
-      db.query.profiles.findMany({ where: { name }, columns: { id: true } }),
-    ]);
-    expect(phases).toHaveLength(0);
-    expect(profiles).toHaveLength(0);
+    expect(await listPhaseIds(instanceId)).toEqual(before);
+    await expectNoProfileNamed(name);
   });
 
   it('accepts a settings schema, settings and a pipeline from the client', async ({
@@ -395,6 +396,33 @@ describe.concurrent('createPhase', () => {
     ).rejects.toMatchObject({ code: 'BAD_REQUEST' });
   });
 
+  it('gives a decision with no rows a row per blob phase before adding the phase', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { testData, instanceId, adminCaller } = await setupDecision(
+      task,
+      onTestFinished,
+    );
+    await testData.removePhaseRows(instanceId);
+    const blobPhases = await loadBlobPhases(instanceId);
+
+    const added = await adminCaller.decision.createPhase({
+      instanceId,
+      name: 'Added',
+      sortOrder: 2,
+    });
+    testData.trackProfileForCleanup(added.profileId);
+
+    const phases = await loadInstancePhases(instanceId);
+    expect(phases.map(({ phaseId }) => phaseId)).toEqual([
+      'initial',
+      'final',
+      added.slug,
+    ]);
+    expect(await loadBlobPhases(instanceId)).toEqual(blobPhases);
+  });
+
   it('requires authentication', async () => {
     const caller = await createUnauthenticatedCaller();
 
@@ -419,7 +447,6 @@ const setupDecision = async (
     instanceCount: 1,
     grantAccess: true,
   });
-  await emptyBlobPhases(setup.instance.instance.id);
 
   return {
     testData,
@@ -443,9 +470,5 @@ const expectRejectedAndNothingWritten = async (
     }),
   ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
 
-  const leftover = await db.query.profiles.findMany({
-    where: { name },
-    columns: { id: true },
-  });
-  expect(leftover).toHaveLength(0);
+  await expectNoProfileNamed(name);
 };

@@ -1,11 +1,12 @@
 import { mockCollab } from '@op/collab/testing';
 import { getInstancePhases, parseProposalData } from '@op/common';
 import {
+  TestDecisionsDataManager,
+  TestReviewsDataManager,
   createDevelopPhaseSetup,
   createDevelopProposalsMember,
   createRevisionRequest,
-  TestDecisionsDataManager,
-  TestReviewsDataManager,
+  syncPhaseRows,
 } from '@op/common/testing';
 import { db, eq } from '@op/db/client';
 import {
@@ -69,6 +70,7 @@ async function updateInstancePhases(
     .update(processInstances)
     .set({ instanceData: { ...instanceData, phases } })
     .where(eq(processInstances.id, processInstanceId));
+  await syncPhaseRows(processInstanceId);
 }
 
 /** Sets the "Proposal editing" rule on the instance's current phase. */

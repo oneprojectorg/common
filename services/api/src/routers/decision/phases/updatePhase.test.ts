@@ -1,14 +1,21 @@
 import type { PhaseData } from '@op/common';
+import {
+  TestDecisionsDataManager,
+  dateAdvancementSchema,
+} from '@op/common/testing';
 import { db, eq } from '@op/db/client';
-import { processPhases } from '@op/db/schema';
+import { ProcessStatus, processPhases } from '@op/db/schema';
 import { randomUUID } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 
 import {
   PHASE_NAME,
   createUnauthenticatedCaller,
+  loadPhaseRows,
+  loadTransitionLinks,
   setupPhase,
 } from '../../../test/helpers/phaseTestUtils';
+import { createAuthenticatedCaller } from '../../../test/supabase-utils';
 
 describe.concurrent('updatePhase', () => {
   it('renames the phase and keeps the slug and data', async ({
@@ -546,6 +553,46 @@ describe.concurrent('updatePhase', () => {
     ).rejects.toMatchObject({
       cause: { name: 'AccessTierError', callerTier: 'none' },
     });
+  });
+
+  it('reschedules the transition when a published phase gets a new end date', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      processSchema: dateAdvancementSchema,
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instanceId = setup.instance.instance.id;
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+    await caller.decision.updateDecisionInstance({
+      instanceId,
+      status: ProcessStatus.PUBLISHED,
+    });
+    const [initial, final] = await loadPhaseRows(instanceId);
+    if (!initial || !final) {
+      throw new Error('Expected the template phase rows');
+    }
+
+    const endDate = new Date(
+      Date.now() + 3 * 24 * 60 * 60 * 1000,
+    ).toISOString();
+    await caller.decision.updatePhase({
+      phaseId: initial.id,
+      data: { endDate },
+    });
+
+    expect(await loadTransitionLinks(instanceId)).toEqual([
+      {
+        fromStateId: 'initial',
+        toStateId: 'final',
+        fromPhaseId: initial.id,
+        toPhaseId: final.id,
+        scheduledDate: endDate,
+      },
+    ]);
   });
 });
 

@@ -671,6 +671,7 @@ describe('processDecisionsTransitions', () => {
         instanceData: { phases: [] },
       })
       .where(eq(processInstances.id, badInstanceId));
+    await testData.removePhaseRows(badInstanceId);
 
     const monitorResult = await processDecisionsTransitions();
 

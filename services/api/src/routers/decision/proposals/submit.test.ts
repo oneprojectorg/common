@@ -1,6 +1,6 @@
 import { mockCollab } from '@op/collab/testing';
 import type { DecisionInstanceData } from '@op/common';
-import { TestDecisionsDataManager } from '@op/common/testing';
+import { TestDecisionsDataManager, syncPhaseRows } from '@op/common/testing';
 import {
   ProposalStatus,
   Visibility,
@@ -907,6 +907,7 @@ describe.concurrent('submitProposal', () => {
         instanceData: { ...instanceData, phases: updatedPhases },
       })
       .where(eq(processInstances.id, instance.instance.id));
+    await syncPhaseRows(instance.instance.id);
 
     const proposal = await testData.createProposal({
       userEmail: setup.userEmail,
@@ -1013,6 +1014,7 @@ describe.concurrent('submitProposal', () => {
         instanceData: { ...instanceData, phases: updatedPhases },
       })
       .where(eq(processInstances.id, instance.instance.id));
+    await syncPhaseRows(instance.instance.id);
 
     const proposal = await testData.createProposal({
       userEmail: setup.userEmail,
@@ -1074,6 +1076,7 @@ describe.concurrent('submitProposal', () => {
         instanceData: { ...instanceData, phases: updatedPhases },
       })
       .where(eq(processInstances.id, instance.instance.id));
+    await syncPhaseRows(instance.instance.id);
 
     const proposal = await testData.createProposal({
       userEmail: setup.userEmail,

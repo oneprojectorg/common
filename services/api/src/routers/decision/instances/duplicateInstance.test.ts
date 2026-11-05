@@ -1,7 +1,7 @@
 import { type DecisionInstanceData, simpleVoting } from '@op/common';
 import type { DecisionSchemaDefinition } from '@op/common';
 import { TestDecisionsDataManager } from '@op/common/testing';
-import { db, eq } from '@op/db/client';
+import { db, eq, sql } from '@op/db/client';
 import {
   ProcessStatus,
   decisionProcesses,
@@ -17,6 +17,12 @@ import {
   expectFailsAccessTierGate,
   expectPassesAccessTierGate,
 } from '../../../test/helpers/gating/decision';
+import {
+  expectNothingNamed,
+  expectRowsMatchPhases,
+  loadInstanceData,
+  loadPhaseRows,
+} from '../../../test/helpers/phaseTestUtils';
 import { createWizardDraft } from '../../../test/helpers/wizardDraftTestUtils';
 import {
   createIsolatedSession,
@@ -90,6 +96,17 @@ async function createSimpleTemplate(
   };
 }
 
+function withoutDates(data: unknown) {
+  if (typeof data !== 'object' || data === null) {
+    return data;
+  }
+  return Object.fromEntries(
+    Object.entries(data).filter(
+      ([key]) => key !== 'startDate' && key !== 'endDate',
+    ),
+  );
+}
+
 async function createSourceInstance(
   testData: TestDecisionsDataManager,
   taskId: string,
@@ -140,6 +157,118 @@ describe.concurrent('duplicateInstance', () => {
 
     expect(instanceData.phases.length).toBeGreaterThan(0);
     expect(instanceData.templateId).toBe(simpleVoting.id);
+  });
+
+  it('mints its own phase rows rather than sharing the source phases', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { result: source, caller } = await createSourceInstance(
+      testData,
+      task.id,
+    );
+
+    await caller.decision.updateDecisionInstance({
+      instanceId: source.processInstance.id,
+      phases: simpleVoting.phases.map((phase) => ({
+        phaseId: phase.id,
+        startDate: new Date().toISOString(),
+        endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+      })),
+    });
+
+    const duplicate = await caller.decision.duplicateInstance({
+      instanceId: source.processInstance.id,
+      name: `Duplicate of ${source.name}`,
+      include: ALL_INCLUDED,
+    });
+    testData.trackProfileForCleanup(duplicate.id);
+
+    const [{ instanceData }, sourceRows, duplicateRows] = await Promise.all([
+      loadInstanceData(duplicate.processInstance.id),
+      loadPhaseRows(source.processInstance.id),
+      loadPhaseRows(duplicate.processInstance.id),
+    ]);
+
+    expect(instanceData.phases).toHaveLength(simpleVoting.phases.length);
+    expectRowsMatchPhases(duplicateRows, instanceData.phases);
+    expect(duplicateRows.map((row) => row.data)).toEqual(
+      sourceRows.map((row) => withoutDates(row.data)),
+    );
+
+    const sourceProfileIds = sourceRows.map((row) => row.profileId);
+    for (const row of duplicateRows) {
+      expect(sourceProfileIds).not.toContain(row.profileId);
+    }
+  });
+
+  it('refuses a legacy source whose phases cannot be minted before writing anything', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { result: source, caller } = await createSourceInstance(
+      testData,
+      task.id,
+    );
+
+    await testData.removePhaseRows(source.processInstance.id);
+    const phases = [
+      { phaseId: '', name: 'Submission' },
+      { phaseId: 'voting', name: 'Voting' },
+    ];
+    await db
+      .update(processInstances)
+      .set({
+        instanceData: sql`jsonb_set(${processInstances.instanceData}, '{phases}', ${JSON.stringify(phases)}::jsonb)`,
+      })
+      .where(eq(processInstances.id, source.processInstance.id));
+
+    const name = `Legacy Duplicate ${task.id}`;
+    await expect(
+      caller.decision.duplicateInstance({
+        instanceId: source.processInstance.id,
+        name,
+        include: ALL_INCLUDED,
+      }),
+    ).rejects.toMatchObject({
+      cause: {
+        name: 'ValidationError',
+        message: expect.stringMatching(/There is a phase with no id/),
+      },
+    });
+
+    await expectNothingNamed(name);
+  });
+
+  it('mints a row per minimal phase when phases are not included', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { result: source, caller } = await createSourceInstance(
+      testData,
+      task.id,
+    );
+
+    const duplicate = await caller.decision.duplicateInstance({
+      instanceId: source.processInstance.id,
+      name: `Bare Duplicate ${task.id}`,
+      include: NONE_INCLUDED,
+    });
+    testData.trackProfileForCleanup(duplicate.id);
+
+    const [{ instanceData }, rows] = await Promise.all([
+      loadInstanceData(duplicate.processInstance.id),
+      loadPhaseRows(duplicate.processInstance.id),
+    ]);
+
+    expect(instanceData.phases).toHaveLength(simpleVoting.phases.length);
+    expectRowsMatchPhases(rows, instanceData.phases);
+    for (const row of rows) {
+      expect(row.data).not.toHaveProperty('rules');
+    }
   });
 
   it('should create a new profile with a unique slug', async ({
