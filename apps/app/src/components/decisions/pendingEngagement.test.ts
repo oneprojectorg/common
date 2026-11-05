@@ -182,6 +182,26 @@ describe('decideResumeStep', () => {
     });
   });
 
+  it('waits, not fails, while a join-eligible viewer cannot engage yet', () => {
+    // The state a visitor is in while the claim modal is open: access flags
+    // read false because there is no account yet. The wait guard must beat
+    // the fail guard, or the pending action is stripped mid-claim.
+    expect(
+      decideResumeStep({ ...base, isJoinEligible: true, canEngage: false }),
+    ).toEqual({ type: 'wait' });
+    expect(
+      decideResumeStep({ ...base, isJoinEligible: true, canInteract: false }),
+    ).toEqual({ type: 'wait' });
+  });
+
+  it('clears a crafted link even while the viewer is join-eligible', () => {
+    // No proof means this browser never saved the action, so there is nothing
+    // legitimate to wait for — the proof guard must beat the wait guard.
+    expect(
+      decideResumeStep({ ...base, hasProof: false, isJoinEligible: true }),
+    ).toEqual({ type: 'clear' });
+  });
+
   it('waits while the relationship state is unknown', () => {
     expect(decideResumeStep({ ...base, stateUnknown: true })).toEqual({
       type: 'wait',

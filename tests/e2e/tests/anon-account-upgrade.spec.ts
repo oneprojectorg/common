@@ -2,6 +2,7 @@ import {
   createDecisionInstance,
   getSeededTemplate,
   makeDecisionPublic,
+  readProfileNameByEmail,
 } from '@op/common/testing/data';
 import { randomUUID } from 'node:crypto';
 
@@ -108,5 +109,11 @@ test.describe('Anonymous account upgrade (promote flow)', () => {
       timeout: 20000,
     });
     await expect(page).not.toHaveURL(/\/start/);
+
+    // The visibility step's promise lands at completion: "Show my name"
+    // replaces the trigger's "Participant <n>" with what the member typed.
+    await expect
+      .poll(() => readProfileNameByEmail(email), { timeout: 15000 })
+      .toBe('Promo Tester');
   });
 });

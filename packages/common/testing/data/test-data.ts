@@ -352,6 +352,32 @@ export async function findAuthUserByPhone(
   };
 }
 
+/**
+ * Read the display name on the profile of the auth user who owns `email` —
+ * what the signup trigger set ("Participant <n>") or a later rename wrote.
+ * Straight SQL for auth.users, as in `findAuthUserByPhone`, because the admin
+ * listUsers API pages at 50 against thousands of accumulated e2e accounts.
+ */
+export async function readProfileNameByEmail(email: string): Promise<string> {
+  const rows = await db.execute<{ id: string }>(sql`
+    SELECT id FROM auth.users WHERE email = ${email}
+  `);
+  const row = rows[0];
+  if (!row) {
+    throw new Error(`No auth user exists for ${email}`);
+  }
+  const profileId = await readProfileIdForAuthUser(row.id);
+  const [profile] = await db
+    .select({ name: profiles.name })
+    .from(profiles)
+    .where(eq(profiles.id, profileId))
+    .limit(1);
+  if (!profile) {
+    throw new Error(`No profile row exists for ${profileId}`);
+  }
+  return profile.name;
+}
+
 export async function readProfileIdForAuthUser(
   authUserId: string,
 ): Promise<string> {
