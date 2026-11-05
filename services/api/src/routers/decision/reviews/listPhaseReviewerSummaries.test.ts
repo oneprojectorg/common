@@ -246,6 +246,89 @@ describe.concurrent('decision.listPhaseReviewerSummaries', () => {
     expect(afterThird.items[0]?.reviewer.id).toBe(reviewers.half);
   });
 
+  it('breaks a completion tie by the larger assignment count, then by id', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const { context, reviewers } = await seedCompletionTies(testData, task.id);
+    const {
+      zeroMany,
+      zeroFewLow,
+      zeroFewHigh,
+      partMany,
+      partFew,
+      fullMany,
+      fullFew,
+      idle,
+    } = reviewers;
+
+    const adminCaller = await createAuthenticatedCaller(
+      context.defaultReviewer.email,
+    );
+    const input = {
+      processInstanceId: context.instance.instance.id,
+      phaseId: 'review',
+    };
+    const seededIds = Object.values(reviewers);
+
+    const cases: { sort: ReviewerSort; expected: string[] }[] = [
+      {
+        sort: 'leastComplete',
+        expected: [
+          zeroMany,
+          zeroFewLow,
+          zeroFewHigh,
+          partMany,
+          partFew,
+          fullMany,
+          fullFew,
+          idle,
+        ],
+      },
+      {
+        sort: 'mostComplete',
+        expected: [
+          fullMany,
+          fullFew,
+          partMany,
+          partFew,
+          zeroMany,
+          zeroFewLow,
+          zeroFewHigh,
+          idle,
+        ],
+      },
+    ];
+
+    for (const { sort, expected } of cases) {
+      const unpaged = await adminCaller.decision.listPhaseReviewerSummaries({
+        ...input,
+        sort,
+        limit: 100,
+      });
+      const unpagedIds = unpaged.items.map((row) => row.reviewer.id);
+      expect(
+        unpagedIds.filter((id) => seededIds.includes(id)),
+        sort,
+      ).toEqual(expected);
+
+      // Every page size puts a page boundary inside the run of
+      // `zeroFewLow` and `zeroFewHigh`, which tie on ratio and count.
+      for (const limit of [1, 2, 3]) {
+        const walked = await walkAllPages({
+          caller: adminCaller,
+          input: { ...input, sort },
+          limit,
+        });
+        expect(
+          walked.map((row) => row.reviewer.id),
+          `${sort} limit ${limit}`,
+        ).toEqual(unpagedIds);
+      }
+    }
+  });
+
   it('rejects a cursor whose sort key is malformed', async ({
     task,
     onTestFinished,
@@ -627,9 +710,11 @@ type PhaseReviewerSummariesCaller = Awaited<
 async function walkAllPages({
   caller,
   input,
+  limit = 2,
 }: {
   caller: PhaseReviewerSummariesCaller;
   input: Omit<PhaseReviewerSummariesInput, 'cursor' | 'limit'>;
+  limit?: number;
 }) {
   const rows: PhaseReviewerSummary[] = [];
   let cursor: string | null = null;
@@ -638,7 +723,7 @@ async function walkAllPages({
     const page: PhaseReviewerSummaries =
       await caller.decision.listPhaseReviewerSummaries({
         ...input,
-        limit: 2,
+        limit,
         cursor,
       });
     rows.push(...page.items);
@@ -753,6 +838,129 @@ async function seedSortedReviewers(
   }
 
   return { context, reviewers };
+}
+
+/**
+ * Reviewers that tie on completion ratio but not on assignment count:
+ * `zeroMany` 0/3, `zeroFewLow` and `zeroFewHigh` 0/1, `partMany` 2/4,
+ * `partFew` 1/2, `fullMany` 2/2, `fullFew` 1/1, `idle` nothing assigned.
+ * Each `Many` reviewer gets the higher id of its pair, so an id-only
+ * tiebreak puts it last.
+ */
+async function seedCompletionTies(
+  testData: TestReviewsDataManager,
+  testId: string,
+) {
+  const context = await testData.createContext();
+  const author = await testData.createInstanceMember(context);
+
+  const createSortedMembers = async (count: number) => {
+    const members = [];
+    for (let index = 0; index < count; index++) {
+      members.push(await testData.createInstanceMember(context));
+    }
+    return members.sort((a, b) => a.profileId.localeCompare(b.profileId));
+  };
+
+  const assign = async ({
+    reviewer,
+    submitted,
+    assigned,
+    label,
+  }: {
+    reviewer: Awaited<ReturnType<typeof testData.createInstanceMember>>;
+    submitted: number;
+    assigned: number;
+    label: string;
+  }) => {
+    for (let index = 0; index < assigned; index++) {
+      await testData.createReviewAssignment({
+        context,
+        reviewer,
+        author,
+        title: `Tie proposal ${label} ${index} ${testId}`,
+        status:
+          index < submitted
+            ? ProposalReviewAssignmentStatus.COMPLETED
+            : ProposalReviewAssignmentStatus.PENDING,
+      });
+    }
+  };
+
+  const [zeroFewLow, zeroFewHigh, zeroMany] = await createSortedMembers(3);
+  const [partFew, partMany] = await createSortedMembers(2);
+  const [fullFew, fullMany] = await createSortedMembers(2);
+  if (
+    !zeroFewLow ||
+    !zeroFewHigh ||
+    !zeroMany ||
+    !partFew ||
+    !partMany ||
+    !fullFew ||
+    !fullMany
+  ) {
+    throw new Error('Expected seven reviewers for the completion ties');
+  }
+
+  await assign({
+    reviewer: zeroMany,
+    submitted: 0,
+    assigned: 3,
+    label: 'zero many',
+  });
+  await assign({
+    reviewer: zeroFewLow,
+    submitted: 0,
+    assigned: 1,
+    label: 'zero few low',
+  });
+  await assign({
+    reviewer: zeroFewHigh,
+    submitted: 0,
+    assigned: 1,
+    label: 'zero few high',
+  });
+  await assign({
+    reviewer: partMany,
+    submitted: 2,
+    assigned: 4,
+    label: 'part many',
+  });
+  await assign({
+    reviewer: partFew,
+    submitted: 1,
+    assigned: 2,
+    label: 'part few',
+  });
+  await assign({
+    reviewer: fullMany,
+    submitted: 2,
+    assigned: 2,
+    label: 'full many',
+  });
+  await assign({
+    reviewer: fullFew,
+    submitted: 1,
+    assigned: 1,
+    label: 'full few',
+  });
+
+  const idle = await testData.createInstanceReviewerWithRole(context);
+  await testData.setCurrentPhase(context.instance.instance.id, 'review');
+
+  return {
+    context,
+    reviewers: {
+      zeroMany: zeroMany.profileId,
+      zeroFewLow: zeroFewLow.profileId,
+      zeroFewHigh: zeroFewHigh.profileId,
+      partMany: partMany.profileId,
+      partFew: partFew.profileId,
+      fullMany: fullMany.profileId,
+      fullFew: fullFew.profileId,
+      idle: idle.profileId,
+    },
+  };
 }
 
 async function seedReviewerStatuses(
