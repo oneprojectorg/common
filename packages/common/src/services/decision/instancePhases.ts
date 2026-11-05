@@ -48,9 +48,12 @@ export const isPhasesFromRowsEnabled = (): Promise<boolean> => {
       key: PHASES_FROM_ROWS_FLAG,
       distinctId: PHASES_FROM_ROWS_FLAG,
     });
-    flagMemo = { value, expiresAt: now + FLAG_MEMO_MS };
+    const memo = { value, expiresAt: now + FLAG_MEMO_MS };
+    flagMemo = memo;
     value.catch(() => {
-      flagMemo = undefined;
+      if (flagMemo === memo) {
+        flagMemo = undefined;
+      }
     });
   }
   return flagMemo.value;
