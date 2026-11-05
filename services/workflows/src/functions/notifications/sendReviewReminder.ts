@@ -1,5 +1,6 @@
 import {
   getReviewerFirstName,
+  isInstanceCurrentPhase,
   listIndividualProfileRecipientsByProfileId,
   listReviewersWithOpenAssignments,
   renderReviewReminderMessage,
@@ -29,7 +30,12 @@ export const sendReviewReminder = inngest.createFunction(
     const instanceData = await step.run('get-instance-data', async () => {
       const instance = await db.query.processInstances.findFirst({
         where: { id: processInstanceId },
-        columns: { name: true, status: true, deletedAt: true },
+        columns: {
+          name: true,
+          status: true,
+          currentStateId: true,
+          deletedAt: true,
+        },
         with: {
           profile: { columns: { slug: true } },
           steward: { columns: { name: true } },
@@ -54,6 +60,15 @@ export const sendReviewReminder = inngest.createFunction(
       logger.info('Skipping review reminder: instance is not published', {
         batchId,
         processInstanceId,
+      });
+      return;
+    }
+
+    if (!isInstanceCurrentPhase(instanceData, phaseId)) {
+      logger.info('Skipping review reminder: phase is no longer current', {
+        batchId,
+        processInstanceId,
+        phaseId,
       });
       return;
     }
