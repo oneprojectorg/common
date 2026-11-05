@@ -64,10 +64,13 @@ export function flattenTranslatableFields(
  * into entries keyed `field_title:<field>`, `field_desc:<field>` and
  * `option:<field>:<value>` — the keys `parseTranslatedMeta` reads back.
  */
-export function flattenSchemaFields(
-  prefix: string,
-  properties: Record<string, XFormatPropertySchema> | undefined,
-): TranslatableEntry[] {
+export function flattenSchemaFields({
+  prefix,
+  properties,
+}: {
+  prefix: string;
+  properties?: Record<string, XFormatPropertySchema>;
+}): TranslatableEntry[] {
   const entries: TranslatableEntry[] = [];
 
   for (const [fieldKey, property] of Object.entries(properties ?? {})) {

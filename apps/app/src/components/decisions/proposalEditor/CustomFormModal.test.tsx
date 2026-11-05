@@ -43,7 +43,14 @@ const schema = {
       type: 'string',
       'x-format': 'radio',
       title: '¿En qué sector trabaja su organización?',
+      description: 'Elija el sector principal.',
       enum: ['Agricultura', 'Educación'],
+    },
+    region: {
+      type: 'string',
+      'x-format': 'dropdown',
+      title: 'Región',
+      enum: ['Norte', 'Sur'],
     },
   },
   required: ['sector'],
@@ -55,6 +62,10 @@ const translated: TranslatedFields = {
   'field_title:sector': 'Which sector does your organization work in?',
   'option:sector:Agricultura': 'Agriculture',
   'option:sector:Educación': 'Education',
+  'field_desc:sector': 'Choose the main sector.',
+  'field_title:region': 'Region',
+  'option:region:Norte': 'North',
+  'option:region:Sur': 'South',
 };
 
 const onSubmit = vi.fn();
@@ -104,10 +115,20 @@ describe('CustomFormModal translation', () => {
       screen.getByText('Which sector does your organization work in?'),
     ).toBeTruthy();
 
+    expect(screen.getByText('Choose the main sector.')).toBeTruthy();
+
     await user.click(screen.getByRole('radio', { name: 'Education' }));
+    await user.click(screen.getByRole('combobox'));
+    await user.click(await screen.findByRole('option', { name: 'South' }));
+
+    expect(screen.getByRole('combobox').textContent).toContain('South');
+
     await user.click(screen.getByRole('button', { name: 'Submit' }));
 
-    expect(onSubmit).toHaveBeenCalledWith({ sector: 'Educación' });
+    expect(onSubmit).toHaveBeenCalledWith({
+      sector: 'Educación',
+      region: 'Sur',
+    });
   });
 
   it('shows the authored text again after "View original"', async () => {
@@ -119,5 +140,15 @@ describe('CustomFormModal translation', () => {
 
     expect(screen.getByText('Información sobre su organización')).toBeTruthy();
     expect(screen.getByRole('radio', { name: 'Educación' })).toBeTruthy();
+  });
+
+  it('keeps the authored text when nothing comes back translated', async () => {
+    const user = renderModal();
+
+    await user.click(screen.getByRole('button', { name: 'See translation' }));
+    await act(async () => pending?.resolve({ translated: {} }));
+
+    expect(screen.getByText('Translation failed.')).toBeTruthy();
+    expect(screen.getByText('Información sobre su organización')).toBeTruthy();
   });
 });

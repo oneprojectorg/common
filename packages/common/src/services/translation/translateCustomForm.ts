@@ -1,7 +1,7 @@
 import { db } from '@op/db/client';
 
-import { NotFoundError } from '../../utils';
-import type { CustomFormDefinitionSchema } from '../customForms/schemas/customForm';
+import { NotFoundError, ValidationError } from '../../utils';
+import { isCustomFormDefinition } from '../customForms/schemas/customForm';
 import type { SupportedLocale } from './locales';
 import { runTranslateBatch } from './runTranslateBatch';
 import {
@@ -35,15 +35,18 @@ export async function translateCustomForm({
     throw new NotFoundError('Custom form', customFormId);
   }
 
+  const definition = form.schema;
+  if (!isCustomFormDefinition(definition)) {
+    throw new ValidationError('The custom form definition is not supported');
+  }
+
   const prefix = `custom_form:${form.id}:`;
-  // The jsonb column holds the same JSON Schema dialect as proposal templates.
-  const definition = form.schema as CustomFormDefinitionSchema;
   const entries = [
     ...flattenTranslatableFields(prefix, {
       title: definition.title,
       description: definition.description,
     }),
-    ...flattenSchemaFields(prefix, definition.properties),
+    ...flattenSchemaFields({ prefix, properties: definition.properties }),
   ];
 
   if (entries.length === 0) {

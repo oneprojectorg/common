@@ -82,6 +82,10 @@ describe('translation.translateCustomForm', () => {
             title: 'Interests',
             items: { type: 'string', enum: ['Food', 'Water'] },
           },
+          tier: {
+            type: 'string',
+            oneOf: [{ const: 'gold', title: 'Gold tier' }],
+          },
           age: { type: 'integer' },
         },
       },
@@ -104,10 +108,62 @@ describe('translation.translateCustomForm', () => {
         'field_title:interests': '[ES] Interests',
         'option:interests:Food': '[ES] Food',
         'option:interests:Water': '[ES] Water',
+        'option:tier:gold': '[ES] Gold tier',
       },
       sourceLocale: 'EN',
       targetLocale: 'es',
     });
+  });
+
+  it('serves a repeat request from the translation cache', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const form = await attachForm({
+      profileId: setup.instance.profileId,
+      onTestFinished,
+      schema: { type: 'object', title: 'About you', properties: {} },
+    });
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+    const input = { customFormId: form.id, targetLocale: 'es' as const };
+
+    await caller.translation.translateCustomForm(input);
+    mockTranslateText.mockClear();
+    const result = await caller.translation.translateCustomForm(input);
+
+    expect(result.translated).toEqual({ title: '[ES] About you' });
+    expect(mockTranslateText).not.toHaveBeenCalled();
+  });
+
+  it('rejects a stored definition the form renderer cannot read', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    // Seeded directly: `createCustomForm` rejects this definition at write.
+    const form = await attachForm({
+      profileId: setup.instance.profileId,
+      onTestFinished,
+      schema: { type: 'string', title: 'About you' },
+    });
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    await expect(
+      caller.translation.translateCustomForm({
+        customFormId: form.id,
+        targetLocale: 'es',
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
+    expect(mockTranslateText).not.toHaveBeenCalled();
   });
 
   it('returns an empty translation without calling the provider when the form has no text', async ({

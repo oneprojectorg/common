@@ -70,7 +70,10 @@ export async function translateProposal({
   }
 
   entries.push(
-    ...flattenSchemaFields(`proposal:${proposalId}:`, template?.properties),
+    ...flattenSchemaFields({
+      prefix: `proposal:${proposalId}:`,
+      properties: template?.properties,
+    }),
   );
 
   if (entries.length === 0) {

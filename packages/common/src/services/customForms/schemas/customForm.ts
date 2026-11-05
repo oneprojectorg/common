@@ -22,6 +22,17 @@ export interface CustomFormDefinitionSchema extends JSONSchema7 {
   'x-phase'?: string;
 }
 
+/** True for a stored form definition with an object root and `properties`. */
+export function isCustomFormDefinition(
+  schema: Record<string, unknown>,
+): schema is CustomFormDefinitionSchema {
+  return (
+    schema.type === 'object' &&
+    typeof schema.properties === 'object' &&
+    schema.properties !== null
+  );
+}
+
 /**
  * Wire schema for a `custom_forms` row. The `schema` field intentionally
  * holds any JSON value — validation against that schema happens at submit

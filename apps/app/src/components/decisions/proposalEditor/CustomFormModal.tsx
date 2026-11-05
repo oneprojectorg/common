@@ -5,7 +5,7 @@ import type {
   CustomFormDefinitionSchema,
   XFormatPropertySchema,
 } from '@op/common/client';
-import { schemaValidator } from '@op/common/client';
+import { isCustomFormDefinition, schemaValidator } from '@op/common/client';
 import { useMediaQuery } from '@op/hooks';
 import { logger } from '@op/logging/client';
 import { Button } from '@op/sense/Button';
@@ -548,16 +548,6 @@ function readEnumOptions(candidate: unknown): string[] {
   return Array.isArray(candidate)
     ? candidate.filter((option): option is string => typeof option === 'string')
     : [];
-}
-
-function isCustomFormDefinition(
-  schema: Record<string, unknown>,
-): schema is CustomFormDefinitionSchema {
-  return (
-    schema.type === 'object' &&
-    typeof schema.properties === 'object' &&
-    schema.properties !== null
-  );
 }
 
 /** Field keys ordered by `x-field-order`, then any remaining properties. */

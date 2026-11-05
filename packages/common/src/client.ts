@@ -258,6 +258,7 @@ export {
   type GetCustomFormForProfileInput,
   type ListCustomFormsInput,
   type UpdateCustomFormInput,
+  isCustomFormDefinition,
 } from './services/customForms/schemas/customForm';
 export { serverExtensions } from './services/decision/tiptapExtensions';
 export { tiptapDocToPlainText } from './services/decision/tiptapDocToPlainText';

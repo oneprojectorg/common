@@ -5,11 +5,9 @@ import { authenticatedProcedure, router } from '../../trpcFactory';
 import { translateOutput } from './translateProposal';
 
 export const translateCustomFormRouter = router({
-  // Same tier and limit as `customForm.getForProfile`, which already returns
-  // the form's text to any signed-in caller.
-  translateCustomForm: authenticatedProcedure({
-    rateLimit: { windowSize: 10, maxRequests: 100 },
-  })
+  // Same tier as `customForm.getForProfile`, which already returns the form's
+  // text to any signed-in caller.
+  translateCustomForm: authenticatedProcedure()
     .input(
       z.object({
         customFormId: z.uuid(),
