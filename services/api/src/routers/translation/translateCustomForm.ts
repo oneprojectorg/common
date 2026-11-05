@@ -2,6 +2,7 @@ import { SUPPORTED_LOCALES, translateCustomForm } from '@op/common';
 import { z } from 'zod';
 
 import { authenticatedProcedure, router } from '../../trpcFactory';
+import { translateOutput } from './translateProposal';
 
 export const translateCustomFormRouter = router({
   // Same tier and limit as `customForm.getForProfile`, which already returns
@@ -15,13 +16,7 @@ export const translateCustomFormRouter = router({
         targetLocale: z.enum(SUPPORTED_LOCALES),
       }),
     )
-    .output(
-      z.object({
-        translated: z.record(z.string(), z.string()),
-        sourceLocale: z.string(),
-        targetLocale: z.enum(SUPPORTED_LOCALES),
-      }),
-    )
+    .output(translateOutput)
     .mutation(async ({ input }) => {
       return translateCustomForm({
         customFormId: input.customFormId,

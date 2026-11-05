@@ -3,12 +3,12 @@ import type { TranslatableEntry } from '@op/translation';
 
 import { getProposal } from '../decision/getProposal';
 import { SYSTEM_FIELD_KEYS } from '../decision/getProposalTemplateFieldOrder';
-import { parseSchemaOptions } from '../decision/proposalDataSchema';
 import { buildProposalListPreview } from '../decision/proposalListPreview';
 import type { ProposalTemplateSchema } from '../decision/types';
 import type { SupportedLocale } from './locales';
 import { runTranslateBatch } from './runTranslateBatch';
 import {
+  flattenSchemaFields,
   flattenTranslatableFields,
   unflattenTranslatedFields,
 } from './translatedFields';
@@ -69,34 +69,9 @@ export async function translateProposal({
     }
   }
 
-  // Template field titles and descriptions
-  if (template?.properties) {
-    for (const [fieldKey, property] of Object.entries(template.properties)) {
-      if (property.title) {
-        entries.push({
-          contentKey: `proposal:${proposalId}:field_title:${fieldKey}`,
-          text: property.title,
-        });
-      }
-      if (property.description) {
-        entries.push({
-          contentKey: `proposal:${proposalId}:field_desc:${fieldKey}`,
-          text: property.description,
-        });
-      }
-
-      // Dropdown option labels (oneOf or legacy enum)
-      const options = parseSchemaOptions(property);
-      for (const option of options) {
-        if (option.title) {
-          entries.push({
-            contentKey: `proposal:${proposalId}:option:${fieldKey}:${option.value}`,
-            text: option.title,
-          });
-        }
-      }
-    }
-  }
+  entries.push(
+    ...flattenSchemaFields(`proposal:${proposalId}:`, template?.properties),
+  );
 
   if (entries.length === 0) {
     return { translated: {}, sourceLocale: '', targetLocale };

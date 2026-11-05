@@ -1,24 +1,29 @@
 'use client';
 
 import { trpc } from '@op/api/client';
-import type {
-  CustomFormDefinitionSchema,
-  CustomFormTranslation,
+import {
+  type CustomFormDefinitionSchema,
+  parseTranslatedMeta,
 } from '@op/common/client';
 import { useMemo } from 'react';
 
+import { getCustomFormDetectionText } from '../translationDetectionText';
 import { useTranslateLink } from '../useTranslateLink';
 
-/** Cap the sample fed to language detection — a few hundred chars already suffices. */
-const MAX_SAMPLE_LENGTH = 2000;
+export type CustomFormTranslation = ReturnType<typeof parseTranslatedMeta> & {
+  title?: string;
+  description?: string;
+};
 
 /** The custom form modal's link: translates the form's own text via `translateCustomForm`. */
 export const useTranslateCustomForm = ({
   customFormId,
   definition,
+  isOpen,
 }: {
   customFormId: string;
   definition?: CustomFormDefinitionSchema;
+  isOpen: boolean;
 }) => {
   const detectionText = useMemo(
     () => (definition ? getCustomFormDetectionText(definition) : ''),
@@ -29,29 +34,22 @@ export const useTranslateCustomForm = ({
 
   return useTranslateLink<CustomFormTranslation>({
     detectionText,
-    enabled: !!definition,
+    enabled: isOpen && !!definition,
     request: (targetLocale) =>
       translateMutation
         .mutateAsync({ customFormId, targetLocale })
         // Nothing translated comes back as `{}`.
-        .then(({ translated }) =>
-          Object.keys(translated).length > 0 ? translated : undefined,
-        ),
+        .then(({ translated }) => {
+          if (Object.keys(translated).length === 0) {
+            return undefined;
+          }
+          const { title, description } = translated;
+          return {
+            ...parseTranslatedMeta(translated),
+            title: typeof title === 'string' ? title : undefined,
+            description:
+              typeof description === 'string' ? description : undefined,
+          };
+        }),
   });
 };
-
-function getCustomFormDetectionText(
-  definition: CustomFormDefinitionSchema,
-): string {
-  const parts = [definition.title, definition.description];
-  for (const field of Object.values(definition.properties ?? {})) {
-    if (field && typeof field === 'object') {
-      parts.push(field.title, field.description);
-    }
-  }
-
-  return parts
-    .filter((part): part is string => typeof part === 'string' && !!part)
-    .join('\n')
-    .slice(0, MAX_SAMPLE_LENGTH);
-}

@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import type { CustomFormTranslation } from '@op/common/client';
+import type { TranslatedFields } from '@op/common/client';
 import { act, cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { NextIntlClientProvider } from 'next-intl';
@@ -9,7 +9,7 @@ import en from '../../../lib/i18n/dictionaries/en.json';
 import { CustomFormModal } from './CustomFormModal';
 
 type TranslateVariables = { customFormId: string; targetLocale: string };
-type TranslateResponse = { translated: CustomFormTranslation };
+type TranslateResponse = { translated: TranslatedFields };
 
 /** Settles the last translate request, held open until the test says so. */
 let pending: { resolve: (data: TranslateResponse) => void } | undefined;
@@ -49,7 +49,7 @@ const schema = {
   required: ['sector'],
 };
 
-const translated: CustomFormTranslation = {
+const translated: TranslatedFields = {
   title: 'About your organization',
   description: 'Please answer the following questions.',
   'field_title:sector': 'Which sector does your organization work in?',

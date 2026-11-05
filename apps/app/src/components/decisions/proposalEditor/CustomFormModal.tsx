@@ -3,7 +3,6 @@
 import { linkifyText } from '@/utils/linkDetection';
 import type {
   CustomFormDefinitionSchema,
-  CustomFormTranslation,
   XFormatPropertySchema,
 } from '@op/common/client';
 import { schemaValidator } from '@op/common/client';
@@ -45,7 +44,10 @@ import { useId, useState } from 'react';
 import { useTranslations } from '@/lib/i18n';
 
 import { TranslateLink } from '../TranslateLink';
-import { useTranslateCustomForm } from './useTranslateCustomForm';
+import {
+  type CustomFormTranslation,
+  useTranslateCustomForm,
+} from './useTranslateCustomForm';
 
 export type CustomFormValues = Record<string, unknown>;
 
@@ -93,7 +95,11 @@ export function CustomFormModal({
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const definition = isCustomFormDefinition(schema) ? schema : undefined;
-  const translateLink = useTranslateCustomForm({ customFormId, definition });
+  const translateLink = useTranslateCustomForm({
+    customFormId,
+    definition,
+    isOpen,
+  });
   const { translation } = translateLink;
 
   if (!definition) {
@@ -230,12 +236,12 @@ function CustomFormField({
   onChange,
 }: CustomFormFieldProps) {
   const fieldId = useId();
-  const label = translation?.[`field_title:${name}`] ?? field.title ?? name;
+  const label = translation?.fieldTitles[name] ?? field.title ?? name;
   const description = linkifyText(
-    translation?.[`field_desc:${name}`] ?? field.description,
+    translation?.fieldDescriptions[name] ?? field.description,
   );
   const getOptionLabel = (option: string) =>
-    translation?.[`option:${name}:${option}`] ?? option;
+    translation?.optionLabels[name]?.[option] ?? option;
   const descriptionNode = description ? (
     <FieldDescription>{description}</FieldDescription>
   ) : null;
@@ -307,6 +313,10 @@ function CustomFormField({
   }
 
   const enumOptions = readEnumOptions(field.enum);
+  const choices = enumOptions.map((option) => ({
+    value: option,
+    label: getOptionLabel(option),
+  }));
 
   // NPS-style numeric scale — matches the ProcessSurveyModal control:
   // horizontal radio row with the label under each number on desktop,
@@ -322,10 +332,7 @@ function CustomFormField({
           description={description}
           error={error}
           isRequired={isRequired}
-          options={enumOptions.map((option) => ({
-            value: option,
-            label: getOptionLabel(option),
-          }))}
+          options={choices}
           value={selected}
           onChange={onChange}
         />
@@ -348,14 +355,17 @@ function CustomFormField({
           aria-invalid={Boolean(error)}
           className="flex w-full flex-row justify-between gap-1"
         >
-          {enumOptions.map((option) => (
-            <Field key={option} className="flex-1 items-center gap-1">
-              <RadioGroupItem id={`${fieldId}-${option}`} value={option} />
+          {choices.map((option) => (
+            <Field key={option.value} className="flex-1 items-center gap-1">
+              <RadioGroupItem
+                id={`${fieldId}-${option.value}`}
+                value={option.value}
+              />
               <FieldLabel
-                htmlFor={`${fieldId}-${option}`}
+                htmlFor={`${fieldId}-${option.value}`}
                 className="justify-center"
               >
-                {getOptionLabel(option)}
+                {option.label}
               </FieldLabel>
             </Field>
           ))}
@@ -373,10 +383,7 @@ function CustomFormField({
         description={description}
         error={error}
         isRequired={isRequired}
-        options={enumOptions.map((option) => ({
-          value: option,
-          label: getOptionLabel(option),
-        }))}
+        options={choices}
         value={typeof value === 'string' ? value : null}
         onChange={onChange}
       />
