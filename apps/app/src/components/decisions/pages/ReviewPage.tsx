@@ -1,6 +1,5 @@
 'use client';
 
-import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import type { RouterOutput } from '@op/api';
 import { type InstancePhaseData } from '@op/api/encoders';
@@ -57,10 +56,6 @@ export function ReviewPage({
   const canReview = Boolean(instance.access?.review);
   const isAdmin = Boolean(instance.access?.admin);
 
-  // Instance admins only; the flag fails closed in prod.
-  const manualAssignmentsEnabled = useFeatureFlag('manual_review_assignments');
-  const showAssignmentsTab = isAdmin && Boolean(manualAssignmentsEnabled);
-
   // Client-side mirror of the service's `canReadPhaseReviews` gate.
   const canSeeReviewCounts =
     isAdmin ||
@@ -75,9 +70,8 @@ export function ReviewPage({
     reviewTabParser.withDefault(DEFAULT_REVIEW_TAB),
   );
 
-  // A stale `?tab=reviewers` (non-admin link, flag off) has no panel.
-  const activeTab =
-    tab === 'reviewers' && !showAssignmentsTab ? DEFAULT_REVIEW_TAB : tab;
+  // A stale `?tab=reviewers` (non-admin link) has no panel.
+  const activeTab = tab === 'reviewers' && !isAdmin ? DEFAULT_REVIEW_TAB : tab;
 
   // The admin variant shows All proposals under DEFAULT_REVIEW_TAB.
   const adminActiveTab =
@@ -192,7 +186,7 @@ export function ReviewPage({
                     <TabsTrigger value="all-proposals">
                       {t('allProposalsTab')}
                     </TabsTrigger>
-                    {showAssignmentsTab ? assignmentsTabTrigger : null}
+                    {isAdmin ? assignmentsTabTrigger : null}
                   </TabsList>
                 </div>
 
@@ -213,38 +207,31 @@ export function ReviewPage({
                   {allProposalsList}
                 </TabsContent>
 
-                {showAssignmentsTab ? assignmentsTabContent : null}
+                {isAdmin ? assignmentsTabContent : null}
               </Tabs>
             ) : isAdmin ? (
-              // Admin without review capability: the progress list is the whole
-              // surface, gaining a sibling tab only when the desk is on.
-              showAssignmentsTab ? (
-                <Tabs
-                  className="gap-6"
-                  value={adminActiveTab}
-                  onValueChange={handleTabChange}
-                >
-                  <div className="w-full border-b">
-                    <TabsList variant="line" className="-ms-3">
-                      <TabsTrigger value={DEFAULT_REVIEW_TAB}>
-                        {t('allProposalsTab')}
-                      </TabsTrigger>
-                      {assignmentsTabTrigger}
-                    </TabsList>
-                  </div>
+              // Admin without review capability: the progress list and the
+              // Reviewers tab are the whole surface.
+              <Tabs
+                className="gap-6"
+                value={adminActiveTab}
+                onValueChange={handleTabChange}
+              >
+                <div className="w-full border-b">
+                  <TabsList variant="line" className="-ms-3">
+                    <TabsTrigger value={DEFAULT_REVIEW_TAB}>
+                      {t('allProposalsTab')}
+                    </TabsTrigger>
+                    {assignmentsTabTrigger}
+                  </TabsList>
+                </div>
 
-                  <TabsContent
-                    value={DEFAULT_REVIEW_TAB}
-                    className="grow sm:p-0"
-                  >
-                    {allProposalsList}
-                  </TabsContent>
+                <TabsContent value={DEFAULT_REVIEW_TAB} className="grow sm:p-0">
+                  {allProposalsList}
+                </TabsContent>
 
-                  {assignmentsTabContent}
-                </Tabs>
-              ) : (
-                allProposalsList
-              )
+                {assignmentsTabContent}
+              </Tabs>
             ) : (
               <APIErrorBoundary fallbacks={proposalsLoadErrorFallback}>
                 <Suspense fallback={<ProposalListSkeleton />}>
