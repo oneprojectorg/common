@@ -96,6 +96,28 @@ jobs:
       - name: Test the numbering script
         run: scripts/number-adrs.test.sh
 
+  # Runs the base branch's copy of the script, so a PR cannot edit the check
+  # it is judged by. Falls back to the PR's copy until the script is on base.
+  migration-order:
+    name: Migration order
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Check new migrations are newer than the base branch
+        env:
+          BASE: origin/${{ github.base_ref }}
+          SCRIPT: scripts/check-migration-order.sh
+        run: '{ git show "$BASE:$SCRIPT" 2>/dev/null || cat "$SCRIPT"; } | bash -s -- "$BASE"'
+
+      - name: Test the migration order script
+        run: scripts/check-migration-order.test.sh
+
   design-system:
     name: Design system
     runs-on: blacksmith-2vcpu-ubuntu-2204
