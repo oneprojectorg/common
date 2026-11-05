@@ -43,7 +43,7 @@ export const createDecisionInstance = async ({
   creatorEmail,
   status = ProcessStatus.DRAFT,
 }: CreateDecisionInstanceOptions) => {
-  const profileId = await db.transaction(async (tx) => {
+  const instanceProfileId = await db.transaction(async (tx) => {
     // Create a DECISION profile for the instance
     const slug = `decision-${randomUUID()}`;
 
@@ -111,7 +111,7 @@ export const createDecisionInstance = async ({
   // The creator's cached `user` entry predates this membership.
   await invalidateProfileUserAccessCache({
     authUserId: creatorAuthUserId,
-    profileId,
+    profileId: instanceProfileId,
   });
 
   // Note: Transitions are NOT created here because the instance is created as DRAFT.
@@ -119,7 +119,7 @@ export const createDecisionInstance = async ({
 
   // Fetch the profile with processInstance joined for the response
   const profile = await db.query.profiles.findFirst({
-    where: { id: profileId },
+    where: { id: instanceProfileId },
     with: {
       processInstance: true,
     },
