@@ -1,5 +1,8 @@
-import { db } from '@op/db/client';
-import type { ProposalReviewRequestState } from '@op/db/schema';
+import { db, eq } from '@op/db/client';
+import {
+  type ProposalReviewRequestState,
+  processInstances,
+} from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 
 import { UnauthorizedError } from '../../utils';
@@ -28,6 +31,8 @@ export async function listProposalsRevisionRequests({
     throw new UnauthorizedError('User must have an active profile');
   }
 
+  const revisionRequestsConfig = proposalWithRevisionRequestsConfig(states);
+
   const proposals = await db.query.proposals.findMany({
     where: {
       submittedByProfileId: commonUser.profileId,
@@ -39,7 +44,24 @@ export async function listProposalsRevisionRequests({
           processInstanceId: table.processInstanceId,
         }),
     },
-    with: proposalWithRevisionRequestsConfig(states),
+    with: {
+      ...revisionRequestsConfig,
+      reviewAssignments: {
+        ...revisionRequestsConfig.reviewAssignments,
+        // Only the current phase's requests can be answered; once the process
+        // advances, older ones stay open but are no longer actionable.
+        where: {
+          RAW: (table) =>
+            eq(
+              table.phaseId,
+              db
+                .select({ currentStateId: processInstances.currentStateId })
+                .from(processInstances)
+                .where(eq(processInstances.id, table.processInstanceId)),
+            ),
+        },
+      },
+    },
   });
 
   const revisionRequests = proposals.flatMap((proposal) => {

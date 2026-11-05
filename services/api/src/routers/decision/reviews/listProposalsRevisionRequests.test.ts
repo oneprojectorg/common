@@ -118,6 +118,40 @@ describe.concurrent('listProposalsRevisionRequests', () => {
     expect(result.items).toHaveLength(0);
   });
 
+  it('hides an open revision request once the process leaves its phase', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const created = await testData.createReviewAssignment({
+      title: 'Left Behind',
+      status: ProposalReviewAssignmentStatus.AWAITING_AUTHOR_REVISION,
+    });
+
+    await createRevisionRequest({
+      assignmentId: created.assignment.id,
+      requestComment: 'Please revise before results.',
+    });
+
+    const authorCaller = await createAuthenticatedCaller(created.author.email);
+    const beforeAdvance =
+      await authorCaller.decision.listProposalsRevisionRequests({
+        states: [ProposalReviewRequestState.REQUESTED],
+      });
+    expect(beforeAdvance.items).toHaveLength(1);
+
+    await testData.setCurrentPhase(
+      created.context.instance.instance.id,
+      'results',
+    );
+
+    const afterAdvance =
+      await authorCaller.decision.listProposalsRevisionRequests({
+        states: [ProposalReviewRequestState.REQUESTED],
+      });
+    expect(afterAdvance.items).toHaveLength(0);
+  });
+
   it('does not return revision requests for proposals by other authors', async ({
     task,
     onTestFinished,
