@@ -21,6 +21,9 @@ export default defineConfig({
       },
       {
         ...integration,
+        // The email templates render here, and the tsconfig `jsx: preserve`
+        // leaves esbuild on the classic runtime with no React import in scope.
+        esbuild: { jsx: 'automatic' },
         test: {
           ...integration.test,
           name: 'integration',
