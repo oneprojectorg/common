@@ -2,6 +2,7 @@ import type {
   DecisionInstanceData,
   InstanceOverview,
   InstanceOverviewUpdate,
+  PhaseInstanceData,
   PhaseOverride,
 } from './schemas/instanceData';
 import type { ProcessConfig } from './schemas/types';
@@ -21,8 +22,6 @@ export interface PhaseEndDateChange {
   newEndDate: string;
 }
 
-type PhaseInstanceData = DecisionInstanceData['phases'][number];
-
 export const hasNonPhaseUpdate = ({
   config,
   overview,
@@ -40,9 +39,10 @@ export const hasPhaseUpdates = (
   update.phases !== undefined && update.phases.length > 0;
 
 /**
- * Applies an admin update to stored instance data without touching the
- * database. `instanceData` is set when a non-phase field changes, `phases`
- * when the update lists any; phases merge onto `existingPhases`.
+ * Applies an admin update to stored instance data and the phase list without
+ * touching the database. `instanceData` is set when a non-phase field
+ * changes, `phases` when the update lists any; phases merge onto
+ * `existingPhases`.
  */
 export function getUpdatedInstanceData({
   existing,

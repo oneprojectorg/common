@@ -9,10 +9,7 @@ import {
 import { eq } from 'drizzle-orm';
 
 import { type RubricTemplateSchema, createDecisionRole } from '../../src';
-import {
-  assertInstancePhase,
-  invalidateDecisionInstance,
-} from '../../src/services/decision';
+import { invalidateDecisionInstance } from '../../src/services/decision';
 import {
   createInstanceMember as coreCreateInstanceMember,
   testSimpleVotingSchema,
@@ -24,7 +21,7 @@ import {
 } from '../data/review-data';
 import { supabaseTestAdminClient } from '../supabase';
 import { TestDecisionsDataManager } from './TestDecisionsDataManager';
-import { syncPhaseRows } from './phaseRowFixtures';
+import { updateInstancePhase } from './phaseRowFixtures';
 
 type DecisionProcessSchema = NonNullable<
   Parameters<TestDecisionsDataManager['createDecisionSetup']>[0]
@@ -206,8 +203,8 @@ export class TestReviewsDataManager {
   /**
    * Advances a process instance to the given phase by stamping `currentStateId`.
    * The reviews context configures the instance with `testSimpleVotingSchema`,
-   * which already includes `'review'` in `instanceData.phases`, so no further
-   * fixture mutation is needed here.
+   * which already includes a `'review'` phase, so no further fixture mutation
+   * is needed here.
    */
   async setCurrentPhase(instanceId: string, phaseId: string) {
     await db
@@ -219,71 +216,32 @@ export class TestReviewsDataManager {
     await invalidateDecisionInstance(instanceId);
   }
 
-  /** Sets `endDate` on a phase entry in `instanceData.phases`. */
+  /** Sets `endDate` on a phase row. */
   async setPhaseEndDate(instanceId: string, phaseId: string, endDate: string) {
-    const instanceRecord = await db.query.processInstances.findFirst({
-      where: { id: instanceId },
+    await updateInstancePhase({
+      instanceId,
+      phaseId,
+      update: (phase) => ({ ...phase, endDate }),
     });
-    const instanceData =
-      (instanceRecord?.instanceData as {
-        phases?: Array<Record<string, unknown>>;
-      } | null) ?? {};
-    const phases = (instanceData.phases ?? []).map((p) =>
-      p?.phaseId === phaseId ? { ...p, endDate } : p,
-    );
-    await db
-      .update(processInstances)
-      .set({
-        instanceData: {
-          ...instanceData,
-          phases,
-        },
-      })
-      .where(eq(processInstances.id, instanceId));
-    await syncPhaseRows(instanceId, phases);
   }
 
-  /**
-   * Opts a phase into (or out of) open reviews by merging
-   * `rules.reviews.openReviews` into that phase entry in `instanceData.phases`.
-   */
+  /** Opts a phase into (or out of) open reviews on its row's `rules.reviews`. */
   async setPhaseOpenReviews(
     instanceId: string,
     phaseId: string,
     openReviews: boolean,
   ) {
-    const instanceRecord = await db.query.processInstances.findFirst({
-      where: { id: instanceId },
-    });
-    const instanceData =
-      (instanceRecord?.instanceData as {
-        phases?: Array<{ phaseId: string; rules?: Record<string, unknown> }>;
-      } | null) ?? {};
-    // Mirror the service posture: an unknown phase is a hard error, not a
-    // silent no-op. Throws NotFoundError, exactly like production reads.
-    assertInstancePhase({ instance: { instanceData }, phaseId });
-    const phases = (instanceData.phases ?? []).map((p) => {
-      if (p.phaseId !== phaseId) {
-        return p;
-      }
-      const rules = p.rules ?? {};
-      const reviews =
-        (rules.reviews as Record<string, unknown> | undefined) ?? {};
-      return {
-        ...p,
-        rules: { ...rules, reviews: { ...reviews, openReviews } },
-      };
-    });
-    await db
-      .update(processInstances)
-      .set({
-        instanceData: {
-          ...instanceData,
-          phases,
+    await updateInstancePhase({
+      instanceId,
+      phaseId,
+      update: (phase) => ({
+        ...phase,
+        rules: {
+          ...phase.rules,
+          reviews: { ...phase.rules?.reviews, openReviews },
         },
-      })
-      .where(eq(processInstances.id, instanceId));
-    await syncPhaseRows(instanceId, phases);
+      }),
+    });
   }
 
   /** Sets the rubric template on a process instance for review API tests. */
@@ -326,29 +284,11 @@ export class TestReviewsDataManager {
     phaseId: string,
     rubricTemplate: RubricTemplateSchema,
   ) {
-    const instanceRecord = await db.query.processInstances.findFirst({
-      where: { id: instanceId },
+    await updateInstancePhase({
+      instanceId,
+      phaseId,
+      update: (phase) => ({ ...phase, rubricTemplate }),
     });
-    const instanceData =
-      (instanceRecord?.instanceData as {
-        phases?: Array<{ phaseId: string }>;
-      } | null) ?? {};
-    // Mirror the service posture: an unknown phase is a hard error, not a
-    // silent no-op. Throws NotFoundError, exactly like production reads.
-    assertInstancePhase({ instance: { instanceData }, phaseId });
-    const phases = (instanceData.phases ?? []).map((p) =>
-      p.phaseId === phaseId ? { ...p, rubricTemplate } : p,
-    );
-    await db
-      .update(processInstances)
-      .set({
-        instanceData: {
-          ...instanceData,
-          phases,
-        },
-      })
-      .where(eq(processInstances.id, instanceId));
-    await syncPhaseRows(instanceId, phases);
   }
 
   /** Creates a single review assignment and the minimum related data it needs. */

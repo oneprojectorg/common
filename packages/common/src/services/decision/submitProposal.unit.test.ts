@@ -77,6 +77,13 @@ vi.mock('./syncProposalProfileLocation', () => ({
   syncProposalProfileLocation: vi.fn(),
 }));
 
+// The current phase allows proposal submission (rules.proposals.submit !== false).
+vi.mock('./instancePhases', () => ({
+  getPhases: vi.fn(async () => [
+    { phaseId: 'phase-1', name: 'Submission', rules: {} },
+  ]),
+}));
+
 const mockFindFirst = vi.mocked(db.query.proposals.findFirst);
 const mockTransaction = vi.mocked(db.transaction);
 const mockAssertProfileAccess = vi.mocked(assertProfileAccess);
@@ -122,10 +129,7 @@ function draftProposal(proposalData: Record<string, unknown>) {
       profileId: PROFILE_ID,
       processId: 'process-1',
       currentStateId: 'phase-1',
-      // Phase allows proposal submission (rules.proposals.submit !== false).
-      instanceData: {
-        phases: [{ phaseId: 'phase-1', name: 'Submission', rules: {} }],
-      },
+      instanceData: {},
     },
   };
 }

@@ -1,4 +1,5 @@
-import { createProposal } from '@op/common/testing/data';
+import type { PhaseInstanceData } from '@op/common';
+import { createProposal, insertPhaseRows } from '@op/common/testing/data';
 import {
   EntityType,
   ProcessStatus,
@@ -30,6 +31,7 @@ async function createProcessAndInstance({
   org,
   processSchema,
   instanceData,
+  phases,
   processName,
 }: {
   org: {
@@ -38,6 +40,7 @@ async function createProcessAndInstance({
   };
   processSchema: Record<string, unknown>;
   instanceData: Record<string, unknown>;
+  phases: PhaseInstanceData[];
   processName: string;
 }) {
   const [process] = await db
@@ -73,9 +76,7 @@ async function createProcessAndInstance({
       processId: process.id,
       profileId: profile.id,
       instanceData,
-      currentStateId:
-        (instanceData as { phases?: { phaseId: string }[] }).phases?.[0]
-          ?.phaseId ?? 'proposalSubmission',
+      currentStateId: phases[0]?.phaseId ?? 'proposalSubmission',
       status: ProcessStatus.PUBLISHED,
       ownerProfileId: org.organizationProfile.id,
     })
@@ -84,6 +85,8 @@ async function createProcessAndInstance({
   if (!instance) {
     throw new Error('Failed to create process instance');
   }
+
+  await insertPhaseRows({ processInstanceId: instance.id, phases });
 
   const [profileUser] = await db
     .insert(profileUsers)
@@ -185,24 +188,26 @@ test.describe('Proposal Listing', () => {
       budget: 50000,
       hideBudget: false,
       proposalTemplate: newProcessSchema.proposalTemplate,
-      phases: [
-        {
-          phaseId: 'proposalSubmission',
-          startDate: '2025-09-20',
-          endDate: '2025-10-01',
-        },
-        {
-          phaseId: 'review',
-          startDate: '2025-10-02',
-          endDate: '2025-10-20',
-        },
-      ],
     };
 
     const { instance, slug, name } = await createProcessAndInstance({
       org,
       processSchema: newProcessSchema,
       instanceData: newInstanceData,
+      phases: [
+        {
+          phaseId: 'proposalSubmission',
+          name: 'Proposal Submission',
+          startDate: '2025-09-20',
+          endDate: '2025-10-01',
+        },
+        {
+          phaseId: 'review',
+          name: 'Review',
+          startDate: '2025-10-02',
+          endDate: '2025-10-20',
+        },
+      ],
       processName: 'New Schema Listing',
     });
 
@@ -340,18 +345,6 @@ test.describe('Proposal Listing', () => {
     const cowopInstanceData = {
       budget: 100000,
       hideBudget: false,
-      phases: [
-        {
-          phaseId: 'ideaCollection',
-          startDate: '2025-09-20',
-          endDate: '2025-10-01',
-        },
-        {
-          phaseId: 'submission',
-          startDate: '2025-10-02',
-          endDate: '2025-10-20',
-        },
-      ],
       fieldValues: {
         categories: [
           'Ai. Direct funding to worker-owned co-ops.',
@@ -366,6 +359,20 @@ test.describe('Proposal Listing', () => {
       org,
       processSchema: cowopProcessSchema,
       instanceData: cowopInstanceData,
+      phases: [
+        {
+          phaseId: 'ideaCollection',
+          name: 'Proposal Concept Generation',
+          startDate: '2025-09-20',
+          endDate: '2025-10-01',
+        },
+        {
+          phaseId: 'submission',
+          name: 'Proposal Development',
+          startDate: '2025-10-02',
+          endDate: '2025-10-20',
+        },
+      ],
       processName: 'COWOP Listing',
     });
 
@@ -460,7 +467,7 @@ test.describe('Proposal Listing', () => {
       name: 'Search Listing Test',
       description: 'Process for exercising proposal search',
       // Two phases: a single-phase instance is its own last phase, and
-      // instanceData carries no `rules`, so the router lands on the results view.
+      // the phase rows carry no `rules`, so the router lands on the results view.
       phases: [
         {
           id: 'proposalSubmission',
@@ -498,19 +505,21 @@ test.describe('Proposal Listing', () => {
       processSchema: searchProcessSchema,
       instanceData: {
         proposalTemplate: searchProcessSchema.proposalTemplate,
-        phases: [
-          {
-            phaseId: 'proposalSubmission',
-            startDate: '2025-09-20',
-            endDate: '2025-10-01',
-          },
-          {
-            phaseId: 'review',
-            startDate: '2025-10-02',
-            endDate: '2025-10-20',
-          },
-        ],
       },
+      phases: [
+        {
+          phaseId: 'proposalSubmission',
+          name: 'Proposal Submission',
+          startDate: '2025-09-20',
+          endDate: '2025-10-01',
+        },
+        {
+          phaseId: 'review',
+          name: 'Review',
+          startDate: '2025-10-02',
+          endDate: '2025-10-20',
+        },
+      ],
       processName: 'Search Listing',
     });
 

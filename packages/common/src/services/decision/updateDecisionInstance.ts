@@ -329,7 +329,6 @@ interface SavedInstanceData {
   phaseEndDateChanges: PhaseEndDateChange[];
 }
 
-// Phases go to rows; instanceData keeps the phases it was created with.
 async function saveInstanceData({
   tx,
   instanceId,
@@ -359,7 +358,8 @@ async function saveInstanceData({
 
     if (update.proposalTemplate) {
       await assertVoterCostField({
-        instanceData: { ...(updated.instanceData ?? stored), phases },
+        instanceData: updated.instanceData ?? stored,
+        phases,
         processId,
       });
     }
@@ -396,10 +396,8 @@ async function saveInstanceData({
   });
 
   await assertVoterCostField({
-    instanceData: {
-      ...(updated.instanceData ?? stored),
-      phases: phases.map(toInstanceDataPhase),
-    },
+    instanceData: updated.instanceData ?? stored,
+    phases: phases.map(toInstanceDataPhase),
     processId,
   });
 

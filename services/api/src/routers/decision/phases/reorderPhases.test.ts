@@ -1,18 +1,14 @@
 import { MAX_PHASES_PER_DECISION } from '@op/common';
-import { TestDecisionsDataManager } from '@op/common/testing';
 import { randomUUID } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 
 import {
   PHASE_NAME,
   createUnauthenticatedCaller,
-  loadBlobPhases,
-  loadPhaseRows,
   loadTransitionLinks,
   setupPhase,
   setupPublishedDateDecision,
 } from '../../../test/helpers/phaseTestUtils';
-import { createAuthenticatedCaller } from '../../../test/supabase-utils';
 
 describe.concurrent('reorderPhases', () => {
   it('sets the new order and returns the phases in it', async ({
@@ -122,35 +118,6 @@ describe.concurrent('reorderPhases', () => {
     );
   });
 
-  it('rolls back the rows it would mint when a decision with no rows is sent unknown phases', async ({
-    task,
-    onTestFinished,
-  }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const setup = await testData.createDecisionSetup({
-      instanceCount: 1,
-      grantAccess: true,
-    });
-    const instanceId = setup.instance.instance.id;
-    const adminCaller = await createAuthenticatedCaller(setup.userEmail);
-    const blobPhases = await loadBlobPhases(instanceId);
-    expect(blobPhases.length).toBeGreaterThan(1);
-    const [row] = await loadPhaseRows(instanceId);
-    expect(row).toBeDefined();
-    await testData.removePhaseRows(instanceId);
-    expect(await loadPhaseRows(instanceId)).toHaveLength(0);
-
-    await expect(
-      adminCaller.decision.reorderPhases({
-        instanceId,
-        phases: blobPhases.map(() => ({ phaseId: randomUUID() })),
-      }),
-    ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
-
-    expect(await loadPhaseRows(instanceId)).toHaveLength(0);
-    expect(await loadBlobPhases(instanceId)).toEqual(blobPhases);
-  });
-
   it('reschedules and relinks the transitions of a published decision', async ({
     task,
     onTestFinished,
@@ -162,7 +129,6 @@ describe.concurrent('reorderPhases', () => {
       name: 'Extra',
       sortOrder: 2,
     });
-    const blobPhases = await loadBlobPhases(instanceId);
     expect(await loadTransitionLinks(instanceId)).toEqual([
       {
         fromStateId: 'initial',
@@ -194,7 +160,6 @@ describe.concurrent('reorderPhases', () => {
     });
 
     expect(await loadTransitionLinks(instanceId)).toEqual([]);
-    expect(await loadBlobPhases(instanceId)).toEqual(blobPhases);
   });
 
   it('refuses a phase from another decision', async ({

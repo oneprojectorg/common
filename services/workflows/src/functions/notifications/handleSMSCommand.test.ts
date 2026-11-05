@@ -2091,7 +2091,7 @@ describe('handleSMSCommand building and casting the ballot', () => {
     expect((await readDraftPicks(instanceId)) ?? []).toEqual([]);
   });
 
-  it('given two picks and a capped phase whose cost field was pointed at an unpriced template field by a raw instance_data write (the admin update refuses it), when the voter texts REMOVE and MOVE, then each reply names the misconfiguration and the draft is unchanged', async ({
+  it('given two picks and a capped phase whose cost field was pointed at an unpriced template field by a raw phase-row write (the admin update refuses it), when the voter texts REMOVE and MOVE, then each reply names the misconfiguration and the draft is unchanged', async ({
     task,
     onTestFinished,
   }) => {
