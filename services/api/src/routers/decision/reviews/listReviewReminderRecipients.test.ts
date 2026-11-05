@@ -166,7 +166,6 @@ describe.concurrent('decision.listReviewReminderRecipients', () => {
           name: `${nameToken} Alpha`,
         }),
         remainingCount: 2,
-        lastRemindedAt: null,
       },
       {
         reviewer: expect.objectContaining({
@@ -174,7 +173,6 @@ describe.concurrent('decision.listReviewReminderRecipients', () => {
           name: `${nameToken} Bravo`,
         }),
         remainingCount: 1,
-        lastRemindedAt: null,
       },
     ]);
 

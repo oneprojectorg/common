@@ -52,16 +52,17 @@ export async function listReviewReminderRecipients({
       slug: rollup.slug,
       avatarImageId: rollup.avatarImageId,
       email: rollup.email,
-      openCount: rollup.openCount,
+      remainingCount: rollup.remainingCount,
     })
     .from(rollup)
     .where(
       and(
-        gt(rollup.openCount, 0),
+        gt(rollup.remainingCount, 0),
         getPhaseReviewerFilters({ rollup, search, status }),
       ),
     )
     .orderBy(asc(rollup.name), asc(rollup.id))
+    // No total: revisit when a process has more reviewers than the cap.
     .limit(REVIEW_REMINDER_MAX_RECIPIENTS);
 
   return reviewReminderRecipientsSchema.parse({
@@ -73,8 +74,7 @@ export async function listReviewReminderRecipients({
         avatarImageId: row.avatarImageId,
         email: row.email,
       },
-      remainingCount: row.openCount,
-      lastRemindedAt: null,
+      remainingCount: row.remainingCount,
     })),
   });
 }

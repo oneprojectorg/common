@@ -119,7 +119,7 @@ export async function listPhaseReviewerSummaries({
       assignedCount: row.assignedCount,
       submittedCount: row.submittedCount,
       draftCount: row.draftCount,
-      openCount: row.openCount,
+      remainingCount: row.remainingCount,
       lastSubmittedAt: row.lastSubmittedAt,
       status: row.status,
     })),

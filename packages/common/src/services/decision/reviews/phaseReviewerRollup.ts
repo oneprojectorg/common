@@ -41,7 +41,7 @@ export function buildPhaseReviewerRollup({
   const assignedCount = sql`count(${proposalReviewAssignments.id})`;
   const submittedCount = sql`count(*) filter (where ${proposalReviewAssignments.status} = ${ProposalReviewAssignmentStatus.COMPLETED})`;
   const draftCount = sql`count(*) filter (where ${proposalReviews.state} = ${ProposalReviewState.DRAFT})`;
-  const openCount = sql`count(distinct ${proposalReviewAssignments.id}) filter (where ${and(
+  const remainingCount = sql`count(distinct ${proposalReviewAssignments.id}) filter (where ${and(
     inArray(proposalReviewAssignments.status, [
       ProposalReviewAssignmentStatus.PENDING,
       ProposalReviewAssignmentStatus.IN_PROGRESS,
@@ -67,9 +67,9 @@ export function buildPhaseReviewerRollup({
         draftCount: sql<number>`(${draftCount})::int`
           .mapWith(Number)
           .as('draft_count'),
-        openCount: sql<number>`(${openCount})::int`
+        remainingCount: sql<number>`(${remainingCount})::int`
           .mapWith(Number)
-          .as('open_count'),
+          .as('remaining_count'),
         status: sql<ReviewerStatus>`case
         when ${assignedCount} = 0 then 'none'
         when ${submittedCount} = 0 and ${draftCount} = 0 then ${ProposalReviewAssignmentStatus.PENDING}
