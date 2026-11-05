@@ -118,38 +118,60 @@ describe.concurrent('listProposalsRevisionRequests', () => {
     expect(result.items).toHaveLength(0);
   });
 
-  it('hides an open revision request once the process leaves its phase', async ({
+  it('returns only revision requests from the current phase once the process advances', async ({
     task,
     onTestFinished,
   }) => {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
-    const created = await testData.createReviewAssignment({
+    const earlierPhase = await testData.createReviewAssignment({
       title: 'Left Behind',
       status: ProposalReviewAssignmentStatus.AWAITING_AUTHOR_REVISION,
     });
-
     await createRevisionRequest({
-      assignmentId: created.assignment.id,
-      requestComment: 'Please revise before results.',
+      assignmentId: earlierPhase.assignment.id,
+      requestComment: 'Please revise before voting.',
     });
 
-    const authorCaller = await createAuthenticatedCaller(created.author.email);
+    const authorCaller = await createAuthenticatedCaller(
+      earlierPhase.author.email,
+    );
     const beforeAdvance =
       await authorCaller.decision.listProposalsRevisionRequests({
         states: [ProposalReviewRequestState.REQUESTED],
       });
     expect(beforeAdvance.items).toHaveLength(1);
 
-    await testData.setCurrentPhase(
-      created.context.instance.instance.id,
-      'results',
-    );
+    // Creating an assignment in 'voting' advances the instance to that phase.
+    const currentPhase = await testData.createReviewAssignment({
+      context: earlierPhase.context,
+      author: earlierPhase.author,
+      title: 'Still Open',
+      status: ProposalReviewAssignmentStatus.AWAITING_AUTHOR_REVISION,
+      phaseId: 'voting',
+    });
+    const currentRequest = await createRevisionRequest({
+      assignmentId: currentPhase.assignment.id,
+      requestComment: 'Please revise during voting.',
+    });
 
     const afterAdvance =
       await authorCaller.decision.listProposalsRevisionRequests({
         states: [ProposalReviewRequestState.REQUESTED],
       });
-    expect(afterAdvance.items).toHaveLength(0);
+    expect(afterAdvance.items.map((item) => item.revisionRequest.id)).toEqual([
+      currentRequest.id,
+    ]);
+
+    await testData.setCurrentPhase(
+      earlierPhase.context.instance.instance.id,
+      'results',
+    );
+
+    const afterResults =
+      await authorCaller.decision.listProposalsRevisionRequests({
+        states: [ProposalReviewRequestState.REQUESTED],
+      });
+    expect(afterResults.items).toHaveLength(0);
   });
 
   it('does not return revision requests for proposals by other authors', async ({
