@@ -1,5 +1,6 @@
 'use client';
 
+import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { useQueryState } from 'nuqs';
 import { useCallback, useEffect, useMemo } from 'react';
 
@@ -12,12 +13,15 @@ import {
   type SidebarItem,
   type StepId,
   isPhaseSection,
+  isReviewPhaseSection,
   phaseToSectionId,
+  reviewPhaseToSectionId,
 } from './navigationConfig';
 
 export interface PhaseNavItem {
   phaseId: string;
   name: string;
+  isReview?: boolean;
 }
 
 export function useProcessNavigation(
@@ -25,6 +29,7 @@ export function useProcessNavigation(
   phases: PhaseNavItem[] = [],
   excludedSectionIds: string[] = [],
 ) {
+  const perPhaseEnabled = useFeatureFlag('review_settings_per_phase');
   const [sectionParam, setSectionParam] = useQueryState('section', {
     history: 'push',
   });
@@ -35,7 +40,8 @@ export function useProcessNavigation(
   });
 
   // Filter SIDEBAR_ITEMS to only visible sections based on navigationConfig,
-  // then insert dynamic phase sections after 'phases'
+  // then insert dynamic phase sections after 'phases' and review phase
+  // sections after 'reviewSettings'
   const visibleSections = useMemo(() => {
     const filtered = SIDEBAR_ITEMS.filter((item) => {
       const stepId = item.parentStepId;
@@ -58,33 +64,39 @@ export function useProcessNavigation(
       return !excludedSectionIds.includes(item.id);
     });
 
-    // Insert dynamic phase sections after 'phases' item
-    if (phases.length === 0) {
-      return filtered;
+    const withPhases = insertAfter(
+      filtered,
+      'phases',
+      phases.map((phase) => ({
+        id: phaseToSectionId(phase.phaseId),
+        labelKey: phase.name,
+        parentStepId: 'general' as const,
+        isDynamic: true,
+      })),
+    );
+
+    if (!perPhaseEnabled) {
+      return withPhases;
     }
 
-    const phasesIndex = filtered.findIndex((item) => item.id === 'phases');
-    if (phasesIndex === -1) {
-      return filtered;
-    }
-
-    const phaseSections: SidebarItem[] = phases.map((phase) => ({
-      id: phaseToSectionId(phase.phaseId),
-      labelKey: phase.name,
-      parentStepId: 'general' as const,
-      isDynamic: true,
-    }));
-
-    return [
-      ...filtered.slice(0, phasesIndex + 1),
-      ...phaseSections,
-      ...filtered.slice(phasesIndex + 1),
-    ];
+    return insertAfter(
+      withPhases,
+      'reviewSettings',
+      phases
+        .filter((phase) => phase.isReview)
+        .map((phase) => ({
+          id: reviewPhaseToSectionId(phase.phaseId),
+          labelKey: phase.name,
+          parentStepId: 'reviews' as const,
+          isDynamic: true,
+        })),
+    );
   }, [
     navigationConfig.steps,
     navigationConfig.sections,
     phases,
     excludedSectionIds,
+    perPhaseEnabled,
   ]);
 
   // Backward compatibility: derive section from old step+section params
@@ -142,12 +154,14 @@ export function useProcessNavigation(
 
   // Replace invalid section param in URL (skip dynamic phase sections —
   // not all hook consumers receive the phases list, so phase-* IDs may be
-  // absent from visibleSections without being truly invalid)
+  // absent from visibleSections without being truly invalid; reviewPhase-*
+  // IDs also wait on the feature flag)
   useEffect(() => {
     if (
       sectionParam &&
       !visibleSections.some((s) => s.id === sectionParam) &&
-      !isPhaseSection(sectionParam)
+      !isPhaseSection(sectionParam) &&
+      !isReviewPhaseSection(sectionParam)
     ) {
       setSectionParam(currentSection?.id ?? null);
     }
@@ -202,4 +216,16 @@ export function useProcessNavigation(
     hasNext,
     hasPrev,
   };
+}
+
+function insertAfter(
+  items: SidebarItem[],
+  anchorId: string,
+  inserted: SidebarItem[],
+): SidebarItem[] {
+  const index = items.findIndex((item) => item.id === anchorId);
+  if (inserted.length === 0 || index === -1) {
+    return items;
+  }
+  return [...items.slice(0, index + 1), ...inserted, ...items.slice(index + 1)];
 }

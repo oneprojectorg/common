@@ -5,6 +5,7 @@ import { type ComponentType } from 'react';
 import {
   type SectionId,
   isPhaseSection,
+  isReviewPhaseSection,
   isSectionId,
 } from './navigationConfig';
 import OverviewSection from './stepContent/general/OverviewSection';
@@ -53,6 +54,9 @@ export function getContentComponentFlat(
   }
   if (isPhaseSection(sectionId)) {
     return PhaseDetailSection;
+  }
+  if (isReviewPhaseSection(sectionId)) {
+    return ReviewSettingsSection;
   }
   if (isSectionId(sectionId)) {
     return FLAT_CONTENT_REGISTRY[sectionId];

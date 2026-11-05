@@ -1,5 +1,6 @@
 'use client';
 
+import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { getDecisionCommonProperties } from '@op/analytics/client-utils';
 import { trpc } from '@op/api/client';
 import type { InstancePhaseData } from '@op/api/encoders';
@@ -16,6 +17,7 @@ import {
 import { Header1, Header3 } from '@op/sense/Header';
 import { RadioGroup, RadioGroupItem } from '@op/sense/RadioGroup';
 import { Switch } from '@op/sense/Switch';
+import { useQueryState } from 'nuqs';
 import { usePostHog } from 'posthog-js/react';
 import { useState } from 'react';
 
@@ -26,6 +28,7 @@ import { ToggleRow } from '@/components/layout/split/form/ToggleRow';
 import { useProcessBuilderAutosave } from '../../ProcessBuilderAutosaveContext';
 import { SaveStatusIndicator } from '../../components/SaveStatusIndicator';
 import type { SectionProps } from '../../contentRegistry';
+import { sectionIdToReviewPhaseId } from '../../navigationConfig';
 import { useProcessBuilderStore } from '../../stores/useProcessBuilderStore';
 import { CategoryReviewerCards } from './CategoryReviewerCards';
 
@@ -40,6 +43,12 @@ export function ReviewSettingsContent({
 }: SectionProps) {
   const t = useTranslations();
   const posthog = usePostHog();
+  const perPhaseEnabled = useFeatureFlag('review_settings_per_phase');
+  const [sectionParam] = useQueryState('section', { history: 'push' });
+  const sectionPhaseId =
+    perPhaseEnabled && sectionParam
+      ? sectionIdToReviewPhaseId(sectionParam)
+      : null;
 
   const [instance] = trpc.decision.getInstance.useSuspenseQuery({ instanceId });
   const config = instance.instanceData?.config;
@@ -56,9 +65,11 @@ export function ReviewSettingsContent({
   const sourcePhases: InstancePhaseData[] =
     (storePhases?.length ? storePhases : instancePhases) ?? [];
 
-  // Scope is a per-phase review setting: there is exactly one review-capable
-  // phase today (the Reviews step is only shown when one exists).
-  const reviewPhase = sourcePhases.find(isReviewPhase);
+  // Scope is a per-phase review setting. Without a phase in the URL, the
+  // first review-capable phase is the target.
+  const reviewPhase = sectionPhaseId
+    ? sourcePhases.find((phase) => phase.phaseId === sectionPhaseId)
+    : sourcePhases.find(isReviewPhase);
 
   const [settings, setSettings] = useState<ReviewSettings>({
     scope: reviewPhase?.rules?.reviews?.scope ?? 'all',
@@ -177,7 +188,10 @@ export function ReviewSettingsContent({
         {settings.scope === 'by_category' && (
           <>
             <hr className="border-border" />
-            <CategoryReviewerCards instanceId={instanceId} />
+            <CategoryReviewerCards
+              instanceId={instanceId}
+              phaseId={perPhaseEnabled ? reviewPhase?.phaseId : undefined}
+            />
           </>
         )}
       </section>
