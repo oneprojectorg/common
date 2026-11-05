@@ -41,7 +41,7 @@ export function buildPhaseReviewerRollup({
   const assignedCount = sql`count(${proposalReviewAssignments.id})`;
   const submittedCount = sql`count(*) filter (where ${proposalReviewAssignments.status} = ${ProposalReviewAssignmentStatus.COMPLETED})`;
   const draftCount = sql`count(*) filter (where ${proposalReviews.state} = ${ProposalReviewState.DRAFT})`;
-  const remainingCount = sql`count(distinct ${proposalReviewAssignments.id}) filter (where ${and(
+  const remainingCount = sql`count(*) filter (where ${and(
     inArray(proposalReviewAssignments.status, [
       ProposalReviewAssignmentStatus.PENDING,
       ProposalReviewAssignmentStatus.IN_PROGRESS,
