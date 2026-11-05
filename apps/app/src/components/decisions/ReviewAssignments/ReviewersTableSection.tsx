@@ -385,7 +385,7 @@ function ReviewerRowCells({
   const percent =
     row.assignedCount > 0 ? (row.submittedCount / row.assignedCount) * 100 : 0;
   const isRemindable =
-    row.openCount > 0 &&
+    row.remainingCount > 0 &&
     (row.status === ProposalReviewAssignmentStatus.PENDING ||
       row.status === ProposalReviewAssignmentStatus.IN_PROGRESS);
   const remind = () =>
@@ -395,7 +395,7 @@ function ReviewerRowCells({
         id: row.reviewer.id,
         name,
         email: row.reviewer.email,
-        remainingCount: row.openCount,
+        remainingCount: row.remainingCount,
       },
     });
 
