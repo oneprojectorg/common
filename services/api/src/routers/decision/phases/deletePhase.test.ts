@@ -1,15 +1,25 @@
+import { TestDecisionsDataManager } from '@op/common/testing';
 import { db } from '@op/db/client';
+import { ProcessStatus, decisionProcessTransitions } from '@op/db/schema';
 import { randomUUID } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 
 import {
+  PHASE_NAME,
   createUnauthenticatedCaller,
+  loadPhaseRows,
+  loadTransitionLinks,
   setupPhase,
 } from '../../../test/helpers/phaseTestUtils';
+import { createAuthenticatedCaller } from '../../../test/supabase-utils';
 
 describe.concurrent('deletePhase', () => {
   it('deletes the phase and its profile', async ({ task, onTestFinished }) => {
-    const { phase, adminCaller } = await setupPhase(task, onTestFinished);
+    const { phase, adminCaller, trackProfileForCleanup } = await setupPhase(
+      task,
+      onTestFinished,
+    );
+    await addPhase({ adminCaller, trackProfileForCleanup, phase });
 
     await adminCaller.decision.deletePhase({ phaseId: phase.id });
 
@@ -25,6 +35,101 @@ describe.concurrent('deletePhase', () => {
     ]);
     expect(row).toBeUndefined();
     expect(profile).toBeUndefined();
+  });
+
+  it.for([ProcessStatus.DRAFT, ProcessStatus.PUBLISHED])(
+    'refuses to delete the last phase of a %s decision',
+    async (status, { task, onTestFinished }) => {
+      const { phase, adminCaller } = await setupPhase(task, onTestFinished);
+      await adminCaller.decision.updateDecisionInstance({
+        instanceId: phase.processInstanceId,
+        status,
+      });
+
+      await expect(
+        adminCaller.decision.deletePhase({ phaseId: phase.id }),
+      ).rejects.toMatchObject({
+        cause: {
+          name: 'ValidationError',
+          message: 'A decision must keep at least one phase',
+        },
+      });
+
+      await expectPhaseExists(phase.id);
+    },
+  );
+
+  it('refuses to delete the current phase of a published decision', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { instanceId, adminCaller, rows } = await setupPublishedDecision(
+      task,
+      onTestFinished,
+    );
+    const [current] = rows;
+    expect(current).toMatchObject({ data: { phaseId: 'initial' } });
+    if (!current) {
+      throw new Error('Fixture has no phase rows');
+    }
+
+    await expect(
+      adminCaller.decision.deletePhase({ phaseId: current.id }),
+    ).rejects.toMatchObject({
+      cause: {
+        name: 'ValidationError',
+        message: 'The current phase cannot be deleted',
+      },
+    });
+
+    expect(await loadPhaseRows(instanceId)).toEqual(rows);
+  });
+
+  it('deletes a phase other than the current one from a published decision and unlinks its transitions', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { instanceId, adminCaller, rows } = await setupPublishedDecision(
+      task,
+      onTestFinished,
+    );
+    const [initial, final] = rows;
+    expect(rows).toMatchObject([
+      { data: { phaseId: 'initial' } },
+      { data: { phaseId: 'final' } },
+    ]);
+    if (!initial || !final) {
+      throw new Error('Fixture is missing its initial or final phase row');
+    }
+    const completedAt = new Date().toISOString();
+    await db.insert(decisionProcessTransitions).values([
+      {
+        processInstanceId: instanceId,
+        fromStateId: 'initial',
+        toStateId: 'final',
+        fromPhaseId: initial.id,
+        toPhaseId: final.id,
+        scheduledDate: completedAt,
+        completedAt,
+      },
+      {
+        processInstanceId: instanceId,
+        fromStateId: 'final',
+        toStateId: 'initial',
+        fromPhaseId: final.id,
+        toPhaseId: initial.id,
+        scheduledDate: completedAt,
+        completedAt,
+      },
+    ]);
+
+    await adminCaller.decision.deletePhase({ phaseId: final.id });
+
+    expect(await loadPhaseRows(instanceId)).toEqual([initial]);
+    expect(await loadTransitionLinks(instanceId)).toMatchObject([
+      { fromStateId: 'final', fromPhaseId: null, toPhaseId: initial.id },
+      { fromStateId: 'initial', fromPhaseId: initial.id, toPhaseId: null },
+    ]);
   });
 
   it('rejects a member without decisions ADMIN', async ({
@@ -106,6 +211,30 @@ describe.concurrent('deletePhase', () => {
       cause: { name: 'AccessTierError', callerTier: 'none' },
     });
   });
+
+  it('drops the deleted phase from the cached instance', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { phase, adminCaller, trackProfileForCleanup } = await setupPhase(
+      task,
+      onTestFinished,
+    );
+    await addPhase({ adminCaller, trackProfileForCleanup, phase });
+    const instanceId = phase.processInstanceId;
+
+    const before = await adminCaller.decision.getInstance({ instanceId });
+    expect(before.instanceData?.phases?.map(({ name }) => name)).toContain(
+      PHASE_NAME,
+    );
+
+    await adminCaller.decision.deletePhase({ phaseId: phase.id });
+
+    const after = await adminCaller.decision.getInstance({ instanceId });
+    expect(after.instanceData?.phases?.map(({ name }) => name)).not.toContain(
+      PHASE_NAME,
+    );
+  });
 });
 
 const expectPhaseExists = async (phaseId: string) => {
@@ -114,4 +243,39 @@ const expectPhaseExists = async (phaseId: string) => {
     columns: { id: true },
   });
   expect(row).toBeDefined();
+};
+
+const addPhase = async ({
+  adminCaller,
+  trackProfileForCleanup,
+  phase,
+}: Pick<
+  Awaited<ReturnType<typeof setupPhase>>,
+  'adminCaller' | 'trackProfileForCleanup' | 'phase'
+>) => {
+  const added = await adminCaller.decision.createPhase({
+    instanceId: phase.processInstanceId,
+    name: 'Kept',
+    sortOrder: phase.sortOrder + 1,
+  });
+  trackProfileForCleanup(added.profileId);
+};
+
+const setupPublishedDecision = async (
+  task: { id: string },
+  onTestFinished: (fn: () => void | Promise<void>) => void,
+) => {
+  const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+  const setup = await testData.createDecisionSetup({
+    instanceCount: 1,
+    grantAccess: true,
+  });
+  const instanceId = setup.instance.instance.id;
+  const adminCaller = await createAuthenticatedCaller(setup.userEmail);
+  await adminCaller.decision.updateDecisionInstance({
+    instanceId,
+    status: ProcessStatus.PUBLISHED,
+  });
+
+  return { instanceId, adminCaller, rows: await loadPhaseRows(instanceId) };
 };

@@ -30,13 +30,13 @@ const existing = (): DecisionInstanceData => ({
 });
 
 describe('getUpdatedInstanceData', () => {
-  it('is undefined when the update carries nothing for instanceData', () => {
-    expect(getUpdatedInstanceData({ existing: existing(), update: {} })).toBe(
-      undefined,
-    );
+  it('sets nothing when the update carries nothing for instanceData', () => {
+    expect(
+      getUpdatedInstanceData({ existing: existing(), update: {} }),
+    ).toEqual({ phaseEndDateChanges: [] });
     expect(
       getUpdatedInstanceData({ existing: existing(), update: { phases: [] } }),
-    ).toBe(undefined);
+    ).toEqual({ phaseEndDateChanges: [] });
   });
 
   it('does not mutate the stored data', () => {
@@ -67,7 +67,7 @@ describe('getUpdatedInstanceData', () => {
       },
     });
 
-    expect(result?.instanceData.config).toEqual({
+    expect(result.instanceData?.config).toEqual({
       hideBudget: false,
       categories: [{ id: 'a', label: 'Parks', description: 'Green space' }],
     });
@@ -84,7 +84,7 @@ describe('getUpdatedInstanceData', () => {
       update: { config: { hideBudget: true } },
     });
 
-    expect(result?.instanceData.config).toEqual({
+    expect(result.instanceData?.config).toEqual({
       hideBudget: true,
       categories: [{ id: 'a', label: 'Parks', description: '' }],
     });
@@ -96,7 +96,7 @@ describe('getUpdatedInstanceData', () => {
       update: { overview: { description: 'New blurb' } },
     });
 
-    expect(result?.instanceData.overview).toEqual({
+    expect(result.instanceData?.overview).toEqual({
       headline: 'Old headline',
       description: 'New blurb',
     });
@@ -107,7 +107,7 @@ describe('getUpdatedInstanceData', () => {
       getUpdatedInstanceData({
         existing: existing(),
         update: { overview: { headline: null } },
-      })?.instanceData.overview,
+      }).instanceData?.overview,
     ).toEqual({ description: 'Old blurb' });
 
     const blank = existing();
@@ -117,7 +117,7 @@ describe('getUpdatedInstanceData', () => {
       getUpdatedInstanceData({
         existing: blank,
         update: { overview: { description: 'New blurb' } },
-      })?.instanceData.overview,
+      }).instanceData?.overview,
     ).toEqual({ description: 'New blurb' });
   });
 
@@ -132,7 +132,7 @@ describe('getUpdatedInstanceData', () => {
       },
     });
 
-    expect(result?.instanceData.phases).toEqual([
+    expect(result.phases).toEqual([
       {
         phaseId: 'voting',
         name: 'Final vote',
@@ -155,7 +155,7 @@ describe('getUpdatedInstanceData', () => {
       },
     });
 
-    expect(result?.instanceData.phases[0]).toEqual({
+    expect(result.phases?.[0]).toEqual({
       phaseId: 'voting',
       name: 'Voting',
       endDate: '2026-02-28',
@@ -175,7 +175,7 @@ describe('getUpdatedInstanceData', () => {
       },
     });
 
-    expect(result?.phaseEndDateChanges).toEqual([
+    expect(result.phaseEndDateChanges).toEqual([
       {
         phaseId: 'voting',
         previousEndDate: '2026-02-28',
@@ -196,8 +196,8 @@ describe('getUpdatedInstanceData', () => {
       update: { proposalTemplate, rubricTemplate },
     });
 
-    expect(result?.instanceData.proposalTemplate).toBe(proposalTemplate);
-    expect(result?.instanceData.rubricTemplate).toBe(rubricTemplate);
-    expect(result?.phaseEndDateChanges).toEqual([]);
+    expect(result.instanceData?.proposalTemplate).toBe(proposalTemplate);
+    expect(result.instanceData?.rubricTemplate).toBe(rubricTemplate);
+    expect(result.phaseEndDateChanges).toEqual([]);
   });
 });

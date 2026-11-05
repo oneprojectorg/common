@@ -284,7 +284,7 @@ export class SmsCommandFixture {
     phaseId?: string;
     attestation: string;
   }) {
-    await updateDecisionInstance({
+    const { phases } = await updateDecisionInstance({
       instanceId,
       phases: [
         {
@@ -294,6 +294,7 @@ export class SmsCommandFixture {
       ],
       user: userOf(owner),
     });
+    this.profileIds.push(...(phases ?? []).map(({ profileId }) => profileId));
   }
 
   async setStatus({

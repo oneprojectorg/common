@@ -1,9 +1,10 @@
 import { mockCollab } from '@op/collab/testing';
 import { getInstancePhases, parseProposalData } from '@op/common';
 import {
-  createRevisionRequest,
   TestDecisionsDataManager,
   TestReviewsDataManager,
+  createRevisionRequest,
+  syncPhaseRows,
 } from '@op/common/testing';
 import { db, eq } from '@op/db/client';
 import {
@@ -70,6 +71,7 @@ async function setProposalEditingRule(
     .update(processInstances)
     .set({ instanceData: { ...instanceData, phases } })
     .where(eq(processInstances.id, processInstanceId));
+  await syncPhaseRows(processInstanceId);
 }
 
 describe.concurrent('updateProposal visibility', () => {
