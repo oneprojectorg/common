@@ -1,6 +1,10 @@
 import { cache } from '@op/cache';
-import { TestDecisionsDataManager } from '@op/common/testing';
-import { ProposalStatus } from '@op/db/schema';
+import {
+  TestDecisionsDataManager,
+  ensureProposalCategoryTerms,
+} from '@op/common/testing';
+import { ProposalStatus, proposalCategories } from '@op/db/schema';
+import { db, eq } from '@op/db/test';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
@@ -17,6 +21,11 @@ import {
 import { createCallerFactory } from '../../../trpcFactory';
 
 const createCaller = createCallerFactory(appRouter);
+
+async function createAuthenticatedCaller(email: string) {
+  const { session } = await createIsolatedSession(email);
+  return createCaller(await createTestContextWithSession(session));
+}
 
 const readCachedUser = ({
   authUserId,
@@ -50,6 +59,38 @@ describe.concurrent('createProposal', () => {
     expect(
       await readCachedUser({ authUserId: session.user.id, fresh: 'fresh' }),
     ).toBe('fresh');
+  });
+
+  it('links the categories that match a proposal taxonomy term and drops the rest', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const [knownTerm] = await ensureProposalCategoryTerms([`Known ${task.id}`]);
+    if (!knownTerm) {
+      throw new Error('Failed to seed a proposal category term');
+    }
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const proposal = await caller.decision.createProposal({
+      processInstanceId: setup.instance.instance.id,
+      proposalData: {
+        title: 'Categorised Proposal',
+        category: [knownTerm.label, `Unknown ${task.id}`],
+      },
+    });
+    testData.trackProfileForCleanup(proposal.profileId);
+
+    const links = await db
+      .select({ taxonomyTermId: proposalCategories.taxonomyTermId })
+      .from(proposalCategories)
+      .where(eq(proposalCategories.proposalId, proposal.id));
+
+    expect(links).toEqual([{ taxonomyTermId: knownTerm.taxonomyTermId }]);
   });
 });
 
