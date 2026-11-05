@@ -332,6 +332,7 @@ export {
 } from './services/translation/locales';
 export type { SupportedLocale } from './services/translation/locales';
 export { parseTranslatedMeta } from './services/translation/parseTranslatedMeta';
+export type { CustomFormTranslation } from './services/translation/translateCustomForm';
 export type { PostTranslation } from './services/translation/translatePost';
 export type { ProposalTranslation } from './services/translation/translateProposal';
 export type { ResourceTranslation } from './services/translation/translateResources';

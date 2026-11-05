@@ -1,4 +1,6 @@
 export { parseTranslatedMeta } from './parseTranslatedMeta';
+export { translateCustomForm } from './translateCustomForm';
+export type { CustomFormTranslation } from './translateCustomForm';
 export { translateDecision } from './translateDecision';
 export type { PostTranslation } from './translatePost';
 export { translatePost } from './translatePost';

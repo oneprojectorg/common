@@ -122,6 +122,7 @@ export function usePhaseCustomForm({
   const customFormModal = form ? (
     <CustomFormModal
       isOpen
+      customFormId={form.id}
       schema={form.schema}
       isSubmitting={submitCustomForm.isPending}
       onSubmit={handleModalSubmit}
