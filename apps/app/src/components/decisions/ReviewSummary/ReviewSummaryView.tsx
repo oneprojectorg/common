@@ -3,7 +3,13 @@
 import { useRequiredUser } from '@/utils/UserProvider';
 import { getDecisionCommonProperties } from '@op/analytics/client-utils';
 import { trpc } from '@op/api/client';
-import { ProposalReviewState, type ReviewSettings } from '@op/common/client';
+import {
+  ProposalReviewState,
+  type ReviewSettings,
+  getProcessBudget,
+  isLastPhase,
+  templateCollectsBudget,
+} from '@op/common/client';
 import { Button } from '@op/sense/Button';
 import { SplitPane } from '@op/sense/SplitPane';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@op/sense/Tabs';
@@ -29,6 +35,7 @@ import type { OwnReviewEntry } from '../ReviewsPanel/ReviewsPanel';
 import { ReviewsPanel } from '../ReviewsPanel/ReviewsPanel';
 import { TranslateLink } from '../TranslateLink';
 import { getPendingSelectionSourcePhase } from '../pendingSelection';
+import { resolvePresentationFields } from '../selection/proposalPresentation';
 import { useTranslateProposal } from '../useTranslateProposal';
 import { OwnReviewPanel } from './OwnReviewPanel';
 import { ReviewSummaryAdvanceFooter } from './ReviewSummaryAdvanceFooter';
@@ -205,6 +212,12 @@ export function ReviewSummaryView({
   const showAdvanceFooter =
     isAdmin && pendingSelectionSourcePhase?.phaseId === phaseId;
 
+  // Mirrors `ReviewSelectionList`: confirming the last phase publishes funded
+  // results, so advancing a proposal there also awards it an amount.
+  const footerAwardsAmounts =
+    isLastPhase(instance.currentStateId, instance.instanceData?.phases ?? []) &&
+    templateCollectsBudget(instance.instanceData?.proposalTemplate);
+
   const currentProposalPane = (
     <ProposalPreview
       proposal={proposal}
@@ -340,8 +353,19 @@ export function ReviewSummaryView({
       {showAdvanceFooter && (
         <ReviewSummaryAdvanceFooter
           instanceId={instanceId}
-          proposalId={proposalId}
           phaseId={phaseId}
+          proposal={proposal}
+          proposalTitle={
+            resolvePresentationFields({
+              proposal,
+              defaultTitle: t('decisions.proposals.untitledProposal'),
+            }).title
+          }
+          awardsAmounts={footerAwardsAmounts}
+          processBudget={getProcessBudget({
+            phases: instance.instanceData?.phases,
+            currentPhaseId: instance.currentStateId,
+          })}
         />
       )}
     </div>
