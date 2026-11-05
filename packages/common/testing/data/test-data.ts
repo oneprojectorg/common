@@ -58,11 +58,22 @@ export interface CreateUserOptions {
   supabaseAdmin: SupabaseClient;
   email: string;
   password?: string;
+  /**
+   * Mark the account onboarded and policy-accepting (the default). Pass false
+   * for an account that is still mid-onboarding — e.g. a non-network-member
+   * entering the promote flow at /start.
+   */
+  onboarded?: boolean;
 }
 
 /** Creates a user via Supabase admin API, bypassing email confirmation. */
 export async function createUser(opts: CreateUserOptions) {
-  const { supabaseAdmin, email, password = TEST_USER_DEFAULT_PASSWORD } = opts;
+  const {
+    supabaseAdmin,
+    email,
+    password = TEST_USER_DEFAULT_PASSWORD,
+    onboarded = true,
+  } = opts;
 
   const { data, error } = await supabaseAdmin.auth.admin.createUser({
     email,
@@ -78,13 +89,15 @@ export async function createUser(opts: CreateUserOptions) {
     throw new Error(`No user returned when creating test user: ${email}`);
   }
 
-  // Mark test users as onboarded (so they aren't redirected to /start) and as
-  // having accepted the current policies (so the re-acceptance gate stays shut).
-  const now = new Date().toISOString();
-  await db
-    .update(users)
-    .set({ onboardedAt: now, tosAcceptedOn: now, privacyAcceptedOn: now })
-    .where(eq(users.authUserId, data.user.id));
+  if (onboarded) {
+    // Mark test users as onboarded (so they aren't redirected to /start) and as
+    // having accepted the current policies (so the re-acceptance gate stays shut).
+    const now = new Date().toISOString();
+    await db
+      .update(users)
+      .set({ onboardedAt: now, tosAcceptedOn: now, privacyAcceptedOn: now })
+      .where(eq(users.authUserId, data.user.id));
+  }
 
   return {
     id: data.user.id,
