@@ -1,3 +1,4 @@
+import { cache } from '@op/cache';
 import {
   type DecisionInstanceData,
   type DecisionSchemaDefinition,
@@ -22,6 +23,14 @@ import {
 import { createCallerFactory } from '../../../trpcFactory';
 
 const createCaller = createCallerFactory(appRouter);
+
+const readCachedUser = ({
+  authUserId,
+  fresh,
+}: {
+  authUserId: string;
+  fresh: string;
+}) => cache({ type: 'user', params: [authUserId], fetch: async () => fresh });
 
 async function createAuthenticatedCaller(email: string) {
   const { session } = await createIsolatedSession(email);
@@ -110,6 +119,32 @@ describe.concurrent('createInstanceFromTemplate', () => {
     expect(instanceData.phases).toBeDefined();
     expect(instanceData.phases.length).toBeGreaterThan(0);
     expect(instance!.currentStateId).toBe('submission');
+  });
+
+  it('drops the cached access of the creator so their admin role applies at once', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const { templateId, userEmail } = await createSimpleTemplate(
+      testData,
+      task.id,
+    );
+    const { session } = await createIsolatedSession(userEmail);
+    const caller = createCaller(await createTestContextWithSession(session));
+    // A `user` entry cached before the membership exists.
+    await readCachedUser({ authUserId: session.user.id, fresh: 'stale' });
+
+    const result = await caller.decision.createInstanceFromTemplate({
+      templateId,
+      name: `Cache Decision ${task.id}`,
+    });
+    testData.trackProfileForCleanup(result.id);
+
+    expect(
+      await readCachedUser({ authUserId: session.user.id, fresh: 'fresh' }),
+    ).toBe('fresh');
   });
 
   it('should NOT create transitions for DRAFT instances (transitions are created on publish)', async ({

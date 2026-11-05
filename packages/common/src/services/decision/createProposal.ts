@@ -15,7 +15,11 @@ import type { User } from '@op/supabase/lib';
 import { permission } from 'access-zones';
 
 import { CommonError, NotFoundError, ValidationError } from '../../utils';
-import { assertInstanceProfileAccess, getCurrentProfileId } from '../access';
+import {
+  assertInstanceProfileAccess,
+  getCurrentProfileId,
+  invalidateProfileUserAccessCache,
+} from '../access';
 import { assertGlobalRole } from '../assert';
 import { generateUniqueProfileSlug } from '../profile/utils';
 import { withBoundaryCategoryLabel } from './boundaryCategory';
@@ -110,48 +114,7 @@ export const createProposal = async ({
         profileId: instance.profileId,
       })
     : manualCategoryLabels;
-  let categoryTermIds: string[] = [];
-
-  if (categoryLabels.length > 0) {
-    try {
-      const proposalTaxonomy = await db.query.taxonomies.findFirst({
-        where: { name: 'proposal' },
-        with: { taxonomyTerms: true },
-      });
-
-      if (proposalTaxonomy) {
-        const labelSet = new Set(categoryLabels);
-        const matchedTerms = proposalTaxonomy.taxonomyTerms.filter(
-          (term: { label: string }) => labelSet.has(term.label),
-        );
-
-        categoryTermIds = matchedTerms.map((term: { id: string }) => term.id);
-
-        const matchedLabels = new Set(
-          matchedTerms.map((term: { label: string }) => term.label),
-        );
-
-        for (const categoryLabel of categoryLabels) {
-          if (!matchedLabels.has(categoryLabel)) {
-            logger.warn('No valid proposal taxonomy term found for category', {
-              categoryLabel,
-            });
-          }
-        }
-      } else {
-        for (const categoryLabel of categoryLabels) {
-          logger.warn('No valid proposal taxonomy term found for category', {
-            categoryLabel,
-          });
-        }
-      }
-    } catch (error) {
-      logger.error(
-        'Error fetching category terms, proceeding without category links',
-        { error },
-      );
-    }
-  }
+  const categoryTermIds = await getCategoryTermIds(categoryLabels);
 
   const [profileId, adminRole] = await Promise.all([
     getCurrentProfileId(authUserId),
@@ -275,7 +238,54 @@ export const createProposal = async ({
     return proposal;
   });
 
+  // The author's cached `user` entry predates this membership.
+  await invalidateProfileUserAccessCache({
+    authUserId,
+    profileId: createdProposal.profileId,
+  });
+
   return createdProposal;
+};
+
+/**
+ * Resolve category labels to proposal taxonomy term ids. Unknown labels are
+ * logged and dropped; a failed lookup links no categories.
+ */
+const getCategoryTermIds = async (
+  categoryLabels: string[],
+): Promise<string[]> => {
+  if (categoryLabels.length === 0) {
+    return [];
+  }
+
+  try {
+    const proposalTaxonomy = await db.query.taxonomies.findFirst({
+      where: { name: 'proposal' },
+      with: { taxonomyTerms: true },
+    });
+
+    const labelSet = new Set(categoryLabels);
+    const matchedTerms: { id: string; label: string }[] = (
+      proposalTaxonomy?.taxonomyTerms ?? []
+    ).filter((term: { label: string }) => labelSet.has(term.label));
+    const matchedLabels = new Set(matchedTerms.map((term) => term.label));
+
+    for (const categoryLabel of categoryLabels) {
+      if (!matchedLabels.has(categoryLabel)) {
+        logger.warn('No valid proposal taxonomy term found for category', {
+          categoryLabel,
+        });
+      }
+    }
+
+    return matchedTerms.map((term) => term.id);
+  } catch (error) {
+    logger.error(
+      'Error fetching category terms, proceeding without category links',
+      { error },
+    );
+    return [];
+  }
 };
 
 // Helper function to extract title from proposal data

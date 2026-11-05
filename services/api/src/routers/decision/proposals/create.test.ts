@@ -1,13 +1,100 @@
-import { TestDecisionsDataManager } from '@op/common/testing';
-import { ProposalStatus } from '@op/db/schema';
-import { expect } from 'vitest';
+import { cache } from '@op/cache';
+import {
+  TestDecisionsDataManager,
+  ensureProposalCategoryTerms,
+} from '@op/common/testing';
+import { ProposalStatus, proposalCategories } from '@op/db/schema';
+import { db, eq } from '@op/db/test';
+import { describe, expect, it } from 'vitest';
 
+import { appRouter } from '../..';
 import {
   accessTierGatingCell,
   describeDecisionAccessTierGating,
   expectFailsAccessTierGate,
   expectPassesAccessTierGate,
 } from '../../../test/helpers/gating/decision';
+import {
+  createIsolatedSession,
+  createTestContextWithSession,
+} from '../../../test/supabase-utils';
+import { createCallerFactory } from '../../../trpcFactory';
+
+const createCaller = createCallerFactory(appRouter);
+
+async function createAuthenticatedCaller(email: string) {
+  const { session } = await createIsolatedSession(email);
+  const caller = createCaller(await createTestContextWithSession(session));
+  return { caller, session };
+}
+
+const readCachedUser = ({
+  authUserId,
+  fresh,
+}: {
+  authUserId: string;
+  fresh: string;
+}) => cache({ type: 'user', params: [authUserId], fetch: async () => fresh });
+
+describe.concurrent('createProposal', () => {
+  it('drops the cached access of the author so their admin role on the proposal applies at once', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const { caller, session } = await createAuthenticatedCaller(
+      setup.userEmail,
+    );
+    // A `user` entry cached before the membership exists.
+    await readCachedUser({ authUserId: session.user.id, fresh: 'stale' });
+
+    const proposal = await caller.decision.createProposal({
+      processInstanceId: setup.instance.instance.id,
+      proposalData: { title: 'Cache Proposal' },
+    });
+    testData.trackProfileForCleanup(proposal.profileId);
+
+    expect(
+      await readCachedUser({ authUserId: session.user.id, fresh: 'fresh' }),
+    ).toBe('fresh');
+  });
+
+  it('links the categories that match a proposal taxonomy term and drops the rest', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const [knownTerm] = await ensureProposalCategoryTerms([`Known ${task.id}`]);
+    if (!knownTerm) {
+      throw new Error('Failed to seed a proposal category term');
+    }
+    const { caller } = await createAuthenticatedCaller(setup.userEmail);
+
+    const proposal = await caller.decision.createProposal({
+      processInstanceId: setup.instance.instance.id,
+      proposalData: {
+        title: 'Categorised Proposal',
+        category: [knownTerm.label, `Unknown ${task.id}`],
+      },
+    });
+    testData.trackProfileForCleanup(proposal.profileId);
+
+    const links = await db
+      .select({ taxonomyTermId: proposalCategories.taxonomyTermId })
+      .from(proposalCategories)
+      .where(eq(proposalCategories.proposalId, proposal.id));
+
+    expect(links).toEqual([{ taxonomyTermId: knownTerm.taxonomyTermId }]);
+  });
+});
 
 describeDecisionAccessTierGating('createProposal', {
   noJwtNonPublic: accessTierGatingCell(

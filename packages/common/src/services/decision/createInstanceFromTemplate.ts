@@ -11,6 +11,7 @@ import type { User } from '@op/supabase/lib';
 import { randomUUID } from 'crypto';
 
 import { CommonError, UnauthorizedError } from '../../utils';
+import { invalidateProfileUserAccessCache } from '../access';
 import { assertUserByAuthId } from '../assert';
 import { createDefaultDecisionRoles } from './decisionRoles';
 import { getTemplate } from './getTemplate';
@@ -42,7 +43,7 @@ export const createDecisionInstance = async ({
   creatorEmail,
   status = ProcessStatus.DRAFT,
 }: CreateDecisionInstanceOptions) => {
-  const instance = await db.transaction(async (tx) => {
+  const instanceProfileId = await db.transaction(async (tx) => {
     // Create a DECISION profile for the instance
     const slug = `decision-${randomUUID()}`;
 
@@ -104,16 +105,21 @@ export const createDecisionInstance = async ({
       accessRoleId: adminRole.id,
     });
 
-    return newInstance;
+    return instanceProfile.id;
+  });
+
+  // The creator's cached `user` entry predates this membership.
+  await invalidateProfileUserAccessCache({
+    authUserId: creatorAuthUserId,
+    profileId: instanceProfileId,
   });
 
   // Note: Transitions are NOT created here because the instance is created as DRAFT.
   // Transitions are created when the instance is published via updateDecisionInstance.
 
   // Fetch the profile with processInstance joined for the response
-  // profileId is guaranteed to be set since we just created it above
   const profile = await db.query.profiles.findFirst({
-    where: { id: instance.profileId! },
+    where: { id: instanceProfileId },
     with: {
       processInstance: true,
     },
