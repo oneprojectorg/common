@@ -534,21 +534,13 @@ function getFieldText({
   field: XFormatPropertySchema;
   translation?: CustomFormTranslation;
 }) {
-  if (!translation) {
-    return {
-      label: field.title ?? name,
-      description: linkifyText(field.description),
-      getOptionLabel: (option: string) => option,
-    };
-  }
-
-  const optionLabels = translation.optionLabels[name] ?? {};
   return {
-    label: translation.fieldTitles[name] ?? field.title ?? name,
+    label: translation?.fieldTitles[name] ?? field.title ?? name,
     description: linkifyText(
-      translation.fieldDescriptions[name] ?? field.description,
+      translation?.fieldDescriptions[name] ?? field.description,
     ),
-    getOptionLabel: (option: string) => optionLabels[option] ?? option,
+    getOptionLabel: (option: string) =>
+      translation?.optionLabels[name]?.[option] ?? option,
   };
 }
 
