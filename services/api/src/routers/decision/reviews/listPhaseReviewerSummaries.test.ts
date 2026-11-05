@@ -859,7 +859,8 @@ async function seedCompletionTies(
     for (let index = 0; index < count; index++) {
       members.push(await testData.createInstanceMember(context));
     }
-    return members.sort((a, b) => a.profileId.localeCompare(b.profileId));
+    // Code-unit order, which matches how Postgres orders the uuid column.
+    return members.sort((a, b) => (a.profileId < b.profileId ? -1 : 1));
   };
 
   const assign = async ({
