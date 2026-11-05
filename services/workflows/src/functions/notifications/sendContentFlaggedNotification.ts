@@ -4,8 +4,9 @@ import {
   listProfileRecipients,
 } from '@op/common';
 import { selectEmailRecipients } from '@op/common/client';
+import { OPURLConfig } from '@op/core';
 import { db, eq } from '@op/db/client';
-import { posts, profiles, proposals, users } from '@op/db/schema';
+import { posts, profiles, users } from '@op/db/schema';
 import { Events, inngest } from '@op/events';
 import { logger } from '@op/logging';
 
@@ -15,6 +16,10 @@ type Recipient = {
   candidates: Array<EmailRecipient>;
   name: string | null;
   contentType: 'post' | 'proposal' | 'comment' | 'account';
+  /** Title of the flagged item, when it has one of its own. */
+  contentName?: string;
+  /** Link to the flagged item, when it is still reachable. */
+  contentUrl?: string;
 };
 
 /**
@@ -54,29 +59,42 @@ const resolveRecipient = async (
   }
 
   if (itemType === 'proposal') {
-    const [row] = await db
-      .select({
-        authorProfileId: profiles.id,
-        authorProfileType: profiles.type,
-        name: profiles.name,
-      })
-      .from(proposals)
-      .leftJoin(profiles, eq(proposals.submittedByProfileId, profiles.id))
-      .where(eq(proposals.id, itemId))
-      .limit(1);
-    if (!row) {
+    const proposal = await db.query.proposals.findFirst({
+      where: { id: itemId },
+      columns: { profileId: true, moderationDetachedAt: true },
+      with: {
+        profile: { columns: { name: true } },
+        submittedBy: { columns: { id: true, type: true, name: true } },
+        processInstance: { with: { profile: { columns: { slug: true } } } },
+      },
+    });
+    if (!proposal) {
       return null;
     }
+
+    const processSlug = proposal.processInstance?.profile?.slug;
+    if (!processSlug) {
+      logger.warn(
+        'Flagged proposal has no process profile slug; omitting link',
+        {
+          itemId,
+        },
+      );
+    }
+
     return {
-      candidates:
-        row.authorProfileId && row.authorProfileType
-          ? await listProfileRecipients({
-              id: row.authorProfileId,
-              type: row.authorProfileType,
-            })
-          : [],
-      name: row.name,
+      candidates: await listProfileRecipients(proposal.submittedBy),
+      name: proposal.submittedBy.name,
       contentType: 'proposal',
+      // Names the proposal in the body. It carries the whole weight when the
+      // proposal is detached and there's no link to follow.
+      contentName: proposal.profile.name,
+      // A moderation detach hides the proposal from every query, so linking a
+      // detached one would only 404 — send the bare notice in that case.
+      contentUrl:
+        processSlug && !proposal.moderationDetachedAt
+          ? `${OPURLConfig('APP').ENV_URL}/decisions/${processSlug}/proposal/${proposal.profileId}`
+          : undefined,
     };
   }
 
@@ -135,6 +153,8 @@ export const sendContentFlaggedNotification = inngest.createFunction(
             ContentFlaggedEmail({
               recipientName: recipient.name ?? undefined,
               contentType: recipient.contentType,
+              contentName: recipient.contentName,
+              contentUrl: recipient.contentUrl,
             }),
         })),
       );
