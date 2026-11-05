@@ -54,7 +54,7 @@ describe('loadFormForWrite', () => {
         instanceId: 'instance-1',
         instanceProfileId: 'decision-profile',
         ownerProfileId: 'org-profile',
-        instanceData: { phases: [{ phaseId: 'submission' }] },
+        instanceData: {},
       },
     ]);
 
@@ -72,7 +72,7 @@ describe('loadFormForWrite', () => {
         instanceId: 'instance-1',
         instanceProfileId: 'decision-profile',
         ownerProfileId: 'org-profile',
-        instanceData: { phases: [] },
+        instanceData: {},
       },
     ]);
 
@@ -84,7 +84,7 @@ describe('loadFormForWrite', () => {
         id: 'instance-1',
         profileId: 'decision-profile',
         ownerProfileId: 'org-profile',
-        instanceData: { phases: [] },
+        instanceData: {},
       },
     });
   });

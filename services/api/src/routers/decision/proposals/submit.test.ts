@@ -1,6 +1,8 @@
 import { mockCollab } from '@op/collab/testing';
-import type { DecisionInstanceData } from '@op/common';
-import { TestDecisionsDataManager, syncPhaseRows } from '@op/common/testing';
+import {
+  TestDecisionsDataManager,
+  updateInstancePhase,
+} from '@op/common/testing';
 import {
   ProposalStatus,
   Visibility,
@@ -876,38 +878,17 @@ describe.concurrent('submitProposal', () => {
     const instance = setup.instance;
 
     // Enable defaults.hidden on the initial phase
-    const instanceRecord = await db.query.processInstances.findFirst({
-      where: { id: instance.instance.id },
+    await updateInstancePhase({
+      instanceId: instance.instance.id,
+      phaseId: 'initial',
+      update: (phase) => ({
+        ...phase,
+        rules: {
+          ...phase.rules,
+          proposals: { ...phase.rules?.proposals, defaults: { hidden: true } },
+        },
+      }),
     });
-
-    if (!instanceRecord) {
-      throw new Error('Instance not found');
-    }
-
-    const instanceData = instanceRecord.instanceData as DecisionInstanceData;
-    const updatedPhases = instanceData.phases.map((phase) => {
-      if (phase.phaseId === 'initial') {
-        return {
-          ...phase,
-          rules: {
-            ...phase.rules,
-            proposals: {
-              ...phase.rules?.proposals,
-              defaults: { hidden: true },
-            },
-          },
-        };
-      }
-      return phase;
-    });
-
-    await db
-      .update(processInstances)
-      .set({
-        instanceData: { ...instanceData, phases: updatedPhases },
-      })
-      .where(eq(processInstances.id, instance.instance.id));
-    await syncPhaseRows(instance.instance.id);
 
     const proposal = await testData.createProposal({
       userEmail: setup.userEmail,
@@ -983,38 +964,17 @@ describe.concurrent('submitProposal', () => {
 
     const instance = setup.instance;
 
-    const instanceRecord = await db.query.processInstances.findFirst({
-      where: { id: instance.instance.id },
+    await updateInstancePhase({
+      instanceId: instance.instance.id,
+      phaseId: 'initial',
+      update: (phase) => ({
+        ...phase,
+        rules: {
+          ...phase.rules,
+          proposals: { ...phase.rules?.proposals, defaults: { hidden: false } },
+        },
+      }),
     });
-
-    if (!instanceRecord) {
-      throw new Error('Instance not found');
-    }
-
-    const instanceData = instanceRecord.instanceData as DecisionInstanceData;
-    const updatedPhases = instanceData.phases.map((phase) => {
-      if (phase.phaseId === 'initial') {
-        return {
-          ...phase,
-          rules: {
-            ...phase.rules,
-            proposals: {
-              ...phase.rules?.proposals,
-              defaults: { hidden: false },
-            },
-          },
-        };
-      }
-      return phase;
-    });
-
-    await db
-      .update(processInstances)
-      .set({
-        instanceData: { ...instanceData, phases: updatedPhases },
-      })
-      .where(eq(processInstances.id, instance.instance.id));
-    await syncPhaseRows(instance.instance.id);
 
     const proposal = await testData.createProposal({
       userEmail: setup.userEmail,
@@ -1045,38 +1005,17 @@ describe.concurrent('submitProposal', () => {
 
     const instance = setup.instance;
 
-    const instanceRecord = await db.query.processInstances.findFirst({
-      where: { id: instance.instance.id },
+    await updateInstancePhase({
+      instanceId: instance.instance.id,
+      phaseId: 'initial',
+      update: (phase) => ({
+        ...phase,
+        rules: {
+          ...phase.rules,
+          proposals: { ...phase.rules?.proposals, defaults: {} },
+        },
+      }),
     });
-
-    if (!instanceRecord) {
-      throw new Error('Instance not found');
-    }
-
-    const instanceData = instanceRecord.instanceData as DecisionInstanceData;
-    const updatedPhases = instanceData.phases.map((phase) => {
-      if (phase.phaseId === 'initial') {
-        return {
-          ...phase,
-          rules: {
-            ...phase.rules,
-            proposals: {
-              ...phase.rules?.proposals,
-              defaults: {},
-            },
-          },
-        };
-      }
-      return phase;
-    });
-
-    await db
-      .update(processInstances)
-      .set({
-        instanceData: { ...instanceData, phases: updatedPhases },
-      })
-      .where(eq(processInstances.id, instance.instance.id));
-    await syncPhaseRows(instance.instance.id);
 
     const proposal = await testData.createProposal({
       userEmail: setup.userEmail,

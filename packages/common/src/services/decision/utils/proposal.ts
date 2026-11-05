@@ -10,10 +10,7 @@ export const isProposalReachable = (proposal: {
   moderationDetachedAt: string | null;
 }): boolean => !proposal.deletedAt && !proposal.moderationDetachedAt;
 
-/**
- * Helper to check if proposals are allowed in the current phase.
- * Reads from instanceData phases which now contain all template fields.
- */
+/** Helper to check if proposals are allowed in the current phase. */
 export function checkProposalsAllowed(
   phases: PhaseInstanceData[],
   currentPhaseId: string,

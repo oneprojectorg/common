@@ -1,11 +1,12 @@
 import { type DecisionInstanceData, simpleVoting } from '@op/common';
 import type { DecisionSchemaDefinition } from '@op/common';
 import { TestDecisionsDataManager } from '@op/common/testing';
-import { db, eq, sql } from '@op/db/client';
+import { db, eq } from '@op/db/client';
 import {
   ProcessStatus,
   decisionProcesses,
   processInstances,
+  processPhases,
   users,
 } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
@@ -21,6 +22,7 @@ import {
   expectNothingNamed,
   expectRowsMatchPhases,
   loadInstanceData,
+  loadInstancePhases,
   loadPhaseRows,
 } from '../../../test/helpers/phaseTestUtils';
 import { createWizardDraft } from '../../../test/helpers/wizardDraftTestUtils';
@@ -150,12 +152,12 @@ describe.concurrent('duplicateInstance', () => {
     expect(duplicate.processInstance.id).not.toBe(source.processInstance.id);
 
     // Verify instanceData was copied
-    const instance = await db.query.processInstances.findFirst({
-      where: { id: duplicate.processInstance.id },
-    });
-    const instanceData = instance!.instanceData as DecisionInstanceData;
+    const [{ instanceData }, phases] = await Promise.all([
+      loadInstanceData(duplicate.processInstance.id),
+      loadInstancePhases(duplicate.processInstance.id),
+    ]);
 
-    expect(instanceData.phases.length).toBeGreaterThan(0);
+    expect(phases.length).toBeGreaterThan(0);
     expect(instanceData.templateId).toBe(simpleVoting.id);
   });
 
@@ -191,8 +193,11 @@ describe.concurrent('duplicateInstance', () => {
       loadPhaseRows(duplicate.processInstance.id),
     ]);
 
-    expect(instanceData.phases).toHaveLength(simpleVoting.phases.length);
-    expectRowsMatchPhases(duplicateRows, instanceData.phases);
+    expectRowsMatchPhases(
+      duplicateRows,
+      simpleVoting.phases.map(({ id, name }) => ({ phaseId: id, name })),
+    );
+    expect(instanceData).not.toHaveProperty('phases');
     expect(duplicateRows.map((row) => row.data)).toEqual(
       sourceRows.map((row) => withoutDates(row.data)),
     );
@@ -213,17 +218,15 @@ describe.concurrent('duplicateInstance', () => {
       task.id,
     );
 
-    await testData.removePhaseRows(source.processInstance.id);
-    const phases = [
-      { phaseId: '', name: 'Submission' },
-      { phaseId: 'voting', name: 'Voting' },
-    ];
+    const [firstRow] = await loadPhaseRows(source.processInstance.id);
+    if (!firstRow) {
+      throw new Error('The source instance has no phase rows');
+    }
+    // The writer refuses an id-less phase, so the legacy row is edited directly.
     await db
-      .update(processInstances)
-      .set({
-        instanceData: sql`jsonb_set(${processInstances.instanceData}, '{phases}', ${JSON.stringify(phases)}::jsonb)`,
-      })
-      .where(eq(processInstances.id, source.processInstance.id));
+      .update(processPhases)
+      .set({ data: { ...firstRow.data, phaseId: '' } })
+      .where(eq(processPhases.id, firstRow.id));
 
     const name = `Legacy Duplicate ${task.id}`;
     await expect(
@@ -264,8 +267,11 @@ describe.concurrent('duplicateInstance', () => {
       loadPhaseRows(duplicate.processInstance.id),
     ]);
 
-    expect(instanceData.phases).toHaveLength(simpleVoting.phases.length);
-    expectRowsMatchPhases(rows, instanceData.phases);
+    expectRowsMatchPhases(
+      rows,
+      simpleVoting.phases.map(({ id, name }) => ({ phaseId: id, name })),
+    );
+    expect(instanceData).not.toHaveProperty('phases');
     for (const row of rows) {
       expect(row.data).not.toHaveProperty('rules');
     }
@@ -362,14 +368,11 @@ describe.concurrent('duplicateInstance', () => {
 
     testData.trackProfileForCleanup(duplicate.id);
 
-    const instance = await db.query.processInstances.findFirst({
-      where: { id: duplicate.processInstance.id },
-    });
-    const instanceData = instance!.instanceData as DecisionInstanceData;
+    const phases = await loadInstancePhases(duplicate.processInstance.id);
 
-    expect(instanceData.phases.length).toBeGreaterThan(0);
+    expect(phases.length).toBeGreaterThan(0);
     // Dates should be stripped
-    for (const phase of instanceData.phases) {
+    for (const phase of phases) {
       expect(phase.startDate).toBeUndefined();
       expect(phase.endDate).toBeUndefined();
     }
@@ -393,15 +396,12 @@ describe.concurrent('duplicateInstance', () => {
 
     testData.trackProfileForCleanup(duplicate.id);
 
-    const instance = await db.query.processInstances.findFirst({
-      where: { id: duplicate.processInstance.id },
-    });
-    const instanceData = instance!.instanceData as DecisionInstanceData;
+    const phases = await loadInstancePhases(duplicate.processInstance.id);
 
     // Should still have phases (minimal identity only)
-    expect(instanceData.phases.length).toBeGreaterThan(0);
+    expect(phases.length).toBeGreaterThan(0);
     // But no detailed settings
-    for (const phase of instanceData.phases) {
+    for (const phase of phases) {
       expect(phase.phaseId).toBeDefined();
       expect(phase.name).toBeDefined();
       expect(phase.settingsSchema).toBeUndefined();
@@ -437,12 +437,9 @@ describe.concurrent('duplicateInstance', () => {
     });
     testData.trackProfileForCleanup(fullCopy.id);
 
-    const fullInstance = await db.query.processInstances.findFirst({
-      where: { id: fullCopy.processInstance.id },
-    });
-    const fullData = fullInstance!.instanceData as DecisionInstanceData;
+    const fullPhases = await loadInstancePhases(fullCopy.processInstance.id);
     expect(
-      fullData.phases.find((p) => p.phaseId === 'submission')?.rubricTemplate,
+      fullPhases.find((p) => p.phaseId === 'submission')?.rubricTemplate,
     ).toMatchObject({ properties: { viability: { title: 'Viability' } } });
 
     // Minimal-phase branch: identity-only phases still carry the rubric.
@@ -453,13 +450,10 @@ describe.concurrent('duplicateInstance', () => {
     });
     testData.trackProfileForCleanup(minimalCopy.id);
 
-    const minimalInstance = await db.query.processInstances.findFirst({
-      where: { id: minimalCopy.processInstance.id },
-    });
-    const minimalData = minimalInstance!.instanceData as DecisionInstanceData;
-    const minimalPhase = minimalData.phases.find(
-      (p) => p.phaseId === 'submission',
+    const minimalPhases = await loadInstancePhases(
+      minimalCopy.processInstance.id,
     );
+    const minimalPhase = minimalPhases.find((p) => p.phaseId === 'submission');
     expect(minimalPhase?.rubricTemplate).toMatchObject({
       properties: { viability: { title: 'Viability' } },
     });
@@ -498,11 +492,9 @@ describe.concurrent('duplicateInstance', () => {
     });
     testData.trackProfileForCleanup(duplicate.id);
 
-    const instance = await db.query.processInstances.findFirst({
-      where: { id: duplicate.processInstance.id },
-    });
-    const instanceData = instance!.instanceData as DecisionInstanceData;
-    for (const phase of instanceData.phases) {
+    const phases = await loadInstancePhases(duplicate.processInstance.id);
+    expect(phases.length).toBeGreaterThan(0);
+    for (const phase of phases) {
       expect(phase.rubricTemplate).toBeUndefined();
     }
   });
@@ -810,16 +802,16 @@ describe.concurrent('duplicateInstance', () => {
 
     testData.trackProfileForCleanup(duplicate.id);
 
-    const instance = await db.query.processInstances.findFirst({
-      where: { id: duplicate.processInstance.id },
-    });
-    const instanceData = instance!.instanceData as DecisionInstanceData;
+    const [{ instanceData }, phases] = await Promise.all([
+      loadInstanceData(duplicate.processInstance.id),
+      loadInstancePhases(duplicate.processInstance.id),
+    ]);
 
     expect(duplicate.processInstance.status).toBe('draft');
     // Should still have template metadata
     expect(instanceData.templateId).toBe(simpleVoting.id);
     // Should still have minimal phases
-    expect(instanceData.phases.length).toBeGreaterThan(0);
+    expect(phases.length).toBeGreaterThan(0);
     // Should NOT have config, proposalTemplate, or rubricTemplate
     expect(instanceData.config).toBeUndefined();
     expect(instanceData.proposalTemplate).toBeUndefined();

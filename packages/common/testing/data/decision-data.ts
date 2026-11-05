@@ -11,6 +11,7 @@ import {
   decisionPhoneNumbers,
   decisionProcesses,
   processInstances,
+  processPhases,
   profileRelationships,
   profileUserToAccessRoles,
   profileUsers,
@@ -24,13 +25,15 @@ import {
   ROLES,
   ZONES,
 } from '@op/db/seedData/accessControl';
-import { db, eq } from '@op/db/test';
+import { and, db, eq } from '@op/db/test';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { sql } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
 
 import type {
+  DecisionInstanceData,
   DecisionSchemaDefinition,
+  PhaseInstanceData,
   ProposalTemplateSchema,
   RubricTemplateSchema,
 } from '../../src';
@@ -339,10 +342,13 @@ export interface CreateDecisionInstanceOptions {
    * API rejects one now, but rows written before it does still hold `''`.
    */
   phaseHeadlines?: Record<string, string>;
+  /** Per-phase `description` overrides, keyed by phase id. */
+  phaseDescriptions?: Record<string, string>;
   /** Phase the instance starts in. Defaults to the schema's first phase. */
   currentStateId?: string;
   /** Rubric every review phase scores against; a review screen needs one. */
   rubricTemplate?: RubricTemplateSchema;
+  overview?: DecisionInstanceData['overview'];
 }
 
 export interface CreateDecisionInstanceResult {
@@ -374,8 +380,10 @@ export async function createDecisionInstance(
     proposalTemplate: proposalTemplateOverride,
     slug,
     phaseHeadlines,
+    phaseDescriptions,
     currentStateId,
     rubricTemplate,
+    overview,
   } = opts;
 
   const instanceSlug = slug ?? `test-instance-${randomUUID()}`;
@@ -395,6 +403,22 @@ export async function createDecisionInstance(
     throw new Error('Failed to create instance profile');
   }
 
+  const phases: PhaseInstanceData[] = schema.phases.map((phase, index) => ({
+    phaseId: phase.id,
+    name: phase.name,
+    description: phaseDescriptions?.[phase.id] ?? phase.description,
+    rules: phase.rules,
+    headline: phaseHeadlines?.[phase.id],
+    selectionPipeline:
+      'selectionPipeline' in phase ? phase.selectionPipeline : undefined,
+    startDate: new Date(
+      Date.now() + index * 7 * 24 * 60 * 60 * 1000,
+    ).toISOString(),
+    endDate: new Date(
+      Date.now() + (index + 1) * 7 * 24 * 60 * 60 * 1000,
+    ).toISOString(),
+  }));
+
   // 2. Create the process instance with proper instanceData structure
   const instanceData = {
     templateId: schema.id,
@@ -402,21 +426,7 @@ export async function createDecisionInstance(
     templateName: schema.name,
     templateDescription: schema.description,
     rubricTemplate,
-    phases: schema.phases.map((phase, index) => ({
-      phaseId: phase.id,
-      name: phase.name,
-      description: phase.description,
-      rules: phase.rules,
-      headline: phaseHeadlines?.[phase.id],
-      selectionPipeline:
-        'selectionPipeline' in phase ? phase.selectionPipeline : undefined,
-      startDate: new Date(
-        Date.now() + index * 7 * 24 * 60 * 60 * 1000,
-      ).toISOString(),
-      endDate: new Date(
-        Date.now() + (index + 1) * 7 * 24 * 60 * 60 * 1000,
-      ).toISOString(),
-    })),
+    overview,
     proposalTemplate: proposalTemplateOverride ?? {
       type: 'object' as const,
       required: ['title'],
@@ -463,6 +473,8 @@ export async function createDecisionInstance(
     throw new Error('Failed to create process instance');
   }
 
+  await insertPhaseRows({ processInstanceId: processInstance.id, phases });
+
   // 3. Grant the user access to the decision profile
   if (grantAdminAccess) {
     await grantDecisionProfileAccess({
@@ -480,6 +492,87 @@ export async function createDecisionInstance(
     name,
   };
 }
+
+// Not reconcilePhases: phaseHelpers imports the server-only db client, which Playwright cannot load.
+export async function insertPhaseRows({
+  processInstanceId,
+  phases,
+}: {
+  processInstanceId: string;
+  phases: readonly PhaseInstanceData[];
+}): Promise<void> {
+  await db.transaction(async (tx) => {
+    for (const [sortOrder, { name, ...data }] of phases.entries()) {
+      const [profile] = await tx
+        .insert(profiles)
+        .values({
+          type: EntityType.PHASE,
+          name: name?.trim() || data.phaseId,
+          slug: randomUUID().slice(0, 8),
+        })
+        .returning({ id: profiles.id });
+      if (!profile) {
+        throw new Error(`Failed to create the "${data.phaseId}" phase profile`);
+      }
+      await tx
+        .insert(processPhases)
+        .values({ processInstanceId, sortOrder, profileId: profile.id, data });
+    }
+  });
+}
+
+/** Shallow-merges `data` into one phase row's jsonb `data`. */
+export async function updatePhaseRowData({
+  processInstanceId,
+  phaseId,
+  data,
+}: {
+  processInstanceId: string;
+  phaseId: string;
+  data: Omit<PhaseInstanceData, 'phaseId' | 'name'>;
+}): Promise<void> {
+  const updated = await db
+    .update(processPhases)
+    .set({
+      data: sql`${processPhases.data} || ${JSON.stringify(data)}::jsonb`,
+    })
+    .where(
+      and(
+        eq(processPhases.processInstanceId, processInstanceId),
+        sql`${processPhases.data} ->> 'phaseId' = ${phaseId}`,
+      ),
+    )
+    .returning({ id: processPhases.id });
+
+  if (updated.length !== 1) {
+    throw new Error(`Expected one phase row for "${phaseId}"`);
+  }
+}
+
+/** Reads one phase row's `data`, or `undefined` when the instance lacks it. */
+export async function getPhaseRowData({
+  processInstanceId,
+  phaseId,
+}: {
+  processInstanceId: string;
+  phaseId: string;
+}): Promise<Partial<PhaseInstanceData> | undefined> {
+  const [row] = await db
+    .select({ data: processPhases.data })
+    .from(processPhases)
+    .where(
+      and(
+        eq(processPhases.processInstanceId, processInstanceId),
+        sql`${processPhases.data} ->> 'phaseId' = ${phaseId}`,
+      ),
+    );
+
+  return row && isPhaseRowData(row.data) ? row.data : undefined;
+}
+
+// Shape only, as the service's `readPhaseRowData` does.
+const isPhaseRowData = (value: unknown): value is Partial<PhaseInstanceData> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
 
 export interface GrantDecisionProfileAccessOptions {
   /** Profile ID to grant access to */

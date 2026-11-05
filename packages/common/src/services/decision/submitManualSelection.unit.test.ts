@@ -5,8 +5,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { assertProfileAccess, assertUserByAuthId } from '../assert';
 import { getProposalIdsForPhase } from './getProposalsForPhase';
+import { getPhases } from './instancePhases';
 import { processResults } from './processResults';
 import { runGenerateReviewAssignments } from './runGenerateReviewAssignments';
+import type { PhaseInstanceData } from './schemas/instanceData';
 import { submitManualSelection } from './submitManualSelection';
 
 // Unit test: drives submitManualSelection through a review-enabled phase and
@@ -67,6 +69,10 @@ vi.mock('./runGenerateReviewAssignments', () => ({
   runGenerateReviewAssignments: vi.fn(() => Promise.resolve()),
 }));
 
+vi.mock('./instancePhases', () => ({
+  getPhases: vi.fn(),
+}));
+
 const mockFindFirst = vi.mocked(db.query.processInstances.findFirst);
 const mockTransaction = vi.mocked(db.transaction);
 const mockAssertUserByAuthId = vi.mocked(assertUserByAuthId);
@@ -76,6 +82,7 @@ const mockProcessResults = vi.mocked(processResults);
 const mockRunGenerateReviewAssignments = vi.mocked(
   runGenerateReviewAssignments,
 );
+const mockReadPhases = vi.mocked(getPhases);
 
 const AUTH_USER_ID = 'auth-1';
 const USER_PROFILE_ID = 'user-profile-1';
@@ -87,24 +94,23 @@ const TRANSITION_HISTORY_ID = 'trans-1';
 
 const user = { id: AUTH_USER_ID } as unknown as User;
 
+const INSTANCE_DATA = { config: { reviewsPolicy: 'full_coverage' } };
+
 /**
- * instanceData with three phases so the current phase (index 1) has a previous
- * phase (manual selection requires one) and is NOT the last phase (keeps
- * processResults out of the transaction). The current phase enables reviews.
+ * Three phases so the current phase (index 1) has a previous phase (manual
+ * selection requires one) and is NOT the last phase (keeps processResults out
+ * of the transaction). `review` sets whether the current phase enables reviews.
  */
-function instanceData(review: boolean) {
-  return {
-    phases: [
-      { phaseId: PREVIOUS_PHASE_ID, name: 'Submission', rules: {} },
-      {
-        phaseId: CURRENT_PHASE_ID,
-        name: 'Review',
-        rules: { proposals: { review } },
-      },
-      { phaseId: 'phase-3', name: 'Voting', rules: {} },
-    ],
-    config: { reviewsPolicy: 'full_coverage' },
-  };
+function reviewPhases(review: boolean): PhaseInstanceData[] {
+  return [
+    { phaseId: PREVIOUS_PHASE_ID, name: 'Submission', rules: {} },
+    {
+      phaseId: CURRENT_PHASE_ID,
+      name: 'Review',
+      rules: { proposals: { review } },
+    },
+    { phaseId: 'phase-3', name: 'Voting', rules: {} },
+  ];
 }
 
 /**
@@ -151,7 +157,7 @@ function happyPathResults() {
       {
         currentStateId: CURRENT_PHASE_ID,
         status: 'published',
-        instanceData: instanceData(true),
+        instanceData: INSTANCE_DATA,
       },
     ],
     // latestRow (SELECT ... FOR UPDATE on stateTransitionHistory)
@@ -189,8 +195,9 @@ describe('submitManualSelection', () => {
       profileId: DECISION_PROFILE_ID,
       status: 'published',
       currentStateId: CURRENT_PHASE_ID,
-      instanceData: instanceData(true),
+      instanceData: INSTANCE_DATA,
     } as never);
+    mockReadPhases.mockResolvedValue(reviewPhases(true));
   });
 
   it('generates review assignments after the transaction commits', async () => {
@@ -217,7 +224,7 @@ describe('submitManualSelection', () => {
       instanceId: INSTANCE_ID,
       fromPhaseId: PREVIOUS_PHASE_ID,
       toPhaseId: CURRENT_PHASE_ID,
-      phases: instanceData(true).phases,
+      phases: reviewPhases(true),
       advanceResult: {
         conflict: false,
         transitionHistoryId: TRANSITION_HISTORY_ID,
@@ -227,26 +234,20 @@ describe('submitManualSelection', () => {
     // The regression guard: generation runs strictly after the tx commits.
     expect(callOrder).toEqual(['tx-commit', 'generate-review-assignments']);
     expect(mockProcessResults).not.toHaveBeenCalled();
+    expect(mockReadPhases).toHaveBeenCalledWith(
+      expect.objectContaining({
+        instance: { id: INSTANCE_ID, instanceData: INSTANCE_DATA },
+      }),
+    );
   });
 
   it('does not generate review assignments when the phase has no review rule', async () => {
-    mockFindFirst.mockResolvedValue({
-      profileId: DECISION_PROFILE_ID,
-      status: 'published',
-      currentStateId: CURRENT_PHASE_ID,
-      instanceData: instanceData(false),
-    } as never);
-    const results = happyPathResults();
-    results[0] = [
-      {
-        currentStateId: CURRENT_PHASE_ID,
-        status: 'published',
-        instanceData: instanceData(false),
-      },
-    ];
+    mockReadPhases.mockResolvedValue(reviewPhases(false));
     mockTransaction.mockImplementation(
       async (cb) =>
-        await (cb as (tx: unknown) => Promise<unknown>)(makeTx(results)),
+        await (cb as (tx: unknown) => Promise<unknown>)(
+          makeTx(happyPathResults()),
+        ),
     );
 
     await submitManualSelection({
@@ -268,7 +269,7 @@ describe('submitManualSelection', () => {
               {
                 currentStateId: CURRENT_PHASE_ID,
                 status: 'archived',
-                instanceData: instanceData(true),
+                instanceData: INSTANCE_DATA,
               },
             ],
           ]),
@@ -289,29 +290,11 @@ describe('submitManualSelection', () => {
 });
 
 /** Three phases with the CURRENT one last, so this call publishes results. */
-const lastPhaseInstanceData = () => ({
-  phases: [
-    { phaseId: 'phase-0', name: 'Submission', rules: {} },
-    { phaseId: PREVIOUS_PHASE_ID, name: 'Review', rules: {} },
-    { phaseId: CURRENT_PHASE_ID, name: 'Voting', rules: {} },
-  ],
-  config: { reviewsPolicy: 'full_coverage' },
-});
-
-/** The happy-path tx results with the locked instance swapped for `data`. */
-const resultsFor = (data: unknown) => {
-  const results = happyPathResults();
-  results[0] = [
-    {
-      currentStateId: CURRENT_PHASE_ID,
-      status: 'published',
-      instanceData: data,
-    },
-  ];
-  return results;
-};
-
-const lastPhaseResults = () => resultsFor(lastPhaseInstanceData());
+const lastPhases = (): PhaseInstanceData[] => [
+  { phaseId: 'phase-0', name: 'Submission', rules: {} },
+  { phaseId: PREVIOUS_PHASE_ID, name: 'Review', rules: {} },
+  { phaseId: CURRENT_PHASE_ID, name: 'Voting', rules: {} },
+];
 
 describe('submitManualSelection author notifications', () => {
   const PROCESS_RESULT_ID = 'result-1';
@@ -332,8 +315,9 @@ describe('submitManualSelection author notifications', () => {
       profileId: DECISION_PROFILE_ID,
       status: 'published',
       currentStateId: CURRENT_PHASE_ID,
-      instanceData: lastPhaseInstanceData(),
+      instanceData: INSTANCE_DATA,
     } as never);
+    mockReadPhases.mockResolvedValue(lastPhases());
   });
 
   it('stamps the messages on the transition row and announces the result row', async () => {
@@ -341,7 +325,7 @@ describe('submitManualSelection author notifications', () => {
     mockTransaction.mockImplementation(
       async (cb) =>
         await (cb as (tx: unknown) => Promise<unknown>)(
-          makeTx(lastPhaseResults(), recorded),
+          makeTx(happyPathResults(), recorded),
         ),
     );
 
@@ -373,7 +357,7 @@ describe('submitManualSelection author notifications', () => {
     mockTransaction.mockImplementation(
       async (cb) =>
         await (cb as (tx: unknown) => Promise<unknown>)(
-          makeTx(lastPhaseResults(), recorded),
+          makeTx(happyPathResults(), recorded),
         ),
     );
 
@@ -401,7 +385,7 @@ describe('submitManualSelection author notifications', () => {
     mockTransaction.mockImplementation(
       async (cb) =>
         await (cb as (tx: unknown) => Promise<unknown>)(
-          makeTx(lastPhaseResults(), recorded),
+          makeTx(happyPathResults(), recorded),
         ),
     );
 
@@ -456,25 +440,12 @@ describe('submitManualSelection author notifications', () => {
   );
 
   const mockMidProcessPhase = () => {
-    mockFindFirst.mockResolvedValue({
-      profileId: DECISION_PROFILE_ID,
-      status: 'published',
-      currentStateId: CURRENT_PHASE_ID,
-      instanceData: instanceData(false),
-    } as never);
-    const results = happyPathResults();
-    results[0] = [
-      {
-        currentStateId: CURRENT_PHASE_ID,
-        status: 'published',
-        instanceData: instanceData(false),
-      },
-    ];
+    mockReadPhases.mockResolvedValue(reviewPhases(false));
     const recorded = { set: [] as unknown[] };
     mockTransaction.mockImplementation(
       async (cb) =>
         await (cb as (tx: unknown) => Promise<unknown>)(
-          makeTx(results, recorded),
+          makeTx(happyPathResults(), recorded),
         ),
     );
     return recorded;
@@ -531,18 +502,18 @@ describe('submitManualSelection allocations', () => {
   const PROPOSAL_B = '00000000-0000-4000-8000-00000000000b';
   const PROPOSAL_C = '00000000-0000-4000-8000-00000000000c';
 
-  /** Points both the pre-check read and the locked read at `data`. */
-  const mockInstance = (data: unknown) => {
+  const mockPhases = (phases: PhaseInstanceData[]) => {
     mockFindFirst.mockResolvedValue({
       profileId: DECISION_PROFILE_ID,
       status: 'published',
       currentStateId: CURRENT_PHASE_ID,
-      instanceData: data,
+      instanceData: INSTANCE_DATA,
     } as never);
+    mockReadPhases.mockResolvedValue(phases);
     mockTransaction.mockImplementation(
       async (cb) =>
         await (cb as (tx: unknown) => Promise<unknown>)(
-          makeTx(resultsFor(data)),
+          makeTx(happyPathResults()),
         ),
     );
   };
@@ -555,7 +526,7 @@ describe('submitManualSelection allocations', () => {
     mockAssertProfileAccess.mockResolvedValue(undefined as never);
     mockGetProposalIdsForPhase.mockResolvedValue([PROPOSAL_A, PROPOSAL_B]);
     mockProcessResults.mockResolvedValue('result-1');
-    mockInstance(lastPhaseInstanceData());
+    mockPhases(lastPhases());
   });
 
   it('hands each awarded amount to the result write', async () => {
@@ -660,7 +631,7 @@ describe('submitManualSelection allocations', () => {
   });
 
   it('rejects amounts on a phase that publishes nothing', async () => {
-    mockInstance(instanceData(false));
+    mockPhases(reviewPhases(false));
 
     await expect(
       submitManualSelection({

@@ -1,8 +1,4 @@
-import {
-  type DecisionInstanceData,
-  getInstancePhases,
-  getPhases,
-} from '@op/common';
+import { type DecisionInstanceData, getPhases } from '@op/common';
 import {
   TestDecisionsDataManager,
   fourPhaseDateSchema,
@@ -119,10 +115,6 @@ export const loadTransitionLinks = async (
     ...link,
     scheduledDate: new Date(link.scheduledDate).toISOString(),
   }));
-
-// TODO: remove when instance_data.phases is dropped.
-export const loadBlobPhases = async (processInstanceId: string) =>
-  getInstancePhases((await loadInstanceData(processInstanceId)).instanceData);
 
 export const loadInstancePhases = async (processInstanceId: string) =>
   getPhases({ instance: (await loadInstanceData(processInstanceId)).instance });
