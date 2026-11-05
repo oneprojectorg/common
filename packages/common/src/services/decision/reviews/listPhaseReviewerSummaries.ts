@@ -4,6 +4,7 @@ import {
   and,
   asc,
   db,
+  desc,
   eq,
   exists,
   ilike,
@@ -257,7 +258,7 @@ function completionRatio({
 }
 
 type ReviewerRollup = Record<
-  'id' | 'name' | 'lastSubmittedAt' | 'completionRatio',
+  'id' | 'name' | 'lastSubmittedAt' | 'completionRatio' | 'assignedCount',
   SQLWrapper
 >;
 
@@ -274,25 +275,19 @@ function getReviewerOrder({
     case 'leastComplete':
     case 'mostComplete': {
       const direction = sort === 'leastComplete' ? sql`asc` : sql`desc`;
+      // On an equal ratio the reviewer with more assignments comes first.
       return {
         orderBy: [
           sql`${rollup.completionRatio} ${direction} nulls last`,
+          desc(rollup.assignedCount),
           asc(rollup.id),
         ],
         afterCursor:
           cursor && 'assignedCount' in cursor
-            ? afterNullsLast({
-                column: rollup.completionRatio,
-                value:
-                  cursor.assignedCount > 0
-                    ? completionRatio({
-                        submitted: sql`${cursor.submittedCount}::int`,
-                        assigned: sql`${cursor.assignedCount}::int`,
-                      })
-                    : null,
+            ? afterCompletionCursor({
+                rollup,
                 direction: sort === 'leastComplete' ? 'asc' : 'desc',
-                id: rollup.id,
-                cursorId: cursor.id,
+                cursor,
               })
             : undefined,
       };
@@ -350,6 +345,46 @@ function afterNullsLast({
     direction === 'asc' ? sql`${column} > ${value}` : sql`${column} < ${value}`,
     and(sql`${column} = ${value}`, sql`${id} > ${cursorId}`),
     sql`${column} is null`,
+  );
+}
+
+/** Ratio in the sort direction, then assigned count descending, then id. */
+function afterCompletionCursor({
+  rollup,
+  direction,
+  cursor,
+}: {
+  rollup: ReviewerRollup;
+  direction: 'asc' | 'desc';
+  cursor: { submittedCount: number; assignedCount: number; id: string };
+}): SQL | undefined {
+  const ratio = rollup.completionRatio;
+
+  // Every row with a null ratio has nothing assigned, so only the id is left.
+  if (cursor.assignedCount === 0) {
+    return and(sql`${ratio} is null`, sql`${rollup.id} > ${cursor.id}`);
+  }
+
+  const cursorRatio = completionRatio({
+    submitted: sql`${cursor.submittedCount}::int`,
+    assigned: sql`${cursor.assignedCount}::int`,
+  });
+
+  return or(
+    direction === 'asc'
+      ? sql`${ratio} > ${cursorRatio}`
+      : sql`${ratio} < ${cursorRatio}`,
+    and(
+      sql`${ratio} = ${cursorRatio}`,
+      or(
+        sql`${rollup.assignedCount} < ${cursor.assignedCount}`,
+        and(
+          sql`${rollup.assignedCount} = ${cursor.assignedCount}`,
+          sql`${rollup.id} > ${cursor.id}`,
+        ),
+      ),
+    ),
+    sql`${ratio} is null`,
   );
 }
 
