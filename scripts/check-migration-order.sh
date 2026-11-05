@@ -20,15 +20,19 @@ cd "$(git rev-parse --show-toplevel)"
 newest_on_base=$(git ls-tree --name-only "$base" "$MIGRATIONS_DIR/" | sed 's#.*/##' | sort | tail -1)
 newest_timestamp=${newest_on_base:0:14}
 
-# Two dots, not three: a migration that a squash merge already put on the base
-# is not an add. --no-renames so a renamed migration directory shows up as one.
-added=$(git diff --name-only --diff-filter=A --no-renames "$base" HEAD -- "$MIGRATIONS_DIR/*/migration.sql")
+# Added since the merge base, so a migration the base removed is not an add.
+# --no-renames so a renamed migration directory shows up as one.
+added=$(git diff --name-only --diff-filter=A --no-renames "$base...HEAD" -- "$MIGRATIONS_DIR/*/migration.sql")
 
 stale=()
 while IFS= read -r file; do
+  # A squash merge of a stacked PR's parent already put this one on the base.
+  if [[ -z $file ]] || git cat-file -e "$base:$file" 2>/dev/null; then
+    continue
+  fi
   name=$(basename "$(dirname "$file")")
   # Drizzle compares timestamps only, so an equal one is stale too.
-  if [[ -n $file && ! ${name:0:14} > $newest_timestamp ]]; then
+  if [[ ! ${name:0:14} > $newest_timestamp ]]; then
     stale+=("$file")
   fi
 done <<< "$added"

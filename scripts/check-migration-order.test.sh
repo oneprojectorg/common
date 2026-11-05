@@ -112,6 +112,16 @@ git checkout -q child
 run trunk || fail "migration already on the base should not count as added"
 pass "ignores migrations a squash merge already put on the base"
 
+# A migration the base removed after the branch was cut is not an add.
+git checkout -q -b base-removal trunk
+echo x > unrelated-removal.txt && git add -A && git commit -qm "unrelated"
+git checkout -q trunk
+git rm -rq services/db/migrations/20260101000000_first
+git commit -qm "remove first"
+git checkout -q base-removal
+run trunk || fail "migration removed on the base should not count as added"
+pass "ignores migrations the base removed"
+
 # Fails on a base ref that does not exist.
 run no-such-ref && fail "unknown base should have failed"
 out_has "fatal" || fail "expected the git error"
