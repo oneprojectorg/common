@@ -102,7 +102,7 @@ export const sendReviewReminder = inngest.createFunction(
         firstName: string;
         remainingCount: number;
       }> = [];
-      const reachedProfileIds = new Set<string>();
+      const withoutAddress: Array<string> = [];
 
       for (const { reviewerProfileId, remainingCount } of reviewers) {
         const addresses = selectEmailRecipients(
@@ -110,10 +110,10 @@ export const sendReviewReminder = inngest.createFunction(
         ).sort();
 
         if (addresses.length === 0) {
+          withoutAddress.push(reviewerProfileId);
           continue;
         }
 
-        reachedProfileIds.add(reviewerProfileId);
         const firstName = getReviewerFirstName(
           nameByProfileId.get(reviewerProfileId) ?? '',
         );
@@ -122,16 +122,18 @@ export const sendReviewReminder = inngest.createFunction(
           emails.push({ to, firstName, remainingCount });
         }
       }
-      const skippedProfileIds = (reviewerProfileIds ?? openProfileIds).filter(
-        (reviewerProfileId) => !reachedProfileIds.has(reviewerProfileId),
+      const openProfileIdSet = new Set(openProfileIds);
+      const withoutOpenAssignments = (reviewerProfileIds ?? []).filter(
+        (reviewerProfileId) => !openProfileIdSet.has(reviewerProfileId),
       );
 
-      if (skippedProfileIds.length > 0) {
+      if (withoutAddress.length > 0 || withoutOpenAssignments.length > 0) {
         logger.warn('Skipped reviewers with no reminder', {
           batchId,
           processInstanceId,
           phaseId,
-          reviewerProfileIds: skippedProfileIds,
+          withoutAddress,
+          withoutOpenAssignments,
         });
       }
 
