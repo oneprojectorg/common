@@ -21,10 +21,12 @@ import {
   createTestContextWithSession,
 } from '../../test/supabase-utils';
 import { createCallerFactory } from '../../trpcFactory';
+import { acceptInviteRouter } from './acceptInvite';
 import { inviteProfileUserRouter } from './invite';
 
 describe.concurrent('Profile Invite Integration Tests', () => {
   const createCaller = createCallerFactory(inviteProfileUserRouter);
+  const createAcceptCaller = createCallerFactory(acceptInviteRouter);
 
   it('should create a pending invite for existing user (not add them directly)', async ({
     task,
@@ -188,7 +190,7 @@ describe.concurrent('Profile Invite Integration Tests', () => {
     );
   });
 
-  it('should not add existing user to allowList', async ({
+  it('lets an invited existing account outside the network accept the invite', async ({
     task,
     onTestFinished,
   }) => {
@@ -197,9 +199,10 @@ describe.concurrent('Profile Invite Integration Tests', () => {
       users: { admin: 1 },
     });
 
-    // Create a standalone user to be invited
-    const standaloneUser = await testData.createStandaloneUser();
-    testData.trackProfileInvite(standaloneUser.email, profile.id);
+    const standaloneUser = await testData.createStandaloneUser('example.com');
+    const email = standaloneUser.email.toLowerCase();
+    testData.trackProfileInvite(email, profile.id);
+    testData.trackAllowListEmail(email);
 
     const { session } = await createIsolatedSession(adminUser.email);
     const caller = createCaller(await createTestContextWithSession(session));
@@ -209,12 +212,65 @@ describe.concurrent('Profile Invite Integration Tests', () => {
       profileId: profile.id,
     });
 
-    // Verify existing user was NOT added to allowList (they already have an account)
-    const allowListEntry = await db.query.allowList.findFirst({
-      where: { email: standaloneUser.email.toLowerCase() },
+    const invite = await db.query.profileInvites.findFirst({
+      where: { email, profileId: profile.id },
     });
 
-    expect(allowListEntry).toBeUndefined();
+    if (!invite) {
+      throw new Error('Expected the invite to exist');
+    }
+
+    const { session: inviteeSession } = await createIsolatedSession(
+      standaloneUser.email,
+    );
+    const acceptCaller = createAcceptCaller(
+      await createTestContextWithSession(inviteeSession),
+    );
+
+    const result = await acceptCaller.acceptInvite({ inviteId: invite.id });
+
+    expect(result.profileId).toBe(profile.id);
+
+    const profileUser = await db.query.profileUsers.findFirst({
+      where: { profileId: profile.id, authUserId: standaloneUser.authUserId },
+    });
+
+    expect(profileUser).toBeDefined();
+
+    const allowListEntry = await db.query.allowList.findFirst({
+      where: { email },
+    });
+
+    expect(allowListEntry).toBeDefined();
+  });
+
+  it('does not duplicate an allow-list row for an existing account already on it', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestProfileUserDataManager(task.id, onTestFinished);
+    const { profile, adminUser } = await testData.createProfile({
+      users: { admin: 1 },
+    });
+
+    const standaloneUser = await testData.createStandaloneUser('example.com');
+    const email = standaloneUser.email.toLowerCase();
+    testData.trackProfileInvite(email, profile.id);
+    await db.insert(allowList).values({ email });
+
+    const { session } = await createIsolatedSession(adminUser.email);
+    const caller = createCaller(await createTestContextWithSession(session));
+
+    await caller.invite({
+      invitations: [{ email: standaloneUser.email, roleId: ROLES.MEMBER.id }],
+      profileId: profile.id,
+    });
+
+    const allowListEntries = await db.query.allowList.findMany({
+      where: { email },
+    });
+
+    expect(allowListEntries).toHaveLength(1);
   });
 
   it('should handle multiple invitations with mixed results', async ({

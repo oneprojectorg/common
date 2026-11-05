@@ -271,11 +271,14 @@ export class TestProfileUserDataManager {
    */
   trackAllowListEmail(email: string): void {
     this.ensureCleanupRegistered();
-    this.createdAllowListEmails.push(email.toLowerCase());
+    const normalizedEmail = email.toLowerCase();
+    if (!this.createdAllowListEmails.includes(normalizedEmail)) {
+      this.createdAllowListEmails.push(normalizedEmail);
+    }
   }
 
   /**
-   * Tracks a profile invite for cleanup.
+   * Tracks a profile invite, and the allowList row an invite can create, for cleanup.
    * Call this when testing invite flows that create profileInvites records.
    */
   trackProfileInvite(email: string, profileId: string): void {
@@ -284,6 +287,7 @@ export class TestProfileUserDataManager {
       email: email.toLowerCase(),
       profileId,
     });
+    this.trackAllowListEmail(email);
   }
 
   /**
