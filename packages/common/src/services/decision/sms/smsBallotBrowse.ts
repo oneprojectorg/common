@@ -14,11 +14,11 @@ import {
   type BallotProposalInfo,
   getBallotProposalByCode,
 } from '../getBallotProposalByCode';
+import { resolvePhases } from '../instancePhases';
 import {
   type BallotProposalListItem,
   listBallotProposals,
 } from '../listBallotProposals';
-import { getInstancePhases } from '../schemas/instanceData';
 import { getInstanceCurrentPhase } from '../utils/instance';
 import { getVoterEnrolment, isVotingPhase } from '../utils/phaseSettings';
 import { findVoterEnrolment, isVoterEnrolled } from '../voterEnrolment';
@@ -40,7 +40,7 @@ export const loadBallotScope = async ({
   authUserId: string;
   instanceId: string;
 }) => {
-  const instance = await db.query.processInstances.findFirst({
+  const row = await db.query.processInstances.findFirst({
     where: { id: instanceId },
     columns: {
       id: true,
@@ -54,18 +54,21 @@ export const loadBallotScope = async ({
   });
 
   if (
-    !instance?.profile ||
-    !instance.profileId ||
-    instance.status !== ProcessStatus.PUBLISHED
+    !row?.profile ||
+    !row.profileId ||
+    row.status !== ProcessStatus.PUBLISHED
   ) {
     throw new NotFoundError('Process instance', instanceId);
   }
+
+  const { profile, profileId } = row;
+  const instance = await resolvePhases({ instance: row });
 
   const [enrolment] = await Promise.all([
     findVoterEnrolment({ processInstanceId: instanceId, authUserId }),
     assertProfileAccess({
       user: { id: authUserId },
-      profileId: instance.profileId,
+      profileId,
       permissions: [
         { decisions: permission.ADMIN },
         { decisions: permission.READ },
@@ -74,10 +77,7 @@ export const loadBallotScope = async ({
     }),
   ]);
 
-  const phase = getInstanceCurrentPhase({
-    currentStateId: instance.currentStateId,
-    instanceData: { phases: getInstancePhases(instance.instanceData) },
-  });
+  const phase = getInstanceCurrentPhase(instance);
 
   if (!phase || !isVotingPhase(phase)) {
     throw new ValidationError('Voting is not open for this decision');
@@ -101,7 +101,7 @@ export const loadBallotScope = async ({
 
   return {
     instance,
-    decisionName: instance.profile.name,
+    decisionName: profile.name,
     taxonomyTermId,
     termLabel: term?.label ?? null,
   };
