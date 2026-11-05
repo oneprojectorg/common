@@ -1,4 +1,3 @@
-import { areFeatureFlagsForcedOn } from '@op/analytics/client-utils';
 import { type DbClient, db as defaultDb } from '@op/db/client';
 import { logger } from '@op/logging';
 
@@ -34,30 +33,11 @@ export type WithProfilePhases<
 const NO_ROWS_MESSAGE =
   'Decision has no phase rows; reading instanceData.phases';
 
-// The flag read is a Redis round trip on every decision read; the value is global.
-const FLAG_MEMO_MS = 15_000;
-let flagMemo: { value: Promise<boolean>; expiresAt: number } | undefined;
-
-export const isPhasesFromRowsEnabled = (): Promise<boolean> => {
-  if (areFeatureFlagsForcedOn()) {
-    return Promise.resolve(true);
-  }
-  const now = Date.now();
-  if (!flagMemo || flagMemo.expiresAt <= now) {
-    const value = isServerFeatureEnabled({
-      key: PHASES_FROM_ROWS_FLAG,
-      distinctId: PHASES_FROM_ROWS_FLAG,
-    });
-    const memo = { value, expiresAt: now + FLAG_MEMO_MS };
-    flagMemo = memo;
-    value.catch(() => {
-      if (flagMemo === memo) {
-        flagMemo = undefined;
-      }
-    });
-  }
-  return flagMemo.value;
-};
+export const isPhasesFromRowsEnabled = (): Promise<boolean> =>
+  isServerFeatureEnabled({
+    key: PHASES_FROM_ROWS_FLAG,
+    distinctId: PHASES_FROM_ROWS_FLAG,
+  });
 
 export const getPhases = async ({
   instance,
