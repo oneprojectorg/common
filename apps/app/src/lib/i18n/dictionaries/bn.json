@@ -1056,6 +1056,7 @@
       "remindersSendingToast": "{count, plural, one {# জন পর্যালোচককে রিমাইন্ডার পাঠানো হচ্ছে} other {# জন পর্যালোচককে রিমাইন্ডার পাঠানো হচ্ছে}}",
       "reminderSendingDescription": "<bdi>{organization}</bdi>-এর পক্ষ থেকে ইমেইলে।",
       "reminderRecipientsLoadError": "মনে করিয়ে দেওয়ার পর্যালোচকদের লোড করা যায়নি।",
+      "reminderRecipientsCapped": "শুধু প্রথম {count} জন পর্যালোচক অন্তর্ভুক্ত। বাকিদের কাছে পৌঁছাতে ফিল্টার সংকীর্ণ করুন।",
       "assignHotkeyHint": "{assign}টি নির্ধারণ করতে · {unassign}টি বাতিল করতে",
       "importIdsNotFoundCount": "{count, plural, one {#টি আইডি পাওয়া যায়নি} other {#টি আইডি পাওয়া যায়নি}}",
       "importProposalsMatchedCount": "{count, plural, one {#টি প্রস্তাবনা মিলেছে} other {#টি প্রস্তাবনা মিলেছে}}",

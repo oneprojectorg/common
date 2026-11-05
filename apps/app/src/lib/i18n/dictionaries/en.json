@@ -1056,6 +1056,7 @@
       "remindersSendingToast": "{count, plural, one {Sending reminders to # reviewer} other {Sending reminders to # reviewers}}",
       "reminderSendingDescription": "By email from <bdi>{organization}</bdi>.",
       "reminderRecipientsLoadError": "Could not load the reviewers to remind.",
+      "reminderRecipientsCapped": "Only the first {count} reviewers are included. Narrow the filters to reach the rest.",
       "assignHotkeyHint": "{assign} to assign · {unassign} to unassign",
       "importIdsNotFoundCount": "{count, plural, one {# ID not found} other {# IDs not found}}",
       "importProposalsMatchedCount": "{count, plural, one {# proposal matched} other {# proposals matched}}",

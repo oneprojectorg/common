@@ -4,6 +4,7 @@ import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { formatDate } from '@/utils/formatting';
 import { trpc } from '@op/api/client';
 import {
+  REVIEW_REMINDER_MAX_RECIPIENTS,
   REVIEW_REMINDER_MESSAGE_MAX_LENGTH,
   type ReviewReminderToken,
   type ReviewerStatus,
@@ -320,6 +321,14 @@ function ReminderForm({
               <BatchRecipients recipients={audience.recipients} />
             )}
           </div>
+          {audience.kind === 'batch' &&
+          audience.recipients.length >= REVIEW_REMINDER_MAX_RECIPIENTS ? (
+            <FieldDescription>
+              {t('decisions.review.reminderRecipientsCapped', {
+                count: REVIEW_REMINDER_MAX_RECIPIENTS,
+              })}
+            </FieldDescription>
+          ) : null}
         </Field>
 
         <Field>

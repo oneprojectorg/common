@@ -1056,6 +1056,7 @@
       "remindersSendingToast": "{count, plural, one {Xusuusin ayaa loo dirayaa # dib-u-eege} other {Xusuusin ayaa loo dirayaa # dib-u-eegayaal}}",
       "reminderSendingDescription": "Iimayl ahaan ka yimid <bdi>{organization}</bdi>.",
       "reminderRecipientsLoadError": "Lama soo dejin karin dib-u-eegayaasha la xusuusinayo.",
+      "reminderRecipientsCapped": "Kaliya {count}-ka dib-u-eegayaasha ugu horreeya ayaa ku jira. Cidhiidhi shaandhooyinka si aad u gaadho inta kale.",
       "assignHotkeyHint": "{assign} in la qoondeeyo · {unassign} in laga qaado",
       "importIdsNotFoundCount": "{count, plural, one {# ID lama helin} other {# ID lama helin}}",
       "importProposalsMatchedCount": "{count, plural, one {# soo jeedin baa la helay} other {# soo jeedimo baa la helay}}",

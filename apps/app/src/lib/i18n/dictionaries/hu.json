@@ -1056,6 +1056,7 @@
       "remindersSendingToast": "{count, plural, one {Emlékeztetők küldése # értékelőnek} other {Emlékeztetők küldése # értékelőnek}}",
       "reminderSendingDescription": "E-mailben, feladó: <bdi>{organization}</bdi>.",
       "reminderRecipientsLoadError": "Nem sikerült betölteni az emlékeztetendő értékelőket.",
+      "reminderRecipientsCapped": "Csak az első {count} bíráló szerepel. Szűkítse a szűrőket a többiek eléréséhez.",
       "assignHotkeyHint": "{assign} kiosztásra · {unassign} visszavonásra",
       "importIdsNotFoundCount": "{count, plural, one {# azonosító nem található} other {# azonosító nem található}}",
       "importProposalsMatchedCount": "{count, plural, one {# javaslat egyezik} other {# javaslat egyezik}}",

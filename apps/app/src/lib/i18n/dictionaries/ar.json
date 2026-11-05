@@ -1056,6 +1056,7 @@
       "remindersSendingToast": "{count, plural, one {جارٍ إرسال تذكير إلى مراجع واحد} other {جارٍ إرسال تذكيرات إلى # مراجعين}}",
       "reminderSendingDescription": "عبر البريد الإلكتروني من <bdi>{organization}</bdi>.",
       "reminderRecipientsLoadError": "تعذّر تحميل المراجعين المطلوب تذكيرهم.",
+      "reminderRecipientsCapped": "يشمل هذا أول {count} مراجع فقط. ضيّق عوامل التصفية للوصول إلى البقية.",
       "assignHotkeyHint": "{assign} للتعيين · {unassign} لإلغاء التعيين",
       "importIdsNotFoundCount": "{count, plural, one {معرّف واحد غير موجود} other {# معرّفات غير موجودة}}",
       "importProposalsMatchedCount": "{count, plural, one {تم مطابقة مقترح واحد} other {تم مطابقة # مقترحات}}",

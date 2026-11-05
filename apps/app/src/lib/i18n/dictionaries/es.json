@@ -1056,6 +1056,7 @@
       "remindersSendingToast": "{count, plural, one {Enviando recordatorios a # revisor} other {Enviando recordatorios a # revisores}}",
       "reminderSendingDescription": "Por correo electrónico desde <bdi>{organization}</bdi>.",
       "reminderRecipientsLoadError": "No se pudieron cargar los revisores a quienes recordar.",
+      "reminderRecipientsCapped": "Solo se incluyen los primeros {count} revisores. Acota los filtros para llegar al resto.",
       "assignHotkeyHint": "{assign} para asignar · {unassign} para quitar",
       "importIdsNotFoundCount": "{count, plural, one {# ID no encontrado} other {# ID no encontrados}}",
       "importProposalsMatchedCount": "{count, plural, one {# propuesta encontrada} other {# propuestas encontradas}}",

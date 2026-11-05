@@ -1056,6 +1056,7 @@
       "remindersSendingToast": "{count, plural, one {Envoi de rappels à # évaluateur} other {Envoi de rappels à # évaluateurs}}",
       "reminderSendingDescription": "Par e-mail de la part de <bdi>{organization}</bdi>.",
       "reminderRecipientsLoadError": "Impossible de charger les évaluateurs à relancer.",
+      "reminderRecipientsCapped": "Seuls les {count} premiers réviseurs sont inclus. Affinez les filtres pour atteindre les autres.",
       "assignHotkeyHint": "{assign} à attribuer · {unassign} à retirer",
       "importIdsNotFoundCount": "{count, plural, one {# ID introuvable} other {# ID introuvables}}",
       "importProposalsMatchedCount": "{count, plural, one {# proposition trouvée} other {# propositions trouvées}}",
