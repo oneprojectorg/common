@@ -103,6 +103,7 @@ pass "rejects a migration with the newest timestamp on the base"
 
 # Fails on a base ref that does not exist.
 run no-such-ref && fail "unknown base should have failed"
+out_has "fatal" || fail "expected the git error"
 pass "rejects an unknown base ref"
 
 # Rejects a missing base ref.

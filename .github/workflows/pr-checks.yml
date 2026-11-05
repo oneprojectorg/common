@@ -102,6 +102,8 @@ jobs:
     name: Migration order
     runs-on: ubuntu-latest
     steps:
+      # No secrets, a read-only token, and no persisted credentials or cache.
+      # nosemgrep: yaml.github-actions.security.pull-request-target-code-checkout.pull-request-target-code-checkout
       - name: Checkout repository
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
