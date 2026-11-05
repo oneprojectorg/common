@@ -4,7 +4,6 @@ export const REVIEW_REMINDER_TOKENS = ['firstName', 'proposalsLeft'] as const;
 
 export type ReviewReminderToken = (typeof REVIEW_REMINDER_TOKENS)[number];
 
-/** The first word of the profile name. */
 export function getReviewerFirstName(name: string): string {
   const trimmed = name.trim();
   const [firstWord] = trimmed.split(/\s+/);

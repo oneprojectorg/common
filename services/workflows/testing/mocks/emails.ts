@@ -5,7 +5,6 @@ export interface RecordedEmail {
   to: string;
   from: string | undefined;
   subject: string;
-  /** The rendered body as plain text. */
   text: string;
   idempotencyKeyPrefix: string | undefined;
 }

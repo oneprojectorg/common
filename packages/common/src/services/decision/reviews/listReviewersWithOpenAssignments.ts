@@ -10,11 +10,6 @@ export interface ReviewerWithOpenAssignments {
   remainingCount: number;
 }
 
-/**
- * Reviewers with open assignments in one instance and phase, in profile id
- * order. When `reviewerProfileIds` is given, only those reviewers count. The
- * caller decides how to reach them.
- */
 export async function listReviewersWithOpenAssignments({
   processInstanceId,
   phaseId,
