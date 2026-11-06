@@ -23,41 +23,45 @@ export interface PhaseEndDateChange {
 
 type PhaseInstanceData = DecisionInstanceData['phases'][number];
 
-export const hasInstanceDataUpdate = ({
+export const hasNonPhaseUpdate = ({
   config,
   overview,
-  phases,
   proposalTemplate,
   rubricTemplate,
 }: InstanceDataUpdate): boolean =>
   config !== undefined ||
   overview !== undefined ||
-  (phases !== undefined && phases.length > 0) ||
   proposalTemplate !== undefined ||
   rubricTemplate !== undefined;
+
+export const hasPhaseUpdates = (
+  update: InstanceDataUpdate,
+): update is InstanceDataUpdate & { phases: PhaseOverride[] } =>
+  update.phases !== undefined && update.phases.length > 0;
 
 /**
  * Applies an admin update to stored instance data without touching the
  * database. `instanceData` is set when a non-phase field changes, `phases`
- * when the update lists any.
+ * when the update lists any; phases merge onto `existingPhases`.
  */
 export function getUpdatedInstanceData({
   existing,
+  existingPhases,
   update,
 }: {
   existing: DecisionInstanceData;
+  existingPhases: PhaseInstanceData[];
   update: InstanceDataUpdate;
 }): {
   instanceData?: DecisionInstanceData;
   phases?: PhaseInstanceData[];
   phaseEndDateChanges: PhaseEndDateChange[];
 } {
-  const { config, overview, phases, proposalTemplate, rubricTemplate } = update;
-  const hasPhaseUpdates = phases !== undefined && phases.length > 0;
-  const { phases: _phases, ...nonPhaseUpdate } = update;
+  const { config, overview, proposalTemplate, rubricTemplate } = update;
+  const phases = hasPhaseUpdates(update) ? update.phases : undefined;
 
   return {
-    ...(hasInstanceDataUpdate(nonPhaseUpdate) && {
+    ...(hasNonPhaseUpdate(update) && {
       instanceData: {
         ...existing,
         ...(config !== undefined && {
@@ -73,9 +77,9 @@ export function getUpdatedInstanceData({
         ...(rubricTemplate !== undefined && { rubricTemplate }),
       },
     }),
-    ...(hasPhaseUpdates && { phases: mergePhases(existing.phases, phases) }),
-    phaseEndDateChanges: hasPhaseUpdates
-      ? getPhaseEndDateChanges(existing.phases, phases)
+    ...(phases && { phases: mergePhases(existingPhases, phases) }),
+    phaseEndDateChanges: phases
+      ? getPhaseEndDateChanges(existingPhases, phases)
       : [],
   };
 }
