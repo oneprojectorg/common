@@ -6,7 +6,7 @@ import { NotFoundError } from '../../../utils';
 import { assertProfileAccess } from '../../assert';
 import { formatUnitAmount, getFieldUnit } from '../fieldUnit';
 import { getDecisionBySlug } from '../getDecisionBySlug';
-import { type WithPhases, resolvePhases } from '../instancePhases';
+import { type InstanceWithPhases, resolvePhases } from '../instancePhases';
 import { resolveProposalTemplate } from '../resolveProposalTemplate';
 import type { VoterEnrolmentRule } from '../schemas/types';
 import { getInstanceCurrentPhase } from '../utils/instance';
@@ -26,7 +26,7 @@ export interface SmsVotingDecision {
   budget: string | null;
 }
 
-type VotingInstance = WithPhases<{
+type VotingInstance = InstanceWithPhases<{
   id: string;
   instanceData: unknown;
   currentStateId: string | null;
