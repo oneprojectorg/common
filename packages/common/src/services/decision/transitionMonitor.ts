@@ -10,7 +10,11 @@ import pMap from 'p-map';
 import { CommonError } from '../../utils';
 import { advancePhase } from './advancePhase';
 import { invalidateDecisionInstance } from './decisionCache';
-import { type InstanceWithPhases, resolvePhasesForAll } from './instancePhases';
+import {
+  type InstanceWithPhases,
+  resolvePhases,
+  resolvePhasesForAll,
+} from './instancePhases';
 import { onPhaseAdvanced } from './onPhaseAdvanced';
 
 export interface ProcessDecisionsTransitionsResult {
@@ -174,7 +178,7 @@ async function advanceInstanceTransitions({
   result: ProcessDecisionsTransitionsResult;
 }): Promise<void> {
   const processInstanceId = instance.id;
-  const { phases } = instance;
+  let current = instance;
 
   for (const transition of transitions) {
     try {
@@ -184,7 +188,9 @@ async function advanceInstanceTransitions({
       const fromPhaseId = transition.fromStateId;
 
       // Only auto-advance phases with date-based advancement.
-      const departingPhase = phases.find((p) => p.phaseId === fromPhaseId);
+      const departingPhase = current.phases.find(
+        (p) => p.phaseId === fromPhaseId,
+      );
       if (departingPhase?.rules?.advancement?.method !== 'date') {
         continue;
       }
@@ -192,7 +198,7 @@ async function advanceInstanceTransitions({
       const advanceResult = await db.transaction(async (tx) =>
         advancePhase({
           db: tx,
-          instance,
+          instance: current,
           fromPhaseId,
           toPhaseId: transition.toStateId,
           triggeredByProfileId: null,
@@ -215,9 +221,17 @@ async function advanceInstanceTransitions({
         instanceId: processInstanceId,
         fromPhaseId,
         toPhaseId: transition.toStateId,
-        phases,
+        phases: current.phases,
         advanceResult,
       });
+
+      // Re-read so the next iteration sees rules saved during this advance.
+      const refreshed = await db.query.processInstances.findFirst({
+        where: { id: processInstanceId },
+      });
+      if (refreshed) {
+        current = await resolvePhases({ instance: refreshed });
+      }
     } catch (error) {
       result.failed++;
       result.errors.push({
