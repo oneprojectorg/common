@@ -28,7 +28,7 @@ import { ProposalPreview, toPreviewEngagement } from './ProposalPreview';
 import { ReportProposalDialog } from './ReportProposalDialog';
 import { TranslateLink } from './TranslateLink';
 import {
-  type ProposalRoute,
+  type ProposalRouteBase,
   decisionRootHref,
   proposalHref,
 } from './proposalHrefs';
@@ -36,7 +36,7 @@ import { useCommentsAllowed } from './useCommentsAllowed';
 import { useLiveProposalDocument } from './useLiveProposalDocument';
 import { useTranslateProposal } from './useTranslateProposal';
 
-export type ProposalSheetRoute = Omit<ProposalRoute, 'profileId'>;
+export type ProposalSheetRoute = ProposalRouteBase;
 
 /**
  * A proposal read in a panel over the page it was opened from, so the list's
