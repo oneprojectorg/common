@@ -1231,6 +1231,8 @@
       "reviewProgressUnavailable": "تقدم المراجعة غير متاح",
       "reviewProgressHeading": "تقدم المراجعة",
       "lastSubmissionLabel": "آخر إرسال",
+      "startedLabel": "بدأ في",
+      "notStartedLabel": "لم يبدأ",
       "reviewsSubmittedLabel": "المراجعات المُرسلة",
       "reviewsSubmittedFigure": "{submitted}<total>/{assigned}</total>",
       "moreActionsForProposal": "مزيد من الإجراءات لـ {title}",

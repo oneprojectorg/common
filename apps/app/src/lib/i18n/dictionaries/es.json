@@ -1231,6 +1231,8 @@
       "reviewProgressUnavailable": "Progreso de la revisión no disponible",
       "reviewProgressHeading": "Progreso de la revisión",
       "lastSubmissionLabel": "Último envío",
+      "startedLabel": "Iniciado",
+      "notStartedLabel": "Sin iniciar",
       "reviewsSubmittedLabel": "Revisiones enviadas",
       "reviewsSubmittedFigure": "{submitted}<total> / {assigned}</total>",
       "moreActionsForProposal": "Más acciones para {title}",

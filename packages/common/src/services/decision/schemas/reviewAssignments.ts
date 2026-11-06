@@ -112,6 +112,7 @@ export const reviewerAssignmentsSchema = reviewAssignmentListSchema.extend({
   draftCount: z.number(),
   remainingCount: z.number().int(),
   lastSubmittedAt: z.string().nullable(),
+  startedAt: z.string().nullable(),
 });
 
 export type ReviewerAssignments = z.infer<typeof reviewerAssignmentsSchema>;

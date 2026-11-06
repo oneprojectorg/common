@@ -288,6 +288,7 @@ function ReviewerStats({ reviewer }: { reviewer: ReviewerAssignments }) {
   const lastSubmittedAt = reviewer.lastSubmittedAt
     ? new Date(reviewer.lastSubmittedAt)
     : null;
+  const startedAt = reviewer.startedAt ? new Date(reviewer.startedAt) : null;
 
   return (
     <div
@@ -302,6 +303,15 @@ function ReviewerStats({ reviewer }: { reviewer: ReviewerAssignments }) {
             <span className="text-muted-foreground">{chunks}</span>
           ),
         })}
+      </StatCard>
+      <StatCard
+        label={
+          startedAt
+            ? t('decisions.review.startedLabel')
+            : t('decisions.review.notStartedLabel')
+        }
+      >
+        {startedAt ? format.dateTime(startedAt, { dateStyle: 'medium' }) : '—'}
       </StatCard>
       <StatCard label={t('decisions.review.lastSubmissionLabel')}>
         {lastSubmittedAt

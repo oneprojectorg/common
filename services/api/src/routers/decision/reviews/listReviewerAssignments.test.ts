@@ -150,13 +150,13 @@ describe.concurrent('decision.listReviewerAssignments', () => {
     });
 
     const submittedAt = new Date().toISOString();
-    await createProposalReview({
+    const submittedReview = await createProposalReview({
       assignmentId: submitted.assignment.id,
       state: ProposalReviewState.SUBMITTED,
       reviewData: { answers: {}, rationales: {} },
       submittedAt,
     });
-    await createProposalReview({
+    const draftReview = await createProposalReview({
       assignmentId: draft.assignment.id,
       state: ProposalReviewState.DRAFT,
       reviewData: { answers: {}, rationales: {} },
@@ -178,6 +178,13 @@ describe.concurrent('decision.listReviewerAssignments', () => {
     // Postgres' own text form, so compare the instant, not the string.
     expect(new Date(result.lastSubmittedAt ?? '').toISOString()).toBe(
       submittedAt,
+    );
+    const earliestReviewCreatedAt = Math.min(
+      new Date(submittedReview.createdAt ?? '').getTime(),
+      new Date(draftReview.createdAt ?? '').getTime(),
+    );
+    expect(new Date(result.startedAt ?? '').getTime()).toBe(
+      earliestReviewCreatedAt,
     );
     // The draft and the untouched one are open; completed and returned are not.
     expect(result.remainingCount).toBe(2);
@@ -221,6 +228,7 @@ describe.concurrent('decision.listReviewerAssignments', () => {
     expect(page1.items).toHaveLength(2);
     expect(page1.total).toBe(3);
     expect(page1.assignedCount).toBe(3);
+    expect(page1.startedAt).toBeNull();
     expect(page1.next).not.toBeNull();
 
     const page2 = await adminCaller.decision.listReviewerAssignments({
