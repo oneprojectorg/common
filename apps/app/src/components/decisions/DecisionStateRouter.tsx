@@ -11,6 +11,7 @@ import { ReviewPage } from './pages/ReviewPage';
 import { ReviewSelectionPage } from './pages/ReviewSelectionPage';
 import { StandardDecisionPage } from './pages/StandardDecisionPage';
 import { VotingPage } from './pages/VotingPage';
+import { getPendingSelectionSourcePhase } from './pendingSelection';
 
 // Sticky filter-bar pin offset (px) for the decision-view layout — the clearance
 // below the scroll container's top for the floating Overview/Current toggle that
@@ -53,8 +54,11 @@ function DecisionStateRouterNew({
     // When the *previous* phase was a review phase, an admin can advance
     // proposals using rich review aggregates — that's the ReviewSelection view.
     // Everyone else falls back to the generic manual-selection prompt.
-    const currentIdx = phases.findIndex((p) => p.phaseId === currentStateId);
-    const previousPhase = currentIdx > 0 ? phases[currentIdx - 1] : null;
+    const previousPhase = getPendingSelectionSourcePhase({
+      phases,
+      currentPhaseId: currentStateId,
+      selectionsAreConfirmed: instance.selectionsAreConfirmed,
+    });
     const previousWasReview = !!previousPhase && isReviewPhase(previousPhase);
 
     if (previousWasReview && previousPhase && isAdmin) {

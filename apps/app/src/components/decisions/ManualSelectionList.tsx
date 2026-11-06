@@ -6,7 +6,8 @@ import type {
   ProposalAllocation,
   ResultNotificationMessages,
 } from '@op/common/client';
-import { templateCollectsBudget } from '@op/common/client';
+import { getProcessBudget, templateCollectsBudget } from '@op/common/client';
+import { Alert, AlertAction, AlertDescription } from '@op/sense/Alert';
 import { Button } from '@op/sense/Button';
 import {
   Empty,
@@ -31,7 +32,9 @@ import {
 import { ProposalCardDialogProvider } from './ProposalCardDialogContext';
 import { SelectableProposalsTable } from './SelectableProposalsTable';
 import { SelectionFooter } from './SelectionFooter';
+import { useManualAwardDraft } from './useManualAwardDraft';
 import { useManualSelection } from './useManualSelection';
+import { useProposalAwards } from './useProposalAwards';
 
 interface ManualSelectionListProps {
   instanceId: string;
@@ -89,7 +92,20 @@ export const ManualSelectionList = ({
     instanceId,
     instance.currentStateId,
   );
+  const awardDraft = useManualAwardDraft(instanceId, instance.currentStateId);
+  const [, setAwardDraft] = awardDraft;
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+
+  // No budget key in the instance's proposal template means the process
+  // collects no budgets, so the column would only ever show "—".
+  const showBudget = templateCollectsBudget(
+    instance.instanceData?.proposalTemplate,
+  );
+  const awardsAmounts = isFinalPhase && showBudget;
+  const processBudget = getProcessBudget({
+    phases: instance.instanceData?.phases,
+    currentPhaseId: instance.currentStateId,
+  });
 
   // Resolve selected ids → proposals via a cache that accumulates across
   // refetches, so picks survive filter/sort changes that exclude them.
@@ -137,6 +153,21 @@ export const ManualSelectionList = ({
     [selectedProposals],
   );
 
+  const awardProposals = useMemo(() => {
+    const listed = new Set(candidates?.map((proposal) => proposal.id));
+    return [
+      ...(candidates ?? []),
+      ...selectedProposals.filter((proposal) => !listed.has(proposal.id)),
+    ];
+  }, [candidates, selectedProposals]);
+  const awards = useProposalAwards({
+    proposals: awardProposals,
+    selectedIds: confirmIds,
+    isEnabled: awardsAmounts,
+    processBudget,
+    draft: awardDraft,
+  });
+
   const submitMutation = trpc.decision.submitManualSelection.useMutation({
     onSuccess: () => {
       // Channel-based invalidation flips selectionsAreConfirmed in the client
@@ -145,6 +176,7 @@ export const ManualSelectionList = ({
       // ResultsPage. Add the resultsLive flag to the URL so the dialog mounted
       // on ResultsPage opens on this admin's machine only.
       setSelectedIds([]);
+      setAwardDraft({});
       setIsConfirmOpen(false);
       if (isFinalPhase) {
         const params = new URLSearchParams(window.location.search);
@@ -266,11 +298,11 @@ export const ManualSelectionList = ({
   };
 
   const numSelected = confirmIds.length;
-  // No budget key in the instance's proposal template means the process
-  // collects no budgets, so the column would only ever show "—".
-  const showBudget = templateCollectsBudget(
-    instance.instanceData?.proposalTemplate,
-  );
+  const listedIds = new Set(candidates.map((proposal) => proposal.id));
+  const hiddenSelectedCount =
+    awardsAmounts && categoryId
+      ? confirmIds.filter((id) => !listedIds.has(id)).length
+      : 0;
   const phases = instance.instanceData?.phases ?? [];
   const currentPhaseIndex = phases.findIndex(
     (p) => p.phaseId === instance.currentStateId,
@@ -289,6 +321,26 @@ export const ManualSelectionList = ({
           onChange={handleToolbarChange}
           pinOffset={pinOffset}
         />
+
+        {hiddenSelectedCount > 0 ? (
+          <Alert variant="warning">
+            <LuTriangleAlert aria-hidden />
+            <AlertDescription>
+              {t('decisions.review.hiddenSelectedWarning', {
+                count: hiddenSelectedCount,
+              })}
+            </AlertDescription>
+            <AlertAction>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setSelectedCategory('all-categories')}
+              >
+                {t('decisions.review.showAllProposalsAction')}
+              </Button>
+            </AlertAction>
+          </Alert>
+        ) : null}
 
         {candidates.length === 0 ? (
           <Empty>
@@ -312,6 +364,7 @@ export const ManualSelectionList = ({
             showVotes={isFinalPhase}
             showBudget={showBudget}
             canEditProposals={!isFinalPhase}
+            awards={awardsAmounts ? awards : undefined}
           />
         )}
 
@@ -326,6 +379,8 @@ export const ManualSelectionList = ({
           onConfirmOpenChange={handleConfirmDialogOpenChange}
           onConfirm={handleConfirmSelection}
           isSubmitting={submitMutation.isPending}
+          awards={awardsAmounts ? awards : undefined}
+          processBudget={processBudget}
         />
       </div>
     </ProposalCardDialogProvider>
