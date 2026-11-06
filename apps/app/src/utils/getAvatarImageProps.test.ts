@@ -12,7 +12,7 @@ describe.concurrent('getAvatarImageProps', () => {
   it('serves the avatar through the image optimizer at 1x and 2x', () => {
     const { src, srcSet } = getAvatarImageProps('/assets/avatar.png');
 
-    expect(src).toMatch(/^\/_next\/image\?url=%2Fassets%2Favatar\.png&w=256/);
-    expect(srcSet).toMatch(/w=128&q=\d+ 1x, .*w=256&q=\d+ 2x$/);
+    expect(src).toMatch(/^\/_next\/image\?url=%2Fassets%2Favatar\.png&w=640/);
+    expect(srcSet).toMatch(/w=256&q=\d+ 1x, .*w=640&q=\d+ 2x$/);
   });
 });

@@ -1,10 +1,10 @@
 import { getImageProps } from 'next/image';
 
 // One width for every avatar, so each avatar resolves to the same two
-// optimizer URLs (128w at 1x, 256w at 2x) wherever it renders and the resized
-// copies are shared in cache. Sharp up to 128 CSS px, which covers every
-// avatar size in the app, so callers never declare a size.
-const AVATAR_IMAGE_WIDTH = 128;
+// optimizer URLs (256w at 1x, 640w at 2x, the next configured size) wherever
+// it renders and the resized copies are shared in cache. The headroom keeps
+// wide uploads, which the optimizer only resizes by width, sharp in the circle.
+const AVATAR_IMAGE_WIDTH = 256;
 
 /**
  * `src`/`srcSet` for an avatar `<img>` (sense `AvatarImage`/`ProfileAvatar`),
