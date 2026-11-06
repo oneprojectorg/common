@@ -85,9 +85,7 @@ export const updateProposal = async ({
   const processInstance = existingProposal.processInstance;
 
   // Reject updates when the instance is in the final (results) phase
-  const instancePhases = await getPhases({
-    instance: processInstance,
-  });
+  const instancePhases = await getPhases({ instance: processInstance });
   if (isLastPhase(processInstance.currentStateId, instancePhases)) {
     throw new ValidationError(
       'Proposals cannot be edited during the results phase',

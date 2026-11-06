@@ -46,9 +46,7 @@ export async function pruneReviewAssignmentsForMember({
   }
 
   const currentPhase = assertInstancePhase({
-    instance: {
-      instanceData: { phases: await getPhases({ instance }) },
-    },
+    instance: { phases: await getPhases({ instance }) },
     phaseId: currentPhaseId,
   });
   if (!isReviewPhase(currentPhase)) {
