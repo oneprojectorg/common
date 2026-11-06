@@ -4,7 +4,8 @@ const ASSETS_PREFIX = '/assets/';
 
 /**
  * `next/image` loader that serves an avatar as a square, center-cropped copy
- * from Supabase image transformations (`/assets-render`, see next.config.mjs).
+ * from Supabase image transformations (the `/assets` rewrite in next.config.mjs
+ * routes a `width` query to the render endpoint).
  * Uploads can have any aspect ratio, and the Next.js optimizer only resizes by
  * width, so a wide upload would come back too short to fill the circle.
  * Sources outside the assets bucket pass through unchanged.
@@ -21,7 +22,7 @@ export const avatarImageLoader: ImageLoader = ({ src, width, quality }) => {
     quality: String(quality ?? 75),
   });
 
-  return `/assets-render/${src.slice(ASSETS_PREFIX.length)}?${params}`;
+  return `${src}?${params}`;
 };
 
 // One width for every small avatar, so each avatar resolves to the same two

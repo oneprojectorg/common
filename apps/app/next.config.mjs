@@ -137,7 +137,7 @@ const config = {
 
     return [
       {
-        source: '/:root(assets|assets-render)/:path*',
+        source: '/assets/:path*',
         headers: [
           {
             key: 'Cache-Control',
@@ -213,15 +213,17 @@ const config = {
         source: `/:locale(${SUPPORTED_LOCALES.join('|')})/:slug(${VANITY_DECISION_SLUGS.join('|')})/:path*`,
         destination: '/:locale/decisions/:slug/:path*',
       },
+      // A `width` query asks for a resized copy: Supabase image
+      // transformations serve the same bucket from the render endpoint, which
+      // mirrors the public object path. Must precede the plain rule below.
+      {
+        source: '/assets/:path*',
+        has: [{ type: 'query', key: 'width' }],
+        destination: `${process.env.S3_ASSET_ROOT?.replace('/storage/v1/object/', '/storage/v1/render/image/')}/:path*`,
+      },
       {
         source: '/assets/:path*',
         destination: `${process.env.S3_ASSET_ROOT}/:path*`,
-      },
-      // Supabase image transformations for the same bucket: the render
-      // endpoint mirrors the public object path, so swap the path segment.
-      {
-        source: '/assets-render/:path*',
-        destination: `${process.env.S3_ASSET_ROOT?.replace('/storage/v1/object/', '/storage/v1/render/image/')}/:path*`,
       },
       {
         source: '/stats/static/:path*',
