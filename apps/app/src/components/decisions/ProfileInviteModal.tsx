@@ -1,6 +1,7 @@
 'use client';
 
 import { getPublicUrl } from '@/utils';
+import { getAvatarImageProps } from '@/utils/getAvatarImageProps';
 import { trackProfileInvited } from '@/utils/inviteAnalytics';
 import { trpc } from '@op/api/client';
 import { EntityType } from '@op/api/encoders';
@@ -583,11 +584,9 @@ function ProfileInviteModalContent({
                           <Avatar className="size-8 shrink-0">
                             {option.result.avatarImage?.name ? (
                               <AvatarImage
-                                src={
-                                  getPublicUrl(
-                                    option.result.avatarImage.name,
-                                  ) ?? ''
-                                }
+                                {...getAvatarImageProps(
+                                  getPublicUrl(option.result.avatarImage.name),
+                                )}
                                 alt={option.result.name}
                               />
                             ) : null}
@@ -774,7 +773,9 @@ function PersonRow({
     <Item variant="outline" className="flex-nowrap px-3 py-2 sm:p-3">
       <ItemMedia>
         <Avatar className="size-6 shrink-0 sm:size-10">
-          {avatarUrl ? <AvatarImage src={avatarUrl} alt={name} /> : null}
+          {avatarUrl ? (
+            <AvatarImage {...getAvatarImageProps(avatarUrl)} alt={name} />
+          ) : null}
           <AvatarFallback>{name.slice(0, 1).toUpperCase()}</AvatarFallback>
         </Avatar>
       </ItemMedia>

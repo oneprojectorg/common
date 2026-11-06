@@ -1,6 +1,7 @@
 'use client';
 
 import { getPublicUrl } from '@/utils';
+import { getAvatarImageProps } from '@/utils/getAvatarImageProps';
 import {
   type Proposal,
   type ProposalReviewAggregates,
@@ -189,11 +190,9 @@ function ReviewersPile({ reviewers }: { reviewers: Reviewer[] }) {
         size="sm"
         name={reviewer.profile.name}
         alt={reviewer.profile.name}
-        src={
-          reviewer.profile.avatarImage?.name
-            ? getPublicUrl(reviewer.profile.avatarImage.name)
-            : undefined
-        }
+        {...getAvatarImageProps(
+          getPublicUrl(reviewer.profile.avatarImage?.name),
+        )}
       />
     ));
   const overflow = ordered.length - MAX_FACES;

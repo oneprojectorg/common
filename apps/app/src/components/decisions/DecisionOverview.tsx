@@ -3,6 +3,7 @@
 import { useCanLinkToProfile } from '@/hooks/useCanLinkToProfile';
 import { getPublicUrl } from '@/utils';
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
+import { getAvatarImageProps } from '@/utils/getAvatarImageProps';
 import { type ProcessInstance, type ProcessPhase } from '@op/api/encoders';
 import { Avatar, AvatarFallback, AvatarImage } from '@op/sense/Avatar';
 import { Button } from '@op/sense/Button';
@@ -319,7 +320,9 @@ const OverviewHero = ({
                   <Avatar className="size-5">
                     {steward?.avatarImage?.name ? (
                       <AvatarImage
-                        src={getPublicUrl(steward.avatarImage.name) ?? ''}
+                        {...getAvatarImageProps(
+                          getPublicUrl(steward.avatarImage.name),
+                        )}
                         alt={stewardName}
                         className="object-cover"
                       />

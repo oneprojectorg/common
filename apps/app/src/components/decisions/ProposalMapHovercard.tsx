@@ -1,6 +1,7 @@
 'use client';
 
 import { getPublicUrl } from '@/utils';
+import { getAvatarImageProps } from '@/utils/getAvatarImageProps';
 import type { Proposal } from '@op/common/client';
 import {
   normalizeProposalCategories,
@@ -68,18 +69,12 @@ function getHovercardAuthors(
   if (!author || author.isAnonymous) {
     return undefined;
   }
+  const avatar = getAvatarImageProps(getPublicUrl(author.avatarImage?.name));
   return [
     {
       name: author.name || author.slug,
-      avatarSrc: resolveAvatarUrl(author) ?? undefined,
+      avatarSrc: avatar.src,
+      avatarSrcSet: avatar.srcSet,
     },
   ];
-}
-
-function resolveAvatarUrl(author: HovercardAuthorData): string | null {
-  const name = author.avatarImage?.name;
-  if (!name) {
-    return null;
-  }
-  return getPublicUrl(name) ?? null;
 }

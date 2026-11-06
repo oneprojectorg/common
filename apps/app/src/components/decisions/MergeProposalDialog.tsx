@@ -750,7 +750,11 @@ function MergeProposalSummaryCard({
       budget={budgetText}
       tags={displayCategories}
       // Without `href`: an anchor inside the label would compete for the click.
-      authors={authors?.map(({ name, avatarSrc }) => ({ name, avatarSrc }))}
+      authors={authors?.map(({ name, avatarSrc, avatarSrcSet }) => ({
+        name,
+        avatarSrc,
+        avatarSrcSet,
+      }))}
       description={showDescription ? description : undefined}
       className={cn('w-full', className)}
     />

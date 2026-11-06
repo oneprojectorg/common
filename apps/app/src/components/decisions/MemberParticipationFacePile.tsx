@@ -1,5 +1,6 @@
 import { useCanLinkToProfile } from '@/hooks/useCanLinkToProfile';
 import { getPublicUrl } from '@/utils';
+import { getAvatarImageProps } from '@/utils/getAvatarImageProps';
 import { Avatar, AvatarFallback, AvatarImage } from '@op/sense/Avatar';
 import { GrowingFacePile } from '@op/sense/FacePile';
 import { cn } from '@op/sense/lib/utils';
@@ -43,7 +44,9 @@ export const MemberParticipationFacePile = ({
             <>
               {submitter.avatarImage?.name ? (
                 <AvatarImage
-                  src={getPublicUrl(submitter.avatarImage.name) ?? ''}
+                  {...getAvatarImageProps(
+                    getPublicUrl(submitter.avatarImage.name),
+                  )}
                   alt={submitter.name || submitter.slug || ''}
                 />
               ) : null}

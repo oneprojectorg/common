@@ -3,6 +3,7 @@
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { getPublicUrl } from '@/utils';
 import { useRequiredUser } from '@/utils/UserProvider';
+import { getAvatarImageProps } from '@/utils/getAvatarImageProps';
 import { trpc } from '@op/api/client';
 import { EntityType, Profile } from '@op/api/encoders';
 import { useAuthLogout, useMediaQuery } from '@op/hooks';
@@ -40,6 +41,7 @@ import {
 import { useRouter, useTranslations } from '@/lib/i18n';
 
 import { UpdateProfileModal } from '../Profile/ProfileDetails/UpdateProfile/UpdateProfileModal';
+import { ProfileAvatarLink } from '../ProfileAvatarLink';
 import { ProfileSwitchingModal } from '../ProfileSwitchingModal';
 
 // behind a flag and rarely opened, so it stays out of every page's header chunk
@@ -111,11 +113,7 @@ const ProfileMenuRow = ({
     <>
       <ProfileAvatar
         name={profile.name}
-        src={
-          profile.avatarImage?.name
-            ? (getPublicUrl(profile.avatarImage.name) ?? undefined)
-            : undefined
-        }
+        {...getAvatarImageProps(getPublicUrl(profile.avatarImage?.name))}
         alt=""
         size="sm"
       />
@@ -329,11 +327,9 @@ const AvatarMenuContent = ({
         <div className="flex items-center gap-2 p-2">
           <ProfileAvatar
             name={user.profile.name}
-            src={
-              user.profile.avatarImage?.name
-                ? (getPublicUrl(user.profile.avatarImage.name) ?? undefined)
-                : undefined
-            }
+            {...getAvatarImageProps(
+              getPublicUrl(user.profile.avatarImage?.name),
+            )}
             alt=""
           />
           <div className="flex min-w-0 flex-1 flex-col">
@@ -479,7 +475,7 @@ export const UserAvatarMenu = ({ className }: { className?: string }) => {
 
   const avatarContent = (
     <>
-      <ProfileAvatar
+      <ProfileAvatarLink
         name={user.currentProfile?.name}
         src={
           user.currentProfile?.avatarImage?.name

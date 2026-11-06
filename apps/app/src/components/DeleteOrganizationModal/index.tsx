@@ -2,6 +2,7 @@
 
 import { getPublicUrl } from '@/utils';
 import { useRequiredUser } from '@/utils/UserProvider';
+import { getAvatarImageProps } from '@/utils/getAvatarImageProps';
 import { RouterOutput } from '@op/api';
 import { trpc } from '@op/api/client';
 import { EntityType } from '@op/api/encoders';
@@ -19,7 +20,6 @@ import { OptionBox } from '@op/sense/OptionBox';
 import { ProfileAvatar } from '@op/sense/ProfileAvatar';
 import { RadioGroup, RadioGroupItem } from '@op/sense/RadioGroup';
 import { toast } from '@op/sense/Toast';
-import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useTransition } from 'react';
 
@@ -199,18 +199,8 @@ const SelectProfileStep = ({
                   <ProfileAvatar
                     className="size-11 shrink-0"
                     name={profile.name}
-                    src={getPublicUrl(avatarUrl)}
+                    {...getAvatarImageProps(getPublicUrl(avatarUrl))}
                     alt={profile.name ?? t('org.accountAvatarAlt')}
-                    imageRender={
-                      avatarUrl ? (
-                        <Image
-                          src={getPublicUrl(avatarUrl) ?? ''}
-                          fill
-                          className="object-cover"
-                          alt={profile.name ?? t('org.accountAvatarAlt')}
-                        />
-                      ) : undefined
-                    }
                   />
                 }
               />
@@ -268,18 +258,8 @@ const ConfirmProfileStep = ({
           <ProfileAvatar
             className="size-11 shrink-0"
             name={profileToDelete.name}
-            src={getPublicUrl(avatarUrl)}
+            {...getAvatarImageProps(getPublicUrl(avatarUrl))}
             alt={profileToDelete.name ?? t('org.accountAvatarAlt')}
-            imageRender={
-              avatarUrl ? (
-                <Image
-                  src={getPublicUrl(avatarUrl) ?? ''}
-                  fill
-                  className="object-cover"
-                  alt={profileToDelete.name ?? t('org.accountAvatarAlt')}
-                />
-              ) : undefined
-            }
           />
           <div className="flex flex-col">
             <p className="font-strong">{profileToDelete.name}</p>

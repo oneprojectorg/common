@@ -1,6 +1,7 @@
 'use client';
 
 import { getPublicUrl } from '@/utils';
+import { getAvatarImageProps } from '@/utils/getAvatarImageProps';
 import { trpc } from '@op/api/client';
 import { EntityType } from '@op/api/encoders';
 import { getTextPreview } from '@op/core';
@@ -15,7 +16,6 @@ import {
 import { ProfileAvatar } from '@op/sense/ProfileAvatar';
 import { ProfileItem } from '@op/sense/ProfileItem';
 import { toast } from '@op/sense/Toast';
-import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Suspense } from 'react';
 
@@ -67,19 +67,9 @@ const PendingDecisionInvitesSuspense = () => {
                 avatar={
                   <ProfileAvatar
                     name={profile.name ?? ''}
-                    src={avatarUrl}
+                    {...getAvatarImageProps(avatarUrl)}
                     alt={profile.name ?? ''}
                     className="size-12"
-                    imageRender={
-                      avatarUrl ? (
-                        <Image
-                          src={avatarUrl}
-                          alt={profile.name ?? ''}
-                          fill
-                          className="object-cover"
-                        />
-                      ) : undefined
-                    }
                   />
                 }
                 title={profile.name ?? ''}
