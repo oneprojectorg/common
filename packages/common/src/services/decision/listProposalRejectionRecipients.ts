@@ -78,9 +78,7 @@ export async function listProposalRejectionRecipients({
 
   const currentPhase = getInstanceCurrentPhase({
     currentStateId: processInstance.currentStateId,
-    instanceData: {
-      phases: await getPhases({ instance: processInstance }),
-    },
+    phases: await getPhases({ instance: processInstance }),
   });
 
   return {

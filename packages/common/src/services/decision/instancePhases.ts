@@ -22,7 +22,7 @@ export type InstanceWithPhases<T> = T & {
   readonly phases: PhaseInstanceData[];
 };
 
-export type ProfileWithInstancePhases<
+type ProfileWithInstancePhases<
   T extends { processInstance: InstanceWithData | null },
 > = Omit<T, 'processInstance'> & {
   processInstance: InstanceWithPhases<NonNullable<T['processInstance']>> | null;
@@ -54,7 +54,6 @@ export const resolvePhases = async <T extends InstanceWithData>({
   return resolved;
 };
 
-// TODO: remove when instanceData.phases is dropped.
 export const attachBlobPhases = <T extends InstanceWithData>({
   instance,
 }: {

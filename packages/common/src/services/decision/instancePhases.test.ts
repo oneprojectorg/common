@@ -185,11 +185,11 @@ describe('instancePhases', () => {
     await emptyBlobPhases(instanceId);
     const instance = await loadInstance(instanceId);
 
-    const fromRows = await resolvePhases({ instance });
+    const resolved = await resolvePhases({ instance });
 
-    expect(fromRows.instanceData).toBe(instance.instanceData);
-    expect(fromRows.instanceData).toMatchObject({ phases: [] });
-    expect(fromRows.phases).toMatchObject([
+    expect(resolved.instanceData).toBe(instance.instanceData);
+    expect(resolved.instanceData).toMatchObject({ phases: [] });
+    expect(resolved.phases).toMatchObject([
       { phaseId: 'initial' },
       { phaseId: 'final' },
     ]);

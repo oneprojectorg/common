@@ -327,9 +327,7 @@ export const getPermissionsOnProposal = async ({
     access.update &&
     (proposal.status === ProposalStatus.DRAFT ||
       isPostSubmissionEditingAllowed({
-        phases: await getPhases({
-          instance: proposal.processInstance,
-        }),
+        phases: await getPhases({ instance: proposal.processInstance }),
         currentPhaseId: proposal.processInstance.currentStateId,
       }));
 

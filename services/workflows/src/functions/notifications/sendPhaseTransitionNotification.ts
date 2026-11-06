@@ -93,7 +93,7 @@ export const sendPhaseTransitionNotification = inngest.createFunction(
       };
     }
 
-    // Resolve phase name and position from instance data
+    // Resolve phase name and position from the phases
     const { phases } = processData;
     const toPhaseIndex = phases.findIndex((p) => p.phaseId === toPhaseId);
     const toPhaseName = phases[toPhaseIndex]?.name ?? toPhaseId;

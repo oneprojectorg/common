@@ -5,7 +5,7 @@ import { NotFoundError } from '../../../utils/error';
  * An instance whose phases are readable: a server instance with resolved
  * `phases`, or a client wire instance whose `instanceData` carries them.
  */
-export type PhasedInstance<Phase extends { phaseId: string }> =
+type PhasedInstance<Phase extends { phaseId: string }> =
   | { phases: readonly Phase[] }
   // TODO: remove this arm and the instanceData read in getPhasesOf once the client reads phases off the instance.
   | {
