@@ -53,9 +53,11 @@ const NUMBERS = {
   lineMember: '+15005550080',
   lineSlugMember: '+15005550081',
   unboundLineMember: '+15005550082',
-  lineStranger: '+15005550083',
-  linePrivateOwner: '+15005550069',
-  agreeRemoved: '+15005550068',
+  lineStranger: '+15005550010',
+  linePrivateOwner: '+15005550011',
+  agreeRemoved: '+15005550012',
+  pickStrangerEnrolment: '+15005550013',
+  pickOwnerOnly: '+15005550014',
   enrolStart: '+15005550070',
   enrolAddress: '+15005550071',
   enrolNotFound: '+15005550072',
@@ -116,9 +118,10 @@ const LINES = {
   bare: '+16145550130',
   slug: '+16145550131',
   unbound: '+16145550132',
-  private: '+16145550138',
-  agreeRemoved: '+16145550139',
+  private: '+16145550180',
+  agreeRemoved: '+16145550181',
   agreeClosed: '+16145550188',
+  pickStrangerEnrolment: '+16145550182',
   enrolStart: '+16145550133',
   enrolAddress: '+16145550134',
   enrolNotFound: '+16145550135',
@@ -1746,6 +1749,35 @@ describe('handleSMSCommand building and casting the ballot', () => {
         messageSid: `SM-${from}-${kw}-${argument ?? ''}`,
       }),
     );
+
+  it("given a confirmed non-member texts a code to a private decision's line, then the reply is generic and names no decision", async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsCommandFixture(task.id, onTestFinished);
+    const name = `Pick Stranger ${task.id}`;
+    await seed(fixture, {
+      phone: NUMBERS.pickOwnerOnly,
+      line: LINES.pickStrangerEnrolment,
+      name,
+      enrolment: { attestation: 'I affirm.', boundary: false },
+    });
+    await fixture.createPhoneOnlyAccount(
+      parsePhoneNumber(NUMBERS.pickStrangerEnrolment),
+    );
+
+    const { result } = await text(
+      NUMBERS.pickStrangerEnrolment,
+      LINES.pickStrangerEnrolment,
+      '101',
+    );
+
+    expect(result).toEqual({ message: 'decision not found' });
+    expect(recordedSms.map((sms) => sms.body)).toEqual([
+      'That decision is not available to you.',
+    ]);
+    expect(recordedSms[0]!.body).not.toContain(name);
+  });
 
   it('given a member texts a code from the guide, then it becomes pick 1 with its cost, what is left and the next steps', async ({
     task,

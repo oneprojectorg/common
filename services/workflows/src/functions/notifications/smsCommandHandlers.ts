@@ -1043,7 +1043,7 @@ const pickByCodes = async (
         authUserId: account.authUserId,
         instanceId,
         codes,
-        phoneNumberId: context.line?.id ?? null,
+        phoneNumberId: context.line?.id,
       }),
     ),
   );

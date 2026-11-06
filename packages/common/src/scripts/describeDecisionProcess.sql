@@ -171,7 +171,7 @@ select jsonb_pretty(jsonb_build_object(
     from decision d join decision_chat_sessions cs2 on cs2.process_instance_id = d.instance_id and cs2.deleted_at is null),
 
   -- The cast ballots: one decisions_vote_submissions row per voter (SUBMIT
-  -- deletes the draft and writes this; reviseVote replaces it in place),
+  -- deletes the draft and writes this),
   -- with its decisions_vote_proposals rows in rank order. vote_data is what
   -- submitVote stored: selections with cost and rank, the total, the unit.
   'decisions_vote_submissions', (select coalesce(jsonb_agg(jsonb_build_object(
@@ -180,7 +180,6 @@ select jsonb_pretty(jsonb_build_object(
       'voter_phone', (select '+' || au.phone from users u join auth.users au on au.id = u.auth_user_id where u.current_profile_id = s.submitted_by_profile_id limit 1),
       'profile_id', s.submitted_by_profile_id,
       'cast_at', s.created_at, 'updated_at', s.updated_at,
-      'revised', s.updated_at > s.created_at + interval '1 second',
       'voter_was_enrolled', exists (select 1 from decision_voter_enrolments e
                                       where e.process_instance_id = s.process_instance_id and e.profile_id = s.submitted_by_profile_id
                                         and e.enrolled_at is not null and e.deleted_at is null),
