@@ -362,6 +362,12 @@ async function seedDynamicRoutes(
       auth: 'authenticated',
     },
     {
+      url: `/en/decisions/${instance.slug}/manage`,
+      displayUrl: '/en/decisions/{slug}/manage',
+      label: 'Process admin',
+      auth: 'authenticated',
+    },
+    {
       url: `/en/decisions/${instance.slug}/proposal/${proposal.profileId}`,
       displayUrl: '/en/decisions/{slug}/proposal/{profileId}',
       label: 'Proposal view',
