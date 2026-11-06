@@ -121,6 +121,7 @@ export const listPhasesByInstance = async ({
   return phasesByInstance;
 };
 
+// TODO: remove once references store the row id instead of data.phaseId.
 export const phaseIdOf = (phase: ProcessPhaseWithProfile): string =>
   phase.data.phaseId ?? phase.slug;
 
