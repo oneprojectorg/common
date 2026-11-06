@@ -1,6 +1,11 @@
 import { TestDecisionsDataManager } from '@op/common/testing';
-import { db } from '@op/db/client';
-import { EntityType } from '@op/db/schema';
+import { db, eq } from '@op/db/client';
+import {
+  EntityType,
+  ProcessStatus,
+  processInstances,
+  processPhases,
+} from '@op/db/schema';
 import { ROLES } from '@op/db/seedData/accessControl';
 import { randomUUID } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
@@ -11,6 +16,7 @@ import {
   listPhaseIds,
   loadBlobPhases,
   loadInstancePhases,
+  loadPhaseRows,
 } from '../../../test/helpers/phaseTestUtils';
 import { createAuthenticatedCaller } from '../../../test/supabase-utils';
 
@@ -26,6 +32,7 @@ describe.concurrent('createPhase', () => {
       task,
       onTestFinished,
     );
+    const blobPhases = await loadBlobPhases(instanceId);
 
     const result = await adminCaller.decision.createPhase({
       instanceId,
@@ -48,6 +55,7 @@ describe.concurrent('createPhase', () => {
     expect(phase?.data).toEqual({ description: 'Pitch an idea' });
     expect(profile?.type).toBe(EntityType.PHASE);
     expect(profile?.slug).toBe(result.slug);
+    expect(await loadBlobPhases(instanceId)).toEqual(blobPhases);
   });
 
   it('lets a second user granted decisions ADMIN create a phase', async ({
@@ -242,7 +250,7 @@ describe.concurrent('createPhase', () => {
     task,
     onTestFinished,
   }) => {
-    const { testData, instanceId, adminCaller } = await setupDecision(
+    const { instanceId, adminCaller } = await setupDecision(
       task,
       onTestFinished,
     );
@@ -258,7 +266,6 @@ describe.concurrent('createPhase', () => {
         proposalTemplate: null,
       },
     });
-    testData.trackProfileForCleanup(phase.profileId);
 
     const stored = await db.query.processPhases.findFirst({
       where: { id: phase.id },
@@ -421,6 +428,44 @@ describe.concurrent('createPhase', () => {
       added.slug,
     ]);
     expect(await loadBlobPhases(instanceId)).toEqual(blobPhases);
+  });
+
+  it('refuses a phase after a date-advanced phase with no end date and writes nothing', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { instanceId, adminCaller } = await setupDecision(
+      task,
+      onTestFinished,
+    );
+    await db
+      .update(processInstances)
+      .set({ status: ProcessStatus.PUBLISHED })
+      .where(eq(processInstances.id, instanceId));
+    const [stored] = (await loadPhaseRows(instanceId)).slice(-1);
+    if (!stored) {
+      throw new Error('The last phase row was not found');
+    }
+    const { endDate: _endDate, ...data } = stored.data;
+    await db
+      .update(processPhases)
+      .set({ data: { ...data, rules: { advancement: { method: 'date' } } } })
+      .where(eq(processPhases.id, stored.id));
+
+    const before = await listPhaseIds(instanceId);
+    expect(before.length).toBeGreaterThan(0);
+
+    const name = `After Date ${randomUUID()}`;
+    await expect(
+      adminCaller.decision.createPhase({
+        instanceId,
+        name,
+        sortOrder: before.length,
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
+
+    expect(await listPhaseIds(instanceId)).toEqual(before);
+    await expectNoProfileNamed(name);
   });
 
   it('requires authentication', async () => {

@@ -138,7 +138,7 @@ describe('buildExpectedTransitions', () => {
     );
 
     expect(() => buildExpectedTransitions(instance)).toThrow(
-      'Phase "phase-a" must have an end date for date-based advancement (instance: inst-123)',
+      'Phase "phase-a" must have an end date because it advances by date',
     );
   });
 });

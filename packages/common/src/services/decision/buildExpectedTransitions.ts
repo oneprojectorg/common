@@ -1,4 +1,4 @@
-import { CommonError } from '../../utils';
+import { CommonError, ValidationError } from '../../utils';
 import type { PhaseInstanceData } from './schemas/instanceData';
 import type { ScheduledTransition } from './types';
 
@@ -39,8 +39,9 @@ export function buildExpectedTransitions(processInstance: {
     const scheduledDate = currentPhase.endDate;
 
     if (!scheduledDate) {
-      throw new CommonError(
-        `Phase "${currentPhase.phaseId}" must have an end date for date-based advancement (instance: ${processInstance.id})`,
+      throw new ValidationError(
+        `Phase "${currentPhase.phaseId}" must have an end date because it advances by date`,
+        { phases: `Set an end date for "${currentPhase.phaseId}"` },
       );
     }
 
