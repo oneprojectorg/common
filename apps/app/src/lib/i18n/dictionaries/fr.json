@@ -1231,6 +1231,8 @@
       "reviewProgressUnavailable": "Progression de l’examen indisponible",
       "reviewProgressHeading": "Progression de l'examen",
       "lastSubmissionLabel": "Dernier envoi",
+      "startedLabel": "Commencé",
+      "notStartedLabel": "Pas commencé",
       "reviewsSubmittedLabel": "Évaluations soumises",
       "reviewsSubmittedFigure": "{submitted}<total> / {assigned}</total>",
       "moreActionsForProposal": "Plus d’actions pour {title}",

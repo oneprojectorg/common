@@ -1231,6 +1231,8 @@
       "reviewProgressUnavailable": "Horumarka dib-u-eegista lama heli karo",
       "reviewProgressHeading": "Horumarka dib-u-eegista",
       "lastSubmissionLabel": "Gudbinta ugu dambeysay",
+      "startedLabel": "La bilaabay",
+      "notStartedLabel": "Lama bilaabin",
       "reviewsSubmittedLabel": "Dib-u-eegisyada la gudbiyay",
       "reviewsSubmittedFigure": "{submitted}<total> / {assigned}</total>",
       "moreActionsForProposal": "Ficillo kale oo loogu talagalay {title}",

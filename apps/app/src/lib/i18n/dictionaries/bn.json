@@ -1231,6 +1231,8 @@
       "reviewProgressUnavailable": "পর্যালোচনার অগ্রগতি পাওয়া যায়নি",
       "reviewProgressHeading": "পর্যালোচনার অগ্রগতি",
       "lastSubmissionLabel": "শেষ জমা",
+      "startedLabel": "শুরু হয়েছে",
+      "notStartedLabel": "শুরু হয়নি",
       "reviewsSubmittedLabel": "জমা দেওয়া পর্যালোচনা",
       "reviewsSubmittedFigure": "{submitted}<total> / {assigned}</total>",
       "moreActionsForProposal": "{title}-এর জন্য আরও কাজ",

@@ -28,6 +28,7 @@ interface ReviewerQueueTotals {
   draftCount: number;
   remainingCount: number;
   lastSubmittedAt: string | null;
+  startedAt: string | null;
 }
 
 /** One page of a reviewer's queue for the admin screen, with whole-queue totals. */
@@ -144,6 +145,7 @@ async function getReviewerQueueTotals({
       lastSubmittedAt: sql<
         string | null
       >`max(${proposalReviews.submittedAt}) filter (where ${proposalReviews.state} = ${ProposalReviewState.SUBMITTED})`,
+      startedAt: sql<string | null>`min(${proposalReviews.createdAt})`,
     })
     .from(proposalReviewAssignments)
     .leftJoin(proposalReviews, reviewOfAssignment)
@@ -155,5 +157,6 @@ async function getReviewerQueueTotals({
     draftCount: row?.draftCount ?? 0,
     remainingCount: row?.remainingCount ?? 0,
     lastSubmittedAt: row?.lastSubmittedAt ?? null,
+    startedAt: row?.startedAt ?? null,
   };
 }
