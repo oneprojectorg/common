@@ -1161,6 +1161,7 @@
       "noReviewsAssigned": "Wali lama xilsaarin dib-u-eegis",
       "noReviewsMatchFilters": "Lama helin dib-u-eegis la mid ah shaandhaynta hadda.",
       "noReviewsInPhase": "Wax dib-u-eegis ah laguma gudbin marxaladdan",
+      "notSubmittedYetGroup": "Weli lama gudbin ({count})",
       "noYesLabel": "Maya/Haa",
       "statusNotStarted": "Lama bilaabin",
       "noteLabel": "Qoraal",

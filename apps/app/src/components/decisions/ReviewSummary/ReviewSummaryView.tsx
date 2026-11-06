@@ -241,6 +241,12 @@ export function ReviewSummaryView({
           }
           ownReview={ownReview}
           hideSummaryHeader={!isAdmin}
+          // The server sends reminders for the instance's current phase only.
+          reminderScope={
+            isAdmin && isPhaseInProgress
+              ? { processInstanceId: instanceId, phaseId }
+              : undefined
+          }
         />
       )}
     </>

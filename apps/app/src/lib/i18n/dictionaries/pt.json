@@ -1161,6 +1161,7 @@
       "noReviewsAssigned": "Nenhuma revisão atribuída ainda",
       "noReviewsMatchFilters": "Nenhuma revisão encontrada correspondendo aos filtros atuais.",
       "noReviewsInPhase": "Nenhuma avaliação foi enviada nesta fase",
+      "notSubmittedYetGroup": "Ainda não enviado ({count})",
       "noYesLabel": "Não/Sim",
       "statusNotStarted": "Não iniciado",
       "noteLabel": "Nota",

@@ -1161,6 +1161,7 @@
       "noReviewsAssigned": "Még nincs kiosztott értékelés",
       "noReviewsMatchFilters": "Nincs a jelenlegi szűrőknek megfelelő értékelés.",
       "noReviewsInPhase": "Ebben a szakaszban nem érkezett értékelés",
+      "notSubmittedYetGroup": "Még nincs beküldve ({count})",
       "noYesLabel": "Nem/igen",
       "statusNotStarted": "Nem kezdődött el",
       "noteLabel": "Megjegyzés",

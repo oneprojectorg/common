@@ -1161,6 +1161,7 @@
       "noReviewsAssigned": "لم يتم تعيين مراجعات بعد",
       "noReviewsMatchFilters": "لم يتم العثور على مراجعات تطابق المرشحات الحالية.",
       "noReviewsInPhase": "لم يتم إرسال أي مراجعات في هذه المرحلة",
+      "notSubmittedYetGroup": "لم تُقدَّم بعد ({count})",
       "noYesLabel": "لا/نعم",
       "statusNotStarted": "لم يبدأ",
       "noteLabel": "ملاحظة",
