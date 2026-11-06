@@ -1,10 +1,15 @@
 import { vi } from 'vitest';
 
-vi.mock(
-  '@op/analytics/client',
-  async () =>
-    (await import('@op/common/testing/mocks/analytics')).analyticsClientMock,
-);
+vi.mock('@op/analytics/client', () => ({
+  default: () => ({
+    capture() {},
+    identify() {},
+    async isFeatureEnabled() {
+      return false;
+    },
+    async shutdown() {},
+  }),
+}));
 vi.mock('@op/common/src/services/notification/provider', async () =>
   (await import('./mocks/sms')).smsProviderMock(),
 );

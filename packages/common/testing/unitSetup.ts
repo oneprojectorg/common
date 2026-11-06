@@ -11,11 +11,6 @@ vi.mock('../src/services/decision/phaseHelpers', async (importOriginal) => ({
   listPhasesByInstance: vi.fn(async () => new Map()),
 }));
 
-vi.mock(
-  '@op/analytics/client',
-  async () => (await import('./mocks/analytics')).analyticsClientMock,
-);
-
 // Each factory throws on import, so a unit test that pulls in the real client
 // through any entry of @op/db fails instead of quietly opening a connection to
 // the test database.
