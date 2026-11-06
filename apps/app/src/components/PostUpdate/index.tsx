@@ -33,17 +33,15 @@ import { LinkPreview } from '@/components/LinkPreview';
 import { OrganizationAvatar } from '../OrganizationAvatar';
 
 const TextCounter = ({ text, max }: { text: string; max: number }) => {
-  if (!text || text.length === 0) {
-    return null;
-  }
-  const textLength = text.length;
-  const countDown = max - textLength;
-
   return (
     <span
-      className={cn('text-foreground', countDown < 0 && 'text-destructive')}
+      aria-live="polite"
+      className={cn(
+        'text-sm text-muted-foreground',
+        text.length > max && 'text-destructive',
+      )}
     >
-      {countDown}
+      {text.length}/{max}
     </span>
   );
 };

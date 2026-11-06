@@ -22,7 +22,7 @@ import { RequestMembershipButton } from './RequestMembershipButton';
 import { UpdateOrganizationModal } from './UpdateOrganizationModal';
 import { UpdateUserProfileModal } from './UpdateProfile';
 
-const ProfileInteractions = ({ profile }: { profile: Organization }) => {
+export const ProfileInteractions = ({ profile }: { profile: Organization }) => {
   const { user } = useRequiredUser();
   const { isReceivingFunds, isOfferingFunds, links } = profile;
 

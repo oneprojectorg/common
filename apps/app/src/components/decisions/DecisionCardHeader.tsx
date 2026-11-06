@@ -30,8 +30,6 @@ export const DecisionCardHeader = ({
   children?: React.ReactNode;
   className?: string;
 }) => {
-  const t = useTranslations();
-
   return (
     <div className={cn('flex flex-col gap-3', className)}>
       <Header3>{name}</Header3>
@@ -49,11 +47,17 @@ export const DecisionCardHeader = ({
       {currentState || children ? (
         <div className="flex flex-wrap items-center gap-3">
           {currentState ? (
-            <Badge variant="accent">{t(currentState as TranslationKey)}</Badge>
+            <DecisionPhaseBadge phaseName={currentState} />
           ) : null}
           {children}
         </div>
       ) : null}
     </div>
   );
+};
+
+export const DecisionPhaseBadge = ({ phaseName }: { phaseName: string }) => {
+  const t = useTranslations();
+
+  return <Badge variant="accent">{t(phaseName as TranslationKey)}</Badge>;
 };

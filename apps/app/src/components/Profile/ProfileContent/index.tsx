@@ -2,17 +2,20 @@
 
 import { useRequiredUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
-import { type Organization, ProcessStatus } from '@op/api/encoders';
+import {
+  type Organization,
+  ProcessStatus,
+  type Profile,
+} from '@op/api/encoders';
 import { formatToUrl } from '@op/common/validation';
-import { Button } from '@op/sense/Button';
+import { Card, CardContent } from '@op/sense/Card';
 import { Header2, Header3 } from '@op/sense/Header';
 import { Skeleton } from '@op/sense/Skeleton';
 import { TabsContent, TabsList, TabsTrigger } from '@op/sense/Tabs';
 import { Tag, TagGroup } from '@op/sense/TagGroup';
-import { toast } from '@op/sense/Toast';
 import { cn } from '@op/sense/lib/utils';
 import { Fragment, ReactNode, Suspense } from 'react';
-import { LuCopy, LuGlobe, LuMail } from 'react-icons/lu';
+import { LuGlobe, LuMail } from 'react-icons/lu';
 
 import { Link, useTranslations } from '@/lib/i18n';
 
@@ -27,6 +30,7 @@ import {
   ProfileFeedList,
   ProfileFeedProvider,
 } from '../ProfileFeed';
+import { CopyEmailButton } from './CopyEmailButton';
 import {
   DecisionsTab,
   DecisionsTabPanel,
@@ -128,11 +132,6 @@ const ProfileAbout = ({
 
   return (
     <div className={cn('flex flex-col gap-2 sm:gap-6', className)}>
-      {orgType ? (
-        <Header2 className="text-label leading-normal">
-          {t('profile.aboutTab')}
-        </Header2>
-      ) : null}
       <div className="flex flex-col gap-10 rounded border p-4 sm:rounded-none sm:border-none sm:p-0">
         {email || website ? (
           <section className="flex flex-col gap-2">
@@ -153,22 +152,7 @@ const ProfileAbout = ({
                 </ContactLink>
               ) : null}
               {email ? (
-                <ContactLink
-                  button={
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        navigator.clipboard.writeText(email);
-                        toast.success(t('profile.emailCopiedToast'), {
-                          dismissible: false,
-                        });
-                      }}
-                    >
-                      <LuCopy /> {t('Copy')}
-                    </Button>
-                  }
-                >
+                <ContactLink button={<CopyEmailButton email={email} />}>
                   <LuMail className="min-w-4" />
                   <Link
                     href={`mailto:${email}`}
@@ -268,13 +252,13 @@ const ProfileAbout = ({
   );
 };
 
-const ProfileDecisions = ({ profileId }: { profileId: string }) => {
+const ProfileDecisions = ({ profile }: { profile: Profile }) => {
   const t = useTranslations();
 
   const [{ items: decisionProfiles }] =
     trpc.decision.listDecisionProfiles.useSuspenseQuery({
       limit: 3,
-      stewardProfileId: profileId,
+      stewardProfileId: profile.id,
       status: [ProcessStatus.PUBLISHED],
     });
 
@@ -283,22 +267,27 @@ const ProfileDecisions = ({ profileId }: { profileId: string }) => {
   }
 
   return (
-    <div className="flex flex-col gap-2 py-6 pb-2 sm:gap-0 sm:border-b sm:pt-4">
-      <Header2 className="text-label leading-normal sm:px-6">
+    <section className="flex flex-col gap-4">
+      <ProfileSectionHeading>
         {t('decisions.decisionsLabel')}
-      </Header2>
-      {decisionProfiles.map((item, index) => (
-        <Fragment key={item.id}>
-          <ProfileDecisionListItem
-            item={item}
-            className="rounded border p-4 transition-colors sm:rounded-none sm:border-none sm:p-6 hover:sm:bg-accent"
-          />
-          {index < decisionProfiles.length - 1 && (
-            <hr className="hidden sm:block" />
-          )}
-        </Fragment>
-      ))}
-    </div>
+      </ProfileSectionHeading>
+      <Card className="py-6">
+        <CardContent className="flex flex-col px-6">
+          {decisionProfiles.map((item, index) => (
+            <Fragment key={item.id}>
+              {index > 0 && <hr className="my-4" />}
+              <ProfileDecisionListItem item={item} />
+            </Fragment>
+          ))}
+        </CardContent>
+      </Card>
+      <Link
+        href={`/org/${profile.slug}?tab=decisions`}
+        className="text-primary"
+      >
+        {t('profile.seeAllDecisionsAction')}
+      </Link>
+    </section>
   );
 };
 
@@ -328,39 +317,64 @@ export const OrganizationProfileGrid = ({
   const isOrg = user.currentProfile?.type === 'org';
 
   return (
-    <ProfileGridWrapper>
-      <div className="col-span-9 flex flex-col">
+    <div className="hidden w-full gap-6 pb-6 sm:flex sm:flex-col lg:flex-row lg:items-start">
+      <section className="flex min-w-0 flex-1 flex-col gap-4">
+        <ProfileSectionHeading>
+          {t('profile.updatesHeading')}
+        </ProfileSectionHeading>
         {isOrg ? (
           <Suspense fallback={null}>
             <PostUpdate
               organization={profile}
               label={t('Post')}
-              className="rounded-none border-x-0 border-t-0 border-b px-4 pt-6 pb-8"
+              className="rounded-lg p-4 empty:hidden"
             />
           </Suspense>
-        ) : (
-          <div></div>
-        )}
+        ) : null}
         <Suspense fallback={<PostFeedSkeleton className="px-4" numPosts={3} />}>
           <ProfileFeedProvider profile={profile}>
             {(props) => <ProfileFeedList {...props} />}
           </ProfileFeedProvider>
         </Suspense>
-      </div>
-      <div className="col-span-6 h-full border-s">
+      </section>
+      <div className="flex flex-col gap-10 lg:w-90 lg:shrink-0 xl:w-104">
         <Suspense fallback={null}>
-          <ProfileDecisions profileId={profile.profile.id} />
+          <ProfileDecisions profile={profile.profile} />
         </Suspense>
-        <div className="flex flex-col gap-4 px-6 py-4">
-          <ProfileAbout profile={profile} />
-        </div>
+        <section className="flex flex-col gap-4">
+          <ProfileSectionHeading>{t('profile.aboutTab')}</ProfileSectionHeading>
+          <Card className="py-6">
+            <CardContent className="px-6">
+              <ProfileAbout profile={profile} />
+            </CardContent>
+          </Card>
+        </section>
       </div>
-    </ProfileGridWrapper>
+    </div>
   );
 };
 
-export const ProfileTabList = ({ children }: { children: React.ReactNode }) => (
-  <TabsList variant="line" className="shrink-0 px-4 sm:px-6">
+/** The 992px column the org profile hero, tabs and body share. */
+export const ProfileColumn = ({
+  children,
+  className,
+}: {
+  children: ReactNode;
+  className?: string;
+}) => (
+  <div className={cn('mx-auto w-full max-w-260 px-4 sm:px-6', className)}>
+    {children}
+  </div>
+);
+
+export const ProfileTabList = ({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) => (
+  <TabsList variant="line" className={cn('shrink-0 px-4 sm:px-6', className)}>
     {children}
   </TabsList>
 );
@@ -464,16 +478,21 @@ export const ProfileTabsMobile = ({
         <>
           <TabsContent value="home" className="flex flex-col gap-6 px-4">
             <Suspense fallback={null}>
-              <ProfileDecisions profileId={profile.profile.id} />
+              <ProfileDecisions profile={profile.profile} />
             </Suspense>
             <hr />
-            <ProfileAbout profile={profile} />
+            <section className="flex flex-col gap-2">
+              <ProfileSectionHeading>
+                {t('profile.aboutTab')}
+              </ProfileSectionHeading>
+              <ProfileAbout profile={profile} />
+            </section>
             <hr />
             <Suspense fallback={<Skeleton className="min-h-20 w-full" />}>
               <div className="-mx-4">
-                <Header2 className="px-4 py-2 text-label leading-normal">
+                <ProfileSectionHeading className="px-4 py-2">
                   {t('profile.postsTab')}
-                </Header2>
+                </ProfileSectionHeading>
                 <ProfileFeedProvider profile={profile}>
                   {(props) => <ProfileFeedCards {...props} />}
                 </ProfileFeedProvider>
@@ -522,3 +541,11 @@ export const ProfileTabsMobile = ({
     </ProfileTabsWithQuery>
   );
 };
+
+const ProfileSectionHeading = ({
+  children,
+  className,
+}: {
+  children: ReactNode;
+  className?: string;
+}) => <Header2 className={cn('text-title', className)}>{children}</Header2>;
