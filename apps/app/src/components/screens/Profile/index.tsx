@@ -48,14 +48,27 @@ const ProfileWithData = async ({
           <ImageHeader
             headerImage={
               headerUrl ? (
-                <Image src={headerUrl} alt="" fill className="object-cover" />
+                <Image
+                  src={headerUrl}
+                  alt=""
+                  fill
+                  priority
+                  sizes="(max-width: 639px) 100vw, 1088px"
+                  className="object-cover"
+                />
               ) : (
                 <div className={cn('h-full w-full', gradientBgHeader)} />
               )
             }
             avatarImage={
               avatarUrl ? (
-                <Image src={avatarUrl} alt="" fill className="object-cover" />
+                <Image
+                  src={avatarUrl}
+                  alt=""
+                  fill
+                  sizes="(max-width: 639px) 64px, 120px"
+                  className="object-cover"
+                />
               ) : (
                 <div className={cn('h-full w-full', gradientBg)} />
               )
@@ -104,14 +117,27 @@ const ProfileWithData = async ({
         <ImageHeader
           headerImage={
             headerUrl ? (
-              <Image src={headerUrl} alt="" fill className="object-cover" />
+              <Image
+                src={headerUrl}
+                alt=""
+                fill
+                priority
+                sizes="(max-width: 639px) 100vw, 1088px"
+                className="object-cover"
+              />
             ) : (
               <div className={cn('h-full w-full', gradientBgHeader)} />
             )
           }
           avatarImage={
             avatarUrl ? (
-              <Image src={avatarUrl} alt="" fill className="object-cover" />
+              <Image
+                src={avatarUrl}
+                alt=""
+                fill
+                sizes="(max-width: 639px) 64px, 120px"
+                className="object-cover"
+              />
             ) : (
               <div className={cn('h-full w-full', gradientBg)} />
             )
