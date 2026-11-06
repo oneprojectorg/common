@@ -1,6 +1,7 @@
 import { db } from '@op/db/client';
 import type { User } from '@op/supabase/lib';
 
+import { toAccountContact } from '../profile/schemas/accountContact';
 import { assertCategoryReviewerAdmin } from './categoryReviewerHelpers';
 import { getEligibleReviewerProfileIds } from './getEligibleReviewerProfileIds';
 import type { EligibleReviewerSchema } from './schemas/reviews';
@@ -9,7 +10,7 @@ import type { EligibleReviewerSchema } from './schemas/reviews';
 export type EligibleReviewer = EligibleReviewerSchema;
 
 /**
- * Display data (name/slug/avatar/email) for every profile currently holding the
+ * Display data (name/slug/avatar/account contact) for every profile currently holding the
  * REVIEW capability on the decision — the candidate set for the category
  * reviewer picker (PR 7, assign-only). Purpose-built for the combobox: it does
  * NOT reuse the unfiltered Participants list, so only role-holders can be added
@@ -48,13 +49,19 @@ export async function listEligibleReviewers({
   const searchPattern =
     trimmed && trimmed.length >= 2 ? `%${trimmed}%` : undefined;
 
-  return db.query.profiles.findMany({
+  const rows = await db.query.profiles.findMany({
     columns: {
       id: true,
       name: true,
       slug: true,
       avatarImageId: true,
-      email: true,
+    },
+    with: {
+      account: {
+        columns: {},
+        orderBy: { createdAt: 'asc', id: 'asc' },
+        with: { authUser: { columns: { email: true, phone: true } } },
+      },
     },
     where: {
       id: { in: eligibleIds },
@@ -62,4 +69,9 @@ export async function listEligibleReviewers({
     },
     orderBy: { name: 'asc' },
   });
+
+  return rows.map(({ account, ...reviewer }) => ({
+    ...reviewer,
+    contact: toAccountContact(account?.authUser),
+  }));
 }

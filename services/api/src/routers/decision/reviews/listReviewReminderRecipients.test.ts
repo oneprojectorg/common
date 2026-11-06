@@ -218,7 +218,7 @@ describe.concurrent('decision.listReviewReminderRecipients', () => {
     expect(await listFor('none')).toEqual([]);
   });
 
-  it('searches by email, and a search that matches nobody returns nothing', async ({
+  it('searches by login email, not the profile email, and a search that matches nobody returns nothing', async ({
     task,
     onTestFinished,
   }) => {
@@ -237,9 +237,10 @@ describe.concurrent('decision.listReviewReminderRecipients', () => {
         })
       ).items.map((row) => row.reviewer.id);
 
-    expect(await listFor(startedDisplayEmail.toUpperCase())).toEqual([
+    expect(await listFor(started.email.toUpperCase())).toEqual([
       started.profileId,
     ]);
+    expect(await listFor(startedDisplayEmail)).toEqual([]);
     expect(await listFor(`no-such-reviewer-${task.id}`)).toEqual([]);
   });
 

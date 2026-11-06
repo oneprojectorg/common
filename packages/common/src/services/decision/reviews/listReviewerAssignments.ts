@@ -9,6 +9,7 @@ import { permission } from 'access-zones';
 
 import { UnauthorizedError } from '../../../utils';
 import { assertProfileAccess } from '../../assert';
+import { toAccountContact } from '../../profile/schemas/accountContact';
 import { getEligibleReviewerProfileIds } from '../getEligibleReviewerProfileIds';
 import { getInstance } from '../getInstance';
 import { listAssignmentsForReviewer } from '../listReviewAssignments';
@@ -65,7 +66,13 @@ export async function listReviewerAssignments({
         name: true,
         slug: true,
         avatarImageId: true,
-        email: true,
+      },
+      with: {
+        account: {
+          columns: {},
+          orderBy: { createdAt: 'asc', id: 'asc' },
+          with: { authUser: { columns: { email: true, phone: true } } },
+        },
       },
     }),
     listAssignmentsForReviewer({
@@ -86,7 +93,16 @@ export async function listReviewerAssignments({
   const isAssociated = isEligible || totals.assignedCount > 0;
 
   return reviewerAssignmentsSchema.parse({
-    reviewer: isAssociated ? (reviewer ?? null) : null,
+    reviewer:
+      isAssociated && reviewer
+        ? {
+            id: reviewer.id,
+            name: reviewer.name,
+            slug: reviewer.slug,
+            avatarImageId: reviewer.avatarImageId,
+            contact: toAccountContact(reviewer.account?.authUser),
+          }
+        : null,
     isEligible,
     ...totals,
     items: queue.items,

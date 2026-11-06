@@ -54,6 +54,7 @@ import {
   SendReminderDialog,
   type SendReminderTarget,
 } from './SendReminderDialog';
+import { accountContactText } from './accountContactText';
 
 interface ReviewersTableSectionProps {
   decisionSlug: string;
@@ -394,7 +395,7 @@ function ReviewerRowCells({
       recipient: {
         id: row.reviewer.id,
         name,
-        email: row.reviewer.email,
+        contact: row.reviewer.contact,
         remainingCount: row.remainingCount,
       },
     });
@@ -417,7 +418,7 @@ function ReviewerRowCells({
             avatar={<ProfileAvatar name={name} alt={name} />}
             title={name}
             titleClassName="font-normal"
-            description={row.reviewer.email ?? undefined}
+            description={accountContactText(row.reviewer.contact) ?? undefined}
           />
         </Link>
       </TableRowHeader>

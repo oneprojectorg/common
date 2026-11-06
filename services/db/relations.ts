@@ -353,6 +353,15 @@ export const relations = defineRelations(schema, (r) => ({
       from: r.profiles.id,
       to: r.profileUsers.profileId,
     }),
+    /**
+     * The `users` row that owns an individual profile. `users.profileId` is
+     * not unique, so callers pass `orderBy: { createdAt: 'asc', id: 'asc' }`.
+     */
+    account: r.one.users({
+      from: r.profiles.id,
+      to: r.users.profileId,
+      alias: 'user_profile',
+    }),
     reviewerAssignments: r.many.proposalReviewAssignments({
       from: r.profiles.id,
       to: r.proposalReviewAssignments.reviewerProfileId,

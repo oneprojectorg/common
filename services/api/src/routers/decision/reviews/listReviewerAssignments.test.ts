@@ -54,7 +54,7 @@ describe.concurrent('decision.listReviewerAssignments', () => {
       submittedAt: new Date().toISOString(),
     });
 
-    // The fixture leaves the profile's contact email unset.
+    // The header shows the login email, never the profile's contact email.
     await db
       .update(profiles)
       .set({ email: `reviewer-${task.id}@example.org` })
@@ -71,7 +71,10 @@ describe.concurrent('decision.listReviewerAssignments', () => {
     });
 
     expect(result.reviewer?.id).toBe(context.defaultReviewer.profileId);
-    expect(result.reviewer?.email).toBe(`reviewer-${task.id}@example.org`);
+    expect(result.reviewer?.contact).toEqual({
+      type: 'email',
+      email: context.defaultReviewer.email,
+    });
     expect(result.isEligible).toBe(true);
     expect(result.items).toHaveLength(1);
     const [item] = result.items;

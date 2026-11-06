@@ -173,6 +173,10 @@ export {
   type StorageItemMinimal,
 } from './services/profile/schemas/profileMinimal';
 export {
+  accountContactSchema,
+  type AccountContact,
+} from './services/profile/schemas/accountContact';
+export {
   accessRoleMinimalSchema,
   type AccessRoleMinimal,
 } from './services/access/schemas/accessRole';

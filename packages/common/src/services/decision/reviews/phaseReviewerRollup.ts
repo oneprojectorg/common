@@ -19,6 +19,8 @@ import {
   proposalReviews,
 } from '@op/db/schema';
 
+import { accountContactColumns } from '../../profile/accountContactColumns';
+import { toAccountContact } from '../../profile/schemas/accountContact';
 import type { ReviewerStatus } from '../schemas/reviewAssignments';
 import type { EligibleReviewerSchema } from '../schemas/reviews';
 import { escapeLikePattern, splitSearchWords } from '../utils/search';
@@ -58,7 +60,8 @@ export function buildPhaseReviewerRollup({
         name: profiles.name,
         slug: profiles.slug,
         avatarImageId: profiles.avatarImageId,
-        email: profiles.email,
+        authEmail: accountContactColumns(profiles.id).email.as('auth_email'),
+        authPhone: accountContactColumns(profiles.id).phone.as('auth_phone'),
         assignedCount: sql<number>`(${assignedCount})::int`
           .mapWith(Number)
           .as('assigned_count'),
@@ -134,14 +137,17 @@ export function buildPhaseReviewerRollup({
 }
 
 export function toEligibleReviewer(
-  row: EligibleReviewerSchema,
+  row: Omit<EligibleReviewerSchema, 'contact'> & {
+    authEmail: string | null;
+    authPhone: string | null;
+  },
 ): EligibleReviewerSchema {
   return {
     id: row.id,
     name: row.name,
     slug: row.slug,
     avatarImageId: row.avatarImageId,
-    email: row.email,
+    contact: toAccountContact({ email: row.authEmail, phone: row.authPhone }),
   };
 }
 
@@ -158,7 +164,11 @@ export function getPhaseReviewerFilters({
     status ? eq(rollup.status, status) : undefined,
     ...splitSearchWords(search).map((word) => {
       const pattern = `%${escapeLikePattern(word)}%`;
-      return or(ilike(rollup.name, pattern), ilike(rollup.email, pattern));
+      return or(
+        ilike(rollup.name, pattern),
+        ilike(rollup.authEmail, pattern),
+        ilike(sql`'+' || ${rollup.authPhone}`, pattern),
+      );
     }),
   );
 }

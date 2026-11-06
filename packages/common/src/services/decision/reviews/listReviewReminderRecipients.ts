@@ -48,7 +48,8 @@ export async function listReviewReminderRecipients({
       name: rollup.name,
       slug: rollup.slug,
       avatarImageId: rollup.avatarImageId,
-      email: rollup.email,
+      authEmail: rollup.authEmail,
+      authPhone: rollup.authPhone,
       remainingCount: rollup.remainingCount,
     })
     .from(rollup)
