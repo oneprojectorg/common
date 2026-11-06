@@ -35,13 +35,10 @@ export function ReviewPage({
   instance,
   decisionSlug,
   slug,
-  pinOffset,
 }: {
   instance: Instance;
   decisionSlug: string;
   slug: string;
-  /** Sticky filter-bar pin offset, forwarded to ProposalsList. */
-  pinOffset?: number;
 }) {
   const phases = instance.instanceData?.phases ?? [];
   const currentPhaseId = instance.currentStateId;
@@ -126,7 +123,6 @@ export function ReviewPage({
       access={instance.access}
       currentPhase={currentPhase}
       canSeeReviewProgress={canSeeReviewCounts}
-      pinOffset={pinOffset}
     />
   );
 
@@ -196,7 +192,6 @@ export function ReviewPage({
                         processInstanceId={instance.id}
                         decisionSlug={decisionSlug}
                         access={instance.access}
-                        pinOffset={pinOffset}
                       />
                     </Suspense>
                   </APIErrorBoundary>
@@ -238,7 +233,6 @@ export function ReviewPage({
                     decisionSlug={decisionSlug}
                     permissions={instance.access}
                     currentPhase={currentPhase}
-                    pinOffset={pinOffset}
                   />
                 </Suspense>
               </APIErrorBoundary>

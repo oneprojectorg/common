@@ -93,11 +93,6 @@ export interface ProposalsListProps {
    * "Proposals in review · N".
    */
   header?: (count: number) => ReactNode;
-  /**
-   * Px offset where the sticky filter bar pins. Decision-view passes a larger
-   * value to clear the Overview/Current toggle; other routes use the default.
-   */
-  pinOffset?: number;
 }
 
 export type ProposalsLoaderRenderProps = {
@@ -285,7 +280,6 @@ const ProposalsListContent = ({
   currentPhase,
   proposalsHidden,
   header,
-  pinOffset,
   phase,
   showFilterTabs = false,
   filters,
@@ -339,15 +333,17 @@ const ProposalsListContent = ({
     // pin line. Below it there's nothing to correct, and scrolling anyway would
     // drag the page down off the hero — which is what a load does, as the
     // profile resolves and moves `queryParams` before anyone has touched a
-    // filter.
-    const pinLine = scroller.getBoundingClientRect().top + (pinOffset ?? 0);
+    // filter. The list's scroll margin is the pin offset, so it is the pin line.
+    const pinLine =
+      scroller.getBoundingClientRect().top +
+      parseFloat(getComputedStyle(list).scrollMarginTop);
     if (list.getBoundingClientRect().top >= pinLine) {
       return;
     }
     // No `behavior`, so it lands instantly: there is nothing to read on the way
     // past, and the results have already changed by the time it starts.
     list.scrollIntoView({ block: 'start' });
-  }, [queryParams, pinOffset]);
+  }, [queryParams]);
 
   const [[{ items: categories }, instance]] = trpc.useSuspenseQueries((t) => [
     t.decision.getCategories({ processInstanceId: instanceId }),
@@ -597,7 +593,6 @@ const ProposalsListContent = ({
       {/* Kept on an empty list too: "Not advanced" can hold what the list
           doesn't, such as proposals earlier phases left behind. */}
       <ProposalsStickyFilterBar
-        pinOffset={pinOffset}
         count={total}
         total={totalProposalCount}
         header={header?.(total)}
@@ -644,11 +639,10 @@ const ProposalsListContent = ({
       ref={listRef}
       // Nothing visibly unmounts any more, so announce the stale window.
       aria-busy={isFilterFetching || undefined}
-      // Clears the floating toggle the filter bar pins below, so a filter reset
-      // doesn't park the bar underneath it.
-      style={{ scrollMarginTop: pinOffset }}
       className={cn(
-        'relative flex flex-col gap-6 pb-12',
+        // The scroll margin clears whatever floats above the pin line, so a
+        // filter reset doesn't park the bar underneath it.
+        'relative flex scroll-mt-pin-offset flex-col gap-6 pb-12',
         // On mobile the map view is edge-to-edge and flush to the bottom.
         browseView === 'map' && 'max-sm:pb-0',
       )}

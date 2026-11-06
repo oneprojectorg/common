@@ -42,15 +42,12 @@ interface ManualSelectionListProps {
    * the standard advance-to-next-phase layout used for mid-process selection.
    */
   confirmVariant?: 'standard' | 'finalPhase';
-  /** Px offset where the filter bar pins (clears the floating phase toggle). */
-  pinOffset?: number;
 }
 
 export const ManualSelectionList = ({
   instanceId,
   decisionSlug,
   confirmVariant = 'standard',
-  pinOffset,
 }: ManualSelectionListProps) => {
   const t = useTranslations();
   const posthog = usePostHog();
@@ -287,7 +284,6 @@ export const ManualSelectionList = ({
           categories={categories}
           filters={toolbarFilters}
           onChange={handleToolbarChange}
-          pinOffset={pinOffset}
         />
 
         {candidates.length === 0 ? (
