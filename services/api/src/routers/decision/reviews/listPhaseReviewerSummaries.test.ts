@@ -85,6 +85,7 @@ describe.concurrent('decision.listPhaseReviewerSummaries', () => {
     expect(summary?.assignedCount).toBe(2);
     expect(summary?.submittedCount).toBe(1);
     expect(summary?.draftCount).toBe(1);
+    expect(summary?.remainingCount).toBe(1);
     expect(summary?.lastSubmittedAt).not.toBeNull();
   });
 
