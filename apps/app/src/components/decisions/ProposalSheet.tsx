@@ -31,12 +31,16 @@ import {
   type ProposalRoute,
   decisionRootHref,
   proposalHref,
+  proposalReviewsHref,
 } from './proposalHrefs';
 import { useCommentsAllowed } from './useCommentsAllowed';
 import { useLiveProposalDocument } from './useLiveProposalDocument';
 import { useTranslateProposal } from './useTranslateProposal';
 
 export type ProposalSheetRoute = Omit<ProposalRoute, 'profileId'>;
+
+/** Where the sheet's expand button goes: the proposal, or its review screen. */
+export type ProposalSheetExpandTo = 'proposal' | 'reviews';
 
 /**
  * A proposal read in a panel over the page it was opened from, so the list's
@@ -45,15 +49,19 @@ export type ProposalSheetRoute = Omit<ProposalRoute, 'profileId'>;
 export function ProposalSheet({
   profileId,
   route,
+  expandTo = 'proposal',
   onClose,
 }: {
   /** `null` keeps the sheet closed. */
   profileId: string | null;
   route: ProposalSheetRoute;
+  expandTo?: ProposalSheetExpandTo;
   onClose: () => void;
 }) {
   const t = useTranslations();
   const shownProfileId = useLastOpenProposal(profileId);
+  const expandHref =
+    expandTo === 'reviews' ? proposalReviewsHref : proposalHref;
 
   return (
     <Sheet
@@ -87,7 +95,7 @@ export function ProposalSheet({
                 </Suspense>
               </APIErrorBoundary>
               <ButtonLink
-                href={proposalHref({ ...route, profileId: shownProfileId })}
+                href={expandHref({ ...route, profileId: shownProfileId })}
                 variant="ghost"
                 size="icon-sm"
                 aria-label={t('decisions.proposals.openFullProposalAction')}

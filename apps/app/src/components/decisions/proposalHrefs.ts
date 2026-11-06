@@ -31,3 +31,8 @@ export function proposalHref(route: ProposalRoute): string {
 export function proposalEditHref(route: ProposalRoute): string {
   return `${proposalHref(route)}/edit`;
 }
+
+/** The proposal's review screen: two-pane review progress for an admin. */
+export function proposalReviewsHref(route: ProposalRoute): string {
+  return `${proposalHref(route)}/reviews`;
+}

@@ -34,7 +34,7 @@ import {
   ReviewStatusBadge,
   isReviewShownOutOfDate,
 } from '../ReviewStatusBadge';
-import { proposalHref } from '../proposalHrefs';
+import { proposalReviewsHref } from '../proposalHrefs';
 import { useOpenProposalInSheet } from '../proposalSheetState';
 import type { AssignmentStatusValue } from './assignmentStatusSpecs';
 
@@ -101,7 +101,7 @@ function ReviewerAssignmentRow({
 
   // A translation record types every field as `string | string[]`.
   const title = typeof titleText === 'string' ? titleText : titleText.join(' ');
-  const href = proposalHref({ ...route, profileId: proposal.profileId });
+  const href = proposalReviewsHref({ ...route, profileId: proposal.profileId });
   const onOpen = openInSheet(proposal.profileId);
   const submitterName = authors?.[0]?.name;
   const submittedAt =

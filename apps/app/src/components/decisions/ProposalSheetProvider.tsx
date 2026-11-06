@@ -4,7 +4,11 @@ import { useIsMobile } from '@/hooks/useIsMobile';
 import { parseAsString, useQueryState } from 'nuqs';
 import { type ReactNode, useCallback, useMemo } from 'react';
 
-import { ProposalSheet, type ProposalSheetRoute } from './ProposalSheet';
+import {
+  ProposalSheet,
+  type ProposalSheetExpandTo,
+  type ProposalSheetRoute,
+} from './ProposalSheet';
 import {
   PROPOSAL_SHEET_PARAM,
   type ProposalSheetControls,
@@ -24,8 +28,13 @@ export function ProposalSheetProvider({
   slug,
   instanceId,
   decisionSlug,
+  expandTo,
   children,
-}: ProposalSheetRoute & { children: ReactNode }) {
+}: ProposalSheetRoute & {
+  /** Defaults to the proposal; a review screen expands into its reviews. */
+  expandTo?: ProposalSheetExpandTo;
+  children: ReactNode;
+}) {
   const [openProfileId, setOpenProfileId] = useQueryState(
     PROPOSAL_SHEET_PARAM,
     parseAsString,
@@ -57,6 +66,7 @@ export function ProposalSheetProvider({
         <ProposalSheet
           profileId={openProfileId}
           route={{ slug, instanceId, decisionSlug }}
+          expandTo={expandTo}
           onClose={close}
         />
       ) : null}

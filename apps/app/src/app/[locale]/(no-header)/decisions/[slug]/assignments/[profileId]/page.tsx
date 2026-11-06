@@ -62,6 +62,7 @@ export default async function ReviewerAssignmentsPage({
           slug={ownerSlug}
           instanceId={processInstanceId}
           decisionSlug={slug}
+          expandTo="reviews"
         >
           <ReviewerAssignmentsSection
             processInstanceId={processInstanceId}
