@@ -115,7 +115,8 @@ const AllDecisionsTabs = () => {
   const t = useTranslations();
   const { user } = useRequiredUser();
   const [tab, setTab] = useQueryState('tab');
-  const ownerProfileId = user.currentProfile?.id;
+  // The creator's individual profile owns a draft, even when they act as an org.
+  const ownerProfileId = user.profileId ?? undefined;
 
   const [{ items: drafts }] =
     trpc.decision.listDecisionProfiles.useSuspenseQuery({

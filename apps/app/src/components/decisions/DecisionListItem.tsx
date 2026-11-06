@@ -80,15 +80,12 @@ export const DecisionListItem = ({
     (phase) => phase.phaseId === processInstance.currentStateId,
   );
   // A draft carries none of the running-process metadata (Figma 17827:9692): no
-  // phase chip, no closing date, no counts — just the name, its owner, and a
+  // phase chip, no closing date, no counts — just the name, its steward, and a
   // Draft badge where the metrics sit.
   const currentPhaseName = isDraft ? undefined : currentPhase?.name;
   const closingDate = isDraft ? undefined : currentPhase?.endDate;
 
-  // For drafts show owner; for published prefer steward, fall back to owner
-  const displayProfile = isDraft
-    ? processInstance.owner
-    : (processInstance.steward ?? processInstance.owner);
+  const displayProfile = processInstance.steward ?? processInstance.owner;
 
   const handleDeleteConfirm = () => {
     deleteMutation.mutate({ instanceId: processInstance.id });
