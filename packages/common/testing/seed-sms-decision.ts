@@ -132,7 +132,6 @@ const schema = {
             ...phase.rules,
             voting: {
               submit: true,
-              edit: true,
               ranked: true,
               voterBudget: 1_000_000,
               voterCostField: 'budget',
