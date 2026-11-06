@@ -29,6 +29,9 @@ import { LuBell, LuListChecks, LuUserX, LuUsers } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
+import type { ProposalSheetRoute } from '../ProposalSheet';
+import { ProposalSheetProvider } from '../ProposalSheetProvider';
+import { proposalReviewsHref } from '../proposalHrefs';
 import { ManageAssignmentsAction } from './ManageAssignmentsAction';
 import {
   ReviewerAssignmentsBodySkeleton,
@@ -50,42 +53,67 @@ interface ReviewerAssignmentsSectionProps {
   ownerSlug: string;
 }
 
-export function ReviewerAssignmentsSection(
-  props: ReviewerAssignmentsSectionProps,
-) {
+export function ReviewerAssignmentsSection({
+  processInstanceId,
+  phaseId,
+  reviewerProfileId,
+  decisionSlug,
+  ownerSlug,
+}: ReviewerAssignmentsSectionProps) {
   const t = useTranslations();
+  const route = useMemo<ProposalSheetRoute>(
+    () => ({ decisionSlug, slug: ownerSlug, instanceId: processInstanceId }),
+    [decisionSlug, ownerSlug, processInstanceId],
+  );
+  const expandHref = useCallback(
+    (profileId: string) =>
+      proposalReviewsHref({
+        decisionSlug,
+        slug: ownerSlug,
+        instanceId: processInstanceId,
+        profileId,
+      }),
+    [decisionSlug, ownerSlug, processInstanceId],
+  );
 
   return (
-    <APIErrorBoundary
-      fallbacks={{
-        default: () => (
-          <Empty>
-            <EmptyHeader>
-              <EmptyMedia variant="icon">
-                <LuUsers className="size-6" />
-              </EmptyMedia>
-              <EmptyTitle>
-                {t('decisions.review.loadAssignmentsError')}
-              </EmptyTitle>
-              <EmptyDescription>
-                {t('decisions.proposals.refreshPageHint')}
-              </EmptyDescription>
-            </EmptyHeader>
-          </Empty>
-        ),
-      }}
-    >
-      <Suspense
-        fallback={
-          <>
-            <ReviewerHeaderSkeleton />
-            <ReviewerAssignmentsBodySkeleton />
-          </>
-        }
+    <ProposalSheetProvider {...route} expandHref={expandHref}>
+      <APIErrorBoundary
+        fallbacks={{
+          default: () => (
+            <Empty>
+              <EmptyHeader>
+                <EmptyMedia variant="icon">
+                  <LuUsers className="size-6" />
+                </EmptyMedia>
+                <EmptyTitle>
+                  {t('decisions.review.loadAssignmentsError')}
+                </EmptyTitle>
+                <EmptyDescription>
+                  {t('decisions.proposals.refreshPageHint')}
+                </EmptyDescription>
+              </EmptyHeader>
+            </Empty>
+          ),
+        }}
       >
-        <ReviewerAssignmentsContent {...props} />
-      </Suspense>
-    </APIErrorBoundary>
+        <Suspense
+          fallback={
+            <>
+              <ReviewerHeaderSkeleton />
+              <ReviewerAssignmentsBodySkeleton />
+            </>
+          }
+        >
+          <ReviewerAssignmentsContent
+            processInstanceId={processInstanceId}
+            phaseId={phaseId}
+            reviewerProfileId={reviewerProfileId}
+            route={route}
+          />
+        </Suspense>
+      </APIErrorBoundary>
+    </ProposalSheetProvider>
   );
 }
 
@@ -93,9 +121,13 @@ function ReviewerAssignmentsContent({
   processInstanceId,
   phaseId,
   reviewerProfileId,
-  decisionSlug,
-  ownerSlug,
-}: ReviewerAssignmentsSectionProps) {
+  route,
+}: {
+  processInstanceId: string;
+  phaseId: string;
+  reviewerProfileId: string;
+  route: ProposalSheetRoute;
+}) {
   const t = useTranslations();
   const headingId = useId();
   const [reminderTarget, setReminderTarget] =
@@ -215,11 +247,7 @@ function ReviewerAssignmentsContent({
 
           <ReviewerAssignmentsTable
             assignments={assignments}
-            route={{
-              decisionSlug,
-              slug: ownerSlug,
-              instanceId: processInstanceId,
-            }}
+            route={route}
             labelledBy={headingId}
           />
 

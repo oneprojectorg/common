@@ -9,7 +9,6 @@ import { notFound } from 'next/navigation';
 
 import { getTranslations } from '@/lib/i18n';
 
-import { ProposalSheetProvider } from '@/components/decisions/ProposalSheetProvider';
 import { AssignmentsPageShell } from '@/components/decisions/ReviewAssignments/AssignmentsPageShell';
 import { ReviewerAssignmentsSection } from '@/components/decisions/ReviewAssignments/ReviewerAssignmentsSection';
 
@@ -58,20 +57,13 @@ export default async function ReviewerAssignmentsPage({
   return (
     <AssignmentsPageShell backHref={`/decisions/${slug}/current?tab=reviewers`}>
       <HydrationBoundary state={dehydrate(queryClient)}>
-        <ProposalSheetProvider
-          slug={ownerSlug}
-          instanceId={processInstanceId}
+        <ReviewerAssignmentsSection
+          processInstanceId={processInstanceId}
+          phaseId={phaseId}
+          reviewerProfileId={profileId}
           decisionSlug={slug}
-          expandTo="reviews"
-        >
-          <ReviewerAssignmentsSection
-            processInstanceId={processInstanceId}
-            phaseId={phaseId}
-            reviewerProfileId={profileId}
-            decisionSlug={slug}
-            ownerSlug={ownerSlug}
-          />
-        </ProposalSheetProvider>
+          ownerSlug={ownerSlug}
+        />
       </HydrationBoundary>
     </AssignmentsPageShell>
   );
