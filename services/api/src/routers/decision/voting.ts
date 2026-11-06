@@ -1,4 +1,4 @@
-import { getVotingStatus, submitVote } from '@op/common';
+import { ballotReceiptSchema, getVotingStatus, submitVote } from '@op/common';
 import { Events, inngest } from '@op/events';
 import { waitUntil } from '@vercel/functions';
 import { z } from 'zod';
@@ -54,16 +54,20 @@ export const votingRouter = router({
 
   // Get the caller's vote status with schema context. Open to public /
   // anonymous viewers of public decisions — they resolve to "not voted".
+  // A ballot cast since votes were unlinked comes back only with the receipt
+  // submitVote issued.
   getVotingStatus: openProcedure()
     .input(
       z.object({
         processInstanceId: z.uuid(),
+        receipt: ballotReceiptSchema.optional(),
       }),
     )
     .query(async ({ input, ctx }) => {
       return await getVotingStatus({
         data: {
           processInstanceId: input.processInstanceId,
+          receipt: input.receipt,
         },
         user: ctx.user,
       });

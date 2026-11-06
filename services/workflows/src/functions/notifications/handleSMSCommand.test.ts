@@ -1990,11 +1990,11 @@ describe('handleSMSCommand building and casting the ballot', () => {
     });
     const idOf = (code: number) =>
       proposals.find((p) => p.shortCode === code)!.id;
-    const submission = await db.query.decisionsVoteSubmissions.findFirst({
+    const ballot = await db.query.decisionsVoteBallots.findFirst({
       where: { processInstanceId: instanceId },
-      columns: { voteData: true },
+      columns: { ballotData: true },
     });
-    expect(submission?.voteData.selections?.map((s) => s.proposalId)).toEqual([
+    expect(ballot?.ballotData.selections.map((s) => s.proposalId)).toEqual([
       idOf(102),
       idOf(101),
     ]);
@@ -2048,11 +2048,11 @@ describe('handleSMSCommand building and casting the ballot', () => {
       where: { processInstanceId: instanceId, shortCode: 101 },
       columns: { id: true },
     });
-    const submission = await db.query.decisionsVoteSubmissions.findFirst({
+    const ballot = await db.query.decisionsVoteBallots.findFirst({
       where: { processInstanceId: instanceId },
-      columns: { voteData: true },
+      columns: { ballotData: true },
     });
-    expect(submission?.voteData.selections?.map((s) => s.proposalId)).toEqual([
+    expect(ballot?.ballotData.selections.map((s) => s.proposalId)).toEqual([
       remaining?.id,
     ]);
   });

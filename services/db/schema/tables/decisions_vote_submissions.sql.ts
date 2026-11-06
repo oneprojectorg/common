@@ -8,6 +8,11 @@ import { decisionsVoteProposals } from './decisions_vote_proposals.sql';
 import { processInstances } from './processInstances.sql';
 import { profiles } from './profiles.sql';
 
+/**
+ * A submission now records only that the voter voted. What they voted for
+ * lives on an unlinked row in `decisions_vote_ballots`. `validationSignature`
+ * and everything below it are set only on submissions cast before that split.
+ */
 export interface VoteData extends Record<string, unknown> {
   schemaVersion: string;
   schemaType: string;
@@ -16,7 +21,8 @@ export interface VoteData extends Record<string, unknown> {
     userAgent?: string;
     [key: string]: unknown;
   };
-  validationSignature: string;
+  /** Legacy: encodes the picks and the voter, so it is no longer written. */
+  validationSignature?: string;
 
   voterBudget?: number;
   /** Template field each selection was charged from, in `costUnit`. */

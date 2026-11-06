@@ -518,6 +518,33 @@ export const relations = defineRelations(schema, (r) => ({
     }),
   },
 
+  // No relation to a voter or a submission, by design.
+  decisionsVoteBallots: {
+    processInstance: r.one.processInstances({
+      from: r.decisionsVoteBallots.processInstanceId,
+      to: r.processInstances.id,
+      optional: false,
+    }),
+    ballotProposals: r.many.decisionsVoteBallotProposals({
+      from: r.decisionsVoteBallots.id,
+      to: r.decisionsVoteBallotProposals.ballotId,
+    }),
+  },
+
+  decisionsVoteBallotProposals: {
+    ballot: r.one.decisionsVoteBallots({
+      from: r.decisionsVoteBallotProposals.ballotId,
+      to: r.decisionsVoteBallots.id,
+      optional: false,
+    }),
+    proposal: r.one.proposals({
+      from: r.decisionsVoteBallotProposals.proposalId,
+      to: r.proposals.id,
+      alias: 'decisionsVoteBallotProposal_proposal',
+      optional: false,
+    }),
+  },
+
   decisionsVoteProposals: {
     voteSubmission: r.one.decisionsVoteSubmissions({
       from: r.decisionsVoteProposals.voteSubmissionId,

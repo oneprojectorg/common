@@ -140,6 +140,7 @@ export const listAllProposals = async ({
     const ballot = await getVoterBallot({
       processInstanceId,
       profileId: input.votedByProfileId,
+      receipt: input.ballotReceipt,
     });
     votedProposalIds = ballot.proposalIds;
     rankedBallotIds = ballot.ranked ? ballot.proposalIds : undefined;
