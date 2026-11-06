@@ -133,11 +133,7 @@ export async function revertPhase({
   const now = new Date().toISOString();
 
   const target = await db.transaction(async (tx) => {
-    const locked = await lockCurrentPhase({
-      tx,
-      instanceId,
-      observedPhaseId,
-    });
+    const locked = await lockCurrentPhase({ tx, instanceId, observedPhaseId });
     const revertTarget = await resolveTransitionToUndo({
       tx,
       instanceId,

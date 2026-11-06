@@ -358,7 +358,6 @@ export type DecisionAccess = z.infer<typeof decisionAccessEncoder>;
 
 /** Process instance encoder  */
 export const processInstanceWithSchemaEncoder = z.preprocess(
-  // TODO: remove withPhasesOnWire when the client reads phases off the instance.
   withPhasesOnWire,
   createSelectSchema(processInstances)
     .pick({
@@ -503,7 +502,6 @@ export const decisionProcessEncoder = createSelectSchema(decisionProcesses)
 
 // Process Instance Encoder
 export const processInstanceEncoder = z.preprocess(
-  // TODO: remove withPhasesOnWire when the client reads phases off the instance.
   withPhasesOnWire,
   createSelectSchema(processInstances)
     .pick({

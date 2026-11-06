@@ -22,7 +22,6 @@
     "./testing/mocks/deepl": "./testing/mocks/deepl.ts",
     "./testing/mocks/collab": "./testing/mocks/collab.ts",
     "./testing/mocks/registerCollab": "./testing/mocks/registerCollab.ts",
-    "./testing/mocks/analytics": "./testing/mocks/analytics.ts",
     "./src/*": "./src/*"
   },
   "main": "src/index.ts",
