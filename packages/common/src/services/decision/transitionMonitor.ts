@@ -10,7 +10,7 @@ import pMap from 'p-map';
 import { CommonError } from '../../utils';
 import { advancePhase } from './advancePhase';
 import { invalidateDecisionInstance } from './decisionCache';
-import { type WithPhases, resolvePhasesForAll } from './instancePhases';
+import { type InstanceWithPhases, resolvePhasesForAll } from './instancePhases';
 import { onPhaseAdvanced } from './onPhaseAdvanced';
 
 export interface ProcessDecisionsTransitionsResult {
@@ -168,7 +168,7 @@ async function advanceInstanceTransitions({
   now,
   result,
 }: {
-  instance: WithPhases<{ id: string; instanceData: unknown }>;
+  instance: InstanceWithPhases<{ id: string; instanceData: unknown }>;
   transitions: DueTransition[];
   now: string;
   result: ProcessDecisionsTransitionsResult;

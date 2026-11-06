@@ -8,7 +8,7 @@ import {
 
 import { attachProposalsToTransition } from './attachProposalsToTransition';
 import { getProposalsForPhase } from './getProposalsForPhase';
-import type { WithPhases } from './instancePhases';
+import type { InstanceWithPhases } from './instancePhases';
 import type { TransitionData } from './schemas/transitionData';
 import {
   aggregateProposalMetrics,
@@ -18,7 +18,7 @@ import type { ExecutionContext } from './selectionPipeline/types';
 
 export interface AdvancePhaseInput {
   db: DbClient;
-  instance: WithPhases<{ id: string }>;
+  instance: InstanceWithPhases<{ id: string }>;
   fromPhaseId: string;
   toPhaseId: string;
   /** Null for cron / system-triggered transitions. */

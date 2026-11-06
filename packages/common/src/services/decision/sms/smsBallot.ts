@@ -21,7 +21,7 @@ import { ensureChatSession } from '../chatSession';
 import { getFieldUnit, isAtMost, sumAmounts } from '../fieldUnit';
 import { getBallotProposalByCode } from '../getBallotProposalByCode';
 import { getProposalCosts } from '../getProposalCosts';
-import type { WithPhases } from '../instancePhases';
+import type { InstanceWithPhases } from '../instancePhases';
 import { resolveProposalTemplate } from '../resolveProposalTemplate';
 import { getInstanceCurrentPhase } from '../utils/instance';
 import {
@@ -57,7 +57,7 @@ interface BallotKey {
 }
 
 const getPricing = async (
-  instance: WithPhases<{
+  instance: InstanceWithPhases<{
     instanceData: unknown;
     currentStateId: string | null;
     processId: string | null;

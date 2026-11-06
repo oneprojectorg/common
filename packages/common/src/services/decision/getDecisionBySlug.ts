@@ -6,7 +6,7 @@ import { permission } from 'access-zones';
 import { UnauthorizedError } from '../../utils';
 import type { AccessUser } from '../access/cacheKeys';
 import { assertProfileAccess } from '../assert';
-import { type WithPhases, resolvePhases } from './instancePhases';
+import { type InstanceWithPhases, resolvePhases } from './instancePhases';
 
 const decisionProfileQueryConfig = {
   with: {
@@ -31,7 +31,7 @@ type LoadedDecisionProfile = NonNullable<
 >;
 
 type DecisionProfileItem = Omit<LoadedDecisionProfile, 'processInstance'> & {
-  processInstance: WithPhases<
+  processInstance: InstanceWithPhases<
     NonNullable<LoadedDecisionProfile['processInstance']>
   >;
 };

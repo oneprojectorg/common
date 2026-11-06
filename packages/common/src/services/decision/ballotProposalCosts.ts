@@ -1,11 +1,11 @@
 import { formatUnitAmount, getFieldUnit } from './fieldUnit';
 import { getProposalCosts } from './getProposalCosts';
-import type { WithPhases } from './instancePhases';
+import type { InstanceWithPhases } from './instancePhases';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
 import { getInstanceCurrentPhase } from './utils/instance';
 import { getVoterCostField } from './utils/phaseSettings';
 
-export type BallotInstance = WithPhases<{
+export type BallotInstance = InstanceWithPhases<{
   id: string;
   instanceData: unknown;
   currentStateId: string | null;
