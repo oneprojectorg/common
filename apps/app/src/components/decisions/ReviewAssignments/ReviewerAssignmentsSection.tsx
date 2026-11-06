@@ -176,7 +176,7 @@ function ReviewerAssignmentsContent({
                       reviewers={reviewersByProposalId.get(
                         item.assignment.proposal.id,
                       )}
-                      access={access}
+                      canOpenReviews={access.admin}
                     />
                   </li>
                 );

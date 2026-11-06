@@ -4,7 +4,6 @@ import { useTrackPageView } from '@/hooks/useTrackPageView';
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { getDecisionCommonProperties } from '@op/analytics/client-utils';
 import { trpc } from '@op/api/client';
-import { type DecisionAccess } from '@op/api/encoders';
 import {
   type Proposal,
   ProposalReviewAssignmentStatus,
@@ -57,16 +56,16 @@ const ASSIGNMENT_STATUSES = Object.values(ProposalReviewAssignmentStatus) as [
 export function ReviewAssignmentsList({
   processInstanceId,
   decisionSlug,
-  access,
+  canSeeReviewCounts,
   pinOffset,
 }: {
   processInstanceId: string;
   decisionSlug: string;
-  access?: DecisionAccess;
+  /** Whether this viewer may see each proposal's submitted-review count. */
+  canSeeReviewCounts: boolean;
   /** Px offset where the filter bar pins (clears the floating phase toggle). */
   pinOffset?: number;
 }) {
-  const canViewReviewers = Boolean(access?.admin);
   const t = useTranslations();
 
   const [statusFilter, setStatusFilter] = useQueryState(
@@ -131,10 +130,12 @@ export function ReviewAssignmentsList({
     () => assignments.map((item) => item.assignment.proposal),
     [assignments],
   );
+  // A reviewer must name the phase for the aggregates read; admins may omit it.
   const reviewersByProposalId = useReviewersByProposalId({
     processInstanceId,
     proposalIds,
-    enabled: canViewReviewers,
+    phaseId: currentPhase?.phaseId,
+    enabled: canSeeReviewCounts,
   });
   const isByCategory =
     !!currentPhase &&
@@ -213,7 +214,7 @@ export function ReviewAssignmentsList({
           viewHref={reviewsHref(proposal)}
           reviewsHref={reviewsHref(proposal)}
           reviewers={reviewersByProposalId.get(proposal.id)}
-          access={access}
+          canOpenReviews={canSeeReviewCounts}
           showCategory={showCategory}
           className={className}
         />
@@ -223,7 +224,7 @@ export function ReviewAssignmentsList({
       assignmentByProposalId,
       reviewersByProposalId,
       reviewsHref,
-      access,
+      canSeeReviewCounts,
       showCategory,
     ],
   );
@@ -425,7 +426,7 @@ export function ReviewAssignmentsList({
                     item.assignment.proposal.id,
                   )}
                   reviewsHref={reviewsHref(item.assignment.proposal)}
-                  access={access}
+                  canOpenReviews={canSeeReviewCounts}
                   showCategory={showCategory}
                 />
               ))}

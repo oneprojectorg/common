@@ -195,7 +195,7 @@ export function ReviewPage({
                       <ReviewAssignmentsList
                         processInstanceId={instance.id}
                         decisionSlug={decisionSlug}
-                        access={instance.access}
+                        canSeeReviewCounts={canSeeReviewCounts}
                         pinOffset={pinOffset}
                       />
                     </Suspense>

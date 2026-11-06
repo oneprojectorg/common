@@ -1,6 +1,5 @@
 'use client';
 
-import { type DecisionAccess } from '@op/api/encoders';
 import {
   type ProposalReviewAggregates,
   type ReviewAssignmentExtended,
@@ -25,7 +24,8 @@ interface ReviewAssignmentCardProps {
   reviewers?: Reviewers;
   /** Review summary route for the assignment's proposal. */
   reviewsHref: string;
-  access?: DecisionAccess;
+  /** Whether the count links to the proposal's reviews screen. */
+  canOpenReviews: boolean;
   /** Whether to show the proposal's category tag (see ReviewAssignmentsList). */
   showCategory?: boolean;
   /** Forwarded to the card — carries the map view's active-pin highlight. */
@@ -37,7 +37,7 @@ export function ReviewAssignmentCard({
   viewHref,
   reviewers,
   reviewsHref,
-  access,
+  canOpenReviews,
   showCategory = true,
   className,
 }: ReviewAssignmentCardProps) {
@@ -89,7 +89,7 @@ export function ReviewAssignmentCard({
           <ProposalReviewsCount
             reviewers={reviewers}
             href={reviewsHref}
-            canOpenReviews={Boolean(access?.admin)}
+            canOpenReviews={canOpenReviews}
           />
         ) : undefined
       }
