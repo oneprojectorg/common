@@ -203,6 +203,12 @@ export * from './utils/phaseTemplates';
 
 // Voting management
 export * from './voting';
+export { ballotReceiptSchema } from './schemas/ballotReceipt';
+export {
+  hashBallotReceipt,
+  isBallotSealIntact,
+  sealBallot,
+} from './ballotReceipt';
 export * from './votingEligibility';
 export * from './sms';
 export * from './countBallotProposals';

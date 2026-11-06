@@ -112,6 +112,7 @@ const resolveExplicitScope = async ({
   const ballot = await getVoterBallot({
     processInstanceId: input.processInstanceId,
     profileId: input.votedByProfileId,
+    receipt: input.ballotReceipt,
   });
 
   return {

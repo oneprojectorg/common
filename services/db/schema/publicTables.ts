@@ -243,6 +243,14 @@ export {
 } from './tables/decisions_vote_proposals.sql';
 export type { DecisionVoteProposal } from './tables/decisions_vote_proposals.sql';
 
+export { decisionsVoteBallots } from './tables/decisions_vote_ballots.sql';
+export type {
+  BallotData,
+  DecisionsVoteBallot,
+} from './tables/decisions_vote_ballots.sql';
+export { decisionsVoteBallotProposals } from './tables/decisions_vote_ballot_proposals.sql';
+export type { DecisionsVoteBallotProposal } from './tables/decisions_vote_ballot_proposals.sql';
+
 export {
   decisionProcessSurveyResponses,
   decisionProcessSurveySubmitters,

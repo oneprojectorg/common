@@ -1,5 +1,10 @@
 import { mockCollab } from '@op/collab/testing';
-import { affirmVoterAttestation, resolveVoterAddress } from '@op/common';
+import {
+  affirmVoterAttestation,
+  hashBallotReceipt,
+  isBallotSealIntact,
+  resolveVoterAddress,
+} from '@op/common';
 import type { BudgetData, VoterEnrolmentRule } from '@op/common/client';
 import { TestDecisionsDataManager } from '@op/common/testing';
 import {
@@ -7,7 +12,7 @@ import {
   ensureProposalCategoryTerms,
 } from '@op/common/testing/data';
 import { ProposalStatus, processInstances, taxonomyTerms } from '@op/db/schema';
-import { db, eq, inArray } from '@op/db/test';
+import { db, eq, inArray, sql } from '@op/db/test';
 import type { AmountUnit } from '@op/types/amountUnit';
 import { describe, expect, it } from 'vitest';
 
@@ -280,12 +285,12 @@ describe.concurrent('submitVote', () => {
 });
 
 describe.concurrent('submitVote knapsack budget', () => {
-  async function getVoteData(voteSubmissionId: string) {
-    const row = await db.query.decisionsVoteSubmissions.findFirst({
-      where: { id: voteSubmissionId },
+  async function getBallotData(receipt: string, processInstanceId: string) {
+    const row = await db.query.decisionsVoteBallots.findFirst({
+      where: { receiptHash: hashBallotReceipt({ receipt, processInstanceId }) },
     });
 
-    return row?.voteData;
+    return row?.ballotData;
   }
 
   it('accepts a ballot under the voter budget and snapshots what it enforced', async ({
@@ -310,7 +315,9 @@ describe.concurrent('submitVote knapsack budget', () => {
       selectedProposalIds: proposals.map((p) => p.id),
     });
 
-    expect(await getVoteData(result.id)).toMatchObject({
+    expect(
+      await getBallotData(result.receipt, instance.instance.id),
+    ).toMatchObject({
       voterBudget: 1000,
       voterCostField: 'budget',
       costUnit: USD,
@@ -351,6 +358,12 @@ describe.concurrent('submitVote knapsack budget', () => {
     });
 
     expect(submissions).toHaveLength(0);
+
+    const ballots = await db.query.decisionsVoteBallots.findMany({
+      where: { processInstanceId: instance.instance.id },
+    });
+
+    expect(ballots).toHaveLength(0);
   });
 
   it('charges nothing for a proposal with no budget', async ({
@@ -372,7 +385,9 @@ describe.concurrent('submitVote knapsack budget', () => {
       selectedProposalIds: proposals.map((p) => p.id),
     });
 
-    expect(await getVoteData(result.id)).toMatchObject({
+    expect(
+      await getBallotData(result.receipt, instance.instance.id),
+    ).toMatchObject({
       totalCost: 300,
       selections: [
         { proposalId: proposals[0]!.id, cost: 300 },
@@ -403,7 +418,11 @@ describe.concurrent('submitVote knapsack budget', () => {
       selectedProposalIds: proposals.map((p) => p.id),
     });
 
-    expect(await getVoteData(result.id)).toMatchObject({ totalCost: 300 });
+    expect(
+      await getBallotData(result.receipt, instance.instance.id),
+    ).toMatchObject({
+      totalCost: 300,
+    });
   });
 
   it('charges from the cost field the rules name', async ({
@@ -433,7 +452,9 @@ describe.concurrent('submitVote knapsack budget', () => {
       selectedProposalIds: [proposals[0]!.id],
     });
 
-    expect(await getVoteData(result.id)).toMatchObject({
+    expect(
+      await getBallotData(result.receipt, instance.instance.id),
+    ).toMatchObject({
       voterCostField: 'cost',
       costUnit: DOTS,
       totalCost: 7,
@@ -464,7 +485,9 @@ describe.concurrent('submitVote knapsack budget', () => {
       selectedProposalIds: proposals.map((p) => p.id),
     });
 
-    expect(await getVoteData(result.id)).toMatchObject({
+    expect(
+      await getBallotData(result.receipt, instance.instance.id),
+    ).toMatchObject({
       voterCostField: 'cost',
       costUnit: DOTS,
       totalCost: 3,
@@ -587,24 +610,33 @@ describe.concurrent('submitVote knapsack budget', () => {
       selectedProposalIds: [proposals[0]!.id],
     });
 
-    const voteData = await getVoteData(result.id);
+    const ballotData = await getBallotData(
+      result.receipt,
+      instance.instance.id,
+    );
 
-    expect(voteData?.voterBudget).toBeUndefined();
-    expect(voteData?.voterCostField).toBeUndefined();
-    expect(voteData?.costUnit).toBeUndefined();
-    expect(voteData?.totalCost).toBeUndefined();
-    expect(voteData?.selections).toEqual([
+    expect(ballotData?.voterBudget).toBeUndefined();
+    expect(ballotData?.voterCostField).toBeUndefined();
+    expect(ballotData?.costUnit).toBeUndefined();
+    expect(ballotData?.totalCost).toBeUndefined();
+    expect(ballotData?.selections).toEqual([
       { proposalId: proposals[0]!.id, cost: null },
     ]);
   });
 });
 
 describe.concurrent('submitVote ranked ballots', () => {
-  async function getSelections(voteSubmissionId: string) {
-    return db.query.decisionsVoteProposals.findMany({
-      where: { voteSubmissionId },
-      orderBy: { rank: 'asc', createdAt: 'asc' },
+  async function getBallot(receipt: string, processInstanceId: string) {
+    return db.query.decisionsVoteBallots.findFirst({
+      where: { receiptHash: hashBallotReceipt({ receipt, processInstanceId }) },
+      with: {
+        ballotProposals: { orderBy: { rank: 'asc', position: 'asc' } },
+      },
     });
+  }
+
+  async function getSelections(receipt: string, processInstanceId: string) {
+    return (await getBallot(receipt, processInstanceId))?.ballotProposals ?? [];
   }
 
   it('persists the submission order as a rank', async ({
@@ -626,7 +658,9 @@ describe.concurrent('submitVote ranked ballots', () => {
       selectedProposalIds: ballot,
     });
 
-    expect(await getSelections(result.id)).toMatchObject([
+    expect(
+      await getSelections(result.receipt, instance.instance.id),
+    ).toMatchObject([
       { proposalId: ballot[0], rank: 1 },
       { proposalId: ballot[1], rank: 2 },
       { proposalId: ballot[2], rank: 3 },
@@ -646,17 +680,23 @@ describe.concurrent('submitVote ranked ballots', () => {
     const caller = await createAuthenticatedCaller(setup.userEmail);
     const ballot = [proposals[2]!.id, proposals[0]!.id, proposals[1]!.id];
 
-    await caller.decision.submitVote({
+    const { receipt } = await caller.decision.submitVote({
       processInstanceId: instance.instance.id,
       selectedProposalIds: ballot,
     });
 
-    const status = await caller.decision.getVotingStatus({
-      processInstanceId: instance.instance.id,
-    });
+    const [status, cast] = await Promise.all([
+      caller.decision.getVotingStatus({
+        processInstanceId: instance.instance.id,
+      }),
+      caller.decision.getBallot({
+        processInstanceId: instance.instance.id,
+        receipt,
+      }),
+    ]);
 
     expect(status.votingConfiguration.ranked).toBe(true);
-    expect(status.selectedProposals?.map((p) => p.id)).toEqual(ballot);
+    expect(cast).toEqual({ proposalIds: ballot, ranked: true });
   });
 
   it('keeps a ballot marked ranked after the phase moves on', async ({
@@ -683,13 +723,19 @@ describe.concurrent('submitVote ranked ballots', () => {
       .set({ currentStateId: 'results' })
       .where(eq(processInstances.id, instance.instance.id));
 
-    const status = await caller.decision.getVotingStatus({
-      processInstanceId: instance.instance.id,
-    });
+    const [status, cast] = await Promise.all([
+      caller.decision.getVotingStatus({
+        processInstanceId: instance.instance.id,
+      }),
+      caller.decision.getBallot({
+        processInstanceId: instance.instance.id,
+        receipt: result.receipt,
+      }),
+    ]);
 
     expect(status.votingConfiguration.ranked).toBe(false);
     expect(status.voteSubmission?.ranked).toBe(true);
-    expect(status.voteSubmission?.selectedProposalIds).toEqual(ballot);
+    expect(cast).toEqual({ proposalIds: ballot, ranked: true });
   });
 
   it('leaves rank null on an unranked phase', async ({
@@ -708,16 +754,26 @@ describe.concurrent('submitVote ranked ballots', () => {
       selectedProposalIds: proposals.map((p) => p.id),
     });
 
-    const selections = await getSelections(result.id);
+    const selections = await getSelections(
+      result.receipt,
+      instance.instance.id,
+    );
 
     expect(selections).toHaveLength(2);
     expect(selections.every((s) => s.rank === null)).toBe(true);
     expect(result.ranked).toBe(false);
 
-    const status = await caller.decision.getVotingStatus({
-      processInstanceId: instance.instance.id,
-    });
+    const [status, cast] = await Promise.all([
+      caller.decision.getVotingStatus({
+        processInstanceId: instance.instance.id,
+      }),
+      caller.decision.getBallot({
+        processInstanceId: instance.instance.id,
+        receipt: result.receipt,
+      }),
+    ]);
     expect(status.voteSubmission?.ranked).toBe(false);
+    expect(cast?.ranked).toBe(false);
   });
 
   it('records the rank alongside the cost in the ballot snapshot', async ({
@@ -744,11 +800,9 @@ describe.concurrent('submitVote ranked ballots', () => {
       selectedProposalIds: ballot,
     });
 
-    const row = await db.query.decisionsVoteSubmissions.findFirst({
-      where: { id: result.id },
-    });
+    const ballotRow = await getBallot(result.receipt, instance.instance.id);
 
-    expect(row?.voteData.selections).toEqual([
+    expect(ballotRow?.ballotData.selections).toEqual([
       { proposalId: ballot[0], cost: 450, rank: 1 },
       { proposalId: ballot[1], cost: 300, rank: 2 },
     ]);
@@ -804,6 +858,196 @@ describe.concurrent('submitVote ranked ballots', () => {
     });
 
     expect(submissions).toHaveLength(0);
+  });
+});
+
+describe.concurrent('submitVote secret ballot', () => {
+  it('records that the voter voted, and nothing about what they chose', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instance, proposals } = await setupVotingInstance(testData, {
+      proposalCount: 2,
+    });
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+    const picks = proposals.map((p) => p.id);
+
+    const result = await caller.decision.submitVote({
+      processInstanceId: instance.instance.id,
+      selectedProposalIds: picks,
+    });
+
+    const submission = await db.query.decisionsVoteSubmissions.findFirst({
+      where: { id: result.id },
+      with: { voteProposals: true },
+    });
+
+    expect(submission?.signature).toBeNull();
+    expect(submission?.voteData.validationSignature).toBeUndefined();
+    expect(submission?.voteData.selections).toBeUndefined();
+    expect(submission?.voteProposals).toEqual([]);
+    expect(JSON.stringify(submission)).not.toContain(picks[0]);
+
+    const ballot = await db.query.decisionsVoteBallots.findFirst({
+      where: { processInstanceId: instance.instance.id },
+      with: { ballotProposals: { orderBy: { position: 'asc' } } },
+    });
+
+    expect(ballot?.receiptHash).toBe(
+      hashBallotReceipt({
+        receipt: result.receipt,
+        processInstanceId: instance.instance.id,
+      }),
+    );
+    expect(ballot?.ballotProposals.map((p) => p.proposalId)).toEqual(picks);
+    expect(
+      isBallotSealIntact({
+        receipt: result.receipt,
+        processInstanceId: instance.instance.id,
+        picks: ballot?.ballotProposals ?? [],
+        seal: ballot?.seal ?? '',
+      }),
+    ).toBe(true);
+    // The ballot carries nothing that names the voter or their submission.
+    const serialised = JSON.stringify(ballot);
+    expect(serialised).not.toContain(result.id);
+    expect(serialised).not.toContain(result.submittedByProfileId);
+    expect(serialised).not.toContain(result.receipt);
+  });
+
+  it('returns the ballot only to the holder of its receipt', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instance, proposals } = await setupVotingInstance(testData, {
+      proposalCount: 2,
+    });
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+    const picks = proposals.map((p) => p.id);
+
+    const { receipt } = await caller.decision.submitVote({
+      processInstanceId: instance.instance.id,
+      selectedProposalIds: picks,
+    });
+
+    const [status, withReceipt, withOtherReceipt] = await Promise.all([
+      caller.decision.getVotingStatus({
+        processInstanceId: instance.instance.id,
+      }),
+      caller.decision.getBallot({
+        processInstanceId: instance.instance.id,
+        receipt,
+      }),
+      caller.decision.getBallot({
+        processInstanceId: instance.instance.id,
+        receipt: 'A'.repeat(43),
+      }),
+    ]);
+
+    // The status says the voter voted and nothing about what they chose.
+    expect(status.hasVoted).toBe(true);
+    expect(status.voteSubmission?.selectedProposalIds).toEqual([]);
+    expect(status.selectedProposals ?? []).toEqual([]);
+
+    expect(withReceipt).toEqual({ proposalIds: picks, ranked: false });
+    expect(withOtherReceipt).toBeNull();
+  });
+
+  it('opens a ballot only for a voter on its instance', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instance, proposals } = await setupVotingInstance(testData, {
+      proposalCount: 2,
+    });
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+    const { receipt } = await caller.decision.submitVote({
+      processInstanceId: instance.instance.id,
+      selectedProposalIds: [proposals[0]!.id],
+    });
+
+    // Has access to the decision but has not voted.
+    const member = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [setup.instance.profileId],
+    });
+    const memberCaller = await createAuthenticatedCaller(member.email);
+
+    expect(
+      await memberCaller.decision.getBallot({
+        processInstanceId: instance.instance.id,
+        receipt,
+      }),
+    ).toBeNull();
+  });
+
+  it('writes every ballot of an instance in one transaction', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instance, proposals } = await setupVotingInstance(testData, {
+      proposalCount: 3,
+    });
+    const instanceProfileId = setup.instance.profileId;
+
+    const voters = await Promise.all(
+      Array.from({ length: 3 }, () =>
+        testData.createMemberUser({
+          organization: setup.organization,
+          instanceProfileIds: [instanceProfileId],
+        }),
+      ),
+    );
+
+    const votes: Array<{ email: string; picks: string[] }> = [
+      { email: setup.userEmail, picks: [proposals[0]!.id] },
+      { email: voters[0]!.email, picks: [proposals[1]!.id, proposals[2]!.id] },
+      { email: voters[1]!.email, picks: [proposals[2]!.id] },
+      { email: voters[2]!.email, picks: [proposals[0]!.id, proposals[1]!.id] },
+    ];
+
+    // One after another: each cast rewrites the ballots before it.
+    const receipts: Array<{ caller: typeof caller; receipt: string }> = [];
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+    for (const vote of votes) {
+      const voterCaller =
+        vote.email === setup.userEmail
+          ? caller
+          : await createAuthenticatedCaller(vote.email);
+      const { receipt } = await voterCaller.decision.submitVote({
+        processInstanceId: instance.instance.id,
+        selectedProposalIds: vote.picks,
+      });
+      receipts.push({ caller: voterCaller, receipt });
+    }
+
+    // Postgres stamps each row with the transaction that wrote it. Were the
+    // ballots written one per cast, each would share its stamp with its
+    // voter's submission alone.
+    const stamps = await db.execute<{ xmin: string }>(
+      sql`SELECT xmin::text AS xmin FROM decisions_vote_ballots WHERE process_instance_id = ${instance.instance.id}`,
+    );
+    expect(stamps).toHaveLength(votes.length);
+    expect(new Set(stamps.map((row) => row.xmin)).size).toBe(1);
+
+    // Every receipt still opens the ballot it was issued for.
+    for (const [
+      index,
+      { caller: voterCaller, receipt },
+    ] of receipts.entries()) {
+      const ballot = await voterCaller.decision.getBallot({
+        processInstanceId: instance.instance.id,
+        receipt,
+      });
+      expect(ballot?.proposalIds).toEqual(votes[index]!.picks);
+    }
   });
 });
 

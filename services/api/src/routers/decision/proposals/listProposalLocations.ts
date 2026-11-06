@@ -7,6 +7,7 @@ import { proposalLocationsSchema } from '@op/common/client';
 
 import { proposalLocationsFilterSchema } from '../../../encoders/decision';
 import { openProcedure, router } from '../../../trpcFactory';
+import { assertReceiptInBody } from '../assertReceiptInBody';
 
 export const listProposalLocationsRouter = router({
   /**
@@ -19,6 +20,7 @@ export const listProposalLocationsRouter = router({
     .input(proposalLocationsFilterSchema)
     .output(proposalLocationsSchema)
     .query(async ({ ctx, input }) => {
+      assertReceiptInBody({ ctx, input });
       const { user } = ctx;
       const result = await listProposalLocations({
         input,

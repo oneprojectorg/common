@@ -5,6 +5,7 @@ import {
   proposalSearchSchema,
   PROPOSAL_TITLE_MAX_LENGTH,
   REVIEWS_POLICIES,
+  ballotReceiptSchema,
   checkpointVersionSchema,
   instanceOptionalPhaseRefSchema,
   paginated,
@@ -769,6 +770,11 @@ export const proposalFilterSchema = instanceOptionalPhaseRefSchema.extend({
    */
   votedByProfileId: z.uuid().optional(),
   /**
+   * With `votedByProfileId`, the receipt `submitVote` returned. A ballot cast
+   * since votes were unlinked can be found only with it.
+   */
+  ballotReceipt: ballotReceiptSchema.optional(),
+  /**
    * Restrict results to proposals liked by this profile. Subject to the same
    * self-only check as `votedByProfileId`.
    */
@@ -797,6 +803,7 @@ export const proposalLocationsFilterSchema =
     categoryId: z.string().optional(),
     search: proposalSearchSchema,
     votedByProfileId: z.uuid().optional(),
+    ballotReceipt: ballotReceiptSchema.optional(),
     likedByProfileId: z.uuid().optional(),
     notAdvanced: z.boolean().optional(),
     phase: z.enum(['results']).optional(),

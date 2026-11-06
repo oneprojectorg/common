@@ -205,6 +205,16 @@ describe('buildQueryParams', () => {
     expect(params.submittedByProfileId).toBeUndefined();
   });
 
+  it('sends the ballot receipt with the ballot filter only', () => {
+    const receipt = 'r'.repeat(43);
+
+    expect(
+      build({ filter: ProposalFilter.MY_BALLOT, ballotReceipt: receipt })
+        .ballotReceipt,
+    ).toBe(receipt);
+    expect(build({ ballotReceipt: receipt }).ballotReceipt).toBeUndefined();
+  });
+
   it("asks for the reader's own likes", () => {
     const params = build({ filter: ProposalFilter.LIKED });
 

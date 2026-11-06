@@ -1221,6 +1221,8 @@
       "loadAssignmentsError": "لم نتمكن من تحميل تعيينات المراجعة",
       "revisionRequestQuestion": "What should the author change?",
       "noVoteCast": "لم تصوت في هذه العملية.",
+      "ballotNotOnDeviceTitle": "تم تسجيل صوتك",
+      "ballotNotOnDeviceDescription": "للحفاظ على سرية صوتك، لا تظهر اختياراتك إلا على الجهاز الذي صوّتَّ منه.",
       "yourRequestHeading": "Your request",
       "yourRequestSentTimeAgo": "Your request • Sent {timeAgo}",
       "cancelRevisionRequestDescription": "Your request will be withdrawn and the author won't see it. Other reviewers' requests aren't affected.",

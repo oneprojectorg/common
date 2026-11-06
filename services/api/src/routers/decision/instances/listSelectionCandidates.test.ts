@@ -9,6 +9,8 @@ import {
   ProcessStatus,
   ProposalStatus,
   decisionTransitionProposals,
+  decisionsVoteBallotProposals,
+  decisionsVoteBallots,
   decisionsVoteProposals,
   decisionsVoteSubmissions,
   processInstances,
@@ -105,6 +107,44 @@ async function seedBallot({
       })),
     );
   }
+}
+
+/** Inserts one anonymous ballot, as `submitVote` writes them now. */
+async function seedAnonymousBallot({
+  processInstanceId,
+  proposalIds,
+}: {
+  processInstanceId: string;
+  proposalIds: string[];
+}) {
+  const [ballot] = await db
+    .insert(decisionsVoteBallots)
+    .values({
+      processInstanceId,
+      receiptHash: crypto.randomUUID(),
+      seal: crypto.randomUUID(),
+      ballotData: {
+        schemaVersion: '1.0.0',
+        schemaType: 'simple',
+        selections: proposalIds.map((proposalId) => ({
+          proposalId,
+          cost: null,
+        })),
+      },
+    })
+    .returning({ id: decisionsVoteBallots.id });
+
+  if (!ballot) {
+    throw new Error('Failed to seed anonymous ballot');
+  }
+
+  await db.insert(decisionsVoteBallotProposals).values(
+    proposalIds.map((proposalId, position) => ({
+      ballotId: ballot.id,
+      proposalId,
+      position,
+    })),
+  );
 }
 
 describe.concurrent('listSelectionCandidates', () => {
@@ -517,6 +557,68 @@ describe.concurrent('listSelectionCandidates', () => {
 
     const found = result.items.find((p) => p.id === proposal.id);
     expect(found?.voteCount).toBe(2);
+  });
+
+  it('counts anonymous ballots alongside ballots cast before the split', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { instanceId, instanceProfileId, userEmail, organization, caller } =
+      await seedInstance(testData);
+
+    const otherSetup = await testData.createDecisionSetup({
+      processSchema: schemaWithoutPipeline,
+      instanceCount: 1,
+      status: ProcessStatus.PUBLISHED,
+    });
+
+    const proposal = await testData.createProposal({
+      userEmail,
+      processInstanceId: instanceId,
+      proposalData: { title: `Mixed ballots ${task.id}` },
+      status: ProposalStatus.SUBMITTED,
+    });
+
+    await testData.advancePhase({
+      instanceId,
+      fromPhaseId: 'submission',
+      toPhaseId: 'review',
+    });
+
+    const legacyVoter = await testData.createMemberUser({
+      organization,
+      instanceProfileIds: [instanceProfileId],
+    });
+
+    await Promise.all([
+      seedBallot({
+        processInstanceId: instanceId,
+        voterProfileId: legacyVoter.profileId,
+        proposalIds: [proposal.id],
+      }),
+      seedAnonymousBallot({
+        processInstanceId: instanceId,
+        proposalIds: [proposal.id],
+      }),
+      seedAnonymousBallot({
+        processInstanceId: instanceId,
+        proposalIds: [proposal.id],
+      }),
+      // Another instance's ballot must not count here.
+      seedAnonymousBallot({
+        processInstanceId: otherSetup.instance.instance.id,
+        proposalIds: [proposal.id],
+      }),
+    ]);
+
+    const result = await caller.decision.listSelectionCandidates({
+      processInstanceId: instanceId,
+      sortOrder: 'votes',
+    });
+
+    const found = result.items.find((p) => p.id === proposal.id);
+    expect(found?.voteCount).toBe(3);
   });
 });
 

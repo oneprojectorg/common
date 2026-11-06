@@ -1,10 +1,5 @@
 import { and, db, sql } from '@op/db/client';
-import {
-  ProposalStatus,
-  decisionsVoteProposals,
-  decisionsVoteSubmissions,
-  proposals,
-} from '@op/db/schema';
+import { ProposalStatus, proposals } from '@op/db/schema';
 import { checkPermission, permission } from 'access-zones';
 import { count as countFn } from 'drizzle-orm';
 
@@ -16,6 +11,7 @@ import {
 } from '../../utils';
 import type { AccessUser } from '../access';
 import { getActivelyFlaggedItemIds } from '../moderation/moderationVisibility';
+import { castPicks } from './castPicks';
 import type { ProposalAdvanceTarget } from './getProposalAdvanceTarget';
 import { getProposalDocumentsContent } from './getProposalDocumentsContent';
 import { getProposalRelationshipData } from './getProposalRelationshipData';
@@ -53,6 +49,11 @@ export interface ListProposalsInput {
    * the voting phase.
    */
   votedByProfileId?: string;
+  /**
+   * With `votedByProfileId`, the receipt for a ballot cast since votes were
+   * unlinked. Without it only a legacy, still-linked ballot can be found.
+   */
+  ballotReceipt?: string;
   /**
    * Restrict results to proposals liked by this profile. Likes are private: a
    * caller can only request their own.
@@ -188,15 +189,12 @@ export const listProposals = async ({
   // callback and the `orderBy` callback so each receives the v2-aliased
   // `table` and embeds the correct outer-column reference.
   //
-  // Scoping the join to `processInstanceId` ensures cross-instance ballots
-  // can't inflate counts.
+  // `castPicks` counts anonymous ballots and legacy linked ones, both scoped
+  // to this instance so cross-instance ballots can't inflate counts.
   const voteCountExpr = (t: typeof proposals) =>
     sql<number>`(
-      SELECT COUNT(*)::int FROM ${decisionsVoteSubmissions}
-      INNER JOIN ${decisionsVoteProposals}
-        ON ${decisionsVoteProposals.voteSubmissionId} = ${decisionsVoteSubmissions.id}
-      WHERE ${decisionsVoteProposals.proposalId} = ${t.id}
-      AND ${decisionsVoteSubmissions.processInstanceId} = ${input.processInstanceId}
+      SELECT COUNT(*)::int FROM ${castPicks(input.processInstanceId)} AS picks
+      WHERE picks.proposal_id = ${t.id}
     )`;
 
   const [rawProposalList, countResult] = await Promise.all([

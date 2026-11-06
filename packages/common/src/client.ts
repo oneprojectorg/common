@@ -67,6 +67,7 @@ export {
   type AllProposalsListItem,
   type AllProposalsList,
 } from './services/decision/schemas/proposal';
+export { ballotReceiptSchema } from './services/decision/schemas/ballotReceipt';
 export { SEARCH_MAX_LENGTH } from './services/decision/schemas/search';
 export {
   adminDecisionInstanceSchema,

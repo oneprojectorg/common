@@ -1221,6 +1221,8 @@
       "loadAssignmentsError": "Impossible de charger les attributions d'examen",
       "revisionRequestQuestion": "What should the author change?",
       "noVoteCast": "Vous n'avez pas voté dans ce processus.",
+      "ballotNotOnDeviceTitle": "Votre vote est enregistré",
+      "ballotNotOnDeviceDescription": "Pour que votre vote reste secret, vos choix ne s’affichent que sur l’appareil depuis lequel vous avez voté.",
       "yourRequestHeading": "Your request",
       "yourRequestSentTimeAgo": "Your request • Sent {timeAgo}",
       "cancelRevisionRequestDescription": "Your request will be withdrawn and the author won't see it. Other reviewers' requests aren't affected.",

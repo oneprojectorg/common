@@ -27,6 +27,8 @@ export type ProposalQueryParams = {
   search?: string;
   submittedByProfileId?: string;
   votedByProfileId?: string;
+  /** Opens the voter's anonymous ballot alongside `votedByProfileId`. */
+  ballotReceipt?: string;
   likedByProfileId?: string;
   status?: ProposalStatus;
   /** "Not advanced": rejected, plus (for admins) what earlier phases left behind. */
@@ -113,6 +115,8 @@ interface QueryParamsInput {
   instanceId: string;
   phase: 'results' | undefined;
   currentProfileId: string | undefined;
+  /** This browser's receipt for the voter's ballot, if it holds one. */
+  ballotReceipt?: string;
   category: string;
   search: string;
   sortOrder: string;
@@ -124,6 +128,7 @@ export const buildQueryParams = ({
   instanceId,
   phase,
   currentProfileId,
+  ballotReceipt,
   category,
   search,
   sortOrder,
@@ -151,6 +156,9 @@ export const buildQueryParams = ({
     params.submittedByProfileId = currentProfileId;
   } else if (filter === ProposalFilter.MY_BALLOT && currentProfileId) {
     params.votedByProfileId = currentProfileId;
+    if (ballotReceipt) {
+      params.ballotReceipt = ballotReceipt;
+    }
   }
 
   // Liked is a status-axis pick where tabs own the audience, and an audience
