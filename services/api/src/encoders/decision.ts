@@ -585,7 +585,7 @@ export const createInstanceFromTemplateInputSchema = z.object({
 
 /** Input schema for phase overrides with datetime validation */
 const instancePhaseDataInputEncoder = instancePhaseDataEncoder.extend({
-  name: phaseNameLengthSchema.optional(),
+  name: phaseNameLengthSchema.min(1, 'A phase name cannot be empty').optional(),
   startDate: z.string().datetime({ offset: true }).optional(),
   endDate: z.string().datetime({ offset: true }).optional(),
   // Overrides the read-path encoder: `''` is rejected here rather than decoded
