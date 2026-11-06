@@ -3,9 +3,13 @@ import {
   getInstancePhases,
   getPhases,
 } from '@op/common';
-import { TestDecisionsDataManager, loadPhaseRows } from '@op/common/testing';
+import {
+  TestDecisionsDataManager,
+  dateAdvancementSchema,
+  loadPhaseRows,
+} from '@op/common/testing';
 import { asc, db, eq } from '@op/db/client';
-import { decisionProcessTransitions } from '@op/db/schema';
+import { ProcessStatus, decisionProcessTransitions } from '@op/db/schema';
 import { expect } from 'vitest';
 
 import { appRouter } from '../../routers';
@@ -37,7 +41,6 @@ export async function setupPhase(
     name: PHASE_NAME,
     sortOrder: 0,
   });
-  testData.trackProfileForCleanup(phase.profileId);
 
   // The fixture mints a row per template phase; phase tests expect only their own.
   await testData.removePhaseRows(setup.instance.instance.id, {
@@ -109,24 +112,11 @@ export const loadTransitionLinks = async (processInstanceId: string) =>
   }));
 
 // TODO: remove when instance_data.phases is dropped.
-export const loadBlobPhases = async (processInstanceId: string) => {
-  const instance = await db.query.processInstances.findFirst({
-    where: { id: processInstanceId },
-    columns: { instanceData: true },
-  });
-  return getInstancePhases(instance?.instanceData);
-};
+export const loadBlobPhases = async (processInstanceId: string) =>
+  getInstancePhases((await loadInstanceData(processInstanceId)).instanceData);
 
-export const loadInstancePhases = async (processInstanceId: string) => {
-  const instance = await db.query.processInstances.findFirst({
-    where: { id: processInstanceId },
-    columns: { id: true, instanceData: true },
-  });
-  if (!instance) {
-    throw new Error(`Instance ${processInstanceId} not found`);
-  }
-  return getPhases({ instance });
-};
+export const loadInstancePhases = async (processInstanceId: string) =>
+  getPhases({ instance: (await loadInstanceData(processInstanceId)).instance });
 
 export const listPhaseIds = async (processInstanceId: string) =>
   (
@@ -136,6 +126,41 @@ export const listPhaseIds = async (processInstanceId: string) =>
       orderBy: { id: 'asc' },
     })
   ).map((phase) => phase.id);
+
+// A published decision whose `initial` phase advances by date to `final`, so one transition is pending.
+export async function setupPublishedDateDecision(
+  task: { id: string },
+  onTestFinished: OnTestFinished,
+) {
+  const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+  const setup = await testData.createDecisionSetup({
+    processSchema: dateAdvancementSchema,
+    instanceCount: 1,
+    grantAccess: true,
+  });
+  const instanceId = setup.instance.instance.id;
+  const adminCaller = await createAuthenticatedCaller(setup.userEmail);
+  const [draftInitial] = await loadPhaseRows(instanceId);
+  if (!draftInitial) {
+    throw new Error('Expected the template phase rows');
+  }
+
+  const endDate = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString();
+  await adminCaller.decision.updatePhase({
+    phaseId: draftInitial.id,
+    data: { endDate },
+  });
+  await adminCaller.decision.updateDecisionInstance({
+    instanceId,
+    status: ProcessStatus.PUBLISHED,
+  });
+  const [initial, final] = await loadPhaseRows(instanceId);
+  if (!initial || !final) {
+    throw new Error('Expected the template phase rows');
+  }
+
+  return { testData, instanceId, adminCaller, initial, final, endDate };
+}
 
 export async function loadInstanceData(instanceId: string) {
   const instance = await db.query.processInstances.findFirst({
