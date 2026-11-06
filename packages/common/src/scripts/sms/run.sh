@@ -7,7 +7,6 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../../../../.." && pwd)"
 
 DEFAULT_SLUG="sms-voting-test"
-DEFAULT_PHONE="+15555550123"
 
 usage() {
   cat <<'EOF'
@@ -17,11 +16,11 @@ Commands:
   show [slug]            Print one decision's whole voting state as JSON.
   reset-decision [slug]  Delete every voter's registrations, drafts, chat
                          sessions and cast ballots on one decision.
-  reset-account [phone]  Delete the account behind one phone number so JOIN
+  reset-account <phone>  Delete the account behind one phone number so JOIN
                          starts from scratch.
-  reset [slug] [phone]   reset-decision, then reset-account, then show.
+  reset <phone> [slug]   reset-decision, then reset-account, then show.
 
-Defaults: slug=sms-voting-test, phone=+15555550123.
+Default: slug=sms-voting-test. The phone number is always explicit.
 DATABASE_URL is read from the environment, else from .env.local.
 EOF
 }
@@ -91,14 +90,22 @@ case "${1:-}" in
     reset_decision "${2:-$DEFAULT_SLUG}"
     ;;
   reset-account)
+    if [ -z "${2:-}" ]; then
+      echo "reset-account needs a phone number, e.g. +15555550123" >&2
+      exit 1
+    fi
     ensure_db
-    reset_account "${2:-$DEFAULT_PHONE}"
+    reset_account "$2"
     ;;
   reset)
+    if [ -z "${2:-}" ]; then
+      echo "reset needs a phone number first, e.g. reset +15555550123 [slug]" >&2
+      exit 1
+    fi
     ensure_db
-    reset_decision "${2:-$DEFAULT_SLUG}"
-    reset_account "${3:-$DEFAULT_PHONE}"
-    show "${2:-$DEFAULT_SLUG}"
+    reset_decision "${3:-$DEFAULT_SLUG}"
+    reset_account "$2"
+    show "${3:-$DEFAULT_SLUG}"
     ;;
   -h | --help | help | '')
     usage

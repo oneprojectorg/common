@@ -21,18 +21,19 @@ packages/common/src/scripts/sms/run.sh <command> [argument]
 | --- | --- |
 | `show [slug]` | Prints one decision's whole voting state as JSON: the decision, its chat line, the districts, and every voter's registration, draft and cast ballot. |
 | `reset-decision [slug]` | Deletes every voter's registrations, drafts, chat sessions and cast ballots on one decision. Proposals, districts, access and the phone number stay. |
-| `reset-account [phone]` | Deletes the account behind one phone number — the GoTrue user, its public rows and everything its individual profile owns — so `JOIN` starts from scratch. |
-| `reset [slug] [phone]` | `reset-decision`, then `reset-account`, then `show`: the full demo reset. |
+| `reset-account <phone>` | Deletes the account behind one phone number — the GoTrue user, its public rows and everything its individual profile owns — so `JOIN` starts from scratch. |
+| `reset <phone> [slug]` | `reset-decision`, then `reset-account`, then `show`: the full demo reset. |
 
-Defaults: `slug=sms-voting-test`, `phone=+15555550123`.
+Default: `slug=sms-voting-test`. The phone number is always explicit —
+pass the number you test with.
 
 Examples:
 
 ```sh
 packages/common/src/scripts/sms/run.sh show
 packages/common/src/scripts/sms/run.sh reset-decision my-decision
-packages/common/src/scripts/sms/run.sh reset-account +15551230000
-packages/common/src/scripts/sms/run.sh reset
+packages/common/src/scripts/sms/run.sh reset-account +15555550123
+packages/common/src/scripts/sms/run.sh reset +15555550123
 ```
 
 ## Notes
