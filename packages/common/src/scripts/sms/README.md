@@ -1,66 +1,48 @@
 # SMS voting demo scripts
 
-Helpers for the local SMS voting demo. Each script reads one `psql`
-variable and acts on the local database only. Never run them against a
-shared environment.
+Helpers for the local SMS voting demo. `run.sh` executes the SQL scripts
+in this folder. It acts on the local database only: a `DATABASE_URL`
+that is not localhost is refused unless `SMS_DEMO_ALLOW_REMOTE=1` is
+set.
 
 ## Prerequisites
 
 - `psql` on your PATH.
-- `DATABASE_URL` in the repo's `.env.local`.
-- `jq` for the describe script's JSON output.
+- `DATABASE_URL` in the environment, or in the repo's `.env.local`.
+- `jq` for pretty JSON output (optional; raw JSON without it).
 
-The commands below read the URL from `.env.local`:
-
-```sh
-DB="$(grep '^DATABASE_URL=' .env.local | cut -d= -f2-)"
-```
-
-## Show a decision
-
-Prints one decision's whole voting state as JSON: the decision, its chat
-line, the districts, and every voter's registration, draft and cast
-ballot.
+## Commands
 
 ```sh
-psql "$DB" -v slug=sms-voting-test -At \
-  -f packages/common/src/scripts/sms/describeDecisionProcess.sql | jq .
+packages/common/src/scripts/sms/run.sh <command> [argument]
 ```
 
-## Reset a decision
+| Command | What it does |
+| --- | --- |
+| `show [slug]` | Prints one decision's whole voting state as JSON: the decision, its chat line, the districts, and every voter's registration, draft and cast ballot. |
+| `reset-decision [slug]` | Deletes every voter's registrations, drafts, chat sessions and cast ballots on one decision. Proposals, districts, access and the phone number stay. |
+| `reset-account [phone]` | Deletes the account behind one phone number — the GoTrue user, its public rows and everything its individual profile owns — so `JOIN` starts from scratch. |
+| `reset [slug] [phone]` | `reset-decision`, then `reset-account`, then `show`: the full demo reset. |
 
-Deletes every voter's registrations, drafts, chat sessions and cast
-ballots on one decision. Proposals, districts, access and the phone
-number stay. Rows are hard-deleted because the unique keys on
-`(process_instance_id, profile_id)` would block a voter from
-registering again.
+Defaults: `slug=sms-voting-test`, `phone=+15555550123`.
+
+Examples:
 
 ```sh
-psql "$DB" -v slug=sms-voting-test -At \
-  -f packages/common/src/scripts/sms/resetDecisionVoting.sql
+packages/common/src/scripts/sms/run.sh show
+packages/common/src/scripts/sms/run.sh reset-decision my-decision
+packages/common/src/scripts/sms/run.sh reset-account +15551230000
+packages/common/src/scripts/sms/run.sh reset
 ```
 
-## Reset an account
+## Notes
 
-Deletes the account behind one phone number — the GoTrue user, its
-public rows and everything its individual profile owns — so `JOIN`
-starts from scratch.
-
-```sh
-psql "$DB" -v phone=+15555550123 -At \
-  -f packages/common/src/scripts/sms/resetSmsAccount.sql
-```
-
-## Full demo reset
-
-Reset the decision, reset the account, then show the decision:
-
-```sh
-psql "$DB" -v slug=sms-voting-test -At -f packages/common/src/scripts/sms/resetDecisionVoting.sql
-psql "$DB" -v phone=+15555550123 -At -f packages/common/src/scripts/sms/resetSmsAccount.sql
-psql "$DB" -v slug=sms-voting-test -At -f packages/common/src/scripts/sms/describeDecisionProcess.sql | jq .
-```
-
-The staging walkthrough that uses these scripts is in
-[`docs/twilio-configuration.md`](../../../../../docs/twilio-configuration.md)
-under "Manual test through ngrok".
+- Reset rows are hard-deleted: the unique keys on
+  `(process_instance_id, profile_id)` would otherwise block a voter from
+  registering again.
+- To run a script directly, pass its `psql` variable yourself, e.g.
+  `psql "$DATABASE_URL" -v slug=sms-voting-test -At -f packages/common/src/scripts/sms/describeDecisionProcess.sql | jq .`
+  — each script's header shows its own usage line.
+- The staging walkthrough that uses these scripts is in
+  [`docs/twilio-configuration.md`](../../../../../docs/twilio-configuration.md)
+  under "Manual test through ngrok".
