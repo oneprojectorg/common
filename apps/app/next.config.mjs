@@ -213,14 +213,6 @@ const config = {
         source: `/:locale(${SUPPORTED_LOCALES.join('|')})/:slug(${VANITY_DECISION_SLUGS.join('|')})/:path*`,
         destination: '/:locale/decisions/:slug/:path*',
       },
-      // A `width` query asks for a resized copy: Supabase image
-      // transformations serve the same bucket from the render endpoint, which
-      // mirrors the public object path. Must precede the plain rule below.
-      {
-        source: '/assets/:path*',
-        has: [{ type: 'query', key: 'width' }],
-        destination: `${process.env.S3_ASSET_ROOT?.replace('/storage/v1/object/', '/storage/v1/render/image/')}/:path*`,
-      },
       {
         source: '/assets/:path*',
         destination: `${process.env.S3_ASSET_ROOT}/:path*`,

@@ -44,10 +44,6 @@ smtp_port = 54325
 enabled = true
 file_size_limit = "50MiB"
 
-# Serves resized /assets?width=… (avatar crops) like hosted Supabase does.
-[storage.image_transformation]
-enabled = true
-
 [storage.buckets.assets]
 public = true
 

@@ -1,5 +1,4 @@
 import { getPublicUrl } from '@/utils';
-import { getAvatarImageProps } from '@/utils/getAvatarImageProps';
 import { handleServerError } from '@/utils/handleServerError';
 import { cn } from '@op/sense/lib/utils';
 import { getGradientForString } from '@op/styles/constants';
@@ -63,10 +62,12 @@ const ProfileWithData = async ({
             }
             avatarImage={
               avatarUrl ? (
-                <img
-                  {...getAvatarImageProps(avatarUrl)}
+                <Image
+                  src={avatarUrl}
                   alt=""
-                  className="size-full object-cover"
+                  fill
+                  sizes="(max-width: 639px) 64px, 120px"
+                  className="object-cover"
                 />
               ) : (
                 <div className={cn('h-full w-full', gradientBg)} />
@@ -130,10 +131,12 @@ const ProfileWithData = async ({
           }
           avatarImage={
             avatarUrl ? (
-              <img
-                {...getAvatarImageProps(avatarUrl)}
+              <Image
+                src={avatarUrl}
                 alt=""
-                className="size-full object-cover"
+                fill
+                sizes="(max-width: 639px) 64px, 120px"
+                className="object-cover"
               />
             ) : (
               <div className={cn('h-full w-full', gradientBg)} />
