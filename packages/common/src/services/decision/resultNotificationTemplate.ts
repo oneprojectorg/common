@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 import { DEFAULT_MONEY_CURRENCY, isValidCurrencyCode } from '../../money';
+import { renderMessageTemplate } from '../../utils/messageTemplate';
 import type { BudgetData } from './proposalDataSchema';
 
 // `amount` resolves to the awarded amount for a selected proposal, and to ''
@@ -44,13 +45,6 @@ export type ResultNotificationValues = {
   phase: string;
 };
 
-// One pass with a replacer: chained `replaceAll`s would let a proposal title
-// containing `{{name}}` expand on the next pass.
-const TOKEN_PATTERN = new RegExp(
-  `\\{\\{(${RESULT_NOTIFICATION_TOKENS.join('|')})\\}\\}`,
-  'g',
-);
-
 /** Anything else in double braces is left exactly as typed. */
 export function renderResultNotificationMessage({
   template,
@@ -59,10 +53,11 @@ export function renderResultNotificationMessage({
   template: string;
   values: ResultNotificationValues;
 }): string {
-  return template.replace(
-    TOKEN_PATTERN,
-    (_match, token: ResultNotificationToken) => values[token],
-  );
+  return renderMessageTemplate({
+    template,
+    tokens: RESULT_NOTIFICATION_TOKENS,
+    values,
+  });
 }
 
 export function selectResultNotificationTemplate({
