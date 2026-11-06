@@ -4,6 +4,7 @@ import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { trpc } from '@op/api/client';
 import type { ReviewerAssignments } from '@op/common/client';
 import { useInfiniteScroll } from '@op/hooks';
+import { Button } from '@op/sense/Button';
 import { Card } from '@op/sense/Card';
 import {
   Empty,
@@ -16,8 +17,15 @@ import {
 import { Header3 } from '@op/sense/Header';
 import { Skeleton } from '@op/sense/Skeleton';
 import { useFormatter } from 'next-intl';
-import { type ReactNode, Suspense, useCallback, useId, useMemo } from 'react';
-import { LuListChecks, LuUserX, LuUsers } from 'react-icons/lu';
+import {
+  type ReactNode,
+  Suspense,
+  useCallback,
+  useId,
+  useMemo,
+  useState,
+} from 'react';
+import { LuBell, LuListChecks, LuUserX, LuUsers } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -28,6 +36,10 @@ import {
 } from './ReviewAssignmentsSkeletons';
 import { ReviewerAssignmentsTable } from './ReviewerAssignmentsTable';
 import { ReviewerHeader } from './ReviewerHeader';
+import {
+  SendReminderDialog,
+  type SendReminderTarget,
+} from './SendReminderDialog';
 
 interface ReviewerAssignmentsSectionProps {
   processInstanceId: string;
@@ -86,6 +98,9 @@ function ReviewerAssignmentsContent({
 }: ReviewerAssignmentsSectionProps) {
   const t = useTranslations();
   const headingId = useId();
+  const [reminderTarget, setReminderTarget] =
+    useState<SendReminderTarget | null>(null);
+  const [isReminderOpen, setIsReminderOpen] = useState(false);
 
   const [data, query] =
     trpc.decision.listReviewerAssignments.useSuspenseInfiniteQuery(
@@ -134,13 +149,36 @@ function ReviewerAssignmentsContent({
   const { reviewer } = summary;
   const name = reviewer.name ?? reviewer.slug ?? reviewer.id;
   const actionProps = { processInstanceId, phaseId, reviewerProfileId };
+  const openReminder = () => {
+    setReminderTarget({
+      kind: 'one',
+      recipient: {
+        id: reviewer.id,
+        name,
+        email: reviewer.email,
+        remainingCount: summary.remainingCount,
+      },
+    });
+    setIsReminderOpen(true);
+  };
 
   return (
     <>
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <ReviewerHeader name={name} email={reviewer.email} />
-        {summary.total > 0 ? (
-          <ManageAssignmentsAction {...actionProps} />
+        {summary.remainingCount > 0 || summary.total > 0 ? (
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Hidden, not disabled: with nothing open there is nothing to remind. */}
+            {summary.remainingCount > 0 ? (
+              <Button onClick={openReminder}>
+                <LuBell data-icon="inline-start" />
+                {t('decisions.review.sendReminderAction')}
+              </Button>
+            ) : null}
+            {summary.total > 0 ? (
+              <ManageAssignmentsAction {...actionProps} />
+            ) : null}
+          </div>
         ) : null}
       </div>
 
@@ -203,6 +241,14 @@ function ReviewerAssignmentsContent({
           </p>
         </div>
       )}
+
+      <SendReminderDialog
+        processInstanceId={processInstanceId}
+        phaseId={phaseId}
+        target={reminderTarget}
+        open={isReminderOpen}
+        onOpenChange={setIsReminderOpen}
+      />
     </>
   );
 }

@@ -15,17 +15,17 @@ import { listAssignmentsForReviewer } from '../listReviewAssignments';
 import type { InstancePhaseRef } from '../schemas/instance';
 import {
   type ReviewerAssignments,
-  type ReviewerQueueStatus,
   reviewerAssignmentsSchema,
 } from '../schemas/reviewAssignments';
 import { assertInstancePhase } from '../utils/instance';
+import { openAssignmentFilter } from './phaseReviewerRollup';
 
 interface ReviewerQueueTotals {
   assignedCount: number;
   submittedCount: number;
   draftCount: number;
+  remainingCount: number;
   lastSubmittedAt: string | null;
-  statusBreakdown: Array<{ status: ReviewerQueueStatus; count: number }>;
 }
 
 /** One page of a reviewer's queue for the admin screen, with whole-queue totals. */
@@ -115,44 +115,35 @@ async function getReviewerQueueTotals({
     eq(proposalReviewAssignments.reviewerProfileId, reviewerProfileId),
   );
 
-  // The same `review.state ?? assignment.status` the cards show.
-  const statusKey = sql<ReviewerQueueStatus>`COALESCE(${proposalReviews.state}::text, ${proposalReviewAssignments.status}::text)`;
-
-  const [[row], breakdownRows] = await Promise.all([
-    db
-      .select({
-        assignedCount: count(proposalReviewAssignments.id),
-        submittedCount:
-          sql<number>`(count(*) filter (where ${proposalReviews.state} = ${ProposalReviewState.SUBMITTED}))::int`.mapWith(
-            Number,
-          ),
-        draftCount:
-          sql<number>`(count(*) filter (where ${proposalReviews.state} = ${ProposalReviewState.DRAFT}))::int`.mapWith(
-            Number,
-          ),
-        lastSubmittedAt: sql<
-          string | null
-        >`max(${proposalReviews.submittedAt}) filter (where ${proposalReviews.state} = ${ProposalReviewState.SUBMITTED})`,
-      })
-      .from(proposalReviewAssignments)
-      .leftJoin(proposalReviews, reviewOfAssignment)
-      .where(reviewerQueue),
-    db
-      .select({
-        status: statusKey.as('status'),
-        count: count(proposalReviewAssignments.id),
-      })
-      .from(proposalReviewAssignments)
-      .leftJoin(proposalReviews, reviewOfAssignment)
-      .where(reviewerQueue)
-      .groupBy(statusKey),
-  ]);
+  const [row] = await db
+    .select({
+      assignedCount: count(proposalReviewAssignments.id),
+      submittedCount:
+        sql<number>`(count(*) filter (where ${proposalReviews.state} = ${ProposalReviewState.SUBMITTED}))::int`.mapWith(
+          Number,
+        ),
+      draftCount:
+        sql<number>`(count(*) filter (where ${proposalReviews.state} = ${ProposalReviewState.DRAFT}))::int`.mapWith(
+          Number,
+        ),
+      // Same rule as the reviewers tab, so a reminder names the same count.
+      remainingCount:
+        sql<number>`(count(*) filter (where ${openAssignmentFilter()}))::int`.mapWith(
+          Number,
+        ),
+      lastSubmittedAt: sql<
+        string | null
+      >`max(${proposalReviews.submittedAt}) filter (where ${proposalReviews.state} = ${ProposalReviewState.SUBMITTED})`,
+    })
+    .from(proposalReviewAssignments)
+    .leftJoin(proposalReviews, reviewOfAssignment)
+    .where(reviewerQueue);
 
   return {
     assignedCount: row?.assignedCount ?? 0,
     submittedCount: row?.submittedCount ?? 0,
     draftCount: row?.draftCount ?? 0,
+    remainingCount: row?.remainingCount ?? 0,
     lastSubmittedAt: row?.lastSubmittedAt ?? null,
-    statusBreakdown: breakdownRows,
   };
 }
