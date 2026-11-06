@@ -34,6 +34,7 @@ import {
   buildPhaseReviewerRollup,
   completionRatio,
   getPhaseReviewerFilters,
+  toEligibleReviewer,
 } from './phaseReviewerRollup';
 
 export async function listPhaseReviewerSummaries({
@@ -109,13 +110,7 @@ export async function listPhaseReviewerSummaries({
 
   return phaseReviewerSummariesSchema.parse({
     items: pageRows.map((row) => ({
-      reviewer: {
-        id: row.id,
-        name: row.name,
-        slug: row.slug,
-        avatarImageId: row.avatarImageId,
-        email: row.email,
-      },
+      reviewer: toEligibleReviewer(row),
       assignedCount: row.assignedCount,
       submittedCount: row.submittedCount,
       draftCount: row.draftCount,

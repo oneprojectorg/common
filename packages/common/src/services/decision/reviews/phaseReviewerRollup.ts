@@ -20,6 +20,7 @@ import {
 } from '@op/db/schema';
 
 import type { ReviewerStatus } from '../schemas/reviewAssignments';
+import type { EligibleReviewerSchema } from '../schemas/reviews';
 import { escapeLikePattern, splitSearchWords } from '../utils/search';
 
 export type PhaseReviewerRollup = ReturnType<typeof buildPhaseReviewerRollup>;
@@ -126,6 +127,18 @@ export function buildPhaseReviewerRollup({
       .groupBy(profiles.id)
       .as('rollup')
   );
+}
+
+export function toEligibleReviewer(
+  row: EligibleReviewerSchema,
+): EligibleReviewerSchema {
+  return {
+    id: row.id,
+    name: row.name,
+    slug: row.slug,
+    avatarImageId: row.avatarImageId,
+    email: row.email,
+  };
 }
 
 export function getPhaseReviewerFilters({

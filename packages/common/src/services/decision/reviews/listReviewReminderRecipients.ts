@@ -15,6 +15,7 @@ import { assertInstancePhase } from '../utils/instance';
 import {
   buildPhaseReviewerRollup,
   getPhaseReviewerFilters,
+  toEligibleReviewer,
 } from './phaseReviewerRollup';
 
 export async function listReviewReminderRecipients({
@@ -63,13 +64,7 @@ export async function listReviewReminderRecipients({
 
   return reviewReminderRecipientsSchema.parse({
     items: rows.map((row) => ({
-      reviewer: {
-        id: row.id,
-        name: row.name,
-        slug: row.slug,
-        avatarImageId: row.avatarImageId,
-        email: row.email,
-      },
+      reviewer: toEligibleReviewer(row),
       remainingCount: row.remainingCount,
     })),
   });
