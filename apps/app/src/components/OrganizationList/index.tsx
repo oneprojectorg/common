@@ -1,6 +1,7 @@
 'use client';
 
 import { getPublicUrl } from '@/utils';
+import { getAvatarImageProps } from '@/utils/getAvatarImageProps';
 import { Organization } from '@op/api/encoders';
 import { Card } from '@op/sense/Card';
 import { HorizontalList, HorizontalListItem } from '@op/sense/HorizontalList';
@@ -88,12 +89,10 @@ export const OrganizationList = ({
                       }
                       avatarImage={
                         avatarUrl ? (
-                          <Image
-                            src={avatarUrl}
+                          <img
+                            {...getAvatarImageProps(avatarUrl)}
                             alt=""
-                            fill
-                            sizes="(max-width: 639px) 64px, 120px"
-                            className="object-cover"
+                            className="size-full object-cover"
                           />
                         ) : (
                           <div className={cn('h-full w-full', gradientBg)} />

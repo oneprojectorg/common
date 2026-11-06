@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { getAvatarImageProps } from './getAvatarImageProps';
+import { avatarImageLoader, getAvatarImageProps } from './getAvatarImageProps';
 
 describe.concurrent('getAvatarImageProps', () => {
   it('returns no props when the avatar has no source', () => {
@@ -9,10 +9,23 @@ describe.concurrent('getAvatarImageProps', () => {
     expect(getAvatarImageProps('')).toEqual({});
   });
 
-  it('serves the avatar through the image optimizer at 1x and 2x', () => {
-    const { src, srcSet } = getAvatarImageProps('/assets/avatar.png');
+  it('serves square crops from Supabase at 1x and 2x', () => {
+    const { src, srcSet } = getAvatarImageProps('/assets/a/avatar.png');
 
-    expect(src).toMatch(/^\/_next\/image\?url=%2Fassets%2Favatar\.png&w=256/);
-    expect(srcSet).toMatch(/w=128&q=\d+ 1x, .*w=256&q=\d+ 2x$/);
+    expect(src).toBe(
+      '/assets-render/a/avatar.png?width=256&height=256&resize=cover&quality=75',
+    );
+    expect(srcSet).toBe(
+      '/assets-render/a/avatar.png?width=128&height=128&resize=cover&quality=75 1x, ' +
+        '/assets-render/a/avatar.png?width=256&height=256&resize=cover&quality=75 2x',
+    );
+  });
+});
+
+describe.concurrent('avatarImageLoader', () => {
+  it('passes sources outside the assets bucket through unchanged', () => {
+    const src = 'https://example.com/avatar.png';
+
+    expect(avatarImageLoader({ src, width: 128 })).toBe(src);
   });
 });

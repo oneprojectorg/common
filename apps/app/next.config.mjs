@@ -137,7 +137,7 @@ const config = {
 
     return [
       {
-        source: '/assets/:path*',
+        source: '/:root(assets|assets-render)/:path*',
         headers: [
           {
             key: 'Cache-Control',
@@ -216,6 +216,12 @@ const config = {
       {
         source: '/assets/:path*',
         destination: `${process.env.S3_ASSET_ROOT}/:path*`,
+      },
+      // Supabase image transformations for the same bucket: the render
+      // endpoint mirrors the public object path, so swap the path segment.
+      {
+        source: '/assets-render/:path*',
+        destination: `${process.env.S3_ASSET_ROOT?.replace('/storage/v1/object/', '/storage/v1/render/image/')}/:path*`,
       },
       {
         source: '/stats/static/:path*',
