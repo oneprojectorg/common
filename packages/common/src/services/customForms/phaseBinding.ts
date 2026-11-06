@@ -4,7 +4,6 @@ import { processInstances } from '@op/db/schema';
 import { sql } from 'drizzle-orm';
 
 import { NotFoundError, ValidationError } from '../../utils';
-import { isPhasesFromRowsEnabled } from '../decision/instancePhases';
 import type {
   CustomFormPhaseSet,
   CustomFormProcessContext,
@@ -23,17 +22,14 @@ export const writeWithPhaseLock = async <TResult>({
   phaseId: string;
   excludeFormId?: string;
   write: (tx: TransactionType) => Promise<TResult>;
-}): Promise<TResult> => {
-  const fromRows = await isPhasesFromRowsEnabled();
-
-  return db.transaction(async (tx) => {
+}): Promise<TResult> =>
+  db.transaction(async (tx) => {
     await lockProfileForms({ tx, profileId: process.profileId });
 
     // Re-read under the instance's row lock: the builder can remove a phase between the pre-check and this write.
     const phases = await lockInstancePhases({
       tx,
       profileId: process.profileId,
-      fromRows,
     });
 
     await assertPhaseAvailable({
@@ -45,7 +41,6 @@ export const writeWithPhaseLock = async <TResult>({
 
     return write(tx);
   });
-};
 
 /**
  * The instance's current phase set, holding the row until the transaction ends
@@ -54,11 +49,9 @@ export const writeWithPhaseLock = async <TResult>({
 const lockInstancePhases = async ({
   tx,
   profileId,
-  fromRows,
 }: {
   tx: TransactionType;
   profileId: string;
-  fromRows: boolean;
 }) => {
   const [instance] = await tx
     .select({
@@ -74,7 +67,7 @@ const lockInstancePhases = async ({
     throw new NotFoundError('Decision process', profileId);
   }
 
-  return readInstancePhaseSet({ instance, db: tx, fromRows });
+  return readInstancePhaseSet({ instance, db: tx });
 };
 
 /**

@@ -2,7 +2,6 @@ import { type DbClient, db as defaultDb } from '@op/db/client';
 import { logger } from '@op/logging';
 
 import { CommonError } from '../../utils';
-import { isServerFeatureEnabled } from '../../utils/featureFlags';
 import {
   type ProcessPhaseWithProfile,
   listPhasesByInstance,
@@ -12,9 +11,6 @@ import {
   type PhaseInstanceData,
   getInstancePhases,
 } from './schemas/instanceData';
-
-// TODO: remove this flag and every fromRows param when instanceData.phases is dropped.
-export const PHASES_FROM_ROWS_FLAG = 'process_phases_from_rows';
 
 interface InstanceWithData {
   id: string;
@@ -33,37 +29,23 @@ export type WithProfilePhases<
 const NO_ROWS_MESSAGE =
   'Decision has no phase rows; reading instanceData.phases';
 
-export const isPhasesFromRowsEnabled = (): Promise<boolean> =>
-  isServerFeatureEnabled({
-    key: PHASES_FROM_ROWS_FLAG,
-    distinctId: PHASES_FROM_ROWS_FLAG,
-  });
-
 export const getPhases = async ({
   instance,
   db = defaultDb,
-  fromRows,
 }: {
   instance: InstanceWithData;
   db?: DbClient;
-  fromRows?: boolean;
 }): Promise<PhaseInstanceData[]> =>
-  (await resolvePhases({ instance, db, fromRows })).phases;
+  (await resolvePhases({ instance, db })).phases;
 
 export const resolvePhases = async <T extends InstanceWithData>({
   instance,
   db = defaultDb,
-  fromRows,
 }: {
   instance: T;
   db?: DbClient;
-  fromRows?: boolean;
 }): Promise<WithPhases<T>> => {
-  const [resolved] = await resolvePhasesForAll({
-    instances: [instance],
-    db,
-    fromRows,
-  });
+  const [resolved] = await resolvePhasesForAll({ instances: [instance], db });
   if (!resolved) {
     throw new CommonError(`Phases did not resolve for instance ${instance.id}`);
   }
@@ -83,18 +65,12 @@ export const attachBlobPhases = <T extends InstanceWithData>({
 export const resolvePhasesForAll = async <T extends InstanceWithData>({
   instances,
   db = defaultDb,
-  fromRows,
 }: {
   instances: T[];
   db?: DbClient;
-  fromRows?: boolean;
 }): Promise<WithPhases<T>[]> => {
   if (instances.length === 0) {
     return [];
-  }
-
-  if (!(fromRows ?? (await isPhasesFromRowsEnabled()))) {
-    return instances.map((instance) => attachBlobPhases({ instance }));
   }
 
   const phasesByInstance = await listPhasesByInstance({

@@ -16,7 +16,6 @@ export {
   createDevelopPhaseSetup,
   createDevelopProposalsMember,
 } from './helpers/developPhase';
-export { forceServerFlags } from './helpers/featureFlags';
 export { emptyBlobPhases } from './helpers/phaseRowFixtures';
 export { TestJoinProfileRequestDataManager } from './helpers/TestJoinProfileRequestDataManager';
 export { TestOrganizationDataManager } from './helpers/TestOrganizationDataManager';

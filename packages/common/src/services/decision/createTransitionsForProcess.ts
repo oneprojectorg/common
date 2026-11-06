@@ -17,11 +17,9 @@ import { resolvePhases } from './instancePhases';
 export async function createTransitionsForProcess({
   processInstance,
   db = defaultDb,
-  fromRows,
 }: {
   processInstance: ProcessInstance;
   db?: DbClient;
-  fromRows?: boolean;
 }): Promise<{
   transitions: Array<{
     id: string;
@@ -32,7 +30,7 @@ export async function createTransitionsForProcess({
 }> {
   try {
     const transitionsToCreate = buildExpectedTransitions(
-      await resolvePhases({ instance: processInstance, db, fromRows }),
+      await resolvePhases({ instance: processInstance, db }),
     );
 
     if (transitionsToCreate.length === 0) {

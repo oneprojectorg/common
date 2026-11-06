@@ -1,12 +1,8 @@
-import {
-  TestDecisionsDataManager,
-  emptyBlobPhases,
-  forceServerFlags,
-} from '@op/common/testing';
+import { TestDecisionsDataManager, emptyBlobPhases } from '@op/common/testing';
 import { db, eq, sql } from '@op/db/client';
 import { processInstances, processPhases, profiles } from '@op/db/schema';
 import { logger } from '@op/logging';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import {
   attachBlobPhases,
@@ -24,33 +20,7 @@ const expectNoRowsMessage = (processInstanceIds: string[]) =>
   );
 
 describe('instancePhases', () => {
-  afterEach(() => {
-    vi.unstubAllEnvs();
-  });
-
-  it('reads instanceData.phases while the flag is off, even with rows', async ({
-    task,
-    onTestFinished,
-  }) => {
-    const { instanceId, testData } = await createInstance(
-      task.id,
-      onTestFinished,
-    );
-    await testData.createPhaseRows(instanceId);
-    await renameBlobPhases(instanceId);
-    forceServerFlags(false);
-
-    const phases = await getPhases({
-      instance: await loadInstance(instanceId),
-    });
-
-    expect(phases.map(({ phaseId, name }) => ({ phaseId, name }))).toEqual([
-      { phaseId: 'initial', name: 'Blob initial' },
-      { phaseId: 'final', name: 'Blob final' },
-    ]);
-  });
-
-  it('reads the rows in sort order while the flag is on', async ({
+  it('reads the rows in sort order, ignoring the blob', async ({
     task,
     onTestFinished,
   }) => {
@@ -63,7 +33,6 @@ describe('instancePhases', () => {
     const rows = await loadRows(instanceId);
     await setSortOrder(rows.initial.id, 1);
     await setSortOrder(rows.final.id, 0);
-    forceServerFlags(true);
 
     const phases = await getPhases({
       instance: await loadInstance(instanceId),
@@ -95,7 +64,6 @@ describe('instancePhases', () => {
       .update(processPhases)
       .set({ data: sql`${processPhases.data} - 'phaseId'` })
       .where(eq(processPhases.id, rows.final.id));
-    forceServerFlags(true);
 
     const phases = await getPhases({
       instance: await loadInstance(instanceId),
@@ -113,7 +81,6 @@ describe('instancePhases', () => {
   }) => {
     const { instanceId } = await createInstance(task.id, onTestFinished);
     await renameBlobPhases(instanceId);
-    forceServerFlags(true);
 
     const phases = await getPhases({
       instance: await loadInstance(instanceId),
@@ -147,7 +114,6 @@ describe('instancePhases', () => {
       }),
     );
     testData.trackProfileForCleanup(added.id);
-    forceServerFlags(true);
 
     const phases = await getPhases({
       instance: await loadInstance(instanceId),
@@ -165,7 +131,6 @@ describe('instancePhases', () => {
   }) => {
     const { instanceId } = await createInstance(task.id, onTestFinished);
     const instance = await loadInstance(instanceId);
-    forceServerFlags(true);
 
     const resolved = await resolvePhases({ instance });
 
@@ -192,7 +157,6 @@ describe('instancePhases', () => {
       await loadInstance(withRows),
       await loadInstance(withoutRows),
     ];
-    forceServerFlags(true);
 
     const [first, second] = await resolvePhasesForAll({ instances });
 
@@ -220,14 +184,7 @@ describe('instancePhases', () => {
     await testData.createPhaseRows(instanceId);
     await emptyBlobPhases(instanceId);
     const instance = await loadInstance(instanceId);
-    forceServerFlags(false);
 
-    const fromBlob = await resolvePhases({ instance });
-
-    expect(fromBlob.instanceData).toBe(instance.instanceData);
-    expect(fromBlob.phases).toEqual([]);
-
-    forceServerFlags(true);
     const fromRows = await resolvePhases({ instance });
 
     expect(fromRows.instanceData).toBe(instance.instanceData);
@@ -238,7 +195,7 @@ describe('instancePhases', () => {
     ]);
   });
 
-  it('attaches the blob phases without a flag check', async ({
+  it('attaches the blob phases without reading the rows', async ({
     task,
     onTestFinished,
   }) => {
@@ -249,7 +206,6 @@ describe('instancePhases', () => {
     await testData.createPhaseRows(instanceId);
     await renameBlobPhases(instanceId);
     const instance = await loadInstance(instanceId);
-    forceServerFlags(true);
 
     const attached = attachBlobPhases({ instance });
 

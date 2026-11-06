@@ -89,13 +89,11 @@ export const assertCustomFormAdminForInstance = async ({
 export const readInstancePhaseSet = async ({
   instance,
   db,
-  fromRows,
 }: {
   instance: { id: string; instanceData: unknown };
   db?: DbClient;
-  fromRows?: boolean;
 }): Promise<CustomFormPhaseSet> => {
-  const phaseIds = (await getPhases({ instance, db, fromRows })).map(
+  const phaseIds = (await getPhases({ instance, db })).map(
     (phase) => phase.phaseId,
   );
 

@@ -13,7 +13,12 @@ import type { User } from '@op/supabase/lib';
 import { waitUntil } from '@vercel/functions';
 import { permission } from 'access-zones';
 
-import { CommonError, NotFoundError, UnauthorizedError } from '../../utils';
+import {
+  CommonError,
+  NotFoundError,
+  UnauthorizedError,
+  ValidationError,
+} from '../../utils';
 import { assertProfileAccess, assertProfileAdmin } from '../assert';
 import { generateUniqueProfileSlug } from '../profile/utils';
 import { assertVoterCostField } from './assertVoterCostField';
@@ -22,7 +27,8 @@ import {
   getNormalizedCategories,
   getUpdatedInstanceData,
 } from './getUpdatedInstanceData';
-import { attachBlobPhases, isPhasesFromRowsEnabled } from './instancePhases';
+import { attachBlobPhases } from './instancePhases';
+import { listPhasesByInstance } from './phaseHelpers';
 import { ensureProposalTaxonomyTerms } from './proposalTaxonomy';
 import { schemaValidator } from './schemaValidator';
 import type {
@@ -119,6 +125,19 @@ export const updateDecisionInstance = async ({
   }
 
   const hasPhaseUpdates = phases !== undefined && phases.length > 0;
+  // Readers take rows over the blob, so a blob phase edit on a decision with rows would be invisible.
+  // TODO: remove once the builder save writes rows.
+  if (hasPhaseUpdates) {
+    const rows = await listPhasesByInstance({
+      db,
+      processInstanceIds: [instanceId],
+    });
+    if (rows.has(instanceId)) {
+      throw new ValidationError(
+        'Phases for this decision are stored as rows and cannot be edited here yet',
+      );
+    }
+  }
   const instanceDataUpdate = getUpdatedInstanceData({
     existing: existingInstance.instanceData as DecisionInstanceData,
     update: { config, overview, phases, proposalTemplate, rubricTemplate },
@@ -155,11 +174,6 @@ export const updateDecisionInstance = async ({
     status === ProcessStatus.PUBLISHED &&
     existingInstance.status === ProcessStatus.DRAFT;
 
-  const transitionsFromRows =
-    isBeingPublished && !hasPhaseUpdates
-      ? await isPhasesFromRowsEnabled()
-      : false;
-
   // Use a transaction for updating the instance and transitions together
   await db.transaction(async (tx) => {
     // Update the instance
@@ -187,7 +201,6 @@ export const updateDecisionInstance = async ({
       isDraft: (status ?? existingInstance.status) === ProcessStatus.DRAFT,
       isBeingPublished,
       phasesChanged: hasPhaseUpdates,
-      fromRows: transitionsFromRows,
     });
   });
 
@@ -271,14 +284,12 @@ async function syncTransitions({
   isDraft,
   isBeingPublished,
   phasesChanged,
-  fromRows,
 }: {
   tx: TransactionType;
   updatedInstance: ProcessInstance;
   isDraft: boolean;
   isBeingPublished: boolean;
   phasesChanged: boolean;
-  fromRows: boolean;
 }) {
   if (isDraft) {
     await tx
@@ -290,7 +301,6 @@ async function syncTransitions({
     await createTransitionsForProcess({
       processInstance: updatedInstance,
       db: tx,
-      fromRows,
     });
   } else if (phasesChanged) {
     await updateTransitionsForProcess({

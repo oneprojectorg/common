@@ -7,11 +7,7 @@ import {
   readInstancePhaseSet,
   revertPhase,
 } from '@op/common';
-import {
-  TestDecisionsDataManager,
-  emptyBlobPhases,
-  forceServerFlags,
-} from '@op/common/testing';
+import { TestDecisionsDataManager, emptyBlobPhases } from '@op/common/testing';
 import { db, eq } from '@op/db/client';
 import {
   ProcessStatus,
@@ -21,15 +17,7 @@ import {
   proposalReviewAssignments,
   users,
 } from '@op/db/schema';
-import {
-  afterAll,
-  afterEach,
-  beforeAll,
-  describe,
-  expect,
-  it,
-  vi,
-} from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { createAuthenticatedCaller } from '../../test/supabase-utils';
 
@@ -166,15 +154,7 @@ const rowPhases = (phaseIds: string[]) =>
     endDate: ROW_END,
   }));
 
-describe('with process_phases_from_rows on and instanceData.phases empty', () => {
-  beforeAll(() => {
-    forceServerFlags(true);
-  });
-
-  afterAll(() => {
-    vi.unstubAllEnvs();
-  });
-
+describe('with instanceData.phases empty', () => {
   it('advances a phase and reads the phases back from the rows', async ({
     task,
     onTestFinished,
@@ -208,6 +188,29 @@ describe('with process_phases_from_rows on and instanceData.phases empty', () =>
         }),
       ),
     ).toEqual(rowPhases(['initial', 'final']));
+  });
+
+  it('rejects a blob phase edit once the decision has rows', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+      processSchema: manualSchema,
+    });
+    const instanceId = setup.instance.instance.id;
+    await moveToRows(testData, instanceId);
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    await expect(
+      caller.decision.updateDecisionInstance({
+        instanceId,
+        phases: [{ phaseId: 'initial', headline: 'Edited in the blob' }],
+      }),
+    ).rejects.toThrow(/stored as rows/i);
   });
 
   it('runs a due transition in the sweep', async ({ task, onTestFinished }) => {
@@ -464,10 +467,6 @@ describe('with process_phases_from_rows on and instanceData.phases empty', () =>
 });
 
 describe('getInstance with hideBudget', () => {
-  afterEach(() => {
-    vi.unstubAllEnvs();
-  });
-
   const createHiddenBudgetDecision = async (
     testData: TestDecisionsDataManager,
   ) => {
@@ -499,7 +498,6 @@ describe('getInstance with hideBudget', () => {
   };
 
   it('strips phase budgets from the blob', async ({ task, onTestFinished }) => {
-    forceServerFlags(false);
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
     const { instanceId, caller } = await createHiddenBudgetDecision(testData);
 
@@ -511,7 +509,6 @@ describe('getInstance with hideBudget', () => {
   });
 
   it('strips phase budgets from the rows', async ({ task, onTestFinished }) => {
-    forceServerFlags(true);
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
     const { instanceId, caller } = await createHiddenBudgetDecision(testData);
     await moveToRows(testData, instanceId);
