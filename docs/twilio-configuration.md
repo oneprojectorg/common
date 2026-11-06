@@ -121,8 +121,7 @@ keyword without a handler fails the typecheck.
 | `REMOVE <code>`             | Takes a pick off the draft.                                                                                                                 |
 | `MOVE <code> <position>`    | Reorders a pick; order is rank.                                                                                                             |
 | `DONE`                      | The full ballot, the ranking note and the SUBMIT prompt.                                                                                     |
-| `SUBMIT`                    | Casts the ballot through `submitVote`, or revises it after CHANGE through `reviseVote`. A second SUBMIT says the ballot is already in.      |
-| `CHANGE`                    | Reopens a cast ballot as a draft while the phase has `voting.edit`. Until then a code, LIST, DONE, REMOVE or MOVE after SUBMIT says to text CHANGE. |
+| `SUBMIT`                    | Casts the ballot through `submitVote`. A second SUBMIT says the ballot is already in.                                                       |
 | anything else               | The help text.                                                                                                                              |
 
 STOP, START and HELP never reach the dispatcher; Twilio answers them (see
@@ -276,8 +275,8 @@ point outside production.
    so a `next dev` server needs nothing in PostHog. A production build
    reads the flags.
 4. Publish a decision whose voting phase has `voting.submit: true`, a
-   `voterBudget`, `ranked: true`, `edit: true` if CHANGE is to be tested, and
-   `voting.enrolment: { attestation, boundary }` if registration is. Import
+   `voterBudget`, `ranked: true`, and
+   `voting.enrolment: { attestation, boundary }` if registration is tested. Import
    boundaries with `packages/common/src/scripts/importBoundaries.sql` (paste
    the GeoJSON, set `name_property` and the decision's `profile_id`); it
    creates the matching proposal category for each. Submit proposals whose
@@ -305,10 +304,9 @@ point outside production.
 | `DONE`                   | The ballot, the ranking note and `Reply SUBMIT to cast your ballot.`                                                                         |
 | `SUBMIT`                 | `Your ballot is in. One ballot per person. However, your vote is never public.`                                                             |
 | `SUBMIT` again           | `Your ballot is already in. One ballot per person.`                                                                                         |
-| `CHANGE`                 | `Your ballot is open for changes…` and the ballot (needs `voting.edit`); then codes, REMOVE, MOVE and `SUBMIT` → `Your ballot is updated…` |
 
 On the shared number the same conversation works with a slug: `SHOW <slug>`,
-`VOTE <slug>`, `PROPOSALS <slug>`. The codes, LIST, DONE, SUBMIT and CHANGE
+`VOTE <slug>`, `PROPOSALS <slug>`. The codes, LIST, DONE and SUBMIT
 follow the decision you touched last — its chat session, which outlives
 SUBMIT — and the ballot you cast last when no session remains; send
 `PROPOSALS <slug>` to choose a decision. On a line they follow that line's

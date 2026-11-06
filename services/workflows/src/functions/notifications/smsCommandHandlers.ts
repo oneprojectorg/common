@@ -919,7 +919,7 @@ const formatMoney = (
     : null;
 
 // The same choice as a browse, then the ballot the voter cast last on the
-// shared number, so CHANGE and a second SUBMIT find it after the draft is gone.
+// shared number, so a second SUBMIT finds it after the draft is gone.
 const resolveBallotInstance = async (
   context: SmsCommandContext,
 ): Promise<string | null> => {

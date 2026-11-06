@@ -171,7 +171,7 @@ select jsonb_pretty(jsonb_build_object(
     from decision d join decision_chat_sessions cs2 on cs2.process_instance_id = d.instance_id and cs2.deleted_at is null),
 
   -- The cast ballots: one decisions_vote_submissions row per voter (SUBMIT
-  -- deletes the draft and writes this; CHANGE + SUBMIT revises it in place),
+  -- deletes the draft and writes this; reviseVote replaces it in place),
   -- with its decisions_vote_proposals rows in rank order. vote_data is what
   -- submitVote stored: selections with cost and rank, the total, the unit.
   'decisions_vote_submissions', (select coalesce(jsonb_agg(jsonb_build_object(
