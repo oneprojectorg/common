@@ -28,7 +28,6 @@ import { LuEllipsis, LuFileText } from 'react-icons/lu';
 import { Link, useTranslations } from '@/lib/i18n';
 
 import { useProposalCardData } from '../ProposalCard';
-import { useProposalCardTranslation } from '../ProposalCard/useProposalCardTranslation';
 import type { ProposalSheetRoute } from '../ProposalSheet';
 import {
   ReviewStatusBadge,
@@ -93,10 +92,8 @@ function ReviewerAssignmentRow({
   const openInSheet = useOpenProposalInSheet();
   const { proposal } = assignment;
 
-  const translation = useProposalCardTranslation({ proposal });
   const { titleText, displayCategories, authors } = useProposalCardData({
     proposal,
-    cardTranslation: translation.translation,
   });
 
   // A translation record types every field as `string | string[]`.
