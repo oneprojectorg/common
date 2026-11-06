@@ -19,11 +19,7 @@ export async function AssignmentsPageShell({
   return (
     <div className="flex min-h-dvh flex-col bg-background">
       <AssignmentsTopRow>
-        <ButtonLink
-          href={backHref}
-          variant="link"
-          className="px-0 text-muted-foreground hover:text-foreground hover:no-underline"
-        >
+        <ButtonLink href={backHref} variant="link" className="px-0">
           <LuArrowLeft className="size-4 rtl:-scale-x-100" />
           {t('Back')}
         </ButtonLink>
