@@ -14,6 +14,7 @@ import {
   loadPhaseRows,
   loadTransitionLinks,
   setupPhase,
+  setupPublishedDateDecision,
 } from '../../../test/helpers/phaseTestUtils';
 import { createAuthenticatedCaller } from '../../../test/supabase-utils';
 
@@ -593,6 +594,82 @@ describe.concurrent('updatePhase', () => {
         scheduledDate: endDate,
       },
     ]);
+  });
+
+  it('creates no transitions for a draft decision', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      processSchema: dateAdvancementSchema,
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instanceId = setup.instance.instance.id;
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+    const [initial] = await loadPhaseRows(instanceId);
+    if (!initial) {
+      throw new Error('Expected the template phase rows');
+    }
+    const endDate = new Date(
+      Date.now() + 3 * 24 * 60 * 60 * 1000,
+    ).toISOString();
+
+    await caller.decision.updatePhase({
+      phaseId: initial.id,
+      data: { endDate },
+    });
+
+    const [updated] = await loadPhaseRows(instanceId);
+    expect(updated?.data.endDate).toBe(endDate);
+    expect(await loadTransitionLinks(instanceId)).toEqual([]);
+  });
+
+  it('keeps the scheduled dates when a published phase is renamed', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { instanceId, adminCaller, initial } =
+      await setupPublishedDateDecision(task, onTestFinished);
+    const before = await loadTransitionLinks(instanceId);
+    expect(before).toHaveLength(1);
+
+    await adminCaller.decision.updatePhase({
+      phaseId: initial.id,
+      name: 'Renamed',
+    });
+
+    await expectPhase(initial, {
+      name: 'Renamed',
+      data: initial.data,
+    });
+    expect(await loadTransitionLinks(instanceId)).toEqual(before);
+  });
+
+  it('refuses an update that leaves a published date-advanced phase with no end date', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { instanceId, adminCaller, initial } =
+      await setupPublishedDateDecision(task, onTestFinished);
+    const { endDate: _endDate, ...data } = initial.data;
+    await db
+      .update(processPhases)
+      .set({ data })
+      .where(eq(processPhases.id, initial.id));
+    const before = await loadTransitionLinks(instanceId);
+    expect(before).toHaveLength(1);
+
+    await expect(
+      adminCaller.decision.updatePhase({
+        phaseId: initial.id,
+        name: 'Refused',
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
+
+    await expectPhase(initial, { name: initial.name, data });
+    expect(await loadTransitionLinks(instanceId)).toEqual(before);
   });
 });
 

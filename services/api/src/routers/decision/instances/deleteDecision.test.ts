@@ -83,8 +83,6 @@ describe.concurrent('deleteDecision', () => {
         ...phaseInput,
       }),
     ]);
-    testData.trackProfileForCleanup(phase.profileId);
-    testData.trackProfileForCleanup(otherPhase.profileId);
 
     await caller.decision.deleteDecision({
       instanceId: setup.instance.instance.id,

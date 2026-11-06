@@ -240,7 +240,7 @@ export class TestReviewsDataManager {
         },
       })
       .where(eq(processInstances.id, instanceId));
-    await syncPhaseRows(instanceId);
+    await syncPhaseRows(instanceId, phases);
   }
 
   /**
@@ -283,7 +283,7 @@ export class TestReviewsDataManager {
         },
       })
       .where(eq(processInstances.id, instanceId));
-    await syncPhaseRows(instanceId);
+    await syncPhaseRows(instanceId, phases);
   }
 
   /** Sets the rubric template on a process instance for review API tests. */
@@ -348,7 +348,7 @@ export class TestReviewsDataManager {
         },
       })
       .where(eq(processInstances.id, instanceId));
-    await syncPhaseRows(instanceId);
+    await syncPhaseRows(instanceId, phases);
   }
 
   /** Creates a single review assignment and the minimum related data it needs. */

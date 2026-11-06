@@ -10,6 +10,7 @@ import {
   loadPhaseRows,
   loadTransitionLinks,
   setupPhase,
+  setupPublishedDateDecision,
 } from '../../../test/helpers/phaseTestUtils';
 import { createAuthenticatedCaller } from '../../../test/supabase-utils';
 
@@ -89,38 +90,21 @@ describe.concurrent('deletePhase', () => {
     task,
     onTestFinished,
   }) => {
-    const { instanceId, adminCaller, rows } = await setupPublishedDecision(
-      task,
-      onTestFinished,
-    );
-    const [initial, final] = rows;
-    expect(rows).toMatchObject([
-      { data: { phaseId: 'initial' } },
-      { data: { phaseId: 'final' } },
-    ]);
-    if (!initial || !final) {
-      throw new Error('Fixture is missing its initial or final phase row');
-    }
+    const { instanceId, adminCaller, initial, final } =
+      await setupPublishedDateDecision(task, onTestFinished);
     const completedAt = new Date().toISOString();
-    await db.insert(decisionProcessTransitions).values([
-      {
-        processInstanceId: instanceId,
-        fromStateId: 'initial',
-        toStateId: 'final',
-        fromPhaseId: initial.id,
-        toPhaseId: final.id,
-        scheduledDate: completedAt,
-        completedAt,
-      },
-      {
-        processInstanceId: instanceId,
-        fromStateId: 'final',
-        toStateId: 'initial',
-        fromPhaseId: final.id,
-        toPhaseId: initial.id,
-        scheduledDate: completedAt,
-        completedAt,
-      },
+    await db.insert(decisionProcessTransitions).values({
+      processInstanceId: instanceId,
+      fromStateId: 'final',
+      toStateId: 'initial',
+      fromPhaseId: final.id,
+      toPhaseId: initial.id,
+      scheduledDate: completedAt,
+      completedAt,
+    });
+    expect(await loadTransitionLinks(instanceId)).toMatchObject([
+      { fromStateId: 'final', fromPhaseId: final.id, toPhaseId: initial.id },
+      { fromStateId: 'initial', fromPhaseId: initial.id, toPhaseId: final.id },
     ]);
 
     await adminCaller.decision.deletePhase({ phaseId: final.id });
@@ -128,7 +112,6 @@ describe.concurrent('deletePhase', () => {
     expect(await loadPhaseRows(instanceId)).toEqual([initial]);
     expect(await loadTransitionLinks(instanceId)).toMatchObject([
       { fromStateId: 'final', fromPhaseId: null, toPhaseId: initial.id },
-      { fromStateId: 'initial', fromPhaseId: initial.id, toPhaseId: null },
     ]);
   });
 
