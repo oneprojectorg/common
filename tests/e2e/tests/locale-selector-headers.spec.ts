@@ -29,6 +29,12 @@ function expectLocaleChooser(page: Page) {
   ).toBeVisible({ timeout: 30_000 });
 }
 
+function expectAccountMenu(page: Page) {
+  return expect(page.getByTestId('user-menu-trigger')).toBeVisible({
+    timeout: 30_000,
+  });
+}
+
 const REVIEW_SCHEMA = {
   id: 'locale-selector-headers-e2e',
   version: '1.0.0',
@@ -154,7 +160,7 @@ async function createDecisionInReview({
 }
 
 test.describe('Locale chooser in headers', () => {
-  test('appears on the decision review subpages', async ({
+  test('appears on the proposal reviews page and the assignments page shows the account menu', async ({
     authenticatedPage: page,
     org,
     supabaseAdmin,
@@ -168,7 +174,7 @@ test.describe('Locale chooser in headers', () => {
     await page.goto(`/en/decisions/${instance.slug}/assignments`, {
       waitUntil: 'domcontentloaded',
     });
-    await expectLocaleChooser(page);
+    await expectAccountMenu(page);
 
     await page.goto(
       `/en/decisions/${instance.slug}/proposal/${proposal.profileId}/reviews`,
