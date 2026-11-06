@@ -148,9 +148,9 @@ export function DecisionStateRouter({
 }) {
   return (
     <ProposalSheetProvider
-      {...(decisionSlug
-        ? { decisionSlug, slug, instanceId }
-        : { slug, instanceId })}
+      slug={slug}
+      instanceId={instanceId}
+      decisionSlug={decisionSlug}
     >
       {useLegacy ? (
         <DecisionStateRouterLegacy instanceId={instanceId} slug={slug} />

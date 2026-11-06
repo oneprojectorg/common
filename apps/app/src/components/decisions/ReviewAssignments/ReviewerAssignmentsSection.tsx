@@ -49,6 +49,8 @@ interface ReviewerAssignmentsSectionProps {
   phaseId: string;
   reviewerProfileId: string;
   decisionSlug: string;
+  /** Owning profile slug, for the proposal route. */
+  ownerSlug: string;
 }
 
 export function ReviewerAssignmentsSection({
@@ -56,20 +58,22 @@ export function ReviewerAssignmentsSection({
   phaseId,
   reviewerProfileId,
   decisionSlug,
+  ownerSlug,
 }: ReviewerAssignmentsSectionProps) {
   const t = useTranslations();
   const route = useMemo<ProposalSheetRoute>(
-    () => ({ decisionSlug, instanceId: processInstanceId }),
-    [decisionSlug, processInstanceId],
+    () => ({ decisionSlug, slug: ownerSlug, instanceId: processInstanceId }),
+    [decisionSlug, ownerSlug, processInstanceId],
   );
   const expandHref = useCallback(
     (profileId: string) =>
       proposalReviewsHref({
         decisionSlug,
+        slug: ownerSlug,
         instanceId: processInstanceId,
         profileId,
       }),
-    [decisionSlug, processInstanceId],
+    [decisionSlug, ownerSlug, processInstanceId],
   );
 
   return (

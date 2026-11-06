@@ -32,7 +32,8 @@ export default async function ReviewerAssignmentsPage({
 }: ReviewerAssignmentsPageProps) {
   const { slug, profileId } = await params;
 
-  const { processInstanceId, phaseId } = await loadReviewAssignmentsPage(slug);
+  const { processInstanceId, phaseId, ownerSlug } =
+    await loadReviewAssignmentsPage(slug);
 
   // The SSR render has no browser client, so the suspending input needs a seed.
   const { utils, queryClient } = await createServerUtils();
@@ -61,6 +62,7 @@ export default async function ReviewerAssignmentsPage({
           phaseId={phaseId}
           reviewerProfileId={profileId}
           decisionSlug={slug}
+          ownerSlug={ownerSlug}
         />
       </HydrationBoundary>
     </AssignmentsPageShell>

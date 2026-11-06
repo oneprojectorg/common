@@ -21,9 +21,11 @@ import {
  * page on its own.
  */
 export function ProposalSheetProvider({
+  slug,
+  instanceId,
+  decisionSlug,
   expandHref,
   children,
-  ...route
 }: ProposalSheetRoute & {
   expandHref?: (profileId: string) => string;
   children: ReactNode;
@@ -58,7 +60,7 @@ export function ProposalSheetProvider({
       {api ? (
         <ProposalSheet
           profileId={openProfileId}
-          route={route}
+          route={{ slug, instanceId, decisionSlug }}
           expandHref={expandHref}
           onClose={close}
         />
