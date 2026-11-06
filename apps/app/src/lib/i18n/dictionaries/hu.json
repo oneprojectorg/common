@@ -1235,7 +1235,6 @@
       "reviewsSubmittedFigure": "{submitted}<total> / {assigned}</total>",
       "moreActionsForProposal": "További műveletek: {title}",
       "openProposalAction": "Javaslat megnyitása",
-      "actionsColumn": "Műveletek",
       "noProposalsAssignedTitle": "Nincs kiosztott javaslat",
       "editAssignmentsAction": "Kiosztások szerkesztése",
       "assignProposalsAction": "Javaslatok kiosztása",

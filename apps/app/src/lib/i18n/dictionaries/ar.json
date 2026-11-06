@@ -1235,7 +1235,6 @@
       "reviewsSubmittedFigure": "{submitted}<total>/{assigned}</total>",
       "moreActionsForProposal": "مزيد من الإجراءات لـ {title}",
       "openProposalAction": "فتح المقترح",
-      "actionsColumn": "الإجراءات",
       "noProposalsAssignedTitle": "لا توجد مقترحات مُعيَّنة",
       "editAssignmentsAction": "تعديل التعيينات",
       "assignProposalsAction": "تعيين مقترحات",

@@ -1235,7 +1235,6 @@
       "reviewsSubmittedFigure": "{submitted}<total> / {assigned}</total>",
       "moreActionsForProposal": "{title}-এর জন্য আরও কাজ",
       "openProposalAction": "প্রস্তাব খুলুন",
-      "actionsColumn": "কাজ",
       "noProposalsAssignedTitle": "কোনো প্রস্তাব নির্ধারিত নেই",
       "editAssignmentsAction": "নির্ধারণ সম্পাদনা করুন",
       "assignProposalsAction": "প্রস্তাব নির্ধারণ করুন",

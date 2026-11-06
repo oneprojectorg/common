@@ -1235,7 +1235,6 @@
       "reviewsSubmittedFigure": "{submitted}<total> / {assigned}</total>",
       "moreActionsForProposal": "More actions for {title}",
       "openProposalAction": "Open proposal",
-      "actionsColumn": "Actions",
       "noProposalsAssignedTitle": "No proposals assigned",
       "editAssignmentsAction": "Edit assignments",
       "assignProposalsAction": "Assign proposals",
