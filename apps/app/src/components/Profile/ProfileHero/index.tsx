@@ -83,7 +83,14 @@ const ProfileHeroCover = ({ profile }: { profile: Profile }) => {
   return (
     <div className="relative h-30 bg-hero md:absolute md:inset-0 md:-z-10 md:h-auto">
       {headerUrl ? (
-        <Image src={headerUrl} alt="" fill className="object-cover" />
+        <Image
+          src={headerUrl}
+          alt=""
+          fill
+          priority
+          sizes="100vw"
+          className="object-cover"
+        />
       ) : null}
       <div className="absolute inset-0 hidden bg-hero/50 md:block" />
     </div>
