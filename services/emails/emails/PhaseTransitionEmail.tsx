@@ -9,7 +9,7 @@ export const PhaseTransitionEmail = ({
   toPhaseName,
   phaseNumber,
   totalPhases,
-  processUrl = 'https://common.oneproject.org/',
+  processUrl,
 }: {
   processTitle: string;
   toPhaseName: string;

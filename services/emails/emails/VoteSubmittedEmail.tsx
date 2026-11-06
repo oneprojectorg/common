@@ -11,7 +11,7 @@ interface NextStep {
 
 export const VoteSubmittedEmail = ({
   processTitle,
-  decisionUrl = 'https://common.oneproject.org/',
+  decisionUrl,
   nextSteps = [],
 }: {
   processTitle?: string | null;

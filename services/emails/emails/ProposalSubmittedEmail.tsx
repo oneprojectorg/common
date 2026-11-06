@@ -7,7 +7,7 @@ import { Header } from '../components/Header';
 export const ProposalSubmittedEmail = ({
   proposalName,
   processTitle,
-  proposalUrl = 'https://common.oneproject.org/',
+  proposalUrl,
 }: {
   proposalName?: string | null;
   processTitle?: string | null;

@@ -11,8 +11,8 @@ export const ProposalMergedIntoYoursEmail = ({
   proposalName,
   sourceProposalName,
   processTitle,
-  proposalUrl = 'https://common.oneproject.org/',
-  sourceProposalUrl = 'https://common.oneproject.org/',
+  proposalUrl,
+  sourceProposalUrl,
 }: {
   /** The recipient's own proposal. */
   proposalName: string;

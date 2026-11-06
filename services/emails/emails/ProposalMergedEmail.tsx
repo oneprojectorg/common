@@ -12,8 +12,8 @@ export const ProposalMergedEmail = ({
   proposalName,
   targetProposalName,
   processTitle,
-  proposalUrl = 'https://common.oneproject.org/',
-  targetProposalUrl = 'https://common.oneproject.org/',
+  proposalUrl,
+  targetProposalUrl,
   note,
 }: {
   proposalName: string;
