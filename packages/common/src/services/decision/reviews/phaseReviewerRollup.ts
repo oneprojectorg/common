@@ -41,7 +41,6 @@ export function openAssignmentFilter(): SQL | undefined {
   );
 }
 
-// `public.users` and `auth.users` share a name, so both need an alias.
 const ownerUsers = aliasedTable(users, 'owner_users');
 const ownerAuthUsers = aliasedTable(authUsers, 'owner_auth_users');
 
@@ -60,8 +59,6 @@ export function buildPhaseReviewerRollup({
   const draftCount = sql`count(*) filter (where ${proposalReviews.state} = ${ProposalReviewState.DRAFT})`;
   const remainingCount = sql`count(*) filter (where ${openAssignmentFilter()})`;
 
-  // The account that owns the profile, the SQL form of `withAccountContact`:
-  // the search needs its email and phone inside this one statement.
   const account = db
     .select({ email: ownerAuthUsers.email, phone: ownerAuthUsers.phone })
     .from(ownerUsers)
@@ -149,8 +146,7 @@ export function buildPhaseReviewerRollup({
         ),
       )
       // `profiles.id` is the primary key, so Postgres lets the other profile
-      // columns through without listing them here. The lateral columns are
-      // not covered by that rule; at most one account row exists per profile.
+      // columns through without listing them here.
       .groupBy(profiles.id, account.email, account.phone)
       .as('rollup')
   );

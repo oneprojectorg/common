@@ -353,11 +353,7 @@ export const relations = defineRelations(schema, (r) => ({
       from: r.profiles.id,
       to: r.profileUsers.profileId,
     }),
-    /**
-     * The `users` row that owns an individual profile. `users.profileId` is
-     * not unique, so a query orders it; `withAccountContact` in `@op/common`
-     * is the shared form.
-     */
+    /** `users.profileId` is not unique, so a query orders this (`withAccountContact`). */
     account: r.one.users({
       from: r.profiles.id,
       to: r.users.profileId,

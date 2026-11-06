@@ -1,9 +1,4 @@
-/**
- * Loads the account that owns a profile with its `auth.users` email and phone:
- * spread into a `profiles` query's `with`, then map `row.account?.authUser`
- * through `toAccountContact`. `users.profileId` is not unique, so the oldest
- * owning row wins.
- */
+/** `with` for a profile's owning account; map `account?.authUser` through `toAccountContact`. */
 export const withAccountContact = {
   account: {
     columns: {},
