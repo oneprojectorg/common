@@ -6,7 +6,7 @@ import { getTranslations } from '@/lib/i18n';
 import { ButtonLink } from '@/components/ButtonLink';
 import { UserAvatarMenu } from '@/components/SiteHeader/UserAvatarMenu';
 
-/** Shared shell: a full-width Back + account row, then the body in the content column. */
+/** Shared shell: a sticky Back + account row at the gutters, then the body at the page width. */
 export async function AssignmentsPageShell({
   backHref,
   children,
@@ -36,18 +36,16 @@ export async function AssignmentsPageShell({
 
 export function AssignmentsTopRow({ children }: { children: ReactNode }) {
   return (
-    <div className="border-b border-border">
-      <div className="mx-auto flex h-14 w-full max-w-5xl items-center justify-between gap-4 px-6">
-        {children}
-      </div>
+    <div className="sticky top-0 z-20 flex h-15 shrink-0 items-center justify-between gap-4 border-b bg-background px-4 md:px-8">
+      {children}
     </div>
   );
 }
 
 export function AssignmentsMain({ children }: { children: ReactNode }) {
-  // 64rem — the width the design was composed at.
+  // 86rem — the page width the design was composed at.
   return (
-    <main className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-6 pt-8 pb-16">
+    <main className="mx-auto flex w-full max-w-page flex-col gap-8 px-4 pt-10 pb-18 md:px-8">
       {children}
     </main>
   );

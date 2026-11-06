@@ -164,7 +164,7 @@ function ReviewerAssignmentsContent({
 
   return (
     <>
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
         <ReviewerHeader name={name} email={reviewer.email} />
         {summary.remainingCount > 0 || summary.total > 0 ? (
           <div className="flex flex-wrap items-center gap-2">
@@ -263,7 +263,10 @@ function ReviewerStats({ reviewer }: { reviewer: ReviewerAssignments }) {
     : null;
 
   return (
-    <div aria-live="polite" className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+    <div
+      aria-live="polite"
+      className="grid grid-cols-2 gap-4 lg:grid-cols-4 lg:gap-6"
+    >
       <StatCard label={t('decisions.review.reviewsSubmittedLabel')}>
         {t.rich('decisions.review.reviewsSubmittedFigure', {
           submitted: reviewer.submittedCount,
@@ -284,8 +287,8 @@ function ReviewerStats({ reviewer }: { reviewer: ReviewerAssignments }) {
 
 function StatCard({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <Card className="gap-2 p-5">
-      <span>{label}</span>
+    <Card className="gap-2 p-4">
+      <span className="text-label text-muted-foreground">{label}</span>
       <span className="font-serif text-headline font-light tabular-nums">
         {children}
       </span>

@@ -61,8 +61,8 @@ export function ReviewerAssignmentsTable({
       <TableHeader>
         <TableRow>
           <TableHead>{t('proposalColumn')}</TableHead>
-          <TableHead className="w-44">{t('statusColumn')}</TableHead>
-          <TableHead className="w-36">{t('submittedColumn')}</TableHead>
+          <TableHead className="w-50">{t('statusColumn')}</TableHead>
+          <TableHead className="w-38">{t('submittedColumn')}</TableHead>
           <TableHead className="w-12">
             <span className="sr-only">{t('actionsColumn')}</span>
           </TableHead>

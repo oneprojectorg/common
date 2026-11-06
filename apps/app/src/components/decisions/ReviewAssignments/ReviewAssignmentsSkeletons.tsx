@@ -31,7 +31,7 @@ export function ReviewerHeaderSkeleton() {
 export function ReviewerAssignmentsBodySkeleton() {
   return (
     <>
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4 lg:gap-6">
         <Skeleton className="h-24 w-full rounded-lg" />
         <Skeleton className="h-24 w-full rounded-lg" />
       </div>
