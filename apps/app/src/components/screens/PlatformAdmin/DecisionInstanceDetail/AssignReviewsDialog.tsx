@@ -31,6 +31,8 @@ import { useMemo, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
+import { accountContactText } from '@/components/decisions/ReviewAssignments/accountContactText';
+
 /**
  * Manually assign a reviewer to proposals in this phase. Proposals authored
  * by the selected reviewer are excluded (the server skips them anyway).
@@ -71,9 +73,9 @@ export const AssignReviewsDialog = ({
         label: (
           <span className="flex items-baseline gap-2">
             {reviewer.name ?? reviewer.slug ?? reviewer.id}
-            {reviewer.email ? (
+            {reviewer.contact ? (
               <span className="text-sm text-muted-foreground">
-                {reviewer.email}
+                {accountContactText(reviewer.contact)}
               </span>
             ) : null}
           </span>

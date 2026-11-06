@@ -1,7 +1,9 @@
 import {
   type SQL,
   type SQLWrapper,
+  aliasedTable,
   and,
+  asc,
   db,
   eq,
   exists,
@@ -14,11 +16,14 @@ import {
 import {
   ProposalReviewAssignmentStatus,
   ProposalReviewState,
+  authUsers,
   profiles,
   proposalReviewAssignments,
   proposalReviews,
+  users,
 } from '@op/db/schema';
 
+import { toAccountContact } from '../../profile/schemas/accountContact';
 import type { ReviewerStatus } from '../schemas/reviewAssignments';
 import type { EligibleReviewerSchema } from '../schemas/reviews';
 import { escapeLikePattern, splitSearchWords } from '../utils/search';
@@ -36,6 +41,9 @@ export function openAssignmentFilter(): SQL | undefined {
   );
 }
 
+const ownerUsers = aliasedTable(users, 'owner_users');
+const ownerAuthUsers = aliasedTable(authUsers, 'owner_auth_users');
+
 export function buildPhaseReviewerRollup({
   processInstanceId,
   phaseId,
@@ -51,6 +59,15 @@ export function buildPhaseReviewerRollup({
   const draftCount = sql`count(*) filter (where ${proposalReviews.state} = ${ProposalReviewState.DRAFT})`;
   const remainingCount = sql`count(*) filter (where ${openAssignmentFilter()})`;
 
+  const account = db
+    .select({ email: ownerAuthUsers.email, phone: ownerAuthUsers.phone })
+    .from(ownerUsers)
+    .innerJoin(ownerAuthUsers, eq(ownerAuthUsers.id, ownerUsers.authUserId))
+    .where(eq(ownerUsers.profileId, profiles.id))
+    .orderBy(asc(ownerUsers.createdAt), asc(ownerUsers.id))
+    .limit(1)
+    .as('account');
+
   return (
     db
       .select({
@@ -58,7 +75,8 @@ export function buildPhaseReviewerRollup({
         name: profiles.name,
         slug: profiles.slug,
         avatarImageId: profiles.avatarImageId,
-        email: profiles.email,
+        authEmail: account.email,
+        authPhone: account.phone,
         assignedCount: sql<number>`(${assignedCount})::int`
           .mapWith(Number)
           .as('assigned_count'),
@@ -88,6 +106,7 @@ export function buildPhaseReviewerRollup({
         }).as('completion_ratio'),
       })
       .from(profiles)
+      .leftJoinLateral(account, sql`true`)
       // The phase filters stay in the join condition: as WHERE predicates they
       // would turn this left join into an inner one and drop idle reviewers.
       .leftJoin(
@@ -128,20 +147,23 @@ export function buildPhaseReviewerRollup({
       )
       // `profiles.id` is the primary key, so Postgres lets the other profile
       // columns through without listing them here.
-      .groupBy(profiles.id)
+      .groupBy(profiles.id, account.email, account.phone)
       .as('rollup')
   );
 }
 
 export function toEligibleReviewer(
-  row: EligibleReviewerSchema,
+  row: Omit<EligibleReviewerSchema, 'contact'> & {
+    authEmail: string | null;
+    authPhone: string | null;
+  },
 ): EligibleReviewerSchema {
   return {
     id: row.id,
     name: row.name,
     slug: row.slug,
     avatarImageId: row.avatarImageId,
-    email: row.email,
+    contact: toAccountContact({ email: row.authEmail, phone: row.authPhone }),
   };
 }
 
@@ -158,7 +180,11 @@ export function getPhaseReviewerFilters({
     status ? eq(rollup.status, status) : undefined,
     ...splitSearchWords(search).map((word) => {
       const pattern = `%${escapeLikePattern(word)}%`;
-      return or(ilike(rollup.name, pattern), ilike(rollup.email, pattern));
+      return or(
+        ilike(rollup.name, pattern),
+        ilike(rollup.authEmail, pattern),
+        ilike(sql`'+' || ${rollup.authPhone}`, pattern),
+      );
     }),
   );
 }

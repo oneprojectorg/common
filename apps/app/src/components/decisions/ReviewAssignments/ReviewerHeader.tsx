@@ -1,13 +1,16 @@
+import type { AccountContact } from '@op/common/client';
 import { ProfileAvatar } from '@op/sense/ProfileAvatar';
 import { ProfileItem } from '@op/sense/ProfileItem';
+
+import { accountContactText } from './accountContactText';
 
 /** Rendered by the client section, from the same query as the assignment cards. */
 export function ReviewerHeader({
   name,
-  email,
+  contact,
 }: {
   name: string;
-  email: string | null;
+  contact: AccountContact | null;
 }) {
   return (
     <ProfileItem
@@ -22,7 +25,7 @@ export function ReviewerHeader({
       }
       title={name}
       titleClassName="font-serif text-headline font-light"
-      description={email ?? undefined}
+      description={accountContactText(contact) ?? undefined}
     />
   );
 }

@@ -353,6 +353,12 @@ export const relations = defineRelations(schema, (r) => ({
       from: r.profiles.id,
       to: r.profileUsers.profileId,
     }),
+    /** `users.profileId` is not unique, so a query orders this (`withAccountContact`). */
+    account: r.one.users({
+      from: r.profiles.id,
+      to: r.users.profileId,
+      alias: 'user_profile',
+    }),
     reviewerAssignments: r.many.proposalReviewAssignments({
       from: r.profiles.id,
       to: r.proposalReviewAssignments.reviewerProfileId,

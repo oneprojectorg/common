@@ -14,8 +14,11 @@ import { db, eq } from '@op/db/client';
 import {
   ProposalReviewAssignmentStatus,
   ProposalReviewState,
+  authUsers,
   profiles,
+  users,
 } from '@op/db/schema';
+import { randomInt } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
@@ -35,6 +38,11 @@ const createCaller = createCallerFactory(appRouter);
 async function createAuthenticatedCaller(email: string) {
   const { session } = await createIsolatedSession(email);
   return createCaller(await createTestContextWithSession(session));
+}
+
+/** A GoTrue-format phone (no `+`) that no other concurrent test holds. */
+function randomPhoneDigits(): string {
+  return `1555${String(randomInt(0, 10_000_000)).padStart(7, '0')}`;
 }
 
 describe.concurrent('decision.listPhaseReviewerSummaries', () => {
@@ -582,7 +590,7 @@ describe.concurrent('decision.listPhaseReviewerSummaries', () => {
     expect(firstPage.totalReviewers).toBeGreaterThanOrEqual(6);
   });
 
-  it('searches reviewers by name and by email, case-insensitively', async ({
+  it('searches reviewers by name and by login email, case-insensitively', async ({
     task,
     onTestFinished,
   }) => {
@@ -644,6 +652,95 @@ describe.concurrent('decision.listPhaseReviewerSummaries', () => {
 
     const blank = await listFor('   ');
     expect(blank.total).toBe(blank.totalReviewers);
+  });
+
+  it('shows and searches the login email or phone, never the profile email', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const context = await testData.createContext();
+    // Members without REVIEW show up through an assignment in the phase.
+    const [emailReviewer, phoneReviewer, anonymousReviewer, orphanReviewer] =
+      await Promise.all([
+        testData.createInstanceReviewerWithRole(context),
+        testData.createInstanceMember(context),
+        testData.createInstanceMember(context),
+        testData.createInstanceMember(context),
+      ]);
+    await Promise.all(
+      [phoneReviewer, anonymousReviewer, orphanReviewer].map(
+        (reviewer, index) =>
+          testData.createReviewAssignment({
+            context,
+            reviewer,
+            title: `Contact proposal ${index} ${task.id}`,
+            status: ProposalReviewAssignmentStatus.PENDING,
+          }),
+      ),
+    );
+    await testData.setCurrentPhase(context.instance.instance.id, 'review');
+    const typoEmail = `typo-${task.id.slice(0, 8)}@exmaple.org`;
+    const phoneDigits = randomPhoneDigits();
+    await Promise.all([
+      db
+        .update(profiles)
+        .set({ email: typoEmail })
+        .where(eq(profiles.id, emailReviewer.profileId)),
+      db
+        .update(authUsers)
+        .set({ email: null, phone: phoneDigits })
+        .where(eq(authUsers.id, phoneReviewer.authUserId)),
+      db
+        .update(authUsers)
+        .set({ email: null, phone: null, isAnonymous: true })
+        .where(eq(authUsers.id, anonymousReviewer.authUserId)),
+      // A profile left behind by a profile switch has no owning account.
+      db
+        .update(users)
+        .set({ profileId: null })
+        .where(eq(users.authUserId, orphanReviewer.authUserId)),
+    ]);
+
+    const adminCaller = await createAuthenticatedCaller(
+      context.defaultReviewer.email,
+    );
+    const listFor = (search?: string) =>
+      adminCaller.decision.listPhaseReviewerSummaries({
+        processInstanceId: context.instance.instance.id,
+        phaseId: 'review',
+        search,
+      });
+
+    const all = await listFor();
+    const contactById = new Map(
+      all.items.map((row) => [row.reviewer.id, row.reviewer.contact]),
+    );
+    expect(contactById.get(emailReviewer.profileId)).toEqual({
+      type: 'email',
+      email: emailReviewer.email,
+    });
+    expect(contactById.get(phoneReviewer.profileId)).toEqual({
+      type: 'phone',
+      phone: `+${phoneDigits}`,
+    });
+    expect(contactById.has(anonymousReviewer.profileId)).toBe(true);
+    expect(contactById.get(anonymousReviewer.profileId)).toBeNull();
+    expect(contactById.has(orphanReviewer.profileId)).toBe(true);
+    expect(contactById.get(orphanReviewer.profileId)).toBeNull();
+
+    const byLoginEmail = await listFor(emailReviewer.email);
+    expect(byLoginEmail.items.map((row) => row.reviewer.id)).toEqual([
+      emailReviewer.profileId,
+    ]);
+
+    const byProfileEmail = await listFor(typoEmail);
+    expect(byProfileEmail.items).toEqual([]);
+
+    const byPhone = await listFor(`+${phoneDigits}`);
+    expect(byPhone.items.map((row) => row.reviewer.id)).toEqual([
+      phoneReviewer.profileId,
+    ]);
   });
 
   it('rejects a cursor that did not come from a previous page', async ({

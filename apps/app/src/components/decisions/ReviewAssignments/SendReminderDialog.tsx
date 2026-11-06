@@ -6,6 +6,7 @@ import { trpc } from '@op/api/client';
 import {
   REVIEW_REMINDER_MAX_RECIPIENTS,
   REVIEW_REMINDER_MESSAGE_MAX_LENGTH,
+  type ReviewReminderRecipient,
   type ReviewReminderToken,
   type ReviewerStatus,
   getReviewerFirstName,
@@ -38,12 +39,13 @@ import { type ReactNode, Suspense, useId, useRef, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
-export interface ReminderRecipientPreview {
-  id: string;
-  name: string;
-  email: string | null;
-  remainingCount: number;
-}
+import { accountContactText } from './accountContactText';
+
+export type ReminderRecipientPreview = Pick<
+  ReviewReminderRecipient['reviewer'],
+  'id' | 'name' | 'contact'
+> &
+  Pick<ReviewReminderRecipient, 'remainingCount'>;
 
 export type SendReminderTarget =
   | { kind: 'one'; recipient: ReminderRecipientPreview }
@@ -151,7 +153,7 @@ function BatchReminderForm({
         recipients: items.map((item) => ({
           id: item.reviewer.id,
           name: item.reviewer.name,
-          email: item.reviewer.email,
+          contact: item.reviewer.contact,
           remainingCount: item.remainingCount,
         })),
       }}
@@ -315,7 +317,9 @@ function ReminderForm({
                 }
                 title={audience.recipient.name}
                 titleClassName="font-normal"
-                description={audience.recipient.email ?? undefined}
+                description={
+                  accountContactText(audience.recipient.contact) ?? undefined
+                }
               />
             ) : (
               <BatchRecipients recipients={audience.recipients} />

@@ -43,14 +43,7 @@ export async function listReviewReminderRecipients({
   const rollup = buildPhaseReviewerRollup({ processInstanceId, phaseId });
 
   const rows = await db
-    .select({
-      id: rollup.id,
-      name: rollup.name,
-      slug: rollup.slug,
-      avatarImageId: rollup.avatarImageId,
-      email: rollup.email,
-      remainingCount: rollup.remainingCount,
-    })
+    .select()
     .from(rollup)
     .where(
       and(

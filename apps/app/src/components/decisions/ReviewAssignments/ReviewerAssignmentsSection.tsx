@@ -187,7 +187,7 @@ function ReviewerAssignmentsContent({
       recipient: {
         id: reviewer.id,
         name,
-        email: reviewer.email,
+        contact: reviewer.contact,
         remainingCount: summary.remainingCount,
       },
     });
@@ -197,7 +197,7 @@ function ReviewerAssignmentsContent({
   return (
     <>
       <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
-        <ReviewerHeader name={name} email={reviewer.email} />
+        <ReviewerHeader name={name} contact={reviewer.contact} />
         {summary.remainingCount > 0 || summary.total > 0 ? (
           <div className="flex flex-wrap items-center gap-2">
             {summary.remainingCount > 0 ? (
