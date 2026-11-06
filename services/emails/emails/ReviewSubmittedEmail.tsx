@@ -8,7 +8,7 @@ import { Header } from '../components/Header';
 export const ReviewSubmittedEmail = ({
   proposalName,
   processTitle,
-  reviewUrl = 'https://common.oneproject.org/',
+  reviewUrl,
 }: {
   proposalName: string;
   processTitle: string;

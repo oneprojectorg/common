@@ -24,7 +24,7 @@ const reasonSentences = {
 export const ProposalRejectedEmail = ({
   proposalName,
   phaseName,
-  proposalUrl = 'https://common.oneproject.org/',
+  proposalUrl,
   reason,
   note,
 }: {

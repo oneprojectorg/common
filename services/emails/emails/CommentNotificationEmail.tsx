@@ -8,7 +8,7 @@ export const CommentNotificationEmail = ({
   commenterName = 'A Common user',
   postContent: _postContent,
   commentContent,
-  postUrl = 'https://common.oneproject.org/',
+  postUrl,
   recipientName: _recipientName,
   contentType = 'post',
   contextName,
