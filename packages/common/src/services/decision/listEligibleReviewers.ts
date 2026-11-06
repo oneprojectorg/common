@@ -1,8 +1,8 @@
 import { db } from '@op/db/client';
 import type { User } from '@op/supabase/lib';
 
-import { withAccountContact } from '../profile/accountContactColumns';
 import { toAccountContact } from '../profile/schemas/accountContact';
+import { withAccountContact } from '../profile/withAccountContact';
 import { assertCategoryReviewerAdmin } from './categoryReviewerHelpers';
 import { getEligibleReviewerProfileIds } from './getEligibleReviewerProfileIds';
 import type { EligibleReviewerSchema } from './schemas/reviews';

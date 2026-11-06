@@ -3,8 +3,8 @@ import { profiles, proposals } from '@op/db/schema';
 import { z } from 'zod';
 
 import { NotFoundError } from '../../utils';
-import { withAccountContact } from '../profile/accountContactColumns';
 import { toAccountContact } from '../profile/schemas/accountContact';
+import { withAccountContact } from '../profile/withAccountContact';
 import { getEligibleReviewerProfileIds } from './getEligibleReviewerProfileIds';
 import { getProposalDocumentsContent } from './getProposalDocumentsContent';
 import { getProposalIdsForPhase } from './getProposalsForPhase';

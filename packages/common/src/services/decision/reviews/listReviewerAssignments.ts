@@ -9,8 +9,8 @@ import { permission } from 'access-zones';
 
 import { UnauthorizedError } from '../../../utils';
 import { assertProfileAccess } from '../../assert';
-import { withAccountContact } from '../../profile/accountContactColumns';
 import { toAccountContact } from '../../profile/schemas/accountContact';
+import { withAccountContact } from '../../profile/withAccountContact';
 import { getEligibleReviewerProfileIds } from '../getEligibleReviewerProfileIds';
 import { getInstance } from '../getInstance';
 import { listAssignmentsForReviewer } from '../listReviewAssignments';

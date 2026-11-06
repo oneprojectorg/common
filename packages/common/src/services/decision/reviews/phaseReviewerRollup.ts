@@ -1,7 +1,9 @@
 import {
   type SQL,
   type SQLWrapper,
+  aliasedTable,
   and,
+  asc,
   db,
   eq,
   exists,
@@ -14,12 +16,13 @@ import {
 import {
   ProposalReviewAssignmentStatus,
   ProposalReviewState,
+  authUsers,
   profiles,
   proposalReviewAssignments,
   proposalReviews,
+  users,
 } from '@op/db/schema';
 
-import { accountContactColumns } from '../../profile/accountContactColumns';
 import { toAccountContact } from '../../profile/schemas/accountContact';
 import type { ReviewerStatus } from '../schemas/reviewAssignments';
 import type { EligibleReviewerSchema } from '../schemas/reviews';
@@ -38,6 +41,10 @@ export function openAssignmentFilter(): SQL | undefined {
   );
 }
 
+// `public.users` and `auth.users` share a name, so both need an alias.
+const ownerUsers = aliasedTable(users, 'owner_users');
+const ownerAuthUsers = aliasedTable(authUsers, 'owner_auth_users');
+
 export function buildPhaseReviewerRollup({
   processInstanceId,
   phaseId,
@@ -53,6 +60,17 @@ export function buildPhaseReviewerRollup({
   const draftCount = sql`count(*) filter (where ${proposalReviews.state} = ${ProposalReviewState.DRAFT})`;
   const remainingCount = sql`count(*) filter (where ${openAssignmentFilter()})`;
 
+  // The account that owns the profile, the SQL form of `withAccountContact`:
+  // the search needs its email and phone inside this one statement.
+  const account = db
+    .select({ email: ownerAuthUsers.email, phone: ownerAuthUsers.phone })
+    .from(ownerUsers)
+    .innerJoin(ownerAuthUsers, eq(ownerAuthUsers.id, ownerUsers.authUserId))
+    .where(eq(ownerUsers.profileId, profiles.id))
+    .orderBy(asc(ownerUsers.createdAt), asc(ownerUsers.id))
+    .limit(1)
+    .as('account');
+
   return (
     db
       .select({
@@ -60,8 +78,8 @@ export function buildPhaseReviewerRollup({
         name: profiles.name,
         slug: profiles.slug,
         avatarImageId: profiles.avatarImageId,
-        authEmail: accountContactColumns(profiles.id).email.as('auth_email'),
-        authPhone: accountContactColumns(profiles.id).phone.as('auth_phone'),
+        authEmail: account.email,
+        authPhone: account.phone,
         assignedCount: sql<number>`(${assignedCount})::int`
           .mapWith(Number)
           .as('assigned_count'),
@@ -91,6 +109,7 @@ export function buildPhaseReviewerRollup({
         }).as('completion_ratio'),
       })
       .from(profiles)
+      .leftJoinLateral(account, sql`true`)
       // The phase filters stay in the join condition: as WHERE predicates they
       // would turn this left join into an inner one and drop idle reviewers.
       .leftJoin(
@@ -130,8 +149,9 @@ export function buildPhaseReviewerRollup({
         ),
       )
       // `profiles.id` is the primary key, so Postgres lets the other profile
-      // columns through without listing them here.
-      .groupBy(profiles.id)
+      // columns through without listing them here. The lateral columns are
+      // not covered by that rule; at most one account row exists per profile.
+      .groupBy(profiles.id, account.email, account.phone)
       .as('rollup')
   );
 }
