@@ -3,23 +3,27 @@ import {
   assertCustomFormAdmin,
   duplicateInstance,
   getVotingProgress,
+  onPhaseAdvanced,
   processDecisionsTransitions,
   readInstancePhaseSet,
   revertPhase,
 } from '@op/common';
 import { TestDecisionsDataManager, emptyBlobPhases } from '@op/common/testing';
-import { db, eq } from '@op/db/client';
+import { and, db, eq, isNull, sql } from '@op/db/client';
 import {
   ProcessStatus,
   ProposalStatus,
   decisionProcessTransitions,
   processInstances,
+  processPhases,
   proposalReviewAssignments,
   users,
 } from '@op/db/schema';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { createAuthenticatedCaller } from '../../test/supabase-utils';
+
+vi.mock('@op/common/src/services/decision/onPhaseAdvanced', { spy: true });
 
 const passAll = { version: '1.0.0' as const, blocks: [] };
 
@@ -61,6 +65,33 @@ const dateSchema = {
     {
       id: 'final',
       name: 'Final',
+      rules: { advancement: { method: 'date' } },
+    },
+  ],
+} satisfies DecisionSchemaDefinition;
+
+const threeStepDateSchema = {
+  ...manualSchema,
+  id: 'rows-three-step',
+  phases: [
+    {
+      id: 'first',
+      name: 'First',
+      rules: {
+        proposals: { submit: true },
+        advancement: { method: 'date' },
+      },
+      selectionPipeline: passAll,
+    },
+    {
+      id: 'second',
+      name: 'Second',
+      rules: { advancement: { method: 'date' } },
+      selectionPipeline: passAll,
+    },
+    {
+      id: 'third',
+      name: 'Third',
       rules: { advancement: { method: 'date' } },
     },
   ],
@@ -240,6 +271,75 @@ describe('with instanceData.phases empty', () => {
       columns: { currentStateId: true },
     });
     expect(instance?.currentStateId).toBe('final');
+  });
+
+  it('reads a rule saved between two advances in one sweep', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      status: ProcessStatus.PUBLISHED,
+      processSchema: threeStepDateSchema,
+    });
+    const instanceId = setup.instance.instance.id;
+    await moveToRows(testData, instanceId);
+    const hourMs = 60 * 60 * 1000;
+    await db.insert(decisionProcessTransitions).values([
+      {
+        processInstanceId: instanceId,
+        fromStateId: 'first',
+        toStateId: 'second',
+        scheduledDate: new Date(Date.now() + hourMs).toISOString(),
+      },
+      {
+        processInstanceId: instanceId,
+        fromStateId: 'second',
+        toStateId: 'third',
+        scheduledDate: new Date(Date.now() + 2 * hourMs).toISOString(),
+      },
+    ]);
+
+    // While the first advance runs, an admin makes the second phase manual.
+    onTestFinished(() => {
+      vi.mocked(onPhaseAdvanced).mockReset();
+    });
+    vi.mocked(onPhaseAdvanced).mockImplementationOnce(async () => {
+      await db
+        .update(processPhases)
+        .set({
+          data: sql`${processPhases.data} || '{"rules":{"advancement":{"method":"manual"}}}'::jsonb`,
+        })
+        .where(
+          and(
+            eq(processPhases.processInstanceId, instanceId),
+            sql`${processPhases.data} ->> 'phaseId' = 'second'`,
+          ),
+        );
+      await db
+        .delete(decisionProcessTransitions)
+        .where(
+          and(
+            eq(decisionProcessTransitions.processInstanceId, instanceId),
+            eq(decisionProcessTransitions.fromStateId, 'second'),
+            isNull(decisionProcessTransitions.completedAt),
+          ),
+        );
+    });
+
+    const result = await processDecisionsTransitions({
+      processInstanceId: instanceId,
+      now: new Date(Date.now() + 3 * hourMs).toISOString(),
+    });
+
+    expect(result).toMatchObject({ processed: 1, failed: 0 });
+    expect(onPhaseAdvanced).toHaveBeenCalledTimes(1);
+    const instance = await db.query.processInstances.findFirst({
+      where: { id: instanceId },
+      columns: { currentStateId: true },
+    });
+    expect(instance?.currentStateId).toBe('second');
   });
 
   it('accepts a vote in the voting phase', async ({ task, onTestFinished }) => {
