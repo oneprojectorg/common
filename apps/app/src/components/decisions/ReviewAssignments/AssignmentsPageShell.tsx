@@ -4,47 +4,42 @@ import { LuArrowLeft } from 'react-icons/lu';
 import { getTranslations } from '@/lib/i18n';
 
 import { ButtonLink } from '@/components/ButtonLink';
-import { LocaleChooser } from '@/components/LocaleChooser';
+import { UserAvatarMenu } from '@/components/SiteHeader/UserAvatarMenu';
 
-/** Shared shell: the Back + action row inside the content column, then the body. */
 export async function AssignmentsPageShell({
   backHref,
-  action,
   children,
 }: {
   backHref: string;
-  action?: ReactNode;
   children: ReactNode;
 }) {
   const t = await getTranslations();
 
   return (
     <div className="flex min-h-dvh flex-col bg-background">
-      <AssignmentsMain>
-        <div className="flex items-center justify-between gap-4">
-          <ButtonLink
-            href={backHref}
-            variant="link"
-            className="px-0 text-muted-foreground hover:text-foreground hover:no-underline"
-          >
-            <LuArrowLeft className="size-4 rtl:-scale-x-100" />
-            {t('Back')}
-          </ButtonLink>
-          <div className="flex items-center gap-4">
-            {action}
-            <LocaleChooser />
-          </div>
-        </div>
-        {children}
-      </AssignmentsMain>
+      <AssignmentsTopRow>
+        <ButtonLink href={backHref} variant="link" className="px-0">
+          <LuArrowLeft className="size-4 rtl:-scale-x-100" />
+          {t('Back')}
+        </ButtonLink>
+        <UserAvatarMenu />
+      </AssignmentsTopRow>
+      <AssignmentsMain>{children}</AssignmentsMain>
+    </div>
+  );
+}
+
+export function AssignmentsTopRow({ children }: { children: ReactNode }) {
+  return (
+    <div className="sticky top-0 z-20 flex h-15 shrink-0 items-center justify-between gap-4 border-b bg-background px-4 md:px-8">
+      {children}
     </div>
   );
 }
 
 export function AssignmentsMain({ children }: { children: ReactNode }) {
-  // 64rem — the width the design was composed at.
   return (
-    <main className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-6 pt-10 pb-16">
+    <main className="mx-auto flex w-full max-w-page flex-col gap-8 px-4 pt-10 pb-18 md:px-8">
       {children}
     </main>
   );

@@ -45,11 +45,13 @@ export type ProposalSheetRoute = Omit<ProposalRoute, 'profileId'>;
 export function ProposalSheet({
   profileId,
   route,
+  expandHref,
   onClose,
 }: {
   /** `null` keeps the sheet closed. */
   profileId: string | null;
   route: ProposalSheetRoute;
+  expandHref?: (profileId: string) => string;
   onClose: () => void;
 }) {
   const t = useTranslations();
@@ -87,7 +89,11 @@ export function ProposalSheet({
                 </Suspense>
               </APIErrorBoundary>
               <ButtonLink
-                href={proposalHref({ ...route, profileId: shownProfileId })}
+                href={
+                  expandHref
+                    ? expandHref(shownProfileId)
+                    : proposalHref({ ...route, profileId: shownProfileId })
+                }
                 variant="ghost"
                 size="icon-sm"
                 aria-label={t('decisions.proposals.openFullProposalAction')}

@@ -154,7 +154,7 @@ async function createDecisionInReview({
 }
 
 test.describe('Locale chooser in headers', () => {
-  test('appears on the decision review subpages', async ({
+  test('appears on the proposal reviews page', async ({
     authenticatedPage: page,
     org,
     supabaseAdmin,
@@ -164,11 +164,6 @@ test.describe('Locale chooser in headers', () => {
       supabaseAdmin,
       testId: `locale-headers-${testInfo.workerIndex}-${Date.now()}`,
     });
-
-    await page.goto(`/en/decisions/${instance.slug}/assignments`, {
-      waitUntil: 'domcontentloaded',
-    });
-    await expectLocaleChooser(page);
 
     await page.goto(
       `/en/decisions/${instance.slug}/proposal/${proposal.profileId}/reviews`,

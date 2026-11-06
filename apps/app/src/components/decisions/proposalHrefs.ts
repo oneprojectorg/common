@@ -31,3 +31,7 @@ export function proposalHref(route: ProposalRoute): string {
 export function proposalEditHref(route: ProposalRoute): string {
   return `${proposalHref(route)}/edit`;
 }
+
+export function proposalReviewsHref(route: ProposalRoute): string {
+  return `${proposalHref(route)}/reviews`;
+}

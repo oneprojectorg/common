@@ -1,7 +1,4 @@
-import {
-  ProposalReviewAssignmentStatus,
-  ProposalReviewState,
-} from '@op/db/schema';
+import { ProposalReviewAssignmentStatus } from '@op/db/schema';
 import { z } from 'zod';
 
 import { paginated, paginationInput, total } from '../../../utils/pagination';
@@ -105,13 +102,6 @@ export type PhaseReviewerSummaries = z.infer<
   typeof phaseReviewerSummariesSchema
 >;
 
-export const reviewerQueueStatusSchema = z.union([
-  z.enum(ProposalReviewAssignmentStatus),
-  z.enum(ProposalReviewState),
-]);
-
-export type ReviewerQueueStatus = z.infer<typeof reviewerQueueStatusSchema>;
-
 export const reviewerAssignmentsSchema = reviewAssignmentListSchema.extend({
   /** Null when the profile has no tie to this process. */
   reviewer: eligibleReviewerSchema.nullable(),
@@ -120,10 +110,8 @@ export const reviewerAssignmentsSchema = reviewAssignmentListSchema.extend({
   assignedCount: z.number(),
   submittedCount: z.number(),
   draftCount: z.number(),
+  remainingCount: z.number().int(),
   lastSubmittedAt: z.string().nullable(),
-  statusBreakdown: z.array(
-    z.object({ status: reviewerQueueStatusSchema, count: z.number().int() }),
-  ),
 });
 
 export type ReviewerAssignments = z.infer<typeof reviewerAssignmentsSchema>;

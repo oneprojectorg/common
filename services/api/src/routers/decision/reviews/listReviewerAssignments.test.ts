@@ -123,7 +123,7 @@ describe.concurrent('decision.listReviewerAssignments', () => {
     expect(result.reviewer?.id).toBe(other.profileId);
   });
 
-  it('reports the header totals across submitted, draft and untouched assignments', async ({
+  it('reports the header totals across submitted, draft, untouched and returned assignments', async ({
     task,
     onTestFinished,
   }) => {
@@ -142,6 +142,11 @@ describe.concurrent('decision.listReviewerAssignments', () => {
       context,
       title: `Untouched proposal ${task.id}`,
       status: ProposalReviewAssignmentStatus.PENDING,
+    });
+    await testData.createReviewAssignment({
+      context,
+      title: `Returned proposal ${task.id}`,
+      status: ProposalReviewAssignmentStatus.AWAITING_AUTHOR_REVISION,
     });
 
     const submittedAt = new Date().toISOString();
@@ -167,24 +172,17 @@ describe.concurrent('decision.listReviewerAssignments', () => {
       reviewerProfileId: context.defaultReviewer.profileId,
     });
 
-    expect(result.assignedCount).toBe(3);
+    expect(result.assignedCount).toBe(4);
     expect(result.submittedCount).toBe(1);
     expect(result.draftCount).toBe(1);
     // Postgres' own text form, so compare the instant, not the string.
     expect(new Date(result.lastSubmittedAt ?? '').toISOString()).toBe(
       submittedAt,
     );
-    // The review's state wins over the assignment's status, as on the cards.
-    expect(result.statusBreakdown).toEqual(
-      expect.arrayContaining([
-        { status: ProposalReviewState.SUBMITTED, count: 1 },
-        { status: ProposalReviewState.DRAFT, count: 1 },
-        { status: ProposalReviewAssignmentStatus.PENDING, count: 1 },
-      ]),
-    );
-    expect(result.statusBreakdown).toHaveLength(3);
-    expect(result.items).toHaveLength(3);
-    expect(result.total).toBe(3);
+    // The draft and the untouched one are open; completed and returned are not.
+    expect(result.remainingCount).toBe(2);
+    expect(result.items).toHaveLength(4);
+    expect(result.total).toBe(4);
     expect(result.next).toBeNull();
   });
 

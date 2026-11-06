@@ -25,6 +25,17 @@ import { escapeLikePattern, splitSearchWords } from '../utils/search';
 
 export type PhaseReviewerRollup = ReturnType<typeof buildPhaseReviewerRollup>;
 
+export function openAssignmentFilter(): SQL | undefined {
+  return and(
+    inArray(proposalReviewAssignments.status, [
+      ProposalReviewAssignmentStatus.PENDING,
+      ProposalReviewAssignmentStatus.IN_PROGRESS,
+      ProposalReviewAssignmentStatus.READY_FOR_RE_REVIEW,
+    ]),
+    isNull(proposalReviewAssignments.deletedAt),
+  );
+}
+
 export function buildPhaseReviewerRollup({
   processInstanceId,
   phaseId,
@@ -38,14 +49,7 @@ export function buildPhaseReviewerRollup({
   const assignedCount = sql`count(${proposalReviewAssignments.id})`;
   const submittedCount = sql`count(*) filter (where ${proposalReviewAssignments.status} = ${ProposalReviewAssignmentStatus.COMPLETED})`;
   const draftCount = sql`count(*) filter (where ${proposalReviews.state} = ${ProposalReviewState.DRAFT})`;
-  const remainingCount = sql`count(*) filter (where ${and(
-    inArray(proposalReviewAssignments.status, [
-      ProposalReviewAssignmentStatus.PENDING,
-      ProposalReviewAssignmentStatus.IN_PROGRESS,
-      ProposalReviewAssignmentStatus.READY_FOR_RE_REVIEW,
-    ]),
-    isNull(proposalReviewAssignments.deletedAt),
-  )})`;
+  const remainingCount = sql`count(*) filter (where ${openAssignmentFilter()})`;
 
   return (
     db
