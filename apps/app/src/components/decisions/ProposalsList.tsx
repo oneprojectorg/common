@@ -212,6 +212,7 @@ const ResultsPhaseProposalsLoader = ({
         status: queryParams.status,
         submittedByProfileId: queryParams.submittedByProfileId,
         votedByProfileId: queryParams.votedByProfileId,
+        ballotReceipt: queryParams.ballotReceipt,
         likedByProfileId: queryParams.likedByProfileId,
       },
       {
@@ -528,6 +529,7 @@ const ProposalsListContent = ({
                 search: queryParams.search,
                 submittedByProfileId: queryParams.submittedByProfileId,
                 votedByProfileId: queryParams.votedByProfileId,
+                ballotReceipt: queryParams.ballotReceipt,
                 likedByProfileId: queryParams.likedByProfileId,
                 status: queryParams.status,
                 notAdvanced: queryParams.notAdvanced,

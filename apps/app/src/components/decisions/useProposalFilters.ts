@@ -6,6 +6,7 @@ import { ProposalFilter } from '@op/api/encoders';
 import { parseAsString, parseAsStringLiteral, useQueryState } from 'nuqs';
 import { useCallback, useDeferredValue, useMemo } from 'react';
 
+import { useBallotReceipt } from './ballotReceiptStore';
 import {
   ALL_CATEGORIES,
   PROPOSAL_STATUS_VALUES,
@@ -44,8 +45,11 @@ export const useProposalFilters = ({
   const { user } = useUser();
   const currentProfileId = user?.currentProfile?.id;
 
+  const ballotReceipt = useBallotReceipt(instanceId);
+
   const [voteStatus] = trpc.decision.getVotingStatus.useSuspenseQuery({
     processInstanceId: instanceId,
+    receipt: ballotReceipt,
   });
   const hasVoted = voteStatus?.hasVoted ?? false;
 
@@ -109,6 +113,7 @@ export const useProposalFilters = ({
         instanceId,
         phase,
         currentProfileId,
+        ballotReceipt,
         category: appliedCategory,
         search: appliedSearch,
         sortOrder: appliedSortOrder,
@@ -119,6 +124,7 @@ export const useProposalFilters = ({
       instanceId,
       phase,
       currentProfileId,
+      ballotReceipt,
       appliedCategory,
       appliedSearch,
       appliedSortOrder,

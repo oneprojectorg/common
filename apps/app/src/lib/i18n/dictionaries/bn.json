@@ -1221,6 +1221,8 @@
       "loadAssignmentsError": "পর্যালোচনা নিয়োগ লোড করা যায়নি",
       "revisionRequestQuestion": "What should the author change?",
       "noVoteCast": "আপনি এই প্রক্রিয়ায় ভোট দেননি।",
+      "ballotNotOnDeviceTitle": "আপনার ভোট জমা হয়েছে",
+      "ballotNotOnDeviceDescription": "আপনার ভোট গোপন রাখতে, আপনার পছন্দগুলো শুধু সেই ডিভাইসেই দেখা যায় যেটি থেকে আপনি ভোট দিয়েছেন।",
       "yourRequestHeading": "Your request",
       "yourRequestSentTimeAgo": "Your request • Sent {timeAgo}",
       "cancelRevisionRequestDescription": "Your request will be withdrawn and the author won't see it. Other reviewers' requests aren't affected.",

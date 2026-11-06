@@ -1221,6 +1221,8 @@
       "loadAssignmentsError": "No pudimos cargar las asignaciones de revisión",
       "revisionRequestQuestion": "¿Qué debería cambiar el autor?",
       "noVoteCast": "No votaste en este proceso.",
+      "ballotNotOnDeviceTitle": "Tu voto está registrado",
+      "ballotNotOnDeviceDescription": "Para mantener tu voto en secreto, tus elecciones solo se muestran en el dispositivo desde el que votaste.",
       "yourRequestHeading": "Tu solicitud",
       "yourRequestSentTimeAgo": "Tu solicitud • Enviada {timeAgo}",
       "cancelRevisionRequestDescription": "Tu solicitud se retirará y el autor no la verá. Las solicitudes de otros revisores no se ven afectadas.",

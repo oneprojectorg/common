@@ -46,6 +46,7 @@ import {
   getBallotRank,
   getBallotRemaining,
 } from './ballot';
+import { useBallotReceipt } from './ballotReceiptStore';
 import {
   CustomFormModal,
   type CustomFormValues,
@@ -83,8 +84,10 @@ export const ProposalsGrid = ({
   const { instanceId, isVotingPhase } = props;
 
   // Get voting status for this user and process
+  const ballotReceipt = useBallotReceipt(instanceId);
   const { data: voteStatus } = trpc.decision.getVotingStatus.useQuery({
     processInstanceId: instanceId,
+    receipt: ballotReceipt,
   });
 
   // Use the phase capability passed from the router, falling back to the
@@ -229,8 +232,10 @@ const VotingProposalsList = ({
   const numSelected = selectedProposals.length;
 
   // Get voting status for this user and process
+  const ballotReceipt = useBallotReceipt(instanceId);
   const { data: voteStatus } = trpc.decision.getVotingStatus.useQuery({
     processInstanceId: instanceId,
+    receipt: ballotReceipt,
   });
 
   // Instance context for resolving the current phase's optional custom form.

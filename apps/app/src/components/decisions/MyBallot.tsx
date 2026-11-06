@@ -2,8 +2,14 @@
 
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
-import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@op/sense/Empty';
-import { LuLeaf } from 'react-icons/lu';
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from '@op/sense/Empty';
+import { LuLeaf, LuLock } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -12,6 +18,7 @@ import { ProposalListSection } from './ProposalListSection';
 import { ProposalMasonry } from './ProposalMasonry';
 import { VoteCheckbox } from './VoteCheckbox';
 import { getBallotRank } from './ballot';
+import { useBallotReceipt } from './ballotReceiptStore';
 import { proposalHref } from './proposalHrefs';
 import { useOpenProposalInSheet } from './proposalSheetState';
 
@@ -40,6 +47,7 @@ export const MyBallot = ({
   decisionSlug?: string;
 }) => {
   const user = useUser();
+  const ballotReceipt = useBallotReceipt(instanceId);
 
   if (!user.user?.id) {
     return <NoVoteFound />;
@@ -47,10 +55,17 @@ export const MyBallot = ({
 
   const [voteStatus] = trpc.decision.getVotingStatus.useSuspenseQuery({
     processInstanceId: instanceId,
+    receipt: ballotReceipt,
   });
 
   if (!voteStatus.hasVoted || !voteStatus.voteSubmission) {
     return <NoVoteFound />;
+  }
+
+  // A cast ballot always has a pick, so none means this browser holds no
+  // receipt for it.
+  if (voteStatus.voteSubmission.selectedProposalIds.length === 0) {
+    return <BallotNotOnThisDevice />;
   }
 
   return (
@@ -59,6 +74,7 @@ export const MyBallot = ({
       instanceId={instanceId}
       decisionSlug={decisionSlug}
       votedByProfileId={voteStatus.voteSubmission.submittedByProfileId}
+      ballotReceipt={ballotReceipt}
       rankedProposalIds={
         voteStatus.voteSubmission.ranked
           ? voteStatus.voteSubmission.selectedProposalIds
@@ -73,12 +89,14 @@ const MyBallotProposals = ({
   instanceId,
   decisionSlug,
   votedByProfileId,
+  ballotReceipt,
   rankedProposalIds,
 }: {
   slug: string;
   instanceId: string;
   decisionSlug?: string;
   votedByProfileId: string;
+  ballotReceipt?: string;
   /** The ballot in rank order; undefined when the phase isn't ranked. */
   rankedProposalIds?: string[];
 }) => {
@@ -88,6 +106,7 @@ const MyBallotProposals = ({
   const [{ items: proposals }] = trpc.decision.listProposals.useSuspenseQuery({
     processInstanceId: instanceId,
     votedByProfileId,
+    ballotReceipt,
   });
 
   return (
@@ -136,5 +155,22 @@ const MyBallotProposals = ({
         })}
       </ProposalMasonry>
     </ProposalListSection>
+  );
+};
+
+const BallotNotOnThisDevice = () => {
+  const t = useTranslations();
+  return (
+    <Empty className="border-0">
+      <EmptyHeader>
+        <EmptyMedia variant="icon">
+          <LuLock className="size-6" />
+        </EmptyMedia>
+        <EmptyTitle>{t('decisions.review.ballotNotOnDeviceTitle')}</EmptyTitle>
+        <EmptyDescription>
+          {t('decisions.review.ballotNotOnDeviceDescription')}
+        </EmptyDescription>
+      </EmptyHeader>
+    </Empty>
   );
 };
