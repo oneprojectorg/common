@@ -1,7 +1,8 @@
+import { invalidate } from '@op/cache';
 import { TestDecisionsDataManager } from '@op/common/testing';
 import { db } from '@op/db/client';
 import { Buffer } from 'node:buffer';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import {
   accessTierGatingCell,
@@ -13,6 +14,11 @@ import {
   createAuthenticatedCaller,
   supabaseTestAdminClient,
 } from '../../test/supabase-utils';
+
+vi.mock('@op/cache', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@op/cache')>();
+  return { ...actual, invalidate: vi.fn(actual.invalidate) };
+});
 
 type AuthenticatedCaller = Awaited<
   ReturnType<typeof createAuthenticatedCaller>
@@ -110,6 +116,38 @@ describe.concurrent('saveProfileImage', () => {
       columns: { avatarImageId: true },
     });
     expect(userRow?.avatarImageId).toBe(profileRow?.avatarImageId);
+  });
+
+  it('busts the cached user so getMyAccount serves the new image', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 0,
+      grantAccess: true,
+    });
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+    const profileId = await getPersonalProfileId(caller);
+
+    const signed = await uploadProfileImageForTest({
+      caller,
+      profileId,
+      imageType: 'avatar',
+    });
+    await caller.profile.saveProfileImage({
+      profileId,
+      storagePath: signed.storagePath,
+      mimeType: 'image/png',
+      imageType: 'avatar',
+    });
+
+    // Tests run without Redis, so a stale getMyAccount can't be observed
+    // end-to-end; assert the bust itself.
+    expect(invalidate).toHaveBeenCalledWith({
+      type: 'user',
+      params: [setup.user.id],
+    });
   });
 
   it('records an uploaded banner on the personal profile', async ({
