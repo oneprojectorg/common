@@ -115,7 +115,7 @@ function ReviewerAssignmentRow({
     // a <tr> as a containing block, so without it the overlay escapes to the
     // table container in Safari and one row swallows every click.
     <TableRow className="relative transform-gpu">
-      <TableRowHeader className="py-3 whitespace-normal">
+      <TableRowHeader className="whitespace-normal">
         <div className="flex flex-col gap-1">
           {/* `static` keeps the row the ::after's containing block. */}
           <Link
