@@ -1,5 +1,5 @@
 import type { TransactionType } from '@op/db/client';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ValidationError } from '../../utils';
 import type {
