@@ -1039,6 +1039,7 @@
     "review": {
       "actionsColumn": "Ficilada",
       "remindAction": "Xusuusi",
+      "remindAllAction": "Xusuusi dhammaan",
       "remindReviewerLabel": "Xusuusi {name}",
       "sendReminderAction": "Dir xusuusin",
       "sendReminderTitle": "Dir xusuusin",

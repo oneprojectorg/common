@@ -51,6 +51,7 @@ export type ReminderRecipientPreview = Pick<
 
 export type SendReminderTarget =
   | { kind: 'one'; recipient: ReminderRecipientPreview }
+  | { kind: 'reviewers'; recipients: Array<ReminderRecipientPreview> }
   | { kind: 'batch'; search?: string; status?: ReviewerStatus };
 
 interface SendReminderDialogProps {
@@ -118,6 +119,11 @@ export function SendReminderDialog({
                 <ReminderForm
                   {...context}
                   audience={{ kind: 'one', recipient: target.recipient }}
+                />
+              ) : target.kind === 'reviewers' ? (
+                <ReminderForm
+                  {...context}
+                  audience={{ kind: 'batch', recipients: target.recipients }}
                 />
               ) : (
                 <BatchReminderForm
