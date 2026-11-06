@@ -47,15 +47,38 @@ ensure_db() {
     exit 1
   fi
 
-  # These scripts hard-delete demo state. Refuse a non-local database unless
-  # the caller opts in explicitly.
+  # These scripts hard-delete demo state. Refuse a database whose DESTINATION
+  # HOST is not local unless the caller opts in explicitly. The host is parsed
+  # out of the URL: a substring check would pass a remote URL whose password
+  # happens to contain "localhost".
+  if [ "${SMS_DEMO_ALLOW_REMOTE:-}" = "1" ]; then
+    return
+  fi
+
+  # A host/hostaddr query parameter overrides the authority host in libpq,
+  # so a URL that carries one is not provably local.
   case "$DB" in
-    *localhost* | *127.0.0.1* | *0.0.0.0*) ;;
+    *\?*host=* | *\&*host=* | *\?*hostaddr=* | *\&*hostaddr=*)
+      echo "Refusing a DATABASE_URL with a host query parameter. Set SMS_DEMO_ALLOW_REMOTE=1 to override." >&2
+      exit 1
+      ;;
+  esac
+
+  local host
+  host="${DB#*://}"   # drop the scheme
+  host="${host%%\?*}" # drop the query string
+  host="${host%%/*}"  # drop the database path
+  host="${host##*@}"  # drop user:password (up to the last @)
+  case "$host" in
+    \[*\]*) host="${host#\[}" && host="${host%%\]*}" ;; # [::1]:5432
+    *) host="${host%%:*}" ;;                            # host:5432
+  esac
+
+  case "$host" in
+    localhost | 127.0.0.1 | ::1 | 0.0.0.0) ;;
     *)
-      if [ "${SMS_DEMO_ALLOW_REMOTE:-}" != "1" ]; then
-        echo "Refusing a non-local DATABASE_URL. Set SMS_DEMO_ALLOW_REMOTE=1 to override." >&2
-        exit 1
-      fi
+      echo "Refusing non-local database host '${host:-<none>}'. Set SMS_DEMO_ALLOW_REMOTE=1 to override." >&2
+      exit 1
       ;;
   esac
 }
