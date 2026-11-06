@@ -16,6 +16,7 @@ import {
   ProposalReviewState,
   authUsers,
   profiles,
+  users,
 } from '@op/db/schema';
 import { randomInt } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
@@ -660,21 +661,22 @@ describe.concurrent('decision.listPhaseReviewerSummaries', () => {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
     const context = await testData.createContext();
     // Members without REVIEW show up through an assignment in the phase.
-    const [emailReviewer, phoneReviewer, anonymousReviewer] = await Promise.all(
-      [
+    const [emailReviewer, phoneReviewer, anonymousReviewer, orphanReviewer] =
+      await Promise.all([
         testData.createInstanceReviewerWithRole(context),
         testData.createInstanceMember(context),
         testData.createInstanceMember(context),
-      ],
-    );
+        testData.createInstanceMember(context),
+      ]);
     await Promise.all(
-      [phoneReviewer, anonymousReviewer].map((reviewer, index) =>
-        testData.createReviewAssignment({
-          context,
-          reviewer,
-          title: `Contact proposal ${index} ${task.id}`,
-          status: ProposalReviewAssignmentStatus.PENDING,
-        }),
+      [phoneReviewer, anonymousReviewer, orphanReviewer].map(
+        (reviewer, index) =>
+          testData.createReviewAssignment({
+            context,
+            reviewer,
+            title: `Contact proposal ${index} ${task.id}`,
+            status: ProposalReviewAssignmentStatus.PENDING,
+          }),
       ),
     );
     await testData.setCurrentPhase(context.instance.instance.id, 'review');
@@ -693,6 +695,11 @@ describe.concurrent('decision.listPhaseReviewerSummaries', () => {
         .update(authUsers)
         .set({ email: null, phone: null, isAnonymous: true })
         .where(eq(authUsers.id, anonymousReviewer.authUserId)),
+      // A profile left behind by a profile switch has no owning account.
+      db
+        .update(users)
+        .set({ profileId: null })
+        .where(eq(users.authUserId, orphanReviewer.authUserId)),
     ]);
 
     const adminCaller = await createAuthenticatedCaller(
@@ -719,6 +726,8 @@ describe.concurrent('decision.listPhaseReviewerSummaries', () => {
     });
     expect(contactById.has(anonymousReviewer.profileId)).toBe(true);
     expect(contactById.get(anonymousReviewer.profileId)).toBeNull();
+    expect(contactById.has(orphanReviewer.profileId)).toBe(true);
+    expect(contactById.get(orphanReviewer.profileId)).toBeNull();
 
     const byLoginEmail = await listFor(emailReviewer.email);
     expect(byLoginEmail.items.map((row) => row.reviewer.id)).toEqual([

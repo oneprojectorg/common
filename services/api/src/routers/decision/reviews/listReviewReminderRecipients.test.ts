@@ -10,6 +10,7 @@ import {
   ProposalReviewState,
   profiles,
   proposalReviewAssignments,
+  users,
 } from '@op/db/schema';
 import { ROLES } from '@op/db/seedData/accessControl';
 import { describe, expect, it } from 'vitest';
@@ -185,6 +186,45 @@ describe.concurrent('decision.listReviewReminderRecipients', () => {
     expect(ids).not.toContain(done.profileId);
     expect(ids).not.toContain(idle.profileId);
     expect(ids).not.toContain(foreignProfileId);
+  });
+
+  it('keeps a reviewer whose profile has no owning account, with no contact', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const context = await testData.createContext();
+    const orphan = await testData.createInstanceMember(context);
+    await testData.createReviewAssignment({
+      context,
+      reviewer: orphan,
+      title: `Recipients orphan ${task.id}`,
+      status: ProposalReviewAssignmentStatus.PENDING,
+    });
+    await testData.setCurrentPhase(context.instance.instance.id, 'review');
+    await db
+      .update(users)
+      .set({ profileId: null })
+      .where(eq(users.authUserId, orphan.authUserId));
+
+    const adminCaller = await createAuthenticatedCaller(
+      context.defaultReviewer.email,
+    );
+    const result = await adminCaller.decision.listReviewReminderRecipients({
+      processInstanceId: context.instance.instance.id,
+      phaseId: 'review',
+    });
+
+    const row = result.items.find(
+      (item) => item.reviewer.id === orphan.profileId,
+    );
+    expect(row).toEqual({
+      reviewer: expect.objectContaining({
+        id: orphan.profileId,
+        contact: null,
+      }),
+      remainingCount: 1,
+    });
   });
 
   it('applies the status filter of the reviewers list', async ({
