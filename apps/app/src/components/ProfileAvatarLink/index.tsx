@@ -61,7 +61,15 @@ export const ProfileAvatarLink = ({
       className={className}
       imageRender={
         src ? (
-          <Image src={src} alt={alt} fill className="object-cover" />
+          // 48px covers the largest rendered avatar (`sm:size-12`); without
+          // `sizes`, a fill image fetches the 100vw candidate.
+          <Image
+            src={src}
+            alt={alt}
+            fill
+            sizes="48px"
+            className="object-cover"
+          />
         ) : undefined
       }
     />

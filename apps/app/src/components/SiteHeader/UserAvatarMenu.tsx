@@ -40,6 +40,7 @@ import {
 import { useRouter, useTranslations } from '@/lib/i18n';
 
 import { UpdateProfileModal } from '../Profile/ProfileDetails/UpdateProfile/UpdateProfileModal';
+import { ProfileAvatarLink } from '../ProfileAvatarLink';
 import { ProfileSwitchingModal } from '../ProfileSwitchingModal';
 
 // behind a flag and rarely opened, so it stays out of every page's header chunk
@@ -479,7 +480,7 @@ export const UserAvatarMenu = ({ className }: { className?: string }) => {
 
   const avatarContent = (
     <>
-      <ProfileAvatar
+      <ProfileAvatarLink
         name={user.currentProfile?.name}
         src={
           user.currentProfile?.avatarImage?.name
