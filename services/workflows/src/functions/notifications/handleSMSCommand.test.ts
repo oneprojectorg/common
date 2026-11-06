@@ -8,6 +8,7 @@ import {
   resolveVoterAddress,
   submitVote,
 } from '@op/common';
+import { SMS_KEYWORDS } from '@op/core/sms';
 import { and, asc, db, eq } from '@op/db/client';
 import {
   ProcessStatus,
@@ -40,6 +41,7 @@ const NUMBERS = {
   chatter: '+15005550095',
   joiner: '+15005550096',
   bareInfo: '+15005550097',
+  infoHelp: '+15005550038',
   owner: '+15005550098',
   outsider: '+15005550099',
   codeReply: '+15005550089',
@@ -51,9 +53,11 @@ const NUMBERS = {
   lineMember: '+15005550080',
   lineSlugMember: '+15005550081',
   unboundLineMember: '+15005550082',
-  lineStranger: '+15005550083',
-  linePrivateOwner: '+15005550069',
-  agreeRemoved: '+15005550068',
+  lineStranger: '+15005550010',
+  linePrivateOwner: '+15005550011',
+  agreeRemoved: '+15005550012',
+  pickStrangerEnrolment: '+15005550013',
+  pickOwnerOnly: '+15005550014',
   enrolStart: '+15005550070',
   enrolAddress: '+15005550071',
   enrolNotFound: '+15005550072',
@@ -114,9 +118,10 @@ const LINES = {
   bare: '+16145550130',
   slug: '+16145550131',
   unbound: '+16145550132',
-  private: '+16145550138',
-  agreeRemoved: '+16145550139',
+  private: '+16145550180',
+  agreeRemoved: '+16145550181',
   agreeClosed: '+16145550188',
+  pickStrangerEnrolment: '+16145550182',
   enrolStart: '+16145550133',
   enrolAddress: '+16145550134',
   enrolNotFound: '+16145550135',
@@ -203,6 +208,28 @@ describe('handleSMSCommand against the database', () => {
     expect(recordedSms.map((sms) => sms.body)).toEqual([
       `"Park Funding ${task.id}" (${slug}): Voting phase, voting open, 2 proposals.`,
     ]);
+  });
+
+  it('given a member texts INFO-HELP, then one reply names every command', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsCommandFixture(task.id, onTestFinished);
+    const phone = parsePhoneNumber(NUMBERS.infoHelp);
+    await fixture.createPhoneOnlyAccount(phone);
+    const t = new InngestTestEngine({ function: handleSMSCommand });
+
+    const { result } = await t.execute({
+      events: [smsInboundEvent({ from: phone, keyword: 'info-help' })],
+    });
+
+    expect(result).toEqual({ message: 'command list sent' });
+    expect(recordedSms).toHaveLength(1);
+    const [body] = recordedSms.map((sms) => sms.body);
+    for (const keyword of SMS_KEYWORDS) {
+      expect(body).toContain(keyword.toUpperCase());
+    }
+    expect(body!.length).toBeLessThanOrEqual(SMS_MAX_BODY_LENGTH);
   });
 
   it('given a member texts SHOW and the slug of a decision still taking submissions, then they are told voting is closed', async ({
@@ -1722,6 +1749,35 @@ describe('handleSMSCommand building and casting the ballot', () => {
         messageSid: `SM-${from}-${kw}-${argument ?? ''}`,
       }),
     );
+
+  it("given a confirmed non-member texts a code to a private decision's line, then the reply is generic and names no decision", async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsCommandFixture(task.id, onTestFinished);
+    const name = `Pick Stranger ${task.id}`;
+    await seed(fixture, {
+      phone: NUMBERS.pickOwnerOnly,
+      line: LINES.pickStrangerEnrolment,
+      name,
+      enrolment: { attestation: 'I affirm.', boundary: false },
+    });
+    await fixture.createPhoneOnlyAccount(
+      parsePhoneNumber(NUMBERS.pickStrangerEnrolment),
+    );
+
+    const { result } = await text(
+      NUMBERS.pickStrangerEnrolment,
+      LINES.pickStrangerEnrolment,
+      '101',
+    );
+
+    expect(result).toEqual({ message: 'decision not found' });
+    expect(recordedSms.map((sms) => sms.body)).toEqual([
+      'That decision is not available to you.',
+    ]);
+    expect(recordedSms[0]!.body).not.toContain(name);
+  });
 
   it('given a member texts a code from the guide, then it becomes pick 1 with its cost, what is left and the next steps', async ({
     task,

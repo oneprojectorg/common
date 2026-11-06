@@ -918,7 +918,7 @@ export interface CreateProposalOptions {
     description?: string;
     collaborationDocId?: string;
     budget?: number | { amount: number; currency: string };
-    category?: string;
+    category?: string | string[];
     /** Allow arbitrary extra fields for dynamic template properties (dropdowns, etc.) */
     [key: string]: unknown;
   };
