@@ -3,7 +3,7 @@
 -- districts, access and the phone number stay. Rows are hard-deleted because the unique keys on
 -- (process_instance_id, profile_id) would block a voter from registering again.
 -- Usage:
---   psql "$DATABASE_URL" -v slug=sms-voting-test -At -f packages/common/src/scripts/resetDecisionVoting.sql
+--   psql "$DATABASE_URL" -v slug=sms-voting-test -At -f packages/common/src/scripts/sms/resetDecisionVoting.sql
 
 begin;
 

@@ -1,7 +1,7 @@
 # Local SMS voting demo helpers. Every recipe reads DATABASE_URL from .env.local
 # and acts on the local database only. `just` lists them.
 
-scripts := "packages/common/src/scripts"
+scripts := "packages/common/src/scripts/sms"
 db := `grep '^DATABASE_URL=' .env.local | cut -d= -f2-`
 slug := "sms-voting-test"
 phone := "+15555550123"

@@ -329,7 +329,7 @@ districts, every voter's enrolment, draft and cast ballot. The proposals
 section is commented out; uncomment it to include them.
 
 ```bash
-psql "$(grep '^DATABASE_URL=' .env.local | cut -d= -f2-)" -v slug=sms-voting-test -At -f packages/common/src/scripts/describeDecisionProcess.sql | jq .
+psql "$(grep '^DATABASE_URL=' .env.local | cut -d= -f2-)" -v slug=sms-voting-test -At -f packages/common/src/scripts/sms/describeDecisionProcess.sql | jq .
 ```
 
 `resetDecisionVoting.sql` deletes every voter's state on the decision so the
@@ -340,5 +340,5 @@ chat line stay. The rows are hard-deleted because the unique keys on
 from registering again.
 
 ```bash
-psql "$(grep '^DATABASE_URL=' .env.local | cut -d= -f2-)" -v slug=sms-voting-test -At -f packages/common/src/scripts/resetDecisionVoting.sql
+psql "$(grep '^DATABASE_URL=' .env.local | cut -d= -f2-)" -v slug=sms-voting-test -At -f packages/common/src/scripts/sms/resetDecisionVoting.sql
 ```

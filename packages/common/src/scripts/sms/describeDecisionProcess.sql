@@ -1,6 +1,6 @@
 -- Describe one decision's voting process as one JSON document, end to end.
 -- Usage:
---   psql "$DATABASE_URL" -v slug=sms-voting-test -At -f packages/common/src/scripts/describeDecisionProcess.sql
+--   psql "$DATABASE_URL" -v slug=sms-voting-test -At -f packages/common/src/scripts/sms/describeDecisionProcess.sql
 
 with decision as (
   select p.id as profile_id, p.slug, p.name, i.id as instance_id, i.process_id,

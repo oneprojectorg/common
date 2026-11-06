@@ -6,7 +6,7 @@
 -- organization the account last switched to. Nothing else references the
 -- number. Local use only.
 -- Usage:
---   psql "$DATABASE_URL" -v phone=+15555550123 -At -f packages/common/src/scripts/resetSmsAccount.sql
+--   psql "$DATABASE_URL" -v phone=+15555550123 -At -f packages/common/src/scripts/sms/resetSmsAccount.sql
 
 begin;
 
