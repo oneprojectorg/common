@@ -37,6 +37,7 @@ import { ProposalCardDialogProvider } from './ProposalCardDialogContext';
 import { ProposalFilterTabs } from './ProposalFilterTabs';
 import {
   ProposalCardSkeleton,
+  ProposalListSkeleton,
   ProposalListSkeletonGrid,
 } from './ProposalListSkeleton';
 import { ProposalsFeedView } from './ProposalsFeedView';
@@ -58,6 +59,7 @@ import {
   PROPOSAL_VIEWS,
   type ProposalView,
 } from './proposalViews';
+import { useCastBallot } from './useCastBallot';
 import {
   type ProposalFilterState,
   type ProposalQueryParams,
@@ -249,7 +251,7 @@ const ResultsPhaseProposalsLoader = ({
 export const ProposalsList = (props: ProposalsListProps) => {
   const { phase } = props;
   const filters = useProposalFilters(props);
-  const { queryParams } = filters;
+  const { queryParams, awaitingReceipt } = filters;
 
   const renderContent = (data: ProposalsLoaderRenderProps) => (
     <ProposalsListContent {...props} {...data} filters={filters} />
@@ -260,7 +262,9 @@ export const ProposalsList = (props: ProposalsListProps) => {
   // through.
   return (
     <ProposalCardDialogProvider>
-      {phase === 'results' ? (
+      {awaitingReceipt ? (
+        <ProposalListSkeleton />
+      ) : phase === 'results' ? (
         <ResultsPhaseProposalsLoader queryParams={queryParams}>
           {renderContent}
         </ResultsPhaseProposalsLoader>
@@ -378,8 +382,7 @@ const ProposalsListContent = ({
       isVotingEnabled || isMobile ? BROWSE_VIEWS_WITHOUT_FEED : PROPOSAL_VIEWS,
   });
 
-  const selectedProposalIds =
-    voteStatus?.voteSubmission?.selectedProposalIds || [];
+  const castBallot = useCastBallot(instanceId);
 
   const canManageProposals = permissions?.admin ?? false;
 
@@ -555,7 +558,7 @@ const ProposalsListContent = ({
         slug={slug}
         decisionSlug={decisionSlug}
         permissions={permissions}
-        votedProposalIds={selectedProposalIds}
+        votedProposalIds={castBallot?.proposalIds}
         {...emptyStateProps}
         isVotingPhase={isInVotingPhase}
         proposalsHidden={proposalsHidden}

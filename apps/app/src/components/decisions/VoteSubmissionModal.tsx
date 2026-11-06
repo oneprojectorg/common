@@ -49,8 +49,12 @@ export const VoteSubmissionModal = ({
 
   const utils = trpc.useUtils();
   const submitVoteMutation = trpc.decision.submitVote.useMutation({
-    onSuccess: ({ receipt }) => {
-      saveBallotReceipt({ instanceId, receipt });
+    onSuccess: ({ receipt, submittedByProfileId }) => {
+      saveBallotReceipt({
+        profileId: submittedByProfileId,
+        instanceId,
+        receipt,
+      });
       utils.decision.getVotingStatus.invalidate();
       // submitVote publishes no channel, so the admin turnout refetches here.
       utils.decision.getVotingProgress.invalidate({

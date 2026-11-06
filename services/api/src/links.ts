@@ -18,6 +18,7 @@ import type { PostHog } from 'posthog-js';
 import { readSSROnlySecret } from 'ssr-only-secrets';
 import superjson from 'superjson';
 
+import { carriesBallotReceipt } from './ballotReceiptTransport';
 import { unwrapResponseWithChannels } from './channelTransformer';
 import type { AppRouter } from './routers';
 
@@ -244,21 +245,32 @@ export function createLinks(encryptedCookies?: string): TRPCLink<AppRouter>[] {
     createChannelRegistrationLink(),
     // HTTP transport link
     splitLink({
-      condition(op) {
-        // Check if skipBatch is set in the context
-        return op.context.skipBatch === true;
-      },
-      // Use regular httpLink (no batching) when skipBatch is true
+      // A ballot receipt goes in a POST body, never a query string. See
+      // `ballotReceiptTransport.ts`.
+      condition: (op) => carriesBallotReceipt(op.input),
       true: httpLink({
         url: trpcUrl,
         transformer: superjson,
         fetch: fetchFn,
+        methodOverride: 'POST',
       }),
-      false: httpBatchStreamLink({
-        url: trpcUrl,
-        transformer: superjson,
-        maxItems: 4,
-        fetch: fetchFn,
+      false: splitLink({
+        condition(op) {
+          // Check if skipBatch is set in the context
+          return op.context.skipBatch === true;
+        },
+        // Use regular httpLink (no batching) when skipBatch is true
+        true: httpLink({
+          url: trpcUrl,
+          transformer: superjson,
+          fetch: fetchFn,
+        }),
+        false: httpBatchStreamLink({
+          url: trpcUrl,
+          transformer: superjson,
+          maxItems: 4,
+          fetch: fetchFn,
+        }),
       }),
     }),
   ];

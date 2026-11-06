@@ -15,7 +15,6 @@ import { MemberParticipationFacePile } from '../MemberParticipationFacePile';
 import { ProposalListSkeleton } from '../ProposalListSkeleton';
 import { ProposalsList } from '../ProposalsList';
 import { VotingProgressStats } from '../VotingProgressStats';
-import { useBallotReceipt } from '../ballotReceiptStore';
 
 export function VotingPage({
   instanceId,
@@ -34,15 +33,10 @@ export function VotingPage({
   const locale = useLocale();
   const translation = useDecisionTranslation();
 
-  const ballotReceipt = useBallotReceipt(instanceId);
-
   const [[instance, voteStatus, { items: submitters, total }]] =
     trpc.useSuspenseQueries((t) => [
       t.decision.getInstance({ instanceId }),
-      t.decision.getVotingStatus({
-        processInstanceId: instanceId,
-        receipt: ballotReceipt,
-      }),
+      t.decision.getVotingStatus({ processInstanceId: instanceId }),
       t.decision.listProposalSubmitters({ processInstanceId: instanceId }),
     ]);
 

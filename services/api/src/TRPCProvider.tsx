@@ -10,6 +10,7 @@ import {
 import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
 import React, { createContext, useState } from 'react';
 
+import { carriesBallotReceipt, queryInput } from './ballotReceiptTransport';
 import { createLinks } from './links';
 import { queryPersister } from './queryPersister';
 import type { AppRouter } from './routers';
@@ -91,7 +92,9 @@ export function TRPCProvider({
                 if (queryIsReadyForPersistance) {
                   const { queryKey } = query;
                   const excludeFromPersisting =
-                    queryKey.includes('ogImageThumbnail');
+                    queryKey.includes('ogImageThumbnail') ||
+                    // Its key holds the receipt and its data the ballot.
+                    carriesBallotReceipt(queryInput(queryKey));
 
                   return !excludeFromPersisting;
                 }

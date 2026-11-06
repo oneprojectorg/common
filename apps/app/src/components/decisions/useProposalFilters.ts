@@ -45,13 +45,17 @@ export const useProposalFilters = ({
   const { user } = useUser();
   const currentProfileId = user?.currentProfile?.id;
 
-  const ballotReceipt = useBallotReceipt(instanceId);
+  const receiptState = useBallotReceipt(instanceId);
+  const ballotReceipt =
+    receiptState.status === 'held' ? receiptState.receipt : undefined;
 
   const [voteStatus] = trpc.decision.getVotingStatus.useSuspenseQuery({
     processInstanceId: instanceId,
-    receipt: ballotReceipt,
   });
   const hasVoted = voteStatus?.hasVoted ?? false;
+  // A ballot cast before votes were unlinked lists without a receipt.
+  const ballotIsLinked =
+    (voteStatus.voteSubmission?.selectedProposalIds.length ?? 0) > 0;
 
   const [selectedCategory, setSelectedCategory] = useQueryState(
     'category',
@@ -136,6 +140,14 @@ export const useProposalFilters = ({
   // Applied, not live: the controls flash "no proposals yet" for a frame when
   // clearing a filter that returned nothing.
   const hasActiveFilter = isFilterActive(queryParams);
+
+  // The receipt is read from this browser's storage after hydration, so the
+  // ballot list can't be fetched before then: the server render would ask
+  // for a ballot it can't open and the client would ask again.
+  const awaitingReceipt =
+    queryParams.votedByProfileId !== undefined &&
+    !ballotIsLinked &&
+    receiptState.status === 'pending';
   const canClearFilters = isFilterActive(queryParams, {
     ignoreAudience: pinnedFilter !== undefined,
   });
@@ -158,6 +170,7 @@ export const useProposalFilters = ({
 
   return {
     queryParams,
+    awaitingReceipt,
     voteStatus,
     availableFilters,
     statusItems,

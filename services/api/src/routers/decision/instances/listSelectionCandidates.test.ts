@@ -122,6 +122,7 @@ async function seedAnonymousBallot({
     .values({
       processInstanceId,
       receiptHash: crypto.randomUUID(),
+      seal: crypto.randomUUID(),
       ballotData: {
         schemaVersion: '1.0.0',
         schemaType: 'simple',

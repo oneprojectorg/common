@@ -33,7 +33,8 @@ export interface BallotData extends Record<string, unknown> {
  * A cast ballot with no voter on it. `decisions_vote_submissions` records
  * that a profile voted; this row records what was voted for, and nothing
  * joins the two. The voter keeps a random receipt, and the row stores only
- * its SHA-256, so only the receipt holder can find it again.
+ * values derived from it (see `ballotReceipt.ts` in `@op/common`), so only
+ * the receipt holder can find it again, or tell whether its picks changed.
  *
  * There are no timestamps, because the clock links a ballot to its
  * submission when voting is sparse. `cast_on` keeps the day only.
@@ -51,8 +52,14 @@ export const decisionsVoteBallots = pgTable(
         onDelete: 'cascade',
       }),
 
-    /** Hex SHA-256 of the voter's receipt. */
+    /** Hex, derived from the receipt and the instance; finds the ballot. */
     receiptHash: text('receipt_hash').notNull(),
+
+    /**
+     * Hex MAC over the picks under a key derived from the receipt, so the
+     * receipt holder can tell whether the picks are still the ones they cast.
+     */
+    seal: text('seal').notNull(),
 
     ballotData: jsonb('ballot_data').$type<BallotData>().notNull(),
 

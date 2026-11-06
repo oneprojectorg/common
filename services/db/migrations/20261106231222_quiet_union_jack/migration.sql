@@ -1,0 +1,1 @@
+ALTER TABLE "decisions_vote_ballots" ADD COLUMN "seal" text NOT NULL;

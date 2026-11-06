@@ -9,12 +9,14 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from '@op/sense/Empty';
+import { Suspense } from 'react';
 import { LuLeaf, LuLock } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
 import { ProposalCardView } from './ProposalCard';
 import { ProposalListSection } from './ProposalListSection';
+import { ProposalListSkeleton } from './ProposalListSkeleton';
 import { ProposalMasonry } from './ProposalMasonry';
 import { VoteCheckbox } from './VoteCheckbox';
 import { getBallotRank } from './ballot';
@@ -47,7 +49,6 @@ export const MyBallot = ({
   decisionSlug?: string;
 }) => {
   const user = useUser();
-  const ballotReceipt = useBallotReceipt(instanceId);
 
   if (!user.user?.id) {
     return <NoVoteFound />;
@@ -55,16 +56,99 @@ export const MyBallot = ({
 
   const [voteStatus] = trpc.decision.getVotingStatus.useSuspenseQuery({
     processInstanceId: instanceId,
-    receipt: ballotReceipt,
   });
 
   if (!voteStatus.hasVoted || !voteStatus.voteSubmission) {
     return <NoVoteFound />;
   }
 
-  // A cast ballot always has a pick, so none means this browser holds no
-  // receipt for it.
-  if (voteStatus.voteSubmission.selectedProposalIds.length === 0) {
+  // A ballot cast before votes were unlinked comes with the status. One cast
+  // since has no picks here: it opens with the receipt this browser holds.
+  if (voteStatus.voteSubmission.selectedProposalIds.length > 0) {
+    return (
+      <MyBallotProposals
+        slug={slug}
+        instanceId={instanceId}
+        decisionSlug={decisionSlug}
+        votedByProfileId={voteStatus.voteSubmission.submittedByProfileId}
+        rankedProposalIds={
+          voteStatus.voteSubmission.ranked
+            ? voteStatus.voteSubmission.selectedProposalIds
+            : undefined
+        }
+      />
+    );
+  }
+
+  return (
+    <ReceiptBallot
+      slug={slug}
+      instanceId={instanceId}
+      decisionSlug={decisionSlug}
+      votedByProfileId={voteStatus.voteSubmission.submittedByProfileId}
+    />
+  );
+};
+
+/**
+ * The receipt is read from this browser's storage, so it is unknown during
+ * the server render and until hydration: the skeleton covers that gap
+ * instead of a flash of "not on this device".
+ */
+const ReceiptBallot = ({
+  slug,
+  instanceId,
+  decisionSlug,
+  votedByProfileId,
+}: {
+  slug: string;
+  instanceId: string;
+  decisionSlug?: string;
+  votedByProfileId: string;
+}) => {
+  const receiptState = useBallotReceipt(instanceId);
+
+  switch (receiptState.status) {
+    case 'pending':
+      return <ProposalListSkeleton />;
+    case 'none':
+      return <BallotNotOnThisDevice />;
+    case 'held':
+      return (
+        <Suspense fallback={<ProposalListSkeleton />}>
+          <HeldBallot
+            slug={slug}
+            instanceId={instanceId}
+            decisionSlug={decisionSlug}
+            votedByProfileId={votedByProfileId}
+            receipt={receiptState.receipt}
+          />
+        </Suspense>
+      );
+  }
+};
+
+const HeldBallot = ({
+  slug,
+  instanceId,
+  decisionSlug,
+  votedByProfileId,
+  receipt,
+}: {
+  slug: string;
+  instanceId: string;
+  decisionSlug?: string;
+  votedByProfileId: string;
+  receipt: string;
+}) => {
+  const [ballot] = trpc.decision.getBallot.useSuspenseQuery({
+    processInstanceId: instanceId,
+    receipt,
+  });
+
+  // A receipt that opens nothing here was issued elsewhere, or its ballot is
+  // gone.
+  if (!ballot) {
     return <BallotNotOnThisDevice />;
   }
 
@@ -73,13 +157,9 @@ export const MyBallot = ({
       slug={slug}
       instanceId={instanceId}
       decisionSlug={decisionSlug}
-      votedByProfileId={voteStatus.voteSubmission.submittedByProfileId}
-      ballotReceipt={ballotReceipt}
-      rankedProposalIds={
-        voteStatus.voteSubmission.ranked
-          ? voteStatus.voteSubmission.selectedProposalIds
-          : undefined
-      }
+      votedByProfileId={votedByProfileId}
+      ballotReceipt={receipt}
+      rankedProposalIds={ballot.ranked ? ballot.proposalIds : undefined}
     />
   );
 };

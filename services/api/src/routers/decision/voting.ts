@@ -1,4 +1,9 @@
-import { ballotReceiptSchema, getVotingStatus, submitVote } from '@op/common';
+import {
+  ballotReceiptSchema,
+  getBallot,
+  getVotingStatus,
+  submitVote,
+} from '@op/common';
 import { Events, inngest } from '@op/events';
 import { waitUntil } from '@vercel/functions';
 import { z } from 'zod';
@@ -8,6 +13,7 @@ import {
   openProcedure,
   router,
 } from '../../trpcFactory';
+import { assertReceiptInBody } from './assertReceiptInBody';
 
 // Input Schemas based on our contracts
 const customDataSchema = z.record(z.string(), z.unknown()).optional();
@@ -54,17 +60,29 @@ export const votingRouter = router({
 
   // Get the caller's vote status with schema context. Open to public /
   // anonymous viewers of public decisions — they resolve to "not voted".
-  // A ballot cast since votes were unlinked comes back only with the receipt
-  // submitVote issued.
+  // Says whether the caller voted; what they chose is behind `getBallot`.
   getVotingStatus: openProcedure()
+    .input(z.object({ processInstanceId: z.uuid() }))
+    .query(async ({ input, ctx }) => {
+      return await getVotingStatus({
+        data: { processInstanceId: input.processInstanceId },
+        user: ctx.user,
+      });
+    }),
+
+  // The caller's ballot, opened by the receipt submitVote issued. A query by
+  // nature, sent as a POST so the receipt stays out of URLs.
+  getBallot: networkAuthenticatedProcedure()
     .input(
       z.object({
         processInstanceId: z.uuid(),
-        receipt: ballotReceiptSchema.optional(),
+        receipt: ballotReceiptSchema,
       }),
     )
     .query(async ({ input, ctx }) => {
-      return await getVotingStatus({
+      assertReceiptInBody({ ctx, input });
+
+      return await getBallot({
         data: {
           processInstanceId: input.processInstanceId,
           receipt: input.receipt,

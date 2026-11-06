@@ -3,8 +3,6 @@ import { db } from '@op/db/client';
 import {
   type BallotData,
   type VoteData,
-  decisionsVoteBallotProposals,
-  decisionsVoteBallots,
   decisionsVoteSubmissions,
 } from '@op/db/schema';
 import { logger } from '@op/logging';
@@ -12,6 +10,7 @@ import type { User } from '@op/supabase/lib';
 import type { AmountUnit } from '@op/types/amountUnit';
 import { waitUntil } from '@vercel/functions';
 import { permission } from 'access-zones';
+import { randomUUID } from 'node:crypto';
 
 import {
   CommonError,
@@ -23,10 +22,19 @@ import {
 } from '../../utils';
 import { assertInstanceProfileAccess, getIndividualProfileId } from '../access';
 import { assertProfileAccess } from '../assert';
-import { createBallotReceipt } from './ballotReceipt';
+import { castBallotIntoBox, lockBallotBox } from './ballotBox';
+import {
+  createBallotReceipt,
+  hashBallotReceipt,
+  sealBallot,
+} from './ballotReceipt';
 import { getFieldUnit } from './fieldUnit';
 import { type ProposalCosts, getProposalCosts } from './getProposalCosts';
-import { getVoterBallot } from './getVoterBallot';
+import {
+  type VoterBallot,
+  getBallotByReceipt,
+  getVoterBallot,
+} from './getVoterBallot';
 import { decisionPermission } from './permissions';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
 import { processDecisionProcessSchema } from './schemaRegistry';
@@ -278,8 +286,12 @@ export interface SubmitVoteInput {
 
 export interface GetVotingStatusInput {
   processInstanceId: string;
-  /** The receipt `submitVote` returned; the only way to read a new ballot. */
-  receipt?: string;
+}
+
+export interface GetBallotInput {
+  processInstanceId: string;
+  /** The receipt `submitVote` returned. */
+  receipt: string;
 }
 
 export interface ValidateVoteSelectionInput {
@@ -293,8 +305,8 @@ export interface VoteSubmissionResult {
   processInstanceId: string;
   submittedByProfileId: string;
   /**
-   * In rank order when `ranked`. Empty when the ballot can't be read: it was
-   * cast after votes were unlinked and the caller sent no matching receipt.
+   * In rank order when `ranked`. Empty for a ballot cast since votes were
+   * unlinked: that one is read through `getBallot`, with its receipt.
    */
   selectedProposalIds: string[];
   /** Whether the ballot was cast on a ranked phase; outlives the phase itself. */
@@ -485,12 +497,21 @@ export const submitVote = async ({
       }),
     };
 
-    const { receipt, receiptHash } = createBallotReceipt();
+    const receipt = createBallotReceipt();
+    const ballotId = randomUUID();
+    const picks = data.selectedProposalIds.map((proposalId, index) => ({
+      ballotId,
+      proposalId,
+      position: index,
+      rank: phaseConfig.ranked ? index + 1 : null,
+    }));
 
     // One transaction so a voter is never recorded without their ballot, or
     // the reverse. The unique (instance, voter) index on the submission
     // rejects a second vote that raced past the check above.
     const voteSubmission = await db.transaction(async (tx) => {
+      await lockBallotBox({ tx, processInstanceId: data.processInstanceId });
+
       const [submission] = await tx
         .insert(decisionsVoteSubmissions)
         .values({
@@ -505,27 +526,25 @@ export const submitVote = async ({
         throw new CommonError('Failed to create vote submission');
       }
 
-      const [ballot] = await tx
-        .insert(decisionsVoteBallots)
-        .values({
+      await castBallotIntoBox({
+        tx,
+        ballot: {
+          id: ballotId,
           processInstanceId: data.processInstanceId,
-          receiptHash,
+          receiptHash: hashBallotReceipt({
+            receipt,
+            processInstanceId: data.processInstanceId,
+          }),
+          seal: sealBallot({
+            receipt,
+            processInstanceId: data.processInstanceId,
+            picks,
+          }),
           ballotData,
-        })
-        .returning({ id: decisionsVoteBallots.id });
-
-      if (!ballot) {
-        throw new CommonError('Failed to create ballot');
-      }
-
-      await tx.insert(decisionsVoteBallotProposals).values(
-        data.selectedProposalIds.map((proposalId, index) => ({
-          ballotId: ballot.id,
-          proposalId,
-          position: index,
-          rank: phaseConfig.ranked ? index + 1 : null,
-        })),
-      );
+          castOn: todayUtc(),
+        },
+        picks,
+      });
 
       return submission;
     });
@@ -608,12 +627,13 @@ export const getVotingStatus = async ({
       getVoteCap({ phaseConfig, processInstance }),
     ]);
 
+    // Only a ballot cast before votes were unlinked is found from here; one
+    // cast since needs its receipt, which `getBallot` takes.
     const ballot =
       voteSubmission && profileId
         ? await getVoterBallot({
             processInstanceId: data.processInstanceId,
             profileId,
-            receipt: data.receipt,
           })
         : undefined;
 
@@ -656,6 +676,62 @@ export const getVotingStatus = async ({
     throw new CommonError('Failed to get voting status');
   }
 };
+
+/**
+ * The ballot behind a receipt, for the voter who holds it. `null` when the
+ * caller has not voted on the instance or the receipt opens no ballot there.
+ */
+export const getBallot = async ({
+  data,
+  user,
+}: {
+  data: GetBallotInput;
+  user: User;
+}): Promise<VoterBallot | null> => {
+  try {
+    const profileId = await getIndividualProfileId(user.id);
+
+    const processInstance = await getVotingInstance(data.processInstanceId);
+
+    await assertInstanceProfileAccess({
+      user,
+      instance: processInstance,
+      profilePermissions: { decisions: permission.READ },
+      orgFallbackPermissions: [{ decisions: permission.READ }],
+    });
+
+    // A receipt is only good in the hands of someone who voted here.
+    const voteSubmission = await db.query.decisionsVoteSubmissions.findFirst({
+      where: {
+        processInstanceId: data.processInstanceId,
+        submittedByProfileId: profileId,
+      },
+      columns: { id: true },
+    });
+
+    if (!voteSubmission) {
+      return null;
+    }
+
+    return (
+      (await getBallotByReceipt({
+        processInstanceId: data.processInstanceId,
+        receipt: data.receipt,
+      })) ?? null
+    );
+  } catch (error) {
+    if (error instanceof CommonError) {
+      throw error;
+    }
+    logger.error('Error getting ballot', { error });
+    throw new CommonError('Failed to get ballot');
+  }
+};
+
+/** The database runs in UTC; `cast_on` keeps the day only. */
+function todayUtc(): string {
+  return new Date().toISOString().slice(0, 10);
+}
 
 async function assertSelectionsInDistrict({
   taxonomyTermId,
