@@ -1,3 +1,4 @@
+import type { AuthUser } from '@op/db/schema';
 import { z } from 'zod';
 
 /**
@@ -18,7 +19,7 @@ export type AccountContact = z.infer<typeof accountContactSchema>;
  * profile with no owning account passes nothing.
  */
 export function toAccountContact(
-  authUser: { email: string | null; phone: string | null } | null | undefined,
+  authUser: Pick<AuthUser, 'email' | 'phone'> | null | undefined,
 ): AccountContact | null {
   if (authUser?.email) {
     return { type: 'email', email: authUser.email };

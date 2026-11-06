@@ -1,6 +1,7 @@
 import { db } from '@op/db/client';
 import type { User } from '@op/supabase/lib';
 
+import { withAccountContact } from '../profile/accountContactColumns';
 import { toAccountContact } from '../profile/schemas/accountContact';
 import { assertCategoryReviewerAdmin } from './categoryReviewerHelpers';
 import { getEligibleReviewerProfileIds } from './getEligibleReviewerProfileIds';
@@ -56,13 +57,7 @@ export async function listEligibleReviewers({
       slug: true,
       avatarImageId: true,
     },
-    with: {
-      account: {
-        columns: {},
-        orderBy: { createdAt: 'asc', id: 'asc' },
-        with: { authUser: { columns: { email: true, phone: true } } },
-      },
-    },
+    with: withAccountContact,
     where: {
       id: { in: eligibleIds },
       ...(searchPattern && { name: { ilike: searchPattern } }),

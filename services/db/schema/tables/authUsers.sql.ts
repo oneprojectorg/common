@@ -22,3 +22,5 @@ export const authUsers = auth.table('users', {
   updatedAt: timestamp('updated_at', { withTimezone: true }),
   isAnonymous: boolean('is_anonymous').notNull().default(false),
 });
+
+export type AuthUser = typeof authUsers.$inferSelect;

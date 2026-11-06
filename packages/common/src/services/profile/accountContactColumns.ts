@@ -1,4 +1,6 @@
 import {
+  type Column,
+  type GetColumnData,
   type SQL,
   type SQLWrapper,
   aliasedTable,
@@ -19,10 +21,12 @@ const ownerAuthUsers = aliasedTable(authUsers, 'owner_auth_users');
  * order it the same way: `created_at`, then `id`, first row.
  */
 export function accountContactColumns(profileId: SQLWrapper): {
-  email: SQL<string | null>;
-  phone: SQL<string | null>;
+  email: SQL<GetColumnData<typeof authUsers.email>>;
+  phone: SQL<GetColumnData<typeof authUsers.phone>>;
 } {
-  const ownerColumn = (column: SQLWrapper): SQL<string | null> => {
+  const ownerColumn = <OwnerColumn extends Column>(
+    column: OwnerColumn,
+  ): SQL<GetColumnData<OwnerColumn>> => {
     const subquery = db
       .select({ value: sql`${column}` })
       .from(ownerUsers)
@@ -31,7 +35,7 @@ export function accountContactColumns(profileId: SQLWrapper): {
       .orderBy(asc(ownerUsers.createdAt), asc(ownerUsers.id))
       .limit(1);
 
-    return sql<string | null>`(${subquery})`;
+    return sql<GetColumnData<OwnerColumn>>`(${subquery})`;
   };
 
   return {
@@ -39,3 +43,15 @@ export function accountContactColumns(profileId: SQLWrapper): {
     phone: ownerColumn(ownerAuthUsers.phone),
   };
 }
+
+/**
+ * The `db.query` form of the same lookup: spread into a `profiles` query's
+ * `with`, then map `row.account?.authUser` through `toAccountContact`.
+ */
+export const withAccountContact = {
+  account: {
+    columns: {},
+    orderBy: { createdAt: 'asc', id: 'asc' },
+    with: { authUser: { columns: { email: true, phone: true } } },
+  },
+} as const;

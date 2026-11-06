@@ -2,13 +2,12 @@ import type {
   AdminAssignableProposal,
   AdminDecisionReviewer,
   AdminEligibleReviewer,
-  AccountContact,
 } from '@op/common/client';
 
 /** A reviewer row: the server rollup, or an eligible reviewer with no work yet. */
 export type ReviewerRow = AdminDecisionReviewer & {
   label: string;
-  contact: AccountContact | null;
+  contact: AdminEligibleReviewer['contact'];
   /** False once the reviewer lost the REVIEW capability; history stays visible. */
   isEligible: boolean;
 };

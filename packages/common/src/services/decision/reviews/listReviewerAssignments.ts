@@ -9,6 +9,7 @@ import { permission } from 'access-zones';
 
 import { UnauthorizedError } from '../../../utils';
 import { assertProfileAccess } from '../../assert';
+import { withAccountContact } from '../../profile/accountContactColumns';
 import { toAccountContact } from '../../profile/schemas/accountContact';
 import { getEligibleReviewerProfileIds } from '../getEligibleReviewerProfileIds';
 import { getInstance } from '../getInstance';
@@ -67,13 +68,7 @@ export async function listReviewerAssignments({
         slug: true,
         avatarImageId: true,
       },
-      with: {
-        account: {
-          columns: {},
-          orderBy: { createdAt: 'asc', id: 'asc' },
-          with: { authUser: { columns: { email: true, phone: true } } },
-        },
-      },
+      with: withAccountContact,
     }),
     listAssignmentsForReviewer({
       instance,

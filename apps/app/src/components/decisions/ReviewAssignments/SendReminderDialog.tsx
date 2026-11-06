@@ -4,9 +4,9 @@ import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { formatDate } from '@/utils/formatting';
 import { trpc } from '@op/api/client';
 import {
-  type AccountContact,
   REVIEW_REMINDER_MAX_RECIPIENTS,
   REVIEW_REMINDER_MESSAGE_MAX_LENGTH,
+  type ReviewReminderRecipient,
   type ReviewReminderToken,
   type ReviewerStatus,
   getReviewerFirstName,
@@ -41,12 +41,11 @@ import { useTranslations } from '@/lib/i18n';
 
 import { accountContactText } from './accountContactText';
 
-export interface ReminderRecipientPreview {
-  id: string;
-  name: string;
-  contact: AccountContact | null;
-  remainingCount: number;
-}
+export type ReminderRecipientPreview = Pick<
+  ReviewReminderRecipient['reviewer'],
+  'id' | 'name' | 'contact'
+> &
+  Pick<ReviewReminderRecipient, 'remainingCount'>;
 
 export type SendReminderTarget =
   | { kind: 'one'; recipient: ReminderRecipientPreview }

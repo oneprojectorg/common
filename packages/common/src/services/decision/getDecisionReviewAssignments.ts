@@ -3,6 +3,7 @@ import { profiles, proposals } from '@op/db/schema';
 import { z } from 'zod';
 
 import { NotFoundError } from '../../utils';
+import { withAccountContact } from '../profile/accountContactColumns';
 import { toAccountContact } from '../profile/schemas/accountContact';
 import { getEligibleReviewerProfileIds } from './getEligibleReviewerProfileIds';
 import { getProposalDocumentsContent } from './getProposalDocumentsContent';
@@ -159,13 +160,7 @@ export async function getDecisionReviewAssignments({
       ? db.query.profiles.findMany({
           where: { id: { in: eligibleProfileIds } },
           columns: { id: true, name: true, slug: true },
-          with: {
-            account: {
-              columns: {},
-              orderBy: { createdAt: 'asc', id: 'asc' },
-              with: { authUser: { columns: { email: true, phone: true } } },
-            },
-          },
+          with: withAccountContact,
         })
       : Promise.resolve([]);
 
