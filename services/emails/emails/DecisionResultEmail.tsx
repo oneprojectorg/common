@@ -62,7 +62,7 @@ const getCopy = ({
 export const DecisionResultEmail = ({
   processTitle,
   message,
-  proposalUrl = 'https://common.oneproject.org/',
+  proposalUrl,
   isSelected,
   publishesResults,
 }: {

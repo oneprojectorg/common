@@ -6,6 +6,7 @@ import {
 import { z } from 'zod';
 
 import { moneyAmountSchema } from '../../../money';
+import { accountContactSchema } from '../../profile/schemas/accountContact';
 import { proposalCategorySchema } from './proposalCategory';
 
 const adminDecisionCurrentPhaseSchema = z.object({
@@ -161,9 +162,8 @@ export type AdminAssignableProposal = z.infer<
   typeof adminAssignableProposalSchema
 >;
 
-/** Eligible reviewer candidate; `email` is the profile contact field. */
 export const adminEligibleReviewerSchema = adminProfileRefSchema.extend({
-  email: z.string().nullable(),
+  contact: accountContactSchema.nullable(),
 });
 
 export type AdminEligibleReviewer = z.infer<typeof adminEligibleReviewerSchema>;

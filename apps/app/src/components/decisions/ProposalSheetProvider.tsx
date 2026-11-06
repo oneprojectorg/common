@@ -24,8 +24,12 @@ export function ProposalSheetProvider({
   slug,
   instanceId,
   decisionSlug,
+  expandHref,
   children,
-}: ProposalSheetRoute & { children: ReactNode }) {
+}: ProposalSheetRoute & {
+  expandHref?: (profileId: string) => string;
+  children: ReactNode;
+}) {
   const [openProfileId, setOpenProfileId] = useQueryState(
     PROPOSAL_SHEET_PARAM,
     parseAsString,
@@ -57,6 +61,7 @@ export function ProposalSheetProvider({
         <ProposalSheet
           profileId={openProfileId}
           route={{ slug, instanceId, decisionSlug }}
+          expandHref={expandHref}
           onClose={close}
         />
       ) : null}

@@ -7,7 +7,7 @@ import type {
 /** A reviewer row: the server rollup, or an eligible reviewer with no work yet. */
 export type ReviewerRow = AdminDecisionReviewer & {
   label: string;
-  email: string | null;
+  contact: AdminEligibleReviewer['contact'];
   /** False once the reviewer lost the REVIEW capability; history stays visible. */
   isEligible: boolean;
 };
@@ -34,23 +34,23 @@ export function buildReviewerRows(
   const rollupByProfileId = new Map(
     reviewers.map((reviewer) => [reviewer.profile.id, reviewer]),
   );
-  const emailByProfileId = new Map(
-    eligibleReviewers.map((reviewer) => [reviewer.id, reviewer.email]),
+  const contactByProfileId = new Map(
+    eligibleReviewers.map((reviewer) => [reviewer.id, reviewer.contact]),
   );
 
   const rows: ReviewerRow[] = [
     ...reviewers.map((reviewer) => ({
       ...reviewer,
       label: reviewerLabel(reviewer.profile),
-      email: emailByProfileId.get(reviewer.profile.id) ?? null,
-      isEligible: emailByProfileId.has(reviewer.profile.id),
+      contact: contactByProfileId.get(reviewer.profile.id) ?? null,
+      isEligible: contactByProfileId.has(reviewer.profile.id),
     })),
     ...eligibleReviewers
       .filter((reviewer) => !rollupByProfileId.has(reviewer.id))
       .map((reviewer) => ({
         profile: { id: reviewer.id, name: reviewer.name, slug: reviewer.slug },
         label: reviewerLabel(reviewer),
-        email: reviewer.email,
+        contact: reviewer.contact,
         isEligible: true,
         assignedCount: 0,
         submittedCount: 0,

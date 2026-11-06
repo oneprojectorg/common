@@ -9,23 +9,26 @@ import { permission } from 'access-zones';
 
 import { UnauthorizedError } from '../../../utils';
 import { assertProfileAccess } from '../../assert';
+import { toAccountContact } from '../../profile/schemas/accountContact';
+import { withAccountContact } from '../../profile/withAccountContact';
 import { getEligibleReviewerProfileIds } from '../getEligibleReviewerProfileIds';
 import { getInstance } from '../getInstance';
 import { listAssignmentsForReviewer } from '../listReviewAssignments';
 import type { InstancePhaseRef } from '../schemas/instance';
 import {
   type ReviewerAssignments,
-  type ReviewerQueueStatus,
   reviewerAssignmentsSchema,
 } from '../schemas/reviewAssignments';
 import { assertInstancePhase } from '../utils/instance';
+import { openAssignmentFilter } from './phaseReviewerRollup';
 
 interface ReviewerQueueTotals {
   assignedCount: number;
   submittedCount: number;
   draftCount: number;
+  remainingCount: number;
   lastSubmittedAt: string | null;
-  statusBreakdown: Array<{ status: ReviewerQueueStatus; count: number }>;
+  startedAt: string | null;
 }
 
 /** One page of a reviewer's queue for the admin screen, with whole-queue totals. */
@@ -65,8 +68,8 @@ export async function listReviewerAssignments({
         name: true,
         slug: true,
         avatarImageId: true,
-        email: true,
       },
+      with: withAccountContact,
     }),
     listAssignmentsForReviewer({
       instance,
@@ -86,7 +89,16 @@ export async function listReviewerAssignments({
   const isAssociated = isEligible || totals.assignedCount > 0;
 
   return reviewerAssignmentsSchema.parse({
-    reviewer: isAssociated ? (reviewer ?? null) : null,
+    reviewer:
+      isAssociated && reviewer
+        ? {
+            id: reviewer.id,
+            name: reviewer.name,
+            slug: reviewer.slug,
+            avatarImageId: reviewer.avatarImageId,
+            contact: toAccountContact(reviewer.account?.authUser),
+          }
+        : null,
     isEligible,
     ...totals,
     items: queue.items,
@@ -115,44 +127,36 @@ async function getReviewerQueueTotals({
     eq(proposalReviewAssignments.reviewerProfileId, reviewerProfileId),
   );
 
-  // The same `review.state ?? assignment.status` the cards show.
-  const statusKey = sql<ReviewerQueueStatus>`COALESCE(${proposalReviews.state}::text, ${proposalReviewAssignments.status}::text)`;
-
-  const [[row], breakdownRows] = await Promise.all([
-    db
-      .select({
-        assignedCount: count(proposalReviewAssignments.id),
-        submittedCount:
-          sql<number>`(count(*) filter (where ${proposalReviews.state} = ${ProposalReviewState.SUBMITTED}))::int`.mapWith(
-            Number,
-          ),
-        draftCount:
-          sql<number>`(count(*) filter (where ${proposalReviews.state} = ${ProposalReviewState.DRAFT}))::int`.mapWith(
-            Number,
-          ),
-        lastSubmittedAt: sql<
-          string | null
-        >`max(${proposalReviews.submittedAt}) filter (where ${proposalReviews.state} = ${ProposalReviewState.SUBMITTED})`,
-      })
-      .from(proposalReviewAssignments)
-      .leftJoin(proposalReviews, reviewOfAssignment)
-      .where(reviewerQueue),
-    db
-      .select({
-        status: statusKey.as('status'),
-        count: count(proposalReviewAssignments.id),
-      })
-      .from(proposalReviewAssignments)
-      .leftJoin(proposalReviews, reviewOfAssignment)
-      .where(reviewerQueue)
-      .groupBy(statusKey),
-  ]);
+  const [row] = await db
+    .select({
+      assignedCount: count(proposalReviewAssignments.id),
+      submittedCount:
+        sql<number>`(count(*) filter (where ${proposalReviews.state} = ${ProposalReviewState.SUBMITTED}))::int`.mapWith(
+          Number,
+        ),
+      draftCount:
+        sql<number>`(count(*) filter (where ${proposalReviews.state} = ${ProposalReviewState.DRAFT}))::int`.mapWith(
+          Number,
+        ),
+      remainingCount:
+        sql<number>`(count(*) filter (where ${openAssignmentFilter()}))::int`.mapWith(
+          Number,
+        ),
+      lastSubmittedAt: sql<
+        string | null
+      >`max(${proposalReviews.submittedAt}) filter (where ${proposalReviews.state} = ${ProposalReviewState.SUBMITTED})`,
+      startedAt: sql<string | null>`min(${proposalReviews.createdAt})`,
+    })
+    .from(proposalReviewAssignments)
+    .leftJoin(proposalReviews, reviewOfAssignment)
+    .where(reviewerQueue);
 
   return {
     assignedCount: row?.assignedCount ?? 0,
     submittedCount: row?.submittedCount ?? 0,
     draftCount: row?.draftCount ?? 0,
+    remainingCount: row?.remainingCount ?? 0,
     lastSubmittedAt: row?.lastSubmittedAt ?? null,
-    statusBreakdown: breakdownRows,
+    startedAt: row?.startedAt ?? null,
   };
 }

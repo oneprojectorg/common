@@ -11,6 +11,7 @@ import { createSelectSchema } from 'drizzle-zod';
 import { z } from 'zod';
 
 import { list, paginated, total } from '../../../utils/pagination';
+import { accountContactSchema } from '../../profile/schemas/accountContact';
 import type { RubricTemplateSchema } from '../types';
 import {
   instanceOptionalPhaseRefSchema,
@@ -406,18 +407,18 @@ export const categoryReviewerTargetSchema =
   });
 
 /**
- * Candidate reviewer surfaced in the "Add reviewer…" picker. email is included
- * so the admin can disambiguate people sharing a display name.
+ * Candidate reviewer surfaced in the "Add reviewer…" picker. `contact` lets
+ * the admin tell apart people who share a display name.
  */
 export const eligibleReviewerSchema = createSelectSchema(profiles)
   .pick({
     name: true,
     slug: true,
     avatarImageId: true,
-    email: true,
   })
   .extend({
     id: z.uuid(),
+    contact: accountContactSchema.nullable(),
   });
 
 export type EligibleReviewerSchema = z.infer<typeof eligibleReviewerSchema>;

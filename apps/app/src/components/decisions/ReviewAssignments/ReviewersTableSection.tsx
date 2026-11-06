@@ -13,6 +13,7 @@ import {
   reviewerStatusSchema,
 } from '@op/common/client';
 import { useInfiniteScroll } from '@op/hooks';
+import { Button } from '@op/sense/Button';
 import {
   Empty,
   EmptyDescription,
@@ -37,8 +38,8 @@ import {
 } from '@op/sense/Table';
 import { useFormatter } from 'next-intl';
 import { parseAsStringLiteral, useQueryState } from 'nuqs';
-import { Suspense, useCallback, useDeferredValue } from 'react';
-import { LuUsers } from 'react-icons/lu';
+import { Suspense, useCallback, useDeferredValue, useState } from 'react';
+import { LuBell, LuUsers } from 'react-icons/lu';
 
 import { Link, useTranslations } from '@/lib/i18n';
 
@@ -49,6 +50,11 @@ import { ReviewStatusBadge } from '../ReviewStatusBadge';
 import { StickyFilterBar } from '../StickyFilterBar';
 import { useSearchParam } from '../useSearchParam';
 import { ReviewersTableSkeleton } from './ReviewAssignmentsSkeletons';
+import {
+  SendReminderDialog,
+  type SendReminderTarget,
+} from './SendReminderDialog';
+import { accountContactText } from './accountContactText';
 
 interface ReviewersTableSectionProps {
   decisionSlug: string;
@@ -140,6 +146,21 @@ function ReviewersTableContent({
   const rows = data.pages.flatMap((page) => page.items);
   const totalReviewers = data.pages[0]?.totalReviewers ?? rows.length;
   const total = data.pages[0]?.total ?? rows.length;
+  const totalAssignments = data.pages[0]?.totalAssignments ?? 0;
+
+  const [reminderTarget, setReminderTarget] =
+    useState<SendReminderTarget | null>(null);
+  const [isReminderOpen, setIsReminderOpen] = useState(false);
+  const openReminder = (target: SendReminderTarget) => {
+    setReminderTarget(target);
+    setIsReminderOpen(true);
+  };
+
+  // A completed or idle reviewer has nothing open to be reminded of.
+  const showSendReminder =
+    totalAssignments > 0 &&
+    appliedStatus !== ProposalReviewAssignmentStatus.COMPLETED &&
+    appliedStatus !== 'none';
 
   const showToolbar = totalReviewers > 0 || Boolean(search || status);
 
@@ -205,6 +226,21 @@ function ReviewersTableContent({
               className="min-w-40"
               items={sortItems}
             />
+            {showSendReminder ? (
+              <Button
+                variant="outline"
+                onClick={() =>
+                  openReminder({
+                    kind: 'batch',
+                    ...(appliedSearch ? { search: appliedSearch } : {}),
+                    ...(appliedStatus ? { status: appliedStatus } : {}),
+                  })
+                }
+              >
+                <LuBell data-icon="inline-start" />
+                {t('decisions.review.sendReminderAction')}
+              </Button>
+            ) : null}
           </div>
         </StickyFilterBar>
       ) : (
@@ -240,7 +276,7 @@ function ReviewersTableContent({
         <>
           <Table
             aria-label={t('decisions.review.reviewersHeading')}
-            className="w-full [&_tbody_th]:h-15 [&_td]:h-15 [&_thead_th]:font-normal [&_tr>*:first-child]:ps-0 [&_tr>*:last-child]:pe-0"
+            className="w-full [&_tbody_th]:h-15 [&_td]:h-15 [&_thead_th]:font-normal [&_tr>*:first-child]:ps-0"
           >
             <TableHeader>
               <TableRow>
@@ -257,6 +293,11 @@ function ReviewersTableContent({
                 <TableHead className="w-44">
                   {t('decisions.review.statusColumn')}
                 </TableHead>
+                <TableHead className="w-36">
+                  <span className="sr-only">
+                    {t('decisions.review.actionsColumn')}
+                  </span>
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -265,6 +306,7 @@ function ReviewersTableContent({
                   key={row.reviewer.id}
                   row={row}
                   href={`/decisions/${decisionSlug}/assignments/${row.reviewer.id}`}
+                  onRemind={openReminder}
                 />
               ))}
             </TableBody>
@@ -285,6 +327,14 @@ function ReviewersTableContent({
           ) : null}
         </>
       )}
+
+      <SendReminderDialog
+        processInstanceId={processInstanceId}
+        phaseId={phaseId}
+        target={reminderTarget}
+        open={isReminderOpen}
+        onOpenChange={setIsReminderOpen}
+      />
     </div>
   );
 }
@@ -321,9 +371,11 @@ function ReviewerCount({
 function ReviewerRowCells({
   row,
   href,
+  onRemind,
 }: {
   row: PhaseReviewerSummary;
   href: string;
+  onRemind: (target: SendReminderTarget) => void;
 }) {
   const t = useTranslations();
   const format = useFormatter();
@@ -333,6 +385,20 @@ function ReviewerRowCells({
     : null;
   const percent =
     row.assignedCount > 0 ? (row.submittedCount / row.assignedCount) * 100 : 0;
+  const isRemindable =
+    row.remainingCount > 0 &&
+    (row.status === ProposalReviewAssignmentStatus.PENDING ||
+      row.status === ProposalReviewAssignmentStatus.IN_PROGRESS);
+  const remind = () =>
+    onRemind({
+      kind: 'one',
+      recipient: {
+        id: row.reviewer.id,
+        name,
+        contact: row.reviewer.contact,
+        remainingCount: row.remainingCount,
+      },
+    });
 
   return (
     // `relative` anchors the name link's stretched ::after (row-wide click).
@@ -352,7 +418,7 @@ function ReviewerRowCells({
             avatar={<ProfileAvatar name={name} alt={name} />}
             title={name}
             titleClassName="font-normal"
-            description={row.reviewer.email ?? undefined}
+            description={accountContactText(row.reviewer.contact) ?? undefined}
           />
         </Link>
       </TableRowHeader>
@@ -395,6 +461,19 @@ function ReviewerRowCells({
         ) : (
           <ReviewStatusBadge status={row.status} />
         )}
+      </TableCell>
+      <TableCell className="text-end">
+        {isRemindable ? (
+          // `z-10` lifts it above the name link's row-wide ::after.
+          <Button
+            variant="outline"
+            className="z-10"
+            aria-label={t('decisions.review.remindReviewerLabel', { name })}
+            onClick={remind}
+          >
+            {t('decisions.review.remindAction')}
+          </Button>
+        ) : null}
       </TableCell>
     </TableRow>
   );

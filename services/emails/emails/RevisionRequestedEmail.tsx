@@ -8,7 +8,7 @@ import { Header } from '../components/Header';
 export const RevisionRequestedEmail = ({
   proposalName,
   processTitle,
-  proposalUrl = 'https://common.oneproject.org/',
+  proposalUrl,
 }: {
   proposalName: string;
   processTitle: string;

@@ -105,8 +105,23 @@ export {
   type PhaseReviewerSummaries,
   reviewerAssignmentsSchema,
   type ReviewerAssignments,
-  type ReviewerQueueStatus,
+  reviewReminderRecipientsInputSchema,
+  type ReviewReminderRecipientsParams,
+  reviewReminderRecipientSchema,
+  type ReviewReminderRecipient,
+  reviewReminderRecipientsSchema,
+  type ReviewReminderRecipients,
+  sendReviewReminderInputSchema,
+  type SendReviewReminderInput,
+  sendReviewReminderResultSchema,
+  type SendReviewReminderResult,
 } from './services/decision/schemas/reviewAssignments';
+export {
+  REVIEW_REMINDER_MAX_RECIPIENTS,
+  REVIEW_REMINDER_MESSAGE_MAX_LENGTH,
+  type ReviewReminderToken,
+  getReviewerFirstName,
+} from './services/decision/reviewReminderTemplate';
 export {
   proposalAllocationSchema,
   type ProposalAllocation,
@@ -157,6 +172,10 @@ export {
   type ProfileMinimal,
   type StorageItemMinimal,
 } from './services/profile/schemas/profileMinimal';
+export {
+  accountContactSchema,
+  type AccountContact,
+} from './services/profile/schemas/accountContact';
 export {
   accessRoleMinimalSchema,
   type AccessRoleMinimal,

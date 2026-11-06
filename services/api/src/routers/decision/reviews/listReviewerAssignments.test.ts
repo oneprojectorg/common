@@ -54,7 +54,7 @@ describe.concurrent('decision.listReviewerAssignments', () => {
       submittedAt: new Date().toISOString(),
     });
 
-    // The fixture leaves the profile's contact email unset.
+    // The header shows the login email, never the profile's contact email.
     await db
       .update(profiles)
       .set({ email: `reviewer-${task.id}@example.org` })
@@ -71,7 +71,10 @@ describe.concurrent('decision.listReviewerAssignments', () => {
     });
 
     expect(result.reviewer?.id).toBe(context.defaultReviewer.profileId);
-    expect(result.reviewer?.email).toBe(`reviewer-${task.id}@example.org`);
+    expect(result.reviewer?.contact).toEqual({
+      type: 'email',
+      email: context.defaultReviewer.email,
+    });
     expect(result.isEligible).toBe(true);
     expect(result.items).toHaveLength(1);
     const [item] = result.items;
@@ -123,7 +126,7 @@ describe.concurrent('decision.listReviewerAssignments', () => {
     expect(result.reviewer?.id).toBe(other.profileId);
   });
 
-  it('reports the header totals across submitted, draft and untouched assignments', async ({
+  it('reports the header totals across submitted, draft, untouched and returned assignments', async ({
     task,
     onTestFinished,
   }) => {
@@ -143,15 +146,20 @@ describe.concurrent('decision.listReviewerAssignments', () => {
       title: `Untouched proposal ${task.id}`,
       status: ProposalReviewAssignmentStatus.PENDING,
     });
+    await testData.createReviewAssignment({
+      context,
+      title: `Returned proposal ${task.id}`,
+      status: ProposalReviewAssignmentStatus.AWAITING_AUTHOR_REVISION,
+    });
 
     const submittedAt = new Date().toISOString();
-    await createProposalReview({
+    const submittedReview = await createProposalReview({
       assignmentId: submitted.assignment.id,
       state: ProposalReviewState.SUBMITTED,
       reviewData: { answers: {}, rationales: {} },
       submittedAt,
     });
-    await createProposalReview({
+    const draftReview = await createProposalReview({
       assignmentId: draft.assignment.id,
       state: ProposalReviewState.DRAFT,
       reviewData: { answers: {}, rationales: {} },
@@ -167,24 +175,24 @@ describe.concurrent('decision.listReviewerAssignments', () => {
       reviewerProfileId: context.defaultReviewer.profileId,
     });
 
-    expect(result.assignedCount).toBe(3);
+    expect(result.assignedCount).toBe(4);
     expect(result.submittedCount).toBe(1);
     expect(result.draftCount).toBe(1);
     // Postgres' own text form, so compare the instant, not the string.
     expect(new Date(result.lastSubmittedAt ?? '').toISOString()).toBe(
       submittedAt,
     );
-    // The review's state wins over the assignment's status, as on the cards.
-    expect(result.statusBreakdown).toEqual(
-      expect.arrayContaining([
-        { status: ProposalReviewState.SUBMITTED, count: 1 },
-        { status: ProposalReviewState.DRAFT, count: 1 },
-        { status: ProposalReviewAssignmentStatus.PENDING, count: 1 },
-      ]),
+    const earliestReviewCreatedAt = Math.min(
+      new Date(submittedReview.createdAt ?? '').getTime(),
+      new Date(draftReview.createdAt ?? '').getTime(),
     );
-    expect(result.statusBreakdown).toHaveLength(3);
-    expect(result.items).toHaveLength(3);
-    expect(result.total).toBe(3);
+    expect(new Date(result.startedAt ?? '').getTime()).toBe(
+      earliestReviewCreatedAt,
+    );
+    // The draft and the untouched one are open; completed and returned are not.
+    expect(result.remainingCount).toBe(2);
+    expect(result.items).toHaveLength(4);
+    expect(result.total).toBe(4);
     expect(result.next).toBeNull();
   });
 
@@ -223,6 +231,7 @@ describe.concurrent('decision.listReviewerAssignments', () => {
     expect(page1.items).toHaveLength(2);
     expect(page1.total).toBe(3);
     expect(page1.assignedCount).toBe(3);
+    expect(page1.startedAt).toBeNull();
     expect(page1.next).not.toBeNull();
 
     const page2 = await adminCaller.decision.listReviewerAssignments({

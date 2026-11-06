@@ -353,6 +353,12 @@ export const relations = defineRelations(schema, (r) => ({
       from: r.profiles.id,
       to: r.profileUsers.profileId,
     }),
+    /** `users.profileId` is not unique, so a query orders this (`withAccountContact`). */
+    account: r.one.users({
+      from: r.profiles.id,
+      to: r.users.profileId,
+      alias: 'user_profile',
+    }),
     reviewerAssignments: r.many.proposalReviewAssignments({
       from: r.profiles.id,
       to: r.proposalReviewAssignments.reviewerProfileId,
@@ -463,6 +469,34 @@ export const relations = defineRelations(schema, (r) => ({
       to: r.profiles.id,
       alias: 'processPhase_profile',
       optional: false,
+    }),
+    outgoingTransitions: r.many.decisionProcessTransitions({
+      from: r.processPhases.id,
+      to: r.decisionProcessTransitions.fromPhaseId,
+      alias: 'decisionProcessTransition_fromPhase',
+    }),
+    incomingTransitions: r.many.decisionProcessTransitions({
+      from: r.processPhases.id,
+      to: r.decisionProcessTransitions.toPhaseId,
+      alias: 'decisionProcessTransition_toPhase',
+    }),
+  },
+
+  /**
+   * Decision process transition relations
+   *
+   * fromPhaseId and toPhaseId are nullable.
+   */
+  decisionProcessTransitions: {
+    fromPhase: r.one.processPhases({
+      from: r.decisionProcessTransitions.fromPhaseId,
+      to: r.processPhases.id,
+      alias: 'decisionProcessTransition_fromPhase',
+    }),
+    toPhase: r.one.processPhases({
+      from: r.decisionProcessTransitions.toPhaseId,
+      to: r.processPhases.id,
+      alias: 'decisionProcessTransition_toPhase',
     }),
   },
 

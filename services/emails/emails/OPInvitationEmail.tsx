@@ -15,7 +15,7 @@ interface OPInvitationEmailProps {
 export const OPInvitationEmail = ({
   inviterName = 'A Common user',
   organizationName,
-  inviteUrl = 'https://common.oneproject.org/',
+  inviteUrl,
   message,
 }: OPInvitationEmailProps) => {
   return (

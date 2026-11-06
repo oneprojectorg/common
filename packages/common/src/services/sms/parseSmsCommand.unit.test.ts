@@ -52,6 +52,21 @@ describe('parseSmsCommand', () => {
     expect(parseSmsCommand('showing columbus')).toEqual(none);
   });
 
+  it('given INFO-HELP alone, when parsed, then it is the info-help keyword, never info with an argument', () => {
+    expect(parseSmsCommand('INFO-HELP')).toEqual({
+      keyword: 'info-help',
+      argument: null,
+    });
+    expect(parseSmsCommand('info-help!')).toEqual({
+      keyword: 'info-help',
+      argument: null,
+    });
+  });
+
+  it('given INFO-HELP followed by other words, when parsed, then nothing is recognised', () => {
+    expect(parseSmsCommand('info-help list them')).toEqual(none);
+  });
+
   it('given only digits or nothing, when parsed, then nothing is recognised', () => {
     expect(parseSmsCommand('214')).toEqual(none);
     expect(parseSmsCommand('12345678901')).toEqual(none);

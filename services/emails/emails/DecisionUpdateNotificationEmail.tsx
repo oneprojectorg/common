@@ -8,7 +8,7 @@ export const DecisionUpdateNotificationEmail = ({
   authorName = 'A Common user',
   processTitle,
   updateContent,
-  updateUrl = 'https://common.oneproject.org/',
+  updateUrl,
 }: {
   authorName: string;
   processTitle: string;

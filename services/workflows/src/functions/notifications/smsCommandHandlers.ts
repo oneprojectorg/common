@@ -83,6 +83,7 @@ import type { GetStepTools } from 'inngest';
 import {
   SMS_ALREADY_JOINED_MESSAGE,
   SMS_COMMAND_HELP_MESSAGE,
+  SMS_COMMAND_LIST_MESSAGE,
 } from './smsReply';
 
 const SMS_SLUG_LENGTH = 100;
@@ -186,6 +187,15 @@ export const join: SmsCommandHandler = async ({ deliver }) => {
     SMS_ALREADY_JOINED_MESSAGE,
   );
   return failed ?? { message: 'already joined' };
+};
+
+export const infoHelp: SmsCommandHandler = async ({ deliver }) => {
+  const failed = await deliver(
+    'send-command-list',
+    'Command list reply',
+    SMS_COMMAND_LIST_MESSAGE,
+  );
+  return failed ?? { message: 'command list sent' };
 };
 
 const listDecisions: SmsCommandHandler = async ({ step, account, deliver }) => {
@@ -909,7 +919,7 @@ const formatMoney = (
     : null;
 
 // The same choice as a browse, then the ballot the voter cast last on the
-// shared number, so CHANGE and a second SUBMIT find it after the draft is gone.
+// shared number, so a second SUBMIT finds it after the draft is gone.
 const resolveBallotInstance = async (
   context: SmsCommandContext,
 ): Promise<string | null> => {
@@ -1033,7 +1043,7 @@ const pickByCodes = async (
         authUserId: account.authUserId,
         instanceId,
         codes,
-        phoneNumberId: context.line?.id ?? null,
+        phoneNumberId: context.line?.id,
       }),
     ),
   );

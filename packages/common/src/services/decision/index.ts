@@ -8,6 +8,7 @@ export * from './listProcesses';
 export * from './listProcessParticipants';
 export * from './listResultNotificationRecipients';
 export * from './resultNotificationTemplate';
+export * from './reviewReminderTemplate';
 
 // Instance cache invalidation
 export * from './decisionCache';

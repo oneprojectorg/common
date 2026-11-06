@@ -337,14 +337,16 @@ export class SmsCommandFixture {
           }
         : phase,
     );
+    const baseData =
+      instance !== undefined &&
+      typeof instance.instanceData === 'object' &&
+      instance.instanceData !== null &&
+      !Array.isArray(instance.instanceData)
+        ? instance.instanceData
+        : {};
     await db
       .update(processInstances)
-      .set({
-        instanceData: {
-          ...(instance?.instanceData as Record<string, unknown>),
-          phases,
-        },
-      })
+      .set({ instanceData: { ...baseData, phases } })
       .where(eq(processInstances.id, instanceId));
   }
 

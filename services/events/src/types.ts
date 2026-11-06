@@ -132,6 +132,17 @@ export const Events = {
       reminderWindowEnd: z.string().min(1),
     }),
   },
+  // Carries the ids and the message: no table records a reminder yet.
+  reviewReminderRequested: {
+    name: 'review/reminder-requested' as const,
+    schema: z.object({
+      batchId: z.string().min(1),
+      processInstanceId: z.string().uuid(),
+      phaseId: z.string().min(1),
+      reviewerProfileIds: z.array(z.string().uuid()).min(1).optional(),
+      message: z.string().min(1),
+    }),
+  },
   reviewProposalRevisionSubmitted: {
     name: 'review/proposal-revision-submitted' as const,
     schema: z.object({

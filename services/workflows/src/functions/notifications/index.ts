@@ -5,6 +5,7 @@ export * from './sendPhaseTransitionNotification';
 export * from './sendVoteSubmittedNotification';
 export * from './sendProposalRevisionResubmittedNotification';
 export * from './sendReviewPhaseEndingReminder';
+export * from './sendReviewReminder';
 export * from './sendRevisionRequestedNotification';
 export * from './sendReviewSubmittedNotification';
 export * from './sendDecisionUpdateNotification';

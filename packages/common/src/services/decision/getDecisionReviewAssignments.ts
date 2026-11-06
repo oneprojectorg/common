@@ -3,6 +3,8 @@ import { profiles, proposals } from '@op/db/schema';
 import { z } from 'zod';
 
 import { NotFoundError } from '../../utils';
+import { toAccountContact } from '../profile/schemas/accountContact';
+import { withAccountContact } from '../profile/withAccountContact';
 import { getEligibleReviewerProfileIds } from './getEligibleReviewerProfileIds';
 import { getProposalDocumentsContent } from './getProposalDocumentsContent';
 import { getProposalIdsForPhase } from './getProposalsForPhase';
@@ -155,15 +157,11 @@ export async function getDecisionReviewAssignments({
 
   const eligibleReviewersPromise =
     eligibleProfileIds.length > 0
-      ? db
-          .select({
-            id: profiles.id,
-            name: profiles.name,
-            slug: profiles.slug,
-            email: profiles.email,
-          })
-          .from(profiles)
-          .where(inArray(profiles.id, eligibleProfileIds))
+      ? db.query.profiles.findMany({
+          where: { id: { in: eligibleProfileIds } },
+          columns: { id: true, name: true, slug: true },
+          with: withAccountContact,
+        })
       : Promise.resolve([]);
 
   const proposalTemplate = await proposalTemplatePromise;
@@ -300,9 +298,12 @@ export async function getDecisionReviewAssignments({
   return adminDecisionReviewAssignmentsSchema.parse({
     reviewers,
     totalAssignments: assignments.length,
-    eligibleReviewers: eligibleReviewers.sort((a, b) =>
-      (a.name ?? '').localeCompare(b.name ?? ''),
-    ),
+    eligibleReviewers: eligibleReviewers
+      .sort((a, b) => (a.name ?? '').localeCompare(b.name ?? ''))
+      .map(({ account, ...reviewer }) => ({
+        ...reviewer,
+        contact: toAccountContact(account?.authUser),
+      })),
     proposals: assignableProposals.map((proposal) => {
       return {
         id: proposal.id,
