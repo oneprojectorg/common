@@ -85,8 +85,14 @@ export function ReviewerList({
     return getReviewsGroupedByRecommendation(reviews, recommendationOptions);
   }, [reviews, hasOverallRecommendation, recommendationOptions]);
 
+  // Revision-flow assignments are left out on purpose: they wait on the
+  // author or on a re-review, and the panel does not remind them yet.
   const pendingReviewers = useMemo(
-    () => reviewers.filter((reviewer) => reviewer.submittedAt === null),
+    () =>
+      reviewers.filter(
+        (reviewer) =>
+          reviewer.submittedAt === null && isAwaitingReview(reviewer),
+      ),
     [reviewers],
   );
 
@@ -425,17 +431,18 @@ function PendingReviewerRow({
   );
 }
 
-// The reminder workflow only emails reviewers with a pending or in-progress
-// assignment, so any other status would send nothing.
+function isAwaitingReview(reviewer: PendingReviewer): boolean {
+  return (
+    reviewer.status === ProposalReviewAssignmentStatus.PENDING ||
+    reviewer.status === ProposalReviewAssignmentStatus.IN_PROGRESS
+  );
+}
+
 function isRemindable(
   reviewer: PendingReviewer,
   ownProfileId: string | undefined,
 ): boolean {
-  return (
-    reviewer.profile.id !== ownProfileId &&
-    (reviewer.status === ProposalReviewAssignmentStatus.PENDING ||
-      reviewer.status === ProposalReviewAssignmentStatus.IN_PROGRESS)
-  );
+  return reviewer.profile.id !== ownProfileId;
 }
 
 function toRecipient(reviewer: PendingReviewer): ReminderRecipientPreview {
