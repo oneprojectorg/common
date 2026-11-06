@@ -3,7 +3,6 @@ import type { User } from '@op/supabase/lib';
 
 import { ConflictError, ValidationError } from '../../utils';
 import { attachProposalsToTransition } from './attachProposalsToTransition';
-import { isPhasesFromRowsEnabled } from './instancePhases';
 import { lockProcessInstance } from './lockProcessInstance';
 import { assertProposalAdmin, resolveAdvancement } from './proposalAdvancement';
 import { runGenerateReviewAssignments } from './runGenerateReviewAssignments';
@@ -28,7 +27,6 @@ export async function advanceProposal({
   user: User;
 }): Promise<{ processInstanceId: string }> {
   const processInstanceId = await assertProposalAdmin({ proposalId, user });
-  const fromRows = await isPhasesFromRowsEnabled();
 
   const reviewAssignmentInput = await db.transaction(async (tx) => {
     // Same lock every phase writer takes, so a concurrent advance, revert or
@@ -49,7 +47,6 @@ export async function advanceProposal({
       dbClient: tx,
       instance: { id: processInstanceId, ...lockedInstance },
       proposalId,
-      fromRows,
     });
 
     if (!advancement.ok) {

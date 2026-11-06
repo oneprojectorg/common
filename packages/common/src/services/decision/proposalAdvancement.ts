@@ -57,11 +57,9 @@ export async function assertProposalAdmin({
 export async function resolvePhaseAdvancement({
   dbClient,
   instance,
-  fromRows,
 }: {
   dbClient: DbClient;
   instance: AdvancementInstance;
-  fromRows?: boolean;
 }): Promise<PhaseAdvancement> {
   const { currentStateId, instanceData } = instance;
 
@@ -74,7 +72,7 @@ export async function resolvePhaseAdvancement({
   }
 
   const phases =
-    instance.phases ?? (await getPhases({ instance, db: dbClient, fromRows }));
+    instance.phases ?? (await getPhases({ instance, db: dbClient }));
   const currentIndex = phases.findIndex((p) => p.phaseId === currentStateId);
   const currentPhase = phases[currentIndex];
   const previousPhase = phases[currentIndex - 1];
@@ -134,18 +132,12 @@ export async function resolveAdvancement({
   dbClient,
   instance,
   proposalId,
-  fromRows,
 }: {
   dbClient: DbClient;
   instance: AdvancementInstance;
   proposalId: string;
-  fromRows?: boolean;
 }): Promise<PhaseAdvancement> {
-  const advancement = await resolvePhaseAdvancement({
-    dbClient,
-    instance,
-    fromRows,
-  });
+  const advancement = await resolvePhaseAdvancement({ dbClient, instance });
   if (!advancement.ok) {
     return advancement;
   }
