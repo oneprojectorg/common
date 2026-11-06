@@ -54,6 +54,7 @@ export const resolvePhases = async <T extends InstanceWithData>({
   return resolved;
 };
 
+// TODO: remove when instanceData.phases is dropped.
 export const attachBlobPhases = <T extends InstanceWithData>({
   instance,
 }: {
