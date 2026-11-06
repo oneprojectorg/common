@@ -18,12 +18,14 @@ interface InstanceWithData {
 }
 
 // Stays after the migration: an instance whose phases are loaded, by the resolver now or a query relation later.
-export type WithPhases<T> = T & { readonly phases: PhaseInstanceData[] };
+export type InstanceWithPhases<T> = T & {
+  readonly phases: PhaseInstanceData[];
+};
 
-export type WithProfilePhases<
+export type ProfileWithInstancePhases<
   T extends { processInstance: InstanceWithData | null },
 > = Omit<T, 'processInstance'> & {
-  processInstance: WithPhases<NonNullable<T['processInstance']>> | null;
+  processInstance: InstanceWithPhases<NonNullable<T['processInstance']>> | null;
 };
 
 const NO_ROWS_MESSAGE =
@@ -44,7 +46,7 @@ export const resolvePhases = async <T extends InstanceWithData>({
 }: {
   instance: T;
   db?: DbClient;
-}): Promise<WithPhases<T>> => {
+}): Promise<InstanceWithPhases<T>> => {
   const [resolved] = await resolvePhasesForAll({ instances: [instance], db });
   if (!resolved) {
     throw new CommonError(`Phases did not resolve for instance ${instance.id}`);
@@ -57,7 +59,7 @@ export const attachBlobPhases = <T extends InstanceWithData>({
   instance,
 }: {
   instance: T;
-}): WithPhases<T> => ({
+}): InstanceWithPhases<T> => ({
   ...instance,
   phases: [...getInstancePhases(instance.instanceData)],
 });
@@ -68,7 +70,7 @@ export const resolvePhasesForAll = async <T extends InstanceWithData>({
 }: {
   instances: T[];
   db?: DbClient;
-}): Promise<WithPhases<T>[]> => {
+}): Promise<InstanceWithPhases<T>[]> => {
   if (instances.length === 0) {
     return [];
   }
@@ -100,7 +102,7 @@ export const resolveProfilePhases = async <
   profile,
 }: {
   profile: T;
-}): Promise<WithProfilePhases<T>> => ({
+}): Promise<ProfileWithInstancePhases<T>> => ({
   ...profile,
   processInstance: profile.processInstance
     ? await resolvePhases({ instance: profile.processInstance })
@@ -115,7 +117,7 @@ export const resolveProfilePhasesForAll = async <
 }: {
   profiles: T[];
   db?: DbClient;
-}): Promise<WithProfilePhases<T>[]> => {
+}): Promise<ProfileWithInstancePhases<T>[]> => {
   const resolved = await resolvePhasesForAll({
     instances: profiles.flatMap(({ processInstance }) =>
       processInstance ? [processInstance] : [],

@@ -5,10 +5,10 @@ import { logger } from '@op/logging';
 
 import { CommonError } from '../../utils';
 import { buildExpectedTransitions } from './buildExpectedTransitions';
-import type { WithPhases } from './instancePhases';
+import type { InstanceWithPhases } from './instancePhases';
 
 export interface UpdateTransitionsInput {
-  processInstance: WithPhases<ProcessInstance>;
+  processInstance: InstanceWithPhases<ProcessInstance>;
   db?: DbClient;
 }
 

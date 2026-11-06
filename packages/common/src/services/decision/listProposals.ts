@@ -21,7 +21,7 @@ import { getProposalDocumentsContent } from './getProposalDocumentsContent';
 import { getProposalRelationshipData } from './getProposalRelationshipData';
 import { getSelectedProposalIds } from './getSelectedProposalIds';
 import { ballotRankPosition } from './getVoterBallot';
-import type { WithPhases } from './instancePhases';
+import type { InstanceWithPhases } from './instancePhases';
 import { resolvePhaseAdvancement } from './proposalAdvancement';
 import {
   isAnonymousAuthor,
@@ -427,7 +427,7 @@ async function getListAdvanceTarget({
   instance,
   includesNotAdvanced,
 }: {
-  instance: WithPhases<
+  instance: InstanceWithPhases<
     Parameters<typeof resolvePhaseAdvancement>[0]['instance']
   >;
   includesNotAdvanced: boolean;
