@@ -288,7 +288,7 @@ function ReviewerStats({ reviewer }: { reviewer: ReviewerAssignments }) {
 function StatCard({ label, children }: { label: string; children: ReactNode }) {
   return (
     <Card className="gap-2 p-4">
-      <span className="text-label text-muted-foreground">{label}</span>
+      <span className="text-base text-muted-foreground">{label}</span>
       <span className="font-serif text-headline font-light tabular-nums">
         {children}
       </span>
