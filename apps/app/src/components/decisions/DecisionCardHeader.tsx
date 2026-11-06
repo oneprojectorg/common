@@ -1,4 +1,5 @@
 import { getPublicUrl } from '@/utils';
+import { getAvatarImageProps } from '@/utils/getAvatarImageProps';
 import { Badge } from '@op/sense/Badge';
 import { Header3 } from '@op/sense/Header';
 import { ProfileAvatar } from '@op/sense/ProfileAvatar';
@@ -38,7 +39,7 @@ export const DecisionCardHeader = ({
         <div className="flex items-center gap-2">
           <ProfileAvatar
             name={stewardName}
-            src={getPublicUrl(stewardAvatarPath)}
+            {...getAvatarImageProps(getPublicUrl(stewardAvatarPath))}
             alt={stewardName}
             size="sm"
           />

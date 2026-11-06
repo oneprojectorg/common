@@ -1,10 +1,10 @@
 'use client';
 
 import { getPublicUrl } from '@/utils';
+import { getAvatarImageProps } from '@/utils/getAvatarImageProps';
 import { Dialog, DialogContent, DialogTitle } from '@op/sense/Dialog';
 import { ProfileAvatar } from '@op/sense/ProfileAvatar';
 import { Spinner } from '@op/sense/Spinner';
-import Image from 'next/image';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -39,19 +39,9 @@ export const ProfileSwitchingModal = ({
           <div className="relative flex size-28">
             <ProfileAvatar
               name={profileName}
-              src={avatarUrl}
+              {...getAvatarImageProps(avatarUrl)}
               alt={switchingTo}
               className="size-full"
-              imageRender={
-                avatarUrl ? (
-                  <Image
-                    src={avatarUrl}
-                    alt={switchingTo}
-                    fill
-                    className="object-cover"
-                  />
-                ) : undefined
-              }
             />
             <div className="absolute start-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
               <Spinner />

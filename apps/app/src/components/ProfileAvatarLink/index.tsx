@@ -1,5 +1,5 @@
+import { getAvatarImageProps } from '@/utils/getAvatarImageProps';
 import { ProfileAvatar } from '@op/sense/ProfileAvatar';
-import Image from 'next/image';
 
 import { Link } from '@/lib/i18n';
 
@@ -41,7 +41,7 @@ interface ProfileAvatarLinkProps {
 /**
  * A `ProfileAvatar` wrapped in the locale-aware `Link` — the linked avatar we
  * render all over the app. Owns the circular focus ring, hover tint, and the
- * `next/image` passthrough so callers just supply `href`/`name`/`src`. Without
+ * optimized image `srcSet` so callers just supply `href`/`name`/`src`. Without
  * `href` it's a plain, non-interactive avatar.
  */
 export const ProfileAvatarLink = ({
@@ -55,23 +55,10 @@ export const ProfileAvatarLink = ({
   const avatar = (
     <ProfileAvatar
       name={name}
-      src={src}
+      {...getAvatarImageProps(src)}
       alt={alt}
       size={size}
       className={className}
-      imageRender={
-        src ? (
-          // 48px covers the largest rendered avatar (`sm:size-12`); without
-          // `sizes`, a fill image fetches the 100vw candidate.
-          <Image
-            src={src}
-            alt={alt}
-            fill
-            sizes="48px"
-            className="object-cover"
-          />
-        ) : undefined
-      }
     />
   );
 

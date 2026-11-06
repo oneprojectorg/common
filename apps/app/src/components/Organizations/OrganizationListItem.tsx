@@ -1,4 +1,5 @@
 import { getPublicUrl } from '@/utils';
+import { getAvatarImageProps } from '@/utils/getAvatarImageProps';
 import type { Organization } from '@op/api/encoders';
 import { Avatar, AvatarFallback, AvatarImage } from '@op/sense/Avatar';
 import { ProfileItem } from '@op/sense/ProfileItem';
@@ -40,7 +41,7 @@ export const OrganizationListItem = ({
         <Avatar>
           {avatarUrl ? (
             <AvatarImage
-              src={avatarUrl}
+              {...getAvatarImageProps(avatarUrl)}
               alt={`${organization.profile.name} avatar`}
             />
           ) : null}

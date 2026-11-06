@@ -3,6 +3,7 @@
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { getPublicUrl } from '@/utils';
 import { useRequiredUser } from '@/utils/UserProvider';
+import { getAvatarImageProps } from '@/utils/getAvatarImageProps';
 import { trpc } from '@op/api/client';
 import { EntityType, Profile } from '@op/api/encoders';
 import { useAuthLogout, useMediaQuery } from '@op/hooks';
@@ -112,11 +113,7 @@ const ProfileMenuRow = ({
     <>
       <ProfileAvatar
         name={profile.name}
-        src={
-          profile.avatarImage?.name
-            ? (getPublicUrl(profile.avatarImage.name) ?? undefined)
-            : undefined
-        }
+        {...getAvatarImageProps(getPublicUrl(profile.avatarImage?.name))}
         alt=""
         size="sm"
       />
@@ -330,11 +327,9 @@ const AvatarMenuContent = ({
         <div className="flex items-center gap-2 p-2">
           <ProfileAvatar
             name={user.profile.name}
-            src={
-              user.profile.avatarImage?.name
-                ? (getPublicUrl(user.profile.avatarImage.name) ?? undefined)
-                : undefined
-            }
+            {...getAvatarImageProps(
+              getPublicUrl(user.profile.avatarImage?.name),
+            )}
             alt=""
           />
           <div className="flex min-w-0 flex-1 flex-col">

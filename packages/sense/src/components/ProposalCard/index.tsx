@@ -33,6 +33,8 @@ import { Toggle } from '../ui/toggle';
 export interface ProposalCardAuthor {
   name: string;
   avatarSrc?: string;
+  /** Resized candidates for `avatarSrc`, so the card does not load the full upload. */
+  avatarSrcSet?: string;
   /** Profile link for the author label. Rendered with `linkComponent`. */
   href?: string;
 }
@@ -343,7 +345,11 @@ function AuthorRow({
             )}
           >
             {author.avatarSrc ? (
-              <AvatarImage src={author.avatarSrc} alt="" />
+              <AvatarImage
+                src={author.avatarSrc}
+                srcSet={author.avatarSrcSet}
+                alt=""
+              />
             ) : null}
             <AvatarFallback name={author.name} />
           </Avatar>

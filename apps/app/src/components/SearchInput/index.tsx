@@ -1,5 +1,6 @@
 import { useCanLinkToProfile } from '@/hooks/useCanLinkToProfile';
 import { getPublicUrl } from '@/utils';
+import { getAvatarImageProps } from '@/utils/getAvatarImageProps';
 import { useLocalStorage } from '@/utils/useLocalStorage';
 import { trpc } from '@op/api/client';
 import { EntityType, ProfileSearchResult } from '@op/api/encoders';
@@ -341,7 +342,10 @@ const ProfileCommandItem = ({
     >
       <Avatar className="aspect-square size-8 shrink-0">
         {avatarSrc ? (
-          <AvatarImage src={avatarSrc} alt={`${profile.name} avatar`} />
+          <AvatarImage
+            {...getAvatarImageProps(avatarSrc)}
+            alt={`${profile.name} avatar`}
+          />
         ) : null}
         <AvatarFallback name={profile.name} />
       </Avatar>

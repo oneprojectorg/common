@@ -1,5 +1,3 @@
-import type { ComponentProps } from 'react';
-
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 
 interface ProfileAvatarProps {
@@ -15,10 +13,10 @@ interface ProfileAvatarProps {
   size?: 'default' | 'sm' | 'lg';
   className?: string;
   /**
-   * Element to render the image through — e.g. a Next.js `<Image>` — so
-   * consumers keep image optimization. Forwarded to AvatarImage's `render`.
+   * Resized candidates for `src` (e.g. from an image optimizer), so the avatar
+   * does not download the full-size upload.
    */
-  imageRender?: ComponentProps<typeof AvatarImage>['render'];
+  srcSet?: string;
 }
 
 /**
@@ -36,7 +34,7 @@ function ProfileAvatar({
   alt,
   size,
   className,
-  imageRender,
+  srcSet,
 }: ProfileAvatarProps) {
   // Callers legitimately pass `alt={profile.name ?? ''}`. An empty name on a
   // `role="img"` is a nameless image — worse than no role at all — so an
@@ -51,7 +49,7 @@ function ProfileAvatar({
         ? { role: 'img', 'aria-label': alt }
         : { 'aria-hidden': true })}
     >
-      {src ? <AvatarImage src={src} alt={alt} render={imageRender} /> : null}
+      {src ? <AvatarImage src={src} srcSet={srcSet} alt={alt} /> : null}
       <AvatarFallback name={name ?? undefined} />
     </Avatar>
   );

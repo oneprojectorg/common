@@ -2,6 +2,7 @@
 
 import { getPublicUrl } from '@/utils';
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
+import { getAvatarImageProps } from '@/utils/getAvatarImageProps';
 import { type RouterOutput, trpc } from '@op/api/client';
 import { nextCursor } from '@op/common/client';
 import { useInfiniteScroll } from '@op/hooks';
@@ -221,7 +222,7 @@ const OrganizationCard = ({
   >
     <ProfileAvatar
       name={organization.name}
-      src={getPublicUrl(organization.avatarImage?.name)}
+      {...getAvatarImageProps(getPublicUrl(organization.avatarImage?.name))}
       alt=""
       size="lg"
       className="size-12"

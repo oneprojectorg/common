@@ -1,6 +1,7 @@
 'use client';
 
 import { getPublicUrl } from '@/utils';
+import { getAvatarImageProps } from '@/utils/getAvatarImageProps';
 import { trpc } from '@op/api/client';
 import { type DecisionProfile, ProcessStatus } from '@op/api/encoders';
 import { PAGE_LIMIT, nextCursor } from '@op/common/client';
@@ -148,7 +149,7 @@ const ProcessCard = ({ decision }: { decision: DecisionProfile }) => {
           <div className="flex items-center gap-2">
             <ProfileAvatar
               name={host.name}
-              src={getPublicUrl(host.avatarImage?.name)}
+              {...getAvatarImageProps(getPublicUrl(host.avatarImage?.name))}
               alt=""
               size="sm"
             />

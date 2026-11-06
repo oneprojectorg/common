@@ -3,6 +3,7 @@
 import { useCanLinkToProfile } from '@/hooks/useCanLinkToProfile';
 import { useProposalEngagement } from '@/hooks/useProposalEngagement';
 import { getPublicUrl } from '@/utils';
+import { getAvatarImageProps } from '@/utils/getAvatarImageProps';
 import { ProposalStatus, Visibility } from '@op/api/encoders';
 import {
   type Proposal,
@@ -68,13 +69,15 @@ export function useProposalCardData({
     !proposal.submittedBy.isAnonymous
       ? `/profile/${proposal.submittedBy.slug}`
       : undefined;
+  const avatar = getAvatarImageProps(
+    getPublicUrl(proposal.submittedBy?.avatarImage?.name),
+  );
   const authors = proposal.submittedBy
     ? [
         {
           name: proposal.submittedBy.name || proposal.submittedBy.slug || '',
-          avatarSrc: proposal.submittedBy.avatarImage?.name
-            ? (getPublicUrl(proposal.submittedBy.avatarImage.name) ?? undefined)
-            : undefined,
+          avatarSrc: avatar.src,
+          avatarSrcSet: avatar.srcSet,
           href: authorHref,
         },
       ]

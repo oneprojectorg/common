@@ -1,6 +1,7 @@
 'use client';
 
 import { getPublicUrl } from '@/utils';
+import { getAvatarImageProps } from '@/utils/getAvatarImageProps';
 import { trpc } from '@op/api/client';
 import { Avatar, AvatarFallback, AvatarImage } from '@op/sense/Avatar';
 import { Badge } from '@op/sense/Badge';
@@ -136,7 +137,10 @@ const AddUserToOrgModalContent = ({
             avatar={
               <Avatar size="lg">
                 {avatarUrl ? (
-                  <AvatarImage src={avatarUrl} alt={`${userName} avatar`} />
+                  <AvatarImage
+                    {...getAvatarImageProps(avatarUrl)}
+                    alt={`${userName} avatar`}
+                  />
                 ) : null}
                 <AvatarFallback name={userName} />
               </Avatar>

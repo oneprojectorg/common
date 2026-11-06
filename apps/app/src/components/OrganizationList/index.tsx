@@ -77,6 +77,7 @@ export const OrganizationList = ({
                             src={headerUrl}
                             alt=""
                             fill
+                            sizes="192px"
                             className="object-cover"
                           />
                         ) : (
@@ -91,6 +92,7 @@ export const OrganizationList = ({
                             src={avatarUrl}
                             alt=""
                             fill
+                            sizes="(max-width: 639px) 64px, 120px"
                             className="object-cover"
                           />
                         ) : (
