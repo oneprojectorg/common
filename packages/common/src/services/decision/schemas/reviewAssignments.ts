@@ -110,7 +110,6 @@ export const reviewerAssignmentsSchema = reviewAssignmentListSchema.extend({
   assignedCount: z.number(),
   submittedCount: z.number(),
   draftCount: z.number(),
-  /** Open assignments still owed a review, as the reviewers tab counts them. */
   remainingCount: z.number().int(),
   lastSubmittedAt: z.string().nullable(),
 });

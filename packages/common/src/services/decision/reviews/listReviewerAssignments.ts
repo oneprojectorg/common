@@ -126,7 +126,6 @@ async function getReviewerQueueTotals({
         sql<number>`(count(*) filter (where ${proposalReviews.state} = ${ProposalReviewState.DRAFT}))::int`.mapWith(
           Number,
         ),
-      // Same rule as the reviewers tab, so a reminder names the same count.
       remainingCount:
         sql<number>`(count(*) filter (where ${openAssignmentFilter()}))::int`.mapWith(
           Number,

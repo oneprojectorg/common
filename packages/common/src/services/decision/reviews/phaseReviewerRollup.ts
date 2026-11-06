@@ -25,7 +25,6 @@ import { escapeLikePattern, splitSearchWords } from '../utils/search';
 
 export type PhaseReviewerRollup = ReturnType<typeof buildPhaseReviewerRollup>;
 
-/** An assignment the reviewer still owes a review on: open and not deleted. */
 export function openAssignmentFilter(): SQL | undefined {
   return and(
     inArray(proposalReviewAssignments.status, [

@@ -200,7 +200,6 @@ function ReviewerAssignmentsContent({
         <ReviewerHeader name={name} email={reviewer.email} />
         {summary.remainingCount > 0 || summary.total > 0 ? (
           <div className="flex flex-wrap items-center gap-2">
-            {/* Hidden, not disabled: with nothing open there is nothing to remind. */}
             {summary.remainingCount > 0 ? (
               <Button onClick={openReminder}>
                 <LuBell data-icon="inline-start" />

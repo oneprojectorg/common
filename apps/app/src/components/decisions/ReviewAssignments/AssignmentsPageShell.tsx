@@ -6,7 +6,6 @@ import { getTranslations } from '@/lib/i18n';
 import { ButtonLink } from '@/components/ButtonLink';
 import { UserAvatarMenu } from '@/components/SiteHeader/UserAvatarMenu';
 
-/** Shared shell: a sticky Back + account row at the gutters, then the body at the page width. */
 export async function AssignmentsPageShell({
   backHref,
   children,
@@ -39,7 +38,6 @@ export function AssignmentsTopRow({ children }: { children: ReactNode }) {
 }
 
 export function AssignmentsMain({ children }: { children: ReactNode }) {
-  // 86rem — the page width the design was composed at.
   return (
     <main className="mx-auto flex w-full max-w-page flex-col gap-8 px-4 pt-10 pb-18 md:px-8">
       {children}
