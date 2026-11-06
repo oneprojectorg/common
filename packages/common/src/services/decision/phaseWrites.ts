@@ -22,8 +22,7 @@ type StoredPhases = Pick<LockedProcessInstance, 'status' | 'currentStateId'> & {
 
 /**
  * Runs a phase endpoint's row write in a transaction under the instance lock,
- * checks and renumbers the rows it leaves, reschedules the transitions of a
- * decision past draft, then clears its cache.
+ * then clears its cache. See {@link writePhasesInTx}.
  */
 export const writePhases = async <T>({
   processInstanceId,
@@ -37,47 +36,70 @@ export const writePhases = async <T>({
       db: tx,
       instanceId: processInstanceId,
     });
-    const before = await listPhasesForWrite({
-      tx,
-      processInstanceId,
-      instanceData: locked.instanceData,
-    });
 
-    const result = await write(tx, {
-      phases: before,
-      status: locked.status,
-      currentStateId: locked.currentStateId,
-    });
-
-    const listed = await listPhases({ db: tx, processInstanceId });
-    assertPhaseRowInvariants({
-      rows: listed,
-      previousPhaseIds: before.map(phaseIdOf),
-      instance: locked,
-    });
-    const phases = await renumberPhases({
-      tx,
-      rows: listed,
-      previousRowIds: new Set(before.map(({ id }) => id)),
-    });
-
-    if (locked.status !== ProcessStatus.DRAFT) {
-      await updateTransitionsForProcess({
-        processInstance: {
-          id: processInstanceId,
-          instanceData: locked.instanceData,
-        },
-        phases,
-        db: tx,
-      });
-    }
-
-    return { result, phases };
+    return writePhasesInTx({ tx, processInstanceId, locked, write });
   });
 
   await invalidateDecisionInstance(processInstanceId);
 
   return written;
+};
+
+/**
+ * Runs a row write for an instance the caller has locked, checks and
+ * renumbers the rows it leaves, and reschedules the transitions of a decision
+ * past draft.
+ */
+export const writePhasesInTx = async <T>({
+  tx,
+  processInstanceId,
+  locked,
+  write,
+  syncTransitions = true,
+}: {
+  tx: TransactionType;
+  processInstanceId: string;
+  locked: LockedProcessInstance;
+  write: (tx: TransactionType, stored: StoredPhases) => Promise<T>;
+  // False when the caller syncs transitions itself after the write.
+  syncTransitions?: boolean;
+}): Promise<{ result: T; phases: ProcessPhaseWithProfile[] }> => {
+  const before = await listPhasesForWrite({
+    tx,
+    processInstanceId,
+    instanceData: locked.instanceData,
+  });
+
+  const result = await write(tx, {
+    phases: before,
+    status: locked.status,
+    currentStateId: locked.currentStateId,
+  });
+
+  const listed = await listPhases({ db: tx, processInstanceId });
+  assertPhaseRowInvariants({
+    rows: listed,
+    previousPhaseIds: before.map(phaseIdOf),
+    instance: locked,
+  });
+  const phases = await renumberPhases({
+    tx,
+    rows: listed,
+    previousRowIds: new Set(before.map(({ id }) => id)),
+  });
+
+  if (syncTransitions && locked.status !== ProcessStatus.DRAFT) {
+    await updateTransitionsForProcess({
+      processInstance: {
+        id: processInstanceId,
+        instanceData: locked.instanceData,
+      },
+      phases,
+      db: tx,
+    });
+  }
+
+  return { result, phases };
 };
 
 // A row added at a taken sortOrder goes before the one already there.

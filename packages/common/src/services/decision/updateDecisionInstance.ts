@@ -23,16 +23,20 @@ import {
   type PhaseEndDateChange,
   getNormalizedCategories,
   getUpdatedInstanceData,
-  hasInstanceDataUpdate,
+  hasNonPhaseUpdate,
+  hasPhaseUpdates,
 } from './getUpdatedInstanceData';
-import { lockProcessInstanceOrThrow } from './lockProcessInstance';
+import { getPhases } from './instancePhases';
+import {
+  type LockedProcessInstance,
+  lockProcessInstanceOrThrow,
+} from './lockProcessInstance';
 import {
   type ProcessPhaseWithProfile,
-  assertPhaseRowInvariants,
-  listPhases,
   reconcilePhases,
   toInstanceDataPhase,
 } from './phaseHelpers';
+import { writePhasesInTx } from './phaseWrites';
 import { ensureProposalTaxonomyTerms } from './proposalTaxonomy';
 import { schemaValidator } from './schemaValidator';
 import type {
@@ -142,7 +146,9 @@ export const updateDecisionInstance = async ({
     );
   }
 
-  const hasDataUpdate = hasInstanceDataUpdate(instanceDataFields);
+  const hasDataUpdate =
+    hasNonPhaseUpdate(instanceDataFields) ||
+    hasPhaseUpdates(instanceDataFields);
   if (Object.keys(updateData).length === 0 && !hasDataUpdate) {
     return {
       profile: await getDecisionProfile(profileId),
@@ -151,24 +157,21 @@ export const updateDecisionInstance = async ({
     };
   }
 
-  const isBeingPublished =
-    status === ProcessStatus.PUBLISHED &&
-    existingInstance.status === ProcessStatus.DRAFT;
-
   // Use a transaction for updating the instance and transitions together
   const written = await db.transaction(async (tx) => {
     const locked = await lockProcessInstanceOrThrow({ db: tx, instanceId });
+    const isBeingPublished =
+      status === ProcessStatus.PUBLISHED &&
+      locked.status === ProcessStatus.DRAFT;
+    const nextStatus = status ?? locked.status;
+
     const saved: SavedInstanceData = hasDataUpdate
       ? await saveInstanceData({
           tx,
           instanceId,
           processId: existingInstance.processId,
-          stored: locked.instanceData as DecisionInstanceData,
+          instance: { ...locked, status: nextStatus },
           update: instanceDataFields,
-          instance: {
-            status: status ?? locked.status,
-            currentStateId: locked.currentStateId,
-          },
         })
       : { phaseEndDateChanges: [] };
 
@@ -197,17 +200,17 @@ export const updateDecisionInstance = async ({
     await syncTransitions({
       tx,
       updatedInstance,
-      isDraft: (status ?? existingInstance.status) === ProcessStatus.DRAFT,
+      isDraft: nextStatus === ProcessStatus.DRAFT,
       isBeingPublished,
       phases: saved.phases,
     });
 
-    return saved;
+    return { ...saved, isBeingPublished };
   });
 
   const profile = await getDecisionProfile(profileId);
 
-  if (isBeingPublished) {
+  if (written.isBeingPublished) {
     await sendQueuedInvites({ profileId, profileSlug: profile.slug });
     waitUntil(trackAdminSetProcess(user.id, instanceId));
   }
@@ -221,7 +224,7 @@ export const updateDecisionInstance = async ({
     // The rows this save left, so the caller can skip reading them again.
     phases: written.phases,
     phaseEndDateChanges: written.phaseEndDateChanges,
-    didPublish: isBeingPublished,
+    didPublish: written.isBeingPublished,
   };
 };
 
@@ -331,58 +334,78 @@ async function saveInstanceData({
   tx,
   instanceId,
   processId,
-  stored,
-  update,
   instance,
+  update,
 }: {
   tx: TransactionType;
   instanceId: string;
   processId: string | null;
-  stored: DecisionInstanceData;
+  // The locked row, carrying the status this save leaves.
+  instance: LockedProcessInstance;
   update: InstanceDataUpdate;
-  instance: { status: string | null; currentStateId: string | null };
 }): Promise<SavedInstanceData> {
-  const phaseRows = await listPhases({ db: tx, processInstanceId: instanceId });
-  // TODO: drop the blob fallback when instanceData.phases is dropped.
-  const currentPhases =
-    phaseRows.length > 0 ? phaseRows.map(toInstanceDataPhase) : stored.phases;
+  const stored = instance.instanceData as DecisionInstanceData;
 
-  const updated = getUpdatedInstanceData({
-    existing: { ...stored, phases: currentPhases },
-    update,
+  if (!hasPhaseUpdates(update)) {
+    const phases = await getPhases({
+      instance: { id: instanceId, instanceData: stored },
+      db: tx,
+    });
+    const updated = getUpdatedInstanceData({
+      existing: stored,
+      existingPhases: phases,
+      update,
+    });
+
+    if (update.proposalTemplate) {
+      await assertVoterCostField({
+        instanceData: { ...(updated.instanceData ?? stored), phases },
+        processId,
+      });
+    }
+
+    return {
+      ...(updated.instanceData && { instanceData: updated.instanceData }),
+      phaseEndDateChanges: [],
+    };
+  }
+
+  const { result: updated, phases } = await writePhasesInTx({
+    tx,
+    processInstanceId: instanceId,
+    locked: instance,
+    syncTransitions: false,
+    write: async (tx, { phases: rows }) => {
+      const merged = getUpdatedInstanceData({
+        existing: stored,
+        existingPhases: rows.map(toInstanceDataPhase),
+        update,
+      });
+
+      if (merged.phases) {
+        await reconcilePhases({
+          tx,
+          processInstanceId: instanceId,
+          existing: rows,
+          phases: merged.phases,
+        });
+      }
+
+      return merged;
+    },
   });
 
-  const rows =
-    updated.phases &&
-    (await reconcilePhases({
-      tx,
-      processInstanceId: instanceId,
-      existing: phaseRows,
-      phases: updated.phases,
-    }));
-  if (rows) {
-    assertPhaseRowInvariants({
-      rows,
-      previousPhaseIds: currentPhases.map(({ phaseId }) => phaseId),
-      instance,
-    });
-  }
-
-  if (updated.phases || update.proposalTemplate) {
-    await assertVoterCostField({
-      instanceData: {
-        ...(updated.instanceData ?? stored),
-        phases: updated.phases ?? currentPhases,
-      },
-      processId,
-    });
-  }
+  await assertVoterCostField({
+    instanceData: {
+      ...(updated.instanceData ?? stored),
+      phases: phases.map(toInstanceDataPhase),
+    },
+    processId,
+  });
 
   return {
-    ...(updated.instanceData && {
-      instanceData: { ...updated.instanceData, phases: stored.phases },
-    }),
-    phases: rows,
+    ...(updated.instanceData && { instanceData: updated.instanceData }),
+    phases,
     phaseEndDateChanges: updated.phaseEndDateChanges,
   };
 }
