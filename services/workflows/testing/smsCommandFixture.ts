@@ -22,11 +22,12 @@ import {
   advanceInstancePhase,
 } from '@op/common/testing/helpers';
 import { mockCollab } from '@op/common/testing/mocks/collab';
-import { db, eq, inArray } from '@op/db/client';
+import { db, eq, inArray, or } from '@op/db/client';
 import {
   ProcessStatus,
   ProposalStatus,
   processInstances,
+  processPhases,
   profiles,
   taxonomyTerms,
 } from '@op/db/schema';
@@ -284,7 +285,7 @@ export class SmsCommandFixture {
     phaseId?: string;
     attestation: string;
   }) {
-    const { phases } = await updateDecisionInstance({
+    await updateDecisionInstance({
       instanceId,
       phases: [
         {
@@ -294,7 +295,6 @@ export class SmsCommandFixture {
       ],
       user: userOf(owner),
     });
-    this.profileIds.push(...(phases ?? []).map(({ profileId }) => profileId));
   }
 
   async setStatus({
@@ -385,7 +385,25 @@ export class SmsCommandFixture {
 
   private async cleanup() {
     if (this.profileIds.length > 0) {
-      await db.delete(profiles).where(inArray(profiles.id, this.profileIds));
+      // An instance's phase profiles outlive it unless deleted with it.
+      await db
+        .delete(profiles)
+        .where(
+          or(
+            inArray(profiles.id, this.profileIds),
+            inArray(
+              profiles.id,
+              db
+                .select({ id: processPhases.profileId })
+                .from(processPhases)
+                .innerJoin(
+                  processInstances,
+                  eq(processInstances.id, processPhases.processInstanceId),
+                )
+                .where(inArray(processInstances.profileId, this.profileIds)),
+            ),
+          ),
+        );
     }
     if (this.termIds.length > 0) {
       await db
