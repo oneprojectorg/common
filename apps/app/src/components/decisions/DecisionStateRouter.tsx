@@ -5,8 +5,6 @@ import { isLastPhase, isReviewPhase, isVotingPhase } from '@op/common/client';
 import { notFound } from 'next/navigation';
 
 import { ProposalSheet } from './ProposalSheet/ProposalSheet';
-import { ProposalSheetBody } from './ProposalSheet/ProposalSheetBody';
-import { ProposalSheetComments } from './ProposalSheet/ProposalSheetComments';
 import { ProposalSheetProvider } from './ProposalSheetProvider';
 import { FinalPhaseManualSelectionPage } from './pages/FinalPhaseManualSelectionPage';
 import { ResultsPage } from './pages/ResultsPage';
@@ -164,11 +162,7 @@ export function DecisionStateRouter({
           decisionSlug={decisionSlug}
         />
       )}
-      <ProposalSheet>
-        <ProposalSheetBody>
-          <ProposalSheetComments />
-        </ProposalSheetBody>
-      </ProposalSheet>
+      <ProposalSheet />
     </ProposalSheetProvider>
   );
 }

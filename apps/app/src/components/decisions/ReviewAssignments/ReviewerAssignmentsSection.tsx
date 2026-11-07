@@ -30,8 +30,6 @@ import { LuBell, LuListChecks, LuUserX, LuUsers } from 'react-icons/lu';
 import { useTranslations } from '@/lib/i18n';
 
 import { ProposalSheet } from '../ProposalSheet/ProposalSheet';
-import { ProposalSheetBody } from '../ProposalSheet/ProposalSheetBody';
-import { ProposalSheetComments } from '../ProposalSheet/ProposalSheetComments';
 import { ProposalSheetProvider } from '../ProposalSheetProvider';
 import { proposalReviewsHref } from '../proposalHrefs';
 import type { ProposalSheetRoute } from '../proposalSheetState';
@@ -116,11 +114,7 @@ export function ReviewerAssignmentsSection({
           />
         </Suspense>
       </APIErrorBoundary>
-      <ProposalSheet>
-        <ProposalSheetBody>
-          <ProposalSheetComments />
-        </ProposalSheetBody>
-      </ProposalSheet>
+      <ProposalSheet />
     </ProposalSheetProvider>
   );
 }

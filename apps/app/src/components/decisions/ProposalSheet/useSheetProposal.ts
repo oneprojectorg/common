@@ -9,7 +9,7 @@ export interface SheetProposal {
   decisionRoot: string;
 }
 
-/** Set by `ProposalSheet` for the proposal it shows. */
+/** Set by `ProposalSheetShell` for the proposal it shows. */
 export const SheetProposalContext = createContext<SheetProposal | null>(null);
 
 /**
@@ -20,7 +20,9 @@ export function useSheetProposal() {
   const sheetProposal = useContext(SheetProposalContext);
 
   if (!sheetProposal) {
-    throw new Error('useSheetProposal must be called inside ProposalSheet');
+    throw new Error(
+      'useSheetProposal must be called inside ProposalSheetShell',
+    );
   }
 
   const [proposal] = trpc.decision.getProposal.useSuspenseQuery({
