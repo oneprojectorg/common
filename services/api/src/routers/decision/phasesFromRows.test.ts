@@ -138,14 +138,6 @@ const leaveOnlyRows = (
     endDate: ROW_END,
   });
 
-const moveToRows = async (
-  testData: TestDecisionsDataManager,
-  instanceId: string,
-) => {
-  await testData.createPhaseRows(instanceId);
-  await emptyBlobPhases(instanceId);
-};
-
 const rowPhases = (phaseIds: string[]) =>
   phaseIds.map((phaseId) => ({
     phaseId,
@@ -190,29 +182,6 @@ describe('with instanceData.phases empty', () => {
     ).toEqual(rowPhases(['initial', 'final']));
   });
 
-  it('rejects a blob phase edit once the decision has rows', async ({
-    task,
-    onTestFinished,
-  }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const setup = await testData.createDecisionSetup({
-      instanceCount: 1,
-      grantAccess: true,
-      processSchema: manualSchema,
-    });
-    const instanceId = setup.instance.instance.id;
-    await moveToRows(testData, instanceId);
-
-    const caller = await createAuthenticatedCaller(setup.userEmail);
-
-    await expect(
-      caller.decision.updateDecisionInstance({
-        instanceId,
-        phases: [{ phaseId: 'initial', headline: 'Edited in the blob' }],
-      }),
-    ).rejects.toThrow(/stored as rows/i);
-  });
-
   it('runs a due transition in the sweep', async ({ task, onTestFinished }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
     const setup = await testData.createDecisionSetup({
@@ -221,7 +190,7 @@ describe('with instanceData.phases empty', () => {
       processSchema: dateSchema,
     });
     const instanceId = setup.instance.instance.id;
-    await moveToRows(testData, instanceId);
+    await emptyBlobPhases(instanceId);
     await db.insert(decisionProcessTransitions).values({
       processInstanceId: instanceId,
       fromStateId: 'initial',
@@ -260,7 +229,7 @@ describe('with instanceData.phases empty', () => {
       .update(processInstances)
       .set({ currentStateId: 'voting' })
       .where(eq(processInstances.id, instanceId));
-    await moveToRows(testData, instanceId);
+    await emptyBlobPhases(instanceId);
 
     const caller = await createAuthenticatedCaller(setup.userEmail);
     const vote = await caller.decision.submitVote({
@@ -279,7 +248,7 @@ describe('with instanceData.phases empty', () => {
       processSchema: manualSchema,
     });
     const instanceId = setup.instance.instance.id;
-    await moveToRows(testData, instanceId);
+    await emptyBlobPhases(instanceId);
 
     const caller = await createAuthenticatedCaller(setup.userEmail);
     const draft = await caller.decision.createProposal({
@@ -316,7 +285,7 @@ describe('with instanceData.phases empty', () => {
       proposalData: { title: 'Rows proposal' },
       status: ProposalStatus.SUBMITTED,
     });
-    await moveToRows(testData, instanceId);
+    await emptyBlobPhases(instanceId);
 
     const caller = await createAuthenticatedCaller(setup.userEmail);
     await caller.decision.transitionFromPhase({ instanceId });
@@ -500,6 +469,7 @@ describe('getInstance with hideBudget', () => {
   it('strips phase budgets from the blob', async ({ task, onTestFinished }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
     const { instanceId, caller } = await createHiddenBudgetDecision(testData);
+    await testData.removePhaseRows(instanceId);
 
     const instance = await caller.decision.getInstance({ instanceId });
 
@@ -511,7 +481,9 @@ describe('getInstance with hideBudget', () => {
   it('strips phase budgets from the rows', async ({ task, onTestFinished }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
     const { instanceId, caller } = await createHiddenBudgetDecision(testData);
-    await moveToRows(testData, instanceId);
+    await testData.leaveOnlyPhaseRows(instanceId, {
+      settings: { budget: 1000 },
+    });
 
     const instance = await caller.decision.getInstance({ instanceId });
 

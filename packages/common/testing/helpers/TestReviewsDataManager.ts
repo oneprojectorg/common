@@ -24,6 +24,7 @@ import {
 } from '../data/review-data';
 import { supabaseTestAdminClient } from '../supabase';
 import { TestDecisionsDataManager } from './TestDecisionsDataManager';
+import { syncPhaseRows } from './phaseRowFixtures';
 
 type DecisionProcessSchema = NonNullable<
   Parameters<TestDecisionsDataManager['createDecisionSetup']>[0]
@@ -239,6 +240,7 @@ export class TestReviewsDataManager {
         },
       })
       .where(eq(processInstances.id, instanceId));
+    await syncPhaseRows(instanceId, phases);
   }
 
   /**
@@ -281,6 +283,7 @@ export class TestReviewsDataManager {
         },
       })
       .where(eq(processInstances.id, instanceId));
+    await syncPhaseRows(instanceId, phases);
   }
 
   /** Sets the rubric template on a process instance for review API tests. */
@@ -345,6 +348,7 @@ export class TestReviewsDataManager {
         },
       })
       .where(eq(processInstances.id, instanceId));
+    await syncPhaseRows(instanceId, phases);
   }
 
   /** Creates a single review assignment and the minimum related data it needs. */

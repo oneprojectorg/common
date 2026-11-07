@@ -1,10 +1,14 @@
 import { TestDecisionsDataManager } from '@op/common/testing';
 import { db } from '@op/db/client';
 import {
+  EntityType,
   ProcessStatus,
   decisionProcesses,
   processInstances,
+  processPhases,
+  profiles,
 } from '@op/db/schema';
+import { randomUUID } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
@@ -128,6 +132,70 @@ describe.concurrent('listLegacyInstances', () => {
       expect(instance.name).toMatch(/^Legacy Instance/);
       expect(instance.status).toBe('published');
     });
+  });
+
+  it('reads the phases from rows when the instance has them', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({ instanceCount: 0 });
+
+    const [process] = await db
+      .insert(decisionProcesses)
+      .values({
+        name: `Legacy Process ${task.id}`,
+        description: 'A legacy process',
+        processSchema: legacyProcessSchema,
+        createdByProfileId: setup.organization.profileId,
+      })
+      .returning();
+    if (!process) {
+      throw new Error('Failed to create the legacy process');
+    }
+    const [instance] = await db
+      .insert(processInstances)
+      .values({
+        name: 'Legacy Instance With Rows',
+        processId: process.id,
+        ownerProfileId: setup.organization.profileId,
+        instanceData: legacyInstanceData,
+        currentStateId: 'submission',
+        status: ProcessStatus.PUBLISHED,
+        profileId: null,
+      })
+      .returning();
+    const [phaseProfile] = await db
+      .insert(profiles)
+      .values({
+        type: EntityType.PHASE,
+        name: 'Submission',
+        slug: randomUUID().slice(0, 8),
+      })
+      .returning();
+    if (!instance || !phaseProfile) {
+      throw new Error('Failed to create the legacy instance or its phase');
+    }
+    testData.trackProfileForCleanup(phaseProfile.id);
+    const rowEndDate = new Date(
+      Date.now() + 30 * 24 * 60 * 60 * 1000,
+    ).toISOString();
+    await db.insert(processPhases).values({
+      processInstanceId: instance.id,
+      sortOrder: 0,
+      profileId: phaseProfile.id,
+      data: { phaseId: 'submission', endDate: rowEndDate },
+    });
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+    const result = await caller.decision.listLegacyInstances({
+      ownerProfileId: setup.organization.profileId,
+    });
+
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0]?.instanceData.phases).toEqual([
+      expect.objectContaining({ phaseId: 'submission', endDate: rowEndDate }),
+    ]);
   });
 
   it('should include proposal and participant counts', async ({

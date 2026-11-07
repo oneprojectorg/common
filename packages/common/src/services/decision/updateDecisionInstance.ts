@@ -13,22 +13,30 @@ import type { User } from '@op/supabase/lib';
 import { waitUntil } from '@vercel/functions';
 import { permission } from 'access-zones';
 
-import {
-  CommonError,
-  NotFoundError,
-  UnauthorizedError,
-  ValidationError,
-} from '../../utils';
+import { CommonError, NotFoundError, UnauthorizedError } from '../../utils';
 import { assertProfileAccess, assertProfileAdmin } from '../assert';
 import { generateUniqueProfileSlug } from '../profile/utils';
 import { assertVoterCostField } from './assertVoterCostField';
 import { createTransitionsForProcess } from './createTransitionsForProcess';
 import {
+  type InstanceDataUpdate,
+  type PhaseEndDateChange,
   getNormalizedCategories,
   getUpdatedInstanceData,
+  hasNonPhaseUpdate,
+  hasPhaseUpdates,
 } from './getUpdatedInstanceData';
-import { attachBlobPhases } from './instancePhases';
-import { listPhasesByInstance } from './phaseHelpers';
+import { getPhases } from './instancePhases';
+import {
+  type LockedProcessInstance,
+  lockProcessInstanceOrThrow,
+} from './lockProcessInstance';
+import {
+  type ProcessPhaseWithProfile,
+  reconcilePhases,
+  toInstanceDataPhase,
+} from './phaseHelpers';
+import { writePhasesInTx } from './phaseWrites';
 import { ensureProposalTaxonomyTerms } from './proposalTaxonomy';
 import { schemaValidator } from './schemaValidator';
 import type {
@@ -65,7 +73,7 @@ export const updateDecisionInstance = async ({
   config?: ProcessConfig;
   /** Public-facing overview content (headline, short description, rich text body) */
   overview?: InstanceOverviewUpdate;
-  /** Optional phase overrides (dates and settings) */
+  /** The full ordered list: a phase left out is deleted. */
   phases?: PhaseOverride[];
   /** Proposal template (JSON Schema) */
   proposalTemplate?: Record<string, unknown>;
@@ -124,62 +132,56 @@ export const updateDecisionInstance = async ({
     updateData.stewardProfileId = stewardProfileId;
   }
 
-  const hasPhaseUpdates = phases !== undefined && phases.length > 0;
-  // Readers take rows over the blob, so a blob phase edit on a decision with rows would be invisible.
-  // TODO: remove once the builder save writes rows.
-  if (hasPhaseUpdates) {
-    const rows = await listPhasesByInstance({
-      db,
-      processInstanceIds: [instanceId],
-    });
-    if (rows.has(instanceId)) {
-      throw new ValidationError(
-        'Phases for this decision are stored as rows and cannot be edited here yet',
-      );
-    }
-  }
-  const instanceDataUpdate = getUpdatedInstanceData({
-    existing: existingInstance.instanceData as DecisionInstanceData,
-    update: { config, overview, phases, proposalTemplate, rubricTemplate },
-  });
-  const phaseEndDateChanges = instanceDataUpdate?.phaseEndDateChanges ?? [];
+  const instanceDataFields: InstanceDataUpdate = {
+    config,
+    overview,
+    phases,
+    proposalTemplate,
+    rubricTemplate,
+  };
 
-  if (instanceDataUpdate) {
-    if (config !== undefined) {
-      await ensureProposalTaxonomyTerms(
-        getNormalizedCategories(config).map((category) => category.label),
-      );
-    }
-
-    if (hasPhaseUpdates || proposalTemplate) {
-      await assertVoterCostField({
-        instanceData: instanceDataUpdate.instanceData,
-        processId: existingInstance.processId,
-      });
-    }
-
-    updateData.instanceData = instanceDataUpdate.instanceData;
+  if (config !== undefined) {
+    await ensureProposalTaxonomyTerms(
+      getNormalizedCategories(config).map((category) => category.label),
+    );
   }
 
-  // Only update if there's something to update
-  if (Object.keys(updateData).length === 0) {
+  const hasDataUpdate =
+    hasNonPhaseUpdate(instanceDataFields) ||
+    hasPhaseUpdates(instanceDataFields);
+  if (Object.keys(updateData).length === 0 && !hasDataUpdate) {
     return {
       profile: await getDecisionProfile(profileId),
-      phaseEndDateChanges,
+      phaseEndDateChanges: [],
       didPublish: false,
     };
   }
 
-  const isBeingPublished =
-    status === ProcessStatus.PUBLISHED &&
-    existingInstance.status === ProcessStatus.DRAFT;
-
   // Use a transaction for updating the instance and transitions together
-  await db.transaction(async (tx) => {
-    // Update the instance
+  const written = await db.transaction(async (tx) => {
+    const locked = await lockProcessInstanceOrThrow({ db: tx, instanceId });
+    const isBeingPublished =
+      status === ProcessStatus.PUBLISHED &&
+      locked.status === ProcessStatus.DRAFT;
+    const nextStatus = status ?? locked.status;
+
+    const saved: SavedInstanceData = hasDataUpdate
+      ? await saveInstanceData({
+          tx,
+          instanceId,
+          processId: existingInstance.processId,
+          instance: { ...locked, status: nextStatus },
+          update: instanceDataFields,
+        })
+      : { phaseEndDateChanges: [] };
+
     const [updatedInstance] = await tx
       .update(processInstances)
-      .set(updateData)
+      .set({
+        ...updateData,
+        ...(saved.instanceData && { instanceData: saved.instanceData }),
+        updatedAt: new Date().toISOString(),
+      })
       .where(eq(processInstances.id, instanceId))
       .returning();
 
@@ -198,15 +200,17 @@ export const updateDecisionInstance = async ({
     await syncTransitions({
       tx,
       updatedInstance,
-      isDraft: (status ?? existingInstance.status) === ProcessStatus.DRAFT,
+      isDraft: nextStatus === ProcessStatus.DRAFT,
       isBeingPublished,
-      phasesChanged: hasPhaseUpdates,
+      phases: saved.phases,
     });
+
+    return { ...saved, isBeingPublished };
   });
 
   const profile = await getDecisionProfile(profileId);
 
-  if (isBeingPublished) {
+  if (written.isBeingPublished) {
     await sendQueuedInvites({ profileId, profileSlug: profile.slug });
     waitUntil(trackAdminSetProcess(user.id, instanceId));
   }
@@ -215,7 +219,13 @@ export const updateDecisionInstance = async ({
     waitUntil(trackAdminSetRubric(user.id, instanceId));
   }
 
-  return { profile, phaseEndDateChanges, didPublish: isBeingPublished };
+  return {
+    profile,
+    // The rows this save left, so the caller can skip reading them again.
+    phases: written.phases,
+    phaseEndDateChanges: written.phaseEndDateChanges,
+    didPublish: written.isBeingPublished,
+  };
 };
 
 function assertValidTemplates({
@@ -283,13 +293,14 @@ async function syncTransitions({
   updatedInstance,
   isDraft,
   isBeingPublished,
-  phasesChanged,
+  phases,
 }: {
   tx: TransactionType;
   updatedInstance: ProcessInstance;
   isDraft: boolean;
   isBeingPublished: boolean;
-  phasesChanged: boolean;
+  // Set only when the save rewrote the phase rows.
+  phases?: ProcessPhaseWithProfile[];
 }) {
   if (isDraft) {
     await tx
@@ -300,14 +311,103 @@ async function syncTransitions({
   } else if (isBeingPublished) {
     await createTransitionsForProcess({
       processInstance: updatedInstance,
+      phases,
       db: tx,
     });
-  } else if (phasesChanged) {
+  } else if (phases) {
     await updateTransitionsForProcess({
-      processInstance: attachBlobPhases({ instance: updatedInstance }),
+      processInstance: updatedInstance,
+      phases,
       db: tx,
     });
   }
+}
+
+interface SavedInstanceData {
+  instanceData?: DecisionInstanceData;
+  phases?: ProcessPhaseWithProfile[];
+  phaseEndDateChanges: PhaseEndDateChange[];
+}
+
+// Phases go to rows; instanceData keeps the phases it was created with.
+async function saveInstanceData({
+  tx,
+  instanceId,
+  processId,
+  instance,
+  update,
+}: {
+  tx: TransactionType;
+  instanceId: string;
+  processId: string | null;
+  // The locked row, carrying the status this save leaves.
+  instance: LockedProcessInstance;
+  update: InstanceDataUpdate;
+}): Promise<SavedInstanceData> {
+  const stored = instance.instanceData as DecisionInstanceData;
+
+  if (!hasPhaseUpdates(update)) {
+    const phases = await getPhases({
+      instance: { id: instanceId, instanceData: stored },
+      db: tx,
+    });
+    const updated = getUpdatedInstanceData({
+      existing: stored,
+      existingPhases: phases,
+      update,
+    });
+
+    if (update.proposalTemplate) {
+      await assertVoterCostField({
+        instanceData: { ...(updated.instanceData ?? stored), phases },
+        processId,
+      });
+    }
+
+    return {
+      ...(updated.instanceData && { instanceData: updated.instanceData }),
+      phaseEndDateChanges: [],
+    };
+  }
+
+  const { result: updated, phases } = await writePhasesInTx({
+    tx,
+    processInstanceId: instanceId,
+    locked: instance,
+    syncTransitions: false,
+    write: async (tx, { phases: rows }) => {
+      const merged = getUpdatedInstanceData({
+        existing: stored,
+        existingPhases: rows.map(toInstanceDataPhase),
+        update,
+      });
+
+      if (merged.phases) {
+        await reconcilePhases({
+          tx,
+          processInstanceId: instanceId,
+          existing: rows,
+          phases: merged.phases,
+        });
+      }
+
+      return merged;
+    },
+  });
+
+  await assertVoterCostField({
+    instanceData: {
+      ...(updated.instanceData ?? stored),
+      phases: phases.map(toInstanceDataPhase),
+    },
+    processId,
+  });
+
+  return {
+    ...(updated.instanceData && { instanceData: updated.instanceData }),
+    phases,
+    phaseEndDateChanges: updated.phaseEndDateChanges,
+  };
 }
 
 async function sendQueuedInvites({

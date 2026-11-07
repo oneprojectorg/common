@@ -5,7 +5,7 @@ import { CommonError } from '../../utils';
 import {
   type ProcessPhaseWithProfile,
   listPhasesByInstance,
-  phaseIdOf,
+  toInstanceDataPhase,
 } from './phaseHelpers';
 import {
   type PhaseInstanceData,
@@ -64,6 +64,18 @@ export const attachBlobPhases = <T extends InstanceWithData>({
   phases: [...getInstancePhases(instance.instanceData)],
 });
 
+// For a writer that already holds the instance's rows.
+export const attachPhaseRows = <T extends InstanceWithData>({
+  instance,
+  phases,
+}: {
+  instance: T;
+  phases: ProcessPhaseWithProfile[];
+}): InstanceWithPhases<T> =>
+  phases.length > 0
+    ? { ...instance, phases: phases.map(toInstanceDataPhase) }
+    : attachBlobPhases({ instance });
+
 export const resolvePhasesForAll = async <T extends InstanceWithData>({
   instances,
   db = defaultDb,
@@ -100,14 +112,23 @@ export const resolveProfilePhases = async <
   T extends { processInstance: InstanceWithData | null },
 >({
   profile,
+  phases,
 }: {
   profile: T;
-}): Promise<ProfileWithInstancePhases<T>> => ({
-  ...profile,
-  processInstance: profile.processInstance
-    ? await resolvePhases({ instance: profile.processInstance })
-    : null,
-});
+  phases?: ProcessPhaseWithProfile[];
+}): Promise<ProfileWithInstancePhases<T>> => {
+  const instance = profile.processInstance;
+  if (!instance) {
+    return { ...profile, processInstance: null };
+  }
+
+  return {
+    ...profile,
+    processInstance: phases
+      ? attachPhaseRows({ instance, phases })
+      : await resolvePhases({ instance }),
+  };
+};
 
 export const resolveProfilePhasesForAll = async <
   T extends { processInstance: InstanceWithData | null },
@@ -139,11 +160,3 @@ export const resolveProfilePhasesForAll = async <
     return { ...profile, processInstance: instance };
   });
 };
-
-const toInstanceDataPhase = (
-  phase: ProcessPhaseWithProfile,
-): PhaseInstanceData => ({
-  ...phase.data,
-  phaseId: phaseIdOf(phase),
-  name: phase.name,
-});
