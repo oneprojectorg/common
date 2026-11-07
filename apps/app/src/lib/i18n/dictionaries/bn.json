@@ -1039,6 +1039,7 @@
     "review": {
       "actionsColumn": "কার্যক্রম",
       "remindAction": "মনে করিয়ে দিন",
+      "remindAllAction": "সবাইকে মনে করিয়ে দিন",
       "remindReviewerLabel": "{name}-কে মনে করিয়ে দিন",
       "sendReminderAction": "রিমাইন্ডার পাঠান",
       "sendReminderTitle": "একটি রিমাইন্ডার পাঠান",
@@ -1161,6 +1162,7 @@
       "noReviewsAssigned": "এখনো কোনো পর্যালোচনা বরাদ্দ করা হয়নি",
       "noReviewsMatchFilters": "বর্তমান ফিল্টারগুলোর সাথে ম্যাচ করে এমন কোনো পর্যালোচনা পাওয়া যায়নি।",
       "noReviewsInPhase": "এই পর্যায়ে কোনো পর্যালোচনা জমা দেওয়া হয়নি",
+      "notSubmittedYetGroup": "এখনও জমা দেওয়া হয়নি ({count})",
       "noYesLabel": "না/হ্যাঁ",
       "statusNotStarted": "শুরু হয়নি",
       "noteLabel": "নোট",

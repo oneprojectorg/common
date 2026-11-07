@@ -26,6 +26,12 @@ export interface OwnReviewEntry {
   onOpenForm: () => void;
 }
 
+/** Where a reminder from the panel goes; set only when one can be sent. */
+export interface ReminderScope {
+  processInstanceId: string;
+  phaseId: string;
+}
+
 interface ReviewsPanelProps {
   proposalWithReviews: ProposalWithSubmittedReviews;
   rubricTemplate: RubricTemplateSchema | null;
@@ -41,6 +47,7 @@ interface ReviewsPanelProps {
   /** Header text; defaults to "Review Summary". */
   title?: string;
   ownReview?: OwnReviewEntry;
+  reminderScope?: ReminderScope;
 }
 
 export function ReviewsPanel({
@@ -52,6 +59,7 @@ export function ReviewsPanel({
   hideSummaryHeader,
   title,
   ownReview,
+  reminderScope,
 }: ReviewsPanelProps) {
   const rubricSummary = useMemo<RubricSummary>(() => {
     if (!rubricTemplate) {
@@ -109,6 +117,7 @@ export function ReviewsPanel({
       hideSummaryHeader={hideSummaryHeader}
       title={title}
       ownReview={ownReview}
+      reminderScope={reminderScope}
     />
   );
 }

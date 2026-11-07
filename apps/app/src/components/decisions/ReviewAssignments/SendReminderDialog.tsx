@@ -44,11 +44,14 @@ import { accountContactText } from './accountContactText';
 export type ReminderRecipientPreview = Pick<
   ReviewReminderRecipient['reviewer'],
   'id' | 'name' | 'contact'
-> &
-  Pick<ReviewReminderRecipient, 'remainingCount'>;
+> & {
+  /** Null when the caller does not know it; the server fills it per reviewer. */
+  remainingCount: ReviewReminderRecipient['remainingCount'] | null;
+};
 
 export type SendReminderTarget =
   | { kind: 'one'; recipient: ReminderRecipientPreview }
+  | { kind: 'reviewers'; recipients: Array<ReminderRecipientPreview> }
   | { kind: 'batch'; search?: string; status?: ReviewerStatus };
 
 interface SendReminderDialogProps {
@@ -116,6 +119,11 @@ export function SendReminderDialog({
                 <ReminderForm
                   {...context}
                   audience={{ kind: 'one', recipient: target.recipient }}
+                />
+              ) : target.kind === 'reviewers' ? (
+                <ReminderForm
+                  {...context}
+                  audience={{ kind: 'batch', recipients: target.recipients }}
                 />
               ) : (
                 <BatchReminderForm
@@ -187,9 +195,12 @@ function ReminderForm({
       ...(audience.kind === 'one'
         ? {
             firstName: getReviewerFirstName(audience.recipient.name),
-            proposalsLeft: t('decisions.review.reminderProposalsLeft', {
-              count: audience.recipient.remainingCount,
-            }),
+            proposalsLeft:
+              audience.recipient.remainingCount === null
+                ? tokenText('proposalsLeft')
+                : t('decisions.review.reminderProposalsLeft', {
+                    count: audience.recipient.remainingCount,
+                  }),
           }
         : // The server fills these per reviewer; as argument values they stay
           // literal text, out of reach of the ICU parser.

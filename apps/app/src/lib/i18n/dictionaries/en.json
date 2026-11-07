@@ -1039,6 +1039,7 @@
     "review": {
       "actionsColumn": "Actions",
       "remindAction": "Remind",
+      "remindAllAction": "Remind all",
       "remindReviewerLabel": "Remind {name}",
       "sendReminderAction": "Send reminder",
       "sendReminderTitle": "Send a reminder",
@@ -1161,6 +1162,7 @@
       "noReviewsAssigned": "No reviews assigned yet",
       "noReviewsMatchFilters": "No reviews found matching the current filters.",
       "noReviewsInPhase": "No reviews were submitted in this phase",
+      "notSubmittedYetGroup": "Not submitted yet ({count})",
       "noYesLabel": "No/Yes",
       "statusNotStarted": "Not Started",
       "noteLabel": "Note",

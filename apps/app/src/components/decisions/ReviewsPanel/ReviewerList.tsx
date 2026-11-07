@@ -2,6 +2,7 @@
 
 import {
   OVERALL_RECOMMENDATION_KEY,
+  ProposalReviewAssignmentStatus,
   type ProposalWithSubmittedReviews,
   type RubricTemplateSchema,
   type SubmittedReviewItem,
@@ -12,14 +13,23 @@ import { Badge } from '@op/sense/Badge';
 import { Button } from '@op/sense/Button';
 import { Header3 } from '@op/sense/Header';
 import { StatusDot } from '@op/sense/StatusDot';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { LuChevronRight, LuCircleAlert, LuRefreshCcw } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
 import { ProfileAvatar } from '../../ProfileAvatar';
+import {
+  type ReminderRecipientPreview,
+  SendReminderDialog,
+  type SendReminderTarget,
+} from '../ReviewAssignments/SendReminderDialog';
 import { AverageScoreBar } from './AverageScoreBar';
-import type { OwnReviewEntry, RubricSummary } from './ReviewsPanel';
+import type {
+  OwnReviewEntry,
+  ReminderScope,
+  RubricSummary,
+} from './ReviewsPanel';
 import { recommendationIntent } from './recommendationIntent';
 
 interface ReviewerListProps {
@@ -31,7 +41,11 @@ interface ReviewerListProps {
   hideSummaryHeader?: boolean;
   title?: string;
   ownReview?: OwnReviewEntry;
+  reminderScope?: ReminderScope;
 }
+
+type PendingReviewer =
+  ProposalWithSubmittedReviews['aggregates']['reviewers'][number];
 
 export function ReviewerList({
   proposalWithReviews,
@@ -42,6 +56,7 @@ export function ReviewerList({
   hideSummaryHeader,
   title,
   ownReview,
+  reminderScope,
 }: ReviewerListProps) {
   const t = useTranslations();
   const {
@@ -49,6 +64,7 @@ export function ReviewerList({
     assignmentsCount,
     averageScore,
     outOfDateReviewsCount,
+    reviewers,
   } = proposalWithReviews.aggregates;
   const { hasScoring, hasOverallRecommendation, totalPoints } = rubricSummary;
 
@@ -68,6 +84,36 @@ export function ReviewerList({
     }
     return getReviewsGroupedByRecommendation(reviews, recommendationOptions);
   }, [reviews, hasOverallRecommendation, recommendationOptions]);
+
+  // Revision-flow assignments are left out on purpose: they wait on the
+  // author or on a re-review, and the panel does not remind them yet.
+  const pendingReviewers = useMemo(
+    () =>
+      reviewers.filter(
+        (reviewer) =>
+          reviewer.submittedAt === null && isAwaitingReview(reviewer),
+      ),
+    [reviewers],
+  );
+
+  const remindableReviewers = pendingReviewers.filter((reviewer) =>
+    isRemindable(reviewer, ownReview?.profileId),
+  );
+
+  const [reminderTarget, setReminderTarget] =
+    useState<SendReminderTarget | null>(null);
+  const [isReminderOpen, setIsReminderOpen] = useState(false);
+  const openReminder = (reviewer: PendingReviewer) => {
+    setReminderTarget({ kind: 'one', recipient: toRecipient(reviewer) });
+    setIsReminderOpen(true);
+  };
+  const openReminderForAll = () => {
+    setReminderTarget({
+      kind: 'reviewers',
+      recipients: remindableReviewers.map(toRecipient),
+    });
+    setIsReminderOpen(true);
+  };
 
   return (
     <div className="flex flex-col gap-6">
@@ -163,6 +209,55 @@ export function ReviewerList({
           {t('decisions.review.addReviewAction')}
         </Button>
       )}
+
+      {/* Admin-only, like the summary header. */}
+      {!hideSummaryHeader && pendingReviewers.length > 0 && (
+        <div className="flex flex-col gap-4">
+          <div className="flex items-center justify-between gap-2">
+            <StatusDot intent="neutral" className="gap-2">
+              <span className="font-serif text-sm">
+                {t('decisions.review.notSubmittedYetGroup', {
+                  count: pendingReviewers.length,
+                })}
+              </span>
+            </StatusDot>
+            {reminderScope && remindableReviewers.length > 1 && (
+              <Button
+                variant="link"
+                size="inline"
+                onClick={openReminderForAll}
+                className="text-sm"
+              >
+                {t('decisions.review.remindAllAction')}
+              </Button>
+            )}
+          </div>
+          <div className="flex flex-col gap-2">
+            {pendingReviewers.map((reviewer) => (
+              <PendingReviewerRow
+                key={reviewer.profile.id}
+                reviewer={reviewer}
+                isOwn={reviewer.profile.id === ownReview?.profileId}
+                onRemind={
+                  reminderScope && isRemindable(reviewer, ownReview?.profileId)
+                    ? openReminder
+                    : undefined
+                }
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {reminderScope && (
+        <SendReminderDialog
+          processInstanceId={reminderScope.processInstanceId}
+          phaseId={reminderScope.phaseId}
+          target={reminderTarget}
+          open={isReminderOpen}
+          onOpenChange={setIsReminderOpen}
+        />
+      )}
     </div>
   );
 }
@@ -250,7 +345,7 @@ function ReviewerRow({
     <Button
       variant="bare"
       onClick={() => onSelect(item.review.assignmentId)}
-      className="flex h-14 w-full items-center justify-between rounded-lg border border-border bg-white px-3 py-2 text-start transition-colors duration-200 hover:bg-muted"
+      className="flex w-full items-center justify-between gap-3 rounded-lg border border-border bg-background p-4 text-start transition-colors duration-200 hover:bg-muted"
       // aria-label replaces the row's visible text, so it must repeat the tag.
       aria-label={
         item.isReviewOutOfDate
@@ -258,11 +353,11 @@ function ReviewerRow({
           : t('decisions.review.viewReviewByName', { name: rowLabel })
       }
     >
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-3">
         <ProfileAvatar
           profile={item.reviewer}
           withLink={false}
-          className="size-6"
+          className="size-10"
         />
         <div className="flex flex-col">
           <span className="text-base">{rowLabel}</span>
@@ -285,4 +380,76 @@ function ReviewerRow({
       </div>
     </Button>
   );
+}
+
+function PendingReviewerRow({
+  reviewer,
+  isOwn,
+  onRemind,
+}: {
+  reviewer: PendingReviewer;
+  isOwn: boolean;
+  onRemind?: (reviewer: PendingReviewer) => void;
+}) {
+  const t = useTranslations();
+  const reviewerName = reviewer.profile.name ?? reviewer.profile.slug;
+  const rowLabel = isOwn
+    ? t('decisions.review.reviewerNameYou', { name: reviewerName })
+    : reviewerName;
+
+  return (
+    <div className="flex w-full items-center justify-between gap-3 rounded-lg border border-border bg-background p-4">
+      <div className="flex min-w-0 items-center gap-3">
+        <ProfileAvatar
+          profile={reviewer.profile}
+          withLink={false}
+          className="size-10"
+        />
+        <div className="flex min-w-0 flex-col">
+          <span className="text-base">
+            <bdi>{rowLabel}</bdi>
+          </span>
+          <span className="text-sm text-muted-foreground">
+            {reviewer.status === ProposalReviewAssignmentStatus.PENDING
+              ? t('decisions.review.statusNotStarted')
+              : t('decisions.review.statusInProgress')}
+          </span>
+        </div>
+      </div>
+      {onRemind && (
+        <Button
+          variant="outline"
+          aria-label={t('decisions.review.remindReviewerLabel', {
+            name: reviewerName,
+          })}
+          onClick={() => onRemind(reviewer)}
+        >
+          {t('decisions.review.remindAction')}
+        </Button>
+      )}
+    </div>
+  );
+}
+
+function isAwaitingReview(reviewer: PendingReviewer): boolean {
+  return (
+    reviewer.status === ProposalReviewAssignmentStatus.PENDING ||
+    reviewer.status === ProposalReviewAssignmentStatus.IN_PROGRESS
+  );
+}
+
+function isRemindable(
+  reviewer: PendingReviewer,
+  ownProfileId: string | undefined,
+): boolean {
+  return reviewer.profile.id !== ownProfileId;
+}
+
+function toRecipient(reviewer: PendingReviewer): ReminderRecipientPreview {
+  return {
+    id: reviewer.profile.id,
+    name: reviewer.profile.name ?? reviewer.profile.slug,
+    contact: null,
+    remainingCount: null,
+  };
 }

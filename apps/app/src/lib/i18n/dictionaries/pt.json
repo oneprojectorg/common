@@ -1039,6 +1039,7 @@
     "review": {
       "actionsColumn": "Ações",
       "remindAction": "Lembrar",
+      "remindAllAction": "Lembrar todos",
       "remindReviewerLabel": "Lembrar {name}",
       "sendReminderAction": "Enviar lembrete",
       "sendReminderTitle": "Enviar um lembrete",
@@ -1161,6 +1162,7 @@
       "noReviewsAssigned": "Nenhuma revisão atribuída ainda",
       "noReviewsMatchFilters": "Nenhuma revisão encontrada correspondendo aos filtros atuais.",
       "noReviewsInPhase": "Nenhuma avaliação foi enviada nesta fase",
+      "notSubmittedYetGroup": "Ainda não enviado ({count})",
       "noYesLabel": "Não/Sim",
       "statusNotStarted": "Não iniciado",
       "noteLabel": "Nota",
