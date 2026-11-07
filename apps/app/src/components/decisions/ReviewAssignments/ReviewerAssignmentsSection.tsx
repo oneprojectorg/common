@@ -29,9 +29,10 @@ import { LuBell, LuListChecks, LuUserX, LuUsers } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
-import type { ProposalSheetRoute } from '../ProposalSheet';
+import { ProposalSheet } from '../ProposalSheet/ProposalSheet';
 import { ProposalSheetProvider } from '../ProposalSheetProvider';
 import { proposalReviewsHref } from '../proposalHrefs';
+import type { ProposalSheetRoute } from '../proposalSheetState';
 import { ManageAssignmentsAction } from './ManageAssignmentsAction';
 import {
   ReviewerAssignmentsBodySkeleton,
@@ -113,6 +114,7 @@ export function ReviewerAssignmentsSection({
           />
         </Suspense>
       </APIErrorBoundary>
+      <ProposalSheet />
     </ProposalSheetProvider>
   );
 }
