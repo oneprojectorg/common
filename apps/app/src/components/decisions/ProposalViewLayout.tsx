@@ -14,6 +14,7 @@ import { JoinAccountModal, JoinOrUserMenu } from './JoinAccountModal';
 import { ProposalAdminMenu } from './ProposalAdminMenu';
 import { PROPOSAL_COMMENTS_ANCHOR_ID } from './ProposalComments';
 import { ReportProposalDialog } from './ReportProposalDialog';
+import { ResumePendingEngagement } from './ResumePendingEngagement';
 import { ReviewNotesButton } from './ReviewNotesButton';
 
 export function ProposalViewLayout({
@@ -22,6 +23,7 @@ export function ProposalViewLayout({
   editHref,
   canEdit = false,
   canJoin = false,
+  canEngage = false,
   commentsEnabled,
   reportProposalId,
   reviewNotesToggle,
@@ -38,6 +40,7 @@ export function ProposalViewLayout({
    * "Log in" to logged-out and anonymous visitors.
    */
   canJoin?: boolean;
+  canEngage?: boolean;
   commentsEnabled: boolean;
   /** When set, renders the "Report" action (opens the report dialog) for the
    *  proposal with this id. */
@@ -137,6 +140,7 @@ export function ProposalViewLayout({
       {/* Mounted outside the sm-only header cluster so a `?join=1` deep link
           still opens the modal on mobile. */}
       {canJoin ? <JoinAccountModal /> : null}
+      <ResumePendingEngagement canEngage={canEngage} />
     </div>
   );
 }

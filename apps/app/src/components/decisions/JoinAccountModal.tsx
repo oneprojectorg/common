@@ -47,6 +47,14 @@ import {
 } from '../AuthPanel';
 import { HeaderUserMenu } from '../SiteHeader';
 import { isValidEmail } from './emailUtils';
+import {
+  type JoinTrigger,
+  PENDING_ENGAGEMENT_PARAM,
+  clearPendingEngagementProof,
+  joinPromptKeys,
+  parseJoinParam,
+  withPendingEngagement,
+} from './pendingEngagement';
 
 /**
  * "Join" flow for public decision processes: claims a full account for the
@@ -63,17 +71,21 @@ import { isValidEmail } from './emailUtils';
 export const JoinAccountModal = () => {
   const { user } = useUser();
   const [join, setJoin] = useQueryState('join');
+  const [, setResume] = useQueryState(PENDING_ENGAGEMENT_PARAM);
 
-  const isOpen = isJoinEligible(user) && join === '1';
+  const trigger = parseJoinParam(join);
+  const isOpen = isJoinEligible(user) && trigger !== null;
 
   const close = () => {
+    clearPendingEngagementProof();
     void setJoin(null);
+    void setResume(null);
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => (open ? null : close())}>
       <DialogContent className="sm:max-w-128">
-        <JoinAccountModalContent close={close} />
+        <JoinAccountModalContent trigger={trigger ?? 'generic'} close={close} />
       </DialogContent>
     </Dialog>
   );
@@ -145,7 +157,13 @@ export const JoinOrUserMenu = ({
   return <HeaderUserMenu className={userMenuClassName} />;
 };
 
-const JoinAccountModalContent = ({ close }: { close: () => void }) => {
+const JoinAccountModalContent = ({
+  trigger,
+  close,
+}: {
+  trigger: JoinTrigger;
+  close: () => void;
+}) => {
   const t = useTranslations();
   const supabase = createSBBrowserClient();
   const {
@@ -160,6 +178,9 @@ const JoinAccountModalContent = ({ close }: { close: () => void }) => {
   // next/navigation (not the i18n router): the locale prefix must stay — the
   // promote-onboarding redirect and the locale-less /login route both need it.
   const pathname = usePathname();
+  // Read-only here; the modal's owner clears it on close. nuqs rather than
+  // window.location so the render stays SSR-safe.
+  const [pendingRaw] = useQueryState(PENDING_ENGAGEMENT_PARAM);
 
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -180,10 +201,17 @@ const JoinAccountModalContent = ({ close }: { close: () => void }) => {
   const phoneIsValid = isValidTypedPhoneNumber(phone);
   const contactIsValid = isPhone ? phoneIsValid : emailIsValid;
 
-  // Return to this decision page after onboarding. Query params are dropped
-  // deliberately — `join=1` must not re-open the modal on the way back.
+  // Return to this decision page after onboarding. The `join` param is dropped
+  // deliberately — it must not re-open the modal on the way back — while a
+  // valid pending engagement is carried through so the replay can apply it.
+  const claimDest = () =>
+    withPendingEngagement(
+      pathname,
+      new URLSearchParams(window.location.search).get(PENDING_ENGAGEMENT_PARAM),
+    );
+
   const goAfterClaim = () => {
-    goToOnboarding(pathname);
+    goToOnboarding(claimDest());
   };
 
   // Google is a redirect flow, not an in-page OTP exchange, so it can't call
@@ -199,7 +227,7 @@ const JoinAccountModalContent = ({ close }: { close: () => void }) => {
   // equivalent (linkIdentity) before this is correct for public processes.
   const joinWithGoogle = async () => {
     const callbackUrl = new URL('/api/auth/callback', window.location.origin);
-    callbackUrl.searchParams.set('redirect', getOnboardingPath(pathname));
+    callbackUrl.searchParams.set('redirect', getOnboardingPath(claimDest()));
     await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: { redirectTo: callbackUrl.toString() },
@@ -296,8 +324,13 @@ const JoinAccountModalContent = ({ close }: { close: () => void }) => {
   };
 
   // Native anchor: /login is outside the [locale] tree, so a RAC link 404s at
-  // /en/login (same as HeaderUserMenu).
-  const loginHref = `/login?redirect=${encodeURIComponent(pathname)}`;
+  // /en/login (same as HeaderUserMenu). The pending engagement rides along as
+  // the claim paths carry it — an existing-account user who clicked Like must
+  // not lose the action by choosing Log in. Their proof is already saved, so
+  // the replay applies once they are back.
+  const loginHref = `/login?redirect=${encodeURIComponent(
+    withPendingEngagement(pathname, pendingRaw),
+  )}`;
 
   const sentTo = otpSent
     ? codeSentToLabel(t, { isPhone, phone: normalizePhoneNumber(phone), email })
@@ -312,10 +345,10 @@ const JoinAccountModalContent = ({ close }: { close: () => void }) => {
             ? isPhone
               ? t('auth.checkTextsTitle')
               : t('auth.checkEmailTitle')
-            : t('decisions.joinPromptTitle')}
+            : t(joinPromptKeys(trigger).title)}
         </DialogTitle>
         <DialogDescription className="text-center">
-          {sentTo ?? t('decisions.joinPromptDescription')}
+          {sentTo ?? t(joinPromptKeys(trigger).description)}
         </DialogDescription>
       </DialogHeader>
 
