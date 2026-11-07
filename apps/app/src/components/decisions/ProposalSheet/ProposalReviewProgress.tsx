@@ -97,6 +97,7 @@ function ProposalReviews({ phaseId }: { phaseId: string }) {
       selectedAssignmentId={selectedAssignmentId}
       onSelectAssignment={handleSelectAssignment}
       title={null}
+      reminderScope={{ processInstanceId: proposal.processInstanceId, phaseId }}
     />
   );
 }
