@@ -2,7 +2,7 @@
   "name": "@op/logging",
   "version": "0.1.0",
   "description": "OpenTelemetry-based logging utilities for OP",
-  "license": "Apache-2.0",
+  "license": "AGPL-3.0-only",
   "type": "module",
   "exports": {
     ".": "./src/index.ts",

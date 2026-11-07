@@ -2,7 +2,7 @@
   "name": "@op/ai",
   "version": "0.0.0",
   "private": true,
-  "license": "SEE LICENSE in /LICENSE",
+  "license": "AGPL-3.0-only",
   "type": "module",
   "exports": {
     ".": "./src/index.ts"
