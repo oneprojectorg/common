@@ -1,5 +1,6 @@
 import type { ProcessInstance } from '@op/api/encoders';
 import {
+  type CustomFormDefinitionSchema,
   type Proposal,
   type ProposalTemplateSchema,
   serverExtensions,
@@ -138,3 +139,16 @@ export const getDecisionDetectionText = ({
     ...phases.map((phase) => phase.name ?? ''),
   ]);
 };
+
+/** Plain-text sample of everything `translateCustomForm` translates, minus option labels. */
+export const getCustomFormDetectionText = (
+  definition: CustomFormDefinitionSchema,
+): string =>
+  joinSample([
+    definition.title ?? '',
+    definition.description ?? '',
+    ...Object.values(definition.properties ?? {}).flatMap((field) => [
+      field.title ?? '',
+      field.description ?? '',
+    ]),
+  ]);

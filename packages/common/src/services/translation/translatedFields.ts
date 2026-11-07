@@ -1,5 +1,8 @@
 import type { TranslatableEntry, TranslationResult } from '@op/translation';
 
+import { parseSchemaOptions } from '../decision/proposalDataSchema';
+import type { XFormatPropertySchema } from '../decision/types';
+
 export type TranslatedFieldValue = string | string[];
 export type TranslatedFields = Record<string, TranslatedFieldValue>;
 export type TranslatableFields = Record<
@@ -51,6 +54,46 @@ export function flattenTranslatableFields(
         text: item,
       });
     });
+  }
+
+  return entries;
+}
+
+/**
+ * Flattens a JSON Schema's field titles, field descriptions and option labels
+ * into entries keyed `field_title:<field>`, `field_desc:<field>` and
+ * `option:<field>:<value>` — the keys `parseTranslatedMeta` reads back.
+ */
+export function flattenSchemaFields({
+  prefix,
+  properties,
+}: {
+  prefix: string;
+  properties?: Record<string, XFormatPropertySchema>;
+}): TranslatableEntry[] {
+  const entries: TranslatableEntry[] = [];
+
+  for (const [fieldKey, property] of Object.entries(properties ?? {})) {
+    if (property.title) {
+      entries.push({
+        contentKey: `${prefix}field_title:${fieldKey}`,
+        text: property.title,
+      });
+    }
+    if (property.description) {
+      entries.push({
+        contentKey: `${prefix}field_desc:${fieldKey}`,
+        text: property.description,
+      });
+    }
+    for (const option of parseSchemaOptions(property)) {
+      if (option.title) {
+        entries.push({
+          contentKey: `${prefix}option:${fieldKey}:${option.value}`,
+          text: option.title,
+        });
+      }
+    }
   }
 
   return entries;
