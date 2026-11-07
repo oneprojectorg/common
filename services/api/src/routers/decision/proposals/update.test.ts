@@ -1,18 +1,17 @@
 import { mockCollab } from '@op/collab/testing';
-import { getInstancePhases, parseProposalData } from '@op/common';
+import { parseProposalData } from '@op/common';
 import {
   TestDecisionsDataManager,
   TestReviewsDataManager,
   createRevisionRequest,
-  syncPhaseRows,
+  updateInstancePhase,
 } from '@op/common/testing';
-import { db, eq } from '@op/db/client';
+import { db } from '@op/db/client';
 import {
   ProposalReviewAssignmentStatus,
   ProposalReviewRequestState,
   ProposalStatus,
   Visibility,
-  processInstances,
 } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
@@ -43,35 +42,24 @@ async function setProposalEditingRule(
 ): Promise<void> {
   const instanceRecord = await db.query.processInstances.findFirst({
     where: { id: processInstanceId },
+    columns: { currentStateId: true },
   });
 
-  if (!instanceRecord) {
-    throw new Error(`Instance ${processInstanceId} not found`);
+  if (!instanceRecord?.currentStateId) {
+    throw new Error(`Instance ${processInstanceId} has no current phase`);
   }
 
-  const { instanceData } = instanceRecord;
-
-  if (instanceData === null || typeof instanceData !== 'object') {
-    throw new Error(`Instance ${processInstanceId} has no instanceData`);
-  }
-
-  const phases = getInstancePhases(instanceData).map((phase) =>
-    phase.phaseId === instanceRecord.currentStateId
-      ? {
-          ...phase,
-          rules: {
-            ...phase.rules,
-            proposals: { ...phase.rules?.proposals, edit },
-          },
-        }
-      : phase,
-  );
-
-  await db
-    .update(processInstances)
-    .set({ instanceData: { ...instanceData, phases } })
-    .where(eq(processInstances.id, processInstanceId));
-  await syncPhaseRows(processInstanceId);
+  await updateInstancePhase({
+    instanceId: processInstanceId,
+    phaseId: instanceRecord.currentStateId,
+    update: (phase) => ({
+      ...phase,
+      rules: {
+        ...phase.rules,
+        proposals: { ...phase.rules?.proposals, edit },
+      },
+    }),
+  });
 }
 
 describe.concurrent('updateProposal visibility', () => {

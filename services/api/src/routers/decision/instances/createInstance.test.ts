@@ -12,8 +12,8 @@ import {
   expectFailsAccessTierGate,
 } from '../../../test/helpers/gating/decision';
 import {
-  expectRowsMatchPhases,
   loadInstanceData,
+  loadInstancePhases,
   loadPhaseRows,
 } from '../../../test/helpers/phaseTestUtils';
 import { createAuthenticatedCaller } from '../../../test/supabase-utils';
@@ -45,23 +45,24 @@ describe.concurrent('createInstance', () => {
     expect(result.name).toBe(`Grant ${task.id}`);
     expect(result.processInstance.status).toBe('draft');
 
-    const { instance, instanceData } = await loadInstanceData(
-      result.processInstance.id,
-    );
+    const [{ instance, instanceData }, phases] = await Promise.all([
+      loadInstanceData(result.processInstance.id),
+      loadInstancePhases(result.processInstance.id),
+    ]);
 
-    expect(instanceData.phases.map((phase) => phase.name)).toEqual([
+    expect(phases.map((phase) => phase.name)).toEqual([
       'Send your application',
       'Review and decide',
       'See awards',
     ]);
-    expect(instanceData.phases[0]?.rules?.proposals?.submit).toBe(true);
-    expect(instanceData.phases[1]?.rules?.reviews?.submit).toBe(true);
+    expect(phases[0]?.rules?.proposals?.submit).toBe(true);
+    expect(phases[1]?.rules?.reviews?.submit).toBe(true);
     expect(instanceData.templateId).toBe('composed:grant');
     expect(instanceData.proposalTemplate).toBeUndefined();
-    expect(instance.currentStateId).toBe(instanceData.phases[0]?.phaseId);
+    expect(instance.currentStateId).toBe(phases[0]?.phaseId);
   });
 
-  it('mints a phase row and profile per phase it is given', async ({
+  it('mints a phase row and profile per phase it is given and stores none in instanceData', async ({
     task,
     onTestFinished,
   }) => {
@@ -80,8 +81,10 @@ describe.concurrent('createInstance', () => {
       loadPhaseRows(result.processInstance.id),
     ]);
 
-    expect(instanceData.phases).toHaveLength(grantDraft.phases.length);
-    expectRowsMatchPhases(rows, instanceData.phases);
+    expect(rows).toMatchObject(
+      grantDraft.phases.map(({ name }, sortOrder) => ({ sortOrder, name })),
+    );
+    expect(instanceData).not.toHaveProperty('phases');
   });
 
   it('creates a blank draft with no phases', async ({
@@ -103,7 +106,7 @@ describe.concurrent('createInstance', () => {
       result.processInstance.id,
     );
 
-    expect(instanceData.phases).toEqual([]);
+    expect(instanceData).not.toHaveProperty('phases');
     expect(instance.currentStateId).toBeNull();
     expect(await loadPhaseRows(result.processInstance.id)).toHaveLength(0);
   });

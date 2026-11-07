@@ -13,9 +13,9 @@ export {
 
 export { TestDecisionsDataManager } from './helpers/TestDecisionsDataManager';
 export {
-  emptyBlobPhases,
   loadPhaseRows,
-  syncPhaseRows,
+  updateInstancePhase,
+  updateInstancePhases,
 } from './helpers/phaseRowFixtures';
 export { TestJoinProfileRequestDataManager } from './helpers/TestJoinProfileRequestDataManager';
 export { TestOrganizationDataManager } from './helpers/TestOrganizationDataManager';

@@ -7,7 +7,7 @@ import { CommonError, NotFoundError, UnauthorizedError } from '../../utils';
 import { getProfileAccessRolesWithOrgFallback } from '../access';
 import { assertProfileAccess, assertUserByAuthId } from '../assert';
 import { createDecisionInstance } from './createInstanceFromTemplate';
-import { resolvePhases } from './instancePhases';
+import { getPhases } from './instancePhases';
 import type {
   DecisionInstanceData,
   InstanceOverview,
@@ -101,17 +101,14 @@ export const duplicateInstance = async ({
     }
   }
 
-  const source = await resolvePhases({ instance: sourceInstance });
-  const sourceData = source.instanceData as DecisionInstanceData | null;
+  const sourceData = sourceInstance.instanceData as DecisionInstanceData | null;
   if (!sourceData) {
     throw new CommonError('Source instance has no instance data');
   }
+  const sourcePhases = await getPhases({ instance: sourceInstance });
 
-  // The copy's blob carries the source's resolved phases.
-  const newInstanceData = buildInstanceData(
-    { ...sourceData, phases: source.phases },
-    include,
-  );
+  // Build new instance data based on include flags
+  const newInstanceData = buildInstanceData(sourceData, include);
 
   // Delegate core creation (profile, instance, default roles, profile user)
   const profile = await createDecisionInstance({
@@ -123,6 +120,7 @@ export const duplicateInstance = async ({
     creatorAuthUserId: user.id,
     creatorEmail: user.email,
     instanceData: newInstanceData,
+    phases: buildPhases(sourcePhases, include),
   });
 
   // Copy custom roles from source if requested (separate step because
@@ -159,7 +157,6 @@ function buildInstanceData(
     templateVersion: source.templateVersion,
     templateName: source.templateName,
     templateDescription: source.templateDescription,
-    phases: [],
   };
 
   // Process settings (config minus category fields unless proposalCategories is also included)
@@ -202,9 +199,25 @@ function buildInstanceData(
     }
   }
 
-  // Phases
-  if (include.phases && source.phases.length > 0) {
-    base.phases = source.phases.map((phase): PhaseInstanceData => {
+  // Proposal template
+  if (include.proposalTemplate && source.proposalTemplate) {
+    base.proposalTemplate = source.proposalTemplate;
+  }
+
+  // Review rubric
+  if (include.reviewRubric && source.rubricTemplate) {
+    base.rubricTemplate = source.rubricTemplate;
+  }
+
+  return base;
+}
+
+function buildPhases(
+  phases: PhaseInstanceData[],
+  include: DuplicateInstanceIncludeFlags,
+): PhaseInstanceData[] {
+  if (include.phases) {
+    return phases.map((phase): PhaseInstanceData => {
       const copied: PhaseInstanceData = {
         phaseId: phase.phaseId,
         name: phase.name,
@@ -231,32 +244,20 @@ function buildInstanceData(
 
       return copied;
     });
-  } else if (source.phases.length > 0) {
-    // Even without phase details, we need at least minimal phase references
-    base.phases = source.phases.map(
-      (phase): PhaseInstanceData => ({
-        phaseId: phase.phaseId,
-        name: phase.name,
-        // Minimal phase - just identity, plus the phase rubric when the
-        // rubric flag asks for it.
-        ...(include.reviewRubric && phase.rubricTemplate
-          ? { rubricTemplate: phase.rubricTemplate }
-          : {}),
-      }),
-    );
   }
 
-  // Proposal template
-  if (include.proposalTemplate && source.proposalTemplate) {
-    base.proposalTemplate = source.proposalTemplate;
-  }
-
-  // Review rubric
-  if (include.reviewRubric && source.rubricTemplate) {
-    base.rubricTemplate = source.rubricTemplate;
-  }
-
-  return base;
+  // Even without phase details, we need at least minimal phase references
+  return phases.map(
+    (phase): PhaseInstanceData => ({
+      phaseId: phase.phaseId,
+      name: phase.name,
+      // Minimal phase - just identity, plus the phase rubric when the
+      // rubric flag asks for it.
+      ...(include.reviewRubric && phase.rubricTemplate
+        ? { rubricTemplate: phase.rubricTemplate }
+        : {}),
+    }),
+  );
 }
 
 /**

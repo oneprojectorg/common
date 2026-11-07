@@ -105,7 +105,7 @@ describe.concurrent('advancePhase', () => {
     expect(history!.triggeredByProfileId).toBeNull();
   });
 
-  it('advances a decision that has no phase rows without creating any', async ({
+  it('refuses to advance a decision that has no phase rows', async ({
     task,
     onTestFinished,
   }) => {
@@ -113,11 +113,9 @@ describe.concurrent('advancePhase', () => {
     const loaded = await loadPublishedInstance(testData);
     await testData.removePhaseRows(loaded.dbInstance.id);
 
-    const result = await callAdvancePhase(loaded, {
-      fromPhaseId: 'initial',
-      toPhaseId: 'final',
-    });
-    expect(result.conflict).toBe(false);
+    await expect(
+      callAdvancePhase(loaded, { fromPhaseId: 'initial', toPhaseId: 'final' }),
+    ).rejects.toThrow('Phase initial not found');
     expect(await listPhaseIds(loaded.dbInstance.id)).toEqual([]);
   });
 

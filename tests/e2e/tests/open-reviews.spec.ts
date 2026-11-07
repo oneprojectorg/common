@@ -8,7 +8,7 @@ import {
   createProposalReview,
   createReviewAssignment,
   createReviewScenario,
-  getDecisionInstance,
+  getPhaseRowData,
   getSeededTemplate,
   grantInstanceReviewerRole,
 } from '@op/common/testing/data';
@@ -154,19 +154,14 @@ async function getProfileDisplayName(profileId: string): Promise<string> {
   return profile?.name ?? profile?.slug ?? profileId;
 }
 
-interface StoredPhase {
-  phaseId: string;
-  rules?: { reviews?: { openReviews?: boolean } };
-}
-
 /** Reads back the review phase's persisted `openReviews` flag from the DB. */
 async function getPersistedOpenReviews(
   instanceId: string,
 ): Promise<boolean | undefined> {
-  const saved = await getDecisionInstance(instanceId);
-  const phases =
-    (saved.instanceData as { phases?: StoredPhase[] }).phases ?? [];
-  const reviewPhase = phases.find((p) => p.phaseId === 'review');
+  const reviewPhase = await getPhaseRowData({
+    processInstanceId: instanceId,
+    phaseId: 'review',
+  });
   return reviewPhase?.rules?.reviews?.openReviews;
 }
 

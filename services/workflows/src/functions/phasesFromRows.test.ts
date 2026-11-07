@@ -1,6 +1,9 @@
 import { InngestTestEngine } from '@inngest/test';
 import type { DecisionSchemaDefinition } from '@op/common';
-import { TestDecisionsDataManager } from '@op/common/testing';
+import {
+  TestDecisionsDataManager,
+  updateInstancePhase,
+} from '@op/common/testing';
 import { db, eq } from '@op/db/client';
 import {
   ProcessStatus,
@@ -51,14 +54,13 @@ const createPublishedInstance = async (
   return { setup, instanceId: setup.instance.instance.id };
 };
 
-describe('with the blob emptied', () => {
+describe('workflows that read the phase rows', () => {
   it('names the phases in the phase transition email', async ({
     task,
     onTestFinished,
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
     const { instanceId } = await createPublishedInstance(testData);
-    await testData.leaveOnlyPhaseRows(instanceId);
 
     const { result } = await new InngestTestEngine({
       function: sendPhaseTransitionNotification,
@@ -76,7 +78,7 @@ describe('with the blob emptied', () => {
     });
 
     expect(result).toMatchObject({
-      phases: [{ name: 'Row initial' }, { name: 'Row final' }],
+      phases: [{ name: 'Initial Phase' }, { name: 'Final Phase' }],
     });
   });
 
@@ -109,7 +111,6 @@ describe('with the blob emptied', () => {
     if (!vote) {
       throw new Error('Failed to insert the vote');
     }
-    await testData.leaveOnlyPhaseRows(instanceId);
 
     const { result } = await new InngestTestEngine({
       function: sendVoteSubmittedNotification,
@@ -123,7 +124,7 @@ describe('with the blob emptied', () => {
     });
 
     expect(result).toMatchObject({
-      phases: [{ name: 'Row initial' }, { name: 'Row final' }],
+      phases: [{ name: 'Initial Phase' }, { name: 'Final Phase' }],
     });
   });
 
@@ -141,8 +142,13 @@ describe('with the blob emptied', () => {
       .update(processInstances)
       .set({ currentStateId: 'review' })
       .where(eq(processInstances.id, instanceId));
-    await testData.leaveOnlyPhaseRows(instanceId, {
-      endDate: new Date(midnightUtc + 2.5 * MS_PER_DAY).toISOString(),
+    await updateInstancePhase({
+      instanceId,
+      phaseId: 'review',
+      update: (phase) => ({
+        ...phase,
+        endDate: new Date(midnightUtc + 2.5 * MS_PER_DAY).toISOString(),
+      }),
     });
 
     const { result } = await new InngestTestEngine({

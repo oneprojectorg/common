@@ -21,6 +21,7 @@ import {
   expectNothingNamed,
   expectRowsMatchPhases,
   loadInstanceData,
+  loadInstancePhases,
   loadPhaseRows,
 } from '../../../test/helpers/phaseTestUtils';
 import {
@@ -118,15 +119,14 @@ describe.concurrent('createInstanceFromTemplate', () => {
     expect(result.name).toBe(decisionName);
     expect(result.processInstance.status).toBe('draft');
 
-    // Verify instance data has phases
     const instance = await db.query.processInstances.findFirst({
       where: { id: result.processInstance.id },
     });
 
     expect(instance).toBeDefined();
-    const instanceData = instance!.instanceData as DecisionInstanceData;
-    expect(instanceData.phases).toBeDefined();
-    expect(instanceData.phases.length).toBeGreaterThan(0);
+    expect(
+      (await loadInstancePhases(result.processInstance.id)).length,
+    ).toBeGreaterThan(0);
     expect(instance!.currentStateId).toBe('submission');
   });
 
@@ -156,7 +156,7 @@ describe.concurrent('createInstanceFromTemplate', () => {
     ).toBe('fresh');
   });
 
-  it('mints a phase row and profile per template phase, in order', async ({
+  it('mints a phase row and profile per template phase, in order, and stores none in instanceData', async ({
     task,
     onTestFinished,
   }) => {
@@ -180,12 +180,14 @@ describe.concurrent('createInstanceFromTemplate', () => {
       loadPhaseRows(result.processInstance.id),
     ]);
 
-    expect(instanceData.phases).toHaveLength(simpleVoting.phases.length);
-    expectRowsMatchPhases(rows, instanceData.phases);
-    expect(rows.map((row) => row.data)).toEqual(
-      instanceData.phases.map(({ name: _name, ...data }) => data),
+    expectRowsMatchPhases(
+      rows,
+      simpleVoting.phases.map(({ id, name }, index) => ({
+        phaseId: id,
+        name: index === 0 ? firstName : name,
+      })),
     );
-    expect(rows[0]?.name).toBe(firstName);
+    expect(instanceData).not.toHaveProperty('phases');
   });
 
   it.for([

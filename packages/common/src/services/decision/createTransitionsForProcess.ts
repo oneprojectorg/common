@@ -16,8 +16,7 @@ import {
  * Creates scheduled transition records for phases with date-based advancement.
  * Each transition fires when the current phase's end date arrives.
  *
- * Rules are read from the instance's phase data (instanceData.phases[].rules),
- * which are populated from the template when the instance is created.
+ * Rules are read from the instance's phase rows.
  */
 export async function createTransitionsForProcess({
   processInstance,

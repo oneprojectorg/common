@@ -119,7 +119,7 @@ export interface InstanceOverviewUpdate extends Omit<
 
 /**
  * Instance data stored in processInstances table for new DecisionSchemaDefinition-based instances.
- * This structure must match instanceDataWithSchemaEncoder in the API encoders.
+ * Phases live in decision_process_phases; a resolved instance carries them as `phases`.
  */
 export interface DecisionInstanceData {
   config?: ProcessConfig;
@@ -129,7 +129,6 @@ export interface DecisionInstanceData {
   templateVersion?: string;
   templateName?: string;
   templateDescription?: string;
-  phases: PhaseInstanceData[];
   /** Proposal template (JSON Schema) */
   proposalTemplate?: ProposalTemplateSchema;
   /** Rubric template (JSON Schema defining evaluation criteria) */
@@ -162,7 +161,7 @@ export interface PhaseOverride {
 export function createInstanceDataFromTemplate(input: {
   template: DecisionSchemaDefinition;
   phaseOverrides?: PhaseOverride[];
-}): DecisionInstanceData {
+}): { instanceData: DecisionInstanceData; phases: PhaseInstanceData[] } {
   const { template, phaseOverrides } = input;
 
   const firstPhase = template.phases[0];
@@ -176,13 +175,15 @@ export function createInstanceDataFromTemplate(input: {
   );
 
   return {
-    config: template.config,
-    templateId: template.id,
-    templateVersion: template.version,
-    templateName: template.name,
-    templateDescription: template.description,
-    proposalTemplate: template.proposalTemplate,
-    rubricTemplate: template.rubricTemplate,
+    instanceData: {
+      config: template.config,
+      templateId: template.id,
+      templateVersion: template.version,
+      templateName: template.name,
+      templateDescription: template.description,
+      proposalTemplate: template.proposalTemplate,
+      rubricTemplate: template.rubricTemplate,
+    },
     phases: template.phases.map((phase) => {
       const override = overrideMap.get(phase.id);
 

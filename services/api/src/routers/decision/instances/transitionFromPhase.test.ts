@@ -1,5 +1,7 @@
-import { type DecisionInstanceData } from '@op/common';
-import { TestDecisionsDataManager, syncPhaseRows } from '@op/common/testing';
+import {
+  TestDecisionsDataManager,
+  updateInstancePhases,
+} from '@op/common/testing';
 import { db, eq } from '@op/db/client';
 import {
   ProcessStatus,
@@ -338,35 +340,31 @@ describe('transitionFromPhase', () => {
     const dbInstance = await db.query.processInstances.findFirst({
       where: { id: instance.instance.id },
     });
-    const instanceData = dbInstance!.instanceData as DecisionInstanceData;
 
     await db
       .update(processInstances)
-      .set({
-        currentStateId: 'phase1',
-        instanceData: {
-          ...instanceData,
-          phases: [
-            {
-              phaseId: 'phase1',
-              startDate: new Date().toISOString(),
-              endDate: new Date(Date.now() + 7 * 86400000).toISOString(),
-            },
-            {
-              phaseId: 'phase2',
-              startDate: new Date(Date.now() + 7 * 86400000).toISOString(),
-              endDate: new Date(Date.now() + 14 * 86400000).toISOString(),
-            },
-            {
-              phaseId: 'phase3',
-              startDate: new Date(Date.now() + 14 * 86400000).toISOString(),
-              endDate: new Date(Date.now() + 21 * 86400000).toISOString(),
-            },
-          ],
-        },
-      })
+      .set({ currentStateId: 'phase1' })
       .where(eq(processInstances.id, instance.instance.id));
-    await syncPhaseRows(instance.instance.id);
+    await updateInstancePhases({
+      instanceId: instance.instance.id,
+      update: () => [
+        {
+          phaseId: 'phase1',
+          startDate: new Date().toISOString(),
+          endDate: new Date(Date.now() + 7 * 86400000).toISOString(),
+        },
+        {
+          phaseId: 'phase2',
+          startDate: new Date(Date.now() + 7 * 86400000).toISOString(),
+          endDate: new Date(Date.now() + 14 * 86400000).toISOString(),
+        },
+        {
+          phaseId: 'phase3',
+          startDate: new Date(Date.now() + 14 * 86400000).toISOString(),
+          endDate: new Date(Date.now() + 21 * 86400000).toISOString(),
+        },
+      ],
+    });
 
     // Also update the process schema to include all 3 phases
     await db

@@ -664,13 +664,7 @@ describe('processDecisionsTransitions', () => {
         .where(eq(decisionProcessTransitions.id, badTransitions[i]!.id));
     }
 
-    // Corrupt the bad instance's data by setting instanceData to have empty phases
-    await db
-      .update(processInstances)
-      .set({
-        instanceData: { phases: [] },
-      })
-      .where(eq(processInstances.id, badInstanceId));
+    // Corrupt the bad instance by deleting its phase rows
     await testData.removePhaseRows(badInstanceId);
 
     const monitorResult = await processDecisionsTransitions();

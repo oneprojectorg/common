@@ -3,7 +3,7 @@ import {
   ValidationError,
   createPhase,
 } from '@op/common';
-import { TestDecisionsDataManager, emptyBlobPhases } from '@op/common/testing';
+import { TestDecisionsDataManager } from '@op/common/testing';
 import { db } from '@op/db/client';
 import { EntityType } from '@op/db/schema';
 import { randomUUID } from 'node:crypto';
@@ -12,7 +12,6 @@ import { describe, expect, it } from 'vitest';
 import {
   expectNoProfileNamed,
   listPhaseIds,
-  loadBlobPhases,
   loadPhaseRows,
 } from '../../test/helpers/phaseTestUtils';
 
@@ -299,75 +298,12 @@ describe.concurrent('createPhase', () => {
     await expectNoProfileNamed(name);
   });
 
-  it(`counts the phases converted from instanceData against the ${MAX_PHASES_PER_DECISION} cap`, async ({
-    task,
-    onTestFinished,
-  }) => {
-    const { instanceId, user, testData } = await setup(task, onTestFinished);
-    await testData.removePhaseRows(instanceId);
-    const rowless = await loadBlobPhases(instanceId);
-    expect(rowless.length).toBeGreaterThan(0);
-
-    for (
-      let sortOrder = rowless.length;
-      sortOrder < MAX_PHASES_PER_DECISION;
-      sortOrder++
-    ) {
-      const { profile } = await createPhase({
-        user,
-        processInstanceId: instanceId,
-        name: `Phase ${sortOrder}`,
-        sortOrder,
-      });
-      testData.trackProfileForCleanup(profile.id);
-    }
-
-    const name = `One Too Many ${randomUUID()}`;
-    await expect(
-      createPhase({
-        user,
-        processInstanceId: instanceId,
-        name,
-        sortOrder: MAX_PHASES_PER_DECISION,
-      }),
-    ).rejects.toBeInstanceOf(ValidationError);
-
-    await expectNoProfileNamed(name);
-    expect(await listPhaseIds(instanceId)).toHaveLength(
-      MAX_PHASES_PER_DECISION,
-    );
-  });
-
-  it('converts a decision whose phases are only in instanceData into rows plus the new one', async ({
-    task,
-    onTestFinished,
-  }) => {
-    const { instanceId, user, testData } = await setup(task, onTestFinished);
-    await testData.removePhaseRows(instanceId);
-    const blobPhases = await loadBlobPhases(instanceId);
-    expect(blobPhases.length).toBeGreaterThan(0);
-
-    const { phase, profile } = await createPhase({
-      user,
-      processInstanceId: instanceId,
-      name: 'Results',
-      sortOrder: blobPhases.length,
-    });
-    testData.trackProfileForCleanup(profile.id);
-
-    expect(await loadPhaseRows(instanceId)).toMatchObject([
-      ...blobPhases.map(({ phaseId }) => ({ data: { phaseId } })),
-      { id: phase.id, data: {} },
-    ]);
-  });
-
   it('mints the first phase row of a decision with no phases', async ({
     task,
     onTestFinished,
   }) => {
     const { instanceId, user, testData } = await setup(task, onTestFinished);
     await testData.removePhaseRows(instanceId);
-    await emptyBlobPhases(instanceId);
 
     const { phase, profile } = await createPhase({
       user,
