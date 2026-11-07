@@ -53,7 +53,13 @@ export async function getProposalWithReviewAggregates(
 
   // Resolved by the effective phase so each phase's reviews are scored (and
   // rendered by clients) against that phase's rubric.
-  const rubricTemplate = getPhaseRubricTemplate(instance.instanceData, phaseId);
+  const rubricTemplate = getPhaseRubricTemplate(
+    {
+      rubricTemplate: instance.instanceData.rubricTemplate,
+      phases: instance.phases,
+    },
+    phaseId,
+  );
   const scoredCriterionKeys = rubricTemplate
     ? getRubricScoringInfo(rubricTemplate)
         .criteria.filter((c) => c.scored)

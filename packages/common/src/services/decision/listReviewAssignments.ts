@@ -407,7 +407,10 @@ export async function listAssignmentsForReviewer({
       },
       // From the assignment's own phase, each of which can carry a rubric.
       rubricTemplate: getPhaseRubricTemplate(
-        instance.instanceData,
+        {
+          rubricTemplate: instance.instanceData.rubricTemplate,
+          phases: instance.phases,
+        },
         assignment.phaseId,
       ),
       review,

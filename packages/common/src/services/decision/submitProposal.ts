@@ -11,6 +11,7 @@ import { permission } from 'access-zones';
 
 import { CommonError, NotFoundError, ValidationError } from '../../utils';
 import { assertProfileAccess } from '../assert';
+import { getPhases } from './instancePhases';
 import { lockProcessInstanceOrThrow } from './lockProcessInstance';
 import { decisionPermission } from './permissions';
 import {
@@ -87,7 +88,7 @@ export const submitProposal = async ({
 
   // Check if proposals are allowed in current phase
   const { allowed, phaseName } = checkProposalsAllowed(
-    instanceData.phases,
+    await getPhases({ instance }),
     currentPhaseId,
   );
 

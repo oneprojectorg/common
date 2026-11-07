@@ -1,4 +1,4 @@
-import { NotFoundError, isDecisionPublic } from '@op/common';
+import { NotFoundError, isDecisionPublic, resolvePhases } from '@op/common';
 import {
   adminDecisionInstanceDetailSchema,
   allowsComments,
@@ -11,6 +11,7 @@ import {
 import { db } from '@op/db/client';
 import { z } from 'zod';
 
+import { putPhasesOnInstanceData } from '../../../encoders/phasesOnWire';
 import { withAuthenticatedPlatformAdmin } from '../../../middlewares/withAuthenticatedPlatformAdmin';
 import withRateLimited from '../../../middlewares/withRateLimited';
 import { commonProcedure, router } from '../../../trpcFactory';
@@ -114,7 +115,7 @@ export const getDecisionInstanceRouter = router({
     .input(z.object({ instanceId: z.uuid() }))
     .output(adminDecisionInstanceDetailSchema)
     .query(async ({ input }) => {
-      const instance = await db.query.processInstances.findFirst({
+      const instanceRow = await db.query.processInstances.findFirst({
         where: { id: input.instanceId },
         with: {
           owner: { columns: { id: true, name: true, slug: true } },
@@ -124,20 +125,29 @@ export const getDecisionInstanceRouter = router({
         },
       });
 
-      if (!instance) {
+      if (!instanceRow) {
         throw new NotFoundError('Decision instance not found');
       }
 
-      const parsed = detailInstanceData.safeParse(instance.instanceData);
-      const instanceData = parsed.success ? parsed.data : {};
-
       // No profile of its own means no grant to carry.
-      const isPublic = instance.profileId
-        ? await isDecisionPublic({ profileId: instance.profileId })
-        : false;
+      const [resolvedInstance, isPublic] = await Promise.all([
+        resolvePhases({ instance: instanceRow }),
+        instanceRow.profileId
+          ? isDecisionPublic({ profileId: instanceRow.profileId })
+          : false,
+      ]);
+
+      const wireInstanceData = putPhasesOnInstanceData({
+        instanceData: resolvedInstance.instanceData,
+        phases: resolvedInstance.phases,
+      });
+      const parsed = detailInstanceData.safeParse(wireInstanceData);
+      const { phases = [], ...instanceData } = parsed.success
+        ? parsed.data
+        : {};
 
       const schemaParsed = detailProcessSchema.safeParse(
-        instance.process?.processSchema,
+        resolvedInstance.process?.processSchema,
       );
       const schemaRulesByPhaseId = new Map(
         (schemaParsed.success ? (schemaParsed.data.phases ?? []) : []).map(
@@ -146,18 +156,18 @@ export const getDecisionInstanceRouter = router({
       );
 
       return adminDecisionInstanceDetailSchema.parse({
-        id: instance.id,
-        name: instance.name,
-        slug: instance.profile?.slug ?? null,
-        profileId: instance.profileId,
-        status: instance.status,
-        createdAt: instance.createdAt,
+        id: resolvedInstance.id,
+        name: resolvedInstance.name,
+        slug: resolvedInstance.profile?.slug ?? null,
+        profileId: resolvedInstance.profileId,
+        status: resolvedInstance.status,
+        createdAt: resolvedInstance.createdAt,
         isPublic,
-        owner: instance.owner ?? null,
-        steward: instance.steward ?? null,
+        owner: resolvedInstance.owner ?? null,
+        steward: resolvedInstance.steward ?? null,
         reviewsPolicy: instanceData.config?.reviewsPolicy ?? null,
         processType:
-          instanceData.templateName ?? instance.process?.name ?? null,
+          instanceData.templateName ?? resolvedInstance.process?.name ?? null,
         templateVersion: instanceData.templateVersion ?? null,
         config: {
           isPrivate: instanceData.config?.isPrivate ?? false,
@@ -179,8 +189,8 @@ export const getDecisionInstanceRouter = router({
             instanceData.config?.requireCollaborativeProposals ?? false,
           categoriesCount: instanceData.config?.categories?.length ?? 0,
         },
-        instanceData: instance.instanceData,
-        phases: (instanceData.phases ?? []).map((phase) => {
+        instanceData: wireInstanceData,
+        phases: phases.map((phase) => {
           // Instance rules win; fall back to the process schema definition
           // (older instances don't copy every rule into instanceData).
           const rules = phase.rules ?? schemaRulesByPhaseId.get(phase.phaseId);
@@ -190,7 +200,7 @@ export const getDecisionInstanceRouter = router({
             name: phase.name ?? null,
             startDate: phase.startDate ?? null,
             endDate: phase.endDate ?? null,
-            isCurrent: phase.phaseId === instance.currentStateId,
+            isCurrent: phase.phaseId === resolvedInstance.currentStateId,
             hasProposals: rules?.proposals?.submit ?? false,
             hasReviews: isReviewPhase({ rules }),
             hasVoting: rules?.voting?.submit ?? false,

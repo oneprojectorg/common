@@ -5,6 +5,7 @@ import { logger } from '@op/logging';
 
 import { CommonError } from '../../utils';
 import { buildExpectedTransitions } from './buildExpectedTransitions';
+import { resolvePhases } from './instancePhases';
 
 /**
  * Creates scheduled transition records for phases with date-based advancement.
@@ -28,7 +29,9 @@ export async function createTransitionsForProcess({
   }>;
 }> {
   try {
-    const transitionsToCreate = buildExpectedTransitions(processInstance);
+    const transitionsToCreate = buildExpectedTransitions(
+      await resolvePhases({ instance: processInstance, db }),
+    );
 
     if (transitionsToCreate.length === 0) {
       return { transitions: [] };

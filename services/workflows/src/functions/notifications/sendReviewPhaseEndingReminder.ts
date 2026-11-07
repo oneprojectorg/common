@@ -1,8 +1,8 @@
 import {
   computeDaysLeft,
   getInstanceCurrentPhase,
-  getInstancePhases,
   isInstanceCurrentPhase,
+  resolvePhases,
 } from '@op/common';
 import { db } from '@op/db/client';
 import { ProcessStatus } from '@op/db/schema';
@@ -23,7 +23,7 @@ export const sendReviewPhaseEndingReminder = inngest.createFunction(
       reviewPhaseEndingSoon.schema.parse(event.data);
 
     const instanceData = await step.run('get-instance-data', async () => {
-      const instance = await db.query.processInstances.findFirst({
+      const instanceRow = await db.query.processInstances.findFirst({
         where: { id: processInstanceId },
         columns: {
           id: true,
@@ -35,11 +35,11 @@ export const sendReviewPhaseEndingReminder = inngest.createFunction(
         },
       });
 
-      if (!instance) {
+      if (!instanceRow) {
         return undefined;
       }
 
-      return instance;
+      return resolvePhases({ instance: instanceRow });
     });
 
     if (!instanceData) {
@@ -70,10 +70,10 @@ export const sendReviewPhaseEndingReminder = inngest.createFunction(
       return;
     }
 
-    const phases = getInstancePhases(instanceData.instanceData);
+    const { phases } = instanceData;
     const phase = getInstanceCurrentPhase({
       currentStateId: instanceData.currentStateId,
-      instanceData: { phases },
+      phases,
     });
 
     if (phase?.rules?.reviews?.submit !== true) {

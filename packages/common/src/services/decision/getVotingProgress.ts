@@ -6,10 +6,10 @@ import { NotFoundError } from '../../utils';
 import { getCachedInstance } from './getCachedInstance';
 import { computeDaysLeft } from './getPhaseReviewProgress';
 import { getProfileIdsWithDecisionPermission } from './getProfileIdsWithDecisionPermission';
+import { getPhases } from './instancePhases';
 import { isDecisionPublic } from './isDecisionPublic';
 import { decisionPermission } from './permissions';
 import { assertDecisionAdmin } from './phaseHelpers';
-import { getInstancePhases } from './schemas/instanceData';
 import type { VotingProgress } from './schemas/votingProgress';
 
 // The permissions submitVote admits.
@@ -33,7 +33,7 @@ export async function getVotingProgress({
 
   // The reads run beside the assert; a denied caller gets its rejection and
   // never sees their results.
-  const [, memberProfileIds, isPublicVoting, voterProfileIds] =
+  const [, memberProfileIds, isPublicVoting, voterProfileIds, phases] =
     await Promise.all([
       assertDecisionAdmin({ user, decisionProfileId: instance.profileId }),
       instance.profileId
@@ -49,6 +49,7 @@ export async function getVotingProgress({
           })
         : false,
       getVoterProfileIds({ processInstanceId }),
+      getPhases({ instance }),
     ]);
 
   // Public voting admits every voter; otherwise a voter who lost the vote
@@ -72,10 +73,7 @@ export async function getVotingProgress({
             (participantsVotedCount / participantsEligibleCount) * 100,
           ),
     daysLeft: instance.currentStateId
-      ? computeDaysLeft({
-          phaseId: instance.currentStateId,
-          phases: getInstancePhases(instance.instanceData),
-        })
+      ? computeDaysLeft({ phaseId: instance.currentStateId, phases })
       : null,
   };
 }

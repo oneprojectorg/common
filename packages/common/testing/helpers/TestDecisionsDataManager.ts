@@ -6,6 +6,7 @@ import {
   decisionProcesses,
   locations,
   processInstances,
+  processPhases,
   profileUserToAccessRoles,
   profiles,
   proposals,
@@ -13,7 +14,7 @@ import {
 } from '@op/db/schema';
 import { ROLES } from '@op/db/seedData/accessControl';
 import type { User } from '@op/supabase/lib';
-import { eq, inArray } from 'drizzle-orm';
+import { eq, inArray, sql } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
 
 import {
@@ -25,9 +26,12 @@ import {
   createInstanceDataFromTemplate,
   createOrganization as createOrganizationService,
   createProposal as createProposalService,
+  type PhaseData,
+  getInstancePhases,
   getTemplate,
   joinOrganization,
 } from '../../src';
+import { insertPhase } from '../../src/services/decision/phaseHelpers';
 import {
   claimShortCode,
   grantDecisionProfileAccess,
@@ -37,6 +41,7 @@ import {
 import { readProfileIdForAuthUser } from '../data/test-data';
 import { createTestUser, supabaseTestAdminClient } from '../supabase';
 import { advanceInstancePhase } from './advanceInstancePhase';
+import { emptyBlobPhases } from './phaseRowFixtures';
 
 // Fixture schemas are literals written straight to `process_schema` (jsonb), so
 // this mirrors the looser shape the api decision encoders decode them into.
@@ -723,6 +728,55 @@ export class TestDecisionsDataManager {
     toPhaseId: string;
   }) {
     return advanceInstancePhase(opts);
+  }
+
+  // TODO: remove the phase-row fixtures below when instanceData.phases is dropped.
+  async createPhaseRows(
+    instanceId: string,
+    rowData: PhaseData = {},
+  ): Promise<void> {
+    const instance = await db.query.processInstances.findFirst({
+      where: { id: instanceId },
+      columns: { instanceData: true },
+    });
+    if (!instance) {
+      throw new Error(`Instance ${instanceId} not found`);
+    }
+
+    const phases = getInstancePhases(instance.instanceData);
+    await db.transaction(async (tx) => {
+      for (const [sortOrder, { phaseId, name, ...data }] of phases.entries()) {
+        const { phase, profile } = await insertPhase({
+          tx,
+          processInstanceId: instanceId,
+          name: name ?? phaseId,
+          sortOrder,
+          data: { ...data, ...rowData },
+        });
+        this.trackProfileForCleanup(profile.id);
+        await tx
+          .update(processPhases)
+          .set({
+            data: sql`${processPhases.data} || ${JSON.stringify({ phaseId })}::jsonb`,
+          })
+          .where(eq(processPhases.id, phase.id));
+      }
+    });
+  }
+
+  async leaveOnlyPhaseRows(
+    instanceId: string,
+    rowData: PhaseData = {},
+  ): Promise<void> {
+    await this.createPhaseRows(instanceId, rowData);
+    await db
+      .update(profiles)
+      .set({ name: sql`'Row ' || (${processPhases.data} ->> 'phaseId')` })
+      .from(processPhases)
+      .where(
+        sql`${profiles.id} = ${processPhases.profileId} AND ${processPhases.processInstanceId} = ${instanceId}`,
+      );
+    await emptyBlobPhases(instanceId);
   }
 
   /**

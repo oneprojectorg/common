@@ -8,8 +8,13 @@ import { permission } from 'access-zones';
 
 import { NotFoundError } from '../../utils';
 import { assertInstanceProfileAccess } from '../access';
-import type { DecisionInstanceData } from '../decision/schemas/instanceData';
+import { resolvePhases } from '../decision/instancePhases';
+import type {
+  DecisionInstanceData,
+  PhaseInstanceData,
+} from '../decision/schemas/instanceData';
 import { serverExtensions } from '../decision/tiptapExtensions';
+import { getInstanceCurrentPhase } from '../decision/utils/instance';
 import type { SupportedLocale } from './locales';
 import { runTranslateBatch } from './runTranslateBatch';
 
@@ -43,6 +48,7 @@ export async function translateDecision({
 }): Promise<DecisionTranslationResult> {
   const instances = await db
     .select({
+      id: processInstances.id,
       description: processInstances.description,
       instanceData: processInstances.instanceData,
       currentStateId: processInstances.currentStateId,
@@ -59,30 +65,33 @@ export async function translateDecision({
     )
     .limit(1);
 
-  if (instances.length === 0) {
+  const [instanceRow] = instances;
+
+  if (!instanceRow) {
     throw new NotFoundError('Decision profile', decisionProfileId);
   }
 
-  const processInstance = instances[0]!;
+  const resolvedInstance = await resolvePhases({ instance: instanceRow });
 
   // Start the permission check immediately so it runs in parallel with translation
   const authPromise = assertInstanceProfileAccess({
     user,
     instance: {
-      profileId: processInstance.profileId,
-      ownerProfileId: processInstance.ownerProfileId,
+      profileId: resolvedInstance.profileId,
+      ownerProfileId: resolvedInstance.ownerProfileId,
     },
     profilePermissions: { decisions: permission.READ },
     orgFallbackPermissions: { decisions: permission.READ },
   });
 
   const instanceData =
-    processInstance.instanceData as DecisionInstanceData | null;
+    resolvedInstance.instanceData as DecisionInstanceData | null;
   const entries = buildEntries(
     decisionProfileId,
     instanceData,
-    processInstance.currentStateId,
-    processInstance.description,
+    resolvedInstance.phases,
+    resolvedInstance.currentStateId,
+    resolvedInstance.description,
   );
 
   if (entries.length === 0) {
@@ -127,15 +136,14 @@ function renderBodyToHtml(content: string | JSONContent): string {
 function buildEntries(
   decisionProfileId: string,
   instanceData: DecisionInstanceData | null,
+  phases: readonly PhaseInstanceData[],
   currentStateId: string | null,
   processDescription: string | null,
 ): TranslatableEntry[] {
   const prefix = `decision:${decisionProfileId}`;
   const entries: TranslatableEntry[] = [];
 
-  const currentPhase = currentStateId
-    ? instanceData?.phases?.find((p) => p.phaseId === currentStateId)
-    : undefined;
+  const currentPhase = getInstanceCurrentPhase({ phases, currentStateId });
 
   if (currentPhase?.headline) {
     entries.push({
@@ -156,7 +164,7 @@ function buildEntries(
     });
   }
 
-  for (const phase of instanceData?.phases ?? []) {
+  for (const phase of phases) {
     if (phase.name) {
       entries.push({
         contentKey: `${prefix}:phase:${phase.phaseId}:name`,

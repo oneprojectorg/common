@@ -24,6 +24,7 @@ import { getProfileAccessRoles } from '../access';
 import { assertUserByAuthId } from '../assert';
 import { withBoundaryCategoryLabel } from './boundaryCategory';
 import { getProposalFragmentNames } from './getProposalFragmentNames';
+import { getPhases } from './instancePhases';
 import type {
   CheckpointVersion,
   ProposalDataInput,
@@ -34,7 +35,6 @@ import { resolveProposalTemplate } from './resolveProposalTemplate';
 import {
   type DecisionInstanceData,
   type PhaseInstanceData,
-  getInstancePhases,
   isLastPhase,
 } from './schemas/instanceData';
 import { setProposalCategories } from './setProposalCategories';
@@ -86,7 +86,7 @@ export const updateProposal = async ({
   const processInstance = existingProposal.processInstance;
 
   // Reject updates when the instance is in the final (results) phase
-  const instancePhases = getInstancePhases(processInstance.instanceData);
+  const instancePhases = await getPhases({ instance: processInstance });
   if (isLastPhase(processInstance.currentStateId, instancePhases)) {
     throw new ValidationError(
       'Proposals cannot be edited during the results phase',

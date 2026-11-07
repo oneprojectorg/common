@@ -19,6 +19,7 @@ import {
   getProposalDocumentsContent,
 } from './getProposalDocumentsContent';
 import { getProposalRelationshipData } from './getProposalRelationshipData';
+import { getPhases } from './instancePhases';
 import {
   type DecisionRolePermissions,
   decisionPermission,
@@ -27,7 +28,6 @@ import {
 import { isAnonymousAuthor } from './proposalAuthor';
 import { type ProposalData, parseProposalData } from './proposalDataSchema';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
-import { getInstancePhases } from './schemas/instanceData';
 import { ProposalTemplateSchema } from './types';
 import { isPostSubmissionEditingAllowed } from './utils/phaseSettings';
 
@@ -323,14 +323,11 @@ export const getPermissionsOnProposal = async ({
     }
   }
 
-  const instancePhases = getInstancePhases(
-    proposal.processInstance.instanceData,
-  );
   const isEditable =
     access.update &&
     (proposal.status === ProposalStatus.DRAFT ||
       isPostSubmissionEditingAllowed({
-        phases: instancePhases,
+        phases: await getPhases({ instance: proposal.processInstance }),
         currentPhaseId: proposal.processInstance.currentStateId,
       }));
 

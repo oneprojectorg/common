@@ -23,13 +23,13 @@ import {
 import { assertGlobalRole } from '../assert';
 import { generateUniqueProfileSlug } from '../profile/utils';
 import { withBoundaryCategoryLabel } from './boundaryCategory';
+import { resolvePhases } from './instancePhases';
 import { decisionPermission } from './permissions';
 import { processProposalContent } from './proposalContentProcessor';
 import {
   type ProposalDataInput,
   parseProposalData,
 } from './proposalDataSchema';
-import type { DecisionInstanceData } from './schemas/instanceData';
 import { syncProposalProfileLocation } from './syncProposalProfileLocation';
 import { assertInstancePhase } from './utils/instance';
 import { checkProposalsAllowed } from './utils/proposal';
@@ -50,26 +50,28 @@ export const createProposal = async ({
   const authUserId = user.id;
 
   // Verify the process instance exists
-  const instance = await db.query.processInstances.findFirst({
+  const instanceRow = await db.query.processInstances.findFirst({
     where: { id: data.processInstanceId },
   });
 
-  if (!instance) {
+  if (!instanceRow) {
     throw new NotFoundError('Process instance', data.processInstanceId);
   }
 
-  await assertInstanceProfileAccess({
-    user: { id: authUserId },
-    instance,
-    profilePermissions: [
-      { profile: permission.ADMIN },
-      { decisions: decisionPermission.SUBMIT_PROPOSALS },
-    ],
-    orgFallbackPermissions: { profile: permission.ADMIN },
-  });
+  const [resolvedInstance] = await Promise.all([
+    resolvePhases({ instance: instanceRow }),
+    assertInstanceProfileAccess({
+      user: { id: authUserId },
+      instance: instanceRow,
+      profilePermissions: [
+        { profile: permission.ADMIN },
+        { decisions: decisionPermission.SUBMIT_PROPOSALS },
+      ],
+      orgFallbackPermissions: { profile: permission.ADMIN },
+    }),
+  ]);
 
-  const instanceData = instance.instanceData as DecisionInstanceData;
-  const currentPhaseId = instance.currentStateId;
+  const currentPhaseId = resolvedInstance.currentStateId;
 
   if (!currentPhaseId) {
     throw new ValidationError('Invalid phase in process instance');
@@ -77,7 +79,7 @@ export const createProposal = async ({
 
   // Check if proposals are allowed in current phase
   const { allowed, phaseName } = checkProposalsAllowed(
-    instanceData.phases,
+    resolvedInstance.phases,
     currentPhaseId,
   );
 
@@ -92,7 +94,7 @@ export const createProposal = async ({
   // a hidden-by-default phase remains hidden even if the rule is edited
   // before submit.
   const currentPhase = assertInstancePhase({
-    instance: { instanceData },
+    instance: resolvedInstance,
     phaseId: currentPhaseId,
   });
   const defaultHidden =
@@ -109,9 +111,9 @@ export const createProposal = async ({
   // Without a decision profile (legacy instances) the boundary lookup is
   // skipped and only the manual categories pass through.
   const manualCategoryLabels = [...new Set(parsedProposalData.category)];
-  const categoryLabels = instance.profileId
+  const categoryLabels = resolvedInstance.profileId
     ? await withBoundaryCategoryLabel(manualCategoryLabels, data.proposalData, {
-        profileId: instance.profileId,
+        profileId: resolvedInstance.profileId,
       })
     : manualCategoryLabels;
   const categoryTermIds = await getCategoryTermIds(categoryLabels);

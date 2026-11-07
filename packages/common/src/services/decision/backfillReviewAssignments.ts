@@ -8,6 +8,7 @@ import {
   type AssignableProposal,
   insertReviewAssignments,
 } from './insertReviewAssignments';
+import { resolvePhases } from './instancePhases';
 import type { DecisionInstanceData } from './schemas/instanceData';
 import { assertInstancePhase } from './utils/instance';
 import { getPhaseReviewSettings, isReviewPhase } from './utils/phaseSettings';
@@ -45,35 +46,39 @@ export async function backfillReviewAssignments({
     return { skipped: reason };
   };
 
-  const instance = await db.query.processInstances.findFirst({
+  const instanceRow = await db.query.processInstances.findFirst({
     where: { id: instanceId },
   });
 
-  if (!instance) {
+  if (!instanceRow) {
     return skip('instance not found');
   }
-  if (instance.status !== ProcessStatus.PUBLISHED) {
-    return skip(`instance is not published (status: ${instance.status})`);
+  if (instanceRow.status !== ProcessStatus.PUBLISHED) {
+    return skip(`instance is not published (status: ${instanceRow.status})`);
   }
-  if (!instance.profileId) {
+  if (!instanceRow.profileId) {
     return skip('instance has no profileId');
   }
-  const currentPhaseId = instance.currentStateId;
+  const currentPhaseId = instanceRow.currentStateId;
   if (!currentPhaseId) {
     return skip('instance has no current phase');
   }
 
-  const instanceData = instance.instanceData as DecisionInstanceData;
+  const resolvedInstance = await resolvePhases({ instance: instanceRow });
+  const { config } = resolvedInstance.instanceData as DecisionInstanceData;
 
   const currentPhase = assertInstancePhase({
-    instance: { instanceData },
+    instance: resolvedInstance,
     phaseId: currentPhaseId,
   });
   if (!isReviewPhase(currentPhase)) {
     return skip('current phase is not review-capable');
   }
 
-  const reviewSettings = getPhaseReviewSettings(instanceData, currentPhaseId);
+  const reviewSettings = getPhaseReviewSettings(
+    { config, phases: resolvedInstance.phases },
+    currentPhaseId,
+  );
 
   // Backfill only makes sense under `full_coverage`: under `single_reviewer` a
   // mid-phase reviewer would land as a second reviewer on every proposal they
@@ -114,7 +119,7 @@ export async function backfillReviewAssignments({
     }),
 
     getEligibleReviewerProfileIds({
-      decisionProfileId: instance.profileId,
+      decisionProfileId: instanceRow.profileId,
     }),
   ]);
 

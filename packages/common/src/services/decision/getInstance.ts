@@ -12,6 +12,7 @@ import {
   getOrgAccessUser,
 } from '../access';
 import { getCachedInstance } from './getCachedInstance';
+import { resolvePhases } from './instancePhases';
 import type { DecisionRolePermissions } from './permissions';
 import { fromDecisionBitField } from './permissions';
 import { resolveManualSelectionStatus } from './resolveManualSelectionStatus';
@@ -74,19 +75,21 @@ export const getInstance = async ({ instanceId, user }: GetInstanceInput) => {
   try {
     // Cached and viewer-independent; the access check + per-user access bits
     // below run on every call, outside the cache.
-    const instance = await getCachedInstance(instanceId);
+    const cached = await getCachedInstance(instanceId);
 
-    if (!instance) {
+    if (!cached) {
       throw new NotFoundError('Process instance', instanceId);
     }
 
-    // Assert read access and reuse the profile-level roles it resolves.
-    const profileRoles = await assertInstanceProfileAccess({
-      user,
-      instance,
-      profilePermissions: { decisions: permission.READ },
-      orgFallbackPermissions: { decisions: permission.READ },
-    });
+    const [instance, profileRoles] = await Promise.all([
+      resolvePhases({ instance: cached }),
+      assertInstanceProfileAccess({
+        user,
+        instance: cached,
+        profilePermissions: { decisions: permission.READ },
+        orgFallbackPermissions: { decisions: permission.READ },
+      }),
+    ]);
 
     // Resolve access capabilities for the current user.
     // profileId is guaranteed non-null here: assertInstanceProfileAccess throws above if null.
@@ -104,30 +107,24 @@ export const getInstance = async ({ instanceId, user }: GetInstanceInput) => {
 
     // Filter budget from phase settings if hideBudget is true
     const instanceData = instance.instanceData as DecisionInstanceData;
-    const filteredInstanceData = instanceData.config?.hideBudget
-      ? {
-          ...instanceData,
-          phases: instanceData.phases.map((phase) => ({
-            ...phase,
-            settings: phase.settings
-              ? { ...phase.settings, budget: undefined }
-              : phase.settings,
-          })),
-        }
-      : instanceData;
+    const phases = instanceData.config?.hideBudget
+      ? instance.phases.map((phase) => ({
+          ...phase,
+          settings: phase.settings
+            ? { ...phase.settings, budget: undefined }
+            : phase.settings,
+        }))
+      : instance.phases;
 
     const manualSelectionStatus = await resolveManualSelectionStatus({
-      instance: {
-        id: instance.id,
-        instanceData: instance.instanceData,
-        currentStateId: instance.currentStateId,
-      },
+      instance,
     });
 
     return {
       ...instance,
       slug: instance.profile?.slug ?? null,
-      instanceData: filteredInstanceData,
+      instanceData,
+      phases,
       access,
       selectionsAreConfirmed: manualSelectionStatus.selectionsAreConfirmed,
     };

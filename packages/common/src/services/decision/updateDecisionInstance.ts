@@ -13,7 +13,12 @@ import type { User } from '@op/supabase/lib';
 import { waitUntil } from '@vercel/functions';
 import { permission } from 'access-zones';
 
-import { CommonError, NotFoundError, UnauthorizedError } from '../../utils';
+import {
+  CommonError,
+  NotFoundError,
+  UnauthorizedError,
+  ValidationError,
+} from '../../utils';
 import { assertProfileAccess, assertProfileAdmin } from '../assert';
 import { generateUniqueProfileSlug } from '../profile/utils';
 import { assertVoterCostField } from './assertVoterCostField';
@@ -22,6 +27,8 @@ import {
   getNormalizedCategories,
   getUpdatedInstanceData,
 } from './getUpdatedInstanceData';
+import { attachBlobPhases } from './instancePhases';
+import { listPhasesByInstance } from './phaseHelpers';
 import { ensureProposalTaxonomyTerms } from './proposalTaxonomy';
 import { schemaValidator } from './schemaValidator';
 import type {
@@ -117,6 +124,20 @@ export const updateDecisionInstance = async ({
     updateData.stewardProfileId = stewardProfileId;
   }
 
+  const hasPhaseUpdates = phases !== undefined && phases.length > 0;
+  // Readers take rows over the blob, so a blob phase edit on a decision with rows would be invisible.
+  // TODO: remove once the builder save writes rows.
+  if (hasPhaseUpdates) {
+    const rows = await listPhasesByInstance({
+      db,
+      processInstanceIds: [instanceId],
+    });
+    if (rows.has(instanceId)) {
+      throw new ValidationError(
+        'Phases for this decision are stored as rows and cannot be edited here yet',
+      );
+    }
+  }
   const instanceDataUpdate = getUpdatedInstanceData({
     existing: existingInstance.instanceData as DecisionInstanceData,
     update: { config, overview, phases, proposalTemplate, rubricTemplate },
@@ -130,7 +151,7 @@ export const updateDecisionInstance = async ({
       );
     }
 
-    if ((phases !== undefined && phases.length > 0) || proposalTemplate) {
+    if (hasPhaseUpdates || proposalTemplate) {
       await assertVoterCostField({
         instanceData: instanceDataUpdate.instanceData,
         processId: existingInstance.processId,
@@ -179,7 +200,7 @@ export const updateDecisionInstance = async ({
       updatedInstance,
       isDraft: (status ?? existingInstance.status) === ProcessStatus.DRAFT,
       isBeingPublished,
-      phasesChanged: phases !== undefined && phases.length > 0,
+      phasesChanged: hasPhaseUpdates,
     });
   });
 
@@ -283,7 +304,7 @@ async function syncTransitions({
     });
   } else if (phasesChanged) {
     await updateTransitionsForProcess({
-      processInstance: updatedInstance,
+      processInstance: attachBlobPhases({ instance: updatedInstance }),
       db: tx,
     });
   }

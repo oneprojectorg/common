@@ -23,11 +23,12 @@ import { assertInstanceProfileAccess, getIndividualProfileId } from '../access';
 import { assertProfileAccess } from '../assert';
 import { getFieldUnit } from './fieldUnit';
 import { type ProposalCosts, getProposalCosts } from './getProposalCosts';
+import { resolvePhases } from './instancePhases';
 import { decisionPermission } from './permissions';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
 import { processDecisionProcessSchema } from './schemaRegistry';
 import { validateVoteBudget, validateVoteSelection } from './schemaValidators';
-import type { DecisionInstanceData } from './schemas/instanceData';
+import type { PhaseInstanceData } from './schemas/instanceData';
 import type { ProposalTemplateSchema } from './types';
 import {
   getVoterBudget,
@@ -53,17 +54,16 @@ interface PhaseConfig {
 
 /** Extract voting/proposal rules for the current phase. */
 function getCurrentPhaseConfig(processInstance: {
-  instanceData: unknown;
+  phases: readonly PhaseInstanceData[];
   currentStateId: string | null;
 }): PhaseConfig | undefined {
-  const instanceData = processInstance.instanceData as DecisionInstanceData;
   const currentPhaseId = processInstance.currentStateId;
 
   if (!currentPhaseId) {
     return undefined;
   }
 
-  const currentPhase = instanceData.phases.find(
+  const currentPhase = processInstance.phases.find(
     (p) =>
       p.phaseId === currentPhaseId ||
       // @ts-expect-error  Remove p.stateId in a migration before undoing p.stateId
@@ -178,7 +178,7 @@ async function getBallotPricing({
 }
 
 async function getVotingInstance(processInstanceId: string) {
-  const processInstance = await db.query.processInstances.findFirst({
+  const instanceRow = await db.query.processInstances.findFirst({
     where: { id: processInstanceId },
     columns: {
       id: true,
@@ -190,11 +190,11 @@ async function getVotingInstance(processInstanceId: string) {
     },
   });
 
-  if (!processInstance) {
+  if (!instanceRow) {
     throw new NotFoundError('Process instance', processInstanceId);
   }
 
-  return processInstance;
+  return instanceRow;
 }
 
 // Runs both caps so the voter sees every problem at once.
@@ -357,21 +357,24 @@ export const submitVote = async ({
   try {
     const profileId = await getIndividualProfileId(authUserId);
 
-    const processInstance = await getVotingInstance(data.processInstanceId);
+    const instanceRow = await getVotingInstance(data.processInstanceId);
 
-    if (!processInstance.profileId) {
+    if (!instanceRow.profileId) {
       throw new NotFoundError('Decision profile', data.processInstanceId);
     }
 
     // Check user permissions
-    await assertProfileAccess({
-      user: { id: authUserId },
-      profileId: processInstance.profileId,
-      permissions: [
-        { decisions: permission.ADMIN },
-        { decisions: decisionPermission.VOTE },
-      ],
-    });
+    const [processInstance] = await Promise.all([
+      resolvePhases({ instance: instanceRow }),
+      assertProfileAccess({
+        user: { id: authUserId },
+        profileId: instanceRow.profileId,
+        permissions: [
+          { decisions: permission.ADMIN },
+          { decisions: decisionPermission.VOTE },
+        ],
+      }),
+    ]);
 
     const phaseConfig = getCurrentPhaseConfig(processInstance);
 
@@ -557,14 +560,17 @@ export const getVotingStatus = async ({
       }
     }
 
-    const processInstance = await getVotingInstance(data.processInstanceId);
+    const instanceRow = await getVotingInstance(data.processInstanceId);
 
-    await assertInstanceProfileAccess({
-      user,
-      instance: processInstance,
-      profilePermissions: { decisions: permission.READ },
-      orgFallbackPermissions: [{ decisions: permission.READ }],
-    });
+    const [processInstance] = await Promise.all([
+      resolvePhases({ instance: instanceRow }),
+      assertInstanceProfileAccess({
+        user,
+        instance: instanceRow,
+        profilePermissions: { decisions: permission.READ },
+        orgFallbackPermissions: [{ decisions: permission.READ }],
+      }),
+    ]);
 
     const phaseConfig = getCurrentPhaseConfig(processInstance);
 

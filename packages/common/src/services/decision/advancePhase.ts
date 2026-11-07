@@ -8,10 +8,7 @@ import {
 
 import { attachProposalsToTransition } from './attachProposalsToTransition';
 import { getProposalsForPhase } from './getProposalsForPhase';
-import type {
-  DecisionInstanceData,
-  PhaseInstanceData,
-} from './schemas/instanceData';
+import type { InstanceWithPhases } from './instancePhases';
 import type { TransitionData } from './schemas/transitionData';
 import {
   aggregateProposalMetrics,
@@ -21,11 +18,7 @@ import type { ExecutionContext } from './selectionPipeline/types';
 
 export interface AdvancePhaseInput {
   db: DbClient;
-  /** Pre-loaded instance row. Stale snapshots are safe — writes use optimistic locks. */
-  instance: {
-    id: string;
-    instanceData: DecisionInstanceData;
-  };
+  instance: InstanceWithPhases<{ id: string }>;
   fromPhaseId: string;
   toPhaseId: string;
   /** Null for cron / system-triggered transitions. */
@@ -54,7 +47,7 @@ export type AdvancePhaseResult =
  *
  * Steps:
  * 1. Run the departing phase's selection pipeline (if any) to filter proposals.
- * 2. Update currentStateId and instanceData under an optimistic lock
+ * 2. Update currentStateId under an optimistic lock
  *    (currentStateId = fromPhaseId AND status = PUBLISHED).
  * 3. Mark any pending scheduled transition for the departing phase complete.
  * 4. Insert a stateTransitionHistory row.
@@ -76,15 +69,12 @@ export async function advancePhase(
   } = input;
 
   const instanceId = instance.id;
-  const instanceData = instance.instanceData as DecisionInstanceData;
-
-  const departingPhase = instanceData.phases?.find(
-    (p: PhaseInstanceData) => p.phaseId === fromPhaseId,
-  );
+  const { phases } = instance;
+  const departingPhase = phases.find((p) => p.phaseId === fromPhaseId);
 
   if (!departingPhase) {
     throw new Error(
-      `Phase ${fromPhaseId} not found in instanceData for instance ${instanceId}`,
+      `Phase ${fromPhaseId} not found in phases for instance ${instanceId}`,
     );
   }
 
