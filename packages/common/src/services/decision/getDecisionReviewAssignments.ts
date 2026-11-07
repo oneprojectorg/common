@@ -82,10 +82,10 @@ export async function getDecisionReviewAssignments({
 
   // Needed to read preview text out of the document fragments, exactly like
   // the proposal list reads. Started now, awaited after the assignment query.
-  const proposalTemplatePromise = resolveProposalTemplate(
-    instance.instanceData as Record<string, unknown> | null,
-    instance.processId,
-  );
+  const proposalTemplatePromise = resolveProposalTemplate({
+    instanceData: instance.instanceData,
+    processId: instance.processId,
+  });
 
   // Not paginated: bounded by reviewers × proposals of a single process.
   const [assignments, eligibleProfileIds, phaseProposalIds] = await Promise.all(

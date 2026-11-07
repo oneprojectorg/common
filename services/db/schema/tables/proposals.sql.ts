@@ -16,6 +16,7 @@ import {
 
 import { autoId, enumToPgEnum, serviceRolePolicies } from '../../helpers';
 import { decisionsVoteProposals } from './decisions_vote_proposals.sql';
+import { formSchemas } from './formSchemas.sql';
 import { processInstances } from './processInstances.sql';
 import { profiles } from './profiles.sql';
 import { proposalAttachments } from './proposalAttachments.sql';
@@ -131,6 +132,12 @@ export const proposals = pgTable(
     ...proposalColumns,
 
     shortCode: integer('short_code'),
+
+    // Outside proposalColumns on purpose: a proposal's form schema never changes, so history gains nothing from it.
+    formSchemaId: uuid('form_schema_id').references(() => formSchemas.id, {
+      onUpdate: 'cascade',
+      onDelete: 'restrict',
+    }),
   },
   (table) => [
     ...serviceRolePolicies,
@@ -146,6 +153,7 @@ export const proposals = pgTable(
     index().on(table.submittedByProfileId).concurrently(),
     index().on(table.lastEditedByProfileId).concurrently(),
     index().on(table.profileId).concurrently(),
+    index().on(table.formSchemaId),
     index().on(table.status).concurrently(),
     index('proposals_status_created_at_idx')
       .on(table.status, table.createdAt)

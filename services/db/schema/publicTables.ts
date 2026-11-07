@@ -158,6 +158,9 @@ export {
 } from './tables/proposals.sql';
 export type { Proposal, ProposalCategory } from './tables/proposals.sql';
 
+export { formSchemas } from './tables/formSchemas.sql';
+export type { FormSchema } from './tables/formSchemas.sql';
+
 export {
   proposalRelationships,
   ProposalRelationshipType,

@@ -633,6 +633,7 @@ export class TestDecisionsDataManager {
     status,
     createdAt,
     seedCollabDoc = false,
+    formSchemaId,
   }: {
     userEmail: string;
     processInstanceId: string;
@@ -647,6 +648,7 @@ export class TestDecisionsDataManager {
     status?: ProposalStatus;
     createdAt?: Date;
     seedCollabDoc?: boolean;
+    formSchemaId?: string;
   }) {
     this.ensureCleanupRegistered();
 
@@ -655,6 +657,7 @@ export class TestDecisionsDataManager {
       data: {
         processInstanceId,
         proposalData,
+        formSchemaId,
       },
       user,
     });
