@@ -44,8 +44,11 @@ interface ReviewsPanelProps {
    * submitted-count line and the admin-only mixed-version banner.
    */
   hideSummaryHeader?: boolean;
-  /** Header text; defaults to "Review Summary". */
-  title?: string;
+  /**
+   * Header text; defaults to "Review Summary". `null` keeps only the count
+   * line, for a container that already names the panel.
+   */
+  title?: string | null;
   ownReview?: OwnReviewEntry;
   reminderScope?: ReminderScope;
 }

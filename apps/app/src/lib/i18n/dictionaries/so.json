@@ -1159,6 +1159,7 @@
       "noProposalsMatchFilter": "Soo jeedimo la mid ah shaandhaynta hadda ma jiraan",
       "noProposalsToReview": "Weli ma jiraan soo jeedimo la eego",
       "noReviewers": "Weli ma jiraan dib-u-eegayaal",
+      "noReviewersForProposalHint": "U qoondee dib-u-eegayaal si soo jeedintan dhibco loogu siiyo.",
       "noReviewsAssigned": "Wali lama xilsaarin dib-u-eegis",
       "noReviewsMatchFilters": "Lama helin dib-u-eegis la mid ah shaandhaynta hadda.",
       "noReviewsInPhase": "Wax dib-u-eegis ah laguma gudbin marxaladdan",
@@ -1170,6 +1171,7 @@
       "olderVersionLabel": "Nooc hore",
       "olderVersionReviewedBy": "Older version reviewed by {name}",
       "otherReviewsTab": "Dib-u-eegisyo kale",
+      "reviewsTab": "Dib-u-eegisyo",
       "overallRecommendationLabel": "Talada guud",
       "importPastePlaceholder": "Ku dheji tiir aqoonsiyo soo jeedimo ah, ama saf dhan",
       "importPasteHint": "Ku dheji wixii aad ka koobiyeysay xaashidaada xisaabeed. Waxaan ka soo saaraynaa aqoonsiyada soo jeedimaha, inteeda kalena waan iska indhatiraynaa.",
@@ -1539,7 +1541,8 @@
       "notAdvancedNotificationTemplate": "Salaan {name},\n\nSoo jeedintaada \"{proposal}\" uma gudbin wajiga {phase}.\n\nWaad ku mahadsan tahay ka qaybgalkaaga.",
       "openFullProposalAction": "Fur soo jeedinta oo dhan",
       "sheetLoadErrorTitle": "Lama soo bixin karin soo jeedintan",
-      "sheetLoadErrorHint": "Waxaa laga yaabaa in la saaray, ama aadan marin u lahayn."
+      "sheetLoadErrorHint": "Waxaa laga yaabaa in la saaray, ama aadan marin u lahayn.",
+      "sheetSectionsLabel": "Qaybaha soo jeedinta"
     },
     "decisionsLabel": "Go'aamada",
     "decisionLabel": "Go'aan",

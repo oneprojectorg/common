@@ -46,7 +46,12 @@ export function ProposalSheetTabTrigger({
   return (
     <TabsTrigger {...props}>
       {children}
-      {count === undefined ? null : <Badge variant="secondary">{count}</Badge>}
+      {/* A count that is still loading renders nothing; hide the empty pill. */}
+      {count === undefined ? null : (
+        <Badge variant="secondary" className="empty:hidden">
+          {count}
+        </Badge>
+      )}
     </TabsTrigger>
   );
 }

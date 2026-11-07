@@ -1159,6 +1159,7 @@
       "noProposalsMatchFilter": "Nincs a jelenlegi szűrőnek megfelelő javaslat",
       "noProposalsToReview": "Még nincs értékelendő javaslat",
       "noReviewers": "Még nincsenek értékelők",
+      "noReviewersForProposalHint": "Rendeljen hozzá értékelőket, hogy ez a javaslat pontszámot kapjon.",
       "noReviewsAssigned": "Még nincs kiosztott értékelés",
       "noReviewsMatchFilters": "Nincs a jelenlegi szűrőknek megfelelő értékelés.",
       "noReviewsInPhase": "Ebben a szakaszban nem érkezett értékelés",
@@ -1170,6 +1171,7 @@
       "olderVersionLabel": "Korábbi verzió",
       "olderVersionReviewedBy": "Older version reviewed by {name}",
       "otherReviewsTab": "Egyéb értékelések",
+      "reviewsTab": "Értékelések",
       "overallRecommendationLabel": "Összesített ajánlás",
       "importPastePlaceholder": "Illesszen be egy oszlopnyi javaslatazonosítót vagy teljes sorokat",
       "importPasteHint": "Illesszen be bármit, amit a táblázatából kimásolt. Kiválogatjuk a javaslatazonosítókat, a többit figyelmen kívül hagyjuk.",
@@ -1539,7 +1541,8 @@
       "notAdvancedNotificationTemplate": "Szia {name}!\n\nA(z) „{proposal}” javaslatod nem jutott tovább a(z) {phase} szakaszba.\n\nKöszönjük a részvételt.",
       "openFullProposalAction": "Teljes javaslat megnyitása",
       "sheetLoadErrorTitle": "Nem sikerült betölteni ezt a javaslatot",
-      "sheetLoadErrorHint": "Lehet, hogy eltávolították, vagy nincs hozzáférésed."
+      "sheetLoadErrorHint": "Lehet, hogy eltávolították, vagy nincs hozzáférésed.",
+      "sheetSectionsLabel": "A javaslat részei"
     },
     "decisionsLabel": "Döntések",
     "decisionLabel": "Döntés",

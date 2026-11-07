@@ -1159,6 +1159,7 @@
       "noProposalsMatchFilter": "Aucune proposition ne correspond au filtre actuel",
       "noProposalsToReview": "Aucune proposition à examiner pour l'instant",
       "noReviewers": "Aucun évaluateur pour l’instant",
+      "noReviewersForProposalHint": "Assignez des évaluateurs pour que cette proposition soit notée.",
       "noReviewsAssigned": "Aucune révision assignée pour le moment",
       "noReviewsMatchFilters": "Aucune révision trouvée correspondant aux filtres actuels.",
       "noReviewsInPhase": "Aucune évaluation n'a été soumise durant cette phase",
@@ -1170,6 +1171,7 @@
       "olderVersionLabel": "Version antérieure",
       "olderVersionReviewedBy": "Older version reviewed by {name}",
       "otherReviewsTab": "Autres évaluations",
+      "reviewsTab": "Évaluations",
       "overallRecommendationLabel": "Recommandation générale",
       "importPastePlaceholder": "Collez une colonne d’identifiants de propositions ou des lignes entières",
       "importPasteHint": "Collez ce que vous avez copié depuis votre tableur. Nous repérons les identifiants des propositions et ignorons le reste.",
@@ -1539,7 +1541,8 @@
       "notAdvancedNotificationTemplate": "Bonjour {name},\n\nVotre proposition « {proposal} » ne passe pas à la phase {phase}.\n\nMerci pour votre participation.",
       "openFullProposalAction": "Ouvrir la proposition complète",
       "sheetLoadErrorTitle": "Impossible de charger cette proposition",
-      "sheetLoadErrorHint": "Elle a peut-être été supprimée, ou vous n'y avez peut-être pas accès."
+      "sheetLoadErrorHint": "Elle a peut-être été supprimée, ou vous n'y avez peut-être pas accès.",
+      "sheetSectionsLabel": "Sections de la proposition"
     },
     "decisionsLabel": "Décisions",
     "decisionLabel": "Décision",
