@@ -166,10 +166,10 @@ export async function getReviewedProposalVersion({
     Boolean(proposalData.collaborationDocId) &&
     proposalData.collaborationDocVersionId == null;
 
-  const proposalTemplate = await resolveProposalTemplate(
-    instance.instanceData,
-    instance.processId,
-  );
+  const proposalTemplate = await resolveProposalTemplate({
+    instanceData: instance.instanceData,
+    processId: instance.processId,
+  });
 
   const [documentContentMap, attachments] = await Promise.all([
     documentUnstamped

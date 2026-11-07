@@ -162,10 +162,11 @@ export const getProposal = async ({
   }
 
   // Read proposalTemplate from instanceData (new path) or processSchema (legacy path)
-  const proposalTemplate = await resolveProposalTemplate(
-    proposal.processInstance.instanceData as Record<string, unknown> | null,
-    proposal.processInstance.processId,
-  );
+  const proposalTemplate = await resolveProposalTemplate({
+    formSchemaId: proposal.formSchemaId,
+    instanceData: proposal.processInstance.instanceData,
+    processId: proposal.processInstance.processId,
+  });
   const parsedProposalData = parseProposalData(proposal.proposalData);
   const collaborationDocVersionId =
     proposal.status === ProposalStatus.DRAFT

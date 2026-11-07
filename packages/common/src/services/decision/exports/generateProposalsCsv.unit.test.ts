@@ -42,6 +42,7 @@ const paragraph = (text: string) => ({
 const baseProposal: ProposalFromList = {
   id: 'proposal-1',
   processInstanceId: 'instance-1',
+  formSchemaId: null,
   profileId: 'profile-1',
   status: 'submitted',
   shortCode: null,

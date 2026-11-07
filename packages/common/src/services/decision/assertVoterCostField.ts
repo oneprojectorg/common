@@ -20,7 +20,7 @@ export async function assertVoterCostField({
     return;
   }
 
-  const template = await resolveProposalTemplate(instanceData, processId);
+  const template = await resolveProposalTemplate({ instanceData, processId });
 
   for (const phase of capped) {
     const voterCostField = getVoterCostField(phase);

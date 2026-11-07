@@ -38,10 +38,10 @@ export async function getReviewAssignment({
 
   const proposalSnapshot = resolveAssignmentProposal(assignment);
 
-  const proposalTemplate = await resolveProposalTemplate(
-    instance.instanceData,
-    instance.processId,
-  );
+  const proposalTemplate = await resolveProposalTemplate({
+    instanceData: instance.instanceData,
+    processId: instance.processId,
+  });
 
   const [relationshipInfo, documentContentMap, proposalAttachments] =
     await Promise.all([

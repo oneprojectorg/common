@@ -48,6 +48,8 @@ export interface UpdateProposalInput {
   status?: ProposalStatus;
   visibility?: Visibility;
   checkpointVersion?: CheckpointVersion;
+  // Accepted so a round-tripped payload passes; a change is refused.
+  formSchemaId?: string | null;
 }
 
 export const updateProposal = async ({
@@ -116,16 +118,27 @@ export const updateProposal = async ({
     }
   }
 
+  // A proposal's form schema is stamped once, in `createProposal`.
+  if (
+    data.formSchemaId !== undefined &&
+    data.formSchemaId !== existingProposal.formSchemaId
+  ) {
+    throw new ValidationError(
+      'The form schema of a proposal cannot be changed',
+    );
+  }
+
   // Validate proposal data against template schema when updating non-draft proposals.
   // Drafts are inherently incomplete — validation is enforced on submission.
   if (data.proposalData && existingProposal.status !== ProposalStatus.DRAFT) {
     const instanceData =
       processInstance.instanceData as DecisionInstanceData | null;
 
-    const proposalTemplate = await resolveProposalTemplate(
+    const proposalTemplate = await resolveProposalTemplate({
+      formSchemaId: existingProposal.formSchemaId,
       instanceData,
-      processInstance.processId,
-    );
+      processId: processInstance.processId,
+    });
 
     if (proposalTemplate) {
       if (!processInstance.profileId) {
@@ -148,6 +161,7 @@ export const updateProposal = async ({
   const {
     title: nextTitle,
     checkpointVersion: _checkpointVersion,
+    formSchemaId: _formSchemaId,
     ...proposalFields
   } = data;
 
@@ -254,10 +268,11 @@ export const updateProposal = async ({
     const priorData = parseProposalData(existingProposal.proposalData);
     const priorVersionId = priorData.collaborationDocVersionId;
     if (priorVersionId !== undefined && priorData.collaborationDocId) {
-      const proposalTemplate = await resolveProposalTemplate(
-        processInstance.instanceData as DecisionInstanceData | null,
-        processInstance.processId,
-      );
+      const proposalTemplate = await resolveProposalTemplate({
+        formSchemaId: existingProposal.formSchemaId,
+        instanceData: processInstance.instanceData,
+        processId: processInstance.processId,
+      });
       const fragmentNames = proposalTemplate
         ? getProposalFragmentNames(proposalTemplate)
         : ['default'];

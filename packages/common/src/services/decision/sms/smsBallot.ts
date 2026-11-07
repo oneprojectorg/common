@@ -67,10 +67,10 @@ const getPricing = async (instance: {
   });
   const budget = phase ? getVoterBudget(phase) : undefined;
   const voterCostField = phase ? getVoterCostField(phase) : 'budget';
-  const proposalTemplate = await resolveProposalTemplate(
-    instance.instanceData,
-    instance.processId,
-  );
+  const proposalTemplate = await resolveProposalTemplate({
+    instanceData: instance.instanceData,
+    processId: instance.processId,
+  });
   const unit = getFieldUnit(proposalTemplate?.properties?.[voterCostField]);
   if (budget !== undefined && !unit) {
     throw new BallotCostError(
@@ -166,8 +166,11 @@ const priceRows = async (
 ): Promise<ReadonlyMap<string, number | null>> =>
   pricing.unit && rows.length > 0
     ? getProposalCosts({
-        proposals: [...rows],
-        proposalTemplate: pricing.proposalTemplate,
+        proposals: rows.map(({ id, proposalData }) => ({
+          id,
+          proposalData,
+          proposalTemplate: pricing.proposalTemplate,
+        })),
         voterCostField: pricing.voterCostField,
         unit: pricing.unit,
         unreadable: pricing.budget === null ? 'null' : 'throw',

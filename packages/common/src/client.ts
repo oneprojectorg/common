@@ -69,6 +69,16 @@ export {
 } from './services/decision/schemas/proposal';
 export { SEARCH_MAX_LENGTH } from './services/decision/schemas/search';
 export {
+  formSchemaSchema,
+  createFormSchemaInputSchema,
+  formSchemaRefSchema,
+  formSchemasListSchema,
+  type FormSchemaDTO,
+  type CreateFormSchemaInput,
+  type FormSchemaRef,
+  type FormSchemasList,
+} from './services/decision/schemas/formSchemas';
+export {
   adminDecisionInstanceSchema,
   type AdminDecisionInstance,
   adminProfileRefSchema,

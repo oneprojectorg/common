@@ -116,6 +116,7 @@ function draftProposal(proposalData: Record<string, unknown>) {
     id: PROPOSAL_ID,
     status: ProposalStatus.DRAFT,
     proposalData,
+    formSchemaId: null,
     profileId: PROFILE_ID,
     profile: { name: 'Test Project' },
     processInstance: {
