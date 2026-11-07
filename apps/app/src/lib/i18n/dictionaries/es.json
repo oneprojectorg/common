@@ -1159,6 +1159,7 @@
       "noProposalsMatchFilter": "Ninguna propuesta coincide con el filtro actual",
       "noProposalsToReview": "Aún no hay propuestas para revisar",
       "noReviewers": "Aún no hay personas revisoras",
+      "noReviewersForProposalHint": "Asigna personas revisoras para que esta propuesta reciba una puntuación.",
       "noReviewsAssigned": "Aún no hay revisiones asignadas",
       "noReviewsMatchFilters": "No se encontraron revisiones que coincidan con los filtros actuales.",
       "noReviewsInPhase": "No se enviaron revisiones en esta fase",
@@ -1170,6 +1171,7 @@
       "olderVersionLabel": "Versión anterior",
       "olderVersionReviewedBy": "Versión anterior revisada por {name}",
       "otherReviewsTab": "Otras revisiones",
+      "reviewsTab": "Revisiones",
       "overallRecommendationLabel": "Recomendación general",
       "importPastePlaceholder": "Pega una columna de IDs de propuestas o filas enteras",
       "importPasteHint": "Pega lo que copiaste de tu hoja de cálculo. Detectamos los IDs de las propuestas e ignoramos el resto.",
@@ -1539,7 +1541,8 @@
       "notAdvancedNotificationTemplate": "Hola {name}:\n\nTu propuesta «{proposal}» no avanzó a la fase {phase}.\n\nGracias por participar.",
       "openFullProposalAction": "Abrir la propuesta completa",
       "sheetLoadErrorTitle": "No se pudo cargar esta propuesta",
-      "sheetLoadErrorHint": "Puede que se haya eliminado o que no tengas acceso a ella."
+      "sheetLoadErrorHint": "Puede que se haya eliminado o que no tengas acceso a ella.",
+      "sheetSectionsLabel": "Secciones de la propuesta"
     },
     "decisionsLabel": "Decisiones",
     "decisionLabel": "Decisión",

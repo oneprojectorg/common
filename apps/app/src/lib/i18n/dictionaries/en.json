@@ -1159,6 +1159,7 @@
       "noProposalsMatchFilter": "No proposals match the current filter",
       "noProposalsToReview": "No proposals to review yet",
       "noReviewers": "No reviewers yet",
+      "noReviewersForProposalHint": "Assign reviewers so this proposal gets scored.",
       "noReviewsAssigned": "No reviews assigned yet",
       "noReviewsMatchFilters": "No reviews found matching the current filters.",
       "noReviewsInPhase": "No reviews were submitted in this phase",
@@ -1170,6 +1171,7 @@
       "olderVersionLabel": "Older version",
       "olderVersionReviewedBy": "Older version reviewed by {name}",
       "otherReviewsTab": "Other reviews",
+      "reviewsTab": "Reviews",
       "overallRecommendationLabel": "Overall recommendation",
       "importPastePlaceholder": "Paste a column of proposal IDs, or whole rows",
       "importPasteHint": "Paste anything you copied from your spreadsheet. We pick out the proposal IDs and ignore the rest.",
@@ -1539,7 +1541,8 @@
       "notAdvancedNotificationTemplate": "Hi {name},\n\nYour proposal “{proposal}” did not advance to the {phase} phase.\n\nThank you for taking part.",
       "openFullProposalAction": "Open full proposal",
       "sheetLoadErrorTitle": "Couldn't load this proposal",
-      "sheetLoadErrorHint": "It may have been removed, or you may not have access to it."
+      "sheetLoadErrorHint": "It may have been removed, or you may not have access to it.",
+      "sheetSectionsLabel": "Proposal sections"
     },
     "decisionsLabel": "Decisions",
     "decisionLabel": "Decision",

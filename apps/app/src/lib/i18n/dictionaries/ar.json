@@ -1159,6 +1159,7 @@
       "noProposalsMatchFilter": "لا توجد مقترحات تطابق المرشح الحالي",
       "noProposalsToReview": "لا توجد مقترحات للمراجعة بعد",
       "noReviewers": "لا يوجد مراجعون بعد",
+      "noReviewersForProposalHint": "عيّن مراجعين حتى يتم تقييم هذا المقترح.",
       "noReviewsAssigned": "لم يتم تعيين مراجعات بعد",
       "noReviewsMatchFilters": "لم يتم العثور على مراجعات تطابق المرشحات الحالية.",
       "noReviewsInPhase": "لم يتم إرسال أي مراجعات في هذه المرحلة",
@@ -1170,6 +1171,7 @@
       "olderVersionLabel": "إصدار أقدم",
       "olderVersionReviewedBy": "Older version reviewed by {name}",
       "otherReviewsTab": "مراجعات أخرى",
+      "reviewsTab": "المراجعات",
       "overallRecommendationLabel": "التوصية العامة",
       "importPastePlaceholder": "الصق عمودًا من معرّفات المقترحات أو صفوفًا كاملة",
       "importPasteHint": "الصق ما نسخته من جدول البيانات. سنستخرج معرّفات المقترحات ونتجاهل ما عداها.",
@@ -1539,7 +1541,8 @@
       "notAdvancedNotificationTemplate": "مرحبًا {name}،\n\nلم ينتقل مقترحك «{proposal}» إلى مرحلة {phase}.\n\nشكرًا لمشاركتك.",
       "openFullProposalAction": "افتح المقترح كاملاً",
       "sheetLoadErrorTitle": "تعذّر تحميل هذا المقترح",
-      "sheetLoadErrorHint": "ربما تمت إزالته، أو ربما لا تملك صلاحية الوصول إليه."
+      "sheetLoadErrorHint": "ربما تمت إزالته، أو ربما لا تملك صلاحية الوصول إليه.",
+      "sheetSectionsLabel": "أقسام المقترح"
     },
     "decisionsLabel": "القرارات",
     "decisionLabel": "قرار",

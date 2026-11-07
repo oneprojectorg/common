@@ -39,7 +39,7 @@ interface ReviewerListProps {
   rubricSummary: RubricSummary;
   onSelectAssignment: (assignmentId: string) => void;
   hideSummaryHeader?: boolean;
-  title?: string;
+  title?: string | null;
   ownReview?: OwnReviewEntry;
   reminderScope?: ReminderScope;
 }
@@ -119,9 +119,13 @@ export function ReviewerList({
     <div className="flex flex-col gap-6">
       {!hideSummaryHeader && (
         <header className="flex flex-col gap-2">
-          <Header3>
-            {title ?? t('decisions.review.reviewSummaryHeading')}
-          </Header3>
+          {title === null ? null : (
+            <Header3>
+              {title === undefined
+                ? t('decisions.review.reviewSummaryHeading')
+                : title}
+            </Header3>
+          )}
           <p className="text-base">
             {t('decisions.review.proposalReviewersSubmittedProgress', {
               submitted: reviewsSubmittedCount,

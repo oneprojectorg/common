@@ -29,7 +29,7 @@ import { LuBell, LuListChecks, LuUserX, LuUsers } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { ProposalSheet } from '../ProposalSheet/ProposalSheet';
+import { ReviewProgressProposalSheet } from '../ProposalSheet/ReviewProgressProposalSheet';
 import { ProposalSheetProvider } from '../ProposalSheetProvider';
 import { proposalReviewsHref } from '../proposalHrefs';
 import type { ProposalSheetRoute } from '../proposalSheetState';
@@ -114,7 +114,7 @@ export function ReviewerAssignmentsSection({
           />
         </Suspense>
       </APIErrorBoundary>
-      <ProposalSheet />
+      <ReviewProgressProposalSheet phaseId={phaseId} />
     </ProposalSheetProvider>
   );
 }
