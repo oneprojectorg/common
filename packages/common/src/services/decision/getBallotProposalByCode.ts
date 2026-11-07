@@ -39,6 +39,7 @@ export async function getBallotProposalByCode({
       id: proposals.id,
       title: profiles.name,
       proposalData: proposals.proposalData,
+      formSchemaId: proposals.formSchemaId,
     })
     .from(proposals)
     .innerJoin(profiles, eq(profiles.id, proposals.profileId))
@@ -52,7 +53,10 @@ export async function getBallotProposalByCode({
   const parsed = parseProposalData(row.proposalData);
   const [costs, proposalTemplate] = await Promise.all([
     priceBallotProposals({ instance, proposals: [row] }),
-    resolveProposalTemplate(instance.instanceData, instance.processId),
+    resolveProposalTemplate({
+      instanceData: instance.instanceData,
+      processId: instance.processId,
+    }),
   ]);
   const documentContent = (
     await getProposalDocumentsContent(

@@ -345,10 +345,10 @@ export async function listAssignmentsForReviewer({
   const hasMore = rows.length > limit;
   const assignments = hasMore ? rows.slice(0, limit) : rows;
 
-  const proposalTemplate = await resolveProposalTemplate(
-    instance.instanceData,
-    instance.processId,
-  );
+  const proposalTemplate = await resolveProposalTemplate({
+    instanceData: instance.instanceData,
+    processId: instance.processId,
+  });
 
   const docContentInputs: Array<{
     id: string;

@@ -30,7 +30,7 @@ import {
 import { parseProposalData } from './proposalDataSchema';
 import { buildProposalListPreview } from './proposalListPreview';
 import { resolveProposalListScope } from './resolveProposalListScope';
-import { resolveProposalTemplate } from './resolveProposalTemplate';
+import { resolveProposalTemplatesByFormSchemaId } from './resolveProposalTemplate';
 import { getInstancePhases } from './schemas/instanceData';
 import { isPostSubmissionEditingAllowed } from './utils/phaseSettings';
 
@@ -114,19 +114,6 @@ export const listProposals = async ({
     buildIsOutsideCurrentPhase,
     rankedBallotIds,
   } = await resolveProposalListScope({ input, user });
-
-  // Template resolution depends only on the instance row — start it now so
-  // its (occasional) fallback DB read overlaps the main query instead of
-  // adding a serial barrier afterwards.
-  const proposalTemplatePromise = resolveProposalTemplate(
-    instance.instanceData as Record<string, unknown> | null,
-    instance.processId,
-  );
-  // Backstop: if this function throws or early-returns before the template is
-  // awaited (auth failure, bad cursor, empty phase window), a rejection here
-  // must not surface as an unhandled promise rejection. The later `await`
-  // still rethrows.
-  proposalTemplatePromise.catch(() => {});
 
   const advanceTargetPromise = getListAdvanceTarget({
     instance,
@@ -280,10 +267,15 @@ export const listProposals = async ({
 
   type ProposalListItem = (typeof proposalList)[number];
 
-  // Resolved from instanceData (falling back to processSchema) — the promise
-  // was started right after the scope resolved, so this await is usually free.
-  const proposalTemplate = await proposalTemplatePromise;
-  const advanceTarget = await advanceTargetPromise;
+  // Each row's template: its form schema, else the instance template.
+  const [templateFor, advanceTarget] = await Promise.all([
+    resolveProposalTemplatesByFormSchemaId({
+      formSchemaIds: proposalList.map((proposal) => proposal.formSchemaId),
+      instanceData: instance.instanceData,
+      processId: instance.processId,
+    }),
+    advanceTargetPromise,
+  ]);
 
   const profileIds = proposalList
     .map((proposal) => proposal.profileId)
@@ -298,7 +290,7 @@ export const listProposals = async ({
           return {
             id: proposal.id,
             proposalData: proposal.proposalData,
-            proposalTemplate,
+            proposalTemplate: templateFor(proposal.formSchemaId),
             collaborationDocVersionId:
               proposal.status === ProposalStatus.DRAFT
                 ? undefined
@@ -352,6 +344,7 @@ export const listProposals = async ({
     // List rows ship a precomputed plain-text preview plus fragment-resolved
     // system fields instead of the full document fragments; the fragments
     // themselves only ride along for trusted full-content consumers.
+    const proposalTemplate = templateFor(proposal.formSchemaId);
     const documentContent = documentContentMap.get(proposal.id);
     const parsedProposalData = parseProposalData(proposal.proposalData);
     const { previewText, systemFieldOverrides } = buildProposalListPreview({
@@ -368,6 +361,7 @@ export const listProposals = async ({
     return {
       id: proposal.id,
       processInstanceId: proposal.processInstanceId,
+      formSchemaId: proposal.formSchemaId,
       proposalData: {
         ...parsedProposalData,
         ...systemFieldOverrides,
