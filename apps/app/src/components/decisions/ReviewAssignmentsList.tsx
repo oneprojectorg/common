@@ -58,13 +58,10 @@ export function ReviewAssignmentsList({
   processInstanceId,
   decisionSlug,
   access,
-  pinOffset,
 }: {
   processInstanceId: string;
   decisionSlug: string;
   access?: DecisionAccess;
-  /** Px offset where the filter bar pins (clears the floating phase toggle). */
-  pinOffset?: number;
 }) {
   const canViewReviewers = Boolean(access?.admin);
   const t = useTranslations();
@@ -301,7 +298,7 @@ export function ReviewAssignmentsList({
   return (
     <div className="relative flex flex-col gap-6">
       {showToolbar && (
-        <StickyFilterBar pinOffset={pinOffset}>
+        <StickyFilterBar>
           {/* min-w-0 + flex-1 lets the category suffix ellipsize before the filters */}
           <div className="flex min-w-0 flex-1 items-baseline gap-1">
             <ProposalCount count={total} />

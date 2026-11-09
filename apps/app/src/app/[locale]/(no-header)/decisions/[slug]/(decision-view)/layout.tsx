@@ -48,7 +48,8 @@ const DecisionViewLayout = async ({
     >
       {/* Fixed header + scrolling content: the grid keeps the header in place
           and confines the scrollbar to the content row. The content row is the
-          scroll container the proposals filter bar pins inside. */}
+          scroll container the proposals filter bar pins inside; it sets the
+          pin offset that clears the mobile toggle floating over its top. */}
       <div className="grid h-dvh grid-rows-[auto_1fr]">
         <DecisionHeader
           instanceId={instanceId}
@@ -65,7 +66,7 @@ const DecisionViewLayout = async ({
             isActive ? <DecisionViewToggle decisionSlug={slug} /> : undefined
           }
         />
-        <div className="min-w-0 overflow-x-clip overflow-y-auto">
+        <div className="min-w-0 overflow-x-clip overflow-y-auto pin-offset-decision-header">
           {children}
         </div>
       </div>

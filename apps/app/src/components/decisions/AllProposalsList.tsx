@@ -42,8 +42,6 @@ interface AllProposalsListProps {
   currentPhase: InstancePhaseData;
   /** Whether this viewer may see review progress; without it the list is plain cards. */
   canSeeReviewProgress: boolean;
-  /** Px offset where the filter bar pins (clears the floating phase toggle). */
-  pinOffset?: number;
 }
 
 /**
@@ -62,7 +60,6 @@ export function AllProposalsList({
   access,
   currentPhase,
   canSeeReviewProgress,
-  pinOffset,
 }: AllProposalsListProps) {
   if (!canSeeReviewProgress) {
     return (
@@ -74,7 +71,6 @@ export function AllProposalsList({
             decisionSlug={decisionSlug}
             permissions={access}
             currentPhase={currentPhase}
-            pinOffset={pinOffset}
           />
         </Suspense>
       </APIErrorBoundary>
@@ -98,7 +94,6 @@ export function AllProposalsList({
             processInstanceId={processInstanceId}
             decisionSlug={decisionSlug}
             canExport={Boolean(access?.admin)}
-            pinOffset={pinOffset}
           />
         </Suspense>
       </ProposalReviewDecorationProvider>
@@ -110,7 +105,6 @@ interface AllProposalsLoaderProps {
   processInstanceId: string;
   decisionSlug: string;
   canExport: boolean;
-  pinOffset?: number;
 }
 
 function AllProposalsLoader(props: AllProposalsLoaderProps) {
@@ -127,7 +121,6 @@ function AllProposalsContent({
   processInstanceId,
   decisionSlug,
   canExport,
-  pinOffset,
   filters,
   allProposals,
   total,
@@ -175,7 +168,6 @@ function AllProposalsContent({
       className="relative flex flex-col gap-6 pb-12"
     >
       <ProposalsStickyFilterBar
-        pinOffset={pinOffset}
         count={total}
         total={totalProposalCount}
         controls={controls}

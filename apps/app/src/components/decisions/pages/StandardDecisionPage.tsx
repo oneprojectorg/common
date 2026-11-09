@@ -29,14 +29,11 @@ export function StandardDecisionPage({
   instanceId,
   slug,
   decisionSlug,
-  pinOffset,
 }: {
   instanceId: string;
   slug: string;
   /** Decision profile slug for building proposal links */
   decisionSlug?: string;
-  /** Sticky filter-bar pin offset, forwarded to ProposalsList. */
-  pinOffset?: number;
 }) {
   const t = useTranslations();
   const translation = useDecisionTranslation();
@@ -155,7 +152,6 @@ export function StandardDecisionPage({
                 <ManualSelectionList
                   instanceId={instanceId}
                   decisionSlug={decisionSlug}
-                  pinOffset={pinOffset}
                 />
               </Suspense>
             </APIErrorBoundary>
@@ -186,7 +182,6 @@ export function StandardDecisionPage({
                   decisionSlug={decisionSlug}
                   permissions={instance.access}
                   proposalsHidden={proposalsHidden}
-                  pinOffset={pinOffset}
                   showFilterTabs
                 />
               </Suspense>
