@@ -75,7 +75,7 @@ describe('formatSmsPicksAdded', () => {
         remaining: null,
         firstPick: false,
       }),
-    ).toEqual(['Pick 1: "Tree planting". Text DONE to review.']);
+    ).toEqual(['Pick 1: "Tree planting".\nText DONE to review.']);
   });
 });
 
