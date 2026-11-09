@@ -28,13 +28,15 @@ import { LuEllipsis, LuFileText } from 'react-icons/lu';
 import { Link, useTranslations } from '@/lib/i18n';
 
 import { useProposalCardData } from '../ProposalCard';
-import type { ProposalSheetRoute } from '../ProposalSheet';
+import {
+  type ProposalSheetRoute,
+  useOpenProposalInSheet,
+} from '../ProposalSheet/proposalSheetState';
 import {
   ReviewStatusBadge,
   isReviewShownOutOfDate,
 } from '../ReviewStatusBadge';
 import { proposalReviewsHref } from '../proposalHrefs';
-import { useOpenProposalInSheet } from '../proposalSheetState';
 import type { AssignmentStatusValue } from './assignmentStatusSpecs';
 
 interface ReviewerAssignmentsTableProps {
