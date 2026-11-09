@@ -25,9 +25,11 @@ const documentStateOf = (
 };
 
 /**
- * A proposal re-fetched while its collaboration document is still propagating.
- * Without this a just-submitted proposal renders an empty body, since TipTap
- * content can lag the proposal row by a few seconds.
+ * Re-fetches the proposal until its collaboration document arrives. A
+ * just-submitted proposal's TipTap document can lag the proposal row by a few
+ * seconds, and without this the viewer renders an empty body. `documentState`
+ * tells `ProposalPreview` whether to show the body, a loading state, or the
+ * "content not found" fallback once the wait times out.
  */
 export function useLiveProposalDocument(initialProposal: Proposal): {
   proposal: Proposal;

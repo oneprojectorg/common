@@ -6,10 +6,19 @@ import { useMemo } from 'react';
 
 import type { ProposalTranslation } from './ProposalPreview';
 import { getProposalDetectionText } from './translationDetectionText';
-import { useTranslateLink } from './useTranslateLink';
+import { type TranslateLinkState, useTranslateLink } from './useTranslateLink';
+
+export interface ProposalTranslationState {
+  /** Pass to `TranslateLink`. */
+  link: TranslateLinkState;
+  /** Pass straight to `ProposalPreview`'s `translation` prop. */
+  translation: ProposalTranslation | undefined;
+}
 
 /** The proposal page's link: translates the whole proposal via `translateProposal`. */
-export const useTranslateProposal = (proposal: Proposal) => {
+export const useTranslateProposal = (
+  proposal: Proposal,
+): ProposalTranslationState => {
   const detectionText = useMemo(
     () => getProposalDetectionText(proposal),
     [proposal],
@@ -32,9 +41,5 @@ export const useTranslateProposal = (proposal: Proposal) => {
     htmlContent: link.translation,
   };
 
-  return {
-    link,
-    /** Pass straight to `ProposalPreview`'s `translation` prop. */
-    translation,
-  };
+  return { link, translation };
 };
