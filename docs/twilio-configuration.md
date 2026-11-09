@@ -290,15 +290,15 @@ point outside production.
 | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------ |
 | `JOIN`                   | The consent text, then a code to confirm the number; reply with the code. `JOIN` takes no argument on either number.                      |
 | `SHOW`                   | `"<decision>" (<slug>): Voting phase, voting open, N proposals.`                                                                           |
-| `VOTE`                   | `Welcome to "<decision>". Two quick steps to register: your address, then a short affirmation. No ID needed. What's your address?`         |
-| `375 S High St, …`       | `That's District 5. Reply AGREE to affirm: "<attestation>"`                                                                                 |
+| `VOTE`                   | `Welcome to "<decision>".` then `Two quick steps to register: your address, then a short affirmation. No ID needed.` then `What's your address?`, each on its own line. |
+| `375 S High St, …`       | `That's District 5.` then `Reply AGREE to register for "<decision>":` then the quoted attestation, each on its own line.                     |
 | `AGREE`                  | `You're registered. You have $1,000,000 for District 5 proposals.`                                                                           |
 | `PROPOSALS`              | `District 5 has N proposals. First 5:` then `101 <title> ($85,000)` … and `Reply MORE for the rest, or INFO plus a code.`                   |
 | `MORE`                   | `Next 5:` …                                                                                                                                 |
 | `INFO 101`               | `101 "<title>" ($85,000)` and the summary.                                                                                                  |
-| `101`                    | `Pick 1: "<title>" ($85,000). $915,000 left. Text another code, LIST to see your ballot, or DONE to review.`                                |
-| `102 103`                | `Pick 2: … Pick 3: … $<left> left.`                                                                                                        |
-| a code that does not fit | `"<title>" costs $…. You have $… left. Reply REMOVE plus a code to make room, or pick a smaller project.`                                    |
+| `101`                    | `Pick 1: "<title>" ($85,000).` then `$915,000 left.` then `Text another code, LIST to see your ballot, or DONE to review.`, each on its own line. |
+| `102 103`                | `Pick 2: …` then `Pick 3: …` then `$<left> left.`, each on its own line.                                                                    |
+| a code that does not fit | `"<title>" costs $…. You have $… left.` then `Reply REMOVE plus a code to make room, or pick a smaller project.` on its own line.            |
 | `LIST`                   | `Your District 5 ballot:` then `1. 101 <title> $85,000.` per pick, `$… allocated, $… unspent.` The code on each line is what REMOVE and MOVE take. |
 | `REMOVE 103` / `MOVE 102 1` | `Removed "<title>". $… left.` / `"<title>" is now pick 1.`                                                                                |
 | `DONE`                   | The ballot, the ranking note and `Reply SUBMIT to cast your ballot.`                                                                         |

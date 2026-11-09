@@ -14,7 +14,11 @@ import {
 describe('formatSmsEnrolmentWelcome', () => {
   it('given the decision name, then the text names it and asks for the address', () => {
     expect(formatSmsEnrolmentWelcome('Our Voice, Our Choice Budget')).toEqual([
-      'Welcome to "Our Voice, Our Choice Budget". Two quick steps to register: your address, then a short affirmation. No ID needed. What\'s your address?',
+      [
+        'Welcome to "Our Voice, Our Choice Budget".',
+        'Two quick steps to register: your address, then a short affirmation. No ID needed.',
+        "What's your address?",
+      ].join('\n'),
     ]);
   });
 });
@@ -28,7 +32,11 @@ describe('formatSmsAddressResolved', () => {
         attestation: 'I affirm that I meet the eligibility requirements.',
       }),
     ).toEqual([
-      'That\'s Council District 5. Reply AGREE to register for "City Budget": "I affirm that I meet the eligibility requirements."',
+      [
+        "That's Council District 5.",
+        'Reply AGREE to register for "City Budget":',
+        '"I affirm that I meet the eligibility requirements."',
+      ].join('\n'),
     ]);
   });
 
@@ -40,7 +48,11 @@ describe('formatSmsAddressResolved', () => {
         attestation: 'I affirm.',
       }),
     ).toEqual([
-      'Address found. Reply AGREE to register for "City Budget": "I affirm."',
+      [
+        'Address found.',
+        'Reply AGREE to register for "City Budget":',
+        '"I affirm."',
+      ].join('\n'),
     ]);
   });
 });
