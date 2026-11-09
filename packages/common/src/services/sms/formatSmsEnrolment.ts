@@ -9,7 +9,9 @@ const quoted = (name: string): string =>
 export const formatSmsEnrolmentWelcome = (decisionName: string): string[] =>
   splitSmsBody({
     lines: [
-      `Welcome to ${quoted(decisionName)}. Two quick steps to register: your address, then a short affirmation. No ID needed. What's your address?`,
+      `Welcome to ${quoted(decisionName)}.`,
+      'Two quick steps to register: your address, then a short affirmation. No ID needed.',
+      "What's your address?",
     ],
   });
 
@@ -24,7 +26,11 @@ export const formatSmsAddressResolved = ({
 }): string[] =>
   splitSmsBody({
     lines: [
-      `${termLabel ? `That's ${clipSmsText(termLabel, SMS_TERM_LABEL_LENGTH)}.` : 'Address found.'} Reply AGREE to register for ${quoted(decisionName)}: "${attestation}"`,
+      termLabel
+        ? `That's ${clipSmsText(termLabel, SMS_TERM_LABEL_LENGTH)}.`
+        : 'Address found.',
+      `Reply AGREE to register for ${quoted(decisionName)}:`,
+      `"${attestation}"`,
     ],
   });
 

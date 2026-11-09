@@ -17,13 +17,28 @@ export const SMS_UNAVAILABLE_RESULT = {
 } as const;
 
 export const SMS_COMMAND_HELP_MESSAGE =
-  'Text SHOW to see your decisions, or SHOW and a decision name, for example SHOW columbus. Reply STOP to unsubscribe.';
+  'Text SHOW to see your decisions, or SHOW and a decision name, for example SHOW columbus.\nReply STOP to unsubscribe.';
 
 export const SMS_ALREADY_JOINED_MESSAGE =
   'You already have an account. Text SHOW to see your decisions.';
 
-export const SMS_COMMAND_LIST_MESSAGE =
-  'Commands: JOIN sign up. SHOW [name] your decisions, or one of them. VOTE [name] register to vote. AGREE confirm your registration. PROPOSALS [name] browse the ballot. MORE next page. INFO [code] one proposal. LIST your picks. MOVE [code] [position] reorder a pick. REMOVE [code] drop a pick. DONE review your ballot. SUBMIT cast it. INFO-HELP this list. Reply STOP to unsubscribe.';
+export const SMS_COMMAND_LIST_MESSAGE = [
+  'Commands:',
+  'JOIN sign up',
+  'SHOW [name] your decisions, or one of them',
+  'VOTE [name] register to vote',
+  'AGREE confirm your registration',
+  'PROPOSALS [name] browse the ballot',
+  'MORE next page',
+  'INFO [code] one proposal',
+  'LIST your picks',
+  'MOVE [code] [position] reorder a pick',
+  'REMOVE [code] drop a pick',
+  'DONE review your ballot',
+  'SUBMIT cast it',
+  'INFO-HELP this list',
+  'Reply STOP to unsubscribe.',
+].join('\n');
 
 export const parseInboundNumber = (
   from: string,

@@ -54,7 +54,9 @@ export const formatSmsPicksAdded = ({
   const left = remaining ? `${remaining} left.` : null;
   const tail = firstPick ? SMS_FIRST_PICK_FOOTER : null;
   return splitSmsBody({
-    lines: [[...sentences, left, tail].filter(Boolean).join(' ')],
+    lines: [...sentences, left, tail].filter(
+      (line): line is string => line !== null,
+    ),
   });
 };
 
@@ -69,7 +71,8 @@ export const formatSmsPickOverBudget = ({
 }): string[] =>
   splitSmsBody({
     lines: [
-      `${quoted(title)} costs ${cost}. You have ${remaining} left. Reply REMOVE plus a code to make room, or pick a smaller project.`,
+      `${quoted(title)} costs ${cost}. You have ${remaining} left.`,
+      'Reply REMOVE plus a code to make room, or pick a smaller project.',
     ],
   });
 

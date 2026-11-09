@@ -25,7 +25,11 @@ describe('formatSmsPicksAdded', () => {
         firstPick: true,
       }),
     ).toEqual([
-      'Pick 1: "Fifth Ave crosswalk lighting" ($85,000). $915,000 left. Text another code, LIST to see your ballot, or DONE to review.',
+      [
+        'Pick 1: "Fifth Ave crosswalk lighting" ($85,000).',
+        '$915,000 left.',
+        'Text another code, LIST to see your ballot, or DONE to review.',
+      ].join('\n'),
     ]);
   });
 
@@ -50,7 +54,11 @@ describe('formatSmsPicksAdded', () => {
         firstPick: false,
       }),
     ).toEqual([
-      'Pick 2: "Linden rec center evening hours" ($240,000). Pick 3: "Neighborhood tree planting" ($150,000). $525,000 left.',
+      [
+        'Pick 2: "Linden rec center evening hours" ($240,000).',
+        'Pick 3: "Neighborhood tree planting" ($150,000).',
+        '$525,000 left.',
+      ].join('\n'),
     ]);
   });
 
@@ -74,7 +82,10 @@ describe('formatSmsPickOverBudget', () => {
         remaining: '$525,000',
       }),
     ).toEqual([
-      '"Main St resurfacing" costs $600,000. You have $525,000 left. Reply REMOVE plus a code to make room, or pick a smaller project.',
+      [
+        '"Main St resurfacing" costs $600,000. You have $525,000 left.',
+        'Reply REMOVE plus a code to make room, or pick a smaller project.',
+      ].join('\n'),
     ]);
   });
 });

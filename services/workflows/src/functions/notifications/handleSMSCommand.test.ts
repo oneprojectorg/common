@@ -767,7 +767,7 @@ describe('handleSMSCommand registration over SMS', () => {
 
     expect(result).toEqual({ message: 'enrolment started' });
     expect(recordedSms.map((sms) => sms.body)).toEqual([
-      `Welcome to "${name}". Two quick steps to register: your address, then a short affirmation. No ID needed. What's your address?`,
+      `Welcome to "${name}".\nTwo quick steps to register: your address, then a short affirmation. No ID needed.\nWhat's your address?`,
     ]);
     await expect(
       findVoterEnrolment({
@@ -812,7 +812,7 @@ describe('handleSMSCommand registration over SMS', () => {
 
     expect(result).toEqual({ message: 'address resolved' });
     expect(recordedSms.at(-1)?.body).toBe(
-      `That's ${boundary.name}. Reply AGREE to register for "${name}": "${ATTESTATION}"`,
+      `That's ${boundary.name}.\nReply AGREE to register for "${name}":\n"${ATTESTATION}"`,
     );
     await expect(
       findVoterEnrolment({
@@ -1794,7 +1794,7 @@ describe('handleSMSCommand building and casting the ballot', () => {
 
     expect(result).toEqual({ message: 'picks added' });
     expect(recordedSms.map((sms) => sms.body)).toEqual([
-      'Pick 1: "Crosswalk lighting" ($85,000). $915,000 left. Text another code, LIST to see your ballot, or DONE to review.',
+      'Pick 1: "Crosswalk lighting" ($85,000).\n$915,000 left.\nText another code, LIST to see your ballot, or DONE to review.',
     ]);
   });
 
@@ -1814,7 +1814,7 @@ describe('handleSMSCommand building and casting the ballot', () => {
 
     expect(result).toEqual({ message: 'picks added' });
     expect(recordedSms.at(-1)?.body).toBe(
-      'Pick 2: "Bike lane" ($310,000). Pick 3: "Speed humps" ($45,000). $560,000 left.',
+      'Pick 2: "Bike lane" ($310,000).\nPick 3: "Speed humps" ($45,000).\n$560,000 left.',
     );
   });
 
@@ -1834,7 +1834,7 @@ describe('handleSMSCommand building and casting the ballot', () => {
 
     expect(result).toEqual({ message: 'pick over budget' });
     expect(recordedSms.at(-1)?.body).toBe(
-      '"Main St resurfacing" costs $950,000. You have $915,000 left. Reply REMOVE plus a code to make room, or pick a smaller project.',
+      '"Main St resurfacing" costs $950,000. You have $915,000 left.\nReply REMOVE plus a code to make room, or pick a smaller project.',
     );
     const { result: listed } = await keyword(
       NUMBERS.pickOver,
