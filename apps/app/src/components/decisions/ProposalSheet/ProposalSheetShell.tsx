@@ -1,9 +1,5 @@
 'use client';
 
-import {
-  canEngageWithProposals,
-  useProposalEngagement,
-} from '@/hooks/useProposalEngagement';
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { trpc } from '@op/api/client';
 import { Button } from '@op/sense/Button';
@@ -16,53 +12,48 @@ import {
 } from '@op/sense/Empty';
 import { Sheet, SheetContent, SheetTitle } from '@op/sense/Sheet';
 import { Skeleton, SkeletonText } from '@op/sense/Skeleton';
-import { Suspense, useState } from 'react';
+import { type ReactNode, Suspense, useContext, useState } from 'react';
 import { LuExpand, LuTriangleAlert, LuX } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { ButtonLink } from '../ButtonLink';
-import { ContributingIdeas } from './ContributingIdeas';
-import { ProposalComments } from './ProposalComments';
-import { ProposalPreview, toPreviewEngagement } from './ProposalPreview';
-import { ReportProposalDialog } from './ReportProposalDialog';
-import { TranslateLink } from './TranslateLink';
-import {
-  type ProposalRoute,
-  decisionRootHref,
-  proposalHref,
-} from './proposalHrefs';
-import { useCommentsAllowed } from './useCommentsAllowed';
-import { useLiveProposalDocument } from './useLiveProposalDocument';
-import { useTranslateProposal } from './useTranslateProposal';
-
-export type ProposalSheetRoute = Omit<ProposalRoute, 'profileId'>;
+import { ButtonLink } from '../../ButtonLink';
+import { ProposalProvider } from '../Proposal/proposalContext';
+import { ReportProposalDialog } from '../ReportProposalDialog';
+import { decisionRootHref, proposalHref } from '../proposalHrefs';
+import { useLiveProposalDocument } from '../useLiveProposalDocument';
+import { ProposalSheetStateContext } from './proposalSheetState';
 
 /**
- * A proposal read in a panel over the page it was opened from, so the list's
- * filters, scroll position and map viewport survive the read.
+ * The sheet's chrome: the sense `Sheet`, the header actions, the error boundary
+ * and Suspense, the scroll region, and the proposal context the parts inside
+ * read. Renders nothing without a `ProposalSheetProvider` above, or on a phone.
  */
-export function ProposalSheet({
-  profileId,
-  route,
-  expandHref,
-  onClose,
+export function ProposalSheetShell({
+  footer,
+  children,
 }: {
-  /** `null` keeps the sheet closed. */
-  profileId: string | null;
-  route: ProposalSheetRoute;
-  expandHref?: (profileId: string) => string;
-  onClose: () => void;
+  /**
+   * Stays in view under the scroll region, e.g. a `ProposalSheetFooter`.
+   * Renders only once the proposal has loaded, inside its context.
+   */
+  footer?: ReactNode;
+  children: ReactNode;
 }) {
   const t = useTranslations();
-  const shownProfileId = useLastOpenProposal(profileId);
+  const state = useContext(ProposalSheetStateContext);
+  const shownProfileId = useLastOpenProposal(state?.openProfileId ?? null);
+
+  if (!state) {
+    return null;
+  }
 
   return (
     <Sheet
-      open={profileId !== null}
+      open={state.openProfileId !== null}
       onOpenChange={(open) => {
         if (!open) {
-          onClose();
+          state.close();
         }
       }}
     >
@@ -90,9 +81,12 @@ export function ProposalSheet({
               </APIErrorBoundary>
               <ButtonLink
                 href={
-                  expandHref
-                    ? expandHref(shownProfileId)
-                    : proposalHref({ ...route, profileId: shownProfileId })
+                  state.expandHref
+                    ? state.expandHref(shownProfileId)
+                    : proposalHref({
+                        ...state.route,
+                        profileId: shownProfileId,
+                      })
                 }
                 variant="ghost"
                 size="icon-sm"
@@ -105,31 +99,72 @@ export function ProposalSheet({
           <Button
             variant="ghost"
             size="icon-sm"
-            onClick={onClose}
+            onClick={state.close}
             aria-label={t('Close')}
           >
             <LuX className="size-5" />
           </Button>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto">
-          {/* Keyed so a failure doesn't latch onto the next proposal opened. */}
-          {shownProfileId ? (
-            <APIErrorBoundary
-              key={shownProfileId}
-              fallbacks={{ default: () => <ProposalUnavailable /> }}
+        {/* Keyed so a failure doesn't latch onto the next proposal opened. */}
+        {shownProfileId ? (
+          <APIErrorBoundary
+            key={shownProfileId}
+            fallbacks={{
+              default: () => (
+                <ScrollRegion>
+                  <ProposalUnavailable />
+                </ScrollRegion>
+              ),
+            }}
+          >
+            <Suspense
+              fallback={
+                <ScrollRegion>
+                  <ProposalSheetSkeleton />
+                </ScrollRegion>
+              }
             >
-              <Suspense fallback={<ProposalSheetSkeleton />}>
-                <ProposalSheetBody
-                  profileId={shownProfileId}
-                  decisionRoot={decisionRootHref(route)}
-                />
-              </Suspense>
-            </APIErrorBoundary>
-          ) : null}
-        </div>
+              <SheetProposalProvider
+                profileId={shownProfileId}
+                decisionRoot={decisionRootHref(state.route)}
+              >
+                <ScrollRegion>
+                  <div className="px-4 py-6 sm:px-8 sm:py-8">{children}</div>
+                </ScrollRegion>
+                {footer}
+              </SheetProposalProvider>
+            </Suspense>
+          </APIErrorBoundary>
+        ) : null}
       </SheetContent>
     </Sheet>
+  );
+}
+
+/** The one `getProposal` read for the parts; they take the proposal from context. */
+function SheetProposalProvider({
+  profileId,
+  decisionRoot,
+  children,
+}: {
+  profileId: string;
+  decisionRoot: string;
+  children: ReactNode;
+}) {
+  const [initialProposal] = trpc.decision.getProposal.useSuspenseQuery({
+    profileId,
+  });
+  const { proposal, documentState } = useLiveProposalDocument(initialProposal);
+
+  return (
+    <ProposalProvider
+      proposal={proposal}
+      decisionRoot={decisionRoot}
+      documentState={documentState}
+    >
+      {children}
+    </ProposalProvider>
   );
 }
 
@@ -138,6 +173,10 @@ function ReportAction({ profileId }: { profileId: string }) {
   const [proposal] = trpc.decision.getProposal.useSuspenseQuery({ profileId });
 
   return <ReportProposalDialog proposalId={proposal.id} iconOnly />;
+}
+
+function ScrollRegion({ children }: { children: ReactNode }) {
+  return <div className="min-h-0 flex-1 overflow-y-auto">{children}</div>;
 }
 
 /** Held past the close so the panel animates out with its content still in it. */
@@ -149,47 +188,6 @@ function useLastOpenProposal(profileId: string | null): string | null {
   }
 
   return shown;
-}
-
-function ProposalSheetBody({
-  profileId,
-  decisionRoot,
-}: {
-  profileId: string;
-  /** Route prefix for sibling proposals, e.g. `/decisions/participatory-budget`. */
-  decisionRoot: string;
-}) {
-  const [initialProposal] = trpc.decision.getProposal.useSuspenseQuery({
-    profileId,
-  });
-
-  const { proposal, documentState } = useLiveProposalDocument(initialProposal);
-
-  const engagement = useProposalEngagement({
-    proposal,
-    canEngage: canEngageWithProposals(proposal.access),
-  });
-  const commentsEnabled = useCommentsAllowed(proposal.processInstanceId);
-  const { link, translation } = useTranslateProposal(proposal);
-
-  return (
-    // Each section's own `pt` mirrors this gap, centring the rules between.
-    <div className="flex flex-col gap-6 px-4 py-6 sm:gap-10 sm:px-8 sm:py-8">
-      <ProposalPreview
-        proposal={proposal}
-        documentState={documentState}
-        engagement={toPreviewEngagement(engagement)}
-        translation={translation}
-        translateLink={<TranslateLink translation={link} />}
-      />
-
-      <ContributingIdeas proposal={proposal} decisionRoot={decisionRoot} />
-
-      {commentsEnabled && (
-        <ProposalComments proposal={proposal} decisionRoot={decisionRoot} />
-      )}
-    </div>
-  );
 }
 
 function ProposalSheetSkeleton() {

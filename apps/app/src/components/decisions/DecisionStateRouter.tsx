@@ -4,6 +4,7 @@ import { trpc } from '@op/api/client';
 import { isLastPhase, isReviewPhase, isVotingPhase } from '@op/common/client';
 import { notFound } from 'next/navigation';
 
+import { ProposalSheet } from './ProposalSheet/ProposalSheet';
 import { ProposalSheetProvider } from './ProposalSheet/ProposalSheetProvider';
 import { FinalPhaseManualSelectionPage } from './pages/FinalPhaseManualSelectionPage';
 import { ResultsPage } from './pages/ResultsPage';
@@ -161,6 +162,7 @@ export function DecisionStateRouter({
           decisionSlug={decisionSlug}
         />
       )}
+      <ProposalSheet />
     </ProposalSheetProvider>
   );
 }
