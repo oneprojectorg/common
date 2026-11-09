@@ -1,8 +1,12 @@
 import { mockCollab } from '@op/collab/testing';
-import { ValidationError, updateProposal } from '@op/common';
 import { TestDecisionsDataManager } from '@op/common/testing';
 import { db, desc, eq } from '@op/db/client';
-import { ProposalStatus, proposalHistory, proposals } from '@op/db/schema';
+import {
+  ProposalStatus,
+  formSchemas,
+  proposalHistory,
+  proposals,
+} from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
@@ -17,6 +21,28 @@ const createCaller = createCallerFactory(appRouter);
 async function createAuthenticatedCaller(email: string) {
   const { session } = await createIsolatedSession(email);
   return createCaller(await createTestContextWithSession(session));
+}
+
+/** Rows are inserted directly: the PoC has no write path. */
+async function insertFormSchema(values: {
+  processInstanceId: string;
+  name: string;
+  schema: Record<string, unknown>;
+  parentId?: string;
+}) {
+  const [row] = await db.insert(formSchemas).values(values).returning();
+  if (!row) {
+    throw new Error('form schema insert returned no row');
+  }
+  return row;
+}
+
+/** Points a proposal at a form schema row. */
+async function attachFormSchema(proposalId: string, formSchemaId: string) {
+  await db
+    .update(proposals)
+    .set({ formSchemaId })
+    .where(eq(proposals.id, proposalId));
 }
 
 /** The instance template: requires a summary, knows nothing of a ballot description. */
@@ -82,7 +108,7 @@ describe.concurrent('proposal form schema', () => {
     const processInstanceId = setup.instance.instance.id;
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
-    const row = await caller.decision.createFormSchema({
+    const row = await insertFormSchema({
       processInstanceId,
       name: 'Ballot entry',
       schema: entrySchema,
@@ -94,13 +120,11 @@ describe.concurrent('proposal form schema', () => {
           userEmail: setup.userEmail,
           processInstanceId,
           proposalData: { title: 'Complete entry' },
-          formSchemaId: row.id,
         }),
         testData.createProposal({
           userEmail: setup.userEmail,
           processInstanceId,
           proposalData: { title: 'Entry without ballot description' },
-          formSchemaId: row.id,
         }),
         testData.createProposal({
           userEmail: setup.userEmail,
@@ -108,6 +132,11 @@ describe.concurrent('proposal form schema', () => {
           proposalData: { title: 'Proposal on the instance template' },
         }),
       ]);
+
+    await Promise.all([
+      attachFormSchema(complete.id, row.id),
+      attachFormSchema(missingBallotDescription.id, row.id),
+    ]);
 
     await Promise.all([
       seedCollabFragments(complete.id, {
@@ -155,7 +184,7 @@ describe.concurrent('proposal form schema', () => {
     const processInstanceId = setup.instance.instance.id;
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
-    const row = await caller.decision.createFormSchema({
+    const row = await insertFormSchema({
       processInstanceId,
       name: 'Ballot entry',
       schema: entrySchema,
@@ -166,7 +195,6 @@ describe.concurrent('proposal form schema', () => {
         userEmail: setup.userEmail,
         processInstanceId,
         proposalData: { title: 'On the row' },
-        formSchemaId: row.id,
         seedCollabDoc: true,
       }),
       testData.createProposal({
@@ -176,6 +204,7 @@ describe.concurrent('proposal form schema', () => {
         seedCollabDoc: true,
       }),
     ]);
+    await attachFormSchema(onRow.id, row.id);
 
     const [readOnRow, readOnInstance] = await Promise.all([
       caller.decision.getProposal({ profileId: onRow.profileId }),
@@ -200,92 +229,6 @@ describe.concurrent('proposal form schema', () => {
     expect(listedOnInstance?.proposalTemplate).toEqual(instanceTemplate);
   });
 
-  it('given a proposal on a row, when an update names a different form schema, then it is refused, and the same one is accepted', async ({
-    task,
-    onTestFinished,
-  }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const setup = await testData.createDecisionSetup({
-      instanceCount: 1,
-      grantAccess: true,
-      proposalTemplate: instanceTemplate,
-    });
-    const processInstanceId = setup.instance.instance.id;
-    const caller = await createAuthenticatedCaller(setup.userEmail);
-
-    const row = await caller.decision.createFormSchema({
-      processInstanceId,
-      name: 'Ballot entry',
-      schema: entrySchema,
-    });
-    const otherRow = await caller.decision.createFormSchema({
-      processInstanceId,
-      name: 'Ballot entry',
-      schema: { ...entrySchema, required: ['title'] },
-      parentId: row.id,
-    });
-
-    const proposal = await testData.createProposal({
-      userEmail: setup.userEmail,
-      processInstanceId,
-      proposalData: { title: 'Entry' },
-      formSchemaId: row.id,
-    });
-
-    await expect(
-      caller.decision.updateProposal({
-        proposalId: proposal.id,
-        data: { formSchemaId: otherRow.id },
-      }),
-    ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
-
-    const unchanged = await caller.decision.updateProposal({
-      proposalId: proposal.id,
-      data: { formSchemaId: row.id },
-    });
-    expect(unchanged.formSchemaId).toBe(row.id);
-
-    // The tRPC input only takes a uuid, so clearing the row is checked on the service.
-    await expect(
-      updateProposal({
-        proposalId: proposal.id,
-        data: { formSchemaId: null },
-        user: setup.user,
-      }),
-    ).rejects.toBeInstanceOf(ValidationError);
-  });
-
-  it('given a row of another instance, when a proposal is created on it, then the row is not found', async ({
-    task,
-    onTestFinished,
-  }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const setup = await testData.createDecisionSetup({
-      instanceCount: 2,
-      grantAccess: true,
-      proposalTemplate: instanceTemplate,
-    });
-    const [first, second] = setup.instances;
-    if (!first || !second) {
-      throw new Error('Expected two instances');
-    }
-    const caller = await createAuthenticatedCaller(setup.userEmail);
-
-    const otherInstanceRow = await caller.decision.createFormSchema({
-      processInstanceId: second.instance.id,
-      name: 'Ballot entry',
-      schema: entrySchema,
-    });
-
-    await expect(
-      caller.decision.createProposal({
-        processInstanceId: first.instance.id,
-        proposalData: { title: 'Entry' },
-        formSchemaId: otherInstanceRow.id,
-      }),
-    ).rejects.toMatchObject({ cause: { name: 'NotFoundError' } });
-  });
-
   it('given a proposal on a row, when its data is updated, then a history row is written and the row link is kept', async ({
     task,
     onTestFinished,
@@ -299,7 +242,7 @@ describe.concurrent('proposal form schema', () => {
     const processInstanceId = setup.instance.instance.id;
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
-    const row = await caller.decision.createFormSchema({
+    const row = await insertFormSchema({
       processInstanceId,
       name: 'Ballot entry',
       schema: entrySchema,
@@ -309,8 +252,8 @@ describe.concurrent('proposal form schema', () => {
       userEmail: setup.userEmail,
       processInstanceId,
       proposalData: { title: 'Entry' },
-      formSchemaId: row.id,
     });
+    await attachFormSchema(proposal.id, row.id);
 
     await caller.decision.updateProposal({
       proposalId: proposal.id,
@@ -356,7 +299,7 @@ describe.concurrent('proposal form schema', () => {
     const processInstanceId = setup.instance.instance.id;
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
-    const row = await caller.decision.createFormSchema({
+    const row = await insertFormSchema({
       processInstanceId,
       name: 'Ballot entry',
       schema: entrySchema,
@@ -366,8 +309,8 @@ describe.concurrent('proposal form schema', () => {
       userEmail: setup.userEmail,
       processInstanceId,
       proposalData: { title: 'Entry' },
-      formSchemaId: row.id,
     });
+    await attachFormSchema(proposal.id, row.id);
 
     await caller.decision.deleteDecision({ instanceId: processInstanceId });
 
@@ -394,24 +337,24 @@ describe.concurrent('proposal form schema', () => {
     const processInstanceId = setup.instance.instance.id;
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
-    const parent = await caller.decision.createFormSchema({
+    const parent = await insertFormSchema({
       processInstanceId,
       name: 'Ballot entry',
       schema: entrySchema,
     });
-    const child = await caller.decision.createFormSchema({
+    const child = await insertFormSchema({
       processInstanceId,
       name: 'Ballot entry',
       schema: { ...entrySchema, required: ['title'] },
       parentId: parent.id,
     });
 
-    await testData.createProposal({
+    const proposal = await testData.createProposal({
       userEmail: setup.userEmail,
       processInstanceId,
       proposalData: { title: 'Entry' },
-      formSchemaId: child.id,
     });
+    await attachFormSchema(proposal.id, child.id);
 
     await caller.decision.deleteDecision({ instanceId: processInstanceId });
 

@@ -135,7 +135,6 @@ export * from './listEligibleReviewers';
 export * from './listReviewerCategories';
 export * from './addCategoryReviewer';
 export * from './removeCategoryReviewer';
-export * from './createFormSchema';
 export * from './getFormSchema';
 export * from './listFormSchemas';
 export * from './listProposalsWithReviewAggregates';

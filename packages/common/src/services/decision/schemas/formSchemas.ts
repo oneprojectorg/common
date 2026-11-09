@@ -18,16 +18,6 @@ export const formSchemaSchema = z.object({
 
 export type FormSchemaDTO = z.infer<typeof formSchemaSchema>;
 
-export const createFormSchemaInputSchema = z.object({
-  processInstanceId: z.uuid(),
-  name: z.string().trim().min(1).max(256),
-  schema: z.record(z.string(), z.unknown()),
-  /** Set to store a new version of an existing row. */
-  parentId: z.uuid().optional(),
-});
-
-export type CreateFormSchemaInput = z.infer<typeof createFormSchemaInputSchema>;
-
 export const formSchemaRefSchema = z.object({
   formSchemaId: z.uuid(),
 });

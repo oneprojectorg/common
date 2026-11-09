@@ -38,7 +38,6 @@ export interface CreateProposalInput {
   processInstanceId: string;
   proposalData: ProposalDataInput;
   attachmentIds?: string[];
-  formSchemaId?: string;
 }
 
 export const createProposal = async ({
@@ -98,21 +97,6 @@ export const createProposal = async ({
   });
   const defaultHidden =
     currentPhase.rules?.proposals?.defaults?.hidden === true;
-
-  // Another instance's row reads as missing, so its existence never leaks.
-  if (data.formSchemaId) {
-    const formSchema = await db.query.formSchemas.findFirst({
-      where: { id: data.formSchemaId },
-      columns: { id: true, processInstanceId: true },
-    });
-
-    if (
-      !formSchema ||
-      formSchema.processInstanceId !== data.processInstanceId
-    ) {
-      throw new NotFoundError('Form schema', data.formSchemaId);
-    }
-  }
 
   const parsedProposalData = parseProposalData(data.proposalData);
 
@@ -183,7 +167,6 @@ export const createProposal = async ({
       .values({
         id: proposalId,
         processInstanceId: data.processInstanceId,
-        formSchemaId: data.formSchemaId,
         proposalData: {
           ...data.proposalData,
           collaborationDocId,

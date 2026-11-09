@@ -48,8 +48,6 @@ export interface UpdateProposalInput {
   status?: ProposalStatus;
   visibility?: Visibility;
   checkpointVersion?: CheckpointVersion;
-  // Accepted so a round-tripped payload passes; a change is refused.
-  formSchemaId?: string | null;
 }
 
 export const updateProposal = async ({
@@ -118,16 +116,6 @@ export const updateProposal = async ({
     }
   }
 
-  // A proposal's form schema is stamped once, in `createProposal`.
-  if (
-    data.formSchemaId !== undefined &&
-    data.formSchemaId !== existingProposal.formSchemaId
-  ) {
-    throw new ValidationError(
-      'The form schema of a proposal cannot be changed',
-    );
-  }
-
   // Validate proposal data against template schema when updating non-draft proposals.
   // Drafts are inherently incomplete — validation is enforced on submission.
   if (data.proposalData && existingProposal.status !== ProposalStatus.DRAFT) {
@@ -161,7 +149,6 @@ export const updateProposal = async ({
   const {
     title: nextTitle,
     checkpointVersion: _checkpointVersion,
-    formSchemaId: _formSchemaId,
     ...proposalFields
   } = data;
 

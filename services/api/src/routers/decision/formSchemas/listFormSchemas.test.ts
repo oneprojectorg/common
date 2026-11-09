@@ -1,4 +1,7 @@
+import { formSchemaSchema } from '@op/common/client';
 import { TestDecisionsDataManager } from '@op/common/testing';
+import { db } from '@op/db/client';
+import { formSchemas } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
@@ -13,6 +16,20 @@ const createCaller = createCallerFactory(appRouter);
 async function createAuthenticatedCaller(email: string) {
   const { session } = await createIsolatedSession(email);
   return createCaller(await createTestContextWithSession(session));
+}
+
+/** Rows are inserted directly: the PoC has no write path. */
+async function insertFormSchema(values: {
+  processInstanceId: string;
+  name: string;
+  schema: Record<string, unknown>;
+  parentId?: string;
+}) {
+  const [row] = await db.insert(formSchemas).values(values).returning();
+  if (!row) {
+    throw new Error('form schema insert returned no row');
+  }
+  return row;
 }
 
 function entrySchema(maxLength: number) {
@@ -48,18 +65,18 @@ describe.concurrent('listFormSchemas and getFormSchema', () => {
     }
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
-    const older = await caller.decision.createFormSchema({
+    const older = await insertFormSchema({
       processInstanceId: first.instance.id,
       name: 'Ballot entry',
       schema: entrySchema(280),
     });
-    const newer = await caller.decision.createFormSchema({
+    const newer = await insertFormSchema({
       processInstanceId: first.instance.id,
       name: 'Ballot entry',
       schema: entrySchema(140),
       parentId: older.id,
     });
-    const otherInstanceRow = await caller.decision.createFormSchema({
+    const otherInstanceRow = await insertFormSchema({
       processInstanceId: second.instance.id,
       name: 'Ballot entry',
       schema: entrySchema(280),
@@ -87,7 +104,7 @@ describe.concurrent('listFormSchemas and getFormSchema', () => {
     });
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
-    const created = await caller.decision.createFormSchema({
+    const created = await insertFormSchema({
       processInstanceId: setup.instance.instance.id,
       name: 'Ballot entry',
       schema: entrySchema(280),
@@ -97,7 +114,7 @@ describe.concurrent('listFormSchemas and getFormSchema', () => {
       formSchemaId: created.id,
     });
 
-    expect(fetched).toEqual(created);
+    expect(fetched).toEqual(formSchemaSchema.parse(created));
   });
 
   it("given a member of one instance, when they get another instance's row, then they are refused", async ({
@@ -109,9 +126,8 @@ describe.concurrent('listFormSchemas and getFormSchema', () => {
       testData.createDecisionSetup({ instanceCount: 1, grantAccess: true }),
       testData.createDecisionSetup({ instanceCount: 1, grantAccess: true }),
     ]);
-    const otherCaller = await createAuthenticatedCaller(otherSetup.userEmail);
 
-    const otherInstanceRow = await otherCaller.decision.createFormSchema({
+    const otherInstanceRow = await insertFormSchema({
       processInstanceId: otherSetup.instance.instance.id,
       name: 'Ballot entry',
       schema: entrySchema(280),
