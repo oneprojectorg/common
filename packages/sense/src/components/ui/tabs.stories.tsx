@@ -80,6 +80,30 @@ export const Line: Story = {
   ),
 };
 
+export const LineFullWidth: Story = {
+  render: () => (
+    <Tabs defaultValue="Overview" className="w-120">
+      <TabsList
+        variant="line"
+        fullWidth
+        aria-label="Project sections"
+        className="flex gap-4 overflow-x-auto"
+      >
+        {['Overview', 'Analytics', 'Reports'].map((tab) => (
+          <TabsTrigger key={tab} value={tab}>
+            {tab}
+          </TabsTrigger>
+        ))}
+      </TabsList>
+      {tabPanels.slice(0, 3).map(({ tab, body }) => (
+        <TabsContent key={tab} value={tab}>
+          <p className="text-sm text-muted-foreground">{body}</p>
+        </TabsContent>
+      ))}
+    </Tabs>
+  ),
+};
+
 export const Vertical: Story = {
   render: () => (
     <Tabs defaultValue="Overview" orientation="vertical" className="w-[480px]">
