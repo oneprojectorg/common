@@ -1,7 +1,7 @@
 {
   "version": "8",
   "dialect": "postgres",
-  "id": "b7f2aa04-b38b-424a-a7d1-f29543c0ffc8",
+  "id": "ad7ef35a-5ed8-4940-a0de-aeded736cf07",
   "prevIds": [
     "ca27f2a7-cfca-4131-9dcb-ede17a649c71"
   ],
@@ -3042,19 +3042,6 @@
       "table": "decision_form_schemas"
     },
     {
-      "type": "uuid",
-      "typeSchema": null,
-      "notNull": false,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "parent_id",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "decision_form_schemas"
-    },
-    {
       "type": "varchar(256)",
       "typeSchema": null,
       "notNull": true,
@@ -3076,22 +3063,6 @@
       "generated": null,
       "identity": null,
       "name": "schema",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "decision_form_schemas"
-    },
-    {
-      "type": "text",
-      "typeSchema": null,
-      "notNull": false,
-      "dimensions": 0,
-      "default": null,
-      "generated": {
-        "as": "md5(\"schema\"::text)",
-        "type": "stored"
-      },
-      "identity": null,
-      "name": "schema_hash",
       "entityType": "columns",
       "schema": "public",
       "table": "decision_form_schemas"
@@ -9774,27 +9745,6 @@
       "nameExplicit": false,
       "columns": [
         {
-          "value": "parent_id",
-          "isExpression": false,
-          "asc": true,
-          "nullsFirst": false,
-          "opclass": null
-        }
-      ],
-      "isUnique": false,
-      "where": null,
-      "with": "",
-      "method": "btree",
-      "concurrently": false,
-      "name": "decision_form_schemas_parent_id_index",
-      "entityType": "indexes",
-      "schema": "public",
-      "table": "decision_form_schemas"
-    },
-    {
-      "nameExplicit": false,
-      "columns": [
-        {
           "value": "id",
           "isExpression": false,
           "asc": true,
@@ -14318,23 +14268,6 @@
     {
       "nameExplicit": false,
       "columns": [
-        "parent_id"
-      ],
-      "schemaTo": "public",
-      "tableTo": "decision_form_schemas",
-      "columnsTo": [
-        "id"
-      ],
-      "onUpdate": "NO ACTION",
-      "onDelete": "RESTRICT",
-      "name": "decision_form_schemas_parent_id_decision_form_schemas_id_fkey",
-      "entityType": "fks",
-      "schema": "public",
-      "table": "decision_form_schemas"
-    },
-    {
-      "nameExplicit": false,
-      "columns": [
         "created_by_profile_id"
       ],
       "schemaTo": "public",
@@ -16830,19 +16763,6 @@
       "entityType": "uniques",
       "schema": "public",
       "table": "decisions_vote_submissions"
-    },
-    {
-      "nameExplicit": true,
-      "columns": [
-        "process_instance_id",
-        "parent_id",
-        "schema_hash"
-      ],
-      "nullsNotDistinct": true,
-      "name": "form_schemas_version_uniq",
-      "entityType": "uniques",
-      "schema": "public",
-      "table": "decision_form_schemas"
     },
     {
       "nameExplicit": true,

@@ -34,7 +34,6 @@ export async function insertFormSchema(values: {
   processInstanceId: string;
   name: string;
   schema: Record<string, unknown>;
-  parentId?: string;
 }) {
   const [row] = await db.insert(formSchemas).values(values).returning();
   if (!row) {

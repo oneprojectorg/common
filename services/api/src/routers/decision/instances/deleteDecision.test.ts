@@ -356,44 +356,4 @@ describe.concurrent('deleteDecision: form schema rows', () => {
     expect(deletedRow).toBeUndefined();
     expect(deletedProposal).toBeUndefined();
   });
-
-  it('given a chain of row versions in use by a proposal, when the decision is deleted, then every version is gone', async ({
-    task,
-    onTestFinished,
-  }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const setup = await testData.createDecisionSetup({
-      instanceCount: 1,
-      grantAccess: true,
-      proposalTemplate: instanceTemplate,
-    });
-    const processInstanceId = setup.instance.instance.id;
-    const caller = await createAuthenticatedCaller(setup.userEmail);
-
-    const parent = await insertFormSchema({
-      processInstanceId,
-      name: 'Ballot entry',
-      schema: entrySchema,
-    });
-    const child = await insertFormSchema({
-      processInstanceId,
-      name: 'Ballot entry',
-      schema: { ...entrySchema, required: ['title'] },
-      parentId: parent.id,
-    });
-
-    const proposal = await testData.createProposal({
-      userEmail: setup.userEmail,
-      processInstanceId,
-      proposalData: { title: 'Entry' },
-    });
-    await attachFormSchema(proposal.id, child.id);
-
-    await caller.decision.deleteDecision({ instanceId: processInstanceId });
-
-    const remaining = await db.query.formSchemas.findMany({
-      where: { processInstanceId },
-    });
-    expect(remaining).toHaveLength(0);
-  });
 });
