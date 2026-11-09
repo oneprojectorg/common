@@ -42,7 +42,6 @@ export async function listBallotProposals({
       code: proposals.shortCode,
       title: profiles.name,
       proposalData: proposals.proposalData,
-      formSchemaId: proposals.formSchemaId,
     })
     .from(proposals)
     .innerJoin(profiles, eq(profiles.id, proposals.profileId))

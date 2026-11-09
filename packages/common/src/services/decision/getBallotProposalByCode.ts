@@ -39,7 +39,6 @@ export async function getBallotProposalByCode({
       id: proposals.id,
       title: profiles.name,
       proposalData: proposals.proposalData,
-      formSchemaId: proposals.formSchemaId,
     })
     .from(proposals)
     .innerJoin(profiles, eq(profiles.id, proposals.profileId))

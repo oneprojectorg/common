@@ -9,27 +9,22 @@ import type { ProposalTemplateSchema } from './types';
 
 export type ProposalCosts = ReadonlyMap<string, number | null>;
 
-/**
- * Reads the live document; `proposalData` is a snapshot that goes stale on edit.
- * Each proposal carries its own template, so one ballot can mix form schemas.
- */
+/** Reads the live document; `proposalData` is a snapshot that goes stale on edit. */
 export async function getProposalCosts({
   proposals,
+  proposalTemplate,
   voterCostField,
   unit,
   unreadable = 'throw',
 }: {
-  proposals: Array<{
-    id: string;
-    proposalData: unknown;
-    proposalTemplate: ProposalTemplateSchema | null;
-  }>;
+  proposals: Array<{ id: string; proposalData: unknown }>;
+  proposalTemplate: ProposalTemplateSchema | null;
   voterCostField: string;
   unit: AmountUnit;
   unreadable?: 'throw' | 'null';
 }): Promise<ProposalCosts> {
   const documentContentMap = await getProposalDocumentsContent(
-    proposals.map(({ id, proposalData, proposalTemplate }) => ({
+    proposals.map(({ id, proposalData }) => ({
       id,
       proposalData,
       proposalTemplate,
@@ -38,7 +33,7 @@ export async function getProposalCosts({
   );
 
   return new Map(
-    proposals.map(({ id, proposalData, proposalTemplate }) => {
+    proposals.map(({ id, proposalData }) => {
       const documentContent = documentContentMap.get(id);
 
       // Charging the stale snapshot could let an over-budget ballot through.

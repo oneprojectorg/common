@@ -166,11 +166,8 @@ const priceRows = async (
 ): Promise<ReadonlyMap<string, number | null>> =>
   pricing.unit && rows.length > 0
     ? getProposalCosts({
-        proposals: rows.map(({ id, proposalData }) => ({
-          id,
-          proposalData,
-          proposalTemplate: pricing.proposalTemplate,
-        })),
+        proposals: [...rows],
+        proposalTemplate: pricing.proposalTemplate,
         voterCostField: pricing.voterCostField,
         unit: pricing.unit,
         unreadable: pricing.budget === null ? 'null' : 'throw',

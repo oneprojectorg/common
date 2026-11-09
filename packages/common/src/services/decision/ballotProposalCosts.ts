@@ -1,9 +1,6 @@
 import { formatUnitAmount, getFieldUnit } from './fieldUnit';
 import { getProposalCosts } from './getProposalCosts';
-import {
-  resolveProposalTemplate,
-  resolveProposalTemplatesByFormSchemaId,
-} from './resolveProposalTemplate';
+import { resolveProposalTemplate } from './resolveProposalTemplate';
 import { getInstancePhases } from './schemas/instanceData';
 import { getInstanceCurrentPhase } from './utils/instance';
 import { getVoterCostField } from './utils/phaseSettings';
@@ -26,11 +23,7 @@ export async function priceBallotProposals({
   proposals,
 }: {
   instance: BallotInstance;
-  proposals: ReadonlyArray<{
-    id: string;
-    proposalData: unknown;
-    formSchemaId: string | null;
-  }>;
+  proposals: ReadonlyArray<{ id: string; proposalData: unknown }>;
 }): Promise<ReadonlyMap<string, string | null>> {
   const unpriced = new Map(proposals.map(({ id }) => [id, null]));
   const phase = findCurrentPhase(instance);
@@ -40,8 +33,6 @@ export async function priceBallotProposals({
   }
 
   const voterCostField = getVoterCostField(phase);
-  // The phase has no form schema pointer yet, so the charging unit is the
-  // instance template's; each proposal's cost is read through its own template.
   const proposalTemplate = await resolveProposalTemplate(
     instance.instanceData,
     instance.processId,
@@ -52,18 +43,9 @@ export async function priceBallotProposals({
     return unpriced;
   }
 
-  const templateFor = await resolveProposalTemplatesByFormSchemaId({
-    formSchemaIds: proposals.map(({ formSchemaId }) => formSchemaId),
-    instanceData: instance.instanceData,
-    processId: instance.processId,
-  });
-
   const costs = await getProposalCosts({
-    proposals: proposals.map(({ id, proposalData, formSchemaId }) => ({
-      id,
-      proposalData,
-      proposalTemplate: templateFor(formSchemaId),
-    })),
+    proposals: [...proposals],
+    proposalTemplate,
     voterCostField,
     unit,
     unreadable: 'null',

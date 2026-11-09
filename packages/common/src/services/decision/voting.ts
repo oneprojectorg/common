@@ -24,13 +24,11 @@ import { assertProfileAccess } from '../assert';
 import { getFieldUnit } from './fieldUnit';
 import { type ProposalCosts, getProposalCosts } from './getProposalCosts';
 import { decisionPermission } from './permissions';
-import {
-  resolveProposalTemplate,
-  resolveProposalTemplatesByFormSchemaId,
-} from './resolveProposalTemplate';
+import { resolveProposalTemplate } from './resolveProposalTemplate';
 import { processDecisionProcessSchema } from './schemaRegistry';
 import { validateVoteBudget, validateVoteSelection } from './schemaValidators';
 import type { DecisionInstanceData } from './schemas/instanceData';
+import type { ProposalTemplateSchema } from './types';
 import {
   getVoterBudget,
   getVoterCostField,
@@ -92,6 +90,7 @@ interface VoteCap {
   voterCostField: string;
   /** Undefined when the rules name a field the template no longer prices. */
   unit: AmountUnit | undefined;
+  proposalTemplate: ProposalTemplateSchema | null;
 }
 
 // Undefined when the phase sets no cap.
@@ -106,10 +105,8 @@ async function getVoteCap({
     return undefined;
   }
 
-  // The phase has no form schema pointer yet, so the charging unit is the
-  // instance template's; each proposal's cost is read through its own template.
   const proposalTemplate = await resolveProposalTemplate(
-    processInstance.instanceData,
+    processInstance.instanceData as Record<string, unknown> | null,
     processInstance.processId,
   );
 
@@ -119,10 +116,11 @@ async function getVoteCap({
     unit: getFieldUnit(
       proposalTemplate?.properties?.[phaseConfig.voterCostField],
     ),
+    proposalTemplate,
   };
 }
 
-type PricedBallot = Omit<VoteCap, 'unit'> & {
+type PricedBallot = Omit<VoteCap, 'unit' | 'proposalTemplate'> & {
   unit: AmountUnit;
   costs: ProposalCosts;
 };
@@ -140,11 +138,7 @@ async function getBallotPricing({
     instanceData: unknown;
     processId: string | null;
   };
-  eligibleProposals: Array<{
-    id: string;
-    proposalData: unknown;
-    formSchemaId: string | null;
-  }>;
+  eligibleProposals: Array<{ id: string; proposalData: unknown }>;
   selectedProposalIds: string[];
 }): Promise<PricedBallot | undefined> {
   const cap = await getVoteCap({ phaseConfig, processInstance });
@@ -153,7 +147,7 @@ async function getBallotPricing({
     return undefined;
   }
 
-  const { unit, ...rest } = cap;
+  const { unit, proposalTemplate, ...rest } = cap;
 
   // Fail closed: an uncapped ballot on a capped phase is the worse outcome.
   if (!unit) {
@@ -170,24 +164,13 @@ async function getBallotPricing({
   }
 
   const selected = new Set(selectedProposalIds);
-  const selectedProposals = eligibleProposals.filter((p) => selected.has(p.id));
-  const templateFor = await resolveProposalTemplatesByFormSchemaId({
-    formSchemaIds: selectedProposals.map((p) => p.formSchemaId),
-    instanceData: processInstance.instanceData,
-    processId: processInstance.processId,
-  });
 
   return {
     ...rest,
     unit,
     costs: await getProposalCosts({
-      proposals: selectedProposals.map(
-        ({ id, proposalData, formSchemaId }) => ({
-          id,
-          proposalData,
-          proposalTemplate: templateFor(formSchemaId),
-        }),
-      ),
+      proposals: eligibleProposals.filter((p) => selected.has(p.id)),
+      proposalTemplate,
       voterCostField: cap.voterCostField,
       unit,
     }),
@@ -228,11 +211,7 @@ async function getValidatedBallot({
     instanceData: unknown;
     processId: string | null;
   };
-  eligibleProposals: Array<{
-    id: string;
-    proposalData: unknown;
-    formSchemaId: string | null;
-  }>;
+  eligibleProposals: Array<{ id: string; proposalData: unknown }>;
 }): Promise<{
   pricing: PricedBallot | undefined;
   selections: BallotSelections;

@@ -48,14 +48,11 @@ describe('getProposalCosts', () => {
   it('reads the named field from the snapshot when there is no document', async () => {
     const costs = await getProposalCosts({
       proposals: [
-        {
-          id: 'a',
-          proposalTemplate: template,
-          proposalData: { budget: { amount: 300, currency: 'USD' } },
-        },
-        { id: 'b', proposalTemplate: template, proposalData: { cost: 4 } },
-        { id: 'c', proposalTemplate: template, proposalData: {} },
+        { id: 'a', proposalData: { budget: { amount: 300, currency: 'USD' } } },
+        { id: 'b', proposalData: { cost: 4 } },
+        { id: 'c', proposalData: {} },
       ],
+      proposalTemplate: template,
       voterCostField: 'budget',
       unit: USD,
     });
@@ -72,10 +69,10 @@ describe('getProposalCosts', () => {
       proposals: [
         {
           id: 'a',
-          proposalTemplate: template,
           proposalData: { budget: { amount: 900, currency: 'USD' }, cost: 2 },
         },
       ],
+      proposalTemplate: template,
       voterCostField: 'cost',
       unit: DOTS,
     });
@@ -104,9 +101,8 @@ describe('getProposalCosts', () => {
     expect(
       (
         await getProposalCosts({
-          proposals: [
-            { id: 'a', proposalTemplate: template, proposalData: { cost: 2 } },
-          ],
+          proposals: [{ id: 'a', proposalData: { cost: 2 } }],
+          proposalTemplate: template,
           voterCostField: 'cost',
           unit: DOTS,
         })
@@ -119,10 +115,10 @@ describe('getProposalCosts', () => {
           proposals: [
             {
               id: 'b',
-              proposalTemplate: template,
               proposalData: { budget: { amount: 100, currency: 'USD' } },
             },
           ],
+          proposalTemplate: template,
           voterCostField: 'budget',
           unit: USD,
         })
@@ -140,13 +136,10 @@ describe('getProposalCosts', () => {
 
     const costs = await getProposalCosts({
       proposals: [
-        { id: 'zero', proposalTemplate: template, proposalData: { cost: 3 } },
-        {
-          id: 'cleared',
-          proposalTemplate: template,
-          proposalData: { cost: 3 },
-        },
+        { id: 'zero', proposalData: { cost: 3 } },
+        { id: 'cleared', proposalData: { cost: 3 } },
       ],
+      proposalTemplate: template,
       voterCostField: 'cost',
       unit: DOTS,
     });
@@ -169,13 +162,13 @@ describe('getProposalCosts', () => {
         proposals: [
           {
             id: 'a',
-            proposalTemplate: template,
             proposalData: {
               title: 'Community garden',
               budget: { amount: 100, currency: 'USD' },
             },
           },
         ],
+        proposalTemplate: template,
         voterCostField: 'budget',
         unit: USD,
       }),
@@ -190,13 +183,8 @@ describe('getProposalCosts', () => {
   it('rejects the ballot when a snapshot cost is filled in but not an amount', async () => {
     await expect(
       getProposalCosts({
-        proposals: [
-          {
-            id: 'a',
-            proposalTemplate: template,
-            proposalData: { cost: 'three' },
-          },
-        ],
+        proposals: [{ id: 'a', proposalData: { cost: 'three' } }],
+        proposalTemplate: template,
         voterCostField: 'cost',
         unit: DOTS,
       }),
@@ -205,9 +193,8 @@ describe('getProposalCosts', () => {
 
   it('charges nothing for a blank cost', async () => {
     const costs = await getProposalCosts({
-      proposals: [
-        { id: 'a', proposalTemplate: template, proposalData: { cost: '  ' } },
-      ],
+      proposals: [{ id: 'a', proposalData: { cost: '  ' } }],
+      proposalTemplate: template,
       voterCostField: 'cost',
       unit: DOTS,
     });
@@ -227,10 +214,10 @@ describe('getProposalCosts', () => {
         proposals: [
           {
             id: 'a',
-            proposalTemplate: template,
             proposalData: { budget: { amount: 100, currency: 'USD' } },
           },
         ],
+        proposalTemplate: template,
         voterCostField: 'budget',
         unit: USD,
       }),
@@ -240,39 +227,12 @@ describe('getProposalCosts', () => {
     });
   });
 
-  it('reads each proposal through its own template', async () => {
-    const otherTemplate: ProposalTemplateSchema = {
-      type: 'object',
-      properties: { cost: { type: 'number', 'x-unit': DOTS } },
-    };
-
-    await getProposalCosts({
-      proposals: [
-        { id: 'a', proposalTemplate: template, proposalData: { cost: 1 } },
-        { id: 'b', proposalTemplate: otherTemplate, proposalData: { cost: 2 } },
-      ],
-      voterCostField: 'cost',
-      unit: DOTS,
-    });
-
-    expect(getDocuments).toHaveBeenCalledWith(
-      [
-        expect.objectContaining({ id: 'a', proposalTemplate: template }),
-        expect.objectContaining({ id: 'b', proposalTemplate: otherTemplate }),
-      ],
-      { onFetchError: 'unavailable' },
-    );
-  });
-
   it('does not charge a value stored in another currency', async () => {
     const costs = await getProposalCosts({
       proposals: [
-        {
-          id: 'a',
-          proposalTemplate: template,
-          proposalData: { budget: { amount: 300, currency: 'EUR' } },
-        },
+        { id: 'a', proposalData: { budget: { amount: 300, currency: 'EUR' } } },
       ],
+      proposalTemplate: template,
       voterCostField: 'budget',
       unit: USD,
     });
