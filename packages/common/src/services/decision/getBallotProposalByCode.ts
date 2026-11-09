@@ -53,10 +53,7 @@ export async function getBallotProposalByCode({
   const parsed = parseProposalData(row.proposalData);
   const [costs, proposalTemplate] = await Promise.all([
     priceBallotProposals({ instance, proposals: [row] }),
-    resolveProposalTemplate({
-      instanceData: instance.instanceData,
-      processId: instance.processId,
-    }),
+    resolveProposalTemplate(instance.instanceData, instance.processId),
   ]);
   const documentContent = (
     await getProposalDocumentsContent(

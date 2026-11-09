@@ -98,11 +98,11 @@ export const submitProposal = async ({
   }
 
   // Validate proposal data against the proposal template schema
-  const proposalTemplate = await resolveProposalTemplate({
-    formSchemaId: existingProposal.formSchemaId,
+  const proposalTemplate = await resolveProposalTemplate(
     instanceData,
-    processId: instance.processId,
-  });
+    instance.processId,
+    existingProposal.formSchemaId,
+  );
 
   // Stamp the latest TipTap version into proposalData so the history row
   // created by the DB trigger links back to a concrete document revision.

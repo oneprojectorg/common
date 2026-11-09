@@ -42,10 +42,10 @@ export async function priceBallotProposals({
   const voterCostField = getVoterCostField(phase);
   // The phase has no form schema pointer yet, so the charging unit is the
   // instance template's; each proposal's cost is read through its own template.
-  const proposalTemplate = await resolveProposalTemplate({
-    instanceData: instance.instanceData,
-    processId: instance.processId,
-  });
+  const proposalTemplate = await resolveProposalTemplate(
+    instance.instanceData,
+    instance.processId,
+  );
   const unit = getFieldUnit(proposalTemplate?.properties?.[voterCostField]);
 
   if (!unit) {

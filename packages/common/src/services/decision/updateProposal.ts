@@ -134,11 +134,11 @@ export const updateProposal = async ({
     const instanceData =
       processInstance.instanceData as DecisionInstanceData | null;
 
-    const proposalTemplate = await resolveProposalTemplate({
-      formSchemaId: existingProposal.formSchemaId,
+    const proposalTemplate = await resolveProposalTemplate(
       instanceData,
-      processId: processInstance.processId,
-    });
+      processInstance.processId,
+      existingProposal.formSchemaId,
+    );
 
     if (proposalTemplate) {
       if (!processInstance.profileId) {
@@ -268,11 +268,11 @@ export const updateProposal = async ({
     const priorData = parseProposalData(existingProposal.proposalData);
     const priorVersionId = priorData.collaborationDocVersionId;
     if (priorVersionId !== undefined && priorData.collaborationDocId) {
-      const proposalTemplate = await resolveProposalTemplate({
-        formSchemaId: existingProposal.formSchemaId,
-        instanceData: processInstance.instanceData,
-        processId: processInstance.processId,
-      });
+      const proposalTemplate = await resolveProposalTemplate(
+        processInstance.instanceData as DecisionInstanceData | null,
+        processInstance.processId,
+        existingProposal.formSchemaId,
+      );
       const fragmentNames = proposalTemplate
         ? getProposalFragmentNames(proposalTemplate)
         : ['default'];

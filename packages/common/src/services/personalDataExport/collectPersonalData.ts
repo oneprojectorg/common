@@ -283,7 +283,10 @@ const readProposals = async (profileId: string) => {
       async ([instanceId, { instanceData, processId }]) =>
         [
           instanceId,
-          await resolveProposalTemplate({ instanceData, processId }),
+          await resolveProposalTemplate(
+            instanceData as Record<string, unknown> | null,
+            processId,
+          ),
         ] as const,
       { concurrency: PERSONAL_DATA_EXPORT_TEMPLATE_CONCURRENCY },
     ),

@@ -67,10 +67,10 @@ const getPricing = async (instance: {
   });
   const budget = phase ? getVoterBudget(phase) : undefined;
   const voterCostField = phase ? getVoterCostField(phase) : 'budget';
-  const proposalTemplate = await resolveProposalTemplate({
-    instanceData: instance.instanceData,
-    processId: instance.processId,
-  });
+  const proposalTemplate = await resolveProposalTemplate(
+    instance.instanceData,
+    instance.processId,
+  );
   const unit = getFieldUnit(proposalTemplate?.properties?.[voterCostField]);
   if (budget !== undefined && !unit) {
     throw new BallotCostError(

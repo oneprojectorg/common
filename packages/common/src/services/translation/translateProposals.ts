@@ -96,10 +96,10 @@ export async function translateProposals({
         ],
       });
 
-      const template = await resolveProposalTemplate({
-        instanceData: instance.instanceData,
-        processId: instance.processId,
-      });
+      const template = await resolveProposalTemplate(
+        instance.instanceData as Record<string, unknown> | null,
+        instance.processId,
+      );
       templateByInstanceId.set(instance.id, template);
     }),
   );

@@ -108,10 +108,10 @@ async function getVoteCap({
 
   // The phase has no form schema pointer yet, so the charging unit is the
   // instance template's; each proposal's cost is read through its own template.
-  const proposalTemplate = await resolveProposalTemplate({
-    instanceData: processInstance.instanceData,
-    processId: processInstance.processId,
-  });
+  const proposalTemplate = await resolveProposalTemplate(
+    processInstance.instanceData,
+    processInstance.processId,
+  );
 
   return {
     voterBudget: phaseConfig.voterBudget,
