@@ -393,28 +393,24 @@ function ReviewSummaryTabs({
         );
       }}
     >
-      <div className="w-full border-b">
-        <TabsList
-          variant="line"
-          aria-label={t('decisions.review.reviewSummaryHeading')}
-          className="flex gap-4 overflow-x-auto"
-        >
-          <TabsTrigger value={REVIEW_PROGRESS_TAB}>
-            {t('decisions.review.reviewProgressHeading')}
+      <TabsList
+        variant="line"
+        fullWidth
+        aria-label={t('decisions.review.reviewSummaryHeading')}
+        className="flex gap-4 overflow-x-auto"
+      >
+        <TabsTrigger value={REVIEW_PROGRESS_TAB}>
+          {t('decisions.review.reviewProgressHeading')}
+        </TabsTrigger>
+        {previousReviewPhases.map((phase) => (
+          <TabsTrigger key={phase.id} value={`${PHASE_TAB_PREFIX}${phase.id}`}>
+            {t.rich('decisions.review.reviewsFromPhase', {
+              phase: phase.name,
+              bdi: (chunks) => <bdi>{chunks}</bdi>,
+            })}
           </TabsTrigger>
-          {previousReviewPhases.map((phase) => (
-            <TabsTrigger
-              key={phase.id}
-              value={`${PHASE_TAB_PREFIX}${phase.id}`}
-            >
-              {t.rich('decisions.review.reviewsFromPhase', {
-                phase: phase.name,
-                bdi: (chunks) => <bdi>{chunks}</bdi>,
-              })}
-            </TabsTrigger>
-          ))}
-        </TabsList>
-      </div>
+        ))}
+      </TabsList>
 
       {/* Kept mounted so an open own-review form survives a tab switch. */}
       <TabsContent value={REVIEW_PROGRESS_TAB} keepMounted>
