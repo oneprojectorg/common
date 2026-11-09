@@ -35,6 +35,7 @@ import { BallotPopover } from './BallotPopover';
 import { ProposalBrowseCard } from './ProposalBrowseCard';
 import { ProposalCardMenu, ProposalCardView } from './ProposalCard';
 import { ProposalMasonry } from './ProposalMasonry';
+import { useOpenProposalInSheet } from './ProposalSheet/proposalSheetState';
 import { VoteCheckbox } from './VoteCheckbox';
 import { VoteSubmissionModal } from './VoteSubmissionModal';
 import { VoteSuccessModal } from './VoteSuccessModal';
@@ -51,7 +52,6 @@ import {
   type CustomFormValues,
 } from './proposalEditor/CustomFormModal';
 import { proposalHref } from './proposalHrefs';
-import { useOpenProposalInSheet } from './proposalSheetState';
 
 export interface ProposalsProps {
   proposals?: Proposal[];

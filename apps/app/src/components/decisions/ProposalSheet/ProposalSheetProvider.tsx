@@ -4,7 +4,7 @@ import { useIsMobile } from '@/hooks/useIsMobile';
 import { parseAsString, useQueryState } from 'nuqs';
 import { type ReactNode, useCallback, useMemo } from 'react';
 
-import { ProposalSheet, type ProposalSheetRoute } from './ProposalSheet';
+import { ProposalSheet, type ProposalSheetRoute } from '../ProposalSheet';
 import {
   PROPOSAL_SHEET_PARAM,
   type ProposalSheetControls,

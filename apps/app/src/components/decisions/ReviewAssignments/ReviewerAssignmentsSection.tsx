@@ -30,7 +30,7 @@ import { LuBell, LuListChecks, LuUserX, LuUsers } from 'react-icons/lu';
 import { useTranslations } from '@/lib/i18n';
 
 import type { ProposalSheetRoute } from '../ProposalSheet';
-import { ProposalSheetProvider } from '../ProposalSheetProvider';
+import { ProposalSheetProvider } from '../ProposalSheet/ProposalSheetProvider';
 import { proposalReviewsHref } from '../proposalHrefs';
 import { ManageAssignmentsAction } from './ManageAssignmentsAction';
 import {

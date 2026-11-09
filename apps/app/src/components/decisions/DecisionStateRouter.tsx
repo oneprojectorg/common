@@ -4,7 +4,7 @@ import { trpc } from '@op/api/client';
 import { isLastPhase, isReviewPhase, isVotingPhase } from '@op/common/client';
 import { notFound } from 'next/navigation';
 
-import { ProposalSheetProvider } from './ProposalSheetProvider';
+import { ProposalSheetProvider } from './ProposalSheet/ProposalSheetProvider';
 import { FinalPhaseManualSelectionPage } from './pages/FinalPhaseManualSelectionPage';
 import { ResultsPage } from './pages/ResultsPage';
 import { ReviewPage } from './pages/ReviewPage';
