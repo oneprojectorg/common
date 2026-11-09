@@ -74,7 +74,7 @@ export function ReviewSelectionPage({
               fallback={
                 <ReviewSelectionListSkeleton
                   showScore={showScore}
-                  showBudget={showBudget}
+                  showBudget={showBudget && !isFinalPhase}
                 />
               }
             >
