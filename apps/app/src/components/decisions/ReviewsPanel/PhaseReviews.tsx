@@ -117,7 +117,7 @@ export function PhaseReviewsTabPanel({
   );
 }
 
-function PhaseReviewsSkeleton() {
+export function PhaseReviewsSkeleton() {
   return (
     <div className="flex flex-col gap-4">
       <Skeleton className="h-14 w-full" />

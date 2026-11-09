@@ -1159,6 +1159,7 @@
       "noProposalsMatchFilter": "বর্তমান ফিল্টারের সাথে কোনো প্রস্তাব মেলে না",
       "noProposalsToReview": "পর্যালোচনার জন্য এখনও কোন প্রস্তাব নেই",
       "noReviewers": "এখনও কোনো পর্যালোচক নেই",
+      "noReviewersForProposalHint": "পর্যালোচক নিয়োগ করুন, যাতে এই প্রস্তাবনাটি স্কোর পায়।",
       "noReviewsAssigned": "এখনো কোনো পর্যালোচনা বরাদ্দ করা হয়নি",
       "noReviewsMatchFilters": "বর্তমান ফিল্টারগুলোর সাথে ম্যাচ করে এমন কোনো পর্যালোচনা পাওয়া যায়নি।",
       "noReviewsInPhase": "এই পর্যায়ে কোনো পর্যালোচনা জমা দেওয়া হয়নি",
@@ -1170,6 +1171,7 @@
       "olderVersionLabel": "পুরোনো সংস্করণ",
       "olderVersionReviewedBy": "Older version reviewed by {name}",
       "otherReviewsTab": "অন্যান্য পর্যালোচনা",
+      "reviewsTab": "পর্যালোচনা",
       "overallRecommendationLabel": "সামগ্রিক সুপারিশ",
       "importPastePlaceholder": "প্রস্তাবনার আইডির একটি কলাম বা পুরো সারি পেস্ট করুন",
       "importPasteHint": "স্প্রেডশিট থেকে যা কপি করেছেন তা পেস্ট করুন। আমরা প্রস্তাবনার আইডিগুলো খুঁজে নেব এবং বাকি সব উপেক্ষা করব।",
@@ -1539,7 +1541,8 @@
       "notAdvancedNotificationTemplate": "প্রিয় {name},\n\nআপনার প্রস্তাব \"{proposal}\" {phase} ধাপে অগ্রসর হয়নি।\n\nঅংশ নেওয়ার জন্য ধন্যবাদ।",
       "openFullProposalAction": "সম্পূর্ণ প্রস্তাব খুলুন",
       "sheetLoadErrorTitle": "এই প্রস্তাবটি লোড করা যায়নি",
-      "sheetLoadErrorHint": "এটি সরিয়ে ফেলা হয়ে থাকতে পারে, অথবা এতে আপনার প্রবেশাধিকার নাও থাকতে পারে।"
+      "sheetLoadErrorHint": "এটি সরিয়ে ফেলা হয়ে থাকতে পারে, অথবা এতে আপনার প্রবেশাধিকার নাও থাকতে পারে।",
+      "sheetSectionsLabel": "প্রস্তাবনার অংশ"
     },
     "decisionsLabel": "সিদ্ধান্ত",
     "decisionLabel": "সিদ্ধান্ত",
