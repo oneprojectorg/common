@@ -10,7 +10,6 @@ import {
 
 import { autoId, serviceRolePolicies } from '../../helpers';
 import { processInstances } from './processInstances.sql';
-import { profiles } from './profiles.sql';
 
 /**
  * Generic JSON Schema storage scoped to a decision instance. Rows are
@@ -32,14 +31,6 @@ export const formSchemas = pgTable(
     name: varchar('name', { length: 256 }).notNull(),
 
     schema: jsonb('schema').$type<Record<string, unknown>>().notNull(),
-
-    createdByProfileId: uuid('created_by_profile_id').references(
-      () => profiles.id,
-      {
-        onUpdate: 'cascade',
-        onDelete: 'set null',
-      },
-    ),
 
     // No updatedAt / deletedAt: rows are never updated or soft-deleted.
     createdAt: timestamp({

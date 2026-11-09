@@ -21,7 +21,7 @@ import {
   getProposalReadContext,
   isProposalReadable,
 } from './proposalVisibility';
-import { resolveProposalTemplatesByFormSchemaId } from './resolveProposalTemplate';
+import { resolveProposalTemplate } from './resolveProposalTemplate';
 import type { ListContributingProposalsInput } from './schemas/contributingProposals';
 
 /**
@@ -58,7 +58,7 @@ export async function listContributingProposals({
 
   const readContext = getProposalReadContext({ user, decisionRoles });
 
-  const [pinnedIsReadable, rows] = await Promise.all([
+  const [pinnedIsReadable, rows, proposalTemplate] = await Promise.all([
     db
       .select({ id: proposals.id })
       .from(proposals)
@@ -84,6 +84,12 @@ export async function listContributingProposals({
             profile: { columns: proposalProfileColumns },
           },
         }),
+    instance
+      ? resolveProposalTemplate(
+          instance.instanceData as Record<string, unknown> | null,
+          instance.processId,
+        )
+      : null,
   ]);
 
   // `NotFoundError`, never `Unauthorized`, so a restricted proposal's existence
@@ -107,13 +113,6 @@ export async function listContributingProposals({
     throw new NotFoundError('Decision instance', proposal.processInstanceId);
   }
 
-  // Each row's template: its form schema, else the instance template.
-  const templateFor = await resolveProposalTemplatesByFormSchemaId({
-    formSchemaIds: rows.map((row) => row.formSchemaId),
-    instanceData: instance.instanceData,
-    processId: instance.processId,
-  });
-
   const [documentContentMap, flaggedIds] = await Promise.all([
     getProposalDocumentsContent(
       rows.map((row) => {
@@ -121,7 +120,7 @@ export async function listContributingProposals({
         return {
           id: row.id,
           proposalData: row.proposalData,
-          proposalTemplate: templateFor(row.formSchemaId),
+          proposalTemplate,
           collaborationDocVersionId:
             row.status === ProposalStatus.DRAFT
               ? undefined
@@ -151,7 +150,6 @@ export async function listContributingProposals({
         : rawSubmittedBy;
       const profile = Array.isArray(row.profile) ? row.profile[0] : row.profile;
 
-      const proposalTemplate = templateFor(row.formSchemaId);
       const parsedProposalData = parseProposalData(row.proposalData);
       const { previewText, systemFieldOverrides } = buildProposalListPreview({
         documentContent: documentContentMap.get(row.id),

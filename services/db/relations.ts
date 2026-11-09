@@ -50,29 +50,6 @@ export const relations = defineRelations(schema, (r) => ({
       from: r.proposals.id,
       to: r.decisionTransitionProposals.proposalId,
     }),
-    // Null = the instance template.
-    formSchema: r.one.formSchemas({
-      from: r.proposals.formSchemaId,
-      to: r.formSchemas.id,
-    }),
-  },
-
-  /**
-   * Form schema relations
-   *
-   * processInstanceId is NOT NULL; createdByProfileId is nullable.
-   */
-  formSchemas: {
-    processInstance: r.one.processInstances({
-      from: r.formSchemas.processInstanceId,
-      to: r.processInstances.id,
-      optional: false,
-    }),
-    createdBy: r.one.profiles({
-      from: r.formSchemas.createdByProfileId,
-      to: r.profiles.id,
-      alias: 'formSchema_createdBy',
-    }),
   },
 
   /**

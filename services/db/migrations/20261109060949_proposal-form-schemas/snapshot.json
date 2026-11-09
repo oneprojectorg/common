@@ -1,7 +1,7 @@
 {
   "version": "8",
   "dialect": "postgres",
-  "id": "ad7ef35a-5ed8-4940-a0de-aeded736cf07",
+  "id": "d88803f9-1a6e-41a1-bced-3148f8e2bcb8",
   "prevIds": [
     "ca27f2a7-cfca-4131-9dcb-ede17a649c71"
   ],
@@ -3063,19 +3063,6 @@
       "generated": null,
       "identity": null,
       "name": "schema",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "decision_form_schemas"
-    },
-    {
-      "type": "uuid",
-      "typeSchema": null,
-      "notNull": false,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "created_by_profile_id",
       "entityType": "columns",
       "schema": "public",
       "table": "decision_form_schemas"
@@ -14261,23 +14248,6 @@
       "onUpdate": "CASCADE",
       "onDelete": "CASCADE",
       "name": "decision_form_schemas_kZh2uwArMRia_fkey",
-      "entityType": "fks",
-      "schema": "public",
-      "table": "decision_form_schemas"
-    },
-    {
-      "nameExplicit": false,
-      "columns": [
-        "created_by_profile_id"
-      ],
-      "schemaTo": "public",
-      "tableTo": "profiles",
-      "columnsTo": [
-        "id"
-      ],
-      "onUpdate": "CASCADE",
-      "onDelete": "SET NULL",
-      "name": "decision_form_schemas_created_by_profile_id_profiles_id_fkey",
       "entityType": "fks",
       "schema": "public",
       "table": "decision_form_schemas"
