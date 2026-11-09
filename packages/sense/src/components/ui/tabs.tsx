@@ -46,15 +46,32 @@ const tabsListVariants = cva(
 function TabsList({
   className,
   variant = 'default',
+  fullWidth = false,
   ...props
-}: TabsPrimitive.List.Props & VariantProps<typeof tabsListVariants>) {
-  return (
+}: TabsPrimitive.List.Props &
+  VariantProps<typeof tabsListVariants> & {
+    /**
+     * Not in the registry. Draws the `line` variant's underline track across
+     * the full width of the container. The list stays `w-fit`, so the track is
+     * a bordered wrapper around it and `className` still styles the list.
+     */
+    fullWidth?: boolean;
+  }) {
+  const list = (
     <TabsPrimitive.List
       data-slot="tabs-list"
       data-variant={variant}
       className={cn(tabsListVariants({ variant }), className)}
       {...props}
     />
+  );
+
+  return fullWidth ? (
+    <div data-slot="tabs-list-track" className="w-full border-b">
+      {list}
+    </div>
+  ) : (
+    list
   );
 }
 

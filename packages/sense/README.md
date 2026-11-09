@@ -236,6 +236,9 @@ published source lags its declared dependency versions. Reapply if you re-run
   left/right and the list had no `aria-orientation`.
 - `tabs.tsx` — `TabsList` has a `sidebar` variant (sidebar palette, tinted
   active tab, no card) for a settings-style nav column. Not in the registry.
+- `tabs.tsx` — `TabsList` takes `fullWidth`, which wraps the list in a
+  `w-full border-b` track so a `line` list's underline spans its container.
+  Not in the registry.
 - `scroll-area.tsx` — dropped an unused `import * as React from "react"` that
   fails `noUnusedLocals`.
 - `sheet.tsx` — moved the panel width out of the `data-[side=left|right]:`
