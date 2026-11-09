@@ -20,7 +20,7 @@ import { LuTriangleAlert } from 'react-icons/lu';
 import { useTranslations } from '@/lib/i18n';
 
 import { ProposalCardView, ProposalRestrictionBadge } from './ProposalCard';
-import { useOpenProposalInSheet } from './proposalSheetState';
+import { useOpenProposalInSheet } from './ProposalSheet/proposalSheetState';
 
 /**
  * The proposals merged into this one, listed above the comments. A merge

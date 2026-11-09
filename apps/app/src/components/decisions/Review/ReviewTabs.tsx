@@ -85,35 +85,29 @@ export function ReviewTabs({
         );
       }}
     >
-      {/* sense `TabsList` is `w-fit`, so the underline track comes from a
-          full-width wrapper (same pattern as the review queue's tabs). */}
-      <div className="w-full border-b">
-        <TabsList
-          variant="line"
-          aria-label={t('decisions.review.reviewProposalHeading')}
-          className="flex gap-4 overflow-x-auto"
-        >
-          <TabsTrigger value={MY_REVIEW_TAB}>
-            {t('decisions.review.myReviewTab')}
+      <TabsList
+        variant="line"
+        fullWidth
+        aria-label={t('decisions.review.reviewProposalHeading')}
+        className="flex gap-4 overflow-x-auto"
+      >
+        <TabsTrigger value={MY_REVIEW_TAB}>
+          {t('decisions.review.myReviewTab')}
+        </TabsTrigger>
+        {showOtherReviews ? (
+          <TabsTrigger value={OTHER_REVIEWS_TAB}>
+            {t('decisions.review.otherReviewsTab')}
           </TabsTrigger>
-          {showOtherReviews ? (
-            <TabsTrigger value={OTHER_REVIEWS_TAB}>
-              {t('decisions.review.otherReviewsTab')}
-            </TabsTrigger>
-          ) : null}
-          {previousPhases.map((phase) => (
-            <TabsTrigger
-              key={phase.id}
-              value={`${PHASE_TAB_PREFIX}${phase.id}`}
-            >
-              {t.rich('decisions.review.reviewsFromPhase', {
-                phase: phase.name,
-                bdi: (chunks) => <bdi>{chunks}</bdi>,
-              })}
-            </TabsTrigger>
-          ))}
-        </TabsList>
-      </div>
+        ) : null}
+        {previousPhases.map((phase) => (
+          <TabsTrigger key={phase.id} value={`${PHASE_TAB_PREFIX}${phase.id}`}>
+            {t.rich('decisions.review.reviewsFromPhase', {
+              phase: phase.name,
+              bdi: (chunks) => <bdi>{chunks}</bdi>,
+            })}
+          </TabsTrigger>
+        ))}
+      </TabsList>
 
       {/* `keepMounted` keeps the reviewer's own form alive across tab switches
           so in-flight answers and pending autosaves survive (base-ui's

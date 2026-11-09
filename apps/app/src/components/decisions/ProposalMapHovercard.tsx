@@ -12,7 +12,7 @@ import { ProposalCard, type ProposalCardAuthor } from '@op/sense/ProposalCard';
 import { useTranslations } from '@/lib/i18n';
 import { Link } from '@/lib/i18n/routing';
 
-import { useOpenProposalInSheet } from './proposalSheetState';
+import { useOpenProposalInSheet } from './ProposalSheet/proposalSheetState';
 
 interface ProposalMapHovercardProps {
   proposal: Proposal;

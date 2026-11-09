@@ -1,12 +1,11 @@
 'use client';
 
 import { ProposalReviewRequestState } from '@op/common/client';
+import { useMemo } from 'react';
 
-import { ProposalComments } from '../ProposalComments';
-import { ProposalPreview } from '../ProposalPreview';
-import { TranslateLink } from '../TranslateLink';
-import { useCommentsAllowed } from '../useCommentsAllowed';
-import { useTranslateProposal } from '../useTranslateProposal';
+import { ProposalBody } from '../Proposal/ProposalBody';
+import { ProposalCommentsSection } from '../Proposal/ProposalCommentsSection';
+import { ProposalContext } from '../Proposal/proposalContext';
 import { AuthorNotesSection } from './AuthorNotesSection';
 import { RevisedOnBadge } from './AuthorRevisionNote';
 import { useReviewForm } from './ReviewFormContext';
@@ -18,10 +17,13 @@ export function ReviewProposalPane({
   decisionRoot: string;
 }) {
   const { assignment, ownLatestRevisionRequest } = useReviewForm();
-  const commentsEnabled = useCommentsAllowed(
-    assignment.proposal.processInstanceId,
+
+  // The version under review comes with the assignment, so the body neither
+  // refetches it nor offers like/follow.
+  const proposalContext = useMemo(
+    () => ({ proposal: assignment.proposal, decisionRoot }),
+    [assignment.proposal, decisionRoot],
   );
-  const { link, translation } = useTranslateProposal(assignment.proposal);
 
   const respondedAt =
     ownLatestRevisionRequest?.state === ProposalReviewRequestState.RESUBMITTED
@@ -29,13 +31,10 @@ export function ReviewProposalPane({
       : null;
 
   return (
-    // Same section rhythm as the proposal view: the sections below mirror this
-    // gap in their own `pt`, which keeps each rule centred between them.
-    <div className="flex flex-col gap-6 sm:gap-10">
-      <ProposalPreview
-        proposal={assignment.proposal}
-        translation={translation}
-        translateLink={<TranslateLink translation={link} />}
+    <ProposalContext.Provider value={proposalContext}>
+      <ProposalBody
+        live={false}
+        engagement={false}
         // The badge shows on the date alone, so a note-less resubmission
         // still shows.
         submissionMetaSuffix={
@@ -44,15 +43,9 @@ export function ReviewProposalPane({
         headerBanner={
           <AuthorNotesSection proposalId={assignment.proposal.id} />
         }
-      />
-
-      {commentsEnabled && (
-        <ProposalComments
-          proposal={assignment.proposal}
-          decisionRoot={decisionRoot}
-          readOnly
-        />
-      )}
-    </div>
+      >
+        <ProposalCommentsSection readOnly />
+      </ProposalBody>
+    </ProposalContext.Provider>
   );
 }

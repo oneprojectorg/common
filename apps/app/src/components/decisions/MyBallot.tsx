@@ -10,10 +10,10 @@ import { useTranslations } from '@/lib/i18n';
 import { ProposalCardView } from './ProposalCard';
 import { ProposalListSection } from './ProposalListSection';
 import { ProposalMasonry } from './ProposalMasonry';
+import { useOpenProposalInSheet } from './ProposalSheet/proposalSheetState';
 import { VoteCheckbox } from './VoteCheckbox';
 import { getBallotRank } from './ballot';
 import { proposalHref } from './proposalHrefs';
-import { useOpenProposalInSheet } from './proposalSheetState';
 
 export const NoVoteFound = () => {
   const t = useTranslations();
