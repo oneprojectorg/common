@@ -4,6 +4,7 @@ import {
   formatSmsAddressNotFound,
   formatSmsAddressOutside,
   formatSmsAddressResolved,
+  formatSmsAffirmOrNewAddress,
   formatSmsEnrolled,
   formatSmsEnrolmentWelcome,
   formatSmsNoEnrolmentNeeded,
@@ -24,7 +25,7 @@ describe('formatSmsEnrolmentWelcome', () => {
 });
 
 describe('formatSmsAddressResolved', () => {
-  it('given a district and the attestation, then the text names the district and quotes the attestation after the AGREE instruction', () => {
+  it('given a district and the attestation, then the text names the district, quotes the attestation after the AGREE instruction, and offers a retry', () => {
     expect(
       formatSmsAddressResolved({
         termLabel: 'Council District 5',
@@ -36,6 +37,7 @@ describe('formatSmsAddressResolved', () => {
         "That's Council District 5.",
         'Reply AGREE to register for "City Budget":',
         '"I affirm that I meet the eligibility requirements."',
+        'Wrong district? Text a new address.',
       ].join('\n'),
     ]);
   });
@@ -67,6 +69,12 @@ describe('address refusals', () => {
   it('given the address is outside every district, then the text names the decision', () => {
     expect(formatSmsAddressOutside('Park Funding')).toEqual([
       'That address is outside the districts of "Park Funding", so you cannot register for it.',
+    ]);
+  });
+
+  it('given a reply that is neither AGREE nor an address while the affirmation waits, then the text offers both paths', () => {
+    expect(formatSmsAffirmOrNewAddress()).toEqual([
+      'Reply AGREE to register, or text your full address (street, city and ZIP) to change your district.',
     ]);
   });
 });

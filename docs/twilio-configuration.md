@@ -111,7 +111,7 @@ keyword without a handler fails the typecheck.
 | `SHOW`                      | The decisions the member belongs to; on a line, that decision's phase, voting state and ballot size.                                        |
 | `SHOW <slug>`               | One decision's phase, voting state and ballot size.                                                                                        |
 | `VOTE [<slug>]`             | Starts registration when the voting phase has `voting.enrolment`: asks for the address. Without the rule: no registration is needed.        |
-| a street address            | While a registration waits for it: confirms the district and sends the attestation, or says the address was not found or is outside.      |
+| a street address            | While a registration waits for it: confirms the district and sends the attestation, or says the address was not found or is outside. While the attestation waits for AGREE, a new address re-resolves the district; text that is not an address prompts AGREE-or-address. |
 | `AGREE`                     | Affirms the attestation that was sent; the voter is registered.                                                                             |
 | `PROPOSALS [<slug>]`        | The first five proposals of the voter's district ballot with codes and costs.                                                             |
 | `MORE`                      | The next five, from where PROPOSALS left off.                                                                                                |
@@ -291,7 +291,7 @@ point outside production.
 | `JOIN`                   | The consent text, then a code to confirm the number; reply with the code. `JOIN` takes no argument on either number.                      |
 | `SHOW`                   | `"<decision>" (<slug>): Voting phase, voting open, N proposals.`                                                                           |
 | `VOTE`                   | `Welcome to "<decision>".` then `Two quick steps to register: your address, then a short affirmation. No ID needed.` then `What's your address?`, each on its own line. |
-| `375 S High St, …`       | `That's District 5.` then `Reply AGREE to register for "<decision>":` then the quoted attestation, each on its own line.                     |
+| `375 S High St, …`       | `That's District 5.` then `Reply AGREE to register for "<decision>":` then the quoted attestation, then `Wrong district? Text a new address.`, each on its own line.    |
 | `AGREE`                  | `You're registered. You have $1,000,000 for District 5 proposals.`                                                                           |
 | `PROPOSALS`              | `District 5 has N proposals. First 5:` then `101 <title> ($85,000)` … and `Reply MORE for the rest, or INFO plus a code.`                   |
 | `MORE`                   | `Next 5:` …                                                                                                                                 |

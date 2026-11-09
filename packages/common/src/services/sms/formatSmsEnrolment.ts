@@ -31,8 +31,13 @@ export const formatSmsAddressResolved = ({
         : 'Address found.',
       `Reply AGREE to register for ${quoted(decisionName)}:`,
       `"${attestation}"`,
+      ...(termLabel ? ['Wrong district? Text a new address.'] : []),
     ],
   });
+
+export const formatSmsAffirmOrNewAddress = (): string[] => [
+  'Reply AGREE to register, or text your full address (street, city and ZIP) to change your district.',
+];
 
 export const formatSmsAddressNotFound = (): string[] => [
   'That address was not found. Text it again with the street, city and ZIP.',
