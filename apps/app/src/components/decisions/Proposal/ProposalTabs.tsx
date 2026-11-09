@@ -7,7 +7,7 @@ import type { ComponentProps, ReactNode } from 'react';
 
 type ProposalTabListProps = Omit<
   ComponentProps<typeof TabsList>,
-  'variant' | 'aria-label'
+  'variant' | 'fullWidth' | 'aria-label'
 > & {
   'aria-label': string;
 };
@@ -24,15 +24,12 @@ export function ProposalTabs(props: ComponentProps<typeof Tabs>) {
 
 export function ProposalTabList({ className, ...props }: ProposalTabListProps) {
   return (
-    // sense `TabsList` is `w-fit`, so the underline track comes from a
-    // full-width wrapper.
-    <div className="w-full border-b">
-      <TabsList
-        variant="line"
-        className={cn('flex gap-4 overflow-x-auto', className)}
-        {...props}
-      />
-    </div>
+    <TabsList
+      variant="line"
+      fullWidth
+      className={cn('flex gap-4 overflow-x-auto', className)}
+      {...props}
+    />
   );
 }
 

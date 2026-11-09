@@ -177,17 +177,15 @@ export function ReviewPage({
                 value={activeTab}
                 onValueChange={handleTabChange}
               >
-                <div className="w-full border-b">
-                  <TabsList variant="line" className="-ms-3">
-                    <TabsTrigger value="to-review">
-                      {t('proposalsToReviewTab')}
-                    </TabsTrigger>
-                    <TabsTrigger value="all-proposals">
-                      {t('allProposalsTab')}
-                    </TabsTrigger>
-                    {isAdmin ? assignmentsTabTrigger : null}
-                  </TabsList>
-                </div>
+                <TabsList variant="line" fullWidth className="-ms-3">
+                  <TabsTrigger value="to-review">
+                    {t('proposalsToReviewTab')}
+                  </TabsTrigger>
+                  <TabsTrigger value="all-proposals">
+                    {t('allProposalsTab')}
+                  </TabsTrigger>
+                  {isAdmin ? assignmentsTabTrigger : null}
+                </TabsList>
 
                 <TabsContent value="to-review" className="grow sm:p-0">
                   <APIErrorBoundary fallbacks={proposalsLoadErrorFallback}>
@@ -214,14 +212,12 @@ export function ReviewPage({
                 value={adminActiveTab}
                 onValueChange={handleTabChange}
               >
-                <div className="w-full border-b">
-                  <TabsList variant="line" className="-ms-3">
-                    <TabsTrigger value={DEFAULT_REVIEW_TAB}>
-                      {t('allProposalsTab')}
-                    </TabsTrigger>
-                    {assignmentsTabTrigger}
-                  </TabsList>
-                </div>
+                <TabsList variant="line" fullWidth className="-ms-3">
+                  <TabsTrigger value={DEFAULT_REVIEW_TAB}>
+                    {t('allProposalsTab')}
+                  </TabsTrigger>
+                  {assignmentsTabTrigger}
+                </TabsList>
 
                 <TabsContent value={DEFAULT_REVIEW_TAB} className="grow sm:p-0">
                   {allProposalsList}
