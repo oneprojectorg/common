@@ -161,8 +161,8 @@ const notFoundReply = (
     label: 'Not-found reply',
     bodies: [
       echoedSlug === null
-        ? 'No decision was found.'
-        : `No decision named "${clipSmsText(echoedSlug, SMS_SLUG_LENGTH)}" was found.`,
+        ? 'No decision was found. Text SHOW to list your decisions.'
+        : `No decision named "${clipSmsText(echoedSlug, SMS_SLUG_LENGTH)}" was found. Text SHOW to list your decisions.`,
     ],
     message: 'decision not found',
   });
@@ -294,7 +294,10 @@ export const vote: SmsCommandHandler = async (context) => {
       deliver,
       stepId: 'send-no-enrolment-needed',
       label: 'No enrolment needed reply',
-      bodies: formatSmsNoEnrolmentNeeded(decision.name),
+      bodies: formatSmsNoEnrolmentNeeded(
+        decision.name,
+        context.line?.instanceId === decision.instanceId ? null : decision.slug,
+      ),
       message: 'no enrolment needed',
     });
   }
@@ -353,6 +356,10 @@ export const vote: SmsCommandHandler = async (context) => {
         decisionName: decision.name,
         termLabel: null,
         budget: decision.budget,
+        slug:
+          context.line?.instanceId === decision.instanceId
+            ? null
+            : decision.slug,
       }),
       message: 'already enrolled',
     });
@@ -383,7 +390,7 @@ export const vote: SmsCommandHandler = async (context) => {
 };
 
 export const agree: SmsCommandHandler = async (context) => {
-  const { step, account, deliver } = context;
+  const { step, account, deliver, line } = context;
   const nothingToAffirm = () =>
     deliverAll({
       deliver,
@@ -442,6 +449,8 @@ export const agree: SmsCommandHandler = async (context) => {
       decisionName: decision.name,
       termLabel: pending.termLabel,
       budget: decision.budget,
+      slug:
+        line?.instanceId === pending.processInstanceId ? null : decision.slug,
     }),
     message: 'enrolled',
   });

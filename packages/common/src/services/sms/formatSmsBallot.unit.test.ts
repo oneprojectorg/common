@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  SMS_BALLOT_ALREADY_SUBMITTED_MESSAGE,
+  SMS_BALLOT_EMPTY_SUBMIT_MESSAGE,
+  SMS_BALLOT_SUBMITTED_MESSAGE,
   formatSmsBallot,
+  formatSmsBallotRefused,
+  formatSmsNotOnYourBallot,
   formatSmsPickDuplicate,
   formatSmsPickMoved,
   formatSmsPickOverBudget,
@@ -33,7 +38,7 @@ describe('formatSmsPicksAdded', () => {
     ]);
   });
 
-  it('given two picks added in one text to a ballot that already had one, then both are numbered and no next-steps hint follows', () => {
+  it('given two picks added in one text to a ballot that already had one, then both are numbered and a short review hint follows', () => {
     expect(
       formatSmsPicksAdded({
         picks: [
@@ -58,6 +63,7 @@ describe('formatSmsPicksAdded', () => {
         'Pick 2: "Linden rec center evening hours" ($240,000).',
         'Pick 3: "Neighborhood tree planting" ($150,000).',
         '$525,000 left.',
+        'Text DONE to review.',
       ].join('\n'),
     ]);
   });
@@ -69,7 +75,7 @@ describe('formatSmsPicksAdded', () => {
         remaining: null,
         firstPick: false,
       }),
-    ).toEqual(['Pick 1: "Tree planting".']);
+    ).toEqual(['Pick 1: "Tree planting". Text DONE to review.']);
   });
 });
 
@@ -180,21 +186,51 @@ describe('formatSmsBallot', () => {
 });
 
 describe('pick changes', () => {
-  it('given a removed pick, then the text names it and what is left', () => {
+  it('given a removed pick, then the text names it, what is left and what to do next', () => {
     expect(
       formatSmsPickRemoved({ title: 'Tree planting', remaining: '$1,000,000' }),
-    ).toBe('Removed "Tree planting". $1,000,000 left.');
+    ).toBe(
+      'Removed "Tree planting". $1,000,000 left. Text a code to add, or DONE to review.',
+    );
     expect(
       formatSmsPickRemoved({ title: 'Tree planting', remaining: null }),
-    ).toBe('Removed "Tree planting".');
+    ).toBe('Removed "Tree planting". Text a code to add, or DONE to review.');
   });
 
-  it('given a moved or repeated pick, then the text names its position', () => {
+  it('given a moved or repeated pick, then the text names its position and points at LIST', () => {
     expect(formatSmsPickMoved({ title: 'Bike lane', position: 1 })).toBe(
-      '"Bike lane" is now pick 1.',
+      '"Bike lane" is now pick 1. Text LIST to see the new order.',
     );
     expect(formatSmsPickDuplicate({ title: 'Bike lane', position: 2 })).toBe(
-      '"Bike lane" is already pick 2.',
+      '"Bike lane" is already pick 2. Text LIST to see your ballot.',
+    );
+  });
+});
+
+describe('submit replies', () => {
+  it('then each submit reply ends with a next step', () => {
+    expect(SMS_BALLOT_SUBMITTED_MESSAGE).toBe(
+      'Your ballot is in. One ballot per person. However, your vote is never public. Text SHOW to see your other decisions.',
+    );
+    expect(SMS_BALLOT_ALREADY_SUBMITTED_MESSAGE).toBe(
+      'Your ballot is already in. One ballot per person. Text SHOW to see your other decisions.',
+    );
+    expect(SMS_BALLOT_EMPTY_SUBMIT_MESSAGE).toBe(
+      'Your ballot is empty. Text PROPOSALS to browse, then a code to pick.',
+    );
+  });
+
+  it('given a refused ballot, then the reason is followed by a review hint', () => {
+    expect(formatSmsBallotRefused('voting closed while you were picking')).toBe(
+      'Your ballot was not cast: voting closed while you were picking\nText DONE to review your ballot.',
+    );
+  });
+});
+
+describe('formatSmsNotOnYourBallot', () => {
+  it('given a code that is not a pick, then the text repeats the code and points at LIST', () => {
+    expect(formatSmsNotOnYourBallot(999)).toBe(
+      'No pick with code 999 is on your ballot. Text LIST to see your picks.',
     );
   });
 });

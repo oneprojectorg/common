@@ -33,7 +33,10 @@ const HELP_MESSAGE =
   'Text JOIN to sign up. Reply STOP to unsubscribe. Msg&Data Rates May Apply.';
 const CONSENT_MESSAGE =
   'Reply with the code we just texted you to create your Common account.';
-const WELCOME_MESSAGE = "You're in! Welcome to Common.";
+const welcomeMessage = (onDecisionLine: boolean): string =>
+  onDecisionLine
+    ? "You're in! Welcome to Common. Text VOTE to register."
+    : "You're in! Welcome to Common. Text SHOW to see your decisions.";
 const { smsInboundReceived } = Events;
 
 type ConfirmationOutcome =
@@ -255,7 +258,7 @@ export const handleUnknownSmsSignup = inngest.createFunction(
     const welcomeResult = await sendText(
       'send-welcome-reply',
       'Welcome message',
-      WELCOME_MESSAGE,
+      welcomeMessage(line !== null),
     );
 
     if (welcomeResult.status === 'rejected') {

@@ -64,15 +64,15 @@ describe('address refusals', () => {
     ]);
   });
 
-  it('given the address is outside every district, then the text names the decision', () => {
+  it('given the address is outside every district, then the text names the decision and points at SHOW', () => {
     expect(formatSmsAddressOutside('Park Funding')).toEqual([
-      'That address is outside the districts of "Park Funding", so you cannot register for it.',
+      'That address is outside the districts of "Park Funding", so you cannot register for it. Text SHOW to see your other decisions.',
     ]);
   });
 });
 
 describe('formatSmsEnrolled', () => {
-  it('given a budget and a district, then the text confirms registration with both', () => {
+  it('given a budget and a district, then the text confirms registration with both and points at PROPOSALS', () => {
     expect(
       formatSmsEnrolled({
         decisionName: 'Park Funding',
@@ -80,18 +80,20 @@ describe('formatSmsEnrolled', () => {
         budget: '$1000000',
       }),
     ).toEqual([
-      "You're registered. You have $1000000 for Council District 5 proposals.",
+      "You're registered. You have $1000000 for Council District 5 proposals. Text PROPOSALS to browse the ballot.",
     ]);
   });
 
-  it('given no budget and no district, then the text confirms registration for the decision', () => {
+  it('given no budget and no district, then the text confirms registration for the decision and points at PROPOSALS', () => {
     expect(
       formatSmsEnrolled({
         decisionName: 'Park Funding',
         termLabel: null,
         budget: null,
       }),
-    ).toEqual(['You\'re registered to vote in "Park Funding".']);
+    ).toEqual([
+      'You\'re registered to vote in "Park Funding". Text PROPOSALS to browse the ballot.',
+    ]);
   });
 
   it('given a budget and no district, then the budget is for the decision', () => {
@@ -102,7 +104,20 @@ describe('formatSmsEnrolled', () => {
         budget: '$500',
       }),
     ).toEqual([
-      'You\'re registered. You have $500 for "Park Funding" proposals.',
+      'You\'re registered. You have $500 for "Park Funding" proposals. Text PROPOSALS to browse the ballot.',
+    ]);
+  });
+
+  it('given a slug for the shared number, then the PROPOSALS hint carries it', () => {
+    expect(
+      formatSmsEnrolled({
+        decisionName: 'Park Funding',
+        termLabel: null,
+        budget: null,
+        slug: 'park-funding',
+      }),
+    ).toEqual([
+      'You\'re registered to vote in "Park Funding". Text PROPOSALS park-funding to browse the ballot.',
     ]);
   });
 });
@@ -116,15 +131,21 @@ describe('formatSmsNothingToAffirm', () => {
 });
 
 describe('vote replies without a registration step', () => {
-  it('given a decision with no enrolment rule, then the text says no registration is needed', () => {
+  it('given a decision with no enrolment rule, then the text says no registration is needed and points at PROPOSALS', () => {
     expect(formatSmsNoEnrolmentNeeded('Park Funding')).toEqual([
-      'No registration is needed for "Park Funding". Voting is open.',
+      'No registration is needed for "Park Funding". Voting is open. Text PROPOSALS to browse the ballot.',
     ]);
   });
 
-  it('given a decision whose voting is closed, then the text says so', () => {
+  it('given a slug for the shared number, then the PROPOSALS hint carries it', () => {
+    expect(formatSmsNoEnrolmentNeeded('Park Funding', 'park-funding')).toEqual([
+      'No registration is needed for "Park Funding". Voting is open. Text PROPOSALS park-funding to browse the ballot.',
+    ]);
+  });
+
+  it('given a decision whose voting is closed, then the text says so and points at SHOW', () => {
     expect(formatSmsVotingClosed('Park Funding')).toEqual([
-      'Voting is not open for "Park Funding".',
+      'Voting is not open for "Park Funding". Text SHOW to see your decisions.',
     ]);
   });
 });

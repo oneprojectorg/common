@@ -4,10 +4,11 @@ const SMS_DECISION_NAME_LENGTH = 80;
 
 export const SMS_BROWSE_MORE_FOOTER =
   'Reply MORE for the rest, or INFO plus a code.';
-export const SMS_BROWSE_LAST_FOOTER = 'Reply INFO plus a code for details.';
+export const SMS_BROWSE_LAST_FOOTER =
+  'Text a code to pick it, or INFO plus a code for details.';
 export const SMS_BROWSE_START_MESSAGE = 'Text PROPOSALS to start browsing.';
 export const SMS_BROWSE_END_MESSAGE =
-  'That was the last page. Text PROPOSALS to start again.';
+  'That was the last page. Text a code to pick, or PROPOSALS to start again.';
 export const SMS_PROPOSALS_NEEDS_DECISION_MESSAGE =
   'Text PROPOSALS and a decision name, for example PROPOSALS columbus.';
 export const SMS_INFO_NEEDS_CODE_MESSAGE =
@@ -40,7 +41,7 @@ export const formatSmsBallotScope = ({
   termLabel ?? `"${clipSmsText(decisionName, SMS_DECISION_NAME_LENGTH)}"`;
 
 export const SMS_BALLOT_UNAVAILABLE_MESSAGE =
-  'That decision is not available to you.';
+  'That decision is not available to you. Text SHOW to list your decisions.';
 
 export const formatSmsRegisterFirst = (
   decisionName: string,
@@ -49,4 +50,4 @@ export const formatSmsRegisterFirst = (
   `Text VOTE${slug ? ` ${slug}` : ''} to register for "${clipSmsText(decisionName, SMS_DECISION_NAME_LENGTH)}" before browsing its proposals.`;
 
 export const formatSmsProposalNotOnBallot = (code: number): string =>
-  `No proposal with code ${code} is on your ballot.`;
+  `No proposal with code ${code} is on your ballot. Text PROPOSALS to browse the ballot.`;

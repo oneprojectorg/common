@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { formatSmsDecisionInfo } from './formatSmsDecisionInfo';
 
 describe('formatSmsDecisionInfo', () => {
-  it('given a decision in a voting phase, then one text names the phase, says voting is open and counts the proposals', () => {
+  it('given a decision in a voting phase, then the text names the phase, says voting is open, counts the proposals and names the next steps', () => {
     expect(
       formatSmsDecisionInfo({
         name: 'Park Funding',
@@ -13,7 +13,7 @@ describe('formatSmsDecisionInfo', () => {
         proposalCount: 3,
       }),
     ).toBe(
-      '"Park Funding" (park-funding): Voting phase, voting open, 3 proposals.',
+      '"Park Funding" (park-funding): Voting phase, voting open, 3 proposals.\nText VOTE park-funding to register, or PROPOSALS park-funding to browse.',
     );
   });
 
@@ -45,7 +45,7 @@ describe('formatSmsDecisionInfo', () => {
     );
   });
 
-  it('given a name longer than a text line should carry, then the name is clipped and the rest of the text survives', () => {
+  it('given a name longer than a text line should carry, then the name is clipped and the info line fits one segment', () => {
     const body = formatSmsDecisionInfo({
       name: 'x'.repeat(300),
       slug: 'long-name',
@@ -53,16 +53,17 @@ describe('formatSmsDecisionInfo', () => {
       votingOpen: true,
       proposalCount: 2,
     });
+    const [infoLine] = body.split('\n');
 
     expect(
-      body.endsWith(
+      infoLine!.endsWith(
         '..." (long-name): Voting phase, voting open, 2 proposals.',
       ),
     ).toBe(true);
-    expect(body.length).toBeLessThanOrEqual(160);
+    expect(infoLine!.length).toBeLessThanOrEqual(160);
   });
 
-  it('given a slug as long as a name, then the text still fits one segment and keeps the whole slug', () => {
+  it('given a slug as long as a name, then the info line still fits one segment and keeps the whole slug', () => {
     const slug = 'test-instance-'.concat('a'.repeat(36));
     const body = formatSmsDecisionInfo({
       name: 'y'.repeat(300),
@@ -71,8 +72,9 @@ describe('formatSmsDecisionInfo', () => {
       votingOpen: true,
       proposalCount: 2,
     });
+    const [infoLine] = body.split('\n');
 
-    expect(body).toContain(`(${slug})`);
-    expect(body.length).toBeLessThanOrEqual(160);
+    expect(infoLine).toContain(`(${slug})`);
+    expect(infoLine!.length).toBeLessThanOrEqual(160);
   });
 });
