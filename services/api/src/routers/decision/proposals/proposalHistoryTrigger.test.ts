@@ -5,6 +5,12 @@ import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
 import {
+  attachFormSchema,
+  entrySchema,
+  insertFormSchema,
+  instanceTemplate,
+} from '../../../test/helpers/formSchemaTestUtils';
+import {
   createIsolatedSession,
   createTestContextWithSession,
 } from '../../../test/supabase-utils';
@@ -127,5 +133,64 @@ describe.concurrent('proposal history trigger', () => {
       .where(eq(proposalHistory.id, proposal.id));
 
     expect(snapshots.length).toBe(0);
+  });
+});
+
+describe.concurrent('proposal history trigger: form schema rows', () => {
+  it('given a proposal on a row, when its data is updated, then a history row is written and the row link is kept', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+      proposalTemplate: instanceTemplate,
+    });
+    const processInstanceId = setup.instance.instance.id;
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const row = await insertFormSchema({
+      processInstanceId,
+      name: 'Ballot entry',
+      schema: entrySchema,
+    });
+
+    const proposal = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId,
+      proposalData: { title: 'Entry' },
+    });
+    await attachFormSchema(proposal.id, row.id);
+
+    await caller.decision.updateProposal({
+      proposalId: proposal.id,
+      data: {
+        proposalData: {
+          title: 'Entry',
+          ballotDescription: 'An edited ballot description',
+          collaborationDocId: `proposal-${proposal.id}`,
+        },
+      },
+    });
+
+    const latestSnapshot = await db
+      .select()
+      .from(proposalHistory)
+      .where(eq(proposalHistory.id, proposal.id))
+      .orderBy(desc(proposalHistory.historyCreatedAt))
+      .limit(1)
+      .then((rows) => rows[0]);
+
+    expect(latestSnapshot).toBeDefined();
+    expect(latestSnapshot?.proposalData).toMatchObject({
+      ballotDescription: 'An edited ballot description',
+    });
+
+    const stored = await db.query.proposals.findFirst({
+      where: { id: proposal.id },
+      columns: { formSchemaId: true },
+    });
+    expect(stored?.formSchemaId).toBe(row.id);
   });
 });

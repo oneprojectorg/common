@@ -25,6 +25,12 @@ import { describe, expect, it } from 'vitest';
 import { appRouter } from '../..';
 import { transformFormDataToProcessSchema as cowopSchema } from '../../../../../../apps/app/src/components/Profile/CreateDecisionProcessModal/schemas/cowop';
 import {
+  attachFormSchema,
+  entrySchema,
+  insertFormSchema,
+  instanceTemplate,
+} from '../../../test/helpers/formSchemaTestUtils';
+import {
   accessTierGatingCell,
   describeDecisionAccessTierGating,
   expectPassesAccessTierGate,
@@ -2771,5 +2777,55 @@ describe.concurrent('listProposals: search', () => {
       search: 'Bike zzzznomatch',
     });
     expect(withinCap.items).toHaveLength(0);
+  });
+});
+
+describe.concurrent('listProposals: form schema rows', () => {
+  it('given one proposal on a row and one without, when they are listed, then each carries its own template', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+      proposalTemplate: instanceTemplate,
+    });
+    const processInstanceId = setup.instance.instance.id;
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const row = await insertFormSchema({
+      processInstanceId,
+      name: 'Ballot entry',
+      schema: entrySchema,
+    });
+
+    const [onRow, onInstance] = await Promise.all([
+      testData.createProposal({
+        userEmail: setup.userEmail,
+        processInstanceId,
+        proposalData: { title: 'On the row' },
+        seedCollabDoc: true,
+      }),
+      testData.createProposal({
+        userEmail: setup.userEmail,
+        processInstanceId,
+        proposalData: { title: 'On the instance template' },
+        seedCollabDoc: true,
+      }),
+    ]);
+    await attachFormSchema(onRow.id, row.id);
+
+    const list = await caller.decision.listProposals({ processInstanceId });
+
+    expect(list.items).toHaveLength(2);
+    const listedOnRow = list.items.find((item) => item.id === onRow.id);
+    const listedOnInstance = list.items.find(
+      (item) => item.id === onInstance.id,
+    );
+    expect(listedOnRow?.formSchemaId).toBe(row.id);
+    expect(listedOnRow?.proposalTemplate).toEqual(entrySchema);
+    expect(listedOnInstance?.formSchemaId).toBeNull();
+    expect(listedOnInstance?.proposalTemplate).toEqual(instanceTemplate);
   });
 });

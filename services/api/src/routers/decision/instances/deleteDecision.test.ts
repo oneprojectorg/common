@@ -4,6 +4,12 @@ import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
 import {
+  attachFormSchema,
+  entrySchema,
+  insertFormSchema,
+  instanceTemplate,
+} from '../../../test/helpers/formSchemaTestUtils';
+import {
   accessTierGatingCell,
   describeDecisionAccessTierGating,
   expectFailsAccessTierGate,
@@ -310,4 +316,84 @@ describeDecisionAccessTierGating('deleteDecision', {
       });
     },
   ),
+});
+
+describe.concurrent('deleteDecision: form schema rows', () => {
+  it('given a row in use by a proposal, when the decision is deleted, then the instance and the row are gone', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+      proposalTemplate: instanceTemplate,
+    });
+    const processInstanceId = setup.instance.instance.id;
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const row = await insertFormSchema({
+      processInstanceId,
+      name: 'Ballot entry',
+      schema: entrySchema,
+    });
+
+    const proposal = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId,
+      proposalData: { title: 'Entry' },
+    });
+    await attachFormSchema(proposal.id, row.id);
+
+    await caller.decision.deleteDecision({ instanceId: processInstanceId });
+
+    const [deletedInstance, deletedRow, deletedProposal] = await Promise.all([
+      db.query.processInstances.findFirst({ where: { id: processInstanceId } }),
+      db.query.formSchemas.findFirst({ where: { id: row.id } }),
+      db.query.proposals.findFirst({ where: { id: proposal.id } }),
+    ]);
+    expect(deletedInstance).toBeUndefined();
+    expect(deletedRow).toBeUndefined();
+    expect(deletedProposal).toBeUndefined();
+  });
+
+  it('given a chain of row versions in use by a proposal, when the decision is deleted, then every version is gone', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+      proposalTemplate: instanceTemplate,
+    });
+    const processInstanceId = setup.instance.instance.id;
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const parent = await insertFormSchema({
+      processInstanceId,
+      name: 'Ballot entry',
+      schema: entrySchema,
+    });
+    const child = await insertFormSchema({
+      processInstanceId,
+      name: 'Ballot entry',
+      schema: { ...entrySchema, required: ['title'] },
+      parentId: parent.id,
+    });
+
+    const proposal = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId,
+      proposalData: { title: 'Entry' },
+    });
+    await attachFormSchema(proposal.id, child.id);
+
+    await caller.decision.deleteDecision({ instanceId: processInstanceId });
+
+    const remaining = await db.query.formSchemas.findMany({
+      where: { processInstanceId },
+    });
+    expect(remaining).toHaveLength(0);
+  });
 });

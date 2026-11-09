@@ -12,6 +12,13 @@ import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
 import {
+  attachFormSchema,
+  entrySchema,
+  insertFormSchema,
+  instanceTemplate,
+  seedCollabFragments,
+} from '../../../test/helpers/formSchemaTestUtils';
+import {
   accessTierGatingCell,
   describeDecisionAccessTierGating,
   expectFailsAccessTierGate,
@@ -1219,4 +1226,82 @@ describeDecisionAccessTierGating('submitProposal', {
       expect(result.status).toBe(ProposalStatus.SUBMITTED);
     },
   ),
+});
+
+describe.concurrent('submitProposal: form schema rows', () => {
+  it("given a proposal on a form schema row, when it is submitted, then it is validated against the row's schema and not the instance template", async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+      proposalTemplate: instanceTemplate,
+    });
+    const processInstanceId = setup.instance.instance.id;
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const row = await insertFormSchema({
+      processInstanceId,
+      name: 'Ballot entry',
+      schema: entrySchema,
+    });
+
+    const [complete, missingBallotDescription, onInstanceTemplate] =
+      await Promise.all([
+        testData.createProposal({
+          userEmail: setup.userEmail,
+          processInstanceId,
+          proposalData: { title: 'Complete entry' },
+        }),
+        testData.createProposal({
+          userEmail: setup.userEmail,
+          processInstanceId,
+          proposalData: { title: 'Entry without ballot description' },
+        }),
+        testData.createProposal({
+          userEmail: setup.userEmail,
+          processInstanceId,
+          proposalData: { title: 'Proposal on the instance template' },
+        }),
+      ]);
+
+    await Promise.all([
+      attachFormSchema(complete.id, row.id),
+      attachFormSchema(missingBallotDescription.id, row.id),
+    ]);
+
+    await Promise.all([
+      seedCollabFragments(complete.id, {
+        title: 'Complete entry',
+        ballotDescription: 'A short description for the ballot',
+      }),
+      seedCollabFragments(missingBallotDescription.id, {
+        title: 'Entry without ballot description',
+      }),
+      seedCollabFragments(onInstanceTemplate.id, {
+        title: 'Proposal on the instance template',
+        ballotDescription: 'A short description for the ballot',
+      }),
+    ]);
+
+    // No summary, which only the instance template requires: still submits.
+    const submitted = await caller.decision.submitProposal({
+      proposalId: complete.id,
+    });
+    expect(submitted.status).toBe(ProposalStatus.SUBMITTED);
+
+    // The row's schema requires the ballot description.
+    await expect(
+      caller.decision.submitProposal({
+        proposalId: missingBallotDescription.id,
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
+
+    // Control: without the row the instance template still applies.
+    await expect(
+      caller.decision.submitProposal({ proposalId: onInstanceTemplate.id }),
+    ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
+  });
 });
