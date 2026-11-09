@@ -135,8 +135,6 @@ export * from './listEligibleReviewers';
 export * from './listReviewerCategories';
 export * from './addCategoryReviewer';
 export * from './removeCategoryReviewer';
-export * from './getFormSchema';
-export * from './listFormSchemas';
 export * from './listProposalsWithReviewAggregates';
 export * from './getProposalWithReviewAggregates';
 export * from './proposal/getReviewedProposalVersion';
@@ -246,7 +244,6 @@ export {
   REVIEWS_SCOPES,
   phaseReviewSettingsSchema,
 } from './schemas/types';
-export * from './schemas/formSchemas';
 export * from './decisionPhoneNumber';
 export * from './ballotProposalFilter';
 export * from './listBallotProposals';
