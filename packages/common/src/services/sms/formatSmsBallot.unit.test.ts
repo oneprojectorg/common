@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
 import {
-  SMS_BALLOT_ALREADY_SUBMITTED_MESSAGE,
-  SMS_BALLOT_EMPTY_SUBMIT_MESSAGE,
-  SMS_BALLOT_SUBMITTED_MESSAGE,
   formatSmsBallot,
+  formatSmsBallotAlreadySubmitted,
+  formatSmsBallotEmptySubmit,
   formatSmsBallotRefused,
+  formatSmsBallotSubmitted,
   formatSmsNotOnYourBallot,
   formatSmsPickDuplicate,
   formatSmsPickMoved,
@@ -208,15 +208,30 @@ describe('pick changes', () => {
 });
 
 describe('submit replies', () => {
-  it('then each submit reply ends with a next step', () => {
-    expect(SMS_BALLOT_SUBMITTED_MESSAGE).toBe(
+  it('given the shared number, then each submit reply points at SHOW for the other decisions', () => {
+    expect(formatSmsBallotSubmitted(false)).toBe(
       'Your ballot is in. One ballot per person. However, your vote is never public. Text SHOW to see your other decisions.',
     );
-    expect(SMS_BALLOT_ALREADY_SUBMITTED_MESSAGE).toBe(
+    expect(formatSmsBallotAlreadySubmitted(false)).toBe(
       'Your ballot is already in. One ballot per person. Text SHOW to see your other decisions.',
     );
-    expect(SMS_BALLOT_EMPTY_SUBMIT_MESSAGE).toBe(
+  });
+
+  it("given the decision's own line where SHOW describes this decision, then the hint promises its status instead", () => {
+    expect(formatSmsBallotSubmitted(true)).toBe(
+      "Your ballot is in. One ballot per person. However, your vote is never public. Text SHOW for this decision's status.",
+    );
+    expect(formatSmsBallotAlreadySubmitted(true)).toBe(
+      "Your ballot is already in. One ballot per person. Text SHOW for this decision's status.",
+    );
+  });
+
+  it('given an empty SUBMIT, then the hint carries the slug on the shared number and drops it on the line', () => {
+    expect(formatSmsBallotEmptySubmit(null)).toBe(
       'Your ballot is empty. Text PROPOSALS to browse, then a code to pick.',
+    );
+    expect(formatSmsBallotEmptySubmit('park-funding')).toBe(
+      'Your ballot is empty. Text PROPOSALS park-funding to browse, then a code to pick.',
     );
   });
 

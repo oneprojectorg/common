@@ -54,6 +54,8 @@ const NUMBERS = {
   lineSlugMember: '+15005550081',
   unboundLineMember: '+15005550082',
   lineStranger: '+15005550092',
+  pickSlugHint: '+15005550105',
+  submitEmpty: '+15005550106',
   linePrivateOwner: '+15005550011',
   agreeRemoved: '+15005550012',
   pickStrangerEnrolment: '+15005550013',
@@ -147,6 +149,8 @@ const LINES = {
   pickDone: '+16145550150',
   pickSubmit: '+16145550151',
   pickUnknown: '+16145550152',
+  pickSlugHint: '+16145550154',
+  submitEmpty: '+16145550155',
   pickUnenrolled: '+16145550153',
   pickLimit: '+16145550161',
   pickOtherLineA: '+16145550195',
@@ -568,7 +572,7 @@ describe('handleSMSCommand against the database', () => {
 });
 
 describe('handleSMSCommand on a decision line', () => {
-  it("given a confirmed non-member texts SHOW alone to a private decision's line, then the reply names no decision and leaks no slug", async ({
+  it("given a confirmed non-member texts SHOW alone to a private decision's line, then they get their decision list and no slug leaks", async ({
     task,
     onTestFinished,
   }) => {
@@ -592,11 +596,11 @@ describe('handleSMSCommand on a decision line', () => {
       events: [smsInboundEvent({ from: phone, to: line, keyword: 'show' })],
     });
 
-    expect(result).toEqual({ message: 'decision not found' });
+    expect(result).toEqual({ message: 'decisions sent', count: 0 });
     expect(recordedSms).toEqual([
       expect.objectContaining({
         to: phone,
-        body: 'No decision was found. Text SHOW to list your decisions.',
+        body: 'You are not a participant in any decision yet.',
       }),
     ]);
     expect(recordedSms[0]!.body).not.toContain(slug);
@@ -1693,7 +1697,7 @@ describe('handleSMSCommand building and casting the ballot', () => {
     const member = await fixture.createPhoneOnlyAccount(
       parsePhoneNumber(phone),
     );
-    const { instanceId, instanceProfileId } =
+    const { instanceId, instanceProfileId, slug } =
       await fixture.createVotingInstance({
         owner: member,
         name,
@@ -1707,7 +1711,7 @@ describe('handleSMSCommand building and casting the ballot', () => {
       });
     await fixture.addMember(instanceProfileId, member);
     await fixture.bindLine(instanceId, parsePhoneNumber(line));
-    return { member, instanceId };
+    return { member, instanceId, slug };
   };
 
   const readDraftPicks = async (
@@ -1986,7 +1990,7 @@ describe('handleSMSCommand building and casting the ballot', () => {
       }),
     );
     expect(recordedSms.at(-1)?.body).toBe(
-      'Your ballot is in. One ballot per person. However, your vote is never public. Text SHOW to see your other decisions.',
+      "Your ballot is in. One ballot per person. However, your vote is never public. Text SHOW for this decision's status.",
     );
     const proposals = await db.query.proposals.findMany({
       where: { processInstanceId: instanceId },
@@ -2157,6 +2161,71 @@ describe('handleSMSCommand building and casting the ballot', () => {
     ]);
   });
 
+  it('given a member browsing on the shared number, when they text an unknown code and an empty SUBMIT, then both hints carry the decision slug', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsCommandFixture(task.id, onTestFinished);
+    const { slug } = await seed(fixture, {
+      phone: NUMBERS.pickSlugHint,
+      line: LINES.pickSlugHint,
+      name: `Pick Slug Hint ${task.id}`,
+    });
+    await run(
+      smsInboundEvent({
+        from: NUMBERS.pickSlugHint,
+        keyword: 'proposals',
+        argument: slug,
+        messageSid: `SM-${task.id}-proposals`,
+      }),
+    );
+
+    const picked = await run(
+      smsInboundEvent({
+        from: NUMBERS.pickSlugHint,
+        body: '999',
+        messageSid: `SM-${task.id}-unknown-code`,
+      }),
+    );
+    const submitted = await run(
+      smsInboundEvent({
+        from: NUMBERS.pickSlugHint,
+        keyword: 'submit',
+        messageSid: `SM-${task.id}-submit`,
+      }),
+    );
+
+    expect(picked.result).toEqual({ message: 'proposal not on ballot' });
+    expect(submitted.result).toEqual({ message: 'ballot empty' });
+    expect(recordedSms.slice(-2).map((sms) => sms.body)).toEqual([
+      `No proposal with code 999 is on your ballot. Text PROPOSALS ${slug} to browse the ballot.`,
+      `Your ballot is empty. Text PROPOSALS ${slug} to browse, then a code to pick.`,
+    ]);
+  });
+
+  it("given an empty SUBMIT on the decision's own line, then the hint names bare PROPOSALS", async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsCommandFixture(task.id, onTestFinished);
+    await seed(fixture, {
+      phone: NUMBERS.submitEmpty,
+      line: LINES.submitEmpty,
+      name: `Submit Empty ${task.id}`,
+    });
+
+    const { result } = await keyword(
+      NUMBERS.submitEmpty,
+      LINES.submitEmpty,
+      'submit',
+    );
+
+    expect(result).toEqual({ message: 'ballot empty' });
+    expect(recordedSms.at(-1)?.body).toBe(
+      'Your ballot is empty. Text PROPOSALS to browse, then a code to pick.',
+    );
+  });
+
   it('given a decision that requires registration, when an unregistered member texts a code, then they are told to text VOTE first', async ({
     task,
     onTestFinished,
@@ -2297,7 +2366,7 @@ describe('handleSMSCommand building and casting the ballot', () => {
     );
     await expect(readDraftPicks(instanceId)).resolves.toBeNull();
     expect(recordedSms.at(-1)?.body).toBe(
-      'Your ballot is already in. One ballot per person. Text SHOW to see your other decisions.',
+      "Your ballot is already in. One ballot per person. Text SHOW for this decision's status.",
     );
   });
   it("given a registration waiting for an address in decision A, when the voter texts a code to decision B's line, then it becomes a pick on B and A still waits for the address", async ({
@@ -2578,7 +2647,7 @@ describe('handleSMSCommand building and casting the ballot', () => {
 
     expect(result).toEqual({ message: 'ballot already submitted' });
     expect(recordedSms.at(-1)?.body).toBe(
-      'Your ballot is already in. One ballot per person. Text SHOW to see your other decisions.',
+      "Your ballot is already in. One ballot per person. Text SHOW for this decision's status.",
     );
     await expect(readDraftPicks(instanceId)).resolves.toBeNull();
   });
@@ -2621,7 +2690,7 @@ describe('handleSMSCommand building and casting the ballot', () => {
       Array.from(
         { length: 3 },
         () =>
-          'Your ballot is already in. One ballot per person. Text SHOW to see your other decisions.',
+          "Your ballot is already in. One ballot per person. Text SHOW for this decision's status.",
       ),
     );
     await expect(readDraftPicks(instanceId)).resolves.toBeNull();

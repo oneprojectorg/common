@@ -2,11 +2,8 @@ import {
   type Geocode,
   BallotCostError,
   NotFoundError,
-  SMS_BALLOT_ALREADY_SUBMITTED_MESSAGE,
   SMS_BALLOT_OUTSIDE_SCOPE_MESSAGE,
-  SMS_BALLOT_EMPTY_SUBMIT_MESSAGE,
   SMS_BALLOT_NEEDS_DECISION_MESSAGE,
-  SMS_BALLOT_SUBMITTED_MESSAGE,
   SMS_BROWSE_END_MESSAGE,
   SMS_BROWSE_LAST_FOOTER,
   SMS_BROWSE_MORE_FOOTER,
@@ -43,6 +40,9 @@ import {
   formatSmsAddressOutside,
   formatSmsAddressResolved,
   formatSmsBallot,
+  formatSmsBallotAlreadySubmitted,
+  formatSmsBallotEmptySubmit,
+  formatSmsBallotSubmitted,
   formatSmsBallotPageHeading,
   formatSmsBallotRefused,
   formatSmsBallotScope,
@@ -214,12 +214,11 @@ const listDecisions: SmsCommandHandler = async ({ step, account, deliver }) => {
     : result;
 };
 
-const describeDecision = async (
-  { step, account, deliver }: SmsCommandContext,
+const readDecision = (
+  { step, account }: SmsCommandContext,
   decisionSlug: string,
-  echoSlug: boolean,
-): Promise<SmsCommandResult> => {
-  const decision = await step.run('describe-decision', () =>
+) =>
+  step.run('describe-decision', () =>
     swallowUnreadable(() =>
       getSmsDecisionDescription({
         authUserId: account.authUserId,
@@ -228,10 +227,10 @@ const describeDecision = async (
     ),
   );
 
-  if (!decision) {
-    return notFoundReply(deliver, echoSlug ? decisionSlug : null);
-  }
-
+const sendDecisionInfo = async (
+  deliver: SmsDeliver,
+  decision: Parameters<typeof formatSmsDecisionInfo>[0],
+): Promise<SmsCommandResult> => {
   const failed = await deliver(
     'send-decision-reply',
     'Decision reply',
@@ -240,12 +239,29 @@ const describeDecision = async (
   return failed ?? { message: 'decision sent' };
 };
 
-export const show: SmsCommandHandler = (context) => {
+const describeDecision = async (
+  context: SmsCommandContext,
+  decisionSlug: string,
+  echoSlug: boolean,
+): Promise<SmsCommandResult> => {
+  const decision = await readDecision(context, decisionSlug);
+
+  if (!decision) {
+    return notFoundReply(context.deliver, echoSlug ? decisionSlug : null);
+  }
+
+  return sendDecisionInfo(context.deliver, decision);
+};
+
+export const show: SmsCommandHandler = async (context) => {
   if (context.argument) {
     return describeDecision(context, context.argument, true);
   }
   if (context.line?.slug) {
-    return describeDecision(context, context.line.slug, false);
+    const decision = await readDecision(context, context.line.slug);
+    return decision
+      ? sendDecisionInfo(context.deliver, decision)
+      : listDecisions(context);
   }
   return listDecisions(context);
 };
@@ -890,11 +906,12 @@ export const info: SmsCommandHandler = async (context) => {
   const proposal = read.value;
 
   if (!proposal) {
+    const slug = await browseSlugHint(context, instanceId, 'info');
     return deliverAll({
       deliver,
       stepId: 'send-proposal-not-on-ballot',
       label: 'Proposal not on ballot reply',
-      bodies: [formatSmsProposalNotOnBallot(code)],
+      bodies: [formatSmsProposalNotOnBallot(code, slug)],
       message: 'proposal not on ballot',
     });
   }
@@ -906,6 +923,22 @@ export const info: SmsCommandHandler = async (context) => {
     bodies: formatSmsProposalInfo(proposal),
     message: 'proposal info sent',
   });
+};
+
+const browseSlugHint = async (
+  { step, account, line }: SmsCommandContext,
+  instanceId: string,
+  stepTag: string,
+): Promise<string | null> => {
+  if (line?.instanceId === instanceId) {
+    return null;
+  }
+  const decision = await step.run(`describe-${stepTag}-hint-decision`, () =>
+    swallowUnreadable(() =>
+      describeEnrolmentDecision({ instanceId, authUserId: account.authUserId }),
+    ),
+  );
+  return decision?.slug ?? null;
 };
 
 const parseProposalCodes = (body: string): number[] | null => {
@@ -943,7 +976,7 @@ const resolveBallotInstance = async (
 };
 
 const refuseIfBallotCast = async (
-  { step, account, deliver }: SmsCommandContext,
+  { step, account, deliver, line }: SmsCommandContext,
   instanceId: string,
 ): Promise<SmsCommandResult | null> => {
   const castId = await step.run('find-cast-ballot', () =>
@@ -954,7 +987,9 @@ const refuseIfBallotCast = async (
         deliver,
         stepId: 'send-ballot-cast-guard',
         label: 'Ballot already in reply',
-        bodies: [SMS_BALLOT_ALREADY_SUBMITTED_MESSAGE],
+        bodies: [
+          formatSmsBallotAlreadySubmitted(line?.instanceId === instanceId),
+        ],
         message: 'ballot already submitted',
       })
     : null;
@@ -1062,6 +1097,9 @@ const pickByCodes = async (
   }
 
   const { results, summary, hadPicks } = picked.value;
+  const unknownSlug = results.some((r) => r.status === 'unknown')
+    ? await browseSlugHint(context, instanceId, 'unknown-code')
+    : null;
   const added = results.flatMap((r) => (r.status === 'added' ? [r] : []));
   const lines = [
     ...(added.length > 0
@@ -1097,7 +1135,7 @@ const pickByCodes = async (
             limit: r.limit,
           });
         case 'unknown':
-          return formatSmsProposalNotOnBallot(r.code);
+          return formatSmsProposalNotOnBallot(r.code, unknownSlug);
       }
     }),
   ];
@@ -1341,7 +1379,7 @@ export const submit: SmsCommandHandler = async (context) => {
         deliver,
         stepId: 'send-ballot-submitted',
         label: 'Ballot submitted reply',
-        bodies: [SMS_BALLOT_SUBMITTED_MESSAGE],
+        bodies: [formatSmsBallotSubmitted(line?.instanceId === instanceId)],
         message: 'ballot submitted',
       });
     case 'already_submitted': {
@@ -1358,7 +1396,9 @@ export const submit: SmsCommandHandler = async (context) => {
         deliver,
         stepId: 'send-ballot-already-in',
         label: 'Ballot already in reply',
-        bodies: [SMS_BALLOT_ALREADY_SUBMITTED_MESSAGE],
+        bodies: [
+          formatSmsBallotAlreadySubmitted(line?.instanceId === instanceId),
+        ],
         message: 'ballot already submitted',
       });
     }
@@ -1367,7 +1407,11 @@ export const submit: SmsCommandHandler = async (context) => {
         deliver,
         stepId: 'send-ballot-empty',
         label: 'Ballot empty reply',
-        bodies: [SMS_BALLOT_EMPTY_SUBMIT_MESSAGE],
+        bodies: [
+          formatSmsBallotEmptySubmit(
+            await browseSlugHint(context, instanceId, 'empty-ballot'),
+          ),
+        ],
         message: 'ballot empty',
       });
     case 'unavailable':

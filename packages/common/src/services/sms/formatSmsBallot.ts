@@ -2,12 +2,17 @@ import { clipSmsText, splitSmsBody } from './text';
 
 const SMS_TITLE_LENGTH = 80;
 
-export const SMS_BALLOT_SUBMITTED_MESSAGE =
-  'Your ballot is in. One ballot per person. However, your vote is never public. Text SHOW to see your other decisions.';
-export const SMS_BALLOT_ALREADY_SUBMITTED_MESSAGE =
-  'Your ballot is already in. One ballot per person. Text SHOW to see your other decisions.';
-export const SMS_BALLOT_EMPTY_SUBMIT_MESSAGE =
-  'Your ballot is empty. Text PROPOSALS to browse, then a code to pick.';
+const showHint = (onLine: boolean): string =>
+  onLine
+    ? "Text SHOW for this decision's status."
+    : 'Text SHOW to see your other decisions.';
+
+export const formatSmsBallotSubmitted = (onLine: boolean): string =>
+  `Your ballot is in. One ballot per person. However, your vote is never public. ${showHint(onLine)}`;
+export const formatSmsBallotAlreadySubmitted = (onLine: boolean): string =>
+  `Your ballot is already in. One ballot per person. ${showHint(onLine)}`;
+export const formatSmsBallotEmptySubmit = (slug?: string | null): string =>
+  `Your ballot is empty. Text PROPOSALS${slug ? ` ${slug}` : ''} to browse, then a code to pick.`;
 export const SMS_BALLOT_OUTSIDE_SCOPE_MESSAGE =
   'A pick is outside your district. Text LIST, then REMOVE its code.';
 export const SMS_BALLOT_EMPTY_MESSAGE =

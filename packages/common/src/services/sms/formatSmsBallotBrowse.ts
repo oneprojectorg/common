@@ -49,5 +49,8 @@ export const formatSmsRegisterFirst = (
 ): string =>
   `Text VOTE${slug ? ` ${slug}` : ''} to register for "${clipSmsText(decisionName, SMS_DECISION_NAME_LENGTH)}" before browsing its proposals.`;
 
-export const formatSmsProposalNotOnBallot = (code: number): string =>
-  `No proposal with code ${code} is on your ballot. Text PROPOSALS to browse the ballot.`;
+export const formatSmsProposalNotOnBallot = (
+  code: number,
+  slug?: string | null,
+): string =>
+  `No proposal with code ${code} is on your ballot. Text PROPOSALS${slug ? ` ${slug}` : ''} to browse the ballot.`;

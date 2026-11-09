@@ -87,6 +87,12 @@ describe('browse refusals', () => {
     );
   });
 
+  it('given the shared number, then the PROPOSALS hint carries the decision slug', () => {
+    expect(formatSmsProposalNotOnBallot(999, 'park-funding')).toBe(
+      'No proposal with code 999 is on your ballot. Text PROPOSALS park-funding to browse the ballot.',
+    );
+  });
+
   it('given a decision the member cannot read, then the text points at SHOW', () => {
     expect(SMS_BALLOT_UNAVAILABLE_MESSAGE).toBe(
       'That decision is not available to you. Text SHOW to list your decisions.',
