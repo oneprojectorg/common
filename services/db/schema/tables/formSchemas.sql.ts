@@ -12,9 +12,9 @@ import { autoId, serviceRolePolicies } from '../../helpers';
 import { processInstances } from './processInstances.sql';
 
 /**
- * Generic JSON Schema storage scoped to a decision instance. Rows are
- * immutable: a change is a new row. Proposals point at a row through
- * `decision_proposals.form_schema_id`; null there means the instance template.
+ * Generic JSON Schema storage scoped to a decision instance. Proposals point
+ * at a row through `decision_proposals.form_schema_id`; null there means the
+ * instance template.
  */
 export const formSchemas = pgTable(
   'decision_form_schemas',
@@ -32,7 +32,6 @@ export const formSchemas = pgTable(
 
     schema: jsonb('schema').$type<Record<string, unknown>>().notNull(),
 
-    // No updatedAt / deletedAt: rows are never updated or soft-deleted.
     createdAt: timestamp({
       withTimezone: true,
       mode: 'string',
