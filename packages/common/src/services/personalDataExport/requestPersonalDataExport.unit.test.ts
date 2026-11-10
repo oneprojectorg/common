@@ -139,15 +139,21 @@ describe('requestPersonalDataExport while an export is running', () => {
   });
 
   it.each([
-    ['ended between the claim and the read', { status: 'miss' }],
-    ['cannot be read', { status: 'timeout' }],
-    ['is not an id', { status: 'hit', data: 42 }],
+    ['ended between the claim and the read', { status: 'miss' }, 'Try again'],
+    [
+      'cannot be read',
+      { status: 'timeout' },
+      'Could not read the running export',
+    ],
+    ['is not an id', { status: 'hit', data: 42 }, 'Try again'],
   ] as const)(
     'fails without queueing a job when the running export %s',
-    async (_, holder) => {
+    async (_, holder, message) => {
       vi.mocked(getWithStatus).mockResolvedValue(holder);
 
-      await expect(requestPersonalDataExport({ user })).rejects.toThrow();
+      await expect(requestPersonalDataExport({ user })).rejects.toThrow(
+        message,
+      );
 
       expect(sendEvent).not.toHaveBeenCalled();
     },
@@ -168,10 +174,9 @@ describe('requestPersonalDataExport without Redis', () => {
 
     const { exportId } = await requestPersonalDataExport({ user });
 
-    const [payload] = sendEvent.mock.calls[0] as [
-      { data: { exportId: string } },
-    ];
-    expect(payload.data.exportId).toBe(exportId);
+    expect(sendEvent).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ exportId }) }),
+    );
   });
 });
 

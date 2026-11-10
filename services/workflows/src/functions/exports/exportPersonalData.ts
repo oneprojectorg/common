@@ -18,8 +18,6 @@ export const exportPersonalData = inngest.createFunction(
     id: 'exportPersonalData',
     // one run per user; the request reuses a running export's id
     singleton: { key: 'event.data.userId', mode: 'skip' },
-    // Ends the run before the request's 30-minute claim lapses.
-    timeouts: { start: '5m', finish: '25m' },
   },
   { event: personalDataExportRequested.name },
   async ({ event, step }) => {

@@ -95,6 +95,10 @@ const claimActiveExport = async ({
 
   const holder = await getWithStatus(key);
 
+  if (holder.status === 'timeout' || holder.status === 'error') {
+    throw new CommonError('Could not read the running export.');
+  }
+
   if (holder.status === 'hit' && typeof holder.data === 'string') {
     return holder.data;
   }
