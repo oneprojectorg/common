@@ -2,18 +2,14 @@
 
 import { trpc } from '@op/api/client';
 import { PAGE_LIMIT } from '@op/common/client';
+import { Tabs, TabsContent } from '@op/sense/Tabs';
 
 import { useTranslations } from '@/lib/i18n';
 
 import { ContributingIdeas } from '../ContributingIdeas';
 import { ProposalBody } from '../Proposal/ProposalBody';
 import { ProposalCommentsSection } from '../Proposal/ProposalCommentsSection';
-import {
-  ProposalTabList,
-  ProposalTabPanel,
-  ProposalTabTrigger,
-  ProposalTabs,
-} from '../Proposal/ProposalTabs';
+import { ProposalTabList, ProposalTabTrigger } from '../Proposal/ProposalTabs';
 import { useProposal } from '../Proposal/proposalContext';
 import { useCommentsAllowed } from '../useCommentsAllowed';
 import { ProposalReviewProgress } from './ProposalReviewProgress';
@@ -41,7 +37,7 @@ function ReviewProgressSections({ phaseId }: { phaseId: string }) {
   const commentsAllowed = useCommentsAllowed(proposal.processInstanceId);
 
   return (
-    <ProposalTabs defaultValue="reviews" className="gap-4">
+    <Tabs defaultValue="reviews" className="gap-4">
       <ProposalTabList aria-label={t('decisions.proposals.sheetSectionsLabel')}>
         <ProposalTabTrigger
           value="reviews"
@@ -56,16 +52,16 @@ function ReviewProgressSections({ phaseId }: { phaseId: string }) {
         ) : null}
       </ProposalTabList>
 
-      <ProposalTabPanel value="reviews">
+      <TabsContent value="reviews">
         <ProposalReviewProgress phaseId={phaseId} />
-      </ProposalTabPanel>
+      </TabsContent>
       {/* Kept mounted so a half-typed comment survives a tab switch. */}
       {commentsAllowed ? (
-        <ProposalTabPanel value="comments" keepMounted>
+        <TabsContent value="comments" keepMounted>
           <ProposalCommentsSection hideHeading />
-        </ProposalTabPanel>
+        </TabsContent>
       ) : null}
-    </ProposalTabs>
+    </Tabs>
   );
 }
 
