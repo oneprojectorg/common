@@ -7,7 +7,7 @@ import type { ComponentProps, ReactNode } from 'react';
 
 type ProposalTabListProps = Omit<
   ComponentProps<typeof TabsList>,
-  'variant' | 'fullWidth' | 'aria-label'
+  'variant' | 'aria-label'
 > & {
   'aria-label': string;
 };
@@ -24,12 +24,13 @@ export function ProposalTabs(props: ComponentProps<typeof Tabs>) {
 
 export function ProposalTabList({ className, ...props }: ProposalTabListProps) {
   return (
-    <TabsList
-      variant="line"
-      fullWidth
-      className={cn('flex gap-4 overflow-x-auto', className)}
-      {...props}
-    />
+    <div className="w-full border-b">
+      <TabsList
+        variant="line"
+        className={cn('flex gap-4 overflow-x-auto', className)}
+        {...props}
+      />
+    </div>
   );
 }
 
