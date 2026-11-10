@@ -1,9 +1,5 @@
 'use client';
 
-import {
-  canEngageWithProposals,
-  useProposalEngagement,
-} from '@/hooks/useProposalEngagement';
 import { useTrackPageView } from '@/hooks/useTrackPageView';
 import { getDecisionCommonProperties } from '@op/analytics/client-utils';
 import type { Proposal, ProposalSelection } from '@op/common/client';
@@ -12,19 +8,18 @@ import type { ReactNode } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { ContributingIdeas } from './ContributingIdeas';
-import { ProposalComments } from './ProposalComments';
+import { ProposalBody } from './Proposal/ProposalBody';
+import { ProposalCommentsSection } from './Proposal/ProposalCommentsSection';
+import { ProposalContributingIdeas } from './Proposal/ProposalContributingIdeas';
+import { ProposalProvider } from './Proposal/proposalContext';
 import { ProposalMergeNotice } from './ProposalMergeNotice';
-import { ProposalPreview, toPreviewEngagement } from './ProposalPreview';
 import { ProposalViewLayout } from './ProposalViewLayout';
 import { RevisedOnBadge } from './Review/AuthorRevisionNote';
 import { ReviewNotesPanel } from './ReviewNotesPanel';
-import { TranslateLink } from './TranslateLink';
 import type { ProposalAffordances } from './getProposalAffordances';
 import { useCommentsAllowed } from './useCommentsAllowed';
 import { useLiveProposalDocument } from './useLiveProposalDocument';
 import { useProposalReviewNotes } from './useProposalReviewNotes';
-import { useTranslateProposal } from './useTranslateProposal';
 
 export function ProposalView({
   proposal: initialProposal,
@@ -59,13 +54,6 @@ export function ProposalView({
     [processInstanceId, proposalId],
   );
 
-  // Same hook the proposal card's metric toggles use, so the two surfaces
-  // can't drift. Returns undefined when the viewer can't act.
-  const engagement = useProposalEngagement({
-    proposal: currentProposal,
-    canEngage: canEngageWithProposals(currentProposal.access),
-  });
-
   // Check if current user can edit (submitter or org admin)
   const canEdit = currentProposal.isEditable ?? false;
 
@@ -81,41 +69,21 @@ export function ProposalView({
     enabled: affordances.review.feedback,
   });
 
-  const { link, translation } = useTranslateProposal(currentProposal);
-
   // The server orders newest first.
   const latestRespondedAt = reviewNotes.noteGroups[0]?.respondedAt ?? null;
 
   const proposalBody: ReactNode = (
-    <>
-      <ProposalPreview
-        proposal={currentProposal}
-        selection={selection}
-        documentState={documentState}
-        // Everyone sees the counts; only a signed-in member with engagement
-        // access gets the controls (the hook returns undefined otherwise).
-        engagement={toPreviewEngagement(engagement)}
-        translation={translation}
-        translateLink={<TranslateLink translation={link} />}
-        submissionMetaSuffix={
-          latestRespondedAt ? (
-            <RevisedOnBadge respondedAt={latestRespondedAt} />
-          ) : undefined
-        }
-      />
-
-      <ContributingIdeas
-        proposal={currentProposal}
-        decisionRoot={decisionRoot}
-      />
-
-      {commentsEnabled && (
-        <ProposalComments
-          proposal={currentProposal}
-          decisionRoot={decisionRoot}
-        />
-      )}
-    </>
+    <ProposalBody
+      selection={selection}
+      submissionMetaSuffix={
+        latestRespondedAt ? (
+          <RevisedOnBadge respondedAt={latestRespondedAt} />
+        ) : undefined
+      }
+    >
+      <ProposalContributingIdeas />
+      <ProposalCommentsSection />
+    </ProposalBody>
   );
 
   const asidePane: ReactNode = reviewNotes.isOpen ? (
@@ -157,36 +125,36 @@ export function ProposalView({
           : undefined
       }
     >
-      {asidePane ? (
-        <SplitPane className="mx-auto w-full max-w-6xl">
-          {/* Same section rhythm as the standalone column below: a section's
-              own `pt` mirrors this gap, so every rule sits centred between the
-              two sections it separates. */}
-          <SplitPane.Pane
-            id="proposal"
-            label={t('decisions.proposals.proposalLabel')}
-            className="gap-6 sm:gap-10"
-          >
-            {proposalBody}
-          </SplitPane.Pane>
-          <SplitPane.Pane
-            id="reviewNotes"
-            label={t('decisions.review.reviewNotesHeading')}
-            className="bg-background"
-            unpadded
-          >
-            {asidePane}
-          </SplitPane.Pane>
-        </SplitPane>
-      ) : (
-        // Figma: 544px (max-w-136) centred column, 56px vertical padding and a
-        // 40px region gap on desktop; 16/32 padding and a 24px gap on mobile.
-        <div className="flex-1 px-4 py-8 sm:px-6 sm:py-14">
-          <div className="mx-auto flex max-w-136 flex-col gap-6 sm:gap-10">
-            {proposalBody}
+      <ProposalProvider
+        proposal={currentProposal}
+        decisionRoot={decisionRoot}
+        documentState={documentState}
+      >
+        {asidePane ? (
+          <SplitPane className="mx-auto w-full max-w-6xl">
+            <SplitPane.Pane
+              id="proposal"
+              label={t('decisions.proposals.proposalLabel')}
+            >
+              {proposalBody}
+            </SplitPane.Pane>
+            <SplitPane.Pane
+              id="reviewNotes"
+              label={t('decisions.review.reviewNotesHeading')}
+              className="bg-background"
+              unpadded
+            >
+              {asidePane}
+            </SplitPane.Pane>
+          </SplitPane>
+        ) : (
+          // Figma: 544px (max-w-136) centred column, 56px vertical padding and a
+          // 40px region gap on desktop; 16/32 padding and a 24px gap on mobile.
+          <div className="flex-1 px-4 py-8 sm:px-6 sm:py-14">
+            <div className="mx-auto max-w-136">{proposalBody}</div>
           </div>
-        </div>
-      )}
+        )}
+      </ProposalProvider>
     </ProposalViewLayout>
   );
 }
