@@ -1,13 +1,9 @@
-import { type DbClient, db as defaultDb, eq, inArray } from '@op/db/client';
+import { type DbClient, db as defaultDb, inArray } from '@op/db/client';
 import type { Proposal } from '@op/db/schema';
-import {
-  ProfileRelationshipType,
-  decisionsVoteProposals,
-  decisionsVoteSubmissions,
-  profileRelationships,
-} from '@op/db/schema';
+import { ProfileRelationshipType, profileRelationships } from '@op/db/schema';
 import { count as countFn } from 'drizzle-orm';
 
+import { listCastPicks } from '../castPicks';
 import { getMergedLikeCounts } from '../proposalSupersession';
 import type { VoteAggregation } from './types';
 
@@ -25,24 +21,12 @@ export async function aggregateProposalMetrics(
   }
 
   const proposalIds = phaseProposals.map((p) => p.id);
+  // Every proposal is from one instance, the one whose phase is advancing.
+  const processInstanceId = phaseProposals[0]!.processInstanceId;
   const profileIds = [...new Set(phaseProposals.map((p) => p.profileId))];
 
   const [voteRows, relationshipCounts, mergedLikes] = await Promise.all([
-    db
-      .select({
-        submissionId: decisionsVoteSubmissions.id,
-        voteData: decisionsVoteSubmissions.voteData,
-        proposalId: decisionsVoteProposals.proposalId,
-      })
-      .from(decisionsVoteSubmissions)
-      .innerJoin(
-        decisionsVoteProposals,
-        eq(
-          decisionsVoteProposals.voteSubmissionId,
-          decisionsVoteSubmissions.id,
-        ),
-      )
-      .where(inArray(decisionsVoteProposals.proposalId, proposalIds)),
+    listCastPicks({ processInstanceId, proposalIds, db }),
 
     db
       .select({
@@ -74,15 +58,15 @@ export async function aggregateProposalMetrics(
   // Group vote rows by proposal
   const proposalVotesMap = new Map<
     string,
-    Array<{ voteData: unknown; submissionId: string }>
+    Array<{ voteData: unknown; ballotId: string }>
   >();
   for (const row of voteRows) {
     if (!proposalVotesMap.has(row.proposalId)) {
       proposalVotesMap.set(row.proposalId, []);
     }
     proposalVotesMap.get(row.proposalId)!.push({
-      voteData: row.voteData,
-      submissionId: row.submissionId,
+      voteData: row.ballotData,
+      ballotId: row.ballotId,
     });
   }
 

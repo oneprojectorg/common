@@ -1,8 +1,8 @@
 import { trackUserVoted } from '@op/analytics';
 import { db } from '@op/db/client';
 import {
+  type BallotData,
   type VoteData,
-  decisionsVoteProposals,
   decisionsVoteSubmissions,
 } from '@op/db/schema';
 import { logger } from '@op/logging';
@@ -10,6 +10,7 @@ import type { User } from '@op/supabase/lib';
 import type { AmountUnit } from '@op/types/amountUnit';
 import { waitUntil } from '@vercel/functions';
 import { permission } from 'access-zones';
+import { randomUUID } from 'node:crypto';
 
 import {
   CommonError,
@@ -21,8 +22,19 @@ import {
 } from '../../utils';
 import { assertInstanceProfileAccess, getIndividualProfileId } from '../access';
 import { assertProfileAccess } from '../assert';
+import { castBallotIntoBox, lockBallotBox } from './ballotBox';
+import {
+  createBallotReceipt,
+  hashBallotReceipt,
+  sealBallot,
+} from './ballotReceipt';
 import { getFieldUnit } from './fieldUnit';
 import { type ProposalCosts, getProposalCosts } from './getProposalCosts';
+import {
+  type VoterBallot,
+  getBallotByReceipt,
+  getVoterBallot,
+} from './getVoterBallot';
 import { decisionPermission } from './permissions';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
 import { processDecisionProcessSchema } from './schemaRegistry';
@@ -39,7 +51,7 @@ import {
 import { isVoterEnrolled } from './voterEnrolment';
 import { isVotingEligible } from './votingEligibility';
 
-type BallotSelections = NonNullable<VoteData['selections']>;
+type BallotSelections = BallotData['selections'];
 
 interface PhaseConfig {
   allowProposals: boolean;
@@ -276,6 +288,12 @@ export interface GetVotingStatusInput {
   processInstanceId: string;
 }
 
+export interface GetBallotInput {
+  processInstanceId: string;
+  /** The receipt `submitVote` returned. */
+  receipt: string;
+}
+
 export interface ValidateVoteSelectionInput {
   processInstanceId: string;
   selectedProposalIds: string[];
@@ -286,7 +304,10 @@ export interface VoteSubmissionResult {
   id: string;
   processInstanceId: string;
   submittedByProfileId: string;
-  /** In rank order when `ranked`. */
+  /**
+   * In rank order when `ranked`. Empty for a ballot cast since votes were
+   * unlinked: that one is read through `getBallot`, with its receipt.
+   */
   selectedProposalIds: string[];
   /** Whether the ballot was cast on a ranked phase; outlives the phase itself. */
   ranked: boolean;
@@ -294,6 +315,14 @@ export interface VoteSubmissionResult {
   signature: string | null;
   schemaVersion: string;
   schemaType: string;
+}
+
+export interface SubmitVoteResult extends VoteSubmissionResult {
+  /**
+   * The only key to the anonymous ballot. The database keeps its hash, so it
+   * is returned here once and never again.
+   */
+  receipt: string;
 }
 
 export interface VotingStatusResult {
@@ -332,24 +361,13 @@ export interface VoteValidationResult {
   }>;
 }
 
-const createVoteSignature = (proposalIds: string[], userId: string): string => {
-  const data = {
-    // `sort` mutates; the caller relies on submission order.
-    proposalIds: [...proposalIds].sort(),
-    userId,
-    timestamp: new Date().toISOString(),
-  };
-
-  return Buffer.from(JSON.stringify(data)).toString('base64');
-};
-
 export const submitVote = async ({
   data,
   authUserId,
 }: {
   data: SubmitVoteInput;
   authUserId: string;
-}): Promise<VoteSubmissionResult> => {
+}): Promise<SubmitVoteResult> => {
   if (!authUserId) {
     throw new UnauthorizedError('User must be authenticated');
   }
@@ -453,18 +471,23 @@ export const submitVote = async ({
       eligibleProposals,
     });
 
-    // Create vote submission record
+    const schemaVersion = data.schemaVersion || '1.0.0';
+
+    // The submission says who voted and nothing about the picks: no
+    // selections and no signature, which used to encode both.
     const voteData: VoteData = {
-      schemaVersion: data.schemaVersion || '1.0.0',
+      schemaVersion,
       schemaType: schemaResult.schemaType,
       submissionMetadata: {
         timestamp: new Date().toISOString(),
         userAgent: 'unknown',
       },
-      validationSignature: createVoteSignature(
-        data.selectedProposalIds,
-        profileId,
-      ),
+    };
+
+    // The ballot says what was picked and nothing about who picked it.
+    const ballotData: BallotData = {
+      schemaVersion,
+      schemaType: schemaResult.schemaType,
       selections,
       ...(pricing && {
         voterBudget: pricing.voterBudget,
@@ -474,45 +497,60 @@ export const submitVote = async ({
       }),
     };
 
-    // Use transaction to create vote submission and join table entries
-    const result = await db.transaction(async (tx) => {
-      // Create the vote submission
-      const [voteSubmission] = await tx
+    const receipt = createBallotReceipt();
+    const ballotId = randomUUID();
+    const picks = data.selectedProposalIds.map((proposalId, index) => ({
+      ballotId,
+      proposalId,
+      position: index,
+      rank: phaseConfig.ranked ? index + 1 : null,
+    }));
+
+    // One transaction so a voter is never recorded without their ballot, or
+    // the reverse. The unique (instance, voter) index on the submission
+    // rejects a second vote that raced past the check above.
+    const voteSubmission = await db.transaction(async (tx) => {
+      await lockBallotBox({ tx, processInstanceId: data.processInstanceId });
+
+      const [submission] = await tx
         .insert(decisionsVoteSubmissions)
         .values({
           processInstanceId: data.processInstanceId,
           submittedByProfileId: profileId,
           voteData,
           customData: data.customData,
-          signature: voteData.validationSignature,
         })
         .returning();
 
-      if (!voteSubmission) {
+      if (!submission) {
         throw new CommonError('Failed to create vote submission');
       }
 
-      // Create join table entries for selected proposals
-      const voteProposalEntries = data.selectedProposalIds.map(
-        (proposalId, index) => ({
-          voteSubmissionId: voteSubmission.id,
-          proposalId,
-          rank: phaseConfig.ranked ? index + 1 : null,
-        }),
-      );
+      await castBallotIntoBox({
+        tx,
+        ballot: {
+          id: ballotId,
+          processInstanceId: data.processInstanceId,
+          receiptHash: hashBallotReceipt({
+            receipt,
+            processInstanceId: data.processInstanceId,
+          }),
+          seal: sealBallot({
+            receipt,
+            processInstanceId: data.processInstanceId,
+            picks,
+          }),
+          ballotData,
+          castOn: todayUtc(),
+        },
+        picks,
+      });
 
-      await tx.insert(decisionsVoteProposals).values(voteProposalEntries);
-
-      return {
-        voteSubmission,
-        selectedProposalIds: data.selectedProposalIds,
-      };
+      return submission;
     });
 
     try {
-      waitUntil(
-        trackUserVoted(authUserId, result.voteSubmission.processInstanceId),
-      );
+      waitUntil(trackUserVoted(authUserId, voteSubmission.processInstanceId));
     } catch (err) {
       // waitUntil can throw synchronously off-Vercel (no request context).
       // Swallow here so analytics never causes "Failed to submit vote".
@@ -520,15 +558,16 @@ export const submitVote = async ({
     }
 
     return {
-      id: result.voteSubmission.id,
-      processInstanceId: result.voteSubmission.processInstanceId,
-      submittedByProfileId: result.voteSubmission.submittedByProfileId,
-      selectedProposalIds: result.selectedProposalIds,
+      id: voteSubmission.id,
+      processInstanceId: voteSubmission.processInstanceId,
+      submittedByProfileId: voteSubmission.submittedByProfileId,
+      selectedProposalIds: data.selectedProposalIds,
       ranked: phaseConfig.ranked,
-      createdAt: new Date(result.voteSubmission.createdAt!),
-      signature: result.voteSubmission.signature || null,
-      schemaVersion: voteData.schemaVersion,
+      createdAt: new Date(voteSubmission.createdAt!),
+      signature: null,
+      schemaVersion,
       schemaType: voteData.schemaType,
+      receipt,
     };
   } catch (error) {
     if (error instanceof CommonError) {
@@ -575,8 +614,7 @@ export const getVotingStatus = async ({
     const schemaResult = buildVotingSchemaResult(phaseConfig);
     const { votingConfig } = schemaResult;
 
-    // Check if user has voted
-    // The ballot and the cap don't depend on each other.
+    // The submission and the cap don't depend on each other.
     const [voteSubmission, cap] = await Promise.all([
       profileId
         ? db.query.decisionsVoteSubmissions.findFirst({
@@ -584,43 +622,24 @@ export const getVotingStatus = async ({
               processInstanceId: data.processInstanceId,
               submittedByProfileId: profileId,
             },
-            with: {
-              voteProposals: {
-                // Postgres sorts NULLs last, so unranked ballots keep creation order.
-                orderBy: { rank: 'asc', createdAt: 'asc' },
-                with: {
-                  proposal: {
-                    with: {
-                      profile: {
-                        columns: {
-                          name: true,
-                        },
-                      },
-                    },
-                  },
-                },
-              },
-            },
           })
-        : null,
+        : undefined,
       getVoteCap({ phaseConfig, processInstance }),
     ]);
 
-    let selectedProposals = null;
-    let selectedProposalIds: string[] = [];
+    // Only a ballot cast before votes were unlinked is found from here; one
+    // cast since needs its receipt, which `getBallot` takes.
+    const ballot =
+      voteSubmission && profileId
+        ? await getVoterBallot({
+            processInstanceId: data.processInstanceId,
+            profileId,
+          })
+        : undefined;
 
-    if (voteSubmission) {
-      // Get proposal details from the join table
-      selectedProposalIds = voteSubmission.voteProposals.map(
-        (vp) => vp.proposalId,
-      );
-      selectedProposals = voteSubmission.voteProposals.map((vp) => ({
-        id: vp.proposal.id,
-        title: vp.proposal.profile?.name || 'Untitled',
-        schemaSpecificDisplay: (vp.proposal.proposalData as any)
-          ?.schemaSpecificDisplay,
-      }));
-    }
+    const selectedProposals = ballot
+      ? await getBallotProposals(ballot.proposalIds)
+      : null;
 
     return {
       hasVoted: !!voteSubmission,
@@ -629,10 +648,8 @@ export const getVotingStatus = async ({
             id: voteSubmission.id,
             processInstanceId: voteSubmission.processInstanceId,
             submittedByProfileId: voteSubmission.submittedByProfileId,
-            selectedProposalIds,
-            ranked: voteSubmission.voteProposals.some(
-              ({ rank }) => rank != null,
-            ),
+            selectedProposalIds: ballot?.proposalIds ?? [],
+            ranked: ballot?.ranked ?? false,
             createdAt: new Date(voteSubmission.createdAt!),
             signature: voteSubmission.signature,
             schemaVersion: voteSubmission.voteData.schemaVersion,
@@ -660,6 +677,62 @@ export const getVotingStatus = async ({
   }
 };
 
+/**
+ * The ballot behind a receipt, for the voter who holds it. `null` when the
+ * caller has not voted on the instance or the receipt opens no ballot there.
+ */
+export const getBallot = async ({
+  data,
+  user,
+}: {
+  data: GetBallotInput;
+  user: User;
+}): Promise<VoterBallot | null> => {
+  try {
+    const profileId = await getIndividualProfileId(user.id);
+
+    const processInstance = await getVotingInstance(data.processInstanceId);
+
+    await assertInstanceProfileAccess({
+      user,
+      instance: processInstance,
+      profilePermissions: { decisions: permission.READ },
+      orgFallbackPermissions: [{ decisions: permission.READ }],
+    });
+
+    // A receipt is only good in the hands of someone who voted here.
+    const voteSubmission = await db.query.decisionsVoteSubmissions.findFirst({
+      where: {
+        processInstanceId: data.processInstanceId,
+        submittedByProfileId: profileId,
+      },
+      columns: { id: true },
+    });
+
+    if (!voteSubmission) {
+      return null;
+    }
+
+    return (
+      (await getBallotByReceipt({
+        processInstanceId: data.processInstanceId,
+        receipt: data.receipt,
+      })) ?? null
+    );
+  } catch (error) {
+    if (error instanceof CommonError) {
+      throw error;
+    }
+    logger.error('Error getting ballot', { error });
+    throw new CommonError('Failed to get ballot');
+  }
+};
+
+/** The database runs in UTC; `cast_on` keeps the day only. */
+function todayUtc(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
 async function assertSelectionsInDistrict({
   taxonomyTermId,
   selectedProposalIds,
@@ -683,4 +756,35 @@ async function assertSelectionsInDistrict({
   if (selectedProposalIds.some((id) => !inDistrict.has(id))) {
     throw new VoteOutsideDistrictError();
   }
+}
+
+// In ballot order.
+async function getBallotProposals(proposalIds: string[]) {
+  if (proposalIds.length === 0) {
+    return [];
+  }
+
+  const rows = await db.query.proposals.findMany({
+    where: { id: { in: proposalIds } },
+    columns: { id: true, proposalData: true },
+    with: { profile: { columns: { name: true } } },
+  });
+  const byId = new Map(rows.map((row) => [row.id, row]));
+
+  return proposalIds.flatMap((id) => {
+    const proposal = byId.get(id);
+
+    if (!proposal) {
+      return [];
+    }
+
+    return [
+      {
+        id: proposal.id,
+        title: proposal.profile?.name || 'Untitled',
+        schemaSpecificDisplay: (proposal.proposalData as any)
+          ?.schemaSpecificDisplay,
+      },
+    ];
+  });
 }

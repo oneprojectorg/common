@@ -1225,6 +1225,8 @@
       "loadAssignmentsError": "We couldn't load review assignments",
       "revisionRequestQuestion": "What should the author change?",
       "noVoteCast": "You did not vote in this process.",
+      "ballotNotOnDeviceTitle": "Your vote is in",
+      "ballotNotOnDeviceDescription": "To keep your vote secret, your choices show only on the device you voted from.",
       "yourRequestHeading": "Your request",
       "yourRequestSentTimeAgo": "Your request • Sent {timeAgo}",
       "cancelRevisionRequestDescription": "Your request will be withdrawn and the author won't see it. Other reviewers' requests aren't affected.",

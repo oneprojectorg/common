@@ -1225,6 +1225,8 @@
       "loadAssignmentsError": "Nem sikerült betölteni az értékelési feladatokat",
       "revisionRequestQuestion": "What should the author change?",
       "noVoteCast": "Ön nem szavazott ebben a folyamatban.",
+      "ballotNotOnDeviceTitle": "A szavazatod beérkezett",
+      "ballotNotOnDeviceDescription": "Hogy a szavazatod titkos maradjon, a választásaid csak azon az eszközön látszanak, amelyről szavaztál.",
       "yourRequestHeading": "Your request",
       "yourRequestSentTimeAgo": "Your request • Sent {timeAgo}",
       "cancelRevisionRequestDescription": "Your request will be withdrawn and the author won't see it. Other reviewers' requests aren't affected.",

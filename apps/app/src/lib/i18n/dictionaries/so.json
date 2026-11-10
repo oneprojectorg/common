@@ -1225,6 +1225,8 @@
       "loadAssignmentsError": "Waan kari waynay in aan soo rarno qoondooyinka dib-u-eegista",
       "revisionRequestQuestion": "What should the author change?",
       "noVoteCast": "Ma aadan cod bixin habkaan.",
+      "ballotNotOnDeviceTitle": "Codkaagii waa la helay",
+      "ballotNotOnDeviceDescription": "Si codkaagu u ahaado mid qarsoodi ah, doorashooyinkaagu waxay ka muuqdaan oo keliya qalabka aad ka codeysay.",
       "yourRequestHeading": "Your request",
       "yourRequestSentTimeAgo": "Your request • Sent {timeAgo}",
       "cancelRevisionRequestDescription": "Your request will be withdrawn and the author won't see it. Other reviewers' requests aren't affected.",

@@ -1,13 +1,10 @@
-import { and, asc, db, desc, eq, gt, inArray, or } from '@op/db/client';
+import { and, asc, db, desc, eq, gt, or } from '@op/db/client';
 import {
   decisionProcessResultSelections,
   decisionProcessResults,
-  decisionsVoteProposals,
-  decisionsVoteSubmissions,
   processInstances,
 } from '@op/db/schema';
 import { permission } from 'access-zones';
-import { count as countFn } from 'drizzle-orm';
 
 import {
   PAGE_LIMIT,
@@ -17,6 +14,7 @@ import {
   encodeCursor,
 } from '../../utils';
 import { type AccessUser, assertInstanceProfileAccess } from '../access';
+import { countCastVotes } from './castPicks';
 import { listProposals } from './listProposals';
 
 // Uses selectionRank with id as tiebreaker for stable ordering
@@ -137,27 +135,8 @@ export const getLatestResultWithProposals = async ({
     : paginatedSelections;
   const paginatedProposalIds = selections.map((s) => s.proposalId);
 
-  const [voteCounts, { items: enrichedProposals }] = await Promise.all([
-    db
-      .select({
-        proposalId: decisionsVoteProposals.proposalId,
-        count: countFn(),
-      })
-      .from(decisionsVoteProposals)
-      .innerJoin(
-        decisionsVoteSubmissions,
-        eq(
-          decisionsVoteProposals.voteSubmissionId,
-          decisionsVoteSubmissions.id,
-        ),
-      )
-      .where(
-        and(
-          inArray(decisionsVoteProposals.proposalId, paginatedProposalIds),
-          eq(decisionsVoteSubmissions.processInstanceId, processInstanceId),
-        ),
-      )
-      .groupBy(decisionsVoteProposals.proposalId),
+  const [voteCountMap, { items: enrichedProposals }] = await Promise.all([
+    countCastVotes({ processInstanceId, proposalIds: paginatedProposalIds }),
     listProposals({
       input: {
         processInstanceId,
@@ -167,10 +146,6 @@ export const getLatestResultWithProposals = async ({
       user,
     }),
   ]);
-
-  const voteCountMap = new Map(
-    voteCounts.map((vc) => [vc.proposalId, Number(vc.count)]),
-  );
 
   const selectionDataMap = new Map(
     selections.map((s) => [

@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { PAGE_LIMIT, list, paginated, total } from '../../../utils/pagination';
 import { proposalDataSchema } from '../proposalDataSchema';
 import { proposalAdvanceTargetSchema } from './advanceProposal';
+import { ballotReceiptSchema } from './ballotReceipt';
 import { SEARCH_MAX_LENGTH } from './search';
 
 export const storageItemSchema = z.object({
@@ -225,6 +226,8 @@ export const allProposalsFilterSchema = z.object({
   search: proposalSearchSchema,
   // Restrict to the caller's ballot (self-only); used by the "My ballot" filter.
   votedByProfileId: z.uuid().optional(),
+  // The receipt for a ballot cast since votes were unlinked.
+  ballotReceipt: ballotReceiptSchema.optional(),
   // Restrict to the caller's likes (self-only); used by the "Liked" filter.
   likedByProfileId: z.uuid().optional(),
   dir: z.enum(['asc', 'desc']).optional(),

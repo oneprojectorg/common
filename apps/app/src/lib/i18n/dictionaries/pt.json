@@ -1225,6 +1225,8 @@
       "loadAssignmentsError": "Não foi possível carregar as atribuições de revisão",
       "revisionRequestQuestion": "What should the author change?",
       "noVoteCast": "Você não votou neste processo.",
+      "ballotNotOnDeviceTitle": "Seu voto foi registrado",
+      "ballotNotOnDeviceDescription": "Para manter seu voto em segredo, suas escolhas só aparecem no dispositivo em que você votou.",
       "yourRequestHeading": "Your request",
       "yourRequestSentTimeAgo": "Your request • Sent {timeAgo}",
       "cancelRevisionRequestDescription": "Your request will be withdrawn and the author won't see it. Other reviewers' requests aren't affected.",

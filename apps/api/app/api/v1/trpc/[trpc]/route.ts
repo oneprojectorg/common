@@ -64,6 +64,9 @@ const handler = async (req: NextRequest) => {
     req,
     router: appRouter,
     createContext,
+    // Lets a query arrive as a POST, which the client uses to keep a ballot
+    // receipt out of the URL. The CSRF gate above covers every POST.
+    allowMethodOverride: true,
     onError({ error, path }) {
       logger.error('tRPC error', { path, error });
     },

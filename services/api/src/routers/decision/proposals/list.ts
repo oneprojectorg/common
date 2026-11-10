@@ -12,6 +12,7 @@ import {
 
 import { proposalFilterSchema } from '../../../encoders/decision';
 import { openProcedure, router } from '../../../trpcFactory';
+import { assertReceiptInBody } from '../assertReceiptInBody';
 
 export const listProposalsRouter = router({
   /** Lists proposals for a given process instance in the current phase. */
@@ -21,6 +22,7 @@ export const listProposalsRouter = router({
     .input(proposalFilterSchema)
     .output(proposalListSchema)
     .query(async ({ ctx, input }) => {
+      assertReceiptInBody({ ctx, input });
       const { user } = ctx;
       const result = await listProposals({
         input,
@@ -44,6 +46,7 @@ export const listProposalsRouter = router({
     .input(allProposalsFilterSchema)
     .output(allProposalsListSchema)
     .query(async ({ ctx, input }) => {
+      assertReceiptInBody({ ctx, input });
       const { user } = ctx;
       const result = await listAllProposals({
         input,

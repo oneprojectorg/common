@@ -8,6 +8,8 @@ import { createSBBrowserClient } from '@op/supabase/client';
 import { QueryClientContext } from '@tanstack/react-query';
 import { useCallback, useContext, useEffect, useRef, useState } from 'react';
 
+import { clearBallotReceipts } from './decisions/ballotReceiptStore';
+
 /** Bound on remembered (mutation, channel) pairs. */
 const MAX_REMEMBERED_KEYS = 500;
 
@@ -48,8 +50,10 @@ function useHasSession(): boolean {
       setHasSession(Boolean(session));
       // Supabase broadcasts this to every tab, so a sign-out anywhere stops
       // this tab from writing its still-populated cache back to localStorage.
+      // The ballot receipts go too: they belong to the account that voted.
       if (event === 'SIGNED_OUT') {
         clearPersistedQueryCache();
+        clearBallotReceipts();
       }
     });
 

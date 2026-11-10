@@ -17,6 +17,7 @@ import { useTranslations } from '@/lib/i18n';
 
 import { VoteReviewStep } from './VoteReviewStep';
 import type { BallotBudget } from './ballot';
+import { saveBallotReceipt } from './ballotReceiptStore';
 
 interface VoteSubmissionModalProps {
   /** In ballot order, which is the rank on a ranked vote. */
@@ -48,7 +49,12 @@ export const VoteSubmissionModal = ({
 
   const utils = trpc.useUtils();
   const submitVoteMutation = trpc.decision.submitVote.useMutation({
-    onSuccess: () => {
+    onSuccess: ({ receipt, submittedByProfileId }) => {
+      saveBallotReceipt({
+        profileId: submittedByProfileId,
+        instanceId,
+        receipt,
+      });
       utils.decision.getVotingStatus.invalidate();
       // submitVote publishes no channel, so the admin turnout refetches here.
       utils.decision.getVotingProgress.invalidate({

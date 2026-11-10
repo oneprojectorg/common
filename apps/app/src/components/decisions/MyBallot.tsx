@@ -2,17 +2,26 @@
 
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
-import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@op/sense/Empty';
-import { LuLeaf } from 'react-icons/lu';
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from '@op/sense/Empty';
+import { Suspense } from 'react';
+import { LuLeaf, LuLock } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
 import { ProposalCardView } from './ProposalCard';
 import { ProposalListSection } from './ProposalListSection';
+import { ProposalListSkeleton } from './ProposalListSkeleton';
 import { ProposalMasonry } from './ProposalMasonry';
 import { useOpenProposalInSheet } from './ProposalSheet/proposalSheetState';
 import { VoteCheckbox } from './VoteCheckbox';
 import { getBallotRank } from './ballot';
+import { useBallotReceipt } from './ballotReceiptStore';
 import { proposalHref } from './proposalHrefs';
 
 export const NoVoteFound = () => {
@@ -53,17 +62,104 @@ export const MyBallot = ({
     return <NoVoteFound />;
   }
 
+  // A ballot cast before votes were unlinked comes with the status. One cast
+  // since has no picks here: it opens with the receipt this browser holds.
+  if (voteStatus.voteSubmission.selectedProposalIds.length > 0) {
+    return (
+      <MyBallotProposals
+        slug={slug}
+        instanceId={instanceId}
+        decisionSlug={decisionSlug}
+        votedByProfileId={voteStatus.voteSubmission.submittedByProfileId}
+        rankedProposalIds={
+          voteStatus.voteSubmission.ranked
+            ? voteStatus.voteSubmission.selectedProposalIds
+            : undefined
+        }
+      />
+    );
+  }
+
+  return (
+    <ReceiptBallot
+      slug={slug}
+      instanceId={instanceId}
+      decisionSlug={decisionSlug}
+      votedByProfileId={voteStatus.voteSubmission.submittedByProfileId}
+    />
+  );
+};
+
+/**
+ * The receipt is read from this browser's storage, so it is unknown during
+ * the server render and until hydration: the skeleton covers that gap
+ * instead of a flash of "not on this device".
+ */
+const ReceiptBallot = ({
+  slug,
+  instanceId,
+  decisionSlug,
+  votedByProfileId,
+}: {
+  slug: string;
+  instanceId: string;
+  decisionSlug?: string;
+  votedByProfileId: string;
+}) => {
+  const receiptState = useBallotReceipt(instanceId);
+
+  switch (receiptState.status) {
+    case 'pending':
+      return <ProposalListSkeleton />;
+    case 'none':
+      return <BallotNotOnThisDevice />;
+    case 'held':
+      return (
+        <Suspense fallback={<ProposalListSkeleton />}>
+          <HeldBallot
+            slug={slug}
+            instanceId={instanceId}
+            decisionSlug={decisionSlug}
+            votedByProfileId={votedByProfileId}
+            receipt={receiptState.receipt}
+          />
+        </Suspense>
+      );
+  }
+};
+
+const HeldBallot = ({
+  slug,
+  instanceId,
+  decisionSlug,
+  votedByProfileId,
+  receipt,
+}: {
+  slug: string;
+  instanceId: string;
+  decisionSlug?: string;
+  votedByProfileId: string;
+  receipt: string;
+}) => {
+  const [ballot] = trpc.decision.getBallot.useSuspenseQuery({
+    processInstanceId: instanceId,
+    receipt,
+  });
+
+  // A receipt that opens nothing here was issued elsewhere, or its ballot is
+  // gone.
+  if (!ballot) {
+    return <BallotNotOnThisDevice />;
+  }
+
   return (
     <MyBallotProposals
       slug={slug}
       instanceId={instanceId}
       decisionSlug={decisionSlug}
-      votedByProfileId={voteStatus.voteSubmission.submittedByProfileId}
-      rankedProposalIds={
-        voteStatus.voteSubmission.ranked
-          ? voteStatus.voteSubmission.selectedProposalIds
-          : undefined
-      }
+      votedByProfileId={votedByProfileId}
+      ballotReceipt={receipt}
+      rankedProposalIds={ballot.ranked ? ballot.proposalIds : undefined}
     />
   );
 };
@@ -73,12 +169,14 @@ const MyBallotProposals = ({
   instanceId,
   decisionSlug,
   votedByProfileId,
+  ballotReceipt,
   rankedProposalIds,
 }: {
   slug: string;
   instanceId: string;
   decisionSlug?: string;
   votedByProfileId: string;
+  ballotReceipt?: string;
   /** The ballot in rank order; undefined when the phase isn't ranked. */
   rankedProposalIds?: string[];
 }) => {
@@ -88,6 +186,7 @@ const MyBallotProposals = ({
   const [{ items: proposals }] = trpc.decision.listProposals.useSuspenseQuery({
     processInstanceId: instanceId,
     votedByProfileId,
+    ballotReceipt,
   });
 
   return (
@@ -136,5 +235,22 @@ const MyBallotProposals = ({
         })}
       </ProposalMasonry>
     </ProposalListSection>
+  );
+};
+
+const BallotNotOnThisDevice = () => {
+  const t = useTranslations();
+  return (
+    <Empty className="border-0">
+      <EmptyHeader>
+        <EmptyMedia variant="icon">
+          <LuLock className="size-6" />
+        </EmptyMedia>
+        <EmptyTitle>{t('decisions.review.ballotNotOnDeviceTitle')}</EmptyTitle>
+        <EmptyDescription>
+          {t('decisions.review.ballotNotOnDeviceDescription')}
+        </EmptyDescription>
+      </EmptyHeader>
+    </Empty>
   );
 };
