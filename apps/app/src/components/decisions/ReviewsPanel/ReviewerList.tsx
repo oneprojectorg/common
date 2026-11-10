@@ -96,13 +96,6 @@ export function ReviewerList({
     [reviewers],
   );
 
-  // Admins see their own pending row, which carries the action itself.
-  const showsOwnPendingRow =
-    !hideSummaryHeader &&
-    pendingReviewers.some(
-      (reviewer) => reviewer.profile.id === ownReview?.profileId,
-    );
-
   const remindableReviewers = pendingReviewers.filter((reviewer) =>
     isRemindable(reviewer, ownReview?.profileId),
   );
@@ -136,17 +129,6 @@ export function ReviewerList({
             })}
           </p>
         </header>
-      )}
-
-      {ownReview && !ownReview.hasSubmitted && !showsOwnPendingRow && (
-        <Button
-          variant="link"
-          size="inline"
-          onClick={ownReview.onOpenForm}
-          className="self-start text-base"
-        >
-          {t('decisions.review.addReviewAction')}
-        </Button>
       )}
 
       {/* Admin-only: the reviewer-facing panel hides the summary header. */}
