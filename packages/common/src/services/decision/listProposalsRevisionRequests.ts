@@ -1,7 +1,10 @@
-import { db, eq } from '@op/db/client';
+import { and, db, eq, exists, inArray } from '@op/db/client';
 import {
   type ProposalReviewRequestState,
   processInstances,
+  proposalReviewAssignments,
+  proposalReviewRequests,
+  proposals as proposalsTable,
 } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 
@@ -39,10 +42,41 @@ export async function listProposalsRevisionRequests({
       // A merged-away proposal is out of the review process, so its author has
       // nothing left to action.
       RAW: (table) =>
-        notSuperseded({
-          proposalId: table.id,
-          processInstanceId: table.processInstanceId,
-        }),
+        and(
+          notSuperseded({
+            proposalId: table.id,
+            processInstanceId: table.processInstanceId,
+          }),
+          exists(
+            db
+              .select({ id: proposalReviewRequests.id })
+              .from(proposalReviewRequests)
+              .innerJoin(
+                proposalReviewAssignments,
+                eq(
+                  proposalReviewAssignments.id,
+                  proposalReviewRequests.assignmentId,
+                ),
+              )
+              .where(
+                and(
+                  eq(proposalReviewAssignments.proposalId, table.id),
+                  eq(
+                    proposalReviewAssignments.phaseId,
+                    db
+                      .select({
+                        currentStateId: processInstances.currentStateId,
+                      })
+                      .from(processInstances)
+                      .where(eq(processInstances.id, table.processInstanceId)),
+                  ),
+                  states && states.length > 0
+                    ? inArray(proposalReviewRequests.state, states)
+                    : undefined,
+                ),
+              ),
+          ),
+        )!,
     },
     with: {
       ...revisionRequestsConfig,
@@ -76,9 +110,20 @@ export async function listProposalsRevisionRequests({
     );
   });
 
-  const processInstanceIds = Array.from(
-    new Set(proposals.map((proposal) => proposal.processInstanceId)),
-  );
+  const instanceRows = await db
+    .selectDistinct({ processInstanceId: proposalsTable.processInstanceId })
+    .from(proposalsTable)
+    .where(
+      and(
+        eq(proposalsTable.submittedByProfileId, commonUser.profileId),
+        notSuperseded({
+          proposalId: proposalsTable.id,
+          processInstanceId: proposalsTable.processInstanceId,
+        }),
+      ),
+    );
+
+  const processInstanceIds = instanceRows.map((row) => row.processInstanceId);
 
   return { items: revisionRequests, processInstanceIds };
 }

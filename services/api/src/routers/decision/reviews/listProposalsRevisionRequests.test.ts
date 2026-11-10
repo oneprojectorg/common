@@ -1,3 +1,4 @@
+import { listProposalsRevisionRequests } from '@op/common';
 import {
   createRevisionRequest,
   TestReviewsDataManager,
@@ -83,6 +84,24 @@ describe.concurrent('listProposalsRevisionRequests', () => {
     );
 
     expect(result.items).toHaveLength(0);
+  });
+
+  it('still lists the instance for live updates when no revision requests exist', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const created = await testData.createReviewAssignment({
+      title: 'No Revisions Needed Yet',
+    });
+
+    const { session } = await createIsolatedSession(created.author.email);
+    const result = await listProposalsRevisionRequests({ user: session.user });
+
+    expect(result.items).toHaveLength(0);
+    expect(result.processInstanceIds).toContain(
+      created.context.instance.instance.id,
+    );
   });
 
   it('excludes cancelled and resolved revision requests', async ({
