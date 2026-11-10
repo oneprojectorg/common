@@ -9,7 +9,7 @@ interface ExportStepRunner {
 }
 
 // `seed`: the fields a reader needs beyond what the run itself writes.
-export const runExportJob = async ({
+export const runExportJob = async <T extends Record<string, unknown>>({
   step,
   exportId,
   cacheKey,
@@ -22,8 +22,8 @@ export const runExportJob = async ({
   cacheKey: string;
   channel: ChannelName;
   seed: Record<string, unknown>;
-  produce: () => Promise<Record<string, unknown>>;
-}): Promise<{ exportId: string; status: 'completed' }> => {
+  produce: () => Promise<T>;
+}): Promise<T & { exportId: string; status: 'completed' }> => {
   // On every patch, so an evicted record comes back whole.
   const restore = { ...seed, exportId };
 
@@ -51,7 +51,7 @@ export const runExportJob = async ({
       notifyExportChanged(channel),
     );
 
-    return { exportId, status: 'completed' };
+    return { ...completion, exportId, status: 'completed' };
   } catch (error) {
     // Logged, not recorded: the error can contain the user's data.
     logger.error('Export run failed', { exportId, error });

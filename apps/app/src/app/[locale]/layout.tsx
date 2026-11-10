@@ -34,7 +34,6 @@ const AppLayout = async ({
           Re-provide it here, where params.locale is authoritative. */}
       <DirectionProvider direction={getLocaleDirection(locale)}>
         <LocaleDirSync />
-        {/* above every route group, so a running export survives navigation */}
         <PersonalDataExportWatcher />
         {children}
       </DirectionProvider>

@@ -1,76 +1,56 @@
 'use client';
 
-import { trpc } from '@op/api/client';
+import { getMutationKey, trpc } from '@op/api/client';
 import { logger } from '@op/logging/client';
 import { Button } from '@op/sense/Button';
 import { toast } from '@op/sense/Toast';
+import { useIsMutating } from '@tanstack/react-query';
 import { useState } from 'react';
 import { LuDownload, LuTriangleAlert } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { getTrpcHttpStatus } from '@/components/exports/errorStatus';
-
-import {
-  PERSONAL_DATA_EXPORT_READY_TOAST_ID,
-  usePersonalDataExportStore,
-} from './personalDataExportStore';
+import { getHttpStatus } from './errors';
+import { usePersonalDataExportStore } from './personalDataExportStore';
 import { useDownloadPersonalDataExport } from './useDownloadPersonalDataExport';
 
-/**
- * The control for the settings "Download your data" row: starts an export,
- * shows it running, then offers the file.
- *
- * The run itself is followed by {@link PersonalDataExportWatcher}, so closing
- * the modal or leaving the page does not lose it.
- */
 export const DownloadDataAction = () => {
   const t = useTranslations('settings');
   const state = usePersonalDataExportStore((store) => store.state);
-  const begin = usePersonalDataExportStore((store) => store.begin);
   const start = usePersonalDataExportStore((store) => store.start);
-  const abort = usePersonalDataExportStore((store) => store.abort);
 
-  // The callbacks live on the mutation, not on `mutate`, so they still run when
-  // the modal closes before the request returns.
+  // callbacks on the mutation, not `mutate`, so they run after the modal closes
   const startExport = trpc.account.exportPersonalData.useMutation({
     onSuccess: ({ exportId }) => start(exportId),
     onError: (error) => {
-      abort();
       logger.error('Failed to start personal data export', { error });
       toast.error(
-        getTrpcHttpStatus(error) === 429
+        getHttpStatus(error) === 429
           ? t('downloadDataRateLimited')
           : t('downloadDataFailed'),
       );
     },
   });
 
-  const isRunning = state.phase === 'starting' || state.phase === 'running';
-
-  const startNewExport = () => {
-    if (!begin()) {
-      return;
-    }
-    // the previous run's offer no longer stands
-    toast.close(PERSONAL_DATA_EXPORT_READY_TOAST_ID);
-    startExport.mutate(undefined);
-  };
+  // sees a start sent before the modal was closed and reopened
+  const isStarting =
+    useIsMutating({
+      mutationKey: getMutationKey(trpc.account.exportPersonalData),
+    }) > 0;
+  const isRunning = isStarting || state.phase === 'running';
 
   return (
-    // the label is the status, so a change to it is announced
     <div aria-live="polite">
       {state.phase === 'ready' ? (
         <DownloadFileButton exportId={state.exportId} />
       ) : (
         <Button
           variant="outline"
-          // disabled rather than `loading`, whose spinner hides the label; kept
-          // focusable so a keyboard user does not lose their place
+          // not `loading`: its spinner hides the label
           disabled={isRunning}
           focusableWhenDisabled
           aria-busy={isRunning}
-          onClick={startNewExport}
+          onClick={() => startExport.mutate(undefined)}
         >
           {isRunning ? t('downloadDataPreparing') : t('downloadAction')}
         </Button>
@@ -79,10 +59,6 @@ export const DownloadDataAction = () => {
   );
 };
 
-/**
- * Warning under the row when the file left sections out. The toast says so too,
- * but it is gone by the time the user opens the file.
- */
 export const DownloadDataPartialNotice = () => {
   const t = useTranslations('settings');
   const isPartial = usePersonalDataExportStore(

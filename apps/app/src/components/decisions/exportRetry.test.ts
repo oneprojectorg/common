@@ -16,7 +16,7 @@ describe('resolveExportRetryOutcome', () => {
   it('stays quiet for a failed run, which the failure effect already toasts', () => {
     expect(
       resolveExportRetryOutcome({ errored: false, status: 'failed' }),
-    ).toBe('run-failed');
+    ).toBe('failure-already-reported');
   });
 
   it('retires an export the server answered for and does not have', () => {

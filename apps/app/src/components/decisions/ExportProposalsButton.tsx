@@ -13,8 +13,9 @@ import { LuArrowDownToLine, LuDownload, LuTriangleAlert } from 'react-icons/lu';
 import { useTranslations } from '@/lib/i18n';
 
 import { ButtonLink } from '@/components/ButtonLink';
-import { resolveExportRetryOutcome } from '@/components/exports/exportRetry';
-import { EXPORT_WAIT_TIMEOUT_MS } from '@/components/exports/exportWait';
+
+import { resolveExportRetryOutcome } from './exportRetry';
+import { EXPORT_WAIT_TIMEOUT_MS } from './exportWait';
 
 export interface ExportProposalsButtonProps {
   processInstanceId: string;
@@ -396,7 +397,7 @@ const ExportProposalsButtonContent = ({
       signedUrl: data && 'signedUrl' in data ? data.signedUrl : undefined,
     });
 
-    if (outcome === 'recovered' || outcome === 'run-failed') {
+    if (outcome === 'recovered' || outcome === 'failure-already-reported') {
       return;
     }
 
