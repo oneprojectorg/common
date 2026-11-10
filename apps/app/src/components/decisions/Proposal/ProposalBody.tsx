@@ -16,6 +16,7 @@ interface ProposalBodyProps {
   selection?: ProposalSelection | null;
   submissionMetaSuffix?: ReactNode;
   headerBanner?: ReactNode;
+  onCommentsLinkClick?: () => void;
   children?: ReactNode;
 }
 
@@ -24,6 +25,7 @@ export function ProposalBody({
   selection,
   submissionMetaSuffix,
   headerBanner,
+  onCommentsLinkClick,
   children,
 }: ProposalBodyProps) {
   const { proposal, documentState, translation } = useProposal();
@@ -44,6 +46,7 @@ export function ProposalBody({
         translateLink={<TranslateLink translation={translation.link} />}
         submissionMetaSuffix={submissionMetaSuffix}
         headerBanner={headerBanner}
+        onCommentsLinkClick={onCommentsLinkClick}
       />
 
       {children}

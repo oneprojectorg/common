@@ -35,11 +35,14 @@ export function ProposalComments({
   proposal,
   decisionRoot,
   readOnly: readOnlyProp = false,
+  hideHeading = false,
 }: {
   proposal: Proposal;
   /** Route prefix for sibling proposals, e.g. `/decisions/participatory-budget`. */
   decisionRoot: string;
   readOnly?: boolean;
+  /** For a container that already names and separates the section, e.g. a tab. */
+  hideHeading?: boolean;
 }) {
   const t = useTranslations();
   const { user } = useUser();
@@ -91,10 +94,16 @@ export function ProposalComments({
 
   return (
     <div id={PROPOSAL_COMMENTS_ANCHOR_ID} ref={containerRef}>
-      <div className="space-y-4 border-t pt-6 sm:pt-10">
-        <Header3 className="text-label">
-          {t('decisions.proposals.commentsHeading')} ({comments.length})
-        </Header3>
+      <div
+        className={
+          hideHeading ? 'space-y-4' : 'space-y-4 border-t pt-6 sm:pt-10'
+        }
+      >
+        {hideHeading ? null : (
+          <Header3 className="text-label">
+            {t('decisions.proposals.commentsHeading')} ({comments.length})
+          </Header3>
+        )}
 
         {!readOnly && (
           <div className="mb-8">
