@@ -423,6 +423,49 @@ export const setWithStatus = async (
   }
 };
 
+// `exists` means the key was already set, so this write did nothing.
+export type RedisSetIfAbsentResult = RedisSetResult | { status: 'exists' };
+
+/**
+ * Writes a key only when it is absent, in one atomic command. Use it to claim
+ * a key that concurrent callers race for: exactly one caller gets `ok`.
+ */
+export const setIfAbsentWithStatus = async ({
+  key,
+  data,
+  ttlSeconds,
+}: {
+  key: string;
+  data: unknown;
+  ttlSeconds: number;
+}): Promise<RedisSetIfAbsentResult> => {
+  if (!redis) {
+    return { status: 'disabled' };
+  }
+
+  const signal = AbortSignal.timeout(REDIS_COMMAND_TIMEOUT_MS);
+
+  try {
+    const reply = await redis
+      .withAbortSignal(signal)
+      .set(key, JSON.stringify(data), {
+        condition: 'NX',
+        expiration: { type: 'EX', value: ttlSeconds },
+      });
+
+    return reply === null ? { status: 'exists' } : { status: 'ok' };
+  } catch (e) {
+    if (signal.aborted) {
+      cacheMetrics.recordTimeout({ layer: 'command' });
+      return { status: 'timeout' };
+    }
+
+    logger.error('CACHE: error setting to Redis', { error: e });
+    cacheMetrics.recordError('set');
+    return { status: 'error' };
+  }
+};
+
 export const set = async (
   key: string,
   data: unknown,

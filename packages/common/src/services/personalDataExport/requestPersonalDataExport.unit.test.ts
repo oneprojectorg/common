@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@op/cache', () => ({
   getWithStatus: vi.fn(),
+  setIfAbsentWithStatus: vi.fn(),
   setWithStatus: vi.fn(),
 }));
 
@@ -9,7 +10,7 @@ vi.mock('../assert', () => ({
   assertUserByAuthId: vi.fn(),
 }));
 
-import { getWithStatus, setWithStatus } from '@op/cache';
+import { getWithStatus, setIfAbsentWithStatus, setWithStatus } from '@op/cache';
 import { Events, event } from '@op/events';
 import type { User } from '@op/supabase/lib';
 
@@ -25,6 +26,7 @@ const sendEvent = vi.fn();
 beforeEach(() => {
   vi.clearAllMocks();
   vi.mocked(setWithStatus).mockResolvedValue({ status: 'ok' });
+  vi.mocked(setIfAbsentWithStatus).mockResolvedValue({ status: 'ok' });
   vi.mocked(getWithStatus).mockResolvedValue({ status: 'miss' });
   vi.spyOn(event, 'send').mockImplementation(sendEvent);
 });
@@ -84,6 +86,16 @@ describe('requestPersonalDataExport status record', () => {
     });
   });
 
+  it('seeds the record before it claims the slot, so a caller handed the id can read it', async () => {
+    await requestPersonalDataExport({ user });
+
+    const [seeded] = vi.mocked(setWithStatus).mock.invocationCallOrder;
+
+    expect(seeded).toBeLessThan(
+      Math.min(...vi.mocked(setIfAbsentWithStatus).mock.invocationCallOrder),
+    );
+  });
+
   it('records the subject the status read will check against', async () => {
     await requestPersonalDataExport({ user });
 
@@ -109,24 +121,15 @@ describe('requestPersonalDataExport status record', () => {
 describe('requestPersonalDataExport while an export is running', () => {
   const RUNNING_ID = '44444444-4444-4444-8444-444444444444';
 
-  const stubLatest = (record: Record<string, unknown>) => {
-    vi.mocked(getWithStatus).mockImplementation(async (key) =>
-      key.includes('active')
-        ? { status: 'hit', data: RUNNING_ID }
-        : { status: 'hit', data: record },
-    );
-  };
-
-  const running = (overrides: Record<string, unknown> = {}) => ({
-    exportId: RUNNING_ID,
-    userId: AUTH_USER_ID,
-    status: 'processing',
-    createdAt: new Date().toISOString(),
-    ...overrides,
+  beforeEach(() => {
+    vi.mocked(setIfAbsentWithStatus).mockResolvedValue({ status: 'exists' });
   });
 
   it('returns the running export and queues nothing', async () => {
-    stubLatest(running());
+    vi.mocked(getWithStatus).mockResolvedValue({
+      status: 'hit',
+      data: RUNNING_ID,
+    });
 
     await expect(requestPersonalDataExport({ user })).resolves.toEqual({
       exportId: RUNNING_ID,
@@ -134,19 +137,36 @@ describe('requestPersonalDataExport while an export is running', () => {
     expect(sendEvent).not.toHaveBeenCalled();
   });
 
-  it.each([
-    ['finished', { status: 'completed' }],
-    ['failed', { status: 'failed' }],
-    [
-      'stuck past the wait cap',
-      { createdAt: new Date(Date.now() - 31 * 60 * 1000).toISOString() },
-    ],
-  ])('starts a new export when the latest one is %s', async (_, overrides) => {
-    stubLatest(running(overrides));
+  it('fails without queueing a job when the running export ended between reads', async () => {
+    await expect(requestPersonalDataExport({ user })).rejects.toThrow(
+      'Try again',
+    );
 
-    const { exportId } = await requestPersonalDataExport({ user });
+    expect(sendEvent).not.toHaveBeenCalled();
+  });
 
-    expect(exportId).not.toBe(RUNNING_ID);
-    expect(sendEvent).toHaveBeenCalledTimes(1);
+  it('fails without queueing a job when the claim could not be written', async () => {
+    vi.mocked(setIfAbsentWithStatus).mockResolvedValue({ status: 'timeout' });
+
+    await expect(requestPersonalDataExport({ user })).rejects.toThrow();
+
+    expect(sendEvent).not.toHaveBeenCalled();
+  });
+});
+
+describe('requestPersonalDataExport when the job cannot be queued', () => {
+  it('releases its claim, so the next request can start an export', async () => {
+    sendEvent.mockRejectedValueOnce(new Error('Inngest unavailable'));
+    vi.mocked(getWithStatus).mockImplementation(async () => ({
+      status: 'hit',
+      data: vi.mocked(setIfAbsentWithStatus).mock.calls[0]?.[0].data,
+    }));
+
+    await expect(requestPersonalDataExport({ user })).rejects.toThrow(
+      'Inngest unavailable',
+    );
+
+    const [claim] = vi.mocked(setIfAbsentWithStatus).mock.calls[0] ?? [];
+    expect(setWithStatus).toHaveBeenLastCalledWith(claim?.key, null);
   });
 });

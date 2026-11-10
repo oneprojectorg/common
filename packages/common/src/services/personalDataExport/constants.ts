@@ -1,10 +1,10 @@
 export const personalDataExportCacheKey = (exportId: string) =>
   `export:personalData:${exportId}`;
 
-// Matches how long the app waits on a run, so a stuck one is not reused forever.
+// Matches how long the app waits on a run. Also the claim's lifetime, so a stuck run frees up.
 export const PERSONAL_DATA_EXPORT_MAX_RUN_MS = 30 * 60 * 1000;
 
-// Points at the user's latest export, so a repeat request can reuse it.
+// Names the user's running export. The run releases it when it ends.
 export const personalDataExportActiveKey = (userId: string) =>
   `export:personalData:active:${userId}`;
 

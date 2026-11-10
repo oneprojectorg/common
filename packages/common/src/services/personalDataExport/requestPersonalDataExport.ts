@@ -1,16 +1,17 @@
-import { getWithStatus, setWithStatus } from '@op/cache';
+import { getWithStatus, setIfAbsentWithStatus } from '@op/cache';
 import { Events, event } from '@op/events';
 import { User } from '@op/supabase/lib';
 import { randomUUID } from 'crypto';
 
+import { CommonError, ConflictError } from '../../utils';
 import { assertUserByAuthId } from '../assert';
-import { EXPORT_CACHE_TTL_SECONDS, seedExportRecord } from '../exports';
+import { seedExportRecord } from '../exports';
 import {
   PERSONAL_DATA_EXPORT_MAX_RUN_MS,
   personalDataExportActiveKey,
   personalDataExportCacheKey,
 } from './constants';
-import { personalDataExportRecordSchema } from './schemas';
+import { releaseActivePersonalDataExport } from './releaseActivePersonalDataExport';
 
 /** Starts an export, or returns the user's export that is still running. */
 export const requestPersonalDataExport = async ({
@@ -20,13 +21,9 @@ export const requestPersonalDataExport = async ({
 }): Promise<{ exportId: string }> => {
   await assertUserByAuthId(user.id);
 
-  const running = await findRunningExport(user.id);
-  if (running) {
-    return { exportId: running };
-  }
-
   const exportId = randomUUID();
 
+  // Seeded before the claim, so a caller handed this id can always read it.
   await seedExportRecord(personalDataExportCacheKey(exportId), {
     exportId,
     userId: user.id,
@@ -34,43 +31,63 @@ export const requestPersonalDataExport = async ({
     createdAt: new Date().toISOString(),
   });
 
-  // best effort: the workflow's singleton still stops a second run
-  await setWithStatus(
-    personalDataExportActiveKey(user.id),
+  const activeExportId = await claimActiveExport({
+    userId: user.id,
     exportId,
-    EXPORT_CACHE_TTL_SECONDS,
-  );
-
-  await event.send({
-    name: Events.personalDataExportRequested.name,
-    data: {
-      exportId,
-      userId: user.id,
-    },
   });
+
+  if (activeExportId !== exportId) {
+    return { exportId: activeExportId };
+  }
+
+  try {
+    await event.send({
+      name: Events.personalDataExportRequested.name,
+      data: {
+        exportId,
+        userId: user.id,
+      },
+    });
+  } catch (error) {
+    // No run will release the claim, so release it here.
+    await releaseActivePersonalDataExport({ userId: user.id, exportId });
+    throw error;
+  }
 
   return { exportId };
 };
 
-const findRunningExport = async (userId: string) => {
-  const pointer = await getWithStatus(personalDataExportActiveKey(userId));
-  if (pointer.status !== 'hit' || typeof pointer.data !== 'string') {
-    return undefined;
+// Returns `exportId` when this request won the claim, else the running export's id.
+const claimActiveExport = async ({
+  userId,
+  exportId,
+}: {
+  userId: string;
+  exportId: string;
+}): Promise<string> => {
+  const key = personalDataExportActiveKey(userId);
+
+  const claim = await setIfAbsentWithStatus({
+    key,
+    data: exportId,
+    ttlSeconds: PERSONAL_DATA_EXPORT_MAX_RUN_MS / 1000,
+  });
+
+  // `disabled` is a deployment without Redis; the workflow singleton still holds.
+  if (claim.status === 'ok' || claim.status === 'disabled') {
+    return exportId;
   }
 
-  const record = await getWithStatus(personalDataExportCacheKey(pointer.data));
-  if (record.status !== 'hit') {
-    return undefined;
+  if (claim.status !== 'exists') {
+    throw new CommonError('Could not record the export request.');
   }
 
-  const parsed = personalDataExportRecordSchema.safeParse(record.data);
-  if (!parsed.success) {
-    return undefined;
+  const holder = await getWithStatus(key);
+
+  if (holder.status === 'hit' && typeof holder.data === 'string') {
+    return holder.data;
   }
 
-  const { status, createdAt, exportId } = parsed.data;
-  const isRunning = status === 'pending' || status === 'processing';
-  const isFresh =
-    Date.now() - Date.parse(createdAt) < PERSONAL_DATA_EXPORT_MAX_RUN_MS;
-  return isRunning && isFresh ? exportId : undefined;
+  // The running export released its claim between the two reads.
+  throw new ConflictError('An export just finished. Try again.');
 };

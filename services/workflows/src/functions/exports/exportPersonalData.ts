@@ -3,6 +3,7 @@ import {
   personalDataExportCacheKey,
   personalDataExportFileName,
   personalDataExportFilePath,
+  releaseActivePersonalDataExport,
   storeExportFile,
 } from '@op/common';
 import { Channels } from '@op/common/realtime';
@@ -10,7 +11,7 @@ import { Events, inngest } from '@op/events';
 
 import { runExportJob } from './runExportJob';
 
-const { personalDataExportRequested, personalDataExportCompleted } = Events;
+const { personalDataExportRequested, personalDataExportFileStored } = Events;
 
 export const exportPersonalData = inngest.createFunction(
   {
@@ -24,37 +25,44 @@ export const exportPersonalData = inngest.createFunction(
       event.data,
     );
 
-    const result = await runExportJob({
-      step,
-      exportId,
-      cacheKey: personalDataExportCacheKey(exportId),
-      channel: Channels.personalDataExport(exportId),
-      seed: { userId },
-      // One step so the file never crosses a step boundary into Inngest state.
-      produce: () =>
-        step.run('collect-and-upload', async () => {
-          const data = await collectPersonalData({ authUserId: userId });
-          const fileName = personalDataExportFileName();
+    try {
+      return await runExportJob({
+        step,
+        exportId,
+        cacheKey: personalDataExportCacheKey(exportId),
+        channel: Channels.personalDataExport(exportId),
+        seed: { userId },
+        produce: async () => {
+          // One step so the file never crosses a step boundary into Inngest state.
+          const stored = await step.run('collect-and-upload', async () => {
+            const data = await collectPersonalData({ authUserId: userId });
+            const fileName = personalDataExportFileName();
 
-          await storeExportFile({
-            filePath: personalDataExportFilePath(userId, fileName),
-            content: JSON.stringify(data, null, 2),
-            mimeType: 'application/json',
+            await storeExportFile({
+              filePath: personalDataExportFilePath(userId, fileName),
+              content: JSON.stringify(data, null, 2),
+              mimeType: 'application/json',
+            });
+
+            return {
+              fileName,
+              truncatedSections: data.truncatedSections,
+            };
           });
 
-          return {
-            fileName,
-            truncatedSections: data.truncatedSections,
-          };
-        }),
-    });
+          // Before any status write, so a failed write cannot keep the file.
+          await step.sendEvent('schedule-expiry', {
+            name: personalDataExportFileStored.name,
+            data: { exportId, userId, fileName: stored.fileName },
+          });
 
-    // a separate run, so this one ends and the singleton frees up
-    await step.sendEvent('schedule-expiry', {
-      name: personalDataExportCompleted.name,
-      data: { exportId, userId, fileName: result.fileName },
-    });
-
-    return result;
+          return stored;
+        },
+      });
+    } finally {
+      await step.run('release-active-export', () =>
+        releaseActivePersonalDataExport({ userId, exportId }),
+      );
+    }
   },
 );

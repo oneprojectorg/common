@@ -14,10 +14,18 @@ type FakeRedis = {
   get: Mock<(key: string) => Promise<string | null>>;
   setEx: Mock<(key: string, ttl: number, data: string) => Promise<unknown>>;
   del: Mock<(key: string) => Promise<unknown>>;
+  set: Mock<
+    (key: string, data: string, options: unknown) => Promise<string | null>
+  >;
   withAbortSignal: (signal: AbortSignal) => {
     get: (key: string) => Promise<string | null>;
     setEx: (key: string, ttl: number, data: string) => Promise<unknown>;
     del: (key: string) => Promise<unknown>;
+    set: (
+      key: string,
+      data: string,
+      options: unknown,
+    ) => Promise<string | null>;
   };
 };
 
@@ -29,6 +37,9 @@ const fakeRedis: FakeRedis = {
   get: vi.fn<(key: string) => Promise<string | null>>(),
   setEx: vi.fn<(key: string, ttl: number, data: string) => Promise<unknown>>(),
   del: vi.fn<(key: string) => Promise<unknown>>(),
+  set: vi.fn<
+    (key: string, data: string, options: unknown) => Promise<string | null>
+  >(),
   // Real node-redis returns a proxy client scoped to the AbortSignal. The
   // shim here calls the underlying mock but races it against the signal,
   // so a signal that fires before the get/set/del resolves rejects the
@@ -38,6 +49,8 @@ const fakeRedis: FakeRedis = {
     setEx: (key: string, ttl: number, data: string) =>
       raceWithSignal(fakeRedis.setEx(key, ttl, data), signal),
     del: (key: string) => raceWithSignal(fakeRedis.del(key), signal),
+    set: (key: string, data: string, options: unknown) =>
+      raceWithSignal(fakeRedis.set(key, data, options), signal),
   }),
 };
 
@@ -66,7 +79,8 @@ process.env.REDIS_URL = 'redis://localhost:6379';
 
 // Imported AFTER the mocks so kv.ts picks up the fake redis client and the
 // mocked logger/metrics modules.
-const { cache, get, getWithStatus, set, setWithStatus } = await import('./kv');
+const { cache, get, getWithStatus, set, setIfAbsentWithStatus, setWithStatus } =
+  await import('./kv');
 const { cacheMetrics } = await import('./metrics');
 
 function raceWithSignal<T>(p: Promise<T>, signal: AbortSignal): Promise<T> {
@@ -401,5 +415,42 @@ describe('setWithStatus()', () => {
     await expect(setWithStatus('k', { a: 1 })).resolves.toEqual({
       status: 'error',
     });
+  });
+});
+
+describe('setIfAbsentWithStatus()', () => {
+  beforeEach(() => {
+    fakeRedis.set.mockReset();
+  });
+
+  const claim = () =>
+    setIfAbsentWithStatus({ key: 'k', data: 'v', ttlSeconds: 60 });
+
+  it('writes the key only if absent, with its ttl, and reports ok', async () => {
+    fakeRedis.set.mockResolvedValue('OK');
+
+    await expect(claim()).resolves.toEqual({ status: 'ok' });
+    expect(fakeRedis.set).toHaveBeenCalledWith('k', '"v"', {
+      condition: 'NX',
+      expiration: { type: 'EX', value: 60 },
+    });
+  });
+
+  it('reports exists when another caller holds the key', async () => {
+    fakeRedis.set.mockResolvedValue(null);
+
+    await expect(claim()).resolves.toEqual({ status: 'exists' });
+  });
+
+  it('reports a timeout when set is too slow', async () => {
+    fakeRedis.set.mockImplementation(() => new Promise<string>(() => {}));
+
+    await expect(claim()).resolves.toEqual({ status: 'timeout' });
+  });
+
+  it('reports an error when set rejects with a non-abort error', async () => {
+    fakeRedis.set.mockRejectedValue(new Error('connection refused'));
+
+    await expect(claim()).resolves.toEqual({ status: 'error' });
   });
 });
