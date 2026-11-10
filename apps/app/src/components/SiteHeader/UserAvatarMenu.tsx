@@ -43,6 +43,7 @@ import { useRouter, useTranslations } from '@/lib/i18n';
 import { UpdateProfileModal } from '../Profile/ProfileDetails/UpdateProfile/UpdateProfileModal';
 import { ProfileAvatarLink } from '../ProfileAvatarLink';
 import { ProfileSwitchingModal } from '../ProfileSwitchingModal';
+import { usePersonalDataExport } from '../SettingsModal/usePersonalDataExport';
 
 // behind a flag and rarely opened, so it stays out of every page's header chunk
 const SettingsModal = dynamic(
@@ -453,6 +454,8 @@ export const UserAvatarMenu = ({ className }: { className?: string }) => {
   };
 
   const settingsModalEnabled = useFeatureFlag('settings_modal');
+  // here rather than in the modal, which unmounts on close
+  const personalDataExport = usePersonalDataExport();
 
   const openEditProfile = () => {
     closeMenus();
@@ -506,7 +509,11 @@ export const UserAvatarMenu = ({ className }: { className?: string }) => {
         onOpenChange={setIsSwitchingProfile}
       />
       {settingsModalEnabled ? (
-        <SettingsModal open={isSettingsOpen} onOpenChange={setIsSettingsOpen} />
+        <SettingsModal
+          open={isSettingsOpen}
+          onOpenChange={setIsSettingsOpen}
+          personalDataExport={personalDataExport}
+        />
       ) : null}
     </>
   );

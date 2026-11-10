@@ -1,5 +1,6 @@
 'use client';
 
+import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -14,50 +15,50 @@ import {
 import { Button } from '@op/sense/Button';
 import { FieldDescription, FieldTitle } from '@op/sense/Field';
 import { Header3 } from '@op/sense/Header';
-import { type ReactNode, useId, useRef, useState } from 'react';
+import { type ReactNode, useId, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { type Confirmation, InlineConfirmation } from './InlineConfirmation';
+import { type PersonalDataExport } from './usePersonalDataExport';
 
-export const YourDataSettings = () => {
+export const YourDataSettings = ({
+  personalDataExport,
+}: {
+  personalDataExport: PersonalDataExport;
+}) => {
   const t = useTranslations('settings');
   const tShared = useTranslations();
-  const [confirmation, setConfirmation] = useState<Confirmation | null>(null);
-  const confirmationCount = useRef(0);
+  const downloadDataEnabled = useFeatureFlag('download-user-data');
+  const { isRunning } = personalDataExport;
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
 
   return (
     <div className="flex flex-col gap-4">
       <Header3>{t('yourDataTab')}</Header3>
       <div className="flex flex-col gap-8">
-        <DataRow
-          title={t('downloadDataTitle')}
-          hint={t('downloadDataHint')}
-          action={
-            <Button
-              variant="outline"
-              onClick={() => {
-                // mock: no export is requested yet
-                confirmationCount.current += 1;
-                setConfirmation({
-                  id: confirmationCount.current,
-                  message: t('downloadStarted'),
-                  tone: 'success',
-                });
-              }}
-            >
-              {t('downloadAction')}
-            </Button>
-          }
-          footer={
-            <InlineConfirmation
-              confirmation={confirmation}
-              onDismiss={() => setConfirmation(null)}
-              className="not-empty:mt-2"
-            />
-          }
-        />
+        {downloadDataEnabled ? (
+          <DataRow
+            title={t('downloadDataTitle')}
+            hint={t('downloadDataHint')}
+            action={
+              <>
+                {/* the run takes minutes and settles without a navigation */}
+                <span role="status" aria-live="polite" className="sr-only">
+                  {isRunning ? t('downloadDataPreparing') : ''}
+                </span>
+                <Button
+                  variant="outline"
+                  // disabled rather than `loading`, whose spinner hides the label
+                  disabled={isRunning}
+                  aria-busy={isRunning}
+                  onClick={personalDataExport.start}
+                >
+                  {isRunning ? t('downloadDataPreparing') : t('downloadAction')}
+                </Button>
+              </>
+            }
+          />
+        ) : null}
         <DataRow
           title={t('deleteAccountTitle')}
           hint={t('deleteAccountHint')}
@@ -99,12 +100,10 @@ const DataRow = ({
   title,
   hint,
   action,
-  footer,
 }: {
   title: string;
   hint: string;
   action: ReactNode;
-  footer?: ReactNode;
 }) => {
   const titleId = useId();
 
@@ -119,7 +118,6 @@ const DataRow = ({
         </div>
         <div className="shrink-0">{action}</div>
       </div>
-      {footer}
     </section>
   );
 };

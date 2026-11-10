@@ -22,16 +22,23 @@ import { AccountSettings } from './AccountSettings';
 import { NotificationSettings } from './NotificationSettings';
 import { PrivacySettings } from './PrivacySettings';
 import { YourDataSettings } from './YourDataSettings';
+import { type PersonalDataExport } from './usePersonalDataExport';
 import { useSettingsMockState } from './useSettingsMockState';
 
 interface SettingsModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  // owned by the caller so a run survives the modal closing
+  personalDataExport: PersonalDataExport;
 }
 
 type SettingsSection = 'account' | 'privacy' | 'notifications' | 'data';
 
-export const SettingsModal = ({ open, onOpenChange }: SettingsModalProps) => {
+export const SettingsModal = ({
+  open,
+  onOpenChange,
+  personalDataExport,
+}: SettingsModalProps) => {
   const t = useTranslations('settings');
   const tShared = useTranslations();
   const { user } = useRequiredUser();
@@ -136,7 +143,7 @@ export const SettingsModal = ({ open, onOpenChange }: SettingsModalProps) => {
             />
           </TabsContent>
           <TabsContent value="data" className={PANEL_CLASS_NAME}>
-            <YourDataSettings />
+            <YourDataSettings personalDataExport={personalDataExport} />
           </TabsContent>
         </Tabs>
       </DialogContent>
