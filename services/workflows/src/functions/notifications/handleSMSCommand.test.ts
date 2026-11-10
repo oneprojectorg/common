@@ -62,6 +62,8 @@ const NUMBERS = {
   pickOwnerOnly: '+15005550014',
   enrolStart: '+15005550070',
   enrolAddress: '+15005550071',
+  enrolRetry: '+15005550020',
+  enrolDecline: '+15005550021',
   enrolNotFound: '+15005550072',
   enrolOutside: '+15005550073',
   enrolDown: '+15005550018',
@@ -818,7 +820,111 @@ describe('handleSMSCommand registration over SMS', () => {
 
     expect(result).toEqual({ message: 'address resolved' });
     expect(recordedSms.at(-1)?.body).toBe(
-      `That's ${boundary.name}.\nReply AGREE to register for "${name}":\n"${ATTESTATION}"`,
+      `That's ${boundary.name}.\nReply AGREE to register for "${name}":\n"${ATTESTATION}"\nWrong district? Text a new address.`,
+    );
+    await expect(
+      findVoterEnrolment({
+        processInstanceId: instanceId,
+        authUserId: member.authUserId,
+      }),
+    ).resolves.toMatchObject({
+      taxonomyTermId: boundary.taxonomyTermId,
+      enrolledAt: null,
+    });
+  });
+
+  it('given a member whose affirmation waits for AGREE texts a new address, then the district is re-resolved and the attestation is resent', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsCommandFixture(task.id, onTestFinished);
+    const name = `Enrol Retry ${task.id}`;
+    const { member, instanceId, slug, boundary } = await seed(fixture, {
+      phone: NUMBERS.enrolRetry,
+      line: null,
+      name,
+    });
+    const first = `375 S High St ${task.id}`;
+    const second = `99 Schiller Ave ${task.id}`;
+    memoryGeocoder.set(first, INSIDE);
+    memoryGeocoder.set(second, INSIDE);
+    await run(
+      smsInboundEvent({
+        from: NUMBERS.enrolRetry,
+        keyword: 'vote',
+        argument: slug,
+      }),
+    );
+    await run(
+      smsInboundEvent({
+        from: NUMBERS.enrolRetry,
+        body: first,
+        messageSid: `SM-${task.id}-first-address`,
+      }),
+    );
+
+    const { result } = await run(
+      smsInboundEvent({
+        from: NUMBERS.enrolRetry,
+        body: second,
+        messageSid: `SM-${task.id}-second-address`,
+      }),
+    );
+
+    expect(result).toEqual({ message: 'address resolved' });
+    expect(recordedSms.at(-1)?.body).toBe(
+      `That's ${boundary.name}.\nReply AGREE to register for "${name}":\n"${ATTESTATION}"\nWrong district? Text a new address.`,
+    );
+    await expect(
+      findVoterEnrolment({
+        processInstanceId: instanceId,
+        authUserId: member.authUserId,
+      }),
+    ).resolves.toMatchObject({
+      taxonomyTermId: boundary.taxonomyTermId,
+      enrolledAt: null,
+    });
+  });
+
+  it('given a member whose affirmation waits for AGREE texts something that is neither AGREE nor an address, then they are told both paths and the row still waits', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsCommandFixture(task.id, onTestFinished);
+    const name = `Enrol Decline ${task.id}`;
+    const { member, instanceId, slug, boundary } = await seed(fixture, {
+      phone: NUMBERS.enrolDecline,
+      line: null,
+      name,
+    });
+    const address = `375 S High St ${task.id}`;
+    memoryGeocoder.set(address, INSIDE);
+    await run(
+      smsInboundEvent({
+        from: NUMBERS.enrolDecline,
+        keyword: 'vote',
+        argument: slug,
+      }),
+    );
+    await run(
+      smsInboundEvent({
+        from: NUMBERS.enrolDecline,
+        body: address,
+        messageSid: `SM-${task.id}-address`,
+      }),
+    );
+
+    const { result } = await run(
+      smsInboundEvent({
+        from: NUMBERS.enrolDecline,
+        body: 'No',
+        messageSid: `SM-${task.id}-no`,
+      }),
+    );
+
+    expect(result).toEqual({ message: 'address not found' });
+    expect(recordedSms.at(-1)?.body).toBe(
+      'Reply AGREE to register, or text your full address (street, city and ZIP) to change your district.',
     );
     await expect(
       findVoterEnrolment({

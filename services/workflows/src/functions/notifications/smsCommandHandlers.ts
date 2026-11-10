@@ -39,6 +39,7 @@ import {
   formatSmsAddressNotFound,
   formatSmsAddressOutside,
   formatSmsAddressResolved,
+  formatSmsAffirmOrNewAddress,
   formatSmsBallot,
   formatSmsBallotAlreadySubmitted,
   formatSmsBallotEmptySubmit,
@@ -472,7 +473,8 @@ export const agree: SmsCommandHandler = async (context) => {
   });
 };
 
-// Free text is an address while a registration waits for one, and proposal
+// Free text is an address while a registration waits for one (including a
+// corrected address while the affirmation waits for AGREE), and proposal
 // codes otherwise. On a decision line, codes win over a registration that
 // belongs to another decision, so one unfinished registration elsewhere never
 // swallows a vote here.
@@ -522,8 +524,8 @@ export const freeText: SmsCommandHandler = async (context) => {
     }),
   );
 
-  if (waitingOn !== 'awaiting_address') {
-    return codesOrHelp();
+  if (waitingOn !== 'awaiting_address' && codes) {
+    return pickByCodes(context, codes);
   }
 
   const resolution = await step.run('resolve-address', () =>
@@ -541,7 +543,10 @@ export const freeText: SmsCommandHandler = async (context) => {
         deliver,
         stepId: 'send-address-not-found',
         label: 'Address not found reply',
-        bodies: formatSmsAddressNotFound(),
+        bodies:
+          waitingOn === 'awaiting_agree'
+            ? formatSmsAffirmOrNewAddress()
+            : formatSmsAddressNotFound(),
         message: 'address not found',
       });
     case 'lookup_failed':
