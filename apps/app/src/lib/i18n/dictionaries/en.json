@@ -1089,7 +1089,7 @@
       "pointsValue": "{pts} points",
       "ptsValue": "{pts} pts",
       "proposalReviewersSubmittedProgress": "{submitted} out of {total} reviewers submitted a review for this proposal",
-      "addReviewAction": "+ Add review",
+      "addReviewAction": "Add review",
       "moreCount": "+{count} More",
       "activeReviewersHeading": "Active Reviewers",
       "addNoteAction": "Add note",

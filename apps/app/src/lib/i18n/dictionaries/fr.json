@@ -1089,7 +1089,7 @@
       "pointsValue": "{pts} points",
       "ptsValue": "{pts} pts",
       "proposalReviewersSubmittedProgress": "{submitted} évaluateurs sur {total} ont soumis une révision pour cette proposition",
-      "addReviewAction": "+ Ajouter une évaluation",
+      "addReviewAction": "Ajouter une évaluation",
       "moreCount": "+{count} autres",
       "activeReviewersHeading": "Examinateurs actifs",
       "addNoteAction": "Ajouter une note",

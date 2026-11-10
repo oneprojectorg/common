@@ -1089,7 +1089,7 @@
       "pointsValue": "{pts} pont",
       "ptsValue": "{pts} pont",
       "proposalReviewersSubmittedProgress": "{total} értékelőből {submitted} küldött be értékelést ehhez a javaslathoz",
-      "addReviewAction": "+ Értékelés hozzáadása",
+      "addReviewAction": "Értékelés hozzáadása",
       "moreCount": "+{count} további",
       "activeReviewersHeading": "Aktív értékelők",
       "addNoteAction": "Megjegyzés hozzáadása",

@@ -1089,7 +1089,7 @@
       "pointsValue": "{pts} puntos",
       "ptsValue": "{pts} pts",
       "proposalReviewersSubmittedProgress": "{submitted} de {total} revisores enviaron una revisión para esta propuesta",
-      "addReviewAction": "+ Agregar revisión",
+      "addReviewAction": "Agregar revisión",
       "moreCount": "+{count} más",
       "activeReviewersHeading": "Revisores activos",
       "addNoteAction": "Agregar nota",
