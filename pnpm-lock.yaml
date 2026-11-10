@@ -1535,6 +1535,12 @@ importers:
       '@op/db':
         specifier: workspace:*
         version: link:../db
+      '@op/logging':
+        specifier: workspace:*
+        version: link:../../packages/logging
+      '@opentelemetry/api':
+        specifier: ^1.9.0
+        version: 1.9.0
       inngest:
         specifier: 3.54.0
         version: 3.54.0(@opentelemetry/core@2.7.0(@opentelemetry/api@1.9.0))(express@5.2.1)(h3@1.15.1)(hono@4.12.31)(next@16.4.2(@opentelemetry/api@1.9.0)(@playwright/test@1.58.2)(@types/node@24.13.3)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.85.1))(typescript@7.0.2)(zod@4.6.7)
