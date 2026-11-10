@@ -18,9 +18,9 @@ import { getAllocatedAmount } from './BudgetDisplay';
 import { ProposalCardView } from './ProposalCard';
 import { ProposalListSection } from './ProposalListSection';
 import { ProposalMasonry } from './ProposalMasonry';
+import { useOpenProposalInSheet } from './ProposalSheet/proposalSheetState';
 import { resolveProposalSystemFields } from './proposalContentUtils';
 import { proposalHref } from './proposalHrefs';
-import { useOpenProposalInSheet } from './proposalSheetState';
 
 export const ResultsList = ({
   slug,

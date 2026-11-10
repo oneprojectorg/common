@@ -19,22 +19,18 @@ import { LuTriangleAlert } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
+import { useProposal } from './Proposal/proposalContext';
 import { ProposalCardView, ProposalRestrictionBadge } from './ProposalCard';
-import { useOpenProposalInSheet } from './proposalSheetState';
+import { useOpenProposalInSheet } from './ProposalSheet/proposalSheetState';
 
 /**
  * The proposals merged into this one, listed above the comments. A merge
  * records a link rather than moving content, so nothing else on the surviving
  * proposal shows what fed into it.
  */
-export function ContributingIdeas({
-  proposal,
-  decisionRoot,
-}: {
-  proposal: Proposal;
-  /** Route prefix, e.g. `/decisions/participatory-budget`. */
-  decisionRoot: string;
-}) {
+export function ContributingIdeas() {
+  const { proposal, decisionRoot } = useProposal();
+
   return (
     <APIErrorBoundary
       fallbacks={{

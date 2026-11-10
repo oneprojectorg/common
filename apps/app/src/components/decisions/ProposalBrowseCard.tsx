@@ -11,8 +11,8 @@ import {
   ProposalCardReviseAction,
   ProposalCardView,
 } from './ProposalCard';
+import { useOpenProposalInSheet } from './ProposalSheet/proposalSheetState';
 import { proposalEditHref, proposalHref } from './proposalHrefs';
-import { useOpenProposalInSheet } from './proposalSheetState';
 
 interface ProposalBrowseCardProps {
   proposal: Proposal;
