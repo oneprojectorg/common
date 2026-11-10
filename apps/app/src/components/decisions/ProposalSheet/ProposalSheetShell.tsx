@@ -24,14 +24,7 @@ import { decisionRootHref, proposalHref } from '../proposalHrefs';
 import { useLiveProposalDocument } from '../useLiveProposalDocument';
 import { ProposalSheetStateContext } from './proposalSheetState';
 
-export function ProposalSheetShell({
-  footer,
-  children,
-}: {
-  /** Stays in view under the scroll region. */
-  footer?: ReactNode;
-  children: ReactNode;
-}) {
+export function ProposalSheetShell({ children }: { children: ReactNode }) {
   const t = useTranslations();
   const state = useContext(ProposalSheetStateContext);
   const shownProfileId = useLastOpenProposal(state?.openProfileId ?? null);
@@ -122,7 +115,6 @@ export function ProposalSheetShell({
                 <ScrollRegion>
                   <div className="px-4 py-6 sm:px-8 sm:py-8">{children}</div>
                 </ScrollRegion>
-                {footer}
               </SheetProposalProvider>
             </Suspense>
           </APIErrorBoundary>
