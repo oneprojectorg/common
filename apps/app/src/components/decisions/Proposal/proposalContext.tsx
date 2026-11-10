@@ -1,7 +1,7 @@
 'use client';
 
 import type { Proposal } from '@op/common/client';
-import { createContext, useContext } from 'react';
+import { type ReactNode, createContext, useContext } from 'react';
 
 import type { ProposalDocumentState } from '../useLiveProposalDocument';
 import {
@@ -21,33 +21,36 @@ export interface ProposalContextValue {
   translation: ProposalTranslationState;
 }
 
+const ProposalContext = createContext<ProposalContextValue | null>(null);
+
 /**
  * The proposal a surface shows. The container resolves it (a query, a page
- * prop, a review assignment) and holds its state; the proposal parts only
- * render it, so a layout change that remounts them loses nothing.
+ * prop, a review assignment) and renders this above any layout switch, so a
+ * shown translation survives when the parts below remount.
  */
-export const ProposalContext = createContext<ProposalContextValue | null>(null);
+export function ProposalProvider({
+  proposal,
+  decisionRoot,
+  documentState,
+  children,
+}: Omit<ProposalContextValue, 'translation'> & { children: ReactNode }) {
+  const translation = useTranslateProposal(proposal);
+
+  return (
+    <ProposalContext.Provider
+      value={{ proposal, decisionRoot, documentState, translation }}
+    >
+      {children}
+    </ProposalContext.Provider>
+  );
+}
 
 export function useProposal(): ProposalContextValue {
   const value = useContext(ProposalContext);
 
   if (!value) {
-    throw new Error('useProposal must be called inside a ProposalContext');
+    throw new Error('useProposal must be used within a ProposalProvider');
   }
 
   return value;
-}
-
-/**
- * The value a container provides. Call it in the component that stays mounted
- * for as long as the proposal is shown, so a shown translation survives.
- */
-export function useProposalContextValue({
-  proposal,
-  decisionRoot,
-  documentState,
-}: Omit<ProposalContextValue, 'translation'>): ProposalContextValue {
-  const translation = useTranslateProposal(proposal);
-
-  return { proposal, decisionRoot, documentState, translation };
 }

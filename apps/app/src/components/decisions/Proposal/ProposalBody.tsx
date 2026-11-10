@@ -31,7 +31,7 @@ interface ProposalBodyProps {
  * The proposal and the sections after it, in one column. Owns no scroll
  * region or outer padding, so the page, the sheet and the reviewer pane each
  * place it in their own container. Holds no state: everything it shows comes
- * from `ProposalContext`.
+ * from `ProposalProvider`.
  */
 export function ProposalBody({
   engagement = true,

@@ -4,10 +4,7 @@ import { ProposalReviewRequestState } from '@op/common/client';
 
 import { ProposalBody } from '../Proposal/ProposalBody';
 import { ProposalCommentsSection } from '../Proposal/ProposalCommentsSection';
-import {
-  ProposalContext,
-  useProposalContextValue,
-} from '../Proposal/proposalContext';
+import { ProposalProvider } from '../Proposal/proposalContext';
 import { AuthorNotesSection } from './AuthorNotesSection';
 import { RevisedOnBadge } from './AuthorRevisionNote';
 import { useReviewForm } from './ReviewFormContext';
@@ -20,20 +17,18 @@ export function ReviewProposalPane({
 }) {
   const { assignment, ownLatestRevisionRequest } = useReviewForm();
 
-  // The version under review comes with the assignment, so it is not
-  // re-fetched (no `documentState`) and the body offers no like/follow.
-  const proposalContext = useProposalContextValue({
-    proposal: assignment.proposal,
-    decisionRoot,
-  });
-
   const respondedAt =
     ownLatestRevisionRequest?.state === ProposalReviewRequestState.RESUBMITTED
       ? ownLatestRevisionRequest.respondedAt
       : null;
 
   return (
-    <ProposalContext.Provider value={proposalContext}>
+    // The version under review comes with the assignment, so it is not
+    // re-fetched (no `documentState`) and the body offers no like/follow.
+    <ProposalProvider
+      proposal={assignment.proposal}
+      decisionRoot={decisionRoot}
+    >
       <ProposalBody
         engagement={false}
         // The badge shows on the date alone, so a note-less resubmission
@@ -47,6 +42,6 @@ export function ReviewProposalPane({
       >
         <ProposalCommentsSection readOnly />
       </ProposalBody>
-    </ProposalContext.Provider>
+    </ProposalProvider>
   );
 }

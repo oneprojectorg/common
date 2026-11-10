@@ -11,10 +11,7 @@ import { useTranslations } from '@/lib/i18n';
 import { ProposalBody } from './Proposal/ProposalBody';
 import { ProposalCommentsSection } from './Proposal/ProposalCommentsSection';
 import { ProposalContributingIdeas } from './Proposal/ProposalContributingIdeas';
-import {
-  ProposalContext,
-  useProposalContextValue,
-} from './Proposal/proposalContext';
+import { ProposalProvider } from './Proposal/proposalContext';
 import { ProposalMergeNotice } from './ProposalMergeNotice';
 import { ProposalViewLayout } from './ProposalViewLayout';
 import { RevisedOnBadge } from './Review/AuthorRevisionNote';
@@ -75,14 +72,6 @@ export function ProposalView({
   // The server orders newest first.
   const latestRespondedAt = reviewNotes.noteGroups[0]?.respondedAt ?? null;
 
-  // Held here, above the review-notes layout switch below, which remounts the
-  // body: a shown translation survives opening and closing the notes.
-  const proposalContext = useProposalContextValue({
-    proposal: currentProposal,
-    decisionRoot,
-    documentState,
-  });
-
   const proposalBodySections: ReactNode = (
     <>
       <ProposalContributingIdeas />
@@ -106,7 +95,11 @@ export function ProposalView({
   ) : null;
 
   return (
-    <ProposalContext.Provider value={proposalContext}>
+    <ProposalProvider
+      proposal={currentProposal}
+      decisionRoot={decisionRoot}
+      documentState={documentState}
+    >
       <ProposalViewLayout
         backHref={backHref}
         reportProposalId={proposalId}
@@ -172,6 +165,6 @@ export function ProposalView({
           </div>
         )}
       </ProposalViewLayout>
-    </ProposalContext.Provider>
+    </ProposalProvider>
   );
 }
