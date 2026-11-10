@@ -1039,7 +1039,6 @@
     "review": {
       "actionsColumn": "কার্যক্রম",
       "remindAction": "মনে করিয়ে দিন",
-      "addReviewButton": "পর্যালোচনা যোগ করুন",
       "remindAllAction": "সবাইকে মনে করিয়ে দিন",
       "remindReviewerLabel": "{name}-কে মনে করিয়ে দিন",
       "sendReminderAction": "রিমাইন্ডার পাঠান",

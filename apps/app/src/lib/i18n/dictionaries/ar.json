@@ -1039,7 +1039,6 @@
     "review": {
       "actionsColumn": "الإجراءات",
       "remindAction": "تذكير",
-      "addReviewButton": "إضافة مراجعة",
       "remindAllAction": "تذكير الجميع",
       "remindReviewerLabel": "تذكير {name}",
       "sendReminderAction": "إرسال تذكير",

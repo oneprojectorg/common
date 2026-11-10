@@ -445,7 +445,7 @@ function PendingReviewerRow({
       )}
       {onStartReview && (
         <Button variant="outline" onClick={onStartReview}>
-          {t('decisions.review.addReviewButton')}
+          {t('decisions.review.addReviewAction')}
         </Button>
       )}
     </div>
