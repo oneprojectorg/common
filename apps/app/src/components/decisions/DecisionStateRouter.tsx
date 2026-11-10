@@ -1,17 +1,22 @@
 'use client';
 
+import type { RouterOutput } from '@op/api';
 import { trpc } from '@op/api/client';
 import { isLastPhase, isReviewPhase, isVotingPhase } from '@op/common/client';
 import { notFound } from 'next/navigation';
+import { useCallback } from 'react';
 
 import { ProposalSheet } from './ProposalSheet/ProposalSheet';
 import { ProposalSheetProvider } from './ProposalSheet/ProposalSheetProvider';
+import { ReviewProgressProposalSheet } from './ProposalSheet/ReviewProgressProposalSheet';
 import { FinalPhaseManualSelectionPage } from './pages/FinalPhaseManualSelectionPage';
 import { ResultsPage } from './pages/ResultsPage';
 import { ReviewPage } from './pages/ReviewPage';
 import { ReviewSelectionPage } from './pages/ReviewSelectionPage';
 import { StandardDecisionPage } from './pages/StandardDecisionPage';
 import { VotingPage } from './pages/VotingPage';
+import { useReviewTab } from './pages/useReviewTab';
+import { proposalReviewsHref } from './proposalHrefs';
 
 // Sticky filter-bar pin offset (px) for the decision-view layout — the clearance
 // below the scroll container's top for the floating Overview/Current toggle that
@@ -31,6 +36,8 @@ function DecisionStateRouterLegacy({
   return <ResultsPage instanceId={instanceId} profileSlug={slug} useLegacy />;
 }
 
+type Instance = RouterOutput['decision']['getInstance'];
+
 function DecisionStateRouterNew({
   instanceId,
   slug,
@@ -41,7 +48,63 @@ function DecisionStateRouterNew({
   decisionSlug?: string;
 }) {
   const [instance] = trpc.decision.getInstance.useSuspenseQuery({ instanceId });
+  const currentPhase = instance.instanceData?.phases?.find(
+    (phase) => phase.phaseId === instance.currentStateId,
+  );
+  const isAdmin = Boolean(instance.access?.admin);
+  const { showsAllProposals } = useReviewTab({
+    isAdmin,
+    canReview: Boolean(instance.access?.review),
+  });
 
+  // The one place that picks the sheet, so a tab change swaps it in the same
+  // render instead of waiting on the departing tab panel to unmount.
+  const reviewSheetPhaseId =
+    instance.selectionsAreConfirmed &&
+    currentPhase &&
+    isReviewPhase(currentPhase) &&
+    isAdmin &&
+    showsAllProposals
+      ? currentPhase.phaseId
+      : null;
+
+  const reviewsHref = useCallback(
+    (profileId: string) =>
+      proposalReviewsHref({ decisionSlug, slug, instanceId, profileId }),
+    [decisionSlug, slug, instanceId],
+  );
+
+  return (
+    <ProposalSheetProvider
+      slug={slug}
+      instanceId={instanceId}
+      decisionSlug={decisionSlug}
+      expandHref={reviewSheetPhaseId ? reviewsHref : undefined}
+    >
+      <DecisionPage
+        instance={instance}
+        slug={slug}
+        decisionSlug={decisionSlug}
+      />
+      {reviewSheetPhaseId ? (
+        <ReviewProgressProposalSheet phaseId={reviewSheetPhaseId} />
+      ) : (
+        <ProposalSheet />
+      )}
+    </ProposalSheetProvider>
+  );
+}
+
+function DecisionPage({
+  instance,
+  slug,
+  decisionSlug,
+}: {
+  instance: Instance;
+  slug: string;
+  decisionSlug?: string;
+}) {
+  const instanceId = instance.id;
   const { currentStateId } = instance;
   const phases = instance.instanceData?.phases ?? [];
   const currentPhase = phases.find((p) => p.phaseId === currentStateId);
@@ -147,21 +210,23 @@ export function DecisionStateRouter({
   /** Use legacy getInstance endpoint (for /profile/[slug]/decisions/[id] route) */
   useLegacy?: boolean;
 }) {
+  if (!useLegacy) {
+    return (
+      <DecisionStateRouterNew
+        instanceId={instanceId}
+        slug={slug}
+        decisionSlug={decisionSlug}
+      />
+    );
+  }
+
   return (
     <ProposalSheetProvider
       slug={slug}
       instanceId={instanceId}
       decisionSlug={decisionSlug}
     >
-      {useLegacy ? (
-        <DecisionStateRouterLegacy instanceId={instanceId} slug={slug} />
-      ) : (
-        <DecisionStateRouterNew
-          instanceId={instanceId}
-          slug={slug}
-          decisionSlug={decisionSlug}
-        />
-      )}
+      <DecisionStateRouterLegacy instanceId={instanceId} slug={slug} />
       <ProposalSheet />
     </ProposalSheetProvider>
   );
