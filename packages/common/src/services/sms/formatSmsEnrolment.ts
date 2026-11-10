@@ -6,6 +6,9 @@ const SMS_TERM_LABEL_LENGTH = 80;
 const quoted = (name: string): string =>
   `"${clipSmsText(name, SMS_DECISION_NAME_LENGTH)}"`;
 
+const browseHint = (slug?: string | null): string =>
+  `Text PROPOSALS${slug ? ` ${slug}` : ''} to browse the ballot.`;
+
 export const formatSmsEnrolmentWelcome = (decisionName: string): string[] =>
   splitSmsBody({
     lines: [
@@ -45,7 +48,7 @@ export const formatSmsAddressLookupFailed = (): string[] => [
 export const formatSmsAddressOutside = (decisionName: string): string[] =>
   splitSmsBody({
     lines: [
-      `That address is outside the districts of ${quoted(decisionName)}, so you cannot register for it.`,
+      `That address is outside the districts of ${quoted(decisionName)}, so you cannot register for it. Text SHOW to see your other decisions.`,
     ],
   });
 
@@ -53,20 +56,21 @@ export const formatSmsEnrolled = ({
   decisionName,
   termLabel,
   budget,
+  slug,
 }: {
   decisionName: string;
   termLabel: string | null;
   budget: string | null;
+  slug?: string | null;
 }): string[] => {
   const scope = termLabel
     ? clipSmsText(termLabel, SMS_TERM_LABEL_LENGTH)
     : quoted(decisionName);
+  const confirmation = budget
+    ? `You're registered. You have ${budget} for ${scope} proposals.`
+    : `You're registered to vote in ${quoted(decisionName)}.`;
   return splitSmsBody({
-    lines: [
-      budget
-        ? `You're registered. You have ${budget} for ${scope} proposals.`
-        : `You're registered to vote in ${quoted(decisionName)}.`,
-    ],
+    lines: [`${confirmation} ${browseHint(slug)}`],
   });
 };
 
@@ -74,16 +78,21 @@ export const formatSmsNothingToAffirm = (): string[] => [
   'There is nothing to affirm. Text VOTE and a decision name to register.',
 ];
 
-export const formatSmsNoEnrolmentNeeded = (decisionName: string): string[] =>
+export const formatSmsNoEnrolmentNeeded = (
+  decisionName: string,
+  slug?: string | null,
+): string[] =>
   splitSmsBody({
     lines: [
-      `No registration is needed for ${quoted(decisionName)}. Voting is open.`,
+      `No registration is needed for ${quoted(decisionName)}. Voting is open. ${browseHint(slug)}`,
     ],
   });
 
 export const formatSmsVotingClosed = (decisionName: string): string[] =>
   splitSmsBody({
-    lines: [`Voting is not open for ${quoted(decisionName)}.`],
+    lines: [
+      `Voting is not open for ${quoted(decisionName)}. Text SHOW to see your decisions.`,
+    ],
   });
 
 export const SMS_VOTE_NEEDS_DECISION_MESSAGE =

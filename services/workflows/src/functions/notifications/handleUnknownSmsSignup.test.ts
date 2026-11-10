@@ -147,6 +147,9 @@ describe('handleUnknownSmsSignup against the database', () => {
     });
     expect(await readProfileId(authUser!.id)).toEqual(expect.any(String));
     expect(recordedSms.map((message) => message.to)).toEqual([phone, phone]);
+    expect(recordedSms.at(-1)?.body).toBe(
+      "You're in! Welcome to Common. Text SHOW to see your decisions.",
+    );
   });
 
   it('given a stranger texts JOIN to a bound line, when they reply with the code, then the consent text and the welcome both come from that line', async ({
@@ -174,6 +177,9 @@ describe('handleUnknownSmsSignup against the database', () => {
       [phone, line],
       [phone, line],
     ]);
+    expect(recordedSms.at(-1)?.body).toBe(
+      "You're in! Welcome to Common. Text VOTE to register.",
+    );
   });
 
   it('given an abandoned attempt whose code is older than the reply window, when the number texts again and nobody replies, then the consent text is sent and the unconfirmed account is discarded', async ({

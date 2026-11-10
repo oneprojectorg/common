@@ -30,9 +30,9 @@ describe('formatSmsProposalPage', () => {
     ).toEqual(['Proposals:\n371 Tree planting ($150000)']);
   });
 
-  it('given an empty ballot, then one text says so', () => {
+  it('given an empty ballot, then one text says so and points at SHOW', () => {
     expect(formatSmsProposalPage({ items: [], hasMore: false })).toEqual([
-      'No proposals are on the ballot yet.',
+      'No proposals are on the ballot yet. Text SHOW to see your decisions.',
     ]);
   });
 
@@ -49,7 +49,7 @@ describe('formatSmsProposalPage', () => {
 });
 
 describe('formatSmsProposalInfo', () => {
-  it('given a proposal with a summary, then the heading names the code, title and cost and the summary follows', () => {
+  it('given a proposal with a summary, then the heading names the code, title and cost, the summary follows, and the footer says how to pick it', () => {
     expect(
       formatSmsProposalInfo({
         code: 214,
@@ -58,7 +58,7 @@ describe('formatSmsProposalInfo', () => {
         summary: 'Lights at the Fifth Avenue crossing.',
       }),
     ).toEqual([
-      '214 "Fifth Ave crosswalk lighting" ($85000)\nLights at the Fifth Avenue crossing.',
+      '214 "Fifth Ave crosswalk lighting" ($85000)\nLights at the Fifth Avenue crossing.\nText 214 to add it to your ballot.',
     ]);
   });
 
@@ -70,7 +70,9 @@ describe('formatSmsProposalInfo', () => {
         cost: null,
         summary: null,
       }),
-    ).toEqual(['108 "Linden rec center evening hours"\nNo summary.']);
+    ).toEqual([
+      '108 "Linden rec center evening hours"\nNo summary.\nText 108 to add it to your ballot.',
+    ]);
   });
 
   it('given a summary longer than one text should carry, then it is clipped into one text that fits an SMS', () => {

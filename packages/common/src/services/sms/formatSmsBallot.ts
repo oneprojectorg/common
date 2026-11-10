@@ -2,12 +2,17 @@ import { clipSmsText, splitSmsBody } from './text';
 
 const SMS_TITLE_LENGTH = 80;
 
-export const SMS_BALLOT_SUBMITTED_MESSAGE =
-  'Your ballot is in. One ballot per person. However, your vote is never public.';
-export const SMS_BALLOT_ALREADY_SUBMITTED_MESSAGE =
-  'Your ballot is already in. One ballot per person.';
-export const SMS_BALLOT_EMPTY_SUBMIT_MESSAGE =
-  'Your ballot is empty. Add a pick before you SUBMIT.';
+const showHint = (onLine: boolean): string =>
+  onLine
+    ? "Text SHOW for this decision's status."
+    : 'Text SHOW to see your other decisions.';
+
+export const formatSmsBallotSubmitted = (onLine: boolean): string =>
+  `Your ballot is in. One ballot per person. However, your vote is never public. ${showHint(onLine)}`;
+export const formatSmsBallotAlreadySubmitted = (onLine: boolean): string =>
+  `Your ballot is already in. One ballot per person. ${showHint(onLine)}`;
+export const formatSmsBallotEmptySubmit = (slug?: string | null): string =>
+  `Your ballot is empty. Text PROPOSALS${slug ? ` ${slug}` : ''} to browse, then a code to pick.`;
 export const SMS_BALLOT_OUTSIDE_SCOPE_MESSAGE =
   'A pick is outside your district. Text LIST, then REMOVE its code.';
 export const SMS_BALLOT_EMPTY_MESSAGE =
@@ -20,6 +25,7 @@ export const SMS_MOVE_USAGE_MESSAGE =
   'Text MOVE, a code and a position, for example MOVE 214 1.';
 export const SMS_FIRST_PICK_FOOTER =
   'Text another code, LIST to see your ballot, or DONE to review.';
+export const SMS_LATER_PICK_FOOTER = 'Text DONE to review.';
 export const SMS_RANKING_NOTE =
   "Your order is your ranking: if a pick can't be funded, your support moves to your next choice.";
 export const SMS_SUBMIT_PROMPT = 'Reply SUBMIT to cast your ballot.';
@@ -52,7 +58,7 @@ export const formatSmsPicksAdded = ({
       `${withCost(`Pick ${pick.position}: ${quoted(pick.title)}`, pick.cost)}.`,
   );
   const left = remaining ? `${remaining} left.` : null;
-  const tail = firstPick ? SMS_FIRST_PICK_FOOTER : null;
+  const tail = firstPick ? SMS_FIRST_PICK_FOOTER : SMS_LATER_PICK_FOOTER;
   return splitSmsBody({
     lines: [...sentences, left, tail].filter(
       (line): line is string => line !== null,
@@ -82,7 +88,8 @@ export const formatSmsPickDuplicate = ({
 }: {
   title: string;
   position: number;
-}): string => `${quoted(title)} is already pick ${position}.`;
+}): string =>
+  `${quoted(title)} is already pick ${position}. Text LIST to see your ballot.`;
 
 export const formatSmsBallot = ({
   scope,
@@ -125,9 +132,11 @@ export const formatSmsPickRemoved = ({
   title: string;
   remaining: string | null;
 }): string =>
-  remaining
-    ? `Removed ${quoted(title)}. ${remaining} left.`
-    : `Removed ${quoted(title)}.`;
+  `${
+    remaining
+      ? `Removed ${quoted(title)}. ${remaining} left.`
+      : `Removed ${quoted(title)}.`
+  } Text a code to add, or DONE to review.`;
 
 export const formatSmsPickMoved = ({
   title,
@@ -135,13 +144,14 @@ export const formatSmsPickMoved = ({
 }: {
   title: string;
   position: number;
-}): string => `${quoted(title)} is now pick ${position}.`;
+}): string =>
+  `${quoted(title)} is now pick ${position}. Text LIST to see the new order.`;
 
 export const formatSmsNotOnYourBallot = (code: number): string =>
-  `No pick with code ${code} is on your ballot.`;
+  `No pick with code ${code} is on your ballot. Text LIST to see your picks.`;
 
 export const formatSmsBallotRefused = (reason: string): string =>
-  `Your ballot was not cast: ${reason}`;
+  `Your ballot was not cast: ${reason}\nText DONE to review your ballot.`;
 
 export const formatSmsPickLimitReached = ({
   title,

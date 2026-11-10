@@ -2,7 +2,8 @@ import { clipSmsText, splitSmsBody } from './text';
 
 const SMS_PROPOSAL_TITLE_LENGTH = 80;
 const SMS_PROPOSAL_SUMMARY_LENGTH = 1200;
-const EMPTY_BALLOT_MESSAGE = 'No proposals are on the ballot yet.';
+const EMPTY_BALLOT_MESSAGE =
+  'No proposals are on the ballot yet. Text SHOW to see your decisions.';
 const MORE_FOOTER = 'Text MORE for the next page.';
 const NO_SUMMARY = 'No summary.';
 const AGREE_FOOTER = 'Reply AGREE to affirm.';
@@ -56,6 +57,7 @@ export const formatSmsProposalInfo = ({
     lines: [
       summary ? clipSmsText(summary, SMS_PROPOSAL_SUMMARY_LENGTH) : NO_SUMMARY,
     ],
+    footer: `Text ${code} to add it to your ballot.`,
   });
 
 export const formatSmsAttestation = (text: string): string[] =>

@@ -26,6 +26,9 @@ export const formatSmsDecisionInfo = ({
     SMS_DECISION_NAME_MIN_LENGTH,
     SMS_DECISION_LINE_LENGTH - fixed.length,
   );
+  const infoLine = `"${clipSmsText(name, nameRoom)}" (${slug}): ${tail}`;
 
-  return `"${clipSmsText(name, nameRoom)}" (${slug}): ${tail}`;
+  return votingOpen
+    ? `${infoLine}\nText VOTE ${slug} to register, or PROPOSALS ${slug} to browse.`
+    : infoLine;
 };

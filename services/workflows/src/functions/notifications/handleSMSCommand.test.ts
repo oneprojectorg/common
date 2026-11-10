@@ -53,7 +53,9 @@ const NUMBERS = {
   lineMember: '+15005550080',
   lineSlugMember: '+15005550081',
   unboundLineMember: '+15005550082',
-  lineStranger: '+15005550010',
+  lineStranger: '+15005550092',
+  pickSlugHint: '+15005550105',
+  submitEmpty: '+15005550106',
   linePrivateOwner: '+15005550011',
   agreeRemoved: '+15005550012',
   pickStrangerEnrolment: '+15005550013',
@@ -147,6 +149,8 @@ const LINES = {
   pickDone: '+16145550150',
   pickSubmit: '+16145550151',
   pickUnknown: '+16145550152',
+  pickSlugHint: '+16145550154',
+  submitEmpty: '+16145550155',
   pickUnenrolled: '+16145550153',
   pickLimit: '+16145550161',
   pickOtherLineA: '+16145550195',
@@ -206,7 +210,7 @@ describe('handleSMSCommand against the database', () => {
 
     expect(result).toEqual({ message: 'decision sent' });
     expect(recordedSms.map((sms) => sms.body)).toEqual([
-      `"Park Funding ${task.id}" (${slug}): Voting phase, voting open, 2 proposals.`,
+      `"Park Funding ${task.id}" (${slug}): Voting phase, voting open, 2 proposals.\nText VOTE ${slug} to register, or PROPOSALS ${slug} to browse.`,
     ]);
   });
 
@@ -281,7 +285,7 @@ describe('handleSMSCommand against the database', () => {
 
     expect(result).toEqual({ message: 'decision not found' });
     expect(recordedSms.map((sms) => sms.body)).toEqual([
-      `No decision named "no-such-decision-${task.id}" was found.`,
+      `No decision named "no-such-decision-${task.id}" was found. Text SHOW to list your decisions.`,
     ]);
   });
 
@@ -306,7 +310,9 @@ describe('handleSMSCommand against the database', () => {
 
     expect(result).toEqual({ message: 'decision not found' });
     const [body] = recordedSms.map((sms) => sms.body);
-    expect(body).toMatch(/^No decision named ".+\.\.\." was found\.$/);
+    expect(body).toMatch(
+      /^No decision named ".+\.\.\." was found\. Text SHOW to list your decisions\.$/,
+    );
     expect(body!.length).toBeLessThanOrEqual(SMS_MAX_BODY_LENGTH);
   });
 
@@ -338,7 +344,7 @@ describe('handleSMSCommand against the database', () => {
 
     expect(result).toEqual({ message: 'decision not found' });
     expect(recordedSms.map((sms) => sms.body)).toEqual([
-      `No decision named "${slug}" was found.`,
+      `No decision named "${slug}" was found. Text SHOW to list your decisions.`,
     ]);
   });
 
@@ -501,7 +507,7 @@ describe('handleSMSCommand against the database', () => {
     expect(show.result).toEqual({ message: 'decision sent' });
     expect(recordedSms.map((sms) => sms.body)).toEqual([
       'You are not a participant in any decision yet.',
-      `"Open Air ${task.id}" (${slug}): Voting phase, voting open, 1 proposal.`,
+      `"Open Air ${task.id}" (${slug}): Voting phase, voting open, 1 proposal.\nText VOTE ${slug} to register, or PROPOSALS ${slug} to browse.`,
     ]);
   });
 
@@ -566,7 +572,7 @@ describe('handleSMSCommand against the database', () => {
 });
 
 describe('handleSMSCommand on a decision line', () => {
-  it("given a confirmed non-member texts SHOW alone to a private decision's line, then the reply names no decision and leaks no slug", async ({
+  it("given a confirmed non-member texts SHOW alone to a private decision's line, then they get their decision list and no slug leaks", async ({
     task,
     onTestFinished,
   }) => {
@@ -590,11 +596,11 @@ describe('handleSMSCommand on a decision line', () => {
       events: [smsInboundEvent({ from: phone, to: line, keyword: 'show' })],
     });
 
-    expect(result).toEqual({ message: 'decision not found' });
+    expect(result).toEqual({ message: 'decisions sent', count: 0 });
     expect(recordedSms).toEqual([
       expect.objectContaining({
         to: phone,
-        body: 'No decision was found.',
+        body: 'You are not a participant in any decision yet.',
       }),
     ]);
     expect(recordedSms[0]!.body).not.toContain(slug);
@@ -627,7 +633,7 @@ describe('handleSMSCommand on a decision line', () => {
       expect.objectContaining({
         to: phone,
         from: line,
-        body: `"Line Funding ${task.id}" (${slug}): Voting phase, voting open, 1 proposal.`,
+        body: `"Line Funding ${task.id}" (${slug}): Voting phase, voting open, 1 proposal.\nText VOTE ${slug} to register, or PROPOSALS ${slug} to browse.`,
       }),
     ]);
   });
@@ -670,7 +676,7 @@ describe('handleSMSCommand on a decision line', () => {
     expect(recordedSms).toEqual([
       expect.objectContaining({
         from: line,
-        body: `"Other ${task.id}" (${other.slug}): Voting phase, voting open, 2 proposals.`,
+        body: `"Other ${task.id}" (${other.slug}): Voting phase, voting open, 2 proposals.\nText VOTE ${other.slug} to register, or PROPOSALS ${other.slug} to browse.`,
       }),
     ]);
   });
@@ -899,7 +905,7 @@ describe('handleSMSCommand registration over SMS', () => {
 
     expect(result).toEqual({ message: 'address outside' });
     expect(recordedSms.at(-1)?.body).toBe(
-      `That address is outside the districts of "${name}", so you cannot register for it.`,
+      `That address is outside the districts of "${name}", so you cannot register for it. Text SHOW to see your other decisions.`,
     );
   });
 
@@ -1037,7 +1043,7 @@ describe('handleSMSCommand registration over SMS', () => {
 
     expect(result).toEqual({ message: 'enrolled' });
     expect(recordedSms.at(-1)?.body).toBe(
-      `You're registered to vote in "${name}".`,
+      `You're registered to vote in "${name}". Text PROPOSALS to browse the ballot.`,
     );
     const row = await findVoterEnrolment({
       processInstanceId: instanceId,
@@ -1201,7 +1207,7 @@ describe('handleSMSCommand registration over SMS', () => {
 
     expect(result).toEqual({ message: 'no enrolment needed' });
     expect(recordedSms.map((sms) => sms.body)).toEqual([
-      `No registration is needed for "${name}". Voting is open.`,
+      `No registration is needed for "${name}". Voting is open. Text PROPOSALS ${slug} to browse the ballot.`,
     ]);
   });
 
@@ -1301,7 +1307,7 @@ describe('handleSMSCommand registration over SMS', () => {
 
     expect(again.result).toEqual({ message: 'already enrolled' });
     expect(recordedSms.at(-1)?.body).toBe(
-      `You're registered to vote in "${name}".`,
+      `You're registered to vote in "${name}". Text PROPOSALS to browse the ballot.`,
     );
     const row = await findVoterEnrolment({
       processInstanceId: instanceId,
@@ -1491,7 +1497,7 @@ describe('handleSMSCommand browsing the ballot', () => {
 
     expect(result).toEqual({ message: 'next ballot page sent' });
     expect(recordedSms.at(-1)?.body).toBe(
-      'Next 1:\n106 Tree planting ($150,000)\nReply INFO plus a code for details.',
+      'Next 1:\n106 Tree planting ($150,000)\nText a code to pick it, or INFO plus a code for details.',
     );
   });
 
@@ -1538,7 +1544,7 @@ describe('handleSMSCommand browsing the ballot', () => {
 
     expect(result).toEqual({ message: 'proposal info sent' });
     expect(recordedSms.map((sms) => sms.body)).toEqual([
-      '101 "Crosswalk lighting" ($85,000)\nNo summary.',
+      '101 "Crosswalk lighting" ($85,000)\nNo summary.\nText 101 to add it to your ballot.',
     ]);
   });
 
@@ -1564,7 +1570,7 @@ describe('handleSMSCommand browsing the ballot', () => {
 
     expect(result).toEqual({ message: 'proposal not on ballot' });
     expect(recordedSms.map((sms) => sms.body)).toEqual([
-      'No proposal with code 999 is on your ballot.',
+      'No proposal with code 999 is on your ballot. Text PROPOSALS to browse the ballot.',
     ]);
   });
 
@@ -1650,7 +1656,7 @@ describe('handleSMSCommand browsing the ballot', () => {
 
     expect(result).toEqual({ message: 'voting closed' });
     expect(recordedSms.map((sms) => sms.body)).toEqual([
-      `Voting is not open for "${name}".`,
+      `Voting is not open for "${name}". Text SHOW to see your decisions.`,
     ]);
   });
 });
@@ -1691,7 +1697,7 @@ describe('handleSMSCommand building and casting the ballot', () => {
     const member = await fixture.createPhoneOnlyAccount(
       parsePhoneNumber(phone),
     );
-    const { instanceId, instanceProfileId } =
+    const { instanceId, instanceProfileId, slug } =
       await fixture.createVotingInstance({
         owner: member,
         name,
@@ -1705,7 +1711,7 @@ describe('handleSMSCommand building and casting the ballot', () => {
       });
     await fixture.addMember(instanceProfileId, member);
     await fixture.bindLine(instanceId, parsePhoneNumber(line));
-    return { member, instanceId };
+    return { member, instanceId, slug };
   };
 
   const readDraftPicks = async (
@@ -1774,7 +1780,7 @@ describe('handleSMSCommand building and casting the ballot', () => {
 
     expect(result).toEqual({ message: 'decision not found' });
     expect(recordedSms.map((sms) => sms.body)).toEqual([
-      'That decision is not available to you.',
+      'That decision is not available to you. Text SHOW to list your decisions.',
     ]);
     expect(recordedSms[0]!.body).not.toContain(name);
   });
@@ -1814,7 +1820,7 @@ describe('handleSMSCommand building and casting the ballot', () => {
 
     expect(result).toEqual({ message: 'picks added' });
     expect(recordedSms.at(-1)?.body).toBe(
-      'Pick 2: "Bike lane" ($310,000).\nPick 3: "Speed humps" ($45,000).\n$560,000 left.',
+      'Pick 2: "Bike lane" ($310,000).\nPick 3: "Speed humps" ($45,000).\n$560,000 left.\nText DONE to review.',
     );
   });
 
@@ -1896,7 +1902,7 @@ describe('handleSMSCommand building and casting the ballot', () => {
 
     expect(result).toEqual({ message: 'pick removed' });
     expect(recordedSms.at(-1)?.body).toBe(
-      'Removed "Crosswalk lighting". $1,000,000 left.',
+      'Removed "Crosswalk lighting". $1,000,000 left. Text a code to add, or DONE to review.',
     );
   });
 
@@ -1920,7 +1926,9 @@ describe('handleSMSCommand building and casting the ballot', () => {
     );
 
     expect(result).toEqual({ message: 'pick moved' });
-    expect(recordedSms.at(-1)?.body).toBe('"Bike lane" is now pick 1.');
+    expect(recordedSms.at(-1)?.body).toBe(
+      '"Bike lane" is now pick 1. Text LIST to see the new order.',
+    );
     await keyword(NUMBERS.pickMove, LINES.pickMove, 'list');
     expect(recordedSms.at(-1)?.body).toContain(
       '1. 102 Bike lane $310,000.\n2. 101 Crosswalk lighting $85,000.',
@@ -1982,7 +1990,7 @@ describe('handleSMSCommand building and casting the ballot', () => {
       }),
     );
     expect(recordedSms.at(-1)?.body).toBe(
-      'Your ballot is in. One ballot per person. However, your vote is never public.',
+      "Your ballot is in. One ballot per person. However, your vote is never public. Text SHOW for this decision's status.",
     );
     const proposals = await db.query.proposals.findMany({
       where: { processInstanceId: instanceId },
@@ -2009,7 +2017,7 @@ describe('handleSMSCommand building and casting the ballot', () => {
     );
     expect(again).toEqual({ message: 'ballot already submitted' });
     expect(recordedSms.at(-1)?.body).toBe(
-      'Your ballot is already in. One ballot per person.',
+      'Your ballot is already in. One ballot per person. Text SHOW to see your other decisions.',
     );
   });
 
@@ -2149,8 +2157,73 @@ describe('handleSMSCommand building and casting the ballot', () => {
 
     expect(result).toEqual({ message: 'proposal not on ballot' });
     expect(recordedSms.map((sms) => sms.body)).toEqual([
-      'No proposal with code 999 is on your ballot.',
+      'No proposal with code 999 is on your ballot. Text PROPOSALS to browse the ballot.',
     ]);
+  });
+
+  it('given a member browsing on the shared number, when they text an unknown code and an empty SUBMIT, then both hints carry the decision slug', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsCommandFixture(task.id, onTestFinished);
+    const { slug } = await seed(fixture, {
+      phone: NUMBERS.pickSlugHint,
+      line: LINES.pickSlugHint,
+      name: `Pick Slug Hint ${task.id}`,
+    });
+    await run(
+      smsInboundEvent({
+        from: NUMBERS.pickSlugHint,
+        keyword: 'proposals',
+        argument: slug,
+        messageSid: `SM-${task.id}-proposals`,
+      }),
+    );
+
+    const picked = await run(
+      smsInboundEvent({
+        from: NUMBERS.pickSlugHint,
+        body: '999',
+        messageSid: `SM-${task.id}-unknown-code`,
+      }),
+    );
+    const submitted = await run(
+      smsInboundEvent({
+        from: NUMBERS.pickSlugHint,
+        keyword: 'submit',
+        messageSid: `SM-${task.id}-submit`,
+      }),
+    );
+
+    expect(picked.result).toEqual({ message: 'proposal not on ballot' });
+    expect(submitted.result).toEqual({ message: 'ballot empty' });
+    expect(recordedSms.slice(-2).map((sms) => sms.body)).toEqual([
+      `No proposal with code 999 is on your ballot. Text PROPOSALS ${slug} to browse the ballot.`,
+      `Your ballot is empty. Text PROPOSALS ${slug} to browse, then a code to pick.`,
+    ]);
+  });
+
+  it("given an empty SUBMIT on the decision's own line, then the hint names bare PROPOSALS", async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsCommandFixture(task.id, onTestFinished);
+    await seed(fixture, {
+      phone: NUMBERS.submitEmpty,
+      line: LINES.submitEmpty,
+      name: `Submit Empty ${task.id}`,
+    });
+
+    const { result } = await keyword(
+      NUMBERS.submitEmpty,
+      LINES.submitEmpty,
+      'submit',
+    );
+
+    expect(result).toEqual({ message: 'ballot empty' });
+    expect(recordedSms.at(-1)?.body).toBe(
+      'Your ballot is empty. Text PROPOSALS to browse, then a code to pick.',
+    );
   });
 
   it('given a decision that requires registration, when an unregistered member texts a code, then they are told to text VOTE first', async ({
@@ -2247,7 +2320,11 @@ describe('handleSMSCommand building and casting the ballot', () => {
       Array.from({ length: 4 }, () => ({ message: 'voting closed' })),
     );
     expect(recordedSms.slice(-4).map((sms) => sms.body)).toEqual(
-      Array.from({ length: 4 }, () => `Voting is not open for "${name}".`),
+      Array.from(
+        { length: 4 },
+        () =>
+          `Voting is not open for "${name}". Text SHOW to see your decisions.`,
+      ),
     );
     await expect(readDraftPicks(instanceId)).resolves.toHaveLength(2);
   });
@@ -2289,7 +2366,7 @@ describe('handleSMSCommand building and casting the ballot', () => {
     );
     await expect(readDraftPicks(instanceId)).resolves.toBeNull();
     expect(recordedSms.at(-1)?.body).toBe(
-      'Your ballot is already in. One ballot per person.',
+      "Your ballot is already in. One ballot per person. Text SHOW for this decision's status.",
     );
   });
   it("given a registration waiting for an address in decision A, when the voter texts a code to decision B's line, then it becomes a pick on B and A still waits for the address", async ({
@@ -2373,7 +2450,7 @@ describe('handleSMSCommand building and casting the ballot', () => {
 
     expect(result).toEqual({ message: 'decision not found' });
     expect(recordedSms.map((sms) => sms.body)).toEqual([
-      'That decision is not available to you.',
+      'That decision is not available to you. Text SHOW to list your decisions.',
     ]);
     await expect(readDraftPicks(instanceId)).resolves.toBeNull();
   });
@@ -2447,7 +2524,7 @@ describe('handleSMSCommand building and casting the ballot', () => {
 
     expect(result).toEqual({ message: 'decision not found' });
     expect(recordedSms.at(-1)?.body).toBe(
-      'That decision is not available to you.',
+      'That decision is not available to you. Text SHOW to list your decisions.',
     );
     await expect(
       db.query.decisionsVoteSubmissions.findFirst({
@@ -2570,7 +2647,7 @@ describe('handleSMSCommand building and casting the ballot', () => {
 
     expect(result).toEqual({ message: 'ballot already submitted' });
     expect(recordedSms.at(-1)?.body).toBe(
-      'Your ballot is already in. One ballot per person.',
+      "Your ballot is already in. One ballot per person. Text SHOW for this decision's status.",
     );
     await expect(readDraftPicks(instanceId)).resolves.toBeNull();
   });
@@ -2612,7 +2689,8 @@ describe('handleSMSCommand building and casting the ballot', () => {
     expect(recordedSms.slice(-3).map((sms) => sms.body)).toEqual(
       Array.from(
         { length: 3 },
-        () => 'Your ballot is already in. One ballot per person.',
+        () =>
+          "Your ballot is already in. One ballot per person. Text SHOW for this decision's status.",
       ),
     );
     await expect(readDraftPicks(instanceId)).resolves.toBeNull();
@@ -2660,7 +2738,7 @@ describe('handleSMSCommand browsing: access and decision choice', () => {
 
     expect(result).toEqual({ message: 'decision not found' });
     expect(recordedSms.map((sms) => sms.body)).toEqual([
-      'That decision is not available to you.',
+      'That decision is not available to you. Text SHOW to list your decisions.',
     ]);
   });
 
@@ -2714,7 +2792,7 @@ describe('handleSMSCommand browsing: access and decision choice', () => {
 
     expect(result).toEqual({ message: 'next ballot page sent' });
     expect(recordedSms.at(-1)?.body).toBe(
-      'Next 1:\n106 Library wifi ($30,000)\nReply INFO plus a code for details.',
+      'Next 1:\n106 Library wifi ($30,000)\nText a code to pick it, or INFO plus a code for details.',
     );
   });
 
@@ -2790,9 +2868,9 @@ describe('handleSMSCommand browsing: access and decision choice', () => {
     expect(info.result).toEqual({ message: 'proposal info sent' });
     expect(more.result).toEqual({ message: 'next ballot page sent' });
     expect(recordedSms.map((sms) => sms.body).slice(1)).toEqual([
-      '101 "Speed humps" ($45,000)\nNo summary.',
+      '101 "Speed humps" ($45,000)\nNo summary.\nText 101 to add it to your ballot.',
       expect.stringContaining('101 Speed humps ($45,000)'),
-      'Next 1:\n106 Library wifi ($30,000)\nReply INFO plus a code for details.',
+      'Next 1:\n106 Library wifi ($30,000)\nText a code to pick it, or INFO plus a code for details.',
     ]);
   });
 
@@ -2855,8 +2933,8 @@ describe('handleSMSCommand browsing: access and decision choice', () => {
     expect(more.result).toEqual({ message: 'decision not found' });
     expect(info.result).toEqual({ message: 'decision not found' });
     expect(recordedSms.map((sms) => sms.body).slice(1)).toEqual([
-      'That decision is not available to you.',
-      'That decision is not available to you.',
+      'That decision is not available to you. Text SHOW to list your decisions.',
+      'That decision is not available to you. Text SHOW to list your decisions.',
     ]);
   });
 });

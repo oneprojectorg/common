@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  SMS_BALLOT_UNAVAILABLE_MESSAGE,
+  SMS_BROWSE_END_MESSAGE,
+  SMS_BROWSE_LAST_FOOTER,
   formatSmsBallotPageHeading,
   formatSmsBallotScope,
   formatSmsProposalNotOnBallot,
@@ -78,9 +81,32 @@ describe('browse refusals', () => {
     );
   });
 
-  it('given a code that is not on the ballot, then the text repeats the code', () => {
+  it('given a code that is not on the ballot, then the text repeats the code and points at PROPOSALS', () => {
     expect(formatSmsProposalNotOnBallot(999)).toBe(
-      'No proposal with code 999 is on your ballot.',
+      'No proposal with code 999 is on your ballot. Text PROPOSALS to browse the ballot.',
+    );
+  });
+
+  it('given the shared number, then the PROPOSALS hint carries the decision slug', () => {
+    expect(formatSmsProposalNotOnBallot(999, 'park-funding')).toBe(
+      'No proposal with code 999 is on your ballot. Text PROPOSALS park-funding to browse the ballot.',
+    );
+  });
+
+  it('given a decision the member cannot read, then the text points at SHOW', () => {
+    expect(SMS_BALLOT_UNAVAILABLE_MESSAGE).toBe(
+      'That decision is not available to you. Text SHOW to list your decisions.',
+    );
+  });
+});
+
+describe('browse footers', () => {
+  it('then the last page and the end of the browse both name picking as the next step', () => {
+    expect(SMS_BROWSE_LAST_FOOTER).toBe(
+      'Text a code to pick it, or INFO plus a code for details.',
+    );
+    expect(SMS_BROWSE_END_MESSAGE).toBe(
+      'That was the last page. Text a code to pick, or PROPOSALS to start again.',
     );
   });
 });
