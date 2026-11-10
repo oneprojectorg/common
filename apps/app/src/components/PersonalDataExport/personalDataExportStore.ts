@@ -40,11 +40,14 @@ interface PersonalDataExportStore {
   complete: (exportId: string, result: { isPartial: boolean }) => boolean;
   /** Returns to idle. False when that run is not the current one. */
   reset: (exportId: string) => boolean;
+  /** Drops whatever run is held, for a sign-out. */
+  clear: () => void;
 }
 
 // Outside React so a run outlives the settings modal and every page header, and
 // in session storage so it outlives a reload. Session rather than local storage
-// keeps it to one tab, which is one signed-in user.
+// keeps it to one tab, and PersonalDataExportWatcher clears it on sign-out so
+// it never passes to the next user of that tab.
 //
 // Hydration is skipped at creation, because the store is built during the
 // server render too. PersonalDataExportWatcher rehydrates it on mount.
@@ -91,6 +94,7 @@ export const usePersonalDataExportStore = create<PersonalDataExportStore>()(
         set({ state: { phase: 'idle' } });
         return true;
       },
+      clear: () => set({ state: { phase: 'idle' } }),
     }),
     {
       name: 'personal-data-export',

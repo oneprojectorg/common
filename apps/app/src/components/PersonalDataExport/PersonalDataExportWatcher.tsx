@@ -1,8 +1,10 @@
 'use client';
 
+import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { trpc } from '@op/api/client';
 import { logger } from '@op/logging/client';
 import { toast } from '@op/sense/Toast';
+import { createSBBrowserClient } from '@op/supabase/client';
 import { useEffect, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -35,13 +37,28 @@ import {
  * which an error boundary would.
  */
 export const PersonalDataExportWatcher = () => {
+  const isEnabled = useFeatureFlag('download-user-data');
   const state = usePersonalDataExportStore((store) => store.state);
 
   useEffect(() => {
     void usePersonalDataExportStore.persist.rehydrate();
+
+    // Supabase reports a sign-out to every tab. The run belongs to the user who
+    // started it, so it goes with them.
+    const {
+      data: { subscription },
+    } = createSBBrowserClient().auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_OUT') {
+        usePersonalDataExportStore.getState().clear();
+        toast.close(PERSONAL_DATA_EXPORT_READY_TOAST_ID);
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
-  if (state.phase !== 'running') {
+  // the flag gates the behaviour, not only the settings row
+  if (!isEnabled || state.phase !== 'running') {
     return null;
   }
 
@@ -74,7 +91,11 @@ const RunningExport = ({
     refetch,
   } = trpc.account.getPersonalDataExportStatus.useQuery(
     { exportId },
-    { retry: 2 },
+    {
+      // a refused read gives the same answer every time
+      retry: (failures, error) =>
+        failures < 2 && !isExportUnreachableError(error),
+    },
   );
 
   const reportedStatus = status?.status;
@@ -82,7 +103,7 @@ const RunningExport = ({
 
   // Settles on an answer from the server. A failed read is usually not one: the
   // run may be fine, so the silence timer below retries it. Only a read refused
-  // for good (signed out, someone else's run) ends it here.
+  // for good (someone else's run, or a record gone) ends it here.
   useEffect(() => {
     // The record is written before the run is queued, so its absence means it
     // aged out or was never stored.
@@ -119,7 +140,11 @@ const RunningExport = ({
       duration: 0,
       action: {
         label: t('downloadFileAction'),
-        onClick: () => void download(exportId),
+        onClick: () => {
+          // one click, one download; the settings row still offers the file
+          toast.close(PERSONAL_DATA_EXPORT_READY_TOAST_ID);
+          void download(exportId);
+        },
       },
     });
   }, [status, isUnreachable, exportId, complete, reset, download, t]);

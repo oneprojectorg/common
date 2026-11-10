@@ -7,6 +7,7 @@ import { useCallback } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
+import { getTrpcHttpStatus } from '@/components/exports/errorStatus';
 import { resolveExportRetryOutcome } from '@/components/exports/exportRetry';
 
 import {
@@ -70,7 +71,8 @@ export const useDownloadPersonalDataExport = () => {
           return;
         case 'run-failed':
         case 'record-gone':
-          // the file is gone; only a new export helps
+          // the file is gone; only a new export helps, and the offer is void
+          toast.close(PERSONAL_DATA_EXPORT_READY_TOAST_ID);
           if (reset(exportId)) {
             toast.error(t('downloadDataFailed'));
           }
@@ -87,22 +89,13 @@ export const useDownloadPersonalDataExport = () => {
 
 /**
  * Whether a failed status read means this client can never read the record:
- * signed out (401), the record belongs to another user (403), or it is absent
- * (404). Retrying any of these returns the same answer.
+ * it belongs to another user (403) or is absent (404). Retrying returns the
+ * same answer. A 401 is left out: a session refresh can race a read, and the
+ * run is still fine.
  */
 export const isExportUnreachableError = (error: unknown) => {
-  if (
-    !(error instanceof Error) ||
-    !('data' in error) ||
-    typeof error.data !== 'object' ||
-    error.data === null ||
-    !('httpStatus' in error.data)
-  ) {
-    return false;
-  }
-
-  const { httpStatus } = error.data;
-  return httpStatus === 401 || httpStatus === 403 || httpStatus === 404;
+  const status = getTrpcHttpStatus(error);
+  return status === 403 || status === 404;
 };
 
 const isCurrentReadyExport = (exportId: string) => {

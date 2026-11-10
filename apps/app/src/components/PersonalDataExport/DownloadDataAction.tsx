@@ -9,6 +9,8 @@ import { LuDownload, LuTriangleAlert } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
+import { getTrpcHttpStatus } from '@/components/exports/errorStatus';
+
 import {
   PERSONAL_DATA_EXPORT_READY_TOAST_ID,
   usePersonalDataExportStore,
@@ -36,12 +38,10 @@ export const DownloadDataAction = () => {
     onError: (error) => {
       abort();
       logger.error('Failed to start personal data export', { error });
-      const isRateLimited =
-        error.data != null &&
-        'httpStatus' in error.data &&
-        error.data.httpStatus === 429;
       toast.error(
-        isRateLimited ? t('downloadDataRateLimited') : t('downloadDataFailed'),
+        getTrpcHttpStatus(error) === 429
+          ? t('downloadDataRateLimited')
+          : t('downloadDataFailed'),
       );
     },
   });
