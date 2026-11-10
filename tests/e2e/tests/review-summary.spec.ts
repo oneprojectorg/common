@@ -340,7 +340,7 @@ test.describe('Review Summary page', () => {
 
     // This admin reviews nothing here, so no own-review entry point.
     await expect(
-      page.getByRole('button', { name: '+ Add review' }),
+      page.getByRole('button', { name: 'Add review', exact: true }),
     ).toHaveCount(0);
 
     // ====================================================================
@@ -407,7 +407,7 @@ test.describe('Review Summary page', () => {
     );
   });
 
-  test('admin reviews the proposal in place: + Add review swaps the panel, submit returns the list with a (You) row', async ({
+  test('admin reviews the proposal in place: Add review swaps the panel, submit returns the list with a (You) row', async ({
     authenticatedPage: page,
     org,
   }) => {
@@ -461,11 +461,14 @@ test.describe('Review Summary page', () => {
     const urlOnArrival = page.url();
 
     // ====================================================================
-    // Step 1: "+ Add review" (below the reviewer list) swaps the panel to the
+    // Step 1: "Add review" (on their own pending card) swaps the panel to the
     //          form, in place: proposal still on the left, URL unchanged
     // ====================================================================
 
-    const addReview = page.getByRole('button', { name: '+ Add review' });
+    const addReview = page.getByRole('button', {
+      name: 'Add review',
+      exact: true,
+    });
     await expect(addReview).toBeVisible();
 
     // Nothing submitted yet, so no average to show — but the counts line stays.
@@ -548,9 +551,9 @@ test.describe('Review Summary page', () => {
     await expect(page.getByText('Yes (1)').first()).toBeVisible();
     await expect(page.getByText('Average score:').first()).toBeVisible();
 
-    // Submitted, so the button below the list is gone — the row is the entry.
+    // Submitted, so the card button is gone — the row is the entry.
     await expect(
-      page.getByRole('button', { name: '+ Add review' }),
+      page.getByRole('button', { name: 'Add review', exact: true }),
     ).toHaveCount(0);
 
     // The form's actions left the top bar with it.
@@ -690,11 +693,11 @@ test.describe('Review Summary page', () => {
       { waitUntil: 'domcontentloaded' },
     );
 
-    // Submitted, so no "+ Add review"; their own row carries the review.
+    // Submitted, so no "Add review"; their own row carries the review.
     const ownRow = page.getByRole('button', { name: /\(You\)$/ });
     await expect(ownRow).toHaveCount(1, { timeout: 36_000 });
     await expect(
-      page.getByRole('button', { name: '+ Add review' }),
+      page.getByRole('button', { name: 'Add review', exact: true }),
     ).toHaveCount(0);
 
     // Drilling in shows the submitted review read-only: the phase has passed,
