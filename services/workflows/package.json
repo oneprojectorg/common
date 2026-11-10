@@ -11,6 +11,7 @@
     "dev": "inngest-cli dev",
     "format:check": "oxfmt --check",
     "test": "vitest run",
+    "test:bench": "vitest bench --run --project integration",
     "test:coverage": "vitest run --coverage",
     "typecheck": "tsc --noEmit"
   },
