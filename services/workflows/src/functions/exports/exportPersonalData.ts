@@ -1,5 +1,7 @@
 import {
+  PERSONAL_DATA_EXPORT_FILE_LIFETIME_MS,
   collectPersonalData,
+  expirePersonalDataExport,
   personalDataExportCacheKey,
   personalDataExportFileName,
   personalDataExportFilePath,
@@ -22,15 +24,18 @@ export const exportPersonalData = inngest.createFunction(
       event.data,
     );
 
-    return runExportJob({
+    // read back from the memoized step on every replay
+    let fileName: string | undefined;
+
+    const result = await runExportJob({
       step,
       exportId,
       cacheKey: personalDataExportCacheKey(exportId),
       channel: Channels.personalDataExport(exportId),
       seed: { userId },
       // One step so the file never crosses a step boundary into Inngest state.
-      produce: () =>
-        step.run('collect-and-upload', async () => {
+      produce: async () => {
+        const produced = await step.run('collect-and-upload', async () => {
           const data = await collectPersonalData({ authUserId: userId });
           const fileName = personalDataExportFileName();
 
@@ -47,7 +52,23 @@ export const exportPersonalData = inngest.createFunction(
             urlExpiresAt,
             truncatedSections: data.truncatedSections,
           };
-        }),
+        });
+        fileName = produced.fileName;
+        return produced;
+      },
     });
+
+    // The file holds everything about the user, so it is kept only as long as
+    // it is offered. The app retires the offer on the same clock.
+    await step.sleep('hold-file', PERSONAL_DATA_EXPORT_FILE_LIFETIME_MS);
+
+    if (fileName) {
+      const expiring = fileName;
+      await step.run('expire-file', () =>
+        expirePersonalDataExport({ exportId, userId, fileName: expiring }),
+      );
+    }
+
+    return result;
   },
 );

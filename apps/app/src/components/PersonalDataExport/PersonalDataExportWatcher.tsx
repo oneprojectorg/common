@@ -142,9 +142,17 @@ const RunningExport = ({
     }
 
     const isPartial = Boolean(status.truncatedSections?.length);
+    // The server's clock, not ours: it deletes the file a fixed time after
+    // this, so counting from when this tab heard would outlast the file.
+    const completedAt = status.completedAt
+      ? Date.parse(status.completedAt)
+      : Number.NaN;
+    const readyAt = Number.isNaN(completedAt)
+      ? Date.now()
+      : Math.min(completedAt, Date.now());
 
     // the store refuses a second settle, so a repeat read reports nothing
-    if (!complete(exportId, { isPartial })) {
+    if (!complete(exportId, { isPartial, readyAt })) {
       return;
     }
 

@@ -1,4 +1,6 @@
+import { PERSONAL_DATA_EXPORT_FILE_LIFETIME_MS } from '@op/common/client';
 import { create } from 'zustand';
+import type { StateStorage } from 'zustand/middleware';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
 /**
@@ -12,10 +14,12 @@ export const PERSONAL_DATA_EXPORT_MAX_WAIT_MS = 30 * 60 * 1000;
 
 /**
  * How long a finished export stays offered before the row returns to "Download"
- * so the user can start a fresh one. Well inside the 24 hours the server keeps
- * the record, so the file is still there for the whole window.
+ * so the user can start a fresh one. The workflow deletes the file on the same
+ * clock, so `readyAt` is the server's completion time: the offer is withdrawn
+ * before the file goes.
  */
-export const PERSONAL_DATA_EXPORT_READY_TTL_MS = 60 * 60 * 1000;
+export const PERSONAL_DATA_EXPORT_READY_TTL_MS =
+  PERSONAL_DATA_EXPORT_FILE_LIFETIME_MS;
 
 /** The ready toast's id, so a newer run can close an older run's offer. */
 export const PERSONAL_DATA_EXPORT_READY_TOAST_ID = 'personal-data-export-ready';
@@ -44,7 +48,10 @@ interface PersonalDataExportStore {
    * Moves a running export to ready. False when that run is not the current one
    * or has already settled, so a repeat settle reports nothing.
    */
-  complete: (exportId: string, result: { isPartial: boolean }) => boolean;
+  complete: (
+    exportId: string,
+    result: { isPartial: boolean; readyAt: number },
+  ) => boolean;
   /** Returns to idle. False when that run is not the current one. */
   reset: (exportId: string) => boolean;
   /** Drops whatever run is held, for a sign-out. */
@@ -82,13 +89,13 @@ export const usePersonalDataExportStore = create<PersonalDataExportStore>()(
         }
         set({ state: { phase: 'idle' } });
       },
-      complete: (exportId, { isPartial }) => {
+      complete: (exportId, { isPartial, readyAt }) => {
         const { state } = get();
         if (state.phase !== 'running' || state.exportId !== exportId) {
           return false;
         }
         set({
-          state: { phase: 'ready', exportId, isPartial, readyAt: Date.now() },
+          state: { phase: 'ready', exportId, isPartial, readyAt },
         });
         return true;
       },
@@ -107,7 +114,7 @@ export const usePersonalDataExportStore = create<PersonalDataExportStore>()(
     }),
     {
       name: 'personal-data-export',
-      storage: createJSONStorage(() => sessionStorage),
+      storage: createJSONStorage(() => sessionStorageOrMemory),
       skipHydration: true,
       // a start in flight has no id to resume, so a reload drops it
       partialize: ({ state }) => ({
@@ -116,3 +123,34 @@ export const usePersonalDataExportStore = create<PersonalDataExportStore>()(
     },
   ),
 );
+
+// Session storage, or nothing when the browser blocks it or there is no window.
+//
+// `persist` must always get a storage. Given none, Zustand builds the store
+// without its `persist` API, and the watcher's `rehydrate()` call in the locale
+// layout would then throw on every page. Each call is guarded rather than
+// probed once, because access can fail at any time (blocked site data, a full
+// quota). The run then lives in memory only and is lost on reload.
+const sessionStorageOrMemory: StateStorage = {
+  getItem: (name) => {
+    try {
+      return window.sessionStorage.getItem(name);
+    } catch {
+      return null;
+    }
+  },
+  setItem: (name, value) => {
+    try {
+      window.sessionStorage.setItem(name, value);
+    } catch {
+      // keep the run in memory
+    }
+  },
+  removeItem: (name) => {
+    try {
+      window.sessionStorage.removeItem(name);
+    } catch {
+      // nothing stored to remove
+    }
+  },
+};
