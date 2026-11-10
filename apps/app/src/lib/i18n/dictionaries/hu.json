@@ -1039,6 +1039,7 @@
     "review": {
       "actionsColumn": "Műveletek",
       "remindAction": "Emlékeztetés",
+      "addReviewButton": "Értékelés hozzáadása",
       "remindAllAction": "Mindenki emlékeztetése",
       "remindReviewerLabel": "{name} emlékeztetése",
       "sendReminderAction": "Emlékeztető küldése",

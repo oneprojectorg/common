@@ -1039,6 +1039,7 @@
     "review": {
       "actionsColumn": "Ficilada",
       "remindAction": "Xusuusi",
+      "addReviewButton": "Ku dar dib-u-eegis",
       "remindAllAction": "Xusuusi dhammaan",
       "remindReviewerLabel": "Xusuusi {name}",
       "sendReminderAction": "Dir xusuusin",

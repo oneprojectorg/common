@@ -1039,6 +1039,7 @@
     "review": {
       "actionsColumn": "Actions",
       "remindAction": "Relancer",
+      "addReviewButton": "Ajouter une évaluation",
       "remindAllAction": "Relancer tout le monde",
       "remindReviewerLabel": "Relancer {name}",
       "sendReminderAction": "Envoyer un rappel",

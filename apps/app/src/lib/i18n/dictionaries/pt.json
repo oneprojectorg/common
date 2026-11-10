@@ -1039,6 +1039,7 @@
     "review": {
       "actionsColumn": "Ações",
       "remindAction": "Lembrar",
+      "addReviewButton": "Adicionar avaliação",
       "remindAllAction": "Lembrar todos",
       "remindReviewerLabel": "Lembrar {name}",
       "sendReminderAction": "Enviar lembrete",
