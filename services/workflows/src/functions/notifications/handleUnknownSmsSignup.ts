@@ -71,24 +71,36 @@ export const handleUnknownSmsSignup = inngest.createFunction(
 
     logger.info('SMS Signup trigger');
 
-    const flagEnabled = await step.run('check-feature-flag', () =>
-      isFeatureEnabled(SMS_SIGNUP_FEATURE_FLAG, 'server'),
-    );
+    const to = parseInboundNumber(from, 'signup');
 
-    if (!flagEnabled) {
+    const context = await step.run('resolve-signup-context', async () => {
+      const flagEnabled = await isFeatureEnabled(
+        SMS_SIGNUP_FEATURE_FLAG,
+        'server',
+      );
+      if (!flagEnabled || !to) {
+        return { flagEnabled, state: null, line: null };
+      }
+      const state = await getPhoneSignupState({ phone: to });
+      if (state.status !== 'free') {
+        return { flagEnabled, state, line: null };
+      }
+      const line = inboundTo
+        ? await findDecisionPhoneNumber({ phone: inboundTo })
+        : null;
+      return { flagEnabled, state, line };
+    });
+
+    if (!context.flagEnabled) {
       logger.info('SMS signup feature flag is disabled, skipping');
       return { message: 'sms signup disabled' };
     }
 
-    const to = parseInboundNumber(from, 'signup');
-
-    if (!to) {
+    if (!to || !context.state) {
       return INVALID_PHONE_RESULT;
     }
 
-    const state = await step.run('check-known-number', () =>
-      getPhoneSignupState({ phone: to }),
-    );
+    const { state, line } = context;
 
     if (state.status === 'confirmed') {
       logger.info('Inbound SMS from a known number, skipping signup flow', {
@@ -104,10 +116,6 @@ export const handleUnknownSmsSignup = inngest.createFunction(
       );
       return { message: 'signup attempt in progress, skipped' };
     }
-
-    const line = await step.run('resolve-line', async () =>
-      inboundTo ? await findDecisionPhoneNumber({ phone: inboundTo }) : null,
-    );
 
     const sendText = createTextSender({
       step,
