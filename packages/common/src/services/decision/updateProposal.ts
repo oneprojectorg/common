@@ -32,7 +32,6 @@ import { parseProposalData } from './proposalDataSchema';
 import { reconcileReviewAssignments } from './reconcileReviewAssignments';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
 import {
-  type DecisionInstanceData,
   type PhaseInstanceData,
   getInstancePhases,
   isLastPhase,
@@ -119,11 +118,8 @@ export const updateProposal = async ({
   // Validate proposal data against template schema when updating non-draft proposals.
   // Drafts are inherently incomplete — validation is enforced on submission.
   if (data.proposalData && existingProposal.status !== ProposalStatus.DRAFT) {
-    const instanceData =
-      processInstance.instanceData as DecisionInstanceData | null;
-
     const proposalTemplate = await resolveProposalTemplate(
-      instanceData,
+      processInstance.instanceData,
       processInstance.processId,
       existingProposal.formSchemaId,
     );
@@ -256,7 +252,7 @@ export const updateProposal = async ({
     const priorVersionId = priorData.collaborationDocVersionId;
     if (priorVersionId !== undefined && priorData.collaborationDocId) {
       const proposalTemplate = await resolveProposalTemplate(
-        processInstance.instanceData as DecisionInstanceData | null,
+        processInstance.instanceData,
         processInstance.processId,
         existingProposal.formSchemaId,
       );

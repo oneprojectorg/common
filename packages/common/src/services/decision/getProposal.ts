@@ -161,7 +161,6 @@ export const getProposal = async ({
     }
   }
 
-  // Read proposalTemplate from instanceData (new path) or processSchema (legacy path)
   const proposalTemplate = await resolveProposalTemplate(
     proposal.processInstance.instanceData,
     proposal.processInstance.processId,
