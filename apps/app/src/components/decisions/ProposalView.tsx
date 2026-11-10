@@ -72,16 +72,19 @@ export function ProposalView({
   // The server orders newest first.
   const latestRespondedAt = reviewNotes.noteGroups[0]?.respondedAt ?? null;
 
-  const proposalBodySections: ReactNode = (
-    <>
+  const proposalBody: ReactNode = (
+    <ProposalBody
+      selection={selection}
+      submissionMetaSuffix={
+        latestRespondedAt ? (
+          <RevisedOnBadge respondedAt={latestRespondedAt} />
+        ) : undefined
+      }
+    >
       <ProposalContributingIdeas />
       <ProposalCommentsSection />
-    </>
+    </ProposalBody>
   );
-
-  const submissionMetaSuffix = latestRespondedAt ? (
-    <RevisedOnBadge respondedAt={latestRespondedAt} />
-  ) : undefined;
 
   const asidePane: ReactNode = reviewNotes.isOpen ? (
     <div className="flex flex-col gap-6 px-12 pt-12 pb-4">
@@ -95,39 +98,37 @@ export function ProposalView({
   ) : null;
 
   return (
-    <ProposalProvider
-      proposal={currentProposal}
-      decisionRoot={decisionRoot}
-      documentState={documentState}
+    <ProposalViewLayout
+      backHref={backHref}
+      reportProposalId={proposalId}
+      editHref={editHref}
+      canEdit={canEdit}
+      // Same viewer-access bit the comments prompt reads (getProposal mirrors
+      // the decision profile's SUBMIT_PROPOSALS grant onto proposal.access),
+      // so the Join button, the modal mount, and the prompt can't diverge —
+      // on any route that renders a proposal, including the legacy one.
+      canJoin={currentProposal.access?.submitProposals === true}
+      commentsEnabled={commentsEnabled}
+      moderationProposal={affordances.moderation ? currentProposal : undefined}
+      notices={
+        <ProposalMergeNotice
+          proposal={currentProposal}
+          decisionRoot={decisionRoot}
+        />
+      }
+      reviewNotesToggle={
+        reviewNotes.hasReviewNotes
+          ? {
+              onToggle: reviewNotes.toggle,
+              isActive: reviewNotes.isOpen,
+            }
+          : undefined
+      }
     >
-      <ProposalViewLayout
-        backHref={backHref}
-        reportProposalId={proposalId}
-        editHref={editHref}
-        canEdit={canEdit}
-        // Same viewer-access bit the comments prompt reads (getProposal mirrors
-        // the decision profile's SUBMIT_PROPOSALS grant onto proposal.access),
-        // so the Join button, the modal mount, and the prompt can't diverge —
-        // on any route that renders a proposal, including the legacy one.
-        canJoin={currentProposal.access?.submitProposals === true}
-        commentsEnabled={commentsEnabled}
-        moderationProposal={
-          affordances.moderation ? currentProposal : undefined
-        }
-        notices={
-          <ProposalMergeNotice
-            proposal={currentProposal}
-            decisionRoot={decisionRoot}
-          />
-        }
-        reviewNotesToggle={
-          reviewNotes.hasReviewNotes
-            ? {
-                onToggle: reviewNotes.toggle,
-                isActive: reviewNotes.isOpen,
-              }
-            : undefined
-        }
+      <ProposalProvider
+        proposal={currentProposal}
+        decisionRoot={decisionRoot}
+        documentState={documentState}
       >
         {asidePane ? (
           <SplitPane className="mx-auto w-full max-w-6xl">
@@ -135,12 +136,7 @@ export function ProposalView({
               id="proposal"
               label={t('decisions.proposals.proposalLabel')}
             >
-              <ProposalBody
-                selection={selection}
-                submissionMetaSuffix={submissionMetaSuffix}
-              >
-                {proposalBodySections}
-              </ProposalBody>
+              {proposalBody}
             </SplitPane.Pane>
             <SplitPane.Pane
               id="reviewNotes"
@@ -155,16 +151,10 @@ export function ProposalView({
           // Figma: 544px (max-w-136) centred column, 56px vertical padding and a
           // 40px region gap on desktop; 16/32 padding and a 24px gap on mobile.
           <div className="flex-1 px-4 py-8 sm:px-6 sm:py-14">
-            <ProposalBody
-              className="mx-auto max-w-136"
-              selection={selection}
-              submissionMetaSuffix={submissionMetaSuffix}
-            >
-              {proposalBodySections}
-            </ProposalBody>
+            <div className="mx-auto max-w-136">{proposalBody}</div>
           </div>
         )}
-      </ProposalViewLayout>
-    </ProposalProvider>
+      </ProposalProvider>
+    </ProposalViewLayout>
   );
 }

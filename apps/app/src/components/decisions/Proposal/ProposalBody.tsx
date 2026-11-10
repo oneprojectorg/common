@@ -5,7 +5,6 @@ import {
   useProposalEngagement,
 } from '@/hooks/useProposalEngagement';
 import type { ProposalSelection } from '@op/common/client';
-import { cn } from '@op/sense/lib/utils';
 import type { ReactNode } from 'react';
 
 import { ProposalPreview, toPreviewEngagement } from '../ProposalPreview';
@@ -18,7 +17,6 @@ interface ProposalBodyProps {
   selection?: ProposalSelection | null;
   submissionMetaSuffix?: ReactNode;
   headerBanner?: ReactNode;
-  className?: string;
   /** Sections after the proposal, e.g. contributing ideas and comments. */
   children?: ReactNode;
 }
@@ -34,7 +32,6 @@ export function ProposalBody({
   selection,
   submissionMetaSuffix,
   headerBanner,
-  className,
   children,
 }: ProposalBodyProps) {
   const { proposal, documentState, translation } = useProposal();
@@ -47,7 +44,7 @@ export function ProposalBody({
 
   return (
     // Each section's own `pt` mirrors this gap, centring the rules between.
-    <div className={cn('flex flex-col gap-6 sm:gap-10', className)}>
+    <div className="flex flex-col gap-6 sm:gap-10">
       <ProposalPreview
         proposal={proposal}
         documentState={documentState}
