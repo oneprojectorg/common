@@ -8,11 +8,7 @@ import type { ProposalSelection } from '@op/common/client';
 import { cn } from '@op/sense/lib/utils';
 import type { ReactNode } from 'react';
 
-import {
-  ProposalPreview,
-  type ProposalPreviewProps,
-  toPreviewEngagement,
-} from '../ProposalPreview';
+import { ProposalPreview, toPreviewEngagement } from '../ProposalPreview';
 import { TranslateLink } from '../TranslateLink';
 import { useProposal } from './proposalContext';
 
@@ -42,42 +38,28 @@ export function ProposalBody({
   children,
 }: ProposalBodyProps) {
   const { proposal, documentState, translation } = useProposal();
-
-  const previewProps: ProposalPreviewProps = {
+  // Everyone sees the counts; only a signed-in member with engagement access
+  // gets the controls (the hook returns undefined otherwise).
+  const proposalEngagement = useProposalEngagement({
     proposal,
-    documentState,
-    selection,
-    translation: translation.translation,
-    translateLink: <TranslateLink translation={translation.link} />,
-    submissionMetaSuffix,
-    headerBanner,
-  };
+    canEngage: engagement && canEngageWithProposals(proposal.access),
+  });
 
   return (
     // Each section's own `pt` mirrors this gap, centring the rules between.
     <div className={cn('flex flex-col gap-6 sm:gap-10', className)}>
-      {engagement ? (
-        <EngagedProposalPreview {...previewProps} />
-      ) : (
-        <ProposalPreview {...previewProps} />
-      )}
+      <ProposalPreview
+        proposal={proposal}
+        documentState={documentState}
+        selection={selection}
+        engagement={toPreviewEngagement(proposalEngagement)}
+        translation={translation.translation}
+        translateLink={<TranslateLink translation={translation.link} />}
+        submissionMetaSuffix={submissionMetaSuffix}
+        headerBanner={headerBanner}
+      />
 
       {children}
     </div>
-  );
-}
-
-/**
- * Everyone sees the counts; only a signed-in member with engagement access
- * gets the controls (the hook returns undefined otherwise).
- */
-function EngagedProposalPreview(props: ProposalPreviewProps) {
-  const engagement = useProposalEngagement({
-    proposal: props.proposal,
-    canEngage: canEngageWithProposals(props.proposal.access),
-  });
-
-  return (
-    <ProposalPreview {...props} engagement={toPreviewEngagement(engagement)} />
   );
 }

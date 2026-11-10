@@ -4,10 +4,7 @@ import type { Proposal } from '@op/common/client';
 import { type ReactNode, createContext, useContext } from 'react';
 
 import type { ProposalDocumentState } from '../useLiveProposalDocument';
-import {
-  type ProposalTranslationState,
-  useTranslateProposal,
-} from '../useTranslateProposal';
+import { useTranslateProposal } from '../useTranslateProposal';
 
 export interface ProposalContextValue {
   proposal: Proposal;
@@ -18,7 +15,7 @@ export interface ProposalContextValue {
    * collaboration document arrives. Absent reads as `ready`.
    */
   documentState?: ProposalDocumentState;
-  translation: ProposalTranslationState;
+  translation: ReturnType<typeof useTranslateProposal>;
 }
 
 const ProposalContext = createContext<ProposalContextValue | null>(null);
