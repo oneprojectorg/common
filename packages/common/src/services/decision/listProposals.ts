@@ -267,7 +267,6 @@ export const listProposals = async ({
 
   type ProposalListItem = (typeof proposalList)[number];
 
-  // Each row's template: its form schema, else the instance template.
   const [templateFor, advanceTarget] = await Promise.all([
     resolveProposalTemplatesByFormSchemaId({
       formSchemaIds: proposalList.map((proposal) => proposal.formSchemaId),

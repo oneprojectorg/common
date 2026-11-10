@@ -237,7 +237,6 @@ export const listAllProposals = async ({
   const hasMore = proposalList.length > limit;
   const pageItems = hasMore ? proposalList.slice(0, limit) : proposalList;
 
-  // Each row's template: its form schema, else the instance template.
   const templateFor = await resolveProposalTemplatesByFormSchemaId({
     formSchemaIds: pageItems.map((proposal) => proposal.formSchemaId),
     instanceData: instance.instanceData,

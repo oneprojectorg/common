@@ -133,7 +133,7 @@ export const proposals = pgTable(
 
     shortCode: integer('short_code'),
 
-    // Outside proposalColumns on purpose: a proposal's form schema never changes, so history gains nothing from it.
+    // Outside proposalColumns on purpose: history doesn't track the template yet.
     formSchemaId: uuid('form_schema_id').references(() => formSchemas.id, {
       onUpdate: 'cascade',
       onDelete: 'restrict',
