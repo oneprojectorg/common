@@ -9,7 +9,10 @@ import { LuDownload, LuTriangleAlert } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { usePersonalDataExportStore } from './personalDataExportStore';
+import {
+  PERSONAL_DATA_EXPORT_READY_TOAST_ID,
+  usePersonalDataExportStore,
+} from './personalDataExportStore';
 import { useDownloadPersonalDataExport } from './useDownloadPersonalDataExport';
 
 /**
@@ -45,11 +48,26 @@ export const DownloadDataAction = () => {
 
   const isRunning = state.phase === 'starting' || state.phase === 'running';
 
+  const startNewExport = () => {
+    if (!begin()) {
+      return;
+    }
+    // the previous run's offer no longer stands
+    toast.close(PERSONAL_DATA_EXPORT_READY_TOAST_ID);
+    startExport.mutate(undefined);
+  };
+
   return (
     // the label is the status, so a change to it is announced
-    <div aria-live="polite">
+    <div aria-live="polite" className="flex flex-wrap gap-2">
       {state.phase === 'ready' ? (
-        <DownloadFileButton exportId={state.exportId} />
+        <>
+          <DownloadFileButton exportId={state.exportId} />
+          {/* the file is a snapshot; a later one needs a new run */}
+          <Button variant="ghost" onClick={startNewExport}>
+            {t('downloadDataNewExport')}
+          </Button>
+        </>
       ) : (
         <Button
           variant="outline"
@@ -58,11 +76,7 @@ export const DownloadDataAction = () => {
           disabled={isRunning}
           focusableWhenDisabled
           aria-busy={isRunning}
-          onClick={() => {
-            if (begin()) {
-              startExport.mutate(undefined);
-            }
-          }}
+          onClick={startNewExport}
         >
           {isRunning ? t('downloadDataPreparing') : t('downloadAction')}
         </Button>

@@ -396,7 +396,7 @@ const ExportProposalsButtonContent = ({
       signedUrl: data && 'signedUrl' in data ? data.signedUrl : undefined,
     });
 
-    if (outcome === 'recovered' || outcome === 'failure-already-reported') {
+    if (outcome === 'recovered' || outcome === 'run-failed') {
       return;
     }
 

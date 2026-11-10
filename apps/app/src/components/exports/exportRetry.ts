@@ -1,12 +1,11 @@
 /**
- * Union of the four things a "Retry download" click can mean, one per result of
- * re-reading the export record.
+ * Union of the four things re-reading a finished export's record can mean, when
+ * the user asks for its file again.
  *
- * The variants are string literals rather than an object, because the caller
- * only branches on which one it got. Each carries its reasoning below, which is
- * the point of this module.
+ * Shared by the proposals CSV export and the personal data export. The helper
+ * only names the outcome; each caller decides what to report for it.
  *
- * This lives apart from the component so a test can drive the four outcomes
+ * This lives apart from the components so a test can drive the four outcomes
  * directly. `apps/app` runs Vitest under `environment: 'node'`, and this
  * workspace installs no DOM, so it supports no component test.
  *
@@ -14,25 +13,23 @@
  * client must refuse to retire an export id it cannot prove is gone.
  */
 export type ExportRetryOutcome =
-  /** The server minted a URL. The download is on screen. Report nothing. */
+  /** The server minted a URL. The caller can hand over the file. */
   | 'recovered'
   /**
-   * The run failed. The `isFailed` effect already shows a toast and resets the
-   * button. A second message would duplicate it, and would also misdescribe it:
-   * that state needs a fresh export, not another retry.
+   * The run failed. Only a new export helps. A caller that already reported the
+   * failure when the run settled should not report it twice.
    */
-  | 'failure-already-reported'
+  | 'run-failed'
   /**
    * The record is absent, because it aged out of its 24 hour life. Nothing
-   * returns it. Holding the id would set `isRunning` back to true, revert the
-   * label to "Preparing...", and time out a run that finished.
+   * returns it, so the caller should retire the id rather than wait on it.
    */
   | 'record-gone'
   /**
    * The read did not settle. A request failed, or signing failed, or the run is
    * still in flight. Report it and keep the export id. The object is most
    * likely still in the bucket, and discarding the only handle to it costs a
-   * re-export of up to a thousand proposals.
+   * whole re-export.
    */
   | 'still-unavailable';
 
@@ -71,7 +68,7 @@ export const resolveExportRetryOutcome = ({
   }
 
   if (status === 'failed') {
-    return 'failure-already-reported';
+    return 'run-failed';
   }
 
   // Only an answered read proves absence. `errored` covers a server that could

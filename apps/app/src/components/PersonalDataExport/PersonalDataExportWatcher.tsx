@@ -11,15 +11,20 @@ import { EXPORT_WAIT_TIMEOUT_MS } from '@/components/exports/exportWait';
 
 import {
   PERSONAL_DATA_EXPORT_MAX_WAIT_MS,
+  PERSONAL_DATA_EXPORT_READY_TOAST_ID,
   usePersonalDataExportStore,
 } from './personalDataExportStore';
-import { useDownloadPersonalDataExport } from './useDownloadPersonalDataExport';
+import {
+  isExportUnreachableError,
+  useDownloadPersonalDataExport,
+} from './useDownloadPersonalDataExport';
 
 /**
  * Follows a running personal data export to its end, wherever the user is.
  *
  * Mounted once in the locale layout, because every page header has its own
- * avatar menu and the settings modal unmounts on close. Renders nothing.
+ * avatar menu and the settings modal unmounts on close. Renders nothing. It
+ * also restores the store from session storage, so a run survives a reload.
  *
  * The finished file is offered, not downloaded: a save dialog firing minutes
  * later, mid-task, is easy to miss. The offer stays until it is dismissed, and
@@ -31,6 +36,10 @@ import { useDownloadPersonalDataExport } from './useDownloadPersonalDataExport';
  */
 export const PersonalDataExportWatcher = () => {
   const state = usePersonalDataExportStore((store) => store.state);
+
+  useEffect(() => {
+    void usePersonalDataExportStore.persist.rehydrate();
+  }, []);
 
   if (state.phase !== 'running') {
     return null;
@@ -59,24 +68,33 @@ const RunningExport = ({
   // bumped to re-arm the silence timer when a re-read finds the run unchanged
   const [silentPeriods, setSilentPeriods] = useState(0);
 
-  const { data: status, refetch } =
-    trpc.account.getPersonalDataExportStatus.useQuery(
-      { exportId },
-      { retry: 2 },
-    );
+  const {
+    data: status,
+    error: readError,
+    refetch,
+  } = trpc.account.getPersonalDataExportStatus.useQuery(
+    { exportId },
+    { retry: 2 },
+  );
 
   const reportedStatus = status?.status;
+  const isUnreachable = isExportUnreachableError(readError);
 
-  // Settles on an answer from the server. A failed read is not an answer: the
-  // run may be fine, so the silence timer below retries it.
+  // Settles on an answer from the server. A failed read is usually not one: the
+  // run may be fine, so the silence timer below retries it. Only a read refused
+  // for good (signed out, someone else's run) ends it here.
   useEffect(() => {
     // The record is written before the run is queued, so its absence means it
     // aged out or was never stored.
-    if (status?.status === 'failed' || status?.status === 'not_found') {
+    if (
+      isUnreachable ||
+      status?.status === 'failed' ||
+      status?.status === 'not_found'
+    ) {
       if (reset(exportId)) {
         logger.error('Personal data export failed', {
           exportId,
-          status: status.status,
+          status: isUnreachable ? 'unreachable' : status?.status,
         });
         toast.error(t('downloadDataFailed'));
       }
@@ -96,6 +114,7 @@ const RunningExport = ({
 
     toast.success(t('downloadDataReady'), {
       description: isPartial ? t('downloadDataPartial') : undefined,
+      id: PERSONAL_DATA_EXPORT_READY_TOAST_ID,
       // the run may have taken many minutes; keep the offer until dismissed
       duration: 0,
       action: {
@@ -103,10 +122,11 @@ const RunningExport = ({
         onClick: () => void download(exportId),
       },
     });
-  }, [status, exportId, complete, reset, download, t]);
+  }, [status, isUnreachable, exportId, complete, reset, download, t]);
 
   // A broadcast can be lost and a read can fail, so silence triggers a re-read.
-  // A run that is merely slow keeps waiting, up to the cap.
+  // A run that is merely slow keeps waiting, up to the cap. The last period is
+  // cut short so the cap holds to within one re-read.
   useEffect(() => {
     if (
       reportedStatus === 'completed' ||
@@ -116,28 +136,50 @@ const RunningExport = ({
       return;
     }
 
+    const giveUp = (reason: string) => {
+      if (reset(exportId)) {
+        logger.error('Personal data export abandoned', {
+          exportId,
+          reason,
+          status: reportedStatus ?? 'unread',
+        });
+        toast.error(t('downloadDataFailed'));
+      }
+    };
+
     let cancelled = false;
-    const timer = setTimeout(async () => {
-      const { data } = await refetch();
+    const untilCap = startedAt + PERSONAL_DATA_EXPORT_MAX_WAIT_MS - Date.now();
+    const timer = setTimeout(
+      async () => {
+        const { data, error } = await refetch();
+        const next = data?.status;
 
-      // a new status re-runs both effects, which handle it
-      if (cancelled || (data && data.status !== reportedStatus)) {
-        return;
-      }
-
-      if (Date.now() - startedAt >= PERSONAL_DATA_EXPORT_MAX_WAIT_MS) {
-        if (reset(exportId)) {
-          logger.error('Personal data export timed out', {
-            exportId,
-            status: reportedStatus ?? 'unread',
-          });
-          toast.error(t('downloadDataFailed'));
+        if (cancelled) {
+          return;
         }
-        return;
-      }
 
-      setSilentPeriods((count) => count + 1);
-    }, EXPORT_WAIT_TIMEOUT_MS);
+        // a settled run is handled by the effect above
+        if (next === 'completed' || next === 'failed' || next === 'not_found') {
+          return;
+        }
+
+        if (error && isExportUnreachableError(error)) {
+          giveUp('unreachable');
+          return;
+        }
+
+        if (Date.now() - startedAt >= PERSONAL_DATA_EXPORT_MAX_WAIT_MS) {
+          giveUp('timed out');
+          return;
+        }
+
+        // a new status re-runs this effect, which re-arms the timer
+        if (next === reportedStatus) {
+          setSilentPeriods((count) => count + 1);
+        }
+      },
+      Math.max(0, Math.min(EXPORT_WAIT_TIMEOUT_MS, untilCap)),
+    );
 
     return () => {
       cancelled = true;
