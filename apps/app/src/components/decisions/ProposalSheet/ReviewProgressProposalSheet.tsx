@@ -3,6 +3,8 @@
 import { trpc } from '@op/api/client';
 import { PAGE_LIMIT } from '@op/common/client';
 import { Tabs, TabsContent } from '@op/sense/Tabs';
+import { useState } from 'react';
+import { flushSync } from 'react-dom';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -15,6 +17,8 @@ import { useCommentsAllowed } from '../useCommentsAllowed';
 import { ProposalReviewProgress } from './ProposalReviewProgress';
 import { ProposalSheetShell } from './ProposalSheetShell';
 
+type SectionTab = 'reviews' | 'comments';
+
 /**
  * The proposal sheet for the admin review-progress screens. The viewer is an
  * admin (the routes that mount it are admin-gated by their loaders), and
@@ -23,21 +27,54 @@ import { ProposalSheetShell } from './ProposalSheetShell';
 export function ReviewProgressProposalSheet({ phaseId }: { phaseId: string }) {
   return (
     <ProposalSheetShell>
-      <ProposalBody>
-        <ContributingIdeas />
-        <ReviewProgressSections phaseId={phaseId} />
-      </ProposalBody>
+      <ReviewProgressBody phaseId={phaseId} />
     </ProposalSheetShell>
   );
 }
 
-function ReviewProgressSections({ phaseId }: { phaseId: string }) {
+/** Inside the shell, so the open tab resets when the sheet shows another proposal. */
+function ReviewProgressBody({ phaseId }: { phaseId: string }) {
+  const [tab, setTab] = useState<SectionTab>('reviews');
+
+  return (
+    <ProposalBody
+      // Show the panel before the link follows its anchor, so the anchor is visible.
+      onCommentsLinkClick={() => flushSync(() => setTab('comments'))}
+    >
+      <ContributingIdeas />
+      <ReviewProgressSections
+        phaseId={phaseId}
+        tab={tab}
+        onTabChange={setTab}
+      />
+    </ProposalBody>
+  );
+}
+
+function ReviewProgressSections({
+  phaseId,
+  tab,
+  onTabChange,
+}: {
+  phaseId: string;
+  tab: SectionTab;
+  onTabChange: (tab: SectionTab) => void;
+}) {
   const t = useTranslations();
   const { proposal } = useProposal();
   const commentsAllowed = useCommentsAllowed(proposal.processInstanceId);
 
   return (
-    <Tabs defaultValue="reviews" className="gap-4">
+    <Tabs
+      value={tab}
+      onValueChange={(next) => {
+        // Tabs reports a plain value; only the two sections are real.
+        if (next === 'reviews' || next === 'comments') {
+          onTabChange(next);
+        }
+      }}
+      className="gap-4"
+    >
       <ProposalTabList aria-label={t('decisions.proposals.sheetSectionsLabel')}>
         <ProposalTabTrigger
           value="reviews"

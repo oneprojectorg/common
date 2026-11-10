@@ -91,6 +91,8 @@ export type ProposalPreviewProps = {
   submissionMetaSuffix?: ReactNode;
   /** Rendered between the header section and the proposal body. */
   headerBanner?: ReactNode;
+  /** Runs before the Comments link follows its anchor, e.g. to reveal a hidden panel. */
+  onCommentsLinkClick?: () => void;
   /**
    * Drives the body region when the collaboration document can't be rendered
    * yet. `'pending'` shows a loading state (still fetching/propagating),
@@ -109,6 +111,7 @@ export function ProposalPreview({
   translateLink,
   submissionMetaSuffix,
   headerBanner,
+  onCommentsLinkClick,
   documentState = 'ready',
 }: ProposalPreviewProps) {
   const t = useTranslations();
@@ -271,7 +274,11 @@ export function ProposalPreview({
             )}
           </div>
 
-          <EngagementRow proposal={proposal} engagement={engagement} />
+          <EngagementRow
+            proposal={proposal}
+            engagement={engagement}
+            onCommentsLinkClick={onCommentsLinkClick}
+          />
         </div>
 
         {headerBanner}
@@ -313,9 +320,11 @@ export function ProposalPreview({
 function EngagementRow({
   proposal,
   engagement,
+  onCommentsLinkClick,
 }: {
   proposal: Proposal;
   engagement?: ProposalEngagement;
+  onCommentsLinkClick?: () => void;
 }) {
   const t = useTranslations();
   const commentsEnabled = useCommentsAllowed(proposal.processInstanceId);
@@ -357,6 +366,7 @@ function EngagementRow({
       {commentsEnabled && (
         <ButtonLink
           href={`#${PROPOSAL_COMMENTS_ANCHOR_ID}`}
+          onClick={onCommentsLinkClick}
           variant="ghost"
           size="sm"
           className="px-2 text-muted-foreground hover:text-foreground"
