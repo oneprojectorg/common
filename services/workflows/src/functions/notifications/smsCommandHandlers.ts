@@ -280,129 +280,166 @@ export const vote: SmsCommandHandler = async (context) => {
     });
   }
 
-  const decision = await step.run('resolve-voting-decision', () =>
-    swallowUnreadable(() =>
+  const resolved = await step.run('resolve-vote-context', async () => {
+    const decision = await swallowUnreadable(() =>
       getSmsVotingDecision({
         authUserId: account.authUserId,
         decisionSlug: slug,
       }),
-    ),
-  );
+    );
+    if (!decision) {
+      return { kind: 'not_found' as const };
+    }
+    if (!decision.votingOpen) {
+      return { kind: 'closed' as const, name: decision.name };
+    }
+    const rule = decision.enrolment;
+    if (!rule) {
+      return {
+        kind: 'no_enrolment' as const,
+        name: decision.name,
+        slug: decision.slug,
+        instanceId: decision.instanceId,
+      };
+    }
+    const key = {
+      processInstanceId: decision.instanceId,
+      authUserId: account.authUserId,
+    };
+    const pending = await findPendingVoterEnrolment(key);
+    if (pending) {
+      const waitingOn = await pendingEnrolmentStep({
+        processInstanceId: decision.instanceId,
+        taxonomyTermId: pending.taxonomyTermId,
+        rule,
+      });
+      return waitingOn === 'awaiting_agree'
+        ? {
+            kind: 'pending_agree' as const,
+            name: decision.name,
+            termLabel: pending.termLabel,
+            attestation: rule.attestation,
+          }
+        : { kind: 'pending_welcome' as const, name: decision.name };
+    }
+    const existing = await findVoterEnrolment(key);
+    if (isVoterEnrolled(existing)) {
+      return {
+        kind: 'enrolled' as const,
+        name: decision.name,
+        slug: decision.slug,
+        instanceId: decision.instanceId,
+        budget: decision.budget,
+      };
+    }
+    return {
+      kind: 'start' as const,
+      name: decision.name,
+      instanceId: decision.instanceId,
+      rule,
+    };
+  });
 
-  if (!decision) {
-    return notFoundReply(deliver, context.argument);
-  }
-
-  if (!decision.votingOpen) {
-    return deliverAll({
-      deliver,
-      stepId: 'send-voting-closed',
-      label: 'Voting closed reply',
-      bodies: formatSmsVotingClosed(decision.name),
-      message: 'voting closed',
-    });
-  }
-
-  const rule = decision.enrolment;
-
-  if (!rule) {
-    return deliverAll({
-      deliver,
-      stepId: 'send-no-enrolment-needed',
-      label: 'No enrolment needed reply',
-      bodies: formatSmsNoEnrolmentNeeded(
-        decision.name,
-        context.line?.instanceId === decision.instanceId ? null : decision.slug,
-      ),
-      message: 'no enrolment needed',
-    });
-  }
-
-  const key = {
-    processInstanceId: decision.instanceId,
-    authUserId: account.authUserId,
-  };
-  const pending = await step.run('find-pending-enrolment', () =>
-    findPendingVoterEnrolment(key),
-  );
-
-  const resendAttestation = (termLabel: string | null, message: string) =>
+  const resendAttestation = (
+    name: string,
+    attestation: string,
+    termLabel: string | null,
+    message: string,
+  ) =>
     deliverAll({
       deliver,
       stepId: 'send-attestation-again',
       label: 'Attestation reply',
       bodies: formatSmsAddressResolved({
         termLabel,
-        decisionName: decision.name,
-        attestation: rule.attestation,
+        decisionName: name,
+        attestation,
       }),
       message,
     });
 
-  if (pending) {
-    const waitingOn = await step.run('derive-enrolment-step', () =>
-      pendingEnrolmentStep({
-        processInstanceId: decision.instanceId,
-        taxonomyTermId: pending.taxonomyTermId,
-        rule,
-      }),
-    );
-    if (waitingOn === 'awaiting_agree') {
-      return resendAttestation(pending.termLabel, 'attestation resent');
-    }
-    return deliverAll({
+  const enrolmentWelcome = (name: string) =>
+    deliverAll({
       deliver,
       stepId: 'send-enrolment-welcome',
       label: 'Registration welcome',
-      bodies: formatSmsEnrolmentWelcome(decision.name),
+      bodies: formatSmsEnrolmentWelcome(name),
       message: 'enrolment started',
     });
-  }
 
-  const existing = await step.run('find-enrolment', () =>
-    findVoterEnrolment(key),
-  );
-
-  if (isVoterEnrolled(existing)) {
-    return deliverAll({
-      deliver,
-      stepId: 'send-already-enrolled',
-      label: 'Already registered reply',
-      bodies: formatSmsEnrolled({
-        decisionName: decision.name,
-        termLabel: null,
-        budget: decision.budget,
-        slug:
-          context.line?.instanceId === decision.instanceId
+  switch (resolved.kind) {
+    case 'not_found':
+      return notFoundReply(deliver, context.argument);
+    case 'closed':
+      return deliverAll({
+        deliver,
+        stepId: 'send-voting-closed',
+        label: 'Voting closed reply',
+        bodies: formatSmsVotingClosed(resolved.name),
+        message: 'voting closed',
+      });
+    case 'no_enrolment':
+      return deliverAll({
+        deliver,
+        stepId: 'send-no-enrolment-needed',
+        label: 'No enrolment needed reply',
+        bodies: formatSmsNoEnrolmentNeeded(
+          resolved.name,
+          context.line?.instanceId === resolved.instanceId
             ? null
-            : decision.slug,
-      }),
-      message: 'already enrolled',
-    });
+            : resolved.slug,
+        ),
+        message: 'no enrolment needed',
+      });
+    case 'pending_agree':
+      return resendAttestation(
+        resolved.name,
+        resolved.attestation,
+        resolved.termLabel,
+        'attestation resent',
+      );
+    case 'pending_welcome':
+      return enrolmentWelcome(resolved.name);
+    case 'enrolled':
+      return deliverAll({
+        deliver,
+        stepId: 'send-already-enrolled',
+        label: 'Already registered reply',
+        bodies: formatSmsEnrolled({
+          decisionName: resolved.name,
+          termLabel: null,
+          budget: resolved.budget,
+          slug:
+            context.line?.instanceId === resolved.instanceId
+              ? null
+              : resolved.slug,
+        }),
+        message: 'already enrolled',
+      });
+    case 'start':
+      break;
   }
 
-  const started = await step.run('start-enrolment', () =>
-    startVoterEnrolment(key),
-  );
-  const waitingOn = await step.run('derive-enrolment-step', () =>
-    pendingEnrolmentStep({
-      processInstanceId: decision.instanceId,
-      taxonomyTermId: started.taxonomyTermId,
-      rule,
-    }),
-  );
+  const { rule, instanceId, name } = resolved;
+  const { waitingOn } = await step.run('start-enrolment', async () => {
+    const started = await startVoterEnrolment({
+      processInstanceId: instanceId,
+      authUserId: account.authUserId,
+    });
+    return {
+      waitingOn: await pendingEnrolmentStep({
+        processInstanceId: instanceId,
+        taxonomyTermId: started.taxonomyTermId,
+        rule,
+      }),
+    };
+  });
 
   if (waitingOn === 'awaiting_agree') {
-    return resendAttestation(null, 'attestation sent');
+    return resendAttestation(name, rule.attestation, null, 'attestation sent');
   }
 
-  return deliverAll({
-    deliver,
-    stepId: 'send-enrolment-welcome',
-    label: 'Registration welcome',
-    bodies: formatSmsEnrolmentWelcome(decision.name),
-    message: 'enrolment started',
-  });
+  return enrolmentWelcome(name);
 };
 
 export const agree: SmsCommandHandler = async (context) => {
@@ -416,43 +453,48 @@ export const agree: SmsCommandHandler = async (context) => {
       message: 'nothing to affirm',
     });
 
-  const pending = await step.run('find-pending-enrolment', () =>
-    findPendingVoterEnrolment({ authUserId: account.authUserId }),
-  );
-
-  if (!pending) {
-    return nothingToAffirm();
-  }
-
-  const decision = await step.run('describe-enrolment-decision', () =>
-    swallowUnreadable(() =>
+  const resolved = await step.run('resolve-agree-context', async () => {
+    const pending = await findPendingVoterEnrolment({
+      authUserId: account.authUserId,
+    });
+    if (!pending) {
+      return { kind: 'nothing' as const };
+    }
+    const decision = await swallowUnreadable(() =>
       describeEnrolmentDecision({
         instanceId: pending.processInstanceId,
         authUserId: account.authUserId,
       }),
-    ),
-  );
-  const rule = decision?.enrolment;
-
-  if (!decision || !rule || !decision.votingOpen) {
-    return nothingToAffirm();
-  }
-
-  const waitingOn = await step.run('derive-enrolment-step', () =>
-    pendingEnrolmentStep({
+    );
+    const rule = decision?.enrolment;
+    if (!decision || !rule || !decision.votingOpen) {
+      return { kind: 'nothing' as const };
+    }
+    const waitingOn = await pendingEnrolmentStep({
       processInstanceId: pending.processInstanceId,
       taxonomyTermId: pending.taxonomyTermId,
       rule,
-    }),
-  );
+    });
+    if (waitingOn !== 'awaiting_agree') {
+      return { kind: 'nothing' as const };
+    }
+    return {
+      kind: 'affirm' as const,
+      instanceId: pending.processInstanceId,
+      termLabel: pending.termLabel,
+      name: decision.name,
+      slug: decision.slug,
+      budget: decision.budget,
+    };
+  });
 
-  if (waitingOn !== 'awaiting_agree') {
+  if (resolved.kind === 'nothing') {
     return nothingToAffirm();
   }
 
   await step.run('affirm-attestation', () =>
     affirmVoterAttestation({
-      processInstanceId: pending.processInstanceId,
+      processInstanceId: resolved.instanceId,
       authUserId: account.authUserId,
     }),
   );
@@ -462,11 +504,10 @@ export const agree: SmsCommandHandler = async (context) => {
     stepId: 'send-enrolled',
     label: 'Registered reply',
     bodies: formatSmsEnrolled({
-      decisionName: decision.name,
-      termLabel: pending.termLabel,
-      budget: decision.budget,
-      slug:
-        line?.instanceId === pending.processInstanceId ? null : decision.slug,
+      decisionName: resolved.name,
+      termLabel: resolved.termLabel,
+      budget: resolved.budget,
+      slug: line?.instanceId === resolved.instanceId ? null : resolved.slug,
     }),
     message: 'enrolled',
   });
@@ -484,51 +525,58 @@ export const freeText: SmsCommandHandler = async (context) => {
     return sendSmsHelp(deliver);
   }
 
-  const pending = await step.run('find-pending-enrolment', () =>
-    findPendingVoterEnrolment({ authUserId: account.authUserId }),
-  );
   const codes = parseProposalCodes(address);
-  const pendingElsewhere =
-    line !== null &&
-    pending !== null &&
-    pending.processInstanceId !== line.instanceId;
 
   const codesOrHelp = () =>
     codes ? pickByCodes(context, codes) : sendSmsHelp(deliver);
 
-  if (!pending || (codes && pendingElsewhere)) {
-    return codesOrHelp();
-  }
-
-  const decision = await step.run('describe-enrolment-decision', () =>
-    swallowUnreadable(() =>
+  const resolved = await step.run('resolve-free-text-context', async () => {
+    const pending = await findPendingVoterEnrolment({
+      authUserId: account.authUserId,
+    });
+    const pendingElsewhere =
+      line !== null &&
+      pending !== null &&
+      pending.processInstanceId !== line.instanceId;
+    if (!pending || (codes && pendingElsewhere)) {
+      return { kind: 'codes_or_help' as const };
+    }
+    const decision = await swallowUnreadable(() =>
       describeEnrolmentDecision({
         instanceId: pending.processInstanceId,
         authUserId: account.authUserId,
       }),
-    ),
-  );
-  const rule = decision?.enrolment;
-
-  if (!decision || !rule || !decision.votingOpen) {
-    return sendSmsHelp(deliver);
-  }
-
-  const waitingOn = await step.run('derive-enrolment-step', () =>
-    pendingEnrolmentStep({
+    );
+    const rule = decision?.enrolment;
+    if (!decision || !rule || !decision.votingOpen) {
+      return { kind: 'help' as const };
+    }
+    const waitingOn = await pendingEnrolmentStep({
       processInstanceId: pending.processInstanceId,
       taxonomyTermId: pending.taxonomyTermId,
       rule,
-    }),
-  );
+    });
+    if (waitingOn !== 'awaiting_address') {
+      return { kind: 'codes_or_help' as const };
+    }
+    return {
+      kind: 'awaiting_address' as const,
+      instanceId: pending.processInstanceId,
+      name: decision.name,
+      attestation: rule.attestation,
+    };
+  });
 
-  if (waitingOn !== 'awaiting_address') {
+  if (resolved.kind === 'codes_or_help') {
     return codesOrHelp();
+  }
+  if (resolved.kind === 'help') {
+    return sendSmsHelp(deliver);
   }
 
   const resolution = await step.run('resolve-address', () =>
     resolveVoterAddress({
-      processInstanceId: pending.processInstanceId,
+      processInstanceId: resolved.instanceId,
       authUserId: account.authUserId,
       address,
       geocode,
@@ -557,7 +605,7 @@ export const freeText: SmsCommandHandler = async (context) => {
         deliver,
         stepId: 'send-address-outside',
         label: 'Address outside reply',
-        bodies: formatSmsAddressOutside(decision.name),
+        bodies: formatSmsAddressOutside(resolved.name),
         message: 'address outside',
       });
     case 'resolved':
@@ -567,8 +615,8 @@ export const freeText: SmsCommandHandler = async (context) => {
         label: 'Attestation reply',
         bodies: formatSmsAddressResolved({
           termLabel: resolution.boundary?.name ?? null,
-          decisionName: decision.name,
-          attestation: rule.attestation,
+          decisionName: resolved.name,
+          attestation: resolved.attestation,
         }),
         message: 'address resolved',
       });
@@ -646,75 +694,111 @@ export const proposals: SmsCommandHandler = async (context) => {
     });
   }
 
-  const decision = await step.run('resolve-voting-decision', () =>
-    swallowUnreadable(() =>
+  const resolved = await step.run('resolve-ballot-page', async () => {
+    const decision = await swallowUnreadable(() =>
       getSmsVotingDecision({
         authUserId: account.authUserId,
         decisionSlug: slug,
       }),
-    ),
-  );
-
-  if (!decision) {
-    return notFoundReply(deliver, slug);
-  }
-
-  if (!decision.votingOpen) {
-    return deliverAll({
-      deliver,
-      stepId: 'send-voting-closed',
-      label: 'Voting closed reply',
-      bodies: formatSmsVotingClosed(decision.name),
-      message: 'voting closed',
-    });
-  }
-
-  if (decision.enrolment) {
-    const enrolment = await step.run('find-enrolment', () =>
-      findVoterEnrolment({
+    );
+    if (!decision) {
+      return { kind: 'not_found' as const };
+    }
+    if (!decision.votingOpen) {
+      return { kind: 'closed' as const, name: decision.name };
+    }
+    if (decision.enrolment) {
+      const enrolment = await findVoterEnrolment({
         processInstanceId: decision.instanceId,
         authUserId: account.authUserId,
-      }),
-    );
+      });
+      if (!isVoterEnrolled(enrolment)) {
+        return { kind: 'register_first' as const, name: decision.name };
+      }
+    }
+    const page = await readBallot({
+      authUserId: account.authUserId,
+      instanceId: decision.instanceId,
+      decision: { name: decision.name, slug: decision.slug },
+      fn: () =>
+        listSmsBallotPage({
+          authUserId: account.authUserId,
+          instanceId: decision.instanceId,
+          phoneNumberId: context.line?.id,
+        }),
+    });
+    return { kind: 'page' as const, instanceId: decision.instanceId, page };
+  });
 
-    if (!isVoterEnrolled(enrolment)) {
+  switch (resolved.kind) {
+    case 'not_found':
+      return notFoundReply(deliver, slug);
+    case 'closed':
+      return deliverAll({
+        deliver,
+        stepId: 'send-voting-closed',
+        label: 'Voting closed reply',
+        bodies: formatSmsVotingClosed(resolved.name),
+        message: 'voting closed',
+      });
+    case 'register_first':
       return deliverAll({
         deliver,
         stepId: 'send-register-first',
         label: 'Register first reply',
-        bodies: [formatSmsRegisterFirst(decision.name, context.argument)],
+        bodies: [formatSmsRegisterFirst(resolved.name, context.argument)],
         message: 'register first',
       });
-    }
+    case 'page':
+      return resolved.page.ok
+        ? deliverBallotPage(
+            context,
+            resolved.page.value,
+            'first',
+            resolved.instanceId,
+          )
+        : refuseBallotRead(context, resolved.page, resolved.instanceId);
   }
-
-  const page = await step.run('list-ballot-page', () =>
-    readBallot(() =>
-      listSmsBallotPage({
-        authUserId: account.authUserId,
-        instanceId: decision.instanceId,
-        phoneNumberId: context.line?.id,
-      }),
-    ),
-  );
-
-  return page.ok
-    ? deliverBallotPage(context, page.value, 'first', decision.instanceId)
-    : refuseBallotRead(context, page, decision.instanceId);
 };
 
+type RefusalDecision = { name: string; slug: string } | null;
+
 type BallotRefusal =
-  | { reason: 'unavailable' | 'not_enrolled' | 'closed' }
-  | { reason: 'unpriced'; message: string };
+  | { reason: 'unavailable' }
+  | { reason: 'unpriced'; message: string }
+  | { reason: 'not_enrolled' | 'closed'; decision: RefusalDecision };
 
 type BallotRead<T> = { ok: true; value: T } | ({ ok: false } & BallotRefusal);
 
-const readBallot = async <T>(fn: () => Promise<T>): Promise<BallotRead<T>> => {
+const readBallot = async <T>({
+  authUserId,
+  instanceId,
+  decision,
+  fn,
+}: {
+  authUserId: string;
+  instanceId: string;
+  decision?: RefusalDecision;
+  fn: () => Promise<T>;
+}): Promise<BallotRead<T>> => {
+  const lookupDecision = async (): Promise<RefusalDecision> => {
+    const described = await swallowUnreadable(() =>
+      describeEnrolmentDecision({ instanceId, authUserId }),
+    );
+    return described ? { name: described.name, slug: described.slug } : null;
+  };
+  const classify = async (
+    reason: 'not_enrolled' | 'closed',
+  ): Promise<BallotRead<T>> => ({
+    ok: false,
+    reason,
+    decision: decision !== undefined ? decision : await lookupDecision(),
+  });
   try {
     return { ok: true, value: await fn() };
   } catch (error) {
     if (error instanceof VoterNotEnrolledError) {
-      return { ok: false, reason: 'not_enrolled' };
+      return classify('not_enrolled');
     }
     if (error instanceof NotFoundError || error instanceof UnauthorizedError) {
       return { ok: false, reason: 'unavailable' };
@@ -723,18 +807,17 @@ const readBallot = async <T>(fn: () => Promise<T>): Promise<BallotRead<T>> => {
       return { ok: false, reason: 'unpriced', message: error.message };
     }
     if (error instanceof ValidationError) {
-      return { ok: false, reason: 'closed' };
+      return classify('closed');
     }
     throw error;
   }
 };
 
-const refuseBallotRead = async (
-  { step, account, deliver, line }: SmsCommandContext,
+const refuseBallotRead = (
+  { deliver, line }: SmsCommandContext,
   refusal: BallotRefusal,
   instanceId: string,
 ): Promise<SmsCommandResult> => {
-  const { reason } = refusal;
   if (refusal.reason === 'unpriced') {
     return deliverAll({
       deliver,
@@ -744,7 +827,7 @@ const refuseBallotRead = async (
       message: 'ballot unpriced',
     });
   }
-  if (reason === 'unavailable') {
+  if (refusal.reason === 'unavailable' || !refusal.decision) {
     return deliverAll({
       deliver,
       stepId: 'send-ballot-unavailable',
@@ -753,21 +836,8 @@ const refuseBallotRead = async (
       message: 'decision not found',
     });
   }
-  const decision = await step.run('describe-refused-decision', () =>
-    swallowUnreadable(() =>
-      describeEnrolmentDecision({ instanceId, authUserId: account.authUserId }),
-    ),
-  );
-  if (!decision) {
-    return deliverAll({
-      deliver,
-      stepId: 'send-ballot-unavailable',
-      label: 'Ballot unavailable reply',
-      bodies: [SMS_BALLOT_UNAVAILABLE_MESSAGE],
-      message: 'decision not found',
-    });
-  }
-  return reason === 'closed'
+  const { decision } = refusal;
+  return refusal.reason === 'closed'
     ? deliverAll({
         deliver,
         stepId: 'send-voting-closed',
@@ -808,33 +878,50 @@ const deliverBallotPage = async (
   return sent;
 };
 
-const resolveBrowseInstance = async ({
-  step,
+const findBrowseInstance = async ({
   account,
   line,
-}: SmsCommandContext): Promise<string | null> => {
-  const session = await step.run('find-latest-session', () =>
-    findLatestChatSession({
-      authUserId: account.authUserId,
-      ...(line ? { phoneNumberId: line.id } : {}),
-    }),
-  );
+}: Pick<SmsCommandContext, 'account' | 'line'>): Promise<string | null> => {
+  const session = await findLatestChatSession({
+    authUserId: account.authUserId,
+    ...(line ? { phoneNumberId: line.id } : {}),
+  });
   return session?.processInstanceId ?? line?.instanceId ?? null;
 };
 
 export const more: SmsCommandHandler = async (context) => {
   const { step, account, deliver } = context;
-  const instanceId = await resolveBrowseInstance(context);
-  const session = instanceId
-    ? await step.run('find-chat-session', () =>
-        findChatSession({
+
+  const resolved = await step.run('resolve-next-ballot-page', async () => {
+    const instanceId = await findBrowseInstance(context);
+    const session = instanceId
+      ? await findChatSession({
           processInstanceId: instanceId,
           authUserId: account.authUserId,
+        })
+      : null;
+    if (!session || session.pageCursor === null) {
+      return { kind: 'not_started' as const };
+    }
+    const after = session.pageCursor;
+    const page = await readBallot({
+      authUserId: account.authUserId,
+      instanceId: session.processInstanceId,
+      fn: () =>
+        listSmsBallotPage({
+          authUserId: account.authUserId,
+          instanceId: session.processInstanceId,
+          after,
         }),
-      )
-    : null;
+    });
+    return {
+      kind: 'page' as const,
+      instanceId: session.processInstanceId,
+      page,
+    };
+  });
 
-  if (!session || session.pageCursor === null) {
+  if (resolved.kind === 'not_started') {
     return deliverAll({
       deliver,
       stepId: 'send-browse-start',
@@ -844,20 +931,14 @@ export const more: SmsCommandHandler = async (context) => {
     });
   }
 
-  const after = session.pageCursor;
-  const page = await step.run('list-ballot-page', () =>
-    readBallot(() =>
-      listSmsBallotPage({
-        authUserId: account.authUserId,
-        instanceId: session.processInstanceId,
-        after,
-      }),
-    ),
-  );
-
-  return page.ok
-    ? deliverBallotPage(context, page.value, 'next', session.processInstanceId)
-    : refuseBallotRead(context, page, session.processInstanceId);
+  return resolved.page.ok
+    ? deliverBallotPage(
+        context,
+        resolved.page.value,
+        'next',
+        resolved.instanceId,
+      )
+    : refuseBallotRead(context, resolved.page, resolved.instanceId);
 };
 
 export const info: SmsCommandHandler = async (context) => {
@@ -877,69 +958,84 @@ export const info: SmsCommandHandler = async (context) => {
     });
   }
 
-  const instanceId = await resolveBrowseInstance(context);
-
-  if (!instanceId) {
-    return deliverAll({
-      deliver,
-      stepId: 'send-info-needs-decision',
-      label: 'Info needs a decision',
-      bodies: [SMS_INFO_NEEDS_DECISION_MESSAGE],
-      message: 'info needs a decision',
+  const resolved = await step.run('resolve-proposal-info', async () => {
+    const instanceId = await findBrowseInstance(context);
+    if (!instanceId) {
+      return { kind: 'needs_decision' as const };
+    }
+    const read = await readBallot({
+      authUserId: account.authUserId,
+      instanceId,
+      fn: () =>
+        getSmsBallotProposal({
+          authUserId: account.authUserId,
+          instanceId,
+          code,
+        }),
     });
-  }
-
-  const read = await step.run('get-ballot-proposal', () =>
-    readBallot(() =>
-      getSmsBallotProposal({
-        authUserId: account.authUserId,
-        instanceId,
-        code,
-      }),
-    ),
-  );
-
-  if (!read.ok) {
-    return refuseBallotRead(context, read, instanceId);
-  }
-
-  const proposal = read.value;
-
-  if (!proposal) {
-    const slug = await browseSlugHint(context, instanceId, 'info');
-    return deliverAll({
-      deliver,
-      stepId: 'send-proposal-not-on-ballot',
-      label: 'Proposal not on ballot reply',
-      bodies: [formatSmsProposalNotOnBallot(code, slug)],
-      message: 'proposal not on ballot',
-    });
-  }
-
-  return deliverAll({
-    deliver,
-    stepId: 'send-proposal-info',
-    label: 'Proposal info',
-    bodies: formatSmsProposalInfo(proposal),
-    message: 'proposal info sent',
+    if (!read.ok) {
+      return { kind: 'refused' as const, instanceId, read };
+    }
+    if (!read.value) {
+      const slug = await findBrowseSlugHint(context, instanceId);
+      return { kind: 'miss' as const, slug };
+    }
+    return { kind: 'proposal' as const, proposal: read.value };
   });
+
+  switch (resolved.kind) {
+    case 'needs_decision':
+      return deliverAll({
+        deliver,
+        stepId: 'send-info-needs-decision',
+        label: 'Info needs a decision',
+        bodies: [SMS_INFO_NEEDS_DECISION_MESSAGE],
+        message: 'info needs a decision',
+      });
+    case 'refused':
+      return refuseBallotRead(context, resolved.read, resolved.instanceId);
+    case 'miss':
+      return deliverAll({
+        deliver,
+        stepId: 'send-proposal-not-on-ballot',
+        label: 'Proposal not on ballot reply',
+        bodies: [formatSmsProposalNotOnBallot(code, resolved.slug)],
+        message: 'proposal not on ballot',
+      });
+    case 'proposal':
+      return deliverAll({
+        deliver,
+        stepId: 'send-proposal-info',
+        label: 'Proposal info',
+        bodies: formatSmsProposalInfo(resolved.proposal),
+        message: 'proposal info sent',
+      });
+  }
 };
 
-const browseSlugHint = async (
-  { step, account, line }: SmsCommandContext,
+const findBrowseSlugHint = async (
+  { account, line }: Pick<SmsCommandContext, 'account' | 'line'>,
   instanceId: string,
-  stepTag: string,
 ): Promise<string | null> => {
   if (line?.instanceId === instanceId) {
     return null;
   }
-  const decision = await step.run(`describe-${stepTag}-hint-decision`, () =>
-    swallowUnreadable(() =>
-      describeEnrolmentDecision({ instanceId, authUserId: account.authUserId }),
-    ),
+  const decision = await swallowUnreadable(() =>
+    describeEnrolmentDecision({ instanceId, authUserId: account.authUserId }),
   );
   return decision?.slug ?? null;
 };
+
+const browseSlugHint = (
+  context: SmsCommandContext,
+  instanceId: string,
+  stepTag: string,
+): Promise<string | null> =>
+  context.line?.instanceId === instanceId
+    ? Promise.resolve(null)
+    : context.step.run(`describe-${stepTag}-hint-decision`, () =>
+        findBrowseSlugHint(context, instanceId),
+      );
 
 const parseProposalCodes = (body: string): number[] | null => {
   const tokens = body.split(/[\s,]+/).filter(Boolean);
@@ -962,94 +1058,47 @@ const formatMoney = (
 
 // The same choice as a browse, then the ballot the voter cast last on the
 // shared number, so a second SUBMIT finds it after the draft is gone.
-const resolveBallotInstance = async (
-  context: SmsCommandContext,
-): Promise<string | null> => {
-  const { step, account, line } = context;
-  const fromBrowse = await resolveBrowseInstance(context);
+const findBallotInstance = async ({
+  account,
+  line,
+}: Pick<SmsCommandContext, 'account' | 'line'>): Promise<string | null> => {
+  const fromBrowse = await findBrowseInstance({ account, line });
   if (fromBrowse || line) {
     return fromBrowse;
   }
-  return step.run('find-latest-cast-ballot', () =>
-    findLatestCastBallotInstance({ authUserId: account.authUserId }),
-  );
+  return findLatestCastBallotInstance({ authUserId: account.authUserId });
 };
 
-const refuseIfBallotCast = async (
-  { step, account, deliver, line }: SmsCommandContext,
+type BallotTarget =
+  | { kind: 'needs_decision' }
+  | { kind: 'cast'; instanceId: string }
+  | { kind: 'ready'; instanceId: string };
+
+const findBallotTarget = async (
+  context: Pick<SmsCommandContext, 'account' | 'line'>,
+): Promise<BallotTarget> => {
+  const instanceId = await findBallotInstance(context);
+  if (!instanceId) {
+    return { kind: 'needs_decision' };
+  }
+  const castId = await findCastBallot({
+    authUserId: context.account.authUserId,
+    instanceId,
+  });
+  return castId ? { kind: 'cast', instanceId } : { kind: 'ready', instanceId };
+};
+
+const sendBallotCastGuard = (
+  { deliver, line }: SmsCommandContext,
   instanceId: string,
-): Promise<SmsCommandResult | null> => {
-  const castId = await step.run('find-cast-ballot', () =>
-    findCastBallot({ authUserId: account.authUserId, instanceId }),
-  );
-  return castId
-    ? deliverAll({
-        deliver,
-        stepId: 'send-ballot-cast-guard',
-        label: 'Ballot already in reply',
-        bodies: [
-          formatSmsBallotAlreadySubmitted(line?.instanceId === instanceId),
-        ],
-        message: 'ballot already submitted',
-      })
-    : null;
-};
-
-const refuseUnlessReadyToPick = async (
-  { step, account, deliver, line }: SmsCommandContext,
-  instanceId: string,
-): Promise<SmsCommandResult | null> => {
-  const decision = await step.run('describe-ballot-decision', () =>
-    swallowUnreadable(() =>
-      describeEnrolmentDecision({ instanceId, authUserId: account.authUserId }),
-    ),
-  );
-
-  if (!decision) {
-    return deliverAll({
-      deliver,
-      stepId: 'send-ballot-unavailable',
-      label: 'Ballot unavailable reply',
-      bodies: [SMS_BALLOT_UNAVAILABLE_MESSAGE],
-      message: 'decision not found',
-    });
-  }
-
-  if (!decision.votingOpen) {
-    return deliverAll({
-      deliver,
-      stepId: 'send-voting-closed',
-      label: 'Voting closed reply',
-      bodies: formatSmsVotingClosed(decision.name),
-      message: 'voting closed',
-    });
-  }
-
-  if (decision.enrolment) {
-    const enrolment = await step.run('find-enrolment', () =>
-      findVoterEnrolment({
-        processInstanceId: instanceId,
-        authUserId: account.authUserId,
-      }),
-    );
-    if (!isVoterEnrolled(enrolment)) {
-      return deliverAll({
-        deliver,
-        stepId: 'send-register-first',
-        label: 'Register first reply',
-        bodies: [
-          formatSmsRegisterFirst(
-            decision.name,
-            line?.instanceId === instanceId ? null : decision.slug,
-          ),
-        ],
-        message: 'register first',
-      });
-    }
-  }
-
-  return null;
-};
+): Promise<SmsCommandResult> =>
+  deliverAll({
+    deliver,
+    stepId: 'send-ballot-cast-guard',
+    label: 'Ballot already in reply',
+    bodies: [formatSmsBallotAlreadySubmitted(line?.instanceId === instanceId)],
+    message: 'ballot already submitted',
+  });
 
 const sendBallotNeedsDecision = (deliver: SmsDeliver) =>
   deliverAll({
@@ -1060,36 +1109,104 @@ const sendBallotNeedsDecision = (deliver: SmsDeliver) =>
     message: 'ballot needs a decision',
   });
 
+const resolveBallotTarget = (
+  context: SmsCommandContext,
+): Promise<BallotTarget> =>
+  context.step.run('resolve-ballot-target', () => findBallotTarget(context));
+
 const pickByCodes = async (
   context: SmsCommandContext,
   codes: number[],
 ): Promise<SmsCommandResult> => {
-  const { step, account, deliver } = context;
-  const instanceId = await resolveBallotInstance(context);
+  const { step, account, deliver, line } = context;
 
-  if (!instanceId) {
-    return sendBallotNeedsDecision(deliver);
+  const resolved = await step.run('resolve-pick-context', async () => {
+    const target = await findBallotTarget(context);
+    if (target.kind !== 'ready') {
+      return target;
+    }
+    const { instanceId } = target;
+    const decision = await swallowUnreadable(() =>
+      describeEnrolmentDecision({
+        instanceId,
+        authUserId: account.authUserId,
+      }),
+    );
+    if (!decision) {
+      return { kind: 'unavailable' as const };
+    }
+    if (!decision.votingOpen) {
+      return { kind: 'closed' as const, name: decision.name };
+    }
+    if (decision.enrolment) {
+      const enrolment = await findVoterEnrolment({
+        processInstanceId: instanceId,
+        authUserId: account.authUserId,
+      });
+      if (!isVoterEnrolled(enrolment)) {
+        return {
+          kind: 'register_first' as const,
+          instanceId,
+          name: decision.name,
+          slug: decision.slug,
+        };
+      }
+    }
+    return target;
+  });
+
+  switch (resolved.kind) {
+    case 'needs_decision':
+      return sendBallotNeedsDecision(deliver);
+    case 'cast':
+      return sendBallotCastGuard(context, resolved.instanceId);
+    case 'unavailable':
+      return deliverAll({
+        deliver,
+        stepId: 'send-ballot-unavailable',
+        label: 'Ballot unavailable reply',
+        bodies: [SMS_BALLOT_UNAVAILABLE_MESSAGE],
+        message: 'decision not found',
+      });
+    case 'closed':
+      return deliverAll({
+        deliver,
+        stepId: 'send-voting-closed',
+        label: 'Voting closed reply',
+        bodies: formatSmsVotingClosed(resolved.name),
+        message: 'voting closed',
+      });
+    case 'register_first':
+      return deliverAll({
+        deliver,
+        stepId: 'send-register-first',
+        label: 'Register first reply',
+        bodies: [
+          formatSmsRegisterFirst(
+            resolved.name,
+            line?.instanceId === resolved.instanceId ? null : resolved.slug,
+          ),
+        ],
+        message: 'register first',
+      });
+    case 'ready':
+      break;
   }
 
-  const cast = await refuseIfBallotCast(context, instanceId);
-  if (cast) {
-    return cast;
-  }
-
-  const refused = await refuseUnlessReadyToPick(context, instanceId);
-  if (refused) {
-    return refused;
-  }
+  const { instanceId } = resolved;
 
   const picked = await step.run('add-ballot-picks', () =>
-    readBallot(() =>
-      addSmsBallotPicks({
-        authUserId: account.authUserId,
-        instanceId,
-        codes,
-        phoneNumberId: context.line?.id,
-      }),
-    ),
+    readBallot({
+      authUserId: account.authUserId,
+      instanceId,
+      fn: () =>
+        addSmsBallotPicks({
+          authUserId: account.authUserId,
+          instanceId,
+          codes,
+          phoneNumberId: context.line?.id,
+        }),
+    }),
   );
 
   if (!picked.ok) {
@@ -1164,28 +1281,34 @@ const sendBallot = async (
   review: boolean,
 ): Promise<SmsCommandResult> => {
   const { step, account, deliver } = context;
-  const instanceId = await resolveBallotInstance(context);
 
-  if (!instanceId) {
+  const resolved = await step.run('resolve-ballot-summary', async () => {
+    const target = await findBallotTarget(context);
+    if (target.kind !== 'ready') {
+      return target;
+    }
+    const { instanceId } = target;
+    const read = await readBallot({
+      authUserId: account.authUserId,
+      instanceId,
+      fn: () =>
+        summarizeSmsBallot({ authUserId: account.authUserId, instanceId }),
+    });
+    return { kind: 'summary' as const, instanceId, read };
+  });
+
+  if (resolved.kind === 'needs_decision') {
     return sendBallotNeedsDecision(deliver);
   }
-
-  const cast = await refuseIfBallotCast(context, instanceId);
-  if (cast) {
-    return cast;
+  if (resolved.kind === 'cast') {
+    return sendBallotCastGuard(context, resolved.instanceId);
   }
 
-  const read = await step.run('summarize-ballot', () =>
-    readBallot(() =>
-      summarizeSmsBallot({ authUserId: account.authUserId, instanceId }),
-    ),
-  );
-
-  if (!read.ok) {
-    return refuseBallotRead(context, read, instanceId);
+  if (!resolved.read.ok) {
+    return refuseBallotRead(context, resolved.read, resolved.instanceId);
   }
 
-  const summary = read.value;
+  const summary = resolved.read.value;
 
   return deliverAll({
     deliver,
@@ -1229,20 +1352,26 @@ export const remove: SmsCommandHandler = async (context) => {
     });
   }
 
-  const instanceId = await resolveBallotInstance(context);
-  if (!instanceId) {
+  const target = await resolveBallotTarget(context);
+  if (target.kind === 'needs_decision') {
     return sendBallotNeedsDecision(deliver);
   }
-
-  const cast = await refuseIfBallotCast(context, instanceId);
-  if (cast) {
-    return cast;
+  if (target.kind === 'cast') {
+    return sendBallotCastGuard(context, target.instanceId);
   }
+  const { instanceId } = target;
 
   const removed = await step.run('remove-ballot-pick', () =>
-    readBallot(() =>
-      removeSmsBallotPick({ authUserId: account.authUserId, instanceId, code }),
-    ),
+    readBallot({
+      authUserId: account.authUserId,
+      instanceId,
+      fn: () =>
+        removeSmsBallotPick({
+          authUserId: account.authUserId,
+          instanceId,
+          code,
+        }),
+    }),
   );
 
   if (!removed.ok) {
@@ -1295,25 +1424,27 @@ export const move: SmsCommandHandler = async (context) => {
     });
   }
 
-  const instanceId = await resolveBallotInstance(context);
-  if (!instanceId) {
+  const target = await resolveBallotTarget(context);
+  if (target.kind === 'needs_decision') {
     return sendBallotNeedsDecision(deliver);
   }
-
-  const cast = await refuseIfBallotCast(context, instanceId);
-  if (cast) {
-    return cast;
+  if (target.kind === 'cast') {
+    return sendBallotCastGuard(context, target.instanceId);
   }
+  const { instanceId } = target;
 
   const moved = await step.run('move-ballot-pick', () =>
-    readBallot(() =>
-      moveSmsBallotPick({
-        authUserId: account.authUserId,
-        instanceId,
-        code,
-        position,
-      }),
-    ),
+    readBallot({
+      authUserId: account.authUserId,
+      instanceId,
+      fn: () =>
+        moveSmsBallotPick({
+          authUserId: account.authUserId,
+          instanceId,
+          code,
+          position,
+        }),
+    }),
   );
 
   if (!moved.ok) {
@@ -1346,7 +1477,9 @@ export const move: SmsCommandHandler = async (context) => {
 
 export const submit: SmsCommandHandler = async (context) => {
   const { step, account, deliver, line } = context;
-  const instanceId = await resolveBallotInstance(context);
+  const instanceId = await step.run('resolve-ballot-instance', () =>
+    findBallotInstance(context),
+  );
 
   if (!instanceId) {
     return sendBallotNeedsDecision(deliver);
