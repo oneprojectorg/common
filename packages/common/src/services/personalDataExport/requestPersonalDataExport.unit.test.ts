@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@op/cache', () => ({
+  getWithStatus: vi.fn(),
   setWithStatus: vi.fn(),
 }));
 
@@ -8,7 +9,7 @@ vi.mock('../assert', () => ({
   assertUserByAuthId: vi.fn(),
 }));
 
-import { setWithStatus } from '@op/cache';
+import { getWithStatus, setWithStatus } from '@op/cache';
 import { Events, event } from '@op/events';
 import type { User } from '@op/supabase/lib';
 
@@ -24,6 +25,7 @@ const sendEvent = vi.fn();
 beforeEach(() => {
   vi.clearAllMocks();
   vi.mocked(setWithStatus).mockResolvedValue({ status: 'ok' });
+  vi.mocked(getWithStatus).mockResolvedValue({ status: 'miss' });
   vi.spyOn(event, 'send').mockImplementation(sendEvent);
 });
 
@@ -101,5 +103,50 @@ describe('requestPersonalDataExport status record', () => {
 
     expect(key).toContain(exportId);
     expect(payload.data.exportId).toBe(exportId);
+  });
+});
+
+describe('requestPersonalDataExport while an export is running', () => {
+  const RUNNING_ID = '44444444-4444-4444-8444-444444444444';
+
+  const stubLatest = (record: Record<string, unknown>) => {
+    vi.mocked(getWithStatus).mockImplementation(async (key) =>
+      key.includes('active')
+        ? { status: 'hit', data: RUNNING_ID }
+        : { status: 'hit', data: record },
+    );
+  };
+
+  const running = (overrides: Record<string, unknown> = {}) => ({
+    exportId: RUNNING_ID,
+    userId: AUTH_USER_ID,
+    status: 'processing',
+    createdAt: new Date().toISOString(),
+    ...overrides,
+  });
+
+  it('returns the running export and queues nothing', async () => {
+    stubLatest(running());
+
+    await expect(requestPersonalDataExport({ user })).resolves.toEqual({
+      exportId: RUNNING_ID,
+    });
+    expect(sendEvent).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['finished', { status: 'completed' }],
+    ['failed', { status: 'failed' }],
+    [
+      'stuck past the wait cap',
+      { createdAt: new Date(Date.now() - 31 * 60 * 1000).toISOString() },
+    ],
+  ])('starts a new export when the latest one is %s', async (_, overrides) => {
+    stubLatest(running(overrides));
+
+    const { exportId } = await requestPersonalDataExport({ user });
+
+    expect(exportId).not.toBe(RUNNING_ID);
+    expect(sendEvent).toHaveBeenCalledTimes(1);
   });
 });

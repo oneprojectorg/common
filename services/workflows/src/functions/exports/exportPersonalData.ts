@@ -3,18 +3,20 @@ import {
   personalDataExportCacheKey,
   personalDataExportFileName,
   personalDataExportFilePath,
-  uploadExportFile,
+  storeExportFile,
 } from '@op/common';
 import { Channels } from '@op/common/realtime';
 import { Events, inngest } from '@op/events';
 
 import { runExportJob } from './runExportJob';
 
-const { personalDataExportRequested } = Events;
+const { personalDataExportRequested, personalDataExportCompleted } = Events;
 
 export const exportPersonalData = inngest.createFunction(
   {
     id: 'exportPersonalData',
+    // one run per user; the request reuses a running export's id
+    singleton: { key: 'event.data.userId', mode: 'skip' },
   },
   { event: personalDataExportRequested.name },
   async ({ event, step }) => {
@@ -22,7 +24,7 @@ export const exportPersonalData = inngest.createFunction(
       event.data,
     );
 
-    return runExportJob({
+    const result = await runExportJob({
       step,
       exportId,
       cacheKey: personalDataExportCacheKey(exportId),
@@ -34,20 +36,25 @@ export const exportPersonalData = inngest.createFunction(
           const data = await collectPersonalData({ authUserId: userId });
           const fileName = personalDataExportFileName();
 
-          const { signedUrl, urlExpiresAt } = await uploadExportFile({
+          await storeExportFile({
             filePath: personalDataExportFilePath(userId, fileName),
-            fileName,
             content: JSON.stringify(data, null, 2),
             mimeType: 'application/json',
           });
 
           return {
             fileName,
-            signedUrl,
-            urlExpiresAt,
             truncatedSections: data.truncatedSections,
           };
         }),
     });
+
+    // a separate run, so this one ends and the singleton frees up
+    await step.sendEvent('schedule-expiry', {
+      name: personalDataExportCompleted.name,
+      data: { exportId, userId, fileName: result.fileName },
+    });
+
+    return result;
   },
 );

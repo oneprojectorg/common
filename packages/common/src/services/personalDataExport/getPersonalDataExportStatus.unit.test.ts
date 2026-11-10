@@ -2,13 +2,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('../exports', () => ({
   readExportRecord: vi.fn(),
-  refreshStaleSignedUrl: vi.fn(),
+  signCompletedExport: vi.fn(),
 }));
 
 import type { User } from '@op/supabase/lib';
 
 import { UnauthorizedError } from '../../utils';
-import { readExportRecord, refreshStaleSignedUrl } from '../exports';
+import { readExportRecord, signCompletedExport } from '../exports';
 import { getPersonalDataExportStatus } from './getPersonalDataExportStatus';
 
 const EXPORT_ID = '11111111-1111-4111-8111-111111111111';
@@ -20,8 +20,6 @@ const completedRecord = {
   userId: SUBJECT_AUTH_ID,
   status: 'completed' as const,
   fileName: 'personal_data_export_1.json',
-  signedUrl: 'https://storage.example/f.json?download=f.json',
-  urlExpiresAt: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
   createdAt: new Date().toISOString(),
   completedAt: new Date().toISOString(),
   truncatedSections: [],
@@ -55,7 +53,7 @@ describe('getPersonalDataExportStatus authorization', () => {
   it('signs nothing for a caller who is not the subject', async () => {
     await expect(readAs(OTHER_AUTH_ID)).rejects.toThrow();
 
-    expect(refreshStaleSignedUrl).not.toHaveBeenCalled();
+    expect(signCompletedExport).not.toHaveBeenCalled();
   });
 
   it('reports an unreadable record as not found rather than checking its owner', async () => {
@@ -64,7 +62,7 @@ describe('getPersonalDataExportStatus authorization', () => {
     await expect(readAs(OTHER_AUTH_ID)).resolves.toEqual({
       status: 'not_found',
     });
-    expect(refreshStaleSignedUrl).not.toHaveBeenCalled();
+    expect(signCompletedExport).not.toHaveBeenCalled();
   });
 });
 
@@ -93,10 +91,19 @@ describe('getPersonalDataExportStatus record reads', () => {
 });
 
 describe('getPersonalDataExportStatus download URL', () => {
+  it('signs a short-lived URL on read without storing it', async () => {
+    await readAs(SUBJECT_AUTH_ID);
+
+    const [call] = vi.mocked(signCompletedExport).mock.calls;
+
+    expect(call![0]).toMatchObject({ ttlSeconds: 60 });
+    expect(call![0]).not.toHaveProperty('cacheKey');
+  });
+
   it('rebuilds the storage key from the record it just authorized', async () => {
     await readAs(SUBJECT_AUTH_ID);
 
-    const [call] = vi.mocked(refreshStaleSignedUrl).mock.calls;
+    const [call] = vi.mocked(signCompletedExport).mock.calls;
     const { resolveFilePath } = call![0];
 
     expect(resolveFilePath('f.json')).toBe(

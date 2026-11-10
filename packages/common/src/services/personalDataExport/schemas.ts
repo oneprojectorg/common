@@ -21,8 +21,6 @@ export const personalDataExportRecordSchema = z.object({
   userId: z.string().uuid(),
   status: z.enum(['pending', 'processing', 'completed', 'failed']),
   fileName: z.string().optional(),
-  signedUrl: z.string().optional(),
-  urlExpiresAt: z.string().optional(),
   createdAt: z.string(),
   completedAt: z.string().optional(),
   truncatedSections: z.array(personalDataExportSectionSchema).optional(),
@@ -34,5 +32,6 @@ export type PersonalDataExportStatusData = z.infer<
 
 export const personalDataExportResponseSchema = z.union([
   z.object({ status: z.literal('not_found') }),
-  personalDataExportRecordSchema,
+  // signed on each read, never stored
+  personalDataExportRecordSchema.extend({ signedUrl: z.string().optional() }),
 ]);

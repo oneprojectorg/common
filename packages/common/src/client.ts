@@ -449,3 +449,7 @@ export {
   clipSmsText,
   splitSmsBody,
 } from './services/sms/text';
+export {
+  PERSONAL_DATA_EXPORT_FILE_LIFETIME_MS,
+  PERSONAL_DATA_EXPORT_MAX_RUN_MS,
+} from './services/personalDataExport/constants';

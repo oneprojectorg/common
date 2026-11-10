@@ -6,5 +6,5 @@ export {
 export { patchExportRecord } from './patchExportRecord';
 export { readExportRecord } from './readExportRecord';
 export { seedExportRecord } from './seedExportRecord';
-export { refreshStaleSignedUrl } from './signedUrl';
-export { uploadExportFile } from './uploadExportFile';
+export { refreshStaleSignedUrl, signCompletedExport } from './signedUrl';
+export { storeExportFile, uploadExportFile } from './uploadExportFile';
