@@ -8,23 +8,15 @@ import { useTranslateProposal } from '../useTranslateProposal';
 
 export interface ProposalContextValue {
   proposal: Proposal;
-  /** Route prefix for sibling proposals, e.g. `/decisions/participatory-budget`. */
   decisionRoot: string;
-  /**
-   * From `useLiveProposalDocument`, where the container re-fetches until the
-   * collaboration document arrives. Absent reads as `ready`.
-   */
+  /** See {@link useLiveProposalDocument}. */
   documentState?: ProposalDocumentState;
   translation: ReturnType<typeof useTranslateProposal>;
 }
 
 const ProposalContext = createContext<ProposalContextValue | null>(null);
 
-/**
- * The proposal a surface shows. The container resolves it (a query, a page
- * prop, a review assignment) and renders this above any layout switch, so a
- * shown translation survives when the parts below remount.
- */
+/** Rendered above any layout switch, so a shown translation survives a remount. */
 export function ProposalProvider({
   proposal,
   decisionRoot,

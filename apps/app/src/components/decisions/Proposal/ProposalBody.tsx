@@ -12,21 +12,13 @@ import { TranslateLink } from '../TranslateLink';
 import { useProposal } from './proposalContext';
 
 interface ProposalBodyProps {
-  /** Like/follow controls for a viewer who may engage; off shows plain counts. */
   engagement?: boolean;
   selection?: ProposalSelection | null;
   submissionMetaSuffix?: ReactNode;
   headerBanner?: ReactNode;
-  /** Sections after the proposal, e.g. contributing ideas and comments. */
   children?: ReactNode;
 }
 
-/**
- * The proposal and the sections after it, in one column. Owns no scroll
- * region or outer padding, so the page, the sheet and the reviewer pane each
- * place it in their own container. Holds no state: everything it shows comes
- * from `ProposalProvider`.
- */
 export function ProposalBody({
   engagement = true,
   selection,
@@ -35,8 +27,6 @@ export function ProposalBody({
   children,
 }: ProposalBodyProps) {
   const { proposal, documentState, translation } = useProposal();
-  // Everyone sees the counts; only a signed-in member with engagement access
-  // gets the controls (the hook returns undefined otherwise).
   const proposalEngagement = useProposalEngagement({
     proposal,
     canEngage: engagement && canEngageWithProposals(proposal.access),

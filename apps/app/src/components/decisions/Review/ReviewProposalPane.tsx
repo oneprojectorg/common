@@ -23,8 +23,6 @@ export function ReviewProposalPane({
       : null;
 
   return (
-    // The version under review comes with the assignment, so it is not
-    // re-fetched (no `documentState`) and the body offers no like/follow.
     <ProposalProvider
       proposal={assignment.proposal}
       decisionRoot={decisionRoot}
