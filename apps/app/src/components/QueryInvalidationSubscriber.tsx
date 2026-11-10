@@ -8,6 +8,8 @@ import { createSBBrowserClient } from '@op/supabase/client';
 import { QueryClientContext } from '@tanstack/react-query';
 import { useCallback, useContext, useEffect, useRef, useState } from 'react';
 
+import { clearPersonalDataExport } from './PersonalDataExport/personalDataExportStore';
+
 /** Bound on remembered (mutation, channel) pairs. */
 const MAX_REMEMBERED_KEYS = 500;
 
@@ -50,6 +52,7 @@ function useHasSession(): boolean {
       // this tab from writing its still-populated cache back to localStorage.
       if (event === 'SIGNED_OUT') {
         clearPersistedQueryCache();
+        clearPersonalDataExport();
       }
     });
 

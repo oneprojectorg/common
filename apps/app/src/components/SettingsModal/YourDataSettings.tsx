@@ -1,5 +1,6 @@
 'use client';
 
+import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -14,50 +15,33 @@ import {
 import { Button } from '@op/sense/Button';
 import { FieldDescription, FieldTitle } from '@op/sense/Field';
 import { Header3 } from '@op/sense/Header';
-import { type ReactNode, useId, useRef, useState } from 'react';
+import { type ReactNode, useId, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { type Confirmation, InlineConfirmation } from './InlineConfirmation';
+import {
+  DownloadDataAction,
+  DownloadDataPartialNotice,
+} from '../PersonalDataExport/DownloadDataAction';
 
 export const YourDataSettings = () => {
   const t = useTranslations('settings');
   const tShared = useTranslations();
-  const [confirmation, setConfirmation] = useState<Confirmation | null>(null);
-  const confirmationCount = useRef(0);
+  const downloadDataEnabled = useFeatureFlag('download-user-data');
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
 
   return (
     <div className="flex flex-col gap-4">
       <Header3>{t('yourDataTab')}</Header3>
       <div className="flex flex-col gap-8">
-        <DataRow
-          title={t('downloadDataTitle')}
-          hint={t('downloadDataHint')}
-          action={
-            <Button
-              variant="outline"
-              onClick={() => {
-                // mock: no export is requested yet
-                confirmationCount.current += 1;
-                setConfirmation({
-                  id: confirmationCount.current,
-                  message: t('downloadStarted'),
-                  tone: 'success',
-                });
-              }}
-            >
-              {t('downloadAction')}
-            </Button>
-          }
-          footer={
-            <InlineConfirmation
-              confirmation={confirmation}
-              onDismiss={() => setConfirmation(null)}
-              className="not-empty:mt-2"
-            />
-          }
-        />
+        {downloadDataEnabled ? (
+          <DataRow
+            title={t('downloadDataTitle')}
+            hint={t('downloadDataHint')}
+            action={<DownloadDataAction />}
+            footer={<DownloadDataPartialNotice />}
+          />
+        ) : null}
         <DataRow
           title={t('deleteAccountTitle')}
           hint={t('deleteAccountHint')}
