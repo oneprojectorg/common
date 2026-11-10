@@ -1,15 +1,15 @@
 'use client';
 
+import { ContributingIdeas } from '../ContributingIdeas';
 import { ProposalBody } from '../Proposal/ProposalBody';
 import { ProposalCommentsSection } from '../Proposal/ProposalCommentsSection';
-import { ProposalContributingIdeas } from '../Proposal/ProposalContributingIdeas';
 import { ProposalSheetShell } from './ProposalSheetShell';
 
 export function ProposalSheet() {
   return (
     <ProposalSheetShell>
       <ProposalBody>
-        <ProposalContributingIdeas />
+        <ContributingIdeas />
         <ProposalCommentsSection />
       </ProposalBody>
     </ProposalSheetShell>

@@ -8,9 +8,9 @@ import type { ReactNode } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
+import { ContributingIdeas } from './ContributingIdeas';
 import { ProposalBody } from './Proposal/ProposalBody';
 import { ProposalCommentsSection } from './Proposal/ProposalCommentsSection';
-import { ProposalContributingIdeas } from './Proposal/ProposalContributingIdeas';
 import { ProposalProvider } from './Proposal/proposalContext';
 import { ProposalMergeNotice } from './ProposalMergeNotice';
 import { ProposalViewLayout } from './ProposalViewLayout';
@@ -81,7 +81,7 @@ export function ProposalView({
         ) : undefined
       }
     >
-      <ProposalContributingIdeas />
+      <ContributingIdeas />
       <ProposalCommentsSection />
     </ProposalBody>
   );
