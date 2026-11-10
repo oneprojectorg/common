@@ -23,9 +23,9 @@ export const invocationTiming = new InngestMiddleware({
       const coldStart = invocationsServed === 0;
       invocationsServed += 1;
 
-      const span = trace.getTracer('@op/events').startSpan(
-        `inngest.invocation ${fn.name}`,
-        {
+      const span = trace
+        .getTracer('@op/events')
+        .startSpan(`inngest.invocation ${fn.name}`, {
           startTime: arrivedAt,
           attributes: {
             'inngest.function': fn.name,
@@ -33,8 +33,7 @@ export const invocationTiming = new InngestMiddleware({
             'inngest.memoized_steps': steps.length,
             'inngest.cold_start': coldStart,
           },
-        },
-      );
+        });
 
       let executionStartedAt: number | null = null;
       let step: string | null = null;
