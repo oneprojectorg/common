@@ -1,6 +1,7 @@
 import { isFeatureEnabled } from '@op/analytics';
 import {
   type PhoneSignupConfirmation,
+  type PhoneSignupState,
   confirmPhoneSignupCode,
   discardUnconfirmedPhoneSignup,
   findDecisionPhoneNumber,
@@ -44,6 +45,12 @@ type ConfirmationOutcome =
   | { status: 'timed_out' }
   | { status: 'exhausted' };
 
+type SignupContext = {
+  flagEnabled: boolean;
+  state: PhoneSignupState | null;
+  line: Awaited<ReturnType<typeof findDecisionPhoneNumber>> | null;
+};
+
 export const handleUnknownSmsSignup = inngest.createFunction(
   {
     id: 'handleUnknownSmsSignup',
@@ -73,23 +80,42 @@ export const handleUnknownSmsSignup = inngest.createFunction(
 
     const to = parseInboundNumber(from, 'signup');
 
-    const context = await step.run('resolve-signup-context', async () => {
-      const flagEnabled = await isFeatureEnabled(
-        SMS_SIGNUP_FEATURE_FLAG,
-        'server',
-      );
-      if (!flagEnabled || !to) {
-        return { flagEnabled, state: null, line: null };
-      }
-      const state = await getPhoneSignupState({ phone: to });
-      if (state.status !== 'free') {
-        return { flagEnabled, state, line: null };
-      }
-      const line = inboundTo
-        ? await findDecisionPhoneNumber({ phone: inboundTo })
-        : null;
-      return { flagEnabled, state, line };
-    });
+    const resolved = await step.run(
+      'check-known-number',
+      async (): Promise<SignupContext | PhoneSignupState> => {
+        const flagEnabled = await isFeatureEnabled(
+          SMS_SIGNUP_FEATURE_FLAG,
+          'server',
+        );
+        if (!flagEnabled || !to) {
+          return { flagEnabled, state: null, line: null };
+        }
+        const state = await getPhoneSignupState({ phone: to });
+        if (state.status !== 'free') {
+          return { flagEnabled, state, line: null };
+        }
+        const line = inboundTo
+          ? await findDecisionPhoneNumber({ phone: inboundTo })
+          : null;
+        return { flagEnabled, state, line };
+      },
+    );
+
+    const context =
+      'flagEnabled' in resolved
+        ? resolved
+        : {
+            flagEnabled: await step.run('check-feature-flag', () =>
+              isFeatureEnabled(SMS_SIGNUP_FEATURE_FLAG, 'server'),
+            ),
+            state: resolved,
+            line:
+              resolved.status === 'free' && inboundTo
+                ? await step.run('resolve-line', () =>
+                    findDecisionPhoneNumber({ phone: inboundTo }),
+                  )
+                : null,
+          };
 
     if (!context.flagEnabled) {
       logger.info('SMS signup feature flag is disabled, skipping');
