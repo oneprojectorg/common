@@ -30,16 +30,8 @@ export type PersonalDataExportStatusData = z.infer<
   typeof personalDataExportRecordSchema
 >;
 
-// The URL is signed on each read and never stored.
-const personalDataExportReadSchema = personalDataExportRecordSchema.extend({
-  signedUrl: z.string().optional(),
-});
-
-export type PersonalDataExportRead = z.infer<
-  typeof personalDataExportReadSchema
->;
-
 export const personalDataExportResponseSchema = z.union([
   z.object({ status: z.literal('not_found') }),
-  personalDataExportReadSchema,
+  // signed on each read, never stored
+  personalDataExportRecordSchema.extend({ signedUrl: z.string().optional() }),
 ]);

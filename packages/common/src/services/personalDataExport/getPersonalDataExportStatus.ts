@@ -7,10 +7,7 @@ import {
   personalDataExportCacheKey,
   personalDataExportFilePath,
 } from './constants';
-import {
-  type PersonalDataExportRead,
-  personalDataExportRecordSchema,
-} from './schemas';
+import { personalDataExportRecordSchema } from './schemas';
 
 export const getPersonalDataExportStatus = async ({
   exportId,
@@ -33,7 +30,9 @@ export const getPersonalDataExportStatus = async ({
     throw new UnauthorizedError('You do not have access to this export');
   }
 
-  const response: PersonalDataExportRead = { ...exportStatus };
+  const response: typeof exportStatus & { signedUrl?: string } = {
+    ...exportStatus,
+  };
 
   await signCompletedExport({
     record: response,
