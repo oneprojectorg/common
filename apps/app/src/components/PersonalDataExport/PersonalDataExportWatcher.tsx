@@ -14,6 +14,7 @@ import { EXPORT_WAIT_TIMEOUT_MS } from '@/components/exports/exportWait';
 import {
   PERSONAL_DATA_EXPORT_MAX_WAIT_MS,
   PERSONAL_DATA_EXPORT_READY_TOAST_ID,
+  PERSONAL_DATA_EXPORT_READY_TTL_MS,
   usePersonalDataExportStore,
 } from './personalDataExportStore';
 import {
@@ -58,7 +59,21 @@ export const PersonalDataExportWatcher = () => {
   }, []);
 
   // the flag gates the behaviour, not only the settings row
-  if (!isEnabled || state.phase !== 'running') {
+  if (!isEnabled) {
+    return null;
+  }
+
+  if (state.phase === 'ready') {
+    return (
+      <ReadyExport
+        key={state.exportId}
+        exportId={state.exportId}
+        readyAt={state.readyAt}
+      />
+    );
+  }
+
+  if (state.phase !== 'running') {
     return null;
   }
 
@@ -211,6 +226,33 @@ const RunningExport = ({
       clearTimeout(timer);
     };
   }, [exportId, startedAt, reportedStatus, silentPeriods, refetch, reset, t]);
+
+  return null;
+};
+
+// Retires a finished export once its window closes, including one restored
+// from storage after the window has already passed.
+const ReadyExport = ({
+  exportId,
+  readyAt,
+}: {
+  exportId: string;
+  readyAt: number;
+}) => {
+  const reset = usePersonalDataExportStore((store) => store.reset);
+
+  useEffect(() => {
+    const timer = setTimeout(
+      () => {
+        if (reset(exportId)) {
+          toast.close(PERSONAL_DATA_EXPORT_READY_TOAST_ID);
+        }
+      },
+      Math.max(0, readyAt + PERSONAL_DATA_EXPORT_READY_TTL_MS - Date.now()),
+    );
+
+    return () => clearTimeout(timer);
+  }, [exportId, readyAt, reset]);
 
   return null;
 };

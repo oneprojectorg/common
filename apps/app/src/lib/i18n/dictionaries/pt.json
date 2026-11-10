@@ -1991,7 +1991,6 @@
     "downloadDataReady": "Seus dados estão prontos para baixar.",
     "downloadFileAction": "Baixar arquivo",
     "downloadDataLinkFailed": "Não foi possível preparar o download. Tente novamente.",
-    "downloadDataNewExport": "Nova exportação",
     "downloadDataRateLimited": "Você iniciou várias exportações. Aguarde um minuto e tente novamente.",
     "deleteAccountTitle": "Excluir conta",
     "deleteAccountHint": "Seu perfil e sua conta serão removidos.",

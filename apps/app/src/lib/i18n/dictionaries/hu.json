@@ -1991,7 +1991,6 @@
     "downloadDataReady": "Az adatai letölthetők.",
     "downloadFileAction": "Fájl letöltése",
     "downloadDataLinkFailed": "Nem sikerült előkészíteni a letöltést. Kérjük, próbálja újra.",
-    "downloadDataNewExport": "Új exportálás",
     "downloadDataRateLimited": "Több exportálást is elindított. Várjon egy percet, majd próbálja újra.",
     "deleteAccountTitle": "Fiók törlése",
     "deleteAccountHint": "A profilját és a fiókját eltávolítjuk.",

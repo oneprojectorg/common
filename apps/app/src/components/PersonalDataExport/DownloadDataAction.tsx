@@ -59,15 +59,9 @@ export const DownloadDataAction = () => {
 
   return (
     // the label is the status, so a change to it is announced
-    <div aria-live="polite" className="flex flex-wrap gap-2">
+    <div aria-live="polite">
       {state.phase === 'ready' ? (
-        <>
-          <DownloadFileButton exportId={state.exportId} />
-          {/* the file is a snapshot; a later one needs a new run */}
-          <Button variant="ghost" onClick={startNewExport}>
-            {t('downloadDataNewExport')}
-          </Button>
-        </>
+        <DownloadFileButton exportId={state.exportId} />
       ) : (
         <Button
           variant="outline"

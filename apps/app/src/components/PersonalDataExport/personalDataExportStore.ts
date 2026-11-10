@@ -10,6 +10,13 @@ import { createJSONStorage, persist } from 'zustand/middleware';
  */
 export const PERSONAL_DATA_EXPORT_MAX_WAIT_MS = 30 * 60 * 1000;
 
+/**
+ * How long a finished export stays offered before the row returns to "Download"
+ * so the user can start a fresh one. Well inside the 24 hours the server keeps
+ * the record, so the file is still there for the whole window.
+ */
+export const PERSONAL_DATA_EXPORT_READY_TTL_MS = 60 * 60 * 1000;
+
 /** The ready toast's id, so a newer run can close an older run's offer. */
 export const PERSONAL_DATA_EXPORT_READY_TOAST_ID = 'personal-data-export-ready';
 
@@ -20,7 +27,7 @@ export type PersonalDataExportState =
   | { phase: 'running'; exportId: string; startedAt: number }
   // The file exists. Its link is read when the user asks for it, because a
   // signed URL expires and the server re-signs a stale one on read.
-  | { phase: 'ready'; exportId: string; isPartial: boolean };
+  | { phase: 'ready'; exportId: string; isPartial: boolean; readyAt: number };
 
 interface PersonalDataExportStore {
   state: PersonalDataExportState;
@@ -80,7 +87,9 @@ export const usePersonalDataExportStore = create<PersonalDataExportStore>()(
         if (state.phase !== 'running' || state.exportId !== exportId) {
           return false;
         }
-        set({ state: { phase: 'ready', exportId, isPartial } });
+        set({
+          state: { phase: 'ready', exportId, isPartial, readyAt: Date.now() },
+        });
         return true;
       },
       reset: (exportId) => {
