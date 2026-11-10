@@ -2,7 +2,7 @@ import { logger } from '@op/logging';
 import { trace } from '@opentelemetry/api';
 import { InngestMiddleware } from 'inngest';
 
-const bootedAt = Date.now();
+const bootedAtMark = performance.now();
 let invocationsServed = 0;
 
 export const invocationTiming = new InngestMiddleware({
@@ -10,6 +10,7 @@ export const invocationTiming = new InngestMiddleware({
   init: () => ({
     onFunctionRun({ ctx, fn, steps }) {
       const arrivedAt = Date.now();
+      const arrivedAtMark = performance.now();
       const coldStart = invocationsServed === 0;
       invocationsServed += 1;
 
@@ -25,13 +26,13 @@ export const invocationTiming = new InngestMiddleware({
           },
         });
 
-      let executionStartedAt: number | null = null;
+      let executionStartedAtMark: number | null = null;
       let step: string | null = null;
       let failed = false;
 
       return {
         beforeExecution() {
-          executionStartedAt = Date.now();
+          executionStartedAtMark = performance.now();
         },
         transformOutput(output) {
           step = output.step?.displayName ?? null;
@@ -39,6 +40,7 @@ export const invocationTiming = new InngestMiddleware({
         },
         beforeResponse() {
           const finishedAt = Date.now();
+          const finishedAtMark = performance.now();
           const eventTs = ctx.event.ts;
           const record = {
             function: fn.name,
@@ -46,14 +48,14 @@ export const invocationTiming = new InngestMiddleware({
             step,
             memoizedSteps: steps.length,
             executionMs:
-              executionStartedAt === null
+              executionStartedAtMark === null
                 ? null
-                : finishedAt - executionStartedAt,
-            invocationMs: finishedAt - arrivedAt,
+                : finishedAtMark - executionStartedAtMark,
+            invocationMs: finishedAtMark - arrivedAtMark,
             sinceEventMs:
               typeof eventTs === 'number' ? finishedAt - eventTs : null,
             coldStart,
-            processAgeMs: arrivedAt - bootedAt,
+            processAgeMs: arrivedAtMark - bootedAtMark,
             failed,
           };
           if (step !== null) {
