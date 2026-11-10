@@ -3,7 +3,7 @@ import {
   personalDataExportCacheKey,
   personalDataExportFileName,
   personalDataExportFilePath,
-  uploadExportFile,
+  storeExportFile,
 } from '@op/common';
 import { Channels } from '@op/common/realtime';
 import { Events, inngest } from '@op/events';
@@ -36,17 +36,14 @@ export const exportPersonalData = inngest.createFunction(
           const data = await collectPersonalData({ authUserId: userId });
           const fileName = personalDataExportFileName();
 
-          const { signedUrl, urlExpiresAt } = await uploadExportFile({
+          await storeExportFile({
             filePath: personalDataExportFilePath(userId, fileName),
-            fileName,
             content: JSON.stringify(data, null, 2),
             mimeType: 'application/json',
           });
 
           return {
             fileName,
-            signedUrl,
-            urlExpiresAt,
             truncatedSections: data.truncatedSections,
           };
         }),

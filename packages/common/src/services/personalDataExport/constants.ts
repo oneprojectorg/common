@@ -23,3 +23,6 @@ export const PERSONAL_DATA_EXPORT_TEMPLATE_CONCURRENCY = 10;
 
 // The app retires the offer on the same clock, from `completedAt`.
 export const PERSONAL_DATA_EXPORT_FILE_LIFETIME_MS = 60 * 60 * 1000;
+
+// Signed per download and used at once, so it never needs to outlive the click.
+export const PERSONAL_DATA_EXPORT_URL_TTL_SECONDS = 60;

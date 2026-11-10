@@ -8,17 +8,15 @@ export interface UploadedExportFile {
   urlExpiresAt: string;
 }
 
-export const uploadExportFile = async ({
+export const storeExportFile = async ({
   filePath,
-  fileName,
   content,
   mimeType,
 }: {
   filePath: string;
-  fileName: string;
   content: string;
   mimeType: string;
-}): Promise<UploadedExportFile> => {
+}): Promise<void> => {
   const supabase = createSBServiceClient();
 
   const { error: uploadError } = await supabase.storage
@@ -31,6 +29,20 @@ export const uploadExportFile = async ({
   if (uploadError) {
     throw new Error(`Storage upload failed: ${uploadError.message}`);
   }
+};
+
+export const uploadExportFile = async ({
+  filePath,
+  fileName,
+  content,
+  mimeType,
+}: {
+  filePath: string;
+  fileName: string;
+  content: string;
+  mimeType: string;
+}): Promise<UploadedExportFile> => {
+  await storeExportFile({ filePath, content, mimeType });
 
   const signedUrl = await signExportDownloadUrl({ filePath, fileName });
 

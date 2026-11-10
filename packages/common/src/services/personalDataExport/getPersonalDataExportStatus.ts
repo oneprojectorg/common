@@ -1,12 +1,16 @@
 import { User } from '@op/supabase/lib';
 
 import { UnauthorizedError } from '../../utils';
-import { readExportRecord, refreshStaleSignedUrl } from '../exports';
+import { readExportRecord, signCompletedExport } from '../exports';
 import {
+  PERSONAL_DATA_EXPORT_URL_TTL_SECONDS,
   personalDataExportCacheKey,
   personalDataExportFilePath,
 } from './constants';
-import { personalDataExportRecordSchema } from './schemas';
+import {
+  type PersonalDataExportRead,
+  personalDataExportRecordSchema,
+} from './schemas';
 
 export const getPersonalDataExportStatus = async ({
   exportId,
@@ -15,11 +19,9 @@ export const getPersonalDataExportStatus = async ({
   exportId: string;
   user: User;
 }) => {
-  const key = personalDataExportCacheKey(exportId);
-
   const exportStatus = await readExportRecord({
     exportId,
-    cacheKey: key,
+    cacheKey: personalDataExportCacheKey(exportId),
     schema: personalDataExportRecordSchema,
   });
 
@@ -31,13 +33,15 @@ export const getPersonalDataExportStatus = async ({
     throw new UnauthorizedError('You do not have access to this export');
   }
 
-  await refreshStaleSignedUrl({
-    record: exportStatus,
+  const response: PersonalDataExportRead = { ...exportStatus };
+
+  await signCompletedExport({
+    record: response,
     exportId,
     resolveFilePath: (fileName) =>
       personalDataExportFilePath(exportStatus.userId, fileName),
-    cacheKey: key,
+    ttlSeconds: PERSONAL_DATA_EXPORT_URL_TTL_SECONDS,
   });
 
-  return exportStatus;
+  return response;
 };

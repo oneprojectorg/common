@@ -13,10 +13,7 @@ import {
   usePersonalDataExportStore,
 } from './personalDataExportStore';
 
-/**
- * Saves a finished export's file. Re-reads the record each time, because the
- * server re-signs an expired URL on read.
- */
+// Re-reads the record on each click: the server signs a fresh, short-lived URL.
 export const useDownloadPersonalDataExport = () => {
   const t = useTranslations('settings');
   const utils = trpc.useUtils();
