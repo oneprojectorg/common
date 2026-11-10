@@ -5,16 +5,6 @@ import { InngestMiddleware } from 'inngest';
 const bootedAt = Date.now();
 let invocationsServed = 0;
 
-/**
- * Emits one structured log record and one OTel span per function invocation.
- *
- * Inngest re-invokes the app over HTTP for every step, so a run's latency
- * lives between invocations as much as inside them. Each record carries what
- * PostHog needs to place the time: which step executed, how long the new work
- * took (executionMs) versus the whole request (invocationMs), how far the run
- * is from its triggering event (sinceEventMs), and whether this process had
- * served anything before (coldStart, processAgeMs).
- */
 export const invocationTiming = new InngestMiddleware({
   name: 'invocation-timing',
   init: () => ({
