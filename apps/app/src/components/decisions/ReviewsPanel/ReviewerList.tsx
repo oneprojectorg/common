@@ -199,17 +199,6 @@ export function ReviewerList({
         </div>
       )}
 
-      {ownReview && !ownReview.hasSubmitted && (
-        <Button
-          variant="link"
-          size="inline"
-          onClick={ownReview.onOpenForm}
-          className="self-start text-base"
-        >
-          {t('decisions.review.addReviewAction')}
-        </Button>
-      )}
-
       {/* Admin-only, like the summary header. */}
       {!hideSummaryHeader && pendingReviewers.length > 0 && (
         <div className="flex flex-col gap-4">
@@ -241,6 +230,13 @@ export function ReviewerList({
                 onRemind={
                   reminderScope && isRemindable(reviewer, ownReview?.profileId)
                     ? openReminder
+                    : undefined
+                }
+                onStartReview={
+                  ownReview &&
+                  !ownReview.hasSubmitted &&
+                  reviewer.profile.id === ownReview.profileId
+                    ? ownReview.onOpenForm
                     : undefined
                 }
               />
@@ -386,10 +382,12 @@ function PendingReviewerRow({
   reviewer,
   isOwn,
   onRemind,
+  onStartReview,
 }: {
   reviewer: PendingReviewer;
   isOwn: boolean;
   onRemind?: (reviewer: PendingReviewer) => void;
+  onStartReview?: () => void;
 }) {
   const t = useTranslations();
   const reviewerName = reviewer.profile.name ?? reviewer.profile.slug;
@@ -425,6 +423,11 @@ function PendingReviewerRow({
           onClick={() => onRemind(reviewer)}
         >
           {t('decisions.review.remindAction')}
+        </Button>
+      )}
+      {onStartReview && (
+        <Button variant="outline" onClick={onStartReview}>
+          {t('decisions.review.addReviewAction')}
         </Button>
       )}
     </div>

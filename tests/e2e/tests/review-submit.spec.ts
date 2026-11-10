@@ -282,10 +282,10 @@ test.describe('Review Submit', () => {
       page.getByRole('heading', { name: 'Review Progress' }),
     ).toBeVisible({ timeout: 36_000 });
 
-    // Being the assignee too, they get "+ Add review" below the reviewer list.
+    // Being the assignee too, they get "Add review" on their own pending card.
     // It swaps their own form into the panel without leaving the screen.
     const progressUrl = page.url();
-    await page.getByRole('button', { name: '+ Add review' }).click();
+    await page.getByRole('button', { name: 'Add review', exact: true }).click();
     await expect(
       page.getByText('Review Proposal', { exact: true }).first(),
     ).toBeVisible({ timeout: 10_000 });

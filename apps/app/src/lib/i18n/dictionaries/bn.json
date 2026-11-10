@@ -1089,7 +1089,7 @@
       "pointsValue": "{pts} পয়েন্ট",
       "ptsValue": "{pts} পয়েন্ট",
       "proposalReviewersSubmittedProgress": "{total} জন পর্যালোচকের মধ্যে {submitted} জন এই প্রস্তাবের জন্য একটি পর্যালোচনা জমা দিয়েছেন",
-      "addReviewAction": "+ পর্যালোচনা যোগ করুন",
+      "addReviewAction": "পর্যালোচনা যোগ করুন",
       "moreCount": "+{count} আরও",
       "activeReviewersHeading": "সক্রিয় পর্যালোচক",
       "addNoteAction": "নোট যোগ করুন",

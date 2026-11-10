@@ -1089,7 +1089,7 @@
       "pointsValue": "{pts} نقطة",
       "ptsValue": "{pts} نقطة",
       "proposalReviewersSubmittedProgress": "{submitted} من أصل {total} مراجعين أرسلوا مراجعة لهذا المقترح",
-      "addReviewAction": "+ إضافة مراجعة",
+      "addReviewAction": "إضافة مراجعة",
       "moreCount": "+{count} المزيد",
       "activeReviewersHeading": "المراجعون النشطون",
       "addNoteAction": "إضافة ملاحظة",
