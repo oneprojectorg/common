@@ -85,15 +85,18 @@ export function ReviewerList({
     return getReviewsGroupedByRecommendation(reviews, recommendationOptions);
   }, [reviews, hasOverallRecommendation, recommendationOptions]);
 
-  // Revision-flow assignments are left out on purpose: they wait on the
-  // author or on a re-review, and the panel does not remind them yet.
+  // Other reviewers' revision-flow assignments are left out: they wait on the
+  // author or on a re-review, and the panel does not remind them yet. The
+  // viewer's own stays in, as its card is their only way back to the form.
   const pendingReviewers = useMemo(
     () =>
       reviewers.filter(
         (reviewer) =>
-          reviewer.submittedAt === null && isAwaitingReview(reviewer),
+          reviewer.submittedAt === null &&
+          (isAwaitingReview(reviewer) ||
+            reviewer.profile.id === ownReview?.profileId),
       ),
-    [reviewers],
+    [reviewers, ownReview?.profileId],
   );
 
   const remindableReviewers = pendingReviewers.filter((reviewer) =>
@@ -412,9 +415,7 @@ function PendingReviewerRow({
             <bdi>{rowLabel}</bdi>
           </span>
           <span className="text-sm text-muted-foreground">
-            {reviewer.status === ProposalReviewAssignmentStatus.PENDING
-              ? t('decisions.review.statusNotStarted')
-              : t('decisions.review.statusInProgress')}
+            {t(getPendingStatusLabel(reviewer.status))}
           </span>
         </div>
       </div>
@@ -436,6 +437,19 @@ function PendingReviewerRow({
       )}
     </div>
   );
+}
+
+function getPendingStatusLabel(status: PendingReviewer['status']) {
+  switch (status) {
+    case ProposalReviewAssignmentStatus.PENDING:
+      return 'decisions.review.statusNotStarted';
+    case ProposalReviewAssignmentStatus.AWAITING_AUTHOR_REVISION:
+      return 'decisions.review.statusRevisionRequested';
+    case ProposalReviewAssignmentStatus.READY_FOR_RE_REVIEW:
+      return 'decisions.review.statusNeedsReview';
+    default:
+      return 'decisions.review.statusInProgress';
+  }
 }
 
 function isAwaitingReview(reviewer: PendingReviewer): boolean {
