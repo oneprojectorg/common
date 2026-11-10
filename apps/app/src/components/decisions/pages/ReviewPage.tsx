@@ -5,7 +5,6 @@ import type { RouterOutput } from '@op/api';
 import { type InstancePhaseData } from '@op/api/encoders';
 import { getPhaseReviewSettings } from '@op/common/client';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@op/sense/Tabs';
-import { parseAsStringLiteral, useQueryState } from 'nuqs';
 import { Suspense } from 'react';
 
 import { useTranslations } from '@/lib/i18n/routing';
@@ -21,15 +20,9 @@ import { ProposalsLoadError } from '../ProposalsLoadError';
 import { ReviewProgressStats } from '../Review/ReviewProgressStats';
 import { ReviewersTableSection } from '../ReviewAssignments/ReviewersTableSection';
 import { ReviewAssignmentsList } from '../ReviewAssignmentsList';
+import { DEFAULT_REVIEW_TAB, useReviewTab } from './useReviewTab';
 
 type Instance = RouterOutput['decision']['getInstance'];
-
-// The admin-without-review variant reuses DEFAULT_REVIEW_TAB for its progress
-// list, so one parser covers every `?tab=` value.
-const REVIEW_TABS = ['to-review', 'all-proposals', 'reviewers'] as const;
-const DEFAULT_REVIEW_TAB = 'to-review';
-
-const reviewTabParser = parseAsStringLiteral(REVIEW_TABS);
 
 export function ReviewPage({
   instance,
@@ -64,28 +57,10 @@ export function ReviewPage({
 
   const t = useTranslations('decisions');
 
-  // In the URL so a reload or shared link lands on the same tab.
-  const [tab, setTab] = useQueryState(
-    'tab',
-    reviewTabParser.withDefault(DEFAULT_REVIEW_TAB),
-  );
-
-  const activeTab = tab === 'reviewers' && !isAdmin ? DEFAULT_REVIEW_TAB : tab;
-
-  // The admin variant shows All proposals under DEFAULT_REVIEW_TAB.
-  const adminActiveTab =
-    activeTab === 'reviewers' ? 'reviewers' : DEFAULT_REVIEW_TAB;
-
-  const handleTabChange = (next: string) => {
-    const parsed = reviewTabParser.parse(next);
-
-    if (!parsed) {
-      return;
-    }
-
-    // Strip the param on the default tab so the URL stays clean.
-    void setTab(parsed === DEFAULT_REVIEW_TAB ? null : parsed);
-  };
+  const { activeTab, adminActiveTab, handleTabChange } = useReviewTab({
+    isAdmin,
+    canReview,
+  });
 
   const translation = useDecisionTranslation();
   const phaseAdditionalInfo =

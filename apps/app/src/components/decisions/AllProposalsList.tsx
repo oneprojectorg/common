@@ -98,6 +98,7 @@ export function AllProposalsList({
             processInstanceId={processInstanceId}
             decisionSlug={decisionSlug}
             canExport={Boolean(access?.admin)}
+            opensInSheet={Boolean(access?.admin)}
             pinOffset={pinOffset}
           />
         </Suspense>
@@ -110,6 +111,7 @@ interface AllProposalsLoaderProps {
   processInstanceId: string;
   decisionSlug: string;
   canExport: boolean;
+  opensInSheet: boolean;
   pinOffset?: number;
 }
 
@@ -127,6 +129,7 @@ function AllProposalsContent({
   processInstanceId,
   decisionSlug,
   canExport,
+  opensInSheet,
   pinOffset,
   filters,
   allProposals,
@@ -202,6 +205,7 @@ function AllProposalsContent({
         <ProposalReviewProgressTable
           proposals={allProposals}
           decisionSlug={decisionSlug}
+          opensInSheet={opensInSheet}
         />
       )}
 

@@ -24,6 +24,7 @@ import {
 } from '@op/sense/Table';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@op/sense/Tooltip';
 import { useFormatter } from 'next-intl';
+import type { MouseEvent } from 'react';
 import { LuCircleAlert } from 'react-icons/lu';
 
 import { Link, useTranslations } from '@/lib/i18n';
@@ -32,6 +33,7 @@ import {
   ProposalStatusBadge,
   useProposalCardData,
 } from './ProposalCard/ProposalCardView';
+import { useOpenProposalInSheet } from './ProposalSheet/proposalSheetState';
 import { useProposalReviewAggregates } from './proposalReviewDecoration';
 
 type Reviewer = ProposalReviewAggregates['reviewers'][number];
@@ -39,6 +41,8 @@ type Reviewer = ProposalReviewAggregates['reviewers'][number];
 interface ProposalReviewProgressTableProps {
   proposals: Proposal[];
   decisionSlug: string;
+  /** Rows open the proposal sheet instead of the proposal's reviews page. */
+  opensInSheet?: boolean;
 }
 
 const MAX_FACES = 3;
@@ -46,8 +50,10 @@ const MAX_FACES = 3;
 export function ProposalReviewProgressTable({
   proposals,
   decisionSlug,
+  opensInSheet = false,
 }: ProposalReviewProgressTableProps) {
   const t = useTranslations('decisions');
+  const openInSheet = useOpenProposalInSheet();
 
   return (
     <Table
@@ -67,6 +73,7 @@ export function ProposalReviewProgressTable({
             key={proposal.id}
             proposal={proposal}
             href={`/decisions/${decisionSlug}/proposal/${proposal.profileId}/reviews`}
+            onOpen={opensInSheet ? openInSheet(proposal.profileId) : undefined}
           />
         ))}
       </TableBody>
@@ -77,9 +84,11 @@ export function ProposalReviewProgressTable({
 function ProposalReviewProgressRow({
   proposal,
   href,
+  onOpen,
 }: {
   proposal: Proposal;
   href: string;
+  onOpen?: (event: MouseEvent<HTMLElement>) => void;
 }) {
   const { titleText, displayCategories } = useProposalCardData({ proposal });
   const review = useProposalReviewAggregates(proposal.id);
@@ -95,6 +104,7 @@ function ProposalReviewProgressRow({
         <div className="flex flex-col gap-1">
           <Link
             href={href}
+            onClick={onOpen}
             className="static text-foreground after:absolute after:inset-0 focus-visible:outline-none focus-visible:after:ring-2 focus-visible:after:ring-ring/50 focus-visible:after:ring-inset"
           >
             <bdi>{titleText}</bdi>
