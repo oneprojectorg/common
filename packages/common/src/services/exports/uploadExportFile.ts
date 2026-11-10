@@ -23,7 +23,8 @@ export const storeExportFile = async ({
     .from(EXPORTS_BUCKET)
     .upload(filePath, Buffer.from(content), {
       contentType: mimeType,
-      upsert: false,
+      // A retried step writes the same path again.
+      upsert: true,
     });
 
   if (uploadError) {

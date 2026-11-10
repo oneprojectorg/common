@@ -15,6 +15,7 @@ import { Events, event } from '@op/events';
 import type { User } from '@op/supabase/lib';
 
 import { assertUserByAuthId } from '../assert';
+import { personalDataExportActiveKey } from './constants';
 import { requestPersonalDataExport } from './requestPersonalDataExport';
 
 const AUTH_USER_ID = '33333333-3333-4333-8333-333333333333';
@@ -137,13 +138,20 @@ describe('requestPersonalDataExport while an export is running', () => {
     expect(sendEvent).not.toHaveBeenCalled();
   });
 
-  it('fails without queueing a job when the running export ended between reads', async () => {
-    await expect(requestPersonalDataExport({ user })).rejects.toThrow(
-      'Try again',
-    );
+  it.each([
+    ['ended between the claim and the read', { status: 'miss' }],
+    ['cannot be read', { status: 'timeout' }],
+    ['is not an id', { status: 'hit', data: 42 }],
+  ] as const)(
+    'fails without queueing a job when the running export %s',
+    async (_, holder) => {
+      vi.mocked(getWithStatus).mockResolvedValue(holder);
 
-    expect(sendEvent).not.toHaveBeenCalled();
-  });
+      await expect(requestPersonalDataExport({ user })).rejects.toThrow();
+
+      expect(sendEvent).not.toHaveBeenCalled();
+    },
+  );
 
   it('fails without queueing a job when the claim could not be written', async () => {
     vi.mocked(setIfAbsentWithStatus).mockResolvedValue({ status: 'timeout' });
@@ -154,9 +162,27 @@ describe('requestPersonalDataExport while an export is running', () => {
   });
 });
 
+describe('requestPersonalDataExport without Redis', () => {
+  it('queues the job under its own id', async () => {
+    vi.mocked(setIfAbsentWithStatus).mockResolvedValue({ status: 'disabled' });
+
+    const { exportId } = await requestPersonalDataExport({ user });
+
+    const [payload] = sendEvent.mock.calls[0] as [
+      { data: { exportId: string } },
+    ];
+    expect(payload.data.exportId).toBe(exportId);
+  });
+});
+
 describe('requestPersonalDataExport when the job cannot be queued', () => {
-  it('releases its claim, so the next request can start an export', async () => {
+  const activeKey = personalDataExportActiveKey(AUTH_USER_ID);
+
+  beforeEach(() => {
     sendEvent.mockRejectedValueOnce(new Error('Inngest unavailable'));
+  });
+
+  it('releases its claim, so the next request can start an export', async () => {
     vi.mocked(getWithStatus).mockImplementation(async () => ({
       status: 'hit',
       data: vi.mocked(setIfAbsentWithStatus).mock.calls[0]?.[0].data,
@@ -166,7 +192,17 @@ describe('requestPersonalDataExport when the job cannot be queued', () => {
       'Inngest unavailable',
     );
 
-    const [claim] = vi.mocked(setIfAbsentWithStatus).mock.calls[0] ?? [];
-    expect(setWithStatus).toHaveBeenLastCalledWith(claim?.key, null);
+    expect(setIfAbsentWithStatus).toHaveBeenCalledWith(
+      expect.objectContaining({ key: activeKey }),
+    );
+    expect(setWithStatus).toHaveBeenLastCalledWith(activeKey, null);
+  });
+
+  it('reports the send failure when the claim cannot be released', async () => {
+    vi.mocked(getWithStatus).mockResolvedValue({ status: 'timeout' });
+
+    await expect(requestPersonalDataExport({ user })).rejects.toThrow(
+      'Inngest unavailable',
+    );
   });
 });

@@ -1,5 +1,6 @@
 import { getWithStatus, setIfAbsentWithStatus } from '@op/cache';
 import { Events, event } from '@op/events';
+import { logger } from '@op/logging';
 import { User } from '@op/supabase/lib';
 import { randomUUID } from 'crypto';
 
@@ -50,7 +51,17 @@ export const requestPersonalDataExport = async ({
     });
   } catch (error) {
     // No run will release the claim, so release it here.
-    await releaseActivePersonalDataExport({ userId: user.id, exportId });
+    await releaseActivePersonalDataExport({
+      userId: user.id,
+      exportId,
+    }).catch((releaseError: unknown) => {
+      // Keeps the send error, which is the one the caller needs.
+      logger.error('Could not release the export claim', {
+        exportId,
+        error: releaseError,
+      });
+    });
+
     throw error;
   }
 

@@ -4,12 +4,18 @@ vi.mock('@op/cache', () => ({
   setWithStatus: vi.fn(),
 }));
 
+const storage = vi.hoisted(() => {
+  const remove = vi.fn();
+
+  return { remove, from: vi.fn(() => ({ remove })) };
+});
+
+// Only the storage path the function touches.
 vi.mock('@op/supabase/server', () => ({
-  createSBServiceClient: vi.fn(),
+  createSBServiceClient: () => ({ storage: { from: storage.from } }),
 }));
 
 import { setWithStatus } from '@op/cache';
-import { createSBServiceClient } from '@op/supabase/server';
 
 import { EXPORTS_BUCKET } from '../exports/constants';
 import {
@@ -22,8 +28,7 @@ const EXPORT_ID = '11111111-1111-4111-8111-111111111111';
 const USER_ID = '22222222-2222-4222-8222-222222222222';
 const FILE_NAME = 'personal-data.json';
 
-const remove = vi.fn();
-const from = vi.fn(() => ({ remove }));
+const { remove, from } = storage;
 
 const expire = () =>
   expirePersonalDataExport({
@@ -35,12 +40,6 @@ const expire = () =>
 describe('expirePersonalDataExport', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(createSBServiceClient).mockReturnValue(
-      // only the storage path the function touches
-      { storage: { from } } as unknown as ReturnType<
-        typeof createSBServiceClient
-      >,
-    );
     remove.mockResolvedValue({ data: [], error: null });
     vi.mocked(setWithStatus).mockResolvedValue({ status: 'ok' });
   });

@@ -119,7 +119,7 @@ export const signCompletedExport = async ({
 
     return true;
   } catch (error) {
-    logger.error('Failed to re-sign export URL', { exportId, error });
+    logger.error('Failed to sign export URL', { exportId, error });
 
     record.signedUrl = undefined;
 

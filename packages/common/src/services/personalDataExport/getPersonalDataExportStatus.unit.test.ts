@@ -25,15 +25,37 @@ const completedRecord = {
   truncatedSections: [],
 };
 
+const authUser = (id: string): User => ({
+  id,
+  app_metadata: {},
+  user_metadata: {},
+  aud: 'authenticated',
+});
+
 const readAs = (authUserId: string) =>
   getPersonalDataExportStatus({
     exportId: EXPORT_ID,
-    user: { id: authUserId } as User,
+    user: authUser(authUserId),
   });
+
+const signArgs = () => {
+  const [call] = vi.mocked(signCompletedExport).mock.calls;
+
+  if (!call) {
+    throw new Error('signCompletedExport was not called');
+  }
+
+  return call[0];
+};
 
 beforeEach(() => {
   vi.clearAllMocks();
   vi.mocked(readExportRecord).mockResolvedValue(completedRecord);
+  vi.mocked(signCompletedExport).mockImplementation(async ({ record }) => {
+    record.signedUrl = 'https://signed';
+
+    return true;
+  });
 });
 
 describe('getPersonalDataExportStatus authorization', () => {
@@ -94,17 +116,26 @@ describe('getPersonalDataExportStatus download URL', () => {
   it('signs a short-lived URL on read without storing it', async () => {
     await readAs(SUBJECT_AUTH_ID);
 
-    const [call] = vi.mocked(signCompletedExport).mock.calls;
+    const args = signArgs();
 
-    expect(call![0]).toMatchObject({ ttlSeconds: 60 });
-    expect(call![0]).not.toHaveProperty('cacheKey');
+    expect(args).toMatchObject({ ttlSeconds: 60 });
+    expect(args).not.toHaveProperty('cacheKey');
+  });
+
+  it('returns the signed URL while the stored record stays without one', async () => {
+    const stored = { ...completedRecord };
+    vi.mocked(readExportRecord).mockResolvedValue(stored);
+
+    const result = await readAs(SUBJECT_AUTH_ID);
+
+    expect(result).toMatchObject({ signedUrl: 'https://signed' });
+    expect(stored).not.toHaveProperty('signedUrl');
   });
 
   it('rebuilds the storage key from the record it just authorized', async () => {
     await readAs(SUBJECT_AUTH_ID);
 
-    const [call] = vi.mocked(signCompletedExport).mock.calls;
-    const { resolveFilePath } = call![0];
+    const { resolveFilePath } = signArgs();
 
     expect(resolveFilePath('f.json')).toBe(
       `user/${SUBJECT_AUTH_ID}/personal-data/f.json`,

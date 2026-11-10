@@ -18,6 +18,8 @@ export const exportPersonalData = inngest.createFunction(
     id: 'exportPersonalData',
     // one run per user; the request reuses a running export's id
     singleton: { key: 'event.data.userId', mode: 'skip' },
+    // Ends the run before the request's 30-minute claim lapses.
+    timeouts: { start: '5m', finish: '25m' },
   },
   { event: personalDataExportRequested.name },
   async ({ event, step }) => {
@@ -33,30 +35,34 @@ export const exportPersonalData = inngest.createFunction(
         channel: Channels.personalDataExport(exportId),
         seed: { userId },
         produce: async () => {
+          // Named in its own step, so a retried upload overwrites the same file.
+          const fileName = await step.run('name-file', async () =>
+            personalDataExportFileName(),
+          );
+
           // One step so the file never crosses a step boundary into Inngest state.
-          const stored = await step.run('collect-and-upload', async () => {
-            const data = await collectPersonalData({ authUserId: userId });
-            const fileName = personalDataExportFileName();
+          const truncatedSections = await step.run(
+            'collect-and-upload',
+            async () => {
+              const data = await collectPersonalData({ authUserId: userId });
 
-            await storeExportFile({
-              filePath: personalDataExportFilePath(userId, fileName),
-              content: JSON.stringify(data, null, 2),
-              mimeType: 'application/json',
-            });
+              await storeExportFile({
+                filePath: personalDataExportFilePath(userId, fileName),
+                content: JSON.stringify(data, null, 2),
+                mimeType: 'application/json',
+              });
 
-            return {
-              fileName,
-              truncatedSections: data.truncatedSections,
-            };
-          });
+              return data.truncatedSections;
+            },
+          );
 
           // Before any status write, so a failed write cannot keep the file.
           await step.sendEvent('schedule-expiry', {
             name: personalDataExportFileStored.name,
-            data: { exportId, userId, fileName: stored.fileName },
+            data: { exportId, userId, fileName },
           });
 
-          return stored;
+          return { fileName, truncatedSections };
         },
       });
     } finally {

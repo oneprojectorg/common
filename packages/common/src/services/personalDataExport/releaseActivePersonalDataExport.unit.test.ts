@@ -7,6 +7,7 @@ vi.mock('@op/cache', () => ({
 
 import { getWithStatus, setWithStatus } from '@op/cache';
 
+import { personalDataExportActiveKey } from './constants';
 import { releaseActivePersonalDataExport } from './releaseActivePersonalDataExport';
 
 const USER_ID = '33333333-3333-4333-8333-333333333333';
@@ -31,7 +32,7 @@ describe('releaseActivePersonalDataExport', () => {
     await release();
 
     expect(setWithStatus).toHaveBeenCalledWith(
-      expect.stringContaining(USER_ID),
+      personalDataExportActiveKey(USER_ID),
       null,
     );
   });
