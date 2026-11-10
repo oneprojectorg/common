@@ -13,9 +13,8 @@ import { LuArrowDownToLine, LuDownload, LuTriangleAlert } from 'react-icons/lu';
 import { useTranslations } from '@/lib/i18n';
 
 import { ButtonLink } from '@/components/ButtonLink';
-
-import { resolveExportRetryOutcome } from './exportRetry';
-import { EXPORT_WAIT_TIMEOUT_MS } from './exportWait';
+import { resolveExportRetryOutcome } from '@/components/exports/exportRetry';
+import { EXPORT_WAIT_TIMEOUT_MS } from '@/components/exports/exportWait';
 
 export interface ExportProposalsButtonProps {
   processInstanceId: string;

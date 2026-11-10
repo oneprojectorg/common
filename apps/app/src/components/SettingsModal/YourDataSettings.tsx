@@ -19,17 +19,15 @@ import { type ReactNode, useId, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { type PersonalDataExport } from './usePersonalDataExport';
+import {
+  DownloadDataAction,
+  DownloadDataPartialNotice,
+} from '../PersonalDataExport/DownloadDataAction';
 
-export const YourDataSettings = ({
-  personalDataExport,
-}: {
-  personalDataExport: PersonalDataExport;
-}) => {
+export const YourDataSettings = () => {
   const t = useTranslations('settings');
   const tShared = useTranslations();
   const downloadDataEnabled = useFeatureFlag('download-user-data');
-  const { isRunning } = personalDataExport;
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
 
   return (
@@ -40,23 +38,8 @@ export const YourDataSettings = ({
           <DataRow
             title={t('downloadDataTitle')}
             hint={t('downloadDataHint')}
-            action={
-              <>
-                {/* the run takes minutes and settles without a navigation */}
-                <span role="status" aria-live="polite" className="sr-only">
-                  {isRunning ? t('downloadDataPreparing') : ''}
-                </span>
-                <Button
-                  variant="outline"
-                  // disabled rather than `loading`, whose spinner hides the label
-                  disabled={isRunning}
-                  aria-busy={isRunning}
-                  onClick={personalDataExport.start}
-                >
-                  {isRunning ? t('downloadDataPreparing') : t('downloadAction')}
-                </Button>
-              </>
-            }
+            action={<DownloadDataAction />}
+            footer={<DownloadDataPartialNotice />}
           />
         ) : null}
         <DataRow
@@ -100,10 +83,12 @@ const DataRow = ({
   title,
   hint,
   action,
+  footer,
 }: {
   title: string;
   hint: string;
   action: ReactNode;
+  footer?: ReactNode;
 }) => {
   const titleId = useId();
 
@@ -118,6 +103,7 @@ const DataRow = ({
         </div>
         <div className="shrink-0">{action}</div>
       </div>
+      {footer}
     </section>
   );
 };
