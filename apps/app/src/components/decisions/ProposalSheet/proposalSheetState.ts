@@ -15,7 +15,6 @@ export interface ProposalSheetControls {
 }
 
 export interface ProposalSheetState {
-  /** `null` keeps the sheet closed. */
   openProfileId: string | null;
   route: ProposalSheetRoute;
   expandHref?: (profileId: string) => string;
@@ -35,9 +34,8 @@ export const ProposalSheetStateContext =
   createContext<ProposalSheetState | null>(null);
 
 /**
- * `onClick={openInSheet(profileId)}` — curried so a list can build one per card
- * inside its `map`. Returns `undefined` with no provider above, leaving the
- * link a plain link, which is the wanted fallback off a decision page.
+ * Curried, so a list builds one handler per card. Returns `undefined` without
+ * a provider, so the link stays a plain link.
  */
 export function useOpenProposalInSheet() {
   const open = useContext(ProposalSheetContext)?.open;

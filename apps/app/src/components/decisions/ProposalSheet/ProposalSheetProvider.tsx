@@ -13,16 +13,7 @@ import {
   ProposalSheetStateContext,
 } from './proposalSheetState';
 
-/**
- * The sheet's URL state only; mount a `ProposalSheet` (or another composition
- * of `ProposalSheetShell`) inside it. Mounted once per decision page, above
- * the cards: masonry re-parents every card when one proposal arrives, so a
- * sheet owned by a card would close mid-read.
- *
- * A phone gets no sheet at all — a panel there would cover the list it is
- * meant to preserve, so the card's title link is left to reach the proposal
- * page on its own.
- */
+/** Mounted once per decision page, above the cards, because masonry re-parents cards. */
 export function ProposalSheetProvider({
   slug,
   instanceId,

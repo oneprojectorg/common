@@ -24,19 +24,11 @@ import { decisionRootHref, proposalHref } from '../proposalHrefs';
 import { useLiveProposalDocument } from '../useLiveProposalDocument';
 import { ProposalSheetStateContext } from './proposalSheetState';
 
-/**
- * The sheet's chrome: the sense `Sheet`, the header actions, the error boundary
- * and Suspense, the scroll region, and the proposal context the parts inside
- * read. Renders nothing without a `ProposalSheetProvider` above, or on a phone.
- */
 export function ProposalSheetShell({
   footer,
   children,
 }: {
-  /**
-   * Stays in view under the scroll region, e.g. a `ProposalSheetFooter`.
-   * Renders only once the proposal has loaded, inside its context.
-   */
+  /** Stays in view under the scroll region. */
   footer?: ReactNode;
   children: ReactNode;
 }) {
@@ -63,8 +55,7 @@ export function ProposalSheetShell({
         showCloseButton={false}
         className="w-full gap-0 p-0 sm:max-w-2xl"
       >
-        {/* The proposal's own H1 arrives with the query, so the dialog's
-            accessible name is this static one. */}
+        {/* The proposal's H1 arrives with the query, so the dialog needs a static name. */}
         <SheetTitle className="sr-only">
           {t('decisions.proposals.proposalLabel')}
         </SheetTitle>
@@ -72,8 +63,7 @@ export function ProposalSheetShell({
         <div className="flex shrink-0 items-center justify-end gap-1 border-b px-4 py-3">
           {shownProfileId ? (
             <>
-              {/* Reporting needs the proposal's own id, so it waits on the
-                  query. Close stays up throughout. */}
+              {/* Reporting needs the proposal's own id, so it waits on the query. */}
               <APIErrorBoundary fallbacks={{ default: () => null }}>
                 <Suspense fallback={null}>
                   <ReportAction profileId={shownProfileId} />
@@ -142,7 +132,6 @@ export function ProposalSheetShell({
   );
 }
 
-/** The one `getProposal` read for the parts; they take the proposal from context. */
 function SheetProposalProvider({
   profileId,
   decisionRoot,
