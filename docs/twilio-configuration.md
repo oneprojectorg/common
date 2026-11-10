@@ -244,6 +244,38 @@ collide with it.
 GoTrue never autoconfirms a phone. `smsAutoconfirm.test.ts` in `services/api`
 fails if that is turned back on.
 
+### Local SMS client, no Twilio account
+
+`pnpm sms:client` is a local phone for the inbound webhook. It signs each
+Twilio-shaped payload with `TWILIO_AUTH_TOKEN` the same way Twilio does, so
+the webhook accepts it with no Twilio account. Any shared string works as the
+token.
+
+Setup:
+
+1. Set `TWILIO_AUTH_TOKEN` to any string, the same value in the api server
+   env and in `.env.local` (the client reads `.env.local` as a fallback).
+2. Set `TWILIO_FAKE_SMS_OUTBOX` to a writable file path, the same value in
+   both places. The server then writes each outbound SMS to that file as one
+   JSON line instead of calling Twilio, and the client prints the ones
+   addressed to you. Never set it in production: `getSmsProvider` throws.
+3. Run the api server on :3101 and the Inngest dev server
+   (`pnpm w:workflows dev`).
+
+Then:
+
+```sh
+pnpm sms:client                           # conversation prompt
+pnpm sms:client "show columbus"           # one text, wait for the reply
+pnpm sms:client --to +16145550130 list    # text a decision line
+pnpm sms:client --from +15005550007 list  # text as another number
+```
+
+The sender must be a confirmed account (sign one in through the app with a
+`[auth.sms.test_otp]` number first). GoTrue sends the JOIN signup codes
+through Twilio Verify itself, so that one flow still needs the ngrok setup
+below.
+
 ### Manual test through ngrok
 
 A text conversation against a local checkout needs a Twilio account with a
