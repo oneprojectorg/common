@@ -21,8 +21,8 @@ import {
 } from '../../utils';
 import { assertInstanceProfileAccess, getIndividualProfileId } from '../access';
 import { assertProfileAccess } from '../assert';
-import { ballotProposalFilter } from './ballotProposalFilter';
 import { getFieldUnit } from './fieldUnit';
+import { getBallotProposalFilter } from './getBallotProposalFilter';
 import { type ProposalCosts, getProposalCosts } from './getProposalCosts';
 import { decisionPermission } from './permissions';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
@@ -417,7 +417,7 @@ export const submitVote = async ({
       );
     }
 
-    const filter = await ballotProposalFilter({ instance: processInstance });
+    const filter = await getBallotProposalFilter({ instance: processInstance });
     const distinctSelectedIds = [...new Set(data.selectedProposalIds)];
     const eligibleProposals =
       filter.isEmpty || distinctSelectedIds.length === 0

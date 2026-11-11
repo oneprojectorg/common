@@ -5,7 +5,7 @@ import {
   type BallotInstance,
   priceBallotProposals,
 } from './ballotProposalCosts';
-import { ballotProposalFilter } from './ballotProposalFilter';
+import { getBallotProposalFilter } from './getBallotProposalFilter';
 
 export interface BallotProposalListItem {
   id: string;
@@ -30,7 +30,7 @@ export async function listBallotProposals({
   after?: number;
   limit: number;
 }): Promise<BallotProposalPage> {
-  const filter = await ballotProposalFilter({ instance, taxonomyTermId });
+  const filter = await getBallotProposalFilter({ instance, taxonomyTermId });
 
   if (filter.isEmpty) {
     return { items: [], nextCursor: null };
