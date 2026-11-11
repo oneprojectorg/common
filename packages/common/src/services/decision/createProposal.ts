@@ -22,7 +22,10 @@ import {
 } from '../access';
 import { assertGlobalRole } from '../assert';
 import { generateUniqueProfileSlug } from '../profile/utils';
-import { assertProposalsAllowed } from './assertProposalsAllowed';
+import {
+  assertProposalsAllowed,
+  isDevelopPhaseById,
+} from './assertProposalsAllowed';
 import { withBoundaryCategoryLabel } from './boundaryCategory';
 import { decisionPermission } from './permissions';
 import { processProposalContent } from './proposalContentProcessor';
@@ -58,25 +61,39 @@ export const createProposal = async ({
     throw new NotFoundError('Process instance', data.processInstanceId);
   }
 
-  await assertInstanceProfileAccess({
-    user: { id: authUserId },
-    instance,
-    profilePermissions: [
-      { profile: permission.ADMIN },
-      { decisions: decisionPermission.SUBMIT_PROPOSALS },
-    ],
-    orgFallbackPermissions: { profile: permission.ADMIN },
-  });
-
   const instanceData = instance.instanceData as DecisionInstanceData;
   const currentPhaseId = instance.currentStateId;
+  const proposalInstance = {
+    id: instance.id,
+    profileId: instance.profileId,
+    ownerProfileId: instance.ownerProfileId,
+    instanceData,
+  };
+
+  // In a develop phase assertProposalsAllowed is the whole authorization.
+  if (
+    !isDevelopPhaseById({
+      instance: proposalInstance,
+      phaseId: currentPhaseId,
+    })
+  ) {
+    await assertInstanceProfileAccess({
+      user: { id: authUserId },
+      instance,
+      profilePermissions: [
+        { profile: permission.ADMIN },
+        { decisions: decisionPermission.SUBMIT_PROPOSALS },
+      ],
+      orgFallbackPermissions: { profile: permission.ADMIN },
+    });
+  }
 
   if (!currentPhaseId) {
     throw new ValidationError('Invalid phase in process instance');
   }
 
   await assertProposalsAllowed({
-    instance: { id: instance.id, profileId: instance.profileId, instanceData },
+    instance: proposalInstance,
     phaseId: currentPhaseId,
     user: { id: authUserId },
   });

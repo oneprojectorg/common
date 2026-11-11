@@ -1,10 +1,20 @@
 import { cache } from '@op/cache';
+import { type DecisionInstanceData, createDecisionRole } from '@op/common';
 import {
   TestDecisionsDataManager,
+  createCategoryReviewer,
   ensureProposalCategoryTerms,
 } from '@op/common/testing';
-import { ProposalStatus, proposalCategories } from '@op/db/schema';
+import {
+  ProposalStatus,
+  Visibility,
+  processInstances,
+  profileUsers,
+  proposalCategories,
+  taxonomyTerms,
+} from '@op/db/schema';
 import { db, eq } from '@op/db/test';
+import { randomUUID } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
@@ -93,6 +103,107 @@ describe.concurrent('createProposal', () => {
       .where(eq(proposalCategories.proposalId, proposal.id));
 
     expect(links).toEqual([{ taxonomyTermId: knownTerm.taxonomyTermId }]);
+  });
+
+  it('lets a caller with Review and a row for the develop phase create without the Submit bit, hidden by the phase default', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instanceId = setup.instance.instance.id;
+    const instanceProfileId = setup.instance.profileId;
+    const record = await db.query.processInstances.findFirst({
+      where: { id: instanceId },
+    });
+    if (!record) {
+      throw new Error('Instance not found');
+    }
+    const instanceData = record.instanceData as DecisionInstanceData;
+    await db
+      .update(processInstances)
+      .set({
+        instanceData: {
+          ...instanceData,
+          phases: instanceData.phases.map((phase) =>
+            phase.phaseId === 'initial'
+              ? {
+                  ...phase,
+                  rules: {
+                    ...phase.rules,
+                    proposals: {
+                      develop: true,
+                      submit: false,
+                      defaults: { hidden: true },
+                    },
+                  },
+                }
+              : phase,
+          ),
+        },
+      })
+      .where(eq(processInstances.id, instanceId));
+
+    // Review only: no built-in Member role, so no Submit Proposals bit.
+    const role = await createDecisionRole({
+      name: `Review-${task.id}`,
+      profileId: instanceProfileId,
+      permissions: {
+        decisions: {
+          type: 'decision',
+          value: {
+            create: false,
+            read: true,
+            update: false,
+            delete: false,
+            admin: false,
+            inviteMembers: false,
+            review: true,
+            submitProposals: false,
+            vote: false,
+          },
+        },
+      },
+    });
+    const reviewer = await testData.createMemberUser({
+      organization: setup.organization,
+    });
+    await db.insert(profileUsers).values({
+      profileId: instanceProfileId,
+      authUserId: reviewer.authUserId,
+      email: reviewer.email,
+    });
+    await testData.assignRole(reviewer.authUserId, instanceProfileId, role.id);
+
+    const termId = randomUUID();
+    await db.insert(taxonomyTerms).values({
+      id: termId,
+      termUri: `test-term-${termId}`,
+      label: `Term ${termId}`,
+    });
+    // Deleting the term cascades to the category-reviewer row.
+    onTestFinished(async () => {
+      await db.delete(taxonomyTerms).where(eq(taxonomyTerms.id, termId));
+    });
+    await createCategoryReviewer({
+      processInstanceId: instanceId,
+      taxonomyTermId: termId,
+      reviewerProfileId: reviewer.profileId,
+      phaseId: 'initial',
+    });
+    const { caller } = await createAuthenticatedCaller(reviewer.email);
+
+    const proposal = await caller.decision.createProposal({
+      processInstanceId: instanceId,
+      proposalData: { title: 'Develop phase proposal' },
+    });
+    testData.trackProfileForCleanup(proposal.profileId);
+
+    expect(proposal.status).toBe(ProposalStatus.DRAFT);
+    expect(proposal.visibility).toBe(Visibility.HIDDEN);
   });
 });
 

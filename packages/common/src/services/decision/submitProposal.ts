@@ -11,7 +11,10 @@ import { permission } from 'access-zones';
 
 import { CommonError, NotFoundError, ValidationError } from '../../utils';
 import { assertProfileAccess } from '../assert';
-import { assertProposalsAllowed } from './assertProposalsAllowed';
+import {
+  assertProposalsAllowed,
+  isDevelopPhaseById,
+} from './assertProposalsAllowed';
 import { lockProcessInstanceOrThrow } from './lockProcessInstance';
 import { decisionPermission } from './permissions';
 import {
@@ -68,25 +71,38 @@ export const submitProposal = async ({
     throw new NotFoundError('Decision profile');
   }
 
-  // Authorization check - verify user has access to the decision profile
-  await assertProfileAccess({
-    user: { id: authUserId },
-    profileId: instance.profileId,
-    permissions: [
-      { profile: permission.ADMIN },
-      { decisions: decisionPermission.SUBMIT_PROPOSALS },
-    ],
-  });
-
   const instanceData = instance.instanceData as DecisionInstanceData;
   const currentPhaseId = instance.currentStateId;
+  const proposalInstance = {
+    id: instance.id,
+    profileId: instance.profileId,
+    ownerProfileId: instance.ownerProfileId,
+    instanceData,
+  };
+
+  // In a develop phase assertProposalsAllowed is the whole authorization.
+  if (
+    !isDevelopPhaseById({
+      instance: proposalInstance,
+      phaseId: currentPhaseId,
+    })
+  ) {
+    await assertProfileAccess({
+      user: { id: authUserId },
+      profileId: instance.profileId,
+      permissions: [
+        { profile: permission.ADMIN },
+        { decisions: decisionPermission.SUBMIT_PROPOSALS },
+      ],
+    });
+  }
 
   if (!currentPhaseId) {
     throw new ValidationError('Invalid phase in process instance');
   }
 
   await assertProposalsAllowed({
-    instance: { id: instance.id, profileId: instance.profileId, instanceData },
+    instance: proposalInstance,
     phaseId: currentPhaseId,
     user: { id: authUserId },
   });

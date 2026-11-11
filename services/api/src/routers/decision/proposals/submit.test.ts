@@ -1,13 +1,19 @@
 import { mockCollab } from '@op/collab/testing';
-import type { DecisionInstanceData } from '@op/common';
-import { TestDecisionsDataManager } from '@op/common/testing';
+import { type DecisionInstanceData, createDecisionRole } from '@op/common';
+import {
+  TestDecisionsDataManager,
+  createCategoryReviewer,
+} from '@op/common/testing';
 import {
   ProposalStatus,
   Visibility,
   processInstances,
+  profileUsers,
   proposals,
+  taxonomyTerms,
 } from '@op/db/schema';
 import { db, eq } from '@op/db/test';
+import { randomUUID } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
@@ -1116,6 +1122,108 @@ describe.concurrent('submitProposal', () => {
     await expect(
       caller.decision.submitProposal({ proposalId: proposal.id }),
     ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
+  });
+
+  it('lets a caller with Review and a row for the develop phase submit without the Submit bit', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instanceId = setup.instance.instance.id;
+    const instanceProfileId = setup.instance.profileId;
+    const record = await db.query.processInstances.findFirst({
+      where: { id: instanceId },
+    });
+    if (!record) {
+      throw new Error('Instance not found');
+    }
+    const instanceData = record.instanceData as DecisionInstanceData;
+    await db
+      .update(processInstances)
+      .set({
+        instanceData: {
+          ...instanceData,
+          phases: instanceData.phases.map((phase) =>
+            phase.phaseId === 'initial'
+              ? {
+                  ...phase,
+                  rules: {
+                    ...phase.rules,
+                    proposals: {
+                      develop: true,
+                      submit: false,
+                    },
+                  },
+                }
+              : phase,
+          ),
+        },
+      })
+      .where(eq(processInstances.id, instanceId));
+
+    // Review only: no built-in Member role, so no Submit Proposals bit.
+    const role = await createDecisionRole({
+      name: `Review-${task.id}`,
+      profileId: instanceProfileId,
+      permissions: {
+        decisions: {
+          type: 'decision',
+          value: {
+            create: false,
+            read: true,
+            update: false,
+            delete: false,
+            admin: false,
+            inviteMembers: false,
+            review: true,
+            submitProposals: false,
+            vote: false,
+          },
+        },
+      },
+    });
+    const reviewer = await testData.createMemberUser({
+      organization: setup.organization,
+    });
+    await db.insert(profileUsers).values({
+      profileId: instanceProfileId,
+      authUserId: reviewer.authUserId,
+      email: reviewer.email,
+    });
+    await testData.assignRole(reviewer.authUserId, instanceProfileId, role.id);
+
+    const termId = randomUUID();
+    await db.insert(taxonomyTerms).values({
+      id: termId,
+      termUri: `test-term-${termId}`,
+      label: `Term ${termId}`,
+    });
+    // Deleting the term cascades to the category-reviewer row.
+    onTestFinished(async () => {
+      await db.delete(taxonomyTerms).where(eq(taxonomyTerms.id, termId));
+    });
+    await createCategoryReviewer({
+      processInstanceId: instanceId,
+      taxonomyTermId: termId,
+      reviewerProfileId: reviewer.profileId,
+      phaseId: 'initial',
+    });
+    const draft = await testData.createProposal({
+      userEmail: reviewer.email,
+      processInstanceId: instanceId,
+      proposalData: { title: 'Develop phase proposal' },
+    });
+    const caller = await createAuthenticatedCaller(reviewer.email);
+
+    const result = await caller.decision.submitProposal({
+      proposalId: draft.id,
+    });
+
+    expect(result.status).toBe(ProposalStatus.SUBMITTED);
   });
 });
 
