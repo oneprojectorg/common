@@ -5,6 +5,8 @@ import {
 } from '@op/db/schema';
 import { and, asc, count, eq, inArray, isNull } from 'drizzle-orm';
 
+import { notSuperseded } from '../proposalSupersession';
+
 export interface ReviewerWithOpenAssignments {
   reviewerProfileId: string;
   remainingCount: number;
@@ -41,6 +43,11 @@ export async function listReviewersWithOpenAssignments({
         eq(proposalReviewAssignments.phaseId, phaseId),
         inArray(proposalReviewAssignments.status, OPEN_ASSIGNMENT_STATUSES),
         isNull(proposalReviewAssignments.deletedAt),
+        // A merged-away proposal is out of the queue, so it earns no reminder.
+        notSuperseded({
+          proposalId: proposalReviewAssignments.proposalId,
+          processInstanceId,
+        }),
         reviewerProfileIds
           ? inArray(proposalReviewAssignments.reviewerProfileId, [
               ...reviewerProfileIds,

@@ -188,6 +188,49 @@ describe.concurrent('decision.listReviewReminderRecipients', () => {
     expect(ids).not.toContain(foreignProfileId);
   });
 
+  it('skips open assignments on merged-away proposals', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const context = await testData.createContext();
+    const behind = await testData.createInstanceMember(context);
+    const open = await testData.createReviewAssignment({
+      context,
+      reviewer: behind,
+      title: `Open proposal ${task.id}`,
+      status: ProposalReviewAssignmentStatus.PENDING,
+    });
+    await testData.createMergedAwayAssignments({
+      context,
+      reviewer: behind,
+      targetProposalId: open.proposal.id,
+    });
+    // Open work only on merged-away proposals: nothing left to remind about.
+    const onlyMerged = await testData.createInstanceMember(context);
+    await testData.createMergedAwayAssignments({
+      context,
+      reviewer: onlyMerged,
+      targetProposalId: open.proposal.id,
+    });
+
+    const adminCaller = await createAuthenticatedCaller(
+      context.defaultReviewer.email,
+    );
+
+    const result = await adminCaller.decision.listReviewReminderRecipients({
+      processInstanceId: context.instance.instance.id,
+      phaseId: 'review',
+    });
+
+    expect(
+      result.items.map((row) => ({
+        id: row.reviewer.id,
+        remainingCount: row.remainingCount,
+      })),
+    ).toEqual([{ id: behind.profileId, remainingCount: 1 }]);
+  });
+
   it('keeps a reviewer whose profile has no owning account, with no contact', async ({
     task,
     onTestFinished,

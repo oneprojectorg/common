@@ -97,6 +97,30 @@ const decodeQueueCursor = (
 };
 
 /**
+ * One reviewer's queue in one phase. The list and the admin totals both use
+ * it, so the counts describe exactly the rows the list shows.
+ */
+export const reviewerQueueFilter = ({
+  table = proposalReviewAssignments,
+  processInstanceId,
+  phaseId,
+  reviewerProfileId,
+}: {
+  table?: typeof proposalReviewAssignments;
+  processInstanceId: string;
+  phaseId: string;
+  reviewerProfileId: string;
+}): SQL =>
+  and(
+    eq(table.processInstanceId, processInstanceId),
+    eq(table.reviewerProfileId, reviewerProfileId),
+    eq(table.phaseId, phaseId),
+    // Merging doesn't delete assignments, so a proposal merged mid-review
+    // would otherwise stay in its reviewer's queue.
+    notSuperseded({ proposalId: table.proposalId, processInstanceId }),
+  )!;
+
+/**
  * Returns one page of the reviewer's authorized review assignments in `phaseId`.
  */
 export async function listReviewAssignments({
@@ -278,9 +302,12 @@ export async function listAssignmentsForReviewer({
   // Shared by the page and the count so `total` describes the same set.
   const buildFilterConditions = (t: typeof proposalReviewAssignments): SQL =>
     and(
-      eq(t.processInstanceId, processInstanceId),
-      eq(t.reviewerProfileId, reviewerProfileId),
-      eq(t.phaseId, phaseId),
+      reviewerQueueFilter({
+        table: t,
+        processInstanceId,
+        phaseId,
+        reviewerProfileId,
+      }),
       status ? eq(t.status, status) : undefined,
       categoryProposalIds
         ? inArray(t.proposalId, categoryProposalIds)
@@ -298,9 +325,6 @@ export async function listAssignmentsForReviewer({
               ),
           )
         : undefined,
-      // Merging doesn't delete assignments, so a proposal merged mid-review
-      // would otherwise stay in its reviewer's queue.
-      notSuperseded({ proposalId: t.proposalId, processInstanceId }),
     )!;
 
   const [rows, countResult] = await Promise.all([

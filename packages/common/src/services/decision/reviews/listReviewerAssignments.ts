@@ -1,4 +1,4 @@
-import { and, count, db, eq, sql } from '@op/db/client';
+import { count, db, eq, sql } from '@op/db/client';
 import {
   ProposalReviewState,
   proposalReviewAssignments,
@@ -13,7 +13,10 @@ import { toAccountContact } from '../../profile/schemas/accountContact';
 import { withAccountContact } from '../../profile/withAccountContact';
 import { getEligibleReviewerProfileIds } from '../getEligibleReviewerProfileIds';
 import { getInstance } from '../getInstance';
-import { listAssignmentsForReviewer } from '../listReviewAssignments';
+import {
+  listAssignmentsForReviewer,
+  reviewerQueueFilter,
+} from '../listReviewAssignments';
 import type { InstancePhaseRef } from '../schemas/instance';
 import {
   type ReviewerAssignments,
@@ -107,7 +110,7 @@ export async function listReviewerAssignments({
   });
 }
 
-/** Whole-queue counts: the page drops merged-away proposals that still count as done work. */
+/** Whole-queue counts over the same set the paged list shows. */
 async function getReviewerQueueTotals({
   processInstanceId,
   phaseId,
@@ -121,11 +124,11 @@ async function getReviewerQueueTotals({
     proposalReviews.assignmentId,
     proposalReviewAssignments.id,
   );
-  const reviewerQueue = and(
-    eq(proposalReviewAssignments.processInstanceId, processInstanceId),
-    eq(proposalReviewAssignments.phaseId, phaseId),
-    eq(proposalReviewAssignments.reviewerProfileId, reviewerProfileId),
-  );
+  const reviewerQueue = reviewerQueueFilter({
+    processInstanceId,
+    phaseId,
+    reviewerProfileId,
+  });
 
   const [row] = await db
     .select({

@@ -10,6 +10,7 @@ import { UnauthorizedError } from '../../utils';
 import { assertProfileAccess } from '../assert';
 import { getInstance } from './getInstance';
 import { getProposalIdsForPhase } from './getProposalsForPhase';
+import { notSuperseded } from './proposalSupersession';
 import type { InstancePhaseRef } from './schemas/instance';
 import type { PhaseInstanceData } from './schemas/instanceData';
 import type { PhaseReviewProgress } from './schemas/reviews';
@@ -70,7 +71,7 @@ export async function getPhaseReviewProgress(
 
 // Counts distinct reviewers from `proposalReviewAssignments` rows for this
 // instance/phase — i.e. reviewers who actually have an assignment, not
-// users with the reviewer role.
+// users with the reviewer role. Merged-away proposals are out of the set.
 async function getAssignedReviewerCounts({
   processInstanceId,
   phaseId,
@@ -92,6 +93,10 @@ async function getAssignedReviewerCounts({
       and(
         eq(proposalReviewAssignments.processInstanceId, processInstanceId),
         eq(proposalReviewAssignments.phaseId, phaseId),
+        notSuperseded({
+          proposalId: proposalReviewAssignments.proposalId,
+          processInstanceId,
+        }),
       ),
     );
 

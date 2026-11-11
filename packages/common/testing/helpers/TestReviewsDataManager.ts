@@ -1,10 +1,13 @@
 import { db } from '@op/db/client';
 import {
+  ProposalRelationshipType,
   ProposalReviewAssignmentStatus,
+  ProposalReviewState,
   attachments,
   objectsInStorage,
   processInstances,
   proposalAttachments,
+  proposalRelationships,
 } from '@op/db/schema';
 import { eq } from 'drizzle-orm';
 
@@ -19,6 +22,7 @@ import {
 } from '../data/decision-data';
 import {
   configureProcessReviews,
+  createProposalReview,
   createReviewScenario,
   defaultReviewSettings,
 } from '../data/review-data';
@@ -393,6 +397,56 @@ export class TestReviewsDataManager {
       reviewer,
       instance: context.instance,
     };
+  }
+
+  /**
+   * Gives `reviewer` two assignments on a proposal merged into
+   * `targetProposalId`: one pending, one completed with a submitted review.
+   * Neither belongs to the phase's review set, so no read should count them.
+   */
+  async createMergedAwayAssignments({
+    context,
+    reviewer = context.defaultReviewer,
+    targetProposalId,
+  }: {
+    context: ReviewAssignmentContext;
+    reviewer?: ReviewParticipant;
+    targetProposalId: string;
+  }) {
+    const [pending, completed] = await Promise.all([
+      this.createReviewAssignment({
+        context,
+        reviewer,
+        title: 'Merged away pending',
+        status: ProposalReviewAssignmentStatus.PENDING,
+      }),
+      this.createReviewAssignment({
+        context,
+        reviewer,
+        title: 'Merged away completed',
+        status: ProposalReviewAssignmentStatus.COMPLETED,
+      }),
+    ]);
+
+    await createProposalReview({
+      assignmentId: completed.assignment.id,
+      state: ProposalReviewState.SUBMITTED,
+      reviewData: { answers: {}, rationales: {} },
+      submittedAt: new Date().toISOString(),
+    });
+
+    // The edge directly: the reads are under test, not mergeProposals. It
+    // cascades away with the proposals at cleanup.
+    await db.insert(proposalRelationships).values(
+      [pending, completed].map(({ proposal }) => ({
+        processInstanceId: context.instance.instance.id,
+        sourceProposalId: proposal.id,
+        targetProposalId,
+        relationshipType: ProposalRelationshipType.MERGED,
+      })),
+    );
+
+    return { pending, completed };
   }
 
   /** Attaches a file to an existing proposal for review payload tests. */

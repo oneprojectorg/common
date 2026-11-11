@@ -4,12 +4,10 @@ import {
   TestReviewsDataManager,
 } from '@op/common/testing';
 import {
-  ProposalRelationshipType,
   ProposalReviewAssignmentStatus,
   ProposalReviewState,
   profileUserToAccessRoles,
   profiles,
-  proposalRelationships,
 } from '@op/db/schema';
 import { ROLES } from '@op/db/seedData/accessControl';
 import { db } from '@op/db/test';
@@ -250,54 +248,51 @@ describe.concurrent('decision.listReviewerAssignments', () => {
     );
   });
 
-  it('keeps a merged-away assignment in the totals while the page drops it', async ({
+  it('counts in its totals only the assignments the page lists, not merged-away ones', async ({
     task,
     onTestFinished,
   }) => {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
-    const merged = await testData.createReviewAssignment({
-      title: `Merged away proposal ${task.id}`,
+    const open = await testData.createReviewAssignment({
+      title: `Open proposal ${task.id}`,
+      status: ProposalReviewAssignmentStatus.PENDING,
     });
-    const context = merged.context;
-    // Same context, so the same reviewer holds both assignments.
-    const survivor = await testData.createReviewAssignment({
+    const context = open.context;
+    // Same context, so the same reviewer holds every assignment.
+    const done = await testData.createReviewAssignment({
       context,
-      title: `Surviving proposal ${task.id}`,
+      title: `Done proposal ${task.id}`,
+      status: ProposalReviewAssignmentStatus.COMPLETED,
     });
-    const instanceId = context.instance.instance.id;
+    await createProposalReview({
+      assignmentId: done.assignment.id,
+      state: ProposalReviewState.SUBMITTED,
+      reviewData: { answers: {}, rationales: {} },
+      submittedAt: new Date().toISOString(),
+    });
+    await testData.createMergedAwayAssignments({
+      context,
+      targetProposalId: open.proposal.id,
+    });
 
     const adminCaller = await createAuthenticatedCaller(
       context.defaultReviewer.email,
     );
 
-    const before = await adminCaller.decision.listReviewerAssignments({
-      processInstanceId: instanceId,
-      phaseId: 'review',
-      reviewerProfileId: context.defaultReviewer.profileId,
-    });
-    expect(before.items).toHaveLength(2);
-
-    // The edge directly: the read is what's under test, not mergeProposals.
-    await db.insert(proposalRelationships).values({
-      processInstanceId: instanceId,
-      sourceProposalId: merged.proposal.id,
-      targetProposalId: survivor.proposal.id,
-      relationshipType: ProposalRelationshipType.MERGED,
-    });
-
-    const after = await adminCaller.decision.listReviewerAssignments({
-      processInstanceId: instanceId,
+    const result = await adminCaller.decision.listReviewerAssignments({
+      processInstanceId: context.instance.instance.id,
       phaseId: 'review',
       reviewerProfileId: context.defaultReviewer.profileId,
     });
 
-    expect(after.items.map((entry) => entry.assignment.proposal.id)).toEqual([
-      survivor.proposal.id,
-    ]);
-    // The page drops it via notSuperseded; the totals still count the work
-    // the reviewer did on the merged-away proposal, on purpose.
-    expect(after.total).toBe(1);
-    expect(after.assignedCount).toBe(2);
+    expect(
+      result.items.map((entry) => entry.assignment.proposal.id).sort(),
+    ).toEqual([open.proposal.id, done.proposal.id].sort());
+    expect(result.total).toBe(2);
+    expect(result.assignedCount).toBe(result.total);
+    expect(result.submittedCount).toBe(1);
+    expect(result.draftCount).toBe(0);
+    expect(result.remainingCount).toBe(1);
   });
 
   it('withholds the identity of a profile with no tie to the process', async ({

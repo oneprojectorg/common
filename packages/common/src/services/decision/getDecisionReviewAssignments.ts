@@ -11,6 +11,7 @@ import { getProposalIdsForPhase } from './getProposalsForPhase';
 import { getCategoriesByProposalIds } from './listProposalsWithReviewAggregates';
 import { type BudgetData, parseProposalData } from './proposalDataSchema';
 import { buildProposalListPreview } from './proposalListPreview';
+import { notSuperseded } from './proposalSupersession';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
 import {
   type AdminDecisionReviewAssignments,
@@ -100,6 +101,12 @@ export async function getDecisionReviewAssignments({
             deletedAt: { isNull: true },
             moderationDetachedAt: { isNull: true },
           },
+          // Out of every reviewer's list, so out of these rollups too.
+          RAW: (table) =>
+            notSuperseded({
+              proposalId: table.proposalId,
+              processInstanceId: instanceId,
+            }),
         },
         with: {
           reviewer: { columns: { id: true, name: true, slug: true } },

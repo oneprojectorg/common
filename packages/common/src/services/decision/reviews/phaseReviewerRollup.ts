@@ -24,6 +24,7 @@ import {
 } from '@op/db/schema';
 
 import { toAccountContact } from '../../profile/schemas/accountContact';
+import { notSuperseded } from '../proposalSupersession';
 import type { ReviewerStatus } from '../schemas/reviewAssignments';
 import type { EligibleReviewerSchema } from '../schemas/reviews';
 import { escapeLikePattern, splitSearchWords } from '../utils/search';
@@ -58,6 +59,15 @@ export function buildPhaseReviewerRollup({
   const submittedCount = sql`count(*) filter (where ${proposalReviewAssignments.status} = ${ProposalReviewAssignmentStatus.COMPLETED})`;
   const draftCount = sql`count(*) filter (where ${proposalReviews.state} = ${ProposalReviewState.DRAFT})`;
   const remainingCount = sql`count(*) filter (where ${openAssignmentFilter()})`;
+  // The same merge check as each reviewer's own list, so the rows match it.
+  const inPhaseReviewSet = and(
+    eq(proposalReviewAssignments.processInstanceId, processInstanceId),
+    eq(proposalReviewAssignments.phaseId, phaseId),
+    notSuperseded({
+      proposalId: proposalReviewAssignments.proposalId,
+      processInstanceId,
+    }),
+  );
 
   const account = db
     .select({ email: ownerAuthUsers.email, phone: ownerAuthUsers.phone })
@@ -113,8 +123,7 @@ export function buildPhaseReviewerRollup({
         proposalReviewAssignments,
         and(
           eq(proposalReviewAssignments.reviewerProfileId, profiles.id),
-          eq(proposalReviewAssignments.processInstanceId, processInstanceId),
-          eq(proposalReviewAssignments.phaseId, phaseId),
+          inPhaseReviewSet,
         ),
       )
       .leftJoin(
@@ -135,11 +144,7 @@ export function buildPhaseReviewerRollup({
               .where(
                 and(
                   eq(proposalReviewAssignments.reviewerProfileId, profiles.id),
-                  eq(
-                    proposalReviewAssignments.processInstanceId,
-                    processInstanceId,
-                  ),
-                  eq(proposalReviewAssignments.phaseId, phaseId),
+                  inPhaseReviewSet,
                 ),
               ),
           ),
