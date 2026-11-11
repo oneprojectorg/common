@@ -12,6 +12,7 @@ const processCategoryEncoder = z.object({
   id: z.string(),
   name: z.string(),
   termUri: z.string(),
+  isDistrict: z.boolean(),
 });
 
 const getCategoriesOutputSchema = list(processCategoryEncoder);

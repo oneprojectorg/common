@@ -1,7 +1,8 @@
 import { categoryTermUri } from '@op/common';
 import { TestDecisionsDataManager } from '@op/common/testing';
-import { db, eq, inArray } from '@op/db/client';
+import { db, eq, inArray, sql } from '@op/db/client';
 import {
+  decisionBoundaries,
   organizationUsers,
   processInstances,
   taxonomies,
@@ -315,6 +316,60 @@ describe.concurrent('getCategories category matching', () => {
           name: 'Food Security',
           termUri: 'food-security',
         }),
+      ]),
+    );
+  });
+
+  it('marks a category linked to one of the decision boundaries as a district', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instance;
+
+    const { termRecords } = await seedProposalTaxonomy(
+      ['Clean Water', 'Ward Seven'],
+      onTestFinished,
+    );
+    const [topic, ward] = termRecords;
+
+    await injectInstanceCategories(instance.instance.id, [
+      { id: 'cat-1', label: 'Clean Water', description: '' },
+      { id: 'cat-2', label: 'Ward Seven', description: '' },
+    ]);
+
+    const [boundary] = await db
+      .insert(decisionBoundaries)
+      .values({
+        profileId: instance.profileId,
+        name: 'Ward Seven',
+        taxonomyTermId: ward!.id,
+        boundary: sql`ST_SetSRID(ST_Multi(ST_GeomFromGeoJSON('{"type":"Polygon","coordinates":[[[-74,40],[-73,40],[-73,41],[-74,41],[-74,40]]]}')), 4326)`,
+      })
+      .returning({ id: decisionBoundaries.id });
+
+    onTestFinished(async () => {
+      await db
+        .delete(decisionBoundaries)
+        .where(eq(decisionBoundaries.id, boundary!.id));
+    });
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const result = await caller.decision.getCategories({
+      processInstanceId: instance.instance.id,
+    });
+
+    expect(result.items).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: topic!.id, isDistrict: false }),
+        expect.objectContaining({ id: ward!.id, isDistrict: true }),
       ]),
     );
   });
