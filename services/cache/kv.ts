@@ -470,9 +470,8 @@ const DELETE_IF_EQUALS_SCRIPT =
   "if redis.call('GET', KEYS[1]) == ARGV[1] then return redis.call('DEL', KEYS[1]) end return 0";
 
 /**
- * Deletes a key only while it still holds `data`, in one atomic command. Use it
- * to release a key claimed with {@link setIfAbsentWithStatus}. `ok` means the
- * command ran, whether or not the key held `data`.
+ * Deletes a key only while it still holds `data`, in one atomic command. `ok`
+ * means the command ran, whether or not the key held `data`.
  */
 export const deleteIfEqualsWithStatus = async ({
   key,
