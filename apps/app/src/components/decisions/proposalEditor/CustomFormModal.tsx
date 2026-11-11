@@ -302,7 +302,7 @@ function CustomFormField({
               className="mt-1"
             />
             <FieldLabel htmlFor={`${fieldId}-${option}`}>
-              {getOptionLabel(option)}
+              <bdi>{getOptionLabel(option)}</bdi>
             </FieldLabel>
           </Field>
         ))}
@@ -364,7 +364,7 @@ function CustomFormField({
                 htmlFor={`${fieldId}-${option.value}`}
                 className="justify-center"
               >
-                {option.label}
+                <bdi>{option.label}</bdi>
               </FieldLabel>
             </Field>
           ))}
@@ -499,7 +499,10 @@ function EnumSelectField({
           className="w-full"
           aria-invalid={Boolean(error)}
         >
+          {/* The trigger clamps, so `<bdi>` alone would clip the wrong end. */}
           <SelectValue
+            dir="auto"
+            className="ltr:text-left rtl:text-right"
             placeholder={t('decisions.proposals.selectOptionPlaceholder')}
           />
         </SelectTrigger>
@@ -507,7 +510,7 @@ function EnumSelectField({
           <SelectGroup>
             {options.map((option) => (
               <SelectItem key={option.value} value={option.value}>
-                {option.label}
+                <bdi>{option.label}</bdi>
               </SelectItem>
             ))}
           </SelectGroup>

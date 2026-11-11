@@ -116,6 +116,8 @@ describe('CustomFormModal translation', () => {
     ).toBeTruthy();
 
     expect(screen.getByText('Choose the main sector.')).toBeTruthy();
+    // Admin-authored option text is isolated from the page direction.
+    expect(screen.getByText('Education').tagName).toBe('BDI');
 
     await user.click(screen.getByRole('radio', { name: 'Education' }));
     await user.click(screen.getByRole('combobox'));
