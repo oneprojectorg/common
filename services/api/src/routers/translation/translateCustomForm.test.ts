@@ -25,18 +25,28 @@ async function createAuthenticatedCaller(email: string) {
   return createCaller(await createTestContextWithSession(session));
 }
 
-async function attachForm({
-  profileId,
+/** A decision with `schema` attached as a custom form, and a caller who can read it. */
+async function setupForm({
+  task,
   schema,
   onTestFinished,
 }: {
-  profileId: string;
+  task: { id: string };
   schema: Record<string, unknown>;
-  onTestFinished: (fn: () => Promise<void>) => void;
+  onTestFinished: (fn: () => void | Promise<void>) => void;
 }) {
+  const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+  const setup = await testData.createDecisionSetup({
+    instanceCount: 1,
+    grantAccess: true,
+  });
   const [form] = await db
     .insert(customForms)
-    .values({ profileId, name: 'Applicant details', schema })
+    .values({
+      profileId: setup.instance.profileId,
+      name: 'Applicant details',
+      schema,
+    })
     .returning();
 
   if (!form) {
@@ -50,7 +60,7 @@ async function attachForm({
     await db.delete(customForms).where(eq(customForms.id, form.id));
   });
 
-  return form;
+  return { form, caller: await createAuthenticatedCaller(setup.userEmail) };
 }
 
 describe('translation.translateCustomForm', () => {
@@ -58,13 +68,8 @@ describe('translation.translateCustomForm', () => {
     task,
     onTestFinished,
   }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const setup = await testData.createDecisionSetup({
-      instanceCount: 1,
-      grantAccess: true,
-    });
-    const form = await attachForm({
-      profileId: setup.instance.profileId,
+    const { form, caller } = await setupForm({
+      task,
       onTestFinished,
       schema: {
         type: 'object',
@@ -90,8 +95,6 @@ describe('translation.translateCustomForm', () => {
         },
       },
     });
-
-    const caller = await createAuthenticatedCaller(setup.userEmail);
     const result = await caller.translation.translateCustomForm({
       customFormId: form.id,
       targetLocale: 'es',
@@ -120,17 +123,11 @@ describe('translation.translateCustomForm', () => {
     task,
     onTestFinished,
   }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const setup = await testData.createDecisionSetup({
-      instanceCount: 1,
-      grantAccess: true,
-    });
-    const form = await attachForm({
-      profileId: setup.instance.profileId,
+    const { form, caller } = await setupForm({
+      task,
       onTestFinished,
       schema: { type: 'object', title: 'About you', properties: {} },
     });
-    const caller = await createAuthenticatedCaller(setup.userEmail);
     const input = { customFormId: form.id, targetLocale: 'es' as const };
 
     await caller.translation.translateCustomForm(input);
@@ -145,18 +142,12 @@ describe('translation.translateCustomForm', () => {
     task,
     onTestFinished,
   }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const setup = await testData.createDecisionSetup({
-      instanceCount: 1,
-      grantAccess: true,
-    });
     // Seeded directly: `createCustomForm` rejects this definition at write.
-    const form = await attachForm({
-      profileId: setup.instance.profileId,
+    const { form, caller } = await setupForm({
+      task,
       onTestFinished,
       schema: { type: 'string', title: 'About you' },
     });
-    const caller = await createAuthenticatedCaller(setup.userEmail);
 
     await expect(
       caller.translation.translateCustomForm({
@@ -171,18 +162,11 @@ describe('translation.translateCustomForm', () => {
     task,
     onTestFinished,
   }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const setup = await testData.createDecisionSetup({
-      instanceCount: 1,
-      grantAccess: true,
-    });
-    const form = await attachForm({
-      profileId: setup.instance.profileId,
+    const { form, caller } = await setupForm({
+      task,
       onTestFinished,
       schema: { type: 'object', properties: { age: { type: 'integer' } } },
     });
-
-    const caller = await createAuthenticatedCaller(setup.userEmail);
     const result = await caller.translation.translateCustomForm({
       customFormId: form.id,
       targetLocale: 'es',
@@ -197,13 +181,8 @@ describe('translation.translateCustomForm', () => {
   });
 
   it('rejects a deleted form', async ({ task, onTestFinished }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const setup = await testData.createDecisionSetup({
-      instanceCount: 1,
-      grantAccess: true,
-    });
-    const form = await attachForm({
-      profileId: setup.instance.profileId,
+    const { form, caller } = await setupForm({
+      task,
       onTestFinished,
       schema: { type: 'object', title: 'About you', properties: {} },
     });
@@ -211,8 +190,6 @@ describe('translation.translateCustomForm', () => {
       .update(customForms)
       .set({ deletedAt: new Date().toISOString() })
       .where(eq(customForms.id, form.id));
-
-    const caller = await createAuthenticatedCaller(setup.userEmail);
 
     await expect(
       caller.translation.translateCustomForm({

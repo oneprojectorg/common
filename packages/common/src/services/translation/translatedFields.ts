@@ -17,9 +17,10 @@ export type TranslatableFields = Record<
  * field id like `field_title:77963788`. The previous `field:index` encoding was
  * ambiguous: that id parsed as array index 77_963_788, so `items[index] = …`
  * allocated a ~78-million-element sparse array and OOM-killed the process
- * (ONE-401). Brackets can't appear in our field ids, so there's no collision.
+ * (ONE-401). Array fields are plain names without a colon. A key with a colon
+ * (`option:<field>:<value>`) is scalar even when the value ends in `[n]`.
  */
-const ARRAY_ELEMENT_PATTERN = /^(?<field>.+)\[(?<index>\d+)\]$/;
+const ARRAY_ELEMENT_PATTERN = /^(?<field>[^:[\]]+)\[(?<index>\d+)\]$/;
 
 /**
  * Flattens string and string[] fields into translation entries while keeping a

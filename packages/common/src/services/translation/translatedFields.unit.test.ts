@@ -110,3 +110,17 @@ describe('flattenSchemaFields', () => {
     expect(flattenSchemaFields({ prefix: 'form:1:' })).toEqual([]);
   });
 });
+
+describe('unflattenTranslatedFields with schema keys', () => {
+  it('keeps an option key whose value ends in brackets as a scalar', () => {
+    const { translated } = unflattenTranslatedFields('form:1:', [
+      result('form:1:option:tier:Tier[2]', 'Nivel[2]'),
+      result('form:1:category[0]', 'Agua'),
+    ]);
+
+    expect(translated).toEqual({
+      'option:tier:Tier[2]': 'Nivel[2]',
+      category: ['Agua'],
+    });
+  });
+});

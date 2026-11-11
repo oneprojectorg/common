@@ -10,7 +10,10 @@ import { useMemo } from 'react';
 import { getCustomFormDetectionText } from '../translationDetectionText';
 import { useTranslateLink } from '../useTranslateLink';
 
-export type CustomFormTranslation = ReturnType<typeof parseTranslatedMeta> & {
+export type CustomFormTranslation = Pick<
+  ReturnType<typeof parseTranslatedMeta>,
+  'fieldTitles' | 'fieldDescriptions' | 'optionLabels'
+> & {
   title?: string;
   description?: string;
 };

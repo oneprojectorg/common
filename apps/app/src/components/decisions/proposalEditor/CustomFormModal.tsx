@@ -236,7 +236,7 @@ function CustomFormField({
   onChange,
 }: CustomFormFieldProps) {
   const fieldId = useId();
-  const { label, description, getOptionLabel } = getFieldText({
+  const { label, description, toChoices } = getFieldText({
     name,
     field,
     translation,
@@ -276,7 +276,9 @@ function CustomFormField({
   // as a checkbox group. An empty selection is stored as absent so JSON
   // Schema `required` treats it as missing.
   if (field.type === 'array') {
-    const multiOptions = readEnumOptions(readItemsSchema(field)?.enum);
+    const multiChoices = toChoices(
+      readEnumOptions(readItemsSchema(field)?.enum),
+    );
     const selected = Array.isArray(value)
       ? value.filter((entry): entry is string => typeof entry === 'string')
       : [];
@@ -287,22 +289,26 @@ function CustomFormField({
           {isRequired ? <RequiredAsterisk /> : null}
         </FieldLegend>
         {descriptionNode}
-        {multiOptions.map((option) => (
-          <Field key={option} className="items-start" orientation="horizontal">
+        {multiChoices.map((option) => (
+          <Field
+            key={option.value}
+            className="items-start"
+            orientation="horizontal"
+          >
             <Checkbox
-              id={`${fieldId}-${option}`}
-              checked={selected.includes(option)}
+              id={`${fieldId}-${option.value}`}
+              checked={selected.includes(option.value)}
               onCheckedChange={(checked) => {
                 const next = checked
-                  ? [...selected, option]
-                  : selected.filter((entry) => entry !== option);
+                  ? [...selected, option.value]
+                  : selected.filter((entry) => entry !== option.value);
                 onChange(next.length > 0 ? next : undefined);
               }}
               aria-invalid={Boolean(error)}
               className="mt-1"
             />
-            <FieldLabel htmlFor={`${fieldId}-${option}`}>
-              <bdi>{getOptionLabel(option)}</bdi>
+            <FieldLabel htmlFor={`${fieldId}-${option.value}`}>
+              <bdi>{option.label}</bdi>
             </FieldLabel>
           </Field>
         ))}
@@ -312,10 +318,7 @@ function CustomFormField({
   }
 
   const enumOptions = readEnumOptions(field.enum);
-  const choices = enumOptions.map((option) => ({
-    value: option,
-    label: getOptionLabel(option),
-  }));
+  const choices = toChoices(enumOptions);
 
   // NPS-style numeric scale — matches the ProcessSurveyModal control:
   // horizontal radio row with the label under each number on desktop,
@@ -542,8 +545,11 @@ function getFieldText({
     description: linkifyText(
       translation?.fieldDescriptions[name] ?? field.description,
     ),
-    getOptionLabel: (option: string) =>
-      translation?.optionLabels[name]?.[option] ?? option,
+    toChoices: (options: string[]) =>
+      options.map((option) => ({
+        value: option,
+        label: translation?.optionLabels[name]?.[option] ?? option,
+      })),
   };
 }
 
