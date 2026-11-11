@@ -18,14 +18,17 @@ cd "$TMP/work"
 git checkout -q -b trunk
 mkdir -p docs/adr scripts
 cp "$SCRIPT" scripts/check-adr-numbers.sh
-echo "# Architecture Decision Records" > docs/adr/README.md
+printf '# Architecture Decision Records\n\n- [the template](./adr-template.md)\n\n## Index\n\n' > docs/adr/README.md
 echo "# NNNN. {short title}" > docs/adr/adr-template.md
-adr() { printf '# %s. %s\n' "$1" "$2" > "docs/adr/$1-$2.md"; }
+# Writes the file only.
+file() { printf '# %s. %s\n' "$1" "$2" > "docs/adr/$1-$2.md"; }
+# Writes the file and appends its index line.
+adr() { file "$1" "$2" && printf -- '- [%s. %s](./%s-%s.md)\n' "$1" "$2" "$1" "$2" >> docs/adr/README.md; }
 commit() { git add -A && git commit -qm "$1"; }
 run() { scripts/check-adr-numbers.sh "$@" > "$TMP/out" 2>&1; }
-out_has() { grep -q "$1" "$TMP/out"; }
-# Starts each case from a fresh branch off trunk.
-feature() { git checkout -q trunk && git checkout -q -B feature; }
+out_has() { grep -q -- "$1" "$TMP/out"; }
+# Starts each case from a fresh, clean branch off trunk.
+feature() { git checkout -q -f trunk && git clean -qfd && git checkout -q -B feature; }
 
 adr 0001 first
 adr 0002 second
@@ -54,7 +57,15 @@ run trunk && fail "a skipped number should have failed"
 out_has "next free number on trunk is 0003" || fail "expected the next free number"
 pass "rejects a skipped number"
 
-# Rejects a new ADR whose number the base took after the branch was cut.
+# Checks an ADR that is not committed yet.
+feature
+adr 0004 uncommitted
+run trunk && fail "an uncommitted skipped number should have failed"
+out_has "0004-uncommitted.md: the next free number on trunk is 0003" || fail "expected 0003"
+pass "checks the working tree"
+
+# Rejects a new ADR whose number the base took after the branch was cut, and
+# git refuses the merge because both sides appended to the index.
 feature
 adr 0003 mine
 commit mine
@@ -64,20 +75,47 @@ commit theirs
 git checkout -q feature
 run trunk && fail "a number taken on the base should have failed"
 out_has "0003-mine.md: the next free number on trunk is 0004" || fail "expected 0004"
-git mv docs/adr/0003-mine.md docs/adr/0004-mine.md
-echo "# 0004. mine" > docs/adr/0004-mine.md
+git merge -q trunk > /dev/null 2>&1 && fail "the index should have conflicted"
+git diff --name-only --diff-filter=U | grep -qx docs/adr/README.md || fail "expected a conflict in the index"
+git merge --abort
+pass "rejects a number the base already took, and the merge conflicts"
+
+# Accepts the ADR once it is renumbered on top of the base.
+git merge -q -X theirs trunk > /dev/null 2>&1 || fail "merge"
+git rm -q -f docs/adr/0003-mine.md
+adr 0004 mine
 commit renumber
 run trunk || fail "the renumbered ADR should pass"
-pass "rejects a number the base already took"
+git checkout -q trunk && git reset -q --hard HEAD~1
+pass "accepts the renumbered ADR"
 
 # Rejects an existing ADR renamed to a new number that is not the next one.
 feature
-git mv docs/adr/0001-first.md docs/adr/0009-first.md
-echo "# 0009. first" > docs/adr/0009-first.md
+git rm -q docs/adr/0001-first.md
+file 0009 first
+sed -i.bak 's/0001/0009/g' docs/adr/README.md && rm docs/adr/README.md.bak
 commit rename
 run trunk && fail "a renumbered old ADR should have failed"
-out_has "0009-first.md" || fail "expected the renamed file listed"
+out_has "0009-first.md: the next free number" || fail "expected the renamed file listed"
 pass "rejects renumbering an existing ADR"
+
+# Rejects an ADR that is missing from the index.
+feature
+file 0003 unlisted
+commit unlisted
+run && fail "an unlisted ADR should have failed"
+out_has "does not list every ADR" || fail "expected the index message"
+out_has "- \[0003. unlisted\](./0003-unlisted.md)" || fail "expected the missing line"
+pass "rejects an ADR missing from the index"
+
+# Rejects an index line whose title differs from the heading.
+feature
+file 0003 third
+echo "- [0003. Something else](./0003-third.md)" >> docs/adr/README.md
+commit title
+run && fail "a wrong index title should have failed"
+out_has "does not list every ADR" || fail "expected the index message"
+pass "rejects an index title that differs from the heading"
 
 # Rejects a file that has no number.
 feature
@@ -89,10 +127,10 @@ pass "rejects an unnumbered file"
 
 # Rejects a heading that does not match the file name.
 feature
-echo "# 0005. wrong" > docs/adr/0004-wrong.md
+echo "# 0005. wrong" > docs/adr/0003-wrong.md
 commit heading
 run && fail "a mismatched heading should have failed"
-out_has "must start with '# 0004. '" || fail "expected the heading message"
+out_has "must start with '# 0003. '" || fail "expected the heading message"
 pass "rejects a mismatched heading"
 
 # Rejects a duplicate number.
