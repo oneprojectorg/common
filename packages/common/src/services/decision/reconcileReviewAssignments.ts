@@ -15,6 +15,7 @@ import { logger } from '@op/logging';
 import { deletePendingReviewAssignments } from './deletePendingReviewAssignments';
 import { getCategoryReviewersByProposal } from './getCategoryReviewersByProposal';
 import { getEligibleReviewerProfileIds } from './getEligibleReviewerProfileIds';
+import { activeAttachedProposalPredicate } from './getProposalsForPhase';
 import {
   type AssignableProposal,
   insertReviewAssignments,
@@ -22,7 +23,6 @@ import {
 import type { DecisionInstanceData } from './schemas/instanceData';
 import { assertInstancePhase } from './utils/instance';
 import { getPhaseReviewSettings, isReviewPhase } from './utils/phaseSettings';
-import { PIPELINE_INELIGIBLE_STATUSES } from './votingEligibility';
 
 /**
  * What triggered the reconcile, and therefore which proposals to re-diff:
@@ -138,12 +138,7 @@ export async function reconcileReviewAssignments({
     {
       where: {
         transitionHistoryId: inboundTransition.id,
-        proposal: {
-          // Rejected proposals leave the review universe, like drafts.
-          status: { notIn: PIPELINE_INELIGIBLE_STATUSES },
-          deletedAt: { isNull: true },
-          moderationDetachedAt: { isNull: true },
-        },
+        proposal: { RAW: (table) => activeAttachedProposalPredicate(table) },
       },
       columns: { proposalId: true, proposalHistoryId: true },
       with: { proposal: { columns: { submittedByProfileId: true } } },

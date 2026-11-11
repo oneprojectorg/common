@@ -4,6 +4,7 @@ import { logger } from '@op/logging';
 
 import { getCategoryReviewersByProposal } from './getCategoryReviewersByProposal';
 import { getEligibleReviewerProfileIds } from './getEligibleReviewerProfileIds';
+import { activeAttachedProposalPredicate } from './getProposalsForPhase';
 import {
   type AssignableProposal,
   insertReviewAssignments,
@@ -11,7 +12,6 @@ import {
 import type { DecisionInstanceData } from './schemas/instanceData';
 import { assertInstancePhase } from './utils/instance';
 import { getPhaseReviewSettings, isReviewPhase } from './utils/phaseSettings';
-import { PIPELINE_INELIGIBLE_STATUSES } from './votingEligibility';
 
 export interface BackfillReviewAssignmentsInput {
   instanceId: string;
@@ -102,12 +102,7 @@ export async function backfillReviewAssignments({
     db.query.decisionTransitionProposals.findMany({
       where: {
         transitionHistoryId: inboundTransition.id,
-        proposal: {
-          // Rejected proposals leave the review universe, like drafts.
-          status: { notIn: PIPELINE_INELIGIBLE_STATUSES },
-          deletedAt: { isNull: true },
-          moderationDetachedAt: { isNull: true },
-        },
+        proposal: { RAW: (table) => activeAttachedProposalPredicate(table) },
       },
       columns: { proposalId: true, proposalHistoryId: true },
       with: { proposal: { columns: { submittedByProfileId: true } } },
