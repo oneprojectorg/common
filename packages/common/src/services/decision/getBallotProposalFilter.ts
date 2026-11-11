@@ -13,7 +13,7 @@ export interface BallotProposalFilter {
   where: (t: typeof proposals) => SQL | undefined;
 }
 
-export async function ballotProposalFilter({
+export async function getBallotProposalFilter({
   instance,
   taxonomyTermId,
 }: {

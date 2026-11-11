@@ -5,7 +5,7 @@ import {
   type BallotInstance,
   priceBallotProposals,
 } from './ballotProposalCosts';
-import { ballotProposalFilter } from './ballotProposalFilter';
+import { getBallotProposalFilter } from './getBallotProposalFilter';
 import { getProposalDocumentsContent } from './getProposalDocumentsContent';
 import { parseProposalData } from './proposalDataSchema';
 import { buildProposalListPreview } from './proposalListPreview';
@@ -28,7 +28,7 @@ export async function getBallotProposalByCode({
   taxonomyTermId?: string | null;
   code: number;
 }): Promise<BallotProposalInfo | null> {
-  const filter = await ballotProposalFilter({ instance, taxonomyTermId });
+  const filter = await getBallotProposalFilter({ instance, taxonomyTermId });
 
   if (filter.isEmpty) {
     return null;
