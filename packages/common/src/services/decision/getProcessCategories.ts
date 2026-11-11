@@ -1,5 +1,6 @@
 import { cache } from '@op/cache';
-import { db } from '@op/db/client';
+import { and, db, eq, isNotNull } from '@op/db/client';
+import { decisionBoundaries } from '@op/db/schema';
 import { logger } from '@op/logging';
 import { User } from '@op/supabase/lib';
 import { permission } from 'access-zones';
@@ -13,6 +14,8 @@ export interface ProcessCategory {
   id: string;
   name: string;
   termUri: string;
+  /** Linked to one of the decision's boundaries, i.e. a district. */
+  isDistrict: boolean;
 }
 
 export const getProcessCategories = async ({
@@ -40,7 +43,7 @@ export const getProcessCategories = async ({
     }
 
     // Run access check and taxonomy lookup in parallel — they're independent
-    const [proposalTaxonomy] = await Promise.all([
+    const [proposalTaxonomy, , districtTermIds] = await Promise.all([
       db.query.taxonomies.findFirst({
         where: { name: 'proposal' },
         with: {
@@ -56,6 +59,7 @@ export const getProcessCategories = async ({
         profilePermissions: { decisions: permission.READ },
         orgFallbackPermissions: { decisions: permission.READ },
       }),
+      getDistrictTermIds(instance.profileId),
     ]);
 
     // Extract categories from the instance config
@@ -88,6 +92,7 @@ export const getProcessCategories = async ({
           id: taxonomyTerm.id,
           name: taxonomyTerm.label,
           termUri: taxonomyTerm.termUri,
+          isDistrict: districtTermIds.has(taxonomyTerm.id),
         });
       }
     }
@@ -101,3 +106,24 @@ export const getProcessCategories = async ({
     return [];
   }
 };
+
+/** Terms the decision's boundaries are linked to; each is a district. */
+async function getDistrictTermIds(
+  profileId: string | null,
+): Promise<Set<string>> {
+  if (!profileId) {
+    return new Set();
+  }
+
+  const rows = await db
+    .select({ taxonomyTermId: decisionBoundaries.taxonomyTermId })
+    .from(decisionBoundaries)
+    .where(
+      and(
+        eq(decisionBoundaries.profileId, profileId),
+        isNotNull(decisionBoundaries.taxonomyTermId),
+      ),
+    );
+
+  return new Set(rows.flatMap((row) => row.taxonomyTermId ?? []));
+}
