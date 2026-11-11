@@ -1,4 +1,4 @@
-# NNNN. Bind a phone number to each decision
+# 0007. Bind a phone number to each decision
 
 Date: 2026-10-23
 

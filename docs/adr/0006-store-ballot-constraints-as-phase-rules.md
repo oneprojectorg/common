@@ -1,4 +1,4 @@
-# NNNN. Store ballot constraints as voting-phase rules and rank on the vote-proposal row
+# 0006. Store ballot constraints as voting-phase rules and rank on the vote-proposal row
 
 Date: 2026-09-21
 
