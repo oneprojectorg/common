@@ -6,7 +6,11 @@ export type ProposalAccessContext = {
   proposalId: string;
   processInstanceId: string;
   /** `profileId` is where the grants live; `ownerProfileId` is the org fallback. */
-  instance: { profileId: string; ownerProfileId: string | null };
+  instance: {
+    profileId: string;
+    ownerProfileId: string | null;
+    currentStateId: string | null;
+  };
   /** Widened to `string` by `enumToPgEnum`; compare against `ProposalStatus`. */
   status: string | null;
 };
@@ -28,7 +32,11 @@ export async function getProposalAccessContext(
     columns: { id: true, processInstanceId: true, status: true },
     with: {
       processInstance: {
-        columns: { profileId: true, ownerProfileId: true },
+        columns: {
+          profileId: true,
+          ownerProfileId: true,
+          currentStateId: true,
+        },
       },
     },
   });
@@ -47,6 +55,7 @@ export async function getProposalAccessContext(
     instance: {
       profileId: proposal.processInstance.profileId,
       ownerProfileId: proposal.processInstance.ownerProfileId,
+      currentStateId: proposal.processInstance.currentStateId,
     },
     status: proposal.status,
   };

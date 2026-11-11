@@ -20,6 +20,7 @@ export const mergeProposalsRouter = router({
         sourceProposalId,
         targetProposalId,
         relationshipId,
+        removedReviewAssignmentCount,
       } = await mergeProposals({
         sourceProposalId: input.sourceProposalId,
         targetProposalId: input.targetProposalId,
@@ -32,6 +33,9 @@ export const mergeProposalsRouter = router({
         Channels.decisionProposals(processInstanceId),
         Channels.decisionProposal(processInstanceId, sourceProposalId),
         Channels.decisionProposal(processInstanceId, targetProposalId),
+        ...(removedReviewAssignmentCount > 0
+          ? [Channels.reviewAssignments(processInstanceId)]
+          : []),
       ]);
 
       // The workflow resolves recipients itself, so an unmerge landing first
