@@ -1070,6 +1070,8 @@
       "sortReviewersLabel": "Kala sooc dib-u-eegayaasha",
       "sortLeastComplete": "Ugu yar ee la dhammeeyay",
       "sortMostComplete": "Ugu badan ee la dhammeeyay",
+      "sortFewestReviews": "Dib-u-eegisyada ugu yar",
+      "sortMostReviews": "Dib-u-eegisyada ugu badan",
       "sortRecentActivity": "Waxqabadkii ugu dambeeyay",
       "sortName": "Magaca",
       "noReviewersMatchFilters": "Ma jiro dib-u-eege u dhigma shaandhooyinkan",

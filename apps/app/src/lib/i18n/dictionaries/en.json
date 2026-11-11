@@ -1070,6 +1070,8 @@
       "sortReviewersLabel": "Sort reviewers",
       "sortLeastComplete": "Least complete",
       "sortMostComplete": "Most complete",
+      "sortFewestReviews": "Fewest reviews",
+      "sortMostReviews": "Most reviews",
       "sortRecentActivity": "Recent activity",
       "sortName": "Name",
       "noReviewersMatchFilters": "No reviewers match these filters",

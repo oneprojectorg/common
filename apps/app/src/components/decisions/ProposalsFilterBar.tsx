@@ -30,6 +30,8 @@ export interface ProposalControls {
   setSelectedCategory: (category: string) => void;
   sortOrder: string;
   setSortOrder: (sort: string) => void;
+  /** Overrides the default Newest/Oldest sort options. */
+  sortOptions?: { id: string; label: string }[];
   categories: { id: string; name: string }[];
   decisionSlug: string | undefined;
 }
@@ -110,6 +112,7 @@ export const ProposalsFilterBar = ({
   header,
   exportControl,
   leadingSelect,
+  extraFilters,
 }: {
   controls: ProposalControls;
   view?: ProposalViewControls;
@@ -121,7 +124,9 @@ export const ProposalsFilterBar = ({
   header?: React.ReactNode;
   /** Admin-only CSV export control; omitted entirely for non-admins. */
   exportControl?: React.ReactNode;
-  leadingSelect: ProposalSelectControl;
+  leadingSelect?: ProposalSelectControl;
+  /** More filter selects, placed after the category select. */
+  extraFilters?: React.ReactNode;
 }) => {
   const t = useTranslations();
 
@@ -148,13 +153,15 @@ export const ProposalsFilterBar = ({
           control, and beats `justify-end` because it collapses to zero once the
           row overflows instead of stranding the leading control. */}
       <div className="-mx-4 scrollbar-none flex items-center gap-4 overflow-x-scroll px-4 max-2xl:grow sm:-mx-8 sm:px-8 [&>*:first-child]:ms-auto">
-        <ResponsiveSelect
-          selectedKey={leadingSelect.value}
-          onSelectionChange={leadingSelect.onChange}
-          aria-label={leadingSelect.label}
-          items={leadingSelect.items}
-          className="min-w-40 shrink-0"
-        />
+        {leadingSelect && (
+          <ResponsiveSelect
+            selectedKey={leadingSelect.value}
+            onSelectionChange={leadingSelect.onChange}
+            aria-label={leadingSelect.label}
+            items={leadingSelect.items}
+            className="min-w-40 shrink-0"
+          />
+        )}
         <CategoryFilterSelect
           decisionSlug={controls.decisionSlug}
           categories={controls.categories}
@@ -162,15 +169,24 @@ export const ProposalsFilterBar = ({
           onSelectCategory={controls.setSelectedCategory}
           className="min-w-40 shrink-0"
         />
+        {extraFilters}
         <ResponsiveSelect
           selectedKey={controls.sortOrder}
           onSelectionChange={controls.setSortOrder}
           aria-label={t('decisions.proposals.sortProposalsLabel')}
           className="min-w-40 shrink-0"
-          items={[
-            { id: 'newest', label: t('decisions.proposals.sortNewestOption') },
-            { id: 'oldest', label: t('decisions.proposals.sortOldestOption') },
-          ]}
+          items={
+            controls.sortOptions ?? [
+              {
+                id: 'newest',
+                label: t('decisions.proposals.sortNewestOption'),
+              },
+              {
+                id: 'oldest',
+                label: t('decisions.proposals.sortOldestOption'),
+              },
+            ]
+          }
         />
         {view && <ProposalsViewSwitch view={view} />}
         {exportControl && (

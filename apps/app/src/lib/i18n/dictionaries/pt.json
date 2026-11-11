@@ -1070,6 +1070,8 @@
       "sortReviewersLabel": "Ordenar revisores",
       "sortLeastComplete": "Menos concluído",
       "sortMostComplete": "Mais concluído",
+      "sortFewestReviews": "Menos avaliações",
+      "sortMostReviews": "Mais avaliações",
       "sortRecentActivity": "Atividade recente",
       "sortName": "Nome",
       "noReviewersMatchFilters": "Nenhum revisor corresponde a estes filtros",
