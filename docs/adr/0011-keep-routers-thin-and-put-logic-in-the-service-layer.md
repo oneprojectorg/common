@@ -15,7 +15,7 @@ it. Most of the 200 or so procedures already follow the rule below; this
 records it.
 
 In scope: where business logic, database access and transactions live.
-Authentication is [0012](./0012-authenticate-in-the-router-through-procedure-tiers.md)
+Authentication is [0012](./0012-authenticate-at-the-interface.md)
 and authorization is [0013](./0013-authorize-in-the-service-layer-with-access-zones.md).
 
 ## Decision
