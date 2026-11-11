@@ -1,6 +1,5 @@
-import { logger } from '@op/logging/client';
+import { createSafeStorage } from '@/utils/safeStorage';
 import { create } from 'zustand';
-import type { StateStorage } from 'zustand/middleware';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
 // The image uploaders stash a base64 `data:` URL into form state for an instant
@@ -29,33 +28,6 @@ const stripBase64DataUrls = (value: unknown): unknown => {
   }
   return value;
 };
-
-// Every access is guarded so a quota overflow or a browser where storage is
-// disabled (private mode, blocked cookies, SSR) degrades gracefully — the form
-// keeps working in memory instead of throwing an unhandled error.
-const createSafeStorage = (getStorage: () => Storage): StateStorage => ({
-  getItem: (name) => {
-    try {
-      return getStorage().getItem(name);
-    } catch {
-      return null;
-    }
-  },
-  setItem: (name, value) => {
-    try {
-      getStorage().setItem(name, value);
-    } catch (error) {
-      logger.warn('Failed to persist onboarding form state', { error });
-    }
-  },
-  removeItem: (name) => {
-    try {
-      getStorage().removeItem(name);
-    } catch {
-      // Nothing to clean up if storage is unavailable.
-    }
-  },
-});
 
 interface OnboardingFormState {
   step: number;
