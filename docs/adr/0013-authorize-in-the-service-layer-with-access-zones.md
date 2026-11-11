@@ -43,7 +43,9 @@ throws `UnauthorizedError` on failure.
 A check several services share becomes a named helper
 (`assertCategoryReviewerAdmin`), not a copy of the role query.
 
-A router adds no permission check of its own.
+A router adds no record-level permission check of its own. Gates on who may
+call at all, such as the platform admin gate, stay at the boundary
+([0012](./0012-authenticate-at-the-boundary.md)).
 
 ## Consequences
 

@@ -31,12 +31,16 @@ never checks the session itself:
 
 | Tier | Accepts |
 | --- | --- |
-| `openProcedure` | anyone; `ctx.user` is the caller or `null` |
+| `openProcedure` | anyone; `ctx.user` is the caller or `undefined` |
 | `authenticatedProcedure` | any session, including an anonymous one |
 | `authenticatedConfirmedProcedure` | a signed-in user with a confirmed email |
 | `networkAuthenticatedProcedure` | a confirmed user who is a network member: a `@oneproject.org` account, or someone on the allow list, invited into the network by another member |
 
 A rejected caller gets 401 with no session and 403 otherwise.
+
+Platform admin procedures add `withAuthenticatedPlatformAdmin`, which admits
+only a platform admin. It is a check on who may call, so it belongs here and
+not in the service.
 
 A webhook verifies an HMAC signature on the request, made with a secret we
 share with the sender and compared in constant time. A missing or invalid

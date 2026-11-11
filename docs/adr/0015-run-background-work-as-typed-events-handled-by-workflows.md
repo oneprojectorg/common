@@ -42,8 +42,10 @@ is declared on the function: `concurrency`, `debounce`, `throttle` and
 `step.waitForEvent`. A scheduled task subscribes to a `cron` instead of an
 event.
 
-An event carries ids, not content. The function reads current state itself,
-so a retry or a delay never acts on a stale copy.
+An event carries ids for stored records. The function reads their current
+state itself rather than using a stale copy. Values that are not stored
+elsewhere, such as a rejection reason or an incoming SMS message, travel in
+the event.
 
 A service sends after its transaction commits, never inside it.
 

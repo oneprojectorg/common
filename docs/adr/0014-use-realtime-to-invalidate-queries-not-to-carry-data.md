@@ -32,9 +32,9 @@ Channels come from the `Channels` helpers in
 - a mutation calls `ctx.registerMutationChannels([...])` with the channels
   it changed.
 
-The `withChannelMeta` middleware returns the channels with the response and,
-for a mutation, publishes to them after the response is sent, tagged with
-the request id. The client records each query's channels, subscribes, and
+The `withChannelMeta` middleware returns the channels with the response and
+starts publishing when a mutation registers its channels, tagged with the
+request id. The client records each query's channels, subscribes, and
 invalidates on a message. The client that made the mutation invalidates from
 the response and skips the message that echoes its own request id.
 
