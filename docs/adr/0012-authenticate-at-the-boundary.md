@@ -34,7 +34,7 @@ never checks the session itself:
 | `openProcedure` | anyone; `ctx.user` is the caller or `null` |
 | `authenticatedProcedure` | any session, including an anonymous one |
 | `authenticatedConfirmedProcedure` | a signed-in user with a confirmed email |
-| `networkAuthenticatedProcedure` | a confirmed user who is a network member |
+| `networkAuthenticatedProcedure` | a confirmed user who is a network member: a `@oneproject.org` account, or someone on the allow list, invited into the network by another member |
 
 A rejected caller gets 401 with no session and 403 otherwise.
 
