@@ -1,6 +1,7 @@
 import type {
   CustomFormDefinitionInput,
   CustomFormField,
+  XFormatPropertySchema,
 } from '@op/common/client';
 import {
   CUSTOM_FORM_MAX_FIELDS,
@@ -18,6 +19,7 @@ export const FORM_CHARACTER_LIMITS = {
   description: 250,
   fieldTitle: 50,
   fieldDescription: 250,
+  gridRowTitle: 100,
 } as const;
 
 /** One branch each of `CustomFormModal`'s renderer. `money` and `location` are
@@ -30,6 +32,7 @@ export const FORM_FIELD_KINDS = [
   'dropdown',
   'radio',
   'multi-select',
+  'grid',
 ] as const;
 
 export type FormFieldKind = (typeof FORM_FIELD_KINDS)[number];
@@ -38,7 +41,17 @@ export const CHOICE_FIELD_KINDS: readonly FormFieldKind[] = [
   'dropdown',
   'radio',
   'multi-select',
+  'grid',
 ];
+
+/** One question in a `grid` field, answered from the field's options. */
+export type GridRow = {
+  /** Editor-local; never persisted. */
+  localId: string;
+  title: string;
+  /** Set on a stored row. Its answers are keyed by it, so a rename keeps it. */
+  key?: string;
+};
 
 export type BuilderField = {
   /** Editor-local; never persisted. */
@@ -52,6 +65,8 @@ export type BuilderField = {
   description: string;
   isRequired: boolean;
   options: string[];
+  /** Set only on a `grid`. */
+  rows: GridRow[];
 };
 
 export type BuilderForm = {
@@ -80,6 +95,7 @@ export const createEmptyField = (localId: string): BuilderField => ({
   description: '',
   isRequired: false,
   options: [],
+  rows: [],
 });
 
 export const buildDefinition = (
@@ -121,6 +137,19 @@ const ROUND_TRIPPED_FIELD_KEYS = new Set([
   'uniqueItems',
 ]);
 
+/** The same, for a `grid`. */
+const ROUND_TRIPPED_GRID_KEYS = new Set([
+  'type',
+  'title',
+  'description',
+  'x-format',
+  'properties',
+  'x-field-order',
+  'required',
+]);
+
+const ROUND_TRIPPED_GRID_ROW_KEYS = new Set(['type', 'title', 'enum']);
+
 /** The same, for the definition itself. */
 const ROUND_TRIPPED_DEFINITION_KEYS = new Set([
   'type',
@@ -152,44 +181,22 @@ export const parseDefinition = ({
       ? schema.required.filter((key): key is string => typeof key === 'string')
       : [],
   );
-  const order = Array.isArray(schema['x-field-order'])
-    ? schema['x-field-order'].filter(
-        (key): key is string => typeof key === 'string',
-      )
-    : [];
-
-  const keys = [
-    ...order.filter((key) => key in properties),
-    ...Object.keys(properties).filter((key) => !order.includes(key)),
-  ];
+  const keys = getOrderedKeys(schema);
 
   const fields: BuilderField[] = [];
   const unsupportedKeys: string[] = [];
 
   for (const key of keys) {
-    const property = properties[key];
-    if (!isRecord(property)) {
-      unsupportedKeys.push(key);
-      continue;
-    }
-
-    const kind = resolveFieldKind(property);
-    if (!kind || !isRoundTrippable(property)) {
-      unsupportedKeys.push(key);
-      continue;
-    }
-
-    fields.push({
-      localId: key,
+    const field = parseField({
       key,
-      isKeyFrozen: true,
-      kind,
-      title: typeof property.title === 'string' ? property.title : key,
-      description:
-        typeof property.description === 'string' ? property.description : '',
+      property: properties[key],
       isRequired: required.has(key),
-      options: readOptions(property),
     });
+    if (field) {
+      fields.push(field);
+    } else {
+      unsupportedKeys.push(key);
+    }
   }
 
   // A keyword on the definition itself would be dropped just as silently.
@@ -210,8 +217,98 @@ export const parseDefinition = ({
   };
 };
 
-const isRoundTrippable = (property: Record<string, unknown>): boolean =>
-  Object.keys(property).every((key) => ROUND_TRIPPED_FIELD_KEYS.has(key));
+/** Null when the builder cannot represent the property. */
+const parseField = ({
+  key,
+  property,
+  isRequired,
+}: {
+  key: string;
+  property: unknown;
+  isRequired: boolean;
+}): BuilderField | null => {
+  if (!isRecord(property)) {
+    return null;
+  }
+
+  const kind = resolveFieldKind(property);
+  if (!kind || !isRoundTrippable({ property, isRequired })) {
+    return null;
+  }
+
+  return {
+    localId: key,
+    key,
+    isKeyFrozen: true,
+    kind,
+    title: typeof property.title === 'string' ? property.title : key,
+    description:
+      typeof property.description === 'string' ? property.description : '',
+    isRequired,
+    options:
+      kind === 'grid' ? readGridColumns(property) : readOptions(property),
+    rows: kind === 'grid' ? readGridRows(property) : [],
+  };
+};
+
+const isRoundTrippable = ({
+  property,
+  isRequired,
+}: {
+  property: Record<string, unknown>;
+  isRequired: boolean;
+}): boolean => {
+  if (property['x-format'] === 'grid') {
+    return (
+      Object.keys(property).every((key) => ROUND_TRIPPED_GRID_KEYS.has(key)) &&
+      isGridRoundTrippable({ property, isRequired })
+    );
+  }
+
+  return Object.keys(property).every((key) =>
+    ROUND_TRIPPED_FIELD_KEYS.has(key),
+  );
+};
+
+/**
+ * Every row must share the first row's choices, and `required` must list all
+ * rows or none: the builder writes back only those shapes.
+ */
+const isGridRoundTrippable = ({
+  property,
+  isRequired,
+}: {
+  property: Record<string, unknown>;
+  isRequired: boolean;
+}): boolean => {
+  const rowProperties = isRecord(property.properties)
+    ? property.properties
+    : {};
+  const columns = readGridColumns(property);
+  const rowKeys = Object.keys(rowProperties);
+  const rowsRequired = Array.isArray(property.required)
+    ? property.required
+    : [];
+  const expectedRequired = isRequired ? rowKeys : [];
+
+  const areRowsRoundTrippable = Object.values(rowProperties).every(
+    (row) =>
+      isRecord(row) &&
+      row.type === 'string' &&
+      Object.keys(row).every((key) => ROUND_TRIPPED_GRID_ROW_KEYS.has(key)) &&
+      isSameList(readOptions(row), columns),
+  );
+
+  return (
+    areRowsRoundTrippable &&
+    rowsRequired.length === expectedRequired.length &&
+    expectedRequired.every((key) => rowsRequired.includes(key))
+  );
+};
+
+const isSameList = (left: string[], right: string[]): boolean =>
+  left.length === right.length &&
+  left.every((value, index) => value === right[index]);
 
 export const countFields = (schema: Record<string, unknown>): number =>
   Object.keys(isRecord(schema.properties) ? schema.properties : {}).length;
@@ -302,6 +399,8 @@ export type DraftProblemCode =
   | 'field-question-too-long'
   | 'field-description-too-long'
   | 'field-missing-options'
+  | 'field-missing-rows'
+  | 'grid-row-too-long'
   | 'schema';
 
 /** Explicit checks first so the author sees translated copy; `schema` is the
@@ -369,6 +468,7 @@ const describeFieldProblems = ({
   description,
   kind,
   options,
+  rows,
 }: BuilderField): DraftProblem[] => [
   ...(title.trim()
     ? []
@@ -387,6 +487,21 @@ const describeFieldProblems = ({
   }),
   ...(CHOICE_FIELD_KINDS.includes(kind) && options.length === 0
     ? [{ code: 'field-missing-options' as const, fieldLocalId }]
+    : []),
+  ...(kind === 'grid' && !rows.some((row) => row.title.trim())
+    ? [{ code: 'field-missing-rows' as const, fieldLocalId }]
+    : []),
+  // One message, shown under the rows list.
+  ...(rows.some(
+    (row) => row.title.trim().length > FORM_CHARACTER_LIMITS.gridRowTitle,
+  )
+    ? [
+        {
+          code: 'grid-row-too-long' as const,
+          max: FORM_CHARACTER_LIMITS.gridRowTitle,
+          fieldLocalId,
+        },
+      ]
     : []),
 ];
 
@@ -431,6 +546,29 @@ export const deriveFieldKey = ({
   return `${base}${suffix}`;
 };
 
+/**
+ * The rows a grid stores, in order. Blank rows are dropped. A stored row keeps
+ * its key; a new row gets one from its title.
+ */
+const resolveGridRowKeys = (
+  rows: readonly GridRow[],
+): { key: string; title: string }[] => {
+  const titledRows = rows.filter((row) => row.title.trim());
+  const takenKeys = titledRows.flatMap((row) => (row.key ? [row.key] : []));
+
+  return titledRows.map((row, index) => {
+    const title = row.title.trim();
+    if (row.key) {
+      return { key: row.key, title };
+    }
+
+    const key = deriveFieldKey({ title, takenKeys, fallbackIndex: index });
+    takenKeys.push(key);
+
+    return { key, title };
+  });
+};
+
 const buildField = (field: BuilderField): CustomFormField => {
   const base = {
     title: field.title.trim(),
@@ -469,7 +607,33 @@ const buildField = (field: BuilderField): CustomFormField => {
       };
     case 'short-text':
       return { ...base, type: 'string', 'x-format': 'short-text' };
+    case 'grid':
+      // Spread: an interface has no index signature to satisfy the loose type.
+      return { ...buildGridSchema(field) };
   }
+};
+
+/** Also what the editor previews, so it shows what participants will get. */
+export const buildGridSchema = (field: BuilderField): XFormatPropertySchema => {
+  const rows = resolveGridRowKeys(field.rows);
+  const rowKeys = rows.map((row) => row.key);
+
+  return {
+    title: field.title.trim(),
+    ...(field.description.trim()
+      ? { description: field.description.trim() }
+      : {}),
+    type: 'object',
+    'x-format': 'grid',
+    properties: Object.fromEntries(
+      rows.map((row) => [
+        row.key,
+        { type: 'string', title: row.title, enum: field.options },
+      ]),
+    ),
+    'x-field-order': rowKeys,
+    required: field.isRequired ? rowKeys : [],
+  };
 };
 
 /** Branch order mirrors the renderer's, so the kind shown is the control
@@ -483,6 +647,10 @@ const resolveFieldKind = (
 
   if (property.type === 'array') {
     return readOptions(property).length > 0 ? 'multi-select' : null;
+  }
+
+  if (property.type === 'object') {
+    return resolveGridKind(property);
   }
 
   return resolveChoiceKind(property) ?? resolveTypedTextKind(property);
@@ -502,6 +670,16 @@ const resolveChoiceKind = (
 
   return format === 'dropdown' || format === 'radio' ? null : undefined;
 };
+
+/** Null for an object that is not a grid, or a grid the renderer would skip. */
+const resolveGridKind = (
+  property: Record<string, unknown>,
+): FormFieldKind | null =>
+  property['x-format'] === 'grid' &&
+  readGridRows(property).length > 0 &&
+  readGridColumns(property).length > 0
+    ? 'grid'
+    : null;
 
 const resolveTypedTextKind = (
   property: Record<string, unknown>,
@@ -533,6 +711,47 @@ const readOptions = (property: Record<string, unknown>): string[] => {
   return Array.isArray(source)
     ? source.filter((option): option is string => typeof option === 'string')
     : [];
+};
+
+const readGridRows = (property: Record<string, unknown>): GridRow[] => {
+  const rowProperties = isRecord(property.properties)
+    ? property.properties
+    : {};
+
+  return getOrderedKeys(property).map((key) => {
+    const row = rowProperties[key];
+    const title =
+      isRecord(row) && typeof row.title === 'string' ? row.title : '';
+
+    return { localId: key, key, title: title || key };
+  });
+};
+
+/** A grid's columns are its first row's choices; `isGridRoundTrippable`
+ *  refuses a grid whose rows differ. */
+const readGridColumns = (property: Record<string, unknown>): string[] => {
+  const rowProperties = isRecord(property.properties)
+    ? property.properties
+    : {};
+  const firstRow = Object.values(rowProperties).find(isRecord);
+
+  return firstRow ? readOptions(firstRow) : [];
+};
+
+/** `properties` keys ordered by `x-field-order`, then any it omits. Used for a
+ *  form's fields and for a grid's rows. */
+const getOrderedKeys = (schema: Record<string, unknown>): string[] => {
+  const properties = isRecord(schema.properties) ? schema.properties : {};
+  const order = Array.isArray(schema['x-field-order'])
+    ? schema['x-field-order'].filter(
+        (key): key is string => typeof key === 'string',
+      )
+    : [];
+
+  return [
+    ...order.filter((key) => key in properties),
+    ...Object.keys(properties).filter((key) => !order.includes(key)),
+  ];
 };
 
 const slugifyKey = (title: string): string => {
