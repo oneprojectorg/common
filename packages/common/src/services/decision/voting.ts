@@ -1,9 +1,10 @@
 import { trackUserVoted } from '@op/analytics';
-import { db, sql } from '@op/db/client';
+import { db, eq, sql } from '@op/db/client';
 import {
   type VoteData,
   decisionsVoteProposals,
   decisionsVoteSubmissions,
+  processInstances,
 } from '@op/db/schema';
 import { logger } from '@op/logging';
 import type { User } from '@op/supabase/lib';
@@ -471,6 +472,24 @@ export const submitVote = async ({
 
     // Use transaction to create vote submission and join table entries
     const result = await db.transaction(async (tx) => {
+      // FOR SHARE waits for a phase change in flight and then reads its result.
+      const [lockedInstance] = await tx
+        .select({ currentStateId: processInstances.currentStateId })
+        .from(processInstances)
+        .where(eq(processInstances.id, data.processInstanceId))
+        .limit(1)
+        .for('share');
+
+      if (!lockedInstance) {
+        throw new NotFoundError('Process instance', data.processInstanceId);
+      }
+
+      if (lockedInstance.currentStateId !== processInstance.currentStateId) {
+        throw new ValidationError(
+          'Voting closed while your vote was being submitted',
+        );
+      }
+
       // Create the vote submission
       const [voteSubmission] = await tx
         .insert(decisionsVoteSubmissions)

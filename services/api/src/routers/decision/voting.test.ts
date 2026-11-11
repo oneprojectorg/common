@@ -20,9 +20,9 @@ import {
   stateTransitionHistory,
   taxonomyTerms,
 } from '@op/db/schema';
-import { db, desc, eq, inArray } from '@op/db/test';
+import { db, desc, eq, inArray, sql } from '@op/db/test';
 import type { AmountUnit } from '@op/types/amountUnit';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { appRouter } from '..';
 import {
@@ -289,6 +289,68 @@ describe.concurrent('submitVote', () => {
         selectedProposalIds: [proposals[0]!.id],
       }),
     ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
+  });
+
+  it('given an admin moves the phase on while a vote is being submitted, then the vote is refused and nothing is written', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instance, proposals } = await setupVotingInstance(testData, {
+      proposalCount: 2,
+    });
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const { vote } = await db.transaction(async (tx) => {
+      await tx
+        .select({ id: processInstances.id })
+        .from(processInstances)
+        .where(eq(processInstances.id, instance.instance.id))
+        .for('update');
+      await tx
+        .update(processInstances)
+        .set({ currentStateId: 'results' })
+        .where(eq(processInstances.id, instance.instance.id));
+
+      const [backend] = await tx.execute<{ pid: number }>(
+        sql`select pg_backend_pid() as pid`,
+      );
+
+      const vote = caller.decision
+        .submitVote({
+          processInstanceId: instance.instance.id,
+          selectedProposalIds: [proposals[0]!.id],
+        })
+        .then(
+          () => undefined,
+          (error: unknown) => error,
+        );
+
+      await vi.waitFor(
+        async () => {
+          const waiting = await db.execute(
+            sql`select 1 from pg_stat_activity where ${backend?.pid}::int = any(pg_blocking_pids(pid))`,
+          );
+          expect(waiting.length).toBeGreaterThan(0);
+        },
+        { timeout: 10_000 },
+      );
+
+      return { vote };
+    });
+
+    expect(await vote).toMatchObject({
+      cause: {
+        name: 'ValidationError',
+        message: 'Voting closed while your vote was being submitted',
+      },
+    });
+    await expect(
+      db.query.decisionsVoteSubmissions.findFirst({
+        where: { processInstanceId: instance.instance.id },
+      }),
+    ).resolves.toBeUndefined();
   });
 });
 
