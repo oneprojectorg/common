@@ -101,15 +101,12 @@ export async function mergeProposals({
         throw new ConflictError('This proposal has already been merged');
       }
 
-      const instance = await tx.query.processInstances.findFirst({
-        where: { id: source.processInstanceId },
-        columns: { currentStateId: true },
-      });
-      const removed = instance?.currentStateId
+      const { currentStateId } = source.instance;
+      const removed = currentStateId
         ? await deletePendingReviewAssignments({
             db: tx,
             processInstanceId: source.processInstanceId,
-            phaseId: instance.currentStateId,
+            phaseId: currentStateId,
             proposalIds: [sourceProposalId],
           })
         : [];
