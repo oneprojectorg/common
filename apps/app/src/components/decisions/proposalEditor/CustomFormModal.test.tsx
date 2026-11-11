@@ -116,8 +116,16 @@ describe('CustomFormModal translation', () => {
     ).toBeTruthy();
 
     expect(screen.getByText('Choose the main sector.')).toBeTruthy();
-    // Admin-authored option text is isolated from the page direction.
-    expect(screen.getByText('Education').tagName).toBe('BDI');
+    // Admin-authored text is isolated from the page direction.
+    for (const text of [
+      'About your organization',
+      'Please answer the following questions.',
+      'Which sector does your organization work in?',
+      'Choose the main sector.',
+      'Education',
+    ]) {
+      expect(screen.getByText(text).closest('bdi')).not.toBeNull();
+    }
 
     await user.click(screen.getByRole('radio', { name: 'Education' }));
     await user.click(screen.getByRole('combobox'));

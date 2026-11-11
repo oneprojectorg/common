@@ -161,9 +161,11 @@ export function CustomFormModal({
       <DialogContent className="gap-0 p-0 sm:max-w-120">
         <DialogHeader>
           <DialogTitle>
-            {translation?.title ??
-              definition.title ??
-              t('decisions.proposals.additionalDetailsHeading')}
+            <bdi>
+              {translation?.title ??
+                definition.title ??
+                t('decisions.proposals.additionalDetailsHeading')}
+            </bdi>
           </DialogTitle>
         </DialogHeader>
         {/* `noValidate`: validation is AJV's (`schemaValidator`), and its
@@ -181,10 +183,12 @@ export function CustomFormModal({
           <div className="flex flex-1 flex-col gap-6 overflow-y-auto px-6 py-4">
             <TranslateLink translation={translateLink} />
             {definition.description ? (
-              <p className="text-base text-muted-foreground [&>a]:underline [&>a]:underline-offset-4">
-                {linkifyText(
-                  translation?.description ?? definition.description,
-                )}
+              <p className="text-base text-muted-foreground [&_a]:underline [&_a]:underline-offset-4">
+                <bdi>
+                  {linkifyText(
+                    translation?.description ?? definition.description,
+                  )}
+                </bdi>
               </p>
             ) : null}
             {renderableKeys.map((key) => {
@@ -473,7 +477,7 @@ function EnumSelectField({
   onChange,
 }: {
   fieldId: string;
-  label: string;
+  label: ReactNode;
   description?: ReactNode;
   error?: string;
   isRequired: boolean;
@@ -530,7 +534,10 @@ const CHOICE_FORMATS = new Set<XFormatPropertySchema['x-format']>([
   'dropdown',
 ]);
 
-/** The field's label, description and option labels, translated when available. */
+/**
+ * The field's label, description and option labels, translated when available.
+ * Label and description are admin-authored, so they come isolated in `<bdi>`.
+ */
 function getFieldText({
   name,
   field,
@@ -540,11 +547,19 @@ function getFieldText({
   field: XFormatPropertySchema;
   translation?: CustomFormTranslation;
 }) {
+  const description = linkifyText(
+    translation?.fieldDescriptions[name] ?? field.description,
+  );
+
   return {
-    label: translation?.fieldTitles[name] ?? field.title ?? name,
-    description: linkifyText(
-      translation?.fieldDescriptions[name] ?? field.description,
-    ),
+    label: <bdi>{translation?.fieldTitles[name] ?? field.title ?? name}</bdi>,
+    // `FieldDescription` styles only its direct `a` children, so the `<bdi>`
+    // carries the same link styles.
+    description: description ? (
+      <bdi className="[&>a]:underline [&>a]:underline-offset-4 [&>a:hover]:text-primary">
+        {description}
+      </bdi>
+    ) : undefined,
     toChoices: (options: string[]) =>
       options.map((option) => ({
         value: option,
