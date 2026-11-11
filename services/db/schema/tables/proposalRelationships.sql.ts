@@ -20,6 +20,7 @@ import { proposals } from './proposals.sql';
 
 export enum ProposalRelationshipType {
   MERGED = 'merged',
+  DEVELOPED = 'developed',
 }
 
 export const proposalRelationshipTypeEnum = pgEnum(
