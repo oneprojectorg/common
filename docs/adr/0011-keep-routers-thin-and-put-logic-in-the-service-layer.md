@@ -11,8 +11,7 @@ Accepted
 One operation has several callers: the browser and server components through
 tRPC, Inngest workflows and inbound SMS handlers through a direct import.
 Logic inside a tRPC resolver reaches only the first two, so the others copy
-it. Most of the 200 or so procedures already follow the rule below; this
-records it.
+it. This records the rule already in force.
 
 In scope: where business logic, database access and transactions live.
 Authentication is [0012](./0012-authenticate-at-the-boundary.md)
@@ -50,11 +49,5 @@ The frontend does not import `@op/db`.
 - Workflows, webhooks and tests call the function the router calls, with the
   same permission check, and need no HTTP request.
 - Every operation costs two files, even a read that only forwards.
-- Eight routers still query the database directly: five under
-  `platform/admin`, plus `account/login`, `organization/checkMembership` and
-  `organization/inviteUser`. They move to a service when next touched; no
-  new router joins them.
-- About 25 routers declare no `.output()`, so a new column reaches the
-  client unreviewed. They gain a schema when next touched.
-- Nothing enforces the rule. A CI rule against `@op/db` imports under
-  `services/api/src/routers` could, once the eight are gone.
+- The `.output()` schema is the only review of what reaches the client. A
+  procedure without one returns whatever its service returns.

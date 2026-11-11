@@ -12,8 +12,7 @@ Whether a caller may act on a record depends on the record: its profile, the
 caller's roles there, sometimes its state. A check in the router protects
 only the tRPC path, and the same service is also called from workflows and
 SMS commands ([0011](./0011-keep-routers-thin-and-put-logic-in-the-service-layer.md)).
-This records current practice: `@op/common` makes about 130 `assert*Access`
-calls and the routers make four.
+This records current practice.
 
 In scope: where a permission check runs and what it is built from. Who the
 caller is belongs to

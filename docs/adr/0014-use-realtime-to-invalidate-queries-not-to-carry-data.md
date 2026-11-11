@@ -51,12 +51,6 @@ on the same channels.
   learns only that something changed.
 - A lost message costs staleness until the next refetch, never a wrong
   record.
-- Every change costs a refetch per subscribed client, and nothing debounces
-  it.
+- Every change costs a refetch per subscribed client.
 - A mutation that registers the wrong channel, or none, leaves other clients
   stale with no error.
-- The client rebuilds tRPC's query key by hand (a `FIXME` in
-  `services/api/src/links.ts`). A change to that key shape breaks
-  invalidation silently.
-- Three call sites publish outside the middleware: the moderation webhook,
-  `resolveModeration` and `notifyExportChanged`.

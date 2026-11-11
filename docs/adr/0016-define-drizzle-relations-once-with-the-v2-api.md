@@ -30,8 +30,6 @@ v1 block is deleted once nothing reads it.
 - One file answers "how are these tables related".
 - `relations.ts` is long (about 1,150 lines) and every schema change that
   adds a relation touches it.
-- 47 `db._query` calls remain in 34 files, against about 680 `db.query`
-  calls. 29 schema files still carry a v1 block for them.
 - Until a legacy caller moves, a relation it uses exists in both places and
   a change has to be made twice.
 - The two APIs differ in `where` and `orderBy` syntax, so moving a caller is

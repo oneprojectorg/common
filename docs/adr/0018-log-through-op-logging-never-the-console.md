@@ -40,5 +40,3 @@ It holds the ids we already store.
 - Logs depend on PostHog. The client logger writes to the console outside
   production only, so a production browser console shows nothing.
 - What may be logged is a rule people follow, not one the logger enforces.
-- Nothing fails CI on `console.*`. Five calls remain in app and service
-  code; a lint rule would hold the line.

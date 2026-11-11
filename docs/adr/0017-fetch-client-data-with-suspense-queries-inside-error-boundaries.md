@@ -11,7 +11,7 @@ Accepted
 A component that fetches with `useQuery` has to handle loading, error and
 empty data itself, and each one does it differently. Fetching in `useEffect`
 adds a render with no data and a race on every change of input. This records
-the rule most of the app already follows.
+the rule already in force.
 
 In scope: how a client component reads server data. Out of scope: mutations
 and server components.
@@ -43,5 +43,3 @@ to stay disabled until some input exists, which a suspense query cannot do.
   than intended.
 - Sibling suspense queries in one component run one after another unless
   they are prefetched or combined.
-- About 60 plain `useQuery` calls remain against about 130 suspense calls.
-  Not all are the disabled-query case.

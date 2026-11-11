@@ -58,6 +58,3 @@ A service sends after its transaction commits, never inside it.
 - A send that fails after the commit loses the work unless the rows record
   that it is still owed, as invites do with `notifiedAt`.
 - A function can run twice, so each step has to be safe to repeat.
-- About ten sends still sit in `services/api` rather than in a service, and
-  a few routers run analytics through `waitUntil`. Neither is the pattern
-  for new code.

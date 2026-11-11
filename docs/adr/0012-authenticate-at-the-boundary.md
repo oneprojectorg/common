@@ -52,7 +52,4 @@ the identity inward.
   caller relies on the service to check what that caller may do.
 - Each adapter owns its own proof of identity, so a weak one weakens every
   service behind it.
-- Nothing checks the choice of tier. About 120 of 200 procedures use
-  `networkAuthenticatedProcedure`; a public one has to opt down on purpose.
-- Platform admin procedures sit outside the four tiers and assemble their
-  checks by hand. A fifth tier would close that.
+- The tier is chosen by hand, and nothing checks that it is the right one.
