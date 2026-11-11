@@ -81,6 +81,54 @@ export function ProposalReviewProgressTable({
   );
 }
 
+/** Loading state for the table: the real header over placeholder rows. */
+export function ProposalReviewProgressTableSkeleton({
+  rows = 10,
+}: {
+  rows?: number;
+}) {
+  const t = useTranslations('decisions');
+
+  return (
+    <Table
+      aria-hidden
+      className="w-full [&_td]:h-15 [&_thead_th]:font-normal [&_tr>*:first-child]:ps-0 [&_tr>*:last-child]:pe-0"
+    >
+      <TableHeader>
+        <TableRow>
+          <TableHead>{t('review.proposalColumn')}</TableHead>
+          <TableHead className="w-30">{t('review.reviewersHeading')}</TableHead>
+          <TableHead className="w-45">{t('review.reviewsLabel')}</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {Array.from({ length: rows }).map((_, index) => (
+          <TableRow key={index}>
+            <TableCell>
+              <div className="flex flex-col gap-2">
+                <Skeleton className="h-4 w-56" />
+                <div className="flex items-center gap-2">
+                  <Skeleton className="h-3.5 w-24" />
+                  <Skeleton className="h-4 w-16" />
+                </div>
+              </div>
+            </TableCell>
+            <TableCell>
+              <Skeleton className="size-6 rounded-full" />
+            </TableCell>
+            <TableCell>
+              <div className="flex items-center gap-2.5">
+                <Skeleton className="h-1.5 w-24" />
+                <Skeleton className="h-4 w-10" />
+              </div>
+            </TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
+  );
+}
+
 function ProposalReviewProgressRow({
   proposal,
   href,
