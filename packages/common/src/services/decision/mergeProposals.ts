@@ -9,6 +9,7 @@ import { permission } from 'access-zones';
 
 import { ConflictError, ValidationError } from '../../utils';
 import { assertProfileAccess } from '../assert';
+import { deletePendingReviewAssignments } from './deletePendingReviewAssignments';
 import { getProposalAccessContext } from './getProposalAccessContext';
 import { findLiveMergedEdge } from './proposalSupersession';
 import type { MergeProposalsInput } from './schemas/proposalRelationships';
@@ -19,12 +20,13 @@ export type MergeProposalsResult = {
   targetProposalId: string;
   /** So the caller can announce this specific merge. */
   relationshipId: string;
+  removedReviewAssignmentCount: number;
 };
 
 /**
  * Links one proposal into another as `merged`, for admins of the parent
- * decision. No content moves and no status changes — recording the edge is the
- * entire effect, and it's what every read filters on via `notSuperseded`.
+ * decision. No content moves and no status changes; every read filters on the
+ * edge via `notSuperseded`.
  *
  * Chains are allowed — a proposal with others merged into it can be merged
  * onward. The target must still be live, which both keeps the merge visible and
@@ -80,30 +82,50 @@ export async function mergeProposals({
     );
   }
 
-  // No transaction needed: the partial unique index enforces "superseded at most
-  // once", and `onConflictDoNothing` turns a concurrent merge into an empty
-  // result rather than a driver error.
-  const [inserted] = await db
-    .insert(proposalRelationships)
-    .values({
-      processInstanceId: source.processInstanceId,
-      sourceProposalId,
-      targetProposalId,
-      relationshipType: ProposalRelationshipType.MERGED,
-      // The column distinguishes "no note" from "an empty note".
-      note: note ?? null,
-    })
-    .onConflictDoNothing()
-    .returning({ id: proposalRelationships.id });
+  const { relationshipId, removedReviewAssignmentCount } = await db.transaction(
+    async (tx) => {
+      const [inserted] = await tx
+        .insert(proposalRelationships)
+        .values({
+          processInstanceId: source.processInstanceId,
+          sourceProposalId,
+          targetProposalId,
+          relationshipType: ProposalRelationshipType.MERGED,
+          // The column distinguishes "no note" from "an empty note".
+          note: note ?? null,
+        })
+        .onConflictDoNothing()
+        .returning({ id: proposalRelationships.id });
 
-  if (!inserted) {
-    throw new ConflictError('This proposal has already been merged');
-  }
+      if (!inserted) {
+        throw new ConflictError('This proposal has already been merged');
+      }
+
+      const instance = await tx.query.processInstances.findFirst({
+        where: { id: source.processInstanceId },
+        columns: { currentStateId: true },
+      });
+      const removed = instance?.currentStateId
+        ? await deletePendingReviewAssignments({
+            db: tx,
+            processInstanceId: source.processInstanceId,
+            phaseId: instance.currentStateId,
+            proposalIds: [sourceProposalId],
+          })
+        : [];
+
+      return {
+        relationshipId: inserted.id,
+        removedReviewAssignmentCount: removed.length,
+      };
+    },
+  );
 
   return {
     processInstanceId: source.processInstanceId,
     sourceProposalId: source.proposalId,
     targetProposalId: target.proposalId,
-    relationshipId: inserted.id,
+    relationshipId,
+    removedReviewAssignmentCount,
   };
 }

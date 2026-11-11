@@ -3,10 +3,15 @@ import {
   assertProposalEngagementAccess,
 } from '@op/common';
 import { MERGE_NOTE_MAX_LENGTH } from '@op/common/client';
-import { TestDecisionsDataManager } from '@op/common/testing';
+import {
+  TestDecisionsDataManager,
+  TestReviewsDataManager,
+  createReviewAssignment,
+} from '@op/common/testing';
 import { db } from '@op/db/client';
 import {
   ProposalRelationshipType,
+  ProposalReviewAssignmentStatus,
   ProposalStatus,
   Visibility,
   proposalRelationships,
@@ -63,6 +68,39 @@ async function createMergeableProposals(testData: TestDecisionsDataManager) {
   ]);
 
   return { setup, instanceId, source, target, caller };
+}
+
+async function createProposalsUnderReview(
+  taskId: string,
+  onTestFinished: ConstructorParameters<typeof TestReviewsDataManager>[1],
+) {
+  const testData = new TestReviewsDataManager(taskId, onTestFinished);
+  const source = await testData.createReviewAssignment({
+    title: 'Source under review',
+  });
+  const target = await testData.createReviewAssignment({
+    context: source.context,
+    title: 'Target under review',
+  });
+  const caller = await createAuthenticatedCaller(
+    source.context.defaultReviewer.email,
+  );
+
+  return {
+    testData,
+    context: source.context,
+    instanceId: source.context.instance.instance.id,
+    source,
+    target,
+    caller,
+  };
+}
+
+async function readAssignments(proposalId: string) {
+  return db.query.proposalReviewAssignments.findMany({
+    where: { proposalId },
+    columns: { id: true, status: true, phaseId: true },
+  });
 }
 
 async function readStatus(proposalId: string) {
@@ -448,6 +486,140 @@ describe.concurrent('mergeProposals', () => {
       .from(proposalRelationships)
       .where(eq(proposalRelationships.sourceProposalId, source.id));
     expect(edge).toBeUndefined();
+  });
+});
+
+describe.concurrent('mergeProposals and review assignments', () => {
+  it("deletes the source's pending assignment in the current phase", async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { source, target, caller } = await createProposalsUnderReview(
+      task.id,
+      onTestFinished,
+    );
+
+    await caller.decision.mergeProposals({
+      sourceProposalId: source.proposal.id,
+      targetProposalId: target.proposal.id,
+    });
+
+    expect(await readAssignments(source.proposal.id)).toEqual([]);
+  });
+
+  it('keeps assignments a reviewer has started or finished', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { testData, context, instanceId, source, target, caller } =
+      await createProposalsUnderReview(task.id, onTestFinished);
+
+    const startedStatuses = Object.values(
+      ProposalReviewAssignmentStatus,
+    ).filter((status) => status !== ProposalReviewAssignmentStatus.PENDING);
+
+    const started = await Promise.all(
+      startedStatuses.map(async (status) => {
+        const reviewer = await testData.createReviewer(context);
+        return createReviewAssignment({
+          processInstanceId: instanceId,
+          proposalId: source.proposal.id,
+          reviewerProfileId: reviewer.profileId,
+          status,
+        });
+      }),
+    );
+
+    await caller.decision.mergeProposals({
+      sourceProposalId: source.proposal.id,
+      targetProposalId: target.proposal.id,
+    });
+
+    const remaining = await readAssignments(source.proposal.id);
+    expect(remaining.map((row) => row.id).sort()).toEqual(
+      started.map((row) => row.id).sort(),
+    );
+  });
+
+  it('keeps pending assignments in another phase', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { context, instanceId, source, target, caller } =
+      await createProposalsUnderReview(task.id, onTestFinished);
+
+    const otherPhase = await createReviewAssignment({
+      processInstanceId: instanceId,
+      proposalId: source.proposal.id,
+      reviewerProfileId: context.defaultReviewer.profileId,
+      phaseId: 'submission',
+    });
+
+    await caller.decision.mergeProposals({
+      sourceProposalId: source.proposal.id,
+      targetProposalId: target.proposal.id,
+    });
+
+    expect(await readAssignments(source.proposal.id)).toEqual([
+      {
+        id: otherPhase.id,
+        status: ProposalReviewAssignmentStatus.PENDING,
+        phaseId: 'submission',
+      },
+    ]);
+  });
+
+  it("leaves the target's assignments alone", async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { source, target, caller } = await createProposalsUnderReview(
+      task.id,
+      onTestFinished,
+    );
+
+    await caller.decision.mergeProposals({
+      sourceProposalId: source.proposal.id,
+      targetProposalId: target.proposal.id,
+    });
+
+    expect(await readAssignments(target.proposal.id)).toEqual([
+      {
+        id: target.assignment.id,
+        status: ProposalReviewAssignmentStatus.PENDING,
+        phaseId: 'review',
+      },
+    ]);
+  });
+
+  it('deletes nothing when the merge loses to a concurrent one', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { instanceId, source, target, caller } =
+      await createProposalsUnderReview(task.id, onTestFinished);
+
+    await db.insert(proposalRelationships).values({
+      processInstanceId: instanceId,
+      sourceProposalId: source.proposal.id,
+      targetProposalId: target.proposal.id,
+      relationshipType: ProposalRelationshipType.MERGED,
+    });
+
+    await expect(
+      caller.decision.mergeProposals({
+        sourceProposalId: source.proposal.id,
+        targetProposalId: target.proposal.id,
+      }),
+    ).rejects.toThrow(/already been merged/i);
+
+    expect(await readAssignments(source.proposal.id)).toEqual([
+      {
+        id: source.assignment.id,
+        status: ProposalReviewAssignmentStatus.PENDING,
+        phaseId: 'review',
+      },
+    ]);
   });
 });
 
