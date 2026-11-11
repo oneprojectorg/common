@@ -24,7 +24,7 @@ import {
 } from '@op/db/schema';
 
 import { toAccountContact } from '../../profile/schemas/accountContact';
-import { notSuperseded } from '../proposalSupersession';
+import { reviewSetPredicate } from '../phaseEligibility';
 import type { ReviewerStatus } from '../schemas/reviewAssignments';
 import type { EligibleReviewerSchema } from '../schemas/reviews';
 import { escapeLikePattern, splitSearchWords } from '../utils/search';
@@ -59,15 +59,11 @@ export function buildPhaseReviewerRollup({
   const submittedCount = sql`count(*) filter (where ${proposalReviewAssignments.status} = ${ProposalReviewAssignmentStatus.COMPLETED})`;
   const draftCount = sql`count(*) filter (where ${proposalReviews.state} = ${ProposalReviewState.DRAFT})`;
   const remainingCount = sql`count(*) filter (where ${openAssignmentFilter()})`;
-  // The same merge check as each reviewer's own list, so the rows match it.
-  const inPhaseReviewSet = and(
-    eq(proposalReviewAssignments.processInstanceId, processInstanceId),
-    eq(proposalReviewAssignments.phaseId, phaseId),
-    notSuperseded({
-      proposalId: proposalReviewAssignments.proposalId,
-      processInstanceId,
-    }),
-  );
+  // The set each reviewer's own list draws from, so the rows match it.
+  const inPhaseReviewSet = reviewSetPredicate(proposalReviewAssignments, {
+    processInstanceId,
+    phaseId,
+  });
 
   const account = db
     .select({ email: ownerAuthUsers.email, phone: ownerAuthUsers.phone })

@@ -13,10 +13,8 @@ import { toAccountContact } from '../../profile/schemas/accountContact';
 import { withAccountContact } from '../../profile/withAccountContact';
 import { getEligibleReviewerProfileIds } from '../getEligibleReviewerProfileIds';
 import { getInstance } from '../getInstance';
-import {
-  listAssignmentsForReviewer,
-  reviewerQueueFilter,
-} from '../listReviewAssignments';
+import { listAssignmentsForReviewer } from '../listReviewAssignments';
+import { reviewerQueuePredicate } from '../phaseEligibility';
 import type { InstancePhaseRef } from '../schemas/instance';
 import {
   type ReviewerAssignments,
@@ -124,7 +122,7 @@ async function getReviewerQueueTotals({
     proposalReviews.assignmentId,
     proposalReviewAssignments.id,
   );
-  const reviewerQueue = reviewerQueueFilter({
+  const reviewerQueue = reviewerQueuePredicate(proposalReviewAssignments, {
     processInstanceId,
     phaseId,
     reviewerProfileId,

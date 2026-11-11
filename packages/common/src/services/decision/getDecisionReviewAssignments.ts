@@ -9,9 +9,9 @@ import { getEligibleReviewerProfileIds } from './getEligibleReviewerProfileIds';
 import { getProposalDocumentsContent } from './getProposalDocumentsContent';
 import { getProposalIdsForPhase } from './getProposalsForPhase';
 import { getCategoriesByProposalIds } from './listProposalsWithReviewAggregates';
+import { reviewSetPredicate } from './phaseEligibility';
 import { type BudgetData, parseProposalData } from './proposalDataSchema';
 import { buildProposalListPreview } from './proposalListPreview';
-import { notSuperseded } from './proposalSupersession';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
 import {
   type AdminDecisionReviewAssignments,
@@ -93,19 +93,17 @@ export async function getDecisionReviewAssignments({
     [
       db.query.proposalReviewAssignments.findMany({
         where: {
-          processInstanceId: instanceId,
-          ...(phaseId && { phaseId }),
           // Unreachable even to admins (see detachProposalForModeration);
           // assignments made before the detach would otherwise leak it.
           proposal: {
             deletedAt: { isNull: true },
             moderationDetachedAt: { isNull: true },
           },
-          // Out of every reviewer's list, so out of these rollups too.
+          // The same set each reviewer's own list draws from.
           RAW: (table) =>
-            notSuperseded({
-              proposalId: table.proposalId,
+            reviewSetPredicate(table, {
               processInstanceId: instanceId,
+              phaseId,
             }),
         },
         with: {

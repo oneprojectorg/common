@@ -3,9 +3,9 @@ import {
   ProposalReviewAssignmentStatus,
   proposalReviewAssignments,
 } from '@op/db/schema';
-import { and, asc, count, eq, inArray, isNull } from 'drizzle-orm';
+import { and, asc, count, inArray, isNull } from 'drizzle-orm';
 
-import { notSuperseded } from '../proposalSupersession';
+import { reviewSetPredicate } from '../phaseEligibility';
 
 export interface ReviewerWithOpenAssignments {
   reviewerProfileId: string;
@@ -39,15 +39,13 @@ export async function listReviewersWithOpenAssignments({
     .from(proposalReviewAssignments)
     .where(
       and(
-        eq(proposalReviewAssignments.processInstanceId, processInstanceId),
-        eq(proposalReviewAssignments.phaseId, phaseId),
+        // A merged-away proposal is out of the queue, so it earns no reminder.
+        reviewSetPredicate(proposalReviewAssignments, {
+          processInstanceId,
+          phaseId,
+        }),
         inArray(proposalReviewAssignments.status, OPEN_ASSIGNMENT_STATUSES),
         isNull(proposalReviewAssignments.deletedAt),
-        // A merged-away proposal is out of the queue, so it earns no reminder.
-        notSuperseded({
-          proposalId: proposalReviewAssignments.proposalId,
-          processInstanceId,
-        }),
         reviewerProfileIds
           ? inArray(proposalReviewAssignments.reviewerProfileId, [
               ...reviewerProfileIds,

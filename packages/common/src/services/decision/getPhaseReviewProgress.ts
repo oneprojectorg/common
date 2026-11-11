@@ -10,7 +10,7 @@ import { UnauthorizedError } from '../../utils';
 import { assertProfileAccess } from '../assert';
 import { getInstance } from './getInstance';
 import { getProposalIdsForPhase } from './getProposalsForPhase';
-import { notSuperseded } from './proposalSupersession';
+import { reviewSetPredicate } from './phaseEligibility';
 import type { InstancePhaseRef } from './schemas/instance';
 import type { PhaseInstanceData } from './schemas/instanceData';
 import type { PhaseReviewProgress } from './schemas/reviews';
@@ -90,14 +90,10 @@ async function getAssignedReviewerCounts({
     })
     .from(proposalReviewAssignments)
     .where(
-      and(
-        eq(proposalReviewAssignments.processInstanceId, processInstanceId),
-        eq(proposalReviewAssignments.phaseId, phaseId),
-        notSuperseded({
-          proposalId: proposalReviewAssignments.proposalId,
-          processInstanceId,
-        }),
-      ),
+      reviewSetPredicate(proposalReviewAssignments, {
+        processInstanceId,
+        phaseId,
+      }),
     );
 
   return {
@@ -129,8 +125,10 @@ async function getReviewedProposalsCount({
     .from(proposalReviewAssignments)
     .where(
       and(
-        eq(proposalReviewAssignments.processInstanceId, processInstanceId),
-        eq(proposalReviewAssignments.phaseId, phaseId),
+        reviewSetPredicate(proposalReviewAssignments, {
+          processInstanceId,
+          phaseId,
+        }),
         inArray(proposalReviewAssignments.proposalId, proposalIds),
         eq(
           proposalReviewAssignments.status,

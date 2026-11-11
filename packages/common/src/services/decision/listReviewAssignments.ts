@@ -28,8 +28,8 @@ import { generateProposalHtml } from './generateProposalHtml';
 import { getInstance } from './getInstance';
 import { getProposalDocumentsContent } from './getProposalDocumentsContent';
 import { decisionPermission } from './permissions';
+import { reviewerQueuePredicate } from './phaseEligibility';
 import { getCurrentProposalHistoryIds } from './proposal/history';
-import { notSuperseded } from './proposalSupersession';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
 import { isReviewOutOfDate } from './review/staleness';
 import {
@@ -95,30 +95,6 @@ const decodeQueueCursor = (
   }
   return parsed.data;
 };
-
-/**
- * One reviewer's queue in one phase. The list and the admin totals both use
- * it, so the counts describe exactly the rows the list shows.
- */
-export const reviewerQueueFilter = ({
-  table = proposalReviewAssignments,
-  processInstanceId,
-  phaseId,
-  reviewerProfileId,
-}: {
-  table?: typeof proposalReviewAssignments;
-  processInstanceId: string;
-  phaseId: string;
-  reviewerProfileId: string;
-}): SQL =>
-  and(
-    eq(table.processInstanceId, processInstanceId),
-    eq(table.reviewerProfileId, reviewerProfileId),
-    eq(table.phaseId, phaseId),
-    // Merging doesn't delete assignments, so a proposal merged mid-review
-    // would otherwise stay in its reviewer's queue.
-    notSuperseded({ proposalId: table.proposalId, processInstanceId }),
-  )!;
 
 /**
  * Returns one page of the reviewer's authorized review assignments in `phaseId`.
@@ -302,8 +278,7 @@ export async function listAssignmentsForReviewer({
   // Shared by the page and the count so `total` describes the same set.
   const buildFilterConditions = (t: typeof proposalReviewAssignments): SQL =>
     and(
-      reviewerQueueFilter({
-        table: t,
+      reviewerQueuePredicate(t, {
         processInstanceId,
         phaseId,
         reviewerProfileId,

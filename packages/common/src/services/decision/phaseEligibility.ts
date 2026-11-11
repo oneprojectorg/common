@@ -1,5 +1,5 @@
-import { type SQL, and, isNull, notInArray, sql } from '@op/db/client';
-import type { proposals } from '@op/db/schema';
+import { type SQL, and, eq, isNull, notInArray, sql } from '@op/db/client';
+import type { proposalReviewAssignments, proposals } from '@op/db/schema';
 
 import { notSuperseded } from './proposalSupersession';
 import {
@@ -34,4 +34,40 @@ export const votingEligiblePredicate = (t: typeof proposals): SQL =>
   and(
     phaseEligiblePredicate(t),
     notInArray(sql<string>`${t.status}::text`, [...VOTING_INELIGIBLE_STATUSES]),
+  )!;
+
+/**
+ * Review assignments in a phase's review set: the assignment-side twin of
+ * `phaseEligiblePredicate`. Merging leaves the merged-away proposal's
+ * assignments in place, so every count or list of assignments filters them
+ * here. Omit `phaseId` for every phase.
+ */
+export const reviewSetPredicate = (
+  t: typeof proposalReviewAssignments,
+  {
+    processInstanceId,
+    phaseId,
+  }: { processInstanceId: string; phaseId?: string },
+): SQL =>
+  and(
+    eq(t.processInstanceId, processInstanceId),
+    phaseId ? eq(t.phaseId, phaseId) : undefined,
+    notSuperseded({ proposalId: t.proposalId, processInstanceId }),
+  )!;
+
+/**
+ * One reviewer's queue in one phase. The list and its admin totals share it,
+ * so the counts describe exactly the rows the list shows.
+ */
+export const reviewerQueuePredicate = (
+  t: typeof proposalReviewAssignments,
+  {
+    processInstanceId,
+    phaseId,
+    reviewerProfileId,
+  }: { processInstanceId: string; phaseId: string; reviewerProfileId: string },
+): SQL =>
+  and(
+    reviewSetPredicate(t, { processInstanceId, phaseId }),
+    eq(t.reviewerProfileId, reviewerProfileId),
   )!;
