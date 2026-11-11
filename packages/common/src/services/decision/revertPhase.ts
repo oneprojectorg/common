@@ -26,6 +26,7 @@ import {
   NotFoundError,
   ValidationError,
 } from '../../utils';
+import { deletePendingReviewAssignments } from './deletePendingReviewAssignments';
 import { lockProcessInstance } from './lockProcessInstance';
 import type {
   DecisionInstanceData,
@@ -142,7 +143,7 @@ export async function revertPhase({
       locked,
     });
 
-    await deletePendingReviewAssignments({
+    await clearPhaseReviewAssignments({
       tx,
       instanceId,
       phaseId: revertTarget.revertedPhaseId,
@@ -352,7 +353,7 @@ async function undoAdvanceWrites({
  * `PENDING` is set by a reviewer action, and deleting the assignment would
  * cascade away their draft or submitted review.
  */
-async function deletePendingReviewAssignments({
+async function clearPhaseReviewAssignments({
   tx,
   instanceId,
   phaseId,
@@ -381,18 +382,10 @@ async function deletePendingReviewAssignments({
     );
   }
 
-  // The PENDING predicate is repeated on the DELETE so a row started between
-  // the check above and this statement survives instead of losing its review.
-  await tx
-    .delete(proposalReviewAssignments)
-    .where(
-      and(
-        eq(proposalReviewAssignments.processInstanceId, instanceId),
-        eq(proposalReviewAssignments.phaseId, phaseId),
-        eq(
-          proposalReviewAssignments.status,
-          ProposalReviewAssignmentStatus.PENDING,
-        ),
-      ),
-    );
+  await deletePendingReviewAssignments({
+    db: tx,
+    processInstanceId: instanceId,
+    phaseId,
+    wholePhase: true,
+  });
 }

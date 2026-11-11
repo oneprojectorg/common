@@ -9,10 +9,10 @@ import {
   ProcessStatus,
   ProposalReviewAssignmentStatus,
   proposalCategories,
-  proposalReviewAssignments,
 } from '@op/db/schema';
 import { logger } from '@op/logging';
 
+import { deletePendingReviewAssignments } from './deletePendingReviewAssignments';
 import { getCategoryReviewersByProposal } from './getCategoryReviewersByProposal';
 import { getEligibleReviewerProfileIds } from './getEligibleReviewerProfileIds';
 import {
@@ -239,14 +239,14 @@ export async function reconcileReviewAssignments({
     }
   }
 
-  let deleted = 0;
-  if (idsToDelete.length > 0) {
-    const deletedRows = await db
-      .delete(proposalReviewAssignments)
-      .where(inArray(proposalReviewAssignments.id, idsToDelete))
-      .returning({ id: proposalReviewAssignments.id });
-    deleted = deletedRows.length;
-  }
+  const deleted = (
+    await deletePendingReviewAssignments({
+      db,
+      processInstanceId: instanceId,
+      phaseId: currentPhaseId,
+      assignmentIds: idsToDelete,
+    })
+  ).length;
 
   return { inserted, deleted, proposalCount: affectedIds.length };
 }

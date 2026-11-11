@@ -1,10 +1,7 @@
-import { and, db, eq } from '@op/db/client';
-import {
-  ProcessStatus,
-  ProposalReviewAssignmentStatus,
-  proposalReviewAssignments,
-} from '@op/db/schema';
+import { db } from '@op/db/client';
+import { ProcessStatus } from '@op/db/schema';
 
+import { deletePendingReviewAssignments } from './deletePendingReviewAssignments';
 import { getEligibleReviewerProfileIds } from './getEligibleReviewerProfileIds';
 import type { DecisionInstanceData } from './schemas/instanceData';
 import { assertInstancePhase } from './utils/instance';
@@ -65,21 +62,12 @@ export async function pruneReviewAssignmentsForMember({
     return { skipped: 'member is still eligible to review' };
   }
 
-  // PENDING is in the DELETE so a row started concurrently keeps its draft.
-  const deleted = await db
-    .delete(proposalReviewAssignments)
-    .where(
-      and(
-        eq(proposalReviewAssignments.processInstanceId, instanceId),
-        eq(proposalReviewAssignments.phaseId, currentPhaseId),
-        eq(proposalReviewAssignments.reviewerProfileId, reviewerProfileId),
-        eq(
-          proposalReviewAssignments.status,
-          ProposalReviewAssignmentStatus.PENDING,
-        ),
-      ),
-    )
-    .returning({ id: proposalReviewAssignments.id });
+  const deleted = await deletePendingReviewAssignments({
+    db,
+    processInstanceId: instanceId,
+    phaseId: currentPhaseId,
+    reviewerProfileId,
+  });
 
   return { removed: deleted.length };
 }
