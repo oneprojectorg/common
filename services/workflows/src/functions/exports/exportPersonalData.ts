@@ -1,5 +1,6 @@
 import {
   collectPersonalData,
+  holdActivePersonalDataExport,
   personalDataExportCacheKey,
   personalDataExportFileName,
   personalDataExportFilePath,
@@ -25,8 +26,10 @@ export const exportPersonalData = inngest.createFunction(
       event.data,
     );
 
+    let result: Awaited<ReturnType<typeof runExportJob>>;
+
     try {
-      return await runExportJob({
+      result = await runExportJob({
         step,
         exportId,
         cacheKey: personalDataExportCacheKey(exportId),
@@ -63,10 +66,18 @@ export const exportPersonalData = inngest.createFunction(
           return { fileName, truncatedSections };
         },
       });
-    } finally {
+    } catch (error) {
       await step.run('release-active-export', () =>
         releaseActivePersonalDataExport({ userId, exportId }),
       );
+      throw error;
     }
+
+    // A repeat request reuses this export while its file can be downloaded.
+    await step.run('hold-active-export', () =>
+      holdActivePersonalDataExport({ userId, exportId }),
+    );
+
+    return result;
   },
 );

@@ -505,6 +505,47 @@ export const deleteIfEqualsWithStatus = async ({
   }
 };
 
+const EXPIRE_IF_EQUALS_SCRIPT =
+  "if redis.call('GET', KEYS[1]) == ARGV[1] then return redis.call('EXPIRE', KEYS[1], ARGV[2]) end return 0";
+
+/**
+ * Resets a key's TTL only while it still holds `data`, in one atomic command.
+ * `ok` means the command ran, whether or not the key held `data`.
+ */
+export const expireIfEqualsWithStatus = async ({
+  key,
+  data,
+  ttlSeconds,
+}: {
+  key: string;
+  data: unknown;
+  ttlSeconds: number;
+}): Promise<RedisSetResult> => {
+  if (!redis) {
+    return { status: 'disabled' };
+  }
+
+  const signal = AbortSignal.timeout(REDIS_COMMAND_TIMEOUT_MS);
+
+  try {
+    await redis.withAbortSignal(signal).eval(EXPIRE_IF_EQUALS_SCRIPT, {
+      keys: [key],
+      arguments: [JSON.stringify(data), String(ttlSeconds)],
+    });
+
+    return { status: 'ok' };
+  } catch (e) {
+    if (signal.aborted) {
+      cacheMetrics.recordTimeout({ layer: 'command' });
+      return { status: 'timeout' };
+    }
+
+    logger.error('CACHE: error setting to Redis', { error: e });
+    cacheMetrics.recordError('set');
+    return { status: 'error' };
+  }
+};
+
 export const set = async (
   key: string,
   data: unknown,

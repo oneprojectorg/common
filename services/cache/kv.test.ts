@@ -87,6 +87,7 @@ process.env.REDIS_URL = 'redis://localhost:6379';
 const {
   cache,
   deleteIfEqualsWithStatus,
+  expireIfEqualsWithStatus,
   get,
   getWithStatus,
   set,
@@ -494,5 +495,30 @@ describe('deleteIfEqualsWithStatus()', () => {
     fakeRedis.eval.mockRejectedValue(new Error('connection refused'));
 
     await expect(release()).resolves.toEqual({ status: 'error' });
+  });
+});
+
+describe('expireIfEqualsWithStatus()', () => {
+  beforeEach(() => {
+    fakeRedis.eval.mockReset();
+  });
+
+  const extend = () =>
+    expireIfEqualsWithStatus({ key: 'k', data: 'v', ttlSeconds: 60 });
+
+  it('compares and resets the ttl in one script against the serialized value', async () => {
+    fakeRedis.eval.mockResolvedValue(1);
+
+    await expect(extend()).resolves.toEqual({ status: 'ok' });
+    expect(fakeRedis.eval).toHaveBeenCalledWith(expect.any(String), {
+      keys: ['k'],
+      arguments: ['"v"', '60'],
+    });
+  });
+
+  it('reports a timeout when the script is too slow', async () => {
+    fakeRedis.eval.mockImplementation(() => new Promise(() => {}));
+
+    await expect(extend()).resolves.toEqual({ status: 'timeout' });
   });
 });

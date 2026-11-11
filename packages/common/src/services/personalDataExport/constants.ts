@@ -4,7 +4,7 @@ export const personalDataExportCacheKey = (exportId: string) =>
 // Matches how long the app waits on a run. Also the claim's lifetime, so a stuck run frees up.
 export const PERSONAL_DATA_EXPORT_MAX_RUN_MS = 30 * 60 * 1000;
 
-// Names the user's running export. The run releases it when it ends.
+// Names the user's export a repeat request reuses: running, or completed with a live file.
 export const personalDataExportActiveKey = (userId: string) =>
   `export:personalData:active:${userId}`;
 
@@ -23,6 +23,10 @@ export const PERSONAL_DATA_EXPORT_TEMPLATE_CONCURRENCY = 10;
 
 // The app retires the offer on the same clock, from `completedAt`.
 export const PERSONAL_DATA_EXPORT_FILE_LIFETIME_MS = 60 * 60 * 1000;
+
+// Ends reuse a minute before the app retires the offer, so a reused export is never already gone.
+export const PERSONAL_DATA_EXPORT_REUSE_MS =
+  PERSONAL_DATA_EXPORT_FILE_LIFETIME_MS - 60 * 1000;
 
 // Signed per download and used at once, so it never needs to outlive the click.
 export const PERSONAL_DATA_EXPORT_URL_TTL_SECONDS = 60;

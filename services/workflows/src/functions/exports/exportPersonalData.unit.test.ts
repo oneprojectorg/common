@@ -9,6 +9,7 @@ vi.mock('@op/common', () => ({
   personalDataExportFileName: () => 'personal_data_export_1.json',
   personalDataExportFilePath: (userId: string, fileName: string) =>
     `user/${userId}/personal-data/${fileName}`,
+  holdActivePersonalDataExport: vi.fn(),
   releaseActivePersonalDataExport: vi.fn(),
   storeExportFile: vi.fn(),
 }));
@@ -19,6 +20,7 @@ vi.mock('@op/logging', () => ({ logger: { error: vi.fn() } }));
 vi.mock('./notifyExportChanged', () => ({ notifyExportChanged: vi.fn() }));
 
 import {
+  holdActivePersonalDataExport,
   patchExportRecord,
   releaseActivePersonalDataExport,
   storeExportFile,
@@ -57,7 +59,7 @@ beforeEach(() => {
 });
 
 describe('exportPersonalData', () => {
-  it('schedules the file expiry and releases the claim when the export completes', async () => {
+  it('schedules the file expiry and keeps the claim for reuse when the export completes', async () => {
     const { ctx, error } = await execute();
 
     expect(error).toBeUndefined();
@@ -65,10 +67,11 @@ describe('exportPersonalData', () => {
       'schedule-expiry',
       expiryEvent,
     );
-    expect(releaseActivePersonalDataExport).toHaveBeenCalledWith({
+    expect(holdActivePersonalDataExport).toHaveBeenCalledWith({
       userId: USER_ID,
       exportId: EXPORT_ID,
     });
+    expect(releaseActivePersonalDataExport).not.toHaveBeenCalled();
   });
 
   it('schedules the file expiry before it writes the completed status', async () => {

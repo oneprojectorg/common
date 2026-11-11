@@ -14,7 +14,7 @@ import {
 } from './constants';
 import { releaseActivePersonalDataExport } from './releaseActivePersonalDataExport';
 
-/** Starts an export, or returns the user's export that is still running. */
+/** Starts an export, or returns the user's export that is running or still downloadable. */
 export const requestPersonalDataExport = async ({
   user,
 }: {
@@ -58,7 +58,7 @@ export const requestPersonalDataExport = async ({
   return { exportId };
 };
 
-// Returns `exportId` when this request won the claim, else the running export's id.
+// Returns `exportId` when this request won the claim, else the held export's id.
 const claimActiveExport = async ({
   userId,
   exportId,
@@ -95,7 +95,7 @@ const claimActiveExport = async ({
     return holder.data;
   }
 
-  // The running export released its claim between the two reads.
+  // The held export released its claim between the two reads.
   throw new ConflictError('An export just finished. Try again.');
 };
 

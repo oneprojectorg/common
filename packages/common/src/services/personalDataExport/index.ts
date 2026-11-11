@@ -7,6 +7,7 @@ export {
 export { collectPersonalData } from './collectPersonalData';
 export { expirePersonalDataExport } from './expirePersonalDataExport';
 export { getPersonalDataExportStatus } from './getPersonalDataExportStatus';
+export { holdActivePersonalDataExport } from './holdActivePersonalDataExport';
 export { releaseActivePersonalDataExport } from './releaseActivePersonalDataExport';
 export { requestPersonalDataExport } from './requestPersonalDataExport';
 export { personalDataExportResponseSchema } from './schemas';
