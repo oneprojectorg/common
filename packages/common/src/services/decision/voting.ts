@@ -23,6 +23,7 @@ import { assertInstanceProfileAccess, getIndividualProfileId } from '../access';
 import { assertProfileAccess } from '../assert';
 import { getFieldUnit } from './fieldUnit';
 import { type ProposalCosts, getProposalCosts } from './getProposalCosts';
+import { getProposalIdsForPhase } from './getProposalsForPhase';
 import { decisionPermission } from './permissions';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
 import { processDecisionProcessSchema } from './schemaRegistry';
@@ -417,19 +418,23 @@ export const submitVote = async ({
       );
     }
 
-    // Get available proposals for this process instance. Moderation-detached
-    // (CSAM) rows must never be votable, so we require both
-    // `deletedAt IS NULL` and `moderationDetachedAt IS NULL` at query time —
-    // filtering post-fetch would still leak the row to the eligibility check.
-    const availableProposals = await db.query.proposals.findMany({
-      where: {
-        processInstanceId: data.processInstanceId,
-        deletedAt: { isNull: true },
-        moderationDetachedAt: { isNull: true },
-      },
+    // The ballot only lists members of the current phase, so a vote must not
+    // reach anything else.
+    const phaseProposalIds = await getProposalIdsForPhase({
+      instance: processInstance,
     });
+    const availableProposals =
+      phaseProposalIds.length === 0
+        ? []
+        : await db.query.proposals.findMany({
+            where: {
+              id: { in: phaseProposalIds },
+              processInstanceId: data.processInstanceId,
+              deletedAt: { isNull: true },
+              moderationDetachedAt: { isNull: true },
+            },
+          });
 
-    // Filter to eligible proposals for voting
     const eligibleProposals = availableProposals.filter((p) =>
       isVotingEligible(p.status),
     );

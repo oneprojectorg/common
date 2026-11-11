@@ -6,8 +6,15 @@ import {
   createDecisionBoundary,
   ensureProposalCategoryTerms,
 } from '@op/common/testing/data';
-import { ProposalStatus, processInstances, taxonomyTerms } from '@op/db/schema';
-import { db, eq, inArray } from '@op/db/test';
+import {
+  ProposalStatus,
+  decisionTransitionProposals,
+  processInstances,
+  proposalHistory,
+  stateTransitionHistory,
+  taxonomyTerms,
+} from '@op/db/schema';
+import { db, desc, eq, inArray } from '@op/db/test';
 import type { AmountUnit } from '@op/types/amountUnit';
 import { describe, expect, it } from 'vitest';
 
@@ -276,6 +283,89 @@ describe.concurrent('submitVote', () => {
         selectedProposalIds: [proposals[0]!.id],
       }),
     ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
+  });
+});
+
+/** Records the advance into voting, carrying only `proposalIds` across. */
+async function attachToVotingPhase(instanceId: string, proposalIds: string[]) {
+  const [transition] = await db
+    .insert(stateTransitionHistory)
+    .values({
+      processInstanceId: instanceId,
+      fromStateId: 'submission',
+      toStateId: 'voting',
+    })
+    .returning();
+
+  if (!transition) {
+    throw new Error('Transition was not created');
+  }
+
+  for (const proposalId of proposalIds) {
+    const [history] = await db
+      .select({ historyId: proposalHistory.historyId })
+      .from(proposalHistory)
+      .where(eq(proposalHistory.id, proposalId))
+      .orderBy(desc(proposalHistory.historyCreatedAt))
+      .limit(1);
+
+    if (!history) {
+      throw new Error(`No history row for proposal ${proposalId}`);
+    }
+
+    await db.insert(decisionTransitionProposals).values({
+      processInstanceId: instanceId,
+      transitionHistoryId: transition.id,
+      proposalId,
+      proposalHistoryId: history.historyId,
+    });
+  }
+}
+
+describe.concurrent('submitVote ballot scope', () => {
+  it('rejects a vote for a proposal that did not advance to the voting phase', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instance, proposals } = await setupVotingInstance(testData, {
+      proposalCount: 2,
+    });
+    await attachToVotingPhase(instance.instance.id, [proposals[0]!.id]);
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    await expect(
+      caller.decision.submitVote({
+        processInstanceId: instance.instance.id,
+        selectedProposalIds: [proposals[1]!.id],
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
+    await expect(
+      db.query.decisionsVoteSubmissions.findFirst({
+        where: { processInstanceId: instance.instance.id },
+      }),
+    ).resolves.toBeUndefined();
+  });
+
+  it('accepts a vote for a proposal that advanced to the voting phase', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instance, proposals } = await setupVotingInstance(testData, {
+      proposalCount: 2,
+    });
+    await attachToVotingPhase(instance.instance.id, [proposals[0]!.id]);
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const result = await caller.decision.submitVote({
+      processInstanceId: instance.instance.id,
+      selectedProposalIds: [proposals[0]!.id],
+    });
+
+    expect(result.selectedProposalIds).toEqual([proposals[0]!.id]);
   });
 });
 
