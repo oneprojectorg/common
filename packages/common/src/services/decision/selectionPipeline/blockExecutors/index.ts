@@ -1,5 +1,6 @@
 import type { Block, BlockExecutor } from '../types';
 import { BranchBlock } from './BranchBlock';
+import { BudgetBlock } from './BudgetBlock';
 import { ComputeBlock } from './ComputeBlock';
 import { DebugBlock } from './DebugBlock';
 import { FilterBlock } from './FilterBlock';
@@ -25,6 +26,7 @@ executorRegistry.set('group', new GroupBlock());
 executorRegistry.set('limit', new LimitBlock());
 executorRegistry.set('sort', new SortBlock());
 executorRegistry.set('score', new ScoreBlock());
+executorRegistry.set('budget', new BudgetBlock());
 executorRegistry.set('debug', new DebugBlock());
 
 /**
@@ -43,6 +45,7 @@ export function getBlockExecutor(block: Block): BlockExecutor {
 // Export all executors for testing
 export {
   BranchBlock,
+  BudgetBlock,
   ComputeBlock,
   DebugBlock,
   FilterBlock,

@@ -22,6 +22,9 @@ export async function executeSelectionPipeline(
       };
     }
 
+    // One list for the whole run: nested branch contexts share the array.
+    context.skipped ??= [];
+
     // Execute blocks sequentially
     let currentProposals = context.proposals;
     let previousOutput = 'proposals'; // Default input name
@@ -48,6 +51,10 @@ export async function executeSelectionPipeline(
 
       // Update current proposals
       currentProposals = result.proposals;
+
+      if (result.skipped) {
+        context.skipped.push(...result.skipped);
+      }
 
       // Store output
       const outputName = block.output || `block_${block.id}_output`;
@@ -82,6 +89,9 @@ export async function executeSelectionPipeline(
 
     return currentProposals;
   } catch (error) {
+    if (error instanceof CommonError) {
+      throw error;
+    }
     logger.error('Error executing pipeline', { error });
     const errorMessage =
       error instanceof Error ? error.message : 'Unknown error';

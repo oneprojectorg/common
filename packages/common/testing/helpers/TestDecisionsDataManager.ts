@@ -21,6 +21,7 @@ import {
   type DecisionInstanceData,
   type DecisionSchemaDefinition as DecisionSchemaDefinitionStrict,
   type PhaseDefinition,
+  type SelectionPipeline,
   createDecisionInstance,
   createInstanceDataFromTemplate,
   createOrganization as createOrganizationService,
@@ -55,10 +56,12 @@ type DecisionSchemaDefinition = Omit<
 > & {
   phases: Array<
     Omit<PhaseDefinition, 'selectionPipeline'> & {
-      selectionPipeline?: {
-        version: string;
-        blocks: TestSelectionPipelineBlock[];
-      };
+      selectionPipeline?:
+        | SelectionPipeline
+        | {
+            version: string;
+            blocks: TestSelectionPipelineBlock[];
+          };
     }
   >;
   proposalTemplate?: Record<string, unknown>;
