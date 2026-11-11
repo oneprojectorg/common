@@ -22,6 +22,7 @@ import {
 } from '../access';
 import { assertGlobalRole } from '../assert';
 import { generateUniqueProfileSlug } from '../profile/utils';
+import { assertProposalsAllowed } from './assertProposalsAllowed';
 import { withBoundaryCategoryLabel } from './boundaryCategory';
 import { decisionPermission } from './permissions';
 import { processProposalContent } from './proposalContentProcessor';
@@ -32,7 +33,6 @@ import {
 import type { DecisionInstanceData } from './schemas/instanceData';
 import { syncProposalProfileLocation } from './syncProposalProfileLocation';
 import { assertInstancePhase } from './utils/instance';
-import { checkProposalsAllowed } from './utils/proposal';
 
 export interface CreateProposalInput {
   processInstanceId: string;
@@ -75,17 +75,10 @@ export const createProposal = async ({
     throw new ValidationError('Invalid phase in process instance');
   }
 
-  // Check if proposals are allowed in current phase
-  const { allowed, phaseName } = checkProposalsAllowed(
-    instanceData.phases,
-    currentPhaseId,
-  );
-
-  if (!allowed) {
-    throw new ValidationError(
-      `Proposals are not allowed in the ${phaseName} phase`,
-    );
-  }
+  assertProposalsAllowed({
+    instance: { instanceData },
+    phaseId: currentPhaseId,
+  });
 
   // Capture the phase's `defaults.hidden` rule at creation time. The flag
   // sticks with the proposal through submission, so a draft authored under
