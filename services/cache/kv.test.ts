@@ -17,6 +17,7 @@ type FakeRedis = {
   set: Mock<
     (key: string, data: string, options: unknown) => Promise<string | null>
   >;
+  eval: Mock<(script: string, options: unknown) => Promise<unknown>>;
   withAbortSignal: (signal: AbortSignal) => {
     get: (key: string) => Promise<string | null>;
     setEx: (key: string, ttl: number, data: string) => Promise<unknown>;
@@ -26,6 +27,7 @@ type FakeRedis = {
       data: string,
       options: unknown,
     ) => Promise<string | null>;
+    eval: (script: string, options: unknown) => Promise<unknown>;
   };
 };
 
@@ -40,6 +42,7 @@ const fakeRedis: FakeRedis = {
   set: vi.fn<
     (key: string, data: string, options: unknown) => Promise<string | null>
   >(),
+  eval: vi.fn<(script: string, options: unknown) => Promise<unknown>>(),
   // Real node-redis returns a proxy client scoped to the AbortSignal. The
   // shim here calls the underlying mock but races it against the signal,
   // so a signal that fires before the get/set/del resolves rejects the
@@ -51,6 +54,8 @@ const fakeRedis: FakeRedis = {
     del: (key: string) => raceWithSignal(fakeRedis.del(key), signal),
     set: (key: string, data: string, options: unknown) =>
       raceWithSignal(fakeRedis.set(key, data, options), signal),
+    eval: (script: string, options: unknown) =>
+      raceWithSignal(fakeRedis.eval(script, options), signal),
   }),
 };
 
@@ -79,8 +84,15 @@ process.env.REDIS_URL = 'redis://localhost:6379';
 
 // Imported AFTER the mocks so kv.ts picks up the fake redis client and the
 // mocked logger/metrics modules.
-const { cache, get, getWithStatus, set, setIfAbsentWithStatus, setWithStatus } =
-  await import('./kv');
+const {
+  cache,
+  deleteIfEqualsWithStatus,
+  get,
+  getWithStatus,
+  set,
+  setIfAbsentWithStatus,
+  setWithStatus,
+} = await import('./kv');
 const { cacheMetrics } = await import('./metrics');
 
 function raceWithSignal<T>(p: Promise<T>, signal: AbortSignal): Promise<T> {
@@ -452,5 +464,35 @@ describe('setIfAbsentWithStatus()', () => {
     fakeRedis.set.mockRejectedValue(new Error('connection refused'));
 
     await expect(claim()).resolves.toEqual({ status: 'error' });
+  });
+});
+
+describe('deleteIfEqualsWithStatus()', () => {
+  beforeEach(() => {
+    fakeRedis.eval.mockReset();
+  });
+
+  const release = () => deleteIfEqualsWithStatus({ key: 'k', data: 'v' });
+
+  it('compares and deletes in one script against the serialized value', async () => {
+    fakeRedis.eval.mockResolvedValue(1);
+
+    await expect(release()).resolves.toEqual({ status: 'ok' });
+    expect(fakeRedis.eval).toHaveBeenCalledWith(expect.any(String), {
+      keys: ['k'],
+      arguments: ['"v"'],
+    });
+  });
+
+  it('reports a timeout when the script is too slow', async () => {
+    fakeRedis.eval.mockImplementation(() => new Promise(() => {}));
+
+    await expect(release()).resolves.toEqual({ status: 'timeout' });
+  });
+
+  it('reports an error when the script rejects with a non-abort error', async () => {
+    fakeRedis.eval.mockRejectedValue(new Error('connection refused'));
+
+    await expect(release()).resolves.toEqual({ status: 'error' });
   });
 });

@@ -51,17 +51,7 @@ export const requestPersonalDataExport = async ({
     });
   } catch (error) {
     // No run will release the claim, so release it here.
-    await releaseActivePersonalDataExport({
-      userId: user.id,
-      exportId,
-    }).catch((releaseError: unknown) => {
-      // Keeps the send error, which is the one the caller needs.
-      logger.error('Could not release the export claim', {
-        exportId,
-        error: releaseError,
-      });
-    });
-
+    await releaseUnusedClaim({ userId: user.id, exportId });
     throw error;
   }
 
@@ -90,6 +80,8 @@ const claimActiveExport = async ({
   }
 
   if (claim.status !== 'exists') {
+    // The write can land after its reply timed out, so undo it if it did.
+    await releaseUnusedClaim({ userId, exportId });
     throw new CommonError('Could not record the export request.');
   }
 
@@ -105,4 +97,19 @@ const claimActiveExport = async ({
 
   // The running export released its claim between the two reads.
   throw new ConflictError('An export just finished. Try again.');
+};
+
+// Logs a failed release, so the caller's own error is the one that surfaces.
+const releaseUnusedClaim = async ({
+  userId,
+  exportId,
+}: {
+  userId: string;
+  exportId: string;
+}): Promise<void> => {
+  try {
+    await releaseActivePersonalDataExport({ userId, exportId });
+  } catch (error) {
+    logger.error('Could not release the export claim', { exportId, error });
+  }
 };
