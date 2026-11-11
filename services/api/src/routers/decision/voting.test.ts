@@ -292,7 +292,6 @@ describe.concurrent('submitVote', () => {
   });
 });
 
-/** Records the advance into voting, carrying only `proposalIds` across. */
 async function attachToVotingPhase(instanceId: string, proposalIds: string[]) {
   const [transition] = await db
     .insert(stateTransitionHistory)
