@@ -75,3 +75,7 @@ what it decided.
 - [0008. Enrol a voter before the first vote](./0008-enrol-a-voter-before-the-first-vote.md)
 - [0009. Keep the draft ballot in its own table](./0009-keep-the-draft-ballot-in-its-own-table.md)
 - [0010. Store a short code on each proposal](./0010-store-a-short-code-on-each-proposal.md)
+- [0011. Keep routers thin and put business logic in the service layer](./0011-keep-routers-thin-and-put-logic-in-the-service-layer.md)
+- [0012. Authenticate in the router through procedure tiers](./0012-authenticate-in-the-router-through-procedure-tiers.md)
+- [0013. Authorize in the service layer with access-zones](./0013-authorize-in-the-service-layer-with-access-zones.md)
+- [0014. Use realtime to invalidate queries, not to carry data](./0014-use-realtime-to-invalidate-queries-not-to-carry-data.md)
