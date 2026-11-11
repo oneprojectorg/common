@@ -91,9 +91,8 @@ tasks/
 .gstack/
 .plans/
 
-# symbolic MCP fact cache (the committed project config and rule library
-# are .symbolic/config.json and .symbolic/rules.pl)
-.symbolic/facts.dets*
+# symbolic MCP local state (project config, rule library, fact cache)
+.symbolic/
 
 # pi/spb agent working state
 .spb/
