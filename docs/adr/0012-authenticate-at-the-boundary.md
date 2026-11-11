@@ -38,8 +38,14 @@ never checks the session itself:
 
 A rejected caller gets 401 with no session and 403 otherwise.
 
-The SMS adapter resolves the sender's phone number to a user and passes that
-user to the same services.
+A webhook verifies an HMAC signature on the request, made with a secret we
+share with the sender and compared in constant time. A missing or invalid
+signature gets 401 before anything is parsed. A secret in the URL or a
+header is not a signature and does not replace one.
+
+The SMS adapter is a webhook: it verifies the provider's signature, then
+resolves the sender's phone number to a user and passes that user to the
+same services.
 
 A new delivery mechanism follows the same rule: verify at the boundary, pass
 the identity inward.
