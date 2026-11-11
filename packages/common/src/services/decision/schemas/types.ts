@@ -25,6 +25,8 @@ export interface PhaseRules {
     edit?: boolean;
     /** @deprecated Superseded by `reviews.submit`; kept only as its read fallback. */
     review?: boolean;
+    /** Reviewers develop new proposals from the previous phase's proposals during the inbound transition. Read through `isDevelopPhase`. */
+    develop?: boolean;
     defaults?: {
       hidden?: boolean;
     };

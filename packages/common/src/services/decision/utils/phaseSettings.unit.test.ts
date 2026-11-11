@@ -12,6 +12,7 @@ import {
   getVoterEnrolment,
   hasOpenReviews,
   hasVotingPhase,
+  isDevelopPhase,
   isPostSubmissionEditingAllowed,
   isRankedVoting,
   isReviewPhase,
@@ -41,6 +42,21 @@ describe('isReviewPhase', () => {
   it('defaults to false when neither flag is set', () => {
     expect(isReviewPhase({ rules: {} })).toBe(false);
     expect(isReviewPhase({})).toBe(false);
+  });
+});
+
+describe('isDevelopPhase', () => {
+  it('is true only when the rule says so', () => {
+    expect(isDevelopPhase({ rules: { proposals: { develop: true } } })).toBe(
+      true,
+    );
+    expect(isDevelopPhase({ rules: { proposals: { develop: false } } })).toBe(
+      false,
+    );
+    expect(isDevelopPhase({ rules: { proposals: { submit: true } } })).toBe(
+      false,
+    );
+    expect(isDevelopPhase({})).toBe(false);
   });
 });
 

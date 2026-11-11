@@ -144,6 +144,25 @@ describe('getUpdatedInstanceData', () => {
     ]);
   });
 
+  it('keeps the develop rule in a phase rules override', () => {
+    const result = getUpdatedInstanceData({
+      existing: existing(),
+      update: {
+        phases: [
+          {
+            phaseId: 'voting',
+            rules: { proposals: { develop: true }, voting: { submit: true } },
+          },
+        ],
+      },
+    });
+
+    expect(result?.instanceData.phases[0]?.rules).toEqual({
+      proposals: { develop: true },
+      voting: { submit: true },
+    });
+  });
+
   it('clears a phase rubric and headline on null', () => {
     const stored = existing();
     stored.phases[1] = { ...stored.phases[1]!, headline: 'Vote now' };
