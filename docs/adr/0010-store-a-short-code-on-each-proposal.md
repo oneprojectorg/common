@@ -1,4 +1,4 @@
-# NNNN. Store a short code on each proposal
+# 0010. Store a short code on each proposal
 
 Date: 2026-10-23
 

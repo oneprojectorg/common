@@ -75,8 +75,10 @@ jobs:
       - name: Test the CI scripts
         run: pnpm test:scripts
 
-  # Only adr-numbering.yml may create NNNN-*.md. The check runs the base
-  # branch's copy of the script. No token here, so no fork gate.
+  # The author numbers an ADR in the pull request. Runs the base branch's copy
+  # of the script, so a PR cannot edit the check it is judged by; falls back
+  # to the PR's copy until the script is on base. No token here, so no fork
+  # gate.
   adr-numbers:
     name: ADR numbers
     runs-on: ubuntu-latest
@@ -88,13 +90,19 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Check no ADR is numbered by hand
+      - name: Check new ADRs take the next free number on the base branch
         env:
           BASE: origin/${{ github.base_ref }}
-        run: git show "$BASE:scripts/number-adrs.sh" | bash -s -- --check "$BASE"
+          SCRIPT: scripts/check-adr-numbers.sh
+        run: |
+          if git cat-file -e "$BASE:$SCRIPT" 2>/dev/null; then
+            git show "$BASE:$SCRIPT" | bash -s -- "$BASE"
+          else
+            bash "$SCRIPT" "$BASE"
+          fi
 
-      - name: Test the numbering script
-        run: scripts/number-adrs.test.sh
+      - name: Test the ADR numbers script
+        run: scripts/check-adr-numbers.test.sh
 
   # Runs the base branch's copy of the script, so a PR cannot edit the check
   # it is judged by. Falls back to the PR's copy until the script is on base.

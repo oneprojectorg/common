@@ -21,16 +21,18 @@ review when you are unsure.
 
 ## How to write one
 
-1. Copy [`adr-template.md`](./adr-template.md) to `draft-short-title.md`.
+1. Copy [`adr-template.md`](./adr-template.md) to `NNNN-short-title.md`, with
+   the next free number, and put the same number in the `# NNNN.` heading.
 2. Open a pull request. Review of the ADR is the decision meeting.
-3. Merge. CI renames the file to `NNNN-short-title.md` with the next free
-   number, fills in the `# NNNN.` heading, and pushes that commit to `dev`
-   (`scripts/number-adrs.sh`). Do not number it yourself: the pull request
-   checks reject a new numbered file.
+3. Merge. Nothing renumbers the file afterwards.
+
+The **ADR numbers** check (`scripts/check-adr-numbers.sh`) fails the pull
+request when a new ADR does not take the next free number on the base branch.
+If another ADR merges first and takes yours, merge the base branch, rename the
+file, and fix its heading and any link to it.
 
 Write the title as a statement: "Use Drizzle relations v2 for new tables", not
-"Drizzle relations". Never reuse a number. Reference an ADR by its number only
-once it has one; until then, link the pull request.
+"Drizzle relations". Never reuse a number, and never renumber a merged ADR.
 
 ## Status
 
@@ -47,9 +49,8 @@ commitment; whoever merges it then sets Accepted.
 
 ## Superseding a decision
 
-A reversal is a new ADR, not an edit. Write the new ADR as a draft. Once it has
-merged and has its number, set the old one's Status to `Superseded by ADR-NNNN`
-and link forward in a follow-up pull request.
+A reversal is a new ADR, not an edit. In the same pull request, set the old
+one's Status to `Superseded by ADR-NNNN` and link forward.
 
 Never rewrite the reasoning in a superseded ADR. Fix a typo, but do not change
 what it decided.

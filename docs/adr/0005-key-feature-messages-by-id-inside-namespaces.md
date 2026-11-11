@@ -1,4 +1,4 @@
-# NNNN. Key feature messages by ID inside namespaces
+# 0005. Key feature messages by ID inside namespaces
 
 Date: 2026-09-16
 
