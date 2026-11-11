@@ -4,11 +4,11 @@ import { logger } from '@op/logging';
 
 import { getCategoryReviewersByProposal } from './getCategoryReviewersByProposal';
 import { getEligibleReviewerProfileIds } from './getEligibleReviewerProfileIds';
-import { activeAttachedProposalPredicate } from './getProposalsForPhase';
 import {
   type AssignableProposal,
   insertReviewAssignments,
 } from './insertReviewAssignments';
+import { phaseEligiblePredicate } from './phaseEligibility';
 import type { DecisionInstanceData } from './schemas/instanceData';
 import { assertInstancePhase } from './utils/instance';
 import { getPhaseReviewSettings, isReviewPhase } from './utils/phaseSettings';
@@ -102,7 +102,12 @@ export async function backfillReviewAssignments({
     db.query.decisionTransitionProposals.findMany({
       where: {
         transitionHistoryId: inboundTransition.id,
-        proposal: { RAW: (table) => activeAttachedProposalPredicate(table) },
+        proposal: {
+          // Drafts, rejected and merged-away proposals leave the review universe.
+          RAW: (table) => phaseEligiblePredicate(table),
+          deletedAt: { isNull: true },
+          moderationDetachedAt: { isNull: true },
+        },
       },
       columns: { proposalId: true, proposalHistoryId: true },
       with: { proposal: { columns: { submittedByProfileId: true } } },

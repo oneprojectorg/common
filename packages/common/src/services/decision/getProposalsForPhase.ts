@@ -135,19 +135,6 @@ async function resolvePhaseWindow(
   };
 }
 
-/**
- * Which proposals attached to a transition are still in the phase: phase
- * eligible (not draft, rejected or merged away), not deleted, not
- * moderation-detached. Every reader and writer of an attachment set filters
- * through this one predicate.
- */
-export const activeAttachedProposalPredicate = (t: typeof proposals): SQL =>
-  and(
-    phaseEligiblePredicate(t),
-    isNull(t.deletedAt),
-    isNull(t.moderationDetachedAt),
-  )!;
-
 /** Proposal ids attached to a specific inbound transition, filtered to still-active rows. */
 async function attachmentIdsFor(
   transitionHistoryId: string,
@@ -166,7 +153,9 @@ async function attachmentIdsFor(
           decisionTransitionProposals.transitionHistoryId,
           transitionHistoryId,
         ),
-        activeAttachedProposalPredicate(proposals),
+        phaseEligiblePredicate(proposals),
+        isNull(proposals.deletedAt),
+        isNull(proposals.moderationDetachedAt),
       ),
     );
   return rows.map((r) => r.id);
