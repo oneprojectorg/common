@@ -75,9 +75,10 @@ export const createProposal = async ({
     throw new ValidationError('Invalid phase in process instance');
   }
 
-  assertProposalsAllowed({
-    instance: { instanceData },
+  await assertProposalsAllowed({
+    instance: { id: instance.id, profileId: instance.profileId, instanceData },
     phaseId: currentPhaseId,
+    user: { id: authUserId },
   });
 
   // Capture the phase's `defaults.hidden` rule at creation time. The flag

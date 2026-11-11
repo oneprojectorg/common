@@ -85,9 +85,10 @@ export const submitProposal = async ({
     throw new ValidationError('Invalid phase in process instance');
   }
 
-  assertProposalsAllowed({
-    instance: { instanceData },
+  await assertProposalsAllowed({
+    instance: { id: instance.id, profileId: instance.profileId, instanceData },
     phaseId: currentPhaseId,
+    user: { id: authUserId },
   });
 
   // Validate proposal data against the proposal template schema
