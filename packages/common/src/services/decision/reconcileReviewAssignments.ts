@@ -15,11 +15,11 @@ import { logger } from '@op/logging';
 import { deletePendingReviewAssignments } from './deletePendingReviewAssignments';
 import { getCategoryReviewersByProposal } from './getCategoryReviewersByProposal';
 import { getEligibleReviewerProfileIds } from './getEligibleReviewerProfileIds';
+import { getAttachedPhaseProposals } from './getProposalsForPhase';
 import {
   type AssignableProposal,
   insertReviewAssignments,
 } from './insertReviewAssignments';
-import { phaseEligiblePredicate } from './phaseEligibility';
 import type { DecisionInstanceData } from './schemas/instanceData';
 import { assertInstancePhase } from './utils/instance';
 import { getPhaseReviewSettings, isReviewPhase } from './utils/phaseSettings';
@@ -134,21 +134,10 @@ export async function reconcileReviewAssignments({
     return skip('current phase has no inbound transition');
   }
 
-  const attachedProposals = await db.query.decisionTransitionProposals.findMany(
-    {
-      where: {
-        transitionHistoryId: inboundTransition.id,
-        proposal: {
-          // Drafts, rejected and merged-away proposals leave the review universe.
-          RAW: (table) => phaseEligiblePredicate(table),
-          deletedAt: { isNull: true },
-          moderationDetachedAt: { isNull: true },
-        },
-      },
-      columns: { proposalId: true, proposalHistoryId: true },
-      with: { proposal: { columns: { submittedByProfileId: true } } },
-    },
-  );
+  const attachedProposals = await getAttachedPhaseProposals({
+    transitionHistoryId: inboundTransition.id,
+    db,
+  });
 
   const attachedByProposalId = new Map(
     attachedProposals.map((row) => [row.proposalId, row]),
@@ -205,7 +194,7 @@ export async function reconcileReviewAssignments({
       const scoped = scopedByProposal.get(proposalId) ?? new Set<string>();
       return {
         proposalId,
-        submittedByProfileId: attached.proposal.submittedByProfileId,
+        submittedByProfileId: attached.submittedByProfileId,
         assignedProposalHistoryId: attached.proposalHistoryId,
         reviewerProfileIds: [...scoped].filter((id) => eligibleSet.has(id)),
       };

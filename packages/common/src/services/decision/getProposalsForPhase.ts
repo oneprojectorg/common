@@ -24,7 +24,10 @@ import {
 } from '@op/db/schema';
 
 import { isLegacyInstanceData } from './isLegacyInstance';
-import { phaseEligiblePredicate } from './phaseEligibility';
+import {
+  activeProposalPredicate,
+  phaseEligiblePredicate,
+} from './phaseEligibility';
 
 /**
  * Minimal `processInstances` row shape required by the phase resolvers.
@@ -135,30 +138,51 @@ async function resolvePhaseWindow(
   };
 }
 
+export interface AttachedPhaseProposal {
+  proposalId: string;
+  proposalHistoryId: string;
+  submittedByProfileId: string;
+}
+
+/**
+ * The proposals attached to an inbound transition that are still in the
+ * phase: phase eligible (not draft, rejected or merged away) and active (not
+ * deleted or moderation-detached). This is the one definition of a phase's
+ * attached set; readers and the review-assignment writers all use it.
+ */
+export async function getAttachedPhaseProposals({
+  transitionHistoryId,
+  db = defaultDb,
+}: {
+  transitionHistoryId: string;
+  db?: DbClient;
+}): Promise<AttachedPhaseProposal[]> {
+  const rows = await db.query.decisionTransitionProposals.findMany({
+    where: {
+      transitionHistoryId,
+      proposal: {
+        RAW: (table) =>
+          and(phaseEligiblePredicate(table), activeProposalPredicate(table))!,
+      },
+    },
+    columns: { proposalId: true, proposalHistoryId: true },
+    with: { proposal: { columns: { submittedByProfileId: true } } },
+  });
+
+  return rows.map((row) => ({
+    proposalId: row.proposalId,
+    proposalHistoryId: row.proposalHistoryId,
+    submittedByProfileId: row.proposal.submittedByProfileId,
+  }));
+}
+
 /** Proposal ids attached to a specific inbound transition, filtered to still-active rows. */
 async function attachmentIdsFor(
   transitionHistoryId: string,
   db: DbClient,
 ): Promise<string[]> {
-  const rows = await db
-    .select({ id: decisionTransitionProposals.proposalId })
-    .from(decisionTransitionProposals)
-    .innerJoin(
-      proposals,
-      eq(decisionTransitionProposals.proposalId, proposals.id),
-    )
-    .where(
-      and(
-        eq(
-          decisionTransitionProposals.transitionHistoryId,
-          transitionHistoryId,
-        ),
-        phaseEligiblePredicate(proposals),
-        isNull(proposals.deletedAt),
-        isNull(proposals.moderationDetachedAt),
-      ),
-    );
-  return rows.map((r) => r.id);
+  const rows = await getAttachedPhaseProposals({ transitionHistoryId, db });
+  return rows.map((row) => row.proposalId);
 }
 
 export const getAttachedProposalIds = ({
@@ -193,11 +217,10 @@ async function getIdsCreatedDuringWindow({
   const conditions: (SQL | undefined)[] = [
     eq(proposals.processInstanceId, instanceId),
     predicate,
-    isNull(proposals.deletedAt),
     // Moderation-detached (CSAM) rows are invisible to every downstream
     // caller — including trusted admin views — so the ID set can never
     // surface them via a phase-scoped lookup.
-    isNull(proposals.moderationDetachedAt),
+    activeProposalPredicate(proposals),
   ];
   if (inboundAt) {
     const comparator = inboundComparator === 'gte' ? gte : gt;
@@ -230,8 +253,7 @@ async function getActiveIdsByPredicate({
       and(
         eq(proposals.processInstanceId, instanceId),
         predicate,
-        isNull(proposals.deletedAt),
-        isNull(proposals.moderationDetachedAt),
+        activeProposalPredicate(proposals),
       ),
     );
   return rows.map((r) => r.id);

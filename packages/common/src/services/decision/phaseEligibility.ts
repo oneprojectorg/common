@@ -1,4 +1,4 @@
-import { type SQL, and, notInArray, sql } from '@op/db/client';
+import { type SQL, and, isNull, notInArray, sql } from '@op/db/client';
 import type { proposals } from '@op/db/schema';
 
 import { notSuperseded } from './proposalSupersession';
@@ -22,6 +22,13 @@ export const phaseEligiblePredicate = (t: typeof proposals): SQL =>
       processInstanceId: t.processInstanceId,
     }),
   )!;
+
+/**
+ * Excludes deleted and moderation-detached proposals. The SQL twin of
+ * `isProposalReachable` in `utils/proposal.ts`.
+ */
+export const activeProposalPredicate = (t: typeof proposals): SQL =>
+  and(isNull(t.deletedAt), isNull(t.moderationDetachedAt))!;
 
 export const votingEligiblePredicate = (t: typeof proposals): SQL =>
   and(
