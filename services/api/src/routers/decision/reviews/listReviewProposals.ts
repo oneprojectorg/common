@@ -12,8 +12,11 @@ export const listReviewProposalsRouter = router({
     .input(listReviewProposalsInputSchema)
     .output(reviewProposalListSchema)
     .query(async ({ ctx, input }) => {
+      // Review writes publish on the assignments channel, which moves the
+      // review-count sorts.
       ctx.registerQueryChannels([
         Channels.decisionProposals(input.processInstanceId),
+        Channels.reviewAssignments(input.processInstanceId),
       ]);
 
       return await listReviewProposals({ ...input, user: ctx.user });
