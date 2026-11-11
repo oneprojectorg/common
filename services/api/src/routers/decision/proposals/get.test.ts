@@ -19,6 +19,12 @@ import { transformFormDataToProcessSchema as cowopSchema } from '../../../../../
 import { transformFormDataToProcessSchema as horizonSchema } from '../../../../../../apps/app/src/components/Profile/CreateDecisionProcessModal/schemas/horizon';
 import { transformFormDataToProcessSchema as simpleSchema } from '../../../../../../apps/app/src/components/Profile/CreateDecisionProcessModal/schemas/simple';
 import {
+  attachFormSchema,
+  entrySchema,
+  insertFormSchema,
+  instanceTemplate,
+} from '../../../test/helpers/formSchemaTestUtils';
+import {
   accessTierGatingCell,
   describeDecisionAccessTierGating,
   expectPassesAccessTierGate,
@@ -1737,4 +1743,52 @@ describeDecisionAccessTierGating('getProposal', {
       );
     },
   ),
+});
+
+describe.concurrent('getProposal: form schema rows', () => {
+  it('given one proposal on a row and one without, when they are read, then each carries its own template', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+      proposalTemplate: instanceTemplate,
+    });
+    const processInstanceId = setup.instance.instance.id;
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const row = await insertFormSchema({
+      processInstanceId,
+      name: 'Ballot entry',
+      schema: entrySchema,
+    });
+
+    const [onRow, onInstance] = await Promise.all([
+      testData.createProposal({
+        userEmail: setup.userEmail,
+        processInstanceId,
+        proposalData: { title: 'On the row' },
+        seedCollabDoc: true,
+      }),
+      testData.createProposal({
+        userEmail: setup.userEmail,
+        processInstanceId,
+        proposalData: { title: 'On the instance template' },
+        seedCollabDoc: true,
+      }),
+    ]);
+    await attachFormSchema(onRow.id, row.id);
+
+    const [readOnRow, readOnInstance] = await Promise.all([
+      caller.decision.getProposal({ profileId: onRow.profileId }),
+      caller.decision.getProposal({ profileId: onInstance.profileId }),
+    ]);
+
+    expect(readOnRow.formSchemaId).toBe(row.id);
+    expect(readOnRow.proposalTemplate).toEqual(entrySchema);
+    expect(readOnInstance.formSchemaId).toBeNull();
+    expect(readOnInstance.proposalTemplate).toEqual(instanceTemplate);
+  });
 });

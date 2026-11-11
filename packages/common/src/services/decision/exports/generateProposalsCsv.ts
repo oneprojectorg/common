@@ -327,20 +327,21 @@ function collectCustomFieldColumns(
 ): CustomFieldColumn[] {
   const usedHeaders = new Set<string>(FIXED_COLUMNS);
   const columns = new Map<string, CustomFieldColumn>();
-  const columnsByInstance = new Map<string, CustomFieldColumn[]>();
+  const columnsByTemplate = new Map<string, CustomFieldColumn[]>();
 
   for (const p of proposals) {
     if (!p.proposalTemplate) {
       continue;
     }
 
-    let instanceColumns = columnsByInstance.get(p.processInstanceId);
-    if (!instanceColumns) {
-      instanceColumns = getCustomFieldColumns(p.proposalTemplate);
-      columnsByInstance.set(p.processInstanceId, instanceColumns);
+    const templateKey = p.formSchemaId ?? p.processInstanceId;
+    let templateColumns = columnsByTemplate.get(templateKey);
+    if (!templateColumns) {
+      templateColumns = getCustomFieldColumns(p.proposalTemplate);
+      columnsByTemplate.set(templateKey, templateColumns);
     }
 
-    for (const column of instanceColumns) {
+    for (const column of templateColumns) {
       if (columns.has(column.key)) {
         continue;
       }

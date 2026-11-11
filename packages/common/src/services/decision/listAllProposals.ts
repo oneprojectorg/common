@@ -54,7 +54,7 @@ import {
   excludeRejectedUnlessAsked,
   isLikedByProfile,
 } from './proposalVisibility';
-import { resolveProposalTemplate } from './resolveProposalTemplate';
+import { resolveProposalTemplatesByFormSchemaId } from './resolveProposalTemplate';
 import type { AllProposalsFilter } from './schemas/proposal';
 
 /**
@@ -93,19 +93,6 @@ export const listAllProposals = async ({
   if (!instance?.profileId) {
     throw new UnauthorizedError('User does not have access to this process');
   }
-
-  // Template resolution depends only on the instance row — start it now so
-  // its (occasional) fallback DB read overlaps the access check and the main
-  // query instead of adding a serial barrier afterwards.
-  const proposalTemplatePromise = resolveProposalTemplate(
-    instance.instanceData as Record<string, unknown> | null,
-    instance.processId,
-  );
-  // Backstop: if this function throws before the template is awaited (the
-  // access assert below rejects for every unauthorized caller), a rejection
-  // here must not surface as an unhandled promise rejection. The later
-  // `await` still rethrows.
-  proposalTemplatePromise.catch(() => {});
 
   const profileRoles = await assertInstanceProfileAccess({
     user,
@@ -250,9 +237,11 @@ export const listAllProposals = async ({
   const hasMore = proposalList.length > limit;
   const pageItems = hasMore ? proposalList.slice(0, limit) : proposalList;
 
-  // Resolved from instanceData (falling back to processSchema) — the promise
-  // was started right after the instance fetch, so this await is usually free.
-  const proposalTemplate = await proposalTemplatePromise;
+  const templateFor = await resolveProposalTemplatesByFormSchemaId({
+    formSchemaIds: pageItems.map((proposal) => proposal.formSchemaId),
+    instanceData: instance.instanceData,
+    processId: instance.processId,
+  });
 
   const profileIds = pageItems
     .map((proposal) => proposal.profileId)
@@ -265,7 +254,7 @@ export const listAllProposals = async ({
         pageItems.map((proposal) => ({
           id: proposal.id,
           proposalData: proposal.proposalData,
-          proposalTemplate,
+          proposalTemplate: templateFor(proposal.formSchemaId),
           // Everything here is submitted (drafts are excluded above), so the
           // pinned version keys the immutable collab-doc cache.
           collaborationDocVersionId: parseProposalData(proposal.proposalData)
@@ -298,6 +287,8 @@ export const listAllProposals = async ({
       : proposal.profile;
     const relationshipInfo = relationshipData.get(proposal.profileId);
 
+    const proposalTemplate = templateFor(proposal.formSchemaId);
+
     // List rows ship a precomputed plain-text preview plus fragment-resolved
     // system fields instead of the full document fragments.
     const parsedProposalData = parseProposalData(proposal.proposalData);
@@ -310,6 +301,7 @@ export const listAllProposals = async ({
     return {
       id: proposal.id,
       processInstanceId: proposal.processInstanceId,
+      formSchemaId: proposal.formSchemaId,
       proposalData: {
         ...parsedProposalData,
         ...systemFieldOverrides,

@@ -94,6 +94,7 @@ export const submitProposal = async ({
   const proposalTemplate = await resolveProposalTemplate(
     instanceData,
     instance.processId,
+    existingProposal.formSchemaId,
   );
 
   // Stamp the latest TipTap version into proposalData so the history row
