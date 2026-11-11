@@ -75,11 +75,14 @@ const RunningExport = ({
   const reset = usePersonalDataExportStore((store) => store.reset);
   const download = useDownloadPersonalDataExport();
 
-  const { data: status, error } =
-    trpc.account.getPersonalDataExportStatus.useQuery(
-      { exportId },
-      { retry: false, refetchInterval: POLL_INTERVAL_MS },
-    );
+  const {
+    data: status,
+    error,
+    isFetched,
+  } = trpc.account.getPersonalDataExportStatus.useQuery(
+    { exportId },
+    { retry: false, refetchInterval: POLL_INTERVAL_MS },
+  );
 
   const isUnreachable = isExportUnreachableError(error);
 
@@ -127,7 +130,14 @@ const RunningExport = ({
     });
   }, [status, isUnreachable, exportId, complete, reset, download, t]);
 
+  const isCompleted = status?.status === 'completed';
+
   useEffect(() => {
+    // A restored run may have finished while the page was closed, so ask first.
+    if (!isFetched || isCompleted) {
+      return;
+    }
+
     const timer = setTimeout(
       () => {
         if (reset(exportId)) {
@@ -138,7 +148,7 @@ const RunningExport = ({
       Math.max(0, startedAt + PERSONAL_DATA_EXPORT_MAX_RUN_MS - Date.now()),
     );
     return () => clearTimeout(timer);
-  }, [exportId, startedAt, reset, t]);
+  }, [exportId, startedAt, isFetched, isCompleted, reset, t]);
 
   return null;
 };
