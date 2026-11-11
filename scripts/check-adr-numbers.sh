@@ -26,6 +26,18 @@ fi
 cd "$(git rev-parse --show-toplevel)"
 shopt -s nullglob
 
+# A branch cut before a change to the ADR folder still holds the old files.
+# It is judged by the base branch's rules only once it touches an ADR.
+if [[ -n $base ]]; then
+  merge_base=$(git merge-base "$base" HEAD)
+  changed=$(git diff --name-only "$merge_base" -- "$ADR_DIR")
+  untracked=$(git ls-files --others --exclude-standard -- "$ADR_DIR")
+  if [[ -z $changed && -z $untracked ]]; then
+    echo "No ADR changes since $base."
+    exit 0
+  fi
+fi
+
 failed=0
 problem() {
   echo "$*" >&2
@@ -70,7 +82,6 @@ if [[ -n $base ]]; then
   newest_on_base=$(git ls-tree --name-only "$base" "$ADR_DIR/" | sed 's#.*/##' \
     | grep -E "$NAME_PATTERN" | sort | tail -1 || true)
   next=$((10#${newest_on_base:0:4} + 1))
-  merge_base=$(git merge-base "$base" HEAD)
 
   # Read from the working tree, so an ADR not yet committed is checked too.
   for file in ${adrs[@]+"${adrs[@]}"}; do

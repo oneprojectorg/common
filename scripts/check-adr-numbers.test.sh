@@ -141,6 +141,26 @@ run && fail "a duplicate should have failed"
 out_has "Duplicate ADR numbers in docs/adr: 0002" || fail "expected the duplicate message"
 pass "rejects a duplicate number"
 
+# Passes a branch that predates a change to the folder and touches no ADR.
+git checkout -q -f trunk && git clean -qfd
+echo "# NNNN. Old" > docs/adr/draft-old.md
+commit "old layout"
+git checkout -q -B stale
+echo x > unrelated.txt
+commit unrelated
+git checkout -q trunk
+git rm -q docs/adr/draft-old.md
+adr 0003 old
+commit "new layout"
+git checkout -q stale
+run && fail "the old layout should fail without a base"
+run trunk || fail "a stale branch with no ADR change should pass"
+out_has "No ADR changes since trunk" || fail "expected the no-change message"
+echo edit >> docs/adr/0001-first.md
+run trunk && fail "a stale branch that edits an ADR should be checked"
+git checkout -q -f trunk && git reset -q --hard HEAD~2
+pass "skips a branch with no ADR change"
+
 # Rejects an unknown flag.
 run --nope && fail "an unknown flag should have failed"
 out_has "Usage" || fail "expected usage"
