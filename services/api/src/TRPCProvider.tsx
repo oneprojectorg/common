@@ -5,6 +5,7 @@ import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client
 import { TRPCClientError } from '@trpc/client';
 import {
   createTRPCReact,
+  getMutationKey as getMutationKeyTRPC,
   getQueryKey as getQueryKeyTRPC,
 } from '@trpc/react-query';
 import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
@@ -32,6 +33,7 @@ export type RouterInput = inferRouterInputs<AppRouter>;
 export type RouterOutput = inferRouterOutputs<AppRouter>;
 
 export const getQueryKey = getQueryKeyTRPC;
+export const getMutationKey = getMutationKeyTRPC;
 
 export function isTRPCClientError(
   cause: unknown,

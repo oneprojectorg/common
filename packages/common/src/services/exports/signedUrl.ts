@@ -19,14 +19,16 @@ export interface RefreshableExportRecord {
 export const signExportDownloadUrl = ({
   filePath,
   fileName,
+  ttlSeconds = EXPORT_URL_TTL_SECONDS,
 }: {
   filePath: string;
   fileName: string;
+  ttlSeconds?: number;
 }): Promise<string> =>
   signStorageDownloadUrl({
     bucket: EXPORTS_BUCKET,
     storagePath: filePath,
-    ttlSeconds: EXPORT_URL_TTL_SECONDS,
+    ttlSeconds,
     // Without this Supabase serves the file inline.
     downloadAs: fileName,
   });
@@ -81,6 +83,55 @@ const isPermanentlyGone = (error: unknown): boolean => {
   );
 };
 
+// Signs a completed record's file onto `record`, in place. False when it could not.
+export const signCompletedExport = async ({
+  record,
+  exportId,
+  resolveFilePath,
+  ttlSeconds,
+}: {
+  record: RefreshableExportRecord;
+  exportId: string;
+  resolveFilePath: (fileName: string) => string;
+  ttlSeconds?: number;
+}): Promise<boolean> => {
+  const { fileName } = record;
+
+  if (record.status !== 'completed') {
+    return false;
+  }
+
+  if (!fileName) {
+    logger.error('Completed export has no file name', { exportId });
+
+    record.status = 'failed';
+    record.signedUrl = undefined;
+
+    return false;
+  }
+
+  try {
+    record.signedUrl = await signExportDownloadUrl({
+      filePath: resolveFilePath(fileName),
+      fileName,
+      ttlSeconds,
+    });
+
+    return true;
+  } catch (error) {
+    logger.error('Failed to sign export URL', { exportId, error });
+
+    record.signedUrl = undefined;
+
+    // A missing file is permanent; other failures stay retryable.
+    if (isPermanentlyGone(error)) {
+      record.status = 'failed';
+    }
+
+    return false;
+  }
+};
+
 // Mutates `record` in place.
 export const refreshStaleSignedUrl = async ({
   record,
@@ -93,43 +144,17 @@ export const refreshStaleSignedUrl = async ({
   resolveFilePath: (fileName: string) => string;
   cacheKey: string;
 }): Promise<void> => {
-  const { fileName } = record;
-
-  if (!fileName) {
-    if (record.status === 'completed') {
-      logger.error('Completed export has no file name', { exportId });
-
-      record.status = 'failed';
-      record.signedUrl = undefined;
-    }
-
+  if (record.fileName && !needsFreshUrl(record)) {
     return;
   }
 
-  if (!needsFreshUrl(record)) {
+  if (!(await signCompletedExport({ record, exportId, resolveFilePath }))) {
     return;
   }
 
-  logger.info('Refreshing signed URL', { exportId });
+  record.urlExpiresAt = new Date(
+    Date.now() + EXPORT_URL_TTL_SECONDS * 1000,
+  ).toISOString();
 
-  try {
-    record.signedUrl = await signExportDownloadUrl({
-      filePath: resolveFilePath(fileName),
-      fileName,
-    });
-    record.urlExpiresAt = new Date(
-      Date.now() + EXPORT_URL_TTL_SECONDS * 1000,
-    ).toISOString();
-
-    await set(cacheKey, record, EXPORT_CACHE_TTL_SECONDS);
-  } catch (error) {
-    logger.error('Failed to re-sign export URL', { exportId, error });
-
-    record.signedUrl = undefined;
-
-    // A missing file is permanent; other failures stay retryable.
-    if (isPermanentlyGone(error)) {
-      record.status = 'failed';
-    }
-  }
+  await set(cacheKey, record, EXPORT_CACHE_TTL_SECONDS);
 };

@@ -423,6 +423,129 @@ export const setWithStatus = async (
   }
 };
 
+// `exists` means the key was already set, so this write did nothing.
+export type RedisSetIfAbsentResult = RedisSetResult | { status: 'exists' };
+
+/**
+ * Writes a key only when it is absent, in one atomic command. Use it to claim
+ * a key that concurrent callers race for: exactly one caller gets `ok`.
+ */
+export const setIfAbsentWithStatus = async ({
+  key,
+  data,
+  ttlSeconds,
+}: {
+  key: string;
+  data: unknown;
+  ttlSeconds: number;
+}): Promise<RedisSetIfAbsentResult> => {
+  if (!redis) {
+    return { status: 'disabled' };
+  }
+
+  const signal = AbortSignal.timeout(REDIS_COMMAND_TIMEOUT_MS);
+
+  try {
+    const reply = await redis
+      .withAbortSignal(signal)
+      .set(key, JSON.stringify(data), {
+        condition: 'NX',
+        expiration: { type: 'EX', value: ttlSeconds },
+      });
+
+    return reply === null ? { status: 'exists' } : { status: 'ok' };
+  } catch (e) {
+    if (signal.aborted) {
+      cacheMetrics.recordTimeout({ layer: 'command' });
+      return { status: 'timeout' };
+    }
+
+    logger.error('CACHE: error setting to Redis', { error: e });
+    cacheMetrics.recordError('set');
+    return { status: 'error' };
+  }
+};
+
+const DELETE_IF_EQUALS_SCRIPT =
+  "if redis.call('GET', KEYS[1]) == ARGV[1] then return redis.call('DEL', KEYS[1]) end return 0";
+
+/**
+ * Deletes a key only while it still holds `data`, in one atomic command. `ok`
+ * means the command ran, whether or not the key held `data`.
+ */
+export const deleteIfEqualsWithStatus = async ({
+  key,
+  data,
+}: {
+  key: string;
+  data: unknown;
+}): Promise<RedisSetResult> => {
+  if (!redis) {
+    return { status: 'disabled' };
+  }
+
+  const signal = AbortSignal.timeout(REDIS_COMMAND_TIMEOUT_MS);
+
+  try {
+    await redis.withAbortSignal(signal).eval(DELETE_IF_EQUALS_SCRIPT, {
+      keys: [key],
+      arguments: [JSON.stringify(data)],
+    });
+
+    return { status: 'ok' };
+  } catch (e) {
+    if (signal.aborted) {
+      cacheMetrics.recordTimeout({ layer: 'command' });
+      return { status: 'timeout' };
+    }
+
+    logger.error('CACHE: error deleting from Redis', { error: e });
+    cacheMetrics.recordError('set');
+    return { status: 'error' };
+  }
+};
+
+const EXPIRE_IF_EQUALS_SCRIPT =
+  "if redis.call('GET', KEYS[1]) == ARGV[1] then return redis.call('EXPIRE', KEYS[1], ARGV[2]) end return 0";
+
+/**
+ * Resets a key's TTL only while it still holds `data`, in one atomic command.
+ * `ok` means the command ran, whether or not the key held `data`.
+ */
+export const expireIfEqualsWithStatus = async ({
+  key,
+  data,
+  ttlSeconds,
+}: {
+  key: string;
+  data: unknown;
+  ttlSeconds: number;
+}): Promise<RedisSetResult> => {
+  if (!redis) {
+    return { status: 'disabled' };
+  }
+
+  const signal = AbortSignal.timeout(REDIS_COMMAND_TIMEOUT_MS);
+
+  try {
+    await redis.withAbortSignal(signal).eval(EXPIRE_IF_EQUALS_SCRIPT, {
+      keys: [key],
+      arguments: [JSON.stringify(data), String(ttlSeconds)],
+    });
+
+    return { status: 'ok' };
+  } catch (e) {
+    if (signal.aborted) {
+      cacheMetrics.recordTimeout({ layer: 'command' });
+      return { status: 'timeout' };
+    }
+
+    logger.error('CACHE: error setting to Redis', { error: e });
+    cacheMetrics.recordError('set');
+    return { status: 'error' };
+  }
+};
+
 export const set = async (
   key: string,
   data: unknown,

@@ -54,6 +54,14 @@ export const Events = {
       userId: z.string().uuid(),
     }),
   },
+  personalDataExportFileStored: {
+    name: 'user/personal-data-export-file-stored' as const,
+    schema: z.object({
+      exportId: z.string().uuid(),
+      userId: z.string().uuid(),
+      fileName: z.string(),
+    }),
+  },
   profileInviteSent: {
     name: 'profile/invites-sent' as const,
     schema: z.object({

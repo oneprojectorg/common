@@ -221,7 +221,7 @@ describe('getExportStatus', () => {
     const result = await getExportStatus({ exportId: EXPORT_ID, user });
 
     expect(logger.error).toHaveBeenCalledWith(
-      'Failed to re-sign export URL',
+      'Failed to sign export URL',
       expect.objectContaining({ exportId: EXPORT_ID }),
     );
     expect(result).toMatchObject({ status: 'completed' });
@@ -246,7 +246,7 @@ describe('getExportStatus', () => {
     const result = await getExportStatus({ exportId: EXPORT_ID, user });
 
     expect(logger.error).toHaveBeenCalledWith(
-      'Failed to re-sign export URL',
+      'Failed to sign export URL',
       expect.objectContaining({ exportId: EXPORT_ID }),
     );
     expect(result).toMatchObject({ status: 'completed' });
