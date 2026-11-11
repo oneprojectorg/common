@@ -6,8 +6,21 @@ import {
   createDecisionBoundary,
   ensureProposalCategoryTerms,
 } from '@op/common/testing/data';
-import { ProposalStatus, processInstances, taxonomyTerms } from '@op/db/schema';
-import { db, eq, inArray } from '@op/db/test';
+import {
+  ModerationFlagStatus,
+  ModerationItemType,
+  ModerationSource,
+  ProposalStatus,
+  Visibility,
+  decisionTransitionProposals,
+  moderationFlags,
+  processInstances,
+  proposalHistory,
+  proposals as proposalsTable,
+  stateTransitionHistory,
+  taxonomyTerms,
+} from '@op/db/schema';
+import { db, desc, eq, inArray } from '@op/db/test';
 import type { AmountUnit } from '@op/types/amountUnit';
 import { describe, expect, it } from 'vitest';
 
@@ -276,6 +289,187 @@ describe.concurrent('submitVote', () => {
         selectedProposalIds: [proposals[0]!.id],
       }),
     ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
+  });
+});
+
+async function attachToVotingPhase(instanceId: string, proposalIds: string[]) {
+  const [transition] = await db
+    .insert(stateTransitionHistory)
+    .values({
+      processInstanceId: instanceId,
+      fromStateId: 'submission',
+      toStateId: 'voting',
+    })
+    .returning();
+
+  if (!transition) {
+    throw new Error('Transition was not created');
+  }
+
+  for (const proposalId of proposalIds) {
+    const [history] = await db
+      .select({ historyId: proposalHistory.historyId })
+      .from(proposalHistory)
+      .where(eq(proposalHistory.id, proposalId))
+      .orderBy(desc(proposalHistory.historyCreatedAt))
+      .limit(1);
+
+    if (!history) {
+      throw new Error(`No history row for proposal ${proposalId}`);
+    }
+
+    await db.insert(decisionTransitionProposals).values({
+      processInstanceId: instanceId,
+      transitionHistoryId: transition.id,
+      proposalId,
+      proposalHistoryId: history.historyId,
+    });
+  }
+
+  return transition;
+}
+
+describe.concurrent('submitVote ballot scope', () => {
+  it('rejects a vote for a proposal that did not advance to the voting phase', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instance, proposals } = await setupVotingInstance(testData, {
+      proposalCount: 2,
+    });
+    await attachToVotingPhase(instance.instance.id, [proposals[0]!.id]);
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    await expect(
+      caller.decision.submitVote({
+        processInstanceId: instance.instance.id,
+        selectedProposalIds: [proposals[1]!.id],
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
+    await expect(
+      db.query.decisionsVoteSubmissions.findFirst({
+        where: { processInstanceId: instance.instance.id },
+      }),
+    ).resolves.toBeUndefined();
+  });
+
+  it('rejects a vote for a hidden proposal in the voting phase', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instance, proposals } = await setupVotingInstance(testData, {
+      proposalCount: 1,
+    });
+    await attachToVotingPhase(instance.instance.id, [proposals[0]!.id]);
+    await db
+      .update(proposalsTable)
+      .set({ visibility: Visibility.HIDDEN })
+      .where(eq(proposalsTable.id, proposals[0]!.id));
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    await expect(
+      caller.decision.submitVote({
+        processInstanceId: instance.instance.id,
+        selectedProposalIds: [proposals[0]!.id],
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
+    await expect(
+      db.query.decisionsVoteSubmissions.findFirst({
+        where: { processInstanceId: instance.instance.id },
+      }),
+    ).resolves.toBeUndefined();
+  });
+
+  it('rejects a vote for a proposal with an active moderation flag', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instance, proposals } = await setupVotingInstance(testData, {
+      proposalCount: 1,
+    });
+    await attachToVotingPhase(instance.instance.id, [proposals[0]!.id]);
+    onTestFinished(async () => {
+      await db
+        .delete(moderationFlags)
+        .where(eq(moderationFlags.itemId, proposals[0]!.id));
+    });
+    await db.insert(moderationFlags).values({
+      itemType: ModerationItemType.PROPOSAL,
+      itemId: proposals[0]!.id,
+      status: ModerationFlagStatus.FLAGGED,
+      source: ModerationSource.AUTOMATED,
+      reason: 'integration-test verdict',
+    });
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    await expect(
+      caller.decision.submitVote({
+        processInstanceId: instance.instance.id,
+        selectedProposalIds: [proposals[0]!.id],
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
+    await expect(
+      db.query.decisionsVoteSubmissions.findFirst({
+        where: { processInstanceId: instance.instance.id },
+      }),
+    ).resolves.toBeUndefined();
+  });
+
+  it('accepts a vote for a proposal that advanced to the voting phase', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instance, proposals } = await setupVotingInstance(testData, {
+      proposalCount: 2,
+    });
+    await attachToVotingPhase(instance.instance.id, [proposals[0]!.id]);
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const result = await caller.decision.submitVote({
+      processInstanceId: instance.instance.id,
+      selectedProposalIds: [proposals[0]!.id],
+    });
+
+    expect(result.selectedProposalIds).toEqual([proposals[0]!.id]);
+  });
+
+  it('accepts a vote for a proposal submitted after the voting phase began', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instance, proposals } = await setupVotingInstance(testData, {
+      proposalCount: 2,
+    });
+    const transition = await attachToVotingPhase(instance.instance.id, [
+      proposals[0]!.id,
+    ]);
+    const lateProposal = proposals[1]!;
+    await db
+      .update(proposalsTable)
+      .set({
+        createdAt: new Date(
+          transition.transitionedAt.getTime() + 1000,
+        ).toISOString(),
+      })
+      .where(eq(proposalsTable.id, lateProposal.id));
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const result = await caller.decision.submitVote({
+      processInstanceId: instance.instance.id,
+      selectedProposalIds: [lateProposal.id],
+    });
+
+    expect(result.selectedProposalIds).toEqual([lateProposal.id]);
   });
 });
 

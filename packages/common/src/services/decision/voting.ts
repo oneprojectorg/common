@@ -1,5 +1,5 @@
 import { trackUserVoted } from '@op/analytics';
-import { db } from '@op/db/client';
+import { db, sql } from '@op/db/client';
 import {
   type VoteData,
   decisionsVoteProposals,
@@ -21,6 +21,7 @@ import {
 } from '../../utils';
 import { assertInstanceProfileAccess, getIndividualProfileId } from '../access';
 import { assertProfileAccess } from '../assert';
+import { ballotProposalFilter } from './ballotProposalFilter';
 import { getFieldUnit } from './fieldUnit';
 import { type ProposalCosts, getProposalCosts } from './getProposalCosts';
 import { decisionPermission } from './permissions';
@@ -37,7 +38,6 @@ import {
   isVotingPhase,
 } from './utils/phaseSettings';
 import { isVoterEnrolled } from './voterEnrolment';
-import { isVotingEligible } from './votingEligibility';
 
 type BallotSelections = NonNullable<VoteData['selections']>;
 
@@ -417,22 +417,17 @@ export const submitVote = async ({
       );
     }
 
-    // Get available proposals for this process instance. Moderation-detached
-    // (CSAM) rows must never be votable, so we require both
-    // `deletedAt IS NULL` and `moderationDetachedAt IS NULL` at query time —
-    // filtering post-fetch would still leak the row to the eligibility check.
-    const availableProposals = await db.query.proposals.findMany({
-      where: {
-        processInstanceId: data.processInstanceId,
-        deletedAt: { isNull: true },
-        moderationDetachedAt: { isNull: true },
-      },
-    });
-
-    // Filter to eligible proposals for voting
-    const eligibleProposals = availableProposals.filter((p) =>
-      isVotingEligible(p.status),
-    );
+    const filter = await ballotProposalFilter({ instance: processInstance });
+    const distinctSelectedIds = [...new Set(data.selectedProposalIds)];
+    const eligibleProposals =
+      filter.isEmpty || distinctSelectedIds.length === 0
+        ? []
+        : await db.query.proposals.findMany({
+            where: {
+              id: { in: distinctSelectedIds },
+              RAW: (t) => filter.where(t) ?? sql`false`,
+            },
+          });
     const eligibleProposalIds = eligibleProposals.map((p) => p.id);
 
     // Check if all selected proposals are eligible
