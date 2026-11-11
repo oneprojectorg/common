@@ -1,13 +1,10 @@
-import { and, db, eq, inArray } from '@op/db/client';
-import {
-  ProposalReviewAssignmentStatus,
-  proposalReviewAssignments,
-} from '@op/db/schema';
+import { db } from '@op/db/client';
 import type { User } from '@op/supabase/lib';
 import { permission } from 'access-zones';
 
 import { CommonError, NotFoundError } from '../../utils';
 import { assertProfileAccess } from '../assert';
+import { deletePendingReviewAssignments } from './deletePendingReviewAssignments';
 import { getInstance } from './getInstance';
 import { assertReviewAssignmentPhaseIsCurrent } from './reviewHelpers';
 import type { InstancePhaseRef } from './schemas/instance';
@@ -68,21 +65,14 @@ export async function removeReviewAssignments({
     throw new NotFoundError('Review assignment', outsideRequestedPhase.id);
   }
 
-  // PENDING repeated here: a row started since the read above keeps its review.
-  const deleted = await db
-    .delete(proposalReviewAssignments)
-    .where(
-      and(
-        inArray(proposalReviewAssignments.id, requestedIds),
-        eq(
-          proposalReviewAssignments.status,
-          ProposalReviewAssignmentStatus.PENDING,
-        ),
-      ),
-    )
-    .returning({ id: proposalReviewAssignments.id });
+  const deletedIds = await deletePendingReviewAssignments({
+    db,
+    processInstanceId,
+    phaseId,
+    assignmentIds: requestedIds,
+  });
 
-  const removedIds = new Set(deleted.map((row) => row.id));
+  const removedIds = new Set(deletedIds);
 
   return {
     removedCount: removedIds.size,
