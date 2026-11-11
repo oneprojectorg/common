@@ -1,0 +1,16 @@
+{
+  "paths": [
+    "apps",
+    "packages",
+    "services",
+    "docs",
+    "scripts",
+    "tests",
+    "supabase",
+    "CLAUDE.md",
+    "AGENTS.md",
+    "README.md",
+    "CONTRIBUTING.md"
+  ],
+  "database": ".symbolic/facts.dets"
+}

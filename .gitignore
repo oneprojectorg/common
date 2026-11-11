@@ -90,3 +90,11 @@ ralph.sh
 tasks/
 .gstack/
 .plans/
+
+# symbolic MCP fact cache (the committed project config and rule library
+# are .symbolic/config.json and .symbolic/rules.pl)
+.symbolic/facts.dets*
+
+# pi/spb agent working state
+.spb/
+.pi/
