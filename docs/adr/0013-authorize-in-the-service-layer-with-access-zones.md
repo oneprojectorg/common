@@ -17,7 +17,7 @@ calls and the routers make four.
 
 In scope: where a permission check runs and what it is built from. Who the
 caller is belongs to
-[0012](./0012-authenticate-at-the-interface.md).
+[0012](./0012-authenticate-at-the-boundary.md).
 
 ## Decision
 
