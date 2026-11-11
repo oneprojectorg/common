@@ -18,21 +18,23 @@ export const ProposalListSkeletonGrid = () => (
   </ProposalMasonry>
 );
 
+export const ProposalFilterBarSkeleton = () => (
+  <div className="flex flex-wrap items-center justify-between gap-4">
+    <div className="flex items-center gap-4">
+      <Skeleton className="h-6 w-40" />
+    </div>
+    <div className="grid max-w-fit grid-cols-2 justify-end gap-4 sm:flex sm:flex-1 sm:flex-wrap sm:items-center">
+      <Skeleton className="h-10 w-32" />
+      <Skeleton className="h-10 w-32" />
+      <Skeleton className="h-10 w-32" />
+    </div>
+  </div>
+);
+
 export const ProposalListSkeleton = () => {
   return (
     <div className="flex flex-col gap-6">
-      {/* Filters Bar Skeleton */}
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <Skeleton className="h-6 w-40" />
-        </div>
-        <div className="grid max-w-fit grid-cols-2 justify-end gap-4 sm:flex sm:flex-1 sm:flex-wrap sm:items-center">
-          <Skeleton className="h-10 w-32" />
-          <Skeleton className="h-10 w-32" />
-          <Skeleton className="h-10 w-32" />
-        </div>
-      </div>
-
+      <ProposalFilterBarSkeleton />
       <ProposalListSkeletonGrid />
     </div>
   );

@@ -10,8 +10,14 @@ import { Suspense } from 'react';
 import { useTranslations } from '@/lib/i18n';
 
 import { ExportProposalsButton } from './ExportProposalsButton';
-import { ProposalListSkeleton } from './ProposalListSkeleton';
-import { ProposalReviewProgressTable } from './ProposalReviewProgressTable';
+import {
+  ProposalFilterBarSkeleton,
+  ProposalListSkeleton,
+} from './ProposalListSkeleton';
+import {
+  ProposalReviewProgressTable,
+  ProposalReviewProgressTableSkeleton,
+} from './ProposalReviewProgressTable';
 import type {
   ProposalControls,
   ProposalSelectControl,
@@ -93,7 +99,7 @@ export function AllProposalsList({
         enabled
         canOpenReviews
       >
-        <Suspense fallback={<ProposalListSkeleton />}>
+        <Suspense fallback={<AllProposalsSkeleton />}>
           <AllProposalsLoader
             processInstanceId={processInstanceId}
             decisionSlug={decisionSlug}
@@ -104,6 +110,15 @@ export function AllProposalsList({
         </Suspense>
       </ProposalReviewDecorationProvider>
     </APIErrorBoundary>
+  );
+}
+
+function AllProposalsSkeleton() {
+  return (
+    <div className="flex flex-col gap-6">
+      <ProposalFilterBarSkeleton />
+      <ProposalReviewProgressTableSkeleton />
+    </div>
   );
 }
 
