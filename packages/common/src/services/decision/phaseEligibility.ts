@@ -1,5 +1,14 @@
-import { type SQL, and, eq, isNull, notInArray, sql } from '@op/db/client';
-import type { proposalReviewAssignments, proposals } from '@op/db/schema';
+import {
+  type SQL,
+  and,
+  db,
+  eq,
+  exists,
+  isNull,
+  notInArray,
+  sql,
+} from '@op/db/client';
+import { type proposalReviewAssignments, proposals } from '@op/db/schema';
 
 import { notSuperseded } from './proposalSupersession';
 import {
@@ -37,10 +46,14 @@ export const votingEligiblePredicate = (t: typeof proposals): SQL =>
   )!;
 
 /**
- * Review assignments in a phase's review set: the assignment-side twin of
- * `phaseEligiblePredicate`. Merging leaves the merged-away proposal's
- * assignments in place, so every count or list of assignments filters them
- * here. Omit `phaseId` for every phase.
+ * Review assignments whose proposal is in the phase's pool, as
+ * `getProposalIdsForPhase` defines it: phase-eligible and active. Merging,
+ * rejecting, deleting and detaching leave the assignment rows in place, so
+ * every count or list of assignments filters them here. Omit `phaseId` for
+ * every phase.
+ *
+ * The proposal check has no phase: a merge in a later phase also removes the
+ * proposal from earlier phases' rollups.
  */
 export const reviewSetPredicate = (
   t: typeof proposalReviewAssignments,
@@ -52,7 +65,19 @@ export const reviewSetPredicate = (
   and(
     eq(t.processInstanceId, processInstanceId),
     phaseId ? eq(t.phaseId, phaseId) : undefined,
-    notSuperseded({ proposalId: t.proposalId, processInstanceId }),
+    exists(
+      db
+        .select({ one: sql`1` })
+        .from(proposals)
+        .where(
+          and(
+            eq(proposals.id, t.proposalId),
+            eq(proposals.processInstanceId, processInstanceId),
+            phaseEligiblePredicate(proposals),
+            activeProposalPredicate(proposals),
+          ),
+        ),
+    ),
   )!;
 
 /**

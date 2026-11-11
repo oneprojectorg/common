@@ -93,13 +93,9 @@ export async function getDecisionReviewAssignments({
     [
       db.query.proposalReviewAssignments.findMany({
         where: {
-          // Unreachable even to admins (see detachProposalForModeration);
-          // assignments made before the detach would otherwise leak it.
-          proposal: {
-            deletedAt: { isNull: true },
-            moderationDetachedAt: { isNull: true },
-          },
-          // The same set each reviewer's own list draws from.
+          // The phase's pool, the set each reviewer's own list draws from. It
+          // also keeps deleted and moderation-detached proposals, which even
+          // admins cannot reach, out of this view.
           RAW: (table) =>
             reviewSetPredicate(table, {
               processInstanceId: instanceId,

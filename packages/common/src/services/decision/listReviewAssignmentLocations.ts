@@ -1,4 +1,4 @@
-import { db } from '@op/db/client';
+import { and, db, eq } from '@op/db/client';
 import type { ProposalReviewAssignmentStatus } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 import { permission } from 'access-zones';
@@ -7,12 +7,12 @@ import { CommonError, UnauthorizedError } from '../../utils';
 import { assertProfileAccess, assertUserByAuthId } from '../assert';
 import { getInstance } from './getInstance';
 import { decisionPermission } from './permissions';
+import { reviewerQueuePredicate } from './phaseEligibility';
 import {
   projectProposalLocation,
   proposalLocationColumns,
   proposalLocationWith,
 } from './projectProposalLocation';
-import { notSuperseded } from './proposalSupersession';
 import {
   type ProposalLocations,
   proposalLocationsSchema,
@@ -66,14 +66,16 @@ export const listReviewAssignmentLocations = async ({
   const rows = await db.query.proposalReviewAssignments.findMany({
     columns: {},
     where: {
-      processInstanceId,
-      reviewerProfileId,
-      phaseId,
-      ...(status && { status }),
-      // Same rule as the queue: a proposal merged mid-review keeps its
-      // assignment row, and its pin must go with its card.
+      // The queue's own set, so a pin goes whenever its card does.
       RAW: (t) =>
-        notSuperseded({ proposalId: t.proposalId, processInstanceId }),
+        and(
+          reviewerQueuePredicate(t, {
+            processInstanceId,
+            phaseId,
+            reviewerProfileId,
+          }),
+          status ? eq(t.status, status) : undefined,
+        )!,
     },
     with: {
       proposal: {

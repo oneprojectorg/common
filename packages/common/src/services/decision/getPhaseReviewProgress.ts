@@ -43,19 +43,12 @@ export async function getPhaseReviewProgress(
 
   assertInstancePhase({ instance, phaseId });
 
-  const assignedReviewerCountsPromise = getAssignedReviewerCounts({
-    processInstanceId,
-    phaseId,
-  });
-  const phaseProposalIds = await getProposalIdsForPhase({ instance, phaseId });
-  const [assignedReviewerCounts, reviewedProposalsCount] = await Promise.all([
-    assignedReviewerCountsPromise,
-    getReviewedProposalsCount({
-      processInstanceId,
-      phaseId,
-      proposalIds: phaseProposalIds,
-    }),
-  ]);
+  const [phaseProposalIds, assignedReviewerCounts, reviewedProposalsCount] =
+    await Promise.all([
+      getProposalIdsForPhase({ instance, phaseId }),
+      getAssignedReviewerCounts({ processInstanceId, phaseId }),
+      getReviewedProposalsCount({ processInstanceId, phaseId }),
+    ]);
 
   return {
     proposalsReviewedCount: reviewedProposalsCount,
@@ -102,22 +95,16 @@ async function getAssignedReviewerCounts({
   };
 }
 
-// A proposal counts as reviewed once it has ≥1 COMPLETED assignment.
-// Restricted to `proposalIds` so soft-deleted/draft proposals can't slip
-// in via stale assignments.
+// A proposal counts as reviewed once it has ≥1 COMPLETED assignment. The
+// review set is the phase's pool, so this shares its rule with
+// `proposalsTotalCount`.
 async function getReviewedProposalsCount({
   processInstanceId,
   phaseId,
-  proposalIds,
 }: {
   processInstanceId: string;
   phaseId: string;
-  proposalIds: string[];
 }): Promise<number> {
-  if (proposalIds.length === 0) {
-    return 0;
-  }
-
   const [row] = await db
     .select({
       count: countDistinct(proposalReviewAssignments.proposalId),
@@ -129,7 +116,6 @@ async function getReviewedProposalsCount({
           processInstanceId,
           phaseId,
         }),
-        inArray(proposalReviewAssignments.proposalId, proposalIds),
         eq(
           proposalReviewAssignments.status,
           ProposalReviewAssignmentStatus.COMPLETED,

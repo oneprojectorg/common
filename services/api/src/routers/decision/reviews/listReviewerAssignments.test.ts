@@ -6,8 +6,10 @@ import {
 import {
   ProposalReviewAssignmentStatus,
   ProposalReviewState,
+  ProposalStatus,
   profileUserToAccessRoles,
   profiles,
+  proposals,
 } from '@op/db/schema';
 import { ROLES } from '@op/db/seedData/accessControl';
 import { db } from '@op/db/test';
@@ -294,6 +296,51 @@ describe.concurrent('decision.listReviewerAssignments', () => {
     expect(result.draftCount).toBe(0);
     expect(result.remainingCount).toBe(1);
   });
+
+  it.for([
+    {
+      label: 'rejected',
+      leavePool: { status: ProposalStatus.REJECTED },
+    },
+    {
+      label: 'soft-deleted',
+      leavePool: { deletedAt: new Date().toISOString() },
+    },
+  ])(
+    'leaves a $label proposal out of the page and the totals',
+    async ({ leavePool }, { task, onTestFinished }) => {
+      const testData = new TestReviewsDataManager(task.id, onTestFinished);
+      const kept = await testData.createReviewAssignment({
+        title: `Kept proposal ${task.id}`,
+      });
+      const context = kept.context;
+      const left = await testData.createReviewAssignment({
+        context,
+        title: `Left proposal ${task.id}`,
+      });
+      // Out of the phase's pool, while its assignment row stays.
+      await db
+        .update(proposals)
+        .set(leavePool)
+        .where(eq(proposals.id, left.proposal.id));
+
+      const adminCaller = await createAuthenticatedCaller(
+        context.defaultReviewer.email,
+      );
+
+      const result = await adminCaller.decision.listReviewerAssignments({
+        processInstanceId: context.instance.instance.id,
+        phaseId: 'review',
+        reviewerProfileId: context.defaultReviewer.profileId,
+      });
+
+      expect(result.items.map((entry) => entry.assignment.proposal.id)).toEqual(
+        [kept.proposal.id],
+      );
+      expect(result.total).toBe(1);
+      expect(result.assignedCount).toBe(1);
+    },
+  );
 
   it('withholds the identity of a profile with no tie to the process', async ({
     task,

@@ -3,6 +3,7 @@ import { db } from '@op/db/client';
 import {
   ProposalRelationshipType,
   ProposalReviewAssignmentStatus,
+  ProposalStatus,
   authUsers,
   proposalRelationships,
   proposals,
@@ -76,6 +77,37 @@ describe.concurrent('listReviewAssignmentLocations', () => {
     });
 
     expect(result.items.map((p) => p.id)).toEqual([mine.proposal.id]);
+  });
+
+  it('drops the pin of a rejected proposal, like the queue does', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const kept = await testData.createReviewAssignment({ title: 'Kept' });
+    const context = kept.context;
+    const rejected = await testData.createReviewAssignment({
+      context,
+      reviewer: kept.reviewer,
+      title: 'Rejected',
+    });
+
+    await Promise.all([
+      setLocation(kept.proposal.id, { lat: 40.7, lng: -74 }),
+      setLocation(rejected.proposal.id, { lat: 34, lng: -118.2 }),
+    ]);
+    await db
+      .update(proposals)
+      .set({ status: ProposalStatus.REJECTED })
+      .where(eq(proposals.id, rejected.proposal.id));
+
+    const caller = await createAuthenticatedCaller(kept.reviewer.email);
+    const result = await caller.decision.listReviewAssignmentLocations({
+      processInstanceId: context.instance.instance.id,
+      phaseId: REVIEW_PHASE,
+    });
+
+    expect(result.items.map((p) => p.id)).toEqual([kept.proposal.id]);
   });
 
   it('rejects a caller without review access on the instance', async ({
