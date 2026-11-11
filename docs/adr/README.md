@@ -79,3 +79,7 @@ what it decided.
 - [0012. Authenticate at the boundary and pass a verified identity inward](./0012-authenticate-at-the-boundary.md)
 - [0013. Authorize in the service layer with access-zones](./0013-authorize-in-the-service-layer-with-access-zones.md)
 - [0014. Use realtime to invalidate queries, not to carry data](./0014-use-realtime-to-invalidate-queries-not-to-carry-data.md)
+- [0015. Run side effects as typed events handled by workflows](./0015-run-side-effects-as-typed-events-handled-by-workflows.md)
+- [0016. Define Drizzle relations once with the v2 API](./0016-define-drizzle-relations-once-with-the-v2-api.md)
+- [0017. Fetch client data with suspense queries inside error boundaries](./0017-fetch-client-data-with-suspense-queries-inside-error-boundaries.md)
+- [0018. Log through `@op/logging`, never the console](./0018-log-through-op-logging-never-the-console.md)
