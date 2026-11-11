@@ -571,6 +571,7 @@ function ProposalEditorInner({
       {customForm && (
         <CustomFormModal
           isOpen={showCustomFormModal}
+          customFormId={customForm.id}
           schema={customForm.schema}
           isSubmitting={isSubmitting}
           onSubmit={handleCustomFormSubmit}

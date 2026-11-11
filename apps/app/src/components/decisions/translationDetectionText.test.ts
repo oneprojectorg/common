@@ -2,6 +2,7 @@ import { parseProposalData } from '@op/common/client';
 import { describe, expect, it } from 'vitest';
 
 import {
+  getCustomFormDetectionText,
   getDecisionDetectionText,
   getOverviewDetectionText,
   getProposalDetectionText,
@@ -172,5 +173,21 @@ describe('getDecisionDetectionText', () => {
 
   it('falls back to the process name without an overview', () => {
     expect(getDecisionDetectionText(decision({}))).toContain('Process name');
+  });
+});
+
+describe('getCustomFormDetectionText', () => {
+  it('samples the form title, description and each field title and description', () => {
+    expect(
+      getCustomFormDetectionText({
+        type: 'object',
+        title: 'Sobre usted',
+        description: 'Cuéntenos más.',
+        properties: {
+          role: { type: 'string', title: 'Su función', enum: ['Docente'] },
+          notes: { type: 'string', description: 'Opcional.' },
+        },
+      }),
+    ).toBe('Sobre usted\nCuéntenos más.\nSu función\nOpcional.');
   });
 });

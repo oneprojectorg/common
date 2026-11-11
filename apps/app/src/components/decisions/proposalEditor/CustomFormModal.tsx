@@ -5,7 +5,7 @@ import type {
   CustomFormDefinitionSchema,
   XFormatPropertySchema,
 } from '@op/common/client';
-import { schemaValidator } from '@op/common/client';
+import { isCustomFormDefinition, schemaValidator } from '@op/common/client';
 import { useMediaQuery } from '@op/hooks';
 import { logger } from '@op/logging/client';
 import { Button } from '@op/sense/Button';
@@ -43,10 +43,17 @@ import { useId, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
+import { TranslateLink } from '../TranslateLink';
+import {
+  type CustomFormTranslation,
+  useTranslateCustomForm,
+} from './useTranslateCustomForm';
+
 export type CustomFormValues = Record<string, unknown>;
 
 interface CustomFormModalProps {
   isOpen: boolean;
+  customFormId: string;
   /**
    * Form definition in the same JSON Schema dialect as proposal templates:
    * standard keywords for the data shape, `x-format` per property and
@@ -68,11 +75,14 @@ interface CustomFormFieldProps {
   value: unknown;
   error?: string;
   isRequired: boolean;
+  /** The form's translated text. Omit to show the authored text. */
+  translation?: CustomFormTranslation;
   onChange: (value: unknown) => void;
 }
 
 export function CustomFormModal({
   isOpen,
+  customFormId,
   schema,
   isSubmitting,
   onSubmit,
@@ -84,7 +94,15 @@ export function CustomFormModal({
   const [values, setValues] = useState<CustomFormValues>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  if (!isCustomFormDefinition(schema)) {
+  const definition = isCustomFormDefinition(schema) ? schema : undefined;
+  const translateLink = useTranslateCustomForm({
+    customFormId,
+    definition,
+    isOpen,
+  });
+  const { translation } = translateLink;
+
+  if (!definition) {
     logger.error('Unsupported form definition', {
       context: 'CustomFormModal',
       schema: JSON.stringify(schema),
@@ -92,7 +110,6 @@ export function CustomFormModal({
     return null;
   }
 
-  const definition = schema;
   // Decided once, here: a field the renderer would skip must also come out of
   // `required`, or AJV rejects every submission over a field that isn't on
   // screen to show the error or be answered.
@@ -144,8 +161,11 @@ export function CustomFormModal({
       <DialogContent className="gap-0 p-0 sm:max-w-120">
         <DialogHeader>
           <DialogTitle>
-            {definition.title ??
-              t('decisions.proposals.additionalDetailsHeading')}
+            <bdi>
+              {translation?.title ??
+                definition.title ??
+                t('decisions.proposals.additionalDetailsHeading')}
+            </bdi>
           </DialogTitle>
         </DialogHeader>
         {/* `noValidate`: validation is AJV's (`schemaValidator`), and its
@@ -161,9 +181,14 @@ export function CustomFormModal({
           className="flex min-h-0 flex-1 flex-col gap-0"
         >
           <div className="flex flex-1 flex-col gap-6 overflow-y-auto px-6 py-4">
+            <TranslateLink translation={translateLink} />
             {definition.description ? (
-              <p className="text-base text-muted-foreground [&>a]:underline [&>a]:underline-offset-4">
-                {linkifyText(definition.description)}
+              <p className="text-base text-muted-foreground [&_a]:underline [&_a]:underline-offset-4">
+                <bdi>
+                  {linkifyText(
+                    translation?.description ?? definition.description,
+                  )}
+                </bdi>
               </p>
             ) : null}
             {renderableKeys.map((key) => {
@@ -179,6 +204,7 @@ export function CustomFormModal({
                   value={values[key]}
                   error={errors[key]}
                   isRequired={requiredFields.has(key)}
+                  translation={translation}
                   onChange={(value) => handleFieldChange(key, value)}
                 />
               );
@@ -210,11 +236,15 @@ function CustomFormField({
   value,
   error,
   isRequired,
+  translation,
   onChange,
 }: CustomFormFieldProps) {
   const fieldId = useId();
-  const label = field.title ?? name;
-  const description = linkifyText(field.description);
+  const { label, description, toChoices } = getFieldText({
+    name,
+    field,
+    translation,
+  });
   const descriptionNode = description ? (
     <FieldDescription>{description}</FieldDescription>
   ) : null;
@@ -250,7 +280,9 @@ function CustomFormField({
   // as a checkbox group. An empty selection is stored as absent so JSON
   // Schema `required` treats it as missing.
   if (field.type === 'array') {
-    const multiOptions = readEnumOptions(readItemsSchema(field)?.enum);
+    const multiChoices = toChoices(
+      readEnumOptions(readItemsSchema(field)?.enum),
+    );
     const selected = Array.isArray(value)
       ? value.filter((entry): entry is string => typeof entry === 'string')
       : [];
@@ -261,21 +293,27 @@ function CustomFormField({
           {isRequired ? <RequiredAsterisk /> : null}
         </FieldLegend>
         {descriptionNode}
-        {multiOptions.map((option) => (
-          <Field key={option} className="items-start" orientation="horizontal">
+        {multiChoices.map((option) => (
+          <Field
+            key={option.value}
+            className="items-start"
+            orientation="horizontal"
+          >
             <Checkbox
-              id={`${fieldId}-${option}`}
-              checked={selected.includes(option)}
+              id={`${fieldId}-${option.value}`}
+              checked={selected.includes(option.value)}
               onCheckedChange={(checked) => {
                 const next = checked
-                  ? [...selected, option]
-                  : selected.filter((entry) => entry !== option);
+                  ? [...selected, option.value]
+                  : selected.filter((entry) => entry !== option.value);
                 onChange(next.length > 0 ? next : undefined);
               }}
               aria-invalid={Boolean(error)}
               className="mt-1"
             />
-            <FieldLabel htmlFor={`${fieldId}-${option}`}>{option}</FieldLabel>
+            <FieldLabel htmlFor={`${fieldId}-${option.value}`}>
+              <bdi>{option.label}</bdi>
+            </FieldLabel>
           </Field>
         ))}
         {error ? <FieldError>{error}</FieldError> : null}
@@ -284,6 +322,7 @@ function CustomFormField({
   }
 
   const enumOptions = readEnumOptions(field.enum);
+  const choices = toChoices(enumOptions);
 
   // NPS-style numeric scale — matches the ProcessSurveyModal control:
   // horizontal radio row with the label under each number on desktop,
@@ -299,7 +338,7 @@ function CustomFormField({
           description={description}
           error={error}
           isRequired={isRequired}
-          options={enumOptions}
+          options={choices}
           value={selected}
           onChange={onChange}
         />
@@ -322,14 +361,17 @@ function CustomFormField({
           aria-invalid={Boolean(error)}
           className="flex w-full flex-row justify-between gap-1"
         >
-          {enumOptions.map((option) => (
-            <Field key={option} className="flex-1 items-center gap-1">
-              <RadioGroupItem id={`${fieldId}-${option}`} value={option} />
+          {choices.map((option) => (
+            <Field key={option.value} className="flex-1 items-center gap-1">
+              <RadioGroupItem
+                id={`${fieldId}-${option.value}`}
+                value={option.value}
+              />
               <FieldLabel
-                htmlFor={`${fieldId}-${option}`}
+                htmlFor={`${fieldId}-${option.value}`}
                 className="justify-center"
               >
-                {option}
+                <bdi>{option.label}</bdi>
               </FieldLabel>
             </Field>
           ))}
@@ -347,7 +389,7 @@ function CustomFormField({
         description={description}
         error={error}
         isRequired={isRequired}
-        options={enumOptions}
+        options={choices}
         value={typeof value === 'string' ? value : null}
         onChange={onChange}
       />
@@ -423,10 +465,7 @@ function CustomFormField({
   );
 }
 
-/**
- * Enum dropdown. Option values ARE their labels here, so base-ui's
- * `Select.Value` renders correctly without an `items` label map.
- */
+/** Enum dropdown. `items` lets base-ui's `Select.Value` show a translated label. */
 function EnumSelectField({
   fieldId,
   label,
@@ -438,11 +477,11 @@ function EnumSelectField({
   onChange,
 }: {
   fieldId: string;
-  label: string;
+  label: ReactNode;
   description?: ReactNode;
   error?: string;
   isRequired: boolean;
-  options: string[];
+  options: { value: string; label: string }[];
   value: string | null;
   onChange: (value: unknown) => void;
 }) {
@@ -455,6 +494,7 @@ function EnumSelectField({
         {isRequired ? <RequiredAsterisk /> : null}
       </FieldLabel>
       <Select
+        items={options}
         value={value}
         onValueChange={(next) =>
           onChange(next == null ? undefined : String(next))
@@ -466,15 +506,18 @@ function EnumSelectField({
           className="w-full"
           aria-invalid={Boolean(error)}
         >
+          {/* The trigger clamps, so `<bdi>` alone would clip the wrong end. */}
           <SelectValue
+            dir="auto"
+            className="ltr:text-left rtl:text-right"
             placeholder={t('decisions.proposals.selectOptionPlaceholder')}
           />
         </SelectTrigger>
         <SelectContent>
           <SelectGroup>
             {options.map((option) => (
-              <SelectItem key={option} value={option}>
-                {option}
+              <SelectItem key={option.value} value={option.value}>
+                <bdi>{option.label}</bdi>
               </SelectItem>
             ))}
           </SelectGroup>
@@ -490,6 +533,40 @@ const CHOICE_FORMATS = new Set<XFormatPropertySchema['x-format']>([
   'radio',
   'dropdown',
 ]);
+
+/**
+ * The field's label, description and option labels, translated when available.
+ * Label and description are admin-authored, so they come isolated in `<bdi>`.
+ */
+function getFieldText({
+  name,
+  field,
+  translation,
+}: {
+  name: string;
+  field: XFormatPropertySchema;
+  translation?: CustomFormTranslation;
+}) {
+  const description = linkifyText(
+    translation?.fieldDescriptions[name] ?? field.description,
+  );
+
+  return {
+    label: <bdi>{translation?.fieldTitles[name] ?? field.title ?? name}</bdi>,
+    // `FieldDescription` styles only its direct `a` children, so the `<bdi>`
+    // carries the same link styles.
+    description: description ? (
+      <bdi className="[&>a]:underline [&>a]:underline-offset-4 [&>a:hover]:text-primary">
+        {description}
+      </bdi>
+    ) : undefined,
+    toChoices: (options: string[]) =>
+      options.map((option) => ({
+        value: option,
+        label: translation?.optionLabels[name]?.[option] ?? option,
+      })),
+  };
+}
 
 /** False for a control that would draw with nothing to choose from. */
 function canRenderField(field: XFormatPropertySchema): boolean {
@@ -514,16 +591,6 @@ function readEnumOptions(candidate: unknown): string[] {
   return Array.isArray(candidate)
     ? candidate.filter((option): option is string => typeof option === 'string')
     : [];
-}
-
-function isCustomFormDefinition(
-  schema: Record<string, unknown>,
-): schema is CustomFormDefinitionSchema {
-  return (
-    schema.type === 'object' &&
-    typeof schema.properties === 'object' &&
-    schema.properties !== null
-  );
 }
 
 /** Field keys ordered by `x-field-order`, then any remaining properties. */

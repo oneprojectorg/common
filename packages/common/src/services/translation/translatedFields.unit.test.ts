@@ -2,6 +2,7 @@ import type { TranslationResult } from '@op/translation';
 import { describe, expect, it } from 'vitest';
 
 import {
+  flattenSchemaFields,
   flattenTranslatableFields,
   unflattenTranslatedFields,
 } from './translatedFields';
@@ -67,5 +68,59 @@ describe('flattenTranslatableFields / unflattenTranslatedFields', () => {
       result('p:tags[2]', 'c'),
     ]);
     expect(translated.tags).toEqual(['a', undefined, 'c']);
+  });
+});
+
+describe('flattenSchemaFields', () => {
+  it('keys field titles, descriptions and option labels by field and option value', () => {
+    const entries = flattenSchemaFields({
+      prefix: 'form:1:',
+      properties: {
+        role: {
+          type: 'string',
+          title: 'Role',
+          description: 'Pick one.',
+          enum: ['Farmer', null],
+        },
+        tier: {
+          type: 'string',
+          oneOf: [
+            { const: 'gold', title: 'Gold tier' },
+            { const: 'none', title: '' },
+          ],
+        },
+        topics: {
+          type: 'array',
+          items: { type: 'string', enum: ['Water'] },
+        },
+        age: { type: 'integer' },
+      },
+    });
+
+    expect(entries).toEqual([
+      { contentKey: 'form:1:field_title:role', text: 'Role' },
+      { contentKey: 'form:1:field_desc:role', text: 'Pick one.' },
+      { contentKey: 'form:1:option:role:Farmer', text: 'Farmer' },
+      { contentKey: 'form:1:option:tier:gold', text: 'Gold tier' },
+      { contentKey: 'form:1:option:topics:Water', text: 'Water' },
+    ]);
+  });
+
+  it('returns no entries when there are no properties', () => {
+    expect(flattenSchemaFields({ prefix: 'form:1:' })).toEqual([]);
+  });
+});
+
+describe('unflattenTranslatedFields with schema keys', () => {
+  it('keeps an option key whose value ends in brackets as a scalar', () => {
+    const { translated } = unflattenTranslatedFields('form:1:', [
+      result('form:1:option:tier:Tier[2]', 'Nivel[2]'),
+      result('form:1:category[0]', 'Agua'),
+    ]);
+
+    expect(translated).toEqual({
+      'option:tier:Tier[2]': 'Nivel[2]',
+      category: ['Agua'],
+    });
   });
 });

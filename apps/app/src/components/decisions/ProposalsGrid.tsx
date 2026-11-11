@@ -630,6 +630,7 @@ const VotingProposalsList = ({
       {phaseForm && (
         <CustomFormModal
           isOpen={showPhaseFormModal}
+          customFormId={phaseForm.id}
           schema={phaseForm.schema}
           isSubmitting={submitPhaseFormMutation.isPending}
           onSubmit={handlePhaseFormSubmit}
