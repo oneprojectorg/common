@@ -386,5 +386,6 @@ async function clearPhaseReviewAssignments({
     db: tx,
     processInstanceId: instanceId,
     phaseId,
+    wholePhase: true,
   });
 }
