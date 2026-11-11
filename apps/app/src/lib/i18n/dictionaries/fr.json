@@ -1070,6 +1070,8 @@
       "sortReviewersLabel": "Trier les évaluateurs",
       "sortLeastComplete": "Moins avancé",
       "sortMostComplete": "Plus avancé",
+      "sortFewestReviews": "Moins d'évaluations",
+      "sortMostReviews": "Plus d'évaluations",
       "sortRecentActivity": "Activité récente",
       "sortName": "Nom",
       "noReviewersMatchFilters": "Aucun évaluateur ne correspond à ces filtres",

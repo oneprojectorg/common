@@ -26,7 +26,9 @@ export interface ProposalsStickyFilterBarProps {
   view?: ProposalViewControls;
   /** Admin-only CSV export control; omitted entirely for non-admins. */
   exportControl?: React.ReactNode;
-  leadingSelect: ProposalSelectControl;
+  leadingSelect?: ProposalSelectControl;
+  /** More filter selects, placed after the category select. */
+  extraFilters?: React.ReactNode;
   /**
    * Px offset where the bar pins inside its scroll container — clears whatever
    * sticky chrome sits above it (e.g. the floating Overview/Current toggle).
@@ -48,6 +50,7 @@ export const ProposalsStickyFilterBar = ({
   view,
   exportControl,
   leadingSelect,
+  extraFilters,
   pinOffset = 0,
 }: ProposalsStickyFilterBarProps) => (
   <StickyFilterBar pinOffset={pinOffset}>
@@ -60,6 +63,7 @@ export const ProposalsStickyFilterBar = ({
         header={header}
         exportControl={exportControl}
         leadingSelect={leadingSelect}
+        extraFilters={extraFilters}
       />
     ) : (
       <>

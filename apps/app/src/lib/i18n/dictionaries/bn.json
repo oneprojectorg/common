@@ -1070,6 +1070,8 @@
       "sortReviewersLabel": "পর্যালোচকদের সাজান",
       "sortLeastComplete": "সবচেয়ে কম সম্পন্ন",
       "sortMostComplete": "সবচেয়ে বেশি সম্পন্ন",
+      "sortFewestReviews": "সবচেয়ে কম পর্যালোচনা",
+      "sortMostReviews": "সবচেয়ে বেশি পর্যালোচনা",
       "sortRecentActivity": "সাম্প্রতিক কার্যকলাপ",
       "sortName": "নাম",
       "noReviewersMatchFilters": "এই ফিল্টারগুলোর সাথে কোনো পর্যালোচক মেলে না",

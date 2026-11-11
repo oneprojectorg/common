@@ -1070,6 +1070,8 @@
       "sortReviewersLabel": "Értékelők rendezése",
       "sortLeastComplete": "Legkevésbé kész",
       "sortMostComplete": "Leginkább kész",
+      "sortFewestReviews": "Legkevesebb értékelés",
+      "sortMostReviews": "Legtöbb értékelés",
       "sortRecentActivity": "Legutóbbi tevékenység",
       "sortName": "Név",
       "noReviewersMatchFilters": "Egy értékelő sem felel meg ezeknek a szűrőknek",
