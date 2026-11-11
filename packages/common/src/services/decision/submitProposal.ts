@@ -11,6 +11,7 @@ import { permission } from 'access-zones';
 
 import { CommonError, NotFoundError, ValidationError } from '../../utils';
 import { assertProfileAccess } from '../assert';
+import { assertProposalsAllowed } from './assertProposalsAllowed';
 import { lockProcessInstanceOrThrow } from './lockProcessInstance';
 import { decisionPermission } from './permissions';
 import {
@@ -25,7 +26,6 @@ import type { DecisionInstanceData } from './schemas/instanceData';
 import { setProposalCategories } from './setProposalCategories';
 import { syncProposalProfileLocation } from './syncProposalProfileLocation';
 import { templateCollectsLocation } from './templateLocation';
-import { checkProposalsAllowed } from './utils/proposal';
 import { validateProposalAgainstTemplate } from './validateProposalAgainstTemplate';
 
 export interface SubmitProposalInput {
@@ -85,17 +85,10 @@ export const submitProposal = async ({
     throw new ValidationError('Invalid phase in process instance');
   }
 
-  // Check if proposals are allowed in current phase
-  const { allowed, phaseName } = checkProposalsAllowed(
-    instanceData.phases,
-    currentPhaseId,
-  );
-
-  if (!allowed) {
-    throw new ValidationError(
-      `Proposals are not allowed in the ${phaseName} phase`,
-    );
-  }
+  assertProposalsAllowed({
+    instance: { instanceData },
+    phaseId: currentPhaseId,
+  });
 
   // Validate proposal data against the proposal template schema
   const proposalTemplate = await resolveProposalTemplate(
