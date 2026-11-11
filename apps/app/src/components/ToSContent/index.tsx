@@ -144,16 +144,15 @@ export const ToSContent = () => {
           place all intellectual property developed in the course of its
           activities into the protected commons, whenever possible. The code
           developed and owned by One Project on which the Platform runs (the
-          "Code") is made available to you under the Apache 2.0 license,
-          modified by the Commons Clause and certain Ethical Provisions
-          (together, the "Code License"). Please review these license terms
-          carefully before using or contributing to the Platform. We reserve the
-          right to change the terms of this license grant at any time, in our
-          sole discretion but always consistent with our mission, by posting
-          notice of such changes on the Platform. For clarity, any content or
-          materials posted on the Platform, by One Project or another user, is
-          not included in the Code and will be subject to the more limited
-          license below in Section 6.
+          "Code") is made available to you under the GNU Affero General Public
+          License, version 3 (the "Code License"). Please review these license
+          terms carefully before using or contributing to the Platform. We
+          reserve the right to change the terms of this license grant at any
+          time, in our sole discretion but always consistent with our mission,
+          by posting notice of such changes on the Platform. For clarity, any
+          content or materials posted on the Platform, by One Project or another
+          user, is not included in the Code and will be subject to the more
+          limited license below in Section 6.
         </p>
       </FormalSection>
 
