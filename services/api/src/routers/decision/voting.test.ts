@@ -11,6 +11,7 @@ import {
   decisionTransitionProposals,
   processInstances,
   proposalHistory,
+  proposals as proposalsTable,
   stateTransitionHistory,
   taxonomyTerms,
 } from '@op/db/schema';
@@ -320,6 +321,8 @@ async function attachToVotingPhase(instanceId: string, proposalIds: string[]) {
       proposalHistoryId: history.historyId,
     });
   }
+
+  return transition;
 }
 
 describe.concurrent('submitVote ballot scope', () => {
@@ -366,6 +369,37 @@ describe.concurrent('submitVote ballot scope', () => {
     });
 
     expect(result.selectedProposalIds).toEqual([proposals[0]!.id]);
+  });
+
+  it('accepts a vote for a proposal submitted after the voting phase began', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instance, proposals } = await setupVotingInstance(testData, {
+      proposalCount: 2,
+    });
+    const transition = await attachToVotingPhase(instance.instance.id, [
+      proposals[0]!.id,
+    ]);
+    const lateProposal = proposals[1]!;
+    await db
+      .update(proposalsTable)
+      .set({
+        createdAt: new Date(
+          transition.transitionedAt.getTime() + 1000,
+        ).toISOString(),
+      })
+      .where(eq(proposalsTable.id, lateProposal.id));
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const result = await caller.decision.submitVote({
+      processInstanceId: instance.instance.id,
+      selectedProposalIds: [lateProposal.id],
+    });
+
+    expect(result.selectedProposalIds).toEqual([lateProposal.id]);
   });
 });
 

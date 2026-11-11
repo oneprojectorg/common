@@ -23,8 +23,9 @@ import { assertInstanceProfileAccess, getIndividualProfileId } from '../access';
 import { assertProfileAccess } from '../assert';
 import { getFieldUnit } from './fieldUnit';
 import { type ProposalCosts, getProposalCosts } from './getProposalCosts';
-import { getProposalIdsForPhase } from './getProposalsForPhase';
+import { getPhaseProposalSqlScope } from './getProposalsForPhase';
 import { decisionPermission } from './permissions';
+import { votingEligiblePredicate } from './phaseEligibility';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
 import { processDecisionProcessSchema } from './schemaRegistry';
 import { validateVoteBudget, validateVoteSelection } from './schemaValidators';
@@ -38,7 +39,6 @@ import {
   isVotingPhase,
 } from './utils/phaseSettings';
 import { isVoterEnrolled } from './voterEnrolment';
-import { isVotingEligible } from './votingEligibility';
 
 type BallotSelections = NonNullable<VoteData['selections']>;
 
@@ -418,26 +418,25 @@ export const submitVote = async ({
       );
     }
 
-    // The ballot only lists members of the current phase, so a vote must not
-    // reach anything else.
-    const phaseProposalIds = await getProposalIdsForPhase({
+    const scope = await getPhaseProposalSqlScope({
       instance: processInstance,
+      authUserIds: [],
     });
-    const availableProposals =
-      phaseProposalIds.length === 0
+    const distinctSelectedIds = [...new Set(data.selectedProposalIds)];
+    const eligibleProposals =
+      scope.isEmpty || distinctSelectedIds.length === 0
         ? []
         : await db.query.proposals.findMany({
             where: {
-              id: { in: phaseProposalIds },
               processInstanceId: data.processInstanceId,
-              deletedAt: { isNull: true },
+              id: { in: distinctSelectedIds },
               moderationDetachedAt: { isNull: true },
+              AND: [
+                { RAW: scope.buildNonDraftFilter },
+                { RAW: votingEligiblePredicate },
+              ],
             },
           });
-
-    const eligibleProposals = availableProposals.filter((p) =>
-      isVotingEligible(p.status),
-    );
     const eligibleProposalIds = eligibleProposals.map((p) => p.id);
 
     // Check if all selected proposals are eligible
