@@ -1,5 +1,5 @@
 import { trackUserVoted } from '@op/analytics';
-import { db } from '@op/db/client';
+import { db, sql } from '@op/db/client';
 import {
   type VoteData,
   decisionsVoteProposals,
@@ -21,11 +21,10 @@ import {
 } from '../../utils';
 import { assertInstanceProfileAccess, getIndividualProfileId } from '../access';
 import { assertProfileAccess } from '../assert';
+import { ballotProposalFilter } from './ballotProposalFilter';
 import { getFieldUnit } from './fieldUnit';
 import { type ProposalCosts, getProposalCosts } from './getProposalCosts';
-import { getPhaseProposalSqlScope } from './getProposalsForPhase';
 import { decisionPermission } from './permissions';
-import { votingEligiblePredicate } from './phaseEligibility';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
 import { processDecisionProcessSchema } from './schemaRegistry';
 import { validateVoteBudget, validateVoteSelection } from './schemaValidators';
@@ -418,23 +417,15 @@ export const submitVote = async ({
       );
     }
 
-    const scope = await getPhaseProposalSqlScope({
-      instance: processInstance,
-      authUserIds: [],
-    });
+    const filter = await ballotProposalFilter({ instance: processInstance });
     const distinctSelectedIds = [...new Set(data.selectedProposalIds)];
     const eligibleProposals =
-      scope.isEmpty || distinctSelectedIds.length === 0
+      filter.isEmpty || distinctSelectedIds.length === 0
         ? []
         : await db.query.proposals.findMany({
             where: {
-              processInstanceId: data.processInstanceId,
               id: { in: distinctSelectedIds },
-              moderationDetachedAt: { isNull: true },
-              AND: [
-                { RAW: scope.buildNonDraftFilter },
-                { RAW: votingEligiblePredicate },
-              ],
+              RAW: (t) => filter.where(t) ?? sql`false`,
             },
           });
     const eligibleProposalIds = eligibleProposals.map((p) => p.id);
