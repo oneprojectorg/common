@@ -10,14 +10,23 @@ import { logger } from '@op/logging';
 import { createSelectSchema } from 'drizzle-zod';
 import { z } from 'zod';
 
-import { list, paginated, total } from '../../../utils/pagination';
+import {
+  list,
+  paginated,
+  paginationInput,
+  total,
+} from '../../../utils/pagination';
 import { accountContactSchema } from '../../profile/schemas/accountContact';
 import type { RubricTemplateSchema } from '../types';
 import {
   instanceOptionalPhaseRefSchema,
   instancePhaseRefSchema,
 } from './instance';
-import { proposalProfileSchema, proposalSchema } from './proposal';
+import {
+  proposalProfileSchema,
+  proposalSchema,
+  proposalSearchSchema,
+} from './proposal';
 import {
   type ProposalCategoryItem,
   proposalCategorySchema,
@@ -434,3 +443,26 @@ export const reviewerCategorySchema = z.object({
 export type ReviewerCategory = z.infer<typeof reviewerCategorySchema>;
 
 export const reviewerCategoriesSchema = list(reviewerCategorySchema);
+
+/**
+ * Input for `decision.listReviewProposals`, the review page's "All proposals"
+ * list. A proposal must carry every term in `categoryIds`, so a category and a
+ * district combine as AND.
+ */
+export const listReviewProposalsInputSchema = instanceOptionalPhaseRefSchema
+  .extend({
+    search: proposalSearchSchema,
+    categoryIds: z.array(z.uuid()).max(10).optional(),
+  })
+  .extend(paginationInput('md').shape);
+
+export type ListReviewProposalsInput = z.infer<
+  typeof listReviewProposalsInputSchema
+>;
+
+/** Items are `proposal.list`'s, so review aggregates still decorate by id. */
+export const reviewProposalListSchema = paginated(proposalSchema).extend({
+  total,
+});
+
+export type ReviewProposalList = z.infer<typeof reviewProposalListSchema>;
