@@ -66,7 +66,6 @@ export const createProposal = async ({
   const proposalInstance = {
     id: instance.id,
     profileId: instance.profileId,
-    ownerProfileId: instance.ownerProfileId,
     instanceData,
   };
 

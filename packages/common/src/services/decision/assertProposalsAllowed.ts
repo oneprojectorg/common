@@ -1,13 +1,8 @@
-import { db, eq } from '@op/db/client';
-import { organizations } from '@op/db/schema';
+import { db } from '@op/db/client';
 import { checkPermission, permission } from 'access-zones';
 
 import { UnauthorizedError, ValidationError } from '../../utils';
-import {
-  type AccessUser,
-  getOrgAccessUser,
-  getProfileAccessRoles,
-} from '../access';
+import { type AccessUser, getProfileAccessRoles } from '../access';
 import { assertUserByAuthId } from '../assert';
 import { decisionPermission } from './permissions';
 import type { DecisionInstanceData } from './schemas/instanceData';
@@ -17,7 +12,6 @@ import { checkProposalsAllowed } from './utils/proposal';
 type ProposalInstance = {
   id: string;
   profileId: string | null;
-  ownerProfileId: string | null;
   instanceData: Pick<DecisionInstanceData, 'phases'>;
 };
 
@@ -47,9 +41,10 @@ export function isDevelopPhaseById({
  * current phase.
  *
  * Outside a develop phase the phase submit rule applies; the caller has
- * already checked access. In a develop phase only decision admins, or callers
- * with the Review permission who are category reviewers for that exact phase,
- * may create or submit proposals there. The category of the row is not
+ * already checked access. In a develop phase only decision admins of the
+ * instance profile (no org fallback), or callers with the Review permission
+ * who are category reviewers for that exact phase, may create or submit
+ * proposals there. The category of the row is not
  * matched against the proposal's category yet.
  */
 export async function assertProposalsAllowed({
@@ -85,10 +80,7 @@ export async function assertProposalsAllowed({
     profileId: instance.profileId,
   });
 
-  if (
-    checkPermission(DECISION_ADMIN, roles) ||
-    (await isOrgAdmin({ ownerProfileId: instance.ownerProfileId, user }))
-  ) {
+  if (checkPermission(DECISION_ADMIN, roles)) {
     return;
   }
 
@@ -101,31 +93,6 @@ export async function assertProposalsAllowed({
       'You have no category assignment for this phase, so you cannot create or submit proposals in it',
     );
   }
-}
-
-/** The org fallback of the create check: an admin of the owning organization. */
-async function isOrgAdmin({
-  ownerProfileId,
-  user,
-}: {
-  ownerProfileId: string | null;
-  user: AccessUser;
-}): Promise<boolean> {
-  if (!ownerProfileId) {
-    return false;
-  }
-
-  const [org] = await db
-    .select({ id: organizations.id })
-    .from(organizations)
-    .where(eq(organizations.profileId, ownerProfileId));
-
-  if (!org) {
-    return false;
-  }
-
-  const orgUser = await getOrgAccessUser({ user, organizationId: org.id });
-  return checkPermission({ profile: permission.ADMIN }, orgUser?.roles ?? []);
 }
 
 async function isPhaseCategoryReviewer({

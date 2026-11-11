@@ -4,6 +4,7 @@ import {
 } from '@op/common/testing';
 import { db, eq } from '@op/db/client';
 import { profileUsers, taxonomyTerms } from '@op/db/schema';
+import { ROLES } from '@op/db/seedData/accessControl';
 import { randomUUID } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 
@@ -35,7 +36,6 @@ function withProposalRules(
   return {
     id: instance.id,
     profileId: instance.profileId,
-    ownerProfileId: instance.ownerProfileId,
     instanceData: {
       phases: instance.instanceData.phases.map((phase) =>
         phase.phaseId === PHASE_ID
@@ -358,6 +358,29 @@ describe.concurrent('assertProposalsAllowed in a develop phase', () => {
       );
     },
   );
+
+  it('refuses an admin of the owning organization with no role on the instance profile', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const orgAdmin = await testData.createMemberUser({
+      organization: setup.organization,
+      orgRoleId: ROLES.ADMIN.id,
+    });
+
+    await expectNotAllowed(
+      assertProposalsAllowed({
+        instance: withProposalRules(setup.instance, DEVELOP_RULES),
+        phaseId: PHASE_ID,
+        user: { id: orgAdmin.authUserId },
+      }),
+    );
+  });
 
   it('refuses on an instance without a decision profile', async ({
     task,
