@@ -1,10 +1,10 @@
-# NNNN. Record the template a proposal is written under
+# 0019. Record the template a proposal is written under
 
 Date: 2026-11-10
 
 ## Status
 
-Proposed
+Accepted
 
 ## Context
 
