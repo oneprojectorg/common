@@ -90,3 +90,10 @@ ralph.sh
 tasks/
 .gstack/
 .plans/
+
+# symbolic MCP local state (project config, rule library, fact cache)
+.symbolic/
+
+# pi/spb agent working state
+.spb/
+.pi/
