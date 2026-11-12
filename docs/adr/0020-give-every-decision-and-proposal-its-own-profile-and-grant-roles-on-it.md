@@ -24,7 +24,8 @@ what the code already does.
 
 We will grant access on profiles. Every record that admits members owns a
 `profiles` row, and a membership is a row on that profile. One mechanism
-serves organizations, decisions and proposals.
+serves decisions and proposals; organizations keep their own membership
+table.
 
 ### Profiles and memberships
 
@@ -82,9 +83,9 @@ its profile: `Admin` (ACRUD on `profile`, every bit on `decisions`) and
 `Participant` (`READ` on `profile`; `READ`, `SUBMIT_PROPOSALS`, `VOTE` on
 `decisions`). A `profile: ADMIN` on the decision adds more through `createRole` and
 `updateDecisionRoles`. `createRole` and `createDecisionRole` add
-`profile: READ` to every scoped role, and `updateDecisionRoles` adds `READ`
-to the `decisions` bitfield, so a role made through them always lets its
-holder see the decision.
+`profile: READ` to every scoped role, and `createDecisionRole` and
+`updateDecisionRoles` add `READ` to the `decisions` bitfield, so a role made
+through them always lets its holder see the decision.
 
 A permission row, `access_role_permissions_on_access_zones`, is global or
 scoped in the same way. A row with `profile_id` set overrides the global row
@@ -117,8 +118,8 @@ profile and `steward_profile_id` is the profile they acted as. `createProposal`
 does the same for a proposal: the creator gets a `profile_users` row with
 `is_owner` and the global `Admin` role on the proposal's profile. A co-author accepts a proposal
 invite, which `acceptProposalInvite` turns into a `profile_users` row on the
-proposal and, when they have none, a row on the decision with the global
-`Member` role. Everyone else joins a decision through a profile invite,
+proposal and, when they have none, a row on the decision with the role of
+their pending decision invite, or the global `Member` role. Everyone else joins a decision through a profile invite,
 which `acceptProfileInvite` turns into a `profile_users` row, or through the
 public grant.
 
@@ -129,9 +130,11 @@ is a separate record, checked at vote time, not a grant.
 
 ### The check per action
 
-Reads of a decision go through `assertInstanceProfileAccess`: the decision's
+Most services go through `assertInstanceProfileAccess`: the decision's
 profile first, then the organization whose profile is `owner_profile_id`.
-Writes to the decision check the decision's profile only.
+Reads use it with a `decisions: READ` fallback. Review assignment, exports
+and custom forms use it with a `decisions: ADMIN` fallback. The lifecycle
+writes in the table below check the decision's profile only.
 
 | Action | Profile checked | Permission | Organization fallback |
 | --- | --- | --- | --- |
@@ -151,7 +154,7 @@ Writes to the decision check the decision's profile only.
 A draft, hidden or flagged proposal is hidden with `NotFoundError`. A draft
 is visible only to members of the proposal's profile, decision admins
 included in the denial. A hidden or flagged proposal is visible to those
-members and to decision admins. After submission, content edits also need the
+members and to a `profile: ADMIN` on the decision. After submission, content edits also need the
 phase to allow them, a decision admin, or an open revision request.
 
 ### Caches and the client
@@ -175,17 +178,17 @@ wraps; it knows `profile_users` and `organization_users` rows, nothing else.
 
 ## Consequences
 
-- One membership mechanism covers an organization, a decision and a
-  proposal, and a decision can define its own roles.
+- One membership mechanism covers a decision and a proposal, and a decision
+  can define its own roles.
 - Public access is a grant on one profile, so it is listed, revoked and
   cached like any other, and it never widens another decision.
 - A proposal has a member list of its own, so a draft is visible to its
   co-authors and to nobody else, decision admins included. Accepting a
-  proposal invite also makes the co-author a `Member` of the decision.
-- The organization fallback applies to reads, proposal creation, likes and
-  follows only. An organization admin with no row on a decision's profile
-  can view it and create a proposal, but cannot comment, submit, vote, edit
-  or delete.
+  proposal invite also makes the co-author a member of the decision.
+- The organization fallback admits an organization admin with no row on a
+  decision's profile to reads, proposal creation, likes and follows, review
+  assignment and exports. It does not admit them to comments, submission,
+  voting, phase changes, or editing and deleting the decision or a proposal.
 - The fallback works only when `owner_profile_id` is an organization's
   profile. A decision created today owns an individual profile there, so
   only older, organization-owned decisions reach it.
