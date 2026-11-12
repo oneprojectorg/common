@@ -48,6 +48,60 @@ We will store notifications in four tables.
 - `notification_deliveries` — an append-only log of per-channel
   attempts, keyed back from provider webhooks by `provider_message_id`.
 
+New tables carry the thick teal border; plain entities already exist.
+
+```mermaid
+erDiagram
+  event_outbox {
+    uuid id PK
+    text event_name
+    jsonb payload
+    timestamptz sent_at
+    int attempts
+  }
+  activities {
+    uuid id PK
+    uuid outbox_id FK "unique"
+    text event_name
+    uuid actor_profile_id FK "set null"
+    uuid organization_id FK "cascade"
+    uuid process_instance_id FK "cascade"
+    uuid proposal_id FK "cascade"
+    uuid post_id FK "cascade"
+    jsonb snapshot
+  }
+  notifications {
+    uuid id PK
+    uuid activity_id FK "unique with user_id"
+    uuid user_id FK
+    text category
+    bool action_required
+    timestamptz seen_at
+    timestamptz read_at
+  }
+  notification_deliveries {
+    uuid id PK
+    uuid notification_id FK
+    text channel
+    text provider_message_id
+    text status
+  }
+
+  event_outbox ||--o| activities : becomes
+  activities ||--o{ notifications : "fans out per recipient"
+  notifications ||--o{ notification_deliveries : "per channel attempt"
+  profiles ||--o{ activities : "actor / owner / subject"
+  organizations ||--o{ activities : scope
+  process_instances ||--o{ activities : scope
+  proposals ||--o{ activities : subject
+  posts ||--o{ activities : subject
+  auth_users ||--o{ notifications : receives
+  profiles ||--o{ notifications : capacity
+
+  classDef newTable fill:none,stroke:#3FA7A0,stroke-width:3px
+  class event_outbox,activities,notifications,notification_deliveries newTable
+```
+
 A service emits an event by writing the outbox row inside its own
 transaction, in place of calling `inngest.send`:
 
