@@ -36,7 +36,10 @@ We will store notifications in four tables.
   at least once; `sent_at` and `attempts` record progress, and sent rows
   are pruned after 30 days.
 - `activities` — one row per domain event, created by the workflow
-  function. A unique index on `outbox_id` makes replay idempotent. The
+  function. A unique index on `outbox_id` makes replay idempotent;
+  the column is a plain uuid, not a foreign key, so pruning the outbox
+  never blocks on or deletes feed history, and replay only needs the
+  key within Inngest's retry window, long before the 30-day prune. The
   row denormalizes its scopes (actor, owner profile, organization,
   process instance, proposal, post, profile) and carries a `snapshot`
   jsonb for rendering. Each feed scope gets a composite index
@@ -62,7 +65,7 @@ erDiagram
   }
   activities {
     uuid id PK
-    uuid outbox_id FK "unique"
+    uuid outbox_id UK "plain uuid, no FK"
     text event_name
     uuid actor_profile_id FK "set null"
     uuid organization_id FK "cascade"
