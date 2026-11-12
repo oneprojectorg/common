@@ -16,7 +16,9 @@ import {
 import { db, eq } from '@op/db/client';
 import {
   ProcessStatus,
+  ProposalRelationshipType,
   ProposalStatus,
+  proposalRelationships,
   proposalReviewAssignments,
 } from '@op/db/schema';
 import { ROLES } from '@op/db/seedData/accessControl';
@@ -291,6 +293,67 @@ describe.concurrent('backfillReviewAssignments', () => {
       assignments.filter((a) => a.proposalId === midPhaseProposal.id),
     ).toHaveLength(0);
     expect(assignments).toHaveLength(assignmentsAfterGeneration.length + 1);
+  });
+
+  it('backfills the merge target but not the proposal merged into it', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instance } = await createReviewInstance(testData);
+    const reviewerRole = await createReviewerRole(instance.profileId);
+
+    const lateReviewer = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [instance.profileId],
+    });
+
+    const [target, source] = await Promise.all([
+      testData.createProposal({
+        userEmail: setup.userEmail,
+        processInstanceId: instance.instance.id,
+        proposalData: { title: 'Merge target' },
+        status: ProposalStatus.SUBMITTED,
+      }),
+      testData.createProposal({
+        userEmail: setup.userEmail,
+        processInstanceId: instance.instance.id,
+        proposalData: { title: 'Merged away' },
+        status: ProposalStatus.SUBMITTED,
+      }),
+    ]);
+
+    await advanceToReviewAndGenerate(instance.instance.id);
+
+    // Merged mid-phase: still attached to the review phase's inbound transition.
+    await db.insert(proposalRelationships).values({
+      processInstanceId: instance.instance.id,
+      sourceProposalId: source.id,
+      targetProposalId: target.id,
+      relationshipType: ProposalRelationshipType.MERGED,
+    });
+
+    await testData.assignRole(
+      lateReviewer.authUserId,
+      instance.profileId,
+      reviewerRole.id,
+    );
+
+    const result = await backfillReviewAssignments({
+      instanceId: instance.instance.id,
+      reviewerProfileIds: [lateReviewer.profileId],
+    });
+
+    expect(result).toEqual({
+      inserted: 1,
+      reviewerCount: 1,
+      proposalCount: 1,
+    });
+
+    const lateAssignments = (await getAssignments(instance.instance.id)).filter(
+      (a) => a.reviewerProfileId === lateReviewer.profileId,
+    );
+    expect(lateAssignments.map((a) => a.proposalId)).toEqual([target.id]);
   });
 
   it('re-checks eligibility and converges across re-runs', async ({

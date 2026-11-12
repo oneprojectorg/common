@@ -14,10 +14,12 @@ import { TestDecisionsDataManager } from '@op/common/testing';
 import { and, db, eq, inArray } from '@op/db/client';
 import {
   ProcessStatus,
+  ProposalRelationshipType,
   ProposalReviewAssignmentStatus,
   ProposalStatus,
   categoryReviewers,
   proposalCategories,
+  proposalRelationships,
   proposalReviewAssignments,
   proposalReviews,
   taxonomies,
@@ -758,6 +760,68 @@ describe.concurrent('reconcileReviewAssignments — recategorization', () => {
     // assigned, A's pending reviewer pruned.
     expect(reviewers.has(reviewerB.profileId)).toBe(true);
     expect(reviewers.has(reviewerA.profileId)).toBe(false);
+  });
+});
+
+describe.concurrent('reconcileReviewAssignments — merged proposals', () => {
+  it('assigns the merge target but not the proposal merged into it', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instance } = await createReviewInstance(
+      testData,
+      'by_category',
+    );
+    const reviewerRole = await createReviewerRole(instance.profileId);
+    const [term] = await seedTerms(1, onTestFinished);
+
+    const reviewer = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [instance.profileId],
+      roleIds: { [instance.profileId]: reviewerRole.id },
+    });
+
+    const [target, source] = await Promise.all([
+      testData.createProposal({
+        userEmail: setup.userEmail,
+        processInstanceId: instance.instance.id,
+        proposalData: { title: 'Merge target' },
+        status: ProposalStatus.SUBMITTED,
+      }),
+      testData.createProposal({
+        userEmail: setup.userEmail,
+        processInstanceId: instance.instance.id,
+        proposalData: { title: 'Merged away' },
+        status: ProposalStatus.SUBMITTED,
+      }),
+    ]);
+
+    await tagProposal(target!.id, term!.id);
+    await tagProposal(source!.id, term!.id);
+
+    await generateBaseline(instance.instance.id);
+
+    // Merged mid-phase: still attached to the review phase's inbound transition.
+    await db.insert(proposalRelationships).values({
+      processInstanceId: instance.instance.id,
+      sourceProposalId: source!.id,
+      targetProposalId: target!.id,
+      relationshipType: ProposalRelationshipType.MERGED,
+    });
+
+    await addCategoryReviewer({
+      processInstanceId: instance.instance.id,
+      taxonomyTermId: term!.id,
+      reviewerProfileId: reviewer.profileId,
+      user: setup.user,
+    });
+
+    const reviewerAssignments = (
+      await getAssignments(instance.instance.id)
+    ).filter((a) => a.reviewerProfileId === reviewer.profileId);
+
+    expect(reviewerAssignments.map((a) => a.proposalId)).toEqual([target!.id]);
   });
 });
 

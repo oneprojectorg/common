@@ -4,6 +4,7 @@ import { logger } from '@op/logging';
 
 import { getCategoryReviewersByProposal } from './getCategoryReviewersByProposal';
 import { getEligibleReviewerProfileIds } from './getEligibleReviewerProfileIds';
+import { getAttachedPhaseProposals } from './getProposalsForPhase';
 import {
   type AssignableProposal,
   insertReviewAssignments,
@@ -11,7 +12,6 @@ import {
 import type { DecisionInstanceData } from './schemas/instanceData';
 import { assertInstancePhase } from './utils/instance';
 import { getPhaseReviewSettings, isReviewPhase } from './utils/phaseSettings';
-import { PIPELINE_INELIGIBLE_STATUSES } from './votingEligibility';
 
 export interface BackfillReviewAssignmentsInput {
   instanceId: string;
@@ -99,19 +99,7 @@ export async function backfillReviewAssignments({
   }
 
   const [attachedProposals, eligibleReviewerProfileIds] = await Promise.all([
-    db.query.decisionTransitionProposals.findMany({
-      where: {
-        transitionHistoryId: inboundTransition.id,
-        proposal: {
-          // Rejected proposals leave the review universe, like drafts.
-          status: { notIn: PIPELINE_INELIGIBLE_STATUSES },
-          deletedAt: { isNull: true },
-          moderationDetachedAt: { isNull: true },
-        },
-      },
-      columns: { proposalId: true, proposalHistoryId: true },
-      with: { proposal: { columns: { submittedByProfileId: true } } },
-    }),
+    getAttachedPhaseProposals({ transitionHistoryId: inboundTransition.id }),
 
     getEligibleReviewerProfileIds({
       decisionProfileId: instance.profileId,
@@ -136,7 +124,7 @@ export async function backfillReviewAssignments({
       const scoped = scopedByProposal.get(row.proposalId) ?? new Set<string>();
       return {
         proposalId: row.proposalId,
-        submittedByProfileId: row.proposal.submittedByProfileId,
+        submittedByProfileId: row.submittedByProfileId,
         assignedProposalHistoryId: row.proposalHistoryId,
         reviewerProfileIds: [...scoped].filter((id) => targetSet.has(id)),
       };
@@ -144,7 +132,7 @@ export async function backfillReviewAssignments({
   } else {
     assignableProposals = attachedProposals.map((row) => ({
       proposalId: row.proposalId,
-      submittedByProfileId: row.proposal.submittedByProfileId,
+      submittedByProfileId: row.submittedByProfileId,
       assignedProposalHistoryId: row.proposalHistoryId,
       reviewerProfileIds: targetReviewerIds,
     }));
