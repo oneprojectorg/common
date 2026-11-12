@@ -161,6 +161,26 @@ export const testMinimalSchema = {
   ],
 } satisfies DecisionSchemaDefinition;
 
+/**
+ * `testMinimalSchema` with a develop rule on the final phase, which also keeps
+ * ordinary submissions open.
+ */
+export const testDevelopSchema = {
+  ...testMinimalSchema,
+  id: 'test-develop-schema',
+  name: 'Test Develop Schema',
+  phases: [
+    testMinimalSchema.phases[0],
+    {
+      ...testMinimalSchema.phases[1],
+      rules: {
+        ...testMinimalSchema.phases[1].rules,
+        proposals: { submit: true, develop: true },
+      },
+    },
+  ],
+} satisfies DecisionSchemaDefinition;
+
 export const testVotingPhaseSchema = {
   id: 'test-voting',
   version: '1.0.0',

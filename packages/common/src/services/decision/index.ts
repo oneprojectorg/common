@@ -89,7 +89,9 @@ export {
   getProposalsForPhase,
 } from './getProposalsForPhase';
 export * from './createProposal';
+export * from './createDevelopedProposal';
 export * from './submitProposal';
+export * from './submitDevelopedProposal';
 export * from './updateProposal';
 export * from './rejectProposal';
 export * from './unrejectProposal';

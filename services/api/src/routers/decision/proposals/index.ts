@@ -3,6 +3,7 @@ import { acceptProposalInviteRouter } from './acceptProposalInvite';
 import { addProposalRelationshipRouter } from './addRelationship';
 import { advanceProposalRouter } from './advanceProposal';
 import { createProposalRouter } from './create';
+import { createDevelopedProposalRouter } from './createDeveloped';
 import { deleteProposalRouter } from './delete';
 import { exportProposalsRouter } from './export';
 import { getProposalRouter } from './get';
@@ -21,6 +22,7 @@ import { mergeProposalsRouter } from './mergeProposals';
 import { rejectProposalRouter } from './reject';
 import { removeProposalRelationshipRouter } from './removeRelationship';
 import { submitProposalRouter } from './submit';
+import { submitDevelopedProposalRouter } from './submitDeveloped';
 import { unmergeProposalRouter } from './unmergeProposal';
 import { unrejectProposalRouter } from './unreject';
 import { updateProposalRouter } from './update';
@@ -31,6 +33,7 @@ export const proposalsRouter = mergeRouters(
   addProposalRelationshipRouter,
   removeProposalRelationshipRouter,
   createProposalRouter,
+  createDevelopedProposalRouter,
   getProposalRouter,
   getProposalAdvanceTargetRouter,
   getCollabTokenRouter,
@@ -47,6 +50,7 @@ export const proposalsRouter = mergeRouters(
   unrejectProposalRouter,
   unmergeProposalRouter,
   submitProposalRouter,
+  submitDevelopedProposalRouter,
   updateProposalRouter,
   deleteProposalRouter,
   exportProposalsRouter,
