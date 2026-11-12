@@ -8,11 +8,12 @@ Proposed
 
 ## Context
 
-One storage schema must power the activity feeds and the notification
-channels that ADR 0004 fans out to. Today nothing stores a notification:
-a tRPC procedure calls `inngest.send` directly, so an event emitted
-before a rollback still sends, an event emitted after a crash is lost,
-and no feed can be read back.
+We want to store activity-feed events and email-notification events in
+one shared transactional model: the same stored event powers the feed
+and the channel fan-out of ADR 0004. Today the two have no common
+record — a tRPC procedure calls `inngest.send` and a workflow function
+sends the email — so there is no feed to read back and no row that ties
+an event to what it delivered.
 
 The design follows a pattern from systems that keep a materialized
 transaction log: a consumer replays the log from a stored cursor, so a
