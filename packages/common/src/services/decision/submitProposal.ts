@@ -1,32 +1,13 @@
-import { getTipTapClient } from '@op/collab';
-import { db, eq } from '@op/db/client';
-import {
-  type ProcessInstance,
-  ProposalStatus,
-  processInstances,
-  proposals,
-} from '@op/db/schema';
-import { logger } from '@op/logging';
+import { db } from '@op/db/client';
+import { type ProcessInstance, ProposalStatus } from '@op/db/schema';
 import { permission } from 'access-zones';
 
-import { CommonError, NotFoundError, ValidationError } from '../../utils';
+import { NotFoundError, ValidationError } from '../../utils';
 import { assertProfileAccess } from '../assert';
 import { assertProposalsAllowed } from './assertProposalsAllowed';
-import { lockProcessInstanceOrThrow } from './lockProcessInstance';
+import { finalizeProposalSubmission } from './finalizeProposalSubmission';
 import { decisionPermission } from './permissions';
-import {
-  normalizeLocation,
-  normalizeProposalCategories,
-  parseProposalData,
-} from './proposalDataSchema';
-import { reconcileReviewAssignments } from './reconcileReviewAssignments';
-import { hasDecisionBoundaries, resolveBoundary } from './resolveBoundary';
-import { resolveProposalTemplate } from './resolveProposalTemplate';
 import type { DecisionInstanceData } from './schemas/instanceData';
-import { setProposalCategories } from './setProposalCategories';
-import { syncProposalProfileLocation } from './syncProposalProfileLocation';
-import { templateCollectsLocation } from './templateLocation';
-import { validateProposalAgainstTemplate } from './validateProposalAgainstTemplate';
 
 export interface SubmitProposalInput {
   proposalId: string;
@@ -90,180 +71,14 @@ export const submitProposal = async ({
     phaseId: currentPhaseId,
   });
 
-  // Validate proposal data against the proposal template schema
-  const proposalTemplate = await resolveProposalTemplate(
-    instanceData,
-    instance.processId,
-    existingProposal.formSchemaId,
-  );
-
-  // Stamp the latest TipTap version into proposalData so the history row
-  // created by the DB trigger links back to a concrete document revision.
-  const parsed = parseProposalData(existingProposal.proposalData);
-
-  // For collab-doc proposals the assembled fragment values are authoritative —
-  // stored proposalData may lag the last autosave.
-  let assembledData: Record<string, unknown> | null = null;
-
-  if (proposalTemplate) {
-    assembledData = await validateProposalAgainstTemplate(
-      proposalTemplate,
-      existingProposal.proposalData,
-      existingProposal.profile.name,
-      { profileId: instance.profileId },
-    );
-  }
-
-  const location =
-    normalizeLocation(
-      assembledData ? assembledData.location : parsed.location,
-    ) ?? null;
-
-  // When the template collects a location, it is mandatory. If boundaries are
-  // configured, the pin must fall inside one — the authoritative server-side
-  // enforcement of the picker's out-of-area check. When no boundaries exist,
-  // any location is valid (the pin can go anywhere).
-  if (templateCollectsLocation(proposalTemplate)) {
-    if (!location) {
-      throw new ValidationError(
-        'A project location is required to submit this proposal.',
-      );
-    }
-
-    const boundary = await resolveBoundary({
-      lat: location.lat,
-      lng: location.lng,
+  return finalizeProposalSubmission({
+    db,
+    proposal: existingProposal,
+    instance: {
+      id: instance.id,
+      processId: instance.processId,
       profileId: instance.profileId,
-    });
-
-    if (
-      !boundary &&
-      (await hasDecisionBoundaries({ profileId: instance.profileId }))
-    ) {
-      throw new ValidationError(
-        'The selected location is outside the project boundary. Choose a spot within the boundary.',
-      );
-    }
-  }
-
-  // Create a named version snapshot. Best-effort — failures logged, never block.
-  if (!parsed.collaborationDocId) {
-    throw new ValidationError('Proposal is missing a collaboration document');
-  }
-
-  const collaborationDocVersionId = await getTipTapClient()
-    .createVersion(parsed.collaborationDocId, { name: 'Submitted' })
-    .then((v) => v?.version ?? null)
-    .catch((error: unknown) => {
-      logger.error('[submitProposal] Failed to create TipTap version', {
-        collaborationDocId: parsed.collaborationDocId,
-        error,
-      });
-      return null;
-    });
-
-  // The authoritative category set for location templates — manual selections
-  // plus the location's council district, already filled into the assembled
-  // data. Persisted to BOTH proposalData.category (the read/display source) and
-  // the proposalCategories junction (the filter source) so they stay in sync.
-  const categoryLabels =
-    assembledData && templateCollectsLocation(proposalTemplate)
-      ? normalizeProposalCategories(assembledData.category)
-      : null;
-
-  // Update proposal status to submitted and re-query with profile
-  const updatedProposal = await db.transaction(async (tx) => {
-    const locked = await lockProcessInstanceOrThrow({
-      db: tx,
-      instanceId: instance.id,
-    });
-    const current = await tx.query.proposals.findFirst({
-      where: { id: data.proposalId },
-      columns: { shortCode: true },
-    });
-    const assignsCode = current?.shortCode == null;
-    const shortCode = current?.shortCode ?? locked.nextShortCode;
-
-    const proposalDataUpdate =
-      collaborationDocVersionId != null || location || categoryLabels
-        ? {
-            ...(existingProposal.proposalData as Record<string, unknown>),
-            ...(location ? { location } : {}),
-            ...(collaborationDocVersionId != null
-              ? { collaborationDocVersionId }
-              : {}),
-            ...(categoryLabels
-              ? {
-                  category:
-                    categoryLabels.length > 0 ? categoryLabels : undefined,
-                }
-              : {}),
-          }
-        : undefined;
-
-    const [submittedProposal] = await tx
-      .update(proposals)
-      .set({
-        status: ProposalStatus.SUBMITTED,
-        shortCode,
-        ...(proposalDataUpdate ? { proposalData: proposalDataUpdate } : {}),
-      })
-      .where(eq(proposals.id, data.proposalId))
-      .returning();
-
-    if (!submittedProposal) {
-      throw new CommonError('Failed to submit proposal');
-    }
-
-    if (assignsCode) {
-      await tx
-        .update(processInstances)
-        .set({ nextShortCode: locked.nextShortCode + 1 })
-        .where(eq(processInstances.id, instance.id));
-    }
-
-    // Fragments are authoritative at submit — project the validated location
-    // onto the proposal's profile (clears the link when the template has no
-    // location field).
-    await syncProposalProfileLocation(
-      tx,
-      existingProposal.profileId,
-      proposalDataUpdate ??
-        (existingProposal.proposalData as Record<string, unknown>),
-    );
-
-    // Persist the proposal's categories — including the location's council
-    // district, already filled into the validated data — through the normal
-    // category link. Only location-collecting templates re-link on submit;
-    // others keep the category links written during draft autosave.
-    if (categoryLabels) {
-      await setProposalCategories({
-        tx,
-        proposalId: submittedProposal.id,
-        labels: categoryLabels,
-      });
-      // Keep by-category assignments consistent with the freshly-persisted
-      // categories, in the same tx. Normally a no-op here — submission happens
-      // before the review phase — but correct if this proposal is already in a
-      // live by_category review phase.
-      await reconcileReviewAssignments({
-        db: tx,
-        instanceId: instance.id,
-        affected: { proposalIds: [submittedProposal.id] },
-      });
-    }
-
-    const proposal = await tx.query.proposals.findFirst({
-      where: { id: submittedProposal.id },
-      with: { profile: true },
-    });
-
-    if (!proposal) {
-      throw new CommonError('Failed to submit proposal');
-    }
-
-    return proposal;
+    },
+    instanceData,
   });
-
-  return updatedProposal;
 };
