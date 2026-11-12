@@ -84,4 +84,4 @@ what it decided.
 - [0017. Fetch client data with suspense queries inside error boundaries](./0017-fetch-client-data-with-suspense-queries-inside-error-boundaries.md)
 - [0018. Log through `@op/logging`, never the console](./0018-log-through-op-logging-never-the-console.md)
 - [0019. Record the template a proposal is written under](./0019-record-the-template-a-proposal-is-written-under.md)
-- [0020. Delete through the profile cascade, and declare a rule on every foreign key](./0020-delete-through-the-profile-cascade.md)
+- [0020. Store notifications as outbox, activity, and per-recipient rows](./0020-store-notifications-behind-a-transactional-outbox.md)
