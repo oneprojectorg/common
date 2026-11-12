@@ -14,11 +14,12 @@ a tRPC procedure calls `inngest.send` directly, so an event emitted
 before a rollback still sends, an event emitted after a crash is lost,
 and no feed can be read back.
 
-The design follows a prior system built on Datomic, where a dispatcher
-replayed the transaction log from a stored cursor, so a crashed consumer
-missed nothing. Postgres has no materialized transaction log, so an
-outbox table written inside the domain transaction gives the same
-guarantee: an event exists if and only if the write committed.
+The design follows a pattern from systems that keep a materialized
+transaction log: a consumer replays the log from a stored cursor, so a
+crashed consumer misses nothing. Postgres has no materialized
+transaction log, so an outbox table written inside the domain
+transaction gives the same guarantee: an event exists if and only if
+the write committed.
 
 In scope: the tables, their delivery semantics, and their foreign-key
 rules. Out of scope: which events notify whom (ADR 0002) and which
