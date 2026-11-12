@@ -4,6 +4,9 @@ import { describe, expect, it } from 'vitest';
 import { exportStatusCacheKey } from '../decision/exports/constants';
 import { EXPORTS_BUCKET } from '../exports';
 import {
+  PERSONAL_DATA_EXPORT_MAX_EXECUTION_MS,
+  PERSONAL_DATA_EXPORT_MAX_QUEUE_MS,
+  PERSONAL_DATA_EXPORT_MAX_RUN_MS,
   personalDataExportCacheKey,
   personalDataExportFileName,
   personalDataExportFilePath,
@@ -55,5 +58,22 @@ describe('personalDataExportFileName', () => {
     expect(
       personalDataExportFilePath('user-1', personalDataExportFileName()),
     ).toMatch(/^[a-zA-Z0-9!\-_.*'()/]+$/);
+  });
+});
+
+describe('personal data export run timeouts', () => {
+  it('end the run before the claim expires', () => {
+    expect(
+      PERSONAL_DATA_EXPORT_MAX_QUEUE_MS + PERSONAL_DATA_EXPORT_MAX_EXECUTION_MS,
+    ).toBeLessThan(PERSONAL_DATA_EXPORT_MAX_RUN_MS);
+  });
+
+  it('are whole seconds, as Inngest durations need', () => {
+    expect(Number.isInteger(PERSONAL_DATA_EXPORT_MAX_QUEUE_MS / 1000)).toBe(
+      true,
+    );
+    expect(Number.isInteger(PERSONAL_DATA_EXPORT_MAX_EXECUTION_MS / 1000)).toBe(
+      true,
+    );
   });
 });

@@ -1,4 +1,6 @@
 import {
+  PERSONAL_DATA_EXPORT_MAX_EXECUTION_MS,
+  PERSONAL_DATA_EXPORT_MAX_QUEUE_MS,
   collectPersonalData,
   holdActivePersonalDataExport,
   personalDataExportCacheKey,
@@ -19,6 +21,11 @@ export const exportPersonalData = inngest.createFunction(
     id: 'exportPersonalData',
     // one run per user; the request reuses a running export's id
     singleton: { key: 'event.data.userId', mode: 'skip' },
+    // A skipped request stays pending, so the slot must free up before the claim expires.
+    timeouts: {
+      start: `${PERSONAL_DATA_EXPORT_MAX_QUEUE_MS / 1000}s`,
+      finish: `${PERSONAL_DATA_EXPORT_MAX_EXECUTION_MS / 1000}s`,
+    },
   },
   { event: personalDataExportRequested.name },
   async ({ event, step }) => {
