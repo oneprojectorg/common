@@ -37,7 +37,7 @@ table.
 | --- | --- |
 | `organizations` | `profile_id` |
 | `users` | `profile_id` (the individual), `current_profile_id` (the profile the user acts as) |
-| `decision_process_instances` | `profile_id` (its own), `owner_profile_id` (the creator's individual profile), `steward_profile_id` (the profile the creator acted as) |
+| `decision_process_instances` | `profile_id` (its own), `owner_profile_id` (the creator's individual profile), `steward_profile_id` (the profile that runs it) |
 | `proposals` | `profile_id` (its own), `submitted_by_profile_id` |
 
 A membership is a `profile_users` row (`auth_user_id`, `profile_id`,
@@ -114,7 +114,8 @@ both. Only a platform admin may call either.
 `createDecisionInstance` creates the profile, the instance, the two scoped
 roles and the creator's membership in one transaction. The creator gets a
 `profile_users` row with `is_owner` and the decision's scoped `Admin` role. `owner_profile_id` is their individual
-profile and `steward_profile_id` is the profile they acted as. `createProposal`
+profile. `steward_profile_id` is the profile they acted as, unless the
+create path names another, as `duplicateInstance` does. `createProposal`
 does the same for a proposal: the creator gets a `profile_users` row with
 `is_owner` and the global `Admin` role on the proposal's profile. A co-author accepts a proposal
 invite, which `acceptProposalInvite` turns into a `profile_users` row on the
@@ -149,7 +150,7 @@ writes in the table below check the decision's profile only.
 | Change the steward | owner | `profile: ADMIN` | no |
 | Edit proposal content | proposal, then decision | `profile: UPDATE` on the proposal, or `decisions: UPDATE` on the decision | no |
 | Change proposal status or visibility | decision | `decisions: ADMIN` | no |
-| Delete a proposal | proposal and decision | submitter, `profile: ADMIN` on the proposal, or `decisions: ADMIN` on the decision | no |
+| Delete a proposal | proposal and decision | the caller whose current profile submitted it, `profile: ADMIN` on the proposal, or `decisions: ADMIN` on the decision | no |
 
 A draft, hidden or flagged proposal is hidden with `NotFoundError`. A draft
 is visible only to members of the proposal's profile, decision admins
@@ -161,16 +162,18 @@ phase to allow them, a decision admin, or an open revision request.
 
 A grant lookup is memoized per request and cached durably, keyed by the
 profile and the resolved id set. Every write that changes a membership, a
-role or a permission row invalidates it: `invalidateProfileUserAccessCache`
-for one member, `invalidateProfileUserCacheForRole` for a role,
-`invalidateProfileUserCacheForProfile` for a profile, sentinel included.
+role or a permission row invalidates the durable cache:
+`invalidateProfileUserCacheForRole` for a role,
+`invalidateProfileUserCacheForProfile` for a profile, sentinel included, and
+`invalidateProfileUserAccessCache` for one member, which also clears the
+per-request memo.
 
 The server computes what the client may do, as `access`, a boolean per bit.
 `getInstance` returns all true for a `profile: ADMIN` on the decision,
 otherwise the union of the roles' `decisions` bits, from the organization's
-roles when the caller has no row on the decision. `getProposal` reads the
-proposal's own profile: its `decisions` bits, `admin` when the caller is a
-`profile: ADMIN` there, and `submitProposals` also when the caller may
+roles when the caller has no row on the decision. `getPermissionsOnProposal` reads
+the proposal's own profile: its `decisions` bits, `admin` when the caller is
+a `profile: ADMIN` there, and `submitProposals` also when the caller may
 comment on the decision. Decision and proposal pages read `access`.
 Organization and profile pages, and the process builder, read
 `getPermissionsForProfile` from `UserProvider`, which `<AccessBoundary>`
@@ -180,15 +183,17 @@ wraps; it knows `profile_users` and `organization_users` rows, nothing else.
 
 - One membership mechanism covers a decision and a proposal, and a decision
   can define its own roles.
-- Public access is a grant on one profile, so it is listed, revoked and
-  cached like any other, and it never widens another decision.
+- Public access is a grant on one profile, so it is revoked and cached like
+  any other, and it never widens another decision. Member lists hide the
+  sentinel row.
 - A proposal has a member list of its own, so a draft is visible to its
   co-authors and to nobody else, decision admins included. Accepting a
   proposal invite also makes the co-author a member of the decision.
-- The organization fallback admits an organization admin with no row on a
-  decision's profile to reads, proposal creation, likes and follows, review
-  assignment and exports. It does not admit them to comments, submission,
-  voting, phase changes, or editing and deleting the decision or a proposal.
+- The organization fallback reaches every service that uses
+  `assertInstanceProfileAccess`: reads, proposal creation, likes and
+  follows, review management, exports, custom forms, translation and
+  moderation. The lifecycle writes in the table deny an organization admin
+  with no row on the decision's profile.
 - The fallback works only when `owner_profile_id` is an organization's
   profile. A decision created today owns an individual profile there, so
   only older, organization-owned decisions reach it.
@@ -200,6 +205,7 @@ wraps; it knows `profile_users` and `organization_users` rows, nothing else.
   lookup on an organization's profile needs the fallback helper, or it sees
   nobody.
 - Invalidation is manual. A write that changes a grant and skips it serves
-  the old roles until the cache expires.
+  the old roles until the cache expires, and only the per-member helper
+  clears the per-request memo.
 - `organization/relationships.ts` still treats every organization member as
   an admin, marked as a TODO.
