@@ -48,6 +48,19 @@ We will store notifications in four tables.
 - `notification_deliveries` — an append-only log of per-channel
   attempts, keyed back from provider webhooks by `provider_message_id`.
 
+A service emits an event by writing the outbox row inside its own
+transaction, in place of calling `inngest.send`:
+
+```ts
+await db.transaction(async (tx) => {
+  const [proposal] = await tx.insert(proposals).values(input).returning();
+  await tx.insert(eventOutbox).values({
+    eventName: Events.proposalSubmitted.name,
+    payload: { proposalId: proposal.id, actorProfileId: profile.id },
+  });
+});
+```
+
 One Inngest function per event consumes the outbox row and writes the
 remaining three tables:
 
