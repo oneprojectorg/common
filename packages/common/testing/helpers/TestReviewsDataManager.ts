@@ -161,6 +161,7 @@ export class TestReviewsDataManager {
             review: true,
             submitProposals: false,
             vote: false,
+            developProposals: false,
           },
         },
       },

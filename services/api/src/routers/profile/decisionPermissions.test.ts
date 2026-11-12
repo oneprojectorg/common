@@ -14,6 +14,7 @@ describe('decisionPermission constants', () => {
     expect(decisionPermission.REVIEW).toBe(64);
     expect(decisionPermission.SUBMIT_PROPOSALS).toBe(128);
     expect(decisionPermission.VOTE).toBe(256);
+    expect(decisionPermission.DEVELOP_PROPOSALS).toBe(512);
   });
 
   it('should not overlap with CRUD bits', () => {
@@ -21,7 +22,8 @@ describe('decisionPermission constants', () => {
       decisionPermission.INVITE_MEMBERS |
       decisionPermission.REVIEW |
       decisionPermission.SUBMIT_PROPOSALS |
-      decisionPermission.VOTE;
+      decisionPermission.VOTE |
+      decisionPermission.DEVELOP_PROPOSALS;
 
     // No overlap with CRUD mask (bits 0–3)
     expect(allDecisionBits & CRUD_BITS_MASK).toBe(0);
@@ -40,6 +42,7 @@ describe('toDecisionBitField', () => {
       review: false,
       submitProposals: false,
       vote: false,
+      developProposals: false,
     };
     expect(toDecisionBitField(caps)).toBe(0);
   });
@@ -56,6 +59,7 @@ describe('toDecisionBitField', () => {
         review: false,
         submitProposals: false,
         vote: false,
+        developProposals: false,
       }),
     ).toBe(permission.ADMIN);
   });
@@ -72,6 +76,7 @@ describe('toDecisionBitField', () => {
         review: false,
         submitProposals: false,
         vote: false,
+        developProposals: false,
       }),
     ).toBe(decisionPermission.INVITE_MEMBERS);
 
@@ -86,6 +91,7 @@ describe('toDecisionBitField', () => {
         review: true,
         submitProposals: false,
         vote: false,
+        developProposals: false,
       }),
     ).toBe(decisionPermission.REVIEW);
 
@@ -100,6 +106,7 @@ describe('toDecisionBitField', () => {
         review: false,
         submitProposals: true,
         vote: false,
+        developProposals: false,
       }),
     ).toBe(decisionPermission.SUBMIT_PROPOSALS);
 
@@ -114,8 +121,24 @@ describe('toDecisionBitField', () => {
         review: false,
         submitProposals: false,
         vote: true,
+        developProposals: false,
       }),
     ).toBe(decisionPermission.VOTE);
+
+    expect(
+      toDecisionBitField({
+        delete: false,
+        update: false,
+        read: false,
+        create: false,
+        admin: false,
+        inviteMembers: false,
+        review: false,
+        submitProposals: false,
+        vote: false,
+        developProposals: true,
+      }),
+    ).toBe(decisionPermission.DEVELOP_PROPOSALS);
   });
 
   it('should combine all bits correctly', () => {
@@ -129,6 +152,7 @@ describe('toDecisionBitField', () => {
       review: true,
       submitProposals: true,
       vote: true,
+      developProposals: true,
     };
     expect(toDecisionBitField(caps)).toBe(
       permission.DELETE |
@@ -139,7 +163,8 @@ describe('toDecisionBitField', () => {
         decisionPermission.INVITE_MEMBERS |
         decisionPermission.REVIEW |
         decisionPermission.SUBMIT_PROPOSALS |
-        decisionPermission.VOTE,
+        decisionPermission.VOTE |
+        decisionPermission.DEVELOP_PROPOSALS,
     );
   });
 
@@ -154,6 +179,7 @@ describe('toDecisionBitField', () => {
       review: true,
       submitProposals: false,
       vote: true,
+      developProposals: false,
     };
     expect(toDecisionBitField(caps)).toBe(
       decisionPermission.INVITE_MEMBERS |
@@ -175,6 +201,7 @@ describe('fromDecisionBitField', () => {
       review: false,
       submitProposals: false,
       vote: false,
+      developProposals: false,
     });
   });
 
@@ -188,7 +215,8 @@ describe('fromDecisionBitField', () => {
       decisionPermission.INVITE_MEMBERS |
       decisionPermission.REVIEW |
       decisionPermission.SUBMIT_PROPOSALS |
-      decisionPermission.VOTE;
+      decisionPermission.VOTE |
+      decisionPermission.DEVELOP_PROPOSALS;
 
     expect(fromDecisionBitField(allBits)).toEqual({
       delete: true,
@@ -200,6 +228,7 @@ describe('fromDecisionBitField', () => {
       review: true,
       submitProposals: true,
       vote: true,
+      developProposals: true,
     });
   });
 
@@ -221,6 +250,7 @@ describe('fromDecisionBitField', () => {
       review: true,
       submitProposals: false,
       vote: true,
+      developProposals: false,
     });
   });
 
@@ -238,6 +268,7 @@ describe('fromDecisionBitField', () => {
       review: true,
       submitProposals: false,
       vote: false,
+      developProposals: false,
     });
   });
 
@@ -252,11 +283,28 @@ describe('fromDecisionBitField', () => {
       review: true,
       submitProposals: false,
       vote: true,
+      developProposals: true,
     };
 
     const bitfield = toDecisionBitField(original);
     const roundTripped = fromDecisionBitField(bitfield);
 
     expect(roundTripped).toEqual(original);
+  });
+
+  it('should read the Develop Proposals bit alone and leave CRUD bits clear', () => {
+    expect(decisionPermission.DEVELOP_PROPOSALS & CRUD_BITS_MASK).toBe(0);
+    expect(fromDecisionBitField(decisionPermission.DEVELOP_PROPOSALS)).toEqual({
+      delete: false,
+      update: false,
+      read: false,
+      create: false,
+      admin: false,
+      inviteMembers: false,
+      review: false,
+      submitProposals: false,
+      vote: false,
+      developProposals: true,
+    });
   });
 });

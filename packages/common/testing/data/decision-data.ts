@@ -544,8 +544,8 @@ export async function makeDecisionPublic(
 /**
  * Bit values duplicated from access-zones / @op/common so this package pulls in
  * no server-only deps at runtime: ACRUD bits 0–4 (DELETE 1, UPDATE 2, READ 4,
- * CREATE 8, ADMIN 16) plus the decision bits 5–8 (INVITE_MEMBERS 32, REVIEW 64,
- * SUBMIT_PROPOSALS 128, VOTE 256).
+ * CREATE 8, ADMIN 16) plus the decision bits 5–9 (INVITE_MEMBERS 32, REVIEW 64,
+ * SUBMIT_PROPOSALS 128, VOTE 256, DEVELOP_PROPOSALS 512).
  */
 export const TEST_PERMISSION_BITS = {
   DELETE: 1,
@@ -557,6 +557,7 @@ export const TEST_PERMISSION_BITS = {
   REVIEW: 64,
   SUBMIT_PROPOSALS: 128,
   VOTE: 256,
+  DEVELOP_PROPOSALS: 512,
 } as const;
 
 export interface GrantInstanceRoleOptions {

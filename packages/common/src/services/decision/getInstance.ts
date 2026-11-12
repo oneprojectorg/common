@@ -32,6 +32,7 @@ const ALL_TRUE_ACCESS: DecisionRolePermissions = {
   review: true,
   submitProposals: true,
   vote: true,
+  developProposals: true,
 };
 
 const getRolesDecisionBits = (roles: NormalizedRole[]): number =>

@@ -2,7 +2,7 @@ import { decisionPermission } from '@op/common';
 import { TestProfileUserDataManager } from '@op/common/testing';
 import { db } from '@op/db/client';
 import { accessRolePermissionsOnAccessZones, accessRoles } from '@op/db/schema';
-import { fromBitField } from 'access-zones';
+import { fromBitField, permission as acrudPermission } from 'access-zones';
 import { and, eq } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 
@@ -59,6 +59,7 @@ describe.concurrent('profile.decisionRoles', () => {
       review: false,
       submitProposals: false,
       vote: false,
+      developProposals: false,
     });
   });
 
@@ -102,6 +103,7 @@ describe.concurrent('profile.decisionRoles', () => {
         review: true,
         submitProposals: true,
         vote: false,
+        developProposals: false,
       },
     });
 
@@ -116,6 +118,7 @@ describe.concurrent('profile.decisionRoles', () => {
       review: true,
       submitProposals: true,
       vote: false,
+      developProposals: false,
     });
 
     // Verify the capabilities can be retrieved — read is true because updateDecisionRoles always forces READ
@@ -134,6 +137,7 @@ describe.concurrent('profile.decisionRoles', () => {
       review: true,
       submitProposals: true,
       vote: false,
+      developProposals: false,
     });
   });
 
@@ -176,6 +180,7 @@ describe.concurrent('profile.decisionRoles', () => {
         review: true,
         submitProposals: false,
         vote: true,
+        developProposals: false,
       },
     });
 
@@ -205,6 +210,85 @@ describe.concurrent('profile.decisionRoles', () => {
     expect(
       permission!.permission & decisionPermission.SUBMIT_PROPOSALS,
     ).toBeFalsy();
+  });
+
+  it('should save and read back the Develop Proposals permission', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestProfileUserDataManager(task.id, onTestFinished);
+    const { profile, adminUser } = await testData.createProfile({
+      users: { admin: 1 },
+    });
+
+    const [customRole] = await db
+      .insert(accessRoles)
+      .values({
+        name: `Decision Cap Role ${task.id}`,
+        description: 'A custom role for Develop Proposals testing',
+        profileId: profile.id,
+      })
+      .returning();
+
+    onTestFinished(async () => {
+      if (customRole) {
+        await db.delete(accessRoles).where(eq(accessRoles.id, customRole.id));
+      }
+    });
+
+    const { session } = await createIsolatedSession(adminUser.email);
+    const caller = createCaller(await createTestContextWithSession(session));
+
+    await caller.updateDecisionRoles({
+      roleId: customRole!.id,
+      decisionPermissions: {
+        delete: false,
+        update: false,
+        read: false,
+        create: false,
+        admin: false,
+        inviteMembers: false,
+        review: true,
+        submitProposals: false,
+        vote: false,
+        developProposals: true,
+      },
+    });
+
+    const result = await caller.getDecisionRole({
+      roleId: customRole!.id,
+      profileId: profile.id,
+    });
+
+    // read is true because updateDecisionRoles always forces READ
+    expect(result).toEqual({
+      delete: false,
+      update: false,
+      read: true,
+      create: false,
+      admin: false,
+      inviteMembers: false,
+      review: true,
+      submitProposals: false,
+      vote: false,
+      developProposals: true,
+    });
+
+    const decisionsZone = await db.query.accessZones.findFirst({
+      where: { name: 'decisions' },
+    });
+    const row = await db.query.accessRolePermissionsOnAccessZones.findFirst({
+      where: {
+        accessRoleId: customRole!.id,
+        accessZoneId: decisionsZone!.id,
+      },
+    });
+
+    expect(row?.permission).toBe(
+      decisionPermission.DEVELOP_PROPOSALS |
+        decisionPermission.REVIEW |
+        acrudPermission.READ,
+    );
   });
 
   it('should not allow non-admin to update decision capabilities', async ({
@@ -247,6 +331,7 @@ describe.concurrent('profile.decisionRoles', () => {
           review: true,
           submitProposals: true,
           vote: true,
+          developProposals: false,
         },
       }),
     ).rejects.toSatisfy(
@@ -289,6 +374,7 @@ describe.concurrent('profile.decisionRoles', () => {
           review: false,
           submitProposals: false,
           vote: false,
+          developProposals: false,
         },
       }),
     ).rejects.toMatchObject({
@@ -336,6 +422,7 @@ describe.concurrent('profile.decisionRoles', () => {
         review: true,
         submitProposals: true,
         vote: true,
+        developProposals: true,
       },
     });
 
@@ -352,6 +439,7 @@ describe.concurrent('profile.decisionRoles', () => {
         review: false,
         submitProposals: false,
         vote: false,
+        developProposals: false,
       },
     });
 
@@ -371,6 +459,7 @@ describe.concurrent('profile.decisionRoles', () => {
       review: false,
       submitProposals: false,
       vote: false,
+      developProposals: false,
     });
 
     // Verify only one permission entry exists (not duplicated)
@@ -434,6 +523,7 @@ describe.concurrent('profile.decisionRoles', () => {
         review: false,
         submitProposals: false,
         vote: false,
+        developProposals: false,
       },
     });
 
@@ -502,6 +592,7 @@ describe.concurrent('profile.decisionRoles', () => {
           review: true,
           submitProposals: true,
           vote: true,
+          developProposals: false,
         },
       }),
     ).rejects.toSatisfy(

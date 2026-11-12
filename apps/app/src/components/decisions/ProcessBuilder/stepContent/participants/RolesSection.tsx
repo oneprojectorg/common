@@ -62,6 +62,7 @@ const PERMISSION_COLUMNS = [
   { key: 'inviteMembers', label: 'Invite Members' },
   { key: 'review', label: 'Review' },
   { key: 'submitProposals', label: 'Submit Proposals' },
+  { key: 'developProposals', label: 'Develop Proposals' },
   { key: 'vote', label: 'Vote' },
 ] as const;
 
@@ -77,6 +78,7 @@ const DEFAULT_DECISION_PERMISSIONS: DecisionRolePermissions = {
   review: false,
   submitProposals: false,
   vote: false,
+  developProposals: false,
 };
 
 function useNewRolePermissions() {
