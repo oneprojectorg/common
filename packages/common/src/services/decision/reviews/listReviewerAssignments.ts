@@ -14,13 +14,13 @@ import { withAccountContact } from '../../profile/withAccountContact';
 import { getEligibleReviewerProfileIds } from '../getEligibleReviewerProfileIds';
 import { getInstance } from '../getInstance';
 import { listAssignmentsForReviewer } from '../listReviewAssignments';
-import { reviewerQueuePredicate } from '../phaseEligibility';
 import type { InstancePhaseRef } from '../schemas/instance';
 import {
   type ReviewerAssignments,
   reviewerAssignmentsSchema,
 } from '../schemas/reviewAssignments';
 import { assertInstancePhase } from '../utils/instance';
+import { reviewerQueuePredicate } from './assignmentEligibility';
 import { openAssignmentFilter } from './phaseReviewerRollup';
 
 interface ReviewerQueueTotals {

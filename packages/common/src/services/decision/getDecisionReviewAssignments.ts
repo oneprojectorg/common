@@ -9,10 +9,10 @@ import { getEligibleReviewerProfileIds } from './getEligibleReviewerProfileIds';
 import { getProposalDocumentsContent } from './getProposalDocumentsContent';
 import { getProposalIdsForPhase } from './getProposalsForPhase';
 import { getCategoriesByProposalIds } from './listProposalsWithReviewAggregates';
-import { reviewSetPredicate } from './phaseEligibility';
 import { type BudgetData, parseProposalData } from './proposalDataSchema';
 import { buildProposalListPreview } from './proposalListPreview';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
+import { eligibleAssignmentPredicate } from './reviews/assignmentEligibility';
 import {
   type AdminDecisionReviewAssignments,
   adminDecisionReviewAssignmentsSchema,
@@ -97,7 +97,7 @@ export async function getDecisionReviewAssignments({
           // also keeps deleted and moderation-detached proposals, which even
           // admins cannot reach, out of this view.
           RAW: (table) =>
-            reviewSetPredicate(table, {
+            eligibleAssignmentPredicate(table, {
               processInstanceId: instanceId,
               phaseId,
             }),

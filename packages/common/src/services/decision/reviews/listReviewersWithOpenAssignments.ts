@@ -2,7 +2,7 @@ import { db } from '@op/db/client';
 import { proposalReviewAssignments } from '@op/db/schema';
 import { and, asc, count, inArray } from 'drizzle-orm';
 
-import { reviewSetPredicate } from '../phaseEligibility';
+import { eligibleAssignmentPredicate } from './assignmentEligibility';
 import { openAssignmentFilter } from './phaseReviewerRollup';
 
 export interface ReviewerWithOpenAssignments {
@@ -32,7 +32,7 @@ export async function listReviewersWithOpenAssignments({
     .where(
       and(
         // A proposal outside the phase's pool earns no reminder.
-        reviewSetPredicate(proposalReviewAssignments, {
+        eligibleAssignmentPredicate(proposalReviewAssignments, {
           processInstanceId,
           phaseId,
         }),

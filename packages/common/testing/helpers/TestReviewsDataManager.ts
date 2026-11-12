@@ -402,7 +402,7 @@ export class TestReviewsDataManager {
   /**
    * Gives `reviewer` two assignments on a proposal merged into
    * `targetProposalId`: one pending, one completed with a submitted review.
-   * Neither belongs to the phase's review set, so no read should count them.
+   * Neither is an eligible assignment, so no read should count them.
    */
   async createMergedAwayAssignments({
     context,

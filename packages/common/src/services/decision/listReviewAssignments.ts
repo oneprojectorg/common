@@ -28,7 +28,6 @@ import { generateProposalHtml } from './generateProposalHtml';
 import { getInstance } from './getInstance';
 import { getProposalDocumentsContent } from './getProposalDocumentsContent';
 import { decisionPermission } from './permissions';
-import { reviewerQueuePredicate } from './phaseEligibility';
 import { getCurrentProposalHistoryIds } from './proposal/history';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
 import { isReviewOutOfDate } from './review/staleness';
@@ -38,6 +37,7 @@ import {
   resolveAssignmentProposal,
   reviewAssignmentWithConfig,
 } from './reviewHelpers';
+import { reviewerQueuePredicate } from './reviews/assignmentEligibility';
 import {
   type ReviewAssignmentList,
   type ReviewAssignmentSort,

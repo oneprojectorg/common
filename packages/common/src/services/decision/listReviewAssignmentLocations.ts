@@ -7,12 +7,12 @@ import { CommonError, UnauthorizedError } from '../../utils';
 import { assertProfileAccess, assertUserByAuthId } from '../assert';
 import { getInstance } from './getInstance';
 import { decisionPermission } from './permissions';
-import { reviewerQueuePredicate } from './phaseEligibility';
 import {
   projectProposalLocation,
   proposalLocationColumns,
   proposalLocationWith,
 } from './projectProposalLocation';
+import { reviewerQueuePredicate } from './reviews/assignmentEligibility';
 import {
   type ProposalLocations,
   proposalLocationsSchema,

@@ -24,10 +24,10 @@ import {
 } from '@op/db/schema';
 
 import { toAccountContact } from '../../profile/schemas/accountContact';
-import { reviewSetPredicate } from '../phaseEligibility';
 import type { ReviewerStatus } from '../schemas/reviewAssignments';
 import type { EligibleReviewerSchema } from '../schemas/reviews';
 import { escapeLikePattern, splitSearchWords } from '../utils/search';
+import { eligibleAssignmentPredicate } from './assignmentEligibility';
 
 export type PhaseReviewerRollup = ReturnType<typeof buildPhaseReviewerRollup>;
 
@@ -60,10 +60,13 @@ export function buildPhaseReviewerRollup({
   const draftCount = sql`count(*) filter (where ${proposalReviews.state} = ${ProposalReviewState.DRAFT})`;
   const remainingCount = sql`count(*) filter (where ${openAssignmentFilter()})`;
   // The set each reviewer's own list draws from, so the rows match it.
-  const inPhaseReviewSet = reviewSetPredicate(proposalReviewAssignments, {
-    processInstanceId,
-    phaseId,
-  });
+  const eligibleAssignments = eligibleAssignmentPredicate(
+    proposalReviewAssignments,
+    {
+      processInstanceId,
+      phaseId,
+    },
+  );
 
   const account = db
     .select({ email: ownerAuthUsers.email, phone: ownerAuthUsers.phone })
@@ -119,7 +122,7 @@ export function buildPhaseReviewerRollup({
         proposalReviewAssignments,
         and(
           eq(proposalReviewAssignments.reviewerProfileId, profiles.id),
-          inPhaseReviewSet,
+          eligibleAssignments,
         ),
       )
       .leftJoin(
@@ -140,7 +143,7 @@ export function buildPhaseReviewerRollup({
               .where(
                 and(
                   eq(proposalReviewAssignments.reviewerProfileId, profiles.id),
-                  inPhaseReviewSet,
+                  eligibleAssignments,
                 ),
               ),
           ),

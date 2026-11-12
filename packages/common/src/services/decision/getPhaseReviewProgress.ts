@@ -10,7 +10,7 @@ import { UnauthorizedError } from '../../utils';
 import { assertProfileAccess } from '../assert';
 import { getInstance } from './getInstance';
 import { getProposalIdsForPhase } from './getProposalsForPhase';
-import { reviewSetPredicate } from './phaseEligibility';
+import { eligibleAssignmentPredicate } from './reviews/assignmentEligibility';
 import type { InstancePhaseRef } from './schemas/instance';
 import type { PhaseInstanceData } from './schemas/instanceData';
 import type { PhaseReviewProgress } from './schemas/reviews';
@@ -83,7 +83,7 @@ async function getAssignedReviewerCounts({
     })
     .from(proposalReviewAssignments)
     .where(
-      reviewSetPredicate(proposalReviewAssignments, {
+      eligibleAssignmentPredicate(proposalReviewAssignments, {
         processInstanceId,
         phaseId,
       }),
@@ -95,9 +95,9 @@ async function getAssignedReviewerCounts({
   };
 }
 
-// A proposal counts as reviewed once it has ≥1 COMPLETED assignment. The
-// review set is the phase's pool, so this shares its rule with
-// `proposalsTotalCount`.
+// A proposal counts as reviewed once it has ≥1 COMPLETED eligible
+// assignment. Eligible assignments are on the phase's pool, so this shares
+// its rule with `proposalsTotalCount`.
 async function getReviewedProposalsCount({
   processInstanceId,
   phaseId,
@@ -112,7 +112,7 @@ async function getReviewedProposalsCount({
     .from(proposalReviewAssignments)
     .where(
       and(
-        reviewSetPredicate(proposalReviewAssignments, {
+        eligibleAssignmentPredicate(proposalReviewAssignments, {
           processInstanceId,
           phaseId,
         }),
