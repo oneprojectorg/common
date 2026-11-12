@@ -83,3 +83,4 @@ what it decided.
 - [0016. Define Drizzle relations once with the v2 API](./0016-define-drizzle-relations-once-with-the-v2-api.md)
 - [0017. Fetch client data with suspense queries inside error boundaries](./0017-fetch-client-data-with-suspense-queries-inside-error-boundaries.md)
 - [0018. Log through `@op/logging`, never the console](./0018-log-through-op-logging-never-the-console.md)
+- [0019. Record the template a proposal is written under](./0019-record-the-template-a-proposal-is-written-under.md)
