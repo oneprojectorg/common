@@ -9,7 +9,7 @@ import { randomUUID } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 
 import { UnauthorizedError, ValidationError } from '../../utils';
-import { assertProposalsAllowed } from './assertProposalsAllowed';
+import { assertProposalDevelopAccess } from './assertProposalDevelopAccess';
 import { createDecisionRole } from './decisionRoles';
 import type { DecisionInstanceData } from './schemas/instanceData';
 
@@ -31,7 +31,7 @@ type CreatedInstance = Setup['instances'][number];
 function withProposalRules(
   created: CreatedInstance,
   proposals: ProposalRules,
-): Parameters<typeof assertProposalsAllowed>[0]['instance'] {
+): Parameters<typeof assertProposalDevelopAccess>[0]['instance'] {
   const { instance } = created;
   return {
     id: instance.id,
@@ -151,7 +151,7 @@ async function expectNoPhaseAssignment(attempt: Promise<void>) {
   );
 }
 
-describe.concurrent('assertProposalsAllowed in a develop phase', () => {
+describe.concurrent('assertProposalDevelopAccess', () => {
   it('allows a caller with Review and a row for the phase', async ({
     task,
     onTestFinished,
@@ -176,7 +176,7 @@ describe.concurrent('assertProposalsAllowed in a develop phase', () => {
     });
 
     await expect(
-      assertProposalsAllowed({
+      assertProposalDevelopAccess({
         instance: withProposalRules(setup.instance, DEVELOP_RULES),
         phaseId: PHASE_ID,
         user: { id: member.authUserId },
@@ -208,7 +208,7 @@ describe.concurrent('assertProposalsAllowed in a develop phase', () => {
     });
 
     await expect(
-      assertProposalsAllowed({
+      assertProposalDevelopAccess({
         instance: withProposalRules(setup.instance, DEVELOP_RULES),
         phaseId: PHASE_ID,
         user: { id: member.authUserId },
@@ -224,7 +224,7 @@ describe.concurrent('assertProposalsAllowed in a develop phase', () => {
     });
 
     await expect(
-      assertProposalsAllowed({
+      assertProposalDevelopAccess({
         instance: withProposalRules(setup.instance, DEVELOP_RULES),
         phaseId: PHASE_ID,
         user: { id: setup.user.id },
@@ -251,7 +251,7 @@ describe.concurrent('assertProposalsAllowed in a develop phase', () => {
     });
 
     await expect(
-      assertProposalsAllowed({
+      assertProposalDevelopAccess({
         instance: withProposalRules(setup.instance, DEVELOP_RULES),
         phaseId: PHASE_ID,
         user: { id: member.authUserId },
@@ -288,7 +288,7 @@ describe.concurrent('assertProposalsAllowed in a develop phase', () => {
       }
 
       await expectNoPhaseAssignment(
-        assertProposalsAllowed({
+        assertProposalDevelopAccess({
           instance: withProposalRules(setup.instance, DEVELOP_RULES),
           phaseId: PHASE_ID,
           user: { id: member.authUserId },
@@ -325,7 +325,7 @@ describe.concurrent('assertProposalsAllowed in a develop phase', () => {
     });
 
     await expectNoPhaseAssignment(
-      assertProposalsAllowed({
+      assertProposalDevelopAccess({
         instance: withProposalRules(setup.instance, DEVELOP_RULES),
         phaseId: PHASE_ID,
         user: { id: member.authUserId },
@@ -333,31 +333,28 @@ describe.concurrent('assertProposalsAllowed in a develop phase', () => {
     );
   });
 
-  it.for([
-    { name: 'submit is missing', rules: { develop: true } },
-    { name: 'submit is true', rules: { develop: true, submit: true } },
-  ])(
-    'refuses a participant without Review with ValidationError when $name',
-    async ({ rules }, { task, onTestFinished }) => {
-      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-      const setup = await testData.createDecisionSetup({
-        instanceCount: 1,
-        grantAccess: true,
-      });
-      const participant = await testData.createMemberUser({
-        organization: setup.organization,
-        instanceProfileIds: [setup.instance.profileId],
-      });
+  it('refuses a participant without Review with ValidationError', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const participant = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [setup.instance.profileId],
+    });
 
-      await expectNotAllowed(
-        assertProposalsAllowed({
-          instance: withProposalRules(setup.instance, rules),
-          phaseId: PHASE_ID,
-          user: { id: participant.authUserId },
-        }),
-      );
-    },
-  );
+    await expectNotAllowed(
+      assertProposalDevelopAccess({
+        instance: withProposalRules(setup.instance, DEVELOP_RULES),
+        phaseId: PHASE_ID,
+        user: { id: participant.authUserId },
+      }),
+    );
+  });
 
   it('refuses an admin of the owning organization with no role on the instance profile', async ({
     task,
@@ -374,7 +371,7 @@ describe.concurrent('assertProposalsAllowed in a develop phase', () => {
     });
 
     await expectNotAllowed(
-      assertProposalsAllowed({
+      assertProposalDevelopAccess({
         instance: withProposalRules(setup.instance, DEVELOP_RULES),
         phaseId: PHASE_ID,
         user: { id: orgAdmin.authUserId },
@@ -393,70 +390,13 @@ describe.concurrent('assertProposalsAllowed in a develop phase', () => {
     });
 
     await expectNotAllowed(
-      assertProposalsAllowed({
+      assertProposalDevelopAccess({
         instance: {
           ...withProposalRules(setup.instance, DEVELOP_RULES),
           profileId: null,
         },
         phaseId: PHASE_ID,
         user: { id: setup.user.id },
-      }),
-    );
-  });
-});
-
-describe.concurrent('assertProposalsAllowed outside a develop phase', () => {
-  it('allows a participant when the submit rule is missing', async ({
-    task,
-    onTestFinished,
-  }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const setup = await testData.createDecisionSetup({
-      instanceCount: 1,
-      grantAccess: true,
-    });
-    const participant = await testData.createMemberUser({
-      organization: setup.organization,
-      instanceProfileIds: [setup.instance.profileId],
-    });
-
-    await expect(
-      assertProposalsAllowed({
-        instance: withProposalRules(setup.instance, {}),
-        phaseId: PHASE_ID,
-        user: { id: participant.authUserId },
-      }),
-    ).resolves.toBeUndefined();
-  });
-
-  it('refuses a caller with Review and a row for the phase when submit is false', async ({
-    task,
-    onTestFinished,
-  }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const setup = await testData.createDecisionSetup({
-      instanceCount: 1,
-      grantAccess: true,
-    });
-    const member = await createMemberWithRole({
-      testData,
-      setup,
-      review: true,
-      submitProposals: true,
-      testId: task.id,
-    });
-    await createReviewerRow({
-      processInstanceId: setup.instance.instance.id,
-      reviewerProfileId: member.profileId,
-      phaseId: PHASE_ID,
-      onTestFinished,
-    });
-
-    await expectNotAllowed(
-      assertProposalsAllowed({
-        instance: withProposalRules(setup.instance, { submit: false }),
-        phaseId: PHASE_ID,
-        user: { id: member.authUserId },
       }),
     );
   });

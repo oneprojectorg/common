@@ -1141,6 +1141,12 @@ describe.concurrent('submitProposal', () => {
     if (!record) {
       throw new Error('Instance not found');
     }
+    // Create refuses in a develop phase, so the draft exists before the switch.
+    const draft = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: instanceId,
+      proposalData: { title: 'Develop phase proposal' },
+    });
     const instanceData = record.instanceData as DecisionInstanceData;
     await db
       .update(processInstances)
@@ -1211,11 +1217,6 @@ describe.concurrent('submitProposal', () => {
       taxonomyTermId: termId,
       reviewerProfileId: reviewer.profileId,
       phaseId: 'initial',
-    });
-    const draft = await testData.createProposal({
-      userEmail: reviewer.email,
-      processInstanceId: instanceId,
-      proposalData: { title: 'Develop phase proposal' },
     });
     const caller = await createAuthenticatedCaller(reviewer.email);
 

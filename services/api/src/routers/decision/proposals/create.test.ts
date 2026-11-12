@@ -1,20 +1,15 @@
 import { cache } from '@op/cache';
-import { type DecisionInstanceData, createDecisionRole } from '@op/common';
+import type { DecisionInstanceData } from '@op/common';
 import {
   TestDecisionsDataManager,
-  createCategoryReviewer,
   ensureProposalCategoryTerms,
 } from '@op/common/testing';
 import {
   ProposalStatus,
-  Visibility,
   processInstances,
-  profileUsers,
   proposalCategories,
-  taxonomyTerms,
 } from '@op/db/schema';
 import { db, eq } from '@op/db/test';
-import { randomUUID } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
@@ -105,7 +100,7 @@ describe.concurrent('createProposal', () => {
     expect(links).toEqual([{ taxonomyTermId: knownTerm.taxonomyTermId }]);
   });
 
-  it('lets a caller with Review and a row for the develop phase create without the Submit bit, hidden by the phase default', async ({
+  it('refuses create in a develop phase, even for an admin', async ({
     task,
     onTestFinished,
   }) => {
@@ -115,7 +110,6 @@ describe.concurrent('createProposal', () => {
       grantAccess: true,
     });
     const instanceId = setup.instance.instance.id;
-    const instanceProfileId = setup.instance.profileId;
     const record = await db.query.processInstances.findFirst({
       where: { id: instanceId },
     });
@@ -134,11 +128,7 @@ describe.concurrent('createProposal', () => {
                   ...phase,
                   rules: {
                     ...phase.rules,
-                    proposals: {
-                      develop: true,
-                      submit: false,
-                      defaults: { hidden: true },
-                    },
+                    proposals: { develop: true, submit: false },
                   },
                 }
               : phase,
@@ -146,64 +136,19 @@ describe.concurrent('createProposal', () => {
         },
       })
       .where(eq(processInstances.id, instanceId));
+    const { caller } = await createAuthenticatedCaller(setup.userEmail);
 
-    // Review only: no built-in Member role, so no Submit Proposals bit.
-    const role = await createDecisionRole({
-      name: `Review-${task.id}`,
-      profileId: instanceProfileId,
-      permissions: {
-        decisions: {
-          type: 'decision',
-          value: {
-            create: false,
-            read: true,
-            update: false,
-            delete: false,
-            admin: false,
-            inviteMembers: false,
-            review: true,
-            submitProposals: false,
-            vote: false,
-          },
-        },
+    await expect(
+      caller.decision.createProposal({
+        processInstanceId: instanceId,
+        proposalData: { title: 'Develop phase proposal' },
+      }),
+    ).rejects.toMatchObject({
+      cause: {
+        name: 'ValidationError',
+        message: expect.stringContaining('are developed from other proposals'),
       },
     });
-    const reviewer = await testData.createMemberUser({
-      organization: setup.organization,
-    });
-    await db.insert(profileUsers).values({
-      profileId: instanceProfileId,
-      authUserId: reviewer.authUserId,
-      email: reviewer.email,
-    });
-    await testData.assignRole(reviewer.authUserId, instanceProfileId, role.id);
-
-    const termId = randomUUID();
-    await db.insert(taxonomyTerms).values({
-      id: termId,
-      termUri: `test-term-${termId}`,
-      label: `Term ${termId}`,
-    });
-    // Deleting the term cascades to the category-reviewer row.
-    onTestFinished(async () => {
-      await db.delete(taxonomyTerms).where(eq(taxonomyTerms.id, termId));
-    });
-    await createCategoryReviewer({
-      processInstanceId: instanceId,
-      taxonomyTermId: termId,
-      reviewerProfileId: reviewer.profileId,
-      phaseId: 'initial',
-    });
-    const { caller } = await createAuthenticatedCaller(reviewer.email);
-
-    const proposal = await caller.decision.createProposal({
-      processInstanceId: instanceId,
-      proposalData: { title: 'Develop phase proposal' },
-    });
-    testData.trackProfileForCleanup(proposal.profileId);
-
-    expect(proposal.status).toBe(ProposalStatus.DRAFT);
-    expect(proposal.visibility).toBe(Visibility.HIDDEN);
   });
 });
 

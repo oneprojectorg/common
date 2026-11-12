@@ -22,10 +22,8 @@ import {
 } from '../access';
 import { assertGlobalRole } from '../assert';
 import { generateUniqueProfileSlug } from '../profile/utils';
-import {
-  assertProposalsAllowed,
-  isDevelopPhaseById,
-} from './assertProposalsAllowed';
+import { isDevelopPhaseById } from './assertProposalDevelopAccess';
+import { assertProposalsAllowed } from './assertProposalsAllowed';
 import { withBoundaryCategoryLabel } from './boundaryCategory';
 import { decisionPermission } from './permissions';
 import { processProposalContent } from './proposalContentProcessor';
@@ -61,40 +59,37 @@ export const createProposal = async ({
     throw new NotFoundError('Process instance', data.processInstanceId);
   }
 
+  await assertInstanceProfileAccess({
+    user: { id: authUserId },
+    instance,
+    profilePermissions: [
+      { profile: permission.ADMIN },
+      { decisions: decisionPermission.SUBMIT_PROPOSALS },
+    ],
+    orgFallbackPermissions: { profile: permission.ADMIN },
+  });
+
   const instanceData = instance.instanceData as DecisionInstanceData;
   const currentPhaseId = instance.currentStateId;
-  const proposalInstance = {
-    id: instance.id,
-    profileId: instance.profileId,
-    instanceData,
-  };
-
-  // In a develop phase assertProposalsAllowed is the whole authorization.
-  if (
-    !isDevelopPhaseById({
-      instance: proposalInstance,
-      phaseId: currentPhaseId,
-    })
-  ) {
-    await assertInstanceProfileAccess({
-      user: { id: authUserId },
-      instance,
-      profilePermissions: [
-        { profile: permission.ADMIN },
-        { decisions: decisionPermission.SUBMIT_PROPOSALS },
-      ],
-      orgFallbackPermissions: { profile: permission.ADMIN },
-    });
-  }
 
   if (!currentPhaseId) {
     throw new ValidationError('Invalid phase in process instance');
   }
 
-  await assertProposalsAllowed({
-    instance: proposalInstance,
+  if (
+    isDevelopPhaseById({ instance: { instanceData }, phaseId: currentPhaseId })
+  ) {
+    const phaseName =
+      instanceData.phases.find((p) => p.phaseId === currentPhaseId)?.name ??
+      'Unknown';
+    throw new ValidationError(
+      `Proposals in the ${phaseName} phase are developed from other proposals`,
+    );
+  }
+
+  assertProposalsAllowed({
+    instance: { instanceData },
     phaseId: currentPhaseId,
-    user: { id: authUserId },
   });
 
   // Capture the phase's `defaults.hidden` rule at creation time. The flag

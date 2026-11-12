@@ -12,9 +12,10 @@ import { permission } from 'access-zones';
 import { CommonError, NotFoundError, ValidationError } from '../../utils';
 import { assertProfileAccess } from '../assert';
 import {
-  assertProposalsAllowed,
+  assertProposalDevelopAccess,
   isDevelopPhaseById,
-} from './assertProposalsAllowed';
+} from './assertProposalDevelopAccess';
+import { assertProposalsAllowed } from './assertProposalsAllowed';
 import { lockProcessInstanceOrThrow } from './lockProcessInstance';
 import { decisionPermission } from './permissions';
 import {
@@ -73,19 +74,22 @@ export const submitProposal = async ({
 
   const instanceData = instance.instanceData as DecisionInstanceData;
   const currentPhaseId = instance.currentStateId;
-  const proposalInstance = {
-    id: instance.id,
-    profileId: instance.profileId,
-    instanceData,
-  };
 
-  // In a develop phase assertProposalsAllowed is the whole authorization.
   if (
-    !isDevelopPhaseById({
-      instance: proposalInstance,
-      phaseId: currentPhaseId,
-    })
+    currentPhaseId &&
+    isDevelopPhaseById({ instance: { instanceData }, phaseId: currentPhaseId })
   ) {
+    await assertProposalDevelopAccess({
+      instance: {
+        id: instance.id,
+        profileId: instance.profileId,
+        instanceData,
+      },
+      phaseId: currentPhaseId,
+      user: { id: authUserId },
+    });
+  } else {
+    // Authorization check - verify user has access to the decision profile
     await assertProfileAccess({
       user: { id: authUserId },
       profileId: instance.profileId,
@@ -94,17 +98,16 @@ export const submitProposal = async ({
         { decisions: decisionPermission.SUBMIT_PROPOSALS },
       ],
     });
-  }
 
-  if (!currentPhaseId) {
-    throw new ValidationError('Invalid phase in process instance');
-  }
+    if (!currentPhaseId) {
+      throw new ValidationError('Invalid phase in process instance');
+    }
 
-  await assertProposalsAllowed({
-    instance: proposalInstance,
-    phaseId: currentPhaseId,
-    user: { id: authUserId },
-  });
+    assertProposalsAllowed({
+      instance: { instanceData },
+      phaseId: currentPhaseId,
+    });
+  }
 
   // Validate proposal data against the proposal template schema
   const proposalTemplate = await resolveProposalTemplate(
