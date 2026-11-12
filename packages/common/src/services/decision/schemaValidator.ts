@@ -1,6 +1,6 @@
 import Ajv from 'ajv';
 import addFormats from 'ajv-formats';
-import type { JSONSchema7 } from 'json-schema';
+import type { JSONSchema7, JSONSchema7Definition } from 'json-schema';
 
 import { ValidationError } from '../../utils';
 import { getSchemaFieldTitle } from './proposalDataSchema';
@@ -81,10 +81,7 @@ export class SchemaValidator {
               )
             : missingProperty;
           requiredErrors.add(fieldPath);
-          const friendlyName = this.getFieldDisplayName(
-            missingProperty,
-            schema,
-          );
+          const friendlyName = this.getFieldDisplayName(fieldPath, schema);
           errors[fieldPath] = `${friendlyName} is required`;
         }
       }
@@ -219,14 +216,22 @@ export class SchemaValidator {
   }
 
   /**
-   * Get user-friendly display name for a field by looking up the `title`
-   * property from the schema definition. Falls back to capitalizing the key.
+   * Get user-friendly display name for a field by looking up the `title` at
+   * its dotted path through nested `properties`. Falls back to the last key.
    */
-  private getFieldDisplayName(fieldName: string, schema?: JSONSchema7): string {
-    const fieldSchema = schema?.properties?.[fieldName];
+  private getFieldDisplayName(fieldPath: string, schema?: JSONSchema7): string {
+    const segments = fieldPath.split('.');
+    let fieldSchema: JSONSchema7Definition | undefined = schema;
+    for (const segment of segments) {
+      fieldSchema =
+        typeof fieldSchema === 'object'
+          ? fieldSchema.properties?.[segment]
+          : undefined;
+    }
+
     return getSchemaFieldTitle(
       typeof fieldSchema === 'object' ? fieldSchema : undefined,
-      fieldName,
+      segments.at(-1) ?? fieldPath,
     );
   }
 
@@ -242,8 +247,7 @@ export class SchemaValidator {
     schema?: JSONSchema7,
   ): string {
     const fieldPath = this.getFieldPath(error.instancePath, error.keyword);
-    const fieldName = fieldPath.split('.').pop() || '';
-    const friendlyName = this.getFieldDisplayName(fieldName, schema);
+    const friendlyName = this.getFieldDisplayName(fieldPath, schema);
 
     switch (error.keyword) {
       case 'required':

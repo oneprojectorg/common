@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   CUSTOM_FORM_MAX_FIELDS,
+  createCustomFormSubmissionInputSchema,
   customFormDefinitionInputSchema,
 } from './customForm';
 
@@ -141,6 +142,26 @@ describe('customFormDefinitionInputSchema', () => {
     ).toBe(true);
   });
 
+  it('accepts a grid row key that follows the field key rules, and refuses one that does not', () => {
+    const grid = (key: string) =>
+      definition({
+        properties: {
+          value: {
+            type: 'object',
+            title: 'How valuable?',
+            'x-format': 'grid',
+            properties: { [key]: { type: 'string', enum: ['1', '2'] } },
+          },
+        },
+        'x-field-order': ['value'],
+      });
+
+    expect(parse(grid('trustedPlatform')).success).toBe(true);
+    for (const key of ['constructor', '__proto__', '2nd row']) {
+      expect(parse(grid(key)).success).toBe(false);
+    }
+  });
+
   it('rejects more fields than one form may hold', () => {
     const properties: Record<string, unknown> = {};
     for (let index = 0; index <= CUSTOM_FORM_MAX_FIELDS; index += 1) {
@@ -155,5 +176,26 @@ describe('customFormDefinitionInputSchema', () => {
         }),
       ).success,
     ).toBe(false);
+  });
+});
+
+describe('createCustomFormSubmissionInputSchema', () => {
+  const submission = (data: string) =>
+    createCustomFormSubmissionInputSchema.safeParse({
+      customFormId: '6a1f4d4e-4b7a-4f0e-9f3e-0b6f2f0d1c11',
+      profileId: '0d0c6c8e-3f5c-4a8f-8a43-2f6c1b9d7e21',
+      // Parsed from JSON, as a request body is, so `__proto__` is an own key.
+      data: JSON.parse(data),
+    });
+
+  it('accepts a grid answer nested one object deep', () => {
+    expect(submission('{"value":{"trustedPlatform":"2"}}').success).toBe(true);
+  });
+
+  it('refuses a key that could poison a prototype at any depth', () => {
+    expect(submission('{"value":{"__proto__":{"isAdmin":true}}}').success).toBe(
+      false,
+    );
+    expect(submission('{"value":[{"constructor":"1"}]}').success).toBe(false);
   });
 });

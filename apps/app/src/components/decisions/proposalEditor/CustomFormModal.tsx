@@ -1,12 +1,8 @@
 'use client';
 
 import { linkifyText } from '@/utils/linkDetection';
-import type {
-  CustomFormDefinitionSchema,
-  XFormatPropertySchema,
-} from '@op/common/client';
+import type { XFormatPropertySchema } from '@op/common/client';
 import { isCustomFormDefinition, schemaValidator } from '@op/common/client';
-import { useMediaQuery } from '@op/hooks';
 import { logger } from '@op/logging/client';
 import { Button } from '@op/sense/Button';
 import { Checkbox } from '@op/sense/Checkbox';
@@ -28,22 +24,20 @@ import {
 import { Input } from '@op/sense/Input';
 import { RadioGroup, RadioGroupItem } from '@op/sense/RadioGroup';
 import { RequiredAsterisk } from '@op/sense/RequiredAsterisk';
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@op/sense/Select';
 import { Textarea } from '@op/sense/Textarea';
-import { screens } from '@op/styles/constants';
-import type { ReactNode } from 'react';
 import { useId, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
 import { TranslateLink } from '../TranslateLink';
+import { EnumSelectField } from './EnumSelectField';
+import { GridField } from './GridField';
+import {
+  getFieldOrder,
+  readEnumOptions,
+  readGridColumns,
+  readGridRows,
+} from './customFormSchema';
 import {
   type CustomFormTranslation,
   useTranslateCustomForm,
@@ -118,6 +112,11 @@ export function CustomFormModal({
     return !!field && typeof field === 'object' && canRenderField(field);
   });
   const renderable = new Set(renderableKeys);
+  const gridKeys = new Set(
+    renderableKeys.filter(
+      (key) => definition.properties?.[key]?.['x-format'] === 'grid',
+    ),
+  );
   const requiredFields = new Set(
     (definition.required ?? []).filter((key) => renderable.has(key)),
   );
@@ -128,9 +127,13 @@ export function CustomFormModal({
 
   const handleFieldChange = (key: string, value: unknown) => {
     setValues((prev) => ({ ...prev, [key]: value }));
-    if (errors[key]) {
-      setErrors(({ [key]: _ignored, ...rest }) => rest);
-    }
+    setErrors((prev) =>
+      Object.fromEntries(
+        Object.entries(prev).filter(
+          ([errorKey]) => getErrorFieldKey(errorKey) !== key,
+        ),
+      ),
+    );
   };
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -149,10 +152,12 @@ export function CustomFormModal({
     await onSubmit(cleaned);
   };
 
-  // Errors that don't key to a rendered field (root-level or nested AJV paths,
-  // or a field we skipped) would otherwise be invisible.
+  // Errors that don't key to a rendered field or grid row (root-level or other
+  // nested paths, or a field we skipped) would otherwise be invisible.
   const formLevelErrors = Object.entries(errors)
-    .filter(([key]) => !renderable.has(key))
+    .filter(
+      ([key]) => !renderable.has(key) && !gridKeys.has(getErrorFieldKey(key)),
+    )
     .map(([, message]) => message);
 
   return (
@@ -196,16 +201,21 @@ export function CustomFormModal({
               if (!field || typeof field !== 'object') {
                 return null;
               }
-              return (
+              const fieldProps = {
+                name: key,
+                field,
+                value: values[key],
+                isRequired: requiredFields.has(key),
+                translation,
+                onChange: (value: unknown) => handleFieldChange(key, value),
+              };
+              return field['x-format'] === 'grid' ? (
+                <GridField key={key} {...fieldProps} errors={errors} />
+              ) : (
                 <CustomFormField
                   key={key}
-                  name={key}
-                  field={field}
-                  value={values[key]}
+                  {...fieldProps}
                   error={errors[key]}
-                  isRequired={requiredFields.has(key)}
-                  translation={translation}
-                  onChange={(value) => handleFieldChange(key, value)}
                 />
               );
             })}
@@ -248,9 +258,6 @@ function CustomFormField({
   const descriptionNode = description ? (
     <FieldDescription>{description}</FieldDescription>
   ) : null;
-  // Same breakpoint the NPS survey uses to swap its scale control between
-  // a horizontal radio row (desktop) and a dropdown (mobile).
-  const isMobile = useMediaQuery(`(max-width: ${screens.sm})`) ?? false;
 
   if (field.type === 'boolean') {
     return (
@@ -324,27 +331,7 @@ function CustomFormField({
   const enumOptions = readEnumOptions(field.enum);
   const choices = toChoices(enumOptions);
 
-  // NPS-style numeric scale — matches the ProcessSurveyModal control:
-  // horizontal radio row with the label under each number on desktop,
-  // dropdown on mobile.
   if (field['x-format'] === 'radio' && enumOptions.length > 0) {
-    const selected = typeof value === 'string' ? value : null;
-
-    if (isMobile) {
-      return (
-        <EnumSelectField
-          fieldId={fieldId}
-          label={label}
-          description={description}
-          error={error}
-          isRequired={isRequired}
-          options={choices}
-          value={selected}
-          onChange={onChange}
-        />
-      );
-    }
-
     return (
       <FieldSet>
         <FieldLegend variant="label">
@@ -353,24 +340,27 @@ function CustomFormField({
         </FieldLegend>
         {descriptionNode}
         <RadioGroup
-          value={selected}
+          value={typeof value === 'string' ? value : null}
           onValueChange={(next) =>
             onChange(next == null || next === '' ? undefined : String(next))
           }
           required={isRequired}
           aria-invalid={Boolean(error)}
-          className="flex w-full flex-row justify-between gap-1"
+          className="gap-4"
         >
           {choices.map((option) => (
-            <Field key={option.value} className="flex-1 items-center gap-1">
+            <Field
+              key={option.value}
+              className="items-start"
+              orientation="horizontal"
+            >
               <RadioGroupItem
                 id={`${fieldId}-${option.value}`}
                 value={option.value}
+                aria-invalid={Boolean(error)}
+                className="mt-1"
               />
-              <FieldLabel
-                htmlFor={`${fieldId}-${option.value}`}
-                className="justify-center"
-              >
+              <FieldLabel htmlFor={`${fieldId}-${option.value}`}>
                 <bdi>{option.label}</bdi>
               </FieldLabel>
             </Field>
@@ -465,70 +455,6 @@ function CustomFormField({
   );
 }
 
-/** Enum dropdown. `items` lets base-ui's `Select.Value` show a translated label. */
-function EnumSelectField({
-  fieldId,
-  label,
-  description,
-  error,
-  isRequired,
-  options,
-  value,
-  onChange,
-}: {
-  fieldId: string;
-  label: ReactNode;
-  description?: ReactNode;
-  error?: string;
-  isRequired: boolean;
-  options: { value: string; label: string }[];
-  value: string | null;
-  onChange: (value: unknown) => void;
-}) {
-  const t = useTranslations();
-
-  return (
-    <Field data-invalid={Boolean(error)}>
-      <FieldLabel htmlFor={fieldId}>
-        {label}
-        {isRequired ? <RequiredAsterisk /> : null}
-      </FieldLabel>
-      <Select
-        items={options}
-        value={value}
-        onValueChange={(next) =>
-          onChange(next == null ? undefined : String(next))
-        }
-        required={isRequired}
-      >
-        <SelectTrigger
-          id={fieldId}
-          className="w-full"
-          aria-invalid={Boolean(error)}
-        >
-          {/* The trigger clamps, so `<bdi>` alone would clip the wrong end. */}
-          <SelectValue
-            dir="auto"
-            className="ltr:text-left rtl:text-right"
-            placeholder={t('decisions.proposals.selectOptionPlaceholder')}
-          />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectGroup>
-            {options.map((option) => (
-              <SelectItem key={option.value} value={option.value}>
-                <bdi>{option.label}</bdi>
-              </SelectItem>
-            ))}
-          </SelectGroup>
-        </SelectContent>
-      </Select>
-      {error ? <FieldError>{error}</FieldError> : null}
-      {description ? <FieldDescription>{description}</FieldDescription> : null}
-    </Field>
-  );
-}
-
 const CHOICE_FORMATS = new Set<XFormatPropertySchema['x-format']>([
   'radio',
   'dropdown',
@@ -570,6 +496,10 @@ function getFieldText({
 
 /** False for a control that would draw with nothing to choose from. */
 function canRenderField(field: XFormatPropertySchema): boolean {
+  if (field['x-format'] === 'grid') {
+    return readGridRows(field).length > 0 && readGridColumns(field).length > 0;
+  }
+
   if (field.type === 'array') {
     return readEnumOptions(readItemsSchema(field)?.enum).length > 0;
   }
@@ -587,20 +517,9 @@ function readItemsSchema(field: XFormatPropertySchema) {
     : undefined;
 }
 
-function readEnumOptions(candidate: unknown): string[] {
-  return Array.isArray(candidate)
-    ? candidate.filter((option): option is string => typeof option === 'string')
-    : [];
-}
-
-/** Field keys ordered by `x-field-order`, then any remaining properties. */
-function getFieldOrder(definition: CustomFormDefinitionSchema): string[] {
-  const properties = definition.properties ?? {};
-  const ordered = definition['x-field-order'] ?? [];
-  return [
-    ...ordered.filter((key) => properties[key]),
-    ...Object.keys(properties).filter((key) => !ordered.includes(key)),
-  ];
+/** A grid row's error is keyed `<field>.<row>`; this returns `<field>`. */
+function getErrorFieldKey(errorKey: string): string {
+  return errorKey.split('.')[0] ?? errorKey;
 }
 
 /** Drop unanswered fields so optional empties don't fail type validation. */

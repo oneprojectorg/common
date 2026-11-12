@@ -48,6 +48,8 @@ const PROBLEM_MESSAGES: Record<
   'field-question-too-long': 'admin.formCharacterLimitError',
   'field-description-too-long': 'admin.formCharacterLimitError',
   'field-missing-options': 'admin.fieldOptionsRequiredError',
+  'field-missing-rows': 'admin.fieldRowsRequiredError',
+  'grid-row-too-long': 'admin.formCharacterLimitError',
 };
 
 const describeProblem = (problem: DraftProblem, t: TranslateFn): string =>

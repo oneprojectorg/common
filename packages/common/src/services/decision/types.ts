@@ -18,7 +18,8 @@ export type JsonSchema = JSONSchema7;
  * JSON Schema keywords (`type`, `enum`, etc.) describe the data shape.
  *
  * `radio` renders an enum as a horizontal radio row (the NPS-style control)
- * instead of a dropdown; used by custom form scale questions.
+ * instead of a dropdown; used by custom form scale questions. `grid` marks an
+ * object whose properties are rows that share one set of choices.
  */
 export type XFormat =
   | 'short-text'
@@ -26,6 +27,7 @@ export type XFormat =
   | 'money'
   | 'dropdown'
   | 'radio'
+  | 'grid'
   | 'location';
 
 /**
@@ -45,6 +47,8 @@ export interface XFormatPropertySchema extends JSONSchema7 {
   'x-map-default'?: MapDefaultView;
   /** Unit of a numeric field. A `money` field's unit is its currency. */
   'x-unit'?: AmountUnit;
+  /** Row order of a `grid` field. */
+  'x-field-order'?: string[];
 }
 
 /** JSON Schema 7 extended with proposal template vendor extensions. */

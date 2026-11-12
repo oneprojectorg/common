@@ -2,7 +2,7 @@
 
 import { Button } from '@op/sense/Button';
 import { Checkbox } from '@op/sense/Checkbox';
-import { Field, FieldDescription, FieldLabel } from '@op/sense/Field';
+import { Field, FieldLabel } from '@op/sense/Field';
 import {
   Select,
   SelectContent,
@@ -11,14 +11,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@op/sense/Select';
-import { Textarea } from '@op/sense/Textarea';
 import { cn } from '@op/sense/lib/utils';
 import { useId, useState } from 'react';
 import { LuArrowDown, LuArrowUp, LuTrash2 } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
+import { GridField } from '@/components/decisions/proposalEditor/GridField';
+
 import { CountedInputField, CountedTextareaField } from './CountedField';
+import type {
+  SortableInputItem,
+  SortableInputListProps,
+} from './SortableInputList';
+import { SortableInputList } from './SortableInputList';
 import type {
   BuilderField,
   DraftProblem,
@@ -28,8 +34,9 @@ import {
   CHOICE_FIELD_KINDS,
   FORM_CHARACTER_LIMITS,
   FORM_FIELD_KINDS,
+  buildGridSchema,
 } from './formDefinition';
-import { ProblemMessages, getProblemsWithCode } from './formProblems';
+import { getProblemsWithCode } from './formProblems';
 
 interface CustomFormFieldEditorProps {
   field: BuilderField;
@@ -61,6 +68,12 @@ export const CustomFormFieldEditor = ({
     'field-question-too-long',
   );
   const optionProblems = getProblemsWithCode(problems, 'field-missing-options');
+  const rowProblems = getProblemsWithCode(
+    problems,
+    'field-missing-rows',
+    'grid-row-too-long',
+  );
+  const isGrid = field.kind === 'grid';
   const descriptionProblems = getProblemsWithCode(
     problems,
     'field-description-too-long',
@@ -74,6 +87,7 @@ export const CustomFormFieldEditor = ({
     dropdown: t('Dropdown'),
     radio: t('admin.fieldTypeRadio'),
     'multi-select': t('decisions.proposals.selectAllThatApplyHint'),
+    grid: t('admin.fieldTypeGrid'),
   };
 
   return (
@@ -160,6 +174,7 @@ export const CustomFormFieldEditor = ({
               // Kept on a text field, options would turn it back into a
               // dropdown on save.
               options: CHOICE_FIELD_KINDS.includes(kind) ? field.options : [],
+              rows: kind === 'grid' ? field.rows : [],
             });
           }}
         >
@@ -179,12 +194,44 @@ export const CustomFormFieldEditor = ({
       </Field>
 
       {hasOptions ? (
-        <OptionsField
-          fieldId={`${fieldId}-options`}
-          options={field.options}
+        <OptionsList
+          label={
+            isGrid
+              ? t('admin.fieldColumnsLabel')
+              : t('decisions.processBuilder.optionsLabel')
+          }
+          addLabel={
+            isGrid ? t('admin.addColumnAction') : t('admin.addOptionAction')
+          }
+          getItemName={(at) =>
+            isGrid
+              ? t('admin.columnNumber', { number: at + 1 })
+              : t('admin.optionNumber', { number: at + 1 })
+          }
+          initialOptions={field.options}
           problems={optionProblems}
           onChange={(options) => onChange({ ...field, options })}
         />
+      ) : null}
+
+      {isGrid ? (
+        <>
+          <SortableInputList
+            label={t('admin.fieldRowsLabel')}
+            addLabel={t('admin.addRowAction')}
+            getItemName={(at) => t('admin.rowNumber', { number: at + 1 })}
+            items={field.rows.map((row) => ({
+              id: row.localId,
+              value: row.title,
+            }))}
+            problems={rowProblems}
+            maxLength={FORM_CHARACTER_LIMITS.gridRowTitle}
+            onChange={(items) =>
+              onChange({ ...field, rows: toGridRows({ items, field }) })
+            }
+          />
+          <GridPreview field={field} />
+        </>
       ) : null}
 
       <CountedTextareaField
@@ -213,53 +260,80 @@ export const CustomFormFieldEditor = ({
 };
 
 /**
- * Holds raw text rather than `options.join('\n')`: a parsed round-trip drops
- * the newline as it is typed, so the author could never start a second line.
+ * Gives each option a stable id for reordering. The editor owns them because
+ * options are stored as bare strings.
  */
-const OptionsField = ({
-  fieldId,
-  options,
-  problems,
+const OptionsList = ({
+  initialOptions,
   onChange,
-}: {
-  fieldId: string;
-  options: string[];
-  problems: DraftProblem[];
+  ...listProps
+}: Omit<SortableInputListProps, 'items' | 'onChange'> & {
+  initialOptions: string[];
   onChange: (options: string[]) => void;
 }) => {
-  const t = useTranslations();
-  const [text, setText] = useState(options.join('\n'));
+  const [items, setItems] = useState(() =>
+    initialOptions.map((value) => ({ id: crypto.randomUUID(), value })),
+  );
 
   return (
-    <Field>
-      <FieldLabel htmlFor={fieldId}>
-        {t('decisions.processBuilder.optionsLabel')}
-      </FieldLabel>
-      <Textarea
-        id={fieldId}
-        rows={4}
-        value={text}
-        aria-invalid={problems.length > 0}
-        onChange={(event) => {
-          setText(event.target.value);
-          onChange(parseOptions(event.target.value));
-        }}
-      />
-      <FieldDescription>{t('admin.fieldOptionsHint')}</FieldDescription>
-      <ProblemMessages problems={problems} />
-    </Field>
+    <SortableInputList
+      {...listProps}
+      items={items}
+      onChange={(next) => {
+        setItems(next);
+        onChange(toOptions(next));
+      }}
+    />
   );
 };
 
-const parseOptions = (value: string): string[] => {
-  const seen = new Set<string>();
+/** What participants see, from the draft as it stands. */
+const GridPreview = ({ field }: { field: BuilderField }) => {
+  const t = useTranslations();
+  const headingId = useId();
+  const schema = buildGridSchema(field);
 
-  for (const line of value.split('\n')) {
-    const option = line.trim();
-    if (option) {
-      seen.add(option);
-    }
+  if (field.options.length === 0 || schema['x-field-order']?.length === 0) {
+    return null;
   }
 
-  return [...seen];
+  return (
+    <section
+      aria-labelledby={headingId}
+      className="flex flex-col gap-2 rounded-md bg-muted p-4"
+    >
+      <p id={headingId} className="text-label text-muted-foreground">
+        {t('admin.gridPreviewLabel')}
+      </p>
+      {/* Inert: a preview to look at, not a form to fill in or tab through. */}
+      <div inert>
+        <GridField
+          name={field.key || field.localId}
+          field={schema}
+          value={undefined}
+          errors={{}}
+          isRequired={field.isRequired}
+          onChange={() => {}}
+        />
+      </div>
+    </section>
+  );
 };
+
+/** Keeps each stored row's key, so renaming a row keeps its answers. */
+const toGridRows = ({
+  items,
+  field,
+}: {
+  items: SortableInputItem[];
+  field: BuilderField;
+}): BuilderField['rows'] =>
+  items.map(({ id, value }) => {
+    const key = field.rows.find((row) => row.localId === id)?.key;
+    return { localId: id, title: value, ...(key ? { key } : {}) };
+  });
+
+/** Trimmed, without blanks or repeats: a repeated `enum` value is invalid. */
+const toOptions = (items: SortableInputItem[]): string[] => [
+  ...new Set(items.map((item) => item.value.trim()).filter(Boolean)),
+];

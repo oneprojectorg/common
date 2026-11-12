@@ -28,11 +28,33 @@ const field = (overrides: Partial<BuilderField> = {}): BuilderField => {
     description: '',
     isRequired: false,
     options: [],
+    rows: [],
     ...overrides,
   };
 
   return { ...base, localId: overrides.localId ?? base.key };
 };
+
+const gridField = (overrides: Partial<BuilderField> = {}): BuilderField =>
+  field({
+    key: 'value',
+    kind: 'grid',
+    title: 'How valuable would each be to your work?',
+    options: ['1', '2', '3'],
+    rows: [
+      {
+        localId: 'trustedPlatform',
+        key: 'trustedPlatform',
+        title: 'A trusted platform',
+      },
+      {
+        localId: 'votingTool',
+        key: 'votingTool',
+        title: 'A tool that runs the vote',
+      },
+    ],
+    ...overrides,
+  });
 
 const form = (fields: BuilderField[]): BuilderForm => ({
   name: 'Exit survey',
@@ -153,6 +175,67 @@ describe('buildDefinition', () => {
     expect(schemaValidator.validate(definition, {}).valid).toBe(false);
   });
 
+  it('writes a grid as an object whose rows share the options', () => {
+    const definition = buildDefinition(form([gridField()]));
+
+    expect(customFormDefinitionInputSchema.safeParse(definition).success).toBe(
+      true,
+    );
+    expect(definition.properties.value).toEqual({
+      title: 'How valuable would each be to your work?',
+      type: 'object',
+      'x-format': 'grid',
+      properties: {
+        trustedPlatform: {
+          type: 'string',
+          title: 'A trusted platform',
+          enum: ['1', '2', '3'],
+        },
+        votingTool: {
+          type: 'string',
+          title: 'A tool that runs the vote',
+          enum: ['1', '2', '3'],
+        },
+      },
+      'x-field-order': ['trustedPlatform', 'votingTool'],
+      required: [],
+    });
+  });
+
+  it('produces a grid schema that accepts one answer per row and rejects one outside the options', () => {
+    const definition = buildDefinition(form([gridField()]));
+
+    expect(
+      schemaValidator.validate(definition, {
+        value: { trustedPlatform: '1', votingTool: '3' },
+      }),
+    ).toEqual({ valid: true, errors: {} });
+    expect(
+      schemaValidator.validate(definition, { value: { votingTool: '3' } })
+        .valid,
+    ).toBe(true);
+    expect(
+      schemaValidator.validate(definition, { value: { votingTool: '9' } })
+        .errors,
+    ).toHaveProperty(['value.votingTool']);
+  });
+
+  it('holds every row of a required grid to being answered, keyed by row', () => {
+    const definition = buildDefinition(form([gridField({ isRequired: true })]));
+
+    expect(definition.required).toEqual(['value']);
+    expect(
+      Object.keys(
+        schemaValidator.validate(definition, {
+          value: { trustedPlatform: '2' },
+        }).errors,
+      ),
+    ).toEqual(['value.votingTool']);
+    expect(
+      Object.keys(schemaValidator.validate(definition, {}).errors),
+    ).toEqual(['value']);
+  });
+
   it('omits an empty description rather than storing a blank string', () => {
     const definition = buildDefinition({
       ...form([field({ key: 'answer', description: '   ' })]),
@@ -185,6 +268,7 @@ describe('parseDefinition', () => {
         localId: 'g',
         isRequired: true,
       }),
+      gridField({ localId: 'h' }),
     ]);
 
     const { form: parsed, unsupportedKeys } = parseDefinition({
@@ -202,9 +286,120 @@ describe('parseDefinition', () => {
       ['pick', 'dropdown'],
       ['score', 'radio'],
       ['reasons', 'multi-select'],
+      ['value', 'grid'],
     ]);
-    expect(parsed.fields.at(-1)?.isRequired).toBe(true);
-    expect(parsed.fields.at(-1)?.options).toEqual(['A', 'B']);
+    expect(parsed.fields.at(-2)?.isRequired).toBe(true);
+    expect(parsed.fields.at(-2)?.options).toEqual(['A', 'B']);
+  });
+
+  it('round-trips a grid with its columns, rows in order, and required flag', () => {
+    const original = gridField({
+      isRequired: true,
+      rows: [
+        {
+          localId: 'votingTool',
+          key: 'votingTool',
+          title: 'A tool that runs the vote',
+        },
+        {
+          localId: 'trustedPlatform',
+          key: 'trustedPlatform',
+          title: 'A trusted platform',
+        },
+      ],
+    });
+
+    const { form: parsed, unsupportedKeys } = parseDefinition({
+      schema: buildDefinition(form([original])),
+      phaseId: 'voting',
+      name: 'Exit survey',
+    });
+
+    expect(unsupportedKeys).toEqual([]);
+    expect(parsed.fields).toEqual([{ ...original, isKeyFrozen: true }]);
+  });
+
+  it('reports a grid the builder would rewrite on save', () => {
+    const row = (choices: string[], title = 'Row') => ({
+      type: 'string',
+      title,
+      enum: choices,
+    });
+    const grid = (overrides: Record<string, unknown>) => ({
+      type: 'object',
+      title: 'Grid',
+      'x-format': 'grid',
+      properties: {
+        first: row(['1', '2'], 'First'),
+        second: row(['1', '2'], 'Second'),
+      },
+      ...overrides,
+    });
+
+    const { unsupportedKeys } = parseDefinition({
+      schema: {
+        type: 'object',
+        title: 'Grids',
+        properties: {
+          mixedChoices: grid({
+            properties: { first: row(['1', '2']), second: row(['1', '3']) },
+          }),
+          partlyRequired: grid({ required: ['first'] }),
+          constrainedRow: grid({
+            properties: { first: { ...row(['1']), maxLength: 1 } },
+          }),
+          noRows: grid({ properties: {} }),
+          noChoices: grid({ properties: { first: row([]) } }),
+          numberRow: grid({
+            properties: { first: { ...row(['1']), type: 'number' } },
+          }),
+          constrainedGrid: grid({ minProperties: 1 }),
+          gridLevelChoices: grid({ enum: ['1', '2'] }),
+          plainObject: { type: 'object', title: 'Object', properties: {} },
+          valid: grid({}),
+          requiredWithoutRows: grid({ required: [] }),
+        },
+        required: ['requiredWithoutRows'],
+      },
+      phaseId: 'submission',
+      name: 'Grids',
+    });
+
+    expect(unsupportedKeys).toEqual([
+      'mixedChoices',
+      'partlyRequired',
+      'constrainedRow',
+      'noRows',
+      'noChoices',
+      'numberRow',
+      'constrainedGrid',
+      'gridLevelChoices',
+      'plainObject',
+      'requiredWithoutRows',
+    ]);
+  });
+
+  it('falls back to the row key for a grid row with no title', () => {
+    const { form: parsed } = parseDefinition({
+      schema: {
+        type: 'object',
+        title: 'Grid',
+        properties: {
+          value: {
+            type: 'object',
+            title: 'Grid',
+            'x-format': 'grid',
+            properties: { untitled: { type: 'string', enum: ['1'] } },
+          },
+        },
+      },
+      phaseId: 'submission',
+      name: 'Grid',
+    });
+
+    expect(parsed.fields[0]?.rows).toEqual([
+      { localId: 'untitled', key: 'untitled', title: 'untitled' },
+    ]);
   });
 
   it('freezes the keys of a stored form so editing cannot orphan submissions', () => {
@@ -471,6 +666,48 @@ describe('validateDraft', () => {
     ]);
   });
 
+  it('reports a grid with no rows, no columns, or both', () => {
+    expect(problemCodes(form([gridField({ rows: [] })]))).toEqual([
+      'field-missing-rows',
+    ]);
+    expect(problemCodes(form([gridField({ options: [] })]))).toEqual([
+      'field-missing-options',
+    ]);
+    expect(problemCodes(form([gridField({ rows: [], options: [] })]))).toEqual([
+      'field-missing-options',
+      'field-missing-rows',
+    ]);
+  });
+
+  it('reports a grid row past the limit once, naming the cap', () => {
+    const result = validateDraft(
+      form([
+        gridField({
+          rows: [
+            {
+              localId: 'first',
+              key: 'first',
+              title: overLimit(FORM_CHARACTER_LIMITS.gridRowTitle),
+            },
+            {
+              localId: 'second',
+              key: 'second',
+              title: overLimit(FORM_CHARACTER_LIMITS.gridRowTitle),
+            },
+          ],
+        }),
+      ]),
+    );
+
+    expect(result.ok === false && result.problems).toEqual([
+      {
+        code: 'grid-row-too-long',
+        max: FORM_CHARACTER_LIMITS.gridRowTitle,
+        fieldLocalId: 'value',
+      },
+    ]);
+  });
+
   it('does not ask a text field for options', () => {
     expect(problemCodes(form([field({ key: 'answer' })]))).toEqual([]);
   });
@@ -625,5 +862,102 @@ describe('deriveFieldKey', () => {
         fallbackIndex: 0,
       }),
     ).toBe('budget3');
+  });
+});
+
+describe('grid rows', () => {
+  const problemCodesOf = (draft: BuilderForm) => {
+    const result = validateDraft(draft);
+    return result.ok ? [] : result.problems.map((problem) => problem.code);
+  };
+
+  const rowsOf = (rows: BuilderField['rows']) => {
+    const grid = buildDefinition(form([gridField({ rows })])).properties.value;
+    return { order: grid?.['x-field-order'], properties: grid?.properties };
+  };
+
+  it('keeps a stored row key when the row is renamed, so its answers stay', () => {
+    expect(
+      rowsOf([
+        { localId: 'a', key: 'trustedPlatform', title: 'A platform you trust' },
+      ]).order,
+    ).toEqual(['trustedPlatform']);
+  });
+
+  it('keys a new row from its title without taking a stored key', () => {
+    expect(
+      rowsOf([
+        { localId: 'new', title: 'Trusted platform' },
+        { localId: 'a', key: 'trustedPlatform', title: 'A trusted platform' },
+      ]).order,
+    ).toEqual(['trustedPlatform2', 'trustedPlatform']);
+  });
+
+  it('gives two new rows with the same title distinct keys', () => {
+    expect(
+      rowsOf([
+        { localId: 'a', title: 'A tool' },
+        { localId: 'b', title: 'A tool' },
+      ]).order,
+    ).toEqual(['aTool', 'aTool2']);
+  });
+
+  it('keeps a stored grid whose rows share a title, keyed apart', () => {
+    const schema = buildDefinition(
+      form([
+        gridField({
+          rows: [
+            { localId: 'a', key: 'first', title: 'Same' },
+            { localId: 'b', key: 'second', title: 'Same' },
+          ],
+        }),
+      ]),
+    );
+
+    const { form: parsed, unsupportedKeys } = parseDefinition({
+      schema,
+      phaseId: 'voting',
+      name: 'Exit survey',
+    });
+
+    expect(unsupportedKeys).toEqual([]);
+    expect(parsed.fields[0]?.rows.map((row) => row.key)).toEqual([
+      'first',
+      'second',
+    ]);
+  });
+
+  it('measures a row title as it is stored, without padding', () => {
+    const rowOf = (title: string) =>
+      problemCodesOf(form([gridField({ rows: [{ localId: 'a', title }] })]));
+
+    expect(
+      rowOf(`  ${'a'.repeat(FORM_CHARACTER_LIMITS.gridRowTitle)}  `),
+    ).toEqual([]);
+    expect(rowOf('a'.repeat(FORM_CHARACTER_LIMITS.gridRowTitle + 1))).toEqual([
+      'grid-row-too-long',
+    ]);
+  });
+
+  it('drops a blank row and stores trimmed titles', () => {
+    const { order, properties } = rowsOf([
+      { localId: 'blank', title: '   ' },
+      { localId: 'new', title: '  A tool  ' },
+    ]);
+
+    expect(order).toEqual(['aTool']);
+    expect(properties).toEqual({
+      aTool: { type: 'string', title: 'A tool', enum: ['1', '2', '3'] },
+    });
+  });
+
+  it('counts only filled rows as rows', () => {
+    const result = validateDraft(
+      form([gridField({ rows: [{ localId: 'blank', title: ' ' }] })]),
+    );
+
+    expect(result.ok === false && result.problems).toEqual([
+      { code: 'field-missing-rows', fieldLocalId: 'value' },
+    ]);
   });
 });

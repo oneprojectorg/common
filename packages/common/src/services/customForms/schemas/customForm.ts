@@ -82,6 +82,22 @@ const FORBIDDEN_DATA_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
 const serializedByteLength = (value: unknown): number =>
   new TextEncoder().encode(JSON.stringify(value)).length;
 
+/** Forbidden keys at any depth: a grid answer nests one object per row. */
+const findForbiddenDataKeys = (value: unknown): string[] => {
+  if (Array.isArray(value)) {
+    return value.flatMap(findForbiddenDataKeys);
+  }
+
+  if (typeof value !== 'object' || value === null) {
+    return [];
+  }
+
+  return Object.entries(value).flatMap(([key, nested]) => [
+    ...(FORBIDDEN_DATA_KEYS.has(key) ? [key] : []),
+    ...findForbiddenDataKeys(nested),
+  ]);
+};
+
 /** Input for `createCustomFormSubmission`. */
 export const createCustomFormSubmissionInputSchema = z.object({
   customFormId: z.uuid(),
@@ -90,13 +106,11 @@ export const createCustomFormSubmissionInputSchema = z.object({
   // submission row.
   profileId: z.uuid(),
   data: z.record(z.string(), z.unknown()).superRefine((value, ctx) => {
-    for (const key of Object.keys(value)) {
-      if (FORBIDDEN_DATA_KEYS.has(key)) {
-        ctx.addIssue({
-          code: 'custom',
-          message: `Key "${key}" is not allowed`,
-        });
-      }
+    for (const key of findForbiddenDataKeys(value)) {
+      ctx.addIssue({
+        code: 'custom',
+        message: `Key "${key}" is not allowed`,
+      });
     }
     if (serializedByteLength(value) > CUSTOM_FORM_SUBMISSION_MAX_BYTES) {
       ctx.addIssue({
@@ -189,11 +203,37 @@ export const customFormDefinitionInputSchema = z
     }
 
     refineFieldOrder({ order: definition['x-field-order'], known }, ctx);
+    refineNestedFieldKeys(definition.properties, ctx);
 
     if (serializedByteLength(definition) > CUSTOM_FORM_DEFINITION_MAX_BYTES) {
       ctx.addIssue({ code: 'custom', message: 'Form definition is too large' });
     }
   });
+
+/** A grid's rows are keyed in its answer object, so they follow the same
+ *  rules as the form's own field keys. */
+const refineNestedFieldKeys = (
+  properties: Record<string, CustomFormField>,
+  ctx: z.RefinementCtx,
+): void => {
+  for (const [fieldKey, field] of Object.entries(properties)) {
+    const nested = field.properties;
+    if (typeof nested !== 'object' || nested === null) {
+      continue;
+    }
+
+    for (const key of Object.keys(nested)) {
+      const result = customFormFieldKeySchema.safeParse(key);
+      if (!result.success) {
+        ctx.addIssue({
+          code: 'custom',
+          message: `Field "${fieldKey}" has an invalid key "${key}"`,
+          path: ['properties', fieldKey, 'properties'],
+        });
+      }
+    }
+  }
+};
 
 /**
  * The renderer walks `x-field-order`, so a field missing from it is one nobody
