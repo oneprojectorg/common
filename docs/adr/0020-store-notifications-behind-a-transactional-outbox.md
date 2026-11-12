@@ -180,3 +180,25 @@ from their parents.
 - Reading `activities` for a shared feed must still apply visibility:
   the scope filter alone would unmask anonymous actors and restricted
   proposals through the snapshot.
+
+The four tables grow at different rates and need different storage
+rules:
+
+- `event_outbox` stays small by design: payloads hold ids only, and
+  sent rows are pruned after 30 days. The partial index on unsent rows
+  keeps the sweep fast whatever the table's size.
+- `activities` grows with domain events and is kept for the life of its
+  scope. The `snapshot` dominates row size, so it holds only the fields
+  a feed renders (ids, names, a title) — never a whole document. Its
+  four composite feed indexes are the write-amplification cost of fast
+  reads.
+- `notifications` grows fastest: rows = events x recipients. Marking
+  seen or read rewrites the partial unread indexes, and rows leave with
+  their activity through the cascade.
+- `notification_deliveries` appends one row per channel attempt plus
+  one per provider webhook, bounded by notifications x channels.
+- We start without partitioning or an archive tier. Feed queries read
+  recent rows through `(scope, created_at desc, id desc)` indexes, so
+  `activities` and `notifications` can move to range partitions on
+  `created_at` later without changing a query. Revisit when either
+  table nears about 50 million rows.
