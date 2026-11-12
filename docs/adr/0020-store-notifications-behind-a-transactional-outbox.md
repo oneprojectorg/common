@@ -145,9 +145,11 @@ sequenceDiagram
   API->>PG: append notification_deliveries (delivered / bounced)
 ```
 
-A crash at any arrow replays from the top: every write below
-`inngest.send` is idempotent, so a retry re-sends nothing and
-re-creates nothing.
+A crash at any arrow replays from the top: every database write below
+`inngest.send` is idempotent, so a retry re-creates nothing. The email
+send dedupes on a Resend idempotency key, which Resend keeps for 24
+hours; before sending, the function also skips any notification whose
+deliveries log already records a send.
 
 Foreign keys follow the schema's delete mechanism: scope columns
 (`organization_id`, `process_instance_id`, `proposal_id`, `post_id`)
@@ -159,9 +161,13 @@ from their parents.
 ## Consequences
 
 - A rollback emits nothing, and a crash between any two steps replays
-  safely: the `outbox_id` and `(activity_id, user_id)` uniques absorb
-  the duplicate rows, and Resend idempotency keys absorb the duplicate
-  sends.
+  safely on the database side: the `outbox_id` and
+  `(activity_id, user_id)` uniques absorb the duplicate rows. Email
+  dedup is narrower: the deliveries check and the Resend idempotency
+  key cover a replay, but a crash after the send and before the
+  deliveries insert, recovered after Resend's 24-hour key window, sends
+  the email again. We accept that rare duplicate rather than risk
+  dropping the send.
 - Every feed is one indexed query with a `(created_at, id)` cursor.
 - Fan-out writes one row per recipient per event. A process-wide event
   in a large process writes thousands of rows; the write is batched and
