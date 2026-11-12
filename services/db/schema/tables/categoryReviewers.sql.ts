@@ -1,6 +1,7 @@
 import { sql } from 'drizzle-orm';
 import {
   index,
+  jsonb,
   pgTable,
   uniqueIndex,
   uuid,
@@ -49,6 +50,11 @@ export const categoryReviewers = pgTable(
 
     // NULL = instance-wide; set = phase-specific (matches proposalReviewAssignments).
     phaseId: varchar('phase_id', { length: 256 }),
+
+    // Typed by `categoryReviewerDataSchema` in @op/common.
+    data: jsonb('data')
+      .notNull()
+      .default(sql`'{}'::jsonb`),
 
     ...timestamps,
   },
