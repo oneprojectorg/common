@@ -84,8 +84,8 @@ await supabase.storage.emptyBucket('avatars');
 //
 // Created first, unlike the two above. `exports` is new, its
 // `[storage.buckets.exports]` block only takes effect when the local stack is
-// started fresh, and developers are told never to run `pnpm w:db migrate` — so
-// on an already-running stack this is the only thing that provisions it. Without
+// started fresh, and a running stack may not have had `pnpm w:db migrate` run
+// since — so on an already-running stack this is what provisions it. Without
 // it the export workflow fails at upload with "Bucket not found".
 // `updateBucket` follows the create for the same reason it does in migrate.ts:
 // create only decides what a *new* bucket looks like, so a local `exports` bucket
