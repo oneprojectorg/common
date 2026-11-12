@@ -1960,7 +1960,7 @@
     "showNameOption": "Mostrar mi nombre",
     "showNameHint": "Todos los participantes ven tu nombre en tu actividad.",
     "stayAnonymousOption": "Mantener el anonimato",
-    "stayAnonymousHint": "Todos los participantes, incluso los administradores del proceso, ven <strong>Participante {number}</strong>. Tus datos de contacto siguen ocultos.",
+    "stayAnonymousHint": "Todos los participantes, incluso los administradores del proceso, ven <strong>{name}</strong>. Tus datos de contacto siguen ocultos.",
     "downloadDataTitle": "Descargar tus datos",
     "downloadDataHint": "Todo lo que publicaste y tu perfil, en un archivo.",
     "downloadAction": "Descargar",

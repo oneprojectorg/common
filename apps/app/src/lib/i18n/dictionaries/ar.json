@@ -1960,7 +1960,7 @@
     "showNameOption": "إظهار اسمي",
     "showNameHint": "يرى جميع المشاركين اسمك بجانب نشاطك.",
     "stayAnonymousOption": "إخفاء هويتي",
-    "stayAnonymousHint": "يرى جميع المشاركين، بمن فيهم مسؤولو العملية، <strong>مشارك {number}</strong>. وتبقى بيانات اتصالك مخفية.",
+    "stayAnonymousHint": "يرى جميع المشاركين، بمن فيهم مسؤولو العملية، <strong>{name}</strong>. وتبقى بيانات اتصالك مخفية.",
     "downloadDataTitle": "تنزيل بياناتك",
     "downloadDataHint": "كل ما نشرته وملفك الشخصي، في ملف واحد.",
     "downloadAction": "تنزيل",

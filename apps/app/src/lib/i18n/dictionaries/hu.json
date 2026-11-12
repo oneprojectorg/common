@@ -1960,7 +1960,7 @@
     "showNameOption": "Megjelenik a nevem",
     "showNameHint": "Minden résztvevő látja az Ön nevét a tevékenységei mellett.",
     "stayAnonymousOption": "Névtelen maradok",
-    "stayAnonymousHint": "Minden résztvevő, a folyamat adminisztrátorait is beleértve, <strong>Résztvevő {number}</strong> néven látja Önt. Az elérhetőségei rejtve maradnak.",
+    "stayAnonymousHint": "Minden résztvevő, a folyamat adminisztrátorait is beleértve, <strong>{name}</strong> néven látja Önt. Az elérhetőségei rejtve maradnak.",
     "downloadDataTitle": "Az adatai letöltése",
     "downloadDataHint": "Minden, amit közzétett, és a profilja egy fájlban.",
     "downloadAction": "Letöltés",

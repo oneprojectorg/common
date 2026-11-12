@@ -3,7 +3,6 @@ import { describe, expect, it } from 'vitest';
 import {
   MAX_FULL_NAME_LENGTH,
   fullNameIssue,
-  parseParticipantNumber,
   validator,
 } from './VisibilityStep';
 
@@ -47,17 +46,5 @@ describe('fullNameIssue', () => {
   it('accepts a name at the limit', () => {
     expect(fullNameIssue('a'.repeat(MAX_FULL_NAME_LENGTH))).toBeNull();
     expect(fullNameIssue('Alex Chen')).toBeNull();
-  });
-});
-
-describe('parseParticipantNumber', () => {
-  it('reads the number from a trigger-assigned participant name', () => {
-    expect(parseParticipantNumber('Participant 46')).toBe('46');
-  });
-
-  it('returns null for any other profile name', () => {
-    expect(parseParticipantNumber('Alex Chen')).toBeNull();
-    expect(parseParticipantNumber('Participant')).toBeNull();
-    expect(parseParticipantNumber('')).toBeNull();
   });
 });

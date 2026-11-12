@@ -1960,7 +1960,7 @@
     "showNameOption": "Muuji magacayga",
     "showNameHint": "Dhammaan ka qaybgalayaashu waxay magacaaga ku arkaan wixii aad samayso.",
     "stayAnonymousOption": "Sii ahow qarsoodi",
-    "stayAnonymousHint": "Dhammaan ka qaybgalayaashu, oo ay ku jiraan maamulayaasha habka, waxay arkaan <strong>Ka qaybgalaha {number}</strong>. Faahfaahinta xiriirkaaga waa la qariyaa.",
+    "stayAnonymousHint": "Dhammaan ka qaybgalayaashu, oo ay ku jiraan maamulayaasha habka, waxay arkaan <strong>{name}</strong>. Faahfaahinta xiriirkaaga waa la qariyaa.",
     "downloadDataTitle": "Soo deji xogtaada",
     "downloadDataHint": "Wax kasta oo aad soo dhigtay iyo bogga shakhsigaaga, fayl ahaan.",
     "downloadAction": "Soo deji",

@@ -38,10 +38,9 @@ export const VisibilityStep = ({ onNext }: StepProps): ReactNode => {
   const [nameError, setNameError] = useState<string | undefined>();
 
   const profileName = userAccount?.profile?.name ?? '';
-  const participantNumber = parseParticipantNumber(profileName) ?? profileName;
 
-  // <bdi>: the interpolated value is "Participant <n>" today, but the
-  // fallback is the raw profile name — user-authored text, which must be
+  // <bdi>: the interpolated value is "Participant <n>" today, but the name
+  // is still profile text — user-authored in other flows, which must be
   // bidi-isolated inside an RTL paragraph.
   const strong = (chunks: ReactNode) => (
     <span className="font-strong text-foreground">
@@ -128,7 +127,7 @@ export const VisibilityStep = ({ onNext }: StepProps): ReactNode => {
             }
             label={tSettings('stayAnonymousOption')}
             description={tSettings.rich('stayAnonymousHint', {
-              number: participantNumber,
+              name: profileName,
               strong,
             })}
             className="rounded-xl p-4"
@@ -166,9 +165,4 @@ export const fullNameIssue = (value: string): 'required' | 'tooLong' | null => {
     return 'tooLong';
   }
   return null;
-};
-
-export const parseParticipantNumber = (profileName: string): string | null => {
-  const match = /^Participant (\d+)$/.exec(profileName);
-  return match?.[1] ?? null;
 };

@@ -29,7 +29,6 @@ import {
 } from './ToSAcceptanceScreen';
 import {
   VisibilityStep,
-  parseParticipantNumber,
   validator as VisibilityStepValidator,
 } from './VisibilityStep';
 import { useOnboardingFormStore } from './useOnboardingFormStore';
@@ -63,12 +62,11 @@ export const PromoteOnboardingFlow = ({
 
   // Every non-network-member lands in this flow, not only claimed visitors
   // (see OnboardingFlow). Only a claimed anonymous account carries the signup
-  // trigger's "Participant <n>" profile name, and only there is the visibility
-  // choice meaningful — an ordinary signup keeps the personal-details step.
+  // trigger's profile flag, and only there is the visibility choice
+  // meaningful — an ordinary signup keeps the personal-details step.
   const { data: userAccount, isPending: accountPending } =
     trpc.account.getMyAccount.useQuery();
-  const isClaimedAnonymous =
-    parseParticipantNumber(userAccount?.profile?.name ?? '') !== null;
+  const isClaimedAnonymous = userAccount?.profile?.isAnonymous === true;
 
   const searchParams = useSearchParams();
   const redirectParam = searchParams.get('redirect');
@@ -98,7 +96,10 @@ export const PromoteOnboardingFlow = ({
         personalDetails?.mode === 'name' &&
         personalDetails.fullName
       ) {
-        await renameProfile({ name: personalDetails.fullName });
+        await renameProfile({
+          name: personalDetails.fullName,
+          isAnonymous: false,
+        });
       }
       await completeOnboarding();
       await trpcUtils.account.getMyAccount.invalidate();
