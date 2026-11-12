@@ -57,6 +57,15 @@ async function stampRow({ id, at }: { id: string; at: string }) {
     .where(eq(categoryReviewers.id, id));
 }
 
+function reviewerProfileOf(profileId: string) {
+  return {
+    id: profileId,
+    name: expect.any(String),
+    slug: expect.any(String),
+    avatarImage: null,
+  };
+}
+
 describe.concurrent('listCategoryDevelopmentStatus', () => {
   it('returns the stamps of the current phase rows only', async ({
     task,
@@ -118,8 +127,16 @@ describe.concurrent('listCategoryDevelopmentStatus', () => {
     expect(categoryA?.rows).toHaveLength(2);
     expect(categoryA?.rows).toEqual(
       expect.arrayContaining([
-        { reviewerProfileId: confirmed.profileId, developConfirmedAt: at },
-        { reviewerProfileId: open.profileId, developConfirmedAt: null },
+        {
+          reviewerProfileId: confirmed.profileId,
+          developConfirmedAt: at,
+          reviewerProfile: reviewerProfileOf(confirmed.profileId),
+        },
+        {
+          reviewerProfileId: open.profileId,
+          developConfirmedAt: null,
+          reviewerProfile: reviewerProfileOf(open.profileId),
+        },
       ]),
     );
   });
@@ -191,7 +208,11 @@ describe.concurrent('listCategoryDevelopmentStatus', () => {
     });
 
     expect(result.items.find((c) => c.category.id === termA.id)?.rows).toEqual([
-      { reviewerProfileId: reviewer.profileId, developConfirmedAt: at },
+      {
+        reviewerProfileId: reviewer.profileId,
+        developConfirmedAt: at,
+        reviewerProfile: reviewerProfileOf(reviewer.profileId),
+      },
     ]);
   });
 

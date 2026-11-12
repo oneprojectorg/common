@@ -12,6 +12,7 @@ import { z } from 'zod';
 
 import { list, paginated, total } from '../../../utils/pagination';
 import { accountContactSchema } from '../../profile/schemas/accountContact';
+import { profileMinimalSchema } from '../../profile/schemas/profileMinimal';
 import type { RubricTemplateSchema } from '../types';
 import {
   instanceOptionalPhaseRefSchema,
@@ -406,6 +407,12 @@ export const categoryDevelopmentStatusSchema = z.object({
     z.object({
       reviewerProfileId: z.uuid(),
       developConfirmedAt: z.string().nullable(),
+      reviewerProfile: profileMinimalSchema.pick({
+        id: true,
+        name: true,
+        slug: true,
+        avatarImage: true,
+      }),
     }),
   ),
 });
