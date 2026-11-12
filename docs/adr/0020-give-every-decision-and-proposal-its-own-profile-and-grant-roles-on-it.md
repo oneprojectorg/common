@@ -8,69 +8,53 @@ Accepted
 
 ## Context
 
-A decision process has its own members: the people who run it, the people
-who take part, sometimes the public. A proposal has its own members too: its
-author and invited co-authors. Neither set is the member list of an
-organization, and an organization's `Admin` and `Member` roles say nothing
+A decision has its own members: the people who run it, the people who take
+part, sometimes the public. A proposal has its author and co-authors. Neither
+set is an organization's member list, and an organization's roles say nothing
 about who may vote or review.
 
 [0013](./0013-authorize-in-the-service-layer-with-access-zones.md) says where
-a check runs. This records what the check is built from: which record holds
-a grant, how a role is scoped, what the permission bits are, and how a
-decision, a proposal and an organization fit into one model. This records
-what the code already does.
+a check runs. This records what it is built from.
 
 ## Decision
 
 We will grant access on profiles. Every record that admits members owns a
-`profiles` row, and a membership is a row on that profile. One mechanism
-serves decisions and proposals; organizations keep their own membership
-table.
+`profiles` row, and a membership is a row on that profile. Organizations keep
+their own membership table.
 
 ### Profiles and memberships
 
-`profiles.entity_type` (`type` in Drizzle) names what owns the profile:
-`org`, `individual`, `decision`, `proposal` or `phase`, plus the deprecated
-`user`. The owning record points at it:
+`profiles.entity_type` is `org`, `individual`, `decision`, `proposal` or
+`phase` (plus the deprecated `user`). The owning record points at the profile:
 
 | Record | Column |
 | --- | --- |
 | `organizations` | `profile_id` |
 | `users` | `profile_id` (the individual), `current_profile_id` (the profile the user acts as) |
-| `decision_process_instances` | `profile_id` (its own), `owner_profile_id` (the creator's individual profile, or an organization's profile on older decisions), `steward_profile_id` (the profile that runs it) |
+| `decision_process_instances` | `profile_id` (its own), `owner_profile_id` (the creator's individual profile; an organization's profile on older decisions), `steward_profile_id` (the profile that runs it) |
 | `proposals` | `profile_id` (its own), `submitted_by_profile_id` |
 
-A membership is a `profile_users` row (`auth_user_id`, `profile_id`,
-`is_owner`) with roles in `profileUser_to_access_roles`. A phase profile
-admits nobody; `assertProfileTypeAccess` throws on it, and lists exclude it.
+A membership is a `profile_users` row with roles in
+`profileUser_to_access_roles`. A phase profile admits nobody.
 
-Organization membership is the exception. It stays on `organization_users`
-and `organizationUser_to_access_roles`, keyed on the auth user and the
-organization, not on the organization's profile. `assertOrgAccess` reads it.
-A lookup on an organization's profile sees no organization member.
-`getProfileAccessRolesWithOrgFallback` falls back to the organization that
-owns that profile. `assertInstanceProfileAccess` falls back to the
-organization whose profile is the decision's `owner_profile_id`.
+Organization membership stays on `organization_users` and
+`organizationUser_to_access_roles`, keyed on the organization, not its
+profile. A lookup on an organization's profile sees no organization member,
+so `assertInstanceProfileAccess` falls back to the organization whose profile
+is the decision's `owner_profile_id`.
 
 ### Zones, bits and roles
 
 A role grants a bitfield per zone. The zones are `profile`, `decisions` and
-`admin` (organization member management). The bits are:
+`admin` (organization member management). A caller's roles are unioned.
 
 | Bit | Value | Zone |
 | --- | --- | --- |
 | `DELETE`, `UPDATE`, `READ`, `CREATE`, `ADMIN` | 1, 2, 4, 8, 16 | every zone |
 | `INVITE_MEMBERS`, `REVIEW`, `SUBMIT_PROPOSALS`, `VOTE` | 32, 64, 128, 256 | `decisions` only |
 
-The standard bits come from `access-zones`. The decision bits are
-`decisionPermission` in `packages/common/src/services/decision/permissions.ts`,
-duplicated in `services/db/seedData/accessControl.ts` because `@op/db`
-cannot import `@op/common`. A caller's roles are unioned, so a bit granted
-by any role is granted.
-
-A role is global or scoped. `access_roles.profile_id` is `NULL` for a global
-role and set for a role that exists on one profile. The seed creates three
-global roles:
+A role is global (`access_roles.profile_id` is `NULL`) or scoped to one
+profile. The seed creates three global roles:
 
 | Role | `profile` | `decisions` | `admin` |
 | --- | --- | --- | --- |
@@ -78,70 +62,51 @@ global roles:
 | `Member` | `READ` | `READ`, `UPDATE`, `SUBMIT_PROPOSALS`, `VOTE` | none |
 | `Public` | none | none | none |
 
-`createDefaultDecisionRoles` gives every new decision two roles scoped to
-its profile: `Admin` (ACRUD on `profile`, every bit on `decisions`) and
-`Participant` (`READ` on `profile`; `READ`, `SUBMIT_PROPOSALS`, `VOTE` on
-`decisions`). A `profile: ADMIN` on the decision adds and edits more through `createRole`,
-`updateRolePermissions` and `updateDecisionRoles`. `createRole` and
-`createDecisionRole` add `profile: READ` to every scoped role, and
-`createDecisionRole` and `updateDecisionRoles` add `READ` to the `decisions`
-bitfield; `updateRolePermissions` adds nothing, so it can write a role whose
-holder cannot see the decision.
+Every new decision gets two roles scoped to its profile: `Admin` (ACRUD on
+`profile`, every bit on `decisions`) and `Participant` (`READ` on `profile`;
+`READ`, `SUBMIT_PROPOSALS`, `VOTE` on `decisions`). A `profile: ADMIN` on the
+decision adds and edits roles. `createRole`, `createDecisionRole` and
+`updateDecisionRoles` force `READ` in; `updateRolePermissions` does not.
 
-A permission row, `access_role_permissions_on_access_zones`, is global or
-scoped in the same way. A row with `profile_id` set overrides the global row
-of the same role and zone on that profile only.
-`pickEffectivePermissionRows` applies the rule: a scoped row never counts on
-another profile, and with no profile in play only global rows count. Only a
-global role carries scoped rows; a scoped role is scoped already.
+A permission row (`access_role_permissions_on_access_zones`) with
+`profile_id` set overrides the global row of the same role and zone on that
+profile only. It never counts elsewhere, and only a global role carries one.
 
 ### Public access
 
-`GLOBAL_USER_PUBLIC` is a sentinel auth user. `resolveAccessUserIds` turns
-every caller into the pair of their own id and the sentinel, or the sentinel
-alone when there is no user. Every grant lookup filters on that set, so a
-grant to the sentinel reaches members, signed-in non-members and visitors
-alike, and a missing user can never drop the filter.
+`GLOBAL_USER_PUBLIC` is a sentinel auth user. Every grant lookup filters on
+the caller's id plus the sentinel, or the sentinel alone with no user, so a
+grant to the sentinel reaches everyone and a missing user never drops the
+filter.
 
-The `Public` role has no global permission rows, so the grant alone opens
-nothing. `makeDecisionPublic` opens one published decision: it adds a
-`profile_users` row for the sentinel on the decision's profile, links it to
-`Public`, and writes a scoped override on `decisions` with `READ` plus
-optional `SUBMIT_PROPOSALS` and `VOTE`. `removeDecisionPublicAccess` deletes
-both. Only a platform admin may call either.
+`Public` has no global permission rows, so the grant alone opens nothing.
+`makeDecisionPublic` adds a `profile_users` row for the sentinel on one
+published decision, links it to `Public`, and writes a scoped override on
+`decisions` with `READ` plus optional `SUBMIT_PROPOSALS` and `VOTE`.
+`removeDecisionPublicAccess` deletes both. Only a platform admin may call
+either.
 
 ### Who is granted what
 
-`createDecisionInstance` creates the profile, the instance, the two scoped
-roles and the creator's membership in one transaction. The creator gets a
-`profile_users` row with `is_owner` and the decision's scoped `Admin` role. `owner_profile_id` is their individual
-profile. `steward_profile_id` is the profile they acted as; `duplicateInstance`
-defaults it to the individual profile instead. `createProposal`
-does the same for a proposal: the creator gets a `profile_users` row with
-`is_owner` and the global `Admin` role on the proposal's profile. A co-author accepts a proposal
-invite, which `acceptProposalInvite` turns into a `profile_users` row on the
-proposal and, when they have none, a row on the decision with the role of
-their pending decision invite, or the global `Member` role. Everyone else joins a decision through a profile invite,
-which `acceptProfileInvite` turns into a `profile_users` row, or through the
-public grant.
-
-A participant, for notifications, is a member of the decision's profile or
-anyone attached to a proposal in it
-([0002](./0002-process-participant-for-notifications.md)). Voter enrolment
-is a separate record, checked at vote time, not a grant.
+The creator of a decision gets a `profile_users` row with `is_owner` and the
+decision's scoped `Admin` role, in the transaction that creates the decision.
+The creator of a proposal gets the same on the proposal's profile, with the
+global `Admin` role. A co-author who accepts a proposal invite gets a row on
+the proposal and, if they have none, a row on the decision with the role of
+their pending decision invite, or `Member`. Everyone else joins a decision by
+profile invite or the public grant. Voter enrolment is a separate record,
+checked at vote time, not a grant.
 
 ### The check per action
 
-Most services go through `assertInstanceProfileAccess`: the decision's
-profile first, then the organization whose profile is `owner_profile_id`.
-Reads by id use it with a `decisions: READ` fallback; the read by slug,
-`getDecisionBySlug`, checks the decision's profile only. Review assignment
-and custom forms use it with a `decisions: ADMIN` fallback. Exports and the
-lifecycle writes in the table below check the decision's profile only.
+Reads by id, proposal creation, review management and custom forms go
+through `assertInstanceProfileAccess`: the decision's profile first, then the
+organization fallback. The read by slug, exports and the lifecycle writes
+below check the decision's profile only.
 
 | Action | Profile checked | Permission | Organization fallback |
 | --- | --- | --- | --- |
-| View a decision by id, its voting status, its results, its proposals | decision | `decisions: READ` | `decisions: READ` |
+| View a decision by id, its voting status, results and proposals | decision | `decisions: READ` | `decisions: READ` |
 | Create a proposal | decision | `profile: ADMIN` or `SUBMIT_PROPOSALS` | `profile: ADMIN` |
 | Like or follow a proposal | decision | `SUBMIT_PROPOSALS` | `SUBMIT_PROPOSALS` or `decisions: ADMIN` |
 | Comment on a proposal | decision | `profile: ADMIN` or `SUBMIT_PROPOSALS` | no |
@@ -152,65 +117,45 @@ lifecycle writes in the table below check the decision's profile only.
 | Change the steward | owner | `profile: ADMIN` | no |
 | Edit proposal content | proposal, then decision | `profile: UPDATE` on the proposal, or `decisions: UPDATE` on the decision | no |
 | Change proposal status or visibility | decision | `decisions: ADMIN` | no |
-| Delete a proposal | proposal and decision | the caller whose current profile submitted it, `profile: ADMIN` on the proposal, or `decisions: ADMIN` on the decision | no |
+| Delete a proposal | proposal and decision | the submitting profile, `profile: ADMIN` on the proposal, or `decisions: ADMIN` on the decision | no |
 
-A draft, hidden or flagged proposal is hidden with `NotFoundError`. A draft
-is visible only to members of the proposal's profile, decision admins
-included in the denial. A hidden or flagged proposal is visible to those
-members and to a `profile: ADMIN` on the decision. After submission, content edits also need the
-phase to allow them, a decision admin, or an open revision request.
+A draft is visible only to the proposal's members. A hidden or flagged
+proposal is visible to them and to a `profile: ADMIN` on the decision. Both
+are hidden with `NotFoundError`. After submission, content edits also need
+the phase to allow them, a decision admin, or an open revision request.
 
 ### Caches and the client
 
-A grant lookup is memoized per request and cached durably, keyed by the
-profile and the resolved id set. Every write that changes a membership, a
-role or a permission row must invalidate the durable cache:
-`invalidateProfileUserCacheForRole` for a role,
-`invalidateProfileUserCacheForProfile` for a profile, sentinel included, and
-`invalidateProfileUserAccessCache` for one member, which also clears the
-per-request memo. Organization grants live in a separate durable `orgUser`
-cache, keyed by the organization and the resolved id set, which the
-profile-side helpers do not touch.
+Grant lookups are memoized per request and cached durably per profile and
+caller. A write that changes a membership, a role or a permission row must
+call `invalidateProfileUserCacheForRole`, `invalidateProfileUserCacheForProfile`
+or `invalidateProfileUserAccessCache`; only the last clears the per-request
+memo. Organization grants have their own `orgUser` cache.
 
-The server computes what the client may do, as `access`, a boolean per bit.
-`getInstance` returns all true for a `profile: ADMIN` on the decision,
-otherwise the union of the roles' `decisions` bits, from the organization's
-roles when the caller has no row on the decision. `getPermissionsOnProposal` reads
-the proposal's own profile: its `decisions` bits, `admin` when the caller is
-a `profile: ADMIN` there, and `submitProposals` also when the caller may
-comment on the decision. Decision and proposal pages read `access`.
-Organization and profile pages, and the process builder, read
-`getPermissionsForProfile` from `UserProvider`, which `<AccessBoundary>`
-wraps; it knows `profile_users` and `organization_users` rows, nothing else.
+The server returns `access`, a boolean per bit, with each decision and
+proposal, and the client reads it. `getInstance` returns all true for a
+`profile: ADMIN`, else the roles' `decisions` bits. `getPermissionsOnProposal`
+reads the proposal's profile, plus `submitProposals` from the decision.
+Organization and profile pages read `getPermissionsForProfile` from
+`UserProvider`, which knows only `profile_users` and `organization_users`.
 
 ## Consequences
 
-- One membership mechanism covers a decision and a proposal, and a decision
-  can define its own roles.
-- Public access is a grant on one profile, so it is revoked and cached like
-  any other, and it never widens another decision. Member lists in the UI
-  hide the sentinel row; the notification participant list does not.
-- A proposal has a member list of its own, so a draft is visible to its
-  co-authors and to nobody else, decision admins included. Accepting a
-  proposal invite also makes the co-author a member of the decision, by
-  default a `Member`, whose `decisions: UPDATE` lets them edit the content
-  of any proposal in it while the phase allows edits.
-- The organization fallback reaches every service that uses
-  `assertInstanceProfileAccess`: reads, proposal creation, proposal likes
-  and follows, review management, custom forms, translation and moderation. The lifecycle writes in the table deny an organization admin
-  with no row on the decision's profile.
-- The fallback works only when `owner_profile_id` is an organization's
-  profile. A decision created today owns an individual profile there, so
-  only older, organization-owned decisions reach it.
-- `profile: ADMIN` and `decisions: ADMIN` are both an admin. Which one an
-  action checks is set per service, and the two are not interchangeable.
+- A decision defines its own roles, and a proposal has a member list of its
+  own, so a draft is visible to co-authors and nobody else.
+- Public access is a grant on one profile, revoked and cached like any other.
+- A co-author becomes a `Member` of the decision, and `Member` carries
+  `decisions: UPDATE`, which lets them edit any proposal while the phase
+  allows edits.
+- The organization fallback fires only when `owner_profile_id` is an
+  organization's profile, so only older decisions reach it. Where it fires,
+  it admits an organization admin to reads and proposal creation but not to
+  the lifecycle writes.
+- `profile: ADMIN` and `decisions: ADMIN` are not interchangeable, and which
+  one an action checks is set per service.
 - `decision_process_instances.profile_id` is nullable, so every service
-  checks it and throws before the grant lookup.
-- Organization membership is not a profile membership. A new profile-level
-  lookup on an organization's profile needs the fallback helper, or it sees
-  nobody.
-- Invalidation is manual. A write that changes a grant and skips it, as
-  `assignRoleToUser` does today, serves the old roles until the cache
-  expires, and only the per-member helper clears the per-request memo.
+  checks it before the grant lookup.
+- Invalidation is manual. `assignRoleToUser` skips it today, and a skipped
+  write serves old roles until the cache expires.
 - `organization/relationships.ts` still treats every organization member as
-  an admin, marked as a TODO.
+  an admin.
