@@ -10,8 +10,8 @@ Proposed
 
 We want to store activity-feed events and email-notification events in
 one shared transactional model: the same stored event powers the feed
-and the channel fan-out of ADR 0004. Today the two have no common
-record — a tRPC procedure calls `inngest.send` and a workflow function
+and the channel fan-out of ADR 0004. Prior to this ADR's
+implementation the two have no common record — a tRPC procedure calls `inngest.send` and a workflow function
 sends the email — so there is no feed to read back and no row that ties
 an event to what it delivered.
 
