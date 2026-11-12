@@ -47,6 +47,36 @@ We will store notifications in four tables.
 - `notification_deliveries` — an append-only log of per-channel
   attempts, keyed back from provider webhooks by `provider_message_id`.
 
+One Inngest function per event consumes the outbox row and writes the
+remaining three tables:
+
+```mermaid
+sequenceDiagram
+  participant API as tRPC procedure
+  participant PG as Postgres
+  participant Relay as Outbox relay (Inngest cron)
+  participant IG as Inngest
+  participant FN as Notification function
+  participant RS as Resend
+
+  API->>PG: domain write + event_outbox insert (one transaction)
+  Relay->>PG: sweep where sent_at is null
+  Relay->>IG: inngest.send(id = outbox.id)
+  Relay->>PG: mark sent_at
+  IG->>FN: invoke (retries on failure)
+  FN->>PG: insert activity (unique outbox_id)
+  FN->>PG: fan out notifications (unique activity_id, user_id)
+  FN->>PG: read notification preferences
+  FN->>RS: send batch (idempotency keys)
+  FN->>PG: append notification_deliveries
+  RS-->>API: status webhook
+  API->>PG: append notification_deliveries (delivered / bounced)
+```
+
+A crash at any arrow replays from the top: every write below
+`inngest.send` is idempotent, so a retry re-sends nothing and
+re-creates nothing.
+
 Foreign keys follow the schema's delete mechanism: scope columns
 (`organization_id`, `process_instance_id`, `proposal_id`, `post_id`)
 cascade, so a deleted scope takes its feed with it; `actor_profile_id`
