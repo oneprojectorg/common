@@ -20,6 +20,7 @@ const profileResultSchema = z.object({
   ]),
   name: z.string(),
   slug: z.string(),
+  isAnonymous: z.boolean(),
   bio: z.string().nullable(),
   mission: z.string().nullable(),
   email: z.string().nullable(),
