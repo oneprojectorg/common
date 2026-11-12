@@ -46,14 +46,15 @@ admits nobody; `assertProfileTypeAccess` throws on it, and lists exclude it.
 Organization membership is the exception. It stays on `organization_users`
 and `organizationUser_to_access_roles`, keyed on the auth user and the
 organization, not on the organization's profile. `assertOrgAccess` reads it.
-A lookup on an organization's profile sees no organization member, so
-`getProfileAccessRolesWithOrgFallback` and `assertInstanceProfileAccess`
-fall back from the profile to the organization that owns it.
+A lookup on an organization's profile sees no organization member.
+`getProfileAccessRolesWithOrgFallback` falls back to the organization that
+owns that profile. `assertInstanceProfileAccess` falls back to the
+organization whose profile is the decision's `owner_profile_id`.
 
 ### Zones, bits and roles
 
 A role grants a bitfield per zone. The zones are `profile`, `decisions` and
-`admin` (legacy). The bits are:
+`admin` (organization member management). The bits are:
 
 | Bit | Value | Zone |
 | --- | --- | --- |
@@ -79,9 +80,11 @@ global roles:
 `createDefaultDecisionRoles` gives every new decision two roles scoped to
 its profile: `Admin` (ACRUD on `profile`, every bit on `decisions`) and
 `Participant` (`READ` on `profile`; `READ`, `SUBMIT_PROPOSALS`, `VOTE` on
-`decisions`). A decision admin can add more through `createDecisionRole`.
-Every scoped role carries `profile: READ`, and every `decisions` bitfield
-carries `READ`, so a member of a decision can always see it.
+`decisions`). A `profile: ADMIN` on the decision adds more through `createRole` and
+`updateDecisionRoles`. `createRole` and `createDecisionRole` add
+`profile: READ` to every scoped role, and `updateDecisionRoles` adds `READ`
+to the `decisions` bitfield, so a role made through them always lets its
+holder see the decision.
 
 A permission row, `access_role_permissions_on_access_zones`, is global or
 scoped in the same way. A row with `profile_id` set overrides the global row
@@ -112,9 +115,12 @@ roles and the creator's membership in one transaction. The creator gets a
 `profile_users` row with `is_owner` and the decision's scoped `Admin` role. `owner_profile_id` is their individual
 profile and `steward_profile_id` is the profile they acted as. `createProposal`
 does the same for a proposal: the creator gets a `profile_users` row with
-`is_owner` and the global `Admin` role on the proposal's profile. Co-authors join through a profile
-invite, which `acceptProfileInvite` turns into a `profile_users` row.
-Everyone else joins a decision through an invite or the public grant.
+`is_owner` and the global `Admin` role on the proposal's profile. A co-author accepts a proposal
+invite, which `acceptProposalInvite` turns into a `profile_users` row on the
+proposal and, when they have none, a row on the decision with the global
+`Member` role. Everyone else joins a decision through a profile invite,
+which `acceptProfileInvite` turns into a `profile_users` row, or through the
+public grant.
 
 A participant, for notifications, is a member of the decision's profile or
 anyone attached to a proposal in it
@@ -173,8 +179,9 @@ wraps; it knows `profile_users` and `organization_users` rows, nothing else.
   proposal, and a decision can define its own roles.
 - Public access is a grant on one profile, so it is listed, revoked and
   cached like any other, and it never widens another decision.
-- A proposal has a member list of its own, so an author can share a draft
-  without giving anyone a role on the decision.
+- A proposal has a member list of its own, so a draft is visible to its
+  co-authors and to nobody else, decision admins included. Accepting a
+  proposal invite also makes the co-author a `Member` of the decision.
 - The organization fallback applies to reads, proposal creation, likes and
   follows only. An organization admin with no row on a decision's profile
   can view it and create a proposal, but cannot comment, submit, vote, edit
