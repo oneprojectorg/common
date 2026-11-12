@@ -166,7 +166,7 @@ describe('getUpdatedInstanceData', () => {
   it('keeps the develop rule in a phase rules override', () => {
     const result = getUpdatedInstanceData({
       existing: existing(),
-      existingPhases: existing().phases,
+      existingPhases: existingPhases(),
       update: {
         phases: [
           {
