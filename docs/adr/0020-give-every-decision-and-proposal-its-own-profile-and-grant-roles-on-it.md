@@ -28,8 +28,9 @@ serves organizations, decisions and proposals.
 
 ### Profiles and memberships
 
-`profiles.type` names what owns the profile: `org`, `individual`,
-`decision`, `proposal` or `phase`. The owning record points at it:
+`profiles.entity_type` (`type` in Drizzle) names what owns the profile:
+`org`, `individual`, `decision`, `proposal` or `phase`, plus the deprecated
+`user`. The owning record points at it:
 
 | Record | Column |
 | --- | --- |
@@ -130,8 +131,10 @@ Writes to the decision check the decision's profile only.
 | --- | --- | --- | --- |
 | View a decision, its voting status, its proposals | decision | `decisions: READ` | `decisions: READ` |
 | Create a proposal | decision | `profile: ADMIN` or `SUBMIT_PROPOSALS` | `profile: ADMIN` |
-| Comment on or react to a proposal | decision | `SUBMIT_PROPOSALS` | `SUBMIT_PROPOSALS` or `decisions: ADMIN` |
-| Submit a proposal, vote | decision | `SUBMIT_PROPOSALS`; `VOTE` or `decisions: ADMIN` | no |
+| Like or follow a proposal | decision | `SUBMIT_PROPOSALS` | `SUBMIT_PROPOSALS` or `decisions: ADMIN` |
+| Comment on a proposal | decision | `profile: ADMIN` or `SUBMIT_PROPOSALS` | no |
+| Submit a proposal | decision | `profile: ADMIN` or `SUBMIT_PROPOSALS` | no |
+| Vote | decision | `VOTE` or `decisions: ADMIN` | no |
 | Edit a decision, advance a phase | decision | `decisions: ADMIN` | no |
 | Delete a decision | decision | `decisions: DELETE` or `ADMIN` | no |
 | Change the steward | owner | `profile: ADMIN` | no |
@@ -153,11 +156,14 @@ role or a permission row invalidates it: `invalidateProfileUserAccessCache`
 for one member, `invalidateProfileUserCacheForRole` for a role,
 `invalidateProfileUserCacheForProfile` for a profile, sentinel included.
 
-The server computes what the client may do. `getInstance` and `getProposal`
-return `access`, a boolean per bit: all true for a `profile: ADMIN` on the
-decision, otherwise the union of the roles' `decisions` bits, with the
-organization's roles when the caller has no row on the decision. Decision
-pages read `access`. Organization and profile pages read
+The server computes what the client may do, as `access`, a boolean per bit.
+`getInstance` returns all true for a `profile: ADMIN` on the decision,
+otherwise the union of the roles' `decisions` bits, from the organization's
+roles when the caller has no row on the decision. `getProposal` reads the
+proposal's own profile: its `decisions` bits, `admin` when the caller is a
+`profile: ADMIN` there, and `submitProposals` also when the caller may
+comment on the decision. Decision and proposal pages read `access`.
+Organization and profile pages, and the process builder, read
 `getPermissionsForProfile` from `UserProvider`, which `<AccessBoundary>`
 wraps; it knows `profile_users` and `organization_users` rows, nothing else.
 
@@ -169,9 +175,10 @@ wraps; it knows `profile_users` and `organization_users` rows, nothing else.
   cached like any other, and it never widens another decision.
 - A proposal has a member list of its own, so an author can share a draft
   without giving anyone a role on the decision.
-- The organization fallback applies to reads and proposal creation only. An
-  organization admin with no row on a decision's profile can view it and
-  create a proposal, but cannot submit, vote, edit or delete.
+- The organization fallback applies to reads, proposal creation, likes and
+  follows only. An organization admin with no row on a decision's profile
+  can view it and create a proposal, but cannot comment, submit, vote, edit
+  or delete.
 - The fallback works only when `owner_profile_id` is an organization's
   profile. A decision created today owns an individual profile there, so
   only older, organization-owned decisions reach it.
