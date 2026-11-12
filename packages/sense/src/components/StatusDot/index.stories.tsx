@@ -21,3 +21,14 @@ export const Intents: Story = {
     </div>
   ),
 };
+
+export const Sizes: Story = {
+  render: () => (
+    <div className="flex flex-col gap-3">
+      <StatusDot className="text-base">Small</StatusDot>
+      <StatusDot size="md" className="gap-2 font-serif text-base">
+        Medium
+      </StatusDot>
+    </div>
+  ),
+};
