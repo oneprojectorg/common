@@ -1,4 +1,4 @@
-import type { DbClient } from '@op/db/client';
+import type { TransactionType } from '@op/db/client';
 import {
   EntityType,
   ProposalStatus,
@@ -14,7 +14,6 @@ import { logger } from '@op/logging';
 import type { User } from '@op/supabase/lib';
 
 import { CommonError } from '../../utils';
-import { invalidateProfileUserAccessCache } from '../access';
 import { generateUniqueProfileSlug } from '../profile/utils';
 import { processProposalContent } from './proposalContentProcessor';
 import type { ProposalDataInput } from './proposalDataSchema';
@@ -22,11 +21,12 @@ import { syncProposalProfileLocation } from './syncProposalProfileLocation';
 
 /**
  * Writes a new draft proposal with its profile, owner membership, location,
- * categories and attachments. The caller asserts access and resolves the
- * inputs first.
+ * categories and attachments inside the caller's transaction. The caller
+ * asserts access, resolves the inputs first, and drops the author's access
+ * cache after the commit.
  */
 export const insertProposalDraft = async ({
-  db,
+  tx,
   user,
   processInstanceId,
   proposalData,
@@ -38,7 +38,7 @@ export const insertProposalDraft = async ({
   adminRoleId,
   defaultHidden,
 }: {
-  db: DbClient;
+  tx: TransactionType;
   user: User;
   processInstanceId: string;
   proposalData: ProposalDataInput;
@@ -52,123 +52,113 @@ export const insertProposalDraft = async ({
 }) => {
   const authUserId = user.id;
 
-  const createdProposal = await db.transaction(async (tx) => {
-    const slug = await generateUniqueProfileSlug({
+  const slug = await generateUniqueProfileSlug({
+    name: proposalTitle,
+    db: tx,
+  });
+  // Create a profile for the proposal
+  const [proposalProfile] = await tx
+    .insert(profiles)
+    .values({
+      type: EntityType.PROPOSAL,
       name: proposalTitle,
-      db: tx,
-    });
-    // Create a profile for the proposal
-    const [proposalProfile] = await tx
-      .insert(profiles)
-      .values({
-        type: EntityType.PROPOSAL,
-        name: proposalTitle,
-        slug,
-      })
-      .returning();
+      slug,
+    })
+    .returning();
 
-    if (!proposalProfile) {
-      throw new CommonError('Failed to create proposal profile');
-    }
+  if (!proposalProfile) {
+    throw new CommonError('Failed to create proposal profile');
+  }
 
-    // Add the creator as a profile user with the global Admin role
-    const [newProfileUser] = await tx
-      .insert(profileUsers)
-      .values({
-        profileId: proposalProfile.id,
-        authUserId,
-        email: user.email!,
-        isOwner: true,
-      })
-      .returning();
+  // Add the creator as a profile user with the global Admin role
+  const [newProfileUser] = await tx
+    .insert(profileUsers)
+    .values({
+      profileId: proposalProfile.id,
+      authUserId,
+      email: user.email!,
+      isOwner: true,
+    })
+    .returning();
 
-    if (!newProfileUser) {
-      throw new CommonError('Failed to create proposal profile user');
-    }
+  if (!newProfileUser) {
+    throw new CommonError('Failed to create proposal profile user');
+  }
 
-    await tx.insert(profileUserToAccessRoles).values({
-      profileUserId: newProfileUser.id,
-      accessRoleId: adminRoleId,
-    });
+  await tx.insert(profileUserToAccessRoles).values({
+    profileUserId: newProfileUser.id,
+    accessRoleId: adminRoleId,
+  });
 
-    const proposalId = crypto.randomUUID();
-    const collaborationDocId = `proposal-${proposalId}`;
+  const proposalId = crypto.randomUUID();
+  const collaborationDocId = `proposal-${proposalId}`;
 
-    const [insertedProposal] = await tx
-      .insert(proposals)
-      .values({
-        id: proposalId,
-        processInstanceId,
-        proposalData: {
-          ...proposalData,
-          collaborationDocId,
-          category: categoryLabels.length > 0 ? categoryLabels : undefined,
-        },
-        submittedByProfileId,
-        profileId: proposalProfile.id,
-        status: ProposalStatus.DRAFT,
-        ...(defaultHidden ? { visibility: Visibility.HIDDEN } : {}),
-      })
-      .returning();
+  const [insertedProposal] = await tx
+    .insert(proposals)
+    .values({
+      id: proposalId,
+      processInstanceId,
+      proposalData: {
+        ...proposalData,
+        collaborationDocId,
+        category: categoryLabels.length > 0 ? categoryLabels : undefined,
+      },
+      submittedByProfileId,
+      profileId: proposalProfile.id,
+      status: ProposalStatus.DRAFT,
+      ...(defaultHidden ? { visibility: Visibility.HIDDEN } : {}),
+    })
+    .returning();
 
-    if (!insertedProposal) {
-      throw new CommonError('Failed to create proposal');
-    }
+  if (!insertedProposal) {
+    throw new CommonError('Failed to create proposal');
+  }
 
-    // Project the proposal's location onto its profile via the shared
-    // locations relation (no bespoke column on the proposal itself).
-    await syncProposalProfileLocation(tx, proposalProfile.id, proposalData);
+  // Project the proposal's location onto its profile via the shared
+  // locations relation (no bespoke column on the proposal itself).
+  await syncProposalProfileLocation(tx, proposalProfile.id, proposalData);
 
-    // Link to categories within transaction if we have valid terms
-    if (categoryTermIds.length > 0) {
-      await tx.insert(proposalCategories).values(
-        categoryTermIds.map((taxonomyTermId) => ({
-          proposalId: insertedProposal.id,
-          taxonomyTermId,
-        })),
-      );
-    }
-
-    // Link attachments to proposal if provided
-    if (attachmentIds && attachmentIds.length > 0) {
-      const proposalAttachmentValues = attachmentIds.map((attachmentId) => ({
+  // Link to categories within transaction if we have valid terms
+  if (categoryTermIds.length > 0) {
+    await tx.insert(proposalCategories).values(
+      categoryTermIds.map((taxonomyTermId) => ({
         proposalId: insertedProposal.id,
-        attachmentId: attachmentId,
-        uploadedBy: submittedByProfileId,
-      }));
+        taxonomyTermId,
+      })),
+    );
+  }
 
-      await tx.insert(proposalAttachments).values(proposalAttachmentValues);
+  // Link attachments to proposal if provided
+  if (attachmentIds && attachmentIds.length > 0) {
+    const proposalAttachmentValues = attachmentIds.map((attachmentId) => ({
+      proposalId: insertedProposal.id,
+      attachmentId: attachmentId,
+      uploadedBy: submittedByProfileId,
+    }));
 
-      // Process proposal content to replace temporary URLs with permanent ones
-      try {
-        await processProposalContent({
-          db: tx,
-          proposalId: insertedProposal.id,
-        });
-      } catch (error) {
-        logger.error('Error processing proposal content', { error });
-        // Let the transaction roll back on error to maintain data consistency
-        throw error;
-      }
+    await tx.insert(proposalAttachments).values(proposalAttachmentValues);
+
+    // Process proposal content to replace temporary URLs with permanent ones
+    try {
+      await processProposalContent({
+        db: tx,
+        proposalId: insertedProposal.id,
+      });
+    } catch (error) {
+      logger.error('Error processing proposal content', { error });
+      // Let the transaction roll back on error to maintain data consistency
+      throw error;
     }
+  }
 
-    const proposal = await tx.query.proposals.findFirst({
-      where: { id: insertedProposal.id },
-      with: { profile: true },
-    });
-
-    if (!proposal) {
-      throw new CommonError('Failed to create proposal');
-    }
-
-    return proposal;
+  const proposal = await tx.query.proposals.findFirst({
+    where: { id: insertedProposal.id },
+    with: { profile: true },
   });
 
-  // The author's cached `user` entry predates this membership.
-  await invalidateProfileUserAccessCache({
-    authUserId,
-    profileId: createdProposal.profileId,
-  });
+  if (!proposal) {
+    throw new CommonError('Failed to create proposal');
+  }
 
-  return createdProposal;
+  return proposal;
 };
