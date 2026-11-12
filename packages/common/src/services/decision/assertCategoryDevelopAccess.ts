@@ -18,14 +18,17 @@ export interface CategoryDevelopAccess {
   phaseId: string;
   actorProfileId: string;
   isAdmin: boolean;
+  /** The one reviewer row to act on; `null` = every row of the category. */
+  targetReviewerProfileId: string | null;
 }
 
 /**
  * Asserts the caller may confirm or unconfirm the develop work of a category
  * in the current phase, which must be a develop phase of a published
- * instance. An admin of the instance profile (no org fallback) acts on every
- * row of the category for the phase. Anyone else needs Review and their own
- * row for the phase, and acts on that row only.
+ * instance. An admin of the instance profile (no org fallback) acts on the
+ * row of `reviewerProfileId`, or on every row of the category for the phase
+ * when it is not given. Anyone else needs Review and their own row for the
+ * phase, and acts on that row only.
  *
  * The rule is not final: the server gates of the develop procedures are
  * still open and will change it.
@@ -33,10 +36,12 @@ export interface CategoryDevelopAccess {
 export async function assertCategoryDevelopAccess({
   processInstanceId,
   taxonomyTermId,
+  reviewerProfileId,
   user,
 }: {
   processInstanceId: string;
   taxonomyTermId: string;
+  reviewerProfileId?: string;
   user: User;
 }): Promise<CategoryDevelopAccess> {
   const [instance, dbUser] = await Promise.all([
@@ -86,11 +91,22 @@ export async function assertCategoryDevelopAccess({
       roles,
     )
   ) {
-    return { phaseId, actorProfileId: dbUser.profileId, isAdmin: true };
+    return {
+      phaseId,
+      actorProfileId: dbUser.profileId,
+      isAdmin: true,
+      targetReviewerProfileId: reviewerProfileId ?? null,
+    };
   }
 
   if (!checkPermission({ decisions: decisionPermission.REVIEW }, roles)) {
     throw new UnauthorizedError("You don't have access to do this");
+  }
+
+  if (reviewerProfileId && reviewerProfileId !== dbUser.profileId) {
+    throw new UnauthorizedError(
+      'You can only confirm or unconfirm your own category reviewer row',
+    );
   }
 
   // Rows with no phase scope reviewing only and do not count here.
@@ -110,7 +126,12 @@ export async function assertCategoryDevelopAccess({
     );
   }
 
-  return { phaseId, actorProfileId: dbUser.profileId, isAdmin: false };
+  return {
+    phaseId,
+    actorProfileId: dbUser.profileId,
+    isAdmin: false,
+    targetReviewerProfileId: dbUser.profileId,
+  };
 }
 
 /**
@@ -130,9 +151,9 @@ export function categoryDevelopRowsWhere({
     eq(categoryReviewers.processInstanceId, processInstanceId),
     eq(categoryReviewers.taxonomyTermId, taxonomyTermId),
     eq(categoryReviewers.phaseId, access.phaseId),
-    access.isAdmin
-      ? undefined
-      : eq(categoryReviewers.reviewerProfileId, access.actorProfileId),
+    access.targetReviewerProfileId
+      ? eq(categoryReviewers.reviewerProfileId, access.targetReviewerProfileId)
+      : undefined,
     exists(
       db
         .select({ id: processInstances.id })

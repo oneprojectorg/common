@@ -147,4 +147,102 @@ describe.concurrent('unconfirmCategoryDevelopment', () => {
       }),
     ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
   });
+  it('lets an admin who names a reviewer clear that row only', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { instanceId, termA, first, second, adminCaller } =
+      await createConfirmedCategory({ testData, onTestFinished });
+
+    const result = await adminCaller.decision.unconfirmCategoryDevelopment({
+      processInstanceId: instanceId,
+      taxonomyTermId: termA.id,
+      reviewerProfileId: second.profileId,
+    });
+
+    expect(result.rows).toEqual([
+      { reviewerProfileId: second.profileId, developConfirmedAt: null },
+    ]);
+    const data = await getCategoryReviewerData([
+      ...first.rowIds,
+      ...second.rowIds,
+    ]);
+    expect(data.get(first.rowIds[0] ?? '')).toEqual(stamped);
+    expect(data.get(second.rowIds[0] ?? '')).toEqual({});
+  });
+
+  it('refuses an admin who names a reviewer with no row for the phase', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instanceId, termA, adminCaller } =
+      await createConfirmedCategory({ testData, onTestFinished });
+    const outsider = await createCategoryDevelopReviewer({
+      testData,
+      setup,
+      rows: [],
+    });
+
+    await expect(
+      adminCaller.decision.unconfirmCategoryDevelopment({
+        processInstanceId: instanceId,
+        taxonomyTermId: termA.id,
+        reviewerProfileId: outsider.profileId,
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'NotFoundError' } });
+  });
+
+  it('lets a reviewer who names themself clear their own row only', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { instanceId, termA, first, second } = await createConfirmedCategory({
+      testData,
+      onTestFinished,
+    });
+
+    const caller = await createAuthenticatedCaller(first.email);
+    await caller.decision.unconfirmCategoryDevelopment({
+      processInstanceId: instanceId,
+      taxonomyTermId: termA.id,
+      reviewerProfileId: first.profileId,
+    });
+
+    const data = await getCategoryReviewerData([
+      ...first.rowIds,
+      ...second.rowIds,
+    ]);
+    expect(data.get(first.rowIds[0] ?? '')).toEqual({});
+    expect(data.get(second.rowIds[0] ?? '')).toEqual(stamped);
+  });
+
+  it('refuses a reviewer who names the row of another reviewer', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { instanceId, termA, first, second } = await createConfirmedCategory({
+      testData,
+      onTestFinished,
+    });
+
+    const caller = await createAuthenticatedCaller(first.email);
+    await expect(
+      caller.decision.unconfirmCategoryDevelopment({
+        processInstanceId: instanceId,
+        taxonomyTermId: termA.id,
+        reviewerProfileId: second.profileId,
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
+
+    const data = await getCategoryReviewerData([
+      ...first.rowIds,
+      ...second.rowIds,
+    ]);
+    expect(data.get(first.rowIds[0] ?? '')).toEqual(stamped);
+    expect(data.get(second.rowIds[0] ?? '')).toEqual(stamped);
+  });
 });

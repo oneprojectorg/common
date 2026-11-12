@@ -13,20 +13,23 @@ import type { CategoryDevelopmentRow } from './listCategoryDevelopmentStatus';
 /**
  * Stamps `data.developConfirmedAt` on the category reviewer rows of a category
  * for the current develop phase: the caller's own row, or every row when the
- * caller is an admin. A second confirm overwrites the time.
+ * caller is an admin and names no reviewer. A second confirm overwrites the time.
  */
 export async function confirmCategoryDevelopment({
   processInstanceId,
   taxonomyTermId,
+  reviewerProfileId,
   user,
 }: {
   processInstanceId: string;
   taxonomyTermId: string;
+  reviewerProfileId?: string;
   user: User;
 }): Promise<{ rows: CategoryDevelopmentRow[] }> {
   const access = await assertCategoryDevelopAccess({
     processInstanceId,
     taxonomyTermId,
+    reviewerProfileId,
     user,
   });
   const now = new Date().toISOString();
@@ -36,7 +39,7 @@ export async function confirmCategoryDevelopment({
   const updated = await db
     .update(categoryReviewers)
     .set({
-      data: sql`${categoryReviewers.data} || jsonb_build_object('developConfirmedAt', ${now}::text)`,
+      data: sql`${categoryReviewers.data} || ${JSON.stringify({ developConfirmedAt: now })}::jsonb`,
     })
     .where(
       categoryDevelopRowsWhere({ processInstanceId, taxonomyTermId, access }),
@@ -57,6 +60,7 @@ export async function confirmCategoryDevelopment({
       taxonomyTermId,
       phaseId: access.phaseId,
       actorProfileId: access.actorProfileId,
+      targetReviewerProfileId: access.targetReviewerProfileId,
       rowCount: updated.length,
     });
   }
