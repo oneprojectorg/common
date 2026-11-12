@@ -14,9 +14,10 @@ only the tRPC path, and the same service is also called from workflows and
 SMS commands ([0011](./0011-keep-routers-thin-and-put-logic-in-the-service-layer.md)).
 This records current practice.
 
-In scope: where a permission check runs and what it is built from. Who the
-caller is belongs to
-[0012](./0012-authenticate-at-the-boundary.md).
+In scope: where a permission check runs. Who the caller is belongs to
+[0012](./0012-authenticate-at-the-boundary.md). What a grant is, and how a
+decision and a proposal fit the model, belongs to
+[0020](./0020-give-every-decision-and-proposal-its-own-profile-and-grant-roles-on-it.md).
 
 ## Decision
 

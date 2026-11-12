@@ -37,7 +37,7 @@ table.
 | --- | --- |
 | `organizations` | `profile_id` |
 | `users` | `profile_id` (the individual), `current_profile_id` (the profile the user acts as) |
-| `decision_process_instances` | `profile_id` (its own), `owner_profile_id` (the creator's individual profile), `steward_profile_id` (the profile that runs it) |
+| `decision_process_instances` | `profile_id` (its own), `owner_profile_id` (the creator's individual profile, or an organization's profile on older decisions), `steward_profile_id` (the profile that runs it) |
 | `proposals` | `profile_id` (its own), `submitted_by_profile_id` |
 
 A membership is a `profile_users` row (`auth_user_id`, `profile_id`,
@@ -114,8 +114,8 @@ both. Only a platform admin may call either.
 `createDecisionInstance` creates the profile, the instance, the two scoped
 roles and the creator's membership in one transaction. The creator gets a
 `profile_users` row with `is_owner` and the decision's scoped `Admin` role. `owner_profile_id` is their individual
-profile. `steward_profile_id` is the profile they acted as, unless the
-create path names another, as `duplicateInstance` does. `createProposal`
+profile. `steward_profile_id` is the profile they acted as; `duplicateInstance`
+defaults it to the individual profile instead. `createProposal`
 does the same for a proposal: the creator gets a `profile_users` row with
 `is_owner` and the global `Admin` role on the proposal's profile. A co-author accepts a proposal
 invite, which `acceptProposalInvite` turns into a `profile_users` row on the
@@ -133,13 +133,14 @@ is a separate record, checked at vote time, not a grant.
 
 Most services go through `assertInstanceProfileAccess`: the decision's
 profile first, then the organization whose profile is `owner_profile_id`.
-Reads use it with a `decisions: READ` fallback. Review assignment, exports
-and custom forms use it with a `decisions: ADMIN` fallback. The lifecycle
-writes in the table below check the decision's profile only.
+Reads by id use it with a `decisions: READ` fallback; the read by slug,
+`getDecisionBySlug`, checks the decision's profile only. Review assignment
+and custom forms use it with a `decisions: ADMIN` fallback. Exports and the
+lifecycle writes in the table below check the decision's profile only.
 
 | Action | Profile checked | Permission | Organization fallback |
 | --- | --- | --- | --- |
-| View a decision, its voting status, its proposals | decision | `decisions: READ` | `decisions: READ` |
+| View a decision by id, its voting status, its results, its proposals | decision | `decisions: READ` | `decisions: READ` |
 | Create a proposal | decision | `profile: ADMIN` or `SUBMIT_PROPOSALS` | `profile: ADMIN` |
 | Like or follow a proposal | decision | `SUBMIT_PROPOSALS` | `SUBMIT_PROPOSALS` or `decisions: ADMIN` |
 | Comment on a proposal | decision | `profile: ADMIN` or `SUBMIT_PROPOSALS` | no |
@@ -162,7 +163,7 @@ phase to allow them, a decision admin, or an open revision request.
 
 A grant lookup is memoized per request and cached durably, keyed by the
 profile and the resolved id set. Every write that changes a membership, a
-role or a permission row invalidates the durable cache:
+role or a permission row must invalidate the durable cache:
 `invalidateProfileUserCacheForRole` for a role,
 `invalidateProfileUserCacheForProfile` for a profile, sentinel included, and
 `invalidateProfileUserAccessCache` for one member, which also clears the
@@ -188,11 +189,12 @@ wraps; it knows `profile_users` and `organization_users` rows, nothing else.
   sentinel row.
 - A proposal has a member list of its own, so a draft is visible to its
   co-authors and to nobody else, decision admins included. Accepting a
-  proposal invite also makes the co-author a member of the decision.
+  proposal invite also makes the co-author a member of the decision, by
+  default a `Member`, whose `decisions: UPDATE` lets them edit the content
+  of any proposal in it while the phase allows edits.
 - The organization fallback reaches every service that uses
   `assertInstanceProfileAccess`: reads, proposal creation, likes and
-  follows, review management, exports, custom forms, translation and
-  moderation. The lifecycle writes in the table deny an organization admin
+  follows, review management, custom forms, translation and moderation. The lifecycle writes in the table deny an organization admin
   with no row on the decision's profile.
 - The fallback works only when `owner_profile_id` is an organization's
   profile. A decision created today owns an individual profile there, so
@@ -204,8 +206,8 @@ wraps; it knows `profile_users` and `organization_users` rows, nothing else.
 - Organization membership is not a profile membership. A new profile-level
   lookup on an organization's profile needs the fallback helper, or it sees
   nobody.
-- Invalidation is manual. A write that changes a grant and skips it serves
-  the old roles until the cache expires, and only the per-member helper
-  clears the per-request memo.
+- Invalidation is manual. A write that changes a grant and skips it, as
+  `assignRoleToUser` does today, serves the old roles until the cache
+  expires, and only the per-member helper clears the per-request memo.
 - `organization/relationships.ts` still treats every organization member as
   an admin, marked as a TODO.
