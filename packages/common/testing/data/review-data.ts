@@ -15,6 +15,7 @@ import {
   taxonomyTerms,
 } from '@op/db/schema';
 import { and, db, eq, sql } from '@op/db/test';
+import { randomUUID } from 'node:crypto';
 
 import { type CreateProposalResult, createProposal } from './decision-data';
 
@@ -554,4 +555,36 @@ export async function createRevisionRequest(
   }
 
   return request;
+}
+
+/**
+ * A category-reviewer row on a fresh taxonomy term. Deleting the term after the
+ * test cascades to the row.
+ */
+export async function createCategoryReviewerWithTerm({
+  processInstanceId,
+  reviewerProfileId,
+  phaseId,
+  onTestFinished,
+}: {
+  processInstanceId: string;
+  reviewerProfileId: string;
+  phaseId: string | null;
+  onTestFinished: (fn: () => void | Promise<void>) => void;
+}): Promise<void> {
+  const termId = randomUUID();
+  await db.insert(taxonomyTerms).values({
+    id: termId,
+    termUri: `test-term-${termId}`,
+    label: `Term ${termId}`,
+  });
+  onTestFinished(async () => {
+    await db.delete(taxonomyTerms).where(eq(taxonomyTerms.id, termId));
+  });
+  await createCategoryReviewer({
+    processInstanceId,
+    taxonomyTermId: termId,
+    reviewerProfileId,
+    phaseId,
+  });
 }
