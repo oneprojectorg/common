@@ -4,6 +4,8 @@ import { beforeAll, beforeEach, vi } from 'vitest';
 // Mocks a test asserts against live in `./mocks` — see ./mocks/README.md.
 
 vi.mock('@op/common/src/services/profile/utils');
+// A spy here, not in a test file: a per-file vi.mock misses modules an earlier file cached.
+vi.mock('@op/common/src/services/decision/onPhaseAdvanced', { spy: true });
 vi.mock('@op/analytics/client', () => ({
   default: () => ({
     capture() {},

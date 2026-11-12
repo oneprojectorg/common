@@ -23,8 +23,6 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { createAuthenticatedCaller } from '../../test/supabase-utils';
 
-vi.mock('@op/common/src/services/decision/onPhaseAdvanced', { spy: true });
-
 const passAll = { version: '1.0.0' as const, blocks: [] };
 
 const manualSchema = {
