@@ -15,9 +15,18 @@ export interface CategoryDevelopmentRow {
   developConfirmedAt: string | null;
 }
 
+export interface CategoryDevelopmentStatusRow extends CategoryDevelopmentRow {
+  reviewerProfile: {
+    id: string;
+    name: string;
+    slug: string;
+    avatarImage: { id: string; name: string | null } | null;
+  };
+}
+
 export interface CategoryDevelopmentStatus {
   category: ProcessCategory;
-  rows: CategoryDevelopmentRow[];
+  rows: CategoryDevelopmentStatusRow[];
 }
 
 /**
@@ -76,12 +85,18 @@ export async function listCategoryDevelopmentStatus({
             reviewerProfileId: true,
             data: true,
           },
+          with: {
+            reviewer: {
+              columns: { id: true, name: true, slug: true },
+              with: { avatarImage: { columns: { id: true, name: true } } },
+            },
+          },
           orderBy: { createdAt: 'asc', id: 'asc' },
         })
       : [],
   ]);
 
-  const rowsByTermId = new Map<string, CategoryDevelopmentRow[]>();
+  const rowsByTermId = new Map<string, CategoryDevelopmentStatusRow[]>();
   for (const row of rows) {
     const bucket = rowsByTermId.get(row.taxonomyTermId) ?? [];
     bucket.push({
@@ -90,6 +105,12 @@ export async function listCategoryDevelopmentStatus({
         rowId: row.id,
         data: row.data,
       }),
+      reviewerProfile: {
+        id: row.reviewer.id,
+        name: row.reviewer.name,
+        slug: row.reviewer.slug,
+        avatarImage: row.reviewer.avatarImage ?? null,
+      },
     });
     rowsByTermId.set(row.taxonomyTermId, bucket);
   }
