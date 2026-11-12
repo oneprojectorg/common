@@ -32,10 +32,7 @@ import { parseProposalData } from './proposalDataSchema';
 import { readInstancePhases } from './readInstancePhases';
 import { reconcileReviewAssignments } from './reconcileReviewAssignments';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
-import {
-  type PhaseInstanceData,
-  isLastPhase,
-} from './schemas/instanceData';
+import { type PhaseInstanceData, isLastPhase } from './schemas/instanceData';
 import { setProposalCategories } from './setProposalCategories';
 import { syncProposalProfileLocation } from './syncProposalProfileLocation';
 import { isPostSubmissionEditingAllowed } from './utils/phaseSettings';
