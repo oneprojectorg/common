@@ -698,6 +698,7 @@ export async function grantInstanceAdminWithoutReviewRole(opts: {
     ADMIN,
     CREATE,
     DELETE,
+    DEVELOP_PROPOSALS,
     INVITE_MEMBERS,
     READ,
     SUBMIT_PROPOSALS,
@@ -716,7 +717,8 @@ export async function grantInstanceAdminWithoutReviewRole(opts: {
       ADMIN |
       INVITE_MEMBERS |
       SUBMIT_PROPOSALS |
-      VOTE,
+      VOTE |
+      DEVELOP_PROPOSALS,
     profilePermission: DELETE | UPDATE | READ | CREATE,
   });
 }
