@@ -10,8 +10,8 @@ Proposed
 
 When an instance leaves a phase, `advancePhase` runs that phase's
 `selectionPipeline`, a JSON list of blocks, over the phase's proposals. The
-output becomes the next phase's membership. Processes select differently: all
-proposals, the top N, or ranked-choice winners that fit a budget. We need one
+output becomes proposals available to the next phase. Different processes select differently: all
+proposals, the top N, or ranked-choice winners that fit a budget, etc. We need one
 rule for where such calculations live, and a default for a phase with no
 pipeline.
 
