@@ -14,8 +14,9 @@ or the ranked-choice winners that fit a budget. Each phase in a process schema
 can carry a `selectionPipeline`, a JSON list of blocks that `advancePhase`
 runs over the departing phase's proposals when the instance moves on. The
 output set becomes the next phase's membership in
-`decision_transition_proposals`. A phase without a pipeline advances nothing,
-an empty pipeline advances everything, and an admin can also select by hand.
+`decision_transition_proposals`. Today a phase without a pipeline advances
+nothing, an empty pipeline advances everything, and an admin can also select
+by hand.
 
 Votes are stored as selections: one `decisions_vote_submissions` row per
 voter and one `decisions_vote_proposals` row per chosen proposal, with `rank`
@@ -50,6 +51,12 @@ The service builds the pipeline's context once per transition, in
   service resolves them before the advancing transaction, and only when the
   pipeline has a `budget` block.
 
+A phase that does not define a `selectionPipeline` uses the default
+pipeline, which has no blocks and so passes every proposal of the departing
+phase. An empty pipeline does the same. A phase that must advance a subset,
+or nothing, defines a pipeline that says so. The last phase needs no
+pipeline, because no transition leaves it.
+
 The pipeline decides with blocks over that context and nothing else:
 `filter`, `transform`, `compute`, `branch`, `merge`, `group`, `limit`,
 `sort`, `score`, `budget` and `debug`. A field expression reads
@@ -79,6 +86,11 @@ proposal by hand.
 
 ## Consequences
 
+- A phase without a pipeline advances all its proposals, not none. A template
+  author who forgets the pipeline loses no proposals, and an admin can still
+  remove proposals by hand. `advancePhase` changes its default from pass-none
+  to pass-all; existing phases without a pipeline change behaviour at their
+  next transition.
 - A new voting method is template JSON, not code, as long as the facts it
   needs are in `voteData`. A new fact is one addition to the aggregator.
 - The 5-4-3-2-1 ladder is one template's weights. Another template can use
