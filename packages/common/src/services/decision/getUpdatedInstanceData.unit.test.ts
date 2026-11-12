@@ -166,6 +166,7 @@ describe('getUpdatedInstanceData', () => {
   it('keeps the develop rule in a phase rules override', () => {
     const result = getUpdatedInstanceData({
       existing: existing(),
+      existingPhases: existing().phases,
       update: {
         phases: [
           {
@@ -176,7 +177,7 @@ describe('getUpdatedInstanceData', () => {
       },
     });
 
-    expect(result?.instanceData.phases[0]?.rules).toEqual({
+    expect(result.phases?.[0]?.rules).toEqual({
       proposals: { develop: true },
       voting: { submit: true },
     });
