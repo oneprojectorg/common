@@ -13,20 +13,23 @@ import type { CategoryDevelopmentRow } from './listCategoryDevelopmentStatus';
 /**
  * Removes `data.developConfirmedAt` from the category reviewer rows of a
  * category for the current develop phase: the caller's own row, or every row
- * when the caller is an admin.
+ * when the caller is an admin and names no reviewer.
  */
 export async function unconfirmCategoryDevelopment({
   processInstanceId,
   taxonomyTermId,
+  reviewerProfileId,
   user,
 }: {
   processInstanceId: string;
   taxonomyTermId: string;
+  reviewerProfileId?: string;
   user: User;
 }): Promise<{ rows: CategoryDevelopmentRow[] }> {
   const access = await assertCategoryDevelopAccess({
     processInstanceId,
     taxonomyTermId,
+    reviewerProfileId,
     user,
   });
 
@@ -54,6 +57,7 @@ export async function unconfirmCategoryDevelopment({
       taxonomyTermId,
       phaseId: access.phaseId,
       actorProfileId: access.actorProfileId,
+      targetReviewerProfileId: access.targetReviewerProfileId,
       rowCount: updated.length,
     });
   }

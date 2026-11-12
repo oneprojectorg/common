@@ -14,6 +14,7 @@ export const unconfirmCategoryDevelopmentRouter = router({
       return await unconfirmCategoryDevelopment({
         processInstanceId: input.processInstanceId,
         taxonomyTermId: input.taxonomyTermId,
+        reviewerProfileId: input.reviewerProfileId,
         user: ctx.user,
       });
     }),

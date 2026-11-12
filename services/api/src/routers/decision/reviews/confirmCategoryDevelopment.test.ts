@@ -1,5 +1,5 @@
 import { TestDecisionsDataManager } from '@op/common/testing';
-import { db, eq } from '@op/db/client';
+import { db, eq, sql } from '@op/db/client';
 import { categoryReviewers } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
@@ -238,5 +238,177 @@ describe.concurrent('confirmCategoryDevelopment', () => {
     expect(confirmedAt).not.toBe(earlier);
     const data = await getCategoryReviewerData([rowId]);
     expect(data.get(rowId)).toEqual({ developConfirmedAt: confirmedAt });
+  });
+  it('stores the stamp as a JSON object with a string time', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instanceId, termA } = await createCategoryDevelopSetup({
+      testData,
+      onTestFinished,
+    });
+    const reviewer = await createCategoryDevelopReviewer({
+      testData,
+      setup,
+      rows: [{ taxonomyTermId: termA.id, phaseId: 'final' }],
+    });
+    const rowId = reviewer.rowIds[0] ?? '';
+
+    const caller = await createAuthenticatedCaller(reviewer.email);
+    await caller.decision.confirmCategoryDevelopment({
+      processInstanceId: instanceId,
+      taxonomyTermId: termA.id,
+    });
+
+    const types = await db.execute(
+      sql`select jsonb_typeof(data) as "dataType", jsonb_typeof(data->'developConfirmedAt') as "stampType" from decision_category_reviewers where id = ${rowId}`,
+    );
+    expect([...types]).toEqual([{ dataType: 'object', stampType: 'string' }]);
+  });
+
+  it('lets an admin who names a reviewer stamp that row only', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instanceId, termA } = await createCategoryDevelopSetup({
+      testData,
+      onTestFinished,
+    });
+    const [first, second] = await Promise.all(
+      [0, 1].map(() =>
+        createCategoryDevelopReviewer({
+          testData,
+          setup,
+          rows: [{ taxonomyTermId: termA.id, phaseId: 'final' }],
+        }),
+      ),
+    );
+    if (!first || !second) {
+      throw new Error('Expected two reviewers');
+    }
+
+    const adminCaller = await createAuthenticatedCaller(setup.userEmail);
+    const result = await adminCaller.decision.confirmCategoryDevelopment({
+      processInstanceId: instanceId,
+      taxonomyTermId: termA.id,
+      reviewerProfileId: first.profileId,
+    });
+
+    expect(result.rows).toEqual([
+      {
+        reviewerProfileId: first.profileId,
+        developConfirmedAt: expect.any(String),
+      },
+    ]);
+    const data = await getCategoryReviewerData([
+      ...first.rowIds,
+      ...second.rowIds,
+    ]);
+    expect(data.get(first.rowIds[0] ?? '')).toEqual(stamped);
+    expect(data.get(second.rowIds[0] ?? '')).toEqual({});
+  });
+
+  it('refuses an admin who names a reviewer with no row for the phase', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instanceId, termA, termB } =
+      await createCategoryDevelopSetup({ testData, onTestFinished });
+    const reviewer = await createCategoryDevelopReviewer({
+      testData,
+      setup,
+      rows: [
+        { taxonomyTermId: termB.id, phaseId: 'final' },
+        { taxonomyTermId: termA.id, phaseId: 'initial' },
+      ],
+    });
+
+    const adminCaller = await createAuthenticatedCaller(setup.userEmail);
+    await expect(
+      adminCaller.decision.confirmCategoryDevelopment({
+        processInstanceId: instanceId,
+        taxonomyTermId: termA.id,
+        reviewerProfileId: reviewer.profileId,
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'NotFoundError' } });
+  });
+
+  it('lets a reviewer who names themself stamp their own row only', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instanceId, termA } = await createCategoryDevelopSetup({
+      testData,
+      onTestFinished,
+    });
+    const [reviewer, other] = await Promise.all(
+      [0, 1].map(() =>
+        createCategoryDevelopReviewer({
+          testData,
+          setup,
+          rows: [{ taxonomyTermId: termA.id, phaseId: 'final' }],
+        }),
+      ),
+    );
+    if (!reviewer || !other) {
+      throw new Error('Expected two reviewers');
+    }
+
+    const caller = await createAuthenticatedCaller(reviewer.email);
+    await caller.decision.confirmCategoryDevelopment({
+      processInstanceId: instanceId,
+      taxonomyTermId: termA.id,
+      reviewerProfileId: reviewer.profileId,
+    });
+
+    const data = await getCategoryReviewerData([
+      ...reviewer.rowIds,
+      ...other.rowIds,
+    ]);
+    expect(data.get(reviewer.rowIds[0] ?? '')).toEqual(stamped);
+    expect(data.get(other.rowIds[0] ?? '')).toEqual({});
+  });
+
+  it('refuses a reviewer who names another reviewer', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instanceId, termA } = await createCategoryDevelopSetup({
+      testData,
+      onTestFinished,
+    });
+    const [reviewer, other] = await Promise.all(
+      [0, 1].map(() =>
+        createCategoryDevelopReviewer({
+          testData,
+          setup,
+          rows: [{ taxonomyTermId: termA.id, phaseId: 'final' }],
+        }),
+      ),
+    );
+    if (!reviewer || !other) {
+      throw new Error('Expected two reviewers');
+    }
+
+    const caller = await createAuthenticatedCaller(reviewer.email);
+    await expect(
+      caller.decision.confirmCategoryDevelopment({
+        processInstanceId: instanceId,
+        taxonomyTermId: termA.id,
+        reviewerProfileId: other.profileId,
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
+
+    const data = await getCategoryReviewerData([
+      ...reviewer.rowIds,
+      ...other.rowIds,
+    ]);
+    expect(data.get(reviewer.rowIds[0] ?? '')).toEqual({});
+    expect(data.get(other.rowIds[0] ?? '')).toEqual({});
   });
 });
