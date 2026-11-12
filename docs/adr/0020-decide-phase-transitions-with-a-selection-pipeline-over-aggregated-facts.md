@@ -24,17 +24,18 @@ The service builds the pipeline's context once per transition:
 - `proposals`: the departing phase's proposals.
 - `voteData`: per proposal, from `aggregateProposalMetrics`: vote, approval,
   like and follow counts, and `rankCounts` (selections per rank). No scores.
-- `variables`: the departing phase's settings, such as `budget`. A setting
-  overrides a default in the pipeline.
+- `variables`: the departing phase's settings, such as `budget`. A variable
+  that the pipeline defines overrides a setting with the same name.
 
 Blocks read only that context and never query the database. A field
 expression reads `proposalData.*` from the proposal and `voteData.*` from the
 proposal's metrics.
 
-A phase with no `selectionPipeline` passes all its proposals, the same as an
-empty pipeline. To advance fewer, the phase defines a pipeline.
+A phase with no `selectionPipeline` advances no proposals. An admin selects
+them by hand. An empty pipeline advances all proposals. This is how
+`advancePhase` works today, and it does not change.
 
-Calculations are template blocks:
+Each calculation is a block in the phase's selection pipeline:
 
 - Ranked-choice points: a `score` block weights `rankCounts` 1 to 4 by 5, 4,
   3 and 2, and every lower rank by 1. A `sort` block orders by points, then
@@ -51,8 +52,8 @@ advance a skipped proposal by hand.
 - A new voting method is template JSON. A new fact is one change to the
   aggregator.
 - Results show the stored outcome, so later vote changes do not alter it.
-- `advancePhase` changes its default from pass-none to pass-all. Existing
-  phases with no pipeline advance all proposals at their next transition.
+- A phase that must advance proposals without an admin needs a pipeline.
 - Schema validation checks a pipeline's shape, not its meaning. A wrong
   formula selects the wrong set without an error.
-- A phase with a `budget` block needs a priced cost field on its template.
+- A proposal with no cost counts as 0, so the `budget` block always accepts
+  it.
