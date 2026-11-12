@@ -201,17 +201,14 @@ const JoinAccountModalContent = ({
   const phoneIsValid = isValidTypedPhoneNumber(phone);
   const contactIsValid = isPhone ? phoneIsValid : emailIsValid;
 
-  // Return to this decision page after onboarding. The `join` param is dropped
-  // deliberately — it must not re-open the modal on the way back — while a
-  // valid pending engagement is carried through so the replay can apply it.
-  const claimDest = () =>
-    withPendingEngagement(
-      pathname,
-      new URLSearchParams(window.location.search).get(PENDING_ENGAGEMENT_PARAM),
-    );
+  // The path this decision page is returned to after onboarding. The `join`
+  // param is dropped deliberately — it must not re-open the modal on the way
+  // back — while a valid pending engagement is carried through so the replay
+  // can apply it.
+  const claimReturnPath = () => withPendingEngagement(pathname, pendingRaw);
 
   const goAfterClaim = () => {
-    goToOnboarding(claimDest());
+    goToOnboarding(claimReturnPath());
   };
 
   // Google is a redirect flow, not an in-page OTP exchange, so it can't call
@@ -227,7 +224,10 @@ const JoinAccountModalContent = ({
   // equivalent (linkIdentity) before this is correct for public processes.
   const joinWithGoogle = async () => {
     const callbackUrl = new URL('/api/auth/callback', window.location.origin);
-    callbackUrl.searchParams.set('redirect', getOnboardingPath(claimDest()));
+    callbackUrl.searchParams.set(
+      'redirect',
+      getOnboardingPath(claimReturnPath()),
+    );
     await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: { redirectTo: callbackUrl.toString() },

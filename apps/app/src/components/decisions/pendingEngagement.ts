@@ -1,3 +1,5 @@
+import { z } from 'zod';
+
 export const PENDING_ENGAGEMENT_PARAM = 'resume';
 
 const PENDING_ENGAGEMENT_STORAGE_KEY = 'pendingEngagementProof';
@@ -35,8 +37,10 @@ export interface PendingEngagement {
 
 export type JoinTrigger = 'generic' | 'like' | 'follow';
 
-const UUID_RE =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const pendingEngagementSchema = z.object({
+  action: z.enum(['like', 'follow']),
+  profileId: z.uuid(),
+});
 
 export const parseJoinParam = (value: string | null): JoinTrigger | null => {
   if (!value) {
@@ -74,13 +78,8 @@ export const parsePendingEngagement = (
     return null;
   }
   const [action, profileId] = parts;
-  if (action !== 'like' && action !== 'follow') {
-    return null;
-  }
-  if (!profileId || !UUID_RE.test(profileId)) {
-    return null;
-  }
-  return { action, profileId };
+  const result = pendingEngagementSchema.safeParse({ action, profileId });
+  return result.success ? result.data : null;
 };
 
 export const withPendingEngagement = (
