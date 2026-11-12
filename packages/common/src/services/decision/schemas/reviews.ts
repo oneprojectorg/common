@@ -421,6 +421,13 @@ export const categoryDevelopmentStatusListSchema = list(
   categoryDevelopmentStatusSchema,
 );
 
+export const categoryDevelopmentTargetSchema =
+  categoryDevelopmentStatusInputSchema.extend({ taxonomyTermId: z.uuid() });
+
+/** The rows a confirm or unconfirm changed, with their stamps after the write. */
+export const categoryDevelopmentChangeSchema =
+  categoryDevelopmentStatusSchema.pick({ rows: true });
+
 export const removeCategoryReviewerResultSchema = z.object({
   removed: z.boolean(),
 });
