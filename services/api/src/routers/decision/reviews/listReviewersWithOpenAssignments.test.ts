@@ -145,4 +145,39 @@ describe.concurrent('listReviewersWithOpenAssignments', () => {
       }),
     ).resolves.toEqual([]);
   });
+
+  it('skips open assignments on merged-away proposals', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const context = await testData.createContext();
+    const behind = await testData.createInstanceMember(context);
+    const open = await testData.createReviewAssignment({
+      context,
+      reviewer: behind,
+      status: ProposalReviewAssignmentStatus.PENDING,
+    });
+    await testData.createMergedAwayAssignments({
+      context,
+      reviewer: behind,
+      targetProposalId: open.proposal.id,
+    });
+    // Open work only on merged-away proposals must not trigger a reminder.
+    const onlyMerged = await testData.createInstanceMember(context);
+    await testData.createMergedAwayAssignments({
+      context,
+      reviewer: onlyMerged,
+      targetProposalId: open.proposal.id,
+    });
+
+    const reviewers = await listReviewersWithOpenAssignments({
+      processInstanceId: context.instance.instance.id,
+      phaseId: 'review',
+    });
+
+    expect(reviewers).toEqual([
+      { reviewerProfileId: behind.profileId, remainingCount: 1 },
+    ]);
+  });
 });

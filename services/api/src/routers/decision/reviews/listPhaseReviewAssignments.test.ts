@@ -84,6 +84,57 @@ describe.concurrent('decision.listPhaseReviewAssignments', () => {
     );
   });
 
+  it("leaves out assignments on merged-away proposals, matching the reviewer's list", async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const open = await testData.createReviewAssignment({
+      title: `Open proposal ${task.id}`,
+      status: ProposalReviewAssignmentStatus.PENDING,
+    });
+    const context = open.context;
+    const done = await testData.createReviewAssignment({
+      context,
+      title: `Done proposal ${task.id}`,
+      status: ProposalReviewAssignmentStatus.COMPLETED,
+    });
+    await createProposalReview({
+      assignmentId: done.assignment.id,
+      state: ProposalReviewState.SUBMITTED,
+      reviewData: { answers: {}, rationales: {} },
+      submittedAt: new Date().toISOString(),
+    });
+    await testData.createMergedAwayAssignments({
+      context,
+      targetProposalId: open.proposal.id,
+    });
+
+    const adminCaller = await createAuthenticatedCaller(
+      context.defaultReviewer.email,
+    );
+    const input = {
+      processInstanceId: context.instance.instance.id,
+      phaseId: 'review',
+    };
+
+    const [result, reviewerList] = await Promise.all([
+      adminCaller.decision.listPhaseReviewAssignments(input),
+      adminCaller.decision.listReviewerAssignments({
+        ...input,
+        reviewerProfileId: context.defaultReviewer.profileId,
+      }),
+    ]);
+
+    expect(result.totalAssignments).toBe(2);
+    const [rollup] = result.reviewers;
+    expect(rollup?.assignedCount).toBe(reviewerList.total);
+    expect(rollup?.submittedCount).toBe(1);
+    expect(
+      rollup?.assignments.map((assignment) => assignment.proposalId).sort(),
+    ).toEqual([open.proposal.id, done.proposal.id].sort());
+  });
+
   it('hides assignments whose proposal was moderation-detached', async ({
     task,
     onTestFinished,

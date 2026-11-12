@@ -8,17 +8,19 @@ import {
 } from '@op/common/client';
 import {
   createProposalReview,
+  TestDecisionsDataManager,
   TestReviewsDataManager,
 } from '@op/common/testing';
 import { db, eq } from '@op/db/client';
 import {
+  EntityType,
   ProposalReviewAssignmentStatus,
   ProposalReviewState,
   authUsers,
   profiles,
   users,
 } from '@op/db/schema';
-import { randomInt } from 'node:crypto';
+import { randomInt, randomUUID } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
@@ -132,6 +134,82 @@ describe.concurrent('decision.listPhaseReviewerSummaries', () => {
     expect(summary?.assignedCount).toBe(1);
     expect(summary?.submittedCount).toBe(0);
     expect(summary?.lastSubmittedAt).not.toBeNull();
+  });
+
+  it("counts only the assignments the reviewer's list shows, not merged-away ones", async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const decisions = new TestDecisionsDataManager(task.id, onTestFinished);
+    const open = await testData.createReviewAssignment({
+      title: `Open proposal ${task.id}`,
+      status: ProposalReviewAssignmentStatus.PENDING,
+    });
+    const context = open.context;
+    const done = await testData.createReviewAssignment({
+      context,
+      title: `Done proposal ${task.id}`,
+      status: ProposalReviewAssignmentStatus.COMPLETED,
+    });
+    await createProposalReview({
+      assignmentId: done.assignment.id,
+      state: ProposalReviewState.SUBMITTED,
+      reviewData: { answers: {}, rationales: {} },
+      submittedAt: new Date().toISOString(),
+    });
+    await testData.createMergedAwayAssignments({
+      context,
+      targetProposalId: open.proposal.id,
+    });
+
+    // No longer eligible, and holds work only on merged-away proposals.
+    const [formerReviewer] = await db
+      .insert(profiles)
+      .values({
+        name: 'Former Reviewer',
+        slug: `former-reviewer-${randomUUID()}`,
+        type: EntityType.INDIVIDUAL,
+      })
+      .returning({ id: profiles.id });
+    if (!formerReviewer) {
+      throw new Error('Expected a profile for the former reviewer');
+    }
+    decisions.trackProfileForCleanup(formerReviewer.id);
+    await testData.createMergedAwayAssignments({
+      context,
+      reviewer: { profileId: formerReviewer.id, authUserId: '', email: '' },
+      targetProposalId: open.proposal.id,
+    });
+
+    const adminCaller = await createAuthenticatedCaller(
+      context.defaultReviewer.email,
+    );
+    const input = {
+      processInstanceId: context.instance.instance.id,
+      phaseId: 'review',
+    };
+
+    const [result, reviewerList] = await Promise.all([
+      adminCaller.decision.listPhaseReviewerSummaries(input),
+      adminCaller.decision.listReviewerAssignments({
+        ...input,
+        reviewerProfileId: context.defaultReviewer.profileId,
+      }),
+    ]);
+
+    const summary = result.items.find(
+      (candidate) =>
+        candidate.reviewer.id === context.defaultReviewer.profileId,
+    );
+    expect(summary?.assignedCount).toBe(2);
+    expect(summary?.assignedCount).toBe(reviewerList.total);
+    expect(summary?.submittedCount).toBe(1);
+    expect(summary?.remainingCount).toBe(1);
+    expect(result.totalAssignments).toBe(2);
+    expect(result.items.map((item) => item.reviewer.id)).not.toContain(
+      formerReviewer.id,
+    );
   });
 
   it('pages every sort in order, without repeats or gaps', async ({

@@ -1,4 +1,4 @@
-import { and, count, db, eq, sql } from '@op/db/client';
+import { count, db, eq, sql } from '@op/db/client';
 import {
   ProposalReviewState,
   proposalReviewAssignments,
@@ -20,6 +20,7 @@ import {
   reviewerAssignmentsSchema,
 } from '../schemas/reviewAssignments';
 import { assertInstancePhase } from '../utils/instance';
+import { reviewerQueuePredicate } from './assignmentEligibility';
 import { openAssignmentFilter } from './phaseReviewerRollup';
 
 interface ReviewerQueueTotals {
@@ -107,7 +108,7 @@ export async function listReviewerAssignments({
   });
 }
 
-/** Whole-queue counts: the page drops merged-away proposals that still count as done work. */
+/** Whole-queue counts over the same set the paged list shows. */
 async function getReviewerQueueTotals({
   processInstanceId,
   phaseId,
@@ -121,11 +122,11 @@ async function getReviewerQueueTotals({
     proposalReviews.assignmentId,
     proposalReviewAssignments.id,
   );
-  const reviewerQueue = and(
-    eq(proposalReviewAssignments.processInstanceId, processInstanceId),
-    eq(proposalReviewAssignments.phaseId, phaseId),
-    eq(proposalReviewAssignments.reviewerProfileId, reviewerProfileId),
-  );
+  const reviewerQueue = reviewerQueuePredicate(proposalReviewAssignments, {
+    processInstanceId,
+    phaseId,
+    reviewerProfileId,
+  });
 
   const [row] = await db
     .select({

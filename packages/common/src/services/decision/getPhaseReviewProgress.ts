@@ -10,6 +10,7 @@ import { UnauthorizedError } from '../../utils';
 import { assertProfileAccess } from '../assert';
 import { getInstance } from './getInstance';
 import { getProposalIdsForPhase } from './getProposalsForPhase';
+import { eligibleAssignmentPredicate } from './reviews/assignmentEligibility';
 import type { InstancePhaseRef } from './schemas/instance';
 import type { PhaseInstanceData } from './schemas/instanceData';
 import type { PhaseReviewProgress } from './schemas/reviews';
@@ -42,19 +43,12 @@ export async function getPhaseReviewProgress(
 
   assertInstancePhase({ instance, phaseId });
 
-  const assignedReviewerCountsPromise = getAssignedReviewerCounts({
-    processInstanceId,
-    phaseId,
-  });
-  const phaseProposalIds = await getProposalIdsForPhase({ instance, phaseId });
-  const [assignedReviewerCounts, reviewedProposalsCount] = await Promise.all([
-    assignedReviewerCountsPromise,
-    getReviewedProposalsCount({
-      processInstanceId,
-      phaseId,
-      proposalIds: phaseProposalIds,
-    }),
-  ]);
+  const [phaseProposalIds, assignedReviewerCounts, reviewedProposalsCount] =
+    await Promise.all([
+      getProposalIdsForPhase({ instance, phaseId }),
+      getAssignedReviewerCounts({ processInstanceId, phaseId }),
+      getReviewedProposalsCount({ processInstanceId, phaseId }),
+    ]);
 
   return {
     proposalsReviewedCount: reviewedProposalsCount,
@@ -70,7 +64,7 @@ export async function getPhaseReviewProgress(
 
 // Counts distinct reviewers from `proposalReviewAssignments` rows for this
 // instance/phase — i.e. reviewers who actually have an assignment, not
-// users with the reviewer role.
+// users with the reviewer role. Merged-away proposals are out of the set.
 async function getAssignedReviewerCounts({
   processInstanceId,
   phaseId,
@@ -89,10 +83,10 @@ async function getAssignedReviewerCounts({
     })
     .from(proposalReviewAssignments)
     .where(
-      and(
-        eq(proposalReviewAssignments.processInstanceId, processInstanceId),
-        eq(proposalReviewAssignments.phaseId, phaseId),
-      ),
+      eligibleAssignmentPredicate(proposalReviewAssignments, {
+        processInstanceId,
+        phaseId,
+      }),
     );
 
   return {
@@ -101,22 +95,16 @@ async function getAssignedReviewerCounts({
   };
 }
 
-// A proposal counts as reviewed once it has ≥1 COMPLETED assignment.
-// Restricted to `proposalIds` so soft-deleted/draft proposals can't slip
-// in via stale assignments.
+// A proposal counts as reviewed once it has ≥1 COMPLETED eligible
+// assignment. Eligible assignments are on the phase's pool, so this shares
+// its rule with `proposalsTotalCount`.
 async function getReviewedProposalsCount({
   processInstanceId,
   phaseId,
-  proposalIds,
 }: {
   processInstanceId: string;
   phaseId: string;
-  proposalIds: string[];
 }): Promise<number> {
-  if (proposalIds.length === 0) {
-    return 0;
-  }
-
   const [row] = await db
     .select({
       count: countDistinct(proposalReviewAssignments.proposalId),
@@ -124,9 +112,10 @@ async function getReviewedProposalsCount({
     .from(proposalReviewAssignments)
     .where(
       and(
-        eq(proposalReviewAssignments.processInstanceId, processInstanceId),
-        eq(proposalReviewAssignments.phaseId, phaseId),
-        inArray(proposalReviewAssignments.proposalId, proposalIds),
+        eligibleAssignmentPredicate(proposalReviewAssignments, {
+          processInstanceId,
+          phaseId,
+        }),
         eq(
           proposalReviewAssignments.status,
           ProposalReviewAssignmentStatus.COMPLETED,

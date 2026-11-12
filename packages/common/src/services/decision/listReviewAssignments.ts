@@ -29,7 +29,6 @@ import { getInstance } from './getInstance';
 import { getProposalDocumentsContent } from './getProposalDocumentsContent';
 import { decisionPermission } from './permissions';
 import { getCurrentProposalHistoryIds } from './proposal/history';
-import { notSuperseded } from './proposalSupersession';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
 import { isReviewOutOfDate } from './review/staleness';
 import {
@@ -38,6 +37,7 @@ import {
   resolveAssignmentProposal,
   reviewAssignmentWithConfig,
 } from './reviewHelpers';
+import { reviewerQueuePredicate } from './reviews/assignmentEligibility';
 import {
   type ReviewAssignmentList,
   type ReviewAssignmentSort,
@@ -278,9 +278,11 @@ export async function listAssignmentsForReviewer({
   // Shared by the page and the count so `total` describes the same set.
   const buildFilterConditions = (t: typeof proposalReviewAssignments): SQL =>
     and(
-      eq(t.processInstanceId, processInstanceId),
-      eq(t.reviewerProfileId, reviewerProfileId),
-      eq(t.phaseId, phaseId),
+      reviewerQueuePredicate(t, {
+        processInstanceId,
+        phaseId,
+        reviewerProfileId,
+      }),
       status ? eq(t.status, status) : undefined,
       categoryProposalIds
         ? inArray(t.proposalId, categoryProposalIds)
@@ -298,9 +300,6 @@ export async function listAssignmentsForReviewer({
               ),
           )
         : undefined,
-      // Merging doesn't delete assignments, so a proposal merged mid-review
-      // would otherwise stay in its reviewer's queue.
-      notSuperseded({ proposalId: t.proposalId, processInstanceId }),
     )!;
 
   const [rows, countResult] = await Promise.all([

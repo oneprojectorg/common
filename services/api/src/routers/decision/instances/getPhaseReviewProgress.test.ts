@@ -226,6 +226,44 @@ describe.concurrent('getPhaseReviewProgress', () => {
     expect(result.activeReviewersCount).toBe(1);
   });
 
+  it('does not count a reviewer whose only assignments are on merged-away proposals', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const context = await testData.createContext();
+    await testData.setCurrentPhase(context.instance.instance.id, 'review');
+
+    const open = await testData.createReviewAssignment({
+      context,
+      title: 'Open assignment',
+      status: ProposalReviewAssignmentStatus.PENDING,
+    });
+    // One completed and one pending assignment, both on merged-away proposals.
+    const onlyMerged = await testData.createReviewer(context);
+    await testData.createMergedAwayAssignments({
+      context,
+      reviewer: onlyMerged,
+      targetProposalId: open.proposal.id,
+    });
+
+    const adminCaller = await createAuthenticatedCaller(
+      context.defaultReviewer.email,
+    );
+
+    const result = await adminCaller.decision.getPhaseReviewProgress({
+      processInstanceId: context.instance.instance.id,
+      phaseId: 'review',
+    });
+
+    expect(result).toMatchObject({
+      proposalsReviewedCount: 0,
+      proposalsTotalCount: 1,
+      activeReviewersCount: 0,
+      reviewersTotalCount: 1,
+    });
+  });
+
   it('treats AWAITING_AUTHOR_REVISION and READY_FOR_RE_REVIEW as active', async ({
     task,
     onTestFinished,

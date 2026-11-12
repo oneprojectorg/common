@@ -27,6 +27,7 @@ import { toAccountContact } from '../../profile/schemas/accountContact';
 import type { ReviewerStatus } from '../schemas/reviewAssignments';
 import type { EligibleReviewerSchema } from '../schemas/reviews';
 import { escapeLikePattern, splitSearchWords } from '../utils/search';
+import { eligibleAssignmentPredicate } from './assignmentEligibility';
 
 export type PhaseReviewerRollup = ReturnType<typeof buildPhaseReviewerRollup>;
 
@@ -58,6 +59,14 @@ export function buildPhaseReviewerRollup({
   const submittedCount = sql`count(*) filter (where ${proposalReviewAssignments.status} = ${ProposalReviewAssignmentStatus.COMPLETED})`;
   const draftCount = sql`count(*) filter (where ${proposalReviews.state} = ${ProposalReviewState.DRAFT})`;
   const remainingCount = sql`count(*) filter (where ${openAssignmentFilter()})`;
+  // The set each reviewer's own list draws from, so the rows match it.
+  const eligibleAssignments = eligibleAssignmentPredicate(
+    proposalReviewAssignments,
+    {
+      processInstanceId,
+      phaseId,
+    },
+  );
 
   const account = db
     .select({ email: ownerAuthUsers.email, phone: ownerAuthUsers.phone })
@@ -113,8 +122,7 @@ export function buildPhaseReviewerRollup({
         proposalReviewAssignments,
         and(
           eq(proposalReviewAssignments.reviewerProfileId, profiles.id),
-          eq(proposalReviewAssignments.processInstanceId, processInstanceId),
-          eq(proposalReviewAssignments.phaseId, phaseId),
+          eligibleAssignments,
         ),
       )
       .leftJoin(
@@ -135,11 +143,7 @@ export function buildPhaseReviewerRollup({
               .where(
                 and(
                   eq(proposalReviewAssignments.reviewerProfileId, profiles.id),
-                  eq(
-                    proposalReviewAssignments.processInstanceId,
-                    processInstanceId,
-                  ),
-                  eq(proposalReviewAssignments.phaseId, phaseId),
+                  eligibleAssignments,
                 ),
               ),
           ),

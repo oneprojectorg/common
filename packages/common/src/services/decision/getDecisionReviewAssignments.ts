@@ -12,6 +12,7 @@ import { getCategoriesByProposalIds } from './listProposalsWithReviewAggregates'
 import { type BudgetData, parseProposalData } from './proposalDataSchema';
 import { buildProposalListPreview } from './proposalListPreview';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
+import { eligibleAssignmentPredicate } from './reviews/assignmentEligibility';
 import {
   type AdminDecisionReviewAssignments,
   adminDecisionReviewAssignmentsSchema,
@@ -92,14 +93,14 @@ export async function getDecisionReviewAssignments({
     [
       db.query.proposalReviewAssignments.findMany({
         where: {
-          processInstanceId: instanceId,
-          ...(phaseId && { phaseId }),
-          // Unreachable even to admins (see detachProposalForModeration);
-          // assignments made before the detach would otherwise leak it.
-          proposal: {
-            deletedAt: { isNull: true },
-            moderationDetachedAt: { isNull: true },
-          },
+          // The phase's pool, the set each reviewer's own list draws from. It
+          // also keeps deleted and moderation-detached proposals, which even
+          // admins cannot reach, out of this view.
+          RAW: (table) =>
+            eligibleAssignmentPredicate(table, {
+              processInstanceId: instanceId,
+              phaseId,
+            }),
         },
         with: {
           reviewer: { columns: { id: true, name: true, slug: true } },
