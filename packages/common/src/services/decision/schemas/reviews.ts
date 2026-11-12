@@ -395,6 +395,25 @@ export type CategoryWithReviewersSchema = z.infer<
 
 export const categoryReviewersListSchema = list(categoryWithReviewersSchema);
 
+export const categoryDevelopmentStatusInputSchema = instancePhaseRefSchema.pick(
+  { processInstanceId: true },
+);
+
+/** A category with its reviewer rows for the current phase and their develop confirm stamps. */
+export const categoryDevelopmentStatusSchema = z.object({
+  category: categoryWithReviewersSchema.shape.category,
+  rows: z.array(
+    z.object({
+      reviewerProfileId: z.uuid(),
+      developConfirmedAt: z.string().nullable(),
+    }),
+  ),
+});
+
+export const categoryDevelopmentStatusListSchema = list(
+  categoryDevelopmentStatusSchema,
+);
+
 export const removeCategoryReviewerResultSchema = z.object({
   removed: z.boolean(),
 });

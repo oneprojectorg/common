@@ -12,6 +12,7 @@ export * from './selection';
 export * from './adminDecisionInstance';
 export * from './reviewAssignments';
 export * from './transitionData';
+export * from './categoryReviewerData';
 export * from './exportStatus';
 export * from './votingProgress';
 export * from './search';
