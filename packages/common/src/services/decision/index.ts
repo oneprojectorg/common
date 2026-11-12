@@ -142,6 +142,8 @@ export * from './getReviewAssignment';
 export * from './listReviewAssignments';
 export * from './listReviewAssignmentLocations';
 export * from './listCategoryReviewers';
+export * from './confirmCategoryDevelopment';
+export * from './unconfirmCategoryDevelopment';
 export * from './listEligibleReviewers';
 export * from './listReviewerCategories';
 export * from './addCategoryReviewer';
