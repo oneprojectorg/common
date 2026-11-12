@@ -35,6 +35,10 @@ export function isReviewPhase(phase: { rules?: ReviewPhaseRules }): boolean {
   );
 }
 
+export function isDevelopPhase(phase: { rules?: PhaseRules }): boolean {
+  return phase.rules?.proposals?.develop ?? false;
+}
+
 /** Reviews in this phase are readable by other reviewers and by later phases. */
 export function hasOpenReviews(phase: { rules?: ReviewPhaseRules }): boolean {
   return phase.rules?.reviews?.openReviews ?? false;

@@ -23,6 +23,7 @@ export {
   getVoterBudget,
   hasOpenReviews,
   hasVotingPhase,
+  isDevelopPhase,
   isRankedVoting,
   isReviewPhase,
   isVotingPhase,

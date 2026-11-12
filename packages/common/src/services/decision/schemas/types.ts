@@ -25,6 +25,8 @@ export interface PhaseRules {
     edit?: boolean;
     /** @deprecated Superseded by `reviews.submit`; kept only as its read fallback. */
     review?: boolean;
+    /** Allows the development of new proposals from existing proposals. */
+    develop?: boolean;
     defaults?: {
       hidden?: boolean;
     };
