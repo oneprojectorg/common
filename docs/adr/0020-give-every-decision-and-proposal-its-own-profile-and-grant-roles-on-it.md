@@ -81,11 +81,12 @@ global roles:
 `createDefaultDecisionRoles` gives every new decision two roles scoped to
 its profile: `Admin` (ACRUD on `profile`, every bit on `decisions`) and
 `Participant` (`READ` on `profile`; `READ`, `SUBMIT_PROPOSALS`, `VOTE` on
-`decisions`). A `profile: ADMIN` on the decision adds more through `createRole` and
-`updateDecisionRoles`. `createRole` and `createDecisionRole` add
-`profile: READ` to every scoped role, and `createDecisionRole` and
-`updateDecisionRoles` add `READ` to the `decisions` bitfield, so a role made
-through them always lets its holder see the decision.
+`decisions`). A `profile: ADMIN` on the decision adds and edits more through `createRole`,
+`updateRolePermissions` and `updateDecisionRoles`. `createRole` and
+`createDecisionRole` add `profile: READ` to every scoped role, and
+`createDecisionRole` and `updateDecisionRoles` add `READ` to the `decisions`
+bitfield; `updateRolePermissions` adds nothing, so it can write a role whose
+holder cannot see the decision.
 
 A permission row, `access_role_permissions_on_access_zones`, is global or
 scoped in the same way. A row with `profile_id` set overrides the global row
@@ -167,7 +168,9 @@ role or a permission row must invalidate the durable cache:
 `invalidateProfileUserCacheForRole` for a role,
 `invalidateProfileUserCacheForProfile` for a profile, sentinel included, and
 `invalidateProfileUserAccessCache` for one member, which also clears the
-per-request memo.
+per-request memo. Organization grants live in a separate durable `orgUser`
+cache, keyed by the organization and the resolved id set, which the
+profile-side helpers do not touch.
 
 The server computes what the client may do, as `access`, a boolean per bit.
 `getInstance` returns all true for a `profile: ADMIN` on the decision,
@@ -185,16 +188,16 @@ wraps; it knows `profile_users` and `organization_users` rows, nothing else.
 - One membership mechanism covers a decision and a proposal, and a decision
   can define its own roles.
 - Public access is a grant on one profile, so it is revoked and cached like
-  any other, and it never widens another decision. Member lists hide the
-  sentinel row.
+  any other, and it never widens another decision. Member lists in the UI
+  hide the sentinel row; the notification participant list does not.
 - A proposal has a member list of its own, so a draft is visible to its
   co-authors and to nobody else, decision admins included. Accepting a
   proposal invite also makes the co-author a member of the decision, by
   default a `Member`, whose `decisions: UPDATE` lets them edit the content
   of any proposal in it while the phase allows edits.
 - The organization fallback reaches every service that uses
-  `assertInstanceProfileAccess`: reads, proposal creation, likes and
-  follows, review management, custom forms, translation and moderation. The lifecycle writes in the table deny an organization admin
+  `assertInstanceProfileAccess`: reads, proposal creation, proposal likes
+  and follows, review management, custom forms, translation and moderation. The lifecycle writes in the table deny an organization admin
   with no row on the decision's profile.
 - The fallback works only when `owner_profile_id` is an organization's
   profile. A decision created today owns an individual profile there, so
