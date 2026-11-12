@@ -232,7 +232,7 @@ describe('with instanceData.phases empty', () => {
       processSchema: threeStepDateSchema,
     });
     const instanceId = setup.instance.instance.id;
-    await testData.leaveOnlyPhaseRows(instanceId);
+    await emptyBlobPhases(instanceId);
     const hourMs = 60 * 60 * 1000;
     await db.insert(decisionProcessTransitions).values([
       {
