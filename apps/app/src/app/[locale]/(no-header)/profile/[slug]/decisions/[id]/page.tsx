@@ -8,11 +8,13 @@ import { Skeleton } from '@op/sense/Skeleton';
 import type { Metadata } from 'next';
 import { Suspense, cache } from 'react';
 
-import { getTranslations } from '@/lib/i18n';
+import { type Locale, getTranslations } from '@/lib/i18n';
 
 import { DecisionHeader } from '@/components/decisions/DecisionHeader';
 import { DecisionStateRouter } from '@/components/decisions/DecisionStateRouter';
 import { DecisionTranslationProvider } from '@/components/decisions/DecisionTranslationContext';
+
+import { redirectConvertedInstance } from './redirectConvertedInstance';
 
 // cache() dedupes the read across generateMetadata + page render (one request),
 // so the resolver and its "viewed" event fire once and the data hydrates.
@@ -107,9 +109,11 @@ const DecisionInstancePageContent = async ({
 const DecisionInstancePage = async ({
   params,
 }: {
-  params: Promise<{ id: string; slug: string }>;
+  params: Promise<{ id: string; slug: string; locale: Locale }>;
 }) => {
-  const { id, slug } = await params;
+  const { id, slug, locale } = await params;
+
+  await redirectConvertedInstance({ instanceId: id, locale });
 
   return <DecisionInstancePageContent instanceId={id} slug={slug} />;
 };

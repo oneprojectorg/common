@@ -6,8 +6,9 @@ import {
 import type { Metadata } from 'next';
 import { cache } from 'react';
 
-import { getTranslations } from '@/lib/i18n';
+import { type Locale, getTranslations } from '@/lib/i18n';
 
+import { redirectConvertedInstance } from '../../../redirectConvertedInstance';
 import { LegacyProposalEditClient } from './ProposalEditClient';
 
 // cache() dedupes the reads across generateMetadata + page render (one request),
@@ -53,9 +54,19 @@ export async function generateMetadata({
 const ProposalEditPage = async ({
   params,
 }: {
-  params: Promise<{ profileId: string; id: string; slug: string }>;
+  params: Promise<{
+    profileId: string;
+    id: string;
+    slug: string;
+    locale: Locale;
+  }>;
 }) => {
-  const { profileId, id, slug } = await params;
+  const { profileId, id, slug, locale } = await params;
+  await redirectConvertedInstance({
+    instanceId: id,
+    locale,
+    path: `/proposal/${profileId}/edit`,
+  });
   const { queryClient } = await createServerUtils();
 
   await Promise.all([fetchProposal(profileId), fetchInstance(id)]).catch(
