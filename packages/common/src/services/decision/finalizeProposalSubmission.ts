@@ -18,6 +18,7 @@ import {
 import { reconcileReviewAssignments } from './reconcileReviewAssignments';
 import { hasDecisionBoundaries, resolveBoundary } from './resolveBoundary';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
+import type { DecisionInstanceData } from './schemas/instanceData';
 import { setProposalCategories } from './setProposalCategories';
 import { syncProposalProfileLocation } from './syncProposalProfileLocation';
 import { templateCollectsLocation } from './templateLocation';
@@ -38,7 +39,7 @@ export const finalizeProposalSubmission = async ({
     'id' | 'formSchemaId' | 'proposalData' | 'profileId'
   > & { profile: { name: string } };
   instance: Pick<ProcessInstance, 'id' | 'processId'> & { profileId: string };
-  instanceData: unknown;
+  instanceData: DecisionInstanceData;
 }) => {
   const proposalTemplate = await resolveProposalTemplate(
     instanceData,

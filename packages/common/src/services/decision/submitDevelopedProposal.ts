@@ -7,7 +7,10 @@ import { getProfileAccessUser } from '../access';
 import { assertProposalDevelopAccess } from './assertProposalDevelopAccess';
 import { finalizeProposalSubmission } from './finalizeProposalSubmission';
 import { activeProposalPredicate } from './phaseEligibility';
-import { getInstancePhases } from './schemas/instanceData';
+import {
+  type DecisionInstanceData,
+  getInstancePhases,
+} from './schemas/instanceData';
 
 export interface SubmitDevelopedProposalInput {
   proposalId: string;
@@ -51,6 +54,8 @@ export const submitDevelopedProposal = async ({
     throw new NotFoundError('Decision profile');
   }
 
+  const instanceData = instance.instanceData as DecisionInstanceData;
+
   const currentPhaseId = instance.currentStateId;
 
   if (!currentPhaseId) {
@@ -61,7 +66,7 @@ export const submitDevelopedProposal = async ({
     assertProposalDevelopAccess({
       instance: {
         profileId: instance.profileId,
-        instanceData: { phases: getInstancePhases(instance.instanceData) },
+        instanceData: { phases: getInstancePhases(instanceData) },
       },
       phaseId: currentPhaseId,
       user: { id: user.id },
@@ -98,6 +103,6 @@ export const submitDevelopedProposal = async ({
       processId: instance.processId,
       profileId: instance.profileId,
     },
-    instanceData: instance.instanceData,
+    instanceData,
   });
 };
