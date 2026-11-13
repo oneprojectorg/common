@@ -1,3 +1,4 @@
+import { setupSSR } from '@/utils/setupSSR';
 import { createClient } from '@op/api/serverClient';
 import { CommonError } from '@op/common';
 import type { Metadata } from 'next';
@@ -58,8 +59,9 @@ export async function generateMetadata({
 export default async function ReviewProposalPage({
   params,
 }: {
-  params: Promise<{ slug: string; reviewId: string }>;
+  params: Promise<{ slug: string; reviewId: string; locale: string }>;
 }) {
+  await setupSSR({ params });
   const { slug: decisionSlug, reviewId: assignmentId } = await params;
 
   return (
