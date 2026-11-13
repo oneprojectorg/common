@@ -68,6 +68,32 @@ describe('redirectConvertedInstance', () => {
     },
   );
 
+  it('carries the legacy query string to the new route', async () => {
+    getConvertedInstanceSlug.mockResolvedValue({ slug: 'riverbend-2026' });
+
+    await expect(
+      redirectConvertedProposal({
+        ...proposal,
+        searchParams: { category: 'parks', tag: ['a', 'b'], empty: undefined },
+      }),
+    ).rejects.toBe(redirected);
+
+    expect(redirect).toHaveBeenCalledExactlyOnceWith({
+      href: '/decisions/riverbend-2026/proposal/abc?category=parks&tag=a&tag=b',
+      locale: 'es',
+    });
+  });
+
+  it('skips the lookup for an id that is not a UUID', async () => {
+    await expect(
+      redirectConvertedDecision({ ...decision, id: 'not-a-uuid' }),
+    ).resolves.toBeUndefined();
+
+    expect(getConvertedInstanceSlug).not.toHaveBeenCalled();
+    expect(logError).not.toHaveBeenCalled();
+    expect(redirect).not.toHaveBeenCalled();
+  });
+
   it('does not redirect when the lookup returns no slug', async () => {
     getConvertedInstanceSlug.mockResolvedValue({ slug: null });
 
