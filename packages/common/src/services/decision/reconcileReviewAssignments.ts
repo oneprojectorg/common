@@ -112,7 +112,7 @@ export async function reconcileReviewAssignments({
     return skip('current phase is not review-capable');
   }
   const reviewSettings = getPhaseReviewSettings(
-    { ...instanceData, phases },
+    { config: instanceData.config, phases },
     currentPhaseId,
   );
 

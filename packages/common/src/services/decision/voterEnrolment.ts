@@ -8,7 +8,7 @@ import { logger } from '@op/logging';
 import { NotFoundError, ValidationError } from '../../utils';
 import { getIndividualProfileId } from '../access';
 import { forwardGeocode } from './forwardGeocode';
-import { getPhases } from './instancePhases';
+import { resolvePhases } from './instancePhases';
 import {
   hasDecisionBoundaries,
   hasLinkedDecisionBoundaries,
@@ -55,10 +55,7 @@ const loadEnrolmentContext = async ({
     throw new NotFoundError('Process instance', processInstanceId);
   }
 
-  const phase = getInstanceCurrentPhase({
-    currentStateId: instance.currentStateId,
-    phases: await getPhases({ instance }),
-  });
+  const phase = getInstanceCurrentPhase(await resolvePhases({ instance }));
   const rule = phase ? getVoterEnrolment(phase) : undefined;
 
   if (!rule) {
