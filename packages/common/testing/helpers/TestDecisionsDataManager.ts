@@ -514,6 +514,25 @@ export class TestDecisionsDataManager {
     this.createdProfileIds.push(profileId);
   }
 
+  // TODO: remove once the backfill gives every decision phase rows.
+  async removePhaseRows(instanceId: string): Promise<void> {
+    const rows = await db
+      .select({ profileId: processPhases.profileId })
+      .from(processPhases)
+      .where(eq(processPhases.processInstanceId, instanceId));
+
+    if (rows.length === 0) {
+      return;
+    }
+
+    await db.delete(profiles).where(
+      inArray(
+        profiles.id,
+        rows.map((row) => row.profileId),
+      ),
+    );
+  }
+
   /**
    * Tracks an auth user ID for cleanup. Use this when creating auth users
    * outside of the standard TestDecisionsDataManager methods (e.g. via a

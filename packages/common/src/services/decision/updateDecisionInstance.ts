@@ -19,15 +19,25 @@ import { generateUniqueProfileSlug } from '../profile/utils';
 import { assertVoterCostField } from './assertVoterCostField';
 import { createTransitionsForProcess } from './createTransitionsForProcess';
 import {
+  type PhaseEndDateChange,
   getNormalizedCategories,
   getUpdatedInstanceData,
+  hasInstanceDataUpdate,
 } from './getUpdatedInstanceData';
+import { lockProcessInstanceOrThrow } from './lockProcessInstance';
+import {
+  getPhaseProfileName,
+  listPhases,
+  reconcilePhases,
+} from './phaseHelpers';
+import { mergePhasesWithInstanceData } from './phaseMirror';
 import { ensureProposalTaxonomyTerms } from './proposalTaxonomy';
 import { schemaValidator } from './schemaValidator';
-import type {
-  DecisionInstanceData,
-  InstanceOverviewUpdate,
-  PhaseOverride,
+import {
+  type DecisionInstanceData,
+  type InstanceOverviewUpdate,
+  type PhaseOverride,
+  getInstancePhases,
 } from './schemas/instanceData';
 import type { ProcessConfig } from './schemas/types';
 import type { RubricTemplateSchema } from './types';
@@ -58,7 +68,6 @@ export const updateDecisionInstance = async ({
   config?: ProcessConfig;
   /** Public-facing overview content (headline, short description, rich text body) */
   overview?: InstanceOverviewUpdate;
-  /** Optional phase overrides (dates and settings) */
   phases?: PhaseOverride[];
   /** Proposal template (JSON Schema) */
   proposalTemplate?: Record<string, unknown>;
@@ -117,31 +126,27 @@ export const updateDecisionInstance = async ({
     updateData.stewardProfileId = stewardProfileId;
   }
 
-  const instanceDataUpdate = getUpdatedInstanceData({
-    existing: existingInstance.instanceData as DecisionInstanceData,
-    update: { config, overview, phases, proposalTemplate, rubricTemplate },
-  });
-  const phaseEndDateChanges = instanceDataUpdate?.phaseEndDateChanges ?? [];
+  const hasPhaseUpdates = phases !== undefined && phases.length > 0;
+  const instanceDataFields = {
+    config,
+    overview,
+    phases,
+    proposalTemplate,
+    rubricTemplate,
+  };
+  const phaseEndDateChanges: PhaseEndDateChange[] = [];
 
-  if (instanceDataUpdate) {
-    if (config !== undefined) {
-      await ensureProposalTaxonomyTerms(
-        getNormalizedCategories(config).map((category) => category.label),
-      );
-    }
-
-    if ((phases !== undefined && phases.length > 0) || proposalTemplate) {
-      await assertVoterCostField({
-        instanceData: instanceDataUpdate.instanceData,
-        processId: existingInstance.processId,
-      });
-    }
-
-    updateData.instanceData = instanceDataUpdate.instanceData;
+  if (config !== undefined) {
+    await ensureProposalTaxonomyTerms(
+      getNormalizedCategories(config).map((category) => category.label),
+    );
   }
 
   // Only update if there's something to update
-  if (Object.keys(updateData).length === 0) {
+  if (
+    Object.keys(updateData).length === 0 &&
+    !hasInstanceDataUpdate(instanceDataFields)
+  ) {
     return {
       profile: await getDecisionProfile(profileId),
       phaseEndDateChanges,
@@ -155,6 +160,55 @@ export const updateDecisionInstance = async ({
 
   // Use a transaction for updating the instance and transitions together
   await db.transaction(async (tx) => {
+    const locked = await lockProcessInstanceOrThrow({ db: tx, instanceId });
+    const lockedInstanceData = locked.instanceData as DecisionInstanceData;
+
+    const existingPhases = hasPhaseUpdates
+      ? await listPhases({ db: tx, processInstanceId: instanceId })
+      : undefined;
+
+    const instanceDataUpdate = getUpdatedInstanceData({
+      existing: existingPhases
+        ? {
+            ...lockedInstanceData,
+            phases: mergePhasesWithInstanceData({
+              phases: existingPhases,
+              blobPhases: getInstancePhases(locked.instanceData),
+            }),
+          }
+        : lockedInstanceData,
+      update: instanceDataFields,
+    });
+
+    if (instanceDataUpdate) {
+      phaseEndDateChanges.push(...instanceDataUpdate.phaseEndDateChanges);
+
+      if (existingPhases) {
+        const { phases: merged } = instanceDataUpdate.instanceData;
+        await reconcilePhases({
+          db: tx,
+          processInstanceId: instanceId,
+          existing: existingPhases,
+          phases: merged,
+        });
+
+        // TODO: remove this blob mirror when instance_data.phases is dropped.
+        instanceDataUpdate.instanceData.phases = merged.map((phase) => ({
+          ...phase,
+          name: getPhaseProfileName(phase),
+        }));
+      }
+
+      if (hasPhaseUpdates || proposalTemplate) {
+        await assertVoterCostField({
+          instanceData: instanceDataUpdate.instanceData,
+          processId: existingInstance.processId,
+        });
+      }
+
+      updateData.instanceData = instanceDataUpdate.instanceData;
+    }
+
     // Update the instance
     const [updatedInstance] = await tx
       .update(processInstances)
@@ -179,7 +233,7 @@ export const updateDecisionInstance = async ({
       updatedInstance,
       isDraft: (status ?? existingInstance.status) === ProcessStatus.DRAFT,
       isBeingPublished,
-      phasesChanged: phases !== undefined && phases.length > 0,
+      phasesChanged: hasPhaseUpdates,
     });
   });
 

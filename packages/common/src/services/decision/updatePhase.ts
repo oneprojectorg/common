@@ -1,4 +1,4 @@
-import { db, eq, sql } from '@op/db/client';
+import { type DbClient, db, eq, sql } from '@op/db/client';
 import {
   type ProcessPhase,
   type Profile,
@@ -8,6 +8,7 @@ import {
 import type { User } from '@op/supabase/lib';
 
 import { NotFoundError, ValidationError } from '../../utils';
+import { invalidateDecisionInstance } from './decisionCache';
 import {
   type PhaseData,
   assertPhaseSchemasCompile,
@@ -15,6 +16,7 @@ import {
   getPhaseAsDecisionAdmin,
   readPhaseSettings,
 } from './phaseHelpers';
+import { mutatePhases } from './phaseMirror';
 import type { PhaseOverride } from './schemas/instanceData';
 import type { ProposalTemplateSchema } from './types';
 
@@ -41,7 +43,10 @@ export const updatePhase = async ({
     throw new ValidationError('Nothing to update');
   }
 
-  const { profileId } = await getPhaseAsDecisionAdmin({ user, phaseId });
+  const { profileId, processInstanceId } = await getPhaseAsDecisionAdmin({
+    user,
+    phaseId,
+  });
 
   const patch = data === undefined ? undefined : toPhaseDataPatch(data);
   // Only when touched: converted legacy phases can hold settings with no schema.
@@ -50,7 +55,7 @@ export const updatePhase = async ({
     (patch.set.settings !== undefined ||
       patch.set.settingsSchema !== undefined);
 
-  return db.transaction(async (tx) => {
+  const write = async (tx: DbClient) => {
     const [profile] =
       name === undefined
         ? await tx.select().from(profiles).where(eq(profiles.id, profileId))
@@ -90,7 +95,20 @@ export const updatePhase = async ({
     }
 
     return { phase, profile };
+  };
+
+  const updated = await db.transaction(async (tx) => {
+    const { result } = await mutatePhases({
+      db: tx,
+      processInstanceId,
+      mutate: () => write(tx),
+    });
+    return result;
   });
+
+  await invalidateDecisionInstance(processInstanceId);
+
+  return updated;
 };
 
 const toPhaseDataPatch = (
