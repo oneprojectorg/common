@@ -6,11 +6,7 @@ import {
 } from '../../../encoders/decision';
 import { openProcedure, router } from '../../../trpcFactory';
 
-/**
- * Used by the legacy route /profile/[slug]/decisions/[id] to redirect a
- * converted instance to /decisions/[slug]. Server-only caller, so it registers
- * no realtime channels. Same tier and rate limit as getInstance.
- */
+/** Server-only lookup for the legacy-route redirect, so no realtime channels; tier and rate limit match getInstance. */
 export const getConvertedInstanceSlugRouter = router({
   getConvertedInstanceSlug: openProcedure({
     rateLimit: { windowSize: 10, maxRequests: 100 },
