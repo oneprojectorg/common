@@ -48,6 +48,12 @@ export const exportPersonalData = inngest.createFunction(
             personalDataExportFileName(),
           );
 
+          // Sent before the upload, so a cancelled run still deletes the file.
+          await step.sendEvent('schedule-expiry', {
+            name: personalDataExportFileStored.name,
+            data: { exportId, userId, fileName },
+          });
+
           // One step so the file never crosses a step boundary into Inngest state.
           const truncatedSections = await step.run(
             'collect-and-upload',
@@ -63,12 +69,6 @@ export const exportPersonalData = inngest.createFunction(
               return data.truncatedSections;
             },
           );
-
-          // Before any status write, so a failed write cannot keep the file.
-          await step.sendEvent('schedule-expiry', {
-            name: personalDataExportFileStored.name,
-            data: { exportId, userId, fileName },
-          });
 
           return { fileName, truncatedSections };
         },

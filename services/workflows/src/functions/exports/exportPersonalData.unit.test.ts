@@ -92,7 +92,7 @@ describe('exportPersonalData', () => {
     );
   });
 
-  it('schedules no file expiry when the upload fails', async () => {
+  it('schedules the file expiry even when the upload fails', async () => {
     vi.mocked(storeExportFile).mockRejectedValue(
       new NonRetriableError('Storage down'),
     );
@@ -100,6 +100,9 @@ describe('exportPersonalData', () => {
     const { ctx, error } = await execute();
 
     expect(error).toMatchObject({ message: 'Storage down' });
-    expect(ctx.step.sendEvent).not.toHaveBeenCalled();
+    expect(ctx.step.sendEvent).toHaveBeenCalledWith(
+      'schedule-expiry',
+      expiryEvent,
+    );
   });
 });
