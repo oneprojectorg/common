@@ -22,7 +22,10 @@ export const getConvertedInstanceSlug = async ({
 }): Promise<string | null> => {
   const instance = await getCachedInstance(instanceId);
 
-  if (!instance) {
+  const slug = instance?.profile?.slug;
+
+  // Cheap misses first: most callers hit a legacy instance.
+  if (!instance || !slug || isLegacyInstanceData(instance.instanceData)) {
     return null;
   }
 
@@ -40,9 +43,5 @@ export const getConvertedInstanceSlug = async ({
     throw error;
   }
 
-  if (isLegacyInstanceData(instance.instanceData)) {
-    return null;
-  }
-
-  return instance.profile?.slug ?? null;
+  return slug;
 };
