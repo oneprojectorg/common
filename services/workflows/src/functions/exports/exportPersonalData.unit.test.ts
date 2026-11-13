@@ -2,6 +2,8 @@ import { InngestTestEngine } from '@inngest/test';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@op/common', () => ({
+  PERSONAL_DATA_EXPORT_MAX_EXECUTION_MS: 20 * 60 * 1000,
+  PERSONAL_DATA_EXPORT_MAX_QUEUE_MS: 5 * 60 * 1000,
   collectPersonalData: vi.fn(async () => ({ truncatedSections: [] })),
   patchExportRecord: vi.fn(),
   personalDataExportCacheKey: (exportId: string) =>
@@ -90,7 +92,7 @@ describe('exportPersonalData', () => {
     );
   });
 
-  it('schedules no file expiry when the upload fails', async () => {
+  it('schedules the file expiry even when the upload fails', async () => {
     vi.mocked(storeExportFile).mockRejectedValue(
       new NonRetriableError('Storage down'),
     );
@@ -98,6 +100,9 @@ describe('exportPersonalData', () => {
     const { ctx, error } = await execute();
 
     expect(error).toMatchObject({ message: 'Storage down' });
-    expect(ctx.step.sendEvent).not.toHaveBeenCalled();
+    expect(ctx.step.sendEvent).toHaveBeenCalledWith(
+      'schedule-expiry',
+      expiryEvent,
+    );
   });
 });
