@@ -58,7 +58,8 @@ export type AdvancePhaseResult =
  *    (currentStateId = fromPhaseId AND status = PUBLISHED).
  * 3. Mark any pending scheduled transition for the departing phase complete.
  * 4. Insert a stateTransitionHistory row.
- * 5. Persist selected proposals into decisionTransitionProposals.
+ * 5. Persist selected proposals into decisionTransitionProposals, unless the
+ *    departing phase needs approval; then the admin's manual selection does it.
  *
  * Returns { conflict: true } if the lock fails (concurrent advance or status change).
  */
@@ -118,7 +119,9 @@ export async function advancePhase(
   // Default to pass-none; phases opt into pass-all via an empty-blocks pipeline.
   let selectedProposalIds: string[] = [];
 
-  if (selectionPipeline) {
+  // Awaiting approval: nothing is attached, so the manual selection screen
+  // shows and the admin's confirmation attaches the proposals.
+  if (selectionPipeline && !departingPhase.selectionNeedsApproval) {
     const proposalMetrics = await aggregateProposalMetrics(allProposals, db);
     const context: ExecutionContext = {
       proposals: allProposals,
