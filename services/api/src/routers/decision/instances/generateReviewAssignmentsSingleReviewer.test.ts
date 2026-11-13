@@ -1,5 +1,4 @@
 import {
-  type DecisionInstanceData,
   type ReviewsPolicy,
   type ReviewsScope,
   advancePhase,
@@ -7,6 +6,7 @@ import {
   createDecisionRole,
   generateReviewAssignments,
   reconcileReviewAssignments,
+  withInstancePhases,
 } from '@op/common';
 import { TestDecisionsDataManager } from '@op/common/testing';
 import { db, eq, inArray } from '@op/db/client';
@@ -303,10 +303,7 @@ async function advanceBetween(
   const result = await db.transaction(async (tx) =>
     advancePhase({
       db: tx,
-      instance: {
-        id: dbInstance.id,
-        instanceData: dbInstance.instanceData as DecisionInstanceData,
-      },
+      instance: await withInstancePhases({ instance: dbInstance }),
       fromPhaseId,
       toPhaseId,
       triggeredByProfileId: null,

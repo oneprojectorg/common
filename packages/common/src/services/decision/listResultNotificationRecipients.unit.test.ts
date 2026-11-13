@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // `eq`/`inArray` record (column, value) pairs so the tests can pin which row
 // each query addresses.

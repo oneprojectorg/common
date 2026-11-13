@@ -1,7 +1,7 @@
 import { getTipTapClient } from '@op/collab';
 import { db } from '@op/db/client';
 import { ProposalStatus } from '@op/db/schema';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ValidationError } from '../../utils/error';
 import { assertProfileAccess } from '../assert';

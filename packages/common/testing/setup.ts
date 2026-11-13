@@ -4,13 +4,10 @@ import { beforeAll, beforeEach, vi } from 'vitest';
 // Mocks a test asserts against live in `./mocks` — see ./mocks/README.md.
 
 vi.mock('@op/common/src/services/profile/utils');
-vi.mock('@op/analytics/client', () => ({
-  default: () => ({
-    capture() {},
-    identify() {},
-    async shutdown() {},
-  }),
-}));
+vi.mock(
+  '@op/analytics/client',
+  async () => (await import('./mocks/analytics')).analyticsClientMock,
+);
 vi.mock('@op/collab', async () => import('@op/collab/testing'));
 vi.mock('deepl-node', async () => (await import('./mocks/deepl')).deeplMock);
 

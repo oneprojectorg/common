@@ -8,6 +8,7 @@ import { isLegacyInstanceData } from './isLegacyInstance';
 import type { LockedProcessInstance } from './lockProcessInstance';
 import { phaseEligiblePredicate } from './phaseEligibility';
 import { assertDecisionAdmin } from './phaseHelpers';
+import { isPhasesResolved, withInstancePhases } from './readInstancePhases';
 import { resolveManualSelectionStatus } from './resolveManualSelectionStatus';
 import {
   type PhaseInstanceData,
@@ -60,9 +61,11 @@ export async function assertProposalAdmin({
 export async function resolvePhaseAdvancement({
   dbClient,
   instance,
+  fromRows,
 }: {
   dbClient: DbClient;
   instance: AdvancementInstance;
+  fromRows?: boolean;
 }): Promise<PhaseAdvancement> {
   const { currentStateId, instanceData } = instance;
 
@@ -74,7 +77,10 @@ export async function resolvePhaseAdvancement({
     return { ok: false, reason: NO_PHASE_TO_ADVANCE_INTO };
   }
 
-  const phases = getInstancePhases(instanceData);
+  const resolved = isPhasesResolved(instance)
+    ? instance
+    : await withInstancePhases({ instance, db: dbClient, fromRows });
+  const phases = getInstancePhases(resolved.instanceData);
   const currentIndex = phases.findIndex((p) => p.phaseId === currentStateId);
   const currentPhase = phases[currentIndex];
   const previousPhase = phases[currentIndex - 1];
@@ -99,10 +105,7 @@ export async function resolvePhaseAdvancement({
       orderBy: { transitionedAt: 'desc' },
       columns: { id: true, toStateId: true },
     }),
-    resolveManualSelectionStatus({
-      instance: { id: instance.id, instanceData, currentStateId },
-      dbClient,
-    }),
+    resolveManualSelectionStatus({ instance: resolved, dbClient }),
   ]);
 
   if (latestTransition?.toStateId !== currentStateId) {
@@ -134,12 +137,18 @@ export async function resolveAdvancement({
   dbClient,
   instance,
   proposalId,
+  fromRows,
 }: {
   dbClient: DbClient;
   instance: AdvancementInstance;
   proposalId: string;
+  fromRows?: boolean;
 }): Promise<PhaseAdvancement> {
-  const advancement = await resolvePhaseAdvancement({ dbClient, instance });
+  const advancement = await resolvePhaseAdvancement({
+    dbClient,
+    instance,
+    fromRows,
+  });
   if (!advancement.ok) {
     return advancement;
   }
