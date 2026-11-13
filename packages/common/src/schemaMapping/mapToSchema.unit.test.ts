@@ -55,6 +55,15 @@ describe('mapToSchema', () => {
     expect(result).toEqual({ data: {} });
   });
 
+  it('does not read an inherited property', () => {
+    const result = mapProposals({
+      fields: [{ from: 'toString', to: 'title' }],
+      inputs: [proposal({ title: 'Trees' })],
+    });
+
+    expect(result).toEqual({ data: {} });
+  });
+
   it('fills the field when all inputs give equal values', () => {
     const result = mapProposals({
       fields: [{ from: 'title', to: 'title' }],
