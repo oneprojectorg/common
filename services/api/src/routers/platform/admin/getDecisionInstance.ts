@@ -80,17 +80,6 @@ const detailInstanceData = z
     templateVersion: z.string().optional(),
     proposalTemplate: z.unknown().optional(),
     rubricTemplate: z.unknown().optional(),
-    phases: z
-      .array(
-        z.object({
-          phaseId: z.string(),
-          name: z.string().optional(),
-          startDate: z.string().optional(),
-          endDate: z.string().optional(),
-          rules: phaseRulesSchema.optional(),
-        }),
-      )
-      .optional(),
   })
   .partial();
 
@@ -141,10 +130,8 @@ export const getDecisionInstanceRouter = router({
         instanceData: instance.instanceData,
         phases: resolved.phases,
       });
-      const parsed = detailInstanceData.safeParse(wireInstanceData);
-      const { phases = [], ...instanceData } = parsed.success
-        ? parsed.data
-        : {};
+      const parsed = detailInstanceData.safeParse(instance.instanceData);
+      const instanceData = parsed.success ? parsed.data : {};
 
       const schemaParsed = detailProcessSchema.safeParse(
         instance.process?.processSchema,
@@ -190,7 +177,7 @@ export const getDecisionInstanceRouter = router({
           categoriesCount: instanceData.config?.categories?.length ?? 0,
         },
         instanceData: wireInstanceData,
-        phases: phases.map((phase) => {
+        phases: resolved.phases.map((phase) => {
           // Instance rules win; fall back to the process schema definition
           // (older instances don't copy every rule into instanceData).
           const rules = phase.rules ?? schemaRulesByPhaseId.get(phase.phaseId);
