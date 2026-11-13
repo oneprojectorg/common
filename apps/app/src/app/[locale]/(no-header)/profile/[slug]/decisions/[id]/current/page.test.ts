@@ -21,7 +21,10 @@ const redirected = new Error('NEXT_REDIRECT');
 
 const id = '7962ff89-babb-4a99-a4ed-e35d8795b416';
 const locale: Locale = 'es';
-const props = { params: Promise.resolve({ id, slug: 'acme', locale }) };
+const props = {
+  params: Promise.resolve({ id, slug: 'acme', locale }),
+  searchParams: Promise.resolve({}),
+};
 
 describe('legacy /current page', () => {
   beforeEach(() => {
