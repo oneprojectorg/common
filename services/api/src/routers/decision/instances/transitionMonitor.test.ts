@@ -3,7 +3,7 @@ import {
   processDecisionsTransitions,
 } from '@op/common';
 import { TestDecisionsDataManager } from '@op/common/testing';
-import { db, eq } from '@op/db/client';
+import { and, db, eq, isNull } from '@op/db/client';
 import {
   ProcessStatus,
   ProposalStatus,
@@ -240,6 +240,53 @@ async function createPublishedInstanceWithDueTransitions(
     caller,
     templateId,
   };
+}
+
+const PHASE_ORDER = ['submission', 'review', 'voting', 'results'];
+
+const hoursAgo = (hours: number) =>
+  new Date(Date.now() - hours * 60 * 60 * 1000).toISOString();
+
+// Advances phase by phase, which completes each departed phase's transition.
+async function advanceTo(
+  testData: TestDecisionsDataManager,
+  instanceId: string,
+  target: string,
+) {
+  const targetIndex = PHASE_ORDER.indexOf(target);
+  for (let index = 0; index < targetIndex; index++) {
+    const advanced = await testData.advancePhase({
+      instanceId,
+      fromPhaseId: PHASE_ORDER[index]!,
+      toPhaseId: PHASE_ORDER[index + 1]!,
+    });
+    if (advanced.conflict) {
+      throw new Error(`Could not advance from ${PHASE_ORDER[index]}`);
+    }
+  }
+}
+
+// Makes the pending transition out of `fromStateId` due at `scheduledDate`.
+async function scheduleTransition(
+  instanceId: string,
+  fromStateId: string,
+  scheduledDate: string,
+) {
+  const [transition] = await db
+    .update(decisionProcessTransitions)
+    .set({ scheduledDate })
+    .where(
+      and(
+        eq(decisionProcessTransitions.processInstanceId, instanceId),
+        eq(decisionProcessTransitions.fromStateId, fromStateId),
+        isNull(decisionProcessTransitions.completedAt),
+      ),
+    )
+    .returning();
+  if (!transition) {
+    throw new Error(`No pending transition out of ${fromStateId}`);
+  }
+  return transition;
 }
 
 // Sequential execution: processDecisionsTransitions is a global function that processes
@@ -500,6 +547,83 @@ describe('processDecisionsTransitions', () => {
     // The remaining 2 transitions should have been processed
     // (review→voting, voting→results)
     expect(result.processed).toBeGreaterThanOrEqual(2);
+  });
+
+  it('completes a stale transition out of a phase the decision has left and keeps advancing', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { instanceId } = await createPublishedInstanceWithDueTransitions(
+      testData,
+      task.id,
+      { makeDue: false },
+    );
+    await advanceTo(testData, instanceId, 'voting');
+
+    const [stale] = await db
+      .insert(decisionProcessTransitions)
+      .values({
+        processInstanceId: instanceId,
+        fromStateId: 'submission',
+        toStateId: 'voting',
+        scheduledDate: hoursAgo(2),
+      })
+      .returning();
+    if (!stale) {
+      throw new Error('The stale transition was not inserted');
+    }
+    const due = await scheduleTransition(instanceId, 'voting', hoursAgo(1));
+
+    const result = await processDecisionsTransitions({
+      processInstanceId: instanceId,
+    });
+
+    expect(result).toMatchObject({ processed: 1, failed: 0 });
+    const [instance, staleAfter, dueAfter] = await Promise.all([
+      db.query.processInstances.findFirst({ where: { id: instanceId } }),
+      db.query.decisionProcessTransitions.findFirst({
+        where: { id: stale.id },
+      }),
+      db.query.decisionProcessTransitions.findFirst({ where: { id: due.id } }),
+    ]);
+    expect(instance?.currentStateId).toBe('results');
+    expect(staleAfter?.completedAt).not.toBeNull();
+    expect(dueAfter?.completedAt).not.toBeNull();
+  });
+
+  it('stops on a conflict over a transition out of a phase the decision has not reached', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { instanceId } = await createPublishedInstanceWithDueTransitions(
+      testData,
+      task.id,
+      { makeDue: false },
+    );
+    await advanceTo(testData, instanceId, 'review');
+
+    const ahead = await scheduleTransition(instanceId, 'voting', hoursAgo(2));
+    const next = await scheduleTransition(instanceId, 'review', hoursAgo(1));
+
+    const result = await processDecisionsTransitions({
+      processInstanceId: instanceId,
+    });
+
+    expect(result).toMatchObject({ processed: 0, failed: 0 });
+    const [instance, aheadAfter, nextAfter] = await Promise.all([
+      db.query.processInstances.findFirst({ where: { id: instanceId } }),
+      db.query.decisionProcessTransitions.findFirst({
+        where: { id: ahead.id },
+      }),
+      db.query.decisionProcessTransitions.findFirst({
+        where: { id: next.id },
+      }),
+    ]);
+    expect(instance?.currentStateId).toBe('review');
+    expect(aheadAfter?.completedAt).toBeNull();
+    expect(nextAfter?.completedAt).toBeNull();
   });
 
   it('should persist selected proposals into decisionTransitionProposals', async ({

@@ -7,10 +7,12 @@ import { describe, expect, it } from 'vitest';
 import {
   PHASE_NAME,
   createUnauthenticatedCaller,
+  loadPendingTransitionLinks,
   loadPhaseRows,
   loadTransitionLinks,
   setupPhase,
   setupPublishedDateDecision,
+  setupPublishedDecisionAtThirdPhase,
 } from '../../../test/helpers/phaseTestUtils';
 import { createAuthenticatedCaller } from '../../../test/supabase-utils';
 
@@ -112,6 +114,25 @@ describe.concurrent('deletePhase', () => {
     expect(await loadPhaseRows(instanceId)).toEqual([initial]);
     expect(await loadTransitionLinks(instanceId)).toMatchObject([
       { fromStateId: 'final', fromPhaseId: null, toPhaseId: initial.id },
+    ]);
+  });
+
+  it('schedules no transition out of a phase the decision has left when an earlier phase is deleted', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { instanceId, adminCaller, rows } =
+      await setupPublishedDecisionAtThirdPhase(task, onTestFinished);
+
+    await adminCaller.decision.deletePhase({ phaseId: rows.review.id });
+
+    expect(await loadPendingTransitionLinks(instanceId)).toEqual([
+      {
+        fromStateId: 'voting',
+        toStateId: 'results',
+        fromPhaseId: rows.voting.id,
+        toPhaseId: rows.results.id,
+      },
     ]);
   });
 

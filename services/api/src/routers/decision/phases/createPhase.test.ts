@@ -16,7 +16,11 @@ import {
   listPhaseIds,
   loadBlobPhases,
   loadInstancePhases,
+  loadPendingTransitionLinks,
   loadPhaseRows,
+  loadTransitionLinks,
+  setupPublishedDateDecision,
+  setupPublishedDecisionAtThirdPhase,
 } from '../../../test/helpers/phaseTestUtils';
 import { createAuthenticatedCaller } from '../../../test/supabase-utils';
 
@@ -466,6 +470,96 @@ describe.concurrent('createPhase', () => {
 
     expect(await listPhaseIds(instanceId)).toEqual(before);
     await expectNoProfileNamed(name);
+  });
+
+  it('places a phase added at a taken sortOrder before the phase already there', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { testData, instanceId, adminCaller } = await setupDecision(
+      task,
+      onTestFinished,
+    );
+    const existing = await loadPhaseRows(instanceId);
+    expect(existing.length).toBeGreaterThan(1);
+
+    const added = await adminCaller.decision.createPhase({
+      instanceId,
+      name: 'Added',
+      sortOrder: 0,
+    });
+    testData.trackProfileForCleanup(added.profileId);
+
+    expect(added.sortOrder).toBe(0);
+    expect(
+      (await loadPhaseRows(instanceId)).map(({ id, sortOrder }) => ({
+        id,
+        sortOrder,
+      })),
+    ).toEqual(
+      [added, ...existing].map(({ id }, sortOrder) => ({ id, sortOrder })),
+    );
+  });
+
+  it('links a transition to a phase added to a published date decision', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { testData, instanceId, adminCaller, initial, final, endDate } =
+      await setupPublishedDateDecision(task, onTestFinished);
+
+    const added = await adminCaller.decision.createPhase({
+      instanceId,
+      name: 'Added',
+      sortOrder: 1,
+    });
+    testData.trackProfileForCleanup(added.profileId);
+
+    expect(await loadPhaseRows(instanceId)).toMatchObject([
+      { id: initial.id },
+      { id: added.id },
+      { id: final.id },
+    ]);
+    expect(await loadTransitionLinks(instanceId)).toEqual([
+      {
+        fromStateId: 'initial',
+        toStateId: added.slug,
+        fromPhaseId: initial.id,
+        toPhaseId: added.id,
+        scheduledDate: endDate,
+      },
+    ]);
+  });
+
+  it('schedules no transition out of a phase the decision has left when a phase is inserted before the current one', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { testData, instanceId, adminCaller, rows } =
+      await setupPublishedDecisionAtThirdPhase(task, onTestFinished);
+
+    const added = await adminCaller.decision.createPhase({
+      instanceId,
+      name: 'Added',
+      sortOrder: rows.voting.sortOrder,
+    });
+    testData.trackProfileForCleanup(added.profileId);
+
+    expect(await loadPhaseRows(instanceId)).toMatchObject([
+      { id: rows.submission.id },
+      { id: rows.review.id },
+      { id: added.id },
+      { id: rows.voting.id },
+      { id: rows.results.id },
+    ]);
+    expect(await loadPendingTransitionLinks(instanceId)).toEqual([
+      {
+        fromStateId: 'voting',
+        toStateId: 'results',
+        fromPhaseId: rows.voting.id,
+        toPhaseId: rows.results.id,
+      },
+    ]);
   });
 
   it('requires authentication', async () => {
