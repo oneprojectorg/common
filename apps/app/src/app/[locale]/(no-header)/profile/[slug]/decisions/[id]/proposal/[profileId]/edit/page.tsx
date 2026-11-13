@@ -6,8 +6,12 @@ import {
 import type { Metadata } from 'next';
 import { cache } from 'react';
 
-import { getTranslations } from '@/lib/i18n';
+import { type Locale, getTranslations } from '@/lib/i18n';
 
+import {
+  type LegacySearchParams,
+  redirectConvertedProposalEdit,
+} from '../../../redirectConvertedInstance';
 import { LegacyProposalEditClient } from './ProposalEditClient';
 
 // cache() dedupes the reads across generateMetadata + page render (one request),
@@ -24,15 +28,26 @@ const fetchInstance = cache(async (instanceId: string) => {
 
 export async function generateMetadata({
   params,
+  searchParams,
 }: {
   params: Promise<{
     profileId: string;
     id: string;
     slug: string;
-    locale: string;
+    locale: Locale;
   }>;
+  searchParams: Promise<LegacySearchParams>;
 }): Promise<Metadata> {
-  const { profileId, id, locale } = await params;
+  const { profileId, id, slug, locale } = await params;
+
+  // Redirecting here, before the loading boundary streams, gives link unfurlers a real 307; browsers still redirect client-side.
+  await redirectConvertedProposalEdit({
+    id,
+    slug,
+    locale,
+    profileId,
+    searchParams: await searchParams,
+  });
 
   try {
     const [t, proposal, instance] = await Promise.all([
@@ -52,10 +67,24 @@ export async function generateMetadata({
 
 const ProposalEditPage = async ({
   params,
+  searchParams,
 }: {
-  params: Promise<{ profileId: string; id: string; slug: string }>;
+  params: Promise<{
+    profileId: string;
+    id: string;
+    slug: string;
+    locale: Locale;
+  }>;
+  searchParams: Promise<LegacySearchParams>;
 }) => {
-  const { profileId, id, slug } = await params;
+  const { profileId, id, slug, locale } = await params;
+  await redirectConvertedProposalEdit({
+    id,
+    slug,
+    locale,
+    profileId,
+    searchParams: await searchParams,
+  });
   const { queryClient } = await createServerUtils();
 
   await Promise.all([fetchProposal(profileId), fetchInstance(id)]).catch(

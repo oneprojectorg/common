@@ -8,11 +8,21 @@ import { Skeleton } from '@op/sense/Skeleton';
 import type { Metadata } from 'next';
 import { Suspense, cache } from 'react';
 
-import { getTranslations } from '@/lib/i18n';
+import { type Locale, getTranslations } from '@/lib/i18n';
 
 import { DecisionHeader } from '@/components/decisions/DecisionHeader';
 import { DecisionStateRouter } from '@/components/decisions/DecisionStateRouter';
 import { DecisionTranslationProvider } from '@/components/decisions/DecisionTranslationContext';
+
+import {
+  type LegacySearchParams,
+  redirectConvertedDecision,
+} from './redirectConvertedInstance';
+
+interface DecisionInstancePageProps {
+  params: Promise<{ id: string; slug: string; locale: Locale }>;
+  searchParams: Promise<LegacySearchParams>;
+}
 
 // cache() dedupes the read across generateMetadata + page render (one request),
 // so the resolver and its "viewed" event fire once and the data hydrates.
@@ -51,10 +61,17 @@ function DecisionHeaderSkeleton() {
 
 export async function generateMetadata({
   params,
-}: {
-  params: Promise<{ id: string; slug: string; locale: string }>;
-}): Promise<Metadata> {
-  const { id, locale } = await params;
+  searchParams,
+}: DecisionInstancePageProps): Promise<Metadata> {
+  const { id, slug, locale } = await params;
+
+  // Redirecting here, before the loading boundary streams, gives link unfurlers a real 307; browsers still redirect client-side.
+  await redirectConvertedDecision({
+    id,
+    slug,
+    locale,
+    searchParams: await searchParams,
+  });
 
   try {
     const [t, instance] = await Promise.all([
@@ -106,10 +123,16 @@ const DecisionInstancePageContent = async ({
 
 const DecisionInstancePage = async ({
   params,
-}: {
-  params: Promise<{ id: string; slug: string }>;
-}) => {
-  const { id, slug } = await params;
+  searchParams,
+}: DecisionInstancePageProps) => {
+  const { id, slug, locale } = await params;
+
+  await redirectConvertedDecision({
+    id,
+    slug,
+    locale,
+    searchParams: await searchParams,
+  });
 
   return <DecisionInstancePageContent instanceId={id} slug={slug} />;
 };

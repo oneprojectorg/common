@@ -35,6 +35,7 @@ export * from './updateDecisionInstance';
 export * from './listInstances';
 export * from './listLegacyInstances';
 export * from './getInstance';
+export * from './getConvertedInstanceSlug';
 export * from './listDecisionProfiles';
 export * from './getDecisionBySlug';
 
