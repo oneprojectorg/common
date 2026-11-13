@@ -1,33 +1,27 @@
 import { evaluateExpression } from '../services/decision/selectionPipeline/expressionEvaluator';
-import type {
-  ExecutionContext,
-  Expression,
-} from '../services/decision/selectionPipeline/types';
+import type { ExecutionContext } from '../services/decision/selectionPipeline/types';
 import { readOwnField } from './fieldPath';
-
-const DATA_COLUMN = 'proposalData';
+import type { MappingExpression } from './types';
 
 export const evaluateMappingValue = ({
   expression,
   data,
 }: {
-  expression: Expression;
+  expression: MappingExpression;
   data: unknown;
 }): unknown => {
-  const hasMissingField = collectRequiredFields(expression).some((path) =>
+  // The evaluator reads a missing operand as 0.
+  const hasEmptyField = getFields(expression).some((path) =>
     isEmptyValue(readOwnField({ data, path })),
   );
-  if (hasMissingField) {
+  if (hasEmptyField) {
     return undefined;
   }
 
-  const prefixed = prefixFields(expression);
-  const context = buildExecutionContext(data);
-  if (hasZeroDivisor({ expression: prefixed, context })) {
-    return undefined;
-  }
-
-  const result: unknown = evaluateExpression(prefixed, context);
+  const result: unknown = evaluateExpression(
+    prefixFields(expression),
+    buildExecutionContext(data),
+  );
   return isEmptyValue(result) ||
     (typeof result === 'number' && !Number.isFinite(result))
     ? undefined
@@ -58,16 +52,9 @@ const buildExecutionContext = (data: unknown): ExecutionContext => ({
   outputs: {},
 });
 
-const prefixFields = (expression: Expression): Expression => {
+const prefixFields = (expression: MappingExpression): MappingExpression => {
   if ('field' in expression) {
-    return { field: `${DATA_COLUMN}.${expression.field}` };
-  }
-  if ('left' in expression) {
-    return {
-      operator: expression.operator,
-      left: prefixFields(expression.left),
-      right: prefixFields(expression.right),
-    };
+    return { field: `proposalData.${expression.field}` };
   }
   if ('operands' in expression) {
     return {
@@ -75,88 +62,14 @@ const prefixFields = (expression: Expression): Expression => {
       operands: expression.operands.map(prefixFields),
     };
   }
-  if ('function' in expression) {
-    return {
-      function: expression.function,
-      arguments: expression.arguments.map(prefixFields),
-    };
-  }
-  if ('value' in expression || 'variable' in expression) {
-    return { ...expression };
-  }
-  if (expression.and) {
-    return { and: expression.and.map(prefixFields) };
-  }
-  if (expression.or) {
-    return { or: expression.or.map(prefixFields) };
-  }
-  if (expression.not) {
-    return { not: prefixFields(expression.not) };
-  }
-  return {};
+  return { value: expression.value };
 };
 
-// The evaluator reads a missing operand as 0, so every field a rule reads must
-// be present. Only a direct coalesce argument may be missing.
-const collectRequiredFields = (expression: Expression): string[] => {
+const getFields = (expression: MappingExpression): string[] => {
   if ('field' in expression) {
     return [expression.field];
   }
-  if ('function' in expression && expression.function === 'coalesce') {
-    return expression.arguments.flatMap((argument) =>
-      'field' in argument ? [] : collectRequiredFields(argument),
-    );
-  }
-  return getChildren(expression).flatMap(collectRequiredFields);
-};
-
-// The evaluator returns 0 for a division by 0 instead of failing.
-const hasZeroDivisor = ({
-  expression,
-  context,
-}: {
-  expression: Expression;
-  context: ExecutionContext;
-}): boolean => {
-  if (
-    'operands' in expression &&
-    (expression.operator === 'divide' || expression.operator === 'modulo')
-  ) {
-    const divisorIsZero = expression.operands.slice(1).some((operand) => {
-      const divisor: unknown = evaluateExpression(operand, context);
-      return typeof divisor !== 'number' || divisor === 0;
-    });
-    if (divisorIsZero) {
-      return true;
-    }
-  }
-  return getChildren(expression).some((child) =>
-    hasZeroDivisor({ expression: child, context }),
-  );
-};
-
-const getChildren = (expression: Expression): Expression[] => {
-  if ('left' in expression) {
-    return [expression.left, expression.right];
-  }
-  if ('operands' in expression) {
-    return expression.operands;
-  }
-  if ('function' in expression) {
-    return expression.arguments;
-  }
-  if (
-    'field' in expression ||
-    'value' in expression ||
-    'variable' in expression
-  ) {
-    return [];
-  }
-  return [
-    ...(expression.and ?? []),
-    ...(expression.or ?? []),
-    ...(expression.not ? [expression.not] : []),
-  ];
+  return 'operands' in expression ? expression.operands.flatMap(getFields) : [];
 };
 
 const isEmptyValue = (value: unknown): boolean =>
