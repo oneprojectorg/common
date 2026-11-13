@@ -85,8 +85,6 @@ export interface PhaseInstanceData {
   rubricTemplate?: RubricTemplateSchema;
   /** Phase-specific form; resolve via `getPhaseProposalTemplate`, never directly. */
   proposalTemplate?: ProposalTemplateSchema;
-  /** `decision_form_schemas` row that proposals created in this phase point at. */
-  formSchemaId?: string;
 }
 
 /** Public-facing overview content (headline, short description, rich text body) */

@@ -250,7 +250,6 @@ export const instancePhaseDataEncoder = z.object({
   // Phase-specific rubric; resolve via getPhaseRubricTemplate (instance-level
   // rubricTemplate is the fallback)
   rubricTemplate: rubricTemplateSchema.optional(),
-  formSchemaId: z.string().optional(),
 });
 
 /**
@@ -573,18 +572,15 @@ export const createInstanceFromTemplateInputSchema = z.object({
 });
 
 /** Input schema for phase overrides with datetime validation */
-// The phase's `formSchemaId` is read-only here: no API path writes it.
-const instancePhaseDataInputEncoder = instancePhaseDataEncoder
-  .omit({ formSchemaId: true })
-  .extend({
-    startDate: z.string().datetime({ offset: true }).optional(),
-    endDate: z.string().datetime({ offset: true }).optional(),
-    // Overrides the read-path encoder: `''` is rejected here rather than decoded
-    // as absent, and `null` is the explicit "clear this headline".
-    headline: phaseHeadlineInputEncoder,
-    // `null` clears the phase-level rubric; omitted leaves it unchanged.
-    rubricTemplate: rubricTemplateSchema.nullable().optional(),
-  });
+const instancePhaseDataInputEncoder = instancePhaseDataEncoder.extend({
+  startDate: z.string().datetime({ offset: true }).optional(),
+  endDate: z.string().datetime({ offset: true }).optional(),
+  // Overrides the read-path encoder: `''` is rejected here rather than decoded
+  // as absent, and `null` is the explicit "clear this headline".
+  headline: phaseHeadlineInputEncoder,
+  // `null` clears the phase-level rubric; omitted leaves it unchanged.
+  rubricTemplate: rubricTemplateSchema.nullable().optional(),
+});
 
 const isJsonObject = (value: unknown) =>
   typeof value === 'object' && value !== null && !Array.isArray(value);

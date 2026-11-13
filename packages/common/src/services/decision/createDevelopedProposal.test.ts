@@ -10,65 +10,11 @@ import {
   ProcessStatus,
   ProposalRelationshipType,
   ProposalStatus,
-  formSchemas,
-  processInstances,
 } from '@op/db/schema';
-import { eq } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 
 import { UnauthorizedError, ValidationError } from '../../utils';
 import { createDevelopedProposal } from './createDevelopedProposal';
-import { getInstancePhases } from './schemas/instanceData';
-
-const readFormSchemaId = async (proposalId: string) => {
-  const row = await db.query.proposals.findFirst({
-    where: { id: proposalId },
-    columns: { formSchemaId: true },
-  });
-  return row?.formSchemaId;
-};
-
-/** Points the develop phase ("final") of the instance at a new form schema row. */
-async function pinDevelopPhaseFormSchema(instanceId: string) {
-  const [row] = await db
-    .insert(formSchemas)
-    .values({
-      processInstanceId: instanceId,
-      name: 'Develop phase form',
-      schema: { type: 'object', properties: {} },
-    })
-    .returning({ id: formSchemas.id });
-  if (!row) {
-    throw new Error('form schema insert returned no row');
-  }
-
-  const instance = await db.query.processInstances.findFirst({
-    where: { id: instanceId },
-    columns: { instanceData: true },
-  });
-  if (!instance) {
-    throw new Error('Instance not found');
-  }
-  const { instanceData } = instance;
-  if (typeof instanceData !== 'object' || instanceData === null) {
-    throw new Error('Instance has no instance data');
-  }
-  await db
-    .update(processInstances)
-    .set({
-      instanceData: {
-        ...instanceData,
-        phases: getInstancePhases(instanceData).map((phase) =>
-          phase.phaseId === 'final'
-            ? { ...phase, formSchemaId: row.id }
-            : phase,
-        ),
-      },
-    })
-    .where(eq(processInstances.id, instanceId));
-
-  return row.id;
-}
 
 const readDevelopedSourceIds = async (targetProposalId: string) => {
   const edges = await db.query.proposalRelationships.findMany({
@@ -398,50 +344,5 @@ describe.concurrent('createDevelopedProposal', () => {
     await expect(readDevelopedSourceIds(second.id)).resolves.toEqual([
       source.id,
     ]);
-  });
-
-  it("sets the draft's formSchemaId from the develop phase", async ({
-    task,
-    onTestFinished,
-  }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const { setup, instanceId, source } = await createDevelopPhaseSetup({
-      testData,
-    });
-    const formSchemaId = await pinDevelopPhaseFormSchema(instanceId);
-
-    const draft = await createDevelopedProposal({
-      data: {
-        processInstanceId: instanceId,
-        sourceProposalIds: [source.id],
-        proposalData: { title: 'Pinned' },
-      },
-      user: setup.user,
-    });
-    testData.trackProfileForCleanup(draft.profileId);
-
-    await expect(readFormSchemaId(draft.id)).resolves.toBe(formSchemaId);
-  });
-
-  it('leaves formSchemaId null when the develop phase has none', async ({
-    task,
-    onTestFinished,
-  }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const { setup, instanceId, source } = await createDevelopPhaseSetup({
-      testData,
-    });
-
-    const draft = await createDevelopedProposal({
-      data: {
-        processInstanceId: instanceId,
-        sourceProposalIds: [source.id],
-        proposalData: { title: 'Unpinned' },
-      },
-      user: setup.user,
-    });
-    testData.trackProfileForCleanup(draft.profileId);
-
-    await expect(readFormSchemaId(draft.id)).resolves.toBeNull();
   });
 });

@@ -93,7 +93,6 @@ export const createDevelopedProposal = async ({
       proposalData: data.proposalData,
       attachmentIds: data.attachmentIds,
       ...draftInputs,
-      formSchemaId: currentPhase.formSchemaId ?? null,
     });
 
     await tx.insert(proposalRelationships).values(
