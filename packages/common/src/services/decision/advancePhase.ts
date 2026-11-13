@@ -6,6 +6,7 @@ import {
   stateTransitionHistory,
 } from '@op/db/schema';
 
+import { ConflictError } from '../../utils';
 import { attachProposalsToTransition } from './attachProposalsToTransition';
 import { getProposalsForPhase } from './getProposalsForPhase';
 import type {
@@ -58,7 +59,8 @@ export type AdvancePhaseResult =
  *    (currentStateId = fromPhaseId AND status = PUBLISHED).
  * 3. Mark any pending scheduled transition for the departing phase complete.
  * 4. Insert a stateTransitionHistory row.
- * 5. Persist selected proposals into decisionTransitionProposals.
+ * 5. Persist selected proposals into decisionTransitionProposals, unless the
+ *    departing phase needs approval; then the admin's manual selection does it.
  *
  * Returns { conflict: true } if the lock fails (concurrent advance or status change).
  */
@@ -108,6 +110,13 @@ export async function advancePhase(
     return { conflict: true };
   }
 
+  await assertInboundSelectionApproved({
+    db,
+    instanceId,
+    phaseId: fromPhaseId,
+    phases: instanceData.phases,
+  });
+
   const selectionPipeline = departingPhase.selectionPipeline;
 
   const allProposals = await getProposalsForPhase({
@@ -118,7 +127,9 @@ export async function advancePhase(
   // Default to pass-none; phases opt into pass-all via an empty-blocks pipeline.
   let selectedProposalIds: string[] = [];
 
-  if (selectionPipeline) {
+  // Awaiting approval: nothing is attached, so the manual selection screen
+  // shows and the admin's confirmation attaches the proposals.
+  if (selectionPipeline && !departingPhase.selectionNeedsApproval) {
     const proposalMetrics = await aggregateProposalMetrics(allProposals, db);
     const context: ExecutionContext = {
       proposals: allProposals,
@@ -190,4 +201,53 @@ export async function advancePhase(
     transitionHistoryId: insertedTransition.id,
     selectedProposalIds,
   };
+}
+
+/**
+ * A phase whose inbound selection still awaits an admin's approval cannot
+ * advance: a scheduled transition would otherwise move on with no proposals
+ * and leave the held selection with nothing to confirm into.
+ */
+async function assertInboundSelectionApproved({
+  db,
+  instanceId,
+  phaseId,
+  phases,
+}: {
+  db: DbClient;
+  instanceId: string;
+  phaseId: string;
+  phases: readonly PhaseInstanceData[];
+}): Promise<void> {
+  const inbound = await db.query.stateTransitionHistory.findFirst({
+    where: { processInstanceId: instanceId, toStateId: phaseId },
+    orderBy: { transitionedAt: 'desc' },
+    columns: { fromStateId: true, transitionData: true },
+  });
+
+  if (!inbound) {
+    return;
+  }
+
+  const previousPhase = phases.find(
+    (phase) => phase.phaseId === inbound.fromStateId,
+  );
+
+  if (!previousPhase?.selectionNeedsApproval) {
+    return;
+  }
+
+  if (!isApprovedTransition(inbound.transitionData)) {
+    throw new ConflictError(
+      'The selection into this phase awaits approval. Confirm it before advancing.',
+    );
+  }
+}
+
+function isApprovedTransition(transitionData: unknown): boolean {
+  return (
+    transitionData !== null &&
+    typeof transitionData === 'object' &&
+    'manualSelection' in transitionData
+  );
 }

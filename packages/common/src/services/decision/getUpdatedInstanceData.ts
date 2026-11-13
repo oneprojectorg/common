@@ -150,6 +150,9 @@ function mergePhases(
       ...(phase.startDate !== undefined && { startDate: phase.startDate }),
       ...(phase.endDate !== undefined && { endDate: phase.endDate }),
       ...(phase.settings !== undefined && { settings: phase.settings }),
+      ...(phase.selectionNeedsApproval !== undefined && {
+        selectionNeedsApproval: phase.selectionNeedsApproval,
+      }),
       ...(phase.rubricTemplate != null && {
         rubricTemplate: phase.rubricTemplate,
       }),

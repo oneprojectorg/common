@@ -11,6 +11,7 @@ const createPhaseOutputSchema = z.object({
   sortOrder: z.number(),
   name: z.string(),
   slug: z.string(),
+  selectionNeedsApproval: z.boolean(),
 });
 
 export const createPhaseRouter = router({
@@ -23,6 +24,7 @@ export const createPhaseRouter = router({
         name: z.string().trim().min(1).max(256),
         sortOrder: z.number().int().min(0).max(2_147_483_647),
         data: createPhaseDataInputEncoder.optional(),
+        selectionNeedsApproval: z.boolean().optional(),
       }),
     )
     .output(createPhaseOutputSchema)
@@ -33,6 +35,7 @@ export const createPhaseRouter = router({
         name: input.name,
         sortOrder: input.sortOrder,
         data: input.data,
+        selectionNeedsApproval: input.selectionNeedsApproval,
       });
 
       return createPhaseOutputSchema.parse({
@@ -42,6 +45,7 @@ export const createPhaseRouter = router({
         sortOrder: phase.sortOrder,
         name: profile.name,
         slug: profile.slug,
+        selectionNeedsApproval: phase.selectionNeedsApproval,
       });
     }),
 });

@@ -20,7 +20,10 @@ import {
 } from './schemas/instanceData';
 
 // phaseId and name live on the phase's profile.
-export type PhaseData = Omit<PhaseInstanceData, 'phaseId' | 'name'>;
+export type PhaseData = Omit<
+  PhaseInstanceData,
+  'phaseId' | 'name' | 'selectionNeedsApproval'
+>;
 
 export { MAX_PHASES_PER_DECISION } from './utils/phaseOrder';
 
@@ -34,6 +37,7 @@ export const insertPhase = async ({
   name,
   sortOrder,
   data,
+  selectionNeedsApproval,
   generateSlug = generatePhaseSlug,
 }: {
   tx: TransactionType;
@@ -41,6 +45,7 @@ export const insertPhase = async ({
   name: string;
   sortOrder: number;
   data?: PhaseData;
+  selectionNeedsApproval?: boolean;
   // Only tests pass this, to force slug clashes.
   generateSlug?: () => string;
 }): Promise<{ phase: ProcessPhase; profile: Profile }> => {
@@ -53,6 +58,8 @@ export const insertPhase = async ({
       sortOrder,
       profileId: profile.id,
       data: data ?? {},
+      // Undefined leaves the column at its default (true).
+      ...(selectionNeedsApproval !== undefined && { selectionNeedsApproval }),
     })
     .returning();
 

@@ -74,6 +74,9 @@ export interface PhaseDefinition {
   /** Filter/reduce pipeline for advancing proposals to next phase */
   selectionPipeline?: SelectionPipeline;
 
+  /** The pipeline only proposes a selection; an admin confirms it before anything advances. */
+  selectionNeedsApproval?: boolean;
+
   /** Optional per-phase settings form (use `default` in schema properties) */
   settings?: JSONSchema7 & { ui?: UiSchema };
 
