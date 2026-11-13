@@ -49,7 +49,7 @@ const threeStepDateSchema = {
 } satisfies DecisionSchemaDefinition;
 
 describe('phases read from rows', () => {
-  it('reads no phases for a decision that has no phase rows', async ({
+  it('getInstance returns no phases for a decision that has no phase rows', async ({
     task,
     onTestFinished,
   }) => {

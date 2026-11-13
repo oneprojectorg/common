@@ -30,23 +30,6 @@ export function isLastPhase(
   return currentStateId === phases[phases.length - 1]?.phaseId;
 }
 
-/** Narrows the `instanceData` jsonb column to its phase list. */
-export function getInstancePhases(
-  instanceData: unknown,
-): readonly PhaseInstanceData[] {
-  if (
-    instanceData === null ||
-    typeof instanceData !== 'object' ||
-    !('phases' in instanceData)
-  ) {
-    return [];
-  }
-
-  const { phases } = instanceData;
-
-  return Array.isArray(phases) ? phases : [];
-}
-
 export type PhaseSettingsSchema = JSONSchema7 & { ui?: UiSchema };
 
 export const assertSettingsMatchSchema = ({

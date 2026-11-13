@@ -22,14 +22,11 @@ const PHASE_HELPERS =
 
 const BLOB_READS = [
   /instanceData\??\.phases/,
-  /getInstancePhases\(/,
   // A blob handed to a helper that reads its phases.
   new RegExp(`\\b(?:${PHASE_HELPERS})\\(\\s*[\\w.?]*[iI]nstanceData\\s*[,)]`),
 ];
 
 const ALLOWED: Record<string, string> = {
-  'packages/common/src/services/decision/schemas/instanceData.ts':
-    'defines getInstancePhases',
   'packages/common/src/services/decision/utils/instance.ts':
     "reads the client's wire instanceData",
 };

@@ -107,7 +107,6 @@ export const duplicateInstance = async ({
   }
   const sourcePhases = await getPhases({ instance: sourceInstance });
 
-  // Build new instance data based on include flags
   const newInstanceData = buildInstanceData(sourceData, include);
 
   // Delegate core creation (profile, instance, default roles, profile user)
@@ -120,7 +119,7 @@ export const duplicateInstance = async ({
     creatorAuthUserId: user.id,
     creatorEmail: user.email,
     instanceData: newInstanceData,
-    phases: buildPhases(sourcePhases, include),
+    phases: buildPhases({ phases: sourcePhases, include }),
   });
 
   // Copy custom roles from source if requested (separate step because
@@ -212,10 +211,13 @@ function buildInstanceData(
   return base;
 }
 
-function buildPhases(
-  phases: PhaseInstanceData[],
-  include: DuplicateInstanceIncludeFlags,
-): PhaseInstanceData[] {
+function buildPhases({
+  phases,
+  include,
+}: {
+  phases: PhaseInstanceData[];
+  include: DuplicateInstanceIncludeFlags;
+}): PhaseInstanceData[] {
   if (include.phases) {
     return phases.map((phase): PhaseInstanceData => {
       const copied: PhaseInstanceData = {
