@@ -1,4 +1,8 @@
+import type { DecisionInstanceData } from '@op/common';
 import { TestDecisionsDataManager } from '@op/common/testing';
+import { asc, db, eq } from '@op/db/client';
+import { processPhases, profiles } from '@op/db/schema';
+import { expect } from 'vitest';
 
 import { appRouter } from '../../routers';
 import { createCallerFactory } from '../../trpcFactory';
@@ -30,6 +34,14 @@ export async function setupPhase(
     sortOrder: 0,
   });
   testData.trackProfileForCleanup(phase.profileId);
+
+  // The fixture mints a row per template phase; phase tests expect only their own.
+  const minted = await listPhaseIds(setup.instance.instance.id);
+  await Promise.all(
+    minted
+      .filter((phaseId) => phaseId !== phase.id)
+      .map((phaseId) => adminCaller.decision.deletePhase({ phaseId })),
+  );
 
   const createMemberCaller = async () => {
     const member = await testData.createMemberUser({
@@ -69,3 +81,73 @@ export async function setupPhase(
 export async function createUnauthenticatedCaller() {
   return createCaller(await createTestContextWithSession(null));
 }
+
+export const loadPhaseRows = (processInstanceId: string) =>
+  db
+    .select({
+      sortOrder: processPhases.sortOrder,
+      profileId: processPhases.profileId,
+      data: processPhases.data,
+      name: profiles.name,
+      type: profiles.type,
+    })
+    .from(processPhases)
+    .innerJoin(profiles, eq(profiles.id, processPhases.profileId))
+    .where(eq(processPhases.processInstanceId, processInstanceId))
+    .orderBy(asc(processPhases.sortOrder));
+
+export const listPhaseIds = async (processInstanceId: string) =>
+  (
+    await db.query.processPhases.findMany({
+      where: { processInstanceId },
+      columns: { id: true },
+      orderBy: { id: 'asc' },
+    })
+  ).map((phase) => phase.id);
+
+export async function loadInstanceData(instanceId: string) {
+  const instance = await db.query.processInstances.findFirst({
+    where: { id: instanceId },
+  });
+
+  if (!instance) {
+    throw new Error(`Instance ${instanceId} was not created`);
+  }
+
+  return {
+    instance,
+    instanceData: instance.instanceData as DecisionInstanceData,
+  };
+}
+
+export const expectRowsMirrorPhases = (
+  rows: Awaited<ReturnType<typeof loadPhaseRows>>,
+  phases: readonly { phaseId: string; name?: string }[],
+) =>
+  expect(rows).toMatchObject(
+    phases.map((phase, sortOrder) => ({
+      sortOrder,
+      name: phase.name ?? phase.phaseId,
+      type: 'phase',
+      data: { phaseId: phase.phaseId },
+    })),
+  );
+
+export const expectNoProfileNamed = async (name: string) => {
+  const leftover = await db.query.profiles.findMany({
+    where: { name },
+    columns: { id: true },
+  });
+  expect(leftover).toHaveLength(0);
+};
+
+export const expectNothingNamed = async (name: string) => {
+  const [instances] = await Promise.all([
+    db.query.processInstances.findMany({
+      where: { name },
+      columns: { id: true },
+    }),
+    expectNoProfileNamed(name),
+  ]);
+  expect(instances).toHaveLength(0);
+};

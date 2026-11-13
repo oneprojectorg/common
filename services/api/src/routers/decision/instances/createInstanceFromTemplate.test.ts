@@ -4,6 +4,7 @@ import {
   type DecisionSchemaDefinition,
   simpleVoting,
 } from '@op/common';
+import { MAX_PHASE_NAME_LENGTH } from '@op/common/client';
 import { TestDecisionsDataManager } from '@op/common/testing';
 import { db, eq } from '@op/db/client';
 import { decisionProcesses, users } from '@op/db/schema';
@@ -16,6 +17,12 @@ import {
   expectFailsAccessTierGate,
   expectPassesAccessTierGate,
 } from '../../../test/helpers/gating/decision';
+import {
+  expectNothingNamed,
+  expectRowsMirrorPhases,
+  loadInstanceData,
+  loadPhaseRows,
+} from '../../../test/helpers/phaseTestUtils';
 import {
   createIsolatedSession,
   createTestContextWithSession,
@@ -81,6 +88,8 @@ async function createSimpleTemplate(
   return { templateId: template!.id, userEmail: setup.userEmail };
 }
 
+const [firstPhase, ...laterPhases] = simpleVoting.phases;
+
 describe.concurrent('createInstanceFromTemplate', () => {
   it('should create an instance from a template with default phases', async ({
     task,
@@ -145,6 +154,93 @@ describe.concurrent('createInstanceFromTemplate', () => {
     expect(
       await readCachedUser({ authUserId: session.user.id, fresh: 'fresh' }),
     ).toBe('fresh');
+  });
+
+  it('mints a phase row and profile per template phase, in order', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const firstName = `Ideas Wanted ${task.id}`;
+    const { templateId, userEmail } = await createSimpleTemplate(
+      testData,
+      task.id,
+      { phases: [{ ...firstPhase, name: firstName }, ...laterPhases] },
+    );
+    const caller = await createAuthenticatedCaller(userEmail);
+
+    const result = await caller.decision.createInstanceFromTemplate({
+      templateId,
+      name: `Phase Rows ${task.id}`,
+    });
+    testData.trackProfileForCleanup(result.id);
+
+    const [{ instanceData }, rows] = await Promise.all([
+      loadInstanceData(result.processInstance.id),
+      loadPhaseRows(result.processInstance.id),
+    ]);
+
+    expect(instanceData.phases).toHaveLength(simpleVoting.phases.length);
+    expectRowsMirrorPhases(rows, instanceData.phases);
+    expect(rows.map((row) => row.data)).toEqual(
+      instanceData.phases.map(({ name: _name, ...data }) => data),
+    );
+    expect(rows[0]?.name).toBe(firstName);
+  });
+
+  it.for([
+    {
+      label: 'names a nameless phase after its id',
+      name: '  ',
+      expected: firstPhase.id,
+    },
+    {
+      label: 'accepts a phase name of exactly the maximum length',
+      name: 'x'.repeat(MAX_PHASE_NAME_LENGTH),
+      expected: 'x'.repeat(MAX_PHASE_NAME_LENGTH),
+    },
+  ])('$label', async ({ name, expected }, { task, onTestFinished }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { templateId, userEmail } = await createSimpleTemplate(
+      testData,
+      task.id,
+      { phases: [{ ...firstPhase, name }, ...laterPhases] },
+    );
+    const caller = await createAuthenticatedCaller(userEmail);
+
+    const result = await caller.decision.createInstanceFromTemplate({
+      templateId,
+      name: `Phase Name ${task.id}`,
+    });
+    testData.trackProfileForCleanup(result.id);
+
+    const [row] = await loadPhaseRows(result.processInstance.id);
+    expect(row?.name).toBe(expected);
+  });
+
+  it('refuses a template whose phases cannot be minted before writing anything', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { templateId, userEmail } = await createSimpleTemplate(
+      testData,
+      task.id,
+      { phases: [{ ...firstPhase, id: '' }, ...laterPhases] },
+    );
+    const caller = await createAuthenticatedCaller(userEmail);
+
+    const name = `Bad Phase Ids ${task.id}`;
+    await expect(
+      caller.decision.createInstanceFromTemplate({ templateId, name }),
+    ).rejects.toMatchObject({
+      cause: {
+        name: 'ValidationError',
+        message: expect.stringMatching(/A phase has no id/),
+      },
+    });
+
+    await expectNothingNamed(name);
   });
 
   it('should NOT create transitions for DRAFT instances (transitions are created on publish)', async ({

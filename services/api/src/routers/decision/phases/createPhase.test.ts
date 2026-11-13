@@ -5,7 +5,11 @@ import { ROLES } from '@op/db/seedData/accessControl';
 import { randomUUID } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 
-import { createUnauthenticatedCaller } from '../../../test/helpers/phaseTestUtils';
+import {
+  createUnauthenticatedCaller,
+  expectNoProfileNamed,
+  listPhaseIds,
+} from '../../../test/helpers/phaseTestUtils';
 import { createAuthenticatedCaller } from '../../../test/supabase-utils';
 
 type OnTestFinished = (fn: () => void | Promise<void>) => void;
@@ -296,6 +300,8 @@ describe.concurrent('createPhase', () => {
       onTestFinished,
     );
 
+    const before = await listPhaseIds(instanceId);
+
     const name = `Bad Form ${randomUUID()}`;
     await expect(
       adminCaller.decision.createPhase({
@@ -306,15 +312,8 @@ describe.concurrent('createPhase', () => {
       }),
     ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
 
-    const [phases, profiles] = await Promise.all([
-      db.query.processPhases.findMany({
-        where: { processInstanceId: instanceId },
-        columns: { id: true },
-      }),
-      db.query.profiles.findMany({ where: { name }, columns: { id: true } }),
-    ]);
-    expect(phases).toHaveLength(0);
-    expect(profiles).toHaveLength(0);
+    expect(await listPhaseIds(instanceId)).toEqual(before);
+    await expectNoProfileNamed(name);
   });
 
   it('accepts a settings schema, settings and a pipeline from the client', async ({
@@ -442,9 +441,5 @@ const expectRejectedAndNothingWritten = async (
     }),
   ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
 
-  const leftover = await db.query.profiles.findMany({
-    where: { name },
-    columns: { id: true },
-  });
-  expect(leftover).toHaveLength(0);
+  await expectNoProfileNamed(name);
 };

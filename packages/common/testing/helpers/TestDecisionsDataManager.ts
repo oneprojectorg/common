@@ -6,6 +6,7 @@ import {
   decisionProcesses,
   locations,
   processInstances,
+  processPhases,
   profileUserToAccessRoles,
   profiles,
   proposals,
@@ -13,7 +14,7 @@ import {
 } from '@op/db/schema';
 import { ROLES } from '@op/db/seedData/accessControl';
 import type { User } from '@op/supabase/lib';
-import { eq, inArray } from 'drizzle-orm';
+import { eq, inArray, or } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
 
 import {
@@ -780,7 +781,24 @@ export class TestDecisionsDataManager {
           validProfileIds.map((id) => `proposal-location:${id}`),
         ),
       );
-      await db.delete(profiles).where(inArray(profiles.id, validProfileIds));
+      await db
+        .delete(profiles)
+        .where(
+          or(
+            inArray(profiles.id, validProfileIds),
+            inArray(
+              profiles.id,
+              db
+                .select({ id: processPhases.profileId })
+                .from(processPhases)
+                .innerJoin(
+                  processInstances,
+                  eq(processInstances.id, processPhases.processInstanceId),
+                )
+                .where(inArray(processInstances.profileId, validProfileIds)),
+            ),
+          ),
+        );
     }
 
     // 2. Delete users table rows by auth user IDs
