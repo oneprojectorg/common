@@ -115,13 +115,16 @@ describe('buildExpectedTransitions', () => {
   });
 
   describe('with a current phase', () => {
-    const phases = ['phase-a', 'phase-b', 'phase-c', 'phase-d'].map(
-      (phaseId, index) => ({
-        phaseId,
-        rules: { advancement: { method: 'date' } },
-        endDate: `2026-0${index + 6}-01T00:00:00.000Z`,
-      }),
-    );
+    const phases: PhaseInstanceData[] = [
+      'phase-a',
+      'phase-b',
+      'phase-c',
+      'phase-d',
+    ].map((phaseId, index) => ({
+      phaseId,
+      rules: { advancement: { method: 'date' } },
+      endDate: `2026-0${index + 6}-01T00:00:00.000Z`,
+    }));
     const fromStateIds = (currentStateId: string | null) =>
       buildExpectedTransitions({
         ...stubInstance({ phases }),
@@ -141,9 +144,11 @@ describe('buildExpectedTransitions', () => {
 
     it('does not require an end date on a phase before the current one', () => {
       const [first, ...rest] = phases;
-      const instance = stubInstance({
-        phases: [{ ...first, endDate: undefined }, ...rest],
-      });
+      if (!first) {
+        throw new Error('Expected the phase fixtures');
+      }
+      const { endDate: _endDate, ...withoutEndDate } = first;
+      const instance = stubInstance({ phases: [withoutEndDate, ...rest] });
 
       expect(
         buildExpectedTransitions({ ...instance, currentStateId: 'phase-b' }),
