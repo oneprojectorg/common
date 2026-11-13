@@ -1,8 +1,6 @@
-import { checkPermission, permission } from 'access-zones';
-
 import { UnauthorizedError, ValidationError } from '../../utils';
-import { type AccessUser, getProfileAccessRoles } from '../access';
-import { decisionPermission } from './permissions';
+import type { AccessUser } from '../access';
+import { getProposalDevelopAccess } from './getProposalDevelopAccess';
 import type { DecisionInstanceData } from './schemas/instanceData';
 import { isDevelopPhase } from './utils/phaseSettings';
 
@@ -10,12 +8,6 @@ type DevelopInstance = {
   profileId: string | null;
   instanceData: Pick<DecisionInstanceData, 'phases'>;
 };
-
-const DEVELOP_ACCESS = [
-  { profile: permission.ADMIN },
-  { decisions: permission.ADMIN },
-  { decisions: decisionPermission.DEVELOP_PROPOSALS },
-];
 
 /** Whether `phaseId` is a develop phase of the instance. */
 export function isDevelopPhaseById({
@@ -47,12 +39,12 @@ export async function assertProposalDevelopAccess({
     );
   }
 
-  const roles = await getProfileAccessRoles({
-    user,
+  const { canDevelop } = await getProposalDevelopAccess({
     profileId: instance.profileId,
+    user,
   });
 
-  if (!checkPermission(DEVELOP_ACCESS, roles)) {
+  if (!canDevelop) {
     throw new UnauthorizedError('You cannot develop proposals in this phase');
   }
 }

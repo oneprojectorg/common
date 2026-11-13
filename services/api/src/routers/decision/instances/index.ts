@@ -6,6 +6,7 @@ import { duplicateInstanceRouter } from './duplicateInstance';
 import { getCategoriesRouter } from './getCategories';
 import { getDecisionBySlugRouter } from './getDecisionBySlug';
 import { getInstanceRouter, getLegacyInstanceRouter } from './getInstance';
+import { getPhaseProposalAccessRouter } from './getPhaseProposalAccess';
 import { getPhaseReviewProgressRouter } from './getPhaseReviewProgress';
 import { getVotingProgressRouter } from './getVotingProgress';
 import { listDecisionProfilesRouter } from './listDecisionProfiles';
@@ -32,6 +33,7 @@ export const instancesRouter = mergeRouters(
   listLegacyInstancesRouter,
   getInstanceRouter,
   getLegacyInstanceRouter,
+  getPhaseProposalAccessRouter,
   getPhaseReviewProgressRouter,
   getVotingProgressRouter,
   getCategoriesRouter,
