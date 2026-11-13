@@ -14,7 +14,7 @@ import {
 } from '@op/db/schema';
 import { ROLES } from '@op/db/seedData/accessControl';
 import type { User } from '@op/supabase/lib';
-import { and, eq, inArray, ne, or, sql } from 'drizzle-orm';
+import { and, eq, inArray, ne, or } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
 
 import {
@@ -22,11 +22,11 @@ import {
   type DecisionInstanceData,
   type DecisionSchemaDefinition as DecisionSchemaDefinitionStrict,
   type PhaseDefinition,
+  type PhaseInstanceData,
   createDecisionInstance,
   createInstanceDataFromTemplate,
   createOrganization as createOrganizationService,
   createProposal as createProposalService,
-  type PhaseData,
   getTemplate,
   joinOrganization,
 } from '../../src';
@@ -39,7 +39,6 @@ import {
 import { readProfileIdForAuthUser } from '../data/test-data';
 import { createTestUser, supabaseTestAdminClient } from '../supabase';
 import { advanceInstancePhase } from './advanceInstancePhase';
-import { emptyBlobPhases } from './phaseRowFixtures';
 
 // Fixture schemas are literals written straight to `process_schema` (jsonb), so
 // this mirrors the looser shape the api decision encoders decode them into.
@@ -88,6 +87,7 @@ type CreatedProcessInstance = Omit<
 
 interface CreatedInstance {
   instance: CreatedProcessInstance;
+  phases: PhaseInstanceData[];
   profileId: string;
   slug: string;
 }
@@ -376,7 +376,7 @@ export class TestDecisionsDataManager {
     }
 
     const template = await getTemplate(resolvedProcessId);
-    const instanceData = createInstanceDataFromTemplate({
+    const { instanceData, phases } = createInstanceDataFromTemplate({
       template,
       phaseOverrides: [
         {
@@ -399,6 +399,7 @@ export class TestDecisionsDataManager {
     const profile = await createDecisionInstance({
       processId: resolvedProcessId,
       instanceData,
+      phases,
       name: this.generateUniqueName(name),
       description: `Test instance ${name}`,
       ownerProfileId,
@@ -441,6 +442,7 @@ export class TestDecisionsDataManager {
 
     return {
       instance: { ...processInstance, instanceData },
+      phases,
       profileId,
       slug: profile.slug,
     };
@@ -728,7 +730,6 @@ export class TestDecisionsDataManager {
     return advanceInstancePhase(opts);
   }
 
-  // TODO: remove the phase-row fixtures below when instanceData.phases is dropped.
   async removePhaseRows(
     instanceId: string,
     { exceptRowId }: { exceptRowId?: string } = {},
@@ -749,31 +750,6 @@ export class TestDecisionsDataManager {
           ),
       ),
     );
-  }
-
-  async leaveOnlyPhaseRows(
-    instanceId: string,
-    rowData: PhaseData = {},
-  ): Promise<void> {
-    await db
-      .update(processPhases)
-      .set({
-        data: sql`${processPhases.data} || ${JSON.stringify(rowData)}::jsonb`,
-      })
-      .where(eq(processPhases.processInstanceId, instanceId));
-    await this.renamePhaseRows(instanceId);
-    await emptyBlobPhases(instanceId);
-  }
-
-  // Names each row `Row <phaseId>` so a read shows whether it came from the rows or the blob.
-  async renamePhaseRows(instanceId: string): Promise<void> {
-    await db
-      .update(profiles)
-      .set({ name: sql`'Row ' || (${processPhases.data} ->> 'phaseId')` })
-      .from(processPhases)
-      .where(
-        sql`${profiles.id} = ${processPhases.profileId} AND ${processPhases.processInstanceId} = ${instanceId}`,
-      );
   }
 
   /**

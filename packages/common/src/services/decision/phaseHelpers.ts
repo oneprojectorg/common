@@ -96,7 +96,7 @@ export const assertPhaseRowInvariants = ({
   previousPhaseIds: readonly string[];
   instance: { status: string | null; currentStateId: string | null };
 }): void => {
-  // With no rows, readers fall back to instanceData.phases and resurrect them.
+  // A decision with no phases cannot advance or publish.
   if (rows.length === 0) {
     throw new ValidationError('A decision must keep at least one phase', {
       phases: 'Keep at least one phase',
@@ -378,7 +378,7 @@ export const assertPhaseCountFits = (count: number): void => {
   }
 };
 
-// TODO: remove once rows stop carrying phaseId and nothing mints from instance_data.
+// TODO: remove once rows stop carrying phaseId.
 export const assertPhasesCanBeMinted = (
   phases: readonly InstanceDataPhase[],
 ): void => {

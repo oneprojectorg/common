@@ -16,12 +16,16 @@ import { assertUserByAuthId } from '../assert';
 import { createDefaultDecisionRoles } from './decisionRoles';
 import { getTemplate } from './getTemplate';
 import { reconcilePhases } from './phaseHelpers';
-import type { DecisionInstanceData } from './schemas/instanceData';
-import { createInstanceDataFromTemplate } from './schemas/instanceData';
+import {
+  type DecisionInstanceData,
+  type PhaseInstanceData,
+  createInstanceDataFromTemplate,
+} from './schemas/instanceData';
 
 export type CreateDecisionInstanceOptions = {
   processId: string | null;
   instanceData: DecisionInstanceData;
+  phases: PhaseInstanceData[];
   name: string;
   description?: string;
   ownerProfileId: string;
@@ -36,6 +40,7 @@ export type CreateDecisionInstanceOptions = {
 export const createDecisionInstance = async ({
   processId,
   instanceData,
+  phases,
   name,
   description,
   ownerProfileId,
@@ -68,9 +73,8 @@ export const createDecisionInstance = async ({
         processId,
         name,
         description,
-        // TODO: leave phases out once instanceData.phases is dropped.
         instanceData,
-        currentStateId: instanceData.phases[0]?.phaseId ?? null,
+        currentStateId: phases[0]?.phaseId ?? null,
         ownerProfileId,
         stewardProfileId,
         profileId: instanceProfile.id,
@@ -86,7 +90,7 @@ export const createDecisionInstance = async ({
       tx,
       processInstanceId: newInstance.id,
       existing: [],
-      phases: instanceData.phases,
+      phases,
     });
 
     const { admin: adminRole } = await createDefaultDecisionRoles({
@@ -197,12 +201,15 @@ export const createInstanceFromTemplate = async ({
 }: CreateInstanceFromTemplateOptions) => {
   const creator = await resolveInstanceCreator(user);
   const template = await getTemplate(templateId);
-  const instanceData = createInstanceDataFromTemplate({ template });
+  const { instanceData, phases } = createInstanceDataFromTemplate({
+    template,
+  });
 
   return createDecisionInstance({
     ...creator,
     processId: templateId,
     instanceData,
+    phases,
     name,
   });
 };

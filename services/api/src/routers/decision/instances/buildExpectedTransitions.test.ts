@@ -1,11 +1,11 @@
-import { attachBlobPhases, buildExpectedTransitions } from '@op/common';
+import { type PhaseInstanceData, buildExpectedTransitions } from '@op/common';
 import { describe, expect, it } from 'vitest';
 
-/** A minimal instance stub whose phases come from `instanceData`. */
-function stubInstance(instanceData: unknown, id = 'test-instance-id') {
-  return attachBlobPhases({
-    instance: { id, instanceData, currentStateId: null },
-  });
+function stubInstance(
+  { phases }: { phases: PhaseInstanceData[] },
+  id = 'test-instance-id',
+) {
+  return { id, phases, currentStateId: null };
 }
 
 describe('buildExpectedTransitions', () => {
@@ -114,22 +114,17 @@ describe('buildExpectedTransitions', () => {
     );
   });
 
-  it('should throw when phases is undefined', () => {
-    const instance = stubInstance({});
-
-    expect(() => buildExpectedTransitions(instance)).toThrow(
-      'Process instance must have at least one phase configured',
-    );
-  });
-
   describe('with a current phase', () => {
-    const phases = ['phase-a', 'phase-b', 'phase-c', 'phase-d'].map(
-      (phaseId, index) => ({
-        phaseId,
-        rules: { advancement: { method: 'date' } },
-        endDate: `2026-0${index + 6}-01T00:00:00.000Z`,
-      }),
-    );
+    const phases: PhaseInstanceData[] = [
+      'phase-a',
+      'phase-b',
+      'phase-c',
+      'phase-d',
+    ].map((phaseId, index) => ({
+      phaseId,
+      rules: { advancement: { method: 'date' } },
+      endDate: `2026-0${index + 6}-01T00:00:00.000Z`,
+    }));
     const fromStateIds = (currentStateId: string | null) =>
       buildExpectedTransitions({
         ...stubInstance({ phases }),
@@ -149,9 +144,11 @@ describe('buildExpectedTransitions', () => {
 
     it('does not require an end date on a phase before the current one', () => {
       const [first, ...rest] = phases;
-      const instance = stubInstance({
-        phases: [{ ...first, endDate: undefined }, ...rest],
-      });
+      if (!first) {
+        throw new Error('Expected the phase fixtures');
+      }
+      const { endDate: _endDate, ...withoutEndDate } = first;
+      const instance = stubInstance({ phases: [withoutEndDate, ...rest] });
 
       expect(
         buildExpectedTransitions({ ...instance, currentStateId: 'phase-b' }),

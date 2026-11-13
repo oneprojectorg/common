@@ -43,8 +43,16 @@ vi.mock('@op/db/schema', () => ({
   },
 }));
 
+const readPhases = vi.fn();
+
+vi.mock('../decision/instancePhases', () => ({
+  getPhases: (...args: unknown[]) => readPhases(...args),
+}));
+
 const { assertPhaseAvailable, lockProfileForms, writeWithPhaseLock } =
   await import('./phaseBinding');
+
+const lockedInstance = { id: 'decision-instance', instanceData: {} };
 
 const process: CustomFormProcessContext & CustomFormPhaseSet = {
   profileId: 'decision-profile',
@@ -57,13 +65,12 @@ describe('writeWithPhaseLock', () => {
     findMany.mockReset();
     execute.mockReset();
     selectLimit.mockReset();
+    readPhases.mockReset();
     findMany.mockResolvedValue([]);
-    selectLimit.mockResolvedValue([
-      {
-        instanceData: {
-          phases: [{ phaseId: 'submission' }, { phaseId: 'voting' }],
-        },
-      },
+    selectLimit.mockResolvedValue([lockedInstance]);
+    readPhases.mockResolvedValue([
+      { phaseId: 'submission' },
+      { phaseId: 'voting' },
     ]);
   });
 
@@ -73,10 +80,12 @@ describe('writeWithPhaseLock', () => {
       order.push('lock');
     });
     selectLimit.mockImplementation(() => {
+      order.push('lock-instance');
+      return Promise.resolve([lockedInstance]);
+    });
+    readPhases.mockImplementation(() => {
       order.push('read-phases');
-      return Promise.resolve([
-        { instanceData: { phases: [{ phaseId: 'voting' }] } },
-      ]);
+      return Promise.resolve([{ phaseId: 'voting' }]);
     });
     findMany.mockImplementation(() => {
       order.push('check');
@@ -93,14 +102,22 @@ describe('writeWithPhaseLock', () => {
     });
 
     expect(result).toBe('written');
-    expect(order).toEqual(['lock', 'read-phases', 'check', 'write']);
+    expect(order).toEqual([
+      'lock',
+      'lock-instance',
+      'read-phases',
+      'check',
+      'write',
+    ]);
+    expect(readPhases).toHaveBeenCalledWith({
+      instance: lockedInstance,
+      db: tx,
+    });
   });
 
   it('refuses a phase the process dropped after the context was resolved', async () => {
     // `process` still lists it; the row read inside the transaction does not.
-    selectLimit.mockResolvedValue([
-      { instanceData: { phases: [{ phaseId: 'submission' }] } },
-    ]);
+    readPhases.mockResolvedValue([{ phaseId: 'submission' }]);
     const write = vi.fn();
 
     await expect(

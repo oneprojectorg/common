@@ -1,15 +1,11 @@
 import { type DbClient, db as defaultDb } from '@op/db/client';
-import { logger } from '@op/logging';
 
 import {
   type ProcessPhaseWithProfile,
   listPhasesByInstance,
   toInstanceDataPhase,
 } from './phaseHelpers';
-import {
-  type PhaseInstanceData,
-  getInstancePhases,
-} from './schemas/instanceData';
+import type { PhaseInstanceData } from './schemas/instanceData';
 
 interface InstanceWithData {
   id: string;
@@ -48,16 +44,6 @@ export const resolvePhases = async <T extends InstanceWithData>({
     rowsById: await loadRows({ db, instances: [instance] }),
   });
 
-// TODO: remove when instanceData.phases is dropped.
-export const attachBlobPhases = <T extends InstanceWithData>({
-  instance,
-}: {
-  instance: T;
-}): InstanceWithPhases<T> => ({
-  ...instance,
-  phases: [...getInstancePhases(instance.instanceData)],
-});
-
 // For a writer that already holds the instance's rows.
 export const attachPhaseRows = <T extends InstanceWithData>({
   instance,
@@ -65,10 +51,10 @@ export const attachPhaseRows = <T extends InstanceWithData>({
 }: {
   instance: T;
   phases: ProcessPhaseWithProfile[];
-}): InstanceWithPhases<T> =>
-  phases.length > 0
-    ? { ...instance, phases: phases.map(toInstanceDataPhase) }
-    : attachBlobPhases({ instance });
+}): InstanceWithPhases<T> => ({
+  ...instance,
+  phases: phases.map(toInstanceDataPhase),
+});
 
 export const resolvePhasesForAll = async <T extends InstanceWithData>({
   instances,
@@ -129,30 +115,17 @@ export const resolveProfilePhasesForAll = async <
   }));
 };
 
-const loadRows = async ({
+const loadRows = ({
   db,
   instances,
 }: {
   db: DbClient;
   instances: InstanceWithData[];
-}): Promise<Map<string, PhaseInstanceData[]>> => {
-  const rowsById = await listPhasesByInstance({
+}): Promise<Map<string, PhaseInstanceData[]>> =>
+  listPhasesByInstance({
     db,
     processInstanceIds: instances.map(({ id }) => id),
   });
-
-  // TODO: drop the blob fallback when instanceData.phases is dropped.
-  const withoutRows = instances
-    .filter(({ id }) => !rowsById.has(id))
-    .map(({ id }) => id);
-  if (withoutRows.length > 0) {
-    logger.debug('Decision has no phase rows; reading instanceData.phases', {
-      processInstanceIds: withoutRows,
-    });
-  }
-
-  return rowsById;
-};
 
 const withPhases = <T extends InstanceWithData>({
   instance,
@@ -160,7 +133,7 @@ const withPhases = <T extends InstanceWithData>({
 }: {
   instance: T;
   rowsById: Map<string, PhaseInstanceData[]>;
-}): InstanceWithPhases<T> => {
-  const rows = rowsById.get(instance.id);
-  return rows ? { ...instance, phases: rows } : attachBlobPhases({ instance });
-};
+}): InstanceWithPhases<T> => ({
+  ...instance,
+  phases: rowsById.get(instance.id) ?? [],
+});

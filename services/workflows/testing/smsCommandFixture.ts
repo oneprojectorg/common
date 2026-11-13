@@ -3,7 +3,6 @@ import {
   type PhoneNumber,
   type VoterEnrolmentRule,
   deleteProposal,
-  getInstancePhases,
   updateDecisionInstance,
 } from '@op/common';
 import {
@@ -13,9 +12,11 @@ import {
   createDecisionProcess,
   createProposal,
   ensureProposalCategoryTerms,
+  getPhaseRowData,
   grantDecisionProfileAccess,
   makeDecisionPublic,
   readProfileIdForAuthUser,
+  updatePhaseRowData,
 } from '@op/common/testing/data';
 import {
   TestPhoneAuthDataManager,
@@ -313,7 +314,7 @@ export class SmsCommandFixture {
     });
   }
 
-  /** Writes the phase's voting rules straight into instance_data, bypassing the admin validation, to plant a state no service produces. */
+  /** Writes the phase's voting rules straight into its row, bypassing the admin validation, to plant a state no service produces. */
   async plantVotingRules({
     instanceId,
     phaseId = VOTING_PHASE_ID,
@@ -323,32 +324,20 @@ export class SmsCommandFixture {
     phaseId?: string;
     voting: FixtureVotingRules;
   }) {
-    const instance = await db.query.processInstances.findFirst({
-      where: { id: instanceId },
-      columns: { instanceData: true },
+    const current = await getPhaseRowData({
+      processInstanceId: instanceId,
+      phaseId,
     });
-    const phases = getInstancePhases(instance?.instanceData).map((phase) =>
-      phase.phaseId === phaseId
-        ? {
-            ...phase,
-            rules: {
-              ...phase.rules,
-              voting: { ...phase.rules?.voting, ...voting },
-            },
-          }
-        : phase,
-    );
-    const baseData =
-      instance !== undefined &&
-      typeof instance.instanceData === 'object' &&
-      instance.instanceData !== null &&
-      !Array.isArray(instance.instanceData)
-        ? instance.instanceData
-        : {};
-    await db
-      .update(processInstances)
-      .set({ instanceData: { ...baseData, phases } })
-      .where(eq(processInstances.id, instanceId));
+    await updatePhaseRowData({
+      processInstanceId: instanceId,
+      phaseId,
+      data: {
+        rules: {
+          ...current?.rules,
+          voting: { ...current?.rules?.voting, ...voting },
+        },
+      },
+    });
   }
 
   async deleteProposal({

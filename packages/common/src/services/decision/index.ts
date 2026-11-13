@@ -228,10 +228,7 @@ export type {
   PhaseOverride,
   PhaseSettingsSchema,
 } from './schemas/instanceData';
-export {
-  createInstanceDataFromTemplate,
-  getInstancePhases,
-} from './schemas/instanceData';
+export { createInstanceDataFromTemplate } from './schemas/instanceData';
 export type {
   DecisionSchemaDefinition,
   PhaseDefinition,

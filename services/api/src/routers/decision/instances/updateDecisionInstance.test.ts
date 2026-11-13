@@ -9,7 +9,7 @@ import { MAX_PHASE_NAME_LENGTH } from '@op/common/client';
 import {
   TestDecisionsDataManager,
   dateAdvancementSchema,
-  syncPhaseRows,
+  updateInstancePhase,
 } from '@op/common/testing';
 import { db, eq, sql } from '@op/db/client';
 import { ProcessStatus, processInstances, processPhases } from '@op/db/schema';
@@ -23,7 +23,7 @@ import {
   expectPassesAccessTierGate,
 } from '../../../test/helpers/gating/decision';
 import {
-  loadBlobPhases,
+  loadInstanceData,
   loadInstancePhases,
   loadPhaseRows,
   loadTransitionLinks,
@@ -42,11 +42,8 @@ async function createAuthenticatedCaller(email: string) {
 }
 
 async function getFirstPhaseId(instanceId: string) {
-  const dbInstance = await db.query.processInstances.findFirst({
-    where: { id: instanceId },
-  });
-  const phaseId = (dbInstance!.instanceData as DecisionInstanceData).phases[0]
-    ?.phaseId;
+  const [firstPhase] = await loadInstancePhases(instanceId);
+  const phaseId = firstPhase?.phaseId;
 
   if (!phaseId) {
     throw new Error('No phases found in instance');
@@ -392,9 +389,11 @@ describe.concurrent('updateDecisionInstance', () => {
     });
     const instanceData = dbInstance!.instanceData as DecisionInstanceData;
 
-    // Sibling instanceData fields survive overview updates
+    // Sibling instanceData fields and the phases survive overview updates
     expect(instanceData.config?.hideBudget).toBe(true);
-    expect(instanceData.phases.length).toBeGreaterThan(0);
+    expect(
+      (await loadInstancePhases(instance.instance.id)).length,
+    ).toBeGreaterThan(0);
 
     // Unspecified overview fields are preserved by the merge
     expect(instanceData.overview?.headline).toBe('New headline');
@@ -572,11 +571,7 @@ describe.concurrent('updateDecisionInstance', () => {
       where: { id: instance.instance.id },
     });
     const seededData = dbInstance!.instanceData as DecisionInstanceData;
-    const firstPhase = seededData.phases[0];
-
-    if (!firstPhase) {
-      throw new Error('No phases found in instance');
-    }
+    const firstPhaseId = await getFirstPhaseId(instance.instance.id);
 
     await db
       .update(processInstances)
@@ -584,14 +579,14 @@ describe.concurrent('updateDecisionInstance', () => {
         instanceData: {
           ...seededData,
           overview: { headline: '', description: 'Kept' },
-          phases: [
-            { ...firstPhase, headline: '' },
-            ...seededData.phases.slice(1),
-          ],
         },
       })
       .where(eq(processInstances.id, instance.instance.id));
-    await syncPhaseRows(instance.instance.id);
+    await updateInstancePhase({
+      instanceId: instance.instance.id,
+      phaseId: firstPhaseId,
+      update: (phase) => ({ ...phase, headline: '' }),
+    });
 
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
@@ -604,7 +599,7 @@ describe.concurrent('updateDecisionInstance', () => {
     expect(fetched.instanceData?.overview?.description).toBe('Kept');
     expect(
       fetched.instanceData?.phases?.find(
-        (phase) => phase.phaseId === firstPhase.phaseId,
+        (phase) => phase.phaseId === firstPhaseId,
       )?.headline,
     ).toBeUndefined();
   });
@@ -668,16 +663,7 @@ describe.concurrent('updateDecisionInstance', () => {
 
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
-    // Get current phases to know which phase IDs exist
-    const dbInstance = await db.query.processInstances.findFirst({
-      where: { id: instance.instance.id },
-    });
-    const currentData = dbInstance!.instanceData as DecisionInstanceData;
-    const firstPhaseId = currentData.phases[0]?.phaseId;
-
-    if (!firstPhaseId) {
-      throw new Error('No phases found in instance');
-    }
+    const firstPhaseId = await getFirstPhaseId(instance.instance.id);
 
     await caller.decision.updateDecisionInstance({
       instanceId: instance.instance.id,
@@ -696,7 +682,7 @@ describe.concurrent('updateDecisionInstance', () => {
     expect(firstPhase?.settings?.maxProposalsPerMember).toBe(10);
   });
 
-  it('inserts every phase row on a save of a decision that has none', async ({
+  it('inserts a phase row per phase a save sends to a decision that has none', async ({
     task,
     onTestFinished,
   }) => {
@@ -715,12 +701,12 @@ describe.concurrent('updateDecisionInstance', () => {
     });
 
     expect(await loadPhaseRows(instanceId)).toMatchObject([
-      { name: 'Initial Phase', sortOrder: 0, data: { phaseId: 'initial' } },
+      { name: 'initial', sortOrder: 0, data: { phaseId: 'initial' } },
       { name: 'Decide', sortOrder: 1, data: { phaseId: 'final' } },
     ]);
   });
 
-  it('syncs the phase rows with the phases a save sends and leaves instanceData.phases alone', async ({
+  it('syncs the phase rows with the phases a save sends and stores none in instanceData', async ({
     task,
     onTestFinished,
   }) => {
@@ -733,7 +719,6 @@ describe.concurrent('updateDecisionInstance', () => {
     const caller = await createAuthenticatedCaller(setup.userEmail);
     const extraName = `Extra ${task.id}`;
     const [initialRow, finalRow] = await loadPhaseRows(instanceId);
-    const blobPhases = await loadBlobPhases(instanceId);
 
     await caller.decision.updateDecisionInstance({
       instanceId,
@@ -765,7 +750,8 @@ describe.concurrent('updateDecisionInstance', () => {
       },
     ]);
 
-    expect(await loadBlobPhases(instanceId)).toEqual(blobPhases);
+    const { instanceData } = await loadInstanceData(instanceId);
+    expect(instanceData).not.toHaveProperty('phases');
 
     const extraRow = synced[2];
     if (!extraRow) {
@@ -804,62 +790,6 @@ describe.concurrent('updateDecisionInstance', () => {
     });
     expect(readded?.id).not.toBe(extraRow.id);
     expect(readded?.profileId).not.toBe(extraRow.profileId);
-  });
-
-  it('keeps the stored fields of blob phases once a phase endpoint gives a decision rows', async ({
-    task,
-    onTestFinished,
-  }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const setup = await testData.createDecisionSetup({
-      instanceCount: 1,
-      grantAccess: true,
-    });
-    const instanceId = setup.instance.instance.id;
-    await testData.removePhaseRows(instanceId);
-    const stored = {
-      selectionPipeline: { version: '1.0.0', blocks: [] },
-      settingsSchema: {
-        type: 'object',
-        properties: { maxProposalsPerMember: { type: 'number' } },
-      },
-      proposalTemplate: {
-        type: 'object',
-        properties: { title: { type: 'string' } },
-      },
-    };
-    await db
-      .update(processInstances)
-      .set({
-        instanceData: sql`jsonb_set(${processInstances.instanceData}, '{phases,0}', (${processInstances.instanceData} -> 'phases' -> 0) || ${JSON.stringify(stored)}::jsonb)`,
-      })
-      .where(eq(processInstances.id, instanceId));
-    const caller = await createAuthenticatedCaller(setup.userEmail);
-
-    const created = await caller.decision.createPhase({
-      instanceId,
-      name: `Endpoint ${task.id}`,
-      sortOrder: 2,
-    });
-    testData.trackProfileForCleanup(created.profileId);
-
-    await caller.decision.updateDecisionInstance({
-      instanceId,
-      phases: [
-        { phaseId: 'initial', description: 'Updated' },
-        { phaseId: 'final' },
-        { phaseId: created.slug },
-      ],
-    });
-
-    expect(await loadPhaseRows(instanceId)).toMatchObject([
-      {
-        sortOrder: 0,
-        data: { ...stored, phaseId: 'initial', description: 'Updated' },
-      },
-      { sortOrder: 1, data: { phaseId: 'final' } },
-      { id: created.id, sortOrder: 2, name: `Endpoint ${task.id}` },
-    ]);
   });
 
   it('keeps a phase the phase endpoints made and moved across a builder save', async ({
@@ -1101,50 +1031,6 @@ describe.concurrent('updateDecisionInstance', () => {
       status: ProcessStatus.PUBLISHED,
     });
 
-    expect(await loadTransitionLinks(instanceId)).toMatchObject([
-      {
-        fromStateId: 'initial',
-        toStateId: 'final',
-        fromPhaseId: initialRow?.id,
-        toPhaseId: finalRow?.id,
-      },
-    ]);
-  });
-
-  it('leaves the transition links empty without phase rows and fills them once a save mints the rows', async ({
-    task,
-    onTestFinished,
-  }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const setup = await testData.createDecisionSetup({
-      processSchema: dateAdvancementSchema,
-      instanceCount: 1,
-      grantAccess: true,
-    });
-    const instanceId = setup.instance.instance.id;
-    await testData.removePhaseRows(instanceId);
-    const caller = await createAuthenticatedCaller(setup.userEmail);
-
-    await caller.decision.updateDecisionInstance({
-      instanceId,
-      status: ProcessStatus.PUBLISHED,
-    });
-
-    expect(await loadTransitionLinks(instanceId)).toMatchObject([
-      {
-        fromStateId: 'initial',
-        toStateId: 'final',
-        fromPhaseId: null,
-        toPhaseId: null,
-      },
-    ]);
-
-    await caller.decision.updateDecisionInstance({
-      instanceId,
-      phases: [{ phaseId: 'initial' }, { phaseId: 'final' }],
-    });
-
-    const [initialRow, finalRow] = await loadPhaseRows(instanceId);
     expect(await loadTransitionLinks(instanceId)).toMatchObject([
       {
         fromStateId: 'initial',
@@ -1434,11 +1320,7 @@ describe.concurrent('updateDecisionInstance', () => {
       status: ProcessStatus.PUBLISHED,
     });
 
-    // Get current phases
-    const dbInstance = await db.query.processInstances.findFirst({
-      where: { id: instance.instance.id },
-    });
-    const currentData = dbInstance!.instanceData as DecisionInstanceData;
+    const currentPhases = await loadInstancePhases(instance.instance.id);
 
     // Update phases with only endDate (no startDate) — should not throw
     const endDate = new Date(
@@ -1446,7 +1328,7 @@ describe.concurrent('updateDecisionInstance', () => {
     ).toISOString();
     const result = await caller.decision.updateDecisionInstance({
       instanceId: instance.instance.id,
-      phases: currentData.phases.map((p) => ({
+      phases: currentPhases.map((p) => ({
         phaseId: p.phaseId,
         endDate,
       })),
@@ -1722,12 +1604,9 @@ describe.concurrent('updateDecisionInstance', () => {
       status: ProcessStatus.PUBLISHED,
     });
 
-    // Get current phases
-    const dbInstance = await db.query.processInstances.findFirst({
-      where: { id: instance.instance.id },
-    });
-    const currentData = dbInstance!.instanceData as DecisionInstanceData;
-    const phaseIds = currentData.phases.map((p) => p.phaseId);
+    const phaseIds = (await loadInstancePhases(instance.instance.id)).map(
+      (p) => p.phaseId,
+    );
 
     // Send phases with no dates at all — should succeed (transitions skipped)
     const result = await caller.decision.updateDecisionInstance({
