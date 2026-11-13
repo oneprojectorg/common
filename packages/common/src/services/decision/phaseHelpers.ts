@@ -33,13 +33,11 @@ import {
 } from './schemas/phaseName';
 import { MAX_PHASES_PER_DECISION } from './utils/phaseOrder';
 
-export { MAX_PHASES_PER_DECISION };
-
 // phaseId and name live on the phase's profile.
 export type PhaseData = Omit<PhaseInstanceData, 'phaseId' | 'name'>;
 
 // TODO: drop phaseId from row data once every reference uses the row id.
-export type PhaseRowData = PhaseData & { phaseId?: string };
+type PhaseRowData = PhaseData & { phaseId?: string };
 
 type InstanceDataPhase = Pick<PhaseInstanceData, 'phaseId' | 'name'>;
 

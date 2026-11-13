@@ -347,17 +347,17 @@ async function saveInstanceData({
   const stored = instance.instanceData as DecisionInstanceData;
 
   if (!hasPhaseUpdates(update)) {
-    const phases = await getPhases({
-      instance: { id: instanceId, instanceData: stored },
-      db: tx,
-    });
     const updated = getUpdatedInstanceData({
       existing: stored,
-      existingPhases: phases,
+      existingPhases: [],
       update,
     });
 
     if (update.proposalTemplate) {
+      const phases = await getPhases({
+        instance: { id: instanceId, instanceData: stored },
+        db: tx,
+      });
       await assertVoterCostField({
         instanceData: { ...(updated.instanceData ?? stored), phases },
         processId,
