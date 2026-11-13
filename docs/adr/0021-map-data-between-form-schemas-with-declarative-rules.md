@@ -40,8 +40,9 @@ We considered five options.
 ## Decision
 
 We will map data with declarative rules (option 5). The rules start as a
-direct copy of one source field to one target field. Value expressions of the
-selection pipeline are the planned next step.
+direct copy of one source field to one target field. The engine reads the
+source field with the expression evaluator of the selection pipeline. Other
+value expressions of the selection pipeline are the planned next step.
 
 - A mapping is data with three parts: a source schema (`from`), a target
   schema (`to`), and a list of fields. Each field copies one source field
@@ -62,12 +63,19 @@ selection pipeline are the planned next step.
 - The source field is a dot path into the source data, for example
   `cost.amount`. The target field is one key of the target data. It cannot
   contain a dot. Nested target paths are deferred.
-- The first version does not call the expression evaluator of the selection
-  pipeline
+- For each copied field, the first version evaluates one `field` node with
+  the expression evaluator of the selection pipeline
   ([0020](./0020-decide-phase-transitions-with-a-selection-pipeline-over-aggregated-facts.md)).
-  The next step lets a field use a value expression of the selection
+- The evaluator gets one additive change: an optional `data` property on its
+  context. Field access reads `data` first when it is set. The existing
+  pipeline callers do not set it, so their behaviour does not change.
+- Before it calls the evaluator, the mapping reads the source field as an own
+  property. The evaluator reads inherited properties and gives `null` for a
+  missing field, so this check stops a mapping from reading, for example,
+  `toString`.
+- The next step lets a field use a value expression of the selection
   pipeline, for example `add`, in place of a source path. We will add the
-  expression nodes one at a time.
+  operators one at a time.
 - A mapping names a schema with `{ type, phaseId }`, where `type` is
   `proposal` or `review`. The caller resolves a reference to a schema. The
   mapping core only compares references.
@@ -78,8 +86,8 @@ selection pipeline are the planned next step.
 - The engine fills a target field only when all values for the field are
   equal. When inputs give different values, the field stays empty and a
   person fills it.
-- The mapping core is in `packages/common/src/schemaMapping/`. It imports no
-  decision code and no database code.
+- The mapping core is in `packages/common/src/schemaMapping/`. It imports
+  the expression evaluator of the selection pipeline and no database code.
 
 ## Consequences
 
@@ -100,8 +108,9 @@ selection pipeline are the planned next step.
     must not pre-fill a wrong number, so it must check for missing values
     before it calls the evaluator. Each operator or function that is added
     needs the same review, for example a zero divisor if `divide` is allowed.
-  - The evaluator has no direct unit tests. The mapping must not depend on
-    behaviour that no test covers.
+  - The evaluator has no direct unit tests. The tests of the mapping cover
+    the field access that it uses. Each operator that is added needs tests
+    through the mapping.
 - A mapped value can break a constraint of the target, such as a maximum
   length. The result is a draft. Validation stays at the point where a person
   submits the target.
