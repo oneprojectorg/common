@@ -1,12 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
+import type { Expression } from '../services/decision/selectionPipeline/types';
 import { checkMappingRules } from './checkMappingRules';
-import type {
-  MappingExpression,
-  MappingRule,
-  SchemaEntry,
-  SchemaRef,
-} from './types';
+import type { MappingRule, SchemaEntry, SchemaRef } from './types';
 
 const proposalRef: SchemaRef = { type: 'proposal', phaseId: 'submission' };
 const feasibilityRef: SchemaRef = { type: 'review', phaseId: 'feasibility' };
@@ -83,50 +79,50 @@ const schemas: SchemaEntry[] = [
 const createRule = ({
   sourceSchema = proposalRef,
   targetSchema = ballotRef,
-  targetPointer,
+  targetField,
   value,
 }: {
   sourceSchema?: SchemaRef;
   targetSchema?: SchemaRef;
-  targetPointer: string;
-  value: MappingExpression;
-}): MappingRule => ({ sourceSchema, targetSchema, targetPointer, value });
+  targetField: string;
+  value: Expression;
+}): MappingRule => ({ sourceSchema, targetSchema, targetField, value });
 
-const costSum: MappingExpression = {
+const costSum: Expression = {
   function: 'sum',
   arguments: [
-    { pointer: '/cost_design/amount' },
-    { pointer: '/cost_construction/amount' },
-    { pointer: '/cost_contingency/amount' },
+    { field: 'cost_design.amount' },
+    { field: 'cost_construction.amount' },
+    { field: 'cost_contingency.amount' },
   ],
 };
 
 const ballotRules: MappingRule[] = [
-  createRule({ targetPointer: '/title', value: { pointer: '/title' } }),
-  createRule({ targetPointer: '/description', value: { pointer: '/summary' } }),
-  createRule({ targetPointer: '/location', value: { pointer: '/location' } }),
-  createRule({ targetPointer: '/category', value: { pointer: '/category' } }),
+  createRule({ targetField: 'title', value: { field: 'title' } }),
+  createRule({ targetField: 'description', value: { field: 'summary' } }),
+  createRule({ targetField: 'location', value: { field: 'location' } }),
+  createRule({ targetField: 'category', value: { field: 'category' } }),
   createRule({
     sourceSchema: feasibilityRef,
-    targetPointer: '/budget/amount',
+    targetField: 'budget.amount',
     value: costSum,
   }),
   createRule({
     sourceSchema: feasibilityRef,
-    targetPointer: '/budget/currency',
-    value: { pointer: '/cost_design/currency' },
+    targetField: 'budget.currency',
+    value: { field: 'cost_design.currency' },
   }),
   createRule({
     sourceSchema: feasibilityRef,
-    targetPointer: '/departments',
-    value: { pointer: '/department' },
+    targetField: 'departments',
+    value: { field: 'department' },
   }),
   createRule({
     sourceSchema: equityRef,
-    targetPointer: '/equity_score',
+    targetField: 'equity_score',
     value: {
       function: 'sum',
-      arguments: [{ pointer: '/score_need' }, { pointer: '/score_reach' }],
+      arguments: [{ field: 'score_need' }, { field: 'score_reach' }],
     },
   }),
 ];
@@ -139,7 +135,7 @@ describe('checkMappingRules', () => {
   it('accepts the sum of three cost amounts into the budget amount', () => {
     const rule = createRule({
       sourceSchema: feasibilityRef,
-      targetPointer: '/budget/amount',
+      targetField: 'budget.amount',
       value: costSum,
     });
 
@@ -151,8 +147,8 @@ describe('checkMappingRules', () => {
     const rule = createRule({
       sourceSchema: missingRef,
       targetSchema: missingRef,
-      targetPointer: '/title',
-      value: { pointer: '/title' },
+      targetField: 'title',
+      value: { field: 'title' },
     });
 
     expect(checkMappingRules({ rules: [rule], schemas })).toEqual([
@@ -161,22 +157,22 @@ describe('checkMappingRules', () => {
     ]);
   });
 
-  it('reports a source pointer and a target pointer that name no field', () => {
+  it('reports a source field and a target field that the schemas do not have', () => {
     const rule = createRule({
-      targetPointer: '/budget/total',
-      value: { pointer: '/subtitle' },
+      targetField: 'budget.total',
+      value: { field: 'subtitle' },
     });
 
     expect(checkMappingRules({ rules: [rule], schemas })).toEqual([
-      { code: 'sourcePointerNotFound', ruleIndex: 0, pointer: '/subtitle' },
-      { code: 'targetPointerNotFound', ruleIndex: 0, pointer: '/budget/total' },
+      { code: 'sourceFieldNotFound', ruleIndex: 0, field: 'subtitle' },
+      { code: 'targetFieldNotFound', ruleIndex: 0, field: 'budget.total' },
     ]);
   });
 
   it('resolves an array index through items', () => {
     const rule = createRule({
-      targetPointer: '/title',
-      value: { pointer: '/attachments/0' },
+      targetField: 'title',
+      value: { field: 'attachments.0' },
     });
 
     expect(checkMappingRules({ rules: [rule], schemas })).toEqual([]);
@@ -185,15 +181,15 @@ describe('checkMappingRules', () => {
   it('reports an arithmetic operand and a round argument that are not numbers', () => {
     const rules = [
       createRule({
-        targetPointer: '/budget/amount',
+        targetField: 'budget.amount',
         value: {
           operator: 'multiply',
-          operands: [{ pointer: '/title' }, { value: 2 }],
+          operands: [{ field: 'title' }, { value: 2 }],
         },
       }),
       createRule({
-        targetPointer: '/equity_rank',
-        value: { function: 'round', arguments: [{ pointer: '/location' }] },
+        targetField: 'equity_rank',
+        value: { function: 'round', arguments: [{ field: 'location' }] },
       }),
     ];
 
@@ -215,14 +211,14 @@ describe('checkMappingRules', () => {
 
   it('reports concat arguments that are objects, arrays or booleans', () => {
     const rule = createRule({
-      targetPointer: '/description',
+      targetField: 'description',
       value: {
         function: 'concat',
         arguments: [
-          { pointer: '/summary' },
+          { field: 'summary' },
           { value: 3 },
-          { pointer: '/location' },
-          { pointer: '/attachments' },
+          { field: 'location' },
+          { field: 'attachments' },
           { value: true },
         ],
       },
@@ -245,8 +241,8 @@ describe('checkMappingRules', () => {
 
   it('reports a string mapped into a money object', () => {
     const rule = createRule({
-      targetPointer: '/budget',
-      value: { pointer: '/title' },
+      targetField: 'budget',
+      value: { field: 'title' },
     });
 
     expect(checkMappingRules({ rules: [rule], schemas })).toEqual([
@@ -262,13 +258,13 @@ describe('checkMappingRules', () => {
   it('accepts a location into a location and rejects money into a location', () => {
     const rules = [
       createRule({
-        targetPointer: '/location',
-        value: { pointer: '/location' },
+        targetField: 'location',
+        value: { field: 'location' },
       }),
       createRule({
         sourceSchema: feasibilityRef,
-        targetPointer: '/location',
-        value: { pointer: '/cost_design' },
+        targetField: 'location',
+        value: { field: 'cost_design' },
       }),
     ];
 
@@ -283,19 +279,19 @@ describe('checkMappingRules', () => {
   });
 
   it('rejects a number into an integer unless the rule rounds it', () => {
-    const division: MappingExpression = {
+    const division: Expression = {
       operator: 'divide',
-      operands: [{ pointer: '/score_need' }, { value: 2 }],
+      operands: [{ field: 'score_need' }, { value: 2 }],
     };
     const rules = [
       createRule({
         sourceSchema: equityRef,
-        targetPointer: '/equity_rank',
+        targetField: 'equity_rank',
         value: division,
       }),
       createRule({
         sourceSchema: equityRef,
-        targetPointer: '/equity_rank',
+        targetField: 'equity_rank',
         value: { function: 'round', arguments: [division] },
       }),
     ];
@@ -312,8 +308,8 @@ describe('checkMappingRules', () => {
 
   it('accepts an integer literal into a number and a fractional literal only into a number', () => {
     const rules = [
-      createRule({ targetPointer: '/budget/amount', value: { value: 4 } }),
-      createRule({ targetPointer: '/equity_rank', value: { value: 4.5 } }),
+      createRule({ targetField: 'budget.amount', value: { value: 4 } }),
+      createRule({ targetField: 'equity_rank', value: { value: 4.5 } }),
     ];
 
     expect(checkMappingRules({ rules, schemas })).toEqual([
@@ -328,8 +324,8 @@ describe('checkMappingRules', () => {
 
   it('accepts a null literal only into a field whose type allows null', () => {
     const rules = [
-      createRule({ targetPointer: '/category', value: { value: null } }),
-      createRule({ targetPointer: '/title', value: { value: null } }),
+      createRule({ targetField: 'category', value: { value: null } }),
+      createRule({ targetField: 'title', value: { value: null } }),
     ];
 
     expect(checkMappingRules({ rules, schemas })).toEqual([
@@ -344,8 +340,8 @@ describe('checkMappingRules', () => {
 
   it('reads the non-null member of a nullable type', () => {
     const rule = createRule({
-      targetPointer: '/is_featured',
-      value: { pointer: '/category' },
+      targetField: 'is_featured',
+      value: { field: 'category' },
     });
 
     expect(checkMappingRules({ rules: [rule], schemas })).toEqual([
@@ -361,17 +357,17 @@ describe('checkMappingRules', () => {
   it('gives coalesce the common type of its arguments, or an unknown type', () => {
     const rules = [
       createRule({
-        targetPointer: '/is_featured',
+        targetField: 'is_featured',
         value: {
           function: 'coalesce',
-          arguments: [{ pointer: '/category' }, { value: 'none' }],
+          arguments: [{ field: 'category' }, { value: 'none' }],
         },
       }),
       createRule({
-        targetPointer: '/is_featured',
+        targetField: 'is_featured',
         value: {
           function: 'coalesce',
-          arguments: [{ pointer: '/title' }, { value: false }],
+          arguments: [{ field: 'title' }, { value: false }],
         },
       }),
     ];
@@ -388,20 +384,20 @@ describe('checkMappingRules', () => {
 
   it('reports no problem for a type it cannot prove', () => {
     const rules = [
-      createRule({ targetPointer: '/budget', value: { pointer: '/shared' } }),
+      createRule({ targetField: 'budget', value: { field: 'shared' } }),
       createRule({
-        targetPointer: '/budget',
-        value: { pointer: '/shared/amount' },
+        targetField: 'budget',
+        value: { field: 'shared.amount' },
       }),
       createRule({
-        targetPointer: '/is_featured',
-        value: { pointer: '/notes' },
+        targetField: 'is_featured',
+        value: { field: 'notes' },
       }),
       createRule({
-        targetPointer: '/is_featured',
+        targetField: 'is_featured',
         value: {
           operator: 'add',
-          operands: [{ pointer: '/notes' }, { value: 1 }],
+          operands: [{ field: 'notes' }, { value: 1 }],
         },
       }),
     ];
@@ -414,8 +410,8 @@ describe('checkMappingRules', () => {
     };
     const typelessRule = createRule({
       sourceSchema: typeless.ref,
-      targetPointer: '/budget',
-      value: { pointer: '/score' },
+      targetField: 'budget',
+      value: { field: 'score' },
     });
 
     expect(
@@ -437,13 +433,13 @@ describe('checkMappingRules', () => {
   it('reports every problem of every rule with its rule index', () => {
     const rules = [
       ...ballotRules,
-      createRule({ targetPointer: '/budget', value: { pointer: '/title' } }),
+      createRule({ targetField: 'budget', value: { field: 'title' } }),
       createRule({
         sourceSchema: feasibilityRef,
-        targetPointer: '/headline',
+        targetField: 'headline',
         value: {
           function: 'concat',
-          arguments: [{ pointer: '/department' }, { pointer: '/missing' }],
+          arguments: [{ field: 'department' }, { field: 'missing' }],
         },
       }),
     ];
@@ -455,9 +451,120 @@ describe('checkMappingRules', () => {
         sourceType: { type: 'string' },
         targetType: { type: 'object', format: 'money' },
       },
-      { code: 'sourcePointerNotFound', ruleIndex: 9, pointer: '/missing' },
+      { code: 'sourceFieldNotFound', ruleIndex: 9, field: 'missing' },
       { code: 'operandNotText', ruleIndex: 9, operandType: { type: 'array' } },
-      { code: 'targetPointerNotFound', ruleIndex: 9, pointer: '/headline' },
+      { code: 'targetFieldNotFound', ruleIndex: 9, field: 'headline' },
+    ]);
+  });
+
+  it('types comparison and logical nodes as booleans and checks the fields they read', () => {
+    const isLarge: Expression = {
+      operator: 'greaterThan',
+      left: { field: 'score_need' },
+      right: { value: 3 },
+    };
+    const rules = [
+      createRule({
+        sourceSchema: equityRef,
+        targetField: 'is_featured',
+        value: { and: [isLarge, { not: { field: 'score_reach' } }] },
+      }),
+      createRule({
+        sourceSchema: equityRef,
+        targetField: 'equity_score',
+        value: isLarge,
+      }),
+      createRule({
+        sourceSchema: equityRef,
+        targetField: 'is_featured',
+        value: {
+          operator: 'equals',
+          left: { field: 'score_other' },
+          right: { value: 1 },
+        },
+      }),
+    ];
+
+    expect(checkMappingRules({ rules, schemas })).toEqual([
+      {
+        code: 'typeMismatch',
+        ruleIndex: 1,
+        sourceType: { type: 'boolean' },
+        targetType: { type: 'number' },
+      },
+      { code: 'sourceFieldNotFound', ruleIndex: 2, field: 'score_other' },
+    ]);
+  });
+
+  it('gives if the common type of its two branches, or an unknown type', () => {
+    const condition: Expression = {
+      operator: 'equals',
+      left: { field: 'category' },
+      right: { value: 'parks' },
+    };
+    const rules = [
+      createRule({
+        targetField: 'is_featured',
+        value: {
+          function: 'if',
+          arguments: [condition, { field: 'title' }, { field: 'summary' }],
+        },
+      }),
+      createRule({
+        targetField: 'is_featured',
+        value: {
+          function: 'if',
+          arguments: [condition, { field: 'title' }, { value: 1 }],
+        },
+      }),
+    ];
+
+    expect(checkMappingRules({ rules, schemas })).toEqual([
+      {
+        code: 'typeMismatch',
+        ruleIndex: 0,
+        sourceType: { type: 'string' },
+        targetType: { type: 'boolean' },
+      },
+    ]);
+  });
+
+  it('checks the operands of the other evaluator functions', () => {
+    const rules = [
+      createRule({
+        targetField: 'equity_score',
+        value: {
+          function: 'min',
+          arguments: [{ field: 'title' }, { value: 2 }],
+        },
+      }),
+      createRule({
+        targetField: 'description',
+        value: { function: 'trim', arguments: [{ value: 3 }] },
+      }),
+      createRule({
+        targetField: 'equity_rank',
+        value: { function: 'count', arguments: [{ field: 'attachments' }] },
+      }),
+      createRule({
+        sourceSchema: equityRef,
+        targetField: 'equity_rank',
+        value: { function: 'abs', arguments: [{ field: 'score_need' }] },
+      }),
+    ];
+
+    expect(checkMappingRules({ rules, schemas })).toEqual([
+      {
+        code: 'operandNotNumber',
+        ruleIndex: 0,
+        operation: 'min',
+        operandType: { type: 'string' },
+      },
+      {
+        code: 'operandNotText',
+        ruleIndex: 1,
+        operandType: { type: 'integer' },
+      },
     ]);
   });
 

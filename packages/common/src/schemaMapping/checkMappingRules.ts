@@ -1,11 +1,10 @@
-import { ARRAY_INDEX_PATTERN, isRecord, parseJsonPointer } from './jsonPointer';
+import type { Expression } from '../services/decision/selectionPipeline/types';
+import { isRecord } from './fieldPath';
 import { isSameSchemaRef } from './mapToSchema';
 import type {
-  MappingExpression,
   MappingRule,
   MappingRuleProblem,
   MappingTypeDescription,
-  MappingValue,
   NumericOperation,
   SchemaEntry,
   SchemaRef,
@@ -29,7 +28,15 @@ const NUMERIC_TYPES = new Set<string>(['number', 'integer', 'unknown']);
 
 const TEXT_TYPES = new Set<string>(['string', 'number', 'integer', 'unknown']);
 
+const STRING_TYPES = new Set<string>(['string', 'unknown']);
+
+const ARRAY_INDEX_PATTERN = /^(0|[1-9]\d*)$/;
+
 const UNKNOWN_TYPE: SchemaNodeType = { type: 'unknown', nullable: false };
+const BOOLEAN_TYPE: SchemaNodeType = { type: 'boolean', nullable: false };
+const NUMBER_TYPE: SchemaNodeType = { type: 'number', nullable: false };
+const INTEGER_TYPE: SchemaNodeType = { type: 'integer', nullable: false };
+const STRING_TYPE: SchemaNodeType = { type: 'string', nullable: false };
 
 /**
  * Compares each rule with the JSON Schemas it names, never with data, so a
@@ -86,15 +93,15 @@ const checkMappingRule = ({
     return problems;
   }
 
-  const targetType = resolveSchemaPointer({
+  const targetType = resolveSchemaField({
     schema: targetEntry.schema,
-    pointer: rule.targetPointer,
+    field: rule.targetField,
   });
   if (!targetType) {
     problems.push({
-      code: 'targetPointerNotFound',
+      code: 'targetFieldNotFound',
       ruleIndex,
-      pointer: rule.targetPointer,
+      field: rule.targetField,
     });
   } else if (!isAssignable({ source: sourceType, target: targetType })) {
     problems.push({
@@ -122,113 +129,171 @@ const inferExpressionType = ({
   ruleIndex,
   problems,
 }: {
-  expression: MappingExpression;
+  expression: Expression;
   sourceEntry: SchemaEntry | undefined;
   ruleIndex: number;
   problems: MappingRuleProblem[];
 }): SchemaNodeType => {
-  if ('pointer' in expression) {
+  const infer = (child: Expression) =>
+    inferExpressionType({
+      expression: child,
+      sourceEntry,
+      ruleIndex,
+      problems,
+    });
+  const checkNumbers = ({
+    operation,
+    operands,
+  }: {
+    operation: NumericOperation;
+    operands: Expression[];
+  }) =>
+    checkOperandTypes({
+      operandTypes: operands.map(infer),
+      allowed: NUMERIC_TYPES,
+      toProblem: (operandType) => ({
+        code: 'operandNotNumber',
+        ruleIndex,
+        operation,
+        operandType,
+      }),
+      problems,
+    });
+  const checkText = ({
+    operands,
+    allowed,
+  }: {
+    operands: Expression[];
+    allowed: Set<string>;
+  }) =>
+    checkOperandTypes({
+      operandTypes: operands.map(infer),
+      allowed,
+      toProblem: (operandType) => ({
+        code: 'operandNotText',
+        ruleIndex,
+        operandType,
+      }),
+      problems,
+    });
+
+  if ('field' in expression) {
     if (!sourceEntry) {
       return UNKNOWN_TYPE;
     }
-    const nodeType = resolveSchemaPointer({
+    const nodeType = resolveSchemaField({
       schema: sourceEntry.schema,
-      pointer: expression.pointer,
+      field: expression.field,
     });
     if (!nodeType) {
       problems.push({
-        code: 'sourcePointerNotFound',
+        code: 'sourceFieldNotFound',
         ruleIndex,
-        pointer: expression.pointer,
+        field: expression.field,
       });
       return UNKNOWN_TYPE;
     }
     return nodeType;
   }
+  if ('left' in expression) {
+    infer(expression.left);
+    infer(expression.right);
+    return BOOLEAN_TYPE;
+  }
+  if ('operands' in expression) {
+    checkNumbers({
+      operation: expression.operator,
+      operands: expression.operands,
+    });
+    return NUMBER_TYPE;
+  }
   if ('value' in expression) {
     return getLiteralType(expression.value);
   }
-
-  const inferChildren = (children: MappingExpression[]) =>
-    children.map((child) =>
-      inferExpressionType({
-        expression: child,
-        sourceEntry,
-        ruleIndex,
-        problems,
-      }),
-    );
-
-  if ('operator' in expression) {
-    checkNumericOperands({
-      operation: expression.operator,
-      operandTypes: inferChildren(expression.operands),
-      ruleIndex,
-      problems,
-    });
-    return { type: 'number', nullable: false };
+  if ('variable' in expression) {
+    return UNKNOWN_TYPE;
+  }
+  if (!('function' in expression)) {
+    [
+      ...(expression.and ?? []),
+      ...(expression.or ?? []),
+      ...(expression.not ? [expression.not] : []),
+    ].forEach(infer);
+    return BOOLEAN_TYPE;
   }
 
-  const argumentTypes = inferChildren(expression.arguments);
+  const { arguments: operands } = expression;
   switch (expression.function) {
     case 'sum':
-      checkNumericOperands({
-        operation: 'sum',
-        operandTypes: argumentTypes,
-        ruleIndex,
-        problems,
-      });
-      return { type: 'number', nullable: false };
+    case 'avg':
+    case 'min':
+    case 'max':
+      checkNumbers({ operation: expression.function, operands });
+      return NUMBER_TYPE;
+    case 'abs': {
+      const [operandType] = checkNumbers({ operation: 'abs', operands });
+      return operandType?.type === 'integer' ? INTEGER_TYPE : NUMBER_TYPE;
+    }
     case 'round':
-      checkNumericOperands({
-        operation: 'round',
-        operandTypes: argumentTypes,
-        ruleIndex,
-        problems,
-      });
-      return { type: 'integer', nullable: false };
+    case 'floor':
+    case 'ceil':
+      checkNumbers({ operation: expression.function, operands });
+      return INTEGER_TYPE;
+    case 'count':
+    case 'length':
+      operands.forEach(infer);
+      return INTEGER_TYPE;
     case 'concat':
-      for (const operandType of argumentTypes) {
-        if (!TEXT_TYPES.has(operandType.type)) {
-          problems.push({
-            code: 'operandNotText',
-            ruleIndex,
-            operandType: toDescription(operandType),
-          });
-        }
-      }
-      return { type: 'string', nullable: false };
+      checkText({ operands, allowed: TEXT_TYPES });
+      return STRING_TYPE;
+    case 'toLowerCase':
+    case 'toUpperCase':
+    case 'trim':
+      checkText({ operands, allowed: STRING_TYPES });
+      return STRING_TYPE;
     case 'coalesce':
-      return getCommonType(argumentTypes);
+      return getCommonType(operands.map(infer));
+    case 'if': {
+      const [condition, ...branches] = operands;
+      if (condition) {
+        infer(condition);
+      }
+      return getCommonType(branches.map(infer));
+    }
+    default:
+      operands.forEach(infer);
+      return UNKNOWN_TYPE;
   }
 };
 
-const checkNumericOperands = ({
-  operation,
+const checkOperandTypes = ({
   operandTypes,
-  ruleIndex,
+  allowed,
+  toProblem,
   problems,
 }: {
-  operation: NumericOperation;
   operandTypes: SchemaNodeType[];
-  ruleIndex: number;
+  allowed: Set<string>;
+  toProblem: (operandType: MappingTypeDescription) => MappingRuleProblem;
   problems: MappingRuleProblem[];
-}): void => {
+}): SchemaNodeType[] => {
   for (const operandType of operandTypes) {
-    if (!NUMERIC_TYPES.has(operandType.type)) {
-      problems.push({
-        code: 'operandNotNumber',
-        ruleIndex,
-        operation,
-        operandType: toDescription(operandType),
-      });
+    if (!allowed.has(operandType.type)) {
+      problems.push(toProblem(toDescription(operandType)));
     }
   }
+  return operandTypes;
 };
 
-const getLiteralType = (value: MappingValue): SchemaNodeType => {
+const getLiteralType = (value: unknown): SchemaNodeType => {
   if (value === null) {
     return { type: 'null', nullable: true };
+  }
+  if (Array.isArray(value)) {
+    return { type: 'array', nullable: false };
+  }
+  if (typeof value === 'object') {
+    return { type: 'object', nullable: false };
   }
   if (typeof value === 'number') {
     return {
@@ -236,10 +301,10 @@ const getLiteralType = (value: MappingValue): SchemaNodeType => {
       nullable: false,
     };
   }
-  return {
-    type: typeof value === 'string' ? 'string' : 'boolean',
-    nullable: false,
-  };
+  if (typeof value === 'string') {
+    return STRING_TYPE;
+  }
+  return typeof value === 'boolean' ? BOOLEAN_TYPE : UNKNOWN_TYPE;
 };
 
 const getCommonType = (types: SchemaNodeType[]): SchemaNodeType => {
@@ -279,23 +344,18 @@ const isAssignable = ({
 
 /**
  * Walks `properties` for object keys and `items` for array indexes. Returns
- * undefined when the pointer names no node, and an unknown type when the walk
- * meets a `$ref` it cannot follow.
+ * undefined when the dot path names no node, and an unknown type when the
+ * walk meets a `$ref` it cannot follow.
  */
-const resolveSchemaPointer = ({
+const resolveSchemaField = ({
   schema,
-  pointer,
+  field,
 }: {
   schema: unknown;
-  pointer: string;
+  field: string;
 }): SchemaNodeType | undefined => {
-  const tokens = parseJsonPointer(pointer);
-  if (!tokens) {
-    return undefined;
-  }
-
   let node = schema;
-  for (const token of tokens) {
+  for (const token of field.split('.')) {
     if (!isRecord(node)) {
       return undefined;
     }

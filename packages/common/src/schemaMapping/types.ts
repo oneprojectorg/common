@@ -47,14 +47,22 @@ export type NumericOperation =
   | 'subtract'
   | 'multiply'
   | 'divide'
+  | 'modulo'
+  | 'power'
   | 'sum'
-  | 'round';
+  | 'avg'
+  | 'min'
+  | 'max'
+  | 'abs'
+  | 'round'
+  | 'floor'
+  | 'ceil';
 
 export type MappingRuleProblem =
   | { code: 'unknownSourceSchema'; ruleIndex: number; schema: SchemaRef }
   | { code: 'unknownTargetSchema'; ruleIndex: number; schema: SchemaRef }
-  | { code: 'sourcePointerNotFound'; ruleIndex: number; pointer: string }
-  | { code: 'targetPointerNotFound'; ruleIndex: number; pointer: string }
+  | { code: 'sourceFieldNotFound'; ruleIndex: number; field: string }
+  | { code: 'targetFieldNotFound'; ruleIndex: number; field: string }
   | {
       code: 'operandNotNumber';
       ruleIndex: number;
