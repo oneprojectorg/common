@@ -599,6 +599,50 @@ test.describe('Proposal View', () => {
     ).toBeVisible();
   });
 
+  test('redirects a legacy proposal link for a current instance, keeping locale and query', async ({
+    authenticatedPage,
+    org,
+  }) => {
+    const template = await getSeededTemplate();
+
+    const instance = await createDecisionInstance({
+      processId: template.id,
+      ownerProfileId: org.organizationProfile.id,
+      authUserId: org.adminUser.authUserId,
+      email: org.adminUser.email,
+      schema: template.processSchema,
+    });
+
+    const proposal = await createProposal({
+      processInstanceId: instance.instance.id,
+      submittedByProfileId: org.organizationProfile.id,
+      authUserId: org.adminUser.authUserId,
+      email: org.adminUser.email,
+      proposalData: {
+        title: 'Community Solar Initiative',
+        collaborationDocId: MOCK_DOC_ID,
+      },
+    });
+
+    await authenticatedPage.goto(
+      `/es/profile/${org.organizationProfile.slug}/decisions/${instance.instance.id}/proposal/${proposal.profileId}?x=1`,
+    );
+
+    await expect(authenticatedPage).toHaveURL(
+      new RegExp(
+        `/es/decisions/${instance.slug}/proposal/${proposal.profileId}\\?x=1$`,
+      ),
+      { timeout: 30_000 },
+    );
+
+    // Positive control: the current proposal view rendered, not an error page.
+    await expect(
+      authenticatedPage.getByRole('heading', {
+        name: 'Community Solar Initiative',
+      }),
+    ).toBeVisible({ timeout: 30_000 });
+  });
+
   test('allows posting a comment on the proposal view', async ({
     authenticatedPage,
     org,

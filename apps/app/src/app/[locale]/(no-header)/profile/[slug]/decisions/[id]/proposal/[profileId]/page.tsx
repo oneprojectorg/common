@@ -35,7 +35,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { profileId, slug, id, locale } = await params;
 
-  // Redirecting here, before the loading boundary streams, gives crawlers a real 307.
+  // Redirecting here, before the loading boundary streams, gives link unfurlers a real 307; browsers still redirect client-side.
   await redirectConvertedProposal({
     id,
     slug,

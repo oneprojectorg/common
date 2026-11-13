@@ -6,7 +6,7 @@ import {
 } from '../../../encoders/decision';
 import { openProcedure, router } from '../../../trpcFactory';
 
-/** Server-only lookup for the legacy-route redirect, so no realtime channels; tier and rate limit match getInstance. */
+/** Public lookup behind the legacy-route redirect; no client query reads it, so no realtime channels. Tier and rate limit match getInstance. */
 export const getConvertedInstanceSlugRouter = router({
   getConvertedInstanceSlug: openProcedure({
     rateLimit: { windowSize: 10, maxRequests: 100 },

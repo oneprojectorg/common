@@ -19,10 +19,12 @@ const helpers = vi.hoisted(() => ({
   redirectConvertedProposalEdit: vi.fn(),
 }));
 
+const createServerUtils = vi.hoisted(() => vi.fn());
+
 vi.mock('./redirectConvertedInstance', () => helpers);
 vi.mock('@op/api/server', () => ({
   HydrationBoundary: () => null,
-  createServerUtils: vi.fn(),
+  createServerUtils,
   dehydrate: vi.fn(),
 }));
 vi.mock('@/lib/i18n', () => ({ getTranslations: vi.fn() }));
@@ -117,6 +119,35 @@ describe('legacy decision pages', () => {
         ...params,
         searchParams,
       });
+    },
+  );
+
+  it.each([
+    ['decision page', () => DecisionInstancePage(decisionProps)],
+    ['decision metadata', () => decisionMetadata(decisionProps)],
+    ['proposal page', () => ProposalViewPage(proposalProps)],
+    ['proposal metadata', () => proposalMetadata(proposalProps)],
+    ['proposal edit page', () => ProposalEditPage(proposalProps)],
+    ['proposal edit metadata', () => proposalEditMetadata(proposalProps)],
+  ])(
+    'the %s carries on for an instance that is not converted',
+    async (_source, run) => {
+      for (const helper of Object.values(helpers)) {
+        helper.mockResolvedValue(undefined);
+      }
+      const fetch = vi.fn().mockResolvedValue({});
+      createServerUtils.mockResolvedValue({
+        queryClient: {},
+        utils: {
+          decision: {
+            getLegacyInstance: { fetch },
+            getProposal: { fetch },
+            getInstance: { fetch },
+          },
+        },
+      });
+
+      await expect(run()).resolves.toBeDefined();
     },
   );
 });
