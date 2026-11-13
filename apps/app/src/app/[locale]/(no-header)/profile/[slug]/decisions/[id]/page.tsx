@@ -13,6 +13,7 @@ import { type Locale, getTranslations } from '@/lib/i18n';
 import { DecisionHeader } from '@/components/decisions/DecisionHeader';
 import { DecisionStateRouter } from '@/components/decisions/DecisionStateRouter';
 import { DecisionTranslationProvider } from '@/components/decisions/DecisionTranslationContext';
+import { decisionRootHref } from '@/components/decisions/proposalHrefs';
 
 import { redirectConvertedInstance } from './redirectConvertedInstance';
 
@@ -113,7 +114,12 @@ const DecisionInstancePage = async ({
 }) => {
   const { id, slug, locale } = await params;
 
-  await redirectConvertedInstance({ instanceId: id, locale });
+  await redirectConvertedInstance({
+    instanceId: id,
+    locale,
+    href: (decisionSlug) =>
+      decisionRootHref({ decisionSlug, slug, instanceId: id }),
+  });
 
   return <DecisionInstancePageContent instanceId={id} slug={slug} />;
 };

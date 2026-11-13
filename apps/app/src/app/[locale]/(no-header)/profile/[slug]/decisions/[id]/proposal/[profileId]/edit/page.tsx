@@ -8,6 +8,8 @@ import { cache } from 'react';
 
 import { type Locale, getTranslations } from '@/lib/i18n';
 
+import { proposalEditHref } from '@/components/decisions/proposalHrefs';
+
 import { redirectConvertedInstance } from '../../../redirectConvertedInstance';
 import { LegacyProposalEditClient } from './ProposalEditClient';
 
@@ -65,7 +67,8 @@ const ProposalEditPage = async ({
   await redirectConvertedInstance({
     instanceId: id,
     locale,
-    path: `/proposal/${profileId}/edit`,
+    href: (decisionSlug) =>
+      proposalEditHref({ decisionSlug, profileId, slug, instanceId: id }),
   });
   const { queryClient } = await createServerUtils();
 
