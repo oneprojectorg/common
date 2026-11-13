@@ -18,19 +18,8 @@ import { createCallerFactory } from '../../../trpcFactory';
 
 const createCaller = createCallerFactory(appRouter);
 
-const legacyInstanceData = {
-  currentStateId: 'submission',
-  phases: [
-    {
-      stateId: 'submission',
-      plannedStartDate: '2025-09-08',
-      plannedEndDate: '2025-09-28',
-    },
-  ],
-  fieldValues: {},
-  budget: 0,
-  hideBudget: false,
-};
+// `currentStateId` in the JSON is the whole legacy marker.
+const legacyInstanceData = { currentStateId: 'submission' };
 
 const makeInstanceLegacy = async (instanceId: string) => {
   await db

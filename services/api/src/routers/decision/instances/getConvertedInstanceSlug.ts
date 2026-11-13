@@ -1,4 +1,4 @@
-import { Channels, getConvertedInstanceSlug } from '@op/common';
+import { getConvertedInstanceSlug } from '@op/common';
 
 import {
   convertedInstanceSlugEncoder,
@@ -8,8 +8,8 @@ import { openProcedure, router } from '../../../trpcFactory';
 
 /**
  * Used by the legacy route /profile/[slug]/decisions/[id] to redirect a
- * converted instance to /decisions/[slug]. Same tier and rate limit as
- * getInstance, which the target route reads.
+ * converted instance to /decisions/[slug]. Server-only caller, so it registers
+ * no realtime channels. Same tier and rate limit as getInstance.
  */
 export const getConvertedInstanceSlugRouter = router({
   getConvertedInstanceSlug: openProcedure({
@@ -22,8 +22,6 @@ export const getConvertedInstanceSlugRouter = router({
         instanceId: input.instanceId,
         user: ctx.user,
       });
-
-      ctx.registerQueryChannels([Channels.decisionInstance(input.instanceId)]);
 
       return { slug };
     }),
