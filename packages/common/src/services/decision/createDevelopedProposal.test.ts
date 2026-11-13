@@ -1,7 +1,8 @@
 import {
   TestDecisionsDataManager,
-  createDevelopPhaseReviewer,
   createDevelopPhaseSetup,
+  createDevelopProposalsMember,
+  grantInstanceReviewerRole,
   testDevelopSchema,
 } from '@op/common/testing';
 import { db } from '@op/db/client';
@@ -39,7 +40,7 @@ async function expectRefused(
 }
 
 describe.concurrent('createDevelopedProposal', () => {
-  it('lets a category reviewer with a row for the phase create a draft and writes one developed edge per source', async ({
+  it('lets a caller with Develop Proposals create a draft and writes one developed edge per source', async ({
     task,
     onTestFinished,
   }) => {
@@ -47,10 +48,9 @@ describe.concurrent('createDevelopedProposal', () => {
     const { setup, instanceId, source } = await createDevelopPhaseSetup({
       testData,
     });
-    const reviewer = await createDevelopPhaseReviewer({
+    const developer = await createDevelopProposalsMember({
       testData,
       setup,
-      onTestFinished,
     });
 
     const draft = await createDevelopedProposal({
@@ -59,7 +59,7 @@ describe.concurrent('createDevelopedProposal', () => {
         sourceProposalIds: [source.id],
         proposalData: { title: 'Developed' },
       },
-      user: reviewer.user,
+      user: developer.user,
     });
     testData.trackProfileForCleanup(draft.profileId);
 
@@ -70,10 +70,7 @@ describe.concurrent('createDevelopedProposal', () => {
     ]);
   });
 
-  it('lets an admin with no category-reviewer row create a draft', async ({
-    task,
-    onTestFinished,
-  }) => {
+  it('lets an admin create a draft', async ({ task, onTestFinished }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
     const { setup, instanceId, source } = await createDevelopPhaseSetup({
       testData,
@@ -94,7 +91,7 @@ describe.concurrent('createDevelopedProposal', () => {
     ]);
   });
 
-  it('refuses a caller with Review and no row for the phase with UnauthorizedError', async ({
+  it('refuses a caller with Review and without Develop Proposals with UnauthorizedError', async ({
     task,
     onTestFinished,
   }) => {
@@ -102,11 +99,14 @@ describe.concurrent('createDevelopedProposal', () => {
     const { setup, instanceId, source } = await createDevelopPhaseSetup({
       testData,
     });
-    const reviewer = await createDevelopPhaseReviewer({
-      testData,
-      setup,
-      onTestFinished,
-      withRow: false,
+    const reviewer = await testData.createMemberUser({
+      organization: setup.organization,
+    });
+    await grantInstanceReviewerRole({
+      instanceProfileId: setup.instance.profileId,
+      authUserId: reviewer.authUserId,
+      email: reviewer.email,
+      roleName: `Reviewer ${reviewer.authUserId}`,
     });
 
     await expectRefused(
@@ -122,7 +122,7 @@ describe.concurrent('createDevelopedProposal', () => {
     );
   });
 
-  it('refuses a participant with ValidationError', async ({
+  it('refuses a participant without Develop Proposals with UnauthorizedError', async ({
     task,
     onTestFinished,
   }) => {
@@ -144,7 +144,7 @@ describe.concurrent('createDevelopedProposal', () => {
         },
         user: participant.user,
       }),
-      ValidationError,
+      UnauthorizedError,
     );
   });
 

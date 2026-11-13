@@ -67,7 +67,6 @@ export const submitDevelopedProposal = async ({
 
   await assertProposalDevelopAccess({
     instance: {
-      id: instance.id,
       profileId: instance.profileId,
       instanceData: { phases },
     },

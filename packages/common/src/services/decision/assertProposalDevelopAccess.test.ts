@@ -31,7 +31,6 @@ function withProposalRules(
 ): Parameters<typeof assertProposalDevelopAccess>[0]['instance'] {
   const { instance } = created;
   return {
-    id: instance.id,
     profileId: instance.profileId,
     instanceData: {
       phases: instance.instanceData.phases.map((phase) =>
@@ -46,20 +45,22 @@ function withProposalRules(
 /**
  * A member of the decision whose only grant on the instance profile is a
  * role with the given decision bits (no built-in Member role, so no Submit
- * bit unless asked for).
+ * or Develop Proposals bit unless asked for).
  */
 async function createMemberWithRole({
   testData,
   setup,
-  review,
-  submitProposals,
+  review = false,
+  submitProposals = false,
+  developProposals = false,
   admin = false,
   testId,
 }: {
   testData: TestDecisionsDataManager;
   setup: Setup;
-  review: boolean;
-  submitProposals: boolean;
+  review?: boolean;
+  submitProposals?: boolean;
+  developProposals?: boolean;
   admin?: boolean;
   testId: string;
 }) {
@@ -80,6 +81,7 @@ async function createMemberWithRole({
           review,
           submitProposals,
           vote: false,
+          developProposals,
         },
       },
     },
@@ -99,6 +101,7 @@ async function createMemberWithRole({
 }
 
 const DEVELOP_RULES: ProposalRules = { develop: true, submit: false };
+const SUBMIT_ONLY_RULES: ProposalRules = { develop: false, submit: true };
 
 async function expectNotAllowed(attempt: Promise<void>) {
   const error = await attempt.catch((caught: unknown) => caught);
@@ -109,17 +112,42 @@ async function expectNotAllowed(attempt: Promise<void>) {
   );
 }
 
-async function expectNoPhaseAssignment(attempt: Promise<void>) {
+async function expectCannotDevelop(attempt: Promise<void>) {
   const error = await attempt.catch((caught: unknown) => caught);
   expect(error).toBeInstanceOf(UnauthorizedError);
   expect(error).toHaveProperty(
     'message',
-    expect.stringContaining('no category assignment for this phase'),
+    'You cannot develop proposals in this phase',
   );
 }
 
 describe.concurrent('assertProposalDevelopAccess', () => {
-  it('allows a caller with Review and a row for the phase', async ({
+  it('allows a caller with Develop Proposals and no Review or Submit bit in a develop phase', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const member = await createMemberWithRole({
+      testData,
+      setup,
+      developProposals: true,
+      testId: task.id,
+    });
+
+    await expect(
+      assertProposalDevelopAccess({
+        instance: withProposalRules(setup.instance, DEVELOP_RULES),
+        phaseId: PHASE_ID,
+        user: { id: member.authUserId },
+      }),
+    ).resolves.toBeUndefined();
+  });
+
+  it('refuses a caller with Review and a category-reviewer row for the phase but without Develop Proposals', async ({
     task,
     onTestFinished,
   }) => {
@@ -142,48 +170,16 @@ describe.concurrent('assertProposalDevelopAccess', () => {
       onTestFinished,
     });
 
-    await expect(
+    await expectCannotDevelop(
       assertProposalDevelopAccess({
         instance: withProposalRules(setup.instance, DEVELOP_RULES),
         phaseId: PHASE_ID,
         user: { id: member.authUserId },
       }),
-    ).resolves.toBeUndefined();
+    );
   });
 
-  it('allows a caller with Review and a row but no Submit bit', async ({
-    task,
-    onTestFinished,
-  }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const setup = await testData.createDecisionSetup({
-      instanceCount: 1,
-      grantAccess: true,
-    });
-    const member = await createMemberWithRole({
-      testData,
-      setup,
-      review: true,
-      submitProposals: false,
-      testId: task.id,
-    });
-    await createCategoryReviewerWithTerm({
-      processInstanceId: setup.instance.instance.id,
-      reviewerProfileId: member.profileId,
-      phaseId: PHASE_ID,
-      onTestFinished,
-    });
-
-    await expect(
-      assertProposalDevelopAccess({
-        instance: withProposalRules(setup.instance, DEVELOP_RULES),
-        phaseId: PHASE_ID,
-        user: { id: member.authUserId },
-      }),
-    ).resolves.toBeUndefined();
-  });
-
-  it('allows a profile admin with no row', async ({ task, onTestFinished }) => {
+  it('allows a profile admin', async ({ task, onTestFinished }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
     const setup = await testData.createDecisionSetup({
       instanceCount: 1,
@@ -199,7 +195,7 @@ describe.concurrent('assertProposalDevelopAccess', () => {
     ).resolves.toBeUndefined();
   });
 
-  it('allows a caller with the decisions Admin permission and no row', async ({
+  it('allows a caller with the decisions Admin permission and no Develop Proposals bit', async ({
     task,
     onTestFinished,
   }) => {
@@ -211,8 +207,6 @@ describe.concurrent('assertProposalDevelopAccess', () => {
     const member = await createMemberWithRole({
       testData,
       setup,
-      review: false,
-      submitProposals: false,
       admin: true,
       testId: task.id,
     });
@@ -226,81 +220,32 @@ describe.concurrent('assertProposalDevelopAccess', () => {
     ).resolves.toBeUndefined();
   });
 
-  it.for([
-    { name: 'no row', rowPhaseId: undefined },
-    { name: 'a row with phase NULL', rowPhaseId: null },
-    { name: 'a row for another phase', rowPhaseId: 'final' },
-  ])(
-    'refuses a caller with Review and $name with UnauthorizedError',
-    async ({ rowPhaseId }, { task, onTestFinished }) => {
-      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-      const setup = await testData.createDecisionSetup({
-        instanceCount: 1,
-        grantAccess: true,
-      });
-      const member = await createMemberWithRole({
-        testData,
-        setup,
-        review: true,
-        submitProposals: true,
-        testId: task.id,
-      });
-      if (rowPhaseId !== undefined) {
-        await createCategoryReviewerWithTerm({
-          processInstanceId: setup.instance.instance.id,
-          reviewerProfileId: member.profileId,
-          phaseId: rowPhaseId,
-          onTestFinished,
-        });
-      }
-
-      await expectNoPhaseAssignment(
-        assertProposalDevelopAccess({
-          instance: withProposalRules(setup.instance, DEVELOP_RULES),
-          phaseId: PHASE_ID,
-          user: { id: member.authUserId },
-        }),
-      );
-    },
-  );
-
-  it('refuses a caller with Review whose row is on another instance with the same phase id', async ({
+  it('refuses a caller with Develop Proposals outside a develop phase with ValidationError', async ({
     task,
     onTestFinished,
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
     const setup = await testData.createDecisionSetup({
-      instanceCount: 2,
+      instanceCount: 1,
       grantAccess: true,
     });
-    const otherInstance = setup.instances[1];
-    if (!otherInstance) {
-      throw new Error('Second instance not created');
-    }
     const member = await createMemberWithRole({
       testData,
       setup,
-      review: true,
-      submitProposals: true,
+      developProposals: true,
       testId: task.id,
     });
-    await createCategoryReviewerWithTerm({
-      processInstanceId: otherInstance.instance.id,
-      reviewerProfileId: member.profileId,
-      phaseId: PHASE_ID,
-      onTestFinished,
-    });
 
-    await expectNoPhaseAssignment(
+    await expectNotAllowed(
       assertProposalDevelopAccess({
-        instance: withProposalRules(setup.instance, DEVELOP_RULES),
+        instance: withProposalRules(setup.instance, SUBMIT_ONLY_RULES),
         phaseId: PHASE_ID,
         user: { id: member.authUserId },
       }),
     );
   });
 
-  it('refuses a participant without Review with ValidationError', async ({
+  it('refuses a participant without Develop Proposals with UnauthorizedError', async ({
     task,
     onTestFinished,
   }) => {
@@ -314,7 +259,7 @@ describe.concurrent('assertProposalDevelopAccess', () => {
       instanceProfileIds: [setup.instance.profileId],
     });
 
-    await expectNotAllowed(
+    await expectCannotDevelop(
       assertProposalDevelopAccess({
         instance: withProposalRules(setup.instance, DEVELOP_RULES),
         phaseId: PHASE_ID,
@@ -337,7 +282,7 @@ describe.concurrent('assertProposalDevelopAccess', () => {
       orgRoleId: ROLES.ADMIN.id,
     });
 
-    await expectNotAllowed(
+    await expectCannotDevelop(
       assertProposalDevelopAccess({
         instance: withProposalRules(setup.instance, DEVELOP_RULES),
         phaseId: PHASE_ID,

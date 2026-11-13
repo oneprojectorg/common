@@ -1,8 +1,8 @@
 import { createDevelopedProposal } from '@op/common';
 import {
   TestDecisionsDataManager,
-  createDevelopPhaseReviewer,
   createDevelopPhaseSetup,
+  createDevelopProposalsMember,
 } from '@op/common/testing';
 import { ProposalStatus } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
@@ -22,7 +22,7 @@ async function createAuthenticatedCaller(email: string) {
 }
 
 describe.concurrent('submitDevelopedProposal', () => {
-  it('lets the author submit a developed draft', async ({
+  it('lets the author, a caller with Develop Proposals, submit a developed draft', async ({
     task,
     onTestFinished,
   }) => {
@@ -30,10 +30,9 @@ describe.concurrent('submitDevelopedProposal', () => {
     const { setup, instanceId, source } = await createDevelopPhaseSetup({
       testData,
     });
-    const reviewer = await createDevelopPhaseReviewer({
+    const developer = await createDevelopProposalsMember({
       testData,
       setup,
-      onTestFinished,
     });
     const draft = await createDevelopedProposal({
       data: {
@@ -41,10 +40,10 @@ describe.concurrent('submitDevelopedProposal', () => {
         sourceProposalIds: [source.id],
         proposalData: { title: 'Developed' },
       },
-      user: reviewer.user,
+      user: developer.user,
     });
     testData.trackProfileForCleanup(draft.profileId);
-    const caller = await createAuthenticatedCaller(reviewer.email);
+    const caller = await createAuthenticatedCaller(developer.email);
 
     const submitted = await caller.decision.submitDevelopedProposal({
       proposalId: draft.id,

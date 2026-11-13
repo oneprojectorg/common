@@ -1,7 +1,7 @@
 import {
   TestDecisionsDataManager,
-  createDevelopPhaseReviewer,
   createDevelopPhaseSetup,
+  createDevelopProposalsMember,
 } from '@op/common/testing';
 import { ProposalRelationshipType, ProposalStatus } from '@op/db/schema';
 import { db } from '@op/db/test';
@@ -22,7 +22,7 @@ async function createAuthenticatedCaller(email: string) {
 }
 
 describe.concurrent('createDevelopedProposal', () => {
-  it('lets a category reviewer create a draft developed from a proposal of the previous phase', async ({
+  it('lets a caller with Develop Proposals create a draft developed from a proposal of the previous phase', async ({
     task,
     onTestFinished,
   }) => {
@@ -30,12 +30,11 @@ describe.concurrent('createDevelopedProposal', () => {
     const { setup, instanceId, source } = await createDevelopPhaseSetup({
       testData,
     });
-    const reviewer = await createDevelopPhaseReviewer({
+    const developer = await createDevelopProposalsMember({
       testData,
       setup,
-      onTestFinished,
     });
-    const caller = await createAuthenticatedCaller(reviewer.email);
+    const caller = await createAuthenticatedCaller(developer.email);
 
     const draft = await caller.decision.createDevelopedProposal({
       processInstanceId: instanceId,
