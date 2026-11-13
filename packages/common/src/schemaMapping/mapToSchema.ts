@@ -1,5 +1,6 @@
 import { isDeepStrictEqual } from 'node:util';
 
+import { evaluateExpression } from '../services/decision/selectionPipeline/expressionEvaluator';
 import { readOwnField } from './fieldPath';
 import type {
   MappingInput,
@@ -33,8 +34,11 @@ export const mapToSchema = ({
 
     for (const field of mapping.fields) {
       for (const source of sources) {
-        const value = readOwnField({ data: source.data, path: field.from });
-        if (isEmptyValue(value)) {
+        const value = evaluateSourceField({
+          data: source.data,
+          path: field.from,
+        });
+        if (value === undefined) {
           continue;
         }
         const values = valuesByField.get(field.to) ?? [];
@@ -64,6 +68,25 @@ export const isSameSchemaRef = ({
   left: SchemaRef;
   right: SchemaRef;
 }): boolean => left.type === right.type && left.phaseId === right.phaseId;
+
+const evaluateSourceField = ({
+  data,
+  path,
+}: {
+  data: unknown;
+  path: string;
+}): unknown => {
+  // The evaluator also reads inherited properties, and gives null for a
+  // missing field.
+  if (isEmptyValue(readOwnField({ data, path }))) {
+    return undefined;
+  }
+  const value: unknown = evaluateExpression(
+    { field: path },
+    { record: data, variables: {}, outputs: {} },
+  );
+  return isEmptyValue(value) ? undefined : value;
+};
 
 const isEmptyValue = (value: unknown): boolean =>
   value === undefined || value === null || value === '';
