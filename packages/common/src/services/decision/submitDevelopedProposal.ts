@@ -1,4 +1,4 @@
-import { db } from '@op/db/client';
+import { and, db, eq } from '@op/db/client';
 import { ProposalRelationshipType, ProposalStatus } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 
@@ -6,6 +6,7 @@ import { NotFoundError, UnauthorizedError, ValidationError } from '../../utils';
 import { getProfileAccessUser } from '../access';
 import { assertProposalDevelopAccess } from './assertProposalDevelopAccess';
 import { finalizeProposalSubmission } from './finalizeProposalSubmission';
+import { activeProposalPredicate } from './phaseEligibility';
 import { getInstancePhases } from './schemas/instanceData';
 
 export interface SubmitDevelopedProposalInput {
@@ -24,7 +25,10 @@ export const submitDevelopedProposal = async ({
   user: User;
 }) => {
   const proposal = await db.query.proposals.findFirst({
-    where: { id: data.proposalId },
+    where: {
+      RAW: (table) =>
+        and(eq(table.id, data.proposalId), activeProposalPredicate(table))!,
+    },
     with: {
       processInstance: true,
       profile: true,

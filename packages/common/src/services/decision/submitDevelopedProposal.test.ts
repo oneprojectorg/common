@@ -3,10 +3,11 @@ import {
   createDevelopPhaseSetup,
   createDevelopProposalsMember,
 } from '@op/common/testing';
-import { ProposalStatus } from '@op/db/schema';
+import { db, eq } from '@op/db/client';
+import { ProposalStatus, proposals } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
-import { UnauthorizedError, ValidationError } from '../../utils';
+import { NotFoundError, UnauthorizedError, ValidationError } from '../../utils';
 import { createDevelopedProposal } from './createDevelopedProposal';
 import { submitDevelopedProposal } from './submitDevelopedProposal';
 
@@ -100,4 +101,41 @@ describe.concurrent('submitDevelopedProposal', () => {
       expect.stringContaining('not developed'),
     );
   });
+
+  it.for([
+    { name: 'soft-deleted', column: 'deletedAt' },
+    { name: 'moderation-detached', column: 'moderationDetachedAt' },
+  ] as const)(
+    'refuses a $name developed draft as not found',
+    async ({ column }, { task, onTestFinished }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+      const { setup, instanceId, source } = await createDevelopPhaseSetup({
+        testData,
+      });
+      const developer = await createDevelopProposalsMember({
+        testData,
+        setup,
+      });
+      const draft = await createDevelopedProposal({
+        data: {
+          processInstanceId: instanceId,
+          sourceProposalIds: [source.id],
+          proposalData: { title: 'Developed' },
+        },
+        user: developer.user,
+      });
+      testData.trackProfileForCleanup(draft.profileId);
+      await db
+        .update(proposals)
+        .set({ [column]: new Date().toISOString() })
+        .where(eq(proposals.id, draft.id));
+
+      const error = await submitDevelopedProposal({
+        data: { proposalId: draft.id },
+        user: developer.user,
+      }).catch((caught: unknown) => caught);
+
+      expect(error).toBeInstanceOf(NotFoundError);
+    },
+  );
 });
