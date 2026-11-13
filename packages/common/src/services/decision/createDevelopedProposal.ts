@@ -123,6 +123,7 @@ export const createDevelopedProposal = async ({
       submittedByProfileId: profileId,
       adminRoleId: adminRole.id,
       defaultHidden,
+      formSchemaId: currentPhase.formSchemaId ?? null,
     });
 
     await tx.insert(proposalRelationships).values(
