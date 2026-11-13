@@ -8,7 +8,7 @@ import { permission } from 'access-zones';
 
 import { NotFoundError } from '../../utils';
 import { assertInstanceProfileAccess } from '../access';
-import { resolvePhases } from '../decision/instancePhases';
+import { getPhases } from '../decision/instancePhases';
 import type {
   DecisionInstanceData,
   PhaseInstanceData,
@@ -65,33 +65,33 @@ export async function translateDecision({
     )
     .limit(1);
 
-  const [instanceRow] = instances;
+  const [processInstance] = instances;
 
-  if (!instanceRow) {
+  if (!processInstance) {
     throw new NotFoundError('Decision profile', decisionProfileId);
   }
-
-  const resolvedInstance = await resolvePhases({ instance: instanceRow });
 
   // Start the permission check immediately so it runs in parallel with translation
   const authPromise = assertInstanceProfileAccess({
     user,
     instance: {
-      profileId: resolvedInstance.profileId,
-      ownerProfileId: resolvedInstance.ownerProfileId,
+      profileId: processInstance.profileId,
+      ownerProfileId: processInstance.ownerProfileId,
     },
     profilePermissions: { decisions: permission.READ },
     orgFallbackPermissions: { decisions: permission.READ },
   });
 
+  const phases = await getPhases({ instance: processInstance });
+
   const instanceData =
-    resolvedInstance.instanceData as DecisionInstanceData | null;
+    processInstance.instanceData as DecisionInstanceData | null;
   const entries = buildEntries(
     decisionProfileId,
     instanceData,
-    resolvedInstance.phases,
-    resolvedInstance.currentStateId,
-    resolvedInstance.description,
+    phases,
+    processInstance.currentStateId,
+    processInstance.description,
   );
 
   if (entries.length === 0) {

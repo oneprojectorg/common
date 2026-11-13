@@ -23,7 +23,7 @@ export const sendReviewPhaseEndingReminder = inngest.createFunction(
       reviewPhaseEndingSoon.schema.parse(event.data);
 
     const instanceData = await step.run('get-instance-data', async () => {
-      const instanceRow = await db.query.processInstances.findFirst({
+      const instance = await db.query.processInstances.findFirst({
         where: { id: processInstanceId },
         columns: {
           id: true,
@@ -35,11 +35,11 @@ export const sendReviewPhaseEndingReminder = inngest.createFunction(
         },
       });
 
-      if (!instanceRow) {
+      if (!instance) {
         return undefined;
       }
 
-      return resolvePhases({ instance: instanceRow });
+      return resolvePhases({ instance });
     });
 
     if (!instanceData) {

@@ -12,7 +12,7 @@ import {
 } from '../../utils';
 import { assertProfileAccess, assertUserByAuthId } from '../assert';
 import { advancePhase } from './advancePhase';
-import { resolvePhases } from './instancePhases';
+import { getPhases } from './instancePhases';
 import { onPhaseAdvanced } from './onPhaseAdvanced';
 
 export interface TriggerPhaseAdvancementInput {
@@ -42,7 +42,7 @@ export async function triggerPhaseAdvancement({
   user,
   fromPhaseId: expectedFromPhaseId,
 }: TriggerPhaseAdvancementInput): Promise<TriggerPhaseAdvancementResult> {
-  const [dbUser, instanceRow] = await Promise.all([
+  const [dbUser, instance] = await Promise.all([
     assertUserByAuthId(user.id),
     db.query.processInstances.findFirst({
       where: { id: instanceId },
@@ -53,11 +53,11 @@ export async function triggerPhaseAdvancement({
     throw new UnauthorizedError('User must have an active profile');
   }
 
-  if (!instanceRow) {
+  if (!instance) {
     throw new NotFoundError('Process instance', instanceId);
   }
 
-  if (!instanceRow.profileId) {
+  if (!instance.profileId) {
     throw new CommonError(
       'Decision instance does not have an associated profile',
     );
@@ -65,22 +65,21 @@ export async function triggerPhaseAdvancement({
 
   await assertProfileAccess({
     user,
-    profileId: instanceRow.profileId,
+    profileId: instance.profileId,
     permissions: { decisions: permission.ADMIN },
   });
 
-  if (instanceRow.status !== ProcessStatus.PUBLISHED) {
+  if (instance.status !== ProcessStatus.PUBLISHED) {
     throw new ValidationError('Instance must be published');
   }
 
-  const resolvedInstance = await resolvePhases({ instance: instanceRow });
-  const { phases } = resolvedInstance;
+  const phases = await getPhases({ instance });
 
   if (phases.length === 0) {
     throw new CommonError('Instance has no phases defined');
   }
 
-  const fromPhaseId = instanceRow.currentStateId;
+  const fromPhaseId = instance.currentStateId;
 
   if (!fromPhaseId) {
     throw new CommonError('Instance has no current phase set');
@@ -107,7 +106,10 @@ export async function triggerPhaseAdvancement({
   const advanceResult = await db.transaction(async (tx) => {
     const result = await advancePhase({
       db: tx,
-      instance: resolvedInstance,
+      instance: {
+        id: instance.id,
+        phases,
+      },
       fromPhaseId,
       toPhaseId,
       triggeredByProfileId: dbUser.profileId,

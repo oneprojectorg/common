@@ -8,7 +8,7 @@ import { logger } from '@op/logging';
 import { NotFoundError, ValidationError } from '../../utils';
 import { getIndividualProfileId } from '../access';
 import { forwardGeocode } from './forwardGeocode';
-import { resolvePhases } from './instancePhases';
+import { getPhases } from './instancePhases';
 import {
   hasDecisionBoundaries,
   hasLinkedDecisionBoundaries,
@@ -38,7 +38,7 @@ const loadEnrolmentContext = async ({
   processInstanceId,
   authUserId,
 }: EnrolmentKey) => {
-  const [profileId, instanceRow] = await Promise.all([
+  const [profileId, instance] = await Promise.all([
     getIndividualProfileId(authUserId),
     db.query.processInstances.findFirst({
       where: { id: processInstanceId },
@@ -51,20 +51,21 @@ const loadEnrolmentContext = async ({
     }),
   ]);
 
-  if (!instanceRow) {
+  if (!instance) {
     throw new NotFoundError('Process instance', processInstanceId);
   }
 
-  const resolvedInstance = await resolvePhases({ instance: instanceRow });
-
-  const phase = getInstanceCurrentPhase(resolvedInstance);
+  const phase = getInstanceCurrentPhase({
+    currentStateId: instance.currentStateId,
+    phases: await getPhases({ instance }),
+  });
   const rule = phase ? getVoterEnrolment(phase) : undefined;
 
   if (!rule) {
     throw new ValidationError('This decision has no enrolment step');
   }
 
-  return { profileId, instance: resolvedInstance, rule };
+  return { profileId, instance, rule };
 };
 
 const findRow = (processInstanceId: string, profileId: string) =>
