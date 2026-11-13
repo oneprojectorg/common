@@ -164,7 +164,7 @@ export type Expression =
   | VariableExpression;
 
 /**
- * Access a field on the proposal or context
+ * Access a field on the record of the expression scope
  */
 export interface FieldAccessExpression {
   field: string; // dot notation, e.g., "proposalData.title", "voteData.approvalRate"
@@ -230,11 +230,21 @@ export interface VariableExpression {
   variable: string; // e.g., "$threshold", "$categoryWeight"
 }
 
+/**
+ * What an expression reads. A `field` expression reads `record`. A `variable`
+ * expression reads `variables`, then `outputs`. A block that evaluates per
+ * proposal passes the proposal as `record`; a block that evaluates once passes
+ * its execution context.
+ */
+export interface ExpressionScope {
+  record: unknown;
+  variables: Record<string, unknown>;
+  outputs: Record<string, unknown>;
+}
+
 /** Runtime context passed to every pipeline block during evaluation. */
 export interface ExecutionContext {
   proposals: Proposal[];
-  /** Set when evaluating expressions on a single proposal. */
-  proposal?: Proposal;
   voteData?: {
     [proposalId: string]: VoteAggregation;
   };
