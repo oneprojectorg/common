@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { isRecord } from './jsonPointer';
+import { isRecord } from './fieldPath';
 import { mapToSchema } from './mapToSchema';
 import type { MappingInput, MappingRule, SchemaRef } from './types';
 
@@ -13,59 +13,59 @@ const ballotRules: MappingRule[] = [
   {
     sourceSchema: proposalRef,
     targetSchema: ballotRef,
-    targetPointer: '/title',
-    value: { pointer: '/title' },
+    targetField: 'title',
+    value: { field: 'title' },
   },
   {
     sourceSchema: proposalRef,
     targetSchema: ballotRef,
-    targetPointer: '/description',
-    value: { pointer: '/summary' },
+    targetField: 'description',
+    value: { field: 'summary' },
   },
   {
     sourceSchema: proposalRef,
     targetSchema: ballotRef,
-    targetPointer: '/location',
-    value: { pointer: '/location' },
+    targetField: 'location',
+    value: { field: 'location' },
   },
   {
     sourceSchema: proposalRef,
     targetSchema: ballotRef,
-    targetPointer: '/neighborhood',
-    value: { pointer: '/f0a8a062' },
+    targetField: 'neighborhood',
+    value: { field: 'f0a8a062' },
   },
   {
     sourceSchema: feasibilityRef,
     targetSchema: ballotRef,
-    targetPointer: '/budget/amount',
+    targetField: 'budget.amount',
     value: {
       function: 'sum',
       arguments: [
-        { pointer: '/cost_design/amount' },
-        { pointer: '/cost_construction/amount' },
-        { pointer: '/cost_contingency/amount' },
+        { field: 'cost_design.amount' },
+        { field: 'cost_construction.amount' },
+        { field: 'cost_contingency.amount' },
       ],
     },
   },
   {
     sourceSchema: feasibilityRef,
     targetSchema: ballotRef,
-    targetPointer: '/budget/currency',
-    value: { pointer: '/cost_design/currency' },
+    targetField: 'budget.currency',
+    value: { field: 'cost_design.currency' },
   },
   {
     sourceSchema: feasibilityRef,
     targetSchema: ballotRef,
-    targetPointer: '/feasibility_recommendation',
-    value: { pointer: '/__overall_recommendation' },
+    targetField: 'feasibility_recommendation',
+    value: { field: '__overall_recommendation' },
   },
   {
     sourceSchema: equityRef,
     targetSchema: ballotRef,
-    targetPointer: '/equity_score',
+    targetField: 'equity_score',
     value: {
       function: 'sum',
-      arguments: [{ pointer: '/score_need' }, { pointer: '/score_reach' }],
+      arguments: [{ field: 'score_need' }, { field: 'score_reach' }],
     },
   },
 ];
@@ -133,7 +133,7 @@ describe('mapToSchema', () => {
       feasibility_recommendation: 'feasible',
       equity_score: 7,
     });
-    expect(result.candidates['/budget/amount']).toEqual([
+    expect(result.candidates['budget.amount']).toEqual([
       { value: 50000, sourceId: 'feasibility-1' },
     ]);
   });
@@ -155,7 +155,7 @@ describe('mapToSchema', () => {
     expect(result.data).toEqual(
       expect.objectContaining({ budget: { currency: 'USD' } }),
     );
-    expect(result.candidates['/budget/amount']).toEqual([
+    expect(result.candidates['budget.amount']).toEqual([
       { value: 50000, sourceId: 'feasibility-1' },
       { value: 75000, sourceId: 'feasibility-2' },
     ]);
@@ -194,7 +194,7 @@ describe('mapToSchema', () => {
     });
 
     expect(result.data).not.toHaveProperty('title');
-    expect(result.candidates['/title']).toEqual([
+    expect(result.candidates['title']).toEqual([
       { value: 'Shade trees', sourceId: 'proposal-1' },
       { value: 'Park benches', sourceId: 'proposal-2' },
       { value: 'Water fountain', sourceId: 'proposal-3' },
@@ -217,7 +217,7 @@ describe('mapToSchema', () => {
     expect(result.data).toEqual(
       expect.objectContaining({ feasibility_recommendation: 'feasible' }),
     );
-    expect(result.candidates['/feasibility_recommendation']).toEqual([
+    expect(result.candidates['feasibility_recommendation']).toEqual([
       { value: 'feasible', sourceId: 'feasibility-1' },
     ]);
   });
@@ -235,7 +235,7 @@ describe('mapToSchema', () => {
       targetSchema: ballotRef,
     });
 
-    expect(result.candidates['/budget/amount']).toEqual([
+    expect(result.candidates['budget.amount']).toEqual([
       { value: 50000, sourceId: 'feasibility-1' },
     ]);
     expect(result.data).toEqual(
@@ -259,7 +259,7 @@ describe('mapToSchema', () => {
       targetSchema: ballotRef,
     });
 
-    expect(result.candidates['/location']).toHaveLength(2);
+    expect(result.candidates['location']).toHaveLength(2);
     expect(result.data).toEqual(
       expect.objectContaining({ location: { lat: 39.96, lng: -82.99 } }),
     );
@@ -272,8 +272,8 @@ describe('mapToSchema', () => {
         {
           sourceSchema: proposalRef,
           targetSchema: { type: 'proposal', phaseId: 'shortlist' },
-          targetPointer: '/shortlist_title',
-          value: { pointer: '/title' },
+          targetField: 'shortlist_title',
+          value: { field: 'title' },
         },
       ],
       inputs: [createProposal({ id: 'proposal-1' })],
@@ -281,17 +281,17 @@ describe('mapToSchema', () => {
     });
 
     expect(result.data).not.toHaveProperty('shortlist_title');
-    expect(result.candidates).not.toHaveProperty('/shortlist_title');
+    expect(result.candidates).not.toHaveProperty(['shortlist_title']);
   });
 
-  it('gives the same data whatever the rule order, including nested and parent pointers', () => {
+  it('gives the same data whatever the rule order, including nested and parent fields', () => {
     const rules: MappingRule[] = [
       ...ballotRules,
       {
         sourceSchema: proposalRef,
         targetSchema: ballotRef,
-        targetPointer: '/location/label',
-        value: { pointer: '/f0a8a062' },
+        targetField: 'location.label',
+        value: { field: 'f0a8a062' },
       },
     ];
     const inputs = [
@@ -315,19 +315,19 @@ describe('mapToSchema', () => {
     );
   });
 
-  it('collects candidates from every rule that writes the same target pointer', () => {
+  it('collects candidates from every rule that writes the same target field', () => {
     const result = mapToSchema({
       rules: [
         {
           sourceSchema: proposalRef,
           targetSchema: ballotRef,
-          targetPointer: '/title',
-          value: { pointer: '/title' },
+          targetField: 'title',
+          value: { field: 'title' },
         },
         {
           sourceSchema: feasibilityRef,
           targetSchema: ballotRef,
-          targetPointer: '/title',
+          targetField: 'title',
           value: { value: 'Reviewed project' },
         },
       ],
@@ -339,7 +339,7 @@ describe('mapToSchema', () => {
     });
 
     expect(result.data).toEqual({});
-    expect(result.candidates['/title']).toEqual([
+    expect(result.candidates['title']).toEqual([
       { value: 'Shade trees for the riverside park', sourceId: 'proposal-1' },
       { value: 'Reviewed project', sourceId: 'feasibility-1' },
     ]);
@@ -363,8 +363,168 @@ describe('mapToSchema', () => {
 
     expect(inputs).toEqual(inputsBefore);
     expect(rules).toEqual(rulesBefore);
-    expect(result.candidates['/location']).toEqual([
+    expect(result.candidates['location']).toEqual([
       { value: { lat: 39.96, lng: -82.99 }, sourceId: 'proposal-1' },
+    ]);
+  });
+});
+
+describe('mapToSchema with the selection pipeline evaluator', () => {
+  const mapOne = ({
+    value,
+    data,
+    targetField = 'result',
+  }: {
+    value: MappingRule['value'];
+    data: unknown;
+    targetField?: string;
+  }) =>
+    mapToSchema({
+      rules: [
+        {
+          sourceSchema: proposalRef,
+          targetSchema: ballotRef,
+          targetField,
+          value,
+        },
+      ],
+      inputs: [{ schema: proposalRef, id: 'proposal-1', data }],
+      targetSchema: ballotRef,
+    });
+
+  it('never reads a column of the placeholder proposal row', () => {
+    for (const field of ['id', 'status', 'proposalData', 'visibility']) {
+      const result = mapOne({ value: { field }, data: { title: 'Trees' } });
+
+      expect(result.candidates).toEqual({});
+    }
+    expect(
+      mapOne({ value: { field: 'id' }, data: { id: 'form-id' } }).data,
+    ).toEqual({ result: 'form-id' });
+  });
+
+  it('gives no candidate when a field the rule reads is missing, null or empty', () => {
+    const value = {
+      operator: 'add' as const,
+      operands: [{ field: 'a' }, { field: 'b' }],
+    };
+
+    for (const data of [{ a: 1 }, { a: 1, b: null }, { a: 1, b: '' }]) {
+      expect(mapOne({ value, data }).candidates).toEqual({});
+    }
+    expect(mapOne({ value, data: { a: 1, b: 2 } }).data).toEqual({
+      result: 3,
+    });
+  });
+
+  it('falls back through coalesce when a direct field argument is missing', () => {
+    const result = mapOne({
+      value: {
+        function: 'coalesce',
+        arguments: [{ field: 'nickname' }, { field: 'title' }],
+      },
+      data: { title: 'Trees' },
+    });
+
+    expect(result.data).toEqual({ result: 'Trees' });
+  });
+
+  it('gives no candidate when a field nested deeper inside coalesce is missing', () => {
+    const result = mapOne({
+      value: {
+        function: 'coalesce',
+        arguments: [
+          { operator: 'add', operands: [{ field: 'missing' }, { value: 1 }] },
+          { value: 5 },
+        ],
+      },
+      data: {},
+    });
+
+    expect(result.candidates).toEqual({});
+  });
+
+  it('gives no candidate for a division or modulo by zero', () => {
+    for (const operator of ['divide', 'modulo'] as const) {
+      const result = mapOne({
+        value: { operator, operands: [{ field: 'a' }, { field: 'b' }] },
+        data: { a: 10, b: 0 },
+      });
+
+      expect(result.candidates).toEqual({});
+    }
+    expect(
+      mapOne({
+        value: { operator: 'divide', operands: [{ field: 'a' }, { value: 4 }] },
+        data: { a: 10 },
+      }).data,
+    ).toEqual({ result: 2.5 });
+  });
+
+  it('gives no candidate for an empty or non-finite result', () => {
+    expect(
+      mapOne({
+        value: { function: 'trim', arguments: [{ field: 'a' }] },
+        data: { a: '   ' },
+      }).candidates,
+    ).toEqual({});
+    expect(
+      mapOne({
+        value: { function: 'min', arguments: [{ field: 'a' }] },
+        data: { a: 'text' },
+      }).candidates,
+    ).toEqual({});
+    expect(mapOne({ value: { value: null }, data: {} }).candidates).toEqual({});
+  });
+
+  it('evaluates comparisons, logic and if', () => {
+    const result = mapOne({
+      value: {
+        function: 'if',
+        arguments: [
+          {
+            and: [
+              {
+                operator: 'greaterThan',
+                left: { field: 'score' },
+                right: { value: 3 },
+              },
+              { not: { field: 'withdrawn' } },
+            ],
+          },
+          { value: 'advance' },
+          { value: 'hold' },
+        ],
+      },
+      data: { score: 4, withdrawn: false },
+    });
+
+    expect(result.data).toEqual({ result: 'advance' });
+  });
+
+  it('does not replace a filled value that is not an object with a deeper field', () => {
+    const result = mapToSchema({
+      rules: [
+        {
+          sourceSchema: proposalRef,
+          targetSchema: ballotRef,
+          targetField: 'budget.amount',
+          value: { value: 5 },
+        },
+        {
+          sourceSchema: proposalRef,
+          targetSchema: ballotRef,
+          targetField: 'budget',
+          value: { value: 'unknown' },
+        },
+      ],
+      inputs: [{ schema: proposalRef, id: 'proposal-1', data: {} }],
+      targetSchema: ballotRef,
+    });
+
+    expect(result.data).toEqual({ budget: 'unknown' });
+    expect(result.candidates['budget.amount']).toEqual([
+      { value: 5, sourceId: 'proposal-1' },
     ]);
   });
 });
