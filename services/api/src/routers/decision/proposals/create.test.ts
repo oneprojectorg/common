@@ -3,7 +3,12 @@ import {
   TestDecisionsDataManager,
   ensureProposalCategoryTerms,
 } from '@op/common/testing';
-import { ProposalStatus, proposalCategories } from '@op/db/schema';
+import { createDecisionBoundary } from '@op/common/testing/data';
+import {
+  ProposalStatus,
+  proposalCategories,
+  taxonomyTerms,
+} from '@op/db/schema';
 import { db, eq } from '@op/db/test';
 import { describe, expect, it } from 'vitest';
 
@@ -93,6 +98,57 @@ describe.concurrent('createProposal', () => {
       .where(eq(proposalCategories.proposalId, proposal.id));
 
     expect(links).toEqual([{ taxonomyTermId: knownTerm.taxonomyTermId }]);
+  });
+
+  it('links the district category of the boundary that holds the location', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instanceProfileId = setup.instance.instance.profileId;
+    if (!instanceProfileId) {
+      throw new Error('Instance has no profile');
+    }
+    const [districtTerm] = await ensureProposalCategoryTerms([
+      `District ${task.id}`,
+    ]);
+    if (!districtTerm) {
+      throw new Error('Failed to seed a proposal category term');
+    }
+    onTestFinished(async () => {
+      await db
+        .delete(taxonomyTerms)
+        .where(eq(taxonomyTerms.id, districtTerm.taxonomyTermId));
+    });
+    await createDecisionBoundary({
+      profileId: instanceProfileId,
+      name: districtTerm.label,
+      taxonomyTermId: districtTerm.taxonomyTermId,
+    });
+    const { caller } = await createAuthenticatedCaller(setup.userEmail);
+
+    const proposal = await caller.decision.createProposal({
+      processInstanceId: setup.instance.instance.id,
+      proposalData: {
+        title: 'Located Proposal',
+        location: { lat: 40.5, lng: -73.5 },
+      },
+    });
+    testData.trackProfileForCleanup(proposal.profileId);
+
+    const links = await db
+      .select({ taxonomyTermId: proposalCategories.taxonomyTermId })
+      .from(proposalCategories)
+      .where(eq(proposalCategories.proposalId, proposal.id));
+
+    expect(links).toEqual([{ taxonomyTermId: districtTerm.taxonomyTermId }]);
+    expect(proposal.proposalData).toMatchObject({
+      category: [districtTerm.label],
+    });
   });
 });
 
