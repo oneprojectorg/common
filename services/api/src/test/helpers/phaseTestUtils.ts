@@ -1,15 +1,15 @@
 import {
   type DecisionInstanceData,
-  type DecisionSchemaDefinition,
   getInstancePhases,
   getPhases,
 } from '@op/common';
 import {
   TestDecisionsDataManager,
+  fourPhaseDateSchema,
   dateAdvancementSchema,
   loadPhaseRows,
 } from '@op/common/testing';
-import { asc, db, eq } from '@op/db/client';
+import { and, asc, db, eq, isNull } from '@op/db/client';
 import { ProcessStatus, decisionProcessTransitions } from '@op/db/schema';
 import { expect } from 'vitest';
 
@@ -89,7 +89,10 @@ export async function createUnauthenticatedCaller() {
 
 export { loadPhaseRows };
 
-export const loadTransitionLinks = async (processInstanceId: string) =>
+export const loadTransitionLinks = async (
+  processInstanceId: string,
+  { pendingOnly = false }: { pendingOnly?: boolean } = {},
+) =>
   (
     await db
       .select({
@@ -101,7 +104,12 @@ export const loadTransitionLinks = async (processInstanceId: string) =>
       })
       .from(decisionProcessTransitions)
       .where(
-        eq(decisionProcessTransitions.processInstanceId, processInstanceId),
+        and(
+          eq(decisionProcessTransitions.processInstanceId, processInstanceId),
+          pendingOnly
+            ? isNull(decisionProcessTransitions.completedAt)
+            : undefined,
+        ),
       )
       .orderBy(
         asc(decisionProcessTransitions.fromStateId),
@@ -146,7 +154,7 @@ export async function setupPublishedDateDecision(
     throw new Error('Expected the template phase rows');
   }
 
-  const endDate = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString();
+  const endDate = new Date(Date.now() + 3 * DAY_MS).toISOString();
   await adminCaller.decision.updatePhase({
     phaseId: draftInitial.id,
     data: { endDate },
@@ -163,24 +171,29 @@ export async function setupPublishedDateDecision(
   return { testData, instanceId, adminCaller, initial, final, endDate };
 }
 
-const datePhase = (id: string, name: string) => ({
-  id,
-  name,
-  rules: { advancement: { method: 'date' as const } },
-  selectionPipeline: { version: '1.0.0', blocks: [] },
-});
+const DAY_MS = 24 * 60 * 60 * 1000;
 
-const fourPhaseDateSchema = {
-  id: 'four-phase-date',
-  version: '1.0.0',
-  name: 'Four Phase Date',
-  phases: [
-    datePhase('submission', 'Submission'),
-    datePhase('review', 'Review'),
-    datePhase('voting', 'Voting'),
-    datePhase('results', 'Results'),
-  ],
-} satisfies DecisionSchemaDefinition;
+// Advances along `phaseIds` one step at a time, completing each departed phase's transition.
+export async function advanceAlong(
+  testData: TestDecisionsDataManager,
+  instanceId: string,
+  phaseIds: readonly string[],
+) {
+  for (const [index, fromPhaseId] of phaseIds.slice(0, -1).entries()) {
+    const toPhaseId = phaseIds[index + 1];
+    if (!toPhaseId) {
+      return;
+    }
+    const advanced = await testData.advancePhase({
+      instanceId,
+      fromPhaseId,
+      toPhaseId,
+    });
+    if (advanced.conflict) {
+      throw new Error(`Could not advance from ${fromPhaseId}`);
+    }
+  }
+}
 
 // A published decision whose four phases all advance by date, moved on to `voting`
 // so the submission→review and review→voting transitions are complete.
@@ -197,13 +210,12 @@ export async function setupPublishedDecisionAtThirdPhase(
   const instanceId = setup.instance.instance.id;
   const adminCaller = await createAuthenticatedCaller(setup.userEmail);
 
-  const dayMs = 24 * 60 * 60 * 1000;
   const draftRows = await loadPhaseRows(instanceId);
   for (const [index, row] of draftRows.slice(0, -1).entries()) {
     await adminCaller.decision.updatePhase({
       phaseId: row.id,
       data: {
-        endDate: new Date(Date.now() + (index + 1) * dayMs).toISOString(),
+        endDate: new Date(Date.now() + (index + 1) * DAY_MS).toISOString(),
       },
     });
   }
@@ -212,19 +224,7 @@ export async function setupPublishedDecisionAtThirdPhase(
     status: ProcessStatus.PUBLISHED,
   });
 
-  for (const [fromPhaseId, toPhaseId] of [
-    ['submission', 'review'],
-    ['review', 'voting'],
-  ] as const) {
-    const advanced = await testData.advancePhase({
-      instanceId,
-      fromPhaseId,
-      toPhaseId,
-    });
-    if (advanced.conflict) {
-      throw new Error(`Could not advance from ${fromPhaseId}`);
-    }
-  }
+  await advanceAlong(testData, instanceId, ['submission', 'review', 'voting']);
 
   const [submission, review, voting, results] = await loadPhaseRows(instanceId);
   if (!submission || !review || !voting || !results) {
@@ -238,18 +238,6 @@ export async function setupPublishedDecisionAtThirdPhase(
     rows: { submission, review, voting, results },
   };
 }
-
-export const loadPendingTransitionLinks = async (processInstanceId: string) =>
-  db.query.decisionProcessTransitions.findMany({
-    where: { processInstanceId, completedAt: { isNull: true } },
-    columns: {
-      fromStateId: true,
-      toStateId: true,
-      fromPhaseId: true,
-      toPhaseId: true,
-    },
-    orderBy: { fromStateId: 'asc' },
-  });
 
 export async function loadInstanceData(instanceId: string) {
   const instance = await db.query.processInstances.findFirst({

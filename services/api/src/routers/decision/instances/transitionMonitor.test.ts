@@ -1,8 +1,8 @@
+import { processDecisionsTransitions } from '@op/common';
 import {
-  type DecisionSchemaDefinition,
-  processDecisionsTransitions,
-} from '@op/common';
-import { TestDecisionsDataManager } from '@op/common/testing';
+  TestDecisionsDataManager,
+  fourPhaseDateSchema,
+} from '@op/common/testing';
 import { and, db, eq, isNull } from '@op/db/client';
 import {
   ProcessStatus,
@@ -19,6 +19,7 @@ import { event } from '@op/events';
 import { type MockInstance, describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
+import { advanceAlong } from '../../../test/helpers/phaseTestUtils';
 import {
   createIsolatedSession,
   createTestContextWithSession,
@@ -31,51 +32,6 @@ async function createAuthenticatedCaller(email: string) {
   const { session } = await createIsolatedSession(email);
   return createCaller(await createTestContextWithSession(session));
 }
-
-// Four-phase schema for transition-monitor tests: every phase uses
-// date-based advancement so the monitor schedules transitions, and every
-// phase carries a pass-all selectionPipeline so proposals flow forward.
-const monitorTestSchema: DecisionSchemaDefinition = {
-  id: 'monitor-test',
-  version: '1.0.0',
-  name: 'Monitor Test Schema',
-  description: 'Date-based pass-all schema used for transition monitor tests.',
-  phases: [
-    {
-      id: 'submission',
-      name: 'Submission',
-      rules: {
-        proposals: { submit: true },
-        advancement: { method: 'date' },
-      },
-      selectionPipeline: { version: '1.0.0', blocks: [] },
-    },
-    {
-      id: 'review',
-      name: 'Review',
-      rules: {
-        advancement: { method: 'date' },
-      },
-      selectionPipeline: { version: '1.0.0', blocks: [] },
-    },
-    {
-      id: 'voting',
-      name: 'Voting',
-      rules: {
-        voting: { submit: true },
-        advancement: { method: 'date' },
-      },
-      selectionPipeline: { version: '1.0.0', blocks: [] },
-    },
-    {
-      id: 'results',
-      name: 'Results',
-      rules: {
-        advancement: { method: 'date' },
-      },
-    },
-  ],
-};
 
 /**
  * Helper to create a template using the monitor test schema (4 phases,
@@ -101,8 +57,8 @@ async function createSimpleTemplate(
     .insert(decisionProcesses)
     .values({
       name: `Simple Template ${taskId}`,
-      description: monitorTestSchema.description,
-      processSchema: monitorTestSchema,
+      description: fourPhaseDateSchema.description,
+      processSchema: fourPhaseDateSchema,
       createdByProfileId: userRecord.profileId,
     })
     .returning();
@@ -242,29 +198,8 @@ async function createPublishedInstanceWithDueTransitions(
   };
 }
 
-const PHASE_ORDER = ['submission', 'review', 'voting', 'results'];
-
 const hoursAgo = (hours: number) =>
   new Date(Date.now() - hours * 60 * 60 * 1000).toISOString();
-
-// Advances phase by phase, which completes each departed phase's transition.
-async function advanceTo(
-  testData: TestDecisionsDataManager,
-  instanceId: string,
-  target: string,
-) {
-  const targetIndex = PHASE_ORDER.indexOf(target);
-  for (let index = 0; index < targetIndex; index++) {
-    const advanced = await testData.advancePhase({
-      instanceId,
-      fromPhaseId: PHASE_ORDER[index]!,
-      toPhaseId: PHASE_ORDER[index + 1]!,
-    });
-    if (advanced.conflict) {
-      throw new Error(`Could not advance from ${PHASE_ORDER[index]}`);
-    }
-  }
-}
 
 // Makes the pending transition out of `fromStateId` due at `scheduledDate`.
 async function scheduleTransition(
@@ -559,7 +494,11 @@ describe('processDecisionsTransitions', () => {
       task.id,
       { makeDue: false },
     );
-    await advanceTo(testData, instanceId, 'voting');
+    await advanceAlong(testData, instanceId, [
+      'submission',
+      'review',
+      'voting',
+    ]);
 
     const [stale] = await db
       .insert(decisionProcessTransitions)
@@ -602,7 +541,7 @@ describe('processDecisionsTransitions', () => {
       task.id,
       { makeDue: false },
     );
-    await advanceTo(testData, instanceId, 'review');
+    await advanceAlong(testData, instanceId, ['submission', 'review']);
 
     const ahead = await scheduleTransition(instanceId, 'voting', hoursAgo(2));
     const next = await scheduleTransition(instanceId, 'review', hoursAgo(1));

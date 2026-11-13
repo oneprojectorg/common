@@ -130,3 +130,49 @@ export const schemaWithThreePhases = {
     { id: 'final', name: 'Final', rules: {} },
   ],
 };
+
+/**
+ * Four phases that all advance by date, each with a pass-all selectionPipeline
+ * so proposals flow forward. Used by transition-monitor and phase-write tests.
+ */
+export const fourPhaseDateSchema = {
+  id: 'four-phase-date',
+  version: '1.0.0',
+  name: 'Monitor Test Schema',
+  description: 'Date-based pass-all schema used for transition monitor tests.',
+  phases: [
+    {
+      id: 'submission',
+      name: 'Submission',
+      rules: {
+        proposals: { submit: true },
+        advancement: { method: 'date' },
+      },
+      selectionPipeline: { version: '1.0.0', blocks: [] },
+    },
+    {
+      id: 'review',
+      name: 'Review',
+      rules: {
+        advancement: { method: 'date' },
+      },
+      selectionPipeline: { version: '1.0.0', blocks: [] },
+    },
+    {
+      id: 'voting',
+      name: 'Voting',
+      rules: {
+        voting: { submit: true },
+        advancement: { method: 'date' },
+      },
+      selectionPipeline: { version: '1.0.0', blocks: [] },
+    },
+    {
+      id: 'results',
+      name: 'Results',
+      rules: {
+        advancement: { method: 'date' },
+      },
+    },
+  ],
+} satisfies DecisionSchemaDefinition;

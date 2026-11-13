@@ -16,7 +16,6 @@ import {
   listPhaseIds,
   loadBlobPhases,
   loadInstancePhases,
-  loadPendingTransitionLinks,
   loadPhaseRows,
   loadTransitionLinks,
   setupPublishedDateDecision,
@@ -552,7 +551,9 @@ describe.concurrent('createPhase', () => {
       { id: rows.voting.id },
       { id: rows.results.id },
     ]);
-    expect(await loadPendingTransitionLinks(instanceId)).toEqual([
+    expect(
+      await loadTransitionLinks(instanceId, { pendingOnly: true }),
+    ).toMatchObject([
       {
         fromStateId: 'voting',
         toStateId: 'results',

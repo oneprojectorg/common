@@ -7,7 +7,6 @@ import { describe, expect, it } from 'vitest';
 import {
   PHASE_NAME,
   createUnauthenticatedCaller,
-  loadPendingTransitionLinks,
   loadPhaseRows,
   loadTransitionLinks,
   setupPhase,
@@ -126,7 +125,9 @@ describe.concurrent('deletePhase', () => {
 
     await adminCaller.decision.deletePhase({ phaseId: rows.review.id });
 
-    expect(await loadPendingTransitionLinks(instanceId)).toEqual([
+    expect(
+      await loadTransitionLinks(instanceId, { pendingOnly: true }),
+    ).toMatchObject([
       {
         fromStateId: 'voting',
         toStateId: 'results',
