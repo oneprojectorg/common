@@ -1,6 +1,7 @@
 /**
  * Process schemas used by pipeline / transition tests.
  */
+import { rankedChoiceBudgetPipeline } from '../../src/services/decision/selectionPipeline/rankedChoiceBudgetPipeline';
 
 /**
  * Process schema with a limit(2) selectionPipeline on the departing 'submission' phase.
@@ -102,5 +103,56 @@ export const schemaWithThreePhases = {
     { id: 'submission', name: 'Submission', rules: {} },
     { id: 'review', name: 'Review', rules: {} },
     { id: 'final', name: 'Final', rules: {} },
+  ],
+};
+
+/**
+ * Ranked voting phase that selects by ranked-choice points under the phase's
+ * `budget` setting. submission → voting (pass-all), voting → results
+ * (rankedChoiceBudgetPipeline).
+ */
+export const schemaWithRankedBudgetPipeline = {
+  id: 'ranked-budget-pipeline-schema',
+  version: '1.0.0',
+  name: 'Ranked Budget Pipeline Process',
+  proposalTemplate: {
+    type: 'object',
+    properties: {
+      title: { type: 'string', 'x-format': 'short-text' },
+      budget: {
+        type: 'object',
+        'x-format': 'money',
+        properties: {
+          amount: { type: 'number' },
+          currency: { type: 'string', default: 'USD' },
+        },
+      },
+    },
+  },
+  phases: [
+    {
+      id: 'submission',
+      name: 'Submission',
+      rules: { proposals: { submit: true }, voting: { submit: false } },
+      selectionPipeline: { version: '1.0.0', blocks: [] },
+    },
+    {
+      id: 'voting',
+      name: 'Voting',
+      rules: {
+        proposals: { submit: false },
+        voting: { submit: true, ranked: true },
+      },
+      settings: {
+        type: 'object' as const,
+        properties: { budget: { type: 'number' as const, minimum: 0 } },
+      },
+      selectionPipeline: rankedChoiceBudgetPipeline,
+    },
+    {
+      id: 'results',
+      name: 'Results',
+      rules: { proposals: { submit: false }, voting: { submit: false } },
+    },
   ],
 };

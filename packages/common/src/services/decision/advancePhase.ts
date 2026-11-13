@@ -4,21 +4,30 @@ import {
   decisionProcessTransitions,
   processInstances,
   stateTransitionHistory,
+  type Proposal,
 } from '@op/db/schema';
 
 import { ConflictError } from '../../utils';
 import { attachProposalsToTransition } from './attachProposalsToTransition';
+import { getPhaseProposalCosts } from './getPhaseProposalCosts';
 import { getProposalsForPhase } from './getProposalsForPhase';
-import type {
-  DecisionInstanceData,
-  PhaseInstanceData,
+import {
+  type DecisionInstanceData,
+  type PhaseInstanceData,
+  getInstancePhases,
 } from './schemas/instanceData';
-import type { TransitionData } from './schemas/transitionData';
+import type {
+  SelectionAudit,
+  SelectionOutcomeRecord,
+  TransitionData,
+} from './schemas/transitionData';
 import {
   aggregateProposalMetrics,
   executeSelectionPipeline,
 } from './selectionPipeline';
+import { getPipelineScores } from './selectionPipeline/getPipelineScores';
 import type { ExecutionContext } from './selectionPipeline/types';
+import { usesBudgetBlock } from './selectionPipeline/usesBudgetBlock';
 
 export interface AdvancePhaseInput {
   db: DbClient;
@@ -96,6 +105,8 @@ export async function advancePhase(
     .select({
       currentStateId: processInstances.currentStateId,
       status: processInstances.status,
+      instanceData: processInstances.instanceData,
+      processId: processInstances.processId,
     })
     .from(processInstances)
     .where(eq(processInstances.id, instanceId))
@@ -117,7 +128,16 @@ export async function advancePhase(
     phases: instanceData.phases,
   });
 
-  const selectionPipeline = departingPhase.selectionPipeline;
+  // The caller's snapshot may predate a settings or pipeline edit; the locked row is current.
+  const lockedDepartingPhase = getInstancePhases(
+    lockedInstance.instanceData,
+  ).find((phase) => phase.phaseId === fromPhaseId);
+
+  if (!lockedDepartingPhase) {
+    return { conflict: true };
+  }
+
+  const selectionPipeline = lockedDepartingPhase.selectionPipeline;
 
   const allProposals = await getProposalsForPhase({
     instanceId,
@@ -126,19 +146,34 @@ export async function advancePhase(
 
   // Default to pass-none; phases opt into pass-all via an empty-blocks pipeline.
   let selectedProposalIds: string[] = [];
+  let selection: SelectionAudit | undefined;
 
-  // Awaiting approval: nothing is attached, so the manual selection screen
-  // shows and the admin's confirmation attaches the proposals.
-  if (selectionPipeline && !departingPhase.selectionNeedsApproval) {
-    const proposalMetrics = await aggregateProposalMetrics(allProposals, db);
+  if (selectionPipeline) {
+    const [proposalMetrics, proposalCosts] = await Promise.all([
+      aggregateProposalMetrics(allProposals, db),
+      usesBudgetBlock(selectionPipeline.blocks)
+        ? getPhaseProposalCosts({
+            instanceData: lockedInstance.instanceData,
+            processId: lockedInstance.processId,
+            phase: lockedDepartingPhase,
+            proposals: allProposals,
+          })
+        : undefined,
+    ]);
     const context: ExecutionContext = {
       proposals: allProposals,
       voteData: proposalMetrics,
-      variables: {},
+      proposalCosts,
+      variables: lockedDepartingPhase.settings ?? {},
       outputs: {},
     };
     const selected = await executeSelectionPipeline(selectionPipeline, context);
     selectedProposalIds = selected.map((p) => p.id);
+    selection = buildSelectionAudit({
+      proposals: allProposals,
+      selected,
+      skipped: context.skipped ?? [],
+    });
   }
 
   // Optimistic lock: only succeeds if currentStateId still matches fromPhaseId.
@@ -178,7 +213,9 @@ export async function advancePhase(
       processInstanceId: instanceId,
       fromStateId: fromPhaseId,
       toStateId: toPhaseId,
-      transitionData,
+      transitionData: selection
+        ? { ...transitionData, selection }
+        : transitionData,
       triggeredByProfileId,
     })
     .returning({ id: stateTransitionHistory.id });
@@ -187,6 +224,12 @@ export async function advancePhase(
     throw new Error(
       `stateTransitionHistory insert returned no ID for instance ${instanceId}`,
     );
+  }
+
+  // Awaiting approval: nothing is attached, so the manual selection screen
+  // shows and the admin's confirmation attaches the proposals.
+  if (lockedDepartingPhase.selectionNeedsApproval) {
+    selectedProposalIds = [];
   }
 
   await attachProposalsToTransition({
@@ -201,6 +244,50 @@ export async function advancePhase(
     transitionHistoryId: insertedTransition.id,
     selectedProposalIds,
   };
+}
+
+/** One outcome per proposal the pipeline saw, with the values blocks wrote on its copy. */
+function buildSelectionAudit({
+  proposals,
+  selected,
+  skipped,
+}: {
+  proposals: Proposal[];
+  selected: Proposal[];
+  skipped: Proposal[];
+}): SelectionAudit {
+  const selectedById = new Map(
+    selected.map((proposal) => [proposal.id, proposal]),
+  );
+  const skippedById = new Map(
+    skipped.map((proposal) => [proposal.id, proposal]),
+  );
+
+  const outcomeOf = (proposal: Proposal): SelectionOutcomeRecord => {
+    const selectedCopy = selectedById.get(proposal.id);
+    if (selectedCopy) {
+      return {
+        proposalId: proposal.id,
+        outcome: 'selected',
+        scores: getPipelineScores(selectedCopy),
+      };
+    }
+
+    const skippedCopy = skippedById.get(proposal.id);
+    if (skippedCopy) {
+      return {
+        proposalId: proposal.id,
+        outcome: 'skipped',
+        scores: getPipelineScores(skippedCopy),
+      };
+    }
+
+    return { proposalId: proposal.id, outcome: 'excluded', scores: {} };
+  };
+
+  const rest = proposals.filter((proposal) => !selectedById.has(proposal.id));
+
+  return { outcomes: [...selected, ...rest].map(outcomeOf) };
 }
 
 /**
