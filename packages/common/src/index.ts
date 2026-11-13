@@ -1,5 +1,6 @@
 export * from './money';
 export * from './realtime';
+export * from './schemaMapping';
 export * from './services';
 export * from './utils';
 export { signStorageDownloadUrl } from './utils/signStorageDownloadUrl';
