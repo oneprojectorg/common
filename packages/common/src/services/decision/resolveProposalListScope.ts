@@ -22,7 +22,7 @@ import {
   getPhaseProposalSqlScope,
 } from './getProposalsForPhase';
 import { getVoterBallot } from './getVoterBallot';
-import { type InstanceWithPhases, resolvePhases } from './instancePhases';
+import { type InstanceWithPhases, getPhases } from './instancePhases';
 import type { ListProposalsInput } from './listProposals';
 import { notSuperseded } from './proposalSupersession';
 import { buildProposalTitleSearchCondition } from './proposalTitleSearch';
@@ -238,10 +238,11 @@ export const resolveProposalListScope = async ({
 
   const explicitScopeIds = explicitScope?.ids;
 
-  const instanceRow = instanceRows[0];
-  if (!instanceRow?.profileId) {
+  const instance = instanceRows[0];
+  if (!instance?.profileId) {
     throw new UnauthorizedError('User does not have access to this process');
   }
+
   // Resolve phase-scope SQL predicates for non-drafts and drafts. Drafts are
   // phase-scoped via a `createdAt` window since they're never attached to
   // transition snapshots. The scope helper resolves the phase window once and
@@ -268,7 +269,7 @@ export const resolveProposalListScope = async ({
       };
     }
     return getPhaseProposalSqlScope({
-      instance: instanceRow,
+      instance,
       phaseId: input.phaseId,
       // Trusted (`skipAccessCheck`) callers never surface drafts. The helper
       // still returns a draft predicate using an empty access set, but the
@@ -289,7 +290,7 @@ export const resolveProposalListScope = async ({
     }
     const profileRoles = await assertInstanceProfileAccess({
       user,
-      instance: instanceRow,
+      instance,
       profilePermissions: [
         { decisions: permission.ADMIN },
         { decisions: permission.READ },
@@ -308,11 +309,11 @@ export const resolveProposalListScope = async ({
     };
   })();
 
-  const [phaseScope, { profileRoles, canManageProposals }, resolvedInstance] =
+  const [phaseScope, { profileRoles, canManageProposals }, phases] =
     await Promise.all([
       phaseScopePromise,
       accessPromise,
-      resolvePhases({ instance: instanceRow }),
+      getPhases({ instance }),
     ]);
 
   // Resolve category-scoped proposal IDs so the same ID set is available to
@@ -461,7 +462,7 @@ export const resolveProposalListScope = async ({
   };
 
   return {
-    instance: resolvedInstance,
+    instance: { ...instance, phases },
     currentProfileId,
     canManageProposals,
     profileRoles,

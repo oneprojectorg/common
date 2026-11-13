@@ -115,7 +115,7 @@ export const getDecisionInstanceRouter = router({
     .input(z.object({ instanceId: z.uuid() }))
     .output(adminDecisionInstanceDetailSchema)
     .query(async ({ input }) => {
-      const instanceRow = await db.query.processInstances.findFirst({
+      const instance = await db.query.processInstances.findFirst({
         where: { id: input.instanceId },
         with: {
           owner: { columns: { id: true, name: true, slug: true } },
@@ -125,21 +125,21 @@ export const getDecisionInstanceRouter = router({
         },
       });
 
-      if (!instanceRow) {
+      if (!instance) {
         throw new NotFoundError('Decision instance not found');
       }
 
       // No profile of its own means no grant to carry.
-      const [resolvedInstance, isPublic] = await Promise.all([
-        resolvePhases({ instance: instanceRow }),
-        instanceRow.profileId
-          ? isDecisionPublic({ profileId: instanceRow.profileId })
+      const [resolved, isPublic] = await Promise.all([
+        resolvePhases({ instance }),
+        instance.profileId
+          ? isDecisionPublic({ profileId: instance.profileId })
           : false,
       ]);
 
       const wireInstanceData = putPhasesOnInstanceData({
-        instanceData: resolvedInstance.instanceData,
-        phases: resolvedInstance.phases,
+        instanceData: instance.instanceData,
+        phases: resolved.phases,
       });
       const parsed = detailInstanceData.safeParse(wireInstanceData);
       const { phases = [], ...instanceData } = parsed.success
@@ -147,7 +147,7 @@ export const getDecisionInstanceRouter = router({
         : {};
 
       const schemaParsed = detailProcessSchema.safeParse(
-        resolvedInstance.process?.processSchema,
+        instance.process?.processSchema,
       );
       const schemaRulesByPhaseId = new Map(
         (schemaParsed.success ? (schemaParsed.data.phases ?? []) : []).map(
@@ -156,18 +156,18 @@ export const getDecisionInstanceRouter = router({
       );
 
       return adminDecisionInstanceDetailSchema.parse({
-        id: resolvedInstance.id,
-        name: resolvedInstance.name,
-        slug: resolvedInstance.profile?.slug ?? null,
-        profileId: resolvedInstance.profileId,
-        status: resolvedInstance.status,
-        createdAt: resolvedInstance.createdAt,
+        id: instance.id,
+        name: instance.name,
+        slug: instance.profile?.slug ?? null,
+        profileId: instance.profileId,
+        status: instance.status,
+        createdAt: instance.createdAt,
         isPublic,
-        owner: resolvedInstance.owner ?? null,
-        steward: resolvedInstance.steward ?? null,
+        owner: instance.owner ?? null,
+        steward: instance.steward ?? null,
         reviewsPolicy: instanceData.config?.reviewsPolicy ?? null,
         processType:
-          instanceData.templateName ?? resolvedInstance.process?.name ?? null,
+          instanceData.templateName ?? instance.process?.name ?? null,
         templateVersion: instanceData.templateVersion ?? null,
         config: {
           isPrivate: instanceData.config?.isPrivate ?? false,
@@ -200,7 +200,7 @@ export const getDecisionInstanceRouter = router({
             name: phase.name ?? null,
             startDate: phase.startDate ?? null,
             endDate: phase.endDate ?? null,
-            isCurrent: phase.phaseId === resolvedInstance.currentStateId,
+            isCurrent: phase.phaseId === instance.currentStateId,
             hasProposals: rules?.proposals?.submit ?? false,
             hasReviews: isReviewPhase({ rules }),
             hasVoting: rules?.voting?.submit ?? false,

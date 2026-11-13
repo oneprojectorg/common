@@ -9,7 +9,7 @@ import {
   type AssignableProposal,
   insertReviewAssignments,
 } from './insertReviewAssignments';
-import { resolvePhases } from './instancePhases';
+import { getPhases } from './instancePhases';
 import type { DecisionInstanceData } from './schemas/instanceData';
 import { assertInstancePhase } from './utils/instance';
 import { getPhaseReviewSettings, isReviewPhase } from './utils/phaseSettings';
@@ -46,29 +46,29 @@ export async function backfillReviewAssignments({
     return { skipped: reason };
   };
 
-  const instanceRow = await db.query.processInstances.findFirst({
+  const instance = await db.query.processInstances.findFirst({
     where: { id: instanceId },
   });
 
-  if (!instanceRow) {
+  if (!instance) {
     return skip('instance not found');
   }
-  if (instanceRow.status !== ProcessStatus.PUBLISHED) {
-    return skip(`instance is not published (status: ${instanceRow.status})`);
+  if (instance.status !== ProcessStatus.PUBLISHED) {
+    return skip(`instance is not published (status: ${instance.status})`);
   }
-  if (!instanceRow.profileId) {
+  if (!instance.profileId) {
     return skip('instance has no profileId');
   }
-  const currentPhaseId = instanceRow.currentStateId;
+  const currentPhaseId = instance.currentStateId;
   if (!currentPhaseId) {
     return skip('instance has no current phase');
   }
 
-  const resolvedInstance = await resolvePhases({ instance: instanceRow });
-  const { config } = resolvedInstance.instanceData as DecisionInstanceData;
+  const instanceData = instance.instanceData as DecisionInstanceData;
+  const phases = await getPhases({ instance, db });
 
   const currentPhase = assertInstancePhase({
-    instance: resolvedInstance,
+    instance: { phases },
     phaseId: currentPhaseId,
   });
   if (!isReviewPhase(currentPhase)) {
@@ -76,7 +76,7 @@ export async function backfillReviewAssignments({
   }
 
   const reviewSettings = getPhaseReviewSettings(
-    { config, phases: resolvedInstance.phases },
+    { ...instanceData, phases },
     currentPhaseId,
   );
 
@@ -107,7 +107,7 @@ export async function backfillReviewAssignments({
     getAttachedPhaseProposals({ transitionHistoryId: inboundTransition.id }),
 
     getEligibleReviewerProfileIds({
-      decisionProfileId: instanceRow.profileId,
+      decisionProfileId: instance.profileId,
     }),
   ]);
 
