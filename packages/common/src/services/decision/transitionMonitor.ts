@@ -15,6 +15,7 @@ import {
   resolvePhases,
   resolvePhasesForAll,
 } from './instancePhases';
+import { lockProcessInstance } from './lockProcessInstance';
 import { onPhaseAdvanced } from './onPhaseAdvanced';
 
 export interface ProcessDecisionsTransitionsResult {
@@ -163,7 +164,60 @@ function groupTransitionsByInstance(
 }
 
 /**
- * Advance one instance's transitions sequentially. Stops on conflict or error.
+ * Completes a pending transition out of a phase the decision has already
+ * left, so it stops blocking the transitions behind it. A conflict on any
+ * other transition is a concurrent writer and is left alone.
+ */
+async function completeStaleTransition({
+  instance,
+  transitionId,
+  fromPhaseId,
+  now,
+}: {
+  instance: InstanceWithPhases<{ id: string; instanceData: unknown }>;
+  transitionId: string;
+  fromPhaseId: string;
+  now: string;
+}): Promise<boolean> {
+  return db.transaction(async (tx) => {
+    const locked = await lockProcessInstance({
+      db: tx,
+      instanceId: instance.id,
+    });
+    if (!locked) {
+      return false;
+    }
+
+    const phaseIds = instance.phases.map(({ phaseId }) => phaseId);
+    const fromIndex = phaseIds.indexOf(fromPhaseId);
+    const currentIndex = locked.currentStateId
+      ? phaseIds.indexOf(locked.currentStateId)
+      : -1;
+    if (fromIndex === -1 || fromIndex >= currentIndex) {
+      return false;
+    }
+
+    await tx
+      .update(decisionProcessTransitions)
+      .set({ completedAt: now })
+      .where(
+        and(
+          eq(decisionProcessTransitions.id, transitionId),
+          isNull(decisionProcessTransitions.completedAt),
+        ),
+      );
+
+    logger.warn('Completed a stale transition out of a past phase', {
+      transitionId,
+      processInstanceId: instance.id,
+    });
+    return true;
+  });
+}
+
+/**
+ * Advance one instance's transitions sequentially. Stops on error, or on a
+ * conflict that is not a stale transition out of a past phase.
  * Returns the last successfully reached phase ID, or null if nothing advanced.
  */
 async function advanceInstanceTransitions({
@@ -208,6 +262,15 @@ async function advanceInstanceTransitions({
       );
 
       if (advanceResult.conflict) {
+        const skipped = await completeStaleTransition({
+          instance: current,
+          transitionId: transition.id,
+          fromPhaseId,
+          now,
+        });
+        if (skipped) {
+          continue;
+        }
         break;
       }
 

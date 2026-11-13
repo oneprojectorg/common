@@ -12,8 +12,9 @@ import type { ScheduledTransition } from './types';
 export function buildExpectedTransitions(processInstance: {
   id: string;
   phases: readonly PhaseInstanceData[];
+  currentStateId?: string | null;
 }): ScheduledTransition[] {
-  const { phases } = processInstance;
+  const { phases, currentStateId } = processInstance;
 
   if (phases.length === 0) {
     throw new CommonError(
@@ -22,11 +23,19 @@ export function buildExpectedTransitions(processInstance: {
   }
 
   const transitions: ScheduledTransition[] = [];
+  const currentIndex = phases.findIndex(
+    ({ phaseId }) => phaseId === currentStateId,
+  );
 
   phases.forEach((currentPhase, index) => {
     const nextPhase = phases[index + 1];
     // Skip last phase (no next phase to transition to)
     if (!nextPhase) {
+      return;
+    }
+
+    // A phase the decision has already left can never be advanced from.
+    if (index < currentIndex) {
       return;
     }
 

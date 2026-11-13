@@ -93,6 +93,7 @@ export const writePhasesInTx = async <T>({
       processInstance: {
         id: processInstanceId,
         instanceData: locked.instanceData,
+        currentStateId: locked.currentStateId,
       },
       phases,
       db: tx,
