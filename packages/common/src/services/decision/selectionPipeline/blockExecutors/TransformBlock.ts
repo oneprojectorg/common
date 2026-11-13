@@ -16,7 +16,7 @@ export class TransformBlock implements BlockExecutor<TransformBlockType> {
     const transformedProposals = context.proposals.map((proposal) => {
       const proposalContext = {
         ...context,
-        proposal,
+        record: proposal,
       };
 
       // Create a deep copy of the proposal to avoid mutations

@@ -11,15 +11,16 @@ export class LimitBlock implements BlockExecutor<LimitBlockType> {
     block: LimitBlockType,
     context: ExecutionContext,
   ): BlockExecutionResult {
+    const scope = { ...context, record: context };
     const count =
       typeof block.count === 'number'
         ? block.count
-        : evaluateExpression(block.count, context);
+        : evaluateExpression(block.count, scope);
 
     const offset = block.offset
       ? typeof block.offset === 'number'
         ? block.offset
-        : evaluateExpression(block.offset, context)
+        : evaluateExpression(block.offset, scope)
       : 0;
 
     // Ensure non-negative values
