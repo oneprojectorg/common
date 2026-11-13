@@ -1,3 +1,4 @@
+export { checkMappingRules } from './checkMappingRules';
 export { isSameSchemaRef, mapToSchema } from './mapToSchema';
 export {
   MAX_MAPPING_EXPRESSION_ARGUMENTS,
@@ -13,5 +14,10 @@ export type {
   MappingInput,
   MappingResult,
   MappingRule,
+  MappingRuleProblem,
+  MappingTypeDescription,
+  MappingValueType,
+  NumericOperation,
+  SchemaEntry,
   SchemaRef,
 } from './types';
