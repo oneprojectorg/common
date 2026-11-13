@@ -2,6 +2,9 @@ import { z } from 'zod';
 
 const FORBIDDEN_KEYS = new Set(['__proto__', 'prototype', 'constructor']);
 
+// Temporary: a schema is named by its type and phase, because rubrics and
+// the instance template have no stable ID yet. Change this to a form schema
+// ID (ADR 0019) before mappings are stored.
 export const schemaRefSchema = z.strictObject({
   type: z.enum(['proposal', 'review']),
   phaseId: z.string().min(1),
