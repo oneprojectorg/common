@@ -12,7 +12,7 @@ vi.mock('../email/recipients', () => ({
 }));
 
 vi.mock('./instancePhases', () => ({
-  getPhases: vi.fn(),
+  resolvePhases: vi.fn(),
 }));
 
 import { db } from '@op/db/client';
@@ -21,7 +21,7 @@ import {
   type EmailRecipient,
   listMemberProfileRecipients,
 } from '../email/recipients';
-import { getPhases } from './instancePhases';
+import { resolvePhases } from './instancePhases';
 import { listProposalRejectionRecipients } from './listProposalRejectionRecipients';
 import type { PhaseInstanceData } from './schemas/instanceData';
 
@@ -33,7 +33,13 @@ const PROCESS_INSTANCE_ID = '55555555-5555-4555-8555-555555555555';
 
 const findFirst = vi.mocked(db.query.proposals.findFirst);
 const recipientsOf = vi.mocked(listMemberProfileRecipients);
-const readPhases = vi.mocked(getPhases);
+const readPhases = vi.mocked(resolvePhases);
+
+const returnPhases = (phases: PhaseInstanceData[]) =>
+  readPhases.mockImplementation(async ({ instance }) => ({
+    ...instance,
+    phases,
+  }));
 
 const ADA: EmailRecipient = {
   email: 'ada@example.com',
@@ -78,7 +84,7 @@ describe('listProposalRejectionRecipients', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     recipientsOf.mockResolvedValue([ADA]);
-    readPhases.mockResolvedValue(PHASES);
+    returnPhases(PHASES);
   });
 
   it('addresses the authors of a proposal that is still rejected', async () => {
@@ -115,7 +121,7 @@ describe('listProposalRejectionRecipients', () => {
       [{ phaseId: 'review' }, { phaseId: 'voting' }],
     ],
   ])('names no phase when %s', async (_label, overrides, phases) => {
-    readPhases.mockResolvedValue(phases);
+    returnPhases(phases);
     findFirst.mockResolvedValue(rejectedProposal(overrides) as never);
 
     const result = await run();
