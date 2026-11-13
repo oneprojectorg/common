@@ -3,7 +3,8 @@
   "dialect": "postgres",
   "id": "147d002c-4aec-4154-ae1c-4ef509578617",
   "prevIds": [
-    "d88803f9-1a6e-41a1-bced-3148f8e2bcb8"
+    "d88803f9-1a6e-41a1-bced-3148f8e2bcb8",
+    "1b4f4610-b111-4dd9-a43f-35f264483064"
   ],
   "ddl": [
     {
@@ -114,7 +115,8 @@
     },
     {
       "values": [
-        "merged"
+        "merged",
+        "developed"
       ],
       "name": "decision_proposal_relationship_type",
       "entityType": "enums",
