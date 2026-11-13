@@ -1,8 +1,9 @@
 import type { DecisionSchemaDefinition } from '@op/common';
 import {
+  TEST_PERMISSION_BITS,
   type TestDecisionsDataManager,
   createCategoryReviewer,
-  grantInstanceReviewerRole,
+  grantInstanceRole,
   testMinimalSchema,
 } from '@op/common/testing';
 import { db } from '@op/db/client';
@@ -67,26 +68,33 @@ export async function createCategoryDevelopSetup({
 }
 
 /**
- * A member with Review on the instance and a category reviewer row for each
- * entry of `rows`.
+ * A member with a role on the instance (by default Develop Proposals) and a
+ * category reviewer row for each entry of `rows`.
  */
 export async function createCategoryDevelopReviewer({
   testData,
   setup,
   rows,
+  decisionsPermission = TEST_PERMISSION_BITS.READ |
+    TEST_PERMISSION_BITS.DEVELOP_PROPOSALS,
+  profilePermission = TEST_PERMISSION_BITS.READ,
 }: {
   testData: TestDecisionsDataManager;
   setup: Awaited<ReturnType<typeof createCategoryDevelopSetup>>['setup'];
   rows: { taxonomyTermId: string; phaseId: string | null }[];
+  decisionsPermission?: number;
+  profilePermission?: number;
 }) {
   const member = await testData.createMemberUser({
     organization: setup.organization,
   });
-  await grantInstanceReviewerRole({
+  await grantInstanceRole({
     instanceProfileId: setup.instance.profileId,
     authUserId: member.authUserId,
     email: member.email,
-    roleName: `Reviewer ${member.authUserId}`,
+    roleName: `Category developer ${member.authUserId}`,
+    decisionsPermission,
+    profilePermission,
   });
   const rowIds = await Promise.all(
     rows.map(async ({ taxonomyTermId, phaseId }) => {

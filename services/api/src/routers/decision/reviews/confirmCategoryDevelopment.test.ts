@@ -1,4 +1,7 @@
-import { TestDecisionsDataManager } from '@op/common/testing';
+import {
+  TEST_PERMISSION_BITS,
+  TestDecisionsDataManager,
+} from '@op/common/testing';
 import { db, eq, sql } from '@op/db/client';
 import { categoryReviewers } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
@@ -55,7 +58,7 @@ describe.concurrent('confirmCategoryDevelopment', () => {
     expect(data.get(other.rowIds[0] ?? '')).toEqual({});
   });
 
-  it('refuses a reviewer with no row for the category', async ({
+  it('refuses a Develop Proposals holder with no row for the category', async ({
     task,
     onTestFinished,
   }) => {
@@ -75,6 +78,90 @@ describe.concurrent('confirmCategoryDevelopment', () => {
         taxonomyTermId: termA.id,
       }),
     ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
+  });
+
+  it('refuses Review and an own row without Develop Proposals', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instanceId, termA } = await createCategoryDevelopSetup({
+      testData,
+      onTestFinished,
+    });
+    const reviewer = await createCategoryDevelopReviewer({
+      testData,
+      setup,
+      rows: [{ taxonomyTermId: termA.id, phaseId: 'final' }],
+      decisionsPermission:
+        TEST_PERMISSION_BITS.READ | TEST_PERMISSION_BITS.REVIEW,
+    });
+
+    const caller = await createAuthenticatedCaller(reviewer.email);
+    await expect(
+      caller.decision.confirmCategoryDevelopment({
+        processInstanceId: instanceId,
+        taxonomyTermId: termA.id,
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
+
+    const data = await getCategoryReviewerData(reviewer.rowIds);
+    expect(data.get(reviewer.rowIds[0] ?? '')).toEqual({});
+  });
+
+  it('lets a profile admin and a decisions admin without Develop Proposals stamp every row', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instanceId, termA, termB } =
+      await createCategoryDevelopSetup({ testData, onTestFinished });
+    const { ADMIN, READ } = TEST_PERMISSION_BITS;
+    const [profileAdmin, decisionsAdmin, rowA, rowB] = await Promise.all([
+      createCategoryDevelopReviewer({
+        testData,
+        setup,
+        rows: [],
+        decisionsPermission: READ,
+        profilePermission: READ | ADMIN,
+      }),
+      createCategoryDevelopReviewer({
+        testData,
+        setup,
+        rows: [],
+        decisionsPermission: READ | ADMIN,
+      }),
+      createCategoryDevelopReviewer({
+        testData,
+        setup,
+        rows: [{ taxonomyTermId: termA.id, phaseId: 'final' }],
+      }),
+      createCategoryDevelopReviewer({
+        testData,
+        setup,
+        rows: [{ taxonomyTermId: termB.id, phaseId: 'final' }],
+      }),
+    ]);
+
+    const [profileAdminCaller, decisionsAdminCaller] = await Promise.all([
+      createAuthenticatedCaller(profileAdmin.email),
+      createAuthenticatedCaller(decisionsAdmin.email),
+    ]);
+    await profileAdminCaller.decision.confirmCategoryDevelopment({
+      processInstanceId: instanceId,
+      taxonomyTermId: termA.id,
+    });
+    await decisionsAdminCaller.decision.confirmCategoryDevelopment({
+      processInstanceId: instanceId,
+      taxonomyTermId: termB.id,
+    });
+
+    const data = await getCategoryReviewerData([
+      ...rowA.rowIds,
+      ...rowB.rowIds,
+    ]);
+    expect(data.get(rowA.rowIds[0] ?? '')).toEqual(stamped);
+    expect(data.get(rowB.rowIds[0] ?? '')).toEqual(stamped);
   });
 
   it('refuses a reviewer whose only row has no phase', async ({

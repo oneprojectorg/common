@@ -1,4 +1,7 @@
-import { TestDecisionsDataManager } from '@op/common/testing';
+import {
+  TEST_PERMISSION_BITS,
+  TestDecisionsDataManager,
+} from '@op/common/testing';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -99,6 +102,37 @@ describe.concurrent('unconfirmCategoryDevelopment', () => {
     ]);
     expect(data.get(first.rowIds[0] ?? '')).toEqual(stamped);
     expect(data.get(second.rowIds[0] ?? '')).toEqual(stamped);
+  });
+
+  it('refuses Review and an own stamped row without Develop Proposals', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instanceId, termA, adminCaller } =
+      await createConfirmedCategory({ testData, onTestFinished });
+    const reviewer = await createCategoryDevelopReviewer({
+      testData,
+      setup,
+      rows: [{ taxonomyTermId: termA.id, phaseId: 'final' }],
+      decisionsPermission:
+        TEST_PERMISSION_BITS.READ | TEST_PERMISSION_BITS.REVIEW,
+    });
+    await adminCaller.decision.confirmCategoryDevelopment({
+      processInstanceId: instanceId,
+      taxonomyTermId: termA.id,
+    });
+
+    const caller = await createAuthenticatedCaller(reviewer.email);
+    await expect(
+      caller.decision.unconfirmCategoryDevelopment({
+        processInstanceId: instanceId,
+        taxonomyTermId: termA.id,
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
+
+    const data = await getCategoryReviewerData(reviewer.rowIds);
+    expect(data.get(reviewer.rowIds[0] ?? '')).toEqual(stamped);
   });
 
   it('lets an admin clear the stamp of every row of the category', async ({
