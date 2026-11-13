@@ -1,5 +1,6 @@
-import { evaluateMappingExpression } from './evaluateMappingExpression';
-import { isRecord, parseJsonPointer, writeJsonPointer } from './jsonPointer';
+import { setValueByPath } from '../services/decision/selectionPipeline/expressionEvaluator';
+import { evaluateMappingValue } from './evaluateMappingValue';
+import { getFieldPathDepth, isRecord } from './fieldPath';
 import type {
   MappingCandidate,
   MappingInput,
@@ -9,7 +10,7 @@ import type {
 } from './types';
 
 /**
- * Collects a candidate per rule and matching input, keyed by target pointer.
+ * Collects a candidate per rule and matching input, keyed by target field.
  * A target field is filled only when all its candidates are equal.
  */
 export const mapToSchema = ({
@@ -21,13 +22,10 @@ export const mapToSchema = ({
   inputs: MappingInput[];
   targetSchema: SchemaRef;
 }): MappingResult => {
-  const candidatesByPointer = new Map<string, MappingCandidate[]>();
+  const candidatesByField = new Map<string, MappingCandidate[]>();
 
   for (const rule of rules) {
-    if (
-      !isSameSchemaRef({ left: rule.targetSchema, right: targetSchema }) ||
-      !parseJsonPointer(rule.targetPointer)?.length
-    ) {
+    if (!isSameSchemaRef({ left: rule.targetSchema, right: targetSchema })) {
       continue;
     }
 
@@ -35,7 +33,7 @@ export const mapToSchema = ({
       if (!isSameSchemaRef({ left: input.schema, right: rule.sourceSchema })) {
         continue;
       }
-      const value = evaluateMappingExpression({
+      const value = evaluateMappingValue({
         expression: rule.value,
         data: input.data,
       });
@@ -43,33 +41,30 @@ export const mapToSchema = ({
         continue;
       }
 
-      const candidates = candidatesByPointer.get(rule.targetPointer) ?? [];
+      const candidates = candidatesByField.get(rule.targetField) ?? [];
       candidates.push({ value: structuredClone(value), sourceId: input.id });
-      candidatesByPointer.set(rule.targetPointer, candidates);
+      candidatesByField.set(rule.targetField, candidates);
     }
   }
 
   const data: Record<string, unknown> = {};
-  const pointersShallowFirst = [...candidatesByPointer.keys()].sort(
-    comparePointerDepth,
+  const fieldsShallowFirst = [...candidatesByField.keys()].sort(
+    compareFieldDepth,
   );
-  for (const pointer of pointersShallowFirst) {
-    const [first, ...rest] = candidatesByPointer.get(pointer) ?? [];
+  for (const field of fieldsShallowFirst) {
+    const [first, ...rest] = candidatesByField.get(field) ?? [];
     if (
       first &&
       rest.every((candidate) =>
         isDeepEqual({ left: first.value, right: candidate.value }),
-      )
+      ) &&
+      !passesThroughNonObject({ data, path: field })
     ) {
-      writeJsonPointer({
-        target: data,
-        pointer,
-        value: structuredClone(first.value),
-      });
+      setValueByPath(data, field, structuredClone(first.value));
     }
   }
 
-  return { data, candidates: Object.fromEntries(candidatesByPointer) };
+  return { data, candidates: Object.fromEntries(candidatesByField) };
 };
 
 export const isSameSchemaRef = ({
@@ -80,12 +75,31 @@ export const isSameSchemaRef = ({
   right: SchemaRef;
 }): boolean => left.type === right.type && left.phaseId === right.phaseId;
 
-const comparePointerDepth = (left: string, right: string): number =>
-  getPointerDepth(left) - getPointerDepth(right) ||
+const compareFieldDepth = (left: string, right: string): number =>
+  getFieldPathDepth(left) - getFieldPathDepth(right) ||
   Number(left > right) - Number(left < right);
 
-const getPointerDepth = (pointer: string): number =>
-  parseJsonPointer(pointer)?.length ?? 0;
+// setValueByPath replaces a value that is not an object with one, which would
+// drop a field filled by a shallower rule.
+const passesThroughNonObject = ({
+  data,
+  path,
+}: {
+  data: Record<string, unknown>;
+  path: string;
+}): boolean => {
+  let current: unknown = data;
+  for (const segment of path.split('.').slice(0, -1)) {
+    if (!isRecord(current)) {
+      return true;
+    }
+    if (!Object.hasOwn(current, segment)) {
+      return false;
+    }
+    current = current[segment];
+  }
+  return !isRecord(current);
+};
 
 const isDeepEqual = ({
   left,

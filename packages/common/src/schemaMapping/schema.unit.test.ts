@@ -1,25 +1,25 @@
 import { describe, expect, it } from 'vitest';
 
+import type { Expression } from '../services/decision/selectionPipeline/types';
 import {
   MAX_MAPPING_EXPRESSION_ARGUMENTS,
   MAX_MAPPING_EXPRESSION_DEPTH,
   mappingExpressionSchema,
   mappingRuleSchema,
 } from './schema';
-import type { MappingExpression } from './types';
 
 const validRule = {
   sourceSchema: { type: 'review', phaseId: 'feasibility' },
   targetSchema: { type: 'proposal', phaseId: 'ballot' },
-  targetPointer: '/budget/amount',
+  targetField: 'budget.amount',
   value: {
     function: 'round',
     arguments: [
       {
         function: 'sum',
         arguments: [
-          { pointer: '/cost_design/amount' },
-          { pointer: '/cost_construction/amount' },
+          { field: 'cost_design.amount' },
+          { field: 'cost_construction.amount' },
         ],
       },
     ],
@@ -31,12 +31,13 @@ describe('mappingRuleSchema', () => {
     expect(mappingRuleSchema.safeParse(validRule).success).toBe(true);
   });
 
-  it('rejects an unknown schema type, an empty target pointer and extra keys', () => {
+  it('rejects an unknown schema type, a bad target field and extra keys', () => {
     for (const rule of [
       { ...validRule, sourceSchema: { type: 'comment', phaseId: 'a' } },
-      { ...validRule, targetPointer: '' },
-      { ...validRule, targetPointer: 'budget' },
-      { ...validRule, targetPointer: '/__proto__/amount' },
+      { ...validRule, targetField: '' },
+      { ...validRule, targetField: 'budget..amount' },
+      { ...validRule, targetField: '__proto__.amount' },
+      { ...validRule, targetPointer: '/budget/amount' },
       { ...validRule, extra: true },
     ]) {
       expect(mappingRuleSchema.safeParse(rule).success).toBe(false);
@@ -47,28 +48,42 @@ describe('mappingRuleSchema', () => {
 describe('mappingExpressionSchema', () => {
   it('accepts every node shape', () => {
     for (const expression of [
-      { pointer: '' },
-      { pointer: '/__overall_recommendation' },
+      { field: '__overall_recommendation' },
+      { field: 'attachments.0' },
       { value: null },
       { value: 12 },
-      { operator: 'divide', operands: [{ pointer: '/a' }, { value: 2 }] },
-      { function: 'coalesce', arguments: [{ pointer: '/a' }] },
+      { value: ['a', 'b'] },
+      { operator: 'divide', operands: [{ field: 'a' }, { value: 2 }] },
+      { operator: 'modulo', operands: [{ field: 'a' }, { value: 2 }] },
+      { operator: 'in', left: { field: 'a' }, right: { value: ['x', 'y'] } },
+      { and: [{ field: 'a' }] },
+      { or: [{ field: 'a' }, { field: 'b' }] },
+      { not: { field: 'a' } },
+      { function: 'coalesce', arguments: [{ field: 'a' }] },
+      {
+        function: 'if',
+        arguments: [{ field: 'a' }, { value: 1 }, { value: 2 }],
+      },
     ]) {
       expect(mappingExpressionSchema.safeParse(expression).success).toBe(true);
     }
   });
 
-  it('rejects mixed node shapes, bad pointers and bad argument counts', () => {
+  it('rejects variables, unknown functions, mixed shapes, bad paths and bad argument counts', () => {
     for (const expression of [
-      { pointer: '/a', value: 1 },
+      { variable: '$threshold' },
+      { function: 'median', arguments: [{ value: 1 }] },
+      { field: 'a', value: 1 },
       { operator: 'add', operands: [{ value: 1 }], function: 'sum' },
-      { pointer: 'a' },
-      { pointer: '/a~2' },
-      { pointer: '/constructor' },
+      { and: [{ field: 'a' }], or: [{ field: 'b' }] },
+      { and: [] },
+      { field: '' },
+      { field: 'a..b' },
+      { field: 'constructor' },
       { value: { nested: true } },
-      { operator: 'power', operands: [{ value: 1 }, { value: 2 }] },
+      { operator: 'between', left: { value: 1 }, right: { value: 2 } },
       { operator: 'add', operands: [{ value: 1 }] },
-      { function: 'round', arguments: [{ value: 1 }, { value: 2 }] },
+      { function: 'if', arguments: [{ value: true }, { value: 1 }] },
       { function: 'sum', arguments: [] },
       {
         function: 'sum',
@@ -96,8 +111,8 @@ describe('mappingExpressionSchema', () => {
   });
 });
 
-const buildNestedExpression = (depth: number): MappingExpression => {
-  let expression: MappingExpression = { pointer: '/cost' };
+const buildNestedExpression = (depth: number): Expression => {
+  let expression: Expression = { field: 'cost' };
   for (let level = 1; level < depth; level++) {
     expression = { function: 'round', arguments: [expression] };
   }
