@@ -47,12 +47,19 @@ The service stores each proposal's outcome per transition: selected or
 skipped, position, scores, cost and remaining budget. An admin can still
 advance a skipped proposal by hand.
 
+A phase with `selectionNeedsApproval` runs its pipeline and stores the
+outcomes, but advances nothing. The selection screen shows the outcomes
+preselected. The admin's confirmation advances the proposals and marks the
+transition as approved, so the screen does not show again.
+
 ## Consequences
 
 - A new voting method is template JSON. A new fact is one change to the
   aggregator.
 - Results show the stored outcome, so later vote changes do not alter it.
 - A phase that must advance proposals without an admin needs a pipeline.
+- Until an admin approves, a phase with `selectionNeedsApproval` has no
+  proposals, and its review assignments and results wait for approval.
 - Schema validation checks a pipeline's shape, not its meaning. A wrong
   formula selects the wrong set without an error.
 - A proposal with no cost counts as 0, so the `budget` block always accepts
