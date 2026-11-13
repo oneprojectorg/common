@@ -22,7 +22,7 @@ async function createAuthenticatedCaller(email: string) {
 }
 
 describe.concurrent('createDevelopedProposal', () => {
-  it('lets a caller with Develop Proposals create a draft developed from a proposal of the previous phase', async ({
+  it('lets a caller with Develop Proposals create a draft developed from a submitted proposal', async ({
     task,
     onTestFinished,
   }) => {

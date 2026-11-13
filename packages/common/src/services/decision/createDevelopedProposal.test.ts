@@ -5,11 +5,12 @@ import {
   grantInstanceReviewerRole,
   testDevelopSchema,
 } from '@op/common/testing';
-import { db } from '@op/db/client';
+import { db, eq } from '@op/db/client';
 import {
   ProcessStatus,
   ProposalRelationshipType,
   ProposalStatus,
+  proposals,
 } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
@@ -263,7 +264,7 @@ describe.concurrent('createDevelopedProposal', () => {
     );
   });
 
-  it('refuses a source that was not in the previous phase', async ({
+  it('accepts a source from a phase other than the previous one', async ({
     task,
     onTestFinished,
   }) => {
@@ -276,38 +277,70 @@ describe.concurrent('createDevelopedProposal', () => {
       status: ProposalStatus.SUBMITTED,
     });
 
+    const draft = await createDevelopedProposal({
+      data: {
+        processInstanceId: instanceId,
+        sourceProposalIds: [lateProposal.id],
+        proposalData: { title: 'Developed' },
+      },
+      user: setup.user,
+    });
+    testData.trackProfileForCleanup(draft.profileId);
+
+    await expect(readDevelopedSourceIds(draft.id)).resolves.toEqual([
+      lateProposal.id,
+    ]);
+  });
+
+  it('refuses a rejected source and names it', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instanceId, source } = await createDevelopPhaseSetup({
+      testData,
+    });
+    await db
+      .update(proposals)
+      .set({ status: ProposalStatus.REJECTED })
+      .where(eq(proposals.id, source.id));
+
     await expectRefused(
       createDevelopedProposal({
         data: {
           processInstanceId: instanceId,
-          sourceProposalIds: [lateProposal.id],
+          sourceProposalIds: [source.id],
           proposalData: { title: 'Refused' },
         },
         user: setup.user,
       }),
       ValidationError,
-      lateProposal.id,
+      `These proposals cannot be developed: ${source.id}`,
     );
   });
 
-  it('refuses a source listed twice', async ({ task, onTestFinished }) => {
+  it('writes one edge per source when a source is listed twice', async ({
+    task,
+    onTestFinished,
+  }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
     const { setup, instanceId, source } = await createDevelopPhaseSetup({
       testData,
     });
 
-    await expectRefused(
-      createDevelopedProposal({
-        data: {
-          processInstanceId: instanceId,
-          sourceProposalIds: [source.id, source.id],
-          proposalData: { title: 'Refused' },
-        },
-        user: setup.user,
-      }),
-      ValidationError,
+    const draft = await createDevelopedProposal({
+      data: {
+        processInstanceId: instanceId,
+        sourceProposalIds: [source.id, source.id],
+        proposalData: { title: 'Developed' },
+      },
+      user: setup.user,
+    });
+    testData.trackProfileForCleanup(draft.profileId);
+
+    await expect(readDevelopedSourceIds(draft.id)).resolves.toEqual([
       source.id,
-    );
+    ]);
   });
 
   it('allows one source to be developed into two drafts', async ({
