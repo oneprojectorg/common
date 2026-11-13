@@ -1791,4 +1791,38 @@ describe.concurrent('getProposal: form schema rows', () => {
     expect(readOnInstance.formSchemaId).toBeNull();
     expect(readOnInstance.proposalTemplate).toEqual(instanceTemplate);
   });
+
+  it('given a row of another decision, when a proposal points at it, then the database refuses it', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 2,
+      grantAccess: true,
+      proposalTemplate: instanceTemplate,
+    });
+    const [ownInstance, otherInstance] = setup.instances;
+    if (!ownInstance || !otherInstance) {
+      throw new Error('expected two instances');
+    }
+
+    const otherRow = await insertFormSchema({
+      processInstanceId: otherInstance.instance.id,
+      name: 'Ballot entry',
+      schema: entrySchema,
+    });
+    const proposal = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: ownInstance.instance.id,
+      proposalData: { title: 'Entry' },
+    });
+
+    await expect(attachFormSchema(proposal.id, otherRow.id)).rejects.toThrow();
+
+    const unchanged = await db.query.proposals.findFirst({
+      where: { id: proposal.id },
+    });
+    expect(unchanged?.formSchemaId).toBeNull();
+  });
 });

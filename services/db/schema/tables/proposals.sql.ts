@@ -2,6 +2,7 @@ import { sql } from 'drizzle-orm';
 import type { InferModel } from 'drizzle-orm';
 import { relations } from 'drizzle-orm/_relations';
 import {
+  foreignKey,
   index,
   integer,
   jsonb,
@@ -134,10 +135,7 @@ export const proposals = pgTable(
     shortCode: integer('short_code'),
 
     // Outside proposalColumns on purpose: history doesn't track the template yet.
-    formSchemaId: uuid('form_schema_id').references(() => formSchemas.id, {
-      onUpdate: 'cascade',
-      onDelete: 'restrict',
-    }),
+    formSchemaId: uuid('form_schema_id'),
   },
   (table) => [
     ...serviceRolePolicies,
@@ -145,6 +143,14 @@ export const proposals = pgTable(
       table.processInstanceId,
       table.id,
     ),
+    // Composite so the form row must belong to the proposal's own instance.
+    foreignKey({
+      name: 'proposals_form_schema_fkey',
+      columns: [table.processInstanceId, table.formSchemaId],
+      foreignColumns: [formSchemas.processInstanceId, formSchemas.id],
+    })
+      .onUpdate('cascade')
+      .onDelete('restrict'),
     uniqueIndex('proposals_process_short_code_uniq')
       .on(table.processInstanceId, table.shortCode)
       .where(sql`${table.shortCode} IS NOT NULL`),

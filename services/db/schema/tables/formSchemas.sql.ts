@@ -4,6 +4,7 @@ import {
   jsonb,
   pgTable,
   timestamp,
+  unique,
   uuid,
   varchar,
 } from 'drizzle-orm/pg-core';
@@ -37,7 +38,15 @@ export const formSchemas = pgTable(
       mode: 'string',
     }).default(sql`(now() AT TIME ZONE 'utc'::text)`),
   },
-  (table) => [...serviceRolePolicies, index().on(table.processInstanceId)],
+  (table) => [
+    ...serviceRolePolicies,
+    index().on(table.processInstanceId),
+    // Composite FK target so a proposal can only point at its own instance's form
+    unique('form_schemas_process_instance_uniq').on(
+      table.processInstanceId,
+      table.id,
+    ),
+  ],
 );
 
 export type FormSchema = typeof formSchemas.$inferSelect;
