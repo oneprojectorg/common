@@ -27,6 +27,11 @@ const proposal = (data: unknown): MappingInput => ({
   data,
 });
 
+const review = (data: unknown): MappingInput => ({
+  schema: reviewRef,
+  data,
+});
+
 describe('mapToSchema', () => {
   it('copies a field', () => {
     const result = mapProposals({
@@ -96,6 +101,69 @@ describe('mapToSchema', () => {
       fields: [{ from: 'title', to: 'title' }],
       inputs: [proposal({ title: 'Trees' })],
       to: { type: 'proposal', phaseId: 'other' },
+    });
+
+    expect(result).toEqual({ data: {} });
+  });
+
+  it('fills fields from mappings of different source schemas', () => {
+    const result = mapToSchema({
+      mappings: [
+        {
+          from: proposalRef,
+          to: targetRef,
+          fields: [{ from: 'title', to: 'title' }],
+        },
+        {
+          from: reviewRef,
+          to: targetRef,
+          fields: [{ from: 'cost.amount', to: 'budget' }],
+        },
+      ],
+      inputs: [proposal({ title: 'Trees' }), review({ cost: { amount: 50 } })],
+      targetSchema: targetRef,
+    });
+
+    expect(result.data).toEqual({ title: 'Trees', budget: 50 });
+  });
+
+  it('fills a field that two mappings write when their values are equal', () => {
+    const result = mapToSchema({
+      mappings: [
+        {
+          from: proposalRef,
+          to: targetRef,
+          fields: [{ from: 'title', to: 'title' }],
+        },
+        {
+          from: reviewRef,
+          to: targetRef,
+          fields: [{ from: 'name', to: 'title' }],
+        },
+      ],
+      inputs: [proposal({ title: 'Trees' }), review({ name: 'Trees' })],
+      targetSchema: targetRef,
+    });
+
+    expect(result.data).toEqual({ title: 'Trees' });
+  });
+
+  it('leaves a field empty when two mappings write different values', () => {
+    const result = mapToSchema({
+      mappings: [
+        {
+          from: proposalRef,
+          to: targetRef,
+          fields: [{ from: 'title', to: 'title' }],
+        },
+        {
+          from: reviewRef,
+          to: targetRef,
+          fields: [{ from: 'name', to: 'title' }],
+        },
+      ],
+      inputs: [proposal({ title: 'Trees' }), review({ name: 'Benches' })],
+      targetSchema: targetRef,
     });
 
     expect(result).toEqual({ data: {} });
