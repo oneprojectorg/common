@@ -44,13 +44,13 @@ pull request.
 
 ## Status
 
-| Status | Meaning |
-| --- | --- |
-| `Proposed` | Open for discussion. Not in force. |
-| `Accepted` | In force. |
-| `Rejected` | Declined. Kept so nobody reopens the question blind. |
-| `Deprecated` | No longer relevant. Nothing replaced it. |
-| `Superseded by ADR-NNNN` | Replaced. Points at the replacement. |
+| Status                   | Meaning                                              |
+| ------------------------ | ---------------------------------------------------- |
+| `Proposed`               | Open for discussion. Not in force.                   |
+| `Accepted`               | In force.                                            |
+| `Rejected`               | Declined. Kept so nobody reopens the question blind. |
+| `Deprecated`             | No longer relevant. Nothing replaced it.             |
+| `Superseded by ADR-NNNN` | Replaced. Points at the replacement.                 |
 
 Set Accepted when the ADR merges. Use Proposed only to get discussion without
 commitment; whoever merges it then sets Accepted.
@@ -84,3 +84,4 @@ what it decided.
 - [0017. Fetch client data with suspense queries inside error boundaries](./0017-fetch-client-data-with-suspense-queries-inside-error-boundaries.md)
 - [0018. Log through `@op/logging`, never the console](./0018-log-through-op-logging-never-the-console.md)
 - [0019. Record the template a proposal is written under](./0019-record-the-template-a-proposal-is-written-under.md)
+- [0020. Store notifications as outbox, activity, and per-recipient rows](./0020-store-notifications-behind-a-transactional-outbox.md)
