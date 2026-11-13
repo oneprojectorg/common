@@ -12,7 +12,10 @@ import {
 } from './phaseHelpers';
 
 export interface UpdateTransitionsInput {
-  processInstance: Pick<ProcessInstance, 'id' | 'instanceData'>;
+  processInstance: Pick<
+    ProcessInstance,
+    'id' | 'instanceData' | 'currentStateId'
+  >;
   // The instance's rows as the caller's write left them.
   phases: ProcessPhaseWithProfile[];
   db?: DbClient;
