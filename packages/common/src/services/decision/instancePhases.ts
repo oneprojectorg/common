@@ -1,12 +1,7 @@
 import { type DbClient, db as defaultDb } from '@op/db/client';
 import { logger } from '@op/logging';
 
-import { CommonError } from '../../utils';
-import {
-  type ProcessPhaseWithProfile,
-  listPhasesByInstance,
-  phaseIdOf,
-} from './phaseHelpers';
+import { listPhasesByInstance } from './phaseHelpers';
 import {
   type PhaseInstanceData,
   getInstancePhases,
@@ -28,9 +23,6 @@ type ProfileWithInstancePhases<
   processInstance: InstanceWithPhases<NonNullable<T['processInstance']>> | null;
 };
 
-const NO_ROWS_MESSAGE =
-  'Decision has no phase rows; reading instanceData.phases';
-
 export const getPhases = async ({
   instance,
   db = defaultDb,
@@ -46,13 +38,11 @@ export const resolvePhases = async <T extends InstanceWithData>({
 }: {
   instance: T;
   db?: DbClient;
-}): Promise<InstanceWithPhases<T>> => {
-  const [resolved] = await resolvePhasesForAll({ instances: [instance], db });
-  if (!resolved) {
-    throw new CommonError(`Phases did not resolve for instance ${instance.id}`);
-  }
-  return resolved;
-};
+}): Promise<InstanceWithPhases<T>> =>
+  withPhases({
+    instance,
+    rowsById: await loadRows({ db, instances: [instance] }),
+  });
 
 // TODO: remove when instanceData.phases is dropped.
 export const attachBlobPhases = <T extends InstanceWithData>({
@@ -71,41 +61,22 @@ export const resolvePhasesForAll = async <T extends InstanceWithData>({
   instances: T[];
   db?: DbClient;
 }): Promise<InstanceWithPhases<T>[]> => {
-  if (instances.length === 0) {
-    return [];
-  }
-
-  const phasesByInstance = await listPhasesByInstance({
-    db,
-    processInstanceIds: instances.map(({ id }) => id),
-  });
-
-  // TODO: drop the blob fallback when instanceData.phases is dropped.
-  const withoutRows = instances
-    .filter(({ id }) => !phasesByInstance.has(id))
-    .map(({ id }) => id);
-  if (withoutRows.length > 0) {
-    logger.debug(NO_ROWS_MESSAGE, { processInstanceIds: withoutRows });
-  }
-
-  return instances.map((instance) => {
-    const rows = phasesByInstance.get(instance.id);
-    return rows
-      ? { ...instance, phases: rows.map(toInstanceDataPhase) }
-      : attachBlobPhases({ instance });
-  });
+  const rowsById = await loadRows({ db, instances });
+  return instances.map((instance) => withPhases({ instance, rowsById }));
 };
 
 export const resolveProfilePhases = async <
   T extends { processInstance: InstanceWithData | null },
 >({
   profile,
+  db = defaultDb,
 }: {
   profile: T;
+  db?: DbClient;
 }): Promise<ProfileWithInstancePhases<T>> => ({
   ...profile,
   processInstance: profile.processInstance
-    ? await resolvePhases({ instance: profile.processInstance })
+    ? await resolvePhases({ instance: profile.processInstance, db })
     : null,
 });
 
@@ -118,32 +89,53 @@ export const resolveProfilePhasesForAll = async <
   profiles: T[];
   db?: DbClient;
 }): Promise<ProfileWithInstancePhases<T>[]> => {
-  const resolved = await resolvePhasesForAll({
+  const rowsById = await loadRows({
+    db,
     instances: profiles.flatMap(({ processInstance }) =>
       processInstance ? [processInstance] : [],
     ),
-    db,
   });
-  const byId = new Map(resolved.map((instance) => [instance.id, instance]));
 
-  return profiles.map((profile) => {
-    if (!profile.processInstance) {
-      return { ...profile, processInstance: null };
-    }
-    const instance = byId.get(profile.processInstance.id);
-    if (!instance) {
-      throw new CommonError(
-        `Phases did not resolve for instance ${profile.processInstance.id}`,
-      );
-    }
-    return { ...profile, processInstance: instance };
-  });
+  return profiles.map((profile) => ({
+    ...profile,
+    processInstance: profile.processInstance
+      ? withPhases({ instance: profile.processInstance, rowsById })
+      : null,
+  }));
 };
 
-const toInstanceDataPhase = (
-  phase: ProcessPhaseWithProfile,
-): PhaseInstanceData => ({
-  ...phase.data,
-  phaseId: phaseIdOf(phase),
-  name: phase.name,
-});
+const loadRows = async ({
+  db,
+  instances,
+}: {
+  db: DbClient;
+  instances: InstanceWithData[];
+}): Promise<Map<string, PhaseInstanceData[]>> => {
+  const rowsById = await listPhasesByInstance({
+    db,
+    processInstanceIds: instances.map(({ id }) => id),
+  });
+
+  // TODO: drop the blob fallback when instanceData.phases is dropped.
+  const withoutRows = instances
+    .filter(({ id }) => !rowsById.has(id))
+    .map(({ id }) => id);
+  if (withoutRows.length > 0) {
+    logger.debug('Decision has no phase rows; reading instanceData.phases', {
+      processInstanceIds: withoutRows,
+    });
+  }
+
+  return rowsById;
+};
+
+const withPhases = <T extends InstanceWithData>({
+  instance,
+  rowsById,
+}: {
+  instance: T;
+  rowsById: Map<string, PhaseInstanceData[]>;
+}): InstanceWithPhases<T> => {
+  const rows = rowsById.get(instance.id);
+  return rows ? { ...instance, phases: rows } : attachBlobPhases({ instance });
+};

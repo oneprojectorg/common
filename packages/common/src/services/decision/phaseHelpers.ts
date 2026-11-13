@@ -32,14 +32,6 @@ export type PhaseData = Omit<PhaseInstanceData, 'phaseId' | 'name'>;
 // TODO: drop phaseId from row data once every reference uses the row id.
 type PhaseRowData = PhaseData & { phaseId?: string };
 
-export interface ProcessPhaseWithProfile {
-  id: string;
-  profileId: string;
-  data: PhaseRowData;
-  name: string;
-  slug: string;
-}
-
 export { MAX_PHASES_PER_DECISION } from './utils/phaseOrder';
 
 const SLUG_ATTEMPTS = 3;
@@ -87,8 +79,8 @@ export const listPhasesByInstance = async ({
 }: {
   db: DbClient;
   processInstanceIds: string[];
-}): Promise<Map<string, ProcessPhaseWithProfile[]>> => {
-  const phasesByInstance = new Map<string, ProcessPhaseWithProfile[]>();
+}): Promise<Map<string, PhaseInstanceData[]>> => {
+  const phasesByInstance = new Map<string, PhaseInstanceData[]>();
 
   if (processInstanceIds.length === 0) {
     return phasesByInstance;
@@ -97,8 +89,6 @@ export const listPhasesByInstance = async ({
   const rows = await db
     .select({
       processInstanceId: processPhases.processInstanceId,
-      id: processPhases.id,
-      profileId: processPhases.profileId,
       data: processPhases.data,
       name: profiles.name,
       slug: profiles.slug,
@@ -112,18 +102,16 @@ export const listPhasesByInstance = async ({
       asc(processPhases.id),
     );
 
-  for (const { processInstanceId, ...phase } of rows) {
+  for (const { processInstanceId, data: rawData, name, slug } of rows) {
+    const data: PhaseRowData = isPhaseRowData(rawData) ? rawData : {};
     const phases = phasesByInstance.get(processInstanceId) ?? [];
-    phases.push({ ...phase, data: readPhaseRowData(phase.data) });
+    // TODO: use the row id once references stop storing data.phaseId.
+    phases.push({ ...data, phaseId: data.phaseId ?? slug, name });
     phasesByInstance.set(processInstanceId, phases);
   }
 
   return phasesByInstance;
 };
-
-// TODO: remove once references store the row id instead of data.phaseId.
-export const phaseIdOf = (phase: ProcessPhaseWithProfile): string =>
-  phase.data.phaseId ?? phase.slug;
 
 export const assertPhaseSchemasCompile = ({
   rubricTemplate,
@@ -263,9 +251,6 @@ const isJsonObject = (value: unknown): value is Record<string, unknown> =>
 
 const isPhaseRowData = (value: unknown): value is PhaseRowData =>
   isJsonObject(value);
-
-const readPhaseRowData = (data: unknown): PhaseRowData =>
-  isPhaseRowData(data) ? data : {};
 
 // Shape only; Ajv compiles it when the settings are checked.
 const isSettingsSchema = (value: unknown): value is PhaseSettingsSchema =>
