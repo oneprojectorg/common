@@ -18,6 +18,7 @@ import type { ExecutionContext } from './selectionPipeline/types';
 
 export interface AdvancePhaseInput {
   db: DbClient;
+  /** Pre-loaded instance row. State writes use optimistic locks; the departing phase config comes from `phases`. */
   instance: InstanceWithPhases<{ id: string }>;
   fromPhaseId: string;
   toPhaseId: string;
