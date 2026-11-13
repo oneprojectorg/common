@@ -6,9 +6,7 @@ import { networkAuthenticatedProcedure, router } from '../../../trpcFactory';
 
 export const createDevelopedProposalRouter = router({
   /** Creates a draft proposal developed from source proposals. Use submitDevelopedProposal to submit it. */
-  createDevelopedProposal: networkAuthenticatedProcedure({
-    rateLimit: { windowSize: 10, maxRequests: 30 },
-  })
+  createDevelopedProposal: networkAuthenticatedProcedure()
     .input(createDevelopedProposalInputSchema)
     .output(proposalSchema)
     .mutation(async ({ ctx, input }) => {

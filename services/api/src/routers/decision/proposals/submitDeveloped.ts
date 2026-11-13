@@ -9,9 +9,7 @@ import { networkAuthenticatedProcedure, router } from '../../../trpcFactory';
 import { trackProposalSubmitted } from '../../../utils/analytics';
 
 export const submitDevelopedProposalRouter = router({
-  submitDevelopedProposal: networkAuthenticatedProcedure({
-    rateLimit: { windowSize: 10, maxRequests: 30 },
-  })
+  submitDevelopedProposal: networkAuthenticatedProcedure()
     .input(submitProposalInputSchema)
     .output(proposalSchema)
     .mutation(async ({ ctx, input }) => {
