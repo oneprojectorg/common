@@ -2,11 +2,11 @@ import { Channels, createDevelopedProposal } from '@op/common';
 import { proposalSchema } from '@op/common/client';
 
 import { createDevelopedProposalInputSchema } from '../../../encoders/decision';
-import { authenticatedProcedure, router } from '../../../trpcFactory';
+import { networkAuthenticatedProcedure, router } from '../../../trpcFactory';
 
 export const createDevelopedProposalRouter = router({
   /** Creates a draft proposal developed from source proposals. Use submitDevelopedProposal to submit it. */
-  createDevelopedProposal: authenticatedProcedure({
+  createDevelopedProposal: networkAuthenticatedProcedure({
     rateLimit: { windowSize: 10, maxRequests: 30 },
   })
     .input(createDevelopedProposalInputSchema)

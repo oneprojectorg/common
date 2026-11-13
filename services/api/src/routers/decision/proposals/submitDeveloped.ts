@@ -5,11 +5,11 @@ import { Events, inngest } from '@op/events';
 import { waitUntil } from '@vercel/functions';
 
 import { submitProposalInputSchema } from '../../../encoders/decision';
-import { authenticatedProcedure, router } from '../../../trpcFactory';
+import { networkAuthenticatedProcedure, router } from '../../../trpcFactory';
 import { trackProposalSubmitted } from '../../../utils/analytics';
 
 export const submitDevelopedProposalRouter = router({
-  submitDevelopedProposal: authenticatedProcedure({
+  submitDevelopedProposal: networkAuthenticatedProcedure({
     rateLimit: { windowSize: 10, maxRequests: 30 },
   })
     .input(submitProposalInputSchema)
