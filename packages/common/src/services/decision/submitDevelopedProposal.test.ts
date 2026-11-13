@@ -1,7 +1,7 @@
 import {
   TestDecisionsDataManager,
-  createDevelopPhaseReviewer,
   createDevelopPhaseSetup,
+  createDevelopProposalsMember,
 } from '@op/common/testing';
 import { ProposalStatus } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
@@ -11,7 +11,7 @@ import { createDevelopedProposal } from './createDevelopedProposal';
 import { submitDevelopedProposal } from './submitDevelopedProposal';
 
 describe.concurrent('submitDevelopedProposal', () => {
-  it('lets the author, a category reviewer with Review and no Submit bit, submit the draft', async ({
+  it('lets the author, a caller with Develop Proposals and no Submit bit, submit the draft', async ({
     task,
     onTestFinished,
   }) => {
@@ -19,10 +19,9 @@ describe.concurrent('submitDevelopedProposal', () => {
     const { setup, instanceId, source } = await createDevelopPhaseSetup({
       testData,
     });
-    const reviewer = await createDevelopPhaseReviewer({
+    const developer = await createDevelopProposalsMember({
       testData,
       setup,
-      onTestFinished,
     });
     const draft = await createDevelopedProposal({
       data: {
@@ -30,13 +29,13 @@ describe.concurrent('submitDevelopedProposal', () => {
         sourceProposalIds: [source.id],
         proposalData: { title: 'Developed' },
       },
-      user: reviewer.user,
+      user: developer.user,
     });
     testData.trackProfileForCleanup(draft.profileId);
 
     const submitted = await submitDevelopedProposal({
       data: { proposalId: draft.id },
-      user: reviewer.user,
+      user: developer.user,
     });
 
     expect(submitted.id).toBe(draft.id);
@@ -44,7 +43,7 @@ describe.concurrent('submitDevelopedProposal', () => {
     expect(submitted.shortCode).not.toBeNull();
   });
 
-  it('refuses a category reviewer with a row who is not an author', async ({
+  it('refuses a caller with Develop Proposals who is not an author', async ({
     task,
     onTestFinished,
   }) => {
@@ -52,9 +51,9 @@ describe.concurrent('submitDevelopedProposal', () => {
     const { setup, instanceId, source } = await createDevelopPhaseSetup({
       testData,
     });
-    const [author, otherReviewer] = await Promise.all([
-      createDevelopPhaseReviewer({ testData, setup, onTestFinished }),
-      createDevelopPhaseReviewer({ testData, setup, onTestFinished }),
+    const [author, otherDeveloper] = await Promise.all([
+      createDevelopProposalsMember({ testData, setup }),
+      createDevelopProposalsMember({ testData, setup }),
     ]);
     const draft = await createDevelopedProposal({
       data: {
@@ -68,7 +67,7 @@ describe.concurrent('submitDevelopedProposal', () => {
 
     const error = await submitDevelopedProposal({
       data: { proposalId: draft.id },
-      user: otherReviewer.user,
+      user: otherDeveloper.user,
     }).catch((caught: unknown) => caught);
 
     expect(error).toBeInstanceOf(UnauthorizedError);

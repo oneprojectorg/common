@@ -13,8 +13,8 @@ export {
 
 export { TestDecisionsDataManager } from './helpers/TestDecisionsDataManager';
 export {
-  createDevelopPhaseReviewer,
   createDevelopPhaseSetup,
+  createDevelopProposalsMember,
 } from './helpers/developPhase';
 export { TestJoinProfileRequestDataManager } from './helpers/TestJoinProfileRequestDataManager';
 export { TestOrganizationDataManager } from './helpers/TestOrganizationDataManager';
