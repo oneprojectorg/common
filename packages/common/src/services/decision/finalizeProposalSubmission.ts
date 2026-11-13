@@ -41,15 +41,12 @@ export const finalizeProposalSubmission = async ({
   instance: Pick<ProcessInstance, 'id' | 'processId'> & { profileId: string };
   instanceData: DecisionInstanceData;
 }) => {
-  // Validate proposal data against the proposal template schema
   const proposalTemplate = await resolveProposalTemplate(
     instanceData,
     instance.processId,
     existingProposal.formSchemaId,
   );
 
-  // Stamp the latest TipTap version into proposalData so the history row
-  // created by the DB trigger links back to a concrete document revision.
   const parsed = parseProposalData(existingProposal.proposalData);
 
   // For collab-doc proposals the assembled fragment values are authoritative —
@@ -97,11 +94,13 @@ export const finalizeProposalSubmission = async ({
     }
   }
 
-  // Create a named version snapshot. Best-effort — failures logged, never block.
   if (!parsed.collaborationDocId) {
     throw new ValidationError('Proposal is missing a collaboration document');
   }
 
+  // Stamp the latest TipTap version into proposalData so the history row
+  // created by the DB trigger links back to a concrete document revision.
+  // Best-effort — failures are logged and never block the submit.
   const collaborationDocVersionId = await getTipTapClient()
     .createVersion(parsed.collaborationDocId, { name: 'Submitted' })
     .then((v) => v?.version ?? null)
@@ -122,7 +121,6 @@ export const finalizeProposalSubmission = async ({
       ? normalizeProposalCategories(assembledData.category)
       : null;
 
-  // Update proposal status to submitted and re-query with profile
   const updatedProposal = await db.transaction(async (tx) => {
     const locked = await lockProcessInstanceOrThrow({
       db: tx,

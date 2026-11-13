@@ -56,7 +56,6 @@ export const insertProposalDraft = async ({
     name: proposalTitle,
     db: tx,
   });
-  // Create a profile for the proposal
   const [proposalProfile] = await tx
     .insert(profiles)
     .values({
@@ -70,7 +69,6 @@ export const insertProposalDraft = async ({
     throw new CommonError('Failed to create proposal profile');
   }
 
-  // Add the creator as a profile user with the global Admin role
   const [newProfileUser] = await tx
     .insert(profileUsers)
     .values({
@@ -118,7 +116,6 @@ export const insertProposalDraft = async ({
   // locations relation (no bespoke column on the proposal itself).
   await syncProposalProfileLocation(tx, proposalProfile.id, proposalData);
 
-  // Link to categories within transaction if we have valid terms
   if (categoryTermIds.length > 0) {
     await tx.insert(proposalCategories).values(
       categoryTermIds.map((taxonomyTermId) => ({
@@ -128,7 +125,6 @@ export const insertProposalDraft = async ({
     );
   }
 
-  // Link attachments to proposal if provided
   if (attachmentIds && attachmentIds.length > 0) {
     const proposalAttachmentValues = attachmentIds.map((attachmentId) => ({
       proposalId: insertedProposal.id,
@@ -146,7 +142,6 @@ export const insertProposalDraft = async ({
       });
     } catch (error) {
       logger.error('Error processing proposal content', { error });
-      // Let the transaction roll back on error to maintain data consistency
       throw error;
     }
   }
