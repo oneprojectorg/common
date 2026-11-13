@@ -29,9 +29,8 @@ const mapOne = ({
     targetSchema: targetRef,
   });
 
-const proposal = (id: string, data: unknown): MappingInput => ({
+const proposal = (data: unknown): MappingInput => ({
   schema: proposalRef,
-  id,
   data,
 });
 
@@ -39,7 +38,7 @@ describe('mapToSchema', () => {
   it('copies a field', () => {
     const result = mapOne({
       value: { field: 'location' },
-      inputs: [proposal('p1', { location: { lat: 1, lng: 2 } })],
+      inputs: [proposal({ location: { lat: 1, lng: 2 } })],
     });
 
     expect(result.data).toEqual({ result: { lat: 1, lng: 2 } });
@@ -48,7 +47,7 @@ describe('mapToSchema', () => {
   it('writes a literal', () => {
     const result = mapOne({
       value: { value: 'draft' },
-      inputs: [proposal('p1', {})],
+      inputs: [proposal({})],
     });
 
     expect(result.data).toEqual({ result: 'draft' });
@@ -64,71 +63,55 @@ describe('mapToSchema', () => {
           { field: 'cost.contingency' },
         ],
       },
-      inputs: [
-        proposal('p1', { cost: { design: 5, build: 40, contingency: 5 } }),
-      ],
+      inputs: [proposal({ cost: { design: 5, build: 40, contingency: 5 } })],
     });
 
     expect(result.data).toEqual({ result: 50 });
   });
 
-  it('gives no candidate when a field it reads is empty', () => {
+  it('leaves the field empty when a field it reads is empty', () => {
     const result = mapOne({
       value: { operator: 'add', operands: [{ field: 'a' }, { field: 'b' }] },
-      inputs: [proposal('p1', { a: 1, b: '' })],
+      inputs: [proposal({ a: 1, b: '' })],
     });
 
-    expect(result).toEqual({ data: {}, candidates: {} });
+    expect(result).toEqual({ data: {} });
   });
 
-  it('fills the field when all candidates are equal', () => {
+  it('fills the field when all inputs give equal values', () => {
     const result = mapOne({
       value: { field: 'title' },
-      inputs: [
-        proposal('p1', { title: 'Trees' }),
-        proposal('p2', { title: 'Trees' }),
-      ],
+      inputs: [proposal({ title: 'Trees' }), proposal({ title: 'Trees' })],
     });
 
     expect(result.data).toEqual({ result: 'Trees' });
   });
 
-  it('leaves the field empty and lists both candidates when they differ', () => {
+  it('leaves the field empty when inputs give different values', () => {
     const result = mapOne({
       value: { field: 'title' },
-      inputs: [
-        proposal('p1', { title: 'Trees' }),
-        proposal('p2', { title: 'Benches' }),
-      ],
+      inputs: [proposal({ title: 'Trees' }), proposal({ title: 'Benches' })],
     });
 
-    expect(result).toEqual({
-      data: {},
-      candidates: {
-        result: [
-          { value: 'Trees', sourceId: 'p1' },
-          { value: 'Benches', sourceId: 'p2' },
-        ],
-      },
-    });
+    expect(result).toEqual({ data: {} });
   });
 
   it('skips inputs of another source schema', () => {
     const result = mapOne({
       value: { field: 'title' },
-      inputs: [{ schema: reviewRef, id: 'r1', data: { title: 'Trees' } }],
+      inputs: [{ schema: reviewRef, data: { title: 'Trees' } }],
     });
 
-    expect(result.candidates).toEqual({});
+    expect(result).toEqual({ data: {} });
   });
 
   it('never reads a column of the placeholder proposal row', () => {
     const result = mapOne({
       value: { field: 'id' },
-      inputs: [proposal('p1', { title: 'Trees' })],
+      inputs: [proposal({ title: 'Trees' })],
     });
 
-    expect(result.candidates).toEqual({});
+    expect(result).toEqual({ data: {} });
   });
 
   it('writes shallower target fields first, whatever the rule order', () => {
@@ -140,7 +123,7 @@ describe('mapToSchema', () => {
     });
     const result = mapToSchema({
       rules: [rule('location.label', 'label'), rule('location', 'location')],
-      inputs: [proposal('p1', { location: { lat: 1 }, label: 'Park' })],
+      inputs: [proposal({ location: { lat: 1 }, label: 'Park' })],
       targetSchema: targetRef,
     });
 

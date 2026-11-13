@@ -4,7 +4,6 @@ import { setValueByPath } from '../services/decision/selectionPipeline/expressio
 import { evaluateMappingValue } from './evaluateMappingValue';
 import { getFieldPathDepth, isRecord } from './fieldPath';
 import type {
-  MappingCandidate,
   MappingInput,
   MappingResult,
   MappingRule,
@@ -12,8 +11,8 @@ import type {
 } from './types';
 
 /**
- * Collects a candidate per rule and matching input, keyed by target field.
- * A target field is filled only when all its candidates are equal.
+ * Evaluates each rule for each input of its source schema. A target field is
+ * filled only when all its values are equal.
  */
 export const mapToSchema = ({
   rules,
@@ -24,7 +23,7 @@ export const mapToSchema = ({
   inputs: MappingInput[];
   targetSchema: SchemaRef;
 }): MappingResult => {
-  const candidatesByField = new Map<string, MappingCandidate[]>();
+  const valuesByField = new Map<string, unknown[]>();
 
   for (const rule of rules) {
     if (!isSameSchemaRef({ left: rule.targetSchema, right: targetSchema })) {
@@ -43,30 +42,25 @@ export const mapToSchema = ({
         continue;
       }
 
-      const candidates = candidatesByField.get(rule.targetField) ?? [];
-      candidates.push({ value: structuredClone(value), sourceId: input.id });
-      candidatesByField.set(rule.targetField, candidates);
+      const values = valuesByField.get(rule.targetField) ?? [];
+      values.push(value);
+      valuesByField.set(rule.targetField, values);
     }
   }
 
   const data: Record<string, unknown> = {};
-  const fieldsShallowFirst = [...candidatesByField.keys()].sort(
-    compareFieldDepth,
-  );
+  const fieldsShallowFirst = [...valuesByField.keys()].sort(compareFieldDepth);
   for (const field of fieldsShallowFirst) {
-    const [first, ...rest] = candidatesByField.get(field) ?? [];
+    const [first, ...rest] = valuesByField.get(field) ?? [];
     if (
-      first &&
-      rest.every((candidate) =>
-        isDeepStrictEqual(first.value, candidate.value),
-      ) &&
+      rest.every((value) => isDeepStrictEqual(first, value)) &&
       !passesThroughNonObject({ data, path: field })
     ) {
-      setValueByPath(data, field, structuredClone(first.value));
+      setValueByPath(data, field, structuredClone(first));
     }
   }
 
-  return { data, candidates: Object.fromEntries(candidatesByField) };
+  return { data };
 };
 
 export const isSameSchemaRef = ({

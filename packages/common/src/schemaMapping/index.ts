@@ -10,7 +10,6 @@ export {
   schemaRefSchema,
 } from './schema';
 export type {
-  MappingCandidate,
   MappingExpression,
   MappingInput,
   MappingResult,
