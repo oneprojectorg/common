@@ -12,6 +12,17 @@
     ],
     "ask": []
   },
+  "extraKnownMarketplaces": {
+    "common-agent-toolkit": {
+      "source": {
+        "source": "git",
+        "url": "git@github.com:oneprojectorg/common-agent-toolkit.git"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "devtools@common-agent-toolkit": true
+  },
   "sandbox": {
     "enabled": true,
     "autoAllowBashIfSandboxed": true,
