@@ -4,8 +4,8 @@ import safeRegex from 'safe-regex2';
 import type {
   ArithmeticExpression,
   ComparisonExpression,
-  ExecutionContext,
   Expression,
+  ExpressionScope,
   FieldAccessExpression,
   FunctionCallExpression,
   LiteralExpression,
@@ -14,11 +14,11 @@ import type {
 } from './types';
 
 /**
- * Evaluates an expression in the given context
+ * Evaluates an expression in the given scope
  */
 export function evaluateExpression(
   expr: Expression,
-  context: ExecutionContext,
+  context: ExpressionScope,
 ): any {
   // Field access
   if ('field' in expr) {
@@ -63,10 +63,10 @@ export function evaluateExpression(
  */
 function evaluateFieldAccess(
   expr: FieldAccessExpression,
-  context: ExecutionContext,
+  context: ExpressionScope,
 ): any {
   const path = expr.field.split('.');
-  let current: any = context.proposal || context;
+  let current: any = context.record;
 
   for (const key of path) {
     if (current == null) {
@@ -83,7 +83,7 @@ function evaluateFieldAccess(
  */
 function evaluateComparison(
   expr: ComparisonExpression,
-  context: ExecutionContext,
+  context: ExpressionScope,
 ): boolean {
   const left = evaluateExpression(expr.left, context);
   const right = evaluateExpression(expr.right, context);
@@ -144,7 +144,7 @@ function evaluateComparison(
  */
 function evaluateLogical(
   expr: LogicalExpression,
-  context: ExecutionContext,
+  context: ExpressionScope,
 ): boolean {
   if (expr.and) {
     return expr.and.every((e) => evaluateExpression(e, context));
@@ -166,7 +166,7 @@ function evaluateLogical(
  */
 function evaluateArithmetic(
   expr: ArithmeticExpression,
-  context: ExecutionContext,
+  context: ExpressionScope,
 ): number {
   const values = expr.operands.map((op) => {
     const val = evaluateExpression(op, context);
@@ -196,7 +196,7 @@ function evaluateArithmetic(
  */
 function evaluateFunctionCall(
   expr: FunctionCallExpression,
-  context: ExecutionContext,
+  context: ExpressionScope,
 ): any {
   const args = expr.arguments.map((arg) => evaluateExpression(arg, context));
 
@@ -295,7 +295,7 @@ function evaluateFunctionCall(
  */
 function evaluateVariable(
   expr: VariableExpression,
-  context: ExecutionContext,
+  context: ExpressionScope,
 ): any {
   const varName = expr.variable.startsWith('$')
     ? expr.variable.slice(1)
