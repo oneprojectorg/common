@@ -1,18 +1,12 @@
 import { permission } from 'access-zones';
 
 import { UnauthorizedError } from '../../utils';
-import { type AccessUser, assertInstanceProfileAccess } from '../access';
+import type { AccessUser } from '../access';
+import { assertProfileAccess } from '../assert';
 import { getCachedInstance } from './getCachedInstance';
 import { isLegacyInstanceData } from './isLegacyInstance';
 
-/**
- * The slug the current decision route (`/decisions/[slug]`) serves an instance
- * at, so a legacy link can redirect there once the instance is converted.
- *
- * Returns `null` for a legacy instance, a missing instance, one without a
- * profile slug, and one the caller can't read: every miss looks the same, so
- * the result never reveals whether an unreadable instance exists.
- */
+/** Slug `/decisions/[slug]` will render for this caller; null for every miss, so existence never leaks. */
 export const getConvertedInstanceSlug = async ({
   instanceId,
   user,
@@ -21,20 +15,23 @@ export const getConvertedInstanceSlug = async ({
   user: AccessUser | undefined;
 }): Promise<string | null> => {
   const instance = await getCachedInstance(instanceId);
-
+  const profileId = instance?.profileId;
   const slug = instance?.profile?.slug;
 
   // Cheap misses first: most callers hit a legacy instance.
-  if (!instance || !slug || isLegacyInstanceData(instance.instanceData)) {
+  if (!profileId || !slug || isLegacyInstanceData(instance?.instanceData)) {
     return null;
   }
 
   try {
-    await assertInstanceProfileAccess({
+    // Same check as getDecisionBySlug, so a redirect never lands on a forbidden page.
+    await assertProfileAccess({
       user,
-      instance,
-      profilePermissions: { decisions: permission.READ },
-      orgFallbackPermissions: { decisions: permission.READ },
+      profileId,
+      permissions: [
+        { decisions: permission.ADMIN },
+        { decisions: permission.READ },
+      ],
     });
   } catch (error) {
     if (error instanceof UnauthorizedError) {

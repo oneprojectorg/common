@@ -13,9 +13,8 @@ import { type Locale, getTranslations } from '@/lib/i18n';
 import { DecisionHeader } from '@/components/decisions/DecisionHeader';
 import { DecisionStateRouter } from '@/components/decisions/DecisionStateRouter';
 import { DecisionTranslationProvider } from '@/components/decisions/DecisionTranslationContext';
-import { decisionRootHref } from '@/components/decisions/proposalHrefs';
 
-import { redirectConvertedInstance } from './redirectConvertedInstance';
+import { redirectConvertedDecision } from './redirectConvertedInstance';
 
 // cache() dedupes the read across generateMetadata + page render (one request),
 // so the resolver and its "viewed" event fire once and the data hydrates.
@@ -55,9 +54,12 @@ function DecisionHeaderSkeleton() {
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ id: string; slug: string; locale: string }>;
+  params: Promise<{ id: string; slug: string; locale: Locale }>;
 }): Promise<Metadata> {
-  const { id, locale } = await params;
+  const { id, slug, locale } = await params;
+
+  // Redirecting here, before the loading boundary streams, gives crawlers a real 307.
+  await redirectConvertedDecision({ id, slug, locale });
 
   try {
     const [t, instance] = await Promise.all([
@@ -114,12 +116,7 @@ const DecisionInstancePage = async ({
 }) => {
   const { id, slug, locale } = await params;
 
-  await redirectConvertedInstance({
-    instanceId: id,
-    locale,
-    href: (decisionSlug) =>
-      decisionRootHref({ decisionSlug, slug, instanceId: id }),
-  });
+  await redirectConvertedDecision({ id, slug, locale });
 
   return <DecisionInstancePageContent instanceId={id} slug={slug} />;
 };

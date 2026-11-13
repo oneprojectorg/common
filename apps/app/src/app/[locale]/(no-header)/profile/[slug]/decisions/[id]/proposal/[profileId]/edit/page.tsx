@@ -8,9 +8,7 @@ import { cache } from 'react';
 
 import { type Locale, getTranslations } from '@/lib/i18n';
 
-import { proposalEditHref } from '@/components/decisions/proposalHrefs';
-
-import { redirectConvertedInstance } from '../../../redirectConvertedInstance';
+import { redirectConvertedProposalEdit } from '../../../redirectConvertedInstance';
 import { LegacyProposalEditClient } from './ProposalEditClient';
 
 // cache() dedupes the reads across generateMetadata + page render (one request),
@@ -32,10 +30,13 @@ export async function generateMetadata({
     profileId: string;
     id: string;
     slug: string;
-    locale: string;
+    locale: Locale;
   }>;
 }): Promise<Metadata> {
-  const { profileId, id, locale } = await params;
+  const { profileId, id, slug, locale } = await params;
+
+  // Redirecting here, before the loading boundary streams, gives crawlers a real 307.
+  await redirectConvertedProposalEdit({ id, slug, locale, profileId });
 
   try {
     const [t, proposal, instance] = await Promise.all([
@@ -64,12 +65,7 @@ const ProposalEditPage = async ({
   }>;
 }) => {
   const { profileId, id, slug, locale } = await params;
-  await redirectConvertedInstance({
-    instanceId: id,
-    locale,
-    href: (decisionSlug) =>
-      proposalEditHref({ decisionSlug, profileId, slug, instanceId: id }),
-  });
+  await redirectConvertedProposalEdit({ id, slug, locale, profileId });
   const { queryClient } = await createServerUtils();
 
   await Promise.all([fetchProposal(profileId), fetchInstance(id)]).catch(

@@ -114,6 +114,32 @@ describe.concurrent('getConvertedInstanceSlug', () => {
     expect(outsiderResult).toEqual({ slug: null });
     expect(publicResult).toEqual({ slug: null });
   });
+
+  // /decisions/[slug] has no org fallback, so redirecting this caller would land on a forbidden page.
+  it('returns null to an owner-org member with no role on the decision profile', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const orgMember = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [],
+    });
+
+    const caller = await createAuthenticatedCaller(orgMember.email);
+    const instanceId = setup.instance.instance.id;
+
+    await expect(
+      caller.decision.getConvertedInstanceSlug({ instanceId }),
+    ).resolves.toEqual({ slug: null });
+    await expect(
+      caller.decision.getDecisionBySlug({ slug: setup.instance.slug }),
+    ).rejects.toThrow();
+  });
 });
 
 describeDecisionAccessTierGating('getConvertedInstanceSlug', {
