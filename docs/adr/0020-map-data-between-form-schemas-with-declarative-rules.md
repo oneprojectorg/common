@@ -45,11 +45,10 @@ expression evaluator of the selection pipeline.
 - A mapping rule is data with four parts: a source schema, a target schema, a
   target field (a dot path, for example `budget.amount`), and a value
   expression.
-- A value expression is the selection pipeline's `Expression` tree. A `field`
-  node reads the source data with a dot path. The mapping accepts the
-  evaluator's literal, field, comparison, logical, arithmetic and function
-  nodes. It rejects `variable` nodes and function names that the evaluator
-  does not know.
+- A value expression is a subset of the selection pipeline's `Expression`
+  tree. Rules start with three nodes: a `field` node that reads the source
+  data with a dot path, a scalar literal, and `add`. Other operators and
+  functions of the evaluator can be allowed later, one at a time.
 - The mapping calls the existing evaluator and does not change it. The
   evaluator's context type requires a proposal database row, so the mapping
   puts the source data in the `proposalData` column of a placeholder row and
@@ -62,8 +61,7 @@ expression evaluator of the selection pipeline.
   schema of the rule. Each result is a candidate, and a candidate keeps the
   ID of its input.
 - A rule gives no candidate when a field it reads is missing, `null` or
-  empty, when a divisor is 0, or when the result is empty or not a finite
-  number. A direct argument of `coalesce` can be missing.
+  empty, or when the result is empty or not a finite number.
 - The engine fills a target field only when all candidates for the field are
   equal. When they are different, the field stays empty and a person chooses.
 - The mapping core is in `packages/common/src/schemaMapping/`. It imports the
@@ -72,17 +70,18 @@ expression evaluator of the selection pipeline.
 
 ## Consequences
 
-- The system can check a rule against the two schemas when the rule is saved.
-  It can find all rules that read a field before a template changes.
-- A rule can copy a value, and can calculate from the fields of one source,
+- Because rules are data, the system can check a rule against the two
+  schemas and find all rules that read a field before a template changes.
+  This check is deferred until rules are stored and edited.
+- A rule can copy a value, write a literal, and add the fields of one source,
   for example a total of three cost fields. A rule cannot calculate across
   sources, for example an average of all reviews. That needs a new decision.
 - One expression language serves the selection pipeline and the mapping.
 - A dot path cannot address a key that contains a dot.
-- The evaluator reads a missing or non-number operand as 0, and gives 0 for a
-  division by 0. The mapping must not pre-fill a wrong number, so it adds its
-  own checks for missing values and zero divisors before it calls the
-  evaluator. A change to the evaluator can make these checks incomplete.
+- The evaluator reads a missing or non-number operand as 0. The mapping must
+  not pre-fill a wrong number, so it checks for missing values before it
+  calls the evaluator. Each operator or function added later needs the same
+  review, for example a zero divisor if `divide` is allowed.
 - The mapping depends on an evaluator that has no direct unit tests. The
   mapping's tests are the only tests of its behaviour.
 - The placeholder proposal row exists only because of the evaluator's
