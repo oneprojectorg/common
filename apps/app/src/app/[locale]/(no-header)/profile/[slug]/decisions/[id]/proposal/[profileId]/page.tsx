@@ -8,9 +8,7 @@ import { cache } from 'react';
 
 import { type Locale, getTranslations } from '@/lib/i18n';
 
-import { proposalHref } from '@/components/decisions/proposalHrefs';
-
-import { redirectConvertedInstance } from '../../redirectConvertedInstance';
+import { redirectConvertedProposal } from '../../redirectConvertedInstance';
 import { LegacyProposalViewClient } from './ProposalViewClient';
 
 // cache() dedupes the read across generateMetadata + page render (one request),
@@ -27,10 +25,13 @@ export async function generateMetadata({
     profileId: string;
     slug: string;
     id: string;
-    locale: string;
+    locale: Locale;
   }>;
 }): Promise<Metadata> {
-  const { profileId, locale } = await params;
+  const { profileId, slug, id, locale } = await params;
+
+  // Redirecting here, before the loading boundary streams, gives crawlers a real 307.
+  await redirectConvertedProposal({ id, slug, locale, profileId });
 
   try {
     const [t, proposal] = await Promise.all([
@@ -57,12 +58,7 @@ const ProposalViewPage = async ({
   }>;
 }) => {
   const { profileId, slug, id, locale } = await params;
-  await redirectConvertedInstance({
-    instanceId: id,
-    locale,
-    href: (decisionSlug) =>
-      proposalHref({ decisionSlug, profileId, slug, instanceId: id }),
-  });
+  await redirectConvertedProposal({ id, slug, locale, profileId });
   const { queryClient } = await createServerUtils();
 
   // Swallow failures: this only warms the cache — the client suspense query
