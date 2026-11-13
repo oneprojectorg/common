@@ -1,18 +1,15 @@
 export { isSameSchemaRef, mapToSchema } from './mapToSchema';
 export {
-  MAPPING_OPERATORS,
-  MAX_MAPPING_EXPRESSION_ARGUMENTS,
-  MAX_MAPPING_EXPRESSION_DEPTH,
+  fieldMappingSchema,
   fieldPathSchema,
-  mappingExpressionSchema,
-  mappingLiteralSchema,
-  mappingRuleSchema,
+  schemaMappingSchema,
   schemaRefSchema,
+  targetKeySchema,
 } from './schema';
 export type {
-  MappingExpression,
+  FieldMapping,
   MappingInput,
   MappingResult,
-  MappingRule,
+  SchemaMapping,
   SchemaRef,
 } from './types';

@@ -1,9 +1,3 @@
-export const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === 'object' && value !== null && !Array.isArray(value);
-
-export const getFieldPathDepth = (path: string): number =>
-  path.split('.').length;
-
 export const readOwnField = ({
   data,
   path,
@@ -23,3 +17,6 @@ export const readOwnField = ({
   }
   return current;
 };
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);

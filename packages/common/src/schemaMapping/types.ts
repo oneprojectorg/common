@@ -1,25 +1,16 @@
 import type { z } from 'zod';
 
 import type {
-  MAPPING_OPERATORS,
-  mappingLiteralSchema,
-  mappingRuleSchema,
+  fieldMappingSchema,
+  schemaMappingSchema,
   schemaRefSchema,
 } from './schema';
 
 export type SchemaRef = z.infer<typeof schemaRefSchema>;
 
-// A subset of the selection pipeline's Expression, so the pipeline evaluator
-// can run it.
-export type MappingExpression =
-  | { field: string }
-  | { value: z.infer<typeof mappingLiteralSchema> }
-  | {
-      operator: (typeof MAPPING_OPERATORS)[number];
-      operands: MappingExpression[];
-    };
+export type FieldMapping = z.infer<typeof fieldMappingSchema>;
 
-export type MappingRule = z.infer<typeof mappingRuleSchema>;
+export type SchemaMapping = z.infer<typeof schemaMappingSchema>;
 
 export type MappingInput = {
   schema: SchemaRef;
