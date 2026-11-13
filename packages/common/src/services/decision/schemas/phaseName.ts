@@ -11,5 +11,5 @@ export const phaseNameLengthSchema = z
 export const phaseNameInputSchema = z
   .string()
   .trim()
-  .min(1)
+  .min(1, 'A phase name cannot be empty')
   .pipe(phaseNameLengthSchema);
