@@ -33,6 +33,8 @@ export type AdvancePhaseResult =
   | {
       /** The optimistic lock failed — another writer already advanced. Nothing was written. */
       conflict: true;
+      /** The phase the locked row was on; null when the row was gone or not published. */
+      currentStateId: string | null;
     }
   | {
       conflict: false;
@@ -96,7 +98,13 @@ export async function advancePhase(
     lockedInstance.currentStateId !== fromPhaseId ||
     lockedInstance.status !== ProcessStatus.PUBLISHED
   ) {
-    return { conflict: true };
+    return {
+      conflict: true,
+      currentStateId:
+        lockedInstance?.status === ProcessStatus.PUBLISHED
+          ? lockedInstance.currentStateId
+          : null,
+    };
   }
 
   const selectionPipeline = departingPhase.selectionPipeline;
@@ -138,7 +146,7 @@ export async function advancePhase(
     .returning({ id: processInstances.id });
 
   if (updated.length === 0) {
-    return { conflict: true };
+    return { conflict: true, currentStateId: null };
   }
 
   await db
