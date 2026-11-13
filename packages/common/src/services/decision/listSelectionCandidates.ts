@@ -10,11 +10,20 @@ import { isLegacyInstanceData } from './isLegacyInstance';
 import { listProposals } from './listProposals';
 import type { DecisionInstanceData } from './schemas/instanceData';
 import type { Proposal } from './schemas/proposal';
+import type {
+  SelectionOutcomeRecord,
+  TransitionData,
+} from './schemas/transitionData';
 
 export interface SelectionCandidates {
   items: Proposal[];
   /** Size of the whole eligible pool, before `categoryId` narrows it. */
   totalCandidates: number;
+  /**
+   * What the departing phase's pipeline decided, in its order, so the screen
+   * can preselect it. Empty when no pipeline ran.
+   */
+  outcomes: SelectionOutcomeRecord[];
 }
 
 interface ListSelectionCandidatesInput {
@@ -64,25 +73,38 @@ export async function listSelectionCandidates({
   });
 
   const previousPhaseId = resolvePreviousPhaseId(instance);
-  if (!previousPhaseId) {
-    return { items: [], totalCandidates: 0 };
+  const currentStateId = instance.currentStateId;
+  if (!previousPhaseId || !currentStateId) {
+    return { items: [], totalCandidates: 0, outcomes: [] };
   }
 
   // Resolved unconditionally: `totalCandidates` describes the unfiltered pool
   // even when the filter matches nothing.
-  const [phaseCandidateIds, categoryRows] = await Promise.all([
-    getProposalIdsForPhase({ instance, phaseId: previousPhaseId, db }),
-    categoryId
-      ? db
-          .select({ proposalId: proposalCategories.proposalId })
-          .from(proposalCategories)
-          .where(eq(proposalCategories.taxonomyTermId, categoryId))
-      : undefined,
-  ]);
+  const [phaseCandidateIds, categoryRows, inboundTransition] =
+    await Promise.all([
+      getProposalIdsForPhase({ instance, phaseId: previousPhaseId, db }),
+      categoryId
+        ? db
+            .select({ proposalId: proposalCategories.proposalId })
+            .from(proposalCategories)
+            .where(eq(proposalCategories.taxonomyTermId, categoryId))
+        : undefined,
+      db.query.stateTransitionHistory.findFirst({
+        where: {
+          processInstanceId,
+          toStateId: currentStateId,
+        },
+        orderBy: { transitionedAt: 'desc' },
+        columns: { transitionData: true },
+      }),
+    ]);
   const totalCandidates = phaseCandidateIds.length;
+  const outcomes =
+    (inboundTransition?.transitionData as TransitionData | null | undefined)
+      ?.selection?.outcomes ?? [];
 
   if (categoryRows?.length === 0) {
-    return { items: [], totalCandidates };
+    return { items: [], totalCandidates, outcomes };
   }
 
   const categoryProposalIds = categoryRows
@@ -94,7 +116,7 @@ export async function listSelectionCandidates({
     : phaseCandidateIds;
 
   if (candidateIds.length === 0) {
-    return { items: [], totalCandidates };
+    return { items: [], totalCandidates, outcomes };
   }
 
   // Single relational query: `listProposals` joins the vote-count subquery via
@@ -111,7 +133,7 @@ export async function listSelectionCandidates({
     user,
   });
 
-  return { items, totalCandidates };
+  return { items, totalCandidates, outcomes };
 }
 
 function resolvePreviousPhaseId(instance: {

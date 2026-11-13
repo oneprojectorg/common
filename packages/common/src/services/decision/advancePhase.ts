@@ -226,8 +226,8 @@ export async function advancePhase(
     );
   }
 
-  // Awaiting approval: the outcomes stay on the transition, nothing is
-  // attached, and the admin's manual selection attaches the proposals.
+  // Awaiting approval: nothing is attached, so the manual selection screen
+  // shows and the admin's confirmation attaches the proposals.
   if (lockedDepartingPhase.selectionNeedsApproval) {
     selectedProposalIds = [];
   }

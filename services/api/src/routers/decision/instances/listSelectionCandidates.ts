@@ -12,6 +12,13 @@ const listSelectionCandidatesInputSchema = z.object({
 
 const listSelectionCandidatesOutputSchema = list(proposalSchema).extend({
   totalCandidates: z.number().int().nonnegative(),
+  outcomes: z.array(
+    z.object({
+      proposalId: z.string(),
+      outcome: z.enum(['selected', 'skipped', 'excluded']),
+      scores: z.record(z.string(), z.unknown()),
+    }),
+  ),
 });
 
 export const listSelectionCandidatesRouter = router({

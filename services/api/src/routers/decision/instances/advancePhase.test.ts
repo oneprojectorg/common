@@ -429,6 +429,96 @@ describe.concurrent('advancePhase', () => {
     });
   });
 
+  it('holds the selection for approval, preselects it, and attaches on confirmation', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+      status: ProcessStatus.PUBLISHED,
+      processSchema: schemaWithPipeline,
+    });
+    const instanceId = setup.instance.instance.id;
+    await Promise.all(
+      ['first', 'second', 'third'].map((key) =>
+        testData.createProposal({
+          userEmail: setup.userEmail,
+          processInstanceId: instanceId,
+          proposalData: { title: `Proposal ${key} ${task.id}` },
+          status: ProposalStatus.SUBMITTED,
+        }),
+      ),
+    );
+    const { instanceData } = setup.instance.instance;
+    await db
+      .update(processInstances)
+      .set({
+        instanceData: {
+          ...instanceData,
+          phases: instanceData.phases.map((phase) =>
+            phase.phaseId === 'submission'
+              ? { ...phase, selectionNeedsApproval: true }
+              : phase,
+          ),
+        },
+      })
+      .where(eq(processInstances.id, instanceId));
+
+    const result = await callAdvancePhase(
+      { setup, dbInstance: await reloadInstance(instanceId) },
+      { fromPhaseId: 'submission', toPhaseId: 'review' },
+    );
+
+    expect(result.conflict).toBe(false);
+    if (result.conflict) {
+      throw new Error('unreachable');
+    }
+    expect(result.selectedProposalIds).toEqual([]);
+    const attachedBefore = await db
+      .select({ proposalId: decisionTransitionProposals.proposalId })
+      .from(decisionTransitionProposals)
+      .where(
+        eq(
+          decisionTransitionProposals.transitionHistoryId,
+          result.transitionHistoryId,
+        ),
+      );
+    expect(attachedBefore).toEqual([]);
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+    const candidates = await caller.decision.listSelectionCandidates({
+      processInstanceId: instanceId,
+    });
+    expect(candidates.outcomes.map(({ outcome }) => outcome)).toEqual([
+      'selected',
+      'selected',
+      'excluded',
+    ]);
+    const preselected = candidates.outcomes
+      .filter(({ outcome }) => outcome === 'selected')
+      .map(({ proposalId }) => proposalId);
+
+    await caller.decision.submitManualSelection({
+      processInstanceId: instanceId,
+      proposalIds: preselected,
+    });
+
+    const attachedAfter = await db
+      .select({ proposalId: decisionTransitionProposals.proposalId })
+      .from(decisionTransitionProposals)
+      .where(
+        eq(
+          decisionTransitionProposals.transitionHistoryId,
+          result.transitionHistoryId,
+        ),
+      );
+    expect(attachedAfter.map(({ proposalId }) => proposalId).sort()).toEqual(
+      [...preselected].sort(),
+    );
+  });
+
   it('writes no selection audit when the departing phase has no pipeline', async ({
     task,
     onTestFinished,
