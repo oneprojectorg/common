@@ -745,11 +745,14 @@ export class TestDecisionsDataManager {
 
     const phases = getInstancePhases(instance.instanceData);
     await db.transaction(async (tx) => {
-      for (const [sortOrder, { phaseId, name, ...data }] of phases.entries()) {
+      for (const [
+        sortOrder,
+        { phaseId, name: _name, ...data },
+      ] of phases.entries()) {
         const { phase, profile } = await insertPhase({
           tx,
           processInstanceId: instanceId,
-          name: name ?? phaseId,
+          name: `Row ${phaseId}`,
           sortOrder,
           data: { ...data, ...rowData },
         });
@@ -769,13 +772,6 @@ export class TestDecisionsDataManager {
     rowData: PhaseData = {},
   ): Promise<void> {
     await this.createPhaseRows(instanceId, rowData);
-    await db
-      .update(profiles)
-      .set({ name: sql`'Row ' || (${processPhases.data} ->> 'phaseId')` })
-      .from(processPhases)
-      .where(
-        sql`${profiles.id} = ${processPhases.profileId} AND ${processPhases.processInstanceId} = ${instanceId}`,
-      );
     await emptyBlobPhases(instanceId);
   }
 

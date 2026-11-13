@@ -1,6 +1,6 @@
 import { TestDecisionsDataManager, emptyBlobPhases } from '@op/common/testing';
 import { db, eq, sql } from '@op/db/client';
-import { processInstances, processPhases, profiles } from '@op/db/schema';
+import { processPhases, profiles } from '@op/db/schema';
 import { logger } from '@op/logging';
 import { describe, expect, it } from 'vitest';
 
@@ -10,7 +10,7 @@ import {
   resolvePhases,
   resolvePhasesForAll,
 } from './instancePhases';
-import { insertPhase, listPhasesByInstance, phaseIdOf } from './phaseHelpers';
+import { insertPhase } from './phaseHelpers';
 import { getInstancePhases } from './schemas/instanceData';
 
 const expectNoRowsMessage = (processInstanceIds: string[]) =>
@@ -29,7 +29,6 @@ describe('instancePhases', () => {
       onTestFinished,
     );
     await testData.createPhaseRows(instanceId);
-    await renameBlobPhases(instanceId);
     const rows = await loadRows(instanceId);
     await setSortOrder(rows.initial.id, 1);
     await setSortOrder(rows.final.id, 0);
@@ -39,8 +38,8 @@ describe('instancePhases', () => {
     });
 
     expect(phases.map(({ phaseId, name }) => ({ phaseId, name }))).toEqual([
-      { phaseId: 'final', name: 'Final Phase' },
-      { phaseId: 'initial', name: 'Initial Phase' },
+      { phaseId: 'final', name: 'Row final' },
+      { phaseId: 'initial', name: 'Row initial' },
     ]);
     expect(phases[1]?.rules?.proposals?.submit).toBe(true);
     expect(logger.debug).not.toHaveBeenCalledWith(
@@ -80,15 +79,14 @@ describe('instancePhases', () => {
     onTestFinished,
   }) => {
     const { instanceId } = await createInstance(task.id, onTestFinished);
-    await renameBlobPhases(instanceId);
 
     const phases = await getPhases({
       instance: await loadInstance(instanceId),
     });
 
     expect(phases.map(({ name }) => name)).toEqual([
-      'Blob initial',
-      'Blob final',
+      'Initial Phase',
+      'Final Phase',
     ]);
     expectNoRowsMessage([instanceId]);
   });
@@ -102,7 +100,6 @@ describe('instancePhases', () => {
       onTestFinished,
     );
     await testData.createPhaseRows(instanceId);
-    await renameBlobPhases(instanceId);
     const rows = await loadRows(instanceId);
     await db.delete(profiles).where(eq(profiles.id, rows.initial.profileId));
     const { profile: added } = await db.transaction((tx) =>
@@ -120,7 +117,7 @@ describe('instancePhases', () => {
     });
 
     expect(phases.map(({ phaseId, name }) => ({ phaseId, name }))).toEqual([
-      { phaseId: 'final', name: 'Final Phase' },
+      { phaseId: 'final', name: 'Row final' },
       { phaseId: added.slug, name: 'Added phase' },
     ]);
   });
@@ -204,15 +201,14 @@ describe('instancePhases', () => {
       onTestFinished,
     );
     await testData.createPhaseRows(instanceId);
-    await renameBlobPhases(instanceId);
     const instance = await loadInstance(instanceId);
 
     const attached = attachBlobPhases({ instance });
 
     expect(attached.instanceData).toBe(instance.instanceData);
     expect(attached.phases.map(({ name }) => name)).toEqual([
-      'Blob initial',
-      'Blob final',
+      'Initial Phase',
+      'Final Phase',
     ]);
   });
 });
@@ -241,13 +237,18 @@ async function loadInstance(instanceId: string) {
 }
 
 async function loadRows(instanceId: string) {
-  const phasesByInstance = await listPhasesByInstance({
-    db,
-    processInstanceIds: [instanceId],
-  });
-  const rows = phasesByInstance.get(instanceId) ?? [];
-  const initial = rows.find((row) => phaseIdOf(row) === 'initial');
-  const final = rows.find((row) => phaseIdOf(row) === 'final');
+  const rows = await db
+    .select({
+      id: processPhases.id,
+      profileId: processPhases.profileId,
+      phaseId: sql<string | null>`${processPhases.data} ->> 'phaseId'`,
+      slug: profiles.slug,
+    })
+    .from(processPhases)
+    .innerJoin(profiles, eq(profiles.id, processPhases.profileId))
+    .where(eq(processPhases.processInstanceId, instanceId));
+  const initial = rows.find((row) => row.phaseId === 'initial');
+  const final = rows.find((row) => row.phaseId === 'final');
 
   if (!initial || !final) {
     throw new Error(`Instance ${instanceId} is missing its phase rows`);
@@ -261,14 +262,3 @@ const setSortOrder = (rowId: string, sortOrder: number) =>
     .update(processPhases)
     .set({ sortOrder })
     .where(eq(processPhases.id, rowId));
-
-const renameBlobPhases = (instanceId: string) =>
-  db
-    .update(processInstances)
-    .set({
-      instanceData: sql`jsonb_set(
-        jsonb_set(${processInstances.instanceData}, '{phases,0,name}', '"Blob initial"'),
-        '{phases,1,name}', '"Blob final"'
-      )`,
-    })
-    .where(eq(processInstances.id, instanceId));
