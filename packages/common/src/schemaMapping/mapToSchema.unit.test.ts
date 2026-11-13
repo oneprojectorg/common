@@ -1,30 +1,23 @@
 import { describe, expect, it } from 'vitest';
 
 import { mapToSchema } from './mapToSchema';
-import type { MappingExpression, MappingInput, SchemaRef } from './types';
+import type { FieldMapping, MappingInput, SchemaRef } from './types';
 
 const proposalRef: SchemaRef = { type: 'proposal', phaseId: 'submission' };
 const reviewRef: SchemaRef = { type: 'review', phaseId: 'feasibility' };
 const targetRef: SchemaRef = { type: 'proposal', phaseId: 'ballot' };
 
-const mapOne = ({
-  value,
+const mapProposals = ({
+  fields,
   inputs,
-  targetField = 'result',
+  to = targetRef,
 }: {
-  value: MappingExpression;
+  fields: FieldMapping[];
   inputs: MappingInput[];
-  targetField?: string;
+  to?: SchemaRef;
 }) =>
   mapToSchema({
-    rules: [
-      {
-        sourceSchema: proposalRef,
-        targetSchema: targetRef,
-        targetField,
-        value,
-      },
-    ],
+    mappings: [{ from: proposalRef, to, fields }],
     inputs,
     targetSchema: targetRef,
   });
@@ -36,60 +29,44 @@ const proposal = (data: unknown): MappingInput => ({
 
 describe('mapToSchema', () => {
   it('copies a field', () => {
-    const result = mapOne({
-      value: { field: 'location' },
-      inputs: [proposal({ location: { lat: 1, lng: 2 } })],
+    const result = mapProposals({
+      fields: [
+        { from: 'location', to: 'place' },
+        { from: 'cost.amount', to: 'budget' },
+      ],
+      inputs: [
+        proposal({ location: { lat: 1, lng: 2 }, cost: { amount: 50 } }),
+      ],
     });
 
-    expect(result.data).toEqual({ result: { lat: 1, lng: 2 } });
+    expect(result.data).toEqual({ place: { lat: 1, lng: 2 }, budget: 50 });
   });
 
-  it('writes a literal', () => {
-    const result = mapOne({
-      value: { value: 'draft' },
-      inputs: [proposal({})],
-    });
-
-    expect(result.data).toEqual({ result: 'draft' });
-  });
-
-  it('adds three fields', () => {
-    const result = mapOne({
-      value: {
-        operator: 'add',
-        operands: [
-          { field: 'cost.design' },
-          { field: 'cost.build' },
-          { field: 'cost.contingency' },
-        ],
-      },
-      inputs: [proposal({ cost: { design: 5, build: 40, contingency: 5 } })],
-    });
-
-    expect(result.data).toEqual({ result: 50 });
-  });
-
-  it('leaves the field empty when a field it reads is empty', () => {
-    const result = mapOne({
-      value: { operator: 'add', operands: [{ field: 'a' }, { field: 'b' }] },
-      inputs: [proposal({ a: 1, b: '' })],
+  it('skips an empty source field', () => {
+    const result = mapProposals({
+      fields: [
+        { from: 'title', to: 'title' },
+        { from: 'summary', to: 'summary' },
+        { from: 'missing', to: 'missing' },
+      ],
+      inputs: [proposal({ title: '', summary: null })],
     });
 
     expect(result).toEqual({ data: {} });
   });
 
   it('fills the field when all inputs give equal values', () => {
-    const result = mapOne({
-      value: { field: 'title' },
+    const result = mapProposals({
+      fields: [{ from: 'title', to: 'title' }],
       inputs: [proposal({ title: 'Trees' }), proposal({ title: 'Trees' })],
     });
 
-    expect(result.data).toEqual({ result: 'Trees' });
+    expect(result.data).toEqual({ title: 'Trees' });
   });
 
   it('leaves the field empty when inputs give different values', () => {
-    const result = mapOne({
-      value: { field: 'title' },
+    const result = mapProposals({
+      fields: [{ from: 'title', to: 'title' }],
       inputs: [proposal({ title: 'Trees' }), proposal({ title: 'Benches' })],
     });
 
@@ -97,36 +74,21 @@ describe('mapToSchema', () => {
   });
 
   it('skips inputs of another source schema', () => {
-    const result = mapOne({
-      value: { field: 'title' },
+    const result = mapProposals({
+      fields: [{ from: 'title', to: 'title' }],
       inputs: [{ schema: reviewRef, data: { title: 'Trees' } }],
     });
 
     expect(result).toEqual({ data: {} });
   });
 
-  it('never reads a column of the placeholder proposal row', () => {
-    const result = mapOne({
-      value: { field: 'id' },
+  it('skips mappings for another target schema', () => {
+    const result = mapProposals({
+      fields: [{ from: 'title', to: 'title' }],
       inputs: [proposal({ title: 'Trees' })],
+      to: { type: 'proposal', phaseId: 'other' },
     });
 
     expect(result).toEqual({ data: {} });
-  });
-
-  it('writes shallower target fields first, whatever the rule order', () => {
-    const rule = (targetField: string, field: string) => ({
-      sourceSchema: proposalRef,
-      targetSchema: targetRef,
-      targetField,
-      value: { field },
-    });
-    const result = mapToSchema({
-      rules: [rule('location.label', 'label'), rule('location', 'location')],
-      inputs: [proposal({ location: { lat: 1 }, label: 'Park' })],
-      targetSchema: targetRef,
-    });
-
-    expect(result.data).toEqual({ location: { lat: 1, label: 'Park' } });
   });
 });

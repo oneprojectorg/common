@@ -1,64 +1,58 @@
 import { isDeepStrictEqual } from 'node:util';
 
-import { setValueByPath } from '../services/decision/selectionPipeline/expressionEvaluator';
-import { evaluateMappingValue } from './evaluateMappingValue';
-import { getFieldPathDepth, isRecord } from './fieldPath';
+import { readOwnField } from './fieldPath';
 import type {
   MappingInput,
   MappingResult,
-  MappingRule,
+  SchemaMapping,
   SchemaRef,
 } from './types';
 
 /**
- * Evaluates each rule for each input of its source schema. A target field is
- * filled only when all its values are equal.
+ * Copies each field of each mapping from each input of the mapping's source
+ * schema. A target field is filled only when all its values are equal.
  */
 export const mapToSchema = ({
-  rules,
+  mappings,
   inputs,
   targetSchema,
 }: {
-  rules: MappingRule[];
+  mappings: SchemaMapping[];
   inputs: MappingInput[];
   targetSchema: SchemaRef;
 }): MappingResult => {
   const valuesByField = new Map<string, unknown[]>();
 
-  for (const rule of rules) {
-    if (!isSameSchemaRef({ left: rule.targetSchema, right: targetSchema })) {
+  for (const mapping of mappings) {
+    if (!isSameSchemaRef({ left: mapping.to, right: targetSchema })) {
       continue;
     }
+    const sources = inputs.filter((input) =>
+      isSameSchemaRef({ left: input.schema, right: mapping.from }),
+    );
 
-    for (const input of inputs) {
-      if (!isSameSchemaRef({ left: input.schema, right: rule.sourceSchema })) {
-        continue;
+    for (const field of mapping.fields) {
+      for (const source of sources) {
+        const value = readOwnField({ data: source.data, path: field.from });
+        if (isEmptyValue(value)) {
+          continue;
+        }
+        const values = valuesByField.get(field.to) ?? [];
+        values.push(value);
+        valuesByField.set(field.to, values);
       }
-      const value = evaluateMappingValue({
-        expression: rule.value,
-        data: input.data,
-      });
-      if (value === undefined) {
-        continue;
-      }
-
-      const values = valuesByField.get(rule.targetField) ?? [];
-      values.push(value);
-      valuesByField.set(rule.targetField, values);
     }
   }
 
-  const data: Record<string, unknown> = {};
-  const fieldsShallowFirst = [...valuesByField.keys()].sort(compareFieldDepth);
-  for (const field of fieldsShallowFirst) {
-    const [first, ...rest] = valuesByField.get(field) ?? [];
-    if (
-      rest.every((value) => isDeepStrictEqual(first, value)) &&
-      !passesThroughNonObject({ data, path: field })
-    ) {
-      setValueByPath(data, field, structuredClone(first));
-    }
-  }
+  // Object.fromEntries defines own keys, so a `__proto__` key from a mapping
+  // that skipped validation cannot change the prototype.
+  const data = Object.fromEntries(
+    [...valuesByField].flatMap<[string, unknown]>(([field, [first, ...rest]]) =>
+      rest.every((value) => isDeepStrictEqual(first, value))
+        ? [[field, structuredClone(first)]]
+        : [],
+    ),
+  );
 
   return { data };
 };
@@ -71,28 +65,5 @@ export const isSameSchemaRef = ({
   right: SchemaRef;
 }): boolean => left.type === right.type && left.phaseId === right.phaseId;
 
-const compareFieldDepth = (left: string, right: string): number =>
-  getFieldPathDepth(left) - getFieldPathDepth(right) ||
-  Number(left > right) - Number(left < right);
-
-// setValueByPath replaces a value that is not an object with one, which would
-// drop a field filled by a shallower rule.
-const passesThroughNonObject = ({
-  data,
-  path,
-}: {
-  data: Record<string, unknown>;
-  path: string;
-}): boolean => {
-  let current: unknown = data;
-  for (const segment of path.split('.').slice(0, -1)) {
-    if (!isRecord(current)) {
-      return true;
-    }
-    if (!Object.hasOwn(current, segment)) {
-      return false;
-    }
-    current = current[segment];
-  }
-  return !isRecord(current);
-};
+const isEmptyValue = (value: unknown): boolean =>
+  value === undefined || value === null || value === '';
