@@ -39,54 +39,67 @@ We considered five options.
 
 ## Decision
 
-We will map data with declarative rules (option 5), and evaluate them with the
-expression evaluator of the selection pipeline.
+We will map data with declarative rules (option 5). The rules start as a
+direct copy of one source field to one target field. Value expressions of the
+selection pipeline are the planned next step.
 
-- A mapping rule is data with four parts: a source schema, a target schema, a
-  target field (a dot path, for example `budget.amount`), and a value
-  expression.
-- A value expression is a subset of the selection pipeline's `Expression`
-  tree. Rules start with three nodes: a `field` node that reads the source
-  data with a dot path, a scalar literal, and `add`. Other operators and
-  functions of the evaluator can be allowed later, one at a time.
-- The mapping calls the existing evaluator and does not change it. The
-  evaluator's context type requires a proposal database row, so the mapping
-  puts the source data in the `proposalData` column of a placeholder row and
-  adds the `proposalData.` prefix to each `field` node of a copy of the rule.
-  No rule can read a column of the placeholder row.
-- A rule names a schema with `{ type, phaseId }`, where `type` is `proposal`
-  or `review`. The caller resolves a reference to a schema. The mapping core
-  only compares references.
-- The engine evaluates each rule one time for each input that has the source
-  schema of the rule.
-- A rule gives no value for an input when a field it reads is missing,
-  `null` or empty, or when the result is empty or not a finite number.
+- A mapping is data with three parts: a source schema (`from`), a target
+  schema (`to`), and a list of fields. Each field copies one source field
+  (`from`) to one target field (`to`). There is one mapping for each pair of
+  schemas:
+
+  ```ts
+  {
+    from: { type: 'proposal', phaseId: 'submission' },
+    to: { type: 'proposal', phaseId: 'ballot' },
+    fields: [
+      { from: 'title', to: 'summary' },
+      { from: 'cost.amount', to: 'budget' },
+    ],
+  }
+  ```
+
+- The source field is a dot path into the source data, for example
+  `cost.amount`. The target field is one key of the target data. It cannot
+  contain a dot. Nested target paths are deferred.
+- The first version does not call the expression evaluator of the selection
+  pipeline. The next step lets a field use a value expression of the selection
+  pipeline, for example `add`, in place of a source path. We will add the
+  expression nodes one at a time.
+- A mapping names a schema with `{ type, phaseId }`, where `type` is
+  `proposal` or `review`. The caller resolves a reference to a schema. The
+  mapping core only compares references.
+- The engine reads each field of a mapping one time for each input that has
+  the source schema of the mapping.
+- A field gives no value for an input when the source field is missing,
+  `null` or empty.
 - The engine fills a target field only when all values for the field are
   equal. When inputs give different values, the field stays empty and a
   person fills it.
-- The mapping core is in `packages/common/src/schemaMapping/`. It imports the
-  selection pipeline's evaluator and types, and no other decision code or
-  database code.
+- The mapping core is in `packages/common/src/schemaMapping/`. It imports no
+  decision code and no database code.
 
 ## Consequences
 
 - Because rules are data, the system can check a rule against the two
   schemas and find all rules that read a field before a template changes.
   This check is deferred until rules are stored and edited.
-- A rule can copy a value, write a literal, and add the fields of one source,
-  for example a total of three cost fields. A rule cannot calculate across
-  sources, for example an average of all reviews. That needs a new decision.
-- One expression language serves the selection pipeline and the mapping.
+- A rule can only copy a value. It cannot write a literal or calculate a
+  value, for example a total of three cost fields. These need value
+  expressions. A rule that calculates across sources, for example an average
+  of all reviews, needs a new decision.
+- When value expressions are added, one expression language serves the
+  selection pipeline and the mapping.
 - A dot path cannot address a key that contains a dot.
-- The evaluator reads a missing or non-number operand as 0. The mapping must
-  not pre-fill a wrong number, so it checks for missing values before it
-  calls the evaluator. Each operator or function added later needs the same
-  review, for example a zero divisor if `divide` is allowed.
-- The mapping depends on an evaluator that has no direct unit tests. The
-  mapping's tests are the only tests of its behaviour.
-- The placeholder proposal row exists only because of the evaluator's
-  parameter type. A later change that lets the evaluator take plain data
-  removes it.
+- A rule cannot write into a nested object of the target, for example only
+  the amount of a money field. It must copy the full object.
+- When value expressions are added, these facts need a solution:
+  - The evaluator reads a missing or non-number operand as 0. The mapping
+    must not pre-fill a wrong number, so it must check for missing values
+    before it calls the evaluator. Each operator or function that is added
+    needs the same review, for example a zero divisor if `divide` is allowed.
+  - The evaluator has no direct unit tests. The mapping must not depend on
+    behaviour that no test covers.
 - A mapped value can break a constraint of the target, such as a maximum
   length. The result is a draft. Validation stays at the point where a person
   submits the target.
