@@ -497,6 +497,8 @@ test.describe('Proposal View', () => {
     }
 
     const cowopInstanceData = {
+      // The legacy marker: without it the legacy route redirects to /decisions/[slug].
+      currentStateId: 'ideaCollection',
       budget: 100000,
       hideBudget: false,
       phases: [
