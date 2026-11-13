@@ -33,7 +33,7 @@ export const sendPhaseTransitionNotification = inngest.createFunction(
     );
 
     const processData = await step.run('get-process-data', async () => {
-      const instanceRows = await db
+      const [instance] = await db
         .select({
           name: processInstances.name,
           profileId: processInstances.profileId,
@@ -46,13 +46,12 @@ export const sendPhaseTransitionNotification = inngest.createFunction(
         .where(eq(processInstances.id, processInstanceId))
         .limit(1);
 
-      const [instanceRow] = instanceRows;
-      if (!instanceRow) {
+      if (!instance) {
         return undefined;
       }
 
       return resolvePhases({
-        instance: { ...instanceRow, id: processInstanceId },
+        instance: { ...instance, id: processInstanceId },
       });
     });
 
@@ -75,16 +74,7 @@ export const sendPhaseTransitionNotification = inngest.createFunction(
     // the admin confirms.
     const manualSelectionStatus = await step.run(
       'check-manual-selection',
-      async () =>
-        resolveManualSelectionStatus({
-          instance: await resolvePhases({
-            instance: {
-              id: processInstanceId,
-              instanceData: processData.instanceData,
-              currentStateId: processData.currentStateId,
-            },
-          }),
-        }),
+      async () => resolveManualSelectionStatus({ instance: processData }),
     );
 
     if (!manualSelectionStatus.selectionsAreConfirmed) {
