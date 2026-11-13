@@ -1,0 +1,1 @@
+ALTER TABLE "decision_category_reviewers" ADD COLUMN "data" jsonb DEFAULT '{}' NOT NULL;

@@ -12,6 +12,7 @@ import { z } from 'zod';
 
 import { list, paginated, total } from '../../../utils/pagination';
 import { accountContactSchema } from '../../profile/schemas/accountContact';
+import { profileMinimalSchema } from '../../profile/schemas/profileMinimal';
 import type { RubricTemplateSchema } from '../types';
 import {
   instanceOptionalPhaseRefSchema,
@@ -394,6 +395,31 @@ export type CategoryWithReviewersSchema = z.infer<
 >;
 
 export const categoryReviewersListSchema = list(categoryWithReviewersSchema);
+
+export const categoryDevelopmentStatusInputSchema = instancePhaseRefSchema.pick(
+  { processInstanceId: true },
+);
+
+/** A category with its reviewer rows for the current phase and their develop confirm stamps. */
+export const categoryDevelopmentStatusSchema = z.object({
+  category: categoryWithReviewersSchema.shape.category,
+  rows: z.array(
+    z.object({
+      reviewerProfileId: z.uuid(),
+      developConfirmedAt: z.string().nullable(),
+      reviewerProfile: profileMinimalSchema.pick({
+        id: true,
+        name: true,
+        slug: true,
+        avatarImage: true,
+      }),
+    }),
+  ),
+});
+
+export const categoryDevelopmentStatusListSchema = list(
+  categoryDevelopmentStatusSchema,
+);
 
 export const removeCategoryReviewerResultSchema = z.object({
   removed: z.boolean(),
