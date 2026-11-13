@@ -134,8 +134,8 @@ const rules: MappingRule[] = [
     targetSchema: ballotRef,
     targetField: 'budget.amount',
     value: {
-      function: 'sum',
-      arguments: [
+      operator: 'add',
+      operands: [
         { field: 'cost_design.amount' },
         { field: 'cost_construction.amount' },
         { field: 'cost_contingency.amount' },
@@ -323,7 +323,6 @@ describe.concurrent('getDevelopPrefill', () => {
     });
 
     expect(result).toEqual({
-      ok: true,
       data: {
         title: 'Bike lanes',
         location: { lat: 39.96, lng: -83 },
@@ -373,9 +372,6 @@ describe.concurrent('getDevelopPrefill', () => {
       user: setup.user,
     });
 
-    if (!result.ok) {
-      throw new Error(`Expected a prefill, got ${JSON.stringify(result)}`);
-    }
     expect(result.data).not.toHaveProperty('budget');
     expect(result.data.title).toBe('Library roof');
     expect(result.candidates['budget.amount']).toEqual([
@@ -431,9 +427,6 @@ describe.concurrent('getDevelopPrefill', () => {
       user: setup.user,
     });
 
-    if (!result.ok) {
-      throw new Error(`Expected a prefill, got ${JSON.stringify(result)}`);
-    }
     expect(result.data).not.toHaveProperty('title');
     expect(result.candidates.title).toEqual(
       proposals.map((proposal, index) => ({
@@ -442,43 +435,6 @@ describe.concurrent('getDevelopPrefill', () => {
       })),
     );
     expect(result.data.budget).toEqual({ amount: 6 });
-  });
-
-  it('given a rule that reads a field the source rubric does not have, when the prefill is built, then it returns the problem with the rule index', async ({
-    task,
-    onTestFinished,
-  }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const { setup, instanceId, createSubmittedProposal } =
-      await seedDevelopDecision(testData);
-    const proposal = await createSubmittedProposal({ title: 'Crosswalks' });
-
-    const result = await getDevelopPrefill({
-      instanceId,
-      inputs: [{ type: 'proposal', phaseId: SUBMISSION, id: proposal.id }],
-      target: { type: 'proposal', phaseId: BALLOT },
-      rules: [
-        ...rules,
-        {
-          sourceSchema: feasibilityRef,
-          targetSchema: ballotRef,
-          targetField: 'budget.amount',
-          value: { field: 'cost_total.amount' },
-        },
-      ],
-      user: setup.user,
-    });
-
-    expect(result).toEqual({
-      ok: false,
-      problems: [
-        {
-          code: 'sourceFieldNotFound',
-          ruleIndex: 4,
-          field: 'cost_total.amount',
-        },
-      ],
-    });
   });
 
   it('given callers with and without the Develop Proposals permission, when each builds the prefill, then only the one without it is refused', async ({
@@ -525,11 +481,9 @@ describe.concurrent('getDevelopPrefill', () => {
       UnauthorizedError,
     );
     await expect(buildPrefill(developer.user)).resolves.toMatchObject({
-      ok: true,
       data: { title: 'Bus shelters' },
     });
     await expect(buildPrefill(setup.user)).resolves.toMatchObject({
-      ok: true,
       data: { title: 'Bus shelters' },
     });
   });

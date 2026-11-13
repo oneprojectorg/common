@@ -5,14 +5,10 @@ import { permission } from 'access-zones';
 import { z } from 'zod';
 
 import {
-  type MappingCandidate,
   type MappingInput,
+  type MappingResult,
   type MappingRule,
-  type MappingRuleProblem,
-  type SchemaEntry,
   type SchemaRef,
-  checkMappingRules,
-  isSameSchemaRef,
   mapToSchema,
   mappingRuleSchema,
 } from '../../schemaMapping';
@@ -36,14 +32,6 @@ export type DevelopPrefillInput = {
   phaseId: string;
   id: string;
 };
-
-export type DevelopPrefillResult =
-  | {
-      ok: true;
-      data: Record<string, unknown>;
-      candidates: Record<string, MappingCandidate[]>;
-    }
-  | { ok: false; problems: MappingRuleProblem[] };
 
 const developPrefillRequestSchema = z.object({
   inputs: z
@@ -79,7 +67,7 @@ export const getDevelopPrefill = async ({
   target: { type: 'proposal'; phaseId: string };
   rules: MappingRule[];
   user: User;
-}): Promise<DevelopPrefillResult> => {
+}): Promise<MappingResult> => {
   const request = developPrefillRequestSchema.safeParse({
     inputs,
     target,
@@ -109,55 +97,23 @@ export const getDevelopPrefill = async ({
   const parsedRules = request.data.rules;
   const targetSchema = request.data.target;
 
-  const requiredRefs = getDistinctRefs([
+  for (const ref of [
     ...parsedInputs.map(({ type, phaseId }) => ({ type, phaseId })),
     targetSchema,
-  ]);
-  const requiredSchemas = requiredRefs.map((ref) => ({
-    ref,
-    schema: resolveRequiredSchema({ instanceData: instance.instanceData, ref }),
-  }));
-
-  // A rule ref that resolves to nothing is left out, so checkMappingRules
-  // reports it as a rule problem instead of failing the request.
-  const ruleSchemas = getDistinctRefs(
-    parsedRules.flatMap((rule) => [rule.sourceSchema, rule.targetSchema]),
-  )
-    .filter(
-      (ref) =>
-        !requiredRefs.some((known) =>
-          isSameSchemaRef({ left: known, right: ref }),
-        ),
-    )
-    .flatMap((ref) => {
-      const schema = resolveSchema({
-        instanceData: instance.instanceData,
-        ref,
-      });
-      return schema ? [{ ref, schema }] : [];
-    });
+  ]) {
+    assertSchemaExists({ instanceData: instance.instanceData, ref });
+  }
 
   const mappingInputs = await loadMappingInputs({
     instance,
     inputs: parsedInputs,
   });
 
-  const problems = checkMappingRules({
+  return mapToSchema({
     rules: parsedRules,
-    schemas: [...requiredSchemas, ...ruleSchemas],
+    inputs: mappingInputs,
+    targetSchema,
   });
-  if (problems.length > 0) {
-    return { ok: false, problems };
-  }
-
-  return {
-    ok: true,
-    ...mapToSchema({
-      rules: parsedRules,
-      inputs: mappingInputs,
-      targetSchema,
-    }),
-  };
 };
 
 const loadMappingInputs = async ({
@@ -325,16 +281,21 @@ const getAssembledProposalData = async ({
   );
 };
 
-const resolveRequiredSchema = ({
+// The phase template resolvers fall back to the instance template for an
+// unknown phase, so the phase is asserted first.
+const assertSchemaExists = ({
   instanceData,
   ref,
 }: {
   instanceData: DecisionInstanceData;
   ref: SchemaRef;
-}): unknown => {
+}): void => {
   assertInstancePhase({ instance: { instanceData }, phaseId: ref.phaseId });
 
-  const schema = resolveSchema({ instanceData, ref });
+  const schema =
+    ref.type === 'review'
+      ? getPhaseRubricTemplate(instanceData, ref.phaseId)
+      : getPhaseProposalTemplate(instanceData, ref.phaseId);
   if (!schema) {
     throw new NotFoundError(
       ref.type === 'review' ? 'Rubric' : 'Proposal form',
@@ -342,33 +303,7 @@ const resolveRequiredSchema = ({
       `Phase '${ref.phaseId}' has no ${ref.type === 'review' ? 'rubric' : 'proposal form'}`,
     );
   }
-  return schema;
 };
-
-// The phase resolvers fall back to the instance template for an unknown
-// phase, so the phase must exist before a template counts as its own.
-const resolveSchema = ({
-  instanceData,
-  ref,
-}: {
-  instanceData: DecisionInstanceData;
-  ref: SchemaRef;
-}): SchemaEntry['schema'] | null => {
-  if (!instanceData.phases.some((phase) => phase.phaseId === ref.phaseId)) {
-    return null;
-  }
-  return ref.type === 'review'
-    ? getPhaseRubricTemplate(instanceData, ref.phaseId)
-    : getPhaseProposalTemplate(instanceData, ref.phaseId);
-};
-
-const getDistinctRefs = (refs: SchemaRef[]): SchemaRef[] =>
-  refs.filter(
-    (ref, index) =>
-      refs.findIndex((other) =>
-        isSameSchemaRef({ left: other, right: ref }),
-      ) === index,
-  );
 
 const toValidationError = (error: z.ZodError): ValidationError => {
   const fieldErrors = Object.fromEntries(
