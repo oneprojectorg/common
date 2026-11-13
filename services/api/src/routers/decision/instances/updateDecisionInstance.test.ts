@@ -12,7 +12,7 @@ import {
   syncPhaseRows,
 } from '@op/common/testing';
 import { db, eq, sql } from '@op/db/client';
-import { ProcessStatus, processInstances } from '@op/db/schema';
+import { ProcessStatus, processInstances, processPhases } from '@op/db/schema';
 import { describe, expect, it, vi } from 'vitest';
 
 import { appRouter } from '../..';
@@ -1155,28 +1155,69 @@ describe.concurrent('updateDecisionInstance', () => {
     ]);
   });
 
-  it('rejects an empty phase name, leaving the stored profile name unchanged', async ({
+  it.for(['', '   '])(
+    'rejects the phase name %j, leaving the stored phases unchanged',
+    async (name, { task, onTestFinished }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+      const setup = await testData.createDecisionSetup({
+        instanceCount: 1,
+        grantAccess: true,
+      });
+      const instanceId = setup.instance.instance.id;
+      const caller = await createAuthenticatedCaller(setup.userEmail);
+      const before = await loadPhaseState(instanceId);
+      expect(before.rows.length).toBeGreaterThan(0);
+
+      await expect(
+        caller.decision.updateDecisionInstance({
+          instanceId,
+          phases: [{ phaseId: 'initial', name }, { phaseId: 'final' }],
+        }),
+      ).rejects.toMatchObject({ code: 'BAD_REQUEST' });
+
+      expect(await loadPhaseState(instanceId)).toEqual(before);
+    },
+  );
+
+  it('names the phase, not its id, when publishing a date phase with no end date', async ({
     task,
     onTestFinished,
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
     const setup = await testData.createDecisionSetup({
+      processSchema: dateAdvancementSchema,
       instanceCount: 1,
       grantAccess: true,
     });
     const instanceId = setup.instance.instance.id;
     const caller = await createAuthenticatedCaller(setup.userEmail);
+    const [initial] = await loadPhaseRows(instanceId);
+    if (!initial) {
+      throw new Error('Expected the template phase rows');
+    }
+    const { endDate: _endDate, ...data } = initial.data;
+    await db
+      .update(processPhases)
+      .set({ data })
+      .where(eq(processPhases.id, initial.id));
     const before = await loadPhaseState(instanceId);
-    expect(before.rows.length).toBeGreaterThan(0);
 
     await expect(
       caller.decision.updateDecisionInstance({
         instanceId,
-        phases: [{ phaseId: 'initial', name: '' }, { phaseId: 'final' }],
+        status: ProcessStatus.PUBLISHED,
+        phases: [{ phaseId: 'initial', name: 'Kickoff' }, { phaseId: 'final' }],
       }),
-    ).rejects.toMatchObject({ code: 'BAD_REQUEST' });
+    ).rejects.toMatchObject({
+      cause: {
+        name: 'ValidationError',
+        message:
+          'Phase "Kickoff" must have an end date because it advances by date',
+      },
+    });
 
     expect(await loadPhaseState(instanceId)).toEqual(before);
+    expect(await loadTransitionLinks(instanceId)).toEqual([]);
   });
 
   it('serializes concurrent saves on the instance lock', async ({
