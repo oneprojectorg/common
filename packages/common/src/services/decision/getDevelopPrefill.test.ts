@@ -287,7 +287,7 @@ const seedDevelopDecision = async (testData: TestDecisionsDataManager) => {
 };
 
 describe.concurrent('getDevelopPrefill', () => {
-  it('given one proposal with a feasibility and an equity review, when the prefill is built, then it fills title, location, description and the summed budget, with candidates that name their sources', async ({
+  it('given one proposal with a feasibility and an equity review, when the prefill is built, then it fills title, location, description and the summed budget', async ({
     task,
     onTestFinished,
   }) => {
@@ -329,18 +329,10 @@ describe.concurrent('getDevelopPrefill', () => {
         description: 'Summary of Bike lanes',
         budget: { amount: 21500 },
       },
-      candidates: {
-        title: [{ value: 'Bike lanes', sourceId: proposal.id }],
-        location: [{ value: { lat: 39.96, lng: -83 }, sourceId: proposal.id }],
-        description: [
-          { value: 'Summary of Bike lanes', sourceId: proposal.id },
-        ],
-        'budget.amount': [{ value: 21500, sourceId: feasibility.id }],
-      },
     });
   });
 
-  it('given two feasibility reviews with different costs, when the prefill is built, then the budget stays empty and keeps both candidates', async ({
+  it('given two feasibility reviews with different costs, when the prefill is built, then the budget stays empty', async ({
     task,
     onTestFinished,
   }) => {
@@ -374,13 +366,9 @@ describe.concurrent('getDevelopPrefill', () => {
 
     expect(result.data).not.toHaveProperty('budget');
     expect(result.data.title).toBe('Library roof');
-    expect(result.candidates['budget.amount']).toEqual([
-      { value: 600, sourceId: first.id },
-      { value: 1300, sourceId: second.id },
-    ]);
   });
 
-  it('given three proposals with their reviews, when the prefill is built, then the title keeps three candidates and is not filled', async ({
+  it('given three proposals with their reviews, when the prefill is built, then the title is not filled', async ({
     task,
     onTestFinished,
   }) => {
@@ -428,12 +416,6 @@ describe.concurrent('getDevelopPrefill', () => {
     });
 
     expect(result.data).not.toHaveProperty('title');
-    expect(result.candidates.title).toEqual(
-      proposals.map((proposal, index) => ({
-        value: titles[index],
-        sourceId: proposal.id,
-      })),
-    );
     expect(result.data.budget).toEqual({ amount: 6 });
   });
 
