@@ -4,10 +4,7 @@ import type { User } from '@op/supabase/lib';
 
 import { NotFoundError, UnauthorizedError, ValidationError } from '../../utils';
 import { getProfileAccessUser } from '../access';
-import {
-  assertProposalDevelopAccess,
-  isDevelopPhaseById,
-} from './assertProposalDevelopAccess';
+import { assertProposalDevelopAccess } from './assertProposalDevelopAccess';
 import { finalizeProposalSubmission } from './finalizeProposalSubmission';
 import { getInstancePhases } from './schemas/instanceData';
 
@@ -50,25 +47,16 @@ export const submitDevelopedProposal = async ({
     throw new NotFoundError('Decision profile');
   }
 
-  const phases = [...getInstancePhases(instance.instanceData)];
   const currentPhaseId = instance.currentStateId;
 
-  if (
-    !currentPhaseId ||
-    !isDevelopPhaseById({
-      instance: { instanceData: { phases } },
-      phaseId: currentPhaseId,
-    })
-  ) {
-    throw new ValidationError(
-      'Developed proposals can only be submitted in a develop phase',
-    );
+  if (!currentPhaseId) {
+    throw new ValidationError('Invalid phase in process instance');
   }
 
   await assertProposalDevelopAccess({
     instance: {
       profileId: instance.profileId,
-      instanceData: { phases },
+      instanceData: { phases: getInstancePhases(instance.instanceData) },
     },
     phaseId: currentPhaseId,
     user: { id: user.id },

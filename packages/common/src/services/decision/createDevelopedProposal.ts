@@ -20,7 +20,6 @@ import {
   type PhaseInstanceData,
   getInstancePhases,
 } from './schemas/instanceData';
-import { isDevelopPhase } from './utils/phaseSettings';
 
 export interface CreateDevelopedProposalInput {
   processInstanceId: string;
@@ -51,26 +50,24 @@ export const createDevelopedProposal = async ({
     throw new NotFoundError('Process instance', data.processInstanceId);
   }
 
-  const phases = getInstancePhases(instance.instanceData);
-  const currentPhaseIndex = phases.findIndex(
-    (phase) => phase.phaseId === instance.currentStateId,
-  );
-  const currentPhase = phases[currentPhaseIndex];
-
-  if (!currentPhase || !isDevelopPhase(currentPhase)) {
-    throw new ValidationError(
-      'Developed proposals can only be created in a develop phase',
-    );
+  if (!instance.currentStateId) {
+    throw new ValidationError('Invalid phase in process instance');
   }
 
-  await assertProposalDevelopAccess({
+  const phases = getInstancePhases(instance.instanceData);
+
+  const currentPhase = await assertProposalDevelopAccess({
     instance: {
       profileId: instance.profileId,
-      instanceData: { phases: [...phases] },
+      instanceData: { phases },
     },
-    phaseId: currentPhase.phaseId,
+    phaseId: instance.currentStateId,
     user: { id: authUserId },
   });
+
+  const currentPhaseIndex = phases.findIndex(
+    (phase) => phase.phaseId === currentPhase.phaseId,
+  );
 
   const sourceProposalIds = await assertDevelopSources({
     instance,

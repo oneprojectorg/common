@@ -177,7 +177,7 @@ describe.concurrent('createDevelopedProposal', () => {
         user: setup.user,
       }),
       ValidationError,
-      'develop phase',
+      'cannot be developed',
     );
   });
 

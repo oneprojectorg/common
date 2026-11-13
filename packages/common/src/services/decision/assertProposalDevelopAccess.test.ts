@@ -103,16 +103,16 @@ async function createMemberWithRole({
 const DEVELOP_RULES: ProposalRules = { develop: true, submit: false };
 const SUBMIT_ONLY_RULES: ProposalRules = { develop: false, submit: true };
 
-async function expectNotAllowed(attempt: Promise<void>) {
+async function expectNotAllowed(attempt: Promise<unknown>) {
   const error = await attempt.catch((caught: unknown) => caught);
   expect(error).toBeInstanceOf(ValidationError);
   expect(error).toHaveProperty(
     'message',
-    expect.stringMatching(/^Proposals are not allowed in the .+ phase$/),
+    expect.stringMatching(/^Proposals cannot be developed in the .+ phase$/),
   );
 }
 
-async function expectCannotDevelop(attempt: Promise<void>) {
+async function expectCannotDevelop(attempt: Promise<unknown>) {
   const error = await attempt.catch((caught: unknown) => caught);
   expect(error).toBeInstanceOf(UnauthorizedError);
   expect(error).toHaveProperty(
@@ -144,7 +144,7 @@ describe.concurrent('assertProposalDevelopAccess', () => {
         phaseId: PHASE_ID,
         user: { id: member.authUserId },
       }),
-    ).resolves.toBeUndefined();
+    ).resolves.toMatchObject({ phaseId: PHASE_ID });
   });
 
   it('refuses a caller with Review and a category-reviewer row for the phase but without Develop Proposals', async ({
@@ -192,7 +192,7 @@ describe.concurrent('assertProposalDevelopAccess', () => {
         phaseId: PHASE_ID,
         user: { id: setup.user.id },
       }),
-    ).resolves.toBeUndefined();
+    ).resolves.toMatchObject({ phaseId: PHASE_ID });
   });
 
   it('allows a caller with the decisions Admin permission and no Develop Proposals bit', async ({
@@ -217,7 +217,7 @@ describe.concurrent('assertProposalDevelopAccess', () => {
         phaseId: PHASE_ID,
         user: { id: member.authUserId },
       }),
-    ).resolves.toBeUndefined();
+    ).resolves.toMatchObject({ phaseId: PHASE_ID });
   });
 
   it('refuses a caller with Develop Proposals outside a develop phase with ValidationError', async ({
@@ -291,7 +291,7 @@ describe.concurrent('assertProposalDevelopAccess', () => {
     );
   });
 
-  it('refuses on an instance without a decision profile', async ({
+  it('refuses on an instance without a decision profile with UnauthorizedError', async ({
     task,
     onTestFinished,
   }) => {
@@ -301,15 +301,16 @@ describe.concurrent('assertProposalDevelopAccess', () => {
       grantAccess: true,
     });
 
-    await expectNotAllowed(
-      assertProposalDevelopAccess({
-        instance: {
-          ...withProposalRules(setup.instance, DEVELOP_RULES),
-          profileId: null,
-        },
-        phaseId: PHASE_ID,
-        user: { id: setup.user.id },
-      }),
-    );
+    const error = await assertProposalDevelopAccess({
+      instance: {
+        ...withProposalRules(setup.instance, DEVELOP_RULES),
+        profileId: null,
+      },
+      phaseId: PHASE_ID,
+      user: { id: setup.user.id },
+    }).catch((caught: unknown) => caught);
+
+    expect(error).toBeInstanceOf(UnauthorizedError);
+    expect(error).toHaveProperty('message', "You don't have access to do this");
   });
 });

@@ -3,12 +3,13 @@ import { checkPermission, permission } from 'access-zones';
 import { UnauthorizedError, ValidationError } from '../../utils';
 import { type AccessUser, getProfileAccessRoles } from '../access';
 import { decisionPermission } from './permissions';
-import type { DecisionInstanceData } from './schemas/instanceData';
+import type { PhaseInstanceData } from './schemas/instanceData';
+import { assertInstancePhase } from './utils/instance';
 import { isDevelopPhase } from './utils/phaseSettings';
 
 type DevelopInstance = {
   profileId: string | null;
-  instanceData: Pick<DecisionInstanceData, 'phases'>;
+  instanceData: { phases: readonly PhaseInstanceData[] };
 };
 
 const DEVELOP_ACCESS = [
@@ -17,19 +18,7 @@ const DEVELOP_ACCESS = [
   { decisions: decisionPermission.DEVELOP_PROPOSALS },
 ];
 
-/** Whether `phaseId` is a develop phase of the instance. */
-export function isDevelopPhaseById({
-  instance,
-  phaseId,
-}: {
-  instance: { instanceData: Pick<DecisionInstanceData, 'phases'> };
-  phaseId: string | null;
-}): boolean {
-  const phase = instance.instanceData.phases.find((p) => p.phaseId === phaseId);
-  return phase !== undefined && isDevelopPhase(phase);
-}
-
-/** Asserts a develop phase and admin or `decisionPermission.DEVELOP_PROPOSALS` on the instance profile. */
+/** Asserts a develop phase and admin or `decisionPermission.DEVELOP_PROPOSALS` on the instance profile, and returns the phase. */
 export async function assertProposalDevelopAccess({
   instance,
   phaseId,
@@ -38,12 +27,16 @@ export async function assertProposalDevelopAccess({
   instance: DevelopInstance;
   phaseId: string;
   user: AccessUser;
-}): Promise<void> {
-  const phase = instance.instanceData.phases.find((p) => p.phaseId === phaseId);
+}): Promise<PhaseInstanceData> {
+  if (!instance.profileId) {
+    throw new UnauthorizedError("You don't have access to do this");
+  }
 
-  if (!phase || !isDevelopPhase(phase) || !instance.profileId) {
+  const phase = assertInstancePhase({ instance, phaseId });
+
+  if (!isDevelopPhase(phase)) {
     throw new ValidationError(
-      `Proposals are not allowed in the ${phase?.name ?? 'Unknown'} phase`,
+      `Proposals cannot be developed in the ${phase.name ?? 'Unknown'} phase`,
     );
   }
 
@@ -55,4 +48,6 @@ export async function assertProposalDevelopAccess({
   if (!checkPermission(DEVELOP_ACCESS, roles)) {
     throw new UnauthorizedError('You cannot develop proposals in this phase');
   }
+
+  return phase;
 }
