@@ -53,7 +53,7 @@ const developPrefillRequestSchema = z.object({
 /**
  * Builds the starting data of a developed proposal: maps the given proposals
  * and their reviews into the target phase's proposal form with `rules`. A
- * target field with conflicting candidates stays empty for a person to choose.
+ * target field whose inputs give different values stays empty.
  */
 export const getDevelopPrefill = async ({
   instanceId,
@@ -217,7 +217,6 @@ const loadMappingInputs = async ({
 
   return inputs.map((input) => ({
     schema: { type: input.type, phaseId: input.phaseId },
-    id: input.id,
     data:
       input.type === 'proposal'
         ? proposalDataById.get(input.id)
