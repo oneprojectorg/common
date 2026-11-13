@@ -34,28 +34,41 @@ We considered five options.
 4. **Use the blocks of the selection pipeline.** A block takes a list of
    items and returns a list of the same items. No block builds one new record
    from sources of different types.
-5. **Use declarative rules with a small expression tree.**
+5. **Use declarative rules whose values are expressions of the selection
+   pipeline.**
 
 ## Decision
 
-We will map data with declarative rules (option 5).
+We will map data with declarative rules (option 5), and evaluate them with the
+expression evaluator of the selection pipeline.
 
 - A mapping rule is data with four parts: a source schema, a target schema, a
-  target pointer (JSON Pointer, RFC 6901), and a value expression.
-- A value expression is a JSON tree: a pointer into the source data, a
-  literal, arithmetic, and a small fixed set of functions. An expression with
-  a missing operand gives no value.
+  target field (a dot path, for example `budget.amount`), and a value
+  expression.
+- A value expression is the selection pipeline's `Expression` tree. A `field`
+  node reads the source data with a dot path. The mapping accepts the
+  evaluator's literal, field, comparison, logical, arithmetic and function
+  nodes. It rejects `variable` nodes and function names that the evaluator
+  does not know.
+- The mapping calls the existing evaluator and does not change it. The
+  evaluator's context type requires a proposal database row, so the mapping
+  puts the source data in the `proposalData` column of a placeholder row and
+  adds the `proposalData.` prefix to each `field` node of a copy of the rule.
+  No rule can read a column of the placeholder row.
 - A rule names a schema with `{ type, phaseId }`, where `type` is `proposal`
   or `review`. The caller resolves a reference to a schema. The mapping core
   only compares references.
 - The engine evaluates each rule one time for each input that has the source
   schema of the rule. Each result is a candidate, and a candidate keeps the
   ID of its input.
+- A rule gives no candidate when a field it reads is missing, `null` or
+  empty, when a divisor is 0, or when the result is empty or not a finite
+  number. A direct argument of `coalesce` can be missing.
 - The engine fills a target field only when all candidates for the field are
   equal. When they are different, the field stays empty and a person chooses.
-- The mapping core is in `packages/common/src/schemaMapping/`. It imports no
-  decision code and no database code. It has its own expression evaluator.
-  The selection pipeline does not change.
+- The mapping core is in `packages/common/src/schemaMapping/`. It imports the
+  selection pipeline's evaluator and types, and no other decision code or
+  database code.
 
 ## Consequences
 
@@ -64,9 +77,17 @@ We will map data with declarative rules (option 5).
 - A rule can copy a value, and can calculate from the fields of one source,
   for example a total of three cost fields. A rule cannot calculate across
   sources, for example an average of all reviews. That needs a new decision.
-- Two expression evaluators exist: this one and the one in the selection
-  pipeline. Their expression nodes have the same JSON shape, so a later
-  change can join them.
+- One expression language serves the selection pipeline and the mapping.
+- A dot path cannot address a key that contains a dot.
+- The evaluator reads a missing or non-number operand as 0, and gives 0 for a
+  division by 0. The mapping must not pre-fill a wrong number, so it adds its
+  own checks for missing values and zero divisors before it calls the
+  evaluator. A change to the evaluator can make these checks incomplete.
+- The mapping depends on an evaluator that has no direct unit tests. The
+  mapping's tests are the only tests of its behaviour.
+- The placeholder proposal row exists only because of the evaluator's
+  parameter type. A later change that lets the evaluator take plain data
+  removes it.
 - A mapped value can break a constraint of the target, such as a maximum
   length. The result is a draft. Validation stays at the point where a person
   submits the target.
