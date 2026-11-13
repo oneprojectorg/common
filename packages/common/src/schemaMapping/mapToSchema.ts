@@ -1,3 +1,5 @@
+import { isDeepStrictEqual } from 'node:util';
+
 import { setValueByPath } from '../services/decision/selectionPipeline/expressionEvaluator';
 import { evaluateMappingValue } from './evaluateMappingValue';
 import { getFieldPathDepth, isRecord } from './fieldPath';
@@ -56,7 +58,7 @@ export const mapToSchema = ({
     if (
       first &&
       rest.every((candidate) =>
-        isDeepEqual({ left: first.value, right: candidate.value }),
+        isDeepStrictEqual(first.value, candidate.value),
       ) &&
       !passesThroughNonObject({ data, path: field })
     ) {
@@ -99,36 +101,4 @@ const passesThroughNonObject = ({
     current = current[segment];
   }
   return !isRecord(current);
-};
-
-const isDeepEqual = ({
-  left,
-  right,
-}: {
-  left: unknown;
-  right: unknown;
-}): boolean => {
-  if (Object.is(left, right)) {
-    return true;
-  }
-  if (Array.isArray(left) && Array.isArray(right)) {
-    return (
-      left.length === right.length &&
-      left.every((item, index) =>
-        isDeepEqual({ left: item, right: right[index] }),
-      )
-    );
-  }
-  if (isRecord(left) && isRecord(right)) {
-    const leftKeys = Object.keys(left);
-    return (
-      leftKeys.length === Object.keys(right).length &&
-      leftKeys.every(
-        (key) =>
-          Object.hasOwn(right, key) &&
-          isDeepEqual({ left: left[key], right: right[key] }),
-      )
-    );
-  }
-  return false;
 };
