@@ -15,7 +15,7 @@ import {
 import { eq } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 
-import type { MappingRule } from '../../schemaMapping';
+import type { SchemaMapping } from '../../schemaMapping';
 import { NotFoundError, UnauthorizedError, ValidationError } from '../../utils';
 import { getDevelopPrefill } from './getDevelopPrefill';
 import { parseProposalData } from './proposalDataSchema';
@@ -110,37 +110,20 @@ const submissionRef = { type: 'proposal', phaseId: SUBMISSION } as const;
 const feasibilityRef = { type: 'review', phaseId: FEASIBILITY } as const;
 const ballotRef = { type: 'proposal', phaseId: BALLOT } as const;
 
-const rules: MappingRule[] = [
+const mappings: SchemaMapping[] = [
   {
-    sourceSchema: submissionRef,
-    targetSchema: ballotRef,
-    targetField: 'title',
-    value: { field: 'title' },
+    from: submissionRef,
+    to: ballotRef,
+    fields: [
+      { from: 'title', to: 'title' },
+      { from: 'location', to: 'location' },
+      { from: 'summary', to: 'description' },
+    ],
   },
   {
-    sourceSchema: submissionRef,
-    targetSchema: ballotRef,
-    targetField: 'location',
-    value: { field: 'location' },
-  },
-  {
-    sourceSchema: submissionRef,
-    targetSchema: ballotRef,
-    targetField: 'description',
-    value: { field: 'summary' },
-  },
-  {
-    sourceSchema: feasibilityRef,
-    targetSchema: ballotRef,
-    targetField: 'budget.amount',
-    value: {
-      operator: 'add',
-      operands: [
-        { field: 'cost_design.amount' },
-        { field: 'cost_construction.amount' },
-        { field: 'cost_contingency.amount' },
-      ],
-    },
+    from: feasibilityRef,
+    to: ballotRef,
+    fields: [{ from: 'cost_construction', to: 'budget' }],
   },
 ];
 
@@ -287,7 +270,7 @@ const seedDevelopDecision = async (testData: TestDecisionsDataManager) => {
 };
 
 describe.concurrent('getDevelopPrefill', () => {
-  it('given one proposal with a feasibility and an equity review, when the prefill is built, then it fills title, location, description and the summed budget', async ({
+  it('given one proposal with a feasibility and an equity review, when the prefill is built, then it fills title, location, description and budget', async ({
     task,
     onTestFinished,
   }) => {
@@ -318,7 +301,7 @@ describe.concurrent('getDevelopPrefill', () => {
         { type: 'review', phaseId: EQUITY, id: equity.id },
       ],
       target: { type: 'proposal', phaseId: BALLOT },
-      rules,
+      mappings,
       user: setup.user,
     });
 
@@ -327,7 +310,7 @@ describe.concurrent('getDevelopPrefill', () => {
         title: 'Bike lanes',
         location: { lat: 39.96, lng: -83 },
         description: 'Summary of Bike lanes',
-        budget: { amount: 21500 },
+        budget: { amount: 20000, currency: 'USD' },
       },
     });
   });
@@ -360,7 +343,7 @@ describe.concurrent('getDevelopPrefill', () => {
         { type: 'review', phaseId: FEASIBILITY, id: second.id },
       ],
       target: { type: 'proposal', phaseId: BALLOT },
-      rules,
+      mappings,
       user: setup.user,
     });
 
@@ -411,12 +394,12 @@ describe.concurrent('getDevelopPrefill', () => {
         })),
       ],
       target: { type: 'proposal', phaseId: BALLOT },
-      rules,
+      mappings,
       user: setup.user,
     });
 
     expect(result.data).not.toHaveProperty('title');
-    expect(result.data.budget).toEqual({ amount: 6 });
+    expect(result.data.budget).toEqual({ amount: 2, currency: 'USD' });
   });
 
   it('given callers with and without the Develop Proposals permission, when each builds the prefill, then only the one without it is refused', async ({
@@ -455,7 +438,7 @@ describe.concurrent('getDevelopPrefill', () => {
         instanceId,
         inputs: [{ type: 'proposal', phaseId: SUBMISSION, id: proposal.id }],
         target: { type: 'proposal', phaseId: BALLOT },
-        rules,
+        mappings,
         user,
       });
 
@@ -519,7 +502,7 @@ describe.concurrent('getDevelopPrefill', () => {
           ...inputs,
         ],
         target: { type: 'proposal', phaseId: BALLOT },
-        rules,
+        mappings,
         user: setup.user,
       });
 

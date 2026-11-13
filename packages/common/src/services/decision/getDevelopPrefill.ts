@@ -7,10 +7,10 @@ import { z } from 'zod';
 import {
   type MappingInput,
   type MappingResult,
-  type MappingRule,
+  type SchemaMapping,
   type SchemaRef,
   mapToSchema,
-  mappingRuleSchema,
+  schemaMappingSchema,
 } from '../../schemaMapping';
 import { CommonError, NotFoundError, ValidationError } from '../../utils';
 import { assertProfileAccess } from '../assert';
@@ -47,31 +47,31 @@ const developPrefillRequestSchema = z.object({
     type: z.literal('proposal'),
     phaseId: z.string().min(1),
   }),
-  rules: z.array(mappingRuleSchema),
+  mappings: z.array(schemaMappingSchema),
 });
 
 /**
  * Builds the starting data of a developed proposal: maps the given proposals
- * and their reviews into the target phase's proposal form with `rules`. A
- * target field whose inputs give different values stays empty.
+ * and their reviews into the target phase's proposal form with `mappings`.
+ * A target field whose inputs give different values stays empty.
  */
 export const getDevelopPrefill = async ({
   instanceId,
   inputs,
   target,
-  rules,
+  mappings,
   user,
 }: {
   instanceId: string;
   inputs: DevelopPrefillInput[];
   target: { type: 'proposal'; phaseId: string };
-  rules: MappingRule[];
+  mappings: SchemaMapping[];
   user: User;
 }): Promise<MappingResult> => {
   const request = developPrefillRequestSchema.safeParse({
     inputs,
     target,
-    rules,
+    mappings,
   });
   if (!request.success) {
     throw toValidationError(request.error);
@@ -94,7 +94,7 @@ export const getDevelopPrefill = async ({
   });
 
   const parsedInputs = request.data.inputs;
-  const parsedRules = request.data.rules;
+  const parsedMappings = request.data.mappings;
   const targetSchema = request.data.target;
 
   for (const ref of [
@@ -110,7 +110,7 @@ export const getDevelopPrefill = async ({
   });
 
   return mapToSchema({
-    rules: parsedRules,
+    mappings: parsedMappings,
     inputs: mappingInputs,
     targetSchema,
   });
