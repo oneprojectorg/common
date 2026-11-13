@@ -114,31 +114,31 @@ const rules: MappingRule[] = [
   {
     sourceSchema: submissionRef,
     targetSchema: ballotRef,
-    targetPointer: '/title',
-    value: { pointer: '/title' },
+    targetField: 'title',
+    value: { field: 'title' },
   },
   {
     sourceSchema: submissionRef,
     targetSchema: ballotRef,
-    targetPointer: '/location',
-    value: { pointer: '/location' },
+    targetField: 'location',
+    value: { field: 'location' },
   },
   {
     sourceSchema: submissionRef,
     targetSchema: ballotRef,
-    targetPointer: '/description',
-    value: { pointer: '/summary' },
+    targetField: 'description',
+    value: { field: 'summary' },
   },
   {
     sourceSchema: feasibilityRef,
     targetSchema: ballotRef,
-    targetPointer: '/budget/amount',
+    targetField: 'budget.amount',
     value: {
       function: 'sum',
       arguments: [
-        { pointer: '/cost_design/amount' },
-        { pointer: '/cost_construction/amount' },
-        { pointer: '/cost_contingency/amount' },
+        { field: 'cost_design.amount' },
+        { field: 'cost_construction.amount' },
+        { field: 'cost_contingency.amount' },
       ],
     },
   },
@@ -331,14 +331,12 @@ describe.concurrent('getDevelopPrefill', () => {
         budget: { amount: 21500 },
       },
       candidates: {
-        '/title': [{ value: 'Bike lanes', sourceId: proposal.id }],
-        '/location': [
-          { value: { lat: 39.96, lng: -83 }, sourceId: proposal.id },
-        ],
-        '/description': [
+        title: [{ value: 'Bike lanes', sourceId: proposal.id }],
+        location: [{ value: { lat: 39.96, lng: -83 }, sourceId: proposal.id }],
+        description: [
           { value: 'Summary of Bike lanes', sourceId: proposal.id },
         ],
-        '/budget/amount': [{ value: 21500, sourceId: feasibility.id }],
+        'budget.amount': [{ value: 21500, sourceId: feasibility.id }],
       },
     });
   });
@@ -380,7 +378,7 @@ describe.concurrent('getDevelopPrefill', () => {
     }
     expect(result.data).not.toHaveProperty('budget');
     expect(result.data.title).toBe('Library roof');
-    expect(result.candidates['/budget/amount']).toEqual([
+    expect(result.candidates['budget.amount']).toEqual([
       { value: 600, sourceId: first.id },
       { value: 1300, sourceId: second.id },
     ]);
@@ -437,7 +435,7 @@ describe.concurrent('getDevelopPrefill', () => {
       throw new Error(`Expected a prefill, got ${JSON.stringify(result)}`);
     }
     expect(result.data).not.toHaveProperty('title');
-    expect(result.candidates['/title']).toEqual(
+    expect(result.candidates.title).toEqual(
       proposals.map((proposal, index) => ({
         value: titles[index],
         sourceId: proposal.id,
@@ -464,8 +462,8 @@ describe.concurrent('getDevelopPrefill', () => {
         {
           sourceSchema: feasibilityRef,
           targetSchema: ballotRef,
-          targetPointer: '/budget/amount',
-          value: { pointer: '/cost_total/amount' },
+          targetField: 'budget.amount',
+          value: { field: 'cost_total.amount' },
         },
       ],
       user: setup.user,
@@ -475,9 +473,9 @@ describe.concurrent('getDevelopPrefill', () => {
       ok: false,
       problems: [
         {
-          code: 'sourcePointerNotFound',
+          code: 'sourceFieldNotFound',
           ruleIndex: 4,
-          pointer: '/cost_total/amount',
+          field: 'cost_total.amount',
         },
       ],
     });
