@@ -37,6 +37,7 @@ export const insertProposalDraft = async ({
   submittedByProfileId,
   adminRoleId,
   defaultHidden,
+  formSchemaId,
 }: {
   tx: TransactionType;
   user: User;
@@ -49,6 +50,8 @@ export const insertProposalDraft = async ({
   submittedByProfileId: string;
   adminRoleId: string;
   defaultHidden: boolean;
+  /** Set only by callers that pin a form schema; omitted leaves the column unset. */
+  formSchemaId?: string | null;
 }) => {
   const authUserId = user.id;
 
@@ -105,6 +108,7 @@ export const insertProposalDraft = async ({
       profileId: proposalProfile.id,
       status: ProposalStatus.DRAFT,
       ...(defaultHidden ? { visibility: Visibility.HIDDEN } : {}),
+      formSchemaId,
     })
     .returning();
 
