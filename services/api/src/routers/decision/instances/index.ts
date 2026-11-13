@@ -4,6 +4,7 @@ import { createInstanceFromTemplateRouter } from './createInstanceFromTemplate';
 import { deleteDecisionRouter } from './deleteDecision';
 import { duplicateInstanceRouter } from './duplicateInstance';
 import { getCategoriesRouter } from './getCategories';
+import { getConvertedInstanceSlugRouter } from './getConvertedInstanceSlug';
 import { getDecisionBySlugRouter } from './getDecisionBySlug';
 import { getInstanceRouter, getLegacyInstanceRouter } from './getInstance';
 import { getPhaseReviewProgressRouter } from './getPhaseReviewProgress';
@@ -32,6 +33,7 @@ export const instancesRouter = mergeRouters(
   listLegacyInstancesRouter,
   getInstanceRouter,
   getLegacyInstanceRouter,
+  getConvertedInstanceSlugRouter,
   getPhaseReviewProgressRouter,
   getVotingProgressRouter,
   getCategoriesRouter,

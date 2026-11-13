@@ -6,8 +6,9 @@ import {
 import type { Metadata } from 'next';
 import { cache } from 'react';
 
-import { getTranslations } from '@/lib/i18n';
+import { type Locale, getTranslations } from '@/lib/i18n';
 
+import { redirectConvertedInstance } from '../../redirectConvertedInstance';
 import { LegacyProposalViewClient } from './ProposalViewClient';
 
 // cache() dedupes the read across generateMetadata + page render (one request),
@@ -46,9 +47,19 @@ export async function generateMetadata({
 const ProposalViewPage = async ({
   params,
 }: {
-  params: Promise<{ profileId: string; slug: string; id: string }>;
+  params: Promise<{
+    profileId: string;
+    slug: string;
+    id: string;
+    locale: Locale;
+  }>;
 }) => {
-  const { profileId, slug, id } = await params;
+  const { profileId, slug, id, locale } = await params;
+  await redirectConvertedInstance({
+    instanceId: id,
+    locale,
+    path: `/proposal/${profileId}`,
+  });
   const { queryClient } = await createServerUtils();
 
   // Swallow failures: this only warms the cache — the client suspense query
