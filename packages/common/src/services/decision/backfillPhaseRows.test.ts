@@ -346,7 +346,21 @@ describe.concurrent('backfill-phase-rows data script', () => {
     expect(await readPhaseRows(instanceId)).toEqual(rows);
   });
 
-  it('given fill_partial and a blank instance_ids, then the run fails before it changes anything', async ({
+  it('given a blank instance_ids, then the run fails before it changes anything', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const instanceId = await seedDecision(testData, {});
+
+    await expect(
+      runBackfill(testData, instanceId, { 'op_backfill.instance_ids': ' ' }),
+    ).rejects.toThrow(/op_backfill\.instance_ids is required/);
+
+    expect(await readPhaseRows(instanceId)).toEqual([]);
+  });
+
+  it('given fill_partial and instance_ids set to all, then the run fails before it changes anything', async ({
     task,
     onTestFinished,
   }) => {
@@ -355,10 +369,10 @@ describe.concurrent('backfill-phase-rows data script', () => {
 
     await expect(
       runBackfill(testData, instanceId, {
-        'op_backfill.instance_ids': ' ',
+        'op_backfill.instance_ids': 'all',
         'op_backfill.fill_partial': 'true',
       }),
-    ).rejects.toThrow(/fill_partial needs op_backfill\.instance_ids/);
+    ).rejects.toThrow(/fill_partial needs a uuid list/);
 
     expect(await readPhaseRows(instanceId)).toEqual([]);
   });
@@ -482,7 +496,7 @@ describe.concurrent('backfill-phase-rows data script', () => {
     ).toEqual([]);
   });
 
-  it('given a blank instance_ids, then the drift check covers every decision', async ({
+  it('given instance_ids set to all, then the drift check covers every decision', async ({
     task,
     onTestFinished,
   }) => {
@@ -490,12 +504,31 @@ describe.concurrent('backfill-phase-rows data script', () => {
     const instanceId = await seedDecision(testData, {});
 
     const rows = await runDriftCheck([], {
-      'op_backfill.instance_ids': ' ',
+      'op_backfill.instance_ids': 'all',
       'op_backfill.drift_kind': 'no_rows',
     });
 
     expect(rows.map((row) => row.instance_id)).toContain(instanceId);
-    expect(rows.every((row) => row.kind === 'no_rows')).toBe(true);
+  });
+
+  it('given a blank instance_ids, then the drift check and the strip fail, and the strip changes nothing', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const instanceId = await seedDecision(testData, {});
+    await runBackfill(testData, instanceId);
+    const before = await readInstanceData(instanceId);
+
+    await expect(
+      runDriftCheck([], { 'op_backfill.instance_ids': ' ' }),
+    ).rejects.toThrow(/op_backfill\.instance_ids is required/);
+    await expect(
+      runStrip([], { 'op_backfill.instance_ids': ' ' }),
+    ).rejects.toThrow(/op_backfill\.instance_ids is required/);
+
+    expect(before).toHaveProperty('phases');
+    expect(await readInstanceData(instanceId)).toEqual(before);
   });
 
   it('given one decision with phase rows and one without, then the strip removes the blob phases from the first only', async ({
@@ -603,12 +636,21 @@ const runBackfill = async (
   }
 };
 
-const runDriftCheck = async (instanceIds: string[], settings?: Settings) => {
-  const rows = await runInScope(driftSql, instanceIds, settings);
-  return z.array(driftRowSchema).parse([...rows]);
+// postgres.js resolves a multi-statement script to one result set per statement
+const lastResultSet = (result: unknown): unknown[] => {
+  const sets = z.array(z.array(z.unknown())).safeParse(result);
+  return sets.success
+    ? (sets.data.at(-1) ?? [])
+    : z.array(z.unknown()).parse(result);
 };
 
-const runStrip = (instanceIds: string[]) => runInScope(stripSql, instanceIds);
+const runDriftCheck = async (instanceIds: string[], settings?: Settings) => {
+  const result = await runInScope(driftSql, instanceIds, settings);
+  return z.array(driftRowSchema).parse(lastResultSet(result));
+};
+
+const runStrip = (instanceIds: string[], settings?: Settings) =>
+  runInScope(stripSql, instanceIds, settings);
 
 const insertPhaseRow = async (
   testData: TestDecisionsDataManager,

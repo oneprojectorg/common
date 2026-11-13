@@ -30,18 +30,22 @@
 -- NOTICE names the uncovered phase ids.
 --
 -- Settings, read once at the start. Use a session SET, not SET LOCAL:
---   op_backfill.instance_ids  '<uuid>,<uuid>' limits the run to those
---                             decisions. Blank means every decision.
+--   op_backfill.instance_ids  required. '<uuid>,<uuid>' limits the run to
+--                             those decisions; 'all' runs on every decision.
+--                             Unset or blank stops the run before any write.
 --   op_backfill.fill_partial  'true' also adds the missing rows to partial
---                             decisions. It needs op_backfill.instance_ids.
+--                             decisions. It needs a uuid list, not 'all'.
 -- check-phase-drift.sql and strip-blob-phases.sql read instance_ids too.
 DO $$
 DECLARE
   -- JS String.prototype.trim's whitespace
   v_trim CONSTANT text := '^[\u0009-\u000d    -     　﻿]+|[\u0009-\u000d    -     　﻿]+$';
-  v_scope uuid[] := string_to_array(
-    replace(nullif(btrim(current_setting('op_backfill.instance_ids', true)), ''), ' ', ''), ','
-  )::uuid[];
+  v_scope_text text := nullif(btrim(current_setting('op_backfill.instance_ids', true)), '');
+  -- NULL means every decision
+  v_scope uuid[] := CASE
+    WHEN lower(v_scope_text) = 'all' THEN NULL
+    ELSE string_to_array(replace(v_scope_text, ' ', ''), ',')::uuid[]
+  END;
   v_fill_partial boolean := coalesce(
     nullif(btrim(current_setting('op_backfill.fill_partial', true)), ''), 'false'
   )::boolean;
@@ -58,8 +62,11 @@ DECLARE
   v_skipped integer := 0;
   v_unlinked integer;
 BEGIN
+  IF v_scope_text IS NULL THEN
+    RAISE EXCEPTION 'backfill-phase-rows: op_backfill.instance_ids is required: a comma-separated uuid list, or all';
+  END IF;
   IF v_fill_partial AND v_scope IS NULL THEN
-    RAISE EXCEPTION 'backfill-phase-rows: op_backfill.fill_partial needs op_backfill.instance_ids';
+    RAISE EXCEPTION 'backfill-phase-rows: op_backfill.fill_partial needs a uuid list in op_backfill.instance_ids, not all';
   END IF;
 
   -- Session-only helpers. They are made here, not above the DO, because a

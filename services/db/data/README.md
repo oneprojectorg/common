@@ -20,14 +20,17 @@ The scripts read these settings. Set them with a session `SET`, not `SET LOCAL`.
 
 | Setting | Read by | Effect |
 |---|---|---|
-| `op_backfill.instance_ids` | all three | `'<uuid>,<uuid>'` limits the run to those decisions. |
-| `op_backfill.fill_partial` | backfill | `'true'` also adds the missing rows to decisions whose rows cover only some phases. Needs `instance_ids`. |
-| `op_backfill.drift_kind` | drift check | `'no_rows'`, `'partial'` or `'drift'` shows only that kind. |
+| `op_backfill.instance_ids` | all three | Required. `'<uuid>,<uuid>'` limits the run to those decisions; `'all'` runs on every decision. Unset or blank stops the script before it reads or writes anything. |
+| `op_backfill.fill_partial` | backfill | `'true'` also adds the missing rows to decisions whose rows cover only some phases. Needs a uuid list in `instance_ids`, not `'all'`. |
+| `op_backfill.drift_kind` | drift check | `'no_rows'`, `'partial'` or `'drift'` shows only that kind. Blank shows every kind. |
 
 The backfill commits inside its `DO` block, so it must not run in a transaction. Put the `SET` in its own `-c`, and do not use `psql -1`:
 
 ```sh
 psql "$DATABASE_URL" -c "SET op_backfill.instance_ids = '<uuid>,<uuid>'" \
+  -f services/db/data/backfill-phase-rows.sql
+
+psql "$DATABASE_URL" -c "SET op_backfill.instance_ids = 'all'" \
   -f services/db/data/backfill-phase-rows.sql
 ```
 
@@ -42,10 +45,10 @@ psql "$DATABASE_URL" -c "SET op_backfill.instance_ids = '<uuid>,<uuid>'" \
 
    Until release 3, the app still writes `instance_data.phases` and the backfill skips decisions that have rows. If you backfill a decision that someone then edits in the builder, it shows stale rows while the read flag is on, and the edit is lost when release 3 ships.
 
-2. **After release 3 is live.** Run the backfill without a scope.
+2. **After release 3 is live.** Run the backfill with `op_backfill.instance_ids = 'all'`.
 
-3. **Before release 4.** Run the drift check with `op_backfill.drift_kind = 'no_rows'`. It must return zero rows. This is the only gate: after the fallback read is gone, a decision with no rows cannot advance, revert or publish. After release 3, `partial` and `drift` rows are expected. The blob is frozen, so a decision with a phase added or removed shows `partial` or `drift`, and each decision made after release 3 shows `drift`.
+3. **Before release 4.** Run the drift check with `op_backfill.instance_ids = 'all'` and `op_backfill.drift_kind = 'no_rows'`. It must return zero rows. This is the only gate: after the fallback read is gone, a decision with no rows cannot advance, revert or publish. After release 3, `partial` and `drift` rows are expected. The blob is frozen, so a decision with a phase added or removed shows `partial` or `drift`, and each decision made after release 3 shows `drift`.
 
-4. **Release 4.** Run `strip-blob-phases.sql`. It keeps the blob on decisions with no rows.
+4. **Release 4.** Run `strip-blob-phases.sql` with `op_backfill.instance_ids = 'all'`. It keeps the blob on decisions with no rows.
 
 `packages/common/src/services/decision/backfillPhaseRows.test.ts` runs these files against the test database.

@@ -2,7 +2,8 @@
 -- instance_data.phases. Zero rows means every decision is in step.
 --
 -- Run by hand with psql against each environment, never through migrate:
---   psql "$DATABASE_URL" -f services/db/data/check-phase-drift.sql
+--   psql "$DATABASE_URL" -c "SET op_backfill.instance_ids = 'all'" \
+--     -f services/db/data/check-phase-drift.sql
 --
 -- A row's phase id is data->>'phaseId', else its profile slug (phaseIdOf).
 -- kind:
@@ -15,18 +16,30 @@
 --
 -- After release 3 the blob is frozen, so partial and drift are expected. The
 -- gate before release 4 is zero no_rows rows:
---   psql "$DATABASE_URL" -c "SET op_backfill.drift_kind = 'no_rows'" \
+--   psql "$DATABASE_URL" -c "SET op_backfill.instance_ids = 'all'" \
+--     -c "SET op_backfill.drift_kind = 'no_rows'" \
 --     -f services/db/data/check-phase-drift.sql
 --
--- Settings, each blank means all:
---   op_backfill.instance_ids  '<uuid>,<uuid>' limits it to those decisions
---   op_backfill.drift_kind    limits it to one kind
+-- Settings:
+--   op_backfill.instance_ids  required. '<uuid>,<uuid>' limits it to those
+--                             decisions; 'all' checks every decision.
+--   op_backfill.drift_kind    limits it to one kind; blank means every kind
+DO $$
+BEGIN
+  IF nullif(btrim(current_setting('op_backfill.instance_ids', true)), '') IS NULL THEN
+    RAISE EXCEPTION 'check-phase-drift: op_backfill.instance_ids is required: a comma-separated uuid list, or all';
+  END IF;
+END $$;
+
 WITH settings AS (
   SELECT
-    string_to_array(
-      replace(nullif(btrim(current_setting('op_backfill.instance_ids', true)), ''), ' ', ''), ','
-    )::uuid[] AS instance_ids,
+    -- NULL means every decision
+    CASE
+      WHEN lower(btrim(scope.text)) = 'all' THEN NULL
+      ELSE string_to_array(replace(btrim(scope.text), ' ', ''), ',')::uuid[]
+    END AS instance_ids,
     nullif(btrim(current_setting('op_backfill.drift_kind', true)), '') AS kind
+  FROM (SELECT current_setting('op_backfill.instance_ids', true) AS text) scope
 )
 SELECT checked.*
 FROM (

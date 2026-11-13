@@ -6,13 +6,25 @@
 -- op_backfill.drift_kind = 'no_rows' first and confirm it returns zero rows.
 --
 -- Run by hand with psql against each environment, never through migrate:
---   psql "$DATABASE_URL" -f services/db/data/strip-blob-phases.sql
+--   psql "$DATABASE_URL" -c "SET op_backfill.instance_ids = 'all'" \
+--     -f services/db/data/strip-blob-phases.sql
 --
--- op_backfill.instance_ids = '<uuid>,<uuid>' limits it to those decisions.
+-- op_backfill.instance_ids is required: '<uuid>,<uuid>' limits it to those
+-- decisions; 'all' strips every decision that has rows.
+DO $$
+BEGIN
+  IF nullif(btrim(current_setting('op_backfill.instance_ids', true)), '') IS NULL THEN
+    RAISE EXCEPTION 'strip-blob-phases: op_backfill.instance_ids is required: a comma-separated uuid list, or all';
+  END IF;
+END $$;
+
 WITH settings AS (
-  SELECT string_to_array(
-    replace(nullif(btrim(current_setting('op_backfill.instance_ids', true)), ''), ' ', ''), ','
-  )::uuid[] AS instance_ids
+  -- NULL means every decision
+  SELECT CASE
+    WHEN lower(btrim(scope.text)) = 'all' THEN NULL
+    ELSE string_to_array(replace(btrim(scope.text), ' ', ''), ',')::uuid[]
+  END AS instance_ids
+  FROM (SELECT current_setting('op_backfill.instance_ids', true) AS text) scope
 )
 UPDATE decision_process_instances i
 SET instance_data = i.instance_data - 'phases'
