@@ -66,9 +66,10 @@ value expressions of the selection pipeline are the planned next step.
 - For each copied field, the first version evaluates one `field` node with
   the expression evaluator of the selection pipeline
   ([0020](./0020-decide-phase-transitions-with-a-selection-pipeline-over-aggregated-facts.md)).
-- The evaluator gets one additive change: an optional `data` property on its
-  context. Field access reads `data` first when it is set. The existing
-  pipeline callers do not set it, so their behaviour does not change.
+- The evaluator reads a field from one generic `record` and does not name a
+  proposal. The mapping passes the source data as the record. The pipeline
+  passes the proposal row, or its own context for a block that evaluates
+  once, so its behaviour does not change.
 - Before it calls the evaluator, the mapping reads the source field as an own
   property. The evaluator reads inherited properties and gives `null` for a
   missing field, so this check stops a mapping from reading, for example,
