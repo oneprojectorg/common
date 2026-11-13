@@ -48,9 +48,10 @@ export function buildExpectedTransitions(processInstance: {
     const scheduledDate = currentPhase.endDate;
 
     if (!scheduledDate) {
+      const phaseName = currentPhase.name?.trim() || currentPhase.phaseId;
       throw new ValidationError(
-        `Phase "${currentPhase.phaseId}" must have an end date because it advances by date`,
-        { phases: `Set an end date for "${currentPhase.phaseId}"` },
+        `Phase "${phaseName}" must have an end date because it advances by date`,
+        { phases: `Set an end date for "${phaseName}"` },
       );
     }
 
