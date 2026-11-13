@@ -353,6 +353,7 @@ const decisionAccessEncoder = z.object({
   review: z.boolean(),
   submitProposals: z.boolean(),
   vote: z.boolean(),
+  developProposals: z.boolean(),
 });
 export type DecisionAccess = z.infer<typeof decisionAccessEncoder>;
 

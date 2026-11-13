@@ -164,6 +164,7 @@ export async function createDefaultDecisionRoles({
             review: true,
             submitProposals: true,
             vote: true,
+            developProposals: true,
           },
         },
       },
@@ -195,6 +196,7 @@ export async function createDefaultDecisionRoles({
             review: false,
             submitProposals: true,
             vote: true,
+            developProposals: false,
           },
         },
       },
@@ -248,7 +250,7 @@ export async function getDecisionRole({
 
 /**
  * Update the decision role permissions for a role on the decisions zone.
- * Preserves CRUD bits (0–3); overwrites admin (bit 4) and decision bits (6–9).
+ * Preserves CRUD bits (0–3); overwrites admin (bit 4) and decision bits (5–9).
  */
 export async function updateDecisionRoles({
   roleId,

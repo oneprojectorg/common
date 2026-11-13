@@ -39,7 +39,8 @@ select jsonb_pretty(jsonb_build_object(
   -- stands in for anyone with no session: a row for it is the public grant
   -- that makeDecisionPublic writes. Permission bits: access-zones ACRUD
   -- (DELETE 1, UPDATE 2, READ 4, CREATE 8, ADMIN 16) plus the decision bits
-  -- (INVITE_MEMBERS 32, REVIEW 64, SUBMIT_PROPOSALS 128, VOTE 256).
+  -- (INVITE_MEMBERS 32, REVIEW 64, SUBMIT_PROPOSALS 128, VOTE 256,
+  -- DEVELOP_PROPOSALS 512).
   'access', (select jsonb_agg(jsonb_build_object(
       'who', case when pu.auth_user_id = '00000000-0000-4000-a000-000000000001'
                   then 'public: anyone, signed in or not (GLOBAL_USER_PUBLIC)'
@@ -53,7 +54,8 @@ select jsonb_pretty(jsonb_build_object(
             'can', (select coalesce(jsonb_agg(n order by o), '[]'::jsonb)
                       from (values (1, 'delete', 1), (2, 'update', 2), (4, 'read', 3), (8, 'create', 4),
                                    (16, 'admin', 5), (32, 'invite_members', 6), (64, 'review', 7),
-                                   (128, 'submit_proposals', 8), (256, 'vote', 9)) as bit(v, n, o)
+                                   (128, 'submit_proposals', 8), (256, 'vote', 9),
+                                   (512, 'develop_proposals', 10)) as bit(v, n, o)
                      where (a.permission & bit.v) <> 0))), '{}'::jsonb)
           from access_role_permissions_on_access_zones a
           join access_zones z on z.id = a.access_zone_id

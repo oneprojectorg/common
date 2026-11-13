@@ -1,6 +1,6 @@
 'use client';
 
-import { Badge } from '@op/sense/Badge';
+import { BadgeNumber } from '@op/sense/Badge';
 import { TabsList, TabsTrigger } from '@op/sense/Tabs';
 import { cn } from '@op/sense/lib/utils';
 import type { ComponentProps, ReactNode } from 'react';
@@ -35,13 +35,16 @@ export function ProposalTabTrigger({
   ...props
 }: ProposalTabTriggerProps) {
   return (
-    <TabsTrigger {...props}>
+    <TabsTrigger {...props} className={cn('group/tab', props.className)}>
       {children}
       {/* A count that is still loading renders nothing; hide the empty pill. */}
       {count === undefined ? null : (
-        <Badge variant="secondary" className="empty:hidden">
+        <BadgeNumber
+          variant="secondary"
+          className="group-data-active/tab:bg-foreground group-data-active/tab:text-background empty:hidden"
+        >
           {count}
-        </Badge>
+        </BadgeNumber>
       )}
     </TabsTrigger>
   );

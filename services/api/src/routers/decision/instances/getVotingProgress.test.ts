@@ -189,6 +189,7 @@ describe.concurrent('getVotingProgress', () => {
             review: false,
             submitProposals: false,
             vote: false,
+            developProposals: false,
           },
         },
       },

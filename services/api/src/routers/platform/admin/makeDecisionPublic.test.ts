@@ -160,6 +160,7 @@ describe.concurrent('platform.admin.makeDecisionPublic', () => {
       submitProposals: true,
       vote: true,
       admin: false,
+      developProposals: false,
     });
   });
 

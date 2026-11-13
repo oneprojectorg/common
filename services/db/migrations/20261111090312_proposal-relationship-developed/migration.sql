@@ -1,0 +1,1 @@
+ALTER TYPE "decision_proposal_relationship_type" ADD VALUE 'developed';

@@ -195,6 +195,7 @@ describe.concurrent('proposal relationship engagement access', () => {
             review: true,
             submitProposals: false,
             vote: false,
+            developProposals: false,
           },
         },
       },

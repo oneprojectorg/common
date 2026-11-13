@@ -107,6 +107,7 @@ async function createReviewerRole(instanceProfileId: string) {
           review: true,
           submitProposals: false,
           vote: false,
+          developProposals: false,
         },
       },
     },

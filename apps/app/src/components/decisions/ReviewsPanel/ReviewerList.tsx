@@ -119,7 +119,7 @@ export function ReviewerList({
   };
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-8">
       {!hideSummaryHeader && (
         <header className="flex flex-col gap-2">
           {title === null ? null : (
@@ -129,7 +129,7 @@ export function ReviewerList({
                 : title}
             </Header3>
           )}
-          <p className="text-base">
+          <p className="text-base text-muted-foreground">
             {t('decisions.review.proposalReviewersSubmittedProgress', {
               submitted: reviewsSubmittedCount,
               total: assignmentsCount,
@@ -165,7 +165,7 @@ export function ReviewerList({
       )}
 
       {groups ? (
-        <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-8">
           {groups.map((group) => (
             <RecommendationGroup
               key={group.value}
@@ -210,8 +210,8 @@ export function ReviewerList({
       {!hideSummaryHeader && pendingReviewers.length > 0 && (
         <div className="flex flex-col gap-4">
           <div className="flex items-center justify-between gap-2">
-            <StatusDot intent="neutral" className="gap-2">
-              <span className="font-serif text-sm">
+            <StatusDot intent="neutral" size="md" className="gap-2">
+              <span className="font-serif text-base">
                 {t('decisions.review.notSubmittedYetGroup', {
                   count: pendingReviewers.length,
                 })}
@@ -313,8 +313,12 @@ function RecommendationGroup({
 }) {
   return (
     <div className="flex flex-col gap-4">
-      <StatusDot intent={recommendationIntent(value)} className="gap-2">
-        <span className="font-serif text-sm">
+      <StatusDot
+        intent={recommendationIntent(value)}
+        size="md"
+        className="gap-2"
+      >
+        <span className="font-serif text-base">
           {label} ({count})
         </span>
       </StatusDot>
@@ -366,7 +370,7 @@ function ReviewerRow({
           <span className="text-base">{rowLabel}</span>
           {showScore && (
             <span className="text-sm">
-              {item.score}
+              <span className="font-strong">{item.score}</span>
               <span className="text-muted-foreground">/{totalPoints}pts</span>
             </span>
           )}
@@ -379,7 +383,7 @@ function ReviewerRow({
             {t('decisions.review.olderVersionLabel')}
           </Badge>
         )}
-        <LuChevronRight className="size-4 text-muted-foreground rtl:-scale-x-100" />
+        <LuChevronRight className="size-4 text-foreground rtl:-scale-x-100" />
       </div>
     </Button>
   );

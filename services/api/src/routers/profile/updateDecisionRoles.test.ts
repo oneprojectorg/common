@@ -15,6 +15,7 @@ const decisionPermissions = {
   review: false,
   submitProposals: false,
   vote: false,
+  developProposals: false,
 };
 
 describeAccessTierGating('profile.updateDecisionRoles', {
