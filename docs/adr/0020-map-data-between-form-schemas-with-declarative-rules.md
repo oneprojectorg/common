@@ -58,12 +58,12 @@ expression evaluator of the selection pipeline.
   or `review`. The caller resolves a reference to a schema. The mapping core
   only compares references.
 - The engine evaluates each rule one time for each input that has the source
-  schema of the rule. Each result is a candidate, and a candidate keeps the
-  ID of its input.
-- A rule gives no candidate when a field it reads is missing, `null` or
-  empty, or when the result is empty or not a finite number.
-- The engine fills a target field only when all candidates for the field are
-  equal. When they are different, the field stays empty and a person chooses.
+  schema of the rule.
+- A rule gives no value for an input when a field it reads is missing,
+  `null` or empty, or when the result is empty or not a finite number.
+- The engine fills a target field only when all values for the field are
+  equal. When inputs give different values, the field stays empty and a
+  person fills it.
 - The mapping core is in `packages/common/src/schemaMapping/`. It imports the
   selection pipeline's evaluator and types, and no other decision code or
   database code.
@@ -93,4 +93,6 @@ expression evaluator of the selection pipeline.
 - `{ type, phaseId }` assumes one schema for each type in a phase. If a phase
   gets more than one, the reference must change to a form schema ID. ADR 0019
   sets that direction.
+- The result is only the mapped data. Returning the conflicting values with
+  the input each came from is deferred until a screen needs it.
 - **Not decided here:** where the rules are stored.
