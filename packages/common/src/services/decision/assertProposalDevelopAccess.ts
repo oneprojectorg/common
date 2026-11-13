@@ -10,7 +10,7 @@ import { isDevelopPhase } from './utils/phaseSettings';
 
 type DevelopInstance = {
   profileId: string | null;
-  instanceData: { phases: readonly PhaseInstanceData[] };
+  phases: PhaseInstanceData[];
 };
 
 const DEVELOP_ACCESS = [
@@ -33,7 +33,10 @@ export async function assertProposalDevelopAccess({
     throw new UnauthorizedError("You don't have access to do this");
   }
 
-  const phase = assertInstancePhase({ instance, phaseId });
+  const phase = assertInstancePhase({
+    instance: { phases: instance.phases },
+    phaseId,
+  });
 
   if (!isDevelopPhase(phase)) {
     throw new ValidationError(
