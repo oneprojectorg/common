@@ -27,8 +27,9 @@ export interface CategoryDevelopAccess {
  * in the current phase, which must be a develop phase of a published
  * instance. An admin of the instance profile (no org fallback) acts on the
  * row of `reviewerProfileId`, or on every row of the category for the phase
- * when it is not given. Anyone else needs Review and their own row for the
- * phase, and acts on that row only.
+ * when it is not given. Anyone else needs Develop Proposals on the instance
+ * profile and their own row for the phase, and acts on that row only. Review
+ * does not count.
  *
  * The rule is not final: the server gates of the develop procedures are
  * still open and will change it.
@@ -99,7 +100,9 @@ export async function assertCategoryDevelopAccess({
     };
   }
 
-  if (!checkPermission({ decisions: decisionPermission.REVIEW }, roles)) {
+  if (
+    !checkPermission({ decisions: decisionPermission.DEVELOP_PROPOSALS }, roles)
+  ) {
     throw new UnauthorizedError("You don't have access to do this");
   }
 
