@@ -100,7 +100,6 @@ export const submitDevelopedProposal = async ({
   }
 
   return finalizeProposalSubmission({
-    db,
     proposal,
     instance: {
       id: instance.id,

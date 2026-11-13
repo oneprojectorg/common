@@ -8,24 +8,13 @@ import {
 import type { User } from '@op/supabase/lib';
 
 import { NotFoundError, ValidationError } from '../../utils';
-import {
-  getCurrentProfileId,
-  invalidateProfileUserAccessCache,
-} from '../access';
-import { assertGlobalRole } from '../assert';
+import { invalidateProfileUserAccessCache } from '../access';
 import { assertProposalDevelopAccess } from './assertProposalDevelopAccess';
-import { withBoundaryCategoryLabel } from './boundaryCategory';
 import { getProposalIdsForPhase } from './getProposalsForPhase';
 import { insertProposalDraft } from './insertProposalDraft';
 import { activeProposalPredicate } from './phaseEligibility';
-import {
-  type ProposalDataInput,
-  parseProposalData,
-} from './proposalDataSchema';
-import {
-  extractTitleFromProposalData,
-  getCategoryTermIds,
-} from './proposalDraftInputs';
+import type { ProposalDataInput } from './proposalDataSchema';
+import { resolveProposalDraftInputs } from './proposalDraftInputs';
 import { notSuperseded } from './proposalSupersession';
 import {
   type PhaseInstanceData,
@@ -89,26 +78,12 @@ export const createDevelopedProposal = async ({
     sourceProposalIds: data.sourceProposalIds,
   });
 
-  // Captured at creation, like `createProposal`: the flag sticks through
-  // submission even if the phase rule changes.
-  const defaultHidden =
-    currentPhase.rules?.proposals?.defaults?.hidden === true;
-
-  const parsedProposalData = parseProposalData(data.proposalData);
-  const proposalTitle = extractTitleFromProposalData(data.proposalData);
-
-  const manualCategoryLabels = [...new Set(parsedProposalData.category)];
-  const categoryLabels = instance.profileId
-    ? await withBoundaryCategoryLabel(manualCategoryLabels, data.proposalData, {
-        profileId: instance.profileId,
-      })
-    : manualCategoryLabels;
-  const categoryTermIds = await getCategoryTermIds(categoryLabels);
-
-  const [profileId, adminRole] = await Promise.all([
-    getCurrentProfileId(authUserId),
-    assertGlobalRole('Admin'),
-  ]);
+  const draftInputs = await resolveProposalDraftInputs({
+    authUserId,
+    instanceProfileId: instance.profileId,
+    phase: currentPhase,
+    proposalData: data.proposalData,
+  });
 
   const createdProposal = await db.transaction(async (tx) => {
     const proposal = await insertProposalDraft({
@@ -117,12 +92,7 @@ export const createDevelopedProposal = async ({
       processInstanceId: instance.id,
       proposalData: data.proposalData,
       attachmentIds: data.attachmentIds,
-      proposalTitle,
-      categoryLabels,
-      categoryTermIds,
-      submittedByProfileId: profileId,
-      adminRoleId: adminRole.id,
-      defaultHidden,
+      ...draftInputs,
       formSchemaId: currentPhase.formSchemaId ?? null,
     });
 
