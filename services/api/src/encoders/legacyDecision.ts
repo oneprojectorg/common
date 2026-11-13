@@ -168,26 +168,28 @@ export const legacyDecisionProcessEncoder = createSelectSchema(
   });
 
 // Process Instance Encoder
+const legacyProcessInstanceEncoderBase = createSelectSchema(processInstances)
+  .pick({
+    id: true,
+    name: true,
+    description: true,
+    instanceData: true,
+    currentStateId: true,
+    status: true,
+    createdAt: true,
+    updatedAt: true,
+  })
+  .extend({
+    instanceData: legacyInstanceDataEncoder,
+    process: legacyDecisionProcessEncoder.nullish(),
+    owner: baseProfileEncoder.optional(),
+    proposalCount: z.number().optional(),
+    participantCount: z.number().optional(),
+  });
+
 export const legacyProcessInstanceEncoder = z.preprocess(
   withPhasesOnWire,
-  createSelectSchema(processInstances)
-    .pick({
-      id: true,
-      name: true,
-      description: true,
-      instanceData: true,
-      currentStateId: true,
-      status: true,
-      createdAt: true,
-      updatedAt: true,
-    })
-    .extend({
-      instanceData: legacyInstanceDataEncoder,
-      process: legacyDecisionProcessEncoder.nullish(),
-      owner: baseProfileEncoder.optional(),
-      proposalCount: z.number().optional(),
-      participantCount: z.number().optional(),
-    }),
+  legacyProcessInstanceEncoderBase,
 );
 
 // Proposal Attachment Join Table Encoder (internal — used by legacyProposalEncoder)

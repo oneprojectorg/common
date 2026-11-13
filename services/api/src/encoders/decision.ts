@@ -359,31 +359,35 @@ const decisionAccessEncoder = z.object({
 export type DecisionAccess = z.infer<typeof decisionAccessEncoder>;
 
 /** Process instance encoder  */
+const processInstanceWithSchemaEncoderBase = createSelectSchema(
+  processInstances,
+)
+  .pick({
+    id: true,
+    profileId: true,
+    name: true,
+    description: true,
+    instanceData: true,
+    currentStateId: true,
+    status: true,
+    createdAt: true,
+    updatedAt: true,
+  })
+  .extend({
+    instanceData: instanceDataWithSchemaEncoder,
+    process: decisionProcessWithSchemaEncoder.nullish(),
+    owner: baseProfileEncoder.optional(),
+    steward: baseProfileEncoder.nullish(),
+    slug: z.string().nullish(),
+    proposalCount: z.number().optional(),
+    participantCount: z.number().optional(),
+    access: decisionAccessEncoder.optional(),
+    selectionsAreConfirmed: z.boolean().optional(),
+  });
+
 export const processInstanceWithSchemaEncoder = z.preprocess(
   withPhasesOnWire,
-  createSelectSchema(processInstances)
-    .pick({
-      id: true,
-      profileId: true,
-      name: true,
-      description: true,
-      instanceData: true,
-      currentStateId: true,
-      status: true,
-      createdAt: true,
-      updatedAt: true,
-    })
-    .extend({
-      instanceData: instanceDataWithSchemaEncoder,
-      process: decisionProcessWithSchemaEncoder.nullish(),
-      owner: baseProfileEncoder.optional(),
-      steward: baseProfileEncoder.nullish(),
-      slug: z.string().nullish(),
-      proposalCount: z.number().optional(),
-      participantCount: z.number().optional(),
-      access: decisionAccessEncoder.optional(),
-      selectionsAreConfirmed: z.boolean().optional(),
-    }),
+  processInstanceWithSchemaEncoderBase,
 );
 
 /** Decision profile encoder  */
@@ -503,26 +507,28 @@ export const decisionProcessEncoder = createSelectSchema(decisionProcesses)
   });
 
 // Process Instance Encoder
+const processInstanceEncoderBase = createSelectSchema(processInstances)
+  .pick({
+    id: true,
+    name: true,
+    description: true,
+    instanceData: true,
+    currentStateId: true,
+    status: true,
+    createdAt: true,
+    updatedAt: true,
+  })
+  .extend({
+    instanceData: instanceDataEncoder,
+    process: decisionProcessEncoder.nullish(),
+    owner: baseProfileEncoder.optional(),
+    proposalCount: z.number().optional(),
+    participantCount: z.number().optional(),
+  });
+
 export const processInstanceEncoder = z.preprocess(
   withPhasesOnWire,
-  createSelectSchema(processInstances)
-    .pick({
-      id: true,
-      name: true,
-      description: true,
-      instanceData: true,
-      currentStateId: true,
-      status: true,
-      createdAt: true,
-      updatedAt: true,
-    })
-    .extend({
-      instanceData: instanceDataEncoder,
-      process: decisionProcessEncoder.nullish(),
-      owner: baseProfileEncoder.optional(),
-      proposalCount: z.number().optional(),
-      participantCount: z.number().optional(),
-    }),
+  processInstanceEncoderBase,
 );
 
 // State Transition History Encoder
