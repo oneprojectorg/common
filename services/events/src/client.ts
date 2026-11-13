@@ -1,6 +1,7 @@
 import { EventSchemas, Inngest } from 'inngest';
 import type { z } from 'zod';
 
+import { invocationTiming } from './observability';
 import { Events } from './types';
 
 type EventSchemaMap = {
@@ -13,6 +14,7 @@ type EventSchemaMap = {
 export const inngest = new Inngest({
   id: process.env.WORKFLOW_APP_ID ?? 'common',
   schemas: new EventSchemas().fromRecord<EventSchemaMap>(),
+  middleware: [invocationTiming],
 });
 
 export const event = inngest;

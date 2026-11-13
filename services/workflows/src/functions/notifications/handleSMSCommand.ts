@@ -61,27 +61,47 @@ export const handleSMSCommand = inngest.createFunction(
       body,
     } = smsInboundReceived.schema.parse(event.data);
 
-    const flagEnabled = await step.run('check-feature-flag', () =>
-      isFeatureEnabled(SMS_COMMANDS_FEATURE_FLAG, 'server'),
-    );
+    const to = parseInboundNumber(from, 'command');
 
-    if (!flagEnabled) {
+    const resolved = await step.run('resolve-context', async () => {
+      const flagEnabled = await isFeatureEnabled(
+        SMS_COMMANDS_FEATURE_FLAG,
+        'server',
+      );
+      if (!flagEnabled || !to) {
+        return { flagEnabled, account: null, line: null };
+      }
+      const [state, found] = await Promise.all([
+        getPhoneSignupState({ phone: to }),
+        inboundTo ? findDecisionPhoneNumber({ phone: inboundTo }) : null,
+      ]);
+      return {
+        flagEnabled,
+        account:
+          state.status === 'confirmed'
+            ? { authUserId: state.authUserId }
+            : null,
+        line: found
+          ? {
+              id: found.id,
+              phone: found.phone,
+              slug: found.slug,
+              instanceId: found.instanceId,
+            }
+          : null,
+      };
+    });
+
+    if (!resolved.flagEnabled) {
       logger.info('SMS commands feature flag is disabled, skipping');
       return { message: 'sms commands disabled' };
     }
-
-    const to = parseInboundNumber(from, 'command');
 
     if (!to) {
       return INVALID_PHONE_RESULT;
     }
 
-    const account = await step.run('resolve-account', async () => {
-      const state = await getPhoneSignupState({ phone: to });
-      return state.status === 'confirmed'
-        ? { authUserId: state.authUserId }
-        : null;
-    });
+    const { account, line } = resolved;
 
     if (!account) {
       logger.info('SMS command from a number with no account, skipping', {
@@ -89,20 +109,6 @@ export const handleSMSCommand = inngest.createFunction(
       });
       return { message: 'unknown number, skipped' };
     }
-
-    const line = await step.run('resolve-line', async () => {
-      const found = inboundTo
-        ? await findDecisionPhoneNumber({ phone: inboundTo })
-        : null;
-      return found
-        ? {
-            id: found.id,
-            phone: found.phone,
-            slug: found.slug,
-            instanceId: found.instanceId,
-          }
-        : null;
-    });
 
     const text = createTextSender({
       step,

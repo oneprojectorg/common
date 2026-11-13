@@ -16,7 +16,6 @@ vi.mock('@op/common', () => ({
 vi.mock('@op/common/realtime', () => ({
   Channels: { personalDataExport: (exportId: string) => `export:${exportId}` },
 }));
-vi.mock('@op/logging', () => ({ logger: { error: vi.fn() } }));
 vi.mock('./notifyExportChanged', () => ({ notifyExportChanged: vi.fn() }));
 
 import {

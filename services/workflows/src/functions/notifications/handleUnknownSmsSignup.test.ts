@@ -3,6 +3,7 @@ import {
   type PhoneNumber,
   parsePhoneNumber,
   PHONE_SIGNUP_REPLY_WINDOW_MINUTES,
+  requestPhoneSignupCode,
   toGoTruePhoneFormat,
 } from '@op/common';
 import { TestDecisionsDataManager } from '@op/common/testing';
@@ -235,6 +236,53 @@ describe('handleUnknownSmsSignup against the database', () => {
     expect(result).toEqual({ message: 'signup attempt in progress, skipped' });
     expect(recordedSms).toEqual([]);
     expect((await readAuthUser(phone))?.phoneConfirmedAt).toBeNull();
+  });
+
+  it('given a signup parked on the consent reply under the pre-release step ids, when the code arrives, then the account is still created', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestPhoneAuthDataManager(task.id, onTestFinished);
+    const { phone, code } = claimNumber('+15005550009', testData);
+    const codeRequest = await requestPhoneSignupCode({ phone });
+    expect(codeRequest).toEqual({ status: 'sent' });
+    const t = new InngestTestEngine({ function: handleUnknownSmsSignup });
+
+    const { result } = await t.execute({
+      events: [smsInboundEvent({ from: phone, keyword: 'join' })],
+      steps: [
+        { id: 'check-feature-flag', handler: () => true },
+        { id: 'check-known-number', handler: () => ({ status: 'free' }) },
+        { id: 'resolve-line', handler: () => null },
+        { id: 'request-signup-code', handler: () => ({ status: 'sent' }) },
+        { id: 'read-code-sent-at', handler: () => Date.now() - 60_000 },
+        {
+          id: 'send-consent-request',
+          handler: () => ({
+            status: 'accepted',
+            providerMessageId: 'pre-deploy',
+          }),
+        },
+        {
+          id: 'start-reply-window',
+          handler: () =>
+            Date.now() + (PHONE_SIGNUP_REPLY_WINDOW_MINUTES - 1) * 60_000,
+        },
+        reply(phone, 1, code),
+      ],
+    });
+
+    expect(result).toEqual({
+      message: 'account created',
+      authUserId: expect.any(String),
+    });
+    const authUser = await readAuthUser(phone);
+    expect(authUser?.phoneConfirmedAt).not.toBeNull();
+    expect(result).toMatchObject({ authUserId: authUser?.id });
+    expect(recordedSms.map((message) => message.to)).toEqual([phone]);
+    expect(recordedSms.at(-1)?.body).toBe(
+      "You're in! Welcome to Common. Text SHOW to see your decisions.",
+    );
   });
 
   it('given a confirmed account, when its number texts, then the flow skips it and sends nothing', async ({
