@@ -1,6 +1,7 @@
 import { CommonError, ValidationError } from '../../utils';
 import type { PhaseInstanceData } from './schemas/instanceData';
 import type { ScheduledTransition } from './types';
+import { hasPhaseEnded } from './utils/phaseOrder';
 
 /**
  * Builds expected transition records from a process instance's phase data.
@@ -12,7 +13,7 @@ import type { ScheduledTransition } from './types';
 export function buildExpectedTransitions(processInstance: {
   id: string;
   phases: readonly PhaseInstanceData[];
-  currentStateId?: string | null;
+  currentStateId: string | null;
 }): ScheduledTransition[] {
   const { phases, currentStateId } = processInstance;
 
@@ -23,9 +24,6 @@ export function buildExpectedTransitions(processInstance: {
   }
 
   const transitions: ScheduledTransition[] = [];
-  const currentIndex = phases.findIndex(
-    ({ phaseId }) => phaseId === currentStateId,
-  );
 
   phases.forEach((currentPhase, index) => {
     const nextPhase = phases[index + 1];
@@ -35,7 +33,7 @@ export function buildExpectedTransitions(processInstance: {
     }
 
     // A phase the decision has already left can never be advanced from.
-    if (index < currentIndex) {
+    if (hasPhaseEnded(processInstance, currentPhase.phaseId, currentStateId)) {
       return;
     }
 

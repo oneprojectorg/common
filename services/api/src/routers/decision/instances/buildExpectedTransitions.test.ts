@@ -3,7 +3,9 @@ import { describe, expect, it } from 'vitest';
 
 /** A minimal instance stub whose phases come from `instanceData`. */
 function stubInstance(instanceData: unknown, id = 'test-instance-id') {
-  return attachBlobPhases({ instance: { id, instanceData } });
+  return attachBlobPhases({
+    instance: { id, instanceData, currentStateId: null },
+  });
 }
 
 describe('buildExpectedTransitions', () => {
