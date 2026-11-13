@@ -10,6 +10,8 @@ export const schemaRefSchema = z.strictObject({
   phaseId: z.string().min(1),
 });
 
+export type SchemaRef = z.infer<typeof schemaRefSchema>;
+
 export const fieldPathSchema = z
   .string()
   .refine(
@@ -32,8 +34,21 @@ export const fieldMappingSchema = z.strictObject({
   to: targetKeySchema,
 });
 
+export type FieldMapping = z.infer<typeof fieldMappingSchema>;
+
 export const schemaMappingSchema = z.strictObject({
   from: schemaRefSchema,
   to: schemaRefSchema,
   fields: z.array(fieldMappingSchema).min(1),
 });
+
+export type SchemaMapping = z.infer<typeof schemaMappingSchema>;
+
+export type MappingInput = {
+  schema: SchemaRef;
+  data: unknown;
+};
+
+export type MappingResult = {
+  data: Record<string, unknown>;
+};

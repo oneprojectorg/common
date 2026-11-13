@@ -6,7 +6,7 @@ import type {
   MappingResult,
   SchemaMapping,
   SchemaRef,
-} from './types';
+} from './schema';
 
 /**
  * Copies each field of each mapping from each input of the mapping's source
