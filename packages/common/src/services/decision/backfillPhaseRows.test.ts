@@ -629,24 +629,19 @@ const runBackfill = async (
   } finally {
     await connection`reset all`;
     connection.release();
-    for (const instanceId of ids) {
-      const rows = await readPhaseRows(instanceId);
-      rows.forEach((row) => testData.trackProfileForCleanup(row.profileId));
-    }
+    const rows = await db
+      .select({ profileId: processPhases.profileId })
+      .from(processPhases)
+      .where(inArray(processPhases.processInstanceId, ids));
+    rows.forEach((row) => testData.trackProfileForCleanup(row.profileId));
   }
-};
-
-// postgres.js resolves a multi-statement script to one result set per statement
-const lastResultSet = (result: unknown): unknown[] => {
-  const sets = z.array(z.array(z.unknown())).safeParse(result);
-  return sets.success
-    ? (sets.data.at(-1) ?? [])
-    : z.array(z.unknown()).parse(result);
 };
 
 const runDriftCheck = async (instanceIds: string[], settings?: Settings) => {
   const result = await runInScope(driftSql, instanceIds, settings);
-  return z.array(driftRowSchema).parse(lastResultSet(result));
+  // postgres.js returns one result set per statement; the query is the last
+  const resultSets = z.array(z.array(z.unknown())).parse(result);
+  return z.array(driftRowSchema).parse(resultSets.at(-1));
 };
 
 const runStrip = (instanceIds: string[], settings?: Settings) =>

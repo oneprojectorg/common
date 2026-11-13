@@ -41,7 +41,7 @@ WITH settings AS (
     nullif(btrim(current_setting('op_backfill.drift_kind', true)), '') AS kind
   FROM (SELECT current_setting('op_backfill.instance_ids', true) AS text) scope
 )
-SELECT checked.*
+SELECT *
 FROM (
   SELECT
     i.id AS instance_id,
@@ -88,13 +88,11 @@ FROM (
       ) AS extra_rows
   ) diff
   WHERE (settings.instance_ids IS NULL OR i.id = ANY (settings.instance_ids))
-    AND (blob.n > 0 OR phase_rows.n > 0)
+    AND (
+      (blob.n > 0 AND phase_rows.n = 0)
+      OR cardinality(diff.missing_rows) > 0
+      OR cardinality(diff.extra_rows) > 0
+    )
 ) checked
-CROSS JOIN settings
-WHERE (
-    checked.kind = 'no_rows'
-    OR cardinality(checked.missing_rows) > 0
-    OR cardinality(checked.extra_rows) > 0
-  )
-  AND (settings.kind IS NULL OR checked.kind = settings.kind)
+WHERE checked.kind = coalesce((SELECT kind FROM settings), checked.kind)
 ORDER BY checked.instance_id;

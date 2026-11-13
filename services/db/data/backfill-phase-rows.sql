@@ -54,6 +54,7 @@ DECLARE
   v_data jsonb;
   v_process_schema jsonb;
   v_row_count integer;
+  v_uncovered jsonb;
   v_reason text;
   v_name text;
   v_profile_id uuid;
@@ -103,37 +104,16 @@ BEGIN
     WHERE pg_temp.phase_row_id(p_instance_id, e.value ->> 'phaseId') IS NULL
   $fn$;
 
-  -- Rows made by the phase endpoints that leave a JSON phase without a row
-  FOR v_instance IN
-    SELECT gap.id, gap.missing
-    FROM (
-      SELECT i.id, i.created_at, ARRAY(
-          SELECT u.phase ->> 'phaseId'
-          FROM pg_temp.uncovered_phases(i.id, i.instance_data) u
-          ORDER BY u.sort_order
-        ) AS missing
-      FROM decision_process_instances i
-      WHERE NOT v_fill_partial
-        AND EXISTS (
-          SELECT 1 FROM decision_process_phases p WHERE p.process_instance_id = i.id
-        )
-        AND (v_scope IS NULL OR i.id = ANY (v_scope))
-    ) gap
-    WHERE cardinality(gap.missing) > 0
-    ORDER BY gap.created_at, gap.id
-  LOOP
-    RAISE NOTICE 'backfill-phase-rows: skipped instance % (partial rows, no row for phase ids: %)',
-      v_instance.id, array_to_string(v_instance.missing, ', ', '<none>');
-    v_skipped := v_skipped + 1;
-  END LOOP;
-
   FOR v_instance IN
     SELECT i.id
     FROM decision_process_instances i
-    WHERE (v_fill_partial OR NOT EXISTS (
-        SELECT 1 FROM decision_process_phases p WHERE p.process_instance_id = i.id
-      ))
-      AND (v_scope IS NULL OR i.id = ANY (v_scope))
+    WHERE (v_scope IS NULL OR i.id = ANY (v_scope))
+      AND (
+        NOT EXISTS (
+          SELECT 1 FROM decision_process_phases p WHERE p.process_instance_id = i.id
+        )
+        OR EXISTS (SELECT 1 FROM pg_temp.uncovered_phases(i.id, i.instance_data))
+      )
     ORDER BY i.created_at, i.id
   LOOP
     <<one_instance>>
@@ -152,20 +132,26 @@ BEGIN
       FROM decision_process_phases p
       WHERE p.process_instance_id = v_instance.id;
 
+      -- With no rows this is every phase; with rows, only the uncovered ones
+      SELECT coalesce(
+        jsonb_agg(jsonb_build_object('phase', u.phase, 'sort_order', u.sort_order) ORDER BY u.sort_order),
+        '[]'::jsonb
+      )
+      INTO v_uncovered
+      FROM pg_temp.uncovered_phases(v_instance.id, v_data) u;
+
+      EXIT one_instance WHEN v_row_count > 0 AND jsonb_array_length(v_uncovered) = 0;
+
       IF v_row_count > 0 AND NOT v_fill_partial THEN
-        RAISE NOTICE 'backfill-phase-rows: skipped instance % (rows appeared)', v_instance.id;
+        RAISE NOTICE 'backfill-phase-rows: skipped instance % (partial rows, no row for phase ids: %)',
+          v_instance.id,
+          (SELECT string_agg(coalesce(u -> 'phase' ->> 'phaseId', '<none>'), ', ') FROM jsonb_array_elements(v_uncovered) u);
         v_skipped := v_skipped + 1;
         EXIT one_instance;
       END IF;
 
-      EXIT one_instance WHEN v_row_count > 0 AND NOT EXISTS (
-        SELECT 1 FROM pg_temp.uncovered_phases(v_instance.id, v_data)
-      );
-
       SELECT CASE
-        WHEN jsonb_typeof(v_data -> 'phases') IS DISTINCT FROM 'array'
-          THEN 'no phases'
-        WHEN jsonb_array_length(v_data -> 'phases') = 0
+        WHEN jsonb_array_length(pg_temp.blob_phases(v_data)) = 0
           THEN 'no phases'
         -- MAX_PHASES_PER_DECISION
         WHEN jsonb_array_length(v_data -> 'phases') > 30
@@ -213,11 +199,9 @@ BEGIN
         WHERE id = v_instance.id;
       END IF;
 
-      -- With no rows this is every phase; with fill_partial, only the uncovered ones
       FOR v_phase IN
-        SELECT u.phase, u.sort_order
-        FROM pg_temp.uncovered_phases(v_instance.id, v_data) u
-        ORDER BY u.sort_order
+        SELECT u -> 'phase' AS phase, (u ->> 'sort_order')::integer AS sort_order
+        FROM jsonb_array_elements(v_uncovered) u
       LOOP
         -- getPhaseProfileName: the trimmed name, else the phaseId
         v_name := coalesce(
