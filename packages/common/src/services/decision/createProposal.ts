@@ -5,22 +5,13 @@ import { permission } from 'access-zones';
 import { NotFoundError, ValidationError } from '../../utils';
 import {
   assertInstanceProfileAccess,
-  getCurrentProfileId,
   invalidateProfileUserAccessCache,
 } from '../access';
-import { assertGlobalRole } from '../assert';
 import { assertProposalsAllowed } from './assertProposalsAllowed';
-import { withBoundaryCategoryLabel } from './boundaryCategory';
 import { insertProposalDraft } from './insertProposalDraft';
 import { decisionPermission } from './permissions';
-import {
-  type ProposalDataInput,
-  parseProposalData,
-} from './proposalDataSchema';
-import {
-  extractTitleFromProposalData,
-  getCategoryTermIds,
-} from './proposalDraftInputs';
+import type { ProposalDataInput } from './proposalDataSchema';
+import { resolveProposalDraftInputs } from './proposalDraftInputs';
 import type { DecisionInstanceData } from './schemas/instanceData';
 import { assertInstancePhase } from './utils/instance';
 
@@ -70,39 +61,18 @@ export const createProposal = async ({
     phaseId: currentPhaseId,
   });
 
-  // Capture the phase's `defaults.hidden` rule at creation time. The flag
-  // sticks with the proposal through submission, so a draft authored under
-  // a hidden-by-default phase remains hidden even if the rule is edited
-  // before submit.
   const currentPhase = assertInstancePhase({
     instance: { instanceData },
     phaseId: currentPhaseId,
   });
-  const defaultHidden =
-    currentPhase.rules?.proposals?.defaults?.hidden === true;
 
-  const parsedProposalData = parseProposalData(data.proposalData);
+  const draftInputs = await resolveProposalDraftInputs({
+    authUserId,
+    instanceProfileId: instance.profileId,
+    phase: currentPhase,
+    proposalData: data.proposalData,
+  });
 
-  // Extract title from proposal data
-  const proposalTitle = extractTitleFromProposalData(data.proposalData);
-
-  // Pre-fetch category terms if specified to avoid lookup inside transaction.
-  // Include the location's council-district category (if any) so it is linked
-  // through the normal category pipeline — no separate boundary-tagging pass.
-  // Without a decision profile (legacy instances) the boundary lookup is
-  // skipped and only the manual categories pass through.
-  const manualCategoryLabels = [...new Set(parsedProposalData.category)];
-  const categoryLabels = instance.profileId
-    ? await withBoundaryCategoryLabel(manualCategoryLabels, data.proposalData, {
-        profileId: instance.profileId,
-      })
-    : manualCategoryLabels;
-  const categoryTermIds = await getCategoryTermIds(categoryLabels);
-
-  const [profileId, adminRole] = await Promise.all([
-    getCurrentProfileId(authUserId),
-    assertGlobalRole('Admin'),
-  ]);
   const createdProposal = await db.transaction((tx) =>
     insertProposalDraft({
       tx,
@@ -110,12 +80,7 @@ export const createProposal = async ({
       processInstanceId: data.processInstanceId,
       proposalData: data.proposalData,
       attachmentIds: data.attachmentIds,
-      proposalTitle,
-      categoryLabels,
-      categoryTermIds,
-      submittedByProfileId: profileId,
-      adminRoleId: adminRole.id,
-      defaultHidden,
+      ...draftInputs,
     }),
   );
 
