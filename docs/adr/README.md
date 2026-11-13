@@ -86,4 +86,4 @@ what it decided.
 - [0019. Record the template a proposal is written under](./0019-record-the-template-a-proposal-is-written-under.md)
 - [0020. Decide phase transitions with a selection pipeline over aggregated facts](./0020-decide-phase-transitions-with-a-selection-pipeline-over-aggregated-facts.md)
 - [0021. Give every decision and proposal its own profile and grant roles on it](./0021-give-every-decision-and-proposal-its-own-profile-and-grant-roles-on-it.md)
-- [0020. Map data between form schemas with declarative rules](./0020-map-data-between-form-schemas-with-declarative-rules.md)
+- [0021. Map data between form schemas with declarative rules](./0021-map-data-between-form-schemas-with-declarative-rules.md)

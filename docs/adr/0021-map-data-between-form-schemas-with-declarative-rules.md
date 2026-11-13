@@ -1,4 +1,4 @@
-# 0020. Map data between form schemas with declarative rules
+# 0021. Map data between form schemas with declarative rules
 
 Date: 2026-11-13
 
@@ -63,7 +63,9 @@ selection pipeline are the planned next step.
   `cost.amount`. The target field is one key of the target data. It cannot
   contain a dot. Nested target paths are deferred.
 - The first version does not call the expression evaluator of the selection
-  pipeline. The next step lets a field use a value expression of the selection
+  pipeline
+  ([0020](./0020-decide-phase-transitions-with-a-selection-pipeline-over-aggregated-facts.md)).
+  The next step lets a field use a value expression of the selection
   pipeline, for example `add`, in place of a source path. We will add the
   expression nodes one at a time.
 - A mapping names a schema with `{ type, phaseId }`, where `type` is
