@@ -1,7 +1,9 @@
 import {
+  TEST_PERMISSION_BITS,
   TestDecisionsDataManager,
   createCategoryReviewer,
   grantInstanceReviewerRole,
+  grantInstanceRole,
 } from '@op/common/testing';
 import { db, eq } from '@op/db/client';
 import { categoryReviewers } from '@op/db/schema';
@@ -216,7 +218,7 @@ describe.concurrent('listCategoryDevelopmentStatus', () => {
     ]);
   });
 
-  it('lets a reviewer read and refuses a member without Review', async ({
+  it('lets a Develop Proposals holder and an admin without it read, and refuses Review alone', async ({
     task,
     onTestFinished,
   }) => {
@@ -225,35 +227,63 @@ describe.concurrent('listCategoryDevelopmentStatus', () => {
       testData,
       onTestFinished,
     });
-    const [reviewer, member] = await Promise.all([
+    const [developer, profileAdmin, reviewer, member] = await Promise.all([
+      testData.createMemberUser({ organization: setup.organization }),
+      testData.createMemberUser({ organization: setup.organization }),
       testData.createMemberUser({ organization: setup.organization }),
       testData.createMemberUser({
         organization: setup.organization,
         instanceProfileIds: [setup.instance.profileId],
       }),
     ]);
-    await grantInstanceReviewerRole({
-      instanceProfileId: setup.instance.profileId,
-      authUserId: reviewer.authUserId,
-      email: reviewer.email,
-      roleName: `Reviewer ${reviewer.authUserId}`,
-    });
-
-    const [reviewerCaller, memberCaller] = await Promise.all([
-      createAuthenticatedCaller(reviewer.email),
-      createAuthenticatedCaller(member.email),
+    await Promise.all([
+      grantInstanceRole({
+        instanceProfileId: setup.instance.profileId,
+        authUserId: developer.authUserId,
+        email: developer.email,
+        roleName: `Developer ${developer.authUserId}`,
+        decisionsPermission:
+          TEST_PERMISSION_BITS.READ | TEST_PERMISSION_BITS.DEVELOP_PROPOSALS,
+      }),
+      grantInstanceRole({
+        instanceProfileId: setup.instance.profileId,
+        authUserId: profileAdmin.authUserId,
+        email: profileAdmin.email,
+        roleName: `Profile admin ${profileAdmin.authUserId}`,
+        decisionsPermission: TEST_PERMISSION_BITS.READ,
+        profilePermission:
+          TEST_PERMISSION_BITS.READ | TEST_PERMISSION_BITS.ADMIN,
+      }),
+      grantInstanceReviewerRole({
+        instanceProfileId: setup.instance.profileId,
+        authUserId: reviewer.authUserId,
+        email: reviewer.email,
+        roleName: `Reviewer ${reviewer.authUserId}`,
+      }),
     ]);
 
-    await expect(
-      reviewerCaller.decision.listCategoryDevelopmentStatus({
-        processInstanceId: instanceId,
-      }),
-    ).resolves.toMatchObject({ items: expect.any(Array) });
+    const [developerCaller, profileAdminCaller, reviewerCaller, memberCaller] =
+      await Promise.all([
+        createAuthenticatedCaller(developer.email),
+        createAuthenticatedCaller(profileAdmin.email),
+        createAuthenticatedCaller(reviewer.email),
+        createAuthenticatedCaller(member.email),
+      ]);
 
-    await expect(
-      memberCaller.decision.listCategoryDevelopmentStatus({
-        processInstanceId: instanceId,
-      }),
-    ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
+    for (const caller of [developerCaller, profileAdminCaller]) {
+      await expect(
+        caller.decision.listCategoryDevelopmentStatus({
+          processInstanceId: instanceId,
+        }),
+      ).resolves.toMatchObject({ items: expect.any(Array) });
+    }
+
+    for (const caller of [reviewerCaller, memberCaller]) {
+      await expect(
+        caller.decision.listCategoryDevelopmentStatus({
+          processInstanceId: instanceId,
+        }),
+      ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
+    }
   });
 });

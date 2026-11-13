@@ -33,6 +33,9 @@ export interface CategoryDevelopmentStatus {
  * Every category of the instance with its category reviewer rows for the
  * current phase and the develop confirm stamp of each row. Rows with no phase
  * do not count. A category with no row has `rows: []`.
+ *
+ * Readers: an admin of the instance profile, or a holder of Develop Proposals
+ * on it. No org fallback.
  */
 export async function listCategoryDevelopmentStatus({
   processInstanceId,
@@ -64,7 +67,7 @@ export async function listCategoryDevelopmentStatus({
       [
         { profile: permission.ADMIN },
         { decisions: permission.ADMIN },
-        { decisions: decisionPermission.REVIEW },
+        { decisions: decisionPermission.DEVELOP_PROPOSALS },
       ],
       roles,
     )
