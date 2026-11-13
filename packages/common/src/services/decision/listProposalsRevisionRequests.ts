@@ -36,7 +36,7 @@ export async function listProposalsRevisionRequests({
 
   const revisionRequestsConfig = proposalWithRevisionRequestsConfig(states);
 
-  const proposals = await db.query.proposals.findMany({
+  const proposalsQuery = db.query.proposals.findMany({
     where: {
       submittedByProfileId: commonUser.profileId,
       // A merged-away proposal is out of the review process, so its author has
@@ -98,19 +98,7 @@ export async function listProposalsRevisionRequests({
     },
   });
 
-  const revisionRequests = proposals.flatMap((proposal) => {
-    const decisionProfileSlug = proposal.processInstance.profile?.slug ?? '';
-
-    return proposal.reviewAssignments.flatMap((assignment) =>
-      assignment.requests.map((request) => ({
-        revisionRequest: request,
-        proposal,
-        decisionProfileSlug,
-      })),
-    );
-  });
-
-  const instanceRows = await db
+  const instanceRowsQuery = db
     .selectDistinct({ processInstanceId: proposalsTable.processInstanceId })
     .from(proposalsTable)
     .where(
@@ -122,6 +110,23 @@ export async function listProposalsRevisionRequests({
         }),
       ),
     );
+
+  const [proposals, instanceRows] = await Promise.all([
+    proposalsQuery,
+    instanceRowsQuery,
+  ]);
+
+  const revisionRequests = proposals.flatMap((proposal) => {
+    const decisionProfileSlug = proposal.processInstance.profile?.slug ?? '';
+
+    return proposal.reviewAssignments.flatMap((assignment) =>
+      assignment.requests.map((request) => ({
+        revisionRequest: request,
+        proposal,
+        decisionProfileSlug,
+      })),
+    );
+  });
 
   const processInstanceIds = instanceRows.map((row) => row.processInstanceId);
 
