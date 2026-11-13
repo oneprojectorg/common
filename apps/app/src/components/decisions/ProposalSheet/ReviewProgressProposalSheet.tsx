@@ -73,7 +73,7 @@ function ReviewProgressSections({
           onTabChange(next);
         }
       }}
-      className="gap-4"
+      className="gap-6"
     >
       <ProposalTabList aria-label={t('decisions.proposals.sheetSectionsLabel')}>
         <ProposalTabTrigger
