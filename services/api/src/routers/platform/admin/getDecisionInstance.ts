@@ -1,4 +1,4 @@
-import { NotFoundError, isDecisionPublic } from '@op/common';
+import { NotFoundError, isDecisionPublic, resolvePhases } from '@op/common';
 import {
   adminDecisionInstanceDetailSchema,
   allowsComments,
@@ -11,6 +11,7 @@ import {
 import { db } from '@op/db/client';
 import { z } from 'zod';
 
+import { putPhasesOnInstanceData } from '../../../encoders/phasesOnWire';
 import { withAuthenticatedPlatformAdmin } from '../../../middlewares/withAuthenticatedPlatformAdmin';
 import withRateLimited from '../../../middlewares/withRateLimited';
 import { commonProcedure, router } from '../../../trpcFactory';
@@ -79,17 +80,6 @@ const detailInstanceData = z
     templateVersion: z.string().optional(),
     proposalTemplate: z.unknown().optional(),
     rubricTemplate: z.unknown().optional(),
-    phases: z
-      .array(
-        z.object({
-          phaseId: z.string(),
-          name: z.string().optional(),
-          startDate: z.string().optional(),
-          endDate: z.string().optional(),
-          rules: phaseRulesSchema.optional(),
-        }),
-      )
-      .optional(),
   })
   .partial();
 
@@ -128,13 +118,20 @@ export const getDecisionInstanceRouter = router({
         throw new NotFoundError('Decision instance not found');
       }
 
+      // No profile of its own means no grant to carry.
+      const [resolved, isPublic] = await Promise.all([
+        resolvePhases({ instance }),
+        instance.profileId
+          ? isDecisionPublic({ profileId: instance.profileId })
+          : false,
+      ]);
+
+      const wireInstanceData = putPhasesOnInstanceData({
+        instanceData: instance.instanceData,
+        phases: resolved.phases,
+      });
       const parsed = detailInstanceData.safeParse(instance.instanceData);
       const instanceData = parsed.success ? parsed.data : {};
-
-      // No profile of its own means no grant to carry.
-      const isPublic = instance.profileId
-        ? await isDecisionPublic({ profileId: instance.profileId })
-        : false;
 
       const schemaParsed = detailProcessSchema.safeParse(
         instance.process?.processSchema,
@@ -179,8 +176,8 @@ export const getDecisionInstanceRouter = router({
             instanceData.config?.requireCollaborativeProposals ?? false,
           categoriesCount: instanceData.config?.categories?.length ?? 0,
         },
-        instanceData: instance.instanceData,
-        phases: (instanceData.phases ?? []).map((phase) => {
+        instanceData: wireInstanceData,
+        phases: resolved.phases.map((phase) => {
           // Instance rules win; fall back to the process schema definition
           // (older instances don't copy every rule into instanceData).
           const rules = phase.rules ?? schemaRulesByPhaseId.get(phase.phaseId);

@@ -19,6 +19,7 @@ import {
 import { assertProfileAccess, assertUserByAuthId } from '../assert';
 import { attachProposalsToTransition } from './attachProposalsToTransition';
 import { getProposalIdsForPhase } from './getProposalsForPhase';
+import { getPhases } from './instancePhases';
 import { isLegacyInstanceData } from './isLegacyInstance';
 import { lockProcessInstance } from './lockProcessInstance';
 import { processResults } from './processResults';
@@ -28,7 +29,7 @@ import {
   resultNotificationMessagesSchema,
 } from './resultNotificationTemplate';
 import { runGenerateReviewAssignments } from './runGenerateReviewAssignments';
-import { type DecisionInstanceData, isLastPhase } from './schemas/instanceData';
+import { isLastPhase } from './schemas/instanceData';
 import {
   type ProposalAllocation,
   proposalAllocationSchema,
@@ -37,6 +38,8 @@ import type {
   ManualSelectionAudit,
   TransitionData,
 } from './schemas/transitionData';
+import { getInstanceCurrentPhase } from './utils/instance';
+import { getPreviousPhases } from './utils/phaseOrder';
 import { isReviewPhase } from './utils/phaseSettings';
 
 export interface SubmitManualSelectionInput {
@@ -156,15 +159,17 @@ export async function submitManualSelection({
       );
     }
 
-    const lockedData =
-      lockedInstance.instanceData as DecisionInstanceData | null;
-    const lockedPhases = lockedData?.phases;
-    const lockedPhaseIndex =
-      lockedPhases?.findIndex((p) => p.phaseId === currentStateId) ?? -1;
-    const lockedPreviousPhase =
-      lockedPhases && lockedPhaseIndex > 0
-        ? lockedPhases[lockedPhaseIndex - 1]
-        : undefined;
+    const lockedPhases = await getPhases({
+      instance: {
+        id: processInstanceId,
+        instanceData: lockedInstance.instanceData,
+      },
+      db: tx,
+    });
+    const lockedPreviousPhase = getPreviousPhases(
+      { phases: lockedPhases },
+      currentStateId,
+    ).at(-1);
     if (!lockedPreviousPhase) {
       throw new ValidationError(
         'Manual selection is not available for this instance',
@@ -269,8 +274,11 @@ export async function submitManualSelection({
     // generateReviewAssignments reads the just-attached decisionTransitionProposals
     // rows and writes assignments on the pooled `db` connection, which can't see
     // this transaction's uncommitted writes (mirrors onPhaseAdvanced's ordering).
-    const currentPhase = lockedPhases?.[lockedPhaseIndex];
-    if (lockedPhases && currentPhase && isReviewPhase(currentPhase)) {
+    const currentPhase = getInstanceCurrentPhase({
+      phases: lockedPhases,
+      currentStateId,
+    });
+    if (currentPhase && isReviewPhase(currentPhase)) {
       reviewAssignmentInput = {
         instanceId: processInstanceId,
         fromPhaseId: lockedPreviousPhaseId,
@@ -284,7 +292,7 @@ export async function submitManualSelection({
       };
     }
 
-    const publishesResults = isLastPhase(currentStateId, lockedPhases ?? []);
+    const publishesResults = isLastPhase(currentStateId, lockedPhases);
     if (!publishesResults && allocatedByProposalId) {
       throw new ValidationError(
         'Amounts are only awarded when confirming the final phase',

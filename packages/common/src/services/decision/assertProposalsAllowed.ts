@@ -1,5 +1,5 @@
 import { ValidationError } from '../../utils';
-import type { DecisionInstanceData } from './schemas/instanceData';
+import type { PhaseInstanceData } from './schemas/instanceData';
 import { checkProposalsAllowed } from './utils/proposal';
 
 /**
@@ -7,16 +7,13 @@ import { checkProposalsAllowed } from './utils/proposal';
  * current phase.
  */
 export function assertProposalsAllowed({
-  instance,
+  phases,
   phaseId,
 }: {
-  instance: { instanceData: Pick<DecisionInstanceData, 'phases'> };
+  phases: PhaseInstanceData[];
   phaseId: string;
 }): void {
-  const { allowed, phaseName } = checkProposalsAllowed(
-    instance.instanceData.phases,
-    phaseId,
-  );
+  const { allowed, phaseName } = checkProposalsAllowed(phases, phaseId);
 
   if (!allowed) {
     throw new ValidationError(

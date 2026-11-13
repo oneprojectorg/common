@@ -13,6 +13,7 @@ export async function runGenerateReviewAssignments(
       phaseId: input.toPhaseId,
       selectedProposalIds: input.advanceResult.selectedProposalIds,
       transitionHistoryId: input.advanceResult.transitionHistoryId,
+      phases: input.phases,
     });
   } catch (error) {
     logger.error('Review assignment generation failed', {

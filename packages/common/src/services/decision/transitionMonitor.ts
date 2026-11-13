@@ -10,11 +10,12 @@ import pMap from 'p-map';
 import { CommonError } from '../../utils';
 import { advancePhase } from './advancePhase';
 import { invalidateDecisionInstance } from './decisionCache';
+import {
+  type InstanceWithPhases,
+  resolvePhases,
+  resolvePhasesForAll,
+} from './instancePhases';
 import { onPhaseAdvanced } from './onPhaseAdvanced';
-import type {
-  DecisionInstanceData,
-  PhaseInstanceData,
-} from './schemas/instanceData';
 
 export interface ProcessDecisionsTransitionsResult {
   processed: number;
@@ -39,12 +40,23 @@ type DueTransition = {
   };
 };
 
+type InstanceTransitions = {
+  id: string;
+  instanceData: unknown;
+  transitions: DueTransition[];
+};
+
 /**
  * Process all due scheduled transitions. Called by cron.
  * Delegates each transition to `advancePhase`.
  */
-export async function processDecisionsTransitions(): Promise<ProcessDecisionsTransitionsResult> {
-  const now = new Date().toISOString();
+export async function processDecisionsTransitions({
+  processInstanceId,
+  now = new Date().toISOString(),
+}: {
+  processInstanceId?: string;
+  now?: string;
+} = {}): Promise<ProcessDecisionsTransitionsResult> {
   const result: ProcessDecisionsTransitionsResult = {
     processed: 0,
     failed: 0,
@@ -74,6 +86,12 @@ export async function processDecisionsTransitions(): Promise<ProcessDecisionsTra
           isNull(decisionProcessTransitions.completedAt),
           lte(decisionProcessTransitions.scheduledDate, now),
           eq(processInstances.status, ProcessStatus.PUBLISHED),
+          processInstanceId
+            ? eq(
+                decisionProcessTransitions.processInstanceId,
+                processInstanceId,
+              )
+            : undefined,
         ),
       )
       .orderBy(decisionProcessTransitions.scheduledDate);
@@ -82,16 +100,16 @@ export async function processDecisionsTransitions(): Promise<ProcessDecisionsTra
       return result;
     }
 
-    const transitionsByInstance = groupTransitionsByInstance(dueTransitions);
+    const instances = await resolvePhasesForAll({
+      instances: groupTransitionsByInstance(dueTransitions),
+    });
 
     await pMap(
-      Array.from(transitionsByInstance.entries()),
-      async ([processInstanceId, transitions]) => {
-        const instanceData = transitions[0]!.instance
-          .instanceData as DecisionInstanceData;
-        const phases = instanceData.phases;
+      instances,
+      async (instance) => {
+        const { id: processInstanceId, transitions } = instance;
 
-        if (!phases || phases.length === 0) {
+        if (instance.phases.length === 0) {
           for (const transition of transitions) {
             result.failed++;
             result.errors.push({
@@ -104,9 +122,8 @@ export async function processDecisionsTransitions(): Promise<ProcessDecisionsTra
         }
 
         await advanceInstanceTransitions({
-          processInstanceId,
+          instance,
           transitions,
-          phases,
           now,
           result,
         });
@@ -126,19 +143,23 @@ export async function processDecisionsTransitions(): Promise<ProcessDecisionsTra
 /** Group transitions by instance so each instance's phases advance sequentially. */
 function groupTransitionsByInstance(
   dueTransitions: DueTransition[],
-): Map<string, DueTransition[]> {
-  const transitionsByInstance = new Map<string, DueTransition[]>();
+): InstanceTransitions[] {
+  const transitionsByInstance = new Map<string, InstanceTransitions>();
 
   for (const transition of dueTransitions) {
     const existing = transitionsByInstance.get(transition.processInstanceId);
     if (existing) {
-      existing.push(transition);
+      existing.transitions.push(transition);
     } else {
-      transitionsByInstance.set(transition.processInstanceId, [transition]);
+      transitionsByInstance.set(transition.processInstanceId, {
+        id: transition.processInstanceId,
+        instanceData: transition.instance.instanceData,
+        transitions: [transition],
+      });
     }
   }
 
-  return transitionsByInstance;
+  return [...transitionsByInstance.values()];
 }
 
 /**
@@ -146,20 +167,18 @@ function groupTransitionsByInstance(
  * Returns the last successfully reached phase ID, or null if nothing advanced.
  */
 async function advanceInstanceTransitions({
-  processInstanceId,
+  instance,
   transitions,
-  phases,
   now,
   result,
 }: {
-  processInstanceId: string;
+  instance: InstanceWithPhases<{ id: string; instanceData: unknown }>;
   transitions: DueTransition[];
-  phases: PhaseInstanceData[];
   now: string;
   result: ProcessDecisionsTransitionsResult;
 }): Promise<void> {
-  let currentInstanceData = transitions[0]!.instance
-    .instanceData as DecisionInstanceData;
+  const processInstanceId = instance.id;
+  let current = instance;
 
   for (const transition of transitions) {
     try {
@@ -169,7 +188,7 @@ async function advanceInstanceTransitions({
       const fromPhaseId = transition.fromStateId;
 
       // Only auto-advance phases with date-based advancement.
-      const departingPhase = currentInstanceData.phases?.find(
+      const departingPhase = current.phases.find(
         (p) => p.phaseId === fromPhaseId,
       );
       if (departingPhase?.rules?.advancement?.method !== 'date') {
@@ -179,10 +198,7 @@ async function advanceInstanceTransitions({
       const advanceResult = await db.transaction(async (tx) =>
         advancePhase({
           db: tx,
-          instance: {
-            id: processInstanceId,
-            instanceData: currentInstanceData,
-          },
+          instance: current,
           fromPhaseId,
           toPhaseId: transition.toStateId,
           triggeredByProfileId: null,
@@ -206,7 +222,7 @@ async function advanceInstanceTransitions({
         instanceId: processInstanceId,
         fromPhaseId,
         toPhaseId: transition.toStateId,
-        phases,
+        phases: current.phases,
         advanceResult,
       });
 
@@ -215,7 +231,7 @@ async function advanceInstanceTransitions({
         where: { id: processInstanceId },
       });
       if (refreshed) {
-        currentInstanceData = refreshed.instanceData as DecisionInstanceData;
+        current = await resolvePhases({ instance: refreshed });
       }
     } catch (error) {
       result.failed++;

@@ -6,7 +6,7 @@ import { permission } from 'access-zones';
 import { CommonError, NotFoundError, ValidationError } from '../../utils';
 import { assertProfileAccess } from '../assert';
 import { schemaValidator } from '../decision/schemaValidator';
-import { parseInstancePhases } from './customFormAuth';
+import { readInstancePhaseSet } from './customFormAuth';
 import type {
   CreateCustomFormSubmissionInput,
   CustomFormDefinitionSchema,
@@ -152,10 +152,9 @@ const isParticipantInFormProcess = async ({
   }
 
   // A reviewer answers only the form of a phase they review in.
-  const formPhaseId = getEffectiveFormPhase({
-    schema: form.schema,
-    initialPhaseId: parseInstancePhases(instance.instanceData).initialPhaseId,
-  });
+  const formPhaseId =
+    getEffectiveFormPhase({ schema: form.schema }) ??
+    (await readInstancePhaseSet({ instance })).initialPhaseId;
 
   const [vote, reviewAssignment] = await Promise.all([
     db.query.decisionsVoteSubmissions.findFirst({

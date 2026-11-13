@@ -1,7 +1,10 @@
 import {
+  type PhaseInstanceData,
   decodeCursor,
   encodeCursor,
   getGenericCursorCondition,
+  getInstanceCurrentPhase,
+  resolvePhasesForAll,
 } from '@op/common';
 import {
   adminDecisionInstanceSchema,
@@ -26,20 +29,6 @@ import withRateLimited from '../../../middlewares/withRateLimited';
 import { commonProcedure, router } from '../../../trpcFactory';
 import { dbFilter } from '../../../utils';
 
-const phaseLookupInstanceData = z
-  .object({
-    phases: z
-      .array(
-        z.object({
-          phaseId: z.string().optional(),
-          name: z.string().optional(),
-          endDate: z.string().optional(),
-        }),
-      )
-      .optional(),
-  })
-  .partial();
-
 const phaseLookupProcessSchema = z
   .object({
     phases: z
@@ -55,23 +44,20 @@ const phaseLookupProcessSchema = z
 
 const resolveCurrentPhase = ({
   currentStateId,
-  instanceData,
+  phases,
   processSchema,
 }: {
   currentStateId: string | null;
-  instanceData: unknown;
+  phases: readonly PhaseInstanceData[];
   processSchema: unknown;
 }) => {
   if (!currentStateId) {
     return null;
   }
 
-  const instance = phaseLookupInstanceData.safeParse(instanceData);
   const schema = phaseLookupProcessSchema.safeParse(processSchema);
 
-  const instancePhase = instance.success
-    ? instance.data.phases?.find((p) => p.phaseId === currentStateId)
-    : undefined;
+  const instancePhase = getInstanceCurrentPhase({ phases, currentStateId });
   const schemaPhase = schema.success
     ? schema.data.phases?.find((p) => p.id === currentStateId)
     : undefined;
@@ -159,9 +145,9 @@ export const listAllDecisionInstancesRouter = router({
 
       const instanceIds = items.map((i) => i.id);
 
-      const proposalStats =
+      const [proposalStats, itemsWithPhases] = await Promise.all([
         instanceIds.length > 0
-          ? await db
+          ? db
               .select({
                 processInstanceId: proposals.processInstanceId,
                 proposalCount:
@@ -174,21 +160,23 @@ export const listAllDecisionInstancesRouter = router({
               .from(proposals)
               .where(inArray(proposals.processInstanceId, instanceIds))
               .groupBy(proposals.processInstanceId)
-          : [];
+          : [],
+        resolvePhasesForAll({ instances: items }),
+      ]);
 
       const statsByInstance = new Map(
         proposalStats.map((row) => [row.processInstanceId, row]),
       );
 
       return {
-        items: items.map((instance) => {
+        items: itemsWithPhases.map((instance) => {
           const stats = statsByInstance.get(instance.id);
           return adminDecisionInstanceSchema.parse({
             id: instance.id,
             name: instance.name,
             currentPhase: resolveCurrentPhase({
               currentStateId: instance.currentStateId,
-              instanceData: instance.instanceData,
+              phases: instance.phases,
               processSchema: instance.process?.processSchema,
             }),
             stewardName: instance.steward?.name ?? null,

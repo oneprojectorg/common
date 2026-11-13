@@ -7,6 +7,7 @@ import { CommonError, NotFoundError, UnauthorizedError } from '../../utils';
 import { getProfileAccessRolesWithOrgFallback } from '../access';
 import { assertProfileAccess, assertUserByAuthId } from '../assert';
 import { createDecisionInstance } from './createInstanceFromTemplate';
+import { resolvePhases } from './instancePhases';
 import type {
   DecisionInstanceData,
   InstanceOverview,
@@ -100,13 +101,17 @@ export const duplicateInstance = async ({
     }
   }
 
-  const sourceData = sourceInstance.instanceData as DecisionInstanceData | null;
+  const source = await resolvePhases({ instance: sourceInstance });
+  const sourceData = source.instanceData as DecisionInstanceData | null;
   if (!sourceData) {
     throw new CommonError('Source instance has no instance data');
   }
 
-  // Build new instance data based on include flags
-  const newInstanceData = buildInstanceData(sourceData, include);
+  // The copy's blob carries the source's resolved phases.
+  const newInstanceData = buildInstanceData(
+    { ...sourceData, phases: source.phases },
+    include,
+  );
 
   // Delegate core creation (profile, instance, default roles, profile user)
   const profile = await createDecisionInstance({

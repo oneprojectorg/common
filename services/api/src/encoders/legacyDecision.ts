@@ -18,6 +18,7 @@ import { createSelectSchema } from 'drizzle-zod';
 import { z } from 'zod';
 
 import { attachmentWithUrlEncoder } from './attachments';
+import { withPhasesOnWire } from './phasesOnWire';
 import { baseProfileEncoder } from './profiles';
 
 // JSON Schema types
@@ -167,7 +168,7 @@ export const legacyDecisionProcessEncoder = createSelectSchema(
   });
 
 // Process Instance Encoder
-export const legacyProcessInstanceEncoder = createSelectSchema(processInstances)
+const legacyProcessInstanceEncoderBase = createSelectSchema(processInstances)
   .pick({
     id: true,
     name: true,
@@ -185,6 +186,11 @@ export const legacyProcessInstanceEncoder = createSelectSchema(processInstances)
     proposalCount: z.number().optional(),
     participantCount: z.number().optional(),
   });
+
+export const legacyProcessInstanceEncoder = z.preprocess(
+  withPhasesOnWire,
+  legacyProcessInstanceEncoderBase,
+);
 
 // Proposal Attachment Join Table Encoder (internal — used by legacyProposalEncoder)
 const legacyProposalAttachmentEncoder = createSelectSchema(proposalAttachments)

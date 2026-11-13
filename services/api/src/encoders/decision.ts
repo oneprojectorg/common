@@ -31,6 +31,7 @@ import {
 import { createSelectSchema } from 'drizzle-zod';
 import { z } from 'zod';
 
+import { withPhasesOnWire } from './phasesOnWire';
 import { baseProfileEncoder } from './profiles';
 
 // JSON Schema types
@@ -358,7 +359,7 @@ const decisionAccessEncoder = z.object({
 export type DecisionAccess = z.infer<typeof decisionAccessEncoder>;
 
 /** Process instance encoder  */
-export const processInstanceWithSchemaEncoder = createSelectSchema(
+const processInstanceWithSchemaEncoderBase = createSelectSchema(
   processInstances,
 )
   .pick({
@@ -383,6 +384,11 @@ export const processInstanceWithSchemaEncoder = createSelectSchema(
     access: decisionAccessEncoder.optional(),
     selectionsAreConfirmed: z.boolean().optional(),
   });
+
+export const processInstanceWithSchemaEncoder = z.preprocess(
+  withPhasesOnWire,
+  processInstanceWithSchemaEncoderBase,
+);
 
 /** Decision profile encoder  */
 export const decisionProfileWithSchemaEncoder = baseProfileEncoder.extend({
@@ -501,7 +507,7 @@ export const decisionProcessEncoder = createSelectSchema(decisionProcesses)
   });
 
 // Process Instance Encoder
-export const processInstanceEncoder = createSelectSchema(processInstances)
+const processInstanceEncoderBase = createSelectSchema(processInstances)
   .pick({
     id: true,
     name: true,
@@ -519,6 +525,11 @@ export const processInstanceEncoder = createSelectSchema(processInstances)
     proposalCount: z.number().optional(),
     participantCount: z.number().optional(),
   });
+
+export const processInstanceEncoder = z.preprocess(
+  withPhasesOnWire,
+  processInstanceEncoderBase,
+);
 
 // State Transition History Encoder
 export const stateTransitionHistoryEncoder = createSelectSchema(

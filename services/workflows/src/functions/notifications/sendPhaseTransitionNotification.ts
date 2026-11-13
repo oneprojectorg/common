@@ -1,7 +1,7 @@
 import {
-  type DecisionInstanceData,
   listProcessParticipants,
   resolveManualSelectionStatus,
+  resolvePhases,
 } from '@op/common';
 import { selectEmailRecipients } from '@op/common/client';
 import { OPURLConfig } from '@op/core';
@@ -33,7 +33,7 @@ export const sendPhaseTransitionNotification = inngest.createFunction(
     );
 
     const processData = await step.run('get-process-data', async () => {
-      const instance = await db
+      const [instance] = await db
         .select({
           name: processInstances.name,
           profileId: processInstances.profileId,
@@ -46,7 +46,13 @@ export const sendPhaseTransitionNotification = inngest.createFunction(
         .where(eq(processInstances.id, processInstanceId))
         .limit(1);
 
-      return instance[0];
+      if (!instance) {
+        return undefined;
+      }
+
+      return resolvePhases({
+        instance: { ...instance, id: processInstanceId },
+      });
     });
 
     if (!processData) {
@@ -68,14 +74,7 @@ export const sendPhaseTransitionNotification = inngest.createFunction(
     // the admin confirms.
     const manualSelectionStatus = await step.run(
       'check-manual-selection',
-      async () =>
-        resolveManualSelectionStatus({
-          instance: {
-            id: processInstanceId,
-            instanceData: processData.instanceData,
-            currentStateId: processData.currentStateId,
-          },
-        }),
+      async () => resolveManualSelectionStatus({ instance: processData }),
     );
 
     if (!manualSelectionStatus.selectionsAreConfirmed) {
@@ -84,9 +83,8 @@ export const sendPhaseTransitionNotification = inngest.createFunction(
       };
     }
 
-    // Resolve phase name and position from instance data
-    const instanceData = processData.instanceData as DecisionInstanceData;
-    const phases = instanceData?.phases ?? [];
+    // Resolve phase name and position from the phases
+    const { phases } = processData;
     const toPhaseIndex = phases.findIndex((p) => p.phaseId === toPhaseId);
     const toPhaseName = phases[toPhaseIndex]?.name ?? toPhaseId;
     const phaseNumber = toPhaseIndex !== -1 ? toPhaseIndex + 1 : 1;

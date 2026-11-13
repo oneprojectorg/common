@@ -20,6 +20,7 @@ import {
   type AssignableProposal,
   insertReviewAssignments,
 } from './insertReviewAssignments';
+import { getPhases } from './instancePhases';
 import type { DecisionInstanceData } from './schemas/instanceData';
 import { assertInstancePhase } from './utils/instance';
 import { getPhaseReviewSettings, isReviewPhase } from './utils/phaseSettings';
@@ -102,14 +103,18 @@ export async function reconcileReviewAssignments({
   }
 
   const instanceData = instance.instanceData as DecisionInstanceData;
+  const phases = await getPhases({ instance, db });
   const currentPhase = assertInstancePhase({
-    instance: { instanceData },
+    instance: { phases },
     phaseId: currentPhaseId,
   });
   if (!isReviewPhase(currentPhase)) {
     return skip('current phase is not review-capable');
   }
-  const reviewSettings = getPhaseReviewSettings(instanceData, currentPhaseId);
+  const reviewSettings = getPhaseReviewSettings(
+    { config: instanceData.config, phases },
+    currentPhaseId,
+  );
 
   // Reconcile only runs under `full_coverage`: its expected set is the whole
   // scope⨝eligibility intersection, so under `single_reviewer` it would fan out

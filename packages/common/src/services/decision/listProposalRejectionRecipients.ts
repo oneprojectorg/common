@@ -3,7 +3,7 @@ import { ProposalStatus } from '@op/db/schema';
 
 import { hasEmail } from '../../utils/email';
 import { listMemberProfileRecipients } from '../email/recipients';
-import type { PhaseInstanceData } from './schemas/instanceData';
+import { resolvePhases } from './instancePhases';
 import { getInstanceCurrentPhase } from './utils/instance';
 import { isProposalReachable } from './utils/proposal';
 
@@ -76,12 +76,9 @@ export async function listProposalRejectionRecipients({
     return { ok: false, reason: 'noRecipients' };
   }
 
-  const currentPhase = getInstanceCurrentPhase<PhaseInstanceData>({
-    currentStateId: processInstance.currentStateId,
-    instanceData: processInstance.instanceData as {
-      phases?: PhaseInstanceData[];
-    } | null,
-  });
+  const currentPhase = getInstanceCurrentPhase(
+    await resolvePhases({ instance: processInstance }),
+  );
 
   return {
     ok: true,

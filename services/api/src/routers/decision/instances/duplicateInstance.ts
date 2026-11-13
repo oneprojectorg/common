@@ -1,4 +1,4 @@
-import { duplicateInstance } from '@op/common';
+import { duplicateInstance, resolveProfilePhases } from '@op/common';
 import { z } from 'zod';
 
 import { decisionProfileWithSchemaEncoder } from '../../../encoders/decision';
@@ -31,6 +31,8 @@ export const duplicateInstanceRouter = router({
         user: ctx.user,
       });
 
-      return decisionProfileWithSchemaEncoder.parse(profile);
+      return decisionProfileWithSchemaEncoder.parse(
+        await resolveProfilePhases({ profile }),
+      );
     }),
 });

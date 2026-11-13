@@ -6,8 +6,8 @@ import { NotFoundError } from '../../../utils';
 import { assertProfileAccess } from '../../assert';
 import { formatUnitAmount, getFieldUnit } from '../fieldUnit';
 import { getDecisionBySlug } from '../getDecisionBySlug';
+import { type InstanceWithPhases, resolvePhases } from '../instancePhases';
 import { resolveProposalTemplate } from '../resolveProposalTemplate';
-import { getInstancePhases } from '../schemas/instanceData';
 import type { VoterEnrolmentRule } from '../schemas/types';
 import { getInstanceCurrentPhase } from '../utils/instance';
 import {
@@ -26,22 +26,19 @@ export interface SmsVotingDecision {
   budget: string | null;
 }
 
-interface VotingInstance {
+type VotingInstance = InstanceWithPhases<{
   id: string;
   instanceData: unknown;
   currentStateId: string | null;
   processId: string | null;
-}
+}>;
 
 const summarizeVotingInstance = async (
   name: string,
   slug: string,
   instance: VotingInstance,
 ): Promise<SmsVotingDecision> => {
-  const phase = getInstanceCurrentPhase({
-    currentStateId: instance.currentStateId,
-    instanceData: { phases: getInstancePhases(instance.instanceData) },
-  });
+  const phase = getInstanceCurrentPhase(instance);
   const voterBudget = phase ? getVoterBudget(phase) : undefined;
   const template =
     phase && voterBudget !== undefined
@@ -107,19 +104,22 @@ export async function describeEnrolmentDecision({
     throw new NotFoundError('Process instance', instanceId);
   }
 
-  await assertProfileAccess({
-    user: { id: authUserId },
-    profileId: instance.profile.id,
-    permissions: [
-      { decisions: permission.ADMIN },
-      { decisions: permission.READ },
-    ],
-    notMemberMessage: 'User does not have access to this process',
-  });
+  const [resolved] = await Promise.all([
+    resolvePhases({ instance }),
+    assertProfileAccess({
+      user: { id: authUserId },
+      profileId: instance.profile.id,
+      permissions: [
+        { decisions: permission.ADMIN },
+        { decisions: permission.READ },
+      ],
+      notMemberMessage: 'User does not have access to this process',
+    }),
+  ]);
 
   return summarizeVotingInstance(
     instance.profile.name,
     instance.profile.slug,
-    instance,
+    resolved,
   );
 }

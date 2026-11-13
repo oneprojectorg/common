@@ -14,11 +14,11 @@ import {
   type BallotProposalInfo,
   getBallotProposalByCode,
 } from '../getBallotProposalByCode';
+import { resolvePhases } from '../instancePhases';
 import {
   type BallotProposalListItem,
   listBallotProposals,
 } from '../listBallotProposals';
-import { getInstancePhases } from '../schemas/instanceData';
 import { getInstanceCurrentPhase } from '../utils/instance';
 import { getVoterEnrolment, isVotingPhase } from '../utils/phaseSettings';
 import { findVoterEnrolment, isVoterEnrolled } from '../voterEnrolment';
@@ -61,8 +61,9 @@ export const loadBallotScope = async ({
     throw new NotFoundError('Process instance', instanceId);
   }
 
-  const [enrolment] = await Promise.all([
+  const [enrolment, resolved] = await Promise.all([
     findVoterEnrolment({ processInstanceId: instanceId, authUserId }),
+    resolvePhases({ instance }),
     assertProfileAccess({
       user: { id: authUserId },
       profileId: instance.profileId,
@@ -74,10 +75,7 @@ export const loadBallotScope = async ({
     }),
   ]);
 
-  const phase = getInstanceCurrentPhase({
-    currentStateId: instance.currentStateId,
-    instanceData: { phases: getInstancePhases(instance.instanceData) },
-  });
+  const phase = getInstanceCurrentPhase(resolved);
 
   if (!phase || !isVotingPhase(phase)) {
     throw new ValidationError('Voting is not open for this decision');
@@ -100,7 +98,7 @@ export const loadBallotScope = async ({
     : null;
 
   return {
-    instance,
+    instance: resolved,
     decisionName: instance.profile.name,
     taxonomyTermId,
     termLabel: term?.label ?? null,

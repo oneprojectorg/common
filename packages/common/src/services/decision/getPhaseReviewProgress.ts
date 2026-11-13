@@ -57,7 +57,7 @@ export async function getPhaseReviewProgress(
     reviewersTotalCount: assignedReviewerCounts.total,
     daysLeft: computeDaysLeft({
       phaseId,
-      phases: instance.instanceData.phases,
+      phases: instance.phases,
     }),
   };
 }

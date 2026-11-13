@@ -1,6 +1,6 @@
-import { getInstanceCurrentPhase, getInstancePhases } from '@op/common';
+import { getInstanceCurrentPhase, resolvePhasesForAll } from '@op/common';
 import { db } from '@op/db/client';
-import { ProcessStatus } from '@op/db/schema';
+import { ProcessStatus, processPhases, profiles } from '@op/db/schema';
 import { Events, inngest } from '@op/events';
 import { sql } from 'drizzle-orm';
 
@@ -33,11 +33,19 @@ export const sendReviewPhaseEndingReminders = inngest.createFunction(
           currentStateId: { isNotNull: true },
           // Pre-filter only; the review-flag guard below stays the real test.
           RAW: (table) =>
-            sql`(jsonb_typeof(${table.instanceData} -> 'phases') = 'array' AND EXISTS (
+            sql`((jsonb_typeof(${table.instanceData} -> 'phases') = 'array' AND EXISTS (
               SELECT 1
               FROM jsonb_array_elements(${table.instanceData} -> 'phases') AS p
               WHERE p ->> 'phaseId' = ${table.currentStateId}
                 AND (p -> 'rules' -> 'reviews' ->> 'submit')::boolean IS TRUE
+            )) OR EXISTS (
+              SELECT 1
+              FROM ${processPhases}
+              JOIN ${profiles} ON ${profiles.id} = ${processPhases.profileId}
+              WHERE ${processPhases.processInstanceId} = ${table.id}
+                -- Same id rule as listPhasesByInstance in phaseHelpers.
+                AND coalesce(${processPhases.data} ->> 'phaseId', ${profiles.slug}) = ${table.currentStateId}
+                AND (${processPhases.data} -> 'rules' -> 'reviews' ->> 'submit')::boolean IS TRUE
             ))`,
         },
         columns: {
@@ -47,11 +55,12 @@ export const sendReviewPhaseEndingReminders = inngest.createFunction(
         },
       });
 
-      return reviewPhaseInstances.flatMap((instance) => {
-        const phase = getInstanceCurrentPhase({
-          currentStateId: instance.currentStateId,
-          instanceData: { phases: getInstancePhases(instance.instanceData) },
-        });
+      const instances = await resolvePhasesForAll({
+        instances: reviewPhaseInstances,
+      });
+
+      return instances.flatMap((instance) => {
+        const phase = getInstanceCurrentPhase(instance);
 
         if (phase?.rules?.reviews?.submit !== true || !phase.endDate) {
           return [];
