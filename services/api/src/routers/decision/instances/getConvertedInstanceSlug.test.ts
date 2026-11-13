@@ -30,7 +30,8 @@ const makeInstanceLegacy = async (instanceId: string) => {
 };
 
 describe.concurrent('getConvertedInstanceSlug', () => {
-  it('returns the profile slug of a current instance the caller can read', async ({
+  // grantAccess assigns the decision Admin role.
+  it('returns the profile slug to a decision admin', async ({
     task,
     onTestFinished,
   }) => {
@@ -82,15 +83,47 @@ describe.concurrent('getConvertedInstanceSlug', () => {
     expect(result).toEqual({ slug: null });
   });
 
-  it('returns null to a caller who cannot read the instance', async ({
+  it('returns the profile slug to a decision member with read access', async ({
     task,
     onTestFinished,
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const setup = await testData.createDecisionSetup({
-      instanceCount: 1,
-      grantAccess: false,
+    const setup = await testData.createDecisionSetup({ instanceCount: 1 });
+    const member = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [setup.instance.profileId],
     });
+
+    const caller = await createAuthenticatedCaller(member.email);
+    const result = await caller.decision.getConvertedInstanceSlug({
+      instanceId: setup.instance.instance.id,
+    });
+
+    expect(result).toEqual({ slug: setup.instance.slug });
+  });
+
+  it('returns the profile slug to an anonymous visitor of a public decision', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({ instanceCount: 1 });
+    await testData.makeDecisionPublic(setup.instance.profileId);
+
+    const visitor = createCaller(await createTestContextWithSession(null));
+    const result = await visitor.decision.getConvertedInstanceSlug({
+      instanceId: setup.instance.instance.id,
+    });
+
+    expect(result).toEqual({ slug: setup.instance.slug });
+  });
+
+  it('returns null to a user from another organization', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({ instanceCount: 1 });
     const separateOrgSetup = await testData.createDecisionSetup({
       instanceCount: 0,
     });
@@ -99,20 +132,27 @@ describe.concurrent('getConvertedInstanceSlug', () => {
       instanceProfileIds: [],
     });
 
-    const outsiderCaller = await createAuthenticatedCaller(outsider.email);
-    const publicCaller = createCaller(await createTestContextWithSession(null));
+    const caller = await createAuthenticatedCaller(outsider.email);
+    const result = await caller.decision.getConvertedInstanceSlug({
+      instanceId: setup.instance.instance.id,
+    });
 
-    const [outsiderResult, publicResult] = await Promise.all([
-      outsiderCaller.decision.getConvertedInstanceSlug({
-        instanceId: setup.instance.instance.id,
-      }),
-      publicCaller.decision.getConvertedInstanceSlug({
-        instanceId: setup.instance.instance.id,
-      }),
-    ]);
+    expect(result).toEqual({ slug: null });
+  });
 
-    expect(outsiderResult).toEqual({ slug: null });
-    expect(publicResult).toEqual({ slug: null });
+  it('returns null to an anonymous visitor of a private decision', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({ instanceCount: 1 });
+
+    const visitor = createCaller(await createTestContextWithSession(null));
+    const result = await visitor.decision.getConvertedInstanceSlug({
+      instanceId: setup.instance.instance.id,
+    });
+
+    expect(result).toEqual({ slug: null });
   });
 
   // /decisions/[slug] has no org fallback, so redirecting this caller would land on a forbidden page.
