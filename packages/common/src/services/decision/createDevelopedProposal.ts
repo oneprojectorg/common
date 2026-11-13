@@ -1,9 +1,5 @@
-import { and, db, eq, inArray } from '@op/db/client';
-import {
-  ProposalRelationshipType,
-  proposalRelationships,
-  proposals,
-} from '@op/db/schema';
+import { and, db } from '@op/db/client';
+import { ProposalRelationshipType, proposalRelationships } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 
 import { NotFoundError, ValidationError } from '../../utils';
@@ -64,14 +60,15 @@ export const createDevelopedProposal = async ({
 
   const sourceProposalIds = [...new Set(data.sourceProposalIds)];
 
-  await assertDevelopSources({ instance, sourceProposalIds });
-
-  const draftInputs = await resolveProposalDraftInputs({
-    authUserId,
-    instanceProfileId: instance.profileId,
-    phase: currentPhase,
-    proposalData: data.proposalData,
-  });
+  const [, draftInputs] = await Promise.all([
+    assertDevelopSources({ instance, sourceProposalIds }),
+    resolveProposalDraftInputs({
+      authUserId,
+      instanceProfileId: instance.profileId,
+      phase: currentPhase,
+      proposalData: data.proposalData,
+    }),
+  ]);
 
   const createdProposal = await db.transaction(async (tx) => {
     const proposal = await insertProposalDraft({
@@ -119,17 +116,15 @@ async function assertDevelopSources({
     throw new ValidationError('Choose at least one source proposal');
   }
 
-  const validRows = await db
-    .select({ id: proposals.id })
-    .from(proposals)
-    .where(
-      and(
-        inArray(proposals.id, sourceProposalIds),
-        eq(proposals.processInstanceId, instance.id),
-        phaseEligiblePredicate(proposals),
-        activeProposalPredicate(proposals),
-      ),
-    );
+  const validRows = await db.query.proposals.findMany({
+    where: {
+      id: { in: sourceProposalIds },
+      processInstanceId: instance.id,
+      RAW: (table) =>
+        and(phaseEligiblePredicate(table), activeProposalPredicate(table))!,
+    },
+    columns: { id: true },
+  });
 
   const validIds = new Set(validRows.map((row) => row.id));
   const invalidIds = sourceProposalIds.filter((id) => !validIds.has(id));

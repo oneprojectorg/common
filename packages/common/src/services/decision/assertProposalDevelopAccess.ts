@@ -1,7 +1,8 @@
-import { checkPermission, permission } from 'access-zones';
+import { permission } from 'access-zones';
 
 import { UnauthorizedError, ValidationError } from '../../utils';
-import { type AccessUser, getProfileAccessRoles } from '../access';
+import type { AccessUser } from '../access';
+import { assertProfileAccess } from '../assert';
 import { decisionPermission } from './permissions';
 import type { PhaseInstanceData } from './schemas/instanceData';
 import { assertInstancePhase } from './utils/instance';
@@ -40,14 +41,11 @@ export async function assertProposalDevelopAccess({
     );
   }
 
-  const roles = await getProfileAccessRoles({
+  await assertProfileAccess({
     user,
     profileId: instance.profileId,
+    permissions: DEVELOP_ACCESS,
   });
-
-  if (!checkPermission(DEVELOP_ACCESS, roles)) {
-    throw new UnauthorizedError('You cannot develop proposals in this phase');
-  }
 
   return phase;
 }

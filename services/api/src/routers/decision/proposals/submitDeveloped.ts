@@ -4,7 +4,7 @@ import { proposalSchema } from '@op/common/client';
 import { Events, inngest } from '@op/events';
 import { waitUntil } from '@vercel/functions';
 
-import { submitDevelopedProposalInputSchema } from '../../../encoders/decision';
+import { submitProposalInputSchema } from '../../../encoders/decision';
 import { authenticatedProcedure, router } from '../../../trpcFactory';
 import { trackProposalSubmitted } from '../../../utils/analytics';
 
@@ -12,7 +12,7 @@ export const submitDevelopedProposalRouter = router({
   submitDevelopedProposal: authenticatedProcedure({
     rateLimit: { windowSize: 10, maxRequests: 30 },
   })
-    .input(submitDevelopedProposalInputSchema)
+    .input(submitProposalInputSchema)
     .output(proposalSchema)
     .mutation(async ({ ctx, input }) => {
       const { user } = ctx;

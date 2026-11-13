@@ -57,34 +57,34 @@ export const submitDevelopedProposal = async ({
     throw new ValidationError('Invalid phase in process instance');
   }
 
-  await assertProposalDevelopAccess({
-    instance: {
-      profileId: instance.profileId,
-      instanceData: { phases: getInstancePhases(instance.instanceData) },
-    },
-    phaseId: currentPhaseId,
-    user: { id: user.id },
-  });
-
-  const developedEdge = await db.query.proposalRelationships.findFirst({
-    where: {
-      targetProposalId: proposal.id,
-      relationshipType: ProposalRelationshipType.DEVELOPED,
-      deletedAt: { isNull: true },
-    },
-    columns: { id: true },
-  });
+  const [, developedEdge, author] = await Promise.all([
+    assertProposalDevelopAccess({
+      instance: {
+        profileId: instance.profileId,
+        instanceData: { phases: getInstancePhases(instance.instanceData) },
+      },
+      phaseId: currentPhaseId,
+      user: { id: user.id },
+    }),
+    db.query.proposalRelationships.findFirst({
+      where: {
+        targetProposalId: proposal.id,
+        relationshipType: ProposalRelationshipType.DEVELOPED,
+        deletedAt: { isNull: true },
+      },
+      columns: { id: true },
+    }),
+    getProfileAccessUser({
+      user: { id: user.id },
+      profileId: proposal.profileId,
+    }),
+  ]);
 
   if (!developedEdge) {
     throw new ValidationError('This proposal was not developed from another');
   }
 
   // An author holds a membership on the proposal's own profile.
-  const author = await getProfileAccessUser({
-    user: { id: user.id },
-    profileId: proposal.profileId,
-  });
-
   if (!author) {
     throw new UnauthorizedError(
       'Only an author of this proposal can submit it',

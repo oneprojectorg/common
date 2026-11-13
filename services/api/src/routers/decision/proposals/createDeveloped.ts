@@ -5,7 +5,7 @@ import { createDevelopedProposalInputSchema } from '../../../encoders/decision';
 import { authenticatedProcedure, router } from '../../../trpcFactory';
 
 export const createDevelopedProposalRouter = router({
-  /** Creates a draft proposal developed from proposals of the previous phase. Use submitDevelopedProposal to submit it. */
+  /** Creates a draft proposal developed from source proposals. Use submitDevelopedProposal to submit it. */
   createDevelopedProposal: authenticatedProcedure({
     rateLimit: { windowSize: 10, maxRequests: 30 },
   })

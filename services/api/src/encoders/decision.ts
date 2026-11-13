@@ -670,7 +670,7 @@ export const createDevelopedProposalInputSchema =
     sourceProposalIds: z.array(z.uuid()).min(1),
   });
 
-export const submitDevelopedProposalInputSchema = z.object({
+export const submitProposalInputSchema = z.object({
   proposalId: z.uuid(),
 });
 

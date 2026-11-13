@@ -115,10 +115,7 @@ async function expectNotAllowed(attempt: Promise<unknown>) {
 async function expectCannotDevelop(attempt: Promise<unknown>) {
   const error = await attempt.catch((caught: unknown) => caught);
   expect(error).toBeInstanceOf(UnauthorizedError);
-  expect(error).toHaveProperty(
-    'message',
-    'You cannot develop proposals in this phase',
-  );
+  expect(error).toHaveProperty('message', 'Not authorized');
 }
 
 describe.concurrent('assertProposalDevelopAccess', () => {
