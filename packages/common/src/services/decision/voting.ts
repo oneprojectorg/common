@@ -178,7 +178,7 @@ async function getBallotPricing({
 }
 
 async function getVotingInstance(processInstanceId: string) {
-  const instanceRow = await db.query.processInstances.findFirst({
+  const processInstance = await db.query.processInstances.findFirst({
     where: { id: processInstanceId },
     columns: {
       id: true,
@@ -190,11 +190,11 @@ async function getVotingInstance(processInstanceId: string) {
     },
   });
 
-  if (!instanceRow) {
+  if (!processInstance) {
     throw new NotFoundError('Process instance', processInstanceId);
   }
 
-  return instanceRow;
+  return resolvePhases({ instance: processInstance });
 }
 
 // Runs both caps so the voter sees every problem at once.
@@ -357,24 +357,21 @@ export const submitVote = async ({
   try {
     const profileId = await getIndividualProfileId(authUserId);
 
-    const instanceRow = await getVotingInstance(data.processInstanceId);
+    const processInstance = await getVotingInstance(data.processInstanceId);
 
-    if (!instanceRow.profileId) {
+    if (!processInstance.profileId) {
       throw new NotFoundError('Decision profile', data.processInstanceId);
     }
 
     // Check user permissions
-    const [processInstance] = await Promise.all([
-      resolvePhases({ instance: instanceRow }),
-      assertProfileAccess({
-        user: { id: authUserId },
-        profileId: instanceRow.profileId,
-        permissions: [
-          { decisions: permission.ADMIN },
-          { decisions: decisionPermission.VOTE },
-        ],
-      }),
-    ]);
+    await assertProfileAccess({
+      user: { id: authUserId },
+      profileId: processInstance.profileId,
+      permissions: [
+        { decisions: permission.ADMIN },
+        { decisions: decisionPermission.VOTE },
+      ],
+    });
 
     const phaseConfig = getCurrentPhaseConfig(processInstance);
 
@@ -555,17 +552,14 @@ export const getVotingStatus = async ({
       }
     }
 
-    const instanceRow = await getVotingInstance(data.processInstanceId);
+    const processInstance = await getVotingInstance(data.processInstanceId);
 
-    const [processInstance] = await Promise.all([
-      resolvePhases({ instance: instanceRow }),
-      assertInstanceProfileAccess({
-        user,
-        instance: instanceRow,
-        profilePermissions: { decisions: permission.READ },
-        orgFallbackPermissions: [{ decisions: permission.READ }],
-      }),
-    ]);
+    await assertInstanceProfileAccess({
+      user,
+      instance: processInstance,
+      profilePermissions: { decisions: permission.READ },
+      orgFallbackPermissions: [{ decisions: permission.READ }],
+    });
 
     const phaseConfig = getCurrentPhaseConfig(processInstance);
 
