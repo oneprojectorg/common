@@ -36,6 +36,7 @@ export {
 } from './helpers/loginTestUtils';
 export {
   dateAdvancementSchema,
+  fourPhaseDateSchema,
   schemaMissingPipeline,
   schemaWithPipeline,
   schemaWithThreePhases,
