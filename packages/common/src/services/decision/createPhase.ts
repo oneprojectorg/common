@@ -2,7 +2,7 @@ import { db } from '@op/db/client';
 import type { ProcessPhase, Profile } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 
-import { NotFoundError } from '../../utils';
+import { CommonError, NotFoundError } from '../../utils';
 import {
   type PhaseData,
   assertDecisionAdmin,
@@ -52,9 +52,12 @@ export const createPhase = async ({
       }),
   });
   const placed = phases.find(({ id }) => id === created.phase.id);
+  if (!placed) {
+    throw new CommonError(`Phase ${created.phase.id} is missing after insert`);
+  }
 
   return {
     ...created,
-    phase: { ...created.phase, sortOrder: placed?.sortOrder ?? sortOrder },
+    phase: { ...created.phase, sortOrder: placed.sortOrder },
   };
 };

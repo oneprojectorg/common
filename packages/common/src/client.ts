@@ -37,7 +37,6 @@ export {
   getInstanceCurrentPhase,
 } from './services/decision/utils/instance';
 export {
-  MAX_PHASES_PER_DECISION,
   getPhaseIndex,
   getPreviousPhases,
   isPhaseAtOrBefore,
@@ -236,7 +235,6 @@ export {
 export {
   MAX_PHASE_NAME_LENGTH,
   phaseNameInputSchema,
-  phaseNameLengthSchema,
 } from './services/decision/schemas/phaseName';
 export {
   RESULT_NOTIFICATION_MESSAGE_MAX_LENGTH,
