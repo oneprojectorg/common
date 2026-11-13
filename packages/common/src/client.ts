@@ -223,6 +223,10 @@ export {
   createInstanceSchema,
 } from './services/decision/schemas/createInstance';
 export {
+  MAX_PHASE_NAME_LENGTH,
+  phaseNameInputSchema,
+} from './services/decision/schemas/phaseName';
+export {
   RESULT_NOTIFICATION_MESSAGE_MAX_LENGTH,
   type ResultNotificationMessages,
   resultNotificationMessagesSchema,

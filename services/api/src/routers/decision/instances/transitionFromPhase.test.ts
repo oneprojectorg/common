@@ -1,5 +1,5 @@
 import { type DecisionInstanceData } from '@op/common';
-import { TestDecisionsDataManager } from '@op/common/testing';
+import { TestDecisionsDataManager, syncPhaseRows } from '@op/common/testing';
 import { db, eq } from '@op/db/client';
 import {
   ProcessStatus,
@@ -366,6 +366,7 @@ describe('transitionFromPhase', () => {
         },
       })
       .where(eq(processInstances.id, instance.instance.id));
+    await syncPhaseRows(instance.instance.id);
 
     // Also update the process schema to include all 3 phases
     await db

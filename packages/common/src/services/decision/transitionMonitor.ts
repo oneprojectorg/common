@@ -16,6 +16,7 @@ import {
   resolvePhasesForAll,
 } from './instancePhases';
 import { onPhaseAdvanced } from './onPhaseAdvanced';
+import { hasPhaseEnded } from './utils/phaseOrder';
 
 export interface ProcessDecisionsTransitionsResult {
   processed: number;
@@ -163,7 +164,8 @@ function groupTransitionsByInstance(
 }
 
 /**
- * Advance one instance's transitions sequentially. Stops on conflict or error.
+ * Advance one instance's transitions sequentially. Stops on error, or on a
+ * conflict that is not a stale transition out of a past phase.
  * Returns the last successfully reached phase ID, or null if nothing advanced.
  */
 async function advanceInstanceTransitions({
@@ -208,6 +210,24 @@ async function advanceInstanceTransitions({
       );
 
       if (advanceResult.conflict) {
+        // A transition out of a phase the decision has already left would
+        // block every later one; complete it and move on.
+        if (hasPhaseEnded(current, fromPhaseId, advanceResult.currentStateId)) {
+          await db
+            .update(decisionProcessTransitions)
+            .set({ completedAt: now })
+            .where(
+              and(
+                eq(decisionProcessTransitions.id, transition.id),
+                isNull(decisionProcessTransitions.completedAt),
+              ),
+            );
+          logger.warn('Completed a stale transition out of a past phase', {
+            transitionId: transition.id,
+            processInstanceId,
+          });
+          continue;
+        }
         break;
       }
 
