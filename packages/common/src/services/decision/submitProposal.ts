@@ -72,7 +72,6 @@ export const submitProposal = async ({
   });
 
   return finalizeProposalSubmission({
-    db,
     proposal: existingProposal,
     instance: {
       id: instance.id,

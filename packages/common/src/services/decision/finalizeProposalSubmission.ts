@@ -1,5 +1,5 @@
 import { getTipTapClient } from '@op/collab';
-import { type DbClient, eq } from '@op/db/client';
+import { db, eq } from '@op/db/client';
 import {
   type ProcessInstance,
   ProposalStatus,
@@ -30,12 +30,10 @@ import { validateProposalAgainstTemplate } from './validateProposalAgainstTempla
  * first.
  */
 export const finalizeProposalSubmission = async ({
-  db,
   proposal: existingProposal,
   instance,
   instanceData,
 }: {
-  db: DbClient;
   proposal: Pick<
     typeof proposals.$inferSelect,
     'id' | 'formSchemaId' | 'proposalData' | 'profileId'
