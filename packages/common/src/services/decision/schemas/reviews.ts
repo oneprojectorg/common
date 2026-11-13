@@ -421,6 +421,22 @@ export const categoryDevelopmentStatusListSchema = list(
   categoryDevelopmentStatusSchema,
 );
 
+export const categoryDevelopmentTargetSchema =
+  categoryDevelopmentStatusInputSchema.extend({
+    taxonomyTermId: z.uuid(),
+    reviewerProfileId: z.uuid().optional(),
+  });
+
+/** The rows a confirm or unconfirm changed, with their stamps after the write. */
+export const categoryDevelopmentChangeSchema = z.object({
+  rows: z.array(
+    z.object({
+      reviewerProfileId: z.uuid(),
+      developConfirmedAt: z.string().nullable(),
+    }),
+  ),
+});
+
 export const removeCategoryReviewerResultSchema = z.object({
   removed: z.boolean(),
 });
