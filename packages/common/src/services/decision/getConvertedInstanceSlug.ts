@@ -1,8 +1,6 @@
-import { permission } from 'access-zones';
+import { checkPermission, permission } from 'access-zones';
 
-import { UnauthorizedError } from '../../utils';
-import type { AccessUser } from '../access';
-import { assertProfileAccess } from '../assert';
+import { type AccessUser, getProfileAccessRoles } from '../access';
 import { getCachedInstance } from './getCachedInstance';
 import { isLegacyInstanceData } from './isLegacyInstance';
 
@@ -12,7 +10,7 @@ export const getConvertedInstanceSlug = async ({
   user,
 }: {
   instanceId: string;
-  user: AccessUser | undefined;
+  user?: AccessUser;
 }): Promise<string | null> => {
   const instance = await getCachedInstance(instanceId);
   const profileId = instance?.profileId;
@@ -23,22 +21,12 @@ export const getConvertedInstanceSlug = async ({
     return null;
   }
 
-  try {
-    // Same check as getDecisionBySlug, so a redirect never lands on a forbidden page.
-    await assertProfileAccess({
-      user,
-      profileId,
-      permissions: [
-        { decisions: permission.ADMIN },
-        { decisions: permission.READ },
-      ],
-    });
-  } catch (error) {
-    if (error instanceof UnauthorizedError) {
-      return null;
-    }
-    throw error;
-  }
+  // Same permissions as getDecisionBySlug, so a redirect never lands on a forbidden page.
+  const roles = await getProfileAccessRoles({ user, profileId });
+  const canRead = checkPermission(
+    [{ decisions: permission.ADMIN }, { decisions: permission.READ }],
+    roles,
+  );
 
-  return slug;
+  return canRead ? slug : null;
 };
