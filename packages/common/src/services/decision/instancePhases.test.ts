@@ -1,6 +1,6 @@
 import { TestDecisionsDataManager } from '@op/common/testing';
 import { db, eq, sql } from '@op/db/client';
-import { processPhases, profiles } from '@op/db/schema';
+import { processInstances, processPhases, profiles } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -10,8 +10,12 @@ import {
 } from './instancePhases';
 
 describe('instancePhases', () => {
-  it('reads the rows in sort order', async ({ task, onTestFinished }) => {
+  it('reads the rows in sort order, ignoring stale phases in instanceData', async ({
+    task,
+    onTestFinished,
+  }) => {
     const { instanceId } = await createInstance(task.id, onTestFinished);
+    await seedStaleBlobPhases(instanceId);
     const rows = await loadRows(instanceId);
     await setSortOrder(rows.initial.id, 1);
     await setSortOrder(rows.final.id, 0);
@@ -48,7 +52,7 @@ describe('instancePhases', () => {
     ]);
   });
 
-  it('reads an instance with no rows as having no phases', async ({
+  it('reads an instance with no rows as having no phases, even with stale phases in instanceData', async ({
     task,
     onTestFinished,
   }) => {
@@ -57,6 +61,7 @@ describe('instancePhases', () => {
       onTestFinished,
     );
     await testData.removePhaseRows(instanceId);
+    await seedStaleBlobPhases(instanceId);
     const instance = await loadInstance(instanceId);
 
     const resolved = await resolvePhases({ instance });
@@ -78,6 +83,8 @@ describe('instancePhases', () => {
       throw new Error('Expected two instances');
     }
     await testData.removePhaseRows(withoutRows);
+    await seedStaleBlobPhases(withRows);
+    await seedStaleBlobPhases(withoutRows);
     const instances = [
       await loadInstance(withRows),
       await loadInstance(withoutRows),
@@ -153,6 +160,14 @@ async function loadRows(instanceId: string) {
 
   return { initial, final };
 }
+
+const seedStaleBlobPhases = (instanceId: string) =>
+  db
+    .update(processInstances)
+    .set({
+      instanceData: sql`${processInstances.instanceData} || ${JSON.stringify({ phases: [{ phaseId: 'stale-blob', name: 'Stale blob' }] })}::jsonb`,
+    })
+    .where(eq(processInstances.id, instanceId));
 
 const setSortOrder = (rowId: string, sortOrder: number) =>
   db
