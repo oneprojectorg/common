@@ -665,6 +665,15 @@ export const createProposalInputSchema = z.object({
   attachmentIds: z.array(z.string()).optional(), // Array of attachment IDs to link to this proposal
 });
 
+export const createDevelopedProposalInputSchema =
+  createProposalInputSchema.extend({
+    sourceProposalIds: z.array(z.uuid()).min(1),
+  });
+
+export const submitProposalInputSchema = z.object({
+  proposalId: z.uuid(),
+});
+
 export const updateProposalInputSchema = createProposalInputSchema
   .omit({ processInstanceId: true })
   .partial()

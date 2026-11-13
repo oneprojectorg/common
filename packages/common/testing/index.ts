@@ -12,6 +12,10 @@ export {
 } from './supabase';
 
 export { TestDecisionsDataManager } from './helpers/TestDecisionsDataManager';
+export {
+  createDevelopPhaseSetup,
+  createDevelopProposalsMember,
+} from './helpers/developPhase';
 export { TestJoinProfileRequestDataManager } from './helpers/TestJoinProfileRequestDataManager';
 export { TestOrganizationDataManager } from './helpers/TestOrganizationDataManager';
 export { TestPhoneAuthDataManager } from './helpers/TestPhoneAuthDataManager';
@@ -62,6 +66,7 @@ export {
   SEEDED_SIMPLE_VOTING_TEMPLATE_NAME,
   SEEDED_TEMPLATE_PROFILE_SLUG,
   TEST_PERMISSION_BITS,
+  testDevelopSchema,
   testMinimalSchema,
   testSimpleVotingSchema,
   type CreateDecisionInstanceOptions,
@@ -83,6 +88,7 @@ export {
   closeOpenProposalHistory,
   configureProcessReviews,
   createCategoryReviewer,
+  createCategoryReviewerWithTerm,
   createProposalReview,
   createReviewAssignment,
   createReviewScenario,
