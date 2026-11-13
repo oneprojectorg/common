@@ -22,4 +22,5 @@ export const decisionRoleEncoder = z.object({
   review: z.boolean(),
   submitProposals: z.boolean(),
   vote: z.boolean(),
+  developProposals: z.boolean(),
 });

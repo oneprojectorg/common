@@ -5,7 +5,7 @@
 import { permission } from 'access-zones';
 
 /**
- * Decision-specific permission bits (bits 5–8), extending the standard ACRUD bits (0–4).
+ * Decision-specific permission bits (bits 5–9), extending the standard ACRUD bits (0–4).
  * Duplicated from @op/common/src/services/decision/permissions.ts to avoid a
  * circular dependency (@op/db cannot depend on @op/common).
  */
@@ -14,6 +14,7 @@ export const DECISION_BITS = {
   REVIEW: 0b10_00000, // 64
   SUBMIT_PROPOSALS: 0b100_00000, // 128
   VOTE: 0b1000_00000, // 256
+  DEVELOP_PROPOSALS: 0b1_0000_00000, // 512
 } as const;
 
 // Predefined UUIDs for access zones (v4 format with version=4 and variant=8)

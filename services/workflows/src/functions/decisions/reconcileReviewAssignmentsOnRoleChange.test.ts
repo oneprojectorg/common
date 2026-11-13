@@ -82,6 +82,7 @@ const createReviewerRole = (instanceProfileId: string, name: string) =>
           review: true,
           submitProposals: false,
           vote: false,
+          developProposals: false,
         },
       },
     },

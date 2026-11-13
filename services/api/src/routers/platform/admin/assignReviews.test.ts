@@ -116,6 +116,7 @@ describe.concurrent('platform.admin.assignReviews', () => {
             review: true,
             submitProposals: true,
             vote: false,
+            developProposals: false,
           },
         },
       },
