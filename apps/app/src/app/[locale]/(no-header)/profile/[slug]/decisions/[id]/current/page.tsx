@@ -5,17 +5,25 @@ import { redirect } from '@/lib/i18n';
 
 import { decisionRootHref } from '@/components/decisions/proposalHrefs';
 
-import { redirectConvertedDecisionCurrent } from '../redirectConvertedInstance';
+import {
+  type LegacySearchParams,
+  redirectConvertedDecisionCurrent,
+} from '../redirectConvertedInstance';
 
 interface LegacyDecisionCurrentProps {
   params: Promise<{ locale: Locale; slug: string; id: string }>;
+  searchParams: Promise<LegacySearchParams>;
 }
 
 // Redirecting here, before the loading boundary streams, gives crawlers a real 307.
 export async function generateMetadata({
   params,
+  searchParams,
 }: LegacyDecisionCurrentProps): Promise<Metadata> {
-  await redirectConvertedDecisionCurrent(await params);
+  await redirectConvertedDecisionCurrent({
+    ...(await params),
+    searchParams: await searchParams,
+  });
   return {};
 }
 
@@ -24,8 +32,14 @@ export async function generateMetadata({
 // `<decisionRoot>/current` shape still resolve here.
 export default async function LegacyDecisionCurrentPage({
   params,
+  searchParams,
 }: LegacyDecisionCurrentProps) {
   const { locale, slug, id } = await params;
-  await redirectConvertedDecisionCurrent({ id, slug, locale });
+  await redirectConvertedDecisionCurrent({
+    id,
+    slug,
+    locale,
+    searchParams: await searchParams,
+  });
   redirect({ href: decisionRootHref({ slug, instanceId: id }), locale });
 }
