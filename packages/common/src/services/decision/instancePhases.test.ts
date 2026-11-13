@@ -1,4 +1,4 @@
-import { TestDecisionsDataManager, emptyBlobPhases } from '@op/common/testing';
+import { TestDecisionsDataManager } from '@op/common/testing';
 import { db, eq, sql } from '@op/db/client';
 import { processPhases, profiles } from '@op/db/schema';
 import { logger } from '@op/logging';
@@ -56,8 +56,7 @@ describe('instancePhases', () => {
       task.id,
       onTestFinished,
     );
-    await testData.createPhaseRows(instanceId);
-    await emptyBlobPhases(instanceId);
+    await testData.leaveOnlyPhaseRows(instanceId);
     const rows = await loadRows(instanceId);
     await db
       .update(processPhases)
@@ -148,8 +147,7 @@ describe('instancePhases', () => {
     if (!withRows || !withoutRows) {
       throw new Error('Expected two instances');
     }
-    await testData.createPhaseRows(withRows);
-    await emptyBlobPhases(withRows);
+    await testData.leaveOnlyPhaseRows(withRows);
     const instances = [
       await loadInstance(withRows),
       await loadInstance(withoutRows),
@@ -178,8 +176,7 @@ describe('instancePhases', () => {
       task.id,
       onTestFinished,
     );
-    await testData.createPhaseRows(instanceId);
-    await emptyBlobPhases(instanceId);
+    await testData.leaveOnlyPhaseRows(instanceId);
     const instance = await loadInstance(instanceId);
 
     const resolved = await resolvePhases({ instance });

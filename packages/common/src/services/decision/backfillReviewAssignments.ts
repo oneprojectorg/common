@@ -76,7 +76,7 @@ export async function backfillReviewAssignments({
   }
 
   const reviewSettings = getPhaseReviewSettings(
-    { ...instanceData, phases },
+    { config: instanceData.config, phases },
     currentPhaseId,
   );
 
