@@ -12,4 +12,4 @@ export type {
   MappingResult,
   SchemaMapping,
   SchemaRef,
-} from './types';
+} from './schema';

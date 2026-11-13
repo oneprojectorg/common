@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { mapToSchema } from './mapToSchema';
-import type { FieldMapping, MappingInput, SchemaRef } from './types';
+import type { FieldMapping, MappingInput, SchemaRef } from './schema';
 
 const proposalRef: SchemaRef = { type: 'proposal', phaseId: 'submission' };
 const reviewRef: SchemaRef = { type: 'review', phaseId: 'feasibility' };
