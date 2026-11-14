@@ -1,6 +1,11 @@
+import { randomUUID } from 'node:crypto';
+import { readFile, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { CommonError } from '../../utils/error';
+import { parsePhoneNumber } from './schemas';
 
 // The real SDK constructor validates the account SID format and would reject
 // the fixtures below. Only the resolver's own branching is under test here.
@@ -17,6 +22,7 @@ const ENV_KEYS = [
   'TWILIO_API_KEY_SECRET',
   'TWILIO_MESSAGING_SERVICE_SID',
   'TWILIO_VERIFY_SERVICE_SID',
+  'TWILIO_FAKE_SMS_OUTBOX',
 ] as const;
 
 /** A well-formed account, so a test varies only what it is about. */
@@ -138,6 +144,59 @@ describe('getSmsProvider', () => {
       setEnv({ TWILIO_ACCOUNT_SID: 'AC1', TWILIO_VERIFY_SERVICE_SID: 'VA1' });
 
       expect(() => getSmsProvider()).toThrow(CommonError);
+    });
+  });
+
+  describe('fake outbox', () => {
+    it('writes each send to the outbox file instead of a vendor', async () => {
+      const path = join(tmpdir(), `sms-outbox-${randomUUID()}.jsonl`);
+      setEnv({ TWILIO_FAKE_SMS_OUTBOX: path });
+
+      const provider = getSmsProvider();
+      const result = await provider?.sendSms?.({
+        to: parsePhoneNumber('+15005550006'),
+        body: 'hello there',
+      });
+
+      expect(result?.status).toBe('accepted');
+      const lines = (await readFile(path, 'utf8')).trim().split('\n');
+      expect(lines).toHaveLength(1);
+      expect(JSON.parse(lines[0]!)).toMatchObject({
+        to: '+15005550006',
+        from: null,
+        body: 'hello there',
+      });
+      await rm(path);
+    });
+
+    it('wins over real credentials', async () => {
+      const path = join(tmpdir(), `sms-outbox-${randomUUID()}.jsonl`);
+      setEnv({
+        ...ACCOUNT,
+        TWILIO_MESSAGING_SERVICE_SID: 'MG1',
+        TWILIO_FAKE_SMS_OUTBOX: path,
+      });
+
+      const provider = getSmsProvider();
+      const result = await provider?.sendSms?.({
+        to: parsePhoneNumber('+15005550006'),
+        body: 'hi',
+      });
+
+      expect(result?.status).toBe('accepted');
+      expect(result?.status === 'accepted' && result.providerMessageId).toMatch(
+        /^fake-/,
+      );
+      await rm(path);
+    });
+
+    it('is refused in production', () => {
+      vi.stubEnv('NODE_ENV', 'production');
+      setEnv({ TWILIO_FAKE_SMS_OUTBOX: '/tmp/never-written.jsonl' });
+
+      expect(() => getSmsProvider()).toThrow(CommonError);
+
+      vi.unstubAllEnvs();
     });
   });
 });
