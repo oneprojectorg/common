@@ -1,4 +1,4 @@
-import { timingSafeStringEqual } from './providers/verify';
+import { timingSafeStringEqual } from '../../utils/timingSafeStringEqual';
 import type { ModerationProvider, ModerationVerdict } from './types';
 
 /** Constant-time secret comparison so the check can't be used as a timing
