@@ -1,12 +1,16 @@
 import {
   createDecisionInstance,
+  createUser,
   getSeededTemplate,
   makeDecisionPublic,
+  readProfileNameByEmail,
 } from '@op/common/testing/data';
 import { randomUUID } from 'node:crypto';
 
 import {
+  TEST_USER_DEFAULT_PASSWORD,
   authenticateAnonymously,
+  authenticateAsUser,
   createOrganization,
   createSupabaseAdminClient,
   expect,
@@ -83,13 +87,13 @@ test.describe('Anonymous account upgrade (promote flow)', () => {
       page.getByText('You do not have permission to view this page'),
     ).not.toBeVisible();
 
-    // PromoteOnboardingFlow — step 1: personal details.
+    // PromoteOnboardingFlow — step 1: the visibility choice. A claimed
+    // anonymous account carries the trigger's "Participant <n>" name, so the
+    // flow offers show-my-name / stay-anonymous instead of personal details.
     await expect(
-      page.getByRole('heading', { name: 'Add your personal details' }),
+      page.getByRole('heading', { name: "How you'll appear in this process" }),
     ).toBeVisible({ timeout: 15000 });
-    await page.getByLabel('Full Name').fill('Promo Tester');
-    await page.getByLabel('Headline').fill('Community member');
-    await page.getByLabel('Email').fill(email);
+    await page.getByLabel('Full name').fill('Promo Tester');
     await page.getByRole('button', { name: 'Continue' }).click();
 
     // Step 2: accept Terms of Service + Privacy Policy.
@@ -108,5 +112,45 @@ test.describe('Anonymous account upgrade (promote flow)', () => {
       timeout: 20000,
     });
     await expect(page).not.toHaveURL(/\/start/);
+
+    // The visibility step's promise lands at completion: "Show my name"
+    // replaces the trigger's "Participant <n>" with what the member typed.
+    await expect
+      .poll(() => readProfileNameByEmail(email), { timeout: 15000 })
+      .toBe('Promo Tester');
+  });
+
+  /**
+   * The other arm of the promote flow's step choice. Everything the claim
+   * machinery mints carries the trigger's "Participant <n>" name, so the
+   * claimed-anonymous arm is what every other promote test exercises — a
+   * swapped ternary would pass the whole suite. A full account's trigger
+   * name is its email local-part, which never parses as a participant
+   * number, so it must get the personal-details step.
+   *
+   * Given a signed-in, non-network-member full account mid-onboarding
+   * When they open the promote onboarding
+   * Then the first step is personal details, not the visibility choice
+   */
+  test('a non-claimed account gets personal details, not the visibility step', async ({
+    page,
+  }) => {
+    // example.com is outside the network allow-list, so this is a full,
+    // non-member account; onboarded: false keeps it mid-onboarding.
+    const email = `promote-plain-${randomUUID().slice(0, 8)}@example.com`;
+    await createUser({ supabaseAdmin: admin, email, onboarded: false });
+
+    await authenticateAsUser(page, {
+      email,
+      password: TEST_USER_DEFAULT_PASSWORD,
+    });
+    await page.goto('/en/start?promote=1', { waitUntil: 'networkidle' });
+
+    await expect(
+      page.getByRole('heading', { name: 'Add your personal details' }),
+    ).toBeVisible({ timeout: 15000 });
+    await expect(
+      page.getByRole('heading', { name: "How you'll appear in this process" }),
+    ).not.toBeVisible();
   });
 });

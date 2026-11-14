@@ -2,6 +2,7 @@ import { sql } from 'drizzle-orm';
 import type { SQL } from 'drizzle-orm';
 import { relations } from 'drizzle-orm/_relations';
 import {
+  boolean,
   index,
   pgTable,
   primaryKey,
@@ -33,6 +34,7 @@ export const profiles = pgTable(
     type: entityTypeEnum('entity_type').notNull().default(EntityType.ORG),
     name: varchar({ length: 256 }).notNull(),
     slug: varchar({ length: 256 }).notNull().unique(),
+    isAnonymous: boolean('is_anonymous').notNull().default(false),
     bio: text(),
 
     // Mission

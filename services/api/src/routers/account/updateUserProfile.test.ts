@@ -32,6 +32,30 @@ describe.concurrent('updateUserProfile', () => {
     expect(after?.profile?.name).toBe(newName);
   });
 
+  it('given an anonymous profile, when the member shows their name, then the profile stops reporting anonymity', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({ grantAccess: true });
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const marked = await caller.account.updateUserProfile({
+      isAnonymous: true,
+    });
+    expect(marked.profile).toMatchObject({ isAnonymous: true });
+
+    const name = `Shown ${task.id}`;
+    const cleared = await caller.account.updateUserProfile({
+      name,
+      isAnonymous: false,
+    });
+    expect(cleared.profile).toMatchObject({ name, isAnonymous: false });
+
+    const account = await caller.account.getMyAccount();
+    expect(account?.profile).toMatchObject({ name, isAnonymous: false });
+  });
+
   it('given a user who leaves the headline empty, when the profile is saved, then the profile has no headline', async ({
     task,
     onTestFinished,
