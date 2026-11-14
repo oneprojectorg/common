@@ -9,6 +9,7 @@ import { Link } from '@/lib/i18n';
 
 import { ImageHeader } from '@/components/ImageHeader';
 import { ProfileDetails } from '@/components/Profile/ProfileDetails';
+import { ProfileHero } from '@/components/Profile/ProfileHero';
 
 import {
   IndividualProfileTabsRenderer,
@@ -33,6 +34,22 @@ const ProfileWithData = async ({
       fetchOrganizationBySlug(slug).catch(() => null),
     ]);
 
+    if (profile.type === 'org') {
+      return organization ? (
+        <div
+          data-layout="full-bleed"
+          className="-mt-[3.05rem] flex w-full flex-col gap-3 sm:mt-0 sm:gap-8"
+        >
+          <ProfileHero organization={organization} />
+          <ProfileTabsRenderer
+            organization={organization}
+            profile={profile}
+            initialTab={initialTab}
+          />
+        </div>
+      ) : null;
+    }
+
     const { headerImage, avatarImage } = profile;
     const headerUrl = getPublicUrl(headerImage?.name);
     const avatarUrl = getPublicUrl(avatarImage?.name);
@@ -41,49 +58,6 @@ const ProfileWithData = async ({
     const gradientBgHeader = getGradientForString(
       profile.name + 'C' || 'Common',
     );
-
-    if (profile.type === 'org') {
-      return organization ? (
-        <>
-          <ImageHeader
-            headerImage={
-              headerUrl ? (
-                <Image
-                  src={headerUrl}
-                  alt=""
-                  fill
-                  priority
-                  sizes="(max-width: 639px) 100vw, 1088px"
-                  className="object-cover"
-                />
-              ) : (
-                <div className={cn('h-full w-full', gradientBgHeader)} />
-              )
-            }
-            avatarImage={
-              avatarUrl ? (
-                <Image
-                  src={avatarUrl}
-                  alt=""
-                  fill
-                  sizes="(max-width: 639px) 64px, 120px"
-                  className="object-cover"
-                />
-              ) : (
-                <div className={cn('h-full w-full', gradientBg)} />
-              )
-            }
-          />
-
-          <ProfileDetails organization={organization} />
-          <ProfileTabsRenderer
-            organization={organization}
-            profile={profile}
-            initialTab={initialTab}
-          />
-        </>
-      ) : null;
-    }
 
     // For user profiles, create a simplified profile object based on the profile data
     // TODO: this is jammed in until we update the individual profile and a better typing
@@ -113,7 +87,7 @@ const ProfileWithData = async ({
     };
 
     return (
-      <>
+      <div className="-mt-[3.05rem] flex w-full flex-col gap-3 border-border border-b-transparent sm:mt-0 sm:min-h-[calc(100vh-3.5rem)] sm:gap-4 sm:border sm:border-border">
         <ImageHeader
           headerImage={
             headerUrl ? (
@@ -150,7 +124,7 @@ const ProfileWithData = async ({
           profile={profile}
           initialTab={initialTab}
         />
-      </>
+      </div>
     );
   } catch (error) {
     // A missing/forbidden profile becomes a 404/403; anything else is a
@@ -174,9 +148,7 @@ export const Profile = ({
           <LuArrowLeft className="size-6 text-white rtl:-scale-x-100" />
         </Link>
       </header>
-      <div className="-mt-[3.05rem] flex w-full flex-col gap-3 border-border border-b-transparent sm:mt-0 sm:min-h-[calc(100vh-3.5rem)] sm:gap-4 sm:border sm:border-border">
-        <ProfileWithData slug={slug} initialTab={initialTab} />
-      </div>
+      <ProfileWithData slug={slug} initialTab={initialTab} />
     </>
   );
 };

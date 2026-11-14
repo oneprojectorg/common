@@ -10,7 +10,7 @@ import { expect, test } from '../fixtures/index.js';
  * If the controlled-value wiring is off, deep-links and URL updates break
  * silently — typecheck won't catch it.
  *
- * Desktop org tabs: "Updates" (value `home`, the default), "Relationships",
+ * Desktop org tabs: "Home" (value `home`, the default), "Relationships",
  * "Followers". Mobile renders a different tab set/labels, so pin a desktop
  * viewport.
  */
@@ -42,13 +42,13 @@ test.describe('Profile tab ?tab= query sync', () => {
       authenticatedPage.getByRole('tab', { name: 'Followers', exact: true }),
     ).toHaveAttribute('aria-selected', 'true');
 
-    // Back to the default tab ("Updates" = `home`) → the param is removed.
+    // Back to the default tab ("Home" = `home`) → the param is removed.
     await authenticatedPage
-      .getByRole('tab', { name: 'Updates', exact: true })
+      .getByRole('tab', { name: 'Home', exact: true })
       .click();
     await expect(authenticatedPage).not.toHaveURL(/[?&]tab=/);
     await expect(
-      authenticatedPage.getByRole('tab', { name: 'Updates', exact: true }),
+      authenticatedPage.getByRole('tab', { name: 'Home', exact: true }),
     ).toHaveAttribute('aria-selected', 'true');
   });
 });
