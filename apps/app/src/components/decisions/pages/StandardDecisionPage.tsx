@@ -82,7 +82,11 @@ export function StandardDecisionPage({
 
   return (
     <div className="min-h-full bg-muted">
-      <DecisionHeroBanner heroImagePath={heroImagePath}>
+      <DecisionHeroBanner
+        instanceId={instanceId}
+        heroImagePath={heroImagePath}
+        isAdmin={isAdmin}
+      >
         <div className="mx-auto flex max-w-3xl flex-col justify-center gap-8 px-4 pt-16 pb-8 md:pb-16">
           <div className="flex flex-col items-center gap-4">
             <DecisionHero
