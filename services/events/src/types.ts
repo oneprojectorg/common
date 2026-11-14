@@ -86,6 +86,12 @@ export const Events = {
   },
   // Emitted only for decision profiles. Role-id arrays are a narrowing hint —
   // consumers must re-derive state from the DB.
+  decisionShortCodeBackfillRequested: {
+    name: 'decision/short-codes.backfill-requested' as const,
+    schema: z.object({
+      instanceIds: z.array(z.string().uuid()).optional(),
+    }),
+  },
   decisionMemberRolesChanged: {
     name: 'decision/member-roles-changed' as const,
     schema: z.object({
