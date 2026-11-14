@@ -444,6 +444,14 @@ export type ReviewerCategory = z.infer<typeof reviewerCategorySchema>;
 
 export const reviewerCategoriesSchema = list(reviewerCategorySchema);
 
+export const reviewProposalSortSchema = z.enum([
+  'newest',
+  'fewestReviews',
+  'mostReviews',
+]);
+
+export type ReviewProposalSort = z.infer<typeof reviewProposalSortSchema>;
+
 /**
  * Input for `decision.listReviewProposals`, the review page's "All proposals"
  * list. A proposal must carry every term in `categoryIds`, so a category and a
@@ -453,6 +461,7 @@ export const listReviewProposalsInputSchema = instanceOptionalPhaseRefSchema
   .extend({
     search: proposalSearchSchema,
     categoryIds: z.array(z.uuid()).max(10).optional(),
+    sort: reviewProposalSortSchema.default('newest'),
   })
   .extend(paginationInput('md').shape);
 
