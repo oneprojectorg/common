@@ -2,13 +2,20 @@
 
 import type { RouterOutput } from '@op/api';
 import { trpc } from '@op/api/client';
-import { isLastPhase, isReviewPhase, isVotingPhase } from '@op/common/client';
+import {
+  isDevelopPhase,
+  isLastPhase,
+  isReviewPhase,
+  isVotingPhase,
+} from '@op/common/client';
 import { notFound } from 'next/navigation';
 import { useCallback } from 'react';
 
 import { ProposalSheet } from './ProposalSheet/ProposalSheet';
 import { ProposalSheetProvider } from './ProposalSheet/ProposalSheetProvider';
 import { ReviewProgressProposalSheet } from './ProposalSheet/ReviewProgressProposalSheet';
+import { DevelopProposalsPage } from './pages/DevelopProposalsPage';
+import { DevelopPublishPage } from './pages/DevelopPublishPage';
 import { FinalPhaseManualSelectionPage } from './pages/FinalPhaseManualSelectionPage';
 import { ResultsPage } from './pages/ResultsPage';
 import { ReviewPage } from './pages/ReviewPage';
@@ -113,6 +120,20 @@ function DecisionPage({
   const isAdmin = Boolean(instance.access?.admin);
 
   if (!instance.selectionsAreConfirmed) {
+    // A develop phase whose inbound selection is pending is the window in
+    // which entries are developed and then published. This branch is the only
+    // guard: without it an admin lands on the review-selection screen below,
+    // which attaches the previous phase's proposals. Admin wins over develop
+    // access; anyone else keeps the generic manual-selection prompt.
+    if (!!currentPhase && isDevelopPhase(currentPhase)) {
+      if (isAdmin) {
+        return <DevelopPublishPage />;
+      }
+      if (instance.access?.developProposals) {
+        return <DevelopProposalsPage />;
+      }
+    }
+
     // The current phase has an empty inbound transition awaiting selection.
     // When the *previous* phase was a review phase, an admin can advance
     // proposals using rich review aggregates — that's the ReviewSelection view.
