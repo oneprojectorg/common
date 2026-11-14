@@ -130,7 +130,7 @@ function DecisionPage({
         return <DevelopPublishPage />;
       }
       if (instance.access?.developProposals) {
-        return <DevelopProposalsPage />;
+        return <DevelopProposalsPage instance={instance} />;
       }
     }
 

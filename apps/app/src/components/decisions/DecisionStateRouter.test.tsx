@@ -38,6 +38,9 @@ vi.mock('./pages/StandardDecisionPage', () => ({
 vi.mock('./pages/ReviewSelectionPage', () => ({
   ReviewSelectionPage: () => <div>review selection page</div>,
 }));
+vi.mock('./pages/DevelopProposalsPage', () => ({
+  DevelopProposalsPage: () => <div>develop page</div>,
+}));
 vi.mock('./pages/FinalPhaseManualSelectionPage', () => ({
   FinalPhaseManualSelectionPage: () => <div>final selection page</div>,
 }));
@@ -134,7 +137,7 @@ describe('DecisionStateRouter', () => {
       currentStateId: 'develop',
       access: { developProposals: true },
     });
-    expect(screen.getByText('Develop entries')).toBeTruthy();
+    expect(screen.getByText('develop page')).toBeTruthy();
   });
 
   it('keeps the standard page for everyone else in a pending develop phase', () => {
@@ -144,7 +147,7 @@ describe('DecisionStateRouter', () => {
       access: {},
     });
     expect(screen.getByText('standard page')).toBeTruthy();
-    expect(screen.queryByText('Develop entries')).toBeNull();
+    expect(screen.queryByText('develop page')).toBeNull();
     expect(screen.queryByText('Publish entries')).toBeNull();
   });
 
