@@ -25,8 +25,6 @@ export function PrepareEntryButton({
   return (
     <Button
       variant="outline"
-      size="sm"
-      className="w-28"
       aria-label={t('prepareEntryLabel', { title })}
       disabled={isDisabled}
       loading={isPreparing}

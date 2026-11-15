@@ -7,6 +7,7 @@ import { Suspense } from 'react';
 import { useTranslations } from '@/lib/i18n';
 
 import { DecisionHero } from '../DecisionHero';
+import { DecisionHeroBanner } from '../DecisionHeroBanner';
 import {
   DevelopProposalsListSkeleton,
   DevelopProposalsListSuspense,
@@ -33,34 +34,41 @@ export function DevelopProposalsPage({
   const currentPhase = phases[currentIndex];
   const previousPhase = currentIndex > 0 ? phases[currentIndex - 1] : null;
 
-  return (
-    <div className="min-h-full pt-8">
-      <div className="mx-auto flex max-w-3xl flex-col items-center justify-center gap-4 px-4 pb-8">
-        <DecisionHero
-          title={currentPhase?.headline ?? t('developEntriesHeading')}
-          description={<p>{t('develop.heroDescription')}</p>}
-          showTranslateLink={false}
-        />
-      </div>
+  const heroImagePath = instance.instanceData?.overview?.heroImage;
 
-      <div className="flex w-full justify-center border-t bg-background">
+  return (
+    <div className="min-h-full">
+      <DecisionHeroBanner heroImagePath={heroImagePath}>
+        <div className="mx-auto flex max-w-3xl flex-col items-center justify-center gap-4 px-4 pt-16 pb-8 md:pb-16">
+          <DecisionHero
+            title={currentPhase?.headline ?? t('developEntriesHeading')}
+            description={<p>{t('develop.heroDescription')}</p>}
+            showTranslateLink={false}
+            hasImage={Boolean(heroImagePath)}
+          />
+        </div>
+      </DecisionHeroBanner>
+
+      <div className="flex w-full justify-center bg-background">
         <div className="w-full p-4 sm:p-8">
-          {/* A develop phase that opens the process has nothing to develop
+          <div className="mx-auto w-full max-w-page">
+            {/* A develop phase that opens the process has nothing to develop
               from, so there is nothing to fetch. */}
-          {previousPhase ? (
-            <APIErrorBoundary
-              fallbacks={{ default: () => <ProposalsLoadError /> }}
-            >
-              <Suspense fallback={<DevelopProposalsListSkeleton />}>
-                <DevelopProposalsListSuspense
-                  instance={instance}
-                  originPhaseId={previousPhase.phaseId}
-                />
-              </Suspense>
-            </APIErrorBoundary>
-          ) : (
-            <NoOriginsEmpty />
-          )}
+            {previousPhase ? (
+              <APIErrorBoundary
+                fallbacks={{ default: () => <ProposalsLoadError /> }}
+              >
+                <Suspense fallback={<DevelopProposalsListSkeleton />}>
+                  <DevelopProposalsListSuspense
+                    instance={instance}
+                    originPhaseId={previousPhase.phaseId}
+                  />
+                </Suspense>
+              </APIErrorBoundary>
+            ) : (
+              <NoOriginsEmpty />
+            )}
+          </div>
         </div>
       </div>
     </div>

@@ -32,7 +32,7 @@ export function DevelopOriginsTable({
       <TableHeader>
         <TableRow>
           <TableHead scope="col">{t('nameColumn')}</TableHead>
-          <TableHead scope="col" className="w-32">
+          <TableHead scope="col">
             <span className="sr-only">{t('actionsColumn')}</span>
           </TableHead>
         </TableRow>

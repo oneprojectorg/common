@@ -61,7 +61,6 @@ export function DevelopOriginActions({
       <ButtonLink
         href={entryHref(entry)}
         variant="outline"
-        size="sm"
         aria-label={
           isReady
             ? t('editEntryLabel', { title })
@@ -73,13 +72,12 @@ export function DevelopOriginActions({
       </ButtonLink>
       <Toggle
         variant="outline"
-        size="sm"
         pressed={isReady || isAdvancing}
         disabled={isReady || isDisabled}
         onPressedChange={() => onAdvance(entry)}
         aria-label={t('advanceEntryLabel', { title })}
       >
-        {isReady ? <LuCheck aria-hidden /> : null}
+        {isReady ? <LuCheck aria-hidden data-icon="inline-start" /> : null}
         {isReady ? t('advancedEntryAction') : t('advanceEntryAction')}
       </Toggle>
     </div>

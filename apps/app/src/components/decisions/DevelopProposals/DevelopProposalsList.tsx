@@ -204,13 +204,13 @@ export function DevelopProposalsListSuspense({
   };
 
   return (
-    <div className="flex flex-col gap-6 pb-24">
+    <div className="flex flex-col gap-6 pb-20">
       <Tabs
         value={tab}
         onValueChange={(value: DevelopTab) => setTab(value)}
-        className="flex flex-col gap-6"
+        className="gap-6"
       >
-        <ProposalTabList aria-label={t('tabsLabel')}>
+        <ProposalTabList aria-label={t('tabsLabel')} className="-ms-3">
           <ProposalTabTrigger value="proposals">
             {t('proposalsTab')}
           </ProposalTabTrigger>
@@ -219,7 +219,10 @@ export function DevelopProposalsListSuspense({
           </ProposalTabTrigger>
         </ProposalTabList>
 
-        <TabsContent value="proposals" className="flex flex-col gap-6">
+        <TabsContent
+          value="proposals"
+          className="flex grow flex-col gap-6 sm:p-0"
+        >
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div aria-live="polite">
               <Header3>
@@ -290,7 +293,7 @@ export function DevelopProposalsListSuspense({
           )}
         </TabsContent>
 
-        <TabsContent value="ballot">
+        <TabsContent value="ballot" className="grow sm:p-0">
           <DevelopEntriesTable entries={entries} editHref={editHref} />
         </TabsContent>
       </Tabs>
