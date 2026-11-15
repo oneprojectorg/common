@@ -6,7 +6,7 @@ import type {
   BlockExecutor,
   ExecutionContext,
   Expression,
-  ExpressionScope,
+  ExpressionContext,
   ScoreBlock as ScoreBlockType,
   ScoringCriteria,
 } from '../types';
@@ -52,7 +52,7 @@ export class ScoreBlock implements BlockExecutor<ScoreBlockType> {
 
   private calculateCompositeScore(
     criteria: ScoringCriteria[],
-    proposalContext: ExpressionScope,
+    proposalContext: ExpressionContext,
     allProposals: Proposal[],
   ): number {
     let totalScore = 0;
@@ -104,7 +104,7 @@ export class ScoreBlock implements BlockExecutor<ScoreBlockType> {
     value: number,
     field: string | Expression | undefined,
     allProposals: Proposal[],
-    baseContext: ExpressionScope,
+    baseContext: ExpressionContext,
   ): number {
     if (!field) {
       return value;

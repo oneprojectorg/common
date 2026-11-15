@@ -5,7 +5,7 @@ import type {
   ArithmeticExpression,
   ComparisonExpression,
   Expression,
-  ExpressionScope,
+  ExpressionContext,
   FieldAccessExpression,
   FunctionCallExpression,
   LiteralExpression,
@@ -14,11 +14,11 @@ import type {
 } from './types';
 
 /**
- * Evaluates an expression in the given scope
+ * Evaluates an expression in the given context
  */
 export function evaluateExpression(
   expr: Expression,
-  context: ExpressionScope,
+  context: ExpressionContext,
 ): any {
   // Field access
   if ('field' in expr) {
@@ -63,7 +63,7 @@ export function evaluateExpression(
  */
 function evaluateFieldAccess(
   expr: FieldAccessExpression,
-  context: ExpressionScope,
+  context: ExpressionContext,
 ): any {
   const path = expr.field.split('.');
   let current: any = context.record;
@@ -83,7 +83,7 @@ function evaluateFieldAccess(
  */
 function evaluateComparison(
   expr: ComparisonExpression,
-  context: ExpressionScope,
+  context: ExpressionContext,
 ): boolean {
   const left = evaluateExpression(expr.left, context);
   const right = evaluateExpression(expr.right, context);
@@ -144,7 +144,7 @@ function evaluateComparison(
  */
 function evaluateLogical(
   expr: LogicalExpression,
-  context: ExpressionScope,
+  context: ExpressionContext,
 ): boolean {
   if (expr.and) {
     return expr.and.every((e) => evaluateExpression(e, context));
@@ -166,7 +166,7 @@ function evaluateLogical(
  */
 function evaluateArithmetic(
   expr: ArithmeticExpression,
-  context: ExpressionScope,
+  context: ExpressionContext,
 ): number {
   const values = expr.operands.map((op) => {
     const val = evaluateExpression(op, context);
@@ -196,7 +196,7 @@ function evaluateArithmetic(
  */
 function evaluateFunctionCall(
   expr: FunctionCallExpression,
-  context: ExpressionScope,
+  context: ExpressionContext,
 ): any {
   const args = expr.arguments.map((arg) => evaluateExpression(arg, context));
 
@@ -295,7 +295,7 @@ function evaluateFunctionCall(
  */
 function evaluateVariable(
   expr: VariableExpression,
-  context: ExpressionScope,
+  context: ExpressionContext,
 ): any {
   const varName = expr.variable.startsWith('$')
     ? expr.variable.slice(1)
