@@ -179,7 +179,7 @@ describe('DevelopProposalsPage', () => {
     expect(screen.getByText('0 proposals')).toBeTruthy();
   });
 
-  it('lists the entries of the current phase with their status and editor link', () => {
+  it('lists the entries of the current phase, drafts included, with their editor link', () => {
     entries = [
       buildEntry({ id: 'e1', title: 'Park entry', status: 'draft' }),
       buildEntry({ id: 'e2', title: 'School entry' }),
@@ -187,8 +187,8 @@ describe('DevelopProposalsPage', () => {
     renderPage();
     fireEvent.click(screen.getByRole('tab', { name: /Ballot/ }));
 
-    expect(screen.getByText('Draft')).toBeTruthy();
-    expect(screen.getByText('Advancing')).toBeTruthy();
+    expect(screen.getByText('2 ballot entries')).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'School entry' })).toBeTruthy();
     expect(
       screen.getByRole('link', { name: 'Park entry' }).getAttribute('href'),
     ).toContain('/decisions/decision-slug/proposal/e1-profile/edit');

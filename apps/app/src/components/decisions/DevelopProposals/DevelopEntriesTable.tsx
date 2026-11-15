@@ -1,7 +1,6 @@
 'use client';
 
 import { formatCurrency } from '@/utils/formatting';
-import { ProposalStatus } from '@op/api/encoders';
 import type { OwnDevelopedProposal } from '@op/common/client';
 import {
   Empty,
@@ -11,7 +10,6 @@ import {
   EmptyTitle,
 } from '@op/sense/Empty';
 import { Header3 } from '@op/sense/Header';
-import { StatusBadge } from '@op/sense/StatusBadge';
 import {
   Table,
   TableBody,
@@ -31,8 +29,7 @@ import { SearchField } from '@/components/SearchField';
 
 /**
  * The caller's own entries of the current phase, drafts and ready ones: title
- * and origins, category, budget and status, with the title linking into the
- * entry. The list is the caller's whole set, never paginated, so the search
+ * and origins, and budget, with the title linking into the entry. The list is the caller's whole set, never paginated, so the search
  * filters it in place.
  */
 export function DevelopEntriesTable({
@@ -60,7 +57,6 @@ export function DevelopEntriesTable({
           .includes(needle),
       )
     : entries;
-  const showCategory = entries.some((entry) => entry.category.length > 0);
   const total = getBudgetTotal(entries);
 
   return (
@@ -109,11 +105,7 @@ export function DevelopEntriesTable({
             <TableHeader>
               <TableRow>
                 <TableHead scope="col">{t('entryColumn')}</TableHead>
-                {showCategory ? (
-                  <TableHead scope="col">{t('categoryColumn')}</TableHead>
-                ) : null}
                 <TableHead scope="col">{t('budgetColumn')}</TableHead>
-                <TableHead scope="col">{t('statusColumn')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -122,7 +114,6 @@ export function DevelopEntriesTable({
                   key={entry.id}
                   entry={entry}
                   href={editHref(entry)}
-                  showCategory={showCategory}
                   locale={locale}
                 />
               ))}
@@ -137,16 +128,13 @@ export function DevelopEntriesTable({
 function EntryRow({
   entry,
   href,
-  showCategory,
   locale,
 }: {
   entry: OwnDevelopedProposal;
   href: string;
-  showCategory: boolean;
   locale: string;
 }) {
   const t = useTranslations('decisions.develop');
-  const isDraft = entry.status === ProposalStatus.DRAFT;
   const originNames = entry.origins.map((origin) => origin.name).join(', ');
 
   return (
@@ -170,20 +158,10 @@ function EntryRow({
           ) : null}
         </div>
       </TableRowHeader>
-      {showCategory ? (
-        <TableCell className="py-4">
-          <bdi>{entry.category.join(', ')}</bdi>
-        </TableCell>
-      ) : null}
       <TableCell className="py-4 tabular-nums">
         {entry.budget && entry.budget.amount > 0
           ? formatCurrency(entry.budget.amount, locale, entry.budget.currency)
           : '—'}
-      </TableCell>
-      <TableCell className="py-4">
-        <StatusBadge variant={isDraft ? 'in-progress' : 'success'} icon={false}>
-          {isDraft ? t('entryDraftStatus') : t('entryReadyStatus')}
-        </StatusBadge>
       </TableCell>
     </TableRow>
   );
