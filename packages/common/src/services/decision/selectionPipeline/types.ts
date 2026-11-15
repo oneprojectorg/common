@@ -164,7 +164,7 @@ export type Expression =
   | VariableExpression;
 
 /**
- * Access a field on the record of the expression scope
+ * Access a field on the record of the expression context
  */
 export interface FieldAccessExpression {
   field: string; // dot notation, e.g., "proposalData.title", "voteData.approvalRate"
@@ -236,7 +236,7 @@ export interface VariableExpression {
  * proposal passes the proposal as `record`; a block that evaluates once passes
  * its execution context.
  */
-export interface ExpressionScope {
+export interface ExpressionContext {
   record: unknown;
   variables: Record<string, unknown>;
   outputs: Record<string, unknown>;

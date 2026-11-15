@@ -12,10 +12,10 @@ export class ComputeBlock implements BlockExecutor<ComputeBlockType> {
     context: ExecutionContext,
   ): BlockExecutionResult {
     const variables: Record<string, any> = {};
-    const scope = { ...context, record: context };
+    const expressionContext = { ...context, record: context };
 
     for (const [varName, expression] of Object.entries(block.computations)) {
-      const value = evaluateExpression(expression, scope);
+      const value = evaluateExpression(expression, expressionContext);
       variables[varName] = value;
     }
 
