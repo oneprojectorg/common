@@ -1,13 +1,6 @@
-export { isSameSchemaRef, mapToSchema } from './mapToSchema';
-export {
-  fieldMappingSchema,
-  fieldPathSchema,
-  schemaMappingSchema,
-  schemaRefSchema,
-  targetKeySchema,
-} from './schema';
+export { mapToSchema } from './mapToSchema';
+export { schemaMappingSchema } from './schema';
 export type {
-  FieldMapping,
   MappingInput,
   MappingResult,
   SchemaMapping,

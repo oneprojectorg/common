@@ -61,7 +61,7 @@ export const mapToSchema = ({
   return { data };
 };
 
-export const isSameSchemaRef = ({
+const isSameSchemaRef = ({
   left,
   right,
 }: {

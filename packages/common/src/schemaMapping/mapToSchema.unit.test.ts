@@ -60,6 +60,15 @@ describe('mapToSchema', () => {
     expect(result).toEqual({ data: {} });
   });
 
+  it('fills the field when one input is empty and another has a value', () => {
+    const result = mapProposals({
+      fields: [{ from: 'title', to: 'title' }],
+      inputs: [proposal({ title: '' }), proposal({ title: 'Trees' })],
+    });
+
+    expect(result.data).toEqual({ title: 'Trees' });
+  });
+
   it('does not read an inherited property', () => {
     const result = mapProposals({
       fields: [{ from: 'toString', to: 'title' }],
