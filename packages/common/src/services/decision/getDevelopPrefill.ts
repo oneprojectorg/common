@@ -1,7 +1,7 @@
 import { and, db, eq, inArray } from '@op/db/client';
-import { ProposalReviewState, ProposalStatus } from '@op/db/schema';
+import { ProposalReviewState } from '@op/db/schema';
+import { logger } from '@op/logging';
 import type { User } from '@op/supabase/lib';
-import { permission } from 'access-zones';
 import { z } from 'zod';
 
 import {
@@ -12,11 +12,12 @@ import {
   mapToSchema,
   schemaMappingSchema,
 } from '../../schemaMapping';
-import { CommonError, NotFoundError, ValidationError } from '../../utils';
-import { assertProfileAccess } from '../assert';
-import { getInstance } from './getInstance';
+import { NotFoundError, UnauthorizedError, ValidationError } from '../../utils';
+import { getProfileAccessRoles } from '../access';
+import { assertProposalDevelopAccess } from './assertProposalDevelopAccess';
+import { assertDevelopSources } from './createDevelopedProposal';
 import { getProposalDocumentsContent } from './getProposalDocumentsContent';
-import { decisionPermission } from './permissions';
+import { getProposalIdsForPhase } from './getProposalsForPhase';
 import { parseProposalData } from './proposalDataSchema';
 import { resolveDocumentFieldValues } from './proposalListPreview';
 import {
@@ -24,18 +25,30 @@ import {
   getProposalReadContext,
   isProposalReadable,
 } from './proposalVisibility';
-import { resolveProposalTemplatesByFormSchemaId } from './resolveProposalTemplate';
-import type { DecisionInstanceData } from './schemas/instanceData';
-import { assertInstancePhase } from './utils/instance';
 import {
-  getPhaseProposalTemplate,
-  getPhaseRubricTemplate,
-} from './utils/phaseTemplates';
+  resolvePhaseProposalTemplate,
+  resolveProposalTemplatesByFormSchemaId,
+} from './resolveProposalTemplate';
+import {
+  type PhaseInstanceData,
+  getInstancePhases,
+} from './schemas/instanceData';
+import type { ProposalTemplateSchema } from './types';
+import { assertInstancePhase } from './utils/instance';
 
 export type DevelopPrefillInput = {
   type: 'proposal' | 'review';
   phaseId: string;
   id: string;
+};
+
+/** The `processInstances` columns the prefill reads. */
+export type DevelopPrefillInstance = {
+  id: string;
+  profileId: string | null;
+  processId: string | null;
+  currentStateId: string | null;
+  instanceData: unknown;
 };
 
 const developPrefillRequestSchema = z.object({
@@ -48,17 +61,17 @@ const developPrefillRequestSchema = z.object({
       }),
     )
     .min(1),
-  target: z.strictObject({
-    type: z.literal('proposal'),
-    phaseId: z.string().min(1),
-  }),
   mappings: z.array(schemaMappingSchema),
 });
 
 /**
  * Builds the starting data of a developed proposal: maps the given proposals
- * and their reviews into the target phase's proposal form with `mappings`.
- * A target field whose inputs give different values stays empty.
+ * and their reviews into the proposal form of the develop phase
+ * `target.phaseId` with `mappings`. A target field whose inputs give
+ * different values stays empty.
+ *
+ * Asserts develop access on the target phase and validates the source
+ * proposals. A caller that has already done both calls `buildDevelopPrefill`.
  */
 export const getDevelopPrefill = async ({
   instanceId,
@@ -73,53 +86,162 @@ export const getDevelopPrefill = async ({
   mappings: SchemaMapping[];
   user: User;
 }): Promise<MappingResult> => {
-  const request = developPrefillRequestSchema.safeParse({
-    inputs,
-    target,
-    mappings,
+  const request = parseRequest({ inputs, mappings });
+
+  const instance = await db.query.processInstances.findFirst({
+    where: { id: instanceId },
+    columns: {
+      id: true,
+      profileId: true,
+      processId: true,
+      currentStateId: true,
+      instanceData: true,
+    },
   });
-  if (!request.success) {
-    throw toValidationError(request.error);
+  if (!instance) {
+    throw new NotFoundError('Process instance', instanceId);
   }
 
-  const instance = await getInstance({ instanceId, user });
-  if (!instance.profileId) {
-    throw new CommonError(
-      'Decision instance does not have an associated profile',
-    );
-  }
-
-  const decisionRoles = await assertProfileAccess({
+  const targetPhase = await assertProposalDevelopAccess({
+    instance: {
+      profileId: instance.profileId,
+      instanceData: { phases: getInstancePhases(instance.instanceData) },
+    },
+    phaseId: target.phaseId,
     user,
-    profileId: instance.profileId,
-    permissions: [
-      { decisions: decisionPermission.DEVELOP_PROPOSALS },
-      { decisions: permission.ADMIN },
+  });
+
+  await assertDevelopSources({
+    instance,
+    sourceProposalIds: [
+      ...new Set(
+        request.inputs
+          .filter((input) => input.type === 'proposal')
+          .map((input) => input.id),
+      ),
     ],
   });
 
-  const parsedInputs = request.data.inputs;
-  const parsedMappings = request.data.mappings;
-  const targetSchema = request.data.target;
+  return buildDevelopPrefill({
+    instance,
+    targetPhase,
+    inputs: request.inputs,
+    mappings: request.mappings,
+    user,
+  });
+};
 
-  for (const ref of [
-    ...parsedInputs.map(({ type, phaseId }) => ({ type, phaseId })),
-    targetSchema,
-  ]) {
-    assertSchemaExists({ instanceData: instance.instanceData, ref });
+/**
+ * `getDevelopPrefill` for a caller that has already asserted develop access on
+ * `targetPhase` (`assertProposalDevelopAccess` returns the phase) and
+ * validated the source proposals (`assertDevelopSources`). It still applies
+ * the proposal read gate, and checks that each input belongs to the instance
+ * and to the phase it is claimed for.
+ */
+export const buildDevelopPrefill = async ({
+  instance,
+  targetPhase,
+  inputs,
+  mappings,
+  user,
+}: {
+  instance: DevelopPrefillInstance;
+  targetPhase: PhaseInstanceData;
+  inputs: DevelopPrefillInput[];
+  mappings: SchemaMapping[];
+  user: User;
+}): Promise<MappingResult> => {
+  const request = parseRequest({ inputs, mappings });
+  if (!instance.profileId) {
+    throw new UnauthorizedError("You don't have access to do this");
   }
+
+  const phases = getInstancePhases(instance.instanceData);
+  for (const input of request.inputs) {
+    assertInstancePhase({
+      instance: { instanceData: { phases } },
+      phaseId: input.phaseId,
+    });
+  }
+
+  const targetSchema: SchemaRef = {
+    type: 'proposal',
+    phaseId: targetPhase.phaseId,
+  };
+
+  const [targetForm, decisionRoles] = await Promise.all([
+    resolvePhaseProposalTemplate({
+      phase: targetPhase,
+      instanceData: instance.instanceData,
+      processId: instance.processId,
+    }),
+    getProfileAccessRoles({ user, profileId: instance.profileId }),
+  ]);
+  assertTargetFields({
+    targetForm,
+    targetSchema,
+    mappings: request.mappings,
+  });
 
   const mappingInputs = await loadMappingInputs({
     instance,
-    inputs: parsedInputs,
+    inputs: request.inputs,
     readContext: getProposalReadContext({ user, decisionRoles }),
   });
 
   return mapToSchema({
-    mappings: parsedMappings,
+    mappings: request.mappings,
     inputs: mappingInputs,
     targetSchema,
   });
+};
+
+const parseRequest = (request: {
+  inputs: DevelopPrefillInput[];
+  mappings: SchemaMapping[];
+}): z.infer<typeof developPrefillRequestSchema> => {
+  const result = developPrefillRequestSchema.safeParse(request);
+  if (!result.success) {
+    throw toValidationError(result.error);
+  }
+  return result.data;
+};
+
+/** Each field a mapping writes into the target must be a field of its form. */
+const assertTargetFields = ({
+  targetForm,
+  targetSchema,
+  mappings,
+}: {
+  targetForm: ProposalTemplateSchema | null;
+  targetSchema: SchemaRef;
+  mappings: SchemaMapping[];
+}): void => {
+  if (!targetForm) {
+    throw new NotFoundError(
+      'Proposal form',
+      undefined,
+      `Phase '${targetSchema.phaseId}' has no proposal form`,
+    );
+  }
+
+  const properties = targetForm.properties ?? {};
+  for (const mapping of mappings) {
+    if (
+      mapping.to.type !== targetSchema.type ||
+      mapping.to.phaseId !== targetSchema.phaseId
+    ) {
+      continue;
+    }
+    const unknownField = mapping.fields.find(
+      (field) => !Object.hasOwn(properties, field.to),
+    );
+    if (unknownField) {
+      throw new ValidationError(
+        `Target field '${unknownField.to}' is not a field of the proposal form of phase '${targetSchema.phaseId}'`,
+      );
+    }
+  }
 };
 
 const loadMappingInputs = async ({
@@ -127,11 +249,7 @@ const loadMappingInputs = async ({
   inputs,
   readContext,
 }: {
-  instance: {
-    id: string;
-    processId: string | null;
-    instanceData: DecisionInstanceData;
-  };
+  instance: DevelopPrefillInstance;
   inputs: DevelopPrefillInput[];
   readContext: ProposalReadContext;
 }): Promise<MappingInput[]> => {
@@ -139,14 +257,13 @@ const loadMappingInputs = async ({
     throw new ValidationError('Each input must be given only once');
   }
 
-  const proposalIds = inputs
-    .filter((input) => input.type === 'proposal')
-    .map((input) => input.id);
+  const proposalInputs = inputs.filter((input) => input.type === 'proposal');
+  const proposalIds = proposalInputs.map((input) => input.id);
   const reviewIds = inputs
     .filter((input) => input.type === 'review')
     .map((input) => input.id);
 
-  const [proposalRows, reviewRows] = await Promise.all([
+  const [proposalRows, reviewRows, proposalIdsByPhase] = await Promise.all([
     proposalIds.length > 0
       ? db.query.proposals.findMany({
           // A proposal the caller cannot read is absent, so it 404s below.
@@ -160,7 +277,6 @@ const loadMappingInputs = async ({
           },
           columns: {
             id: true,
-            status: true,
             proposalData: true,
             formSchemaId: true,
           },
@@ -181,6 +297,10 @@ const loadMappingInputs = async ({
           },
         })
       : [],
+    getProposalIdsByPhase({
+      instance,
+      phaseIds: proposalInputs.map((input) => input.phaseId),
+    }),
   ]);
 
   const proposalsById = new Map(proposalRows.map((row) => [row.id, row]));
@@ -188,13 +308,14 @@ const loadMappingInputs = async ({
 
   for (const input of inputs) {
     if (input.type === 'proposal') {
-      const proposal = proposalsById.get(input.id);
-      if (!proposal) {
+      if (!proposalsById.has(input.id)) {
         throw new NotFoundError('Proposal', input.id);
       }
-      if (proposal.status === ProposalStatus.DRAFT) {
+      // Phase membership admits only phase-eligible proposals, so this also
+      // refuses a draft.
+      if (!proposalIdsByPhase.get(input.phaseId)?.has(input.id)) {
         throw new ValidationError(
-          `Proposal '${input.id}' is a draft and cannot be developed`,
+          `Proposal '${input.id}' is not in phase '${input.phaseId}'`,
         );
       }
       continue;
@@ -235,16 +356,37 @@ const loadMappingInputs = async ({
   }));
 };
 
+/** The ids of the proposals in each of `phaseIds`, by phase. */
+const getProposalIdsByPhase = async ({
+  instance,
+  phaseIds,
+}: {
+  instance: DevelopPrefillInstance;
+  phaseIds: string[];
+}): Promise<Map<string, Set<string>>> =>
+  new Map(
+    await Promise.all(
+      [...new Set(phaseIds)].map(
+        async (phaseId): Promise<[string, Set<string>]> => [
+          phaseId,
+          new Set(await getProposalIdsForPhase({ instance, phaseId })),
+        ],
+      ),
+    ),
+  );
+
 /**
  * The flat data the proposal validator reads: the document fragments
  * assembled under the template the proposal was written under, or the stored
- * data of a legacy proposal without a collaboration document.
+ * data of a legacy proposal without a collaboration document. A proposal whose
+ * document cannot be fetched gives no data, so the other inputs still fill
+ * the target.
  */
 const getAssembledProposalData = async ({
   instance,
   proposals,
 }: {
-  instance: { processId: string | null; instanceData: DecisionInstanceData };
+  instance: DevelopPrefillInstance;
   proposals: Array<{
     id: string;
     proposalData: unknown;
@@ -272,7 +414,13 @@ const getAssembledProposalData = async ({
     proposals.map((proposal) => {
       const document = documents.get(proposal.id);
       if (document?.type === 'unavailable') {
-        throw new NotFoundError('Proposal document', proposal.id);
+        logger.warn(
+          'Develop prefill skipped an unavailable proposal document',
+          {
+            proposalId: proposal.id,
+          },
+        );
+        return [proposal.id, {}];
       }
       if (document?.type !== 'json') {
         return [proposal.id, parseProposalData(proposal.proposalData)];
@@ -289,30 +437,6 @@ const getAssembledProposalData = async ({
       ];
     }),
   );
-};
-
-// The phase template resolvers fall back to the instance template for an
-// unknown phase, so the phase is asserted first.
-const assertSchemaExists = ({
-  instanceData,
-  ref,
-}: {
-  instanceData: DecisionInstanceData;
-  ref: SchemaRef;
-}): void => {
-  assertInstancePhase({ instance: { instanceData }, phaseId: ref.phaseId });
-
-  const schema =
-    ref.type === 'review'
-      ? getPhaseRubricTemplate(instanceData, ref.phaseId)
-      : getPhaseProposalTemplate(instanceData, ref.phaseId);
-  if (!schema) {
-    throw new NotFoundError(
-      ref.type === 'review' ? 'Rubric' : 'Proposal form',
-      undefined,
-      `Phase '${ref.phaseId}' has no ${ref.type === 'review' ? 'rubric' : 'proposal form'}`,
-    );
-  }
 };
 
 const toValidationError = (error: z.ZodError): ValidationError => {
