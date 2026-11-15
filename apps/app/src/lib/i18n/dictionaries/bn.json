@@ -1661,8 +1661,6 @@
     "reviewsCompleteBadge": "পর্যালোচনা সম্পূর্ণ",
     "confirmWinnersHeading": "বিজয়ী প্রস্তাবগুলি নিশ্চিত করুন",
     "developEntriesHeading": "এন্ট্রি তৈরি করুন",
-    "publishEntriesHeading": "এন্ট্রি প্রকাশ করুন",
-    "publishEntriesPlaceholder": "তৈরি করা এন্ট্রি প্রকাশের স্ক্রিনটি শীঘ্রই আসছে।",
     "develop": {
       "heroDescription": "আগের পর্বের প্রতিটি প্রস্তাব থেকে এই পর্বের জন্য একটি এন্ট্রি প্রস্তুত করুন।",
       "originsCount": "{count, plural, one {#টি প্রস্তাব} other {#টি প্রস্তাব}}",

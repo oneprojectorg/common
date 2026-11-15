@@ -1661,8 +1661,6 @@
     "reviewsCompleteBadge": "AZ ÉRTÉKELÉSEK ELKÉSZÜLTEK",
     "confirmWinnersHeading": "Erősítse meg a nyertes javaslatokat",
     "developEntriesHeading": "Bejegyzések kidolgozása",
-    "publishEntriesHeading": "Bejegyzések közzététele",
-    "publishEntriesPlaceholder": "A kidolgozott bejegyzések közzétételére szolgáló képernyő hamarosan elérhető.",
     "develop": {
       "heroDescription": "Készíts elő egy bejegyzést ehhez a szakaszhoz az előző szakasz minden javaslatából.",
       "originsCount": "{count, plural, one {# javaslat} other {# javaslat}}",

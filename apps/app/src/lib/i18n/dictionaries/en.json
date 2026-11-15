@@ -1661,8 +1661,6 @@
     "reviewsCompleteBadge": "REVIEWS COMPLETE",
     "confirmWinnersHeading": "Confirm the winning proposals",
     "developEntriesHeading": "Develop entries",
-    "publishEntriesHeading": "Publish entries",
-    "publishEntriesPlaceholder": "The screen for publishing developed entries is on its way.",
     "develop": {
       "heroDescription": "Prepare an entry for this phase from each proposal of the last phase.",
       "originsCount": "{count, plural, one {# proposal} other {# proposals}}",

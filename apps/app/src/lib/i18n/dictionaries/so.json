@@ -1661,8 +1661,6 @@
     "reviewsCompleteBadge": "DIB-U-EEGISTU WAY DHAMMAATAY",
     "confirmWinnersHeading": "Xaqiiji soo jeedimaha guusha helay",
     "developEntriesHeading": "Horumari gelitaannada",
-    "publishEntriesHeading": "Daabac gelitaannada",
-    "publishEntriesPlaceholder": "Shaashadda daabacaadda gelitaannada la horumariyey waa soo socotaa.",
     "develop": {
       "heroDescription": "Ka diyaari gelis wejigan mid kasta oo ka mid ah soo jeedinta wejigii hore.",
       "originsCount": "{count, plural, one {# soo jeedin} other {# soo jeedinno}}",

@@ -15,7 +15,6 @@ import { ProposalSheet } from './ProposalSheet/ProposalSheet';
 import { ProposalSheetProvider } from './ProposalSheet/ProposalSheetProvider';
 import { ReviewProgressProposalSheet } from './ProposalSheet/ReviewProgressProposalSheet';
 import { DevelopProposalsPage } from './pages/DevelopProposalsPage';
-import { DevelopPublishPage } from './pages/DevelopPublishPage';
 import { FinalPhaseManualSelectionPage } from './pages/FinalPhaseManualSelectionPage';
 import { ResultsPage } from './pages/ResultsPage';
 import { ReviewPage } from './pages/ReviewPage';
@@ -121,17 +120,17 @@ function DecisionPage({
 
   if (!instance.selectionsAreConfirmed) {
     // A develop phase whose inbound selection is pending is the window in
-    // which entries are developed and then published. This branch is the only
-    // guard: without it an admin lands on the review-selection screen below,
-    // which attaches the previous phase's proposals. Admin wins over develop
-    // access; anyone else keeps the generic manual-selection prompt.
-    if (!!currentPhase && isDevelopPhase(currentPhase)) {
-      if (isAdmin) {
-        return <DevelopPublishPage />;
-      }
-      if (instance.access?.developProposals) {
-        return <DevelopProposalsPage instance={instance} />;
-      }
+    // which entries are developed. This branch is the only guard: without it
+    // an admin lands on the review-selection screen below, which attaches the
+    // previous phase's proposals. Admins and develop-access holders get the
+    // develop screen, as the server develop gate allows both; anyone else
+    // keeps the generic manual-selection prompt.
+    if (
+      !!currentPhase &&
+      isDevelopPhase(currentPhase) &&
+      (isAdmin || instance.access?.developProposals)
+    ) {
+      return <DevelopProposalsPage instance={instance} />;
     }
 
     // The current phase has an empty inbound transition awaiting selection.

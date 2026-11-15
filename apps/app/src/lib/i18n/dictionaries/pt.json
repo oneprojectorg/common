@@ -1661,8 +1661,6 @@
     "reviewsCompleteBadge": "REVISÕES CONCLUÍDAS",
     "confirmWinnersHeading": "Confirme as propostas vencedoras",
     "developEntriesHeading": "Desenvolver entradas",
-    "publishEntriesHeading": "Publicar entradas",
-    "publishEntriesPlaceholder": "A tela para publicar as entradas desenvolvidas está a caminho.",
     "develop": {
       "heroDescription": "Prepare uma entrada para esta fase a partir de cada proposta da fase anterior.",
       "originsCount": "{count, plural, one {# proposta} other {# propostas}}",

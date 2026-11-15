@@ -121,13 +121,13 @@ const reviewThenDevelop = [reviewPhase, developPhase, votePhase, resultsPhase];
 describe('DecisionStateRouter', () => {
   afterEach(cleanup);
 
-  it('sends an admin to the publish page while a develop phase awaits selection', () => {
+  it('sends an admin to the develop page while a develop phase awaits selection', () => {
     renderRouter({
       phases: reviewThenDevelop,
       currentStateId: 'develop',
-      access: { admin: true, developProposals: true },
+      access: { admin: true },
     });
-    expect(screen.getByText('Publish entries')).toBeTruthy();
+    expect(screen.getByText('develop page')).toBeTruthy();
     expect(screen.queryByText('review selection page')).toBeNull();
   });
 
@@ -148,7 +148,6 @@ describe('DecisionStateRouter', () => {
     });
     expect(screen.getByText('standard page')).toBeTruthy();
     expect(screen.queryByText('develop page')).toBeNull();
-    expect(screen.queryByText('Publish entries')).toBeNull();
   });
 
   it('keeps the review-selection page for an admin when the pending phase is not a develop phase', () => {

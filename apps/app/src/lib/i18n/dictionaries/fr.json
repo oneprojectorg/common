@@ -1661,8 +1661,6 @@
     "reviewsCompleteBadge": "EXAMENS TERMINÉS",
     "confirmWinnersHeading": "Confirmez les propositions gagnantes",
     "developEntriesHeading": "Développer les contributions",
-    "publishEntriesHeading": "Publier les contributions",
-    "publishEntriesPlaceholder": "L'écran de publication des contributions développées arrive bientôt.",
     "develop": {
       "heroDescription": "Préparez une entrée pour cette phase à partir de chaque proposition de la phase précédente.",
       "originsCount": "{count, plural, one {# proposition} other {# propositions}}",

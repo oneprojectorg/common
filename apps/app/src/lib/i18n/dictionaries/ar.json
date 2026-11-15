@@ -1661,8 +1661,6 @@
     "reviewsCompleteBadge": "اكتملت المراجعات",
     "confirmWinnersHeading": "تأكيد المقترحات الفائزة",
     "developEntriesHeading": "تطوير المدخلات",
-    "publishEntriesHeading": "نشر المدخلات",
-    "publishEntriesPlaceholder": "شاشة نشر المدخلات المطوّرة قيد الإعداد.",
     "develop": {
       "heroDescription": "جهّز مُدخلًا لهذه المرحلة من كل مقترح في المرحلة السابقة.",
       "originsCount": "{count, plural, zero {لا مقترحات} one {مقترح واحد} two {مقترحان} few {# مقترحات} many {# مقترحًا} other {# مقترح}}",
