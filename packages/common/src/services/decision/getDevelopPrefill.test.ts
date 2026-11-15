@@ -10,7 +10,9 @@ import { db } from '@op/db/client';
 import {
   ProposalReviewState,
   ProposalStatus,
+  Visibility,
   processInstances,
+  proposals as proposalsTable,
 } from '@op/db/schema';
 import { eq } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
@@ -450,6 +452,51 @@ describe.concurrent('getDevelopPrefill', () => {
     });
     await expect(buildPrefill(setup.user)).resolves.toMatchObject({
       data: { title: 'Bus shelters' },
+    });
+  });
+
+  it('given a hidden proposal, when a caller with only Develop Proposals builds the prefill from it, then it is refused as not found while the instance admin still gets the data', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instanceId, instanceProfileId, createSubmittedProposal } =
+      await seedDevelopDecision(testData);
+    const [proposal, developer] = await Promise.all([
+      createSubmittedProposal({ title: 'Hidden plaza' }),
+      testData.createMemberUser({ organization: setup.organization }),
+    ]);
+    await Promise.all([
+      db
+        .update(proposalsTable)
+        .set({ visibility: Visibility.HIDDEN })
+        .where(eq(proposalsTable.id, proposal.id)),
+      grantInstanceRole({
+        instanceProfileId,
+        authUserId: developer.authUserId,
+        email: developer.email,
+        roleName: `Developer-${task.id}`,
+        decisionsPermission:
+          TEST_PERMISSION_BITS.READ | TEST_PERMISSION_BITS.DEVELOP_PROPOSALS,
+      }),
+    ]);
+
+    const buildPrefill = (user: typeof setup.user) =>
+      getDevelopPrefill({
+        instanceId,
+        inputs: [{ type: 'proposal', phaseId: SUBMISSION, id: proposal.id }],
+        target: { type: 'proposal', phaseId: BALLOT },
+        mappings,
+        user,
+      });
+
+    await expectRejection({
+      promise: buildPrefill(developer.user),
+      errorClass: NotFoundError,
+      message: new NotFoundError('Proposal', proposal.id).message,
+    });
+    await expect(buildPrefill(setup.user)).resolves.toMatchObject({
+      data: { title: 'Hidden plaza' },
     });
   });
 
