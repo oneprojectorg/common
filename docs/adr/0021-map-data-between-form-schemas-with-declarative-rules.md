@@ -45,9 +45,9 @@ source field with the expression evaluator of the selection pipeline. Other
 value expressions of the selection pipeline are the planned next step.
 
 - A mapping is data with three parts: a source schema (`from`), a target
-  schema (`to`), and a list of fields. Each field copies one source field
-  (`from`) to one target field (`to`). There is one mapping for each pair of
-  schemas:
+  schema (`to`), and a list of fields. Each field is one rule: it copies one
+  source field (`from`) to one target field (`to`). There is one mapping for
+  each pair of schemas:
 
   ```ts
   {
@@ -109,15 +109,17 @@ value expressions of the selection pipeline are the planned next step.
     must not pre-fill a wrong number, so it must check for missing values
     before it calls the evaluator. Each operator or function that is added
     needs the same review, for example a zero divisor if `divide` is allowed.
-  - The evaluator has no direct unit tests. The tests of the mapping cover
-    the field access that it uses. Each operator that is added needs tests
-    through the mapping.
+  - Only the field access of the evaluator has tests: the characterization
+    tests of the pipeline and the tests of the mapping. The operators and
+    functions have none. Each operator that is added needs tests through the
+    mapping.
 - A mapped value can break a constraint of the target, such as a maximum
   length. The result is a draft. Validation stays at the point where a person
   submits the target.
-- `{ type, phaseId }` assumes one schema for each type in a phase. If a phase
-  gets more than one, the reference must change to a form schema ID. ADR 0019
-  sets that direction.
+- `{ type, phaseId }` is a temporary name for a schema. It assumes one schema
+  for each type in a phase, and a proposal can be written under a template
+  that is not the template of its phase. The reference must change to a form
+  schema ID before mappings are stored. ADR 0019 sets that direction.
 - The result is only the mapped data. Returning the conflicting values with
   the input each came from is deferred until a screen needs it.
 - **Not decided here:** where the rules are stored.
