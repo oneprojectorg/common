@@ -1,4 +1,4 @@
-import { and, db, sql } from '@op/db/client';
+import { type SQL, and, db, sql } from '@op/db/client';
 import {
   ProposalStatus,
   decisionsVoteProposals,
@@ -64,6 +64,13 @@ export interface ListProposalsInput {
    * votedByProfileId.
    */
   proposalIds?: string[];
+  /**
+   * Internal override: an extra SQL predicate on the proposals table, ANDed
+   * into the data and count queries. Not exposed on the tRPC schema — for
+   * services that narrow the list to a set they resolve in SQL (e.g. the
+   * develop origins assigned to the caller).
+   */
+  restrictTo?: (proposalsTable: typeof proposals) => SQL;
   phase?: 'results';
   limit?: number;
   // Keyset pagination cursor from a previous page's `next` (see `getCursorCondition`).

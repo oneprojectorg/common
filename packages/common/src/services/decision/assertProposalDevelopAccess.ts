@@ -1,8 +1,7 @@
-import { permission } from 'access-zones';
+import { checkPermission, permission } from 'access-zones';
 
 import { UnauthorizedError, ValidationError } from '../../utils';
-import type { AccessUser } from '../access';
-import { assertProfileAccess } from '../assert';
+import { type AccessUser, getProfileAccessRoles } from '../access';
 import { decisionPermission } from './permissions';
 import type { PhaseInstanceData } from './schemas/instanceData';
 import { assertInstancePhase } from './utils/instance';
@@ -13,14 +12,31 @@ type DevelopInstance = {
   instanceData: { phases: readonly PhaseInstanceData[] };
 };
 
-const DEVELOP_ACCESS = [
+export interface ProposalDevelopAccess {
+  /** The develop phase that was checked. */
+  phase: PhaseInstanceData;
+  /** Profile Admin or decisions Admin on the instance profile. */
+  isAdmin: boolean;
+  /** Admin, or `decisionPermission.DEVELOP_PROPOSALS`. */
+  canDevelop: boolean;
+}
+
+const ADMIN_ACCESS = [
   { profile: permission.ADMIN },
   { decisions: permission.ADMIN },
+];
+
+const DEVELOP_ACCESS = [
+  ...ADMIN_ACCESS,
   { decisions: decisionPermission.DEVELOP_PROPOSALS },
 ];
 
-/** Asserts a develop phase and admin or `decisionPermission.DEVELOP_PROPOSALS` on the instance profile, and returns the phase. */
-export async function assertProposalDevelopAccess({
+/**
+ * Resolves the caller's develop access on a develop phase without refusing a
+ * caller who has none. Throws only when the phase is not a develop phase of the
+ * instance, or the instance has no profile.
+ */
+export async function getProposalDevelopAccess({
   instance,
   phaseId,
   user,
@@ -28,7 +44,7 @@ export async function assertProposalDevelopAccess({
   instance: DevelopInstance;
   phaseId: string;
   user: AccessUser;
-}): Promise<PhaseInstanceData> {
+}): Promise<ProposalDevelopAccess> {
   if (!instance.profileId) {
     throw new UnauthorizedError("You don't have access to do this");
   }
@@ -41,11 +57,37 @@ export async function assertProposalDevelopAccess({
     );
   }
 
-  await assertProfileAccess({
+  const roles = await getProfileAccessRoles({
     user,
     profileId: instance.profileId,
-    permissions: DEVELOP_ACCESS,
   });
+
+  return {
+    phase,
+    isAdmin: checkPermission(ADMIN_ACCESS, roles),
+    canDevelop: checkPermission(DEVELOP_ACCESS, roles),
+  };
+}
+
+/** Asserts a develop phase and admin or `decisionPermission.DEVELOP_PROPOSALS` on the instance profile, and returns the phase. */
+export async function assertProposalDevelopAccess({
+  instance,
+  phaseId,
+  user,
+}: {
+  instance: DevelopInstance;
+  phaseId: string;
+  user: AccessUser;
+}): Promise<PhaseInstanceData> {
+  const { phase, canDevelop } = await getProposalDevelopAccess({
+    instance,
+    phaseId,
+    user,
+  });
+
+  if (!canDevelop) {
+    throw new UnauthorizedError('Not authorized');
+  }
 
   return phase;
 }

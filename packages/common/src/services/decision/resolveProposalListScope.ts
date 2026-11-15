@@ -167,6 +167,10 @@ const buildBaseConditions = (
     conditions.push(searchCondition);
   }
 
+  if (input.restrictTo) {
+    conditions.push(input.restrictTo(t));
+  }
+
   return and(...conditions)!;
 };
 

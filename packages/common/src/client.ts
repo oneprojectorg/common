@@ -148,6 +148,12 @@ export {
   type OwnDevelopedProposalList,
 } from './services/decision/schemas/ownDevelopedProposals';
 export {
+  developOriginScopeSchema,
+  listDevelopOriginsInputSchema,
+  type DevelopOriginScope,
+  type ListDevelopOriginsInput,
+} from './services/decision/schemas/developOrigins';
+export {
   REJECTION_NOTE_MAX_LENGTH,
   RejectionReason,
   rejectionReasonSchema,

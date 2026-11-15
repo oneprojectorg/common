@@ -93,6 +93,7 @@ export * from './createDevelopedProposal';
 export * from './submitProposal';
 export * from './submitDevelopedProposal';
 export * from './listOwnDevelopedProposals';
+export * from './listDevelopOrigins';
 export * from './updateProposal';
 export * from './rejectProposal';
 export * from './unrejectProposal';
