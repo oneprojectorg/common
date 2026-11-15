@@ -6,6 +6,7 @@ export * from './proposalCategory';
 export * from './reviews';
 export * from './proposal';
 export * from './proposalRelationships';
+export * from './ownDevelopedProposals';
 export * from './rejectProposal';
 export * from './advanceProposal';
 export * from './selection';

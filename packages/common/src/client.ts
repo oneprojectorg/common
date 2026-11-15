@@ -141,6 +141,13 @@ export {
   type ProposalRelationshipList,
 } from './services/decision/schemas/proposalRelationships';
 export {
+  listOwnDevelopedProposalsInputSchema,
+  ownDevelopedProposalListSchema,
+  type ListOwnDevelopedProposalsInput,
+  type OwnDevelopedProposal,
+  type OwnDevelopedProposalList,
+} from './services/decision/schemas/ownDevelopedProposals';
+export {
   REJECTION_NOTE_MAX_LENGTH,
   RejectionReason,
   rejectionReasonSchema,
