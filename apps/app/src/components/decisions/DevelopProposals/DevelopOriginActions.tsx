@@ -1,7 +1,7 @@
 'use client';
 
 import { ProposalStatus } from '@op/api/encoders';
-import type { OwnDevelopedProposal } from '@op/common/client';
+import type { DevelopOriginEntry } from '@op/common/client';
 import { Toggle } from '@op/sense/Toggle';
 import { LuCheck, LuPencil } from 'react-icons/lu';
 
@@ -30,8 +30,8 @@ export function DevelopOriginActions({
   /** The origin's title, which names the actions for screen readers. */
   title: string;
   /** The caller's entry developed from this origin, if any. */
-  entry: OwnDevelopedProposal | undefined;
-  entryHref: (entry: OwnDevelopedProposal) => string;
+  entry: DevelopOriginEntry | undefined;
+  entryHref: (entry: Pick<DevelopOriginEntry, 'profileId'>) => string;
   /** Another entry is being created, opened or marked ready. */
   isDisabled: boolean;
   /** This origin's entry is being created or opened. */
@@ -39,7 +39,7 @@ export function DevelopOriginActions({
   /** This origin's entry is being marked ready. */
   isAdvancing: boolean;
   onPrepare: () => void;
-  onAdvance: (entry: OwnDevelopedProposal) => void;
+  onAdvance: (entry: DevelopOriginEntry) => void;
 }) {
   const t = useTranslations('decisions.develop');
 

@@ -1699,7 +1699,6 @@
       "ballotTab": "Bulletin",
       "originsInCategoryCount": "{count, plural, one {# proposition} other {# propositions}} dans <bdi>{category}</bdi>",
       "sortLabel": "Trier les propositions",
-      "sortHighestScoreOption": "Meilleur score",
       "sortNewestOption": "Plus récentes",
       "nameColumn": "Nom",
       "advancingCount": "{count, plural, one {# proposition avance} other {# propositions avancent}}",
@@ -1718,7 +1717,12 @@
       "advanceEntryAction": "Faire avancer",
       "advancedEntryAction": "Avance",
       "advanceEntryLabel": "Faire avancer l’entrée issue de {title}",
-      "advanceEntryError": "Impossible de faire avancer l’entrée. Réessayez."
+      "advanceEntryError": "Impossible de faire avancer l’entrée. Réessayez.",
+      "assignedOriginsCount": "{count, plural, one {# proposition vous est attribuée} other {# propositions vous sont attribuées}}",
+      "noAssignedOriginsTitle": "Aucune proposition ne vous est encore attribuée",
+      "noAssignedOriginsDescription": "Les propositions de la phase précédente qui vous sont attribuées s’affichent ici.",
+      "sortOldestOption": "Plus anciennes",
+      "loadingMore": "Chargement…"
     },
     "suggestedWinnersHint": "Nous avons sélectionné les propositions gagnantes suggérées en fonction des règles de vote et du budget total.",
     "votingOpenHeading": "C'EST L'HEURE DE VOTER.",

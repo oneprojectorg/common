@@ -1699,7 +1699,6 @@
       "ballotTab": "Szavazólap",
       "originsInCategoryCount": "{count, plural, one {# javaslat} other {# javaslat}} itt: <bdi>{category}</bdi>",
       "sortLabel": "Javaslatok rendezése",
-      "sortHighestScoreOption": "Legmagasabb pontszám",
       "sortNewestOption": "Legújabb",
       "nameColumn": "Név",
       "advancingCount": "{count, plural, one {# javaslat jut tovább} other {# javaslat jut tovább}}",
@@ -1718,7 +1717,12 @@
       "advanceEntryAction": "Továbbjuttatás",
       "advancedEntryAction": "Továbbjut",
       "advanceEntryLabel": "A bejegyzés továbbjuttatása ebből: {title}",
-      "advanceEntryError": "Nem sikerült továbbjuttatni a bejegyzést. Próbáld újra."
+      "advanceEntryError": "Nem sikerült továbbjuttatni a bejegyzést. Próbáld újra.",
+      "assignedOriginsCount": "{count, plural, one {# neked kiosztott javaslat} other {# neked kiosztott javaslat}}",
+      "noAssignedOriginsTitle": "Még nincs neked kiosztott javaslat",
+      "noAssignedOriginsDescription": "Itt jelennek meg az előző szakasz neked kiosztott javaslatai.",
+      "sortOldestOption": "Legrégebbi",
+      "loadingMore": "Továbbiak betöltése…"
     },
     "suggestedWinnersHint": "A javasolt nyertes javaslatokat a szavazási szabályok és a teljes költségvetés alapján választottuk ki.",
     "votingOpenHeading": "ITT AZ IDEJE SZAVAZNI.",

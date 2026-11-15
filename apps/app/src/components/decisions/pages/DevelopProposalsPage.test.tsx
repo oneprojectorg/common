@@ -12,12 +12,18 @@ const mutate = vi.fn();
 const push = vi.fn();
 let origins: Proposal[] = [];
 let entries: OwnDevelopedProposal[] = [];
+const infiniteQueryState = {
+  fetchNextPage: vi.fn(),
+  hasNextPage: false,
+  isFetchingNextPage: false,
+};
 
 vi.mock('@op/api/client', () => ({
   trpc: {
     useUtils: () => ({
       decision: {
         listProposals: { invalidate: vi.fn() },
+        listDevelopOrigins: { invalidate: vi.fn() },
         listOwnDevelopedProposals: { invalidate: vi.fn() },
         getInstance: { invalidate: vi.fn() },
       },
@@ -25,11 +31,38 @@ vi.mock('@op/api/client', () => ({
     useSuspenseQueries: () => [
       [
         { items: [] },
-        { items: origins, total: origins.length, next: null },
-        { items: entries },
+        {
+          items: entries.slice(0, 1),
+          next: null,
+          total: entries.length,
+          readyTotal: 0,
+          budgetTotal: null,
+        },
       ],
     ],
     decision: {
+      listDevelopOrigins: {
+        useSuspenseInfiniteQuery: () => [
+          {
+            pages: [
+              {
+                items: origins,
+                total: origins.length,
+                next: null,
+                canManageProposals: false,
+                ownEntries: [],
+              },
+            ],
+          },
+          infiniteQueryState,
+        ],
+      },
+      listOwnDevelopedProposals: {
+        useSuspenseInfiniteQuery: () => [
+          { pages: [{ items: entries, next: null }] },
+          infiniteQueryState,
+        ],
+      },
       createDevelopedProposal: {
         useMutation: () => ({ mutate, isPending: false, variables: undefined }),
       },
@@ -150,7 +183,7 @@ describe('DevelopProposalsPage', () => {
     expect(screen.getByText('Fix the park')).toBeTruthy();
     expect(screen.getByText('Author of Fix the park')).toBeTruthy();
     expect(screen.getByText('Paint the school')).toBeTruthy();
-    expect(screen.getByText('2 proposals')).toBeTruthy();
+    expect(screen.getByText('2 proposals assigned to you')).toBeTruthy();
   });
 
   it('prepares an entry from an origin with its title and category', () => {
@@ -172,11 +205,13 @@ describe('DevelopProposalsPage', () => {
     });
   });
 
-  it('shows an empty state when the previous phase has no proposals', () => {
+  it('shows an empty state when no proposals are assigned to the caller', () => {
     renderPage();
 
-    expect(screen.getByText('No proposals to develop')).toBeTruthy();
-    expect(screen.getByText('0 proposals')).toBeTruthy();
+    expect(
+      screen.getByText('No proposals are assigned to you yet'),
+    ).toBeTruthy();
+    expect(screen.getByText('0 proposals assigned to you')).toBeTruthy();
   });
 
   it('lists the entries of the current phase, drafts included, with their editor link', () => {

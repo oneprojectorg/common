@@ -1699,7 +1699,6 @@
       "ballotTab": "ورقة الاقتراع",
       "originsInCategoryCount": "{count, plural, zero {لا مقترحات} one {مقترح واحد} two {مقترحان} few {# مقترحات} many {# مقترحًا} other {# مقترح}} في <bdi>{category}</bdi>",
       "sortLabel": "ترتيب المقترحات",
-      "sortHighestScoreOption": "الأعلى تقييمًا",
       "sortNewestOption": "الأحدث",
       "nameColumn": "الاسم",
       "advancingCount": "{count, plural, zero {لا مقترحات متقدمة} one {مقترح واحد يتقدم} two {مقترحان يتقدمان} few {# مقترحات تتقدم} many {# مقترحًا يتقدم} other {# مقترح يتقدم}}",
@@ -1718,7 +1717,12 @@
       "advanceEntryAction": "تقديم",
       "advancedEntryAction": "مُتقدّم",
       "advanceEntryLabel": "قدّم المُدخل المأخوذ من {title}",
-      "advanceEntryError": "تعذّر تقديم المُدخل. حاول مرة أخرى."
+      "advanceEntryError": "تعذّر تقديم المُدخل. حاول مرة أخرى.",
+      "assignedOriginsCount": "{count, plural, zero {لا مقترحات مُسندة إليك} one {مقترح واحد مُسند إليك} two {مقترحان مُسندان إليك} few {# مقترحات مُسندة إليك} many {# مقترحًا مُسندًا إليك} other {# مقترح مُسند إليك}}",
+      "noAssignedOriginsTitle": "لم تُسند إليك أي مقترحات بعد",
+      "noAssignedOriginsDescription": "تظهر هنا مقترحات المرحلة السابقة المُسندة إليك.",
+      "sortOldestOption": "الأقدم",
+      "loadingMore": "جارٍ تحميل المزيد…"
     },
     "suggestedWinnersHint": "اخترنا المقترحات الفائزة المقترحة بناءً على قواعد التصويت والميزانية الإجمالية.",
     "votingOpenHeading": "حان وقت التصويت.",

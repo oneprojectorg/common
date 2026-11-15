@@ -1699,7 +1699,6 @@
       "ballotTab": "Warqadda codbixinta",
       "originsInCategoryCount": "{count, plural, one {# soo jeedin} other {# soo jeedinno}} gudaha <bdi>{category}</bdi>",
       "sortLabel": "Kala saar soo jeedinta",
-      "sortHighestScoreOption": "Dhibcaha ugu sarreeya",
       "sortNewestOption": "Kuwa ugu cusub",
       "nameColumn": "Magac",
       "advancingCount": "{count, plural, one {# soo jeedin ayaa horumaraysa} other {# soo jeedinno ayaa horumaraya}}",
@@ -1718,7 +1717,12 @@
       "advanceEntryAction": "Horumari",
       "advancedEntryAction": "La horumariyay",
       "advanceEntryLabel": "Horumari gelista laga soo qaaday {title}",
-      "advanceEntryError": "Gelista lama horumarin karin. Isku day mar kale."
+      "advanceEntryError": "Gelista lama horumarin karin. Isku day mar kale.",
+      "assignedOriginsCount": "{count, plural, one {# soo jeedin laguu xilsaaray} other {# soo jeedinno laguu xilsaaray}}",
+      "noAssignedOriginsTitle": "Weli laguuma xilsaarin soo jeedinno",
+      "noAssignedOriginsDescription": "Soo jeedinta wejigii hore ee laguu xilsaaray halkan ayay ka muuqdaan.",
+      "sortOldestOption": "Kuwa ugu da'da weyn",
+      "loadingMore": "Wax badan ayaa la soo shubayaa…"
     },
     "suggestedWinnersHint": "Waxaan dooranay soo jeedimaha guusha helay ee la soo jeediyay iyadoo lagu salaynayo xeerarka codeynta iyo wadarta miisaaniyada.",
     "votingOpenHeading": "WAA WAKHTIGII CODAYNTA.",

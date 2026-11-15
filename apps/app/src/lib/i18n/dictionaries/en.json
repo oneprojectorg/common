@@ -1699,7 +1699,6 @@
       "ballotTab": "Ballot",
       "originsInCategoryCount": "{count, plural, one {# proposal} other {# proposals}} in <bdi>{category}</bdi>",
       "sortLabel": "Sort proposals",
-      "sortHighestScoreOption": "Highest score",
       "sortNewestOption": "Newest",
       "nameColumn": "Name",
       "advancingCount": "{count, plural, one {# proposal advancing} other {# proposals advancing}}",
@@ -1718,7 +1717,12 @@
       "advanceEntryAction": "Advance",
       "advancedEntryAction": "Advanced",
       "advanceEntryLabel": "Advance the entry from {title}",
-      "advanceEntryError": "Could not advance the entry. Try again."
+      "advanceEntryError": "Could not advance the entry. Try again.",
+      "assignedOriginsCount": "{count, plural, one {# proposal} other {# proposals}} assigned to you",
+      "noAssignedOriginsTitle": "No proposals are assigned to you yet",
+      "noAssignedOriginsDescription": "Proposals from the last phase that are assigned to you show here.",
+      "sortOldestOption": "Oldest",
+      "loadingMore": "Loading more…"
     },
     "suggestedWinnersHint": "We've selected the suggested winning proposals based on voting rules and total budget.",
     "votingOpenHeading": "TIME TO VOTE.",

@@ -1,7 +1,14 @@
 'use client';
 
+import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { formatCurrency } from '@/utils/formatting';
-import type { OwnDevelopedProposal } from '@op/common/client';
+import { trpc } from '@op/api/client';
+import {
+  type MoneyAmount,
+  type OwnDevelopedProposal,
+  nextCursor,
+} from '@op/common/client';
+import { useDebounce, useInfiniteScroll } from '@op/hooks';
 import {
   Empty,
   EmptyDescription,
@@ -10,6 +17,7 @@ import {
   EmptyTitle,
 } from '@op/sense/Empty';
 import { Header3 } from '@op/sense/Header';
+import { Skeleton } from '@op/sense/Skeleton';
 import {
   Table,
   TableBody,
@@ -20,107 +28,183 @@ import {
   TableRowHeader,
 } from '@op/sense/Table';
 import { useLocale } from 'next-intl';
-import { useState } from 'react';
+import { Suspense, useCallback, useDeferredValue, useState } from 'react';
 import { LuFileText } from 'react-icons/lu';
 
 import { Link, useTranslations } from '@/lib/i18n';
 
 import { SearchField } from '@/components/SearchField';
 
+import { ProposalsLoadError } from '../ProposalsLoadError';
+
+const SEARCH_DEBOUNCE_MS = 300;
+
 /**
  * The caller's own entries of the current phase, drafts and ready ones: title
- * and origins, and budget, with the title linking into the entry. The list is the caller's whole set, never paginated, so the search
- * filters it in place.
+ * and origins, and budget, with the title linking into the entry. The search,
+ * the order and the pages all come from the API; the heading's count and
+ * budget total are the caller's whole set, whatever the search.
  */
 export function DevelopEntriesTable({
-  entries,
+  processInstanceId,
+  entriesTotal,
+  budgetTotal,
   editHref,
 }: {
-  entries: OwnDevelopedProposal[];
+  processInstanceId: string;
+  /** Every entry of the caller in this phase. */
+  entriesTotal: number;
+  /** The budget total of every entry, or null when there is none. */
+  budgetTotal: MoneyAmount | null;
   /** Where an entry opens. */
   editHref: (entry: OwnDevelopedProposal) => string;
 }) {
   const t = useTranslations('decisions.develop');
   const locale = useLocale();
   const [query, setQuery] = useState('');
-
-  const needle = query.trim().toLocaleLowerCase(locale);
-  const shown = needle
-    ? entries.filter((entry) =>
-        [
-          entry.title,
-          ...entry.category,
-          ...entry.origins.map((origin) => origin.name),
-        ]
-          .join(' ')
-          .toLocaleLowerCase(locale)
-          .includes(needle),
-      )
-    : entries;
-  const total = getBudgetTotal(entries);
+  const [debouncedQuery] = useDebounce(query.trim(), SEARCH_DEBOUNCE_MS);
+  // A new search keeps the current rows on screen while the next ones load.
+  const search = useDeferredValue(debouncedQuery);
 
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div aria-live="polite">
           <Header3>
-            {total
+            {budgetTotal
               ? t('entriesCountWithBudget', {
-                  count: entries.length,
-                  budget: formatCurrency(total.amount, locale, total.currency),
+                  count: entriesTotal,
+                  budget: formatCurrency(
+                    budgetTotal.amount,
+                    locale,
+                    budgetTotal.currency,
+                  ),
                 })
-              : t('entriesCount', { count: entries.length })}
+              : t('entriesCount', { count: entriesTotal })}
           </Header3>
         </div>
-        {entries.length > 0 ? (
+        {entriesTotal > 0 ? (
           <SearchField
             value={query}
             onChange={setQuery}
+            isPending={search !== query.trim()}
             label={t('searchEntriesLabel')}
           />
         ) : null}
       </div>
 
-      <div aria-live="polite">
-        {shown.length === 0 ? (
-          <Empty>
-            <EmptyHeader>
-              <EmptyMedia variant="icon">
-                <LuFileText className="size-6" />
-              </EmptyMedia>
-              <EmptyTitle render={<h4 />}>
-                {entries.length > 0
-                  ? t('noMatchingEntriesTitle')
-                  : t('noEntriesTitle')}
-              </EmptyTitle>
-              <EmptyDescription>
-                {entries.length > 0
-                  ? t('noMatchingEntriesDescription')
-                  : t('noEntriesDescription')}
-              </EmptyDescription>
-            </EmptyHeader>
-          </Empty>
-        ) : (
-          <Table aria-label={t('entriesTableLabel')}>
-            <TableHeader>
-              <TableRow>
-                <TableHead scope="col">{t('entryColumn')}</TableHead>
-                <TableHead scope="col">{t('budgetColumn')}</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {shown.map((entry) => (
-                <EntryRow
-                  key={entry.id}
-                  entry={entry}
-                  href={editHref(entry)}
-                  locale={locale}
-                />
-              ))}
-            </TableBody>
-          </Table>
-        )}
-      </div>
+      {entriesTotal === 0 ? (
+        <EntriesEmpty isSearch={false} />
+      ) : (
+        <APIErrorBoundary fallbacks={{ default: () => <ProposalsLoadError /> }}>
+          <Suspense fallback={<EntriesSkeleton />}>
+            <EntriesPageSuspense
+              processInstanceId={processInstanceId}
+              search={search}
+              editHref={editHref}
+            />
+          </Suspense>
+        </APIErrorBoundary>
+      )}
+    </div>
+  );
+}
+
+function EntriesPageSuspense({
+  processInstanceId,
+  search,
+  editHref,
+}: {
+  processInstanceId: string;
+  search: string;
+  editHref: (entry: OwnDevelopedProposal) => string;
+}) {
+  const t = useTranslations('decisions.develop');
+  const locale = useLocale();
+  const [{ pages }, { fetchNextPage, hasNextPage, isFetchingNextPage }] =
+    trpc.decision.listOwnDevelopedProposals.useSuspenseInfiniteQuery(
+      { processInstanceId, search: search || undefined },
+      { getNextPageParam: nextCursor },
+    );
+  const entries = pages.flatMap((page) => page.items);
+
+  const loadNextPage = useCallback(() => {
+    fetchNextPage();
+  }, [fetchNextPage]);
+  const { ref: infiniteScrollRef, shouldShowTrigger } =
+    useInfiniteScroll<HTMLDivElement>(loadNextPage, {
+      hasNextPage,
+      isFetchingNextPage,
+      threshold: 0.1,
+      rootMargin: '50px',
+    });
+
+  return (
+    <div aria-live="polite" className="flex flex-col">
+      {entries.length === 0 ? (
+        <EntriesEmpty isSearch />
+      ) : (
+        <Table aria-label={t('entriesTableLabel')}>
+          <TableHeader>
+            <TableRow>
+              <TableHead scope="col">{t('entryColumn')}</TableHead>
+              <TableHead scope="col">{t('budgetColumn')}</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {entries.map((entry) => (
+              <EntryRow
+                key={entry.id}
+                entry={entry}
+                href={editHref(entry)}
+                locale={locale}
+              />
+            ))}
+          </TableBody>
+        </Table>
+      )}
+      {/* `aria-hidden` keeps the trigger out of the a11y tree; the line below
+        announces loading instead. */}
+      {shouldShowTrigger ? (
+        <div ref={infiniteScrollRef} aria-hidden className="py-4">
+          {isFetchingNextPage ? <EntriesSkeleton /> : null}
+        </div>
+      ) : null}
+      <span className="sr-only">
+        {isFetchingNextPage ? t('loadingMore') : ''}
+      </span>
+    </div>
+  );
+}
+
+function EntriesEmpty({ isSearch }: { isSearch: boolean }) {
+  const t = useTranslations('decisions.develop');
+
+  return (
+    <Empty>
+      <EmptyHeader>
+        <EmptyMedia variant="icon">
+          <LuFileText className="size-6" />
+        </EmptyMedia>
+        <EmptyTitle render={<h4 />}>
+          {isSearch ? t('noMatchingEntriesTitle') : t('noEntriesTitle')}
+        </EmptyTitle>
+        <EmptyDescription>
+          {isSearch
+            ? t('noMatchingEntriesDescription')
+            : t('noEntriesDescription')}
+        </EmptyDescription>
+      </EmptyHeader>
+    </Empty>
+  );
+}
+
+function EntriesSkeleton() {
+  return (
+    <div className="flex flex-col gap-4 py-4">
+      <Skeleton className="h-6 w-full" />
+      <Skeleton className="h-6 w-full" />
+      <Skeleton className="h-6 w-full" />
     </div>
   );
 }
@@ -165,23 +249,4 @@ function EntryRow({
       </TableCell>
     </TableRow>
   );
-}
-
-/** The entries' budget total, or null when there is none or currencies differ. */
-function getBudgetTotal(
-  entries: OwnDevelopedProposal[],
-): { amount: number; currency: string } | null {
-  const budgets = entries.flatMap((entry) =>
-    entry.budget && entry.budget.amount > 0 ? [entry.budget] : [],
-  );
-  const currency = budgets[0]?.currency;
-
-  if (!currency || budgets.some((budget) => budget.currency !== currency)) {
-    return null;
-  }
-
-  return {
-    amount: budgets.reduce((sum, budget) => sum + budget.amount, 0),
-    currency,
-  };
 }

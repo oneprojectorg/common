@@ -1699,7 +1699,6 @@
       "ballotTab": "Papeleta",
       "originsInCategoryCount": "{count, plural, one {# propuesta} other {# propuestas}} en <bdi>{category}</bdi>",
       "sortLabel": "Ordenar propuestas",
-      "sortHighestScoreOption": "Mayor puntuación",
       "sortNewestOption": "Más recientes",
       "nameColumn": "Nombre",
       "advancingCount": "{count, plural, one {# propuesta avanza} other {# propuestas avanzan}}",
@@ -1718,7 +1717,12 @@
       "advanceEntryAction": "Avanzar",
       "advancedEntryAction": "Avanzada",
       "advanceEntryLabel": "Avanzar la entrada de {title}",
-      "advanceEntryError": "No se pudo avanzar la entrada. Inténtalo de nuevo."
+      "advanceEntryError": "No se pudo avanzar la entrada. Inténtalo de nuevo.",
+      "assignedOriginsCount": "{count, plural, one {# propuesta asignada} other {# propuestas asignadas}} a ti",
+      "noAssignedOriginsTitle": "Aún no tienes propuestas asignadas",
+      "noAssignedOriginsDescription": "Aquí aparecen las propuestas de la fase anterior que se te asignan.",
+      "sortOldestOption": "Más antiguas",
+      "loadingMore": "Cargando más…"
     },
     "suggestedWinnersHint": "Hemos seleccionado las propuestas ganadoras sugeridas según las reglas de votación y el presupuesto total.",
     "votingOpenHeading": "HORA DE VOTAR.",

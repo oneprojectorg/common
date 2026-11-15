@@ -1699,7 +1699,6 @@
       "ballotTab": "Cédula",
       "originsInCategoryCount": "{count, plural, one {# proposta} other {# propostas}} em <bdi>{category}</bdi>",
       "sortLabel": "Ordenar propostas",
-      "sortHighestScoreOption": "Maior pontuação",
       "sortNewestOption": "Mais recentes",
       "nameColumn": "Nome",
       "advancingCount": "{count, plural, one {# proposta avançando} other {# propostas avançando}}",
@@ -1718,7 +1717,12 @@
       "advanceEntryAction": "Avançar",
       "advancedEntryAction": "Avançada",
       "advanceEntryLabel": "Avançar a entrada de {title}",
-      "advanceEntryError": "Não foi possível avançar a entrada. Tente novamente."
+      "advanceEntryError": "Não foi possível avançar a entrada. Tente novamente.",
+      "assignedOriginsCount": "{count, plural, one {# proposta atribuída a você} other {# propostas atribuídas a você}}",
+      "noAssignedOriginsTitle": "Ainda não há propostas atribuídas a você",
+      "noAssignedOriginsDescription": "As propostas da fase anterior atribuídas a você aparecem aqui.",
+      "sortOldestOption": "Mais antigas",
+      "loadingMore": "Carregando mais…"
     },
     "suggestedWinnersHint": "Selecionamos as propostas vencedoras sugeridas com base nas regras de votação e no orçamento total.",
     "votingOpenHeading": "HORA DE VOTAR.",
