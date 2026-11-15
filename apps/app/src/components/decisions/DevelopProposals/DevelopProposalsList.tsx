@@ -4,6 +4,7 @@ import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { trpc } from '@op/api/client';
 import { ProposalStatus, type ProcessInstance } from '@op/api/encoders';
 import {
+  type OwnDevelopedProposal,
   PAGE_LIMIT,
   type Proposal,
   type ProposalWithAggregates,
@@ -44,9 +45,9 @@ import {
 import { ALL_CATEGORIES } from '../proposalFilterQuery';
 import { proposalEditHref } from '../proposalHrefs';
 import { DevelopEntriesTable } from './DevelopEntriesTable';
+import { DevelopOriginActions } from './DevelopOriginActions';
 import { DevelopOriginsTable } from './DevelopOriginsTable';
 import { NoOriginsEmpty } from './NoOriginsEmpty';
-import { PrepareEntryButton } from './PrepareEntryButton';
 
 type DevelopTab = 'proposals' | 'ballot';
 type OriginSort = 'score' | 'newest';
@@ -55,10 +56,11 @@ type OriginSort = 'score' | 'newest';
  * The develop screen's body, in two tabs. Proposals lists the previous phase's
  * proposals (the origins) with their review recommendations, each with a
  * Prepare action that creates an entry in the current phase and opens it in
- * the proposal editor. Ballot lists the entries the current phase holds.
+ * the proposal editor. Ballot lists the caller's own entries of the current
+ * phase, drafts included, each with the origins it was developed from.
  *
- * The two lists are not joined: telling which origin already has an entry
- * takes one relationship read per entry, so Prepare shows on every origin.
+ * An origin the caller already developed links to that entry instead, with
+ * Advance to mark the entry ready.
  */
 export function DevelopProposalsListSuspense({
   instance,
@@ -104,15 +106,20 @@ export function DevelopProposalsListSuspense({
         dir: 'desc',
         limit: PAGE_LIMIT.max,
       }),
-      q.decision.listProposals({
-        processInstanceId,
-        phaseId: instance.currentStateId ?? undefined,
-        limit: PAGE_LIMIT.max,
-      }),
+      q.decision.listOwnDevelopedProposals({ processInstanceId }),
     ]);
 
   const origins = originsList.items;
   const entries = entriesList.items;
+  // Entries come newest first, so an origin maps to its newest entry.
+  const entryByOriginId = new Map<string, OwnDevelopedProposal>();
+  for (const entry of entries) {
+    for (const origin of entry.origins) {
+      if (!entryByOriginId.has(origin.id)) {
+        entryByOriginId.set(origin.id, entry);
+      }
+    }
+  }
   const advancingCount = entries.filter(
     (entry) => entry.status === ProposalStatus.SUBMITTED,
   ).length;
@@ -131,6 +138,9 @@ export function DevelopProposalsListSuspense({
   const createEntry = trpc.decision.createDevelopedProposal.useMutation({
     onSuccess: (entry) => {
       void utils.decision.listProposals.invalidate({ processInstanceId });
+      void utils.decision.listOwnDevelopedProposals.invalidate({
+        processInstanceId,
+      });
       void utils.decision.getInstance.invalidate({
         instanceId: processInstanceId,
       });
@@ -144,28 +154,54 @@ export function DevelopProposalsListSuspense({
     },
   });
 
+  const submitEntry = trpc.decision.submitDevelopedProposal.useMutation({
+    onSuccess: () => {
+      void utils.decision.listProposals.invalidate({ processInstanceId });
+      void utils.decision.listOwnDevelopedProposals.invalidate({
+        processInstanceId,
+      });
+    },
+    onError: (error) => {
+      logger.error('Failed to mark a develop entry ready', { error });
+      toast.error(t('advanceEntryError'));
+    },
+  });
+
   const isPreparing = createEntry.isPending || isNavigating;
   const preparingOriginId = isPreparing
     ? (createEntry.variables?.sourceProposalIds[0] ?? null)
     : null;
+  const advancingEntryId = submitEntry.isPending
+    ? (submitEntry.variables?.proposalId ?? null)
+    : null;
 
-  const renderPrepare = (origin: Proposal) => (
-    <PrepareEntryButton
-      title={origin.profile.name || t('untitledProposal')}
-      isDisabled={isPreparing}
-      isPreparing={preparingOriginId === origin.id}
-      onPrepare={() =>
-        createEntry.mutate({
-          processInstanceId,
-          sourceProposalIds: [origin.id],
-          proposalData: {
-            title: origin.profile.name,
-            category: origin.proposalData.category,
-          },
-        })
-      }
-    />
-  );
+  const renderPrepare = (origin: Proposal) => {
+    const entry = entryByOriginId.get(origin.id);
+
+    return (
+      <DevelopOriginActions
+        title={origin.profile.name || t('untitledProposal')}
+        entry={entry}
+        entryHref={editHref}
+        isDisabled={isPreparing || submitEntry.isPending}
+        isPreparing={preparingOriginId === origin.id}
+        isAdvancing={!!entry && advancingEntryId === entry.id}
+        onPrepare={() =>
+          createEntry.mutate({
+            processInstanceId,
+            sourceProposalIds: [origin.id],
+            proposalData: {
+              title: origin.profile.name,
+              category: origin.proposalData.category,
+            },
+          })
+        }
+        onAdvance={(developed) =>
+          submitEntry.mutate({ proposalId: developed.id })
+        }
+      />
+    );
+  };
 
   return (
     <div className="flex flex-col gap-6 pb-24">

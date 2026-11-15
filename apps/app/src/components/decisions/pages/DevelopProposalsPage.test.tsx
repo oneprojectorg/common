@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import type { InstancePhaseData, ProcessInstance } from '@op/api/encoders';
-import type { Proposal } from '@op/common/client';
+import type { OwnDevelopedProposal, Proposal } from '@op/common/client';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { NextIntlClientProvider } from 'next-intl';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -11,13 +11,14 @@ import { DevelopProposalsPage } from './DevelopProposalsPage';
 const mutate = vi.fn();
 const push = vi.fn();
 let origins: Proposal[] = [];
-let entries: Proposal[] = [];
+let entries: OwnDevelopedProposal[] = [];
 
 vi.mock('@op/api/client', () => ({
   trpc: {
     useUtils: () => ({
       decision: {
         listProposals: { invalidate: vi.fn() },
+        listOwnDevelopedProposals: { invalidate: vi.fn() },
         getInstance: { invalidate: vi.fn() },
       },
     }),
@@ -25,12 +26,19 @@ vi.mock('@op/api/client', () => ({
       [
         { items: [] },
         { items: origins, total: origins.length, next: null },
-        { items: entries, total: entries.length, next: null },
+        { items: entries },
       ],
     ],
     decision: {
       createDevelopedProposal: {
         useMutation: () => ({ mutate, isPending: false, variables: undefined }),
+      },
+      submitDevelopedProposal: {
+        useMutation: () => ({
+          mutate: vi.fn(),
+          isPending: false,
+          variables: undefined,
+        }),
       },
     },
   },
@@ -80,6 +88,25 @@ const buildProposal = ({
     budget: { amount: 1200, currency: 'USD' },
     attachmentIds: [],
   },
+});
+
+const buildEntry = ({
+  id,
+  title,
+  status = 'submitted',
+}: {
+  id: string;
+  title: string;
+  status?: string;
+}): OwnDevelopedProposal => ({
+  id,
+  profileId: `${id}-profile`,
+  status,
+  visibility: 'hidden',
+  title,
+  category: [],
+  budget: null,
+  origins: [{ id: 'origin', name: 'Origin' }],
 });
 
 const renderPage = () => {
@@ -154,18 +181,16 @@ describe('DevelopProposalsPage', () => {
 
   it('lists the entries of the current phase with their status and editor link', () => {
     entries = [
-      buildProposal({ id: 'e1', title: 'Park entry', status: 'draft' }),
-      buildProposal({ id: 'e2', title: 'School entry' }),
+      buildEntry({ id: 'e1', title: 'Park entry', status: 'draft' }),
+      buildEntry({ id: 'e2', title: 'School entry' }),
     ];
     renderPage();
     fireEvent.click(screen.getByRole('tab', { name: /Ballot/ }));
 
     expect(screen.getByText('Draft')).toBeTruthy();
-    expect(screen.getByText('Submitted')).toBeTruthy();
+    expect(screen.getByText('Advancing')).toBeTruthy();
     expect(
-      screen
-        .getByRole('link', { name: 'Open Park entry' })
-        .getAttribute('href'),
+      screen.getByRole('link', { name: 'Park entry' }).getAttribute('href'),
     ).toContain('/decisions/decision-slug/proposal/e1-profile/edit');
   });
 });
