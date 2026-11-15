@@ -105,7 +105,7 @@ export const createDevelopedProposal = async ({
  * Every source must be a live, submitted, not rejected, not merged proposal of
  * this instance. Sources may come from any phase.
  */
-async function assertDevelopSources({
+export async function assertDevelopSources({
   instance,
   sourceProposalIds,
 }: {

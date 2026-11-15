@@ -11,6 +11,7 @@ import {
   ProposalReviewState,
   ProposalStatus,
   Visibility,
+  formSchemas,
   processInstances,
   proposals as proposalsTable,
 } from '@op/db/schema';
@@ -46,7 +47,14 @@ const developSchema = {
     },
     { id: FEASIBILITY, name: 'Feasibility review', rules: closedPhaseRules },
     { id: EQUITY, name: 'Equity review', rules: closedPhaseRules },
-    { id: BALLOT, name: 'Ballot development', rules: closedPhaseRules },
+    {
+      id: BALLOT,
+      name: 'Ballot development',
+      rules: {
+        ...closedPhaseRules,
+        proposals: { submit: false, develop: true },
+      },
+    },
   ],
 } satisfies DecisionSchemaDefinition;
 
@@ -108,6 +116,16 @@ const ballotForm = {
   },
 } as const;
 
+/** A `decision_form_schemas` row: the form an entry of the develop phase is created with. */
+const entryForm = {
+  type: 'object',
+  'x-field-order': ['title', 'ballotDescription'],
+  properties: {
+    title: { type: 'string', 'x-format': 'short-text' },
+    ballotDescription: { type: 'string', 'x-format': 'long-text' },
+  },
+};
+
 const submissionRef = { type: 'proposal', phaseId: SUBMISSION } as const;
 const feasibilityRef = { type: 'review', phaseId: FEASIBILITY } as const;
 const ballotRef = { type: 'proposal', phaseId: BALLOT } as const;
@@ -167,7 +185,24 @@ const expectRejection = async ({
   expect(error).toHaveProperty('message', message);
 };
 
-const seedDevelopDecision = async (testData: TestDecisionsDataManager) => {
+const insertFormSchema = async (values: {
+  processInstanceId: string;
+  schema: Record<string, unknown>;
+}) => {
+  const [row] = await db
+    .insert(formSchemas)
+    .values({ ...values, name: 'Entry form' })
+    .returning();
+  if (!row) {
+    throw new Error('Expected the form schema insert to return a row');
+  }
+  return row;
+};
+
+const seedDevelopDecision = async (
+  testData: TestDecisionsDataManager,
+  { ballotFormSchema }: { ballotFormSchema?: Record<string, unknown> } = {},
+) => {
   const setup = await testData.createDecisionSetup({
     instanceCount: 2,
     grantAccess: true,
@@ -179,10 +214,20 @@ const seedDevelopDecision = async (testData: TestDecisionsDataManager) => {
     throw new Error('Expected two instances');
   }
 
+  const ballotFormRow = ballotFormSchema
+    ? await insertFormSchema({
+        processInstanceId: instance.instance.id,
+        schema: ballotFormSchema,
+      })
+    : undefined;
+
   const phaseTemplates: Record<string, object> = {
     [FEASIBILITY]: { rubricTemplate: feasibilityRubric },
     [EQUITY]: { rubricTemplate: equityRubric },
-    [BALLOT]: { proposalTemplate: ballotForm },
+    [BALLOT]: {
+      proposalTemplate: ballotForm,
+      ...(ballotFormRow ? { formSchemaId: ballotFormRow.id } : {}),
+    },
   };
   const { instanceData } = instance.instance;
   await db
@@ -404,7 +449,7 @@ describe.concurrent('getDevelopPrefill', () => {
     expect(result.data.budget).toEqual({ amount: 2, currency: 'USD' });
   });
 
-  it('given callers with and without the Develop Proposals permission, when each builds the prefill, then only the one without it is refused', async ({
+  it('given a developer, a profile admin, a decisions admin and a reviewer, when each builds the prefill, then only the reviewer is refused', async ({
     task,
     onTestFinished,
   }) => {
@@ -412,11 +457,30 @@ describe.concurrent('getDevelopPrefill', () => {
     const { setup, instanceId, instanceProfileId, createSubmittedProposal } =
       await seedDevelopDecision(testData);
     const proposal = await createSubmittedProposal({ title: 'Bus shelters' });
-    const [developer, reviewer] = await Promise.all([
-      testData.createMemberUser({ organization: setup.organization }),
-      testData.createMemberUser({ organization: setup.organization }),
-    ]);
+    const [developer, reviewer, profileAdmin, decisionsAdmin] =
+      await Promise.all([
+        testData.createMemberUser({ organization: setup.organization }),
+        testData.createMemberUser({ organization: setup.organization }),
+        testData.createMemberUser({ organization: setup.organization }),
+        testData.createMemberUser({ organization: setup.organization }),
+      ]);
     await Promise.all([
+      grantInstanceRole({
+        instanceProfileId,
+        authUserId: profileAdmin.authUserId,
+        email: profileAdmin.email,
+        roleName: `Profile admin-${task.id}`,
+        decisionsPermission: TEST_PERMISSION_BITS.READ,
+        profilePermission: TEST_PERMISSION_BITS.ADMIN,
+      }),
+      grantInstanceRole({
+        instanceProfileId,
+        authUserId: decisionsAdmin.authUserId,
+        email: decisionsAdmin.email,
+        roleName: `Decisions admin-${task.id}`,
+        decisionsPermission:
+          TEST_PERMISSION_BITS.READ | TEST_PERMISSION_BITS.ADMIN,
+      }),
       grantInstanceRole({
         instanceProfileId,
         authUserId: developer.authUserId,
@@ -447,11 +511,149 @@ describe.concurrent('getDevelopPrefill', () => {
     await expect(buildPrefill(reviewer.user)).rejects.toBeInstanceOf(
       UnauthorizedError,
     );
-    await expect(buildPrefill(developer.user)).resolves.toMatchObject({
-      data: { title: 'Bus shelters' },
+    for (const user of [
+      developer.user,
+      profileAdmin.user,
+      decisionsAdmin.user,
+      setup.user,
+    ]) {
+      await expect(buildPrefill(user)).resolves.toMatchObject({
+        data: { title: 'Bus shelters' },
+      });
+    }
+  });
+
+  it('given a phase that does not develop, when the prefill targets it, then it is refused', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instanceId, createSubmittedProposal } =
+      await seedDevelopDecision(testData);
+    const proposal = await createSubmittedProposal({ title: 'Murals' });
+
+    await expectRejection({
+      promise: getDevelopPrefill({
+        instanceId,
+        inputs: [{ type: 'proposal', phaseId: SUBMISSION, id: proposal.id }],
+        target: { type: 'proposal', phaseId: SUBMISSION },
+        mappings: [
+          {
+            from: submissionRef,
+            to: submissionRef,
+            fields: [{ from: 'title', to: 'title' }],
+          },
+        ],
+        user: setup.user,
+      }),
+      errorClass: ValidationError,
+      message: 'Proposals cannot be developed in the Submission phase',
     });
-    await expect(buildPrefill(setup.user)).resolves.toMatchObject({
-      data: { title: 'Bus shelters' },
+  });
+
+  it('given a develop phase with a form schema row, when the prefill is built, then it maps into that form and not the phase or instance template', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instanceId, createSubmittedProposal } =
+      await seedDevelopDecision(testData, { ballotFormSchema: entryForm });
+    const proposal = await createSubmittedProposal({ title: 'Tree canopy' });
+
+    const buildPrefill = (fields: SchemaMapping['fields']) =>
+      getDevelopPrefill({
+        instanceId,
+        inputs: [{ type: 'proposal', phaseId: SUBMISSION, id: proposal.id }],
+        target: { type: 'proposal', phaseId: BALLOT },
+        mappings: [{ from: submissionRef, to: ballotRef, fields }],
+        user: setup.user,
+      });
+
+    await expect(
+      buildPrefill([
+        { from: 'title', to: 'title' },
+        { from: 'summary', to: 'ballotDescription' },
+      ]),
+    ).resolves.toEqual({
+      data: {
+        title: 'Tree canopy',
+        ballotDescription: 'Summary of Tree canopy',
+      },
+    });
+    // `description` is a field of the phase template and `summary` of the
+    // instance template; neither is a field of the row.
+    for (const to of ['description', 'summary']) {
+      await expectRejection({
+        promise: buildPrefill([{ from: 'summary', to }]),
+        errorClass: ValidationError,
+        message: `Target field '${to}' is not a field of the proposal form of phase '${BALLOT}'`,
+      });
+    }
+  });
+
+  it('given a mapping into a field the target form does not have, when the prefill is built, then it is refused naming the field', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instanceId, createSubmittedProposal } =
+      await seedDevelopDecision(testData);
+    const proposal = await createSubmittedProposal({ title: 'Crosswalks' });
+
+    await expectRejection({
+      promise: getDevelopPrefill({
+        instanceId,
+        inputs: [{ type: 'proposal', phaseId: SUBMISSION, id: proposal.id }],
+        target: { type: 'proposal', phaseId: BALLOT },
+        mappings: [
+          {
+            from: submissionRef,
+            to: ballotRef,
+            fields: [
+              { from: 'title', to: 'title' },
+              { from: 'summary', to: 'nickname' },
+            ],
+          },
+        ],
+        user: setup.user,
+      }),
+      errorClass: ValidationError,
+      message: `Target field 'nickname' is not a field of the proposal form of phase '${BALLOT}'`,
+    });
+  });
+
+  it('given a proposal whose document cannot be fetched, when the prefill is built, then that proposal gives no data and the others still fill the target', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instanceId, createSubmittedProposal } =
+      await seedDevelopDecision(testData);
+    const [available, unavailable] = await Promise.all([
+      createSubmittedProposal({ title: 'Splash pad' }),
+      // No fragments are seeded, so the document fetch fails.
+      testData.createProposal({
+        userEmail: setup.userEmail,
+        processInstanceId: instanceId,
+        proposalData: { title: 'Unreachable' },
+        status: ProposalStatus.SUBMITTED,
+      }),
+    ]);
+
+    const result = await getDevelopPrefill({
+      instanceId,
+      inputs: [
+        { type: 'proposal', phaseId: SUBMISSION, id: available.id },
+        { type: 'proposal', phaseId: SUBMISSION, id: unavailable.id },
+      ],
+      target: { type: 'proposal', phaseId: BALLOT },
+      mappings,
+      user: setup.user,
+    });
+
+    expect(result.data).toMatchObject({
+      title: 'Splash pad',
+      description: 'Summary of Splash pad',
     });
   });
 
@@ -578,8 +780,19 @@ describe.concurrent('getDevelopPrefill', () => {
       promise: buildPrefill([
         { type: 'proposal', phaseId: SUBMISSION, id: foreign.id },
       ]),
-      errorClass: NotFoundError,
-      message: new NotFoundError('Proposal', foreign.id).message,
+      errorClass: ValidationError,
+      message: `These proposals cannot be developed: ${foreign.id}`,
+    });
+    await expectRejection({
+      promise: getDevelopPrefill({
+        instanceId,
+        inputs: [{ type: 'proposal', phaseId: FEASIBILITY, id: proposal.id }],
+        target: { type: 'proposal', phaseId: BALLOT },
+        mappings,
+        user: setup.user,
+      }),
+      errorClass: ValidationError,
+      message: `Proposal '${proposal.id}' is not in phase '${FEASIBILITY}'`,
     });
   });
 });
