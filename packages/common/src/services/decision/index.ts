@@ -101,6 +101,10 @@ export * from './advanceProposal';
 export * from './getProposalAdvanceTarget';
 export * from './listProposalRejectionRecipients';
 export * from './getProposal';
+export {
+  type DevelopPrefillInput,
+  getDevelopPrefill,
+} from './getDevelopPrefill';
 export * from './getCollabToken';
 export * from './assertProposalEngagementAccess';
 export { mergeTargetIds } from './proposalSupersession';

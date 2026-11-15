@@ -14,7 +14,7 @@ export class FilterBlock implements BlockExecutor<FilterBlockType> {
     const filteredProposals = context.proposals.filter((proposal) => {
       const proposalContext = {
         ...context,
-        proposal,
+        record: proposal,
       };
 
       const result = evaluateExpression(block.condition, proposalContext);
