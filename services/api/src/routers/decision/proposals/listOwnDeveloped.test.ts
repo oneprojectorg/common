@@ -93,6 +93,84 @@ describe.concurrent('listOwnDevelopedProposals', () => {
     expect(admins.items).toEqual([]);
   });
 
+  it("pages, searches and totals the caller's entries in the database", async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instanceId, source } = await createDevelopPhaseSetup({
+      testData,
+    });
+    const author = await createDevelopProposalsMember({ testData, setup });
+    const caller = await createAuthenticatedCaller(author.email);
+
+    // Created one after another, so creation order is the list's order.
+    const entries = [];
+    for (const [title, amount] of [
+      ['Park lighting', 100],
+      ['Library hours', 250],
+      ['Park benches', 0],
+    ] as const) {
+      const entry = await caller.decision.createDevelopedProposal({
+        processInstanceId: instanceId,
+        sourceProposalIds: [source.id],
+        proposalData: { title, budget: { amount, currency: 'USD' } },
+      });
+      testData.trackProfileForCleanup(entry.profileId);
+      entries.push(entry);
+    }
+    const [lighting, library, benches] = entries;
+    if (!lighting || !library || !benches) {
+      throw new Error('Failed to create the entries');
+    }
+    await caller.decision.submitDevelopedProposal({ proposalId: library.id });
+
+    const first = await caller.decision.listOwnDevelopedProposals({
+      processInstanceId: instanceId,
+      limit: 2,
+    });
+    expect(first.items.map((item) => item.id)).toEqual([
+      benches.id,
+      library.id,
+    ]);
+    expect(first.next).not.toBeNull();
+    expect(first).toMatchObject({
+      total: 3,
+      readyTotal: 1,
+      budgetTotal: { amount: 350, currency: 'USD' },
+    });
+
+    const second = await caller.decision.listOwnDevelopedProposals({
+      processInstanceId: instanceId,
+      limit: 2,
+      cursor: first.next,
+    });
+    expect(second.items.map((item) => item.id)).toEqual([lighting.id]);
+    expect(second.next).toBeNull();
+
+    const [park, byOrigin] = await Promise.all([
+      caller.decision.listOwnDevelopedProposals({
+        processInstanceId: instanceId,
+        search: 'park',
+      }),
+      // Every entry was developed from "Source".
+      caller.decision.listOwnDevelopedProposals({
+        processInstanceId: instanceId,
+        search: 'sour',
+      }),
+    ]);
+    expect(park.items.map((item) => item.id)).toEqual([
+      benches.id,
+      lighting.id,
+    ]);
+    expect(park).toMatchObject({
+      total: 2,
+      readyTotal: 0,
+      budgetTotal: { amount: 100, currency: 'USD' },
+    });
+    expect(byOrigin.total).toBe(3);
+  });
+
   it('refuses a caller with no role on the decision', async ({
     task,
     onTestFinished,

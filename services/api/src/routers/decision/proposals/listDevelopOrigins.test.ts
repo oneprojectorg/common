@@ -236,6 +236,99 @@ describe.concurrent('listDevelopOrigins', () => {
     expect(assigned.items).toEqual([]);
   });
 
+  it('pages, sorts and searches origins in the database', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instanceId, origins } = await createOriginsSetup({
+      testData,
+      taskId: task.id,
+      onTestFinished,
+    });
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+    const byCreation = [origins.sharedA, origins.sharedB, origins.other]
+      .sort(
+        (a, b) =>
+          (a.createdAt ?? '').localeCompare(b.createdAt ?? '') ||
+          a.id.localeCompare(b.id),
+      )
+      .map((origin) => origin.id);
+
+    const first = await caller.decision.listDevelopOrigins({
+      processInstanceId: instanceId,
+      scope: 'all',
+      dir: 'asc',
+      limit: 2,
+    });
+    expect(first.items.map((item) => item.id)).toEqual(byCreation.slice(0, 2));
+    expect(first.total).toBe(3);
+    expect(first.next).not.toBeNull();
+
+    const second = await caller.decision.listDevelopOrigins({
+      processInstanceId: instanceId,
+      scope: 'all',
+      dir: 'asc',
+      limit: 2,
+      cursor: first.next,
+    });
+    expect(second.items.map((item) => item.id)).toEqual(byCreation.slice(2));
+    expect(second.next).toBeNull();
+
+    const shared = await caller.decision.listDevelopOrigins({
+      processInstanceId: instanceId,
+      scope: 'all',
+      search: 'shared',
+    });
+    expect(ids(shared)).toEqual(
+      [origins.sharedA.id, origins.sharedB.id].sort(),
+    );
+    expect(shared.total).toBe(2);
+  });
+
+  it("carries the caller's own entry for each origin on the page", async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { instanceId, origins, members } = await createOriginsSetup({
+      testData,
+      taskId: task.id,
+      onTestFinished,
+    });
+    const [firstCaller, secondCaller] = await Promise.all([
+      createAuthenticatedCaller(members.first.email),
+      createAuthenticatedCaller(members.second.email),
+    ]);
+    const entry = await firstCaller.decision.createDevelopedProposal({
+      processInstanceId: instanceId,
+      sourceProposalIds: [origins.sharedA.id],
+      proposalData: { title: 'Entry' },
+    });
+    testData.trackProfileForCleanup(entry.profileId);
+
+    const [own, others] = await Promise.all([
+      firstCaller.decision.listDevelopOrigins({
+        processInstanceId: instanceId,
+        scope: 'categories',
+      }),
+      secondCaller.decision.listDevelopOrigins({
+        processInstanceId: instanceId,
+        scope: 'categories',
+      }),
+    ]);
+
+    expect(own.ownEntries).toEqual([
+      {
+        originId: origins.sharedA.id,
+        id: entry.id,
+        profileId: entry.profileId,
+        status: ProposalStatus.DRAFT,
+      },
+    ]);
+    expect(others.ownEntries).toEqual([]);
+  });
+
   it('refuses a caller without develop access', async ({
     task,
     onTestFinished,

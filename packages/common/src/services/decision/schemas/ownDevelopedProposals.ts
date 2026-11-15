@@ -1,13 +1,18 @@
 import { z } from 'zod';
 
 import { moneyAmountSchema } from '../../../money';
-import { list } from '../../../utils/pagination';
+import { paginated, paginationInput, total } from '../../../utils/pagination';
+import { proposalSearchSchema } from './proposal';
 
-export const listOwnDevelopedProposalsInputSchema = z.object({
-  processInstanceId: z.uuid(),
-});
+export const listOwnDevelopedProposalsInputSchema = z
+  .object({
+    processInstanceId: z.uuid(),
+    /** Every word in the entry's title, or in one of its origins' titles. */
+    search: proposalSearchSchema,
+  })
+  .extend(paginationInput('md').shape);
 
-export type ListOwnDevelopedProposalsInput = z.infer<
+export type ListOwnDevelopedProposalsInput = z.input<
   typeof listOwnDevelopedProposalsInputSchema
 >;
 
@@ -35,7 +40,22 @@ export const ownDevelopedProposalSchema = z.object({
 
 export type OwnDevelopedProposal = z.infer<typeof ownDevelopedProposalSchema>;
 
-export const ownDevelopedProposalListSchema = list(ownDevelopedProposalSchema);
+/**
+ * One page of the caller's entries, newest first. The counts and the budget
+ * total cover every entry the search matches, not just this page.
+ */
+export const ownDevelopedProposalListSchema = paginated(
+  ownDevelopedProposalSchema,
+).extend({
+  total,
+  /** Entries marked ready (no longer drafts). */
+  readyTotal: total,
+  /**
+   * The sum of the entries' stored budgets, or null when there is none or
+   * their currencies differ.
+   */
+  budgetTotal: moneyAmountSchema.nullable(),
+});
 
 export type OwnDevelopedProposalList = z.infer<
   typeof ownDevelopedProposalListSchema

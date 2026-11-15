@@ -1,17 +1,34 @@
-import { type SQL, and, db, eq, exists, isNull, or, sql } from '@op/db/client';
 import {
+  type SQL,
+  and,
+  db,
+  desc,
+  eq,
+  exists,
+  inArray,
+  isNull,
+  or,
+  sql,
+} from '@op/db/client';
+import {
+  ProposalRelationshipType,
   categoryReviewers,
   proposalCategories,
+  proposalRelationships,
   proposalReviewAssignments,
-  type proposals,
+  proposals,
 } from '@op/db/schema';
 
 import { NotFoundError, UnauthorizedError, ValidationError } from '../../utils';
 import type { AccessUser } from '../access';
 import { assertUserByAuthId } from '../assert';
 import { getProposalDevelopAccess } from './assertProposalDevelopAccess';
+import type { PhaseScopedInstance } from './getProposalsForPhase';
 import { listProposals } from './listProposals';
+import { getOwnDevelopedEntryScope } from './ownDevelopedEntryScope';
 import type {
+  DevelopOriginEntry,
+  DevelopOriginList,
   DevelopOriginScope,
   ListDevelopOriginsInput,
 } from './schemas/developOrigins';
@@ -22,7 +39,8 @@ import { getInstancePhases } from './schemas/instanceData';
  * that the caller may develop into entries, narrowed by `scope` and
  * `categoryId`. A develop holder may ask for `assigned` or `categories`; only
  * an admin may ask for `all`. The rows, order and cursor are `listProposals`',
- * so the result reads like any proposal list.
+ * so the result reads like any proposal list. Each page also carries the
+ * caller's own entry for each of its origins that has one.
  */
 export async function listDevelopOrigins({
   input,
@@ -30,12 +48,17 @@ export async function listDevelopOrigins({
 }: {
   input: ListDevelopOriginsInput;
   user: AccessUser;
-}) {
+}): Promise<DevelopOriginList> {
   const { processInstanceId, scope = 'assigned', categoryId } = input;
 
   const instance = await db.query.processInstances.findFirst({
     where: { id: processInstanceId },
-    columns: { profileId: true, instanceData: true, currentStateId: true },
+    columns: {
+      id: true,
+      profileId: true,
+      instanceData: true,
+      currentStateId: true,
+    },
   });
 
   if (!instance) {
@@ -66,7 +89,13 @@ export async function listDevelopOrigins({
 
   // A develop phase that opens the process has nothing to develop from.
   if (!originPhaseId) {
-    return { items: [], total: 0, canManageProposals: isAdmin, next: null };
+    return {
+      items: [],
+      total: 0,
+      canManageProposals: isAdmin,
+      next: null,
+      ownEntries: [],
+    };
   }
 
   const restrictTo =
@@ -80,11 +109,12 @@ export async function listDevelopOrigins({
           reviewerProfileId: await getCallerProfileId(user),
         });
 
-  return listProposals({
+  const page = await listProposals({
     input: {
       processInstanceId,
       phaseId: originPhaseId,
       categoryId,
+      search: input.search,
       restrictTo,
       cursor: input.cursor,
       limit: input.limit,
@@ -92,6 +122,74 @@ export async function listDevelopOrigins({
     },
     user,
   });
+
+  const ownEntries = await listOwnEntriesForOrigins({
+    instance,
+    processInstanceId,
+    authUserId: user.id,
+    originIds: page.items.map((origin) => origin.id),
+  });
+
+  return { ...page, ownEntries };
+}
+
+/**
+ * The caller's newest own entry of the current phase developed from each of
+ * the given origins, one row per origin that has one.
+ */
+async function listOwnEntriesForOrigins({
+  instance,
+  processInstanceId,
+  authUserId,
+  originIds,
+}: {
+  instance: PhaseScopedInstance;
+  processInstanceId: string;
+  authUserId: string;
+  originIds: string[];
+}): Promise<DevelopOriginEntry[]> {
+  if (originIds.length === 0) {
+    return [];
+  }
+
+  const scope = await getOwnDevelopedEntryScope({
+    instance,
+    processInstanceId,
+    authUserId,
+  });
+
+  if (scope.isEmpty) {
+    return [];
+  }
+
+  return db
+    .selectDistinctOn([proposalRelationships.sourceProposalId], {
+      originId: proposalRelationships.sourceProposalId,
+      id: proposals.id,
+      profileId: proposals.profileId,
+      status: proposals.status,
+    })
+    .from(proposalRelationships)
+    .innerJoin(
+      proposals,
+      eq(proposals.id, proposalRelationships.targetProposalId),
+    )
+    .where(
+      and(
+        inArray(proposalRelationships.sourceProposalId, originIds),
+        eq(
+          proposalRelationships.relationshipType,
+          ProposalRelationshipType.DEVELOPED,
+        ),
+        isNull(proposalRelationships.deletedAt),
+        scope.buildFilter(proposals),
+      ),
+    )
+    .orderBy(
+      proposalRelationships.sourceProposalId,
+      desc(proposals.createdAt),
+      desc(proposals.id),
+    );
 }
 
 async function getCallerProfileId(user: AccessUser): Promise<string> {

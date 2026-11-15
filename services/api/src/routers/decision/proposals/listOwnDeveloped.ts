@@ -8,15 +8,16 @@ import { networkAuthenticatedProcedure, router } from '../../../trpcFactory';
 
 export const listOwnDevelopedProposalsRouter = router({
   /**
-   * The caller's own developed proposals (drafts included) in the current
-   * phase, each with the proposals it was developed from.
+   * One page of the caller's own developed proposals (drafts included) in the
+   * current phase, each with the proposals it was developed from, plus the
+   * counts and budget total of every entry the search matches.
    */
   listOwnDevelopedProposals: networkAuthenticatedProcedure()
     .input(listOwnDevelopedProposalsInputSchema)
     .output(ownDevelopedProposalListSchema)
     .query(async ({ ctx, input }) => {
       const result = await listOwnDevelopedProposals({
-        processInstanceId: input.processInstanceId,
+        ...input,
         user: ctx.user,
       });
 

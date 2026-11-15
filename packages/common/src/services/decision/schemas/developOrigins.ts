@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 import { paginationInput } from '../../../utils/pagination';
+import { proposalListSchema, proposalSearchSchema } from './proposal';
 
 /**
  * Which origins a develop screen lists:
@@ -24,6 +25,9 @@ export const listDevelopOriginsInputSchema = z
     scope: developOriginScopeSchema.prefault('assigned'),
     /** Narrows any scope to one category. */
     categoryId: z.uuid().optional(),
+    /** Every word in the origin's title. */
+    search: proposalSearchSchema,
+    /** By creation: `desc` newest first (the default), `asc` oldest first. */
     dir: z.enum(['asc', 'desc']).optional(),
   })
   .extend(paginationInput('md').shape);
@@ -31,3 +35,23 @@ export const listDevelopOriginsInputSchema = z
 export type ListDevelopOriginsInput = z.input<
   typeof listDevelopOriginsInputSchema
 >;
+
+/** The caller's newest entry developed from an origin on the page. */
+export const developOriginEntrySchema = z.object({
+  originId: z.uuid(),
+  id: z.uuid(),
+  profileId: z.uuid(),
+  status: z.string().nullish(),
+});
+
+export type DevelopOriginEntry = z.infer<typeof developOriginEntrySchema>;
+
+/**
+ * One page of origins, as `listProposals` returns it, with the caller's own
+ * entry for each origin on the page that has one.
+ */
+export const developOriginListSchema = proposalListSchema.extend({
+  ownEntries: z.array(developOriginEntrySchema),
+});
+
+export type DevelopOriginList = z.infer<typeof developOriginListSchema>;

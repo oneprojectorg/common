@@ -148,8 +148,12 @@ export {
   type OwnDevelopedProposalList,
 } from './services/decision/schemas/ownDevelopedProposals';
 export {
+  developOriginEntrySchema,
+  developOriginListSchema,
   developOriginScopeSchema,
   listDevelopOriginsInputSchema,
+  type DevelopOriginEntry,
+  type DevelopOriginList,
   type DevelopOriginScope,
   type ListDevelopOriginsInput,
 } from './services/decision/schemas/developOrigins';

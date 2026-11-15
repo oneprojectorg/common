@@ -1,29 +1,39 @@
-import { and, db, eq, exists, isNull, or } from '@op/db/client';
+import { type SQL, and, db, sql } from '@op/db/client';
 import {
   ProposalRelationshipType,
   ProposalStatus,
-  proposalRelationships,
+  proposals,
 } from '@op/db/schema';
 import { permission } from 'access-zones';
 
-import { NotFoundError, PAGE_LIMIT } from '../../utils';
+import {
+  NotFoundError,
+  PAGE_LIMIT,
+  decodeCursor,
+  encodeCursor,
+  getCursorCondition,
+} from '../../utils';
 import type { AccessUser } from '../access';
 import { assertProfileAccess } from '../assert';
 import { getProposalDocumentsContent } from './getProposalDocumentsContent';
-import { getPhaseProposalSqlScope } from './getProposalsForPhase';
 import {
-  activeProposalPredicate,
-  phaseEligiblePredicate,
-} from './phaseEligibility';
+  buildEntrySearchCondition,
+  getOwnDevelopedEntryScope,
+} from './ownDevelopedEntryScope';
 import { parseProposalData } from './proposalDataSchema';
 import { buildProposalListPreview } from './proposalListPreview';
-import { notSuperseded } from './proposalSupersession';
-import { isProposalProfileMember } from './proposalVisibility';
 import { resolveProposalTemplatesByFormSchemaId } from './resolveProposalTemplate';
 import type {
   ListOwnDevelopedProposalsInput,
   OwnDevelopedProposalList,
 } from './schemas/ownDevelopedProposals';
+
+type EntryCursor = { value: string; id: string };
+
+type EntryTotals = Pick<
+  OwnDevelopedProposalList,
+  'total' | 'readyTotal' | 'budgetTotal'
+>;
 
 /**
  * The caller's own developed proposals in the instance's current phase:
@@ -31,11 +41,14 @@ import type {
  * the proposals it was developed from. "Own" is a membership on the proposal's
  * profile (author or co-author), the set that may read a draft.
  *
- * Unpaginated: one author's entries in one phase, a handful in practice.
- * `PAGE_LIMIT.max` caps it in SQL.
+ * Newest first, one cursor page at a time. The counts and the budget total
+ * are aggregated in SQL over every entry the search matches.
  */
 export async function listOwnDevelopedProposals({
   processInstanceId,
+  search,
+  cursor,
+  limit = PAGE_LIMIT.md,
   user,
 }: ListOwnDevelopedProposalsInput & {
   user: AccessUser;
@@ -61,68 +74,69 @@ export async function listOwnDevelopedProposals({
     permissions: { decisions: permission.READ },
   });
 
-  const phaseScope = await getPhaseProposalSqlScope({
+  // Decoded before any early return, so a malformed cursor always throws.
+  const decodedCursor = cursor ? decodeCursor<EntryCursor>(cursor) : undefined;
+
+  const scope = await getOwnDevelopedEntryScope({
     instance,
-    authUserIds: [user.id],
+    processInstanceId,
+    authUserId: user.id,
   });
 
-  if (phaseScope.isEmpty) {
-    return { items: [] };
+  if (scope.isEmpty) {
+    return {
+      items: [],
+      next: null,
+      total: 0,
+      readyTotal: 0,
+      budgetTotal: null,
+    };
   }
 
-  const rows = await db.query.proposals.findMany({
-    where: {
-      processInstanceId,
-      RAW: (table) =>
-        and(
-          activeProposalPredicate(table),
-          notSuperseded({ proposalId: table.id, processInstanceId }),
-          isProposalProfileMember(table, user.id),
-          exists(
-            db
-              .select({ id: proposalRelationships.id })
-              .from(proposalRelationships)
-              .where(
-                and(
-                  eq(proposalRelationships.targetProposalId, table.id),
-                  eq(
-                    proposalRelationships.relationshipType,
-                    ProposalRelationshipType.DEVELOPED,
-                  ),
-                  isNull(proposalRelationships.deletedAt),
-                ),
-              ),
-          ),
-          // Drafts never join a phase, so they match by their creation
-          // window; the rest by phase membership, which drops rejected ones.
-          or(
-            and(
-              eq(table.status, ProposalStatus.DRAFT),
-              phaseScope.buildDraftFilter(table),
-            ),
-            and(
-              phaseEligiblePredicate(table),
-              phaseScope.buildNonDraftFilter(table),
-            ),
-          ),
-        )!,
-    },
-    columns: {
-      id: true,
-      profileId: true,
-      status: true,
-      visibility: true,
-      createdAt: true,
-      proposalData: true,
-      formSchemaId: true,
-    },
-    with: { profile: { columns: { name: true } } },
-    orderBy: { createdAt: 'desc', id: 'desc' },
-    limit: PAGE_LIMIT.max,
-  });
+  const buildWhere = (table: typeof proposals): SQL =>
+    and(scope.buildFilter(table), buildEntrySearchCondition(table, search))!;
+
+  const [rawRows, totals] = await Promise.all([
+    db.query.proposals.findMany({
+      where: {
+        RAW: (table) =>
+          and(
+            buildWhere(table),
+            getCursorCondition({
+              column: table.createdAt,
+              tieBreakerColumn: table.id,
+              cursor: decodedCursor,
+              direction: 'desc',
+            }),
+          )!,
+      },
+      columns: {
+        id: true,
+        profileId: true,
+        status: true,
+        visibility: true,
+        createdAt: true,
+        proposalData: true,
+        formSchemaId: true,
+      },
+      with: { profile: { columns: { name: true } } },
+      orderBy: { createdAt: 'desc', id: 'desc' },
+      // One extra row tells whether a next page exists.
+      limit: limit + 1,
+    }),
+    getEntryTotals(buildWhere),
+  ]);
+
+  const hasMore = rawRows.length > limit;
+  const rows = hasMore ? rawRows.slice(0, limit) : rawRows;
+  const lastRow = rows.at(-1);
+  const next =
+    hasMore && lastRow?.createdAt
+      ? encodeCursor<EntryCursor>({ value: lastRow.createdAt, id: lastRow.id })
+      : null;
 
   if (rows.length === 0) {
-    return { items: [] };
+    return { items: [], next, ...totals };
   }
 
   const [edges, templateFor] = await Promise.all([
@@ -189,5 +203,52 @@ export async function listOwnDevelopedProposals({
           })),
       };
     }),
+    next,
+    ...totals,
+  };
+}
+
+/**
+ * Counts and the budget total over every matching entry, in one aggregate.
+ * The budget is the stored `proposalData.budget`, which autosave keeps
+ * current: a canonical `{ amount, currency }`, or a legacy bare number in USD.
+ */
+async function getEntryTotals(
+  buildWhere: (table: typeof proposals) => SQL,
+): Promise<EntryTotals> {
+  const budget = sql`(${proposals.proposalData}->'budget')`;
+  const amount = sql`(CASE
+    WHEN jsonb_typeof(${budget}->'amount') = 'number' THEN (${budget}->>'amount')::numeric
+    WHEN jsonb_typeof(${budget}) = 'number' THEN (${budget})::text::numeric
+  END)`;
+  const currency = sql`(CASE
+    WHEN jsonb_typeof(${budget}) = 'object' THEN ${budget}->>'currency'
+    ELSE 'USD'
+  END)`;
+
+  const [row] = await db
+    .select({
+      total: sql<number>`count(*)::int`,
+      readyTotal: sql<number>`(count(*) FILTER (WHERE ${proposals.status} <> ${ProposalStatus.DRAFT}))::int`,
+      budgetAmount: sql<
+        string | null
+      >`sum(${amount}) FILTER (WHERE ${amount} > 0)`,
+      budgetCurrency: sql<
+        string | null
+      >`min(${currency}) FILTER (WHERE ${amount} > 0)`,
+      currencyCount: sql<number>`(count(DISTINCT ${currency}) FILTER (WHERE ${amount} > 0))::int`,
+    })
+    .from(proposals)
+    .where(buildWhere(proposals));
+
+  const budgetTotal =
+    row?.budgetAmount != null && row.budgetCurrency && row.currencyCount === 1
+      ? { amount: Number(row.budgetAmount), currency: row.budgetCurrency }
+      : null;
+
+  return {
+    total: row?.total ?? 0,
+    readyTotal: row?.readyTotal ?? 0,
+    budgetTotal,
   };
 }
