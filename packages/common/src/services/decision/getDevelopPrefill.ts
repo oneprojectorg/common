@@ -1,4 +1,4 @@
-import { db } from '@op/db/client';
+import { and, db, eq, inArray } from '@op/db/client';
 import { ProposalReviewState, ProposalStatus } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 import { permission } from 'access-zones';
@@ -19,6 +19,11 @@ import { getProposalDocumentsContent } from './getProposalDocumentsContent';
 import { decisionPermission } from './permissions';
 import { parseProposalData } from './proposalDataSchema';
 import { resolveDocumentFieldValues } from './proposalListPreview';
+import {
+  type ProposalReadContext,
+  getProposalReadContext,
+  isProposalReadable,
+} from './proposalVisibility';
 import { resolveProposalTemplatesByFormSchemaId } from './resolveProposalTemplate';
 import type { DecisionInstanceData } from './schemas/instanceData';
 import { assertInstancePhase } from './utils/instance';
@@ -84,7 +89,7 @@ export const getDevelopPrefill = async ({
     );
   }
 
-  await assertProfileAccess({
+  const decisionRoles = await assertProfileAccess({
     user,
     profileId: instance.profileId,
     permissions: [
@@ -107,6 +112,7 @@ export const getDevelopPrefill = async ({
   const mappingInputs = await loadMappingInputs({
     instance,
     inputs: parsedInputs,
+    readContext: getProposalReadContext({ user, decisionRoles }),
   });
 
   return mapToSchema({
@@ -119,6 +125,7 @@ export const getDevelopPrefill = async ({
 const loadMappingInputs = async ({
   instance,
   inputs,
+  readContext,
 }: {
   instance: {
     id: string;
@@ -126,6 +133,7 @@ const loadMappingInputs = async ({
     instanceData: DecisionInstanceData;
   };
   inputs: DevelopPrefillInput[];
+  readContext: ProposalReadContext;
 }): Promise<MappingInput[]> => {
   if (new Set(inputs.map((input) => input.id)).size !== inputs.length) {
     throw new ValidationError('Each input must be given only once');
@@ -141,11 +149,14 @@ const loadMappingInputs = async ({
   const [proposalRows, reviewRows] = await Promise.all([
     proposalIds.length > 0
       ? db.query.proposals.findMany({
+          // A proposal the caller cannot read is absent, so it 404s below.
           where: {
-            id: { in: proposalIds },
-            processInstanceId: instance.id,
-            deletedAt: { isNull: true },
-            moderationDetachedAt: { isNull: true },
+            RAW: (table) =>
+              and(
+                inArray(table.id, proposalIds),
+                eq(table.processInstanceId, instance.id),
+                isProposalReadable(table, readContext),
+              )!,
           },
           columns: {
             id: true,
