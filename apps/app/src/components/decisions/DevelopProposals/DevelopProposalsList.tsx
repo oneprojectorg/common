@@ -1,33 +1,63 @@
 'use client';
 
+import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { trpc } from '@op/api/client';
-import type { ProcessInstance } from '@op/api/encoders';
-import { PAGE_LIMIT, type Proposal, nextCursor } from '@op/common/client';
+import { ProposalStatus, type ProcessInstance } from '@op/api/encoders';
+import {
+  PAGE_LIMIT,
+  type Proposal,
+  type ProposalWithAggregates,
+  resolveReviewSettings,
+} from '@op/common/client';
 import { logger } from '@op/logging/client';
 import { Button } from '@op/sense/Button';
+import {
+  FooterBar,
+  FooterBarCenter,
+  FooterBarEnd,
+  FooterBarStart,
+} from '@op/sense/FooterBar';
 import { Header3 } from '@op/sense/Header';
 import { Skeleton } from '@op/sense/Skeleton';
+import { Tabs, TabsContent } from '@op/sense/Tabs';
 import { toast } from '@op/sense/Toast';
 import { notFound } from 'next/navigation';
-import { useId, useMemo, useState, useTransition } from 'react';
+import {
+  type ReactNode,
+  Suspense,
+  useMemo,
+  useState,
+  useTransition,
+} from 'react';
+import { LuCircleCheck } from 'react-icons/lu';
 
 import { useRouter, useTranslations } from '@/lib/i18n';
 
-import { Bullet } from '@/components/Bullet';
-
 import { CategoryFilterSelect } from '../CategoryFilterSelect';
+import { ProposalTabList, ProposalTabTrigger } from '../Proposal/ProposalTabs';
+import { ProposalsLoadError } from '../ProposalsLoadError';
+import { ResponsiveSelect } from '../ResponsiveSelect';
+import {
+  ReviewSelectionTable,
+  ReviewSelectionTableSkeleton,
+} from '../ReviewSelection/ReviewSelectionTable';
 import { ALL_CATEGORIES } from '../proposalFilterQuery';
 import { proposalEditHref } from '../proposalHrefs';
 import { DevelopEntriesTable } from './DevelopEntriesTable';
 import { DevelopOriginsTable } from './DevelopOriginsTable';
+import { NoOriginsEmpty } from './NoOriginsEmpty';
+import { PrepareEntryButton } from './PrepareEntryButton';
+
+type DevelopTab = 'proposals' | 'ballot';
+type OriginSort = 'score' | 'newest';
 
 /**
- * The develop screen's body: the previous phase's proposals (the origins),
- * filterable by category, each with a Prepare action that creates an entry in
- * the current phase and opens it in the proposal editor; below them, the
- * entries that exist in the current phase.
+ * The develop screen's body, in two tabs. Proposals lists the previous phase's
+ * proposals (the origins) with their review recommendations, each with a
+ * Prepare action that creates an entry in the current phase and opens it in
+ * the proposal editor. Ballot lists the entries the current phase holds.
  *
- * The two lists are not joined: knowing which origin already has an entry
+ * The two lists are not joined: telling which origin already has an entry
  * takes one relationship read per entry, so Prepare shows on every origin.
  */
 export function DevelopProposalsListSuspense({
@@ -48,49 +78,47 @@ export function DevelopProposalsListSuspense({
     notFound();
   }
 
-  const originsHeadingId = useId();
-  const entriesHeadingId = useId();
+  const [tab, setTab] = useState<DevelopTab>('proposals');
   const [selectedCategory, setSelectedCategory] = useState(ALL_CATEGORIES);
+  const [sort, setSort] = useState<OriginSort>('score');
   // A filter change keeps the current rows on screen while the next ones load,
   // instead of swapping the whole list for its skeleton.
-  const [isFiltering, startFiltering] = useTransition();
+  const [, startFiltering] = useTransition();
   const [isNavigating, startNavigating] = useTransition();
 
-  const originsInput = {
-    processInstanceId,
-    phaseId: originPhaseId,
-    categoryId:
-      selectedCategory === ALL_CATEGORIES ? undefined : selectedCategory,
-    limit: PAGE_LIMIT.lg,
-  };
-  const originsOptions = { getNextPageParam: nextCursor };
+  // Mirrors the server's `canReadPhaseReviews`, which gates the aggregates read.
+  const canReadReviews =
+    Boolean(instance.access?.admin) ||
+    (Boolean(instance.access?.review) &&
+      resolveReviewSettings(instance.instanceData ?? {}, originPhaseId)
+        .openReviews);
 
-  // Starts the origins read alongside the batch below, not after it.
-  trpc.decision.listProposals.usePrefetchInfiniteQuery(originsInput, {
-    ...originsOptions,
-    pages: 1,
-  });
-  const [[{ items: categories }, entriesList]] = trpc.useSuspenseQueries(
-    (q) => [
+  const [[{ items: categories }, originsList, entriesList]] =
+    trpc.useSuspenseQueries((q) => [
       q.decision.getCategories({ processInstanceId }),
+      q.decision.listProposals({
+        processInstanceId,
+        phaseId: originPhaseId,
+        categoryId:
+          selectedCategory === ALL_CATEGORIES ? undefined : selectedCategory,
+        dir: 'desc',
+        limit: PAGE_LIMIT.max,
+      }),
       q.decision.listProposals({
         processInstanceId,
         phaseId: instance.currentStateId ?? undefined,
         limit: PAGE_LIMIT.max,
       }),
-    ],
-  );
-  const [originPages, originsQuery] =
-    trpc.decision.listProposals.useSuspenseInfiniteQuery(
-      originsInput,
-      originsOptions,
-    );
+    ]);
 
-  const origins = useMemo(
-    () => originPages.pages.flatMap((page) => page.items),
-    [originPages.pages],
-  );
-  const originsTotal = originPages.pages[0]?.total ?? 0;
+  const origins = originsList.items;
+  const entries = entriesList.items;
+  const advancingCount = entries.filter(
+    (entry) => entry.status === ProposalStatus.SUBMITTED,
+  ).length;
+  const categoryName = categories.find(
+    (category) => category.id === selectedCategory,
+  )?.name;
 
   const editHref = (proposal: Pick<Proposal, 'profileId'>) =>
     proposalEditHref({
@@ -116,80 +144,134 @@ export function DevelopProposalsListSuspense({
     },
   });
 
-  const handlePrepare = (origin: Proposal) => {
-    createEntry.mutate({
-      processInstanceId,
-      sourceProposalIds: [origin.id],
-      proposalData: {
-        title: origin.profile.name,
-        category: origin.proposalData.category,
-      },
-    });
-  };
-
   const isPreparing = createEntry.isPending || isNavigating;
   const preparingOriginId = isPreparing
     ? (createEntry.variables?.sourceProposalIds[0] ?? null)
     : null;
 
+  const renderPrepare = (origin: Proposal) => (
+    <PrepareEntryButton
+      title={origin.profile.name || t('untitledProposal')}
+      isDisabled={isPreparing}
+      isPreparing={preparingOriginId === origin.id}
+      onPrepare={() =>
+        createEntry.mutate({
+          processInstanceId,
+          sourceProposalIds: [origin.id],
+          proposalData: {
+            title: origin.profile.name,
+            category: origin.proposalData.category,
+          },
+        })
+      }
+    />
+  );
+
   return (
-    <div className="flex flex-col gap-10 pb-20">
-      <section
-        aria-labelledby={originsHeadingId}
+    <div className="flex flex-col gap-6 pb-24">
+      <Tabs
+        value={tab}
+        onValueChange={(value: DevelopTab) => setTab(value)}
         className="flex flex-col gap-6"
       >
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <Header3 id={originsHeadingId}>{t('originsHeading')}</Header3>
-          {categories.length > 0 ? (
-            <CategoryFilterSelect
-              decisionSlug={decisionSlug}
-              categories={categories}
-              selectedCategory={selectedCategory}
-              onSelectCategory={(category) =>
-                startFiltering(() => setSelectedCategory(category))
-              }
+        <ProposalTabList aria-label={t('tabsLabel')}>
+          <ProposalTabTrigger value="proposals">
+            {t('proposalsTab')}
+          </ProposalTabTrigger>
+          <ProposalTabTrigger value="ballot" count={entries.length}>
+            {t('ballotTab')}
+          </ProposalTabTrigger>
+        </ProposalTabList>
+
+        <TabsContent value="proposals" className="flex flex-col gap-6">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div aria-live="polite">
+              <Header3>
+                {categoryName
+                  ? t.rich('originsInCategoryCount', {
+                      count: originsList.total,
+                      category: categoryName,
+                      bdi: (chunks) => <bdi>{chunks}</bdi>,
+                    })
+                  : t('originsCount', { count: originsList.total })}
+              </Header3>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              {categories.length > 0 ? (
+                <CategoryFilterSelect
+                  decisionSlug={decisionSlug}
+                  categories={categories}
+                  selectedCategory={selectedCategory}
+                  onSelectCategory={(category) =>
+                    startFiltering(() => setSelectedCategory(category))
+                  }
+                />
+              ) : null}
+              {canReadReviews ? (
+                <ResponsiveSelect<OriginSort>
+                  selectedKey={sort}
+                  onSelectionChange={setSort}
+                  aria-label={t('sortLabel')}
+                  items={[
+                    { id: 'score', label: t('sortHighestScoreOption') },
+                    { id: 'newest', label: t('sortNewestOption') },
+                  ]}
+                />
+              ) : null}
+            </div>
+          </div>
+
+          {origins.length === 0 ? (
+            <NoOriginsEmpty />
+          ) : canReadReviews ? (
+            <APIErrorBoundary
+              fallbacks={{ default: () => <ProposalsLoadError /> }}
+            >
+              <Suspense
+                fallback={
+                  <ReviewSelectionTableSkeleton
+                    showScore={false}
+                    showBudget={false}
+                  />
+                }
+              >
+                <OriginsWithReviewsSuspense
+                  processInstanceId={processInstanceId}
+                  originPhaseId={originPhaseId}
+                  origins={origins}
+                  sort={sort}
+                  decisionSlug={decisionSlug}
+                  actionLabel={t('actionsColumn')}
+                  renderPrepare={renderPrepare}
+                />
+              </Suspense>
+            </APIErrorBoundary>
+          ) : (
+            <DevelopOriginsTable
+              origins={origins}
+              renderAction={renderPrepare}
             />
-          ) : null}
-        </div>
+          )}
+        </TabsContent>
 
-        <p
-          aria-live="polite"
-          aria-busy={isFiltering || undefined}
-          className="text-sm text-muted-foreground"
-        >
-          {t('originsCount', { count: originsTotal })}
-        </p>
+        <TabsContent value="ballot">
+          <DevelopEntriesTable entries={entries} editHref={editHref} />
+        </TabsContent>
+      </Tabs>
 
-        <DevelopOriginsTable
-          origins={origins}
-          onPrepare={handlePrepare}
-          isPreparing={isPreparing}
-          preparingOriginId={preparingOriginId}
-        />
-
-        {originsQuery.hasNextPage ? (
-          <Button
-            variant="outline"
-            className="self-center"
-            loading={originsQuery.isFetchingNextPage}
-            onClick={() => void originsQuery.fetchNextPage()}
-          >
-            {t('loadMoreOriginsAction')}
-          </Button>
-        ) : null}
-      </section>
-
-      <section
-        aria-labelledby={entriesHeadingId}
-        className="flex flex-col gap-6"
-      >
-        <Header3 id={entriesHeadingId} className="flex items-center gap-2">
-          {t('entriesHeading')}
-          <Bullet />
-          {entriesList.items.length}
-        </Header3>
-        <DevelopEntriesTable entries={entriesList.items} editHref={editHref} />
-      </section>
+      <FooterBar position="fixed" className="bg-muted/95">
+        <FooterBarStart>
+          <p aria-live="polite" className="flex items-center gap-2 text-base">
+            <LuCircleCheck className="size-5 shrink-0" aria-hidden />
+            {t('advancingCount', { count: advancingCount })}
+          </p>
+        </FooterBarStart>
+        <FooterBarCenter />
+        <FooterBarEnd>
+          {/* Confirm is not built yet; the disabled button holds its place. */}
+          <Button disabled>{t('confirmSelectionsAction')}</Button>
+        </FooterBarEnd>
+      </FooterBar>
     </div>
   );
 }
@@ -197,26 +279,77 @@ export function DevelopProposalsListSuspense({
 export function DevelopProposalsListSkeleton() {
   return (
     <div className="flex flex-col gap-6">
+      <div className="flex gap-4 border-b pb-2">
+        <Skeleton className="h-6 w-24" />
+        <Skeleton className="h-6 w-20" />
+      </div>
       <div className="flex items-center justify-between gap-4">
-        <Skeleton className="h-8 w-32" />
-        <Skeleton className="h-10 w-48" />
+        <Skeleton className="h-8 w-48" />
+        <Skeleton className="h-10 w-40" />
       </div>
-      <Skeleton className="h-4 w-24" />
-      <div className="flex w-full flex-col gap-2">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <div
-            key={i}
-            className="flex w-full items-center justify-between gap-4 border-b border-border py-2"
-          >
-            <div className="flex flex-col gap-1">
-              <Skeleton className="h-4 w-40" />
-              <Skeleton className="h-3 w-24" />
-            </div>
-            <Skeleton className="hidden h-4 w-16 md:block" />
-            <Skeleton className="h-8 w-24" />
-          </div>
-        ))}
-      </div>
+      <ReviewSelectionTableSkeleton showScore={false} showBudget={false} />
     </div>
+  );
+}
+
+/**
+ * The origins with their review recommendations. The aggregates are read for
+ * exactly the listed origins: the filtered read is the one a reviewer may make
+ * on a phase with open reviews; the phase-wide read is admin-only.
+ */
+function OriginsWithReviewsSuspense({
+  processInstanceId,
+  originPhaseId,
+  origins,
+  sort,
+  decisionSlug,
+  actionLabel,
+  renderPrepare,
+}: {
+  processInstanceId: string;
+  originPhaseId: string;
+  origins: Proposal[];
+  sort: OriginSort;
+  decisionSlug: string;
+  actionLabel: string;
+  renderPrepare: (origin: Proposal) => ReactNode;
+}) {
+  const [{ items }] = trpc.decision.listWithReviewAggregates.useSuspenseQuery({
+    processInstanceId,
+    phaseId: originPhaseId,
+    proposalIds: origins.map((origin) => origin.id),
+  });
+
+  // The aggregates come back as one list for the loaded origins, so sorting
+  // them here orders everything the table shows.
+  const sorted = useMemo(() => sortOrigins(items, sort), [items, sort]);
+
+  return (
+    <ReviewSelectionTable
+      items={sorted}
+      totalPoints={0}
+      showScore={false}
+      showBudget={false}
+      showCategory={false}
+      decisionSlug={decisionSlug}
+      action={{
+        label: actionLabel,
+        render: (item) => renderPrepare(item.proposal),
+      }}
+    />
+  );
+}
+
+function sortOrigins(
+  items: ProposalWithAggregates[],
+  sort: OriginSort,
+): ProposalWithAggregates[] {
+  const byNewest = (a: ProposalWithAggregates, b: ProposalWithAggregates) =>
+    (b.proposal.createdAt ?? '').localeCompare(a.proposal.createdAt ?? '');
+
+  return [...items].sort((a, b) =>
+    sort === 'score'
+      ? b.aggregates.averageScore - a.aggregates.averageScore || byNewest(a, b)
+      : byNewest(a, b),
   );
 }

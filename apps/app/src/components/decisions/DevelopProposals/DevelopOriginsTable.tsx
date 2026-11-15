@@ -1,8 +1,6 @@
 'use client';
 
-import { formatCurrency } from '@/utils/formatting';
 import type { Proposal } from '@op/common/client';
-import { Button } from '@op/sense/Button';
 import {
   Table,
   TableBody,
@@ -12,41 +10,28 @@ import {
   TableRow,
   TableRowHeader,
 } from '@op/sense/Table';
+import type { ReactNode } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { SelectionCategoryChips } from '../selection/SelectionCategoryChips';
-import { NoOriginsEmpty } from './NoOriginsEmpty';
-
 /**
- * The previous phase's proposals on the develop screen, each with a Prepare
- * action that turns it into an entry of the current phase.
+ * The origins without review aggregates, for a caller who cannot read the
+ * previous phase's reviews: name and submitter, then the row's action.
  */
 export function DevelopOriginsTable({
   origins,
-  onPrepare,
-  isPreparing,
-  preparingOriginId,
+  renderAction,
 }: {
   origins: Proposal[];
-  onPrepare: (origin: Proposal) => void;
-  /** An entry is being created or opened; every Prepare waits for it. */
-  isPreparing: boolean;
-  /** The origin whose entry is being created, which shows the spinner. */
-  preparingOriginId: string | null;
+  renderAction: (origin: Proposal) => ReactNode;
 }) {
   const t = useTranslations('decisions.develop');
-
-  if (origins.length === 0) {
-    return <NoOriginsEmpty />;
-  }
 
   return (
     <Table aria-label={t('originsTableLabel')}>
       <TableHeader>
         <TableRow>
-          <TableHead scope="col">{t('proposalColumn')}</TableHead>
-          <TableHead scope="col">{t('budgetColumn')}</TableHead>
+          <TableHead scope="col">{t('nameColumn')}</TableHead>
           <TableHead scope="col" className="w-32">
             <span className="sr-only">{t('actionsColumn')}</span>
           </TableHead>
@@ -54,9 +39,7 @@ export function DevelopOriginsTable({
       </TableHeader>
       <TableBody>
         {origins.map((origin) => {
-          const title = origin.profile.name || t('untitledProposal');
           const submitterName = origin.submittedBy?.name ?? null;
-          const budget = origin.proposalData.budget;
 
           return (
             <TableRow key={origin.id}>
@@ -66,7 +49,7 @@ export function DevelopOriginsTable({
                     dir="auto"
                     className="line-clamp-1 text-base text-foreground ltr:text-left rtl:text-right"
                   >
-                    {title}
+                    {origin.profile.name || t('untitledProposal')}
                   </span>
                   {submitterName ? (
                     <span
@@ -76,31 +59,9 @@ export function DevelopOriginsTable({
                       {submitterName}
                     </span>
                   ) : null}
-                  <SelectionCategoryChips
-                    labels={origin.proposalData.category}
-                  />
                 </div>
               </TableRowHeader>
-              <TableCell>
-                <span className="text-base">
-                  {budget
-                    ? formatCurrency(budget.amount, undefined, budget.currency)
-                    : '—'}
-                </span>
-              </TableCell>
-              <TableCell>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-28"
-                  aria-label={t('prepareEntryLabel', { title })}
-                  disabled={isPreparing}
-                  loading={preparingOriginId === origin.id}
-                  onClick={() => onPrepare(origin)}
-                >
-                  {t('prepareEntryAction')}
-                </Button>
-              </TableCell>
+              <TableCell>{renderAction(origin)}</TableCell>
             </TableRow>
           );
         })}

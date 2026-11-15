@@ -22,20 +22,13 @@ vi.mock('@op/api/client', () => ({
       },
     }),
     useSuspenseQueries: () => [
-      [{ items: [] }, { items: entries, total: entries.length, next: null }],
+      [
+        { items: [] },
+        { items: origins, total: origins.length, next: null },
+        { items: entries, total: entries.length, next: null },
+      ],
     ],
     decision: {
-      listProposals: {
-        usePrefetchInfiniteQuery: () => undefined,
-        useSuspenseInfiniteQuery: () => [
-          { pages: [{ items: origins, total: origins.length, next: null }] },
-          {
-            hasNextPage: false,
-            isFetchingNextPage: false,
-            fetchNextPage: vi.fn(),
-          },
-        ],
-      },
       createDevelopedProposal: {
         useMutation: () => ({ mutate, isPending: false, variables: undefined }),
       },
@@ -120,7 +113,7 @@ describe('DevelopProposalsPage', () => {
     vi.clearAllMocks();
   });
 
-  it('lists the previous phase proposals with their submitter, category and count', () => {
+  it('lists the previous phase proposals with their submitter and count', () => {
     origins = [
       buildProposal({ id: 'a', title: 'Fix the park', category: ['Parks'] }),
       buildProposal({ id: 'b', title: 'Paint the school' }),
@@ -129,7 +122,6 @@ describe('DevelopProposalsPage', () => {
 
     expect(screen.getByText('Fix the park')).toBeTruthy();
     expect(screen.getByText('Author of Fix the park')).toBeTruthy();
-    expect(screen.getByText('Parks')).toBeTruthy();
     expect(screen.getByText('Paint the school')).toBeTruthy();
     expect(screen.getByText('2 proposals')).toBeTruthy();
   });
@@ -158,7 +150,6 @@ describe('DevelopProposalsPage', () => {
 
     expect(screen.getByText('No proposals to develop')).toBeTruthy();
     expect(screen.getByText('0 proposals')).toBeTruthy();
-    expect(screen.getByText('No entries yet')).toBeTruthy();
   });
 
   it('lists the entries of the current phase with their status and editor link', () => {
@@ -167,6 +158,7 @@ describe('DevelopProposalsPage', () => {
       buildProposal({ id: 'e2', title: 'School entry' }),
     ];
     renderPage();
+    fireEvent.click(screen.getByRole('tab', { name: /Ballot/ }));
 
     expect(screen.getByText('Draft')).toBeTruthy();
     expect(screen.getByText('Submitted')).toBeTruthy();

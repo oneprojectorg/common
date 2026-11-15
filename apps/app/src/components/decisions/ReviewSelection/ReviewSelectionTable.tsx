@@ -21,6 +21,7 @@ import {
 } from '@op/sense/Table';
 import { cn } from '@op/sense/lib/utils';
 import { screens } from '@op/styles/constants';
+import type { ReactNode } from 'react';
 import { LuRefreshCcw } from 'react-icons/lu';
 
 import { Link, useTranslations } from '@/lib/i18n';
@@ -30,35 +31,77 @@ import { ProposalRowMenu } from '../selection/ProposalRowMenu';
 import { SelectionCard } from '../selection/SelectionCard';
 import { SelectionCategoryChips } from '../selection/SelectionCategoryChips';
 
+/** The control each row ends with, in place of the Advance toggle. */
+export interface ReviewSelectionRowAction {
+  /** Names the action column for screen readers. */
+  label: string;
+  render: (item: ProposalWithAggregates) => ReactNode;
+}
+
+/**
+ * Each row ends either with the Advance toggle and the proposal menu, or with
+ * a caller's own action, which replaces both.
+ */
+type RowActionProps =
+  | {
+      onAdvance: (proposalId: string) => void;
+      advancingIds: ReadonlySet<string>;
+      action?: undefined;
+    }
+  | {
+      action: ReviewSelectionRowAction;
+      onAdvance?: undefined;
+      advancingIds?: undefined;
+    };
+
 const RECOMMENDATION_INTENT: Record<RecommendationValue, StatusDotIntent> = {
   yes: 'success',
   maybe: 'warning',
   no: 'danger',
 };
 
+const NO_IDS: ReadonlySet<string> = new Set();
+
 export function ReviewSelectionTable({
   items,
   totalPoints,
   showScore,
   onAdvance,
-  advancingIds,
+  advancingIds = NO_IDS,
+  action,
   decisionSlug,
   showBudget,
-}: {
+  showCategory = true,
+}: RowActionProps & {
   items: ProposalWithAggregates[];
   /** Maximum possible score from the rubric, e.g. 50 → header reads "Score (50pts)". */
   totalPoints: number;
   /** Rubrics without scored criteria always aggregate to 0, so hide the column. */
   showScore: boolean;
-  onAdvance: (proposalId: string) => void;
-  advancingIds: ReadonlySet<string>;
   /** Decision profile slug used to build per-proposal review summary links. */
   decisionSlug: string;
   /** Show the budget column. False when the proposal template collects no budget. */
   showBudget: boolean;
+  /** Show the category column. False where the list is already per category. */
+  showCategory?: boolean;
 }) {
   const t = useTranslations();
   const isMobile = useMediaQuery(`(max-width: ${screens.md})`);
+
+  const renderAction = (item: ProposalWithAggregates, className?: string) =>
+    action ? (
+      action.render(item)
+    ) : (
+      <AdvanceToggleButton
+        isSelected={advancingIds.has(item.proposal.id)}
+        onPress={() => onAdvance?.(item.proposal.id)}
+        title={
+          item.proposal.profile.name ||
+          t('decisions.proposals.untitledProposal')
+        }
+        className={className}
+      />
+    );
 
   if (isMobile) {
     return (
@@ -74,7 +117,7 @@ export function ReviewSelectionTable({
                 item={item}
                 advancing={advancing}
                 showScore={showScore}
-                onAdvance={() => onAdvance(item.proposal.id)}
+                action={renderAction(item)}
                 decisionSlug={decisionSlug}
                 showBudget={showBudget}
               />
@@ -95,7 +138,9 @@ export function ReviewSelectionTable({
           {showBudget ? (
             <TableHead scope="col">{t('decisions.budgetLabel')}</TableHead>
           ) : null}
-          <TableHead scope="col">{t('decisions.categoryLabel')}</TableHead>
+          {showCategory ? (
+            <TableHead scope="col">{t('decisions.categoryLabel')}</TableHead>
+          ) : null}
           <TableHead scope="col">
             {t('decisions.review.overallRecommendationLabel')}
           </TableHead>
@@ -107,13 +152,17 @@ export function ReviewSelectionTable({
             </TableHead>
           )}
           <TableHead scope="col" className="w-28">
-            <span className="sr-only">{t('decisions.advanceAction')}</span>
-          </TableHead>
-          <TableHead scope="col" className="w-11">
             <span className="sr-only">
-              {t('decisions.proposals.proposalOptionsLabel')}
+              {action ? action.label : t('decisions.advanceAction')}
             </span>
           </TableHead>
+          {action ? null : (
+            <TableHead scope="col" className="w-11">
+              <span className="sr-only">
+                {t('decisions.proposals.proposalOptionsLabel')}
+              </span>
+            </TableHead>
+          )}
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -167,11 +216,13 @@ export function ReviewSelectionTable({
                   </span>
                 </TableCell>
               ) : null}
-              <TableCell>
-                <SelectionCategoryChips
-                  labels={item.categories.map((c) => c.label)}
-                />
-              </TableCell>
+              {showCategory ? (
+                <TableCell>
+                  <SelectionCategoryChips
+                    labels={item.categories.map((c) => c.label)}
+                  />
+                </TableCell>
+              ) : null}
               <TableCell>
                 <RecommendationCounts
                   counts={item.aggregates.overallRecommendationCount}
@@ -184,21 +235,16 @@ export function ReviewSelectionTable({
                   </span>
                 </TableCell>
               )}
-              <TableCell>
-                <AdvanceToggleButton
-                  isSelected={advancing}
-                  onPress={() => onAdvance(item.proposal.id)}
-                  title={title}
-                  className="w-28 justify-center"
-                />
-              </TableCell>
-              <TableCell>
-                <ProposalRowMenu
-                  proposal={item.proposal}
-                  proposalHref={`/decisions/${decisionSlug}/proposal/${item.proposal.profileId}`}
-                  isSelected={advancing}
-                />
-              </TableCell>
+              <TableCell>{renderAction(item, 'w-28 justify-center')}</TableCell>
+              {action ? null : (
+                <TableCell>
+                  <ProposalRowMenu
+                    proposal={item.proposal}
+                    proposalHref={`/decisions/${decisionSlug}/proposal/${item.proposal.profileId}`}
+                    isSelected={advancing}
+                  />
+                </TableCell>
+              )}
             </TableRow>
           );
         })}
@@ -252,14 +298,15 @@ function ProposalCard({
   item,
   advancing,
   showScore,
-  onAdvance,
+  action,
   decisionSlug,
   showBudget,
 }: {
   item: ProposalWithAggregates;
   advancing: boolean;
   showScore: boolean;
-  onAdvance: () => void;
+  /** The row's trailing control: the Advance toggle or a caller's action. */
+  action: ReactNode;
   decisionSlug: string;
   showBudget: boolean;
 }) {
@@ -313,11 +360,7 @@ function ProposalCard({
             <ScoreText value={item.aggregates.averageScore} />
           </span>
         )}
-        <AdvanceToggleButton
-          isSelected={advancing}
-          onPress={onAdvance}
-          title={title}
-        />
+        {action}
       </div>
     </SelectionCard>
   );
