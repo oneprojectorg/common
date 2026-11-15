@@ -7,7 +7,9 @@ import { trpc } from '@op/api/client';
 import type { ProcessInstance } from '@op/api/encoders';
 import {
   type Proposal,
+  getInstanceCurrentPhase,
   getProposalFragmentNames,
+  isDevelopPhase,
   parseProposalData,
 } from '@op/common/client';
 import { APP_NAME } from '@op/core';
@@ -29,11 +31,13 @@ import {
   ReviewNotesProvider,
 } from '@/components/decisions/ReviewNotesContext';
 import { ReviewNotesPanel } from '@/components/decisions/ReviewNotesPanel';
+import { DevelopedEntryRoute } from '@/components/decisions/entryEditor/DevelopedEntryRoute';
 import { getProposalAffordances } from '@/components/decisions/getProposalAffordances';
 import { ProposalEditor } from '@/components/decisions/proposalEditor';
 import { VersionPreviewProvider } from '@/components/decisions/proposalEditor/VersionPreviewContext';
 import { useOptionalVersionPreview } from '@/components/decisions/proposalEditor/VersionPreviewContext';
 import { ProposalVersionsAside } from '@/components/decisions/proposalEditor/asides/ProposalVersionsAside';
+import { getProposalEditorTemplate } from '@/components/decisions/proposalEditor/getProposalEditorTemplate';
 import {
   type ProposalEditorAside,
   type ProposalEditorAsideState,
@@ -62,9 +66,42 @@ export default function EditProposalPage() {
   // letting them bubble to error.tsx as a 500.
   return (
     <ResourceErrorBoundary>
-      <EditProposalPageContent />
+      <EditProposalRoute />
     </ResourceErrorBoundary>
   );
+}
+
+/**
+ * In a develop phase, an entry (a proposal developed from origins) opens in the
+ * entry editor. Every other proposal opens in the proposal editor. The reads
+ * are the ones `EditProposalPageContent` makes, so they cost no extra request.
+ */
+function EditProposalRoute() {
+  const { profileId, slug } = useParams<{
+    profileId: string;
+    slug: string;
+  }>();
+
+  const [[decisionProfile, proposal]] = trpc.useSuspenseQueries((t) => [
+    t.decision.getDecisionBySlug({ slug }),
+    t.decision.getProposal({ profileId }),
+  ]);
+
+  const instance = decisionProfile?.processInstance;
+  const currentPhase = instance ? getInstanceCurrentPhase(instance) : null;
+
+  if (instance && proposal && currentPhase && isDevelopPhase(currentPhase)) {
+    return (
+      <DevelopedEntryRoute
+        instance={instance}
+        proposal={proposal}
+        decisionSlug={slug}
+        fallback={<EditProposalPageContent />}
+      />
+    );
+  }
+
+  return <EditProposalPageContent />;
 }
 
 function EditProposalPageContent() {
@@ -113,7 +150,10 @@ function EditProposalPageContent() {
     !!user.currentProfile?.id &&
     proposal.submittedBy?.id === user.currentProfile.id;
 
-  const proposalTemplate = instance.instanceData.proposalTemplate;
+  const proposalTemplate = getProposalEditorTemplate({
+    proposal,
+    instanceTemplate: instance.instanceData.proposalTemplate,
+  });
 
   const fragmentNames = useMemo(
     () => (proposalTemplate ? getProposalFragmentNames(proposalTemplate) : []),

@@ -1661,6 +1661,23 @@
     "reviewsCompleteBadge": "REVISÕES CONCLUÍDAS",
     "confirmWinnersHeading": "Confirme as propostas vencedoras",
     "developEntriesHeading": "Desenvolver entradas",
+    "entryEditor": {
+      "heading": "Entrada da cédula",
+      "intro": "Antes que esta proposta possa avançar, ela precisa de um título, uma descrição aprovada e um orçamento.",
+      "advanceAction": "Avançar",
+      "proposalTab": "Proposta",
+      "entryTab": "Entrada",
+      "originSectionsLabel": "Seções da proposta",
+      "originSelectLabel": "Proposta de origem",
+      "noReviews": "Ainda não há avaliações para esta proposta.",
+      "savingStatus": "Salvando…",
+      "savedStatus": "Salvo",
+      "notReadyTitle": "A entrada não está pronta para avançar",
+      "notReadyDescription": "Preencha os campos que faltam.",
+      "advancedTitle": "Avançando",
+      "advancedDescription": "“{title}” vai entrar na cédula.",
+      "readOnlyNotice": "Esta entrada foi enviada. A edição está fechada nesta fase."
+    },
     "develop": {
       "heroDescription": "Prepare uma entrada para esta fase a partir de cada proposta da fase anterior.",
       "originsCount": "{count, plural, one {# proposta} other {# propostas}}",

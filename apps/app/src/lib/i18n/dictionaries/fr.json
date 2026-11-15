@@ -1661,6 +1661,23 @@
     "reviewsCompleteBadge": "EXAMENS TERMINÉS",
     "confirmWinnersHeading": "Confirmez les propositions gagnantes",
     "developEntriesHeading": "Développer les contributions",
+    "entryEditor": {
+      "heading": "Entrée du bulletin",
+      "intro": "Avant que cette proposition puisse avancer, elle doit avoir un titre, une description approuvée et un budget.",
+      "advanceAction": "Faire avancer",
+      "proposalTab": "Proposition",
+      "entryTab": "Entrée",
+      "originSectionsLabel": "Sections de la proposition",
+      "originSelectLabel": "Proposition d’origine",
+      "noReviews": "Aucune évaluation pour cette proposition pour l’instant.",
+      "savingStatus": "Enregistrement…",
+      "savedStatus": "Enregistré",
+      "notReadyTitle": "L’entrée n’est pas prête à avancer",
+      "notReadyDescription": "Remplissez les champs manquants.",
+      "advancedTitle": "En cours d’avancement",
+      "advancedDescription": "« {title} » figurera sur le bulletin.",
+      "readOnlyNotice": "Cette entrée est soumise. La modification est fermée pendant cette phase."
+    },
     "develop": {
       "heroDescription": "Préparez une entrée pour cette phase à partir de chaque proposition de la phase précédente.",
       "originsCount": "{count, plural, one {# proposition} other {# propositions}}",

@@ -18,6 +18,8 @@ interface CollaborativeBudgetFieldProps {
   required?: boolean;
   minAmount?: number;
   maxAmount?: number;
+  /** A validation message; marks the input invalid. */
+  error?: string;
   initialValue?: BudgetData | null;
   onChange?: (budget: BudgetData | null) => void;
 }
@@ -36,6 +38,7 @@ export function CollaborativeBudgetField({
   required = false,
   minAmount,
   maxAmount,
+  error,
   initialValue = null,
   onChange,
 }: CollaborativeBudgetFieldProps) {
@@ -107,6 +110,8 @@ export function CollaborativeBudgetField({
       maxValue={maxAmount}
       prefixText={currencySymbol}
       placeholder={placeholderText}
+      errorMessage={error}
+      data-testid="field-budget"
       // Figma: half the 544 column (272px = 17rem).
       className="w-full gap-2 sm:max-w-68"
     />

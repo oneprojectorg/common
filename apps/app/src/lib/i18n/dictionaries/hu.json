@@ -1661,6 +1661,23 @@
     "reviewsCompleteBadge": "AZ ÉRTÉKELÉSEK ELKÉSZÜLTEK",
     "confirmWinnersHeading": "Erősítse meg a nyertes javaslatokat",
     "developEntriesHeading": "Bejegyzések kidolgozása",
+    "entryEditor": {
+      "heading": "Szavazólap-bejegyzés",
+      "intro": "Mielőtt ez a javaslat továbbléphet, szüksége van egy címre, egy jóváhagyott leírásra és egy költségvetésre.",
+      "advanceAction": "Továbbléptetés",
+      "proposalTab": "Javaslat",
+      "entryTab": "Bejegyzés",
+      "originSectionsLabel": "A javaslat részei",
+      "originSelectLabel": "Eredeti javaslat",
+      "noReviews": "Ehhez a javaslathoz még nincs értékelés.",
+      "savingStatus": "Mentés…",
+      "savedStatus": "Mentve",
+      "notReadyTitle": "A bejegyzés még nem léptethető tovább",
+      "notReadyDescription": "Töltse ki a hiányzó mezőket.",
+      "advancedTitle": "Továbblép",
+      "advancedDescription": "„{title}” felkerül a szavazólapra.",
+      "readOnlyNotice": "Ez a bejegyzés be van küldve. Ebben a szakaszban a szerkesztés lezárult."
+    },
     "develop": {
       "heroDescription": "Készíts elő egy bejegyzést ehhez a szakaszhoz az előző szakasz minden javaslatából.",
       "originsCount": "{count, plural, one {# javaslat} other {# javaslat}}",

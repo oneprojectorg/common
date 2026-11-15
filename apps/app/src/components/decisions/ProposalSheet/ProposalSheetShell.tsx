@@ -18,10 +18,9 @@ import { LuExpand, LuTriangleAlert, LuX } from 'react-icons/lu';
 import { useTranslations } from '@/lib/i18n';
 
 import { ButtonLink } from '../../ButtonLink';
-import { ProposalProvider } from '../Proposal/proposalContext';
+import { ProposalQueryProvider } from '../Proposal/ProposalQueryProvider';
 import { ReportProposalDialog } from '../ReportProposalDialog';
 import { decisionRootHref, proposalHref } from '../proposalHrefs';
-import { useLiveProposalDocument } from '../useLiveProposalDocument';
 import { ProposalSheetStateContext } from './proposalSheetState';
 
 export function ProposalSheetShell({ children }: { children: ReactNode }) {
@@ -108,44 +107,19 @@ export function ProposalSheetShell({ children }: { children: ReactNode }) {
                 </ScrollRegion>
               }
             >
-              <SheetProposalProvider
+              <ProposalQueryProvider
                 profileId={shownProfileId}
                 decisionRoot={decisionRootHref(state.route)}
               >
                 <ScrollRegion>
                   <div className="px-4 py-6 sm:px-8 sm:py-8">{children}</div>
                 </ScrollRegion>
-              </SheetProposalProvider>
+              </ProposalQueryProvider>
             </Suspense>
           </APIErrorBoundary>
         ) : null}
       </SheetContent>
     </Sheet>
-  );
-}
-
-function SheetProposalProvider({
-  profileId,
-  decisionRoot,
-  children,
-}: {
-  profileId: string;
-  decisionRoot: string;
-  children: ReactNode;
-}) {
-  const [initialProposal] = trpc.decision.getProposal.useSuspenseQuery({
-    profileId,
-  });
-  const { proposal, documentState } = useLiveProposalDocument(initialProposal);
-
-  return (
-    <ProposalProvider
-      proposal={proposal}
-      decisionRoot={decisionRoot}
-      documentState={documentState}
-    >
-      {children}
-    </ProposalProvider>
   );
 }
 

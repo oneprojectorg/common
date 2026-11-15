@@ -1661,6 +1661,23 @@
     "reviewsCompleteBadge": "REVISIONES COMPLETADAS",
     "confirmWinnersHeading": "Confirma las propuestas ganadoras",
     "developEntriesHeading": "Desarrollar entradas",
+    "entryEditor": {
+      "heading": "Entrada de la papeleta",
+      "intro": "Antes de que esta propuesta pueda avanzar, necesita un título, una descripción aprobada y un presupuesto.",
+      "advanceAction": "Avanzar",
+      "proposalTab": "Propuesta",
+      "entryTab": "Entrada",
+      "originSectionsLabel": "Secciones de la propuesta",
+      "originSelectLabel": "Propuesta de origen",
+      "noReviews": "Esta propuesta aún no tiene revisiones.",
+      "savingStatus": "Guardando…",
+      "savedStatus": "Guardado",
+      "notReadyTitle": "La entrada no está lista para avanzar",
+      "notReadyDescription": "Completa los campos que faltan.",
+      "advancedTitle": "Avanzando",
+      "advancedDescription": "“{title}” irá en la papeleta.",
+      "readOnlyNotice": "Esta entrada está enviada. La edición está cerrada en esta fase."
+    },
     "develop": {
       "heroDescription": "Prepara una entrada para esta fase a partir de cada propuesta de la fase anterior.",
       "originsCount": "{count, plural, one {# propuesta} other {# propuestas}}",

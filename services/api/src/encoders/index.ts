@@ -25,6 +25,7 @@ export {
   JoinProfileRequestStatus,
   ProcessStatus,
   ProfileRelationshipType,
+  ProposalRelationshipType,
   ProposalStatus,
   Visibility,
 } from '@op/db/schema';

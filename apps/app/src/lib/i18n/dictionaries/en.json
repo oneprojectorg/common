@@ -1661,6 +1661,23 @@
     "reviewsCompleteBadge": "REVIEWS COMPLETE",
     "confirmWinnersHeading": "Confirm the winning proposals",
     "developEntriesHeading": "Develop entries",
+    "entryEditor": {
+      "heading": "Ballot Entry",
+      "intro": "Before this proposal can advance, it needs a title, an approved description, and a budget.",
+      "advanceAction": "Advance",
+      "proposalTab": "Proposal",
+      "entryTab": "Entry",
+      "originSectionsLabel": "Proposal sections",
+      "originSelectLabel": "Origin proposal",
+      "noReviews": "No reviews for this proposal yet.",
+      "savingStatus": "Saving…",
+      "savedStatus": "Saved",
+      "notReadyTitle": "The entry is not ready to advance",
+      "notReadyDescription": "Fill in the missing fields.",
+      "advancedTitle": "Advancing",
+      "advancedDescription": "“{title}” is set to go on the ballot.",
+      "readOnlyNotice": "This entry is submitted. Editing is closed in this phase."
+    },
     "develop": {
       "heroDescription": "Prepare an entry for this phase from each proposal of the last phase.",
       "originsCount": "{count, plural, one {# proposal} other {# proposals}}",

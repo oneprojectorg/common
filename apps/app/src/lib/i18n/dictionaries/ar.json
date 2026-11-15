@@ -1661,6 +1661,23 @@
     "reviewsCompleteBadge": "اكتملت المراجعات",
     "confirmWinnersHeading": "تأكيد المقترحات الفائزة",
     "developEntriesHeading": "تطوير المدخلات",
+    "entryEditor": {
+      "heading": "مُدخل ورقة الاقتراع",
+      "intro": "قبل أن يتقدّم هذا الاقتراح، يحتاج إلى عنوان ووصف مُعتمد وميزانية.",
+      "advanceAction": "تقديم إلى المرحلة التالية",
+      "proposalTab": "الاقتراح",
+      "entryTab": "المُدخل",
+      "originSectionsLabel": "أقسام الاقتراح",
+      "originSelectLabel": "الاقتراح الأصلي",
+      "noReviews": "لا توجد مراجعات لهذا الاقتراح بعد.",
+      "savingStatus": "جارٍ الحفظ…",
+      "savedStatus": "تم الحفظ",
+      "notReadyTitle": "المُدخل غير جاهز للتقدّم",
+      "notReadyDescription": "املأ الحقول الناقصة.",
+      "advancedTitle": "يتقدّم",
+      "advancedDescription": "سيُدرج «{title}» في ورقة الاقتراع.",
+      "readOnlyNotice": "تم تقديم هذا المُدخل. التعديل مغلق في هذه المرحلة."
+    },
     "develop": {
       "heroDescription": "جهّز مُدخلًا لهذه المرحلة من كل مقترح في المرحلة السابقة.",
       "originsCount": "{count, plural, zero {لا مقترحات} one {مقترح واحد} two {مقترحان} few {# مقترحات} many {# مقترحًا} other {# مقترح}}",

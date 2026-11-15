@@ -1661,6 +1661,23 @@
     "reviewsCompleteBadge": "পর্যালোচনা সম্পূর্ণ",
     "confirmWinnersHeading": "বিজয়ী প্রস্তাবগুলি নিশ্চিত করুন",
     "developEntriesHeading": "এন্ট্রি তৈরি করুন",
+    "entryEditor": {
+      "heading": "ব্যালট এন্ট্রি",
+      "intro": "এই প্রস্তাবটি এগোনোর আগে এর একটি শিরোনাম, একটি অনুমোদিত বিবরণ এবং একটি বাজেট দরকার।",
+      "advanceAction": "এগিয়ে নিন",
+      "proposalTab": "প্রস্তাব",
+      "entryTab": "এন্ট্রি",
+      "originSectionsLabel": "প্রস্তাবের অংশ",
+      "originSelectLabel": "মূল প্রস্তাব",
+      "noReviews": "এই প্রস্তাবের এখনও কোনো পর্যালোচনা নেই।",
+      "savingStatus": "সংরক্ষণ করা হচ্ছে…",
+      "savedStatus": "সংরক্ষিত",
+      "notReadyTitle": "এন্ট্রিটি এগোনোর জন্য প্রস্তুত নয়",
+      "notReadyDescription": "অনুপস্থিত ঘরগুলো পূরণ করুন।",
+      "advancedTitle": "এগোচ্ছে",
+      "advancedDescription": "“{title}” ব্যালটে যাবে।",
+      "readOnlyNotice": "এই এন্ট্রি জমা দেওয়া হয়েছে। এই পর্যায়ে সম্পাদনা বন্ধ।"
+    },
     "develop": {
       "heroDescription": "আগের পর্বের প্রতিটি প্রস্তাব থেকে এই পর্বের জন্য একটি এন্ট্রি প্রস্তুত করুন।",
       "originsCount": "{count, plural, one {#টি প্রস্তাব} other {#টি প্রস্তাব}}",
