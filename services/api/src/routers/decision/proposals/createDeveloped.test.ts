@@ -1,3 +1,4 @@
+import { getInstancePhases } from '@op/common';
 import {
   TEST_PERMISSION_BITS,
   TestDecisionsDataManager,
@@ -20,12 +21,46 @@ import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
 import {
+  entrySchema,
+  insertFormSchema,
+} from '../../../test/helpers/formSchemaTestUtils';
+import {
   createIsolatedSession,
   createTestContextWithSession,
 } from '../../../test/supabase-utils';
 import { createCallerFactory } from '../../../trpcFactory';
 
 const createCaller = createCallerFactory(appRouter);
+
+/** Writes `formSchemaId` on the develop phase, as the setup script does. */
+const pointDevelopPhaseAt = async (
+  instanceId: string,
+  formSchemaId: string,
+) => {
+  const instance = await db.query.processInstances.findFirst({
+    where: { id: instanceId },
+    columns: { instanceData: true },
+  });
+  const instanceData = instance?.instanceData;
+  if (instanceData === null || typeof instanceData !== 'object') {
+    throw new Error(`Instance ${instanceId} has no instanceData`);
+  }
+  const phases = getInstancePhases(instanceData).map((phase) =>
+    phase.phaseId === 'final' ? { ...phase, formSchemaId } : phase,
+  );
+  await db
+    .update(processInstances)
+    .set({ instanceData: { ...instanceData, phases } })
+    .where(eq(processInstances.id, instanceId));
+};
+
+const readFormSchemaId = async (proposalId: string) => {
+  const row = await db.query.proposals.findFirst({
+    where: { id: proposalId },
+    columns: { formSchemaId: true },
+  });
+  return row?.formSchemaId;
+};
 
 async function createAuthenticatedCaller(email: string) {
   const { session } = await createIsolatedSession(email);
@@ -473,5 +508,87 @@ describe.concurrent('createDevelopedProposal', () => {
     await expect(readDevelopedSourceIds(second.id)).resolves.toEqual([
       source.id,
     ]);
+  });
+
+  it('gives the draft the form schema row the develop phase points at', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instanceId, source } = await createDevelopPhaseSetup({
+      testData,
+    });
+    const row = await insertFormSchema({
+      processInstanceId: instanceId,
+      name: 'Ballot entry',
+      schema: entrySchema,
+    });
+    await pointDevelopPhaseAt(instanceId, row.id);
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const draft = await caller.decision.createDevelopedProposal({
+      processInstanceId: instanceId,
+      sourceProposalIds: [source.id],
+      proposalData: { title: 'Developed' },
+    });
+    testData.trackProfileForCleanup(draft.profileId);
+
+    await expect(readFormSchemaId(draft.id)).resolves.toBe(row.id);
+    const read = await caller.decision.getProposal({
+      profileId: draft.profileId,
+    });
+    expect(read.formSchemaId).toBe(row.id);
+    expect(read.proposalTemplate).toEqual(entrySchema);
+  });
+
+  it('leaves the form schema empty when the develop phase has no pointer', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instanceId, source } = await createDevelopPhaseSetup({
+      testData,
+    });
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const draft = await caller.decision.createDevelopedProposal({
+      processInstanceId: instanceId,
+      sourceProposalIds: [source.id],
+      proposalData: { title: 'Developed' },
+    });
+    testData.trackProfileForCleanup(draft.profileId);
+
+    await expect(readFormSchemaId(draft.id)).resolves.toBeNull();
+  });
+
+  it('refuses before the insert when the phase points at a missing form schema row', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instanceId, source } = await createDevelopPhaseSetup({
+      testData,
+    });
+    const missingId = crypto.randomUUID();
+    await pointDevelopPhaseAt(instanceId, missingId);
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    await expect(
+      caller.decision.createDevelopedProposal({
+        processInstanceId: instanceId,
+        sourceProposalIds: [source.id],
+        proposalData: { title: 'Refused' },
+      }),
+    ).rejects.toMatchObject({
+      cause: {
+        name: 'NotFoundError',
+        message: `Form schema with ID '${missingId}' not found.`,
+      },
+    });
+    const instanceProposals = await db.query.proposals.findMany({
+      where: { processInstanceId: instanceId },
+      columns: { id: true },
+    });
+    expect(instanceProposals).toEqual([{ id: source.id }]);
   });
 });

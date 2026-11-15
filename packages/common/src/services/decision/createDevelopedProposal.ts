@@ -12,6 +12,7 @@ import {
 } from './phaseEligibility';
 import type { ProposalDataInput } from './proposalDataSchema';
 import { resolveProposalDraftInputs } from './proposalDraftInputs';
+import { resolveProposalTemplate } from './resolveProposalTemplate';
 import { getInstancePhases } from './schemas/instanceData';
 
 export interface CreateDevelopedProposalInput {
@@ -24,7 +25,8 @@ export interface CreateDevelopedProposalInput {
 /**
  * Creates a draft proposal in a develop phase, developed from proposals of
  * any phase of the instance. Writes one `developed` edge per source in the same
- * transaction as the draft.
+ * transaction as the draft. The draft takes the phase's `formSchemaId` as its
+ * form, so it opens with the entry form instead of the instance template.
  */
 export const createDevelopedProposal = async ({
   data,
@@ -60,8 +62,15 @@ export const createDevelopedProposal = async ({
 
   const sourceProposalIds = [...new Set(data.sourceProposalIds)];
 
-  const [, draftInputs] = await Promise.all([
+  const formSchemaId = currentPhase.formSchemaId ?? null;
+
+  const [, , draftInputs] = await Promise.all([
     assertDevelopSources({ instance, sourceProposalIds }),
+    // Refuse a pointer to a missing or malformed row before the insert; the
+    // FK would only catch a missing one, and as a raw database error.
+    formSchemaId
+      ? resolveProposalTemplate(null, null, formSchemaId)
+      : undefined,
     resolveProposalDraftInputs({
       authUserId,
       instanceProfileId: instance.profileId,
@@ -77,6 +86,7 @@ export const createDevelopedProposal = async ({
       processInstanceId: instance.id,
       proposalData: data.proposalData,
       attachmentIds: data.attachmentIds,
+      formSchemaId,
       ...draftInputs,
     });
 

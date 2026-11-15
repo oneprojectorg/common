@@ -37,6 +37,7 @@ export const insertProposalDraft = async ({
   submittedByProfileId,
   adminRoleId,
   defaultHidden,
+  formSchemaId = null,
 }: {
   tx: TransactionType;
   user: User;
@@ -49,6 +50,8 @@ export const insertProposalDraft = async ({
   submittedByProfileId: string;
   adminRoleId: string;
   defaultHidden: boolean;
+  /** Form row the draft uses; null uses the instance template. */
+  formSchemaId?: string | null;
 }) => {
   const authUserId = user.id;
 
@@ -104,6 +107,7 @@ export const insertProposalDraft = async ({
       submittedByProfileId,
       profileId: proposalProfile.id,
       status: ProposalStatus.DRAFT,
+      formSchemaId,
       ...(defaultHidden ? { visibility: Visibility.HIDDEN } : {}),
     })
     .returning();
