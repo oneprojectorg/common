@@ -218,6 +218,13 @@ const docFragmentTextResponses = new Map<string, Record<string, string>>();
 // Per-doc saved versions returned by the version history API.
 const docVersions = new Map<string, TipTapVersion[]>();
 
+// `createDocument` calls that throw, matched by their fragments: the server
+// names a new document, so a test cannot know its name in advance.
+const createDocumentErrors: Array<{
+  matches: (fragments: SeedFragments) => boolean;
+  error: Error;
+}> = [];
+
 // Pre-seed the well-known e2e doc ID so the Next.js server (separate process)
 // returns fixture content without needing cross-process seeding.
 docResponses.set('test-proposal-doc', () =>
@@ -325,6 +332,14 @@ export const mockCollab = {
   setDocError: (docId: string, error: Error) => {
     docResponses.set(docId, () => Promise.reject(error));
   },
+
+  /** Makes `createDocument` throw `error` for fragments that `matches`. */
+  setCreateDocumentError: (
+    matches: (fragments: SeedFragments) => boolean,
+    error: Error,
+  ) => {
+    createDocumentErrors.push({ matches, error });
+  },
 };
 
 // ---------------------------------------------------------------------------
@@ -410,6 +425,13 @@ export function createTipTapClient(_config?: unknown) {
       docName: string,
       fragments: SeedFragments,
     ): Promise<'created' | 'exists'> => {
+      const failure = createDocumentErrors.find(({ matches }) =>
+        matches(fragments),
+      );
+      if (failure) {
+        throw failure.error;
+      }
+
       if (
         docResponses.has(docName) ||
         docFragmentJsonResponses.has(docName) ||
