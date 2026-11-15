@@ -21,7 +21,8 @@
     "@op/cache": "workspace:*",
     "jsonwebtoken": "^9.0.2",
     "ky": "^1.8.1",
-    "server-only": "^0.0.1"
+    "server-only": "^0.0.1",
+    "yjs": "^13.6.29"
   },
   "devDependencies": {
     "@op/typescript-config": "workspace:*",

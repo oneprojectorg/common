@@ -19,6 +19,7 @@
  * mockCollab.setDocResponse('doc-id', { type: 'doc', content: [...] });
  */
 import type {
+  SeedFragments,
   TipTapDocument,
   TipTapFragmentResponse,
   TipTapVersion,
@@ -27,6 +28,8 @@ import type {
 
 // Re-export types so `import { type X } from '@op/collab'` resolves when aliased here.
 export type {
+  SeedFragment,
+  SeedFragments,
   TipTapDocument,
   TipTapFragmentResponse,
   TipTapClient,
@@ -400,6 +403,31 @@ export function createTipTapClient(_config?: unknown) {
       return Object.fromEntries(
         fragments.map((fragment) => [fragment, doc]),
       ) as R;
+    },
+
+    /** Seeds the fragments as the real client would, or `'exists'` if seeded. */
+    createDocument: async (
+      docName: string,
+      fragments: SeedFragments,
+    ): Promise<'created' | 'exists'> => {
+      if (
+        docResponses.has(docName) ||
+        docFragmentJsonResponses.has(docName) ||
+        docFragmentTextResponses.has(docName)
+      ) {
+        return 'exists';
+      }
+
+      mockCollab.setDocFragments(
+        docName,
+        Object.fromEntries(
+          Object.entries(fragments).map(([name, { kind, text }]) => [
+            name,
+            kind === 'line' ? text.replace(/\s+/g, ' ').trim() : text.trim(),
+          ]),
+        ),
+      );
+      return 'created';
     },
 
     listVersions: async (docName: string): Promise<TipTapVersion[]> => {
