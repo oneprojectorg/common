@@ -394,7 +394,7 @@ function EntryColumn({
           <p className="text-base text-foreground">{t('entryEditor.intro')}</p>
         ) : (
           <div>
-            <Badge variant="success">{t('develop.entrySubmittedStatus')}</Badge>
+            <Badge variant="success">{t('develop.entryReadyStatus')}</Badge>
           </div>
         )}
         {isReadOnly ? (
