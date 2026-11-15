@@ -30,8 +30,16 @@ describe.concurrent('listOwnDevelopedProposals', () => {
       testData,
     });
     const [author, otherDeveloper] = await Promise.all([
-      createDevelopProposalsMember({ testData, setup }),
-      createDevelopProposalsMember({ testData, setup }),
+      createDevelopProposalsMember({
+        testData,
+        setup,
+        assignedOriginIds: [source.id],
+      }),
+      createDevelopProposalsMember({
+        testData,
+        setup,
+        assignedOriginIds: [source.id],
+      }),
     ]);
     const [authorCaller, otherCaller, adminCaller] = await Promise.all([
       createAuthenticatedCaller(author.email),
@@ -101,7 +109,11 @@ describe.concurrent('listOwnDevelopedProposals', () => {
     const { setup, instanceId, source } = await createDevelopPhaseSetup({
       testData,
     });
-    const author = await createDevelopProposalsMember({ testData, setup });
+    const author = await createDevelopProposalsMember({
+      testData,
+      setup,
+      assignedOriginIds: [source.id],
+    });
     const caller = await createAuthenticatedCaller(author.email);
 
     // Created one after another, so creation order is the list's order.

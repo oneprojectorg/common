@@ -1,5 +1,4 @@
 import {
-  type SQL,
   and,
   db,
   desc,
@@ -15,14 +14,18 @@ import {
   categoryReviewers,
   proposalCategories,
   proposalRelationships,
-  proposalReviewAssignments,
   proposals,
 } from '@op/db/schema';
 
 import { NotFoundError, UnauthorizedError, ValidationError } from '../../utils';
 import type { AccessUser } from '../access';
-import { assertUserByAuthId } from '../assert';
 import { getProposalDevelopAccess } from './assertProposalDevelopAccess';
+import {
+  type ProposalRowFilter,
+  assignedOriginFilter,
+  getCallerProfileId,
+  getDevelopOriginPhaseId,
+} from './developOriginScope';
 import type { PhaseScopedInstance } from './getProposalsForPhase';
 import { listProposals } from './listProposals';
 import { getOwnDevelopedEntryScope } from './ownDevelopedEntryScope';
@@ -82,10 +85,7 @@ export async function listDevelopOrigins({
     throw new UnauthorizedError('Not authorized');
   }
 
-  const developIndex = phases.findIndex(
-    (phase) => phase.phaseId === developPhaseId,
-  );
-  const originPhaseId = phases[developIndex - 1]?.phaseId;
+  const originPhaseId = getDevelopOriginPhaseId({ phases, developPhaseId });
 
   // A develop phase that opens the process has nothing to develop from.
   if (!originPhaseId) {
@@ -192,14 +192,6 @@ async function listOwnEntriesForOrigins({
     );
 }
 
-async function getCallerProfileId(user: AccessUser): Promise<string> {
-  const { profileId } = await assertUserByAuthId(user.id);
-  if (!profileId) {
-    throw new UnauthorizedError('User must have an active profile');
-  }
-  return profileId;
-}
-
 /**
  * The scope as a correlated predicate on the proposal row, so it rides in the
  * list's own WHERE clause and keeps its order, cursor and total true.
@@ -216,31 +208,13 @@ function buildScopeFilter({
   originPhaseId: string;
   developPhaseId: string;
   reviewerProfileId: string;
-}): (proposalsTable: typeof proposals) => SQL {
+}): ProposalRowFilter {
   if (scope === 'assigned') {
-    // Any live assignment counts, whatever its status: a develop holder is
-    // assigned like a reviewer but may never complete a review.
-    return (proposalsTable) =>
-      exists(
-        db
-          .select({ one: sql`1` })
-          .from(proposalReviewAssignments)
-          .where(
-            and(
-              eq(
-                proposalReviewAssignments.processInstanceId,
-                processInstanceId,
-              ),
-              eq(proposalReviewAssignments.proposalId, proposalsTable.id),
-              eq(
-                proposalReviewAssignments.reviewerProfileId,
-                reviewerProfileId,
-              ),
-              eq(proposalReviewAssignments.phaseId, originPhaseId),
-              isNull(proposalReviewAssignments.deletedAt),
-            ),
-          ),
-      );
+    return assignedOriginFilter({
+      processInstanceId,
+      originPhaseId,
+      reviewerProfileId,
+    });
   }
 
   // Category reviewer rows of the develop phase, plus instance-wide ones.

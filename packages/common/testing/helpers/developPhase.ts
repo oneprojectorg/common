@@ -5,6 +5,7 @@ import {
   grantInstanceRole,
   testDevelopSchema,
 } from '../data/decision-data';
+import { createReviewAssignment } from '../data/review-data';
 import type { TestDecisionsDataManager } from './TestDecisionsDataManager';
 
 /**
@@ -43,14 +44,17 @@ export async function createDevelopPhaseSetup({
 
 /**
  * A member whose only decisions grant on the instance is a role with Read and
- * Develop Proposals (no Review, no Submit).
+ * Develop Proposals (no Review, no Submit). `assignedOriginIds` are assigned to
+ * the member in the origin phase ("initial"), so the member may develop them.
  */
 export async function createDevelopProposalsMember({
   testData,
   setup,
+  assignedOriginIds = [],
 }: {
   testData: TestDecisionsDataManager;
   setup: Awaited<ReturnType<typeof createDevelopPhaseSetup>>['setup'];
+  assignedOriginIds?: string[];
 }) {
   const member = await testData.createMemberUser({
     organization: setup.organization,
@@ -63,5 +67,15 @@ export async function createDevelopProposalsMember({
     decisionsPermission:
       TEST_PERMISSION_BITS.READ | TEST_PERMISSION_BITS.DEVELOP_PROPOSALS,
   });
+  await Promise.all(
+    assignedOriginIds.map((proposalId) =>
+      createReviewAssignment({
+        processInstanceId: setup.instance.instance.id,
+        proposalId,
+        reviewerProfileId: member.profileId,
+        phaseId: 'initial',
+      }),
+    ),
+  );
   return member;
 }

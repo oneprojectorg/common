@@ -33,6 +33,7 @@ describe.concurrent('submitDevelopedProposal', () => {
     const developer = await createDevelopProposalsMember({
       testData,
       setup,
+      assignedOriginIds: [source.id],
     });
     const caller = await createAuthenticatedCaller(developer.email);
     const draft = await caller.decision.createDevelopedProposal({
@@ -60,8 +61,16 @@ describe.concurrent('submitDevelopedProposal', () => {
       testData,
     });
     const [author, otherDeveloper] = await Promise.all([
-      createDevelopProposalsMember({ testData, setup }),
-      createDevelopProposalsMember({ testData, setup }),
+      createDevelopProposalsMember({
+        testData,
+        setup,
+        assignedOriginIds: [source.id],
+      }),
+      createDevelopProposalsMember({
+        testData,
+        setup,
+        assignedOriginIds: [source.id],
+      }),
     ]);
     const [authorCaller, otherCaller] = await Promise.all([
       createAuthenticatedCaller(author.email),
@@ -120,6 +129,7 @@ describe.concurrent('submitDevelopedProposal', () => {
       const developer = await createDevelopProposalsMember({
         testData,
         setup,
+        assignedOriginIds: [source.id],
       });
       const caller = await createAuthenticatedCaller(developer.email);
       const draft = await caller.decision.createDevelopedProposal({

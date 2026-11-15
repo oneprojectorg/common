@@ -14,8 +14,8 @@ import {
 } from '../../schemaMapping';
 import { NotFoundError, UnauthorizedError, ValidationError } from '../../utils';
 import { getProfileAccessRoles } from '../access';
+import { assertDevelopSources } from './assertDevelopSources';
 import { assertProposalDevelopAccess } from './assertProposalDevelopAccess';
-import { assertDevelopSources } from './createDevelopedProposal';
 import { getProposalDocumentsContent } from './getProposalDocumentsContent';
 import { getProposalIdsForPhase } from './getProposalsForPhase';
 import { parseProposalData } from './proposalDataSchema';
@@ -111,8 +111,11 @@ export const getDevelopPrefill = async ({
     user,
   });
 
+  // Not narrowed to the caller's assigned origins: no endpoint serves this
+  // yet. `createDevelopedProposal` narrows its sources.
   await assertDevelopSources({
     instance,
+    restrictTo: null,
     sourceProposalIds: [
       ...new Set(
         request.inputs

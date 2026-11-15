@@ -1,4 +1,4 @@
-import { getInstancePhases } from '@op/common';
+import { type PhaseInstanceData, getInstancePhases } from '@op/common';
 import {
   TEST_PERMISSION_BITS,
   TestDecisionsDataManager,
@@ -13,6 +13,7 @@ import {
   ProposalRelationshipType,
   ProposalStatus,
   processInstances,
+  proposalReviewAssignments,
   proposals,
 } from '@op/db/schema';
 import { ROLES } from '@op/db/seedData/accessControl';
@@ -32,10 +33,10 @@ import { createCallerFactory } from '../../../trpcFactory';
 
 const createCaller = createCallerFactory(appRouter);
 
-/** Writes `formSchemaId` on the develop phase, as the setup script does. */
-const pointDevelopPhaseAt = async (
+/** Writes setup-script fields on the develop phase ("final"). */
+const configureDevelopPhase = async (
   instanceId: string,
-  formSchemaId: string,
+  fields: Partial<PhaseInstanceData>,
 ) => {
   const instance = await db.query.processInstances.findFirst({
     where: { id: instanceId },
@@ -46,13 +47,17 @@ const pointDevelopPhaseAt = async (
     throw new Error(`Instance ${instanceId} has no instanceData`);
   }
   const phases = getInstancePhases(instanceData).map((phase) =>
-    phase.phaseId === 'final' ? { ...phase, formSchemaId } : phase,
+    phase.phaseId === 'final' ? { ...phase, ...fields } : phase,
   );
   await db
     .update(processInstances)
     .set({ instanceData: { ...instanceData, phases } })
     .where(eq(processInstances.id, instanceId));
 };
+
+/** Writes `formSchemaId` on the develop phase, as the setup script does. */
+const pointDevelopPhaseAt = (instanceId: string, formSchemaId: string) =>
+  configureDevelopPhase(instanceId, { formSchemaId });
 
 const readFormSchemaId = async (proposalId: string) => {
   const row = await db.query.proposals.findFirst({
@@ -94,6 +99,7 @@ describe.concurrent('createDevelopedProposal', () => {
     const developer = await createDevelopProposalsMember({
       testData,
       setup,
+      assignedOriginIds: [source.id],
     });
     const caller = await createAuthenticatedCaller(developer.email);
 
@@ -590,5 +596,80 @@ describe.concurrent('createDevelopedProposal', () => {
       columns: { id: true },
     });
     expect(instanceProposals).toEqual([{ id: source.id }]);
+  });
+
+  it('lets a develop holder develop an origin assigned to them and refuses one that is not', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instanceId, source } = await createDevelopPhaseSetup({
+      testData,
+    });
+    const [assigned, unassigned] = await Promise.all([
+      createDevelopProposalsMember({
+        testData,
+        setup,
+        assignedOriginIds: [source.id],
+      }),
+      createDevelopProposalsMember({ testData, setup }),
+    ]);
+    const [assignedCaller, unassignedCaller] = await Promise.all([
+      createAuthenticatedCaller(assigned.email),
+      createAuthenticatedCaller(unassigned.email),
+    ]);
+
+    const draft = await assignedCaller.decision.createDevelopedProposal({
+      processInstanceId: instanceId,
+      sourceProposalIds: [source.id],
+      proposalData: { title: 'Developed' },
+    });
+    testData.trackProfileForCleanup(draft.profileId);
+
+    await expect(readDevelopedSourceIds(draft.id)).resolves.toEqual([
+      source.id,
+    ]);
+    await expect(
+      unassignedCaller.decision.createDevelopedProposal({
+        processInstanceId: instanceId,
+        sourceProposalIds: [source.id],
+        proposalData: { title: 'Refused' },
+      }),
+    ).rejects.toMatchObject({
+      cause: {
+        name: 'ValidationError',
+        message: `These proposals cannot be developed: ${source.id}`,
+      },
+    });
+  });
+
+  it('refuses a develop holder whose assignment on the origin is deleted', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instanceId, source } = await createDevelopPhaseSetup({
+      testData,
+    });
+    const developer = await createDevelopProposalsMember({
+      testData,
+      setup,
+      assignedOriginIds: [source.id],
+    });
+    await db
+      .update(proposalReviewAssignments)
+      .set({ deletedAt: new Date().toISOString() })
+      .where(eq(proposalReviewAssignments.proposalId, source.id));
+    const caller = await createAuthenticatedCaller(developer.email);
+
+    await expect(
+      caller.decision.createDevelopedProposal({
+        processInstanceId: instanceId,
+        sourceProposalIds: [source.id],
+        proposalData: { title: 'Refused' },
+      }),
+    ).rejects.toMatchObject({
+      cause: { name: 'ValidationError' },
+    });
   });
 });

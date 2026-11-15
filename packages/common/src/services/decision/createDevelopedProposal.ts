@@ -1,15 +1,13 @@
-import { and, db } from '@op/db/client';
+import { db } from '@op/db/client';
 import { ProposalRelationshipType, proposalRelationships } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 
-import { NotFoundError, ValidationError } from '../../utils';
+import { NotFoundError, UnauthorizedError, ValidationError } from '../../utils';
 import { invalidateProfileUserAccessCache } from '../access';
-import { assertProposalDevelopAccess } from './assertProposalDevelopAccess';
+import { assertDevelopSources } from './assertDevelopSources';
+import { getProposalDevelopAccess } from './assertProposalDevelopAccess';
+import { getDevelopSourceFilter } from './developOriginScope';
 import { insertProposalDraft } from './insertProposalDraft';
-import {
-  activeProposalPredicate,
-  phaseEligiblePredicate,
-} from './phaseEligibility';
 import type { ProposalDataInput } from './proposalDataSchema';
 import { resolveProposalDraftInputs } from './proposalDraftInputs';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
@@ -27,6 +25,8 @@ export interface CreateDevelopedProposalInput {
  * any phase of the instance. Writes one `developed` edge per source in the same
  * transaction as the draft. The draft takes the phase's `formSchemaId` as its
  * form, so it opens with the entry form instead of the instance template.
+ *
+ * A caller who is not an admin may develop only the origins assigned to them.
  */
 export const createDevelopedProposal = async ({
   data,
@@ -50,22 +50,39 @@ export const createDevelopedProposal = async ({
   }
 
   const phases = getInstancePhases(instance.instanceData);
+  const developPhaseId = instance.currentStateId;
 
-  const currentPhase = await assertProposalDevelopAccess({
+  const {
+    phase: currentPhase,
+    isAdmin,
+    canDevelop,
+  } = await getProposalDevelopAccess({
     instance: {
       profileId: instance.profileId,
       instanceData: { phases },
     },
-    phaseId: instance.currentStateId,
+    phaseId: developPhaseId,
     user: { id: authUserId },
   });
+
+  if (!canDevelop) {
+    throw new UnauthorizedError('Not authorized');
+  }
 
   const sourceProposalIds = [...new Set(data.sourceProposalIds)];
 
   const formSchemaId = currentPhase.formSchemaId ?? null;
 
   const [, , draftInputs] = await Promise.all([
-    assertDevelopSources({ instance, sourceProposalIds }),
+    getDevelopSourceFilter({
+      processInstanceId: instance.id,
+      phases,
+      developPhaseId,
+      isAdmin,
+      user: { id: authUserId },
+    }).then((restrictTo) =>
+      assertDevelopSources({ instance, sourceProposalIds, restrictTo }),
+    ),
     // Refuse a pointer to a missing or malformed row before the insert; the
     // FK would only catch a missing one, and as a raw database error.
     formSchemaId
@@ -110,38 +127,3 @@ export const createDevelopedProposal = async ({
 
   return createdProposal;
 };
-
-/**
- * Every source must be a live, submitted, not rejected, not merged proposal of
- * this instance. Sources may come from any phase.
- */
-export async function assertDevelopSources({
-  instance,
-  sourceProposalIds,
-}: {
-  instance: { id: string };
-  sourceProposalIds: string[];
-}): Promise<void> {
-  if (sourceProposalIds.length === 0) {
-    throw new ValidationError('Choose at least one source proposal');
-  }
-
-  const validRows = await db.query.proposals.findMany({
-    where: {
-      id: { in: sourceProposalIds },
-      processInstanceId: instance.id,
-      RAW: (table) =>
-        and(phaseEligiblePredicate(table), activeProposalPredicate(table))!,
-    },
-    columns: { id: true },
-  });
-
-  const validIds = new Set(validRows.map((row) => row.id));
-  const invalidIds = sourceProposalIds.filter((id) => !validIds.has(id));
-
-  if (invalidIds.length > 0) {
-    throw new ValidationError(
-      `These proposals cannot be developed: ${invalidIds.join(', ')}`,
-    );
-  }
-}
