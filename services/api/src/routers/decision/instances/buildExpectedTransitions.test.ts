@@ -138,7 +138,50 @@ describe('buildExpectedTransitions', () => {
     );
 
     expect(() => buildExpectedTransitions(instance)).toThrow(
-      'Phase "phase-a" must have an end date for date-based advancement (instance: inst-123)',
+      expect.objectContaining({
+        name: 'ValidationError',
+        message:
+          'Phase "phase-a" must have an end date because it advances by date',
+        fieldErrors: { phases: 'Set an end date for "phase-a"' },
+      }),
+    );
+  });
+
+  it('names the phase without an end date by its name', () => {
+    const instance = stubInstance({
+      phases: [
+        {
+          phaseId: 'phase-a',
+          name: '  Submissions  ',
+          rules: { advancement: { method: 'date' } },
+        },
+        { phaseId: 'phase-b' },
+      ],
+    });
+
+    expect(() => buildExpectedTransitions(instance)).toThrow(
+      expect.objectContaining({
+        message:
+          'Phase "Submissions" must have an end date because it advances by date',
+        fieldErrors: { phases: 'Set an end date for "Submissions"' },
+      }),
+    );
+  });
+
+  it('falls back to the phase id when the name is blank', () => {
+    const instance = stubInstance({
+      phases: [
+        {
+          phaseId: 'phase-a',
+          name: '   ',
+          rules: { advancement: { method: 'date' } },
+        },
+        { phaseId: 'phase-b' },
+      ],
+    });
+
+    expect(() => buildExpectedTransitions(instance)).toThrow(
+      'Phase "phase-a" must have an end date because it advances by date',
     );
   });
 });

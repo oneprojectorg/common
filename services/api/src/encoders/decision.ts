@@ -8,6 +8,7 @@ import {
   checkpointVersionSchema,
   instanceOptionalPhaseRefSchema,
   paginated,
+  phaseNameInputSchema,
   phaseReviewSettingsSchema,
   proposalSchema,
   rubricTemplateSchema,
@@ -584,6 +585,7 @@ export const createInstanceFromTemplateInputSchema = z.object({
 
 /** Input schema for phase overrides with datetime validation */
 const instancePhaseDataInputEncoder = instancePhaseDataEncoder.extend({
+  name: phaseNameInputSchema.optional(),
   startDate: z.string().datetime({ offset: true }).optional(),
   endDate: z.string().datetime({ offset: true }).optional(),
   // Overrides the read-path encoder: `''` is rejected here rather than decoded

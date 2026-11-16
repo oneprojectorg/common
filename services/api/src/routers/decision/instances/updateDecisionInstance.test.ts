@@ -2,6 +2,7 @@ import {
   type DecisionInstanceData,
   type RubricTemplateSchema,
 } from '@op/common';
+import { MAX_PHASE_NAME_LENGTH } from '@op/common/client';
 import { TestDecisionsDataManager } from '@op/common/testing';
 import { db, eq } from '@op/db/client';
 import { ProcessStatus, processInstances } from '@op/db/schema';
@@ -25,6 +26,13 @@ const createCaller = createCallerFactory(appRouter);
 async function createAuthenticatedCaller(email: string) {
   const { session } = await createIsolatedSession(email);
   return createCaller(await createTestContextWithSession(session));
+}
+
+async function loadPhases(instanceId: string) {
+  const dbInstance = await db.query.processInstances.findFirst({
+    where: { id: instanceId },
+  });
+  return (dbInstance!.instanceData as DecisionInstanceData).phases;
 }
 
 async function getFirstPhaseId(instanceId: string) {
@@ -433,6 +441,131 @@ describe.concurrent('updateDecisionInstance', () => {
         phases: [{ phaseId: firstPhaseId, headline: '  ' }],
       }),
     ).rejects.toThrow(/Headline cannot be empty/i);
+  });
+
+  it.for([
+    { label: 'an empty', name: '' },
+    { label: 'a whitespace-only', name: '   ' },
+    { label: 'a too-long', name: 'x'.repeat(MAX_PHASE_NAME_LENGTH + 1) },
+  ])(
+    'should reject $label phase name and keep the stored phases',
+    async ({ name }, { task, onTestFinished }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+      const setup = await testData.createDecisionSetup({
+        instanceCount: 1,
+        grantAccess: true,
+      });
+      const instanceId = setup.instance.instance.id;
+      const caller = await createAuthenticatedCaller(setup.userEmail);
+      const before = await loadPhases(instanceId);
+      const [first] = before;
+      if (!first) {
+        throw new Error('No phases found in instance');
+      }
+
+      await expect(
+        caller.decision.updateDecisionInstance({
+          instanceId,
+          phases: [{ phaseId: first.phaseId, name }],
+        }),
+      ).rejects.toMatchObject({ code: 'BAD_REQUEST' });
+
+      expect(await loadPhases(instanceId)).toEqual(before);
+    },
+  );
+
+  it('should trim a phase name and accept one at the length limit', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instanceId = setup.instance.instance.id;
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+    const before = await loadPhases(instanceId);
+    const [first, second] = before;
+    if (!first || !second) {
+      throw new Error('The instance needs two phases');
+    }
+    const longest = 'x'.repeat(MAX_PHASE_NAME_LENGTH);
+
+    await caller.decision.updateDecisionInstance({
+      instanceId,
+      phases: [
+        { phaseId: first.phaseId, name: '  Submissions  ' },
+        { phaseId: second.phaseId, name: longest },
+        ...before.slice(2).map(({ phaseId }) => ({ phaseId })),
+      ],
+    });
+
+    const after = await loadPhases(instanceId);
+    expect(after[0]?.name).toBe('Submissions');
+    expect(after[1]?.name).toBe(longest);
+  });
+
+  it('should reject a date-advanced phase with no end date on a published instance, naming the phase', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instanceId = setup.instance.instance.id;
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+    await caller.decision.updateDecisionInstance({
+      instanceId,
+      status: ProcessStatus.PUBLISHED,
+    });
+
+    const stored = await db.query.processInstances.findFirst({
+      where: { id: instanceId },
+    });
+    const storedData = stored!.instanceData as DecisionInstanceData;
+    const [first, ...rest] = storedData.phases;
+    if (!first || rest.length === 0) {
+      throw new Error('The instance needs two phases');
+    }
+    const { endDate: _endDate, ...firstWithoutEndDate } = first;
+    await db
+      .update(processInstances)
+      .set({
+        instanceData: {
+          ...storedData,
+          phases: [firstWithoutEndDate, ...rest],
+        },
+      })
+      .where(eq(processInstances.id, instanceId));
+    const before = await loadPhases(instanceId);
+
+    const error = await caller.decision
+      .updateDecisionInstance({
+        instanceId,
+        phases: [
+          {
+            phaseId: first.phaseId,
+            name: 'Submissions',
+            rules: { advancement: { method: 'date' } },
+          },
+          ...rest.map(({ phaseId }) => ({ phaseId })),
+        ],
+      })
+      .catch((caught: unknown) => caught);
+
+    expect(error).toMatchObject({
+      message:
+        'Phase "Submissions" must have an end date because it advances by date',
+      cause: {
+        name: 'ValidationError',
+        statusCode: 400,
+        fieldErrors: { phases: 'Set an end date for "Submissions"' },
+      },
+    });
+    expect(await loadPhases(instanceId)).toEqual(before);
   });
 
   it('should clear the overview headline with null and keep a cleared description', async ({
