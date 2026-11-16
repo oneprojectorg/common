@@ -6,6 +6,7 @@ import { translateProposalRouter } from './translateProposal';
 import { translateProposalsRouter } from './translateProposals';
 import { translateResourcesRouter } from './translateResources';
 import { translateReviewRouter } from './translateReview';
+import { translateRevisionNoteRouter } from './translateRevisionNote';
 import { translateRevisionRequestRouter } from './translateRevisionRequest';
 
 export const translationRouter = mergeRouters(
@@ -16,5 +17,6 @@ export const translationRouter = mergeRouters(
   translateProposalsRouter,
   translateResourcesRouter,
   translateReviewRouter,
+  translateRevisionNoteRouter,
   translateRevisionRequestRouter,
 );

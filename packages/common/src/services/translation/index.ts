@@ -8,6 +8,7 @@ export { translateProposals } from './translateProposals';
 export type { ProposalTranslation } from './translateProposal';
 export { translateReview } from './translateReview';
 export type { ReviewTranslation } from './translateReview';
+export { translateRevisionNote } from './translateRevisionNote';
 export { translateRevisionRequest } from './translateRevisionRequest';
 export type { RevisionRequestTranslation } from './translateRevisionRequest';
 export { translateResources } from './translateResources';

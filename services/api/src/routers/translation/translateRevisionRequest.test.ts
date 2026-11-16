@@ -5,7 +5,6 @@ import {
 import { db } from '@op/db/client';
 import {
   ProposalReviewAssignmentStatus,
-  ProposalReviewRequestState,
   contentTranslations,
 } from '@op/db/schema';
 import { like } from 'drizzle-orm';
@@ -35,10 +34,6 @@ async function createAuthenticatedCaller(email: string) {
 async function createRevisionRequestScenario(
   testData: TestReviewsDataManager,
   onTestFinished: (fn: () => Promise<void>) => void,
-  {
-    requestComment = 'Please add a detailed budget breakdown.',
-    responseComment,
-  }: { requestComment?: string; responseComment?: string } = {},
 ) {
   const created = await testData.createReviewAssignment({
     title: 'Budget Proposal',
@@ -47,10 +42,7 @@ async function createRevisionRequestScenario(
 
   const request = await createRevisionRequest({
     assignmentId: created.assignment.id,
-    requestComment,
-    ...(responseComment
-      ? { state: ProposalReviewRequestState.RESUBMITTED, responseComment }
-      : {}),
+    requestComment: 'Please add a detailed budget breakdown.',
   });
 
   onTestFinished(async () => {
@@ -90,56 +82,6 @@ describe('translation.translateRevisionRequest', () => {
       sourceLocale: 'EN',
       targetLocale: 'es',
     });
-    // A request with no author note sends only the request text.
-    expect(result.responseComment).toBeUndefined();
-    expect(mockTranslateText).toHaveBeenCalledTimes(1);
-  });
-
-  it("translates the author's note on a resubmitted request", async ({
-    task,
-    onTestFinished,
-  }) => {
-    const testData = new TestReviewsDataManager(task.id, onTestFinished);
-    const { reviewer, request } = await createRevisionRequestScenario(
-      testData,
-      onTestFinished,
-      { responseComment: 'I added the budget breakdown.' },
-    );
-
-    const caller = await createAuthenticatedCaller(reviewer.email);
-    const result = await caller.translation.translateRevisionRequest({
-      requestId: request.id,
-      targetLocale: 'es',
-    });
-
-    expect(result).toEqual({
-      requestComment: '[ES] Please add a detailed budget breakdown.',
-      responseComment: '[ES] I added the budget breakdown.',
-      sourceLocale: 'EN',
-      targetLocale: 'es',
-    });
-  });
-
-  it('translates only the note when the request text is blank', async ({
-    task,
-    onTestFinished,
-  }) => {
-    const testData = new TestReviewsDataManager(task.id, onTestFinished);
-    const { reviewer, request } = await createRevisionRequestScenario(
-      testData,
-      onTestFinished,
-      { requestComment: '   ', responseComment: 'I added the budget.' },
-    );
-
-    const caller = await createAuthenticatedCaller(reviewer.email);
-    const result = await caller.translation.translateRevisionRequest({
-      requestId: request.id,
-      targetLocale: 'es',
-    });
-
-    expect(result.requestComment).toBeUndefined();
-    expect(result.responseComment).toBe('[ES] I added the budget.');
-    expect(mockTranslateText).toHaveBeenCalledTimes(1);
   });
 
   it('translates the request comment for a decision admin', async ({

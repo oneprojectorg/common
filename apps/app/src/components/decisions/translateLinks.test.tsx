@@ -18,6 +18,7 @@ import {
 } from './DecisionTranslationContext';
 import { AuthorNotesAccordion } from './Review/AuthorNotesAccordion';
 import { SubmittedReviewView } from './Review/SubmittedReviewView';
+import { RevisionNoteCard } from './RevisionNoteCard';
 import { RevisionRequestCard } from './RevisionRequestCard';
 
 /** One held-open request per endpoint, settled by the test. */
@@ -46,6 +47,7 @@ vi.mock('@op/api/client', () => ({
       translateDecision: endpoint('translateDecision'),
       translateResources: endpoint('translateResources'),
       translateReview: endpoint('translateReview'),
+      translateRevisionNote: endpoint('translateRevisionNote'),
       translateRevisionRequest: endpoint('translateRevisionRequest'),
     },
   },
@@ -208,8 +210,7 @@ describe('the revision request link', () => {
 });
 
 describe('the author note link', () => {
-  it("shows the author's note translated, and the original again on View original", async () => {
-    const user = userEvent.setup();
+  const renderNote = () => {
     render(
       withIntl(
         <AuthorNotesAccordion
@@ -225,21 +226,54 @@ describe('the author note link', () => {
         />,
       ),
     );
+    return userEvent.setup();
+  };
+
+  it("shows the author's note translated, and the original again on View original", async () => {
+    const user = renderNote();
 
     await user.click(seeTranslation());
-    expect(pending.translateRevisionRequest?.input).toEqual({
+    expect(pending.translateRevisionNote?.input).toEqual({
       requestId: 'request-1',
       targetLocale: 'en',
     });
-    await respond('translateRevisionRequest', {
-      requestComment: 'Please add a budget.',
-      responseComment: EN,
-    });
+    await respond('translateRevisionNote', { responseComment: EN });
 
     expect(screen.getByText(EN)).toBeTruthy();
 
     await user.click(screen.getByRole('button', { name: 'View original' }));
 
     expect(screen.getByText(ES)).toBeTruthy();
+  });
+
+  it('keeps the original note and shows the failure when nothing comes back', async () => {
+    const user = renderNote();
+
+    await user.click(seeTranslation());
+    await respond('translateRevisionNote', { sourceLocale: '' });
+
+    expect(screen.getByText('Translation failed.')).toBeTruthy();
+    expect(screen.getByText(ES)).toBeTruthy();
+  });
+});
+
+describe('the revision note card link', () => {
+  it("translates the author's note", async () => {
+    const user = userEvent.setup();
+    render(
+      withIntl(
+        <RevisionNoteCard
+          requestId="request-1"
+          comment={ES}
+          respondedAt={null}
+          title="Author's note"
+        />,
+      ),
+    );
+
+    await user.click(seeTranslation());
+    await respond('translateRevisionNote', { responseComment: EN });
+
+    expect(screen.getByText(EN)).toBeTruthy();
   });
 });

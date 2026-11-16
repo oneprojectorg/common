@@ -1,6 +1,5 @@
 'use client';
 
-import { trpc } from '@op/api/client';
 import { useRelativeTime } from '@op/hooks';
 import {
   Accordion,
@@ -16,7 +15,7 @@ import { Fragment, useState } from 'react';
 import { useTranslations } from '@/lib/i18n';
 
 import { TranslateLink } from '../TranslateLink';
-import { useTranslateLink } from '../useTranslateLink';
+import { useRevisionNoteTranslation } from '../useRevisionNoteTranslation';
 
 export interface AuthorNote {
   /** The resubmitted proposal version. */
@@ -94,15 +93,9 @@ function AuthorNoteEntry({
 }) {
   const t = useTranslations();
   const timeAgo = useRelativeTime(note.respondedAt, { style: 'long' });
-  const translateRequest =
-    trpc.translation.translateRevisionRequest.useMutation();
-
-  const translation = useTranslateLink({
-    detectionText: note.comment,
-    request: (targetLocale) =>
-      translateRequest
-        .mutateAsync({ requestId: note.requestIds[0], targetLocale })
-        .then(({ responseComment }) => responseComment || undefined),
+  const translation = useRevisionNoteTranslation({
+    requestId: note.requestIds[0],
+    comment: note.comment,
   });
 
   return (

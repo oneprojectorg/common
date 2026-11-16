@@ -14,7 +14,6 @@ export const translateRevisionRequestRouter = router({
     .output(
       z.object({
         requestComment: z.string().optional(),
-        responseComment: z.string().optional(),
         sourceLocale: z.string(),
         targetLocale: z.enum(SUPPORTED_LOCALES),
       }),

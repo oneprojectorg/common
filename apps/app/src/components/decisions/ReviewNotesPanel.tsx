@@ -8,6 +8,7 @@ import type {
 
 import { useTranslations } from '@/lib/i18n';
 
+import { RevisionNoteCard } from './RevisionNoteCard';
 import { RevisionRequestCard } from './RevisionRequestCard';
 import { RevisionFeedbackCard } from './proposalEditor/RevisionFeedbackCard';
 
@@ -67,27 +68,29 @@ export function ReviewNotesPanel({
         </>
       ) : null}
 
-      {noteGroups.map((group) => (
-        <div
-          key={group.respondedProposalHistoryId}
-          className="flex flex-col gap-4"
-        >
-          {/* A resubmission can carry no note. */}
-          {group.responseComment ? (
-            <RevisionFeedbackCard
-              comment={group.responseComment}
-              sentAt={group.respondedAt}
-              variant="author"
-              title={noteTitle}
-              meta="bare"
-            />
-          ) : null}
+      {noteGroups.map((group) => {
+        const [firstRequest] = group.requests;
+        return (
+          <div
+            key={group.respondedProposalHistoryId}
+            className="flex flex-col gap-4"
+          >
+            {/* A resubmission can carry no note. */}
+            {group.responseComment && firstRequest ? (
+              <RevisionNoteCard
+                requestId={firstRequest.id}
+                comment={group.responseComment}
+                respondedAt={group.respondedAt}
+                title={noteTitle}
+              />
+            ) : null}
 
-          {group.requests.map((request) => (
-            <RevisionRequestCard key={request.id} request={request} />
-          ))}
-        </div>
-      ))}
+            {group.requests.map((request) => (
+              <RevisionRequestCard key={request.id} request={request} />
+            ))}
+          </div>
+        );
+      })}
     </div>
   );
 }
