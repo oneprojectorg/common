@@ -2,8 +2,10 @@ import mitt from 'mitt';
 
 import type { ChannelName } from './channels';
 
+export type RegisteredQueryKey = readonly unknown[];
+
 type QueryAddedEvent = {
-  queryKey: unknown;
+  queryKey: RegisteredQueryKey;
   channels: ChannelName[];
 };
 
@@ -13,7 +15,7 @@ export type MutationAddedEvent = {
 };
 
 export type QueryRemovedEvent = {
-  queryKey: unknown;
+  queryKey: RegisteredQueryKey;
 };
 
 export type ChannelRemovedEvent = {
@@ -48,9 +50,9 @@ class QueryChannelRegistry {
   /**
    * Get all query keys registered to a set of channels.
    */
-  getQueryKeysForChannels(channels: ChannelName[]): unknown[] {
+  getQueryKeysForChannels(channels: ChannelName[]): RegisteredQueryKey[] {
     const seen = new Set<string>();
-    const result: unknown[] = [];
+    const result: RegisteredQueryKey[] = [];
 
     for (const channel of channels) {
       const keys = this.channelToQueryKeys.get(channel);
@@ -59,7 +61,10 @@ class QueryChannelRegistry {
           if (!seen.has(key)) {
             seen.add(key);
             try {
-              result.push(JSON.parse(key));
+              const parsed: unknown = JSON.parse(key);
+              if (Array.isArray(parsed)) {
+                result.push(parsed);
+              }
             } catch {
               // Skip malformed keys - shouldn't happen if stringify succeeded
             }
