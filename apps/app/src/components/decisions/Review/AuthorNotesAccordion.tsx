@@ -101,8 +101,8 @@ function AuthorNoteEntry({
   return (
     <div data-testid="author-note" className="flex flex-col gap-3">
       <TranslateLink translation={translation} />
-      <p dir="auto" className="text-base whitespace-pre-wrap">
-        {translation.translation ?? note.comment}
+      <p className="text-base whitespace-pre-wrap">
+        <bdi>{translation.translation ?? note.comment}</bdi>
       </p>
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
         <span>{t('decisions.review.revisedTimeAgo', { timeAgo })}</span>
