@@ -1683,6 +1683,7 @@
       "noEntriesTitle": "Nothing prepared yet",
       "noEntriesDescription": "What you prepare from proposals appears here.",
       "noMatchingEntriesDescription": "Try another search.",
+      "resultsCount": "{count, plural, one {# result} other {# results}}",
       "advancingCount": "{count, plural, one {# proposal advancing} other {# proposals advancing}}",
       "confirmSelectionsAction": "Confirm selections"
     },

@@ -1683,6 +1683,7 @@
       "noEntriesTitle": "Még nincs semmi előkészítve",
       "noEntriesDescription": "Itt jelenik meg, amit javaslatokból előkészítesz.",
       "noMatchingEntriesDescription": "Próbálj másik keresést.",
+      "resultsCount": "{count, plural, one {# találat} other {# találat}}",
       "advancingCount": "{count, plural, one {# javaslat jut tovább} other {# javaslat jut tovább}}",
       "confirmSelectionsAction": "Kiválasztás megerősítése"
     },

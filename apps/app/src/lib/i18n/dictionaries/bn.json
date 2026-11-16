@@ -1683,6 +1683,7 @@
       "noEntriesTitle": "এখনো কিছু প্রস্তুত করা হয়নি",
       "noEntriesDescription": "প্রস্তাব থেকে আপনি যা প্রস্তুত করবেন তা এখানে দেখা যাবে।",
       "noMatchingEntriesDescription": "অন্যভাবে খুঁজে দেখুন।",
+      "resultsCount": "{count, plural, one {#টি ফলাফল} other {#টি ফলাফল}}",
       "advancingCount": "{count, plural, one {#টি প্রস্তাব এগিয়ে যাচ্ছে} other {#টি প্রস্তাব এগিয়ে যাচ্ছে}}",
       "confirmSelectionsAction": "নির্বাচন নিশ্চিত করুন"
     },

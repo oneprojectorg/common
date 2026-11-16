@@ -1683,6 +1683,7 @@
       "noEntriesTitle": "Nada preparado ainda",
       "noEntriesDescription": "O que você preparar a partir de propostas aparece aqui.",
       "noMatchingEntriesDescription": "Tente outra pesquisa.",
+      "resultsCount": "{count, plural, one {# resultado} other {# resultados}}",
       "advancingCount": "{count, plural, one {# proposta avançando} other {# propostas avançando}}",
       "confirmSelectionsAction": "Confirmar seleções"
     },

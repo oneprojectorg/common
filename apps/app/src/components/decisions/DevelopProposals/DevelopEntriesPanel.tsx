@@ -135,6 +135,13 @@ function DevelopEntriesTable({
     () => data.pages.flatMap((page) => page.items),
     [data.pages],
   );
+  const resultsCount = (
+    <p aria-live="polite" className="sr-only">
+      {t('decisions.develop.resultsCount', {
+        count: data.pages[0]?.total ?? 0,
+      })}
+    </p>
+  );
 
   const loadNextPage = useCallback(() => {
     void fetchNextPage();
@@ -147,7 +154,8 @@ function DevelopEntriesTable({
 
   if (entries.length === 0) {
     return (
-      <div aria-live="polite">
+      <div className="flex flex-col">
+        {resultsCount}
         <Empty>
           <EmptyHeader>
             <EmptyMedia variant="icon">
@@ -169,6 +177,7 @@ function DevelopEntriesTable({
 
   return (
     <div className="flex flex-col">
+      {resultsCount}
       <Table
         aria-label={entryName}
         className="min-w-3xl table-fixed [&_tr>*:first-child]:ps-0 [&_tr>*:last-child]:pe-0"
