@@ -3,13 +3,13 @@ import {
   and,
   count,
   db,
-  desc,
   eq,
   exists,
   inArray,
   isNull,
   ne,
   or,
+  sql,
 } from '@op/db/client';
 import {
   ProposalStatus,
@@ -98,39 +98,54 @@ export async function listPhaseProposals({
       ? [firstScope.instance.currentStateId]
       : []);
 
-  const where = and(
-    or(
-      ...phaseScopes.map((listScope) => listScope.buildWhereClause(proposals)),
-    ),
-    ne(proposals.status, ProposalStatus.DRAFT),
-    ...categoryIds.map((categoryId) => hasCategory(categoryId)),
-    assignedToProfileId === undefined
-      ? undefined
-      : isAssignedTo({
-          processInstanceId,
-          phaseIds: assignmentPhaseIds,
-          reviewerProfileId: assignedToProfileId,
-        }),
-  );
+  // Takes the table so the page query's aliased RAW table and the count's
+  // schema table both resolve; `and` is never empty here, the fallback only
+  // satisfies its type and fails closed.
+  const buildWhere = (
+    proposalsTable: typeof proposals,
+    cursorCondition?: SQL,
+  ): SQL =>
+    and(
+      or(
+        ...phaseScopes.map((listScope) =>
+          listScope.buildWhereClause(proposalsTable),
+        ),
+      ),
+      ne(proposalsTable.status, ProposalStatus.DRAFT),
+      ...categoryIds.map((categoryId) =>
+        hasCategory({ proposalsTable, categoryId }),
+      ),
+      assignedToProfileId === undefined
+        ? undefined
+        : isAssignedTo({
+            proposalsTable,
+            processInstanceId,
+            phaseIds: assignmentPhaseIds,
+            reviewerProfileId: assignedToProfileId,
+          }),
+      cursorCondition,
+    ) ?? sql`false`;
 
   const [rows, [totals]] = await Promise.all([
-    db
-      .select({ id: proposals.id, createdAt: proposals.createdAt })
-      .from(proposals)
-      .where(
-        and(
-          where,
-          getCursorCondition({
-            column: proposals.createdAt,
-            tieBreakerColumn: proposals.id,
-            cursor: decodedCursor,
-            direction: 'desc',
-          }),
-        ),
-      )
-      .orderBy(desc(proposals.createdAt), desc(proposals.id))
-      .limit(limit + 1),
-    db.select({ total: count() }).from(proposals).where(where),
+    db.query.proposals.findMany({
+      columns: { id: true, createdAt: true },
+      where: {
+        RAW: (table) =>
+          buildWhere(
+            table,
+            getCursorCondition({
+              column: table.createdAt,
+              tieBreakerColumn: table.id,
+              cursor: decodedCursor,
+              direction: 'desc',
+            }),
+          ),
+      },
+      orderBy: (table, { desc }) => [desc(table.createdAt), desc(table.id)],
+      limit: limit + 1,
+    }),
+    // The relational API has no aggregate, so the total stays a select.
+    db.select({ total: count() }).from(proposals).where(buildWhere(proposals)),
   ]);
 
   const hasMore = rows.length > limit;
@@ -189,10 +204,12 @@ function decodePhaseProposalCursor(
 
 /** A review assignment of the profile on the proposal in any of the phases, any status. */
 function isAssignedTo({
+  proposalsTable,
   processInstanceId,
   phaseIds,
   reviewerProfileId,
 }: {
+  proposalsTable: typeof proposals;
   processInstanceId: string;
   phaseIds: string[];
   reviewerProfileId: string;
@@ -203,7 +220,7 @@ function isAssignedTo({
       .from(proposalReviewAssignments)
       .where(
         and(
-          eq(proposalReviewAssignments.proposalId, proposals.id),
+          eq(proposalReviewAssignments.proposalId, proposalsTable.id),
           eq(proposalReviewAssignments.processInstanceId, processInstanceId),
           inArray(proposalReviewAssignments.phaseId, phaseIds),
           eq(proposalReviewAssignments.reviewerProfileId, reviewerProfileId),
@@ -214,14 +231,20 @@ function isAssignedTo({
 }
 
 /** One EXISTS per term, so a proposal must carry all of them. */
-function hasCategory(categoryId: string): SQL {
+function hasCategory({
+  proposalsTable,
+  categoryId,
+}: {
+  proposalsTable: typeof proposals;
+  categoryId: string;
+}): SQL {
   return exists(
     db
       .select({ proposalId: proposalCategories.proposalId })
       .from(proposalCategories)
       .where(
         and(
-          eq(proposalCategories.proposalId, proposals.id),
+          eq(proposalCategories.proposalId, proposalsTable.id),
           eq(proposalCategories.taxonomyTermId, categoryId),
         ),
       ),
