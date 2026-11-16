@@ -1,11 +1,6 @@
 'use client';
 
-import {
-  Field,
-  FieldDescription,
-  FieldError,
-  FieldTitle,
-} from '@op/sense/Field';
+import { Field, FieldDescription, FieldTitle } from '@op/sense/Field';
 import { InputGroup, InputGroupAddon } from '@op/sense/InputGroup';
 import { RequiredAsterisk } from '@op/sense/RequiredAsterisk';
 import type { Editor } from '@tiptap/react';
@@ -32,7 +27,6 @@ import { CollaborativeEditor } from './CollaborativeEditor';
  * @param placeholder - Placeholder text shown when the editor is empty.
  * @param multiline - When true, renders a taller editor suitable for long text.
  * @param maxLength - Optional character limit shown in the editor UI.
- * @param error - Optional validation message shown under the editor.
  * @param onChange - Called with the editor's HTML content on every update.
  * @param onEditorFocus - Called with the editor instance when it gains focus.
  * @param onEditorBlur - Called with the editor instance when it loses focus.
@@ -45,7 +39,6 @@ interface CollaborativeTextFieldProps {
   placeholder?: string;
   multiline?: boolean;
   maxLength?: number;
-  error?: string;
   onChange?: (html: string) => void;
   onEditorFocus?: (editor: Editor) => void;
   onEditorBlur?: (editor: Editor) => void;
@@ -66,7 +59,6 @@ export function CollaborativeTextField({
   placeholder,
   multiline = false,
   maxLength,
-  error,
   onChange,
   onEditorFocus,
   onEditorBlur,
@@ -78,7 +70,6 @@ export function CollaborativeTextField({
   const labelId = useId();
   const descriptionId = useId();
   const counterId = useId();
-  const errorId = useId();
 
   // No Placeholder extension here — useRichTextEditor registers one from the
   // `placeholder` prop below; adding our own would duplicate the extension.
@@ -114,19 +105,12 @@ export function CollaborativeTextField({
   }, []);
 
   const describedBy =
-    [
-      description ? descriptionId : null,
-      maxLength != null ? counterId : null,
-      error ? errorId : null,
-    ]
+    [description ? descriptionId : null, maxLength != null ? counterId : null]
       .filter(Boolean)
       .join(' ') || undefined;
 
   return (
-    <Field
-      data-testid={`field-${fragmentName}`}
-      data-invalid={error ? true : undefined}
-    >
+    <Field data-testid={`field-${fragmentName}`}>
       {title && (
         <FieldTitle id={labelId}>
           {title}
@@ -179,7 +163,6 @@ export function CollaborativeTextField({
           </InputGroupAddon>
         )}
       </InputGroup>
-      {error ? <FieldError id={errorId}>{error}</FieldError> : null}
     </Field>
   );
 }

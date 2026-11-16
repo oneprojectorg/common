@@ -1662,17 +1662,12 @@
     "confirmWinnersHeading": "Erősítse meg a nyertes javaslatokat",
     "developEditor": {
       "entryHeading": "Bejegyzés",
-      "intro": "Töltse ki ezt a bejegyzést a javaslat alapján, majd juttassa tovább.",
       "advanceAction": "Továbbjuttatás",
       "advancedStatus": "Továbbjutott",
       "proposalTab": "Javaslat",
       "originSectionsLabel": "A javaslat részei",
       "originSelectLabel": "Eredeti javaslat",
       "noReviews": "Ehhez a javaslathoz még nincs értékelés.",
-      "savingStatus": "Mentés…",
-      "savedStatus": "Mentve",
-      "notReadyTitle": "A bejegyzés még nem juttatható tovább",
-      "notReadyDescription": "Töltse ki a hiányzó mezőket.",
       "advancedToast": "„{title}” továbbjutott",
       "readOnlyNotice": "Ezt a bejegyzést megtekintheti, de nem szerkesztheti."
     },

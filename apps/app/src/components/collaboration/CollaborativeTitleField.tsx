@@ -1,11 +1,6 @@
 'use client';
 
-import {
-  Field,
-  FieldDescription,
-  FieldError,
-  FieldTitle,
-} from '@op/sense/Field';
+import { Field, FieldDescription, FieldTitle } from '@op/sense/Field';
 import { InputGroup, InputGroupAddon } from '@op/sense/InputGroup';
 import { RequiredAsterisk } from '@op/sense/RequiredAsterisk';
 import { Skeleton } from '@op/sense/Skeleton';
@@ -45,8 +40,6 @@ interface CollaborativeTitleFieldProps {
   maxLength?: number;
   /** Help text under the control, from the template's `description`. */
   description?: ReactNode;
-  /** A validation message; marks the control invalid. */
-  error?: string;
   onChange?: (text: string) => void;
 }
 
@@ -65,7 +58,6 @@ export function CollaborativeTitleField({
   placeholder,
   maxLength,
   description,
-  error,
   onChange,
 }: CollaborativeTitleFieldProps) {
   const t = useTranslations('decisions.proposals');
@@ -74,18 +66,13 @@ export function CollaborativeTitleField({
   const labelId = useId();
   const counterId = useId();
   const descriptionId = useId();
-  const errorId = useId();
   const [charCount, setCharCount] = useState(0);
 
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
 
   const describedBy =
-    [
-      maxLength != null ? counterId : null,
-      description ? descriptionId : null,
-      error ? errorId : null,
-    ]
+    [maxLength != null ? counterId : null, description ? descriptionId : null]
       .filter(Boolean)
       .join(' ') || undefined;
 
@@ -128,7 +115,6 @@ export function CollaborativeTitleField({
         'aria-labelledby': labelId,
         ...(describedBy ? { 'aria-describedby': describedBy } : {}),
         ...(required ? { 'aria-required': 'true' } : {}),
-        ...(error ? { 'aria-invalid': 'true' } : {}),
       },
       handleKeyDown: (_view, event) => {
         if (event.key === 'Enter') {
@@ -214,11 +200,7 @@ export function CollaborativeTitleField({
     // `dir="auto"`: the label is authored template text. The editor below sets
     // its own once it has content, so a latin title inside an arabic-labelled
     // field still reads correctly.
-    <Field
-      data-testid="field-title"
-      data-invalid={error ? true : undefined}
-      dir="auto"
-    >
+    <Field data-testid="field-title" dir="auto">
       <FieldTitle id={labelId}>
         {title ?? t('proposalNameLabel')}
         {required && <RequiredAsterisk />}
@@ -255,7 +237,6 @@ export function CollaborativeTitleField({
       {description ? (
         <FieldDescription id={descriptionId}>{description}</FieldDescription>
       ) : null}
-      {error ? <FieldError id={errorId}>{error}</FieldError> : null}
     </Field>
   );
 }

@@ -1662,17 +1662,12 @@
     "confirmWinnersHeading": "Confirmez les propositions gagnantes",
     "developEditor": {
       "entryHeading": "Entrée",
-      "intro": "Complétez cette entrée à partir de la proposition, puis faites-la avancer.",
       "advanceAction": "Faire avancer",
       "advancedStatus": "Avancée",
       "proposalTab": "Proposition",
       "originSectionsLabel": "Sections de la proposition",
       "originSelectLabel": "Proposition d’origine",
       "noReviews": "Aucune évaluation pour cette proposition pour l’instant.",
-      "savingStatus": "Enregistrement…",
-      "savedStatus": "Enregistré",
-      "notReadyTitle": "L’entrée n’est pas prête à avancer",
-      "notReadyDescription": "Remplissez les champs manquants.",
       "advancedToast": "« {title} » a avancé",
       "readOnlyNotice": "Vous pouvez consulter cette entrée, mais pas la modifier."
     },

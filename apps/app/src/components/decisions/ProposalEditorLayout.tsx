@@ -14,6 +14,8 @@ interface ProposalEditorLayoutProps {
   backHref: string;
   title: string;
   onSubmitProposal: () => void;
+  /** Replaces the submit action's default label. */
+  submitLabel?: string;
   isSubmitting: boolean;
   isEditMode?: boolean;
   isDraft?: boolean;
@@ -39,6 +41,7 @@ export function ProposalEditorLayout({
   backHref,
   title,
   onSubmitProposal,
+  submitLabel,
   isSubmitting,
   isEditMode = false,
   isDraft = false,
@@ -67,6 +70,7 @@ export function ProposalEditorLayout({
         backHref={backHref}
         title={title}
         onSubmitProposal={onSubmitProposal}
+        submitLabel={submitLabel}
         isSubmitting={isSubmitting}
         isEditMode={isEditMode}
         isDraft={isDraft}

@@ -12,7 +12,9 @@ import {
   parseProposalData,
 } from '@op/common/client';
 import { logger } from '@op/logging/client';
+import { Badge } from '@op/sense/Badge';
 import { Header2 } from '@op/sense/Header';
+import { SplitPane } from '@op/sense/SplitPane';
 import { toast } from '@op/sense/Toast';
 import { useLocale } from 'next-intl';
 import { usePostHog } from 'posthog-js/react';
@@ -54,19 +56,38 @@ import { useProposalValidation } from './useProposalValidation';
 // Create a version snapshot after 60 seconds without local edits.
 const VERSION_INTERVAL_SECONDS = 60;
 
+interface ProposalEditorProps {
+  instance: ProcessInstance;
+  backHref: string;
+  proposal: Proposal;
+  isEditMode?: boolean;
+  asideHeaderIcons?: ReactNode;
+  /**
+   * Edits a proposal developed from origins. The origin pane sits beside the
+   * form, a draft is advanced with `submitDevelopedProposal` from an
+   * "Advance" action, and the participant steps (submit confirmation, custom
+   * form, info modal, anonymous promote) and attachments are left out.
+   */
+  develop?: DevelopEditorConfig;
+}
+
+export interface DevelopEditorConfig {
+  /** Shown beside the form in a split pane; the form pane is first on a phone. */
+  originPane: { label: string; content: ReactNode };
+  /** Replaces the edit heading above the form. */
+  heading: string;
+  /** A paragraph under the heading. */
+  description?: string;
+}
+
 export function ProposalEditor({
   instance,
   backHref,
   proposal,
   isEditMode = false,
   asideHeaderIcons,
-}: {
-  instance: ProcessInstance;
-  backHref: string;
-  proposal: Proposal;
-  isEditMode?: boolean;
-  asideHeaderIcons?: ReactNode;
-}) {
+  develop,
+}: ProposalEditorProps) {
   const { user } = useRequiredUser();
   const t = useTranslations();
 
@@ -113,6 +134,7 @@ export function ProposalEditor({
       asideHeaderIcons={asideHeaderIcons}
       collaborationDocId={collaborationDocId}
       proposalTemplate={proposalTemplate}
+      develop={develop}
     />
   );
 
@@ -144,12 +166,9 @@ function ProposalEditorInner({
   asideHeaderIcons,
   collaborationDocId,
   proposalTemplate,
-}: {
-  instance: ProcessInstance;
-  backHref: string;
-  proposal: Proposal;
+  develop,
+}: Omit<ProposalEditorProps, 'isEditMode'> & {
   isEditMode: boolean;
-  asideHeaderIcons?: ReactNode;
   collaborationDocId: string;
   proposalTemplate: ProposalTemplateSchema;
 }) {
@@ -175,6 +194,7 @@ function ProposalEditorInner({
   const submitInFlightRef = useRef(false);
 
   const isDraft = isEditMode && proposal?.status === ProposalStatus.DRAFT;
+  const isDevelopedProposal = Boolean(develop);
 
   // Look up the optional form attached to this decision profile for the
   // current phase. A profile can attach a form per phase (tagged with
@@ -190,7 +210,7 @@ function ProposalEditorInner({
       phaseId: instance.currentStateId ?? undefined,
       initialPhaseId,
     },
-    { enabled: Boolean(instance.profileId) && isDraft },
+    { enabled: Boolean(instance.profileId) && isDraft && !isDevelopedProposal },
   );
 
   // -- Instance config -------------------------------------------------------
@@ -243,6 +263,11 @@ function ProposalEditorInner({
     onError: (error) => handleMutationError(error, 'submit', t),
   });
 
+  const submitDevelopedProposalMutation =
+    trpc.decision.submitDevelopedProposal.useMutation({
+      onError: (error) => handleMutationError(error, 'submit', t),
+    });
+
   const updateProposalMutation = trpc.decision.updateProposal.useMutation({
     onError: (error) => handleMutationError(error, 'update', t),
   });
@@ -257,10 +282,21 @@ function ProposalEditorInner({
 
   // Show info modal on mount for new/draft proposals
   useEffect(() => {
-    if ((!isEditMode || isDraft) && proposalInfoTitle && proposalInfoContent) {
+    if (
+      (!isEditMode || isDraft) &&
+      !isDevelopedProposal &&
+      proposalInfoTitle &&
+      proposalInfoContent
+    ) {
       setShowInfoModal(true);
     }
-  }, [isEditMode, isDraft, proposalInfoTitle, proposalInfoContent]);
+  }, [
+    isEditMode,
+    isDraft,
+    isDevelopedProposal,
+    proposalInfoTitle,
+    proposalInfoContent,
+  ]);
 
   useEffect(() => {
     if (!provider || !isSynced || isPreviewMode) {
@@ -297,6 +333,20 @@ function ProposalEditorInner({
 
   const finalizeSubmit = useCallback(async () => {
     const didSubmitDraft = isDraft && Boolean(proposal);
+
+    if (didSubmitDraft && isDevelopedProposal) {
+      await submitDevelopedProposalMutation.mutateAsync({
+        proposalId: proposal.id,
+      });
+      toast.success(
+        t('decisions.developEditor.advancedToast', {
+          title: draftRef.current.title || t('decisions.develop.untitledEntry'),
+        }),
+      );
+      router.push(backHref);
+      return;
+    }
+
     if (didSubmitDraft && proposal) {
       await submitProposalMutation.mutateAsync({
         proposalId: proposal.id,
@@ -310,8 +360,12 @@ function ProposalEditorInner({
     );
   }, [
     isDraft,
+    isDevelopedProposal,
     proposal,
     submitProposalMutation,
+    submitDevelopedProposalMutation,
+    draftRef,
+    t,
     router,
     isAnonymous,
     backHref,
@@ -366,7 +420,7 @@ function ProposalEditorInner({
       // phase; voting-phase forms are gated separately on the voting page.
       // Resolve via the query cache (fetch, not hook state) so a click before
       // the subscription resolves still routes through the required form.
-      if (isDraft && instance.profileId) {
+      if (isDraft && !isDevelopedProposal && instance.profileId) {
         const form = await utils.customForm.getForProfile.fetch({
           profileId: instance.profileId,
           phaseId: instance.currentStateId ?? undefined,
@@ -392,6 +446,7 @@ function ProposalEditorInner({
     collaborationDocId,
     proposal,
     isDraft,
+    isDevelopedProposal,
     instance.profileId,
     instance.currentStateId,
     initialPhaseId,
@@ -422,13 +477,22 @@ function ProposalEditorInner({
       return;
     }
 
-    if (requiresSubmitConfirmation({ instance, isDraft })) {
+    if (
+      !isDevelopedProposal &&
+      requiresSubmitConfirmation({ instance, isDraft })
+    ) {
       setShowSubmitConfirm(true);
       return;
     }
 
     void performSubmit();
-  }, [validateWithToast, instance, isDraft, performSubmit]);
+  }, [
+    validateWithToast,
+    instance,
+    isDraft,
+    isDevelopedProposal,
+    performSubmit,
+  ]);
 
   const handleConfirmSubmit = useCallback(() => {
     // The dialog closes before the submission starts: `AlertDialogAction` is a
@@ -496,27 +560,49 @@ function ProposalEditorInner({
         previewVersionFragmentContents={versionPreview?.fragmentContents}
       />
 
-      <div className="border-t pt-6 sm:pt-10">
-        <ProposalAttachments
-          proposalId={proposal.id}
-          attachments={
-            proposal.attachments?.map((pa) => ({
-              id: pa.attachmentId,
-              fileName:
-                pa.attachment?.fileName ??
-                t('decisions.proposals.unknownAuthor'),
-              fileSize: pa.attachment?.fileSize ?? null,
-              url: pa.attachment?.url,
-            })) ?? []
-          }
-          onMutate={() =>
-            utils.decision.getProposal.invalidate({
-              profileId: proposal.profileId,
-            })
-          }
-        />
-      </div>
+      {develop ? null : (
+        <div className="border-t pt-6 sm:pt-10">
+          <ProposalAttachments
+            proposalId={proposal.id}
+            attachments={
+              proposal.attachments?.map((pa) => ({
+                id: pa.attachmentId,
+                fileName:
+                  pa.attachment?.fileName ??
+                  t('decisions.proposals.unknownAuthor'),
+                fileSize: pa.attachment?.fileSize ?? null,
+                url: pa.attachment?.url,
+              })) ?? []
+            }
+            onMutate={() =>
+              utils.decision.getProposal.invalidate({
+                profileId: proposal.profileId,
+              })
+            }
+          />
+        </div>
+      )}
     </>
+  );
+
+  const formHeading =
+    develop?.heading ??
+    (isEditMode
+      ? t('decisions.proposals.editProposalTitle')
+      : t('decisions.proposals.createProposalTitle'));
+
+  const formColumn = (
+    <div className="mx-auto flex w-full max-w-136 flex-col gap-6 sm:gap-10">
+      {develop?.description ? (
+        <div className="flex flex-col gap-2">
+          <Header2>{formHeading}</Header2>
+          <p className="text-base text-foreground">{develop.description}</p>
+        </div>
+      ) : (
+        <Header2>{formHeading}</Header2>
+      )}
+      {editorBody}
+    </div>
   );
 
   return (
@@ -528,7 +614,16 @@ function ProposalEditorInner({
           <span className="truncate text-sm text-muted-foreground">
             {viewingLabel}
           </span>
+        ) : isDevelopedProposal && isEditMode && !isDraft ? (
+          <Badge variant="success">
+            {t('decisions.developEditor.advancedStatus')}
+          </Badge>
         ) : undefined
+      }
+      submitLabel={
+        isDevelopedProposal && isDraft
+          ? t('decisions.developEditor.advanceAction')
+          : undefined
       }
       onSubmitProposal={handleSubmitProposal}
       isSubmitting={isSubmitting}
@@ -542,22 +637,26 @@ function ProposalEditorInner({
     >
       {/* Formatting is per-field now: each prose editor renders its own bubble
           menu on the selection, so there is no toolbar row above the form. */}
-      <div className="grid h-full min-h-0 grid-cols-1 grid-rows-[1fr]">
-        <div className="relative min-h-0 overflow-y-auto">
-          <div className="px-4 py-8 sm:px-6 sm:py-14">
-            <div className="mx-auto flex w-full max-w-136 flex-col gap-6 sm:gap-10">
-              <Header2>
-                {isEditMode
-                  ? t('decisions.proposals.editProposalTitle')
-                  : t('decisions.proposals.createProposalTitle')}
-              </Header2>
-              {editorBody}
-            </div>
+      {develop ? (
+        <div className="flex h-full min-h-0 flex-col">
+          <SplitPane defaultMobileTabId="form">
+            <SplitPane.Pane id="origin" label={develop.originPane.label}>
+              {develop.originPane.content}
+            </SplitPane.Pane>
+            <SplitPane.Pane id="form" label={formHeading}>
+              {formColumn}
+            </SplitPane.Pane>
+          </SplitPane>
+        </div>
+      ) : (
+        <div className="grid h-full min-h-0 grid-cols-1 grid-rows-[1fr]">
+          <div className="relative min-h-0 overflow-y-auto">
+            <div className="px-4 py-8 sm:px-6 sm:py-14">{formColumn}</div>
           </div>
         </div>
-      </div>
+      )}
 
-      {proposalInfoTitle && proposalInfoContent && (
+      {!develop && proposalInfoTitle && proposalInfoContent && (
         <ProposalInfoModal
           isOpen={showInfoModal}
           onClose={handleCloseInfoModal}

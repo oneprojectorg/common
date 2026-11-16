@@ -73,12 +73,6 @@ function extractFragmentTexts(
   return result;
 }
 
-/** The system fields submit reads from the stored `proposalData`. */
-interface StoredSystemFields {
-  category?: unknown;
-  budget?: unknown;
-}
-
 /**
  * Client-side proposal validation against the JSON Schema template.
  *
@@ -92,11 +86,6 @@ interface StoredSystemFields {
  * `relaxLocationCategoryRequirement`), because the server fills the category
  * from the location's district and is the authority on that requirement.
  *
- * Pass `storedData` to validate the way submit does: the server lays the
- * stored `proposalData.category` and `budget` over the fragment values and
- * coerces them to the schema, so a category set at create, which no fragment
- * holds, still counts.
- *
  * @param ydoc - The shared Yjs document from `useCollaborativeDoc()`.
  * @param template - The proposal template schema from the process instance.
  * @returns An object with a `validate` function that returns
@@ -105,38 +94,17 @@ interface StoredSystemFields {
 export function useProposalValidation(
   ydoc: Doc,
   template: ProposalTemplateSchema,
-): {
-  validate: (storedData?: StoredSystemFields) => SchemaValidationResult;
-} {
-  const validate = useCallback(
-    (storedData?: StoredSystemFields): SchemaValidationResult => {
-      const fragmentNames = getProposalFragmentNames(template);
-      const fragmentTexts = extractFragmentTexts(ydoc, fragmentNames);
-      const data = assembleProposalData(template, fragmentTexts);
-      // For location-collecting templates the category is auto-derived from the
-      // pin's district on the server, so don't block submit on a category the
-      // user never selects. The server remains the authority on the requirement.
-      const validationTemplate = relaxLocationCategoryRequirement(template);
-
-      if (!storedData) {
-        return schemaValidator.validate(validationTemplate, data);
-      }
-
-      return schemaValidator.validate(
-        validationTemplate,
-        schemaValidator.coerceToSchema(validationTemplate, {
-          ...data,
-          ...(storedData.category !== undefined
-            ? { category: storedData.category }
-            : {}),
-          ...(storedData.budget !== undefined
-            ? { budget: storedData.budget }
-            : {}),
-        }),
-      );
-    },
-    [ydoc, template],
-  );
+): { validate: () => SchemaValidationResult } {
+  const validate = useCallback((): SchemaValidationResult => {
+    const fragmentNames = getProposalFragmentNames(template);
+    const fragmentTexts = extractFragmentTexts(ydoc, fragmentNames);
+    const data = assembleProposalData(template, fragmentTexts);
+    // For location-collecting templates the category is auto-derived from the
+    // pin's district on the server, so don't block submit on a category the
+    // user never selects. The server remains the authority on the requirement.
+    const validationTemplate = relaxLocationCategoryRequirement(template);
+    return schemaValidator.validate(validationTemplate, data);
+  }, [ydoc, template]);
 
   return { validate };
 }

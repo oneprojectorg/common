@@ -1662,17 +1662,12 @@
     "confirmWinnersHeading": "تأكيد المقترحات الفائزة",
     "developEditor": {
       "entryHeading": "المُدخل",
-      "intro": "أكمل هذا المُدخل انطلاقًا من المقترح، ثم قدّمه.",
       "advanceAction": "تقديم",
       "advancedStatus": "تم التقديم",
       "proposalTab": "المقترح",
       "originSectionsLabel": "أقسام المقترح",
       "originSelectLabel": "المقترح الأصلي",
       "noReviews": "لا توجد مراجعات لهذا المقترح بعد.",
-      "savingStatus": "جارٍ الحفظ…",
-      "savedStatus": "تم الحفظ",
-      "notReadyTitle": "المُدخل غير جاهز للتقديم",
-      "notReadyDescription": "املأ الحقول الناقصة.",
       "advancedToast": "تم تقديم «{title}»",
       "readOnlyNotice": "يمكنك عرض هذا المُدخل دون تعديله."
     },
