@@ -1,5 +1,6 @@
 'use client';
 
+import { getDecisionCommonProperties } from '@op/analytics/client-utils';
 import { trpc } from '@op/api/client';
 import type {
   Proposal,
@@ -160,17 +161,23 @@ export const ManualSelectionList = ({
   const handleConfirmDialogOpenChange = useCallback(
     (open: boolean) => {
       if (open) {
-        posthog.capture('manual_selection_dialog_opened', {
-          process_instance_id: instanceId,
-          proposal_count: confirmIds.length,
-        });
+        posthog.capture(
+          'manual_selection_dialog_opened',
+          getSelectionDialogTrackingProps({
+            instanceId,
+            proposalCount: confirmIds.length,
+          }),
+        );
       } else if (submitMutation.status === 'idle') {
         // Only treat a close as a user-initiated dismiss when no submission
         // has run. Pending → in-flight close, success → already-submitted.
-        posthog.capture('manual_selection_dialog_dismissed', {
-          process_instance_id: instanceId,
-          proposal_count: confirmIds.length,
-        });
+        posthog.capture(
+          'manual_selection_dialog_dismissed',
+          getSelectionDialogTrackingProps({
+            instanceId,
+            proposalCount: confirmIds.length,
+          }),
+        );
       }
       setIsConfirmOpen(open);
     },
@@ -199,10 +206,13 @@ export const ManualSelectionList = ({
       resultNotifications?: ResultNotificationMessages,
       allocations?: ProposalAllocation[],
     ) => {
-      posthog.capture('manual_selection_dialog_confirmed', {
-        process_instance_id: instanceId,
-        proposal_count: confirmIds.length,
-      });
+      posthog.capture(
+        'manual_selection_dialog_confirmed',
+        getSelectionDialogTrackingProps({
+          instanceId,
+          proposalCount: confirmIds.length,
+        }),
+      );
       submitMutation.mutate({
         processInstanceId: instanceId,
         proposalIds: confirmIds,
@@ -331,3 +341,19 @@ export const ManualSelectionList = ({
     </ProposalCardDialogProvider>
   );
 };
+
+function getSelectionDialogTrackingProps({
+  instanceId,
+  proposalCount,
+}: {
+  instanceId: string;
+  proposalCount: number;
+}) {
+  return getDecisionCommonProperties({
+    decisionInstanceId: instanceId,
+    additionalProps: {
+      process_instance_id: instanceId,
+      proposal_count: proposalCount,
+    },
+  });
+}

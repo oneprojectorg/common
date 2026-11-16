@@ -19,7 +19,7 @@ export function DecisionProcessStepper({
 }: {
   phases: ProcessPhase[];
   currentStateId: string;
-  instanceId?: string;
+  instanceId: string;
   isAdmin?: boolean;
   className?: string;
 }) {
