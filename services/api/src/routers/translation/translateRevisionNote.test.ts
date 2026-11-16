@@ -7,8 +7,9 @@ import {
   ProposalReviewAssignmentStatus,
   ProposalReviewRequestState,
   contentTranslations,
+  proposals,
 } from '@op/db/schema';
-import { like } from 'drizzle-orm';
+import { eq, like } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '..';
@@ -96,6 +97,45 @@ describe('translation.translateRevisionNote', () => {
     expect(mockTranslateText).toHaveBeenCalledTimes(1);
   });
 
+  it("translates the note for the proposal's author", async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const { author, request } = await createRevisionNoteScenario(
+      testData,
+      onTestFinished,
+    );
+
+    const caller = await createAuthenticatedCaller(author.email);
+    const result = await caller.translation.translateRevisionNote({
+      requestId: request.id,
+      targetLocale: 'es',
+    });
+
+    expect(result.responseComment).toBe('[ES] I added the budget breakdown.');
+  });
+
+  it('translates the note for a reviewer with the review capability but no admin role', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const { context, request } = await createRevisionNoteScenario(
+      testData,
+      onTestFinished,
+    );
+
+    const reviewer = await testData.createInstanceReviewerWithRole(context);
+    const caller = await createAuthenticatedCaller(reviewer.email);
+    const result = await caller.translation.translateRevisionNote({
+      requestId: request.id,
+      targetLocale: 'es',
+    });
+
+    expect(result.responseComment).toBe('[ES] I added the budget breakdown.');
+  });
+
   it('returns no translation for a blank note without calling the provider', async ({
     task,
     onTestFinished,
@@ -130,6 +170,60 @@ describe('translation.translateRevisionNote', () => {
     );
 
     const caller = await createAuthenticatedCaller(reviewer.email);
+
+    await expect(
+      caller.translation.translateRevisionNote({
+        requestId: request.id,
+        targetLocale: 'es',
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'NotFoundError' } });
+    expect(mockTranslateText).not.toHaveBeenCalled();
+  });
+
+  it('rejects an admin of another decision', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const { request } = await createRevisionNoteScenario(
+      testData,
+      onTestFinished,
+    );
+
+    const otherData = new TestReviewsDataManager(
+      `${task.id}-other`,
+      onTestFinished,
+    );
+    const otherContext = await otherData.createContext();
+    const caller = await createAuthenticatedCaller(
+      otherContext.defaultReviewer.email,
+    );
+
+    await expect(
+      caller.translation.translateRevisionNote({
+        requestId: request.id,
+        targetLocale: 'es',
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
+    expect(mockTranslateText).not.toHaveBeenCalled();
+  });
+
+  it('hides the note of a proposal taken down by moderation, even from its author', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const { author, proposal, request } = await createRevisionNoteScenario(
+      testData,
+      onTestFinished,
+    );
+
+    await db
+      .update(proposals)
+      .set({ moderationDetachedAt: new Date().toISOString() })
+      .where(eq(proposals.id, proposal.id));
+
+    const caller = await createAuthenticatedCaller(author.email);
 
     await expect(
       caller.translation.translateRevisionNote({
