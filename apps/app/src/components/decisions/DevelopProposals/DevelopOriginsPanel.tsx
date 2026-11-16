@@ -156,7 +156,6 @@ function DevelopOriginsTable({
 }) {
   const t = useTranslations('decisions');
   const router = useRouter();
-  const utils = trpc.useUtils();
   const openInSheet = useOpenProposalInSheet();
   const [isNavigating, startNavigating] = useTransition();
 
@@ -188,7 +187,6 @@ function DevelopOriginsTable({
 
   const createEntry = trpc.decision.createDevelopedProposal.useMutation({
     onSuccess: (entry) => {
-      void utils.decision.listProposals.invalidate({ processInstanceId });
       startNavigating(() => {
         router.push(proposalEditHref({ ...route, profileId: entry.profileId }));
       });
