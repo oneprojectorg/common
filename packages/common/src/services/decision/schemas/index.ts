@@ -5,6 +5,7 @@ export * from './instanceData';
 export * from './proposalCategory';
 export * from './reviews';
 export * from './proposal';
+export * from './developOrigins';
 export * from './proposalRelationships';
 export * from './rejectProposal';
 export * from './advanceProposal';

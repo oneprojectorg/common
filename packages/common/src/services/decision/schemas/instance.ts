@@ -1,11 +1,14 @@
 import { z } from 'zod';
 
+/** A slug, not a uuid. */
+export const phaseIdSchema = z.string().min(1);
+
 /**
  * Reference to a specific phase within a process instance.
  */
 export const instancePhaseRefSchema = z.object({
   processInstanceId: z.uuid(),
-  phaseId: z.string().min(1),
+  phaseId: phaseIdSchema,
 });
 
 export type InstancePhaseRef = z.infer<typeof instancePhaseRefSchema>;
