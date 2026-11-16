@@ -39,6 +39,7 @@ export {
 export {
   getPhaseIndex,
   getPreviousPhases,
+  hasPhaseEnded,
   isPhaseAtOrBefore,
 } from './services/decision/utils/phaseOrder';
 export {
