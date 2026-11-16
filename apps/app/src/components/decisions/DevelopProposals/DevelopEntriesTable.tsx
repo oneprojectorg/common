@@ -4,6 +4,7 @@ import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { formatCurrency } from '@/utils/formatting';
 import { trpc } from '@op/api/client';
 import {
+  type DevelopedEntryScope,
   type MoneyAmount,
   type OwnDevelopedProposal,
   nextCursor,
@@ -28,31 +29,51 @@ import {
   TableRowHeader,
 } from '@op/sense/Table';
 import { useLocale } from 'next-intl';
-import { Suspense, useCallback, useDeferredValue, useState } from 'react';
+import {
+  Suspense,
+  useCallback,
+  useDeferredValue,
+  useState,
+  useTransition,
+} from 'react';
 import { LuFileText } from 'react-icons/lu';
 
 import { Link, useTranslations } from '@/lib/i18n';
 
 import { SearchField } from '@/components/SearchField';
 
+import { CategoryFilterSelect } from '../CategoryFilterSelect';
 import { ProposalsLoadError } from '../ProposalsLoadError';
+import { ALL_CATEGORIES } from '../proposalFilterQuery';
+import { SelectionCategoryChips } from '../selection/SelectionCategoryChips';
 
 const SEARCH_DEBOUNCE_MS = 300;
 
+type EntryCategory = { id: string; name: string };
+
 /**
- * The caller's own entries of the current phase, drafts and ready ones: title
- * and origins, and budget, with the title linking into the entry. The search,
- * the order and the pages all come from the API; the heading's count and
- * budget total are the caller's whole set, whatever the search.
+ * The entries of the current phase: title and origins, and budget, with the
+ * title linking into the entry. Under `own`, the caller's own entries, drafts
+ * and ready ones; under `all` (an admin), every ready entry, with its category
+ * and a category filter. The search, the filter, the order and the pages all
+ * come from the API; the heading's count and budget total are the whole set,
+ * whatever the search or filter.
  */
 export function DevelopEntriesTable({
   processInstanceId,
+  scope,
+  decisionSlug,
+  categories,
   entriesTotal,
   budgetTotal,
   editHref,
 }: {
   processInstanceId: string;
-  /** Every entry of the caller in this phase. */
+  scope: DevelopedEntryScope;
+  decisionSlug: string;
+  /** The instance's categories, for the filter under `all`. */
+  categories: EntryCategory[];
+  /** Every entry in the scope. */
   entriesTotal: number;
   /** The budget total of every entry, or null when there is none. */
   budgetTotal: MoneyAmount | null;
@@ -65,6 +86,12 @@ export function DevelopEntriesTable({
   const [debouncedQuery] = useDebounce(query.trim(), SEARCH_DEBOUNCE_MS);
   // A new search keeps the current rows on screen while the next ones load.
   const search = useDeferredValue(debouncedQuery);
+  const [selectedCategory, setSelectedCategory] = useState(ALL_CATEGORIES);
+  const [, startFiltering] = useTransition();
+
+  const isAll = scope === 'all';
+  const categoryId =
+    isAll && selectedCategory !== ALL_CATEGORIES ? selectedCategory : undefined;
 
   return (
     <div className="flex flex-col gap-6">
@@ -84,22 +111,36 @@ export function DevelopEntriesTable({
           </Header3>
         </div>
         {entriesTotal > 0 ? (
-          <SearchField
-            value={query}
-            onChange={setQuery}
-            isPending={search !== query.trim()}
-            label={t('searchEntriesLabel')}
-          />
+          <div className="flex flex-wrap items-center gap-2">
+            <SearchField
+              value={query}
+              onChange={setQuery}
+              isPending={search !== query.trim()}
+              label={t('searchEntriesLabel')}
+            />
+            {isAll && categories.length > 0 ? (
+              <CategoryFilterSelect
+                decisionSlug={decisionSlug}
+                categories={categories}
+                selectedCategory={selectedCategory}
+                onSelectCategory={(category) =>
+                  startFiltering(() => setSelectedCategory(category))
+                }
+              />
+            ) : null}
+          </div>
         ) : null}
       </div>
 
       {entriesTotal === 0 ? (
-        <EntriesEmpty isSearch={false} />
+        <EntriesEmpty isSearch={false} isAll={isAll} />
       ) : (
         <APIErrorBoundary fallbacks={{ default: () => <ProposalsLoadError /> }}>
           <Suspense fallback={<EntriesSkeleton />}>
             <EntriesPageSuspense
               processInstanceId={processInstanceId}
+              scope={scope}
+              categoryId={categoryId}
               search={search}
               editHref={editHref}
             />
@@ -112,18 +153,23 @@ export function DevelopEntriesTable({
 
 function EntriesPageSuspense({
   processInstanceId,
+  scope,
+  categoryId,
   search,
   editHref,
 }: {
   processInstanceId: string;
+  scope: DevelopedEntryScope;
+  categoryId: string | undefined;
   search: string;
   editHref: (entry: OwnDevelopedProposal) => string;
 }) {
   const t = useTranslations('decisions.develop');
   const locale = useLocale();
+  const isAll = scope === 'all';
   const [{ pages }, { fetchNextPage, hasNextPage, isFetchingNextPage }] =
     trpc.decision.listOwnDevelopedProposals.useSuspenseInfiniteQuery(
-      { processInstanceId, search: search || undefined },
+      { processInstanceId, scope, categoryId, search: search || undefined },
       { getNextPageParam: nextCursor },
     );
   const entries = pages.flatMap((page) => page.items);
@@ -142,12 +188,19 @@ function EntriesPageSuspense({
   return (
     <div aria-live="polite" className="flex flex-col">
       {entries.length === 0 ? (
-        <EntriesEmpty isSearch />
+        <EntriesEmpty isSearch isAll={isAll} />
       ) : (
-        <Table aria-label={t('entriesTableLabel')}>
+        <Table
+          aria-label={
+            isAll ? t('allEntriesTableLabel') : t('entriesTableLabel')
+          }
+        >
           <TableHeader>
             <TableRow>
               <TableHead scope="col">{t('entryColumn')}</TableHead>
+              {isAll ? (
+                <TableHead scope="col">{t('categoryColumn')}</TableHead>
+              ) : null}
               <TableHead scope="col">{t('budgetColumn')}</TableHead>
             </TableRow>
           </TableHeader>
@@ -158,6 +211,7 @@ function EntriesPageSuspense({
                 entry={entry}
                 href={editHref(entry)}
                 locale={locale}
+                showCategory={isAll}
               />
             ))}
           </TableBody>
@@ -177,8 +231,21 @@ function EntriesPageSuspense({
   );
 }
 
-function EntriesEmpty({ isSearch }: { isSearch: boolean }) {
+function EntriesEmpty({
+  isSearch,
+  isAll,
+}: {
+  isSearch: boolean;
+  isAll: boolean;
+}) {
   const t = useTranslations('decisions.develop');
+  const description = isSearch
+    ? isAll
+      ? t('noMatchingEntriesFilterDescription')
+      : t('noMatchingEntriesDescription')
+    : isAll
+      ? t('noReadyEntriesDescription')
+      : t('noEntriesDescription');
 
   return (
     <Empty>
@@ -189,11 +256,7 @@ function EntriesEmpty({ isSearch }: { isSearch: boolean }) {
         <EmptyTitle render={<h4 />}>
           {isSearch ? t('noMatchingEntriesTitle') : t('noEntriesTitle')}
         </EmptyTitle>
-        <EmptyDescription>
-          {isSearch
-            ? t('noMatchingEntriesDescription')
-            : t('noEntriesDescription')}
-        </EmptyDescription>
+        <EmptyDescription>{description}</EmptyDescription>
       </EmptyHeader>
     </Empty>
   );
@@ -213,10 +276,12 @@ function EntryRow({
   entry,
   href,
   locale,
+  showCategory,
 }: {
   entry: OwnDevelopedProposal;
   href: string;
   locale: string;
+  showCategory: boolean;
 }) {
   const t = useTranslations('decisions.develop');
   const originNames = entry.origins.map((origin) => origin.name).join(', ');
@@ -242,6 +307,11 @@ function EntryRow({
           ) : null}
         </div>
       </TableRowHeader>
+      {showCategory ? (
+        <TableCell className="py-4">
+          <SelectionCategoryChips labels={entry.category} />
+        </TableCell>
+      ) : null}
       <TableCell className="py-4 tabular-nums">
         {entry.budget && entry.budget.amount > 0
           ? formatCurrency(entry.budget.amount, locale, entry.budget.currency)

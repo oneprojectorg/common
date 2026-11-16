@@ -6,6 +6,7 @@ import type { ProcessInstance } from '@op/api/encoders';
 import {
   type DevelopOriginEntry,
   type DevelopOriginScope,
+  type DevelopedEntryScope,
   type Proposal,
   type ProposalWithAggregates,
   nextCursor,
@@ -47,21 +48,27 @@ import {
 } from '../ReviewSelection/ReviewSelectionTable';
 import { ALL_CATEGORIES } from '../proposalFilterQuery';
 import { proposalEditHref } from '../proposalHrefs';
+import {
+  DevelopCategoriesTableSkeleton,
+  DevelopCategoriesTableSuspense,
+} from './DevelopCategoriesTable';
 import { DevelopEntriesTable } from './DevelopEntriesTable';
 import { DevelopOriginActions } from './DevelopOriginActions';
 import { DevelopOriginsTable } from './DevelopOriginsTable';
 import { NoOriginsEmpty } from './NoOriginsEmpty';
 
-type DevelopTab = 'proposals' | 'ballot';
+type DevelopTab = 'categories' | 'proposals' | 'ballot';
 type OriginSort = 'newest' | 'oldest';
 
 /**
- * The develop screen's body, in two tabs. Proposals lists the previous phase's
+ * The develop screen's body, in tabs. Proposals lists the previous phase's
  * proposals (the origins): an admin sees every one, with a category filter;
  * anyone else sees the ones assigned to them. Each has a Prepare action that
  * creates an entry in the current phase and opens it in the proposal editor.
- * Ballot lists the caller's own entries of the current phase, drafts included,
- * each with the origins it was developed from.
+ * Ballot lists the entries of the current phase, each with the origins it was
+ * developed from: the caller's own, drafts included, or every ready entry for
+ * an admin. An admin of an instance with categories also gets a first tab with
+ * each category's counts, which opens the proposals tab filtered to one.
  *
  * An origin the caller already developed links to that entry instead, with
  * Advance to mark the entry ready. Filtering, sorting, paging and counting all
@@ -86,10 +93,11 @@ export function DevelopProposalsListSuspense({
   }
 
   const isAdmin = Boolean(instance.access?.admin);
-  // An admin sees every origin; anyone else the ones assigned to them.
+  // An admin sees every origin and every ready entry; anyone else the origins
+  // assigned to them and their own entries.
   const scope: DevelopOriginScope = isAdmin ? 'all' : 'assigned';
+  const entryScope: DevelopedEntryScope = isAdmin ? 'all' : 'own';
 
-  const [tab, setTab] = useState<DevelopTab>('proposals');
   const [selectedCategory, setSelectedCategory] = useState(ALL_CATEGORIES);
   const [sort, setSort] = useState<OriginSort>('newest');
   // A filter change keeps the current rows on screen while the next ones load,
@@ -108,8 +116,17 @@ export function DevelopProposalsListSuspense({
   const [[{ items: categories }, entriesSummary]] = trpc.useSuspenseQueries(
     (q) => [
       q.decision.getCategories({ processInstanceId }),
-      q.decision.listOwnDevelopedProposals({ processInstanceId, limit: 1 }),
+      q.decision.listOwnDevelopedProposals({
+        processInstanceId,
+        scope: entryScope,
+        limit: 1,
+      }),
     ],
+  );
+  const showCategoriesTab = isAdmin && categories.length > 0;
+
+  const [tab, setTab] = useState<DevelopTab>(
+    showCategoriesTab ? 'categories' : 'proposals',
   );
 
   const categoryId =
@@ -161,6 +178,9 @@ export function DevelopProposalsListSuspense({
   const invalidateLists = () => {
     void utils.decision.listDevelopOrigins.invalidate({ processInstanceId });
     void utils.decision.listOwnDevelopedProposals.invalidate({
+      processInstanceId,
+    });
+    void utils.decision.listDevelopCategoryTotals.invalidate({
       processInstanceId,
     });
     void utils.decision.listProposals.invalidate({ processInstanceId });
@@ -244,13 +264,39 @@ export function DevelopProposalsListSuspense({
         className="gap-6"
       >
         <ProposalTabList aria-label={t('tabsLabel')} className="-ms-3">
+          {showCategoriesTab ? (
+            <ProposalTabTrigger value="categories">
+              {t('categoriesTab')}
+            </ProposalTabTrigger>
+          ) : null}
           <ProposalTabTrigger value="proposals">
-            {t('proposalsTab')}
+            {isAdmin ? t('allProposalsTab') : t('proposalsTab')}
           </ProposalTabTrigger>
           <ProposalTabTrigger value="ballot" count={entriesSummary.total}>
             {t('ballotTab')}
           </ProposalTabTrigger>
         </ProposalTabList>
+
+        {showCategoriesTab ? (
+          <TabsContent value="categories" className="grow sm:p-0">
+            <APIErrorBoundary
+              fallbacks={{ default: () => <ProposalsLoadError /> }}
+            >
+              <Suspense fallback={<DevelopCategoriesTableSkeleton />}>
+                <DevelopCategoriesTableSuspense
+                  processInstanceId={processInstanceId}
+                  onSelectCategory={(category) =>
+                    // Keeps this tab on screen until the filtered list loads.
+                    startFiltering(() => {
+                      setSelectedCategory(category);
+                      setTab('proposals');
+                    })
+                  }
+                />
+              </Suspense>
+            </APIErrorBoundary>
+          </TabsContent>
+        ) : null}
 
         <TabsContent
           value="proposals"
@@ -307,6 +353,7 @@ export function DevelopProposalsListSuspense({
                     decisionSlug={decisionSlug}
                     actionLabel={t('actionsColumn')}
                     renderPrepare={renderPrepare}
+                    showCategory={isAdmin}
                   />
                 </Suspense>
               </APIErrorBoundary>
@@ -337,6 +384,9 @@ export function DevelopProposalsListSuspense({
         <TabsContent value="ballot" className="grow sm:p-0">
           <DevelopEntriesTable
             processInstanceId={processInstanceId}
+            scope={entryScope}
+            decisionSlug={decisionSlug}
+            categories={categories}
             entriesTotal={entriesSummary.total}
             budgetTotal={entriesSummary.budgetTotal}
             editHref={editHref}
@@ -352,10 +402,13 @@ export function DevelopProposalsListSuspense({
           </p>
         </FooterBarStart>
         <FooterBarCenter />
-        <FooterBarEnd>
-          {/* Confirm is not built yet; the disabled button holds its place. */}
-          <Button disabled>{t('confirmSelectionsAction')}</Button>
-        </FooterBarEnd>
+        {/* Confirm is not built yet; the disabled button holds its place. An
+          admin's publish is not built either, and gets no placeholder. */}
+        {isAdmin ? null : (
+          <FooterBarEnd>
+            <Button disabled>{t('confirmSelectionsAction')}</Button>
+          </FooterBarEnd>
+        )}
       </FooterBar>
     </div>
   );
@@ -390,6 +443,7 @@ function OriginsWithReviewsSuspense({
   decisionSlug,
   actionLabel,
   renderPrepare,
+  showCategory,
 }: {
   processInstanceId: string;
   originPhaseId: string;
@@ -397,6 +451,7 @@ function OriginsWithReviewsSuspense({
   decisionSlug: string;
   actionLabel: string;
   renderPrepare: (origin: Proposal) => ReactNode;
+  showCategory: boolean;
 }) {
   const shownOrigins = useDeferredValue(origins);
   const [{ items }] = trpc.decision.listWithReviewAggregates.useSuspenseQuery({
@@ -419,7 +474,7 @@ function OriginsWithReviewsSuspense({
       totalPoints={0}
       showScore={false}
       showBudget={false}
-      showCategory={false}
+      showCategory={showCategory}
       decisionSlug={decisionSlug}
       action={{
         label: actionLabel,
