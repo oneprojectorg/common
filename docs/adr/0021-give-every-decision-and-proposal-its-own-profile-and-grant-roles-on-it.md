@@ -89,12 +89,17 @@ the decision process: `decisions: ADMIN` is managing the process, alongside
 `INVITE_MEMBERS`, `REVIEW`, `SUBMIT_PROPOSALS` and `VOTE`. Those rights
 belong to the process and would not carry over.
 
-A role may hold `ADMIN` on both, as the default decision `Admin` does, and a
-profile owner may hold only the core rights. A check picks the zone that
-matches the action: deleting the decision or changing its roles is a profile
-action, advancing a phase or changing a proposal's status is a decision
-action. Today the two sets overlap almost entirely; this is the one
-contextual zone, so the split is easy to miss.
+A role may hold `ADMIN` on both, as the default decision `Admin` does, which
+is why a decision admin can run the process and manage its members and
+roles. Today the code splits them like this: creating, editing and deleting
+roles, changing a member's roles, removing a member and editing an invite
+assert `profile: ADMIN`; sending an invite accepts `profile: ADMIN` or
+`decisions: INVITE_MEMBERS`; editing the decision, advancing a phase and
+changing a proposal's status assert `decisions: ADMIN`; deleting the
+decision accepts `decisions: DELETE` or `ADMIN`, the contextual zone, which
+is drift from the split above. A custom role with `decisions: ADMIN` alone
+runs the process but cannot change roles or members. This is the one
+contextual zone so far, so the split is easy to miss.
 
 ### Public access
 
