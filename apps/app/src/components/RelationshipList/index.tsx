@@ -109,7 +109,7 @@ const RelationshipListContent = ({
                             ?.label ?? t('profile.relationshipColumnLabel')}
                           {relationship.pending && (
                             <TagGroup className="ms-1 inline-flex">
-                              <Tag className="rounded-md px-1 py-0.5 text-xs">
+                              <Tag size="default">
                                 {t('profile.relationshipPendingBadge')}
                               </Tag>
                             </TagGroup>
