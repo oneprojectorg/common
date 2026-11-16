@@ -285,14 +285,17 @@ export class SmsCommandFixture {
     phaseId?: string;
     attestation: string;
   }) {
+    // The phase list is the whole list: every phase is sent, so none is removed.
     await updateDecisionInstance({
       instanceId,
-      phases: [
-        {
-          phaseId,
-          rules: { voting: { submit: true, enrolment: { attestation } } },
-        },
-      ],
+      phases: votingSchema.phases.map(({ id }) =>
+        id === phaseId
+          ? {
+              phaseId,
+              rules: { voting: { submit: true, enrolment: { attestation } } },
+            }
+          : { phaseId: id },
+      ),
       user: userOf(owner),
     });
   }
