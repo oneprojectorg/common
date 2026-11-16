@@ -1,8 +1,10 @@
 import {
   type SQL,
   and,
+  asc,
   count,
   db,
+  desc,
   eq,
   exists,
   inArray,
@@ -12,9 +14,11 @@ import {
   sql,
 } from '@op/db/client';
 import {
+  ProposalReviewState,
   ProposalStatus,
   proposalCategories,
   proposalReviewAssignments,
+  proposalReviews,
   proposals,
 } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
@@ -33,6 +37,7 @@ import {
   type PhaseProposalList,
   phaseProposalListSchema,
 } from './schemas/proposal';
+import type { ReviewProposalSort } from './schemas/reviews';
 
 export interface ListPhaseProposalsInput {
   processInstanceId: string;
@@ -41,23 +46,26 @@ export interface ListPhaseProposalsInput {
   assignedToProfileId?: string;
   search?: string;
   categoryIds?: string[];
+  /** Defaults to newest first. */
+  sort?: ReviewProposalSort;
   cursor?: string | null;
   limit?: number;
   user: User;
 }
 
-/** Non-draft proposals of the phases, newest first. Checks only READ, so callers gate first. */
+/** Non-draft proposals of the phases, newest first or by review count. Checks only READ, so callers gate first. */
 export async function listPhaseProposals({
   processInstanceId,
   phaseIds,
   assignedToProfileId,
   search,
   categoryIds = [],
+  sort = 'newest',
   cursor,
   limit = PAGE_LIMIT.md,
   user,
 }: ListPhaseProposalsInput): Promise<PhaseProposalList> {
-  const decodedCursor = decodePhaseProposalCursor(cursor);
+  const decodedCursor = decodePhaseProposalCursor({ cursor, sort });
 
   const requestedPhaseIds: Array<string | undefined> = phaseIds ?? [undefined];
   const listScopes = await Promise.all(
@@ -107,23 +115,16 @@ export async function listPhaseProposals({
     ) ?? sql`false`;
 
   const [rows, [totals]] = await Promise.all([
-    db.query.proposals.findMany({
-      columns: { id: true, createdAt: true },
-      where: {
-        RAW: (table) =>
-          buildWhere(
-            table,
-            getCursorCondition({
-              column: table.createdAt,
-              tieBreakerColumn: table.id,
-              cursor: decodedCursor,
-              direction: 'desc',
-            }),
-          ),
-      },
-      orderBy: (table, { desc }) => [desc(table.createdAt), desc(table.id)],
-      limit: limit + 1,
-    }),
+    sort === 'newest'
+      ? listNewestRows({ buildWhere, cursor: decodedCursor, limit })
+      : listReviewCountRows({
+          buildWhere,
+          sort,
+          processInstanceId,
+          phaseIds: assignmentPhaseIds,
+          cursor: decodedCursor,
+          limit,
+        }),
     // The relational API has no aggregate, so the total stays a select.
     db.select({ total: count() }).from(proposals).where(buildWhere(proposals)),
   ]);
@@ -143,23 +144,164 @@ export async function listPhaseProposals({
         ? encodeCursor<PhaseProposalCursor>({
             value: lastRow.createdAt,
             id: lastRow.id,
+            counts: lastRow.counts,
           })
         : null,
     total: totals?.total ?? 0,
   });
 }
 
+type BuildWhere = (
+  proposalsTable: typeof proposals,
+  cursorCondition?: SQL,
+) => SQL;
+
+type PageRow = {
+  id: string;
+  createdAt: string | null;
+  counts?: ReviewCounts;
+};
+
+async function listNewestRows({
+  buildWhere,
+  cursor,
+  limit,
+}: {
+  buildWhere: BuildWhere;
+  cursor: PhaseProposalCursor | undefined;
+  limit: number;
+}): Promise<PageRow[]> {
+  return db.query.proposals.findMany({
+    columns: { id: true, createdAt: true },
+    where: {
+      RAW: (table) =>
+        buildWhere(
+          table,
+          getCursorCondition({
+            column: table.createdAt,
+            tieBreakerColumn: table.id,
+            cursor,
+            direction: 'desc',
+          }),
+        ),
+    },
+    orderBy: (table, { desc }) => [desc(table.createdAt), desc(table.id)],
+    limit: limit + 1,
+  });
+}
+
+/**
+ * Orders by submitted reviews, then assignments, then createdAt and id, all
+ * one direction, so the cursor is a single row comparison.
+ */
+async function listReviewCountRows({
+  buildWhere,
+  sort,
+  processInstanceId,
+  phaseIds,
+  cursor,
+  limit,
+}: {
+  buildWhere: BuildWhere;
+  sort: Exclude<ReviewProposalSort, 'newest'>;
+  processInstanceId: string;
+  phaseIds: string[];
+  cursor: PhaseProposalCursor | undefined;
+  limit: number;
+}): Promise<PageRow[]> {
+  const counts = reviewCountsByProposal({ processInstanceId, phaseIds });
+  const submitted = sql<number>`coalesce(${counts.submitted}, 0)`;
+  const assigned = sql<number>`coalesce(${counts.assigned}, 0)`;
+  const direction = sort === 'fewestReviews' ? asc : desc;
+  const comparison = sort === 'fewestReviews' ? sql`>` : sql`<`;
+
+  const afterCursor = cursor?.counts
+    ? sql`(${submitted}, ${assigned}, ${proposals.createdAt}, ${proposals.id}) ${comparison} (${cursor.counts.submitted}::int, ${cursor.counts.assigned}::int, ${cursor.value}::timestamptz, ${cursor.id}::uuid)`
+    : undefined;
+
+  // An aggregate join and order, which the relational API cannot express.
+  const rows = await db
+    .select({
+      id: proposals.id,
+      createdAt: proposals.createdAt,
+      submitted: submitted.mapWith(Number),
+      assigned: assigned.mapWith(Number),
+    })
+    .from(proposals)
+    .leftJoin(counts, eq(counts.proposalId, proposals.id))
+    .where(buildWhere(proposals, afterCursor))
+    .orderBy(
+      direction(submitted),
+      direction(assigned),
+      direction(proposals.createdAt),
+      direction(proposals.id),
+    )
+    .limit(limit + 1);
+
+  return rows.map(({ id, createdAt, submitted, assigned }) => ({
+    id,
+    createdAt,
+    counts: { sort, submitted, assigned },
+  }));
+}
+
+/** Same rule as the review aggregates: every assignment, and its review only once submitted. */
+function reviewCountsByProposal({
+  processInstanceId,
+  phaseIds,
+}: {
+  processInstanceId: string;
+  phaseIds: string[];
+}) {
+  return db
+    .select({
+      proposalId: proposalReviewAssignments.proposalId,
+      submitted:
+        sql<number>`(count(${proposalReviews.id}) filter (where ${proposalReviews.state} = ${ProposalReviewState.SUBMITTED}))::int`.as(
+          'submitted_count',
+        ),
+      assigned: sql<number>`count(*)::int`.as('assigned_count'),
+    })
+    .from(proposalReviewAssignments)
+    .leftJoin(
+      proposalReviews,
+      eq(proposalReviews.assignmentId, proposalReviewAssignments.id),
+    )
+    .where(
+      and(
+        eq(proposalReviewAssignments.processInstanceId, processInstanceId),
+        inArray(proposalReviewAssignments.phaseId, phaseIds),
+      ),
+    )
+    .groupBy(proposalReviewAssignments.proposalId)
+    .as('review_counts');
+}
+
+const reviewCountsSchema = z.object({
+  sort: z.enum(['fewestReviews', 'mostReviews']),
+  submitted: z.number().int().nonnegative(),
+  assigned: z.number().int().nonnegative(),
+});
+
+type ReviewCounts = z.infer<typeof reviewCountsSchema>;
+
 const phaseProposalCursorSchema = z.object({
   // A non-date value would fail in Postgres as a 500.
   value: z.string().refine((value) => !Number.isNaN(Date.parse(value))),
   id: z.uuid(),
+  // Set only by the review-count sorts.
+  counts: reviewCountsSchema.optional(),
 });
 
 type PhaseProposalCursor = z.infer<typeof phaseProposalCursorSchema>;
 
-function decodePhaseProposalCursor(
-  cursor: string | null | undefined,
-): PhaseProposalCursor | undefined {
+function decodePhaseProposalCursor({
+  cursor,
+  sort,
+}: {
+  cursor: string | null | undefined;
+  sort: ReviewProposalSort;
+}): PhaseProposalCursor | undefined {
   if (!cursor) {
     return undefined;
   }
@@ -173,7 +315,9 @@ function decodePhaseProposalCursor(
   })();
 
   const result = phaseProposalCursorSchema.safeParse(decoded);
-  if (!result.success) {
+  // A cursor from another sort would page from the wrong key.
+  const cursorSort = result.data?.counts?.sort ?? 'newest';
+  if (!result.success || cursorSort !== sort) {
     throw new ValidationError('Invalid cursor');
   }
   return result.data;

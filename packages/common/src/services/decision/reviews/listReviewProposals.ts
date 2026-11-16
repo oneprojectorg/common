@@ -15,6 +15,7 @@ export async function listReviewProposals({
   phaseId,
   search,
   categoryIds,
+  sort,
   cursor,
   limit,
 }: ListReviewProposalsInput & { user: User }): Promise<ReviewProposalList> {
@@ -31,6 +32,7 @@ export async function listReviewProposals({
     phaseIds: phaseId === undefined ? undefined : [phaseId],
     search,
     categoryIds,
+    sort,
     cursor,
     limit,
     user,
