@@ -1,5 +1,6 @@
 'use client';
 
+import { getDecisionCommonProperties } from '@op/analytics/client-utils';
 import dynamic from 'next/dynamic';
 import { usePostHog } from 'posthog-js/react';
 import { type ReactNode, useCallback, useState } from 'react';
@@ -16,7 +17,7 @@ const AdvancePhaseConfirm = dynamic(
 );
 
 interface UseAdvancePhaseArgs {
-  instanceId?: string;
+  instanceId: string;
   /** Phase the process is currently in (the one being advanced out of). */
   currentPhaseId: string;
   /** Phase the process advances into. Undefined when there is no next phase. */
@@ -59,14 +60,18 @@ export function useAdvancePhase({
   const [hasRequestedAdvance, setHasRequestedAdvance] = useState(false);
 
   const getTrackingProps = useCallback(
-    () => ({
-      process_instance_id: instanceId,
-      from_phase_id: currentPhaseId,
-      to_phase_id: nextPhaseId,
-      before_end_date: currentPhaseEndDate
-        ? isBeforeEndOfDayLocal(new Date(), currentPhaseEndDate)
-        : null,
-    }),
+    () =>
+      getDecisionCommonProperties({
+        decisionInstanceId: instanceId,
+        additionalProps: {
+          process_instance_id: instanceId,
+          from_phase_id: currentPhaseId,
+          to_phase_id: nextPhaseId,
+          before_end_date: currentPhaseEndDate
+            ? isBeforeEndOfDayLocal(new Date(), currentPhaseEndDate)
+            : null,
+        },
+      }),
     [instanceId, currentPhaseId, nextPhaseId, currentPhaseEndDate],
   );
 

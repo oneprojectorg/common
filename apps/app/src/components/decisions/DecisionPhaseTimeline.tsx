@@ -42,7 +42,7 @@ export function DecisionPhaseTimeline({
    * upcoming variant anyway.
    */
   hasStarted?: boolean;
-  instanceId?: string;
+  instanceId: string;
   isAdmin?: boolean;
   decisionSlug: string;
   className?: string;
