@@ -1,7 +1,7 @@
 -- Removes the phases key from instance_data on every decision that has phase
 -- rows. A decision with no rows keeps it, as it is the only copy.
 --
--- Run it only in release 4, after the app no longer falls back to reading
+-- Run it only with #2431, after the app no longer falls back to reading
 -- instance_data.phases. Run check-phase-drift.sql first and confirm it returns
 -- zero rows.
 --

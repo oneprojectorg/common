@@ -4,12 +4,10 @@
 --   psql "$DATABASE_URL" -c "SET op_backfill.instance_ids = '<uuid>,<uuid>'" \
 --     -f services/db/data/backfill-phase-rows.sql
 --
--- Release 2: run it on every environment, development too, for frozen
--- decisions only (completed or cancelled), scoped with
--- op_backfill.instance_ids. Run it unscoped only after release 3 is live.
--- Until then the app still writes instance_data.phases, so an edit to a
--- backfilled decision shows stale rows while the read flag is on, and is lost
--- when release 3 ships.
+-- Run it once per environment, only when both #2429 (reads phase rows) and
+-- #2430 (writes phase rows) are live there. Before #2430 the app writes only
+-- instance_data.phases, so an edit to a backfilled decision never reaches its
+-- rows. Run it on one decision first, then with 'all'.
 --
 -- For each decision with no phase rows, it:
 --   - adds one PHASE profile and one decision_process_phases row per
@@ -24,7 +22,7 @@
 -- outside a transaction block: do not use psql -1, BEGIN, or one -c string
 -- that holds both the SET and this file. If a decision fails, the run stops;
 -- the decisions before it stay committed and a re-run continues.
--- A re-run is a no-op for decisions that already have rows.
+-- It skips decisions that already have rows, so a re-run is a no-op for them.
 -- It skips, with a NOTICE, a decision whose phases fail validation.
 --
 -- Settings, read once at the start. Use a session SET, not SET LOCAL:
