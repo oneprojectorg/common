@@ -1,5 +1,10 @@
 import { TestReviewsDataManager } from '@op/common/testing';
-import { proposalCategories, taxonomyTerms } from '@op/db/schema';
+import {
+  ProposalStatus,
+  proposalCategories,
+  proposals as proposalsTable,
+  taxonomyTerms,
+} from '@op/db/schema';
 import { db } from '@op/db/test';
 import { eq } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
@@ -197,6 +202,69 @@ describe.concurrent('decision.listReviewProposals', () => {
     ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
   });
 
+  it('rejects a well-formed cursor whose value is not a timestamp', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const { context, adminCaller } = await createReviewProposals(testData, [
+      'Only one',
+    ]);
+    const cursor = Buffer.from(
+      JSON.stringify({ value: 'not-a-date', id: randomUUID() }),
+    ).toString('base64');
+
+    await expect(
+      adminCaller.decision.listReviewProposals({
+        processInstanceId: context.instance.instance.id,
+        cursor,
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
+  });
+
+  it('leaves drafts out of the list and the total', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const { context, proposals, adminCaller } = await createReviewProposals(
+      testData,
+      ['Submitted', 'Draft'],
+    );
+    const [submitted, draft] = proposals;
+    if (!submitted || !draft) {
+      throw new Error('expected two proposals');
+    }
+    await db
+      .update(proposalsTable)
+      .set({ status: ProposalStatus.DRAFT })
+      .where(eq(proposalsTable.id, draft.id));
+
+    const result = await adminCaller.decision.listReviewProposals({
+      processInstanceId: context.instance.instance.id,
+    });
+
+    expect(result.items.map((item) => item.id)).toEqual([submitted.id]);
+    expect(result.total).toBe(1);
+  });
+
+  it('returns an empty list for a phase the instance has not reached', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const { context, adminCaller } = await createReviewProposals(testData, [
+      'Review phase proposal',
+    ]);
+
+    const result = await adminCaller.decision.listReviewProposals({
+      processInstanceId: context.instance.instance.id,
+      phaseId: 'voting',
+    });
+
+    expect(result).toEqual({ items: [], next: null, total: 0 });
+  });
+
   it('admits a reviewer on a phase with open reviews', async ({
     task,
     onTestFinished,
@@ -261,6 +329,26 @@ describe.concurrent('decision.listReviewProposals', () => {
 
     await expect(
       memberCaller.decision.listReviewProposals({
+        processInstanceId: context.instance.instance.id,
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
+  });
+
+  it('rejects a caller with no access to the instance', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const [{ context }, otherContext] = await Promise.all([
+      createReviewProposals(testData, ['Private proposal']),
+      testData.createContext(),
+    ]);
+    const outsiderCaller = await createAuthenticatedCaller(
+      otherContext.defaultReviewer.email,
+    );
+
+    await expect(
+      outsiderCaller.decision.listReviewProposals({
         processInstanceId: context.instance.instance.id,
       }),
     ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });

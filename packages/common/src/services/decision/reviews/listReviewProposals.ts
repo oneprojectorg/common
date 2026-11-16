@@ -106,7 +106,9 @@ export async function listReviewProposals({
 }
 
 const reviewProposalCursorSchema = z.object({
-  value: z.string(),
+  // Compared against `created_at`; an unparseable value would fail the cast
+  // in Postgres as a 500 instead of a 400.
+  value: z.string().refine((value) => !Number.isNaN(Date.parse(value))),
   id: z.uuid(),
 });
 
