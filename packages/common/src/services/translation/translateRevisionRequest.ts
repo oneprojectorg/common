@@ -43,13 +43,11 @@ export async function translateRevisionRequest({
     with: {},
   });
 
-  const prefix = `revision_request:${request.id}:`;
+  const requestKey = `revision_request:${request.id}:request_comment`;
+  const responseKey = `revision_request:${request.id}:response_comment`;
   const entries = [
-    { contentKey: `${prefix}request_comment`, text: request.requestComment },
-    {
-      contentKey: `${prefix}response_comment`,
-      text: request.responseComment ?? '',
-    },
+    { contentKey: requestKey, text: request.requestComment },
+    { contentKey: responseKey, text: request.responseComment ?? '' },
   ].filter((entry) => entry.text.trim());
 
   if (entries.length === 0) {
@@ -62,12 +60,13 @@ export async function translateRevisionRequest({
   }
 
   const results = await runTranslateBatch(entries, targetLocale);
-  const getTranslatedText = (contentKey: string) =>
-    results.find((result) => result.contentKey === contentKey)?.translatedText;
+  const translatedTexts = new Map(
+    results.map((result) => [result.contentKey, result.translatedText]),
+  );
 
   return {
-    requestComment: getTranslatedText(`${prefix}request_comment`),
-    responseComment: getTranslatedText(`${prefix}response_comment`),
+    requestComment: translatedTexts.get(requestKey),
+    responseComment: translatedTexts.get(responseKey),
     sourceLocale:
       results.find((result) => result.sourceLocale)?.sourceLocale ?? '',
     targetLocale,

@@ -29,7 +29,8 @@ function AuthorNotes({ proposalId }: { proposalId: string }) {
   const notes = useMemo<Array<AuthorNote>>(
     () =>
       items.flatMap((note) => {
-        if (!note.responseComment || !note.respondedAt) {
+        const [firstRequest, ...otherRequests] = note.requests;
+        if (!note.responseComment || !note.respondedAt || !firstRequest) {
           return [];
         }
         return [
@@ -37,7 +38,10 @@ function AuthorNotes({ proposalId }: { proposalId: string }) {
             id: note.respondedProposalHistoryId,
             comment: note.responseComment,
             respondedAt: note.respondedAt,
-            requestIds: note.requests.map((request) => request.id),
+            requestIds: [
+              firstRequest.id,
+              ...otherRequests.map((request) => request.id),
+            ],
           },
         ];
       }),

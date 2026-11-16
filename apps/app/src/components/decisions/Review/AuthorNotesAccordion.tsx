@@ -23,7 +23,8 @@ export interface AuthorNote {
   id: string;
   comment: string;
   respondedAt: string;
-  requestIds: string[];
+  /** Every request a resubmission answered carries the same note. */
+  requestIds: [string, ...Array<string>];
 }
 
 const NOTES_ITEM = 'author-notes';
@@ -95,18 +96,13 @@ function AuthorNoteEntry({
   const timeAgo = useRelativeTime(note.respondedAt, { style: 'long' });
   const translateRequest =
     trpc.translation.translateRevisionRequest.useMutation();
-  // Every request a resubmission answered carries the same note.
-  const [requestId] = note.requestIds;
 
   const translation = useTranslateLink({
     detectionText: note.comment,
-    enabled: !!requestId,
     request: (targetLocale) =>
-      requestId
-        ? translateRequest
-            .mutateAsync({ requestId, targetLocale })
-            .then(({ responseComment }) => responseComment || undefined)
-        : Promise.resolve(undefined),
+      translateRequest
+        .mutateAsync({ requestId: note.requestIds[0], targetLocale })
+        .then(({ responseComment }) => responseComment || undefined),
   });
 
   return (
@@ -117,18 +113,16 @@ function AuthorNoteEntry({
       </p>
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
         <span>{t('decisions.review.revisedTimeAgo', { timeAgo })}</span>
-        {note.requestIds.length > 0 ? (
-          <Button
-            variant="link"
-            size="inline"
-            className="text-sm underline"
-            onClick={() => onViewRequests(note.requestIds)}
-          >
-            {note.requestIds.length === 1
-              ? t('decisions.review.viewRevisionRequestAction')
-              : t('decisions.review.viewRevisionRequestsAction')}
-          </Button>
-        ) : null}
+        <Button
+          variant="link"
+          size="inline"
+          className="text-sm underline"
+          onClick={() => onViewRequests(note.requestIds)}
+        >
+          {note.requestIds.length === 1
+            ? t('decisions.review.viewRevisionRequestAction')
+            : t('decisions.review.viewRevisionRequestsAction')}
+        </Button>
       </div>
     </div>
   );
