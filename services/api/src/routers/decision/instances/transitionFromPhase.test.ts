@@ -113,7 +113,10 @@ describe('transitionFromPhase', () => {
     expect(history).toBeDefined();
     expect(history!.fromStateId).toBe('initial');
     expect(history!.toStateId).toBe('final');
-    expect(history!.transitionData).toEqual({ manual: true });
+    expect(history!.transitionData).toEqual({
+      manual: true,
+      selection: { outcomes: [] },
+    });
     expect(history!.triggeredByProfileId).toBeDefined();
   });
 

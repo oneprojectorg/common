@@ -33,6 +33,7 @@ export async function aggregateProposalMetrics(
         submissionId: decisionsVoteSubmissions.id,
         voteData: decisionsVoteSubmissions.voteData,
         proposalId: decisionsVoteProposals.proposalId,
+        rank: decisionsVoteProposals.rank,
       })
       .from(decisionsVoteSubmissions)
       .innerJoin(
@@ -74,7 +75,7 @@ export async function aggregateProposalMetrics(
   // Group vote rows by proposal
   const proposalVotesMap = new Map<
     string,
-    Array<{ voteData: unknown; submissionId: string }>
+    Array<{ voteData: unknown; submissionId: string; rank: number | null }>
   >();
   for (const row of voteRows) {
     if (!proposalVotesMap.has(row.proposalId)) {
@@ -83,6 +84,7 @@ export async function aggregateProposalMetrics(
     proposalVotesMap.get(row.proposalId)!.push({
       voteData: row.voteData,
       submissionId: row.submissionId,
+      rank: row.rank,
     });
   }
 
@@ -91,22 +93,6 @@ export async function aggregateProposalMetrics(
 
   for (const proposal of phaseProposals) {
     const votes = proposalVotesMap.get(proposal.id) ?? [];
-    const voteCount = votes.length;
-
-    let approvalCount = 0;
-    let rejectionCount = 0;
-    let abstainCount = 0;
-
-    for (const vote of votes) {
-      const voteData = vote.voteData as Record<string, unknown> | null;
-      if (voteData?.approved === true || voteData?.vote === 'approve') {
-        approvalCount++;
-      } else if (voteData?.approved === false || voteData?.vote === 'reject') {
-        rejectionCount++;
-      } else if (voteData?.vote === 'abstain') {
-        abstainCount++;
-      }
-    }
 
     voteDataMap[proposal.id] = {
       proposalId: proposal.id,
@@ -114,14 +100,55 @@ export async function aggregateProposalMetrics(
         (likesMap.get(proposal.profileId) ?? 0) +
         (mergedLikes.get(proposal.profileId) ?? 0),
       followsCount: followsMap.get(proposal.profileId) ?? 0,
-      voteCount,
-      approvalCount,
-      rejectionCount,
-      abstainCount,
-      approvalRate: voteCount > 0 ? approvalCount / voteCount : 0,
+      ...summarizeVotes(votes),
       votes: votes.map((v) => v.voteData),
     };
   }
 
   return voteDataMap;
+}
+
+type VoteSummary = Pick<
+  VoteAggregation,
+  | 'voteCount'
+  | 'approvalCount'
+  | 'rejectionCount'
+  | 'abstainCount'
+  | 'approvalRate'
+  | 'rankCounts'
+>;
+
+function summarizeVotes(
+  votes: Array<{ voteData: unknown; rank: number | null }>,
+): VoteSummary {
+  let approvalCount = 0;
+  let rejectionCount = 0;
+  let abstainCount = 0;
+  const rankCounts: { [rank: number]: number } = {};
+
+  for (const vote of votes) {
+    if (vote.rank != null) {
+      rankCounts[vote.rank] = (rankCounts[vote.rank] ?? 0) + 1;
+    }
+
+    const voteData = vote.voteData as Record<string, unknown> | null;
+    if (voteData?.approved === true || voteData?.vote === 'approve') {
+      approvalCount++;
+    } else if (voteData?.approved === false || voteData?.vote === 'reject') {
+      rejectionCount++;
+    } else if (voteData?.vote === 'abstain') {
+      abstainCount++;
+    }
+  }
+
+  const voteCount = votes.length;
+
+  return {
+    voteCount,
+    approvalCount,
+    rejectionCount,
+    abstainCount,
+    approvalRate: voteCount > 0 ? approvalCount / voteCount : 0,
+    rankCounts,
+  };
 }

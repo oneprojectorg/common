@@ -1,5 +1,7 @@
 import type { Proposal } from '@op/db/schema';
 
+import type { ProposalCosts } from '../getProposalCosts';
+
 /**
  * Top-level selection pipeline definition
  */
@@ -23,6 +25,7 @@ export type Block =
   | LimitBlock
   | SortBlock
   | ScoreBlock
+  | BudgetBlock
   | DebugBlock;
 
 /**
@@ -143,6 +146,15 @@ export interface ScoringCriteria {
 }
 
 /**
+ * Budget block - accepts proposals in their current order while each one's
+ * cost fits the budget that is left, and skips the ones that do not
+ */
+export interface BudgetBlock extends BaseBlock {
+  type: 'budget';
+  budget: number | Expression; // total available, e.g. { variable: "budget" }
+}
+
+/**
  * Debug block - log intermediate state
  */
 export interface DebugBlock extends BaseBlock {
@@ -240,6 +252,10 @@ export interface ExecutionContext {
   };
   variables: Record<string, any>;
   outputs: Record<string, any>;
+  /** Set when the pipeline has a budget block; priced like the phase's ballots. */
+  proposalCosts?: ProposalCosts;
+  /** Proposals a block dropped and reported; the engine appends to it across blocks. */
+  skipped?: Proposal[];
 }
 
 /**
@@ -254,6 +270,7 @@ export interface VoteAggregation {
   rejectionCount: number; // For decision votes
   abstainCount: number; // For decision votes
   approvalRate: number; // approvalCount / voteCount
+  rankCounts: { [rank: number]: number }; // selections that ranked the proposal at each 1-based rank
   participationRate?: number; // voteCount / totalEligibleVoters
   votes: any[]; // Raw vote records
   // Additional custom metrics can be added here
@@ -266,6 +283,7 @@ export interface BlockExecutionResult {
   proposals: Proposal[];
   variables?: Record<string, any>; // Variables set by this block
   output?: any; // Output value (for non-proposal-returning blocks)
+  skipped?: Proposal[]; // Dropped proposals the transition should record
 }
 
 /**

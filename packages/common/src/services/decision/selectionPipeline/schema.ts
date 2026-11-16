@@ -172,6 +172,11 @@ export const blockSchema: z.ZodType<Block, Block> = z.lazy(() =>
     }),
     z.strictObject({
       ...blockBase,
+      type: z.literal('budget'),
+      budget: numberOrExpression,
+    }),
+    z.strictObject({
+      ...blockBase,
       type: z.literal('debug'),
       message: z.string().optional(),
       logFields: z.array(z.string()).optional(),

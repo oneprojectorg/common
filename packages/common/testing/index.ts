@@ -32,10 +32,16 @@ export {
 export {
   schemaMissingPipeline,
   schemaWithPipeline,
+  schemaWithRankedBudgetPipeline,
   schemaWithThreePhases,
   schemaWithThreePhasesAndPipelines,
   schemaWithoutPipeline,
 } from './helpers/pipelineSchemas';
+export {
+  buildProposalRow,
+  buildVoteAggregation,
+  money,
+} from './helpers/proposalRows';
 
 export {
   addUserToOrganization,

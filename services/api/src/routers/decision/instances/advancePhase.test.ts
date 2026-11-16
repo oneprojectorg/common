@@ -1,15 +1,23 @@
-import { type DecisionInstanceData, advancePhase } from '@op/common';
+import { mockCollab } from '@op/collab/testing';
+import {
+  type DecisionInstanceData,
+  advancePhase,
+  parseProposalData,
+} from '@op/common';
 import {
   TestDecisionsDataManager,
+  schemaMissingPipeline,
   schemaWithPipeline,
+  schemaWithRankedBudgetPipeline,
   schemaWithThreePhasesAndPipelines,
 } from '@op/common/testing';
-import { db, eq } from '@op/db/client';
+import { and, db, eq } from '@op/db/client';
 import {
   ProcessStatus,
   ProposalStatus,
   decisionTransitionProposals,
   processInstances,
+  stateTransitionHistory,
 } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
@@ -44,17 +52,25 @@ async function loadPublishedInstance(
     status: ProcessStatus.PUBLISHED,
   });
 
-  const instance = setup.instance;
+  return {
+    setup,
+    dbInstance: await reloadInstance(setup.instance.instance.id),
+  };
+}
 
+/** Reloads the instance row, e.g. after writes outside advancePhase. */
+async function reloadInstance(
+  instanceId: string,
+): Promise<LoadedInstance['dbInstance']> {
   const dbInstance = await db.query.processInstances.findFirst({
-    where: { id: instance.instance.id },
+    where: { id: instanceId },
   });
 
   if (!dbInstance) {
     throw new Error('Failed to reload instance');
   }
 
-  return { setup, dbInstance };
+  return dbInstance;
 }
 
 /** Calls advancePhase with the loaded instance and given override fields. */
@@ -174,7 +190,11 @@ describe.concurrent('advancePhase', () => {
     const history = await db.query.stateTransitionHistory.findFirst({
       where: { processInstanceId: loaded.dbInstance.id },
     });
-    expect(history!.transitionData).toEqual({ source: 'cron', batch: 42 });
+    expect(history!.transitionData).toEqual({
+      source: 'cron',
+      batch: 42,
+      selection: { outcomes: [] },
+    });
   });
 
   it('persists submitted proposals into decisionTransitionProposals', async ({
@@ -252,6 +272,280 @@ describe.concurrent('advancePhase', () => {
         eq(decisionTransitionProposals.processInstanceId, loaded.dbInstance.id),
       );
     expect(joinRows.length).toBe(0);
+  });
+
+  it('selects by ranked-choice points and skips what the phase budget cannot cover', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instanceId, a, b, c, d } = await seedRankedBudgetVoting(
+      testData,
+      task.id,
+    );
+    await setPhaseBudgets(setup, instanceId, { submission: 1, voting: 1000 });
+
+    const result = await callAdvancePhase(
+      { setup, dbInstance: await reloadInstance(instanceId) },
+      { fromPhaseId: 'voting', toPhaseId: 'results' },
+    );
+
+    expect(result.conflict).toBe(false);
+    if (result.conflict) {
+      throw new Error('unreachable');
+    }
+    // a (400) and b (500) fit; d (300) exceeds the 100 left and is skipped; c (100) fits.
+    expect(result.selectedProposalIds).toEqual([a.id, b.id, c.id]);
+
+    const [transition] = await db
+      .select({ transitionData: stateTransitionHistory.transitionData })
+      .from(stateTransitionHistory)
+      .where(eq(stateTransitionHistory.id, result.transitionHistoryId));
+    expect(transition?.transitionData).toEqual({
+      selection: {
+        outcomes: [
+          {
+            proposalId: a.id,
+            outcome: 'selected',
+            scores: {
+              rankPoints: 10,
+              position: 1,
+              cost: 400,
+              budgetRemaining: 1000,
+            },
+          },
+          {
+            proposalId: b.id,
+            outcome: 'selected',
+            scores: {
+              rankPoints: 8,
+              position: 2,
+              cost: 500,
+              budgetRemaining: 600,
+            },
+          },
+          {
+            proposalId: c.id,
+            outcome: 'selected',
+            scores: {
+              rankPoints: 3,
+              position: 4,
+              cost: 100,
+              budgetRemaining: 100,
+            },
+          },
+          {
+            proposalId: d.id,
+            outcome: 'skipped',
+            scores: {
+              rankPoints: 5,
+              position: 3,
+              cost: 300,
+              budgetRemaining: 100,
+            },
+          },
+        ],
+      },
+    });
+  });
+
+  it('fails the transition when the departing phase has no budget setting', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instanceId } = await seedRankedBudgetVoting(
+      testData,
+      task.id,
+    );
+    await setPhaseBudgets(setup, instanceId, { submission: 1 });
+
+    await expect(
+      callAdvancePhase(
+        { setup, dbInstance: await reloadInstance(instanceId) },
+        { fromPhaseId: 'voting', toPhaseId: 'results' },
+      ),
+    ).rejects.toThrow(/budget/);
+
+    const untouched = await reloadInstance(instanceId);
+    expect(untouched.currentStateId).toBe('voting');
+    const [history] = await db
+      .select({ id: stateTransitionHistory.id })
+      .from(stateTransitionHistory)
+      .where(
+        and(
+          eq(stateTransitionHistory.processInstanceId, instanceId),
+          eq(stateTransitionHistory.fromStateId, 'voting'),
+        ),
+      );
+    expect(history).toBeUndefined();
+  });
+
+  it('records proposals a limit dropped as excluded', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+      status: ProcessStatus.PUBLISHED,
+      processSchema: schemaWithPipeline,
+    });
+    const instanceId = setup.instance.instance.id;
+    await Promise.all(
+      ['newest', 'older', 'oldest'].map((key) =>
+        testData.createProposal({
+          userEmail: setup.userEmail,
+          processInstanceId: instanceId,
+          proposalData: { title: `Proposal ${key} ${task.id}` },
+          status: ProposalStatus.SUBMITTED,
+        }),
+      ),
+    );
+
+    const result = await callAdvancePhase(
+      { setup, dbInstance: await reloadInstance(instanceId) },
+      { fromPhaseId: 'submission', toPhaseId: 'review' },
+    );
+
+    expect(result.conflict).toBe(false);
+    if (result.conflict) {
+      throw new Error('unreachable');
+    }
+    expect(result.selectedProposalIds).toHaveLength(2);
+    const [transition] = await db
+      .select({ transitionData: stateTransitionHistory.transitionData })
+      .from(stateTransitionHistory)
+      .where(eq(stateTransitionHistory.id, result.transitionHistoryId));
+    expect(transition?.transitionData).toMatchObject({
+      selection: {
+        outcomes: [
+          { outcome: 'selected' },
+          { outcome: 'selected' },
+          { outcome: 'excluded', scores: {} },
+        ],
+      },
+    });
+  });
+
+  it('holds the selection for approval, preselects it, and attaches on confirmation', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+      status: ProcessStatus.PUBLISHED,
+      processSchema: schemaWithPipeline,
+    });
+    const instanceId = setup.instance.instance.id;
+    await Promise.all(
+      ['first', 'second', 'third'].map((key) =>
+        testData.createProposal({
+          userEmail: setup.userEmail,
+          processInstanceId: instanceId,
+          proposalData: { title: `Proposal ${key} ${task.id}` },
+          status: ProposalStatus.SUBMITTED,
+        }),
+      ),
+    );
+    const { instanceData } = setup.instance.instance;
+    await db
+      .update(processInstances)
+      .set({
+        instanceData: {
+          ...instanceData,
+          phases: instanceData.phases.map((phase) =>
+            phase.phaseId === 'submission'
+              ? { ...phase, selectionNeedsApproval: true }
+              : phase,
+          ),
+        },
+      })
+      .where(eq(processInstances.id, instanceId));
+
+    const result = await callAdvancePhase(
+      { setup, dbInstance: await reloadInstance(instanceId) },
+      { fromPhaseId: 'submission', toPhaseId: 'review' },
+    );
+
+    expect(result.conflict).toBe(false);
+    if (result.conflict) {
+      throw new Error('unreachable');
+    }
+    expect(result.selectedProposalIds).toEqual([]);
+    const attachedBefore = await db
+      .select({ proposalId: decisionTransitionProposals.proposalId })
+      .from(decisionTransitionProposals)
+      .where(
+        eq(
+          decisionTransitionProposals.transitionHistoryId,
+          result.transitionHistoryId,
+        ),
+      );
+    expect(attachedBefore).toEqual([]);
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+    const candidates = await caller.decision.listSelectionCandidates({
+      processInstanceId: instanceId,
+    });
+    expect(candidates.outcomes.map(({ outcome }) => outcome)).toEqual([
+      'selected',
+      'selected',
+      'excluded',
+    ]);
+    const preselected = candidates.outcomes
+      .filter(({ outcome }) => outcome === 'selected')
+      .map(({ proposalId }) => proposalId);
+
+    await caller.decision.submitManualSelection({
+      processInstanceId: instanceId,
+      proposalIds: preselected,
+    });
+
+    const attachedAfter = await db
+      .select({ proposalId: decisionTransitionProposals.proposalId })
+      .from(decisionTransitionProposals)
+      .where(
+        eq(
+          decisionTransitionProposals.transitionHistoryId,
+          result.transitionHistoryId,
+        ),
+      );
+    expect(attachedAfter.map(({ proposalId }) => proposalId).sort()).toEqual(
+      [...preselected].sort(),
+    );
+  });
+
+  it('writes no selection audit when the departing phase has no pipeline', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+      status: ProcessStatus.PUBLISHED,
+      processSchema: schemaMissingPipeline,
+    });
+    const instanceId = setup.instance.instance.id;
+
+    const result = await callAdvancePhase(
+      { setup, dbInstance: await reloadInstance(instanceId) },
+      { fromPhaseId: 'submission', toPhaseId: 'review' },
+    );
+
+    expect(result.conflict).toBe(false);
+    if (result.conflict) {
+      throw new Error('unreachable');
+    }
+    const [transition] = await db
+      .select({ transitionData: stateTransitionHistory.transitionData })
+      .from(stateTransitionHistory)
+      .where(eq(stateTransitionHistory.id, result.transitionHistoryId));
+    expect(transition?.transitionData).toEqual({});
   });
 
   it('refuses to advance a phase whose inbound selection still awaits approval', async ({
@@ -409,3 +703,94 @@ describe.concurrent('advancePhase', () => {
     ]);
   });
 });
+
+/**
+ * A published ranked-budget instance in its voting phase with four priced
+ * proposals (a 400, b 500, c 100, d 300) and two ballots: [a, b, c, d] and
+ * [a, b, d], so the points are a 10, b 8, d 5, c 3.
+ */
+async function seedRankedBudgetVoting(
+  testData: TestDecisionsDataManager,
+  taskId: string,
+) {
+  const setup = await testData.createDecisionSetup({
+    instanceCount: 1,
+    grantAccess: true,
+    status: ProcessStatus.PUBLISHED,
+    processSchema: schemaWithRankedBudgetPipeline,
+  });
+  const instanceId = setup.instance.instance.id;
+
+  const createCostedProposal = async (key: string, amount: number) => {
+    const budget = { amount, currency: 'USD' };
+    const proposal = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: instanceId,
+      proposalData: { title: `Proposal ${key} ${taskId}`, budget },
+      status: ProposalStatus.SUBMITTED,
+    });
+    const { collaborationDocId } = parseProposalData(proposal.proposalData);
+    if (!collaborationDocId) {
+      throw new Error(`Proposal ${key} has no collaboration document`);
+    }
+    // Costs are priced from the live document, so it must carry the budget.
+    mockCollab.setDocFragments(collaborationDocId, {
+      title: `Proposal ${key} ${taskId}`,
+      budget: JSON.stringify(budget),
+    });
+    return proposal;
+  };
+  const [a, b, c, d] = await Promise.all([
+    createCostedProposal('a', 400),
+    createCostedProposal('b', 500),
+    createCostedProposal('c', 100),
+    createCostedProposal('d', 300),
+  ]);
+
+  const toVoting = await callAdvancePhase(
+    { setup, dbInstance: await reloadInstance(instanceId) },
+    { fromPhaseId: 'submission', toPhaseId: 'voting' },
+  );
+  expect(toVoting.conflict).toBe(false);
+
+  const member = await testData.createMemberUser({
+    organization: setup.organization,
+    instanceProfileIds: [setup.instance.profileId],
+  });
+  const [ownerCaller, memberCaller] = await Promise.all([
+    createAuthenticatedCaller(setup.userEmail),
+    createAuthenticatedCaller(member.email),
+  ]);
+  await ownerCaller.decision.submitVote({
+    processInstanceId: instanceId,
+    selectedProposalIds: [a.id, b.id, c.id, d.id],
+  });
+  await memberCaller.decision.submitVote({
+    processInstanceId: instanceId,
+    selectedProposalIds: [a.id, b.id, d.id],
+  });
+
+  return { setup, instanceId, a, b, c, d };
+}
+
+/** Writes a `budget` setting on each named phase of the instance. */
+async function setPhaseBudgets(
+  setup: LoadedInstance['setup'],
+  instanceId: string,
+  budgets: Record<string, number>,
+) {
+  const { instanceData } = setup.instance.instance;
+  await db
+    .update(processInstances)
+    .set({
+      instanceData: {
+        ...instanceData,
+        phases: instanceData.phases.map((phase) =>
+          phase.phaseId in budgets
+            ? { ...phase, settings: { budget: budgets[phase.phaseId] } }
+            : phase,
+        ),
+      },
+    })
+    .where(eq(processInstances.id, instanceId));
+}

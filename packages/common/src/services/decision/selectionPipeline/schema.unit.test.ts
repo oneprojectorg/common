@@ -78,6 +78,27 @@ describe('selectionPipelineSchema', () => {
     expect(selectionPipelineSchema.parse(pipeline)).toEqual(pipeline);
   });
 
+  it.each([
+    ['a literal', 1000],
+    ['a variable', { variable: 'budget' }],
+  ])('accepts a budget block whose budget is %s', (_, budget) => {
+    const pipeline = {
+      version: '1.0.0',
+      blocks: [{ id: 'fit', type: 'budget', budget }],
+    };
+
+    expect(selectionPipelineSchema.parse(pipeline)).toEqual(pipeline);
+  });
+
+  it('rejects a budget block without a budget', () => {
+    expect(
+      selectionPipelineSchema.safeParse({
+        version: '1.0.0',
+        blocks: [{ id: 'fit', type: 'budget' }],
+      }).success,
+    ).toBe(false);
+  });
+
   it('rejects a block type no executor handles', () => {
     expect(
       selectionPipelineSchema.safeParse({
