@@ -90,11 +90,15 @@ export const useProposalAwards = ({
     ? selected.filter((id) => !isValid(id))
     : [];
 
-  const currency = singleCurrency(
-    selected.map(
-      (id) => requested.get(id)?.currency ?? getBudgetCurrency(undefined),
-    ),
-  );
+  // An empty selection keeps a zero total, so the budget meter stays anchored.
+  const currency =
+    selected.length === 0
+      ? getBudgetCurrency(undefined)
+      : singleCurrency(
+          selected.map(
+            (id) => requested.get(id)?.currency ?? getBudgetCurrency(undefined),
+          ),
+        );
   const total = isEnabled && currency ? sum(selected, amounts, currency) : null;
   const totalRequested =
     isEnabled && currency

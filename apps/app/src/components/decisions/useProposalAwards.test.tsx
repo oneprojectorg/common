@@ -188,10 +188,15 @@ describe('useProposalAwards', () => {
     expect(result.current.canConfirm).toBe(false);
   });
 
-  it('gives no total when nothing is selected', () => {
+  it('anchors the total at zero in the default currency when nothing is selected', () => {
     const { result } = renderAwards({ selectedIds: [] });
 
-    expect(result.current.total).toBeNull();
+    expect(result.current.total).toEqual({ amount: 0, currency: 'USD' });
+    expect(result.current.totalRequested).toEqual({
+      amount: 0,
+      currency: 'USD',
+    });
+    expect(result.current.hasMixedCurrencies).toBe(false);
     expect(result.current.allocations()).toEqual([]);
   });
 

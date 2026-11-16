@@ -86,6 +86,18 @@ describe('AwardBudgetMeter', () => {
     expect(screen.getByText('$25,700').className).toContain('text-destructive');
   });
 
+  it('anchors the bar at zero when no winner is selected yet', () => {
+    renderMeter({
+      proposals: [solar, bike],
+      selectedIds: [],
+      processBudget: 25000,
+    });
+
+    const bar = screen.getByRole('progressbar', { name: 'Budget allocated' });
+    expect(bar.getAttribute('aria-valuenow')).toBe('0');
+    expect(bar.getAttribute('aria-valuetext')).toBe('$0 of $25,000 allocated');
+  });
+
   it('counts only the advanced rows', () => {
     renderMeter({
       proposals: [solar, bike],
