@@ -43,17 +43,14 @@ import { Link, useRouter, useTranslations } from '@/lib/i18n';
 import { useOpenProposalInSheet } from '../ProposalSheet/proposalSheetState';
 import { PROPOSALS_PAGE_LIMIT } from '../proposalFilterQuery';
 import {
-  type ProposalRoute,
-  proposalEditHref,
-  proposalHref,
+  decisionProposalEditHref,
+  decisionProposalHref,
 } from '../proposalHrefs';
 import {
   ProposalReviewDecorationProvider,
   useProposalReviewAggregates,
   useReportProposalsForReviewDecoration,
 } from '../proposalReviewDecoration';
-
-type Route = Omit<ProposalRoute, 'profileId'>;
 
 type DevelopOriginScope = ListDevelopOriginsInput['scope'];
 
@@ -75,11 +72,11 @@ const RECOMMENDATION_INTENT: Record<RecommendationValue, StatusDotIntent> = {
 export function DevelopOriginsPanel({
   instance,
   originPhase,
-  route,
+  decisionSlug,
 }: {
   instance: ProcessInstance;
   originPhase: InstancePhaseData | null;
-  route: Route;
+  decisionSlug: string;
 }) {
   const t = useTranslations('decisions.develop');
   const scope: DevelopOriginScope = instance.access?.admin ? 'all' : 'assigned';
@@ -103,13 +100,13 @@ export function DevelopOriginsPanel({
     isReviewPhase(originPhase) &&
     (Boolean(instance.access?.admin) ||
       (Boolean(instance.access?.review) &&
-        resolveReviewSettings(instance.instanceData ?? {}, originPhase.phaseId)
+        resolveReviewSettings(instance.instanceData, originPhase.phaseId)
           .openReviews));
 
   return (
     <ProposalReviewDecorationProvider
       processInstanceId={instance.id}
-      decisionSlug={route.decisionSlug ?? route.slug}
+      decisionSlug={decisionSlug}
       phaseId={originPhase.phaseId}
       enabled={canReadReviews}
       canOpenReviews={false}
@@ -119,7 +116,7 @@ export function DevelopOriginsPanel({
         originPhaseId={originPhase.phaseId}
         scope={scope}
         showRecommendations={canReadReviews}
-        route={route}
+        decisionSlug={decisionSlug}
       />
     </ProposalReviewDecorationProvider>
   );
@@ -153,14 +150,14 @@ function DevelopOriginsTable({
   originPhaseId,
   scope,
   showRecommendations,
-  route,
+  decisionSlug,
 }: {
   processInstanceId: string;
   originPhaseId: string;
   scope: DevelopOriginScope;
   /** Show the overall-recommendation column: the caller may read the reviews. */
   showRecommendations: boolean;
-  route: Route;
+  decisionSlug: string;
 }) {
   const t = useTranslations('decisions');
   const router = useRouter();
@@ -197,7 +194,12 @@ function DevelopOriginsTable({
   const createEntry = trpc.decision.createDevelopedProposal.useMutation({
     onSuccess: (entry) => {
       startNavigating(() => {
-        router.push(proposalEditHref({ ...route, profileId: entry.profileId }));
+        router.push(
+          decisionProposalEditHref({
+            decisionSlug,
+            profileId: entry.profileId,
+          }),
+        );
       });
     },
     onError: (error) => {
@@ -267,8 +269,8 @@ function DevelopOriginsTable({
                     <TableRowHeader className="py-4 whitespace-normal">
                       <div className="flex flex-col items-start gap-0.5">
                         <Link
-                          href={proposalHref({
-                            ...route,
+                          href={decisionProposalHref({
+                            decisionSlug,
                             profileId: origin.profileId,
                           })}
                           onClick={openInSheet(origin.profileId)}

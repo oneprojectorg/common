@@ -1,11 +1,11 @@
 'use client';
 
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
-import type { ProcessInstance } from '@op/api/encoders';
+import type { InstancePhaseData, ProcessInstance } from '@op/api/encoders';
 import { Header1 } from '@op/sense/Header';
 import { Suspense } from 'react';
 
-import { useTranslations } from '@/lib/i18n';
+import { type TranslateFn, useTranslations } from '@/lib/i18n';
 
 import {
   DevelopProposalsList,
@@ -22,17 +22,13 @@ import { ProposalsLoadError } from '../ProposalsLoadError';
  */
 export function DevelopProposalsPage({
   instance,
-  slug,
   decisionSlug,
 }: {
   instance: ProcessInstance;
-  /** Owning profile slug, for proposal links on the legacy route. */
-  slug: string;
-  /** Decision profile slug, for proposal links. */
-  decisionSlug?: string;
+  decisionSlug: string;
 }) {
   const t = useTranslations('decisions');
-  const phases = instance.instanceData?.phases ?? [];
+  const phases = instance.instanceData.phases ?? [];
   const currentIndex = phases.findIndex(
     (phase) => phase.phaseId === instance.currentStateId,
   );
@@ -57,12 +53,28 @@ export function DevelopProposalsPage({
             <DevelopProposalsList
               instance={instance}
               originPhase={originPhase}
-              slug={slug}
               decisionSlug={decisionSlug}
+              entryName={getEntryName({
+                developPhase: phases[currentIndex],
+                t,
+              })}
             />
           </Suspense>
         </APIErrorBoundary>
       </div>
     </div>
   );
+}
+
+/**
+ * The name shown for the develop phase's developed proposals. The default
+ * stands until the phase's form schema supplies a name.
+ */
+function getEntryName({
+  t,
+}: {
+  developPhase: InstancePhaseData | undefined;
+  t: TranslateFn<'decisions'>;
+}): string {
+  return t('develop.defaultEntryName');
 }

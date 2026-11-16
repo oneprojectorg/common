@@ -32,6 +32,24 @@ export function proposalEditHref(route: ProposalRoute): string {
   return `${proposalHref(route)}/edit`;
 }
 
+/** A proposal on the decision route, for a screen that only renders there. */
+export function decisionProposalHref({
+  decisionSlug,
+  profileId,
+}: {
+  decisionSlug: string;
+  profileId: string;
+}): string {
+  return `/decisions/${decisionSlug}/proposal/${profileId}`;
+}
+
+export function decisionProposalEditHref(route: {
+  decisionSlug: string;
+  profileId: string;
+}): string {
+  return `${decisionProposalHref(route)}/edit`;
+}
+
 export function proposalReviewsHref(route: ProposalRoute): string {
   return `${proposalHref(route)}/reviews`;
 }

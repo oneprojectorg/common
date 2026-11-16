@@ -128,14 +128,11 @@ function DecisionPage({
     if (
       currentPhase &&
       isDevelopPhase(currentPhase) &&
+      decisionSlug &&
       (isAdmin || instance.access?.developProposals)
     ) {
       return (
-        <DevelopProposalsPage
-          instance={instance}
-          slug={slug}
-          decisionSlug={decisionSlug}
-        />
+        <DevelopProposalsPage instance={instance} decisionSlug={decisionSlug} />
       );
     }
 

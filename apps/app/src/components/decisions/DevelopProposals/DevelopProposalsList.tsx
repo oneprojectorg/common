@@ -24,7 +24,6 @@ import { useTranslations } from '@/lib/i18n';
 
 import { ProposalTabList, ProposalTabTrigger } from '../Proposal/ProposalTabs';
 import { ProposalsLoadError } from '../ProposalsLoadError';
-import type { ProposalRoute } from '../proposalHrefs';
 import { DevelopEntriesPanel } from './DevelopEntriesPanel';
 import {
   DevelopOriginsPanel,
@@ -42,24 +41,19 @@ type DevelopTab = 'proposals' | 'entries';
 export function DevelopProposalsList({
   instance,
   originPhase,
-  slug,
   decisionSlug,
+  entryName,
 }: {
   instance: ProcessInstance;
   /** The phase the origins come from: the one before the develop phase. */
   originPhase: InstancePhaseData | null;
-  slug: string;
-  decisionSlug?: string;
+  decisionSlug: string;
+  entryName: string;
 }) {
   const t = useTranslations('decisions.develop');
   const [tab, setTab] = useState<DevelopTab>('proposals');
   const processInstanceId = instance.id;
   const phaseId = instance.currentStateId ?? undefined;
-  const route: Omit<ProposalRoute, 'profileId'> = {
-    decisionSlug,
-    slug,
-    instanceId: processInstanceId,
-  };
 
   // Only the totals are read here, so each list is asked for one row.
   const [[entries, advancing]] = trpc.useSuspenseQueries((q) => [
@@ -89,7 +83,7 @@ export function DevelopProposalsList({
             {t('proposalsTab')}
           </ProposalTabTrigger>
           <ProposalTabTrigger value="entries" count={entries.total}>
-            {t('entriesTab')}
+            <bdi>{entryName}</bdi>
           </ProposalTabTrigger>
         </ProposalTabList>
 
@@ -101,7 +95,7 @@ export function DevelopProposalsList({
               <DevelopOriginsPanel
                 instance={instance}
                 originPhase={originPhase}
-                route={route}
+                decisionSlug={decisionSlug}
               />
             </Suspense>
           </APIErrorBoundary>
@@ -111,8 +105,8 @@ export function DevelopProposalsList({
           <DevelopEntriesPanel
             processInstanceId={processInstanceId}
             phaseId={phaseId}
-            totalEntries={entries.total}
-            route={route}
+            decisionSlug={decisionSlug}
+            entryName={entryName}
           />
         </TabsContent>
       </Tabs>

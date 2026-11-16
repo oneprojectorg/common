@@ -13,7 +13,6 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from '@op/sense/Empty';
-import { Header2 } from '@op/sense/Header';
 import {
   InputGroup,
   InputGroupAddon,
@@ -45,12 +44,9 @@ import { useOpenProposalInSheet } from '../ProposalSheet/proposalSheetState';
 import { ProposalsLoadError } from '../ProposalsLoadError';
 import { PROPOSALS_PAGE_LIMIT } from '../proposalFilterQuery';
 import {
-  type ProposalRoute,
-  proposalEditHref,
-  proposalHref,
+  decisionProposalEditHref,
+  decisionProposalHref,
 } from '../proposalHrefs';
-
-type Route = Omit<ProposalRoute, 'profileId'>;
 
 /**
  * The Entries tab of the develop screen: the entries this phase holds, with
@@ -60,17 +56,16 @@ type Route = Omit<ProposalRoute, 'profileId'>;
 export function DevelopEntriesPanel({
   processInstanceId,
   phaseId,
-  totalEntries,
-  route,
+  decisionSlug,
+  entryName,
 }: {
   processInstanceId: string;
   /** The develop phase, whose entries are listed. */
   phaseId: string | undefined;
-  /** Every entry of the phase, whatever the search. */
-  totalEntries: number;
-  route: Route;
+  decisionSlug: string;
+  entryName: string;
 }) {
-  const t = useTranslations('decisions.develop');
+  const t = useTranslations();
   const [search, setSearch] = useState('');
   const [debouncedSearch] = useDebounce(search.trim(), 200);
   // Keeps the current rows on screen while the next search loads, instead of
@@ -79,10 +74,7 @@ export function DevelopEntriesPanel({
 
   return (
     <div className="flex flex-col gap-10">
-      <div className="flex min-h-11 flex-wrap items-center justify-between gap-3">
-        <Header2 className="text-title font-normal">
-          {t('entriesCount', { count: totalEntries })}
-        </Header2>
+      <div className="flex min-h-11 items-center justify-end">
         <InputGroup className="w-full sm:w-56">
           <InputGroupAddon align="inline-start">
             <LuSearch aria-hidden />
@@ -91,8 +83,8 @@ export function DevelopEntriesPanel({
             type="search"
             value={search}
             onChange={(event) => setSearch(event.target.value)}
-            placeholder={t('searchEntriesPlaceholder')}
-            aria-label={t('searchEntriesLabel')}
+            placeholder={t('Search')}
+            aria-label={t('decisions.develop.searchEntriesLabel')}
           />
         </InputGroup>
       </div>
@@ -103,7 +95,8 @@ export function DevelopEntriesPanel({
             processInstanceId={processInstanceId}
             phaseId={phaseId}
             search={deferredSearch}
-            route={route}
+            decisionSlug={decisionSlug}
+            entryName={entryName}
           />
         </Suspense>
       </APIErrorBoundary>
@@ -115,14 +108,16 @@ function DevelopEntriesTable({
   processInstanceId,
   phaseId,
   search,
-  route,
+  decisionSlug,
+  entryName,
 }: {
   processInstanceId: string;
   phaseId: string | undefined;
   search: string;
-  route: Route;
+  decisionSlug: string;
+  entryName: string;
 }) {
-  const t = useTranslations('decisions');
+  const t = useTranslations();
   const openInSheet = useOpenProposalInSheet();
 
   const [data, { fetchNextPage, hasNextPage, isFetchingNextPage }] =
@@ -159,14 +154,12 @@ function DevelopEntriesTable({
               <LuFileText aria-hidden className="size-5" />
             </EmptyMedia>
             <EmptyTitle render={<h3 />}>
-              {search
-                ? t('develop.noMatchingEntriesTitle')
-                : t('develop.noEntriesTitle')}
+              {search ? t('No results') : t('decisions.develop.noEntriesTitle')}
             </EmptyTitle>
             <EmptyDescription>
               {search
-                ? t('develop.noMatchingEntriesDescription')
-                : t('develop.noEntriesDescription')}
+                ? t('decisions.develop.noMatchingEntriesDescription')
+                : t('decisions.develop.noEntriesDescription')}
             </EmptyDescription>
           </EmptyHeader>
         </Empty>
@@ -177,23 +170,26 @@ function DevelopEntriesTable({
   return (
     <div className="flex flex-col">
       <Table
-        aria-label={t('develop.entriesTableLabel')}
+        aria-label={entryName}
         className="min-w-3xl table-fixed [&_tr>*:first-child]:ps-0 [&_tr>*:last-child]:pe-0"
       >
         <TableHeader>
           <TableRow>
-            <TableHead scope="col">{t('develop.entryColumn')}</TableHead>
+            <TableHead scope="col">
+              <bdi>{entryName}</bdi>
+            </TableHead>
             <TableHead scope="col" className="w-30">
-              {t('budgetLabel')}
+              {t('decisions.budgetLabel')}
             </TableHead>
             <TableHead scope="col" className="w-45">
-              {t('develop.statusColumn')}
+              {t('decisions.develop.statusColumn')}
             </TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {entries.map((entry) => {
-            const title = entry.profile.name || t('develop.untitledEntry');
+            const title =
+              entry.profile.name || t('decisions.develop.untitledEntry');
             const budget = entry.proposalData.budget;
             const isDraft = entry.status === ProposalStatus.DRAFT;
 
@@ -205,11 +201,14 @@ function DevelopEntriesTable({
                   <Link
                     href={
                       entry.isEditable
-                        ? proposalEditHref({
-                            ...route,
+                        ? decisionProposalEditHref({
+                            decisionSlug,
                             profileId: entry.profileId,
                           })
-                        : proposalHref({ ...route, profileId: entry.profileId })
+                        : decisionProposalHref({
+                            decisionSlug,
+                            profileId: entry.profileId,
+                          })
                     }
                     onClick={
                       entry.isEditable
@@ -235,8 +234,8 @@ function DevelopEntriesTable({
                     icon={false}
                   >
                     {isDraft
-                      ? t('develop.entryInProgressStatus')
-                      : t('develop.entryAdvancingStatus')}
+                      ? t('decisions.develop.entryInProgressStatus')
+                      : t('decisions.develop.entryAdvancingStatus')}
                   </StatusBadge>
                 </TableCell>
               </TableRow>
