@@ -24,13 +24,9 @@ const backfillSql = readDataScript('backfill-phase-rows.sql');
 const driftSql = readDataScript('check-phase-drift.sql');
 const stripSql = readDataScript('strip-blob-phases.sql');
 
-const driftRowSchema = z.object({
+const noRowsSchema = z.object({
   instance_id: z.string(),
-  kind: z.enum(['no_rows', 'partial', 'drift']),
   blob_phases: z.number(),
-  row_phases: z.number(),
-  missing_rows: z.array(z.string().nullable()),
-  extra_rows: z.array(z.string()),
 });
 
 const proposalTemplate = {
@@ -390,70 +386,28 @@ describe.concurrent('backfill-phase-rows data script', () => {
     expect(await readPhaseRows(unlisted)).toEqual([]);
   });
 
-  it('given decisions out of step with their blob, then the drift check names them, and returns nothing once they agree', async ({
+  it('given decisions with blob phases and no rows, then the no-rows check names them, and returns nothing once they have rows, even when the rows and blob differ', async ({
     task,
     onTestFinished,
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const shrunk = await seedDecision(testData, {});
-    const grown = await seedDecision(testData, {});
-    const ids = [shrunk, grown];
+    const backfilled = await seedDecision(testData, {});
+    const partial = await seedDecision(testData, {});
+    const ids = [backfilled, partial];
 
     expect(await runDriftCheck(ids)).toEqual(
       sortByInstance(
-        ids.map((instanceId) => ({
-          instance_id: instanceId,
-          kind: 'no_rows',
-          blob_phases: 2,
-          row_phases: 0,
-          missing_rows: ['final', 'initial'],
-          extra_rows: [],
-        })),
+        ids.map((instanceId) => ({ instance_id: instanceId, blob_phases: 2 })),
       ),
     );
 
-    await runBackfill(testData, ids);
+    await runBackfill(testData, backfilled);
+    await insertPhaseRow(testData, partial, { phaseId: 'initial' });
+
     expect(await runDriftCheck(ids)).toEqual([]);
-
-    await db
-      .update(processInstances)
-      .set({
-        instanceData: sql`jsonb_set(${processInstances.instanceData}, '{phases}', (${processInstances.instanceData} -> 'phases') - -1)`,
-      })
-      .where(eq(processInstances.id, shrunk));
-    await db
-      .update(processInstances)
-      .set({
-        instanceData: sql`jsonb_set(${processInstances.instanceData}, '{phases}', (${processInstances.instanceData} -> 'phases') || '[{"phaseId":"added","name":"Added"}]'::jsonb)`,
-      })
-      .where(eq(processInstances.id, grown));
-
-    expect(await runDriftCheck(ids)).toEqual(
-      sortByInstance([
-        {
-          instance_id: shrunk,
-          kind: 'drift',
-          blob_phases: 1,
-          row_phases: 2,
-          missing_rows: [],
-          extra_rows: ['final'],
-        },
-        {
-          instance_id: grown,
-          kind: 'partial',
-          blob_phases: 3,
-          row_phases: 2,
-          missing_rows: ['added'],
-          extra_rows: [],
-        },
-      ]),
-    );
-    expect(
-      await runDriftCheck(ids, { 'op_backfill.drift_kind': 'no_rows' }),
-    ).toEqual([]);
   });
 
-  it('given instance_ids set to all, then the drift check covers every decision', async ({
+  it('given instance_ids set to all, then the no-rows check covers every decision', async ({
     task,
     onTestFinished,
   }) => {
@@ -462,7 +416,6 @@ describe.concurrent('backfill-phase-rows data script', () => {
 
     const rows = await runDriftCheck([], {
       'op_backfill.instance_ids': 'all',
-      'op_backfill.drift_kind': 'no_rows',
     });
 
     expect(rows.map((row) => row.instance_id)).toContain(instanceId);
@@ -598,7 +551,7 @@ const runDriftCheck = async (instanceIds: string[], settings?: Settings) => {
   const result = await runInScope(driftSql, instanceIds, settings);
   // postgres.js returns one result set per statement; the query is the last
   const resultSets = z.array(z.array(z.unknown())).parse(result);
-  return z.array(driftRowSchema).parse(resultSets.at(-1));
+  return z.array(noRowsSchema).parse(resultSets.at(-1));
 };
 
 const runStrip = (instanceIds: string[], settings?: Settings) =>

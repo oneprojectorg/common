@@ -2,8 +2,8 @@
 -- rows. A decision with no rows keeps it, as it is the only copy.
 --
 -- Run it only in release 4, after the app no longer falls back to reading
--- instance_data.phases. Run check-phase-drift.sql with
--- op_backfill.drift_kind = 'no_rows' first and confirm it returns zero rows.
+-- instance_data.phases. Run check-phase-drift.sql first and confirm it returns
+-- zero rows.
 --
 -- Run by hand with psql against each environment, never through migrate:
 --   psql "$DATABASE_URL" -c "SET op_backfill.instance_ids = 'all'" \

@@ -11,7 +11,7 @@ psql "$DATABASE_URL" -f services/db/data/<file>.sql
 | File | What it does |
 |---|---|
 | `backfill-phase-rows.sql` | Adds phase rows and profiles for decisions that have phases only in `instance_data.phases`, and links transitions to them. Commits each decision on its own. Safe to re-run. |
-| `check-phase-drift.sql` | Read-only. Lists decisions whose phase rows and `instance_data.phases` disagree. Zero rows means they agree. |
+| `check-phase-drift.sql` | Read-only. Lists decisions that have phases in `instance_data.phases` and no phase rows. Zero rows means every decision has rows. |
 | `strip-blob-phases.sql` | Removes `instance_data.phases` from decisions that have phase rows. Release 4 only, after the fallback read is gone. |
 
 ## Settings
@@ -21,7 +21,6 @@ The scripts read these settings. Set them with a session `SET`, not `SET LOCAL`.
 | Setting | Read by | Effect |
 |---|---|---|
 | `op_backfill.instance_ids` | all three | Required. `'<uuid>,<uuid>'` limits the run to those decisions; `'all'` runs on every decision. Unset or blank stops the script before it reads or writes anything. |
-| `op_backfill.drift_kind` | drift check | `'no_rows'`, `'partial'` or `'drift'` shows only that kind. Blank shows every kind. |
 
 The backfill commits inside its `DO` block, so it must not run in a transaction. Put the `SET` in its own `-c`, and do not use `psql -1`:
 
