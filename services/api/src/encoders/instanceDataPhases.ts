@@ -1,7 +1,7 @@
 // TODO: remove when the client reads phases off the instance instead of instanceData.
 
 /** A copy of `instanceData` carrying `phases`; a non-object is left as is. */
-export const putPhasesOnInstanceData = ({
+export const putPhasesInInstanceData = ({
   instanceData,
   phases,
 }: {
@@ -16,14 +16,14 @@ export const putPhasesOnInstanceData = ({
  * Sends a resolved instance's `phases` as `instanceData.phases`, where the
  * client reads them. An instance that was never resolved keeps its blob.
  */
-export const withPhasesOnWire = (instance: unknown): unknown =>
+export const withPhasesInInstanceData = (instance: unknown): unknown =>
   typeof instance === 'object' &&
   instance !== null &&
   'phases' in instance &&
   'instanceData' in instance
     ? {
         ...instance,
-        instanceData: putPhasesOnInstanceData({
+        instanceData: putPhasesInInstanceData({
           instanceData: instance.instanceData,
           phases: instance.phases,
         }),

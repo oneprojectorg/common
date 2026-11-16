@@ -18,7 +18,7 @@ import { createSelectSchema } from 'drizzle-zod';
 import { z } from 'zod';
 
 import { attachmentWithUrlEncoder } from './attachments';
-import { withPhasesOnWire } from './phasesOnWire';
+import { withPhasesInInstanceData } from './instanceDataPhases';
 import { baseProfileEncoder } from './profiles';
 
 // JSON Schema types
@@ -188,7 +188,7 @@ const legacyProcessInstanceEncoderBase = createSelectSchema(processInstances)
   });
 
 export const legacyProcessInstanceEncoder = z.preprocess(
-  withPhasesOnWire,
+  withPhasesInInstanceData,
   legacyProcessInstanceEncoderBase,
 );
 

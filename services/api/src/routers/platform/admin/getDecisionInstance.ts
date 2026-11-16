@@ -11,7 +11,7 @@ import {
 import { db } from '@op/db/client';
 import { z } from 'zod';
 
-import { putPhasesOnInstanceData } from '../../../encoders/phasesOnWire';
+import { putPhasesInInstanceData } from '../../../encoders/instanceDataPhases';
 import { withAuthenticatedPlatformAdmin } from '../../../middlewares/withAuthenticatedPlatformAdmin';
 import withRateLimited from '../../../middlewares/withRateLimited';
 import { commonProcedure, router } from '../../../trpcFactory';
@@ -126,7 +126,7 @@ export const getDecisionInstanceRouter = router({
           : false,
       ]);
 
-      const wireInstanceData = putPhasesOnInstanceData({
+      const wireInstanceData = putPhasesInInstanceData({
         instanceData: instance.instanceData,
         phases: resolved.phases,
       });

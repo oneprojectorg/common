@@ -31,7 +31,7 @@ import {
 import { createSelectSchema } from 'drizzle-zod';
 import { z } from 'zod';
 
-import { withPhasesOnWire } from './phasesOnWire';
+import { withPhasesInInstanceData } from './instanceDataPhases';
 import { baseProfileEncoder } from './profiles';
 
 // JSON Schema types
@@ -386,7 +386,7 @@ const processInstanceWithSchemaEncoderBase = createSelectSchema(
   });
 
 export const processInstanceWithSchemaEncoder = z.preprocess(
-  withPhasesOnWire,
+  withPhasesInInstanceData,
   processInstanceWithSchemaEncoderBase,
 );
 
@@ -527,7 +527,7 @@ const processInstanceEncoderBase = createSelectSchema(processInstances)
   });
 
 export const processInstanceEncoder = z.preprocess(
-  withPhasesOnWire,
+  withPhasesInInstanceData,
   processInstanceEncoderBase,
 );
 
