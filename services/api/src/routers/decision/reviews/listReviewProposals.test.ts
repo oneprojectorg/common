@@ -2,6 +2,7 @@ import { TestReviewsDataManager } from '@op/common/testing';
 import {
   ProposalStatus,
   proposalCategories,
+  proposalReviewAssignments,
   proposals as proposalsTable,
   taxonomyTerms,
 } from '@op/db/schema';
@@ -352,5 +353,271 @@ describe.concurrent('decision.listReviewProposals', () => {
         processInstanceId: context.instance.instance.id,
       }),
     ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
+  });
+
+  describe('scope: assigned', () => {
+    /**
+     * A context with a REVIEW-only reviewer: `assignedTitles` are assigned to
+     * them, `otherTitles` to the default reviewer, all in the review phase.
+     */
+    async function createAssignedContext({
+      testData,
+      assignedTitles,
+      otherTitles = [],
+    }: {
+      testData: TestReviewsDataManager;
+      assignedTitles: string[];
+      otherTitles?: string[];
+    }) {
+      const context = await testData.createContext();
+      const reviewer = await testData.createInstanceReviewerWithRole(context);
+      const assigned = [];
+      const other = [];
+      // Sequential, so each proposal gets a later `createdAt`.
+      for (const title of assignedTitles) {
+        const { proposal } = await testData.createReviewAssignment({
+          context,
+          reviewer,
+          title,
+        });
+        assigned.push(proposal);
+      }
+      for (const title of otherTitles) {
+        const { proposal } = await testData.createReviewAssignment({
+          context,
+          title,
+        });
+        other.push(proposal);
+      }
+      const reviewerCaller = await createAuthenticatedCaller(reviewer.email);
+      return { context, reviewer, assigned, other, reviewerCaller };
+    }
+
+    it('returns only the caller assigned proposals, with total and paging', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestReviewsDataManager(task.id, onTestFinished);
+      const { context, assigned, reviewerCaller } = await createAssignedContext(
+        {
+          testData,
+          assignedTitles: ['Mine one', 'Mine two', 'Mine three'],
+          otherTitles: ['Theirs one', 'Theirs two'],
+        },
+      );
+      await testData.setPhaseOpenReviews(
+        context.instance.instance.id,
+        'review',
+        false,
+      );
+
+      const seen: string[] = [];
+      let cursor: string | null = null;
+      let pages = 0;
+      do {
+        const page: Awaited<
+          ReturnType<typeof reviewerCaller.decision.listReviewProposals>
+        > = await reviewerCaller.decision.listReviewProposals({
+          processInstanceId: context.instance.instance.id,
+          scope: 'assigned',
+          limit: 2,
+          cursor,
+        });
+        expect(page.total).toBe(3);
+        seen.push(...page.items.map((item) => item.id));
+        cursor = page.next;
+        pages += 1;
+      } while (cursor && pages < 10);
+
+      expect(pages).toBe(2);
+      expect(seen).toEqual(assigned.map((proposal) => proposal.id).reverse());
+    });
+
+    it('leaves the default scope listing every proposal', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestReviewsDataManager(task.id, onTestFinished);
+      const { context, assigned, other } = await createAssignedContext({
+        testData,
+        assignedTitles: ['Mine'],
+        otherTitles: ['Theirs'],
+      });
+      const adminCaller = await createAuthenticatedCaller(
+        context.defaultReviewer.email,
+      );
+
+      const [defaultResult, assignedResult] = await Promise.all([
+        adminCaller.decision.listReviewProposals({
+          processInstanceId: context.instance.instance.id,
+        }),
+        adminCaller.decision.listReviewProposals({
+          processInstanceId: context.instance.instance.id,
+          scope: 'assigned',
+        }),
+      ]);
+
+      expect(defaultResult.items.map((item) => item.id)).toEqual([
+        other[0]?.id,
+        assigned[0]?.id,
+      ]);
+      expect(defaultResult.total).toBe(2);
+      // The admin's own assignments only.
+      expect(assignedResult.items.map((item) => item.id)).toEqual([
+        other[0]?.id,
+      ]);
+      expect(assignedResult.total).toBe(1);
+    });
+
+    it('matches assignments on the requested phase only', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestReviewsDataManager(task.id, onTestFinished);
+      const { context, reviewer, assigned, other, reviewerCaller } =
+        await createAssignedContext({
+          testData,
+          assignedTitles: ['Review phase'],
+          otherTitles: ['Earlier phase'],
+        });
+      const [earlier] = other;
+      if (!earlier) {
+        throw new Error('expected a second proposal');
+      }
+      await db.insert(proposalReviewAssignments).values({
+        processInstanceId: context.instance.instance.id,
+        proposalId: earlier.id,
+        reviewerProfileId: reviewer.profileId,
+        phaseId: 'submission',
+      });
+
+      const [current, explicit] = await Promise.all([
+        reviewerCaller.decision.listReviewProposals({
+          processInstanceId: context.instance.instance.id,
+          scope: 'assigned',
+        }),
+        reviewerCaller.decision.listReviewProposals({
+          processInstanceId: context.instance.instance.id,
+          phaseId: 'review',
+          scope: 'assigned',
+        }),
+      ]);
+
+      expect(current.items.map((item) => item.id)).toEqual([assigned[0]?.id]);
+      expect(explicit.items.map((item) => item.id)).toEqual([assigned[0]?.id]);
+    });
+
+    it('combines with search and categoryIds', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestReviewsDataManager(task.id, onTestFinished);
+      const { context, assigned, other, reviewerCaller } =
+        await createAssignedContext({
+          testData,
+          assignedTitles: ['Garden tagged', 'Garden untagged', 'Library'],
+          otherTitles: ['Garden not mine'],
+        });
+      const [tagged, untagged] = assigned;
+      const [notMine] = other;
+      if (!tagged || !untagged || !notMine) {
+        throw new Error('expected four proposals');
+      }
+      const term = await createTerm('Parks', onTestFinished);
+      await Promise.all([
+        tagProposal(tagged.id, [term.id]),
+        tagProposal(notMine.id, [term.id]),
+      ]);
+
+      const [searchResult, categoryResult] = await Promise.all([
+        reviewerCaller.decision.listReviewProposals({
+          processInstanceId: context.instance.instance.id,
+          scope: 'assigned',
+          search: 'garden',
+        }),
+        reviewerCaller.decision.listReviewProposals({
+          processInstanceId: context.instance.instance.id,
+          scope: 'assigned',
+          categoryIds: [term.id],
+        }),
+      ]);
+
+      expect(searchResult.items.map((item) => item.id)).toEqual([
+        untagged.id,
+        tagged.id,
+      ]);
+      expect(searchResult.total).toBe(2);
+      expect(categoryResult.items.map((item) => item.id)).toEqual([tagged.id]);
+      expect(categoryResult.total).toBe(1);
+    });
+
+    it('admits a reviewer without open reviews only under assigned', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestReviewsDataManager(task.id, onTestFinished);
+      const { context, assigned, reviewerCaller } = await createAssignedContext(
+        {
+          testData,
+          assignedTitles: ['Closed review'],
+        },
+      );
+      await testData.setPhaseOpenReviews(
+        context.instance.instance.id,
+        'review',
+        false,
+      );
+
+      const result = await reviewerCaller.decision.listReviewProposals({
+        processInstanceId: context.instance.instance.id,
+        scope: 'assigned',
+      });
+
+      expect(result.items.map((item) => item.id)).toEqual([assigned[0]?.id]);
+      await expect(
+        reviewerCaller.decision.listReviewProposals({
+          processInstanceId: context.instance.instance.id,
+          scope: 'all',
+        }),
+      ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
+    });
+
+    it('refuses a phase after the current one', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestReviewsDataManager(task.id, onTestFinished);
+      const { context, reviewerCaller } = await createAssignedContext({
+        testData,
+        assignedTitles: ['Current phase'],
+      });
+
+      await expect(
+        reviewerCaller.decision.listReviewProposals({
+          processInstanceId: context.instance.instance.id,
+          phaseId: 'voting',
+          scope: 'assigned',
+        }),
+      ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
+    });
+
+    it('rejects a member without the review capability', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestReviewsDataManager(task.id, onTestFinished);
+      const { context } = await createReviewProposals(testData, [
+        'Member proposal',
+      ]);
+      const member = await testData.createInstanceMember(context);
+      const memberCaller = await createAuthenticatedCaller(member.email);
+
+      await expect(
+        memberCaller.decision.listReviewProposals({
+          processInstanceId: context.instance.instance.id,
+          scope: 'assigned',
+        }),
+      ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
+    });
   });
 });

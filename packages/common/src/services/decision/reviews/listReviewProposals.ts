@@ -1,32 +1,66 @@
-import { type SQL, and, count, db, desc, eq, exists, ne } from '@op/db/client';
-import { ProposalStatus, proposalCategories, proposals } from '@op/db/schema';
+import {
+  type SQL,
+  and,
+  count,
+  db,
+  desc,
+  eq,
+  exists,
+  isNull,
+  ne,
+} from '@op/db/client';
+import {
+  ProposalStatus,
+  proposalCategories,
+  proposalReviewAssignments,
+  proposals,
+} from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
+import { permission } from 'access-zones';
 import { z } from 'zod';
 
 import {
   PAGE_LIMIT,
+  UnauthorizedError,
   ValidationError,
   decodeCursor,
   encodeCursor,
   getCursorCondition,
 } from '../../../utils';
+import { assertProfileAccess, assertUserByAuthId } from '../../assert';
 import { getInstance } from '../getInstance';
 import { listProposals } from '../listProposals';
+import { decisionPermission } from '../permissions';
 import { resolveProposalListScope } from '../resolveProposalListScope';
-import { assertCanReadPhaseReviews } from '../reviewHelpers';
+import {
+  type PhaseReviewsReadContext,
+  assertCanReadPhaseReviews,
+} from '../reviewHelpers';
 import {
   type ListReviewProposalsInput,
   type ReviewProposalList,
   reviewProposalListSchema,
 } from '../schemas/reviews';
+import { assertInstancePhase } from '../utils/instance';
+import { isPhaseAtOrBefore } from '../utils/phaseOrder';
+
+type ReviewProposalScope = ListReviewProposalsInput['scope'];
+
+interface ReviewerAssignmentScope {
+  phaseId: string;
+  reviewerProfileId: string;
+}
 
 /**
- * The review page's "All proposals" list: the phase's submitted proposals,
- * newest first, filtered by title search and by every given category term.
+ * A phase's submitted proposals for review, newest first, filtered by title
+ * search and by every given category term — all of them (`scope: 'all'`) or
+ * only those the caller is assigned to review (`scope: 'assigned'`).
  *
- * Gated like the tab itself: admins, or reviewers on a phase with open
- * reviews. Rows are the ones `proposal.list` would show the caller — the scope
- * comes from `resolveProposalListScope` — minus drafts, which have nothing to
+ * `all` is gated like the review page's "All proposals" tab: admins, or
+ * reviewers on a phase with open reviews. `assigned` admits admins and
+ * reviewers on the current phase or an earlier one, open reviews or not.
+ * Rows are the ones `proposal.list` would show the caller — the scope comes
+ * from `resolveProposalListScope` — minus drafts, which have nothing to
  * review. The page is picked here and hydrated by `listProposals`, so items
  * keep the `proposal.list` shape.
  */
@@ -34,34 +68,36 @@ export async function listReviewProposals({
   user,
   processInstanceId,
   phaseId,
+  scope = 'all',
   search,
   categoryIds = [],
   cursor,
   limit = PAGE_LIMIT.md,
 }: ListReviewProposalsInput & { user: User }): Promise<ReviewProposalList> {
   const instance = await getInstance({ instanceId: processInstanceId, user });
-
-  await assertCanReadPhaseReviews({
+  const assignment = await assertCanListReviewProposals({
     instance,
     phaseId: phaseId ?? instance.currentStateId ?? undefined,
+    scope,
     user,
   });
 
   const decodedCursor = decodeReviewProposalCursor(cursor);
 
-  const scope = await resolveProposalListScope({
+  const listScope = await resolveProposalListScope({
     input: { processInstanceId, phaseId, search },
     user,
   });
 
-  if (scope.isEmpty) {
+  if (listScope.isEmpty) {
     return { items: [], next: null, total: 0 };
   }
 
   const where = and(
-    scope.buildWhereClause(proposals),
+    listScope.buildWhereClause(proposals),
     ne(proposals.status, ProposalStatus.DRAFT),
     ...categoryIds.map((categoryId) => hasCategory(categoryId)),
+    assignment ? isAssignedTo({ processInstanceId, ...assignment }) : undefined,
   );
 
   const [rows, [totals]] = await Promise.all([
@@ -136,6 +172,99 @@ function decodeReviewProposalCursor(
     throw new ValidationError('Invalid cursor');
   }
   return result.data;
+}
+
+/**
+ * Gates the list by scope. Returns, for `assigned`, the assignment every row
+ * must match.
+ */
+async function assertCanListReviewProposals({
+  instance,
+  phaseId,
+  scope,
+  user,
+}: {
+  instance: PhaseReviewsReadContext;
+  phaseId: string | undefined;
+  scope: ReviewProposalScope;
+  user: User;
+}): Promise<ReviewerAssignmentScope | undefined> {
+  if (scope === 'assigned') {
+    return await assertCanListAssignedProposals({ instance, phaseId, user });
+  }
+  await assertCanReadPhaseReviews({ instance, phaseId, user });
+  return undefined;
+}
+
+/**
+ * Admits an admin or reviewer on the instance profile to their own assigned
+ * proposals, whatever the phase's open-reviews setting. The phase must be
+ * the current one or an earlier one. No org fallback, as in
+ * `listReviewAssignments`: that pattern is being retired.
+ */
+async function assertCanListAssignedProposals({
+  instance,
+  phaseId,
+  user,
+}: {
+  instance: PhaseReviewsReadContext;
+  phaseId: string | undefined;
+  user: User;
+}): Promise<ReviewerAssignmentScope> {
+  if (!instance.profileId || !phaseId || instance.currentStateId == null) {
+    throw new UnauthorizedError(
+      "You don't have access to list assigned proposals for this phase",
+    );
+  }
+
+  const [dbUser] = await Promise.all([
+    assertUserByAuthId(user.id),
+    assertProfileAccess({
+      user,
+      profileId: instance.profileId,
+      permissions: [
+        { decisions: decisionPermission.REVIEW },
+        { decisions: permission.ADMIN },
+      ],
+    }),
+  ]);
+
+  if (!dbUser.profileId) {
+    throw new UnauthorizedError('User must have an active profile');
+  }
+
+  assertInstancePhase({ instance, phaseId });
+  if (
+    !isPhaseAtOrBefore(instance.instanceData, phaseId, instance.currentStateId)
+  ) {
+    throw new UnauthorizedError(
+      "You don't have access to list assigned proposals for this phase",
+    );
+  }
+
+  return { phaseId, reviewerProfileId: dbUser.profileId };
+}
+
+/** The caller's review assignment on the proposal in the phase, any status. */
+function isAssignedTo({
+  processInstanceId,
+  phaseId,
+  reviewerProfileId,
+}: ReviewerAssignmentScope & { processInstanceId: string }): SQL {
+  return exists(
+    db
+      .select({ id: proposalReviewAssignments.id })
+      .from(proposalReviewAssignments)
+      .where(
+        and(
+          eq(proposalReviewAssignments.proposalId, proposals.id),
+          eq(proposalReviewAssignments.processInstanceId, processInstanceId),
+          eq(proposalReviewAssignments.phaseId, phaseId),
+          eq(proposalReviewAssignments.reviewerProfileId, reviewerProfileId),
+          isNull(proposalReviewAssignments.deletedAt),
+        ),
+      ),
+  );
 }
 
 /** One EXISTS per term, so a proposal must carry all of them. */
