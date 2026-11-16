@@ -117,19 +117,10 @@ export const assertPhaseRowInvariants = ({
   }
 };
 
-// Fields an admin may still edit on a phase the decision has left.
-const PAST_PHASE_TEXT_FIELDS = new Set([
-  'phaseId',
-  'name',
-  'description',
-  'headline',
-  'additionalInfo',
-]);
-
 /**
  * On a decision past draft, refuses a write that rewrites its history: the
  * phases up to the current one keep their order, a past phase keeps every
- * field but its text, and the current phase keeps its start date.
+ * field, and the current phase keeps its start date.
  */
 export const assertPastPhasesUnchanged = ({
   before,
@@ -167,7 +158,7 @@ export const assertPastPhasesUnchanged = ({
   for (const [index, phase] of before.slice(0, currentIndex).entries()) {
     if (!isDeepStrictEqual(lockedFields(phase), lockedFields(after[index]))) {
       throw new ValidationError(
-        `Only the name and text of the past phase "${phase.name ?? phase.phaseId}" can be edited`,
+        `The past phase "${phase.name ?? phase.phaseId}" cannot be edited`,
         { phases: 'Past phases are locked' },
       );
     }
@@ -184,19 +175,17 @@ export const assertPastPhasesUnchanged = ({
   }
 };
 
-// A phase's locked fields, with absent, null and empty values dropped and
-// dates compared as instants, so a resave of the same values is no change.
+// A phase's fields, with absent, null and empty values dropped and dates
+// compared as instants, so a resave of the same values is no change.
 const lockedFields = (phase: PhaseInstanceData | undefined): unknown =>
   phase &&
   normalize(
     Object.fromEntries(
-      Object.entries(phase)
-        .filter(([key]) => !PAST_PHASE_TEXT_FIELDS.has(key))
-        .map(([key, value]) =>
-          key === 'startDate' || key === 'endDate'
-            ? [key, toInstant(value)]
-            : [key, value],
-        ),
+      Object.entries(phase).map(([key, value]) =>
+        key === 'startDate' || key === 'endDate'
+          ? [key, toInstant(value)]
+          : [key, value],
+      ),
     ),
   );
 
@@ -206,6 +195,9 @@ const toInstant = (value: unknown): number | undefined =>
 const normalize = (value: unknown): unknown => {
   if (Array.isArray(value)) {
     return value.map(normalize);
+  }
+  if (value === '') {
+    return undefined;
   }
   if (value === null || typeof value !== 'object') {
     return value;

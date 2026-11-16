@@ -664,8 +664,7 @@ describe.concurrent('updatePhase', () => {
     ).rejects.toMatchObject({
       cause: {
         name: 'ValidationError',
-        message:
-          'Only the name and text of the past phase "Review" can be edited',
+        message: 'The past phase "Review" cannot be edited',
       },
     });
 
@@ -676,7 +675,38 @@ describe.concurrent('updatePhase', () => {
     expect(await loadTransitionLinks(instanceId)).toEqual(linksBefore);
   });
 
-  it('edits the name and text of a past phase and the end date of the current one', async ({
+  it.for([
+    { label: 'a new name', update: { name: 'Shortlist' } },
+    { label: 'a new description', update: { data: { description: 'New' } } },
+    { label: 'a new headline', update: { data: { headline: 'Hi' } } },
+  ])(
+    'refuses $label on a phase the decision has left',
+    async ({ update }, { task, onTestFinished }) => {
+      const { adminCaller, rows } = await setupPublishedDecisionAtThirdPhase(
+        task,
+        onTestFinished,
+      );
+
+      await expect(
+        adminCaller.decision.updatePhase({
+          phaseId: rows.review.id,
+          ...update,
+        }),
+      ).rejects.toMatchObject({
+        cause: {
+          name: 'ValidationError',
+          message: 'The past phase "Review" cannot be edited',
+        },
+      });
+
+      await expectPhase(rows.review, {
+        name: rows.review.name,
+        data: rows.review.data,
+      });
+    },
+  );
+
+  it('edits the text of the current and a later phase and the end date of the current one', async ({
     task,
     onTestFinished,
   }) => {
@@ -689,22 +719,23 @@ describe.concurrent('updatePhase', () => {
     ).toISOString();
 
     await adminCaller.decision.updatePhase({
-      phaseId: rows.review.id,
-      name: 'Shortlist',
-      data: { description: 'Narrow the field' },
+      phaseId: rows.voting.id,
+      name: 'Ballot',
+      data: { description: 'Pick one', endDate },
     });
     await adminCaller.decision.updatePhase({
-      phaseId: rows.voting.id,
-      data: { endDate },
+      phaseId: rows.results.id,
+      name: 'Outcome',
+      data: { headline: 'The winners' },
     });
 
-    await expectPhase(rows.review, {
-      name: 'Shortlist',
-      data: { ...rows.review.data, description: 'Narrow the field' },
-    });
     await expectPhase(rows.voting, {
-      name: rows.voting.name,
-      data: { ...rows.voting.data, endDate },
+      name: 'Ballot',
+      data: { ...rows.voting.data, description: 'Pick one', endDate },
+    });
+    await expectPhase(rows.results, {
+      name: 'Outcome',
+      data: { ...rows.results.data, headline: 'The winners' },
     });
   });
 

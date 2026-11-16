@@ -97,13 +97,17 @@ describe('assertPastPhasesUnchanged', () => {
   it.for([
     { label: 'an unchanged list', after: before },
     {
-      label: 'new text on a past phase',
+      label: 'new text on the current and a later phase',
       after: [
-        { ...submission, name: 'Ideas', description: 'New', headline: 'Hi' },
+        submission,
         review,
-        voting,
-        results,
+        { ...voting, name: 'Ballot', description: 'New', headline: 'Hi' },
+        { ...results, name: 'Outcome', additionalInfo: 'More' },
       ],
+    },
+    {
+      label: 'a resave that spells absent text as empty',
+      after: [{ ...submission, headline: '' }, review, voting, results],
     },
     {
       label: 'a resave that spells an absent rule set as empty',
@@ -165,6 +169,36 @@ describe('assertPastPhasesUnchanged', () => {
       label: 'the current phase moved',
       after: [submission, review, results, voting],
       message: /cannot be removed, added or reordered/,
+    },
+    {
+      label: 'a past phase renamed',
+      after: [{ ...submission, name: 'Ideas' }, review, voting, results],
+      message: /The past phase "Submission" cannot be edited/,
+    },
+    {
+      label: 'a past phase description changed',
+      after: [{ ...submission, description: 'New' }, review, voting, results],
+      message: /past phase "Submission"/,
+    },
+    {
+      label: 'a past phase description cleared',
+      after: [{ ...submission, description: '' }, review, voting, results],
+      message: /past phase "Submission"/,
+    },
+    {
+      label: 'a past phase headline added',
+      after: [submission, { ...review, headline: 'Hi' }, voting, results],
+      message: /past phase "Review"/,
+    },
+    {
+      label: 'a past phase additional info added',
+      after: [
+        submission,
+        { ...review, additionalInfo: 'More' },
+        voting,
+        results,
+      ],
+      message: /past phase "Review"/,
     },
     {
       label: 'a past phase end date changed',
