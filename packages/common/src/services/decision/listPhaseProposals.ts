@@ -36,31 +36,17 @@ import {
 
 export interface ListPhaseProposalsInput {
   processInstanceId: string;
-  /** The phases to list; omitted means the instance's current phase. */
+  /** Omitted means the current phase. */
   phaseIds?: string[];
-  /** Only proposals this profile holds a review assignment for, on any of the phases. */
   assignedToProfileId?: string;
   search?: string;
-  /** A proposal must carry every term. */
   categoryIds?: string[];
   cursor?: string | null;
   limit?: number;
   user: User;
 }
 
-/**
- * The submitted proposals of one or more phases, newest first, filtered by
- * title search, by every given category term and optionally by a reviewer's
- * assignments. Shared by the procedures that list a phase's proposals in
- * their own terms; it runs no gate of its own beyond the decisions READ or
- * ADMIN access `resolveProposalListScope` asserts, so the caller gates first.
- *
- * Each phase's rows are the ones `proposal.list` would show the caller,
- * minus drafts. The phase scopes are ORed in one query over `proposals`, so a
- * proposal in two of the phases is one row and the order, cursor and `total`
- * hold across them. The page is picked here and hydrated by `listProposals`,
- * so items keep the `proposal.list` shape.
- */
+/** Non-draft proposals of the phases, newest first. Checks only READ, so callers gate first. */
 export async function listPhaseProposals({
   processInstanceId,
   phaseIds,
@@ -73,8 +59,6 @@ export async function listPhaseProposals({
 }: ListPhaseProposalsInput): Promise<PhaseProposalList> {
   const decodedCursor = decodePhaseProposalCursor(cursor);
 
-  // `undefined` lets the scope resolve the current phase exactly as
-  // `proposal.list` does.
   const requestedPhaseIds: Array<string | undefined> = phaseIds ?? [undefined];
   const listScopes = await Promise.all(
     requestedPhaseIds.map((phaseId) =>
@@ -91,16 +75,12 @@ export async function listPhaseProposals({
     return { items: [], next: null, total: 0 };
   }
 
-  // The phases an assignment may sit on: the requested ones, or the current one.
   const assignmentPhaseIds =
     phaseIds ??
     (firstScope.instance.currentStateId
       ? [firstScope.instance.currentStateId]
       : []);
 
-  // Takes the table so the page query's aliased RAW table and the count's
-  // schema table both resolve; `and` is never empty here, the fallback only
-  // satisfies its type and fails closed.
   const buildWhere = (
     proposalsTable: typeof proposals,
     cursorCondition?: SQL,
@@ -170,8 +150,7 @@ export async function listPhaseProposals({
 }
 
 const phaseProposalCursorSchema = z.object({
-  // Compared against `created_at`; an unparseable value would fail the cast
-  // in Postgres as a 500 instead of a 400.
+  // A non-date value would fail in Postgres as a 500.
   value: z.string().refine((value) => !Number.isNaN(Date.parse(value))),
   id: z.uuid(),
 });
@@ -185,8 +164,6 @@ function decodePhaseProposalCursor(
     return undefined;
   }
 
-  // `decodeCursor` throws a bare 500 on unreadable input; keep every bad
-  // cursor a 400.
   const decoded = ((): unknown => {
     try {
       return decodeCursor<unknown>(cursor);
@@ -202,7 +179,6 @@ function decodePhaseProposalCursor(
   return result.data;
 }
 
-/** A review assignment of the profile on the proposal in any of the phases, any status. */
 function isAssignedTo({
   proposalsTable,
   processInstanceId,
@@ -251,7 +227,6 @@ function hasCategory({
   );
 }
 
-/** Hydrates the page through `listProposals` and keeps the order picked here. */
 async function hydrateInOrder({
   processInstanceId,
   proposalIds,

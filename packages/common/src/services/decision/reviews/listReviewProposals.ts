@@ -8,14 +8,7 @@ import type {
   ReviewProposalList,
 } from '../schemas/reviews';
 
-/**
- * The review page's "All proposals" list: the phase's submitted proposals,
- * newest first, filtered by title search and by every given category term.
- *
- * Gated like the tab itself: admins, or reviewers on a phase with open
- * reviews. The rows come from `listPhaseProposals`, so they are the ones
- * `proposal.list` would show the caller, minus drafts, in its item shape.
- */
+/** The review page's All proposals tab, gated by `assertCanReadPhaseReviews`. */
 export async function listReviewProposals({
   user,
   processInstanceId,

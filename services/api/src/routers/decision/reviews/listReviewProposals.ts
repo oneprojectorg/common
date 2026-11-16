@@ -7,7 +7,6 @@ import {
 import { networkAuthenticatedProcedure, router } from '../../../trpcFactory';
 
 export const listReviewProposalsRouter = router({
-  /** The review page's "All proposals" list; `proposal.list` stays review-agnostic. */
   listReviewProposals: networkAuthenticatedProcedure()
     .input(listReviewProposalsInputSchema)
     .output(reviewProposalListSchema)

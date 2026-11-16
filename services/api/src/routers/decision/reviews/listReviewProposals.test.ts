@@ -47,7 +47,6 @@ async function tagProposal(proposalId: string, termIds: string[]) {
     .values(termIds.map((taxonomyTermId) => ({ proposalId, taxonomyTermId })));
 }
 
-/** Creates `titles.length` proposals in the review phase, oldest first. */
 async function createReviewProposals(
   testData: TestReviewsDataManager,
   titles: string[],
@@ -88,7 +87,6 @@ describe.concurrent('decision.listReviewProposals', () => {
     );
     expect(result.total).toBe(3);
     expect(result.next).toBeNull();
-    // Same item shape as `proposal.list`.
     expect(result.items[0]).toMatchObject({
       processInstanceId: context.instance.instance.id,
       profileId: proposals[2]?.profileId,
