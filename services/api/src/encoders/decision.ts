@@ -245,6 +245,7 @@ export const instancePhaseDataEncoder = z.object({
   endDate: z.string().optional(),
   rules: phaseRulesEncoder.optional(),
   selectionPipeline: selectionPipelineEncoder.optional(),
+  selectionNeedsApproval: z.boolean().optional(),
   settingsSchema: jsonSchemaEncoder.optional(),
   settings: z.record(z.string(), z.unknown()).optional(),
   // Phase-specific rubric; resolve via getPhaseRubricTemplate (instance-level
@@ -448,6 +449,20 @@ const processSchemaEncoder = z
   })
   .passthrough();
 
+// Legacy phases name their fields stateId, plannedStartDate and plannedEndDate.
+function renameLegacyPhaseFields(phase: unknown): unknown {
+  if (!isJsonObject(phase)) {
+    return phase;
+  }
+  const legacyPhase = phase;
+  return {
+    ...legacyPhase,
+    phaseId: legacyPhase.phaseId ?? legacyPhase.stateId,
+    startDate: legacyPhase.startDate ?? legacyPhase.plannedStartDate,
+    endDate: legacyPhase.endDate ?? legacyPhase.plannedEndDate,
+  };
+}
+
 // Instance Data Encoder that supports both new and legacy field names
 const instanceDataEncoder = z.preprocess(
   (data) => {
@@ -460,18 +475,7 @@ const instanceDataEncoder = z.preprocess(
     // - phases[].plannedStartDate → phases[].startDate
     // - phases[].plannedEndDate → phases[].endDate
     const phases = Array.isArray(obj.phases)
-      ? obj.phases.map((phase) => {
-          if (typeof phase !== 'object' || phase === null) {
-            return phase;
-          }
-          const p = phase as Record<string, unknown>;
-          return {
-            ...p,
-            phaseId: p.phaseId ?? p.stateId,
-            startDate: p.startDate ?? p.plannedStartDate,
-            endDate: p.endDate ?? p.plannedEndDate,
-          };
-        })
+      ? obj.phases.map(renameLegacyPhaseFields)
       : obj.phases;
     return {
       ...obj,
@@ -582,12 +586,13 @@ const instancePhaseDataInputEncoder = instancePhaseDataEncoder.extend({
   rubricTemplate: rubricTemplateSchema.nullable().optional(),
 });
 
-const isJsonObject = (value: unknown) =>
+const isJsonObject = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
 
 // selectionPipelineEncoder strips block-specific fields; pass the pipeline whole.
+// A phase row keeps selectionNeedsApproval as a column, not in its data.
 export const phaseDataEncoder = instancePhaseDataEncoder
-  .omit({ phaseId: true, name: true })
+  .omit({ phaseId: true, name: true, selectionNeedsApproval: true })
   .extend({
     selectionPipeline: z.custom<SelectionPipeline>(isJsonObject).optional(),
     proposalTemplate: z.custom<ProposalTemplateSchema>(isJsonObject).optional(),
@@ -595,7 +600,7 @@ export const phaseDataEncoder = instancePhaseDataEncoder
 
 // name lives on the phase's profile; the service validates both schemas.
 export const phaseDataInputEncoder = instancePhaseDataInputEncoder
-  .omit({ phaseId: true, name: true })
+  .omit({ phaseId: true, name: true, selectionNeedsApproval: true })
   .extend({
     settingsSchema: z.custom<PhaseSettingsSchema>(isJsonObject).optional(),
     selectionPipeline: selectionPipelineSchema.optional(),

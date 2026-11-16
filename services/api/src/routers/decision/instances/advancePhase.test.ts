@@ -1,8 +1,13 @@
 import { type DecisionInstanceData, advancePhase } from '@op/common';
-import { TestDecisionsDataManager } from '@op/common/testing';
+import {
+  TestDecisionsDataManager,
+  schemaWithPipeline,
+  schemaWithThreePhasesAndPipelines,
+} from '@op/common/testing';
 import { db, eq } from '@op/db/client';
 import {
   ProcessStatus,
+  ProposalStatus,
   decisionTransitionProposals,
   processInstances,
 } from '@op/db/schema';
@@ -247,5 +252,160 @@ describe.concurrent('advancePhase', () => {
         eq(decisionTransitionProposals.processInstanceId, loaded.dbInstance.id),
       );
     expect(joinRows.length).toBe(0);
+  });
+
+  it('refuses to advance a phase whose inbound selection still awaits approval', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+      status: ProcessStatus.PUBLISHED,
+      processSchema: schemaWithThreePhasesAndPipelines,
+    });
+    const instanceId = setup.instance.instance.id;
+    const proposal = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: instanceId,
+      proposalData: { title: `Held ${task.id}` },
+      status: ProposalStatus.SUBMITTED,
+    });
+    const { instanceData } = setup.instance.instance;
+    await db
+      .update(processInstances)
+      .set({
+        instanceData: {
+          ...instanceData,
+          phases: instanceData.phases.map((phase) =>
+            phase.phaseId === 'submission'
+              ? { ...phase, selectionNeedsApproval: true }
+              : phase,
+          ),
+        },
+      })
+      .where(eq(processInstances.id, instanceId));
+    const reload = async () => {
+      const row = await db.query.processInstances.findFirst({
+        where: { id: instanceId },
+      });
+      if (!row) {
+        throw new Error('Failed to reload instance');
+      }
+      return row;
+    };
+
+    const held = await callAdvancePhase(
+      { setup, dbInstance: await reload() },
+      { fromPhaseId: 'submission', toPhaseId: 'review' },
+    );
+    expect(held.conflict).toBe(false);
+
+    await expect(
+      callAdvancePhase(
+        { setup, dbInstance: await reload() },
+        { fromPhaseId: 'review', toPhaseId: 'final' },
+      ),
+    ).rejects.toThrow(/awaits approval/);
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+    await caller.decision.submitManualSelection({
+      processInstanceId: instanceId,
+      proposalIds: [proposal.id],
+    });
+
+    const advanced = await callAdvancePhase(
+      { setup, dbInstance: await reload() },
+      { fromPhaseId: 'review', toPhaseId: 'final' },
+    );
+    expect(advanced.conflict).toBe(false);
+  });
+
+  it('holds the selection for the admin when the departing phase needs approval', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+      status: ProcessStatus.PUBLISHED,
+      processSchema: schemaWithPipeline,
+    });
+    const instanceId = setup.instance.instance.id;
+    const createSubmitted = (key: string) =>
+      testData.createProposal({
+        userEmail: setup.userEmail,
+        processInstanceId: instanceId,
+        proposalData: { title: `Proposal ${key} ${task.id}` },
+        status: ProposalStatus.SUBMITTED,
+      });
+    const [first] = await Promise.all([
+      createSubmitted('first'),
+      createSubmitted('second'),
+      createSubmitted('third'),
+    ]);
+    const { instanceData } = setup.instance.instance;
+    await db
+      .update(processInstances)
+      .set({
+        instanceData: {
+          ...instanceData,
+          phases: instanceData.phases.map((phase) =>
+            phase.phaseId === 'submission'
+              ? { ...phase, selectionNeedsApproval: true }
+              : phase,
+          ),
+        },
+      })
+      .where(eq(processInstances.id, instanceId));
+    const dbInstance = await db.query.processInstances.findFirst({
+      where: { id: instanceId },
+    });
+    if (!dbInstance) {
+      throw new Error('Failed to reload instance');
+    }
+
+    const result = await callAdvancePhase(
+      { setup, dbInstance },
+      { fromPhaseId: 'submission', toPhaseId: 'review' },
+    );
+
+    expect(result.conflict).toBe(false);
+    if (result.conflict) {
+      throw new Error('unreachable');
+    }
+    // The limit(2) pipeline chose two, but the admin has the last word.
+    expect(result.selectedProposalIds).toEqual([]);
+    const attachedBefore = await db
+      .select({ proposalId: decisionTransitionProposals.proposalId })
+      .from(decisionTransitionProposals)
+      .where(
+        eq(
+          decisionTransitionProposals.transitionHistoryId,
+          result.transitionHistoryId,
+        ),
+      );
+    expect(attachedBefore).toEqual([]);
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+    await caller.decision.submitManualSelection({
+      processInstanceId: instanceId,
+      proposalIds: [first.id],
+    });
+
+    const attachedAfter = await db
+      .select({ proposalId: decisionTransitionProposals.proposalId })
+      .from(decisionTransitionProposals)
+      .where(
+        eq(
+          decisionTransitionProposals.transitionHistoryId,
+          result.transitionHistoryId,
+        ),
+      );
+    expect(attachedAfter.map(({ proposalId }) => proposalId)).toEqual([
+      first.id,
+    ]);
   });
 });

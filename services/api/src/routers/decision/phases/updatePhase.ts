@@ -13,6 +13,7 @@ const updatePhaseOutputSchema = z.object({
   name: z.string(),
   slug: z.string(),
   data: phaseDataEncoder,
+  selectionNeedsApproval: z.boolean(),
 });
 
 export const updatePhaseRouter = router({
@@ -23,10 +24,14 @@ export const updatePhaseRouter = router({
           phaseId: z.uuid(),
           name: z.string().trim().min(1).max(256).optional(),
           data: phaseDataInputEncoder.optional(),
+          selectionNeedsApproval: z.boolean().optional(),
         })
         .refine(
-          (input) => input.name !== undefined || input.data !== undefined,
-          { message: 'Provide a name, data, or both' },
+          (input) =>
+            input.name !== undefined ||
+            input.data !== undefined ||
+            input.selectionNeedsApproval !== undefined,
+          { message: 'Provide a name, data, or selectionNeedsApproval' },
         ),
     )
     .output(updatePhaseOutputSchema)
@@ -36,6 +41,7 @@ export const updatePhaseRouter = router({
         phaseId: input.phaseId,
         name: input.name,
         data: input.data,
+        selectionNeedsApproval: input.selectionNeedsApproval,
       });
 
       return updatePhaseOutputSchema.parse({
@@ -44,6 +50,7 @@ export const updatePhaseRouter = router({
         name: profile.name,
         slug: profile.slug,
         data: phase.data,
+        selectionNeedsApproval: phase.selectionNeedsApproval,
       });
     }),
 });

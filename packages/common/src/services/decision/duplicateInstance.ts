@@ -157,39 +157,15 @@ function buildInstanceData(
     phases: [],
   };
 
-  // Process settings (config minus category fields unless proposalCategories is also included)
-  if (include.processSettings && source.config) {
-    const config: ProcessConfig = { ...source.config };
-
-    if (!include.proposalCategories) {
-      // Strip category-related fields from config
-      for (const key of CATEGORY_KEYS) {
-        delete config[key];
-      }
-    }
-
-    base.config = config;
-  } else if (include.proposalCategories && source.config) {
-    // Only category fields from config
-    const config: ProcessConfig = {};
-    for (const key of CATEGORY_KEYS) {
-      if (source.config[key] !== undefined) {
-        (config as any)[key] = source.config[key];
-      }
-    }
+  const config = copyConfig(source, include);
+  if (config) {
     base.config = config;
   }
 
   if (include.processSettings) {
-    if (source.overview) {
-      const overview: InstanceOverview = { ...source.overview };
-      // Storage object under the source instance's prefix, and clearing it
-      // there deletes the object — sharing the path breaks the other's banner.
-      delete overview.heroImage;
-
-      if (Object.keys(overview).length > 0) {
-        base.overview = overview;
-      }
+    const overview = copyOverview(source);
+    if (overview) {
+      base.overview = overview;
     }
 
     if (source.fieldValues) {
@@ -199,45 +175,13 @@ function buildInstanceData(
 
   // Phases
   if (include.phases && source.phases.length > 0) {
-    base.phases = source.phases.map((phase): PhaseInstanceData => {
-      const copied: PhaseInstanceData = {
-        phaseId: phase.phaseId,
-        name: phase.name,
-        description: phase.description,
-        headline: phase.headline,
-        additionalInfo: phase.additionalInfo,
-        settingsSchema: phase.settingsSchema,
-        settings: phase.settings,
-        selectionPipeline: phase.selectionPipeline,
-        // Strip dates
-        // startDate and endDate intentionally omitted
-      };
-
-      // Include review settings (phase-level rules) if requested
-      if (include.reviewSettings) {
-        copied.rules = phase.rules;
-      }
-
-      // Phase-level rubrics travel with the rubric flag, like the
-      // instance-level template below.
-      if (include.reviewRubric && phase.rubricTemplate) {
-        copied.rubricTemplate = phase.rubricTemplate;
-      }
-
-      return copied;
-    });
+    base.phases = source.phases.map((phase) =>
+      copyPhaseDetails(phase, include),
+    );
   } else if (source.phases.length > 0) {
     // Even without phase details, we need at least minimal phase references
-    base.phases = source.phases.map(
-      (phase): PhaseInstanceData => ({
-        phaseId: phase.phaseId,
-        name: phase.name,
-        // Minimal phase - just identity, plus the phase rubric when the
-        // rubric flag asks for it.
-        ...(include.reviewRubric && phase.rubricTemplate
-          ? { rubricTemplate: phase.rubricTemplate }
-          : {}),
-      }),
+    base.phases = source.phases.map((phase) =>
+      copyPhaseReference(phase, include),
     );
   }
 
@@ -252,6 +196,107 @@ function buildInstanceData(
   }
 
   return base;
+}
+
+// Config minus the category fields, unless proposalCategories is included too;
+// or only the category fields, when that is all that is included.
+function copyConfig(
+  source: DecisionInstanceData,
+  include: DuplicateInstanceIncludeFlags,
+): ProcessConfig | undefined {
+  if (!source.config) {
+    return undefined;
+  }
+
+  if (include.processSettings) {
+    return include.proposalCategories
+      ? { ...source.config }
+      : withoutCategoryFields(source.config);
+  }
+
+  return include.proposalCategories
+    ? onlyCategoryFields(source.config)
+    : undefined;
+}
+
+function withoutCategoryFields(source: ProcessConfig): ProcessConfig {
+  const config: ProcessConfig = { ...source };
+  for (const key of CATEGORY_KEYS) {
+    delete config[key];
+  }
+  return config;
+}
+
+function onlyCategoryFields(source: ProcessConfig): ProcessConfig {
+  const config: ProcessConfig = {};
+  for (const key of CATEGORY_KEYS) {
+    if (source[key] !== undefined) {
+      (config as any)[key] = source[key];
+    }
+  }
+  return config;
+}
+
+// The hero image is a storage object under the source instance's prefix, and
+// clearing it there deletes the object; sharing the path breaks the other's banner.
+function copyOverview(
+  source: DecisionInstanceData,
+): InstanceOverview | undefined {
+  if (!source.overview) {
+    return undefined;
+  }
+
+  const overview: InstanceOverview = { ...source.overview };
+  delete overview.heroImage;
+
+  return Object.keys(overview).length > 0 ? overview : undefined;
+}
+
+function copyPhaseDetails(
+  phase: PhaseInstanceData,
+  include: DuplicateInstanceIncludeFlags,
+): PhaseInstanceData {
+  const copied: PhaseInstanceData = {
+    phaseId: phase.phaseId,
+    name: phase.name,
+    description: phase.description,
+    headline: phase.headline,
+    additionalInfo: phase.additionalInfo,
+    settingsSchema: phase.settingsSchema,
+    settings: phase.settings,
+    selectionPipeline: phase.selectionPipeline,
+    selectionNeedsApproval: phase.selectionNeedsApproval,
+    // Strip dates
+    // startDate and endDate intentionally omitted
+  };
+
+  // Include review settings (phase-level rules) if requested
+  if (include.reviewSettings) {
+    copied.rules = phase.rules;
+  }
+
+  // Phase-level rubrics travel with the rubric flag, like the
+  // instance-level template below.
+  if (include.reviewRubric && phase.rubricTemplate) {
+    copied.rubricTemplate = phase.rubricTemplate;
+  }
+
+  return copied;
+}
+
+function copyPhaseReference(
+  phase: PhaseInstanceData,
+  include: DuplicateInstanceIncludeFlags,
+): PhaseInstanceData {
+  return {
+    phaseId: phase.phaseId,
+    name: phase.name,
+    // Minimal phase - just identity, plus the phase rubric when the
+    // rubric flag asks for it.
+    ...(include.reviewRubric && phase.rubricTemplate
+      ? { rubricTemplate: phase.rubricTemplate }
+      : {}),
+  };
 }
 
 /**

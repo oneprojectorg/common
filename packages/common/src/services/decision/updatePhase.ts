@@ -31,13 +31,19 @@ export const updatePhase = async ({
   phaseId,
   name,
   data,
+  selectionNeedsApproval,
 }: {
   user: User;
   phaseId: string;
   name?: string;
   data?: PhaseDataUpdate;
+  selectionNeedsApproval?: boolean;
 }): Promise<{ phase: ProcessPhase; profile: Profile }> => {
-  if (name === undefined && data === undefined) {
+  if (
+    name === undefined &&
+    data === undefined &&
+    selectionNeedsApproval === undefined
+  ) {
     throw new ValidationError('Nothing to update');
   }
 
@@ -61,7 +67,7 @@ export const updatePhase = async ({
             .returning();
 
     const [phase] =
-      patch === undefined
+      patch === undefined && selectionNeedsApproval === undefined
         ? await tx
             .select()
             .from(processPhases)
@@ -69,10 +75,15 @@ export const updatePhase = async ({
         : await tx
             .update(processPhases)
             .set({
-              data: patch.clear.reduce(
-                (merged, key) => sql`${merged} - ${key}::text`,
-                sql`(${processPhases.data} || ${JSON.stringify(patch.set)}::jsonb)`,
-              ),
+              ...(patch && {
+                data: patch.clear.reduce(
+                  (merged, key) => sql`${merged} - ${key}::text`,
+                  sql`(${processPhases.data} || ${JSON.stringify(patch.set)}::jsonb)`,
+                ),
+              }),
+              ...(selectionNeedsApproval !== undefined && {
+                selectionNeedsApproval,
+              }),
             })
             .where(eq(processPhases.id, phaseId))
             .returning();

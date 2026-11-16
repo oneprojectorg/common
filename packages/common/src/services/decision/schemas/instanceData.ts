@@ -77,6 +77,8 @@ export interface PhaseInstanceData {
   additionalInfo?: string;
   rules?: PhaseRules;
   selectionPipeline?: SelectionPipeline;
+  /** The pipeline only proposes a selection; an admin confirms it before anything advances. */
+  selectionNeedsApproval?: boolean;
   settingsSchema?: PhaseSettingsSchema;
   startDate?: string;
   endDate?: string;
@@ -151,6 +153,7 @@ export interface PhaseOverride {
   startDate?: string;
   endDate?: string;
   settings?: Record<string, unknown>;
+  selectionNeedsApproval?: boolean;
   /** Phase rubric override; `null` clears it, `undefined` leaves it unchanged. */
   rubricTemplate?: RubricTemplateSchema | null;
 }
@@ -202,6 +205,9 @@ export function createInstanceDataFromTemplate(input: {
         rules: phase.rules,
         ...(phase.selectionPipeline && {
           selectionPipeline: phase.selectionPipeline,
+        }),
+        ...(phase.selectionNeedsApproval && {
+          selectionNeedsApproval: phase.selectionNeedsApproval,
         }),
         ...(phase.settings && { settingsSchema: phase.settings }),
         ...(phase.rubricTemplate && { rubricTemplate: phase.rubricTemplate }),

@@ -19,12 +19,14 @@ export const createPhase = async ({
   name,
   sortOrder,
   data,
+  selectionNeedsApproval,
 }: {
   user: User;
   processInstanceId: string;
   name: string;
   sortOrder: number;
   data?: PhaseData;
+  selectionNeedsApproval?: boolean;
 }): Promise<{ phase: ProcessPhase; profile: Profile }> => {
   const instance = await db.query.processInstances.findFirst({
     where: { id: processInstanceId },
@@ -56,6 +58,7 @@ export const createPhase = async ({
     }
 
     return insertPhase({
+      selectionNeedsApproval,
       tx,
       processInstanceId,
       name,

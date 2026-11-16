@@ -1,4 +1,5 @@
 import {
+  getInstancePhases,
   type DecisionInstanceData,
   type RubricTemplateSchema,
 } from '@op/common';
@@ -408,6 +409,40 @@ describe.concurrent('updateDecisionInstance', () => {
     // The rejected writes changed nothing.
     expect(instanceData.overview?.headline).toBe('Keep me');
     expect(instanceData.overview?.description).toBe('Desc');
+  });
+
+  it('sets and clears a phase selection approval through the phase override', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instanceId = setup.instance.instance.id;
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+    const firstPhaseId = await getFirstPhaseId(instanceId);
+    const readFlag = async () => {
+      const row = await db.query.processInstances.findFirst({
+        where: { id: instanceId },
+      });
+      return getInstancePhases(row?.instanceData).find(
+        (phase) => phase.phaseId === firstPhaseId,
+      )?.selectionNeedsApproval;
+    };
+
+    await caller.decision.updateDecisionInstance({
+      instanceId,
+      phases: [{ phaseId: firstPhaseId, selectionNeedsApproval: true }],
+    });
+    expect(await readFlag()).toBe(true);
+
+    await caller.decision.updateDecisionInstance({
+      instanceId,
+      phases: [{ phaseId: firstPhaseId, selectionNeedsApproval: false }],
+    });
+    expect(await readFlag()).toBe(false);
   });
 
   it('should reject an empty phase headline', async ({

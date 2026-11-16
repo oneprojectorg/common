@@ -27,6 +27,7 @@ describe.concurrent('updatePhase', () => {
       profileId: phase.profileId,
       name: 'Final Review',
       slug: phase.slug,
+      selectionNeedsApproval: true,
       data: {},
     });
   });
@@ -536,6 +537,26 @@ describe.concurrent('updatePhase', () => {
     });
 
     expect(result.data).toEqual({ selectionPipeline });
+  });
+
+  it('sets and clears the selection approval flag without touching data', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { phase, adminCaller } = await setupPhase(task, onTestFinished);
+
+    const flagged = await adminCaller.decision.updatePhase({
+      phaseId: phase.id,
+      selectionNeedsApproval: true,
+    });
+    expect(flagged.selectionNeedsApproval).toBe(true);
+    expect(flagged.data).toEqual({});
+
+    const cleared = await adminCaller.decision.updatePhase({
+      phaseId: phase.id,
+      selectionNeedsApproval: false,
+    });
+    expect(cleared.selectionNeedsApproval).toBe(false);
   });
 
   it('requires authentication', async () => {
