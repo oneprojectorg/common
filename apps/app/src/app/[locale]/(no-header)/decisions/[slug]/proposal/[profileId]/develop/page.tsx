@@ -59,7 +59,7 @@ export async function generateMetadata({
 
 /**
  * Route page for the develop editor of an entry: a proposal developed from
- * origins in a develop phase. Any other proposal is not found here; it opens
+ * sources in a develop phase. Any other proposal is not found here; it opens
  * at `/edit`.
  */
 const DevelopProposalPage = async ({

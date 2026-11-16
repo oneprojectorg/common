@@ -13,9 +13,9 @@ interface DevelopProposalFrameProps {
   backHref: string;
   /** Header controls placed before the language chooser and avatar menu. */
   actions?: ReactNode;
-  /** The origin proposal, shown in the first pane. */
-  origin: ReactNode;
-  originLabel: string;
+  /** The source proposal, shown in the first pane. */
+  source: ReactNode;
+  sourceLabel: string;
   heading: string;
   description?: string;
   /** A line under the heading and description, such as a read-only notice. */
@@ -25,15 +25,15 @@ interface DevelopProposalFrameProps {
 }
 
 /**
- * The develop screen around a proposal developed from origins: a header, the
- * origin pane and the form pane side by side. The form pane is the first tab
+ * The develop screen around a proposal developed from sources: a header, the
+ * source pane and the form pane side by side. The form pane is the first tab
  * on a narrow screen.
  */
 export function DevelopProposalFrame({
   backHref,
   actions,
-  origin,
-  originLabel,
+  source,
+  sourceLabel,
   heading,
   description,
   notice,
@@ -51,8 +51,8 @@ export function DevelopProposalFrame({
         {actions}
       </DecisionSubpageHeader>
       <SplitPane className="mx-auto w-full max-w-6xl" defaultMobileTabId="form">
-        <SplitPane.Pane id="origin" label={originLabel} className="sm:pt-8">
-          {origin}
+        <SplitPane.Pane id="source" label={sourceLabel} className="sm:pt-8">
+          {source}
         </SplitPane.Pane>
         <SplitPane.Pane id="form" label={heading} className="sm:pt-8">
           <div className="flex flex-col gap-8">

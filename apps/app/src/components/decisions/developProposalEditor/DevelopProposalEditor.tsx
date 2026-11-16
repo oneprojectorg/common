@@ -25,15 +25,15 @@ interface DevelopProposalEditorProps {
   instance: ProcessInstance;
   proposal: Proposal;
   backHref: string;
-  /** The origin proposal, shown beside the form. */
-  origin: ReactNode;
-  originLabel: string;
+  /** The source proposal, shown beside the form. */
+  source: ReactNode;
+  sourceLabel: string;
   heading: string;
   description?: string;
 }
 
 /**
- * Edits a proposal developed from origins, with its origin beside the form.
+ * Edits a proposal developed from sources, with its source beside the form.
  * A draft is advanced with `submitDevelopedProposal`. After that the form
  * stays editable and autosaves for as long as the server reports it editable.
  */
@@ -41,8 +41,8 @@ export function DevelopProposalEditor({
   instance,
   proposal,
   backHref,
-  origin,
-  originLabel,
+  source,
+  sourceLabel,
   heading,
   description,
 }: DevelopProposalEditorProps) {
@@ -58,8 +58,8 @@ export function DevelopProposalEditor({
         actions={
           <DevelopHeaderActions proposal={proposal} backHref={backHref} />
         }
-        origin={origin}
-        originLabel={originLabel}
+        source={source}
+        sourceLabel={sourceLabel}
         heading={heading}
         description={description}
       >

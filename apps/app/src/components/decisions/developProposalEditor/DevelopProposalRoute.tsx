@@ -15,14 +15,14 @@ import { compileProposalSchema } from '../forms/proposal';
 import { ProposalFormRenderer } from '../proposalEditor/ProposalFormRenderer';
 import { getProposalEditorTemplate } from '../proposalEditor/getProposalEditorTemplate';
 import { decisionRootHref } from '../proposalHrefs';
-import { DevelopOriginColumn } from './DevelopOriginColumn';
 import { DevelopProposalEditor } from './DevelopProposalEditor';
 import { DevelopProposalFrame } from './DevelopProposalFrame';
+import { DevelopSourceColumn } from './DevelopSourceColumn';
 import { getDevelopEntryHeading } from './getDevelopEntryHeading';
 
 /**
- * Opens a proposal developed from origins (the target of at least one
- * `developed` relationship) with its origin beside the form. Any other proposal is not found on this route.
+ * Opens a proposal developed from sources (the target of at least one
+ * `developed` relationship) with its source beside the form. Any other proposal is not found on this route.
  *
  * This is the one access gate. The form is editable only for a caller the
  * server lets develop proposals (an admin or a holder of the Develop
@@ -44,9 +44,9 @@ export function DevelopProposalRoute({
     relationshipType: ProposalRelationshipType.DEVELOPED,
   });
 
-  const origins = items.map((item) => item.proposal);
+  const sources = items.map((item) => item.proposal);
 
-  if (origins.length === 0) {
+  if (sources.length === 0) {
     notFound();
   }
 
@@ -76,27 +76,27 @@ export function DevelopProposalRoute({
   const currentIndex = phases.findIndex(
     (phase) => phase.phaseId === instance.currentStateId,
   );
-  const originPhaseId =
+  const sourcePhaseId =
     currentIndex > 0 ? (phases[currentIndex - 1]?.phaseId ?? null) : null;
 
-  // Mirrors the server's `canReadPhaseReviews` on the origin phase.
+  // Mirrors the server's `canReadPhaseReviews` on the source phase.
   const canReadReviews =
     Boolean(instance.access?.admin) ||
     (Boolean(instance.access?.review) &&
-      !!originPhaseId &&
-      resolveReviewSettings(instance.instanceData ?? {}, originPhaseId)
+      !!sourcePhaseId &&
+      resolveReviewSettings(instance.instanceData ?? {}, sourcePhaseId)
         .openReviews);
 
-  const originLabel = t('decisions.developEditor.proposalTab');
-  const origin = (
-    <DevelopOriginColumn
-      origins={origins}
+  const sourceLabel = t('decisions.developEditor.proposalTab');
+  const source = (
+    <DevelopSourceColumn
+      sources={sources}
       decisionRoot={decisionRootHref({
         decisionSlug,
         slug: decisionSlug,
         instanceId: instance.id,
       })}
-      originPhaseId={originPhaseId}
+      sourcePhaseId={sourcePhaseId}
       canReadReviews={canReadReviews}
     />
   );
@@ -107,8 +107,8 @@ export function DevelopProposalRoute({
         instance={instance}
         proposal={proposal}
         backHref={backHref}
-        origin={origin}
-        originLabel={originLabel}
+        source={source}
+        sourceLabel={sourceLabel}
         heading={heading}
         description={description}
       />
@@ -118,8 +118,8 @@ export function DevelopProposalRoute({
   return (
     <DevelopProposalFrame
       backHref={backHref}
-      origin={origin}
-      originLabel={originLabel}
+      source={source}
+      sourceLabel={sourceLabel}
       heading={heading}
       description={description}
       notice={

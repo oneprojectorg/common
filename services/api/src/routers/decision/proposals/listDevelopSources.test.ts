@@ -23,15 +23,15 @@ import { createCallerFactory } from '../../../trpcFactory';
 const createCaller = createCallerFactory(appRouter);
 
 type Caller = ReturnType<typeof createCaller>;
-type OriginList = Awaited<ReturnType<Caller['decision']['listDevelopOrigins']>>;
-type ListInput = Parameters<Caller['decision']['listDevelopOrigins']>[0];
+type SourceList = Awaited<ReturnType<Caller['decision']['listDevelopSources']>>;
+type ListInput = Parameters<Caller['decision']['listDevelopSources']>[0];
 
 async function createAuthenticatedCaller(email: string) {
   const { session } = await createIsolatedSession(email);
   return createCaller(await createTestContextWithSession(session));
 }
 
-async function createOriginsContext({
+async function createSourcesContext({
   testData,
   titles,
   assignedToReviewer = [],
@@ -75,7 +75,7 @@ async function readAllPages(caller: Caller, input: ListInput) {
   let cursor: string | null = null;
   let pages = 0;
   do {
-    const page: OriginList = await caller.decision.listDevelopOrigins({
+    const page: SourceList = await caller.decision.listDevelopSources({
       ...input,
       cursor,
     });
@@ -163,14 +163,14 @@ async function transitionIntoReview({
   }
 }
 
-describe.concurrent('decision.listDevelopOrigins', () => {
+describe.concurrent('decision.listDevelopSources', () => {
   it('lists the phase non-draft proposals for a plain member', async ({
     task,
     onTestFinished,
   }) => {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
     const { processInstanceId, proposals, memberCaller } =
-      await createOriginsContext({
+      await createSourcesContext({
         testData,
         titles: ['First', 'Second', 'Draft'],
       });
@@ -183,7 +183,7 @@ describe.concurrent('decision.listDevelopOrigins', () => {
       .set({ status: ProposalStatus.DRAFT })
       .where(eq(proposalsTable.id, draft.id));
 
-    const result = await memberCaller.decision.listDevelopOrigins({
+    const result = await memberCaller.decision.listDevelopSources({
       processInstanceId,
       phaseIds: ['review'],
     });
@@ -199,7 +199,7 @@ describe.concurrent('decision.listDevelopOrigins', () => {
   }) => {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
     const [{ processInstanceId }, otherContext] = await Promise.all([
-      createOriginsContext({ testData, titles: ['Private'] }),
+      createSourcesContext({ testData, titles: ['Private'] }),
       testData.createContext(),
     ]);
     const outsiderCaller = await createAuthenticatedCaller(
@@ -207,7 +207,7 @@ describe.concurrent('decision.listDevelopOrigins', () => {
     );
 
     await expect(
-      outsiderCaller.decision.listDevelopOrigins({
+      outsiderCaller.decision.listDevelopSources({
         processInstanceId,
         phaseIds: ['review'],
       }),
@@ -220,7 +220,7 @@ describe.concurrent('decision.listDevelopOrigins', () => {
   }) => {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
     const { processInstanceId, proposals, reviewerCaller } =
-      await createOriginsContext({
+      await createSourcesContext({
         testData,
         titles: ['Mine one', 'Theirs', 'Mine two'],
         assignedToReviewer: ['Mine one', 'Mine two'],
@@ -245,7 +245,7 @@ describe.concurrent('decision.listDevelopOrigins', () => {
   }) => {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
     const { processInstanceId, reviewer, proposals, reviewerCaller } =
-      await createOriginsContext({
+      await createSourcesContext({
         testData,
         titles: ['On review', 'On submission'],
         assignedToReviewer: ['On review'],
@@ -262,12 +262,12 @@ describe.concurrent('decision.listDevelopOrigins', () => {
     });
 
     const [reviewOnly, bothPhases] = await Promise.all([
-      reviewerCaller.decision.listDevelopOrigins({
+      reviewerCaller.decision.listDevelopSources({
         processInstanceId,
         phaseIds: ['review'],
         scope: 'assigned',
       }),
-      reviewerCaller.decision.listDevelopOrigins({
+      reviewerCaller.decision.listDevelopSources({
         processInstanceId,
         phaseIds: ['submission', 'review'],
         scope: 'assigned',
@@ -289,7 +289,7 @@ describe.concurrent('decision.listDevelopOrigins', () => {
   }) => {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
     const { processInstanceId, proposals, memberCaller } =
-      await createOriginsContext({
+      await createSourcesContext({
         testData,
         titles: ['Advanced one', 'Advanced two', 'Left behind'],
       });
@@ -326,7 +326,7 @@ describe.concurrent('decision.listDevelopOrigins', () => {
   }) => {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
     const { processInstanceId, proposals, reviewerCaller } =
-      await createOriginsContext({
+      await createSourcesContext({
         testData,
         titles: [
           'Garden tagged',
@@ -359,8 +359,8 @@ describe.concurrent('decision.listDevelopOrigins', () => {
       categoryIds: [term.id],
     };
     const [all, assigned] = await Promise.all([
-      reviewerCaller.decision.listDevelopOrigins(filters),
-      reviewerCaller.decision.listDevelopOrigins({
+      reviewerCaller.decision.listDevelopSources(filters),
+      reviewerCaller.decision.listDevelopSources({
         ...filters,
         scope: 'assigned',
       }),
@@ -380,12 +380,12 @@ describe.concurrent('decision.listDevelopOrigins', () => {
     onTestFinished,
   }) => {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
-    const { processInstanceId, memberCaller } = await createOriginsContext({
+    const { processInstanceId, memberCaller } = await createSourcesContext({
       testData,
       titles: ['Assigned elsewhere'],
     });
 
-    const result = await memberCaller.decision.listDevelopOrigins({
+    const result = await memberCaller.decision.listDevelopSources({
       processInstanceId,
       phaseIds: ['review'],
       scope: 'assigned',
@@ -396,13 +396,13 @@ describe.concurrent('decision.listDevelopOrigins', () => {
 
   it('rejects an unreadable cursor', async ({ task, onTestFinished }) => {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
-    const { processInstanceId, memberCaller } = await createOriginsContext({
+    const { processInstanceId, memberCaller } = await createSourcesContext({
       testData,
       titles: ['Only one'],
     });
 
     await expect(
-      memberCaller.decision.listDevelopOrigins({
+      memberCaller.decision.listDevelopSources({
         processInstanceId,
         phaseIds: ['review'],
         cursor: 'not-a-cursor',

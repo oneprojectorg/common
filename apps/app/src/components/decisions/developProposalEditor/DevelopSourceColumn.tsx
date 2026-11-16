@@ -27,45 +27,45 @@ import {
   PhaseReviewsTabPanel,
 } from '../ReviewsPanel/PhaseReviews';
 
-type OriginTab = 'proposal' | 'reviews';
+type SourceTab = 'proposal' | 'reviews';
 
 /**
- * The entry's origins, read only: the selected origin's proposal and its
- * reviews from the phase it comes from. With several origins a select picks
+ * The entry's sources, read only: the selected source's proposal and its
+ * reviews from the phase it comes from. With several sources a select picks
  * the one shown.
  */
-export function DevelopOriginColumn({
-  origins,
+export function DevelopSourceColumn({
+  sources,
   decisionRoot,
-  originPhaseId,
+  sourcePhaseId,
   canReadReviews,
 }: {
   /** At least one. */
-  origins: RelatedProposal[];
+  sources: RelatedProposal[];
   decisionRoot: string;
-  /** The phase the origins come from; absent when the develop phase is first. */
-  originPhaseId: string | null;
-  /** Mirrors the server gate on the origin phase's reviews. */
+  /** The phase the sources come from; absent when the develop phase is first. */
+  sourcePhaseId: string | null;
+  /** Mirrors the server gate on the source phase's reviews. */
   canReadReviews: boolean;
 }) {
   const t = useTranslations('decisions');
-  const [selectedId, setSelectedId] = useState(origins[0]?.id ?? '');
-  const origin =
-    origins.find((candidate) => candidate.id === selectedId) ?? origins[0];
+  const [selectedId, setSelectedId] = useState(sources[0]?.id ?? '');
+  const source =
+    sources.find((candidate) => candidate.id === selectedId) ?? sources[0];
 
-  if (!origin) {
+  if (!source) {
     return null;
   }
 
   return (
     <div className="flex flex-col gap-6">
-      {origins.length > 1 ? (
+      {sources.length > 1 ? (
         <ResponsiveSelect<string>
-          selectedKey={origin.id}
+          selectedKey={source.id}
           onSelectionChange={setSelectedId}
-          aria-label={t('developEditor.originSelectLabel')}
+          aria-label={t('developEditor.sourceSelectLabel')}
           className="w-full sm:max-w-80"
-          items={origins.map((candidate) => {
+          items={sources.map((candidate) => {
             const name =
               candidate.profile.name || t('proposals.untitledProposal');
 
@@ -78,18 +78,18 @@ export function DevelopOriginColumn({
         />
       ) : null}
 
-      {/* Keyed so the open tab and a failed load reset with the origin. */}
+      {/* Keyed so the open tab and a failed load reset with the source. */}
       <APIErrorBoundary
-        key={origin.id}
-        fallbacks={{ default: () => <OriginUnavailable /> }}
+        key={source.id}
+        fallbacks={{ default: () => <SourceUnavailable /> }}
       >
-        <Suspense fallback={<OriginSkeleton />}>
+        <Suspense fallback={<SourceSkeleton />}>
           <ProposalQueryProvider
-            profileId={origin.profile.id}
+            profileId={source.profile.id}
             decisionRoot={decisionRoot}
           >
-            <OriginSections
-              originPhaseId={canReadReviews ? originPhaseId : null}
+            <SourceSections
+              sourcePhaseId={canReadReviews ? sourcePhaseId : null}
             />
           </ProposalQueryProvider>
         </Suspense>
@@ -98,10 +98,10 @@ export function DevelopOriginColumn({
   );
 }
 
-function OriginSections({ originPhaseId }: { originPhaseId: string | null }) {
+function SourceSections({ sourcePhaseId }: { sourcePhaseId: string | null }) {
   const t = useTranslations('decisions');
   const { proposal } = useProposal();
-  const [tab, setTab] = useState<OriginTab>('proposal');
+  const [tab, setTab] = useState<SourceTab>('proposal');
 
   return (
     <Tabs
@@ -114,14 +114,14 @@ function OriginSections({ originPhaseId }: { originPhaseId: string | null }) {
       }}
       className="gap-6"
     >
-      <ProposalTabList aria-label={t('developEditor.originSectionsLabel')}>
+      <ProposalTabList aria-label={t('developEditor.sourceSectionsLabel')}>
         <ProposalTabTrigger value="proposal">
           {t('developEditor.proposalTab')}
         </ProposalTabTrigger>
-        {originPhaseId ? (
+        {sourcePhaseId ? (
           <ProposalTabTrigger
             value="reviews"
-            count={<ReviewsCount phaseId={originPhaseId} />}
+            count={<ReviewsCount phaseId={sourcePhaseId} />}
           >
             {t('review.reviewsTab')}
           </ProposalTabTrigger>
@@ -131,12 +131,12 @@ function OriginSections({ originPhaseId }: { originPhaseId: string | null }) {
       <TabsContent value="proposal">
         <ProposalBody engagement={false} />
       </TabsContent>
-      {originPhaseId ? (
+      {sourcePhaseId ? (
         <PhaseReviewsTabPanel value="reviews">
           <PhaseReviews
             processInstanceId={proposal.processInstanceId}
             proposalId={proposal.id}
-            phaseId={originPhaseId}
+            phaseId={sourcePhaseId}
             isCurrentPhase={false}
             emptyMessage={t('developEditor.noReviews')}
           />
@@ -158,7 +158,7 @@ function ReviewsCount({ phaseId }: { phaseId: string }) {
   return data ? data.reviews.length : null;
 }
 
-function OriginSkeleton() {
+function SourceSkeleton() {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex gap-4 border-b pb-2">
@@ -175,7 +175,7 @@ function OriginSkeleton() {
   );
 }
 
-function OriginUnavailable() {
+function SourceUnavailable() {
   const t = useTranslations('decisions.proposals');
 
   return (

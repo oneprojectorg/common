@@ -1,15 +1,15 @@
-import { Channels, listDevelopOrigins } from '@op/common';
+import { Channels, listDevelopSources } from '@op/common';
 import {
-  developOriginListSchema,
-  listDevelopOriginsInputSchema,
+  developSourceListSchema,
+  listDevelopSourcesInputSchema,
 } from '@op/common/client';
 
 import { networkAuthenticatedProcedure, router } from '../../../trpcFactory';
 
-export const listDevelopOriginsRouter = router({
-  listDevelopOrigins: networkAuthenticatedProcedure()
-    .input(listDevelopOriginsInputSchema)
-    .output(developOriginListSchema)
+export const listDevelopSourcesRouter = router({
+  listDevelopSources: networkAuthenticatedProcedure()
+    .input(listDevelopSourcesInputSchema)
+    .output(developSourceListSchema)
     .query(async ({ ctx, input }) => {
       ctx.registerQueryChannels([
         Channels.decisionProposals(input.processInstanceId),
@@ -18,6 +18,6 @@ export const listDevelopOriginsRouter = router({
           : []),
       ]);
 
-      return await listDevelopOrigins({ ...input, user: ctx.user });
+      return await listDevelopSources({ ...input, user: ctx.user });
     }),
 });

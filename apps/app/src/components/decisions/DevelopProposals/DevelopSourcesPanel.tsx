@@ -3,7 +3,7 @@
 import { trpc } from '@op/api/client';
 import type { InstancePhaseData, ProcessInstance } from '@op/api/encoders';
 import {
-  type ListDevelopOriginsInput,
+  type ListDevelopSourcesInput,
   type Proposal,
   type ProposalReviewAggregates,
   RECOMMENDATION_OPTION,
@@ -52,7 +52,7 @@ import {
   useReportProposalsForReviewDecoration,
 } from '../proposalReviewDecoration';
 
-type DevelopOriginScope = ListDevelopOriginsInput['scope'];
+type DevelopSourceScope = ListDevelopSourcesInput['scope'];
 
 const RECOMMENDATION_INTENT: Record<RecommendationValue, StatusDotIntent> = {
   yes: 'success',
@@ -62,58 +62,58 @@ const RECOMMENDATION_INTENT: Record<RecommendationValue, StatusDotIntent> = {
 
 /**
  * The Proposals tab of the develop screen: the previous phase's proposals
- * (the origins), each with its reviewers' overall recommendations and a
+ * (the sources), each with its reviewers' overall recommendations and a
  * Prepare action that creates an entry of this phase from it. An admin sees
- * every origin; anyone else sees the origins assigned to them.
+ * every source; anyone else sees the sources assigned to them.
  *
  * The list comes page by page from the API in its own order (newest first);
  * nothing is sorted or filtered here.
  */
-export function DevelopOriginsPanel({
+export function DevelopSourcesPanel({
   instance,
-  originPhase,
+  sourcePhase,
   decisionSlug,
 }: {
   instance: ProcessInstance;
-  originPhase: InstancePhaseData | null;
+  sourcePhase: InstancePhaseData | null;
   decisionSlug: string;
 }) {
   const t = useTranslations('decisions.develop');
-  const scope: DevelopOriginScope = instance.access?.admin ? 'all' : 'assigned';
+  const scope: DevelopSourceScope = instance.access?.admin ? 'all' : 'assigned';
 
-  if (!originPhase) {
+  if (!sourcePhase) {
     return (
       <div className="flex flex-col gap-10">
         <div className="flex min-h-11 items-center">
           <Header2 className="text-title font-normal">
-            {t('originsCount', { count: 0 })}
+            {t('sourcesCount', { count: 0 })}
           </Header2>
         </div>
-        <NoOriginsEmpty scope={scope} />
+        <NoSourcesEmpty scope={scope} />
       </div>
     );
   }
 
   // Mirrors the server's `canReadPhaseReviews`, which gates the aggregates
-  // read: admins always, reviewers when the origin phase's reviews are open.
+  // read: admins always, reviewers when the source phase's reviews are open.
   const canReadReviews =
-    isReviewPhase(originPhase) &&
+    isReviewPhase(sourcePhase) &&
     (Boolean(instance.access?.admin) ||
       (Boolean(instance.access?.review) &&
-        resolveReviewSettings(instance.instanceData, originPhase.phaseId)
+        resolveReviewSettings(instance.instanceData, sourcePhase.phaseId)
           .openReviews));
 
   return (
     <ProposalReviewDecorationProvider
       processInstanceId={instance.id}
       decisionSlug={decisionSlug}
-      phaseId={originPhase.phaseId}
+      phaseId={sourcePhase.phaseId}
       enabled={canReadReviews}
       canOpenReviews={false}
     >
-      <DevelopOriginsTable
+      <DevelopSourcesTable
         processInstanceId={instance.id}
-        originPhaseId={originPhase.phaseId}
+        sourcePhaseId={sourcePhase.phaseId}
         scope={scope}
         showRecommendations={canReadReviews}
         decisionSlug={decisionSlug}
@@ -122,7 +122,7 @@ export function DevelopOriginsPanel({
   );
 }
 
-export function DevelopOriginsTableSkeleton() {
+export function DevelopSourcesTableSkeleton() {
   return (
     <div className="flex flex-col gap-10" aria-hidden>
       <Skeleton className="h-7 w-40" />
@@ -145,16 +145,16 @@ export function DevelopOriginsTableSkeleton() {
   );
 }
 
-function DevelopOriginsTable({
+function DevelopSourcesTable({
   processInstanceId,
-  originPhaseId,
+  sourcePhaseId,
   scope,
   showRecommendations,
   decisionSlug,
 }: {
   processInstanceId: string;
-  originPhaseId: string;
-  scope: DevelopOriginScope;
+  sourcePhaseId: string;
+  scope: DevelopSourceScope;
   /** Show the overall-recommendation column: the caller may read the reviews. */
   showRecommendations: boolean;
   decisionSlug: string;
@@ -165,22 +165,22 @@ function DevelopOriginsTable({
   const [isNavigating, startNavigating] = useTransition();
 
   const [data, { fetchNextPage, hasNextPage, isFetchingNextPage }] =
-    trpc.decision.listDevelopOrigins.useSuspenseInfiniteQuery(
+    trpc.decision.listDevelopSources.useSuspenseInfiniteQuery(
       {
         processInstanceId,
-        phaseIds: [originPhaseId],
+        phaseIds: [sourcePhaseId],
         scope,
         limit: PROPOSALS_PAGE_LIMIT,
       },
       { getNextPageParam: nextCursor },
     );
 
-  const origins = useMemo(
+  const sources = useMemo(
     () => data.pages.flatMap((page) => page.items),
     [data.pages],
   );
   const total = data.pages[0]?.total ?? 0;
-  useReportProposalsForReviewDecoration(origins);
+  useReportProposalsForReviewDecoration(sources);
 
   const loadNextPage = useCallback(() => {
     void fetchNextPage();
@@ -209,19 +209,19 @@ function DevelopOriginsTable({
   });
 
   const isPreparing = createEntry.isPending || isNavigating;
-  const preparingOriginId = isPreparing
+  const preparingSourceId = isPreparing
     ? (createEntry.variables?.sourceProposalIds[0] ?? null)
     : null;
 
-  const prepare = (origin: Proposal) =>
+  const prepare = (source: Proposal) =>
     createEntry.mutate({
       processInstanceId,
-      sourceProposalIds: [origin.id],
-      // A suggested draft: the entry starts from the origin's title and
+      sourceProposalIds: [source.id],
+      // A suggested draft: the entry starts from the source's title and
       // category, and the editor takes it from there.
       proposalData: {
-        title: origin.profile.name,
-        category: origin.proposalData.category,
+        title: source.profile.name,
+        category: source.proposalData.category,
       },
     });
 
@@ -231,16 +231,16 @@ function DevelopOriginsTable({
           across tabs. */}
       <div aria-live="polite" className="flex min-h-11 items-center">
         <Header2 className="text-title font-normal">
-          {t('develop.originsCount', { count: total })}
+          {t('develop.sourcesCount', { count: total })}
         </Header2>
       </div>
 
-      {origins.length === 0 ? (
-        <NoOriginsEmpty scope={scope} />
+      {sources.length === 0 ? (
+        <NoSourcesEmpty scope={scope} />
       ) : (
         <div className="flex flex-col">
           <Table
-            aria-label={t('develop.originsTableLabel')}
+            aria-label={t('develop.sourcesTableLabel')}
             className="min-w-3xl [&_tr>*:first-child]:ps-0 [&_tr>*:last-child]:pe-0"
           >
             <TableHeader>
@@ -257,23 +257,23 @@ function DevelopOriginsTable({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {origins.map((origin) => {
+              {sources.map((source) => {
                 const title =
-                  origin.profile.name || t('proposals.untitledProposal');
-                const submitterName = origin.submittedBy
-                  ? origin.submittedBy.name || origin.submittedBy.slug
+                  source.profile.name || t('proposals.untitledProposal');
+                const submitterName = source.submittedBy
+                  ? source.submittedBy.name || source.submittedBy.slug
                   : null;
 
                 return (
-                  <TableRow key={origin.id}>
+                  <TableRow key={source.id}>
                     <TableRowHeader className="py-4">
                       <div className="flex flex-col items-start gap-0.5">
                         <Link
                           href={decisionProposalHref({
                             decisionSlug,
-                            profileId: origin.profileId,
+                            profileId: source.profileId,
                           })}
-                          onClick={openInSheet(origin.profileId)}
+                          onClick={openInSheet(source.profileId)}
                           className="text-base font-strong text-foreground hover:underline"
                         >
                           <bdi>{title}</bdi>
@@ -287,7 +287,7 @@ function DevelopOriginsTable({
                     </TableRowHeader>
                     {showRecommendations ? (
                       <TableCell className="py-4">
-                        <OriginRecommendations proposalId={origin.id} />
+                        <SourceRecommendations proposalId={source.id} />
                       </TableCell>
                     ) : null}
                     <TableCell className="py-4 text-end">
@@ -295,8 +295,8 @@ function DevelopOriginsTable({
                         variant="outline"
                         aria-label={t('develop.prepareEntryLabel', { title })}
                         disabled={isPreparing}
-                        loading={preparingOriginId === origin.id}
-                        onClick={() => prepare(origin)}
+                        loading={preparingSourceId === source.id}
+                        onClick={() => prepare(source)}
                       >
                         <LuPencil aria-hidden data-icon="inline-start" />
                         {t('develop.prepareEntryAction')}
@@ -330,10 +330,10 @@ function DevelopOriginsTable({
 }
 
 /**
- * The reviewers' overall recommendations for one origin, as counts of Yes,
+ * The reviewers' overall recommendations for one source, as counts of Yes,
  * Maybe and No. The aggregates load after the row, a page at a time.
  */
-function OriginRecommendations({ proposalId }: { proposalId: string }) {
+function SourceRecommendations({ proposalId }: { proposalId: string }) {
   const review = useProposalReviewAggregates(proposalId);
 
   if (review.status === 'loading') {
@@ -372,8 +372,8 @@ function RecommendationCounts({
   );
 }
 
-/** What the Proposals tab shows when the previous phase offers no origins. */
-function NoOriginsEmpty({ scope }: { scope: DevelopOriginScope }) {
+/** What the Proposals tab shows when the previous phase offers no sources. */
+function NoSourcesEmpty({ scope }: { scope: DevelopSourceScope }) {
   const t = useTranslations('decisions.develop');
 
   return (
@@ -382,11 +382,11 @@ function NoOriginsEmpty({ scope }: { scope: DevelopOriginScope }) {
         <EmptyMedia variant="icon">
           <LuLeaf aria-hidden className="size-5" />
         </EmptyMedia>
-        <EmptyTitle render={<h3 />}>{t('noOriginsTitle')}</EmptyTitle>
+        <EmptyTitle render={<h3 />}>{t('noSourcesTitle')}</EmptyTitle>
         <EmptyDescription>
           {scope === 'assigned'
-            ? t('noAssignedOriginsDescription')
-            : t('noOriginsDescription')}
+            ? t('noAssignedSourcesDescription')
+            : t('noSourcesDescription')}
         </EmptyDescription>
       </EmptyHeader>
     </Empty>
