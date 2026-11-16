@@ -21,7 +21,6 @@ The scripts read these settings. Set them with a session `SET`, not `SET LOCAL`.
 | Setting | Read by | Effect |
 |---|---|---|
 | `op_backfill.instance_ids` | all three | Required. `'<uuid>,<uuid>'` limits the run to those decisions; `'all'` runs on every decision. Unset or blank stops the script before it reads or writes anything. |
-| `op_backfill.fill_partial` | backfill | `'true'` also adds the missing rows to decisions whose rows cover only some phases. Needs a uuid list in `instance_ids`, not `'all'`. |
 | `op_backfill.drift_kind` | drift check | `'no_rows'`, `'partial'` or `'drift'` shows only that kind. Blank shows every kind. |
 
 The backfill commits inside its `DO` block, so it must not run in a transaction. Put the `SET` in its own `-c`, and do not use `psql -1`:

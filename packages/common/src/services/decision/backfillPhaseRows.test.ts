@@ -303,22 +303,7 @@ describe.concurrent('backfill-phase-rows data script', () => {
     expect(await readPhaseRows(instanceId)).toEqual([]);
   });
 
-  it('given rows that leave a phase uncovered, then the decision is skipped', async ({
-    task,
-    onTestFinished,
-  }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const instanceId = await seedDecision(testData, {});
-    const profileId = await insertPhaseRow(testData, instanceId, {});
-
-    await runBackfill(testData, instanceId);
-
-    expect(
-      (await readPhaseRows(instanceId)).map((row) => row.profileId),
-    ).toEqual([profileId]);
-  });
-
-  it('given fill_partial and rows that cover one of two phases, then the uncovered phase gets a row and a second run changes nothing', async ({
+  it('given a decision whose rows cover only some of its blob phases, then the backfill leaves its rows alone', async ({
     task,
     onTestFinished,
   }) => {
@@ -327,23 +312,12 @@ describe.concurrent('backfill-phase-rows data script', () => {
     const profileId = await insertPhaseRow(testData, instanceId, {
       phaseId: 'initial',
     });
-    const fillPartial = { 'op_backfill.fill_partial': 'true' };
 
-    await runBackfill(testData, instanceId, fillPartial);
-    const rows = await readPhaseRows(instanceId);
+    await runBackfill(testData, instanceId);
 
-    expect(rows.map((row) => row.data)).toEqual([
-      { phaseId: 'initial' },
-      expect.objectContaining({ phaseId: 'final' }),
-    ]);
-    expect(rows.map((row) => row.sortOrder)).toEqual([0, 1]);
-    expect(rows[0]?.profileId).toBe(profileId);
-    expect(rows[1]?.type).toBe(EntityType.PHASE);
-    expect(rows[1]?.slug).toMatch(/^[0-9a-f]{8}$/);
-
-    await runBackfill(testData, instanceId, fillPartial);
-
-    expect(await readPhaseRows(instanceId)).toEqual(rows);
+    expect(
+      (await readPhaseRows(instanceId)).map((row) => row.profileId),
+    ).toEqual([profileId]);
   });
 
   it('given a blank instance_ids, then the run fails before it changes anything', async ({
@@ -356,23 +330,6 @@ describe.concurrent('backfill-phase-rows data script', () => {
     await expect(
       runBackfill(testData, instanceId, { 'op_backfill.instance_ids': ' ' }),
     ).rejects.toThrow(/op_backfill\.instance_ids is required/);
-
-    expect(await readPhaseRows(instanceId)).toEqual([]);
-  });
-
-  it('given fill_partial and instance_ids set to all, then the run fails before it changes anything', async ({
-    task,
-    onTestFinished,
-  }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const instanceId = await seedDecision(testData, {});
-
-    await expect(
-      runBackfill(testData, instanceId, {
-        'op_backfill.instance_ids': 'all',
-        'op_backfill.fill_partial': 'true',
-      }),
-    ).rejects.toThrow(/fill_partial needs a uuid list/);
 
     expect(await readPhaseRows(instanceId)).toEqual([]);
   });

@@ -25,16 +25,12 @@
 -- that holds both the SET and this file. If a decision fails, the run stops;
 -- the decisions before it stay committed and a re-run continues.
 -- A re-run is a no-op for decisions that already have rows.
--- It skips, with a NOTICE, a decision whose phases fail validation, and a
--- decision whose rows leave a JSON phase uncovered (partial rows). The partial
--- NOTICE names the uncovered phase ids.
+-- It skips, with a NOTICE, a decision whose phases fail validation.
 --
 -- Settings, read once at the start. Use a session SET, not SET LOCAL:
 --   op_backfill.instance_ids  required. '<uuid>,<uuid>' limits the run to
 --                             those decisions; 'all' runs on every decision.
 --                             Unset or blank stops the run before any write.
---   op_backfill.fill_partial  'true' also adds the missing rows to partial
---                             decisions. It needs a uuid list, not 'all'.
 -- check-phase-drift.sql and strip-blob-phases.sql read instance_ids too.
 DO $$
 DECLARE
@@ -46,28 +42,19 @@ DECLARE
     WHEN lower(v_scope_text) = 'all' THEN NULL
     ELSE string_to_array(replace(v_scope_text, ' ', ''), ',')::uuid[]
   END;
-  v_fill_partial boolean := coalesce(
-    nullif(btrim(current_setting('op_backfill.fill_partial', true)), ''), 'false'
-  )::boolean;
   v_instance record;
   v_phase record;
   v_data jsonb;
   v_process_schema jsonb;
-  v_row_count integer;
-  v_uncovered jsonb;
   v_reason text;
   v_name text;
   v_profile_id uuid;
   v_backfilled integer := 0;
-  v_filled integer := 0;
   v_skipped integer := 0;
   v_unlinked integer;
 BEGIN
   IF v_scope_text IS NULL THEN
     RAISE EXCEPTION 'backfill-phase-rows: op_backfill.instance_ids is required: a comma-separated uuid list, or all';
-  END IF;
-  IF v_fill_partial AND v_scope IS NULL THEN
-    RAISE EXCEPTION 'backfill-phase-rows: op_backfill.fill_partial needs a uuid list in op_backfill.instance_ids, not all';
   END IF;
 
   -- Session-only helpers. They are made here, not above the DO, because a
@@ -95,24 +82,12 @@ BEGIN
     LIMIT 1
   $fn$;
 
-  -- The blob phases that have no row, with their array index
-  CREATE OR REPLACE FUNCTION pg_temp.uncovered_phases(p_instance_id uuid, p_instance_data jsonb)
-  RETURNS TABLE (phase jsonb, sort_order bigint) LANGUAGE sql STABLE
-  AS $fn$
-    SELECT e.value, e.ordinality - 1
-    FROM jsonb_array_elements(pg_temp.blob_phases(p_instance_data)) WITH ORDINALITY e
-    WHERE pg_temp.phase_row_id(p_instance_id, e.value ->> 'phaseId') IS NULL
-  $fn$;
-
   FOR v_instance IN
     SELECT i.id
     FROM decision_process_instances i
     WHERE (v_scope IS NULL OR i.id = ANY (v_scope))
-      AND (
-        NOT EXISTS (
-          SELECT 1 FROM decision_process_phases p WHERE p.process_instance_id = i.id
-        )
-        OR EXISTS (SELECT 1 FROM pg_temp.uncovered_phases(i.id, i.instance_data))
+      AND NOT EXISTS (
+        SELECT 1 FROM decision_process_phases p WHERE p.process_instance_id = i.id
       )
     ORDER BY i.created_at, i.id
   LOOP
@@ -128,27 +103,10 @@ BEGIN
 
       EXIT one_instance WHEN NOT FOUND;
 
-      SELECT count(*) INTO v_row_count
-      FROM decision_process_phases p
-      WHERE p.process_instance_id = v_instance.id;
-
-      -- With no rows this is every phase; with rows, only the uncovered ones
-      SELECT coalesce(
-        jsonb_agg(jsonb_build_object('phase', u.phase, 'sort_order', u.sort_order) ORDER BY u.sort_order),
-        '[]'::jsonb
-      )
-      INTO v_uncovered
-      FROM pg_temp.uncovered_phases(v_instance.id, v_data) u;
-
-      EXIT one_instance WHEN v_row_count > 0 AND jsonb_array_length(v_uncovered) = 0;
-
-      IF v_row_count > 0 AND NOT v_fill_partial THEN
-        RAISE NOTICE 'backfill-phase-rows: skipped instance % (partial rows, no row for phase ids: %)',
-          v_instance.id,
-          (SELECT string_agg(coalesce(u -> 'phase' ->> 'phaseId', '<none>'), ', ') FROM jsonb_array_elements(v_uncovered) u);
-        v_skipped := v_skipped + 1;
-        EXIT one_instance;
-      END IF;
+      -- A builder save may have added rows since the loop query
+      EXIT one_instance WHEN EXISTS (
+        SELECT 1 FROM decision_process_phases p WHERE p.process_instance_id = v_instance.id
+      );
 
       SELECT CASE
         WHEN jsonb_array_length(pg_temp.blob_phases(v_data)) = 0
@@ -200,8 +158,8 @@ BEGIN
       END IF;
 
       FOR v_phase IN
-        SELECT u -> 'phase' AS phase, (u ->> 'sort_order')::integer AS sort_order
-        FROM jsonb_array_elements(v_uncovered) u
+        SELECT e.value AS phase, (e.ordinality - 1)::integer AS sort_order
+        FROM jsonb_array_elements(v_data -> 'phases') WITH ORDINALITY e
       LOOP
         -- getPhaseProfileName: the trimmed name, else the phaseId
         v_name := coalesce(
@@ -229,11 +187,7 @@ BEGIN
         VALUES (v_instance.id, v_phase.sort_order, v_profile_id, v_phase.phase - 'name');
       END LOOP;
 
-      IF v_row_count = 0 THEN
-        v_backfilled := v_backfilled + 1;
-      ELSE
-        v_filled := v_filled + 1;
-      END IF;
+      v_backfilled := v_backfilled + 1;
     END;
 
     COMMIT;
@@ -264,6 +218,6 @@ BEGIN
   WHERE l.to_phase_id IS NULL
     OR (l.from_state_id IS NOT NULL AND l.from_phase_id IS NULL);
 
-  RAISE NOTICE 'backfill-phase-rows: backfilled % instances, filled % partial, skipped %, % transitions on instances with phase rows still have an unmatched state id',
-    v_backfilled, v_filled, v_skipped, v_unlinked;
+  RAISE NOTICE 'backfill-phase-rows: backfilled % instances, skipped %, % transitions on instances with phase rows still have an unmatched state id',
+    v_backfilled, v_skipped, v_unlinked;
 END $$;
