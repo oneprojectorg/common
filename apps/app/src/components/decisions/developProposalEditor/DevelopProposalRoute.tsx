@@ -18,6 +18,7 @@ import { decisionRootHref } from '../proposalHrefs';
 import { DevelopOriginColumn } from './DevelopOriginColumn';
 import { DevelopProposalEditor } from './DevelopProposalEditor';
 import { DevelopProposalFrame } from './DevelopProposalFrame';
+import { getDevelopEntryHeading } from './getDevelopEntryHeading';
 
 /**
  * Opens a proposal developed from origins (the target of at least one
@@ -68,9 +69,10 @@ export function DevelopProposalRoute({
   const isEditable = canDevelop && proposal.isEditable === true;
 
   const backHref = `/decisions/${decisionSlug}/current`;
-  // The fixed word stands in until the entry form PR gives the phase's entry
-  // form its own name.
-  const heading = template.title || t('decisions.developEditor.entryHeading');
+  const heading = getDevelopEntryHeading({
+    template,
+    fallback: t('decisions.developEditor.entryHeading'),
+  });
   const description = template.description || undefined;
 
   const phases = instance.instanceData.phases ?? [];

@@ -1,63 +1,88 @@
-'use client';
+import {
+  HydrationBoundary,
+  createServerUtils,
+  dehydrate,
+} from '@op/api/server';
+import type { Metadata } from 'next';
+import { cache } from 'react';
 
-import { ResourceErrorBoundary } from '@/utils/ResourceErrorBoundary';
-import { trpc } from '@op/api/client';
-import { APP_NAME } from '@op/core';
-import { notFound, useParams } from 'next/navigation';
-import { useEffect } from 'react';
+import { getTranslations } from '@/lib/i18n';
 
-import { useTranslations } from '@/lib/i18n';
+import { getDevelopEntryHeading } from '@/components/decisions/developProposalEditor/getDevelopEntryHeading';
+import { getProposalEditorTemplate } from '@/components/decisions/proposalEditor/getProposalEditorTemplate';
 
-import { DevelopProposalRoute } from '@/components/decisions/developProposalEditor/DevelopProposalRoute';
+import { DevelopProposalClient } from './DevelopProposalClient';
+
+// cache() dedupes the reads across generateMetadata + page render (one
+// request), so the data is fetched once and hydrates.
+const fetchProposal = cache(async (profileId: string) => {
+  const { utils } = await createServerUtils();
+  return utils.decision.getProposal.fetch({ profileId });
+});
+
+const fetchDecisionBySlug = cache(async (slug: string) => {
+  const { utils } = await createServerUtils();
+  return utils.decision.getDecisionBySlug.fetch({ slug });
+});
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string; profileId: string; locale: string }>;
+}): Promise<Metadata> {
+  const { slug, profileId, locale } = await params;
+
+  try {
+    const [t, proposal, decisionProfile] = await Promise.all([
+      getTranslations({ locale }),
+      fetchProposal(profileId),
+      fetchDecisionBySlug(slug),
+    ]);
+
+    // The same heading the screen shows: the entry form's name.
+    const heading = getDevelopEntryHeading({
+      template: getProposalEditorTemplate({
+        proposal,
+        instanceTemplate:
+          decisionProfile?.processInstance?.instanceData.proposalTemplate,
+      }),
+      fallback: t('decisions.developEditor.entryHeading'),
+    });
+    const decisionName = decisionProfile?.name;
+    return {
+      title: decisionName ? `${heading} | ${decisionName}` : heading,
+    };
+  } catch {
+    return {};
+  }
+}
 
 /**
  * Route page for the develop editor of an entry: a proposal developed from
  * origins in a develop phase. Any other proposal is not found here; it opens
  * at `/edit`.
  */
-export default function DevelopProposalPage() {
-  // Translates NOT_FOUND and FORBIDDEN from the suspense queries to 404/403.
-  return (
-    <ResourceErrorBoundary>
-      <DevelopProposalPageContent />
-    </ResourceErrorBoundary>
-  );
-}
+const DevelopProposalPage = async ({
+  params,
+}: {
+  params: Promise<{ slug: string; profileId: string }>;
+}) => {
+  const { slug, profileId } = await params;
+  const { queryClient } = await createServerUtils();
 
-function DevelopProposalPageContent() {
-  const { profileId, slug } = useParams<{
-    profileId: string;
-    slug: string;
-  }>();
-  const t = useTranslations();
-
-  const [[decisionProfile, proposal]] = trpc.useSuspenseQueries((t) => [
-    t.decision.getDecisionBySlug({ slug }),
-    t.decision.getProposal({ profileId }),
-  ]);
-
-  if (!decisionProfile?.processInstance || !proposal) {
-    notFound();
-  }
-
-  const proposalTitle = proposal.profile?.name;
-  useEffect(() => {
-    document.title = [
-      proposalTitle
-        ? `${proposalTitle} (${t('decisions.editingPageTitle')})`
-        : null,
-      decisionProfile.name,
-      APP_NAME,
-    ]
-      .filter(Boolean)
-      .join(' | ');
-  }, [proposalTitle, decisionProfile.name, t]);
+  // Shares the cache()-wrapped fetches with generateMetadata above. Swallow
+  // failures: this only warms the cache — the client suspense queries
+  // refetch and their error boundary owns errors.
+  await Promise.all([
+    fetchProposal(profileId),
+    fetchDecisionBySlug(slug),
+  ]).catch(() => {});
 
   return (
-    <DevelopProposalRoute
-      instance={decisionProfile.processInstance}
-      proposal={proposal}
-      decisionSlug={slug}
-    />
+    <HydrationBoundary state={dehydrate(queryClient)}>
+      <DevelopProposalClient profileId={profileId} slug={slug} />
+    </HydrationBoundary>
   );
-}
+};
+
+export default DevelopProposalPage;
