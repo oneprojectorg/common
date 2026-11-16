@@ -19,8 +19,14 @@ import { DragHandle, Sortable } from '@op/sense/Sortable';
 import { cn } from '@op/sense/lib/utils';
 import { useLocale } from 'next-intl';
 import { useQueryState } from 'nuqs';
-import { useMemo, useState } from 'react';
-import { LuCheck, LuCircleAlert, LuPlus, LuTrash2 } from 'react-icons/lu';
+import { type ReactNode, useId, useMemo, useState } from 'react';
+import {
+  LuCheck,
+  LuCircleAlert,
+  LuLock,
+  LuPlus,
+  LuTrash2,
+} from 'react-icons/lu';
 
 import { type TranslateFn, useTranslations } from '@/lib/i18n';
 
@@ -29,6 +35,7 @@ import { SaveStatusIndicator } from '../../components/SaveStatusIndicator';
 import type { SectionProps } from '../../contentRegistry';
 import { phaseToSectionId } from '../../navigationConfig';
 import { useProcessBuilderStore } from '../../stores/useProcessBuilderStore';
+import { usePastPhaseLock } from '../../usePastPhaseLock';
 
 export function PhasesSectionContent({
   instanceId,
@@ -42,6 +49,8 @@ export function PhasesSectionContent({
     (s) => s.instances[decisionProfileId]?.phases,
   );
   const { saveChanges, autosaveStatus } = useProcessBuilderAutosave();
+  const lock = usePastPhaseLock(instanceId);
+  const lockNoteId = useId();
 
   const initialPhases: PhaseDefinition[] = (() => {
     const source = storePhases?.length ? storePhases : instancePhases;
@@ -114,6 +123,16 @@ export function PhasesSectionContent({
     });
   };
 
+  // Locked phases stay a fixed prefix, so only the free ones can move.
+  const lockedPhases = phases.filter((p) => lock.isPhaseLocked(p.id));
+  const freePhases = phases.filter((p) => !lock.isPhaseLocked(p.id));
+
+  const reorderFreePhases = (reordered: PhaseDefinition[]) =>
+    updatePhases((prev) => [
+      ...prev.filter((p) => lock.isPhaseLocked(p.id)),
+      ...reordered,
+    ]);
+
   const addPhase = () => {
     const newPhase: PhaseDefinition = {
       id: crypto.randomUUID().slice(0, 8),
@@ -129,7 +148,7 @@ export function PhasesSectionContent({
   const [phaseToDelete, setPhaseToDelete] = useState<string | null>(null);
 
   const confirmRemovePhase = () => {
-    if (!phaseToDelete) {
+    if (!phaseToDelete || lock.isPhaseLocked(phaseToDelete)) {
       return;
     }
     const updated = phases.filter((p) => p.id !== phaseToDelete);
@@ -181,80 +200,119 @@ export function PhasesSectionContent({
         </div>
       ) : (
         <div className="space-y-4">
-          <Sortable
-            items={phases}
-            onChange={updatePhases}
-            dragTrigger="handle"
-            getItemLabel={(phase) => phase.name}
-            className="gap-4"
-            renderDragPreview={(items) => {
-              const phase = items[0];
-              if (!phase) {
-                return null;
-              }
-              return (
-                <PhaseDragPreview
-                  phase={phase}
-                  configured={isPhaseConfigured(phase)}
-                  dateRange={phaseDateRange(phase)}
-                  t={t}
-                />
-              );
-            }}
-            renderDropIndicator={PhaseDropIndicator}
-          >
-            {(phase, { dragHandleProps, isDragging }) => {
-              const configured = isPhaseConfigured(phase);
-              return (
-                <div
-                  className={cn(
-                    'flex items-center gap-2 rounded-lg border bg-white px-3 py-3',
-                    isDragging && 'opacity-50',
-                  )}
-                >
-                  <DragHandle {...dragHandleProps} />
-                  <div className="flex flex-1 items-center justify-between gap-3">
-                    <div className="flex-1">
-                      <p className="font-serif text-label">
-                        <bdi>{phase.name}</bdi>
-                      </p>
-                      {configured ? (
-                        <span className="flex items-center gap-1 text-sm text-primary">
-                          <LuCheck className="size-3" />
-                          {phaseDateRange(phase)}
-                        </span>
-                      ) : (
-                        <span className="text-sm text-muted-foreground">
-                          {t('decisions.processBuilder.phaseNotConfigured')}
-                        </span>
+          {lockedPhases.length > 0 && (
+            <div className="space-y-3">
+              <p
+                id={lockNoteId}
+                className="flex items-start gap-2 text-sm text-muted-foreground"
+              >
+                <LuLock className="mt-0.5 size-4 shrink-0" aria-hidden />
+                {t('decisions.processBuilder.lockedPhasesNote')}
+              </p>
+              <ul
+                aria-describedby={lockNoteId}
+                className="flex flex-col gap-4"
+                data-testid="locked-phases"
+              >
+                {lockedPhases.map((phase) => {
+                  const isPast = lock.isPastPhase(phase.id);
+                  const configured = isPhaseConfigured(phase);
+                  return (
+                    <li key={phase.id} data-testid="locked-phase-row">
+                      <PhaseRow
+                        phase={phase}
+                        configured={configured}
+                        dateRange={phaseDateRange(phase)}
+                        lockLabel={
+                          isPast
+                            ? t('decisions.processBuilder.pastPhaseLabel')
+                            : t('decisions.processBuilder.currentPhaseLabel')
+                        }
+                        t={t}
+                        leading={
+                          <LuLock
+                            className="mx-1 size-4 shrink-0 text-muted-foreground"
+                            aria-hidden
+                          />
+                        }
+                      >
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setSection(phaseToSectionId(phase.id))}
+                        >
+                          {isPast
+                            ? t('View')
+                            : configured
+                              ? t('Edit')
+                              : t('decisions.processBuilder.configureAction')}
+                        </Button>
+                      </PhaseRow>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          )}
+          {freePhases.length > 0 && (
+            <Sortable
+              items={freePhases}
+              onChange={reorderFreePhases}
+              dragTrigger="handle"
+              getItemLabel={(phase) => phase.name}
+              aria-label={t('decisions.processBuilder.phasesLabel')}
+              className="gap-4"
+              renderDragPreview={(items) => {
+                const phase = items[0];
+                if (!phase) {
+                  return null;
+                }
+                return (
+                  <PhaseDragPreview
+                    phase={phase}
+                    configured={isPhaseConfigured(phase)}
+                    dateRange={phaseDateRange(phase)}
+                    t={t}
+                  />
+                );
+              }}
+              renderDropIndicator={PhaseDropIndicator}
+            >
+              {(phase, { dragHandleProps, isDragging }) => {
+                const configured = isPhaseConfigured(phase);
+                return (
+                  <PhaseRow
+                    phase={phase}
+                    configured={configured}
+                    dateRange={phaseDateRange(phase)}
+                    t={t}
+                    className={cn(isDragging && 'opacity-50')}
+                    leading={<DragHandle {...dragHandleProps} />}
+                  >
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setSection(phaseToSectionId(phase.id))}
+                    >
+                      {configured
+                        ? t('Edit')
+                        : t('decisions.processBuilder.configureAction')}
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="icon-sm"
+                      onClick={() => setPhaseToDelete(phase.id)}
+                      aria-label={t(
+                        'decisions.processBuilder.deletePhaseTitle',
                       )}
-                    </div>
-                    <div className="flex shrink-0 items-center gap-3">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setSection(phaseToSectionId(phase.id))}
-                      >
-                        {configured
-                          ? t('Edit')
-                          : t('decisions.processBuilder.configureAction')}
-                      </Button>
-                      <Button
-                        variant="destructive"
-                        size="icon-sm"
-                        onClick={() => setPhaseToDelete(phase.id)}
-                        aria-label={t(
-                          'decisions.processBuilder.deletePhaseTitle',
-                        )}
-                      >
-                        <LuTrash2 className="size-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              );
-            }}
-          </Sortable>
+                    >
+                      <LuTrash2 className="size-4" />
+                    </Button>
+                  </PhaseRow>
+                );
+              }}
+            </Sortable>
+          )}
           <Button variant="outline" className="w-full" onClick={addPhase}>
             <LuPlus className="size-4" />
             {t('decisions.processBuilder.addPhaseAction')}
@@ -297,6 +355,60 @@ export function PhasesSectionContent({
   );
 }
 
+function PhaseRow({
+  phase,
+  configured,
+  dateRange,
+  lockLabel,
+  t,
+  leading,
+  className,
+  children,
+}: {
+  phase: PhaseDefinition;
+  configured: boolean;
+  dateRange: string | null;
+  lockLabel?: string;
+  t: TranslateFn;
+  leading: ReactNode;
+  className?: string;
+  children: ReactNode;
+}) {
+  return (
+    <div
+      className={cn(
+        'flex items-center gap-2 rounded-lg border bg-white px-3 py-3',
+        className,
+      )}
+    >
+      {leading}
+      <div className="flex flex-1 items-center justify-between gap-3">
+        <div className="flex-1">
+          <p className="font-serif text-label">
+            <bdi>{phase.name}</bdi>
+          </p>
+          <div className="flex flex-wrap items-center gap-x-2">
+            {configured ? (
+              <span className="flex items-center gap-1 text-sm text-primary">
+                <LuCheck className="size-3" />
+                {dateRange}
+              </span>
+            ) : (
+              <span className="text-sm text-muted-foreground">
+                {t('decisions.processBuilder.phaseNotConfigured')}
+              </span>
+            )}
+            {lockLabel && (
+              <span className="text-sm text-muted-foreground">{lockLabel}</span>
+            )}
+          </div>
+        </div>
+        <div className="flex shrink-0 items-center gap-3">{children}</div>
+      </div>
+    </div>
+  );
+}
+
 /** Element to show when a phase is being dragged */
 const PhaseDragPreview = ({
   phase,
@@ -309,46 +421,31 @@ const PhaseDragPreview = ({
   dateRange: string | null;
   t: TranslateFn;
 }) => {
+  // Inert placeholders: this is the drag ghost, so no handlers and no tab stops.
   return (
-    <div
-      aria-hidden
-      className="flex items-center gap-2 rounded-lg border bg-white px-3 py-3 shadow-md"
-    >
-      <DragHandle tabIndex={-1} aria-hidden />
-      <div className="flex flex-1 items-center justify-between gap-3">
-        <div className="flex-1">
-          <p className="font-serif text-label">
-            <bdi>{phase.name}</bdi>
-          </p>
-          {configured ? (
-            <span className="flex items-center gap-1 text-sm text-primary">
-              <LuCheck className="size-3" />
-              {dateRange}
-            </span>
-          ) : (
-            <span className="text-sm text-muted-foreground">
-              {t('decisions.processBuilder.phaseNotConfigured')}
-            </span>
-          )}
-        </div>
-        {/* Inert placeholders — this is the drag ghost, so no handlers and
-            no tab stops (aria-hidden on the wrapper below). */}
-        <div className="flex shrink-0 items-center gap-3">
-          <Button variant="outline" size="sm" tabIndex={-1}>
-            {configured
-              ? t('Edit')
-              : t('decisions.processBuilder.configureAction')}
-          </Button>
-          <Button
-            variant="destructive"
-            size="icon-sm"
-            tabIndex={-1}
-            aria-label={t('decisions.processBuilder.deletePhaseTitle')}
-          >
-            <LuTrash2 className="size-4" />
-          </Button>
-        </div>
-      </div>
+    <div aria-hidden>
+      <PhaseRow
+        phase={phase}
+        configured={configured}
+        dateRange={dateRange}
+        t={t}
+        className="shadow-md"
+        leading={<DragHandle tabIndex={-1} aria-hidden />}
+      >
+        <Button variant="outline" size="sm" tabIndex={-1}>
+          {configured
+            ? t('Edit')
+            : t('decisions.processBuilder.configureAction')}
+        </Button>
+        <Button
+          variant="destructive"
+          size="icon-sm"
+          tabIndex={-1}
+          aria-label={t('decisions.processBuilder.deletePhaseTitle')}
+        >
+          <LuTrash2 className="size-4" />
+        </Button>
+      </PhaseRow>
     </div>
   );
 };
