@@ -592,7 +592,14 @@ function ProposalEditorInner({
       : t('decisions.proposals.createProposalTitle'));
 
   const formColumn = (
-    <div className="mx-auto flex w-full max-w-136 flex-col gap-6 sm:gap-10">
+    // In develop the column fills its pane; the split pane bounds the width.
+    <div
+      className={
+        develop
+          ? 'flex flex-col gap-8'
+          : 'mx-auto flex w-full max-w-136 flex-col gap-6 sm:gap-10'
+      }
+    >
       {develop?.description ? (
         <div className="flex flex-col gap-2">
           <Header2>{formHeading}</Header2>
@@ -639,11 +646,18 @@ function ProposalEditorInner({
           menu on the selection, so there is no toolbar row above the form. */}
       {develop ? (
         <div className="flex h-full min-h-0 flex-col">
-          <SplitPane defaultMobileTabId="form">
-            <SplitPane.Pane id="origin" label={develop.originPane.label}>
+          <SplitPane
+            className="mx-auto w-full max-w-6xl"
+            defaultMobileTabId="form"
+          >
+            <SplitPane.Pane
+              id="origin"
+              label={develop.originPane.label}
+              className="sm:pt-8"
+            >
               {develop.originPane.content}
             </SplitPane.Pane>
-            <SplitPane.Pane id="form" label={formHeading}>
+            <SplitPane.Pane id="form" label={formHeading} className="sm:pt-8">
               {formColumn}
             </SplitPane.Pane>
           </SplitPane>

@@ -129,12 +129,16 @@ export function DevelopProposalRoute({
         backLabel={t('Back')}
         accountSlot={<UserAvatarMenu className="hidden sm:block" />}
       />
-      <SplitPane defaultMobileTabId="form">
-        <SplitPane.Pane id="origin" label={originPane.label}>
+      <SplitPane className="mx-auto w-full max-w-6xl" defaultMobileTabId="form">
+        <SplitPane.Pane
+          id="origin"
+          label={originPane.label}
+          className="sm:pt-8"
+        >
           {originPane.content}
         </SplitPane.Pane>
-        <SplitPane.Pane id="form" label={heading}>
-          <div className="mx-auto flex w-full max-w-136 flex-col gap-6 sm:gap-10">
+        <SplitPane.Pane id="form" label={heading} className="sm:pt-8">
+          <div className="flex flex-col gap-8">
             <div className="flex flex-col gap-2">
               <Header2>{heading}</Header2>
               {description ? (
