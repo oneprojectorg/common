@@ -1,39 +1,47 @@
 'use client';
 
 import { formatCurrency } from '@/utils/formatting';
-import { getCurrencySymbol } from '@op/common/client';
+import { type MoneyAmount, getCurrencySymbol } from '@op/common/client';
 import { NumberField } from '@op/sense/NumberField';
 import { cn } from '@op/sense/lib/utils';
+import { memo } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
-import type { ProposalAwards } from '../useProposalAwards';
 import { AdvanceToggleButton } from './AdvanceToggleButton';
 
-interface AwardCellProps {
+export interface AwardCellProps {
   proposalId: string;
   title: string;
-  awards: ProposalAwards;
+  amount: number | null;
+  requested: MoneyAmount | undefined;
+  currency: string;
+  hasAdjusted: boolean;
+  isValid: boolean;
+  onAmountChange: (proposalId: string, amount: number | null) => void;
   isSelected: boolean;
-  onToggle: () => void;
+  onToggle: (proposalId: string) => void;
   className?: string;
 }
 
-export const AwardCell = ({
+// Memoized on per-row scalars so one row's keystroke does not re-render every
+// other row's controlled NumberField.
+export const AwardCell = memo(function AwardCell({
   proposalId,
   title,
-  awards,
+  amount,
+  requested,
+  currency,
+  hasAdjusted,
+  isValid,
+  onAmountChange,
   isSelected,
   onToggle,
   className,
-}: AwardCellProps) => {
+}: AwardCellProps) {
   const t = useTranslations('decisions.review');
-  const amount = awards.amounts.get(proposalId) ?? null;
-  const requested = awards.getRequested(proposalId);
-  const currency = awards.getCurrency(proposalId);
-  const showRequested =
-    requested !== undefined && awards.hasAdjusted(proposalId);
-  const showError = isSelected && !awards.isValid(proposalId);
+  const showRequested = requested !== undefined && hasAdjusted;
+  const showError = isSelected && !isValid;
 
   return (
     <div
@@ -63,15 +71,15 @@ export const AwardCell = ({
         aria-label={t('awardForProposalLabel', { title })}
         prefixText={getCurrencySymbol(currency)}
         value={amount}
-        onChange={(next) => awards.setAmount(proposalId, next)}
+        onChange={(next) => onAmountChange(proposalId, next)}
         errorMessage={showError ? t('awardedAmountError') : undefined}
         className="w-40 shrink-0"
       />
       <AdvanceToggleButton
         isSelected={isSelected}
         title={title}
-        onPress={onToggle}
+        onPress={() => onToggle(proposalId)}
       />
     </div>
   );
-};
+});

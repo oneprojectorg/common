@@ -1,6 +1,6 @@
 'use client';
 
-import type { Proposal } from '@op/common/client';
+import type { MoneyAmount, Proposal } from '@op/common/client';
 import { useMediaQuery } from '@op/hooks';
 import {
   Table,
@@ -11,6 +11,7 @@ import {
   TableRow,
 } from '@op/sense/Table';
 import { screens } from '@op/styles/constants';
+import { memo } from 'react';
 
 import { Link, useTranslations } from '@/lib/i18n';
 
@@ -25,6 +26,7 @@ import type { ProposalAwards } from './useProposalAwards';
 interface SelectableProposalsTableProps {
   proposals: Proposal[];
   selectedIds: string[];
+  /** Must be referentially stable, or the row memoization is defeated. */
   onToggle: (proposalId: string) => void;
   getProposalHref?: (proposal: Proposal) => string;
   /** Show the per-proposal vote count column. Only used by the final-phase view. */
@@ -34,6 +36,33 @@ interface SelectableProposalsTableProps {
   /** Offer Edit in the row menu. Proposals can't be edited in the results phase. */
   canEditProposals?: boolean;
   awards?: ProposalAwards;
+}
+
+// Flattened per-row scalars, so the memoized row only re-renders when its own
+// amount or validity changes — not on every keystroke in another row.
+interface RowAward {
+  amount: number | null;
+  requested: MoneyAmount | undefined;
+  currency: string;
+  hasAdjusted: boolean;
+  isValid: boolean;
+  onAmountChange: (proposalId: string, amount: number | null) => void;
+}
+
+interface SelectableRowProps {
+  proposal: Proposal;
+  isSelected: boolean;
+  href: string | undefined;
+  showVotes: boolean;
+  showBudget: boolean;
+  canEditProposals: boolean;
+  onToggle: (proposalId: string) => void;
+  awardAmount?: number | null;
+  awardRequested?: MoneyAmount;
+  awardCurrency?: string;
+  awardHasAdjusted?: boolean;
+  awardIsValid?: boolean;
+  onAwardChange?: (proposalId: string, amount: number | null) => void;
 }
 
 export const SelectableProposalsTable = ({
@@ -51,6 +80,26 @@ export const SelectableProposalsTable = ({
   const selectedSet = new Set(selectedIds);
   const showBudget = showBudgetColumn && !awards;
 
+  const rowProps = (proposal: Proposal): SelectableRowProps => ({
+    proposal,
+    isSelected: selectedSet.has(proposal.id),
+    href: getProposalHref?.(proposal),
+    showVotes,
+    showBudget,
+    canEditProposals,
+    onToggle,
+    ...(awards
+      ? {
+          awardAmount: awards.amounts.get(proposal.id) ?? null,
+          awardRequested: awards.getRequested(proposal.id),
+          awardCurrency: awards.getCurrency(proposal.id),
+          awardHasAdjusted: awards.hasAdjusted(proposal.id),
+          awardIsValid: awards.isValid(proposal.id),
+          onAwardChange: awards.setAmount,
+        }
+      : {}),
+  });
+
   if (isMobile) {
     return (
       <ul
@@ -59,15 +108,7 @@ export const SelectableProposalsTable = ({
       >
         {proposals.map((proposal) => (
           <li key={proposal.id}>
-            <SelectableProposalCard
-              proposal={proposal}
-              isSelected={selectedSet.has(proposal.id)}
-              onToggle={onToggle}
-              href={getProposalHref?.(proposal)}
-              showVotes={showVotes}
-              showBudget={showBudget}
-              awards={awards}
-            />
+            <SelectableProposalCard {...rowProps(proposal)} />
           </li>
         ))}
       </ul>
@@ -108,109 +149,124 @@ export const SelectableProposalsTable = ({
         </TableRow>
       </TableHeader>
       <TableBody>
-        {proposals.map((proposal) => {
-          const isSelected = selectedSet.has(proposal.id);
-          const fields = resolvePresentationFields({
-            proposal,
-            defaultTitle: t('decisions.proposals.untitledProposal'),
-          });
-          const href = getProposalHref?.(proposal);
-
-          return (
-            <TableRow key={proposal.id} className="group">
-              <TableCell>
-                <div className="flex flex-col">
-                  {href ? (
-                    <Link
-                      href={href}
-                      className="text-base text-foreground hover:underline"
-                    >
-                      <bdi>{fields.title}</bdi>
-                    </Link>
-                  ) : (
-                    <span className="text-base">
-                      <bdi>{fields.title}</bdi>
-                    </span>
-                  )}
-                  {fields.submitterName ? (
-                    <span className="text-sm text-muted-foreground">
-                      {fields.submitterName}
-                    </span>
-                  ) : null}
-                </div>
-              </TableCell>
-              {showBudget ? (
-                <TableCell>
-                  {fields.budget ? (
-                    <span className="text-base">{fields.budget}</span>
-                  ) : (
-                    <span className="text-sm text-muted-foreground">—</span>
-                  )}
-                </TableCell>
-              ) : null}
-              <TableCell>
-                <SelectionCategoryChips labels={fields.categories} />
-              </TableCell>
-              {showVotes ? (
-                <TableCell>
-                  <span className="text-base">
-                    {t('decisions.review.votesCount', {
-                      count: proposal.voteCount ?? 0,
-                    })}
-                  </span>
-                </TableCell>
-              ) : null}
-              <TableCell className="text-end">
-                {awards ? (
-                  <AwardCell
-                    proposalId={proposal.id}
-                    title={fields.title}
-                    awards={awards}
-                    isSelected={isSelected}
-                    onToggle={() => onToggle(proposal.id)}
-                  />
-                ) : (
-                  <AdvanceToggleButton
-                    isSelected={isSelected}
-                    title={fields.title}
-                    onPress={() => onToggle(proposal.id)}
-                    className="ms-auto"
-                  />
-                )}
-              </TableCell>
-              <TableCell>
-                <ProposalRowMenu
-                  proposal={proposal}
-                  proposalHref={canEditProposals ? href : undefined}
-                  isSelected={isSelected}
-                />
-              </TableCell>
-            </TableRow>
-          );
-        })}
+        {proposals.map((proposal) => (
+          <SelectableProposalRow key={proposal.id} {...rowProps(proposal)} />
+        ))}
       </TableBody>
     </Table>
   );
 };
 
-const SelectableProposalCard = ({
-  proposal,
-  isSelected,
-  onToggle,
-  href,
-  showVotes,
-  showBudget,
-  awards,
-}: {
-  proposal: Proposal;
-  isSelected: boolean;
-  onToggle: (proposalId: string) => void;
-  href?: string;
-  showVotes: boolean;
-  showBudget: boolean;
-  awards?: ProposalAwards;
-}) => {
+const rowAward = (props: SelectableRowProps): RowAward | undefined =>
+  props.onAwardChange
+    ? {
+        amount: props.awardAmount ?? null,
+        requested: props.awardRequested,
+        currency: props.awardCurrency ?? '',
+        hasAdjusted: props.awardHasAdjusted ?? false,
+        isValid: props.awardIsValid ?? false,
+        onAmountChange: props.onAwardChange,
+      }
+    : undefined;
+
+const SelectableProposalRow = memo(function SelectableProposalRow(
+  props: SelectableRowProps,
+) {
+  const {
+    proposal,
+    isSelected,
+    href,
+    showVotes,
+    showBudget,
+    canEditProposals,
+    onToggle,
+  } = props;
   const t = useTranslations();
+  const award = rowAward(props);
+  const fields = resolvePresentationFields({
+    proposal,
+    defaultTitle: t('decisions.proposals.untitledProposal'),
+  });
+
+  return (
+    <TableRow className="group">
+      <TableCell>
+        <div className="flex flex-col">
+          {href ? (
+            <Link
+              href={href}
+              className="text-base text-foreground hover:underline"
+            >
+              <bdi>{fields.title}</bdi>
+            </Link>
+          ) : (
+            <span className="text-base">
+              <bdi>{fields.title}</bdi>
+            </span>
+          )}
+          {fields.submitterName ? (
+            <span className="text-sm text-muted-foreground">
+              {fields.submitterName}
+            </span>
+          ) : null}
+        </div>
+      </TableCell>
+      {showBudget ? (
+        <TableCell>
+          {fields.budget ? (
+            <span className="text-base">{fields.budget}</span>
+          ) : (
+            <span className="text-sm text-muted-foreground">—</span>
+          )}
+        </TableCell>
+      ) : null}
+      <TableCell>
+        <SelectionCategoryChips labels={fields.categories} />
+      </TableCell>
+      {showVotes ? (
+        <TableCell>
+          <span className="text-base">
+            {t('decisions.review.votesCount', {
+              count: proposal.voteCount ?? 0,
+            })}
+          </span>
+        </TableCell>
+      ) : null}
+      <TableCell className="text-end">
+        {award ? (
+          <AwardCell
+            proposalId={proposal.id}
+            title={fields.title}
+            {...award}
+            isSelected={isSelected}
+            onToggle={onToggle}
+          />
+        ) : (
+          <AdvanceToggleButton
+            isSelected={isSelected}
+            title={fields.title}
+            onPress={() => onToggle(proposal.id)}
+            className="ms-auto"
+          />
+        )}
+      </TableCell>
+      <TableCell>
+        <ProposalRowMenu
+          proposal={proposal}
+          proposalHref={canEditProposals ? href : undefined}
+          isSelected={isSelected}
+        />
+      </TableCell>
+    </TableRow>
+  );
+});
+
+const SelectableProposalCard = memo(function SelectableProposalCard(
+  props: SelectableRowProps,
+) {
+  const { proposal, isSelected, href, showVotes, showBudget, onToggle } = props;
+  const t = useTranslations();
+  const award = rowAward(props);
   const fields = resolvePresentationFields({
     proposal,
     defaultTitle: t('decisions.proposals.untitledProposal'),
@@ -252,13 +308,13 @@ const SelectableProposalCard = ({
         ) : null}
       </div>
 
-      {awards ? (
+      {award ? (
         <AwardCell
           proposalId={proposal.id}
           title={fields.title}
-          awards={awards}
+          {...award}
           isSelected={isSelected}
-          onToggle={() => onToggle(proposal.id)}
+          onToggle={onToggle}
           className="justify-start"
         />
       ) : (
@@ -271,4 +327,4 @@ const SelectableProposalCard = ({
       )}
     </SelectionCard>
   );
-};
+});

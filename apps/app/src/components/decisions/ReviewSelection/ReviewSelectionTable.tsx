@@ -201,9 +201,14 @@ export function ReviewSelectionTable({
                   <AwardCell
                     proposalId={item.proposal.id}
                     title={title}
-                    awards={awards}
+                    amount={awards.amounts.get(item.proposal.id) ?? null}
+                    requested={awards.getRequested(item.proposal.id)}
+                    currency={awards.getCurrency(item.proposal.id)}
+                    hasAdjusted={awards.hasAdjusted(item.proposal.id)}
+                    isValid={awards.isValid(item.proposal.id)}
+                    onAmountChange={awards.setAmount}
                     isSelected={advancing}
-                    onToggle={() => onAdvance(item.proposal.id)}
+                    onToggle={onAdvance}
                   />
                 ) : (
                   <AdvanceToggleButton
@@ -341,7 +346,12 @@ function ProposalCard({
           <AwardCell
             proposalId={item.proposal.id}
             title={title}
-            awards={awards}
+            amount={awards.amounts.get(item.proposal.id) ?? null}
+            requested={awards.getRequested(item.proposal.id)}
+            currency={awards.getCurrency(item.proposal.id)}
+            hasAdjusted={awards.hasAdjusted(item.proposal.id)}
+            isValid={awards.isValid(item.proposal.id)}
+            onAmountChange={awards.setAmount}
             isSelected={advancing}
             onToggle={onAdvance}
             className="justify-start"

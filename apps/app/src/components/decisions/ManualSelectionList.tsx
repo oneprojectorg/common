@@ -154,13 +154,17 @@ export const ManualSelectionList = ({
     [selectedProposals],
   );
 
-  const awardProposals = useMemo(() => {
-    const listed = new Set(candidates?.map((proposal) => proposal.id));
-    return [
+  const listedIds = useMemo(
+    () => new Set(candidates?.map((proposal) => proposal.id)),
+    [candidates],
+  );
+  const awardProposals = useMemo(
+    () => [
       ...(candidates ?? []),
-      ...selectedProposals.filter((proposal) => !listed.has(proposal.id)),
-    ];
-  }, [candidates, selectedProposals]);
+      ...selectedProposals.filter((proposal) => !listedIds.has(proposal.id)),
+    ],
+    [candidates, listedIds, selectedProposals],
+  );
   const awards = useProposalAwards({
     proposals: awardProposals,
     selectedIds: confirmIds,
@@ -233,6 +237,18 @@ export const ManualSelectionList = ({
     [],
   );
 
+  // Stable, so the memoized table rows survive a keystroke in another row.
+  const toggleProposal = useCallback(
+    (proposalId: string) => {
+      setSelectedIds((prev) =>
+        prev.includes(proposalId)
+          ? prev.filter((id) => id !== proposalId)
+          : [...prev, proposalId],
+      );
+    },
+    [setSelectedIds],
+  );
+
   const handleConfirmSelection = useCallback(
     (
       resultNotifications?: ResultNotificationMessages,
@@ -299,16 +315,7 @@ export const ManualSelectionList = ({
     );
   }
 
-  const toggleProposal = (proposalId: string) => {
-    setSelectedIds(
-      selectedIds.includes(proposalId)
-        ? selectedIds.filter((id) => id !== proposalId)
-        : [...selectedIds, proposalId],
-    );
-  };
-
   const numSelected = confirmIds.length;
-  const listedIds = new Set(candidates.map((proposal) => proposal.id));
   const hiddenSelectedCount =
     awardsAmounts && categoryId
       ? confirmIds.filter((id) => !listedIds.has(id)).length

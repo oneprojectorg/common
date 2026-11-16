@@ -37,7 +37,12 @@ const Harness = ({
     <AwardCell
       proposalId="solar"
       title="Solar Panel Installation"
-      awards={awards}
+      amount={awards.amounts.get('solar') ?? null}
+      requested={awards.getRequested('solar')}
+      currency={awards.getCurrency('solar')}
+      hasAdjusted={awards.hasAdjusted('solar')}
+      isValid={awards.isValid('solar')}
+      onAmountChange={awards.setAmount}
       isSelected={isSelected}
       onToggle={() => {
         onToggle?.();

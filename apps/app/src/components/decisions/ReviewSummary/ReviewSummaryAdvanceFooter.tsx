@@ -62,10 +62,10 @@ export function ReviewSummaryAdvanceFooter({
   const count = selectedIds.length;
 
   const toggle = () => {
-    setSelectedIds(
+    setSelectedIds((prev) =>
       isAdvancing
-        ? selectedIds.filter((id) => id !== proposal.id)
-        : [...selectedIds, proposal.id],
+        ? prev.filter((id) => id !== proposal.id)
+        : [...prev, proposal.id],
     );
   };
 
@@ -85,7 +85,12 @@ export function ReviewSummaryAdvanceFooter({
           <AwardCell
             proposalId={proposal.id}
             title={proposalTitle}
-            awards={awards}
+            amount={awards.amounts.get(proposal.id) ?? null}
+            requested={awards.getRequested(proposal.id)}
+            currency={awards.getCurrency(proposal.id)}
+            hasAdjusted={awards.hasAdjusted(proposal.id)}
+            isValid={awards.isValid(proposal.id)}
+            onAmountChange={awards.setAmount}
             isSelected={isAdvancing}
             onToggle={toggle}
           />
