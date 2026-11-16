@@ -7,16 +7,8 @@ import {
   exists,
   inArray,
   isNull,
-  ne,
-  or,
-  sql,
 } from '@op/db/client';
-import {
-  ProposalStatus,
-  proposalCategories,
-  proposalReviewAssignments,
-  proposals,
-} from '@op/db/schema';
+import { proposalReviewAssignments, proposals } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 import { z } from 'zod';
 
@@ -27,8 +19,11 @@ import {
   encodeCursor,
   getCursorCondition,
 } from '../../utils';
-import { listProposals } from './listProposals';
-import { resolveProposalListScope } from './resolveProposalListScope';
+import {
+  buildProposalFilterConditions,
+  hydrateProposalsInOrder,
+  resolvePhaseProposalQuery,
+} from './phaseProposalQuery';
 import {
   type PhaseProposalList,
   phaseProposalListSchema,
@@ -59,52 +54,31 @@ export async function listPhaseProposals({
 }: ListPhaseProposalsInput): Promise<PhaseProposalList> {
   const decodedCursor = decodePhaseProposalCursor(cursor);
 
-  const requestedPhaseIds: Array<string | undefined> = phaseIds ?? [undefined];
-  const listScopes = await Promise.all(
-    requestedPhaseIds.map((phaseId) =>
-      resolveProposalListScope({
-        input: { processInstanceId, phaseId, search },
-        user,
-      }),
-    ),
-  );
-
-  const phaseScopes = listScopes.filter((listScope) => !listScope.isEmpty);
-  const [firstScope] = listScopes;
-  if (phaseScopes.length === 0 || !firstScope) {
+  const query = await resolvePhaseProposalQuery({
+    processInstanceId,
+    phaseIds,
+    user,
+  });
+  if (query.isEmpty) {
     return { items: [], next: null, total: 0 };
   }
-
-  const assignmentPhaseIds =
-    phaseIds ??
-    (firstScope.instance.currentStateId
-      ? [firstScope.instance.currentStateId]
-      : []);
 
   const buildWhere = (
     proposalsTable: typeof proposals,
     cursorCondition?: SQL,
   ): SQL =>
-    and(
-      or(
-        ...phaseScopes.map((listScope) =>
-          listScope.buildWhereClause(proposalsTable),
-        ),
-      ),
-      ne(proposalsTable.status, ProposalStatus.DRAFT),
-      ...categoryIds.map((categoryId) =>
-        hasCategory({ proposalsTable, categoryId }),
-      ),
+    query.buildWhere(proposalsTable, [
+      ...buildProposalFilterConditions({ proposalsTable, search, categoryIds }),
       assignedToProfileId === undefined
         ? undefined
         : isAssignedTo({
             proposalsTable,
             processInstanceId,
-            phaseIds: assignmentPhaseIds,
+            phaseIds: query.phaseIds,
             reviewerProfileId: assignedToProfileId,
           }),
       cursorCondition,
-    ) ?? sql`false`;
+    ]);
 
   const [rows, [totals]] = await Promise.all([
     db.query.proposals.findMany({
@@ -133,7 +107,7 @@ export async function listPhaseProposals({
   const lastRow = pageRows[pageRows.length - 1];
 
   return phaseProposalListSchema.parse({
-    items: await hydrateInOrder({
+    items: await hydrateProposalsInOrder({
       processInstanceId,
       proposalIds: pageRows.map((row) => row.id),
       user,
@@ -204,47 +178,4 @@ function isAssignedTo({
         ),
       ),
   );
-}
-
-/** One EXISTS per term, so a proposal must carry all of them. */
-function hasCategory({
-  proposalsTable,
-  categoryId,
-}: {
-  proposalsTable: typeof proposals;
-  categoryId: string;
-}): SQL {
-  return exists(
-    db
-      .select({ proposalId: proposalCategories.proposalId })
-      .from(proposalCategories)
-      .where(
-        and(
-          eq(proposalCategories.proposalId, proposalsTable.id),
-          eq(proposalCategories.taxonomyTermId, categoryId),
-        ),
-      ),
-  );
-}
-
-async function hydrateInOrder({
-  processInstanceId,
-  proposalIds,
-  user,
-}: {
-  processInstanceId: string;
-  proposalIds: string[];
-  user: User;
-}) {
-  if (proposalIds.length === 0) {
-    return [];
-  }
-
-  const { items } = await listProposals({
-    input: { processInstanceId, proposalIds, limit: proposalIds.length },
-    user,
-  });
-  const byId = new Map(items.map((item) => [item.id, item]));
-
-  return proposalIds.flatMap((id) => byId.get(id) ?? []);
 }
