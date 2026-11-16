@@ -5,7 +5,11 @@ import {
   type ProcessInstance,
   ProposalRelationshipType,
 } from '@op/api/encoders';
-import { type Proposal, resolveReviewSettings } from '@op/common/client';
+import {
+  type Proposal,
+  type ProposalTemplateSchema,
+  resolveReviewSettings,
+} from '@op/common/client';
 import type { JSONContent } from '@tiptap/react';
 import { notFound } from 'next/navigation';
 
@@ -13,7 +17,6 @@ import { useTranslations } from '@/lib/i18n';
 
 import { compileProposalSchema } from '../forms/proposal';
 import { ProposalFormRenderer } from '../proposalEditor/ProposalFormRenderer';
-import { getProposalEditorTemplate } from '../proposalEditor/getProposalEditorTemplate';
 import { decisionRootHref } from '../proposalHrefs';
 import { DevelopProposalEditor } from './DevelopProposalEditor';
 import { DevelopProposalFrame } from './DevelopProposalFrame';
@@ -50,10 +53,8 @@ export function DevelopProposalRoute({
     notFound();
   }
 
-  const template = getProposalEditorTemplate({
-    proposal,
-    instanceTemplate: instance.instanceData.proposalTemplate,
-  });
+  const template: ProposalTemplateSchema | undefined =
+    instance.instanceData.proposalTemplate;
 
   if (!template) {
     throw new Error('Proposal template not found');

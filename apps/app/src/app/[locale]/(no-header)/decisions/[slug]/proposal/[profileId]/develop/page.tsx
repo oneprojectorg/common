@@ -9,7 +9,6 @@ import { cache } from 'react';
 import { getTranslations } from '@/lib/i18n';
 
 import { getDevelopEntryHeading } from '@/components/decisions/developProposalEditor/getDevelopEntryHeading';
-import { getProposalEditorTemplate } from '@/components/decisions/proposalEditor/getProposalEditorTemplate';
 
 import { DevelopProposalClient } from './DevelopProposalClient';
 
@@ -30,22 +29,18 @@ export async function generateMetadata({
 }: {
   params: Promise<{ slug: string; profileId: string; locale: string }>;
 }): Promise<Metadata> {
-  const { slug, profileId, locale } = await params;
+  const { slug, locale } = await params;
 
   try {
-    const [t, proposal, decisionProfile] = await Promise.all([
+    const [t, decisionProfile] = await Promise.all([
       getTranslations({ locale }),
-      fetchProposal(profileId),
       fetchDecisionBySlug(slug),
     ]);
 
     // The same heading the screen shows: the entry form's name.
     const heading = getDevelopEntryHeading({
-      template: getProposalEditorTemplate({
-        proposal,
-        instanceTemplate:
-          decisionProfile?.processInstance?.instanceData.proposalTemplate,
-      }),
+      template:
+        decisionProfile?.processInstance?.instanceData.proposalTemplate ?? null,
       fallback: t('decisions.developEditor.entryHeading'),
     });
     const decisionName = decisionProfile?.name;
