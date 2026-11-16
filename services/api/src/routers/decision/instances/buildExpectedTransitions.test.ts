@@ -3,7 +3,9 @@ import { describe, expect, it } from 'vitest';
 
 /** A minimal instance stub whose phases come from `instanceData`. */
 function stubInstance(instanceData: unknown, id = 'test-instance-id') {
-  return attachBlobPhases({ instance: { id, instanceData } });
+  return attachBlobPhases({
+    instance: { id, instanceData, currentStateId: null },
+  });
 }
 
 describe('buildExpectedTransitions', () => {
@@ -118,6 +120,46 @@ describe('buildExpectedTransitions', () => {
     expect(() => buildExpectedTransitions(instance)).toThrow(
       'Process instance must have at least one phase configured',
     );
+  });
+
+  describe('with a current phase', () => {
+    const phases = ['phase-a', 'phase-b', 'phase-c', 'phase-d'].map(
+      (phaseId, index) => ({
+        phaseId,
+        rules: { advancement: { method: 'date' } },
+        endDate: `2026-0${index + 6}-01T00:00:00.000Z`,
+      }),
+    );
+    const fromStateIds = (currentStateId: string | null) =>
+      buildExpectedTransitions({
+        ...stubInstance({ phases }),
+        currentStateId,
+      }).map(({ fromStateId }) => fromStateId);
+
+    it('builds no transition out of a phase before the current one', () => {
+      expect(fromStateIds('phase-c')).toEqual(['phase-c']);
+      expect(fromStateIds('phase-b')).toEqual(['phase-b', 'phase-c']);
+    });
+
+    it('builds every transition when the current phase is null or unknown', () => {
+      const all = ['phase-a', 'phase-b', 'phase-c'];
+      expect(fromStateIds(null)).toEqual(all);
+      expect(fromStateIds('phase-gone')).toEqual(all);
+    });
+
+    it('does not require an end date on a phase before the current one', () => {
+      const [first, ...rest] = phases;
+      const instance = stubInstance({
+        phases: [{ ...first, endDate: undefined }, ...rest],
+      });
+
+      expect(
+        buildExpectedTransitions({ ...instance, currentStateId: 'phase-b' }),
+      ).toHaveLength(2);
+      expect(() =>
+        buildExpectedTransitions({ ...instance, currentStateId: 'phase-a' }),
+      ).toThrow('Phase "phase-a" must have an end date');
+    });
   });
 
   it('should throw when date-based phase has no endDate', () => {
