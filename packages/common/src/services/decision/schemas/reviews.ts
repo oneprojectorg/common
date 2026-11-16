@@ -444,28 +444,13 @@ export type ReviewerCategory = z.infer<typeof reviewerCategorySchema>;
 
 export const reviewerCategoriesSchema = list(reviewerCategorySchema);
 
-export const REVIEW_PROPOSAL_SCOPES = ['all', 'assigned'] as const;
-
 /**
- * Input for `decision.listReviewProposals`: the phase's proposals for the
- * review page's "All proposals" tab, or for any screen that lists the
- * proposals a reviewer is assigned in a phase. `phaseId` defaults to the
- * current phase.
- *
- * - `all` (default): every proposal the caller may see in the phase. Open to
- *   admins, and to reviewers when the phase has open reviews.
- * - `assigned`: only proposals the caller holds a review assignment for in
- *   the phase, in any status. Open to admins and reviewers whatever the
- *   phase's open-reviews setting.
- *
- * A reviewer never reads a phase after the current one, and under `assigned`
- * nobody does. A proposal must carry every term in `categoryIds`, so a category and a
- * district combine as AND. Search, categories and pagination apply under both
- * scopes.
+ * Input for `decision.listReviewProposals`, the review page's "All proposals"
+ * list. A proposal must carry every term in `categoryIds`, so a category and a
+ * district combine as AND.
  */
 export const listReviewProposalsInputSchema = instanceOptionalPhaseRefSchema
   .extend({
-    scope: z.enum(REVIEW_PROPOSAL_SCOPES).default('all'),
     search: proposalSearchSchema,
     categoryIds: z.array(z.uuid()).max(10).optional(),
   })

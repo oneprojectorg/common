@@ -191,6 +191,16 @@ export const proposalListSchema = paginated(proposalSchema).extend({
 export type ProposalList = z.infer<typeof proposalListSchema>;
 
 /**
+ * A page of a phase's proposals in `proposal.list`'s item shape, as listed by
+ * `listPhaseProposals` for the review and develop screens.
+ */
+export const phaseProposalListSchema = paginated(proposalSchema).extend({
+  total,
+});
+
+export type PhaseProposalList = z.infer<typeof phaseProposalListSchema>;
+
+/**
  * Free-text proposal title search, shared by every list endpoint's filter.
  * Truncated rather than rejected: an over-long paste is normal in a search
  * field, and the tail past a full title's length could not have matched.
