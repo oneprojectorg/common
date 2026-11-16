@@ -87,6 +87,9 @@ describe('translation.translateRevisionRequest', () => {
       sourceLocale: 'EN',
       targetLocale: 'es',
     });
+    // A request with no author note sends only the request text.
+    expect(result.responseComment).toBeUndefined();
+    expect(mockTranslateText).toHaveBeenCalledTimes(1);
   });
 
   it("translates the author's note on a resubmitted request", async ({

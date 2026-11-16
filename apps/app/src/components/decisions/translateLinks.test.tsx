@@ -22,6 +22,7 @@ import { RevisionRequestCard } from './RevisionRequestCard';
 
 /** One held-open request per endpoint, settled by the test. */
 type Pending = {
+  input: unknown;
   resolve: (data: unknown) => void;
   reject: (error: Error) => void;
 };
@@ -30,9 +31,9 @@ const { pending, endpoint } = vi.hoisted(() => {
   const pending: Record<string, Pending | undefined> = {};
   const endpoint = (name: string) => ({
     useMutation: () => ({
-      mutateAsync: () =>
+      mutateAsync: (input: unknown) =>
         new Promise((resolve, reject) => {
-          pending[name] = { resolve, reject };
+          pending[name] = { input, resolve, reject };
         }),
     }),
   });
@@ -207,7 +208,7 @@ describe('the revision request link', () => {
 });
 
 describe('the author note link', () => {
-  it("translates the author's note", async () => {
+  it("shows the author's note translated, and the original again on View original", async () => {
     const user = userEvent.setup();
     render(
       withIntl(
@@ -217,7 +218,7 @@ describe('the author note link', () => {
               id: 'history-1',
               comment: ES,
               respondedAt: new Date().toISOString(),
-              requestIds: ['request-1'],
+              requestIds: ['request-1', 'request-2'],
             },
           ]}
           onViewRequests={() => {}}
@@ -226,12 +227,19 @@ describe('the author note link', () => {
     );
 
     await user.click(seeTranslation());
+    expect(pending.translateRevisionRequest?.input).toEqual({
+      requestId: 'request-1',
+      targetLocale: 'en',
+    });
     await respond('translateRevisionRequest', {
       requestComment: 'Please add a budget.',
       responseComment: EN,
     });
 
     expect(screen.getByText(EN)).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'View original' })).toBeTruthy();
+
+    await user.click(screen.getByRole('button', { name: 'View original' }));
+
+    expect(screen.getByText(ES)).toBeTruthy();
   });
 });
