@@ -1660,6 +1660,22 @@
     "selectAdvancingHeading": "Select which proposals move on to the next phase",
     "reviewsCompleteBadge": "REVIEWS COMPLETE",
     "confirmWinnersHeading": "Confirm the winning proposals",
+    "developEditor": {
+      "entryHeading": "Entry",
+      "intro": "Complete this entry from the proposal, then advance it.",
+      "advanceAction": "Advance",
+      "advancedStatus": "Advanced",
+      "proposalTab": "Proposal",
+      "originSectionsLabel": "Proposal sections",
+      "originSelectLabel": "Origin proposal",
+      "noReviews": "No reviews for this proposal yet.",
+      "savingStatus": "Saving…",
+      "savedStatus": "Saved",
+      "notReadyTitle": "The entry is not ready to advance",
+      "notReadyDescription": "Fill in the missing fields.",
+      "advancedToast": "“{title}” advanced",
+      "readOnlyNotice": "You can view this entry but not edit it."
+    },
     "develop": {
       "heroTitle": "Advance Proposals",
       "tabsLabel": "Develop views",

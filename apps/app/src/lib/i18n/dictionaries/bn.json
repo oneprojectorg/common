@@ -1660,6 +1660,22 @@
     "selectAdvancingHeading": "কোন প্রস্তাবগুলি পরবর্তী পর্যায়ে যাবে তা নির্বাচন করুন",
     "reviewsCompleteBadge": "পর্যালোচনা সম্পূর্ণ",
     "confirmWinnersHeading": "বিজয়ী প্রস্তাবগুলি নিশ্চিত করুন",
+    "developEditor": {
+      "entryHeading": "এন্ট্রি",
+      "intro": "প্রস্তাব থেকে এই এন্ট্রিটি সম্পূর্ণ করুন, তারপর এটি এগিয়ে নিন।",
+      "advanceAction": "এগিয়ে নিন",
+      "advancedStatus": "এগিয়ে গেছে",
+      "proposalTab": "প্রস্তাব",
+      "originSectionsLabel": "প্রস্তাবের অংশ",
+      "originSelectLabel": "মূল প্রস্তাব",
+      "noReviews": "এই প্রস্তাবের এখনও কোনো পর্যালোচনা নেই।",
+      "savingStatus": "সংরক্ষণ করা হচ্ছে…",
+      "savedStatus": "সংরক্ষিত",
+      "notReadyTitle": "এন্ট্রিটি এগোনোর জন্য প্রস্তুত নয়",
+      "notReadyDescription": "অনুপস্থিত ঘরগুলো পূরণ করুন।",
+      "advancedToast": "“{title}” এগিয়ে গেছে",
+      "readOnlyNotice": "আপনি এই এন্ট্রিটি দেখতে পারবেন, কিন্তু সম্পাদনা করতে পারবেন না।"
+    },
     "develop": {
       "heroTitle": "প্রস্তাব এগিয়ে নিন",
       "tabsLabel": "উন্নয়নের ভিউ",

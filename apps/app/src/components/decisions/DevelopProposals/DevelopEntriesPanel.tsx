@@ -44,7 +44,7 @@ import { useOpenProposalInSheet } from '../ProposalSheet/proposalSheetState';
 import { ProposalsLoadError } from '../ProposalsLoadError';
 import { PROPOSALS_PAGE_LIMIT } from '../proposalFilterQuery';
 import {
-  decisionProposalEditHref,
+  decisionProposalDevelopHref,
   decisionProposalHref,
 } from '../proposalHrefs';
 
@@ -205,12 +205,12 @@ function DevelopEntriesTable({
             return (
               <TableRow key={entry.id}>
                 <TableRowHeader className="py-4">
-                  {/* An entry its caller may still edit opens in the editor;
-                      any other opens read-only. */}
+                  {/* An entry its caller may still edit opens in the develop
+                      editor; any other opens read-only. */}
                   <Link
                     href={
                       entry.isEditable
-                        ? decisionProposalEditHref({
+                        ? decisionProposalDevelopHref({
                             decisionSlug,
                             profileId: entry.profileId,
                           })

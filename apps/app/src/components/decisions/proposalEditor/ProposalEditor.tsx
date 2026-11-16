@@ -43,6 +43,7 @@ import { CustomFormModal, type CustomFormValues } from './CustomFormModal';
 import { ProposalFormRenderer } from './ProposalFormRenderer';
 import { SubmitProposalConfirmModal } from './SubmitProposalConfirmModal';
 import { useOptionalVersionPreview } from './VersionPreviewContext';
+import { getProposalEditorTemplate } from './getProposalEditorTemplate';
 import { handleMutationError } from './handleMutationError';
 import { getFragmentText } from './proposalPreviewContent';
 import { requiresSubmitConfirmation } from './submitConfirmation';
@@ -92,10 +93,13 @@ export function ProposalEditor({
 
   // -- Schema compilation ----------------------------------------------------
 
-  const proposalTemplate = instance.instanceData.proposalTemplate;
+  const proposalTemplate = getProposalEditorTemplate({
+    proposal,
+    instanceTemplate: instance.instanceData.proposalTemplate,
+  });
 
   if (!proposalTemplate) {
-    throw new Error('Proposal template not found on instance');
+    throw new Error('Proposal template not found');
   }
 
   const existingCollab = useOptionalCollaborativeDoc();

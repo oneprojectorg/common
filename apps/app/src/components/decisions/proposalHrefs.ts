@@ -43,11 +43,12 @@ export function decisionProposalHref({
   return `/decisions/${decisionSlug}/proposal/${profileId}`;
 }
 
-export function decisionProposalEditHref(route: {
+/** The develop editor of an entry: a proposal developed from origins. */
+export function decisionProposalDevelopHref(route: {
   decisionSlug: string;
   profileId: string;
 }): string {
-  return `${decisionProposalHref(route)}/edit`;
+  return `${decisionProposalHref(route)}/develop`;
 }
 
 export function proposalReviewsHref(route: ProposalRoute): string {

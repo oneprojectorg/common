@@ -2,6 +2,7 @@
 
 import { linkifyText } from '@/utils/linkDetection';
 import {
+  PROPOSAL_TITLE_MAX_LENGTH,
   formatProposalCategories,
   isDistrictCategoryLabel,
   parseCategoryFragmentValue,
@@ -43,12 +44,13 @@ import type { ProposalDraftFields } from './useProposalDraft';
 // ---------------------------------------------------------------------------
 
 /**
- * Cap on the proposal title (Figma 17950:11356 — the field reads "37/50").
+ * Default cap on the proposal title (Figma 17950:11356 — the field reads
+ * "37/50"), used when the template sets no `maxLength` on the title.
  *
- * Below `PROPOSAL_TITLE_MAX_LENGTH`, which the API enforces to keep
- * `profiles.name` inside its varchar(256). Capping the server at 50 would make
- * every existing longer-titled proposal unsaveable, since autosave would be
- * rejected on each tick. A template may ask for less, never more.
+ * A template may ask for more, up to `PROPOSAL_TITLE_MAX_LENGTH`, which the API
+ * enforces to keep `profiles.name` inside its varchar(256). The server is not
+ * capped at 50: that would make every existing longer-titled proposal
+ * unsaveable, since autosave would be rejected on each tick.
  */
 const TITLE_MAX_LENGTH = 50;
 
@@ -73,6 +75,8 @@ interface ProposalFormRendererProps {
   mode?: 'edit-collaborative' | 'preview-version';
   /** Version preview content keyed by fragment name. */
   previewVersionFragmentContents?: Record<string, JSONContent | null>;
+  /** Validation messages keyed by field, shown under each field. */
+  errors?: Record<string, string>;
 }
 
 // ---------------------------------------------------------------------------
@@ -116,6 +120,19 @@ function formatPreviewBudget(
   });
 }
 
+/**
+ * Whether the collaborative form shows a field's `errors` entry under it: the
+ * title, money and text fields do; category, dropdown and location do not.
+ */
+export function showsInlineError({ key, format }: FieldDescriptor): boolean {
+  return (
+    key === 'title' ||
+    key === 'budget' ||
+    format === 'money' ||
+    (key !== 'category' && (format === 'short-text' || format === 'long-text'))
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Field renderer
 // ---------------------------------------------------------------------------
@@ -132,10 +149,12 @@ function renderField(
   t: TranslateFn,
   mode: 'edit-collaborative' | 'preview-version',
   previewVersionFragmentContents: Record<string, JSONContent | null>,
+  errors: Record<string, string>,
   onEditorFocus?: (editor: Editor) => void,
   onEditorBlur?: (editor: Editor) => void,
 ): React.ReactNode {
   const { key, format, schema } = field;
+  const error = errors[key];
   const isReadonlyMode = mode !== 'edit-collaborative';
   const previewContent = previewVersionFragmentContents[key];
   // Template help text is plain text, never rich text.
@@ -160,8 +179,10 @@ function renderField(
         required={field.required}
         maxLength={Math.min(
           schema.maxLength ?? TITLE_MAX_LENGTH,
-          TITLE_MAX_LENGTH,
+          PROPOSAL_TITLE_MAX_LENGTH,
         )}
+        description={description}
+        error={error}
         placeholder={t('decisions.proposals.untitledProposal')}
         onChange={(value) => onFieldChange('title', value)}
       />
@@ -259,6 +280,7 @@ function renderField(
         required={field.required}
         minAmount={schema.minimum}
         maxAmount={schema.maximum}
+        error={error}
         initialValue={key === 'budget' ? draft.budget : null}
         onChange={(value) => onFieldChange(key, value)}
       />
@@ -294,6 +316,7 @@ function renderField(
           placeholder={placeholder}
           multiline={format === 'long-text'}
           maxLength={schema.maxLength}
+          error={error}
           onChange={(html) => onFieldChange(key, html)}
           onEditorFocus={onEditorFocus}
           onEditorBlur={onEditorBlur}
@@ -405,6 +428,7 @@ export function ProposalFormRenderer({
   onEditorBlur,
   mode = 'edit-collaborative',
   previewVersionFragmentContents = {},
+  errors = {},
 }: ProposalFormRendererProps) {
   const t = useTranslations();
 
@@ -422,6 +446,7 @@ export function ProposalFormRenderer({
       t,
       mode,
       previewVersionFragmentContents,
+      errors,
       onEditorFocus,
       onEditorBlur,
     );
