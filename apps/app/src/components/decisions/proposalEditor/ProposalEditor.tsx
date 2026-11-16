@@ -637,6 +637,7 @@ function ProposalEditorInner({
       isEditMode={isEditMode}
       isDraft={isDraft}
       readOnlyMode={isPreviewMode}
+      allowShare={!develop}
       presenceSlot={<CollaborativePresence />}
       asideHeaderIcons={asideHeaderIcons}
       proposalProfileId={proposal.profileId}

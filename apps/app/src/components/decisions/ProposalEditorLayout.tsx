@@ -27,6 +27,8 @@ interface ProposalEditorLayoutProps {
   statusSlot?: ReactNode;
   /** When true, hide editing actions while showing a historical version. */
   readOnlyMode?: boolean;
+  /** When false, the share action and its modal are left out. */
+  allowShare?: boolean;
   /** The proposal's profile ID, used for the share modal */
   proposalProfileId: string;
   /** The current user's decision permissions on this proposal */
@@ -49,6 +51,7 @@ export function ProposalEditorLayout({
   asideHeaderIcons,
   statusSlot,
   readOnlyMode = false,
+  allowShare = true,
   proposalProfileId,
   access,
 }: ProposalEditorLayoutProps) {
@@ -60,7 +63,9 @@ export function ProposalEditorLayout({
   // Sharing is a write surface — only offer it to signed-in, non-anonymous
   // members, on top of the existing admin/invite permission check.
   const canShare = Boolean(
-    userCanInteract(user) && (access?.admin || access?.inviteMembers),
+    allowShare &&
+    userCanInteract(user) &&
+    (access?.admin || access?.inviteMembers),
   );
   const isRevisionMode = reviewNotes?.hasOpenRequests ?? false;
 
