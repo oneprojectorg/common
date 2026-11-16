@@ -266,7 +266,7 @@ function DevelopOriginsTable({
 
                 return (
                   <TableRow key={origin.id}>
-                    <TableRowHeader className="py-4 whitespace-normal">
+                    <TableRowHeader className="py-4">
                       <div className="flex flex-col items-start gap-0.5">
                         <Link
                           href={decisionProposalHref({

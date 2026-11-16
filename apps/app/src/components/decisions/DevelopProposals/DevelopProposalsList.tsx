@@ -7,6 +7,7 @@ import {
   type ProcessInstance,
   ProposalStatus,
 } from '@op/api/encoders';
+import { BadgeNumber } from '@op/sense/Badge';
 import { Button } from '@op/sense/Button';
 import {
   FooterBar,
@@ -15,14 +16,13 @@ import {
   FooterBarStart,
 } from '@op/sense/FooterBar';
 import { Skeleton } from '@op/sense/Skeleton';
-import { Tabs, TabsContent } from '@op/sense/Tabs';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@op/sense/Tabs';
 import { cn } from '@op/sense/lib/utils';
 import { Suspense, useState } from 'react';
 import { LuCircleCheck } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { ProposalTabList, ProposalTabTrigger } from '../Proposal/ProposalTabs';
 import { ProposalsLoadError } from '../ProposalsLoadError';
 import { DevelopEntriesPanel } from './DevelopEntriesPanel';
 import {
@@ -75,17 +75,17 @@ export function DevelopProposalsList({
       >
         {/* The first label starts flush with the count and the table's first
             column below it, underline included. */}
-        <ProposalTabList
+        <TabsList
+          variant="line"
           aria-label={t('tabsLabel')}
           className="[&>[data-slot=tabs-trigger]:first-child]:ps-0"
         >
-          <ProposalTabTrigger value="proposals">
-            {t('proposalsTab')}
-          </ProposalTabTrigger>
-          <ProposalTabTrigger value="entries" count={entries.total}>
+          <TabsTrigger value="proposals">{t('proposalsTab')}</TabsTrigger>
+          <TabsTrigger value="entries">
             <bdi>{entryName}</bdi>
-          </ProposalTabTrigger>
-        </ProposalTabList>
+            <BadgeNumber variant="secondary">{entries.total}</BadgeNumber>
+          </TabsTrigger>
+        </TabsList>
 
         <TabsContent value="proposals">
           <APIErrorBoundary
