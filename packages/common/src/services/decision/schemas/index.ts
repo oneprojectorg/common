@@ -8,6 +8,7 @@ export * from './proposal';
 export * from './proposalRelationships';
 export * from './ownDevelopedProposals';
 export * from './developOrigins';
+export * from './developCategoryTotals';
 export * from './rejectProposal';
 export * from './advanceProposal';
 export * from './selection';

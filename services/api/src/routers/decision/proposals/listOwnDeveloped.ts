@@ -8,9 +8,10 @@ import { networkAuthenticatedProcedure, router } from '../../../trpcFactory';
 
 export const listOwnDevelopedProposalsRouter = router({
   /**
-   * One page of the caller's own developed proposals (drafts included) in the
-   * current phase, each with the proposals it was developed from, plus the
-   * counts and budget total of every entry the search matches.
+   * One page of developed proposals in the current phase, each with the
+   * proposals it was developed from, plus the counts and budget total of every
+   * entry the search and category match. The caller's own entries (drafts
+   * included) by default; every ready entry for an admin who asks for `all`.
    */
   listOwnDevelopedProposals: networkAuthenticatedProcedure()
     .input(listOwnDevelopedProposalsInputSchema)

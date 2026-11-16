@@ -12,6 +12,7 @@ import {
   ProposalRelationshipType,
   ProposalStatus,
   profiles,
+  proposalCategories,
   proposalRelationships,
   proposals,
 } from '@op/db/schema';
@@ -28,15 +29,16 @@ import {
 import { notSuperseded } from './proposalSupersession';
 import { buildProposalTitleSearchCondition } from './proposalTitleSearch';
 import { isProposalProfileMember } from './proposalVisibility';
+import type { DevelopedEntryScope } from './schemas/ownDevelopedProposals';
 import { escapeLikePattern, splitSearchWords } from './utils/search';
 
 export interface OwnDevelopedEntryScope {
   /** The current phase is unreached: no entry can match. */
   isEmpty: boolean;
   /**
-   * Matches the caller's own entries of the current phase: live proposals the
-   * caller is a member of, each the target of a live `developed` edge. Takes
-   * the table so it works on the relational alias and the schema table alike.
+   * Matches the entries of the current phase: live proposals, each the target
+   * of a live `developed` edge, narrowed by the scope. Takes the table so it
+   * works on the relational alias and the schema table alike.
    */
   buildFilter: (proposalsTable: typeof proposals) => SQL;
 }
@@ -46,7 +48,7 @@ export interface OwnDevelopedEntryScope {
  * predicate. Shared by the entries list and the origins list's lookup of the
  * caller's entry per origin, so both agree on what an entry of the caller is.
  */
-export async function getOwnDevelopedEntryScope({
+export function getOwnDevelopedEntryScope({
   instance,
   processInstanceId,
   authUserId,
@@ -55,10 +57,39 @@ export async function getOwnDevelopedEntryScope({
   processInstanceId: string;
   authUserId: string;
 }): Promise<OwnDevelopedEntryScope> {
+  return getDevelopedEntryScope({
+    instance,
+    processInstanceId,
+    authUserId,
+    scope: 'own',
+  });
+}
+
+/**
+ * The developed entries of the instance's current phase, as a SQL predicate.
+ * `own` is the caller's entries, drafts included; `all` is every ready entry,
+ * whoever wrote it, since a draft stays private to its authors. The caller
+ * checks that `all` is allowed.
+ */
+export async function getDevelopedEntryScope({
+  instance,
+  processInstanceId,
+  authUserId,
+  scope,
+}: {
+  instance: PhaseScopedInstance;
+  processInstanceId: string;
+  authUserId: string;
+  scope: DevelopedEntryScope;
+}): Promise<OwnDevelopedEntryScope> {
   const phaseScope = await getPhaseProposalSqlScope({
     instance,
     authUserIds: [authUserId],
   });
+
+  // Ready entries match by phase membership, which drops rejected ones.
+  const buildReadyFilter = (table: typeof proposals): SQL =>
+    and(phaseEligiblePredicate(table), phaseScope.buildNonDraftFilter(table))!;
 
   return {
     isEmpty: phaseScope.isEmpty,
@@ -67,7 +98,6 @@ export async function getOwnDevelopedEntryScope({
         eq(table.processInstanceId, processInstanceId),
         activeProposalPredicate(table),
         notSuperseded({ proposalId: table.id, processInstanceId }),
-        isProposalProfileMember(table, authUserId),
         exists(
           db
             .select({ id: proposalRelationships.id })
@@ -83,20 +113,44 @@ export async function getOwnDevelopedEntryScope({
               ),
             ),
         ),
-        // Drafts never join a phase, so they match by their creation
-        // window; the rest by phase membership, which drops rejected ones.
-        or(
-          and(
-            eq(table.status, ProposalStatus.DRAFT),
-            phaseScope.buildDraftFilter(table),
-          ),
-          and(
-            phaseEligiblePredicate(table),
-            phaseScope.buildNonDraftFilter(table),
-          ),
-        ),
+        scope === 'all'
+          ? buildReadyFilter(table)
+          : and(
+              isProposalProfileMember(table, authUserId),
+              // Drafts never join a phase, so they match by their creation
+              // window.
+              or(
+                and(
+                  eq(table.status, ProposalStatus.DRAFT),
+                  phaseScope.buildDraftFilter(table),
+                ),
+                buildReadyFilter(table),
+              ),
+            ),
       )!,
   };
+}
+
+/** Entries linked to the category, or no condition without one. */
+export function buildEntryCategoryCondition(
+  table: typeof proposals,
+  categoryId: string | undefined,
+): SQL | undefined {
+  if (!categoryId) {
+    return undefined;
+  }
+
+  return exists(
+    db
+      .select({ proposalId: proposalCategories.proposalId })
+      .from(proposalCategories)
+      .where(
+        and(
+          eq(proposalCategories.proposalId, table.id),
+          eq(proposalCategories.taxonomyTermId, categoryId),
+        ),
+      ),
+  );
 }
 
 const originProposals = alias(proposals, 'origin_proposals');

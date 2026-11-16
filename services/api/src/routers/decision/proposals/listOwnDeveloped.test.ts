@@ -1,9 +1,16 @@
 import {
   TestDecisionsDataManager,
+  addProposalToCategory,
   createDevelopPhaseSetup,
   createDevelopProposalsMember,
+  ensureProposalCategoryTerms,
 } from '@op/common/testing';
-import { ProposalStatus } from '@op/db/schema';
+import { db, inArray } from '@op/db/client';
+import {
+  ProposalStatus,
+  proposalCategories,
+  taxonomyTerms,
+} from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
@@ -197,6 +204,136 @@ describe.concurrent('listOwnDevelopedProposals', () => {
     await expect(
       caller.decision.listOwnDevelopedProposals({
         processInstanceId: instanceId,
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
+  });
+
+  it('lists an admin every ready entry under `all`, narrowed by `categoryId`', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instanceId, source } = await createDevelopPhaseSetup({
+      testData,
+    });
+    const [first, second] = await Promise.all([
+      createDevelopProposalsMember({
+        testData,
+        setup,
+        assignedOriginIds: [source.id],
+      }),
+      createDevelopProposalsMember({
+        testData,
+        setup,
+        assignedOriginIds: [source.id],
+      }),
+    ]);
+    const [firstCaller, secondCaller, adminCaller] = await Promise.all([
+      createAuthenticatedCaller(first.email),
+      createAuthenticatedCaller(second.email),
+      createAuthenticatedCaller(setup.userEmail),
+    ]);
+    const [category] = await ensureProposalCategoryTerms([
+      `entries-${task.id}`,
+    ]);
+    if (!category) {
+      throw new Error('Failed to create the category');
+    }
+    onTestFinished(async () => {
+      await db
+        .delete(proposalCategories)
+        .where(
+          inArray(proposalCategories.taxonomyTermId, [category.taxonomyTermId]),
+        );
+      await db
+        .delete(taxonomyTerms)
+        .where(inArray(taxonomyTerms.id, [category.taxonomyTermId]));
+    });
+
+    const createEntry = async (
+      caller: typeof firstCaller,
+      title: string,
+      amount: number,
+    ) => {
+      const entry = await caller.decision.createDevelopedProposal({
+        processInstanceId: instanceId,
+        sourceProposalIds: [source.id],
+        proposalData: { title, budget: { amount, currency: 'USD' } },
+      });
+      testData.trackProfileForCleanup(entry.profileId);
+      return entry;
+    };
+
+    const firstReady = await createEntry(firstCaller, 'First ready', 100);
+    const draft = await createEntry(firstCaller, 'First draft', 50);
+    const secondReady = await createEntry(secondCaller, 'Second ready', 200);
+    await Promise.all([
+      firstCaller.decision.submitDevelopedProposal({
+        proposalId: firstReady.id,
+      }),
+      secondCaller.decision.submitDevelopedProposal({
+        proposalId: secondReady.id,
+      }),
+      addProposalToCategory({
+        proposalId: secondReady.id,
+        taxonomyTermId: category.taxonomyTermId,
+      }),
+      addProposalToCategory({
+        proposalId: draft.id,
+        taxonomyTermId: category.taxonomyTermId,
+      }),
+    ]);
+
+    const [everything, inCategory, ownInCategory] = await Promise.all([
+      adminCaller.decision.listOwnDevelopedProposals({
+        processInstanceId: instanceId,
+        scope: 'all',
+      }),
+      adminCaller.decision.listOwnDevelopedProposals({
+        processInstanceId: instanceId,
+        scope: 'all',
+        categoryId: category.taxonomyTermId,
+      }),
+      firstCaller.decision.listOwnDevelopedProposals({
+        processInstanceId: instanceId,
+        categoryId: category.taxonomyTermId,
+      }),
+    ]);
+
+    // Drafts stay private to their authors, so `all` holds ready entries only.
+    expect(everything.items.map((item) => item.id)).toEqual([
+      secondReady.id,
+      firstReady.id,
+    ]);
+    expect(everything).toMatchObject({
+      total: 2,
+      readyTotal: 2,
+      budgetTotal: { amount: 300, currency: 'USD' },
+    });
+    expect(inCategory.items.map((item) => item.id)).toEqual([secondReady.id]);
+    expect(inCategory.total).toBe(1);
+    expect(ownInCategory.items.map((item) => item.id)).toEqual([draft.id]);
+  });
+
+  it('refuses `all` to a develop holder who is not an admin', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instanceId, source } = await createDevelopPhaseSetup({
+      testData,
+    });
+    const member = await createDevelopProposalsMember({
+      testData,
+      setup,
+      assignedOriginIds: [source.id],
+    });
+    const caller = await createAuthenticatedCaller(member.email);
+
+    await expect(
+      caller.decision.listOwnDevelopedProposals({
+        processInstanceId: instanceId,
+        scope: 'all',
       }),
     ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
   });

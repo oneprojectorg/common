@@ -9,20 +9,25 @@ import { permission } from 'access-zones';
 import {
   NotFoundError,
   PAGE_LIMIT,
+  UnauthorizedError,
+  ValidationError,
   decodeCursor,
   encodeCursor,
   getCursorCondition,
 } from '../../utils';
 import type { AccessUser } from '../access';
 import { assertProfileAccess } from '../assert';
+import { getProposalDevelopAccess } from './assertProposalDevelopAccess';
 import { getProposalDocumentsContent } from './getProposalDocumentsContent';
 import {
+  buildEntryCategoryCondition,
   buildEntrySearchCondition,
-  getOwnDevelopedEntryScope,
+  getDevelopedEntryScope,
 } from './ownDevelopedEntryScope';
 import { parseProposalData } from './proposalDataSchema';
 import { buildProposalListPreview } from './proposalListPreview';
 import { resolveProposalTemplatesByFormSchemaId } from './resolveProposalTemplate';
+import { getInstancePhases } from './schemas/instanceData';
 import type {
   ListOwnDevelopedProposalsInput,
   OwnDevelopedProposalList,
@@ -36,16 +41,20 @@ type EntryTotals = Pick<
 >;
 
 /**
- * The caller's own developed proposals in the instance's current phase:
- * drafts and submitted ones, each the target of a live `developed` edge, with
- * the proposals it was developed from. "Own" is a membership on the proposal's
- * profile (author or co-author), the set that may read a draft.
+ * The developed proposals in the instance's current phase, each the target of
+ * a live `developed` edge, with the proposals it was developed from. Under
+ * `own` (the default), the caller's drafts and submitted ones; "own" is a
+ * membership on the proposal's profile (author or co-author), the set that may
+ * read a draft. Under `all`, every ready entry, for an admin only.
+ * `categoryId` narrows either scope.
  *
  * Newest first, one cursor page at a time. The counts and the budget total
- * are aggregated in SQL over every entry the search matches.
+ * are aggregated in SQL over every entry the search and category match.
  */
 export async function listOwnDevelopedProposals({
   processInstanceId,
+  scope = 'own',
+  categoryId,
   search,
   cursor,
   limit = PAGE_LIMIT.md,
@@ -77,13 +86,18 @@ export async function listOwnDevelopedProposals({
   // Decoded before any early return, so a malformed cursor always throws.
   const decodedCursor = cursor ? decodeCursor<EntryCursor>(cursor) : undefined;
 
-  const scope = await getOwnDevelopedEntryScope({
+  if (scope === 'all') {
+    await assertAdminOnCurrentPhase({ instance, user });
+  }
+
+  const entryScope = await getDevelopedEntryScope({
     instance,
     processInstanceId,
     authUserId: user.id,
+    scope,
   });
 
-  if (scope.isEmpty) {
+  if (entryScope.isEmpty) {
     return {
       items: [],
       next: null,
@@ -94,7 +108,11 @@ export async function listOwnDevelopedProposals({
   }
 
   const buildWhere = (table: typeof proposals): SQL =>
-    and(scope.buildFilter(table), buildEntrySearchCondition(table, search))!;
+    and(
+      entryScope.buildFilter(table),
+      buildEntrySearchCondition(table, search),
+      buildEntryCategoryCondition(table, categoryId),
+    )!;
 
   const [rawRows, totals] = await Promise.all([
     db.query.proposals.findMany({
@@ -206,6 +224,39 @@ export async function listOwnDevelopedProposals({
     next,
     ...totals,
   };
+}
+
+/**
+ * Every entry of the phase is an admin's view: admin on the instance profile,
+ * with the current phase a develop phase.
+ */
+async function assertAdminOnCurrentPhase({
+  instance,
+  user,
+}: {
+  instance: {
+    profileId: string | null;
+    instanceData: unknown;
+    currentStateId: string | null;
+  };
+  user: AccessUser;
+}): Promise<void> {
+  if (!instance.currentStateId) {
+    throw new ValidationError('Invalid phase in process instance');
+  }
+
+  const { isAdmin } = await getProposalDevelopAccess({
+    instance: {
+      profileId: instance.profileId,
+      instanceData: { phases: getInstancePhases(instance.instanceData) },
+    },
+    phaseId: instance.currentStateId,
+    user,
+  });
+
+  if (!isAdmin) {
+    throw new UnauthorizedError('Not authorized');
+  }
 }
 
 /**

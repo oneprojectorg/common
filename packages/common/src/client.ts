@@ -141,8 +141,10 @@ export {
   type ProposalRelationshipList,
 } from './services/decision/schemas/proposalRelationships';
 export {
+  developedEntryScopeSchema,
   listOwnDevelopedProposalsInputSchema,
   ownDevelopedProposalListSchema,
+  type DevelopedEntryScope,
   type ListOwnDevelopedProposalsInput,
   type OwnDevelopedProposal,
   type OwnDevelopedProposalList,
@@ -157,6 +159,14 @@ export {
   type DevelopOriginScope,
   type ListDevelopOriginsInput,
 } from './services/decision/schemas/developOrigins';
+export {
+  developCategoryTotalsListSchema,
+  developCategoryTotalsSchema,
+  listDevelopCategoryTotalsInputSchema,
+  type DevelopCategoryTotals,
+  type DevelopCategoryTotalsList,
+  type ListDevelopCategoryTotalsInput,
+} from './services/decision/schemas/developCategoryTotals';
 export {
   REJECTION_NOTE_MAX_LENGTH,
   RejectionReason,

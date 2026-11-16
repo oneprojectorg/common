@@ -4,9 +4,21 @@ import { moneyAmountSchema } from '../../../money';
 import { paginated, paginationInput, total } from '../../../utils/pagination';
 import { proposalSearchSchema } from './proposal';
 
+/**
+ * Whose entries a develop screen lists:
+ * - `own`: the caller's entries, drafts included. The default.
+ * - `all`: every ready entry of the phase, whoever wrote it. Admin only.
+ */
+export const developedEntryScopeSchema = z.enum(['own', 'all']);
+
+export type DevelopedEntryScope = z.infer<typeof developedEntryScopeSchema>;
+
 export const listOwnDevelopedProposalsInputSchema = z
   .object({
     processInstanceId: z.uuid(),
+    scope: developedEntryScopeSchema.prefault('own'),
+    /** Narrows either scope to the entries linked to one category. */
+    categoryId: z.uuid().optional(),
     /** Every word in the entry's title, or in one of its origins' titles. */
     search: proposalSearchSchema,
   })
@@ -23,7 +35,7 @@ export const developedOriginSchema = z.object({
 });
 
 /**
- * One of the caller's developed proposals in the current phase. Slim: what the
+ * A developed proposal in the current phase. Slim: what the
  * develop screen lists, with the title and budget resolved from the document.
  */
 export const ownDevelopedProposalSchema = z.object({
@@ -41,7 +53,7 @@ export const ownDevelopedProposalSchema = z.object({
 export type OwnDevelopedProposal = z.infer<typeof ownDevelopedProposalSchema>;
 
 /**
- * One page of the caller's entries, newest first. The counts and the budget
+ * One page of entries, newest first. The counts and the budget
  * total cover every entry the search matches, not just this page.
  */
 export const ownDevelopedProposalListSchema = paginated(

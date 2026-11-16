@@ -94,6 +94,7 @@ export * from './submitProposal';
 export * from './submitDevelopedProposal';
 export * from './listOwnDevelopedProposals';
 export * from './listDevelopOrigins';
+export * from './listDevelopCategoryTotals';
 export * from './updateProposal';
 export * from './rejectProposal';
 export * from './unrejectProposal';
