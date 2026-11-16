@@ -17,7 +17,7 @@ This records current practice.
 In scope: where a permission check runs. Who the caller is belongs to
 [0012](./0012-authenticate-at-the-boundary.md). What a grant is, and how a
 decision and a proposal fit the model, belongs to
-[0020](./0020-give-every-decision-and-proposal-its-own-profile-and-grant-roles-on-it.md).
+[0021](./0021-give-every-decision-and-proposal-its-own-profile-and-grant-roles-on-it.md).
 
 ## Decision
 

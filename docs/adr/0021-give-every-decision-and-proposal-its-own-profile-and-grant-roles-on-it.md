@@ -1,4 +1,4 @@
-# 0020. Give every decision and proposal its own profile and grant roles on it
+# 0021. Give every decision and proposal its own profile and grant roles on it
 
 Date: 2026-11-12
 
