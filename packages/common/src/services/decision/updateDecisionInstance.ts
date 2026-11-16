@@ -171,6 +171,7 @@ export const updateDecisionInstance = async ({
           instanceId,
           processId: existingInstance.processId,
           instance: { ...locked, status: nextStatus },
+          storedStatus: locked.status,
           update: instanceDataFields,
         })
       : { phaseEndDateChanges: [] };
@@ -335,6 +336,7 @@ async function saveInstanceData({
   instanceId,
   processId,
   instance,
+  storedStatus,
   update,
 }: {
   tx: TransactionType;
@@ -342,6 +344,7 @@ async function saveInstanceData({
   processId: string | null;
   // The locked row, carrying the status this save leaves.
   instance: LockedProcessInstance;
+  storedStatus: LockedProcessInstance['status'];
   update: InstanceDataUpdate;
 }): Promise<SavedInstanceData> {
   const stored = instance.instanceData as DecisionInstanceData;
@@ -374,6 +377,7 @@ async function saveInstanceData({
     tx,
     processInstanceId: instanceId,
     locked: instance,
+    storedStatus,
     syncTransitions: false,
     write: async (tx, { phases: rows }) => {
       const merged = getUpdatedInstanceData({

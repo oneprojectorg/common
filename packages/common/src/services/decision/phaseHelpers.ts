@@ -117,6 +117,105 @@ export const assertPhaseRowInvariants = ({
   }
 };
 
+// Fields an admin may still edit on a phase the decision has left.
+const PAST_PHASE_TEXT_FIELDS = new Set([
+  'phaseId',
+  'name',
+  'description',
+  'headline',
+  'additionalInfo',
+]);
+
+/**
+ * On a decision past draft, refuses a write that rewrites its history: the
+ * phases up to the current one keep their order, a past phase keeps every
+ * field but its text, and the current phase keeps its start date.
+ */
+export const assertPastPhasesUnchanged = ({
+  before,
+  after,
+  currentStateId,
+}: {
+  before: readonly PhaseInstanceData[];
+  after: readonly PhaseInstanceData[];
+  currentStateId: string | null;
+}): void => {
+  if (currentStateId === null) {
+    return;
+  }
+
+  const currentIndex = before.findIndex(
+    ({ phaseId }) => phaseId === currentStateId,
+  );
+  if (currentIndex === -1) {
+    throw new ValidationError(
+      'The current phase is missing, so phases cannot be edited',
+      { phases: 'Move the decision to an existing phase first' },
+    );
+  }
+
+  const isPrefixKept = before
+    .slice(0, currentIndex + 1)
+    .every(({ phaseId }, index) => after[index]?.phaseId === phaseId);
+  if (!isPrefixKept) {
+    throw new ValidationError(
+      'Phases up to the current phase cannot be removed, added or reordered',
+      { phases: 'Change only the phases after the current phase' },
+    );
+  }
+
+  for (const [index, phase] of before.slice(0, currentIndex).entries()) {
+    if (!isDeepStrictEqual(lockedFields(phase), lockedFields(after[index]))) {
+      throw new ValidationError(
+        `Only the name and text of the past phase "${phase.name ?? phase.phaseId}" can be edited`,
+        { phases: 'Past phases are locked' },
+      );
+    }
+  }
+
+  const current = before[currentIndex];
+  if (
+    toInstant(current?.startDate) !== toInstant(after[currentIndex]?.startDate)
+  ) {
+    throw new ValidationError(
+      'The start date of the current phase cannot be changed',
+      { phases: 'The current phase has already started' },
+    );
+  }
+};
+
+// A phase's locked fields, with absent, null and empty values dropped and
+// dates compared as instants, so a resave of the same values is no change.
+const lockedFields = (phase: PhaseInstanceData | undefined): unknown =>
+  phase &&
+  normalize(
+    Object.fromEntries(
+      Object.entries(phase)
+        .filter(([key]) => !PAST_PHASE_TEXT_FIELDS.has(key))
+        .map(([key, value]) =>
+          key === 'startDate' || key === 'endDate'
+            ? [key, toInstant(value)]
+            : [key, value],
+        ),
+    ),
+  );
+
+const toInstant = (value: unknown): number | undefined =>
+  typeof value === 'string' ? Date.parse(value) : undefined;
+
+const normalize = (value: unknown): unknown => {
+  if (Array.isArray(value)) {
+    return value.map(normalize);
+  }
+  if (value === null || typeof value !== 'object') {
+    return value;
+  }
+  const entries = Object.entries(value)
+    .map(([key, nested]) => [key, normalize(nested)] as const)
+    .filter(([, nested]) => nested !== undefined && nested !== null);
+  return entries.length === 0 ? undefined : Object.fromEntries(entries);
+};
+
 export const toInstanceDataPhase = (
   phase: ProcessPhaseWithProfile,
 ): PhaseInstanceData => ({

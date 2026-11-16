@@ -162,7 +162,6 @@ describe.concurrent('reorderPhases', () => {
       name: 'Extra',
       sortOrder: 2,
     });
-    const blobPhases = await loadBlobPhases(instanceId);
     expect(await loadTransitionLinks(instanceId)).toEqual([
       {
         fromStateId: 'initial',
@@ -188,13 +187,23 @@ describe.concurrent('reorderPhases', () => {
       },
     ]);
 
-    await adminCaller.decision.reorderPhases({
-      instanceId,
-      phases: [extra, final, initial].map(({ id }) => ({ phaseId: id })),
+    const linksBefore = await loadTransitionLinks(instanceId);
+    const blobBefore = await loadBlobPhases(instanceId);
+    await expect(
+      adminCaller.decision.reorderPhases({
+        instanceId,
+        phases: [extra, final, initial].map(({ id }) => ({ phaseId: id })),
+      }),
+    ).rejects.toMatchObject({
+      cause: {
+        name: 'ValidationError',
+        message:
+          'Phases up to the current phase cannot be removed, added or reordered',
+      },
     });
 
-    expect(await loadTransitionLinks(instanceId)).toEqual([]);
-    expect(await loadBlobPhases(instanceId)).toEqual(blobPhases);
+    expect(await loadTransitionLinks(instanceId)).toEqual(linksBefore);
+    expect(await loadBlobPhases(instanceId)).toEqual(blobBefore);
   });
 
   it('refuses a phase from another decision', async ({

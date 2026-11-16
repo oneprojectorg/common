@@ -15,8 +15,6 @@ export interface PhasePlacement {
   endDate?: string;
 }
 
-// TODO: refuse moving phases that have already run, once currentStateId
-// points at a phase row.
 export const reorderPhases = async ({
   user,
   processInstanceId,

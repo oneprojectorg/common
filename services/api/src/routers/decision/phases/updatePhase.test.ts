@@ -15,6 +15,7 @@ import {
   loadTransitionLinks,
   setupPhase,
   setupPublishedDateDecision,
+  setupPublishedDecisionAtThirdPhase,
 } from '../../../test/helpers/phaseTestUtils';
 import { createAuthenticatedCaller } from '../../../test/supabase-utils';
 
@@ -645,6 +646,66 @@ describe.concurrent('updatePhase', () => {
       data: initial.data,
     });
     expect(await loadTransitionLinks(instanceId)).toEqual(before);
+  });
+
+  it('refuses a new end date on a phase the decision has left', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { instanceId, adminCaller, rows } =
+      await setupPublishedDecisionAtThirdPhase(task, onTestFinished);
+    const linksBefore = await loadTransitionLinks(instanceId);
+
+    await expect(
+      adminCaller.decision.updatePhase({
+        phaseId: rows.review.id,
+        data: { endDate: new Date().toISOString() },
+      }),
+    ).rejects.toMatchObject({
+      cause: {
+        name: 'ValidationError',
+        message:
+          'Only the name and text of the past phase "Review" can be edited',
+      },
+    });
+
+    await expectPhase(rows.review, {
+      name: rows.review.name,
+      data: rows.review.data,
+    });
+    expect(await loadTransitionLinks(instanceId)).toEqual(linksBefore);
+  });
+
+  it('edits the name and text of a past phase and the end date of the current one', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { adminCaller, rows } = await setupPublishedDecisionAtThirdPhase(
+      task,
+      onTestFinished,
+    );
+    const endDate = new Date(
+      Date.now() + 30 * 24 * 60 * 60 * 1000,
+    ).toISOString();
+
+    await adminCaller.decision.updatePhase({
+      phaseId: rows.review.id,
+      name: 'Shortlist',
+      data: { description: 'Narrow the field' },
+    });
+    await adminCaller.decision.updatePhase({
+      phaseId: rows.voting.id,
+      data: { endDate },
+    });
+
+    await expectPhase(rows.review, {
+      name: 'Shortlist',
+      data: { ...rows.review.data, description: 'Narrow the field' },
+    });
+    await expectPhase(rows.voting, {
+      name: rows.voting.name,
+      data: { ...rows.voting.data, endDate },
+    });
   });
 
   it('refuses an update that leaves a published date-advanced phase with no end date', async ({

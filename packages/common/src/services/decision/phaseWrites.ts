@@ -8,10 +8,12 @@ import {
 } from './lockProcessInstance';
 import {
   type ProcessPhaseWithProfile,
+  assertPastPhasesUnchanged,
   assertPhaseRowInvariants,
   listPhases,
   phaseIdOf,
   reconcilePhases,
+  toInstanceDataPhase,
 } from './phaseHelpers';
 import { getInstancePhases } from './schemas/instanceData';
 import { updateTransitionsForProcess } from './updateTransitionsForProcess';
@@ -56,6 +58,7 @@ export const writePhasesInTx = async <T>({
   locked,
   write,
   syncTransitions = true,
+  storedStatus = locked.status,
 }: {
   tx: TransactionType;
   processInstanceId: string;
@@ -63,6 +66,8 @@ export const writePhasesInTx = async <T>({
   write: (tx: TransactionType, stored: StoredPhases) => Promise<T>;
   // False when the caller syncs transitions itself after the write.
   syncTransitions?: boolean;
+  // The status before this save, when `locked` carries the one it leaves.
+  storedStatus?: LockedProcessInstance['status'];
 }): Promise<{ result: T; phases: ProcessPhaseWithProfile[] }> => {
   const before = await listPhasesForWrite({
     tx,
@@ -87,6 +92,14 @@ export const writePhasesInTx = async <T>({
     rows: listed,
     previousRowIds: new Set(before.map(({ id }) => id)),
   });
+
+  if (storedStatus !== ProcessStatus.DRAFT) {
+    assertPastPhasesUnchanged({
+      before: before.map(toInstanceDataPhase),
+      after: phases.map(toInstanceDataPhase),
+      currentStateId: locked.currentStateId,
+    });
+  }
 
   if (syncTransitions && locked.status !== ProcessStatus.DRAFT) {
     await updateTransitionsForProcess({

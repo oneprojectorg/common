@@ -27,6 +27,7 @@ import {
   loadInstancePhases,
   loadPhaseRows,
   loadTransitionLinks,
+  setupPublishedDecisionAtThirdPhase,
 } from '../../../test/helpers/phaseTestUtils';
 import {
   createIsolatedSession,
@@ -2130,5 +2131,72 @@ describe.concurrent('voting enrolment rule', () => {
 
     const after = await caller.decision.getInstance({ instanceId });
     expect(after.instanceData?.phases).toEqual(before.instanceData?.phases);
+  });
+});
+
+describe.concurrent('updateDecisionInstance past phases', () => {
+  // The phase list as the process builder sends it on save.
+  const toBuilderPhases = (rows: Awaited<ReturnType<typeof loadPhaseRows>>) =>
+    rows.map((row) => ({
+      phaseId: row.data.phaseId ?? row.slug,
+      name: row.name,
+      description: row.data.description,
+      startDate: row.data.startDate,
+      endDate: row.data.endDate,
+      rules: row.data.rules ?? {},
+    }));
+
+  it('saves the builder phase list with new text on a past phase and a new end date on the current one', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { instanceId, adminCaller } =
+      await setupPublishedDecisionAtThirdPhase(task, onTestFinished);
+    const endDate = new Date(
+      Date.now() + 30 * 24 * 60 * 60 * 1000,
+    ).toISOString();
+    const phases = toBuilderPhases(await loadPhaseRows(instanceId)).map(
+      (phase) =>
+        phase.phaseId === 'review'
+          ? { ...phase, description: 'Narrow the field' }
+          : phase.phaseId === 'voting'
+            ? { ...phase, endDate }
+            : phase,
+    );
+
+    await adminCaller.decision.updateDecisionInstance({ instanceId, phases });
+
+    expect(await loadPhaseRows(instanceId)).toMatchObject([
+      { data: { phaseId: 'submission' } },
+      { data: { phaseId: 'review', description: 'Narrow the field' } },
+      { data: { phaseId: 'voting', endDate } },
+      { data: { phaseId: 'results' } },
+    ]);
+  });
+
+  it('refuses a builder phase list without a phase the decision has left', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { instanceId, adminCaller } =
+      await setupPublishedDecisionAtThirdPhase(task, onTestFinished);
+    const rowsBefore = await loadPhaseRows(instanceId);
+
+    await expect(
+      adminCaller.decision.updateDecisionInstance({
+        instanceId,
+        phases: toBuilderPhases(rowsBefore).filter(
+          ({ phaseId }) => phaseId !== 'review',
+        ),
+      }),
+    ).rejects.toMatchObject({
+      cause: {
+        name: 'ValidationError',
+        message:
+          'Phases up to the current phase cannot be removed, added or reordered',
+      },
+    });
+
+    expect(await loadPhaseRows(instanceId)).toEqual(rowsBefore);
   });
 });
