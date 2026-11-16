@@ -112,7 +112,6 @@ export const EmailInviteField = ({
           {emailBadges.map((email) => (
             <Tag
               key={email}
-              size="lg"
               onRemove={() => removeEmailBadge(email)}
               removeLabel={t('inviteRemoveEmailAction', { email })}
             >

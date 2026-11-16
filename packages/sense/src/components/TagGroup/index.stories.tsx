@@ -1,3 +1,4 @@
+import type { BadgeSize } from '@op/sense/Badge';
 import { Tag, TagGroup } from '@op/sense/TagGroup';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
@@ -44,15 +45,32 @@ export const Variants: Story = {
   ),
 };
 
-export const Large: Story = {
+const sizes: BadgeSize[] = ['default', 'md', 'lg'];
+
+export const Sizes: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          '`Tag` passes `size` straight through to the underlying `Badge`, so a tag at a given size has the same height, text size and icon size as a `Badge` at that size. Tags default to `md`. The remove icon scales with the size.',
+      },
+    },
+  },
   render: () => (
-    <TagGroup label="Focus areas" className="max-w-md">
-      {focusAreas.map((area) => (
-        <Tag key={area} size="lg">
-          {area}
-        </Tag>
+    <div className="flex max-w-md flex-col gap-6">
+      {sizes.map((size) => (
+        <TagGroup key={size} label={size}>
+          {focusAreas.slice(0, 3).map((area) => (
+            <Tag key={area} size={size}>
+              {area}
+            </Tag>
+          ))}
+          <Tag size={size} onRemove={() => {}} removeLabel="Remove Mutual aid">
+            Mutual aid
+          </Tag>
+        </TagGroup>
       ))}
-    </TagGroup>
+    </div>
   ),
 };
 
