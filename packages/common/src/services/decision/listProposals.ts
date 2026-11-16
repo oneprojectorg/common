@@ -21,6 +21,7 @@ import { getProposalDocumentsContent } from './getProposalDocumentsContent';
 import { getProposalRelationshipData } from './getProposalRelationshipData';
 import { getSelectedProposalIds } from './getSelectedProposalIds';
 import { ballotRankPosition } from './getVoterBallot';
+import type { InstanceWithPhases } from './instancePhases';
 import { resolvePhaseAdvancement } from './proposalAdvancement';
 import {
   isAnonymousAuthor,
@@ -31,7 +32,6 @@ import { parseProposalData } from './proposalDataSchema';
 import { buildProposalListPreview } from './proposalListPreview';
 import { resolveProposalListScope } from './resolveProposalListScope';
 import { resolveProposalTemplatesByFormSchemaId } from './resolveProposalTemplate';
-import { getInstancePhases } from './schemas/instanceData';
 import { isPostSubmissionEditingAllowed } from './utils/phaseSettings';
 
 export interface ListProposalsInput {
@@ -314,7 +314,7 @@ export const listProposals = async ({
   );
 
   const postSubmissionEditingAllowed = isPostSubmissionEditingAllowed({
-    phases: getInstancePhases(instance.instanceData),
+    phases: instance.phases,
     currentPhaseId: instance.currentStateId,
   });
 
@@ -427,7 +427,9 @@ async function getListAdvanceTarget({
   instance,
   includesNotAdvanced,
 }: {
-  instance: Parameters<typeof resolvePhaseAdvancement>[0]['instance'];
+  instance: InstanceWithPhases<
+    Parameters<typeof resolvePhaseAdvancement>[0]['instance']
+  >;
   includesNotAdvanced: boolean;
 }): Promise<ProposalAdvanceTarget | undefined> {
   if (!includesNotAdvanced) {

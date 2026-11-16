@@ -4,17 +4,10 @@ import { useRequiredUser } from '@/utils/UserProvider';
 import { DATE_TIME_UTC_FORMAT, formatDate } from '@/utils/formatting';
 import { getDecisionCommonProperties } from '@op/analytics/client-utils';
 import { trpc } from '@op/api/client';
-import { type ProcessInstance, ProposalStatus } from '@op/api/encoders';
-import {
-  type Proposal,
-  type ProposalDataInput,
-  type ProposalTemplateSchema,
-  parseProposalData,
-} from '@op/common/client';
+import type { ProcessInstance } from '@op/api/encoders';
+import type { Proposal } from '@op/common/client';
 import { logger } from '@op/logging/client';
-import { Badge } from '@op/sense/Badge';
 import { Header2 } from '@op/sense/Header';
-import { SplitPane } from '@op/sense/SplitPane';
 import { toast } from '@op/sense/Toast';
 import { useLocale } from 'next-intl';
 import { usePostHog } from 'posthog-js/react';
@@ -22,63 +15,28 @@ import {
   type ReactNode,
   useCallback,
   useEffect,
-  useMemo,
   useRef,
   useState,
 } from 'react';
 
 import { useRouter, useTranslations } from '@/lib/i18n';
 
-import {
-  CollaborativeDocProvider,
-  CollaborativePresence,
-  useCollaborativeDoc,
-  useOptionalCollaborativeDoc,
-} from '../../collaboration';
+import { CollaborativePresence } from '../../collaboration';
 import { ProposalAttachments } from '../ProposalAttachments';
 import { ProposalEditorLayout } from '../ProposalEditorLayout';
 import { ProposalEditorSkeleton } from '../ProposalEditorSkeleton';
 import { ProposalInfoModal } from '../ProposalInfoModal';
-import { compileProposalSchema } from '../forms/proposal';
-import { schemaHasOptions } from '../proposalTemplate';
 import { CustomFormModal, type CustomFormValues } from './CustomFormModal';
-import { ProposalFormRenderer } from './ProposalFormRenderer';
+import {
+  ProposalFormFields,
+  ProposalFormProvider,
+  useProposalForm,
+} from './ProposalForm';
 import { SubmitProposalConfirmModal } from './SubmitProposalConfirmModal';
 import { useOptionalVersionPreview } from './VersionPreviewContext';
-import { getProposalEditorTemplate } from './getProposalEditorTemplate';
 import { handleMutationError } from './handleMutationError';
 import { getFragmentText } from './proposalPreviewContent';
 import { requiresSubmitConfirmation } from './submitConfirmation';
-import { useProposalCollabToken } from './useProposalCollabToken';
-import { useProposalDraft } from './useProposalDraft';
-import { useProposalValidation } from './useProposalValidation';
-
-// Create a version snapshot after 60 seconds without local edits.
-const VERSION_INTERVAL_SECONDS = 60;
-
-interface ProposalEditorProps {
-  instance: ProcessInstance;
-  backHref: string;
-  proposal: Proposal;
-  isEditMode?: boolean;
-  asideHeaderIcons?: ReactNode;
-  /**
-   * Edits a proposal developed from origins. The origin pane sits beside the
-   * form, a draft is advanced with `submitDevelopedProposal` from an
-   * "Advance" action, and the participant steps (submit confirmation, custom
-   * form, info modal, anonymous promote) and attachments are left out.
-   */
-  develop?: DevelopEditorConfig;
-}
-
-export interface DevelopEditorConfig {
-  /** Shown beside the form in a split pane; the form pane is first on a phone. */
-  originPane: { label: string; content: ReactNode };
-  /** Replaces the edit heading above the form. */
-  heading: string;
-  /** A paragraph under the heading. */
-  description?: string;
-}
 
 export function ProposalEditor({
   instance,
@@ -86,77 +44,34 @@ export function ProposalEditor({
   proposal,
   isEditMode = false,
   asideHeaderIcons,
-  develop,
-}: ProposalEditorProps) {
-  const { user } = useRequiredUser();
-  const t = useTranslations();
-
-  // -- Collaboration ---------------------------------------------------------
-
-  const getToken = useProposalCollabToken(proposal.profileId);
-
-  const collaborationDocId = useMemo(() => {
-    const { collaborationDocId: existingId } = parseProposalData(
-      proposal?.proposalData,
-    );
-
-    if (existingId) {
-      return existingId;
-    }
-
-    throw new Error(
-      'Legacy proposals without collaboration documents cannot be edited',
-    );
-  }, [proposal?.proposalData]);
-
-  const userName =
-    user.profile?.name ?? t('decisions.proposals.anonymousAuthor');
-
-  // -- Schema compilation ----------------------------------------------------
-
-  const proposalTemplate = getProposalEditorTemplate({
-    proposal,
-    instanceTemplate: instance.instanceData.proposalTemplate,
-  });
-
-  if (!proposalTemplate) {
-    throw new Error('Proposal template not found');
-  }
-
-  const existingCollab = useOptionalCollaborativeDoc();
-
-  const inner = (
-    <ProposalEditorInner
+}: {
+  instance: ProcessInstance;
+  backHref: string;
+  proposal: Proposal;
+  isEditMode?: boolean;
+  asideHeaderIcons?: ReactNode;
+}) {
+  return (
+    <ProposalFormProvider
       instance={instance}
-      backHref={backHref}
       proposal={proposal}
       isEditMode={isEditMode}
-      asideHeaderIcons={asideHeaderIcons}
-      collaborationDocId={collaborationDocId}
-      proposalTemplate={proposalTemplate}
-      develop={develop}
-    />
-  );
-
-  if (existingCollab) {
-    return inner;
-  }
-
-  return (
-    <CollaborativeDocProvider
-      docId={collaborationDocId}
-      getToken={getToken}
-      userName={userName}
       fallback={<ProposalEditorSkeleton />}
     >
-      {inner}
-    </CollaborativeDocProvider>
+      <ProposalEditorInner
+        instance={instance}
+        backHref={backHref}
+        proposal={proposal}
+        isEditMode={isEditMode}
+        asideHeaderIcons={asideHeaderIcons}
+      />
+    </ProposalFormProvider>
   );
 }
 
 /**
- * Inner component rendered inside `CollaborativeDocProvider` so it can
- * access the Yjs document for client-side schema validation.
+ * The edit page around the proposal form: header, presence, attachments, the
+ * info modal and the submission flow.
  */
 function ProposalEditorInner({
   instance,
@@ -164,13 +79,12 @@ function ProposalEditorInner({
   proposal,
   isEditMode,
   asideHeaderIcons,
-  collaborationDocId,
-  proposalTemplate,
-  develop,
-}: Omit<ProposalEditorProps, 'isEditMode'> & {
+}: {
+  instance: ProcessInstance;
+  backHref: string;
+  proposal: Proposal;
   isEditMode: boolean;
-  collaborationDocId: string;
-  proposalTemplate: ProposalTemplateSchema;
+  asideHeaderIcons?: ReactNode;
 }) {
   const router = useRouter();
   const locale = useLocale();
@@ -182,19 +96,18 @@ function ProposalEditorInner({
   // Anon visitors get sent back with ?promote=1 so PromoteAccountModal offers an
   // upgrade. `isAnonymous` is session-derived, not the stale DB relation.
   const isAnonymous = Boolean(user?.isAnonymous);
-  const { ydoc, provider, isSynced } = useCollaborativeDoc();
   const versionPreview = useOptionalVersionPreview();
+  const {
+    state: { draft, isDraft },
+    actions: { validate, save },
+  } = useProposalForm();
 
   const [showInfoModal, setShowInfoModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showCustomFormModal, setShowCustomFormModal] = useState(false);
   const [showSubmitConfirm, setShowSubmitConfirm] = useState(false);
   const isPreviewMode = Boolean(versionPreview);
-  const pendingVersionTimeoutRef = useRef<number | null>(null);
   const submitInFlightRef = useRef(false);
-
-  const isDraft = isEditMode && proposal?.status === ProposalStatus.DRAFT;
-  const isDevelopedProposal = Boolean(develop);
 
   // Look up the optional form attached to this decision profile for the
   // current phase. A profile can attach a form per phase (tagged with
@@ -210,7 +123,7 @@ function ProposalEditorInner({
       phaseId: instance.currentStateId ?? undefined,
       initialPhaseId,
     },
-    { enabled: Boolean(instance.profileId) && isDraft && !isDevelopedProposal },
+    { enabled: Boolean(instance.profileId) && isDraft },
   );
 
   // -- Instance config -------------------------------------------------------
@@ -220,20 +133,6 @@ function ProposalEditorInner({
   const proposalInfoContent = instance.instanceData?.fieldValues
     ?.proposalInfoContent as string | undefined;
 
-  // -- Draft management ------------------------------------------------------
-
-  const { draft, draftRef, handleFieldChange } = useProposalDraft({
-    proposal,
-    isEditMode,
-    collaborationDocId,
-  });
-
-  // -- Schema compilation ----------------------------------------------------
-
-  const templateRef = useRef(proposalTemplate);
-  templateRef.current = proposalTemplate;
-
-  const proposalFields = compileProposalSchema(proposalTemplate);
   const previewTitle = getFragmentText(versionPreview?.fragmentContents.title);
   const viewingLabel = versionPreview?.tiptapVersion
     ? t('decisions.proposals.viewingVersionDate', {
@@ -244,10 +143,6 @@ function ProposalEditorInner({
         ),
       })
     : null;
-
-  // -- Validation ------------------------------------------------------------
-
-  const { validate } = useProposalValidation(ydoc, proposalTemplate);
 
   // -- Mutations -------------------------------------------------------------
 
@@ -263,15 +158,6 @@ function ProposalEditorInner({
     onError: (error) => handleMutationError(error, 'submit', t),
   });
 
-  const submitDevelopedProposalMutation =
-    trpc.decision.submitDevelopedProposal.useMutation({
-      onError: (error) => handleMutationError(error, 'submit', t),
-    });
-
-  const updateProposalMutation = trpc.decision.updateProposal.useMutation({
-    onError: (error) => handleMutationError(error, 'update', t),
-  });
-
   const submitCustomFormMutation = trpc.customForm.submit.useMutation({
     onError: (error) => handleMutationError(error, 'submit', t),
   });
@@ -282,71 +168,13 @@ function ProposalEditorInner({
 
   // Show info modal on mount for new/draft proposals
   useEffect(() => {
-    if (
-      (!isEditMode || isDraft) &&
-      !isDevelopedProposal &&
-      proposalInfoTitle &&
-      proposalInfoContent
-    ) {
+    if ((!isEditMode || isDraft) && proposalInfoTitle && proposalInfoContent) {
       setShowInfoModal(true);
     }
-  }, [
-    isEditMode,
-    isDraft,
-    isDevelopedProposal,
-    proposalInfoTitle,
-    proposalInfoContent,
-  ]);
-
-  useEffect(() => {
-    if (!provider || !isSynced || isPreviewMode) {
-      return;
-    }
-
-    const scheduleVersionOnLocalChange = (transaction: { local: boolean }) => {
-      if (!transaction.local) {
-        return;
-      }
-
-      if (pendingVersionTimeoutRef.current !== null) {
-        window.clearTimeout(pendingVersionTimeoutRef.current);
-      }
-
-      pendingVersionTimeoutRef.current = window.setTimeout(() => {
-        pendingVersionTimeoutRef.current = null;
-
-        provider.createVersion(undefined, true);
-      }, VERSION_INTERVAL_SECONDS * 1000);
-    };
-
-    ydoc.on('afterTransaction', scheduleVersionOnLocalChange);
-
-    return () => {
-      ydoc.off('afterTransaction', scheduleVersionOnLocalChange);
-
-      if (pendingVersionTimeoutRef.current !== null) {
-        window.clearTimeout(pendingVersionTimeoutRef.current);
-        pendingVersionTimeoutRef.current = null;
-      }
-    };
-  }, [isPreviewMode, isSynced, provider, ydoc]);
+  }, [isEditMode, isDraft, proposalInfoTitle, proposalInfoContent]);
 
   const finalizeSubmit = useCallback(async () => {
     const didSubmitDraft = isDraft && Boolean(proposal);
-
-    if (didSubmitDraft && isDevelopedProposal) {
-      await submitDevelopedProposalMutation.mutateAsync({
-        proposalId: proposal.id,
-      });
-      toast.success(
-        t('decisions.developEditor.advancedToast', {
-          title: draftRef.current.title || t('decisions.develop.untitledEntry'),
-        }),
-      );
-      router.push(backHref);
-      return;
-    }
-
     if (didSubmitDraft && proposal) {
       await submitProposalMutation.mutateAsync({
         proposalId: proposal.id,
@@ -360,18 +188,13 @@ function ProposalEditorInner({
     );
   }, [
     isDraft,
-    isDevelopedProposal,
     proposal,
     submitProposalMutation,
-    submitDevelopedProposalMutation,
-    draftRef,
-    t,
     router,
     isAnonymous,
     backHref,
   ]);
 
-  // Reads the refs at call time: the user can keep typing with the dialog open.
   const performSubmit = useCallback(async () => {
     // A ref, not `isSubmitting`: the confirm dialog's action button is a plain
     // Button that stays clickable through its exit animation, and state read at
@@ -381,46 +204,17 @@ function ProposalEditorInner({
     }
     submitInFlightRef.current = true;
 
-    const currentDraft = draftRef.current;
-    const template = templateRef.current;
-
     setIsSubmitting(true);
 
     try {
-      if (!proposal) {
-        throw new Error('No proposal to update');
-      }
-
-      const categorySchema = template.properties?.category;
-      const hasCategories =
-        typeof categorySchema === 'object' && schemaHasOptions(categorySchema);
-
-      const proposalData: ProposalDataInput = {
-        ...parseProposalData(proposal.proposalData),
-        collaborationDocId,
-        category: hasCategories
-          ? currentDraft.category.length > 0
-            ? currentDraft.category
-            : undefined
-          : undefined,
-        budget: currentDraft.budget ?? undefined,
-      };
-
-      await updateProposalMutation.mutateAsync({
-        proposalId: proposal.id,
-        data: {
-          title: currentDraft.title,
-          proposalData,
-          ...(!isDraft ? { checkpointVersion: { type: 'update' } } : {}),
-        },
-      });
+      await save();
 
       // The custom form gates proposal submission only (the draft -> submit
       // transition). The phase params select the form tied to the current
       // phase; voting-phase forms are gated separately on the voting page.
       // Resolve via the query cache (fetch, not hook state) so a click before
       // the subscription resolves still routes through the required form.
-      if (isDraft && !isDevelopedProposal && instance.profileId) {
+      if (isDraft && instance.profileId) {
         const form = await utils.customForm.getForProfile.fetch({
           profileId: instance.profileId,
           phaseId: instance.currentStateId ?? undefined,
@@ -443,16 +237,12 @@ function ProposalEditorInner({
       setIsSubmitting(false);
     }
   }, [
-    collaborationDocId,
-    proposal,
+    save,
     isDraft,
-    isDevelopedProposal,
     instance.profileId,
     instance.currentStateId,
     initialPhaseId,
     utils,
-    updateProposalMutation,
-    draftRef,
     finalizeSubmit,
   ]);
 
@@ -477,22 +267,13 @@ function ProposalEditorInner({
       return;
     }
 
-    if (
-      !isDevelopedProposal &&
-      requiresSubmitConfirmation({ instance, isDraft })
-    ) {
+    if (requiresSubmitConfirmation({ instance, isDraft })) {
       setShowSubmitConfirm(true);
       return;
     }
 
     void performSubmit();
-  }, [
-    validateWithToast,
-    instance,
-    isDraft,
-    isDevelopedProposal,
-    performSubmit,
-  ]);
+  }, [validateWithToast, instance, isDraft, performSubmit]);
 
   const handleConfirmSubmit = useCallback(() => {
     // The dialog closes before the submission starts: `AlertDialogAction` is a
@@ -551,65 +332,29 @@ function ProposalEditorInner({
 
   const editorBody = (
     <>
-      <ProposalFormRenderer
-        fields={proposalFields}
-        draft={draft}
-        decisionProfileId={instance.profileId ?? null}
-        onFieldChange={handleFieldChange}
-        mode={isPreviewMode ? 'preview-version' : 'edit-collaborative'}
-        previewVersionFragmentContents={versionPreview?.fragmentContents}
-      />
+      <ProposalFormFields />
 
-      {develop ? null : (
-        <div className="border-t pt-6 sm:pt-10">
-          <ProposalAttachments
-            proposalId={proposal.id}
-            attachments={
-              proposal.attachments?.map((pa) => ({
-                id: pa.attachmentId,
-                fileName:
-                  pa.attachment?.fileName ??
-                  t('decisions.proposals.unknownAuthor'),
-                fileSize: pa.attachment?.fileSize ?? null,
-                url: pa.attachment?.url,
-              })) ?? []
-            }
-            onMutate={() =>
-              utils.decision.getProposal.invalidate({
-                profileId: proposal.profileId,
-              })
-            }
-          />
-        </div>
-      )}
+      <div className="border-t pt-6 sm:pt-10">
+        <ProposalAttachments
+          proposalId={proposal.id}
+          attachments={
+            proposal.attachments?.map((pa) => ({
+              id: pa.attachmentId,
+              fileName:
+                pa.attachment?.fileName ??
+                t('decisions.proposals.unknownAuthor'),
+              fileSize: pa.attachment?.fileSize ?? null,
+              url: pa.attachment?.url,
+            })) ?? []
+          }
+          onMutate={() =>
+            utils.decision.getProposal.invalidate({
+              profileId: proposal.profileId,
+            })
+          }
+        />
+      </div>
     </>
-  );
-
-  const formHeading =
-    develop?.heading ??
-    (isEditMode
-      ? t('decisions.proposals.editProposalTitle')
-      : t('decisions.proposals.createProposalTitle'));
-
-  const formColumn = (
-    // In develop the column fills its pane; the split pane bounds the width.
-    <div
-      className={
-        develop
-          ? 'flex flex-col gap-8'
-          : 'mx-auto flex w-full max-w-136 flex-col gap-6 sm:gap-10'
-      }
-    >
-      {develop?.description ? (
-        <div className="flex flex-col gap-2">
-          <Header2>{formHeading}</Header2>
-          <p className="text-base text-foreground">{develop.description}</p>
-        </div>
-      ) : (
-        <Header2>{formHeading}</Header2>
-      )}
-      {editorBody}
-    </div>
   );
 
   return (
@@ -621,23 +366,13 @@ function ProposalEditorInner({
           <span className="truncate text-sm text-muted-foreground">
             {viewingLabel}
           </span>
-        ) : isDevelopedProposal && isEditMode && !isDraft ? (
-          <Badge variant="success">
-            {t('decisions.developEditor.advancedStatus')}
-          </Badge>
         ) : undefined
-      }
-      submitLabel={
-        isDevelopedProposal && isDraft
-          ? t('decisions.developEditor.advanceAction')
-          : undefined
       }
       onSubmitProposal={handleSubmitProposal}
       isSubmitting={isSubmitting}
       isEditMode={isEditMode}
       isDraft={isDraft}
       readOnlyMode={isPreviewMode}
-      allowShare={!develop}
       presenceSlot={<CollaborativePresence />}
       asideHeaderIcons={asideHeaderIcons}
       proposalProfileId={proposal.profileId}
@@ -645,33 +380,22 @@ function ProposalEditorInner({
     >
       {/* Formatting is per-field now: each prose editor renders its own bubble
           menu on the selection, so there is no toolbar row above the form. */}
-      {develop ? (
-        <div className="flex h-full min-h-0 flex-col">
-          <SplitPane
-            className="mx-auto w-full max-w-6xl"
-            defaultMobileTabId="form"
-          >
-            <SplitPane.Pane
-              id="origin"
-              label={develop.originPane.label}
-              className="sm:pt-8"
-            >
-              {develop.originPane.content}
-            </SplitPane.Pane>
-            <SplitPane.Pane id="form" label={formHeading} className="sm:pt-8">
-              {formColumn}
-            </SplitPane.Pane>
-          </SplitPane>
-        </div>
-      ) : (
-        <div className="grid h-full min-h-0 grid-cols-1 grid-rows-[1fr]">
-          <div className="relative min-h-0 overflow-y-auto">
-            <div className="px-4 py-8 sm:px-6 sm:py-14">{formColumn}</div>
+      <div className="grid h-full min-h-0 grid-cols-1 grid-rows-[1fr]">
+        <div className="relative min-h-0 overflow-y-auto">
+          <div className="px-4 py-8 sm:px-6 sm:py-14">
+            <div className="mx-auto flex w-full max-w-136 flex-col gap-6 sm:gap-10">
+              <Header2>
+                {isEditMode
+                  ? t('decisions.proposals.editProposalTitle')
+                  : t('decisions.proposals.createProposalTitle')}
+              </Header2>
+              {editorBody}
+            </div>
           </div>
         </div>
-      )}
+      </div>
 
-      {!develop && proposalInfoTitle && proposalInfoContent && (
+      {proposalInfoTitle && proposalInfoContent && (
         <ProposalInfoModal
           isOpen={showInfoModal}
           onClose={handleCloseInfoModal}

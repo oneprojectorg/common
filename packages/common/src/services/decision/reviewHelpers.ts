@@ -16,7 +16,10 @@ import { decisionPermission } from './permissions';
 import { getCurrentProposalHistoryIdForAssignment } from './proposal/history';
 import { type ProposalData, parseProposalData } from './proposalDataSchema';
 import { isReviewOutOfDate } from './review/staleness';
-import type { DecisionInstanceData } from './schemas/instanceData';
+import type {
+  DecisionInstanceData,
+  PhaseInstanceData,
+} from './schemas/instanceData';
 import { isInstanceCurrentPhase } from './utils/instance';
 import { isPhaseAtOrBefore } from './utils/phaseOrder';
 import { getPhaseReviewSettings } from './utils/phaseSettings';
@@ -255,6 +258,7 @@ export interface PhaseReviewsReadContext {
   profileId: string | null;
   currentStateId: string | null;
   instanceData: DecisionInstanceData;
+  phases: readonly PhaseInstanceData[];
 }
 
 /**
@@ -301,13 +305,14 @@ export async function canReadPhaseReviews({
 
   // No peeking past the current phase: the target must be the current phase
   // or an earlier one in the instance's phase ordering.
-  if (
-    !isPhaseAtOrBefore(instance.instanceData, phaseId, instance.currentStateId)
-  ) {
+  if (!isPhaseAtOrBefore(instance, phaseId, instance.currentStateId)) {
     return false;
   }
 
-  return getPhaseReviewSettings(instance.instanceData, phaseId).openReviews;
+  return getPhaseReviewSettings(
+    { config: instance.instanceData.config, phases: instance.phases },
+    phaseId,
+  ).openReviews;
 }
 
 /** `canReadPhaseReviews`, but throws `UnauthorizedError` on denial. */
@@ -457,7 +462,10 @@ export async function assertReviewAssignmentContext({
     // Reviews are validated and rendered against the rubric of the phase
     // their assignment belongs to.
     rubricTemplate: getPhaseRubricTemplate(
-      instance.instanceData,
+      {
+        rubricTemplate: instance.instanceData.rubricTemplate,
+        phases: instance.phases,
+      },
       assignment.phaseId,
     ),
   };

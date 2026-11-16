@@ -1,4 +1,4 @@
-import { TestDecisionsDataManager } from '@op/common/testing';
+import { TestDecisionsDataManager, emptyBlobPhases } from '@op/common/testing';
 import { db } from '@op/db/client';
 import { describe, expect, it } from 'vitest';
 
@@ -69,6 +69,10 @@ describe.concurrent('deleteDecision', () => {
     const [setup, otherSetup] = await Promise.all([
       testData.createDecisionSetup({ instanceCount: 1, grantAccess: true }),
       testData.createDecisionSetup({ instanceCount: 1, grantAccess: true }),
+    ]);
+    await Promise.all([
+      emptyBlobPhases(setup.instance.instance.id),
+      emptyBlobPhases(otherSetup.instance.instance.id),
     ]);
     const [caller, otherCaller] = await Promise.all([
       createAuthenticatedCaller(setup.userEmail),

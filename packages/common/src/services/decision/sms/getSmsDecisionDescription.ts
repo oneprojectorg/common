@@ -31,7 +31,7 @@ export async function getSmsDecisionDescription({
     throw new NotFoundError('Decision', decisionSlug);
   }
 
-  const { id, instanceData, currentStateId } = processInstance;
+  const { id, instanceData, currentStateId, phases } = processInstance;
   const enrolment = await findVoterEnrolment({
     processInstanceId: id,
     authUserId,
@@ -47,6 +47,6 @@ export async function getSmsDecisionDescription({
     name,
     slug,
     proposalCount,
-    ...summarizeCurrentPhase({ instanceData, currentStateId }),
+    ...summarizeCurrentPhase({ phases, currentStateId }),
   };
 }

@@ -7,6 +7,7 @@ import {
 } from '@op/db/schema';
 
 import { memberProfileIds } from '../../access';
+import { resolvePhasesForAll } from '../instancePhases';
 import { summarizeCurrentPhase } from '../summarizeCurrentPhase';
 
 export interface SmsDecisionListItem {
@@ -22,6 +23,7 @@ export async function listSmsDecisions({
 }): Promise<Array<SmsDecisionListItem>> {
   const rows = await db
     .select({
+      id: processInstances.id,
       name: profiles.name,
       slug: profiles.slug,
       instanceData: processInstances.instanceData,
@@ -38,12 +40,13 @@ export async function listSmsDecisions({
     )
     .orderBy(asc(profiles.name), asc(profiles.id));
 
-  return rows
-    .map(({ name, slug, instanceData, currentStateId }) => ({
+  const instances = await resolvePhasesForAll({ instances: rows });
+
+  return instances
+    .map(({ name, slug, phases, currentStateId }) => ({
       name,
       slug,
-      votingOpen: summarizeCurrentPhase({ instanceData, currentStateId })
-        .votingOpen,
+      votingOpen: summarizeCurrentPhase({ phases, currentStateId }).votingOpen,
     }))
     .sort((a, b) => Number(b.votingOpen) - Number(a.votingOpen));
 }

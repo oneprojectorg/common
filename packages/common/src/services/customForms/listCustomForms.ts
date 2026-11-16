@@ -2,7 +2,7 @@ import { db } from '@op/db/client';
 import type { CustomForm } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 
-import { assertCustomFormAdmin } from './customFormAuth';
+import { assertCustomFormAdmin, readInstancePhaseSet } from './customFormAuth';
 import type { ListCustomFormsInput } from './schemas/customForm';
 import { getEffectiveFormPhase } from './utils';
 
@@ -22,8 +22,10 @@ export const listCustomForms = async ({
   // The rows are keyed on the same `profileId` the authorization resolves, so
   // both can be in flight at once. `Promise.all` rejects on a denial before any
   // row is returned.
-  const [process, forms] = await Promise.all([
-    assertCustomFormAdmin({ user, profileId: input.profileId }),
+  const [{ initialPhaseId }, forms] = await Promise.all([
+    assertCustomFormAdmin({ user, profileId: input.profileId }).then(
+      ({ instance }) => readInstancePhaseSet({ instance }),
+    ),
     db.query.customForms.findMany({
       where: {
         profileId: input.profileId,
@@ -38,7 +40,7 @@ export const listCustomForms = async ({
     ...form,
     phaseId: getEffectiveFormPhase({
       schema: form.schema,
-      initialPhaseId: process.initialPhaseId,
+      initialPhaseId,
     }),
   }));
 };

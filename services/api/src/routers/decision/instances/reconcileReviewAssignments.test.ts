@@ -1,5 +1,4 @@
 import {
-  type DecisionInstanceData,
   type ReviewsScope,
   addCategoryReviewer,
   advancePhase,
@@ -9,6 +8,7 @@ import {
   reconcileReviewAssignments,
   removeCategoryReviewer,
   updateProposal,
+  resolvePhases,
 } from '@op/common';
 import { TestDecisionsDataManager } from '@op/common/testing';
 import { and, db, eq, inArray } from '@op/db/client';
@@ -216,10 +216,7 @@ async function advanceToReviewPhase(instanceId: string) {
   const result = await db.transaction(async (tx) =>
     advancePhase({
       db: tx,
-      instance: {
-        id: dbInstance.id,
-        instanceData: dbInstance.instanceData as DecisionInstanceData,
-      },
+      instance: await resolvePhases({ instance: dbInstance }),
       fromPhaseId: 'submission',
       toPhaseId: 'review',
       triggeredByProfileId: null,

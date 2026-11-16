@@ -3,7 +3,7 @@ import { ProcessStatus } from '@op/db/schema';
 
 import { deletePendingReviewAssignments } from './deletePendingReviewAssignments';
 import { getEligibleReviewerProfileIds } from './getEligibleReviewerProfileIds';
-import type { DecisionInstanceData } from './schemas/instanceData';
+import { getPhases } from './instancePhases';
 import { assertInstancePhase } from './utils/instance';
 import { isReviewPhase } from './utils/phaseSettings';
 
@@ -45,10 +45,8 @@ export async function pruneReviewAssignmentsForMember({
     return { skipped: 'instance has no current phase' };
   }
 
-  const instanceData = instance.instanceData as DecisionInstanceData;
-
   const currentPhase = assertInstancePhase({
-    instance: { instanceData },
+    instance: { phases: await getPhases({ instance }) },
     phaseId: currentPhaseId,
   });
   if (!isReviewPhase(currentPhase)) {

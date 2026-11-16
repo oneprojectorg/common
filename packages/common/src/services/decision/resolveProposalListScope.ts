@@ -22,6 +22,7 @@ import {
   getPhaseProposalSqlScope,
 } from './getProposalsForPhase';
 import { getVoterBallot } from './getVoterBallot';
+import { type InstanceWithPhases, getPhases } from './instancePhases';
 import type { ListProposalsInput } from './listProposals';
 import { notSuperseded } from './proposalSupersession';
 import { buildProposalTitleSearchCondition } from './proposalTitleSearch';
@@ -44,7 +45,7 @@ type InstanceScopeRow = Pick<
 
 export interface ProposalListScope {
   /** Instance row reused by callers for template resolution and enrichment. */
-  instance: InstanceScopeRow;
+  instance: InstanceWithPhases<InstanceScopeRow>;
   currentProfileId: string | undefined;
   canManageProposals: boolean;
   profileRoles: NormalizedRole[];
@@ -308,10 +309,12 @@ export const resolveProposalListScope = async ({
     };
   })();
 
-  const [phaseScope, { profileRoles, canManageProposals }] = await Promise.all([
-    phaseScopePromise,
-    accessPromise,
-  ]);
+  const [phaseScope, { profileRoles, canManageProposals }, phases] =
+    await Promise.all([
+      phaseScopePromise,
+      accessPromise,
+      getPhases({ instance }),
+    ]);
 
   // Resolve category-scoped proposal IDs so the same ID set is available to
   // every query the caller builds from `buildWhereClause`.
@@ -459,7 +462,7 @@ export const resolveProposalListScope = async ({
   };
 
   return {
-    instance,
+    instance: { ...instance, phases },
     currentProfileId,
     canManageProposals,
     profileRoles,

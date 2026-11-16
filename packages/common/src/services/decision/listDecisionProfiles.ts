@@ -18,6 +18,7 @@ import {
   getCursorCondition,
 } from '../../utils';
 import { getNormalizedRoles } from '../access';
+import { resolveProfilePhasesForAll } from './instancePhases';
 import {
   type DecisionRolePermissions,
   fromDecisionBitField,
@@ -171,8 +172,12 @@ export const listDecisionProfiles = async ({
     };
   };
 
+  const profilesWithPhases = await resolveProfilePhasesForAll({
+    profiles: profileList,
+  });
+
   // Transform profiles to include proposal/participant counts and access permissions
-  const profilesWithCounts = profileList.map((profile) => {
+  const profilesWithCounts = profilesWithPhases.map((profile) => {
     const { profileUsers: _, ...profileWithoutUsers } = profile;
 
     if (profile.processInstance) {

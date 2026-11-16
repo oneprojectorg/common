@@ -6,13 +6,13 @@ import { NotFoundError, ValidationError } from '../../utils';
 import { invalidateProfileUserAccessCache } from '../access';
 import { assertProposalDevelopAccess } from './assertProposalDevelopAccess';
 import { insertProposalDraft } from './insertProposalDraft';
+import { getPhases } from './instancePhases';
 import {
   activeProposalPredicate,
   phaseEligiblePredicate,
 } from './phaseEligibility';
 import type { ProposalDataInput } from './proposalDataSchema';
 import { resolveProposalDraftInputs } from './proposalDraftInputs';
-import { getInstancePhases } from './schemas/instanceData';
 
 export interface CreateDevelopedProposalInput {
   processInstanceId: string;
@@ -47,12 +47,10 @@ export const createDevelopedProposal = async ({
     throw new ValidationError('Invalid phase in process instance');
   }
 
-  const phases = getInstancePhases(instance.instanceData);
-
   const currentPhase = await assertProposalDevelopAccess({
     instance: {
       profileId: instance.profileId,
-      instanceData: { phases },
+      phases: await getPhases({ instance }),
     },
     phaseId: instance.currentStateId,
     user: { id: authUserId },

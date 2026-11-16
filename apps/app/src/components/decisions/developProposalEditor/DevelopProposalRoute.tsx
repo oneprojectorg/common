@@ -6,26 +6,22 @@ import {
   ProposalRelationshipType,
 } from '@op/api/encoders';
 import { type Proposal, resolveReviewSettings } from '@op/common/client';
-import { Header2 } from '@op/sense/Header';
-import { SplitPane } from '@op/sense/SplitPane';
 import type { JSONContent } from '@tiptap/react';
 import { notFound } from 'next/navigation';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { UserAvatarMenu } from '../../SiteHeader';
-import { DecisionSubpageHeader } from '../DecisionSubpageHeader';
 import { compileProposalSchema } from '../forms/proposal';
-import { ProposalEditor } from '../proposalEditor';
 import { ProposalFormRenderer } from '../proposalEditor/ProposalFormRenderer';
 import { getProposalEditorTemplate } from '../proposalEditor/getProposalEditorTemplate';
 import { decisionRootHref } from '../proposalHrefs';
 import { DevelopOriginColumn } from './DevelopOriginColumn';
+import { DevelopProposalEditor } from './DevelopProposalEditor';
+import { DevelopProposalFrame } from './DevelopProposalFrame';
 
 /**
  * Opens a proposal developed from origins (the target of at least one
- * `developed` relationship) in the proposal editor, with its origin beside the
- * form. Any other proposal is not found on this route.
+ * `developed` relationship) with its origin beside the form. Any other proposal is not found on this route.
  *
  * This is the one access gate. The form is editable only for a caller the
  * server lets develop proposals (an admin or a holder of the Develop
@@ -92,79 +88,61 @@ export function DevelopProposalRoute({
       resolveReviewSettings(instance.instanceData ?? {}, originPhaseId)
         .openReviews);
 
-  const originPane = {
-    label: t('decisions.developEditor.proposalTab'),
-    content: (
-      <DevelopOriginColumn
-        origins={origins}
-        decisionRoot={decisionRootHref({
-          decisionSlug,
-          slug: decisionSlug,
-          instanceId: instance.id,
-        })}
-        originPhaseId={originPhaseId}
-        canReadReviews={canReadReviews}
-      />
-    ),
-  };
+  const originLabel = t('decisions.developEditor.proposalTab');
+  const origin = (
+    <DevelopOriginColumn
+      origins={origins}
+      decisionRoot={decisionRootHref({
+        decisionSlug,
+        slug: decisionSlug,
+        instanceId: instance.id,
+      })}
+      originPhaseId={originPhaseId}
+      canReadReviews={canReadReviews}
+    />
+  );
 
   if (isEditable) {
     return (
-      <div className="flex h-screen bg-background">
-        <ProposalEditor
-          instance={instance}
-          backHref={backHref}
-          proposal={proposal}
-          isEditMode
-          develop={{ originPane, heading, description }}
-        />
-      </div>
+      <DevelopProposalEditor
+        instance={instance}
+        proposal={proposal}
+        backHref={backHref}
+        origin={origin}
+        originLabel={originLabel}
+        heading={heading}
+        description={description}
+      />
     );
   }
 
   return (
-    <div className="flex h-dvh flex-col overflow-hidden bg-background">
-      <DecisionSubpageHeader
-        backHref={backHref}
-        backLabel={t('Back')}
-        accountSlot={<UserAvatarMenu className="hidden sm:block" />}
+    <DevelopProposalFrame
+      backHref={backHref}
+      origin={origin}
+      originLabel={originLabel}
+      heading={heading}
+      description={description}
+      notice={
+        <p className="text-base text-muted-foreground">
+          {t('decisions.developEditor.readOnlyNotice')}
+        </p>
+      }
+    >
+      <ProposalFormRenderer
+        fields={compileProposalSchema(template)}
+        draft={{
+          title: proposal.profile.name ?? '',
+          category: [],
+          budget: null,
+          location: null,
+        }}
+        decisionProfileId={instance.profileId ?? null}
+        onFieldChange={() => {}}
+        mode="preview-version"
+        previewVersionFragmentContents={getStoredFragments(proposal)}
       />
-      <SplitPane className="mx-auto w-full max-w-6xl" defaultMobileTabId="form">
-        <SplitPane.Pane
-          id="origin"
-          label={originPane.label}
-          className="sm:pt-8"
-        >
-          {originPane.content}
-        </SplitPane.Pane>
-        <SplitPane.Pane id="form" label={heading} className="sm:pt-8">
-          <div className="flex flex-col gap-8">
-            <div className="flex flex-col gap-2">
-              <Header2>{heading}</Header2>
-              {description ? (
-                <p className="text-base text-foreground">{description}</p>
-              ) : null}
-              <p className="text-base text-muted-foreground">
-                {t('decisions.developEditor.readOnlyNotice')}
-              </p>
-            </div>
-            <ProposalFormRenderer
-              fields={compileProposalSchema(template)}
-              draft={{
-                title: proposal.profile.name ?? '',
-                category: [],
-                budget: null,
-                location: null,
-              }}
-              decisionProfileId={instance.profileId ?? null}
-              onFieldChange={() => {}}
-              mode="preview-version"
-              previewVersionFragmentContents={getStoredFragments(proposal)}
-            />
-          </div>
-        </SplitPane.Pane>
-      </SplitPane>
-    </div>
+    </DevelopProposalFrame>
   );
 }
 

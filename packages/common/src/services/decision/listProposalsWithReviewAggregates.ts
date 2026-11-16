@@ -25,7 +25,7 @@ import { resolveProposalTemplate } from './resolveProposalTemplate';
 import { isReviewOutOfDate } from './review/staleness';
 import { assertCanReadPhaseReviews } from './reviewHelpers';
 import { instanceOptionalPhaseRefSchema } from './schemas/instance';
-import { getInstancePhases, isLastPhase } from './schemas/instanceData';
+import { isLastPhase } from './schemas/instanceData';
 import {
   type ProposalCategoryItem,
   type ProposalsWithReviewAggregatesList,
@@ -78,7 +78,13 @@ export async function listProposalsWithReviewAggregates(
 
   // Scoring follows the effective phase's rubric (the list is always
   // phase-scoped: explicit `phaseId`, else the current phase).
-  const rubricTemplate = getPhaseRubricTemplate(instance.instanceData, phaseId);
+  const rubricTemplate = getPhaseRubricTemplate(
+    {
+      rubricTemplate: instance.instanceData.rubricTemplate,
+      phases: instance.phases,
+    },
+    phaseId,
+  );
   const scoredCriterionKeys = rubricTemplate
     ? getRubricScoringInfo(rubricTemplate)
         .criteria.filter((c) => c.scored)
@@ -125,10 +131,7 @@ export async function listProposalsWithReviewAggregates(
     // Mirrors `updateProposal`, which also refuses every edit in the results phase.
     isEditable:
       checkPermission({ decisions: permission.UPDATE }, roles) &&
-      !isLastPhase(
-        instance.currentStateId,
-        getInstancePhases(instance.instanceData),
-      ),
+      !isLastPhase(instance.currentStateId, instance.phases),
     phaseProposalIds,
     scoredCriterionKeys,
     rubricTemplate,

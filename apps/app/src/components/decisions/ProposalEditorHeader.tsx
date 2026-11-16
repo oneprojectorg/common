@@ -20,8 +20,6 @@ interface ProposalEditorHeaderProps {
   backHref: string;
   title: string;
   onSubmitProposal: () => void;
-  /** Replaces the submit action's default label. */
-  submitLabel?: string;
   isSubmitting: boolean;
   isEditMode?: boolean;
   isDraft?: boolean;
@@ -48,7 +46,6 @@ export function ProposalEditorHeader({
   backHref,
   title,
   onSubmitProposal,
-  submitLabel,
   isSubmitting,
   isEditMode = false,
   isDraft = false,
@@ -125,10 +122,9 @@ export function ProposalEditorHeader({
               loading={isSubmitting}
             >
               <LuCheck className="size-4" />
-              {submitLabel ??
-                (isEditMode && !isDraft
-                  ? t('Update')
-                  : t('decisions.proposals.submitAction'))}
+              {isEditMode && !isDraft
+                ? t('Update')
+                : t('decisions.proposals.submitAction')}
             </Button>
           )}
           <LocaleChooser />

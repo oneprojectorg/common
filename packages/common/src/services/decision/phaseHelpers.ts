@@ -1,4 +1,11 @@
-import { type TransactionType, db } from '@op/db/client';
+import {
+  type DbClient,
+  type TransactionType,
+  asc,
+  db,
+  eq,
+  inArray,
+} from '@op/db/client';
 import {
   EntityType,
   type ProcessPhase,
@@ -21,6 +28,9 @@ import {
 
 // phaseId and name live on the phase's profile.
 export type PhaseData = Omit<PhaseInstanceData, 'phaseId' | 'name'>;
+
+// TODO: drop phaseId from row data once every reference uses the row id.
+type PhaseRowData = PhaseData & { phaseId?: string };
 
 export { MAX_PHASES_PER_DECISION } from './utils/phaseOrder';
 
@@ -61,6 +71,46 @@ export const insertPhase = async ({
   }
 
   return { phase, profile };
+};
+
+export const listPhasesByInstance = async ({
+  db,
+  processInstanceIds,
+}: {
+  db: DbClient;
+  processInstanceIds: string[];
+}): Promise<Map<string, PhaseInstanceData[]>> => {
+  const phasesByInstance = new Map<string, PhaseInstanceData[]>();
+
+  if (processInstanceIds.length === 0) {
+    return phasesByInstance;
+  }
+
+  const rows = await db
+    .select({
+      processInstanceId: processPhases.processInstanceId,
+      data: processPhases.data,
+      name: profiles.name,
+      slug: profiles.slug,
+    })
+    .from(processPhases)
+    .innerJoin(profiles, eq(profiles.id, processPhases.profileId))
+    .where(inArray(processPhases.processInstanceId, processInstanceIds))
+    .orderBy(
+      asc(processPhases.processInstanceId),
+      asc(processPhases.sortOrder),
+      asc(processPhases.id),
+    );
+
+  for (const { processInstanceId, data: rawData, name, slug } of rows) {
+    const data: PhaseRowData = isPhaseRowData(rawData) ? rawData : {};
+    const phases = phasesByInstance.get(processInstanceId) ?? [];
+    // TODO: use the row id once references stop storing data.phaseId.
+    phases.push({ ...data, phaseId: data.phaseId ?? slug, name });
+    phasesByInstance.set(processInstanceId, phases);
+  }
+
+  return phasesByInstance;
 };
 
 export const assertPhaseSchemasCompile = ({
@@ -198,6 +248,9 @@ const generatePhaseSlug = () => randomUUID().slice(0, 8);
 
 const isJsonObject = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
+
+const isPhaseRowData = (value: unknown): value is PhaseRowData =>
+  isJsonObject(value);
 
 // Shape only; Ajv compiles it when the settings are checked.
 const isSettingsSchema = (value: unknown): value is PhaseSettingsSchema =>

@@ -6,6 +6,7 @@ import { NotFoundError, ValidationError } from '../../utils';
 import { assertProfileAccess } from '../assert';
 import { assertProposalsAllowed } from './assertProposalsAllowed';
 import { finalizeProposalSubmission } from './finalizeProposalSubmission';
+import { getPhases } from './instancePhases';
 import { decisionPermission } from './permissions';
 import type { DecisionInstanceData } from './schemas/instanceData';
 
@@ -67,7 +68,7 @@ export const submitProposal = async ({
   }
 
   assertProposalsAllowed({
-    instance: { instanceData },
+    phases: await getPhases({ instance }),
     phaseId: currentPhaseId,
   });
 
