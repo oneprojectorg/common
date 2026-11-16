@@ -50,6 +50,7 @@ function DatePicker({
 }: DatePickerProps) {
   const reactId = React.useId();
   const inputId = id ?? reactId;
+  const descriptionId = `${inputId}-description`;
 
   const [open, setOpen] = React.useState(false);
   const [inputValue, setInputValue] = React.useState(() => formatDate(value));
@@ -112,6 +113,7 @@ function DatePicker({
             disabled={disabled}
             required={required}
             aria-invalid={errorMessage ? true : undefined}
+            aria-describedby={description ? descriptionId : undefined}
           />
           <InputGroupAddon align="inline-end">
             <PopoverTrigger
@@ -147,7 +149,9 @@ function DatePicker({
           />
         </PopoverContent>
       </Popover>
-      {description ? <FieldDescription>{description}</FieldDescription> : null}
+      {description ? (
+        <FieldDescription id={descriptionId}>{description}</FieldDescription>
+      ) : null}
       {errorMessage ? <FieldError>{errorMessage}</FieldError> : null}
     </div>
   );
