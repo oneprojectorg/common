@@ -210,6 +210,65 @@ describe('ComposeNotificationsDialog awarded amounts', () => {
     ]);
   });
 
+  it('blocks the continue and names the invalid award when one turns invalid under the amounts step', async () => {
+    const { user, update } = renderDialog({ proposals: [alpha, beta] });
+
+    await user.click(screen.getByRole('button', { name: 'Open' }));
+    update({ edits: { alpha: null } });
+
+    const dialog = confirmDialog();
+    expect(
+      within(dialog).getByRole('button', { name: 'Continue' }),
+    ).toHaveProperty('disabled', true);
+    expect(within(dialog).getByRole('alert').textContent).toContain(
+      'Some award amounts are missing or invalid',
+    );
+    expect(
+      within(dialog).getByText('Enter an amount greater than 0'),
+    ).toBeTruthy();
+
+    update({ edits: {} });
+    expect(
+      within(dialog).getByRole('button', { name: 'Continue' }),
+    ).toHaveProperty('disabled', false);
+    expect(within(dialog).queryByRole('alert')).toBeNull();
+  });
+
+  it('blocks the continue when the awards pass the budget under the amounts step', async () => {
+    const { user, update } = renderDialog({
+      proposals: [alpha, beta],
+      processBudget: 13000,
+    });
+
+    await user.click(screen.getByRole('button', { name: 'Open' }));
+    update({ edits: { alpha: 6000 } });
+
+    const dialog = confirmDialog();
+    expect(
+      within(dialog).getByRole('button', { name: 'Continue' }),
+    ).toHaveProperty('disabled', true);
+    expect(within(dialog).getByRole('alert').textContent).toContain(
+      'more than the phase budget',
+    );
+  });
+
+  it('publishes a reordered selection whose winners and amounts did not change', async () => {
+    const { onConfirm, user, update } = renderDialog({
+      proposals: [alpha, beta],
+    });
+
+    await user.click(screen.getByRole('button', { name: 'Open' }));
+    await user.click(screen.getByRole('button', { name: 'Continue' }));
+    update({ selected: [beta, alpha] });
+    await user.click(screen.getByRole('button', { name: 'Send & advance' }));
+
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(onConfirm).toHaveBeenCalledWith(expect.any(Object), [
+      { proposalId: 'beta', amount: 8000 },
+      { proposalId: 'alpha', amount: 5000 },
+    ]);
+  });
+
   it('stops publishing when an award turns invalid or over budget under the open dialog', async () => {
     const { onConfirm, user, update } = renderDialog({
       proposals: [alpha, beta],

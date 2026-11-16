@@ -354,18 +354,24 @@ const getPlaceholderHintKey = (awardsAmounts: boolean) =>
 const getInitialStep = (awardsAmounts: boolean): Step =>
   awardsAmounts ? 'amounts' : 'notifications';
 
+// Keyed by proposal, so a reorder of the same winners and amounts is not a change.
 const sameAllocations = (
   current: ProposalAllocation[] | undefined,
   shown: ProposalAllocation[] | undefined,
-): boolean =>
-  current !== undefined &&
-  shown !== undefined &&
-  current.length === shown.length &&
-  current.every(
-    (allocation, index) =>
-      allocation.proposalId === shown[index]?.proposalId &&
-      allocation.amount === shown[index]?.amount,
+): boolean => {
+  if (current === undefined || shown === undefined) {
+    return false;
+  }
+  const shownAmounts = new Map(
+    shown.map(({ proposalId, amount }) => [proposalId, amount]),
   );
+  return (
+    current.length === shownAmounts.size &&
+    current.every(
+      ({ proposalId, amount }) => shownAmounts.get(proposalId) === amount,
+    )
+  );
+};
 
 const BackButton = ({
   isShown,

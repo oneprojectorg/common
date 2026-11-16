@@ -2,11 +2,13 @@
 
 import { formatCurrency } from '@/utils/formatting';
 import type { Proposal } from '@op/common/client';
+import { Alert, AlertDescription } from '@op/sense/Alert';
 import { Badge } from '@op/sense/Badge';
 import { Button } from '@op/sense/Button';
 import { DialogFooter } from '@op/sense/Dialog';
 import { Header3 } from '@op/sense/Header';
 import { StatusBadge } from '@op/sense/StatusBadge';
+import { LuCircleAlert } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -32,10 +34,17 @@ export const AwardSummaryStep = ({
     total !== null &&
     totalRequested !== null &&
     total.amount !== totalRequested.amount;
+  const blockedWarningKey = getBlockedWarningKey(awards);
 
   return (
     <>
       <div className="flex flex-col gap-4 px-6 py-4">
+        {blockedWarningKey ? (
+          <Alert variant="destructive">
+            <LuCircleAlert aria-hidden />
+            <AlertDescription>{t(blockedWarningKey)}</AlertDescription>
+          </Alert>
+        ) : null}
         <p className="text-base">
           {t('decisions.review.awardAmountsDescription')}
         </p>
@@ -78,12 +87,28 @@ export const AwardSummaryStep = ({
       </div>
 
       <DialogFooter>
-        <Button onClick={onContinue} disabled={proposals.length === 0}>
+        <Button
+          onClick={onContinue}
+          disabled={proposals.length === 0 || !awards.canConfirm}
+        >
           {t('Continue')}
         </Button>
       </DialogFooter>
     </>
   );
+};
+
+const getBlockedWarningKey = (awards: ProposalAwards) => {
+  if (awards.canConfirm) {
+    return undefined;
+  }
+  if (awards.invalidSelectedIds.length > 0) {
+    return 'decisions.review.awardsInvalidWarning' as const;
+  }
+  if (awards.isOverBudget) {
+    return 'decisions.review.awardsOverBudgetWarning' as const;
+  }
+  return 'decisions.review.mixedCurrenciesWarning' as const;
 };
 
 const AwardProposalSummary = ({ proposal }: { proposal: Proposal }) => {
@@ -137,7 +162,11 @@ const AwardedAmount = ({
         ),
       })}
     </StatusBadge>
-  ) : null;
+  ) : (
+    <span className="shrink-0 text-sm text-destructive">
+      {t('decisions.review.awardedAmountError')}
+    </span>
+  );
 };
 
 const getSummaryId = (proposal: Proposal) => `award-summary-${proposal.id}`;

@@ -1284,6 +1284,8 @@
       "overBudgetWarning": "Miisaaniyadda waxaa laga badiyey {amount}",
       "mixedCurrenciesWarning": "Lacagaha la bixiyey waxay isticmaalaan lacago kala duwan, sidaas darteed wadarta laguma hubin karo miisaaniyadda",
       "awardsChangedWarning": "Lacagaha la bixiyey way isbeddeleen tan iyo markii ugu dambeysay ee aad eegtay. Hubi, kadibna sii wad",
+      "awardsInvalidWarning": "Qaar ka mid ah lacagaha la bixiyey ayaa maqan ama aan sax ahayn. Xir sanduuqan wadahadalka oo ku saxo miiska",
+      "awardsOverBudgetWarning": "Lacagaha la bixiyey waxay ka badan yihiin miisaaniyadda wejigan. Xir sanduuqan wadahadalka oo ku yaree miiska",
       "hiddenSelectedWarning": "{count, plural, one {# soo jeedin oo la doortay ayaa ku qarsoon shaandhaynta hadda jirta, sidaas darteed lacagteeda lama beddeli karo} other {# soo jeedin oo la doortay ayaa ku qarsoon shaandhaynta hadda jirta, sidaas darteed lacagahooda lama beddeli karo}}",
       "showAllProposalsAction": "Muuji dhammaan soo jeedinta",
       "totalAwardedLabel": "Wadarta la bixiyay"
