@@ -2,7 +2,7 @@
 
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { trpc } from '@op/api/client';
-import type { ProposalRelationshipList } from '@op/common/client';
+import type { RelatedProposal } from '@op/common/client';
 import {
   Empty,
   EmptyDescription,
@@ -27,10 +27,6 @@ import {
   PhaseReviewsTabPanel,
 } from '../ReviewsPanel/PhaseReviews';
 
-/** The proposal an entry was developed from, as the relationship read returns it. */
-export type DevelopOrigin =
-  ProposalRelationshipList['items'][number]['proposal'];
-
 type OriginTab = 'proposal' | 'reviews';
 
 /**
@@ -45,7 +41,7 @@ export function DevelopOriginColumn({
   canReadReviews,
 }: {
   /** At least one. */
-  origins: DevelopOrigin[];
+  origins: RelatedProposal[];
   decisionRoot: string;
   /** The phase the origins come from; absent when the develop phase is first. */
   originPhaseId: string | null;
