@@ -35,7 +35,10 @@ async function createAuthenticatedCaller(email: string) {
 async function createRevisionRequestScenario(
   testData: TestReviewsDataManager,
   onTestFinished: (fn: () => Promise<void>) => void,
-  { responseComment }: { responseComment?: string } = {},
+  {
+    requestComment = 'Please add a detailed budget breakdown.',
+    responseComment,
+  }: { requestComment?: string; responseComment?: string } = {},
 ) {
   const created = await testData.createReviewAssignment({
     title: 'Budget Proposal',
@@ -44,7 +47,7 @@ async function createRevisionRequestScenario(
 
   const request = await createRevisionRequest({
     assignmentId: created.assignment.id,
-    requestComment: 'Please add a detailed budget breakdown.',
+    requestComment,
     ...(responseComment
       ? { state: ProposalReviewRequestState.RESUBMITTED, responseComment }
       : {}),
@@ -115,6 +118,28 @@ describe('translation.translateRevisionRequest', () => {
       sourceLocale: 'EN',
       targetLocale: 'es',
     });
+  });
+
+  it('translates only the note when the request text is blank', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const { reviewer, request } = await createRevisionRequestScenario(
+      testData,
+      onTestFinished,
+      { requestComment: '   ', responseComment: 'I added the budget.' },
+    );
+
+    const caller = await createAuthenticatedCaller(reviewer.email);
+    const result = await caller.translation.translateRevisionRequest({
+      requestId: request.id,
+      targetLocale: 'es',
+    });
+
+    expect(result.requestComment).toBeUndefined();
+    expect(result.responseComment).toBe('[ES] I added the budget.');
+    expect(mockTranslateText).toHaveBeenCalledTimes(1);
   });
 
   it('translates the request comment for a decision admin', async ({
