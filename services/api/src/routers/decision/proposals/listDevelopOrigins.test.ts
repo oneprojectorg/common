@@ -3,14 +3,13 @@ import {
   ProposalStatus,
   decisionTransitionProposals,
   proposalCategories,
-  proposalHistory,
   proposalReviewAssignments,
   proposals as proposalsTable,
   stateTransitionHistory,
   taxonomyTerms,
 } from '@op/db/schema';
 import { db } from '@op/db/test';
-import { desc, eq } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 
@@ -156,12 +155,11 @@ async function transitionIntoReview({
     throw new Error('failed to create transition');
   }
   for (const proposalId of attachedProposalIds) {
-    const [history] = await db
-      .select({ historyId: proposalHistory.historyId })
-      .from(proposalHistory)
-      .where(eq(proposalHistory.id, proposalId))
-      .orderBy(desc(proposalHistory.historyCreatedAt))
-      .limit(1);
+    const history = await db.query.proposalHistory.findFirst({
+      columns: { historyId: true },
+      where: { id: proposalId },
+      orderBy: { historyCreatedAt: 'desc' },
+    });
     if (!history) {
       throw new Error('expected a proposal history row');
     }
