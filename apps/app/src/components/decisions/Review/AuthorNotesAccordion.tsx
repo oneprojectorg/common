@@ -14,12 +14,16 @@ import { Fragment, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
+import { TranslateLink } from '../TranslateLink';
+import { useRevisionNoteTranslation } from '../useRevisionNoteTranslation';
+
 export interface AuthorNote {
   /** The resubmitted proposal version. */
   id: string;
   comment: string;
   respondedAt: string;
-  requestIds: string[];
+  /** Every request a resubmission answered carries the same note. */
+  requestIds: [string, ...Array<string>];
 }
 
 const NOTES_ITEM = 'author-notes';
@@ -89,26 +93,29 @@ function AuthorNoteEntry({
 }) {
   const t = useTranslations();
   const timeAgo = useRelativeTime(note.respondedAt, { style: 'long' });
+  const translation = useRevisionNoteTranslation({
+    requestId: note.requestIds[0],
+    comment: note.comment,
+  });
 
   return (
     <div data-testid="author-note" className="flex flex-col gap-3">
-      <p dir="auto" className="text-base whitespace-pre-wrap">
-        {note.comment}
+      <TranslateLink translation={translation} />
+      <p className="text-base whitespace-pre-wrap">
+        <bdi>{translation.translation ?? note.comment}</bdi>
       </p>
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
         <span>{t('decisions.review.revisedTimeAgo', { timeAgo })}</span>
-        {note.requestIds.length > 0 ? (
-          <Button
-            variant="link"
-            size="inline"
-            className="text-sm underline"
-            onClick={() => onViewRequests(note.requestIds)}
-          >
-            {note.requestIds.length === 1
-              ? t('decisions.review.viewRevisionRequestAction')
-              : t('decisions.review.viewRevisionRequestsAction')}
-          </Button>
-        ) : null}
+        <Button
+          variant="link"
+          size="inline"
+          className="text-sm underline"
+          onClick={() => onViewRequests(note.requestIds)}
+        >
+          {note.requestIds.length === 1
+            ? t('decisions.review.viewRevisionRequestAction')
+            : t('decisions.review.viewRevisionRequestsAction')}
+        </Button>
       </div>
     </div>
   );

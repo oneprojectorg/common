@@ -16,11 +16,14 @@ import {
   DecisionTranslationProvider,
   useDecisionTranslation,
 } from './DecisionTranslationContext';
+import { AuthorNotesAccordion } from './Review/AuthorNotesAccordion';
 import { SubmittedReviewView } from './Review/SubmittedReviewView';
+import { RevisionNoteCard } from './RevisionNoteCard';
 import { RevisionRequestCard } from './RevisionRequestCard';
 
 /** One held-open request per endpoint, settled by the test. */
 type Pending = {
+  input: unknown;
   resolve: (data: unknown) => void;
   reject: (error: Error) => void;
 };
@@ -29,9 +32,9 @@ const { pending, endpoint } = vi.hoisted(() => {
   const pending: Record<string, Pending | undefined> = {};
   const endpoint = (name: string) => ({
     useMutation: () => ({
-      mutateAsync: () =>
+      mutateAsync: (input: unknown) =>
         new Promise((resolve, reject) => {
-          pending[name] = { resolve, reject };
+          pending[name] = { input, resolve, reject };
         }),
     }),
   });
@@ -44,6 +47,7 @@ vi.mock('@op/api/client', () => ({
       translateDecision: endpoint('translateDecision'),
       translateResources: endpoint('translateResources'),
       translateReview: endpoint('translateReview'),
+      translateRevisionNote: endpoint('translateRevisionNote'),
       translateRevisionRequest: endpoint('translateRevisionRequest'),
     },
   },
@@ -202,5 +206,74 @@ describe('the revision request link', () => {
 
     expect(screen.getByText(EN)).toBeTruthy();
     expect(screen.getByRole('button', { name: 'View original' })).toBeTruthy();
+  });
+});
+
+describe('the author note link', () => {
+  const renderNote = () => {
+    render(
+      withIntl(
+        <AuthorNotesAccordion
+          notes={[
+            {
+              id: 'history-1',
+              comment: ES,
+              respondedAt: new Date().toISOString(),
+              requestIds: ['request-1', 'request-2'],
+            },
+          ]}
+          onViewRequests={() => {}}
+        />,
+      ),
+    );
+    return userEvent.setup();
+  };
+
+  it("shows the author's note translated, and the original again on View original", async () => {
+    const user = renderNote();
+
+    await user.click(seeTranslation());
+    expect(pending.translateRevisionNote?.input).toEqual({
+      requestId: 'request-1',
+      targetLocale: 'en',
+    });
+    await respond('translateRevisionNote', { responseComment: EN });
+
+    expect(screen.getByText(EN)).toBeTruthy();
+
+    await user.click(screen.getByRole('button', { name: 'View original' }));
+
+    expect(screen.getByText(ES)).toBeTruthy();
+  });
+
+  it('keeps the original note and shows the failure when nothing comes back', async () => {
+    const user = renderNote();
+
+    await user.click(seeTranslation());
+    await respond('translateRevisionNote', { sourceLocale: '' });
+
+    expect(screen.getByText('Translation failed.')).toBeTruthy();
+    expect(screen.getByText(ES)).toBeTruthy();
+  });
+});
+
+describe('the revision note card link', () => {
+  it("translates the author's note", async () => {
+    const user = userEvent.setup();
+    render(
+      withIntl(
+        <RevisionNoteCard
+          requestId="request-1"
+          comment={ES}
+          respondedAt={null}
+          title="Author's note"
+        />,
+      ),
+    );
+
+    await user.click(seeTranslation());
+    await respond('translateRevisionNote', { responseComment: EN });
+
+    expect(screen.getByText(EN)).toBeTruthy();
   });
 });

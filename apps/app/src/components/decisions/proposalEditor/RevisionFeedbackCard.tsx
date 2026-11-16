@@ -44,13 +44,12 @@ export function RevisionFeedbackCard({
       {translateLink}
 
       <p
-        dir="auto"
         className={cn(
           'text-base whitespace-pre-wrap',
           variant === 'reviewer' && 'italic',
         )}
       >
-        {comment}
+        <bdi>{comment}</bdi>
       </p>
       {sentAt && <SentAtLine sentAt={sentAt} meta={meta} />}
     </div>
