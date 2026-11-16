@@ -2,7 +2,7 @@
 
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { trpc } from '@op/api/client';
-import { ProposalStatus } from '@op/api/encoders';
+import { ProposalRelationshipType, ProposalStatus } from '@op/api/encoders';
 import type { Proposal } from '@op/common/client';
 import { logger } from '@op/logging/client';
 import { toast } from '@op/sense/Toast';
@@ -70,7 +70,10 @@ export function ProposalAdminMenu({
   // A superseded proposal leaves every listing, so its own page is the only
   // surface that can offer the undo.
   const { data: mergedAway } = trpc.decision.listProposalRelationships.useQuery(
-    { sourceProposalId: proposal.id },
+    {
+      sourceProposalId: proposal.id,
+      relationshipType: ProposalRelationshipType.MERGED,
+    },
   );
   const supersededBy = mergedAway?.items[0];
 

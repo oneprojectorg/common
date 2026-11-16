@@ -32,13 +32,15 @@ export type UnmergeProposalInput = z.infer<typeof unmergeProposalInputSchema>;
 
 /**
  * Direction comes from which end the caller pins. Exactly one: pinning both
- * leaves "the other end" undefined, pinning neither asks for every merge in the
+ * leaves "the other end" undefined, pinning neither asks for every edge in the
  * database.
  */
 export const listProposalRelationshipsInputSchema = z
   .object({
     sourceProposalId: z.uuid().optional(),
     targetProposalId: z.uuid().optional(),
+    /** Only edges of this type. Absent means every type. */
+    relationshipType: z.enum(ProposalRelationshipType).optional(),
   })
   .refine(
     (input) =>
