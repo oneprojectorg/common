@@ -2,13 +2,19 @@
 
 import type { RouterOutput } from '@op/api';
 import { trpc } from '@op/api/client';
-import { isLastPhase, isReviewPhase, isVotingPhase } from '@op/common/client';
+import {
+  isDevelopPhase,
+  isLastPhase,
+  isReviewPhase,
+  isVotingPhase,
+} from '@op/common/client';
 import { notFound } from 'next/navigation';
 import { useCallback } from 'react';
 
 import { ProposalSheet } from './ProposalSheet/ProposalSheet';
 import { ProposalSheetProvider } from './ProposalSheet/ProposalSheetProvider';
 import { ReviewProgressProposalSheet } from './ProposalSheet/ReviewProgressProposalSheet';
+import { DevelopProposalsPage } from './pages/DevelopProposalsPage';
 import { FinalPhaseManualSelectionPage } from './pages/FinalPhaseManualSelectionPage';
 import { ResultsPage } from './pages/ResultsPage';
 import { ReviewPage } from './pages/ReviewPage';
@@ -113,6 +119,26 @@ function DecisionPage({
   const isAdmin = Boolean(instance.access?.admin);
 
   if (!instance.selectionsAreConfirmed) {
+    // A develop phase whose inbound selection is pending is the window in
+    // which entries are developed from the previous phase's proposals. This
+    // branch must come first: without it an admin lands on the
+    // review-selection screen below, which advances the previous phase's
+    // proposals as they are. The server's develop gate admits admins and
+    // develop-access holders alike; anyone else keeps the generic page.
+    if (
+      currentPhase &&
+      isDevelopPhase(currentPhase) &&
+      (isAdmin || instance.access?.developProposals)
+    ) {
+      return (
+        <DevelopProposalsPage
+          instance={instance}
+          slug={slug}
+          decisionSlug={decisionSlug}
+        />
+      );
+    }
+
     // The current phase has an empty inbound transition awaiting selection.
     // When the *previous* phase was a review phase, an admin can advance
     // proposals using rich review aggregates — that's the ReviewSelection view.
