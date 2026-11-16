@@ -1674,6 +1674,7 @@
       "prepareEntryError": "Impossible de préparer l’entrée. Réessayez.",
       "noOriginsTitle": "Aucune proposition à développer",
       "noOriginsDescription": "Les propositions de la phase précédente s’affichent ici.",
+      "noAssignedOriginsDescription": "Aucune proposition ne vous est encore assignée.",
       "entriesCount": "{count, plural, one {# entrée} other {# entrées}}",
       "searchEntriesPlaceholder": "Rechercher des entrées",
       "searchEntriesLabel": "Rechercher des entrées par titre",

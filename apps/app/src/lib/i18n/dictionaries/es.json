@@ -1674,6 +1674,7 @@
       "prepareEntryError": "No se pudo preparar la entrada. Inténtalo de nuevo.",
       "noOriginsTitle": "No hay propuestas para desarrollar",
       "noOriginsDescription": "Aquí aparecen las propuestas de la fase anterior.",
+      "noAssignedOriginsDescription": "Aún no tienes propuestas asignadas.",
       "entriesCount": "{count, plural, one {# entrada} other {# entradas}}",
       "searchEntriesPlaceholder": "Buscar entradas",
       "searchEntriesLabel": "Buscar entradas por título",

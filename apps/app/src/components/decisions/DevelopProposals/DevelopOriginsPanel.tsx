@@ -3,6 +3,7 @@
 import { trpc } from '@op/api/client';
 import type { InstancePhaseData, ProcessInstance } from '@op/api/encoders';
 import {
+  type ListDevelopOriginsInput,
   type Proposal,
   type ProposalReviewAggregates,
   RECOMMENDATION_OPTION,
@@ -54,6 +55,8 @@ import {
 
 type Route = Omit<ProposalRoute, 'profileId'>;
 
+type DevelopOriginScope = ListDevelopOriginsInput['scope'];
+
 const RECOMMENDATION_INTENT: Record<RecommendationValue, StatusDotIntent> = {
   yes: 'success',
   maybe: 'warning',
@@ -63,7 +66,8 @@ const RECOMMENDATION_INTENT: Record<RecommendationValue, StatusDotIntent> = {
 /**
  * The Proposals tab of the develop screen: the previous phase's proposals
  * (the origins), each with its reviewers' overall recommendations and a
- * Prepare action that creates an entry of this phase from it.
+ * Prepare action that creates an entry of this phase from it. An admin sees
+ * every origin; anyone else sees the origins assigned to them.
  *
  * The list comes page by page from the API in its own order (newest first);
  * nothing is sorted or filtered here.
@@ -78,6 +82,7 @@ export function DevelopOriginsPanel({
   route: Route;
 }) {
   const t = useTranslations('decisions.develop');
+  const scope: DevelopOriginScope = instance.access?.admin ? 'all' : 'assigned';
 
   if (!originPhase) {
     return (
@@ -87,7 +92,7 @@ export function DevelopOriginsPanel({
             {t('originsCount', { count: 0 })}
           </Header2>
         </div>
-        <NoOriginsEmpty />
+        <NoOriginsEmpty scope={scope} />
       </div>
     );
   }
@@ -112,6 +117,7 @@ export function DevelopOriginsPanel({
       <DevelopOriginsTable
         processInstanceId={instance.id}
         originPhaseId={originPhase.phaseId}
+        scope={scope}
         showRecommendations={canReadReviews}
         route={route}
       />
@@ -145,11 +151,13 @@ export function DevelopOriginsTableSkeleton() {
 function DevelopOriginsTable({
   processInstanceId,
   originPhaseId,
+  scope,
   showRecommendations,
   route,
 }: {
   processInstanceId: string;
   originPhaseId: string;
+  scope: DevelopOriginScope;
   /** Show the overall-recommendation column: the caller may read the reviews. */
   showRecommendations: boolean;
   route: Route;
@@ -160,10 +168,11 @@ function DevelopOriginsTable({
   const [isNavigating, startNavigating] = useTransition();
 
   const [data, { fetchNextPage, hasNextPage, isFetchingNextPage }] =
-    trpc.decision.listProposals.useSuspenseInfiniteQuery(
+    trpc.decision.listDevelopOrigins.useSuspenseInfiniteQuery(
       {
         processInstanceId,
-        phaseId: originPhaseId,
+        phaseIds: [originPhaseId],
+        scope,
         limit: PROPOSALS_PAGE_LIMIT,
       },
       { getNextPageParam: nextCursor },
@@ -225,7 +234,7 @@ function DevelopOriginsTable({
       </div>
 
       {origins.length === 0 ? (
-        <NoOriginsEmpty />
+        <NoOriginsEmpty scope={scope} />
       ) : (
         <div className="flex flex-col">
           <Table
@@ -362,7 +371,7 @@ function RecommendationCounts({
 }
 
 /** What the Proposals tab shows when the previous phase offers no origins. */
-function NoOriginsEmpty() {
+function NoOriginsEmpty({ scope }: { scope: DevelopOriginScope }) {
   const t = useTranslations('decisions.develop');
 
   return (
@@ -372,7 +381,11 @@ function NoOriginsEmpty() {
           <LuLeaf aria-hidden className="size-5" />
         </EmptyMedia>
         <EmptyTitle render={<h3 />}>{t('noOriginsTitle')}</EmptyTitle>
-        <EmptyDescription>{t('noOriginsDescription')}</EmptyDescription>
+        <EmptyDescription>
+          {scope === 'assigned'
+            ? t('noAssignedOriginsDescription')
+            : t('noOriginsDescription')}
+        </EmptyDescription>
       </EmptyHeader>
     </Empty>
   );

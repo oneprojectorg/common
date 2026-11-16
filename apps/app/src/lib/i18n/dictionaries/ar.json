@@ -1674,6 +1674,7 @@
       "prepareEntryError": "تعذّر تجهيز المُدخل. حاول مرة أخرى.",
       "noOriginsTitle": "لا توجد مقترحات للتطوير",
       "noOriginsDescription": "تظهر هنا مقترحات المرحلة السابقة.",
+      "noAssignedOriginsDescription": "لم يتم تعيين أي مقترحات لك بعد.",
       "entriesCount": "{count, plural, zero {لا مُدخلات} one {مُدخل واحد} two {مُدخلان} few {# مُدخلات} many {# مُدخلًا} other {# مُدخل}}",
       "searchEntriesPlaceholder": "ابحث في المُدخلات",
       "searchEntriesLabel": "ابحث في المُدخلات حسب العنوان",

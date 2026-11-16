@@ -1674,6 +1674,7 @@
       "prepareEntryError": "Could not prepare the entry. Try again.",
       "noOriginsTitle": "No proposals to develop",
       "noOriginsDescription": "Proposals from the last phase show here.",
+      "noAssignedOriginsDescription": "No proposals are assigned to you yet.",
       "entriesCount": "{count, plural, one {# entry} other {# entries}}",
       "searchEntriesPlaceholder": "Search entries",
       "searchEntriesLabel": "Search entries by title",

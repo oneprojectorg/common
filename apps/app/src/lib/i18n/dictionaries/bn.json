@@ -1674,6 +1674,7 @@
       "prepareEntryError": "এন্ট্রি প্রস্তুত করা যায়নি। আবার চেষ্টা করুন।",
       "noOriginsTitle": "উন্নয়নের জন্য কোনো প্রস্তাব নেই",
       "noOriginsDescription": "আগের পর্বের প্রস্তাবগুলো এখানে দেখা যাবে।",
+      "noAssignedOriginsDescription": "আপনাকে এখনো কোনো প্রস্তাব বরাদ্দ করা হয়নি।",
       "entriesCount": "{count, plural, one {#টি এন্ট্রি} other {#টি এন্ট্রি}}",
       "searchEntriesPlaceholder": "এন্ট্রি খুঁজুন",
       "searchEntriesLabel": "শিরোনাম দিয়ে এন্ট্রি খুঁজুন",

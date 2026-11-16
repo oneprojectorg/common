@@ -1674,6 +1674,7 @@
       "prepareEntryError": "Nem sikerült előkészíteni a bejegyzést. Próbáld újra.",
       "noOriginsTitle": "Nincs kidolgozandó javaslat",
       "noOriginsDescription": "Itt jelennek meg az előző szakasz javaslatai.",
+      "noAssignedOriginsDescription": "Még nincs Önhöz rendelt javaslat.",
       "entriesCount": "{count, plural, one {# bejegyzés} other {# bejegyzés}}",
       "searchEntriesPlaceholder": "Bejegyzések keresése",
       "searchEntriesLabel": "Bejegyzések keresése cím alapján",

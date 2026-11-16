@@ -1674,6 +1674,7 @@
       "prepareEntryError": "Gelista lama diyaarin karin. Isku day mar kale.",
       "noOriginsTitle": "Ma jiraan soo jeedinno la horumarinayo",
       "noOriginsDescription": "Soo jeedinta wejigii hore halkan ayay ka muuqdaan.",
+      "noAssignedOriginsDescription": "Wali laguuma xilsaarin wax soo jeedin ah.",
       "entriesCount": "{count, plural, one {# gelis} other {# gelisyo}}",
       "searchEntriesPlaceholder": "Raadi gelisyo",
       "searchEntriesLabel": "Ku raadi gelisyada cinwaanka",
