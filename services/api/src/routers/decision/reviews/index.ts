@@ -13,6 +13,7 @@ import { listProposalRevisionRequestsRouter } from './listProposalRevisionReques
 import { listProposalsRevisionRequestsRouter } from './listProposalsRevisionRequests';
 import { listReviewAssignmentLocationsRouter } from './listReviewAssignmentLocations';
 import { listReviewAssignmentsRouter } from './listReviewAssignments';
+import { listReviewProposalsRouter } from './listReviewProposals';
 import { listReviewReminderRecipientsRouter } from './listReviewReminderRecipients';
 import { listReviewerAssignmentsRouter } from './listReviewerAssignments';
 import { listReviewerCategoriesRouter } from './listReviewerCategories';
@@ -42,6 +43,7 @@ export const reviewsRouter = mergeRouters(
   listReviewAssignmentLocationsRouter,
   listReviewAssignmentsRouter,
   listReviewerAssignmentsRouter,
+  listReviewProposalsRouter,
   listReviewReminderRecipientsRouter,
   removeCategoryReviewerRouter,
   removeReviewAssignmentsRouter,
