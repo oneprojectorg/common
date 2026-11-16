@@ -1,63 +1,55 @@
 'use client';
 
 import { formatCurrency } from '@/utils/formatting';
-import {
-  type MoneyAmount,
-  type Proposal,
-  getCurrencySymbol,
-} from '@op/common/client';
+import type { Proposal } from '@op/common/client';
+import { Alert, AlertDescription } from '@op/sense/Alert';
 import { Badge } from '@op/sense/Badge';
 import { Button } from '@op/sense/Button';
 import { DialogFooter } from '@op/sense/Dialog';
 import { Header3 } from '@op/sense/Header';
-import { NumberField } from '@op/sense/NumberField';
 import { StatusBadge } from '@op/sense/StatusBadge';
-import { Toggle } from '@op/sense/Toggle';
+import { LuCircleAlert } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
 import { Bullet } from '../Bullet';
 import { formatBudget } from './BudgetDisplay';
 import { resolvePresentationFields } from './selection/proposalPresentation';
-import { type AwardAmounts, isValidAwardAmount } from './useAwardAmounts';
+import { type ProposalAwards, isValidAwardAmount } from './useProposalAwards';
 
-interface AwardAmountsStepProps {
+interface AwardSummaryStepProps {
   proposals: Proposal[];
-  awards: AwardAmounts;
+  awards: ProposalAwards;
   onContinue: () => void;
 }
 
-/**
- * First step of the final-phase confirm dialog: the winning proposals with the
- * amount each is awarded. Amounts start at the requested budget; "Adjust
- * amounts" swaps the awarded badges for fields.
- */
-export const AwardAmountsStep = ({
+export const AwardSummaryStep = ({
   proposals,
   awards,
   onContinue,
-}: AwardAmountsStepProps) => {
+}: AwardSummaryStepProps) => {
   const t = useTranslations();
-  const total = getTotalAwarded({ proposals, awards });
+  const { total, totalRequested } = awards;
+  const showRequestedTotal =
+    total !== null &&
+    totalRequested !== null &&
+    total.amount !== totalRequested.amount;
+  const blockedWarningKey = getBlockedWarningKey(awards);
 
   return (
     <>
       <div className="flex flex-col gap-4 px-6 py-4">
+        {blockedWarningKey ? (
+          <Alert variant="destructive">
+            <LuCircleAlert aria-hidden />
+            <AlertDescription>{t(blockedWarningKey)}</AlertDescription>
+          </Alert>
+        ) : null}
         <p className="text-base">
           {t('decisions.review.awardAmountsDescription')}
         </p>
 
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <Header3>{t('decisions.review.selectedProposalsHeading')}</Header3>
-          <Toggle
-            variant="outline"
-            size="sm"
-            pressed={awards.isAdjusting}
-            onPressedChange={awards.toggleAdjusting}
-          >
-            {t('decisions.review.adjustAmountsAction')}
-          </Toggle>
-        </div>
+        <Header3>{t('decisions.review.selectedProposalsHeading')}</Header3>
 
         <ul className="flex flex-col gap-3">
           {proposals.map((proposal) => (
@@ -75,23 +67,48 @@ export const AwardAmountsStep = ({
         {total ? (
           <div
             aria-live="polite"
-            className="flex items-center justify-between gap-4 border-t pt-3"
+            className="flex items-start justify-between gap-4 border-t pt-3"
           >
             <span className="text-sm text-muted-foreground">
               {t('decisions.review.totalAwardedLabel')}
             </span>
-            <span className="font-strong">{formatBudget(total)}</span>
+            <span className="flex flex-col items-end">
+              <span className="font-strong">{formatBudget(total)}</span>
+              {showRequestedTotal ? (
+                <span className="text-sm text-muted-foreground">
+                  {t('decisions.review.requestedAmount', {
+                    amount: formatBudget(totalRequested) ?? '',
+                  })}
+                </span>
+              ) : null}
+            </span>
           </div>
         ) : null}
       </div>
 
       <DialogFooter>
-        <Button onClick={onContinue} disabled={proposals.length === 0}>
+        <Button
+          onClick={onContinue}
+          disabled={proposals.length === 0 || !awards.canConfirm}
+        >
           {t('Continue')}
         </Button>
       </DialogFooter>
     </>
   );
+};
+
+const getBlockedWarningKey = (awards: ProposalAwards) => {
+  if (awards.canConfirm) {
+    return undefined;
+  }
+  if (awards.invalidSelectedIds.length > 0) {
+    return 'decisions.review.awardsInvalidWarning' as const;
+  }
+  if (awards.isOverBudget) {
+    return 'decisions.review.awardsOverBudgetWarning' as const;
+  }
+  return 'decisions.review.mixedCurrenciesWarning' as const;
 };
 
 const AwardProposalSummary = ({ proposal }: { proposal: Proposal }) => {
@@ -130,67 +147,26 @@ const AwardedAmount = ({
   awards,
 }: {
   proposal: Proposal;
-  awards: AwardAmounts;
+  awards: ProposalAwards;
 }) => {
   const t = useTranslations();
   const amount = awards.amounts.get(proposal.id) ?? null;
-  const currency = awards.getCurrency(proposal.id);
-
-  if (awards.isAdjusting) {
-    return (
-      <NumberField
-        ref={(input) => awards.registerInput(proposal.id, input)}
-        label={t('decisions.review.awardedAmountLabel')}
-        prefixText={getCurrencySymbol(currency)}
-        value={amount}
-        onChange={(next) => awards.setAmount(proposal.id, next)}
-        aria-describedby={getSummaryId(proposal)}
-        errorMessage={
-          awards.showErrors && !isValidAwardAmount(amount)
-            ? t('decisions.review.awardedAmountError')
-            : undefined
-        }
-        className="shrink-0 sm:w-48"
-      />
-    );
-  }
 
   return isValidAwardAmount(amount) ? (
     <StatusBadge variant="success" icon={false} className="shrink-0">
       {t('decisions.amountAwarded', {
-        amount: formatCurrency(amount, undefined, currency),
+        amount: formatCurrency(
+          amount,
+          undefined,
+          awards.getCurrency(proposal.id),
+        ),
       })}
     </StatusBadge>
-  ) : null;
+  ) : (
+    <span className="shrink-0 text-sm text-destructive">
+      {t('decisions.review.awardedAmountError')}
+    </span>
+  );
 };
 
-// Links each amount field to the title it is for; the visible label alone
-// reads the same on every row.
 const getSummaryId = (proposal: Proposal) => `award-summary-${proposal.id}`;
-
-/**
- * Sum of the valid amounts, or `null` when the rows mix currencies and a
- * single figure would be meaningless.
- */
-function getTotalAwarded({
-  proposals,
-  awards,
-}: {
-  proposals: Proposal[];
-  awards: AwardAmounts;
-}): MoneyAmount | null {
-  const currencies = new Set(
-    proposals.map((proposal) => awards.getCurrency(proposal.id)),
-  );
-  const [currency] = currencies;
-  if (currency === undefined || currencies.size > 1) {
-    return null;
-  }
-
-  const amount = proposals.reduce((sum, proposal) => {
-    const awarded = awards.amounts.get(proposal.id);
-    return isValidAwardAmount(awarded) ? sum + awarded : sum;
-  }, 0);
-
-  return { amount, currency };
-}
