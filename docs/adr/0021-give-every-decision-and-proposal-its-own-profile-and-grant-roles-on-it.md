@@ -54,7 +54,10 @@ A role grants a bitfield per zone. The zones are `profile`, `decisions` and
 | `INVITE_MEMBERS`, `REVIEW`, `SUBMIT_PROPOSALS`, `VOTE` | 32, 64, 128, 256 | `decisions` only |
 
 A role is global (`access_roles.profile_id` is `NULL`) or scoped to one
-profile. The seed creates three global roles:
+profile. Global roles belong to organization members. A decision's members
+hold only roles scoped to that decision. The seed creates three global
+roles: `Admin` and `Member` are organization roles, and `Public` is the
+public sentinel's role on any profile opened to the public.
 
 | Role | `profile` | `decisions` | `admin` |
 | --- | --- | --- | --- |
@@ -62,10 +65,11 @@ profile. The seed creates three global roles:
 | `Member` | `READ` | `READ`, `UPDATE`, `SUBMIT_PROPOSALS`, `VOTE` | none |
 | `Public` | none | none | none |
 
-Every new decision gets two roles scoped to its profile: `Admin` (ACRUD on
-`profile`, every bit on `decisions`) and `Participant` (`READ` on `profile`;
-`READ`, `SUBMIT_PROPOSALS`, `VOTE` on `decisions`). A `profile: ADMIN` on the
-decision adds and edits roles. `createRole`, `createDecisionRole` and
+Every new decision gets two roles scoped to its profile by default: `Admin`
+(ACRUD on `profile`, every bit on `decisions`) and `Participant` (`READ` on
+`profile`; `READ`, `SUBMIT_PROPOSALS`, `VOTE` on `decisions`). A
+`profile: ADMIN` on the decision can rename or delete them and add others,
+so code checks bits, never role names. `createRole`, `createDecisionRole` and
 `updateDecisionRoles` force `READ` in; `updateRolePermissions` does not.
 
 A permission row (`access_role_permissions_on_access_zones`) with
@@ -92,8 +96,8 @@ The creator of a decision gets a `profile_users` row with `is_owner` and the
 decision's scoped `Admin` role, in the transaction that creates the decision.
 The creator of a proposal gets the same on the proposal's profile, with the
 global `Admin` role. A co-author who accepts a proposal invite gets a row on
-the proposal and, if they have none, a row on the decision with the role of
-their pending decision invite, or `Member`. Everyone else joins a decision by
+the proposal and, when a decision invite is pending for them, the row on the
+decision that invite names. Everyone else joins a decision by
 profile invite or the public grant. Voter enrolment is a separate record,
 checked at vote time, not a grant.
 
@@ -144,9 +148,10 @@ Organization and profile pages read `getPermissionsForProfile` from
 - A decision defines its own roles, and a proposal has a member list of its
   own, so a draft is visible to co-authors and nobody else.
 - Public access is a grant on one profile, revoked and cached like any other.
-- A co-author becomes a `Member` of the decision, and `Member` carries
-  `decisions: UPDATE`, which lets them edit any proposal while the phase
-  allows edits.
+- `acceptProposalInvite` still grants the global `Member` role on the
+  decision to a co-author with no pending decision invite. That breaks the
+  rule above and gives them `decisions: UPDATE` on every proposal. It is to
+  be fixed.
 - The organization fallback fires only when `owner_profile_id` is an
   organization's profile, so only older decisions reach it. Where it fires,
   it admits an organization admin to reads and proposal creation but not to
