@@ -24,7 +24,7 @@ export function SelectionCategoryChips({
   return (
     <div className="flex flex-wrap items-center gap-2">
       {visible.map((label) => (
-        <Badge key={label} variant="secondary" className="text-sm">
+        <Badge key={label} variant="secondary" size="md">
           {label}
         </Badge>
       ))}
