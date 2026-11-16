@@ -8,7 +8,6 @@ import {
   createProposalReview,
   createReviewAssignment,
   createReviewScenario,
-  getDecisionInstance,
   getSeededTemplate,
   grantInstanceReviewerRole,
 } from '@op/common/testing/data';
@@ -17,6 +16,7 @@ import {
   ProposalReviewAssignmentStatus,
   ProposalReviewState,
   processInstances,
+  processPhases,
 } from '@op/db/schema';
 import { db, eq } from '@op/db/test';
 
@@ -159,14 +159,21 @@ interface StoredPhase {
   rules?: { reviews?: { openReviews?: boolean } };
 }
 
-/** Reads back the review phase's persisted `openReviews` flag from the DB. */
+const isStoredPhase = (data: unknown): data is StoredPhase =>
+  typeof data === 'object' && data !== null && 'phaseId' in data;
+
+/** Reads back the review phase's persisted `openReviews` flag from its phase row. */
 async function getPersistedOpenReviews(
   instanceId: string,
 ): Promise<boolean | undefined> {
-  const saved = await getDecisionInstance(instanceId);
-  const phases =
-    (saved.instanceData as { phases?: StoredPhase[] }).phases ?? [];
-  const reviewPhase = phases.find((p) => p.phaseId === 'review');
+  const rows = await db
+    .select({ data: processPhases.data })
+    .from(processPhases)
+    .where(eq(processPhases.processInstanceId, instanceId));
+  const reviewPhase = rows
+    .map(({ data }) => data)
+    .filter(isStoredPhase)
+    .find((phase) => phase.phaseId === 'review');
   return reviewPhase?.rules?.reviews?.openReviews;
 }
 
