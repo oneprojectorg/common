@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-/** A phase's id within its instance's phase list — a slug, not a uuid. */
+/** A slug, not a uuid. */
 export const phaseIdSchema = z.string().min(1);
 
 /**

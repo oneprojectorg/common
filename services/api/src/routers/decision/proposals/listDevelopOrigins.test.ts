@@ -31,11 +31,6 @@ async function createAuthenticatedCaller(email: string) {
   return createCaller(await createTestContextWithSession(session));
 }
 
-/**
- * A review-phase context with a READ-only member and a REVIEW-only reviewer.
- * Each proposal is created in order (oldest first), with an assignment to the
- * default reviewer or, for `assignedToReviewer`, to the reviewer.
- */
 async function createOriginsContext({
   testData,
   titles,
@@ -131,11 +126,7 @@ async function assignOnPhase({
     .values({ processInstanceId, proposalId, reviewerProfileId, phaseId });
 }
 
-/**
- * Moves the instance from `submission` into `review` now and attaches
- * `attachedProposalIds` to that transition. Every proposal created before it
- * then sits in `submission`'s window, and the attached ones also in `review`.
- */
+/** Every proposal created before now sits in `submission`; the attached ones also in `review`. */
 async function transitionIntoReview({
   processInstanceId,
   attachedProposalIds,

@@ -6,18 +6,7 @@ import { phaseProposalListSchema, proposalSearchSchema } from './proposal';
 
 export const DEVELOP_ORIGIN_SCOPES = ['all', 'assigned'] as const;
 
-/**
- * Input for `decision.listDevelopOrigins`. An origin is a proposal of an
- * earlier phase that an entry is, or can be, developed from; the client names
- * those phases in `phaseIds`, and a proposal in more than one is listed once.
- *
- * - `all` (default): every proposal of the phases the caller may see.
- * - `assigned`: only those the caller holds a review assignment for on any of
- *   the phases, in any status.
- *
- * A proposal must carry every term in `categoryIds`. Search, categories and
- * pagination apply under both scopes.
- */
+/** An origin is an earlier-phase proposal an entry is, or can be, developed from; `assigned` keeps the caller's review assignments on any of `phaseIds`. */
 export const listDevelopOriginsInputSchema = z
   .object({
     processInstanceId: z.uuid(),
@@ -32,7 +21,6 @@ export type ListDevelopOriginsInput = z.infer<
   typeof listDevelopOriginsInputSchema
 >;
 
-/** Items are `proposal.list`'s. */
 export const developOriginListSchema = phaseProposalListSchema;
 
 export type DevelopOriginList = z.infer<typeof developOriginListSchema>;
