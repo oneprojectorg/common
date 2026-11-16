@@ -76,6 +76,26 @@ A permission row (`access_role_permissions_on_access_zones`) with
 `profile_id` set overrides the global row of the same role and zone on that
 profile only. It never counts elsewhere, and only a global role carries one.
 
+### Profile bits versus decision bits
+
+The `profile` zone is core. It governs the profile as an entity in Common,
+whatever the entity is: `profile: ADMIN` is ownership of the record, such as
+deleting it and managing its members and roles. If a decision's profile
+became another entity type, a goal or a project, those rights would carry
+over.
+
+The `decisions` zone is contextual. It governs what a member may do inside
+the decision process: `decisions: ADMIN` is managing the process, alongside
+`INVITE_MEMBERS`, `REVIEW`, `SUBMIT_PROPOSALS` and `VOTE`. Those rights
+belong to the process and would not carry over.
+
+A role may hold `ADMIN` on both, as the default decision `Admin` does, and a
+profile owner may hold only the core rights. A check picks the zone that
+matches the action: deleting the decision or changing its roles is a profile
+action, advancing a phase or changing a proposal's status is a decision
+action. Today the two sets overlap almost entirely; this is the one
+contextual zone, so the split is easy to miss.
+
 ### Public access
 
 `GLOBAL_USER_PUBLIC` is a sentinel auth user. Every grant lookup filters on
@@ -156,8 +176,9 @@ Organization and profile pages read `getPermissionsForProfile` from
   organization's profile, so only older decisions reach it. Where it fires,
   it admits an organization admin to reads and proposal creation but not to
   the lifecycle writes.
-- `profile: ADMIN` and `decisions: ADMIN` are not interchangeable, and which
-  one an action checks is set per service.
+- `profile: ADMIN` and `decisions: ADMIN` are not interchangeable. The table
+  records which one each service checks today; where it checks the zone the
+  split above does not name, that is drift to fix.
 - `decision_process_instances.profile_id` is nullable, so every service
   checks it before the grant lookup.
 - Invalidation is manual. `assignRoleToUser` skips it today, and a skipped
