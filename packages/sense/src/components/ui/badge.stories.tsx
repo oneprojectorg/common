@@ -32,7 +32,6 @@ const meta: Meta<typeof Badge> = {
   args: {
     children: 'Badge',
     variant: 'default',
-    size: 'default',
   },
 };
 

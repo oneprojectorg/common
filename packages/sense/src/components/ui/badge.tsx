@@ -71,7 +71,7 @@ const badgeNumberMinWidth: Record<BadgeSize, string> = {
 function Badge({
   className,
   variant = 'default',
-  size = 'default',
+  size,
   render,
   ...props
 }: BadgeProps) {
@@ -108,4 +108,4 @@ function BadgeNumber({ className, size = 'default', ...props }: BadgeProps) {
 }
 
 export { Badge, BadgeNumber, badgeVariants };
-export type { BadgeProps, BadgeSize };
+export type { BadgeSize };
