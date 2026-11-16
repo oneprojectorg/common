@@ -6,11 +6,9 @@ import { NotFoundError, UnauthorizedError, ValidationError } from '../../utils';
 import { getProfileAccessUser } from '../access';
 import { assertProposalDevelopAccess } from './assertProposalDevelopAccess';
 import { finalizeProposalSubmission } from './finalizeProposalSubmission';
+import { getPhases } from './instancePhases';
 import { activeProposalPredicate } from './phaseEligibility';
-import {
-  type DecisionInstanceData,
-  getInstancePhases,
-} from './schemas/instanceData';
+import type { DecisionInstanceData } from './schemas/instanceData';
 
 export interface SubmitDevelopedProposalInput {
   proposalId: string;
@@ -62,12 +60,11 @@ export const submitDevelopedProposal = async ({
     throw new ValidationError('Invalid phase in process instance');
   }
 
+  const phases = await getPhases({ instance });
+
   const [, developedEdge, author] = await Promise.all([
     assertProposalDevelopAccess({
-      instance: {
-        profileId: instance.profileId,
-        instanceData: { phases: getInstancePhases(instanceData) },
-      },
+      instance: { profileId: instance.profileId, phases },
       phaseId: currentPhaseId,
       user: { id: user.id },
     }),

@@ -1,7 +1,5 @@
-import type { ProcessInstance } from '@op/db/schema';
-
 import { CommonError } from '../../utils';
-import type { DecisionInstanceData } from './schemas/instanceData';
+import type { PhaseInstanceData } from './schemas/instanceData';
 import type { ScheduledTransition } from './types';
 
 /**
@@ -11,15 +9,13 @@ import type { ScheduledTransition } from './types';
  *
  * Shared by both `createTransitionsForProcess` and `updateTransitionsForProcess`.
  */
-export function buildExpectedTransitions(
-  processInstance: ProcessInstance,
-): ScheduledTransition[] {
-  // Type assertion: instanceData is `unknown` in DB to support legacy formats for viewing,
-  // but this function is only called for new DecisionInstanceData processes
-  const instanceData = processInstance.instanceData as DecisionInstanceData;
-  const phases = instanceData.phases;
+export function buildExpectedTransitions(processInstance: {
+  id: string;
+  phases: readonly PhaseInstanceData[];
+}): ScheduledTransition[] {
+  const { phases } = processInstance;
 
-  if (!phases || phases.length === 0) {
+  if (phases.length === 0) {
     throw new CommonError(
       'Process instance must have at least one phase configured',
     );

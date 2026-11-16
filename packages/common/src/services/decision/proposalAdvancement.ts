@@ -4,16 +4,13 @@ import type { User } from '@op/supabase/lib';
 
 import { getProposalAccessContext } from './getProposalAccessContext';
 import { getPhaseProposalSqlScope } from './getProposalsForPhase';
+import { getPhases } from './instancePhases';
 import { isLegacyInstanceData } from './isLegacyInstance';
 import type { LockedProcessInstance } from './lockProcessInstance';
 import { phaseEligiblePredicate } from './phaseEligibility';
 import { assertDecisionAdmin } from './phaseHelpers';
 import { resolveManualSelectionStatus } from './resolveManualSelectionStatus';
-import {
-  type PhaseInstanceData,
-  getInstancePhases,
-  isLastPhase,
-} from './schemas/instanceData';
+import { type PhaseInstanceData, isLastPhase } from './schemas/instanceData';
 
 export type PhaseAdvancement =
   | {
@@ -28,7 +25,7 @@ export type PhaseAdvancement =
 type AdvancementInstance = Pick<
   LockedProcessInstance,
   'currentStateId' | 'status' | 'instanceData'
-> & { id: string };
+> & { id: string; phases?: PhaseInstanceData[] };
 
 const NO_PHASE_TO_ADVANCE_INTO = 'This decision has no phase to advance into';
 
@@ -74,7 +71,8 @@ export async function resolvePhaseAdvancement({
     return { ok: false, reason: NO_PHASE_TO_ADVANCE_INTO };
   }
 
-  const phases = getInstancePhases(instanceData);
+  const phases =
+    instance.phases ?? (await getPhases({ instance, db: dbClient }));
   const currentIndex = phases.findIndex((p) => p.phaseId === currentStateId);
   const currentPhase = phases[currentIndex];
   const previousPhase = phases[currentIndex - 1];
@@ -100,7 +98,7 @@ export async function resolvePhaseAdvancement({
       columns: { id: true, toStateId: true },
     }),
     resolveManualSelectionStatus({
-      instance: { id: instance.id, instanceData, currentStateId },
+      instance: { ...instance, phases },
       dbClient,
     }),
   ]);

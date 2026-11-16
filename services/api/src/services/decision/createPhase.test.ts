@@ -3,7 +3,7 @@ import {
   ValidationError,
   createPhase,
 } from '@op/common';
-import { TestDecisionsDataManager } from '@op/common/testing';
+import { TestDecisionsDataManager, emptyBlobPhases } from '@op/common/testing';
 import { db } from '@op/db/client';
 import { EntityType } from '@op/db/schema';
 import { randomUUID } from 'node:crypto';
@@ -261,9 +261,77 @@ describe.concurrent('createPhase', () => {
 
     await expectNoProfileNamed(name);
   });
+
+  it('refuses a decision whose phases are only in instanceData and writes nothing', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { instanceId, user } = await setupWithBlobPhases(
+      task,
+      onTestFinished,
+    );
+
+    const name = `Blob Only ${randomUUID()}`;
+    await expect(
+      createPhase({ user, processInstanceId: instanceId, name, sortOrder: 0 }),
+    ).rejects.toThrow(ValidationError);
+
+    expect(await listPhaseRows(instanceId)).toHaveLength(0);
+    await expectNoProfileNamed(name);
+  });
+
+  it('adds a phase to a decision that already has phase rows', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { instanceId, user, testData } = await setupWithBlobPhases(
+      task,
+      onTestFinished,
+    );
+    await testData.createPhaseRows(instanceId);
+    const before = await listPhaseRows(instanceId);
+
+    const { phase, profile } = await createPhase({
+      user,
+      processInstanceId: instanceId,
+      name: 'Results',
+      sortOrder: before.length,
+    });
+    testData.trackProfileForCleanup(profile.id);
+
+    const after = await listPhaseRows(instanceId);
+    expect(after).toHaveLength(before.length + 1);
+    expect(after.map(({ id }) => id)).toContain(phase.id);
+  });
+
+  it('mints the first phase row of a decision with no phases', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { instanceId, user, testData } = await setup(task, onTestFinished);
+
+    const { phase, profile } = await createPhase({
+      user,
+      processInstanceId: instanceId,
+      name: 'Submissions',
+      sortOrder: 0,
+    });
+    testData.trackProfileForCleanup(profile.id);
+
+    expect(await listPhaseRows(instanceId)).toEqual([{ id: phase.id }]);
+  });
 });
 
 const setup = async (
+  task: { id: string },
+  onTestFinished: (fn: () => void | Promise<void>) => void,
+) => {
+  const decision = await setupWithBlobPhases(task, onTestFinished);
+  await emptyBlobPhases(decision.instanceId);
+  return decision;
+};
+
+const setupWithBlobPhases = async (
   task: { id: string },
   onTestFinished: (fn: () => void | Promise<void>) => void,
 ) => {
@@ -279,6 +347,12 @@ const setup = async (
     testData,
   };
 };
+
+const listPhaseRows = (instanceId: string) =>
+  db.query.processPhases.findMany({
+    where: { processInstanceId: instanceId },
+    columns: { id: true },
+  });
 
 const expectNoProfileNamed = async (name: string) => {
   const leftover = await db.query.profiles.findMany({

@@ -21,8 +21,8 @@ import { ensureChatSession } from '../chatSession';
 import { getFieldUnit, isAtMost, sumAmounts } from '../fieldUnit';
 import { getBallotProposalByCode } from '../getBallotProposalByCode';
 import { getProposalCosts } from '../getProposalCosts';
+import type { InstanceWithPhases } from '../instancePhases';
 import { resolveProposalTemplate } from '../resolveProposalTemplate';
-import { getInstancePhases } from '../schemas/instanceData';
 import { getInstanceCurrentPhase } from '../utils/instance';
 import {
   getVoterBudget,
@@ -56,15 +56,14 @@ interface BallotKey {
   instanceId: string;
 }
 
-const getPricing = async (instance: {
-  instanceData: unknown;
-  currentStateId: string | null;
-  processId: string | null;
-}) => {
-  const phase = getInstanceCurrentPhase({
-    currentStateId: instance.currentStateId,
-    instanceData: { phases: getInstancePhases(instance.instanceData) },
-  });
+const getPricing = async (
+  instance: InstanceWithPhases<{
+    instanceData: unknown;
+    currentStateId: string | null;
+    processId: string | null;
+  }>,
+) => {
+  const phase = getInstanceCurrentPhase(instance);
   const budget = phase ? getVoterBudget(phase) : undefined;
   const voterCostField = phase ? getVoterCostField(phase) : 'budget';
   const proposalTemplate = await resolveProposalTemplate(

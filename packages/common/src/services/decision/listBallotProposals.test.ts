@@ -5,6 +5,7 @@ import { ProcessStatus } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
 import { getBallotProposalByCode } from './getBallotProposalByCode';
+import { resolvePhases } from './instancePhases';
 import { listBallotProposals } from './listBallotProposals';
 import { parseProposalData } from './proposalDataSchema';
 import { rejectProposal } from './rejectProposal';
@@ -69,7 +70,7 @@ const readInstance = async (instanceId: string) => {
   if (!instance) {
     throw new Error(`Instance ${instanceId} not found`);
   }
-  return instance;
+  return resolvePhases({ instance });
 };
 
 const seedVotingDecision = async (

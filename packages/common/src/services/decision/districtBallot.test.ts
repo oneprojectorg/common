@@ -10,6 +10,7 @@ import { describe, expect, it } from 'vitest';
 
 import { countBallotProposals } from './countBallotProposals';
 import { getBallotProposalByCode } from './getBallotProposalByCode';
+import { resolvePhases } from './instancePhases';
 import { listBallotProposals } from './listBallotProposals';
 import type { DecisionSchemaDefinition } from './schemas/types';
 import { submitProposal } from './submitProposal';
@@ -60,7 +61,7 @@ const readInstance = async (instanceId: string) => {
   if (!instance) {
     throw new Error(`Instance ${instanceId} not found`);
   }
-  return instance;
+  return resolvePhases({ instance });
 };
 
 const INSIDE_FIVE = { lat: 40.5, lng: -73.5 };

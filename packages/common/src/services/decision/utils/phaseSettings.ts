@@ -9,7 +9,7 @@ import type {
   VoterEnrolmentRule,
 } from '../schemas/types';
 import { assertInstancePhase } from './instance';
-import { getPreviousPhases } from './phaseOrder';
+import { type PhaseSource, getPreviousPhases } from './phaseOrder';
 
 /**
  * Phase-level settings resolution: `rules.<domain>` → legacy `config.*` →
@@ -172,7 +172,8 @@ interface ReviewPhase {
   rules?: ReviewPhaseRules;
 }
 
-interface ReviewSettingsInstanceData {
+/** Server: config plus resolved phases; client: wire `instanceData`. */
+interface ReviewSettingsSource {
   config?: {
     reviewsPolicy?: ReviewsPolicy;
     reviewsAllowRevisions?: boolean;
@@ -183,11 +184,14 @@ interface ReviewSettingsInstanceData {
 
 /** Resolves review settings for `phaseId`; throws if the phase doesn't exist. */
 export function getPhaseReviewSettings(
-  instanceData: ReviewSettingsInstanceData,
+  source: ReviewSettingsSource,
   phaseId: string,
 ): ReviewSettings {
-  const phase = assertInstancePhase({ instance: { instanceData }, phaseId });
-  return reviewSettingsFromPhase(instanceData.config, phase);
+  const phase = assertInstancePhase({
+    instance: { phases: source.phases ?? [] },
+    phaseId,
+  });
+  return reviewSettingsFromPhase(source.config, phase);
 }
 
 /**
@@ -195,24 +199,24 @@ export function getPhaseReviewSettings(
  * off-list phase falls back to config → defaults instead of throwing.
  */
 export function resolveReviewSettings(
-  instanceData: ReviewSettingsInstanceData,
+  source: ReviewSettingsSource,
   phaseId: string | undefined,
 ): ReviewSettings {
   const phase = phaseId
-    ? instanceData.phases?.find((p) => p.phaseId === phaseId)
+    ? source.phases?.find((p) => p.phaseId === phaseId)
     : undefined;
-  return reviewSettingsFromPhase(instanceData.config, phase);
+  return reviewSettingsFromPhase(source.config, phase);
 }
 
 export function getPreviousReviewPhases<Phase extends ReviewPhase>(
-  instanceData: { phases?: readonly Phase[] },
+  source: PhaseSource<Phase>,
   phaseId: string,
 ): Phase[] {
-  return getPreviousPhases(instanceData, phaseId).filter(isReviewPhase);
+  return getPreviousPhases(source, phaseId).filter(isReviewPhase);
 }
 
 function reviewSettingsFromPhase(
-  config: ReviewSettingsInstanceData['config'],
+  config: ReviewSettingsSource['config'],
   phase: ReviewPhase | undefined,
 ): ReviewSettings {
   const reviews = phase?.rules?.reviews;

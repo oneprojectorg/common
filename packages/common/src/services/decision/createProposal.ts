@@ -9,10 +9,10 @@ import {
 } from '../access';
 import { assertProposalsAllowed } from './assertProposalsAllowed';
 import { insertProposalDraft } from './insertProposalDraft';
+import { getPhases } from './instancePhases';
 import { decisionPermission } from './permissions';
 import type { ProposalDataInput } from './proposalDataSchema';
 import { resolveProposalDraftInputs } from './proposalDraftInputs';
-import type { DecisionInstanceData } from './schemas/instanceData';
 import { assertInstancePhase } from './utils/instance';
 
 export interface CreateProposalInput {
@@ -39,17 +39,19 @@ export const createProposal = async ({
     throw new NotFoundError('Process instance', data.processInstanceId);
   }
 
-  await assertInstanceProfileAccess({
-    user: { id: authUserId },
-    instance,
-    profilePermissions: [
-      { profile: permission.ADMIN },
-      { decisions: decisionPermission.SUBMIT_PROPOSALS },
-    ],
-    orgFallbackPermissions: { profile: permission.ADMIN },
-  });
+  const [phases] = await Promise.all([
+    getPhases({ instance }),
+    assertInstanceProfileAccess({
+      user: { id: authUserId },
+      instance,
+      profilePermissions: [
+        { profile: permission.ADMIN },
+        { decisions: decisionPermission.SUBMIT_PROPOSALS },
+      ],
+      orgFallbackPermissions: { profile: permission.ADMIN },
+    }),
+  ]);
 
-  const instanceData = instance.instanceData as DecisionInstanceData;
   const currentPhaseId = instance.currentStateId;
 
   if (!currentPhaseId) {
@@ -57,12 +59,12 @@ export const createProposal = async ({
   }
 
   assertProposalsAllowed({
-    instance: { instanceData },
+    phases,
     phaseId: currentPhaseId,
   });
 
   const currentPhase = assertInstancePhase({
-    instance: { instanceData },
+    instance: { phases },
     phaseId: currentPhaseId,
   });
 

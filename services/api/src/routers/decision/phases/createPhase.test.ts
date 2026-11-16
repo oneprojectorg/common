@@ -1,4 +1,4 @@
-import { TestDecisionsDataManager } from '@op/common/testing';
+import { TestDecisionsDataManager, emptyBlobPhases } from '@op/common/testing';
 import { db } from '@op/db/client';
 import { EntityType } from '@op/db/schema';
 import { ROLES } from '@op/db/seedData/accessControl';
@@ -419,6 +419,7 @@ const setupDecision = async (
     instanceCount: 1,
     grantAccess: true,
   });
+  await emptyBlobPhases(setup.instance.instance.id);
 
   return {
     testData,
