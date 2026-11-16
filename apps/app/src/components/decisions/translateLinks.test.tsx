@@ -16,6 +16,7 @@ import {
   DecisionTranslationProvider,
   useDecisionTranslation,
 } from './DecisionTranslationContext';
+import { AuthorNotesAccordion } from './Review/AuthorNotesAccordion';
 import { SubmittedReviewView } from './Review/SubmittedReviewView';
 import { RevisionRequestCard } from './RevisionRequestCard';
 
@@ -199,6 +200,36 @@ describe('the revision request link', () => {
 
     await user.click(seeTranslation());
     await respond('translateRevisionRequest', { requestComment: EN });
+
+    expect(screen.getByText(EN)).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'View original' })).toBeTruthy();
+  });
+});
+
+describe('the author note link', () => {
+  it("translates the author's note", async () => {
+    const user = userEvent.setup();
+    render(
+      withIntl(
+        <AuthorNotesAccordion
+          notes={[
+            {
+              id: 'history-1',
+              comment: ES,
+              respondedAt: new Date().toISOString(),
+              requestIds: ['request-1'],
+            },
+          ]}
+          onViewRequests={() => {}}
+        />,
+      ),
+    );
+
+    await user.click(seeTranslation());
+    await respond('translateRevisionRequest', {
+      requestComment: 'Please add a budget.',
+      responseComment: EN,
+    });
 
     expect(screen.getByText(EN)).toBeTruthy();
     expect(screen.getByRole('button', { name: 'View original' })).toBeTruthy();

@@ -1,5 +1,6 @@
 'use client';
 
+import { trpc } from '@op/api/client';
 import { useRelativeTime } from '@op/hooks';
 import {
   Accordion,
@@ -13,6 +14,9 @@ import { Separator } from '@op/sense/Separator';
 import { Fragment, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
+
+import { TranslateLink } from '../TranslateLink';
+import { useTranslateLink } from '../useTranslateLink';
 
 export interface AuthorNote {
   /** The resubmitted proposal version. */
@@ -89,11 +93,27 @@ function AuthorNoteEntry({
 }) {
   const t = useTranslations();
   const timeAgo = useRelativeTime(note.respondedAt, { style: 'long' });
+  const translateRequest =
+    trpc.translation.translateRevisionRequest.useMutation();
+  // Every request a resubmission answered carries the same note.
+  const [requestId] = note.requestIds;
+
+  const translation = useTranslateLink({
+    detectionText: note.comment,
+    enabled: !!requestId,
+    request: (targetLocale) =>
+      requestId
+        ? translateRequest
+            .mutateAsync({ requestId, targetLocale })
+            .then(({ responseComment }) => responseComment || undefined)
+        : Promise.resolve(undefined),
+  });
 
   return (
     <div data-testid="author-note" className="flex flex-col gap-3">
+      <TranslateLink translation={translation} />
       <p dir="auto" className="text-base whitespace-pre-wrap">
-        {note.comment}
+        {translation.translation ?? note.comment}
       </p>
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
         <span>{t('decisions.review.revisedTimeAgo', { timeAgo })}</span>

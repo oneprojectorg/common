@@ -8,9 +8,10 @@ import { runTranslateBatch } from './runTranslateBatch';
 
 export type RevisionRequestTranslation = {
   requestComment: string | undefined;
+  responseComment: string | undefined;
 };
 
-/** Translates a revision request for anyone who can read the proposal's revision requests. */
+/** Translates a revision request and the author's note on it for anyone who can read the proposal's revision requests. */
 export async function translateRevisionRequest({
   requestId,
   targetLocale,
@@ -27,7 +28,7 @@ export async function translateRevisionRequest({
 > {
   const request = await db.query.proposalReviewRequests.findFirst({
     where: { id: requestId },
-    columns: { id: true, requestComment: true },
+    columns: { id: true, requestComment: true, responseComment: true },
     with: { assignment: { columns: { proposalId: true } } },
   });
 
@@ -42,23 +43,33 @@ export async function translateRevisionRequest({
     with: {},
   });
 
-  if (!request.requestComment.trim()) {
-    return { requestComment: undefined, sourceLocale: '', targetLocale };
+  const prefix = `revision_request:${request.id}:`;
+  const entries = [
+    { contentKey: `${prefix}request_comment`, text: request.requestComment },
+    {
+      contentKey: `${prefix}response_comment`,
+      text: request.responseComment ?? '',
+    },
+  ].filter((entry) => entry.text.trim());
+
+  if (entries.length === 0) {
+    return {
+      requestComment: undefined,
+      responseComment: undefined,
+      sourceLocale: '',
+      targetLocale,
+    };
   }
 
-  const [result] = await runTranslateBatch(
-    [
-      {
-        contentKey: `revision_request:${request.id}:request_comment`,
-        text: request.requestComment,
-      },
-    ],
-    targetLocale,
-  );
+  const results = await runTranslateBatch(entries, targetLocale);
+  const getTranslatedText = (contentKey: string) =>
+    results.find((result) => result.contentKey === contentKey)?.translatedText;
 
   return {
-    requestComment: result?.translatedText,
-    sourceLocale: result?.sourceLocale ?? '',
+    requestComment: getTranslatedText(`${prefix}request_comment`),
+    responseComment: getTranslatedText(`${prefix}response_comment`),
+    sourceLocale:
+      results.find((result) => result.sourceLocale)?.sourceLocale ?? '',
     targetLocale,
   };
 }

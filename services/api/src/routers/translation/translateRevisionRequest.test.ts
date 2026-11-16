@@ -5,6 +5,7 @@ import {
 import { db } from '@op/db/client';
 import {
   ProposalReviewAssignmentStatus,
+  ProposalReviewRequestState,
   contentTranslations,
 } from '@op/db/schema';
 import { like } from 'drizzle-orm';
@@ -34,6 +35,7 @@ async function createAuthenticatedCaller(email: string) {
 async function createRevisionRequestScenario(
   testData: TestReviewsDataManager,
   onTestFinished: (fn: () => Promise<void>) => void,
+  { responseComment }: { responseComment?: string } = {},
 ) {
   const created = await testData.createReviewAssignment({
     title: 'Budget Proposal',
@@ -43,6 +45,9 @@ async function createRevisionRequestScenario(
   const request = await createRevisionRequest({
     assignmentId: created.assignment.id,
     requestComment: 'Please add a detailed budget breakdown.',
+    ...(responseComment
+      ? { state: ProposalReviewRequestState.RESUBMITTED, responseComment }
+      : {}),
   });
 
   onTestFinished(async () => {
@@ -79,6 +84,31 @@ describe('translation.translateRevisionRequest', () => {
     // No reviewer identity rides along.
     expect(result).toEqual({
       requestComment: '[ES] Please add a detailed budget breakdown.',
+      sourceLocale: 'EN',
+      targetLocale: 'es',
+    });
+  });
+
+  it("translates the author's note on a resubmitted request", async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const { reviewer, request } = await createRevisionRequestScenario(
+      testData,
+      onTestFinished,
+      { responseComment: 'I added the budget breakdown.' },
+    );
+
+    const caller = await createAuthenticatedCaller(reviewer.email);
+    const result = await caller.translation.translateRevisionRequest({
+      requestId: request.id,
+      targetLocale: 'es',
+    });
+
+    expect(result).toEqual({
+      requestComment: '[ES] Please add a detailed budget breakdown.',
+      responseComment: '[ES] I added the budget breakdown.',
       sourceLocale: 'EN',
       targetLocale: 'es',
     });
