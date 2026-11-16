@@ -29,7 +29,7 @@
 --   op_backfill.instance_ids  required. '<uuid>,<uuid>' limits the run to
 --                             those decisions; 'all' runs on every decision.
 --                             Unset or blank stops the run before any write.
--- check-phase-drift.sql and strip-blob-phases.sql read instance_ids too.
+-- check-missing-phase-rows.sql and strip-blob-phases.sql read instance_ids too.
 DO $$
 DECLARE
   -- JS String.prototype.trim's whitespace

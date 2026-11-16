@@ -2,7 +2,7 @@
 -- rows. A decision with no rows keeps it, as it is the only copy.
 --
 -- Run it only with #2431, after the app no longer falls back to reading
--- instance_data.phases. Run check-phase-drift.sql first and confirm it returns
+-- instance_data.phases. Run check-missing-phase-rows.sql first and confirm it returns
 -- zero rows.
 --
 -- Run by hand with psql against each environment, never through migrate:

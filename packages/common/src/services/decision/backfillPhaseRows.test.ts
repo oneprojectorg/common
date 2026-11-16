@@ -21,7 +21,7 @@ const readDataScript = (name: string) =>
   );
 
 const backfillSql = readDataScript('backfill-phase-rows.sql');
-const driftSql = readDataScript('check-phase-drift.sql');
+const missingRowsSql = readDataScript('check-missing-phase-rows.sql');
 const stripSql = readDataScript('strip-blob-phases.sql');
 
 const noRowsSchema = z.object({
@@ -395,7 +395,7 @@ describe.concurrent('backfill-phase-rows data script', () => {
     const partial = await seedDecision(testData, {});
     const ids = [backfilled, partial];
 
-    expect(await runDriftCheck(ids)).toEqual(
+    expect(await runMissingRowsCheck(ids)).toEqual(
       sortByInstance(
         ids.map((instanceId) => ({ instance_id: instanceId, blob_phases: 2 })),
       ),
@@ -404,7 +404,7 @@ describe.concurrent('backfill-phase-rows data script', () => {
     await runBackfill(testData, backfilled);
     await insertPhaseRow(testData, partial, { phaseId: 'initial' });
 
-    expect(await runDriftCheck(ids)).toEqual([]);
+    expect(await runMissingRowsCheck(ids)).toEqual([]);
   });
 
   it('given instance_ids set to all, then the no-rows check covers every decision', async ({
@@ -414,14 +414,14 @@ describe.concurrent('backfill-phase-rows data script', () => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
     const instanceId = await seedDecision(testData, {});
 
-    const rows = await runDriftCheck([], {
+    const rows = await runMissingRowsCheck([], {
       'op_backfill.instance_ids': 'all',
     });
 
     expect(rows.map((row) => row.instance_id)).toContain(instanceId);
   });
 
-  it('given a blank instance_ids, then the drift check and the strip fail, and the strip changes nothing', async ({
+  it('given a blank instance_ids, then the missing-rows check and the strip fail, and the strip changes nothing', async ({
     task,
     onTestFinished,
   }) => {
@@ -431,7 +431,7 @@ describe.concurrent('backfill-phase-rows data script', () => {
     const before = await readInstanceData(instanceId);
 
     await expect(
-      runDriftCheck([], { 'op_backfill.instance_ids': ' ' }),
+      runMissingRowsCheck([], { 'op_backfill.instance_ids': ' ' }),
     ).rejects.toThrow(/op_backfill\.instance_ids is required/);
     await expect(
       runStrip([], { 'op_backfill.instance_ids': ' ' }),
@@ -547,8 +547,11 @@ const runBackfill = async (
   }
 };
 
-const runDriftCheck = async (instanceIds: string[], settings?: Settings) => {
-  const result = await runInScope(driftSql, instanceIds, settings);
+const runMissingRowsCheck = async (
+  instanceIds: string[],
+  settings?: Settings,
+) => {
+  const result = await runInScope(missingRowsSql, instanceIds, settings);
   // postgres.js returns one result set per statement; the query is the last
   const resultSets = z.array(z.array(z.unknown())).parse(result);
   return z.array(noRowsSchema).parse(resultSets.at(-1));

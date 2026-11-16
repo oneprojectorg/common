@@ -4,14 +4,14 @@
 --
 -- Run by hand with psql against each environment, never through migrate:
 --   psql "$DATABASE_URL" -c "SET op_backfill.instance_ids = 'all'" \
---     -f services/db/data/check-phase-drift.sql
+--     -f services/db/data/check-missing-phase-rows.sql
 --
 -- op_backfill.instance_ids is required: '<uuid>,<uuid>' limits it to those
 -- decisions; 'all' checks every decision.
 DO $$
 BEGIN
   IF nullif(btrim(current_setting('op_backfill.instance_ids', true)), '') IS NULL THEN
-    RAISE EXCEPTION 'check-phase-drift: op_backfill.instance_ids is required: a comma-separated uuid list, or all';
+    RAISE EXCEPTION 'check-missing-phase-rows: op_backfill.instance_ids is required: a comma-separated uuid list, or all';
   END IF;
 END $$;
 
