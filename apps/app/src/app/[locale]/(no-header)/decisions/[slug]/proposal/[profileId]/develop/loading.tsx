@@ -1,5 +1,5 @@
-import { ProposalEditorSkeleton } from '@/components/decisions/ProposalEditorSkeleton';
+import { DevelopProposalSkeleton } from '@/components/decisions/developProposalEditor/DevelopProposalSkeleton';
 
 export default function Loading() {
-  return <ProposalEditorSkeleton />;
+  return <DevelopProposalSkeleton />;
 }

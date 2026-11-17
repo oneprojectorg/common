@@ -11,23 +11,18 @@ import { DecisionSubpageHeader } from '../DecisionSubpageHeader';
 
 interface DevelopProposalFrameProps {
   backHref: string;
-  /** Header controls placed before the language chooser and avatar menu. */
   actions?: ReactNode;
-  /** The origin proposal, shown in the first pane. */
   origin: ReactNode;
   originLabel: string;
   heading: string;
   description?: string;
-  /** A line under the heading and description, such as a read-only notice. */
   notice?: ReactNode;
-  /** The proposal's fields. */
   children: ReactNode;
 }
 
 /**
- * The develop screen around a proposal developed from origins: a header, the
- * origin pane and the form pane side by side. The form pane is the first tab
- * on a narrow screen.
+ * The develop screen: a header over the origin pane and the form pane. The
+ * form is the first tab on a narrow screen.
  */
 export function DevelopProposalFrame({
   backHref,
@@ -50,16 +45,24 @@ export function DevelopProposalFrame({
       >
         {actions}
       </DecisionSubpageHeader>
-      <SplitPane className="mx-auto w-full max-w-6xl" defaultMobileTabId="form">
-        <SplitPane.Pane id="origin" label={originLabel} className="sm:pt-8">
+      <SplitPane className="mx-auto w-full max-w-7xl" defaultMobileTabId="form">
+        <SplitPane.Pane
+          id="origin"
+          label={originLabel}
+          className="sm:ps-6 sm:pt-8"
+        >
           {origin}
         </SplitPane.Pane>
-        <SplitPane.Pane id="form" label={heading} className="sm:pt-8">
+        <SplitPane.Pane id="form" label={heading} className="sm:pe-6 sm:pt-8">
           <div className="flex flex-col gap-8">
             <div className="flex flex-col gap-2">
-              <Header2>{heading}</Header2>
+              <Header2>
+                <bdi>{heading}</bdi>
+              </Header2>
               {description ? (
-                <p className="text-base text-foreground">{description}</p>
+                <p className="text-base text-foreground">
+                  <bdi>{description}</bdi>
+                </p>
               ) : null}
               {notice}
             </div>
