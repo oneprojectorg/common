@@ -14,6 +14,7 @@ export const SMS_ARGUMENT_KEYWORDS = [
   'info',
   'remove',
   'move',
+  'l',
 ] as const;
 
 export const SMS_KEYWORDS = [

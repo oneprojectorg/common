@@ -762,6 +762,9 @@ importers:
 
   packages/common:
     dependencies:
+      '@op/ai':
+        specifier: workspace:*
+        version: link:../ai
       '@op/analytics':
         specifier: workspace:*
         version: link:../analytics
@@ -854,7 +857,7 @@ importers:
         version: 3.0.1
       next:
         specifier: 'catalog:'
-        version: 16.4.6(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(@playwright/test@1.58.2)(@types/node@26.5.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.85.1)
+        version: 16.4.6(@babel/core@7.29.7)(@opentelemetry/api@1.9.0)(@playwright/test@1.58.2)(@types/node@26.5.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.85.1)
       p-map:
         specifier: ^7.0.3
         version: 7.0.3
@@ -1023,7 +1026,7 @@ importers:
         version: 4.1.11(vitest@4.1.11)
       next:
         specifier: 'catalog:'
-        version: 16.4.6(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(@playwright/test@1.58.2)(@types/node@26.5.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.85.1)
+        version: 16.4.6(@opentelemetry/api@1.9.0)(@playwright/test@1.58.2)(@types/node@26.5.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.85.1)
       typescript:
         specifier: 7.0.2
         version: 7.0.2
@@ -19089,7 +19092,7 @@ snapshots:
       postcss: 8.5.3
       react: 19.2.1
       react-dom: 19.2.1(react@19.2.1)
-      styled-jsx: 5.1.6(@babel/core@7.28.5)(react@19.2.1)
+      styled-jsx: 5.1.6(react@19.2.1)
     optionalDependencies:
       '@next/swc-darwin-arm64': 16.2.6
       '@next/swc-darwin-x64': 16.2.6
@@ -19137,6 +19140,35 @@ snapshots:
       - '@types/node'
       - babel-plugin-macros
 
+  next@16.4.6(@babel/core@7.29.7)(@opentelemetry/api@1.9.0)(@playwright/test@1.58.2)(@types/node@26.5.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.85.1):
+    dependencies:
+      '@next/env': 16.4.6
+      '@swc/helpers': 0.5.23
+      baseline-browser-mapping: 2.10.0
+      caniuse-lite: 1.0.30001692
+      postcss: 8.5.3
+      react: 19.2.1
+      react-dom: 19.2.1(react@19.2.1)
+      styled-jsx: 5.1.6(@babel/core@7.29.7)(react@19.2.1)
+    optionalDependencies:
+      '@next/swc-darwin-arm64': 16.4.6
+      '@next/swc-darwin-x64': 16.4.6
+      '@next/swc-linux-arm64-gnu': 16.4.6
+      '@next/swc-linux-arm64-musl': 16.4.6
+      '@next/swc-linux-x64-gnu': 16.4.6
+      '@next/swc-linux-x64-musl': 16.4.6
+      '@next/swc-win32-arm64-msvc': 16.4.6
+      '@next/swc-win32-x64-msvc': 16.4.6
+      '@opentelemetry/api': 1.9.0
+      '@playwright/test': 1.58.2
+      babel-plugin-react-compiler: 1.0.0
+      sass: 1.85.1
+      sharp: 0.35.5(@types/node@26.5.0)
+    transitivePeerDependencies:
+      - '@babel/core'
+      - '@types/node'
+      - babel-plugin-macros
+
   next@16.4.6(@opentelemetry/api@1.9.0)(@playwright/test@1.58.2)(@types/node@24.13.3)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.85.1):
     dependencies:
       '@next/env': 16.4.6
@@ -19146,7 +19178,7 @@ snapshots:
       postcss: 8.5.3
       react: 19.2.1
       react-dom: 19.2.1(react@19.2.1)
-      styled-jsx: 5.1.6(@babel/core@7.28.5)(react@19.2.1)
+      styled-jsx: 5.1.6(react@19.2.1)
     optionalDependencies:
       '@next/swc-darwin-arm64': 16.4.6
       '@next/swc-darwin-x64': 16.4.6
@@ -19175,7 +19207,7 @@ snapshots:
       postcss: 8.5.3
       react: 19.2.1
       react-dom: 19.2.1(react@19.2.1)
-      styled-jsx: 5.1.6(@babel/core@7.28.5)(react@19.2.1)
+      styled-jsx: 5.1.6(react@19.2.1)
     optionalDependencies:
       '@next/swc-darwin-arm64': 16.4.6
       '@next/swc-darwin-x64': 16.4.6
@@ -19194,7 +19226,6 @@ snapshots:
       - '@babel/core'
       - '@types/node'
       - babel-plugin-macros
-    optional: true
 
   no-case@3.0.4:
     dependencies:
@@ -20707,6 +20738,18 @@ snapshots:
       react: 19.2.1
     optionalDependencies:
       '@babel/core': 7.28.5
+
+  styled-jsx@5.1.6(@babel/core@7.29.7)(react@19.2.1):
+    dependencies:
+      client-only: 0.0.1
+      react: 19.2.1
+    optionalDependencies:
+      '@babel/core': 7.29.7
+
+  styled-jsx@5.1.6(react@19.2.1):
+    dependencies:
+      client-only: 0.0.1
+      react: 19.2.1
 
   supabase@2.95.4:
     dependencies:

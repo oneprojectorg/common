@@ -38,6 +38,7 @@ const NUMBERS = {
   chatter: '+15005550095',
   bareInfo: '+15005550097',
   infoHelp: '+15005550038',
+  asker: '+15005550107',
   owner: '+15005550098',
   outsider: '+15005550099',
   codeReply: '+15005550089',
@@ -230,6 +231,120 @@ describe('handleSMSCommand against the database', () => {
       expect(body).toContain(keyword.toUpperCase());
     }
     expect(body!.length).toBeLessThanOrEqual(SMS_MAX_BODY_LENGTH);
+  });
+
+  it('given a member texts L with a question, then the model answers in one text', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsCommandFixture(task.id, onTestFinished);
+    const phone = parsePhoneNumber(NUMBERS.asker);
+    await fixture.createPhoneOnlyAccount(phone);
+    const realFetch = globalThis.fetch;
+    vi.stubEnv('AI_BASE_URL', 'https://inference.test.invalid/v1');
+    vi.stubEnv('AI_API_KEY', 'test-key');
+    vi.stubGlobal('fetch', ((input: RequestInfo | URL, init?: RequestInit) =>
+      String(input).startsWith('https://inference.test.invalid')
+        ? Promise.resolve(
+            new Response(
+              JSON.stringify({
+                id: 'mock',
+                object: 'chat.completion',
+                created: 0,
+                model: 'glm-5.3-flash',
+                choices: [
+                  {
+                    index: 0,
+                    message: {
+                      role: 'assistant',
+                      content: 'Text SHOW to see your decisions.',
+                    },
+                    finish_reason: 'stop',
+                  },
+                ],
+                usage: {
+                  prompt_tokens: 1,
+                  completion_tokens: 1,
+                  total_tokens: 2,
+                },
+              }),
+              {
+                status: 200,
+                headers: { 'content-type': 'application/json' },
+              },
+            ),
+          )
+        : realFetch(input, init)) as typeof fetch);
+    onTestFinished(() => {
+      vi.unstubAllGlobals();
+      vi.unstubAllEnvs();
+    });
+    const t = new InngestTestEngine({ function: handleSMSCommand });
+
+    const { result } = await t.execute({
+      events: [
+        smsInboundEvent({
+          from: phone,
+          keyword: 'l',
+          argument: 'how do i vote',
+          body: 'L how do I vote?',
+        }),
+      ],
+    });
+
+    expect(result).toEqual({ message: 'question answered' });
+    expect(recordedSms.map((sms) => sms.body)).toEqual([
+      'Text SHOW to see your decisions.',
+    ]);
+  });
+
+  it('given a member texts L alone, then they are told how to ask', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsCommandFixture(task.id, onTestFinished);
+    const phone = parsePhoneNumber(NUMBERS.asker);
+    await fixture.createPhoneOnlyAccount(phone);
+    const t = new InngestTestEngine({ function: handleSMSCommand });
+
+    const { result } = await t.execute({
+      events: [smsInboundEvent({ from: phone, keyword: 'l', body: 'L' })],
+    });
+
+    expect(result).toEqual({ message: 'ask needs a question' });
+    expect(recordedSms.map((sms) => sms.body)).toEqual([
+      'Text L and your question, for example: L how do I vote?',
+    ]);
+  });
+
+  it('given the model is unreachable, when a member texts L with a question, then they get the help text', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsCommandFixture(task.id, onTestFinished);
+    const phone = parsePhoneNumber(NUMBERS.asker);
+    await fixture.createPhoneOnlyAccount(phone);
+    vi.stubEnv('AI_BASE_URL', '');
+    onTestFinished(() => {
+      vi.unstubAllEnvs();
+    });
+    const t = new InngestTestEngine({ function: handleSMSCommand });
+
+    const { result } = await t.execute({
+      events: [
+        smsInboundEvent({
+          from: phone,
+          keyword: 'l',
+          argument: 'how do i vote',
+          body: 'L how do I vote?',
+        }),
+      ],
+    });
+
+    expect(result).toEqual({ message: 'ask failed, help sent' });
+    expect(recordedSms.map((sms) => sms.body)).toEqual([
+      SMS_COMMAND_HELP_MESSAGE,
+    ]);
   });
 
   it('given a member texts SHOW and the slug of a decision still taking submissions, then they are told voting is closed', async ({

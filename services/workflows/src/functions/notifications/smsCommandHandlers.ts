@@ -22,6 +22,7 @@ import {
   VoterNotEnrolledError,
   addSmsBallotPicks,
   affirmVoterAttestation,
+  answerVotingQuestion,
   deleteBallotDraft,
   findCastBallot,
   findLatestCastBallotInstance,
@@ -608,6 +609,90 @@ export const freeText: SmsCommandHandler = async (context) => {
         message: 'address resolved',
       });
   }
+};
+
+const SMS_ASK_USAGE_MESSAGE =
+  'Text L and your question, for example: L how do I vote?';
+
+export const ask: SmsCommandHandler = async (context) => {
+  const { step, account, body, deliver } = context;
+  const question = (body ?? '')
+    .trim()
+    .replace(/^l[.!:,]?\s*/i, '')
+    .trim();
+
+  if (!question) {
+    return deliverAll({
+      deliver,
+      stepId: 'send-ask-usage',
+      label: 'Ask usage reply',
+      bodies: [SMS_ASK_USAGE_MESSAGE],
+      message: 'ask needs a question',
+    });
+  }
+
+  const resolved = await step.run('resolve-ask-answer', async () => {
+    const pending = await findPendingVoterEnrolment({
+      authUserId: account.authUserId,
+    });
+    if (pending && pending.taxonomyTermId === null) {
+      return { kind: 'awaiting_address' as const, answer: null };
+    }
+
+    const facts: string[] = [];
+    const instanceId = await findBallotInstance(context);
+    if (instanceId) {
+      const decision = await swallowUnreadable(() =>
+        describeEnrolmentDecision({
+          instanceId,
+          authUserId: account.authUserId,
+        }),
+      );
+      if (decision) {
+        facts.push(
+          `Decision "${decision.name}": voting ${decision.votingOpen ? 'open' : 'closed'}.`,
+        );
+      }
+      const summary = await summarizeSmsBallot({
+        authUserId: account.authUserId,
+        instanceId,
+      }).catch(() => null);
+      if (summary) {
+        facts.push(
+          `The member's draft ballot holds ${summary.picks.length} picks.`,
+        );
+      }
+    }
+
+    const answer = await answerVotingQuestion({
+      question,
+      commandList: SMS_COMMAND_LIST_MESSAGE,
+      facts,
+    });
+    return { kind: 'asked' as const, answer };
+  });
+
+  if (resolved.kind === 'awaiting_address') {
+    return freeText(context);
+  }
+
+  if (!resolved.answer) {
+    return deliverAll({
+      deliver,
+      stepId: 'send-ask-fallback',
+      label: 'Ask fallback reply',
+      bodies: [SMS_COMMAND_HELP_MESSAGE],
+      message: 'ask failed, help sent',
+    });
+  }
+
+  return deliverAll({
+    deliver,
+    stepId: 'send-ask-answer',
+    label: 'Ask answer',
+    bodies: [resolved.answer],
+    message: 'question answered',
+  });
 };
 
 export const sendSmsHelp = async (
