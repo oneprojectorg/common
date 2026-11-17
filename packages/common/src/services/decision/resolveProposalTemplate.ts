@@ -39,29 +39,36 @@ export async function resolveProposalTemplate(
 }
 
 /**
- * List form of `resolveProposalTemplate`: one query over the distinct non-null
- * `formSchemaIds` and at most one instance → process resolution for null.
- * Returns a lookup that gives each row its own template; it throws
- * `NotFoundError` for an id that was not passed in.
+ * List form of `resolveProposalTemplate`. It runs one query over the distinct
+ * non-null `formSchemaId` values, and at most one instance → process
+ * resolution when a proposal has no `formSchemaId`.
+ * Returns a lookup by proposal id. The lookup throws `NotFoundError` for an
+ * id that was not passed in.
  */
-export async function resolveProposalTemplatesByFormSchemaId({
-  formSchemaIds,
+export async function resolveProposalTemplates({
+  proposals,
   instanceData,
   processId,
 }: {
-  formSchemaIds: ReadonlyArray<string | null>;
+  proposals: ReadonlyArray<{ id: string; formSchemaId: string | null }>;
   instanceData: unknown;
   processId: string | null;
-}): Promise<(formSchemaId: string | null) => ProposalTemplateSchema | null> {
-  const ids = [
-    ...new Set(formSchemaIds.filter((id): id is string => id !== null)),
+}): Promise<(proposalId: string) => ProposalTemplateSchema | null> {
+  const formSchemaIds = [
+    ...new Set(
+      proposals
+        .map((proposal) => proposal.formSchemaId)
+        .filter((id): id is string => id !== null),
+    ),
   ];
-  const needsInstanceTemplate = formSchemaIds.some((id) => id === null);
+  const needsInstanceTemplate = proposals.some(
+    (proposal) => proposal.formSchemaId === null,
+  );
 
   const [rows, instanceTemplate] = await Promise.all([
-    ids.length > 0
+    formSchemaIds.length > 0
       ? db.query.formSchemas.findMany({
-          where: { id: { in: ids } },
+          where: { id: { in: formSchemaIds } },
           columns: { id: true, schema: true },
         })
       : [],
@@ -70,24 +77,30 @@ export async function resolveProposalTemplatesByFormSchemaId({
       : null,
   ]);
 
-  const templates = new Map<string, ProposalTemplateSchema>();
+  const formTemplates = new Map<string, ProposalTemplateSchema>();
   for (const row of rows) {
-    templates.set(row.id, asProposalTemplate(row.schema));
+    formTemplates.set(row.id, asProposalTemplate(row.schema));
   }
 
-  const missing = ids.find((id) => !templates.has(id));
-  if (missing) {
-    throw new NotFoundError('Form schema', missing);
-  }
-
-  return (formSchemaId) => {
-    if (formSchemaId === null) {
-      return instanceTemplate;
+  const templates = new Map<string, ProposalTemplateSchema | null>();
+  for (const proposal of proposals) {
+    if (proposal.formSchemaId === null) {
+      templates.set(proposal.id, instanceTemplate);
+      continue;
     }
 
-    const template = templates.get(formSchemaId);
+    const template = formTemplates.get(proposal.formSchemaId);
     if (!template) {
-      throw new NotFoundError('Form schema', formSchemaId);
+      throw new NotFoundError('Form schema', proposal.formSchemaId);
+    }
+
+    templates.set(proposal.id, template);
+  }
+
+  return (proposalId) => {
+    const template = templates.get(proposalId);
+    if (template === undefined) {
+      throw new NotFoundError('Proposal', proposalId);
     }
 
     return template;
