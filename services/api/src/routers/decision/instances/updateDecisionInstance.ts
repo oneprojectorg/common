@@ -24,7 +24,7 @@ export const updateDecisionInstanceRouter = router({
     .mutation(async ({ ctx, input }) => {
       const { user } = ctx;
 
-      const { profile, phases, phaseEndDateChanges, didPublish } =
+      const { profile, phaseRows, phaseEndDateChanges, didPublish } =
         await updateDecisionInstance({
           ...input,
           user,
@@ -51,7 +51,7 @@ export const updateDecisionInstanceRouter = router({
       }
 
       return updateDecisionInstanceOutputSchema.parse({
-        ...(await resolveProfilePhases({ profile, phases })),
+        ...(await resolveProfilePhases({ profile, phases: phaseRows })),
         didPublish,
       });
     }),

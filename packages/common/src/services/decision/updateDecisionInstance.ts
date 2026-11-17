@@ -222,7 +222,7 @@ export const updateDecisionInstance = async ({
   return {
     profile,
     // The rows this save left, so the caller can skip reading them again.
-    phases: written.phases,
+    phaseRows: written.phases,
     phaseEndDateChanges: written.phaseEndDateChanges,
     didPublish: written.isBeingPublished,
   };
