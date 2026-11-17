@@ -1,20 +1,7 @@
 import { db, eq } from '@op/db/client';
 import { users } from '@op/db/schema';
 
-export const policyAcceptanceSet = ({
-  tos,
-  privacy,
-  now,
-}: {
-  tos: boolean;
-  privacy: boolean;
-  now: string;
-}) => ({
-  tos,
-  privacy,
-  ...(tos ? { tosAcceptedOn: now } : {}),
-  ...(privacy ? { privacyAcceptedOn: now } : {}),
-});
+import { policyAcceptanceSet } from './policyAcceptance';
 
 export const recordPhoneSignupConsent = async ({
   authUserId,

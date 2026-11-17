@@ -16,6 +16,8 @@ export const SMS_UNAVAILABLE_RESULT = {
   message: 'sms sending unavailable',
 } as const;
 
+export const SMS_COMMANDS_FEATURE_FLAG = 'sms-commands';
+
 export const SMS_COMMAND_HELP_MESSAGE =
   'Text SHOW to see your decisions, or SHOW and a decision name, for example SHOW columbus.\nReply STOP to unsubscribe.';
 

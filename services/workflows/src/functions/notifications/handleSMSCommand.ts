@@ -32,12 +32,12 @@ import {
 } from './smsInboundLimits';
 import {
   INVALID_PHONE_RESULT,
+  SMS_COMMANDS_FEATURE_FLAG,
   SMS_UNAVAILABLE_RESULT,
   createTextSender,
   parseInboundNumber,
 } from './smsReply';
 
-const SMS_COMMANDS_FEATURE_FLAG = 'sms-commands';
 const { smsInboundReceived } = Events;
 
 export const handleSMSCommand = inngest.createFunction(

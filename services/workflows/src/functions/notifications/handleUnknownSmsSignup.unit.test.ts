@@ -542,7 +542,7 @@ describe('handleUnknownSmsSignup', () => {
     );
   });
 
-  it('still reports success when only the welcome reply is rejected, and replays nothing', async () => {
+  it('still reports success and replays the command when only the welcome reply is rejected', async () => {
     unknownNumberWithProvider(
       vi.fn<SendSms>().mockResolvedValueOnce(accepted).mockResolvedValueOnce({
         status: 'rejected',
@@ -567,8 +567,40 @@ describe('handleUnknownSmsSignup', () => {
     expect(result).toEqual({
       message: 'account created',
       authUserId: 'auth-user-3',
+      replayed: true,
+    });
+    expect(ctx.step.sendEvent).toHaveBeenCalled();
+  });
+
+  it('given the sms-commands flag is off, when the code confirms, then nothing replays and the welcome names VOTE', async () => {
+    const sendSms = unknownNumberWithProvider(
+      vi.fn<SendSms>().mockResolvedValue(accepted),
+    );
+    vi.mocked(isFeatureEnabled)
+      .mockResolvedValueOnce(true)
+      .mockResolvedValueOnce(false);
+    vi.mocked(getPhoneSignupState)
+      .mockResolvedValueOnce(free)
+      .mockResolvedValueOnce(confirmed(2));
+    vi.mocked(confirmPhoneSignupCode).mockResolvedValue({
+      status: 'confirmed',
+      authUserId: 'auth-user-2',
+    });
+    const t = new InngestTestEngine({ function: handleUnknownSmsSignup });
+
+    const { result, ctx } = await t.execute({
+      events: [onLine({ from: FROM, keyword: 'vote', body: 'VOTE' })],
+      steps: [reply(1, '123456')],
+    });
+
+    expect(result).toEqual({
+      message: 'account created',
+      authUserId: 'auth-user-2',
       replayed: false,
     });
+    expect(vi.mocked(sendSms).mock.calls.at(-1)?.[0]?.body).toContain(
+      'Text VOTE to register',
+    );
     expect(ctx.step.sendEvent).not.toHaveBeenCalled();
   });
 });

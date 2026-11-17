@@ -22,6 +22,7 @@ import {
 } from './smsInboundLimits';
 import {
   INVALID_PHONE_RESULT,
+  SMS_COMMANDS_FEATURE_FLAG,
   SMS_UNAVAILABLE_RESULT,
   createTextSender,
   parseInboundNumber,
@@ -293,11 +294,20 @@ export const handleUnknownSmsSignup = inngest.createFunction(
 
     const { authUserId } = outcome;
 
-    const profileId = await step.run('record-signup-consent', () =>
-      recordPhoneSignupConsent({ authUserId }),
+    const confirmedAccount = await step.run(
+      'record-signup-consent',
+      async () => {
+        const [profileId, commandsEnabled] = await Promise.all([
+          recordPhoneSignupConsent({ authUserId }),
+          isFeatureEnabled(SMS_COMMANDS_FEATURE_FLAG, 'server'),
+        ]);
+        return { profileId, commandsEnabled };
+      },
     );
 
-    const replaying = keyword !== null || Boolean(inbound.body?.trim());
+    const replaying =
+      confirmedAccount.commandsEnabled &&
+      (keyword !== null || Boolean(inbound.body?.trim()));
 
     const welcomeResult = await sendText(
       'send-welcome-reply',
@@ -312,9 +322,7 @@ export const handleUnknownSmsSignup = inngest.createFunction(
       });
     }
 
-    const replayed = replaying && welcomeResult.status !== 'rejected';
-
-    if (replayed) {
+    if (replaying) {
       await step.sendEvent('replay-original-command', {
         name: smsInboundReceived.name,
         id: `sms-inbound-${inbound.messageSid}-replay`,
@@ -324,9 +332,9 @@ export const handleUnknownSmsSignup = inngest.createFunction(
 
     logger.info('Created account from inbound SMS signup', {
       authUserId,
-      profileId,
+      profileId: confirmedAccount.profileId,
     });
 
-    return { message: 'account created', authUserId, replayed };
+    return { message: 'account created', authUserId, replayed: replaying };
   },
 );
