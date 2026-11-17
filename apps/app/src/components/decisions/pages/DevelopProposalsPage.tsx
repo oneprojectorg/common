@@ -17,7 +17,7 @@ import { ProposalsLoadError } from '../ProposalsLoadError';
  * The develop screen: what an admin or a holder of the Develop Proposals
  * permission sees while a develop phase is current and its inbound selection
  * is still pending. A muted band names the task; below it, the previous
- * phase's proposals (the origins) to prepare entries from, and the entries
+ * phase's proposals (the sources) to prepare entries from, and the entries
  * this phase holds so far.
  */
 export function DevelopProposalsPage({
@@ -33,7 +33,7 @@ export function DevelopProposalsPage({
     (phase) => phase.phaseId === instance.currentStateId,
   );
   // A develop phase that opens the process has nothing to develop from.
-  const originPhase =
+  const sourcePhase =
     currentIndex > 0 ? (phases[currentIndex - 1] ?? null) : null;
 
   return (
@@ -52,7 +52,7 @@ export function DevelopProposalsPage({
           <Suspense fallback={<DevelopProposalsListSkeleton />}>
             <DevelopProposalsList
               instance={instance}
-              originPhase={originPhase}
+              sourcePhase={sourcePhase}
               decisionSlug={decisionSlug}
               entryName={getEntryName({
                 developPhase: phases[currentIndex],

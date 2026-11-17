@@ -26,27 +26,27 @@ import { useTranslations } from '@/lib/i18n';
 import { ProposalsLoadError } from '../ProposalsLoadError';
 import { DevelopEntriesPanel } from './DevelopEntriesPanel';
 import {
-  DevelopOriginsPanel,
-  DevelopOriginsTableSkeleton,
-} from './DevelopOriginsPanel';
+  DevelopSourcesPanel,
+  DevelopSourcesTableSkeleton,
+} from './DevelopSourcesPanel';
 
 type DevelopTab = 'proposals' | 'entries';
 
 /**
  * The develop screen's body: a Proposals tab with the previous phase's
- * proposals (the origins) to prepare entries from, an Entries tab with the
+ * proposals (the sources) to prepare entries from, an Entries tab with the
  * entries this phase holds, and a fixed footer with the advancing count and
  * the confirm action.
  */
 export function DevelopProposalsList({
   instance,
-  originPhase,
+  sourcePhase,
   decisionSlug,
   entryName,
 }: {
   instance: ProcessInstance;
-  /** The phase the origins come from: the one before the develop phase. */
-  originPhase: InstancePhaseData | null;
+  /** The phase the sources come from: the one before the develop phase. */
+  sourcePhase: InstancePhaseData | null;
   decisionSlug: string;
   entryName: string;
 }) {
@@ -91,10 +91,10 @@ export function DevelopProposalsList({
           <APIErrorBoundary
             fallbacks={{ default: () => <ProposalsLoadError /> }}
           >
-            <Suspense fallback={<DevelopOriginsTableSkeleton />}>
-              <DevelopOriginsPanel
+            <Suspense fallback={<DevelopSourcesTableSkeleton />}>
+              <DevelopSourcesPanel
                 instance={instance}
-                originPhase={originPhase}
+                sourcePhase={sourcePhase}
                 decisionSlug={decisionSlug}
               />
             </Suspense>
@@ -142,7 +142,7 @@ export function DevelopProposalsListSkeleton() {
         <Skeleton className="h-6 w-24" />
         <Skeleton className="h-6 w-20" />
       </div>
-      <DevelopOriginsTableSkeleton />
+      <DevelopSourcesTableSkeleton />
     </div>
   );
 }

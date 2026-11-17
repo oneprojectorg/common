@@ -4,7 +4,7 @@
 export * from './money';
 export * from './services/decision/proposalDataSchema';
 export * from './services/decision/schemas/reviews';
-export * from './services/decision/schemas/developOrigins';
+export * from './services/decision/schemas/developSources';
 export {
   phaseIdSchema,
   instancePhaseRefSchema,

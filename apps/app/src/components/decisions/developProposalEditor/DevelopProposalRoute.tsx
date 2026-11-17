@@ -22,13 +22,13 @@ import { compileProposalSchema } from '../forms/proposal';
 import { ProposalFormRenderer } from '../proposalEditor/ProposalFormRenderer';
 import { decisionRootHref } from '../proposalHrefs';
 import { useLiveProposalDocument } from '../useLiveProposalDocument';
-import { DevelopOriginColumn } from './DevelopOriginColumn';
 import { DevelopProposalEditor } from './DevelopProposalEditor';
 import { DevelopProposalFrame } from './DevelopProposalFrame';
+import { DevelopSourceColumn } from './DevelopSourceColumn';
 import { getDevelopEntryHeading } from './getDevelopEntryHeading';
 
 /**
- * Opens a proposal developed from origins beside its origin; any other
+ * Opens a proposal developed from sources beside its source; any other
  * proposal is not found. The form is editable only for a caller who may
  * develop proposals, and only while the server reports the proposal editable.
  */
@@ -47,9 +47,9 @@ export function DevelopProposalRoute({
     relationshipType: ProposalRelationshipType.DEVELOPED,
   });
 
-  const origins = items.map((item) => item.proposal);
+  const sources = items.map((item) => item.proposal);
 
-  if (origins.length === 0) {
+  if (sources.length === 0) {
     notFound();
   }
 
@@ -89,10 +89,10 @@ export function DevelopProposalRoute({
         }))
     : [];
 
-  const originLabel = t('decisions.developEditor.proposalTab');
-  const origin = (
-    <DevelopOriginColumn
-      origins={origins}
+  const sourceLabel = t('decisions.developEditor.proposalTab');
+  const source = (
+    <DevelopSourceColumn
+      sources={sources}
       decisionRoot={decisionRootHref({
         decisionSlug,
         slug: decisionSlug,
@@ -108,8 +108,8 @@ export function DevelopProposalRoute({
         instance={instance}
         proposal={proposal}
         backHref={backHref}
-        origin={origin}
-        originLabel={originLabel}
+        source={source}
+        sourceLabel={sourceLabel}
         heading={heading}
         description={description}
       />
@@ -119,8 +119,8 @@ export function DevelopProposalRoute({
   return (
     <DevelopProposalFrame
       backHref={backHref}
-      origin={origin}
-      originLabel={originLabel}
+      source={source}
+      sourceLabel={sourceLabel}
       heading={heading}
       description={description}
       notice={

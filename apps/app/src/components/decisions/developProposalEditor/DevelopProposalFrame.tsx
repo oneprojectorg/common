@@ -12,8 +12,8 @@ import { DecisionSubpageHeader } from '../DecisionSubpageHeader';
 interface DevelopProposalFrameProps {
   backHref: string;
   actions?: ReactNode;
-  origin: ReactNode;
-  originLabel: string;
+  source: ReactNode;
+  sourceLabel: string;
   heading: string;
   description?: string;
   notice?: ReactNode;
@@ -21,14 +21,14 @@ interface DevelopProposalFrameProps {
 }
 
 /**
- * The develop screen: a header over the origin pane and the form pane. The
+ * The develop screen: a header over the source pane and the form pane. The
  * form is the first tab on a narrow screen.
  */
 export function DevelopProposalFrame({
   backHref,
   actions,
-  origin,
-  originLabel,
+  source,
+  sourceLabel,
   heading,
   description,
   notice,
@@ -47,11 +47,11 @@ export function DevelopProposalFrame({
       </DecisionSubpageHeader>
       <SplitPane className="mx-auto w-full max-w-7xl" defaultMobileTabId="form">
         <SplitPane.Pane
-          id="origin"
-          label={originLabel}
+          id="source"
+          label={sourceLabel}
           className="sm:ps-6 sm:pt-8"
         >
-          {origin}
+          {source}
         </SplitPane.Pane>
         <SplitPane.Pane id="form" label={heading} className="sm:pe-6 sm:pt-8">
           <div className="flex flex-col gap-8">

@@ -4,16 +4,16 @@ import { UnauthorizedError } from '../../utils';
 import { assertUserByAuthId } from '../assert';
 import { listPhaseProposals } from './listPhaseProposals';
 import type {
-  DevelopOriginList,
-  ListDevelopOriginsInput,
-} from './schemas/developOrigins';
+  DevelopSourceList,
+  ListDevelopSourcesInput,
+} from './schemas/developSources';
 
 /**
  * Gated only by the READ check in `listPhaseProposals`: no Develop Proposals,
  * Review or phase check, as Develop Proposals is asserted in
  * `createDevelopedProposal`.
  */
-export async function listDevelopOrigins({
+export async function listDevelopSources({
   user,
   processInstanceId,
   phaseIds,
@@ -22,7 +22,7 @@ export async function listDevelopOrigins({
   categoryIds,
   cursor,
   limit,
-}: ListDevelopOriginsInput & { user: User }): Promise<DevelopOriginList> {
+}: ListDevelopSourcesInput & { user: User }): Promise<DevelopSourceList> {
   const assignedToProfileId =
     scope === 'assigned' ? await getCallerProfileId(user) : undefined;
 

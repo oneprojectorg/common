@@ -27,40 +27,40 @@ import {
   PhaseReviews,
   PhaseReviewsTabPanel,
 } from '../ReviewsPanel/PhaseReviews';
-import { DevelopOriginSkeleton } from './DevelopProposalSkeleton';
+import { DevelopSourceSkeleton } from './DevelopProposalSkeleton';
 
-type OriginTab = 'proposal' | 'reviews';
+type SourceTab = 'proposal' | 'reviews';
 
-/** The entry's origins, read only, with a select when there are several. */
-export function DevelopOriginColumn({
-  origins,
+/** The entry's sources, read only, with a select when there are several. */
+export function DevelopSourceColumn({
+  sources,
   decisionRoot,
   reviewPhases,
 }: {
   /** At least one. */
-  origins: RelatedProposal[];
+  sources: RelatedProposal[];
   decisionRoot: string;
   /** The earlier review phases whose reviews the caller may read. */
   reviewPhases: PreviousReviewPhase[];
 }) {
   const t = useTranslations('decisions');
-  const [selectedId, setSelectedId] = useState(origins[0]?.id ?? '');
-  const origin =
-    origins.find((candidate) => candidate.id === selectedId) ?? origins[0];
+  const [selectedId, setSelectedId] = useState(sources[0]?.id ?? '');
+  const source =
+    sources.find((candidate) => candidate.id === selectedId) ?? sources[0];
 
-  if (!origin) {
+  if (!source) {
     return null;
   }
 
   return (
     <div className="flex flex-col gap-6">
-      {origins.length > 1 ? (
+      {sources.length > 1 ? (
         <ResponsiveSelect<string>
-          selectedKey={origin.id}
+          selectedKey={source.id}
           onSelectionChange={setSelectedId}
-          aria-label={t('developEditor.originSelectLabel')}
+          aria-label={t('developEditor.sourceSelectLabel')}
           className="w-full sm:max-w-80"
-          items={origins.map((candidate) => {
+          items={sources.map((candidate) => {
             const name =
               candidate.profile.name || t('proposals.untitledProposal');
 
@@ -73,17 +73,17 @@ export function DevelopOriginColumn({
         />
       ) : null}
 
-      {/* Keyed so the open tab and a failed load reset with the origin. */}
+      {/* Keyed so the open tab and a failed load reset with the source. */}
       <APIErrorBoundary
-        key={origin.id}
-        fallbacks={{ default: () => <OriginUnavailable /> }}
+        key={source.id}
+        fallbacks={{ default: () => <SourceUnavailable /> }}
       >
-        <Suspense fallback={<DevelopOriginSkeleton />}>
+        <Suspense fallback={<DevelopSourceSkeleton />}>
           <ProposalQueryProvider
-            profileId={origin.profile.id}
+            profileId={source.profile.id}
             decisionRoot={decisionRoot}
           >
-            <OriginSections reviewPhases={reviewPhases} />
+            <SourceSections reviewPhases={reviewPhases} />
           </ProposalQueryProvider>
         </Suspense>
       </APIErrorBoundary>
@@ -91,14 +91,14 @@ export function DevelopOriginColumn({
   );
 }
 
-function OriginSections({
+function SourceSections({
   reviewPhases,
 }: {
   reviewPhases: PreviousReviewPhase[];
 }) {
   const t = useTranslations('decisions');
   const { proposal } = useProposal();
-  const [tab, setTab] = useState<OriginTab>('proposal');
+  const [tab, setTab] = useState<SourceTab>('proposal');
 
   return (
     <Tabs
@@ -111,7 +111,7 @@ function OriginSections({
       }}
       className="gap-6"
     >
-      <ProposalTabList aria-label={t('developEditor.originSectionsLabel')}>
+      <ProposalTabList aria-label={t('developEditor.sourceSectionsLabel')}>
         <ProposalTabTrigger value="proposal">
           {t('developEditor.proposalTab')}
         </ProposalTabTrigger>
@@ -176,7 +176,7 @@ function ReviewsCount({ phases }: { phases: PreviousReviewPhase[] }) {
   return total;
 }
 
-function OriginUnavailable() {
+function SourceUnavailable() {
   const t = useTranslations('decisions.proposals');
 
   return (
