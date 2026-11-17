@@ -3,11 +3,9 @@
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { trpc } from '@op/api/client';
 import type { Proposal } from '@op/common/client';
-import { useDebounce } from '@op/hooks';
 import { Header2 } from '@op/sense/Header';
 import { Skeleton } from '@op/sense/Skeleton';
 import {
-  Table,
   TableBody,
   TableCell,
   TableHead,
@@ -16,7 +14,7 @@ import {
 } from '@op/sense/Table';
 import { useFormatter } from 'next-intl';
 import { parseAsString, useQueryState } from 'nuqs';
-import { Suspense, useDeferredValue, useState } from 'react';
+import { Suspense, useEffect } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -25,148 +23,133 @@ import { ProposalsLoadError } from '../ProposalsLoadError';
 import { usesDistrictCategoryTerm } from '../categoryTerm';
 import { ALL_CATEGORIES } from '../proposalFilterQuery';
 import {
-  type DevelopEntriesQuery,
   DevelopEntriesEmpty,
   DevelopEntriesNextPage,
+  DevelopEntriesProvider,
   DevelopEntriesSearch,
-  DevelopEntriesTableSkeleton,
+  DevelopEntriesTable,
   DevelopEntryBudgetCell,
   DevelopEntryStatusCell,
+  DevelopEntryStatusCellSkeleton,
+  DevelopEntryTextCellSkeleton,
   DevelopEntryTitleCell,
+  DevelopEntryTitleCellSkeleton,
   useDevelopEntries,
-  useDevelopEntriesQuery,
 } from './DevelopEntriesParts';
 
 /** The URL param of the entries' category filter, apart from the proposals list's. */
 const ENTRY_CATEGORY_PARAM = 'entryCategory';
-
-interface DevelopAdminEntriesPanelProps {
-  processInstanceId: string;
-  /** The develop phase, whose entries are listed. */
-  phaseId: string | undefined;
-  decisionSlug: string;
-  entryName: string;
-}
 
 /**
  * The body of the admin's develop screen: a count of the develop phase's
  * entries, a search and a category filter, and the entries with their
  * category, budget and status. The API filters, searches and pages; the
  * category filter is kept in the URL.
+ *
+ * The count, the category filter and the table suspend on their own data
+ * under sibling boundaries, so their requests start together.
  */
-export function DevelopAdminEntriesPanel(props: DevelopAdminEntriesPanelProps) {
-  return (
-    <APIErrorBoundary fallbacks={{ default: () => <ProposalsLoadError /> }}>
-      <Suspense fallback={<DevelopAdminEntriesPanelSkeleton />}>
-        <DevelopAdminEntriesPanelSuspense {...props} />
-      </Suspense>
-    </APIErrorBoundary>
-  );
-}
-
-function DevelopAdminEntriesPanelSuspense({
+export function DevelopAdminEntriesPanel({
   processInstanceId,
   phaseId,
   decisionSlug,
   entryName,
-}: DevelopAdminEntriesPanelProps) {
-  // The unfiltered total is the "of N" in the count; only `.total` is read,
-  // so the list is asked for one row.
-  const [[{ items: categories }, { total: unfilteredTotal }]] =
-    trpc.useSuspenseQueries((q) => [
-      q.decision.getCategories({ processInstanceId }),
-      q.decision.listProposals({ processInstanceId, phaseId, limit: 1 }),
-    ]);
-
-  const [categoryParam, setCategoryParam] = useQueryState(
-    ENTRY_CATEGORY_PARAM,
-    parseAsString.withDefault(ALL_CATEGORIES),
-  );
-  // The param is untrusted: an id this process does not have lists every
-  // category.
-  const selectedCategory = categories.some(
-    (category) => category.id === categoryParam,
-  )
-    ? categoryParam
-    : ALL_CATEGORIES;
-
-  const [search, setSearch] = useState('');
-  const [debouncedSearch] = useDebounce(search.trim(), 200);
-
-  // Keeps the current rows and count on screen while the next search or
-  // category loads, instead of swapping them for their skeletons.
-  const deferredSearch = useDeferredValue(debouncedSearch);
-  const deferredCategory = useDeferredValue(selectedCategory);
-  const query: DevelopEntriesQuery = {
-    processInstanceId,
-    phaseId,
-    search: deferredSearch,
-    categoryId:
-      deferredCategory === ALL_CATEGORIES ? undefined : deferredCategory,
-  };
+}: {
+  processInstanceId: string;
+  /** The develop phase, whose entries are listed. */
+  phaseId: string | undefined;
+  decisionSlug: string;
+  entryName: string;
+}) {
+  const [categoryParam] = useEntryCategoryParam();
+  // The list takes the param as given, without waiting for the categories:
+  // an id this process does not have matches nothing until the filter, once
+  // the categories load, clears it.
+  const categoryId =
+    categoryParam === ALL_CATEGORIES ? undefined : categoryParam;
 
   return (
-    <div className="flex flex-col gap-10">
-      <div className="flex min-h-11 flex-wrap items-center justify-between gap-4">
-        {/* Filtering swaps the rows in place, so the count is the only
-            feedback a screen reader gets that a search or filter landed. */}
-        <div role="status" aria-live="polite">
-          <APIErrorBoundary fallbacks={{ default: () => null }}>
-            <Suspense fallback={<Skeleton className="h-7 w-40" />}>
-              <DevelopEntriesCountSuspense
-                query={query}
-                unfilteredTotal={unfilteredTotal}
+    <DevelopEntriesProvider
+      processInstanceId={processInstanceId}
+      phaseId={phaseId}
+      categoryId={categoryId}
+    >
+      <div className="flex flex-col gap-10">
+        <div className="flex min-h-11 flex-wrap items-center justify-between gap-4">
+          {/* Filtering swaps the rows in place, so the count is the only
+              feedback a screen reader gets that a search or filter landed. */}
+          <div role="status" aria-live="polite">
+            <APIErrorBoundary fallbacks={{ default: () => null }}>
+              <Suspense
+                fallback={<Skeleton aria-hidden className="h-7 w-40" />}
+              >
+                <DevelopAdminEntriesCountSuspense
+                  processInstanceId={processInstanceId}
+                  phaseId={phaseId}
+                />
+              </Suspense>
+            </APIErrorBoundary>
+          </div>
+
+          <div className="flex w-full flex-wrap items-center gap-4 sm:w-auto">
+            <DevelopEntriesSearch />
+            <APIErrorBoundary fallbacks={{ default: () => null }}>
+              <Suspense fallback={<CategoryFilterSkeleton />}>
+                <DevelopAdminCategoryFilterSuspense
+                  processInstanceId={processInstanceId}
+                  decisionSlug={decisionSlug}
+                />
+              </Suspense>
+            </APIErrorBoundary>
+          </div>
+        </div>
+
+        <APIErrorBoundary fallbacks={{ default: () => <ProposalsLoadError /> }}>
+          <Suspense
+            fallback={
+              <DevelopAdminEntriesTableSkeleton
+                entryName={entryName}
+                decisionSlug={decisionSlug}
               />
-            </Suspense>
-          </APIErrorBoundary>
-        </div>
-
-        <div className="flex w-full flex-wrap items-center gap-4 sm:w-auto">
-          <DevelopEntriesSearch value={search} onChange={setSearch} />
-          <CategoryFilterSelect
-            decisionSlug={decisionSlug}
-            categories={categories}
-            selectedCategory={selectedCategory}
-            onSelectCategory={(category) => {
-              void setCategoryParam(
-                category === ALL_CATEGORIES ? null : category,
-              );
-            }}
-            className="w-full sm:w-48"
-          />
-        </div>
+            }
+          >
+            <DevelopAdminEntriesTableSuspense
+              decisionSlug={decisionSlug}
+              entryName={entryName}
+            />
+          </Suspense>
+        </APIErrorBoundary>
       </div>
-
-      <APIErrorBoundary fallbacks={{ default: () => <ProposalsLoadError /> }}>
-        <Suspense fallback={<DevelopEntriesTableSkeleton />}>
-          <DevelopAdminEntriesTableSuspense
-            query={query}
-            decisionSlug={decisionSlug}
-            entryName={entryName}
-          />
-        </Suspense>
-      </APIErrorBoundary>
-    </div>
+    </DevelopEntriesProvider>
   );
 }
 
 /**
  * "12 entries", or "3 of 12 entries" once a search or category narrows the
- * list, in the shape of the proposals list's count. It reads the table's own
- * query, so one request serves both.
+ * list, in the shape of the proposals list's count.
  */
-function DevelopEntriesCountSuspense({
-  query,
-  unfilteredTotal,
+function DevelopAdminEntriesCountSuspense({
+  processInstanceId,
+  phaseId,
 }: {
-  query: DevelopEntriesQuery;
-  /** Every entry of the phase, from the API: the "of N". */
-  unfilteredTotal: number;
+  processInstanceId: string;
+  phaseId: string | undefined;
 }) {
   const t = useTranslations('decisions.develop');
-  const [data] = useDevelopEntriesQuery(query);
-  const count = data.pages[0]?.total ?? 0;
+  // The unfiltered total is the "of N"; only `.total` is read, so the list is
+  // asked for one row. It is read before the list so both requests start in
+  // the first render: the table, a sibling, has already started the list's.
+  const [{ total: unfilteredTotal }] =
+    trpc.decision.listProposals.useSuspenseQuery({
+      processInstanceId,
+      phaseId,
+      limit: 1,
+    });
+  const { total: count } = useDevelopEntries();
 
+  // The two totals come from separately cached queries, and a realtime
+  // refresh can land on one before the other. A count at or above the total
+  // stands alone, so the heading never reads "13 of 12".
   if (count >= unfilteredTotal) {
     return (
       <Header2 className="text-title font-normal">
@@ -185,35 +168,59 @@ function DevelopEntriesCountSuspense({
   );
 }
 
+function DevelopAdminCategoryFilterSuspense({
+  processInstanceId,
+  decisionSlug,
+}: {
+  processInstanceId: string;
+  decisionSlug: string;
+}) {
+  const [{ items: categories }] = trpc.decision.getCategories.useSuspenseQuery({
+    processInstanceId,
+  });
+  const [categoryParam, setCategoryParam] = useEntryCategoryParam();
+  const isKnownCategory =
+    categoryParam === ALL_CATEGORIES ||
+    categories.some((category) => category.id === categoryParam);
+
+  // The param is untrusted. Once the categories are known, one that names
+  // none of them is dropped, and the list goes back to every category.
+  useEffect(() => {
+    if (!isKnownCategory) {
+      void setCategoryParam(null);
+    }
+  }, [isKnownCategory, setCategoryParam]);
+
+  return (
+    <CategoryFilterSelect
+      decisionSlug={decisionSlug}
+      categories={categories}
+      selectedCategory={isKnownCategory ? categoryParam : ALL_CATEGORIES}
+      onSelectCategory={(category) => {
+        void setCategoryParam(category === ALL_CATEGORIES ? null : category);
+      }}
+      className="w-full sm:w-48"
+    />
+  );
+}
+
 function DevelopAdminEntriesTableSuspense({
-  query,
   decisionSlug,
   entryName,
 }: {
-  query: DevelopEntriesQuery;
   decisionSlug: string;
   entryName: string;
 }) {
   const t = useTranslations();
-  const usesDistricts = usesDistrictCategoryTerm(decisionSlug);
-  const filteredDescription = usesDistricts
-    ? t('decisions.develop.noFilteredEntriesDistrictDescription')
-    : t('decisions.develop.noFilteredEntriesDescription');
-  const { entries, nextPageRef, shouldShowTrigger, isFetchingNextPage } =
-    useDevelopEntries(query);
+  const { entries } = useDevelopEntries();
 
   if (entries.length === 0) {
     return (
       <DevelopEntriesEmpty
-        title={
-          query.search || query.categoryId
-            ? t('No results')
-            : t('decisions.develop.noEntriesTitle')
-        }
-        description={
-          query.search || query.categoryId
-            ? filteredDescription
-            : t('decisions.develop.noEntriesDescription')
+        narrowedDescription={
+          usesDistrictCategoryTerm(decisionSlug)
+            ? t('decisions.develop.noFilteredEntriesDistrictDescription')
+            : t('decisions.develop.noFilteredEntriesDescription')
         }
       />
     );
@@ -221,28 +228,11 @@ function DevelopAdminEntriesTableSuspense({
 
   return (
     <div className="flex flex-col">
-      <Table
-        aria-label={entryName}
-        className="min-w-3xl table-fixed [&_tr>*:first-child]:ps-0 [&_tr>*:last-child]:pe-0"
-      >
-        <TableHeader>
-          <TableRow>
-            <TableHead scope="col">
-              <bdi>{entryName}</bdi>
-            </TableHead>
-            <TableHead scope="col" className="w-48">
-              {usesDistricts
-                ? t('decisions.develop.districtColumn')
-                : t('decisions.develop.categoryColumn')}
-            </TableHead>
-            <TableHead scope="col" className="w-30">
-              {t('decisions.budgetLabel')}
-            </TableHead>
-            <TableHead scope="col" className="w-45">
-              {t('decisions.develop.statusColumn')}
-            </TableHead>
-          </TableRow>
-        </TableHeader>
+      <DevelopEntriesTable entryName={entryName}>
+        <DevelopAdminEntriesTableHeader
+          entryName={entryName}
+          decisionSlug={decisionSlug}
+        />
         <TableBody>
           {entries.map((entry) => (
             <TableRow key={entry.id}>
@@ -256,15 +246,49 @@ function DevelopAdminEntriesTableSuspense({
             </TableRow>
           ))}
         </TableBody>
-      </Table>
+      </DevelopEntriesTable>
 
-      {shouldShowTrigger ? (
-        <DevelopEntriesNextPage
-          nextPageRef={nextPageRef}
-          isFetchingNextPage={isFetchingNextPage}
-        />
-      ) : null}
+      <DevelopEntriesNextPage>
+        {/* No header row here, so the cells carry the column widths. */}
+        <DevelopEntriesTable entryName={entryName}>
+          <TableBody>
+            <DevelopAdminEntrySkeletonRows count={2} />
+          </TableBody>
+        </DevelopEntriesTable>
+      </DevelopEntriesNextPage>
     </div>
+  );
+}
+
+/** The real header, so the skeleton's columns and height match the table's. */
+function DevelopAdminEntriesTableHeader({
+  entryName,
+  decisionSlug,
+}: {
+  entryName: string;
+  decisionSlug: string;
+}) {
+  const t = useTranslations();
+
+  return (
+    <TableHeader>
+      <TableRow>
+        <TableHead scope="col">
+          <bdi>{entryName}</bdi>
+        </TableHead>
+        <TableHead scope="col" className="w-48">
+          {usesDistrictCategoryTerm(decisionSlug)
+            ? t('decisions.develop.districtColumn')
+            : t('decisions.develop.categoryColumn')}
+        </TableHead>
+        <TableHead scope="col" className="w-30">
+          {t('decisions.budgetLabel')}
+        </TableHead>
+        <TableHead scope="col" className="w-45">
+          {t('decisions.develop.statusColumn')}
+        </TableHead>
+      </TableRow>
+    </TableHeader>
   );
 }
 
@@ -292,17 +316,51 @@ function DevelopEntryCategoryCell({ entry }: { entry: Proposal }) {
   );
 }
 
-function DevelopAdminEntriesPanelSkeleton() {
+function DevelopAdminEntrySkeletonRows({ count }: { count: number }) {
   return (
-    <div className="flex flex-col gap-10" aria-hidden>
-      <div className="flex min-h-11 flex-wrap items-center justify-between gap-4">
-        <Skeleton className="h-7 w-40" />
-        <div className="flex items-center gap-4">
-          <Skeleton className="h-11 w-56" />
-          <Skeleton className="h-11 w-48" />
-        </div>
-      </div>
-      <DevelopEntriesTableSkeleton />
+    <>
+      {Array.from({ length: count }).map((_, index) => (
+        <TableRow key={index}>
+          <DevelopEntryTitleCellSkeleton />
+          <DevelopEntryTextCellSkeleton className="w-48" />
+          <DevelopEntryTextCellSkeleton className="w-30" />
+          <DevelopEntryStatusCellSkeleton className="w-45" />
+        </TableRow>
+      ))}
+    </>
+  );
+}
+
+function DevelopAdminEntriesTableSkeleton({
+  entryName,
+  decisionSlug,
+}: {
+  entryName: string;
+  decisionSlug: string;
+}) {
+  return (
+    <div className="flex flex-col" aria-hidden>
+      <DevelopEntriesTable entryName={entryName}>
+        <DevelopAdminEntriesTableHeader
+          entryName={entryName}
+          decisionSlug={decisionSlug}
+        />
+        <TableBody>
+          <DevelopAdminEntrySkeletonRows count={4} />
+        </TableBody>
+      </DevelopEntriesTable>
     </div>
+  );
+}
+
+/** The category filter's trigger: full width up to 12rem below `sm`, 12rem above. */
+function CategoryFilterSkeleton() {
+  return <Skeleton aria-hidden className="h-11 w-full max-w-48 sm:w-48" />;
+}
+
+function useEntryCategoryParam() {
+  return useQueryState(
+    ENTRY_CATEGORY_PARAM,
+    parseAsString.withDefault(ALL_CATEGORIES),
   );
 }
