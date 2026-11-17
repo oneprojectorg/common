@@ -2,7 +2,6 @@
 
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { trpc } from '@op/api/client';
-import type { RelatedProposal } from '@op/common/client';
 import {
   Empty,
   EmptyDescription,
@@ -21,7 +20,6 @@ import { ProposalBody } from '../Proposal/ProposalBody';
 import { ProposalQueryProvider } from '../Proposal/ProposalQueryProvider';
 import { ProposalTabList, ProposalTabTrigger } from '../Proposal/ProposalTabs';
 import { useProposal } from '../Proposal/proposalContext';
-import { ResponsiveSelect } from '../ResponsiveSelect';
 import type { PreviousReviewPhase } from '../Review/ReviewTabs';
 import {
   PhaseReviews,
@@ -31,63 +29,28 @@ import { DevelopSourceSkeleton } from './DevelopProposalSkeleton';
 
 type SourceTab = 'proposal' | 'reviews';
 
-/** The entry's sources, read only, with a select when there are several. */
+/** The source proposal, read only: its content and its earlier reviews. */
 export function DevelopSourceColumn({
-  sources,
+  profileId,
   decisionRoot,
   reviewPhases,
 }: {
-  /** At least one. */
-  sources: RelatedProposal[];
+  profileId: string;
   decisionRoot: string;
   /** The earlier review phases whose reviews the caller may read. */
   reviewPhases: PreviousReviewPhase[];
 }) {
-  const t = useTranslations('decisions');
-  const [selectedId, setSelectedId] = useState(sources[0]?.id ?? '');
-  const source =
-    sources.find((candidate) => candidate.id === selectedId) ?? sources[0];
-
-  if (!source) {
-    return null;
-  }
-
   return (
-    <div className="flex flex-col gap-6">
-      {sources.length > 1 ? (
-        <ResponsiveSelect<string>
-          selectedKey={source.id}
-          onSelectionChange={setSelectedId}
-          aria-label={t('developEditor.sourceSelectLabel')}
-          className="w-full sm:max-w-80"
-          items={sources.map((candidate) => {
-            const name =
-              candidate.profile.name || t('proposals.untitledProposal');
-
-            return {
-              id: candidate.id,
-              label: <bdi>{name}</bdi>,
-              textValue: name,
-            };
-          })}
-        />
-      ) : null}
-
-      {/* Keyed so the open tab and a failed load reset with the source. */}
-      <APIErrorBoundary
-        key={source.id}
-        fallbacks={{ default: () => <SourceUnavailable /> }}
-      >
-        <Suspense fallback={<DevelopSourceSkeleton />}>
-          <ProposalQueryProvider
-            profileId={source.profile.id}
-            decisionRoot={decisionRoot}
-          >
-            <SourceSections reviewPhases={reviewPhases} />
-          </ProposalQueryProvider>
-        </Suspense>
-      </APIErrorBoundary>
-    </div>
+    <APIErrorBoundary fallbacks={{ default: () => <SourceUnavailable /> }}>
+      <Suspense fallback={<DevelopSourceSkeleton />}>
+        <ProposalQueryProvider
+          profileId={profileId}
+          decisionRoot={decisionRoot}
+        >
+          <SourceSections reviewPhases={reviewPhases} />
+        </ProposalQueryProvider>
+      </Suspense>
+    </APIErrorBoundary>
   );
 }
 

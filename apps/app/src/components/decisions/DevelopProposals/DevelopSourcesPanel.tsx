@@ -4,7 +4,6 @@ import { trpc } from '@op/api/client';
 import type { InstancePhaseData, ProcessInstance } from '@op/api/encoders';
 import {
   type ListDevelopSourcesInput,
-  type Proposal,
   type ProposalReviewAggregates,
   RECOMMENDATION_OPTION,
   type RecommendationValue,
@@ -13,8 +12,6 @@ import {
   resolveReviewSettings,
 } from '@op/common/client';
 import { useInfiniteScroll } from '@op/hooks';
-import { logger } from '@op/logging/client';
-import { Button } from '@op/sense/Button';
 import {
   Empty,
   EmptyDescription,
@@ -34,12 +31,12 @@ import {
   TableRow,
   TableRowHeader,
 } from '@op/sense/Table';
-import { toast } from '@op/sense/Toast';
-import { useCallback, useMemo, useTransition } from 'react';
+import { useCallback, useMemo } from 'react';
 import { LuLeaf, LuPencil } from 'react-icons/lu';
 
-import { Link, useRouter, useTranslations } from '@/lib/i18n';
+import { Link, useTranslations } from '@/lib/i18n';
 
+import { ButtonLink } from '../../ButtonLink';
 import { useOpenProposalInSheet } from '../ProposalSheet/proposalSheetState';
 import { PROPOSALS_PAGE_LIMIT } from '../proposalFilterQuery';
 import {
@@ -160,9 +157,7 @@ function DevelopSourcesTable({
   decisionSlug: string;
 }) {
   const t = useTranslations('decisions');
-  const router = useRouter();
   const openInSheet = useOpenProposalInSheet();
-  const [isNavigating, startNavigating] = useTransition();
 
   const [data, { fetchNextPage, hasNextPage, isFetchingNextPage }] =
     trpc.decision.listDevelopSources.useSuspenseInfiniteQuery(
@@ -189,40 +184,6 @@ function DevelopSourcesTable({
     useInfiniteScroll<HTMLDivElement>(loadNextPage, {
       hasNextPage,
       isFetchingNextPage,
-    });
-
-  const createEntry = trpc.decision.createDevelopedProposal.useMutation({
-    onSuccess: (entry) => {
-      startNavigating(() => {
-        router.push(
-          decisionProposalDevelopHref({
-            decisionSlug,
-            profileId: entry.profileId,
-          }),
-        );
-      });
-    },
-    onError: (error) => {
-      logger.error('Failed to prepare a develop entry', { error });
-      toast.error(t('develop.prepareEntryError'));
-    },
-  });
-
-  const isPreparing = createEntry.isPending || isNavigating;
-  const preparingSourceId = isPreparing
-    ? (createEntry.variables?.sourceProposalIds[0] ?? null)
-    : null;
-
-  const prepare = (source: Proposal) =>
-    createEntry.mutate({
-      processInstanceId,
-      sourceProposalIds: [source.id],
-      // A suggested draft: the entry starts from the source's title and
-      // category, and the editor takes it from there.
-      proposalData: {
-        title: source.profile.name,
-        category: source.proposalData.category,
-      },
     });
 
   return (
@@ -291,16 +252,18 @@ function DevelopSourcesTable({
                       </TableCell>
                     ) : null}
                     <TableCell className="py-4 text-end">
-                      <Button
+                      {/* Opens the develop screen, which starts the entry. */}
+                      <ButtonLink
                         variant="outline"
                         aria-label={t('develop.prepareEntryLabel', { title })}
-                        disabled={isPreparing}
-                        loading={preparingSourceId === source.id}
-                        onClick={() => prepare(source)}
+                        href={decisionProposalDevelopHref({
+                          decisionSlug,
+                          profileId: source.profileId,
+                        })}
                       >
                         <LuPencil aria-hidden data-icon="inline-start" />
                         {t('develop.prepareEntryAction')}
-                      </Button>
+                      </ButtonLink>
                     </TableCell>
                   </TableRow>
                 );

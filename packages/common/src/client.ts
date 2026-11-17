@@ -139,12 +139,10 @@ export {
   unmergeProposalInputSchema,
   listProposalRelationshipsInputSchema,
   proposalRelationshipListSchema,
-  relatedProposalSchema,
   type MergeProposalsInput,
   type UnmergeProposalInput,
   type ListProposalRelationshipsInput,
   type ProposalRelationshipList,
-  type RelatedProposal,
 } from './services/decision/schemas/proposalRelationships';
 export {
   REJECTION_NOTE_MAX_LENGTH,

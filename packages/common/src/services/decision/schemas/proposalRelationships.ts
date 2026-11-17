@@ -52,25 +52,20 @@ export type ListProposalRelationshipsInput = z.infer<
   typeof listProposalRelationshipsInputSchema
 >;
 
-/** The proposal at the other end of a relationship, as the list read returns it. */
-export const relatedProposalSchema = z.object({
-  id: z.uuid(),
-  status: z.string().nullish(),
-  profile: z.object({
-    id: z.uuid(),
-    name: z.string(),
-    slug: z.string(),
-  }),
-});
-
-export type RelatedProposal = z.infer<typeof relatedProposalSchema>;
-
 export const proposalRelationshipItemSchema = z.object({
   id: z.uuid(),
   relationshipType: z.enum(ProposalRelationshipType),
   createdAt: z.string().nullish(),
   /** The proposal at the end the caller did NOT pin. */
-  proposal: relatedProposalSchema,
+  proposal: z.object({
+    id: z.uuid(),
+    status: z.string().nullish(),
+    profile: z.object({
+      id: z.uuid(),
+      name: z.string(),
+      slug: z.string(),
+    }),
+  }),
 });
 
 export type ProposalRelationshipItem = z.infer<
