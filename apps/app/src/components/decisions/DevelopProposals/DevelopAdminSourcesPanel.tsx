@@ -21,15 +21,12 @@ import {
   CategoryFilterSkeleton,
   DevelopEntryCategoryCell,
 } from './DevelopAdminEntriesPanel';
-import {
-  DevelopEntryStatusCellSkeleton,
-  DevelopEntryTextCellSkeleton,
-} from './DevelopEntriesParts';
+import { DevelopEntryTextCellSkeleton } from './DevelopEntriesParts';
 import { NoSourcesEmpty } from './DevelopSourcesPanel';
 import {
-  DevelopSourceActionCell,
-  DevelopSourceActionCellSkeleton,
   DevelopSourceDecisionCell,
+  DevelopSourceDecisionCellSkeleton,
+  DevelopSourceEntryTitle,
   DevelopSourceNameCell,
   DevelopSourceNameCellSkeleton,
   DevelopSourceRecommendationsCell,
@@ -46,8 +43,8 @@ const SOURCE_CATEGORY_PARAM = 'sourceCategory';
 
 /**
  * The admin's All proposals tab: every source of the previous phase, with its
- * category, its reviewers' overall recommendation, whether it is advancing,
- * and an action that opens its entry or prepares one.
+ * category, its reviewers' overall recommendation and whether it is advancing.
+ * A source's title opens its entry, or prepares one when it has none.
  */
 export function DevelopAdminSourcesPanel({
   processInstanceId,
@@ -100,11 +97,13 @@ export function DevelopAdminSourcesPanel({
             <div role="status" aria-live="polite">
               <APIErrorBoundary fallbacks={{ default: () => null }}>
                 <Suspense
-                  fallback={<Skeleton aria-hidden className="h-7 w-40" />}
+                  fallback={
+                    <Skeleton aria-hidden className="h-7 w-72 max-w-full" />
+                  }
                 >
                   <DevelopAdminSourcesCountSuspense
                     processInstanceId={processInstanceId}
-                    sourcePhaseId={sourcePhase.phaseId}
+                    decisionSlug={decisionSlug}
                   />
                 </Suspense>
               </APIErrorBoundary>
@@ -137,29 +136,37 @@ export function DevelopAdminSourcesPanel({
   );
 }
 
-// Same shape as the entries tab's count.
+// The categories and the list are the filter's and the table's reads, so this
+// adds no request.
 function DevelopAdminSourcesCountSuspense({
   processInstanceId,
-  sourcePhaseId,
+  decisionSlug,
 }: {
   processInstanceId: string;
-  sourcePhaseId: string;
+  decisionSlug: string;
 }) {
   const t = useTranslations('decisions.develop');
-  // Only `.total` is read, hence `limit: 1`. Read before the list so it
-  // starts in the same render as the table's list request.
-  const [{ total: unfilteredTotal }] =
-    trpc.decision.listDevelopSources.useSuspenseQuery({
-      processInstanceId,
-      phaseIds: [sourcePhaseId],
-      scope: 'all',
-      limit: 1,
-    });
-  const { total: count } = useDevelopSources();
+  const [{ items: categories }] = trpc.decision.getCategories.useSuspenseQuery({
+    processInstanceId,
+  });
+  const { total: count, categoryId } = useDevelopSources();
+  const category = categoryId
+    ? categories.find((item) => item.id === categoryId)
+    : undefined;
 
-  // The totals are cached apart and can refresh out of step; `>=` keeps a
-  // "13 of 12" from showing.
-  if (count >= unfilteredTotal) {
+  if (category) {
+    return (
+      <Header2 className="text-title font-normal">
+        {t.rich('sourcesInCategoryCount', {
+          count,
+          category: category.name,
+          bdi: (chunks) => <bdi>{chunks}</bdi>,
+        })}
+      </Header2>
+    );
+  }
+
+  if (categoryId || categories.length === 0) {
     return (
       <Header2 className="text-title font-normal">
         {t('sourcesCount', { count })}
@@ -168,12 +175,17 @@ function DevelopAdminSourcesCountSuspense({
   }
 
   return (
-    <span className="flex items-baseline gap-1">
-      <Header2 className="text-title font-normal">{count}</Header2>
-      <span className="text-base text-muted-foreground">
-        {t('ofTotalSources', { total: unfilteredTotal })}
-      </span>
-    </span>
+    <Header2 className="text-title font-normal">
+      {usesDistrictCategoryTerm(decisionSlug)
+        ? t('sourcesAcrossDistrictsCount', {
+            count,
+            categories: categories.length,
+          })
+        : t('sourcesAcrossCategoriesCount', {
+            count,
+            categories: categories.length,
+          })}
+    </Header2>
   );
 }
 
@@ -239,11 +251,12 @@ function DevelopAdminSourcesTableSuspense({
         <TableBody>
           {sources.map((source) => (
             <TableRow key={source.id}>
-              <DevelopSourceNameCell source={source} />
+              <DevelopSourceNameCell source={source}>
+                <DevelopSourceEntryTitle source={source} />
+              </DevelopSourceNameCell>
               <DevelopEntryCategoryCell entry={source} />
               <DevelopSourceRecommendationsCell source={source} />
               <DevelopSourceDecisionCell source={source} />
-              <DevelopSourceActionCell source={source} />
             </TableRow>
           ))}
         </TableBody>
@@ -273,7 +286,7 @@ function DevelopAdminSourcesTableHeader({
     <TableHeader>
       <TableRow>
         <TableHead scope="col">{t('develop.nameColumn')}</TableHead>
-        <TableHead scope="col" className="w-40">
+        <TableHead scope="col" className="w-48">
           {usesDistrictCategoryTerm(decisionSlug)
             ? t('develop.districtColumn')
             : t('develop.categoryColumn')}
@@ -281,11 +294,8 @@ function DevelopAdminSourcesTableHeader({
         <TableHead scope="col" className="w-72">
           {t('review.overallRecommendationLabel')}
         </TableHead>
-        <TableHead scope="col" className="w-48">
+        <TableHead scope="col" className="w-48 text-end">
           {t('develop.decisionColumn')}
-        </TableHead>
-        <TableHead scope="col" className="w-36 text-end">
-          <span className="sr-only">{t('develop.actionsColumn')}</span>
         </TableHead>
       </TableRow>
     </TableHeader>
@@ -298,10 +308,9 @@ function DevelopAdminSourceSkeletonRows({ count }: { count: number }) {
       {Array.from({ length: count }).map((_, index) => (
         <TableRow key={index}>
           <DevelopSourceNameCellSkeleton />
-          <DevelopEntryTextCellSkeleton className="w-40" />
+          <DevelopEntryTextCellSkeleton className="w-48" />
           <DevelopSourceRecommendationsCellSkeleton className="w-72" />
-          <DevelopEntryStatusCellSkeleton className="w-48" />
-          <DevelopSourceActionCellSkeleton className="w-36" />
+          <DevelopSourceDecisionCellSkeleton className="w-48" />
         </TableRow>
       ))}
     </>

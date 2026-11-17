@@ -3,7 +3,6 @@
 import { trpc } from '@op/api/client';
 import {
   type DevelopSource,
-  type ListDevelopSourcesInput,
   isVotingEligible,
   nextCursor,
 } from '@op/common/client';
@@ -28,26 +27,23 @@ import {
   useDeferredValue,
   useMemo,
 } from 'react';
-import { LuLeaf, LuPencil } from 'react-icons/lu';
+import { LuLeaf } from 'react-icons/lu';
 
-import { type TranslateFn, Link, useTranslations } from '@/lib/i18n';
+import { Link, useTranslations } from '@/lib/i18n';
 
-import { ButtonLink } from '@/components/ButtonLink';
-
-import { useOpenProposalInSheet } from '../ProposalSheet/proposalSheetState';
-import { PROPOSALS_PAGE_LIMIT } from '../proposalFilterQuery';
-import {
-  decisionProposalDevelopHref,
-  decisionProposalHref,
-} from '../proposalHrefs';
+import { decisionProposalDevelopHref } from '../proposalHrefs';
 import { useReportProposalsForReviewDecoration } from '../proposalReviewDecoration';
 import { NoSourcesEmpty, SourceRecommendations } from './DevelopSourcesPanel';
+import {
+  type DevelopSourceScope,
+  getDevelopSourcesInput,
+} from './developSources';
 import { usePrepareDevelopEntry } from './usePrepareDevelopEntry';
 
 interface DevelopSourcesQuery {
   processInstanceId: string;
   sourcePhaseId: string;
-  scope: ListDevelopSourcesInput['scope'];
+  scope: DevelopSourceScope;
   categoryId: string | undefined;
 }
 
@@ -80,7 +76,7 @@ export function DevelopSourcesProvider({
 }: {
   processInstanceId: string;
   sourcePhaseId: string;
-  scope: ListDevelopSourcesInput['scope'];
+  scope: DevelopSourceScope;
   categoryId?: string;
   decisionSlug: string;
   children: ReactNode;
@@ -119,11 +115,8 @@ export function useDevelopSources() {
   const [data, { fetchNextPage, hasNextPage, isFetchingNextPage }] =
     trpc.decision.listDevelopSources.useSuspenseInfiniteQuery(
       {
-        processInstanceId: query.processInstanceId,
-        phaseIds: [query.sourcePhaseId],
-        scope: query.scope,
+        ...getDevelopSourcesInput(query),
         categoryIds: query.categoryId ? [query.categoryId] : undefined,
-        limit: PROPOSALS_PAGE_LIMIT,
       },
       { getNextPageParam: nextCursor },
     );
@@ -138,6 +131,8 @@ export function useDevelopSources() {
   return {
     sources,
     total: data.pages[0]?.total ?? 0,
+    /** The category the rows were read for, which lags the filter. */
+    categoryId: query.categoryId,
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
@@ -150,17 +145,21 @@ export function DevelopSourcesTable({ children }: { children: ReactNode }) {
   return (
     <Table
       aria-label={t('sourcesTableLabel')}
-      className="min-w-5xl table-fixed [&_tr>*:first-child]:ps-0 [&_tr>*:last-child]:pe-0"
+      className="min-w-4xl table-fixed [&_tr>*:first-child]:ps-0 [&_tr>*:last-child]:pe-0"
     >
       {children}
     </Table>
   );
 }
 
-export function DevelopSourceNameCell({ source }: { source: DevelopSource }) {
-  const t = useTranslations('decisions');
-  const { decisionSlug } = useDevelopSourcesContext().meta;
-  const openInSheet = useOpenProposalInSheet();
+/** The source's submitter under a title control the variant passes in. */
+export function DevelopSourceNameCell({
+  source,
+  children,
+}: {
+  source: DevelopSource;
+  children: ReactNode;
+}) {
   const submitterName = source.submittedBy
     ? source.submittedBy.name || source.submittedBy.slug
     : null;
@@ -168,16 +167,7 @@ export function DevelopSourceNameCell({ source }: { source: DevelopSource }) {
   return (
     <TableRowHeader className="py-4">
       <div className="flex flex-col items-start gap-0.5">
-        <Link
-          href={decisionProposalHref({
-            decisionSlug,
-            profileId: source.profileId,
-          })}
-          onClick={openInSheet(source.profileId)}
-          className="text-base font-strong text-foreground hover:underline"
-        >
-          <bdi>{getSourceTitle({ source, t })}</bdi>
-        </Link>
+        {children}
         {submitterName ? (
           <span className="text-sm text-muted-foreground">
             <bdi>{submitterName}</bdi>
@@ -185,6 +175,45 @@ export function DevelopSourceNameCell({ source }: { source: DevelopSource }) {
         ) : null}
       </div>
     </TableRowHeader>
+  );
+}
+
+/**
+ * The source's title as the way into its entry: a link to the entry's develop
+ * editor, or, while it has none the caller may read, a control that prepares one.
+ */
+export function DevelopSourceEntryTitle({ source }: { source: DevelopSource }) {
+  const t = useTranslations('decisions');
+  const { state, actions, meta } = useDevelopSourcesContext();
+  const title = source.profile.name || t('proposals.untitledProposal');
+  const entry = getAdvancingEntry(source) ?? source.developedProposals[0];
+
+  if (entry) {
+    return (
+      <Link
+        href={decisionProposalDevelopHref({
+          decisionSlug: meta.decisionSlug,
+          profileId: entry.profileId,
+        })}
+        className="text-base font-strong text-foreground hover:underline"
+      >
+        <bdi>{title}</bdi>
+      </Link>
+    );
+  }
+
+  return (
+    <Button
+      variant="link"
+      size="inline"
+      aria-label={t('develop.prepareEntryLabel', { title })}
+      disabled={state.isPreparing}
+      loading={state.preparingSourceId === source.id}
+      onClick={() => actions.prepare(source)}
+      className="justify-start text-start whitespace-normal text-foreground"
+    >
+      <bdi>{title}</bdi>
+    </Button>
   );
 }
 
@@ -211,7 +240,7 @@ export function DevelopSourceDecisionCell({
   const isAdvancing = Boolean(getAdvancingEntry(source));
 
   return (
-    <TableCell className="py-4">
+    <TableCell className="py-4 text-end">
       <StatusBadge
         variant={isAdvancing ? 'success' : 'in-progress'}
         icon={false}
@@ -220,42 +249,6 @@ export function DevelopSourceDecisionCell({
           ? t('sourceAdvancingStatus')
           : t('sourceUnderConsiderationStatus')}
       </StatusBadge>
-    </TableCell>
-  );
-}
-
-export function DevelopSourceActionCell({ source }: { source: DevelopSource }) {
-  const t = useTranslations('decisions');
-  const { state, actions, meta } = useDevelopSourcesContext();
-  const title = getSourceTitle({ source, t });
-  const entry = getAdvancingEntry(source) ?? source.developedProposals[0];
-
-  return (
-    <TableCell className="py-4 text-end">
-      {entry ? (
-        <ButtonLink
-          variant="outline"
-          href={decisionProposalDevelopHref({
-            decisionSlug: meta.decisionSlug,
-            profileId: entry.profileId,
-          })}
-          aria-label={t('develop.editEntryLabel', { title })}
-        >
-          <LuPencil aria-hidden data-icon="inline-start" />
-          {t('develop.editEntryAction')}
-        </ButtonLink>
-      ) : (
-        <Button
-          variant="outline"
-          aria-label={t('develop.prepareEntryLabel', { title })}
-          disabled={state.isPreparing}
-          loading={state.preparingSourceId === source.id}
-          onClick={() => actions.prepare(source)}
-        >
-          <LuPencil aria-hidden data-icon="inline-start" />
-          {t('develop.prepareEntryAction')}
-        </Button>
-      )}
     </TableCell>
   );
 }
@@ -332,14 +325,14 @@ export function DevelopSourceRecommendationsCellSkeleton({
   );
 }
 
-export function DevelopSourceActionCellSkeleton({
+export function DevelopSourceDecisionCellSkeleton({
   className,
 }: {
   className?: string;
 }) {
   return (
     <TableCell className={cn('py-4', className)}>
-      <Skeleton className="ms-auto h-11 w-28 max-w-full" />
+      <Skeleton className="ms-auto h-9 w-24" />
     </TableCell>
   );
 }
@@ -348,16 +341,6 @@ function getAdvancingEntry(source: DevelopSource) {
   return source.developedProposals.find((entry) =>
     isVotingEligible(entry.status),
   );
-}
-
-function getSourceTitle({
-  source,
-  t,
-}: {
-  source: DevelopSource;
-  t: TranslateFn<'decisions'>;
-}) {
-  return source.profile.name || t('proposals.untitledProposal');
 }
 
 function useDevelopSourcesContext() {
