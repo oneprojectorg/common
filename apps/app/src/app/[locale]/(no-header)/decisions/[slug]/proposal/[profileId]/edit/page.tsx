@@ -34,7 +34,7 @@ import { ProposalEditor } from '@/components/decisions/proposalEditor';
 import { VersionPreviewProvider } from '@/components/decisions/proposalEditor/VersionPreviewContext';
 import { useOptionalVersionPreview } from '@/components/decisions/proposalEditor/VersionPreviewContext';
 import { ProposalVersionsAside } from '@/components/decisions/proposalEditor/asides/ProposalVersionsAside';
-import { getProposalEditorTemplate } from '@/components/decisions/proposalEditor/getProposalEditorTemplate';
+import { getProposalTemplate } from '@/components/decisions/proposalEditor/getProposalTemplate';
 import {
   type ProposalEditorAside,
   type ProposalEditorAsideState,
@@ -114,10 +114,7 @@ function EditProposalPageContent() {
     !!user.currentProfile?.id &&
     proposal.submittedBy?.id === user.currentProfile.id;
 
-  const proposalTemplate = getProposalEditorTemplate({
-    proposal,
-    instanceTemplate: instance.instanceData.proposalTemplate,
-  });
+  const proposalTemplate = getProposalTemplate(proposal);
 
   const fragmentNames = useMemo(
     () => (proposalTemplate ? getProposalFragmentNames(proposalTemplate) : []),
