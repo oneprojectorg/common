@@ -1403,6 +1403,9 @@ importers:
       server-only:
         specifier: ^0.0.1
         version: 0.0.1
+      yjs:
+        specifier: ^13.6.29
+        version: 13.6.29
     devDependencies:
       '@op/typescript-config':
         specifier: workspace:*

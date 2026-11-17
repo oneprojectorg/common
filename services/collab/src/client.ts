@@ -1,5 +1,9 @@
 import ky from 'ky';
 
+import { type SeedFragments, encodeSeedUpdate } from './seed';
+
+export type { SeedFragment, SeedFragments } from './seed';
+
 /**
  * TipTap document content in JSON format
  * @see https://tiptap.dev/docs/collaboration/documents/rest-api
@@ -151,6 +155,29 @@ export function createTipTapClient(config: TipTapClientConfig) {
       }
 
       return response as R;
+    },
+
+    /**
+     * Create a document that does not exist yet, with plain text in named
+     * fragments. Returns `'exists'` and writes nothing when the document is
+     * already there (TipTap answers 409), so it never overwrites or doubles
+     * content that a user typed. Other failures throw.
+     * POST /api/documents/{docName} with a binary Yjs update
+     */
+    createDocument: async (
+      docName: string,
+      fragments: SeedFragments,
+    ): Promise<'created' | 'exists'> => {
+      const response = await api.post(
+        `documents/${encodeURIComponent(docName)}`,
+        {
+          body: encodeSeedUpdate(fragments),
+          headers: { 'Content-Type': 'application/octet-stream' },
+          throwHttpErrors: (status) => status !== 409,
+        },
+      );
+
+      return response.status === 409 ? 'exists' : 'created';
     },
 
     /**
