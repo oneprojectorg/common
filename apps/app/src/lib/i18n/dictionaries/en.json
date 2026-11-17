@@ -1666,7 +1666,7 @@
       "advancedStatus": "Advanced",
       "proposalTab": "Proposal",
       "sourceSectionsLabel": "Proposal sections",
-      "noEntry": "No entry for this proposal yet.",
+      "sourceSelectLabel": "Source proposal",
       "noReviews": "No reviews for this proposal yet.",
       "advancedToast": "“{title}” advanced",
       "readOnlyNotice": "You can view this entry but not edit it."

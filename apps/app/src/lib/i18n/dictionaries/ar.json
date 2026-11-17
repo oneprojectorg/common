@@ -1666,7 +1666,7 @@
       "advancedStatus": "تم التقديم",
       "proposalTab": "المقترح",
       "sourceSectionsLabel": "أقسام المقترح",
-      "noEntry": "لا يوجد مُدخل لهذا المقترح بعد.",
+      "sourceSelectLabel": "المقترح المصدر",
       "noReviews": "لا توجد مراجعات لهذا المقترح بعد.",
       "advancedToast": "تم تقديم «{title}»",
       "readOnlyNotice": "يمكنك عرض هذا المُدخل دون تعديله."

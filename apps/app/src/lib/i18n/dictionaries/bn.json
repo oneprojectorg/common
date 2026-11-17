@@ -1666,7 +1666,7 @@
       "advancedStatus": "এগিয়ে গেছে",
       "proposalTab": "প্রস্তাব",
       "sourceSectionsLabel": "প্রস্তাবের অংশ",
-      "noEntry": "এই প্রস্তাবের জন্য এখনও কোনো এন্ট্রি নেই।",
+      "sourceSelectLabel": "উৎস প্রস্তাব",
       "noReviews": "এই প্রস্তাবের এখনও কোনো পর্যালোচনা নেই।",
       "advancedToast": "“{title}” এগিয়ে গেছে",
       "readOnlyNotice": "আপনি এই এন্ট্রিটি দেখতে পারবেন, কিন্তু সম্পাদনা করতে পারবেন না।"
