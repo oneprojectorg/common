@@ -18,6 +18,7 @@ import { assertProposalDevelopAccess } from './assertProposalDevelopAccess';
 import { assertDevelopSources } from './createDevelopedProposal';
 import { getProposalDocumentsContent } from './getProposalDocumentsContent';
 import { getProposalIdsForPhase } from './getProposalsForPhase';
+import { getPhases } from './instancePhases';
 import { parseProposalData } from './proposalDataSchema';
 import { resolveDocumentFieldValues } from './proposalListPreview';
 import {
@@ -29,10 +30,7 @@ import {
   resolvePhaseProposalTemplate,
   resolveProposalTemplatesByFormSchemaId,
 } from './resolveProposalTemplate';
-import {
-  type PhaseInstanceData,
-  getInstancePhases,
-} from './schemas/instanceData';
+import type { PhaseInstanceData } from './schemas/instanceData';
 import type { ProposalTemplateSchema } from './types';
 import { assertInstancePhase } from './utils/instance';
 
@@ -102,11 +100,10 @@ export const getDevelopPrefill = async ({
     throw new NotFoundError('Process instance', instanceId);
   }
 
+  const phases = await getPhases({ instance });
+
   const targetPhase = await assertProposalDevelopAccess({
-    instance: {
-      profileId: instance.profileId,
-      instanceData: { phases: getInstancePhases(instance.instanceData) },
-    },
+    instance: { profileId: instance.profileId, phases },
     phaseId: target.phaseId,
     user,
   });
@@ -124,6 +121,7 @@ export const getDevelopPrefill = async ({
 
   return buildDevelopPrefill({
     instance,
+    phases,
     targetPhase,
     inputs: request.inputs,
     mappings: request.mappings,
@@ -140,12 +138,15 @@ export const getDevelopPrefill = async ({
  */
 export const buildDevelopPrefill = async ({
   instance,
+  phases,
   targetPhase,
   inputs,
   mappings,
   user,
 }: {
   instance: DevelopPrefillInstance;
+  /** The instance's resolved phases (`getPhases`). */
+  phases: PhaseInstanceData[];
   targetPhase: PhaseInstanceData;
   inputs: DevelopPrefillInput[];
   mappings: SchemaMapping[];
@@ -156,12 +157,8 @@ export const buildDevelopPrefill = async ({
     throw new UnauthorizedError("You don't have access to do this");
   }
 
-  const phases = getInstancePhases(instance.instanceData);
   for (const input of request.inputs) {
-    assertInstancePhase({
-      instance: { instanceData: { phases } },
-      phaseId: input.phaseId,
-    });
+    assertInstancePhase({ instance: { phases }, phaseId: input.phaseId });
   }
 
   const targetSchema: SchemaRef = {
