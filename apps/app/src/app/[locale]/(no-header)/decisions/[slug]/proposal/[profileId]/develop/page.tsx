@@ -11,6 +11,7 @@ import { cache } from 'react';
 import { getTranslations } from '@/lib/i18n';
 
 import { getDevelopEntryHeading } from '@/components/decisions/developProposalEditor/getDevelopEntryHeading';
+import { getProposalEditorTemplate } from '@/components/decisions/proposalEditor/getProposalEditorTemplate';
 
 import { DevelopProposalClient } from './DevelopProposalClient';
 
@@ -30,17 +31,21 @@ export async function generateMetadata({
 }: {
   params: Promise<{ slug: string; profileId: string; locale: string }>;
 }): Promise<Metadata> {
-  const { slug, locale } = await params;
+  const { slug, profileId, locale } = await params;
 
   try {
-    const [t, decisionProfile] = await Promise.all([
+    const [t, decisionProfile, proposal] = await Promise.all([
       getTranslations({ locale }),
       fetchDecisionBySlug(slug),
+      fetchProposal(profileId),
     ]);
 
     const heading = getDevelopEntryHeading({
-      template:
-        decisionProfile?.processInstance?.instanceData.proposalTemplate ?? null,
+      template: getProposalEditorTemplate({
+        proposal,
+        instanceTemplate:
+          decisionProfile?.processInstance?.instanceData.proposalTemplate,
+      }),
       fallback: t('decisions.developEditor.entryHeading'),
     });
     const decisionName = decisionProfile?.name;

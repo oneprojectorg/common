@@ -1,6 +1,7 @@
 import { mockCollab } from '@op/collab/testing';
+import { getInstancePhases } from '@op/common';
 import { db, eq } from '@op/db/client';
-import { formSchemas, proposals } from '@op/db/schema';
+import { formSchemas, processInstances, proposals } from '@op/db/schema';
 
 /** The instance template: requires a summary, knows nothing of a ballot description. */
 export const instanceTemplate = {
@@ -40,6 +41,28 @@ export async function insertFormSchema(values: {
     throw new Error('form schema insert returned no row');
   }
   return row;
+}
+
+/** Points the instance's current phase at a form schema row, as a setup script does. */
+export async function setCurrentPhaseFormSchema(
+  instanceId: string,
+  formSchemaId: string,
+): Promise<void> {
+  const instance = await db.query.processInstances.findFirst({
+    where: { id: instanceId },
+    columns: { instanceData: true, currentStateId: true },
+  });
+  if (!instance?.instanceData || !instance.currentStateId) {
+    throw new Error(`Instance ${instanceId} has no current phase`);
+  }
+  const { instanceData, currentStateId } = instance;
+  const phases = getInstancePhases(instanceData).map((phase) =>
+    phase.phaseId === currentStateId ? { ...phase, formSchemaId } : phase,
+  );
+  await db
+    .update(processInstances)
+    .set({ instanceData: { ...instanceData, phases } })
+    .where(eq(processInstances.id, instanceId));
 }
 
 /** Points a proposal at a form schema row, as a manual insert would. */

@@ -1,6 +1,7 @@
 import { db } from '@op/db/client';
 import { logger } from '@op/logging';
 
+import { NotFoundError } from '../../utils';
 import { getCurrentProfileId } from '../access';
 import { assertGlobalRole } from '../assert';
 import { withBoundaryCategoryLabel } from './boundaryCategory';
@@ -8,22 +9,26 @@ import {
   type ProposalDataInput,
   parseProposalData,
 } from './proposalDataSchema';
+import { resolveProposalTemplate } from './resolveProposalTemplate';
 import type { PhaseInstanceData } from './schemas/instanceData';
 
 /**
  * Resolves everything a new draft needs before its write transaction opens:
- * title, category labels and term ids, the author's profile, the owner role
- * and the phase's hidden default. The caller asserts access and the phase.
+ * title, category labels and term ids, the author's profile, the owner role,
+ * and the phase's hidden default and form. The caller asserts access and the
+ * phase.
  */
 export const resolveProposalDraftInputs = async ({
   authUserId,
+  processInstanceId,
   instanceProfileId,
   phase,
   proposalData,
 }: {
   authUserId: string;
+  processInstanceId: string;
   instanceProfileId: string | null;
-  phase: Pick<PhaseInstanceData, 'rules'>;
+  phase: Pick<PhaseInstanceData, 'rules' | 'formSchemaId'>;
   proposalData: ProposalDataInput;
 }) => {
   // Capture the phase's `defaults.hidden` rule at creation time. The flag
@@ -47,9 +52,13 @@ export const resolveProposalDraftInputs = async ({
     : manualCategoryLabels;
   const categoryTermIds = await getCategoryTermIds(categoryLabels);
 
-  const [submittedByProfileId, adminRole] = await Promise.all([
+  const [submittedByProfileId, adminRole, formSchemaId] = await Promise.all([
     getCurrentProfileId(authUserId),
     assertGlobalRole('Admin'),
+    getPhaseFormSchemaId({
+      formSchemaId: phase.formSchemaId,
+      processInstanceId,
+    }),
   ]);
 
   return {
@@ -59,7 +68,36 @@ export const resolveProposalDraftInputs = async ({
     submittedByProfileId,
     adminRoleId: adminRole.id,
     defaultHidden,
+    formSchemaId,
   };
+};
+
+/**
+ * The form a draft is written under: the phase's, or null for the instance
+ * template. Refused like every other read of a missing or malformed row.
+ */
+const getPhaseFormSchemaId = async ({
+  formSchemaId,
+  processInstanceId,
+}: {
+  formSchemaId: string | null | undefined;
+  processInstanceId: string;
+}): Promise<string | null> => {
+  if (!formSchemaId) {
+    return null;
+  }
+
+  await resolveProposalTemplate(null, null, formSchemaId);
+  // The resolver reads the row by id alone.
+  const row = await db.query.formSchemas.findFirst({
+    where: { id: formSchemaId, processInstanceId },
+    columns: { id: true },
+  });
+  if (!row) {
+    throw new NotFoundError('Form schema', formSchemaId);
+  }
+
+  return row.id;
 };
 
 /**

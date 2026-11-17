@@ -10,9 +10,15 @@ import {
   taxonomyTerms,
 } from '@op/db/schema';
 import { db, eq } from '@op/db/test';
+import { randomUUID } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
+import {
+  entrySchema,
+  insertFormSchema,
+  setCurrentPhaseFormSchema,
+} from '../../../test/helpers/formSchemaTestUtils';
 import {
   accessTierGatingCell,
   describeDecisionAccessTierGating,
@@ -40,6 +46,22 @@ const readCachedUser = ({
   authUserId: string;
   fresh: string;
 }) => cache({ type: 'user', params: [authUserId], fetch: async () => fresh });
+
+const readFormSchemaId = async (proposalId: string) => {
+  const row = await db.query.proposals.findFirst({
+    where: { id: proposalId },
+    columns: { formSchemaId: true },
+  });
+  return row?.formSchemaId;
+};
+
+const readInstanceProposalIds = async (processInstanceId: string) =>
+  (
+    await db.query.proposals.findMany({
+      where: { processInstanceId },
+      columns: { id: true },
+    })
+  ).map((row) => row.id);
 
 describe.concurrent('createProposal', () => {
   it('drops the cached access of the author so their admin role on the proposal applies at once', async ({
@@ -149,6 +171,117 @@ describe.concurrent('createProposal', () => {
     expect(proposal.proposalData).toMatchObject({
       category: [districtTerm.label],
     });
+  });
+
+  it('writes the draft under the form of the phase it is created in', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instanceId = setup.instance.instance.id;
+    const row = await insertFormSchema({
+      processInstanceId: instanceId,
+      name: 'Phase form',
+      schema: entrySchema,
+    });
+    await setCurrentPhaseFormSchema(instanceId, row.id);
+    const { caller } = await createAuthenticatedCaller(setup.userEmail);
+
+    const proposal = await caller.decision.createProposal({
+      processInstanceId: instanceId,
+      proposalData: { title: 'Phase form proposal' },
+    });
+    testData.trackProfileForCleanup(proposal.profileId);
+
+    await expect(readFormSchemaId(proposal.id)).resolves.toBe(row.id);
+  });
+
+  it('writes the draft under the instance template when its phase has no form', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const { caller } = await createAuthenticatedCaller(setup.userEmail);
+
+    const proposal = await caller.decision.createProposal({
+      processInstanceId: setup.instance.instance.id,
+      proposalData: { title: 'Template proposal' },
+    });
+    testData.trackProfileForCleanup(proposal.profileId);
+
+    await expect(readFormSchemaId(proposal.id)).resolves.toBeNull();
+  });
+
+  it('refuses the create when the phase form row is missing', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instanceId = setup.instance.instance.id;
+    const missingId = randomUUID();
+    await setCurrentPhaseFormSchema(instanceId, missingId);
+    const { caller } = await createAuthenticatedCaller(setup.userEmail);
+
+    await expect(
+      caller.decision.createProposal({
+        processInstanceId: instanceId,
+        proposalData: { title: 'Refused' },
+      }),
+    ).rejects.toMatchObject({
+      cause: {
+        name: 'NotFoundError',
+        message: `Form schema with ID '${missingId}' not found.`,
+      },
+    });
+    await expect(readInstanceProposalIds(instanceId)).resolves.toEqual([]);
+  });
+
+  it('refuses the create when the phase form row belongs to another instance', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 2,
+      grantAccess: true,
+    });
+    const [instance, otherInstance] = setup.instances;
+    if (!instance || !otherInstance) {
+      throw new Error('Expected two instances');
+    }
+    const instanceId = instance.instance.id;
+    const otherRow = await insertFormSchema({
+      processInstanceId: otherInstance.instance.id,
+      name: 'Other instance form',
+      schema: entrySchema,
+    });
+    await setCurrentPhaseFormSchema(instanceId, otherRow.id);
+    const { caller } = await createAuthenticatedCaller(setup.userEmail);
+
+    await expect(
+      caller.decision.createProposal({
+        processInstanceId: instanceId,
+        proposalData: { title: 'Refused' },
+      }),
+    ).rejects.toMatchObject({
+      cause: {
+        name: 'NotFoundError',
+        message: `Form schema with ID '${otherRow.id}' not found.`,
+      },
+    });
+    await expect(readInstanceProposalIds(instanceId)).resolves.toEqual([]);
   });
 });
 

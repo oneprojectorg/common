@@ -22,6 +22,7 @@ import {
 } from '@op/db/schema';
 import { ROLES } from '@op/db/seedData/accessControl';
 import { db, eq } from '@op/db/test';
+import { randomUUID } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
@@ -169,6 +170,7 @@ const configurePrefill = async ({
       { from: 'budget', to: 'budget' },
     ]),
   });
+  return { entryFormSchemaId: entryRow.id };
 };
 
 const EMPTY_FRAGMENT = { type: 'doc', content: [] };
@@ -180,6 +182,14 @@ const readEntryDocument = (proposalId: string) =>
     'category',
     'budget',
   ]);
+
+const readFormSchemaId = async (proposalId: string) => {
+  const row = await db.query.proposals.findFirst({
+    where: { id: proposalId },
+    columns: { formSchemaId: true },
+  });
+  return row?.formSchemaId;
+};
 
 const readProposalData = async (proposalId: string) => {
   const row = await db.query.proposals.findFirst({
@@ -946,5 +956,85 @@ describe.concurrent('createDevelopedProposal', () => {
     await expect(
       createTipTapClient().getDocumentUpdate(`proposal-${draft.id}`),
     ).resolves.toBeNull();
+  });
+
+  it('writes a prefilled entry under the develop phase form and reads it back with that form', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instanceId, source } = await createDevelopPhaseSetup({
+      testData,
+    });
+    const { entryFormSchemaId } = await configurePrefill({
+      instanceId,
+      sourceId: source.id,
+      summary: 'Plant trees along the river.',
+    });
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const draft = await caller.decision.createDevelopedProposal({
+      processInstanceId: instanceId,
+      sourceProposalIds: [source.id],
+      proposalData: {},
+    });
+    testData.trackProfileForCleanup(draft.profileId);
+
+    await expect(readFormSchemaId(draft.id)).resolves.toBe(entryFormSchemaId);
+    const read = await caller.decision.getProposal({
+      profileId: draft.profileId,
+    });
+    expect(read.proposalTemplate).toEqual(prefillEntrySchema);
+  });
+
+  it('writes the entry under the instance template when the develop phase has no form', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instanceId, source } = await createDevelopPhaseSetup({
+      testData,
+    });
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const draft = await caller.decision.createDevelopedProposal({
+      processInstanceId: instanceId,
+      sourceProposalIds: [source.id],
+      proposalData: { title: 'Developed' },
+    });
+    testData.trackProfileForCleanup(draft.profileId);
+
+    await expect(readFormSchemaId(draft.id)).resolves.toBeNull();
+  });
+
+  it('refuses the create when the develop phase form row is missing', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instanceId, source } = await createDevelopPhaseSetup({
+      testData,
+    });
+    const missingId = randomUUID();
+    await configureDevelopPhase(instanceId, { formSchemaId: missingId });
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    await expect(
+      caller.decision.createDevelopedProposal({
+        processInstanceId: instanceId,
+        sourceProposalIds: [source.id],
+        proposalData: { title: 'Refused' },
+      }),
+    ).rejects.toMatchObject({
+      cause: {
+        name: 'NotFoundError',
+        message: `Form schema with ID '${missingId}' not found.`,
+      },
+    });
+    const instanceProposals = await db.query.proposals.findMany({
+      where: { processInstanceId: instanceId },
+      columns: { id: true },
+    });
+    expect(instanceProposals).toEqual([{ id: source.id }]);
   });
 });
