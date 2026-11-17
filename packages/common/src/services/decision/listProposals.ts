@@ -314,21 +314,11 @@ export const listProposals = async ({
     profileRoles,
   );
 
-  // The develop window costs up to two queries, so it is resolved once and
-  // only when a row's answer hangs on it.
   const submittedEditingAllowed =
     isPostSubmissionEditingAllowed({
       phases: instance.phases,
       currentPhaseId: instance.currentStateId,
-    }) ||
-    (input.phase !== 'results' &&
-      !hasAdminPermission &&
-      proposalList.some(
-        (proposal) =>
-          proposal.submittedByProfileId === currentProfileId &&
-          proposal.status !== ProposalStatus.DRAFT,
-      ) &&
-      (await isDevelopWindowOpen({ instance })));
+    }) || (await isDevelopWindowOpen({ instance }));
 
   const proposalsWithCounts = proposalList.map((proposal: ProposalListItem) => {
     const rawSubmittedBy = Array.isArray(proposal.submittedBy)
