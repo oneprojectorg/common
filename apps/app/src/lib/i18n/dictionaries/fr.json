@@ -1705,6 +1705,12 @@
       "noEntriesDescription": "Ce que vous préparez à partir des propositions s’affiche ici.",
       "noMatchingEntriesDescription": "Essayez une autre recherche.",
       "resultsCount": "{count, plural, one {# résultat} other {# résultats}}",
+      "entriesCount": "{count, plural, one {# entrée} other {# entrées}}",
+      "ofTotalEntries": "sur {total, plural, one {# entrée} other {# entrées}}",
+      "categoryColumn": "Catégorie",
+      "districtColumn": "District",
+      "noFilteredEntriesDescription": "Essayez une autre recherche ou catégorie.",
+      "noFilteredEntriesDistrictDescription": "Essayez une autre recherche ou un autre district.",
       "advancingCount": "{count, plural, one {# proposition avance} other {# propositions avancent}}",
       "confirmSelectionsAction": "Confirmer les sélections"
     },

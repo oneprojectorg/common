@@ -41,6 +41,9 @@ vi.mock('./pages/ReviewSelectionPage', () => ({
 vi.mock('./pages/DevelopProposalsPage', () => ({
   DevelopProposalsPage: () => <div>develop page</div>,
 }));
+vi.mock('./pages/DevelopAdminPage', () => ({
+  DevelopAdminPage: () => <div>develop admin page</div>,
+}));
 vi.mock('./pages/FinalPhaseManualSelectionPage', () => ({
   FinalPhaseManualSelectionPage: () => <div>final selection page</div>,
 }));
@@ -121,14 +124,25 @@ const reviewThenDevelop = [reviewPhase, developPhase, votePhase, resultsPhase];
 describe('DecisionStateRouter', () => {
   afterEach(cleanup);
 
-  it('sends an admin to the develop page while a develop phase awaits selection', () => {
+  it('sends an admin to the develop admin page while a develop phase awaits selection', () => {
     renderRouter({
       phases: reviewThenDevelop,
       currentStateId: 'develop',
       access: { admin: true },
     });
-    expect(screen.getByText('develop page')).toBeTruthy();
+    expect(screen.getByText('develop admin page')).toBeTruthy();
+    expect(screen.queryByText('develop page')).toBeNull();
     expect(screen.queryByText('review selection page')).toBeNull();
+  });
+
+  it('sends an admin who also holds develop access to the develop admin page', () => {
+    renderRouter({
+      phases: reviewThenDevelop,
+      currentStateId: 'develop',
+      access: { admin: true, developProposals: true },
+    });
+    expect(screen.getByText('develop admin page')).toBeTruthy();
+    expect(screen.queryByText('develop page')).toBeNull();
   });
 
   it('sends someone with develop access to the develop page', () => {
@@ -138,6 +152,7 @@ describe('DecisionStateRouter', () => {
       access: { developProposals: true },
     });
     expect(screen.getByText('develop page')).toBeTruthy();
+    expect(screen.queryByText('develop admin page')).toBeNull();
   });
 
   it('keeps the standard page for everyone else in a pending develop phase', () => {
@@ -148,6 +163,7 @@ describe('DecisionStateRouter', () => {
     });
     expect(screen.getByText('standard page')).toBeTruthy();
     expect(screen.queryByText('develop page')).toBeNull();
+    expect(screen.queryByText('develop admin page')).toBeNull();
   });
 
   it('keeps the review-selection page for an admin when the pending phase is not a develop phase', () => {

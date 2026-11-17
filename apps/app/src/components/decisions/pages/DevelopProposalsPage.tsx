@@ -1,21 +1,21 @@
 'use client';
 
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
-import type { InstancePhaseData, ProcessInstance } from '@op/api/encoders';
-import { Header1 } from '@op/sense/Header';
+import type { ProcessInstance } from '@op/api/encoders';
 import { Suspense } from 'react';
 
-import { type TranslateFn, useTranslations } from '@/lib/i18n';
+import { useTranslations } from '@/lib/i18n';
 
 import {
   DevelopProposalsList,
   DevelopProposalsListSkeleton,
 } from '../DevelopProposals/DevelopProposalsList';
 import { ProposalsLoadError } from '../ProposalsLoadError';
+import { DevelopPageShell, getEntryName } from './DevelopPageShell';
 
 /**
- * The develop screen: what an admin or a holder of the Develop Proposals
- * permission sees while a develop phase is current and its inbound selection
+ * The develop screen: what a holder of the Develop Proposals permission
+ * sees while a develop phase is current and its inbound selection
  * is still pending. A muted band names the task; below it, the previous
  * phase's proposals (the sources) to prepare entries from, and the entries
  * this phase holds so far.
@@ -37,44 +37,20 @@ export function DevelopProposalsPage({
     currentIndex > 0 ? (phases[currentIndex - 1] ?? null) : null;
 
   return (
-    <div className="min-h-full">
-      <section className="bg-muted px-4 pt-8 pb-7 text-center">
-        <div className="mx-auto flex max-w-page flex-col items-center gap-3">
-          <Header1 className="text-primary">{t('develop.heroTitle')}</Header1>
-          <p className="max-w-prose text-base text-balance text-foreground">
-            {t('selectAdvancingHeading')}
-          </p>
-        </div>
-      </section>
-
-      <div className="mx-auto w-full max-w-page px-4 pt-12 pb-32">
-        <APIErrorBoundary fallbacks={{ default: () => <ProposalsLoadError /> }}>
-          <Suspense fallback={<DevelopProposalsListSkeleton />}>
-            <DevelopProposalsList
-              instance={instance}
-              sourcePhase={sourcePhase}
-              decisionSlug={decisionSlug}
-              entryName={getEntryName({
-                developPhase: phases[currentIndex],
-                t,
-              })}
-            />
-          </Suspense>
-        </APIErrorBoundary>
-      </div>
-    </div>
+    <DevelopPageShell>
+      <APIErrorBoundary fallbacks={{ default: () => <ProposalsLoadError /> }}>
+        <Suspense fallback={<DevelopProposalsListSkeleton />}>
+          <DevelopProposalsList
+            instance={instance}
+            sourcePhase={sourcePhase}
+            decisionSlug={decisionSlug}
+            entryName={getEntryName({
+              developPhase: phases[currentIndex],
+              t,
+            })}
+          />
+        </Suspense>
+      </APIErrorBoundary>
+    </DevelopPageShell>
   );
-}
-
-/**
- * The name shown for the develop phase's developed proposals. The default
- * stands until the phase's form schema supplies a name.
- */
-function getEntryName({
-  t,
-}: {
-  developPhase: InstancePhaseData | undefined;
-  t: TranslateFn<'decisions'>;
-}): string {
-  return t('develop.defaultEntryName');
 }

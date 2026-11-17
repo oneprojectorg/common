@@ -1705,6 +1705,12 @@
       "noEntriesDescription": "প্রস্তাব থেকে আপনি যা প্রস্তুত করবেন তা এখানে দেখা যাবে।",
       "noMatchingEntriesDescription": "অন্যভাবে খুঁজে দেখুন।",
       "resultsCount": "{count, plural, one {#টি ফলাফল} other {#টি ফলাফল}}",
+      "entriesCount": "{count, plural, one {#টি এন্ট্রি} other {#টি এন্ট্রি}}",
+      "ofTotalEntries": "{total, plural, one {#টি এন্ট্রির} other {#টি এন্ট্রির}} মধ্যে",
+      "categoryColumn": "বিভাগ",
+      "districtColumn": "জেলা",
+      "noFilteredEntriesDescription": "অন্যভাবে খুঁজুন বা অন্য বিভাগ বেছে নিন।",
+      "noFilteredEntriesDistrictDescription": "অন্যভাবে খুঁজুন বা অন্য জেলা বেছে নিন।",
       "advancingCount": "{count, plural, one {#টি প্রস্তাব এগিয়ে যাচ্ছে} other {#টি প্রস্তাব এগিয়ে যাচ্ছে}}",
       "confirmSelectionsAction": "নির্বাচন নিশ্চিত করুন"
     },
