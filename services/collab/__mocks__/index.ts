@@ -429,8 +429,15 @@ export function createTipTapClient(_config?: unknown) {
      * The document's per-fragment JSON as a Yjs update, laid out as
      * y-prosemirror writes it; null for a document that was never seeded.
      */
-    getDocumentUpdate: async (docName: string): Promise<Uint8Array | null> => {
-      const fragments = docFragmentJsonResponses.get(docName);
+    getDocumentUpdate: async (
+      docName: string,
+      options?: { version?: number },
+    ): Promise<Uint8Array | null> => {
+      const version = options?.version;
+      const fragments =
+        (version !== undefined
+          ? docVersionFragmentJsonResponses.get(version)?.get(docName)
+          : undefined) ?? docFragmentJsonResponses.get(docName);
       return fragments ? encodeFragmentsAsUpdate(fragments) : null;
     },
 

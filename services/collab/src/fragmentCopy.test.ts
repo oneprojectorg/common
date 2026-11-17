@@ -137,6 +137,26 @@ describe('encodeFragmentCopies', () => {
     );
   });
 
+  it('fills a target from the first source whose fragment is not empty', () => {
+    const empty = buildUpdate({ summary: () => {} });
+    const first = buildUpdate({
+      summary: (fragment) => fragment.insert(0, [paragraph('First')]),
+    });
+    const second = buildUpdate({
+      summary: (fragment) => fragment.insert(0, [paragraph('Second')]),
+    });
+
+    const update = encodeFragmentCopies([
+      { sourceUpdate: empty, from: 'summary', to: 'description' },
+      { sourceUpdate: first, from: 'summary', to: 'description' },
+      { sourceUpdate: second, from: 'summary', to: 'description' },
+    ]);
+
+    expect(readFragment(update, 'description')).toBe(
+      '<paragraph>First</paragraph>',
+    );
+  });
+
   it('adds nothing for an empty or missing source fragment', () => {
     const sourceUpdate = buildUpdate({
       title: (fragment) => fragment.insert(0, [paragraph('Title')]),
@@ -198,6 +218,16 @@ describe('TipTap client document updates', () => {
     expect(sent.request.method).toBe('GET');
     expect(sent.request.url).toBe(
       'https://app.collab.tiptap.cloud/api/documents/proposal-1?format=yjs',
+    );
+  });
+
+  it('asks for a saved version when one is given', async () => {
+    const requests = stubFetch(() => new Response(update, { status: 200 }));
+
+    await client.getDocumentUpdate('proposal-1', { version: 3 });
+
+    expect(requests[0]?.request.url).toBe(
+      'https://app.collab.tiptap.cloud/api/documents/proposal-1?format=yjs&version=3',
     );
   });
 

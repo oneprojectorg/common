@@ -88,14 +88,22 @@ export function createTipTapClient(config: TipTapClientConfig) {
 
     /**
      * Fetch a document as a binary Yjs update (`Y.encodeStateAsUpdate`), or
-     * null when the document does not exist (TipTap answers 404).
+     * null when the document does not exist (TipTap answers 404). Without a
+     * `version`, the latest state.
      * GET /api/documents/{docName}?format=yjs
      */
-    getDocumentUpdate: async (docName: string): Promise<Uint8Array | null> => {
+    getDocumentUpdate: async (
+      docName: string,
+      options?: { version?: number },
+    ): Promise<Uint8Array | null> => {
+      const version = options?.version;
       const response = await api.get(
         `documents/${encodeURIComponent(docName)}`,
         {
-          searchParams: { format: 'yjs' },
+          searchParams: {
+            format: 'yjs',
+            ...(version !== undefined ? { version } : {}),
+          },
           throwHttpErrors: (status) => status !== 404,
         },
       );

@@ -11,17 +11,21 @@ export type FragmentCopy = {
 /**
  * Builds one Yjs update for a new document from fragments of other
  * documents. Nodes are deep-cloned, so their attributes and text marks come
- * along. An empty or missing source fragment adds nothing; when nothing is
- * copied the result is null.
+ * along. A target takes the first copy whose source fragment is not empty;
+ * later copies to it are skipped. When nothing is copied the result is null.
  */
 export function encodeFragmentCopies(
   copies: FragmentCopy[],
 ): Uint8Array<ArrayBuffer> | null {
   const sourceDocs = new Map<Uint8Array, Y.Doc>();
+  const filledTargets = new Set<string>();
   const target = new Y.Doc();
-  let copied = false;
 
   for (const { sourceUpdate, from, to } of copies) {
+    if (filledTargets.has(to)) {
+      continue;
+    }
+
     let source = sourceDocs.get(sourceUpdate);
     if (!source) {
       source = new Y.Doc();
@@ -41,11 +45,12 @@ export function encodeFragmentCopies(
       continue;
     }
 
-    const fragment = target.getXmlFragment(to);
-    fragment.insert(fragment.length, nodes);
-    copied = true;
+    target.getXmlFragment(to).insert(0, nodes);
+    filledTargets.add(to);
   }
 
   // Copied so the bytes sit on a plain `ArrayBuffer`, which `fetch` accepts.
-  return copied ? new Uint8Array(Y.encodeStateAsUpdate(target)) : null;
+  return filledTargets.size > 0
+    ? new Uint8Array(Y.encodeStateAsUpdate(target))
+    : null;
 }
