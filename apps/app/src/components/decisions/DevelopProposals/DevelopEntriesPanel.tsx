@@ -1,15 +1,9 @@
 'use client';
 
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
-import { useDebounce } from '@op/hooks';
-import {
-  Table,
-  TableBody,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@op/sense/Table';
-import { Suspense, useDeferredValue, useState } from 'react';
+import { Skeleton } from '@op/sense/Skeleton';
+import { TableBody, TableHead, TableHeader, TableRow } from '@op/sense/Table';
+import { Suspense } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -17,7 +11,9 @@ import { ProposalsLoadError } from '../ProposalsLoadError';
 import {
   DevelopEntriesEmpty,
   DevelopEntriesNextPage,
+  DevelopEntriesProvider,
   DevelopEntriesSearch,
+  DevelopEntriesTable,
   DevelopEntriesTableSkeleton,
   DevelopEntryBudgetCell,
   DevelopEntryStatusCell,
@@ -42,49 +38,38 @@ export function DevelopEntriesPanel({
   decisionSlug: string;
   entryName: string;
 }) {
-  const [search, setSearch] = useState('');
-  const [debouncedSearch] = useDebounce(search.trim(), 200);
-  // Keeps the current rows on screen while the next search loads, instead of
-  // swapping the table for its skeleton on every keystroke.
-  const deferredSearch = useDeferredValue(debouncedSearch);
-
   return (
-    <div className="flex flex-col gap-10">
-      <div className="flex min-h-11 items-center justify-end">
-        <DevelopEntriesSearch value={search} onChange={setSearch} />
-      </div>
+    <DevelopEntriesProvider
+      processInstanceId={processInstanceId}
+      phaseId={phaseId}
+    >
+      <div className="flex flex-col gap-10">
+        <div className="flex min-h-11 items-center justify-end">
+          <DevelopEntriesSearch />
+        </div>
 
-      <APIErrorBoundary fallbacks={{ default: () => <ProposalsLoadError /> }}>
-        <Suspense fallback={<DevelopEntriesTableSkeleton />}>
-          <DevelopEntriesTableSuspense
-            processInstanceId={processInstanceId}
-            phaseId={phaseId}
-            search={deferredSearch}
-            decisionSlug={decisionSlug}
-            entryName={entryName}
-          />
-        </Suspense>
-      </APIErrorBoundary>
-    </div>
+        <APIErrorBoundary fallbacks={{ default: () => <ProposalsLoadError /> }}>
+          <Suspense fallback={<DevelopEntriesTableSkeleton />}>
+            <DevelopEntriesTableSuspense
+              decisionSlug={decisionSlug}
+              entryName={entryName}
+            />
+          </Suspense>
+        </APIErrorBoundary>
+      </div>
+    </DevelopEntriesProvider>
   );
 }
 
 function DevelopEntriesTableSuspense({
-  processInstanceId,
-  phaseId,
-  search,
   decisionSlug,
   entryName,
 }: {
-  processInstanceId: string;
-  phaseId: string | undefined;
-  search: string;
   decisionSlug: string;
   entryName: string;
 }) {
   const t = useTranslations();
-  const { entries, total, nextPageRef, shouldShowTrigger, isFetchingNextPage } =
-    useDevelopEntries({ processInstanceId, phaseId, search });
+  const { entries, total } = useDevelopEntries();
 
   const resultsCount = (
     <p aria-live="polite" className="sr-only">
@@ -97,14 +82,9 @@ function DevelopEntriesTableSuspense({
       <div className="flex flex-col">
         {resultsCount}
         <DevelopEntriesEmpty
-          title={
-            search ? t('No results') : t('decisions.develop.noEntriesTitle')
-          }
-          description={
-            search
-              ? t('decisions.develop.noMatchingEntriesDescription')
-              : t('decisions.develop.noEntriesDescription')
-          }
+          narrowedDescription={t(
+            'decisions.develop.noMatchingEntriesDescription',
+          )}
         />
       </div>
     );
@@ -113,10 +93,7 @@ function DevelopEntriesTableSuspense({
   return (
     <div className="flex flex-col">
       {resultsCount}
-      <Table
-        aria-label={entryName}
-        className="min-w-3xl table-fixed [&_tr>*:first-child]:ps-0 [&_tr>*:last-child]:pe-0"
-      >
+      <DevelopEntriesTable entryName={entryName}>
         <TableHeader>
           <TableRow>
             <TableHead scope="col">
@@ -142,14 +119,19 @@ function DevelopEntriesTableSuspense({
             </TableRow>
           ))}
         </TableBody>
-      </Table>
+      </DevelopEntriesTable>
 
-      {shouldShowTrigger ? (
-        <DevelopEntriesNextPage
-          nextPageRef={nextPageRef}
-          isFetchingNextPage={isFetchingNextPage}
-        />
-      ) : null}
+      <DevelopEntriesNextPage>
+        {Array.from({ length: 2 }).map((_, index) => (
+          <div
+            key={index}
+            className="flex items-center justify-between gap-4 border-b py-4"
+          >
+            <Skeleton className="h-4 w-56" />
+            <Skeleton className="h-9 w-28" />
+          </div>
+        ))}
+      </DevelopEntriesNextPage>
     </div>
   );
 }

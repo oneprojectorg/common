@@ -4,7 +4,7 @@ import { formatCurrency } from '@/utils/formatting';
 import { trpc } from '@op/api/client';
 import { ProposalStatus } from '@op/api/encoders';
 import { type Proposal, nextCursor } from '@op/common/client';
-import { useInfiniteScroll } from '@op/hooks';
+import { useDebounce, useInfiniteScroll } from '@op/hooks';
 import {
   Empty,
   EmptyDescription,
@@ -19,8 +19,16 @@ import {
 } from '@op/sense/InputGroup';
 import { Skeleton } from '@op/sense/Skeleton';
 import { StatusBadge } from '@op/sense/StatusBadge';
-import { TableCell, TableRowHeader } from '@op/sense/Table';
-import { type RefCallback, useCallback, useMemo } from 'react';
+import { Table, TableCell, TableRowHeader } from '@op/sense/Table';
+import {
+  type ReactNode,
+  createContext,
+  useCallback,
+  useContext,
+  useDeferredValue,
+  useMemo,
+  useState,
+} from 'react';
 import { LuFileText, LuSearch } from 'react-icons/lu';
 
 import { Link, useTranslations } from '@/lib/i18n';
@@ -32,71 +40,124 @@ import {
   decisionProposalHref,
 } from '../proposalHrefs';
 
-/** What the Entries tab lists: the develop phase's entries, narrowed in the API. */
-export interface DevelopEntriesQuery {
+// The shared pieces of the develop screen's entries list. A variant wraps its
+// screen in `DevelopEntriesProvider` and composes its own table from the
+// parts below; each part reads the provider instead of taking the query.
+
+/** The list's API inputs, as the provider applies them. */
+interface DevelopEntriesQuery {
+  processInstanceId: string;
+  phaseId: string | undefined;
+  search: string;
+  categoryId: string | undefined;
+}
+
+interface DevelopEntriesContextValue {
+  state: {
+    /** The search box's text, as typed. */
+    search: string;
+  };
+  actions: {
+    setSearch: (search: string) => void;
+  };
+  meta: {
+    /** What the list asks the API for: debounced and deferred. */
+    query: DevelopEntriesQuery;
+    /** A search or category narrows the list. */
+    isNarrowed: boolean;
+  };
+}
+
+const DevelopEntriesContext = createContext<DevelopEntriesContextValue | null>(
+  null,
+);
+
+/**
+ * Owns the entries list's search and its API inputs. The search and the
+ * category reach the API debounced and deferred, so the current rows stay on
+ * screen while the next ones load instead of swapping for their skeleton.
+ */
+export function DevelopEntriesProvider({
+  processInstanceId,
+  phaseId,
+  categoryId,
+  children,
+}: {
   processInstanceId: string;
   /** The develop phase, whose entries are listed. */
   phaseId: string | undefined;
-  search: string;
-}
+  /** Narrows the list to one category; omitted lists every category. */
+  categoryId?: string;
+  children: ReactNode;
+}) {
+  const [search, setSearch] = useState('');
+  const [debouncedSearch] = useDebounce(search.trim(), 200);
+  const deferredSearch = useDeferredValue(debouncedSearch);
+  const deferredCategoryId = useDeferredValue(categoryId);
 
-// The shared pieces of the develop screen's Entries tab: the query, the search
-// box, the cells of an entry row, the empty state, the next-page trigger and
-// the skeleton. Each variant of the tab composes its own table from them.
-
-/** One page-by-page read of the entries; the API searches and pages. */
-export function useDevelopEntriesQuery({
-  processInstanceId,
-  phaseId,
-  search,
-}: DevelopEntriesQuery) {
-  return trpc.decision.listProposals.useSuspenseInfiniteQuery(
-    {
-      processInstanceId,
-      phaseId,
-      search: search || undefined,
-      limit: PROPOSALS_PAGE_LIMIT,
+  const value: DevelopEntriesContextValue = {
+    state: { search },
+    actions: { setSearch },
+    meta: {
+      query: {
+        processInstanceId,
+        phaseId,
+        search: deferredSearch,
+        categoryId: deferredCategoryId,
+      },
+      isNarrowed: Boolean(deferredSearch || deferredCategoryId),
     },
-    { getNextPageParam: nextCursor },
+  };
+
+  return (
+    <DevelopEntriesContext.Provider value={value}>
+      {children}
+    </DevelopEntriesContext.Provider>
   );
 }
 
-/** The entries loaded so far, their total, and the next-page trigger. */
-export function useDevelopEntries(query: DevelopEntriesQuery) {
+/**
+ * The entries loaded so far, the API's total, and the next-page controls:
+ * the one read of the list, shared by every part through the query cache.
+ */
+export function useDevelopEntries() {
+  const { query } = useDevelopEntriesContext().meta;
   const [data, { fetchNextPage, hasNextPage, isFetchingNextPage }] =
-    useDevelopEntriesQuery(query);
+    trpc.decision.listProposals.useSuspenseInfiniteQuery(
+      {
+        processInstanceId: query.processInstanceId,
+        phaseId: query.phaseId,
+        search: query.search || undefined,
+        categoryId: query.categoryId,
+        limit: PROPOSALS_PAGE_LIMIT,
+      },
+      { getNextPageParam: nextCursor },
+    );
 
+  // The React Compiler is not on in this app, so the flattened rows are
+  // memoised by hand.
   const entries = useMemo(
     () => data.pages.flatMap((page) => page.items),
     [data.pages],
   );
 
-  const loadNextPage = useCallback(() => {
-    void fetchNextPage();
-  }, [fetchNextPage]);
-  const { ref: nextPageRef, shouldShowTrigger } =
-    useInfiniteScroll<HTMLDivElement>(loadNextPage, {
-      hasNextPage,
-      isFetchingNextPage,
-    });
-
   return {
     entries,
     total: data.pages[0]?.total ?? 0,
-    nextPageRef,
-    shouldShowTrigger,
+    fetchNextPage,
+    hasNextPage,
     isFetchingNextPage,
   };
 }
 
-export function DevelopEntriesSearch({
-  value,
-  onChange,
-}: {
-  value: string;
-  onChange: (value: string) => void;
-}) {
+/** Whether a search or category narrows the list; it needs no data. */
+export function useDevelopEntriesNarrowed() {
+  return useDevelopEntriesContext().meta.isNarrowed;
+}
+
+export function DevelopEntriesSearch() {
   const t = useTranslations();
+  const { state, actions } = useDevelopEntriesContext();
 
   return (
     <InputGroup className="w-full sm:w-56">
@@ -105,12 +166,30 @@ export function DevelopEntriesSearch({
       </InputGroupAddon>
       <InputGroupInput
         type="search"
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
+        value={state.search}
+        onChange={(event) => actions.setSearch(event.target.value)}
         placeholder={t('Search')}
         aria-label={t('decisions.develop.searchEntriesLabel')}
       />
     </InputGroup>
+  );
+}
+
+/** The table frame every variant shares; the variant supplies its rows. */
+export function DevelopEntriesTable({
+  entryName,
+  children,
+}: {
+  entryName: string;
+  children: ReactNode;
+}) {
+  return (
+    <Table
+      aria-label={entryName}
+      className="min-w-3xl table-fixed [&_tr>*:first-child]:ps-0 [&_tr>*:last-child]:pe-0"
+    >
+      {children}
+    </Table>
   );
 }
 
@@ -182,49 +261,58 @@ export function DevelopEntryStatusCell({ entry }: { entry: Proposal }) {
   );
 }
 
+/**
+ * The empty list. Its title and description tell an unfiltered list apart
+ * from a narrowed one; the variant supplies the narrowed description.
+ */
 export function DevelopEntriesEmpty({
-  title,
-  description,
+  narrowedDescription,
 }: {
-  title: string;
-  description: string;
+  narrowedDescription: string;
 }) {
+  const t = useTranslations();
+  const isNarrowed = useDevelopEntriesNarrowed();
+
   return (
     <Empty>
       <EmptyHeader>
         <EmptyMedia variant="icon">
           <LuFileText aria-hidden className="size-5" />
         </EmptyMedia>
-        <EmptyTitle render={<h3 />}>{title}</EmptyTitle>
-        <EmptyDescription>{description}</EmptyDescription>
+        <EmptyTitle render={<h3 />}>
+          {isNarrowed ? t('No results') : t('decisions.develop.noEntriesTitle')}
+        </EmptyTitle>
+        <EmptyDescription>
+          {isNarrowed
+            ? narrowedDescription
+            : t('decisions.develop.noEntriesDescription')}
+        </EmptyDescription>
       </EmptyHeader>
     </Empty>
   );
 }
 
-/** Loads the next page when it scrolls into view. */
-export function DevelopEntriesNextPage({
-  nextPageRef,
-  isFetchingNextPage,
-}: {
-  nextPageRef: RefCallback<HTMLDivElement>;
-  isFetchingNextPage: boolean;
-}) {
-  return (
-    <div ref={nextPageRef} aria-hidden className="flex flex-col">
-      {isFetchingNextPage
-        ? Array.from({ length: 2 }).map((_, index) => (
-            <div
-              key={index}
-              className="flex items-center justify-between gap-4 border-b py-4"
-            >
-              <Skeleton className="h-4 w-56" />
-              <Skeleton className="h-9 w-28" />
-            </div>
-          ))
-        : null}
-    </div>
+/**
+ * Loads the next page when it scrolls into view, and shows `children` (the
+ * variant's placeholder rows) while that page loads.
+ */
+export function DevelopEntriesNextPage({ children }: { children: ReactNode }) {
+  const { fetchNextPage, hasNextPage, isFetchingNextPage } =
+    useDevelopEntries();
+
+  const loadNextPage = useCallback(() => {
+    void fetchNextPage();
+  }, [fetchNextPage]);
+  const { ref, shouldShowTrigger } = useInfiniteScroll<HTMLDivElement>(
+    loadNextPage,
+    { hasNextPage, isFetchingNextPage },
   );
+
+  return shouldShowTrigger ? (
+    <div ref={ref} aria-hidden className="flex flex-col">
+      {isFetchingNextPage ? children : null}
+    </div>
+  ) : null;
 }
 
 export function DevelopEntriesTableSkeleton() {
@@ -244,4 +332,12 @@ export function DevelopEntriesTableSkeleton() {
       ))}
     </div>
   );
+}
+
+function useDevelopEntriesContext() {
+  const context = useContext(DevelopEntriesContext);
+  if (!context) {
+    throw new Error('Develop entries parts need a DevelopEntriesProvider');
+  }
+  return context;
 }
