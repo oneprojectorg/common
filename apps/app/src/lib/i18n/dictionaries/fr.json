@@ -1758,7 +1758,13 @@
       "publishError": "Impossible de publier le bulletin. Réessayez.",
       "publishNotConfirmedError": "Toutes les catégories doivent être confirmées avant la publication.",
       "alreadyPublishedError": "Cette phase est déjà publiée ou a changé. Actualisez la page.",
-      "categoriesLoadError": "Impossible de charger les catégories"
+      "categoriesLoadError": "Impossible de charger les catégories",
+      "ofTotalSources": "sur {total, plural, one {# proposition} other {# propositions}}",
+      "decisionColumn": "Décision",
+      "sourceAdvancingStatus": "Avance",
+      "sourceUnderConsiderationStatus": "À l'étude",
+      "noFilteredSourcesDescription": "Essayez une autre catégorie.",
+      "noFilteredSourcesDistrictDescription": "Essayez un autre district."
     },
     "suggestedWinnersHint": "Nous avons sélectionné les propositions gagnantes suggérées en fonction des règles de vote et du budget total.",
     "votingOpenHeading": "C'EST L'HEURE DE VOTER.",

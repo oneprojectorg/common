@@ -1758,7 +1758,13 @@
       "publishError": "No se pudo publicar la boleta. Inténtalo de nuevo.",
       "publishNotConfirmedError": "Todas las categorías deben estar confirmadas antes de publicar.",
       "alreadyPublishedError": "Esta fase ya está publicada o ha cambiado. Actualiza la página.",
-      "categoriesLoadError": "No se pudieron cargar las categorías"
+      "categoriesLoadError": "No se pudieron cargar las categorías",
+      "ofTotalSources": "de {total, plural, one {# propuesta} other {# propuestas}}",
+      "decisionColumn": "Decisión",
+      "sourceAdvancingStatus": "Avanza",
+      "sourceUnderConsiderationStatus": "En consideración",
+      "noFilteredSourcesDescription": "Prueba con otra categoría.",
+      "noFilteredSourcesDistrictDescription": "Prueba con otro distrito."
     },
     "suggestedWinnersHint": "Hemos seleccionado las propuestas ganadoras sugeridas según las reglas de votación y el presupuesto total.",
     "votingOpenHeading": "HORA DE VOTAR.",

@@ -1758,7 +1758,13 @@
       "publishError": "Could not publish the ballot. Try again.",
       "publishNotConfirmedError": "Every category must be confirmed before you publish.",
       "alreadyPublishedError": "This phase is already published or has changed. Refresh the page.",
-      "categoriesLoadError": "Could not load the categories"
+      "categoriesLoadError": "Could not load the categories",
+      "ofTotalSources": "of {total, plural, one {# proposal} other {# proposals}}",
+      "decisionColumn": "Decision",
+      "sourceAdvancingStatus": "Advancing",
+      "sourceUnderConsiderationStatus": "Under consideration",
+      "noFilteredSourcesDescription": "Try another category.",
+      "noFilteredSourcesDistrictDescription": "Try another district."
     },
     "suggestedWinnersHint": "We've selected the suggested winning proposals based on voting rules and total budget.",
     "votingOpenHeading": "TIME TO VOTE.",

@@ -1758,7 +1758,13 @@
       "publishError": "تعذّر نشر ورقة الاقتراع. حاول مرة أخرى.",
       "publishNotConfirmedError": "يجب تأكيد كل الفئات قبل النشر.",
       "alreadyPublishedError": "هذه المرحلة منشورة بالفعل أو تغيّرت. حدّث الصفحة.",
-      "categoriesLoadError": "تعذّر تحميل الفئات"
+      "categoriesLoadError": "تعذّر تحميل الفئات",
+      "ofTotalSources": "من {total, plural, zero {مقترح} one {مقترح واحد} two {مقترحين} few {# مقترحات} many {# مقترحًا} other {# مقترح}}",
+      "decisionColumn": "القرار",
+      "sourceAdvancingStatus": "يتقدم",
+      "sourceUnderConsiderationStatus": "قيد الدراسة",
+      "noFilteredSourcesDescription": "جرّب فئة أخرى.",
+      "noFilteredSourcesDistrictDescription": "جرّب منطقة أخرى."
     },
     "suggestedWinnersHint": "اخترنا المقترحات الفائزة المقترحة بناءً على قواعد التصويت والميزانية الإجمالية.",
     "votingOpenHeading": "حان وقت التصويت.",

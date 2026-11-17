@@ -1758,7 +1758,13 @@
       "publishError": "Lama daabici karin warqadda codbixinta. Isku day mar kale.",
       "publishNotConfirmedError": "Qayb kasta waa in la xaqiijiyaa ka hor intaadan daabicin.",
       "alreadyPublishedError": "Wejigan horay ayaa loo daabacay ama wuu isbeddelay. Cusboonaysii bogga.",
-      "categoriesLoadError": "Lama soo rari karin qaybaha"
+      "categoriesLoadError": "Lama soo rari karin qaybaha",
+      "ofTotalSources": "ka mid ah {total, plural, one {# soo jeedin} other {# soo jeedinno}}",
+      "decisionColumn": "Go'aan",
+      "sourceAdvancingStatus": "Horumaraya",
+      "sourceUnderConsiderationStatus": "Waa la tixgelinayaa",
+      "noFilteredSourcesDescription": "Isku day qayb kale.",
+      "noFilteredSourcesDistrictDescription": "Isku day degmo kale."
     },
     "suggestedWinnersHint": "Waxaan dooranay soo jeedimaha guusha helay ee la soo jeediyay iyadoo lagu salaynayo xeerarka codeynta iyo wadarta miisaaniyada.",
     "votingOpenHeading": "WAA WAKHTIGII CODAYNTA.",

@@ -666,7 +666,7 @@ function AdvanceEntryButton({
  * The reviewers' overall recommendations for one source, as counts of Yes,
  * Maybe and No. The aggregates load after the row, a page at a time.
  */
-function SourceRecommendations({ proposalId }: { proposalId: string }) {
+export function SourceRecommendations({ proposalId }: { proposalId: string }) {
   const review = useProposalReviewAggregates(proposalId);
 
   if (review.status === 'loading') {
@@ -706,7 +706,7 @@ function RecommendationCounts({
 }
 
 /** What the Proposals tab shows when the previous phase offers no sources. */
-function NoSourcesEmpty({ scope }: { scope: DevelopSourceScope }) {
+export function NoSourcesEmpty({ scope }: { scope: DevelopSourceScope }) {
   const t = useTranslations('decisions.develop');
 
   return (

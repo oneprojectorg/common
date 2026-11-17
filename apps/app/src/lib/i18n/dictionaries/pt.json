@@ -1758,7 +1758,13 @@
       "publishError": "Não foi possível publicar a cédula. Tente novamente.",
       "publishNotConfirmedError": "Todas as categorias devem estar confirmadas antes de publicar.",
       "alreadyPublishedError": "Esta fase já foi publicada ou mudou. Atualize a página.",
-      "categoriesLoadError": "Não foi possível carregar as categorias"
+      "categoriesLoadError": "Não foi possível carregar as categorias",
+      "ofTotalSources": "de {total, plural, one {# proposta} other {# propostas}}",
+      "decisionColumn": "Decisão",
+      "sourceAdvancingStatus": "Avançando",
+      "sourceUnderConsiderationStatus": "Em consideração",
+      "noFilteredSourcesDescription": "Tente outra categoria.",
+      "noFilteredSourcesDistrictDescription": "Tente outro distrito."
     },
     "suggestedWinnersHint": "Selecionamos as propostas vencedoras sugeridas com base nas regras de votação e no orçamento total.",
     "votingOpenHeading": "HORA DE VOTAR.",

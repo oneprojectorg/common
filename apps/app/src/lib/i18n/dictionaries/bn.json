@@ -1758,7 +1758,13 @@
       "publishError": "ব্যালট প্রকাশ করা যায়নি। আবার চেষ্টা করুন।",
       "publishNotConfirmedError": "প্রকাশ করার আগে প্রতিটি বিভাগ নিশ্চিত হতে হবে।",
       "alreadyPublishedError": "এই ধাপটি ইতিমধ্যে প্রকাশিত হয়েছে বা পরিবর্তিত হয়েছে। পৃষ্ঠাটি রিফ্রেশ করুন।",
-      "categoriesLoadError": "বিভাগগুলি লোড করা যায়নি"
+      "categoriesLoadError": "বিভাগগুলি লোড করা যায়নি",
+      "ofTotalSources": "{total, plural, one {#টি প্রস্তাবের} other {#টি প্রস্তাবের}} মধ্যে",
+      "decisionColumn": "সিদ্ধান্ত",
+      "sourceAdvancingStatus": "এগিয়ে যাচ্ছে",
+      "sourceUnderConsiderationStatus": "বিবেচনাধীন",
+      "noFilteredSourcesDescription": "অন্য বিভাগ বেছে নিন।",
+      "noFilteredSourcesDistrictDescription": "অন্য জেলা বেছে নিন।"
     },
     "suggestedWinnersHint": "ভোটিং নিয়ম এবং মোট বাজেটের ভিত্তিতে আমরা প্রস্তাবিত বিজয়ী প্রস্তাবগুলি নির্বাচন করেছি।",
     "votingOpenHeading": "ভোট দেওয়ার সময় হয়েছে।",

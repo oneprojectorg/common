@@ -1758,7 +1758,13 @@
       "publishError": "Nem sikerült közzétenni a szavazólapot. Próbálja újra.",
       "publishNotConfirmedError": "Közzététel előtt minden kategóriát meg kell erősíteni.",
       "alreadyPublishedError": "Ez a fázis már közzé van téve, vagy megváltozott. Frissítse az oldalt.",
-      "categoriesLoadError": "Nem sikerült betölteni a kategóriákat"
+      "categoriesLoadError": "Nem sikerült betölteni a kategóriákat",
+      "ofTotalSources": "{total, plural, one {/ # javaslat} other {/ # javaslat}}",
+      "decisionColumn": "Döntés",
+      "sourceAdvancingStatus": "Továbbjut",
+      "sourceUnderConsiderationStatus": "Mérlegelés alatt",
+      "noFilteredSourcesDescription": "Próbálj másik kategóriát.",
+      "noFilteredSourcesDistrictDescription": "Próbálj másik körzetet."
     },
     "suggestedWinnersHint": "A javasolt nyertes javaslatokat a szavazási szabályok és a teljes költségvetés alapján választottuk ki.",
     "votingOpenHeading": "ITT AZ IDEJE SZAVAZNI.",
