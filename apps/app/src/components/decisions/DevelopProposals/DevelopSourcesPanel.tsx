@@ -1,9 +1,14 @@
 'use client';
 
-import { trpc } from '@op/api/client';
-import type { InstancePhaseData, ProcessInstance } from '@op/api/encoders';
+import { isTRPCClientError, trpc } from '@op/api/client';
+import {
+  type InstancePhaseData,
+  type ProcessInstance,
+  ProposalStatus,
+} from '@op/api/encoders';
 import {
   type DevelopSource,
+  type DevelopedProposal,
   type ListDevelopSourcesInput,
   type ProposalReviewAggregates,
   RECOMMENDATION_OPTION,
@@ -24,6 +29,7 @@ import {
 } from '@op/sense/Empty';
 import { Header2 } from '@op/sense/Header';
 import { Skeleton } from '@op/sense/Skeleton';
+import { Spinner } from '@op/sense/Spinner';
 import { StatusDot, type StatusDotIntent } from '@op/sense/StatusDot';
 import {
   Table,
@@ -35,8 +41,9 @@ import {
   TableRowHeader,
 } from '@op/sense/Table';
 import { toast } from '@op/sense/Toast';
-import { useCallback, useMemo, useTransition } from 'react';
-import { LuLeaf, LuPencil } from 'react-icons/lu';
+import { Toggle } from '@op/sense/Toggle';
+import { type ReactNode, useCallback, useMemo, useTransition } from 'react';
+import { LuCheck, LuLeaf, LuPencil } from 'react-icons/lu';
 
 import { Link, useRouter, useTranslations } from '@/lib/i18n';
 
@@ -64,10 +71,12 @@ const RECOMMENDATION_INTENT: Record<RecommendationValue, StatusDotIntent> = {
 
 /**
  * The Proposals tab of the develop screen: the previous phase's proposals
- * (the sources), each with its reviewers' overall recommendations and one
- * action: Edit opens the first entry developed from the source, and Prepare
- * creates an entry of this phase from a source that has none yet. An admin
- * sees every source; anyone else sees the sources assigned to them.
+ * (the sources), each with its reviewers' overall recommendations. A source
+ * with no entry yet shows Prepare, which creates an entry of this phase from
+ * it; a source with an entry shows Edit, which opens the first entry, and
+ * Advance, which submits that entry while it is a draft and shows it as
+ * advanced once submitted. An admin sees every source; anyone else sees the
+ * sources assigned to them.
  *
  * The list comes page by page from the API in its own order (newest first);
  * nothing is sorted or filtered here.
@@ -224,6 +233,32 @@ function DevelopSourcesTable({
       proposalData: {},
     });
 
+  // No invalidation: the submit publishes on the decision's proposals
+  // channel, which this list subscribes to.
+  const submitEntry = trpc.decision.submitDevelopedProposal.useMutation();
+
+  const isAdvancing = submitEntry.isPending;
+  const advancingEntryId = isAdvancing
+    ? (submitEntry.variables?.proposalId ?? null)
+    : null;
+  const isBusy = isPreparing || isAdvancing;
+
+  const advance = (entry: DevelopedProposal, title: string) =>
+    submitEntry.mutate(
+      { proposalId: entry.id },
+      {
+        onError: (error) => {
+          logger.error('Failed to advance a develop entry', { error });
+          // A 400 is the server's form validation: the entry is incomplete.
+          toast.error(
+            getHttpStatus(error) === 400
+              ? t('develop.advanceEntryIncompleteError', { title })
+              : t('develop.advanceEntryError'),
+          );
+        },
+      },
+    );
+
   return (
     <div className="flex flex-col gap-10">
       {/* The Entries tab's search row's height, so the count holds still
@@ -262,7 +297,8 @@ function DevelopSourcesTable({
                 const submitterName = source.submittedBy
                   ? source.submittedBy.name || source.submittedBy.slug
                   : null;
-                // One entry per source for now: Edit opens the oldest one.
+                // One entry per source for now: Edit and Advance act on the
+                // oldest one.
                 const developedEntry = source.developedProposals[0];
 
                 return (
@@ -293,17 +329,28 @@ function DevelopSourcesTable({
                     ) : null}
                     <TableCell className="py-4 text-end">
                       {developedEntry ? (
-                        <EditEntryLink
-                          title={title}
-                          href={decisionProposalDevelopHref({
-                            decisionSlug,
-                            profileId: developedEntry.profileId,
-                          })}
-                        />
+                        <EntryActions>
+                          <EditEntryLink
+                            title={title}
+                            href={decisionProposalDevelopHref({
+                              decisionSlug,
+                              profileId: developedEntry.profileId,
+                            })}
+                          />
+                          <AdvanceEntryToggle
+                            title={title}
+                            advanced={
+                              developedEntry.status !== ProposalStatus.DRAFT
+                            }
+                            disabled={isBusy}
+                            loading={advancingEntryId === developedEntry.id}
+                            onAdvance={() => advance(developedEntry, title)}
+                          />
+                        </EntryActions>
                       ) : (
                         <PrepareEntryButton
                           title={title}
-                          disabled={isPreparing}
+                          disabled={isBusy}
                           loading={preparingSourceId === source.id}
                           onPrepare={() => prepare(source)}
                         />
@@ -380,6 +427,64 @@ function EditEntryLink({ title, href }: { title: string; href: string }) {
   );
 }
 
+/** Edit and Advance side by side, for a source that has an entry. */
+function EntryActions({ children }: { children: ReactNode }) {
+  return <div className="flex items-center justify-end gap-2">{children}</div>;
+}
+
+/**
+ * Submits a draft entry; the server checks it against its form. A submitted
+ * entry shows as pressed and cannot be taken back here.
+ */
+function AdvanceEntryToggle({
+  title,
+  advanced,
+  disabled,
+  loading,
+  onAdvance,
+}: {
+  title: string;
+  /** The entry is no longer a draft. */
+  advanced: boolean;
+  disabled: boolean;
+  loading: boolean;
+  onAdvance: () => void;
+}) {
+  const t = useTranslations('decisions.develop');
+
+  if (advanced) {
+    return (
+      <Toggle
+        variant="outline"
+        pressed
+        disabled
+        aria-label={t('advancedEntryLabel', { title })}
+      >
+        <LuCheck aria-hidden data-icon="inline-start" />
+        {t('advancedEntryAction')}
+      </Toggle>
+    );
+  }
+
+  return (
+    <Toggle
+      variant="outline"
+      pressed={false}
+      disabled={disabled || loading}
+      aria-busy={loading || undefined}
+      aria-label={t('advanceEntryLabel', { title })}
+      onPressedChange={(pressed) => {
+        if (pressed) {
+          onAdvance();
+        }
+      }}
+    >
+      {loading ? <Spinner aria-hidden data-icon="inline-start" /> : null}
+      {t('advanceEntryAction')}
+    </Toggle>
+  );
+}
+
 /**
  * The reviewers' overall recommendations for one source, as counts of Yes,
  * Maybe and No. The aggregates load after the row, a page at a time.
@@ -442,4 +547,14 @@ function NoSourcesEmpty({ scope }: { scope: DevelopSourceScope }) {
       </EmptyHeader>
     </Empty>
   );
+}
+
+// The client types `error.data` as `object`.
+function getHttpStatus(error: unknown) {
+  return isTRPCClientError(error) &&
+    error.data &&
+    'httpStatus' in error.data &&
+    typeof error.data.httpStatus === 'number'
+    ? error.data.httpStatus
+    : undefined;
 }
