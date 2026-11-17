@@ -522,7 +522,7 @@ describe('handleUnknownSmsSignup', () => {
     const t = new InngestTestEngine({ function: handleUnknownSmsSignup });
 
     const { result, ctx } = await t.execute({
-      events: [onLine({ from: FROM, body: '12', code: null })],
+      events: [onLine({ from: FROM, body: '123', code: null })],
       steps: [reply(1, '123456')],
     });
 
@@ -537,7 +537,7 @@ describe('handleUnknownSmsSignup', () => {
     expect(ctx.step.sendEvent).toHaveBeenCalledWith(
       'replay-original-command',
       expect.objectContaining({
-        data: expect.objectContaining({ body: '12', keyword: null }),
+        data: expect.objectContaining({ body: '123', keyword: null }),
       }),
     );
   });

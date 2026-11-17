@@ -1024,7 +1024,7 @@ const browseSlugHint = (
         findBrowseSlugHint(context, instanceId),
       );
 
-const parseProposalCodes = (body: string): number[] | null => {
+export const parseProposalCodes = (body: string): number[] | null => {
   const tokens = body.split(/[\s,]+/).filter(Boolean);
   if (
     tokens.length === 0 ||

@@ -15,6 +15,7 @@ import { Events, inngest } from '@op/events';
 import { logger } from '@op/logging';
 
 import { remainingReplyWindow } from './replyWindow';
+import { parseProposalCodes } from './smsCommandHandlers';
 import {
   SMS_THROTTLE_LIMIT,
   SMS_THROTTLE_PERIOD,
@@ -54,6 +55,7 @@ type SignupContext = {
   state: PhoneSignupState | null;
   line: Awaited<ReturnType<typeof findDecisionPhoneNumber>> | null;
   requireLine?: boolean;
+  sawConsentTerms?: boolean;
 };
 
 export const handleUnknownSmsSignup = inngest.createFunction(
@@ -90,16 +92,34 @@ export const handleUnknownSmsSignup = inngest.createFunction(
           'server',
         );
         if (!flagEnabled || !to) {
-          return { flagEnabled, state: null, line: null, requireLine: true };
+          return {
+            flagEnabled,
+            state: null,
+            line: null,
+            requireLine: true,
+            sawConsentTerms: true,
+          };
         }
         const state = await getPhoneSignupState({ phone: to });
         if (state.status !== 'free') {
-          return { flagEnabled, state, line: null, requireLine: true };
+          return {
+            flagEnabled,
+            state,
+            line: null,
+            requireLine: true,
+            sawConsentTerms: true,
+          };
         }
         const line = inboundTo
           ? await findDecisionPhoneNumber({ phone: inboundTo })
           : null;
-        return { flagEnabled, state, line, requireLine: true };
+        return {
+          flagEnabled,
+          state,
+          line,
+          requireLine: true,
+          sawConsentTerms: true,
+        };
       },
     );
 
@@ -118,6 +138,7 @@ export const handleUnknownSmsSignup = inngest.createFunction(
                   )
                 : null,
             requireLine: false,
+            sawConsentTerms: false,
           };
 
     if (!context.flagEnabled) {
@@ -294,7 +315,7 @@ export const handleUnknownSmsSignup = inngest.createFunction(
 
     const { authUserId } = outcome;
 
-    const sawConsentTerms = context.requireLine === true;
+    const sawConsentTerms = context.sawConsentTerms === true;
 
     const confirmedAccount = await step.run(
       'record-signup-consent',
@@ -313,9 +334,8 @@ export const handleUnknownSmsSignup = inngest.createFunction(
       },
     );
 
-    const firstText = inbound.body?.trim() ?? '';
     const firstTextIsPicks =
-      /^[\d\s.,]+$/.test(firstText) && /\d/.test(firstText);
+      parseProposalCodes(inbound.body?.trim() ?? '') !== null;
     const replaying =
       confirmedAccount.commandsEnabled &&
       (keyword !== null || firstTextIsPicks);
