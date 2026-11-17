@@ -217,9 +217,8 @@ function DevelopSourcesTable({
     createEntry.mutate({
       processInstanceId,
       sourceProposalIds: [source.id],
-      // The server prefills the entry from the source; a category sent here
-      // wins over the mapped one.
-      proposalData: { category: source.proposalData.category },
+      // The server prefills the entry from the source's document.
+      proposalData: {},
     });
 
   return (

@@ -17,26 +17,6 @@ import type { XFormatPropertySchema } from './types';
  */
 export const PROPOSAL_TITLE_MAX_LENGTH = 200;
 
-/**
- * Cap on a title whose template field sets no `maxLength` (Figma
- * 17950:11356 — the field reads "37/50"). The API does not enforce it: a
- * server cap of 50 would reject the autosave of every existing longer title.
- */
-export const DEFAULT_PROPOSAL_TITLE_MAX_LENGTH = 50;
-
-/**
- * The cap the editor puts on a title: the template field's `maxLength`, else
- * `DEFAULT_PROPOSAL_TITLE_MAX_LENGTH`, never above `PROPOSAL_TITLE_MAX_LENGTH`.
- */
-export function getProposalTitleMaxLength(
-  titleSchema: { maxLength?: number } | undefined,
-): number {
-  return Math.min(
-    titleSchema?.maxLength ?? DEFAULT_PROPOSAL_TITLE_MAX_LENGTH,
-    PROPOSAL_TITLE_MAX_LENGTH,
-  );
-}
-
 const categoryValueSchema = z
   .union([z.string(), z.array(z.string()), z.null()])
   .nullish()

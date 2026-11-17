@@ -1,4 +1,8 @@
-import { createTipTapClient, mockCollab } from '@op/collab/testing';
+import {
+  createTipTapClient,
+  mockCollab,
+  textFragment,
+} from '@op/collab/testing';
 import { type PhaseInstanceData, getInstancePhases } from '@op/common';
 import {
   TEST_PERMISSION_BITS,
@@ -88,9 +92,7 @@ const sourceFormSchema = {
   },
 };
 
-const DESCRIPTION_MAX_LENGTH = 60;
-
-/** The entry form: short title and description caps, a category, a budget. */
+/** The entry form: a title cap the source title is over, and a budget. */
 const prefillEntrySchema = {
   type: 'object',
   'x-field-order': ['title', 'description', 'category', 'budget'],
@@ -104,7 +106,6 @@ const prefillEntrySchema = {
     description: {
       type: 'string',
       title: 'Description',
-      maxLength: DESCRIPTION_MAX_LENGTH,
       'x-format': 'long-text',
     },
     category: {
@@ -116,6 +117,19 @@ const prefillEntrySchema = {
     budget: { type: 'object', title: 'Budget', 'x-format': 'money' },
   },
 };
+
+const SOURCE_TITLE = 'Riverside community garden expansion';
+const SOURCE_BUDGET = '{"amount":500,"currency":"USD"}';
+
+const sourceToEntry = (
+  fields: Array<{ from: string; to: string }>,
+): PhaseInstanceData['developPrefillMappings'] => [
+  {
+    from: { type: 'proposal', phaseId: 'initial' },
+    to: { type: 'proposal', phaseId: 'final' },
+    fields,
+  },
+];
 
 /**
  * Writes the source's document under the source form, points the develop
@@ -144,34 +158,31 @@ const configurePrefill = async ({
   ]);
   await attachFormSchema(sourceId, sourceRow.id);
   await seedCollabFragments(sourceId, {
-    title: 'Riverside community garden expansion',
+    title: SOURCE_TITLE,
     summary,
     category: 'Parks',
-    budget: '{"amount":500,"currency":"USD"}',
+    budget: SOURCE_BUDGET,
   });
   await configureDevelopPhase(instanceId, {
     formSchemaId: entryRow.id,
-    developPrefillMappings: [
-      {
-        from: { type: 'proposal', phaseId: 'initial' },
-        to: { type: 'proposal', phaseId: 'final' },
-        fields: [
-          { from: 'title', to: 'title' },
-          { from: 'summary', to: 'description' },
-          { from: 'category', to: 'category' },
-          { from: 'budget', to: 'budget' },
-        ],
-      },
-    ],
+    developPrefillMappings: sourceToEntry([
+      { from: 'title', to: 'title' },
+      { from: 'summary', to: 'description' },
+      { from: 'category', to: 'category' },
+      { from: 'budget', to: 'budget' },
+    ]),
   });
 };
 
-const readSeededFragments = (proposalId: string) =>
-  createTipTapClient().getDocumentFragments(
-    `proposal-${proposalId}`,
-    ['title', 'description', 'budget', 'category'],
-    { format: 'text' },
-  );
+const EMPTY_FRAGMENT = { type: 'doc', content: [] };
+
+const readEntryDocument = (proposalId: string) =>
+  createTipTapClient().getDocumentFragments(`proposal-${proposalId}`, [
+    'title',
+    'description',
+    'category',
+    'budget',
+  ]);
 
 const readProposalData = async (proposalId: string) => {
   const row = await db.query.proposals.findFirst({
@@ -613,7 +624,7 @@ describe.concurrent('createDevelopedProposal', () => {
     ]);
   });
 
-  it('prefills the title, category and description from the source and leaves the budget out', async ({
+  it('copies the mapped fragments of the source into the entry, budget and category included, and keeps an over-long title', async ({
     task,
     onTestFinished,
   }) => {
@@ -635,49 +646,21 @@ describe.concurrent('createDevelopedProposal', () => {
     });
     testData.trackProfileForCleanup(draft.profileId);
 
-    // The mapped title wins, capped at the entry form's 20 characters.
-    expect(draft.profile.name).toBe('Riverside community');
-    const stored = await readProposalData(draft.id);
-    expect(stored).toMatchObject({
-      title: 'Riverside community',
+    // The mapped title wins and is not cut to the entry form's 20 characters.
+    expect(draft.profile.name).toBe(SOURCE_TITLE);
+    await expect(readProposalData(draft.id)).resolves.toMatchObject({
+      title: SOURCE_TITLE,
       category: ['Parks'],
     });
-    expect(stored).not.toHaveProperty('budget');
-    await expect(readSeededFragments(draft.id)).resolves.toEqual({
-      title: 'Riverside community',
-      description: 'Plant trees along the river.',
-      budget: '',
-      category: '',
+    await expect(readEntryDocument(draft.id)).resolves.toEqual({
+      title: textFragment(SOURCE_TITLE),
+      description: textFragment('Plant trees along the river.'),
+      category: textFragment('Parks'),
+      budget: textFragment(SOURCE_BUDGET),
     });
   });
 
-  it('cuts a prefilled text field to the maxLength of its entry form field', async ({
-    task,
-    onTestFinished,
-  }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const { setup, instanceId, source } = await createDevelopPhaseSetup({
-      testData,
-    });
-    const summary =
-      'Plant trees along the river, then add benches, lights and a small playground.';
-    await configurePrefill({ instanceId, sourceId: source.id, summary });
-    const caller = await createAuthenticatedCaller(setup.userEmail);
-
-    const draft = await caller.decision.createDevelopedProposal({
-      processInstanceId: instanceId,
-      sourceProposalIds: [source.id],
-      proposalData: {},
-    });
-    testData.trackProfileForCleanup(draft.profileId);
-
-    expect(summary.length).toBeGreaterThan(DESCRIPTION_MAX_LENGTH);
-    await expect(readSeededFragments(draft.id)).resolves.toMatchObject({
-      description: summary.slice(0, DESCRIPTION_MAX_LENGTH).trim(),
-    });
-  });
-
-  it('keeps the category the caller sends over the mapped one', async ({
+  it('copies a formatted source field with its formatting', async ({
     task,
     onTestFinished,
   }) => {
@@ -690,17 +673,132 @@ describe.concurrent('createDevelopedProposal', () => {
       sourceId: source.id,
       summary: 'Plant trees along the river.',
     });
+    const formattedSummary = {
+      type: 'doc',
+      content: [
+        {
+          type: 'paragraph',
+          content: [
+            { type: 'text', text: 'Plant ' },
+            { type: 'text', text: 'trees', marks: [{ type: 'bold' }] },
+            {
+              type: 'text',
+              text: ' by the river',
+              marks: [
+                { type: 'link', attrs: { href: 'https://example.org/river' } },
+              ],
+            },
+          ],
+        },
+        {
+          type: 'bulletList',
+          content: [
+            {
+              type: 'listItem',
+              content: [
+                {
+                  type: 'paragraph',
+                  content: [{ type: 'text', text: 'Oaks' }],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+    mockCollab.setDocFragmentResponses(`proposal-${source.id}`, {
+      title: textFragment(SOURCE_TITLE),
+      summary: formattedSummary,
+    });
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
     const draft = await caller.decision.createDevelopedProposal({
       processInstanceId: instanceId,
       sourceProposalIds: [source.id],
-      proposalData: { category: ['Libraries'] },
+      proposalData: {},
     });
     testData.trackProfileForCleanup(draft.profileId);
 
-    await expect(readProposalData(draft.id)).resolves.toMatchObject({
-      category: ['Libraries'],
+    await expect(readEntryDocument(draft.id)).resolves.toMatchObject({
+      title: textFragment(SOURCE_TITLE),
+      description: formattedSummary,
+    });
+  });
+
+  it('keeps an over-long text value as it is', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instanceId, source } = await createDevelopPhaseSetup({
+      testData,
+    });
+    const summary = 'Plant trees along the river. '.repeat(20).trim();
+    await configurePrefill({ instanceId, sourceId: source.id, summary });
+    const entrySchemaRow = await insertFormSchema({
+      processInstanceId: instanceId,
+      name: 'Short entry',
+      schema: {
+        ...prefillEntrySchema,
+        properties: {
+          ...prefillEntrySchema.properties,
+          description: {
+            ...prefillEntrySchema.properties.description,
+            maxLength: 40,
+          },
+        },
+      },
+    });
+    await configureDevelopPhase(instanceId, {
+      formSchemaId: entrySchemaRow.id,
+    });
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const draft = await caller.decision.createDevelopedProposal({
+      processInstanceId: instanceId,
+      sourceProposalIds: [source.id],
+      proposalData: {},
+    });
+    testData.trackProfileForCleanup(draft.profileId);
+
+    await expect(readEntryDocument(draft.id)).resolves.toMatchObject({
+      description: textFragment(summary),
+    });
+  });
+
+  it('seeds no document field for a rule that reads a nested source path', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instanceId, source } = await createDevelopPhaseSetup({
+      testData,
+    });
+    await configurePrefill({
+      instanceId,
+      sourceId: source.id,
+      summary: 'Plant trees along the river.',
+    });
+    await configureDevelopPhase(instanceId, {
+      developPrefillMappings: sourceToEntry([
+        { from: 'title', to: 'title' },
+        { from: 'budget.amount', to: 'description' },
+      ]),
+    });
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const draft = await caller.decision.createDevelopedProposal({
+      processInstanceId: instanceId,
+      sourceProposalIds: [source.id],
+      proposalData: {},
+    });
+    testData.trackProfileForCleanup(draft.profileId);
+
+    await expect(readEntryDocument(draft.id)).resolves.toEqual({
+      title: textFragment(SOURCE_TITLE),
+      description: EMPTY_FRAGMENT,
+      category: EMPTY_FRAGMENT,
+      budget: EMPTY_FRAGMENT,
     });
   });
 
@@ -713,7 +811,7 @@ describe.concurrent('createDevelopedProposal', () => {
       testData,
     });
     await seedCollabFragments(source.id, {
-      title: 'Riverside community garden expansion',
+      title: SOURCE_TITLE,
       summary: 'Plant trees along the river.',
     });
     const caller = await createAuthenticatedCaller(setup.userEmail);
@@ -730,13 +828,10 @@ describe.concurrent('createDevelopedProposal', () => {
     await expect(readProposalData(draft.id)).resolves.not.toHaveProperty(
       'category',
     );
-    // Nothing created the document, so it is not there to read.
-    await expect(readSeededFragments(draft.id)).resolves.toEqual({
-      title: '',
-      description: '',
-      budget: '',
-      category: '',
-    });
+    // Nothing created the document.
+    await expect(
+      createTipTapClient().getDocumentUpdate(`proposal-${draft.id}`),
+    ).resolves.toBeNull();
   });
 
   it('creates the entry without a prefill when a mapping names a field the entry form lacks', async ({
@@ -753,16 +848,10 @@ describe.concurrent('createDevelopedProposal', () => {
       summary: 'Plant trees along the river.',
     });
     await configureDevelopPhase(instanceId, {
-      developPrefillMappings: [
-        {
-          from: { type: 'proposal', phaseId: 'initial' },
-          to: { type: 'proposal', phaseId: 'final' },
-          fields: [
-            { from: 'title', to: 'title' },
-            { from: 'summary', to: 'notOnTheForm' },
-          ],
-        },
-      ],
+      developPrefillMappings: sourceToEntry([
+        { from: 'title', to: 'title' },
+        { from: 'summary', to: 'notOnTheForm' },
+      ]),
     });
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
@@ -774,9 +863,9 @@ describe.concurrent('createDevelopedProposal', () => {
     testData.trackProfileForCleanup(draft.profileId);
 
     expect(draft.profile.name).toBe('Sent by the list');
-    await expect(readSeededFragments(draft.id)).resolves.toMatchObject({
-      title: '',
-    });
+    await expect(
+      createTipTapClient().getDocumentUpdate(`proposal-${draft.id}`),
+    ).resolves.toBeNull();
   });
 
   it('creates the entry when its document cannot be seeded', async ({
@@ -790,7 +879,8 @@ describe.concurrent('createDevelopedProposal', () => {
     const summary = `Seeding fails ${task.id}`;
     await configurePrefill({ instanceId, sourceId: source.id, summary });
     mockCollab.setCreateDocumentError(
-      (fragments) => fragments.description?.text === summary,
+      (fragments) =>
+        JSON.stringify(fragments.description ?? null).includes(summary),
       new Error('Collaboration server unavailable'),
     );
     const caller = await createAuthenticatedCaller(setup.userEmail);
@@ -803,12 +893,12 @@ describe.concurrent('createDevelopedProposal', () => {
     testData.trackProfileForCleanup(draft.profileId);
 
     expect(draft.status).toBe(ProposalStatus.DRAFT);
-    expect(draft.profile.name).toBe('Riverside community');
+    expect(draft.profile.name).toBe(SOURCE_TITLE);
     await expect(readDevelopedSourceIds(draft.id)).resolves.toEqual([
       source.id,
     ]);
-    await expect(readSeededFragments(draft.id)).resolves.toMatchObject({
-      description: '',
-    });
+    await expect(
+      createTipTapClient().getDocumentUpdate(`proposal-${draft.id}`),
+    ).resolves.toBeNull();
   });
 });

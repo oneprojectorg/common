@@ -377,9 +377,9 @@ const getProposalIdsByPhase = async ({
   );
 
 /**
- * The document assembled under the proposal's own template, or the stored data
- * of a legacy proposal. An unavailable document gives no data, so the other
- * inputs still fill the target.
+ * The document assembled under the proposal's own template. A proposal with no
+ * collaboration document, or one that cannot be fetched, gives no data, so
+ * the other inputs still fill the target.
  */
 const getAssembledProposalData = async ({
   instance,
@@ -422,7 +422,7 @@ const getAssembledProposalData = async ({
         return [proposal.id, {}];
       }
       if (document?.type !== 'json') {
-        return [proposal.id, parseProposalData(proposal.proposalData)];
+        return [proposal.id, {}];
       }
 
       const proposalTemplate = templateFor(proposal.formSchemaId);

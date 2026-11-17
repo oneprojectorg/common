@@ -15,7 +15,6 @@ import { insertProposalDraft } from './insertProposalDraft';
 import { getPhases } from './instancePhases';
 import {
   type ProposalDataInput,
-  normalizeProposalCategories,
   parseProposalData,
 } from './proposalDataSchema';
 import { resolveProposalDraftInputs } from './proposalDraftInputs';
@@ -31,8 +30,8 @@ export interface CreateDevelopedProposalInput {
  * Creates a draft proposal in a develop phase, developed from proposals of
  * any phase of the instance. Writes one `developed` edge per source in the same
  * transaction as the draft. When the phase has prefill mappings, the draft
- * starts with the mapped title, category and text fields; the text lives in the
- * collaboration document, created after the commit.
+ * starts with the mapped title and category, and its collaboration document,
+ * created after the commit, with copies of the sources' mapped fragments.
  */
 export const createDevelopedProposal = async ({
   data,
@@ -117,14 +116,17 @@ export const createDevelopedProposal = async ({
     seedDevelopedEntryDocument({
       collaborationDocId: parseProposalData(createdProposal.proposalData)
         .collaborationDocId,
-      fragments: prefill?.fragments ?? {},
+      documentUpdate: prefill?.documentUpdate ?? null,
     }),
   ]);
 
   return createdProposal;
 };
 
-/** The mapped title is the title; the caller's category wins over the mapped one. */
+/**
+ * The mapped title and category replace the caller's. The title becomes the
+ * entry's name, and the category places the entry before anyone edits it.
+ */
 function withEntryPrefill({
   proposalData,
   prefill,
@@ -136,12 +138,9 @@ function withEntryPrefill({
     return proposalData;
   }
 
-  const hasCategory =
-    normalizeProposalCategories(proposalData.category).length > 0;
-
   return {
     ...proposalData,
     ...(prefill.title ? { title: prefill.title } : {}),
-    ...(prefill.category && !hasCategory ? { category: prefill.category } : {}),
+    ...(prefill.category ? { category: prefill.category } : {}),
   };
 }

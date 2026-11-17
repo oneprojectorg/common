@@ -2,8 +2,8 @@
 
 import { linkifyText } from '@/utils/linkDetection';
 import {
+  PROPOSAL_TITLE_MAX_LENGTH,
   formatProposalCategories,
-  getProposalTitleMaxLength,
   isDistrictCategoryLabel,
   parseCategoryFragmentValue,
   parseSchemaOptions,
@@ -42,6 +42,17 @@ import type { ProposalDraftFields } from './useProposalDraft';
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
+
+/**
+ * Default cap on the proposal title (Figma 17950:11356 — the field reads
+ * "37/50"), used when the template sets no `maxLength` on the title.
+ *
+ * A template may ask for more, up to `PROPOSAL_TITLE_MAX_LENGTH`, which the API
+ * enforces to keep `profiles.name` inside its varchar(256). The server is not
+ * capped at 50: that would make every existing longer-titled proposal
+ * unsaveable, since autosave would be rejected on each tick.
+ */
+const TITLE_MAX_LENGTH = 50;
 
 interface ProposalFormRendererProps {
   /** Compiled field descriptors from `compileProposalSchema`. */
@@ -149,7 +160,10 @@ function renderField(
       <CollaborativeTitleField
         title={schema.title ?? t('decisions.proposals.proposalNameLabel')}
         required={field.required}
-        maxLength={getProposalTitleMaxLength(schema)}
+        maxLength={Math.min(
+          schema.maxLength ?? TITLE_MAX_LENGTH,
+          PROPOSAL_TITLE_MAX_LENGTH,
+        )}
         description={description}
         placeholder={t('decisions.proposals.untitledProposal')}
         onChange={(value) => onFieldChange('title', value)}
