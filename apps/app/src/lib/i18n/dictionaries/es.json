@@ -1705,6 +1705,11 @@
       "noEntriesDescription": "Lo que prepares a partir de propuestas aparece aquí.",
       "noMatchingEntriesDescription": "Prueba con otra búsqueda.",
       "resultsCount": "{count, plural, one {# resultado} other {# resultados}}",
+      "entriesCount": "{count, plural, one {# entrada} other {# entradas}}",
+      "categoryColumn": "Categoría",
+      "filterByCategoryLabel": "Filtrar entradas por categoría",
+      "allCategoriesOption": "Todas las categorías",
+      "noFilteredEntriesDescription": "Prueba con otra búsqueda o categoría.",
       "advancingCount": "{count, plural, one {# propuesta avanza} other {# propuestas avanzan}}",
       "confirmSelectionsAction": "Confirmar selecciones"
     },

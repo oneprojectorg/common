@@ -1705,6 +1705,11 @@
       "noEntriesDescription": "Waxaad ka diyaariso soo jeedinnada halkan ayay ka muuqdaan.",
       "noMatchingEntriesDescription": "Isku day raadin kale.",
       "resultsCount": "{count, plural, one {# natiijo} other {# natiijooyin}}",
+      "entriesCount": "{count, plural, one {# gelis} other {# gelisyo}}",
+      "categoryColumn": "Qayb",
+      "filterByCategoryLabel": "Shaandhee gelisyada qaybta",
+      "allCategoriesOption": "Dhammaan qaybaha",
+      "noFilteredEntriesDescription": "Isku day raadin kale ama qayb kale.",
       "advancingCount": "{count, plural, one {# soo jeedin ayaa horumaraysa} other {# soo jeedinno ayaa horumaraya}}",
       "confirmSelectionsAction": "Xaqiiji xulashooyinka"
     },

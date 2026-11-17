@@ -1705,6 +1705,11 @@
       "noEntriesDescription": "What you prepare from proposals appears here.",
       "noMatchingEntriesDescription": "Try another search.",
       "resultsCount": "{count, plural, one {# result} other {# results}}",
+      "entriesCount": "{count, plural, one {# entry} other {# entries}}",
+      "categoryColumn": "Category",
+      "filterByCategoryLabel": "Filter entries by category",
+      "allCategoriesOption": "All categories",
+      "noFilteredEntriesDescription": "Try another search or category.",
       "advancingCount": "{count, plural, one {# proposal advancing} other {# proposals advancing}}",
       "confirmSelectionsAction": "Confirm selections"
     },
