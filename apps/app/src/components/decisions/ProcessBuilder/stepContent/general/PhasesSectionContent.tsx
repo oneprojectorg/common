@@ -237,11 +237,10 @@ export function PhasesSectionContent({
                               render={
                                 <span
                                   role="img"
-                                  tabIndex={0}
                                   aria-label={t(
                                     'decisions.processBuilder.lockedPhaseOrderHint',
                                   )}
-                                  className="mx-1 inline-flex shrink-0 rounded-sm text-muted-foreground outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+                                  className="mx-1 inline-flex shrink-0 text-muted-foreground"
                                 />
                               }
                             >
