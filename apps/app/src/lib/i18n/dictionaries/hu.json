@@ -1693,6 +1693,8 @@
       "prepareEntryAction": "Előkészítés",
       "prepareEntryLabel": "Előkészítés: {title}",
       "prepareEntryError": "Nem sikerült létrehozni a piszkozatot. Próbáld újra.",
+      "editEntryAction": "Szerkesztés",
+      "editEntryLabel": "Szerkesztés: {title}",
       "noSourcesTitle": "Nincs kidolgozandó javaslat",
       "noSourcesDescription": "Itt jelennek meg az előző szakasz javaslatai.",
       "noAssignedSourcesDescription": "Még nincs hozzád rendelt javaslat.",

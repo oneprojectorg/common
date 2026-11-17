@@ -1693,6 +1693,8 @@
       "prepareEntryAction": "Diyaari",
       "prepareEntryLabel": "Diyaari {title}",
       "prepareEntryError": "Qabyada lama abuuri karin. Isku day mar kale.",
+      "editEntryAction": "Wax ka beddel",
+      "editEntryLabel": "Wax ka beddel {title}",
       "noSourcesTitle": "Ma jiraan soo jeedinno la horumarinayo",
       "noSourcesDescription": "Soo jeedinta wejigii hore halkan ayay ka muuqdaan.",
       "noAssignedSourcesDescription": "Wali laguuma xilsaarin wax soo jeedin ah.",

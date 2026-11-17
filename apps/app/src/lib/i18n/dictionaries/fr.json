@@ -1693,6 +1693,8 @@
       "prepareEntryAction": "Préparer",
       "prepareEntryLabel": "Préparer {title}",
       "prepareEntryError": "Impossible de créer le brouillon. Réessayez.",
+      "editEntryAction": "Modifier",
+      "editEntryLabel": "Modifier {title}",
       "noSourcesTitle": "Aucune proposition à développer",
       "noSourcesDescription": "Les propositions de la phase précédente s’affichent ici.",
       "noAssignedSourcesDescription": "Aucune proposition ne vous est encore assignée.",

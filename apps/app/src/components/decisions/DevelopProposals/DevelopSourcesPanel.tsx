@@ -3,8 +3,8 @@
 import { trpc } from '@op/api/client';
 import type { InstancePhaseData, ProcessInstance } from '@op/api/encoders';
 import {
+  type DevelopSource,
   type ListDevelopSourcesInput,
-  type Proposal,
   type ProposalReviewAggregates,
   RECOMMENDATION_OPTION,
   type RecommendationValue,
@@ -40,6 +40,8 @@ import { LuLeaf, LuPencil } from 'react-icons/lu';
 
 import { Link, useRouter, useTranslations } from '@/lib/i18n';
 
+import { ButtonLink } from '@/components/ButtonLink';
+
 import { useOpenProposalInSheet } from '../ProposalSheet/proposalSheetState';
 import { PROPOSALS_PAGE_LIMIT } from '../proposalFilterQuery';
 import {
@@ -62,9 +64,10 @@ const RECOMMENDATION_INTENT: Record<RecommendationValue, StatusDotIntent> = {
 
 /**
  * The Proposals tab of the develop screen: the previous phase's proposals
- * (the sources), each with its reviewers' overall recommendations and a
- * Prepare action that creates an entry of this phase from it. An admin sees
- * every source; anyone else sees the sources assigned to them.
+ * (the sources), each with its reviewers' overall recommendations and one
+ * action: Edit opens the first entry developed from the source, and Prepare
+ * creates an entry of this phase from a source that has none yet. An admin
+ * sees every source; anyone else sees the sources assigned to them.
  *
  * The list comes page by page from the API in its own order (newest first);
  * nothing is sorted or filtered here.
@@ -213,7 +216,7 @@ function DevelopSourcesTable({
     ? (createEntry.variables?.sourceProposalIds[0] ?? null)
     : null;
 
-  const prepare = (source: Proposal) =>
+  const prepare = (source: DevelopSource) =>
     createEntry.mutate({
       processInstanceId,
       sourceProposalIds: [source.id],
@@ -259,6 +262,8 @@ function DevelopSourcesTable({
                 const submitterName = source.submittedBy
                   ? source.submittedBy.name || source.submittedBy.slug
                   : null;
+                // One entry per source for now: Edit opens the oldest one.
+                const developedEntry = source.developedProposals[0];
 
                 return (
                   <TableRow key={source.id}>
@@ -287,16 +292,22 @@ function DevelopSourcesTable({
                       </TableCell>
                     ) : null}
                     <TableCell className="py-4 text-end">
-                      <Button
-                        variant="outline"
-                        aria-label={t('develop.prepareEntryLabel', { title })}
-                        disabled={isPreparing}
-                        loading={preparingSourceId === source.id}
-                        onClick={() => prepare(source)}
-                      >
-                        <LuPencil aria-hidden data-icon="inline-start" />
-                        {t('develop.prepareEntryAction')}
-                      </Button>
+                      {developedEntry ? (
+                        <EditEntryLink
+                          title={title}
+                          href={decisionProposalDevelopHref({
+                            decisionSlug,
+                            profileId: developedEntry.profileId,
+                          })}
+                        />
+                      ) : (
+                        <PrepareEntryButton
+                          title={title}
+                          disabled={isPreparing}
+                          loading={preparingSourceId === source.id}
+                          onPrepare={() => prepare(source)}
+                        />
+                      )}
                     </TableCell>
                   </TableRow>
                 );
@@ -322,6 +333,50 @@ function DevelopSourcesTable({
         </div>
       )}
     </div>
+  );
+}
+
+/** Creates an entry of this phase from a source that has none yet. */
+function PrepareEntryButton({
+  title,
+  disabled,
+  loading,
+  onPrepare,
+}: {
+  title: string;
+  disabled: boolean;
+  loading: boolean;
+  onPrepare: () => void;
+}) {
+  const t = useTranslations('decisions.develop');
+
+  return (
+    <Button
+      variant="outline"
+      aria-label={t('prepareEntryLabel', { title })}
+      disabled={disabled}
+      loading={loading}
+      onClick={onPrepare}
+    >
+      <LuPencil aria-hidden data-icon="inline-start" />
+      {t('prepareEntryAction')}
+    </Button>
+  );
+}
+
+/** Opens the entry already developed from a source, draft or submitted. */
+function EditEntryLink({ title, href }: { title: string; href: string }) {
+  const t = useTranslations('decisions.develop');
+
+  return (
+    <ButtonLink
+      variant="outline"
+      href={href}
+      aria-label={t('editEntryLabel', { title })}
+    >
+      <LuPencil aria-hidden data-icon="inline-start" />
+      {t('editEntryAction')}
+    </ButtonLink>
   );
 }
 

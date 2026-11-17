@@ -1693,6 +1693,8 @@
       "prepareEntryAction": "تجهيز",
       "prepareEntryLabel": "جهّز {title}",
       "prepareEntryError": "تعذّر إنشاء المسودة. حاول مرة أخرى.",
+      "editEntryAction": "تعديل",
+      "editEntryLabel": "عدّل {title}",
       "noSourcesTitle": "لا توجد مقترحات للتطوير",
       "noSourcesDescription": "تظهر هنا مقترحات المرحلة السابقة.",
       "noAssignedSourcesDescription": "لم يتم تعيين أي مقترحات لك بعد.",

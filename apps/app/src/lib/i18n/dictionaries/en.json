@@ -1693,6 +1693,8 @@
       "prepareEntryAction": "Prepare",
       "prepareEntryLabel": "Prepare {title}",
       "prepareEntryError": "Could not create the draft. Try again.",
+      "editEntryAction": "Edit",
+      "editEntryLabel": "Edit {title}",
       "noSourcesTitle": "No proposals to develop",
       "noSourcesDescription": "Proposals from the last phase show here.",
       "noAssignedSourcesDescription": "No proposals are assigned to you yet.",

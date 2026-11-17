@@ -1693,6 +1693,8 @@
       "prepareEntryAction": "Preparar",
       "prepareEntryLabel": "Preparar {title}",
       "prepareEntryError": "No se pudo crear el borrador. Inténtalo de nuevo.",
+      "editEntryAction": "Editar",
+      "editEntryLabel": "Editar {title}",
       "noSourcesTitle": "No hay propuestas para desarrollar",
       "noSourcesDescription": "Aquí aparecen las propuestas de la fase anterior.",
       "noAssignedSourcesDescription": "Aún no tienes propuestas asignadas.",
