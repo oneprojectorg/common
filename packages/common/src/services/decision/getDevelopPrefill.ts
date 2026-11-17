@@ -34,11 +34,10 @@ import type { PhaseInstanceData } from './schemas/instanceData';
 import type { ProposalTemplateSchema } from './types';
 import { assertInstancePhase } from './utils/instance';
 
-export type DevelopPrefillInput = {
-  type: 'proposal' | 'review';
-  phaseId: string;
-  id: string;
-};
+/** A review's phase is its assignment's phase, so a review input names none. */
+export type DevelopPrefillInput =
+  | { type: 'proposal'; phaseId: string; id: string }
+  | { type: 'review'; id: string };
 
 /** The `processInstances` columns the prefill reads. */
 export type DevelopPrefillInstance = {
@@ -52,11 +51,14 @@ export type DevelopPrefillInstance = {
 const developPrefillRequestSchema = z.object({
   inputs: z
     .array(
-      z.strictObject({
-        type: z.enum(['proposal', 'review']),
-        phaseId: z.string().min(1),
-        id: z.uuid(),
-      }),
+      z.discriminatedUnion('type', [
+        z.strictObject({
+          type: z.literal('proposal'),
+          phaseId: z.string().min(1),
+          id: z.uuid(),
+        }),
+        z.strictObject({ type: z.literal('review'), id: z.uuid() }),
+      ]),
     )
     .min(1),
   mappings: z.array(schemaMappingSchema),
@@ -134,8 +136,9 @@ export const getDevelopPrefill = async ({
  * `getDevelopPrefill` for a caller that has already asserted develop access on
  * `targetPhase` (`assertProposalDevelopAccess` returns the phase) and
  * validated the source proposals (`assertDevelopSources`). It still applies
- * the proposal read gate, and checks that each input belongs to the instance
- * and to the phase it is claimed for.
+ * the proposal read gate, checks that each proposal is in the phase it is
+ * claimed for, and that each review is a submitted review of the instance of
+ * a proposal among the inputs.
  */
 export const buildDevelopPrefill = async ({
   instance,
@@ -159,7 +162,9 @@ export const buildDevelopPrefill = async ({
   }
 
   for (const input of request.inputs) {
-    assertInstancePhase({ instance: { phases }, phaseId: input.phaseId });
+    if (input.type === 'proposal') {
+      assertInstancePhase({ instance: { phases }, phaseId: input.phaseId });
+    }
   }
 
   const targetSchema: SchemaRef = {
@@ -284,16 +289,14 @@ const loadMappingInputs = async ({
       : [],
     reviewIds.length > 0
       ? db.query.proposalReviews.findMany({
-          where: { id: { in: reviewIds } },
-          columns: { id: true, state: true, reviewData: true },
+          where: {
+            id: { in: reviewIds },
+            state: ProposalReviewState.SUBMITTED,
+            assignment: { processInstanceId: instance.id },
+          },
+          columns: { id: true, reviewData: true },
           with: {
-            assignment: {
-              columns: {
-                processInstanceId: true,
-                phaseId: true,
-                proposalId: true,
-              },
-            },
+            assignment: { columns: { phaseId: true, proposalId: true } },
           },
         })
       : [],
@@ -306,38 +309,29 @@ const loadMappingInputs = async ({
   const proposalsById = new Map(proposalRows.map((row) => [row.id, row]));
   const reviewsById = new Map(reviewRows.map((row) => [row.id, row]));
 
-  for (const input of inputs) {
-    if (input.type === 'proposal') {
-      if (!proposalsById.has(input.id)) {
-        throw new NotFoundError('Proposal', input.id);
-      }
-      // Phase membership admits only phase-eligible proposals, so this also
-      // refuses a draft.
-      if (!proposalIdsByPhase.get(input.phaseId)?.has(input.id)) {
-        throw new ValidationError(
-          `Proposal '${input.id}' is not in phase '${input.phaseId}'`,
-        );
-      }
-      continue;
+  for (const input of proposalInputs) {
+    if (!proposalsById.has(input.id)) {
+      throw new NotFoundError('Proposal', input.id);
     }
+    // Phase membership admits only phase-eligible proposals, so this also
+    // refuses a draft.
+    if (!proposalIdsByPhase.get(input.phaseId)?.has(input.id)) {
+      throw new ValidationError(
+        `Proposal '${input.id}' is not in phase '${input.phaseId}'`,
+      );
+    }
+  }
 
-    const review = reviewsById.get(input.id);
-    if (!review || review.assignment.processInstanceId !== instance.id) {
-      throw new NotFoundError('Review', input.id);
-    }
-    if (review.assignment.phaseId !== input.phaseId) {
-      throw new ValidationError(
-        `Review '${input.id}' belongs to phase '${review.assignment.phaseId}', not '${input.phaseId}'`,
-      );
-    }
-    if (review.state !== ProposalReviewState.SUBMITTED) {
-      throw new ValidationError(
-        `Review '${input.id}' is not submitted and cannot be developed`,
-      );
-    }
+  const refusedReviewIds = reviewIds.filter((id) => !reviewsById.has(id));
+  if (refusedReviewIds.length > 0) {
+    throw new ValidationError(
+      `These reviews cannot be developed: ${refusedReviewIds.join(', ')}`,
+    );
+  }
+  for (const review of reviewRows) {
     if (!proposalsById.has(review.assignment.proposalId)) {
       throw new ValidationError(
-        `Review '${input.id}' is of a proposal that is not among the inputs`,
+        `Review '${review.id}' is of a proposal that is not among the inputs`,
       );
     }
   }
@@ -347,13 +341,24 @@ const loadMappingInputs = async ({
     proposals: proposalRows,
   });
 
-  return inputs.map((input) => ({
-    schema: { type: input.type, phaseId: input.phaseId },
-    data:
-      input.type === 'proposal'
-        ? proposalDataById.get(input.id)
-        : reviewsById.get(input.id)?.reviewData,
-  }));
+  return inputs.map((input): MappingInput => {
+    if (input.type === 'proposal') {
+      return {
+        schema: { type: 'proposal', phaseId: input.phaseId },
+        data: proposalDataById.get(input.id),
+      };
+    }
+    const review = reviewsById.get(input.id);
+    if (!review) {
+      throw new ValidationError(
+        `These reviews cannot be developed: ${input.id}`,
+      );
+    }
+    return {
+      schema: { type: 'review', phaseId: review.assignment.phaseId },
+      data: review.reviewData,
+    };
+  });
 };
 
 /** The ids of the proposals in each of `phaseIds`, by phase. */

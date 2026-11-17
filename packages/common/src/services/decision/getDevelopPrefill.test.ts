@@ -292,15 +292,17 @@ const seedDevelopDecision = async (
     reviewData,
     reviewer = 0,
     state = ProposalReviewState.SUBMITTED,
+    processInstanceId = instance.instance.id,
   }: {
     proposalId: string;
     phaseId: string;
     reviewData: Record<string, unknown>;
     reviewer?: 0 | 1;
     state?: ProposalReviewState;
+    processInstanceId?: string;
   }) => {
     const assignment = await createReviewAssignment({
-      processInstanceId: instance.instance.id,
+      processInstanceId,
       proposalId,
       reviewerProfileId: reviewerProfileIds[reviewer] ?? adminProfileId,
       phaseId,
@@ -350,8 +352,8 @@ describe.concurrent('getDevelopPrefill', () => {
       instanceId,
       inputs: [
         { type: 'proposal', phaseId: SUBMISSION, id: proposal.id },
-        { type: 'review', phaseId: FEASIBILITY, id: feasibility.id },
-        { type: 'review', phaseId: EQUITY, id: equity.id },
+        { type: 'review', id: feasibility.id },
+        { type: 'review', id: equity.id },
       ],
       target: { type: 'proposal', phaseId: BALLOT },
       mappings,
@@ -392,8 +394,8 @@ describe.concurrent('getDevelopPrefill', () => {
       instanceId,
       inputs: [
         { type: 'proposal', phaseId: SUBMISSION, id: proposal.id },
-        { type: 'review', phaseId: FEASIBILITY, id: first.id },
-        { type: 'review', phaseId: FEASIBILITY, id: second.id },
+        { type: 'review', id: first.id },
+        { type: 'review', id: second.id },
       ],
       target: { type: 'proposal', phaseId: BALLOT },
       mappings,
@@ -440,9 +442,8 @@ describe.concurrent('getDevelopPrefill', () => {
           phaseId: SUBMISSION,
           id: proposal.id,
         })),
-        ...reviews.map((review, index) => ({
+        ...reviews.map((review) => ({
           type: 'review' as const,
-          phaseId: index % 2 === 0 ? FEASIBILITY : EQUITY,
           id: review.id,
         })),
       ],
@@ -453,6 +454,49 @@ describe.concurrent('getDevelopPrefill', () => {
 
     expect(result.data).not.toHaveProperty('title');
     expect(result.data.budget).toEqual({ amount: 2, currency: 'USD' });
+  });
+
+  it('given a feasibility and an equity review, when each is developed, then it is mapped under its own assignment phase', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instanceId, createSubmittedProposal, createReview } =
+      await seedDevelopDecision(testData);
+    const proposal = await createSubmittedProposal({ title: 'Skate park' });
+    const [feasibility, equity] = await Promise.all([
+      createReview({
+        proposalId: proposal.id,
+        phaseId: FEASIBILITY,
+        reviewData: costs({ design: 1, construction: 700, contingency: 1 }),
+      }),
+      createReview({
+        proposalId: proposal.id,
+        phaseId: EQUITY,
+        reviewData: equityScores,
+      }),
+    ]);
+
+    const buildPrefill = (reviewId: string) =>
+      getDevelopPrefill({
+        instanceId,
+        inputs: [
+          { type: 'proposal', phaseId: SUBMISSION, id: proposal.id },
+          { type: 'review', id: reviewId },
+        ],
+        target: { type: 'proposal', phaseId: BALLOT },
+        mappings,
+        user: setup.user,
+      });
+
+    // Only the feasibility mapping fills the budget.
+    const fromFeasibility = await buildPrefill(feasibility.id);
+    expect(fromFeasibility.data.budget).toEqual({
+      amount: 700,
+      currency: 'USD',
+    });
+    const fromEquity = await buildPrefill(equity.id);
+    expect(fromEquity.data).not.toHaveProperty('budget');
   });
 
   it('given a developer, a profile admin, a decisions admin and a reviewer, when each builds the prefill, then only the reviewer is refused', async ({
@@ -762,12 +806,7 @@ describe.concurrent('getDevelopPrefill', () => {
         processInstanceId: otherInstanceId,
       }),
     ]);
-    const [equityReview, draftReview, unlistedReview] = await Promise.all([
-      createReview({
-        proposalId: proposal.id,
-        phaseId: EQUITY,
-        reviewData: equityScores,
-      }),
+    const [draftReview, unlistedReview, foreignReview] = await Promise.all([
       createReview({
         proposalId: proposal.id,
         phaseId: FEASIBILITY,
@@ -778,6 +817,12 @@ describe.concurrent('getDevelopPrefill', () => {
         proposalId: unlisted.id,
         phaseId: FEASIBILITY,
         reviewData: costs({ design: 1, construction: 1, contingency: 1 }),
+      }),
+      createReview({
+        proposalId: foreign.id,
+        phaseId: FEASIBILITY,
+        reviewData: costs({ design: 1, construction: 1, contingency: 1 }),
+        processInstanceId: otherInstanceId,
       }),
     ]);
 
@@ -795,24 +840,17 @@ describe.concurrent('getDevelopPrefill', () => {
         user: setup.user,
       });
 
+    // A draft review and a review of another instance give one error.
     await expectRejection({
       promise: buildPrefill([
-        { type: 'review', phaseId: FEASIBILITY, id: equityReview.id },
+        { type: 'review', id: draftReview.id },
+        { type: 'review', id: foreignReview.id },
       ]),
       errorClass: ValidationError,
-      message: `Review '${equityReview.id}' belongs to phase '${EQUITY}', not '${FEASIBILITY}'`,
+      message: `These reviews cannot be developed: ${draftReview.id}, ${foreignReview.id}`,
     });
     await expectRejection({
-      promise: buildPrefill([
-        { type: 'review', phaseId: FEASIBILITY, id: draftReview.id },
-      ]),
-      errorClass: ValidationError,
-      message: `Review '${draftReview.id}' is not submitted and cannot be developed`,
-    });
-    await expectRejection({
-      promise: buildPrefill([
-        { type: 'review', phaseId: FEASIBILITY, id: unlistedReview.id },
-      ]),
+      promise: buildPrefill([{ type: 'review', id: unlistedReview.id }]),
       errorClass: ValidationError,
       message: `Review '${unlistedReview.id}' is of a proposal that is not among the inputs`,
     });
