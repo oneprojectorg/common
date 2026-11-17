@@ -27,7 +27,7 @@ import {
   isProposalReadable,
 } from './proposalVisibility';
 import {
-  resolvePhaseProposalTemplate,
+  resolveProposalTemplate,
   resolveProposalTemplatesByFormSchemaId,
 } from './resolveProposalTemplate';
 import type { PhaseInstanceData } from './schemas/instanceData';
@@ -65,8 +65,9 @@ const developPrefillRequestSchema = z.object({
 /**
  * Builds the starting data of a developed proposal: maps the given proposals
  * and their reviews into the proposal form of the develop phase
- * `target.phaseId` with `mappings`. A target field whose inputs give
- * different values stays empty.
+ * `target.phaseId` with `mappings`. That form is the phase's `formSchemaId`
+ * row, else the instance template, else the process template. A target field
+ * whose inputs give different values stays empty.
  *
  * Asserts develop access on the target phase and validates the source
  * proposals. A caller that has already done both calls `buildDevelopPrefill`.
@@ -167,11 +168,13 @@ export const buildDevelopPrefill = async ({
   };
 
   const [targetForm, decisionRoles] = await Promise.all([
-    resolvePhaseProposalTemplate({
-      phase: targetPhase,
-      instanceData: instance.instanceData,
-      processId: instance.processId,
-    }),
+    // A proposal created in the phase is stamped with its `formSchemaId` and
+    // read through `resolveProposalTemplate`, so the prefill targets that form.
+    resolveProposalTemplate(
+      instance.instanceData,
+      instance.processId,
+      targetPhase.formSchemaId,
+    ),
     getProfileAccessRoles({ user, profileId: instance.profileId }),
   ]);
   assertTargetFields({

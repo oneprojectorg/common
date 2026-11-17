@@ -199,9 +199,15 @@ const insertFormSchema = async (values: {
   return row;
 };
 
+/**
+ * `ballotFormSchema` is the develop phase's `formSchemaId` row: `ballotForm`
+ * by default, none when `null`.
+ */
 const seedDevelopDecision = async (
   testData: TestDecisionsDataManager,
-  { ballotFormSchema }: { ballotFormSchema?: Record<string, unknown> } = {},
+  {
+    ballotFormSchema = ballotForm,
+  }: { ballotFormSchema?: Record<string, unknown> | null } = {},
 ) => {
   const setup = await testData.createDecisionSetup({
     instanceCount: 2,
@@ -589,6 +595,40 @@ describe.concurrent('getDevelopPrefill', () => {
         message: `Target field '${to}' is not a field of the proposal form of phase '${BALLOT}'`,
       });
     }
+  });
+
+  it('given a develop phase without a form schema row, when the prefill is built, then it maps into the instance template and not the phase template', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instanceId, createSubmittedProposal } =
+      await seedDevelopDecision(testData, { ballotFormSchema: null });
+    const proposal = await createSubmittedProposal({ title: 'Bike racks' });
+
+    const buildPrefill = (fields: SchemaMapping['fields']) =>
+      getDevelopPrefill({
+        instanceId,
+        inputs: [{ type: 'proposal', phaseId: SUBMISSION, id: proposal.id }],
+        target: { type: 'proposal', phaseId: BALLOT },
+        mappings: [{ from: submissionRef, to: ballotRef, fields }],
+        user: setup.user,
+      });
+
+    await expect(
+      buildPrefill([
+        { from: 'title', to: 'title' },
+        { from: 'summary', to: 'summary' },
+      ]),
+    ).resolves.toEqual({
+      data: { title: 'Bike racks', summary: 'Summary of Bike racks' },
+    });
+    // `description` is a field of the phase template only.
+    await expectRejection({
+      promise: buildPrefill([{ from: 'summary', to: 'description' }]),
+      errorClass: ValidationError,
+      message: `Target field 'description' is not a field of the proposal form of phase '${BALLOT}'`,
+    });
   });
 
   it('given a mapping into a field the target form does not have, when the prefill is built, then it is refused naming the field', async ({

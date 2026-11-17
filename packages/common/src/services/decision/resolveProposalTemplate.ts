@@ -1,9 +1,7 @@
 import { db } from '@op/db/client';
 
 import { NotFoundError, ValidationError } from '../../utils';
-import type { PhaseInstanceData } from './schemas/instanceData';
 import type { ProposalTemplateSchema } from './types';
-import { getPhaseProposalTemplate } from './utils/phaseTemplates';
 
 /**
  * Resolves the proposal template schema for a proposal.
@@ -38,31 +36,6 @@ export async function resolveProposalTemplate(
   }
 
   return resolveInstanceTemplate({ instanceData, processId });
-}
-
-/**
- * Resolves the proposal form of a phase: the form a proposal created in the
- * phase is written under. The `decision_form_schemas` row behind the phase's
- * `formSchemaId` comes first, with the same errors as `resolveProposalTemplate`.
- * Otherwise the phase's own template, then the instance template.
- */
-export async function resolvePhaseProposalTemplate({
-  phase,
-  instanceData,
-  processId,
-}: {
-  phase: PhaseInstanceData;
-  instanceData: unknown;
-  processId: string | null;
-}): Promise<ProposalTemplateSchema | null> {
-  if (phase.formSchemaId) {
-    return resolveProposalTemplate(null, null, phase.formSchemaId);
-  }
-
-  return (
-    getPhaseProposalTemplate({ phases: [phase] }, phase.phaseId) ??
-    resolveInstanceTemplate({ instanceData, processId })
-  );
 }
 
 /**

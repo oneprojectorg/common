@@ -87,8 +87,9 @@ export interface PhaseInstanceData {
   proposalTemplate?: ProposalTemplateSchema;
   /**
    * `decision_form_schemas` row that a proposal developed in this phase uses
-   * as its form (`proposals.form_schema_id`). Only a setup script writes it;
-   * the API phase encoders do not carry it.
+   * as its form (`proposals.form_schema_id`). The develop prefill targets it
+   * instead of `proposalTemplate`. Only a setup script writes it; the API
+   * phase encoders do not carry it.
    */
   formSchemaId?: string;
 }
