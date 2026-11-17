@@ -34,7 +34,13 @@ import type { PhaseInstanceData } from './schemas/instanceData';
 import type { ProposalTemplateSchema } from './types';
 import { assertInstancePhase } from './utils/instance';
 
-/** A review's phase is its assignment's phase, so a review input names none. */
+/**
+ * A review's phase is its assignment's phase, so a review input names none. A
+ * proposal input names a phase only because a mapping names its source schema
+ * as `{ type, phaseId }`. Once schemas have stable ids, the row gives its
+ * schema (the proposal's `form_schema_id`, the review's rubric), and both
+ * inputs become `{ type, id }`.
+ */
 export type DevelopPrefillInput =
   | { type: 'proposal'; phaseId: string; id: string }
   | { type: 'review'; id: string };
@@ -82,7 +88,7 @@ export const getDevelopPrefill = async ({
   mappings: SchemaMapping[];
   user: User;
 }): Promise<MappingResult> => {
-  const request = parseRequest({ inputs, mappings });
+  assertValidRequest({ inputs, mappings });
 
   const instance = await db.query.processInstances.findFirst({
     where: { id: instanceId },
@@ -110,7 +116,7 @@ export const getDevelopPrefill = async ({
     instance,
     sourceProposalIds: [
       ...new Set(
-        request.inputs
+        inputs
           .filter((input) => input.type === 'proposal')
           .map((input) => input.id),
       ),
@@ -121,8 +127,8 @@ export const getDevelopPrefill = async ({
     instance,
     phases,
     targetPhase,
-    inputs: request.inputs,
-    mappings: request.mappings,
+    inputs,
+    mappings,
     user,
   });
 };
@@ -147,12 +153,12 @@ export const buildDevelopPrefill = async ({
   mappings: SchemaMapping[];
   user: User;
 }): Promise<MappingResult> => {
-  const request = parseRequest({ inputs, mappings });
+  assertValidRequest({ inputs, mappings });
   if (!instance.profileId) {
     throw new UnauthorizedError("You don't have access to do this");
   }
 
-  for (const input of request.inputs) {
+  for (const input of inputs) {
     if (input.type === 'proposal') {
       assertInstancePhase({ instance: { phases }, phaseId: input.phaseId });
     }
@@ -176,31 +182,29 @@ export const buildDevelopPrefill = async ({
   assertTargetFields({
     targetForm,
     targetSchema,
-    mappings: request.mappings,
+    mappings,
   });
 
   const mappingInputs = await loadMappingInputs({
     instance,
-    inputs: request.inputs,
+    inputs,
     readContext: getProposalReadContext({ user, decisionRoles }),
   });
 
   return mapToSchema({
-    mappings: request.mappings,
+    mappings,
     inputs: mappingInputs,
     targetSchema,
   });
 };
 
-const parseRequest = (request: {
+const assertValidRequest = (request: {
   inputs: DevelopPrefillInput[];
   mappings: SchemaMapping[];
-}): z.infer<typeof developPrefillRequestSchema> => {
-  const result = developPrefillRequestSchema.safeParse(request);
-  if (!result.success) {
-    throw toValidationError(result.error);
+}): void => {
+  if (!developPrefillRequestSchema.validate(request)) {
+    throw new ValidationError('Invalid develop prefill request');
   }
-  return result.data;
 };
 
 /** Each field a mapping writes into the target must be a field of its form. */
@@ -431,18 +435,5 @@ const getAssembledProposalData = async ({
         }),
       ];
     }),
-  );
-};
-
-const toValidationError = (error: z.ZodError): ValidationError => {
-  const fieldErrors = Object.fromEntries(
-    error.issues.map((issue) => [issue.path.join('.'), issue.message]),
-  );
-  const [first] = error.issues;
-  return new ValidationError(
-    first
-      ? `Invalid ${first.path.join('.') || 'request'}: ${first.message}`
-      : 'Invalid request',
-    fieldErrors,
   );
 };
