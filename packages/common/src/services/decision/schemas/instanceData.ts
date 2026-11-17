@@ -85,6 +85,11 @@ export interface PhaseInstanceData {
   rubricTemplate?: RubricTemplateSchema;
   /** Phase-specific form; resolve via `getPhaseProposalTemplate`, never directly. */
   proposalTemplate?: ProposalTemplateSchema;
+  /**
+   * Form row of a proposal developed in this phase; the develop prefill targets
+   * it, not `proposalTemplate`. Only a setup script writes it.
+   */
+  formSchemaId?: string;
 }
 
 /** Public-facing overview content (headline, short description, rich text body) */
