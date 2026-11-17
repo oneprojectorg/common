@@ -1,17 +1,22 @@
-import { and, db } from '@op/db/client';
+import { db } from '@op/db/client';
 import { ProposalRelationshipType, proposalRelationships } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 
 import { NotFoundError, ValidationError } from '../../utils';
 import { invalidateProfileUserAccessCache } from '../access';
+import { assertDevelopSources } from './assertDevelopSources';
 import { assertProposalDevelopAccess } from './assertProposalDevelopAccess';
+import {
+  type DevelopedEntryPrefill,
+  getDevelopedEntryPrefill,
+  seedDevelopedEntryDocument,
+} from './developedEntryPrefill';
 import { insertProposalDraft } from './insertProposalDraft';
 import { getPhases } from './instancePhases';
 import {
-  activeProposalPredicate,
-  phaseEligiblePredicate,
-} from './phaseEligibility';
-import type { ProposalDataInput } from './proposalDataSchema';
+  type ProposalDataInput,
+  parseProposalData,
+} from './proposalDataSchema';
 import { resolveProposalDraftInputs } from './proposalDraftInputs';
 
 export interface CreateDevelopedProposalInput {
@@ -24,7 +29,8 @@ export interface CreateDevelopedProposalInput {
 /**
  * Creates a draft proposal in a develop phase, developed from proposals of
  * any phase of the instance. Writes one `developed` edge per source in the same
- * transaction as the draft.
+ * transaction as the draft. With prefill mappings on the phase, the draft
+ * starts from its sources (`getDevelopedEntryPrefill`).
  */
 export const createDevelopedProposal = async ({
   data,
@@ -47,33 +53,43 @@ export const createDevelopedProposal = async ({
     throw new ValidationError('Invalid phase in process instance');
   }
 
+  const phases = await getPhases({ instance });
+
   const currentPhase = await assertProposalDevelopAccess({
-    instance: {
-      profileId: instance.profileId,
-      phases: await getPhases({ instance }),
-    },
+    instance: { profileId: instance.profileId, phases },
     phaseId: instance.currentStateId,
     user: { id: authUserId },
   });
 
   const sourceProposalIds = [...new Set(data.sourceProposalIds)];
 
-  const [, draftInputs] = await Promise.all([
-    assertDevelopSources({ instance, sourceProposalIds }),
-    resolveProposalDraftInputs({
-      authUserId,
-      instanceProfileId: instance.profileId,
-      phase: currentPhase,
-      proposalData: data.proposalData,
-    }),
-  ]);
+  await assertDevelopSources({ instance, sourceProposalIds });
+
+  const prefill = await getDevelopedEntryPrefill({
+    instance,
+    phases,
+    developPhase: currentPhase,
+    sourceProposalIds,
+    user,
+  });
+  const proposalData = withEntryPrefill({
+    proposalData: data.proposalData,
+    prefill,
+  });
+
+  const draftInputs = await resolveProposalDraftInputs({
+    authUserId,
+    instanceProfileId: instance.profileId,
+    phase: currentPhase,
+    proposalData,
+  });
 
   const createdProposal = await db.transaction(async (tx) => {
     const proposal = await insertProposalDraft({
       tx,
       user,
       processInstanceId: instance.id,
-      proposalData: data.proposalData,
+      proposalData,
       attachmentIds: data.attachmentIds,
       ...draftInputs,
     });
@@ -90,46 +106,29 @@ export const createDevelopedProposal = async ({
     return proposal;
   });
 
-  // The author's cached `user` entry predates this membership.
-  await invalidateProfileUserAccessCache({
-    authUserId,
-    profileId: createdProposal.profileId,
-  });
+  await Promise.all([
+    // The author's cached `user` entry predates this membership.
+    invalidateProfileUserAccessCache({
+      authUserId,
+      profileId: createdProposal.profileId,
+    }),
+    seedDevelopedEntryDocument({
+      collaborationDocId: parseProposalData(createdProposal.proposalData)
+        .collaborationDocId,
+      documentUpdate: prefill?.documentUpdate ?? null,
+    }),
+  ]);
 
   return createdProposal;
 };
 
-/**
- * Every source must be a live, submitted, not rejected, not merged proposal of
- * this instance. Sources may come from any phase.
- */
-export async function assertDevelopSources({
-  instance,
-  sourceProposalIds,
+/** The mapped system fields replace the caller's, as if the author typed them. */
+function withEntryPrefill({
+  proposalData,
+  prefill,
 }: {
-  instance: { id: string };
-  sourceProposalIds: string[];
-}): Promise<void> {
-  if (sourceProposalIds.length === 0) {
-    throw new ValidationError('Choose at least one source proposal');
-  }
-
-  const validRows = await db.query.proposals.findMany({
-    where: {
-      id: { in: sourceProposalIds },
-      processInstanceId: instance.id,
-      RAW: (table) =>
-        and(phaseEligiblePredicate(table), activeProposalPredicate(table))!,
-    },
-    columns: { id: true },
-  });
-
-  const validIds = new Set(validRows.map((row) => row.id));
-  const invalidIds = sourceProposalIds.filter((id) => !validIds.has(id));
-
-  if (invalidIds.length > 0) {
-    throw new ValidationError(
-      `These proposals cannot be developed: ${invalidIds.join(', ')}`,
-    );
-  }
+  proposalData: ProposalDataInput;
+  prefill: DevelopedEntryPrefill | null;
+}): ProposalDataInput {
+  return prefill ? { ...proposalData, ...prefill.proposalData } : proposalData;
 }

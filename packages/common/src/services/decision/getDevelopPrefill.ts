@@ -14,8 +14,8 @@ import {
 } from '../../schemaMapping';
 import { NotFoundError, UnauthorizedError, ValidationError } from '../../utils';
 import { getProfileAccessRoles } from '../access';
+import { assertDevelopSources } from './assertDevelopSources';
 import { assertProposalDevelopAccess } from './assertProposalDevelopAccess';
-import { assertDevelopSources } from './createDevelopedProposal';
 import { getProposalDocumentsContent } from './getProposalDocumentsContent';
 import { getProposalIdsForPhase } from './getProposalsForPhase';
 import { getPhases } from './instancePhases';
@@ -377,9 +377,8 @@ const getProposalIdsByPhase = async ({
   );
 
 /**
- * The document assembled under the proposal's own template, or the stored data
- * of a legacy proposal. An unavailable document gives no data, so the other
- * inputs still fill the target.
+ * The document assembled under the proposal's own template. No document, or
+ * one that cannot be fetched, gives no data; the other inputs still fill it.
  */
 const getAssembledProposalData = async ({
   instance,
@@ -422,7 +421,7 @@ const getAssembledProposalData = async ({
         return [proposal.id, {}];
       }
       if (document?.type !== 'json') {
-        return [proposal.id, parseProposalData(proposal.proposalData)];
+        return [proposal.id, {}];
       }
 
       const proposalTemplate = templateFor(proposal.formSchemaId);

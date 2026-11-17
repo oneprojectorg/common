@@ -421,7 +421,10 @@ export function createTipTapClient(_config?: unknown) {
       ) as R;
     },
 
-    /** The seeded JSON as a Yjs update; null for a document never seeded. */
+    /**
+     * The seeded JSON as a Yjs update; null for a document never seeded.
+     * Rejects for a document seeded with `setDocError`.
+     */
     getDocumentUpdate: async (
       docName: string,
       options?: { version?: number },
@@ -431,7 +434,11 @@ export function createTipTapClient(_config?: unknown) {
         (version !== undefined
           ? docVersionFragmentJsonResponses.get(version)?.get(docName)
           : undefined) ?? docFragmentJsonResponses.get(docName);
-      return fragments ? encodeFragmentsAsUpdate(fragments) : null;
+      if (fragments) {
+        return encodeFragmentsAsUpdate(fragments);
+      }
+      await docResponses.get(docName)?.();
+      return null;
     },
 
     /** Stores the update's fragments as JSON, or `'exists'` if seeded. */

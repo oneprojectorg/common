@@ -217,12 +217,8 @@ function DevelopSourcesTable({
     createEntry.mutate({
       processInstanceId,
       sourceProposalIds: [source.id],
-      // A suggested draft: the entry starts from the source's title and
-      // category, and the editor takes it from there.
-      proposalData: {
-        title: source.profile.name,
-        category: source.proposalData.category,
-      },
+      // The server prefills the entry from the source's document.
+      proposalData: {},
     });
 
   return (
