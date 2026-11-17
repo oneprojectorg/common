@@ -21,18 +21,21 @@ export type ListProposalRelationshipsResult = ProposalRelationshipList & {
 };
 
 /**
- * Live relationships on one end of a proposal: pin `targetProposalId` for what was
- * merged into it, `sourceProposalId` for what it was merged into. Each row carries
- * the proposal at the end the caller didn't pin.
+ * Live relationships on one end of a proposal: pin `targetProposalId` for what
+ * was merged into it or developed into it, `sourceProposalId` for what it was
+ * merged or developed into. `relationshipType` narrows the read to one type.
+ * Each row carries the proposal at the end the caller didn't pin.
  *
  * The one read that shows superseded proposals, so it's gated on `decisions: READ`
  * rather than admin. It exposes only id, status, and profile name/slug — opening
  * one still goes through `getProposal` and its full gate. Unpaginated: the fan-in
- * is however many proposals an admin merged together.
+ * is however many proposals an admin merged together, or an entry was
+ * developed from.
  */
 export async function listProposalRelationships({
   sourceProposalId,
   targetProposalId,
+  relationshipType,
   user,
 }: ListProposalRelationshipsInput & {
   user: User | undefined;
@@ -98,6 +101,9 @@ export async function listProposalRelationships({
       .where(
         and(
           eq(pinnedColumn, pinnedProposalId),
+          relationshipType
+            ? eq(proposalRelationships.relationshipType, relationshipType)
+            : undefined,
           isNull(proposalRelationships.deletedAt),
           isProposalReadable(proposals, readContext),
         ),

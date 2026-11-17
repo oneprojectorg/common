@@ -815,6 +815,55 @@ describe.concurrent('listProposalRelationships', () => {
     });
   });
 
+  it('filters to one relationship type in SQL', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instanceId, source, target, caller } =
+      await createMergeableProposals(testData);
+
+    await caller.decision.mergeProposals({
+      sourceProposalId: source.id,
+      targetProposalId: target.id,
+    });
+
+    // A second edge from the same source, of another type.
+    const developed = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: instanceId,
+      proposalData: { title: 'Developed Entry', description: 'Developed' },
+    });
+    await db.insert(proposalRelationships).values({
+      processInstanceId: instanceId,
+      sourceProposalId: source.id,
+      targetProposalId: developed.id,
+      relationshipType: ProposalRelationshipType.DEVELOPED,
+    });
+
+    const [all, merged, developedOnly] = await Promise.all([
+      caller.decision.listProposalRelationships({
+        sourceProposalId: source.id,
+      }),
+      caller.decision.listProposalRelationships({
+        sourceProposalId: source.id,
+        relationshipType: ProposalRelationshipType.MERGED,
+      }),
+      caller.decision.listProposalRelationships({
+        sourceProposalId: source.id,
+        relationshipType: ProposalRelationshipType.DEVELOPED,
+      }),
+    ]);
+
+    expect(all.items).toHaveLength(2);
+    expect(merged.items).toMatchObject([
+      { relationshipType: 'merged', proposal: { id: target.id } },
+    ]);
+    expect(developedOnly.items).toMatchObject([
+      { relationshipType: 'developed', proposal: { id: developed.id } },
+    ]);
+  });
+
   it('rejects pinning both ends or neither', async ({
     task,
     onTestFinished,

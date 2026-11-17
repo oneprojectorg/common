@@ -8,7 +8,7 @@ import { openProcedure, router } from '../../../trpcFactory';
 
 export const listProposalRelationshipsRouter = router({
   /**
-   * A proposal's merge links. `openProcedure` to match `getProposal`, since this
+   * A proposal's relationship links (merged, developed). `openProcedure` to match `getProposal`, since this
    * renders alongside the proposal and public decision visitors see both; the
    * service asserts `decisions: READ`.
    */
@@ -20,6 +20,7 @@ export const listProposalRelationshipsRouter = router({
         await listProposalRelationships({
           sourceProposalId: input.sourceProposalId,
           targetProposalId: input.targetProposalId,
+          relationshipType: input.relationshipType,
           user: ctx.user,
         });
 

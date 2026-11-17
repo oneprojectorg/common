@@ -44,13 +44,10 @@ export function DevelopProposalRoute({
   const t = useTranslations();
   const [{ items }] = trpc.decision.listProposalRelationships.useSuspenseQuery({
     targetProposalId: proposal.id,
+    relationshipType: ProposalRelationshipType.DEVELOPED,
   });
 
-  const origins = items
-    .filter(
-      (item) => item.relationshipType === ProposalRelationshipType.DEVELOPED,
-    )
-    .map((item) => item.proposal);
+  const origins = items.map((item) => item.proposal);
 
   if (origins.length === 0) {
     notFound();

@@ -2,6 +2,7 @@
 
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { trpc } from '@op/api/client';
+import { ProposalRelationshipType } from '@op/api/encoders';
 import type { Proposal } from '@op/common/client';
 import { type ReactNode, Suspense } from 'react';
 import { LuMerge } from 'react-icons/lu';
@@ -45,10 +46,12 @@ function ProposalMergeNoticeSuspense({
 }) {
   const t = useTranslations('decisions.proposals');
 
-  // Pinning the source end asks what this was merged into: at most one row.
+  // Pinning the source end of a merge asks what this was merged into: at most
+  // one row. Without the type, `developed` edges from this proposal match too.
   const [{ items: mergedAway }] =
     trpc.decision.listProposalRelationships.useSuspenseQuery({
       sourceProposalId: proposal.id,
+      relationshipType: ProposalRelationshipType.MERGED,
     });
 
   const supersededBy = mergedAway[0];
