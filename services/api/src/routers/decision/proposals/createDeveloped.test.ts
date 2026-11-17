@@ -724,6 +724,53 @@ describe.concurrent('createDevelopedProposal', () => {
     });
   });
 
+  it('fills the entry from the other sources when one source document cannot be read', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const {
+      setup,
+      instanceId,
+      source,
+      otherSources: [unreadable],
+    } = await createDevelopPhaseSetup({ testData, sourceCount: 2 });
+    if (!unreadable) {
+      throw new Error('Expected a second source');
+    }
+    await configurePrefill({
+      instanceId,
+      sourceId: source.id,
+      summary: 'Plant trees along the river.',
+    });
+    const unreadableDocId = `proposal-${unreadable.id}`;
+    await db
+      .update(proposals)
+      .set({ proposalData: { collaborationDocId: unreadableDocId } })
+      .where(eq(proposals.id, unreadable.id));
+    mockCollab.setDocError(
+      unreadableDocId,
+      new Error('Collaboration server unavailable'),
+    );
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const draft = await caller.decision.createDevelopedProposal({
+      processInstanceId: instanceId,
+      // The unreadable source first, so its failure comes before the copy.
+      sourceProposalIds: [unreadable.id, source.id],
+      proposalData: {},
+    });
+    testData.trackProfileForCleanup(draft.profileId);
+
+    expect(draft.profile.name).toBe(SOURCE_TITLE);
+    await expect(readEntryDocument(draft.id)).resolves.toEqual({
+      title: textFragment(SOURCE_TITLE),
+      description: textFragment('Plant trees along the river.'),
+      category: textFragment('Parks'),
+      budget: textFragment(SOURCE_BUDGET),
+    });
+  });
+
   it('keeps an over-long text value as it is', async ({
     task,
     onTestFinished,

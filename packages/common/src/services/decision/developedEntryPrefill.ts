@@ -218,9 +218,18 @@ async function getEntryDocumentUpdate({
       if (!proposalData?.collaborationDocId) {
         return null;
       }
-      return client.getDocumentUpdate(proposalData.collaborationDocId, {
-        version: proposalData.collaborationDocVersionId,
-      });
+      // As in `buildDevelopPrefill`, one unreadable source leaves the rest.
+      try {
+        return await client.getDocumentUpdate(proposalData.collaborationDocId, {
+          version: proposalData.collaborationDocVersionId,
+        });
+      } catch (error) {
+        logger.warn('Develop prefill skipped an unreadable source document', {
+          proposalId: id,
+          error,
+        });
+        return null;
+      }
     }),
   );
 

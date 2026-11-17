@@ -8,16 +8,18 @@ import {
 import type { TestDecisionsDataManager } from './TestDecisionsDataManager';
 
 /**
- * A published instance in its develop phase ("final") with one submitted
- * proposal from the previous phase ("initial"). The setup user is an admin of
- * the instance.
+ * A published instance in its develop phase ("final") with `sourceCount`
+ * submitted proposals from the previous phase ("initial"): `source`, then
+ * `otherSources`. The setup user is an admin of the instance.
  */
 export async function createDevelopPhaseSetup({
   testData,
   instanceCount = 1,
+  sourceCount = 1,
 }: {
   testData: TestDecisionsDataManager;
   instanceCount?: number;
+  sourceCount?: number;
 }) {
   const setup = await testData.createDecisionSetup({
     instanceCount,
@@ -32,13 +34,24 @@ export async function createDevelopPhaseSetup({
     proposalData: { title: 'Source' },
     status: ProposalStatus.SUBMITTED,
   });
+  const otherSources: Array<typeof source> = [];
+  for (let index = 1; index < sourceCount; index++) {
+    otherSources.push(
+      await testData.createProposal({
+        userEmail: setup.userEmail,
+        processInstanceId: instanceId,
+        proposalData: { title: `Source ${index + 1}` },
+        status: ProposalStatus.SUBMITTED,
+      }),
+    );
+  }
   await testData.advancePhase({
     instanceId,
     fromPhaseId: 'initial',
     toPhaseId: 'final',
   });
 
-  return { setup, instanceId, source };
+  return { setup, instanceId, source, otherSources };
 }
 
 /**
