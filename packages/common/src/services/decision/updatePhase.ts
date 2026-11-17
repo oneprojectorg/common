@@ -15,7 +15,7 @@ import {
   getPhaseAsDecisionAdmin,
   readPhaseSettings,
 } from './phaseHelpers';
-import { writePhases } from './phaseWrites';
+import { writePhasesWithLock } from './phaseWrites';
 import type { PhaseOverride } from './schemas/instanceData';
 import type { ProposalTemplateSchema } from './types';
 
@@ -54,7 +54,7 @@ export const updatePhase = async ({
     (patch.set.settings !== undefined ||
       patch.set.settingsSchema !== undefined);
 
-  const { result } = await writePhases({
+  const { result } = await writePhasesWithLock({
     processInstanceId,
     write: async (tx) => {
       const [profile] =

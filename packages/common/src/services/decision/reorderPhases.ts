@@ -7,7 +7,7 @@ import {
   type ProcessPhaseWithProfile,
   assertDecisionAdmin,
 } from './phaseHelpers';
-import { writePhases } from './phaseWrites';
+import { writePhasesWithLock } from './phaseWrites';
 
 export interface PhasePlacement {
   phaseId: string;
@@ -44,7 +44,7 @@ export const reorderPhases = async ({
     });
   }
 
-  const { phases: reordered } = await writePhases({
+  const { phases: reordered } = await writePhasesWithLock({
     processInstanceId,
     write: async (tx, { phases: stored }) => {
       if (

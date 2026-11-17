@@ -24,7 +24,7 @@ type StoredPhases = Pick<LockedProcessInstance, 'status' | 'currentStateId'> & {
  * Runs a phase endpoint's row write in a transaction under the instance lock,
  * then clears its cache. See {@link writePhasesInTx}.
  */
-export const writePhases = async <T>({
+export const writePhasesWithLock = async <T>({
   processInstanceId,
   write,
 }: {

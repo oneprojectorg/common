@@ -4,7 +4,7 @@ import type { User } from '@op/supabase/lib';
 
 import { NotFoundError } from '../../utils';
 import { getPhaseAsDecisionAdmin } from './phaseHelpers';
-import { writePhases } from './phaseWrites';
+import { writePhasesWithLock } from './phaseWrites';
 
 export const deletePhase = async ({
   user,
@@ -15,7 +15,7 @@ export const deletePhase = async ({
 }): Promise<void> => {
   const phase = await getPhaseAsDecisionAdmin({ user, phaseId });
 
-  await writePhases({
+  await writePhasesWithLock({
     processInstanceId: phase.processInstanceId,
     write: async (tx) => {
       // The profile cascades to the phase row, not the other way round.

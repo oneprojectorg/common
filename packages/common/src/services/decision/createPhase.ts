@@ -10,7 +10,7 @@ import {
   assertPhaseSettings,
   insertPhase,
 } from './phaseHelpers';
-import { writePhases } from './phaseWrites';
+import { writePhasesWithLock } from './phaseWrites';
 
 export const createPhase = async ({
   user,
@@ -40,7 +40,7 @@ export const createPhase = async ({
   assertPhaseSchemasCompile(phaseData);
   assertPhaseSettings({ data: phaseData, phaseLabel: name });
 
-  const { result: created, phases } = await writePhases({
+  const { result: created, phases } = await writePhasesWithLock({
     processInstanceId,
     write: (tx) =>
       insertPhase({
