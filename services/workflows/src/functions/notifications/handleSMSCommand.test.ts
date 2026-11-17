@@ -544,6 +544,31 @@ describe('handleSMSCommand against the database', () => {
     expect(result).toEqual({ message: 'unknown number, skipped' });
     expect(recordedSms).toEqual([]);
   });
+
+  it('given the webhook saw no account at receipt, when the account exists by the time the run executes, then the original text is still skipped', async ({
+    task,
+    onTestFinished,
+  }) => {
+    // The delayed original run and the signup replay must never both answer
+    // one text. The at-receipt snapshot, not a live read, decides.
+    const fixture = new SmsCommandFixture(task.id, onTestFinished);
+    const phone = parsePhoneNumber('+15005550096');
+    await fixture.createPhoneOnlyAccount(phone);
+    const t = new InngestTestEngine({ function: handleSMSCommand });
+
+    const { result } = await t.execute({
+      events: [
+        smsInboundEvent({
+          from: phone,
+          keyword: 'info-help',
+          authUserId: null,
+        }),
+      ],
+    });
+
+    expect(result).toEqual({ message: 'unknown number, skipped' });
+    expect(recordedSms).toEqual([]);
+  });
 });
 
 describe('handleSMSCommand on a decision line', () => {

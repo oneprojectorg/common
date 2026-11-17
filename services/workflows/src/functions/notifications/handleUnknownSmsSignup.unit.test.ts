@@ -373,6 +373,7 @@ describe('handleUnknownSmsSignup', () => {
           from: FROM,
           keyword: 'vote',
           messageSid: 'SM-original',
+          authUserId: 'auth-user-2',
         }),
       }),
     );

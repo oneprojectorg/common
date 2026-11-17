@@ -78,7 +78,9 @@ export const handleUnknownSmsSignup = inngest.createFunction(
       mode: 'skip',
     },
   },
-  { event: smsInboundReceived.name },
+  // A confirmed number's texts never start this function; the webhook stamps
+  // the account on the event. An event without the field still triggers it.
+  { event: smsInboundReceived.name, if: 'event.data.authUserId == null' },
   async ({ event, step }) => {
     const inbound = smsInboundReceived.schema.parse(event.data);
     const { from, to: inboundTo, keyword } = inbound;
@@ -376,7 +378,7 @@ export const handleUnknownSmsSignup = inngest.createFunction(
       await step.sendEvent('replay-original-command', {
         name: smsInboundReceived.name,
         id: `sms-inbound-${inbound.messageSid}-replay`,
-        data: { ...inbound, code: null },
+        data: { ...inbound, code: null, authUserId },
       });
     }
 

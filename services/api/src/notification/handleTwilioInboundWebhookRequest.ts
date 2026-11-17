@@ -1,9 +1,11 @@
 import {
   extractSmsCode,
+  getPhoneSignupState,
   isCarrierKeyword,
   parseCarrierKeyword,
   parseSmsCommand,
   parseTwilioInboundMessage,
+  safeParsePhoneNumber,
   verifyTwilioWebhookSignature,
 } from '@op/common';
 import { Events, inngest } from '@op/events';
@@ -68,6 +70,7 @@ export const handleTwilioInboundWebhookRequest = async ({
   }
 
   const { keyword, argument } = parseSmsCommand(message.body);
+  const authUserId = await resolveInboundAccount(message.from);
 
   await inngest.send({
     id: `sms-inbound-${message.messageSid}`,
@@ -80,6 +83,7 @@ export const handleTwilioInboundWebhookRequest = async ({
       argument,
       to: message.to || null,
       body: message.body,
+      ...(authUserId !== undefined ? { authUserId } : {}),
     },
   });
 
@@ -88,6 +92,23 @@ export const handleTwilioInboundWebhookRequest = async ({
   });
 
   return { status: 200, body: '<Response></Response>' };
+};
+
+const resolveInboundAccount = async (
+  from: string,
+): Promise<string | null | undefined> => {
+  const parsed = safeParsePhoneNumber(from);
+  if (!parsed.success) {
+    return null;
+  }
+  try {
+    const state = await getPhoneSignupState({ phone: parsed.data });
+    return state.status === 'confirmed' ? state.authUserId : null;
+  } catch (error) {
+    // The functions fall back to their own lookup when the field is absent.
+    logger.error('Could not resolve the inbound SMS account', { error });
+    return undefined;
+  }
 };
 
 const describeUrl = (url: string) => {
