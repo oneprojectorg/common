@@ -9,87 +9,64 @@ const phases = [
   { phaseId: 'results' },
 ];
 
+const published = getPastPhaseLock({
+  isDraft: false,
+  currentStateId: 'voting',
+  phases,
+});
+
 describe('getPastPhaseLock', () => {
   it('locks nothing on a draft decision', () => {
-    const lock = getPastPhaseLock({
+    const getLock = getPastPhaseLock({
       isDraft: true,
       currentStateId: 'voting',
       phases,
     });
 
-    expect(lock.isLocked).toBe(false);
-    expect(phases.some(({ phaseId }) => lock.isPhaseLocked(phaseId))).toBe(
-      false,
-    );
-    expect(phases.some(({ phaseId }) => lock.isPastPhase(phaseId))).toBe(false);
+    expect(phases.map(({ phaseId }) => getLock(phaseId))).toEqual([
+      'free',
+      'free',
+      'free',
+      'free',
+    ]);
   });
 
   it('locks nothing when the decision has no current phase', () => {
-    const lock = getPastPhaseLock({
+    const getLock = getPastPhaseLock({
       isDraft: false,
       currentStateId: null,
       phases,
     });
 
-    expect(lock.isLocked).toBe(false);
-    expect(lock.isPhaseLocked('submission')).toBe(false);
+    expect(getLock('submission')).toBe('free');
   });
 
   it('fully locks the phases before the current one', () => {
-    const lock = getPastPhaseLock({
-      isDraft: false,
-      currentStateId: 'voting',
-      phases,
-    });
-
-    expect(lock.isLocked).toBe(true);
-    expect(lock.currentPhaseId).toBe('voting');
-    expect(lock.isPastPhase('submission')).toBe(true);
-    expect(lock.isPastPhase('review')).toBe(true);
-    expect(lock.isPhaseLocked('submission')).toBe(true);
-    expect(lock.isPhaseLocked('review')).toBe(true);
+    expect(published('submission')).toBe('past');
+    expect(published('review')).toBe('past');
   });
 
   it('pins the current phase in place without treating it as past', () => {
-    const lock = getPastPhaseLock({
-      isDraft: false,
-      currentStateId: 'voting',
-      phases,
-    });
-
-    expect(lock.isPhaseLocked('voting')).toBe(true);
-    expect(lock.isPastPhase('voting')).toBe(false);
+    expect(published('voting')).toBe('current');
   });
 
   it('leaves the phases after the current one free', () => {
-    const lock = getPastPhaseLock({
-      isDraft: false,
-      currentStateId: 'voting',
-      phases,
-    });
-
-    expect(lock.isPhaseLocked('results')).toBe(false);
-    expect(lock.isPastPhase('results')).toBe(false);
+    expect(published('results')).toBe('free');
   });
 
   it('leaves a phase added since the last save free', () => {
-    const lock = getPastPhaseLock({
-      isDraft: false,
-      currentStateId: 'voting',
-      phases,
-    });
-
-    expect(lock.isPhaseLocked('unsaved')).toBe(false);
+    expect(published('unsaved')).toBe('free');
   });
 
   it('locks every phase when the current phase is missing', () => {
-    const lock = getPastPhaseLock({
+    const getLock = getPastPhaseLock({
       isDraft: false,
       currentStateId: 'deleted',
       phases,
     });
 
-    expect(lock.isLocked).toBe(true);
-    expect(phases.every(({ phaseId }) => lock.isPastPhase(phaseId))).toBe(true);
+    expect(phases.every(({ phaseId }) => getLock(phaseId) === 'past')).toBe(
+      true,
+    );
   });
 });

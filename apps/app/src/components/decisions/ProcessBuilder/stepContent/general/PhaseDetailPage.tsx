@@ -43,7 +43,6 @@ import { cn } from '@op/sense/lib/utils';
 import { useQueryState } from 'nuqs';
 import { usePostHog } from 'posthog-js/react';
 import { useId, useRef, useState } from 'react';
-import { LuLock } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -51,6 +50,7 @@ import { RichTextEditorWithToolbar } from '@/components/RichTextEditor/RichTextE
 import { ToggleRow } from '@/components/layout/split/form/ToggleRow';
 
 import { useProcessBuilderAutosave } from '../../ProcessBuilderAutosaveContext';
+import { LockNote } from '../../components/LockNote';
 import { SaveStatusIndicator } from '../../components/SaveStatusIndicator';
 import type { SectionProps } from '../../contentRegistry';
 import { isPhaseSection, sectionIdToPhaseId } from '../../navigationConfig';
@@ -113,9 +113,9 @@ function PhaseDetailForm({
     (s) => s.instances[decisionProfileId]?.phases,
   );
   const { saveChanges, autosaveStatus } = useProcessBuilderAutosave();
-  const lock = usePastPhaseLock(instanceId);
-  const isPast = lock.isPastPhase(phaseId);
-  const isCurrent = lock.isLocked && lock.currentPhaseId === phaseId;
+  const lockState = usePastPhaseLock(instanceId)(phaseId);
+  const isPast = lockState === 'past';
+  const isCurrent = lockState === 'current';
   const lockNoteId = useId();
   const additionalInfoLabelId = useId();
 
@@ -276,14 +276,9 @@ function PhaseDetailForm({
             )}
           </Header1>
           {isPast && (
-            <p
-              id={lockNoteId}
-              className="flex items-start gap-2 text-sm text-muted-foreground"
-              data-testid="past-phase-lock-note"
-            >
-              <LuLock className="mt-0.5 size-4 shrink-0" aria-hidden />
+            <LockNote id={lockNoteId} data-testid="past-phase-lock-note">
               {t('decisions.processBuilder.pastPhaseLockedNote')}
-            </p>
+            </LockNote>
           )}
         </div>
         <SaveStatusIndicator
@@ -336,27 +331,17 @@ function PhaseDetailForm({
           disabled={isPast}
         />
         <div className="space-y-2">
-          {isPast ? (
-            <>
-              <p id={additionalInfoLabelId} className="block font-strong">
-                {t('decisions.processBuilder.phaseAdditionalInfoLabel')}
-              </p>
-              <div
-                role="group"
-                aria-labelledby={additionalInfoLabelId}
+          <p id={additionalInfoLabelId} className="block font-strong">
+            {t('decisions.processBuilder.phaseAdditionalInfoLabel')}
+          </p>
+          <div role="group" aria-labelledby={additionalInfoLabelId}>
+            {isPast ? (
+              <RichTextViewer
+                content={phase.additionalInfo ?? ''}
                 className="rounded-lg border border-input bg-muted"
-              >
-                <RichTextViewer
-                  content={phase.additionalInfo ?? ''}
-                  editorClassName="min-h-24 p-3"
-                />
-              </div>
-            </>
-          ) : (
-            <>
-              <label className="block font-strong">
-                {t('decisions.processBuilder.phaseAdditionalInfoLabel')}
-              </label>
+                editorClassName="min-h-24 p-3"
+              />
+            ) : (
               <RichTextEditorWithToolbar
                 content={phase.additionalInfo ?? ''}
                 onChange={(content) => updatePhase({ additionalInfo: content })}
@@ -364,8 +349,8 @@ function PhaseDetailForm({
                 className="rounded-lg border border-input"
                 editorClassName="min-h-24 p-3"
               />
-            </>
-          )}
+            )}
+          </div>
           <p className="text-sm text-muted-foreground">
             {t('decisions.processBuilder.phaseAdditionalInfoHint')}
           </p>

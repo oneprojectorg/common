@@ -18,13 +18,13 @@ import { RadioGroup, RadioGroupItem } from '@op/sense/RadioGroup';
 import { Switch } from '@op/sense/Switch';
 import { usePostHog } from 'posthog-js/react';
 import { useId, useState } from 'react';
-import { LuLock } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
 import { ToggleRow } from '@/components/layout/split/form/ToggleRow';
 
 import { useProcessBuilderAutosave } from '../../ProcessBuilderAutosaveContext';
+import { LockNote } from '../../components/LockNote';
 import { SaveStatusIndicator } from '../../components/SaveStatusIndicator';
 import type { SectionProps } from '../../contentRegistry';
 import { useProcessBuilderStore } from '../../stores/useProcessBuilderStore';
@@ -61,8 +61,9 @@ export function ReviewSettingsContent({
   // Scope is a per-phase review setting: there is exactly one review-capable
   // phase today (the Reviews step is only shown when one exists).
   const reviewPhase = sourcePhases.find(isReviewPhase);
-  const lock = usePastPhaseLock(instanceId);
-  const isScopeLocked = !!reviewPhase && lock.isPastPhase(reviewPhase.phaseId);
+  const getLock = usePastPhaseLock(instanceId);
+  const isScopeLocked =
+    !!reviewPhase && getLock(reviewPhase.phaseId) === 'past';
   const scopeLockNoteId = useId();
 
   const [settings, setSettings] = useState<ReviewSettings>({
@@ -136,13 +137,9 @@ export function ReviewSettingsContent({
             {t('decisions.processBuilder.reviewScopeQuestion')}
           </FieldLegend>
           {isScopeLocked && (
-            <p
-              id={scopeLockNoteId}
-              className="mb-3 flex items-start gap-2 text-sm text-muted-foreground"
-            >
-              <LuLock className="mt-0.5 size-4 shrink-0" aria-hidden />
+            <LockNote id={scopeLockNoteId} className="mb-3">
               {t('decisions.processBuilder.reviewScopeLockedNote')}
-            </p>
+            </LockNote>
           )}
           <RadioGroup
             value={settings.scope}

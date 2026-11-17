@@ -31,6 +31,7 @@ import {
 import { type TranslateFn, useTranslations } from '@/lib/i18n';
 
 import { useProcessBuilderAutosave } from '../../ProcessBuilderAutosaveContext';
+import { LockNote } from '../../components/LockNote';
 import { SaveStatusIndicator } from '../../components/SaveStatusIndicator';
 import type { SectionProps } from '../../contentRegistry';
 import { phaseToSectionId } from '../../navigationConfig';
@@ -49,7 +50,8 @@ export function PhasesSectionContent({
     (s) => s.instances[decisionProfileId]?.phases,
   );
   const { saveChanges, autosaveStatus } = useProcessBuilderAutosave();
-  const lock = usePastPhaseLock(instanceId);
+  const getLock = usePastPhaseLock(instanceId);
+  const isPhaseLocked = (phaseId: string) => getLock(phaseId) !== 'free';
   const lockNoteId = useId();
 
   const initialPhases: PhaseDefinition[] = (() => {
@@ -124,12 +126,12 @@ export function PhasesSectionContent({
   };
 
   // Locked phases stay a fixed prefix, so only the free ones can move.
-  const lockedPhases = phases.filter((p) => lock.isPhaseLocked(p.id));
-  const freePhases = phases.filter((p) => !lock.isPhaseLocked(p.id));
+  const lockedPhases = phases.filter((p) => isPhaseLocked(p.id));
+  const freePhases = phases.filter((p) => !isPhaseLocked(p.id));
 
   const reorderFreePhases = (reordered: PhaseDefinition[]) =>
     updatePhases((prev) => [
-      ...prev.filter((p) => lock.isPhaseLocked(p.id)),
+      ...prev.filter((p) => isPhaseLocked(p.id)),
       ...reordered,
     ]);
 
@@ -148,7 +150,7 @@ export function PhasesSectionContent({
   const [phaseToDelete, setPhaseToDelete] = useState<string | null>(null);
 
   const confirmRemovePhase = () => {
-    if (!phaseToDelete || lock.isPhaseLocked(phaseToDelete)) {
+    if (!phaseToDelete || isPhaseLocked(phaseToDelete)) {
       return;
     }
     const updated = phases.filter((p) => p.id !== phaseToDelete);
@@ -202,20 +204,16 @@ export function PhasesSectionContent({
         <div className="space-y-4">
           {lockedPhases.length > 0 && (
             <div className="space-y-3">
-              <p
-                id={lockNoteId}
-                className="flex items-start gap-2 text-sm text-muted-foreground"
-              >
-                <LuLock className="mt-0.5 size-4 shrink-0" aria-hidden />
+              <LockNote id={lockNoteId}>
                 {t('decisions.processBuilder.lockedPhasesNote')}
-              </p>
+              </LockNote>
               <ul
                 aria-describedby={lockNoteId}
                 className="flex flex-col gap-4"
                 data-testid="locked-phases"
               >
                 {lockedPhases.map((phase) => {
-                  const isPast = lock.isPastPhase(phase.id);
+                  const isPast = getLock(phase.id) === 'past';
                   const configured = isPhaseConfigured(phase);
                   return (
                     <li key={phase.id} data-testid="locked-phase-row">
