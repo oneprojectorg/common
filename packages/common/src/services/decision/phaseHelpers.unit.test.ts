@@ -240,6 +240,20 @@ describe('assertPastPhasesUnchanged', () => {
     expect(assertAfter(after)).toThrow(message);
   });
 
+  it.for(['', 'not a date'])(
+    'accepts a resave of a current phase whose stored start date %j does not parse',
+    (startDate) => {
+      const stored = [submission, review, { ...voting, startDate }, results];
+      expect(() =>
+        assertPastPhasesUnchanged({
+          before: stored,
+          after: stored,
+          currentStateId: 'voting',
+        }),
+      ).not.toThrow();
+    },
+  );
+
   it('accepts any change when the decision has no current phase', () => {
     expect(assertAfter([results, voting], null)).not.toThrow();
   });

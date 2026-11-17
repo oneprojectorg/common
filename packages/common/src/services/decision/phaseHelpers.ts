@@ -168,7 +168,10 @@ export const assertPastPhasesUnchanged = ({
 
   const current = before[currentIndex];
   if (
-    toInstant(current?.startDate) !== toInstant(after[currentIndex]?.startDate)
+    !Object.is(
+      toInstant(current?.startDate),
+      toInstant(after[currentIndex]?.startDate),
+    )
   ) {
     throw new ValidationError(
       'The start date of the current phase cannot be changed',
