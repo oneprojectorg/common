@@ -67,13 +67,19 @@ const readAuthUser = async (phone: PhoneNumber) => {
   return row ?? null;
 };
 
-const readProfileId = async (authUserId: string) => {
+const readUserRow = async (authUserId: string) => {
   const [row] = await db
-    .select({ profileId: users.profileId })
+    .select({
+      profileId: users.profileId,
+      tos: users.tos,
+      privacy: users.privacy,
+      tosAcceptedOn: users.tosAcceptedOn,
+      privacyAcceptedOn: users.privacyAcceptedOn,
+    })
     .from(users)
     .where(eq(users.authUserId, authUserId))
     .limit(1);
-  return row?.profileId ?? null;
+  return row ?? null;
 };
 
 const profileExists = async (profileId: string) => {
@@ -100,12 +106,26 @@ const claimNumber = (
   return { phone, code: TEST_NUMBERS[number] };
 };
 
+const bindLine = async (
+  taskId: string,
+  onTestFinished: ConstructorParameters<typeof TestDecisionsDataManager>[1],
+) => {
+  const decisions = new TestDecisionsDataManager(taskId, onTestFinished);
+  const line = parsePhoneNumber(LINE);
+  const setup = await decisions.createDecisionSetup({ instanceCount: 1 });
+  await createDecisionPhoneNumber({
+    processInstanceId: setup.instance.instance.id,
+    phoneNumber: line,
+  });
+  return line;
+};
+
 beforeEach(() => {
   resetRecordedSms();
 });
 
 describe('handleUnknownSmsSignup against the database', () => {
-  it('given a stranger texts something other than JOIN, then they are texted how to join and no account is created', async ({
+  it('given a stranger texts off any decision line, then they are texted help and no account is created', async ({
     task,
     onTestFinished,
   }) => {
@@ -121,22 +141,24 @@ describe('handleUnknownSmsSignup against the database', () => {
     expect(recordedSms).toEqual([
       expect.objectContaining({
         to: phone,
-        body: expect.stringContaining('JOIN'),
+        body: expect.stringContaining('STOP'),
       }),
     ]);
+    expect(recordedSms[0]?.body).not.toContain('JOIN');
     expect(await readAuthUser(phone)).toBeNull();
   });
 
-  it('given a stranger texts, when they reply with the code GoTrue sent, then the number is confirmed, the account exists, and they were texted twice', async ({
+  it('given a stranger texts a decision line, when they reply with the code GoTrue sent, then the account exists with consent stamped, and they were texted twice', async ({
     task,
     onTestFinished,
   }) => {
     const testData = new TestPhoneAuthDataManager(task.id, onTestFinished);
     const { phone, code } = claimNumber('+15005550007', testData);
+    const line = await bindLine(task.id, onTestFinished);
     const t = new InngestTestEngine({ function: handleUnknownSmsSignup });
 
     const { result } = await t.execute({
-      events: [smsInboundEvent({ from: phone, keyword: 'join' })],
+      events: [smsInboundEvent({ from: phone, to: line })],
       steps: replyingWith(phone, code),
     });
 
@@ -145,63 +167,75 @@ describe('handleUnknownSmsSignup against the database', () => {
     expect(result).toEqual({
       message: 'account created',
       authUserId: authUser?.id,
+      replayed: false,
     });
-    expect(await readProfileId(authUser!.id)).toEqual(expect.any(String));
+    const userRow = await readUserRow(authUser!.id);
+    expect(userRow).toMatchObject({
+      profileId: expect.any(String),
+      tos: true,
+      privacy: true,
+      tosAcceptedOn: expect.any(String),
+      privacyAcceptedOn: expect.any(String),
+    });
     expect(recordedSms.map((message) => message.to)).toEqual([phone, phone]);
-    expect(recordedSms.at(-1)?.body).toBe(
-      "You're in! Welcome to Common. Text SHOW to see your decisions.",
-    );
-  });
-
-  it('given a stranger texts JOIN to a bound line, when they reply with the code, then the consent text and the welcome both come from that line', async ({
-    task,
-    onTestFinished,
-  }) => {
-    const testData = new TestPhoneAuthDataManager(task.id, onTestFinished);
-    const decisions = new TestDecisionsDataManager(task.id, onTestFinished);
-    const { phone, code } = claimNumber('+15005550010', testData);
-    const line = parsePhoneNumber(LINE);
-    const setup = await decisions.createDecisionSetup({ instanceCount: 1 });
-    await createDecisionPhoneNumber({
-      processInstanceId: setup.instance.instance.id,
-      phoneNumber: line,
-    });
-    const t = new InngestTestEngine({ function: handleUnknownSmsSignup });
-
-    const { result } = await t.execute({
-      events: [smsInboundEvent({ from: phone, to: line, keyword: 'join' })],
-      steps: replyingWith(phone, code),
-    });
-
-    expect(result).toMatchObject({ message: 'account created' });
-    expect(recordedSms.map((message) => [message.to, message.from])).toEqual([
-      [phone, line],
-      [phone, line],
-    ]);
+    expect(recordedSms[0]?.body).toContain('Terms of Service');
     expect(recordedSms.at(-1)?.body).toBe(
       "You're in! Welcome to Common. Text VOTE to register.",
     );
   });
 
-  it('given an abandoned attempt whose code is older than the reply window, when the number texts again and nobody replies, then the consent text is sent and the unconfirmed account is discarded', async ({
+  it('given a stranger texts VOTE to a bound line, when they reply with the code, then both texts come from that line and the command replays', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestPhoneAuthDataManager(task.id, onTestFinished);
+    const { phone, code } = claimNumber('+15005550010', testData);
+    const line = await bindLine(task.id, onTestFinished);
+    const t = new InngestTestEngine({ function: handleUnknownSmsSignup });
+
+    const { result } = await t.execute({
+      events: [
+        smsInboundEvent({
+          from: phone,
+          to: line,
+          keyword: 'vote',
+          body: 'VOTE',
+        }),
+      ],
+      steps: replyingWith(phone, code),
+    });
+
+    expect(result).toMatchObject({
+      message: 'account created',
+      replayed: true,
+    });
+    expect(recordedSms.map((message) => [message.to, message.from])).toEqual([
+      [phone, line],
+      [phone, line],
+    ]);
+    expect(recordedSms.at(-1)?.body).toBe("You're in! Welcome to Common.");
+  });
+
+  it('given an abandoned attempt whose code is older than the reply window, when the number texts a line again and nobody replies, then the consent text is sent and the unconfirmed account is discarded', async ({
     task,
     onTestFinished,
   }) => {
     const testData = new TestPhoneAuthDataManager(task.id, onTestFinished);
     const { phone } = claimNumber('+15005550008', testData);
+    const line = await bindLine(task.id, onTestFinished);
     const authUserId = await testData.createUser({
       phone,
       confirmed: false,
       codeSentAt: minutesAgo(PHONE_SIGNUP_REPLY_WINDOW_MINUTES + 1),
     });
-    const profileId = await readProfileId(authUserId);
-    if (profileId === null) {
+    const profileId = (await readUserRow(authUserId))?.profileId;
+    if (!profileId) {
       throw new Error('The signup trigger created no profile for the test row');
     }
     const t = new InngestTestEngine({ function: handleUnknownSmsSignup });
 
     const { result } = await t.execute({
-      events: [smsInboundEvent({ from: phone, keyword: 'join' })],
+      events: [smsInboundEvent({ from: phone, to: line })],
       steps: noReply,
     });
 
@@ -230,7 +264,7 @@ describe('handleUnknownSmsSignup against the database', () => {
     const t = new InngestTestEngine({ function: handleUnknownSmsSignup });
 
     const { result } = await t.execute({
-      events: [smsInboundEvent({ from: phone, keyword: 'join' })],
+      events: [smsInboundEvent({ from: phone })],
     });
 
     expect(result).toEqual({ message: 'signup attempt in progress, skipped' });
@@ -249,7 +283,7 @@ describe('handleUnknownSmsSignup against the database', () => {
     const t = new InngestTestEngine({ function: handleUnknownSmsSignup });
 
     const { result } = await t.execute({
-      events: [smsInboundEvent({ from: phone, keyword: 'join' })],
+      events: [smsInboundEvent({ from: phone })],
       steps: [
         { id: 'check-feature-flag', handler: () => true },
         { id: 'check-known-number', handler: () => ({ status: 'free' }) },
@@ -275,13 +309,14 @@ describe('handleUnknownSmsSignup against the database', () => {
     expect(result).toEqual({
       message: 'account created',
       authUserId: expect.any(String),
+      replayed: false,
     });
     const authUser = await readAuthUser(phone);
     expect(authUser?.phoneConfirmedAt).not.toBeNull();
     expect(result).toMatchObject({ authUserId: authUser?.id });
     expect(recordedSms.map((message) => message.to)).toEqual([phone]);
     expect(recordedSms.at(-1)?.body).toBe(
-      "You're in! Welcome to Common. Text SHOW to see your decisions.",
+      "You're in! Welcome to Common. Text VOTE to register.",
     );
   });
 
@@ -295,7 +330,7 @@ describe('handleUnknownSmsSignup against the database', () => {
     const t = new InngestTestEngine({ function: handleUnknownSmsSignup });
 
     const { result } = await t.execute({
-      events: [smsInboundEvent({ from: phone, keyword: 'join' })],
+      events: [smsInboundEvent({ from: phone })],
     });
 
     expect(result).toEqual({ message: 'known number, skipped' });
@@ -316,7 +351,7 @@ describe('handleUnknownSmsSignup against the database', () => {
     delete process.env.NEXT_PUBLIC_E2E;
     try {
       const { result } = await t.execute({
-        events: [smsInboundEvent({ from: phone, keyword: 'join' })],
+        events: [smsInboundEvent({ from: phone })],
       });
 
       expect(result).toEqual({ message: 'sms signup disabled' });
@@ -334,7 +369,6 @@ describe('handleUnknownSmsSignup against the database', () => {
       events: [
         smsInboundEvent({
           from: 'not-a-phone',
-          keyword: 'join',
           messageSid: 'SM-bad',
         }),
       ],
@@ -344,16 +378,17 @@ describe('handleUnknownSmsSignup against the database', () => {
     expect(recordedSms).toEqual([]);
   });
 
-  it('given a stranger texts, when they reply with a wrong code and then go quiet, then no account remains and no welcome is sent', async ({
+  it('given a stranger texts a line, when they reply with a wrong code and then go quiet, then no account remains and no welcome is sent', async ({
     task,
     onTestFinished,
   }) => {
     const testData = new TestPhoneAuthDataManager(task.id, onTestFinished);
     const { phone } = claimNumber('+15005550010', testData);
+    const line = await bindLine(task.id, onTestFinished);
     const t = new InngestTestEngine({ function: handleUnknownSmsSignup });
 
     const { result } = await t.execute({
-      events: [smsInboundEvent({ from: phone, keyword: 'join' })],
+      events: [smsInboundEvent({ from: phone, to: line })],
       steps: [reply(phone, 1, '000000'), silence(2)],
     });
 
@@ -365,16 +400,17 @@ describe('handleUnknownSmsSignup against the database', () => {
     expect(recordedSms.map((message) => message.to)).toEqual([phone]);
   });
 
-  it('given a stranger texts, when they reply with words first and the code second, then the account is created', async ({
+  it('given a stranger texts a line, when they reply with words first and the code second, then the account is created', async ({
     task,
     onTestFinished,
   }) => {
     const testData = new TestPhoneAuthDataManager(task.id, onTestFinished);
     const { phone, code } = claimNumber('+15005550009', testData);
+    const line = await bindLine(task.id, onTestFinished);
     const t = new InngestTestEngine({ function: handleUnknownSmsSignup });
 
     const { result } = await t.execute({
-      events: [smsInboundEvent({ from: phone, keyword: 'join' })],
+      events: [smsInboundEvent({ from: phone, to: line })],
       steps: [reply(phone, 1, null), reply(phone, 2, code)],
     });
 
@@ -383,6 +419,7 @@ describe('handleUnknownSmsSignup against the database', () => {
     expect(result).toEqual({
       message: 'account created',
       authUserId: authUser?.id,
+      replayed: false,
     });
     expect(recordedSms.map((message) => message.to)).toEqual([phone, phone]);
   });

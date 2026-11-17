@@ -16,7 +16,6 @@ import {
   freeText,
   info,
   infoHelp,
-  join,
   list,
   more,
   move,
@@ -149,8 +148,6 @@ export const handleSMSCommand = inngest.createFunction(
     switch (keyword) {
       case null:
         return freeText(context);
-      case 'join':
-        return join(context);
       case 'show':
         return show(context);
       case 'vote':

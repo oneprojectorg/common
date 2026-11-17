@@ -17,6 +17,7 @@ import { AllowListUser, allowListMetadataSchema } from './validators';
 export * from './discardUnconfirmedPhoneSignup';
 export * from './getPhoneSignupState';
 export * from './phoneSignup';
+export * from './recordPhoneSignupConsent';
 
 export interface User {
   id: number;

@@ -80,11 +80,7 @@ import {
 import { Events, inngest } from '@op/events';
 import type { GetStepTools } from 'inngest';
 
-import {
-  SMS_ALREADY_JOINED_MESSAGE,
-  SMS_COMMAND_HELP_MESSAGE,
-  SMS_COMMAND_LIST_MESSAGE,
-} from './smsReply';
+import { SMS_COMMAND_HELP_MESSAGE, SMS_COMMAND_LIST_MESSAGE } from './smsReply';
 
 const SMS_SLUG_LENGTH = 100;
 
@@ -178,15 +174,6 @@ const swallowUnreadable = async <T>(
     }
     throw error;
   }
-};
-
-export const join: SmsCommandHandler = async ({ deliver }) => {
-  const failed = await deliver(
-    'send-already-joined-reply',
-    'Already joined reply',
-    SMS_ALREADY_JOINED_MESSAGE,
-  );
-  return failed ?? { message: 'already joined' };
 };
 
 export const infoHelp: SmsCommandHandler = async ({ deliver }) => {

@@ -4,8 +4,11 @@ import {
   type SmsProvider,
   confirmPhoneSignupCode,
   discardUnconfirmedPhoneSignup,
+  findDecisionPhoneNumber,
   getPhoneSignupState,
   getSmsProvider,
+  parsePhoneNumber,
+  recordPhoneSignupConsent,
   requestPhoneSignupCode,
 } from '@op/common';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -16,10 +19,13 @@ vi.mock('@op/common', () => {
   return {
     confirmPhoneSignupCode: vi.fn(),
     discardUnconfirmedPhoneSignup: vi.fn(),
+    findDecisionPhoneNumber: vi.fn(),
     getPhoneSignupState: vi.fn(),
     getSmsProvider: vi.fn(),
+    recordPhoneSignupConsent: vi.fn(),
     requestPhoneSignupCode: vi.fn(),
     PHONE_SIGNUP_REPLY_WINDOW_MINUTES: 10,
+    parsePhoneNumber: (value: string) => value,
     safeParsePhoneNumber: (value: string) =>
       value === 'not-e164'
         ? {
@@ -38,6 +44,16 @@ import { handleUnknownSmsSignup } from './handleUnknownSmsSignup';
 type SendSms = NonNullable<SmsProvider['sendSms']>;
 
 const FROM = '+15005550006';
+const LINE_PHONE = parsePhoneNumber('+15005550999');
+const LINE = {
+  id: 'line-1',
+  phone: LINE_PHONE,
+  slug: 'columbus',
+  instanceId: 'instance-1',
+} as const;
+
+const onLine = (overrides: Parameters<typeof smsInboundEvent>[0]) =>
+  smsInboundEvent({ to: LINE_PHONE, ...overrides });
 
 const reply = (attempt: number, code: string | null) => ({
   id: `wait-for-confirmation-${attempt}`,
@@ -69,8 +85,10 @@ const confirmed = (n: number) =>
 const unknownNumberWithProvider = (sendSms = vi.fn<SendSms>()) => {
   vi.mocked(isFeatureEnabled).mockResolvedValue(true);
   vi.mocked(getPhoneSignupState).mockResolvedValue(free);
+  vi.mocked(findDecisionPhoneNumber).mockResolvedValue(LINE);
   vi.mocked(getSmsProvider).mockReturnValue({ sendSms });
   vi.mocked(requestPhoneSignupCode).mockResolvedValue({ status: 'sent' });
+  vi.mocked(recordPhoneSignupConsent).mockResolvedValue(undefined);
   vi.mocked(discardUnconfirmedPhoneSignup).mockResolvedValue({
     status: 'discarded',
     authUserId: 'auth-user-1',
@@ -94,7 +112,7 @@ describe('handleUnknownSmsSignup', () => {
     const t = new InngestTestEngine({ function: handleUnknownSmsSignup });
 
     const { result } = await t.execute({
-      events: [smsInboundEvent({ from: FROM, keyword: 'join' })],
+      events: [onLine({ from: FROM, keyword: 'vote' })],
     });
 
     expect(result).toEqual({ message: 'sms signup disabled' });
@@ -108,7 +126,7 @@ describe('handleUnknownSmsSignup', () => {
     const t = new InngestTestEngine({ function: handleUnknownSmsSignup });
 
     const { result } = await t.execute({
-      events: [smsInboundEvent({ from: FROM, keyword: 'join' })],
+      events: [onLine({ from: FROM, keyword: 'vote' })],
     });
 
     expect(getPhoneSignupState).toHaveBeenCalledWith({ phone: FROM });
@@ -126,7 +144,7 @@ describe('handleUnknownSmsSignup', () => {
     const t = new InngestTestEngine({ function: handleUnknownSmsSignup });
 
     const { result } = await t.execute({
-      events: [smsInboundEvent({ from: FROM, keyword: 'join' })],
+      events: [onLine({ from: FROM, keyword: 'vote' })],
     });
 
     expect(result).toEqual({ message: 'signup attempt in progress, skipped' });
@@ -141,7 +159,7 @@ describe('handleUnknownSmsSignup', () => {
     const t = new InngestTestEngine({ function: handleUnknownSmsSignup });
 
     await t.execute({
-      events: [smsInboundEvent({ from: FROM, keyword: 'join' })],
+      events: [onLine({ from: FROM, keyword: 'vote' })],
       steps: [silence(1)],
     });
 
@@ -152,32 +170,36 @@ describe('handleUnknownSmsSignup', () => {
   it('reports sending as unavailable when no Messaging Service is configured', async () => {
     vi.mocked(isFeatureEnabled).mockResolvedValue(true);
     vi.mocked(getPhoneSignupState).mockResolvedValue(free);
+    vi.mocked(findDecisionPhoneNumber).mockResolvedValue(LINE);
     vi.mocked(getSmsProvider).mockReturnValue({});
     const t = new InngestTestEngine({ function: handleUnknownSmsSignup });
 
     const { result } = await t.execute({
-      events: [smsInboundEvent({ from: FROM, keyword: 'join' })],
+      events: [onLine({ from: FROM, keyword: 'vote' })],
     });
 
     expect(result).toEqual({ message: 'sms sending unavailable' });
     expect(requestPhoneSignupCode).not.toHaveBeenCalled();
   });
 
-  it('given a text from an unknown number that is not the JOIN keyword, then it texts help and starts no signup', async () => {
+  it('given a text from an unknown number off any decision line, then it texts help and starts no signup', async () => {
     const sendSms = unknownNumberWithProvider(
       vi.fn<SendSms>().mockResolvedValue(accepted),
     );
+    vi.mocked(findDecisionPhoneNumber).mockResolvedValue(null);
     const t = new InngestTestEngine({ function: handleUnknownSmsSignup });
 
     const { result } = await t.execute({
-      events: [smsInboundEvent({ from: FROM })],
+      events: [smsInboundEvent({ from: FROM, keyword: 'vote' })],
     });
 
     expect(result).toEqual({ message: 'help sent' });
     expect(sendSms).toHaveBeenCalledWith({
       to: FROM,
-      body: expect.stringContaining('JOIN'),
+      body: expect.stringContaining('STOP'),
     });
+    const [{ body }] = vi.mocked(sendSms).mock.calls[0] ?? [{ body: '' }];
+    expect(body).not.toContain('JOIN');
     expect(requestPhoneSignupCode).not.toHaveBeenCalled();
     expect(discardUnconfirmedPhoneSignup).not.toHaveBeenCalled();
   });
@@ -190,10 +212,11 @@ describe('handleUnknownSmsSignup', () => {
         retryable: false,
       }),
     );
+    vi.mocked(findDecisionPhoneNumber).mockResolvedValue(null);
     const t = new InngestTestEngine({ function: handleUnknownSmsSignup });
 
     const { result } = await t.execute({
-      events: [smsInboundEvent({ from: FROM })],
+      events: [smsInboundEvent({ from: FROM, keyword: 'vote' })],
     });
 
     expect(result).toEqual({
@@ -209,9 +232,9 @@ describe('handleUnknownSmsSignup', () => {
 
     const { result } = await t.execute({
       events: [
-        smsInboundEvent({
+        onLine({
           from: 'not-e164',
-          keyword: 'join',
+          keyword: 'vote',
           messageSid: 'SM1',
         }),
       ],
@@ -231,7 +254,7 @@ describe('handleUnknownSmsSignup', () => {
     const t = new InngestTestEngine({ function: handleUnknownSmsSignup });
 
     const { result } = await t.execute({
-      events: [smsInboundEvent({ from: FROM, keyword: 'join' })],
+      events: [onLine({ from: FROM, keyword: 'vote' })],
     });
 
     expect(result).toEqual({
@@ -240,6 +263,24 @@ describe('handleUnknownSmsSignup', () => {
     });
     expect(requestPhoneSignupCode).toHaveBeenCalledWith({ phone: FROM });
     expect(sendSms).not.toHaveBeenCalled();
+  });
+
+  it('names the Terms of Service in the consent text', async () => {
+    const sendSms = unknownNumberWithProvider(
+      vi.fn<SendSms>().mockResolvedValue(accepted),
+    );
+    const t = new InngestTestEngine({ function: handleUnknownSmsSignup });
+
+    await t.execute({
+      events: [onLine({ from: FROM, keyword: 'vote' })],
+      steps: [silence(1)],
+    });
+
+    expect(sendSms).toHaveBeenCalledWith({
+      to: FROM,
+      from: LINE_PHONE,
+      body: expect.stringContaining('Terms of Service'),
+    });
   });
 
   it('aborts the signup when the consent text is permanently rejected', async () => {
@@ -253,7 +294,7 @@ describe('handleUnknownSmsSignup', () => {
     const t = new InngestTestEngine({ function: handleUnknownSmsSignup });
 
     const { result } = await t.execute({
-      events: [smsInboundEvent({ from: FROM, keyword: 'join' })],
+      events: [onLine({ from: FROM, keyword: 'vote' })],
     });
 
     expect(result).toEqual({
@@ -276,7 +317,7 @@ describe('handleUnknownSmsSignup', () => {
     const t = new InngestTestEngine({ function: handleUnknownSmsSignup });
 
     const { error } = await t.execute({
-      events: [smsInboundEvent({ from: FROM, keyword: 'join' })],
+      events: [onLine({ from: FROM, keyword: 'vote' })],
     });
 
     expect(error).toMatchObject({
@@ -293,7 +334,7 @@ describe('handleUnknownSmsSignup', () => {
     const t = new InngestTestEngine({ function: handleUnknownSmsSignup });
 
     const { result } = await t.execute({
-      events: [smsInboundEvent({ from: FROM, keyword: 'join' })],
+      events: [onLine({ from: FROM, keyword: 'vote' })],
       steps: [silence(1)],
     });
 
@@ -320,13 +361,14 @@ describe('handleUnknownSmsSignup', () => {
     const t = new InngestTestEngine({ function: handleUnknownSmsSignup });
 
     const { result } = await t.execute({
-      events: [smsInboundEvent({ from: FROM, keyword: 'join' })],
+      events: [onLine({ from: FROM })],
       steps: [reply(1, null), reply(2, '123456')],
     });
 
     expect(result).toEqual({
       message: 'account created',
       authUserId: 'auth-user-2',
+      replayed: false,
     });
     expect(confirmPhoneSignupCode).toHaveBeenCalledTimes(1);
     expect(confirmPhoneSignupCode).toHaveBeenCalledWith({
@@ -347,7 +389,7 @@ describe('handleUnknownSmsSignup', () => {
     const t = new InngestTestEngine({ function: handleUnknownSmsSignup });
 
     const { result } = await t.execute({
-      events: [smsInboundEvent({ from: FROM, keyword: 'join' })],
+      events: [onLine({ from: FROM, keyword: 'vote' })],
       steps: [reply(1, '000000'), silence(2)],
     });
 
@@ -371,7 +413,7 @@ describe('handleUnknownSmsSignup', () => {
     const t = new InngestTestEngine({ function: handleUnknownSmsSignup });
 
     const { result } = await t.execute({
-      events: [smsInboundEvent({ from: FROM, keyword: 'join' })],
+      events: [onLine({ from: FROM, keyword: 'vote' })],
       steps: [
         reply(1, null),
         reply(2, '000000'),
@@ -390,7 +432,7 @@ describe('handleUnknownSmsSignup', () => {
     discardedThisAttempt();
   });
 
-  it('confirms the texted code with GoTrue and sends a welcome message', async () => {
+  it('given a first text with no keyword, when the code confirms, then the welcome names VOTE and nothing replays', async () => {
     const sendSms = unknownNumberWithProvider(
       vi.fn<SendSms>().mockResolvedValue(accepted),
     );
@@ -404,20 +446,63 @@ describe('handleUnknownSmsSignup', () => {
     const t = new InngestTestEngine({ function: handleUnknownSmsSignup });
 
     const { result } = await t.execute({
-      events: [smsInboundEvent({ from: FROM, keyword: 'join' })],
+      events: [onLine({ from: FROM })],
       steps: [reply(1, '123456')],
     });
 
     expect(result).toEqual({
       message: 'account created',
       authUserId: 'auth-user-2',
+      replayed: false,
     });
-    expect(confirmPhoneSignupCode).toHaveBeenCalledWith({
-      phone: FROM,
-      token: '123456',
+    expect(sendSms).toHaveBeenLastCalledWith({
+      to: FROM,
+      from: LINE_PHONE,
+      body: expect.stringContaining('Text VOTE to register'),
     });
-    expect(sendSms).toHaveBeenCalledTimes(2);
-    expect(discardUnconfirmedPhoneSignup).not.toHaveBeenCalled();
+    expect(recordPhoneSignupConsent).toHaveBeenCalledWith({
+      authUserId: 'auth-user-2',
+    });
+  });
+
+  it('given a first text that was a command, when the code confirms, then it replays the command and the welcome names no next step', async () => {
+    const sendSms = unknownNumberWithProvider(
+      vi.fn<SendSms>().mockResolvedValue(accepted),
+    );
+    vi.mocked(getPhoneSignupState)
+      .mockResolvedValueOnce(free)
+      .mockResolvedValueOnce(confirmed(2));
+    vi.mocked(confirmPhoneSignupCode).mockResolvedValue({
+      status: 'confirmed',
+      authUserId: 'auth-user-2',
+    });
+    const t = new InngestTestEngine({ function: handleUnknownSmsSignup });
+
+    const { result, ctx } = await t.execute({
+      events: [
+        onLine({ from: FROM, keyword: 'vote', messageSid: 'SM-original' }),
+      ],
+      steps: [reply(1, '123456')],
+    });
+
+    expect(result).toEqual({
+      message: 'account created',
+      authUserId: 'auth-user-2',
+      replayed: true,
+    });
+    const welcome = vi.mocked(sendSms).mock.calls.at(-1)?.[0];
+    expect(welcome?.body).toContain("You're in");
+    expect(welcome?.body).not.toContain('Text VOTE to register');
+    expect(ctx.step.sendEvent).toHaveBeenCalledWith(
+      'replay-original-command',
+      expect.objectContaining({
+        data: expect.objectContaining({
+          from: FROM,
+          keyword: 'vote',
+          messageSid: 'SM-original-replay',
+        }),
+      }),
+    );
   });
 
   it('still reports success when only the welcome reply is rejected', async () => {
@@ -438,13 +523,14 @@ describe('handleUnknownSmsSignup', () => {
     const t = new InngestTestEngine({ function: handleUnknownSmsSignup });
 
     const { result } = await t.execute({
-      events: [smsInboundEvent({ from: FROM, keyword: 'join' })],
+      events: [onLine({ from: FROM })],
       steps: [reply(1, '123456')],
     });
 
     expect(result).toEqual({
       message: 'account created',
       authUserId: 'auth-user-3',
+      replayed: false,
     });
   });
 });

@@ -28,10 +28,7 @@ import {
 import { SmsCommandFixture } from '../../../testing/smsCommandFixture';
 import { smsInboundEvent } from '../../../testing/smsInboundEvent';
 import { handleSMSCommand } from './handleSMSCommand';
-import {
-  SMS_ALREADY_JOINED_MESSAGE,
-  SMS_COMMAND_HELP_MESSAGE,
-} from './smsReply';
+import { SMS_COMMAND_HELP_MESSAGE } from './smsReply';
 
 const NUMBERS = {
   member: '+15005550090',
@@ -453,7 +450,7 @@ describe('handleSMSCommand against the database', () => {
     ]);
   });
 
-  it('given a member texts JOIN, then they are told they already have an account and how to see their decisions', async ({
+  it('given a member texts join, then it reads as free text and they are texted the help message', async ({
     task,
     onTestFinished,
   }) => {
@@ -464,13 +461,18 @@ describe('handleSMSCommand against the database', () => {
 
     const { result } = await t.execute({
       events: [
-        smsInboundEvent({ from: phone, keyword: 'join', argument: null }),
+        smsInboundEvent({
+          from: phone,
+          keyword: null,
+          argument: null,
+          body: 'join',
+        }),
       ],
     });
 
-    expect(result).toEqual({ message: 'already joined' });
+    expect(result).toEqual({ message: 'help sent' });
     expect(recordedSms.map((sms) => sms.body)).toEqual([
-      SMS_ALREADY_JOINED_MESSAGE,
+      SMS_COMMAND_HELP_MESSAGE,
     ]);
   });
 

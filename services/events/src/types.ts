@@ -227,7 +227,11 @@ export const Events = {
       from: z.string(),
       messageSid: z.string(),
       code: z.string().nullable(),
-      keyword: z.enum(SMS_KEYWORDS).nullable(),
+      // 'join' was a keyword until auto-join shipped; queued events may still carry it.
+      keyword: z.preprocess(
+        (value) => (value === 'join' ? null : value),
+        z.enum(SMS_KEYWORDS).nullable(),
+      ),
       argument: z.string().nullable().default(null),
       to: z.string().nullable().default(null),
       body: z.string().nullable().default(null),

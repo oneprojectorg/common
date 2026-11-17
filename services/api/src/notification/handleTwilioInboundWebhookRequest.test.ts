@@ -94,7 +94,7 @@ describe('handleTwilioInboundWebhookRequest', () => {
     });
   });
 
-  it('given a text that is the JOIN keyword, when forwarded, then the event carries the keyword and not the text', async () => {
+  it('given a text that was the retired JOIN keyword, when forwarded, then the event carries no keyword and keeps the text', async () => {
     process.env.TWILIO_AUTH_TOKEN = AUTH_TOKEN;
     const params = { ...MESSAGE_PARAMS, Body: ' Join! ' };
     const signature = signTwilioRequest(AUTH_TOKEN, URL, params);
@@ -113,7 +113,7 @@ describe('handleTwilioInboundWebhookRequest', () => {
         from: '+15005550006',
         messageSid: 'SM456',
         code: null,
-        keyword: 'join',
+        keyword: null,
         argument: null,
         to: '+16145550100',
         body: ' Join! ',

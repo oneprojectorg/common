@@ -1,5 +1,4 @@
 export const SMS_BARE_KEYWORDS = [
-  'join',
   'agree',
   'more',
   'list',

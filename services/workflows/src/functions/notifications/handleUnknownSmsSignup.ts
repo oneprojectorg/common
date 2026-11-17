@@ -8,6 +8,7 @@ import {
   getPhoneSignupState,
   parsePhoneNumber,
   PHONE_SIGNUP_REPLY_WINDOW_MINUTES,
+  recordPhoneSignupConsent,
   requestPhoneSignupCode,
 } from '@op/common';
 import { Events, inngest } from '@op/events';
@@ -31,13 +32,13 @@ const MAX_REPLY_ATTEMPTS = 3;
 const DEBOUNCE_PERIOD = '5s';
 const REPLY_WINDOW_MS = PHONE_SIGNUP_REPLY_WINDOW_MINUTES * 60_000;
 const HELP_MESSAGE =
-  'Text JOIN to sign up. Reply STOP to unsubscribe. Msg&Data Rates May Apply.';
+  "This number cannot sign you up. Text your group's decision number to get started. Reply STOP to unsubscribe. Msg&Data Rates May Apply.";
 const CONSENT_MESSAGE =
-  'Reply with the code we just texted you to create your Common account.';
-const welcomeMessage = (onDecisionLine: boolean): string =>
-  onDecisionLine
-    ? "You're in! Welcome to Common. Text VOTE to register."
-    : "You're in! Welcome to Common. Text SHOW to see your decisions.";
+  'Reply with the code we just texted you to create your Common account. By replying you agree to our Terms of Service and Privacy Policy.';
+const welcomeMessage = (replaying: boolean): string =>
+  replaying
+    ? "You're in! Welcome to Common."
+    : "You're in! Welcome to Common. Text VOTE to register.";
 const { smsInboundReceived } = Events;
 
 type ConfirmationOutcome =
@@ -74,6 +75,10 @@ export const handleUnknownSmsSignup = inngest.createFunction(
       from,
       to: inboundTo,
       keyword,
+      messageSid,
+      code,
+      argument,
+      body,
     } = smsInboundReceived.schema.parse(event.data);
 
     logger.info('SMS Signup trigger');
@@ -100,6 +105,10 @@ export const handleUnknownSmsSignup = inngest.createFunction(
         return { flagEnabled, state, line };
       },
     );
+
+    // A run parked on the code wait before auto-join shipped resumes with the
+    // legacy step shape; it joined under the old contract, so no line gate.
+    const resumedLegacyRun = !('flagEnabled' in resolved);
 
     const context =
       'flagEnabled' in resolved
@@ -154,7 +163,7 @@ export const handleUnknownSmsSignup = inngest.createFunction(
       return SMS_UNAVAILABLE_RESULT;
     }
 
-    if (keyword !== 'join') {
+    if (!line && !resumedLegacyRun) {
       const helpResult = await sendText(
         'send-help-reply',
         'Help reply',
@@ -168,7 +177,9 @@ export const handleUnknownSmsSignup = inngest.createFunction(
         return { message: 'help send rejected', reason: helpResult.reason };
       }
 
-      logger.info('Inbound SMS from an unknown number was not JOIN, sent help');
+      logger.info(
+        'Inbound SMS from an unknown number off any decision line, sent help',
+      );
       return { message: 'help sent' };
     }
 
@@ -289,16 +300,37 @@ export const handleUnknownSmsSignup = inngest.createFunction(
 
     const { authUserId } = outcome;
 
+    await step.run('record-signup-consent', () =>
+      recordPhoneSignupConsent({ authUserId }),
+    );
+
+    const replaying = keyword !== null;
+
     const welcomeResult = await sendText(
       'send-welcome-reply',
       'Welcome message',
-      welcomeMessage(line !== null),
+      welcomeMessage(replaying),
     );
 
     if (welcomeResult.status === 'rejected') {
       logger.warn('Welcome message permanently rejected', {
         authUserId,
         reason: welcomeResult.reason,
+      });
+    }
+
+    if (replaying) {
+      await step.sendEvent('replay-original-command', {
+        name: smsInboundReceived.name,
+        data: {
+          from,
+          messageSid: `${messageSid}-replay`,
+          code,
+          keyword,
+          argument,
+          to: inboundTo,
+          body,
+        },
       });
     }
 
@@ -314,6 +346,6 @@ export const handleUnknownSmsSignup = inngest.createFunction(
       profileId,
     });
 
-    return { message: 'account created', authUserId };
+    return { message: 'account created', authUserId, replayed: replaying };
   },
 );
