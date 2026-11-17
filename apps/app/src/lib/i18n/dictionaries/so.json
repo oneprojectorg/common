@@ -1666,7 +1666,7 @@
       "advancedStatus": "Horay loo gudbiyay",
       "proposalTab": "Soo jeedin",
       "originSectionsLabel": "Qaybaha soo jeedinta",
-      "originSelectLabel": "Soo jeedinta asalka ah",
+      "noEntry": "Soo jeedintan weli gelis ma laha.",
       "noReviews": "Weli dib-u-eegis looma samayn soo jeedintan.",
       "advancedToast": "“{title}” horay ayaa loo gudbiyay",
       "readOnlyNotice": "Waad arki kartaa gelistan, laakiin wax kama beddeli kartid."

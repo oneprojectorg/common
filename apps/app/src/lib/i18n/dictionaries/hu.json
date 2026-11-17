@@ -1666,7 +1666,7 @@
       "advancedStatus": "Továbbjutott",
       "proposalTab": "Javaslat",
       "originSectionsLabel": "A javaslat részei",
-      "originSelectLabel": "Eredeti javaslat",
+      "noEntry": "Ehhez a javaslathoz még nincs bejegyzés.",
       "noReviews": "Ehhez a javaslathoz még nincs értékelés.",
       "advancedToast": "„{title}” továbbjutott",
       "readOnlyNotice": "Ezt a bejegyzést megtekintheti, de nem szerkesztheti."
