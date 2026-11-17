@@ -10,6 +10,7 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from '@op/sense/Empty';
+import { Header3 } from '@op/sense/Header';
 import { Tabs, TabsContent } from '@op/sense/Tabs';
 import { Suspense, useState } from 'react';
 import { LuTriangleAlert } from 'react-icons/lu';
@@ -21,6 +22,7 @@ import { ProposalQueryProvider } from '../Proposal/ProposalQueryProvider';
 import { ProposalTabList, ProposalTabTrigger } from '../Proposal/ProposalTabs';
 import { useProposal } from '../Proposal/proposalContext';
 import { ResponsiveSelect } from '../ResponsiveSelect';
+import type { PreviousReviewPhase } from '../Review/ReviewTabs';
 import {
   PhaseReviews,
   PhaseReviewsTabPanel,
@@ -33,16 +35,13 @@ type SourceTab = 'proposal' | 'reviews';
 export function DevelopSourceColumn({
   sources,
   decisionRoot,
-  sourcePhaseId,
-  canReadReviews,
+  reviewPhases,
 }: {
   /** At least one. */
   sources: RelatedProposal[];
   decisionRoot: string;
-  /** The phase the sources come from; absent when the develop phase is first. */
-  sourcePhaseId: string | null;
-  /** Mirrors the server gate on the source phase's reviews. */
-  canReadReviews: boolean;
+  /** The earlier review phases whose reviews the caller may read. */
+  reviewPhases: PreviousReviewPhase[];
 }) {
   const t = useTranslations('decisions');
   const [selectedId, setSelectedId] = useState(sources[0]?.id ?? '');
@@ -84,9 +83,7 @@ export function DevelopSourceColumn({
             profileId={source.profile.id}
             decisionRoot={decisionRoot}
           >
-            <SourceSections
-              sourcePhaseId={canReadReviews ? sourcePhaseId : null}
-            />
+            <SourceSections reviewPhases={reviewPhases} />
           </ProposalQueryProvider>
         </Suspense>
       </APIErrorBoundary>
@@ -94,7 +91,11 @@ export function DevelopSourceColumn({
   );
 }
 
-function SourceSections({ sourcePhaseId }: { sourcePhaseId: string | null }) {
+function SourceSections({
+  reviewPhases,
+}: {
+  reviewPhases: PreviousReviewPhase[];
+}) {
   const t = useTranslations('decisions');
   const { proposal } = useProposal();
   const [tab, setTab] = useState<SourceTab>('proposal');
@@ -114,10 +115,10 @@ function SourceSections({ sourcePhaseId }: { sourcePhaseId: string | null }) {
         <ProposalTabTrigger value="proposal">
           {t('developEditor.proposalTab')}
         </ProposalTabTrigger>
-        {sourcePhaseId ? (
+        {reviewPhases.length > 0 ? (
           <ProposalTabTrigger
             value="reviews"
-            count={<ReviewsCount phaseId={sourcePhaseId} />}
+            count={<ReviewsCount phases={reviewPhases} />}
           >
             {t('review.reviewsTab')}
           </ProposalTabTrigger>
@@ -127,31 +128,54 @@ function SourceSections({ sourcePhaseId }: { sourcePhaseId: string | null }) {
       <TabsContent value="proposal">
         <ProposalBody engagement={false} />
       </TabsContent>
-      {sourcePhaseId ? (
+      {reviewPhases.length > 0 ? (
         <PhaseReviewsTabPanel value="reviews">
-          <PhaseReviews
-            processInstanceId={proposal.processInstanceId}
-            proposalId={proposal.id}
-            phaseId={sourcePhaseId}
-            isCurrentPhase={false}
-            emptyMessage={t('developEditor.noReviews')}
-          />
+          <div className="flex flex-col gap-8">
+            {reviewPhases.map((phase) => (
+              <section key={phase.id} className="flex flex-col gap-4">
+                {reviewPhases.length > 1 ? (
+                  <Header3>
+                    <bdi>{phase.name}</bdi>
+                  </Header3>
+                ) : null}
+                <PhaseReviews
+                  processInstanceId={proposal.processInstanceId}
+                  proposalId={proposal.id}
+                  phaseId={phase.id}
+                  isCurrentPhase={false}
+                  emptyMessage={t('developEditor.noReviews')}
+                />
+              </section>
+            ))}
+          </div>
         </PhaseReviewsTabPanel>
       ) : null}
     </Tabs>
   );
 }
 
-/** Not suspense, so the trigger never suspends; the panel's input, so one request. */
-function ReviewsCount({ phaseId }: { phaseId: string }) {
+/** Not suspense, so the trigger never suspends; the panels' inputs, so no extra request. */
+function ReviewsCount({ phases }: { phases: PreviousReviewPhase[] }) {
   const { proposal } = useProposal();
-  const { data } = trpc.decision.getProposalWithReviewAggregates.useQuery({
-    processInstanceId: proposal.processInstanceId,
-    proposalId: proposal.id,
-    phaseId,
-  });
+  const results = trpc.useQueries((t) =>
+    phases.map((phase) =>
+      t.decision.getProposalWithReviewAggregates({
+        processInstanceId: proposal.processInstanceId,
+        proposalId: proposal.id,
+        phaseId: phase.id,
+      }),
+    ),
+  );
 
-  return data ? data.reviews.length : null;
+  let total = 0;
+  for (const { data } of results) {
+    if (!data) {
+      return null;
+    }
+    total += data.reviews.length;
+  }
+
+  return total;
 }
 
 function SourceUnavailable() {

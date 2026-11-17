@@ -8,16 +8,20 @@ import {
 import {
   type Proposal,
   type ProposalTemplateSchema,
-  resolveReviewSettings,
+  getPreviousReviewPhases,
+  hasOpenReviews,
 } from '@op/common/client';
+import { Spinner } from '@op/sense/Spinner';
 import type { JSONContent } from '@tiptap/react';
 import { notFound } from 'next/navigation';
 
 import { useTranslations } from '@/lib/i18n';
 
+import { DocumentNotAvailable } from '../DocumentNotAvailable';
 import { compileProposalSchema } from '../forms/proposal';
 import { ProposalFormRenderer } from '../proposalEditor/ProposalFormRenderer';
 import { decisionRootHref } from '../proposalHrefs';
+import { useLiveProposalDocument } from '../useLiveProposalDocument';
 import { DevelopProposalEditor } from './DevelopProposalEditor';
 import { DevelopProposalFrame } from './DevelopProposalFrame';
 import { DevelopSourceColumn } from './DevelopSourceColumn';
@@ -69,20 +73,21 @@ export function DevelopProposalRoute({
   });
   const description = template.description || undefined;
 
-  const phases = instance.instanceData.phases ?? [];
-  const currentIndex = phases.findIndex(
-    (phase) => phase.phaseId === instance.currentStateId,
-  );
-  const sourcePhaseId =
-    currentIndex > 0 ? (phases[currentIndex - 1]?.phaseId ?? null) : null;
-
-  // Mirrors the server's `canReadPhaseReviews` on the source phase.
-  const canReadReviews =
-    Boolean(instance.access?.admin) ||
-    (Boolean(instance.access?.review) &&
-      !!sourcePhaseId &&
-      resolveReviewSettings(instance.instanceData ?? {}, sourcePhaseId)
-        .openReviews);
+  // Every earlier review phase, as the review screens list them. The filter
+  // mirrors the server's `canReadPhaseReviews`.
+  const isAdmin = Boolean(instance.access?.admin);
+  const canReview = Boolean(instance.access?.review);
+  const reviewPhases = instance.currentStateId
+    ? getPreviousReviewPhases(
+        instance.instanceData ?? {},
+        instance.currentStateId,
+      )
+        .filter((phase) => isAdmin || (canReview && hasOpenReviews(phase)))
+        .map((phase) => ({
+          id: phase.phaseId,
+          name: phase.name ?? phase.phaseId,
+        }))
+    : [];
 
   const sourceLabel = t('decisions.developEditor.proposalTab');
   const source = (
@@ -93,8 +98,7 @@ export function DevelopProposalRoute({
         slug: decisionSlug,
         instanceId: instance.id,
       })}
-      sourcePhaseId={sourcePhaseId}
-      canReadReviews={canReadReviews}
+      reviewPhases={reviewPhases}
     />
   );
 
@@ -125,20 +129,53 @@ export function DevelopProposalRoute({
         </p>
       }
     >
-      <ProposalFormRenderer
-        fields={compileProposalSchema(template)}
-        draft={{
-          title: proposal.profile.name ?? '',
-          category: [],
-          budget: null,
-          location: null,
-        }}
+      <ReadOnlyFields
+        initialProposal={proposal}
+        template={template}
         decisionProfileId={instance.profileId ?? null}
-        onFieldChange={() => {}}
-        mode="preview-version"
-        previewVersionFragmentContents={getStoredFragments(proposal)}
       />
     </DevelopProposalFrame>
+  );
+}
+
+/** The stored fields, re-read while the document is still propagating. */
+function ReadOnlyFields({
+  initialProposal,
+  template,
+  decisionProfileId,
+}: {
+  initialProposal: Proposal;
+  template: ProposalTemplateSchema;
+  decisionProfileId: string | null;
+}) {
+  const { proposal, documentState } = useLiveProposalDocument(initialProposal);
+
+  if (documentState === 'pending') {
+    return (
+      <div className="flex justify-center py-8">
+        <Spinner />
+      </div>
+    );
+  }
+
+  if (documentState === 'error') {
+    return <DocumentNotAvailable className="py-4" />;
+  }
+
+  return (
+    <ProposalFormRenderer
+      fields={compileProposalSchema(template)}
+      draft={{
+        title: proposal.profile.name ?? '',
+        category: [],
+        budget: null,
+        location: null,
+      }}
+      decisionProfileId={decisionProfileId}
+      onFieldChange={() => {}}
+      mode="preview-version"
+      previewVersionFragmentContents={getStoredFragments(proposal)}
+    />
   );
 }
 
