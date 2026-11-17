@@ -1,23 +1,15 @@
-import { cn } from '@op/sense/lib/utils';
+import { Alert, AlertDescription } from '@op/sense/Alert';
 import type { ComponentProps } from 'react';
 import { LuLock } from 'react-icons/lu';
 
-/** Muted lock-icon note; give it an `id` for the locked controls' `aria-describedby`. */
-export function LockNote({
-  className,
-  children,
-  ...props
-}: ComponentProps<'p'>) {
+/** Info alert with a lock icon; give it an `id` for the locked controls' `aria-describedby`. */
+export function LockNote({ children, ...props }: ComponentProps<'div'>) {
   return (
-    <p
-      className={cn(
-        'flex items-start gap-2 text-sm text-muted-foreground',
-        className,
-      )}
-      {...props}
-    >
-      <LuLock className="mt-0.5 size-4 shrink-0" aria-hidden />
-      {children}
-    </p>
+    // `role="note"`: shown on load, so the default `alert` role would
+    // interrupt the screen reader with it.
+    <Alert variant="info" role="note" {...props}>
+      <LuLock aria-hidden />
+      <AlertDescription>{children}</AlertDescription>
+    </Alert>
   );
 }
