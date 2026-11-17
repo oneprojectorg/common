@@ -1673,12 +1673,12 @@
     "developEditor": {
       "entryHeading": "المُدخل",
       "advanceAction": "تقديم",
-      "advancedStatus": "تم التقديم",
       "proposalTab": "المقترح",
       "sourceSectionsLabel": "أقسام المقترح",
       "sourceSelectLabel": "المقترح المصدر",
       "noReviews": "لا توجد مراجعات لهذا المقترح بعد.",
       "advancedToast": "تم تقديم «{title}»",
+      "savedToast": "تم حفظ «{title}»",
       "readOnlyNotice": "يمكنك عرض هذا المُدخل دون تعديله."
     },
     "develop": {

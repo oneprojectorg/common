@@ -1673,12 +1673,12 @@
     "developEditor": {
       "entryHeading": "Bejegyzés",
       "advanceAction": "Továbbjuttatás",
-      "advancedStatus": "Továbbjutott",
       "proposalTab": "Javaslat",
       "sourceSectionsLabel": "A javaslat részei",
       "sourceSelectLabel": "Forrásjavaslat",
       "noReviews": "Ehhez a javaslathoz még nincs értékelés.",
       "advancedToast": "„{title}” továbbjutott",
+      "savedToast": "„{title}” mentve",
       "readOnlyNotice": "Ezt a bejegyzést megtekintheti, de nem szerkesztheti."
     },
     "develop": {

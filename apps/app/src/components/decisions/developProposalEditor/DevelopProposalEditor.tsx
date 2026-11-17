@@ -3,7 +3,6 @@
 import { trpc } from '@op/api/client';
 import type { ProcessInstance } from '@op/api/encoders';
 import type { Proposal } from '@op/common/client';
-import { Badge } from '@op/sense/Badge';
 import { Button } from '@op/sense/Button';
 import { toast } from '@op/sense/Toast';
 import { type ReactNode, useRef, useState } from 'react';
@@ -32,8 +31,8 @@ interface DevelopProposalEditorProps {
 }
 
 /**
- * Edits a proposal developed from sources. After a draft is advanced the form
- * stays editable for as long as the server reports it editable.
+ * Edits a proposal developed from sources: a draft is advanced, and an advanced
+ * entry is saved while the server reports it editable.
  */
 export function DevelopProposalEditor({
   instance,
@@ -74,7 +73,6 @@ function DevelopHeaderActions({
   proposal: Proposal;
   backHref: string;
 }) {
-  const t = useTranslations();
   const {
     state: { isDraft },
   } = useProposalForm();
@@ -85,9 +83,7 @@ function DevelopHeaderActions({
       {isDraft ? (
         <AdvanceButton proposal={proposal} backHref={backHref} />
       ) : (
-        <Badge variant="success">
-          {t('decisions.developEditor.advancedStatus')}
-        </Badge>
+        <SaveChangesButton backHref={backHref} />
       )}
     </>
   );
@@ -104,19 +100,71 @@ function AdvanceButton({
   const router = useRouter();
   const {
     state: { draft },
-    actions: { validate, save },
+    actions: { save },
   } = useProposalForm();
-  const [isAdvancing, setIsAdvancing] = useState(false);
-  // A ref, not `isAdvancing`: a second click can land before the re-render.
-  const advanceInFlightRef = useRef(false);
 
   const submitDevelopedProposal =
     trpc.decision.submitDevelopedProposal.useMutation({
       onError: (error) => handleMutationError(error, 'submit', t),
     });
 
-  const handleAdvance = async () => {
-    if (advanceInFlightRef.current) {
+  const { handleSubmit, isSubmitting } = useValidatedSubmit(async () => {
+    await save();
+    await submitDevelopedProposal.mutateAsync({ proposalId: proposal.id });
+    toast.success(
+      t('decisions.developEditor.advancedToast', {
+        title: draft.title || t('decisions.develop.untitledEntry'),
+      }),
+    );
+    router.push(backHref);
+  });
+
+  return (
+    <Button onClick={handleSubmit} loading={isSubmitting}>
+      <LuCheck className="size-4" />
+      {t('decisions.developEditor.advanceAction')}
+    </Button>
+  );
+}
+
+/** Saves an advanced entry, editable until the develop window closes. */
+function SaveChangesButton({ backHref }: { backHref: string }) {
+  const t = useTranslations();
+  const router = useRouter();
+  const {
+    state: { draft },
+    actions: { save },
+  } = useProposalForm();
+
+  const { handleSubmit, isSubmitting } = useValidatedSubmit(async () => {
+    await save();
+    toast.success(
+      t('decisions.developEditor.savedToast', {
+        title: draft.title || t('decisions.develop.untitledEntry'),
+      }),
+    );
+    router.push(backHref);
+  });
+
+  return (
+    <Button onClick={handleSubmit} loading={isSubmitting}>
+      {t('Save changes')}
+    </Button>
+  );
+}
+
+/** Validates the form, then runs `submit` once at a time. */
+function useValidatedSubmit(submit: () => Promise<void>) {
+  const t = useTranslations();
+  const {
+    actions: { validate },
+  } = useProposalForm();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  // A ref, not `isSubmitting`: a second click can land before the re-render.
+  const inFlightRef = useRef(false);
+
+  const handleSubmit = async () => {
+    if (inFlightRef.current) {
       return;
     }
 
@@ -128,30 +176,18 @@ function AdvanceButton({
       return;
     }
 
-    advanceInFlightRef.current = true;
-    setIsAdvancing(true);
+    inFlightRef.current = true;
+    setIsSubmitting(true);
 
     try {
-      await save();
-      await submitDevelopedProposal.mutateAsync({ proposalId: proposal.id });
-      toast.success(
-        t('decisions.developEditor.advancedToast', {
-          title: draft.title || t('decisions.develop.untitledEntry'),
-        }),
-      );
-      router.push(backHref);
+      await submit();
     } catch {
       // The mutations' `onError` already logged the failure and showed a toast.
     } finally {
-      advanceInFlightRef.current = false;
-      setIsAdvancing(false);
+      inFlightRef.current = false;
+      setIsSubmitting(false);
     }
   };
 
-  return (
-    <Button onClick={handleAdvance} loading={isAdvancing}>
-      <LuCheck className="size-4" />
-      {t('decisions.developEditor.advanceAction')}
-    </Button>
-  );
+  return { handleSubmit, isSubmitting };
 }

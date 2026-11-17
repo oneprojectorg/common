@@ -1673,12 +1673,12 @@
     "developEditor": {
       "entryHeading": "Gelis",
       "advanceAction": "Horay u gudbi",
-      "advancedStatus": "Horay loo gudbiyay",
       "proposalTab": "Soo jeedin",
       "sourceSectionsLabel": "Qaybaha soo jeedinta",
       "sourceSelectLabel": "Soo jeedinta isha ah",
       "noReviews": "Weli dib-u-eegis looma samayn soo jeedintan.",
       "advancedToast": "“{title}” horay ayaa loo gudbiyay",
+      "savedToast": "“{title}” waa la kaydiyay",
       "readOnlyNotice": "Waad arki kartaa gelistan, laakiin wax kama beddeli kartid."
     },
     "develop": {

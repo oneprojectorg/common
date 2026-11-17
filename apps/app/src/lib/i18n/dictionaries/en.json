@@ -1673,12 +1673,12 @@
     "developEditor": {
       "entryHeading": "Entry",
       "advanceAction": "Advance",
-      "advancedStatus": "Advanced",
       "proposalTab": "Proposal",
       "sourceSectionsLabel": "Proposal sections",
       "sourceSelectLabel": "Source proposal",
       "noReviews": "No reviews for this proposal yet.",
       "advancedToast": "“{title}” advanced",
+      "savedToast": "“{title}” saved",
       "readOnlyNotice": "You can view this entry but not edit it."
     },
     "develop": {
