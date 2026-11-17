@@ -1,5 +1,5 @@
 import { mockCollab } from '@op/collab/testing';
-import { parseProposalData } from '@op/common';
+import { type PhaseInstanceData, parseProposalData } from '@op/common';
 import {
   TestDecisionsDataManager,
   TestReviewsDataManager,
@@ -7,6 +7,7 @@ import {
   createDevelopProposalsMember,
   createRevisionRequest,
   updateInstancePhase,
+  updateInstancePhases,
 } from '@op/common/testing';
 import { db, eq } from '@op/db/client';
 import {
@@ -37,10 +38,10 @@ async function createAuthenticatedCaller(email: string) {
   return createCaller(await createTestContextWithSession(session));
 }
 
-/** Sets the "Proposal editing" rule on the instance's current phase. */
-async function setProposalEditingRule(
+/** Rewrites the instance's current phase row. */
+async function updateCurrentPhase(
   processInstanceId: string,
-  edit: boolean,
+  update: (phase: PhaseInstanceData) => PhaseInstanceData,
 ): Promise<void> {
   const instanceRecord = await db.query.processInstances.findFirst({
     where: { id: processInstanceId },
@@ -54,14 +55,22 @@ async function setProposalEditingRule(
   await updateInstancePhase({
     instanceId: processInstanceId,
     phaseId: instanceRecord.currentStateId,
-    update: (phase) => ({
-      ...phase,
-      rules: {
-        ...phase.rules,
-        proposals: { ...phase.rules?.proposals, edit },
-      },
-    }),
+    update,
   });
+}
+
+/** Sets the "Proposal editing" rule on the instance's current phase. */
+async function setProposalEditingRule(
+  processInstanceId: string,
+  edit: boolean,
+): Promise<void> {
+  await updateCurrentPhase(processInstanceId, (phase) => ({
+    ...phase,
+    rules: {
+      ...phase.rules,
+      proposals: { ...phase.rules?.proposals, edit },
+    },
+  }));
 }
 
 describe.concurrent('updateProposal visibility', () => {
@@ -1336,19 +1345,13 @@ describe.concurrent('updateProposal develop window', () => {
       testData,
       advance: true,
     });
-    await updateInstancePhases(instanceId, (phases, currentStateId) =>
-      phases.map((phase) =>
-        phase.phaseId === currentStateId
-          ? {
-              ...phase,
-              rules: {
-                ...phase.rules,
-                proposals: { ...phase.rules?.proposals, develop: false },
-              },
-            }
-          : phase,
-      ),
-    );
+    await updateCurrentPhase(instanceId, (phase) => ({
+      ...phase,
+      rules: {
+        ...phase.rules,
+        proposals: { ...phase.rules?.proposals, develop: false },
+      },
+    }));
 
     const detail = await caller.decision.getProposal({
       profileId: entry.profileId,
@@ -1404,10 +1407,13 @@ async function createDevelopEntry({
   const { setup, instanceId, source } = await createDevelopPhaseSetup({
     testData,
   });
-  await updateInstancePhases(instanceId, (phases) => [
-    ...phases,
-    { phaseId: 'results', name: 'Results', rules: {} },
-  ]);
+  await updateInstancePhases({
+    instanceId,
+    update: (phases) => [
+      ...phases,
+      { phaseId: 'results', name: 'Results', rules: {} },
+    ],
+  });
   const developer = await createDevelopProposalsMember({ testData, setup });
   const caller = await createAuthenticatedCaller(developer.email);
   const entry = await caller.decision.createDevelopedProposal({
