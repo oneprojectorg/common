@@ -16,20 +16,17 @@ const developPrefillMappingsSchema = z.array(schemaMappingSchema);
 export function getDevelopPrefillMappings(
   phase: PhaseInstanceData,
 ): SchemaMapping[] {
-  if (phase.developPrefillMappings === undefined) {
+  const mappings = phase.developPrefillMappings;
+  if (mappings === undefined) {
     return [];
   }
 
-  const result = developPrefillMappingsSchema.safeParse(
-    phase.developPrefillMappings,
-  );
-  if (!result.success) {
+  if (!developPrefillMappingsSchema.validate(mappings)) {
     logger.error('Ignoring invalid develop prefill mappings', {
       phaseId: phase.phaseId,
-      error: result.error,
     });
     return [];
   }
 
-  return result.data;
+  return mappings;
 }
