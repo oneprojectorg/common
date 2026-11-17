@@ -96,7 +96,8 @@ describe('encodeFragmentCopies', () => {
     expect(list.nodeName).toBe('bulletList');
     expect(list.getAttribute('class')).toBe('tight');
     expect(list.toString()).toBe(
-      '<bulletList class="tight"><listItem><paragraph>Oaks</paragraph></listItem></bulletList>',
+      // `toString` lowercases node names.
+      '<bulletlist class="tight"><listitem><paragraph>Oaks</paragraph></listitem></bulletlist>',
     );
   });
 
