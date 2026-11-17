@@ -4,12 +4,15 @@ import { randomUUID } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 
 import {
+  DAY_MS,
   PHASE_NAME,
   createUnauthenticatedCaller,
   loadBlobPhases,
   loadTransitionLinks,
+  setupDraftDecisionWithPastPhases,
   setupPhase,
   setupPublishedDateDecision,
+  setupPublishedDecisionAtThirdPhase,
 } from '../../../test/helpers/phaseTestUtils';
 import { createAuthenticatedCaller } from '../../../test/supabase-utils';
 
@@ -326,6 +329,119 @@ describe.concurrent('reorderPhases', () => {
     ).rejects.toMatchObject({
       cause: { name: 'AccessTierError', callerTier: 'none' },
     });
+  });
+});
+
+describe.concurrent('reorderPhases past phases', () => {
+  it('refuses swapping two phases the decision has left', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { instanceId, adminCaller, rows } =
+      await setupPublishedDecisionAtThirdPhase(task, onTestFinished);
+    const rowsBefore = await loadPhaseRows(instanceId);
+
+    await expect(
+      adminCaller.decision.reorderPhases({
+        instanceId,
+        phases: [rows.review, rows.submission, rows.voting, rows.results].map(
+          ({ id }) => ({ phaseId: id }),
+        ),
+      }),
+    ).rejects.toMatchObject({
+      cause: {
+        name: 'ValidationError',
+        message:
+          'Phases up to the current phase cannot be removed, added or reordered',
+      },
+    });
+
+    expect(await loadPhaseRows(instanceId)).toEqual(rowsBefore);
+  });
+
+  it.for([
+    {
+      label: 'a new end date on a past phase',
+      phase: 'review',
+      dates: { endDate: new Date(Date.now() + 20 * DAY_MS).toISOString() },
+      message: 'The past phase "Review" cannot be edited',
+    },
+    {
+      label: 'a new start date on the current phase',
+      phase: 'voting',
+      dates: { startDate: new Date(Date.now() - DAY_MS).toISOString() },
+      message: 'The start date of the current phase cannot be changed',
+    },
+  ] as const)(
+    'refuses $label sent with the order',
+    async ({ phase, dates, message }, { task, onTestFinished }) => {
+      const { instanceId, adminCaller, rows } =
+        await setupPublishedDecisionAtThirdPhase(task, onTestFinished);
+      const rowsBefore = await loadPhaseRows(instanceId);
+
+      await expect(
+        adminCaller.decision.reorderPhases({
+          instanceId,
+          phases: rowsBefore.map(({ id }) =>
+            id === rows[phase].id ? { phaseId: id, ...dates } : { phaseId: id },
+          ),
+        }),
+      ).rejects.toMatchObject({ cause: { name: 'ValidationError', message } });
+
+      expect(await loadPhaseRows(instanceId)).toEqual(rowsBefore);
+    },
+  );
+
+  it('accepts the same order with new dates on a later phase', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { instanceId, adminCaller, rows } =
+      await setupPublishedDecisionAtThirdPhase(task, onTestFinished);
+    const startDate = new Date(Date.now() + 5 * DAY_MS).toISOString();
+    const endDate = new Date(Date.now() + 10 * DAY_MS).toISOString();
+
+    await adminCaller.decision.reorderPhases({
+      instanceId,
+      phases: [
+        { phaseId: rows.submission.id },
+        { phaseId: rows.review.id },
+        { phaseId: rows.voting.id },
+        { phaseId: rows.results.id, startDate, endDate },
+      ],
+    });
+
+    expect(await loadPhaseRows(instanceId)).toMatchObject([
+      { id: rows.submission.id, data: rows.submission.data },
+      { id: rows.review.id, data: rows.review.data },
+      { id: rows.voting.id, data: rows.voting.data },
+      {
+        id: rows.results.id,
+        data: { ...rows.results.data, startDate, endDate },
+      },
+    ]);
+  });
+
+  it('swaps two phases the decision has left while it is a draft', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { instanceId, adminCaller, rows } =
+      await setupDraftDecisionWithPastPhases(task, onTestFinished);
+
+    await adminCaller.decision.reorderPhases({
+      instanceId,
+      phases: [rows.review, rows.submission, rows.voting, rows.results].map(
+        ({ id }) => ({ phaseId: id }),
+      ),
+    });
+
+    expect((await loadPhaseRows(instanceId)).map(({ id }) => id)).toEqual([
+      rows.review.id,
+      rows.submission.id,
+      rows.voting.id,
+      rows.results.id,
+    ]);
   });
 });
 

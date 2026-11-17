@@ -30,8 +30,10 @@ import {
 } from '../../../test/helpers/gating/decision';
 import {
   loadBlobPhases,
+  loadInstanceData,
   loadInstancePhases,
   loadTransitionLinks,
+  setupDraftDecisionWithPastPhases,
   setupPublishedDecisionAtThirdPhase,
 } from '../../../test/helpers/phaseTestUtils';
 import {
@@ -2293,6 +2295,94 @@ describe.concurrent('updateDecisionInstance past phases', () => {
       },
     });
 
+    expect(await loadPhaseRows(instanceId)).toEqual(rowsBefore);
+  });
+
+  it('saves a builder phase list with a new name on a phase the decision has left while it is a draft', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { instanceId, adminCaller } = await setupDraftDecisionWithPastPhases(
+      task,
+      onTestFinished,
+    );
+    const phases = (await loadBuilderPhases(adminCaller, instanceId)).map(
+      (phase) =>
+        phase.phaseId === 'submission'
+          ? { ...phase, name: 'Proposals' }
+          : phase,
+    );
+
+    await adminCaller.decision.updateDecisionInstance({ instanceId, phases });
+
+    expect(await loadPhaseRows(instanceId)).toMatchObject([
+      { name: 'Proposals', data: { phaseId: 'submission' } },
+      { data: { phaseId: 'review' } },
+      { data: { phaseId: 'voting' } },
+      { data: { phaseId: 'results' } },
+    ]);
+  });
+
+  it('publishes a draft and edits a phase it has left in the same save', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { instanceId, adminCaller } = await setupDraftDecisionWithPastPhases(
+      task,
+      onTestFinished,
+    );
+    const phases = (await loadBuilderPhases(adminCaller, instanceId)).map(
+      (phase) =>
+        phase.phaseId === 'submission'
+          ? { ...phase, name: 'Proposals' }
+          : phase,
+    );
+
+    await adminCaller.decision.updateDecisionInstance({
+      instanceId,
+      status: ProcessStatus.PUBLISHED,
+      phases,
+    });
+
+    expect((await loadInstanceData(instanceId)).instance.status).toBe(
+      ProcessStatus.PUBLISHED,
+    );
+    expect((await loadPhaseRows(instanceId))[0]).toMatchObject({
+      name: 'Proposals',
+      data: { phaseId: 'submission' },
+    });
+  });
+
+  it('refuses moving a published decision to draft with an edit to a phase it has left in the same save', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { instanceId, adminCaller } =
+      await setupPublishedDecisionAtThirdPhase(task, onTestFinished);
+    const rowsBefore = await loadPhaseRows(instanceId);
+    const phases = (await loadBuilderPhases(adminCaller, instanceId)).map(
+      (phase) =>
+        phase.phaseId === 'submission'
+          ? { ...phase, name: 'Proposals' }
+          : phase,
+    );
+
+    await expect(
+      adminCaller.decision.updateDecisionInstance({
+        instanceId,
+        status: ProcessStatus.DRAFT,
+        phases,
+      }),
+    ).rejects.toMatchObject({
+      cause: {
+        name: 'ValidationError',
+        message: 'The past phase "Submission" cannot be edited',
+      },
+    });
+
+    expect((await loadInstanceData(instanceId)).instance.status).toBe(
+      ProcessStatus.PUBLISHED,
+    );
     expect(await loadPhaseRows(instanceId)).toEqual(rowsBefore);
   });
 });

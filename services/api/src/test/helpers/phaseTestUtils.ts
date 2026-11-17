@@ -237,6 +237,24 @@ export async function setupPublishedDecisionAtThirdPhase(
   };
 }
 
+// The decision from setupPublishedDecisionAtThirdPhase moved back to draft; it stays on `voting`.
+export async function setupDraftDecisionWithPastPhases(
+  task: { id: string },
+  onTestFinished: OnTestFinished,
+) {
+  const setup = await setupPublishedDecisionAtThirdPhase(task, onTestFinished);
+  await setup.adminCaller.decision.updateDecisionInstance({
+    instanceId: setup.instanceId,
+    status: ProcessStatus.DRAFT,
+  });
+  const { instance } = await loadInstanceData(setup.instanceId);
+  expect(instance).toMatchObject({
+    status: ProcessStatus.DRAFT,
+    currentStateId: 'voting',
+  });
+  return setup;
+}
+
 export async function loadInstanceData(instanceId: string) {
   const instance = await db.query.processInstances.findFirst({
     where: { id: instanceId },

@@ -14,6 +14,7 @@ import {
   PHASE_NAME,
   createUnauthenticatedCaller,
   loadTransitionLinks,
+  setupDraftDecisionWithPastPhases,
   setupPhase,
   setupPublishedDateDecision,
   setupPublishedDecisionAtThirdPhase,
@@ -733,6 +734,54 @@ describe.concurrent('updatePhase', () => {
     await expectPhase(rows.results, {
       name: 'Outcome',
       data: { ...rows.results.data, headline: 'The winners' },
+    });
+  });
+
+  it('refuses a new start date on the current phase', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { adminCaller, rows } = await setupPublishedDecisionAtThirdPhase(
+      task,
+      onTestFinished,
+    );
+
+    await expect(
+      adminCaller.decision.updatePhase({
+        phaseId: rows.voting.id,
+        data: { startDate: new Date(Date.now() - DAY_MS).toISOString() },
+      }),
+    ).rejects.toMatchObject({
+      cause: {
+        name: 'ValidationError',
+        message: 'The start date of the current phase cannot be changed',
+      },
+    });
+
+    await expectPhase(rows.voting, {
+      name: rows.voting.name,
+      data: rows.voting.data,
+    });
+  });
+
+  it('edits a phase the decision has left while it is a draft', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { adminCaller, rows } = await setupDraftDecisionWithPastPhases(
+      task,
+      onTestFinished,
+    );
+
+    await adminCaller.decision.updatePhase({
+      phaseId: rows.review.id,
+      name: 'Shortlist',
+      data: { description: 'Pick the best' },
+    });
+
+    await expectPhase(rows.review, {
+      name: 'Shortlist',
+      data: { ...rows.review.data, description: 'Pick the best' },
     });
   });
 
