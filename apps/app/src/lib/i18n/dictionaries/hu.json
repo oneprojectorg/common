@@ -873,6 +873,7 @@
       "deletePhaseTitle": "Törli a szakaszt?",
       "deletePhaseConfirm": "Biztosan törli ezt a szakaszt? A művelet nem vonható vissza.",
       "lockedPhasesNote": "Ez a döntés folyamatban van. A már elért szakaszok a helyükön maradnak, a lezárult szakaszok pedig nem módosíthatók.",
+      "lockedPhaseOrderHint": "Ez a szakasz már elkezdődött, ezért nem helyezhető át.",
       "pastPhaseLabel": "Lezárult",
       "currentPhaseLabel": "Jelenlegi szakasz",
       "pastPhaseLockedNote": "Ez a szakasz lezárult, ezért nem módosítható.",

@@ -873,6 +873,7 @@
       "deletePhaseTitle": "Excluir fase?",
       "deletePhaseConfirm": "Tem certeza de que deseja excluir esta fase? Esta ação não pode ser desfeita.",
       "lockedPhasesNote": "Esta decisão está em andamento. As fases que ela já alcançou permanecem no lugar, e as fases anteriores não podem ser alteradas.",
+      "lockedPhaseOrderHint": "Esta fase já começou, por isso não pode ser movida.",
       "pastPhaseLabel": "Encerrada",
       "currentPhaseLabel": "Fase atual",
       "pastPhaseLockedNote": "Esta fase foi encerrada, então não pode ser alterada.",

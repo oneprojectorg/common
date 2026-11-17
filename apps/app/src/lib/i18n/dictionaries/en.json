@@ -873,6 +873,7 @@
       "deletePhaseTitle": "Delete phase?",
       "deletePhaseConfirm": "Are you sure you want to delete this phase? This action cannot be undone.",
       "lockedPhasesNote": "This decision is under way. The phases it has reached stay in place, and past phases can't be changed.",
+      "lockedPhaseOrderHint": "This phase has started, so it can't be moved.",
       "pastPhaseLabel": "Ended",
       "currentPhaseLabel": "Current phase",
       "pastPhaseLockedNote": "This phase has ended, so it can't be changed.",

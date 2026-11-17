@@ -873,6 +873,7 @@
       "deletePhaseTitle": "Tirtir marxaladda?",
       "deletePhaseConfirm": "Ma hubtaa inaad tirtirayso marxaladdaan? Ficilkan lama celin karo.",
       "lockedPhasesNote": "Go'aankan wuu socdaa. Marxaladaha uu horay u gaaray meeshooda ayay ku sii jiraan, marxaladaha la soo dhaafayna lama beddeli karo.",
+      "lockedPhaseOrderHint": "Wejigan wuu bilaabmay, sidaas darteed lama dhaqaajin karo.",
       "pastPhaseLabel": "Dhammaaday",
       "currentPhaseLabel": "Marxaladda hadda",
       "pastPhaseLockedNote": "Marxaladdan way dhammaatay, sidaas darteed lama beddeli karo.",

@@ -873,6 +873,7 @@
       "deletePhaseTitle": "¿Eliminar fase?",
       "deletePhaseConfirm": "¿Estás seguro de que quieres eliminar esta fase? Esta acción no se puede deshacer.",
       "lockedPhasesNote": "Esta decisión está en curso. Las fases que ya ha alcanzado se quedan en su lugar, y las fases pasadas no se pueden cambiar.",
+      "lockedPhaseOrderHint": "Esta fase ya comenzó, así que no se puede mover.",
       "pastPhaseLabel": "Finalizada",
       "currentPhaseLabel": "Fase actual",
       "pastPhaseLockedNote": "Esta fase ha finalizado, así que no se puede cambiar.",

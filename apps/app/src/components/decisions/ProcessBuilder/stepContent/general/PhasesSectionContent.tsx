@@ -16,6 +16,7 @@ import {
 import { Button } from '@op/sense/Button';
 import { Header1 } from '@op/sense/Header';
 import { DragHandle, Sortable } from '@op/sense/Sortable';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@op/sense/Tooltip';
 import { cn } from '@op/sense/lib/utils';
 import { useLocale } from 'next-intl';
 import { useQueryState } from 'nuqs';
@@ -231,10 +232,27 @@ export function PhasesSectionContent({
                         }
                         t={t}
                         leading={
-                          <LuLock
-                            className="mx-1 size-4 shrink-0 text-muted-foreground"
-                            aria-hidden
-                          />
+                          <Tooltip>
+                            <TooltipTrigger
+                              render={
+                                <span
+                                  role="img"
+                                  tabIndex={0}
+                                  aria-label={t(
+                                    'decisions.processBuilder.lockedPhaseOrderHint',
+                                  )}
+                                  className="mx-1 inline-flex shrink-0 rounded-sm text-muted-foreground outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+                                />
+                              }
+                            >
+                              <LuLock className="size-4" aria-hidden />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              {t(
+                                'decisions.processBuilder.lockedPhaseOrderHint',
+                              )}
+                            </TooltipContent>
+                          </Tooltip>
                         }
                       >
                         <Button
