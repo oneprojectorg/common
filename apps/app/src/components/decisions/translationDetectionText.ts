@@ -2,7 +2,6 @@ import type { ProcessInstance } from '@op/api/encoders';
 import {
   type CustomFormDefinitionSchema,
   type Proposal,
-  type ProposalTemplateSchema,
   serverExtensions,
 } from '@op/common/client';
 import { getTextPreview } from '@op/core';
@@ -69,8 +68,7 @@ const getProposalBodyText = (proposal: ProposalTextSource): string => {
     return fromPreview;
   }
 
-  const template =
-    (proposal.proposalTemplate as ProposalTemplateSchema | null) ?? undefined;
+  const template = proposal.proposalTemplate ?? undefined;
   const fromDocument =
     getProposalContentPreview(proposal.documentContent, template)?.trim() ?? '';
   if (fromDocument) {

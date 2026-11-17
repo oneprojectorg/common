@@ -3,6 +3,7 @@ import { z } from 'zod';
 
 import { PAGE_LIMIT, list, paginated, total } from '../../../utils/pagination';
 import { proposalDataSchema } from '../proposalDataSchema';
+import type { ProposalTemplateSchema } from '../types';
 import { proposalAdvanceTargetSchema } from './advanceProposal';
 import { SEARCH_MAX_LENGTH } from './search';
 
@@ -157,7 +158,13 @@ export const proposalSchema = z.object({
   selectionRank: z.number().nullable().optional(),
   voteCount: z.number().nullable().optional(),
   allocated: z.string().nullable().optional(),
-  proposalTemplate: z.record(z.string(), z.unknown()).nullable().optional(),
+  proposalTemplate: z
+    .custom<ProposalTemplateSchema>(
+      (value) =>
+        typeof value === 'object' && value !== null && !Array.isArray(value),
+    )
+    .nullable()
+    .optional(),
   /**
    * Server-computed plain-text preview of the document body. List reads ship
    * this instead of the full `documentContent` fragments — the card's 3-line

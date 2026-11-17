@@ -12,8 +12,9 @@ import type { PhaseInstanceData } from './schemas/instanceData';
 
 /**
  * Resolves everything a new draft needs before its write transaction opens:
- * title, category labels and term ids, the author's profile, the owner role
- * and the phase's hidden default. The caller asserts access and the phase.
+ * title, category labels and term ids, the author's profile, the owner role,
+ * and the phase's hidden default and form. The caller asserts access and the
+ * phase.
  */
 export const resolveProposalDraftInputs = async ({
   authUserId,
@@ -23,7 +24,7 @@ export const resolveProposalDraftInputs = async ({
 }: {
   authUserId: string;
   instanceProfileId: string | null;
-  phase: Pick<PhaseInstanceData, 'rules'>;
+  phase: Pick<PhaseInstanceData, 'rules' | 'formSchemaId'>;
   proposalData: ProposalDataInput;
 }) => {
   // Capture the phase's `defaults.hidden` rule at creation time. The flag
@@ -59,6 +60,7 @@ export const resolveProposalDraftInputs = async ({
     submittedByProfileId,
     adminRoleId: adminRole.id,
     defaultHidden,
+    formSchemaId: phase.formSchemaId ?? null,
   };
 };
 

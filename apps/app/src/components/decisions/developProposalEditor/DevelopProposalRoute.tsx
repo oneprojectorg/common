@@ -53,8 +53,7 @@ export function DevelopProposalRoute({
     notFound();
   }
 
-  const template: ProposalTemplateSchema | undefined =
-    instance.instanceData.proposalTemplate;
+  const template = proposal.proposalTemplate ?? null;
 
   if (!template) {
     throw new Error('Proposal template not found');

@@ -109,10 +109,10 @@ export function ProposalFormProvider({
   const userName =
     user.profile?.name ?? t('decisions.proposals.anonymousAuthor');
 
-  const proposalTemplate = instance.instanceData.proposalTemplate;
+  const proposalTemplate = proposal.proposalTemplate ?? null;
 
   if (!proposalTemplate) {
-    throw new Error('Proposal template not found on instance');
+    throw new Error('Proposal template not found');
   }
 
   const existingCollab = useOptionalCollaborativeDoc();

@@ -7,7 +7,6 @@ import { ProposalStatus, Visibility } from '@op/api/encoders';
 import {
   type Proposal,
   type ProposalSelection,
-  type ProposalTemplateSchema,
   normalizeProposalCategories,
   parseTranslatedMeta,
 } from '@op/common/client';
@@ -117,8 +116,7 @@ export function ProposalPreview({
   const t = useTranslations();
   const canLinkToProfile = useCanLinkToProfile();
 
-  const proposalTemplate =
-    (proposal.proposalTemplate as ProposalTemplateSchema) ?? null;
+  const proposalTemplate = proposal.proposalTemplate ?? null;
 
   const isDraft = proposal.status === ProposalStatus.DRAFT;
   // Draft has its own banner above, so don't also badge it as hidden.

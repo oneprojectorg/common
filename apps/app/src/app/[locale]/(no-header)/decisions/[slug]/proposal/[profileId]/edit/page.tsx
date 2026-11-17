@@ -113,7 +113,7 @@ function EditProposalPageContent() {
     !!user.currentProfile?.id &&
     proposal.submittedBy?.id === user.currentProfile.id;
 
-  const proposalTemplate = instance.instanceData.proposalTemplate;
+  const proposalTemplate = proposal.proposalTemplate ?? null;
 
   const fragmentNames = useMemo(
     () => (proposalTemplate ? getProposalFragmentNames(proposalTemplate) : []),
