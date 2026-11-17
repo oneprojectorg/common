@@ -1670,6 +1670,17 @@
     "selectAdvancingHeading": "Selecciona qué propuestas pasan a la siguiente fase",
     "reviewsCompleteBadge": "REVISIONES COMPLETADAS",
     "confirmWinnersHeading": "Confirma las propuestas ganadoras",
+    "developEditor": {
+      "entryHeading": "Entrada",
+      "advanceAction": "Avanzar",
+      "advancedStatus": "Avanzada",
+      "proposalTab": "Propuesta",
+      "originSectionsLabel": "Secciones de la propuesta",
+      "originSelectLabel": "Propuesta de origen",
+      "noReviews": "Esta propuesta aún no tiene revisiones.",
+      "advancedToast": "“{title}” avanzó",
+      "readOnlyNotice": "Puedes ver esta entrada, pero no editarla."
+    },
     "develop": {
       "heroTitle": "Avanzar propuestas",
       "tabsLabel": "Vistas de desarrollo",

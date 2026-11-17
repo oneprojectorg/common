@@ -1670,6 +1670,17 @@
     "selectAdvancingHeading": "اختر المقترحات التي ستنتقل إلى المرحلة التالية",
     "reviewsCompleteBadge": "اكتملت المراجعات",
     "confirmWinnersHeading": "تأكيد المقترحات الفائزة",
+    "developEditor": {
+      "entryHeading": "المُدخل",
+      "advanceAction": "تقديم",
+      "advancedStatus": "تم التقديم",
+      "proposalTab": "المقترح",
+      "originSectionsLabel": "أقسام المقترح",
+      "originSelectLabel": "المقترح الأصلي",
+      "noReviews": "لا توجد مراجعات لهذا المقترح بعد.",
+      "advancedToast": "تم تقديم «{title}»",
+      "readOnlyNotice": "يمكنك عرض هذا المُدخل دون تعديله."
+    },
     "develop": {
       "heroTitle": "تقديم المقترحات",
       "tabsLabel": "عروض التطوير",

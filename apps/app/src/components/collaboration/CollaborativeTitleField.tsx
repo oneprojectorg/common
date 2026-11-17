@@ -1,6 +1,6 @@
 'use client';
 
-import { Field, FieldTitle } from '@op/sense/Field';
+import { Field, FieldDescription, FieldTitle } from '@op/sense/Field';
 import { InputGroup, InputGroupAddon } from '@op/sense/InputGroup';
 import { RequiredAsterisk } from '@op/sense/RequiredAsterisk';
 import { Skeleton } from '@op/sense/Skeleton';
@@ -11,7 +11,14 @@ import Paragraph from '@tiptap/extension-paragraph';
 import Placeholder from '@tiptap/extension-placeholder';
 import Text from '@tiptap/extension-text';
 import { EditorContent, useEditor } from '@tiptap/react';
-import { useEffect, useId, useMemo, useRef, useState } from 'react';
+import {
+  type ReactNode,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -31,6 +38,8 @@ interface CollaborativeTitleFieldProps {
    * the same cap.
    */
   maxLength?: number;
+  /** Help text under the control, from the template's `description`. */
+  description?: ReactNode;
   onChange?: (text: string) => void;
 }
 
@@ -48,6 +57,7 @@ export function CollaborativeTitleField({
   required = false,
   placeholder,
   maxLength,
+  description,
   onChange,
 }: CollaborativeTitleFieldProps) {
   const t = useTranslations('decisions.proposals');
@@ -55,10 +65,16 @@ export function CollaborativeTitleField({
   const resolvedPlaceholder = placeholder ?? t('untitledProposal');
   const labelId = useId();
   const counterId = useId();
+  const descriptionId = useId();
   const [charCount, setCharCount] = useState(0);
 
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
+
+  const describedBy =
+    [maxLength != null ? counterId : null, description ? descriptionId : null]
+      .filter(Boolean)
+      .join(' ') || undefined;
 
   // Build collaborative extensions for the title field
   const extensions = useMemo(
@@ -97,7 +113,7 @@ export function CollaborativeTitleField({
         role: 'textbox',
         'aria-multiline': 'false',
         'aria-labelledby': labelId,
-        ...(maxLength != null ? { 'aria-describedby': counterId } : {}),
+        ...(describedBy ? { 'aria-describedby': describedBy } : {}),
         ...(required ? { 'aria-required': 'true' } : {}),
       },
       handleKeyDown: (_view, event) => {
@@ -218,6 +234,9 @@ export function CollaborativeTitleField({
       ) : (
         <Skeleton className="h-11 w-full rounded-lg" />
       )}
+      {description ? (
+        <FieldDescription id={descriptionId}>{description}</FieldDescription>
+      ) : null}
     </Field>
   );
 }

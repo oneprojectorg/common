@@ -1670,6 +1670,17 @@
     "selectAdvancingHeading": "Válassza ki, mely javaslatok lépjenek tovább a következő szakaszba",
     "reviewsCompleteBadge": "AZ ÉRTÉKELÉSEK ELKÉSZÜLTEK",
     "confirmWinnersHeading": "Erősítse meg a nyertes javaslatokat",
+    "developEditor": {
+      "entryHeading": "Bejegyzés",
+      "advanceAction": "Továbbjuttatás",
+      "advancedStatus": "Továbbjutott",
+      "proposalTab": "Javaslat",
+      "originSectionsLabel": "A javaslat részei",
+      "originSelectLabel": "Eredeti javaslat",
+      "noReviews": "Ehhez a javaslathoz még nincs értékelés.",
+      "advancedToast": "„{title}” továbbjutott",
+      "readOnlyNotice": "Ezt a bejegyzést megtekintheti, de nem szerkesztheti."
+    },
     "develop": {
       "heroTitle": "Javaslatok továbbjuttatása",
       "tabsLabel": "Kidolgozási nézetek",

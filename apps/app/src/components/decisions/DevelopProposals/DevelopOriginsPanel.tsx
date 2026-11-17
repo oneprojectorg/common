@@ -43,7 +43,7 @@ import { Link, useRouter, useTranslations } from '@/lib/i18n';
 import { useOpenProposalInSheet } from '../ProposalSheet/proposalSheetState';
 import { PROPOSALS_PAGE_LIMIT } from '../proposalFilterQuery';
 import {
-  decisionProposalEditHref,
+  decisionProposalDevelopHref,
   decisionProposalHref,
 } from '../proposalHrefs';
 import {
@@ -195,7 +195,7 @@ function DevelopOriginsTable({
     onSuccess: (entry) => {
       startNavigating(() => {
         router.push(
-          decisionProposalEditHref({
+          decisionProposalDevelopHref({
             decisionSlug,
             profileId: entry.profileId,
           }),

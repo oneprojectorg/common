@@ -1670,6 +1670,17 @@
     "selectAdvancingHeading": "Dooro soo jeedimaha u gudbaya wejiga xiga",
     "reviewsCompleteBadge": "DIB-U-EEGISTU WAY DHAMMAATAY",
     "confirmWinnersHeading": "Xaqiiji soo jeedimaha guusha helay",
+    "developEditor": {
+      "entryHeading": "Gelis",
+      "advanceAction": "Horay u gudbi",
+      "advancedStatus": "Horay loo gudbiyay",
+      "proposalTab": "Soo jeedin",
+      "originSectionsLabel": "Qaybaha soo jeedinta",
+      "originSelectLabel": "Soo jeedinta asalka ah",
+      "noReviews": "Weli dib-u-eegis looma samayn soo jeedintan.",
+      "advancedToast": "“{title}” horay ayaa loo gudbiyay",
+      "readOnlyNotice": "Waad arki kartaa gelistan, laakiin wax kama beddeli kartid."
+    },
     "develop": {
       "heroTitle": "Horumari soo jeedinta",
       "tabsLabel": "Muuqaallada horumarinta",
