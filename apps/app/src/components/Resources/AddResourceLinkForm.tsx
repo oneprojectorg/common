@@ -49,12 +49,12 @@ export const AddResourceLinkForm = ({
   // preview query and the API see the same URL.
   const normalizedUrl = normalizeHttpUrl(url);
   const urlValid =
-    normalizedUrl !== null && httpUrlSchema.safeParse(normalizedUrl).success;
+    normalizedUrl !== null && httpUrlSchema.validate(normalizedUrl);
 
   // Debounce the preview query so we don't hammer Iframely on every keystroke.
   const [debouncedUrl] = useDebounce(normalizedUrl, 400);
   const debouncedValid =
-    debouncedUrl !== null && httpUrlSchema.safeParse(debouncedUrl).success;
+    debouncedUrl !== null && httpUrlSchema.validate(debouncedUrl);
 
   const previewQuery = trpc.content.linkPreview.useQuery(
     { url: debouncedUrl ?? '' },

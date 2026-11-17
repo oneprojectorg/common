@@ -23,9 +23,7 @@ export function findFirstInvalidStepBefore(
 
     // Check if value exists and validate it
     if (value !== null) {
-      const result = schema.safeParse(value);
-
-      if (!result.success) {
+      if (!schema.validate(value)) {
         return i;
       }
     } else {

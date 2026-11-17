@@ -138,8 +138,7 @@ const SCREENS: Screen[] = [
   {
     id: 'name',
     step: 5,
-    isComplete: ({ name }) =>
-      createInstanceSchema.shape.name.safeParse(name).success,
+    isComplete: ({ name }) => createInstanceSchema.shape.name.validate(name),
   },
 ];
 

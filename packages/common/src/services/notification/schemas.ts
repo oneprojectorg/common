@@ -55,7 +55,7 @@ export const normalizePhoneNumber = (value: string): string => {
 };
 
 export const isValidTypedPhoneNumber = (raw: string): boolean =>
-  phoneNumberSchema.safeParse(normalizePhoneNumber(raw)).success;
+  phoneNumberSchema.validate(normalizePhoneNumber(raw));
 
 const goTruePhoneSchema = phoneNumberSchema
   .transform((phone) => phone.replace(/^\+/, ''))

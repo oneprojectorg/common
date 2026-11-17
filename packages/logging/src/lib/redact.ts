@@ -133,7 +133,7 @@ function redactCandidate(candidate: string): string {
   const localPart = core.slice(0, separatorIndex);
   const domain = core.slice(separatorIndex + separatorLength);
 
-  if (!emailSchema.safeParse(`${localPart}@${domain}`).success) {
+  if (!emailSchema.validate(`${localPart}@${domain}`)) {
     return candidate;
   }
 

@@ -17,8 +17,8 @@ export const listLegacyInstancesRouter = router({
         user: ctx.user,
       });
 
-      const validInstances = result.filter(
-        (instance) => legacyProcessInstanceEncoder.safeParse(instance).success,
+      const validInstances = result.filter((instance) =>
+        legacyProcessInstanceEncoder.validate(instance),
       );
 
       return legacyInstanceListEncoder.parse({ items: validInstances });
