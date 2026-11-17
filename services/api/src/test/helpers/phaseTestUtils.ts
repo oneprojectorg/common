@@ -87,8 +87,6 @@ export async function createUnauthenticatedCaller() {
   return createCaller(await createTestContextWithSession(null));
 }
 
-export { loadPhaseRows };
-
 export const loadTransitionLinks = async (
   processInstanceId: string,
   { pendingOnly = false }: { pendingOnly?: boolean } = {},
@@ -171,7 +169,7 @@ export async function setupPublishedDateDecision(
   return { testData, instanceId, adminCaller, initial, final, endDate };
 }
 
-const DAY_MS = 24 * 60 * 60 * 1000;
+export const DAY_MS = 24 * 60 * 60 * 1000;
 
 // Advances along `phaseIds` one step at a time, completing each departed phase's transition.
 export async function advanceAlong(

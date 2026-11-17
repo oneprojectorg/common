@@ -1,12 +1,33 @@
 import { db } from '@op/db/client';
-import { processInstances } from '@op/db/schema';
-import { eq, sql } from 'drizzle-orm';
+import { processInstances, processPhases, profiles } from '@op/db/schema';
+import { eq, inArray, or, sql } from 'drizzle-orm';
 
 import { getInstancePhases } from '../../src';
 import {
   listPhases,
   reconcilePhases,
 } from '../../src/services/decision/phaseHelpers';
+
+// An instance's phase profiles outlive it unless deleted with it.
+export const deleteProfilesWithPhaseProfiles = (profileIds: string[]) =>
+  db
+    .delete(profiles)
+    .where(
+      or(
+        inArray(profiles.id, profileIds),
+        inArray(
+          profiles.id,
+          db
+            .select({ id: processPhases.profileId })
+            .from(processPhases)
+            .innerJoin(
+              processInstances,
+              eq(processInstances.id, processPhases.processInstanceId),
+            )
+            .where(inArray(processInstances.profileId, profileIds)),
+        ),
+      ),
+    );
 
 export const loadPhaseRows = (processInstanceId: string) =>
   listPhases({ db, processInstanceId });

@@ -14,7 +14,7 @@ import {
 } from '@op/db/schema';
 import { ROLES } from '@op/db/seedData/accessControl';
 import type { User } from '@op/supabase/lib';
-import { and, eq, inArray, ne, or, sql } from 'drizzle-orm';
+import { and, eq, inArray, ne, sql } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
 
 import {
@@ -39,7 +39,10 @@ import {
 import { readProfileIdForAuthUser } from '../data/test-data';
 import { createTestUser, supabaseTestAdminClient } from '../supabase';
 import { advanceInstancePhase } from './advanceInstancePhase';
-import { emptyBlobPhases } from './phaseRowFixtures';
+import {
+  deleteProfilesWithPhaseProfiles,
+  emptyBlobPhases,
+} from './phaseRowFixtures';
 
 // Fixture schemas are literals written straight to `process_schema` (jsonb), so
 // this mirrors the looser shape the api decision encoders decode them into.
@@ -831,25 +834,7 @@ export class TestDecisionsDataManager {
           validProfileIds.map((id) => `proposal-location:${id}`),
         ),
       );
-      // An instance's phase profiles outlive it unless deleted with it.
-      await db
-        .delete(profiles)
-        .where(
-          or(
-            inArray(profiles.id, validProfileIds),
-            inArray(
-              profiles.id,
-              db
-                .select({ id: processPhases.profileId })
-                .from(processPhases)
-                .innerJoin(
-                  processInstances,
-                  eq(processInstances.id, processPhases.processInstanceId),
-                )
-                .where(inArray(processInstances.profileId, validProfileIds)),
-            ),
-          ),
-        );
+      await deleteProfilesWithPhaseProfiles(validProfileIds);
     }
 
     // 2. Delete users table rows by auth user IDs

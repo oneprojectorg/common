@@ -1,4 +1,4 @@
-import { TestDecisionsDataManager } from '@op/common/testing';
+import { TestDecisionsDataManager, loadPhaseRows } from '@op/common/testing';
 import { db } from '@op/db/client';
 import { ProcessStatus, decisionProcessTransitions } from '@op/db/schema';
 import { randomUUID } from 'node:crypto';
@@ -7,7 +7,6 @@ import { describe, expect, it } from 'vitest';
 import {
   PHASE_NAME,
   createUnauthenticatedCaller,
-  loadPhaseRows,
   loadTransitionLinks,
   setupPhase,
   setupPublishedDateDecision,

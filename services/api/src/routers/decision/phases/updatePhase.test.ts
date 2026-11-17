@@ -2,6 +2,7 @@ import type { PhaseData } from '@op/common';
 import {
   TestDecisionsDataManager,
   dateAdvancementSchema,
+  loadPhaseRows,
 } from '@op/common/testing';
 import { db, eq } from '@op/db/client';
 import { ProcessStatus, processPhases } from '@op/db/schema';
@@ -9,9 +10,9 @@ import { randomUUID } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 
 import {
+  DAY_MS,
   PHASE_NAME,
   createUnauthenticatedCaller,
-  loadPhaseRows,
   loadTransitionLinks,
   setupPhase,
   setupPublishedDateDecision,
@@ -578,9 +579,7 @@ describe.concurrent('updatePhase', () => {
       throw new Error('Expected the template phase rows');
     }
 
-    const endDate = new Date(
-      Date.now() + 3 * 24 * 60 * 60 * 1000,
-    ).toISOString();
+    const endDate = new Date(Date.now() + 3 * DAY_MS).toISOString();
     await caller.decision.updatePhase({
       phaseId: initial.id,
       data: { endDate },
@@ -613,9 +612,7 @@ describe.concurrent('updatePhase', () => {
     if (!initial) {
       throw new Error('Expected the template phase rows');
     }
-    const endDate = new Date(
-      Date.now() + 3 * 24 * 60 * 60 * 1000,
-    ).toISOString();
+    const endDate = new Date(Date.now() + 3 * DAY_MS).toISOString();
 
     await caller.decision.updatePhase({
       phaseId: initial.id,

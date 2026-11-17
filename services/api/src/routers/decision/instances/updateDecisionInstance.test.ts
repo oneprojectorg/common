@@ -10,6 +10,7 @@ import {
   TestDecisionsDataManager,
   dateAdvancementSchema,
   syncPhaseRows,
+  loadPhaseRows,
 } from '@op/common/testing';
 import { db, eq, sql } from '@op/db/client';
 import {
@@ -30,7 +31,6 @@ import {
 import {
   loadBlobPhases,
   loadInstancePhases,
-  loadPhaseRows,
   loadTransitionLinks,
   setupPublishedDecisionAtThirdPhase,
 } from '../../../test/helpers/phaseTestUtils';

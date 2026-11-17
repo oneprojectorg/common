@@ -44,7 +44,7 @@ export const reorderPhases = async ({
 
   const { phases: reordered } = await writePhasesWithLock({
     processInstanceId,
-    write: async (tx, { phases: stored }) => {
+    write: async (tx, stored) => {
       if (
         stored.length !== requestedIds.size ||
         !stored.every((phase) => requestedIds.has(phase.id))

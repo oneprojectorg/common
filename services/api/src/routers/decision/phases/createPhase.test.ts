@@ -1,4 +1,4 @@
-import { TestDecisionsDataManager } from '@op/common/testing';
+import { TestDecisionsDataManager, loadPhaseRows } from '@op/common/testing';
 import { db, eq } from '@op/db/client';
 import {
   EntityType,
@@ -16,7 +16,6 @@ import {
   listPhaseIds,
   loadBlobPhases,
   loadInstancePhases,
-  loadPhaseRows,
   loadTransitionLinks,
   setupPublishedDateDecision,
   setupPublishedDecisionAtThirdPhase,

@@ -1,5 +1,5 @@
 import { MAX_PHASES_PER_DECISION } from '@op/common';
-import { TestDecisionsDataManager } from '@op/common/testing';
+import { TestDecisionsDataManager, loadPhaseRows } from '@op/common/testing';
 import { randomUUID } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 
@@ -7,7 +7,6 @@ import {
   PHASE_NAME,
   createUnauthenticatedCaller,
   loadBlobPhases,
-  loadPhaseRows,
   loadTransitionLinks,
   setupPhase,
   setupPublishedDateDecision,

@@ -170,8 +170,8 @@ export const updateDecisionInstance = async ({
           tx,
           instanceId,
           processId: existingInstance.processId,
-          instance: { ...locked, status: nextStatus },
-          storedStatus: locked.status,
+          locked,
+          nextStatus,
           update: instanceDataFields,
         })
       : { phaseEndDateChanges: [] };
@@ -335,77 +335,67 @@ async function saveInstanceData({
   tx,
   instanceId,
   processId,
-  instance,
-  storedStatus,
+  locked,
+  nextStatus,
   update,
 }: {
   tx: TransactionType;
   instanceId: string;
   processId: string | null;
-  // The locked row, carrying the status this save leaves.
-  instance: LockedProcessInstance;
-  storedStatus: LockedProcessInstance['status'];
+  locked: LockedProcessInstance;
+  nextStatus: LockedProcessInstance['status'];
   update: InstanceDataUpdate;
 }): Promise<SavedInstanceData> {
-  const stored = instance.instanceData as DecisionInstanceData;
+  const stored = locked.instanceData as DecisionInstanceData;
 
-  if (!hasPhaseUpdates(update)) {
-    const updated = getUpdatedInstanceData({
-      existing: stored,
-      existingPhases: [],
-      update,
+  const { result: updated, phases } = hasPhaseUpdates(update)
+    ? await writePhasesInTx({
+        tx,
+        processInstanceId: instanceId,
+        locked,
+        nextStatus,
+        write: async (tx, rows) => {
+          const merged = getUpdatedInstanceData({
+            existing: stored,
+            existingPhases: rows.map(toInstanceDataPhase),
+            update,
+          });
+
+          if (merged.phases) {
+            await reconcilePhases({
+              tx,
+              processInstanceId: instanceId,
+              existing: rows,
+              phases: merged.phases,
+            });
+          }
+
+          return merged;
+        },
+      })
+    : {
+        result: getUpdatedInstanceData({
+          existing: stored,
+          existingPhases: [],
+          update,
+        }),
+        phases: undefined,
+      };
+
+  if (phases || update.proposalTemplate) {
+    await assertVoterCostField({
+      instanceData: {
+        ...(updated.instanceData ?? stored),
+        phases: phases
+          ? phases.map(toInstanceDataPhase)
+          : await getPhases({
+              instance: { id: instanceId, instanceData: stored },
+              db: tx,
+            }),
+      },
+      processId,
     });
-
-    if (update.proposalTemplate) {
-      const phases = await getPhases({
-        instance: { id: instanceId, instanceData: stored },
-        db: tx,
-      });
-      await assertVoterCostField({
-        instanceData: { ...(updated.instanceData ?? stored), phases },
-        processId,
-      });
-    }
-
-    return {
-      ...(updated.instanceData && { instanceData: updated.instanceData }),
-      phaseEndDateChanges: [],
-    };
   }
-
-  const { result: updated, phases } = await writePhasesInTx({
-    tx,
-    processInstanceId: instanceId,
-    locked: instance,
-    storedStatus,
-    syncTransitions: false,
-    write: async (tx, { phases: rows }) => {
-      const merged = getUpdatedInstanceData({
-        existing: stored,
-        existingPhases: rows.map(toInstanceDataPhase),
-        update,
-      });
-
-      if (merged.phases) {
-        await reconcilePhases({
-          tx,
-          processInstanceId: instanceId,
-          existing: rows,
-          phases: merged.phases,
-        });
-      }
-
-      return merged;
-    },
-  });
-
-  await assertVoterCostField({
-    instanceData: {
-      ...(updated.instanceData ?? stored),
-      phases: phases.map(toInstanceDataPhase),
-    },
-    processId,
-  });
 
   return {
     ...(updated.instanceData && { instanceData: updated.instanceData }),
