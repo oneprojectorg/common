@@ -133,11 +133,9 @@ function OriginSections({
           <div className="flex flex-col gap-8">
             {reviewPhases.map((phase) => (
               <section key={phase.id} className="flex flex-col gap-4">
-                {reviewPhases.length > 1 ? (
-                  <Header3>
-                    <bdi>{phase.name}</bdi>
-                  </Header3>
-                ) : null}
+                <Header3>
+                  <bdi>{phase.name}</bdi>
+                </Header3>
                 <PhaseReviews
                   processInstanceId={proposal.processInstanceId}
                   proposalId={proposal.id}
