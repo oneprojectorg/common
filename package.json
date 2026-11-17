@@ -173,6 +173,7 @@
       "js-yaml": "$js-yaml",
       "lodash": "$lodash",
       "motion": "$motion",
+      "nanoid@<3.3.18": "3.3.18",
       "postcss": "$postcss",
       "postgres": "$postgres",
       "react": "$react",
