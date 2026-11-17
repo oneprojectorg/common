@@ -250,9 +250,6 @@ published source lags its declared dependency versions. Reapply if you re-run
   resize grip on `textarea`) and keeps the behaviour, for a field that reads as
   the text around it (`EditableText`, the process overview). The counterpart of
   `Button`'s `bare`.
-- `toggle.tsx` — added `loading`, which mirrors `Button`'s: a centered spinner
-  over the invisible label, `aria-busy`, and disabled while loading, with
-  `disabled:opacity-80` instead of the full disabled dim. Not in the registry.
 - `textarea.tsx` — the `ref` goes through `lib/useFieldSizingFallback`, which
   sizes the box from `scrollHeight` where `field-sizing: content` is
   unsupported (Firefox) and only merges the ref elsewhere.

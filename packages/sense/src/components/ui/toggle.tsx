@@ -4,7 +4,6 @@ import { Toggle as TogglePrimitive } from '@base-ui/react/toggle';
 import { cva, type VariantProps } from 'class-variance-authority';
 
 import { cn } from '../../lib/utils';
-import { Spinner } from './spinner';
 
 const toggleVariants = cva(
   "group/toggle inline-flex cursor-pointer items-center justify-center gap-1 rounded-lg text-base font-strong text-foreground whitespace-nowrap transition-all outline-none hover:bg-muted focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 aria-pressed:bg-accent aria-pressed:text-accent-foreground dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
@@ -50,43 +49,14 @@ function Toggle({
   className,
   variant = 'default',
   size = 'default',
-  loading = false,
-  disabled,
-  children,
   ...props
-}: TogglePrimitive.Props &
-  VariantProps<typeof toggleVariants> & {
-    /**
-     * Not in the registry; mirrors `Button`'s `loading`. Shows a centered
-     * spinner over the label and blocks interaction. Keeps the toggle's fill,
-     * pressed state and width (the label stays laid out but invisible).
-     */
-    loading?: boolean;
-  }) {
+}: TogglePrimitive.Props & VariantProps<typeof toggleVariants>) {
   return (
     <TogglePrimitive
       data-slot="toggle"
-      className={cn(
-        toggleVariants({ variant, size, className }),
-        // `disabled` blocks the toggle natively (mouse + keyboard). opacity-80
-        // keeps the spinner readable, not greyed out.
-        loading && 'pointer-events-none relative disabled:opacity-80',
-      )}
-      disabled={loading || disabled}
-      aria-busy={loading || undefined}
+      className={cn(toggleVariants({ variant, size, className }))}
       {...props}
-    >
-      {loading ? (
-        <>
-          <span className="invisible flex items-center gap-1">{children}</span>
-          <span className="pointer-events-none absolute inset-0 flex items-center justify-center">
-            <Spinner />
-          </span>
-        </>
-      ) : (
-        children
-      )}
-    </TogglePrimitive>
+    />
   );
 }
 

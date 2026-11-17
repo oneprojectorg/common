@@ -40,7 +40,6 @@ import {
   TableRowHeader,
 } from '@op/sense/Table';
 import { toast } from '@op/sense/Toast';
-import { Toggle } from '@op/sense/Toggle';
 import {
   type ReactNode,
   useCallback,
@@ -387,7 +386,7 @@ function DevelopSourcesTable({
                               profileId: developedEntry.profileId,
                             })}
                           />
-                          <AdvanceEntryToggle
+                          <AdvanceEntryButton
                             title={title}
                             status={developedEntry.status}
                             disabled={isBusy}
@@ -482,12 +481,13 @@ function EntryActions({ children }: { children: ReactNode }) {
 }
 
 /**
- * Pressed when the entry is advanced. Pressing it submits a draft entry, and
- * the server checks it against its form; unpressing it moves a submitted entry
- * back to draft. An entry past submitted (rejected, selected and so on) shows
- * as advanced and cannot be changed here.
+ * A pressed-state button, styled as advanced once the entry is no longer a
+ * draft. On a draft entry it submits the entry, and the server checks it
+ * against its form; on a submitted entry it moves the entry back to draft. An
+ * entry past submitted (rejected, selected and so on) shows as advanced and
+ * cannot be changed here.
  */
-function AdvanceEntryToggle({
+function AdvanceEntryButton({
   title,
   status,
   disabled,
@@ -505,32 +505,27 @@ function AdvanceEntryToggle({
   onUnadvance: () => void;
 }) {
   const t = useTranslations('decisions.develop');
-  const advanced = status !== ProposalStatus.DRAFT;
-  const actionable =
-    status === ProposalStatus.DRAFT || status === ProposalStatus.SUBMITTED;
+  const isDraft = status === ProposalStatus.DRAFT;
+  const advanced = !isDraft;
+  const actionable = isDraft || status === ProposalStatus.SUBMITTED;
 
   return (
-    <Toggle
+    <Button
       variant="outline"
-      pressed={advanced}
-      disabled={disabled || !actionable}
+      aria-pressed={advanced}
       loading={loading}
+      disabled={disabled || !actionable}
+      className={advanced ? 'border-primary bg-accent text-primary' : undefined}
       aria-label={
         advanced
           ? t('advancedEntryLabel', { title })
           : t('advanceEntryLabel', { title })
       }
-      onPressedChange={(pressed) => {
-        if (pressed) {
-          onAdvance();
-        } else {
-          onUnadvance();
-        }
-      }}
+      onClick={isDraft ? onAdvance : onUnadvance}
     >
       {advanced ? <LuCheck aria-hidden data-icon="inline-start" /> : null}
       {advanced ? t('advancedEntryAction') : t('advanceEntryAction')}
-    </Toggle>
+    </Button>
   );
 }
 
