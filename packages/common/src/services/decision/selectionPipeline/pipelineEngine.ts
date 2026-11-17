@@ -97,9 +97,14 @@ async function executeBranchBlock(
   blockContext: ExecutionContext,
   parentContext: ExecutionContext,
 ): Promise<Proposal[]> {
+  const expressionContext = { ...blockContext, record: blockContext };
+
   // Check each branch condition
   for (const branch of block.branches) {
-    const conditionResult = evaluateExpression(branch.condition, blockContext);
+    const conditionResult = evaluateExpression(
+      branch.condition,
+      expressionContext,
+    );
 
     if (conditionResult) {
       // Execute this branch's blocks as a nested pipeline

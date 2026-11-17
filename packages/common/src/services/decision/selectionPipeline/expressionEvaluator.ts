@@ -4,8 +4,8 @@ import safeRegex from 'safe-regex2';
 import type {
   ArithmeticExpression,
   ComparisonExpression,
-  ExecutionContext,
   Expression,
+  ExpressionContext,
   FieldAccessExpression,
   FunctionCallExpression,
   LiteralExpression,
@@ -18,7 +18,7 @@ import type {
  */
 export function evaluateExpression(
   expr: Expression,
-  context: ExecutionContext,
+  context: ExpressionContext,
 ): any {
   // Field access
   if ('field' in expr) {
@@ -63,10 +63,10 @@ export function evaluateExpression(
  */
 function evaluateFieldAccess(
   expr: FieldAccessExpression,
-  context: ExecutionContext,
+  context: ExpressionContext,
 ): any {
   const path = expr.field.split('.');
-  let current: any = context.proposal || context;
+  let current: any = context.record;
 
   for (const key of path) {
     if (current == null) {
@@ -83,7 +83,7 @@ function evaluateFieldAccess(
  */
 function evaluateComparison(
   expr: ComparisonExpression,
-  context: ExecutionContext,
+  context: ExpressionContext,
 ): boolean {
   const left = evaluateExpression(expr.left, context);
   const right = evaluateExpression(expr.right, context);
@@ -144,7 +144,7 @@ function evaluateComparison(
  */
 function evaluateLogical(
   expr: LogicalExpression,
-  context: ExecutionContext,
+  context: ExpressionContext,
 ): boolean {
   if (expr.and) {
     return expr.and.every((e) => evaluateExpression(e, context));
@@ -166,7 +166,7 @@ function evaluateLogical(
  */
 function evaluateArithmetic(
   expr: ArithmeticExpression,
-  context: ExecutionContext,
+  context: ExpressionContext,
 ): number {
   const values = expr.operands.map((op) => {
     const val = evaluateExpression(op, context);
@@ -196,7 +196,7 @@ function evaluateArithmetic(
  */
 function evaluateFunctionCall(
   expr: FunctionCallExpression,
-  context: ExecutionContext,
+  context: ExpressionContext,
 ): any {
   const args = expr.arguments.map((arg) => evaluateExpression(arg, context));
 
@@ -295,7 +295,7 @@ function evaluateFunctionCall(
  */
 function evaluateVariable(
   expr: VariableExpression,
-  context: ExecutionContext,
+  context: ExpressionContext,
 ): any {
   const varName = expr.variable.startsWith('$')
     ? expr.variable.slice(1)
