@@ -124,8 +124,9 @@ export const createDevelopedProposal = async ({
 };
 
 /**
- * The mapped title and category replace the caller's. The title becomes the
- * entry's name, and the category places the entry before anyone edits it.
+ * The mapped system fields replace the caller's, as if the author had typed
+ * them: the title becomes the entry's name, and the category and location
+ * place the entry before anyone edits it.
  */
 function withEntryPrefill({
   proposalData,
@@ -134,13 +135,5 @@ function withEntryPrefill({
   proposalData: ProposalDataInput;
   prefill: DevelopedEntryPrefill | null;
 }): ProposalDataInput {
-  if (!prefill) {
-    return proposalData;
-  }
-
-  return {
-    ...proposalData,
-    ...(prefill.title ? { title: prefill.title } : {}),
-    ...(prefill.category ? { category: prefill.category } : {}),
-  };
+  return prefill ? { ...proposalData, ...prefill.proposalData } : proposalData;
 }

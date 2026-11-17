@@ -16,6 +16,9 @@ import {
 import { getDevelopPrefillMappings } from './getDevelopPrefillMappings';
 import {
   PROPOSAL_TITLE_MAX_LENGTH,
+  type ProposalDataInput,
+  normalizeBudget,
+  normalizeLocation,
   normalizeProposalCategories,
   parseProposalData,
 } from './proposalDataSchema';
@@ -24,9 +27,8 @@ import { getPreviousPhases } from './utils/phaseOrder';
 
 /** What a new developed proposal starts with, from its sources. */
 export type DevelopedEntryPrefill = {
-  /** The mapped title as plain text, for the proposal's name. */
-  title?: string;
-  category?: string[];
+  /** The mapped system fields: title, category, budget and location. */
+  proposalData: ProposalDataInput;
   /** The new collaboration document, copied from the sources' fragments. */
   documentUpdate: Uint8Array<ArrayBuffer> | null;
 };
@@ -119,6 +121,15 @@ export async function getDevelopedEntryPrefill({
     });
   }
 
+  return { proposalData: toSystemFields(data), documentUpdate };
+}
+
+/**
+ * The system fields of the mapped data, normalized as the proposal editor's
+ * autosave stores them; every other field lives only in the document. The
+ * title is cut only at the hard limit, as it becomes the proposal's name.
+ */
+function toSystemFields(data: Record<string, unknown>): ProposalDataInput {
   const title =
     typeof data.title === 'string'
       ? data.title
@@ -128,11 +139,14 @@ export async function getDevelopedEntryPrefill({
           .trim()
       : '';
   const category = normalizeProposalCategories(data.category);
+  const budget = normalizeBudget(data.budget);
+  const location = normalizeLocation(data.location);
 
   return {
     ...(title ? { title } : {}),
     ...(category.length > 0 ? { category } : {}),
-    documentUpdate,
+    ...(budget ? { budget } : {}),
+    ...(location ? { location } : {}),
   };
 }
 

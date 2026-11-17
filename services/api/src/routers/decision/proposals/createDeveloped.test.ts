@@ -648,9 +648,11 @@ describe.concurrent('createDevelopedProposal', () => {
 
     // The mapped title wins and is not cut to the entry form's 20 characters.
     expect(draft.profile.name).toBe(SOURCE_TITLE);
+    // The system fields are stored as the editor's autosave stores them.
     await expect(readProposalData(draft.id)).resolves.toMatchObject({
       title: SOURCE_TITLE,
       category: ['Parks'],
+      budget: { amount: 500, currency: 'USD' },
     });
     await expect(readEntryDocument(draft.id)).resolves.toEqual({
       title: textFragment(SOURCE_TITLE),
