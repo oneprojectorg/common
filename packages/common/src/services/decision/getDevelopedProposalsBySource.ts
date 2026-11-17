@@ -1,9 +1,5 @@
-import { and, db, eq, inArray, isNull } from '@op/db/client';
-import {
-  ProposalRelationshipType,
-  proposalRelationships,
-  proposals,
-} from '@op/db/schema';
+import { db } from '@op/db/client';
+import { ProposalRelationshipType } from '@op/db/schema';
 
 import {
   type ProposalReadContext,
@@ -37,41 +33,26 @@ export async function getDevelopedProposalsBySource({
     return bySource;
   }
 
-  const rows = await db
-    .select({
-      sourceProposalId: proposalRelationships.sourceProposalId,
-      id: proposals.id,
-      profileId: proposals.profileId,
-      status: proposals.status,
-    })
-    .from(proposalRelationships)
-    // Inner join: the composite foreign key guarantees the target is a
-    // proposal in this decision.
-    .innerJoin(
-      proposals,
-      eq(proposals.id, proposalRelationships.targetProposalId),
-    )
-    .where(
-      and(
-        eq(proposalRelationships.processInstanceId, processInstanceId),
-        inArray(proposalRelationships.sourceProposalId, sourceProposalIds),
-        eq(
-          proposalRelationships.relationshipType,
-          ProposalRelationshipType.DEVELOPED,
-        ),
-        isNull(proposalRelationships.deletedAt),
-        isProposalReadable(proposals, readContext),
-      ),
-    )
-    .orderBy(
-      proposalRelationships.sourceProposalId,
-      proposalRelationships.createdAt,
-      proposalRelationships.id,
-    );
+  const edges = await db.query.proposalRelationships.findMany({
+    where: {
+      processInstanceId,
+      sourceProposalId: { in: sourceProposalIds },
+      relationshipType: ProposalRelationshipType.DEVELOPED,
+      deletedAt: { isNull: true },
+      targetProposal: {
+        RAW: (table) => isProposalReadable(table, readContext),
+      },
+    },
+    columns: { sourceProposalId: true },
+    with: {
+      targetProposal: { columns: { id: true, profileId: true, status: true } },
+    },
+    orderBy: { sourceProposalId: 'asc', createdAt: 'asc', id: 'asc' },
+  });
 
-  for (const { sourceProposalId, ...row } of rows) {
+  for (const { sourceProposalId, targetProposal } of edges) {
     // The status column types as `string`; the parse narrows it to the enum.
-    const entry = developedProposalSchema.parse(row);
+    const entry = developedProposalSchema.parse(targetProposal);
     const entries = bySource.get(sourceProposalId);
     if (entries) {
       entries.push(entry);
