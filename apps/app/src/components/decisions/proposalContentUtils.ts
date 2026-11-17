@@ -105,7 +105,7 @@ export function resolveProposalSystemFields(
 ) {
   const fallback = parseProposalData(proposal.proposalData);
 
-  const template = proposal.proposalTemplate as ProposalTemplateSchema | null;
+  const template = proposal.proposalTemplate;
   if (proposal.documentContent?.type !== 'json' || !template) {
     return fallback;
   }

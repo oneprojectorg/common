@@ -7,7 +7,6 @@ import { getAvatarImageProps } from '@/utils/getAvatarImageProps';
 import { ProposalStatus, Visibility } from '@op/api/encoders';
 import {
   type Proposal,
-  type ProposalTemplateSchema,
   type ProposalTranslation,
   normalizeProposalCategories,
 } from '@op/common/client';
@@ -89,7 +88,7 @@ export function useProposalCardData({
       ? (proposal.previewText ??
         getProposalContentPreview(
           proposal.documentContent,
-          (proposal.proposalTemplate as ProposalTemplateSchema) ?? undefined,
+          proposal.proposalTemplate ?? undefined,
         ))
       : undefined;
   const description = (translatedPreview ?? previewText) || undefined;
