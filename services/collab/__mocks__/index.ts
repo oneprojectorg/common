@@ -40,7 +40,7 @@ export type {
 export {
   type FragmentCopy,
   encodeFragmentCopies,
-} from '../src/fragmentCopy.js';
+} from '../src/fragmentCopy';
 
 // ---------------------------------------------------------------------------
 // Helpers
