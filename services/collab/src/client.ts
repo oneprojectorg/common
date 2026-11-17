@@ -86,12 +86,7 @@ export function createTipTapClient(config: TipTapClientConfig) {
         .json();
     },
 
-    /**
-     * Fetch a document as a binary Yjs update (`Y.encodeStateAsUpdate`), or
-     * null when the document does not exist (TipTap answers 404). Without a
-     * `version`, the latest state.
-     * GET /api/documents/{docName}?format=yjs
-     */
+    /** The document as a binary Yjs update (`format=yjs`); null on a 404. */
     getDocumentUpdate: async (
       docName: string,
       options?: { version?: number },
@@ -182,11 +177,8 @@ export function createTipTapClient(config: TipTapClientConfig) {
     },
 
     /**
-     * Create a document that does not exist yet from a binary Yjs update.
-     * Returns `'exists'` and writes nothing when the document is already
-     * there (TipTap answers 409), so it never overwrites or doubles content
-     * that a user typed. Other failures throw.
-     * POST /api/documents/{docName}
+     * Creates the document from a Yjs update. A 409 gives `'exists'` and
+     * writes nothing, so typed content is never overwritten; others throw.
      */
     createDocument: async (
       docName: string,

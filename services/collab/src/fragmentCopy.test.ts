@@ -4,7 +4,6 @@ import * as Y from 'yjs';
 import { createTipTapClient } from './client';
 import { encodeFragmentCopies } from './fragmentCopy';
 
-/** A document update with the given fragments, each built by its callback. */
 function buildUpdate(
   fragments: Record<string, (fragment: Y.XmlFragment) => void>,
 ): Uint8Array {
@@ -21,7 +20,6 @@ function paragraph(text: string): Y.XmlElement {
   return element;
 }
 
-/** The fragment of a decoded update, as an XML string with its marks. */
 function readFragment(update: Uint8Array | null, name: string): string {
   if (!update) {
     throw new Error('Expected an update');

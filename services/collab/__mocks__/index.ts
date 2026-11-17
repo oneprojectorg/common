@@ -220,8 +220,7 @@ const docFragmentTextResponses = new Map<string, Record<string, string>>();
 // Per-doc saved versions returned by the version history API.
 const docVersions = new Map<string, TipTapVersion[]>();
 
-// `createDocument` calls that throw, matched by the new document's fragments:
-// the server names a new document, so a test cannot know its name.
+// Matched by content: a test cannot know the new document's name.
 const createDocumentErrors: Array<{
   matches: (fragments: TipTapFragmentResponse) => boolean;
   error: Error;
@@ -422,10 +421,7 @@ export function createTipTapClient(_config?: unknown) {
       ) as R;
     },
 
-    /**
-     * The document's per-fragment JSON as a Yjs update, laid out as
-     * y-prosemirror writes it; null for a document that was never seeded.
-     */
+    /** The seeded JSON as a Yjs update; null for a document never seeded. */
     getDocumentUpdate: async (
       docName: string,
       options?: { version?: number },
@@ -533,11 +529,8 @@ export async function invalidateCachedDocumentFragments(_args: {
   fragmentNames: string[];
 }): Promise<void> {}
 
-// ---------------------------------------------------------------------------
-// ProseMirror JSON <-> Yjs, as y-prosemirror maps them: a node is an
-// `XmlElement` named for its type with its attrs as attributes; a run of text
-// is an `XmlText` whose marks are format attributes.
-// ---------------------------------------------------------------------------
+// JSON <-> Yjs as y-prosemirror maps it: a node is an `XmlElement` with its
+// attrs as attributes; text is an `XmlText` with its marks as formats.
 
 type JsonNode = {
   type: string;
