@@ -1,9 +1,13 @@
 import { ProposalStatus } from '@op/db/schema';
 import { z } from 'zod';
 
-import { paginated, paginationInput, total } from '../../../utils/pagination';
+import { paginationInput } from '../../../utils/pagination';
 import { phaseIdSchema } from './instance';
-import { proposalSchema, proposalSearchSchema } from './proposal';
+import {
+  phaseProposalListSchema,
+  proposalSchema,
+  proposalSearchSchema,
+} from './proposal';
 
 export const DEVELOP_SOURCE_SCOPES = ['all', 'assigned'] as const;
 
@@ -38,8 +42,8 @@ export const developSourceSchema = proposalSchema.extend({
 
 export type DevelopSource = z.infer<typeof developSourceSchema>;
 
-export const developSourceListSchema = paginated(developSourceSchema).extend({
-  total,
+export const developSourceListSchema = phaseProposalListSchema.extend({
+  items: z.array(developSourceSchema),
 });
 
 export type DevelopSourceList = z.infer<typeof developSourceListSchema>;
