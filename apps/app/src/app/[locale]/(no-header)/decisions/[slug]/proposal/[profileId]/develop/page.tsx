@@ -11,7 +11,6 @@ import { cache } from 'react';
 import { getTranslations } from '@/lib/i18n';
 
 import { getDevelopEntryHeading } from '@/components/decisions/developProposalEditor/getDevelopEntryHeading';
-import { getProposalTemplate } from '@/components/decisions/proposalEditor/getProposalTemplate';
 
 import { DevelopProposalClient } from './DevelopProposalClient';
 
@@ -41,7 +40,7 @@ export async function generateMetadata({
     ]);
 
     const heading = getDevelopEntryHeading({
-      template: getProposalTemplate(proposal),
+      template: proposal.proposalTemplate ?? null,
       fallback: t('decisions.developEditor.entryHeading'),
     });
     const decisionName = decisionProfile?.name;

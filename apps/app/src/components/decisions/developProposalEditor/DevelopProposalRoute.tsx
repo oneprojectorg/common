@@ -20,7 +20,6 @@ import { useTranslations } from '@/lib/i18n';
 import { DocumentNotAvailable } from '../DocumentNotAvailable';
 import { compileProposalSchema } from '../forms/proposal';
 import { ProposalFormRenderer } from '../proposalEditor/ProposalFormRenderer';
-import { getProposalTemplate } from '../proposalEditor/getProposalTemplate';
 import { decisionRootHref } from '../proposalHrefs';
 import { useLiveProposalDocument } from '../useLiveProposalDocument';
 import { DevelopProposalEditor } from './DevelopProposalEditor';
@@ -54,7 +53,7 @@ export function DevelopProposalRoute({
     notFound();
   }
 
-  const template = getProposalTemplate(proposal);
+  const template = proposal.proposalTemplate ?? null;
 
   if (!template) {
     throw new Error('Proposal template not found');

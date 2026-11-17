@@ -32,7 +32,6 @@ import type { FieldDescriptor } from '../forms/types';
 import { schemaHasOptions } from '../proposalTemplate';
 import { ProposalFormRenderer } from './ProposalFormRenderer';
 import { useOptionalVersionPreview } from './VersionPreviewContext';
-import { getProposalTemplate } from './getProposalTemplate';
 import { handleMutationError } from './handleMutationError';
 import { useProposalCollabToken } from './useProposalCollabToken';
 import { type ProposalDraftFields, useProposalDraft } from './useProposalDraft';
@@ -110,7 +109,7 @@ export function ProposalFormProvider({
   const userName =
     user.profile?.name ?? t('decisions.proposals.anonymousAuthor');
 
-  const proposalTemplate = getProposalTemplate(proposal);
+  const proposalTemplate = proposal.proposalTemplate ?? null;
 
   if (!proposalTemplate) {
     throw new Error('Proposal template not found');
