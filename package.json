@@ -101,7 +101,7 @@
     "js-yaml": "^4.1.0",
     "lodash": "^4.17.21",
     "motion": "12.4.7",
-    "nanoid": "5.1.2",
+    "nanoid": "5.1.16",
     "next": "catalog:",
     "open": "^10.1.0",
     "oxfmt": "^0.46.0",

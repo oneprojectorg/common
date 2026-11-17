@@ -280,8 +280,8 @@ importers:
         specifier: 12.4.7
         version: 12.4.7(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
       nanoid:
-        specifier: 5.1.2
-        version: 5.1.2
+        specifier: 5.1.16
+        version: 5.1.16
       next:
         specifier: 'catalog:'
         version: 16.4.6(@opentelemetry/api@1.9.0)(@playwright/test@1.58.2)(@types/node@24.13.3)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.85.1)
@@ -1300,8 +1300,8 @@ importers:
         specifier: ^5.2.1
         version: 5.3.2
       nanoid:
-        specifier: 5.1.2
-        version: 5.1.2
+        specifier: 5.1.16
+        version: 5.1.16
       node-geonames-client:
         specifier: ^0.0.2
         version: 0.0.2
@@ -9353,8 +9353,8 @@ packages:
     engines: {node: ^10 || ^12 || ^13.7 || ^14 || >=15.0.1}
     hasBin: true
 
-  nanoid@5.1.2:
-    resolution: {integrity: sha512-b+CiXQCNMUGe0Ri64S9SXFcP9hogjAJ2Rd6GdVxhPLRm7mhGaM7VgOvCAJ1ZshfHbqVDI3uqTI5C8/GaKuLI7g==}
+  nanoid@5.1.16:
+    resolution: {integrity: sha512-kVrnsrJqMR8+oLJnGEmSWw9BivK5mt7H3FZatVRjrc5wGqFYuBxX1yG7+A7Gi5AefkX6t/oCkizcQgpu0cY1dQ==}
     engines: {node: ^18 || >=20}
     hasBin: true
 
@@ -19031,7 +19031,7 @@ snapshots:
 
   nanoid@3.3.11: {}
 
-  nanoid@5.1.2: {}
+  nanoid@5.1.16: {}
 
   native-duplexpair@1.0.0: {}
 
