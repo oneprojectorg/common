@@ -28,10 +28,7 @@ import {
 import { SmsCommandFixture } from '../../../testing/smsCommandFixture';
 import { smsInboundEvent } from '../../../testing/smsInboundEvent';
 import { handleSMSCommand } from './handleSMSCommand';
-import {
-  SMS_ALREADY_JOINED_MESSAGE,
-  SMS_COMMAND_HELP_MESSAGE,
-} from './smsReply';
+import { SMS_COMMAND_HELP_MESSAGE } from './smsReply';
 
 const NUMBERS = {
   member: '+15005550090',
@@ -39,7 +36,6 @@ const NUMBERS = {
   submitting: '+15005550093',
   stranger: '+15005550094',
   chatter: '+15005550095',
-  joiner: '+15005550096',
   bareInfo: '+15005550097',
   infoHelp: '+15005550038',
   owner: '+15005550098',
@@ -453,27 +449,6 @@ describe('handleSMSCommand against the database', () => {
     ]);
   });
 
-  it('given a member texts JOIN, then they are told they already have an account and how to see their decisions', async ({
-    task,
-    onTestFinished,
-  }) => {
-    const fixture = new SmsCommandFixture(task.id, onTestFinished);
-    const phone = parsePhoneNumber(NUMBERS.joiner);
-    await fixture.createPhoneOnlyAccount(phone);
-    const t = new InngestTestEngine({ function: handleSMSCommand });
-
-    const { result } = await t.execute({
-      events: [
-        smsInboundEvent({ from: phone, keyword: 'join', argument: null }),
-      ],
-    });
-
-    expect(result).toEqual({ message: 'already joined' });
-    expect(recordedSms.map((sms) => sms.body)).toEqual([
-      SMS_ALREADY_JOINED_MESSAGE,
-    ]);
-  });
-
   it('given a public decision the member never joined, when they text SHOW alone, then it is not listed, and SHOW with its slug still describes it', async ({
     task,
     onTestFinished,
@@ -563,6 +538,31 @@ describe('handleSMSCommand against the database', () => {
     const { result } = await t.execute({
       events: [
         smsInboundEvent({ from: phone, keyword: 'show', argument: 'columbus' }),
+      ],
+    });
+
+    expect(result).toEqual({ message: 'unknown number, skipped' });
+    expect(recordedSms).toEqual([]);
+  });
+
+  it('given the webhook saw no account at receipt, when the account exists by the time the run executes, then the original text is still skipped', async ({
+    task,
+    onTestFinished,
+  }) => {
+    // The delayed original run and the signup replay must never both answer
+    // one text. The at-receipt snapshot, not a live read, decides.
+    const fixture = new SmsCommandFixture(task.id, onTestFinished);
+    const phone = parsePhoneNumber('+15005550096');
+    await fixture.createPhoneOnlyAccount(phone);
+    const t = new InngestTestEngine({ function: handleSMSCommand });
+
+    const { result } = await t.execute({
+      events: [
+        smsInboundEvent({
+          from: phone,
+          keyword: 'info-help',
+          authUserId: null,
+        }),
       ],
     });
 

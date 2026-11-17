@@ -227,10 +227,17 @@ export const Events = {
       from: z.string(),
       messageSid: z.string(),
       code: z.string().nullable(),
-      keyword: z.enum(SMS_KEYWORDS).nullable(),
+      keyword: z
+        .enum([...SMS_KEYWORDS, 'join'])
+        .nullable()
+        .transform((value) => (value === 'join' ? null : value)),
       argument: z.string().nullable().default(null),
       to: z.string().nullable().default(null),
       body: z.string().nullable().default(null),
+      // The account at receipt time, resolved once in the webhook. Absent on
+      // an event recorded before the field existed or when the lookup failed;
+      // consumers then resolve the account themselves.
+      authUserId: z.string().nullable().optional(),
     }),
   },
 } as const;

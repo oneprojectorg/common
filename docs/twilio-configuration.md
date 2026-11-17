@@ -107,7 +107,6 @@ keyword without a handler fails the typecheck.
 
 | Text                        | Reply                                                                                                                                      |
 | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| `JOIN`                      | On a known number: you already have an account. On an unknown number: `handleUnknownSmsSignup` sends the consent text and creates the account. |
 | `SHOW`                      | The decisions the member belongs to; on a line, that decision's phase, voting state and ballot size.                                        |
 | `SHOW <slug>`               | One decision's phase, voting state and ballot size.                                                                                        |
 | `VOTE [<slug>]`             | Starts registration when the voting phase has `voting.enrolment`: asks for the address. Without the rule: no registration is needed.        |
@@ -125,8 +124,9 @@ keyword without a handler fails the typecheck.
 | anything else               | The help text.                                                                                                                              |
 
 STOP, START and HELP never reach the dispatcher; Twilio answers them (see
-above). Digits from a number with no account are a signup code and belong to
-`handleUnknownSmsSignup`; digits from a confirmed number are proposal codes.
+above). Digits from a confirmed number are proposal codes. Digits from an
+unknown number start the signup like any other first text; only a run parked
+on the retired code wait still reads them as a signup code.
 
 ### Decision lines
 
@@ -230,7 +230,7 @@ stay off until the A2P campaign is approved.
 | Flag           | Gates                                                                                                            |
 | -------------- | ---------------------------------------------------------------------------------------------------------------- |
 | `sms-login`    | The phone option in `LoginPanel` and `JoinAccountModal`.                                                         |
-| `sms-signup`   | `handleUnknownSmsSignup`: an unknown number that texts the Messaging Service gets a consent text and an account. |
+| `sms-signup`   | `handleUnknownSmsSignup`: an unknown number that texts a decision line gets a confirmed account and one welcome with the Terms and STOP wording; off a line it gets a help reply. A first text that was a command or proposal codes replays when `sms-commands` is on. |
 | `sms-commands` | `handleSMSCommand`: a confirmed number that texts a command, a proposal code or anything else gets a reply (see Commands). |
 
 ## Local development
@@ -288,7 +288,7 @@ point outside production.
 
 | You text                 | Reply                                                                                                                                      |
 | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| `JOIN`                   | The consent text, then a code to confirm the number; reply with the code. `JOIN` takes no argument on either number.                      |
+| anything, as a stranger  | The welcome with the Terms and STOP wording; the account exists at once. A first text that was a command or proposal codes replays. |
 | `SHOW`                   | `"<decision>" (<slug>): Voting phase, voting open, N proposals.`                                                                           |
 | `VOTE`                   | `Welcome to "<decision>".` then `Two quick steps to register: your address, then a short affirmation. No ID needed.` then `What's your address?`, each on its own line. |
 | `375 S High St, …`       | `That's District 5.` then `Reply AGREE to register for "<decision>":` then the quoted attestation, each on its own line.                     |

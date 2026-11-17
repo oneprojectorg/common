@@ -1,3 +1,5 @@
+import { parsePhoneNumber } from '@op/common';
+import { TestPhoneAuthDataManager } from '@op/common/testing/helpers';
 import { Events, inngest } from '@op/events';
 import { createHmac } from 'node:crypto';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -60,6 +62,7 @@ describe('handleTwilioInboundWebhookRequest', () => {
         argument: null,
         to: '+16145550100',
         body: 'YES',
+        authUserId: null,
       },
     });
   });
@@ -90,11 +93,38 @@ describe('handleTwilioInboundWebhookRequest', () => {
         argument: null,
         to: '+16145550100',
         body: ' 234 567 ',
+        authUserId: null,
       },
     });
   });
 
-  it('given a text that is the JOIN keyword, when forwarded, then the event carries the keyword and not the text', async () => {
+  it('given a text from a confirmed number, when forwarded, then the event carries the account at receipt', async ({
+    task,
+    onTestFinished,
+  }) => {
+    process.env.TWILIO_AUTH_TOKEN = AUTH_TOKEN;
+    const testData = new TestPhoneAuthDataManager(task.id, onTestFinished);
+    const phone = parsePhoneNumber('+15005550777');
+    testData.cleanupByPhoneOnFinish(phone);
+    const authUserId = await testData.createUser({ phone, confirmed: true });
+    const params = { ...MESSAGE_PARAMS, From: phone, Body: 'LIST' };
+    const signature = signTwilioRequest(AUTH_TOKEN, URL, params);
+
+    const response = await handleTwilioInboundWebhookRequest({
+      rawBody: rawBodyOf(params),
+      signature,
+      url: URL,
+    });
+
+    expect(response.status).toBe(200);
+    expect(inngest.send).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ from: phone, authUserId }),
+      }),
+    );
+  });
+
+  it('given a text that was the retired JOIN keyword, when forwarded, then the event carries no keyword and keeps the text', async () => {
     process.env.TWILIO_AUTH_TOKEN = AUTH_TOKEN;
     const params = { ...MESSAGE_PARAMS, Body: ' Join! ' };
     const signature = signTwilioRequest(AUTH_TOKEN, URL, params);
@@ -113,10 +143,11 @@ describe('handleTwilioInboundWebhookRequest', () => {
         from: '+15005550006',
         messageSid: 'SM456',
         code: null,
-        keyword: 'join',
+        keyword: null,
         argument: null,
         to: '+16145550100',
         body: ' Join! ',
+        authUserId: null,
       },
     });
   });
@@ -144,6 +175,7 @@ describe('handleTwilioInboundWebhookRequest', () => {
         argument: 'columbus',
         to: '+16145550100',
         body: 'Show Columbus',
+        authUserId: null,
       },
     });
   });

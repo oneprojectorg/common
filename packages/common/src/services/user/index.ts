@@ -12,11 +12,15 @@ import { type UserWithRoles, getGlobalPermissions } from 'access-zones';
 
 import { NotFoundError, UnauthorizedError } from '../../utils/error';
 import { getNormalizedRoles, getOrgAccessUser } from '../access';
+import { policyAcceptanceSet } from './policyAcceptance';
 import { AllowListUser, allowListMetadataSchema } from './validators';
 
 export * from './discardUnconfirmedPhoneSignup';
+export * from './createConfirmedPhoneAccount';
 export * from './getPhoneSignupState';
 export * from './phoneSignup';
+export * from './policyAcceptance';
+export * from './recordPhoneSignupConsent';
 
 export interface User {
   id: number;
@@ -438,12 +442,7 @@ export const completeOnboarding = async ({
     .update(users)
     .set({
       onboardedAt: now,
-      tos,
-      privacy,
-      // Stamp the acceptance date whenever the corresponding flag is set true.
-      // These date columns are what gates the re-acceptance modal.
-      ...(tos ? { tosAcceptedOn: now } : {}),
-      ...(privacy ? { privacyAcceptedOn: now } : {}),
+      ...policyAcceptanceSet({ tos, privacy, now }),
     })
     .where(eq(users.authUserId, authUserId));
 };

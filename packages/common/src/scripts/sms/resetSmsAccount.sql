@@ -1,5 +1,5 @@
 -- Remove the account behind one phone number so the SMS signup can be demoed
--- again from JOIN: the GoTrue user, its public rows and everything the
+-- again from the SMS signup: the GoTrue user, its public rows and everything the
 -- profile owns in a decision (registrations, drafts, cast ballots cascade from
 -- the profile). The profile deleted is the account's own individual profile
 -- (users.profile_id), never current_profile_id, which points at whichever

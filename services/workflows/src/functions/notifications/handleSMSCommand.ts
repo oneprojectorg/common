@@ -16,7 +16,6 @@ import {
   freeText,
   info,
   infoHelp,
-  join,
   list,
   more,
   move,
@@ -33,12 +32,12 @@ import {
 } from './smsInboundLimits';
 import {
   INVALID_PHONE_RESULT,
+  SMS_COMMANDS_FEATURE_FLAG,
   SMS_UNAVAILABLE_RESULT,
   createTextSender,
   parseInboundNumber,
 } from './smsReply';
 
-const SMS_COMMANDS_FEATURE_FLAG = 'sms-commands';
 const { smsInboundReceived } = Events;
 
 export const handleSMSCommand = inngest.createFunction(
@@ -59,6 +58,7 @@ export const handleSMSCommand = inngest.createFunction(
       keyword,
       argument,
       body,
+      authUserId: accountAtReceipt,
     } = smsInboundReceived.schema.parse(event.data);
 
     const to = parseInboundNumber(from, 'command');
@@ -71,16 +71,23 @@ export const handleSMSCommand = inngest.createFunction(
       if (!flagEnabled || !to) {
         return { flagEnabled, account: null, line: null };
       }
+      // The webhook resolves the account once at receipt. An event recorded
+      // before the field existed falls back to a live read.
       const [state, found] = await Promise.all([
-        getPhoneSignupState({ phone: to }),
+        accountAtReceipt === undefined
+          ? getPhoneSignupState({ phone: to })
+          : null,
         inboundTo ? findDecisionPhoneNumber({ phone: inboundTo }) : null,
       ]);
+      const accountId =
+        accountAtReceipt === undefined
+          ? state?.status === 'confirmed'
+            ? state.authUserId
+            : null
+          : accountAtReceipt;
       return {
         flagEnabled,
-        account:
-          state.status === 'confirmed'
-            ? { authUserId: state.authUserId }
-            : null,
+        account: accountId ? { authUserId: accountId } : null,
         line: found
           ? {
               id: found.id,
@@ -149,8 +156,6 @@ export const handleSMSCommand = inngest.createFunction(
     switch (keyword) {
       case null:
         return freeText(context);
-      case 'join':
-        return join(context);
       case 'show':
         return show(context);
       case 'vote':

@@ -2,7 +2,7 @@ import { Events } from '@op/events';
 import { describe, expect, it } from 'vitest';
 
 describe('sms/inbound.received event schema', () => {
-  it('given an event recorded before the argument field existed, when parsed, then it reads as no argument', () => {
+  it('given an event recorded before the argument field existed, with the retired join keyword, when parsed, then it reads as free text with no argument', () => {
     const parsed = Events.smsInboundReceived.schema.parse({
       from: '+15005550006',
       messageSid: 'SM-old',
@@ -14,7 +14,7 @@ describe('sms/inbound.received event schema', () => {
       from: '+15005550006',
       messageSid: 'SM-old',
       code: null,
-      keyword: 'join',
+      keyword: null,
       argument: null,
       to: null,
       body: null,

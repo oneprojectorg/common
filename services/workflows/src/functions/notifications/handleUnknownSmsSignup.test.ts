@@ -10,7 +10,7 @@ import { TestDecisionsDataManager } from '@op/common/testing';
 import { createDecisionPhoneNumber } from '@op/common/testing/data';
 import { TestPhoneAuthDataManager } from '@op/common/testing/helpers';
 import { db, eq } from '@op/db/client';
-import { authUsers, profiles, users } from '@op/db/schema';
+import { authUsers, users } from '@op/db/schema';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { recordedSms, resetRecordedSms } from '../../../testing/mocks/sms';
@@ -45,18 +45,12 @@ const reply = (from: PhoneNumber, attempt: number, code: string | null) => ({
   }),
 });
 
-const silence = (attempt: number) => ({
-  id: `wait-for-confirmation-${attempt}`,
-  handler: () => null,
-});
+const LINE = '+16145550250';
 
-const replyingWith = (from: PhoneNumber, code: string) => [
-  reply(from, 1, code),
-];
-
-const noReply = [silence(1)];
-
-const LINE = '+16145550140';
+const replayDelivered = {
+  id: 'replay-original-command',
+  handler: () => ({}),
+};
 
 const readAuthUser = async (phone: PhoneNumber) => {
   const [row] = await db
@@ -67,22 +61,19 @@ const readAuthUser = async (phone: PhoneNumber) => {
   return row ?? null;
 };
 
-const readProfileId = async (authUserId: string) => {
+const readUserRow = async (authUserId: string) => {
   const [row] = await db
-    .select({ profileId: users.profileId })
+    .select({
+      profileId: users.profileId,
+      tos: users.tos,
+      privacy: users.privacy,
+      tosAcceptedOn: users.tosAcceptedOn,
+      privacyAcceptedOn: users.privacyAcceptedOn,
+    })
     .from(users)
     .where(eq(users.authUserId, authUserId))
     .limit(1);
-  return row?.profileId ?? null;
-};
-
-const profileExists = async (profileId: string) => {
-  const [row] = await db
-    .select({ id: profiles.id })
-    .from(profiles)
-    .where(eq(profiles.id, profileId))
-    .limit(1);
-  return row !== undefined;
+  return row ?? null;
 };
 
 const minutesAgo = (minutes: number) => new Date(Date.now() - minutes * 60_000);
@@ -100,12 +91,26 @@ const claimNumber = (
   return { phone, code: TEST_NUMBERS[number] };
 };
 
+const createBoundLine = async (
+  taskId: string,
+  onTestFinished: ConstructorParameters<typeof TestDecisionsDataManager>[1],
+) => {
+  const decisions = new TestDecisionsDataManager(taskId, onTestFinished);
+  const line = parsePhoneNumber(LINE);
+  const setup = await decisions.createDecisionSetup({ instanceCount: 1 });
+  await createDecisionPhoneNumber({
+    processInstanceId: setup.instance.instance.id,
+    phoneNumber: line,
+  });
+  return line;
+};
+
 beforeEach(() => {
   resetRecordedSms();
 });
 
 describe('handleUnknownSmsSignup against the database', () => {
-  it('given a stranger texts something other than JOIN, then they are texted how to join and no account is created', async ({
+  it('given a stranger texts off any decision line, then they are texted help and no account is created', async ({
     task,
     onTestFinished,
   }) => {
@@ -121,23 +126,24 @@ describe('handleUnknownSmsSignup against the database', () => {
     expect(recordedSms).toEqual([
       expect.objectContaining({
         to: phone,
-        body: expect.stringContaining('JOIN'),
+        body: expect.stringContaining('STOP'),
       }),
     ]);
+    expect(recordedSms[0]?.body).not.toContain('JOIN');
     expect(await readAuthUser(phone)).toBeNull();
   });
 
-  it('given a stranger texts, when they reply with the code GoTrue sent, then the number is confirmed, the account exists, and they were texted twice', async ({
+  it('given a stranger texts a decision line, then the account is created confirmed with consent stamped, and one welcome is sent', async ({
     task,
     onTestFinished,
   }) => {
     const testData = new TestPhoneAuthDataManager(task.id, onTestFinished);
-    const { phone, code } = claimNumber('+15005550007', testData);
+    const { phone } = claimNumber('+15005550007', testData);
+    const line = await createBoundLine(task.id, onTestFinished);
     const t = new InngestTestEngine({ function: handleUnknownSmsSignup });
 
     const { result } = await t.execute({
-      events: [smsInboundEvent({ from: phone, keyword: 'join' })],
-      steps: replyingWith(phone, code),
+      events: [smsInboundEvent({ from: phone, to: line })],
     });
 
     const authUser = await readAuthUser(phone);
@@ -145,73 +151,82 @@ describe('handleUnknownSmsSignup against the database', () => {
     expect(result).toEqual({
       message: 'account created',
       authUserId: authUser?.id,
+      replayed: false,
     });
-    expect(await readProfileId(authUser!.id)).toEqual(expect.any(String));
-    expect(recordedSms.map((message) => message.to)).toEqual([phone, phone]);
-    expect(recordedSms.at(-1)?.body).toBe(
-      "You're in! Welcome to Common. Text SHOW to see your decisions.",
-    );
+    const userRow = await readUserRow(authUser!.id);
+    expect(userRow).toMatchObject({
+      profileId: expect.any(String),
+      tos: true,
+      privacy: true,
+      tosAcceptedOn: expect.any(String),
+      privacyAcceptedOn: expect.any(String),
+    });
+    expect(recordedSms.map((message) => [message.to, message.from])).toEqual([
+      [phone, line],
+    ]);
+    expect(recordedSms[0]?.body).toContain('Terms of Service');
+    expect(recordedSms[0]?.body).toContain('Text VOTE to register');
   });
 
-  it('given a stranger texts JOIN to a bound line, when they reply with the code, then the consent text and the welcome both come from that line', async ({
+  it('given a stranger texts VOTE to a bound line, then the welcome comes from that line and the command replays', async ({
     task,
     onTestFinished,
   }) => {
     const testData = new TestPhoneAuthDataManager(task.id, onTestFinished);
-    const decisions = new TestDecisionsDataManager(task.id, onTestFinished);
-    const { phone, code } = claimNumber('+15005550010', testData);
-    const line = parsePhoneNumber(LINE);
-    const setup = await decisions.createDecisionSetup({ instanceCount: 1 });
-    await createDecisionPhoneNumber({
-      processInstanceId: setup.instance.instance.id,
-      phoneNumber: line,
-    });
+    const { phone } = claimNumber('+15005550010', testData);
+    const line = await createBoundLine(task.id, onTestFinished);
     const t = new InngestTestEngine({ function: handleUnknownSmsSignup });
 
     const { result } = await t.execute({
-      events: [smsInboundEvent({ from: phone, to: line, keyword: 'join' })],
-      steps: replyingWith(phone, code),
+      events: [
+        smsInboundEvent({
+          from: phone,
+          to: line,
+          keyword: 'vote',
+          body: 'VOTE',
+        }),
+      ],
+      steps: [replayDelivered],
     });
 
-    expect(result).toMatchObject({ message: 'account created' });
+    expect(result).toMatchObject({
+      message: 'account created',
+      replayed: true,
+    });
     expect(recordedSms.map((message) => [message.to, message.from])).toEqual([
       [phone, line],
-      [phone, line],
     ]);
-    expect(recordedSms.at(-1)?.body).toBe(
-      "You're in! Welcome to Common. Text VOTE to register.",
-    );
+    expect(recordedSms[0]?.body).not.toContain('Text VOTE to register');
+    expect(recordedSms[0]?.body).toContain('Terms of Service');
   });
 
-  it('given an abandoned attempt whose code is older than the reply window, when the number texts again and nobody replies, then the consent text is sent and the unconfirmed account is discarded', async ({
+  it('given a lapsed unconfirmed signup, when the number texts a line, then the existing account is confirmed instead of recreated', async ({
     task,
     onTestFinished,
   }) => {
     const testData = new TestPhoneAuthDataManager(task.id, onTestFinished);
     const { phone } = claimNumber('+15005550008', testData);
+    const line = await createBoundLine(task.id, onTestFinished);
     const authUserId = await testData.createUser({
       phone,
       confirmed: false,
       codeSentAt: minutesAgo(PHONE_SIGNUP_REPLY_WINDOW_MINUTES + 1),
     });
-    const profileId = await readProfileId(authUserId);
-    if (profileId === null) {
-      throw new Error('The signup trigger created no profile for the test row');
-    }
     const t = new InngestTestEngine({ function: handleUnknownSmsSignup });
 
     const { result } = await t.execute({
-      events: [smsInboundEvent({ from: phone, keyword: 'join' })],
-      steps: noReply,
+      events: [smsInboundEvent({ from: phone, to: line })],
     });
 
+    const authUser = await readAuthUser(phone);
+    expect(authUser?.id).toBe(authUserId);
+    expect(authUser?.phoneConfirmedAt).not.toBeNull();
     expect(result).toEqual({
-      message: 'timed out waiting for confirmation',
-      discard: 'discarded',
+      message: 'account created',
+      authUserId,
+      replayed: false,
     });
     expect(recordedSms.map((message) => message.to)).toEqual([phone]);
-    expect(await readAuthUser(phone)).toBeNull();
-    expect(await profileExists(profileId)).toBe(false);
   });
 
   it('given a code was texted moments ago and not yet confirmed, when the number texts again, then nothing is sent and no new code is requested', async ({
@@ -230,7 +245,7 @@ describe('handleUnknownSmsSignup against the database', () => {
     const t = new InngestTestEngine({ function: handleUnknownSmsSignup });
 
     const { result } = await t.execute({
-      events: [smsInboundEvent({ from: phone, keyword: 'join' })],
+      events: [smsInboundEvent({ from: phone })],
     });
 
     expect(result).toEqual({ message: 'signup attempt in progress, skipped' });
@@ -249,7 +264,7 @@ describe('handleUnknownSmsSignup against the database', () => {
     const t = new InngestTestEngine({ function: handleUnknownSmsSignup });
 
     const { result } = await t.execute({
-      events: [smsInboundEvent({ from: phone, keyword: 'join' })],
+      events: [smsInboundEvent({ from: phone })],
       steps: [
         { id: 'check-feature-flag', handler: () => true },
         { id: 'check-known-number', handler: () => ({ status: 'free' }) },
@@ -275,13 +290,14 @@ describe('handleUnknownSmsSignup against the database', () => {
     expect(result).toEqual({
       message: 'account created',
       authUserId: expect.any(String),
+      replayed: false,
     });
     const authUser = await readAuthUser(phone);
     expect(authUser?.phoneConfirmedAt).not.toBeNull();
     expect(result).toMatchObject({ authUserId: authUser?.id });
     expect(recordedSms.map((message) => message.to)).toEqual([phone]);
-    expect(recordedSms.at(-1)?.body).toBe(
-      "You're in! Welcome to Common. Text SHOW to see your decisions.",
+    expect(recordedSms.at(-1)?.body).toContain(
+      'Text SHOW to see your decisions.',
     );
   });
 
@@ -295,7 +311,7 @@ describe('handleUnknownSmsSignup against the database', () => {
     const t = new InngestTestEngine({ function: handleUnknownSmsSignup });
 
     const { result } = await t.execute({
-      events: [smsInboundEvent({ from: phone, keyword: 'join' })],
+      events: [smsInboundEvent({ from: phone })],
     });
 
     expect(result).toEqual({ message: 'known number, skipped' });
@@ -316,7 +332,7 @@ describe('handleUnknownSmsSignup against the database', () => {
     delete process.env.NEXT_PUBLIC_E2E;
     try {
       const { result } = await t.execute({
-        events: [smsInboundEvent({ from: phone, keyword: 'join' })],
+        events: [smsInboundEvent({ from: phone })],
       });
 
       expect(result).toEqual({ message: 'sms signup disabled' });
@@ -334,7 +350,6 @@ describe('handleUnknownSmsSignup against the database', () => {
       events: [
         smsInboundEvent({
           from: 'not-a-phone',
-          keyword: 'join',
           messageSid: 'SM-bad',
         }),
       ],
@@ -342,48 +357,5 @@ describe('handleUnknownSmsSignup against the database', () => {
 
     expect(result).toEqual({ message: 'invalid phone number' });
     expect(recordedSms).toEqual([]);
-  });
-
-  it('given a stranger texts, when they reply with a wrong code and then go quiet, then no account remains and no welcome is sent', async ({
-    task,
-    onTestFinished,
-  }) => {
-    const testData = new TestPhoneAuthDataManager(task.id, onTestFinished);
-    const { phone } = claimNumber('+15005550010', testData);
-    const t = new InngestTestEngine({ function: handleUnknownSmsSignup });
-
-    const { result } = await t.execute({
-      events: [smsInboundEvent({ from: phone, keyword: 'join' })],
-      steps: [reply(phone, 1, '000000'), silence(2)],
-    });
-
-    expect(result).toEqual({
-      message: 'timed out waiting for confirmation',
-      discard: 'discarded',
-    });
-    expect(await readAuthUser(phone)).toBeNull();
-    expect(recordedSms.map((message) => message.to)).toEqual([phone]);
-  });
-
-  it('given a stranger texts, when they reply with words first and the code second, then the account is created', async ({
-    task,
-    onTestFinished,
-  }) => {
-    const testData = new TestPhoneAuthDataManager(task.id, onTestFinished);
-    const { phone, code } = claimNumber('+15005550009', testData);
-    const t = new InngestTestEngine({ function: handleUnknownSmsSignup });
-
-    const { result } = await t.execute({
-      events: [smsInboundEvent({ from: phone, keyword: 'join' })],
-      steps: [reply(phone, 1, null), reply(phone, 2, code)],
-    });
-
-    const authUser = await readAuthUser(phone);
-    expect(authUser?.phoneConfirmedAt).not.toBeNull();
-    expect(result).toEqual({
-      message: 'account created',
-      authUserId: authUser?.id,
-    });
-    expect(recordedSms.map((message) => message.to)).toEqual([phone, phone]);
   });
 });

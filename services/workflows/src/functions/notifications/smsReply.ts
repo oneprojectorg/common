@@ -16,15 +16,13 @@ export const SMS_UNAVAILABLE_RESULT = {
   message: 'sms sending unavailable',
 } as const;
 
+export const SMS_COMMANDS_FEATURE_FLAG = 'sms-commands';
+
 export const SMS_COMMAND_HELP_MESSAGE =
   'Text SHOW to see your decisions, or SHOW and a decision name, for example SHOW columbus.\nReply STOP to unsubscribe.';
 
-export const SMS_ALREADY_JOINED_MESSAGE =
-  'You already have an account. Text SHOW to see your decisions.';
-
 export const SMS_COMMAND_LIST_MESSAGE = [
   'Commands:',
-  'JOIN sign up',
   'SHOW [name] your decisions, or one of them',
   'VOTE [name] register to vote',
   'AGREE confirm your registration',

@@ -16,8 +16,8 @@ Commands:
   show [slug]            Print one decision's whole voting state as JSON.
   reset-decision [slug]  Delete every voter's registrations, drafts, chat
                          sessions and cast ballots on one decision.
-  reset-account <phone>  Delete the account behind one phone number so JOIN
-                         starts from scratch.
+  reset-account <phone>  Delete the account behind one phone number so the
+                         SMS signup starts from scratch.
   reset <phone> [slug]   reset-decision, then reset-account, then show.
 
 Default: slug=sms-voting-test. The phone number is always explicit.
