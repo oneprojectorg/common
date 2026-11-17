@@ -14,11 +14,11 @@ import { ProposalsLoadError } from '../ProposalsLoadError';
 import { DevelopPageShell, getEntryName } from './DevelopPageShell';
 
 /**
- * The develop screen: what a holder of the Develop Proposals permission who
- * is not an admin sees while a develop phase is current and its inbound
- * selection is still pending. A muted band names the task; below it, the
- * previous phase's proposals (the sources) to prepare entries from, and the
- * entries this phase holds so far.
+ * The develop screen: what a holder of the Develop Proposals permission
+ * sees while a develop phase is current and its inbound selection
+ * is still pending. A muted band names the task; below it, the previous
+ * phase's proposals (the sources) to prepare entries from, and the entries
+ * this phase holds so far.
  */
 export function DevelopProposalsPage({
   instance,

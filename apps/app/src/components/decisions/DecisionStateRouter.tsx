@@ -125,9 +125,8 @@ function DecisionPage({
     // which entries are developed from the previous phase's proposals. This
     // branch must come first: without it an admin lands on the
     // review-selection screen below, which advances the previous phase's
-    // proposals as they are. An admin gets the admin develop screen, even
-    // when they also hold develop access; a develop-access holder gets the
-    // develop screen; anyone else keeps the generic page.
+    // proposals as they are. An admin wins over develop access; anyone else
+    // keeps the generic page.
     if (currentPhase && isDevelopPhase(currentPhase) && decisionSlug) {
       if (isAdmin) {
         return (

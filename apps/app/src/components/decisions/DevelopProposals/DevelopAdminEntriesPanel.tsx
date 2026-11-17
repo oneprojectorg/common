@@ -37,18 +37,9 @@ import {
   useDevelopEntries,
 } from './DevelopEntriesParts';
 
-/** The URL param of the entries' category filter, apart from the proposals list's. */
+// Not `category`, which the proposals list uses.
 const ENTRY_CATEGORY_PARAM = 'entryCategory';
 
-/**
- * The body of the admin's develop screen: a count of the develop phase's
- * entries, a search and a category filter, and the entries with their
- * category, budget and status. The API filters, searches and pages; the
- * category filter is kept in the URL.
- *
- * The count, the category filter and the table suspend on their own data
- * under sibling boundaries, so their requests start together.
- */
 export function DevelopAdminEntriesPanel({
   processInstanceId,
   phaseId,
@@ -56,15 +47,13 @@ export function DevelopAdminEntriesPanel({
   entryName,
 }: {
   processInstanceId: string;
-  /** The develop phase, whose entries are listed. */
   phaseId: string | undefined;
   decisionSlug: string;
   entryName: string;
 }) {
   const [categoryParam] = useEntryCategoryParam();
-  // The list takes the param as given, without waiting for the categories:
-  // an id this process does not have matches nothing until the filter, once
-  // the categories load, clears it.
+  // Used as given so the list does not wait for the categories; the filter
+  // clears an unknown id once they load.
   const categoryId =
     categoryParam === ALL_CATEGORIES ? undefined : categoryParam;
 
@@ -76,8 +65,7 @@ export function DevelopAdminEntriesPanel({
     >
       <div className="flex flex-col gap-10">
         <div className="flex min-h-11 flex-wrap items-center justify-between gap-4">
-          {/* Filtering swaps the rows in place, so the count is the only
-              feedback a screen reader gets that a search or filter landed. */}
+          {/* Outside Suspense so the live region exists before the count changes. */}
           <div role="status" aria-live="polite">
             <APIErrorBoundary fallbacks={{ default: () => null }}>
               <Suspense
@@ -124,10 +112,7 @@ export function DevelopAdminEntriesPanel({
   );
 }
 
-/**
- * "12 entries", or "3 of 12 entries" once a search or category narrows the
- * list, in the shape of the proposals list's count.
- */
+// Same shape as the proposals list's `ProposalCount`.
 function DevelopAdminEntriesCountSuspense({
   processInstanceId,
   phaseId,
@@ -136,9 +121,8 @@ function DevelopAdminEntriesCountSuspense({
   phaseId: string | undefined;
 }) {
   const t = useTranslations('decisions.develop');
-  // The unfiltered total is the "of N"; only `.total` is read, so the list is
-  // asked for one row. It is read before the list so both requests start in
-  // the first render: the table, a sibling, has already started the list's.
+  // Only `.total` is read, hence `limit: 1`. Read before the list so it
+  // starts in the same render as the table's list request.
   const [{ total: unfilteredTotal }] =
     trpc.decision.listProposals.useSuspenseQuery({
       processInstanceId,
@@ -147,9 +131,8 @@ function DevelopAdminEntriesCountSuspense({
     });
   const { total: count } = useDevelopEntries();
 
-  // The two totals come from separately cached queries, and a realtime
-  // refresh can land on one before the other. A count at or above the total
-  // stands alone, so the heading never reads "13 of 12".
+  // The totals are cached apart and can refresh out of step; `>=` keeps a
+  // "13 of 12" from showing.
   if (count >= unfilteredTotal) {
     return (
       <Header2 className="text-title font-normal">
@@ -183,8 +166,7 @@ function DevelopAdminCategoryFilterSuspense({
     categoryParam === ALL_CATEGORIES ||
     categories.some((category) => category.id === categoryParam);
 
-  // The param is untrusted. Once the categories are known, one that names
-  // none of them is dropped, and the list goes back to every category.
+  // The param is untrusted: drop an id that names no category.
   useEffect(() => {
     if (!isKnownCategory) {
       void setCategoryParam(null);
@@ -260,7 +242,7 @@ function DevelopAdminEntriesTableSuspense({
   );
 }
 
-/** The real header, so the skeleton's columns and height match the table's. */
+// Shared with the skeleton so its columns and height match.
 function DevelopAdminEntriesTableHeader({
   entryName,
   decisionSlug,
@@ -292,7 +274,6 @@ function DevelopAdminEntriesTableHeader({
   );
 }
 
-/** The category labels the entry's proposal data holds, as other lists show them. */
 function DevelopEntryCategoryCell({ entry }: { entry: Proposal }) {
   const format = useFormatter();
   const categories = entry.proposalData.category;
@@ -353,7 +334,7 @@ function DevelopAdminEntriesTableSkeleton({
   );
 }
 
-/** The category filter's trigger: full width up to 12rem below `sm`, 12rem above. */
+// ResponsiveSelect caps its phone trigger at 12rem.
 function CategoryFilterSkeleton() {
   return <Skeleton aria-hidden className="h-11 w-full max-w-48 sm:w-48" />;
 }

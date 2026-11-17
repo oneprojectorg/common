@@ -1,6 +1,4 @@
 /**
- * Whether a decision calls its categories "districts" in its copy.
- *
  * TODO: This is a hardcoded, per-decision copy override — the Columbus
  * decision refers to its categories as "districts", matched here on its
  * decision slug. Replace this with a proper configurable terminology/labeling

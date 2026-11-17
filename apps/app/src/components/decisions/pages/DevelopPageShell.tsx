@@ -6,11 +6,6 @@ import type { ReactNode } from 'react';
 
 import { type TranslateFn, useTranslations } from '@/lib/i18n';
 
-/**
- * The frame every develop screen shares while a develop phase is current and
- * its inbound selection is still pending: a muted band that names the task,
- * and the page column below it for the screen's own body.
- */
 export function DevelopPageShell({ children }: { children: ReactNode }) {
   const t = useTranslations('decisions');
 

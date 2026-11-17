@@ -7,12 +7,6 @@ import { useTranslations } from '@/lib/i18n';
 import { DevelopAdminEntriesPanel } from '../DevelopProposals/DevelopAdminEntriesPanel';
 import { DevelopPageShell, getEntryName } from './DevelopPageShell';
 
-/**
- * The develop screen an admin sees while a develop phase is current and its
- * inbound selection is still pending: the same band as the develop screen,
- * and below it the entries this phase holds, with their count, a search and
- * a category filter.
- */
 export function DevelopAdminPage({
   instance,
   decisionSlug,
