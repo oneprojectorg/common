@@ -29,9 +29,8 @@ export interface CreateDevelopedProposalInput {
 /**
  * Creates a draft proposal in a develop phase, developed from proposals of
  * any phase of the instance. Writes one `developed` edge per source in the same
- * transaction as the draft. When the phase has prefill mappings, the draft
- * starts with the mapped title and category, and its collaboration document,
- * created after the commit, with copies of the sources' mapped fragments.
+ * transaction as the draft. With prefill mappings on the phase, the draft
+ * starts from its sources (`getDevelopedEntryPrefill`).
  */
 export const createDevelopedProposal = async ({
   data,
@@ -123,11 +122,7 @@ export const createDevelopedProposal = async ({
   return createdProposal;
 };
 
-/**
- * The mapped system fields replace the caller's, as if the author had typed
- * them: the title becomes the entry's name, and the category and location
- * place the entry before anyone edits it.
- */
+/** The mapped system fields replace the caller's, as if the author typed them. */
 function withEntryPrefill({
   proposalData,
   prefill,

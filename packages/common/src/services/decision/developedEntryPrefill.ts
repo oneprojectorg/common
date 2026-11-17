@@ -29,19 +29,12 @@ import { getPreviousPhases } from './utils/phaseOrder';
 export type DevelopedEntryPrefill = {
   /** The mapped system fields: title, category, budget and location. */
   proposalData: ProposalDataInput;
-  /** The new collaboration document, copied from the sources' fragments. */
   documentUpdate: Uint8Array<ArrayBuffer> | null;
 };
 
 /**
- * Maps the sources into the form of the develop phase with the phase's
- * prefill mappings. Each mapped field whose rule reads a top-level source
- * field is copied as it is, as the source document's fragment; nothing is
- * cut to the target's constraints.
- *
- * Best effort: no mappings, or a prefill that fails, gives null and the entry
- * is created without a prefill. The caller has asserted develop access and
- * validated the sources.
+ * Maps the sources with the develop phase's prefill mappings. Best effort: a
+ * failure is logged and gives null, and the entry is created without it.
  */
 export async function getDevelopedEntryPrefill({
   instance,
@@ -86,9 +79,7 @@ export async function getDevelopedEntryPrefill({
       user,
     }));
   } catch (error) {
-    // A refused mapping or input points at the config (a target field the
-    // form lacks, a missing form) or a source outside the source phase; it
-    // fails every create alike, so it must be seen.
+    // A refused mapping or source is a config error that fails every create.
     if (error instanceof ValidationError || error instanceof NotFoundError) {
       logger.error('Develop prefill refused; creating the entry without it', {
         ...context,
@@ -125,9 +116,8 @@ export async function getDevelopedEntryPrefill({
 }
 
 /**
- * The system fields of the mapped data, normalized as the proposal editor's
- * autosave stores them; every other field lives only in the document. The
- * title is cut only at the hard limit, as it becomes the proposal's name.
+ * The system fields the editor's autosave stores, through its normalizers.
+ * The title is cut only at the hard limit, as it becomes the proposal's name.
  */
 function toSystemFields(data: Record<string, unknown>): ProposalDataInput {
   const title =
@@ -150,11 +140,7 @@ function toSystemFields(data: Record<string, unknown>): ProposalDataInput {
   };
 }
 
-/**
- * Creates the entry's collaboration document from the prefill. Never throws:
- * an entry without its seed is still a usable empty entry. An existing
- * document is left as it is.
- */
+/** Creates the entry's document unless it exists. Never throws. */
 export async function seedDevelopedEntryDocument({
   collaborationDocId,
   documentUpdate,
@@ -176,10 +162,7 @@ export async function seedDevelopedEntryDocument({
   }
 }
 
-/**
- * The source → target fragment pairs for the mapped keys. A rule whose source
- * is a nested path has no fragment of its own, so it seeds nothing.
- */
+/** A rule with a nested source path has no fragment of its own; it is left out. */
 function getFragmentRules({
   mappings,
   sourcePhaseId,
@@ -206,9 +189,8 @@ function getFragmentRules({
 }
 
 /**
- * Copies each rule's fragment from the first source whose document has it.
- * The mapped data holds a key only when every source agreed on it. Each
- * source document is fetched once; a source without one adds nothing.
+ * Each source document is fetched once. The mapped data holds a key only when
+ * the sources agreed, so the first source that has the fragment fills it.
  */
 async function getEntryDocumentUpdate({
   fields,

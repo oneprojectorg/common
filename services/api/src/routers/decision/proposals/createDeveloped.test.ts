@@ -131,10 +131,7 @@ const sourceToEntry = (
   },
 ];
 
-/**
- * Writes the source's document under the source form, points the develop
- * phase at the entry form, and maps title, summary, category and budget.
- */
+/** Maps title, summary, category and budget from the source to the entry form. */
 const configurePrefill = async ({
   instanceId,
   sourceId,

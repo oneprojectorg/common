@@ -377,9 +377,8 @@ const getProposalIdsByPhase = async ({
   );
 
 /**
- * The document assembled under the proposal's own template. A proposal with no
- * collaboration document, or one that cannot be fetched, gives no data, so
- * the other inputs still fill the target.
+ * The document assembled under the proposal's own template. No document, or
+ * one that cannot be fetched, gives no data; the other inputs still fill it.
  */
 const getAssembledProposalData = async ({
   instance,

@@ -92,9 +92,8 @@ export interface PhaseInstanceData {
    */
   formSchemaId?: string;
   /**
-   * Mappings (ADR 0022) that fill a proposal developed in this phase from its
-   * sources. Read it only through `getDevelopPrefillMappings`; only a setup
-   * script writes it, and the API phase encoders do not carry it.
+   * Develop prefill mappings (ADR 0022); read only through
+   * `getDevelopPrefillMappings`. Set by a setup script, not the API.
    */
   developPrefillMappings?: SchemaMapping[];
 }
