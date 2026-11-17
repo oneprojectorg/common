@@ -56,7 +56,12 @@ const replyingWith = (from: PhoneNumber, code: string) => [
 
 const noReply = [silence(1)];
 
-const LINE = '+16145550140';
+const LINE = '+16145550250';
+
+const replayDelivered = {
+  id: 'replay-original-command',
+  handler: () => ({}),
+};
 
 const readAuthUser = async (phone: PhoneNumber) => {
   const [row] = await db
@@ -201,7 +206,7 @@ describe('handleUnknownSmsSignup against the database', () => {
           body: 'VOTE',
         }),
       ],
-      steps: replyingWith(phone, code),
+      steps: [...replyingWith(phone, code), replayDelivered],
     });
 
     expect(result).toMatchObject({

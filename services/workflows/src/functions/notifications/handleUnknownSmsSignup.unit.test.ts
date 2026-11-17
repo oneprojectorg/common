@@ -72,6 +72,11 @@ const silence = (attempt: number) => ({
   handler: () => null,
 });
 
+const replayDelivered = {
+  id: 'replay-original-command',
+  handler: () => ({}),
+};
+
 const accepted = { status: 'accepted', providerMessageId: 'SM-c' } as const;
 
 const free = { status: 'free' } as const;
@@ -485,7 +490,7 @@ describe('handleUnknownSmsSignup', () => {
       events: [
         onLine({ from: FROM, keyword: 'vote', messageSid: 'SM-original' }),
       ],
-      steps: [reply(1, '123456')],
+      steps: [reply(1, '123456'), replayDelivered],
     });
 
     expect(result).toEqual({
@@ -524,7 +529,7 @@ describe('handleUnknownSmsSignup', () => {
 
     const { result, ctx } = await t.execute({
       events: [onLine({ from: FROM, body: '123', code: null })],
-      steps: [reply(1, '123456')],
+      steps: [reply(1, '123456'), replayDelivered],
     });
 
     expect(result).toEqual({
@@ -562,7 +567,7 @@ describe('handleUnknownSmsSignup', () => {
 
     const { result, ctx } = await t.execute({
       events: [onLine({ from: FROM, keyword: 'vote', body: 'VOTE' })],
-      steps: [reply(1, '123456')],
+      steps: [reply(1, '123456'), replayDelivered],
     });
 
     expect(result).toEqual({
