@@ -1677,8 +1677,8 @@
       "sourceSectionsLabel": "Proposal sections",
       "sourceSelectLabel": "Source proposal",
       "noReviews": "No reviews for this proposal yet.",
-      "advancedToast": "“{title}” advanced",
-      "savedToast": "“{title}” saved",
+      "advancedToast": "“<bdi>{title}</bdi>” advanced",
+      "savedToast": "“<bdi>{title}</bdi>” saved",
       "readOnlyNotice": "You can view this entry but not edit it."
     },
     "develop": {

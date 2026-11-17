@@ -1677,8 +1677,8 @@
       "sourceSectionsLabel": "প্রস্তাবের অংশ",
       "sourceSelectLabel": "উৎস প্রস্তাব",
       "noReviews": "এই প্রস্তাবের এখনও কোনো পর্যালোচনা নেই।",
-      "advancedToast": "“{title}” এগিয়ে গেছে",
-      "savedToast": "“{title}” সংরক্ষিত হয়েছে",
+      "advancedToast": "“<bdi>{title}</bdi>” এগিয়ে গেছে",
+      "savedToast": "“<bdi>{title}</bdi>” সংরক্ষিত হয়েছে",
       "readOnlyNotice": "আপনি এই এন্ট্রিটি দেখতে পারবেন, কিন্তু সম্পাদনা করতে পারবেন না।"
     },
     "develop": {

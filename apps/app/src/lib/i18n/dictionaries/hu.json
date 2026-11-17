@@ -1677,8 +1677,8 @@
       "sourceSectionsLabel": "A javaslat részei",
       "sourceSelectLabel": "Forrásjavaslat",
       "noReviews": "Ehhez a javaslathoz még nincs értékelés.",
-      "advancedToast": "„{title}” továbbjutott",
-      "savedToast": "„{title}” mentve",
+      "advancedToast": "„<bdi>{title}</bdi>” továbbjutott",
+      "savedToast": "„<bdi>{title}</bdi>” mentve",
       "readOnlyNotice": "Ezt a bejegyzést megtekintheti, de nem szerkesztheti."
     },
     "develop": {

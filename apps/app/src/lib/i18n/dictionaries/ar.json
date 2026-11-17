@@ -1677,8 +1677,8 @@
       "sourceSectionsLabel": "أقسام المقترح",
       "sourceSelectLabel": "المقترح المصدر",
       "noReviews": "لا توجد مراجعات لهذا المقترح بعد.",
-      "advancedToast": "تم تقديم «{title}»",
-      "savedToast": "تم حفظ «{title}»",
+      "advancedToast": "تم تقديم «<bdi>{title}</bdi>»",
+      "savedToast": "تم حفظ «<bdi>{title}</bdi>»",
       "readOnlyNotice": "يمكنك عرض هذا المُدخل دون تعديله."
     },
     "develop": {

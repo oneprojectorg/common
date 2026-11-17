@@ -1677,8 +1677,8 @@
       "sourceSectionsLabel": "Sections de la proposition",
       "sourceSelectLabel": "Proposition source",
       "noReviews": "Aucune évaluation pour cette proposition pour l’instant.",
-      "advancedToast": "« {title} » a avancé",
-      "savedToast": "Modifications de « {title} » enregistrées",
+      "advancedToast": "« <bdi>{title}</bdi> » a avancé",
+      "savedToast": "Modifications de « <bdi>{title}</bdi> » enregistrées",
       "readOnlyNotice": "Vous pouvez consulter cette entrée, mais pas la modifier."
     },
     "develop": {

@@ -112,8 +112,9 @@ function AdvanceButton({
     await save();
     await submitDevelopedProposal.mutateAsync({ proposalId: proposal.id });
     toast.success(
-      t('decisions.developEditor.advancedToast', {
+      t.rich('decisions.developEditor.advancedToast', {
         title: draft.title || t('decisions.develop.untitledEntry'),
+        bdi: (chunks) => <bdi>{chunks}</bdi>,
       }),
     );
     router.push(backHref);
@@ -139,8 +140,9 @@ function SaveChangesButton({ backHref }: { backHref: string }) {
   const { handleSubmit, isSubmitting } = useValidatedSubmit(async () => {
     await save();
     toast.success(
-      t('decisions.developEditor.savedToast', {
+      t.rich('decisions.developEditor.savedToast', {
         title: draft.title || t('decisions.develop.untitledEntry'),
+        bdi: (chunks) => <bdi>{chunks}</bdi>,
       }),
     );
     router.push(backHref);

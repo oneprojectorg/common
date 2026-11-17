@@ -1677,8 +1677,8 @@
       "sourceSectionsLabel": "Seções da proposta",
       "sourceSelectLabel": "Proposta fonte",
       "noReviews": "Ainda não há avaliações para esta proposta.",
-      "advancedToast": "“{title}” avançou",
-      "savedToast": "Alterações em “{title}” salvas",
+      "advancedToast": "“<bdi>{title}</bdi>” avançou",
+      "savedToast": "Alterações em “<bdi>{title}</bdi>” salvas",
       "readOnlyNotice": "Você pode ver esta entrada, mas não editá-la."
     },
     "develop": {
