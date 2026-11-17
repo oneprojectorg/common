@@ -1,13 +1,13 @@
-"use client";
+'use client';
 
-import { Header2 } from "@op/sense/Header";
-import { SplitPane } from "@op/sense/SplitPane";
-import type { ReactNode } from "react";
+import { Header2 } from '@op/sense/Header';
+import { SplitPane } from '@op/sense/SplitPane';
+import type { ReactNode } from 'react';
 
-import { useTranslations } from "@/lib/i18n";
+import { useTranslations } from '@/lib/i18n';
 
-import { UserAvatarMenu } from "../../SiteHeader";
-import { DecisionSubpageHeader } from "../DecisionSubpageHeader";
+import { UserAvatarMenu } from '../../SiteHeader';
+import { DecisionSubpageHeader } from '../DecisionSubpageHeader';
 
 interface DevelopProposalFrameProps {
   backHref: string;
