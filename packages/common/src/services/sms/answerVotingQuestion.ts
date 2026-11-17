@@ -48,7 +48,7 @@ export const answerVotingQuestion = async ({
     const text = result?.text?.trim();
     return text ? clipSmsText(text, SMS_ANSWER_MAX_LENGTH) : null;
   } catch (error) {
-    logger.warn('SMS question could not be answered', { error });
+    logger.error('SMS question could not be answered', { error });
     return null;
   } finally {
     clearTimeout(timer);

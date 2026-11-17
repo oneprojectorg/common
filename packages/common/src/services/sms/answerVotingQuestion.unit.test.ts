@@ -31,6 +31,7 @@ afterEach(() => {
 const stubEndpoint = (content: string) => {
   vi.stubEnv('AI_BASE_URL', 'https://inference.example.com/v1');
   vi.stubEnv('AI_API_KEY', 'test-key');
+  vi.stubEnv('AI_MODEL_ID', '');
   const fetchMock = vi.fn().mockResolvedValue(chatCompletionResponse(content));
   vi.stubGlobal('fetch', fetchMock);
   return fetchMock;

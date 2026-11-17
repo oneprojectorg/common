@@ -632,15 +632,12 @@ export const ask: SmsCommandHandler = async (context) => {
   }
 
   const resolved = await step.run('resolve-ask-answer', async () => {
+    const facts: string[] = [];
     const pending = await findPendingVoterEnrolment({
       authUserId: account.authUserId,
     });
-    if (pending && pending.taxonomyTermId === null) {
-      return { kind: 'awaiting_address' as const, answer: null };
-    }
-
-    const facts: string[] = [];
-    const instanceId = await findBallotInstance(context);
+    const instanceId =
+      pending?.processInstanceId ?? (await findBallotInstance(context));
     if (instanceId) {
       const decision = await swallowUnreadable(() =>
         describeEnrolmentDecision({
@@ -652,6 +649,18 @@ export const ask: SmsCommandHandler = async (context) => {
         facts.push(
           `Decision "${decision.name}": voting ${decision.votingOpen ? 'open' : 'closed'}.`,
         );
+        if (pending && decision.enrolment) {
+          const waitingOn = await pendingEnrolmentStep({
+            processInstanceId: pending.processInstanceId,
+            taxonomyTermId: pending.taxonomyTermId,
+            rule: decision.enrolment,
+          });
+          facts.push(
+            waitingOn === 'awaiting_address'
+              ? 'The member is registering; the next step is to text their street address.'
+              : 'The member is registering; the next step is to reply AGREE.',
+          );
+        }
       }
       const summary = await summarizeSmsBallot({
         authUserId: account.authUserId,
@@ -669,12 +678,8 @@ export const ask: SmsCommandHandler = async (context) => {
       commandList: SMS_COMMAND_LIST_MESSAGE,
       facts,
     });
-    return { kind: 'asked' as const, answer };
+    return { answer };
   });
-
-  if (resolved.kind === 'awaiting_address') {
-    return freeText(context);
-  }
 
   if (!resolved.answer) {
     return deliverAll({
