@@ -29,7 +29,6 @@ import {
 } from '@op/sense/Empty';
 import { Header2 } from '@op/sense/Header';
 import { Skeleton } from '@op/sense/Skeleton';
-import { Spinner } from '@op/sense/Spinner';
 import { StatusDot, type StatusDotIntent } from '@op/sense/StatusDot';
 import {
   Table,
@@ -42,7 +41,13 @@ import {
 } from '@op/sense/Table';
 import { toast } from '@op/sense/Toast';
 import { Toggle } from '@op/sense/Toggle';
-import { type ReactNode, useCallback, useMemo, useTransition } from 'react';
+import {
+  type ReactNode,
+  useCallback,
+  useMemo,
+  useState,
+  useTransition,
+} from 'react';
 import { LuCheck, LuLeaf, LuPencil } from 'react-icons/lu';
 
 import { Link, useRouter, useTranslations } from '@/lib/i18n';
@@ -62,6 +67,13 @@ import {
 } from '../proposalReviewDecoration';
 
 type DevelopSourceScope = ListDevelopSourcesInput['scope'];
+
+/** An advance or un-advance sent for an entry whose new status has not arrived yet. */
+type PendingStatusChange = {
+  entryId: string;
+  /** Advance (to submitted) or un-advance (to draft). */
+  toAdvanced: boolean;
+};
 
 const RECOMMENDATION_INTENT: Record<RecommendationValue, StatusDotIntent> = {
   yes: 'success',
@@ -238,19 +250,34 @@ function DevelopSourcesTable({
   const submitEntry = trpc.decision.submitDevelopedProposal.useMutation();
   const unsubmitEntry = trpc.decision.unsubmitDevelopedProposal.useMutation();
 
-  const changingEntryId = submitEntry.isPending
-    ? (submitEntry.variables?.proposalId ?? null)
-    : unsubmitEntry.isPending
-      ? (unsubmitEntry.variables?.proposalId ?? null)
-      : null;
-  const isBusy =
-    isPreparing || submitEntry.isPending || unsubmitEntry.isPending;
+  // The toggle flips only when the refetch from that channel lands, after the
+  // mutation resolves, so the row stays loading until its status reaches the
+  // target. It is cleared here once it does, so a later change to the entry
+  // from elsewhere cannot turn the spinner back on.
+  const [pendingChange, setPendingChange] =
+    useState<PendingStatusChange | null>(null);
+  if (pendingChange) {
+    const pendingEntry = sources
+      .flatMap((source) => source.developedProposals)
+      .find((entry) => entry.id === pendingChange.entryId);
+    const targetStatus = pendingChange.toAdvanced
+      ? ProposalStatus.SUBMITTED
+      : ProposalStatus.DRAFT;
+    if (!pendingEntry || pendingEntry.status === targetStatus) {
+      setPendingChange(null);
+    }
+  }
 
-  const advance = (entry: DevelopedProposal, title: string) =>
+  const changingEntryId = pendingChange?.entryId ?? null;
+  const isBusy = isPreparing || pendingChange !== null;
+
+  const advance = (entry: DevelopedProposal, title: string) => {
+    setPendingChange({ entryId: entry.id, toAdvanced: true });
     submitEntry.mutate(
       { proposalId: entry.id },
       {
         onError: (error) => {
+          setPendingChange(null);
           logger.error('Failed to advance a develop entry', { error });
           // A 400 is the server's form validation: the entry is incomplete.
           toast.error(
@@ -261,12 +288,15 @@ function DevelopSourcesTable({
         },
       },
     );
+  };
 
-  const unadvance = (entry: DevelopedProposal, title: string) =>
+  const unadvance = (entry: DevelopedProposal, title: string) => {
+    setPendingChange({ entryId: entry.id, toAdvanced: false });
     unsubmitEntry.mutate(
       { proposalId: entry.id },
       {
         onError: (error) => {
+          setPendingChange(null);
           logger.error('Failed to un-advance a develop entry', { error });
           toast.error(
             t.rich('develop.unadvanceEntryError', {
@@ -277,6 +307,7 @@ function DevelopSourcesTable({
         },
       },
     );
+  };
 
   return (
     <div className="flex flex-col gap-10">
@@ -358,9 +389,7 @@ function DevelopSourcesTable({
                           />
                           <AdvanceEntryToggle
                             title={title}
-                            advanced={
-                              developedEntry.status !== ProposalStatus.DRAFT
-                            }
+                            status={developedEntry.status}
                             disabled={isBusy}
                             loading={changingEntryId === developedEntry.id}
                             onAdvance={() => advance(developedEntry, title)}
@@ -454,33 +483,38 @@ function EntryActions({ children }: { children: ReactNode }) {
 
 /**
  * Pressed when the entry is advanced. Pressing it submits a draft entry, and
- * the server checks it against its form; unpressing it moves an advanced entry
- * back to draft.
+ * the server checks it against its form; unpressing it moves a submitted entry
+ * back to draft. An entry past submitted (rejected, selected and so on) shows
+ * as advanced and cannot be changed here.
  */
 function AdvanceEntryToggle({
   title,
-  advanced,
+  status,
   disabled,
   loading,
   onAdvance,
   onUnadvance,
 }: {
   title: string;
-  /** The entry is no longer a draft. */
-  advanced: boolean;
+  status: DevelopedProposal['status'];
+  /** Another row is busy. */
   disabled: boolean;
+  /** This row's change is in flight. */
   loading: boolean;
   onAdvance: () => void;
   onUnadvance: () => void;
 }) {
   const t = useTranslations('decisions.develop');
+  const advanced = status !== ProposalStatus.DRAFT;
+  const actionable =
+    status === ProposalStatus.DRAFT || status === ProposalStatus.SUBMITTED;
 
   return (
     <Toggle
       variant="outline"
       pressed={advanced}
-      disabled={disabled || loading}
-      aria-busy={loading || undefined}
+      disabled={disabled || !actionable}
+      loading={loading}
       aria-label={
         advanced
           ? t('advancedEntryLabel', { title })
@@ -494,11 +528,7 @@ function AdvanceEntryToggle({
         }
       }}
     >
-      {loading ? (
-        <Spinner aria-hidden data-icon="inline-start" />
-      ) : advanced ? (
-        <LuCheck aria-hidden data-icon="inline-start" />
-      ) : null}
+      {advanced ? <LuCheck aria-hidden data-icon="inline-start" /> : null}
       {advanced ? t('advancedEntryAction') : t('advanceEntryAction')}
     </Toggle>
   );

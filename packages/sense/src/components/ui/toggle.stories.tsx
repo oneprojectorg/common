@@ -15,6 +15,9 @@ const meta: Meta<typeof Toggle> = {
       control: 'select',
       options: ['default', 'sm', 'lg'],
     },
+    loading: {
+      control: 'boolean',
+    },
   },
 };
 
@@ -73,6 +76,25 @@ export const Pressed: Story = {
         Text
       </Toggle>
       <Toggle variant="outline" defaultPressed>
+        <LuBold />
+        Text
+      </Toggle>
+    </div>
+  ),
+};
+
+export const Loading: Story = {
+  render: () => (
+    <div className="flex flex-wrap items-center gap-4">
+      <Toggle loading>
+        <LuBold />
+        Text
+      </Toggle>
+      <Toggle variant="outline" loading>
+        <LuBold />
+        Text
+      </Toggle>
+      <Toggle variant="outline" defaultPressed loading>
         <LuBold />
         Text
       </Toggle>
