@@ -117,6 +117,7 @@ function PhaseDetailForm({
   const isPast = lockState === 'past';
   const isCurrent = lockState === 'current';
   const lockNoteId = useId();
+  const headingId = useId();
   const additionalInfoLabelId = useId();
 
   const posthog = usePostHog();
@@ -268,7 +269,7 @@ function PhaseDetailForm({
               total: phaseCount,
             })}
           </p>
-          <Header1 className="text-headline">
+          <Header1 id={headingId} className="text-headline">
             {phase.name?.trim() ? (
               <bdi>{phase.name}</bdi>
             ) : (
@@ -285,6 +286,7 @@ function PhaseDetailForm({
       <div
         className="space-y-8"
         role={isPast ? 'group' : undefined}
+        aria-labelledby={isPast ? headingId : undefined}
         aria-describedby={isPast ? lockNoteId : undefined}
       >
         {isPast && (
@@ -302,7 +304,7 @@ function PhaseDetailForm({
           errorMessage={getErrorMessage('name')}
           description={t('decisions.processBuilder.phaseShortNameHint')}
           maxLength={50}
-          disabled={isPast}
+          readOnly={isPast}
         />
         <PhaseField
           id="phase-headline"
@@ -314,7 +316,7 @@ function PhaseDetailForm({
           errorMessage={getErrorMessage('headline')}
           description={t('decisions.processBuilder.phaseHeadlineHint')}
           maxLength={50}
-          disabled={isPast}
+          readOnly={isPast}
         />
         <PhaseField
           id="phase-description"
@@ -328,7 +330,7 @@ function PhaseDetailForm({
           errorMessage={getErrorMessage('description')}
           description={t('decisions.processBuilder.phaseDescriptionHint')}
           maxLength={250}
-          disabled={isPast}
+          readOnly={isPast}
         />
         <div className="space-y-2">
           <p id={additionalInfoLabelId} className="block font-strong">
@@ -659,7 +661,7 @@ function PhaseField({
   maxLength,
   multiline,
   rows,
-  disabled,
+  readOnly,
 }: {
   id: string;
   label: string;
@@ -672,7 +674,7 @@ function PhaseField({
   maxLength?: number;
   multiline?: boolean;
   rows?: number;
-  disabled?: boolean;
+  readOnly?: boolean;
 }) {
   const isInvalid = !!errorMessage;
   return (
@@ -689,7 +691,8 @@ function PhaseField({
           maxLength={maxLength}
           onChange={(e) => onChange(e.target.value)}
           onBlur={onBlur}
-          disabled={disabled}
+          readOnly={readOnly}
+          className={cn(readOnly && 'bg-muted')}
           aria-invalid={isInvalid || undefined}
         />
       ) : (
@@ -699,7 +702,8 @@ function PhaseField({
           maxLength={maxLength}
           onChange={(e) => onChange(e.target.value)}
           onBlur={onBlur}
-          disabled={disabled}
+          readOnly={readOnly}
+          className={cn(readOnly && 'bg-muted')}
           aria-invalid={isInvalid || undefined}
         />
       )}

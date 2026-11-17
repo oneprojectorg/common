@@ -159,6 +159,9 @@ export function PhasesSectionContent({
     setPhaseToDelete(null);
   };
 
+  const editLabel = (configured: boolean) =>
+    configured ? t('Edit') : t('decisions.processBuilder.configureAction');
+
   /** Check if a phase has its required fields filled in */
   const isPhaseConfigured = (phase: PhaseDefinition) => {
     return !!(
@@ -239,11 +242,7 @@ export function PhasesSectionContent({
                           size="sm"
                           onClick={() => setSection(phaseToSectionId(phase.id))}
                         >
-                          {isPast
-                            ? t('View')
-                            : configured
-                              ? t('Edit')
-                              : t('decisions.processBuilder.configureAction')}
+                          {isPast ? t('View') : editLabel(configured)}
                         </Button>
                       </PhaseRow>
                     </li>
@@ -292,9 +291,7 @@ export function PhasesSectionContent({
                       size="sm"
                       onClick={() => setSection(phaseToSectionId(phase.id))}
                     >
-                      {configured
-                        ? t('Edit')
-                        : t('decisions.processBuilder.configureAction')}
+                      {editLabel(configured)}
                     </Button>
                     <Button
                       variant="destructive"
