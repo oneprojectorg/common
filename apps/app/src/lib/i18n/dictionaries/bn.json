@@ -1707,8 +1707,6 @@
       "resultsCount": "{count, plural, one {#টি ফলাফল} other {#টি ফলাফল}}",
       "entriesCount": "{count, plural, one {#টি এন্ট্রি} other {#টি এন্ট্রি}}",
       "categoryColumn": "বিভাগ",
-      "filterByCategoryLabel": "বিভাগ অনুসারে এন্ট্রিগুলি ফিল্টার করুন",
-      "allCategoriesOption": "সব বিভাগ",
       "noFilteredEntriesDescription": "অন্যভাবে খুঁজুন বা অন্য বিভাগ বেছে নিন।",
       "advancingCount": "{count, plural, one {#টি প্রস্তাব এগিয়ে যাচ্ছে} other {#টি প্রস্তাব এগিয়ে যাচ্ছে}}",
       "confirmSelectionsAction": "নির্বাচন নিশ্চিত করুন"

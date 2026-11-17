@@ -5,14 +5,6 @@ import { trpc } from '@op/api/client';
 import type { Proposal } from '@op/common/client';
 import { useDebounce } from '@op/hooks';
 import { Header2 } from '@op/sense/Header';
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@op/sense/Select';
 import { Skeleton } from '@op/sense/Skeleton';
 import {
   Table,
@@ -28,6 +20,7 @@ import { Suspense, useDeferredValue, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
+import { CategoryFilterSelect } from '../CategoryFilterSelect';
 import { ProposalsLoadError } from '../ProposalsLoadError';
 import { ALL_CATEGORIES } from '../proposalFilterQuery';
 import {
@@ -76,7 +69,6 @@ function DevelopAdminEntriesPanelSuspense({
   decisionSlug,
   entryName,
 }: DevelopAdminEntriesPanelProps) {
-  const t = useTranslations('decisions.develop');
   const [{ items: categories }] = trpc.decision.getCategories.useSuspenseQuery({
     processInstanceId,
   });
@@ -107,10 +99,6 @@ function DevelopAdminEntriesPanelSuspense({
     categoryId:
       deferredCategory === ALL_CATEGORIES ? undefined : deferredCategory,
   };
-  const selectedCategoryName =
-    selectedCategory === ALL_CATEGORIES
-      ? t('allCategoriesOption')
-      : categories.find((category) => category.id === selectedCategory)?.name;
 
   return (
     <div className="flex flex-col gap-10">
@@ -125,43 +113,17 @@ function DevelopAdminEntriesPanelSuspense({
 
         <div className="flex w-full flex-wrap items-center gap-4 sm:w-auto">
           <DevelopEntriesSearch value={search} onChange={setSearch} />
-          <Select
-            value={selectedCategory}
-            onValueChange={(value) => {
-              if (value !== null) {
-                void setCategoryParam(value === ALL_CATEGORIES ? null : value);
-              }
+          <CategoryFilterSelect
+            decisionSlug={decisionSlug}
+            categories={categories}
+            selectedCategory={selectedCategory}
+            onSelectCategory={(category) => {
+              void setCategoryParam(
+                category === ALL_CATEGORIES ? null : category,
+              );
             }}
-          >
-            <SelectTrigger
-              aria-label={t('filterByCategoryLabel')}
-              className="w-full sm:w-48"
-            >
-              {/* The value is an id, so the trigger renders the name. */}
-              <SelectValue className="min-w-0">
-                {() => (
-                  <span
-                    dir="auto"
-                    className="min-w-0 truncate ltr:text-left rtl:text-right"
-                  >
-                    {selectedCategoryName}
-                  </span>
-                )}
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent>
-              <SelectGroup>
-                <SelectItem value={ALL_CATEGORIES}>
-                  {t('allCategoriesOption')}
-                </SelectItem>
-                {categories.map((category) => (
-                  <SelectItem key={category.id} value={category.id}>
-                    <bdi>{category.name}</bdi>
-                  </SelectItem>
-                ))}
-              </SelectGroup>
-            </SelectContent>
-          </Select>
+            className="w-full sm:w-48"
+          />
         </div>
       </div>
 

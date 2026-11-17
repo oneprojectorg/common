@@ -1707,8 +1707,6 @@
       "resultsCount": "{count, plural, zero {لا نتائج} one {نتيجة واحدة} two {نتيجتان} few {# نتائج} many {# نتيجة} other {# نتيجة}}",
       "entriesCount": "{count, plural, zero {لا مُدخلات} one {مُدخل واحد} two {مُدخلان} few {# مُدخلات} many {# مُدخلًا} other {# مُدخل}}",
       "categoryColumn": "الفئة",
-      "filterByCategoryLabel": "تصفية المُدخلات حسب الفئة",
-      "allCategoriesOption": "جميع الفئات",
       "noFilteredEntriesDescription": "جرّب بحثًا آخر أو فئة أخرى.",
       "advancingCount": "{count, plural, zero {لا مقترحات متقدمة} one {مقترح واحد يتقدم} two {مقترحان يتقدمان} few {# مقترحات تتقدم} many {# مقترحًا يتقدم} other {# مقترح يتقدم}}",
       "confirmSelectionsAction": "تأكيد الاختيارات"

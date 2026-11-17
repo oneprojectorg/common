@@ -1707,8 +1707,6 @@
       "resultsCount": "{count, plural, one {# találat} other {# találat}}",
       "entriesCount": "{count, plural, one {# bejegyzés} other {# bejegyzés}}",
       "categoryColumn": "Kategória",
-      "filterByCategoryLabel": "Bejegyzések szűrése kategória szerint",
-      "allCategoriesOption": "Összes kategória",
       "noFilteredEntriesDescription": "Próbálj másik keresést vagy kategóriát.",
       "advancingCount": "{count, plural, one {# javaslat jut tovább} other {# javaslat jut tovább}}",
       "confirmSelectionsAction": "Kiválasztás megerősítése"

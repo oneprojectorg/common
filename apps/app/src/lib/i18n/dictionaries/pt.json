@@ -1707,8 +1707,6 @@
       "resultsCount": "{count, plural, one {# resultado} other {# resultados}}",
       "entriesCount": "{count, plural, one {# entrada} other {# entradas}}",
       "categoryColumn": "Categoria",
-      "filterByCategoryLabel": "Filtrar entradas por categoria",
-      "allCategoriesOption": "Todas as categorias",
       "noFilteredEntriesDescription": "Tente outra pesquisa ou categoria.",
       "advancingCount": "{count, plural, one {# proposta avançando} other {# propostas avançando}}",
       "confirmSelectionsAction": "Confirmar seleções"
