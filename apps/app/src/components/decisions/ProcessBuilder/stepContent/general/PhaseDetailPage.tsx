@@ -8,6 +8,7 @@ import {
   isReviewPhase,
   isVotingPhase,
 } from '@op/common/client';
+import { Alert, AlertDescription } from '@op/sense/Alert';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -43,6 +44,7 @@ import { cn } from '@op/sense/lib/utils';
 import { useQueryState } from 'nuqs';
 import { usePostHog } from 'posthog-js/react';
 import { useId, useRef, useState } from 'react';
+import { LuLock } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -50,7 +52,6 @@ import { RichTextEditorWithToolbar } from '@/components/RichTextEditor/RichTextE
 import { ToggleRow } from '@/components/layout/split/form/ToggleRow';
 
 import { useProcessBuilderAutosave } from '../../ProcessBuilderAutosaveContext';
-import { LockNote } from '../../components/LockNote';
 import { SaveStatusIndicator } from '../../components/SaveStatusIndicator';
 import type { SectionProps } from '../../contentRegistry';
 import { isPhaseSection, sectionIdToPhaseId } from '../../navigationConfig';
@@ -275,11 +276,6 @@ function PhaseDetailForm({
               t('decisions.processBuilder.addPhaseAction')
             )}
           </Header1>
-          {isPast && (
-            <LockNote id={lockNoteId} data-testid="past-phase-lock-note">
-              {t('decisions.processBuilder.pastPhaseLockedNote')}
-            </LockNote>
-          )}
         </div>
         <SaveStatusIndicator
           status={autosaveStatus.status}
@@ -292,6 +288,21 @@ function PhaseDetailForm({
         role={isPast ? 'group' : undefined}
         aria-describedby={isPast ? lockNoteId : undefined}
       >
+        {isPast && (
+          // `role="note"`: shown on load, so the default `alert` role would
+          // interrupt the screen reader with it.
+          <Alert
+            variant="info"
+            role="note"
+            id={lockNoteId}
+            data-testid="past-phase-lock-note"
+          >
+            <LuLock aria-hidden />
+            <AlertDescription>
+              {t('decisions.processBuilder.pastPhaseLockedNote')}
+            </AlertDescription>
+          </Alert>
+        )}
         <PhaseField
           id="phase-name"
           label={t('decisions.processBuilder.phaseShortNameLabel')}
