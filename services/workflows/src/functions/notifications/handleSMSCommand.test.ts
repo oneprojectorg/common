@@ -1871,6 +1871,120 @@ describe('handleSMSCommand building and casting the ballot', () => {
       }),
     );
 
+  it('given a member asks L to add a proposal, then the model adds it through the tools and the draft changes', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsCommandFixture(task.id, onTestFinished);
+    const { instanceId } = await seed(fixture, {
+      phone: NUMBERS.asker,
+      line: '+16145550251',
+      name: 'Ask tools decision',
+    });
+    const realFetch = globalThis.fetch;
+    vi.stubEnv('AI_BASE_URL', 'https://inference.test.invalid/v1');
+    vi.stubEnv('AI_API_KEY', 'test-key');
+    const aiBodies: string[] = [];
+    const aiResponses = [
+      new Response(
+        JSON.stringify({
+          id: 'mock-tool-call',
+          object: 'chat.completion',
+          created: 0,
+          model: 'glm-5.3-flash',
+          choices: [
+            {
+              index: 0,
+              message: {
+                role: 'assistant',
+                content: null,
+                tool_calls: [
+                  {
+                    id: 'call-1',
+                    type: 'function',
+                    function: {
+                      name: 'add_picks',
+                      arguments: JSON.stringify({ codes: [101] }),
+                    },
+                  },
+                ],
+              },
+              finish_reason: 'tool_calls',
+            },
+          ],
+          usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 },
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      ),
+      new Response(
+        JSON.stringify({
+          id: 'mock-answer',
+          object: 'chat.completion',
+          created: 0,
+          model: 'glm-5.3-flash',
+          choices: [
+            {
+              index: 0,
+              message: {
+                role: 'assistant',
+                content:
+                  'Added 101 Crosswalk lighting. $915,000 left. Text REMOVE 101 to undo.',
+              },
+              finish_reason: 'stop',
+            },
+          ],
+          usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 },
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      ),
+    ];
+    vi.stubGlobal('fetch', ((input: RequestInfo | URL, init?: RequestInit) => {
+      if (String(input).startsWith('https://inference.test.invalid')) {
+        aiBodies.push(String(init?.body));
+        return Promise.resolve(aiResponses.shift()!);
+      }
+      return realFetch(input, init);
+    }) as typeof fetch);
+    onTestFinished(() => {
+      vi.unstubAllGlobals();
+      vi.unstubAllEnvs();
+    });
+
+    const { result } = await run(
+      smsInboundEvent({
+        from: parsePhoneNumber(NUMBERS.asker),
+        to: '+16145550251',
+        keyword: 'l',
+        argument: 'add the crosswalk one',
+        body: 'L add the crosswalk one',
+      }),
+    );
+
+    expect(result).toEqual({ message: 'question answered' });
+    expect(recordedSms.at(-1)?.body).toContain('Added 101');
+    const picks = await readDraftPicks(instanceId);
+    expect(picks).toHaveLength(1);
+    const firstRequestTools = JSON.stringify(
+      JSON.parse(aiBodies[0] ?? '{}').tools,
+    );
+    for (const tool of [
+      'get_decision',
+      'get_registration',
+      'get_ballot',
+      'list_proposals',
+      'get_proposal',
+      'add_picks',
+      'remove_pick',
+      'move_pick',
+      'submit_ballot',
+    ]) {
+      expect(firstRequestTools).toContain(tool);
+    }
+    expect(JSON.stringify(JSON.parse(aiBodies[1] ?? '{}').messages)).toContain(
+      'added',
+    );
+  });
+
   it("given a confirmed non-member texts a code to a private decision's line, then the reply is generic and names no decision", async ({
     task,
     onTestFinished,

@@ -22,7 +22,6 @@ import {
   VoterNotEnrolledError,
   addSmsBallotPicks,
   affirmVoterAttestation,
-  answerVotingQuestion,
   deleteBallotDraft,
   findCastBallot,
   findLatestCastBallotInstance,
@@ -74,6 +73,8 @@ import {
   moveSmsBallotPick,
   removeSmsBallotPick,
   resolveVoterAddress,
+  runVotingAssistant,
+  votingAssistantTools,
   startVoterEnrolment,
   submitSmsBallot,
   summarizeSmsBallot,
@@ -632,51 +633,18 @@ export const ask: SmsCommandHandler = async (context) => {
   }
 
   const resolved = await step.run('resolve-ask-answer', async () => {
-    const facts: string[] = [];
     const pending = await findPendingVoterEnrolment({
       authUserId: account.authUserId,
     });
     const instanceId =
       pending?.processInstanceId ?? (await findBallotInstance(context));
-    if (instanceId) {
-      const decision = await swallowUnreadable(() =>
-        describeEnrolmentDecision({
-          instanceId,
-          authUserId: account.authUserId,
-        }),
-      );
-      if (decision) {
-        facts.push(
-          `Decision "${decision.name}": voting ${decision.votingOpen ? 'open' : 'closed'}.`,
-        );
-        if (pending && decision.enrolment) {
-          const waitingOn = await pendingEnrolmentStep({
-            processInstanceId: pending.processInstanceId,
-            taxonomyTermId: pending.taxonomyTermId,
-            rule: decision.enrolment,
-          });
-          facts.push(
-            waitingOn === 'awaiting_address'
-              ? 'The member is registering; the next step is to text their street address.'
-              : 'The member is registering; the next step is to reply AGREE.',
-          );
-        }
-      }
-      const summary = await summarizeSmsBallot({
-        authUserId: account.authUserId,
-        instanceId,
-      }).catch(() => null);
-      if (summary) {
-        facts.push(
-          `The member's draft ballot holds ${summary.picks.length} picks.`,
-        );
-      }
-    }
-
-    const answer = await answerVotingQuestion({
+    const answer = await runVotingAssistant({
       question,
       commandList: SMS_COMMAND_LIST_MESSAGE,
-      facts,
+      tools: votingAssistantTools({
+        authUserId: account.authUserId,
+        instanceId,
+      }),
     });
     return { answer };
   });

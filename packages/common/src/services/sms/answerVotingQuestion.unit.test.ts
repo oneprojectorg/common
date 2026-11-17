@@ -1,8 +1,19 @@
+import { createTool } from '@op/ai';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { z } from 'zod';
 
-import { answerVotingQuestion } from './answerVotingQuestion';
+import { runVotingAssistant } from './answerVotingQuestion';
 
 const COMMAND_LIST = 'Commands:\nSHOW your decisions\nVOTE register to vote';
+
+const STUB_TOOLS = {
+  get_stub: createTool({
+    id: 'get_stub',
+    description: 'A stub tool.',
+    inputSchema: z.object({}),
+    execute: async () => ({ ok: true }),
+  }),
+};
 
 const chatCompletionResponse = (content: string) =>
   new Response(
@@ -37,35 +48,34 @@ const stubEndpoint = (content: string) => {
   return fetchMock;
 };
 
-describe('answerVotingQuestion', () => {
-  it('asks the configured model with the commands, the facts and the question', async () => {
+describe('runVotingAssistant', () => {
+  it('asks the configured model with the tools, the commands and the question', async () => {
     const fetchMock = stubEndpoint('Text VOTE to register.');
 
-    const answer = await answerVotingQuestion({
+    const answer = await runVotingAssistant({
       question: 'How do I vote?',
       commandList: COMMAND_LIST,
-      facts: ['Decision: "Columbus", voting open.'],
+      tools: STUB_TOOLS,
     });
 
     expect(answer).toBe('Text VOTE to register.');
     const body = JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body));
     expect(body.model).toBe('glm-5.3-flash');
-    const contents = body.messages.map(
-      ({ content }: { content: string }) => content,
-    );
-    expect(contents.join('\n')).toContain('VOTE register to vote');
-    expect(contents.join('\n')).toContain('Decision: "Columbus", voting open.');
-    expect(contents.join('\n')).toContain('Question: How do I vote?');
+    expect(JSON.stringify(body.tools)).toContain('get_stub');
+    const contents = JSON.stringify(body.messages);
+    expect(contents).toContain('VOTE register to vote');
+    expect(contents).toContain('Question: How do I vote?');
+    expect(contents).toContain('submit_ballot only');
   });
 
   it('reads the model id from AI_MODEL_ID when set', async () => {
     const fetchMock = stubEndpoint('ok');
     vi.stubEnv('AI_MODEL_ID', 'other-model');
 
-    await answerVotingQuestion({
+    await runVotingAssistant({
       question: 'q',
       commandList: COMMAND_LIST,
-      facts: [],
+      tools: STUB_TOOLS,
     });
 
     const body = JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body));
@@ -75,10 +85,10 @@ describe('answerVotingQuestion', () => {
   it('clips a long answer to one SMS segment', async () => {
     stubEndpoint('a'.repeat(400));
 
-    const answer = await answerVotingQuestion({
+    const answer = await runVotingAssistant({
       question: 'q',
       commandList: COMMAND_LIST,
-      facts: [],
+      tools: STUB_TOOLS,
     });
 
     expect(answer?.length).toBeLessThanOrEqual(160);
@@ -88,10 +98,10 @@ describe('answerVotingQuestion', () => {
     vi.stubEnv('AI_BASE_URL', 'https://inference.example.com/v1');
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('down')));
 
-    const answer = await answerVotingQuestion({
+    const answer = await runVotingAssistant({
       question: 'q',
       commandList: COMMAND_LIST,
-      facts: [],
+      tools: STUB_TOOLS,
     });
 
     expect(answer).toBeNull();
@@ -100,10 +110,10 @@ describe('answerVotingQuestion', () => {
   it('answers null when the model returns no text', async () => {
     stubEndpoint('');
 
-    const answer = await answerVotingQuestion({
+    const answer = await runVotingAssistant({
       question: 'q',
       commandList: COMMAND_LIST,
-      facts: [],
+      tools: STUB_TOOLS,
     });
 
     expect(answer).toBeNull();
