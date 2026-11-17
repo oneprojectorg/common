@@ -312,7 +312,7 @@ export const handleUnknownSmsSignup = inngest.createFunction(
     const welcomeResult = await sendText(
       'send-welcome-reply',
       'Welcome message',
-      welcomeMessage(replaying, line !== null),
+      welcomeMessage(replaying && keyword !== null, line !== null),
     );
 
     if (welcomeResult.status === 'rejected') {

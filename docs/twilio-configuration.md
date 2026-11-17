@@ -229,7 +229,7 @@ stay off until the A2P campaign is approved.
 | Flag           | Gates                                                                                                            |
 | -------------- | ---------------------------------------------------------------------------------------------------------------- |
 | `sms-login`    | The phone option in `LoginPanel` and `JoinAccountModal`.                                                         |
-| `sms-signup`   | `handleUnknownSmsSignup`: an unknown number that texts a decision line gets a consent text and an account; off a line it gets a help reply. After the code confirms, the text that started the signup replays. |
+| `sms-signup`   | `handleUnknownSmsSignup`: an unknown number that texts a decision line gets a consent text and an account; off a line it gets a help reply. After the code confirms, the text that started the signup replays when `sms-commands` is on. |
 | `sms-commands` | `handleSMSCommand`: a confirmed number that texts a command, a proposal code or anything else gets a reply (see Commands). |
 
 ## Local development

@@ -531,7 +531,7 @@ describe('handleUnknownSmsSignup', () => {
       authUserId: 'auth-user-2',
       replayed: true,
     });
-    expect(vi.mocked(sendSms).mock.calls.at(-1)?.[0]?.body).not.toContain(
+    expect(vi.mocked(sendSms).mock.calls.at(-1)?.[0]?.body).toContain(
       'Text VOTE to register',
     );
     expect(ctx.step.sendEvent).toHaveBeenCalledWith(
