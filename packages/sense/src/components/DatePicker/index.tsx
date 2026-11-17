@@ -208,6 +208,7 @@ function DatePickerButton({
 }: DatePickerButtonProps) {
   const reactId = React.useId();
   const buttonId = id ?? reactId;
+  const descriptionId = `${buttonId}-description`;
 
   const [open, setOpen] = React.useState(false);
 
@@ -231,6 +232,7 @@ function DatePickerButton({
           disabled={disabled}
           required={required}
           aria-invalid={errorMessage ? true : undefined}
+          aria-describedby={description ? descriptionId : undefined}
         />
       ) : (
         <Popover open={open} onOpenChange={setOpen}>
@@ -241,6 +243,7 @@ function DatePickerButton({
                 variant="outline"
                 disabled={disabled}
                 aria-invalid={errorMessage ? true : undefined}
+                aria-describedby={description ? descriptionId : undefined}
                 className={cn(
                   'justify-start font-normal',
                   !value && 'text-muted-foreground',
@@ -266,7 +269,9 @@ function DatePickerButton({
           </PopoverContent>
         </Popover>
       )}
-      {description ? <FieldDescription>{description}</FieldDescription> : null}
+      {description ? (
+        <FieldDescription id={descriptionId}>{description}</FieldDescription>
+      ) : null}
       {errorMessage ? <FieldError>{errorMessage}</FieldError> : null}
     </div>
   );
