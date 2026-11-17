@@ -1,9 +1,9 @@
 import { db } from '@op/db/client';
 import type { User } from '@op/supabase/lib';
+import { permission } from 'access-zones';
 
 import { NotFoundError, UnauthorizedError } from '../../utils';
-import { getProfileAccessRoles } from '../access';
-import { assertUserByAuthId } from '../assert';
+import { assertProfileAccess, assertUserByAuthId } from '../assert';
 import { getDevelopedProposalsBySource } from './getDevelopedProposalsBySource';
 import { listPhaseProposals } from './listPhaseProposals';
 import {
@@ -67,9 +67,8 @@ export async function listDevelopSources({
 }
 
 /**
- * Only the roles, no assert: `listPhaseProposals` has already checked access.
- * A caller admitted through the owner organization's grant gets no roles, so
- * they read as a non-admin.
+ * Asserts decisions Read on the decision's profile; its roles decide the
+ * instance-admin arm.
  */
 async function getReadContext({
   processInstanceId,
@@ -86,9 +85,10 @@ async function getReadContext({
     throw new NotFoundError('Process instance', processInstanceId);
   }
 
-  const decisionRoles = await getProfileAccessRoles({
+  const decisionRoles = await assertProfileAccess({
     user,
     profileId: instance.profileId,
+    permissions: { decisions: permission.READ },
   });
 
   return getProposalReadContext({ user, decisionRoles });
