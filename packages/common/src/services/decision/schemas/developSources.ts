@@ -1,8 +1,9 @@
+import { ProposalStatus } from '@op/db/schema';
 import { z } from 'zod';
 
-import { paginationInput } from '../../../utils/pagination';
+import { paginated, paginationInput, total } from '../../../utils/pagination';
 import { phaseIdSchema } from './instance';
-import { phaseProposalListSchema, proposalSearchSchema } from './proposal';
+import { proposalSchema, proposalSearchSchema } from './proposal';
 
 export const DEVELOP_SOURCE_SCOPES = ['all', 'assigned'] as const;
 
@@ -21,6 +22,24 @@ export type ListDevelopSourcesInput = z.infer<
   typeof listDevelopSourcesInputSchema
 >;
 
-export const developSourceListSchema = phaseProposalListSchema;
+/** An entry developed from a source, as far as the caller may read it. */
+export const developedProposalSchema = z.object({
+  id: z.uuid(),
+  profileId: z.uuid(),
+  status: z.enum(ProposalStatus).nullable(),
+});
+
+export type DevelopedProposal = z.infer<typeof developedProposalSchema>;
+
+/** `developedProposals` is empty when the source has no entry the caller may read. */
+export const developSourceSchema = proposalSchema.extend({
+  developedProposals: z.array(developedProposalSchema),
+});
+
+export type DevelopSource = z.infer<typeof developSourceSchema>;
+
+export const developSourceListSchema = paginated(developSourceSchema).extend({
+  total,
+});
 
 export type DevelopSourceList = z.infer<typeof developSourceListSchema>;
