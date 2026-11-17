@@ -566,24 +566,37 @@ function encodeFragmentsAsUpdate(
   return Y.encodeStateAsUpdate(ydoc);
 }
 
+// y-prosemirror stores each non-null attr value as it is; Yjs's default
+// element type would only take strings.
+type NodeAttributes = Record<string, NonNullable<unknown>>;
+
+function isXmlNode(node: unknown): node is Y.XmlElement | Y.XmlText {
+  return node instanceof Y.XmlElement || node instanceof Y.XmlText;
+}
+
 function toYNodes(content: unknown[]): Array<Y.XmlElement | Y.XmlText> {
-  const nodes: Array<Y.XmlElement | Y.XmlText> = [];
+  const nodes: unknown[] = [];
   let text: Y.XmlText | null = null;
+  // An unattached `XmlText` reports length 0 until it joins a document.
+  let textLength = 0;
 
   for (const node of content.filter(isJsonNode)) {
     if (node.type === 'text') {
       text ??= new Y.XmlText();
-      text.insert(text.length, node.text ?? '', toFormat(node.marks ?? []));
+      const value = node.text ?? '';
+      text.insert(textLength, value, toFormat(node.marks ?? []));
+      textLength += value.length;
       continue;
     }
     if (text) {
       nodes.push(text);
       text = null;
+      textLength = 0;
     }
-    const element = new Y.XmlElement(node.type);
+    const element = new Y.XmlElement<NodeAttributes>(node.type);
     for (const [key, value] of Object.entries(node.attrs ?? {})) {
-      if (value != null && typeof value !== 'object') {
-        element.setAttribute(key, String(value));
+      if (value != null) {
+        element.setAttribute(key, value);
       }
     }
     element.insert(0, toYNodes(node.content ?? []));
@@ -593,7 +606,7 @@ function toYNodes(content: unknown[]): Array<Y.XmlElement | Y.XmlText> {
   if (text) {
     nodes.push(text);
   }
-  return nodes;
+  return nodes.filter(isXmlNode);
 }
 
 function toFormat(marks: unknown[]): Record<string, unknown> {
