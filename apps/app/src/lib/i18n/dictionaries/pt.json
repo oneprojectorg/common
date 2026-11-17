@@ -1673,12 +1673,12 @@
     "developEditor": {
       "entryHeading": "Entrada",
       "advanceAction": "Avançar",
-      "advancedStatus": "Avançada",
       "proposalTab": "Proposta",
       "sourceSectionsLabel": "Seções da proposta",
       "sourceSelectLabel": "Proposta fonte",
       "noReviews": "Ainda não há avaliações para esta proposta.",
-      "advancedToast": "“{title}” avançou",
+      "advancedToast": "“<bdi>{title}</bdi>” avançou",
+      "savedToast": "Alterações em “<bdi>{title}</bdi>” salvas",
       "readOnlyNotice": "Você pode ver esta entrada, mas não editá-la."
     },
     "develop": {
