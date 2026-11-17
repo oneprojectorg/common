@@ -1701,6 +1701,7 @@
       "advancedEntryLabel": "{title} avanzó",
       "advanceEntryError": "No se pudo avanzar la entrada. Inténtalo de nuevo.",
       "advanceEntryIncompleteError": "{title} no está completa. Abre la entrada, complétala y vuelve a avanzarla.",
+      "unadvanceEntryError": "No se pudo deshacer el avance de <bdi>{title}</bdi>. Inténtalo de nuevo.",
       "noSourcesTitle": "No hay propuestas para desarrollar",
       "noSourcesDescription": "Aquí aparecen las propuestas de la fase anterior.",
       "noAssignedSourcesDescription": "Aún no tienes propuestas asignadas.",

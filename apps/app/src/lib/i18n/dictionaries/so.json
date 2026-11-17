@@ -1701,6 +1701,7 @@
       "advancedEntryLabel": "{title} horay ayaa loo gudbiyay",
       "advanceEntryError": "Gelinta horay looma gudbin karin. Isku day mar kale.",
       "advanceEntryIncompleteError": "{title} ma dhammaystirna. Fur gelinta, dhammaystir, kadibna mar kale horay u gudbi.",
+      "unadvanceEntryError": "Lama celin karin horay u gudbinta <bdi>{title}</bdi>. Isku day mar kale.",
       "noSourcesTitle": "Ma jiraan soo jeedinno la horumarinayo",
       "noSourcesDescription": "Soo jeedinta wejigii hore halkan ayay ka muuqdaan.",
       "noAssignedSourcesDescription": "Wali laguuma xilsaarin wax soo jeedin ah.",

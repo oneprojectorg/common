@@ -1701,6 +1701,7 @@
       "advancedEntryLabel": "{title} továbbjutott",
       "advanceEntryError": "Nem sikerült továbbjuttatni a bejegyzést. Próbáld újra.",
       "advanceEntryIncompleteError": "{title} nincs kész. Nyisd meg a bejegyzést, töltsd ki, majd juttasd tovább újra.",
+      "unadvanceEntryError": "Nem sikerült visszavonni a továbbjuttatást: <bdi>{title}</bdi>. Próbáld újra.",
       "noSourcesTitle": "Nincs kidolgozandó javaslat",
       "noSourcesDescription": "Itt jelennek meg az előző szakasz javaslatai.",
       "noAssignedSourcesDescription": "Még nincs hozzád rendelt javaslat.",

@@ -1,12 +1,10 @@
 import { and, db, eq } from '@op/db/client';
-import { ProposalRelationshipType, ProposalStatus } from '@op/db/schema';
+import { ProposalStatus } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 
-import { NotFoundError, UnauthorizedError, ValidationError } from '../../utils';
-import { getProfileAccessUser } from '../access';
-import { assertProposalDevelopAccess } from './assertProposalDevelopAccess';
+import { NotFoundError, ValidationError } from '../../utils';
+import { assertDevelopedProposalAuthor } from './assertDevelopedProposalAuthor';
 import { finalizeProposalSubmission } from './finalizeProposalSubmission';
-import { getPhases } from './instancePhases';
 import { activeProposalPredicate } from './phaseEligibility';
 import type { DecisionInstanceData } from './schemas/instanceData';
 
@@ -46,52 +44,11 @@ export const submitDevelopedProposal = async ({
     );
   }
 
-  const instance = proposal.processInstance;
-
-  if (!instance?.profileId) {
-    throw new NotFoundError('Decision profile');
-  }
-
-  const instanceData = instance.instanceData as DecisionInstanceData;
-
-  const currentPhaseId = instance.currentStateId;
-
-  if (!currentPhaseId) {
-    throw new ValidationError('Invalid phase in process instance');
-  }
-
-  const phases = await getPhases({ instance });
-
-  const [, developedEdge, author] = await Promise.all([
-    assertProposalDevelopAccess({
-      instance: { profileId: instance.profileId, phases },
-      phaseId: currentPhaseId,
-      user: { id: user.id },
-    }),
-    db.query.proposalRelationships.findFirst({
-      where: {
-        targetProposalId: proposal.id,
-        relationshipType: ProposalRelationshipType.DEVELOPED,
-        deletedAt: { isNull: true },
-      },
-      columns: { id: true },
-    }),
-    getProfileAccessUser({
-      user: { id: user.id },
-      profileId: proposal.profileId,
-    }),
-  ]);
-
-  if (!developedEdge) {
-    throw new ValidationError('This proposal was not developed from another');
-  }
-
-  // An author holds a membership on the proposal's own profile.
-  if (!author) {
-    throw new UnauthorizedError(
-      'Only an author of this proposal can submit it',
-    );
-  }
+  const instance = await assertDevelopedProposalAuthor({
+    proposal,
+    instance: proposal.processInstance,
+    user,
+  });
 
   return finalizeProposalSubmission({
     proposal,
@@ -100,6 +57,6 @@ export const submitDevelopedProposal = async ({
       processId: instance.processId,
       profileId: instance.profileId,
     },
-    instanceData,
+    instanceData: instance.instanceData as DecisionInstanceData,
   });
 };
