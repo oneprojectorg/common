@@ -18,6 +18,8 @@
  * // Or seed a single doc that gets returned for every requested fragment:
  * mockCollab.setDocResponse('doc-id', { type: 'doc', content: [...] });
  */
+import * as Y from 'yjs';
+
 import type {
   TipTapDocument,
   TipTapFragmentResponse,
@@ -33,6 +35,9 @@ export type {
   TipTapVersionCreateInput,
   TipTapVersion,
 } from '../src/client.js';
+
+// Pure, so the real copy runs against the mock's documents.
+export { type FragmentCopy, encodeFragmentCopies } from '../src/fragmentCopy';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -215,6 +220,12 @@ const docFragmentTextResponses = new Map<string, Record<string, string>>();
 // Per-doc saved versions returned by the version history API.
 const docVersions = new Map<string, TipTapVersion[]>();
 
+// Matched by content: a test cannot know the new document's name.
+const createDocumentErrors: Array<{
+  matches: (fragments: TipTapFragmentResponse) => boolean;
+  error: Error;
+}> = [];
+
 // Pre-seed the well-known e2e doc ID so the Next.js server (separate process)
 // returns fixture content without needing cross-process seeding.
 docResponses.set('test-proposal-doc', () =>
@@ -322,6 +333,14 @@ export const mockCollab = {
   setDocError: (docId: string, error: Error) => {
     docResponses.set(docId, () => Promise.reject(error));
   },
+
+  /** Makes `createDocument` throw `error` for documents that `matches`. */
+  setCreateDocumentError: (
+    matches: (fragments: TipTapFragmentResponse) => boolean,
+    error: Error,
+  ) => {
+    createDocumentErrors.push({ matches, error });
+  },
 };
 
 // ---------------------------------------------------------------------------
@@ -402,6 +421,44 @@ export function createTipTapClient(_config?: unknown) {
       ) as R;
     },
 
+    /** The seeded JSON as a Yjs update; null for a document never seeded. */
+    getDocumentUpdate: async (
+      docName: string,
+      options?: { version?: number },
+    ): Promise<Uint8Array | null> => {
+      const version = options?.version;
+      const fragments =
+        (version !== undefined
+          ? docVersionFragmentJsonResponses.get(version)?.get(docName)
+          : undefined) ?? docFragmentJsonResponses.get(docName);
+      return fragments ? encodeFragmentsAsUpdate(fragments) : null;
+    },
+
+    /** Stores the update's fragments as JSON, or `'exists'` if seeded. */
+    createDocument: async (
+      docName: string,
+      update: Uint8Array<ArrayBuffer>,
+    ): Promise<'created' | 'exists'> => {
+      const fragments = decodeUpdateAsFragments(update);
+      const failure = createDocumentErrors.find(({ matches }) =>
+        matches(fragments),
+      );
+      if (failure) {
+        throw failure.error;
+      }
+
+      if (
+        docResponses.has(docName) ||
+        docFragmentJsonResponses.has(docName) ||
+        docFragmentTextResponses.has(docName)
+      ) {
+        return 'exists';
+      }
+
+      docFragmentJsonResponses.set(docName, fragments);
+      return 'created';
+    },
+
     listVersions: async (docName: string): Promise<TipTapVersion[]> => {
       return [...(docVersions.get(docName) ?? [])];
     },
@@ -471,3 +528,141 @@ export async function invalidateCachedDocumentFragments(_args: {
   versionId: number | undefined;
   fragmentNames: string[];
 }): Promise<void> {}
+
+// JSON <-> Yjs as y-prosemirror maps it: a node is an `XmlElement` with its
+// attrs as attributes; text is an `XmlText` with its marks as formats.
+
+type JsonNode = {
+  type: string;
+  attrs?: Record<string, unknown>;
+  content?: unknown[];
+  text?: string;
+  marks?: unknown[];
+};
+
+function isJsonNode(value: unknown): value is JsonNode {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'type' in value &&
+    typeof value.type === 'string'
+  );
+}
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function encodeFragmentsAsUpdate(
+  fragments: TipTapFragmentResponse,
+): Uint8Array {
+  const ydoc = new Y.Doc();
+  for (const [name, doc] of Object.entries(fragments)) {
+    const nodes = toYNodes(doc.content ?? []);
+    if (nodes.length > 0) {
+      ydoc.getXmlFragment(name).insert(0, nodes);
+    }
+  }
+  return Y.encodeStateAsUpdate(ydoc);
+}
+
+// y-prosemirror stores each non-null attr value as it is; Yjs's default
+// element type would only take strings.
+type NodeAttributes = Record<string, NonNullable<unknown>>;
+
+function isXmlNode(node: unknown): node is Y.XmlElement | Y.XmlText {
+  return node instanceof Y.XmlElement || node instanceof Y.XmlText;
+}
+
+function toYNodes(content: unknown[]): Array<Y.XmlElement | Y.XmlText> {
+  const nodes: unknown[] = [];
+  let text: Y.XmlText | null = null;
+  // An unattached `XmlText` reports length 0 until it joins a document.
+  let textLength = 0;
+
+  for (const node of content.filter(isJsonNode)) {
+    if (node.type === 'text') {
+      text ??= new Y.XmlText();
+      const value = node.text ?? '';
+      text.insert(textLength, value, toFormat(node.marks ?? []));
+      textLength += value.length;
+      continue;
+    }
+    if (text) {
+      nodes.push(text);
+      text = null;
+      textLength = 0;
+    }
+    const element = new Y.XmlElement<NodeAttributes>(node.type);
+    for (const [key, value] of Object.entries(node.attrs ?? {})) {
+      if (value != null) {
+        element.setAttribute(key, value);
+      }
+    }
+    element.insert(0, toYNodes(node.content ?? []));
+    nodes.push(element);
+  }
+
+  if (text) {
+    nodes.push(text);
+  }
+  return nodes.filter(isXmlNode);
+}
+
+function toFormat(marks: unknown[]): Record<string, unknown> {
+  return Object.fromEntries(
+    marks.filter(isJsonNode).map((mark) => [mark.type, mark.attrs ?? {}]),
+  );
+}
+
+function decodeUpdateAsFragments(update: Uint8Array): TipTapFragmentResponse {
+  const ydoc = new Y.Doc();
+  Y.applyUpdate(ydoc, update);
+  return Object.fromEntries(
+    [...ydoc.share.keys()].map((name) => [
+      name,
+      {
+        type: 'doc',
+        content: toJsonNodes(ydoc.getXmlFragment(name).toArray()),
+      },
+    ]),
+  );
+}
+
+function toJsonNodes(nodes: unknown[]): JsonNode[] {
+  return nodes.flatMap((node): JsonNode[] => {
+    if (node instanceof Y.XmlText) {
+      const delta: unknown[] = node.toDelta();
+      return delta.flatMap((op): JsonNode[] => {
+        if (!isPlainObject(op) || typeof op.insert !== 'string') {
+          return [];
+        }
+        const format = isPlainObject(op.attributes) ? op.attributes : {};
+        const marks = Object.entries(format).map(([type, attrs]) =>
+          isPlainObject(attrs) && Object.keys(attrs).length > 0
+            ? { type, attrs }
+            : { type },
+        );
+        return [
+          {
+            type: 'text',
+            text: op.insert,
+            ...(marks.length > 0 ? { marks } : {}),
+          },
+        ];
+      });
+    }
+    if (node instanceof Y.XmlElement) {
+      const attrs: Record<string, unknown> = node.getAttributes();
+      const content = toJsonNodes(node.toArray());
+      return [
+        {
+          type: node.nodeName,
+          ...(Object.keys(attrs).length > 0 ? { attrs } : {}),
+          ...(content.length > 0 ? { content } : {}),
+        },
+      ];
+    }
+    return [];
+  });
+}

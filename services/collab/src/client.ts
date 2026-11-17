@@ -86,6 +86,29 @@ export function createTipTapClient(config: TipTapClientConfig) {
         .json();
     },
 
+    /** The document as a binary Yjs update (`format=yjs`); null on a 404. */
+    getDocumentUpdate: async (
+      docName: string,
+      options?: { version?: number },
+    ): Promise<Uint8Array | null> => {
+      const version = options?.version;
+      const response = await api.get(
+        `documents/${encodeURIComponent(docName)}`,
+        {
+          searchParams: {
+            format: 'yjs',
+            ...(version !== undefined ? { version } : {}),
+          },
+          throwHttpErrors: (status) => status !== 404,
+        },
+      );
+
+      if (response.status === 404) {
+        return null;
+      }
+      return new Uint8Array(await response.arrayBuffer());
+    },
+
     /**
      * Fetch specific named fragments from a document.
      *
@@ -151,6 +174,26 @@ export function createTipTapClient(config: TipTapClientConfig) {
       }
 
       return response as R;
+    },
+
+    /**
+     * Creates the document from a Yjs update. A 409 gives `'exists'` and
+     * writes nothing, so typed content is never overwritten; others throw.
+     */
+    createDocument: async (
+      docName: string,
+      update: Uint8Array<ArrayBuffer>,
+    ): Promise<'created' | 'exists'> => {
+      const response = await api.post(
+        `documents/${encodeURIComponent(docName)}`,
+        {
+          body: update,
+          headers: { 'Content-Type': 'application/octet-stream' },
+          throwHttpErrors: (status) => status !== 409,
+        },
+      );
+
+      return response.status === 409 ? 'exists' : 'created';
     },
 
     /**
