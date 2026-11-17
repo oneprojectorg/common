@@ -1706,8 +1706,11 @@
       "noMatchingEntriesDescription": "جرّب بحثًا آخر.",
       "resultsCount": "{count, plural, zero {لا نتائج} one {نتيجة واحدة} two {نتيجتان} few {# نتائج} many {# نتيجة} other {# نتيجة}}",
       "entriesCount": "{count, plural, zero {لا مُدخلات} one {مُدخل واحد} two {مُدخلان} few {# مُدخلات} many {# مُدخلًا} other {# مُدخل}}",
+      "ofTotalEntries": "من {total, plural, zero {مُدخل} one {مُدخل واحد} two {مُدخلين} few {# مُدخلات} many {# مُدخلًا} other {# مُدخل}}",
       "categoryColumn": "الفئة",
+      "districtColumn": "المنطقة",
       "noFilteredEntriesDescription": "جرّب بحثًا آخر أو فئة أخرى.",
+      "noFilteredEntriesDistrictDescription": "جرّب بحثًا آخر أو منطقة أخرى.",
       "advancingCount": "{count, plural, zero {لا مقترحات متقدمة} one {مقترح واحد يتقدم} two {مقترحان يتقدمان} few {# مقترحات تتقدم} many {# مقترحًا يتقدم} other {# مقترح يتقدم}}",
       "confirmSelectionsAction": "تأكيد الاختيارات"
     },

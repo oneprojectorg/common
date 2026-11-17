@@ -1706,8 +1706,11 @@
       "noMatchingEntriesDescription": "Próbálj másik keresést.",
       "resultsCount": "{count, plural, one {# találat} other {# találat}}",
       "entriesCount": "{count, plural, one {# bejegyzés} other {# bejegyzés}}",
+      "ofTotalEntries": "{total, plural, one {/ # bejegyzés} other {/ # bejegyzés}}",
       "categoryColumn": "Kategória",
+      "districtColumn": "Körzet",
       "noFilteredEntriesDescription": "Próbálj másik keresést vagy kategóriát.",
+      "noFilteredEntriesDistrictDescription": "Próbálj másik keresést vagy körzetet.",
       "advancingCount": "{count, plural, one {# javaslat jut tovább} other {# javaslat jut tovább}}",
       "confirmSelectionsAction": "Kiválasztás megerősítése"
     },

@@ -22,6 +22,7 @@ import { useTranslations } from '@/lib/i18n';
 
 import { CategoryFilterSelect } from '../CategoryFilterSelect';
 import { ProposalsLoadError } from '../ProposalsLoadError';
+import { usesDistrictCategoryTerm } from '../categoryTerm';
 import { ALL_CATEGORIES } from '../proposalFilterQuery';
 import {
   type DevelopEntriesQuery,
@@ -69,9 +70,13 @@ function DevelopAdminEntriesPanelSuspense({
   decisionSlug,
   entryName,
 }: DevelopAdminEntriesPanelProps) {
-  const [{ items: categories }] = trpc.decision.getCategories.useSuspenseQuery({
-    processInstanceId,
-  });
+  // The unfiltered total is the "of N" in the count; only `.total` is read,
+  // so the list is asked for one row.
+  const [[{ items: categories }, { total: unfilteredTotal }]] =
+    trpc.useSuspenseQueries((q) => [
+      q.decision.getCategories({ processInstanceId }),
+      q.decision.listProposals({ processInstanceId, phaseId, limit: 1 }),
+    ]);
 
   const [categoryParam, setCategoryParam] = useQueryState(
     ENTRY_CATEGORY_PARAM,
@@ -103,10 +108,15 @@ function DevelopAdminEntriesPanelSuspense({
   return (
     <div className="flex flex-col gap-10">
       <div className="flex min-h-11 flex-wrap items-center justify-between gap-4">
-        <div aria-live="polite">
+        {/* Filtering swaps the rows in place, so the count is the only
+            feedback a screen reader gets that a search or filter landed. */}
+        <div role="status" aria-live="polite">
           <APIErrorBoundary fallbacks={{ default: () => null }}>
             <Suspense fallback={<Skeleton className="h-7 w-40" />}>
-              <DevelopEntriesCountSuspense query={query} />
+              <DevelopEntriesCountSuspense
+                query={query}
+                unfilteredTotal={unfilteredTotal}
+              />
             </Suspense>
           </APIErrorBoundary>
         </div>
@@ -140,19 +150,38 @@ function DevelopAdminEntriesPanelSuspense({
   );
 }
 
-/** The heading count; it reads the table's own query, so one request serves both. */
+/**
+ * "12 entries", or "3 of 12 entries" once a search or category narrows the
+ * list, in the shape of the proposals list's count. It reads the table's own
+ * query, so one request serves both.
+ */
 function DevelopEntriesCountSuspense({
   query,
+  unfilteredTotal,
 }: {
   query: DevelopEntriesQuery;
+  /** Every entry of the phase, from the API: the "of N". */
+  unfilteredTotal: number;
 }) {
   const t = useTranslations('decisions.develop');
   const [data] = useDevelopEntriesQuery(query);
+  const count = data.pages[0]?.total ?? 0;
+
+  if (count >= unfilteredTotal) {
+    return (
+      <Header2 className="text-title font-normal">
+        {t('entriesCount', { count })}
+      </Header2>
+    );
+  }
 
   return (
-    <Header2 className="text-title font-normal">
-      {t('entriesCount', { count: data.pages[0]?.total ?? 0 })}
-    </Header2>
+    <span className="flex items-baseline gap-1">
+      <Header2 className="text-title font-normal">{count}</Header2>
+      <span className="text-base text-muted-foreground">
+        {t('ofTotalEntries', { total: unfilteredTotal })}
+      </span>
+    </span>
   );
 }
 
@@ -166,6 +195,10 @@ function DevelopAdminEntriesTableSuspense({
   entryName: string;
 }) {
   const t = useTranslations();
+  const usesDistricts = usesDistrictCategoryTerm(decisionSlug);
+  const filteredDescription = usesDistricts
+    ? t('decisions.develop.noFilteredEntriesDistrictDescription')
+    : t('decisions.develop.noFilteredEntriesDescription');
   const { entries, nextPageRef, shouldShowTrigger, isFetchingNextPage } =
     useDevelopEntries(query);
 
@@ -179,7 +212,7 @@ function DevelopAdminEntriesTableSuspense({
         }
         description={
           query.search || query.categoryId
-            ? t('decisions.develop.noFilteredEntriesDescription')
+            ? filteredDescription
             : t('decisions.develop.noEntriesDescription')
         }
       />
@@ -198,7 +231,9 @@ function DevelopAdminEntriesTableSuspense({
               <bdi>{entryName}</bdi>
             </TableHead>
             <TableHead scope="col" className="w-48">
-              {t('decisions.develop.categoryColumn')}
+              {usesDistricts
+                ? t('decisions.develop.districtColumn')
+                : t('decisions.develop.categoryColumn')}
             </TableHead>
             <TableHead scope="col" className="w-30">
               {t('decisions.budgetLabel')}

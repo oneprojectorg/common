@@ -1706,8 +1706,11 @@
       "noMatchingEntriesDescription": "Isku day raadin kale.",
       "resultsCount": "{count, plural, one {# natiijo} other {# natiijooyin}}",
       "entriesCount": "{count, plural, one {# gelis} other {# gelisyo}}",
+      "ofTotalEntries": "ka mid ah {total, plural, one {# gelis} other {# gelisyo}}",
       "categoryColumn": "Qayb",
+      "districtColumn": "Degmo",
       "noFilteredEntriesDescription": "Isku day raadin kale ama qayb kale.",
+      "noFilteredEntriesDistrictDescription": "Isku day raadin kale ama degmo kale.",
       "advancingCount": "{count, plural, one {# soo jeedin ayaa horumaraysa} other {# soo jeedinno ayaa horumaraya}}",
       "confirmSelectionsAction": "Xaqiiji xulashooyinka"
     },

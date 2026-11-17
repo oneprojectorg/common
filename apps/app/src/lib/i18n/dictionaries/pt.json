@@ -1706,8 +1706,11 @@
       "noMatchingEntriesDescription": "Tente outra pesquisa.",
       "resultsCount": "{count, plural, one {# resultado} other {# resultados}}",
       "entriesCount": "{count, plural, one {# entrada} other {# entradas}}",
+      "ofTotalEntries": "de {total, plural, one {# entrada} other {# entradas}}",
       "categoryColumn": "Categoria",
+      "districtColumn": "Distrito",
       "noFilteredEntriesDescription": "Tente outra pesquisa ou categoria.",
+      "noFilteredEntriesDistrictDescription": "Tente outra pesquisa ou distrito.",
       "advancingCount": "{count, plural, one {# proposta avançando} other {# propostas avançando}}",
       "confirmSelectionsAction": "Confirmar seleções"
     },

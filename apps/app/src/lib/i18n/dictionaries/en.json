@@ -1706,8 +1706,11 @@
       "noMatchingEntriesDescription": "Try another search.",
       "resultsCount": "{count, plural, one {# result} other {# results}}",
       "entriesCount": "{count, plural, one {# entry} other {# entries}}",
+      "ofTotalEntries": "of {total, plural, one {# entry} other {# entries}}",
       "categoryColumn": "Category",
+      "districtColumn": "District",
       "noFilteredEntriesDescription": "Try another search or category.",
+      "noFilteredEntriesDistrictDescription": "Try another search or district.",
       "advancingCount": "{count, plural, one {# proposal advancing} other {# proposals advancing}}",
       "confirmSelectionsAction": "Confirm selections"
     },
