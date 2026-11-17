@@ -124,7 +124,7 @@ function DevelopEntriesTableSuspense({
   );
 }
 
-/** The real header, so the skeleton's columns and height match the table's. */
+// Shared with the skeleton so its columns and height match.
 function DevelopEntriesTableHeader({ entryName }: { entryName: string }) {
   const t = useTranslations();
 

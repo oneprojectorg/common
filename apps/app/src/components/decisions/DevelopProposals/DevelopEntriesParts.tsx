@@ -41,11 +41,6 @@ import {
   decisionProposalHref,
 } from '../proposalHrefs';
 
-// The shared pieces of the develop screen's entries list. A variant wraps its
-// screen in `DevelopEntriesProvider` and composes its own table from the
-// parts below; each part reads the provider instead of taking the query.
-
-/** The list's API inputs, as the provider applies them. */
 interface DevelopEntriesQuery {
   processInstanceId: string;
   phaseId: string | undefined;
@@ -55,16 +50,13 @@ interface DevelopEntriesQuery {
 
 interface DevelopEntriesContextValue {
   state: {
-    /** The search box's text, as typed. */
     search: string;
   };
   actions: {
     setSearch: (search: string) => void;
   };
   meta: {
-    /** What the list asks the API for: debounced and deferred. */
     query: DevelopEntriesQuery;
-    /** A search or category narrows the list. */
     isNarrowed: boolean;
   };
 }
@@ -73,11 +65,6 @@ const DevelopEntriesContext = createContext<DevelopEntriesContextValue | null>(
   null,
 );
 
-/**
- * Owns the entries list's search and its API inputs. The search and the
- * category reach the API debounced and deferred, so the current rows stay on
- * screen while the next ones load instead of swapping for their skeleton.
- */
 export function DevelopEntriesProvider({
   processInstanceId,
   phaseId,
@@ -85,14 +72,13 @@ export function DevelopEntriesProvider({
   children,
 }: {
   processInstanceId: string;
-  /** The develop phase, whose entries are listed. */
   phaseId: string | undefined;
-  /** Narrows the list to one category; omitted lists every category. */
   categoryId?: string;
   children: ReactNode;
 }) {
   const [search, setSearch] = useState('');
   const [debouncedSearch] = useDebounce(search.trim(), 200);
+  // Deferred so the current rows stay on screen while the next ones load.
   const deferredSearch = useDeferredValue(debouncedSearch);
   const deferredCategoryId = useDeferredValue(categoryId);
 
@@ -117,10 +103,6 @@ export function DevelopEntriesProvider({
   );
 }
 
-/**
- * The entries loaded so far, the API's total, and the next-page controls:
- * the one read of the list, shared by every part through the query cache.
- */
 export function useDevelopEntries() {
   const { query } = useDevelopEntriesContext().meta;
   const [data, { fetchNextPage, hasNextPage, isFetchingNextPage }] =
@@ -135,8 +117,7 @@ export function useDevelopEntries() {
       { getNextPageParam: nextCursor },
     );
 
-  // The React Compiler is not on in this app, so the flattened rows are
-  // memoised by hand.
+  // The React Compiler is not enabled in this app.
   const entries = useMemo(
     () => data.pages.flatMap((page) => page.items),
     [data.pages],
@@ -151,7 +132,6 @@ export function useDevelopEntries() {
   };
 }
 
-/** Whether a search or category narrows the list; it needs no data. */
 export function useDevelopEntriesNarrowed() {
   return useDevelopEntriesContext().meta.isNarrowed;
 }
@@ -176,7 +156,6 @@ export function DevelopEntriesSearch() {
   );
 }
 
-/** The table frame every variant shares; the variant supplies its rows. */
 export function DevelopEntriesTable({
   entryName,
   children,
@@ -194,10 +173,7 @@ export function DevelopEntriesTable({
   );
 }
 
-/**
- * The entry's title. An entry its caller may still edit opens in the develop
- * editor; any other opens read-only.
- */
+// An entry its caller may still edit opens in the develop editor.
 export function DevelopEntryTitleCell({
   entry,
   decisionSlug,
@@ -262,10 +238,6 @@ export function DevelopEntryStatusCell({ entry }: { entry: Proposal }) {
   );
 }
 
-/**
- * The empty list. Its title and description tell an unfiltered list apart
- * from a narrowed one; the variant supplies the narrowed description.
- */
 export function DevelopEntriesEmpty({
   narrowedDescription,
 }: {
@@ -293,10 +265,6 @@ export function DevelopEntriesEmpty({
   );
 }
 
-/**
- * Loads the next page when it scrolls into view, and shows `children` (the
- * variant's placeholder rows) while that page loads.
- */
 export function DevelopEntriesNextPage({ children }: { children: ReactNode }) {
   const { fetchNextPage, hasNextPage, isFetchingNextPage } =
     useDevelopEntries();
@@ -316,7 +284,6 @@ export function DevelopEntriesNextPage({ children }: { children: ReactNode }) {
   ) : null;
 }
 
-/** A placeholder for the title cell: one line of text. */
 export function DevelopEntryTitleCellSkeleton() {
   return (
     <TableCell className="py-4">
@@ -325,10 +292,6 @@ export function DevelopEntryTitleCellSkeleton() {
   );
 }
 
-/**
- * A placeholder for a cell holding one short line of text. `className`
- * carries the column's width for a skeleton table without a header row.
- */
 export function DevelopEntryTextCellSkeleton({
   className,
 }: {
@@ -341,7 +304,6 @@ export function DevelopEntryTextCellSkeleton({
   );
 }
 
-/** A placeholder for the status cell, at the status badge's height. */
 export function DevelopEntryStatusCellSkeleton({
   className,
 }: {
