@@ -1,52 +1,29 @@
 'use client';
 
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
-import { formatCurrency } from '@/utils/formatting';
-import { trpc } from '@op/api/client';
-import { ProposalStatus } from '@op/api/encoders';
-import { nextCursor } from '@op/common/client';
-import { useDebounce, useInfiniteScroll } from '@op/hooks';
-import {
-  Empty,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from '@op/sense/Empty';
-import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupInput,
-} from '@op/sense/InputGroup';
-import { Skeleton } from '@op/sense/Skeleton';
-import { StatusBadge } from '@op/sense/StatusBadge';
+import { useDebounce } from '@op/hooks';
 import {
   Table,
   TableBody,
-  TableCell,
   TableHead,
   TableHeader,
   TableRow,
-  TableRowHeader,
 } from '@op/sense/Table';
-import {
-  Suspense,
-  useCallback,
-  useDeferredValue,
-  useMemo,
-  useState,
-} from 'react';
-import { LuFileText, LuSearch } from 'react-icons/lu';
+import { Suspense, useDeferredValue, useState } from 'react';
 
-import { Link, useTranslations } from '@/lib/i18n';
+import { useTranslations } from '@/lib/i18n';
 
-import { useOpenProposalInSheet } from '../ProposalSheet/proposalSheetState';
 import { ProposalsLoadError } from '../ProposalsLoadError';
-import { PROPOSALS_PAGE_LIMIT } from '../proposalFilterQuery';
 import {
-  decisionProposalDevelopHref,
-  decisionProposalHref,
-} from '../proposalHrefs';
+  DevelopEntriesEmpty,
+  DevelopEntriesNextPage,
+  DevelopEntriesSearch,
+  DevelopEntriesTableSkeleton,
+  DevelopEntryBudgetCell,
+  DevelopEntryStatusCell,
+  DevelopEntryTitleCell,
+  useDevelopEntries,
+} from './DevelopEntriesParts';
 
 /**
  * The Entries tab of the develop screen: the entries this phase holds, with
@@ -65,7 +42,6 @@ export function DevelopEntriesPanel({
   decisionSlug: string;
   entryName: string;
 }) {
-  const t = useTranslations();
   const [search, setSearch] = useState('');
   const [debouncedSearch] = useDebounce(search.trim(), 200);
   // Keeps the current rows on screen while the next search loads, instead of
@@ -75,23 +51,12 @@ export function DevelopEntriesPanel({
   return (
     <div className="flex flex-col gap-10">
       <div className="flex min-h-11 items-center justify-end">
-        <InputGroup className="w-full sm:w-56">
-          <InputGroupAddon align="inline-start">
-            <LuSearch aria-hidden />
-          </InputGroupAddon>
-          <InputGroupInput
-            type="search"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder={t('Search')}
-            aria-label={t('decisions.develop.searchEntriesLabel')}
-          />
-        </InputGroup>
+        <DevelopEntriesSearch value={search} onChange={setSearch} />
       </div>
 
       <APIErrorBoundary fallbacks={{ default: () => <ProposalsLoadError /> }}>
         <Suspense fallback={<DevelopEntriesTableSkeleton />}>
-          <DevelopEntriesTable
+          <DevelopEntriesTableSuspense
             processInstanceId={processInstanceId}
             phaseId={phaseId}
             search={deferredSearch}
@@ -104,7 +69,7 @@ export function DevelopEntriesPanel({
   );
 }
 
-function DevelopEntriesTable({
+function DevelopEntriesTableSuspense({
   processInstanceId,
   phaseId,
   search,
@@ -118,59 +83,29 @@ function DevelopEntriesTable({
   entryName: string;
 }) {
   const t = useTranslations();
-  const openInSheet = useOpenProposalInSheet();
+  const { entries, total, nextPageRef, shouldShowTrigger, isFetchingNextPage } =
+    useDevelopEntries({ processInstanceId, phaseId, search });
 
-  const [data, { fetchNextPage, hasNextPage, isFetchingNextPage }] =
-    trpc.decision.listProposals.useSuspenseInfiniteQuery(
-      {
-        processInstanceId,
-        phaseId,
-        search: search || undefined,
-        limit: PROPOSALS_PAGE_LIMIT,
-      },
-      { getNextPageParam: nextCursor },
-    );
-
-  const entries = useMemo(
-    () => data.pages.flatMap((page) => page.items),
-    [data.pages],
-  );
   const resultsCount = (
     <p aria-live="polite" className="sr-only">
-      {t('decisions.develop.resultsCount', {
-        count: data.pages[0]?.total ?? 0,
-      })}
+      {t('decisions.develop.resultsCount', { count: total })}
     </p>
   );
-
-  const loadNextPage = useCallback(() => {
-    void fetchNextPage();
-  }, [fetchNextPage]);
-  const { ref: nextPageRef, shouldShowTrigger } =
-    useInfiniteScroll<HTMLDivElement>(loadNextPage, {
-      hasNextPage,
-      isFetchingNextPage,
-    });
 
   if (entries.length === 0) {
     return (
       <div className="flex flex-col">
         {resultsCount}
-        <Empty>
-          <EmptyHeader>
-            <EmptyMedia variant="icon">
-              <LuFileText aria-hidden className="size-5" />
-            </EmptyMedia>
-            <EmptyTitle render={<h3 />}>
-              {search ? t('No results') : t('decisions.develop.noEntriesTitle')}
-            </EmptyTitle>
-            <EmptyDescription>
-              {search
-                ? t('decisions.develop.noMatchingEntriesDescription')
-                : t('decisions.develop.noEntriesDescription')}
-            </EmptyDescription>
-          </EmptyHeader>
-        </Empty>
+        <DevelopEntriesEmpty
+          title={
+            search ? t('No results') : t('decisions.develop.noEntriesTitle')
+          }
+          description={
+            search
+              ? t('decisions.develop.noMatchingEntriesDescription')
+              : t('decisions.develop.noEntriesDescription')
+          }
+        />
       </div>
     );
   }
@@ -196,97 +131,25 @@ function DevelopEntriesTable({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {entries.map((entry) => {
-            const title =
-              entry.profile.name || t('decisions.develop.untitledEntry');
-            const budget = entry.proposalData.budget;
-            const isDraft = entry.status === ProposalStatus.DRAFT;
-
-            return (
-              <TableRow key={entry.id}>
-                <TableRowHeader className="py-4">
-                  {/* An entry its caller may still edit opens in the develop
-                      editor; any other opens read-only. */}
-                  <Link
-                    href={
-                      entry.isEditable
-                        ? decisionProposalDevelopHref({
-                            decisionSlug,
-                            profileId: entry.profileId,
-                          })
-                        : decisionProposalHref({
-                            decisionSlug,
-                            profileId: entry.profileId,
-                          })
-                    }
-                    onClick={
-                      entry.isEditable
-                        ? undefined
-                        : openInSheet(entry.profileId)
-                    }
-                    dir="auto"
-                    className="block truncate text-base font-strong text-foreground hover:underline ltr:text-left rtl:text-right"
-                  >
-                    {title}
-                  </Link>
-                </TableRowHeader>
-                <TableCell className="py-4 tabular-nums">
-                  {budget ? (
-                    formatCurrency(budget.amount, undefined, budget.currency)
-                  ) : (
-                    <span className="text-muted-foreground">—</span>
-                  )}
-                </TableCell>
-                <TableCell className="py-4">
-                  <StatusBadge
-                    variant={isDraft ? 'in-progress' : 'success'}
-                    icon={false}
-                  >
-                    {isDraft
-                      ? t('decisions.develop.entryInProgressStatus')
-                      : t('decisions.develop.entryAdvancingStatus')}
-                  </StatusBadge>
-                </TableCell>
-              </TableRow>
-            );
-          })}
+          {entries.map((entry) => (
+            <TableRow key={entry.id}>
+              <DevelopEntryTitleCell
+                entry={entry}
+                decisionSlug={decisionSlug}
+              />
+              <DevelopEntryBudgetCell entry={entry} />
+              <DevelopEntryStatusCell entry={entry} />
+            </TableRow>
+          ))}
         </TableBody>
       </Table>
 
       {shouldShowTrigger ? (
-        <div ref={nextPageRef} aria-hidden className="flex flex-col">
-          {isFetchingNextPage
-            ? Array.from({ length: 2 }).map((_, index) => (
-                <div
-                  key={index}
-                  className="flex items-center justify-between gap-4 border-b py-4"
-                >
-                  <Skeleton className="h-4 w-56" />
-                  <Skeleton className="h-9 w-28" />
-                </div>
-              ))
-            : null}
-        </div>
+        <DevelopEntriesNextPage
+          nextPageRef={nextPageRef}
+          isFetchingNextPage={isFetchingNextPage}
+        />
       ) : null}
-    </div>
-  );
-}
-
-function DevelopEntriesTableSkeleton() {
-  return (
-    <div className="flex flex-col" aria-hidden>
-      {Array.from({ length: 4 }).map((_, index) => (
-        <div
-          key={index}
-          className="flex items-center justify-between gap-4 border-b py-4"
-        >
-          <Skeleton className="h-4 w-64" />
-          <div className="flex items-center gap-10">
-            <Skeleton className="h-4 w-20" />
-            <Skeleton className="h-9 w-28" />
-          </div>
-        </div>
-      ))}
     </div>
   );
 }
