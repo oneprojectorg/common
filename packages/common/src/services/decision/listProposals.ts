@@ -22,6 +22,7 @@ import { getProposalRelationshipData } from './getProposalRelationshipData';
 import { getSelectedProposalIds } from './getSelectedProposalIds';
 import { ballotRankPosition } from './getVoterBallot';
 import type { InstanceWithPhases } from './instancePhases';
+import { isDevelopWindowOpen } from './isDevelopWindowOpen';
 import { resolvePhaseAdvancement } from './proposalAdvancement';
 import {
   isAnonymousAuthor,
@@ -313,10 +314,21 @@ export const listProposals = async ({
     profileRoles,
   );
 
-  const postSubmissionEditingAllowed = isPostSubmissionEditingAllowed({
-    phases: instance.phases,
-    currentPhaseId: instance.currentStateId,
-  });
+  // The develop window costs up to two queries, so it is resolved once and
+  // only when a row's answer hangs on it.
+  const submittedEditingAllowed =
+    isPostSubmissionEditingAllowed({
+      phases: instance.phases,
+      currentPhaseId: instance.currentStateId,
+    }) ||
+    (input.phase !== 'results' &&
+      !hasAdminPermission &&
+      proposalList.some(
+        (proposal) =>
+          proposal.submittedByProfileId === currentProfileId &&
+          proposal.status !== ProposalStatus.DRAFT,
+      ) &&
+      (await isDevelopWindowOpen({ instance })));
 
   const proposalsWithCounts = proposalList.map((proposal: ProposalListItem) => {
     const rawSubmittedBy = Array.isArray(proposal.submittedBy)
@@ -338,7 +350,7 @@ export const listProposals = async ({
       (hasAdminPermission ||
         (proposal.submittedByProfileId === currentProfileId &&
           (proposal.status === ProposalStatus.DRAFT ||
-            postSubmissionEditingAllowed)));
+            submittedEditingAllowed)));
 
     // List rows ship a precomputed plain-text preview plus fragment-resolved
     // system fields instead of the full document fragments; the fragments

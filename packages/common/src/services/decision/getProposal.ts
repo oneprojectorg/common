@@ -19,7 +19,8 @@ import {
   getProposalDocumentsContent,
 } from './getProposalDocumentsContent';
 import { getProposalRelationshipData } from './getProposalRelationshipData';
-import { getPhases } from './instancePhases';
+import { resolvePhases } from './instancePhases';
+import { isDevelopWindowOpen } from './isDevelopWindowOpen';
 import {
   type DecisionRolePermissions,
   decisionPermission,
@@ -323,13 +324,31 @@ export const getPermissionsOnProposal = async ({
     }
   }
 
-  const isEditable =
-    access.update &&
-    (proposal.status === ProposalStatus.DRAFT ||
-      isPostSubmissionEditingAllowed({
-        phases: await getPhases({ instance: proposal.processInstance }),
-        currentPhaseId: proposal.processInstance.currentStateId,
-      }));
-
-  return { access, isEditable };
+  return {
+    access,
+    isEditable: access.update && (await isStatusEditable({ proposal })),
+  };
 };
+
+/**
+ * A draft is always editable; a submitted proposal while the phase allows
+ * editing or the develop window is open.
+ */
+async function isStatusEditable({
+  proposal,
+}: {
+  proposal: Proposal & { processInstance: ProcessInstance };
+}): Promise<boolean> {
+  if (proposal.status === ProposalStatus.DRAFT) {
+    return true;
+  }
+
+  const instance = await resolvePhases({ instance: proposal.processInstance });
+
+  return (
+    isPostSubmissionEditingAllowed({
+      phases: instance.phases,
+      currentPhaseId: instance.currentStateId,
+    }) || (await isDevelopWindowOpen({ instance }))
+  );
+}

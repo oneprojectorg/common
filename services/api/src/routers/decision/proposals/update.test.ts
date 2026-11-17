@@ -1,6 +1,8 @@
 import { mockCollab } from '@op/collab/testing';
 import { getInstancePhases, parseProposalData } from '@op/common';
 import {
+  createDevelopPhaseSetup,
+  createDevelopProposalsMember,
   createRevisionRequest,
   TestDecisionsDataManager,
   TestReviewsDataManager,
@@ -11,6 +13,7 @@ import {
   ProposalReviewRequestState,
   ProposalStatus,
   Visibility,
+  decisionTransitionProposals,
   processInstances,
 } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
@@ -35,10 +38,13 @@ async function createAuthenticatedCaller(email: string) {
   return createCaller(await createTestContextWithSession(session));
 }
 
-/** Sets the "Proposal editing" rule on the instance's current phase. */
-async function setProposalEditingRule(
+/** Rewrites the instance's phase list. */
+async function updateInstancePhases(
   processInstanceId: string,
-  edit: boolean,
+  update: (
+    phases: ReturnType<typeof getInstancePhases>,
+    currentStateId: string | null,
+  ) => unknown[],
 ): Promise<void> {
   const instanceRecord = await db.query.processInstances.findFirst({
     where: { id: processInstanceId },
@@ -54,22 +60,35 @@ async function setProposalEditingRule(
     throw new Error(`Instance ${processInstanceId} has no instanceData`);
   }
 
-  const phases = getInstancePhases(instanceData).map((phase) =>
-    phase.phaseId === instanceRecord.currentStateId
-      ? {
-          ...phase,
-          rules: {
-            ...phase.rules,
-            proposals: { ...phase.rules?.proposals, edit },
-          },
-        }
-      : phase,
+  const phases = update(
+    getInstancePhases(instanceData),
+    instanceRecord.currentStateId,
   );
 
   await db
     .update(processInstances)
     .set({ instanceData: { ...instanceData, phases } })
     .where(eq(processInstances.id, processInstanceId));
+}
+
+/** Sets the "Proposal editing" rule on the instance's current phase. */
+async function setProposalEditingRule(
+  processInstanceId: string,
+  edit: boolean,
+): Promise<void> {
+  await updateInstancePhases(processInstanceId, (phases, currentStateId) =>
+    phases.map((phase) =>
+      phase.phaseId === currentStateId
+        ? {
+            ...phase,
+            rules: {
+              ...phase.rules,
+              proposals: { ...phase.rules?.proposals, edit },
+            },
+          }
+        : phase,
+    ),
+  );
 }
 
 describe.concurrent('updateProposal visibility', () => {
@@ -1280,3 +1299,162 @@ describeDecisionAccessTierGating('updateProposal', {
     },
   ),
 });
+
+describe.concurrent('updateProposal develop window', () => {
+  it('lets the author edit an advanced entry while selections are pending', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { instanceId, caller, entry } = await createDevelopEntry({
+      testData,
+      advance: true,
+    });
+    await clearSelections({ instanceId });
+
+    const [detail, list] = await Promise.all([
+      caller.decision.getProposal({ profileId: entry.profileId }),
+      caller.decision.listProposals({ processInstanceId: instanceId }),
+    ]);
+
+    expect(detail.status).toBe(ProposalStatus.SUBMITTED);
+    expect(detail.isEditable).toBe(true);
+    expect(list.items.find((item) => item.id === entry.id)?.isEditable).toBe(
+      true,
+    );
+
+    const result = await caller.decision.updateProposal({
+      proposalId: entry.id,
+      data: { title: 'Refined entry' },
+    });
+
+    expect(result.profile.name).toBe('Refined entry');
+  });
+
+  it('closes an advanced entry once selections are confirmed', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    // The setup's pass-all pipeline attached the source: selections are confirmed.
+    const { caller, entry } = await createDevelopEntry({
+      testData,
+      advance: true,
+    });
+
+    const detail = await caller.decision.getProposal({
+      profileId: entry.profileId,
+    });
+
+    expect(detail.isEditable).toBe(false);
+    await expect(
+      caller.decision.updateProposal({
+        proposalId: entry.id,
+        data: { title: 'Refined entry' },
+      }),
+    ).rejects.toMatchObject({ cause: { statusCode: 403 } });
+  });
+
+  it('closes an advanced entry when the current phase is not a develop phase', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { instanceId, caller, entry } = await createDevelopEntry({
+      testData,
+      advance: true,
+    });
+    await clearSelections({ instanceId });
+    await updateInstancePhases(instanceId, (phases, currentStateId) =>
+      phases.map((phase) =>
+        phase.phaseId === currentStateId
+          ? {
+              ...phase,
+              rules: {
+                ...phase.rules,
+                proposals: { ...phase.rules?.proposals, develop: false },
+              },
+            }
+          : phase,
+      ),
+    );
+
+    const detail = await caller.decision.getProposal({
+      profileId: entry.profileId,
+    });
+
+    expect(detail.isEditable).toBe(false);
+    await expect(
+      caller.decision.updateProposal({
+        proposalId: entry.id,
+        data: { title: 'Refined entry' },
+      }),
+    ).rejects.toMatchObject({ cause: { statusCode: 403 } });
+  });
+
+  it('keeps a draft entry editable once selections are confirmed', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { caller, entry } = await createDevelopEntry({
+      testData,
+      advance: false,
+    });
+
+    const detail = await caller.decision.getProposal({
+      profileId: entry.profileId,
+    });
+
+    expect(detail.isEditable).toBe(true);
+
+    const result = await caller.decision.updateProposal({
+      proposalId: entry.id,
+      data: { title: 'Refined draft' },
+    });
+
+    expect(result.profile.name).toBe('Refined draft');
+  });
+});
+
+/**
+ * An entry developed from the source by a member with Develop Proposals, in a
+ * develop phase that is followed by a results phase (edits are refused in the
+ * last phase).
+ */
+async function createDevelopEntry({
+  testData,
+  advance,
+}: {
+  testData: TestDecisionsDataManager;
+  advance: boolean;
+}) {
+  const { setup, instanceId, source } = await createDevelopPhaseSetup({
+    testData,
+  });
+  await updateInstancePhases(instanceId, (phases) => [
+    ...phases,
+    { phaseId: 'results', name: 'Results', rules: {} },
+  ]);
+  const developer = await createDevelopProposalsMember({ testData, setup });
+  const caller = await createAuthenticatedCaller(developer.email);
+  const entry = await caller.decision.createDevelopedProposal({
+    processInstanceId: instanceId,
+    sourceProposalIds: [source.id],
+    proposalData: { title: 'Developed' },
+  });
+  testData.trackProfileForCleanup(entry.profileId);
+
+  if (advance) {
+    await caller.decision.submitDevelopedProposal({ proposalId: entry.id });
+  }
+
+  return { instanceId, caller, entry };
+}
+
+/** Detaches every proposal from the inbound transition, so selections are pending. */
+async function clearSelections({ instanceId }: { instanceId: string }) {
+  await db
+    .delete(decisionTransitionProposals)
+    .where(eq(decisionTransitionProposals.processInstanceId, instanceId));
+}

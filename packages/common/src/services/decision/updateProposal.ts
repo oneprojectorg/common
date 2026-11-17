@@ -25,6 +25,7 @@ import { assertUserByAuthId } from '../assert';
 import { withBoundaryCategoryLabel } from './boundaryCategory';
 import { getProposalFragmentNames } from './getProposalFragmentNames';
 import { getPhases } from './instancePhases';
+import { isDevelopWindowOpen } from './isDevelopWindowOpen';
 import type {
   CheckpointVersion,
   ProposalDataInput,
@@ -280,8 +281,10 @@ export async function assertProposalUpdateAccess({
   data: UpdateProposalInput;
   proposal: { id: string; profileId: string; status: string | null };
   processInstance: {
+    id: string;
     profileId: string | null;
     currentStateId: string | null;
+    instanceData: unknown;
   };
   instancePhases: readonly PhaseInstanceData[];
 }): Promise<void> {
@@ -328,9 +331,19 @@ export async function assertProposalUpdateAccess({
     instanceRoles,
   );
 
+  if (isInstanceAdmin) {
+    return;
+  }
+
+  // An advanced entry stays editable until the develop window closes.
+  const instance = { ...processInstance, phases: instancePhases };
+  if (await isDevelopWindowOpen({ instance })) {
+    return;
+  }
+
   // An open revision request is itself the invitation to edit, and the editor
   // autosaves system fields through here on the way to `resubmit`.
-  if (!isInstanceAdmin && !(await hasOpenRevisionRequest(proposal.id))) {
+  if (!(await hasOpenRevisionRequest(proposal.id))) {
     throw new UnauthorizedError('Editing proposals is closed for this phase');
   }
 }
