@@ -81,7 +81,7 @@ function Tag({
       <Badge
         variant={variant}
         size={size}
-        className={cn('max-w-full rounded-md font-normal', className)}
+        className={cn('max-w-full', className)}
         {...props}
       >
         {/* Tags carry user content (categories), so isolate them — a tag whose
