@@ -2,9 +2,8 @@ import { db } from '@op/db/client';
 import type { User } from '@op/supabase/lib';
 import { permission } from 'access-zones';
 
-import { UnauthorizedError } from '../../utils';
-import { assertInstanceProfileAccess } from '../access';
-import { assertUserByAuthId } from '../assert';
+import { NotFoundError, UnauthorizedError } from '../../utils';
+import { assertProfileAccess, assertUserByAuthId } from '../assert';
 import { getDevelopedProposalsBySource } from './getDevelopedProposalsBySource';
 import { listPhaseProposals } from './listPhaseProposals';
 import {
@@ -68,8 +67,8 @@ export async function listDevelopSources({
 }
 
 /**
- * The same assert `resolveProposalListScope` makes, so it cannot reject a
- * caller the list let through; its roles decide the instance-admin arm.
+ * Asserts decisions Read on the decision's profile; its roles decide the
+ * instance-admin arm.
  */
 async function getReadContext({
   processInstanceId,
@@ -80,23 +79,16 @@ async function getReadContext({
 }): Promise<ProposalReadContext> {
   const instance = await db.query.processInstances.findFirst({
     where: { id: processInstanceId },
-    columns: { profileId: true, ownerProfileId: true },
+    columns: { profileId: true },
   });
-  if (!instance) {
-    throw new UnauthorizedError('User does not have access to this process');
+  if (!instance?.profileId) {
+    throw new NotFoundError('Process instance', processInstanceId);
   }
 
-  const decisionRoles = await assertInstanceProfileAccess({
+  const decisionRoles = await assertProfileAccess({
     user,
-    instance,
-    profilePermissions: [
-      { decisions: permission.ADMIN },
-      { decisions: permission.READ },
-    ],
-    orgFallbackPermissions: [
-      { decisions: permission.ADMIN },
-      { decisions: permission.READ },
-    ],
+    profileId: instance.profileId,
+    permissions: { decisions: permission.READ },
   });
 
   return getProposalReadContext({ user, decisionRoles });
