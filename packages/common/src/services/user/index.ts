@@ -16,6 +16,7 @@ import { policyAcceptanceSet } from './policyAcceptance';
 import { AllowListUser, allowListMetadataSchema } from './validators';
 
 export * from './discardUnconfirmedPhoneSignup';
+export * from './createConfirmedPhoneAccount';
 export * from './getPhoneSignupState';
 export * from './phoneSignup';
 export * from './policyAcceptance';

@@ -3,6 +3,7 @@ import {
   type PhoneSignupConfirmation,
   type PhoneSignupState,
   confirmPhoneSignupCode,
+  createConfirmedPhoneAccount,
   discardUnconfirmedPhoneSignup,
   findDecisionPhoneNumber,
   getPhoneSignupState,
@@ -37,12 +38,14 @@ const HELP_MESSAGE =
   "This number cannot sign you up. Text your group's decision number to get started. Reply STOP to unsubscribe. Msg&Data Rates May Apply.";
 const CONSENT_MESSAGE =
   'Reply with the code we just texted you to create your Common account. By replying you agree to our Terms of Service and Privacy Policy.';
+const WELCOME_BASE =
+  'Welcome to Common! By continuing you agree to our Terms of Service and Privacy Policy. Reply STOP to unsubscribe. Msg&Data Rates May Apply.';
 const welcomeMessage = (replaying: boolean, onDecisionLine: boolean): string =>
   replaying
-    ? "You're in! Welcome to Common."
+    ? WELCOME_BASE
     : onDecisionLine
-      ? "You're in! Welcome to Common. Text VOTE to register."
-      : "You're in! Welcome to Common. Text SHOW to see your decisions.";
+      ? `${WELCOME_BASE}\nText VOTE to register.`
+      : `${WELCOME_BASE}\nText SHOW to see your decisions.`;
 const { smsInboundReceived } = Events;
 
 type ConfirmationOutcome =
@@ -198,122 +201,139 @@ export const handleUnknownSmsSignup = inngest.createFunction(
       return { message: 'help sent' };
     }
 
-    const discardAbandonedSignup = (codeSentNoLaterThan: number) =>
-      step.run('discard-abandoned-signup', () =>
-        discardUnconfirmedPhoneSignup({
-          phone: to,
-          codeSentNoLaterThan: new Date(codeSentNoLaterThan),
-        }),
+    let authUserId: string;
+
+    if (context.requireLine === true) {
+      const created = await step.run('create-account', () =>
+        createConfirmedPhoneAccount({ phone: to }),
       );
 
-    const codeRequest = await step.run('request-signup-code', () =>
-      requestPhoneSignupCode({ phone: to }),
-    );
-
-    if (codeRequest.status === 'rejected') {
-      logger.warn('GoTrue refused to send a signup code, aborting signup', {
-        reason: codeRequest.reason,
-      });
-      return { message: 'code send rejected', reason: codeRequest.reason };
-    }
-
-    const codeSentAt = await step.run('read-code-sent-at', async () => {
-      const attempt = await getPhoneSignupState({ phone: to });
-      return attempt.status === 'attempt_in_progress'
-        ? attempt.codeSentAt.getTime()
-        : Date.now();
-    });
-
-    const consentResult = await sendText(
-      'send-consent-request',
-      'Consent request',
-      CONSENT_MESSAGE,
-    );
-
-    if (consentResult.status === 'rejected') {
-      logger.warn('Consent request permanently rejected, aborting signup', {
-        reason: consentResult.reason,
-      });
-      const discard = await discardAbandonedSignup(codeSentAt);
-      return {
-        message: 'consent send rejected',
-        reason: consentResult.reason,
-        discard: discard.status,
-      };
-    }
-
-    const replyDeadline = await step.run(
-      'start-reply-window',
-      () => Date.now() + REPLY_WINDOW_MS,
-    );
-
-    const awaitConfirmation = async (
-      attempt: number,
-    ): Promise<ConfirmationOutcome> => {
-      if (attempt > MAX_REPLY_ATTEMPTS) {
-        return { status: 'exhausted' };
-      }
-
-      const reply = await step.waitForEvent(
-        `wait-for-confirmation-${attempt}`,
-        {
-          event: smsInboundReceived.name,
-          match: 'data.from',
-          timeout: remainingReplyWindow(replyDeadline),
-        },
-      );
-
-      if (!reply) {
-        return { status: 'timed_out' };
-      }
-
-      const { code } = smsInboundReceived.schema.parse(reply.data);
-
-      if (!code) {
-        logger.info('Reply did not look like a signup code', { attempt });
-        return awaitConfirmation(attempt + 1);
-      }
-
-      const confirmation = await step.run(
-        `confirm-signup-code-${attempt}`,
-        () => confirmPhoneSignupCode({ phone: to, token: code }),
-      );
-
-      if (confirmation.status === 'rejected') {
-        logger.info('GoTrue rejected the signup code', {
-          attempt,
-          reason: confirmation.reason,
+      if (created.status === 'rejected') {
+        logger.warn('Could not create a confirmed phone account', {
+          reason: created.reason,
         });
-        return awaitConfirmation(attempt + 1);
+        return { message: 'account create rejected', reason: created.reason };
       }
 
-      return confirmation;
-    };
+      authUserId = created.authUserId;
+    } else {
+      const discardAbandonedSignup = (codeSentNoLaterThan: number) =>
+        step.run('discard-abandoned-signup', () =>
+          discardUnconfirmedPhoneSignup({
+            phone: to,
+            codeSentNoLaterThan: new Date(codeSentNoLaterThan),
+          }),
+        );
 
-    const outcome = await awaitConfirmation(1);
+      const codeRequest = await step.run('request-signup-code', () =>
+        requestPhoneSignupCode({ phone: to }),
+      );
 
-    if (outcome.status === 'timed_out') {
-      logger.info('No confirmation reply received in time');
-      const discard = await discardAbandonedSignup(codeSentAt);
-      return {
-        message: 'timed out waiting for confirmation',
-        discard: discard.status,
-      };
-    }
+      if (codeRequest.status === 'rejected') {
+        logger.warn('GoTrue refused to send a signup code, aborting signup', {
+          reason: codeRequest.reason,
+        });
+        return { message: 'code send rejected', reason: codeRequest.reason };
+      }
 
-    if (outcome.status === 'exhausted') {
-      logger.info('No valid signup code in the allowed replies', {
-        attempts: MAX_REPLY_ATTEMPTS,
+      const codeSentAt = await step.run('read-code-sent-at', async () => {
+        const attempt = await getPhoneSignupState({ phone: to });
+        return attempt.status === 'attempt_in_progress'
+          ? attempt.codeSentAt.getTime()
+          : Date.now();
       });
-      const discard = await discardAbandonedSignup(codeSentAt);
-      return {
-        message: 'code not confirmed',
-        attempts: MAX_REPLY_ATTEMPTS,
-        discard: discard.status,
-      };
-    }
 
-    const { authUserId } = outcome;
+      const consentResult = await sendText(
+        'send-consent-request',
+        'Consent request',
+        CONSENT_MESSAGE,
+      );
+
+      if (consentResult.status === 'rejected') {
+        logger.warn('Consent request permanently rejected, aborting signup', {
+          reason: consentResult.reason,
+        });
+        const discard = await discardAbandonedSignup(codeSentAt);
+        return {
+          message: 'consent send rejected',
+          reason: consentResult.reason,
+          discard: discard.status,
+        };
+      }
+
+      const replyDeadline = await step.run(
+        'start-reply-window',
+        () => Date.now() + REPLY_WINDOW_MS,
+      );
+
+      const awaitConfirmation = async (
+        attempt: number,
+      ): Promise<ConfirmationOutcome> => {
+        if (attempt > MAX_REPLY_ATTEMPTS) {
+          return { status: 'exhausted' };
+        }
+
+        const reply = await step.waitForEvent(
+          `wait-for-confirmation-${attempt}`,
+          {
+            event: smsInboundReceived.name,
+            match: 'data.from',
+            timeout: remainingReplyWindow(replyDeadline),
+          },
+        );
+
+        if (!reply) {
+          return { status: 'timed_out' };
+        }
+
+        const { code } = smsInboundReceived.schema.parse(reply.data);
+
+        if (!code) {
+          logger.info('Reply did not look like a signup code', { attempt });
+          return awaitConfirmation(attempt + 1);
+        }
+
+        const confirmation = await step.run(
+          `confirm-signup-code-${attempt}`,
+          () => confirmPhoneSignupCode({ phone: to, token: code }),
+        );
+
+        if (confirmation.status === 'rejected') {
+          logger.info('GoTrue rejected the signup code', {
+            attempt,
+            reason: confirmation.reason,
+          });
+          return awaitConfirmation(attempt + 1);
+        }
+
+        return confirmation;
+      };
+
+      const outcome = await awaitConfirmation(1);
+
+      if (outcome.status === 'timed_out') {
+        logger.info('No confirmation reply received in time');
+        const discard = await discardAbandonedSignup(codeSentAt);
+        return {
+          message: 'timed out waiting for confirmation',
+          discard: discard.status,
+        };
+      }
+
+      if (outcome.status === 'exhausted') {
+        logger.info('No valid signup code in the allowed replies', {
+          attempts: MAX_REPLY_ATTEMPTS,
+        });
+        const discard = await discardAbandonedSignup(codeSentAt);
+        return {
+          message: 'code not confirmed',
+          attempts: MAX_REPLY_ATTEMPTS,
+          discard: discard.status,
+        };
+      }
+
+      authUserId = outcome.authUserId;
+    }
 
     const sawConsentTerms = context.sawConsentTerms === true;
 
