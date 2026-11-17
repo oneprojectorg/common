@@ -25,11 +25,7 @@ import {
 } from '@op/common/testing/helpers';
 import { mockCollab } from '@op/common/testing/mocks/collab';
 import { db, inArray } from '@op/db/client';
-import {
-  ProcessStatus,
-  ProposalStatus,
-  taxonomyTerms,
-} from '@op/db/schema';
+import { ProcessStatus, ProposalStatus, taxonomyTerms } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 
 type RegisterCleanup = (fn: () => void | Promise<void>) => void;
