@@ -10,7 +10,6 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from '@op/sense/Empty';
-import { Skeleton, SkeletonText } from '@op/sense/Skeleton';
 import { Tabs, TabsContent } from '@op/sense/Tabs';
 import { Suspense, useState } from 'react';
 import { LuTriangleAlert } from 'react-icons/lu';
@@ -26,14 +25,11 @@ import {
   PhaseReviews,
   PhaseReviewsTabPanel,
 } from '../ReviewsPanel/PhaseReviews';
+import { DevelopOriginSkeleton } from './DevelopProposalSkeleton';
 
 type OriginTab = 'proposal' | 'reviews';
 
-/**
- * The entry's origins, read only: the selected origin's proposal and its
- * reviews from the phase it comes from. With several origins a select picks
- * the one shown.
- */
+/** The entry's origins, read only, with a select when there are several. */
 export function DevelopOriginColumn({
   origins,
   decisionRoot,
@@ -83,7 +79,7 @@ export function DevelopOriginColumn({
         key={origin.id}
         fallbacks={{ default: () => <OriginUnavailable /> }}
       >
-        <Suspense fallback={<OriginSkeleton />}>
+        <Suspense fallback={<DevelopOriginSkeleton />}>
           <ProposalQueryProvider
             profileId={origin.profile.id}
             decisionRoot={decisionRoot}
@@ -156,23 +152,6 @@ function ReviewsCount({ phaseId }: { phaseId: string }) {
   });
 
   return data ? data.reviews.length : null;
-}
-
-function OriginSkeleton() {
-  return (
-    <div className="flex flex-col gap-6">
-      <div className="flex gap-4 border-b pb-2">
-        <Skeleton className="h-6 w-20" />
-        <Skeleton className="h-6 w-20" />
-      </div>
-      <Skeleton className="h-8 w-3/4" />
-      <div className="flex items-center gap-2">
-        <Skeleton className="size-8 rounded-full" />
-        <Skeleton className="h-4 w-32" />
-      </div>
-      <SkeletonText lines={6} />
-    </div>
-  );
 }
 
 function OriginUnavailable() {

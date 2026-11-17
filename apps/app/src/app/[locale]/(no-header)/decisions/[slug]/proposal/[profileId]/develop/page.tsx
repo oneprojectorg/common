@@ -12,8 +12,7 @@ import { getDevelopEntryHeading } from '@/components/decisions/developProposalEd
 
 import { DevelopProposalClient } from './DevelopProposalClient';
 
-// cache() dedupes the reads across generateMetadata + page render (one
-// request), so the data is fetched once and hydrates.
+// cache() shares each read between generateMetadata and the page.
 const fetchProposal = cache(async (profileId: string) => {
   const { utils } = await createServerUtils();
   return utils.decision.getProposal.fetch({ profileId });
@@ -37,7 +36,6 @@ export async function generateMetadata({
       fetchDecisionBySlug(slug),
     ]);
 
-    // The same heading the screen shows: the entry form's name.
     const heading = getDevelopEntryHeading({
       template:
         decisionProfile?.processInstance?.instanceData.proposalTemplate ?? null,
@@ -52,11 +50,7 @@ export async function generateMetadata({
   }
 }
 
-/**
- * Route page for the develop editor of an entry: a proposal developed from
- * origins in a develop phase. Any other proposal is not found here; it opens
- * at `/edit`.
- */
+/** The develop editor of an entry. Any other proposal opens at `/edit`. */
 const DevelopProposalPage = async ({
   params,
 }: {
@@ -65,9 +59,7 @@ const DevelopProposalPage = async ({
   const { slug, profileId } = await params;
   const { queryClient } = await createServerUtils();
 
-  // Shares the cache()-wrapped fetches with generateMetadata above. Swallow
-  // failures: this only warms the cache — the client suspense queries
-  // refetch and their error boundary owns errors.
+  // Only warms the cache; the client's error boundary owns failures.
   await Promise.all([
     fetchProposal(profileId),
     fetchDecisionBySlug(slug),
