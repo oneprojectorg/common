@@ -11,13 +11,9 @@ import {
   getPreviousReviewPhases,
   hasOpenReviews,
 } from '@op/common/client';
-import { logger } from '@op/logging/client';
-import { Button } from '@op/sense/Button';
 import { Spinner } from '@op/sense/Spinner';
-import { toast } from '@op/sense/Toast';
 import type { JSONContent } from '@tiptap/react';
-import type { ComponentProps } from 'react';
-import { LuPencil } from 'react-icons/lu';
+import { notFound } from 'next/navigation';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -31,20 +27,14 @@ import { DevelopProposalEditor } from './DevelopProposalEditor';
 import { DevelopProposalFrame } from './DevelopProposalFrame';
 import { getDevelopEntryHeading } from './getDevelopEntryHeading';
 
-type FrameProps = Pick<
-  ComponentProps<typeof DevelopProposalFrame>,
-  'backHref' | 'origin' | 'originLabel' | 'heading' | 'description'
->;
-
 /**
- * The develop screen of one proposal, the origin: the proposal on one side and
- * the entry developed from it on the other. Without an entry, a caller who
- * may develop proposals can start one. The entry is editable only for such a
- * caller, and only while the server reports it editable.
+ * Opens a proposal developed from origins beside its origin; any other
+ * proposal is not found. The form is editable only for a caller who may
+ * develop proposals, and only while the server reports the proposal editable.
  */
 export function DevelopProposalRoute({
   instance,
-  proposal: origin,
+  proposal,
   decisionSlug,
 }: {
   instance: ProcessInstance;
@@ -53,15 +43,18 @@ export function DevelopProposalRoute({
 }) {
   const t = useTranslations();
   const [{ items }] = trpc.decision.listProposalRelationships.useSuspenseQuery({
-    sourceProposalId: origin.id,
+    targetProposalId: proposal.id,
   });
 
-  // The server lets a proposal be developed more than once. This screen keeps
-  // one entry per proposal: it shows the first and offers to start one only
-  // when there is none.
-  const entry = items.find(
-    (item) => item.relationshipType === ProposalRelationshipType.DEVELOPED,
-  )?.proposal;
+  const origins = items
+    .filter(
+      (item) => item.relationshipType === ProposalRelationshipType.DEVELOPED,
+    )
+    .map((item) => item.proposal);
+
+  if (origins.length === 0) {
+    notFound();
+  }
 
   const template: ProposalTemplateSchema | undefined =
     instance.instanceData.proposalTemplate;
@@ -74,6 +67,14 @@ export function DevelopProposalRoute({
   const canDevelop = Boolean(
     instance.access?.admin || instance.access?.developProposals,
   );
+  const isEditable = canDevelop && proposal.isEditable === true;
+
+  const backHref = `/decisions/${decisionSlug}/current`;
+  const heading = getDevelopEntryHeading({
+    template,
+    fallback: t('decisions.developEditor.entryHeading'),
+  });
+  const description = template.description || undefined;
 
   // Every earlier review phase, as the review screens list them. The filter
   // mirrors the server's `canReadPhaseReviews`.
@@ -91,83 +92,40 @@ export function DevelopProposalRoute({
         }))
     : [];
 
-  const frame: FrameProps = {
-    backHref: `/decisions/${decisionSlug}/current`,
-    origin: (
-      <DevelopOriginColumn
-        profileId={origin.profileId}
-        decisionRoot={decisionRootHref({
-          decisionSlug,
-          slug: decisionSlug,
-          instanceId: instance.id,
-        })}
-        reviewPhases={reviewPhases}
-      />
-    ),
-    originLabel: t('decisions.developEditor.proposalTab'),
-    heading: getDevelopEntryHeading({
-      template,
-      fallback: t('decisions.developEditor.entryHeading'),
-    }),
-    description: template.description || undefined,
-  };
-
-  if (!entry) {
-    return (
-      <DevelopProposalFrame
-        {...frame}
-        notice={
-          <p className="text-base text-muted-foreground">
-            {t('decisions.developEditor.noEntry')}
-          </p>
-        }
-      >
-        {canDevelop ? (
-          <StartEntryButton processInstanceId={instance.id} origin={origin} />
-        ) : null}
-      </DevelopProposalFrame>
-    );
-  }
-
-  return (
-    <DevelopEntry
-      entryProfileId={entry.profile.id}
-      instance={instance}
-      template={template}
-      canDevelop={canDevelop}
-      frame={frame}
+  const originLabel = t('decisions.developEditor.proposalTab');
+  const origin = (
+    <DevelopOriginColumn
+      origins={origins}
+      decisionRoot={decisionRootHref({
+        decisionSlug,
+        slug: decisionSlug,
+        instanceId: instance.id,
+      })}
+      reviewPhases={reviewPhases}
     />
   );
-}
 
-/** The entry: the editor when the caller may edit it, else its stored fields. */
-function DevelopEntry({
-  entryProfileId,
-  instance,
-  template,
-  canDevelop,
-  frame,
-}: {
-  entryProfileId: string;
-  instance: ProcessInstance;
-  template: ProposalTemplateSchema;
-  canDevelop: boolean;
-  frame: FrameProps;
-}) {
-  const t = useTranslations();
-  const [entry] = trpc.decision.getProposal.useSuspenseQuery({
-    profileId: entryProfileId,
-  });
-
-  if (canDevelop && entry.isEditable === true) {
+  if (isEditable) {
     return (
-      <DevelopProposalEditor instance={instance} proposal={entry} {...frame} />
+      <DevelopProposalEditor
+        instance={instance}
+        proposal={proposal}
+        backHref={backHref}
+        origin={origin}
+        originLabel={originLabel}
+        heading={heading}
+        description={description}
+      />
     );
   }
 
   return (
     <DevelopProposalFrame
-      {...frame}
+      backHref={backHref}
+      origin={origin}
+      originLabel={originLabel}
+      heading={heading}
+      description={description}
       notice={
         <p className="text-base text-muted-foreground">
           {t('decisions.developEditor.readOnlyNotice')}
@@ -175,54 +133,11 @@ function DevelopEntry({
       }
     >
       <ReadOnlyFields
-        initialProposal={entry}
+        initialProposal={proposal}
         template={template}
         decisionProfileId={instance.profileId ?? null}
       />
     </DevelopProposalFrame>
-  );
-}
-
-/** Creates the draft entry, seeded with the origin's title and category. */
-function StartEntryButton({
-  processInstanceId,
-  origin,
-}: {
-  processInstanceId: string;
-  origin: Proposal;
-}) {
-  const t = useTranslations('decisions.develop');
-  const createEntry = trpc.decision.createDevelopedProposal.useMutation({
-    onError: (error) => {
-      logger.error('Failed to prepare a develop entry', { error });
-      toast.error(t('prepareEntryError'));
-    },
-  });
-  // Busy after success too: the relationships read refreshes through its
-  // channel and the editor replaces this button.
-  const isBusy = createEntry.isPending || createEntry.isSuccess;
-
-  return (
-    <div>
-      <Button
-        variant="outline"
-        disabled={isBusy}
-        loading={isBusy}
-        onClick={() =>
-          createEntry.mutate({
-            processInstanceId,
-            sourceProposalIds: [origin.id],
-            proposalData: {
-              title: origin.profile.name,
-              category: origin.proposalData.category,
-            },
-          })
-        }
-      >
-        <LuPencil aria-hidden data-icon="inline-start" />
-        {t('prepareEntryAction')}
-      </Button>
-    </div>
   );
 }
 
