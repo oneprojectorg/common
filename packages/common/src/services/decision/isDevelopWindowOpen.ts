@@ -8,7 +8,7 @@ import {
 import type { PhaseRules } from './schemas/types';
 import { isDevelopPhase } from './utils/phaseSettings';
 
-type DevelopWindowInstance = InstanceForStatusResolution & {
+type DevelopWindowInstance = Omit<InstanceForStatusResolution, 'phases'> & {
   phases: readonly { phaseId: string; rules?: PhaseRules }[];
 };
 
