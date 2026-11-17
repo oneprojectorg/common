@@ -40,6 +40,7 @@ vi.mock('@op/common', () => {
 
 import { smsInboundEvent } from '../../../testing/smsInboundEvent';
 import { handleUnknownSmsSignup } from './handleUnknownSmsSignup';
+import { SMS_COMMANDS_FEATURE_FLAG } from './smsReply';
 
 type SendSms = NonNullable<SmsProvider['sendSms']>;
 
@@ -605,9 +606,9 @@ describe('handleUnknownSmsSignup', () => {
     const sendSms = unknownNumberWithProvider(
       vi.fn<SendSms>().mockResolvedValue(accepted),
     );
-    vi.mocked(isFeatureEnabled)
-      .mockResolvedValueOnce(true)
-      .mockResolvedValueOnce(false);
+    vi.mocked(isFeatureEnabled).mockImplementation(
+      async (flag) => flag !== SMS_COMMANDS_FEATURE_FLAG,
+    );
     vi.mocked(getPhoneSignupState)
       .mockResolvedValueOnce(free)
       .mockResolvedValueOnce(confirmed(2));

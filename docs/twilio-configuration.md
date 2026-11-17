@@ -229,7 +229,7 @@ stay off until the A2P campaign is approved.
 | Flag           | Gates                                                                                                            |
 | -------------- | ---------------------------------------------------------------------------------------------------------------- |
 | `sms-login`    | The phone option in `LoginPanel` and `JoinAccountModal`.                                                         |
-| `sms-signup`   | `handleUnknownSmsSignup`: an unknown number that texts a decision line gets a consent text and an account; off a line it gets a help reply. After the code confirms, the text that started the signup replays when `sms-commands` is on. |
+| `sms-signup`   | `handleUnknownSmsSignup`: an unknown number that texts a decision line gets a consent text and an account; off a line it gets a help reply. After the code confirms, a first text that was a command or proposal codes replays when `sms-commands` is on. |
 | `sms-commands` | `handleSMSCommand`: a confirmed number that texts a command, a proposal code or anything else gets a reply (see Commands). |
 
 ## Local development
@@ -287,7 +287,7 @@ point outside production.
 
 | You text                 | Reply                                                                                                                                      |
 | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| anything, as a stranger  | The consent text, then a code to confirm the number; reply with the code. The text that started the signup replays once the code confirms. |
+| anything, as a stranger  | The consent text, then a code to confirm the number; reply with the code. A first text that was a command or proposal codes replays once the code confirms. |
 | `SHOW`                   | `"<decision>" (<slug>): Voting phase, voting open, N proposals.`                                                                           |
 | `VOTE`                   | `Welcome to "<decision>".` then `Two quick steps to register: your address, then a short affirmation. No ID needed.` then `What's your address?`, each on its own line. |
 | `375 S High St, …`       | `That's District 5.` then `Reply AGREE to register for "<decision>":` then the quoted attestation, each on its own line.                     |

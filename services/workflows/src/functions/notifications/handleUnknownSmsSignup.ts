@@ -334,8 +334,7 @@ export const handleUnknownSmsSignup = inngest.createFunction(
       },
     );
 
-    const firstTextIsPicks =
-      parseProposalCodes(inbound.body?.trim() ?? '') !== null;
+    const firstTextIsPicks = parseProposalCodes(inbound.body ?? '') !== null;
     const replaying =
       confirmedAccount.commandsEnabled &&
       (keyword !== null || firstTextIsPicks);
