@@ -70,16 +70,14 @@ const DevelopProposalPage = async ({
   // Same input as the read in `DevelopProposalRoute`, so it hydrates.
   const relationships = proposal
     ? await utils.decision.listProposalRelationships
-        .fetch({ targetProposalId: proposal.id })
+        .fetch({
+          targetProposalId: proposal.id,
+          relationshipType: ProposalRelationshipType.DEVELOPED,
+        })
         .catch(() => null)
     : null;
 
-  if (
-    relationships &&
-    !relationships.items.some(
-      (item) => item.relationshipType === ProposalRelationshipType.DEVELOPED,
-    )
-  ) {
+  if (relationships && relationships.items.length === 0) {
     notFound();
   }
 
