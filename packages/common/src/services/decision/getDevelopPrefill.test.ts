@@ -5,8 +5,8 @@ import {
   createProposalReview,
   createReviewAssignment,
   grantInstanceRole,
-  syncPhaseRows,
 } from '@op/common/testing';
+import { updatePhaseRowData } from '@op/common/testing/data';
 import { db } from '@op/db/client';
 import {
   ProposalReviewState,
@@ -23,6 +23,7 @@ import type { SchemaMapping } from '../../schemaMapping';
 import { NotFoundError, UnauthorizedError, ValidationError } from '../../utils';
 import { getDevelopPrefill } from './getDevelopPrefill';
 import { parseProposalData } from './proposalDataSchema';
+import type { PhaseInstanceData } from './schemas/instanceData';
 import type { DecisionSchemaDefinition } from './schemas/types';
 
 const SUBMISSION = 'submission';
@@ -224,7 +225,10 @@ const seedDevelopDecision = async (
       })
     : undefined;
 
-  const phaseTemplates: Record<string, object> = {
+  const phaseTemplates: Record<
+    string,
+    Omit<PhaseInstanceData, 'phaseId' | 'name'>
+  > = {
     [FEASIBILITY]: { rubricTemplate: feasibilityRubric },
     [EQUITY]: { rubricTemplate: equityRubric },
     [BALLOT]: {
@@ -232,21 +236,22 @@ const seedDevelopDecision = async (
       ...(ballotFormRow ? { formSchemaId: ballotFormRow.id } : {}),
     },
   };
-  const { instanceData } = instance.instance;
   await db
     .update(processInstances)
     .set({
       instanceData: {
-        ...instanceData,
+        ...instance.instance.instanceData,
         proposalTemplate: submissionForm,
-        phases: instanceData.phases.map((phase) => ({
-          ...phase,
-          ...phaseTemplates[phase.phaseId],
-        })),
       },
     })
     .where(eq(processInstances.id, instance.instance.id));
-  await syncPhaseRows(instance.instance.id);
+  for (const [phaseId, data] of Object.entries(phaseTemplates)) {
+    await updatePhaseRowData({
+      processInstanceId: instance.instance.id,
+      phaseId,
+      data,
+    });
+  }
 
   const adminUser = await db.query.users.findFirst({
     where: { authUserId: setup.user.id },
