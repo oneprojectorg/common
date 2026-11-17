@@ -158,6 +158,20 @@ export const handleUnknownSmsSignup = inngest.createFunction(
     const { state, line } = context;
 
     if (state.status === 'confirmed') {
+      if (inbound.authUserId === null) {
+        // The webhook saw no account, so handleSMSCommand skipped this text;
+        // the account was confirmed between receipt and this run. Forward the
+        // text with the account so it is answered exactly once.
+        await step.sendEvent('forward-confirmed-command', {
+          name: smsInboundReceived.name,
+          id: `sms-inbound-${inbound.messageSid}-forward`,
+          data: { ...inbound, code: null, authUserId: state.authUserId },
+        });
+        logger.info('Inbound SMS confirmed after receipt, forwarded', {
+          profileId: state.profileId,
+        });
+        return { message: 'known number, forwarded' };
+      }
       logger.info('Inbound SMS from a known number, skipping signup flow', {
         profileId: state.profileId,
       });

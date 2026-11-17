@@ -139,17 +139,51 @@ describe('handleUnknownSmsSignup', () => {
     expect(createConfirmedPhoneAccount).not.toHaveBeenCalled();
   });
 
-  it('skips a number that already has a confirmed account', async () => {
+  it('given a legacy event with no account field from a confirmed number, then it skips without forwarding', async () => {
     vi.mocked(isFeatureEnabled).mockResolvedValue(true);
     vi.mocked(getPhoneSignupState).mockResolvedValue(confirmed(1));
     const t = new InngestTestEngine({ function: handleUnknownSmsSignup });
 
-    const { result } = await t.execute({
+    const { result, ctx } = await t.execute({
       events: [onLine({ from: FROM, keyword: 'vote' })],
     });
 
     expect(getPhoneSignupState).toHaveBeenCalledWith({ phone: FROM });
     expect(result).toEqual({ message: 'known number, skipped' });
+    expect(ctx.step.sendEvent).not.toHaveBeenCalled();
+    expect(createConfirmedPhoneAccount).not.toHaveBeenCalled();
+  });
+
+  it('given the webhook saw no account but the number confirmed before this run, then the text is forwarded with the account', async () => {
+    vi.mocked(isFeatureEnabled).mockResolvedValue(true);
+    vi.mocked(getPhoneSignupState).mockResolvedValue(confirmed(1));
+    const t = new InngestTestEngine({ function: handleUnknownSmsSignup });
+
+    const { result, ctx } = await t.execute({
+      events: [
+        onLine({
+          from: FROM,
+          keyword: 'show',
+          authUserId: null,
+          messageSid: 'SM-racing',
+        }),
+      ],
+      steps: [{ id: 'forward-confirmed-command', handler: () => ({}) }],
+    });
+
+    expect(result).toEqual({ message: 'known number, forwarded' });
+    expect(ctx.step.sendEvent).toHaveBeenCalledWith(
+      'forward-confirmed-command',
+      expect.objectContaining({
+        id: 'sms-inbound-SM-racing-forward',
+        data: expect.objectContaining({
+          from: FROM,
+          keyword: 'show',
+          authUserId: 'auth-user-1',
+          code: null,
+        }),
+      }),
+    );
     expect(createConfirmedPhoneAccount).not.toHaveBeenCalled();
   });
 
