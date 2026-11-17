@@ -294,20 +294,31 @@ export const handleUnknownSmsSignup = inngest.createFunction(
 
     const { authUserId } = outcome;
 
+    const sawConsentTerms = context.requireLine === true;
+
     const confirmedAccount = await step.run(
       'record-signup-consent',
       async () => {
         const [profileId, commandsEnabled] = await Promise.all([
-          recordPhoneSignupConsent({ authUserId }),
+          sawConsentTerms
+            ? recordPhoneSignupConsent({ authUserId })
+            : getPhoneSignupState({ phone: to }).then((confirmedState) =>
+                confirmedState.status === 'confirmed'
+                  ? confirmedState.profileId
+                  : null,
+              ),
           isFeatureEnabled(SMS_COMMANDS_FEATURE_FLAG, 'server'),
         ]);
         return { profileId, commandsEnabled };
       },
     );
 
+    const firstText = inbound.body?.trim() ?? '';
+    const firstTextIsPicks =
+      /^[\d\s.,]+$/.test(firstText) && /\d/.test(firstText);
     const replaying =
       confirmedAccount.commandsEnabled &&
-      (keyword !== null || Boolean(inbound.body?.trim()));
+      (keyword !== null || firstTextIsPicks);
 
     const welcomeResult = await sendText(
       'send-welcome-reply',
@@ -326,7 +337,7 @@ export const handleUnknownSmsSignup = inngest.createFunction(
       await step.sendEvent('replay-original-command', {
         name: smsInboundReceived.name,
         id: `sms-inbound-${inbound.messageSid}-replay`,
-        data: inbound,
+        data: { ...inbound, code: null },
       });
     }
 

@@ -572,6 +572,35 @@ describe('handleUnknownSmsSignup', () => {
     expect(ctx.step.sendEvent).toHaveBeenCalled();
   });
 
+  it('given a chatter first message, when the code confirms, then nothing replays and the welcome names VOTE', async () => {
+    const sendSms = unknownNumberWithProvider(
+      vi.fn<SendSms>().mockResolvedValue(accepted),
+    );
+    vi.mocked(getPhoneSignupState)
+      .mockResolvedValueOnce(free)
+      .mockResolvedValueOnce(confirmed(2));
+    vi.mocked(confirmPhoneSignupCode).mockResolvedValue({
+      status: 'confirmed',
+      authUserId: 'auth-user-2',
+    });
+    const t = new InngestTestEngine({ function: handleUnknownSmsSignup });
+
+    const { result, ctx } = await t.execute({
+      events: [onLine({ from: FROM, body: 'hello there' })],
+      steps: [reply(1, '123456')],
+    });
+
+    expect(result).toEqual({
+      message: 'account created',
+      authUserId: 'auth-user-2',
+      replayed: false,
+    });
+    expect(vi.mocked(sendSms).mock.calls.at(-1)?.[0]?.body).toContain(
+      'Text VOTE to register',
+    );
+    expect(ctx.step.sendEvent).not.toHaveBeenCalled();
+  });
+
   it('given the sms-commands flag is off, when the code confirms, then nothing replays and the welcome names VOTE', async () => {
     const sendSms = unknownNumberWithProvider(
       vi.fn<SendSms>().mockResolvedValue(accepted),
