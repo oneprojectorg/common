@@ -4,16 +4,13 @@ import * as React from 'react';
 import { LuX } from 'react-icons/lu';
 
 import { cn } from '../../lib/utils';
-import { Badge } from '../ui/badge';
+import { Badge, type BadgeSize } from '../ui/badge';
 import { FieldDescription, FieldError, FieldLabel } from '../ui/field';
 
-type TagSize = 'default' | 'lg';
-
-// Badge stays upstream-pure (it has no size variant), so the size classes
-// live here in the composite.
-const tagSizeClasses: Record<TagSize, string> = {
-  default: '',
-  lg: 'h-7 px-2.5 text-sm',
+const removeIconSize: Record<BadgeSize, string> = {
+  default: 'size-3',
+  md: 'size-3.5',
+  lg: 'size-4',
 };
 
 interface TagGroupProps extends React.ComponentProps<'div'> {
@@ -66,7 +63,8 @@ interface TagProps extends React.ComponentProps<typeof Badge> {
   onRemove?: () => void;
   /** Accessible label for the remove button — pass a translated string. */
   removeLabel?: string;
-  size?: TagSize;
+  /** Passed through to the underlying `Badge`. Defaults to `md`. */
+  size?: BadgeSize;
 }
 
 function Tag({
@@ -74,7 +72,7 @@ function Tag({
   onRemove,
   removeLabel = 'Remove',
   variant = 'secondary',
-  size = 'default',
+  size = 'md',
   className,
   ...props
 }: TagProps) {
@@ -82,7 +80,8 @@ function Tag({
     <li data-slot="tag" className="max-w-full list-none">
       <Badge
         variant={variant}
-        className={cn('max-w-full', tagSizeClasses[size], className)}
+        size={size}
+        className={cn('max-w-full', className)}
         {...props}
       >
         {/* Tags carry user content (categories), so isolate them — a tag whose
@@ -98,7 +97,7 @@ function Tag({
             onClick={onRemove}
             className="-me-0.5 flex shrink-0 cursor-pointer items-center justify-center rounded-full p-0.5 outline-none hover:bg-foreground/10 focus-visible:ring-2 focus-visible:ring-ring/50"
           >
-            <LuX aria-hidden className={size === 'lg' ? 'size-4' : 'size-3'} />
+            <LuX aria-hidden className={removeIconSize[size]} />
           </button>
         ) : null}
       </Badge>

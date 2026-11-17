@@ -260,7 +260,7 @@ const MembersListContent = ({
                     <div className="flex flex-wrap gap-1">
                       <TagGroup>
                         {member.roles.map((role) => (
-                          <Tag key={role.id} className="text-xs">
+                          <Tag key={role.id} size="default">
                             {role.name}
                           </Tag>
                         ))}

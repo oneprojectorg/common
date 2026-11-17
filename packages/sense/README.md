@@ -261,3 +261,9 @@ published source lags its declared dependency versions. Reapply if you re-run
 - `sidebar.tsx` — `SidebarGroupLabel` is `text-sm text-muted-foreground`
   instead of the registry's `text-xs text-sidebar-foreground`. We don't use a
   12px size, and every sidebar was overriding both at the call site.
+- `badge.tsx` — added a `size` axis (`default` / `md` / `lg`) with the height,
+  text size and icon size per step, and sized `BadgeNumber`'s min width to
+  match. `Tag` and the app pass `size`, so dropping it breaks their builds.
+  `variant` and `size` are typed non-nullable, since cva emits no classes for
+  `null`. `size` stays out of the `useRender` state: a `data-size` on a badge
+  would match the avatar group's `has-data-[size]` selectors.

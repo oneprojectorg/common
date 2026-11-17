@@ -204,7 +204,7 @@ export function ProposalPreview({
               categories.length > 0) && (
               <TagGroup className="max-w-full">
                 {(budget != null || selection?.allocated != null) && (
-                  <Tag size="lg" variant="outline">
+                  <Tag variant="outline">
                     <BudgetDisplay
                       value={
                         selection?.allocated != null
@@ -218,16 +218,14 @@ export function ProposalPreview({
                   </Tag>
                 )}
                 {selection?.allocated != null && budget && (
-                  <Tag size="lg">
+                  <Tag>
                     {t('decisions.proposals.amountRequested', {
                       amount: formatBudget(budget) ?? '',
                     })}
                   </Tag>
                 )}
                 {categories.map((category) => (
-                  <Tag key={category} size="lg">
-                    {category}
-                  </Tag>
+                  <Tag key={category}>{category}</Tag>
                 ))}
               </TagGroup>
             )}

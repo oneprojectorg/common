@@ -1,7 +1,9 @@
-import { Badge } from '@op/sense/Badge';
+import { Badge, BadgeNumber, type BadgeSize } from '@op/sense/Badge';
 import { Card, CardHeader, CardTitle } from '@op/sense/Card';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { LuCheck, LuTriangleAlert } from 'react-icons/lu';
+
+const sizes: BadgeSize[] = ['default', 'md', 'lg'];
 
 const meta: Meta<typeof Badge> = {
   title: 'Primitives/Badge',
@@ -21,6 +23,10 @@ const meta: Meta<typeof Badge> = {
         'ghost',
         'link',
       ],
+    },
+    size: {
+      control: 'select',
+      options: sizes,
     },
   },
   args: {
@@ -46,6 +52,32 @@ export const Variants: Story = {
       <Badge variant="accent">Accent</Badge>
       <Badge variant="outline">Outline</Badge>
       <Badge variant="ghost">Ghost</Badge>
+    </div>
+  ),
+};
+
+export const Sizes: Story = {
+  render: () => (
+    <div className="flex flex-col gap-4">
+      {sizes.map((size) => (
+        <div key={size} className="flex flex-wrap items-center gap-4">
+          <span className="w-16 shrink-0 text-sm text-muted-foreground">
+            {size}
+          </span>
+          <Badge size={size}>Budget</Badge>
+          <Badge size={size} variant="secondary">
+            Ranked voting
+          </Badge>
+          <Badge size={size} variant="success">
+            <LuCheck data-icon="inline-start" />
+            Verified
+          </Badge>
+          <BadgeNumber size={size}>8</BadgeNumber>
+          <BadgeNumber size={size} variant="outline">
+            20+
+          </BadgeNumber>
+        </div>
+      ))}
     </div>
   ),
 };
