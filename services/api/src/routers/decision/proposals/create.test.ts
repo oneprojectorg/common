@@ -1,4 +1,5 @@
 import { cache } from '@op/cache';
+import { getInstancePhases } from '@op/common';
 import {
   TestDecisionsDataManager,
   ensureProposalCategoryTerms,
@@ -6,6 +7,7 @@ import {
 import { createDecisionBoundary } from '@op/common/testing/data';
 import {
   ProposalStatus,
+  processInstances,
   proposalCategories,
   taxonomyTerms,
 } from '@op/db/schema';
@@ -17,7 +19,6 @@ import { appRouter } from '../..';
 import {
   entrySchema,
   insertFormSchema,
-  setCurrentPhaseFormSchema,
 } from '../../../test/helpers/formSchemaTestUtils';
 import {
   accessTierGatingCell,
@@ -46,6 +47,28 @@ const readCachedUser = ({
   authUserId: string;
   fresh: string;
 }) => cache({ type: 'user', params: [authUserId], fetch: async () => fresh });
+
+/** Points the instance's current phase at a form schema row, as a setup script does. */
+const setCurrentPhaseFormSchema = async (
+  instanceId: string,
+  formSchemaId: string,
+) => {
+  const instance = await db.query.processInstances.findFirst({
+    where: { id: instanceId },
+    columns: { instanceData: true, currentStateId: true },
+  });
+  if (!instance?.instanceData || !instance.currentStateId) {
+    throw new Error(`Instance ${instanceId} has no current phase`);
+  }
+  const { instanceData, currentStateId } = instance;
+  const phases = getInstancePhases(instanceData).map((phase) =>
+    phase.phaseId === currentStateId ? { ...phase, formSchemaId } : phase,
+  );
+  await db
+    .update(processInstances)
+    .set({ instanceData: { ...instanceData, phases } })
+    .where(eq(processInstances.id, instanceId));
+};
 
 const readFormSchemaId = async (proposalId: string) => {
   const row = await db.query.proposals.findFirst({
