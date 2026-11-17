@@ -39,7 +39,6 @@ export type DevelopPrefillInput =
   | { type: 'proposal'; phaseId: string; id: string }
   | { type: 'review'; id: string };
 
-/** The `processInstances` columns the prefill reads. */
 export type DevelopPrefillInstance = {
   id: string;
   profileId: string | null;
@@ -65,14 +64,10 @@ const developPrefillRequestSchema = z.object({
 });
 
 /**
- * Builds the starting data of a developed proposal: maps the given proposals
- * and their reviews into the proposal form of the develop phase
- * `target.phaseId` with `mappings`. That form is the phase's `formSchemaId`
- * row, else the instance template, else the process template. A target field
- * whose inputs give different values stays empty.
- *
- * Asserts develop access on the target phase and validates the source
- * proposals. A caller that has already done both calls `buildDevelopPrefill`.
+ * Maps the given proposals and their reviews into the proposal form of the
+ * develop phase `target.phaseId`; a target field whose inputs disagree stays
+ * empty. A caller that has already asserted develop access and validated the
+ * sources calls `buildDevelopPrefill`.
  */
 export const getDevelopPrefill = async ({
   instanceId,
@@ -133,12 +128,8 @@ export const getDevelopPrefill = async ({
 };
 
 /**
- * `getDevelopPrefill` for a caller that has already asserted develop access on
- * `targetPhase` (`assertProposalDevelopAccess` returns the phase) and
- * validated the source proposals (`assertDevelopSources`). It still applies
- * the proposal read gate, checks that each proposal is in the phase it is
- * claimed for, and that each review is a submitted review of the instance of
- * a proposal among the inputs.
+ * `getDevelopPrefill` after `assertProposalDevelopAccess` and
+ * `assertDevelopSources`. It still applies the proposal read gate.
  */
 export const buildDevelopPrefill = async ({
   instance,
@@ -173,8 +164,8 @@ export const buildDevelopPrefill = async ({
   };
 
   const [targetForm, decisionRoles] = await Promise.all([
-    // A proposal created in the phase is stamped with its `formSchemaId` and
-    // read through `resolveProposalTemplate`, so the prefill targets that form.
+    // The form a proposal stamped with the phase's `formSchemaId` is read
+    // under. `createDevelopedProposal` does not stamp it yet.
     resolveProposalTemplate(
       instance.instanceData,
       instance.processId,
@@ -289,6 +280,8 @@ const loadMappingInputs = async ({
       : [],
     reviewIds.length > 0
       ? db.query.proposalReviews.findMany({
+          // Develop access is enough to read these reviews, unlike other review
+          // reads (decisions ADMIN): accepted, as the mappings pick the fields.
           where: {
             id: { in: reviewIds },
             state: ProposalReviewState.SUBMITTED,
@@ -361,7 +354,6 @@ const loadMappingInputs = async ({
   });
 };
 
-/** The ids of the proposals in each of `phaseIds`, by phase. */
 const getProposalIdsByPhase = async ({
   instance,
   phaseIds,
@@ -381,11 +373,9 @@ const getProposalIdsByPhase = async ({
   );
 
 /**
- * The flat data the proposal validator reads: the document fragments
- * assembled under the template the proposal was written under, or the stored
- * data of a legacy proposal without a collaboration document. A proposal whose
- * document cannot be fetched gives no data, so the other inputs still fill
- * the target.
+ * The document assembled under the proposal's own template, or the stored data
+ * of a legacy proposal. An unavailable document gives no data, so the other
+ * inputs still fill the target.
  */
 const getAssembledProposalData = async ({
   instance,

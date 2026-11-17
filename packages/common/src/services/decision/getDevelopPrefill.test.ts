@@ -116,7 +116,6 @@ const ballotForm = {
   },
 } as const;
 
-/** A `decision_form_schemas` row: the form an entry of the develop phase is created with. */
 const entryForm = {
   type: 'object',
   'x-field-order': ['title', 'ballotDescription'],
@@ -199,10 +198,7 @@ const insertFormSchema = async (values: {
   return row;
 };
 
-/**
- * `ballotFormSchema` is the develop phase's `formSchemaId` row: `ballotForm`
- * by default, none when `null`.
- */
+/** `ballotFormSchema: null` gives the develop phase no `formSchemaId` row. */
 const seedDevelopDecision = async (
   testData: TestDecisionsDataManager,
   {
@@ -840,7 +836,6 @@ describe.concurrent('getDevelopPrefill', () => {
         user: setup.user,
       });
 
-    // A draft review and a review of another instance give one error.
     await expectRejection({
       promise: buildPrefill([
         { type: 'review', id: draftReview.id },
