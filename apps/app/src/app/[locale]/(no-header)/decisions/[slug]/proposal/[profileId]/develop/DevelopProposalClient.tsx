@@ -6,10 +6,6 @@ import { notFound } from 'next/navigation';
 
 import { DevelopProposalRoute } from '@/components/decisions/developProposalEditor/DevelopProposalRoute';
 
-/**
- * Client body of the develop editor route: reads the decision and the
- * proposal, then hands them to `DevelopProposalRoute`.
- */
 export function DevelopProposalClient({
   profileId,
   slug,

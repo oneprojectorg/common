@@ -1,10 +1,6 @@
 import type { ProposalTemplateSchema } from '@op/common/client';
 
-/**
- * The heading of the develop editor, which the page title repeats: the entry
- * form's own title, else `fallback`. The fixed fallback word stands in until
- * the entry form PR gives the phase's entry form its own name.
- */
+/** The develop heading and page title: the form's title, else `fallback`. */
 export function getDevelopEntryHeading({
   template,
   fallback,

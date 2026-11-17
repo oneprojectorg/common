@@ -12,7 +12,6 @@ import { LuCheck } from 'react-icons/lu';
 import { useRouter, useTranslations } from '@/lib/i18n';
 
 import { CollaborativePresence } from '../../collaboration';
-import { ProposalEditorSkeleton } from '../ProposalEditorSkeleton';
 import {
   ProposalFormFields,
   ProposalFormProvider,
@@ -20,12 +19,12 @@ import {
 } from '../proposalEditor/ProposalForm';
 import { handleMutationError } from '../proposalEditor/handleMutationError';
 import { DevelopProposalFrame } from './DevelopProposalFrame';
+import { DevelopProposalSkeleton } from './DevelopProposalSkeleton';
 
 interface DevelopProposalEditorProps {
   instance: ProcessInstance;
   proposal: Proposal;
   backHref: string;
-  /** The source proposal, shown beside the form. */
   source: ReactNode;
   sourceLabel: string;
   heading: string;
@@ -33,9 +32,8 @@ interface DevelopProposalEditorProps {
 }
 
 /**
- * Edits a proposal developed from sources, with its source beside the form.
- * A draft is advanced with `submitDevelopedProposal`. After that the form
- * stays editable and autosaves for as long as the server reports it editable.
+ * Edits a proposal developed from sources. After a draft is advanced the form
+ * stays editable for as long as the server reports it editable.
  */
 export function DevelopProposalEditor({
   instance,
@@ -51,7 +49,7 @@ export function DevelopProposalEditor({
       instance={instance}
       proposal={proposal}
       isEditMode
-      fallback={<ProposalEditorSkeleton />}
+      fallback={<DevelopProposalSkeleton />}
     >
       <DevelopProposalFrame
         backHref={backHref}
@@ -69,7 +67,6 @@ export function DevelopProposalEditor({
   );
 }
 
-/** Presence, then the Advance button on a draft or the Advanced badge after. */
 function DevelopHeaderActions({
   proposal,
   backHref,
@@ -96,7 +93,6 @@ function DevelopHeaderActions({
   );
 }
 
-/** Validates, saves and advances the draft, then returns to the decision. */
 function AdvanceButton({
   proposal,
   backHref,

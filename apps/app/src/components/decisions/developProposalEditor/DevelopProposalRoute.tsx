@@ -24,13 +24,9 @@ import { DevelopSourceColumn } from './DevelopSourceColumn';
 import { getDevelopEntryHeading } from './getDevelopEntryHeading';
 
 /**
- * Opens a proposal developed from sources (the target of at least one
- * `developed` relationship) with its source beside the form. Any other proposal is not found on this route.
- *
- * This is the one access gate. The form is editable only for a caller the
- * server lets develop proposals (an admin or a holder of the Develop
- * Proposals permission), and only while the server reports the proposal
- * editable. Anyone else gets the read-only view.
+ * Opens a proposal developed from sources beside its source; any other
+ * proposal is not found. The form is editable only for a caller who may
+ * develop proposals, and only while the server reports the proposal editable.
  */
 export function DevelopProposalRoute({
   instance,
