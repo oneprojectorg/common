@@ -1,8 +1,11 @@
 import { TestReviewsDataManager } from '@op/common/testing';
 import {
+  ProposalRelationshipType,
   ProposalStatus,
+  Visibility,
   decisionTransitionProposals,
   proposalCategories,
+  proposalRelationships,
   proposalReviewAssignments,
   proposals as proposalsTable,
   stateTransitionHistory,
@@ -161,6 +164,63 @@ async function transitionIntoReview({
       proposalHistoryId: history.historyId,
     });
   }
+}
+
+type SourceContext = Awaited<ReturnType<typeof createSourcesContext>>;
+type EntryAuthor = Awaited<
+  ReturnType<TestReviewsDataManager['createInstanceMember']>
+>;
+
+/**
+ * Writes the entry and its `developed` edge directly: the list is under test,
+ * not `createDevelopedProposal`. The entry is a submitted proposal of the same
+ * phase, so it is also listed as a source. `developedAt` pins the edge order.
+ */
+async function developEntry({
+  testData,
+  context,
+  source,
+  author,
+  developedAt,
+  status = ProposalStatus.SUBMITTED,
+  visibility = Visibility.VISIBLE,
+}: {
+  testData: TestReviewsDataManager;
+  context: SourceContext['context'];
+  source: { id: string };
+  author: EntryAuthor;
+  developedAt: Date;
+  status?: ProposalStatus;
+  visibility?: Visibility;
+}) {
+  const { proposal } = await testData.createReviewAssignment({
+    context,
+    title: `Entry of ${source.id}`,
+    author,
+  });
+  await db
+    .update(proposalsTable)
+    .set({ status, visibility })
+    .where(eq(proposalsTable.id, proposal.id));
+  await db.insert(proposalRelationships).values({
+    processInstanceId: context.instance.instance.id,
+    sourceProposalId: source.id,
+    targetProposalId: proposal.id,
+    relationshipType: ProposalRelationshipType.DEVELOPED,
+    createdAt: developedAt.toISOString(),
+  });
+  return { id: proposal.id, profileId: proposal.profileId, status };
+}
+
+function developedBySource(page: SourceList) {
+  const bySource = new Map<
+    string,
+    SourceList['items'][number]['developedProposals']
+  >();
+  for (const item of page.items) {
+    bySource.set(item.id, item.developedProposals);
+  }
+  return bySource;
 }
 
 describe.concurrent('decision.listDevelopSources', () => {
@@ -408,5 +468,177 @@ describe.concurrent('decision.listDevelopSources', () => {
         cursor: 'not-a-cursor',
       }),
     ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
+  });
+});
+
+describe.concurrent('decision.listDevelopSources developedProposals', () => {
+  it('returns the entries of each source the caller may read', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const sources = await createSourcesContext({
+      testData,
+      titles: ['No entry', 'Own draft', 'Other draft', 'Submitted', 'Two'],
+    });
+    const { context, processInstanceId, proposals } = sources;
+    const [noEntry, ownDraftSource, otherDraftSource, submittedSource, two] =
+      proposals;
+    if (
+      !noEntry ||
+      !ownDraftSource ||
+      !otherDraftSource ||
+      !submittedSource ||
+      !two
+    ) {
+      throw new Error('expected five proposals');
+    }
+    const [author, otherAuthor] = await Promise.all([
+      testData.createInstanceMember(context),
+      testData.createInstanceMember(context),
+    ]);
+    const now = Date.now();
+    const ownDraft = await developEntry({
+      testData,
+      context,
+      source: ownDraftSource,
+      author,
+      developedAt: new Date(now),
+      status: ProposalStatus.DRAFT,
+    });
+    await developEntry({
+      testData,
+      context,
+      source: otherDraftSource,
+      author: otherAuthor,
+      developedAt: new Date(now),
+      status: ProposalStatus.DRAFT,
+    });
+    const submitted = await developEntry({
+      testData,
+      context,
+      source: submittedSource,
+      author,
+      developedAt: new Date(now),
+    });
+    // Written newest first, so only the SQL order can put them oldest first.
+    const secondOfTwo = await developEntry({
+      testData,
+      context,
+      source: two,
+      author: otherAuthor,
+      developedAt: new Date(now),
+    });
+    const firstOfTwo = await developEntry({
+      testData,
+      context,
+      source: two,
+      author: otherAuthor,
+      developedAt: new Date(now - 60_000),
+    });
+    const [authorCaller, adminCaller] = await Promise.all([
+      createAuthenticatedCaller(author.email),
+      createAuthenticatedCaller(context.defaultReviewer.email),
+    ]);
+
+    const [authorPage, adminPage] = await Promise.all([
+      authorCaller.decision.listDevelopSources({
+        processInstanceId,
+        phaseIds: ['review'],
+      }),
+      adminCaller.decision.listDevelopSources({
+        processInstanceId,
+        phaseIds: ['review'],
+      }),
+    ]);
+
+    const authorView = developedBySource(authorPage);
+    expect(authorView.get(noEntry.id)).toEqual([]);
+    expect(authorView.get(ownDraftSource.id)).toEqual([ownDraft]);
+    expect(authorView.get(otherDraftSource.id)).toEqual([]);
+    expect(authorView.get(submittedSource.id)).toEqual([submitted]);
+    expect(authorView.get(two.id)).toEqual([firstOfTwo, secondOfTwo]);
+
+    // An admin never sees another person's draft.
+    const adminView = developedBySource(adminPage);
+    expect(adminView.get(noEntry.id)).toEqual([]);
+    expect(adminView.get(ownDraftSource.id)).toEqual([]);
+    expect(adminView.get(otherDraftSource.id)).toEqual([]);
+    expect(adminView.get(submittedSource.id)).toEqual([submitted]);
+    expect(adminView.get(two.id)).toEqual([firstOfTwo, secondOfTwo]);
+
+    // The submitted entries are listed as sources too, with no entry of their own.
+    expect(adminView.get(submitted.id)).toEqual([]);
+  });
+
+  it('returns a hidden entry to an admin and its author only', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const { context, processInstanceId, proposals, memberCaller } =
+      await createSourcesContext({ testData, titles: ['Hidden entry'] });
+    const [source] = proposals;
+    if (!source) {
+      throw new Error('expected one proposal');
+    }
+    const author = await testData.createInstanceMember(context);
+    const hidden = await developEntry({
+      testData,
+      context,
+      source,
+      author,
+      developedAt: new Date(),
+      visibility: Visibility.HIDDEN,
+    });
+    const [authorCaller, adminCaller] = await Promise.all([
+      createAuthenticatedCaller(author.email),
+      createAuthenticatedCaller(context.defaultReviewer.email),
+    ]);
+    const input = { processInstanceId, phaseIds: ['review'] };
+
+    const [authorPage, adminPage, memberPage] = await Promise.all([
+      authorCaller.decision.listDevelopSources(input),
+      adminCaller.decision.listDevelopSources(input),
+      memberCaller.decision.listDevelopSources(input),
+    ]);
+
+    expect(developedBySource(authorPage).get(source.id)).toEqual([hidden]);
+    expect(developedBySource(adminPage).get(source.id)).toEqual([hidden]);
+    expect(developedBySource(memberPage).get(source.id)).toEqual([]);
+  });
+
+  it('leaves the field off listReviewProposals', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const { context, processInstanceId, proposals } =
+      await createSourcesContext({ testData, titles: ['Developed'] });
+    const [source] = proposals;
+    if (!source) {
+      throw new Error('expected one proposal');
+    }
+    const author = await testData.createInstanceMember(context);
+    await developEntry({
+      testData,
+      context,
+      source,
+      author,
+      developedAt: new Date(),
+    });
+    const adminCaller = await createAuthenticatedCaller(
+      context.defaultReviewer.email,
+    );
+
+    const result = await adminCaller.decision.listReviewProposals({
+      processInstanceId,
+      phaseId: 'review',
+    });
+
+    expect(result.items.map((item) => item.id)).toContain(source.id);
+    for (const item of result.items) {
+      expect(item).not.toHaveProperty('developedProposals');
+    }
   });
 });
