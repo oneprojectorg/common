@@ -26,6 +26,7 @@ import { submitProposalRouter } from './submit';
 import { submitDevelopedProposalRouter } from './submitDeveloped';
 import { unmergeProposalRouter } from './unmergeProposal';
 import { unrejectProposalRouter } from './unreject';
+import { unsubmitDevelopedProposalRouter } from './unsubmitDeveloped';
 import { updateProposalRouter } from './update';
 
 export const proposalsRouter = mergeRouters(
@@ -53,6 +54,7 @@ export const proposalsRouter = mergeRouters(
   unmergeProposalRouter,
   submitProposalRouter,
   submitDevelopedProposalRouter,
+  unsubmitDevelopedProposalRouter,
   updateProposalRouter,
   deleteProposalRouter,
   exportProposalsRouter,

@@ -1701,6 +1701,7 @@
       "advancedEntryLabel": "{title} is advanced",
       "advanceEntryError": "Could not advance the entry. Try again.",
       "advanceEntryIncompleteError": "{title} is not complete. Open the entry, complete it, then advance it again.",
+      "unadvanceEntryError": "Could not un-advance <bdi>{title}</bdi>. Try again.",
       "noSourcesTitle": "No proposals to develop",
       "noSourcesDescription": "Proposals from the last phase show here.",
       "noAssignedSourcesDescription": "No proposals are assigned to you yet.",

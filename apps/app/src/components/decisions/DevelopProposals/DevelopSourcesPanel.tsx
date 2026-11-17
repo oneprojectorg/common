@@ -74,9 +74,9 @@ const RECOMMENDATION_INTENT: Record<RecommendationValue, StatusDotIntent> = {
  * (the sources), each with its reviewers' overall recommendations. A source
  * with no entry yet shows Prepare, which creates an entry of this phase from
  * it; a source with an entry shows Edit, which opens the first entry, and
- * Advance, which submits that entry while it is a draft and shows it as
- * advanced once submitted. An admin sees every source; anyone else sees the
- * sources assigned to them.
+ * Advance, a toggle that submits that entry while it is a draft and moves it
+ * back to draft once it is submitted. An admin sees every source; anyone else
+ * sees the sources assigned to them.
  *
  * The list comes page by page from the API in its own order (newest first);
  * nothing is sorted or filtered here.
@@ -233,15 +233,18 @@ function DevelopSourcesTable({
       proposalData: {},
     });
 
-  // No invalidation: the submit publishes on the decision's proposals
-  // channel, which this list subscribes to.
+  // No invalidation: the submit and the unsubmit publish on the decision's
+  // proposals channel, which this list subscribes to.
   const submitEntry = trpc.decision.submitDevelopedProposal.useMutation();
+  const unsubmitEntry = trpc.decision.unsubmitDevelopedProposal.useMutation();
 
-  const isAdvancing = submitEntry.isPending;
-  const advancingEntryId = isAdvancing
+  const changingEntryId = submitEntry.isPending
     ? (submitEntry.variables?.proposalId ?? null)
-    : null;
-  const isBusy = isPreparing || isAdvancing;
+    : unsubmitEntry.isPending
+      ? (unsubmitEntry.variables?.proposalId ?? null)
+      : null;
+  const isBusy =
+    isPreparing || submitEntry.isPending || unsubmitEntry.isPending;
 
   const advance = (entry: DevelopedProposal, title: string) =>
     submitEntry.mutate(
@@ -254,6 +257,22 @@ function DevelopSourcesTable({
             getHttpStatus(error) === 400
               ? t('develop.advanceEntryIncompleteError', { title })
               : t('develop.advanceEntryError'),
+          );
+        },
+      },
+    );
+
+  const unadvance = (entry: DevelopedProposal, title: string) =>
+    unsubmitEntry.mutate(
+      { proposalId: entry.id },
+      {
+        onError: (error) => {
+          logger.error('Failed to un-advance a develop entry', { error });
+          toast.error(
+            t.rich('develop.unadvanceEntryError', {
+              title,
+              bdi: (chunks) => <bdi>{chunks}</bdi>,
+            }),
           );
         },
       },
@@ -343,8 +362,9 @@ function DevelopSourcesTable({
                               developedEntry.status !== ProposalStatus.DRAFT
                             }
                             disabled={isBusy}
-                            loading={advancingEntryId === developedEntry.id}
+                            loading={changingEntryId === developedEntry.id}
                             onAdvance={() => advance(developedEntry, title)}
+                            onUnadvance={() => unadvance(developedEntry, title)}
                           />
                         </EntryActions>
                       ) : (
@@ -433,8 +453,9 @@ function EntryActions({ children }: { children: ReactNode }) {
 }
 
 /**
- * Submits a draft entry; the server checks it against its form. A submitted
- * entry shows as pressed and cannot be taken back here.
+ * Pressed when the entry is advanced. Pressing it submits a draft entry, and
+ * the server checks it against its form; unpressing it moves an advanced entry
+ * back to draft.
  */
 function AdvanceEntryToggle({
   title,
@@ -442,6 +463,7 @@ function AdvanceEntryToggle({
   disabled,
   loading,
   onAdvance,
+  onUnadvance,
 }: {
   title: string;
   /** The entry is no longer a draft. */
@@ -449,38 +471,35 @@ function AdvanceEntryToggle({
   disabled: boolean;
   loading: boolean;
   onAdvance: () => void;
+  onUnadvance: () => void;
 }) {
   const t = useTranslations('decisions.develop');
-
-  if (advanced) {
-    return (
-      <Toggle
-        variant="outline"
-        pressed
-        disabled
-        aria-label={t('advancedEntryLabel', { title })}
-      >
-        <LuCheck aria-hidden data-icon="inline-start" />
-        {t('advancedEntryAction')}
-      </Toggle>
-    );
-  }
 
   return (
     <Toggle
       variant="outline"
-      pressed={false}
+      pressed={advanced}
       disabled={disabled || loading}
       aria-busy={loading || undefined}
-      aria-label={t('advanceEntryLabel', { title })}
+      aria-label={
+        advanced
+          ? t('advancedEntryLabel', { title })
+          : t('advanceEntryLabel', { title })
+      }
       onPressedChange={(pressed) => {
         if (pressed) {
           onAdvance();
+        } else {
+          onUnadvance();
         }
       }}
     >
-      {loading ? <Spinner aria-hidden data-icon="inline-start" /> : null}
-      {t('advanceEntryAction')}
+      {loading ? (
+        <Spinner aria-hidden data-icon="inline-start" />
+      ) : advanced ? (
+        <LuCheck aria-hidden data-icon="inline-start" />
+      ) : null}
+      {advanced ? t('advancedEntryAction') : t('advanceEntryAction')}
     </Toggle>
   );
 }

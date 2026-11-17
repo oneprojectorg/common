@@ -1701,6 +1701,7 @@
       "advancedEntryLabel": "تم تقديم {title}",
       "advanceEntryError": "تعذّر تقديم المدخل. حاول مرة أخرى.",
       "advanceEntryIncompleteError": "{title} غير مكتمل. افتح المدخل وأكمله، ثم قدّمه مرة أخرى.",
+      "unadvanceEntryError": "تعذّر إلغاء تقديم <bdi>{title}</bdi>. حاول مرة أخرى.",
       "noSourcesTitle": "لا توجد مقترحات للتطوير",
       "noSourcesDescription": "تظهر هنا مقترحات المرحلة السابقة.",
       "noAssignedSourcesDescription": "لم يتم تعيين أي مقترحات لك بعد.",
