@@ -1,13 +1,13 @@
-'use client';
+"use client";
 
-import { Header2 } from '@op/sense/Header';
-import { SplitPane } from '@op/sense/SplitPane';
-import type { ReactNode } from 'react';
+import { Header2 } from "@op/sense/Header";
+import { SplitPane } from "@op/sense/SplitPane";
+import type { ReactNode } from "react";
 
-import { useTranslations } from '@/lib/i18n';
+import { useTranslations } from "@/lib/i18n";
 
-import { UserAvatarMenu } from '../../SiteHeader';
-import { DecisionSubpageHeader } from '../DecisionSubpageHeader';
+import { UserAvatarMenu } from "../../SiteHeader";
+import { DecisionSubpageHeader } from "../DecisionSubpageHeader";
 
 interface DevelopProposalFrameProps {
   backHref: string;
@@ -50,11 +50,15 @@ export function DevelopProposalFrame({
       >
         {actions}
       </DecisionSubpageHeader>
-      <SplitPane className="mx-auto w-full max-w-6xl" defaultMobileTabId="form">
-        <SplitPane.Pane id="origin" label={originLabel} className="sm:pt-8">
+      <SplitPane className="mx-auto w-full max-w-7xl" defaultMobileTabId="form">
+        <SplitPane.Pane
+          id="origin"
+          label={originLabel}
+          className="sm:ps-6 sm:pt-8"
+        >
           {origin}
         </SplitPane.Pane>
-        <SplitPane.Pane id="form" label={heading} className="sm:pt-8">
+        <SplitPane.Pane id="form" label={heading} className="sm:pe-6 sm:pt-8">
           <div className="flex flex-col gap-8">
             <div className="flex flex-col gap-2">
               <Header2>{heading}</Header2>
