@@ -14,6 +14,7 @@ import { useCallback } from 'react';
 import { ProposalSheet } from './ProposalSheet/ProposalSheet';
 import { ProposalSheetProvider } from './ProposalSheet/ProposalSheetProvider';
 import { ReviewProgressProposalSheet } from './ProposalSheet/ReviewProgressProposalSheet';
+import { DevelopAdminPage } from './pages/DevelopAdminPage';
 import { DevelopProposalsPage } from './pages/DevelopProposalsPage';
 import { FinalPhaseManualSelectionPage } from './pages/FinalPhaseManualSelectionPage';
 import { ResultsPage } from './pages/ResultsPage';
@@ -124,17 +125,24 @@ function DecisionPage({
     // which entries are developed from the previous phase's proposals. This
     // branch must come first: without it an admin lands on the
     // review-selection screen below, which advances the previous phase's
-    // proposals as they are. The server's develop gate admits admins and
-    // develop-access holders alike; anyone else keeps the generic page.
-    if (
-      currentPhase &&
-      isDevelopPhase(currentPhase) &&
-      decisionSlug &&
-      (isAdmin || instance.access?.developProposals)
-    ) {
-      return (
-        <DevelopProposalsPage instance={instance} decisionSlug={decisionSlug} />
-      );
+    // proposals as they are. An admin gets the admin develop screen, even
+    // when they also hold develop access; a develop-access holder gets the
+    // develop screen; anyone else keeps the generic page.
+    if (currentPhase && isDevelopPhase(currentPhase) && decisionSlug) {
+      if (isAdmin) {
+        return (
+          <DevelopAdminPage instance={instance} decisionSlug={decisionSlug} />
+        );
+      }
+
+      if (instance.access?.developProposals) {
+        return (
+          <DevelopProposalsPage
+            instance={instance}
+            decisionSlug={decisionSlug}
+          />
+        );
+      }
     }
 
     // The current phase has an empty inbound transition awaiting selection.

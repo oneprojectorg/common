@@ -36,7 +36,7 @@ import {
   useDevelopEntriesQuery,
 } from './DevelopEntriesParts';
 
-/** The URL param of this tab's category filter; the Proposals tab has none. */
+/** The URL param of the entries' category filter, apart from the proposals list's. */
 const ENTRY_CATEGORY_PARAM = 'entryCategory';
 
 interface DevelopAdminEntriesPanelProps {
@@ -48,7 +48,7 @@ interface DevelopAdminEntriesPanelProps {
 }
 
 /**
- * The Entries tab of the develop screen as an admin sees it: a count of the
+ * The body of the admin's develop screen: a count of the develop phase's
  * entries, a search and a category filter, and the entries with their
  * category, budget and status. The API filters, searches and pages; the
  * category filter is kept in the URL.

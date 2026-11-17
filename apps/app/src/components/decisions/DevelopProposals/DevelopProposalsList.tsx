@@ -24,7 +24,6 @@ import { LuCircleCheck } from 'react-icons/lu';
 import { useTranslations } from '@/lib/i18n';
 
 import { ProposalsLoadError } from '../ProposalsLoadError';
-import { DevelopAdminEntriesPanel } from './DevelopAdminEntriesPanel';
 import { DevelopEntriesPanel } from './DevelopEntriesPanel';
 import {
   DevelopSourcesPanel,
@@ -36,8 +35,7 @@ type DevelopTab = 'proposals' | 'entries';
 /**
  * The develop screen's body: a Proposals tab with the previous phase's
  * proposals (the sources) to prepare entries from, an Entries tab with the
- * entries this phase holds (an admin's also counts, filters and shows them by
- * category), and a fixed footer with the advancing count and
+ * entries this phase holds, and a fixed footer with the advancing count and
  * the confirm action.
  */
 export function DevelopProposalsList({
@@ -104,21 +102,12 @@ export function DevelopProposalsList({
         </TabsContent>
 
         <TabsContent value="entries">
-          {instance.access?.admin ? (
-            <DevelopAdminEntriesPanel
-              processInstanceId={processInstanceId}
-              phaseId={phaseId}
-              decisionSlug={decisionSlug}
-              entryName={entryName}
-            />
-          ) : (
-            <DevelopEntriesPanel
-              processInstanceId={processInstanceId}
-              phaseId={phaseId}
-              decisionSlug={decisionSlug}
-              entryName={entryName}
-            />
-          )}
+          <DevelopEntriesPanel
+            processInstanceId={processInstanceId}
+            phaseId={phaseId}
+            decisionSlug={decisionSlug}
+            entryName={entryName}
+          />
         </TabsContent>
       </Tabs>
 
