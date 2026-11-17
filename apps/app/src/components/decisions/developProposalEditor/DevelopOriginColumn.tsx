@@ -2,7 +2,6 @@
 
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { trpc } from '@op/api/client';
-import type { RelatedProposal } from '@op/common/client';
 import {
   Empty,
   EmptyDescription,
@@ -21,7 +20,6 @@ import { ProposalBody } from '../Proposal/ProposalBody';
 import { ProposalQueryProvider } from '../Proposal/ProposalQueryProvider';
 import { ProposalTabList, ProposalTabTrigger } from '../Proposal/ProposalTabs';
 import { useProposal } from '../Proposal/proposalContext';
-import { ResponsiveSelect } from '../ResponsiveSelect';
 import type { PreviousReviewPhase } from '../Review/ReviewTabs';
 import {
   PhaseReviews,
@@ -31,63 +29,28 @@ import { DevelopOriginSkeleton } from './DevelopProposalSkeleton';
 
 type OriginTab = 'proposal' | 'reviews';
 
-/** The entry's origins, read only, with a select when there are several. */
+/** The origin proposal, read only: its content and its earlier reviews. */
 export function DevelopOriginColumn({
-  origins,
+  profileId,
   decisionRoot,
   reviewPhases,
 }: {
-  /** At least one. */
-  origins: RelatedProposal[];
+  profileId: string;
   decisionRoot: string;
   /** The earlier review phases whose reviews the caller may read. */
   reviewPhases: PreviousReviewPhase[];
 }) {
-  const t = useTranslations('decisions');
-  const [selectedId, setSelectedId] = useState(origins[0]?.id ?? '');
-  const origin =
-    origins.find((candidate) => candidate.id === selectedId) ?? origins[0];
-
-  if (!origin) {
-    return null;
-  }
-
   return (
-    <div className="flex flex-col gap-6">
-      {origins.length > 1 ? (
-        <ResponsiveSelect<string>
-          selectedKey={origin.id}
-          onSelectionChange={setSelectedId}
-          aria-label={t('developEditor.originSelectLabel')}
-          className="w-full sm:max-w-80"
-          items={origins.map((candidate) => {
-            const name =
-              candidate.profile.name || t('proposals.untitledProposal');
-
-            return {
-              id: candidate.id,
-              label: <bdi>{name}</bdi>,
-              textValue: name,
-            };
-          })}
-        />
-      ) : null}
-
-      {/* Keyed so the open tab and a failed load reset with the origin. */}
-      <APIErrorBoundary
-        key={origin.id}
-        fallbacks={{ default: () => <OriginUnavailable /> }}
-      >
-        <Suspense fallback={<DevelopOriginSkeleton />}>
-          <ProposalQueryProvider
-            profileId={origin.profile.id}
-            decisionRoot={decisionRoot}
-          >
-            <OriginSections reviewPhases={reviewPhases} />
-          </ProposalQueryProvider>
-        </Suspense>
-      </APIErrorBoundary>
-    </div>
+    <APIErrorBoundary fallbacks={{ default: () => <OriginUnavailable /> }}>
+      <Suspense fallback={<DevelopOriginSkeleton />}>
+        <ProposalQueryProvider
+          profileId={profileId}
+          decisionRoot={decisionRoot}
+        >
+          <OriginSections reviewPhases={reviewPhases} />
+        </ProposalQueryProvider>
+      </Suspense>
+    </APIErrorBoundary>
   );
 }
 

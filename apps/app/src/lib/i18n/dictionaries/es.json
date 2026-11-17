@@ -1666,7 +1666,7 @@
       "advancedStatus": "Avanzada",
       "proposalTab": "Propuesta",
       "originSectionsLabel": "Secciones de la propuesta",
-      "originSelectLabel": "Propuesta de origen",
+      "noEntry": "Esta propuesta aún no tiene una entrada.",
       "noReviews": "Esta propuesta aún no tiene revisiones.",
       "advancedToast": "“{title}” avanzó",
       "readOnlyNotice": "Puedes ver esta entrada, pero no editarla."

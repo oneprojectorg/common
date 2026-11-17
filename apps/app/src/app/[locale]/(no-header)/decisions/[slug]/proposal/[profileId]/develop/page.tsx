@@ -5,12 +5,12 @@ import {
   dehydrate,
 } from '@op/api/server';
 import type { Metadata } from 'next';
-import { notFound } from 'next/navigation';
 import { cache } from 'react';
 
-import { getTranslations } from '@/lib/i18n';
+import { getTranslations, redirect } from '@/lib/i18n';
 
 import { getDevelopEntryHeading } from '@/components/decisions/developProposalEditor/getDevelopEntryHeading';
+import { decisionProposalDevelopHref } from '@/components/decisions/proposalHrefs';
 
 import { DevelopProposalClient } from './DevelopProposalClient';
 
@@ -52,13 +52,16 @@ export async function generateMetadata({
   }
 }
 
-/** The develop editor of an entry. Any other proposal opens at `/edit`. */
+/**
+ * The develop screen of a proposal: the proposal beside the entry developed
+ * from it. `profileId` is the proposal's; an entry's redirects to it.
+ */
 const DevelopProposalPage = async ({
   params,
 }: {
-  params: Promise<{ slug: string; profileId: string }>;
+  params: Promise<{ slug: string; profileId: string; locale: string }>;
 }) => {
-  const { slug, profileId } = await params;
+  const { slug, profileId, locale } = await params;
   const { utils, queryClient } = await createServerUtils();
 
   // These reads warm the cache; the client's error boundary owns failures.
@@ -67,18 +70,38 @@ const DevelopProposalPage = async ({
     fetchDecisionBySlug(slug).catch(() => null),
   ]);
 
-  // Same input as the read in `DevelopProposalRoute`, so it hydrates.
-  const relationships = proposal
-    ? await utils.decision.listProposalRelationships
+  if (proposal) {
+    const [asEntry, asOrigin] = await Promise.all([
+      utils.decision.listProposalRelationships
         .fetch({
           targetProposalId: proposal.id,
           relationshipType: ProposalRelationshipType.DEVELOPED,
         })
-        .catch(() => null)
-    : null;
+        .catch(() => null),
+      // Same input as the read in `DevelopProposalRoute`, so it hydrates.
+      utils.decision.listProposalRelationships
+        .fetch({
+          sourceProposalId: proposal.id,
+          relationshipType: ProposalRelationshipType.DEVELOPED,
+        })
+        .catch(() => null),
+    ]);
 
-  if (relationships && relationships.items.length === 0) {
-    notFound();
+    const origin = asEntry?.items[0]?.proposal;
+    if (origin) {
+      redirect({
+        href: decisionProposalDevelopHref({
+          decisionSlug: slug,
+          profileId: origin.profile.id,
+        }),
+        locale,
+      });
+    }
+
+    const entry = asOrigin?.items[0]?.proposal;
+    if (entry) {
+      await fetchProposal(entry.profile.id).catch(() => null);
+    }
   }
 
   return (

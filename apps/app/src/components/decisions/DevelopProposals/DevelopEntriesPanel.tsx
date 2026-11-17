@@ -205,8 +205,9 @@ function DevelopEntriesTable({
             return (
               <TableRow key={entry.id}>
                 <TableRowHeader className="py-4">
-                  {/* An entry its caller may still edit opens in the develop
-                      editor; any other opens read-only. */}
+                  {/* An entry its caller may still edit opens the develop
+                      screen, which redirects to the proposal it was developed
+                      from; any other opens read-only. */}
                   <Link
                     href={
                       entry.isEditable
