@@ -315,7 +315,7 @@ describe('handleUnknownSmsSignup against the database', () => {
     expect(result).toMatchObject({ authUserId: authUser?.id });
     expect(recordedSms.map((message) => message.to)).toEqual([phone]);
     expect(recordedSms.at(-1)?.body).toBe(
-      "You're in! Welcome to Common. Text VOTE to register.",
+      "You're in! Welcome to Common. Text SHOW to see your decisions.",
     );
   });
 

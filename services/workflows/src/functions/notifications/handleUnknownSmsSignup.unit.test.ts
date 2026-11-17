@@ -508,7 +508,41 @@ describe('handleUnknownSmsSignup', () => {
     );
   });
 
-  it('still reports success when only the welcome reply is rejected', async () => {
+  it('given a free-text first message, when the code confirms, then the text replays as free text', async () => {
+    const sendSms = unknownNumberWithProvider(
+      vi.fn<SendSms>().mockResolvedValue(accepted),
+    );
+    vi.mocked(getPhoneSignupState)
+      .mockResolvedValueOnce(free)
+      .mockResolvedValueOnce(confirmed(2));
+    vi.mocked(confirmPhoneSignupCode).mockResolvedValue({
+      status: 'confirmed',
+      authUserId: 'auth-user-2',
+    });
+    const t = new InngestTestEngine({ function: handleUnknownSmsSignup });
+
+    const { result, ctx } = await t.execute({
+      events: [onLine({ from: FROM, body: '12', code: null })],
+      steps: [reply(1, '123456')],
+    });
+
+    expect(result).toEqual({
+      message: 'account created',
+      authUserId: 'auth-user-2',
+      replayed: true,
+    });
+    expect(vi.mocked(sendSms).mock.calls.at(-1)?.[0]?.body).not.toContain(
+      'Text VOTE to register',
+    );
+    expect(ctx.step.sendEvent).toHaveBeenCalledWith(
+      'replay-original-command',
+      expect.objectContaining({
+        data: expect.objectContaining({ body: '12', keyword: null }),
+      }),
+    );
+  });
+
+  it('still reports success when only the welcome reply is rejected, and replays nothing', async () => {
     unknownNumberWithProvider(
       vi.fn<SendSms>().mockResolvedValueOnce(accepted).mockResolvedValueOnce({
         status: 'rejected',
@@ -525,8 +559,8 @@ describe('handleUnknownSmsSignup', () => {
     });
     const t = new InngestTestEngine({ function: handleUnknownSmsSignup });
 
-    const { result } = await t.execute({
-      events: [onLine({ from: FROM })],
+    const { result, ctx } = await t.execute({
+      events: [onLine({ from: FROM, keyword: 'vote', body: 'VOTE' })],
       steps: [reply(1, '123456')],
     });
 
@@ -535,5 +569,6 @@ describe('handleUnknownSmsSignup', () => {
       authUserId: 'auth-user-3',
       replayed: false,
     });
+    expect(ctx.step.sendEvent).not.toHaveBeenCalled();
   });
 });

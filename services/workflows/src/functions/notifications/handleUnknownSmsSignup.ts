@@ -35,10 +35,12 @@ const HELP_MESSAGE =
   "This number cannot sign you up. Text your group's decision number to get started. Reply STOP to unsubscribe. Msg&Data Rates May Apply.";
 const CONSENT_MESSAGE =
   'Reply with the code we just texted you to create your Common account. By replying you agree to our Terms of Service and Privacy Policy.';
-const welcomeMessage = (replaying: boolean): string =>
+const welcomeMessage = (replaying: boolean, onDecisionLine: boolean): string =>
   replaying
     ? "You're in! Welcome to Common."
-    : "You're in! Welcome to Common. Text VOTE to register.";
+    : onDecisionLine
+      ? "You're in! Welcome to Common. Text VOTE to register."
+      : "You're in! Welcome to Common. Text SHOW to see your decisions.";
 const { smsInboundReceived } = Events;
 
 type ConfirmationOutcome =
@@ -50,9 +52,6 @@ type SignupContext = {
   flagEnabled: boolean;
   state: PhoneSignupState | null;
   line: Awaited<ReturnType<typeof findDecisionPhoneNumber>> | null;
-  // Absent on a context memoized before auto-join shipped: those runs joined
-  // under the old contract, with no line gate. Remove with the schema's
-  // legacy-'join' shim once no pre-deploy run can resume.
   requireLine?: boolean;
 };
 
@@ -298,12 +297,12 @@ export const handleUnknownSmsSignup = inngest.createFunction(
       recordPhoneSignupConsent({ authUserId }),
     );
 
-    const replaying = keyword !== null;
+    const replaying = keyword !== null || Boolean(inbound.body?.trim());
 
     const welcomeResult = await sendText(
       'send-welcome-reply',
       'Welcome message',
-      welcomeMessage(replaying),
+      welcomeMessage(replaying, line !== null),
     );
 
     if (welcomeResult.status === 'rejected') {
@@ -313,7 +312,9 @@ export const handleUnknownSmsSignup = inngest.createFunction(
       });
     }
 
-    if (replaying) {
+    const replayed = replaying && welcomeResult.status !== 'rejected';
+
+    if (replayed) {
       await step.sendEvent('replay-original-command', {
         name: smsInboundReceived.name,
         id: `sms-inbound-${inbound.messageSid}-replay`,
@@ -326,6 +327,6 @@ export const handleUnknownSmsSignup = inngest.createFunction(
       profileId,
     });
 
-    return { message: 'account created', authUserId, replayed: replaying };
+    return { message: 'account created', authUserId, replayed };
   },
 );

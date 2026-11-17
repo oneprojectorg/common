@@ -1,7 +1,6 @@
 import { db, eq } from '@op/db/client';
 import { users } from '@op/db/schema';
 
-// The acceptance date columns gate the policy re-acceptance modal.
 export const policyAcceptanceSet = ({
   tos,
   privacy,
