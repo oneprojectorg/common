@@ -1,9 +1,11 @@
+import { ProposalRelationshipType } from '@op/api/encoders';
 import {
   HydrationBoundary,
   createServerUtils,
   dehydrate,
 } from '@op/api/server';
 import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
 import { cache } from 'react';
 
 import { getTranslations } from '@/lib/i18n';
@@ -57,13 +59,29 @@ const DevelopProposalPage = async ({
   params: Promise<{ slug: string; profileId: string }>;
 }) => {
   const { slug, profileId } = await params;
-  const { queryClient } = await createServerUtils();
+  const { utils, queryClient } = await createServerUtils();
 
-  // Only warms the cache; the client's error boundary owns failures.
-  await Promise.all([
-    fetchProposal(profileId),
-    fetchDecisionBySlug(slug),
-  ]).catch(() => {});
+  // These reads warm the cache; the client's error boundary owns failures.
+  const [proposal] = await Promise.all([
+    fetchProposal(profileId).catch(() => null),
+    fetchDecisionBySlug(slug).catch(() => null),
+  ]);
+
+  // Same input as the read in `DevelopProposalRoute`, so it hydrates.
+  const relationships = proposal
+    ? await utils.decision.listProposalRelationships
+        .fetch({ targetProposalId: proposal.id })
+        .catch(() => null)
+    : null;
+
+  if (
+    relationships &&
+    !relationships.items.some(
+      (item) => item.relationshipType === ProposalRelationshipType.DEVELOPED,
+    )
+  ) {
+    notFound();
+  }
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
