@@ -7,12 +7,7 @@ import { getProfileAccessUser } from '../access';
 import { assertProposalDevelopAccess } from './assertProposalDevelopAccess';
 import { getPhases } from './instancePhases';
 
-/**
- * Asserts that the caller may advance or un-advance a developed proposal: the
- * develop rule for the instance's current phase, a live `developed` edge that
- * targets the proposal, and a membership on the proposal's own profile.
- * Returns the instance, with its profile ID known to be set.
- */
+/** Asserts the caller may develop in the current phase and authors this developed proposal. */
 export async function assertDevelopedProposalAuthor<
   TInstance extends {
     id: string;

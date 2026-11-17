@@ -67,10 +67,8 @@ import {
 
 type DevelopSourceScope = ListDevelopSourcesInput['scope'];
 
-/** An advance or un-advance sent for an entry whose new status has not arrived yet. */
 type PendingStatusChange = {
   entryId: string;
-  /** Advance (to submitted) or un-advance (to draft). */
   toAdvanced: boolean;
 };
 
@@ -85,9 +83,9 @@ const RECOMMENDATION_INTENT: Record<RecommendationValue, StatusDotIntent> = {
  * (the sources), each with its reviewers' overall recommendations. A source
  * with no entry yet shows Prepare, which creates an entry of this phase from
  * it; a source with an entry shows Edit, which opens the first entry, and
- * Advance, a toggle that submits that entry while it is a draft and moves it
- * back to draft once it is submitted. An admin sees every source; anyone else
- * sees the sources assigned to them.
+ * Advance, which submits that entry while it is a draft and un-advances it
+ * once submitted. An admin sees every source; anyone else sees the
+ * sources assigned to them.
  *
  * The list comes page by page from the API in its own order (newest first);
  * nothing is sorted or filtered here.
@@ -249,10 +247,7 @@ function DevelopSourcesTable({
   const submitEntry = trpc.decision.submitDevelopedProposal.useMutation();
   const unsubmitEntry = trpc.decision.unsubmitDevelopedProposal.useMutation();
 
-  // The toggle flips only when the refetch from that channel lands, after the
-  // mutation resolves, so the row stays loading until its status reaches the
-  // target. It is cleared here once it does, so a later change to the entry
-  // from elsewhere cannot turn the spinner back on.
+  // Held until the channel's refetch shows the entry's new status.
   const [pendingChange, setPendingChange] =
     useState<PendingStatusChange | null>(null);
   if (pendingChange) {
@@ -480,13 +475,6 @@ function EntryActions({ children }: { children: ReactNode }) {
   return <div className="flex items-center justify-end gap-2">{children}</div>;
 }
 
-/**
- * A pressed-state button, styled as advanced once the entry is no longer a
- * draft. On a draft entry it submits the entry, and the server checks it
- * against its form; on a submitted entry it moves the entry back to draft. An
- * entry past submitted (rejected, selected and so on) shows as advanced and
- * cannot be changed here.
- */
 function AdvanceEntryButton({
   title,
   status,
@@ -497,9 +485,7 @@ function AdvanceEntryButton({
 }: {
   title: string;
   status: DevelopedProposal['status'];
-  /** Another row is busy. */
   disabled: boolean;
-  /** This row's change is in flight. */
   loading: boolean;
   onAdvance: () => void;
   onUnadvance: () => void;

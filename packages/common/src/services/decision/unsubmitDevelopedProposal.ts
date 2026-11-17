@@ -10,12 +10,7 @@ export interface UnsubmitDevelopedProposalInput {
   proposalId: string;
 }
 
-/**
- * Moves a submitted developed proposal back to draft. It is gated like
- * `submitDevelopedProposal`. Only the status changes: the short code,
- * visibility, categories and proposal data stay, so a later submit keeps the
- * same short code.
- */
+/** Moves a submitted developed proposal back to draft; only the status changes. */
 export const unsubmitDevelopedProposal = async ({
   data,
   user,
@@ -47,7 +42,6 @@ export const unsubmitDevelopedProposal = async ({
     user,
   });
 
-  // The status condition refuses a concurrent change since the read above.
   const [draft] = await db
     .update(proposals)
     .set({ status: ProposalStatus.DRAFT })
