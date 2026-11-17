@@ -14,8 +14,8 @@ import {
 } from '../../schemaMapping';
 import { NotFoundError, UnauthorizedError, ValidationError } from '../../utils';
 import { getProfileAccessRoles } from '../access';
+import { assertDevelopSources } from './assertDevelopSources';
 import { assertProposalDevelopAccess } from './assertProposalDevelopAccess';
-import { assertDevelopSources } from './createDevelopedProposal';
 import { getProposalDocumentsContent } from './getProposalDocumentsContent';
 import { getProposalIdsForPhase } from './getProposalsForPhase';
 import { getPhases } from './instancePhases';

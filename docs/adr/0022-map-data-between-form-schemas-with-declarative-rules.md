@@ -122,4 +122,8 @@ value expressions of the selection pipeline are the planned next step.
   schema ID before mappings are stored. ADR 0019 sets that direction.
 - The result is only the mapped data. Returning the conflicting values with
   the input each came from is deferred until a screen needs it.
-- **Not decided here:** where the rules are stored.
+- **Where the rules are stored (amended 2026-11-17):** for now, the rules sit
+  on the target (develop) phase's config under `developPrefillMappings`. A
+  setup script sets them by hand; no editor writes them. Code reads them only
+  through `getDevelopPrefillMappings`. The `{ type, phaseId }` reference stays
+  until sources have a form schema ID.

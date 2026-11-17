@@ -5,6 +5,7 @@ import type { UiSchema } from '@rjsf/utils';
 import type { JSONContent } from '@tiptap/core';
 import type { JSONSchema7 } from 'json-schema';
 
+import type { SchemaMapping } from '../../../schemaMapping';
 import { CommonError, ValidationError } from '../../../utils';
 import { schemaValidator } from '../schemaValidator';
 import type { SelectionPipeline } from '../selectionPipeline/types';
@@ -90,6 +91,12 @@ export interface PhaseInstanceData {
    * it, not `proposalTemplate`. Only a setup script writes it.
    */
   formSchemaId?: string;
+  /**
+   * Mappings (ADR 0022) that fill a proposal developed in this phase from its
+   * sources. Read it only through `getDevelopPrefillMappings`; only a setup
+   * script writes it, and the API phase encoders do not carry it.
+   */
+  developPrefillMappings?: SchemaMapping[];
 }
 
 /** Public-facing overview content (headline, short description, rich text body) */
