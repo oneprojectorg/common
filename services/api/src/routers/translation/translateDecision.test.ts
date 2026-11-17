@@ -1,6 +1,7 @@
 import {
   TestDecisionsDataManager,
   TestTranslationDataManager,
+  syncPhaseRows,
 } from '@op/common/testing';
 import { db } from '@op/db/client';
 import { contentTranslations, processInstances } from '@op/db/schema';
@@ -119,6 +120,7 @@ describe('translation.translateDecision', () => {
       .update(processInstances)
       .set({ instanceData: { ...instanceData, phases } })
       .where(eq(processInstances.id, instance.instance.id));
+    await syncPhaseRows(instance.instance.id);
 
     // Clean up translations created by the test
     onTestFinished(async () => {
@@ -188,6 +190,7 @@ describe('translation.translateDecision', () => {
       .update(processInstances)
       .set({ instanceData: { ...instanceData, phases } })
       .where(eq(processInstances.id, instance.instance.id));
+    await syncPhaseRows(instance.instance.id);
 
     onTestFinished(async () => {
       await db
@@ -262,6 +265,7 @@ describe('translation.translateDecision', () => {
         },
       })
       .where(eq(processInstances.id, instance.instance.id));
+    await syncPhaseRows(instance.instance.id);
 
     onTestFinished(async () => {
       await db
@@ -325,6 +329,8 @@ describe('translation.translateDecision', () => {
       .update(processInstances)
       .set({ instanceData: { ...instanceData, phases }, description: null })
       .where(eq(processInstances.id, instance.instance.id));
+    // A phase row always has a name, so only a decision without rows has none.
+    await testData.removePhaseRows(instance.instance.id);
 
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
@@ -374,6 +380,7 @@ describe('translation.translateDecision', () => {
       .update(processInstances)
       .set({ instanceData: { ...instanceData, phases } })
       .where(eq(processInstances.id, instance.instance.id));
+    await syncPhaseRows(instance.instance.id);
 
     // Pre-seed the headline translation in cache
     await translationData.seedTranslation({
@@ -458,6 +465,7 @@ describe('translation.translateDecision', () => {
       .update(processInstances)
       .set({ instanceData: { ...instanceData, phases } })
       .where(eq(processInstances.id, instance.instance.id));
+    await syncPhaseRows(instance.instance.id);
 
     // Open the decision to visitors: GLOBAL_USER_PUBLIC gets the Public role
     // (decisions READ), which a no-JWT caller resolves to via the sentinel.
@@ -603,6 +611,7 @@ describe('translation.translateDecision', () => {
       .update(processInstances)
       .set({ instanceData: { ...instanceData, phases } })
       .where(eq(processInstances.id, instance.instance.id));
+    await syncPhaseRows(instance.instance.id);
 
     onTestFinished(async () => {
       await db

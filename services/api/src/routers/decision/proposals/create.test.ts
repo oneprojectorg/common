@@ -3,6 +3,7 @@ import { getInstancePhases } from '@op/common';
 import {
   TestDecisionsDataManager,
   ensureProposalCategoryTerms,
+  syncPhaseRows,
 } from '@op/common/testing';
 import { createDecisionBoundary } from '@op/common/testing/data';
 import {
@@ -68,6 +69,7 @@ const setCurrentPhaseFormSchema = async (
     .update(processInstances)
     .set({ instanceData: { ...instanceData, phases } })
     .where(eq(processInstances.id, instanceId));
+  await syncPhaseRows(instanceId, phases);
 };
 
 // Postgres error code: `proposals.form_schema_id` names no row.

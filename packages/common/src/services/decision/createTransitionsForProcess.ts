@@ -5,7 +5,12 @@ import { logger } from '@op/logging';
 
 import { CommonError } from '../../utils';
 import { buildExpectedTransitions } from './buildExpectedTransitions';
-import { resolvePhases } from './instancePhases';
+import { attachPhaseRows } from './instancePhases';
+import {
+  type ProcessPhaseWithProfile,
+  listPhases,
+  resolveTransitionPhaseRowIds,
+} from './phaseHelpers';
 
 /**
  * Creates scheduled transition records for phases with date-based advancement.
@@ -16,9 +21,12 @@ import { resolvePhases } from './instancePhases';
  */
 export async function createTransitionsForProcess({
   processInstance,
+  phases,
   db = defaultDb,
 }: {
   processInstance: ProcessInstance;
+  // Read here when the caller does not hold the rows.
+  phases?: ProcessPhaseWithProfile[];
   db?: DbClient;
 }): Promise<{
   transitions: Array<{
@@ -29,9 +37,15 @@ export async function createTransitionsForProcess({
   }>;
 }> {
   try {
-    const transitionsToCreate = buildExpectedTransitions(
-      await resolvePhases({ instance: processInstance, db }),
-    );
+    const rows =
+      phases ??
+      (await listPhases({ db, processInstanceId: processInstance.id }));
+    const transitionsToCreate = resolveTransitionPhaseRowIds({
+      phases: rows,
+      transitions: buildExpectedTransitions(
+        attachPhaseRows({ instance: processInstance, phases: rows }),
+      ),
+    });
 
     if (transitionsToCreate.length === 0) {
       return { transitions: [] };

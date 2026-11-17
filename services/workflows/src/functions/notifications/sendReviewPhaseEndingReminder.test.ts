@@ -1,5 +1,5 @@
 import { InngestTestEngine } from '@inngest/test';
-import { TestReviewsDataManager } from '@op/common/testing';
+import { TestReviewsDataManager, syncPhaseRows } from '@op/common/testing';
 import { db, eq } from '@op/db/client';
 import { ProcessStatus, processInstances } from '@op/db/schema';
 import { Events } from '@op/events';
@@ -47,6 +47,7 @@ describe('sendReviewPhaseEndingReminder', () => {
         },
       })
       .where(eq(processInstances.id, processInstanceId));
+    await syncPhaseRows(processInstanceId);
 
     const { error, result, ctx } = await new InngestTestEngine({
       function: sendReviewPhaseEndingReminder,

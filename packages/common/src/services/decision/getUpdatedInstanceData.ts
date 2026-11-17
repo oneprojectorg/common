@@ -23,62 +23,63 @@ export interface PhaseEndDateChange {
 
 type PhaseInstanceData = DecisionInstanceData['phases'][number];
 
+export const hasNonPhaseUpdate = ({
+  config,
+  overview,
+  proposalTemplate,
+  rubricTemplate,
+}: InstanceDataUpdate): boolean =>
+  config !== undefined ||
+  overview !== undefined ||
+  proposalTemplate !== undefined ||
+  rubricTemplate !== undefined;
+
+export const hasPhaseUpdates = (
+  update: InstanceDataUpdate,
+): update is InstanceDataUpdate & { phases: PhaseOverride[] } =>
+  update.phases !== undefined && update.phases.length > 0;
+
 /**
  * Applies an admin update to stored instance data without touching the
- * database. Undefined when the update carries nothing for instanceData.
+ * database. `instanceData` is set when a non-phase field changes, `phases`
+ * when the update lists any; phases merge onto `existingPhases`.
  */
 export function getUpdatedInstanceData({
   existing,
+  existingPhases,
   update,
 }: {
   existing: DecisionInstanceData;
+  existingPhases: PhaseInstanceData[];
   update: InstanceDataUpdate;
-}):
-  | {
-      instanceData: DecisionInstanceData;
-      phaseEndDateChanges: PhaseEndDateChange[];
-    }
-  | undefined {
-  const { config, overview, phases, proposalTemplate, rubricTemplate } = update;
-  const hasPhaseUpdates = phases !== undefined && phases.length > 0;
-
-  if (
-    config === undefined &&
-    overview === undefined &&
-    !hasPhaseUpdates &&
-    proposalTemplate === undefined &&
-    rubricTemplate === undefined
-  ) {
-    return undefined;
-  }
-
-  const instanceData: DecisionInstanceData = { ...existing };
-
-  if (config !== undefined) {
-    instanceData.config = mergeConfig(existing.config, config);
-  }
-
-  if (overview !== undefined) {
-    instanceData.overview = mergeOverview(existing.overview, overview);
-  }
-
-  if (hasPhaseUpdates) {
-    instanceData.phases = mergePhases(existing.phases, phases);
-  }
-
-  if (proposalTemplate !== undefined) {
-    // The API hands over a generic JSON Schema; the stored shape is the template type.
-    instanceData.proposalTemplate = proposalTemplate as ProposalTemplateSchema;
-  }
-
-  if (rubricTemplate !== undefined) {
-    instanceData.rubricTemplate = rubricTemplate;
-  }
+}): {
+  instanceData?: DecisionInstanceData;
+  phases?: PhaseInstanceData[];
+  phaseEndDateChanges: PhaseEndDateChange[];
+} {
+  const { config, overview, proposalTemplate, rubricTemplate } = update;
+  const phases = hasPhaseUpdates(update) ? update.phases : undefined;
 
   return {
-    instanceData,
-    phaseEndDateChanges: hasPhaseUpdates
-      ? getPhaseEndDateChanges(existing.phases, phases)
+    ...(hasNonPhaseUpdate(update) && {
+      instanceData: {
+        ...existing,
+        ...(config !== undefined && {
+          config: mergeConfig(existing.config, config),
+        }),
+        ...(overview !== undefined && {
+          overview: mergeOverview(existing.overview, overview),
+        }),
+        // The API hands over a generic JSON Schema; the stored shape is the template type.
+        ...(proposalTemplate !== undefined && {
+          proposalTemplate: proposalTemplate as ProposalTemplateSchema,
+        }),
+        ...(rubricTemplate !== undefined && { rubricTemplate }),
+      },
+    }),
+    ...(phases && { phases: mergePhases(existingPhases, phases) }),
+    phaseEndDateChanges: phases
+      ? getPhaseEndDateChanges(existingPhases, phases)
       : [],
   };
 }

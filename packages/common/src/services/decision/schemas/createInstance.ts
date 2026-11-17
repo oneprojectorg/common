@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 import { MAX_PHASES_PER_DECISION } from '../utils/phaseOrder';
+import { phaseNameInputSchema } from './phaseName';
 
 export const PROCESS_NAME_MIN_LENGTH = 3;
 export const PROCESS_NAME_MAX_LENGTH = 256;
@@ -21,7 +22,7 @@ export type ProcessType = (typeof PROCESS_TYPES)[number];
 export const instancePhaseInputSchema = z.object({
   kind: z.enum(PHASE_KINDS),
   /** Already in the creator's language. */
-  name: z.string().trim().min(1).max(256),
+  name: phaseNameInputSchema,
 });
 
 export type InstancePhaseInput = z.infer<typeof instancePhaseInputSchema>;

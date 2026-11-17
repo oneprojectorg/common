@@ -1,7 +1,8 @@
 import { mockCollab } from '@op/collab/testing';
-import type {
-  DecisionSchemaDefinition,
-  RubricTemplateSchema,
+import {
+  type DecisionSchemaDefinition,
+  type RubricTemplateSchema,
+  getPhases,
 } from '@op/common';
 import { OVERALL_RECOMMENDATION_KEY } from '@op/common/client';
 import {
@@ -470,11 +471,12 @@ describe.concurrent('per-phase rubric templates', () => {
     const currentPhases = async () => {
       const row = await db.query.processInstances.findFirst({
         where: { id: instanceId },
+        columns: { id: true, instanceData: true },
       });
-      const data = row?.instanceData as {
-        phases: Array<{ phaseId: string; rubricTemplate?: unknown }>;
-      };
-      return data.phases;
+      if (!row) {
+        throw new Error(`Instance ${instanceId} not found`);
+      }
+      return getPhases({ instance: row });
     };
     const phaseIds = (await currentPhases()).map((p) => p.phaseId);
 

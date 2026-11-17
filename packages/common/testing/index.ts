@@ -16,7 +16,11 @@ export {
   createDevelopPhaseSetup,
   createDevelopProposalsMember,
 } from './helpers/developPhase';
-export { emptyBlobPhases } from './helpers/phaseRowFixtures';
+export {
+  emptyBlobPhases,
+  loadPhaseRows,
+  syncPhaseRows,
+} from './helpers/phaseRowFixtures';
 export { TestJoinProfileRequestDataManager } from './helpers/TestJoinProfileRequestDataManager';
 export { TestOrganizationDataManager } from './helpers/TestOrganizationDataManager';
 export { TestPhoneAuthDataManager } from './helpers/TestPhoneAuthDataManager';
@@ -31,6 +35,8 @@ export {
   type RegisterCleanup,
 } from './helpers/loginTestUtils';
 export {
+  dateAdvancementSchema,
+  fourPhaseDateSchema,
   schemaMissingPipeline,
   schemaWithPipeline,
   schemaWithThreePhases,

@@ -1,9 +1,9 @@
+import { processDecisionsTransitions } from '@op/common';
 import {
-  type DecisionSchemaDefinition,
-  processDecisionsTransitions,
-} from '@op/common';
-import { TestDecisionsDataManager } from '@op/common/testing';
-import { db, eq } from '@op/db/client';
+  TestDecisionsDataManager,
+  fourPhaseDateSchema,
+} from '@op/common/testing';
+import { and, db, eq, isNull } from '@op/db/client';
 import {
   ProcessStatus,
   ProposalStatus,
@@ -19,6 +19,7 @@ import { event } from '@op/events';
 import { type MockInstance, describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
+import { advanceAlong } from '../../../test/helpers/phaseTestUtils';
 import {
   createIsolatedSession,
   createTestContextWithSession,
@@ -31,51 +32,6 @@ async function createAuthenticatedCaller(email: string) {
   const { session } = await createIsolatedSession(email);
   return createCaller(await createTestContextWithSession(session));
 }
-
-// Four-phase schema for transition-monitor tests: every phase uses
-// date-based advancement so the monitor schedules transitions, and every
-// phase carries a pass-all selectionPipeline so proposals flow forward.
-const monitorTestSchema: DecisionSchemaDefinition = {
-  id: 'monitor-test',
-  version: '1.0.0',
-  name: 'Monitor Test Schema',
-  description: 'Date-based pass-all schema used for transition monitor tests.',
-  phases: [
-    {
-      id: 'submission',
-      name: 'Submission',
-      rules: {
-        proposals: { submit: true },
-        advancement: { method: 'date' },
-      },
-      selectionPipeline: { version: '1.0.0', blocks: [] },
-    },
-    {
-      id: 'review',
-      name: 'Review',
-      rules: {
-        advancement: { method: 'date' },
-      },
-      selectionPipeline: { version: '1.0.0', blocks: [] },
-    },
-    {
-      id: 'voting',
-      name: 'Voting',
-      rules: {
-        voting: { submit: true },
-        advancement: { method: 'date' },
-      },
-      selectionPipeline: { version: '1.0.0', blocks: [] },
-    },
-    {
-      id: 'results',
-      name: 'Results',
-      rules: {
-        advancement: { method: 'date' },
-      },
-    },
-  ],
-};
 
 /**
  * Helper to create a template using the monitor test schema (4 phases,
@@ -101,8 +57,8 @@ async function createSimpleTemplate(
     .insert(decisionProcesses)
     .values({
       name: `Simple Template ${taskId}`,
-      description: monitorTestSchema.description,
-      processSchema: monitorTestSchema,
+      description: fourPhaseDateSchema.description,
+      processSchema: fourPhaseDateSchema,
       createdByProfileId: userRecord.profileId,
     })
     .returning();
@@ -240,6 +196,32 @@ async function createPublishedInstanceWithDueTransitions(
     caller,
     templateId,
   };
+}
+
+const hoursAgo = (hours: number) =>
+  new Date(Date.now() - hours * 60 * 60 * 1000).toISOString();
+
+// Makes the pending transition out of `fromStateId` due at `scheduledDate`.
+async function scheduleTransition(
+  instanceId: string,
+  fromStateId: string,
+  scheduledDate: string,
+) {
+  const [transition] = await db
+    .update(decisionProcessTransitions)
+    .set({ scheduledDate })
+    .where(
+      and(
+        eq(decisionProcessTransitions.processInstanceId, instanceId),
+        eq(decisionProcessTransitions.fromStateId, fromStateId),
+        isNull(decisionProcessTransitions.completedAt),
+      ),
+    )
+    .returning();
+  if (!transition) {
+    throw new Error(`No pending transition out of ${fromStateId}`);
+  }
+  return transition;
 }
 
 // Sequential execution: processDecisionsTransitions is a global function that processes
@@ -502,6 +484,87 @@ describe('processDecisionsTransitions', () => {
     expect(result.processed).toBeGreaterThanOrEqual(2);
   });
 
+  it('completes a stale transition out of a phase the decision has left and keeps advancing', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { instanceId } = await createPublishedInstanceWithDueTransitions(
+      testData,
+      task.id,
+      { makeDue: false },
+    );
+    await advanceAlong(testData, instanceId, [
+      'submission',
+      'review',
+      'voting',
+    ]);
+
+    const [stale] = await db
+      .insert(decisionProcessTransitions)
+      .values({
+        processInstanceId: instanceId,
+        fromStateId: 'submission',
+        toStateId: 'voting',
+        scheduledDate: hoursAgo(2),
+      })
+      .returning();
+    if (!stale) {
+      throw new Error('The stale transition was not inserted');
+    }
+    const due = await scheduleTransition(instanceId, 'voting', hoursAgo(1));
+
+    const result = await processDecisionsTransitions({
+      processInstanceId: instanceId,
+    });
+
+    expect(result).toMatchObject({ processed: 1, failed: 0 });
+    const [instance, staleAfter, dueAfter] = await Promise.all([
+      db.query.processInstances.findFirst({ where: { id: instanceId } }),
+      db.query.decisionProcessTransitions.findFirst({
+        where: { id: stale.id },
+      }),
+      db.query.decisionProcessTransitions.findFirst({ where: { id: due.id } }),
+    ]);
+    expect(instance?.currentStateId).toBe('results');
+    expect(staleAfter?.completedAt).not.toBeNull();
+    expect(dueAfter?.completedAt).not.toBeNull();
+  });
+
+  it('stops on a conflict over a transition out of a phase the decision has not reached', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { instanceId } = await createPublishedInstanceWithDueTransitions(
+      testData,
+      task.id,
+      { makeDue: false },
+    );
+    await advanceAlong(testData, instanceId, ['submission', 'review']);
+
+    const ahead = await scheduleTransition(instanceId, 'voting', hoursAgo(2));
+    const next = await scheduleTransition(instanceId, 'review', hoursAgo(1));
+
+    const result = await processDecisionsTransitions({
+      processInstanceId: instanceId,
+    });
+
+    expect(result).toMatchObject({ processed: 0, failed: 0 });
+    const [instance, aheadAfter, nextAfter] = await Promise.all([
+      db.query.processInstances.findFirst({ where: { id: instanceId } }),
+      db.query.decisionProcessTransitions.findFirst({
+        where: { id: ahead.id },
+      }),
+      db.query.decisionProcessTransitions.findFirst({
+        where: { id: next.id },
+      }),
+    ]);
+    expect(instance?.currentStateId).toBe('review');
+    expect(aheadAfter?.completedAt).toBeNull();
+    expect(nextAfter?.completedAt).toBeNull();
+  });
+
   it('should persist selected proposals into decisionTransitionProposals', async ({
     task,
     onTestFinished,
@@ -671,6 +734,7 @@ describe('processDecisionsTransitions', () => {
         instanceData: { phases: [] },
       })
       .where(eq(processInstances.id, badInstanceId));
+    await testData.removePhaseRows(badInstanceId);
 
     const monitorResult = await processDecisionsTransitions();
 

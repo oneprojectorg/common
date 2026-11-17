@@ -2,6 +2,7 @@ import { mockCollab } from '@op/collab/testing';
 import { createDecisionRole, invalidateDecisionInstance } from '@op/common';
 import {
   TestDecisionsDataManager,
+  syncPhaseRows,
   testSimpleVotingSchema,
 } from '@op/common/testing';
 import {
@@ -78,6 +79,7 @@ async function setupVotingInstance(
       },
     })
     .where(eq(processInstances.id, instanceId));
+  await syncPhaseRows(instanceId);
   await invalidateDecisionInstance(instanceId);
 
   return { setup, instanceId, proposal };
