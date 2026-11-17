@@ -42,13 +42,11 @@ interface ProposalFormState {
   draft: ProposalDraftFields;
   /** The proposal is a draft that the edit page can submit. */
   isDraft: boolean;
-  /** The template compiled into field descriptors. */
   fields: FieldDescriptor[];
 }
 
 interface ProposalFormActions {
   updateField: (key: string, value: unknown) => void;
-  /** Validates every template field against the collaborative document. */
   validate: () => SchemaValidationResult;
   /** Persists the current draft now. Rejects when the update fails. */
   save: () => Promise<void>;
@@ -73,11 +71,8 @@ const ProposalFormContext = createContext<ProposalFormContextValue | null>(
 
 /**
  * Owns the proposal form: the collaborative document, the draft of the system
- * fields, validation and saving. It renders no page chrome; a host screen
- * composes `ProposalFormFields` and its own header and actions inside it.
- *
- * Reuses a `CollaborativeDocProvider` that is already mounted above it, and
- * mounts one (showing `fallback` until it syncs) when there is none.
+ * fields, validation and saving. Reuses a `CollaborativeDocProvider` mounted
+ * above it, else mounts one and shows `fallback` until it syncs.
  */
 export function ProposalFormProvider({
   instance,
@@ -150,7 +145,6 @@ export function ProposalFormProvider({
   );
 }
 
-/** Reads the state, actions and meta of the enclosing `ProposalFormProvider`. */
 export function useProposalForm(): ProposalFormContextValue {
   const context = use(ProposalFormContext);
 
@@ -161,10 +155,7 @@ export function useProposalForm(): ProposalFormContextValue {
   return context;
 }
 
-/**
- * The proposal's fields. Shows the version selected in `VersionPreviewContext`
- * read-only when there is one, otherwise the live collaborative fields.
- */
+/** The live fields, or the version selected in `VersionPreviewContext`. */
 export function ProposalFormFields() {
   const {
     state: { draft, fields },
@@ -185,10 +176,7 @@ export function ProposalFormFields() {
   );
 }
 
-/**
- * Rendered inside `CollaborativeDocProvider` so it can read the Yjs document
- * for validation and version snapshots.
- */
+/** Inside `CollaborativeDocProvider`, so it can read the Yjs document. */
 function ProposalFormStateProvider({
   instance,
   proposal,
