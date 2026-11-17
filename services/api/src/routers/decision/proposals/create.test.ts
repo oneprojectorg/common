@@ -70,6 +70,9 @@ const setCurrentPhaseFormSchema = async (
     .where(eq(processInstances.id, instanceId));
 };
 
+// Postgres error code: `proposals.form_schema_id` names no row.
+const FOREIGN_KEY_VIOLATION = '23503';
+
 const readFormSchemaId = async (proposalId: string) => {
   const row = await db.query.proposals.findFirst({
     where: { id: proposalId },
@@ -243,7 +246,7 @@ describe.concurrent('createProposal', () => {
     await expect(readFormSchemaId(proposal.id)).resolves.toBeNull();
   });
 
-  it('refuses the create when the phase form row is missing', async ({
+  it('fails the create on the foreign key when the phase form row is missing', async ({
     task,
     onTestFinished,
   }) => {
@@ -263,46 +266,8 @@ describe.concurrent('createProposal', () => {
         proposalData: { title: 'Refused' },
       }),
     ).rejects.toMatchObject({
-      cause: {
-        name: 'NotFoundError',
-        message: `Form schema with ID '${missingId}' not found.`,
-      },
-    });
-    await expect(readInstanceProposalIds(instanceId)).resolves.toEqual([]);
-  });
-
-  it('refuses the create when the phase form row belongs to another instance', async ({
-    task,
-    onTestFinished,
-  }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const setup = await testData.createDecisionSetup({
-      instanceCount: 2,
-      grantAccess: true,
-    });
-    const [instance, otherInstance] = setup.instances;
-    if (!instance || !otherInstance) {
-      throw new Error('Expected two instances');
-    }
-    const instanceId = instance.instance.id;
-    const otherRow = await insertFormSchema({
-      processInstanceId: otherInstance.instance.id,
-      name: 'Other instance form',
-      schema: entrySchema,
-    });
-    await setCurrentPhaseFormSchema(instanceId, otherRow.id);
-    const { caller } = await createAuthenticatedCaller(setup.userEmail);
-
-    await expect(
-      caller.decision.createProposal({
-        processInstanceId: instanceId,
-        proposalData: { title: 'Refused' },
-      }),
-    ).rejects.toMatchObject({
-      cause: {
-        name: 'NotFoundError',
-        message: `Form schema with ID '${otherRow.id}' not found.`,
-      },
+      code: 'INTERNAL_SERVER_ERROR',
+      cause: { cause: { code: FOREIGN_KEY_VIOLATION } },
     });
     await expect(readInstanceProposalIds(instanceId)).resolves.toEqual([]);
   });

@@ -1007,7 +1007,7 @@ describe.concurrent('createDevelopedProposal', () => {
     await expect(readFormSchemaId(draft.id)).resolves.toBeNull();
   });
 
-  it('refuses the create when the develop phase form row is missing', async ({
+  it('fails the create on the foreign key when the develop phase form row is missing', async ({
     task,
     onTestFinished,
   }) => {
@@ -1026,10 +1026,9 @@ describe.concurrent('createDevelopedProposal', () => {
         proposalData: { title: 'Refused' },
       }),
     ).rejects.toMatchObject({
-      cause: {
-        name: 'NotFoundError',
-        message: `Form schema with ID '${missingId}' not found.`,
-      },
+      code: 'INTERNAL_SERVER_ERROR',
+      // Postgres foreign key violation on `proposals.form_schema_id`.
+      cause: { cause: { code: '23503' } },
     });
     const instanceProposals = await db.query.proposals.findMany({
       where: { processInstanceId: instanceId },

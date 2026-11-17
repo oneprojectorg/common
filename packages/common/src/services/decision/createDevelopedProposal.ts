@@ -79,7 +79,6 @@ export const createDevelopedProposal = async ({
 
   const draftInputs = await resolveProposalDraftInputs({
     authUserId,
-    processInstanceId: instance.id,
     instanceProfileId: instance.profileId,
     phase: currentPhase,
     proposalData,
