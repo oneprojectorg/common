@@ -1,12 +1,9 @@
-import { authUsers } from '@op/db/schema';
 import { db, eq } from '@op/db/client';
+import { authUsers } from '@op/db/schema';
 import { logger } from '@op/logging';
 import { createSBServiceClient } from '@op/supabase/server';
 
-import {
-  type PhoneNumber,
-  toGoTruePhoneFormat,
-} from '../notification/schemas';
+import { type PhoneNumber, toGoTruePhoneFormat } from '../notification/schemas';
 
 export type PhoneAccountCreation =
   | { status: 'created'; authUserId: string }
