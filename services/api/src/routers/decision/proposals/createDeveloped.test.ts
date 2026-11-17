@@ -12,6 +12,7 @@ import {
   createDevelopProposalsMember,
   grantInstanceRole,
   testDevelopSchema,
+  syncPhaseRows,
 } from '@op/common/testing';
 import {
   ProcessStatus,
@@ -75,6 +76,7 @@ const configureDevelopPhase = async (
     .update(processInstances)
     .set({ instanceData: { ...instanceData, phases } })
     .where(eq(processInstances.id, instanceId));
+  await syncPhaseRows(instanceId, phases);
 };
 
 const sourceFormSchema = {

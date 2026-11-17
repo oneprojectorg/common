@@ -5,6 +5,7 @@ import {
   createProposalReview,
   createReviewAssignment,
   grantInstanceRole,
+  syncPhaseRows,
 } from '@op/common/testing';
 import { db } from '@op/db/client';
 import {
@@ -245,6 +246,7 @@ const seedDevelopDecision = async (
       },
     })
     .where(eq(processInstances.id, instance.instance.id));
+  await syncPhaseRows(instance.instance.id);
 
   const adminUser = await db.query.users.findFirst({
     where: { authUserId: setup.user.id },
