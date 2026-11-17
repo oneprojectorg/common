@@ -157,8 +157,13 @@ Already handled inside sense — don't re-wrap: `Header1`–`Header4`,
 `Input`, `Textarea`, `RichTextEditor`. A raw `<h1>`/`<p>`/`<span>` you write
 yourself is handled by nothing.
 
-Also: anything that animates needs a `motion-reduce:` branch, and any
-directional icon needs `rtl:-scale-x-100`.
+Also: anything that moves (transform, size, slide, zoom, a `transition-all`)
+needs `motion-reduce:transition-none`, and a popup appears instantly under
+reduced motion through `motion-reduce:data-open:animate-none
+motion-reduce:data-closed:animate-none` — stacked on the data variant, since a
+bare `motion-reduce:animate-none` loses to the `[data-open]` attribute on
+specificity. Colour, opacity and shadow fades on everything else and the
+loaders stay. Any directional icon needs `rtl:-scale-x-100`.
 
 To check it, switch Storybook or the app to Arabic and look at a story whose
 text is English — the mismatch is the whole point, and it's invisible when both
