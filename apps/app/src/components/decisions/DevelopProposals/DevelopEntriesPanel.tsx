@@ -1,7 +1,6 @@
 'use client';
 
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
-import { Skeleton } from '@op/sense/Skeleton';
 import { TableBody, TableHead, TableHeader, TableRow } from '@op/sense/Table';
 import { Suspense } from 'react';
 
@@ -14,10 +13,12 @@ import {
   DevelopEntriesProvider,
   DevelopEntriesSearch,
   DevelopEntriesTable,
-  DevelopEntriesTableSkeleton,
   DevelopEntryBudgetCell,
   DevelopEntryStatusCell,
+  DevelopEntryStatusCellSkeleton,
+  DevelopEntryTextCellSkeleton,
   DevelopEntryTitleCell,
+  DevelopEntryTitleCellSkeleton,
   useDevelopEntries,
 } from './DevelopEntriesParts';
 
@@ -49,7 +50,9 @@ export function DevelopEntriesPanel({
         </div>
 
         <APIErrorBoundary fallbacks={{ default: () => <ProposalsLoadError /> }}>
-          <Suspense fallback={<DevelopEntriesTableSkeleton />}>
+          <Suspense
+            fallback={<DevelopEntriesTableSkeleton entryName={entryName} />}
+          >
             <DevelopEntriesTableSuspense
               decisionSlug={decisionSlug}
               entryName={entryName}
@@ -94,19 +97,7 @@ function DevelopEntriesTableSuspense({
     <div className="flex flex-col">
       {resultsCount}
       <DevelopEntriesTable entryName={entryName}>
-        <TableHeader>
-          <TableRow>
-            <TableHead scope="col">
-              <bdi>{entryName}</bdi>
-            </TableHead>
-            <TableHead scope="col" className="w-30">
-              {t('decisions.budgetLabel')}
-            </TableHead>
-            <TableHead scope="col" className="w-45">
-              {t('decisions.develop.statusColumn')}
-            </TableHead>
-          </TableRow>
-        </TableHeader>
+        <DevelopEntriesTableHeader entryName={entryName} />
         <TableBody>
           {entries.map((entry) => (
             <TableRow key={entry.id}>
@@ -122,16 +113,61 @@ function DevelopEntriesTableSuspense({
       </DevelopEntriesTable>
 
       <DevelopEntriesNextPage>
-        {Array.from({ length: 2 }).map((_, index) => (
-          <div
-            key={index}
-            className="flex items-center justify-between gap-4 border-b py-4"
-          >
-            <Skeleton className="h-4 w-56" />
-            <Skeleton className="h-9 w-28" />
-          </div>
-        ))}
+        {/* No header row here, so the cells carry the column widths. */}
+        <DevelopEntriesTable entryName={entryName}>
+          <TableBody>
+            <DevelopEntrySkeletonRows count={2} />
+          </TableBody>
+        </DevelopEntriesTable>
       </DevelopEntriesNextPage>
+    </div>
+  );
+}
+
+/** The real header, so the skeleton's columns and height match the table's. */
+function DevelopEntriesTableHeader({ entryName }: { entryName: string }) {
+  const t = useTranslations();
+
+  return (
+    <TableHeader>
+      <TableRow>
+        <TableHead scope="col">
+          <bdi>{entryName}</bdi>
+        </TableHead>
+        <TableHead scope="col" className="w-30">
+          {t('decisions.budgetLabel')}
+        </TableHead>
+        <TableHead scope="col" className="w-45">
+          {t('decisions.develop.statusColumn')}
+        </TableHead>
+      </TableRow>
+    </TableHeader>
+  );
+}
+
+function DevelopEntrySkeletonRows({ count }: { count: number }) {
+  return (
+    <>
+      {Array.from({ length: count }).map((_, index) => (
+        <TableRow key={index}>
+          <DevelopEntryTitleCellSkeleton />
+          <DevelopEntryTextCellSkeleton className="w-30" />
+          <DevelopEntryStatusCellSkeleton className="w-45" />
+        </TableRow>
+      ))}
+    </>
+  );
+}
+
+function DevelopEntriesTableSkeleton({ entryName }: { entryName: string }) {
+  return (
+    <div className="flex flex-col" aria-hidden>
+      <DevelopEntriesTable entryName={entryName}>
+        <DevelopEntriesTableHeader entryName={entryName} />
+        <TableBody>
+          <DevelopEntrySkeletonRows count={4} />
+        </TableBody>
+      </DevelopEntriesTable>
     </div>
   );
 }

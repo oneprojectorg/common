@@ -20,6 +20,7 @@ import {
 import { Skeleton } from '@op/sense/Skeleton';
 import { StatusBadge } from '@op/sense/StatusBadge';
 import { Table, TableCell, TableRowHeader } from '@op/sense/Table';
+import { cn } from '@op/sense/lib/utils';
 import {
   type ReactNode,
   createContext,
@@ -315,22 +316,41 @@ export function DevelopEntriesNextPage({ children }: { children: ReactNode }) {
   ) : null;
 }
 
-export function DevelopEntriesTableSkeleton() {
+/** A placeholder for the title cell: one line of text. */
+export function DevelopEntryTitleCellSkeleton() {
   return (
-    <div className="flex flex-col" aria-hidden>
-      {Array.from({ length: 4 }).map((_, index) => (
-        <div
-          key={index}
-          className="flex items-center justify-between gap-4 border-b py-4"
-        >
-          <Skeleton className="h-4 w-64" />
-          <div className="flex items-center gap-10">
-            <Skeleton className="h-4 w-20" />
-            <Skeleton className="h-9 w-28" />
-          </div>
-        </div>
-      ))}
-    </div>
+    <TableCell className="py-4">
+      <Skeleton className="h-4 w-64 max-w-full" />
+    </TableCell>
+  );
+}
+
+/**
+ * A placeholder for a cell holding one short line of text. `className`
+ * carries the column's width for a skeleton table without a header row.
+ */
+export function DevelopEntryTextCellSkeleton({
+  className,
+}: {
+  className?: string;
+}) {
+  return (
+    <TableCell className={cn('py-4', className)}>
+      <Skeleton className="h-4 w-20 max-w-full" />
+    </TableCell>
+  );
+}
+
+/** A placeholder for the status cell, at the status badge's height. */
+export function DevelopEntryStatusCellSkeleton({
+  className,
+}: {
+  className?: string;
+}) {
+  return (
+    <TableCell className={cn('py-4', className)}>
+      <Skeleton className="h-9 w-24" />
+    </TableCell>
   );
 }
 
