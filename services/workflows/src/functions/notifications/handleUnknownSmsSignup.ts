@@ -50,6 +50,10 @@ type SignupContext = {
   flagEnabled: boolean;
   state: PhoneSignupState | null;
   line: Awaited<ReturnType<typeof findDecisionPhoneNumber>> | null;
+  // Absent on a context memoized before auto-join shipped: those runs joined
+  // under the old contract, with no line gate. Remove with the schema's
+  // legacy-'join' shim once no pre-deploy run can resume.
+  requireLine?: boolean;
 };
 
 export const handleUnknownSmsSignup = inngest.createFunction(
@@ -71,15 +75,8 @@ export const handleUnknownSmsSignup = inngest.createFunction(
   },
   { event: smsInboundReceived.name },
   async ({ event, step }) => {
-    const {
-      from,
-      to: inboundTo,
-      keyword,
-      messageSid,
-      code,
-      argument,
-      body,
-    } = smsInboundReceived.schema.parse(event.data);
+    const inbound = smsInboundReceived.schema.parse(event.data);
+    const { from, to: inboundTo, keyword } = inbound;
 
     logger.info('SMS Signup trigger');
 
@@ -93,22 +90,18 @@ export const handleUnknownSmsSignup = inngest.createFunction(
           'server',
         );
         if (!flagEnabled || !to) {
-          return { flagEnabled, state: null, line: null };
+          return { flagEnabled, state: null, line: null, requireLine: true };
         }
         const state = await getPhoneSignupState({ phone: to });
         if (state.status !== 'free') {
-          return { flagEnabled, state, line: null };
+          return { flagEnabled, state, line: null, requireLine: true };
         }
         const line = inboundTo
           ? await findDecisionPhoneNumber({ phone: inboundTo })
           : null;
-        return { flagEnabled, state, line };
+        return { flagEnabled, state, line, requireLine: true };
       },
     );
-
-    // A run parked on the code wait before auto-join shipped resumes with the
-    // legacy step shape; it joined under the old contract, so no line gate.
-    const resumedLegacyRun = !('flagEnabled' in resolved);
 
     const context =
       'flagEnabled' in resolved
@@ -124,6 +117,7 @@ export const handleUnknownSmsSignup = inngest.createFunction(
                     findDecisionPhoneNumber({ phone: inboundTo }),
                   )
                 : null,
+            requireLine: false,
           };
 
     if (!context.flagEnabled) {
@@ -163,7 +157,7 @@ export const handleUnknownSmsSignup = inngest.createFunction(
       return SMS_UNAVAILABLE_RESULT;
     }
 
-    if (!line && !resumedLegacyRun) {
+    if (!line && context.requireLine) {
       const helpResult = await sendText(
         'send-help-reply',
         'Help reply',
@@ -300,7 +294,7 @@ export const handleUnknownSmsSignup = inngest.createFunction(
 
     const { authUserId } = outcome;
 
-    await step.run('record-signup-consent', () =>
+    const profileId = await step.run('record-signup-consent', () =>
       recordPhoneSignupConsent({ authUserId }),
     );
 
@@ -322,24 +316,10 @@ export const handleUnknownSmsSignup = inngest.createFunction(
     if (replaying) {
       await step.sendEvent('replay-original-command', {
         name: smsInboundReceived.name,
-        data: {
-          from,
-          messageSid: `${messageSid}-replay`,
-          code,
-          keyword,
-          argument,
-          to: inboundTo,
-          body,
-        },
+        id: `sms-inbound-${inbound.messageSid}-replay`,
+        data: inbound,
       });
     }
-
-    const profileId = await step.run('lookup-profile-id', async () => {
-      const confirmedState = await getPhoneSignupState({ phone: to });
-      return confirmedState.status === 'confirmed'
-        ? confirmedState.profileId
-        : null;
-    });
 
     logger.info('Created account from inbound SMS signup', {
       authUserId,

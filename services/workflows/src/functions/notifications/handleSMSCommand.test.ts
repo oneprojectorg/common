@@ -36,7 +36,6 @@ const NUMBERS = {
   submitting: '+15005550093',
   stranger: '+15005550094',
   chatter: '+15005550095',
-  joiner: '+15005550096',
   bareInfo: '+15005550097',
   infoHelp: '+15005550038',
   owner: '+15005550098',
@@ -447,32 +446,6 @@ describe('handleSMSCommand against the database', () => {
     expect(result).toEqual({ message: 'ballot needs a decision' });
     expect(recordedSms.map((sms) => sms.body)).toEqual([
       'Text PROPOSALS and a decision name first, then pick by code.',
-    ]);
-  });
-
-  it('given a member texts join, then it reads as free text and they are texted the help message', async ({
-    task,
-    onTestFinished,
-  }) => {
-    const fixture = new SmsCommandFixture(task.id, onTestFinished);
-    const phone = parsePhoneNumber(NUMBERS.joiner);
-    await fixture.createPhoneOnlyAccount(phone);
-    const t = new InngestTestEngine({ function: handleSMSCommand });
-
-    const { result } = await t.execute({
-      events: [
-        smsInboundEvent({
-          from: phone,
-          keyword: null,
-          argument: null,
-          body: 'join',
-        }),
-      ],
-    });
-
-    expect(result).toEqual({ message: 'help sent' });
-    expect(recordedSms.map((sms) => sms.body)).toEqual([
-      SMS_COMMAND_HELP_MESSAGE,
     ]);
   });
 

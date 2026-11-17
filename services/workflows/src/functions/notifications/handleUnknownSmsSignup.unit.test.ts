@@ -88,7 +88,7 @@ const unknownNumberWithProvider = (sendSms = vi.fn<SendSms>()) => {
   vi.mocked(findDecisionPhoneNumber).mockResolvedValue(LINE);
   vi.mocked(getSmsProvider).mockReturnValue({ sendSms });
   vi.mocked(requestPhoneSignupCode).mockResolvedValue({ status: 'sent' });
-  vi.mocked(recordPhoneSignupConsent).mockResolvedValue(undefined);
+  vi.mocked(recordPhoneSignupConsent).mockResolvedValue('profile-1');
   vi.mocked(discardUnconfirmedPhoneSignup).mockResolvedValue({
     status: 'discarded',
     authUserId: 'auth-user-1',
@@ -198,8 +198,10 @@ describe('handleUnknownSmsSignup', () => {
       to: FROM,
       body: expect.stringContaining('STOP'),
     });
-    const [{ body }] = vi.mocked(sendSms).mock.calls[0] ?? [{ body: '' }];
-    expect(body).not.toContain('JOIN');
+    expect(sendSms).toHaveBeenCalledWith({
+      to: FROM,
+      body: expect.not.stringContaining('JOIN'),
+    });
     expect(requestPhoneSignupCode).not.toHaveBeenCalled();
     expect(discardUnconfirmedPhoneSignup).not.toHaveBeenCalled();
   });
@@ -496,10 +498,11 @@ describe('handleUnknownSmsSignup', () => {
     expect(ctx.step.sendEvent).toHaveBeenCalledWith(
       'replay-original-command',
       expect.objectContaining({
+        id: 'sms-inbound-SM-original-replay',
         data: expect.objectContaining({
           from: FROM,
           keyword: 'vote',
-          messageSid: 'SM-original-replay',
+          messageSid: 'SM-original',
         }),
       }),
     );

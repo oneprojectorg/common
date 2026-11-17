@@ -227,7 +227,8 @@ export const Events = {
       from: z.string(),
       messageSid: z.string(),
       code: z.string().nullable(),
-      // 'join' was a keyword until auto-join shipped; queued events may still carry it.
+      // 'join' was a keyword until auto-join shipped. Remove once no run from
+      // before that deploy can resume; the signup reply window is 10 minutes.
       keyword: z.preprocess(
         (value) => (value === 'join' ? null : value),
         z.enum(SMS_KEYWORDS).nullable(),

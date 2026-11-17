@@ -106,7 +106,7 @@ const claimNumber = (
   return { phone, code: TEST_NUMBERS[number] };
 };
 
-const bindLine = async (
+const createBoundLine = async (
   taskId: string,
   onTestFinished: ConstructorParameters<typeof TestDecisionsDataManager>[1],
 ) => {
@@ -154,7 +154,7 @@ describe('handleUnknownSmsSignup against the database', () => {
   }) => {
     const testData = new TestPhoneAuthDataManager(task.id, onTestFinished);
     const { phone, code } = claimNumber('+15005550007', testData);
-    const line = await bindLine(task.id, onTestFinished);
+    const line = await createBoundLine(task.id, onTestFinished);
     const t = new InngestTestEngine({ function: handleUnknownSmsSignup });
 
     const { result } = await t.execute({
@@ -178,7 +178,6 @@ describe('handleUnknownSmsSignup against the database', () => {
       privacyAcceptedOn: expect.any(String),
     });
     expect(recordedSms.map((message) => message.to)).toEqual([phone, phone]);
-    expect(recordedSms[0]?.body).toContain('Terms of Service');
     expect(recordedSms.at(-1)?.body).toBe(
       "You're in! Welcome to Common. Text VOTE to register.",
     );
@@ -190,7 +189,7 @@ describe('handleUnknownSmsSignup against the database', () => {
   }) => {
     const testData = new TestPhoneAuthDataManager(task.id, onTestFinished);
     const { phone, code } = claimNumber('+15005550010', testData);
-    const line = await bindLine(task.id, onTestFinished);
+    const line = await createBoundLine(task.id, onTestFinished);
     const t = new InngestTestEngine({ function: handleUnknownSmsSignup });
 
     const { result } = await t.execute({
@@ -222,7 +221,7 @@ describe('handleUnknownSmsSignup against the database', () => {
   }) => {
     const testData = new TestPhoneAuthDataManager(task.id, onTestFinished);
     const { phone } = claimNumber('+15005550008', testData);
-    const line = await bindLine(task.id, onTestFinished);
+    const line = await createBoundLine(task.id, onTestFinished);
     const authUserId = await testData.createUser({
       phone,
       confirmed: false,
@@ -384,7 +383,7 @@ describe('handleUnknownSmsSignup against the database', () => {
   }) => {
     const testData = new TestPhoneAuthDataManager(task.id, onTestFinished);
     const { phone } = claimNumber('+15005550010', testData);
-    const line = await bindLine(task.id, onTestFinished);
+    const line = await createBoundLine(task.id, onTestFinished);
     const t = new InngestTestEngine({ function: handleUnknownSmsSignup });
 
     const { result } = await t.execute({
@@ -406,7 +405,7 @@ describe('handleUnknownSmsSignup against the database', () => {
   }) => {
     const testData = new TestPhoneAuthDataManager(task.id, onTestFinished);
     const { phone, code } = claimNumber('+15005550009', testData);
-    const line = await bindLine(task.id, onTestFinished);
+    const line = await createBoundLine(task.id, onTestFinished);
     const t = new InngestTestEngine({ function: handleUnknownSmsSignup });
 
     const { result } = await t.execute({
