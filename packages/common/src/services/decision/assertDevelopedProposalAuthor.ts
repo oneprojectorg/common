@@ -5,9 +5,13 @@ import type { User } from '@op/supabase/lib';
 import { NotFoundError, UnauthorizedError, ValidationError } from '../../utils';
 import { getProfileAccessUser } from '../access';
 import { assertProposalDevelopAccess } from './assertProposalDevelopAccess';
+import { assertDevelopUnlocked } from './developLock';
 import { getPhases } from './instancePhases';
 
-/** Asserts the caller may develop in the current phase and authors this developed proposal. */
+/**
+ * Asserts the caller may develop in the current phase, is not held by the
+ * develop lock (`assertDevelopUnlocked`) and authors this developed proposal.
+ */
 export async function assertDevelopedProposalAuthor<
   TInstance extends {
     id: string;
@@ -66,6 +70,8 @@ export async function assertDevelopedProposalAuthor<
       'Only an author of this proposal can change its status',
     );
   }
+
+  await assertDevelopUnlocked({ instance: { ...instance, phases }, user });
 
   return { ...instance, profileId: instance.profileId };
 }
