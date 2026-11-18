@@ -193,7 +193,7 @@ function ProposalFormStateProvider({
   children: ReactNode;
 }) {
   const t = useTranslations();
-  const { ydoc, provider, isSynced } = useCollaborativeDoc();
+  const { ydoc, provider, isSynced, isAccessDenied } = useCollaborativeDoc();
   const isPreviewMode = Boolean(useOptionalVersionPreview());
   const pendingVersionTimeoutRef = useRef<number | null>(null);
 
@@ -203,6 +203,7 @@ function ProposalFormStateProvider({
     proposal,
     isEditMode,
     collaborationDocId,
+    isAutoSaveBlocked: isAccessDenied,
   });
 
   const templateRef = useRef(proposalTemplate);

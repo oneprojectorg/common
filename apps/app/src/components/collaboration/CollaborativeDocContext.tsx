@@ -22,6 +22,8 @@ interface CollaborativeDocContextValue {
   status: CollabStatus;
   /** Whether the document has synced with the server */
   isSynced: boolean;
+  /** The server refused a token: the user can no longer edit the document. */
+  isAccessDenied: boolean;
   /** Current user info with assigned color */
   user: CollabUser;
 }
@@ -61,11 +63,12 @@ export function CollaborativeDocProvider({
   fallback = null,
   children,
 }: CollaborativeDocProviderProps) {
-  const { ydoc, provider, status, isSynced, user } = useTiptapCollab({
-    docId,
-    getToken,
-    userName,
-  });
+  const { ydoc, provider, status, isSynced, isAccessDenied, user } =
+    useTiptapCollab({
+      docId,
+      getToken,
+      userName,
+    });
 
   if (!provider) {
     return <>{fallback}</>;
@@ -73,7 +76,7 @@ export function CollaborativeDocProvider({
 
   return (
     <CollaborativeDocContext.Provider
-      value={{ ydoc, provider, status, isSynced, user }}
+      value={{ ydoc, provider, status, isSynced, isAccessDenied, user }}
     >
       {children}
     </CollaborativeDocContext.Provider>

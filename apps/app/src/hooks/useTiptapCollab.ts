@@ -14,6 +14,9 @@ export type CollabStatus = 'connecting' | 'connected' | 'disconnected';
 /** The first rejection is a normal token expiry. */
 const MAX_TOKEN_REJECTIONS = 3;
 
+/** Thrown by `getToken` when the server no longer lets the user edit the document. */
+export class CollabAccessDeniedError extends Error {}
+
 export interface CollabUser {
   name: string;
   color: string;
@@ -21,7 +24,10 @@ export interface CollabUser {
 
 export interface UseTiptapCollabOptions {
   docId: string;
-  /** Called on every connect; must be referentially stable. */
+  /**
+   * Called on every connect; must be referentially stable. Reject with
+   * `CollabAccessDeniedError` to stop reconnecting.
+   */
   getToken: () => Promise<string>;
   /** User's display name for the collaboration cursor */
   userName?: string;
@@ -33,6 +39,8 @@ export interface UseTiptapCollabReturn {
   status: CollabStatus;
   isSynced: boolean;
   isConnected: boolean;
+  /** The server refused a token: the user can no longer edit the document. */
+  isAccessDenied: boolean;
   /** User object with assigned color for this session */
   user: CollabUser;
 }
@@ -47,6 +55,7 @@ export function useTiptapCollab({
 
   const [status, setStatus] = useState<CollabStatus>('connecting');
   const [isSynced, setIsSynced] = useState(false);
+  const [isAccessDenied, setIsAccessDenied] = useState(false);
   const [provider, setProvider] = useState<TiptapCollabProvider | null>(null);
 
   const ydoc = useMemo(() => new Y.Doc(), []);
@@ -71,11 +80,18 @@ export function useTiptapCollab({
     // a no-op until the close handler runs; reconnect starts in `onDisconnect`.
     let rejections = 0;
     let reconnectAfterClose = false;
+    // A refused token request also reaches `onAuthenticationFailed`, but a new
+    // token will not fix it, so it must not count as an expiry.
+    let accessDenied = false;
 
     const newProvider = new TiptapCollabProvider({
       name: docId,
       appId,
-      token: getToken,
+      token: () =>
+        getToken().catch((error: unknown) => {
+          accessDenied = error instanceof CollabAccessDeniedError;
+          throw error;
+        }),
       document: ydoc,
       onConnect: () => {
         setStatus('connected');
@@ -96,6 +112,12 @@ export function useTiptapCollab({
         setIsSynced(true);
       },
       onAuthenticationFailed: () => {
+        if (accessDenied) {
+          setIsAccessDenied(true);
+          newProvider.disconnect();
+          return;
+        }
+
         rejections += 1;
 
         if (rejections < MAX_TOKEN_REJECTIONS) {
@@ -116,6 +138,7 @@ export function useTiptapCollab({
     return () => {
       newProvider.destroy();
       setProvider(null);
+      setIsAccessDenied(false);
     };
   }, [docId, getToken, t, ydoc]);
 
@@ -132,6 +155,7 @@ export function useTiptapCollab({
     status,
     isSynced,
     isConnected: status === 'connected',
+    isAccessDenied,
     user,
   };
 }
