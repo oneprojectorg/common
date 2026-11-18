@@ -4,3 +4,4 @@ export { listReviewReminderRecipients } from './listReviewReminderRecipients';
 export * from './sendReviewReminder';
 export { listReviewersWithOpenAssignments } from './listReviewersWithOpenAssignments';
 export * from './listReviewProposals';
+export * from './listCategoryReviewerStatus';
