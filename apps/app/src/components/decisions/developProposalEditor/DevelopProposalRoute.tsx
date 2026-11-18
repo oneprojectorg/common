@@ -17,7 +17,7 @@ import { Spinner } from '@op/sense/Spinner';
 import { StatusBadge } from '@op/sense/StatusBadge';
 import type { JSONContent } from '@tiptap/react';
 import { notFound } from 'next/navigation';
-import { type ComponentProps, Suspense } from 'react';
+import { type ComponentProps, type ReactNode, Suspense } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -39,7 +39,8 @@ type DevelopSources = ComponentProps<typeof DevelopSourceColumn>['sources'];
  * current develop phase with no entry opens beside the note that it has none
  * yet; any other proposal is not found. The entry's form is editable only for
  * a caller who may develop proposals, and only while the server reports the
- * proposal editable.
+ * proposal editable. A draft entry that a developer's lock keeps from
+ * advancing shows as not advanced, without its form.
  */
 export function DevelopProposalRoute({
   instance,
@@ -114,7 +115,7 @@ export function DevelopProposalRoute({
     );
   }
 
-  return (
+  const readOnlyEntry = (
     <DevelopProposalFrame
       backHref={backHref}
       source={source}
@@ -144,13 +145,105 @@ export function DevelopProposalRoute({
       />
     </DevelopProposalFrame>
   );
+
+  if (!canDevelop || proposal.status !== ProposalStatus.DRAFT) {
+    return readOnlyEntry;
+  }
+
+  // A spinner, not the form, while the lock loads: a locked draft shows none.
+  return (
+    <APIErrorBoundary fallbacks={{ default: () => readOnlyEntry }}>
+      <Suspense
+        fallback={
+          <DevelopProposalFrame
+            backHref={backHref}
+            source={source}
+            sourceLabel={sourceLabel}
+            heading={heading}
+          >
+            <div className="flex justify-center py-8">
+              <Spinner />
+            </div>
+          </DevelopProposalFrame>
+        }
+      >
+        <DevelopDraftEntry
+          processInstanceId={instance.id}
+          readOnlyEntry={readOnlyEntry}
+          notAdvancedEntry={
+            <NotAdvancedFrame
+              backHref={backHref}
+              source={source}
+              sourceLabel={sourceLabel}
+              heading={heading}
+            />
+          }
+        />
+      </Suspense>
+    </APIErrorBoundary>
+  );
 }
 
 /**
- * A source of the current develop phase with no entry yet: the source beside
- * the entry's heading, the Not advanced badge, and a note that it gets an
- * entry if it advances.
+ * A draft entry the caller sees read-only: not advanced once their develop
+ * lock means it can no longer advance (they confirmed, or the develop window
+ * closed); otherwise the read-only entry.
  */
+function DevelopDraftEntry({
+  processInstanceId,
+  readOnlyEntry,
+  notAdvancedEntry,
+}: {
+  processInstanceId: string;
+  readOnlyEntry: ReactNode;
+  notAdvancedEntry: ReactNode;
+}) {
+  const [{ lock }] = trpc.decision.getDevelopConfirmState.useSuspenseQuery({
+    processInstanceId,
+  });
+
+  return lock === null ? readOnlyEntry : notAdvancedEntry;
+}
+
+/**
+ * The develop view of a source whose entry does not advance, as it has none or
+ * only a draft that can no longer advance: the source beside the entry's
+ * heading, the Not advanced badge, and a note that it gets an entry if it
+ * advances. No form.
+ */
+function NotAdvancedFrame({
+  backHref,
+  source,
+  sourceLabel,
+  heading,
+}: {
+  backHref: string;
+  source: ReactNode;
+  sourceLabel: string;
+  heading: string;
+}) {
+  const t = useTranslations('decisions');
+
+  return (
+    <DevelopProposalFrame
+      backHref={backHref}
+      source={source}
+      sourceLabel={sourceLabel}
+      heading={heading}
+      notice={
+        <StatusBadge variant="inactive" icon={false} className="self-start">
+          {t('develop.entryNotAdvancedStatus')}
+        </StatusBadge>
+      }
+    >
+      <p className="text-base text-muted-foreground">
+        {t('developEditor.noEntryYet')}
+      </p>
+    </DevelopProposalFrame>
+  );
+}
+
+/** A source of the current develop phase with no entry yet. */
 function DevelopSourceWithoutEntry({
   instance,
   proposal,
@@ -163,7 +256,7 @@ function DevelopSourceWithoutEntry({
   const t = useTranslations('decisions');
 
   return (
-    <DevelopProposalFrame
+    <NotAdvancedFrame
       backHref={getDevelopBackHref(decisionSlug)}
       source={
         <InstanceSourceColumn
@@ -179,16 +272,7 @@ function DevelopSourceWithoutEntry({
       }
       sourceLabel={t('developEditor.proposalTab')}
       heading={t('developEditor.entryHeading')}
-      notice={
-        <StatusBadge variant="inactive" icon={false} className="self-start">
-          {t('develop.entryNotAdvancedStatus')}
-        </StatusBadge>
-      }
-    >
-      <p className="text-base text-muted-foreground">
-        {t('developEditor.noEntryYet')}
-      </p>
-    </DevelopProposalFrame>
+    />
   );
 }
 
