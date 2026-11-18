@@ -30,12 +30,6 @@ interface ConfirmActionProps {
   categoryNames: string[];
 }
 
-/**
- * Confirms all of the caller's develop work for the current phase after a
- * dialog that counts the caller's sources that advance and those that do not.
- * Disabled while nothing is advancing. No invalidation: the confirm publishes
- * on the channels the develop screen and the editor subscribe to.
- */
 export function ConfirmSelectionsAction({
   processInstanceId,
   categoryNames,
@@ -43,7 +37,6 @@ export function ConfirmSelectionsAction({
   sourcesInput,
 }: ConfirmActionProps & {
   advancingCount: number;
-  /** The sources table's query input. Omit when the phase has no sources. */
   sourcesInput?: DevelopSourcesInput;
 }) {
   const t = useTranslations('decisions.develop');
@@ -121,10 +114,6 @@ export function ConfirmSelectionsAction({
   );
 }
 
-/**
- * Takes back the caller's confirm after a dialog, so they can change their
- * develop work again.
- */
 export function UnconfirmSelectionsAction({
   processInstanceId,
   categoryNames,
@@ -179,10 +168,7 @@ export function UnconfirmSelectionsAction({
   );
 }
 
-/**
- * How many of the caller's sources advance and how many do not. Both counts
- * cover every source, so the pages the sources table has not loaded load here.
- */
+/** Loads every page, as both counts cover every source. */
 function ConfirmSelectionsDescription({
   sourcesInput,
 }: {

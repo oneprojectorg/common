@@ -7,7 +7,6 @@ export type DevelopSourceScope = ListDevelopSourcesInput['scope'];
 
 export type DevelopSourcesInput = ReturnType<typeof getDevelopSourcesInput>;
 
-/** An admin sees every source; anyone else sees the sources assigned to them. */
 export function getDevelopSourceScope(
   instance: ProcessInstance,
 ): DevelopSourceScope {
@@ -32,7 +31,6 @@ export function getDevelopSourcesInput({
   };
 }
 
-/** A source advances when its first entry is no longer a draft. */
 export function isSourceAdvancing(source: DevelopSource): boolean {
   const developedEntry = source.developedProposals[0];
   return !!developedEntry && developedEntry.status !== ProposalStatus.DRAFT;

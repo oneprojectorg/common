@@ -32,13 +32,6 @@ import { getDevelopEntryHeading } from './getDevelopEntryHeading';
 
 type DevelopSources = ComponentProps<typeof DevelopSourceColumn>['sources'];
 
-/**
- * Opens a proposal developed from sources beside its source. A proposal with
- * no entry opens beside the note that it has none yet. The entry's form is editable only for
- * a caller who may develop proposals, while the server reports the proposal
- * editable and the caller has no develop lock. A draft entry that a
- * developer's lock keeps from advancing shows as not advanced, without its form.
- */
 export function DevelopProposalRoute({
   instance,
   proposal,
@@ -156,12 +149,6 @@ export function DevelopProposalRoute({
   );
 }
 
-/**
- * A developer's entry by their develop lock: the editor while the proposal is
- * editable and they have no lock; a draft as not advanced once the lock means
- * it can no longer advance (they confirmed, or the develop window closed);
- * otherwise the read-only entry.
- */
 function DevelopEntryByLock({
   processInstanceId,
   proposal,
@@ -192,12 +179,6 @@ function DevelopEntryByLock({
   return readOnlyEntry;
 }
 
-/**
- * The develop view of a source whose entry does not advance, as it has none or
- * only a draft that can no longer advance: the source beside the entry's
- * heading, the Not advanced badge, and a note that it gets an entry if it
- * advances. No form.
- */
 function NotAdvancedFrame({
   backHref,
   source,
@@ -230,7 +211,6 @@ function NotAdvancedFrame({
   );
 }
 
-/** A source of the current develop phase with no entry yet. */
 function DevelopSourceWithoutEntry({
   instance,
   proposal,
@@ -263,10 +243,6 @@ function DevelopSourceWithoutEntry({
   );
 }
 
-/**
- * The develop column of sources, with every earlier review phase the caller
- * may read, as the review screens list them.
- */
 function InstanceSourceColumn({
   instance,
   decisionSlug,
@@ -304,10 +280,6 @@ function InstanceSourceColumn({
   );
 }
 
-/**
- * Why a developer sees the entry read-only: once they confirmed their work,
- * the entry's decision and how to change it; otherwise the generic notice.
- */
 function DevelopLockNotice({
   processInstanceId,
   isAdvancing,

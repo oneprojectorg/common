@@ -16,23 +16,11 @@ import { decisionPermission } from './permissions';
 import { isDevelopPhase } from './utils/phaseSettings';
 
 export interface CategoryDevelopmentState {
-  /**
-   * The caller may confirm or unconfirm their own develop work: they are not
-   * an admin, the current phase is a develop phase of a published instance,
-   * and they have at least one category reviewer row for it.
-   */
   canConfirm: boolean;
-  /** {@link getDevelopLock} for the caller. */
   lock: DevelopLock | null;
-  /** The labels of the caller's categories for the current phase, by label. */
   categoryNames: string[];
 }
 
-/**
- * What the develop screen needs to know about the caller's own develop work
- * in the current phase. Readers: an admin of the instance profile, or a
- * holder of Develop Proposals on it. No org fallback.
- */
 export async function getCategoryDevelopmentState({
   processInstanceId,
   user,

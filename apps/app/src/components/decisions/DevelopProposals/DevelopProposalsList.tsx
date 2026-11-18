@@ -50,11 +50,6 @@ type DevelopTab = 'proposals' | 'entries';
  * proposals (the sources) to prepare entries from, an Entries tab with the
  * entries this phase holds, and a fixed footer with the advancing count and
  * the confirm action.
- *
- * The caller's develop state comes from the server: once they confirmed
- * their work (or the window closed), both tabs show the read-only variants,
- * and the footer offers Unconfirm instead of Confirm. Every read here
- * refreshes through the proposals channel that confirm and unconfirm publish.
  */
 export function DevelopProposalsList({
   instance,
@@ -74,8 +69,7 @@ export function DevelopProposalsList({
   const [tab, setTab] = useState<DevelopTab>('proposals');
   const processInstanceId = instance.id;
 
-  // Only the totals of the lists are read here, so each is asked for one
-  // row; the develop state decides the variants and the footer action.
+  // Only `.total` is read, hence `limit: 1`.
   const [[entries, advancing, developState]] = trpc.useSuspenseQueries((q) => [
     q.decision.listProposals({ processInstanceId, phaseId, limit: 1 }),
     q.decision.listProposals({
@@ -172,8 +166,6 @@ export function DevelopProposalsList({
         </FooterBarStart>
         <FooterBarCenter />
         <FooterBarEnd>
-          {/* Polite, so the swap between Confirm and Unconfirm is
-              announced. */}
           <div aria-live="polite">
             <FooterConfirmAction
               developState={developState}
@@ -200,10 +192,6 @@ export function DevelopProposalsListSkeleton() {
   );
 }
 
-/**
- * Only a caller with a category of their own for this phase confirms, and
- * not once the window closed: Confirm until they confirmed, then Unconfirm.
- */
 function FooterConfirmAction({
   developState,
   processInstanceId,

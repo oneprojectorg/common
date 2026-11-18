@@ -173,8 +173,6 @@ export function DevelopEntriesTable({
   );
 }
 
-// An entry the caller may edit opens in the develop editor, any other in the
-// read-only sheet.
 export function DevelopEntryTitleCell({
   entry,
   decisionSlug,
@@ -241,7 +239,6 @@ export function DevelopEntryStatusCell({ entry }: { entry: Proposal }) {
   );
 }
 
-/** Whether an entry advances, once its caller confirmed their work. */
 export function DevelopEntryDecisionCell({ entry }: { entry: Proposal }) {
   const t = useTranslations();
   const advancing = entry.status !== ProposalStatus.DRAFT;

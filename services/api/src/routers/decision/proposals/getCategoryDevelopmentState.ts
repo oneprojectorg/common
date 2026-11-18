@@ -16,9 +16,8 @@ export const getCategoryDevelopmentStateRouter = router({
         user: ctx.user,
       });
 
-      // Confirm and unconfirm publish on the proposals channel; a phase
-      // change or a confirmed selection, which close the window, on the
-      // instance channel.
+      // Confirm and unconfirm publish on `decisionProposals`; a phase change or
+      // a confirmed selection, which close the window, on `decisionInstance`.
       ctx.registerQueryChannels([
         Channels.decisionProposals(input.processInstanceId),
         Channels.decisionInstance(input.processInstanceId),

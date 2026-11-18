@@ -51,9 +51,6 @@ export async function generateMetadata({
   }
 }
 
-/**
- * The develop view of an entry, or of a proposal with no entry yet.
- */
 const DevelopProposalPage = async ({
   params,
 }: {
