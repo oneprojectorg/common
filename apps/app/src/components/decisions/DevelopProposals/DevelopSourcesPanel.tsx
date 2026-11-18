@@ -34,11 +34,10 @@ import {
   type ReactNode,
   useCallback,
   useMemo,
-  useTransition,
 } from 'react';
 import { LuCheck, LuPencil } from 'react-icons/lu';
 
-import { Link, useRouter, useTranslations } from '@/lib/i18n';
+import { Link, useTranslations } from '@/lib/i18n';
 
 import { ButtonLink } from '@/components/ButtonLink';
 
@@ -58,7 +57,8 @@ import {
   getDevelopSourcesInput,
   isSourceAdvancing,
 } from './developSources';
-import { getHttpStatus } from './getHttpStatus';
+import { getHttpStatus, isDevelopLockedError } from './getHttpStatus';
+import { usePrepareDevelopEntry } from './usePrepareDevelopEntry';
 
 interface DevelopSourcesPanelProps {
   instance: ProcessInstance;
@@ -189,45 +189,12 @@ function SourcesPanelShell({
 
 function EditableSourcesTable(props: SourcesTableProps) {
   const { processInstanceId, decisionSlug } = props;
-  const t = useTranslations('decisions');
-  const router = useRouter();
   const openInSheet = useOpenProposalInSheet();
-  const [isNavigating, startNavigating] = useTransition();
   const sourcesPage = useDevelopSourcesPage(props);
-
-  const createEntry = trpc.decision.createDevelopedProposal.useMutation({
-    onSuccess: (entry) => {
-      startNavigating(() => {
-        router.push(
-          decisionProposalDevelopHref({
-            decisionSlug,
-            profileId: entry.profileId,
-          }),
-        );
-      });
-    },
-    onError: (error) => {
-      logger.error('Failed to prepare a develop entry', { error });
-      toast.error(
-        isDevelopLockedError(error)
-          ? t('develop.developLockedError')
-          : t('develop.prepareEntryError'),
-      );
-    },
+  const { prepare, isPreparing, preparingSourceId } = usePrepareDevelopEntry({
+    processInstanceId,
+    decisionSlug,
   });
-
-  const isPreparing = createEntry.isPending || isNavigating;
-  const preparingSourceId = isPreparing
-    ? (createEntry.variables?.sourceProposalIds[0] ?? null)
-    : null;
-
-  const prepare = (source: DevelopSource) =>
-    createEntry.mutate({
-      processInstanceId,
-      sourceProposalIds: [source.id],
-      // The server prefills the entry from the source's document.
-      proposalData: {},
-    });
 
   return (
     <SourcesTable
@@ -546,15 +513,14 @@ function AdvanceEntryButton({
   const submitEntry = trpc.decision.submitDevelopedProposal.useMutation({
     onError: (error) => {
       logger.error('Failed to advance a develop entry', { error });
-      const status = getHttpStatus(error);
-      // A 400 is the server's form validation: the entry is incomplete.
-      toast.error(
-        status === 409
-          ? t('developLockedError')
-          : status === 400
-            ? t('advanceEntryIncompleteError', { title })
-            : t('advanceEntryError'),
-      );
+      if (isDevelopLockedError(error)) {
+        toast.error(t('developLockedError'));
+      } else if (getHttpStatus(error) === 400) {
+        // A 400 is the server's form validation: the entry is incomplete.
+        toast.error(t('advanceEntryIncompleteError', { title }));
+      } else {
+        toast.error(t('advanceEntryError'));
+      }
     },
   });
   const unsubmitEntry = trpc.decision.unsubmitDevelopedProposal.useMutation({
@@ -597,9 +563,4 @@ function AdvanceEntryButton({
       {advanced ? t('advancedEntryAction') : t('advanceEntryAction')}
     </Button>
   );
-}
-
-/** The server refuses a caller who confirmed their work with a 409. */
-function isDevelopLockedError(error: unknown) {
-  return getHttpStatus(error) === 409;
 }

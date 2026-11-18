@@ -54,6 +54,10 @@ interface DevelopSourcesQuery {
 }
 
 interface DevelopSourcesContextValue {
+  state: {
+    isPreparing: boolean;
+    preparingSourceId: string | null;
+  };
   actions: {
     prepare: (source: DevelopSource) => void;
   };
@@ -91,12 +95,13 @@ export function DevelopSourcesProvider({
 }) {
   // Deferred so the current rows stay on screen while the next ones load.
   const deferredCategoryId = useDeferredValue(categoryId);
-  const { prepare } = usePrepareDevelopEntry({
+  const { prepare, isPreparing, preparingSourceId } = usePrepareDevelopEntry({
     processInstanceId,
     decisionSlug,
   });
 
   const value: DevelopSourcesContextValue = {
+    state: { isPreparing, preparingSourceId },
     actions: { prepare },
     meta: {
       query: {
