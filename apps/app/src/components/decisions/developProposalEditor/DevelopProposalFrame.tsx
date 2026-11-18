@@ -17,7 +17,7 @@ interface DevelopProposalFrameProps {
   heading: string;
   description?: string;
   notice?: ReactNode;
-  children: ReactNode;
+  children?: ReactNode;
 }
 
 /**

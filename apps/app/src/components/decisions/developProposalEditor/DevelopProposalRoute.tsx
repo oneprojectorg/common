@@ -94,27 +94,28 @@ export function DevelopProposalRoute({
       heading={heading}
       description={description}
       notice={
-        // Only a developer can be locked by their own confirm.
-        canDevelop ? (
-          <APIErrorBoundary fallbacks={{ default: () => <ReadOnlyNotice /> }}>
-            <Suspense fallback={<ReadOnlyNotice />}>
-              <DevelopLockNotice
-                processInstanceId={instance.id}
-                isAdvancing={proposal.status !== ProposalStatus.DRAFT}
-              />
-            </Suspense>
-          </APIErrorBoundary>
-        ) : (
-          <ReadOnlyNotice />
-        )
+        <div className="flex flex-col gap-6">
+          {/* Only a developer can be locked by their own confirm. */}
+          {canDevelop ? (
+            <APIErrorBoundary fallbacks={{ default: () => <ReadOnlyNotice /> }}>
+              <Suspense fallback={<ReadOnlyNotice />}>
+                <DevelopLockNotice
+                  processInstanceId={instance.id}
+                  isAdvancing={proposal.status !== ProposalStatus.DRAFT}
+                />
+              </Suspense>
+            </APIErrorBoundary>
+          ) : (
+            <ReadOnlyNotice />
+          )}
+          <ReadOnlyFields
+            initialProposal={proposal}
+            template={template}
+            decisionProfileId={instance.profileId ?? null}
+          />
+        </div>
       }
-    >
-      <ReadOnlyFields
-        initialProposal={proposal}
-        template={template}
-        decisionProfileId={instance.profileId ?? null}
-      />
-    </DevelopProposalFrame>
+    />
   );
 
   if (!canDevelop) {
@@ -199,15 +200,16 @@ function NotAdvancedFrame({
       sourceLabel={sourceLabel}
       heading={heading}
       notice={
-        <StatusBadge variant="inactive" icon={false} className="self-start">
-          {t('develop.entryNotAdvancedStatus')}
-        </StatusBadge>
+        <div className="flex flex-col items-start gap-4">
+          <StatusBadge variant="inactive" icon={false}>
+            {t('develop.entryNotAdvancedStatus')}
+          </StatusBadge>
+          <p className="text-sm text-muted-foreground">
+            {t('developEditor.noEntryYet')}
+          </p>
+        </div>
       }
-    >
-      <p className="text-base text-muted-foreground">
-        {t('developEditor.noEntryYet')}
-      </p>
-    </DevelopProposalFrame>
+    />
   );
 }
 
@@ -299,13 +301,13 @@ function DevelopLockNotice({
   }
 
   return (
-    <div aria-live="polite" className="flex flex-col items-start gap-2">
+    <div aria-live="polite" className="flex flex-col items-start gap-4">
       <StatusBadge variant={isAdvancing ? 'success' : 'inactive'} icon={false}>
         {isAdvancing
           ? t('develop.entryAdvancingStatus')
           : t('develop.entryNotAdvancedStatus')}
       </StatusBadge>
-      <p className="text-base text-muted-foreground">
+      <p className="text-sm text-muted-foreground">
         {t('developEditor.confirmedNotice')}
       </p>
     </div>
@@ -316,7 +318,7 @@ function ReadOnlyNotice() {
   const t = useTranslations('decisions');
 
   return (
-    <p aria-live="polite" className="text-base text-muted-foreground">
+    <p aria-live="polite" className="text-sm text-muted-foreground">
       {t('developEditor.readOnlyNotice')}
     </p>
   );
