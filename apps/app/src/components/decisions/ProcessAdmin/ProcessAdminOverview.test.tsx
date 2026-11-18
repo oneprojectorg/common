@@ -600,7 +600,7 @@ describe('ProcessAdminOverview', () => {
     const field = await screen.findByRole('textbox', { name: 'Process name' });
     await user.clear(field);
     await user.type(field, 'New Fund{Enter}');
-    await settleSave('fail');
+    await failSave();
     await user.tab();
 
     expect(field).toHaveProperty('value', 'New Fund');
@@ -658,7 +658,7 @@ describe('ProcessAdminOverview', () => {
         .getAttribute('aria-checked'),
     ).toBe('true');
 
-    await settleSave('fail');
+    await failSave();
 
     expect(
       screen
