@@ -45,7 +45,6 @@ import {
   type ReactNode,
   useCallback,
   useMemo,
-  useState,
   useTransition,
 } from 'react';
 import { LuCheck, LuLeaf, LuPencil } from 'react-icons/lu';
@@ -86,11 +85,6 @@ interface SourcesTableProps {
   showRecommendations: boolean;
   decisionSlug: string;
 }
-
-type PendingStatusChange = {
-  entryId: string;
-  toAdvanced: boolean;
-};
 
 const RECOMMENDATION_INTENT: Record<RecommendationValue, StatusDotIntent> = {
   yes: 'success',
@@ -217,7 +211,6 @@ function EditableSourcesTable(props: SourcesTableProps) {
   const openInSheet = useOpenProposalInSheet();
   const [isNavigating, startNavigating] = useTransition();
   const sourcesPage = useDevelopSourcesPage(props);
-  const { sources } = sourcesPage;
 
   const createEntry = trpc.decision.createDevelopedProposal.useMutation({
     onSuccess: (entry) => {
@@ -253,72 +246,6 @@ function EditableSourcesTable(props: SourcesTableProps) {
       proposalData: {},
     });
 
-  // No invalidation: the submit and the unsubmit publish on the decision's
-  // proposals channel, which this list subscribes to.
-  const submitEntry = trpc.decision.submitDevelopedProposal.useMutation();
-  const unsubmitEntry = trpc.decision.unsubmitDevelopedProposal.useMutation();
-
-  // Held until the channel's refetch shows the entry's new status.
-  const [pendingChange, setPendingChange] =
-    useState<PendingStatusChange | null>(null);
-  if (pendingChange) {
-    const pendingEntry = sources
-      .flatMap((source) => source.developedProposals)
-      .find((entry) => entry.id === pendingChange.entryId);
-    const targetStatus = pendingChange.toAdvanced
-      ? ProposalStatus.SUBMITTED
-      : ProposalStatus.DRAFT;
-    if (!pendingEntry || pendingEntry.status === targetStatus) {
-      setPendingChange(null);
-    }
-  }
-
-  const changingEntryId = pendingChange?.entryId ?? null;
-  const isBusy = isPreparing || pendingChange !== null;
-
-  const advance = (entry: DevelopedProposal, title: string) => {
-    setPendingChange({ entryId: entry.id, toAdvanced: true });
-    submitEntry.mutate(
-      { proposalId: entry.id },
-      {
-        onError: (error) => {
-          setPendingChange(null);
-          logger.error('Failed to advance a develop entry', { error });
-          const status = getHttpStatus(error);
-          // A 400 is the server's form validation: the entry is incomplete.
-          toast.error(
-            status === 409
-              ? t('develop.developLockedError')
-              : status === 400
-                ? t('develop.advanceEntryIncompleteError', { title })
-                : t('develop.advanceEntryError'),
-          );
-        },
-      },
-    );
-  };
-
-  const unadvance = (entry: DevelopedProposal, title: string) => {
-    setPendingChange({ entryId: entry.id, toAdvanced: false });
-    unsubmitEntry.mutate(
-      { proposalId: entry.id },
-      {
-        onError: (error) => {
-          setPendingChange(null);
-          logger.error('Failed to un-advance a develop entry', { error });
-          toast.error(
-            isDevelopLockedError(error)
-              ? t('develop.developLockedError')
-              : t.rich('develop.unadvanceEntryError', {
-                  title,
-                  bdi: (chunks) => <bdi>{chunks}</bdi>,
-                }),
-          );
-        },
-      },
-    );
-  };
-
   return (
     <SourcesTable
       {...props}
@@ -348,18 +275,15 @@ function EditableSourcesTable(props: SourcesTableProps) {
               })}
             />
             <AdvanceEntryButton
+              entry={developedEntry}
               title={title}
-              status={developedEntry.status}
-              disabled={isBusy}
-              loading={changingEntryId === developedEntry.id}
-              onAdvance={() => advance(developedEntry, title)}
-              onUnadvance={() => unadvance(developedEntry, title)}
+              disabled={isPreparing}
             />
           </EntryActions>
         ) : (
           <PrepareEntryButton
             title={title}
-            disabled={isBusy}
+            disabled={isPreparing}
             loading={preparingSourceId === source.id}
             onPrepare={() => prepare(source)}
           />
@@ -622,31 +546,57 @@ function EntryActions({ children }: { children: ReactNode }) {
   return <div className="flex items-center justify-end gap-2">{children}</div>;
 }
 
+/** Submits a source's draft entry, or un-advances it once submitted. */
 function AdvanceEntryButton({
+  entry,
   title,
-  status,
   disabled,
-  loading,
-  onAdvance,
-  onUnadvance,
 }: {
+  entry: DevelopedProposal;
   title: string;
-  status: DevelopedProposal['status'];
   disabled: boolean;
-  loading: boolean;
-  onAdvance: () => void;
-  onUnadvance: () => void;
 }) {
   const t = useTranslations('decisions.develop');
-  const isDraft = status === ProposalStatus.DRAFT;
+
+  // No invalidation: the submit and the unsubmit publish on the decision's
+  // proposals channel, which this list subscribes to.
+  const submitEntry = trpc.decision.submitDevelopedProposal.useMutation({
+    onError: (error) => {
+      logger.error('Failed to advance a develop entry', { error });
+      const status = getHttpStatus(error);
+      // A 400 is the server's form validation: the entry is incomplete.
+      toast.error(
+        status === 409
+          ? t('developLockedError')
+          : status === 400
+            ? t('advanceEntryIncompleteError', { title })
+            : t('advanceEntryError'),
+      );
+    },
+  });
+  const unsubmitEntry = trpc.decision.unsubmitDevelopedProposal.useMutation({
+    onError: (error) => {
+      logger.error('Failed to un-advance a develop entry', { error });
+      toast.error(
+        isDevelopLockedError(error)
+          ? t('developLockedError')
+          : t.rich('unadvanceEntryError', {
+              title,
+              bdi: (chunks) => <bdi>{chunks}</bdi>,
+            }),
+      );
+    },
+  });
+
+  const isDraft = entry.status === ProposalStatus.DRAFT;
   const advanced = !isDraft;
-  const actionable = isDraft || status === ProposalStatus.SUBMITTED;
+  const actionable = isDraft || entry.status === ProposalStatus.SUBMITTED;
 
   return (
     <Button
       variant="outline"
       aria-pressed={advanced}
-      loading={loading}
+      loading={submitEntry.isPending || unsubmitEntry.isPending}
       disabled={disabled || !actionable}
       className={advanced ? 'border-primary bg-accent text-primary' : undefined}
       aria-label={
@@ -654,7 +604,11 @@ function AdvanceEntryButton({
           ? t('advancedEntryLabel', { title })
           : t('advanceEntryLabel', { title })
       }
-      onClick={isDraft ? onAdvance : onUnadvance}
+      onClick={() =>
+        isDraft
+          ? submitEntry.mutate({ proposalId: entry.id })
+          : unsubmitEntry.mutate({ proposalId: entry.id })
+      }
     >
       {advanced ? <LuCheck aria-hidden data-icon="inline-start" /> : null}
       {advanced ? t('advancedEntryAction') : t('advanceEntryAction')}
