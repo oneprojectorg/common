@@ -93,7 +93,7 @@ function PublishStatusSuspense({
   }
 
   return t('advancingAcrossCategories', {
-    advancing: confirmed.reduce(
+    advancing: items.reduce(
       (total, status) => total + status.advancingCount,
       0,
     ),
