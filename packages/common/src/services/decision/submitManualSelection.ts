@@ -38,6 +38,7 @@ import type {
   ManualSelectionAudit,
   TransitionData,
 } from './schemas/transitionData';
+import { sendManualSelectionsConfirmed } from './sendManualSelectionsConfirmed';
 import { getInstanceCurrentPhase } from './utils/instance';
 import { getPreviousPhases } from './utils/phaseOrder';
 import { isReviewPhase } from './utils/phaseSettings';
@@ -326,21 +327,11 @@ export async function submitManualSelection({
   }
 
   if (previousPhaseId) {
-    event
-      .send({
-        name: Events.manualSelectionsConfirmed.name,
-        data: {
-          processInstanceId,
-          fromPhaseId: previousPhaseId,
-          toPhaseId: currentStateId,
-        },
-      })
-      .catch((err) => {
-        logger.error('Failed to send manual selections confirmed event', {
-          processInstanceId,
-          error: err,
-        });
-      });
+    sendManualSelectionsConfirmed({
+      processInstanceId,
+      fromPhaseId: previousPhaseId,
+      toPhaseId: currentStateId,
+    });
 
     // Awaited, unlike the send above: publishing is one-shot, so a send
     // dropped when the isolate freezes leaves every author unnotified with no
