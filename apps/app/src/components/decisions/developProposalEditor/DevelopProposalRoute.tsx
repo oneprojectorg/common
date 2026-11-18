@@ -16,7 +16,6 @@ import {
 import { Spinner } from '@op/sense/Spinner';
 import { StatusBadge } from '@op/sense/StatusBadge';
 import type { JSONContent } from '@tiptap/react';
-import { notFound } from 'next/navigation';
 import { type ComponentProps, type ReactNode, Suspense } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -30,14 +29,12 @@ import { DevelopProposalEditor } from './DevelopProposalEditor';
 import { DevelopProposalFrame } from './DevelopProposalFrame';
 import { DevelopSourceColumn } from './DevelopSourceColumn';
 import { getDevelopEntryHeading } from './getDevelopEntryHeading';
-import { isCurrentDevelopSource } from './isCurrentDevelopSource';
 
 type DevelopSources = ComponentProps<typeof DevelopSourceColumn>['sources'];
 
 /**
- * Opens a proposal developed from sources beside its source. A source of the
- * current develop phase with no entry opens beside the note that it has none
- * yet; any other proposal is not found. The entry's form is editable only for
+ * Opens a proposal developed from sources beside its source. A proposal with
+ * no entry opens beside the note that it has none yet. The entry's form is editable only for
  * a caller who may develop proposals, while the server reports the proposal
  * editable and the caller has no develop lock. A draft entry that a
  * developer's lock keeps from advancing shows as not advanced, without its form.
@@ -60,10 +57,6 @@ export function DevelopProposalRoute({
   const sources = items.map((item) => item.proposal);
 
   if (sources.length === 0) {
-    if (!isCurrentDevelopSource({ instance, proposal })) {
-      notFound();
-    }
-
     return (
       <DevelopSourceWithoutEntry
         instance={instance}

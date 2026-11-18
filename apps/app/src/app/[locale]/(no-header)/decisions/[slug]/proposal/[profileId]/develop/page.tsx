@@ -5,13 +5,11 @@ import {
   dehydrate,
 } from '@op/api/server';
 import type { Metadata } from 'next';
-import { notFound } from 'next/navigation';
 import { cache } from 'react';
 
 import { getTranslations } from '@/lib/i18n';
 
 import { getDevelopEntryHeading } from '@/components/decisions/developProposalEditor/getDevelopEntryHeading';
-import { isCurrentDevelopSource } from '@/components/decisions/developProposalEditor/isCurrentDevelopSource';
 
 import { DevelopProposalClient } from './DevelopProposalClient';
 
@@ -54,8 +52,7 @@ export async function generateMetadata({
 }
 
 /**
- * The develop view of an entry, or of a source of the current develop phase
- * that has no entry. Any other proposal opens at `/edit`.
+ * The develop view of an entry, or of a proposal with no entry yet.
  */
 const DevelopProposalPage = async ({
   params,
@@ -77,7 +74,7 @@ const DevelopProposalPage = async ({
   );
 
   // Same inputs as the reads in `DevelopProposalRoute`, so they hydrate.
-  const [relationships] = await Promise.all([
+  await Promise.all([
     proposal
       ? utils.decision.listProposalRelationships
           .fetch({
@@ -92,16 +89,6 @@ const DevelopProposalPage = async ({
           .catch(() => null)
       : null,
   ]);
-
-  if (
-    relationships &&
-    relationships.items.length === 0 &&
-    instance &&
-    proposal &&
-    !isCurrentDevelopSource({ instance, proposal })
-  ) {
-    notFound();
-  }
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
