@@ -13,6 +13,7 @@
  */
 export function hasFirstPhaseStarted(
   phases: { startDate?: string }[] | undefined,
+  now: Date = new Date(),
 ): boolean {
   const start = phases?.[0]?.startDate;
   if (!start) {
@@ -22,5 +23,5 @@ export function hasFirstPhaseStarted(
   if (Number.isNaN(parsed.getTime())) {
     return true;
   }
-  return new Date() >= parsed;
+  return now >= parsed;
 }

@@ -196,14 +196,23 @@ const seed = (options: Parameters<typeof profile>[0]) => {
   query.decisionProfile = profile(options);
 };
 
-const overview = (isOpen = false, aboutSlot: ReactNode = null) => (
+const AFTER_START = Date.parse('2026-06-01T00:00:00.000Z');
+const BEFORE_START = Date.parse('2025-12-01T00:00:00.000Z');
+
+const overview = (renderedAt = AFTER_START, aboutSlot: ReactNode = null) => (
   <NextIntlClientProvider locale="en" messages={en}>
-    <ProcessAdminOverview slug={SLUG} isOpen={isOpen} aboutSlot={aboutSlot} />
+    <ProcessAdminOverview
+      slug={SLUG}
+      renderedAt={renderedAt}
+      aboutSlot={aboutSlot}
+    />
   </NextIntlClientProvider>
 );
 
-const renderOverview = (isOpen = false, aboutSlot: ReactNode = null) =>
-  render(overview(isOpen, aboutSlot));
+const renderOverview = (
+  renderedAt = AFTER_START,
+  aboutSlot: ReactNode = null,
+) => render(overview(renderedAt, aboutSlot));
 
 const succeedSave = (saved: unknown) =>
   act(() => updateInstance.succeed(saved));
@@ -262,7 +271,7 @@ describe('ProcessAdminOverview', () => {
 
   it('renders the server-rendered About body over the plain description', () => {
     seed({ description: 'Plain description' });
-    renderOverview(false, <p>Rich body</p>);
+    renderOverview(AFTER_START, <p>Rich body</p>);
 
     expect(screen.getByText('Rich body')).toBeTruthy();
     expect(screen.queryByText('Plain description')).toBeNull();
@@ -280,7 +289,7 @@ describe('ProcessAdminOverview', () => {
 
   it('renders the phase timeline when the process has phases', () => {
     seed({ phases: [phase] });
-    renderOverview(true);
+    renderOverview();
 
     expect(screen.getByTestId('phase-timeline').dataset.started).toBe('true');
     expect(screen.queryByText('No phases yet')).toBeNull();
@@ -288,7 +297,7 @@ describe('ProcessAdminOverview', () => {
 
   it('links to the proposals once the process is open', () => {
     seed({ phases: [phase] });
-    renderOverview(true);
+    renderOverview();
 
     expect(
       screen
@@ -299,10 +308,23 @@ describe('ProcessAdminOverview', () => {
 
   it('keeps the timeline and the proposals link closed until the process is open', () => {
     seed({ phases: [phase] });
-    renderOverview(false);
+    renderOverview(BEFORE_START);
 
     expect(screen.queryByRole('link', { name: 'Browse proposals' })).toBeNull();
     expect(screen.getByTestId('phase-timeline').dataset.started).toBe('false');
+  });
+
+  it('opens the timeline and the proposals link when a refetch publishes the draft', () => {
+    seed({ status: ProcessStatus.DRAFT, phases: [phase] });
+    const { rerender } = renderOverview();
+
+    expect(screen.queryByRole('link', { name: 'Browse proposals' })).toBeNull();
+
+    seed({ status: ProcessStatus.PUBLISHED, phases: [phase] });
+    rerender(overview());
+
+    expect(screen.getByRole('link', { name: 'Browse proposals' })).toBeTruthy();
+    expect(screen.getByTestId('phase-timeline').dataset.started).toBe('true');
   });
 
   it('shows the steward with the name isolated', () => {
@@ -311,6 +333,30 @@ describe('ProcessAdminOverview', () => {
 
     const name = screen.getByText('Amal Haddad', { selector: 'bdi' });
     expect(name.closest('span')?.textContent).toBe('Stewarded by Amal Haddad');
+  });
+
+  it('keeps the steward after a draft rename saves', async () => {
+    seed({
+      status: ProcessStatus.DRAFT,
+      steward: { name: 'Amal Haddad', slug: 'amal' },
+    });
+    renderOverview();
+    const user = userEvent.setup();
+
+    await user.click(
+      screen.getByRole('button', { name: 'Edit Community Fund' }),
+    );
+    await user.keyboard('Neighbourhood Fund{Enter}');
+    const { steward: _steward, ...savedInstance } = profile({
+      status: ProcessStatus.DRAFT,
+      name: 'Neighbourhood Fund',
+    }).processInstance;
+    await succeedSave({
+      name: 'Neighbourhood Fund',
+      processInstance: savedInstance,
+    });
+
+    expect(screen.getByText('Amal Haddad', { selector: 'bdi' })).toBeTruthy();
   });
 
   it.each([

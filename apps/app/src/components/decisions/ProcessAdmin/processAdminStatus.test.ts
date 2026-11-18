@@ -23,40 +23,45 @@ describe('getProcessAdminStatus', () => {
 describe('isProcessOpen', () => {
   const past = [{ startDate: '2000-01-01T00:00:00.000Z' }];
   const future = [{ startDate: '2999-01-01T00:00:00.000Z' }];
+  const now = new Date('2026-06-01T00:00:00.000Z');
 
   it('keeps a draft closed, even with a past start date', () => {
-    expect(isProcessOpen({ status: ProcessStatus.DRAFT, phases: past })).toBe(
-      false,
-    );
+    expect(
+      isProcessOpen({ status: ProcessStatus.DRAFT, phases: past, now }),
+    ).toBe(false);
   });
 
   it('treats a process with no phases as not started', () => {
-    expect(isProcessOpen({ status: ProcessStatus.PUBLISHED, phases: [] })).toBe(
-      false,
-    );
     expect(
-      isProcessOpen({ status: ProcessStatus.PUBLISHED, phases: undefined }),
+      isProcessOpen({ status: ProcessStatus.PUBLISHED, phases: [], now }),
+    ).toBe(false);
+    expect(
+      isProcessOpen({
+        status: ProcessStatus.PUBLISHED,
+        phases: undefined,
+        now,
+      }),
     ).toBe(false);
   });
 
   it('opens a live process once its first phase has started', () => {
     expect(
-      isProcessOpen({ status: ProcessStatus.PUBLISHED, phases: past }),
+      isProcessOpen({ status: ProcessStatus.PUBLISHED, phases: past, now }),
     ).toBe(true);
     expect(
-      isProcessOpen({ status: ProcessStatus.PUBLISHED, phases: future }),
+      isProcessOpen({ status: ProcessStatus.PUBLISHED, phases: future, now }),
     ).toBe(false);
   });
 
   it('keeps a completed process open', () => {
     expect(
-      isProcessOpen({ status: ProcessStatus.COMPLETED, phases: past }),
+      isProcessOpen({ status: ProcessStatus.COMPLETED, phases: past, now }),
     ).toBe(true);
   });
 
   it('keeps a cancelled process open once it had started', () => {
     expect(
-      isProcessOpen({ status: ProcessStatus.CANCELLED, phases: past }),
+      isProcessOpen({ status: ProcessStatus.CANCELLED, phases: past, now }),
     ).toBe(true);
   });
 });

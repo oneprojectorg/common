@@ -36,18 +36,21 @@ export function getProcessAdminStatus(
  * current phase and link to the proposals. A draft is never open, whatever its
  * dates say, and a process with no phases has not started. (The public page
  * shows its CTAs by default when the dates are missing; the admin page does
- * not.) Reads the clock, so call it on the server.
+ * not.) Pass the server's render time as `now` on the client, so the server
+ * and hydrated output agree.
  */
 export function isProcessOpen({
   status,
   phases,
+  now,
 }: {
   status: string | null | undefined;
   phases: { startDate?: string }[] | undefined;
+  now: Date;
 }): boolean {
   if (getProcessAdminStatus(status) === 'draft') {
     return false;
   }
 
-  return (phases?.length ?? 0) > 0 && hasFirstPhaseStarted(phases);
+  return (phases?.length ?? 0) > 0 && hasFirstPhaseStarted(phases, now);
 }

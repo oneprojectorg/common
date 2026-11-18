@@ -42,16 +42,17 @@ import {
   type ProcessAdminStatus,
   STATUS_BADGE_VARIANT,
   getProcessAdminStatus,
+  isProcessOpen,
 } from './processAdminStatus';
 
 interface ProcessAdminOverviewProps {
   slug: string;
   /**
-   * Whether participants can act on the process (`isProcessOpen`). Computed on
-   * the server, because the check reads the clock and would otherwise differ
-   * between server and client.
+   * The server's render time, in ms. `isProcessOpen` measures against it
+   * instead of the clock, so hydration matches the server while the status
+   * and dates still follow refetches.
    */
-  isOpen: boolean;
+  renderedAt: number;
   /**
    * The About body, server-rendered by the page (RichTextRenderer), so it
    * ships as HTML. Null when the stored body holds nothing to show.
@@ -62,7 +63,7 @@ interface ProcessAdminOverviewProps {
 /** Read-only admin home for one process, at /decisions/[slug]/manage. */
 export function ProcessAdminOverview({
   slug,
-  isOpen,
+  renderedAt,
   aboutSlot,
 }: ProcessAdminOverviewProps) {
   const t = useTranslations('decisions');
@@ -89,7 +90,7 @@ export function ProcessAdminOverview({
       <Suspense fallback={<ProcessAdminOverviewSkeleton />}>
         <ProcessAdminOverviewSuspense
           slug={slug}
-          isOpen={isOpen}
+          renderedAt={renderedAt}
           aboutSlot={aboutSlot}
         />
       </Suspense>
@@ -99,7 +100,7 @@ export function ProcessAdminOverview({
 
 function ProcessAdminOverviewSuspense({
   slug,
-  isOpen,
+  renderedAt,
   aboutSlot,
 }: ProcessAdminOverviewProps) {
   const [decisionProfile] = trpc.decision.getDecisionBySlug.useSuspenseQuery({
@@ -107,6 +108,11 @@ function ProcessAdminOverviewSuspense({
   });
   const instance = decisionProfile.processInstance;
   const status = getProcessAdminStatus(instance.status);
+  const isOpen = isProcessOpen({
+    status: instance.status,
+    phases: instance.instanceData.phases,
+    now: new Date(renderedAt),
+  });
   const t = useTranslations('decisions.processAdmin');
 
   return (
