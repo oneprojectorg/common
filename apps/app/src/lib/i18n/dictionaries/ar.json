@@ -2091,7 +2091,6 @@
       "discardAction": "تجاهل",
       "savingStatus": "جارٍ الحفظ…",
       "savedStatus": "تم الحفظ",
-      "fixtureNotice": "يتم عرض نموذج البيانات {name}. هذه المراحل بيانات تجريبية، وليست مراحل هذه العملية.",
       "adminAdded": "أصبح <bdi>{name}</bdi> مسؤولًا الآن.",
       "adminRemoved": "لم يعد <bdi>{name}</bdi> مسؤولًا.",
       "adminInviteWithdrawn": "تم سحب الدعوة الموجّهة إلى <bdi>{name}</bdi>.",

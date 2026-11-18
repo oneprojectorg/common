@@ -2091,7 +2091,6 @@
       "discardAction": "Annuler les modifications",
       "savingStatus": "Enregistrement…",
       "savedStatus": "Enregistré",
-      "fixtureNotice": "Affichage du fixture {name}. Ces phases sont des données d'exemple, pas celles de ce processus.",
       "adminAdded": "<bdi>{name}</bdi> est maintenant administrateur.",
       "adminRemoved": "<bdi>{name}</bdi> n’est plus administrateur.",
       "adminInviteWithdrawn": "L’invitation de <bdi>{name}</bdi> a été retirée.",

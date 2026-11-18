@@ -2091,7 +2091,6 @@
       "discardAction": "বাতিল করুন",
       "savingStatus": "সংরক্ষণ হচ্ছে…",
       "savedStatus": "সংরক্ষিত",
-      "fixtureNotice": "{name} ফিক্সচার দেখানো হচ্ছে। এই পর্যায়গুলি নমুনা ডেটা, এই প্রক্রিয়ার পর্যায় নয়।",
       "adminAdded": "<bdi>{name}</bdi> এখন একজন অ্যাডমিন।",
       "adminRemoved": "<bdi>{name}</bdi> আর অ্যাডমিন নন।",
       "adminInviteWithdrawn": "<bdi>{name}</bdi>-এর আমন্ত্রণ প্রত্যাহার করা হয়েছে।",

@@ -2091,7 +2091,6 @@
       "discardAction": "Discard",
       "savingStatus": "Saving…",
       "savedStatus": "Saved",
-      "fixtureNotice": "Showing the {name} fixture. These phases are sample data, not this process's phases.",
       "adminAdded": "<bdi>{name}</bdi> is now an admin.",
       "adminRemoved": "<bdi>{name}</bdi> is no longer an admin.",
       "adminInviteWithdrawn": "The invitation to <bdi>{name}</bdi> was withdrawn.",
