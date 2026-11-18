@@ -449,14 +449,22 @@ export const categoryDevelopmentTargetSchema =
     reviewerProfileId: z.uuid().optional(),
   });
 
-/** The rows a confirm or unconfirm changed, with their stamps after the write. */
+export const categoryDevelopmentReviewerSchema =
+  categoryReviewerStatusSchema.pick({
+    reviewerProfileId: true,
+    developConfirmedAt: true,
+  });
+
+export type CategoryDevelopmentReviewerSchema = z.infer<
+  typeof categoryDevelopmentReviewerSchema
+>;
+
+/**
+ * The category reviewers a confirm or unconfirm changed, with their stamps
+ * after the write.
+ */
 export const categoryDevelopmentChangeSchema = z.object({
-  rows: z.array(
-    z.object({
-      reviewerProfileId: z.uuid(),
-      developConfirmedAt: z.string().nullable(),
-    }),
-  ),
+  reviewers: z.array(categoryDevelopmentReviewerSchema),
 });
 
 export const removeCategoryReviewerResultSchema = z.object({

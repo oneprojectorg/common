@@ -3,24 +3,21 @@ import { categoryReviewers } from '@op/db/schema';
 import { logger } from '@op/logging';
 import type { User } from '@op/supabase/lib';
 
-import { NotFoundError } from '../../utils';
+import { NotFoundError } from '../../../utils';
+import type { CategoryDevelopmentReviewerSchema } from '../schemas/reviews';
 import {
   assertCategoryDevelopAccess,
   categoryDevelopRowsWhere,
 } from './assertCategoryDevelopAccess';
-import type { CategoryReviewerStatusSchema } from './schemas/reviews';
-
-type CategoryDevelopmentRow = Pick<
-  CategoryReviewerStatusSchema,
-  'reviewerProfileId' | 'developConfirmedAt'
->;
 
 /**
- * Removes `data.developConfirmedAt` from category reviewer rows for the
- * current develop phase, on the same rows that `confirmCategoryDevelopment`
- * stamps.
+ * Stamps `data.developConfirmedAt` on category reviewer rows for the current
+ * develop phase. A non-admin stamps their own row of the category, or all
+ * their own rows when no category is given. An admin names a category and
+ * stamps one reviewer's row, or every row of the category when no reviewer is
+ * given. A second confirm overwrites the time.
  */
-export async function unconfirmCategoryDevelopment({
+export async function confirmCategoryDevelopment({
   processInstanceId,
   taxonomyTermId,
   reviewerProfileId,
@@ -30,32 +27,35 @@ export async function unconfirmCategoryDevelopment({
   taxonomyTermId?: string;
   reviewerProfileId?: string;
   user: User;
-}): Promise<{ rows: CategoryDevelopmentRow[] }> {
+}): Promise<{ reviewers: CategoryDevelopmentReviewerSchema[] }> {
   const access = await assertCategoryDevelopAccess({
     processInstanceId,
     taxonomyTermId,
     reviewerProfileId,
     user,
   });
+  const now = new Date().toISOString();
 
-  // TODO(PUB-SERVICE): refuse an unconfirm after publish, once publish writes
-  // its stamp.
+  // One statement that merges the key, so two confirms at the same time do
+  // not overwrite each other's rows.
   const updated = await db
     .update(categoryReviewers)
-    .set({ data: sql`${categoryReviewers.data} - 'developConfirmedAt'` })
+    .set({
+      data: sql`${categoryReviewers.data} || ${JSON.stringify({ developConfirmedAt: now })}::jsonb`,
+    })
     .where(categoryDevelopRowsWhere({ processInstanceId, access }))
     .returning({ reviewerProfileId: categoryReviewers.reviewerProfileId });
 
   if (updated.length === 0) {
     throw new NotFoundError(
-      'Category reviewer rows',
+      'Category reviewers',
       taxonomyTermId ?? processInstanceId,
-      'No category reviewer row to unconfirm for the current phase',
+      'No category reviewer to confirm for the current phase',
     );
   }
 
   if (access.isAdmin) {
-    logger.info('Admin unconfirmed category development', {
+    logger.info('Admin confirmed category development', {
       processInstanceId,
       taxonomyTermId,
       phaseId: access.phaseId,
@@ -66,9 +66,9 @@ export async function unconfirmCategoryDevelopment({
   }
 
   return {
-    rows: updated.map(({ reviewerProfileId }) => ({
+    reviewers: updated.map(({ reviewerProfileId }) => ({
       reviewerProfileId,
-      developConfirmedAt: null,
+      developConfirmedAt: now,
     })),
   };
 }

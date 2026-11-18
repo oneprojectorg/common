@@ -44,7 +44,7 @@ describe.concurrent('confirmCategoryDevelopment', () => {
       taxonomyTermId: termA.id,
     });
 
-    expect(result.rows).toEqual([
+    expect(result.reviewers).toEqual([
       {
         reviewerProfileId: reviewer.profileId,
         developConfirmedAt: expect.any(String),
@@ -263,7 +263,7 @@ describe.concurrent('confirmCategoryDevelopment', () => {
       taxonomyTermId: termA.id,
     });
 
-    expect(result.rows).toHaveLength(2);
+    expect(result.reviewers).toHaveLength(2);
     const data = await getCategoryReviewerData([
       ...first.rowIds,
       ...second.rowIds,
@@ -321,7 +321,7 @@ describe.concurrent('confirmCategoryDevelopment', () => {
       taxonomyTermId: termA.id,
     });
 
-    const confirmedAt = result.rows[0]?.developConfirmedAt;
+    const confirmedAt = result.reviewers[0]?.developConfirmedAt;
     expect(confirmedAt).not.toBe(earlier);
     const data = await getCategoryReviewerData([rowId]);
     expect(data.get(rowId)).toEqual({ developConfirmedAt: confirmedAt });
@@ -383,7 +383,7 @@ describe.concurrent('confirmCategoryDevelopment', () => {
       reviewerProfileId: first.profileId,
     });
 
-    expect(result.rows).toEqual([
+    expect(result.reviewers).toEqual([
       {
         reviewerProfileId: first.profileId,
         developConfirmedAt: expect.any(String),
@@ -529,7 +529,7 @@ describe.concurrent('confirmCategoryDevelopment', () => {
       processInstanceId: instanceId,
     });
 
-    expect(result.rows).toEqual([
+    expect(result.reviewers).toEqual([
       {
         reviewerProfileId: reviewer.profileId,
         developConfirmedAt: expect.any(String),

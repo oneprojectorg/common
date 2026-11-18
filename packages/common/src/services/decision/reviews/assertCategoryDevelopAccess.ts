@@ -7,12 +7,15 @@ import {
 import type { User } from '@op/supabase/lib';
 import { checkPermission, permission } from 'access-zones';
 
-import { NotFoundError, UnauthorizedError, ValidationError } from '../../utils';
-import { getProfileAccessRoles } from '../access';
-import { assertUserByAuthId } from '../assert';
-import { getPhases } from './instancePhases';
-import { decisionPermission } from './permissions';
-import { isDevelopPhase } from './utils/phaseSettings';
+import {
+  NotFoundError,
+  UnauthorizedError,
+  ValidationError,
+} from '../../../utils';
+import { assertProfileAccess, assertUserByAuthId } from '../../assert';
+import { getPhases } from '../instancePhases';
+import { decisionPermission } from '../permissions';
+import { isDevelopPhase } from '../utils/phaseSettings';
 
 export type CategoryDevelopAccess = {
   phaseId: string;
@@ -73,6 +76,20 @@ export async function assertCategoryDevelopAccess({
     throw new NotFoundError('Process instance', processInstanceId);
   }
 
+  if (!instance.profileId || !dbUser.profileId) {
+    throw new UnauthorizedError("You don't have access to do this");
+  }
+
+  const roles = await assertProfileAccess({
+    user,
+    profileId: instance.profileId,
+    permissions: [
+      { profile: permission.ADMIN },
+      { decisions: permission.ADMIN },
+      { decisions: decisionPermission.DEVELOP_PROPOSALS },
+    ],
+  });
+
   const phases = await getPhases({
     instance: { id: processInstanceId, instanceData: instance.instanceData },
   });
@@ -90,14 +107,6 @@ export async function assertCategoryDevelopAccess({
     );
   }
 
-  if (!instance.profileId || !dbUser.profileId) {
-    throw new UnauthorizedError("You don't have access to do this");
-  }
-
-  const roles = await getProfileAccessRoles({
-    user,
-    profileId: instance.profileId,
-  });
   const phaseId = currentPhase.phaseId;
 
   if (
@@ -120,15 +129,9 @@ export async function assertCategoryDevelopAccess({
     };
   }
 
-  if (
-    !checkPermission({ decisions: decisionPermission.DEVELOP_PROPOSALS }, roles)
-  ) {
-    throw new UnauthorizedError("You don't have access to do this");
-  }
-
   if (reviewerProfileId && reviewerProfileId !== dbUser.profileId) {
     throw new UnauthorizedError(
-      'You can only confirm or unconfirm your own category reviewer row',
+      'You can only confirm or unconfirm for yourself',
     );
   }
 
