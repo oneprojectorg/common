@@ -11,9 +11,11 @@ import {
 import type { CategoryDevelopmentRow } from './listCategoryDevelopmentStatus';
 
 /**
- * Stamps `data.developConfirmedAt` on the category reviewer rows of a category
- * for the current develop phase: the caller's own row, or every row when the
- * caller is an admin and names no reviewer. A second confirm overwrites the time.
+ * Stamps `data.developConfirmedAt` on category reviewer rows for the current
+ * develop phase. A non-admin stamps their own row of the category, or all
+ * their own rows when no category is given. An admin names a category and
+ * stamps one reviewer's row, or every row of the category when no reviewer is
+ * given. A second confirm overwrites the time.
  */
 export async function confirmCategoryDevelopment({
   processInstanceId,
@@ -22,7 +24,7 @@ export async function confirmCategoryDevelopment({
   user,
 }: {
   processInstanceId: string;
-  taxonomyTermId: string;
+  taxonomyTermId?: string;
   reviewerProfileId?: string;
   user: User;
 }): Promise<{ rows: CategoryDevelopmentRow[] }> {
@@ -41,15 +43,13 @@ export async function confirmCategoryDevelopment({
     .set({
       data: sql`${categoryReviewers.data} || ${JSON.stringify({ developConfirmedAt: now })}::jsonb`,
     })
-    .where(
-      categoryDevelopRowsWhere({ processInstanceId, taxonomyTermId, access }),
-    )
+    .where(categoryDevelopRowsWhere({ processInstanceId, access }))
     .returning({ reviewerProfileId: categoryReviewers.reviewerProfileId });
 
   if (updated.length === 0) {
     throw new NotFoundError(
       'Category reviewer rows',
-      taxonomyTermId,
+      taxonomyTermId ?? processInstanceId,
       'No category reviewer row to confirm for the current phase',
     );
   }

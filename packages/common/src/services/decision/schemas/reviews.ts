@@ -442,9 +442,10 @@ export const categoryReviewerStatusListSchema = list(
   categoryWithReviewerStatusSchema,
 );
 
+/** No category: a reviewer acts on all their own rows; an admin must name one. */
 export const categoryDevelopmentTargetSchema =
   categoryDevelopmentStatusInputSchema.extend({
-    taxonomyTermId: z.uuid(),
+    taxonomyTermId: z.uuid().optional(),
     reviewerProfileId: z.uuid().optional(),
   });
 

@@ -14,22 +14,33 @@ import { getPhases } from './instancePhases';
 import { decisionPermission } from './permissions';
 import { isDevelopPhase } from './utils/phaseSettings';
 
-export interface CategoryDevelopAccess {
+export type CategoryDevelopAccess = {
   phaseId: string;
   actorProfileId: string;
-  isAdmin: boolean;
-  /** The one reviewer row to act on; `null` = every row of the category. */
-  targetReviewerProfileId: string | null;
-}
+} & (
+  | {
+      isAdmin: true;
+      taxonomyTermId: string;
+      /** The one reviewer row to act on; `null` = every row of the category. */
+      targetReviewerProfileId: string | null;
+    }
+  | {
+      isAdmin: false;
+      /** `null` = every own row for the phase. */
+      taxonomyTermId: string | null;
+      targetReviewerProfileId: string;
+    }
+);
 
 /**
- * Asserts the caller may confirm or unconfirm the develop work of a category
- * in the current phase, which must be a develop phase of a published
- * instance. An admin of the instance profile (no org fallback) acts on the
- * row of `reviewerProfileId`, or on every row of the category for the phase
- * when it is not given. Anyone else needs Develop Proposals on the instance
- * profile and their own row for the phase, and acts on that row only. Review
- * does not count.
+ * Asserts the caller may confirm or unconfirm develop work in the current
+ * phase, which must be a develop phase of a published instance. An admin of
+ * the instance profile (no org fallback) must name a category, and acts on
+ * the row of `reviewerProfileId`, or on every row of the category for the
+ * phase when it is not given. Anyone else needs Develop Proposals on the
+ * instance profile and at least one own row for the phase, and acts on their
+ * own row of the category, or on all their own rows for the phase when no
+ * category is given. Review does not count.
  *
  * The rule is not final: the server gates of the develop procedures are
  * still open and will change it.
@@ -41,7 +52,7 @@ export async function assertCategoryDevelopAccess({
   user,
 }: {
   processInstanceId: string;
-  taxonomyTermId: string;
+  taxonomyTermId?: string;
   reviewerProfileId?: string;
   user: User;
 }): Promise<CategoryDevelopAccess> {
@@ -95,10 +106,16 @@ export async function assertCategoryDevelopAccess({
       roles,
     )
   ) {
+    // An admin acts for others, one category at a time.
+    if (!taxonomyTermId) {
+      throw new ValidationError('Choose a category to confirm or unconfirm');
+    }
+
     return {
       phaseId,
       actorProfileId: dbUser.profileId,
       isAdmin: true,
+      taxonomyTermId,
       targetReviewerProfileId: reviewerProfileId ?? null,
     };
   }
@@ -119,16 +136,18 @@ export async function assertCategoryDevelopAccess({
   const ownRow = await db.query.categoryReviewers.findFirst({
     where: {
       processInstanceId,
-      taxonomyTermId,
       reviewerProfileId: dbUser.profileId,
       phaseId,
+      ...(taxonomyTermId ? { taxonomyTermId } : {}),
     },
     columns: { id: true },
   });
 
   if (!ownRow) {
     throw new UnauthorizedError(
-      'You are not a reviewer of this category for the current phase',
+      taxonomyTermId
+        ? 'You are not a reviewer of this category for the current phase'
+        : 'You are not a reviewer of any category for the current phase',
     );
   }
 
@@ -136,26 +155,29 @@ export async function assertCategoryDevelopAccess({
     phaseId,
     actorProfileId: dbUser.profileId,
     isAdmin: false,
+    taxonomyTermId: taxonomyTermId ?? null,
     targetReviewerProfileId: dbUser.profileId,
   };
 }
 
 /**
- * The rows a confirm or unconfirm writes. It checks the phase again in the
- * same statement, so a write after the phase moved on changes no row.
+ * The rows a confirm or unconfirm writes: the rows of one category, or every
+ * own row of a non-admin caller when no category is given. It checks the
+ * phase again in the same statement, so a write after the phase moved on
+ * changes no row.
  */
 export function categoryDevelopRowsWhere({
   processInstanceId,
-  taxonomyTermId,
   access,
 }: {
   processInstanceId: string;
-  taxonomyTermId: string;
   access: CategoryDevelopAccess;
 }): SQL | undefined {
   return and(
     eq(categoryReviewers.processInstanceId, processInstanceId),
-    eq(categoryReviewers.taxonomyTermId, taxonomyTermId),
+    access.taxonomyTermId
+      ? eq(categoryReviewers.taxonomyTermId, access.taxonomyTermId)
+      : undefined,
     eq(categoryReviewers.phaseId, access.phaseId),
     access.targetReviewerProfileId
       ? eq(categoryReviewers.reviewerProfileId, access.targetReviewerProfileId)

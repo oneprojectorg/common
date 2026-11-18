@@ -498,4 +498,146 @@ describe.concurrent('confirmCategoryDevelopment', () => {
     expect(data.get(reviewer.rowIds[0] ?? '')).toEqual({});
     expect(data.get(other.rowIds[0] ?? '')).toEqual({});
   });
+
+  it('stamps every own row for the phase when no category is given', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instanceId, termA, termB } =
+      await createCategoryDevelopSetup({ testData, onTestFinished });
+    const [reviewer, other] = await Promise.all([
+      createCategoryDevelopReviewer({
+        testData,
+        setup,
+        rows: [
+          { taxonomyTermId: termA.id, phaseId: 'final' },
+          { taxonomyTermId: termB.id, phaseId: 'final' },
+          { taxonomyTermId: termA.id, phaseId: null },
+        ],
+      }),
+      createCategoryDevelopReviewer({
+        testData,
+        setup,
+        rows: [{ taxonomyTermId: termA.id, phaseId: 'final' }],
+      }),
+    ]);
+    const [rowA, rowB, unphasedRow] = reviewer.rowIds;
+
+    const caller = await createAuthenticatedCaller(reviewer.email);
+    const result = await caller.decision.confirmCategoryDevelopment({
+      processInstanceId: instanceId,
+    });
+
+    expect(result.rows).toEqual([
+      {
+        reviewerProfileId: reviewer.profileId,
+        developConfirmedAt: expect.any(String),
+      },
+      {
+        reviewerProfileId: reviewer.profileId,
+        developConfirmedAt: expect.any(String),
+      },
+    ]);
+    const data = await getCategoryReviewerData([
+      ...reviewer.rowIds,
+      ...other.rowIds,
+    ]);
+    expect(data.get(rowA ?? '')).toEqual(stamped);
+    expect(data.get(rowB ?? '')).toEqual(stamped);
+    expect(data.get(unphasedRow ?? '')).toEqual({});
+    expect(data.get(other.rowIds[0] ?? '')).toEqual({});
+  });
+
+  it('refuses a reviewer with no row for the phase when no category is given', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instanceId, termA } = await createCategoryDevelopSetup({
+      testData,
+      onTestFinished,
+    });
+    const reviewer = await createCategoryDevelopReviewer({
+      testData,
+      setup,
+      rows: [{ taxonomyTermId: termA.id, phaseId: null }],
+    });
+
+    const caller = await createAuthenticatedCaller(reviewer.email);
+    await expect(
+      caller.decision.confirmCategoryDevelopment({
+        processInstanceId: instanceId,
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
+
+    const data = await getCategoryReviewerData(reviewer.rowIds);
+    expect(data.get(reviewer.rowIds[0] ?? '')).toEqual({});
+  });
+
+  it('refuses a reviewer who names another reviewer and no category', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instanceId, termA } = await createCategoryDevelopSetup({
+      testData,
+      onTestFinished,
+    });
+    const [reviewer, other] = await Promise.all(
+      [0, 1].map(() =>
+        createCategoryDevelopReviewer({
+          testData,
+          setup,
+          rows: [{ taxonomyTermId: termA.id, phaseId: 'final' }],
+        }),
+      ),
+    );
+    if (!reviewer || !other) {
+      throw new Error('Expected two reviewers');
+    }
+
+    const caller = await createAuthenticatedCaller(reviewer.email);
+    await expect(
+      caller.decision.confirmCategoryDevelopment({
+        processInstanceId: instanceId,
+        reviewerProfileId: other.profileId,
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
+
+    const data = await getCategoryReviewerData(other.rowIds);
+    expect(data.get(other.rowIds[0] ?? '')).toEqual({});
+  });
+
+  it('refuses an admin who names no category', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instanceId, termA } = await createCategoryDevelopSetup({
+      testData,
+      onTestFinished,
+    });
+    const reviewer = await createCategoryDevelopReviewer({
+      testData,
+      setup,
+      rows: [{ taxonomyTermId: termA.id, phaseId: 'final' }],
+    });
+
+    const adminCaller = await createAuthenticatedCaller(setup.userEmail);
+    await expect(
+      adminCaller.decision.confirmCategoryDevelopment({
+        processInstanceId: instanceId,
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
+    await expect(
+      adminCaller.decision.confirmCategoryDevelopment({
+        processInstanceId: instanceId,
+        reviewerProfileId: reviewer.profileId,
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
+
+    const data = await getCategoryReviewerData(reviewer.rowIds);
+    expect(data.get(reviewer.rowIds[0] ?? '')).toEqual({});
+  });
 });

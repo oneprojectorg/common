@@ -11,9 +11,9 @@ import {
 import type { CategoryDevelopmentRow } from './listCategoryDevelopmentStatus';
 
 /**
- * Removes `data.developConfirmedAt` from the category reviewer rows of a
- * category for the current develop phase: the caller's own row, or every row
- * when the caller is an admin and names no reviewer.
+ * Removes `data.developConfirmedAt` from category reviewer rows for the
+ * current develop phase, on the same rows that `confirmCategoryDevelopment`
+ * stamps.
  */
 export async function unconfirmCategoryDevelopment({
   processInstanceId,
@@ -22,7 +22,7 @@ export async function unconfirmCategoryDevelopment({
   user,
 }: {
   processInstanceId: string;
-  taxonomyTermId: string;
+  taxonomyTermId?: string;
   reviewerProfileId?: string;
   user: User;
 }): Promise<{ rows: CategoryDevelopmentRow[] }> {
@@ -38,15 +38,13 @@ export async function unconfirmCategoryDevelopment({
   const updated = await db
     .update(categoryReviewers)
     .set({ data: sql`${categoryReviewers.data} - 'developConfirmedAt'` })
-    .where(
-      categoryDevelopRowsWhere({ processInstanceId, taxonomyTermId, access }),
-    )
+    .where(categoryDevelopRowsWhere({ processInstanceId, access }))
     .returning({ reviewerProfileId: categoryReviewers.reviewerProfileId });
 
   if (updated.length === 0) {
     throw new NotFoundError(
       'Category reviewer rows',
-      taxonomyTermId,
+      taxonomyTermId ?? processInstanceId,
       'No category reviewer row to unconfirm for the current phase',
     );
   }
