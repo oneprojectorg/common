@@ -88,6 +88,8 @@ const { query, updateInstance, utils, toast, logger } = await vi.hoisted(
   },
 );
 
+const refresh = vi.hoisted(() => vi.fn());
+
 vi.mock('@op/api/client', () => ({
   trpc: {
     useUtils: () => ({ decision: { getDecisionBySlug: utils } }),
@@ -122,7 +124,7 @@ vi.mock('../DecisionPhaseTimeline', () => ({
 // neither of which a unit test has.
 vi.mock('next/navigation', async (importOriginal) => ({
   ...(await importOriginal<object>()),
-  useRouter: () => ({ prefetch: () => {}, push: () => {} }),
+  useRouter: () => ({ prefetch: () => {}, push: () => {}, refresh }),
   usePathname: () => '/',
 }));
 vi.mock('@/hooks/useForesight', () => ({
@@ -196,23 +198,14 @@ const seed = (options: Parameters<typeof profile>[0]) => {
   query.decisionProfile = profile(options);
 };
 
-const AFTER_START = Date.parse('2026-06-01T00:00:00.000Z');
-const BEFORE_START = Date.parse('2025-12-01T00:00:00.000Z');
-
-const overview = (renderedAt = AFTER_START, aboutSlot: ReactNode = null) => (
+const overview = (isOpen = false, aboutSlot: ReactNode = null) => (
   <NextIntlClientProvider locale="en" messages={en}>
-    <ProcessAdminOverview
-      slug={SLUG}
-      renderedAt={renderedAt}
-      aboutSlot={aboutSlot}
-    />
+    <ProcessAdminOverview slug={SLUG} isOpen={isOpen} aboutSlot={aboutSlot} />
   </NextIntlClientProvider>
 );
 
-const renderOverview = (
-  renderedAt = AFTER_START,
-  aboutSlot: ReactNode = null,
-) => render(overview(renderedAt, aboutSlot));
+const renderOverview = (isOpen = false, aboutSlot: ReactNode = null) =>
+  render(overview(isOpen, aboutSlot));
 
 const succeedSave = (saved: unknown) =>
   act(() => updateInstance.succeed(saved));
@@ -271,7 +264,7 @@ describe('ProcessAdminOverview', () => {
 
   it('renders the server-rendered About body over the plain description', () => {
     seed({ description: 'Plain description' });
-    renderOverview(AFTER_START, <p>Rich body</p>);
+    renderOverview(false, <p>Rich body</p>);
 
     expect(screen.getByText('Rich body')).toBeTruthy();
     expect(screen.queryByText('Plain description')).toBeNull();
@@ -289,7 +282,7 @@ describe('ProcessAdminOverview', () => {
 
   it('renders the phase timeline when the process has phases', () => {
     seed({ phases: [phase] });
-    renderOverview();
+    renderOverview(true);
 
     expect(screen.getByTestId('phase-timeline').dataset.started).toBe('true');
     expect(screen.queryByText('No phases yet')).toBeNull();
@@ -297,7 +290,7 @@ describe('ProcessAdminOverview', () => {
 
   it('links to the proposals once the process is open', () => {
     seed({ phases: [phase] });
-    renderOverview();
+    renderOverview(true);
 
     expect(
       screen
@@ -308,23 +301,54 @@ describe('ProcessAdminOverview', () => {
 
   it('keeps the timeline and the proposals link closed until the process is open', () => {
     seed({ phases: [phase] });
-    renderOverview(BEFORE_START);
+    renderOverview(false);
 
     expect(screen.queryByRole('link', { name: 'Browse proposals' })).toBeNull();
     expect(screen.getByTestId('phase-timeline').dataset.started).toBe('false');
   });
 
-  it('opens the timeline and the proposals link when a refetch publishes the draft', () => {
+  it.each([
+    [
+      'publishes the draft',
+      { status: ProcessStatus.PUBLISHED, phases: [phase] },
+    ],
+    [
+      'moves the first start date',
+      {
+        status: ProcessStatus.DRAFT,
+        phases: [{ ...phase, startDate: '2026-02-01T00:00:00.000Z' }],
+      },
+    ],
+    ['removes the last phase', { status: ProcessStatus.DRAFT, phases: [] }],
+  ])('refreshes the page when a refetch %s', (_change, refetched) => {
     seed({ status: ProcessStatus.DRAFT, phases: [phase] });
     const { rerender } = renderOverview();
+    expect(refresh).not.toHaveBeenCalled();
 
-    expect(screen.queryByRole('link', { name: 'Browse proposals' })).toBeNull();
-
-    seed({ status: ProcessStatus.PUBLISHED, phases: [phase] });
+    seed(refetched);
     rerender(overview());
 
-    expect(screen.getByRole('link', { name: 'Browse proposals' })).toBeTruthy();
-    expect(screen.getByTestId('phase-timeline').dataset.started).toBe('true');
+    expect(refresh).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not refresh the page when a refetch leaves the status and dates alone', async () => {
+    seed({ status: ProcessStatus.DRAFT, phases: [phase] });
+    renderOverview();
+    const user = userEvent.setup();
+
+    await user.click(
+      screen.getByRole('button', { name: 'Edit Community Fund' }),
+    );
+    await user.keyboard('Neighbourhood Fund{Enter}');
+    await succeedSave(
+      profile({
+        status: ProcessStatus.DRAFT,
+        phases: [phase],
+        name: 'Neighbourhood Fund',
+      }),
+    );
+
+    expect(refresh).not.toHaveBeenCalled();
   });
 
   it('shows the steward with the name isolated', () => {

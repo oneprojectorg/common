@@ -9,6 +9,7 @@ import { getTranslations } from '@/lib/i18n';
 
 import { ProcessAdminOverview } from '@/components/decisions/ProcessAdmin/ProcessAdminOverview';
 import { getViewableOverviewBody } from '@/components/decisions/ProcessAdmin/getViewableOverviewBody';
+import { isProcessOpen } from '@/components/decisions/ProcessAdmin/processAdminStatus';
 import { RichTextRenderer } from '@/components/decisions/RichTextRenderer';
 
 import { loadProcessAdmin } from '../loadProcessAdmin';
@@ -45,6 +46,11 @@ const ManageDecisionPage = async ({ params }: ManageDecisionPageProps) => {
   if (instance.profileId) {
     await utils.resources.list.prefetch({ profileId: instance.profileId });
   }
+  const isOpen = isProcessOpen({
+    status: instance.status,
+    phases: instance.instanceData.phases,
+  });
+
   // Same server render as the public page, so admins and participants see one
   // renderer and the body is in the HTML instead of appearing after hydration.
   const body = getViewableOverviewBody(instance.instanceData.overview?.body);
@@ -52,11 +58,7 @@ const ManageDecisionPage = async ({ params }: ManageDecisionPageProps) => {
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
-      <ProcessAdminOverview
-        slug={slug}
-        renderedAt={Date.now()}
-        aboutSlot={aboutSlot}
-      />
+      <ProcessAdminOverview slug={slug} isOpen={isOpen} aboutSlot={aboutSlot} />
     </HydrationBoundary>
   );
 };

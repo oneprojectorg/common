@@ -16,7 +16,8 @@ import {
 import { Header2 } from '@op/sense/Header';
 import { ProfileAvatar } from '@op/sense/ProfileAvatar';
 import { StatusBadge } from '@op/sense/StatusBadge';
-import { Suspense, type ReactNode } from 'react';
+import { useRouter } from 'next/navigation';
+import { Suspense, useEffect, useRef, type ReactNode } from 'react';
 import { LuArrowLeft, LuTriangleAlert } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -42,17 +43,17 @@ import {
   type ProcessAdminStatus,
   STATUS_BADGE_VARIANT,
   getProcessAdminStatus,
-  isProcessOpen,
 } from './processAdminStatus';
 
 interface ProcessAdminOverviewProps {
   slug: string;
   /**
-   * The server's render time, in ms. `isProcessOpen` measures against it
-   * instead of the clock, so hydration matches the server while the status
-   * and dates still follow refetches.
+   * Whether participants can act on the process (`isProcessOpen`). Computed on
+   * the server, because the check reads the clock and would otherwise differ
+   * between server and client. The overview refreshes the page when a refetch
+   * changes what it depends on.
    */
-  renderedAt: number;
+  isOpen: boolean;
   /**
    * The About body, server-rendered by the page (RichTextRenderer), so it
    * ships as HTML. Null when the stored body holds nothing to show.
@@ -63,7 +64,7 @@ interface ProcessAdminOverviewProps {
 /** Read-only admin home for one process, at /decisions/[slug]/manage. */
 export function ProcessAdminOverview({
   slug,
-  renderedAt,
+  isOpen,
   aboutSlot,
 }: ProcessAdminOverviewProps) {
   const t = useTranslations('decisions');
@@ -90,7 +91,7 @@ export function ProcessAdminOverview({
       <Suspense fallback={<ProcessAdminOverviewSkeleton />}>
         <ProcessAdminOverviewSuspense
           slug={slug}
-          renderedAt={renderedAt}
+          isOpen={isOpen}
           aboutSlot={aboutSlot}
         />
       </Suspense>
@@ -100,7 +101,7 @@ export function ProcessAdminOverview({
 
 function ProcessAdminOverviewSuspense({
   slug,
-  renderedAt,
+  isOpen,
   aboutSlot,
 }: ProcessAdminOverviewProps) {
   const [decisionProfile] = trpc.decision.getDecisionBySlug.useSuspenseQuery({
@@ -108,12 +109,8 @@ function ProcessAdminOverviewSuspense({
   });
   const instance = decisionProfile.processInstance;
   const status = getProcessAdminStatus(instance.status);
-  const isOpen = isProcessOpen({
-    status: instance.status,
-    phases: instance.instanceData.phases,
-    now: new Date(renderedAt),
-  });
   const t = useTranslations('decisions.processAdmin');
+  useRefreshWhenOpenInputsChange(instance);
 
   return (
     <div className="flex min-h-dvh flex-col bg-background">
@@ -376,4 +373,24 @@ function AdminEmptyState({
       </EmptyHeader>
     </Empty>
   );
+}
+
+/** Re-renders the page on the server when a refetch changes the status or first phase, so `isOpen` reads the clock again. */
+function useRefreshWhenOpenInputsChange(instance: ProcessInstance) {
+  const router = useRouter();
+  const phases = instance.instanceData.phases;
+  const openInputs = JSON.stringify([
+    instance.status,
+    phases?.length ?? 0,
+    phases?.[0]?.startDate,
+  ]);
+  const renderedInputs = useRef(openInputs);
+
+  useEffect(() => {
+    if (renderedInputs.current === openInputs) {
+      return;
+    }
+    renderedInputs.current = openInputs;
+    router.refresh();
+  }, [openInputs, router]);
 }
