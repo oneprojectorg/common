@@ -22,14 +22,7 @@ import { LuLeaf } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
-import {
-  ConfirmCategoryAction,
-  UnconfirmCategoryAction,
-} from './DevelopAdminCategoryActions';
-import {
-  countConfirmedReviewers,
-  isCategoryConfirmed,
-} from './developCategoryStatus';
+import { getCategoryConfirmedAt } from './developCategoryStatus';
 
 export function DevelopAdminCategoriesPanel({
   processInstanceId,
@@ -93,11 +86,7 @@ function CategoriesTableSuspense({
     <CategoriesTable>
       <TableBody>
         {items.map((status) => (
-          <CategoryRow
-            key={status.category.id}
-            status={status}
-            processInstanceId={processInstanceId}
-          />
+          <CategoryRow key={status.category.id} status={status} />
         ))}
       </TableBody>
     </CategoriesTable>
@@ -115,12 +104,14 @@ function CategoriesTable({ children }: { children: ReactNode }) {
       <TableHeader>
         <TableRow>
           <TableHead scope="col">{t('categoryColumn')}</TableHead>
-          <TableHead scope="col">{t('facilitatorsColumn')}</TableHead>
+          <TableHead scope="col" className="w-48">
+            {t('underConsiderationColumn')}
+          </TableHead>
+          <TableHead scope="col" className="w-48">
+            {t('advancingColumn')}
+          </TableHead>
           <TableHead scope="col" className="w-48">
             {t('statusColumn')}
-          </TableHead>
-          <TableHead scope="col" className="w-56 text-end">
-            {t('actionsColumn')}
           </TableHead>
         </TableRow>
       </TableHeader>
@@ -129,73 +120,69 @@ function CategoriesTable({ children }: { children: ReactNode }) {
   );
 }
 
-function CategoryRow({
-  status,
-  processInstanceId,
-}: {
-  status: CategoryWithReviewerStatusSchema;
-  processInstanceId: string;
-}) {
+function CategoryRow({ status }: { status: CategoryWithReviewerStatusSchema }) {
   const t = useTranslations('decisions.develop');
-  const format = useFormatter();
-  const { category, reviewers } = status;
-  const confirmedCount = countConfirmedReviewers(reviewers);
-  const hasFacilitators = reviewers.length > 0;
-  const isConfirmed = isCategoryConfirmed(status);
+  const { category, sourceCount, advancingCount } = status;
+  const isConfirmed = getCategoryConfirmedAt(status) !== null;
 
   return (
     <TableRow>
       <TableRowHeader className="py-4 whitespace-normal">
         <bdi>{category.name}</bdi>
       </TableRowHeader>
-      <TableCell className="py-4 whitespace-normal">
-        {hasFacilitators ? (
-          format.list(
-            reviewers.map((reviewer) => (
-              <bdi key={reviewer.reviewerProfileId}>
-                {reviewer.profile.name}
-              </bdi>
-            )),
-            { type: 'conjunction' },
-          )
+      <TableCell className="py-4 tabular-nums">{sourceCount}</TableCell>
+      <TableCell className="py-4 tabular-nums">
+        {isConfirmed ? (
+          advancingCount
         ) : (
-          <span className="text-muted-foreground">—</span>
+          <span className="text-muted-foreground">
+            {t('advancingSoFar', { count: advancingCount })}
+          </span>
         )}
       </TableCell>
       <TableCell className="py-4">
-        {!hasFacilitators ? (
-          <span className="text-muted-foreground">
-            {t('noFacilitatorStatus')}
-          </span>
-        ) : isConfirmed ? (
-          <StatusBadge variant="success" icon={false}>
-            {t('categoryConfirmedStatus')}
-          </StatusBadge>
-        ) : (
-          <StatusBadge variant="in-progress" icon={false}>
-            {t('categoryConfirmProgressStatus', {
-              confirmed: confirmedCount,
-              total: reviewers.length,
-            })}
-          </StatusBadge>
-        )}
-      </TableCell>
-      <TableCell className="py-4 text-end">
         <div aria-live="polite">
-          {!hasFacilitators ? null : isConfirmed ? (
-            <UnconfirmCategoryAction
-              processInstanceId={processInstanceId}
-              category={category}
-            />
-          ) : (
-            <ConfirmCategoryAction
-              processInstanceId={processInstanceId}
-              category={category}
-            />
-          )}
+          <CategoryStatus status={status} />
         </div>
       </TableCell>
     </TableRow>
+  );
+}
+
+function CategoryStatus({
+  status,
+}: {
+  status: CategoryWithReviewerStatusSchema;
+}) {
+  const t = useTranslations('decisions.develop');
+  const format = useFormatter();
+  const confirmedAt = getCategoryConfirmedAt(status);
+
+  if (status.reviewers.length === 0) {
+    return (
+      <span className="text-muted-foreground">
+        {t('categoryUnassignedStatus')}
+      </span>
+    );
+  }
+
+  if (confirmedAt === null) {
+    return (
+      <StatusBadge variant="in-progress" icon={false}>
+        {t('categoryDeliberatingStatus')}
+      </StatusBadge>
+    );
+  }
+
+  return (
+    <StatusBadge variant="success" icon={false}>
+      {t('categoryConfirmedStatus', {
+        date: format.dateTime(new Date(confirmedAt), {
+          month: 'short',
+          day: 'numeric',
+        }),
+      })}
+    </StatusBadge>
   );
 }
 
@@ -210,13 +197,13 @@ function CategoriesTableSkeleton() {
                 <Skeleton className="h-5 w-32" />
               </TableCell>
               <TableCell className="py-4">
-                <Skeleton className="h-5 w-48" />
+                <Skeleton className="h-5 w-12" />
+              </TableCell>
+              <TableCell className="py-4">
+                <Skeleton className="h-5 w-16" />
               </TableCell>
               <TableCell className="py-4">
                 <Skeleton className="h-9 w-32" />
-              </TableCell>
-              <TableCell className="py-4">
-                <Skeleton className="ms-auto h-8 w-36" />
               </TableCell>
             </TableRow>
           ))}
