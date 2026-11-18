@@ -472,6 +472,7 @@ export const developConfirmStateSchema = z.object({
   canConfirm: z.boolean(),
   lock: z.enum(['windowClosed', 'confirmed']).nullable(),
   categoryNames: z.array(z.string()),
+  canPublish: z.boolean(),
 });
 
 export type DevelopConfirmStateSchema = z.infer<
