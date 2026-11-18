@@ -6,6 +6,7 @@ import { NotFoundError, ValidationError } from '../../utils';
 import { invalidateProfileUserAccessCache } from '../access';
 import { assertDevelopSources } from './assertDevelopSources';
 import { assertProposalDevelopAccess } from './assertProposalDevelopAccess';
+import { assertDevelopUnlocked } from './developLock';
 import {
   type DevelopedEntryPrefill,
   getDevelopedEntryPrefill,
@@ -58,6 +59,10 @@ export const createDevelopedProposal = async ({
   const currentPhase = await assertProposalDevelopAccess({
     instance: { profileId: instance.profileId, phases },
     phaseId: instance.currentStateId,
+    user: { id: authUserId },
+  });
+  await assertDevelopUnlocked({
+    instance: { ...instance, phases },
     user: { id: authUserId },
   });
 
