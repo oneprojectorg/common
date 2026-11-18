@@ -1,10 +1,10 @@
 import {
   type CreateOrganizationResult,
   createDecisionInstance,
-  createOrganization,
+  createInstanceMember,
   getSeededTemplate,
-  grantDecisionProfileAccess,
 } from '@op/common/testing/data';
+import type { Page } from '@playwright/test';
 import { randomUUID } from 'node:crypto';
 
 import {
@@ -39,18 +39,10 @@ test.describe('Process admin shell', () => {
   }) => {
     const { instance, managePath } = await seedDecision(org);
 
-    const memberOrg = await createOrganization({
-      testId: `process-admin-shell-${randomUUID().slice(0, 8)}`,
+    const { user: memberUser } = await createInstanceMember({
       supabaseAdmin,
-      users: { admin: 1, member: 0 },
-    });
-    const memberUser = memberOrg.adminUser;
-
-    await grantDecisionProfileAccess({
-      profileId: instance.profileId,
-      authUserId: memberUser.authUserId,
-      email: memberUser.email,
-      isAdmin: false,
+      testId: `process-admin-shell-${randomUUID().slice(0, 8)}`,
+      instanceProfileId: instance.profileId,
     });
 
     const memberContext = await browser.newContext();
@@ -74,15 +66,7 @@ test.describe('Process admin shell', () => {
         waitUntil: 'domcontentloaded',
       });
 
-      await expect(
-        memberPage.getByRole('heading', {
-          name: "You don't have access to this page",
-          level: 1,
-        }),
-      ).toBeVisible({ timeout: 15_000 });
-      await expect(
-        memberPage.getByRole('heading', { name: instance.name, level: 1 }),
-      ).toHaveCount(0);
+      await expectForbidden(memberPage, instance.name);
     } finally {
       await memberContext.close();
     }
@@ -99,15 +83,7 @@ test.describe('Process admin shell', () => {
 
       await page.goto(managePath, { waitUntil: 'domcontentloaded' });
 
-      await expect(
-        page.getByRole('heading', {
-          name: "You don't have access to this page",
-          level: 1,
-        }),
-      ).toBeVisible({ timeout: 15_000 });
-      await expect(
-        page.getByRole('heading', { name: instance.name, level: 1 }),
-      ).toHaveCount(0);
+      await expectForbidden(page, instance.name);
     });
   });
 });
@@ -123,4 +99,16 @@ async function seedDecision(org: CreateOrganizationResult) {
   });
 
   return { instance, managePath: `/en/decisions/${instance.slug}/manage` };
+}
+
+async function expectForbidden(page: Page, decisionName: string) {
+  await expect(
+    page.getByRole('heading', {
+      name: "You don't have access to this page",
+      level: 1,
+    }),
+  ).toBeVisible({ timeout: 15_000 });
+  await expect(
+    page.getByRole('heading', { name: decisionName, level: 1 }),
+  ).toHaveCount(0);
 }

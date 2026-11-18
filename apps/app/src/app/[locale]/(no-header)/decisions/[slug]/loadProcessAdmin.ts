@@ -6,7 +6,7 @@ import { cache } from 'react';
 import { loadDecision } from './(decision-view)/loadDecision';
 
 // As in the editor, the decision's own access decides who is an admin, network
-// member or not. The flag is read last so only admins cost a PostHog lookup.
+// member or not; the flag is only read for an admin.
 export const loadProcessAdmin = cache(async (slug: string) => {
   const [user, decision] = await Promise.all([getUser(), loadDecision(slug)]);
 

@@ -28,13 +28,8 @@ vi.mock('next/navigation', () => ({
 
 const user = { authUserId: 'auth-user-1' };
 
-const decisionFor = (admin: boolean) => ({
-  decisionProfile: {
-    name: 'Budget 2027',
-    processInstance: { access: { admin } },
-  },
-  instanceId: 'instance-1',
-  ownerSlug: 'owner',
+const decisionFor = (access?: { admin: boolean }) => ({
+  decisionProfile: { processInstance: { access } },
 });
 
 describe('loadProcessAdmin', () => {
@@ -45,7 +40,7 @@ describe('loadProcessAdmin', () => {
 
   it('forbids a visitor without a session without reading the flag', async () => {
     mocks.getUser.mockResolvedValue(null);
-    mocks.loadDecision.mockResolvedValue(decisionFor(true));
+    mocks.loadDecision.mockResolvedValue(decisionFor({ admin: true }));
 
     await expect(loadProcessAdmin('budget')).rejects.toThrow('FORBIDDEN');
     expect(mocks.isServerFeatureEnabled).not.toHaveBeenCalled();
@@ -60,19 +55,17 @@ describe('loadProcessAdmin', () => {
   });
 
   it.each([
-    ['access.admin is false', { access: { admin: false } }],
-    ['access is missing', {}],
-  ])('forbids without reading the flag when %s', async (_, processInstance) => {
-    mocks.loadDecision.mockResolvedValue({
-      decisionProfile: { name: 'Budget 2027', processInstance },
-    });
+    ['access.admin is false', { admin: false }],
+    ['access is missing', undefined],
+  ])('forbids without reading the flag when %s', async (_, access) => {
+    mocks.loadDecision.mockResolvedValue(decisionFor(access));
 
     await expect(loadProcessAdmin('budget')).rejects.toThrow('FORBIDDEN');
     expect(mocks.isServerFeatureEnabled).not.toHaveBeenCalled();
   });
 
   it('returns not found for an admin with the flag off', async () => {
-    mocks.loadDecision.mockResolvedValue(decisionFor(true));
+    mocks.loadDecision.mockResolvedValue(decisionFor({ admin: true }));
     mocks.isServerFeatureEnabled.mockResolvedValue(false);
 
     await expect(loadProcessAdmin('budget')).rejects.toThrow('NOT_FOUND');
@@ -83,7 +76,7 @@ describe('loadProcessAdmin', () => {
   });
 
   it('returns the decision for an admin with the flag on', async () => {
-    const decision = decisionFor(true);
+    const decision = decisionFor({ admin: true });
     mocks.loadDecision.mockResolvedValue(decision);
     mocks.isServerFeatureEnabled.mockResolvedValue(true);
 
