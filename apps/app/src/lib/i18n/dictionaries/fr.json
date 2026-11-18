@@ -2034,8 +2034,7 @@
       "workThemUpDescription": "Ce qui avance devient quelque chose de plus complet."
     },
     "processAdmin": {
-      "pageTitle": "Gérer {decisionName}",
-      "underConstruction": "La nouvelle administration du processus est en cours de construction ici."
+      "pageTitle": "Gérer {decisionName}"
     }
   },
   "loadingProgress": "En train de charger…",

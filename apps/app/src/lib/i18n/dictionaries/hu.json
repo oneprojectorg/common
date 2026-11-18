@@ -2034,8 +2034,7 @@
       "workThemUpDescription": "Ami továbblép, részletesebbé épül ki."
     },
     "processAdmin": {
-      "pageTitle": "{decisionName} kezelése",
-      "underConstruction": "Itt készül az új folyamatkezelő felület."
+      "pageTitle": "{decisionName} kezelése"
     }
   },
   "loadingProgress": "Betöltés...",

@@ -2034,8 +2034,7 @@
       "workThemUpDescription": "ما يتقدّم يُبنى ليصبح أكثر اكتمالاً."
     },
     "processAdmin": {
-      "pageTitle": "إدارة {decisionName}",
-      "underConstruction": "يجري بناء أداة إدارة العملية الجديدة هنا."
+      "pageTitle": "إدارة {decisionName}"
     }
   },
   "loadingProgress": "جارٍ التحميل...",

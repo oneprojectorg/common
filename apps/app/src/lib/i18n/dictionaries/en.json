@@ -2034,8 +2034,7 @@
       "workThemUpDescription": "What advances gets built into something fuller."
     },
     "processAdmin": {
-      "pageTitle": "Manage {decisionName}",
-      "underConstruction": "The new process admin is being built here."
+      "pageTitle": "Manage {decisionName}"
     }
   },
   "loadingProgress": "Loading...",

@@ -5,6 +5,9 @@ import { getTranslations } from '@/lib/i18n';
 
 import { loadProcessAdmin } from '../loadProcessAdmin';
 
+// Untranslated on purpose: placeholder until the overview replaces it.
+const UNDER_CONSTRUCTION = 'The new process admin is being built here.';
+
 interface ManageDecisionPageProps {
   params: Promise<{ slug: string; locale: string }>;
 }
@@ -23,7 +26,7 @@ const ManageDecisionPage = async ({ params }: ManageDecisionPageProps) => {
   return (
     <main className="flex min-h-dvh flex-col gap-4 bg-background px-4 py-12 md:px-6">
       <Header1>{decisionProfile.name}</Header1>
-      <p className="text-muted-foreground">{t('underConstruction')}</p>
+      <p className="text-muted-foreground">{UNDER_CONSTRUCTION}</p>
     </main>
   );
 };
