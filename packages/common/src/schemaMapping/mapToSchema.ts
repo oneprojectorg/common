@@ -51,10 +51,11 @@ export const mapToSchema = ({
   // Object.fromEntries defines own keys, so a `__proto__` key from a mapping
   // that skipped validation cannot change the prototype.
   const data = Object.fromEntries(
-    [...valuesByField].flatMap<[string, unknown]>(([field, [first, ...rest]]) =>
-      rest.every((value) => isDeepStrictEqual(first, value))
-        ? [[field, structuredClone(first)]]
-        : [],
+    [...valuesByField].flatMap<[string, unknown]>(
+      ([field, [first, ...rest]]) =>
+        rest.every((value) => isDeepStrictEqual(first, value))
+          ? [[field, structuredClone(first)]]
+          : [],
     ),
   );
 

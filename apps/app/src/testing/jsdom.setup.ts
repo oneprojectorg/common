@@ -8,19 +8,16 @@ import { vi } from 'vitest';
 if (typeof window !== 'undefined') {
   document.elementFromPoint = () => null;
 
-  vi.stubGlobal(
-    'matchMedia',
-    (query: string): MediaQueryList => ({
-      matches: false,
-      media: query,
-      onchange: null,
-      addListener: () => {},
-      removeListener: () => {},
-      addEventListener: () => {},
-      removeEventListener: () => {},
-      dispatchEvent: () => false,
-    }),
-  );
+  vi.stubGlobal('matchMedia', (query: string): MediaQueryList => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: () => {},
+    removeListener: () => {},
+    addEventListener: () => {},
+    removeEventListener: () => {},
+    dispatchEvent: () => false,
+  }));
 
   vi.stubGlobal(
     'ResizeObserver',

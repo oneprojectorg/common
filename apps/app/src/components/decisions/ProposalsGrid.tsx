@@ -554,10 +554,11 @@ const VotingProposalsList = ({
         })}
       </ProposalMasonry>
 
-      {canVote && !isReadOnly && (
-        // Room under the last card for the fixed bar, taller once it wraps.
-        <div aria-hidden className="h-16 md:h-8" />
-      )}
+      {canVote &&
+        !isReadOnly && (
+          // Room under the last card for the fixed bar, taller once it wraps.
+          <div aria-hidden className="h-16 md:h-8" />
+        )}
 
       {canVote && !isReadOnly && (
         <FooterBar
