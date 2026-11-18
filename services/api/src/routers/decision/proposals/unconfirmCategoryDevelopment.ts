@@ -1,4 +1,4 @@
-import { unconfirmCategoryDevelopment } from '@op/common';
+import { Channels, unconfirmCategoryDevelopment } from '@op/common';
 import {
   categoryDevelopmentChangeSchema,
   categoryDevelopmentTargetSchema,
@@ -11,11 +11,18 @@ export const unconfirmCategoryDevelopmentRouter = router({
     .input(categoryDevelopmentTargetSchema)
     .output(categoryDevelopmentChangeSchema)
     .mutation(async ({ ctx, input }) => {
-      return await unconfirmCategoryDevelopment({
+      const result = await unconfirmCategoryDevelopment({
         processInstanceId: input.processInstanceId,
         taxonomyTermId: input.taxonomyTermId,
         reviewerProfileId: input.reviewerProfileId,
         user: ctx.user,
       });
+
+      // An unconfirm changes which entries the reviewer may edit again.
+      ctx.registerMutationChannels([
+        Channels.decisionProposals(input.processInstanceId),
+      ]);
+
+      return result;
     }),
 });

@@ -1,4 +1,4 @@
-import { confirmCategoryDevelopment } from '@op/common';
+import { Channels, confirmCategoryDevelopment } from '@op/common';
 import {
   categoryDevelopmentChangeSchema,
   categoryDevelopmentTargetSchema,
@@ -11,11 +11,18 @@ export const confirmCategoryDevelopmentRouter = router({
     .input(categoryDevelopmentTargetSchema)
     .output(categoryDevelopmentChangeSchema)
     .mutation(async ({ ctx, input }) => {
-      return await confirmCategoryDevelopment({
+      const result = await confirmCategoryDevelopment({
         processInstanceId: input.processInstanceId,
         taxonomyTermId: input.taxonomyTermId,
         reviewerProfileId: input.reviewerProfileId,
         user: ctx.user,
       });
+
+      // A confirm changes which entries the reviewer may still edit.
+      ctx.registerMutationChannels([
+        Channels.decisionProposals(input.processInstanceId),
+      ]);
+
+      return result;
     }),
 });
