@@ -21,6 +21,7 @@ export const unconfirmCategoryDevelopmentRouter = router({
       // An unconfirm changes which entries the reviewer may edit again.
       ctx.registerMutationChannels([
         Channels.decisionProposals(input.processInstanceId),
+        Channels.decisionDevelopLock(input.processInstanceId),
       ]);
 
       return result;

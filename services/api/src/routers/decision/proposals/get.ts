@@ -43,6 +43,8 @@ export const getProposalRouter = router({
 
       ctx.registerQueryChannels([
         Channels.decisionProposal(proposal.processInstanceId, proposal.id),
+        // A develop confirm or unconfirm changes `isEditable`.
+        Channels.decisionDevelopLock(proposal.processInstanceId),
       ]);
 
       return proposalSchema.parse({
