@@ -1737,9 +1737,7 @@
       "selectionsAlreadyConfirmedError": "আপনার নির্বাচন ইতিমধ্যে নিশ্চিত করা হয়েছে।",
       "unconfirmSelectionsError": "আপনার নির্বাচনের নিশ্চিতকরণ বাতিল করা যায়নি। আবার চেষ্টা করুন।",
       "developLockedError": "আপনি আপনার নির্বাচন নিশ্চিত করেছেন। পরিবর্তন করতে নিশ্চিতকরণ বাতিল করুন।",
-      "entryNotAdvancedStatus": "এগোয়নি",
-      "viewEntryAction": "দেখুন",
-      "viewEntryLabel": "{title} দেখুন"
+      "entryNotAdvancedStatus": "এগোয়নি"
     },
     "suggestedWinnersHint": "ভোটিং নিয়ম এবং মোট বাজেটের ভিত্তিতে আমরা প্রস্তাবিত বিজয়ী প্রস্তাবগুলি নির্বাচন করেছি।",
     "votingOpenHeading": "ভোট দেওয়ার সময় হয়েছে।",

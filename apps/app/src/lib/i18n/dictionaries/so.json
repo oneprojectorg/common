@@ -1737,9 +1737,7 @@
       "selectionsAlreadyConfirmedError": "Xulashooyinkaaga horay ayaa loo xaqiijiyay.",
       "unconfirmSelectionsError": "Lagama noqon karin xaqiijinta xulashooyinkaaga. Isku day mar kale.",
       "developLockedError": "Waad xaqiijisay xulashooyinkaaga. Ka noqo xaqiijinta si aad isbeddel u samayso.",
-      "entryNotAdvancedStatus": "Ma gudbin",
-      "viewEntryAction": "Eeg",
-      "viewEntryLabel": "Eeg {title}"
+      "entryNotAdvancedStatus": "Ma gudbin"
     },
     "suggestedWinnersHint": "Waxaan dooranay soo jeedimaha guusha helay ee la soo jeediyay iyadoo lagu salaynayo xeerarka codeynta iyo wadarta miisaaniyada.",
     "votingOpenHeading": "WAA WAKHTIGII CODAYNTA.",

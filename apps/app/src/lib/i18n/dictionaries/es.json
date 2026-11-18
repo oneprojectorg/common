@@ -1737,9 +1737,7 @@
       "selectionsAlreadyConfirmedError": "Tus selecciones ya están confirmadas.",
       "unconfirmSelectionsError": "No se pudo anular la confirmación de tus selecciones. Inténtalo de nuevo.",
       "developLockedError": "Confirmaste tus selecciones. Anula la confirmación para hacer cambios.",
-      "entryNotAdvancedStatus": "No avanza",
-      "viewEntryAction": "Ver",
-      "viewEntryLabel": "Ver {title}"
+      "entryNotAdvancedStatus": "No avanza"
     },
     "suggestedWinnersHint": "Hemos seleccionado las propuestas ganadoras sugeridas según las reglas de votación y el presupuesto total.",
     "votingOpenHeading": "HORA DE VOTAR.",

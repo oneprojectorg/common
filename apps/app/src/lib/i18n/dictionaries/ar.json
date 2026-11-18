@@ -1737,9 +1737,7 @@
       "selectionsAlreadyConfirmedError": "اختياراتك مؤكَّدة بالفعل.",
       "unconfirmSelectionsError": "تعذّر إلغاء تأكيد اختياراتك. حاول مرة أخرى.",
       "developLockedError": "لقد أكّدت اختياراتك. ألغِ التأكيد لإجراء تغييرات.",
-      "entryNotAdvancedStatus": "لم يتقدّم",
-      "viewEntryAction": "عرض",
-      "viewEntryLabel": "عرض {title}"
+      "entryNotAdvancedStatus": "لم يتقدّم"
     },
     "suggestedWinnersHint": "اخترنا المقترحات الفائزة المقترحة بناءً على قواعد التصويت والميزانية الإجمالية.",
     "votingOpenHeading": "حان وقت التصويت.",
