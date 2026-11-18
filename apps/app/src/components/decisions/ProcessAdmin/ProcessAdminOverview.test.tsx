@@ -45,17 +45,28 @@ vi.mock('@op/api/client', () => ({
         useSuspenseQuery: () => [query.decisionProfile],
       },
       updateDecisionInstance: {
-        // Records the input, then settles at once so the hook-level and the
-        // per-call callbacks both run.
+        // Records the call, then settles at once so the hook-level and the
+        // per-call callbacks both run. A test fails a save by making
+        // updateInstance throw.
         useMutation: (hookOptions?: {
           onSuccess?: (data: undefined, input: object) => void;
           onSettled?: (data: undefined, error: null) => void;
         }) => ({
           mutate: (
             input: object,
-            callOptions?: { onSuccess?: () => void; onSettled?: () => void },
+            callOptions?: {
+              onSuccess?: () => void;
+              onSettled?: () => void;
+              onError?: () => void;
+            },
           ) => {
-            updateInstance(input);
+            try {
+              updateInstance(input, callOptions);
+            } catch {
+              callOptions?.onError?.();
+              callOptions?.onSettled?.();
+              return;
+            }
             hookOptions?.onSuccess?.(undefined, input);
             callOptions?.onSuccess?.();
             hookOptions?.onSettled?.(undefined, null);
@@ -449,10 +460,9 @@ describe('ProcessAdminOverview', () => {
     seed({});
     renderOverview();
     const user = userEvent.setup();
-    updateInstance.mockImplementationOnce(
-      (_input: unknown, options?: { onError?: () => void }) =>
-        options?.onError?.(),
-    );
+    updateInstance.mockImplementationOnce(() => {
+      throw new Error('save failed');
+    });
 
     await user.click(screen.getByRole('button', { name: 'Settings' }));
     const field = await screen.findByRole('textbox', { name: 'Process name' });
@@ -523,10 +533,10 @@ describe('ProcessAdminOverview', () => {
       await screen.findByRole('menuitem', { name: /West End Trust/ }),
     );
 
-    expect(updateInstance).toHaveBeenCalledWith({
-      instanceId: 'instance-1',
-      stewardProfileId: 'org-2',
-    });
+    expect(updateInstance).toHaveBeenCalledWith(
+      { instanceId: 'instance-1', stewardProfileId: 'org-2' },
+      expect.anything(),
+    );
   });
 
   it('shows the steward as plain text when the admin does not administer the owner', async () => {
