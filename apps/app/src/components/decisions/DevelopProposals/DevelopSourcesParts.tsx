@@ -48,10 +48,6 @@ interface DevelopSourcesQuery {
 }
 
 interface DevelopSourcesContextValue {
-  state: {
-    isPreparing: boolean;
-    preparingSourceId: string | null;
-  };
   actions: {
     prepare: (source: DevelopSource) => void;
   };
@@ -83,13 +79,12 @@ export function DevelopSourcesProvider({
 }) {
   // Deferred so the current rows stay on screen while the next ones load.
   const deferredCategoryId = useDeferredValue(categoryId);
-  const { prepare, isPreparing, preparingSourceId } = usePrepareDevelopEntry({
+  const { prepare } = usePrepareDevelopEntry({
     processInstanceId,
     decisionSlug,
   });
 
   const value: DevelopSourcesContextValue = {
-    state: { isPreparing, preparingSourceId },
     actions: { prepare },
     meta: {
       query: {
@@ -184,7 +179,7 @@ export function DevelopSourceNameCell({
  */
 export function DevelopSourceEntryTitle({ source }: { source: DevelopSource }) {
   const t = useTranslations('decisions');
-  const { state, actions, meta } = useDevelopSourcesContext();
+  const { actions, meta } = useDevelopSourcesContext();
   const title = source.profile.name || t('proposals.untitledProposal');
   const entry = getAdvancingEntry(source) ?? source.developedProposals[0];
 
@@ -207,8 +202,6 @@ export function DevelopSourceEntryTitle({ source }: { source: DevelopSource }) {
       variant="link"
       size="inline"
       aria-label={t('develop.prepareEntryLabel', { title })}
-      disabled={state.isPreparing}
-      loading={state.preparingSourceId === source.id}
       onClick={() => actions.prepare(source)}
       className="justify-start text-start whitespace-normal text-foreground"
     >

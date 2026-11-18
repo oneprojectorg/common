@@ -11,7 +11,7 @@ import { decisionProposalDevelopHref } from '../proposalHrefs';
 
 /**
  * Creates an entry of the develop phase from one source and opens it in the
- * develop editor. One prepare runs at a time; `preparingSourceId` names it.
+ * develop editor. One prepare runs at a time.
  */
 export function usePrepareDevelopEntry({
   processInstanceId,
@@ -42,17 +42,19 @@ export function usePrepareDevelopEntry({
   });
 
   const isPreparing = createEntry.isPending || isNavigating;
-  const preparingSourceId = isPreparing
-    ? (createEntry.variables?.sourceProposalIds[0] ?? null)
-    : null;
 
-  const prepare = (source: { id: string }) =>
+  const prepare = (source: { id: string }) => {
+    if (isPreparing) {
+      return;
+    }
+
     createEntry.mutate({
       processInstanceId,
       sourceProposalIds: [source.id],
       // The server prefills the entry from the source's document.
       proposalData: {},
     });
+  };
 
-  return { prepare, isPreparing, preparingSourceId };
+  return { prepare };
 }
