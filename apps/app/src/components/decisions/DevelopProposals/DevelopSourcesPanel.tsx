@@ -42,7 +42,6 @@ import {
 } from '@op/sense/Table';
 import { toast } from '@op/sense/Toast';
 import {
-  type MouseEventHandler,
   type ReactNode,
   useCallback,
   useMemo,
@@ -55,11 +54,7 @@ import { Link, useRouter, useTranslations } from '@/lib/i18n';
 
 import { ButtonLink } from '@/components/ButtonLink';
 
-import { useOpenProposalInSheet } from '../ProposalSheet/proposalSheetState';
-import {
-  decisionProposalDevelopHref,
-  decisionProposalHref,
-} from '../proposalHrefs';
+import { decisionProposalDevelopHref } from '../proposalHrefs';
 import {
   ProposalReviewDecorationProvider,
   useProposalReviewAggregates,
@@ -206,7 +201,6 @@ function EditableSourcesTable(props: SourcesTableProps) {
   const { processInstanceId, decisionSlug } = props;
   const t = useTranslations('decisions');
   const router = useRouter();
-  const openInSheet = useOpenProposalInSheet();
   const [isNavigating, startNavigating] = useTransition();
   const sourcesPage = useDevelopSourcesPage(props);
   const { sources } = sourcesPage;
@@ -315,16 +309,6 @@ function EditableSourcesTable(props: SourcesTableProps) {
     <SourcesTable
       {...props}
       sourcesPage={sourcesPage}
-      renderTitle={(source, title) => (
-        <SourceTitleLink
-          title={title}
-          href={decisionProposalHref({
-            decisionSlug,
-            profileId: source.profileId,
-          })}
-          onClick={openInSheet(source.profileId)}
-        />
-      )}
       renderActions={(source, title) => {
         // One entry per source for now: the actions use the oldest.
         const developedEntry = source.developedProposals[0];
@@ -361,23 +345,12 @@ function EditableSourcesTable(props: SourcesTableProps) {
 }
 
 function ReadOnlySourcesTable(props: SourcesTableProps) {
-  const { decisionSlug } = props;
   const sourcesPage = useDevelopSourcesPage(props);
 
   return (
     <SourcesTable
       {...props}
       sourcesPage={sourcesPage}
-      renderTitle={(source, title) => (
-        <SourceTitleLink
-          title={title}
-          href={decisionProposalDevelopHref({
-            decisionSlug,
-            profileId:
-              source.developedProposals[0]?.profileId ?? source.profileId,
-          })}
-        />
-      )}
       renderActions={(source) => (
         <EntryActions>
           <SourceDecisionBadge advancing={isSourceAdvancing(source)} />
@@ -423,14 +396,13 @@ function useDevelopSourcesPage({
 }
 
 function SourcesTable({
+  decisionSlug,
   scope,
   showRecommendations,
   sourcesPage,
-  renderTitle,
   renderActions,
 }: SourcesTableProps & {
   sourcesPage: ReturnType<typeof useDevelopSourcesPage>;
-  renderTitle: (source: DevelopSource, title: string) => ReactNode;
   renderActions: (source: DevelopSource, title: string) => ReactNode;
 }) {
   const t = useTranslations('decisions');
@@ -479,7 +451,15 @@ function SourcesTable({
                   <TableRow key={source.id}>
                     <TableRowHeader className="py-4">
                       <div className="flex flex-col items-start gap-0.5">
-                        {renderTitle(source, title)}
+                        <SourceTitleLink
+                          title={title}
+                          href={decisionProposalDevelopHref({
+                            decisionSlug,
+                            profileId:
+                              source.developedProposals[0]?.profileId ??
+                              source.profileId,
+                          })}
+                        />
                         {submitterName ? (
                           <span className="text-sm text-muted-foreground">
                             <bdi>{submitterName}</bdi>
@@ -570,19 +550,10 @@ function EditEntryLink({ title, href }: { title: string; href: string }) {
   );
 }
 
-function SourceTitleLink({
-  title,
-  href,
-  onClick,
-}: {
-  title: string;
-  href: string;
-  onClick?: MouseEventHandler<HTMLAnchorElement>;
-}) {
+function SourceTitleLink({ title, href }: { title: string; href: string }) {
   return (
     <Link
       href={href}
-      onClick={onClick}
       className="text-base font-strong text-foreground hover:underline"
     >
       <bdi>{title}</bdi>
