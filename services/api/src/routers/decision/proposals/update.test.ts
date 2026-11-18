@@ -14,7 +14,6 @@ import {
   ProposalReviewRequestState,
   ProposalStatus,
   Visibility,
-  decisionTransitionProposals,
   processInstances,
 } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
@@ -1312,7 +1311,6 @@ describe.concurrent('updateProposal develop window', () => {
       testData,
       advance: true,
     });
-    await clearSelections({ instanceId });
 
     const [detail, list] = await Promise.all([
       caller.decision.getProposal({ profileId: entry.profileId }),
@@ -1338,11 +1336,11 @@ describe.concurrent('updateProposal develop window', () => {
     onTestFinished,
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    // The setup's pass-all pipeline attached the source: selections are confirmed.
-    const { caller, entry } = await createDevelopEntry({
+    const { caller, entry, confirmSelections } = await createDevelopEntry({
       testData,
       advance: true,
     });
+    await confirmSelections();
 
     const detail = await caller.decision.getProposal({
       profileId: entry.profileId,
@@ -1366,7 +1364,6 @@ describe.concurrent('updateProposal develop window', () => {
       testData,
       advance: true,
     });
-    await clearSelections({ instanceId });
     await updateInstancePhases(instanceId, (phases, currentStateId) =>
       phases.map((phase) =>
         phase.phaseId === currentStateId
@@ -1399,10 +1396,11 @@ describe.concurrent('updateProposal develop window', () => {
     onTestFinished,
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const { caller, entry } = await createDevelopEntry({
+    const { caller, entry, confirmSelections } = await createDevelopEntry({
       testData,
       advance: false,
     });
+    await confirmSelections();
 
     const detail = await caller.decision.getProposal({
       profileId: entry.profileId,
@@ -1451,12 +1449,14 @@ async function createDevelopEntry({
     await caller.decision.submitDevelopedProposal({ proposalId: entry.id });
   }
 
-  return { instanceId, caller, entry };
-}
+  /** An admin confirms the selections, which closes the develop window. */
+  const confirmSelections = async () => {
+    const adminCaller = await createAuthenticatedCaller(setup.userEmail);
+    await adminCaller.decision.submitManualSelection({
+      processInstanceId: instanceId,
+      proposalIds: [source.id],
+    });
+  };
 
-/** Detaches every proposal from the inbound transition, so selections are pending. */
-async function clearSelections({ instanceId }: { instanceId: string }) {
-  await db
-    .delete(decisionTransitionProposals)
-    .where(eq(decisionTransitionProposals.processInstanceId, instanceId));
+  return { instanceId, caller, entry, confirmSelections };
 }

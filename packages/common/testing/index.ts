@@ -15,6 +15,7 @@ export { TestDecisionsDataManager } from './helpers/TestDecisionsDataManager';
 export {
   createDevelopPhaseSetup,
   createDevelopProposalsMember,
+  openDevelopWindow,
 } from './helpers/developPhase';
 export {
   emptyBlobPhases,
