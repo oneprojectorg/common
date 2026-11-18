@@ -218,7 +218,7 @@ function AdminsList({
             profileUserId: action.profileUserId,
             roleIds: action.roleIds,
           });
-          toast.success(t('adminAdded', { name }));
+          toast.success(t.rich('adminAdded', { name, bdi }));
           break;
         }
         case 'moveInvite':
@@ -233,7 +233,9 @@ function AdminsList({
             inviteId: action.inviteId,
             accessRoleId: roleId,
           });
-          toast.success(t('inviteMovedToAdmin', { email: option.email }));
+          toast.success(
+            t.rich('inviteMovedToAdmin', { email: option.email, bdi }),
+          );
           break;
         case 'invite': {
           showPending({ list: 'invites', option });
@@ -242,9 +244,9 @@ function AdminsList({
             invitations: [{ email: action.email, roleId }],
           });
           if (result.details.failed.length > 0) {
-            toast.error(t('inviteFailed', { email: option.email }));
+            toast.error(t.rich('inviteFailed', { email: option.email, bdi }));
           } else {
-            toast.success(t('inviteSent', { email: option.email }));
+            toast.success(t.rich('inviteSent', { email: option.email, bdi }));
           }
         }
       }
@@ -255,7 +257,7 @@ function AdminsList({
       ]);
     } catch (error) {
       logger.error('Process admin grant failed', { error });
-      toast.error(t('inviteFailed', { email: option.email }));
+      toast.error(t.rich('inviteFailed', { email: option.email, bdi }));
     } finally {
       setPendingAdmins((current) =>
         current.filter((pending) => pending.key !== key),

@@ -2,7 +2,8 @@
 import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { NextIntlClientProvider } from 'next-intl';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { renderToStaticMarkup } from 'react-dom/server';
+import { afterEach, describe, expect, it, type Mock, vi } from 'vitest';
 
 import en from '../../../lib/i18n/dictionaries/en.json';
 import { ProcessAdminsPanel } from './ProcessAdminsPanel';
@@ -147,6 +148,9 @@ const pickEmail = async (
   );
 };
 
+const toastMarkup = (spy: Mock) =>
+  spy.mock.calls.map(([message]) => renderToStaticMarkup(<>{message}</>));
+
 afterEach(() => {
   cleanup();
   vi.clearAllMocks();
@@ -267,9 +271,9 @@ describe('ProcessAdminsPanel', () => {
       accessRoleId: ADMIN,
     });
     await waitFor(() =>
-      expect(spies.toastSuccess).toHaveBeenCalledWith(
-        'other@example.org will be an admin once they accept the invitation.',
-      ),
+      expect(toastMarkup(spies.toastSuccess)).toEqual([
+        '<bdi>other@example.org</bdi> will be an admin once they accept the invitation.',
+      ]),
     );
     expect(spies.invite).not.toHaveBeenCalled();
   });
@@ -376,9 +380,9 @@ describe('ProcessAdminsPanel', () => {
     await waitFor(() =>
       expect(screen.queryByText('fresh@example.org')).toBeNull(),
     );
-    expect(spies.toastError).toHaveBeenCalledWith(
-      'fresh@example.org could not be invited.',
-    );
+    expect(toastMarkup(spies.toastError)).toEqual([
+      '<bdi>fresh@example.org</bdi> could not be invited.',
+    ]);
   });
 
   it('shows an admin being removed as pending until the server confirms', async () => {
