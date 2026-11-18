@@ -2,6 +2,7 @@
 
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { trpc } from '@op/api/client';
+import type { CategoryWithReviewerStatusSchema } from '@op/common/client';
 import { logger } from '@op/logging/client';
 import {
   AlertDialog,
@@ -23,6 +24,7 @@ import {
 } from '@op/sense/FooterBar';
 import { Skeleton } from '@op/sense/Skeleton';
 import { toast } from '@op/sense/Toast';
+import { useFormatter } from 'next-intl';
 import { Suspense, useState } from 'react';
 
 import { type TranslateFn, useTranslations } from '@/lib/i18n';
@@ -32,8 +34,10 @@ import { getHttpStatus } from './getHttpStatus';
 
 export function DevelopAdminPublishFooter({
   processInstanceId,
+  votingStartDate,
 }: {
   processInstanceId: string;
+  votingStartDate?: string;
 }) {
   return (
     <FooterBar position="fixed">
@@ -64,7 +68,10 @@ export function DevelopAdminPublishFooter({
         </div>
         <APIErrorBoundary fallbacks={{ default: () => null }}>
           <Suspense fallback={<Skeleton aria-hidden className="h-11 w-36" />}>
-            <PublishActionSuspense processInstanceId={processInstanceId} />
+            <PublishActionSuspense
+              processInstanceId={processInstanceId}
+              votingStartDate={votingStartDate}
+            />
           </Suspense>
         </APIErrorBoundary>
       </FooterBarEnd>
@@ -83,22 +90,13 @@ function PublishStatusSuspense({
       processInstanceId,
     },
   );
-  const assigned = items.filter((status) => status.reviewers.length > 0);
-  const confirmed = assigned.filter(
-    (status) => getCategoryConfirmedAt(status) !== null,
-  );
+  const { advancing, confirmed, assigned } = getPublishTotals(items);
 
-  if (assigned.length === 0) {
+  if (assigned === 0) {
     return t('noMappedCategoriesStatus');
   }
 
-  return t('advancingAcrossCategories', {
-    advancing: items.reduce(
-      (total, status) => total + status.advancingCount,
-      0,
-    ),
-    confirmed: confirmed.length,
-  });
+  return t('advancingAcrossCategories', { advancing, confirmed });
 }
 
 function WaitingCategoriesSuspense({
@@ -126,16 +124,36 @@ function WaitingCategoriesSuspense({
 
 function PublishActionSuspense({
   processInstanceId,
+  votingStartDate,
 }: {
   processInstanceId: string;
+  votingStartDate?: string;
 }) {
   const t = useTranslations('decisions.develop');
   const tShared = useTranslations();
+  const format = useFormatter();
   const [isOpen, setIsOpen] = useState(false);
   const [{ canPublish }] =
     trpc.decision.getDevelopConfirmState.useSuspenseQuery({
       processInstanceId,
     });
+  const [{ items }] = trpc.decision.listCategoryReviewerStatus.useSuspenseQuery(
+    {
+      processInstanceId,
+    },
+  );
+  const { advancing, confirmed } = getPublishTotals(items);
+  const description = votingStartDate
+    ? t('publishVotingDescription', {
+        count: advancing,
+        categories: confirmed,
+        date: format.dateTime(new Date(votingStartDate), {
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric',
+        }),
+      })
+    : t('publishDescription', { count: advancing, categories: confirmed });
   const publish = trpc.decision.publishDevelopedProposals.useMutation({
     onSuccess: () => {
       setIsOpen(false);
@@ -156,9 +174,7 @@ function PublishActionSuspense({
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>{t('publishTitle')}</AlertDialogTitle>
-          <AlertDialogDescription>
-            {t('publishDescription')}
-          </AlertDialogDescription>
+          <AlertDialogDescription>{description}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>{tShared('Cancel')}</AlertDialogCancel>
@@ -173,6 +189,20 @@ function PublishActionSuspense({
       </AlertDialogContent>
     </AlertDialog>
   );
+}
+
+function getPublishTotals(items: CategoryWithReviewerStatusSchema[]) {
+  const assigned = items.filter((status) => status.reviewers.length > 0);
+  return {
+    advancing: items.reduce(
+      (total, status) => total + status.advancingCount,
+      0,
+    ),
+    confirmed: assigned.filter(
+      (status) => getCategoryConfirmedAt(status) !== null,
+    ).length,
+    assigned: assigned.length,
+  };
 }
 
 function getPublishErrorMessage({

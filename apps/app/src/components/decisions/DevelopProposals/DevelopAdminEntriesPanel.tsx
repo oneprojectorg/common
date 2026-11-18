@@ -295,7 +295,7 @@ function DevelopAdminEntriesTableHeader({
   );
 }
 
-function DevelopEntryCategoryCell({ entry }: { entry: Proposal }) {
+export function DevelopEntryCategoryCell({ entry }: { entry: Proposal }) {
   const format = useFormatter();
   const categories = entry.proposalData.category;
 
@@ -371,7 +371,7 @@ function DevelopAdminEntriesTableSkeleton({
 }
 
 // ResponsiveSelect caps its phone trigger at 12rem.
-function CategoryFilterSkeleton() {
+export function CategoryFilterSkeleton() {
   return <Skeleton aria-hidden className="h-11 w-full max-w-48 sm:w-48" />;
 }
 
