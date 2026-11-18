@@ -2070,7 +2070,9 @@
       "youBadge": "أنت",
       "manageAdminLabel": "إدارة {name}",
       "removeAdminError": "تعذّرت إزالة هذا المسؤول.",
-      "adminAdded": "أصبح {name} مسؤولًا الآن."
+      "adminAdded": "أصبح {name} مسؤولًا الآن.",
+      "adminRemoved": "لم يعد <bdi>{name}</bdi> مسؤولًا.",
+      "adminInviteWithdrawn": "تم سحب الدعوة الموجّهة إلى <bdi>{name}</bdi>."
     }
   },
   "loadingProgress": "جارٍ التحميل...",

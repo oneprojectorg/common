@@ -2070,7 +2070,9 @@
       "youBadge": "Vous",
       "manageAdminLabel": "Gérer {name}",
       "removeAdminError": "Impossible de retirer cet administrateur.",
-      "adminAdded": "{name} est maintenant administrateur."
+      "adminAdded": "{name} est maintenant administrateur.",
+      "adminRemoved": "<bdi>{name}</bdi> n’est plus administrateur.",
+      "adminInviteWithdrawn": "L’invitation de <bdi>{name}</bdi> a été retirée."
     }
   },
   "loadingProgress": "En train de charger…",

@@ -2070,7 +2070,9 @@
       "youBadge": "Ön",
       "manageAdminLabel": "{name} kezelése",
       "removeAdminError": "Ezt az adminisztrátort nem sikerült eltávolítani.",
-      "adminAdded": "{name} mostantól adminisztrátor."
+      "adminAdded": "{name} mostantól adminisztrátor.",
+      "adminRemoved": "<bdi>{name}</bdi> már nem adminisztrátor.",
+      "adminInviteWithdrawn": "<bdi>{name}</bdi> meghívója visszavonva."
     }
   },
   "loadingProgress": "Betöltés...",

@@ -33,9 +33,11 @@ import { cn } from '@op/sense/lib/utils';
 import {
   type ComponentProps,
   type ReactNode,
+  type RefObject,
   Suspense,
   useId,
   useMemo,
+  useRef,
   useState,
 } from 'react';
 import { LuEllipsisVertical, LuSearch, LuTrash2 } from 'react-icons/lu';
@@ -144,6 +146,8 @@ function AdminsList({
     t.profile.listProfileInvites({ profileId }),
   ]);
   const [pendingAdmins, setPendingAdmins] = useState<PendingAdmin[]>([]);
+  const pickerInputRef = useRef<HTMLInputElement>(null);
+  const focusPicker = () => pickerInputRef.current?.focus();
   const adminInvites = useMemo(
     () => allInvites.items.filter((invite) => invite.accessRoleId === roleId),
     [allInvites, roleId],
@@ -262,6 +266,7 @@ function AdminsList({
   return (
     <div className="flex flex-col gap-4">
       <AdminPicker
+        inputRef={pickerInputRef}
         takenEmails={takenEmails}
         onPick={(option) => void handlePick(option)}
       />
@@ -276,6 +281,7 @@ function AdminsList({
               profileId={profileId}
               roleId={roleId}
               adminCount={admins.length}
+              onRemoved={focusPicker}
             />
           ) : (
             <PendingMemberRow
@@ -292,6 +298,7 @@ function AdminsList({
               key={row.confirmed.id}
               invite={row.confirmed}
               profileId={profileId}
+              onRemoved={focusPicker}
             />
           ) : (
             <PendingInviteRow key={row.pending.key} pending={row.pending} />
@@ -321,15 +328,19 @@ function slotPending<Confirmed, Pending>(
 
 const inServerOrder = (a: string, b: string) => a.localeCompare(b, 'en');
 
+const bdi = (chunks: ReactNode) => <bdi>{chunks}</bdi>;
+
 /** The members list comes back by name, then email. */
 const compareMembers = (a: ProfileUser, b: ProfileUser) =>
   inServerOrder(a.name ?? '', b.name ?? '') ||
   inServerOrder(a.email ?? '', b.email ?? '');
 
 function AdminPicker({
+  inputRef,
   takenEmails,
   onPick,
 }: {
+  inputRef: RefObject<HTMLInputElement | null>;
   takenEmails: Set<string>;
   onPick: (option: PickerOption) => void;
 }) {
@@ -403,6 +414,7 @@ function AdminPicker({
           aria-hidden
         />
         <ComboboxChipsInput
+          ref={inputRef}
           id={inputId}
           placeholder={t('adminSearchPlaceholder')}
         />
@@ -451,11 +463,13 @@ function AdminRow({
   profileId,
   roleId,
   adminCount,
+  onRemoved,
 }: {
   admin: ProfileUser;
   profileId: string;
   roleId: string;
   adminCount: number;
+  onRemoved: () => void;
 }) {
   const t = useTranslations('decisions.processAdmin');
   const user = useMaybeUser();
@@ -469,6 +483,8 @@ function AdminRow({
   const { isRemoving, remove } = usePendingRemoval({
     profileId,
     failureLog: 'Process admin removal failed',
+    successMessage: t.rich('adminRemoved', { name, bdi }),
+    onRemoved,
     run: () => {
       const action = getAdminRemoveAction(admin, roleId);
       return action.kind === 'demote'
@@ -545,9 +561,11 @@ function PendingInviteRow({ pending }: { pending: PendingInvite }) {
 function InviteRow({
   invite,
   profileId,
+  onRemoved,
 }: {
   invite: ProfileInvite;
   profileId: string;
+  onRemoved: () => void;
 }) {
   const t = useTranslations('decisions.processAdmin');
   const name = invite.inviteeProfile?.name || invite.email;
@@ -556,6 +574,8 @@ function InviteRow({
   const { isRemoving, remove } = usePendingRemoval({
     profileId,
     failureLog: 'Process admin invite removal failed',
+    successMessage: t.rich('adminInviteWithdrawn', { name, bdi }),
+    onRemoved,
     run: () => deleteInvite.mutateAsync({ inviteId: invite.id }),
   });
 
@@ -620,10 +640,14 @@ function AdminListRow({
 function usePendingRemoval({
   profileId,
   failureLog,
+  successMessage,
+  onRemoved,
   run,
 }: {
   profileId: string;
   failureLog: string;
+  successMessage: ReactNode;
+  onRemoved: () => void;
   run: () => Promise<unknown>;
 }) {
   const t = useTranslations('decisions.processAdmin');
@@ -638,6 +662,8 @@ function usePendingRemoval({
         utils.profile.listUsers.invalidate({ profileId }),
         utils.profile.listProfileInvites.invalidate({ profileId }),
       ]);
+      toast.success(successMessage);
+      onRemoved();
     } catch (error) {
       logger.error(failureLog, { error });
       toast.error(t('removeAdminError'));

@@ -2070,7 +2070,9 @@
       "youBadge": "Adiga",
       "manageAdminLabel": "Maamul {name}",
       "removeAdminError": "Maamahan lama saari karin.",
-      "adminAdded": "{name} hadda waa maamule."
+      "adminAdded": "{name} hadda waa maamule.",
+      "adminRemoved": "<bdi>{name}</bdi> mar dambe maamule ma aha.",
+      "adminInviteWithdrawn": "Casuumaadda <bdi>{name}</bdi> waa la joojiyay."
     }
   },
   "loadingProgress": "Waa la soo rarayaa...",

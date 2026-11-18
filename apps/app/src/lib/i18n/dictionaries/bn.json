@@ -2070,7 +2070,9 @@
       "youBadge": "আপনি",
       "manageAdminLabel": "{name} পরিচালনা করুন",
       "removeAdminError": "এই অ্যাডমিনকে সরানো যায়নি।",
-      "adminAdded": "{name} এখন একজন অ্যাডমিন।"
+      "adminAdded": "{name} এখন একজন অ্যাডমিন।",
+      "adminRemoved": "<bdi>{name}</bdi> আর অ্যাডমিন নন।",
+      "adminInviteWithdrawn": "<bdi>{name}</bdi>-এর আমন্ত্রণ প্রত্যাহার করা হয়েছে।"
     }
   },
   "loadingProgress": "লোড হচ্ছে...",
