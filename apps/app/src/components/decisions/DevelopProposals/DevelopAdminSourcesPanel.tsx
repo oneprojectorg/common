@@ -38,6 +38,7 @@ import {
   DevelopSourcesTable,
   NoSourcesEmpty,
   useDevelopSources,
+  useDevelopSourcesMeta,
 } from './DevelopSourcesParts';
 
 // Not `category` or `entryCategory`, which the other lists on this route use.
@@ -105,7 +106,6 @@ export function DevelopAdminSourcesPanel({
                 >
                   <DevelopAdminSourcesCountSuspense
                     processInstanceId={processInstanceId}
-                    decisionSlug={decisionSlug}
                   />
                 </Suspense>
               </APIErrorBoundary>
@@ -115,7 +115,6 @@ export function DevelopAdminSourcesPanel({
               <Suspense fallback={<CategoryFilterSkeleton />}>
                 <DevelopAdminSourceCategoryFilterSuspense
                   processInstanceId={processInstanceId}
-                  decisionSlug={decisionSlug}
                 />
               </Suspense>
             </APIErrorBoundary>
@@ -124,12 +123,8 @@ export function DevelopAdminSourcesPanel({
           <APIErrorBoundary
             fallbacks={{ default: () => <ProposalsLoadError /> }}
           >
-            <Suspense
-              fallback={
-                <DevelopAdminSourcesTableSkeleton decisionSlug={decisionSlug} />
-              }
-            >
-              <DevelopAdminSourcesTableSuspense decisionSlug={decisionSlug} />
+            <Suspense fallback={<DevelopAdminSourcesTableSkeleton />}>
+              <DevelopAdminSourcesTableSuspense />
             </Suspense>
           </APIErrorBoundary>
         </div>
@@ -142,12 +137,11 @@ export function DevelopAdminSourcesPanel({
 // adds no request.
 function DevelopAdminSourcesCountSuspense({
   processInstanceId,
-  decisionSlug,
 }: {
   processInstanceId: string;
-  decisionSlug: string;
 }) {
   const t = useTranslations('decisions.develop');
+  const { formatAcrossCategoriesCount } = useSourceCategoryTerm();
   const [{ items: categories }] = trpc.decision.getCategories.useSuspenseQuery({
     processInstanceId,
   });
@@ -178,26 +172,17 @@ function DevelopAdminSourcesCountSuspense({
 
   return (
     <Header2 className="text-title font-normal">
-      {usesDistrictCategoryTerm(decisionSlug)
-        ? t('sourcesAcrossDistrictsCount', {
-            count,
-            categories: categories.length,
-          })
-        : t('sourcesAcrossCategoriesCount', {
-            count,
-            categories: categories.length,
-          })}
+      {formatAcrossCategoriesCount({ count, categories: categories.length })}
     </Header2>
   );
 }
 
 function DevelopAdminSourceCategoryFilterSuspense({
   processInstanceId,
-  decisionSlug,
 }: {
   processInstanceId: string;
-  decisionSlug: string;
 }) {
+  const { decisionSlug } = useDevelopSourcesMeta();
   const [{ items: categories }] = trpc.decision.getCategories.useSuspenseQuery({
     processInstanceId,
   });
@@ -226,30 +211,20 @@ function DevelopAdminSourceCategoryFilterSuspense({
   );
 }
 
-function DevelopAdminSourcesTableSuspense({
-  decisionSlug,
-}: {
-  decisionSlug: string;
-}) {
-  const t = useTranslations('decisions.develop');
+function DevelopAdminSourcesTableSuspense() {
+  const { noFilteredSourcesDescription } = useSourceCategoryTerm();
   const { sources } = useDevelopSources();
 
   if (sources.length === 0) {
     return (
-      <DevelopSourcesEmpty
-        narrowedDescription={
-          usesDistrictCategoryTerm(decisionSlug)
-            ? t('noFilteredSourcesDistrictDescription')
-            : t('noFilteredSourcesDescription')
-        }
-      />
+      <DevelopSourcesEmpty narrowedDescription={noFilteredSourcesDescription} />
     );
   }
 
   return (
     <div className="flex flex-col">
       <DevelopSourcesTable className="min-w-4xl table-fixed">
-        <DevelopAdminSourcesTableHeader decisionSlug={decisionSlug} />
+        <DevelopAdminSourcesTableHeader />
         <TableBody>
           {sources.map((source) => (
             <TableRow key={source.id}>
@@ -277,21 +252,16 @@ function DevelopAdminSourcesTableSuspense({
 }
 
 // Shared with the skeleton so its columns and height match.
-function DevelopAdminSourcesTableHeader({
-  decisionSlug,
-}: {
-  decisionSlug: string;
-}) {
+function DevelopAdminSourcesTableHeader() {
   const t = useTranslations('decisions');
+  const { categoryColumnLabel } = useSourceCategoryTerm();
 
   return (
     <TableHeader>
       <TableRow>
         <TableHead scope="col">{t('develop.nameColumn')}</TableHead>
         <TableHead scope="col" className="w-48">
-          {usesDistrictCategoryTerm(decisionSlug)
-            ? t('develop.districtColumn')
-            : t('develop.categoryColumn')}
+          {categoryColumnLabel}
         </TableHead>
         <TableHead scope="col" className="w-72">
           {t('review.overallRecommendationLabel')}
@@ -319,21 +289,43 @@ function DevelopAdminSourceSkeletonRows({ count }: { count: number }) {
   );
 }
 
-function DevelopAdminSourcesTableSkeleton({
-  decisionSlug,
-}: {
-  decisionSlug: string;
-}) {
+function DevelopAdminSourcesTableSkeleton() {
   return (
     <div className="flex flex-col" aria-hidden>
       <DevelopSourcesTable className="min-w-4xl table-fixed">
-        <DevelopAdminSourcesTableHeader decisionSlug={decisionSlug} />
+        <DevelopAdminSourcesTableHeader />
         <TableBody>
           <DevelopAdminSourceSkeletonRows count={4} />
         </TableBody>
       </DevelopSourcesTable>
     </div>
   );
+}
+
+/** The copy that names a source's category, in the term the decision uses. */
+function useSourceCategoryTerm() {
+  const t = useTranslations('decisions.develop');
+  const { decisionSlug } = useDevelopSourcesMeta();
+
+  if (usesDistrictCategoryTerm(decisionSlug)) {
+    return {
+      categoryColumnLabel: t('districtColumn'),
+      noFilteredSourcesDescription: t('noFilteredSourcesDistrictDescription'),
+      formatAcrossCategoriesCount: (values: {
+        count: number;
+        categories: number;
+      }) => t('sourcesAcrossDistrictsCount', values),
+    };
+  }
+
+  return {
+    categoryColumnLabel: t('categoryColumn'),
+    noFilteredSourcesDescription: t('noFilteredSourcesDescription'),
+    formatAcrossCategoriesCount: (values: {
+      count: number;
+      categories: number;
+    }) => t('sourcesAcrossCategoriesCount', values),
+  };
 }
 
 function useSourceCategoryParam() {
