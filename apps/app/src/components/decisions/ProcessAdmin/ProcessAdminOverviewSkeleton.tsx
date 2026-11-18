@@ -8,14 +8,14 @@ export function ProcessAdminOverviewSkeleton() {
         <Skeleton className="h-10 w-2/3 md:h-14 md:w-1/2" />
         <Skeleton className="h-5 w-48" />
       </div>
-      <div className="mx-auto flex w-full max-w-272 flex-col gap-12 px-4 py-6 md:flex-row md:gap-24 md:px-6 md:py-12">
+      <div className="mx-auto flex w-full max-w-272 flex-col gap-12 px-4 py-6 md:flex-row md:px-6 md:py-12 lg:gap-24">
         <div className="flex min-w-0 flex-1 flex-col gap-4">
           <Skeleton className="h-5 w-32" />
           <Skeleton className="h-20 w-full rounded-lg" />
           <Skeleton className="h-20 w-full rounded-lg" />
           <Skeleton className="h-20 w-full rounded-lg" />
         </div>
-        <div className="flex min-w-0 flex-col gap-3 md:w-140 md:shrink-0">
+        <div className="flex min-w-0 flex-col gap-3 md:w-80 md:shrink-0 lg:w-140">
           <Skeleton className="h-5 w-40" />
           <Skeleton className="h-4 w-full" />
           <Skeleton className="h-4 w-full" />

@@ -126,7 +126,7 @@ function ProcessAdminOverviewSuspense({
           status={status}
           showBrowseProposals={isOpen}
         />
-        <div className="mx-auto flex w-full max-w-272 flex-col gap-12 px-4 py-6 md:flex-row md:gap-24 md:px-6 md:py-12">
+        <div className="mx-auto flex w-full max-w-272 flex-col gap-12 px-4 py-6 md:flex-row md:px-6 md:py-12 lg:gap-24">
           <div className="flex min-w-0 flex-1 flex-col gap-10">
             <ProcessAdminPhaseRail
               slug={slug}
@@ -342,7 +342,7 @@ function ProcessAdminAbout({
   const t = useTranslations('decisions.processAdmin');
 
   return (
-    <section className="flex min-w-0 flex-col gap-3 md:w-140 md:shrink-0">
+    <section className="flex min-w-0 flex-col gap-3 md:w-80 md:shrink-0 lg:w-140">
       <Header2 className="text-label">{t('aboutHeading')}</Header2>
       {aboutSlot || description ? (
         <OverviewAbout
