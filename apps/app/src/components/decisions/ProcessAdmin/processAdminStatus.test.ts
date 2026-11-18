@@ -53,4 +53,10 @@ describe('isProcessOpen', () => {
       isProcessOpen({ status: ProcessStatus.COMPLETED, phases: past }),
     ).toBe(true);
   });
+
+  it('keeps a cancelled process open once it had started', () => {
+    expect(
+      isProcessOpen({ status: ProcessStatus.CANCELLED, phases: past }),
+    ).toBe(true);
+  });
 });

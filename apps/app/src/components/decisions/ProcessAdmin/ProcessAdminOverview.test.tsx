@@ -9,69 +9,96 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import en from '../../../lib/i18n/dictionaries/en.json';
 import { ProcessAdminOverview } from './ProcessAdminOverview';
 
-const { query, updateInstance } = await vi.hoisted(async () => {
-  const { useState } = await import('react');
-  const query: { decisionProfile: unknown; resources: unknown[] } = {
-    decisionProfile: null,
-    resources: [],
-  };
+const { query, updateInstance, utils, toast, logger } = await vi.hoisted(
+  async () => {
+    const { useState } = await import('react');
+    const query: {
+      decisionProfile: unknown;
+      resources: unknown[];
+      error: Error | null;
+    } = {
+      decisionProfile: null,
+      resources: [],
+      error: null,
+    };
 
-  interface Callbacks {
-    onSuccess?: () => unknown;
-    onError?: (error: Error) => unknown;
-    onSettled?: () => unknown;
-  }
+    const utils = {
+      // Applies the updater, as the query cache would, so a test can read what the page shows before any refetch.
+      setData: vi.fn(
+        (_input: unknown, update: (current: unknown) => unknown) => {
+          query.decisionProfile = update(query.decisionProfile);
+        },
+      ),
+      invalidate: vi.fn(
+        async (_input: unknown, _filters?: unknown, _options?: unknown) => {},
+      ),
+    };
+    const toast = { success: vi.fn(), error: vi.fn() };
+    const logger = { error: vi.fn() };
 
-  /** A mutation mock whose latest save stays pending, per hook instance, until the test settles it with `succeed` or `fail`. */
-  const pendingMutation = () => {
-    const mutate = vi.fn();
-    let settleLatest = async (_error?: Error) => {};
+    interface Callbacks {
+      onSuccess?: (saved: unknown) => unknown;
+      onError?: (error: Error) => unknown;
+      onSettled?: () => unknown;
+    }
 
-    const useMutation = (hook: Callbacks = {}) => {
-      const [variables, setVariables] = useState<unknown>(undefined);
-      const [isPending, setIsPending] = useState(false);
+    /** A mutation mock whose latest save stays pending, per hook instance, until the test settles it with `succeed` or `fail`. */
+    const pendingMutation = () => {
+      const mutate = vi.fn();
+      let settleLatest = async (_outcome: {
+        error?: Error;
+        saved?: unknown;
+      }) => {};
+
+      const useMutation = (hook: Callbacks = {}) => {
+        const [variables, setVariables] = useState<unknown>(undefined);
+        const [isPending, setIsPending] = useState(false);
+
+        return {
+          isPending,
+          variables,
+          mutate: (input: unknown, call: Callbacks = {}) => {
+            mutate(input, call);
+            setVariables(input);
+            setIsPending(true);
+            settleLatest = async ({ error, saved }) => {
+              if (error) {
+                await hook.onError?.(error);
+                await call.onError?.(error);
+              } else {
+                await hook.onSuccess?.(saved);
+                await call.onSuccess?.(saved);
+              }
+              await call.onSettled?.();
+              setIsPending(false);
+            };
+          },
+        };
+      };
 
       return {
-        isPending,
-        variables,
-        mutate: (input: unknown, call: Callbacks = {}) => {
-          mutate(input, call);
-          setVariables(input);
-          setIsPending(true);
-          settleLatest = async (error) => {
-            if (error) {
-              await hook.onError?.(error);
-              await call.onError?.(error);
-            } else {
-              await hook.onSuccess?.();
-              await call.onSuccess?.();
-            }
-            await call.onSettled?.();
-            setIsPending(false);
-          };
-        },
+        mutate,
+        useMutation,
+        succeed: (saved: unknown) => settleLatest({ saved }),
+        fail: () => settleLatest({ error: new Error('save failed') }),
       };
     };
 
-    return {
-      mutate,
-      useMutation,
-      succeed: () => settleLatest(),
-      fail: () => settleLatest(new Error('save failed')),
-    };
-  };
-
-  return { query, updateInstance: pendingMutation() };
-});
+    return { query, updateInstance: pendingMutation(), utils, toast, logger };
+  },
+);
 
 vi.mock('@op/api/client', () => ({
   trpc: {
-    useUtils: () => ({
-      decision: { getDecisionBySlug: { invalidate: async () => {} } },
-    }),
+    useUtils: () => ({ decision: { getDecisionBySlug: utils } }),
     decision: {
       getDecisionBySlug: {
-        useSuspenseQuery: () => [query.decisionProfile],
+        useSuspenseQuery: () => {
+          if (query.error) {
+            throw query.error;
+          }
+          return [query.decisionProfile];
+        },
       },
       updateDecisionInstance: { useMutation: updateInstance.useMutation },
     },
@@ -105,14 +132,34 @@ vi.mock('@/hooks/useForesight', () => ({
 vi.mock('@/hooks/useCanLinkToProfile', () => ({
   useCanLinkToProfile: () => false,
 }));
-vi.mock('@op/logging/client', () => ({ logger: { error: () => {} } }));
-vi.mock('@op/sense/Toast', () => ({
-  toast: { success: () => {}, error: () => {} },
+vi.mock('@op/logging/client', () => ({ logger }));
+vi.mock('@op/sense/Toast', () => ({ toast }));
+
+vi.mock('@/components/Resources/PinnedResourceCard', () => ({
+  PinnedResourceCard: ({ resource }: { resource: { title: string } }) => (
+    <div data-testid="pinned-resource">{resource.title}</div>
+  ),
+}));
+
+// The upload modal owns its own mutations; this test only needs its change signal.
+vi.mock('../BannerUploadModal', () => ({
+  BannerUploadModal: ({
+    isOpen,
+    onChange,
+  }: {
+    isOpen: boolean;
+    onChange?: () => void;
+  }) =>
+    isOpen ? (
+      <button type="button" onClick={onChange}>
+        Save banner
+      </button>
+    ) : null,
 }));
 
 const SLUG = 'community-fund';
 
-const seed = ({
+const profile = ({
   status = ProcessStatus.PUBLISHED,
   description = null,
   phases = [],
@@ -128,23 +175,25 @@ const seed = ({
   steward?: object | null;
   heroImage?: string;
   isPrivate?: boolean;
-}) => {
-  query.decisionProfile = {
-    name,
-    processInstance: {
-      id: 'instance-1',
-      profileId: 'profile-1',
-      status,
-      description,
-      currentStateId: null,
-      steward,
-      instanceData: {
-        phases,
-        config: { isPrivate },
-        overview: heroImage ? { heroImage } : undefined,
-      },
+}) => ({
+  name,
+  processInstance: {
+    id: 'instance-1',
+    profileId: 'profile-1',
+    status,
+    description,
+    currentStateId: null,
+    steward,
+    instanceData: {
+      phases,
+      config: { isPrivate },
+      overview: heroImage ? { heroImage } : undefined,
     },
-  };
+  },
+});
+
+const seed = (options: Parameters<typeof profile>[0]) => {
+  query.decisionProfile = profile(options);
 };
 
 const overview = (isOpen = false, aboutSlot: ReactNode = null) => (
@@ -156,8 +205,9 @@ const overview = (isOpen = false, aboutSlot: ReactNode = null) => (
 const renderOverview = (isOpen = false, aboutSlot: ReactNode = null) =>
   render(overview(isOpen, aboutSlot));
 
-const settleSave = (outcome: 'succeed' | 'fail') =>
-  act(() => updateInstance[outcome]());
+const succeedSave = (saved: unknown) =>
+  act(() => updateInstance.succeed(saved));
+const failSave = () => act(() => updateInstance.fail());
 
 const phase = {
   phaseId: 'submit',
@@ -168,7 +218,8 @@ const phase = {
 afterEach(() => {
   cleanup();
   query.resources = [];
-  updateInstance.mutate.mockClear();
+  query.error = null;
+  vi.clearAllMocks();
 });
 
 describe('ProcessAdminOverview', () => {
@@ -180,6 +231,33 @@ describe('ProcessAdminOverview', () => {
     expect(screen.getByText('No pinned resources')).toBeTruthy();
     expect(screen.getByText('No description yet')).toBeTruthy();
     expect(screen.queryByTestId('phase-timeline')).toBeNull();
+  });
+
+  it('lists the pinned resources in place of their empty state', () => {
+    seed({});
+    query.resources = [
+      { id: 'resource-1', collectionId: 'collection-1', title: 'Budget guide' },
+    ];
+    renderOverview();
+
+    expect(screen.getByTestId('pinned-resource').textContent).toBe(
+      'Budget guide',
+    );
+    expect(
+      screen.getByRole('heading', { name: 'Pinned Resources' }),
+    ).toBeTruthy();
+    expect(screen.queryByText('No pinned resources')).toBeNull();
+  });
+
+  it('keeps the way back, and no status or actions, when the process fails to load', () => {
+    query.error = new Error('load failed');
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    renderOverview();
+
+    expect(screen.getByText("Couldn't load the overview")).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Back to editor' })).toBeTruthy();
+    expect(screen.queryByText('Live')).toBeNull();
+    expect(screen.queryByRole('link', { name: 'View process' })).toBeNull();
   });
 
   it('renders the server-rendered About body over the plain description', () => {
@@ -301,7 +379,7 @@ describe('ProcessAdminOverview', () => {
     ).toBeNull();
   });
 
-  it('saves a renamed draft title on Enter and refuses one below the minimum', async () => {
+  it('saves a renamed draft title on Enter', async () => {
     seed({ status: ProcessStatus.DRAFT });
     renderOverview();
     const user = userEvent.setup();
@@ -316,18 +394,37 @@ describe('ProcessAdminOverview', () => {
       instanceId: 'instance-1',
       name: 'Neighbourhood Fund',
     });
+  });
+
+  it('refuses a draft title below the minimum and says why', async () => {
+    seed({ status: ProcessStatus.DRAFT });
+    renderOverview();
+    const user = userEvent.setup();
 
     await user.click(
-      screen.getByRole('button', { name: 'Edit Neighbourhood Fund' }),
+      screen.getByRole('button', { name: 'Edit Community Fund' }),
     );
     await user.keyboard('ab{Enter}');
 
-    expect(updateInstance.mutate).toHaveBeenCalledTimes(1);
+    expect(updateInstance.mutate).not.toHaveBeenCalled();
+    expect(toast.error).toHaveBeenCalledWith(
+      'The name needs at least 3 characters.',
+    );
+
+    await user.click(
+      screen.getByRole('button', { name: 'Edit Community Fund' }),
+    );
+    await user.keyboard('abc{Enter}');
+
+    expect(updateInstance.mutate.mock.calls[0]?.[0]).toEqual({
+      instanceId: 'instance-1',
+      name: 'abc',
+    });
   });
 
-  it('shows the renamed draft title while it saves and keeps it once the server has it', async () => {
+  it('shows the latest renamed draft title while it saves', async () => {
     seed({ status: ProcessStatus.DRAFT });
-    const { rerender } = renderOverview();
+    renderOverview();
     const user = userEvent.setup();
 
     await user.click(
@@ -340,17 +437,32 @@ describe('ProcessAdminOverview', () => {
     expect(
       screen.getByRole('heading', { name: 'Second Fund', level: 1 }),
     ).toBeTruthy();
+  });
 
-    seed({ status: ProcessStatus.DRAFT, name: 'Second Fund' });
-    await settleSave('succeed');
+  it('keeps the saved draft title when the refetch brings nothing back', async () => {
+    seed({ status: ProcessStatus.DRAFT });
+    const { rerender } = renderOverview();
+    const user = userEvent.setup();
+
+    await user.click(
+      screen.getByRole('button', { name: 'Edit Community Fund' }),
+    );
+    await user.keyboard('Neighbourhood Fund{Enter}');
+    await succeedSave(
+      profile({ status: ProcessStatus.DRAFT, name: 'Neighbourhood Fund' }),
+    );
     rerender(overview());
 
     expect(
-      screen.getByRole('heading', { name: 'Second Fund', level: 1 }),
+      screen.getByRole('heading', { name: 'Neighbourhood Fund', level: 1 }),
     ).toBeTruthy();
+    expect(utils.invalidate).toHaveBeenCalledWith({ slug: SLUG }, undefined, {
+      cancelRefetch: false,
+    });
+    expect(toast.error).not.toHaveBeenCalled();
   });
 
-  it('puts the draft title back to the saved name when the rename fails', async () => {
+  it('puts the draft title back and says so when the rename fails', async () => {
     seed({ status: ProcessStatus.DRAFT });
     renderOverview();
     const user = userEvent.setup();
@@ -359,11 +471,32 @@ describe('ProcessAdminOverview', () => {
       screen.getByRole('button', { name: 'Edit Community Fund' }),
     );
     await user.keyboard('Neighbourhood Fund{Enter}');
-    await settleSave('fail');
+
+    expect(
+      screen.getByRole('heading', { name: 'Neighbourhood Fund', level: 1 }),
+    ).toBeTruthy();
+
+    await failSave();
 
     expect(
       screen.getByRole('heading', { name: 'Community Fund', level: 1 }),
     ).toBeTruthy();
+    expect(toast.error).toHaveBeenCalledWith('Your change was not saved.');
+    expect(logger.error).toHaveBeenCalledTimes(1);
+    expect(utils.setData).not.toHaveBeenCalled();
+  });
+
+  it('refetches the process, without a reload, when the banner changes', async () => {
+    seed({});
+    renderOverview();
+    const user = userEvent.setup();
+
+    await user.click(screen.getByRole('button', { name: 'Add banner' }));
+    await user.click(screen.getByRole('button', { name: 'Save banner' }));
+
+    expect(utils.invalidate).toHaveBeenCalledWith({ slug: SLUG }, undefined, {
+      cancelRefetch: false,
+    });
   });
 
   it('names the banner control by whether there is a banner', () => {

@@ -6,14 +6,30 @@ import { toast } from '@op/sense/Toast';
 
 import { useTranslations } from '@/lib/i18n';
 
-/** Saves a change to the process instance, refetching the page's process and toasting on failure. */
+/** Saves a change to the process instance, showing the saved process at once and toasting on failure. */
 export function useSaveInstance(slug: string) {
   const t = useTranslations('decisions.processAdmin');
   const utils = trpc.useUtils();
 
   return trpc.decision.updateDecisionInstance.useMutation({
-    onSuccess: async () => {
-      await utils.decision.getDecisionBySlug.invalidate({ slug });
+    onSuccess: async (saved) => {
+      // The response carries no access.
+      utils.decision.getDecisionBySlug.setData(
+        { slug },
+        (current) =>
+          current && {
+            ...current,
+            ...saved,
+            processInstance: {
+              ...saved.processInstance,
+              access: current.processInstance.access,
+            },
+          },
+      );
+      // The realtime channel already refetches; join that fetch instead of restarting it.
+      await utils.decision.getDecisionBySlug.invalidate({ slug }, undefined, {
+        cancelRefetch: false,
+      });
     },
     onError: (error) => {
       logger.error('Process save failed', { error });
