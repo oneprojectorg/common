@@ -143,6 +143,7 @@
       "supabase"
     ],
     "overrides": {
+      "@opentelemetry/auto-instrumentations-node": "~0.81.2",
       "@opentelemetry/sdk-metrics": "^2.2.0",
       "@react-three/drei": "$@react-three/drei",
       "@react-three/fiber": "$@react-three/fiber",
