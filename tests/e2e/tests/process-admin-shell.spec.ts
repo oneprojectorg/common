@@ -90,16 +90,23 @@ test.describe('Process admin shell', () => {
   test.describe('signed out', () => {
     test.use({ storageState: { cookies: [], origins: [] } });
 
-    test('a signed-out visitor is sent to login with the manage page as the return path', async ({
+    test('a signed-out visitor cannot open the manage page', async ({
       page,
       org,
     }) => {
-      const { managePath } = await seedDecision(org);
+      const { instance, managePath } = await seedDecision(org);
 
       await page.goto(managePath, { waitUntil: 'domcontentloaded' });
 
-      await expect(page).toHaveURL(/\/login\?redirect=/, { timeout: 15_000 });
-      expect(new URL(page.url()).searchParams.get('redirect')).toBe(managePath);
+      await expect(
+        page.getByRole('heading', {
+          name: "You don't have access to this page",
+          level: 1,
+        }),
+      ).toBeVisible({ timeout: 15_000 });
+      await expect(
+        page.getByRole('heading', { name: instance.name, level: 1 }),
+      ).toHaveCount(0);
     });
   });
 });

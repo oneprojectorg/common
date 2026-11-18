@@ -4,16 +4,12 @@ import { loadProcessAdmin } from './loadProcessAdmin';
 
 const mocks = vi.hoisted(() => ({
   getUser: vi.fn(),
-  assertWalledGardenAccess: vi.fn(),
   loadDecision: vi.fn(),
   isServerFeatureEnabled: vi.fn(),
 }));
 
 vi.mock('@/utils/getUser', () => ({
   getUser: mocks.getUser,
-}));
-vi.mock('@/utils/walledGarden', () => ({
-  assertWalledGardenAccess: mocks.assertWalledGardenAccess,
 }));
 vi.mock('./(decision-view)/loadDecision', () => ({
   loadDecision: mocks.loadDecision,
@@ -45,25 +41,14 @@ describe('loadProcessAdmin', () => {
   beforeEach(() => {
     vi.resetAllMocks();
     mocks.getUser.mockResolvedValue(user);
-    mocks.assertWalledGardenAccess.mockResolvedValue(user);
   });
 
-  it('admits any real account through the walled-garden gate', async () => {
+  it('forbids a visitor without a session without reading the flag', async () => {
+    mocks.getUser.mockResolvedValue(null);
     mocks.loadDecision.mockResolvedValue(decisionFor(true));
-    mocks.isServerFeatureEnabled.mockResolvedValue(true);
 
-    await loadProcessAdmin('budget');
-
-    expect(mocks.assertWalledGardenAccess).toHaveBeenCalledWith(user, {
-      allowNonMembers: true,
-    });
-  });
-
-  it('sends a visitor without an account to login before loading the decision', async () => {
-    mocks.assertWalledGardenAccess.mockRejectedValue(new Error('LOGIN'));
-
-    await expect(loadProcessAdmin('budget')).rejects.toThrow('LOGIN');
-    expect(mocks.loadDecision).not.toHaveBeenCalled();
+    await expect(loadProcessAdmin('budget')).rejects.toThrow('FORBIDDEN');
+    expect(mocks.isServerFeatureEnabled).not.toHaveBeenCalled();
   });
 
   it('passes a decision load failure through without reading the flag', async () => {
