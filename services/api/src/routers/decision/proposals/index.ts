@@ -2,6 +2,7 @@ import { mergeRouters } from '../../../trpcFactory';
 import { acceptProposalInviteRouter } from './acceptProposalInvite';
 import { addProposalRelationshipRouter } from './addRelationship';
 import { advanceProposalRouter } from './advanceProposal';
+import { confirmCategoryDevelopmentRouter } from './confirmCategoryDevelopment';
 import { createProposalRouter } from './create';
 import { createDevelopedProposalRouter } from './createDeveloped';
 import { deleteProposalRouter } from './delete';
@@ -24,6 +25,7 @@ import { rejectProposalRouter } from './reject';
 import { removeProposalRelationshipRouter } from './removeRelationship';
 import { submitProposalRouter } from './submit';
 import { submitDevelopedProposalRouter } from './submitDeveloped';
+import { unconfirmCategoryDevelopmentRouter } from './unconfirmCategoryDevelopment';
 import { unmergeProposalRouter } from './unmergeProposal';
 import { unrejectProposalRouter } from './unreject';
 import { unsubmitDevelopedProposalRouter } from './unsubmitDeveloped';
@@ -47,6 +49,8 @@ export const proposalsRouter = mergeRouters(
   listProposalRelationshipsRouter,
   listContributingProposalsRouter,
   listDevelopSourcesRouter,
+  confirmCategoryDevelopmentRouter,
+  unconfirmCategoryDevelopmentRouter,
   listWithReviewAggregatesRouter,
   mergeProposalsRouter,
   rejectProposalRouter,

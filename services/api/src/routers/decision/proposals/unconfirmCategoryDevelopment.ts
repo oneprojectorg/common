@@ -1,8 +1,8 @@
+import { unconfirmCategoryDevelopment } from '@op/common';
 import {
   categoryDevelopmentChangeSchema,
   categoryDevelopmentTargetSchema,
-  unconfirmCategoryDevelopment,
-} from '@op/common';
+} from '@op/common/client';
 
 import { networkAuthenticatedProcedure, router } from '../../../trpcFactory';
 
