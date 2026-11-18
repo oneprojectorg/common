@@ -1,4 +1,4 @@
-import { and, db, eq, sql } from '@op/db/client';
+import { type DbClient, and, db, eq, sql } from '@op/db/client';
 import { categoryReviewers, users } from '@op/db/schema';
 import { checkPermission, permission } from 'access-zones';
 
@@ -136,6 +136,35 @@ async function hasConfirmedEveryOwnCategory({
     .where(
       and(
         eq(users.authUserId, authUserId),
+        eq(categoryReviewers.processInstanceId, processInstanceId),
+        eq(categoryReviewers.phaseId, phaseId),
+      ),
+    );
+
+  return result?.allConfirmed === true;
+}
+
+// `decision_category_reviewers` is a temporary store of who owns a category.
+// True when the phase has at least one row and every row is confirmed.
+export async function isEveryCategoryDevelopConfirmed({
+  processInstanceId,
+  phaseId,
+  dbClient = db,
+}: {
+  processInstanceId: string;
+  phaseId: string;
+  dbClient?: DbClient;
+}): Promise<boolean> {
+  // `bool_and` is NULL when the phase has no row.
+  const [result] = await dbClient
+    .select({
+      allConfirmed: sql<
+        boolean | null
+      >`bool_and(${categoryReviewers.data} ->> 'developConfirmedAt' IS NOT NULL)`,
+    })
+    .from(categoryReviewers)
+    .where(
+      and(
         eq(categoryReviewers.processInstanceId, processInstanceId),
         eq(categoryReviewers.phaseId, phaseId),
       ),

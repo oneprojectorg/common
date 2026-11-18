@@ -40,7 +40,8 @@ export const Channels = {
    * reviewer's develop work. Narrower than `decisionProposals`, which every
    * proposal edit publishes.
    * Subscribers: `getProposal` (its `isEditable`).
-   * Broadcasters: `confirmCategoryDevelopment`, `unconfirmCategoryDevelopment`.
+   * Broadcasters: `confirmCategoryDevelopment`, `unconfirmCategoryDevelopment`,
+   * `publishDevelopedProposals` (it closes the develop window).
    */
   decisionDevelopLock: (instanceId: string) =>
     `decisionDevelopLock:${instanceId}` as const,

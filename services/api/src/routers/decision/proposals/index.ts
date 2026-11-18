@@ -22,6 +22,7 @@ import { listProposalLocationsRouter } from './listProposalLocations';
 import { listProposalRelationshipsRouter } from './listProposalRelationships';
 import { listWithReviewAggregatesRouter } from './listWithReviewAggregates';
 import { mergeProposalsRouter } from './mergeProposals';
+import { publishDevelopedProposalsRouter } from './publishDevelopedProposals';
 import { rejectProposalRouter } from './reject';
 import { removeProposalRelationshipRouter } from './removeRelationship';
 import { submitProposalRouter } from './submit';
@@ -53,6 +54,7 @@ export const proposalsRouter = mergeRouters(
   getDevelopConfirmStateRouter,
   confirmCategoryDevelopmentRouter,
   unconfirmCategoryDevelopmentRouter,
+  publishDevelopedProposalsRouter,
   listWithReviewAggregatesRouter,
   mergeProposalsRouter,
   rejectProposalRouter,
