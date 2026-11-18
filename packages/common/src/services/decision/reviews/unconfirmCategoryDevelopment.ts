@@ -33,8 +33,6 @@ export async function unconfirmCategoryDevelopment({
     user,
   });
 
-  // TODO(PUB-SERVICE): refuse an unconfirm after an admin publish, once
-  // publish writes its stamp.
   const updated = await db
     .update(categoryReviewers)
     .set({ data: sql`${categoryReviewers.data} - 'developConfirmedAt'` })
