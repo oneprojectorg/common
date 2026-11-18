@@ -7,8 +7,10 @@ export * from './services/decision/schemas/reviews';
 export * from './services/decision/schemas/developSources';
 export {
   phaseIdSchema,
+  instanceRefSchema,
   instancePhaseRefSchema,
   instanceOptionalPhaseRefSchema,
+  type InstanceRef,
   type InstancePhaseRef,
   type InstanceOptionalPhaseRef,
 } from './services/decision/schemas/instance';

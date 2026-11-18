@@ -24,6 +24,7 @@ import { assertProfileAccess, assertUserByAuthId } from '../assert';
 import { isEveryCategoryDevelopConfirmed } from './developLock';
 import { getPhases } from './instancePhases';
 import { lockProcessInstanceOrThrow } from './lockProcessInstance';
+import { activeProposalPredicate } from './phaseEligibility';
 import type { PublishDevelopedProposalsResult } from './schemas/developSources';
 import type {
   ManualSelectionAudit,
@@ -188,7 +189,7 @@ export async function publishDevelopedProposals({
             eq(proposals.processInstanceId, processInstanceId),
             eq(proposals.status, ProposalStatus.SUBMITTED),
             eq(proposals.visibility, Visibility.HIDDEN),
-            isNull(proposals.deletedAt),
+            activeProposalPredicate(proposals),
             exists(
               tx
                 .select({ id: proposalRelationships.id })

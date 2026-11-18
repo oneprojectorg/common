@@ -48,10 +48,6 @@ export const developSourceListSchema = phaseProposalListSchema.extend({
 
 export type DevelopSourceList = z.infer<typeof developSourceListSchema>;
 
-export const publishDevelopedProposalsInputSchema = z.object({
-  processInstanceId: z.uuid(),
-});
-
 /** `publishedCount`: the advanced entries that the publish made visible. */
 export const publishDevelopedProposalsResultSchema = z.object({
   publishedCount: z.number().int().nonnegative(),

@@ -4,7 +4,7 @@ import {
   publishDevelopedProposals,
 } from '@op/common';
 import {
-  publishDevelopedProposalsInputSchema,
+  instanceRefSchema,
   publishDevelopedProposalsResultSchema,
 } from '@op/common/client';
 
@@ -12,7 +12,7 @@ import { networkAuthenticatedProcedure, router } from '../../../trpcFactory';
 
 export const publishDevelopedProposalsRouter = router({
   publishDevelopedProposals: networkAuthenticatedProcedure()
-    .input(publishDevelopedProposalsInputSchema)
+    .input(instanceRefSchema)
     .output(publishDevelopedProposalsResultSchema)
     .mutation(async ({ ctx, input }) => {
       const result = await publishDevelopedProposals({
