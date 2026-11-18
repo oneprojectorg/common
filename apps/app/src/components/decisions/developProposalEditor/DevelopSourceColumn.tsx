@@ -31,14 +31,18 @@ import { DevelopSourceSkeleton } from './DevelopProposalSkeleton';
 
 type SourceTab = 'proposal' | 'reviews';
 
-/** The entry's sources, read only, with a select when there are several. */
+type DevelopSourceOption = Pick<RelatedProposal, 'id'> & {
+  profile: Pick<RelatedProposal['profile'], 'id' | 'name'>;
+};
+
+/** An entry's sources, or one source, read only, with a select when there are several. */
 export function DevelopSourceColumn({
   sources,
   decisionRoot,
   reviewPhases,
 }: {
   /** At least one. */
-  sources: RelatedProposal[];
+  sources: DevelopSourceOption[];
   decisionRoot: string;
   /** The earlier review phases whose reviews the caller may read. */
   reviewPhases: PreviousReviewPhase[];

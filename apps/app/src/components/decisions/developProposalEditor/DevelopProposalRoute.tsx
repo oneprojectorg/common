@@ -17,7 +17,7 @@ import { Spinner } from '@op/sense/Spinner';
 import { StatusBadge } from '@op/sense/StatusBadge';
 import type { JSONContent } from '@tiptap/react';
 import { notFound } from 'next/navigation';
-import { Suspense } from 'react';
+import { type ComponentProps, Suspense } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -30,11 +30,16 @@ import { DevelopProposalEditor } from './DevelopProposalEditor';
 import { DevelopProposalFrame } from './DevelopProposalFrame';
 import { DevelopSourceColumn } from './DevelopSourceColumn';
 import { getDevelopEntryHeading } from './getDevelopEntryHeading';
+import { isCurrentDevelopSource } from './isCurrentDevelopSource';
+
+type DevelopSources = ComponentProps<typeof DevelopSourceColumn>['sources'];
 
 /**
- * Opens a proposal developed from sources beside its source; any other
- * proposal is not found. The form is editable only for a caller who may
- * develop proposals, and only while the server reports the proposal editable.
+ * Opens a proposal developed from sources beside its source. A source of the
+ * current develop phase with no entry opens beside the note that it has none
+ * yet; any other proposal is not found. The entry's form is editable only for
+ * a caller who may develop proposals, and only while the server reports the
+ * proposal editable.
  */
 export function DevelopProposalRoute({
   instance,
@@ -54,7 +59,17 @@ export function DevelopProposalRoute({
   const sources = items.map((item) => item.proposal);
 
   if (sources.length === 0) {
-    notFound();
+    if (!isCurrentDevelopSource({ instance, proposal })) {
+      notFound();
+    }
+
+    return (
+      <DevelopSourceWithoutEntry
+        instance={instance}
+        proposal={proposal}
+        decisionSlug={decisionSlug}
+      />
+    );
   }
 
   const template = proposal.proposalTemplate ?? null;
@@ -69,39 +84,19 @@ export function DevelopProposalRoute({
   );
   const isEditable = canDevelop && proposal.isEditable === true;
 
-  const backHref = `/decisions/${decisionSlug}/current`;
+  const backHref = getDevelopBackHref(decisionSlug);
   const heading = getDevelopEntryHeading({
     template,
     fallback: t('decisions.developEditor.entryHeading'),
   });
   const description = template.description || undefined;
 
-  // Every earlier review phase, as the review screens list them. The filter
-  // mirrors the server's `canReadPhaseReviews`.
-  const isAdmin = Boolean(instance.access?.admin);
-  const canReview = Boolean(instance.access?.review);
-  const reviewPhases = instance.currentStateId
-    ? getPreviousReviewPhases(
-        instance.instanceData ?? {},
-        instance.currentStateId,
-      )
-        .filter((phase) => isAdmin || (canReview && hasOpenReviews(phase)))
-        .map((phase) => ({
-          id: phase.phaseId,
-          name: phase.name ?? phase.phaseId,
-        }))
-    : [];
-
   const sourceLabel = t('decisions.developEditor.proposalTab');
   const source = (
-    <DevelopSourceColumn
+    <InstanceSourceColumn
+      instance={instance}
+      decisionSlug={decisionSlug}
       sources={sources}
-      decisionRoot={decisionRootHref({
-        decisionSlug,
-        slug: decisionSlug,
-        instanceId: instance.id,
-      })}
-      reviewPhases={reviewPhases}
     />
   );
 
@@ -148,6 +143,93 @@ export function DevelopProposalRoute({
         decisionProfileId={instance.profileId ?? null}
       />
     </DevelopProposalFrame>
+  );
+}
+
+/**
+ * A source of the current develop phase with no entry yet: the source beside
+ * the entry's heading, the Not advanced badge, and a note that it gets an
+ * entry if it advances.
+ */
+function DevelopSourceWithoutEntry({
+  instance,
+  proposal,
+  decisionSlug,
+}: {
+  instance: ProcessInstance;
+  proposal: Proposal;
+  decisionSlug: string;
+}) {
+  const t = useTranslations('decisions');
+
+  return (
+    <DevelopProposalFrame
+      backHref={getDevelopBackHref(decisionSlug)}
+      source={
+        <InstanceSourceColumn
+          instance={instance}
+          decisionSlug={decisionSlug}
+          sources={[
+            {
+              id: proposal.id,
+              profile: { id: proposal.profileId, name: proposal.profile.name },
+            },
+          ]}
+        />
+      }
+      sourceLabel={t('developEditor.proposalTab')}
+      heading={t('developEditor.entryHeading')}
+      notice={
+        <StatusBadge variant="inactive" icon={false} className="self-start">
+          {t('develop.entryNotAdvancedStatus')}
+        </StatusBadge>
+      }
+    >
+      <p className="text-base text-muted-foreground">
+        {t('developEditor.noEntryYet')}
+      </p>
+    </DevelopProposalFrame>
+  );
+}
+
+/**
+ * The develop column of sources, with every earlier review phase the caller
+ * may read, as the review screens list them.
+ */
+function InstanceSourceColumn({
+  instance,
+  decisionSlug,
+  sources,
+}: {
+  instance: ProcessInstance;
+  decisionSlug: string;
+  sources: DevelopSources;
+}) {
+  // The filter mirrors the server's `canReadPhaseReviews`.
+  const isAdmin = Boolean(instance.access?.admin);
+  const canReview = Boolean(instance.access?.review);
+  const reviewPhases = instance.currentStateId
+    ? getPreviousReviewPhases(
+        instance.instanceData ?? {},
+        instance.currentStateId,
+      )
+        .filter((phase) => isAdmin || (canReview && hasOpenReviews(phase)))
+        .map((phase) => ({
+          id: phase.phaseId,
+          name: phase.name ?? phase.phaseId,
+        }))
+    : [];
+
+  return (
+    <DevelopSourceColumn
+      sources={sources}
+      decisionRoot={decisionRootHref({
+        decisionSlug,
+        slug: decisionSlug,
+        instanceId: instance.id,
+      })}
+      reviewPhases={reviewPhases}
+    />
   );
 }
 
@@ -249,6 +331,10 @@ function getStoredFragments(
       ([key, fragment]) => [key, isJsonContent(fragment) ? fragment : null],
     ),
   );
+}
+
+function getDevelopBackHref(decisionSlug: string): string {
+  return `/decisions/${decisionSlug}/current`;
 }
 
 function isJsonContent(value: unknown): value is JSONContent {

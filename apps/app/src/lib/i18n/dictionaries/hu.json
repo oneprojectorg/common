@@ -1680,7 +1680,8 @@
       "advancedToast": "„<bdi>{title}</bdi>” továbbjutott",
       "savedToast": "„<bdi>{title}</bdi>” mentve",
       "readOnlyNotice": "Ezt a bejegyzést megtekintheti, de nem szerkesztheti.",
-      "confirmedNotice": "Megerősítette a választásait. A módosításhoz vonja vissza a megerősítést a fejlesztési képernyőn."
+      "confirmedNotice": "Megerősítette a választásait. A módosításhoz vonja vissza a megerősítést a fejlesztési képernyőn.",
+      "noEntryYet": "Még nincs szavazólap-bejegyzés. Akkor kap egyet, ha ez a javaslat továbbjut."
     },
     "develop": {
       "heroTitle": "Javaslatok továbbjuttatása",

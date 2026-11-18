@@ -1680,7 +1680,8 @@
       "advancedToast": "“<bdi>{title}</bdi>” horay ayaa loo gudbiyay",
       "savedToast": "“<bdi>{title}</bdi>” waa la kaydiyay",
       "readOnlyNotice": "Waad arki kartaa gelistan, laakiin wax kama beddeli kartid.",
-      "confirmedNotice": "Waad xaqiijisay xulashooyinkaaga. Ka noqo xaqiijinta shaashadda horumarinta si aad isbeddel u samayso."
+      "confirmedNotice": "Waad xaqiijisay xulashooyinkaaga. Ka noqo xaqiijinta shaashadda horumarinta si aad isbeddel u samayso.",
+      "noEntryYet": "Weli ma jiro gelis warqadda codbixinta ah. Wuxuu heli doonaa mid haddii soo jeedintan ay gudubto."
     },
     "develop": {
       "heroTitle": "Horumari soo jeedinta",

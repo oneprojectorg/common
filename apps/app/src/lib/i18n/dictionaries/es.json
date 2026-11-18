@@ -1680,7 +1680,8 @@
       "advancedToast": "“<bdi>{title}</bdi>” avanzó",
       "savedToast": "Cambios en “<bdi>{title}</bdi>” guardados",
       "readOnlyNotice": "Puedes ver esta entrada, pero no editarla.",
-      "confirmedNotice": "Confirmaste tus selecciones. Anula la confirmación en la pantalla de desarrollo para hacer cambios."
+      "confirmedNotice": "Confirmaste tus selecciones. Anula la confirmación en la pantalla de desarrollo para hacer cambios.",
+      "noEntryYet": "Aún no hay entrada en la boleta. Tendrá una si esta propuesta avanza."
     },
     "develop": {
       "heroTitle": "Avanzar propuestas",
