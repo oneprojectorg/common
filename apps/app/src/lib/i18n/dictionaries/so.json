@@ -1727,7 +1727,7 @@
       "unconfirmSelectionsAction": "Ka noqo xaqiijinta",
       "confirmSelectionsTitle": "Ma xaqiijinaysaa xulashooyinkaaga?",
       "confirmCategorySelectionsTitle": "Ma xaqiijinaysaa xulashooyinka <bdi>{category}</bdi>?",
-      "confirmSelectionsDescription": "{count, plural, one {# soo jeedin ayaa u gudbaysa} other {# soo jeedin ayaa u gudbaya}} warqadda codbixinta. Soo jeedimaha kale ma gudbayaan. Maamule ayaa dib u eegaya qayb kasta oo daabacaya warqadda codbixinta.",
+      "confirmSelectionsDescription": "{count, plural, one {# soo jeedin ayaa u gudbaysa} other {# soo jeedin ayaa u gudbaya}} warqadda codbixinta, halka {notAdvancedCount, plural, one {# aanay gudbin} other {# aanay gudbin}}. Maamule ayaa dib u eegaya qayb kasta oo daabacaya warqadda codbixinta.",
       "unconfirmSelectionsTitle": "Ma ka noqonaysaa xaqiijinta xulashooyinkaaga?",
       "unconfirmCategorySelectionsTitle": "Ma ka noqonaysaa xaqiijinta xulashooyinka <bdi>{category}</bdi>?",
       "unconfirmSelectionsDescription": "Mar kale ayaad beddeli kartaa xulashooyinkaaga. Waxba ma lumayaan. Mar kale xaqiiji markaad dhammayso.",

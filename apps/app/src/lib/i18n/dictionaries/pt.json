@@ -1727,7 +1727,7 @@
       "unconfirmSelectionsAction": "Cancelar confirmação",
       "confirmSelectionsTitle": "Confirmar suas seleções?",
       "confirmCategorySelectionsTitle": "Confirmar as seleções de <bdi>{category}</bdi>?",
-      "confirmSelectionsDescription": "{count, plural, one {# proposta avança} other {# propostas avançam}} para a cédula. As outras propostas não avançam. Um administrador revisa cada categoria e publica a cédula.",
+      "confirmSelectionsDescription": "{count, plural, one {# proposta avança} other {# propostas avançam}} para a cédula e {notAdvancedCount, plural, one {# não avança} other {# não avançam}}. Um administrador revisa cada categoria e publica a cédula.",
       "unconfirmSelectionsTitle": "Cancelar a confirmação das suas seleções?",
       "unconfirmCategorySelectionsTitle": "Cancelar a confirmação das seleções de <bdi>{category}</bdi>?",
       "unconfirmSelectionsDescription": "Você poderá alterar suas seleções novamente. Nada é perdido. Confirme de novo quando terminar.",

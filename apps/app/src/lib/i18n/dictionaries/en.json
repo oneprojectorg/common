@@ -1727,7 +1727,7 @@
       "unconfirmSelectionsAction": "Unconfirm selections",
       "confirmSelectionsTitle": "Confirm your selections?",
       "confirmCategorySelectionsTitle": "Confirm <bdi>{category}</bdi>'s selections?",
-      "confirmSelectionsDescription": "{count, plural, one {# proposal advances} other {# proposals advance}} to the ballot. The other proposals do not advance. An admin reviews every category and publishes the ballot.",
+      "confirmSelectionsDescription": "{count, plural, one {# proposal advances} other {# proposals advance}} to the ballot and {notAdvancedCount, plural, one {# is} other {# are}} not advanced. An admin reviews every category and publishes the ballot.",
       "unconfirmSelectionsTitle": "Unconfirm your selections?",
       "unconfirmCategorySelectionsTitle": "Unconfirm <bdi>{category}</bdi>'s selections?",
       "unconfirmSelectionsDescription": "You can change your selections again. Nothing is lost. Confirm again when you are done.",

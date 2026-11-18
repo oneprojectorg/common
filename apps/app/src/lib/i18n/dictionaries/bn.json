@@ -1727,7 +1727,7 @@
       "unconfirmSelectionsAction": "নির্বাচনের নিশ্চিতকরণ বাতিল করুন",
       "confirmSelectionsTitle": "আপনার নির্বাচন নিশ্চিত করবেন?",
       "confirmCategorySelectionsTitle": "<bdi>{category}</bdi>-এর নির্বাচন নিশ্চিত করবেন?",
-      "confirmSelectionsDescription": "{count, plural, one {#টি প্রস্তাব} other {#টি প্রস্তাব}} ব্যালটে এগিয়ে যাবে। অন্য প্রস্তাবগুলি এগোবে না। একজন অ্যাডমিন প্রতিটি বিভাগ পর্যালোচনা করে ব্যালট প্রকাশ করবেন।",
+      "confirmSelectionsDescription": "{count, plural, one {#টি প্রস্তাব} other {#টি প্রস্তাব}} ব্যালটে এগিয়ে যাবে এবং {notAdvancedCount, plural, one {#টি} other {#টি}} এগোবে না। একজন অ্যাডমিন প্রতিটি বিভাগ পর্যালোচনা করে ব্যালট প্রকাশ করবেন।",
       "unconfirmSelectionsTitle": "আপনার নির্বাচনের নিশ্চিতকরণ বাতিল করবেন?",
       "unconfirmCategorySelectionsTitle": "<bdi>{category}</bdi>-এর নির্বাচনের নিশ্চিতকরণ বাতিল করবেন?",
       "unconfirmSelectionsDescription": "আপনি আবার আপনার নির্বাচন পরিবর্তন করতে পারবেন। কিছুই হারাবে না। কাজ শেষ হলে আবার নিশ্চিত করুন।",

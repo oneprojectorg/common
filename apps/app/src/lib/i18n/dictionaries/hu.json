@@ -1727,7 +1727,7 @@
       "unconfirmSelectionsAction": "Megerősítés visszavonása",
       "confirmSelectionsTitle": "Megerősíti a választásait?",
       "confirmCategorySelectionsTitle": "Megerősíti a(z) <bdi>{category}</bdi> választásait?",
-      "confirmSelectionsDescription": "{count, plural, one {# javaslat kerül} other {# javaslat kerül}} a szavazólapra. A többi javaslat nem jut tovább. Egy adminisztrátor minden kategóriát átnéz, és közzéteszi a szavazólapot.",
+      "confirmSelectionsDescription": "{count, plural, one {# javaslat kerül} other {# javaslat kerül}} a szavazólapra, és {notAdvancedCount, plural, one {# nem jut tovább} other {# nem jut tovább}}. Egy adminisztrátor minden kategóriát átnéz, és közzéteszi a szavazólapot.",
       "unconfirmSelectionsTitle": "Visszavonja a választásai megerősítését?",
       "unconfirmCategorySelectionsTitle": "Visszavonja a(z) <bdi>{category}</bdi> választásainak megerősítését?",
       "unconfirmSelectionsDescription": "Újra módosíthatja a választásait. Semmi sem vész el. Ha végzett, erősítse meg újra.",

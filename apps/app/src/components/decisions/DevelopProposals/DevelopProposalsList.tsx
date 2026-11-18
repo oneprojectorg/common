@@ -37,6 +37,11 @@ import {
   DevelopSourcesReadOnlyPanel,
   DevelopSourcesTableSkeleton,
 } from './DevelopSourcesPanel';
+import {
+  type DevelopSourcesInput,
+  getDevelopSourceScope,
+  getDevelopSourcesInput,
+} from './developSources';
 
 type DevelopTab = 'proposals' | 'entries';
 
@@ -81,6 +86,13 @@ export function DevelopProposalsList({
     q.decision.getDevelopConfirmState({ processInstanceId }),
   ]);
   const isReadOnly = developState.lock !== null;
+  const sourcesInput = sourcePhase
+    ? getDevelopSourcesInput({
+        processInstanceId,
+        sourcePhaseId: sourcePhase.phaseId,
+        scope: getDevelopSourceScope(instance),
+      })
+    : undefined;
 
   return (
     <>
@@ -166,6 +178,7 @@ export function DevelopProposalsList({
               developState={developState}
               processInstanceId={processInstanceId}
               advancingCount={advancing.total}
+              sourcesInput={sourcesInput}
             />
           </div>
         </FooterBarEnd>
@@ -194,10 +207,12 @@ function FooterConfirmAction({
   developState,
   processInstanceId,
   advancingCount,
+  sourcesInput,
 }: {
   developState: DevelopConfirmStateSchema;
   processInstanceId: string;
   advancingCount: number;
+  sourcesInput?: DevelopSourcesInput;
 }) {
   if (!developState.canConfirm || developState.lock === 'windowClosed') {
     return null;
@@ -217,6 +232,7 @@ function FooterConfirmAction({
       processInstanceId={processInstanceId}
       categoryNames={developState.categoryNames}
       advancingCount={advancingCount}
+      sourcesInput={sourcesInput}
     />
   );
 }
