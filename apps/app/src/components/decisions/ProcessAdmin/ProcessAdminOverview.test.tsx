@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { ProcessStatus } from '@op/api/encoders';
 import {
+  act,
   cleanup,
   fireEvent,
   render,
@@ -15,7 +16,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import en from '../../../lib/i18n/dictionaries/en.json';
 import { ProcessAdminOverview } from './ProcessAdminOverview';
 
-const { query, updateInstance } = vi.hoisted(() => {
+const { query, updateInstance } = await vi.hoisted(async () => {
+  const { useState } = await import('react');
   const query: {
     decisionProfile: unknown;
     resources: unknown[];
@@ -25,7 +27,55 @@ const { query, updateInstance } = vi.hoisted(() => {
     resources: [],
     userProfiles: [],
   };
-  return { query, updateInstance: vi.fn() };
+
+  interface Callbacks {
+    onSuccess?: (data: undefined, input: unknown) => unknown;
+    onError?: (error: Error) => unknown;
+    onSettled?: (data: undefined, error: Error | null) => unknown;
+  }
+
+  /** A mutation mock whose latest save stays pending, per hook instance, until the test settles it with `succeed` or `fail`. */
+  const pendingMutation = () => {
+    const mutate = vi.fn();
+    let settleLatest = async (_error?: Error) => {};
+
+    const useMutation = (hook: Callbacks = {}) => {
+      const [variables, setVariables] = useState<unknown>(undefined);
+      const [isPending, setIsPending] = useState(false);
+
+      return {
+        isPending,
+        variables,
+        mutate: (input: unknown, call: Callbacks = {}) => {
+          mutate(input, call);
+          setVariables(input);
+          setIsPending(true);
+          settleLatest = async (error) => {
+            if (error) {
+              await hook.onError?.(error);
+              await hook.onSettled?.(undefined, error);
+              await call.onError?.(error);
+            } else {
+              await hook.onSuccess?.(undefined, input);
+              await hook.onSettled?.(undefined, null);
+              await call.onSuccess?.(undefined, input);
+            }
+            await call.onSettled?.(undefined, error ?? null);
+            setIsPending(false);
+          };
+        },
+      };
+    };
+
+    return {
+      mutate,
+      useMutation,
+      succeed: () => settleLatest(),
+      fail: () => settleLatest(new Error('save failed')),
+    };
+  };
+
+  return { query, updateInstance: pendingMutation() };
 });
 
 const refresh = vi.hoisted(() => vi.fn());
@@ -44,37 +94,7 @@ vi.mock('@op/api/client', () => ({
       getDecisionBySlug: {
         useSuspenseQuery: () => [query.decisionProfile],
       },
-      updateDecisionInstance: {
-        // Records the call, then settles at once so the hook-level and the
-        // per-call callbacks both run. A test fails a save by making
-        // updateInstance throw.
-        useMutation: (hookOptions?: {
-          onSuccess?: (data: undefined, input: object) => void;
-          onSettled?: (data: undefined, error: null) => void;
-        }) => ({
-          mutate: (
-            input: object,
-            callOptions?: {
-              onSuccess?: () => void;
-              onSettled?: () => void;
-              onError?: () => void;
-            },
-          ) => {
-            try {
-              updateInstance(input, callOptions);
-            } catch {
-              callOptions?.onError?.();
-              callOptions?.onSettled?.();
-              return;
-            }
-            hookOptions?.onSuccess?.(undefined, input);
-            callOptions?.onSuccess?.();
-            hookOptions?.onSettled?.(undefined, null);
-            callOptions?.onSettled?.();
-          },
-          isPending: false,
-        }),
-      },
+      updateDecisionInstance: { useMutation: updateInstance.useMutation },
     },
     resources: {
       list: {
@@ -107,6 +127,9 @@ vi.mock('@/hooks/useCanLinkToProfile', () => ({
   useCanLinkToProfile: () => false,
 }));
 vi.mock('@op/logging/client', () => ({ logger: { error: () => {} } }));
+vi.mock('@op/sense/Toast', () => ({
+  toast: { success: () => {}, error: () => {} },
+}));
 
 // TipTap needs a real DOM selection; a textarea seeded from `content` that
 // emits a one-paragraph doc is enough to drive open, type and commit.
@@ -161,7 +184,9 @@ const seed = ({
   heroImage,
   body,
   isPrivate = false,
+  name = 'Community Fund',
 }: {
+  name?: string;
   status?: string;
   description?: string | null;
   phases?: object[];
@@ -172,7 +197,7 @@ const seed = ({
   isPrivate?: boolean;
 }) => {
   query.decisionProfile = {
-    name: 'Community Fund',
+    name,
     processInstance: {
       id: 'instance-1',
       profileId: 'profile-1',
@@ -190,12 +215,17 @@ const seed = ({
   };
 };
 
+const overview = (isOpen = false, aboutSlot: ReactNode = null) => (
+  <NextIntlClientProvider locale="en" messages={en}>
+    <ProcessAdminOverview slug={SLUG} isOpen={isOpen} aboutSlot={aboutSlot} />
+  </NextIntlClientProvider>
+);
+
 const renderOverview = (isOpen = false, aboutSlot: ReactNode = null) =>
-  render(
-    <NextIntlClientProvider locale="en" messages={en}>
-      <ProcessAdminOverview slug={SLUG} isOpen={isOpen} aboutSlot={aboutSlot} />
-    </NextIntlClientProvider>,
-  );
+  render(overview(isOpen, aboutSlot));
+
+const settleSave = (outcome: 'succeed' | 'fail') =>
+  act(() => updateInstance[outcome]());
 
 const phase = {
   phaseId: 'submit',
@@ -207,7 +237,7 @@ afterEach(() => {
   cleanup();
   query.resources = [];
   query.userProfiles = [];
-  updateInstance.mockClear();
+  updateInstance.mutate.mockClear();
 });
 
 describe('ProcessAdminOverview', () => {
@@ -422,20 +452,59 @@ describe('ProcessAdminOverview', () => {
     );
     await user.keyboard('Neighbourhood Fund{Enter}');
 
-    expect(updateInstance).toHaveBeenCalledTimes(1);
-    expect(updateInstance.mock.calls[0]?.[0]).toEqual({
+    expect(updateInstance.mutate).toHaveBeenCalledTimes(1);
+    expect(updateInstance.mutate.mock.calls[0]?.[0]).toEqual({
       instanceId: 'instance-1',
       name: 'Neighbourhood Fund',
     });
 
-    // The mock settles at once and the query is not refetched, so the title
-    // reads the stored name again.
     await user.click(
-      screen.getByRole('button', { name: 'Edit Community Fund' }),
+      screen.getByRole('button', { name: 'Edit Neighbourhood Fund' }),
     );
     await user.keyboard('ab{Enter}');
 
-    expect(updateInstance).toHaveBeenCalledTimes(1);
+    expect(updateInstance.mutate).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows the renamed draft title while it saves and keeps it once the server has it', async () => {
+    seed({ status: ProcessStatus.DRAFT });
+    const { rerender } = renderOverview();
+    const user = userEvent.setup();
+
+    await user.click(
+      screen.getByRole('button', { name: 'Edit Community Fund' }),
+    );
+    await user.keyboard('First Fund{Enter}');
+    await user.click(screen.getByRole('button', { name: 'Edit First Fund' }));
+    await user.keyboard('Second Fund{Enter}');
+
+    expect(
+      screen.getByRole('heading', { name: 'Second Fund', level: 1 }),
+    ).toBeTruthy();
+
+    seed({ status: ProcessStatus.DRAFT, name: 'Second Fund' });
+    await settleSave('succeed');
+    rerender(overview());
+
+    expect(
+      screen.getByRole('heading', { name: 'Second Fund', level: 1 }),
+    ).toBeTruthy();
+  });
+
+  it('puts the draft title back to the saved name when the rename fails', async () => {
+    seed({ status: ProcessStatus.DRAFT });
+    renderOverview();
+    const user = userEvent.setup();
+
+    await user.click(
+      screen.getByRole('button', { name: 'Edit Community Fund' }),
+    );
+    await user.keyboard('Neighbourhood Fund{Enter}');
+    await settleSave('fail');
+
+    expect(
+      screen.getByRole('heading', { name: 'Community Fund', level: 1 }),
+    ).toBeTruthy();
   });
 
   it('saves the name from Settings once for Enter and the blur after it', async () => {
@@ -449,8 +518,8 @@ describe('ProcessAdminOverview', () => {
     await user.type(field, 'New Fund{Enter}');
     await user.tab();
 
-    expect(updateInstance).toHaveBeenCalledTimes(1);
-    expect(updateInstance).toHaveBeenCalledWith(
+    expect(updateInstance.mutate).toHaveBeenCalledTimes(1);
+    expect(updateInstance.mutate).toHaveBeenCalledWith(
       { instanceId: 'instance-1', name: 'New Fund' },
       expect.anything(),
     );
@@ -460,19 +529,17 @@ describe('ProcessAdminOverview', () => {
     seed({});
     renderOverview();
     const user = userEvent.setup();
-    updateInstance.mockImplementationOnce(() => {
-      throw new Error('save failed');
-    });
 
     await user.click(screen.getByRole('button', { name: 'Settings' }));
     const field = await screen.findByRole('textbox', { name: 'Process name' });
     await user.clear(field);
     await user.type(field, 'New Fund{Enter}');
+    await settleSave('fail');
     await user.tab();
 
     expect(field).toHaveProperty('value', 'New Fund');
-    expect(updateInstance).toHaveBeenCalledTimes(2);
-    expect(updateInstance).toHaveBeenLastCalledWith(
+    expect(updateInstance.mutate).toHaveBeenCalledTimes(2);
+    expect(updateInstance.mutate).toHaveBeenLastCalledWith(
       { instanceId: 'instance-1', name: 'New Fund' },
       expect.anything(),
     );
@@ -492,7 +559,7 @@ describe('ProcessAdminOverview', () => {
     expect(
       screen.getByText('The name needs at least 3 characters.'),
     ).toBeTruthy();
-    expect(updateInstance).not.toHaveBeenCalled();
+    expect(updateInstance.mutate).not.toHaveBeenCalled();
   });
 
   it('saves the visibility as it is chosen', async () => {
@@ -504,7 +571,7 @@ describe('ProcessAdminOverview', () => {
     await user.click(await screen.findByRole('tab', { name: 'Visibility' }));
     await user.click(await screen.findByRole('radio', { name: /Unlisted/ }));
 
-    expect(updateInstance.mock.calls[0]?.[0]).toEqual({
+    expect(updateInstance.mutate.mock.calls[0]?.[0]).toEqual({
       instanceId: 'instance-1',
       config: { isPrivate: true },
     });
@@ -533,10 +600,38 @@ describe('ProcessAdminOverview', () => {
       await screen.findByRole('menuitem', { name: /West End Trust/ }),
     );
 
-    expect(updateInstance.mock.calls[0]?.[0]).toEqual({
+    expect(updateInstance.mutate.mock.calls[0]?.[0]).toEqual({
       instanceId: 'instance-1',
       stewardProfileId: 'org-2',
     });
+  });
+
+  it('shows the chosen steward in Settings while it saves and the stored one when it fails', async () => {
+    query.userProfiles = [
+      { id: 'org-1', name: 'East Side Collective' },
+      { id: 'org-2', name: 'West End Trust' },
+    ];
+    seed({
+      steward: { id: 'org-1', name: 'East Side Collective' },
+      owner: { id: 'org-1' },
+    });
+    renderOverview();
+    const user = userEvent.setup();
+
+    await user.click(screen.getByRole('button', { name: 'Settings' }));
+    const select = await screen.findByRole('combobox', {
+      name: 'Stewarded by',
+    });
+    await user.click(select);
+    await user.click(
+      await screen.findByRole('option', { name: /West End Trust/ }),
+    );
+
+    expect(select.textContent).toContain('West End Trust');
+
+    await settleSave('fail');
+
+    expect(select.textContent).toContain('East Side Collective');
   });
 
   it('shows the steward as plain text when the admin does not administer the owner', async () => {
@@ -570,11 +665,12 @@ describe('ProcessAdminOverview', () => {
     await user.type(aboutField(), 'Grants for the neighbourhood');
     await user.click(screen.getByRole('button', { name: 'Done' }));
 
-    expect(updateInstance).toHaveBeenCalledTimes(1);
-    expect(updateInstance.mock.calls[0]?.[0]).toEqual({
+    expect(updateInstance.mutate).toHaveBeenCalledTimes(1);
+    expect(updateInstance.mutate.mock.calls[0]?.[0]).toEqual({
       instanceId: 'instance-1',
       overview: { body: paragraphDoc('Grants for the neighbourhood') },
     });
+    await settleSave('succeed');
     expect(
       screen.queryByRole('textbox', { name: 'About the process' }),
     ).toBeNull();
@@ -592,7 +688,7 @@ describe('ProcessAdminOverview', () => {
     expect(screen.getByDisplayValue('<p>Legacy body</p>')).toBeTruthy();
     await user.click(screen.getByRole('button', { name: 'Done' }));
 
-    expect(updateInstance).not.toHaveBeenCalled();
+    expect(updateInstance.mutate).not.toHaveBeenCalled();
   });
 
   it('asks before a dirty edit is abandoned by a click elsewhere', async () => {
@@ -607,10 +703,10 @@ describe('ProcessAdminOverview', () => {
     const dialog = await screen.findByRole('alertdialog', {
       name: 'Keep your changes?',
     });
-    expect(updateInstance).not.toHaveBeenCalled();
+    expect(updateInstance.mutate).not.toHaveBeenCalled();
     await user.click(within(dialog).getByRole('button', { name: 'Discard' }));
 
-    expect(updateInstance).not.toHaveBeenCalled();
+    expect(updateInstance.mutate).not.toHaveBeenCalled();
     expect(
       screen.queryByRole('textbox', { name: 'About the process' }),
     ).toBeNull();
@@ -640,11 +736,11 @@ describe('ProcessAdminOverview', () => {
       fireEvent.change(aboutField(), { target: { value: 'a' } });
       fireEvent.change(aboutField(), { target: { value: 'ab' } });
       vi.advanceTimersByTime(999);
-      expect(updateInstance).not.toHaveBeenCalled();
+      expect(updateInstance.mutate).not.toHaveBeenCalled();
       vi.advanceTimersByTime(1);
 
-      expect(updateInstance).toHaveBeenCalledTimes(1);
-      expect(updateInstance.mock.calls[0]?.[0]).toEqual({
+      expect(updateInstance.mutate).toHaveBeenCalledTimes(1);
+      expect(updateInstance.mutate.mock.calls[0]?.[0]).toEqual({
         instanceId: 'instance-1',
         overview: { body: paragraphDoc('ab') },
       });
@@ -660,17 +756,41 @@ describe('ProcessAdminOverview', () => {
       const { unmount } = renderOverview();
 
       fireEvent.change(aboutField(), { target: { value: 'gone' } });
-      expect(updateInstance).not.toHaveBeenCalled();
+      expect(updateInstance.mutate).not.toHaveBeenCalled();
       unmount();
 
-      expect(updateInstance).toHaveBeenCalledTimes(1);
-      expect(updateInstance.mock.calls[0]?.[0]).toEqual({
+      expect(updateInstance.mutate).toHaveBeenCalledTimes(1);
+      expect(updateInstance.mutate.mock.calls[0]?.[0]).toEqual({
         instanceId: 'instance-1',
         overview: { body: paragraphDoc('gone') },
       });
     } finally {
       vi.useRealTimers();
     }
+  });
+
+  it('shows the chosen visibility while it saves and the saved one when it fails', async () => {
+    seed({});
+    renderOverview();
+    const user = userEvent.setup();
+
+    await user.click(screen.getByRole('button', { name: 'Settings' }));
+    await user.click(await screen.findByRole('tab', { name: 'Visibility' }));
+    await user.click(await screen.findByRole('radio', { name: /Unlisted/ }));
+
+    expect(
+      screen
+        .getByRole('radio', { name: /Unlisted/ })
+        .getAttribute('aria-checked'),
+    ).toBe('true');
+
+    await settleSave('fail');
+
+    expect(
+      screen
+        .getByRole('radio', { name: /Public/ })
+        .getAttribute('aria-checked'),
+    ).toBe('true');
   });
 
   it('names the banner control by whether there is a banner', () => {
