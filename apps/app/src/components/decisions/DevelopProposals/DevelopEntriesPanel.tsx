@@ -41,6 +41,7 @@ export function DevelopEntriesPanel(props: DevelopEntriesPanelProps) {
   return (
     <EntriesPanel
       {...props}
+      isEntryEditable={(entry) => entry.isEditable === true}
       renderStatusCell={(entry) => <DevelopEntryStatusCell entry={entry} />}
     />
   );
@@ -54,6 +55,7 @@ export function DevelopEntriesReadOnlyPanel(props: DevelopEntriesPanelProps) {
   return (
     <EntriesPanel
       {...props}
+      isEntryEditable={() => false}
       renderStatusCell={(entry) => <DevelopEntryDecisionCell entry={entry} />}
     />
   );
@@ -64,8 +66,10 @@ function EntriesPanel({
   phaseId,
   decisionSlug,
   entryName,
+  isEntryEditable,
   renderStatusCell,
 }: DevelopEntriesPanelProps & {
+  isEntryEditable: (entry: Proposal) => boolean;
   renderStatusCell: (entry: Proposal) => ReactNode;
 }) {
   return (
@@ -85,6 +89,7 @@ function EntriesPanel({
             <DevelopEntriesTableSuspense
               decisionSlug={decisionSlug}
               entryName={entryName}
+              isEntryEditable={isEntryEditable}
               renderStatusCell={renderStatusCell}
             />
           </Suspense>
@@ -97,10 +102,12 @@ function EntriesPanel({
 function DevelopEntriesTableSuspense({
   decisionSlug,
   entryName,
+  isEntryEditable,
   renderStatusCell,
 }: {
   decisionSlug: string;
   entryName: string;
+  isEntryEditable: (entry: Proposal) => boolean;
   renderStatusCell: (entry: Proposal) => ReactNode;
 }) {
   const t = useTranslations();
@@ -136,6 +143,7 @@ function DevelopEntriesTableSuspense({
               <DevelopEntryTitleCell
                 entry={entry}
                 decisionSlug={decisionSlug}
+                isEditable={isEntryEditable(entry)}
               />
               <DevelopEntryBudgetCell entry={entry} />
               {renderStatusCell(entry)}

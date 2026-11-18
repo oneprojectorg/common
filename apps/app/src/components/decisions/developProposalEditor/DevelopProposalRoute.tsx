@@ -38,9 +38,9 @@ type DevelopSources = ComponentProps<typeof DevelopSourceColumn>['sources'];
  * Opens a proposal developed from sources beside its source. A source of the
  * current develop phase with no entry opens beside the note that it has none
  * yet; any other proposal is not found. The entry's form is editable only for
- * a caller who may develop proposals, and only while the server reports the
- * proposal editable. A draft entry that a developer's lock keeps from
- * advancing shows as not advanced, without its form.
+ * a caller who may develop proposals, while the server reports the proposal
+ * editable and the caller has no develop lock. A draft entry that a
+ * developer's lock keeps from advancing shows as not advanced, without its form.
  */
 export function DevelopProposalRoute({
   instance,
@@ -83,7 +83,6 @@ export function DevelopProposalRoute({
   const canDevelop = Boolean(
     instance.access?.admin || instance.access?.developProposals,
   );
-  const isEditable = canDevelop && proposal.isEditable === true;
 
   const backHref = getDevelopBackHref(decisionSlug);
   const heading = getDevelopEntryHeading({
@@ -100,20 +99,6 @@ export function DevelopProposalRoute({
       sources={sources}
     />
   );
-
-  if (isEditable) {
-    return (
-      <DevelopProposalEditor
-        instance={instance}
-        proposal={proposal}
-        backHref={backHref}
-        source={source}
-        sourceLabel={sourceLabel}
-        heading={heading}
-        description={description}
-      />
-    );
-  }
 
   const readOnlyEntry = (
     <DevelopProposalFrame
@@ -146,55 +131,54 @@ export function DevelopProposalRoute({
     </DevelopProposalFrame>
   );
 
-  if (!canDevelop || proposal.status !== ProposalStatus.DRAFT) {
+  if (!canDevelop) {
     return readOnlyEntry;
   }
 
-  // A spinner, not the form, while the lock loads: a locked draft shows none.
   return (
-    <APIErrorBoundary fallbacks={{ default: () => readOnlyEntry }}>
-      <Suspense
-        fallback={
-          <DevelopProposalFrame
-            backHref={backHref}
-            source={source}
-            sourceLabel={sourceLabel}
-            heading={heading}
-          >
-            <div className="flex justify-center py-8">
-              <Spinner />
-            </div>
-          </DevelopProposalFrame>
-        }
-      >
-        <DevelopDraftEntry
-          processInstanceId={instance.id}
-          readOnlyEntry={readOnlyEntry}
-          notAdvancedEntry={
-            <NotAdvancedFrame
-              backHref={backHref}
-              source={source}
-              sourceLabel={sourceLabel}
-              heading={heading}
-            />
-          }
+    <DevelopEntryByLock
+      processInstanceId={instance.id}
+      proposal={proposal}
+      editor={
+        <DevelopProposalEditor
+          instance={instance}
+          proposal={proposal}
+          backHref={backHref}
+          source={source}
+          sourceLabel={sourceLabel}
+          heading={heading}
+          description={description}
         />
-      </Suspense>
-    </APIErrorBoundary>
+      }
+      readOnlyEntry={readOnlyEntry}
+      notAdvancedEntry={
+        <NotAdvancedFrame
+          backHref={backHref}
+          source={source}
+          sourceLabel={sourceLabel}
+          heading={heading}
+        />
+      }
+    />
   );
 }
 
 /**
- * A draft entry the caller sees read-only: not advanced once their develop
- * lock means it can no longer advance (they confirmed, or the develop window
- * closed); otherwise the read-only entry.
+ * A developer's entry by their develop lock: the editor while the proposal is
+ * editable and they have no lock; a draft as not advanced once the lock means
+ * it can no longer advance (they confirmed, or the develop window closed);
+ * otherwise the read-only entry.
  */
-function DevelopDraftEntry({
+function DevelopEntryByLock({
   processInstanceId,
+  proposal,
+  editor,
   readOnlyEntry,
   notAdvancedEntry,
 }: {
   processInstanceId: string;
+  proposal: Proposal;
+  editor: ReactNode;
   readOnlyEntry: ReactNode;
   notAdvancedEntry: ReactNode;
 }) {
@@ -202,7 +186,15 @@ function DevelopDraftEntry({
     processInstanceId,
   });
 
-  return lock === null ? readOnlyEntry : notAdvancedEntry;
+  if (lock === null && proposal.isEditable === true) {
+    return editor;
+  }
+
+  if (lock !== null && proposal.status === ProposalStatus.DRAFT) {
+    return notAdvancedEntry;
+  }
+
+  return readOnlyEntry;
 }
 
 /**

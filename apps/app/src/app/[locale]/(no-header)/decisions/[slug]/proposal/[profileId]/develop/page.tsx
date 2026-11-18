@@ -71,17 +71,28 @@ const DevelopProposalPage = async ({
     fetchDecisionBySlug(slug).catch(() => null),
   ]);
 
-  // Same input as the read in `DevelopProposalRoute`, so it hydrates.
-  const relationships = proposal
-    ? await utils.decision.listProposalRelationships
-        .fetch({
-          targetProposalId: proposal.id,
-          relationshipType: ProposalRelationshipType.DEVELOPED,
-        })
-        .catch(() => null)
-    : null;
-
   const instance = decisionProfile?.processInstance;
+  const canDevelop = Boolean(
+    instance?.access?.admin || instance?.access?.developProposals,
+  );
+
+  // Same inputs as the reads in `DevelopProposalRoute`, so they hydrate.
+  const [relationships] = await Promise.all([
+    proposal
+      ? utils.decision.listProposalRelationships
+          .fetch({
+            targetProposalId: proposal.id,
+            relationshipType: ProposalRelationshipType.DEVELOPED,
+          })
+          .catch(() => null)
+      : null,
+    instance && canDevelop
+      ? utils.decision.getDevelopConfirmState
+          .fetch({ processInstanceId: instance.id })
+          .catch(() => null)
+      : null,
+  ]);
+
   if (
     relationships &&
     relationships.items.length === 0 &&

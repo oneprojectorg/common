@@ -221,6 +221,7 @@ function DevelopAdminEntriesTableSuspense({
               <DevelopEntryTitleCell
                 entry={entry}
                 decisionSlug={decisionSlug}
+                isEditable={entry.isEditable === true}
               />
               <DevelopEntryCategoryCell entry={entry} />
               <DevelopEntryBudgetCell entry={entry} />
