@@ -26,8 +26,7 @@ import {
 
 interface DevelopEntriesPanelProps {
   processInstanceId: string;
-  /** The develop phase, whose entries are listed. */
-  phaseId: string | undefined;
+  phaseId: string;
   decisionSlug: string;
   entryName: string;
 }
@@ -47,10 +46,6 @@ export function DevelopEntriesPanel(props: DevelopEntriesPanelProps) {
   );
 }
 
-/**
- * The Entries tab for a caller who confirmed their work: each entry shows
- * whether it is advancing or not advanced, and opens read-only.
- */
 export function DevelopEntriesReadOnlyPanel(props: DevelopEntriesPanelProps) {
   return (
     <EntriesPanel

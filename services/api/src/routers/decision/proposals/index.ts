@@ -8,8 +8,8 @@ import { createDevelopedProposalRouter } from './createDeveloped';
 import { deleteProposalRouter } from './delete';
 import { exportProposalsRouter } from './export';
 import { getProposalRouter } from './get';
+import { getCategoryDevelopmentStateRouter } from './getCategoryDevelopmentState';
 import { getCollabTokenRouter } from './getCollabToken';
-import { getDevelopConfirmStateRouter } from './getDevelopConfirmState';
 import { getExportStatusRouter } from './getExportStatus';
 import { getLatestSelectionForProposalRouter } from './getLatestSelection';
 import { getProposalAdvanceTargetRouter } from './getProposalAdvanceTarget';
@@ -50,7 +50,7 @@ export const proposalsRouter = mergeRouters(
   listProposalRelationshipsRouter,
   listContributingProposalsRouter,
   listDevelopSourcesRouter,
-  getDevelopConfirmStateRouter,
+  getCategoryDevelopmentStateRouter,
   confirmCategoryDevelopmentRouter,
   unconfirmCategoryDevelopmentRouter,
   listWithReviewAggregatesRouter,

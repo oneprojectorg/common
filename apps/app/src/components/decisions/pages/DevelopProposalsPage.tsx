@@ -1,7 +1,7 @@
 'use client';
 
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
-import type { ProcessInstance } from '@op/api/encoders';
+import type { InstancePhaseData, ProcessInstance } from '@op/api/encoders';
 import { Suspense } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -22,15 +22,17 @@ import { DevelopPageShell, getEntryName } from './DevelopPageShell';
  */
 export function DevelopProposalsPage({
   instance,
+  developPhase,
   decisionSlug,
 }: {
   instance: ProcessInstance;
+  developPhase: InstancePhaseData;
   decisionSlug: string;
 }) {
   const t = useTranslations('decisions');
   const phases = instance.instanceData.phases ?? [];
   const currentIndex = phases.findIndex(
-    (phase) => phase.phaseId === instance.currentStateId,
+    (phase) => phase.phaseId === developPhase.phaseId,
   );
   // A develop phase that opens the process has nothing to develop from.
   const sourcePhase =
@@ -42,12 +44,10 @@ export function DevelopProposalsPage({
         <Suspense fallback={<DevelopProposalsListSkeleton />}>
           <DevelopProposalsList
             instance={instance}
+            phaseId={developPhase.phaseId}
             sourcePhase={sourcePhase}
             decisionSlug={decisionSlug}
-            entryName={getEntryName({
-              developPhase: phases[currentIndex],
-              t,
-            })}
+            entryName={getEntryName({ developPhase, t })}
           />
         </Suspense>
       </APIErrorBoundary>

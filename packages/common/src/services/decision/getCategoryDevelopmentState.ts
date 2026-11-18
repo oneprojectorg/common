@@ -9,37 +9,25 @@ import type { User } from '@op/supabase/lib';
 import { checkPermission, permission } from 'access-zones';
 
 import { NotFoundError, UnauthorizedError } from '../../utils';
-import { getProfileAccessRoles } from '../access';
+import { assertProfileAccess } from '../assert';
 import { type DevelopLock, getDevelopLock } from './developLock';
 import { getPhases } from './instancePhases';
 import { decisionPermission } from './permissions';
 import { isDevelopPhase } from './utils/phaseSettings';
 
-export interface DevelopConfirmState {
-  /**
-   * The caller may confirm or unconfirm their own develop work: they are not
-   * an admin, the current phase is a develop phase of a published instance,
-   * and they have at least one category reviewer row for it.
-   */
+export interface CategoryDevelopmentState {
   canConfirm: boolean;
-  /** {@link getDevelopLock} for the caller. */
   lock: DevelopLock | null;
-  /** The labels of the caller's categories for the current phase, by label. */
   categoryNames: string[];
 }
 
-/**
- * What the develop screen needs to know about the caller's own develop work
- * in the current phase. Readers: an admin of the instance profile, or a
- * holder of Develop Proposals on it. No org fallback.
- */
-export async function getDevelopConfirmState({
+export async function getCategoryDevelopmentState({
   processInstanceId,
   user,
 }: {
   processInstanceId: string;
   user: User;
-}): Promise<DevelopConfirmState> {
+}): Promise<CategoryDevelopmentState> {
   const instance = await db.query.processInstances.findFirst({
     where: { id: processInstanceId },
     columns: {
@@ -61,20 +49,21 @@ export async function getDevelopConfirmState({
 
   const [phases, roles] = await Promise.all([
     getPhases({ instance }),
-    getProfileAccessRoles({ user, profileId: instance.profileId }),
+    assertProfileAccess({
+      user,
+      profileId: instance.profileId,
+      permissions: [
+        { profile: permission.ADMIN },
+        { decisions: permission.ADMIN },
+        { decisions: decisionPermission.DEVELOP_PROPOSALS },
+      ],
+    }),
   ]);
 
   const isAdmin = checkPermission(
     [{ profile: permission.ADMIN }, { decisions: permission.ADMIN }],
     roles,
   );
-
-  if (
-    !isAdmin &&
-    !checkPermission({ decisions: decisionPermission.DEVELOP_PROPOSALS }, roles)
-  ) {
-    throw new UnauthorizedError("You don't have access to do this");
-  }
 
   const currentPhase = phases.find(
     (phase) => phase.phaseId === instance.currentStateId,

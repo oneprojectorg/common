@@ -16,7 +16,6 @@ import {
 import { Spinner } from '@op/sense/Spinner';
 import { StatusBadge } from '@op/sense/StatusBadge';
 import type { JSONContent } from '@tiptap/react';
-import { notFound } from 'next/navigation';
 import { type ComponentProps, type ReactNode, Suspense } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -30,18 +29,9 @@ import { DevelopProposalEditor } from './DevelopProposalEditor';
 import { DevelopProposalFrame } from './DevelopProposalFrame';
 import { DevelopSourceColumn } from './DevelopSourceColumn';
 import { getDevelopEntryHeading } from './getDevelopEntryHeading';
-import { isCurrentDevelopSource } from './isCurrentDevelopSource';
 
 type DevelopSources = ComponentProps<typeof DevelopSourceColumn>['sources'];
 
-/**
- * Opens a proposal developed from sources beside its source. A source of the
- * current develop phase with no entry opens beside the note that it has none
- * yet; any other proposal is not found. The entry's form is editable only for
- * a caller who may develop proposals, while the server reports the proposal
- * editable and the caller has no develop lock. A draft entry that a
- * developer's lock keeps from advancing shows as not advanced, without its form.
- */
 export function DevelopProposalRoute({
   instance,
   proposal,
@@ -60,10 +50,6 @@ export function DevelopProposalRoute({
   const sources = items.map((item) => item.proposal);
 
   if (sources.length === 0) {
-    if (!isCurrentDevelopSource({ instance, proposal })) {
-      notFound();
-    }
-
     return (
       <DevelopSourceWithoutEntry
         instance={instance}
@@ -108,27 +94,28 @@ export function DevelopProposalRoute({
       heading={heading}
       description={description}
       notice={
-        // Only a developer can be locked by their own confirm.
-        canDevelop ? (
-          <APIErrorBoundary fallbacks={{ default: () => <ReadOnlyNotice /> }}>
-            <Suspense fallback={<ReadOnlyNotice />}>
-              <DevelopLockNotice
-                processInstanceId={instance.id}
-                isAdvancing={proposal.status !== ProposalStatus.DRAFT}
-              />
-            </Suspense>
-          </APIErrorBoundary>
-        ) : (
-          <ReadOnlyNotice />
-        )
+        <div className="flex flex-col gap-6">
+          {/* Only a developer can be locked by their own confirm. */}
+          {canDevelop ? (
+            <APIErrorBoundary fallbacks={{ default: () => <ReadOnlyNotice /> }}>
+              <Suspense fallback={<ReadOnlyNotice />}>
+                <DevelopLockNotice
+                  processInstanceId={instance.id}
+                  isAdvancing={proposal.status !== ProposalStatus.DRAFT}
+                />
+              </Suspense>
+            </APIErrorBoundary>
+          ) : (
+            <ReadOnlyNotice />
+          )}
+          <ReadOnlyFields
+            initialProposal={proposal}
+            template={template}
+            decisionProfileId={instance.profileId ?? null}
+          />
+        </div>
       }
-    >
-      <ReadOnlyFields
-        initialProposal={proposal}
-        template={template}
-        decisionProfileId={instance.profileId ?? null}
-      />
-    </DevelopProposalFrame>
+    />
   );
 
   if (!canDevelop) {
@@ -163,12 +150,6 @@ export function DevelopProposalRoute({
   );
 }
 
-/**
- * A developer's entry by their develop lock: the editor while the proposal is
- * editable and they have no lock; a draft as not advanced once the lock means
- * it can no longer advance (they confirmed, or the develop window closed);
- * otherwise the read-only entry.
- */
 function DevelopEntryByLock({
   processInstanceId,
   proposal,
@@ -182,9 +163,11 @@ function DevelopEntryByLock({
   readOnlyEntry: ReactNode;
   notAdvancedEntry: ReactNode;
 }) {
-  const [{ lock }] = trpc.decision.getDevelopConfirmState.useSuspenseQuery({
-    processInstanceId,
-  });
+  const [{ lock }] = trpc.decision.getCategoryDevelopmentState.useSuspenseQuery(
+    {
+      processInstanceId,
+    },
+  );
 
   if (lock === null && proposal.isEditable === true) {
     return editor;
@@ -197,12 +180,6 @@ function DevelopEntryByLock({
   return readOnlyEntry;
 }
 
-/**
- * The develop view of a source whose entry does not advance, as it has none or
- * only a draft that can no longer advance: the source beside the entry's
- * heading, the Not advanced badge, and a note that it gets an entry if it
- * advances. No form.
- */
 function NotAdvancedFrame({
   backHref,
   source,
@@ -223,19 +200,19 @@ function NotAdvancedFrame({
       sourceLabel={sourceLabel}
       heading={heading}
       notice={
-        <StatusBadge variant="inactive" icon={false} className="self-start">
-          {t('develop.entryNotAdvancedStatus')}
-        </StatusBadge>
+        <div className="flex flex-col items-start gap-4">
+          <StatusBadge variant="inactive" icon={false}>
+            {t('develop.entryNotAdvancedStatus')}
+          </StatusBadge>
+          <p className="text-sm text-muted-foreground">
+            {t('developEditor.noEntryYet')}
+          </p>
+        </div>
       }
-    >
-      <p className="text-base text-muted-foreground">
-        {t('developEditor.noEntryYet')}
-      </p>
-    </DevelopProposalFrame>
+    />
   );
 }
 
-/** A source of the current develop phase with no entry yet. */
 function DevelopSourceWithoutEntry({
   instance,
   proposal,
@@ -268,10 +245,6 @@ function DevelopSourceWithoutEntry({
   );
 }
 
-/**
- * The develop column of sources, with every earlier review phase the caller
- * may read, as the review screens list them.
- */
 function InstanceSourceColumn({
   instance,
   decisionSlug,
@@ -309,10 +282,6 @@ function InstanceSourceColumn({
   );
 }
 
-/**
- * Why a developer sees the entry read-only: once they confirmed their work,
- * the entry's decision and how to change it; otherwise the generic notice.
- */
 function DevelopLockNotice({
   processInstanceId,
   isAdvancing,
@@ -321,22 +290,24 @@ function DevelopLockNotice({
   isAdvancing: boolean;
 }) {
   const t = useTranslations('decisions');
-  const [{ lock }] = trpc.decision.getDevelopConfirmState.useSuspenseQuery({
-    processInstanceId,
-  });
+  const [{ lock }] = trpc.decision.getCategoryDevelopmentState.useSuspenseQuery(
+    {
+      processInstanceId,
+    },
+  );
 
   if (lock !== 'confirmed') {
     return <ReadOnlyNotice />;
   }
 
   return (
-    <div aria-live="polite" className="flex flex-col items-start gap-2">
+    <div aria-live="polite" className="flex flex-col items-start gap-4">
       <StatusBadge variant={isAdvancing ? 'success' : 'inactive'} icon={false}>
         {isAdvancing
           ? t('develop.entryAdvancingStatus')
           : t('develop.entryNotAdvancedStatus')}
       </StatusBadge>
-      <p className="text-base text-muted-foreground">
+      <p className="text-sm text-muted-foreground">
         {t('developEditor.confirmedNotice')}
       </p>
     </div>
@@ -347,7 +318,7 @@ function ReadOnlyNotice() {
   const t = useTranslations('decisions');
 
   return (
-    <p aria-live="polite" className="text-base text-muted-foreground">
+    <p aria-live="polite" className="text-sm text-muted-foreground">
       {t('developEditor.readOnlyNotice')}
     </p>
   );

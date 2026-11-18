@@ -1,5 +1,6 @@
 'use client';
 
+import { getHttpStatus } from '@/utils/getHttpStatus';
 import { getMutationKey, trpc } from '@op/api/client';
 import { logger } from '@op/logging/client';
 import { Button } from '@op/sense/Button';
@@ -10,7 +11,6 @@ import { LuDownload, LuTriangleAlert } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { getHttpStatus } from './errors';
 import { usePersonalDataExportStore } from './personalDataExportStore';
 import { useDownloadPersonalDataExport } from './useDownloadPersonalDataExport';
 

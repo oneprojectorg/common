@@ -1,6 +1,7 @@
 'use client';
 
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
+import { getHttpStatus } from '@/utils/getHttpStatus';
 import { trpc } from '@op/api/client';
 import { nextCursor } from '@op/common/client';
 import { logger } from '@op/logging/client';
@@ -23,20 +24,12 @@ import { LuX } from 'react-icons/lu';
 import { useTranslations } from '@/lib/i18n';
 
 import { type DevelopSourcesInput, isSourceAdvancing } from './developSources';
-import { getHttpStatus } from './getHttpStatus';
 
 interface ConfirmActionProps {
   processInstanceId: string;
-  /** The caller's categories for the current phase; one names the dialog. */
   categoryNames: string[];
 }
 
-/**
- * Confirms all of the caller's develop work for the current phase after a
- * dialog that counts the caller's sources that advance and those that do not.
- * Disabled while nothing is advancing. No invalidation: the confirm publishes
- * on the channels the develop screen and the editor subscribe to.
- */
 export function ConfirmSelectionsAction({
   processInstanceId,
   categoryNames,
@@ -44,7 +37,6 @@ export function ConfirmSelectionsAction({
   sourcesInput,
 }: ConfirmActionProps & {
   advancingCount: number;
-  /** The sources table's query input. Omit when the phase has no sources. */
   sourcesInput?: DevelopSourcesInput;
 }) {
   const t = useTranslations('decisions.develop');
@@ -64,7 +56,6 @@ export function ConfirmSelectionsAction({
       );
     },
   });
-  const categoryName = getSingleCategoryName(categoryNames);
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -74,10 +65,10 @@ export function ConfirmSelectionsAction({
       <DialogContent showCloseButton={false}>
         <DialogHeader>
           <DialogTitle>
-            {categoryName === null
+            {categoryNames.length === 0
               ? t('confirmSelectionsTitle')
               : t.rich('confirmCategorySelectionsTitle', {
-                  category: categoryName,
+                  categories: categoryNames.join(', '),
                   bdi: (chunks) => <bdi>{chunks}</bdi>,
                 })}
           </DialogTitle>
@@ -123,10 +114,6 @@ export function ConfirmSelectionsAction({
   );
 }
 
-/**
- * Takes back the caller's confirm after a dialog, so they can change their
- * develop work again.
- */
 export function UnconfirmSelectionsAction({
   processInstanceId,
   categoryNames,
@@ -144,7 +131,6 @@ export function UnconfirmSelectionsAction({
       toast.error(t('unconfirmSelectionsError'));
     },
   });
-  const categoryName = getSingleCategoryName(categoryNames);
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -154,10 +140,10 @@ export function UnconfirmSelectionsAction({
       <DialogContent showCloseButton={false}>
         <DialogHeader>
           <DialogTitle>
-            {categoryName === null
+            {categoryNames.length === 0
               ? t('unconfirmSelectionsTitle')
               : t.rich('unconfirmCategorySelectionsTitle', {
-                  category: categoryName,
+                  categories: categoryNames.join(', '),
                   bdi: (chunks) => <bdi>{chunks}</bdi>,
                 })}
           </DialogTitle>
@@ -182,10 +168,7 @@ export function UnconfirmSelectionsAction({
   );
 }
 
-/**
- * How many of the caller's sources advance and how many do not. Both counts
- * cover every source, so the pages the sources table has not loaded load here.
- */
+/** Loads every page, as both counts cover every source. */
 function ConfirmSelectionsDescription({
   sourcesInput,
 }: {
@@ -252,9 +235,4 @@ function DialogCloseButton() {
       <LuX aria-hidden />
     </DialogClose>
   );
-}
-
-/** The one category the caller's rows cover, or `null` for several. */
-function getSingleCategoryName(categoryNames: string[]): string | null {
-  return categoryNames.length === 1 ? (categoryNames[0] ?? null) : null;
 }

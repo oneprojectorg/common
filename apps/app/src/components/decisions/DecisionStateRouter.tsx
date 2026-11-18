@@ -130,7 +130,11 @@ function DecisionPage({
     if (currentPhase && isDevelopPhase(currentPhase) && decisionSlug) {
       if (isAdmin) {
         return (
-          <DevelopAdminPage instance={instance} decisionSlug={decisionSlug} />
+          <DevelopAdminPage
+            instance={instance}
+            developPhase={currentPhase}
+            decisionSlug={decisionSlug}
+          />
         );
       }
 
@@ -138,6 +142,7 @@ function DecisionPage({
         return (
           <DevelopProposalsPage
             instance={instance}
+            developPhase={currentPhase}
             decisionSlug={decisionSlug}
           />
         );

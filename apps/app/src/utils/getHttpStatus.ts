@@ -1,6 +1,6 @@
 import { isTRPCClientError } from '@op/api/client';
 
-/** The HTTP status of a failed develop call; the client types `error.data` as `object`. */
+// The client types `error.data` as `object`.
 export function getHttpStatus(error: unknown): number | undefined {
   return isTRPCClientError(error) &&
     error.data &&
