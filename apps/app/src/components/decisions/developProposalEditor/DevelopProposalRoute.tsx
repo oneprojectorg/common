@@ -182,9 +182,11 @@ function DevelopEntryByLock({
   readOnlyEntry: ReactNode;
   notAdvancedEntry: ReactNode;
 }) {
-  const [{ lock }] = trpc.decision.getDevelopConfirmState.useSuspenseQuery({
-    processInstanceId,
-  });
+  const [{ lock }] = trpc.decision.getCategoryDevelopmentState.useSuspenseQuery(
+    {
+      processInstanceId,
+    },
+  );
 
   if (lock === null && proposal.isEditable === true) {
     return editor;
@@ -321,9 +323,11 @@ function DevelopLockNotice({
   isAdvancing: boolean;
 }) {
   const t = useTranslations('decisions');
-  const [{ lock }] = trpc.decision.getDevelopConfirmState.useSuspenseQuery({
-    processInstanceId,
-  });
+  const [{ lock }] = trpc.decision.getCategoryDevelopmentState.useSuspenseQuery(
+    {
+      processInstanceId,
+    },
+  );
 
   if (lock !== 'confirmed') {
     return <ReadOnlyNotice />;

@@ -1,17 +1,17 @@
-import { Channels, getDevelopConfirmState } from '@op/common';
+import { Channels, getCategoryDevelopmentState } from '@op/common';
 import {
   categoryReviewerStatusInputSchema,
-  developConfirmStateSchema,
+  categoryDevelopmentStateSchema,
 } from '@op/common/client';
 
 import { networkAuthenticatedProcedure, router } from '../../../trpcFactory';
 
-export const getDevelopConfirmStateRouter = router({
-  getDevelopConfirmState: networkAuthenticatedProcedure()
+export const getCategoryDevelopmentStateRouter = router({
+  getCategoryDevelopmentState: networkAuthenticatedProcedure()
     .input(categoryReviewerStatusInputSchema)
-    .output(developConfirmStateSchema)
+    .output(categoryDevelopmentStateSchema)
     .query(async ({ ctx, input }) => {
-      const state = await getDevelopConfirmState({
+      const state = await getCategoryDevelopmentState({
         processInstanceId: input.processInstanceId,
         user: ctx.user,
       });

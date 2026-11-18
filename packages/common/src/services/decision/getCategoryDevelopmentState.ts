@@ -15,7 +15,7 @@ import { getPhases } from './instancePhases';
 import { decisionPermission } from './permissions';
 import { isDevelopPhase } from './utils/phaseSettings';
 
-export interface DevelopConfirmState {
+export interface CategoryDevelopmentState {
   /**
    * The caller may confirm or unconfirm their own develop work: they are not
    * an admin, the current phase is a develop phase of a published instance,
@@ -33,13 +33,13 @@ export interface DevelopConfirmState {
  * in the current phase. Readers: an admin of the instance profile, or a
  * holder of Develop Proposals on it. No org fallback.
  */
-export async function getDevelopConfirmState({
+export async function getCategoryDevelopmentState({
   processInstanceId,
   user,
 }: {
   processInstanceId: string;
   user: User;
-}): Promise<DevelopConfirmState> {
+}): Promise<CategoryDevelopmentState> {
   const instance = await db.query.processInstances.findFirst({
     where: { id: processInstanceId },
     columns: {

@@ -7,7 +7,7 @@ import {
   type ProcessInstance,
   ProposalStatus,
 } from '@op/api/encoders';
-import type { DevelopConfirmStateSchema } from '@op/common/client';
+import type { CategoryDevelopmentStateSchema } from '@op/common/client';
 import { BadgeNumber } from '@op/sense/Badge';
 import {
   FooterBar,
@@ -83,7 +83,7 @@ export function DevelopProposalsList({
       status: ProposalStatus.SUBMITTED,
       limit: 1,
     }),
-    q.decision.getDevelopConfirmState({ processInstanceId }),
+    q.decision.getCategoryDevelopmentState({ processInstanceId }),
   ]);
   const isReadOnly = developState.lock !== null;
   const sourcesInput = sourcePhase
@@ -209,7 +209,7 @@ function FooterConfirmAction({
   advancingCount,
   sourcesInput,
 }: {
-  developState: DevelopConfirmStateSchema;
+  developState: CategoryDevelopmentStateSchema;
   processInstanceId: string;
   advancingCount: number;
   sourcesInput?: DevelopSourcesInput;

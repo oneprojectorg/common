@@ -11,7 +11,7 @@ import { createAuthenticatedCaller } from '../../../test/supabase-utils';
 
 type OnTestFinished = (fn: () => void | Promise<void>) => void;
 
-describe.concurrent('getDevelopConfirmState', () => {
+describe.concurrent('getCategoryDevelopmentState', () => {
   it('lets a Develop Proposals holder with no row for the phase read it, without the confirm', async ({
     task,
     onTestFinished,
@@ -29,7 +29,7 @@ describe.concurrent('getDevelopConfirmState', () => {
     });
     const caller = await createAuthenticatedCaller(reviewer.email);
 
-    const state = await caller.decision.getDevelopConfirmState({
+    const state = await caller.decision.getCategoryDevelopmentState({
       processInstanceId: instanceId,
     });
 
@@ -55,7 +55,7 @@ describe.concurrent('getDevelopConfirmState', () => {
     });
     const caller = await createAuthenticatedCaller(reviewer.email);
 
-    const state = await caller.decision.getDevelopConfirmState({
+    const state = await caller.decision.getCategoryDevelopmentState({
       processInstanceId: instanceId,
     });
 
@@ -85,14 +85,14 @@ describe.concurrent('getDevelopConfirmState', () => {
     await caller.decision.confirmCategoryDevelopment({
       processInstanceId: instanceId,
     });
-    const confirmed = await caller.decision.getDevelopConfirmState({
+    const confirmed = await caller.decision.getCategoryDevelopmentState({
       processInstanceId: instanceId,
     });
 
     await caller.decision.unconfirmCategoryDevelopment({
       processInstanceId: instanceId,
     });
-    const unconfirmed = await caller.decision.getDevelopConfirmState({
+    const unconfirmed = await caller.decision.getCategoryDevelopmentState({
       processInstanceId: instanceId,
     });
 
@@ -115,7 +115,7 @@ describe.concurrent('getDevelopConfirmState', () => {
     });
     const adminCaller = await createAuthenticatedCaller(setup.userEmail);
 
-    const state = await adminCaller.decision.getDevelopConfirmState({
+    const state = await adminCaller.decision.getCategoryDevelopmentState({
       processInstanceId: instanceId,
     });
 
@@ -142,7 +142,9 @@ describe.concurrent('getDevelopConfirmState', () => {
     const caller = await createAuthenticatedCaller(reviewer.email);
 
     await expect(
-      caller.decision.getDevelopConfirmState({ processInstanceId: instanceId }),
+      caller.decision.getCategoryDevelopmentState({
+        processInstanceId: instanceId,
+      }),
     ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
   });
 });

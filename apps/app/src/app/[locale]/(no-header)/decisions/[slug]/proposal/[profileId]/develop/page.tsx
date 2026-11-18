@@ -87,7 +87,7 @@ const DevelopProposalPage = async ({
           .catch(() => null)
       : null,
     instance && canDevelop
-      ? utils.decision.getDevelopConfirmState
+      ? utils.decision.getCategoryDevelopmentState
           .fetch({ processInstanceId: instance.id })
           .catch(() => null)
       : null,
