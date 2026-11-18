@@ -1,4 +1,9 @@
-import { ProcessStatus, ProposalStatus } from '@op/db/schema';
+import { db, eq } from '@op/db/client';
+import {
+  ProcessStatus,
+  ProposalStatus,
+  decisionTransitionProposals,
+} from '@op/db/schema';
 
 import {
   TEST_PERMISSION_BITS,
@@ -10,7 +15,8 @@ import type { TestDecisionsDataManager } from './TestDecisionsDataManager';
 /**
  * A published instance in its develop phase ("final") with `sourceCount`
  * submitted proposals from the previous phase ("initial"): `source`, then
- * `otherSources`. The setup user is an admin of the instance.
+ * `otherSources`. The setup user is an admin of the instance. The develop
+ * window is open: no selection is confirmed yet.
  */
 export async function createDevelopPhaseSetup({
   testData,
@@ -50,8 +56,23 @@ export async function createDevelopPhaseSetup({
     fromPhaseId: 'initial',
     toPhaseId: 'final',
   });
+  await openDevelopWindow({ instanceId });
 
   return { setup, instanceId, source, otherSources };
+}
+
+/**
+ * Detaches every proposal from the inbound transition, so the selections of
+ * the current phase are pending and the develop window is open.
+ */
+export async function openDevelopWindow({
+  instanceId,
+}: {
+  instanceId: string;
+}): Promise<void> {
+  await db
+    .delete(decisionTransitionProposals)
+    .where(eq(decisionTransitionProposals.processInstanceId, instanceId));
 }
 
 /**
