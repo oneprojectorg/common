@@ -1,12 +1,18 @@
-import { Header1 } from '@op/sense/Header';
+import {
+  HydrationBoundary,
+  createServerUtils,
+  dehydrate,
+} from '@op/api/server';
 import type { Metadata } from 'next';
 
 import { getTranslations } from '@/lib/i18n';
 
-import { loadProcessAdmin } from '../loadProcessAdmin';
+import { ProcessAdminOverview } from '@/components/decisions/ProcessAdmin/ProcessAdminOverview';
+import { getViewableOverviewBody } from '@/components/decisions/ProcessAdmin/getViewableOverviewBody';
+import { isProcessOpen } from '@/components/decisions/ProcessAdmin/processAdminStatus';
+import { RichTextRenderer } from '@/components/decisions/RichTextRenderer';
 
-// Untranslated on purpose: placeholder until the overview replaces it.
-const UNDER_CONSTRUCTION = 'The new process admin is being built here.';
+import { loadProcessAdmin } from '../loadProcessAdmin';
 
 interface ManageDecisionPageProps {
   params: Promise<{ slug: string; locale: string }>;
@@ -28,11 +34,32 @@ const ManageDecisionPage = async ({ params }: ManageDecisionPageProps) => {
   const { slug } = await params;
   const { decisionProfile } = await loadProcessAdmin(slug);
 
+  // Seed the cache with the gate's read so the overview renders without
+  // suspending. The client still refetches it in the background once stale.
+  const { utils, queryClient } = await createServerUtils();
+  queryClient.setQueryData(
+    utils.decision.getDecisionBySlug.queryOptions({ slug }).queryKey,
+    decisionProfile,
+  );
+
+  const instance = decisionProfile.processInstance;
+  if (instance.profileId) {
+    await utils.resources.list.prefetch({ profileId: instance.profileId });
+  }
+  const isOpen = isProcessOpen({
+    status: instance.status,
+    phases: instance.instanceData.phases,
+  });
+
+  // Same server render as the public page, so admins and participants see one
+  // renderer and the body is in the HTML instead of appearing after hydration.
+  const body = getViewableOverviewBody(instance.instanceData.overview?.body);
+  const aboutSlot = body ? <RichTextRenderer content={body} /> : null;
+
   return (
-    <main className="flex min-h-dvh flex-col gap-4 bg-background px-4 py-12 md:px-6">
-      <Header1>{decisionProfile.name}</Header1>
-      <p className="text-muted-foreground">{UNDER_CONSTRUCTION}</p>
-    </main>
+    <HydrationBoundary state={dehydrate(queryClient)}>
+      <ProcessAdminOverview slug={slug} isOpen={isOpen} aboutSlot={aboutSlot} />
+    </HydrationBoundary>
   );
 };
 

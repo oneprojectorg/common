@@ -36,6 +36,8 @@ interface EditableTextProps extends Omit<
   disabled?: boolean;
   /** Wraps long text onto more lines instead of truncating it; still one line of text, so Enter commits. */
   wrap?: boolean;
+  /** Centres the text and the field, for a title on a centred page; `start` follows the page direction. */
+  align?: 'start' | 'center';
   maxLength?: number;
 }
 
@@ -51,6 +53,7 @@ function EditableText({
   placeholder,
   disabled = false,
   wrap = false,
+  align = 'start',
   maxLength,
   className,
   ...props
@@ -97,7 +100,15 @@ function EditableText({
     wrap ? 'items-start' : 'items-center',
     className,
   );
-  const text = <DisplayText muted={isBlank} wrap={wrap} text={shownText} />;
+  const isCentered = align === 'center';
+  const text = (
+    <DisplayText
+      muted={isBlank}
+      wrap={wrap}
+      centered={isCentered}
+      text={shownText}
+    />
+  );
 
   if (disabled) {
     return (
@@ -185,7 +196,7 @@ function EditableText({
             unstyled
             rows={1}
             enterKeyHint="done"
-            className="overflow-hidden"
+            className={cn('overflow-hidden', isCentered && 'text-center')}
             {...fieldProps}
           />
         ) : (
@@ -196,7 +207,10 @@ function EditableText({
               // No intrinsic width, or the grid would take the field's default 20 characters over the mirror.
               size={1}
               enterKeyHint="done"
-              className="col-start-1 row-start-1"
+              className={cn(
+                'col-start-1 row-start-1',
+                isCentered && 'text-center',
+              )}
               {...fieldProps}
             />
             <span
@@ -239,10 +253,12 @@ function DisplayText({
   text,
   muted,
   wrap,
+  centered,
 }: {
   text: string;
   muted: boolean;
   wrap: boolean;
+  centered: boolean;
 }) {
   // The text takes its direction on the element, with alignment pinned to the
   // page: truncation needs that, and the same pair serves wrapped text.
@@ -250,7 +266,8 @@ function DisplayText({
     <span
       dir="auto"
       className={cn(
-        'block min-w-0 ltr:text-left rtl:text-right',
+        'block min-w-0',
+        centered ? 'text-center' : 'ltr:text-left rtl:text-right',
         wrap ? 'wrap-break-word whitespace-normal' : 'truncate',
         muted && 'text-muted-foreground',
       )}

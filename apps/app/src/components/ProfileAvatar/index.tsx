@@ -13,6 +13,8 @@ type ProfileAvatarProps = {
     avatarImage?: { name?: string | null } | null;
   } | null;
   withLink?: boolean;
+  /** Defaults to the name; pass "" when a visible name sits beside the avatar. */
+  alt?: string;
   className?: string;
 };
 
@@ -27,6 +29,7 @@ type ProfileAvatarProps = {
 export const ProfileAvatar = ({
   profile,
   withLink = true,
+  alt,
   className,
 }: ProfileAvatarProps) => {
   const canLinkToProfile = useCanLinkToProfile();
@@ -51,7 +54,7 @@ export const ProfileAvatar = ({
       href={linked ? `/profile/${slug}` : undefined}
       name={placeholderSeed}
       src={src}
-      alt={name}
+      alt={alt ?? name}
       className={cn('size-6', className)}
     />
   );

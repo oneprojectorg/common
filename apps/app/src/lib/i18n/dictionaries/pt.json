@@ -2034,7 +2034,27 @@
       "workThemUpDescription": "O que avança é transformado em algo mais completo."
     },
     "processAdmin": {
-      "pageTitle": "Gerenciar {decisionName}"
+      "pageTitle": "Gerenciar {decisionName}",
+      "backToEditor": "Voltar ao editor",
+      "viewProcess": "Ver processo",
+      "stewardedBy": "Gerenciado por <steward>{name}</steward>",
+      "aboutHeading": "Sobre o processo",
+      "statusDraft": "Rascunho",
+      "statusLive": "Ativo",
+      "statusCompleted": "Concluído",
+      "statusCancelled": "Cancelado",
+      "noPhasesTitle": "Ainda não há fases",
+      "noPhasesDescription": "As fases que você adicionar no editor aparecem aqui.",
+      "noResourcesTitle": "Nenhum recurso fixado",
+      "noResourcesDescription": "Guias, documentos e links que os participantes podem consultar.",
+      "noAboutTitle": "Ainda não há descrição",
+      "noAboutDescription": "Descreva o processo no editor para que os participantes saibam para que ele serve.",
+      "editTitleHint": "Editar",
+      "processNameLabel": "Nome do processo",
+      "processNameTooShort": "O nome precisa ter pelo menos {min} caracteres.",
+      "saveError": "Sua alteração não foi salva.",
+      "addBannerAction": "Adicionar banner",
+      "launchAction": "Lançar processo"
     }
   },
   "loadingProgress": "Carregando...",

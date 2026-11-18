@@ -62,6 +62,13 @@ export const Wrap: Story = {
   decorators: narrow,
 };
 
+// `align="center"`: each wrapped line is centred, at rest and in the field, for
+// a title on a centred page.
+export const Centered: Story = {
+  args: { value: LONG_TITLE, wrap: true, align: 'center' },
+  decorators: narrow,
+};
+
 // Arabic on an Arabic page, and English on an Arabic page: the title takes its
 // direction from its text (`dir="auto"`) with alignment pinned to the page, and
 // the field picks its direction from the text being typed.

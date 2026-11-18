@@ -2034,7 +2034,27 @@
       "workThemUpDescription": "What advances gets built into something fuller."
     },
     "processAdmin": {
-      "pageTitle": "Manage {decisionName}"
+      "pageTitle": "Manage {decisionName}",
+      "backToEditor": "Back to editor",
+      "viewProcess": "View process",
+      "stewardedBy": "Stewarded by <steward>{name}</steward>",
+      "aboutHeading": "About the process",
+      "statusDraft": "Draft",
+      "statusLive": "Live",
+      "statusCompleted": "Completed",
+      "statusCancelled": "Cancelled",
+      "noPhasesTitle": "No phases yet",
+      "noPhasesDescription": "Phases you add in the editor appear here.",
+      "noResourcesTitle": "No pinned resources",
+      "noResourcesDescription": "Guides, documents and links participants can refer to.",
+      "noAboutTitle": "No description yet",
+      "noAboutDescription": "Describe the process in the editor so participants know what it is for.",
+      "editTitleHint": "Edit",
+      "processNameLabel": "Process name",
+      "processNameTooShort": "The name needs at least {min} characters.",
+      "saveError": "Your change was not saved.",
+      "addBannerAction": "Add banner",
+      "launchAction": "Launch process"
     }
   },
   "loadingProgress": "Loading...",
