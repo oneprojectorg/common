@@ -1,8 +1,12 @@
 'use client';
 
+import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
+import { trpc } from '@op/api/client';
 import type { ProcessInstance } from '@op/api/encoders';
+import { BadgeNumber } from '@op/sense/Badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@op/sense/Tabs';
 import { parseAsStringLiteral, useQueryState } from 'nuqs';
+import { Suspense } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -11,8 +15,8 @@ import { DevelopAdminEntriesPanel } from '../DevelopProposals/DevelopAdminEntrie
 import { DevelopAdminPublishFooter } from '../DevelopProposals/DevelopAdminPublishFooter';
 import { DevelopPageShell, getEntryName } from './DevelopPageShell';
 
-const DEVELOP_TABS = ['entries', 'categories'] as const;
-const DEFAULT_DEVELOP_TAB = 'entries';
+const DEVELOP_TABS = ['categories', 'entries'] as const;
+const DEFAULT_DEVELOP_TAB = 'categories';
 
 // Not `tab`, which the review screen on this route reads.
 const DEVELOP_TAB_PARAM = 'developTab';
@@ -54,13 +58,25 @@ export function DevelopAdminPage({
           aria-label={t('develop.tabsLabel')}
           className="[&>[data-slot=tabs-trigger]:first-child]:ps-0"
         >
-          <TabsTrigger value="entries">
-            <bdi>{entryName}</bdi>
-          </TabsTrigger>
           <TabsTrigger value="categories">
             {t('develop.categoriesTab')}
           </TabsTrigger>
+          <TabsTrigger value="entries">
+            <bdi>{entryName}</bdi>
+            <APIErrorBoundary fallbacks={{ default: () => null }}>
+              <Suspense fallback={null}>
+                <DevelopAdminEntriesTotalSuspense
+                  processInstanceId={instance.id}
+                  phaseId={phaseId}
+                />
+              </Suspense>
+            </APIErrorBoundary>
+          </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="categories">
+          <DevelopAdminCategoriesPanel processInstanceId={instance.id} />
+        </TabsContent>
 
         <TabsContent value="entries">
           <DevelopAdminEntriesPanel
@@ -70,13 +86,25 @@ export function DevelopAdminPage({
             entryName={entryName}
           />
         </TabsContent>
-
-        <TabsContent value="categories">
-          <DevelopAdminCategoriesPanel processInstanceId={instance.id} />
-        </TabsContent>
       </Tabs>
 
       <DevelopAdminPublishFooter processInstanceId={instance.id} />
     </DevelopPageShell>
   );
+}
+
+function DevelopAdminEntriesTotalSuspense({
+  processInstanceId,
+  phaseId,
+}: {
+  processInstanceId: string;
+  phaseId: string | undefined;
+}) {
+  const [{ total }] = trpc.decision.listProposals.useSuspenseQuery({
+    processInstanceId,
+    phaseId,
+    limit: 1,
+  });
+
+  return <BadgeNumber variant="secondary">{total}</BadgeNumber>;
 }
