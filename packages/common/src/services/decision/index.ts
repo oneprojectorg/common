@@ -133,6 +133,7 @@ export * from './getPhaseReviewAssignments';
 export * from './generateReviewAssignments';
 export * from './runGenerateReviewAssignments';
 export * from './backfillReviewAssignments';
+export * from './backfillShortCodes';
 export * from './pruneReviewAssignmentsForMember';
 export * from './reconcileReviewAssignments';
 export * from './getEligibleReviewerProfileIds';
