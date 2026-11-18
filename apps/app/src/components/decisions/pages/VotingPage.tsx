@@ -82,7 +82,11 @@ export function VotingPage({
 
   return (
     <div className="min-h-full">
-      <DecisionHeroBanner heroImagePath={heroImagePath}>
+      <DecisionHeroBanner
+        instanceId={instanceId}
+        heroImagePath={heroImagePath}
+        isAdmin={instance.access?.admin === true}
+      >
         <div className="mx-auto flex max-w-3xl flex-col justify-center gap-4 px-4 pt-16 pb-8 md:pb-16">
           <DecisionHero
             title={heroTitle}

@@ -9,8 +9,8 @@ import { useTranslations } from '@/lib/i18n';
 import { BannerUploadModal } from './BannerUploadModal';
 
 /**
- * Desktop "Edit banner" control on the overview hero (top-right). Hidden on
- * mobile, where the admin bar + bottom sheet (AdminOverviewBar) takes over.
+ * Desktop "Edit banner" control on the overview and phase heroes (top-right).
+ * Hidden on mobile, where the admin bar + bottom sheet (AdminOverviewBar) takes over.
  */
 export function EditBannerModal({
   instanceId,
