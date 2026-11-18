@@ -8,7 +8,12 @@ import {
   assertCategoryDevelopAccess,
   categoryDevelopRowsWhere,
 } from './assertCategoryDevelopAccess';
-import type { CategoryDevelopmentRow } from './listCategoryDevelopmentStatus';
+import type { CategoryReviewerStatusSchema } from './schemas/reviews';
+
+type CategoryDevelopmentRow = Pick<
+  CategoryReviewerStatusSchema,
+  'reviewerProfileId' | 'developConfirmedAt'
+>;
 
 /**
  * Removes `data.developConfirmedAt` from category reviewer rows for the
