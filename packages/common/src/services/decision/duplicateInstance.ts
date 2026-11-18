@@ -233,17 +233,15 @@ function buildInstanceData(
     });
   } else if (source.phases.length > 0) {
     // Even without phase details, we need at least minimal phase references
-    base.phases = source.phases.map(
-      (phase): PhaseInstanceData => ({
-        phaseId: phase.phaseId,
-        name: phase.name,
-        // Minimal phase - just identity, plus the phase rubric when the
-        // rubric flag asks for it.
-        ...(include.reviewRubric && phase.rubricTemplate
-          ? { rubricTemplate: phase.rubricTemplate }
-          : {}),
-      }),
-    );
+    base.phases = source.phases.map((phase): PhaseInstanceData => ({
+      phaseId: phase.phaseId,
+      name: phase.name,
+      // Minimal phase - just identity, plus the phase rubric when the
+      // rubric flag asks for it.
+      ...(include.reviewRubric && phase.rubricTemplate
+        ? { rubricTemplate: phase.rubricTemplate }
+        : {}),
+    }));
   }
 
   // Proposal template
