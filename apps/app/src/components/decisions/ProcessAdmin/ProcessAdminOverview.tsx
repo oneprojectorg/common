@@ -38,6 +38,7 @@ import { toProcessPhases } from '../toProcessPhases';
 import { ProcessAdminBanner } from './ProcessAdminBanner';
 import { ProcessAdminLaunchButton } from './ProcessAdminLaunchButton';
 import { ProcessAdminOverviewSkeleton } from './ProcessAdminOverviewSkeleton';
+import { ProcessAdminSettingsDialog } from './ProcessAdminSettingsDialog';
 import { ProcessAdminTitle } from './ProcessAdminTitle';
 import { ProcessAdminsDialog } from './ProcessAdminsDialog';
 import {
@@ -163,7 +164,7 @@ function ProcessAdminOverviewSuspense({
 }
 
 // A draft manages its admins from the bar and cannot launch from here yet; a
-// live process links to what participants see.
+// live process gets Settings and a link to what participants see.
 function ProcessAdminTopBar({
   slug,
   process,
@@ -196,9 +197,16 @@ function ProcessAdminTopBar({
     );
   } else if (process) {
     actions = (
-      <ButtonLink href={`/decisions/${slug}`} variant="link">
-        {t('viewProcess')}
-      </ButtonLink>
+      <>
+        <ProcessAdminSettingsDialog
+          slug={slug}
+          name={process.name}
+          instance={process.instance}
+        />
+        <ButtonLink href={`/decisions/${slug}`} variant="link">
+          {t('viewProcess')}
+        </ButtonLink>
+      </>
     );
   }
 

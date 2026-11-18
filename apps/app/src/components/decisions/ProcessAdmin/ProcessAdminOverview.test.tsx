@@ -404,7 +404,7 @@ describe('ProcessAdminOverview', () => {
     ).toContain(`/decisions/${SLUG}/edit`);
   });
 
-  it('gives a draft its admins and an inert launch, not the public view', () => {
+  it('gives a draft its admins and an inert launch, not Settings', () => {
     seed({ status: ProcessStatus.DRAFT });
     renderOverview();
 
@@ -414,13 +414,15 @@ describe('ProcessAdminOverview', () => {
         .getByRole('button', { name: 'Launch process' })
         .getAttribute('aria-disabled'),
     ).toBe('true');
+    expect(screen.queryByRole('button', { name: 'Settings' })).toBeNull();
     expect(screen.queryByRole('link', { name: 'View process' })).toBeNull();
   });
 
-  it('gives a live process the public view, not a launch', () => {
+  it('gives a live process Settings and the public view, not a launch', () => {
     seed({});
     renderOverview();
 
+    expect(screen.getByRole('button', { name: 'Settings' })).toBeTruthy();
     expect(
       screen.getByRole('link', { name: 'View process' }).getAttribute('href'),
     ).toContain(`/decisions/${SLUG}`);
@@ -569,6 +571,100 @@ describe('ProcessAdminOverview', () => {
     expect(utils.invalidate).toHaveBeenCalledWith({ slug: SLUG }, undefined, {
       cancelRefetch: false,
     });
+  });
+
+  it('saves the name from Settings once for Enter and the blur after it', async () => {
+    seed({});
+    renderOverview();
+    const user = userEvent.setup();
+
+    await user.click(screen.getByRole('button', { name: 'Settings' }));
+    const field = await screen.findByRole('textbox', { name: 'Process name' });
+    await user.clear(field);
+    await user.type(field, 'New Fund{Enter}');
+    await user.tab();
+
+    expect(updateInstance.mutate).toHaveBeenCalledTimes(1);
+    expect(updateInstance.mutate).toHaveBeenCalledWith(
+      { instanceId: 'instance-1', name: 'New Fund' },
+      expect.anything(),
+    );
+  });
+
+  it('retries a Settings rename on the next blur after the save fails', async () => {
+    seed({});
+    renderOverview();
+    const user = userEvent.setup();
+
+    await user.click(screen.getByRole('button', { name: 'Settings' }));
+    const field = await screen.findByRole('textbox', { name: 'Process name' });
+    await user.clear(field);
+    await user.type(field, 'New Fund{Enter}');
+    await settleSave('fail');
+    await user.tab();
+
+    expect(field).toHaveProperty('value', 'New Fund');
+    expect(updateInstance.mutate).toHaveBeenCalledTimes(2);
+    expect(updateInstance.mutate).toHaveBeenLastCalledWith(
+      { instanceId: 'instance-1', name: 'New Fund' },
+      expect.anything(),
+    );
+  });
+
+  it('keeps a too-short name out of Settings saves and says why', async () => {
+    seed({});
+    renderOverview();
+    const user = userEvent.setup();
+
+    await user.click(screen.getByRole('button', { name: 'Settings' }));
+    const field = await screen.findByRole('textbox', { name: 'Process name' });
+    await user.clear(field);
+    await user.type(field, 'ab');
+    await user.tab();
+
+    expect(
+      screen.getByText('The name needs at least 3 characters.'),
+    ).toBeTruthy();
+    expect(updateInstance.mutate).not.toHaveBeenCalled();
+  });
+
+  it('saves the visibility as it is chosen', async () => {
+    seed({});
+    renderOverview();
+    const user = userEvent.setup();
+
+    await user.click(screen.getByRole('button', { name: 'Settings' }));
+    await user.click(await screen.findByRole('tab', { name: 'Visibility' }));
+    await user.click(await screen.findByRole('radio', { name: /Unlisted/ }));
+
+    expect(updateInstance.mutate.mock.calls[0]?.[0]).toEqual({
+      instanceId: 'instance-1',
+      config: { isPrivate: true },
+    });
+  });
+
+  it('shows the chosen visibility while it saves and the saved one when it fails', async () => {
+    seed({});
+    renderOverview();
+    const user = userEvent.setup();
+
+    await user.click(screen.getByRole('button', { name: 'Settings' }));
+    await user.click(await screen.findByRole('tab', { name: 'Visibility' }));
+    await user.click(await screen.findByRole('radio', { name: /Unlisted/ }));
+
+    expect(
+      screen
+        .getByRole('radio', { name: /Unlisted/ })
+        .getAttribute('aria-checked'),
+    ).toBe('true');
+
+    await settleSave('fail');
+
+    expect(
+      screen
+        .getByRole('radio', { name: /Public/ })
+        .getAttribute('aria-checked'),
+    ).toBe('true');
   });
 
   it('names the banner control by whether there is a banner', () => {
