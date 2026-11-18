@@ -16,10 +16,16 @@ const { data, spies, mutation } = vi.hoisted(() => {
     roles: object[];
     members: { email: string; roles: { id: string }[] }[];
     invites: object[];
+    searchResults: object[] | undefined;
+    searchFailed: boolean;
+    loadFails: boolean;
   } = {
     roles: [],
     members: [],
     invites: [],
+    searchResults: undefined,
+    searchFailed: false,
+    loadFails: false,
   };
   const spies = {
     updateUserRoles: vi.fn(),
@@ -27,6 +33,11 @@ const { data, spies, mutation } = vi.hoisted(() => {
     deleteInvite: vi.fn(),
     invite: vi.fn(),
     updateInvite: vi.fn(),
+    lookup: vi.fn(async ({ query }: { query: string }) => ({
+      items: data.members.filter((m) => m.email.includes(query)),
+    })),
+    invalidateUsers: vi.fn(async () => {}),
+    invalidateInvites: vi.fn(async () => {}),
     toastSuccess: vi.fn(),
     toastError: vi.fn(),
   };
@@ -40,18 +51,10 @@ vi.mock('@op/api/client', () => ({
   trpc: {
     useUtils: () => ({
       // The pick lookup searches every member, past the admins the list shows.
-      client: {
-        profile: {
-          listUsers: {
-            query: async ({ query }: { query: string }) => ({
-              items: data.members.filter((m) => m.email.includes(query)),
-            }),
-          },
-        },
-      },
+      client: { profile: { listUsers: { query: spies.lookup } } },
       profile: {
-        listUsers: { invalidate: async () => {} },
-        listProfileInvites: { invalidate: async () => {} },
+        listUsers: { invalidate: spies.invalidateUsers },
+        listProfileInvites: { invalidate: spies.invalidateInvites },
       },
     }),
     useSuspenseQueries: (
@@ -61,22 +64,33 @@ vi.mock('@op/api/client', () => ({
           listProfileInvites: () => unknown;
         };
       }) => unknown[],
-    ) => [
-      build({
-        profile: {
-          listUsers: ({ roleId }) => ({
-            items: data.members.filter((m) =>
-              m.roles.some((r) => r.id === roleId),
-            ),
-          }),
-          listProfileInvites: () => ({ items: data.invites }),
-        },
-      }),
-      [],
-    ],
+    ) => {
+      if (data.loadFails) {
+        throw new Error('load failed');
+      }
+      return [
+        build({
+          profile: {
+            listUsers: ({ roleId }) => ({
+              items: data.members.filter((m) =>
+                m.roles.some((r) => r.id === roleId),
+              ),
+            }),
+            listProfileInvites: () => ({ items: data.invites }),
+          },
+        }),
+        [],
+      ];
+    },
     profile: {
       listRoles: { useSuspenseQuery: () => [{ items: data.roles }] },
-      search: { useQuery: () => ({ data: undefined, isFetching: false }) },
+      search: {
+        useQuery: () => ({
+          data: data.searchResults,
+          isFetching: false,
+          isError: data.searchFailed,
+        }),
+      },
       invite: mutation(spies.invite),
       updateUserRoles: mutation(spies.updateUserRoles),
       updateProfileInvite: mutation(spies.updateInvite),
@@ -156,7 +170,31 @@ afterEach(() => {
   vi.clearAllMocks();
   data.roles = [role(ADMIN, 'Admin'), role(REVIEWER, 'Reviewer')];
   data.invites = [];
+  data.searchResults = undefined;
+  data.searchFailed = false;
+  data.loadFails = false;
 });
+
+const deferred = () => {
+  let resolve = () => {};
+  const promise = new Promise<void>((done) => {
+    resolve = done;
+  });
+  return { promise, resolve };
+};
+
+const searchBox = () =>
+  screen.getByRole('combobox', {
+    name: 'Search people on Common, or type an email address',
+  });
+
+const removeVia = async (
+  user: ReturnType<typeof userEvent.setup>,
+  name: string,
+) => {
+  await user.click(screen.getByRole('button', { name: `Manage ${name}` }));
+  await user.click(await screen.findByRole('menuitem', { name: 'Remove' }));
+};
 
 describe('ProcessAdminsPanel', () => {
   it('lists the admins, marks you, and offers removal only where allowed', () => {
@@ -292,7 +330,97 @@ describe('ProcessAdminsPanel', () => {
       invitations: [{ email: 'fresh@example.org', roleId: ADMIN }],
     });
     expect(spies.updateUserRoles).not.toHaveBeenCalled();
+    await waitFor(() =>
+      expect(toastMarkup(spies.toastSuccess)).toEqual([
+        'Invitation sent to <bdi>fresh@example.org</bdi>',
+      ]),
+    );
+    expect(spies.toastError).not.toHaveBeenCalled();
   });
+
+  it('holds the pending admin until the refreshed lists arrive', async () => {
+    data.members = [
+      member({ id: 'me', name: 'Me', roles: [ADMIN], profileId: 'p-me' }),
+    ];
+    spies.invite.mockResolvedValueOnce({ details: { failed: [] } });
+    const refetch = deferred();
+    spies.invalidateUsers.mockReturnValueOnce(refetch.promise);
+    const user = renderPanel();
+
+    await pickEmail(user, 'fresh@example.org');
+    await waitFor(() =>
+      expect(spies.invalidateUsers).toHaveBeenCalledWith({
+        profileId: 'profile-1',
+      }),
+    );
+    expect(screen.getByText('Adding…')).toBeTruthy();
+
+    refetch.resolve();
+
+    await waitFor(() => expect(screen.queryByText('Adding…')).toBeNull());
+  });
+
+  it('says so when the invite comes back as failed', async () => {
+    data.members = [
+      member({ id: 'me', name: 'Me', roles: [ADMIN], profileId: 'p-me' }),
+    ];
+    spies.invite.mockResolvedValueOnce({
+      details: { failed: [{ email: 'fresh@example.org', reason: 'no' }] },
+    });
+    const user = renderPanel();
+
+    await pickEmail(user, 'fresh@example.org');
+
+    await waitFor(() =>
+      expect(toastMarkup(spies.toastError)).toEqual([
+        '<bdi>fresh@example.org</bdi> could not be invited.',
+      ]),
+    );
+    expect(spies.toastSuccess).not.toHaveBeenCalled();
+    await waitFor(() => expect(screen.queryByText('Adding…')).toBeNull());
+  });
+
+  it.each([
+    {
+      step: 'the member lookup',
+      email: 'paul@example.org',
+      fail: () => spies.lookup.mockRejectedValueOnce(new Error('boom')),
+    },
+    {
+      step: 'promoting a member',
+      email: 'paul@example.org',
+      fail: () =>
+        spies.updateUserRoles.mockRejectedValueOnce(new Error('boom')),
+    },
+    {
+      step: 'moving an invite',
+      email: 'other@example.org',
+      fail: () => spies.updateInvite.mockRejectedValueOnce(new Error('boom')),
+    },
+  ])(
+    'takes the pending admin back out when $step fails',
+    async ({ email, fail }) => {
+      data.members = [
+        member({ id: 'me', name: 'Me', roles: [ADMIN], profileId: 'p-me' }),
+        member({ id: 'paul', name: 'Paul', roles: [REVIEWER] }),
+      ];
+      data.invites = [
+        { id: 'inv-other', email: 'other@example.org', accessRoleId: REVIEWER },
+      ];
+      fail();
+      const user = renderPanel();
+
+      await pickEmail(user, email);
+
+      await waitFor(() =>
+        expect(toastMarkup(spies.toastError)).toEqual([
+          `<bdi>${email}</bdi> could not be invited.`,
+        ]),
+      );
+      await waitFor(() => expect(screen.queryByText('Adding…')).toBeNull());
+      expect(spies.invite).not.toHaveBeenCalled();
+    },
+  );
 
   it('shows the picked admin as pending, with the picker still usable, until the server confirms', async () => {
     data.members = [
@@ -433,6 +561,143 @@ describe('ProcessAdminsPanel', () => {
     );
     expect(screen.queryByText('Removing…')).toBeNull();
     expect(screen.getByText('Sam')).toBeTruthy();
+  });
+
+  it('announces a removal and returns focus to the search once the lists refresh', async () => {
+    data.members = [
+      member({ id: 'me', name: 'Me', roles: [ADMIN], profileId: 'p-me' }),
+      member({ id: 'sam', name: 'Sam', roles: [ADMIN] }),
+    ];
+    spies.removeUser.mockResolvedValueOnce(undefined);
+    const refetch = deferred();
+    spies.invalidateUsers.mockReturnValueOnce(refetch.promise);
+    const user = renderPanel();
+
+    await removeVia(user, 'Sam');
+
+    await waitFor(() => expect(spies.removeUser).toHaveBeenCalled());
+    expect(screen.getByText('Removing…')).toBeTruthy();
+    expect(spies.toastSuccess).not.toHaveBeenCalled();
+
+    refetch.resolve();
+
+    await waitFor(() =>
+      expect(toastMarkup(spies.toastSuccess)).toEqual([
+        '<bdi>Sam</bdi> is no longer an admin.',
+      ]),
+    );
+    expect(document.activeElement).toBe(searchBox());
+  });
+
+  it('announces a withdrawn invitation', async () => {
+    data.members = [
+      member({ id: 'me', name: 'Me', roles: [ADMIN], profileId: 'p-me' }),
+    ];
+    data.invites = [
+      { id: 'inv-admin', email: 'new@example.org', accessRoleId: ADMIN },
+    ];
+    spies.deleteInvite.mockResolvedValueOnce(undefined);
+    const user = renderPanel();
+
+    await removeVia(user, 'new@example.org');
+
+    await waitFor(() =>
+      expect(toastMarkup(spies.toastSuccess)).toEqual([
+        'The invitation to <bdi>new@example.org</bdi> was withdrawn.',
+      ]),
+    );
+    expect(document.activeElement).toBe(searchBox());
+  });
+
+  it('keeps the admin and their roles when dropping the admin role fails', async () => {
+    data.members = [
+      member({ id: 'me', name: 'Me', roles: [ADMIN], profileId: 'p-me' }),
+      member({ id: 'rita', name: 'Rita', roles: [ADMIN, REVIEWER] }),
+    ];
+    spies.updateUserRoles.mockRejectedValueOnce(new Error('boom'));
+    const user = renderPanel();
+
+    await removeVia(user, 'Rita');
+
+    await waitFor(() =>
+      expect(spies.toastError).toHaveBeenCalledWith(
+        'This admin could not be removed.',
+      ),
+    );
+    expect(spies.toastSuccess).not.toHaveBeenCalled();
+    expect(screen.getByText('Rita')).toBeTruthy();
+  });
+
+  it('recognises you by email when your profile is not linked', () => {
+    data.members = [
+      member({ id: 'me', name: 'Me', roles: [ADMIN], profileId: 'p-other' }),
+      member({ id: 'rita', name: 'Rita', roles: [ADMIN] }),
+    ];
+    renderPanel();
+
+    expect(screen.getByText('You')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Manage Me' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Manage Rita' })).toBeTruthy();
+  });
+
+  it('offers only people who are not already admins or invited', async () => {
+    data.members = [
+      member({ id: 'me', name: 'Me', roles: [ADMIN], profileId: 'p-me' }),
+      member({ id: 'rita', name: 'Rita', roles: [ADMIN] }),
+    ];
+    data.invites = [
+      { id: 'inv-admin', email: 'ivy@example.org', accessRoleId: ADMIN },
+    ];
+    const person = (id: string, name: string) => ({
+      id: `p-${id}`,
+      name,
+      rank: 1,
+      user: { email: `${id}@example.org` },
+    });
+    data.searchResults = [
+      {
+        results: [
+          person('rita', 'Rita'),
+          person('ivy', 'Ivy'),
+          person('nina', 'Nina'),
+        ],
+      },
+    ];
+    const user = renderPanel();
+
+    await user.type(searchBox(), 'ri');
+
+    expect(await screen.findByRole('option', { name: /Nina/ })).toBeTruthy();
+    expect(screen.queryByRole('option', { name: /Rita/ })).toBeNull();
+    expect(screen.queryByRole('option', { name: /Ivy/ })).toBeNull();
+  });
+
+  it('says the search failed instead of showing no results', async () => {
+    data.members = [
+      member({ id: 'me', name: 'Me', roles: [ADMIN], profileId: 'p-me' }),
+    ];
+    data.searchFailed = true;
+    const user = renderPanel();
+
+    await user.type(searchBox(), 'zz');
+
+    expect(
+      await screen.findByText('Could not search for people. Try again.'),
+    ).toBeTruthy();
+    expect(screen.queryByText('No results')).toBeNull();
+  });
+
+  it('shows an error when the admins cannot be loaded', () => {
+    data.loadFails = true;
+    const consoleError = vi
+      .spyOn(console, 'error')
+      .mockImplementation(() => {});
+    renderPanel();
+
+    expect(screen.getByRole('alert').textContent).toBe(
+      'The admins could not be loaded.',
+    );
+    consoleError.mockRestore();
   });
 
   it('says so when the process has no admin role', () => {
