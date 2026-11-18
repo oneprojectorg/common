@@ -1679,7 +1679,9 @@
       "noReviews": "Ainda não há avaliações para esta proposta.",
       "advancedToast": "“<bdi>{title}</bdi>” avançou",
       "savedToast": "Alterações em “<bdi>{title}</bdi>” salvas",
-      "readOnlyNotice": "Você pode ver esta entrada, mas não editá-la."
+      "readOnlyNotice": "Você pode ver esta entrada, mas não editá-la.",
+      "confirmedNotice": "Você confirmou suas seleções. Cancele a confirmação na tela de desenvolvimento para fazer alterações.",
+      "noEntryYet": "Ainda não há entrada na cédula. Ela terá uma se esta proposta avançar."
     },
     "develop": {
       "heroTitle": "Avançar propostas",
@@ -1721,7 +1723,21 @@
       "noFilteredEntriesDescription": "Tente outra pesquisa ou categoria.",
       "noFilteredEntriesDistrictDescription": "Tente outra pesquisa ou distrito.",
       "advancingCount": "{count, plural, one {# proposta avançando} other {# propostas avançando}}",
-      "confirmSelectionsAction": "Confirmar seleções"
+      "confirmSelectionsAction": "Confirmar seleções",
+      "unconfirmSelectionsAction": "Cancelar confirmação",
+      "confirmSelectionsTitle": "Confirmar suas seleções?",
+      "confirmCategorySelectionsTitle": "Confirmar as seleções de <bdi>{category}</bdi>?",
+      "confirmSelectionsDescription": "{count, plural, one {# proposta avança} other {# propostas avançam}} para a cédula e {notAdvancedCount, plural, one {# não avança} other {# não avançam}}. Um administrador revisa cada categoria e publica a cédula.",
+      "unconfirmSelectionsTitle": "Cancelar a confirmação das suas seleções?",
+      "unconfirmCategorySelectionsTitle": "Cancelar a confirmação das seleções de <bdi>{category}</bdi>?",
+      "unconfirmSelectionsDescription": "Você poderá alterar suas seleções novamente. Nada é perdido. Confirme de novo quando terminar.",
+      "selectionsConfirmedSuccess": "Seleções confirmadas",
+      "selectionsUnconfirmedSuccess": "Confirmação cancelada",
+      "confirmSelectionsError": "Não foi possível confirmar suas seleções. Tente novamente.",
+      "selectionsAlreadyConfirmedError": "Suas seleções já estão confirmadas.",
+      "unconfirmSelectionsError": "Não foi possível cancelar a confirmação das suas seleções. Tente novamente.",
+      "developLockedError": "Você confirmou suas seleções. Cancele a confirmação para fazer alterações.",
+      "entryNotAdvancedStatus": "Não avança"
     },
     "suggestedWinnersHint": "Selecionamos as propostas vencedoras sugeridas com base nas regras de votação e no orçamento total.",
     "votingOpenHeading": "HORA DE VOTAR.",

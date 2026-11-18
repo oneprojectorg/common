@@ -43,7 +43,10 @@ export function decisionProposalHref({
   return `/decisions/${decisionSlug}/proposal/${profileId}`;
 }
 
-/** The develop editor of an entry: a proposal developed from sources. */
+/**
+ * The develop view of a proposal: the editor of an entry developed from
+ * sources, or a source of the current develop phase that has no entry yet.
+ */
 export function decisionProposalDevelopHref(route: {
   decisionSlug: string;
   profileId: string;

@@ -1,9 +1,11 @@
 'use client';
 
+import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { trpc } from '@op/api/client';
 import {
   type ProcessInstance,
   ProposalRelationshipType,
+  ProposalStatus,
 } from '@op/api/encoders';
 import {
   type Proposal,
@@ -12,8 +14,10 @@ import {
   hasOpenReviews,
 } from '@op/common/client';
 import { Spinner } from '@op/sense/Spinner';
+import { StatusBadge } from '@op/sense/StatusBadge';
 import type { JSONContent } from '@tiptap/react';
 import { notFound } from 'next/navigation';
+import { type ComponentProps, type ReactNode, Suspense } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -26,11 +30,17 @@ import { DevelopProposalEditor } from './DevelopProposalEditor';
 import { DevelopProposalFrame } from './DevelopProposalFrame';
 import { DevelopSourceColumn } from './DevelopSourceColumn';
 import { getDevelopEntryHeading } from './getDevelopEntryHeading';
+import { isCurrentDevelopSource } from './isCurrentDevelopSource';
+
+type DevelopSources = ComponentProps<typeof DevelopSourceColumn>['sources'];
 
 /**
- * Opens a proposal developed from sources beside its source; any other
- * proposal is not found. The form is editable only for a caller who may
- * develop proposals, and only while the server reports the proposal editable.
+ * Opens a proposal developed from sources beside its source. A source of the
+ * current develop phase with no entry opens beside the note that it has none
+ * yet; any other proposal is not found. The entry's form is editable only for
+ * a caller who may develop proposals, while the server reports the proposal
+ * editable and the caller has no develop lock. A draft entry that a
+ * developer's lock keeps from advancing shows as not advanced, without its form.
  */
 export function DevelopProposalRoute({
   instance,
@@ -50,7 +60,17 @@ export function DevelopProposalRoute({
   const sources = items.map((item) => item.proposal);
 
   if (sources.length === 0) {
-    notFound();
+    if (!isCurrentDevelopSource({ instance, proposal })) {
+      notFound();
+    }
+
+    return (
+      <DevelopSourceWithoutEntry
+        instance={instance}
+        proposal={proposal}
+        decisionSlug={decisionSlug}
+      />
+    );
   }
 
   const template = proposal.proposalTemplate ?? null;
@@ -63,17 +83,205 @@ export function DevelopProposalRoute({
   const canDevelop = Boolean(
     instance.access?.admin || instance.access?.developProposals,
   );
-  const isEditable = canDevelop && proposal.isEditable === true;
 
-  const backHref = `/decisions/${decisionSlug}/current`;
+  const backHref = getDevelopBackHref(decisionSlug);
   const heading = getDevelopEntryHeading({
     template,
     fallback: t('decisions.developEditor.entryHeading'),
   });
   const description = template.description || undefined;
 
-  // Every earlier review phase, as the review screens list them. The filter
-  // mirrors the server's `canReadPhaseReviews`.
+  const sourceLabel = t('decisions.developEditor.proposalTab');
+  const source = (
+    <InstanceSourceColumn
+      instance={instance}
+      decisionSlug={decisionSlug}
+      sources={sources}
+    />
+  );
+
+  const readOnlyEntry = (
+    <DevelopProposalFrame
+      backHref={backHref}
+      source={source}
+      sourceLabel={sourceLabel}
+      heading={heading}
+      description={description}
+      notice={
+        // Only a developer can be locked by their own confirm.
+        canDevelop ? (
+          <APIErrorBoundary fallbacks={{ default: () => <ReadOnlyNotice /> }}>
+            <Suspense fallback={<ReadOnlyNotice />}>
+              <DevelopLockNotice
+                processInstanceId={instance.id}
+                isAdvancing={proposal.status !== ProposalStatus.DRAFT}
+              />
+            </Suspense>
+          </APIErrorBoundary>
+        ) : (
+          <ReadOnlyNotice />
+        )
+      }
+    >
+      <ReadOnlyFields
+        initialProposal={proposal}
+        template={template}
+        decisionProfileId={instance.profileId ?? null}
+      />
+    </DevelopProposalFrame>
+  );
+
+  if (!canDevelop) {
+    return readOnlyEntry;
+  }
+
+  return (
+    <DevelopEntryByLock
+      processInstanceId={instance.id}
+      proposal={proposal}
+      editor={
+        <DevelopProposalEditor
+          instance={instance}
+          proposal={proposal}
+          backHref={backHref}
+          source={source}
+          sourceLabel={sourceLabel}
+          heading={heading}
+          description={description}
+        />
+      }
+      readOnlyEntry={readOnlyEntry}
+      notAdvancedEntry={
+        <NotAdvancedFrame
+          backHref={backHref}
+          source={source}
+          sourceLabel={sourceLabel}
+          heading={heading}
+        />
+      }
+    />
+  );
+}
+
+/**
+ * A developer's entry by their develop lock: the editor while the proposal is
+ * editable and they have no lock; a draft as not advanced once the lock means
+ * it can no longer advance (they confirmed, or the develop window closed);
+ * otherwise the read-only entry.
+ */
+function DevelopEntryByLock({
+  processInstanceId,
+  proposal,
+  editor,
+  readOnlyEntry,
+  notAdvancedEntry,
+}: {
+  processInstanceId: string;
+  proposal: Proposal;
+  editor: ReactNode;
+  readOnlyEntry: ReactNode;
+  notAdvancedEntry: ReactNode;
+}) {
+  const [{ lock }] = trpc.decision.getDevelopConfirmState.useSuspenseQuery({
+    processInstanceId,
+  });
+
+  if (lock === null && proposal.isEditable === true) {
+    return editor;
+  }
+
+  if (lock !== null && proposal.status === ProposalStatus.DRAFT) {
+    return notAdvancedEntry;
+  }
+
+  return readOnlyEntry;
+}
+
+/**
+ * The develop view of a source whose entry does not advance, as it has none or
+ * only a draft that can no longer advance: the source beside the entry's
+ * heading, the Not advanced badge, and a note that it gets an entry if it
+ * advances. No form.
+ */
+function NotAdvancedFrame({
+  backHref,
+  source,
+  sourceLabel,
+  heading,
+}: {
+  backHref: string;
+  source: ReactNode;
+  sourceLabel: string;
+  heading: string;
+}) {
+  const t = useTranslations('decisions');
+
+  return (
+    <DevelopProposalFrame
+      backHref={backHref}
+      source={source}
+      sourceLabel={sourceLabel}
+      heading={heading}
+      notice={
+        <StatusBadge variant="inactive" icon={false} className="self-start">
+          {t('develop.entryNotAdvancedStatus')}
+        </StatusBadge>
+      }
+    >
+      <p className="text-base text-muted-foreground">
+        {t('developEditor.noEntryYet')}
+      </p>
+    </DevelopProposalFrame>
+  );
+}
+
+/** A source of the current develop phase with no entry yet. */
+function DevelopSourceWithoutEntry({
+  instance,
+  proposal,
+  decisionSlug,
+}: {
+  instance: ProcessInstance;
+  proposal: Proposal;
+  decisionSlug: string;
+}) {
+  const t = useTranslations('decisions');
+
+  return (
+    <NotAdvancedFrame
+      backHref={getDevelopBackHref(decisionSlug)}
+      source={
+        <InstanceSourceColumn
+          instance={instance}
+          decisionSlug={decisionSlug}
+          sources={[
+            {
+              id: proposal.id,
+              profile: { id: proposal.profileId, name: proposal.profile.name },
+            },
+          ]}
+        />
+      }
+      sourceLabel={t('developEditor.proposalTab')}
+      heading={t('developEditor.entryHeading')}
+    />
+  );
+}
+
+/**
+ * The develop column of sources, with every earlier review phase the caller
+ * may read, as the review screens list them.
+ */
+function InstanceSourceColumn({
+  instance,
+  decisionSlug,
+  sources,
+}: {
+  instance: ProcessInstance;
+  decisionSlug: string;
+  sources: DevelopSources;
+}) {
+  // The filter mirrors the server's `canReadPhaseReviews`.
   const isAdmin = Boolean(instance.access?.admin);
   const canReview = Boolean(instance.access?.review);
   const reviewPhases = instance.currentStateId
@@ -88,8 +296,7 @@ export function DevelopProposalRoute({
         }))
     : [];
 
-  const sourceLabel = t('decisions.developEditor.proposalTab');
-  const source = (
+  return (
     <DevelopSourceColumn
       sources={sources}
       decisionRoot={decisionRootHref({
@@ -100,40 +307,49 @@ export function DevelopProposalRoute({
       reviewPhases={reviewPhases}
     />
   );
+}
 
-  if (isEditable) {
-    return (
-      <DevelopProposalEditor
-        instance={instance}
-        proposal={proposal}
-        backHref={backHref}
-        source={source}
-        sourceLabel={sourceLabel}
-        heading={heading}
-        description={description}
-      />
-    );
+/**
+ * Why a developer sees the entry read-only: once they confirmed their work,
+ * the entry's decision and how to change it; otherwise the generic notice.
+ */
+function DevelopLockNotice({
+  processInstanceId,
+  isAdvancing,
+}: {
+  processInstanceId: string;
+  isAdvancing: boolean;
+}) {
+  const t = useTranslations('decisions');
+  const [{ lock }] = trpc.decision.getDevelopConfirmState.useSuspenseQuery({
+    processInstanceId,
+  });
+
+  if (lock !== 'confirmed') {
+    return <ReadOnlyNotice />;
   }
 
   return (
-    <DevelopProposalFrame
-      backHref={backHref}
-      source={source}
-      sourceLabel={sourceLabel}
-      heading={heading}
-      description={description}
-      notice={
-        <p className="text-base text-muted-foreground">
-          {t('decisions.developEditor.readOnlyNotice')}
-        </p>
-      }
-    >
-      <ReadOnlyFields
-        initialProposal={proposal}
-        template={template}
-        decisionProfileId={instance.profileId ?? null}
-      />
-    </DevelopProposalFrame>
+    <div aria-live="polite" className="flex flex-col items-start gap-2">
+      <StatusBadge variant={isAdvancing ? 'success' : 'inactive'} icon={false}>
+        {isAdvancing
+          ? t('develop.entryAdvancingStatus')
+          : t('develop.entryNotAdvancedStatus')}
+      </StatusBadge>
+      <p className="text-base text-muted-foreground">
+        {t('developEditor.confirmedNotice')}
+      </p>
+    </div>
+  );
+}
+
+function ReadOnlyNotice() {
+  const t = useTranslations('decisions');
+
+  return (
+    <p aria-live="polite" className="text-base text-muted-foreground">
+      {t('developEditor.readOnlyNotice')}
+    </p>
   );
 }
 
@@ -191,6 +407,10 @@ function getStoredFragments(
       ([key, fragment]) => [key, isJsonContent(fragment) ? fragment : null],
     ),
   );
+}
+
+function getDevelopBackHref(decisionSlug: string): string {
+  return `/decisions/${decisionSlug}/current`;
 }
 
 function isJsonContent(value: unknown): value is JSONContent {

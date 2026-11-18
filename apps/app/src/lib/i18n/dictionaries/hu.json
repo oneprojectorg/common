@@ -1679,7 +1679,9 @@
       "noReviews": "Ehhez a javaslathoz még nincs értékelés.",
       "advancedToast": "„<bdi>{title}</bdi>” továbbjutott",
       "savedToast": "„<bdi>{title}</bdi>” mentve",
-      "readOnlyNotice": "Ezt a bejegyzést megtekintheti, de nem szerkesztheti."
+      "readOnlyNotice": "Ezt a bejegyzést megtekintheti, de nem szerkesztheti.",
+      "confirmedNotice": "Megerősítette a választásait. A módosításhoz vonja vissza a megerősítést a fejlesztési képernyőn.",
+      "noEntryYet": "Még nincs szavazólap-bejegyzés. Akkor kap egyet, ha ez a javaslat továbbjut."
     },
     "develop": {
       "heroTitle": "Javaslatok továbbjuttatása",
@@ -1721,7 +1723,21 @@
       "noFilteredEntriesDescription": "Próbálj másik keresést vagy kategóriát.",
       "noFilteredEntriesDistrictDescription": "Próbálj másik keresést vagy körzetet.",
       "advancingCount": "{count, plural, one {# javaslat jut tovább} other {# javaslat jut tovább}}",
-      "confirmSelectionsAction": "Kiválasztás megerősítése"
+      "confirmSelectionsAction": "Kiválasztás megerősítése",
+      "unconfirmSelectionsAction": "Megerősítés visszavonása",
+      "confirmSelectionsTitle": "Megerősíti a választásait?",
+      "confirmCategorySelectionsTitle": "Megerősíti a(z) <bdi>{category}</bdi> választásait?",
+      "confirmSelectionsDescription": "{count, plural, one {# javaslat kerül} other {# javaslat kerül}} a szavazólapra, és {notAdvancedCount, plural, one {# nem jut tovább} other {# nem jut tovább}}. Egy adminisztrátor minden kategóriát átnéz, és közzéteszi a szavazólapot.",
+      "unconfirmSelectionsTitle": "Visszavonja a választásai megerősítését?",
+      "unconfirmCategorySelectionsTitle": "Visszavonja a(z) <bdi>{category}</bdi> választásainak megerősítését?",
+      "unconfirmSelectionsDescription": "Újra módosíthatja a választásait. Semmi sem vész el. Ha végzett, erősítse meg újra.",
+      "selectionsConfirmedSuccess": "Választások megerősítve",
+      "selectionsUnconfirmedSuccess": "Megerősítés visszavonva",
+      "confirmSelectionsError": "Nem sikerült megerősíteni a választásait. Próbálja újra.",
+      "selectionsAlreadyConfirmedError": "A választásai már meg vannak erősítve.",
+      "unconfirmSelectionsError": "Nem sikerült visszavonni a választásai megerősítését. Próbálja újra.",
+      "developLockedError": "Megerősítette a választásait. A módosításhoz vonja vissza a megerősítést.",
+      "entryNotAdvancedStatus": "Nem jut tovább"
     },
     "suggestedWinnersHint": "A javasolt nyertes javaslatokat a szavazási szabályok és a teljes költségvetés alapján választottuk ki.",
     "votingOpenHeading": "ITT AZ IDEJE SZAVAZNI.",

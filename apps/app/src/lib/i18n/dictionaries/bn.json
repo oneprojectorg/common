@@ -1679,7 +1679,9 @@
       "noReviews": "এই প্রস্তাবের এখনও কোনো পর্যালোচনা নেই।",
       "advancedToast": "“<bdi>{title}</bdi>” এগিয়ে গেছে",
       "savedToast": "“<bdi>{title}</bdi>” সংরক্ষিত হয়েছে",
-      "readOnlyNotice": "আপনি এই এন্ট্রিটি দেখতে পারবেন, কিন্তু সম্পাদনা করতে পারবেন না।"
+      "readOnlyNotice": "আপনি এই এন্ট্রিটি দেখতে পারবেন, কিন্তু সম্পাদনা করতে পারবেন না।",
+      "confirmedNotice": "আপনি আপনার নির্বাচন নিশ্চিত করেছেন। পরিবর্তন করতে ডেভেলপ স্ক্রিনে নিশ্চিতকরণ বাতিল করুন।",
+      "noEntryYet": "এখনও কোনো ব্যালট এন্ট্রি নেই। এই প্রস্তাবটি এগিয়ে গেলে এটি একটি এন্ট্রি পাবে।"
     },
     "develop": {
       "heroTitle": "প্রস্তাব এগিয়ে নিন",
@@ -1721,7 +1723,21 @@
       "noFilteredEntriesDescription": "অন্যভাবে খুঁজুন বা অন্য বিভাগ বেছে নিন।",
       "noFilteredEntriesDistrictDescription": "অন্যভাবে খুঁজুন বা অন্য জেলা বেছে নিন।",
       "advancingCount": "{count, plural, one {#টি প্রস্তাব এগিয়ে যাচ্ছে} other {#টি প্রস্তাব এগিয়ে যাচ্ছে}}",
-      "confirmSelectionsAction": "নির্বাচন নিশ্চিত করুন"
+      "confirmSelectionsAction": "নির্বাচন নিশ্চিত করুন",
+      "unconfirmSelectionsAction": "নির্বাচনের নিশ্চিতকরণ বাতিল করুন",
+      "confirmSelectionsTitle": "আপনার নির্বাচন নিশ্চিত করবেন?",
+      "confirmCategorySelectionsTitle": "<bdi>{category}</bdi>-এর নির্বাচন নিশ্চিত করবেন?",
+      "confirmSelectionsDescription": "{count, plural, one {#টি প্রস্তাব} other {#টি প্রস্তাব}} ব্যালটে এগিয়ে যাবে এবং {notAdvancedCount, plural, one {#টি} other {#টি}} এগোবে না। একজন অ্যাডমিন প্রতিটি বিভাগ পর্যালোচনা করে ব্যালট প্রকাশ করবেন।",
+      "unconfirmSelectionsTitle": "আপনার নির্বাচনের নিশ্চিতকরণ বাতিল করবেন?",
+      "unconfirmCategorySelectionsTitle": "<bdi>{category}</bdi>-এর নির্বাচনের নিশ্চিতকরণ বাতিল করবেন?",
+      "unconfirmSelectionsDescription": "আপনি আবার আপনার নির্বাচন পরিবর্তন করতে পারবেন। কিছুই হারাবে না। কাজ শেষ হলে আবার নিশ্চিত করুন।",
+      "selectionsConfirmedSuccess": "নির্বাচন নিশ্চিত হয়েছে",
+      "selectionsUnconfirmedSuccess": "নিশ্চিতকরণ বাতিল হয়েছে",
+      "confirmSelectionsError": "আপনার নির্বাচন নিশ্চিত করা যায়নি। আবার চেষ্টা করুন।",
+      "selectionsAlreadyConfirmedError": "আপনার নির্বাচন ইতিমধ্যে নিশ্চিত করা হয়েছে।",
+      "unconfirmSelectionsError": "আপনার নির্বাচনের নিশ্চিতকরণ বাতিল করা যায়নি। আবার চেষ্টা করুন।",
+      "developLockedError": "আপনি আপনার নির্বাচন নিশ্চিত করেছেন। পরিবর্তন করতে নিশ্চিতকরণ বাতিল করুন।",
+      "entryNotAdvancedStatus": "এগোয়নি"
     },
     "suggestedWinnersHint": "ভোটিং নিয়ম এবং মোট বাজেটের ভিত্তিতে আমরা প্রস্তাবিত বিজয়ী প্রস্তাবগুলি নির্বাচন করেছি।",
     "votingOpenHeading": "ভোট দেওয়ার সময় হয়েছে।",

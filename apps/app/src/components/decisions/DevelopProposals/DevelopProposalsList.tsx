@@ -7,8 +7,8 @@ import {
   type ProcessInstance,
   ProposalStatus,
 } from '@op/api/encoders';
+import type { DevelopConfirmStateSchema } from '@op/common/client';
 import { BadgeNumber } from '@op/sense/Badge';
-import { Button } from '@op/sense/Button';
 import {
   FooterBar,
   FooterBarCenter,
@@ -24,11 +24,24 @@ import { LuCircleCheck } from 'react-icons/lu';
 import { useTranslations } from '@/lib/i18n';
 
 import { ProposalsLoadError } from '../ProposalsLoadError';
-import { DevelopEntriesPanel } from './DevelopEntriesPanel';
+import {
+  ConfirmSelectionsAction,
+  UnconfirmSelectionsAction,
+} from './DevelopConfirmActions';
+import {
+  DevelopEntriesPanel,
+  DevelopEntriesReadOnlyPanel,
+} from './DevelopEntriesPanel';
 import {
   DevelopSourcesPanel,
+  DevelopSourcesReadOnlyPanel,
   DevelopSourcesTableSkeleton,
 } from './DevelopSourcesPanel';
+import {
+  type DevelopSourcesInput,
+  getDevelopSourceScope,
+  getDevelopSourcesInput,
+} from './developSources';
 
 type DevelopTab = 'proposals' | 'entries';
 
@@ -37,6 +50,11 @@ type DevelopTab = 'proposals' | 'entries';
  * proposals (the sources) to prepare entries from, an Entries tab with the
  * entries this phase holds, and a fixed footer with the advancing count and
  * the confirm action.
+ *
+ * The caller's develop state comes from the server: once they confirmed
+ * their work (or the window closed), both tabs show the read-only variants,
+ * and the footer offers Unconfirm instead of Confirm. Every read here
+ * refreshes through the proposals channel that confirm and unconfirm publish.
  */
 export function DevelopProposalsList({
   instance,
@@ -55,8 +73,9 @@ export function DevelopProposalsList({
   const processInstanceId = instance.id;
   const phaseId = instance.currentStateId ?? undefined;
 
-  // Only the totals are read here, so each list is asked for one row.
-  const [[entries, advancing]] = trpc.useSuspenseQueries((q) => [
+  // Only the totals of the lists are read here, so each is asked for one
+  // row; the develop state decides the variants and the footer action.
+  const [[entries, advancing, developState]] = trpc.useSuspenseQueries((q) => [
     q.decision.listProposals({ processInstanceId, phaseId, limit: 1 }),
     q.decision.listProposals({
       processInstanceId,
@@ -64,7 +83,16 @@ export function DevelopProposalsList({
       status: ProposalStatus.SUBMITTED,
       limit: 1,
     }),
+    q.decision.getDevelopConfirmState({ processInstanceId }),
   ]);
+  const isReadOnly = developState.lock !== null;
+  const sourcesInput = sourcePhase
+    ? getDevelopSourcesInput({
+        processInstanceId,
+        sourcePhaseId: sourcePhase.phaseId,
+        scope: getDevelopSourceScope(instance),
+      })
+    : undefined;
 
   return (
     <>
@@ -92,22 +120,39 @@ export function DevelopProposalsList({
             fallbacks={{ default: () => <ProposalsLoadError /> }}
           >
             <Suspense fallback={<DevelopSourcesTableSkeleton />}>
-              <DevelopSourcesPanel
-                instance={instance}
-                sourcePhase={sourcePhase}
-                decisionSlug={decisionSlug}
-              />
+              {isReadOnly ? (
+                <DevelopSourcesReadOnlyPanel
+                  instance={instance}
+                  sourcePhase={sourcePhase}
+                  decisionSlug={decisionSlug}
+                />
+              ) : (
+                <DevelopSourcesPanel
+                  instance={instance}
+                  sourcePhase={sourcePhase}
+                  decisionSlug={decisionSlug}
+                />
+              )}
             </Suspense>
           </APIErrorBoundary>
         </TabsContent>
 
         <TabsContent value="entries">
-          <DevelopEntriesPanel
-            processInstanceId={processInstanceId}
-            phaseId={phaseId}
-            decisionSlug={decisionSlug}
-            entryName={entryName}
-          />
+          {isReadOnly ? (
+            <DevelopEntriesReadOnlyPanel
+              processInstanceId={processInstanceId}
+              phaseId={phaseId}
+              decisionSlug={decisionSlug}
+              entryName={entryName}
+            />
+          ) : (
+            <DevelopEntriesPanel
+              processInstanceId={processInstanceId}
+              phaseId={phaseId}
+              decisionSlug={decisionSlug}
+              entryName={entryName}
+            />
+          )}
         </TabsContent>
       </Tabs>
 
@@ -126,9 +171,16 @@ export function DevelopProposalsList({
         </FooterBarStart>
         <FooterBarCenter />
         <FooterBarEnd>
-          {/* Confirming a develop phase's selection has no endpoint yet; the
-              disabled button holds its place. */}
-          <Button disabled>{t('confirmSelectionsAction')}</Button>
+          {/* Polite, so the swap between Confirm and Unconfirm is
+              announced. */}
+          <div aria-live="polite">
+            <FooterConfirmAction
+              developState={developState}
+              processInstanceId={processInstanceId}
+              advancingCount={advancing.total}
+              sourcesInput={sourcesInput}
+            />
+          </div>
         </FooterBarEnd>
       </FooterBar>
     </>
@@ -144,5 +196,43 @@ export function DevelopProposalsListSkeleton() {
       </div>
       <DevelopSourcesTableSkeleton />
     </div>
+  );
+}
+
+/**
+ * Only a caller with a category of their own for this phase confirms, and
+ * not once the window closed: Confirm until they confirmed, then Unconfirm.
+ */
+function FooterConfirmAction({
+  developState,
+  processInstanceId,
+  advancingCount,
+  sourcesInput,
+}: {
+  developState: DevelopConfirmStateSchema;
+  processInstanceId: string;
+  advancingCount: number;
+  sourcesInput?: DevelopSourcesInput;
+}) {
+  if (!developState.canConfirm || developState.lock === 'windowClosed') {
+    return null;
+  }
+
+  if (developState.lock === 'confirmed') {
+    return (
+      <UnconfirmSelectionsAction
+        processInstanceId={processInstanceId}
+        categoryNames={developState.categoryNames}
+      />
+    );
+  }
+
+  return (
+    <ConfirmSelectionsAction
+      processInstanceId={processInstanceId}
+      categoryNames={developState.categoryNames}
+      advancingCount={advancingCount}
+      sourcesInput={sourcesInput}
+    />
   );
 }

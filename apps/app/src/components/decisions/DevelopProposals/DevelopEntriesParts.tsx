@@ -173,13 +173,16 @@ export function DevelopEntriesTable({
   );
 }
 
-// An entry its caller may still edit opens in the develop editor.
+// An entry the caller may edit opens in the develop editor, any other in the
+// read-only sheet.
 export function DevelopEntryTitleCell({
   entry,
   decisionSlug,
+  isEditable,
 }: {
   entry: Proposal;
   decisionSlug: string;
+  isEditable: boolean;
 }) {
   const t = useTranslations();
   const openInSheet = useOpenProposalInSheet();
@@ -189,7 +192,7 @@ export function DevelopEntryTitleCell({
     <TableRowHeader className="py-4">
       <Link
         href={
-          entry.isEditable
+          isEditable
             ? decisionProposalDevelopHref({
                 decisionSlug,
                 profileId: entry.profileId,
@@ -199,7 +202,7 @@ export function DevelopEntryTitleCell({
                 profileId: entry.profileId,
               })
         }
-        onClick={entry.isEditable ? undefined : openInSheet(entry.profileId)}
+        onClick={isEditable ? undefined : openInSheet(entry.profileId)}
         dir="auto"
         className="block truncate text-base font-strong text-foreground hover:underline ltr:text-left rtl:text-right"
       >
@@ -233,6 +236,22 @@ export function DevelopEntryStatusCell({ entry }: { entry: Proposal }) {
         {isDraft
           ? t('decisions.develop.entryInProgressStatus')
           : t('decisions.develop.entryAdvancingStatus')}
+      </StatusBadge>
+    </TableCell>
+  );
+}
+
+/** Whether an entry advances, once its caller confirmed their work. */
+export function DevelopEntryDecisionCell({ entry }: { entry: Proposal }) {
+  const t = useTranslations();
+  const advancing = entry.status !== ProposalStatus.DRAFT;
+
+  return (
+    <TableCell className="py-4">
+      <StatusBadge variant={advancing ? 'success' : 'inactive'} icon={false}>
+        {advancing
+          ? t('decisions.develop.entryAdvancingStatus')
+          : t('decisions.develop.entryNotAdvancedStatus')}
       </StatusBadge>
     </TableCell>
   );
