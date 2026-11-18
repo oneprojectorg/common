@@ -37,9 +37,9 @@ export function DevelopAdminPublishFooter({
 }) {
   return (
     <FooterBar position="fixed">
-      <FooterBarStart>
+      <FooterBarStart className="min-w-0 shrink">
         {/* Outside Suspense so the live region exists before the count changes. */}
-        <div role="status" aria-live="polite" className="text-base">
+        <div role="status" aria-live="polite" className="min-w-0 text-base">
           <APIErrorBoundary fallbacks={{ default: () => null }}>
             <Suspense fallback={<Skeleton aria-hidden className="h-5 w-48" />}>
               <PublishStatusSuspense processInstanceId={processInstanceId} />
@@ -52,7 +52,7 @@ export function DevelopAdminPublishFooter({
         <div
           role="status"
           aria-live="polite"
-          className="text-sm text-muted-foreground"
+          className="hidden text-sm text-muted-foreground sm:block"
         >
           <APIErrorBoundary fallbacks={{ default: () => null }}>
             <Suspense fallback={null}>

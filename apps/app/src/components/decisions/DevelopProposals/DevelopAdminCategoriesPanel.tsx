@@ -32,11 +32,14 @@ export function DevelopAdminCategoriesPanel({
   return (
     <div className="flex flex-col gap-10">
       <div className="flex min-h-11 items-center">
-        <APIErrorBoundary fallbacks={{ default: () => null }}>
-          <Suspense fallback={<Skeleton aria-hidden className="h-7 w-40" />}>
-            <CategoriesCountSuspense processInstanceId={processInstanceId} />
-          </Suspense>
-        </APIErrorBoundary>
+        {/* Outside Suspense so the live region exists before the count changes. */}
+        <div role="status" aria-live="polite">
+          <APIErrorBoundary fallbacks={{ default: () => null }}>
+            <Suspense fallback={<Skeleton aria-hidden className="h-7 w-40" />}>
+              <CategoriesCountSuspense processInstanceId={processInstanceId} />
+            </Suspense>
+          </APIErrorBoundary>
+        </div>
       </div>
 
       <APIErrorBoundary fallbacks={{ default: () => <CategoriesLoadError /> }}>
