@@ -245,8 +245,7 @@ function EditableText({
 // At rest the button's pseudo covers the box, so the box paints the hover and focus.
 const REST_BOX_CLASSNAME =
   'transition-colors has-hover:bg-primary/10 has-focus-visible:bg-primary/10 has-focus-visible:ring-3 has-focus-visible:ring-ring/50 motion-reduce:transition-none';
-const BUTTON_CLASSNAME =
-  '-m-1 rounded-sm p-1 text-muted-foreground transition-colors hover:text-foreground focus-visible:text-foreground motion-reduce:transition-none';
+const BUTTON_CLASSNAME = '-m-1 rounded-sm p-1';
 const REST_BUTTON_CLASSNAME =
   'static focus-visible:ring-0 after:absolute after:inset-0';
 function DisplayText({
