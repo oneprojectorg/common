@@ -45,7 +45,6 @@ import {
   type ReactNode,
   useCallback,
   useMemo,
-  useState,
   useTransition,
 } from 'react';
 import { LuCheck, LuLeaf, LuPencil } from 'react-icons/lu';
@@ -86,11 +85,6 @@ interface SourcesTableProps {
   showRecommendations: boolean;
   decisionSlug: string;
 }
-
-type PendingStatusChange = {
-  entryId: string;
-  toAdvanced: boolean;
-};
 
 const RECOMMENDATION_INTENT: Record<RecommendationValue, StatusDotIntent> = {
   yes: 'success',
@@ -217,7 +211,6 @@ function EditableSourcesTable(props: SourcesTableProps) {
   const openInSheet = useOpenProposalInSheet();
   const [isNavigating, startNavigating] = useTransition();
   const sourcesPage = useDevelopSourcesPage(props);
-  const { sources } = sourcesPage;
 
   const createEntry = trpc.decision.createDevelopedProposal.useMutation({
     onSuccess: (entry) => {
@@ -258,31 +251,17 @@ function EditableSourcesTable(props: SourcesTableProps) {
   const submitEntry = trpc.decision.submitDevelopedProposal.useMutation();
   const unsubmitEntry = trpc.decision.unsubmitDevelopedProposal.useMutation();
 
-  // Held until the channel's refetch shows the entry's new status.
-  const [pendingChange, setPendingChange] =
-    useState<PendingStatusChange | null>(null);
-  if (pendingChange) {
-    const pendingEntry = sources
-      .flatMap((source) => source.developedProposals)
-      .find((entry) => entry.id === pendingChange.entryId);
-    const targetStatus = pendingChange.toAdvanced
-      ? ProposalStatus.SUBMITTED
-      : ProposalStatus.DRAFT;
-    if (!pendingEntry || pendingEntry.status === targetStatus) {
-      setPendingChange(null);
-    }
-  }
-
-  const changingEntryId = pendingChange?.entryId ?? null;
-  const isBusy = isPreparing || pendingChange !== null;
+  const pendingEntryChange = [submitEntry, unsubmitEntry].find(
+    (mutation) => mutation.isPending,
+  );
+  const changingEntryId = pendingEntryChange?.variables?.proposalId ?? null;
+  const isBusy = isPreparing || pendingEntryChange !== undefined;
 
   const advance = (entry: DevelopedProposal, title: string) => {
-    setPendingChange({ entryId: entry.id, toAdvanced: true });
     submitEntry.mutate(
       { proposalId: entry.id },
       {
         onError: (error) => {
-          setPendingChange(null);
           logger.error('Failed to advance a develop entry', { error });
           const status = getHttpStatus(error);
           // A 400 is the server's form validation: the entry is incomplete.
@@ -299,12 +278,10 @@ function EditableSourcesTable(props: SourcesTableProps) {
   };
 
   const unadvance = (entry: DevelopedProposal, title: string) => {
-    setPendingChange({ entryId: entry.id, toAdvanced: false });
     unsubmitEntry.mutate(
       { proposalId: entry.id },
       {
         onError: (error) => {
-          setPendingChange(null);
           logger.error('Failed to un-advance a develop entry', { error });
           toast.error(
             isDevelopLockedError(error)
