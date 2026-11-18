@@ -21,7 +21,7 @@ export async function generateMetadata({
 }
 
 const ManageDecisionPage = async ({ params }: ManageDecisionPageProps) => {
-  const { decisionProfile, t } = await loadPage(params);
+  const { decisionProfile } = await loadPage(params);
 
   return (
     <main className="flex min-h-dvh flex-col gap-4 bg-background px-4 py-12 md:px-6">
