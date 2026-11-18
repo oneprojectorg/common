@@ -57,8 +57,9 @@ CREATE TABLE "decisions_vote_drafts" (
 );
 --> statement-breakpoint
 ALTER TABLE "decisions_vote_drafts" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
-ALTER TABLE "decision_process_instances" ADD COLUMN "next_short_code" integer DEFAULT 101 NOT NULL;--> statement-breakpoint
-ALTER TABLE "decision_proposals" ADD COLUMN "short_code" integer;--> statement-breakpoint
+DROP INDEX IF EXISTS "proposals_process_short_code_uniq";--> statement-breakpoint
+ALTER TABLE "decision_process_instances" ADD COLUMN IF NOT EXISTS "next_short_code" integer DEFAULT 101 NOT NULL;--> statement-breakpoint
+ALTER TABLE "decision_proposals" ADD COLUMN IF NOT EXISTS "short_code" integer;--> statement-breakpoint
 CREATE UNIQUE INDEX "decision_chat_sessions_instance_profile_uniq" ON "decision_chat_sessions" ("process_instance_id","profile_id");--> statement-breakpoint
 CREATE UNIQUE INDEX "decision_phone_numbers_instance_channel_uniq" ON "decision_phone_numbers" ("process_instance_id","channel");--> statement-breakpoint
 CREATE UNIQUE INDEX "decision_phone_numbers_number_channel_uniq" ON "decision_phone_numbers" ("phone_number","channel");--> statement-breakpoint
