@@ -15,9 +15,10 @@ SMS keyword system. As part of that, we will also have a LLM agent
 with memory that allows users to participate in the voting process via
 SMS and an LLM agent.
 
-Lastly, we are hoping to build various different types of LLM
+Additionally, we are hoping to build various different types of LLM
 agents. These agents will likely be accessed through the interface,
-but this UI has not been designed yet.
+but this UI has not been designed yet. These agents will need to store
+their memory in our database.
 
 The goal of this ADR is to establish a storage format for
 conversational-like interactions that includes non-SMS LLM agents,
