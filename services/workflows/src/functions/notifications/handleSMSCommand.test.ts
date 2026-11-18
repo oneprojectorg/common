@@ -26,6 +26,17 @@ import {
   resetRecordedSms,
 } from '../../../testing/mocks/sms';
 import { SmsCommandFixture } from '../../../testing/smsCommandFixture';
+
+const isInferenceRequest = (input: RequestInfo | URL): boolean => {
+  try {
+    return (
+      new URL(input instanceof Request ? input.url : String(input)).host ===
+      'inference.test.invalid'
+    );
+  } catch {
+    return false;
+  }
+};
 import { smsInboundEvent } from '../../../testing/smsInboundEvent';
 import { handleSMSCommand } from './handleSMSCommand';
 import { SMS_COMMAND_HELP_MESSAGE } from './smsReply';
@@ -244,7 +255,7 @@ describe('handleSMSCommand against the database', () => {
     vi.stubEnv('AI_BASE_URL', 'https://inference.test.invalid/v1');
     vi.stubEnv('AI_API_KEY', 'test-key');
     vi.stubGlobal('fetch', ((input: RequestInfo | URL, init?: RequestInit) =>
-      String(input).startsWith('https://inference.test.invalid')
+      isInferenceRequest(input)
         ? Promise.resolve(
             new Response(
               JSON.stringify({
@@ -1939,7 +1950,7 @@ describe('handleSMSCommand building and casting the ballot', () => {
       ),
     ];
     vi.stubGlobal('fetch', ((input: RequestInfo | URL, init?: RequestInit) => {
-      if (String(input).startsWith('https://inference.test.invalid')) {
+      if (isInferenceRequest(input)) {
         aiBodies.push(String(init?.body));
         return Promise.resolve(aiResponses.shift()!);
       }
