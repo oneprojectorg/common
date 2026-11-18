@@ -1727,7 +1727,7 @@
       "unconfirmSelectionsAction": "Anular la confirmación",
       "confirmSelectionsTitle": "¿Confirmar tus selecciones?",
       "confirmCategorySelectionsTitle": "¿Confirmar las selecciones de <bdi>{category}</bdi>?",
-      "confirmSelectionsDescription": "{count, plural, one {# propuesta avanza} other {# propuestas avanzan}} a la boleta. Las demás propuestas no avanzan. Un administrador revisa cada categoría y publica la boleta.",
+      "confirmSelectionsDescription": "{count, plural, one {# propuesta avanza} other {# propuestas avanzan}} a la boleta y {notAdvancedCount, plural, one {# no avanza} other {# no avanzan}}. Un administrador revisa cada categoría y publica la boleta.",
       "unconfirmSelectionsTitle": "¿Anular la confirmación de tus selecciones?",
       "unconfirmCategorySelectionsTitle": "¿Anular la confirmación de las selecciones de <bdi>{category}</bdi>?",
       "unconfirmSelectionsDescription": "Podrás cambiar tus selecciones de nuevo. No se pierde nada. Vuelve a confirmar cuando termines.",

@@ -1,24 +1,28 @@
 'use client';
 
+import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { trpc } from '@op/api/client';
+import { nextCursor } from '@op/common/client';
 import { logger } from '@op/logging/client';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@op/sense/AlertDialog';
 import { Button } from '@op/sense/Button';
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@op/sense/Dialog';
+import { Skeleton } from '@op/sense/Skeleton';
 import { toast } from '@op/sense/Toast';
-import { useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
+import { LuX } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
+import { type DevelopSourcesInput, isSourceAdvancing } from './developSources';
 import { getHttpStatus } from './getHttpStatus';
 
 interface ConfirmActionProps {
@@ -29,14 +33,20 @@ interface ConfirmActionProps {
 
 /**
  * Confirms all of the caller's develop work for the current phase after a
- * dialog. Disabled while nothing is advancing. No invalidation: the confirm
- * publishes on the channels the develop screen and the editor subscribe to.
+ * dialog that counts the caller's sources that advance and those that do not.
+ * Disabled while nothing is advancing. No invalidation: the confirm publishes
+ * on the channels the develop screen and the editor subscribe to.
  */
 export function ConfirmSelectionsAction({
   processInstanceId,
   categoryNames,
   advancingCount,
-}: ConfirmActionProps & { advancingCount: number }) {
+  sourcesInput,
+}: ConfirmActionProps & {
+  advancingCount: number;
+  /** The sources table's query input. Omit when the phase has no sources. */
+  sourcesInput?: DevelopSourcesInput;
+}) {
   const t = useTranslations('decisions.develop');
   const tShared = useTranslations();
   const [isOpen, setIsOpen] = useState(false);
@@ -57,35 +67,59 @@ export function ConfirmSelectionsAction({
   const categoryName = getSingleCategoryName(categoryNames);
 
   return (
-    <AlertDialog open={isOpen} onOpenChange={setIsOpen}>
-      <AlertDialogTrigger render={<Button disabled={advancingCount === 0} />}>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger render={<Button disabled={advancingCount === 0} />}>
         {t('confirmSelectionsAction')}
-      </AlertDialogTrigger>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>
+      </DialogTrigger>
+      <DialogContent showCloseButton={false}>
+        <DialogHeader>
+          <DialogTitle>
             {categoryName === null
               ? t('confirmSelectionsTitle')
               : t.rich('confirmCategorySelectionsTitle', {
                   category: categoryName,
                   bdi: (chunks) => <bdi>{chunks}</bdi>,
                 })}
-          </AlertDialogTitle>
-          <AlertDialogDescription>
-            {t('confirmSelectionsDescription', { count: advancingCount })}
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel>{tShared('Cancel')}</AlertDialogCancel>
-          <AlertDialogAction
+          </DialogTitle>
+          <div aria-live="polite">
+            {sourcesInput ? (
+              <APIErrorBoundary
+                fallbacks={{
+                  default: () => (
+                    <DialogDescription>
+                      {tShared('decisions.proposals.proposalsLoadError')}
+                    </DialogDescription>
+                  ),
+                }}
+              >
+                <Suspense fallback={<Skeleton className="h-12 w-full" />}>
+                  <ConfirmSelectionsDescription sourcesInput={sourcesInput} />
+                </Suspense>
+              </APIErrorBoundary>
+            ) : (
+              <DialogDescription>
+                {t('confirmSelectionsDescription', {
+                  count: 0,
+                  notAdvancedCount: 0,
+                })}
+              </DialogDescription>
+            )}
+          </div>
+        </DialogHeader>
+        <DialogCloseButton />
+        <DialogFooter>
+          <DialogClose render={<Button variant="outline" />}>
+            {tShared('Cancel')}
+          </DialogClose>
+          <Button
             loading={confirm.isPending}
             onClick={() => confirm.mutate({ processInstanceId })}
           >
             {t('confirmSelectionsAction')}
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -113,35 +147,110 @@ export function UnconfirmSelectionsAction({
   const categoryName = getSingleCategoryName(categoryNames);
 
   return (
-    <AlertDialog open={isOpen} onOpenChange={setIsOpen}>
-      <AlertDialogTrigger render={<Button variant="outline" />}>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger render={<Button variant="outline" />}>
         {t('unconfirmSelectionsAction')}
-      </AlertDialogTrigger>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>
+      </DialogTrigger>
+      <DialogContent showCloseButton={false}>
+        <DialogHeader>
+          <DialogTitle>
             {categoryName === null
               ? t('unconfirmSelectionsTitle')
               : t.rich('unconfirmCategorySelectionsTitle', {
                   category: categoryName,
                   bdi: (chunks) => <bdi>{chunks}</bdi>,
                 })}
-          </AlertDialogTitle>
-          <AlertDialogDescription>
+          </DialogTitle>
+          <DialogDescription>
             {t('unconfirmSelectionsDescription')}
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel>{tShared('Cancel')}</AlertDialogCancel>
-          <AlertDialogAction
+          </DialogDescription>
+        </DialogHeader>
+        <DialogCloseButton />
+        <DialogFooter>
+          <DialogClose render={<Button variant="outline" />}>
+            {tShared('Cancel')}
+          </DialogClose>
+          <Button
             loading={unconfirm.isPending}
             onClick={() => unconfirm.mutate({ processInstanceId })}
           >
             {t('unconfirmSelectionsAction')}
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/**
+ * How many of the caller's sources advance and how many do not. Both counts
+ * cover every source, so the pages the sources table has not loaded load here.
+ */
+function ConfirmSelectionsDescription({
+  sourcesInput,
+}: {
+  sourcesInput: DevelopSourcesInput;
+}) {
+  const t = useTranslations('decisions.develop');
+  const [
+    data,
+    {
+      hasNextPage,
+      isFetchingNextPage,
+      isFetchNextPageError,
+      error,
+      fetchNextPage,
+    },
+  ] = trpc.decision.listDevelopSources.useSuspenseInfiniteQuery(sourcesInput, {
+    getNextPageParam: nextCursor,
+  });
+
+  const shouldLoadNextPage =
+    hasNextPage && !isFetchingNextPage && !isFetchNextPageError;
+  useEffect(() => {
+    if (shouldLoadNextPage) {
+      void fetchNextPage();
+    }
+  }, [shouldLoadNextPage, fetchNextPage]);
+
+  if (isFetchNextPageError) {
+    throw error;
+  }
+
+  if (hasNextPage) {
+    return <Skeleton className="h-12 w-full" />;
+  }
+
+  const sources = data.pages.flatMap((page) => page.items);
+  const advancingCount = sources.filter(isSourceAdvancing).length;
+
+  return (
+    <DialogDescription>
+      {t('confirmSelectionsDescription', {
+        count: advancingCount,
+        notAdvancedCount: sources.length - advancingCount,
+      })}
+    </DialogDescription>
+  );
+}
+
+/** The built-in close button's label is not translated, so this one replaces it. */
+function DialogCloseButton() {
+  const t = useTranslations();
+
+  return (
+    <DialogClose
+      render={
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          aria-label={t('Close')}
+          className="fixed end-4 top-4 z-20 opacity-70 hover:bg-transparent hover:opacity-100 sm:absolute"
+        />
+      }
+    >
+      <LuX aria-hidden />
+    </DialogClose>
   );
 }
 

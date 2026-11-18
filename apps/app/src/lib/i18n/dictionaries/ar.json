@@ -1727,7 +1727,7 @@
       "unconfirmSelectionsAction": "إلغاء تأكيد الاختيارات",
       "confirmSelectionsTitle": "هل تريد تأكيد اختياراتك؟",
       "confirmCategorySelectionsTitle": "هل تريد تأكيد اختيارات <bdi>{category}</bdi>؟",
-      "confirmSelectionsDescription": "{count, plural, zero {لا يتقدّم أي مقترح} one {يتقدّم مقترح واحد} two {يتقدّم مقترحان} few {تتقدّم # مقترحات} many {يتقدّم # مقترحًا} other {يتقدّم # مقترح}} إلى ورقة الاقتراع. لا تتقدّم المقترحات الأخرى. يراجع أحد المسؤولين كل فئة وينشر ورقة الاقتراع.",
+      "confirmSelectionsDescription": "{count, plural, zero {لا يتقدّم أي مقترح} one {يتقدّم مقترح واحد} two {يتقدّم مقترحان} few {تتقدّم # مقترحات} many {يتقدّم # مقترحًا} other {يتقدّم # مقترح}} إلى ورقة الاقتراع، و{notAdvancedCount, plural, zero {لا يبقى أي مقترح دون تقدّم} one {لا يتقدّم مقترح واحد} two {لا يتقدّم مقترحان} few {لا تتقدّم # مقترحات} many {لا يتقدّم # مقترحًا} other {لا يتقدّم # مقترح}}. يراجع أحد المسؤولين كل فئة وينشر ورقة الاقتراع.",
       "unconfirmSelectionsTitle": "هل تريد إلغاء تأكيد اختياراتك؟",
       "unconfirmCategorySelectionsTitle": "هل تريد إلغاء تأكيد اختيارات <bdi>{category}</bdi>؟",
       "unconfirmSelectionsDescription": "يمكنك تغيير اختياراتك مرة أخرى. لن يضيع شيء. أكّدها مرة أخرى عند الانتهاء.",

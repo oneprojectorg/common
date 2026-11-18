@@ -1727,7 +1727,7 @@
       "unconfirmSelectionsAction": "Annuler la confirmation",
       "confirmSelectionsTitle": "Confirmer vos sélections ?",
       "confirmCategorySelectionsTitle": "Confirmer les sélections de <bdi>{category}</bdi> ?",
-      "confirmSelectionsDescription": "{count, plural, one {# proposition avance} other {# propositions avancent}} vers le bulletin. Les autres propositions n’avancent pas. Un administrateur examine chaque catégorie et publie le bulletin.",
+      "confirmSelectionsDescription": "{count, plural, one {# proposition avance} other {# propositions avancent}} vers le bulletin et {notAdvancedCount, plural, one {# n’avance pas} other {# n’avancent pas}}. Un administrateur examine chaque catégorie et publie le bulletin.",
       "unconfirmSelectionsTitle": "Annuler la confirmation de vos sélections ?",
       "unconfirmCategorySelectionsTitle": "Annuler la confirmation des sélections de <bdi>{category}</bdi> ?",
       "unconfirmSelectionsDescription": "Vous pourrez de nouveau modifier vos sélections. Rien n’est perdu. Confirmez à nouveau quand vous avez terminé.",
