@@ -1737,9 +1737,7 @@
       "selectionsAlreadyConfirmedError": "A választásai már meg vannak erősítve.",
       "unconfirmSelectionsError": "Nem sikerült visszavonni a választásai megerősítését. Próbálja újra.",
       "developLockedError": "Megerősítette a választásait. A módosításhoz vonja vissza a megerősítést.",
-      "entryNotAdvancedStatus": "Nem jut tovább",
-      "viewEntryAction": "Megtekintés",
-      "viewEntryLabel": "{title} megtekintése"
+      "entryNotAdvancedStatus": "Nem jut tovább"
     },
     "suggestedWinnersHint": "A javasolt nyertes javaslatokat a szavazási szabályok és a teljes költségvetés alapján választottuk ki.",
     "votingOpenHeading": "ITT AZ IDEJE SZAVAZNI.",

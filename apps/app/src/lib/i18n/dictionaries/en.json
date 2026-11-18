@@ -1737,9 +1737,7 @@
       "selectionsAlreadyConfirmedError": "Your selections are already confirmed.",
       "unconfirmSelectionsError": "Could not unconfirm your selections. Try again.",
       "developLockedError": "You confirmed your selections. Unconfirm them to make changes.",
-      "entryNotAdvancedStatus": "Not advanced",
-      "viewEntryAction": "View",
-      "viewEntryLabel": "View {title}"
+      "entryNotAdvancedStatus": "Not advanced"
     },
     "suggestedWinnersHint": "We've selected the suggested winning proposals based on voting rules and total budget.",
     "votingOpenHeading": "TIME TO VOTE.",
