@@ -2,6 +2,7 @@
 
 import { trpc } from '@op/api/client';
 import { sanitizeTiptapDoc } from '@op/common/client';
+import { useDebouncedCallback } from '@op/hooks';
 import { logger } from '@op/logging/client';
 import {
   AlertDialog,
@@ -17,10 +18,11 @@ import { Header2 } from '@op/sense/Header';
 import { RichTextEditor, RichTextViewer } from '@op/sense/RichTextEditor';
 import { toast } from '@op/sense/Toast';
 import { cn } from '@op/sense/lib/utils';
-import { type JSONContent, generateJSON } from '@tiptap/core';
+import { type Extensions, type JSONContent, generateJSON } from '@tiptap/core';
 import type { Editor } from '@tiptap/react';
 import {
   type ReactNode,
+  type Ref,
   useEffect,
   useId,
   useMemo,
@@ -44,6 +46,7 @@ const EMPTY_DOC: JSONContent = {
 };
 
 type DraftSaveStatus = 'idle' | 'saving' | 'saved';
+type AboutBody = string | JSONContent;
 
 interface ProcessAdminAboutProps {
   slug: string;
@@ -51,17 +54,13 @@ interface ProcessAdminAboutProps {
   /** A draft has no reading view to protect: the editor is always up and writes through. */
   isDraft: boolean;
   /** The stored body, TipTap JSON or legacy HTML. */
-  body?: string | JSONContent;
+  body?: AboutBody;
   description: string | null | undefined;
   /** The About body, server-rendered by the page so it ships as HTML. */
   aboutSlot: ReactNode;
 }
 
-/**
- * The About section, edited where it sits. On a live process Edit swaps the
- * editor into the same box, Done or Save commits, Escape discards, and
- * clicking away asks only when something was typed.
- */
+/** The About section, edited where it sits. */
 export function ProcessAdminAbout({
   slug,
   instanceId,
@@ -70,30 +69,103 @@ export function ProcessAdminAbout({
   description,
   aboutSlot,
 }: ProcessAdminAboutProps) {
+  if (isDraft) {
+    return <DraftAbout slug={slug} instanceId={instanceId} body={body} />;
+  }
+  return (
+    <LiveAbout
+      slug={slug}
+      instanceId={instanceId}
+      body={body}
+      description={description}
+      aboutSlot={aboutSlot}
+    />
+  );
+}
+
+/** The editor is always up and writes through, a keystroke's pause later. */
+function DraftAbout({
+  slug,
+  instanceId,
+  body,
+}: {
+  slug: string;
+  instanceId: string;
+  body?: AboutBody;
+}) {
+  const t = useTranslations('decisions.processAdmin');
+  const headingId = useId();
+  const { extensions, seed, setSaved } = useAboutBody(body);
+  const [status, setStatus] = useState<DraftSaveStatus>('idle');
+
+  const { sendSave } = useOrderedBodySaves({
+    slug,
+    instanceId,
+    onSaved: setSaved,
+    onIdle: (ok) => setStatus(ok ? 'saved' : 'idle'),
+  });
+  const saveAfterPause = useDebouncedCallback(
+    (nextBody: JSONContent) => sendSave(nextBody),
+    DRAFT_SAVE_DELAY_MS,
+  );
+  // Leaving the page within the pause still sends the last edit.
+  useEffect(() => () => void saveAfterPause.flush(), [saveAfterPause]);
+
+  const statusLabels: Record<DraftSaveStatus, string> = {
+    idle: '',
+    saving: t('savingStatus'),
+    saved: t('savedStatus'),
+  };
+
+  return (
+    <AboutFrame
+      headingId={headingId}
+      action={
+        <span aria-live="polite" className="sr-only">
+          {statusLabels[status]}
+        </span>
+      }
+      boxClassName="focus-within:ring-1 focus-within:ring-input not-focus-within:hover:bg-muted/40"
+    >
+      <AboutEditor
+        extensions={extensions}
+        content={seed}
+        headingId={headingId}
+        onChangeJSON={(nextBody) => {
+          setStatus('saving');
+          saveAfterPause(nextBody);
+        }}
+      />
+    </AboutFrame>
+  );
+}
+
+/**
+ * Edit swaps the editor into the reading box, Done or Save commits, Escape
+ * discards, and clicking away asks only when something was typed.
+ */
+function LiveAbout({
+  slug,
+  instanceId,
+  body,
+  description,
+  aboutSlot,
+}: {
+  slug: string;
+  instanceId: string;
+  body?: AboutBody;
+  description: string | null | undefined;
+  aboutSlot: ReactNode;
+}) {
   const t = useTranslations('decisions.processAdmin');
   const tShared = useTranslations();
   const headingId = useId();
-  const extensions = useMemo(
-    () => getProposalExtensions({ slashCommands: false }),
-    [],
-  );
-  // Sanitized so an unknown node cannot make TipTap blank the doc on load.
-  const storedContent = useMemo(
-    () =>
-      typeof body === 'string' || body === undefined
-        ? body
-        : sanitizeTiptapDoc(body),
-    [body],
-  );
-  // What this client last saved; the server-rendered slot is stale after a save.
-  const [saved, setSaved] = useState<JSONContent | null>(null);
+  const { extensions, seed, saved, setSaved } = useAboutBody(body);
   const [isOpen, setIsOpen] = useState(false);
   const [draft, setDraft] = useState<JSONContent | null>(null);
   const [isConfirming, setIsConfirming] = useState(false);
-  const [editor, setEditor] = useState<Editor | null>(null);
-  const [draftStatus, setDraftStatus] = useState<DraftSaveStatus>('idle');
   const box = useRef<HTMLDivElement>(null);
-  const outer = useRef<HTMLDivElement>(null);
+  const outer = useRef<HTMLElement>(null);
   const editButton = useRef<HTMLButtonElement>(null);
   const baseline = useRef('');
   const isDirty = draft !== null && JSON.stringify(draft) !== baseline.current;
@@ -102,10 +174,7 @@ export function ProcessAdminAbout({
     slug,
     instanceId,
     onSaved: setSaved,
-    onIdle: isDraft ? (ok) => setDraftStatus(ok ? 'saved' : 'idle') : undefined,
   });
-
-  const seed = saved ?? storedContent ?? '';
 
   const close = () => {
     setIsOpen(false);
@@ -131,38 +200,6 @@ export function ProcessAdminAbout({
     }
     sendSave(draft, close);
   };
-
-  const draftTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const draftBody = useRef<JSONContent | null>(null);
-  const flushDraft = () => {
-    draftTimer.current = null;
-    const next = draftBody.current;
-    draftBody.current = null;
-    if (next) {
-      sendSave(next);
-    }
-  };
-  // A draft writes through, a keystroke's pause later.
-  const saveDraftBody = (nextBody: JSONContent) => {
-    draftBody.current = nextBody;
-    setDraftStatus('saving');
-    if (draftTimer.current) {
-      clearTimeout(draftTimer.current);
-    }
-    draftTimer.current = setTimeout(flushDraft, DRAFT_SAVE_DELAY_MS);
-  };
-  const flushDraftRef = useRef(flushDraft);
-  flushDraftRef.current = flushDraft;
-  // Leaving the page within the pause still sends the last edit.
-  useEffect(
-    () => () => {
-      if (draftTimer.current) {
-        clearTimeout(draftTimer.current);
-        flushDraftRef.current();
-      }
-    },
-    [],
-  );
 
   // Escape discards. Focus leaving the box does not: the editor holds a
   // toolbar, and taking one of its buttons is not leaving.
@@ -237,33 +274,13 @@ export function ProcessAdminAbout({
     );
   }
 
-  let boxClassName: string;
-  if (isDraft) {
-    boxClassName =
-      'focus-within:ring-1 focus-within:ring-input not-focus-within:hover:bg-muted/40';
-  } else if (isOpen) {
-    boxClassName = 'ring-1 ring-input';
-  } else {
-    boxClassName = 'hover:bg-muted/40 focus-within:bg-muted/40';
-  }
-
-  const draftStatusLabels: Record<DraftSaveStatus, string> = {
-    idle: '',
-    saving: t('savingStatus'),
-    saved: t('savedStatus'),
-  };
-
   return (
-    <section ref={outer} className="flex min-w-0 flex-col gap-3 md:w-80 md:shrink-0 lg:w-140">
-      <div className="flex items-start justify-between gap-3">
-        <Header2 id={headingId} className="text-label">
-          {t('aboutHeading')}
-        </Header2>
-        {isDraft ? (
-          <span aria-live="polite" className="sr-only">
-            {draftStatusLabels[draftStatus]}
-          </span>
-        ) : (
+    <>
+      <AboutFrame
+        headingId={headingId}
+        outerRef={outer}
+        boxRef={box}
+        action={
           <Button
             ref={editButton}
             variant="link"
@@ -276,36 +293,24 @@ export function ProcessAdminAbout({
             {isOpen ? null : <LuPencil className="size-3.5" aria-hidden />}
             {isOpen ? tShared('Done') : tShared('Edit')}
           </Button>
-        )}
-      </div>
-      <div
-        ref={box}
-        className={cn(
-          '-mx-3 -my-2 rounded-lg px-3 py-2 transition-colors',
-          boxClassName,
-        )}
+        }
+        boxClassName={
+          isOpen
+            ? 'ring-1 ring-input'
+            : 'hover:bg-muted/40 focus-within:bg-muted/40'
+        }
       >
-        {isDraft || isOpen ? (
-          <>
-            <RichTextEditor
-              extensions={extensions}
-              content={seed}
-              placeholder={t('aboutPlaceholder')}
-              ariaLabelledBy={headingId}
-              editorClassName="min-h-40 focus-visible:ring-0"
-              onChangeJSON={isDraft ? saveDraftBody : setDraft}
-              onEditorReady={setEditor}
-            />
-            <RichTextEditorBubbleMenu
-              editor={editor}
-              allowCollapsible
-              allowImages
-            />
-          </>
+        {isOpen ? (
+          <AboutEditor
+            extensions={extensions}
+            content={seed}
+            headingId={headingId}
+            onChangeJSON={setDraft}
+          />
         ) : (
           readView
         )}
-      </div>
+      </AboutFrame>
       <AlertDialog open={isConfirming} onOpenChange={setIsConfirming}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -335,8 +340,98 @@ export function ProcessAdminAbout({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+    </>
+  );
+}
+
+function AboutFrame({
+  headingId,
+  action,
+  boxClassName,
+  outerRef,
+  boxRef,
+  children,
+}: {
+  headingId: string;
+  action: ReactNode;
+  boxClassName: string;
+  outerRef?: Ref<HTMLElement>;
+  boxRef?: Ref<HTMLDivElement>;
+  children: ReactNode;
+}) {
+  const t = useTranslations('decisions.processAdmin');
+
+  return (
+    <section
+      ref={outerRef}
+      className="flex min-w-0 flex-col gap-3 md:w-80 md:shrink-0 lg:w-140"
+    >
+      <div className="flex items-start justify-between gap-3">
+        <Header2 id={headingId} className="text-label">
+          {t('aboutHeading')}
+        </Header2>
+        {action}
+      </div>
+      <div
+        ref={boxRef}
+        className={cn(
+          '-mx-3 -my-2 rounded-lg px-3 py-2 transition-colors',
+          boxClassName,
+        )}
+      >
+        {children}
+      </div>
     </section>
   );
+}
+
+function AboutEditor({
+  extensions,
+  content,
+  headingId,
+  onChangeJSON,
+}: {
+  extensions: Extensions;
+  content: AboutBody;
+  headingId: string;
+  onChangeJSON: (body: JSONContent) => void;
+}) {
+  const t = useTranslations('decisions.processAdmin');
+  const [editor, setEditor] = useState<Editor | null>(null);
+
+  return (
+    <>
+      <RichTextEditor
+        extensions={extensions}
+        content={content}
+        placeholder={t('aboutPlaceholder')}
+        ariaLabelledBy={headingId}
+        editorClassName="min-h-40 focus-visible:ring-0"
+        onChangeJSON={onChangeJSON}
+        onEditorReady={setEditor}
+      />
+      <RichTextEditorBubbleMenu editor={editor} allowCollapsible allowImages />
+    </>
+  );
+}
+
+function useAboutBody(body: AboutBody | undefined) {
+  const extensions = useMemo(
+    () => getProposalExtensions({ slashCommands: false }),
+    [],
+  );
+  // Sanitized so an unknown node cannot make TipTap blank the doc on load.
+  const storedContent = useMemo(
+    () =>
+      typeof body === 'string' || body === undefined
+        ? body
+        : sanitizeTiptapDoc(body),
+    [body],
+  );
+  // What this client last saved; the server-rendered slot is stale after a save.
+  const [saved, setSaved] = useState<JSONContent | null>(null);
+
+  return { extensions, saved, setSaved, seed: saved ?? storedContent ?? '' };
 }
 
 /**
