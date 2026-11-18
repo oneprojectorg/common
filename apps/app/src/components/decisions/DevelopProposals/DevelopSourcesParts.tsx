@@ -8,7 +8,6 @@ import {
   type ProposalReviewAggregates,
   RECOMMENDATION_OPTION,
   type RecommendationValue,
-  isVotingEligible,
   nextCursor,
 } from '@op/common/client';
 import { useInfiniteScroll } from '@op/hooks';
@@ -252,7 +251,7 @@ export function DevelopSourceEntryTitle({ source }: { source: DevelopSource }) {
   const t = useTranslations('decisions.develop');
   const { actions, meta } = useDevelopSourcesContext();
   const title = useDevelopSourceTitle(source);
-  const entry = getAdvancingEntry(source) ?? source.developedProposals[0];
+  const entry = source.developedProposals[0];
 
   if (entry) {
     return (
@@ -291,15 +290,15 @@ export function DevelopSourceRecommendationsCell({
   );
 }
 
-// Advancing once an entry developed from the source is submitted and still in
-// the running; the API returns only the entries the caller may read.
+// Advancing once the source's first entry is no longer a draft; the API
+// returns only the entries the caller may read.
 export function DevelopSourceDecisionCell({
   source,
 }: {
   source: DevelopSource;
 }) {
   const t = useTranslations('decisions.develop');
-  const isAdvancing = Boolean(getAdvancingEntry(source));
+  const isAdvancing = isSourceAdvancing(source);
 
   return (
     <TableCell className="py-4 text-end">
@@ -609,12 +608,6 @@ function RecommendationCounts({
         </StatusDot>
       ))}
     </div>
-  );
-}
-
-function getAdvancingEntry(source: DevelopSource) {
-  return source.developedProposals.find((entry) =>
-    isVotingEligible(entry.status),
   );
 }
 
