@@ -1680,7 +1680,8 @@
       "advancedToast": "“<bdi>{title}</bdi>” advanced",
       "savedToast": "“<bdi>{title}</bdi>” saved",
       "readOnlyNotice": "You can view this entry but not edit it.",
-      "confirmedNotice": "You confirmed your selections. Unconfirm them on the develop screen to make changes."
+      "confirmedNotice": "You confirmed your selections. Unconfirm them on the develop screen to make changes.",
+      "noEntryYet": "No ballot entry yet. It gets one if this proposal advances."
     },
     "develop": {
       "heroTitle": "Advance Proposals",

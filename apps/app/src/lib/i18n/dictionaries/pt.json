@@ -1680,7 +1680,8 @@
       "advancedToast": "“<bdi>{title}</bdi>” avançou",
       "savedToast": "Alterações em “<bdi>{title}</bdi>” salvas",
       "readOnlyNotice": "Você pode ver esta entrada, mas não editá-la.",
-      "confirmedNotice": "Você confirmou suas seleções. Cancele a confirmação na tela de desenvolvimento para fazer alterações."
+      "confirmedNotice": "Você confirmou suas seleções. Cancele a confirmação na tela de desenvolvimento para fazer alterações.",
+      "noEntryYet": "Ainda não há entrada na cédula. Ela terá uma se esta proposta avançar."
     },
     "develop": {
       "heroTitle": "Avançar propostas",

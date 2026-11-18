@@ -11,6 +11,7 @@ import { cache } from 'react';
 import { getTranslations } from '@/lib/i18n';
 
 import { getDevelopEntryHeading } from '@/components/decisions/developProposalEditor/getDevelopEntryHeading';
+import { isCurrentDevelopSource } from '@/components/decisions/developProposalEditor/isCurrentDevelopSource';
 
 import { DevelopProposalClient } from './DevelopProposalClient';
 
@@ -52,7 +53,10 @@ export async function generateMetadata({
   }
 }
 
-/** The develop editor of an entry. Any other proposal opens at `/edit`. */
+/**
+ * The develop view of an entry, or of a source of the current develop phase
+ * that has no entry. Any other proposal opens at `/edit`.
+ */
 const DevelopProposalPage = async ({
   params,
 }: {
@@ -62,7 +66,7 @@ const DevelopProposalPage = async ({
   const { utils, queryClient } = await createServerUtils();
 
   // These reads warm the cache; the client's error boundary owns failures.
-  const [proposal] = await Promise.all([
+  const [proposal, decisionProfile] = await Promise.all([
     fetchProposal(profileId).catch(() => null),
     fetchDecisionBySlug(slug).catch(() => null),
   ]);
@@ -77,7 +81,14 @@ const DevelopProposalPage = async ({
         .catch(() => null)
     : null;
 
-  if (relationships && relationships.items.length === 0) {
+  const instance = decisionProfile?.processInstance;
+  if (
+    relationships &&
+    relationships.items.length === 0 &&
+    instance &&
+    proposal &&
+    !isCurrentDevelopSource({ instance, proposal })
+  ) {
     notFound();
   }
 

@@ -1680,7 +1680,8 @@
       "advancedToast": "« <bdi>{title}</bdi> » a avancé",
       "savedToast": "Modifications de « <bdi>{title}</bdi> » enregistrées",
       "readOnlyNotice": "Vous pouvez consulter cette entrée, mais pas la modifier.",
-      "confirmedNotice": "Vous avez confirmé vos sélections. Annulez la confirmation sur l’écran de développement pour faire des modifications."
+      "confirmedNotice": "Vous avez confirmé vos sélections. Annulez la confirmation sur l’écran de développement pour faire des modifications.",
+      "noEntryYet": "Pas encore d’entrée au bulletin. Elle en aura une si cette proposition avance."
     },
     "develop": {
       "heroTitle": "Faire avancer les propositions",
