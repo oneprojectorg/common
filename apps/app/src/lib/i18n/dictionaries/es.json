@@ -1679,7 +1679,8 @@
       "noReviews": "Esta propuesta aún no tiene revisiones.",
       "advancedToast": "“<bdi>{title}</bdi>” avanzó",
       "savedToast": "Cambios en “<bdi>{title}</bdi>” guardados",
-      "readOnlyNotice": "Puedes ver esta entrada, pero no editarla."
+      "readOnlyNotice": "Puedes ver esta entrada, pero no editarla.",
+      "confirmedNotice": "Confirmaste tus selecciones. Anula la confirmación en la pantalla de desarrollo para hacer cambios."
     },
     "develop": {
       "heroTitle": "Avanzar propuestas",
@@ -1721,7 +1722,23 @@
       "noFilteredEntriesDescription": "Prueba con otra búsqueda o categoría.",
       "noFilteredEntriesDistrictDescription": "Prueba con otra búsqueda o distrito.",
       "advancingCount": "{count, plural, one {# propuesta avanza} other {# propuestas avanzan}}",
-      "confirmSelectionsAction": "Confirmar selecciones"
+      "confirmSelectionsAction": "Confirmar selecciones",
+      "unconfirmSelectionsAction": "Anular la confirmación",
+      "confirmSelectionsTitle": "¿Confirmar tus selecciones?",
+      "confirmCategorySelectionsTitle": "¿Confirmar las selecciones de <bdi>{category}</bdi>?",
+      "confirmSelectionsDescription": "{count, plural, one {# propuesta avanza} other {# propuestas avanzan}} a la boleta. Las demás propuestas no avanzan. Un administrador revisa cada categoría y publica la boleta.",
+      "unconfirmSelectionsTitle": "¿Anular la confirmación de tus selecciones?",
+      "unconfirmCategorySelectionsTitle": "¿Anular la confirmación de las selecciones de <bdi>{category}</bdi>?",
+      "unconfirmSelectionsDescription": "Podrás cambiar tus selecciones de nuevo. No se pierde nada. Vuelve a confirmar cuando termines.",
+      "selectionsConfirmedSuccess": "Selecciones confirmadas",
+      "selectionsUnconfirmedSuccess": "Confirmación anulada",
+      "confirmSelectionsError": "No se pudieron confirmar tus selecciones. Inténtalo de nuevo.",
+      "selectionsAlreadyConfirmedError": "Tus selecciones ya están confirmadas.",
+      "unconfirmSelectionsError": "No se pudo anular la confirmación de tus selecciones. Inténtalo de nuevo.",
+      "developLockedError": "Confirmaste tus selecciones. Anula la confirmación para hacer cambios.",
+      "entryNotAdvancedStatus": "No avanza",
+      "viewEntryAction": "Ver",
+      "viewEntryLabel": "Ver {title}"
     },
     "suggestedWinnersHint": "Hemos seleccionado las propuestas ganadoras sugeridas según las reglas de votación y el presupuesto total.",
     "votingOpenHeading": "HORA DE VOTAR.",

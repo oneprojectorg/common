@@ -1,6 +1,6 @@
 'use client';
 
-import { isTRPCClientError, trpc } from '@op/api/client';
+import { trpc } from '@op/api/client';
 import {
   type InstancePhaseData,
   type ProcessInstance,
@@ -29,6 +29,7 @@ import {
 } from '@op/sense/Empty';
 import { Header2 } from '@op/sense/Header';
 import { Skeleton } from '@op/sense/Skeleton';
+import { StatusBadge } from '@op/sense/StatusBadge';
 import { StatusDot, type StatusDotIntent } from '@op/sense/StatusDot';
 import {
   Table,
@@ -47,7 +48,7 @@ import {
   useState,
   useTransition,
 } from 'react';
-import { LuCheck, LuLeaf, LuPencil } from 'react-icons/lu';
+import { LuCheck, LuEye, LuLeaf, LuPencil } from 'react-icons/lu';
 
 import { Link, useRouter, useTranslations } from '@/lib/i18n';
 
@@ -64,8 +65,24 @@ import {
   useProposalReviewAggregates,
   useReportProposalsForReviewDecoration,
 } from '../proposalReviewDecoration';
+import { getHttpStatus } from './getHttpStatus';
 
 type DevelopSourceScope = ListDevelopSourcesInput['scope'];
+
+interface DevelopSourcesPanelProps {
+  instance: ProcessInstance;
+  sourcePhase: InstancePhaseData | null;
+  decisionSlug: string;
+}
+
+interface SourcesTableProps {
+  processInstanceId: string;
+  sourcePhaseId: string;
+  scope: DevelopSourceScope;
+  /** Show the overall-recommendation column: the caller may read the reviews. */
+  showRecommendations: boolean;
+  decisionSlug: string;
+}
 
 type PendingStatusChange = {
   entryId: string;
@@ -90,14 +107,60 @@ const RECOMMENDATION_INTENT: Record<RecommendationValue, StatusDotIntent> = {
  * The list comes page by page from the API in its own order (newest first);
  * nothing is sorted or filtered here.
  */
-export function DevelopSourcesPanel({
+export function DevelopSourcesPanel(props: DevelopSourcesPanelProps) {
+  return (
+    <SourcesPanelShell
+      {...props}
+      renderTable={(tableProps) => <EditableSourcesTable {...tableProps} />}
+    />
+  );
+}
+
+/**
+ * The Proposals tab for a caller who may not develop now (they confirmed
+ * their work): each source shows whether it is advancing instead of the
+ * develop actions, and a source with an entry opens it read-only.
+ */
+export function DevelopSourcesReadOnlyPanel(props: DevelopSourcesPanelProps) {
+  return (
+    <SourcesPanelShell
+      {...props}
+      renderTable={(tableProps) => <ReadOnlySourcesTable {...tableProps} />}
+    />
+  );
+}
+
+export function DevelopSourcesTableSkeleton() {
+  return (
+    <div className="flex flex-col gap-10" aria-hidden>
+      <Skeleton className="h-7 w-40" />
+      <div className="flex flex-col">
+        {Array.from({ length: 4 }).map((_, index) => (
+          <div
+            key={index}
+            className="flex items-center justify-between gap-4 border-b py-4"
+          >
+            <div className="flex flex-col gap-2">
+              <Skeleton className="h-4 w-56" />
+              <Skeleton className="h-3.5 w-28" />
+            </div>
+            <Skeleton className="hidden h-4 w-48 md:block" />
+            <Skeleton className="h-11 w-28" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** The scope, the empty state and the review decoration both variants share. */
+function SourcesPanelShell({
   instance,
   sourcePhase,
   decisionSlug,
-}: {
-  instance: ProcessInstance;
-  sourcePhase: InstancePhaseData | null;
-  decisionSlug: string;
+  renderTable,
+}: DevelopSourcesPanelProps & {
+  renderTable: (props: SourcesTableProps) => ReactNode;
 }) {
   const t = useTranslations('decisions.develop');
   const scope: DevelopSourceScope = instance.access?.admin ? 'all' : 'assigned';
@@ -132,85 +195,24 @@ export function DevelopSourcesPanel({
       enabled={canReadReviews}
       canOpenReviews={false}
     >
-      <DevelopSourcesTable
-        processInstanceId={instance.id}
-        sourcePhaseId={sourcePhase.phaseId}
-        scope={scope}
-        showRecommendations={canReadReviews}
-        decisionSlug={decisionSlug}
-      />
+      {renderTable({
+        processInstanceId: instance.id,
+        sourcePhaseId: sourcePhase.phaseId,
+        scope,
+        showRecommendations: canReadReviews,
+        decisionSlug,
+      })}
     </ProposalReviewDecorationProvider>
   );
 }
 
-export function DevelopSourcesTableSkeleton() {
-  return (
-    <div className="flex flex-col gap-10" aria-hidden>
-      <Skeleton className="h-7 w-40" />
-      <div className="flex flex-col">
-        {Array.from({ length: 4 }).map((_, index) => (
-          <div
-            key={index}
-            className="flex items-center justify-between gap-4 border-b py-4"
-          >
-            <div className="flex flex-col gap-2">
-              <Skeleton className="h-4 w-56" />
-              <Skeleton className="h-3.5 w-28" />
-            </div>
-            <Skeleton className="hidden h-4 w-48 md:block" />
-            <Skeleton className="h-11 w-28" />
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function DevelopSourcesTable({
-  processInstanceId,
-  sourcePhaseId,
-  scope,
-  showRecommendations,
-  decisionSlug,
-}: {
-  processInstanceId: string;
-  sourcePhaseId: string;
-  scope: DevelopSourceScope;
-  /** Show the overall-recommendation column: the caller may read the reviews. */
-  showRecommendations: boolean;
-  decisionSlug: string;
-}) {
+function EditableSourcesTable(props: SourcesTableProps) {
+  const { processInstanceId, decisionSlug } = props;
   const t = useTranslations('decisions');
   const router = useRouter();
-  const openInSheet = useOpenProposalInSheet();
   const [isNavigating, startNavigating] = useTransition();
-
-  const [data, { fetchNextPage, hasNextPage, isFetchingNextPage }] =
-    trpc.decision.listDevelopSources.useSuspenseInfiniteQuery(
-      {
-        processInstanceId,
-        phaseIds: [sourcePhaseId],
-        scope,
-        limit: PROPOSALS_PAGE_LIMIT,
-      },
-      { getNextPageParam: nextCursor },
-    );
-
-  const sources = useMemo(
-    () => data.pages.flatMap((page) => page.items),
-    [data.pages],
-  );
-  const total = data.pages[0]?.total ?? 0;
-  useReportProposalsForReviewDecoration(sources);
-
-  const loadNextPage = useCallback(() => {
-    void fetchNextPage();
-  }, [fetchNextPage]);
-  const { ref: nextPageRef, shouldShowTrigger } =
-    useInfiniteScroll<HTMLDivElement>(loadNextPage, {
-      hasNextPage,
-      isFetchingNextPage,
-    });
+  const sourcesPage = useDevelopSourcesPage(props);
+  const { sources } = sourcesPage;
 
   const createEntry = trpc.decision.createDevelopedProposal.useMutation({
     onSuccess: (entry) => {
@@ -225,7 +227,11 @@ function DevelopSourcesTable({
     },
     onError: (error) => {
       logger.error('Failed to prepare a develop entry', { error });
-      toast.error(t('develop.prepareEntryError'));
+      toast.error(
+        isDevelopLockedError(error)
+          ? t('develop.developLockedError')
+          : t('develop.prepareEntryError'),
+      );
     },
   });
 
@@ -273,11 +279,14 @@ function DevelopSourcesTable({
         onError: (error) => {
           setPendingChange(null);
           logger.error('Failed to advance a develop entry', { error });
+          const status = getHttpStatus(error);
           // A 400 is the server's form validation: the entry is incomplete.
           toast.error(
-            getHttpStatus(error) === 400
-              ? t('develop.advanceEntryIncompleteError', { title })
-              : t('develop.advanceEntryError'),
+            status === 409
+              ? t('develop.developLockedError')
+              : status === 400
+                ? t('develop.advanceEntryIncompleteError', { title })
+                : t('develop.advanceEntryError'),
           );
         },
       },
@@ -293,15 +302,147 @@ function DevelopSourcesTable({
           setPendingChange(null);
           logger.error('Failed to un-advance a develop entry', { error });
           toast.error(
-            t.rich('develop.unadvanceEntryError', {
-              title,
-              bdi: (chunks) => <bdi>{chunks}</bdi>,
-            }),
+            isDevelopLockedError(error)
+              ? t('develop.developLockedError')
+              : t.rich('develop.unadvanceEntryError', {
+                  title,
+                  bdi: (chunks) => <bdi>{chunks}</bdi>,
+                }),
           );
         },
       },
     );
   };
+
+  return (
+    <SourcesTable
+      {...props}
+      sourcesPage={sourcesPage}
+      renderActions={(source, title) => {
+        // One entry per source for now: Edit and Advance act on the oldest
+        // one.
+        const developedEntry = source.developedProposals[0];
+
+        return developedEntry ? (
+          <EntryActions>
+            <EditEntryLink
+              title={title}
+              href={decisionProposalDevelopHref({
+                decisionSlug,
+                profileId: developedEntry.profileId,
+              })}
+            />
+            <AdvanceEntryButton
+              title={title}
+              status={developedEntry.status}
+              disabled={isBusy}
+              loading={changingEntryId === developedEntry.id}
+              onAdvance={() => advance(developedEntry, title)}
+              onUnadvance={() => unadvance(developedEntry, title)}
+            />
+          </EntryActions>
+        ) : (
+          <PrepareEntryButton
+            title={title}
+            disabled={isBusy}
+            loading={preparingSourceId === source.id}
+            onPrepare={() => prepare(source)}
+          />
+        );
+      }}
+    />
+  );
+}
+
+function ReadOnlySourcesTable(props: SourcesTableProps) {
+  const { decisionSlug } = props;
+  const sourcesPage = useDevelopSourcesPage(props);
+
+  return (
+    <SourcesTable
+      {...props}
+      sourcesPage={sourcesPage}
+      renderActions={(source, title) => {
+        const developedEntry = source.developedProposals[0];
+
+        return (
+          <EntryActions>
+            <SourceDecisionBadge
+              advancing={
+                !!developedEntry &&
+                developedEntry.status !== ProposalStatus.DRAFT
+              }
+            />
+            {developedEntry ? (
+              <ViewEntryLink
+                title={title}
+                href={decisionProposalDevelopHref({
+                  decisionSlug,
+                  profileId: developedEntry.profileId,
+                })}
+              />
+            ) : null}
+          </EntryActions>
+        );
+      }}
+    />
+  );
+}
+
+/** One page of sources at a time, with the next page loaded on scroll. */
+function useDevelopSourcesPage({
+  processInstanceId,
+  sourcePhaseId,
+  scope,
+}: SourcesTableProps) {
+  const [data, { fetchNextPage, hasNextPage, isFetchingNextPage }] =
+    trpc.decision.listDevelopSources.useSuspenseInfiniteQuery(
+      {
+        processInstanceId,
+        phaseIds: [sourcePhaseId],
+        scope,
+        limit: PROPOSALS_PAGE_LIMIT,
+      },
+      { getNextPageParam: nextCursor },
+    );
+
+  const sources = useMemo(
+    () => data.pages.flatMap((page) => page.items),
+    [data.pages],
+  );
+  useReportProposalsForReviewDecoration(sources);
+
+  const loadNextPage = useCallback(() => {
+    void fetchNextPage();
+  }, [fetchNextPage]);
+  const { ref: nextPageRef, shouldShowTrigger } =
+    useInfiniteScroll<HTMLDivElement>(loadNextPage, {
+      hasNextPage,
+      isFetchingNextPage,
+    });
+
+  return {
+    sources,
+    total: data.pages[0]?.total ?? 0,
+    nextPageRef,
+    shouldShowTrigger,
+    isFetchingNextPage,
+  };
+}
+
+function SourcesTable({
+  scope,
+  showRecommendations,
+  decisionSlug,
+  sourcesPage,
+  renderActions,
+}: SourcesTableProps & {
+  sourcesPage: ReturnType<typeof useDevelopSourcesPage>;
+  renderActions: (source: DevelopSource, title: string) => ReactNode;
+}) {
+  const t = useTranslations('decisions');
+  const openInSheet = useOpenProposalInSheet();
+  const { sources, total } = sourcesPage;
 
   return (
     <div className="flex flex-col gap-10">
@@ -341,9 +482,6 @@ function DevelopSourcesTable({
                 const submitterName = source.submittedBy
                   ? source.submittedBy.name || source.submittedBy.slug
                   : null;
-                // One entry per source for now: Edit and Advance act on the
-                // oldest one.
-                const developedEntry = source.developedProposals[0];
 
                 return (
                   <TableRow key={source.id}>
@@ -372,32 +510,7 @@ function DevelopSourcesTable({
                       </TableCell>
                     ) : null}
                     <TableCell className="py-4 text-end">
-                      {developedEntry ? (
-                        <EntryActions>
-                          <EditEntryLink
-                            title={title}
-                            href={decisionProposalDevelopHref({
-                              decisionSlug,
-                              profileId: developedEntry.profileId,
-                            })}
-                          />
-                          <AdvanceEntryButton
-                            title={title}
-                            status={developedEntry.status}
-                            disabled={isBusy}
-                            loading={changingEntryId === developedEntry.id}
-                            onAdvance={() => advance(developedEntry, title)}
-                            onUnadvance={() => unadvance(developedEntry, title)}
-                          />
-                        </EntryActions>
-                      ) : (
-                        <PrepareEntryButton
-                          title={title}
-                          disabled={isBusy}
-                          loading={preparingSourceId === source.id}
-                          onPrepare={() => prepare(source)}
-                        />
-                      )}
+                      {renderActions(source, title)}
                     </TableCell>
                   </TableRow>
                 );
@@ -405,9 +518,13 @@ function DevelopSourcesTable({
             </TableBody>
           </Table>
 
-          {shouldShowTrigger ? (
-            <div ref={nextPageRef} aria-hidden className="flex flex-col">
-              {isFetchingNextPage
+          {sourcesPage.shouldShowTrigger ? (
+            <div
+              ref={sourcesPage.nextPageRef}
+              aria-hidden
+              className="flex flex-col"
+            >
+              {sourcesPage.isFetchingNextPage
                 ? Array.from({ length: 2 }).map((_, index) => (
                     <div
                       key={index}
@@ -470,7 +587,38 @@ function EditEntryLink({ title, href }: { title: string; href: string }) {
   );
 }
 
-/** Edit and Advance side by side, for a source that has an entry. */
+/** Opens the entry developed from a source, which the editor shows read-only. */
+function ViewEntryLink({ title, href }: { title: string; href: string }) {
+  const t = useTranslations('decisions.develop');
+
+  return (
+    <ButtonLink
+      variant="outline"
+      href={href}
+      aria-label={t('viewEntryLabel', { title })}
+    >
+      <LuEye aria-hidden data-icon="inline-start" />
+      {t('viewEntryAction')}
+    </ButtonLink>
+  );
+}
+
+/** Whether a source's entry is advancing, once the caller confirmed their work. */
+function SourceDecisionBadge({ advancing }: { advancing: boolean }) {
+  const t = useTranslations('decisions.develop');
+
+  return advancing ? (
+    <StatusBadge variant="success" icon={false}>
+      {t('entryAdvancingStatus')}
+    </StatusBadge>
+  ) : (
+    <StatusBadge variant="inactive" icon={false}>
+      {t('entryNotAdvancedStatus')}
+    </StatusBadge>
+  );
+}
+
+/** The actions or the decision of a source, side by side at the row's end. */
 function EntryActions({ children }: { children: ReactNode }) {
   return <div className="flex items-center justify-end gap-2">{children}</div>;
 }
@@ -579,12 +727,7 @@ function NoSourcesEmpty({ scope }: { scope: DevelopSourceScope }) {
   );
 }
 
-// The client types `error.data` as `object`.
-function getHttpStatus(error: unknown) {
-  return isTRPCClientError(error) &&
-    error.data &&
-    'httpStatus' in error.data &&
-    typeof error.data.httpStatus === 'number'
-    ? error.data.httpStatus
-    : undefined;
+/** The server refuses a caller who confirmed their work with a 409. */
+function isDevelopLockedError(error: unknown) {
+  return getHttpStatus(error) === 409;
 }

@@ -1679,7 +1679,8 @@
       "noReviews": "لا توجد مراجعات لهذا المقترح بعد.",
       "advancedToast": "تم تقديم «<bdi>{title}</bdi>»",
       "savedToast": "تم حفظ «<bdi>{title}</bdi>»",
-      "readOnlyNotice": "يمكنك عرض هذا المُدخل دون تعديله."
+      "readOnlyNotice": "يمكنك عرض هذا المُدخل دون تعديله.",
+      "confirmedNotice": "لقد أكّدت اختياراتك. ألغِ التأكيد في شاشة التطوير لإجراء تغييرات."
     },
     "develop": {
       "heroTitle": "تقديم المقترحات",
@@ -1721,7 +1722,23 @@
       "noFilteredEntriesDescription": "جرّب بحثًا آخر أو فئة أخرى.",
       "noFilteredEntriesDistrictDescription": "جرّب بحثًا آخر أو منطقة أخرى.",
       "advancingCount": "{count, plural, zero {لا مقترحات متقدمة} one {مقترح واحد يتقدم} two {مقترحان يتقدمان} few {# مقترحات تتقدم} many {# مقترحًا يتقدم} other {# مقترح يتقدم}}",
-      "confirmSelectionsAction": "تأكيد الاختيارات"
+      "confirmSelectionsAction": "تأكيد الاختيارات",
+      "unconfirmSelectionsAction": "إلغاء تأكيد الاختيارات",
+      "confirmSelectionsTitle": "هل تريد تأكيد اختياراتك؟",
+      "confirmCategorySelectionsTitle": "هل تريد تأكيد اختيارات <bdi>{category}</bdi>؟",
+      "confirmSelectionsDescription": "{count, plural, zero {لا يتقدّم أي مقترح} one {يتقدّم مقترح واحد} two {يتقدّم مقترحان} few {تتقدّم # مقترحات} many {يتقدّم # مقترحًا} other {يتقدّم # مقترح}} إلى ورقة الاقتراع. لا تتقدّم المقترحات الأخرى. يراجع أحد المسؤولين كل فئة وينشر ورقة الاقتراع.",
+      "unconfirmSelectionsTitle": "هل تريد إلغاء تأكيد اختياراتك؟",
+      "unconfirmCategorySelectionsTitle": "هل تريد إلغاء تأكيد اختيارات <bdi>{category}</bdi>؟",
+      "unconfirmSelectionsDescription": "يمكنك تغيير اختياراتك مرة أخرى. لن يضيع شيء. أكّدها مرة أخرى عند الانتهاء.",
+      "selectionsConfirmedSuccess": "تم تأكيد الاختيارات",
+      "selectionsUnconfirmedSuccess": "تم إلغاء تأكيد الاختيارات",
+      "confirmSelectionsError": "تعذّر تأكيد اختياراتك. حاول مرة أخرى.",
+      "selectionsAlreadyConfirmedError": "اختياراتك مؤكَّدة بالفعل.",
+      "unconfirmSelectionsError": "تعذّر إلغاء تأكيد اختياراتك. حاول مرة أخرى.",
+      "developLockedError": "لقد أكّدت اختياراتك. ألغِ التأكيد لإجراء تغييرات.",
+      "entryNotAdvancedStatus": "لم يتقدّم",
+      "viewEntryAction": "عرض",
+      "viewEntryLabel": "عرض {title}"
     },
     "suggestedWinnersHint": "اخترنا المقترحات الفائزة المقترحة بناءً على قواعد التصويت والميزانية الإجمالية.",
     "votingOpenHeading": "حان وقت التصويت.",
