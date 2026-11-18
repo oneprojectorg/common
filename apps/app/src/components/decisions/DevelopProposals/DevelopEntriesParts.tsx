@@ -43,7 +43,7 @@ import {
 
 interface DevelopEntriesQuery {
   processInstanceId: string;
-  phaseId: string | undefined;
+  phaseId: string;
   search: string;
   categoryId: string | undefined;
 }
@@ -72,7 +72,7 @@ export function DevelopEntriesProvider({
   children,
 }: {
   processInstanceId: string;
-  phaseId: string | undefined;
+  phaseId: string;
   categoryId?: string;
   children: ReactNode;
 }) {

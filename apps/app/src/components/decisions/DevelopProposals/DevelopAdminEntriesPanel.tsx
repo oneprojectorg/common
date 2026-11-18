@@ -47,7 +47,7 @@ export function DevelopAdminEntriesPanel({
   entryName,
 }: {
   processInstanceId: string;
-  phaseId: string | undefined;
+  phaseId: string;
   decisionSlug: string;
   entryName: string;
 }) {
@@ -118,7 +118,7 @@ function DevelopAdminEntriesCountSuspense({
   phaseId,
 }: {
   processInstanceId: string;
-  phaseId: string | undefined;
+  phaseId: string;
 }) {
   const t = useTranslations('decisions.develop');
   // Only `.total` is read, hence `limit: 1`. Read before the list so it

@@ -27,7 +27,7 @@ import {
 interface DevelopEntriesPanelProps {
   processInstanceId: string;
   /** The develop phase, whose entries are listed. */
-  phaseId: string | undefined;
+  phaseId: string;
   decisionSlug: string;
   entryName: string;
 }

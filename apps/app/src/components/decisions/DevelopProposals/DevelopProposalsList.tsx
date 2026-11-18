@@ -58,11 +58,13 @@ type DevelopTab = 'proposals' | 'entries';
  */
 export function DevelopProposalsList({
   instance,
+  phaseId,
   sourcePhase,
   decisionSlug,
   entryName,
 }: {
   instance: ProcessInstance;
+  phaseId: string;
   /** The phase the sources come from: the one before the develop phase. */
   sourcePhase: InstancePhaseData | null;
   decisionSlug: string;
@@ -71,7 +73,6 @@ export function DevelopProposalsList({
   const t = useTranslations('decisions.develop');
   const [tab, setTab] = useState<DevelopTab>('proposals');
   const processInstanceId = instance.id;
-  const phaseId = instance.currentStateId ?? undefined;
 
   // Only the totals of the lists are read here, so each is asked for one
   // row; the develop state decides the variants and the footer action.
