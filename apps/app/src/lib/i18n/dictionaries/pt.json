@@ -2072,7 +2072,8 @@
       "removeAdminError": "Não foi possível remover este administrador.",
       "adminAdded": "{name} agora é administrador.",
       "adminRemoved": "<bdi>{name}</bdi> não é mais administrador.",
-      "adminInviteWithdrawn": "O convite para <bdi>{name}</bdi> foi retirado."
+      "adminInviteWithdrawn": "O convite para <bdi>{name}</bdi> foi retirado.",
+      "adminSearchError": "Não foi possível pesquisar pessoas. Tente novamente."
     }
   },
   "loadingProgress": "Carregando...",

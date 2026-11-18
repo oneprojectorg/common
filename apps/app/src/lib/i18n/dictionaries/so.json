@@ -2072,7 +2072,8 @@
       "removeAdminError": "Maamahan lama saari karin.",
       "adminAdded": "{name} hadda waa maamule.",
       "adminRemoved": "<bdi>{name}</bdi> mar dambe maamule ma aha.",
-      "adminInviteWithdrawn": "Casuumaadda <bdi>{name}</bdi> waa la joojiyay."
+      "adminInviteWithdrawn": "Casuumaadda <bdi>{name}</bdi> waa la joojiyay.",
+      "adminSearchError": "Dadka lama raadin karin. Isku day mar kale."
     }
   },
   "loadingProgress": "Waa la soo rarayaa...",
