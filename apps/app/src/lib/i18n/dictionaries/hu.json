@@ -1754,6 +1754,7 @@
       "publishAction": "Szavazólap közzététele",
       "publishTitle": "Közzéteszi a szavazólapot?",
       "publishDescription": "{count, plural, one {# szavazólap-bejegyzést} other {# szavazólap-bejegyzést}} tesz közzé {categories, plural, one {# kategóriában} other {# kategóriában}}. A választások többé nem módosíthatók. Ez nem vonható vissza.",
+      "publishVotingDescription": "{count, plural, one {# szavazólap-bejegyzést} other {# szavazólap-bejegyzést}} tesz közzé {categories, plural, one {# kategóriában} other {# kategóriában}}. A szavazás kezdete: {date}. A választások többé nem módosíthatók. Ez nem vonható vissza.",
       "publishSuccess": "Szavazólap közzétéve",
       "publishError": "Nem sikerült közzétenni a szavazólapot. Próbálja újra.",
       "publishNotConfirmedError": "Közzététel előtt minden kategóriát meg kell erősíteni.",

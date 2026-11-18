@@ -1754,6 +1754,7 @@
       "publishAction": "Publier le bulletin",
       "publishTitle": "Publier le bulletin ?",
       "publishDescription": "Vous publiez {count, plural, one {# entrée du bulletin} other {# entrées du bulletin}} dans {categories, plural, one {# catégorie} other {# catégories}}. Les sélections ne peuvent plus être modifiées. Cette action est irréversible.",
+      "publishVotingDescription": "Vous publiez {count, plural, one {# entrée du bulletin} other {# entrées du bulletin}} dans {categories, plural, one {# catégorie} other {# catégories}}. Le vote ouvre le {date}. Les sélections ne peuvent plus être modifiées. Cette action est irréversible.",
       "publishSuccess": "Bulletin publié",
       "publishError": "Impossible de publier le bulletin. Réessayez.",
       "publishNotConfirmedError": "Toutes les catégories doivent être confirmées avant la publication.",

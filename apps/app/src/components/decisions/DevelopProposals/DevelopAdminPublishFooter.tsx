@@ -24,6 +24,7 @@ import {
 } from '@op/sense/FooterBar';
 import { Skeleton } from '@op/sense/Skeleton';
 import { toast } from '@op/sense/Toast';
+import { useFormatter } from 'next-intl';
 import { Suspense, useState } from 'react';
 
 import { type TranslateFn, useTranslations } from '@/lib/i18n';
@@ -33,8 +34,10 @@ import { getHttpStatus } from './getHttpStatus';
 
 export function DevelopAdminPublishFooter({
   processInstanceId,
+  votingStartDate,
 }: {
   processInstanceId: string;
+  votingStartDate?: string;
 }) {
   return (
     <FooterBar position="fixed">
@@ -65,7 +68,10 @@ export function DevelopAdminPublishFooter({
         </div>
         <APIErrorBoundary fallbacks={{ default: () => null }}>
           <Suspense fallback={<Skeleton aria-hidden className="h-11 w-36" />}>
-            <PublishActionSuspense processInstanceId={processInstanceId} />
+            <PublishActionSuspense
+              processInstanceId={processInstanceId}
+              votingStartDate={votingStartDate}
+            />
           </Suspense>
         </APIErrorBoundary>
       </FooterBarEnd>
@@ -118,11 +124,14 @@ function WaitingCategoriesSuspense({
 
 function PublishActionSuspense({
   processInstanceId,
+  votingStartDate,
 }: {
   processInstanceId: string;
+  votingStartDate?: string;
 }) {
   const t = useTranslations('decisions.develop');
   const tShared = useTranslations();
+  const format = useFormatter();
   const [isOpen, setIsOpen] = useState(false);
   const [{ canPublish }] =
     trpc.decision.getDevelopConfirmState.useSuspenseQuery({
@@ -134,6 +143,17 @@ function PublishActionSuspense({
     },
   );
   const { advancing, confirmed } = getPublishTotals(items);
+  const description = votingStartDate
+    ? t('publishVotingDescription', {
+        count: advancing,
+        categories: confirmed,
+        date: format.dateTime(new Date(votingStartDate), {
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric',
+        }),
+      })
+    : t('publishDescription', { count: advancing, categories: confirmed });
   const publish = trpc.decision.publishDevelopedProposals.useMutation({
     onSuccess: () => {
       setIsOpen(false);
@@ -154,12 +174,7 @@ function PublishActionSuspense({
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>{t('publishTitle')}</AlertDialogTitle>
-          <AlertDialogDescription>
-            {t('publishDescription', {
-              count: advancing,
-              categories: confirmed,
-            })}
-          </AlertDialogDescription>
+          <AlertDialogDescription>{description}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>{tShared('Cancel')}</AlertDialogCancel>

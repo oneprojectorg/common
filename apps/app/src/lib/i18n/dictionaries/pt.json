@@ -1754,6 +1754,7 @@
       "publishAction": "Publicar a cédula",
       "publishTitle": "Publicar a cédula?",
       "publishDescription": "Você está publicando {count, plural, one {# entrada da cédula} other {# entradas da cédula}} em {categories, plural, one {# categoria} other {# categorias}}. As seleções não podem mais ser alteradas. Não é possível desfazer.",
+      "publishVotingDescription": "Você está publicando {count, plural, one {# entrada da cédula} other {# entradas da cédula}} em {categories, plural, one {# categoria} other {# categorias}}. A votação abre em {date}. As seleções não podem mais ser alteradas. Não é possível desfazer.",
       "publishSuccess": "Cédula publicada",
       "publishError": "Não foi possível publicar a cédula. Tente novamente.",
       "publishNotConfirmedError": "Todas as categorias devem estar confirmadas antes de publicar.",

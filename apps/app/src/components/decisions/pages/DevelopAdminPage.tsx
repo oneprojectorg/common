@@ -3,6 +3,7 @@
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { trpc } from '@op/api/client';
 import { type ProcessInstance, ProposalStatus } from '@op/api/encoders';
+import { isVotingPhase } from '@op/common/client';
 import { BadgeNumber } from '@op/sense/Badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@op/sense/Tabs';
 import { parseAsStringLiteral, useQueryState } from 'nuqs';
@@ -43,6 +44,9 @@ export function DevelopAdminPage({
   const developPhase = phases[currentIndex];
   const sourcePhase =
     currentIndex > 0 ? (phases[currentIndex - 1] ?? null) : null;
+  const nextPhase = currentIndex >= 0 ? phases[currentIndex + 1] : undefined;
+  const votingStartDate =
+    nextPhase && isVotingPhase(nextPhase) ? nextPhase.startDate : undefined;
   const phaseId = instance.currentStateId ?? undefined;
   const entryName = getEntryName({ developPhase, t });
 
@@ -101,7 +105,10 @@ export function DevelopAdminPage({
         </TabsContent>
       </Tabs>
 
-      <DevelopAdminPublishFooter processInstanceId={instance.id} />
+      <DevelopAdminPublishFooter
+        processInstanceId={instance.id}
+        votingStartDate={votingStartDate}
+      />
     </DevelopPageShell>
   );
 }

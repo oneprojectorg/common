@@ -1754,6 +1754,7 @@
       "publishAction": "Publish ballot",
       "publishTitle": "Publish the ballot?",
       "publishDescription": "You are publishing {count, plural, one {# ballot entry} other {# ballot entries}} across {categories, plural, one {# category} other {# categories}}. Selections can no longer change. This can't be undone.",
+      "publishVotingDescription": "You are publishing {count, plural, one {# ballot entry} other {# ballot entries}} across {categories, plural, one {# category} other {# categories}}. Voting opens on {date}. Selections can no longer change. This can't be undone.",
       "publishSuccess": "Ballot published",
       "publishError": "Could not publish the ballot. Try again.",
       "publishNotConfirmedError": "Every category must be confirmed before you publish.",
