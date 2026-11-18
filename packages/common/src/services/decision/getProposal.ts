@@ -13,6 +13,7 @@ import { NotFoundError } from '../../utils';
 import { signStorageDownloadUrlOrNull } from '../../utils/signStorageDownloadUrl';
 import { assertInstanceProfileAccess, getProfileAccessRoles } from '../access';
 import { hasActiveModerationFlag } from '../moderation/moderationVisibility';
+import { isLockedByDevelopConfirm } from './developLock';
 import { generateProposalHtml } from './generateProposalHtml';
 import {
   type ProposalDocumentContent,
@@ -326,24 +327,32 @@ export const getPermissionsOnProposal = async ({
 
   return {
     access,
-    isEditable: access.update && (await isStatusEditable({ proposal })),
+    isEditable: access.update && (await isStatusEditable({ proposal, user })),
   };
 };
 
 /**
- * A draft is always editable; a submitted proposal while the phase allows
- * editing or the develop window is open.
+ * Nothing is editable for a caller who confirmed their develop work
+ * (`isLockedByDevelopConfirm`). Otherwise a draft is always editable; a
+ * submitted proposal while the phase allows editing or the develop window is
+ * open.
  */
 async function isStatusEditable({
   proposal,
+  user,
 }: {
   proposal: Proposal & { processInstance: ProcessInstance };
+  user: User | undefined;
 }): Promise<boolean> {
+  const instance = await resolvePhases({ instance: proposal.processInstance });
+
+  if (await isLockedByDevelopConfirm({ instance, user })) {
+    return false;
+  }
+
   if (proposal.status === ProposalStatus.DRAFT) {
     return true;
   }
-
-  const instance = await resolvePhases({ instance: proposal.processInstance });
 
   return (
     isPostSubmissionEditingAllowed({

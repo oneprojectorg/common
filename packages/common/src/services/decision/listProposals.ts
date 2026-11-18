@@ -16,6 +16,7 @@ import {
 } from '../../utils';
 import type { AccessUser } from '../access';
 import { getActivelyFlaggedItemIds } from '../moderation/moderationVisibility';
+import { isLockedByDevelopConfirm } from './developLock';
 import type { ProposalAdvanceTarget } from './getProposalAdvanceTarget';
 import { getProposalDocumentsContent } from './getProposalDocumentsContent';
 import { getProposalRelationshipData } from './getProposalRelationshipData';
@@ -314,11 +315,15 @@ export const listProposals = async ({
     profileRoles,
   );
 
+  const [developWindowOpen, lockedByDevelopConfirm] = await Promise.all([
+    isDevelopWindowOpen({ instance }),
+    isLockedByDevelopConfirm({ instance, user }),
+  ]);
   const submittedEditingAllowed =
     isPostSubmissionEditingAllowed({
       phases: instance.phases,
       currentPhaseId: instance.currentStateId,
-    }) || (await isDevelopWindowOpen({ instance }));
+    }) || developWindowOpen;
 
   const proposalsWithCounts = proposalList.map((proposal: ProposalListItem) => {
     const rawSubmittedBy = Array.isArray(proposal.submittedBy)
@@ -338,7 +343,8 @@ export const listProposals = async ({
     const isEditable =
       input.phase !== 'results' &&
       (hasAdminPermission ||
-        (proposal.submittedByProfileId === currentProfileId &&
+        (!lockedByDevelopConfirm &&
+          proposal.submittedByProfileId === currentProfileId &&
           (proposal.status === ProposalStatus.DRAFT ||
             submittedEditingAllowed)));
 

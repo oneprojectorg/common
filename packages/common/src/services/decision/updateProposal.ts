@@ -23,6 +23,7 @@ import {
 import { getProfileAccessRoles } from '../access';
 import { assertUserByAuthId } from '../assert';
 import { withBoundaryCategoryLabel } from './boundaryCategory';
+import { developConfirmedError, isLockedByDevelopConfirm } from './developLock';
 import { getProposalFragmentNames } from './getProposalFragmentNames';
 import { getPhases } from './instancePhases';
 import { isDevelopWindowOpen } from './isDevelopWindowOpen';
@@ -316,6 +317,14 @@ export async function assertProposalUpdateAccess({
     throw new UnauthorizedError("You don't have access to do this");
   }
 
+  const instance = { ...processInstance, phases: instancePhases };
+
+  // Drafts included: a caller who confirmed their work edits nothing until
+  // they unconfirm.
+  if (await isLockedByDevelopConfirm({ instance, user })) {
+    throw developConfirmedError();
+  }
+
   if (
     proposal.status === ProposalStatus.DRAFT ||
     isPostSubmissionEditingAllowed({
@@ -336,7 +345,6 @@ export async function assertProposalUpdateAccess({
   }
 
   // An advanced entry stays editable until the develop window closes.
-  const instance = { ...processInstance, phases: instancePhases };
   if (await isDevelopWindowOpen({ instance })) {
     return;
   }
