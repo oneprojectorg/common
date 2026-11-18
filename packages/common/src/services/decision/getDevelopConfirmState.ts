@@ -10,7 +10,11 @@ import { checkPermission, permission } from 'access-zones';
 
 import { NotFoundError, UnauthorizedError } from '../../utils';
 import { getProfileAccessRoles } from '../access';
-import { type DevelopLock, getDevelopLock } from './developLock';
+import {
+  type DevelopLock,
+  getDevelopLock,
+  isEveryCategoryDevelopConfirmed,
+} from './developLock';
 import { getPhases } from './instancePhases';
 import { decisionPermission } from './permissions';
 import { isDevelopPhase } from './utils/phaseSettings';
@@ -26,6 +30,7 @@ export interface DevelopConfirmState {
   lock: DevelopLock | null;
   /** The labels of the caller's categories for the current phase, by label. */
   categoryNames: string[];
+  canPublish: boolean;
 }
 
 /**
@@ -91,14 +96,25 @@ export async function getDevelopConfirmState({
       : [],
   ]);
 
-  const canConfirm =
-    !isAdmin &&
+  const isPublishedDevelopPhase =
     instance.status === ProcessStatus.PUBLISHED &&
     !!currentPhase &&
-    isDevelopPhase(currentPhase) &&
-    categoryNames.length > 0;
+    isDevelopPhase(currentPhase);
 
-  return { canConfirm, lock, categoryNames };
+  const canConfirm =
+    !isAdmin && isPublishedDevelopPhase && categoryNames.length > 0;
+
+  const canPublish =
+    !!currentPhase &&
+    isPublishedDevelopPhase &&
+    lock !== 'windowClosed' &&
+    checkPermission({ decisions: permission.ADMIN }, roles) &&
+    (await isEveryCategoryDevelopConfirmed({
+      processInstanceId,
+      phaseId: currentPhase.phaseId,
+    }));
+
+  return { canConfirm, lock, categoryNames, canPublish };
 }
 
 // `decision_category_reviewers` is a temporary store of who owns a category;

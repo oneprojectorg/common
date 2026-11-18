@@ -432,6 +432,10 @@ export type CategoryReviewerStatusSchema = z.infer<
 export const categoryWithReviewerStatusSchema = z.object({
   category: categoryWithReviewersSchema.shape.category,
   reviewers: z.array(categoryReviewerStatusSchema),
+  /** The previous phase's non-draft proposals in the category: the sources the develop screens list. */
+  sourceCount: z.number().int().nonnegative(),
+  /** The submitted entries in the category that a live `developed` relationship targets. */
+  advancingCount: z.number().int().nonnegative(),
 });
 
 export type CategoryWithReviewerStatusSchema = z.infer<
@@ -472,6 +476,7 @@ export const developConfirmStateSchema = z.object({
   canConfirm: z.boolean(),
   lock: z.enum(['windowClosed', 'confirmed']).nullable(),
   categoryNames: z.array(z.string()),
+  canPublish: z.boolean(),
 });
 
 export type DevelopConfirmStateSchema = z.infer<

@@ -2,14 +2,16 @@ import {
   TEST_PERMISSION_BITS,
   TestDecisionsDataManager,
   createCategoryReviewer,
+  createDevelopPhaseSetup,
   grantInstanceReviewerRole,
   grantInstanceRole,
 } from '@op/common/testing';
 import { db, eq } from '@op/db/client';
-import { categoryReviewers } from '@op/db/schema';
+import { categoryReviewers, proposalCategories } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
+import { createCategoryDevelopReviewer } from '../../../test/helpers/categoryDevelopTestUtils';
 import {
   injectInstanceCategories,
   seedTwoCategories,
@@ -50,6 +52,19 @@ async function createStatusSetup({
   await injectInstanceCategories(instanceId, configCategories);
 
   return { setup, instanceId, termA, termB, configCategories };
+}
+
+async function tagProposals({
+  proposalIds,
+  taxonomyTermId,
+}: {
+  proposalIds: string[];
+  taxonomyTermId: string;
+}) {
+  await db
+    .insert(proposalCategories)
+    .values(proposalIds.map((proposalId) => ({ proposalId, taxonomyTermId })))
+    .onConflictDoNothing();
 }
 
 async function stampRow({ id, at }: { id: string; at: string }) {
@@ -218,6 +233,83 @@ describe.concurrent('listCategoryReviewerStatus', () => {
         profile: profileOf(reviewer.profileId),
       },
     ]);
+  });
+
+  it('counts the sources of the previous phase and the submitted entries of each category', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const [
+      { setup, instanceId, source, otherSources },
+      { terms, configCategories },
+    ] = await Promise.all([
+      createDevelopPhaseSetup({ testData, sourceCount: 3 }),
+      seedTwoCategories(onTestFinished),
+    ]);
+    const [termA, termB] = terms;
+    const [secondSource, thirdSource] = otherSources;
+    if (!termA || !termB || !secondSource || !thirdSource) {
+      throw new Error('Expected two category terms and three sources');
+    }
+    await injectInstanceCategories(instanceId, configCategories);
+
+    const developer = await createCategoryDevelopReviewer({
+      testData,
+      setup,
+      rows: [{ taxonomyTermId: termA.id, phaseId: 'final' }],
+    });
+    const developerCaller = await createAuthenticatedCaller(developer.email);
+    const createEntry = async (sourceId: string) => {
+      const entry = await developerCaller.decision.createDevelopedProposal({
+        processInstanceId: instanceId,
+        sourceProposalIds: [sourceId],
+        proposalData: { title: 'Developed' },
+      });
+      testData.trackProfileForCleanup(entry.profileId);
+      return entry;
+    };
+    const submittedEntry = await createEntry(source.id);
+    const draftEntry = await createEntry(secondSource.id);
+    const draftEntryOfB = await createEntry(thirdSource.id);
+    await developerCaller.decision.submitDevelopedProposal({
+      proposalId: submittedEntry.id,
+    });
+    await Promise.all([
+      tagProposals({
+        proposalIds: [
+          source.id,
+          secondSource.id,
+          submittedEntry.id,
+          draftEntry.id,
+        ],
+        taxonomyTermId: termA.id,
+      }),
+      tagProposals({
+        proposalIds: [thirdSource.id, draftEntryOfB.id],
+        taxonomyTermId: termB.id,
+      }),
+    ]);
+
+    const adminCaller = await createAuthenticatedCaller(setup.userEmail);
+    const result = await adminCaller.decision.listCategoryReviewerStatus({
+      processInstanceId: instanceId,
+    });
+
+    const countsByCategory = new Map(
+      result.items.map((item) => [
+        item.category.id,
+        { sourceCount: item.sourceCount, advancingCount: item.advancingCount },
+      ]),
+    );
+    expect(countsByCategory.get(termA.id)).toEqual({
+      sourceCount: 2,
+      advancingCount: 1,
+    });
+    expect(countsByCategory.get(termB.id)).toEqual({
+      sourceCount: 1,
+      advancingCount: 0,
+    });
   });
 
   it('lets a Develop Proposals holder and an admin without it read, and refuses Review alone', async ({

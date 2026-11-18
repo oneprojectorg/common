@@ -1,4 +1,4 @@
-import { listCategoryReviewerStatus } from '@op/common';
+import { Channels, listCategoryReviewerStatus } from '@op/common';
 import {
   categoryReviewerStatusInputSchema,
   categoryReviewerStatusListSchema,
@@ -15,6 +15,12 @@ export const listCategoryReviewerStatusRouter = router({
         processInstanceId: input.processInstanceId,
         user: ctx.user,
       });
+
+      // Confirm, unconfirm and publish all publish on the proposals channel.
+      ctx.registerQueryChannels([
+        Channels.decisionProposals(input.processInstanceId),
+        Channels.decisionInstance(input.processInstanceId),
+      ]);
 
       return { items: categories };
     }),
