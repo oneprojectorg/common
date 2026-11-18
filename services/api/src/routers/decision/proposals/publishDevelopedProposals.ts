@@ -24,11 +24,13 @@ export const publishDevelopedProposalsRouter = router({
       // read a stale cached snapshot.
       await invalidateDecisionInstance(input.processInstanceId);
 
-      // Publish confirms the phase's selections, which closes the develop
-      // window (instance), and makes entries visible (proposal lists).
+      // Publish confirms the phase's selections (instance), makes entries
+      // visible (proposal lists) and closes the develop window (category
+      // develop status).
       ctx.registerMutationChannels([
         Channels.decisionInstance(input.processInstanceId),
         Channels.decisionProposals(input.processInstanceId),
+        Channels.decisionDevelopLock(input.processInstanceId),
       ]);
 
       return result;
