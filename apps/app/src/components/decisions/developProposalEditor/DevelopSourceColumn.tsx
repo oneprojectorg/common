@@ -12,7 +12,8 @@ import {
 } from '@op/sense/Empty';
 import { Header3 } from '@op/sense/Header';
 import { Tabs, TabsContent } from '@op/sense/Tabs';
-import { Suspense, useState } from 'react';
+import { cn } from '@op/sense/lib/utils';
+import { useState, useTransition } from 'react';
 import { LuTriangleAlert } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -27,7 +28,6 @@ import {
   PhaseReviews,
   PhaseReviewsTabPanel,
 } from '../ReviewsPanel/PhaseReviews';
-import { DevelopSourceSkeleton } from './DevelopProposalSkeleton';
 
 type SourceTab = 'proposal' | 'reviews';
 
@@ -49,6 +49,7 @@ export function DevelopSourceColumn({
 }) {
   const t = useTranslations('decisions');
   const [selectedId, setSelectedId] = useState(sources[0]?.id ?? '');
+  const [isPending, startTransition] = useTransition();
   const source =
     sources.find((candidate) => candidate.id === selectedId) ?? sources[0];
 
@@ -61,7 +62,7 @@ export function DevelopSourceColumn({
       {sources.length > 1 ? (
         <ResponsiveSelect<string>
           selectedKey={source.id}
-          onSelectionChange={setSelectedId}
+          onSelectionChange={(id) => startTransition(() => setSelectedId(id))}
           aria-label={t('developEditor.sourceSelectLabel')}
           className="w-full sm:max-w-80"
           items={sources.map((candidate) => {
@@ -77,20 +78,25 @@ export function DevelopSourceColumn({
         />
       ) : null}
 
-      {/* Keyed so the open tab and a failed load reset with the source. */}
-      <APIErrorBoundary
-        key={source.id}
-        fallbacks={{ default: () => <SourceUnavailable /> }}
+      <div
+        aria-busy={isPending}
+        className={cn('transition-opacity', isPending && 'opacity-60')}
       >
-        <Suspense fallback={<DevelopSourceSkeleton />}>
+        {/* No Suspense here: a loading source holds the route skeleton so both
+            panes reveal together, and a switch holds the current source. Keyed
+            so the open tab and a failed load reset with the source. */}
+        <APIErrorBoundary
+          key={source.id}
+          fallbacks={{ default: () => <SourceUnavailable /> }}
+        >
           <ProposalQueryProvider
             profileId={source.profile.id}
             decisionRoot={decisionRoot}
           >
             <SourceSections reviewPhases={reviewPhases} />
           </ProposalQueryProvider>
-        </Suspense>
-      </APIErrorBoundary>
+        </APIErrorBoundary>
+      </div>
     </div>
   );
 }
