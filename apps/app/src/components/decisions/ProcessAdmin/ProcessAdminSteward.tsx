@@ -3,7 +3,6 @@
 import { getPublicUrl } from '@/utils';
 import { trpc } from '@op/api/client';
 import type { ProcessInstance } from '@op/api/encoders';
-import { logger } from '@op/logging/client';
 import { Avatar, AvatarFallback, AvatarImage } from '@op/sense/Avatar';
 import { Button } from '@op/sense/Button';
 import {
@@ -21,11 +20,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@op/sense/Select';
-import { toast } from '@op/sense/Toast';
-import { type ReactNode, useId, useMemo, useState } from 'react';
+import { type ReactNode, useId, useMemo } from 'react';
 import { LuChevronDown } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
+
+import { useSaveInstance } from './useSaveInstance';
 
 interface StewardOption {
   id: string;
@@ -48,7 +48,7 @@ export function ProcessAdminStewardMenu({
   const t = useTranslations('decisions.processAdmin');
   const hintId = useId();
   const { options, canChange } = useStewardOptions(instance);
-  const { save, isPending } = useSaveSteward(slug, instance.id);
+  const saveInstance = useSaveInstance(slug);
 
   if (!canChange) {
     return fallback;
@@ -61,7 +61,7 @@ export function ProcessAdminStewardMenu({
           render={
             <Button
               variant="bare"
-              disabled={isPending}
+              disabled={saveInstance.isPending}
               aria-describedby={hintId}
               className="h-auto gap-1 rounded-md px-1.5 py-0.5 text-base font-normal underline hover:bg-muted"
             />
@@ -75,7 +75,12 @@ export function ProcessAdminStewardMenu({
             <DropdownMenuItem
               key={option.id}
               disabled={option.id === instance.steward?.id}
-              onClick={() => save(option.id)}
+              onClick={() =>
+                saveInstance.mutate({
+                  instanceId: instance.id,
+                  stewardProfileId: option.id,
+                })
+              }
             >
               <StewardAvatar option={option} />
               <bdi>{option.name}</bdi>
@@ -101,24 +106,24 @@ export function ProcessAdminStewardSelect({
   const t = useTranslations('decisions.processAdmin');
   const selectId = useId();
   const { options, canChange } = useStewardOptions(instance);
-  const { save, isPending } = useSaveSteward(slug, instance.id);
-  // Holds the choice until the refetch lands, so the select does not jump back.
-  const [pendingId, setPendingId] = useState<string | null>(null);
+  const saveInstance = useSaveInstance(slug);
   const stewardId = instance.steward?.id ?? null;
-  if (pendingId !== null && !isPending && pendingId === stewardId) {
-    setPendingId(null);
-  }
+  const shownId = saveInstance.isPending
+    ? (saveInstance.variables.stewardProfileId ?? stewardId)
+    : stewardId;
 
   return (
     <Field>
       <FieldLabel htmlFor={selectId}>{t('stewardLabel')}</FieldLabel>
       <Select
-        value={pendingId ?? stewardId}
-        disabled={!canChange || isPending}
+        value={shownId}
+        disabled={!canChange || saveInstance.isPending}
         onValueChange={(value) => {
           if (typeof value === 'string' && value !== stewardId) {
-            setPendingId(value);
-            save(value, () => setPendingId(null));
+            saveInstance.mutate({
+              instanceId: instance.id,
+              stewardProfileId: value,
+            });
           }
         }}
         // Without `items`, SelectValue renders the raw id.
@@ -191,24 +196,4 @@ function useStewardOptions(instance: ProcessInstance): {
     userProfiles.some((profile) => profile.id === ownerId);
 
   return { options, canChange };
-}
-
-function useSaveSteward(slug: string, instanceId: string) {
-  const t = useTranslations('decisions.processAdmin');
-  const utils = trpc.useUtils();
-  const updateInstance = trpc.decision.updateDecisionInstance.useMutation({
-    onSuccess: async () => {
-      await utils.decision.getDecisionBySlug.invalidate({ slug });
-    },
-    onError: (error) => {
-      logger.error('Process steward change failed', { error });
-      toast.error(t('saveError'));
-    },
-  });
-
-  return {
-    save: (stewardProfileId: string, onError?: () => void) =>
-      updateInstance.mutate({ instanceId, stewardProfileId }, { onError }),
-    isPending: updateInstance.isPending,
-  };
 }
