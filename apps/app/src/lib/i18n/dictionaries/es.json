@@ -2070,7 +2070,6 @@
       "inviteSent": "Invitación enviada a <bdi>{email}</bdi>",
       "inviteFailed": "No se pudo invitar a <bdi>{email}</bdi>.",
       "inviteMovedToAdmin": "<bdi>{email}</bdi> será administrador al aceptar su invitación.",
-      "invitedLabel": "Invitado",
       "addingAdminLabel": "Añadiendo…",
       "removingAdminLabel": "Eliminando…",
       "youBadge": "Tú",

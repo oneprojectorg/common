@@ -2070,7 +2070,6 @@
       "inviteSent": "<bdi>{email}</bdi>-এ আমন্ত্রণ পাঠানো হয়েছে",
       "inviteFailed": "<bdi>{email}</bdi>-কে আমন্ত্রণ জানানো যায়নি।",
       "inviteMovedToAdmin": "আমন্ত্রণ গ্রহণ করলে <bdi>{email}</bdi> একজন অ্যাডমিন হবেন।",
-      "invitedLabel": "আমন্ত্রিত",
       "addingAdminLabel": "যোগ করা হচ্ছে…",
       "removingAdminLabel": "সরানো হচ্ছে…",
       "youBadge": "আপনি",
