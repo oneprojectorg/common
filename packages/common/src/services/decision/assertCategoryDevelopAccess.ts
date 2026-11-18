@@ -10,8 +10,8 @@ import { checkPermission, permission } from 'access-zones';
 import { NotFoundError, UnauthorizedError, ValidationError } from '../../utils';
 import { getProfileAccessRoles } from '../access';
 import { assertUserByAuthId } from '../assert';
+import { getPhases } from './instancePhases';
 import { decisionPermission } from './permissions';
-import { getInstancePhases } from './schemas/instanceData';
 import { isDevelopPhase } from './utils/phaseSettings';
 
 export interface CategoryDevelopAccess {
@@ -62,7 +62,10 @@ export async function assertCategoryDevelopAccess({
     throw new NotFoundError('Process instance', processInstanceId);
   }
 
-  const currentPhase = getInstancePhases(instance.instanceData).find(
+  const phases = await getPhases({
+    instance: { id: processInstanceId, instanceData: instance.instanceData },
+  });
+  const currentPhase = phases.find(
     (phase) => phase.phaseId === instance.currentStateId,
   );
 
