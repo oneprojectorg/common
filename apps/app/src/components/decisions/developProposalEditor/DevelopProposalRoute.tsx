@@ -1,9 +1,11 @@
 'use client';
 
+import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { trpc } from '@op/api/client';
 import {
   type ProcessInstance,
   ProposalRelationshipType,
+  ProposalStatus,
 } from '@op/api/encoders';
 import {
   type Proposal,
@@ -12,8 +14,10 @@ import {
   hasOpenReviews,
 } from '@op/common/client';
 import { Spinner } from '@op/sense/Spinner';
+import { StatusBadge } from '@op/sense/StatusBadge';
 import type { JSONContent } from '@tiptap/react';
 import { notFound } from 'next/navigation';
+import { Suspense } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -123,9 +127,19 @@ export function DevelopProposalRoute({
       heading={heading}
       description={description}
       notice={
-        <p className="text-base text-muted-foreground">
-          {t('decisions.developEditor.readOnlyNotice')}
-        </p>
+        // Only a developer can be locked by their own confirm.
+        canDevelop ? (
+          <APIErrorBoundary fallbacks={{ default: () => <ReadOnlyNotice /> }}>
+            <Suspense fallback={<ReadOnlyNotice />}>
+              <DevelopLockNotice
+                processInstanceId={instance.id}
+                isAdvancing={proposal.status !== ProposalStatus.DRAFT}
+              />
+            </Suspense>
+          </APIErrorBoundary>
+        ) : (
+          <ReadOnlyNotice />
+        )
       }
     >
       <ReadOnlyFields
@@ -134,6 +148,50 @@ export function DevelopProposalRoute({
         decisionProfileId={instance.profileId ?? null}
       />
     </DevelopProposalFrame>
+  );
+}
+
+/**
+ * Why a developer sees the entry read-only: once they confirmed their work,
+ * the entry's decision and how to change it; otherwise the generic notice.
+ */
+function DevelopLockNotice({
+  processInstanceId,
+  isAdvancing,
+}: {
+  processInstanceId: string;
+  isAdvancing: boolean;
+}) {
+  const t = useTranslations('decisions');
+  const [{ lock }] = trpc.decision.getDevelopConfirmState.useSuspenseQuery({
+    processInstanceId,
+  });
+
+  if (lock !== 'confirmed') {
+    return <ReadOnlyNotice />;
+  }
+
+  return (
+    <div aria-live="polite" className="flex flex-col items-start gap-2">
+      <StatusBadge variant={isAdvancing ? 'success' : 'inactive'} icon={false}>
+        {isAdvancing
+          ? t('develop.entryAdvancingStatus')
+          : t('develop.entryNotAdvancedStatus')}
+      </StatusBadge>
+      <p className="text-base text-muted-foreground">
+        {t('developEditor.confirmedNotice')}
+      </p>
+    </div>
+  );
+}
+
+function ReadOnlyNotice() {
+  const t = useTranslations('decisions');
+
+  return (
+    <p aria-live="polite" className="text-base text-muted-foreground">
+      {t('developEditor.readOnlyNotice')}
+    </p>
   );
 }
 
