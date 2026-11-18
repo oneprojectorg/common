@@ -2076,7 +2076,9 @@
       "youBadge": "Tú",
       "manageAdminLabel": "Gestionar a {name}",
       "removeAdminError": "No se pudo quitar a este administrador.",
-      "adminAdded": "{name} ahora es administrador."
+      "adminAdded": "{name} ahora es administrador.",
+      "adminRemoved": "<bdi>{name}</bdi> ya no es administrador.",
+      "adminInviteWithdrawn": "Se retiró la invitación a <bdi>{name}</bdi>."
     }
   },
   "loadingProgress": "Cargando...",
