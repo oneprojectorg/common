@@ -38,6 +38,7 @@ import { toProcessPhases } from '../toProcessPhases';
 import { ProcessAdminBanner } from './ProcessAdminBanner';
 import { ProcessAdminLaunchButton } from './ProcessAdminLaunchButton';
 import { ProcessAdminOverviewSkeleton } from './ProcessAdminOverviewSkeleton';
+import { ProcessAdminSettingsDialog } from './ProcessAdminSettingsDialog';
 import { ProcessAdminTitle } from './ProcessAdminTitle';
 import { ProcessAdminsDialog } from './ProcessAdminsDialog';
 import {
@@ -194,9 +195,16 @@ function ProcessAdminTopBar({
     );
   } else if (process) {
     actions = (
-      <ButtonLink href={`/decisions/${slug}`} variant="link">
-        {t('viewProcess')}
-      </ButtonLink>
+      <>
+        <ProcessAdminSettingsDialog
+          slug={slug}
+          name={process.name}
+          instance={process.instance}
+        />
+        <ButtonLink href={`/decisions/${slug}`} variant="link">
+          {t('viewProcess')}
+        </ButtonLink>
+      </>
     );
   }
 
