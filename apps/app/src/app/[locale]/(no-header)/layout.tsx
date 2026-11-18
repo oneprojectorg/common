@@ -11,13 +11,20 @@ import { PolicyReacceptanceModal } from '@/components/PolicyReacceptanceModal';
 
 export const dynamic = 'force-dynamic';
 
-const Layout = async ({ children }: { children: React.ReactNode }) => {
+const Layout = async ({
+  children,
+  params,
+}: {
+  children: React.ReactNode;
+  params: Promise<{ locale: string }>;
+}) => {
   const user = await getUser();
 
   if (shouldRedirectToOnboarding(user)) {
-    const requestHeaders = await headers();
+    const [{ locale }, requestHeaders] = await Promise.all([params, headers()]);
     redirect(
       buildOnboardingRedirect(
+        locale,
         requestHeaders.get('x-pathname'),
         requestHeaders.get('x-search'),
       ),
