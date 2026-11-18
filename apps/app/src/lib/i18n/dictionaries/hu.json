@@ -1753,7 +1753,7 @@
       "waitingOnCategories": "Várakozás {count, plural, one {# kategóriára} other {# kategóriára}}",
       "publishAction": "Szavazólap közzététele",
       "publishTitle": "Közzéteszi a szavazólapot?",
-      "publishDescription": "A továbbjutó bejegyzések láthatóvá válnak, és minden résztvevő értesítést kap. A választások többé nem módosíthatók. Ez nem vonható vissza.",
+      "publishDescription": "{count, plural, one {# szavazólap-bejegyzést} other {# szavazólap-bejegyzést}} tesz közzé {categories, plural, one {# kategóriában} other {# kategóriában}}. A választások többé nem módosíthatók. Ez nem vonható vissza.",
       "publishSuccess": "Szavazólap közzétéve",
       "publishError": "Nem sikerült közzétenni a szavazólapot. Próbálja újra.",
       "publishNotConfirmedError": "Közzététel előtt minden kategóriát meg kell erősíteni.",

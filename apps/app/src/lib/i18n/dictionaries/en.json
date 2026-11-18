@@ -1753,7 +1753,7 @@
       "waitingOnCategories": "Waiting on {count, plural, one {# category} other {# categories}}",
       "publishAction": "Publish ballot",
       "publishTitle": "Publish the ballot?",
-      "publishDescription": "The advanced entries become visible, and every participant is notified. Selections can no longer change. You cannot undo this.",
+      "publishDescription": "You are publishing {count, plural, one {# ballot entry} other {# ballot entries}} across {categories, plural, one {# category} other {# categories}}. Selections can no longer change. This can't be undone.",
       "publishSuccess": "Ballot published",
       "publishError": "Could not publish the ballot. Try again.",
       "publishNotConfirmedError": "Every category must be confirmed before you publish.",

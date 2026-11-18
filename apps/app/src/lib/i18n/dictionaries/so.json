@@ -1753,7 +1753,7 @@
       "waitingOnCategories": "Waxaa la sugayaa {count, plural, one {# qayb} other {# qaybood}}",
       "publishAction": "Daabac warqadda codbixinta",
       "publishTitle": "Ma daabacaysaa warqadda codbixinta?",
-      "publishDescription": "Gelisyada gudbaya ayaa muuqan doona, ka qaybgale kastana waa la ogeysiin doonaa. Xulashooyinka mar dambe lama beddeli karo. Tan dib looma celin karo.",
+      "publishDescription": "Waxaad daabacaysaa {count, plural, one {# gelis warqadda codbixinta ah} other {# gelisyo warqadda codbixinta ah}} oo ku jira {categories, plural, one {# qayb} other {# qaybood}}. Xulashooyinka mar dambe lama beddeli karo. Tan dib looma celin karo.",
       "publishSuccess": "Warqadda codbixinta waa la daabacay",
       "publishError": "Lama daabici karin warqadda codbixinta. Isku day mar kale.",
       "publishNotConfirmedError": "Qayb kasta waa in la xaqiijiyaa ka hor intaadan daabicin.",

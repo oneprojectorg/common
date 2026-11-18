@@ -1753,7 +1753,7 @@
       "waitingOnCategories": "En attente de {count, plural, one {# catégorie} other {# catégories}}",
       "publishAction": "Publier le bulletin",
       "publishTitle": "Publier le bulletin ?",
-      "publishDescription": "Les entrées qui avancent deviennent visibles et chaque participant est notifié. Les sélections ne peuvent plus être modifiées. Cette action est irréversible.",
+      "publishDescription": "Vous publiez {count, plural, one {# entrée du bulletin} other {# entrées du bulletin}} dans {categories, plural, one {# catégorie} other {# catégories}}. Les sélections ne peuvent plus être modifiées. Cette action est irréversible.",
       "publishSuccess": "Bulletin publié",
       "publishError": "Impossible de publier le bulletin. Réessayez.",
       "publishNotConfirmedError": "Toutes les catégories doivent être confirmées avant la publication.",

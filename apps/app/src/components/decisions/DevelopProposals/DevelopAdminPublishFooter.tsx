@@ -2,6 +2,7 @@
 
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { trpc } from '@op/api/client';
+import type { CategoryWithReviewerStatusSchema } from '@op/common/client';
 import { logger } from '@op/logging/client';
 import {
   AlertDialog,
@@ -83,22 +84,13 @@ function PublishStatusSuspense({
       processInstanceId,
     },
   );
-  const assigned = items.filter((status) => status.reviewers.length > 0);
-  const confirmed = assigned.filter(
-    (status) => getCategoryConfirmedAt(status) !== null,
-  );
+  const { advancing, confirmed, assigned } = getPublishTotals(items);
 
-  if (assigned.length === 0) {
+  if (assigned === 0) {
     return t('noMappedCategoriesStatus');
   }
 
-  return t('advancingAcrossCategories', {
-    advancing: items.reduce(
-      (total, status) => total + status.advancingCount,
-      0,
-    ),
-    confirmed: confirmed.length,
-  });
+  return t('advancingAcrossCategories', { advancing, confirmed });
 }
 
 function WaitingCategoriesSuspense({
@@ -136,6 +128,12 @@ function PublishActionSuspense({
     trpc.decision.getDevelopConfirmState.useSuspenseQuery({
       processInstanceId,
     });
+  const [{ items }] = trpc.decision.listCategoryReviewerStatus.useSuspenseQuery(
+    {
+      processInstanceId,
+    },
+  );
+  const { advancing, confirmed } = getPublishTotals(items);
   const publish = trpc.decision.publishDevelopedProposals.useMutation({
     onSuccess: () => {
       setIsOpen(false);
@@ -157,7 +155,10 @@ function PublishActionSuspense({
         <AlertDialogHeader>
           <AlertDialogTitle>{t('publishTitle')}</AlertDialogTitle>
           <AlertDialogDescription>
-            {t('publishDescription')}
+            {t('publishDescription', {
+              count: advancing,
+              categories: confirmed,
+            })}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
@@ -173,6 +174,20 @@ function PublishActionSuspense({
       </AlertDialogContent>
     </AlertDialog>
   );
+}
+
+function getPublishTotals(items: CategoryWithReviewerStatusSchema[]) {
+  const assigned = items.filter((status) => status.reviewers.length > 0);
+  return {
+    advancing: items.reduce(
+      (total, status) => total + status.advancingCount,
+      0,
+    ),
+    confirmed: assigned.filter(
+      (status) => getCategoryConfirmedAt(status) !== null,
+    ).length,
+    assigned: assigned.length,
+  };
 }
 
 function getPublishErrorMessage({

@@ -1753,7 +1753,7 @@
       "waitingOnCategories": "في انتظار {count, plural, zero {# فئة} one {فئة واحدة} two {فئتين} few {# فئات} many {# فئة} other {# فئة}}",
       "publishAction": "نشر ورقة الاقتراع",
       "publishTitle": "هل تريد نشر ورقة الاقتراع؟",
-      "publishDescription": "تصبح المُدخلات المتقدّمة مرئية، ويتلقّى كل مشارك إشعارًا. لا يمكن تغيير الاختيارات بعد ذلك. لا يمكن التراجع عن هذا.",
+      "publishDescription": "أنت تنشر {count, plural, zero {لا مُدخلات} one {مُدخلًا واحدًا} two {مُدخلَين} few {# مُدخلات} many {# مُدخلًا} other {# مُدخل}} في ورقة الاقتراع عبر {categories, plural, zero {# فئة} one {فئة واحدة} two {فئتين} few {# فئات} many {# فئة} other {# فئة}}. لا يمكن تغيير الاختيارات بعد ذلك. لا يمكن التراجع عن هذا.",
       "publishSuccess": "تم نشر ورقة الاقتراع",
       "publishError": "تعذّر نشر ورقة الاقتراع. حاول مرة أخرى.",
       "publishNotConfirmedError": "يجب تأكيد كل الفئات قبل النشر.",
