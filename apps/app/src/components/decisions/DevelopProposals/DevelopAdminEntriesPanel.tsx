@@ -2,6 +2,7 @@
 
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { trpc } from '@op/api/client';
+import { ProposalStatus } from '@op/api/encoders';
 import type { Proposal } from '@op/common/client';
 import { Header2 } from '@op/sense/Header';
 import { Skeleton } from '@op/sense/Skeleton';
@@ -36,6 +37,7 @@ import {
   DevelopEntryTitleCellSkeleton,
   useDevelopEntries,
 } from './DevelopEntriesParts';
+import { getCategoryConfirmedAt } from './developCategoryStatus';
 
 // Not `category`, which the proposals list uses.
 const ENTRY_CATEGORY_PARAM = 'entryCategory';
@@ -102,6 +104,7 @@ export function DevelopAdminEntriesPanel({
             }
           >
             <DevelopAdminEntriesTableSuspense
+              processInstanceId={processInstanceId}
               decisionSlug={decisionSlug}
               entryName={entryName}
             />
@@ -127,6 +130,7 @@ function DevelopAdminEntriesCountSuspense({
     trpc.decision.listProposals.useSuspenseQuery({
       processInstanceId,
       phaseId,
+      status: ProposalStatus.SUBMITTED,
       limit: 1,
     });
   const { total: count } = useDevelopEntries();
@@ -187,14 +191,25 @@ function DevelopAdminCategoryFilterSuspense({
 }
 
 function DevelopAdminEntriesTableSuspense({
+  processInstanceId,
   decisionSlug,
   entryName,
 }: {
+  processInstanceId: string;
   decisionSlug: string;
   entryName: string;
 }) {
   const t = useTranslations();
   const { entries } = useDevelopEntries();
+  const [{ items: categoryStatuses }] =
+    trpc.decision.listCategoryReviewerStatus.useSuspenseQuery({
+      processInstanceId,
+    });
+  const confirmedCategoryNames = new Set(
+    categoryStatuses
+      .filter((status) => getCategoryConfirmedAt(status) !== null)
+      .map((status) => status.category.name),
+  );
 
   if (entries.length === 0) {
     return (
@@ -225,7 +240,12 @@ function DevelopAdminEntriesTableSuspense({
               />
               <DevelopEntryCategoryCell entry={entry} />
               <DevelopEntryBudgetCell entry={entry} />
-              <DevelopEntryStatusCell entry={entry} />
+              <DevelopEntryStatusCell
+                isCategoryConfirmed={isEntryCategoryConfirmed({
+                  entry,
+                  confirmedCategoryNames,
+                })}
+              />
             </TableRow>
           ))}
         </TableBody>
@@ -295,6 +315,21 @@ function DevelopEntryCategoryCell({ entry }: { entry: Proposal }) {
         <span className="text-muted-foreground">—</span>
       )}
     </TableCell>
+  );
+}
+
+// An entry holds its category labels, which are the category names.
+function isEntryCategoryConfirmed({
+  entry,
+  confirmedCategoryNames,
+}: {
+  entry: Proposal;
+  confirmedCategoryNames: Set<string>;
+}) {
+  const categories = entry.proposalData.category;
+  return (
+    categories.length > 0 &&
+    categories.every((category) => confirmedCategoryNames.has(category))
   );
 }
 

@@ -2,7 +2,7 @@
 
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { trpc } from '@op/api/client';
-import type { ProcessInstance } from '@op/api/encoders';
+import { type ProcessInstance, ProposalStatus } from '@op/api/encoders';
 import { BadgeNumber } from '@op/sense/Badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@op/sense/Tabs';
 import { parseAsStringLiteral, useQueryState } from 'nuqs';
@@ -103,6 +103,7 @@ function DevelopAdminEntriesTotalSuspense({
   const [{ total }] = trpc.decision.listProposals.useSuspenseQuery({
     processInstanceId,
     phaseId,
+    status: ProposalStatus.SUBMITTED,
     limit: 1,
   });
 
