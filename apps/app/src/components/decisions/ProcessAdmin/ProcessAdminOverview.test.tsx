@@ -631,7 +631,7 @@ describe('ProcessAdminOverview', () => {
   });
 
   it('saves a draft About body after a pause, once, with the last text', () => {
-    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] });
     try {
       seed({ status: ProcessStatus.DRAFT });
       renderOverview();
@@ -647,6 +647,26 @@ describe('ProcessAdminOverview', () => {
       expect(updateInstance.mock.calls[0]?.[0]).toEqual({
         instanceId: 'instance-1',
         overview: { body: paragraphDoc('ab') },
+      });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('sends a draft About edit when the page is left inside the pause', () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] });
+    try {
+      seed({ status: ProcessStatus.DRAFT });
+      const { unmount } = renderOverview();
+
+      fireEvent.change(aboutField(), { target: { value: 'gone' } });
+      expect(updateInstance).not.toHaveBeenCalled();
+      unmount();
+
+      expect(updateInstance).toHaveBeenCalledTimes(1);
+      expect(updateInstance.mock.calls[0]?.[0]).toEqual({
+        instanceId: 'instance-1',
+        overview: { body: paragraphDoc('gone') },
       });
     } finally {
       vi.useRealTimers();
