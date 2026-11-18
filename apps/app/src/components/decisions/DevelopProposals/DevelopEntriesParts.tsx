@@ -112,6 +112,7 @@ export function useDevelopEntries() {
         phaseId: query.phaseId,
         search: query.search || undefined,
         categoryId: query.categoryId,
+        status: ProposalStatus.SUBMITTED,
         limit: PROPOSALS_PAGE_LIMIT,
       },
       { getNextPageParam: nextCursor },
@@ -173,13 +174,16 @@ export function DevelopEntriesTable({
   );
 }
 
-// An entry its caller may still edit opens in the develop editor.
+// An entry the caller may edit opens in the develop editor, any other in the
+// read-only sheet.
 export function DevelopEntryTitleCell({
   entry,
   decisionSlug,
+  isEditable,
 }: {
   entry: Proposal;
   decisionSlug: string;
+  isEditable: boolean;
 }) {
   const t = useTranslations();
   const openInSheet = useOpenProposalInSheet();
@@ -189,7 +193,7 @@ export function DevelopEntryTitleCell({
     <TableRowHeader className="py-4">
       <Link
         href={
-          entry.isEditable
+          isEditable
             ? decisionProposalDevelopHref({
                 decisionSlug,
                 profileId: entry.profileId,
@@ -199,7 +203,7 @@ export function DevelopEntryTitleCell({
                 profileId: entry.profileId,
               })
         }
-        onClick={entry.isEditable ? undefined : openInSheet(entry.profileId)}
+        onClick={isEditable ? undefined : openInSheet(entry.profileId)}
         dir="auto"
         className="block truncate text-base font-strong text-foreground hover:underline ltr:text-left rtl:text-right"
       >
@@ -223,17 +227,25 @@ export function DevelopEntryBudgetCell({ entry }: { entry: Proposal }) {
   );
 }
 
-export function DevelopEntryStatusCell({ entry }: { entry: Proposal }) {
+/** The state of the entry's category: deliberating until it is confirmed. */
+export function DevelopEntryStatusCell({
+  isCategoryConfirmed,
+}: {
+  isCategoryConfirmed: boolean;
+}) {
   const t = useTranslations();
-  const isDraft = entry.status === ProposalStatus.DRAFT;
 
   return (
     <TableCell className="py-4">
-      <StatusBadge variant={isDraft ? 'in-progress' : 'success'} icon={false}>
-        {isDraft
-          ? t('decisions.develop.entryInProgressStatus')
-          : t('decisions.develop.entryAdvancingStatus')}
-      </StatusBadge>
+      {isCategoryConfirmed ? (
+        <StatusBadge variant="success" icon={false}>
+          {t('decisions.develop.entryConfirmedStatus')}
+        </StatusBadge>
+      ) : (
+        <StatusBadge variant="in-progress" icon={false}>
+          {t('decisions.develop.entryDeliberatingStatus')}
+        </StatusBadge>
+      )}
     </TableCell>
   );
 }

@@ -2,12 +2,14 @@ import { mergeRouters } from '../../../trpcFactory';
 import { acceptProposalInviteRouter } from './acceptProposalInvite';
 import { addProposalRelationshipRouter } from './addRelationship';
 import { advanceProposalRouter } from './advanceProposal';
+import { confirmCategoryDevelopmentRouter } from './confirmCategoryDevelopment';
 import { createProposalRouter } from './create';
 import { createDevelopedProposalRouter } from './createDeveloped';
 import { deleteProposalRouter } from './delete';
 import { exportProposalsRouter } from './export';
 import { getProposalRouter } from './get';
 import { getCollabTokenRouter } from './getCollabToken';
+import { getDevelopConfirmStateRouter } from './getDevelopConfirmState';
 import { getExportStatusRouter } from './getExportStatus';
 import { getLatestSelectionForProposalRouter } from './getLatestSelection';
 import { getProposalAdvanceTargetRouter } from './getProposalAdvanceTarget';
@@ -20,10 +22,12 @@ import { listProposalLocationsRouter } from './listProposalLocations';
 import { listProposalRelationshipsRouter } from './listProposalRelationships';
 import { listWithReviewAggregatesRouter } from './listWithReviewAggregates';
 import { mergeProposalsRouter } from './mergeProposals';
+import { publishDevelopedProposalsRouter } from './publishDevelopedProposals';
 import { rejectProposalRouter } from './reject';
 import { removeProposalRelationshipRouter } from './removeRelationship';
 import { submitProposalRouter } from './submit';
 import { submitDevelopedProposalRouter } from './submitDeveloped';
+import { unconfirmCategoryDevelopmentRouter } from './unconfirmCategoryDevelopment';
 import { unmergeProposalRouter } from './unmergeProposal';
 import { unrejectProposalRouter } from './unreject';
 import { unsubmitDevelopedProposalRouter } from './unsubmitDeveloped';
@@ -47,6 +51,10 @@ export const proposalsRouter = mergeRouters(
   listProposalRelationshipsRouter,
   listContributingProposalsRouter,
   listDevelopSourcesRouter,
+  getDevelopConfirmStateRouter,
+  confirmCategoryDevelopmentRouter,
+  unconfirmCategoryDevelopmentRouter,
+  publishDevelopedProposalsRouter,
   listWithReviewAggregatesRouter,
   mergeProposalsRouter,
   rejectProposalRouter,

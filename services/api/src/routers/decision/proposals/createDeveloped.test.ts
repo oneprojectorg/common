@@ -11,6 +11,7 @@ import {
   createDevelopPhaseSetup,
   createDevelopProposalsMember,
   grantInstanceRole,
+  openDevelopWindow,
   testDevelopSchema,
   syncPhaseRows,
 } from '@op/common/testing';
@@ -510,6 +511,7 @@ describe.concurrent('createDevelopedProposal', () => {
       fromPhaseId: 'initial',
       toPhaseId: 'final',
     });
+    await openDevelopWindow({ instanceId });
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
     await expect(

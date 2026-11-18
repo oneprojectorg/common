@@ -11,6 +11,7 @@ import { cache } from 'react';
 import { getTranslations } from '@/lib/i18n';
 
 import { getDevelopEntryHeading } from '@/components/decisions/developProposalEditor/getDevelopEntryHeading';
+import { isCurrentDevelopSource } from '@/components/decisions/developProposalEditor/isCurrentDevelopSource';
 
 import { DevelopProposalClient } from './DevelopProposalClient';
 
@@ -52,7 +53,10 @@ export async function generateMetadata({
   }
 }
 
-/** The develop editor of an entry. Any other proposal opens at `/edit`. */
+/**
+ * The develop view of an entry, or of a source of the current develop phase
+ * that has no entry. Any other proposal opens at `/edit`.
+ */
 const DevelopProposalPage = async ({
   params,
 }: {
@@ -62,23 +66,49 @@ const DevelopProposalPage = async ({
   const { utils, queryClient } = await createServerUtils();
 
   // These reads warm the cache; the client's error boundary owns failures.
-  const [proposal] = await Promise.all([
+  const [proposal, decisionProfile] = await Promise.all([
     fetchProposal(profileId).catch(() => null),
     fetchDecisionBySlug(slug).catch(() => null),
   ]);
 
-  // Same input as the read in `DevelopProposalRoute`, so it hydrates.
-  const relationships = proposal
-    ? await utils.decision.listProposalRelationships
-        .fetch({
-          targetProposalId: proposal.id,
-          relationshipType: ProposalRelationshipType.DEVELOPED,
-        })
-        .catch(() => null)
-    : null;
+  const instance = decisionProfile?.processInstance;
+  const canDevelop = Boolean(
+    instance?.access?.admin || instance?.access?.developProposals,
+  );
 
-  if (relationships && relationships.items.length === 0) {
+  // Same inputs as the reads in `DevelopProposalRoute`, so they hydrate.
+  const [relationships] = await Promise.all([
+    proposal
+      ? utils.decision.listProposalRelationships
+          .fetch({
+            targetProposalId: proposal.id,
+            relationshipType: ProposalRelationshipType.DEVELOPED,
+          })
+          .catch(() => null)
+      : null,
+    instance && canDevelop
+      ? utils.decision.getDevelopConfirmState
+          .fetch({ processInstanceId: instance.id })
+          .catch(() => null)
+      : null,
+  ]);
+
+  if (
+    relationships &&
+    relationships.items.length === 0 &&
+    instance &&
+    proposal &&
+    !isCurrentDevelopSource({ instance, proposal })
+  ) {
     notFound();
+  }
+
+  // The first source the column opens, so both panes reveal together.
+  const firstSource = relationships?.items[0]?.proposal;
+  if (firstSource) {
+    await utils.decision.getProposal
+      .fetch({ profileId: firstSource.profile.id })
+      .catch(() => null);
   }
 
   return (

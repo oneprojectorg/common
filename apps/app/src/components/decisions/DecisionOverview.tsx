@@ -4,7 +4,7 @@ import { useCanLinkToProfile } from '@/hooks/useCanLinkToProfile';
 import { getPublicUrl } from '@/utils';
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { getAvatarImageProps } from '@/utils/getAvatarImageProps';
-import { type ProcessInstance, type ProcessPhase } from '@op/api/encoders';
+import { type ProcessInstance } from '@op/api/encoders';
 import { Avatar, AvatarFallback, AvatarImage } from '@op/sense/Avatar';
 import { Button } from '@op/sense/Button';
 import {
@@ -37,6 +37,7 @@ import {
   PinnedResourcesSkeleton,
 } from './OverviewPinnedResources';
 import { ProposalHtmlContent } from './ProposalHtmlContent';
+import { toProcessPhases } from './toProcessPhases';
 import { useCreateProposal } from './useCreateProposal';
 
 interface DecisionOverviewProps {
@@ -155,16 +156,7 @@ function DecisionOverviewContent({
     currentPhase?.rules?.proposals?.submit === true &&
     instance.access?.submitProposals === true;
 
-  const phases: ProcessPhase[] = (instance.instanceData?.phases ?? []).map(
-    (p) => ({
-      id: p.phaseId,
-      name: p.name || '',
-      description: p.description,
-      phase: { startDate: p.startDate, endDate: p.endDate },
-      advancementMethod: p.rules?.advancement?.method,
-      config: { allowProposals: p.rules?.proposals?.submit },
-    }),
-  );
+  const phases = toProcessPhases(instance.instanceData?.phases);
 
   const currentPhaseId = currentPhase?.phaseId || '';
 

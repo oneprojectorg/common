@@ -1,5 +1,7 @@
 'use client';
 
+import { setWorkerUrl } from 'maplibre-gl';
+
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { useEffect, useMemo, useRef } from 'react';
 import {
@@ -20,6 +22,16 @@ export { Layer, Source };
 export type { LayerProps };
 
 import { cn } from '../../lib/utils';
+
+// maplibre-gl v6 cannot find its worker from inside a bundle. This `new URL`
+// form makes Next (Turbopack and webpack) emit the worker as a same-origin
+// hashed asset and gives maplibre its URL.
+setWorkerUrl(
+  new URL(
+    'maplibre-gl/dist/maplibre-gl-worker.mjs',
+    import.meta.url,
+  ).toString(),
+);
 
 export interface LngLat {
   lng: number;

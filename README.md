@@ -209,7 +209,7 @@ Backend services and utilities, often consumed by the applications.
 - **[`services/db`](./services/db/README.md)**: Manages the PostgreSQL database schema using Drizzle ORM, handles migrations (`drizzle-kit`), provides the typed database client, and integrates with the local Supabase development environment. Includes a custom workflow for managing database indexes separately.
 - **[`services/emails`](./services/emails/README.md)**: Defines transactional email templates using React Email and Tailwind CSS. Provides a function (`OPNodemailer`) to render and send emails via Nodemailer/Resend SMTP. (Note: Currently, the sending function doesn't seem to be actively used by other services).
 - **[`services/supabase`](./services/supabase/README.md)**: Provides configured Supabase client instances (browser and server-side using `@supabase/ssr`) and utilities for interacting with Supabase authentication and storage. Manages TypeScript type generation (`pnpm typegen`) from the database schema.
-- **[`services/trpc`](./services/trpc/README.md)**: Implements the type-safe API layer using tRPC. Defines routers, procedures, context (`createContext`), middleware, and provides the `TRPCProvider` for frontend integration with React Query and localStorage persistence. Also includes integration with the AI SDK (Anthropic).
+- **[`services/trpc`](./services/trpc/README.md)**: Implements the type-safe API layer using tRPC. Defines routers, procedures, context (`createContext`), middleware, and provides the `TRPCProvider` for frontend integration with React Query and localStorage persistence.
 
 ### Configuration (`configs/`)
 

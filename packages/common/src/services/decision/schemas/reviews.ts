@@ -17,7 +17,9 @@ import {
   total,
 } from '../../../utils/pagination';
 import { accountContactSchema } from '../../profile/schemas/accountContact';
+import { profileMinimalSchema } from '../../profile/schemas/profileMinimal';
 import type { RubricTemplateSchema } from '../types';
+import { categoryReviewerDataSchema } from './categoryReviewerData';
 import {
   instanceOptionalPhaseRefSchema,
   instancePhaseRefSchema,
@@ -403,6 +405,83 @@ export type CategoryWithReviewersSchema = z.infer<
 >;
 
 export const categoryReviewersListSchema = list(categoryWithReviewersSchema);
+
+export const categoryReviewerStatusInputSchema = instancePhaseRefSchema.pick({
+  processInstanceId: true,
+});
+
+/** One category reviewer of the current phase with its develop confirm stamp. */
+export const categoryReviewerStatusSchema = z.object({
+  reviewerProfileId: z.uuid(),
+  developConfirmedAt: categoryReviewerDataSchema.shape.developConfirmedAt
+    .unwrap()
+    .nullable(),
+  profile: profileMinimalSchema.pick({
+    id: true,
+    name: true,
+    slug: true,
+    avatarImage: true,
+  }),
+});
+
+export type CategoryReviewerStatusSchema = z.infer<
+  typeof categoryReviewerStatusSchema
+>;
+
+/** A category with its category reviewers for the current phase. */
+export const categoryWithReviewerStatusSchema = z.object({
+  category: categoryWithReviewersSchema.shape.category,
+  reviewers: z.array(categoryReviewerStatusSchema),
+  /** The previous phase's non-draft proposals in the category: the sources the develop screens list. */
+  sourceCount: z.number().int().nonnegative(),
+  /** The submitted entries in the category that a live `developed` relationship targets. */
+  advancingCount: z.number().int().nonnegative(),
+});
+
+export type CategoryWithReviewerStatusSchema = z.infer<
+  typeof categoryWithReviewerStatusSchema
+>;
+
+export const categoryReviewerStatusListSchema = list(
+  categoryWithReviewerStatusSchema,
+);
+
+/** No category: a reviewer acts on all their own rows; an admin must name one. */
+export const categoryDevelopmentTargetSchema =
+  categoryReviewerStatusInputSchema.extend({
+    taxonomyTermId: z.uuid().optional(),
+    reviewerProfileId: z.uuid().optional(),
+  });
+
+export const categoryDevelopmentReviewerSchema =
+  categoryReviewerStatusSchema.pick({
+    reviewerProfileId: true,
+    developConfirmedAt: true,
+  });
+
+export type CategoryDevelopmentReviewerSchema = z.infer<
+  typeof categoryDevelopmentReviewerSchema
+>;
+
+/**
+ * The category reviewers a confirm or unconfirm changed, with their stamps
+ * after the write.
+ */
+export const categoryDevelopmentChangeSchema = z.object({
+  reviewers: z.array(categoryDevelopmentReviewerSchema),
+});
+
+/** The caller's own develop work in the current phase: see `getDevelopConfirmState`. */
+export const developConfirmStateSchema = z.object({
+  canConfirm: z.boolean(),
+  lock: z.enum(['windowClosed', 'confirmed']).nullable(),
+  categoryNames: z.array(z.string()),
+  canPublish: z.boolean(),
+});
+
+export type DevelopConfirmStateSchema = z.infer<
+  typeof developConfirmStateSchema
+>;
 
 export const removeCategoryReviewerResultSchema = z.object({
   removed: z.boolean(),

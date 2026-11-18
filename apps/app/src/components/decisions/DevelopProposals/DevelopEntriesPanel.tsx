@@ -1,8 +1,9 @@
 'use client';
 
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
+import type { Proposal } from '@op/common/client';
 import { TableBody, TableHead, TableHeader, TableRow } from '@op/sense/Table';
-import { Suspense } from 'react';
+import { type ReactNode, Suspense } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -22,22 +23,64 @@ import {
   useDevelopEntries,
 } from './DevelopEntriesParts';
 
-/**
- * The Entries tab of the develop screen: the entries this phase holds, with
- * their budget and whether they are still in progress or advancing. The
- * search runs in the API, page by page, like the list itself.
- */
-export function DevelopEntriesPanel({
-  processInstanceId,
-  phaseId,
-  decisionSlug,
-  entryName,
-}: {
+interface DevelopEntriesPanelProps {
   processInstanceId: string;
   /** The develop phase, whose entries are listed. */
   phaseId: string | undefined;
   decisionSlug: string;
   entryName: string;
+}
+
+/**
+ * The Entries tab of the develop screen: the entries advancing from this
+ * phase, with their budget. The caller has not confirmed their work, so
+ * each category is still deliberating. The search runs in the API, page by
+ * page, like the list itself.
+ */
+export function DevelopEntriesPanel(props: DevelopEntriesPanelProps) {
+  return (
+    <EntriesPanel
+      {...props}
+      isEntryEditable={(entry) => entry.isEditable === true}
+      renderStatusCell={() => (
+        <DevelopEntryStatusCell isCategoryConfirmed={false} />
+      )}
+    />
+  );
+}
+
+/**
+ * The Entries tab once the caller confirmed their work or the window
+ * closed: each entry opens read-only.
+ */
+export function DevelopEntriesReadOnlyPanel({
+  isCategoryConfirmed,
+  ...props
+}: DevelopEntriesPanelProps & {
+  /** Whether the caller confirmed their work, which confirms their categories. */
+  isCategoryConfirmed: boolean;
+}) {
+  return (
+    <EntriesPanel
+      {...props}
+      isEntryEditable={() => false}
+      renderStatusCell={() => (
+        <DevelopEntryStatusCell isCategoryConfirmed={isCategoryConfirmed} />
+      )}
+    />
+  );
+}
+
+function EntriesPanel({
+  processInstanceId,
+  phaseId,
+  decisionSlug,
+  entryName,
+  isEntryEditable,
+  renderStatusCell,
+}: DevelopEntriesPanelProps & {
+  isEntryEditable: (entry: Proposal) => boolean;
+  renderStatusCell: (entry: Proposal) => ReactNode;
 }) {
   return (
     <DevelopEntriesProvider
@@ -56,6 +99,8 @@ export function DevelopEntriesPanel({
             <DevelopEntriesTableSuspense
               decisionSlug={decisionSlug}
               entryName={entryName}
+              isEntryEditable={isEntryEditable}
+              renderStatusCell={renderStatusCell}
             />
           </Suspense>
         </APIErrorBoundary>
@@ -67,9 +112,13 @@ export function DevelopEntriesPanel({
 function DevelopEntriesTableSuspense({
   decisionSlug,
   entryName,
+  isEntryEditable,
+  renderStatusCell,
 }: {
   decisionSlug: string;
   entryName: string;
+  isEntryEditable: (entry: Proposal) => boolean;
+  renderStatusCell: (entry: Proposal) => ReactNode;
 }) {
   const t = useTranslations();
   const { entries, total } = useDevelopEntries();
@@ -104,9 +153,10 @@ function DevelopEntriesTableSuspense({
               <DevelopEntryTitleCell
                 entry={entry}
                 decisionSlug={decisionSlug}
+                isEditable={isEntryEditable(entry)}
               />
               <DevelopEntryBudgetCell entry={entry} />
-              <DevelopEntryStatusCell entry={entry} />
+              {renderStatusCell(entry)}
             </TableRow>
           ))}
         </TableBody>
