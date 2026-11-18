@@ -467,6 +467,13 @@ export const categoryDevelopmentChangeSchema = z.object({
   reviewers: z.array(categoryDevelopmentReviewerSchema),
 });
 
+/** The caller's own develop work in the current phase: see `getDevelopConfirmState`. */
+export const developConfirmStateSchema = z.object({
+  canConfirm: z.boolean(),
+  lock: z.enum(['windowClosed', 'confirmed']).nullable(),
+  categoryNames: z.array(z.string()),
+});
+
 export const removeCategoryReviewerResultSchema = z.object({
   removed: z.boolean(),
 });
