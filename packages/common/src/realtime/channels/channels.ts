@@ -36,13 +36,6 @@ export const Channels = {
     `decisionProposal:${instanceId}:${proposalId}` as const,
 
   /**
-   * Channel for the develop confirm stamps of an instance. Narrower than
-   * `decisionProposals`, which every proposal edit publishes.
-   */
-  decisionDevelopLock: (instanceId: string) =>
-    `decisionDevelopLock:${instanceId}` as const,
-
-  /**
    * Channel for one reader's Liked list in an instance. Likes are private, so
    * never build it from a profile id: use `getProposalLikesChannels`.
    */
@@ -149,9 +142,6 @@ export type DecisionProposalsChannel = ReturnType<
 export type DecisionProposalChannel = ReturnType<
   typeof Channels.decisionProposal
 >;
-export type DecisionDevelopLockChannel = ReturnType<
-  typeof Channels.decisionDevelopLock
->;
 export type DecisionProposalLikesChannel = ReturnType<
   typeof Channels.decisionProposalLikes
 >;
@@ -193,7 +183,6 @@ export type ChannelName =
   | DecisionInstanceChannel
   | DecisionProposalsChannel
   | DecisionProposalChannel
-  | DecisionDevelopLockChannel
   | DecisionProposalLikesChannel
   | ReviewAssignmentChannel
   | ReviewAssignmentsChannel

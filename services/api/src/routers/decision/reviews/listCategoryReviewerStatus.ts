@@ -16,8 +16,9 @@ export const listCategoryReviewerStatusRouter = router({
         user: ctx.user,
       });
 
+      // Confirm, unconfirm and publish all publish on the proposals channel.
       ctx.registerQueryChannels([
-        Channels.decisionDevelopLock(input.processInstanceId),
+        Channels.decisionProposals(input.processInstanceId),
         Channels.decisionInstance(input.processInstanceId),
       ]);
 

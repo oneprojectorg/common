@@ -21,7 +21,6 @@ export const confirmCategoryDevelopmentRouter = router({
       // A confirm changes which entries the reviewer may still edit.
       ctx.registerMutationChannels([
         Channels.decisionProposals(input.processInstanceId),
-        Channels.decisionDevelopLock(input.processInstanceId),
       ]);
 
       return result;
