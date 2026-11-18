@@ -9,9 +9,6 @@ import {
 import {
   type DevelopSource,
   type DevelopedProposal,
-  type ProposalReviewAggregates,
-  RECOMMENDATION_OPTION,
-  type RecommendationValue,
   isReviewPhase,
   nextCursor,
   resolveReviewSettings,
@@ -19,17 +16,9 @@ import {
 import { useInfiniteScroll } from '@op/hooks';
 import { logger } from '@op/logging/client';
 import { Button } from '@op/sense/Button';
-import {
-  Empty,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from '@op/sense/Empty';
 import { Header2 } from '@op/sense/Header';
 import { Skeleton } from '@op/sense/Skeleton';
 import { StatusBadge } from '@op/sense/StatusBadge';
-import { StatusDot, type StatusDotIntent } from '@op/sense/StatusDot';
 import {
   Table,
   TableBody,
@@ -47,7 +36,7 @@ import {
   useMemo,
   useTransition,
 } from 'react';
-import { LuCheck, LuLeaf, LuPencil } from 'react-icons/lu';
+import { LuCheck, LuPencil } from 'react-icons/lu';
 
 import { Link, useRouter, useTranslations } from '@/lib/i18n';
 
@@ -60,9 +49,9 @@ import {
 } from '../proposalHrefs';
 import {
   ProposalReviewDecorationProvider,
-  useProposalReviewAggregates,
   useReportProposalsForReviewDecoration,
 } from '../proposalReviewDecoration';
+import { NoSourcesEmpty, SourceRecommendations } from './DevelopSourcesParts';
 import {
   type DevelopSourceScope,
   getDevelopSourceScope,
@@ -85,12 +74,6 @@ interface SourcesTableProps {
   showRecommendations: boolean;
   decisionSlug: string;
 }
-
-const RECOMMENDATION_INTENT: Record<RecommendationValue, StatusDotIntent> = {
-  yes: 'success',
-  maybe: 'warning',
-  no: 'danger',
-};
 
 /**
  * The Proposals tab of the develop screen: the previous phase's proposals
@@ -613,70 +596,6 @@ function AdvanceEntryButton({
       {advanced ? <LuCheck aria-hidden data-icon="inline-start" /> : null}
       {advanced ? t('advancedEntryAction') : t('advanceEntryAction')}
     </Button>
-  );
-}
-
-/**
- * The reviewers' overall recommendations for one source, as counts of Yes,
- * Maybe and No. The aggregates load after the row, a page at a time.
- */
-export function SourceRecommendations({ proposalId }: { proposalId: string }) {
-  const review = useProposalReviewAggregates(proposalId);
-
-  if (review.status === 'loading') {
-    return <Skeleton className="h-5 w-48" />;
-  }
-  if (review.status === 'unavailable') {
-    return <span className="text-muted-foreground">—</span>;
-  }
-
-  return (
-    <RecommendationCounts
-      counts={review.aggregates.overallRecommendationCount}
-    />
-  );
-}
-
-function RecommendationCounts({
-  counts,
-}: {
-  counts: ProposalReviewAggregates['overallRecommendationCount'];
-}) {
-  const t = useTranslations();
-
-  return (
-    <div className="flex items-center gap-4 whitespace-nowrap">
-      {Object.values(RECOMMENDATION_OPTION).map((option) => (
-        <StatusDot
-          key={option.value}
-          intent={RECOMMENDATION_INTENT[option.value]}
-          className="text-base text-foreground"
-        >
-          {counts[option.value] ?? 0} {t(option.label)}
-        </StatusDot>
-      ))}
-    </div>
-  );
-}
-
-/** What the Proposals tab shows when the previous phase offers no sources. */
-export function NoSourcesEmpty({ scope }: { scope: DevelopSourceScope }) {
-  const t = useTranslations('decisions.develop');
-
-  return (
-    <Empty>
-      <EmptyHeader>
-        <EmptyMedia variant="icon">
-          <LuLeaf aria-hidden className="size-5" />
-        </EmptyMedia>
-        <EmptyTitle render={<h3 />}>{t('noSourcesTitle')}</EmptyTitle>
-        <EmptyDescription>
-          {scope === 'assigned'
-            ? t('noAssignedSourcesDescription')
-            : t('noSourcesDescription')}
-        </EmptyDescription>
-      </EmptyHeader>
-    </Empty>
   );
 }
 

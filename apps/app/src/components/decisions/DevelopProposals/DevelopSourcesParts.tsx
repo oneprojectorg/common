@@ -3,6 +3,9 @@
 import { trpc } from '@op/api/client';
 import {
   type DevelopSource,
+  type ProposalReviewAggregates,
+  RECOMMENDATION_OPTION,
+  type RecommendationValue,
   isVotingEligible,
   nextCursor,
 } from '@op/common/client';
@@ -17,6 +20,7 @@ import {
 } from '@op/sense/Empty';
 import { Skeleton } from '@op/sense/Skeleton';
 import { StatusBadge } from '@op/sense/StatusBadge';
+import { StatusDot, type StatusDotIntent } from '@op/sense/StatusDot';
 import { Table, TableCell, TableRowHeader } from '@op/sense/Table';
 import { cn } from '@op/sense/lib/utils';
 import {
@@ -32,8 +36,10 @@ import { LuLeaf } from 'react-icons/lu';
 import { Link, useTranslations } from '@/lib/i18n';
 
 import { decisionProposalDevelopHref } from '../proposalHrefs';
-import { useReportProposalsForReviewDecoration } from '../proposalReviewDecoration';
-import { NoSourcesEmpty, SourceRecommendations } from './DevelopSourcesPanel';
+import {
+  useProposalReviewAggregates,
+  useReportProposalsForReviewDecoration,
+} from '../proposalReviewDecoration';
 import {
   type DevelopSourceScope,
   getDevelopSourcesInput,
@@ -61,6 +67,12 @@ interface DevelopSourcesContextValue {
 const DevelopSourcesContext = createContext<DevelopSourcesContextValue | null>(
   null,
 );
+
+const RECOMMENDATION_INTENT: Record<RecommendationValue, StatusDotIntent> = {
+  yes: 'success',
+  maybe: 'warning',
+  no: 'danger',
+};
 
 export function DevelopSourcesProvider({
   processInstanceId,
@@ -271,6 +283,48 @@ export function DevelopSourcesEmpty({
   );
 }
 
+/** What the Proposals tab shows when the previous phase offers no sources. */
+export function NoSourcesEmpty({ scope }: { scope: DevelopSourceScope }) {
+  const t = useTranslations('decisions.develop');
+
+  return (
+    <Empty>
+      <EmptyHeader>
+        <EmptyMedia variant="icon">
+          <LuLeaf aria-hidden className="size-5" />
+        </EmptyMedia>
+        <EmptyTitle render={<h3 />}>{t('noSourcesTitle')}</EmptyTitle>
+        <EmptyDescription>
+          {scope === 'assigned'
+            ? t('noAssignedSourcesDescription')
+            : t('noSourcesDescription')}
+        </EmptyDescription>
+      </EmptyHeader>
+    </Empty>
+  );
+}
+
+/**
+ * The reviewers' overall recommendations for one source, as counts of Yes,
+ * Maybe and No. The aggregates load after the row, a page at a time.
+ */
+export function SourceRecommendations({ proposalId }: { proposalId: string }) {
+  const review = useProposalReviewAggregates(proposalId);
+
+  if (review.status === 'loading') {
+    return <Skeleton className="h-5 w-48" />;
+  }
+  if (review.status === 'unavailable') {
+    return <span className="text-muted-foreground">—</span>;
+  }
+
+  return (
+    <RecommendationCounts
+      counts={review.aggregates.overallRecommendationCount}
+    />
+  );
+}
+
 export function DevelopSourcesNextPage({ children }: { children: ReactNode }) {
   const { fetchNextPage, hasNextPage, isFetchingNextPage } =
     useDevelopSources();
@@ -327,6 +381,28 @@ export function DevelopSourceDecisionCellSkeleton({
     <TableCell className={cn('py-4', className)}>
       <Skeleton className="ms-auto h-9 w-24" />
     </TableCell>
+  );
+}
+
+function RecommendationCounts({
+  counts,
+}: {
+  counts: ProposalReviewAggregates['overallRecommendationCount'];
+}) {
+  const t = useTranslations();
+
+  return (
+    <div className="flex items-center gap-4 whitespace-nowrap">
+      {Object.values(RECOMMENDATION_OPTION).map((option) => (
+        <StatusDot
+          key={option.value}
+          intent={RECOMMENDATION_INTENT[option.value]}
+          className="text-base text-foreground"
+        >
+          {counts[option.value] ?? 0} {t(option.label)}
+        </StatusDot>
+      ))}
+    </div>
   );
 }
 

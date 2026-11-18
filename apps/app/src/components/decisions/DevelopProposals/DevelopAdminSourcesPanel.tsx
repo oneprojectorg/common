@@ -12,17 +12,18 @@ import { Suspense, useEffect } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { CategoryFilterSelect } from '../CategoryFilterSelect';
+import {
+  CategoryFilterSelect,
+  CategoryFilterSkeleton,
+} from '../CategoryFilterSelect';
 import { ProposalsLoadError } from '../ProposalsLoadError';
 import { usesDistrictCategoryTerm } from '../categoryTerm';
 import { ALL_CATEGORIES } from '../proposalFilterQuery';
 import { ProposalReviewDecorationProvider } from '../proposalReviewDecoration';
 import {
-  CategoryFilterSkeleton,
   DevelopEntryCategoryCell,
-} from './DevelopAdminEntriesPanel';
-import { DevelopEntryTextCellSkeleton } from './DevelopEntriesParts';
-import { NoSourcesEmpty } from './DevelopSourcesPanel';
+  DevelopEntryTextCellSkeleton,
+} from './DevelopEntriesParts';
 import {
   DevelopSourceDecisionCell,
   DevelopSourceDecisionCellSkeleton,
@@ -35,6 +36,7 @@ import {
   DevelopSourcesNextPage,
   DevelopSourcesProvider,
   DevelopSourcesTable,
+  NoSourcesEmpty,
   useDevelopSources,
 } from './DevelopSourcesParts';
 
