@@ -1,0 +1,352 @@
+import {
+  TEST_PERMISSION_BITS,
+  TestDecisionsDataManager,
+} from '@op/common/testing';
+import { describe, expect, it } from 'vitest';
+
+import {
+  createCategoryDevelopReviewer,
+  createCategoryDevelopSetup,
+  getCategoryReviewerData,
+} from '../../../test/helpers/categoryDevelopTestUtils';
+import { createAuthenticatedCaller } from '../../../test/supabase-utils';
+
+const stamped = { developConfirmedAt: expect.any(String) };
+
+/** A develop phase with two reviewers on category A, both confirmed by the admin. */
+async function createConfirmedCategory({
+  testData,
+  onTestFinished,
+}: {
+  testData: TestDecisionsDataManager;
+  onTestFinished: (fn: () => void | Promise<void>) => void;
+}) {
+  const { setup, instanceId, termA, termB } = await createCategoryDevelopSetup({
+    testData,
+    onTestFinished,
+  });
+  const [first, second] = await Promise.all(
+    [0, 1].map(() =>
+      createCategoryDevelopReviewer({
+        testData,
+        setup,
+        rows: [{ taxonomyTermId: termA.id, phaseId: 'final' }],
+      }),
+    ),
+  );
+  if (!first || !second) {
+    throw new Error('Expected two reviewers');
+  }
+
+  const adminCaller = await createAuthenticatedCaller(setup.userEmail);
+  await adminCaller.decision.confirmCategoryDevelopment({
+    processInstanceId: instanceId,
+    taxonomyTermId: termA.id,
+  });
+
+  return { setup, instanceId, termA, termB, first, second, adminCaller };
+}
+
+describe.concurrent('unconfirmCategoryDevelopment', () => {
+  it('removes the stamp from the own row and leaves the other rows stamped', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { instanceId, termA, first, second } = await createConfirmedCategory({
+      testData,
+      onTestFinished,
+    });
+
+    const caller = await createAuthenticatedCaller(first.email);
+    const result = await caller.decision.unconfirmCategoryDevelopment({
+      processInstanceId: instanceId,
+      taxonomyTermId: termA.id,
+    });
+
+    expect(result.reviewers).toEqual([
+      { reviewerProfileId: first.profileId, developConfirmedAt: null },
+    ]);
+    const data = await getCategoryReviewerData([
+      ...first.rowIds,
+      ...second.rowIds,
+    ]);
+    expect(data.get(first.rowIds[0] ?? '')).toEqual({});
+    expect(data.get(second.rowIds[0] ?? '')).toEqual(stamped);
+  });
+
+  it('refuses a reviewer who unconfirms a category where another person has the row', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instanceId, termA, first, second } =
+      await createConfirmedCategory({ testData, onTestFinished });
+    const outsider = await createCategoryDevelopReviewer({
+      testData,
+      setup,
+      rows: [],
+    });
+
+    const caller = await createAuthenticatedCaller(outsider.email);
+    await expect(
+      caller.decision.unconfirmCategoryDevelopment({
+        processInstanceId: instanceId,
+        taxonomyTermId: termA.id,
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
+
+    const data = await getCategoryReviewerData([
+      ...first.rowIds,
+      ...second.rowIds,
+    ]);
+    expect(data.get(first.rowIds[0] ?? '')).toEqual(stamped);
+    expect(data.get(second.rowIds[0] ?? '')).toEqual(stamped);
+  });
+
+  it('refuses Review and an own stamped row without Develop Proposals', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instanceId, termA, adminCaller } =
+      await createConfirmedCategory({ testData, onTestFinished });
+    const reviewer = await createCategoryDevelopReviewer({
+      testData,
+      setup,
+      rows: [{ taxonomyTermId: termA.id, phaseId: 'final' }],
+      decisionsPermission:
+        TEST_PERMISSION_BITS.READ | TEST_PERMISSION_BITS.REVIEW,
+    });
+    await adminCaller.decision.confirmCategoryDevelopment({
+      processInstanceId: instanceId,
+      taxonomyTermId: termA.id,
+    });
+
+    const caller = await createAuthenticatedCaller(reviewer.email);
+    await expect(
+      caller.decision.unconfirmCategoryDevelopment({
+        processInstanceId: instanceId,
+        taxonomyTermId: termA.id,
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
+
+    const data = await getCategoryReviewerData(reviewer.rowIds);
+    expect(data.get(reviewer.rowIds[0] ?? '')).toEqual(stamped);
+  });
+
+  it('lets an admin clear the stamp of every row of the category', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { instanceId, termA, first, second, adminCaller } =
+      await createConfirmedCategory({ testData, onTestFinished });
+
+    const result = await adminCaller.decision.unconfirmCategoryDevelopment({
+      processInstanceId: instanceId,
+      taxonomyTermId: termA.id,
+    });
+
+    expect(result.reviewers).toHaveLength(2);
+    const data = await getCategoryReviewerData([
+      ...first.rowIds,
+      ...second.rowIds,
+    ]);
+    expect(data.get(first.rowIds[0] ?? '')).toEqual({});
+    expect(data.get(second.rowIds[0] ?? '')).toEqual({});
+  });
+
+  it('refuses an unconfirm outside a develop phase', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instanceId, termA } = await createCategoryDevelopSetup({
+      testData,
+      onTestFinished,
+      advance: false,
+    });
+    const reviewer = await createCategoryDevelopReviewer({
+      testData,
+      setup,
+      rows: [{ taxonomyTermId: termA.id, phaseId: 'initial' }],
+    });
+
+    const caller = await createAuthenticatedCaller(reviewer.email);
+    await expect(
+      caller.decision.unconfirmCategoryDevelopment({
+        processInstanceId: instanceId,
+        taxonomyTermId: termA.id,
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
+  });
+  it('lets an admin who names a reviewer clear that row only', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { instanceId, termA, first, second, adminCaller } =
+      await createConfirmedCategory({ testData, onTestFinished });
+
+    const result = await adminCaller.decision.unconfirmCategoryDevelopment({
+      processInstanceId: instanceId,
+      taxonomyTermId: termA.id,
+      reviewerProfileId: second.profileId,
+    });
+
+    expect(result.reviewers).toEqual([
+      { reviewerProfileId: second.profileId, developConfirmedAt: null },
+    ]);
+    const data = await getCategoryReviewerData([
+      ...first.rowIds,
+      ...second.rowIds,
+    ]);
+    expect(data.get(first.rowIds[0] ?? '')).toEqual(stamped);
+    expect(data.get(second.rowIds[0] ?? '')).toEqual({});
+  });
+
+  it('refuses an admin who names a reviewer with no row for the phase', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instanceId, termA, adminCaller } =
+      await createConfirmedCategory({ testData, onTestFinished });
+    const outsider = await createCategoryDevelopReviewer({
+      testData,
+      setup,
+      rows: [],
+    });
+
+    await expect(
+      adminCaller.decision.unconfirmCategoryDevelopment({
+        processInstanceId: instanceId,
+        taxonomyTermId: termA.id,
+        reviewerProfileId: outsider.profileId,
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'NotFoundError' } });
+  });
+
+  it('lets a reviewer who names themself clear their own row only', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { instanceId, termA, first, second } = await createConfirmedCategory({
+      testData,
+      onTestFinished,
+    });
+
+    const caller = await createAuthenticatedCaller(first.email);
+    await caller.decision.unconfirmCategoryDevelopment({
+      processInstanceId: instanceId,
+      taxonomyTermId: termA.id,
+      reviewerProfileId: first.profileId,
+    });
+
+    const data = await getCategoryReviewerData([
+      ...first.rowIds,
+      ...second.rowIds,
+    ]);
+    expect(data.get(first.rowIds[0] ?? '')).toEqual({});
+    expect(data.get(second.rowIds[0] ?? '')).toEqual(stamped);
+  });
+
+  it('refuses a reviewer who names the row of another reviewer', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { instanceId, termA, first, second } = await createConfirmedCategory({
+      testData,
+      onTestFinished,
+    });
+
+    const caller = await createAuthenticatedCaller(first.email);
+    await expect(
+      caller.decision.unconfirmCategoryDevelopment({
+        processInstanceId: instanceId,
+        taxonomyTermId: termA.id,
+        reviewerProfileId: second.profileId,
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
+
+    const data = await getCategoryReviewerData([
+      ...first.rowIds,
+      ...second.rowIds,
+    ]);
+    expect(data.get(first.rowIds[0] ?? '')).toEqual(stamped);
+    expect(data.get(second.rowIds[0] ?? '')).toEqual(stamped);
+  });
+
+  it('clears every own row for the phase when no category is given', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instanceId, termA, termB } =
+      await createCategoryDevelopSetup({ testData, onTestFinished });
+    const [reviewer, other] = await Promise.all([
+      createCategoryDevelopReviewer({
+        testData,
+        setup,
+        rows: [
+          { taxonomyTermId: termA.id, phaseId: 'final' },
+          { taxonomyTermId: termB.id, phaseId: 'final' },
+        ],
+      }),
+      createCategoryDevelopReviewer({
+        testData,
+        setup,
+        rows: [{ taxonomyTermId: termA.id, phaseId: 'final' }],
+      }),
+    ]);
+    const adminCaller = await createAuthenticatedCaller(setup.userEmail);
+    await Promise.all(
+      [termA, termB].map((term) =>
+        adminCaller.decision.confirmCategoryDevelopment({
+          processInstanceId: instanceId,
+          taxonomyTermId: term.id,
+        }),
+      ),
+    );
+
+    const caller = await createAuthenticatedCaller(reviewer.email);
+    const result = await caller.decision.unconfirmCategoryDevelopment({
+      processInstanceId: instanceId,
+    });
+
+    expect(result.reviewers).toEqual([
+      { reviewerProfileId: reviewer.profileId, developConfirmedAt: null },
+      { reviewerProfileId: reviewer.profileId, developConfirmedAt: null },
+    ]);
+    const data = await getCategoryReviewerData([
+      ...reviewer.rowIds,
+      ...other.rowIds,
+    ]);
+    expect(data.get(reviewer.rowIds[0] ?? '')).toEqual({});
+    expect(data.get(reviewer.rowIds[1] ?? '')).toEqual({});
+    expect(data.get(other.rowIds[0] ?? '')).toEqual(stamped);
+  });
+
+  it('refuses an admin who names no category', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { instanceId, first, adminCaller } = await createConfirmedCategory({
+      testData,
+      onTestFinished,
+    });
+
+    await expect(
+      adminCaller.decision.unconfirmCategoryDevelopment({
+        processInstanceId: instanceId,
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
+
+    const data = await getCategoryReviewerData(first.rowIds);
+    expect(data.get(first.rowIds[0] ?? '')).toEqual(stamped);
+  });
+});

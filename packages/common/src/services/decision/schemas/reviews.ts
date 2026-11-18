@@ -442,6 +442,31 @@ export const categoryReviewerStatusListSchema = list(
   categoryWithReviewerStatusSchema,
 );
 
+/** No category: a reviewer acts on all their own rows; an admin must name one. */
+export const categoryDevelopmentTargetSchema =
+  categoryReviewerStatusInputSchema.extend({
+    taxonomyTermId: z.uuid().optional(),
+    reviewerProfileId: z.uuid().optional(),
+  });
+
+export const categoryDevelopmentReviewerSchema =
+  categoryReviewerStatusSchema.pick({
+    reviewerProfileId: true,
+    developConfirmedAt: true,
+  });
+
+export type CategoryDevelopmentReviewerSchema = z.infer<
+  typeof categoryDevelopmentReviewerSchema
+>;
+
+/**
+ * The category reviewers a confirm or unconfirm changed, with their stamps
+ * after the write.
+ */
+export const categoryDevelopmentChangeSchema = z.object({
+  reviewers: z.array(categoryDevelopmentReviewerSchema),
+});
+
 export const removeCategoryReviewerResultSchema = z.object({
   removed: z.boolean(),
 });
