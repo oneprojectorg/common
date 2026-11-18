@@ -126,8 +126,8 @@ function ProcessAdminOverviewSuspense({
           status={status}
           showBrowseProposals={isOpen}
         />
-        <div className="mx-auto grid w-full max-w-6xl grid-cols-1 gap-12 px-4 py-6 md:grid-cols-12 md:gap-x-12 md:px-6 md:py-12">
-          <div className="flex flex-col gap-10 md:col-span-6">
+        <div className="mx-auto flex w-full max-w-272 flex-col gap-12 px-4 py-6 md:flex-row md:gap-24 md:px-6 md:py-12">
+          <div className="flex min-w-0 flex-1 flex-col gap-10">
             <ProcessAdminPhaseRail
               slug={slug}
               instance={instance}
@@ -265,7 +265,7 @@ function ProcessAdminHero({
         instanceId={instance.id}
         heroImagePath={overview?.heroImage}
       />
-      <div className="mx-auto flex max-w-3xl flex-col items-center gap-8 px-4 pt-16 pb-8 md:px-6 md:pb-16">
+      <div className="mx-auto flex w-full flex-col items-center px-4 pt-16 pb-8 md:w-1/2 md:px-6 md:pb-16">
         <DecisionHero
           title={name}
           titleSlot={
@@ -280,13 +280,14 @@ function ProcessAdminHero({
           }
           hasImage={hasImage}
           showTranslateLink={false}
+          className="gap-3"
           description={stewardLine}
         >
           {showBrowseProposals ? (
             <ButtonLink
               href={`/decisions/${slug}/current`}
               variant="outline"
-              className="mt-6 self-center"
+              className="mt-8 self-center"
             >
               {t('browseProposalsAction')}
             </ButtonLink>
@@ -341,7 +342,7 @@ function ProcessAdminAbout({
   const t = useTranslations('decisions.processAdmin');
 
   return (
-    <section className="flex min-w-0 flex-col gap-4 md:col-span-6">
+    <section className="flex min-w-0 flex-col gap-3 md:w-140 md:shrink-0">
       <Header2 className="text-label">{t('aboutHeading')}</Header2>
       {aboutSlot || description ? (
         <OverviewAbout

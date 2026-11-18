@@ -11,6 +11,7 @@ export function DecisionHero({
   gradient,
   hasImage = false,
   showTranslateLink = true,
+  className,
   children,
 }: {
   title: string | ReactNode;
@@ -27,10 +28,11 @@ export function DecisionHero({
   hasImage?: boolean;
   /** Hide the translate link on pages that render no translated content. */
   showTranslateLink?: boolean;
+  className?: string;
   children?: ReactNode;
 }) {
   return (
-    <div className="flex flex-col gap-2 text-center">
+    <div className={cn('flex flex-col gap-2 text-center', className)}>
       {showTranslateLink ? <DecisionTranslateLink hasImage={hasImage} /> : null}
       {titleSlot ??
         (hasImage ? (
