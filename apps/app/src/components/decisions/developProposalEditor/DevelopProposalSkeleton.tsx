@@ -30,7 +30,7 @@ export function DevelopProposalSkeleton() {
   );
 }
 
-export function DevelopSourceSkeleton() {
+function DevelopSourceSkeleton() {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex gap-4 border-b pb-2">

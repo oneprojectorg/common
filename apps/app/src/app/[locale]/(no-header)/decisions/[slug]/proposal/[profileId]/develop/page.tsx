@@ -103,6 +103,14 @@ const DevelopProposalPage = async ({
     notFound();
   }
 
+  // The first source the column opens, so both panes reveal together.
+  const firstSource = relationships?.items[0]?.proposal;
+  if (firstSource) {
+    await utils.decision.getProposal
+      .fetch({ profileId: firstSource.profile.id })
+      .catch(() => null);
+  }
+
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
       <DevelopProposalClient profileId={profileId} slug={slug} />
