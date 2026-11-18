@@ -54,7 +54,7 @@
     "drizzle-orm": "catalog:",
     "drizzle-zod": "catalog:",
     "fast-xml-parser": "^5.2.1",
-    "nanoid": "5.1.2",
+    "nanoid": "5.1.16",
     "node-geonames-client": "^0.0.2",
     "posthog-js": "^1.370.0",
     "react": "^19.0.1",
