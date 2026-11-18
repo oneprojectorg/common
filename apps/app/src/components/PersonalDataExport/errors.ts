@@ -1,13 +1,4 @@
-import { isTRPCClientError } from '@op/api/client';
-
-// the client types `error.data` as `object`
-export const getHttpStatus = (error: unknown) =>
-  isTRPCClientError(error) &&
-  error.data &&
-  'httpStatus' in error.data &&
-  typeof error.data.httpStatus === 'number'
-    ? error.data.httpStatus
-    : undefined;
+import { getHttpStatus } from '@/utils/getHttpStatus';
 
 /**
  * A 403 or 404: retrying gives the same answer. 401 is excluded because a

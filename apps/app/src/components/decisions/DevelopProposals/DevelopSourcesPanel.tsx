@@ -1,5 +1,6 @@
 'use client';
 
+import { getHttpStatus } from '@/utils/getHttpStatus';
 import { trpc } from '@op/api/client';
 import {
   type InstancePhaseData,
@@ -70,7 +71,6 @@ import {
   getDevelopSourcesInput,
   isSourceAdvancing,
 } from './developSources';
-import { getHttpStatus } from './getHttpStatus';
 
 interface DevelopSourcesPanelProps {
   instance: ProcessInstance;
