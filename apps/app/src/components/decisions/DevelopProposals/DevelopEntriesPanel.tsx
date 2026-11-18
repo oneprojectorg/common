@@ -15,7 +15,6 @@ import {
   DevelopEntriesSearch,
   DevelopEntriesTable,
   DevelopEntryBudgetCell,
-  DevelopEntryDecisionCell,
   DevelopEntryStatusCell,
   DevelopEntryStatusCellSkeleton,
   DevelopEntryTextCellSkeleton,
@@ -33,30 +32,41 @@ interface DevelopEntriesPanelProps {
 }
 
 /**
- * The Entries tab of the develop screen: the entries this phase holds, with
- * their budget and whether they are still in progress or advancing. The
- * search runs in the API, page by page, like the list itself.
+ * The Entries tab of the develop screen: the entries advancing from this
+ * phase, with their budget. The caller has not confirmed their work, so
+ * each category is still deliberating. The search runs in the API, page by
+ * page, like the list itself.
  */
 export function DevelopEntriesPanel(props: DevelopEntriesPanelProps) {
   return (
     <EntriesPanel
       {...props}
       isEntryEditable={(entry) => entry.isEditable === true}
-      renderStatusCell={(entry) => <DevelopEntryStatusCell entry={entry} />}
+      renderStatusCell={() => (
+        <DevelopEntryStatusCell isCategoryConfirmed={false} />
+      )}
     />
   );
 }
 
 /**
- * The Entries tab for a caller who confirmed their work: each entry shows
- * whether it is advancing or not advanced, and opens read-only.
+ * The Entries tab once the caller confirmed their work or the window
+ * closed: each entry opens read-only.
  */
-export function DevelopEntriesReadOnlyPanel(props: DevelopEntriesPanelProps) {
+export function DevelopEntriesReadOnlyPanel({
+  isCategoryConfirmed,
+  ...props
+}: DevelopEntriesPanelProps & {
+  /** Whether the caller confirmed their work, which confirms their categories. */
+  isCategoryConfirmed: boolean;
+}) {
   return (
     <EntriesPanel
       {...props}
       isEntryEditable={() => false}
-      renderStatusCell={(entry) => <DevelopEntryDecisionCell entry={entry} />}
+      renderStatusCell={() => (
+        <DevelopEntryStatusCell isCategoryConfirmed={isCategoryConfirmed} />
+      )}
     />
   );
 }

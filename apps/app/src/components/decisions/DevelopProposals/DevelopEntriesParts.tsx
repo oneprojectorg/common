@@ -112,6 +112,7 @@ export function useDevelopEntries() {
         phaseId: query.phaseId,
         search: query.search || undefined,
         categoryId: query.categoryId,
+        status: ProposalStatus.SUBMITTED,
         limit: PROPOSALS_PAGE_LIMIT,
       },
       { getNextPageParam: nextCursor },
@@ -226,33 +227,25 @@ export function DevelopEntryBudgetCell({ entry }: { entry: Proposal }) {
   );
 }
 
-export function DevelopEntryStatusCell({ entry }: { entry: Proposal }) {
+/** The state of the entry's category: deliberating until it is confirmed. */
+export function DevelopEntryStatusCell({
+  isCategoryConfirmed,
+}: {
+  isCategoryConfirmed: boolean;
+}) {
   const t = useTranslations();
-  const isDraft = entry.status === ProposalStatus.DRAFT;
 
   return (
     <TableCell className="py-4">
-      <StatusBadge variant={isDraft ? 'in-progress' : 'success'} icon={false}>
-        {isDraft
-          ? t('decisions.develop.entryInProgressStatus')
-          : t('decisions.develop.entryAdvancingStatus')}
-      </StatusBadge>
-    </TableCell>
-  );
-}
-
-/** Whether an entry advances, once its caller confirmed their work. */
-export function DevelopEntryDecisionCell({ entry }: { entry: Proposal }) {
-  const t = useTranslations();
-  const advancing = entry.status !== ProposalStatus.DRAFT;
-
-  return (
-    <TableCell className="py-4">
-      <StatusBadge variant={advancing ? 'success' : 'inactive'} icon={false}>
-        {advancing
-          ? t('decisions.develop.entryAdvancingStatus')
-          : t('decisions.develop.entryNotAdvancedStatus')}
-      </StatusBadge>
+      {isCategoryConfirmed ? (
+        <StatusBadge variant="success" icon={false}>
+          {t('decisions.develop.entryConfirmedStatus')}
+        </StatusBadge>
+      ) : (
+        <StatusBadge variant="in-progress" icon={false}>
+          {t('decisions.develop.entryDeliberatingStatus')}
+        </StatusBadge>
+      )}
     </TableCell>
   );
 }

@@ -48,7 +48,7 @@ type DevelopTab = 'proposals' | 'entries';
 /**
  * The develop screen's body: a Proposals tab with the previous phase's
  * proposals (the sources) to prepare entries from, an Entries tab with the
- * entries this phase holds, and a fixed footer with the advancing count and
+ * entries advancing from this phase, and a fixed footer with their count and
  * the confirm action.
  *
  * The caller's develop state comes from the server: once they confirmed
@@ -73,10 +73,9 @@ export function DevelopProposalsList({
   const processInstanceId = instance.id;
   const phaseId = instance.currentStateId ?? undefined;
 
-  // Only the totals of the lists are read here, so each is asked for one
-  // row; the develop state decides the variants and the footer action.
-  const [[entries, advancing, developState]] = trpc.useSuspenseQueries((q) => [
-    q.decision.listProposals({ processInstanceId, phaseId, limit: 1 }),
+  // Only the total of the entries is read here, so it is asked for one row;
+  // the develop state decides the variants and the footer action.
+  const [[advancing, developState]] = trpc.useSuspenseQueries((q) => [
     q.decision.listProposals({
       processInstanceId,
       phaseId,
@@ -111,7 +110,7 @@ export function DevelopProposalsList({
           <TabsTrigger value="proposals">{t('proposalsTab')}</TabsTrigger>
           <TabsTrigger value="entries">
             <bdi>{entryName}</bdi>
-            <BadgeNumber variant="secondary">{entries.total}</BadgeNumber>
+            <BadgeNumber variant="secondary">{advancing.total}</BadgeNumber>
           </TabsTrigger>
         </TabsList>
 
@@ -140,6 +139,7 @@ export function DevelopProposalsList({
         <TabsContent value="entries">
           {isReadOnly ? (
             <DevelopEntriesReadOnlyPanel
+              isCategoryConfirmed={developState.lock === 'confirmed'}
               processInstanceId={processInstanceId}
               phaseId={phaseId}
               decisionSlug={decisionSlug}
