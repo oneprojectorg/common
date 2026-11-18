@@ -16,7 +16,6 @@ import {
 import { Header2 } from '@op/sense/Header';
 import { ProfileAvatar } from '@op/sense/ProfileAvatar';
 import { StatusBadge } from '@op/sense/StatusBadge';
-import { cn } from '@op/sense/lib/utils';
 import { Suspense, type ReactNode } from 'react';
 import { LuArrowLeft, LuTriangleAlert } from 'react-icons/lu';
 
@@ -125,7 +124,7 @@ function ProcessAdminOverviewSuspense({
           showBrowseProposals={isOpen}
         />
         <div className="mx-auto grid w-full max-w-6xl grid-cols-1 gap-12 px-4 py-6 md:grid-cols-12 md:gap-x-12 md:px-6 md:py-12">
-          <aside className="flex flex-col gap-10 md:col-span-6">
+          <div className="flex flex-col gap-10 md:col-span-6">
             <ProcessAdminPhaseRail
               slug={slug}
               instance={instance}
@@ -148,7 +147,7 @@ function ProcessAdminOverviewSuspense({
                 </Suspense>
               </APIErrorBoundary>
             ) : null}
-          </aside>
+          </div>
           <ProcessAdminAbout
             description={instance.description}
             aboutSlot={aboutSlot}
@@ -212,8 +211,6 @@ function ProcessAdminTopBar({
   );
 }
 
-// A draft's title is edited in place; a live title is read-only and changes
-// from Settings. The steward line and the banner control are shared.
 function ProcessAdminHero({
   slug,
   name,
@@ -258,8 +255,6 @@ function ProcessAdminHero({
     </p>
   ) : undefined;
 
-  // The design shows the title and the steward only; the summary belongs to
-  // the About section.
   return (
     <DecisionHeroBanner heroImagePath={overview?.heroImage}>
       <ProcessAdminBanner
@@ -268,43 +263,32 @@ function ProcessAdminHero({
         heroImagePath={overview?.heroImage}
       />
       <div className="mx-auto flex max-w-3xl flex-col items-center gap-8 px-4 pt-16 pb-8 md:px-6 md:pb-16">
-        {status === 'draft' ? (
-          <div className="flex w-full flex-col gap-2 text-center">
-            <ProcessAdminTitle
-              slug={slug}
-              instanceId={instance.id}
-              name={name}
-              hasImage={hasImage}
-            />
-            {stewardLine ? (
-              <div
-                className={cn(
-                  'flex flex-col gap-2 text-base',
-                  hasImage ? 'text-white' : 'text-foreground',
-                )}
-              >
-                {stewardLine}
-              </div>
-            ) : null}
-          </div>
-        ) : (
-          <DecisionHero
-            title={name}
-            hasImage={hasImage}
-            showTranslateLink={false}
-            description={stewardLine}
-          >
-            {showBrowseProposals ? (
-              <ButtonLink
-                href={`/decisions/${slug}/current`}
-                variant="outline"
-                className="mt-6 self-center"
-              >
-                {t('browseProposalsAction')}
-              </ButtonLink>
-            ) : null}
-          </DecisionHero>
-        )}
+        <DecisionHero
+          title={name}
+          titleSlot={
+            status === 'draft' ? (
+              <ProcessAdminTitle
+                slug={slug}
+                instanceId={instance.id}
+                name={name}
+                hasImage={hasImage}
+              />
+            ) : undefined
+          }
+          hasImage={hasImage}
+          showTranslateLink={false}
+          description={stewardLine}
+        >
+          {showBrowseProposals ? (
+            <ButtonLink
+              href={`/decisions/${slug}/current`}
+              variant="outline"
+              className="mt-6 self-center"
+            >
+              {t('browseProposalsAction')}
+            </ButtonLink>
+          ) : null}
+        </DecisionHero>
       </div>
     </DecisionHeroBanner>
   );

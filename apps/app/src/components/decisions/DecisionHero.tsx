@@ -6,6 +6,7 @@ import { DecisionTranslateLink } from './DecisionTranslateLink';
 
 export function DecisionHero({
   title,
+  titleSlot,
   description,
   gradient,
   hasImage = false,
@@ -13,6 +14,8 @@ export function DecisionHero({
   children,
 }: {
   title: string | ReactNode;
+  /** Replaces the default heading, for a title that renders its own `h1`. */
+  titleSlot?: ReactNode;
   description?: string | ReactNode;
   /** Override the default teal/green gradient on the gradient-style header. */
   gradient?: string;
@@ -29,17 +32,18 @@ export function DecisionHero({
   return (
     <div className="flex flex-col gap-2 text-center">
       {showTranslateLink ? <DecisionTranslateLink hasImage={hasImage} /> : null}
-      {hasImage ? (
-        <Header1 className="text-white">
-          <bdi>{title}</bdi>
-        </Header1>
-      ) : (
-        <GradientHeader gradient={gradient}>
-          <Header1>
+      {titleSlot ??
+        (hasImage ? (
+          <Header1 className="text-white">
             <bdi>{title}</bdi>
           </Header1>
-        </GradientHeader>
-      )}
+        ) : (
+          <GradientHeader gradient={gradient}>
+            <Header1>
+              <bdi>{title}</bdi>
+            </Header1>
+          </GradientHeader>
+        ))}
 
       {description && (
         <div
