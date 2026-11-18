@@ -1,8 +1,10 @@
 'use client';
 
 import { trpc } from '@op/api/client';
+import { ProposalStatus } from '@op/api/encoders';
 import {
   type DevelopSource,
+  type DevelopedProposal,
   type ProposalReviewAggregates,
   RECOMMENDATION_OPTION,
   type RecommendationValue,
@@ -10,6 +12,7 @@ import {
   nextCursor,
 } from '@op/common/client';
 import { useInfiniteScroll } from '@op/hooks';
+import { logger } from '@op/logging/client';
 import { Button } from '@op/sense/Button';
 import {
   Empty,
@@ -22,8 +25,10 @@ import { Skeleton } from '@op/sense/Skeleton';
 import { StatusBadge } from '@op/sense/StatusBadge';
 import { StatusDot, type StatusDotIntent } from '@op/sense/StatusDot';
 import { Table, TableCell, TableRowHeader } from '@op/sense/Table';
+import { toast } from '@op/sense/Toast';
 import { cn } from '@op/sense/lib/utils';
 import {
+  type MouseEventHandler,
   type ReactNode,
   createContext,
   useCallback,
@@ -31,9 +36,11 @@ import {
   useDeferredValue,
   useMemo,
 } from 'react';
-import { LuLeaf } from 'react-icons/lu';
+import { LuCheck, LuLeaf, LuPencil } from 'react-icons/lu';
 
 import { Link, useTranslations } from '@/lib/i18n';
+
+import { ButtonLink } from '@/components/ButtonLink';
 
 import { decisionProposalDevelopHref } from '../proposalHrefs';
 import {
@@ -43,7 +50,9 @@ import {
 import {
   type DevelopSourceScope,
   getDevelopSourcesInput,
+  isSourceAdvancing,
 } from './developSources';
+import { getHttpStatus, isDevelopLockedError } from './getHttpStatus';
 import { usePrepareDevelopEntry } from './usePrepareDevelopEntry';
 
 interface DevelopSourcesQuery {
@@ -124,12 +133,14 @@ export function DevelopSourcesProvider({
 
 export function useDevelopSources() {
   const { query } = useDevelopSourcesContext().meta;
+  const sourcesInput = getDevelopSourcesInput(query);
+  // Without a category the input equals `getDevelopSourcesInput`, so readers
+  // of that input share these pages.
   const [data, { fetchNextPage, hasNextPage, isFetchingNextPage }] =
     trpc.decision.listDevelopSources.useSuspenseInfiniteQuery(
-      {
-        ...getDevelopSourcesInput(query),
-        categoryIds: query.categoryId ? [query.categoryId] : undefined,
-      },
+      query.categoryId
+        ? { ...sourcesInput, categoryIds: [query.categoryId] }
+        : sourcesInput,
       { getNextPageParam: nextCursor },
     );
 
@@ -151,13 +162,35 @@ export function useDevelopSources() {
   };
 }
 
-export function DevelopSourcesTable({ children }: { children: ReactNode }) {
+export function useDevelopSourcesMeta() {
+  return useDevelopSourcesContext().meta;
+}
+
+export function useDevelopSourcesState() {
+  return useDevelopSourcesContext().state;
+}
+
+export function useDevelopSourceTitle(source: DevelopSource) {
+  const t = useTranslations('decisions.proposals');
+  return source.profile.name || t('untitledProposal');
+}
+
+export function DevelopSourcesTable({
+  className,
+  children,
+}: {
+  className?: string;
+  children: ReactNode;
+}) {
   const t = useTranslations('decisions.develop');
 
   return (
     <Table
       aria-label={t('sourcesTableLabel')}
-      className="min-w-4xl table-fixed [&_tr>*:first-child]:ps-0 [&_tr>*:last-child]:pe-0"
+      className={cn(
+        className,
+        '[&_tr>*:first-child]:ps-0 [&_tr>*:last-child]:pe-0',
+      )}
     >
       {children}
     </Table>
@@ -190,27 +223,46 @@ export function DevelopSourceNameCell({
   );
 }
 
+/** A source's title, as a link to where its row leads. */
+export function DevelopSourceTitleLink({
+  title,
+  href,
+  onClick,
+}: {
+  title: string;
+  href: string;
+  onClick?: MouseEventHandler<HTMLAnchorElement>;
+}) {
+  return (
+    <Link
+      href={href}
+      onClick={onClick}
+      className="text-base font-strong text-foreground hover:underline"
+    >
+      <bdi>{title}</bdi>
+    </Link>
+  );
+}
+
 /**
  * The source's title as the way into its entry: a link to the entry's develop
  * editor, or, while it has none the caller may read, a control that prepares one.
  */
 export function DevelopSourceEntryTitle({ source }: { source: DevelopSource }) {
-  const t = useTranslations('decisions');
+  const t = useTranslations('decisions.develop');
   const { actions, meta } = useDevelopSourcesContext();
-  const title = source.profile.name || t('proposals.untitledProposal');
+  const title = useDevelopSourceTitle(source);
   const entry = getAdvancingEntry(source) ?? source.developedProposals[0];
 
   if (entry) {
     return (
-      <Link
+      <DevelopSourceTitleLink
+        title={title}
         href={decisionProposalDevelopHref({
           decisionSlug: meta.decisionSlug,
           profileId: entry.profileId,
         })}
-        className="text-base font-strong text-foreground hover:underline"
-      >
-        <bdi>{title}</bdi>
-      </Link>
+      />
     );
   }
 
@@ -218,7 +270,7 @@ export function DevelopSourceEntryTitle({ source }: { source: DevelopSource }) {
     <Button
       variant="link"
       size="inline"
-      aria-label={t('develop.prepareEntryLabel', { title })}
+      aria-label={t('prepareEntryLabel', { title })}
       onClick={() => actions.prepare(source)}
       className="justify-start text-start whitespace-normal text-foreground"
     >
@@ -260,6 +312,155 @@ export function DevelopSourceDecisionCell({
           : t('sourceUnderConsiderationStatus')}
       </StatusBadge>
     </TableCell>
+  );
+}
+
+/** The actions or the decision of a source, side by side at the row's end. */
+export function DevelopSourceActionsCell({
+  children,
+}: {
+  children: ReactNode;
+}) {
+  return (
+    <TableCell className="py-4 text-end">
+      <div className="flex items-center justify-end gap-2">{children}</div>
+    </TableCell>
+  );
+}
+
+/** Creates an entry of this phase from a source that has none yet. */
+export function DevelopSourcePrepareEntryButton({
+  source,
+  disabled,
+}: {
+  source: DevelopSource;
+  disabled: boolean;
+}) {
+  const t = useTranslations('decisions.develop');
+  const { state, actions } = useDevelopSourcesContext();
+  const title = useDevelopSourceTitle(source);
+
+  return (
+    <Button
+      variant="outline"
+      aria-label={t('prepareEntryLabel', { title })}
+      disabled={disabled}
+      loading={state.preparingSourceId === source.id}
+      onClick={() => actions.prepare(source)}
+    >
+      <LuPencil aria-hidden data-icon="inline-start" />
+      {t('prepareEntryAction')}
+    </Button>
+  );
+}
+
+/** Opens the entry already developed from a source, draft or submitted. */
+export function DevelopSourceEditEntryLink({
+  title,
+  href,
+}: {
+  title: string;
+  href: string;
+}) {
+  const t = useTranslations('decisions.develop');
+
+  return (
+    <ButtonLink
+      variant="outline"
+      href={href}
+      aria-label={t('editEntryLabel', { title })}
+    >
+      <LuPencil aria-hidden data-icon="inline-start" />
+      {t('editEntryAction')}
+    </ButtonLink>
+  );
+}
+
+/** Submits a source's draft entry, or un-advances it once submitted. */
+export function DevelopSourceAdvanceEntryButton({
+  entry,
+  title,
+  disabled,
+}: {
+  entry: DevelopedProposal;
+  title: string;
+  disabled: boolean;
+}) {
+  const t = useTranslations('decisions.develop');
+
+  // No invalidation: the submit and the unsubmit publish on the decision's
+  // proposals channel, which this list subscribes to.
+  const submitEntry = trpc.decision.submitDevelopedProposal.useMutation({
+    onError: (error) => {
+      logger.error('Failed to advance a develop entry', { error });
+      if (isDevelopLockedError(error)) {
+        toast.error(t('developLockedError'));
+      } else if (getHttpStatus(error) === 400) {
+        // A 400 is the server's form validation: the entry is incomplete.
+        toast.error(t('advanceEntryIncompleteError', { title }));
+      } else {
+        toast.error(t('advanceEntryError'));
+      }
+    },
+  });
+  const unsubmitEntry = trpc.decision.unsubmitDevelopedProposal.useMutation({
+    onError: (error) => {
+      logger.error('Failed to un-advance a develop entry', { error });
+      toast.error(
+        isDevelopLockedError(error)
+          ? t('developLockedError')
+          : t.rich('unadvanceEntryError', {
+              title,
+              bdi: (chunks) => <bdi>{chunks}</bdi>,
+            }),
+      );
+    },
+  });
+
+  const isDraft = entry.status === ProposalStatus.DRAFT;
+  const advanced = !isDraft;
+  const actionable = isDraft || entry.status === ProposalStatus.SUBMITTED;
+
+  return (
+    <Button
+      variant="outline"
+      aria-pressed={advanced}
+      loading={submitEntry.isPending || unsubmitEntry.isPending}
+      disabled={disabled || !actionable}
+      className={advanced ? 'border-primary bg-accent text-primary' : undefined}
+      aria-label={
+        advanced
+          ? t('advancedEntryLabel', { title })
+          : t('advanceEntryLabel', { title })
+      }
+      onClick={() =>
+        isDraft
+          ? submitEntry.mutate({ proposalId: entry.id })
+          : unsubmitEntry.mutate({ proposalId: entry.id })
+      }
+    >
+      {advanced ? <LuCheck aria-hidden data-icon="inline-start" /> : null}
+      {advanced ? t('advancedEntryAction') : t('advanceEntryAction')}
+    </Button>
+  );
+}
+
+/** Whether a source's entry is advancing, once the caller confirmed their work. */
+export function DevelopSourceDecisionBadge({
+  source,
+}: {
+  source: DevelopSource;
+}) {
+  const t = useTranslations('decisions.develop');
+
+  return isSourceAdvancing(source) ? (
+    <StatusBadge variant="success" icon={false}>
+      {t('entryAdvancingStatus')}
+    </StatusBadge>
+  ) : (
+    <StatusBadge variant="inactive" icon={false}>
+      {t('entryNotAdvancedStatus')}
+    </StatusBadge>
   );
 }
 
@@ -306,27 +507,6 @@ export function NoSourcesEmpty({ scope }: { scope: DevelopSourceScope }) {
         </EmptyDescription>
       </EmptyHeader>
     </Empty>
-  );
-}
-
-/**
- * The reviewers' overall recommendations for one source, as counts of Yes,
- * Maybe and No. The aggregates load after the row, a page at a time.
- */
-export function SourceRecommendations({ proposalId }: { proposalId: string }) {
-  const review = useProposalReviewAggregates(proposalId);
-
-  if (review.status === 'loading') {
-    return <Skeleton className="h-5 w-48" />;
-  }
-  if (review.status === 'unavailable') {
-    return <span className="text-muted-foreground">—</span>;
-  }
-
-  return (
-    <RecommendationCounts
-      counts={review.aggregates.overallRecommendationCount}
-    />
   );
 }
 
@@ -386,6 +566,27 @@ export function DevelopSourceDecisionCellSkeleton({
     <TableCell className={cn('py-4', className)}>
       <Skeleton className="ms-auto h-9 w-24" />
     </TableCell>
+  );
+}
+
+/**
+ * The reviewers' overall recommendations for one source, as counts of Yes,
+ * Maybe and No. The aggregates load after the row, a page at a time.
+ */
+function SourceRecommendations({ proposalId }: { proposalId: string }) {
+  const review = useProposalReviewAggregates(proposalId);
+
+  if (review.status === 'loading') {
+    return <Skeleton className="h-5 w-48" />;
+  }
+  if (review.status === 'unavailable') {
+    return <span className="text-muted-foreground">—</span>;
+  }
+
+  return (
+    <RecommendationCounts
+      counts={review.aggregates.overallRecommendationCount}
+    />
   );
 }
 

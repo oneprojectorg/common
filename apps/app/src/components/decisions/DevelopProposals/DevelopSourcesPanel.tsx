@@ -1,64 +1,43 @@
 'use client';
 
-import { trpc } from '@op/api/client';
-import {
-  type InstancePhaseData,
-  type ProcessInstance,
-  ProposalStatus,
-} from '@op/api/encoders';
+import type { InstancePhaseData, ProcessInstance } from '@op/api/encoders';
 import {
   type DevelopSource,
-  type DevelopedProposal,
   isReviewPhase,
-  nextCursor,
   resolveReviewSettings,
 } from '@op/common/client';
-import { useInfiniteScroll } from '@op/hooks';
-import { logger } from '@op/logging/client';
-import { Button } from '@op/sense/Button';
 import { Header2 } from '@op/sense/Header';
 import { Skeleton } from '@op/sense/Skeleton';
-import { StatusBadge } from '@op/sense/StatusBadge';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-  TableRowHeader,
-} from '@op/sense/Table';
-import { toast } from '@op/sense/Toast';
-import {
-  type MouseEventHandler,
-  type ReactNode,
-  useCallback,
-  useMemo,
-} from 'react';
-import { LuCheck, LuPencil } from 'react-icons/lu';
+import { TableBody, TableHead, TableHeader, TableRow } from '@op/sense/Table';
+import type { ReactNode } from 'react';
 
-import { Link, useTranslations } from '@/lib/i18n';
-
-import { ButtonLink } from '@/components/ButtonLink';
+import { useTranslations } from '@/lib/i18n';
 
 import { useOpenProposalInSheet } from '../ProposalSheet/proposalSheetState';
 import {
   decisionProposalDevelopHref,
   decisionProposalHref,
 } from '../proposalHrefs';
+import { ProposalReviewDecorationProvider } from '../proposalReviewDecoration';
 import {
-  ProposalReviewDecorationProvider,
-  useReportProposalsForReviewDecoration,
-} from '../proposalReviewDecoration';
-import { NoSourcesEmpty, SourceRecommendations } from './DevelopSourcesParts';
-import {
-  type DevelopSourceScope,
-  getDevelopSourceScope,
-  getDevelopSourcesInput,
-  isSourceAdvancing,
-} from './developSources';
-import { getHttpStatus, isDevelopLockedError } from './getHttpStatus';
-import { usePrepareDevelopEntry } from './usePrepareDevelopEntry';
+  DevelopSourceActionsCell,
+  DevelopSourceAdvanceEntryButton,
+  DevelopSourceDecisionBadge,
+  DevelopSourceEditEntryLink,
+  DevelopSourceNameCell,
+  DevelopSourcePrepareEntryButton,
+  DevelopSourceRecommendationsCell,
+  DevelopSourceTitleLink,
+  DevelopSourcesNextPage,
+  DevelopSourcesProvider,
+  DevelopSourcesTable,
+  NoSourcesEmpty,
+  useDevelopSourceTitle,
+  useDevelopSources,
+  useDevelopSourcesMeta,
+  useDevelopSourcesState,
+} from './DevelopSourcesParts';
+import { getDevelopSourceScope } from './developSources';
 
 interface DevelopSourcesPanelProps {
   instance: ProcessInstance;
@@ -67,12 +46,8 @@ interface DevelopSourcesPanelProps {
 }
 
 interface SourcesTableProps {
-  processInstanceId: string;
-  sourcePhaseId: string;
-  scope: DevelopSourceScope;
   /** Show the overall-recommendation column: the caller may read the reviews. */
   showRecommendations: boolean;
-  decisionSlug: string;
 }
 
 /**
@@ -176,32 +151,52 @@ function SourcesPanelShell({
       enabled={canReadReviews}
       canOpenReviews={false}
     >
-      {renderTable({
-        processInstanceId: instance.id,
-        sourcePhaseId: sourcePhase.phaseId,
-        scope,
-        showRecommendations: canReadReviews,
-        decisionSlug,
-      })}
+      <DevelopSourcesProvider
+        processInstanceId={instance.id}
+        sourcePhaseId={sourcePhase.phaseId}
+        scope={scope}
+        decisionSlug={decisionSlug}
+      >
+        {renderTable({ showRecommendations: canReadReviews })}
+      </DevelopSourcesProvider>
     </ProposalReviewDecorationProvider>
   );
 }
 
-function EditableSourcesTable(props: SourcesTableProps) {
-  const { processInstanceId, decisionSlug } = props;
-  const openInSheet = useOpenProposalInSheet();
-  const sourcesPage = useDevelopSourcesPage(props);
-  const { prepare, isPreparing, preparingSourceId } = usePrepareDevelopEntry({
-    processInstanceId,
-    decisionSlug,
-  });
+function EditableSourcesTable({ showRecommendations }: SourcesTableProps) {
+  const { sources } = useDevelopSources();
 
   return (
-    <SourcesTable
-      {...props}
-      sourcesPage={sourcesPage}
-      renderTitle={(source, title) => (
-        <SourceTitleLink
+    <SourcesTableFrame showRecommendations={showRecommendations}>
+      {sources.map((source) => (
+        <EditableSourceRow
+          key={source.id}
+          source={source}
+          showRecommendations={showRecommendations}
+        />
+      ))}
+    </SourcesTableFrame>
+  );
+}
+
+function EditableSourceRow({
+  source,
+  showRecommendations,
+}: {
+  source: DevelopSource;
+  showRecommendations: boolean;
+}) {
+  const { decisionSlug } = useDevelopSourcesMeta();
+  const { isPreparing } = useDevelopSourcesState();
+  const title = useDevelopSourceTitle(source);
+  const openInSheet = useOpenProposalInSheet();
+  // One entry per source for now: Edit and Advance act on the oldest one.
+  const developedEntry = source.developedProposals[0];
+
+  return (
+    <TableRow>
+      <DevelopSourceNameCell source={source}>
+        <DevelopSourceTitleLink
           title={title}
           href={decisionProposalHref({
             decisionSlug,
@@ -209,50 +204,67 @@ function EditableSourcesTable(props: SourcesTableProps) {
           })}
           onClick={openInSheet(source.profileId)}
         />
-      )}
-      renderActions={(source, title) => {
-        // One entry per source for now: Edit and Advance act on the oldest
-        // one.
-        const developedEntry = source.developedProposals[0];
-
-        return developedEntry ? (
-          <EntryActions>
-            <EditEntryLink
+      </DevelopSourceNameCell>
+      {showRecommendations ? (
+        <DevelopSourceRecommendationsCell source={source} />
+      ) : null}
+      <DevelopSourceActionsCell>
+        {developedEntry ? (
+          <>
+            <DevelopSourceEditEntryLink
               title={title}
               href={decisionProposalDevelopHref({
                 decisionSlug,
                 profileId: developedEntry.profileId,
               })}
             />
-            <AdvanceEntryButton
+            <DevelopSourceAdvanceEntryButton
               entry={developedEntry}
               title={title}
               disabled={isPreparing}
             />
-          </EntryActions>
+          </>
         ) : (
-          <PrepareEntryButton
-            title={title}
+          <DevelopSourcePrepareEntryButton
+            source={source}
             disabled={isPreparing}
-            loading={preparingSourceId === source.id}
-            onPrepare={() => prepare(source)}
           />
-        );
-      }}
-    />
+        )}
+      </DevelopSourceActionsCell>
+    </TableRow>
   );
 }
 
-function ReadOnlySourcesTable(props: SourcesTableProps) {
-  const { decisionSlug } = props;
-  const sourcesPage = useDevelopSourcesPage(props);
+function ReadOnlySourcesTable({ showRecommendations }: SourcesTableProps) {
+  const { sources } = useDevelopSources();
 
   return (
-    <SourcesTable
-      {...props}
-      sourcesPage={sourcesPage}
-      renderTitle={(source, title) => (
-        <SourceTitleLink
+    <SourcesTableFrame showRecommendations={showRecommendations}>
+      {sources.map((source) => (
+        <ReadOnlySourceRow
+          key={source.id}
+          source={source}
+          showRecommendations={showRecommendations}
+        />
+      ))}
+    </SourcesTableFrame>
+  );
+}
+
+function ReadOnlySourceRow({
+  source,
+  showRecommendations,
+}: {
+  source: DevelopSource;
+  showRecommendations: boolean;
+}) {
+  const { decisionSlug } = useDevelopSourcesMeta();
+  const title = useDevelopSourceTitle(source);
+
+  return (
+    <TableRow>
+      <DevelopSourceNameCell source={source}>
+        <DevelopSourceTitleLink
           title={title}
           href={decisionProposalDevelopHref({
             decisionSlug,
@@ -261,65 +273,28 @@ function ReadOnlySourcesTable(props: SourcesTableProps) {
               source.developedProposals[0]?.profileId ?? source.profileId,
           })}
         />
-      )}
-      renderActions={(source) => (
-        <EntryActions>
-          <SourceDecisionBadge advancing={isSourceAdvancing(source)} />
-        </EntryActions>
-      )}
-    />
+      </DevelopSourceNameCell>
+      {showRecommendations ? (
+        <DevelopSourceRecommendationsCell source={source} />
+      ) : null}
+      <DevelopSourceActionsCell>
+        <DevelopSourceDecisionBadge source={source} />
+      </DevelopSourceActionsCell>
+    </TableRow>
   );
 }
 
-/** One page of sources at a time, with the next page loaded on scroll. */
-function useDevelopSourcesPage({
-  processInstanceId,
-  sourcePhaseId,
-  scope,
-}: SourcesTableProps) {
-  const [data, { fetchNextPage, hasNextPage, isFetchingNextPage }] =
-    trpc.decision.listDevelopSources.useSuspenseInfiniteQuery(
-      getDevelopSourcesInput({ processInstanceId, sourcePhaseId, scope }),
-      { getNextPageParam: nextCursor },
-    );
-
-  const sources = useMemo(
-    () => data.pages.flatMap((page) => page.items),
-    [data.pages],
-  );
-  useReportProposalsForReviewDecoration(sources);
-
-  const loadNextPage = useCallback(() => {
-    void fetchNextPage();
-  }, [fetchNextPage]);
-  const { ref: nextPageRef, shouldShowTrigger } =
-    useInfiniteScroll<HTMLDivElement>(loadNextPage, {
-      hasNextPage,
-      isFetchingNextPage,
-    });
-
-  return {
-    sources,
-    total: data.pages[0]?.total ?? 0,
-    nextPageRef,
-    shouldShowTrigger,
-    isFetchingNextPage,
-  };
-}
-
-function SourcesTable({
-  scope,
+/** The count, the empty state, the table and its next page around the rows. */
+function SourcesTableFrame({
   showRecommendations,
-  sourcesPage,
-  renderTitle,
-  renderActions,
-}: SourcesTableProps & {
-  sourcesPage: ReturnType<typeof useDevelopSourcesPage>;
-  renderTitle: (source: DevelopSource, title: string) => ReactNode;
-  renderActions: (source: DevelopSource, title: string) => ReactNode;
+  children,
+}: {
+  showRecommendations: boolean;
+  children: ReactNode;
 }) {
   const t = useTranslations('decisions');
-  const { sources, total } = sourcesPage;
+  const { sources, total } = useDevelopSources();
+  const { query } = useDevelopSourcesMeta();
 
   return (
     <div className="flex flex-col gap-10">
@@ -332,13 +307,10 @@ function SourcesTable({
       </div>
 
       {sources.length === 0 ? (
-        <NoSourcesEmpty scope={scope} />
+        <NoSourcesEmpty scope={query.scope} />
       ) : (
         <div className="flex flex-col">
-          <Table
-            aria-label={t('develop.sourcesTableLabel')}
-            className="min-w-3xl [&_tr>*:first-child]:ps-0 [&_tr>*:last-child]:pe-0"
-          >
+          <DevelopSourcesTable className="min-w-3xl">
             <TableHeader>
               <TableRow>
                 <TableHead scope="col">{t('develop.nameColumn')}</TableHead>
@@ -352,215 +324,22 @@ function SourcesTable({
                 </TableHead>
               </TableRow>
             </TableHeader>
-            <TableBody>
-              {sources.map((source) => {
-                const title =
-                  source.profile.name || t('proposals.untitledProposal');
-                const submitterName = source.submittedBy
-                  ? source.submittedBy.name || source.submittedBy.slug
-                  : null;
+            <TableBody>{children}</TableBody>
+          </DevelopSourcesTable>
 
-                return (
-                  <TableRow key={source.id}>
-                    <TableRowHeader className="py-4">
-                      <div className="flex flex-col items-start gap-0.5">
-                        {renderTitle(source, title)}
-                        {submitterName ? (
-                          <span className="text-sm text-muted-foreground">
-                            <bdi>{submitterName}</bdi>
-                          </span>
-                        ) : null}
-                      </div>
-                    </TableRowHeader>
-                    {showRecommendations ? (
-                      <TableCell className="py-4">
-                        <SourceRecommendations proposalId={source.id} />
-                      </TableCell>
-                    ) : null}
-                    <TableCell className="py-4 text-end">
-                      {renderActions(source, title)}
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-
-          {sourcesPage.shouldShowTrigger ? (
-            <div
-              ref={sourcesPage.nextPageRef}
-              aria-hidden
-              className="flex flex-col"
-            >
-              {sourcesPage.isFetchingNextPage
-                ? Array.from({ length: 2 }).map((_, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center justify-between gap-4 border-b py-4"
-                    >
-                      <Skeleton className="h-4 w-56" />
-                      <Skeleton className="h-11 w-28" />
-                    </div>
-                  ))
-                : null}
-            </div>
-          ) : null}
+          <DevelopSourcesNextPage>
+            {Array.from({ length: 2 }).map((_, index) => (
+              <div
+                key={index}
+                className="flex items-center justify-between gap-4 border-b py-4"
+              >
+                <Skeleton className="h-4 w-56" />
+                <Skeleton className="h-11 w-28" />
+              </div>
+            ))}
+          </DevelopSourcesNextPage>
         </div>
       )}
     </div>
-  );
-}
-
-/** Creates an entry of this phase from a source that has none yet. */
-function PrepareEntryButton({
-  title,
-  disabled,
-  loading,
-  onPrepare,
-}: {
-  title: string;
-  disabled: boolean;
-  loading: boolean;
-  onPrepare: () => void;
-}) {
-  const t = useTranslations('decisions.develop');
-
-  return (
-    <Button
-      variant="outline"
-      aria-label={t('prepareEntryLabel', { title })}
-      disabled={disabled}
-      loading={loading}
-      onClick={onPrepare}
-    >
-      <LuPencil aria-hidden data-icon="inline-start" />
-      {t('prepareEntryAction')}
-    </Button>
-  );
-}
-
-/** Opens the entry already developed from a source, draft or submitted. */
-function EditEntryLink({ title, href }: { title: string; href: string }) {
-  const t = useTranslations('decisions.develop');
-
-  return (
-    <ButtonLink
-      variant="outline"
-      href={href}
-      aria-label={t('editEntryLabel', { title })}
-    >
-      <LuPencil aria-hidden data-icon="inline-start" />
-      {t('editEntryAction')}
-    </ButtonLink>
-  );
-}
-
-/** A source's title, as a link to where its row leads. */
-function SourceTitleLink({
-  title,
-  href,
-  onClick,
-}: {
-  title: string;
-  href: string;
-  onClick?: MouseEventHandler<HTMLAnchorElement>;
-}) {
-  return (
-    <Link
-      href={href}
-      onClick={onClick}
-      className="text-base font-strong text-foreground hover:underline"
-    >
-      <bdi>{title}</bdi>
-    </Link>
-  );
-}
-
-/** Whether a source's entry is advancing, once the caller confirmed their work. */
-function SourceDecisionBadge({ advancing }: { advancing: boolean }) {
-  const t = useTranslations('decisions.develop');
-
-  return advancing ? (
-    <StatusBadge variant="success" icon={false}>
-      {t('entryAdvancingStatus')}
-    </StatusBadge>
-  ) : (
-    <StatusBadge variant="inactive" icon={false}>
-      {t('entryNotAdvancedStatus')}
-    </StatusBadge>
-  );
-}
-
-/** The actions or the decision of a source, side by side at the row's end. */
-function EntryActions({ children }: { children: ReactNode }) {
-  return <div className="flex items-center justify-end gap-2">{children}</div>;
-}
-
-/** Submits a source's draft entry, or un-advances it once submitted. */
-function AdvanceEntryButton({
-  entry,
-  title,
-  disabled,
-}: {
-  entry: DevelopedProposal;
-  title: string;
-  disabled: boolean;
-}) {
-  const t = useTranslations('decisions.develop');
-
-  // No invalidation: the submit and the unsubmit publish on the decision's
-  // proposals channel, which this list subscribes to.
-  const submitEntry = trpc.decision.submitDevelopedProposal.useMutation({
-    onError: (error) => {
-      logger.error('Failed to advance a develop entry', { error });
-      if (isDevelopLockedError(error)) {
-        toast.error(t('developLockedError'));
-      } else if (getHttpStatus(error) === 400) {
-        // A 400 is the server's form validation: the entry is incomplete.
-        toast.error(t('advanceEntryIncompleteError', { title }));
-      } else {
-        toast.error(t('advanceEntryError'));
-      }
-    },
-  });
-  const unsubmitEntry = trpc.decision.unsubmitDevelopedProposal.useMutation({
-    onError: (error) => {
-      logger.error('Failed to un-advance a develop entry', { error });
-      toast.error(
-        isDevelopLockedError(error)
-          ? t('developLockedError')
-          : t.rich('unadvanceEntryError', {
-              title,
-              bdi: (chunks) => <bdi>{chunks}</bdi>,
-            }),
-      );
-    },
-  });
-
-  const isDraft = entry.status === ProposalStatus.DRAFT;
-  const advanced = !isDraft;
-  const actionable = isDraft || entry.status === ProposalStatus.SUBMITTED;
-
-  return (
-    <Button
-      variant="outline"
-      aria-pressed={advanced}
-      loading={submitEntry.isPending || unsubmitEntry.isPending}
-      disabled={disabled || !actionable}
-      className={advanced ? 'border-primary bg-accent text-primary' : undefined}
-      aria-label={
-        advanced
-          ? t('advancedEntryLabel', { title })
-          : t('advanceEntryLabel', { title })
-      }
-      onClick={() =>
-        isDraft
-          ? submitEntry.mutate({ proposalId: entry.id })
-          : unsubmitEntry.mutate({ proposalId: entry.id })
-      }
-    >
-      {advanced ? <LuCheck aria-hidden data-icon="inline-start" /> : null}
-      {advanced ? t('advancedEntryAction') : t('advanceEntryAction')}
-    </Button>
   );
 }

@@ -248,7 +248,7 @@ function DevelopAdminSourcesTableSuspense({
 
   return (
     <div className="flex flex-col">
-      <DevelopSourcesTable>
+      <DevelopSourcesTable className="min-w-4xl table-fixed">
         <DevelopAdminSourcesTableHeader decisionSlug={decisionSlug} />
         <TableBody>
           {sources.map((source) => (
@@ -266,7 +266,7 @@ function DevelopAdminSourcesTableSuspense({
 
       <DevelopSourcesNextPage>
         {/* No header row here, so the cells carry the column widths. */}
-        <DevelopSourcesTable>
+        <DevelopSourcesTable className="min-w-4xl table-fixed">
           <TableBody>
             <DevelopAdminSourceSkeletonRows count={2} />
           </TableBody>
@@ -326,7 +326,7 @@ function DevelopAdminSourcesTableSkeleton({
 }) {
   return (
     <div className="flex flex-col" aria-hidden>
-      <DevelopSourcesTable>
+      <DevelopSourcesTable className="min-w-4xl table-fixed">
         <DevelopAdminSourcesTableHeader decisionSlug={decisionSlug} />
         <TableBody>
           <DevelopAdminSourceSkeletonRows count={4} />
