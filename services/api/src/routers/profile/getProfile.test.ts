@@ -1,9 +1,35 @@
+import { TestOrganizationDataManager } from '@op/common/testing';
+import { describe, expect, it } from 'vitest';
+
 import {
   accessTierGatingCell,
   describeAccessTierGating,
   expectFailsAccessTierGate,
   expectPassesAccessTierGate,
 } from '../../test/helpers/gating';
+import { createAuthenticatedCaller } from '../../test/supabase-utils';
+
+describe.concurrent('profile.getBySlug', () => {
+  it('returns the profile with its anonymity flag to a network member', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestOrganizationDataManager(task.id, onTestFinished);
+    const { adminUser, organizationProfile } =
+      await testData.createOrganization({ users: { admin: 1 } });
+
+    const caller = await createAuthenticatedCaller(adminUser.email);
+    const profile = await caller.profile.getBySlug({
+      slug: organizationProfile.slug,
+    });
+
+    expect(profile).toMatchObject({
+      slug: organizationProfile.slug,
+      name: organizationProfile.name,
+      isAnonymous: false,
+    });
+  });
+});
 
 describeAccessTierGating('profile.list', {
   noJwt: accessTierGatingCell(

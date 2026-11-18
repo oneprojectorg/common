@@ -5,6 +5,7 @@ export {
   findAuthUserByPhone,
   generateTestEmail,
   readProfileIdForAuthUser,
+  readProfileNameByEmail,
   releaseTestPhoneNumber,
   TEST_USER_DEFAULT_PASSWORD,
   type CreateOrganizationOptions,

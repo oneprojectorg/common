@@ -8,6 +8,7 @@ export const proposalProfileColumns = {
   type: true,
   slug: true,
   name: true,
+  isAnonymous: true,
   city: true,
   state: true,
   bio: true,

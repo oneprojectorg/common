@@ -58,11 +58,22 @@ export interface CreateUserOptions {
   supabaseAdmin: SupabaseClient;
   email: string;
   password?: string;
+  /**
+   * Mark the account onboarded and policy-accepting (the default). Pass false
+   * for an account that is still mid-onboarding — e.g. a non-network-member
+   * entering the promote flow at /start.
+   */
+  onboarded?: boolean;
 }
 
 /** Creates a user via Supabase admin API, bypassing email confirmation. */
 export async function createUser(opts: CreateUserOptions) {
-  const { supabaseAdmin, email, password = TEST_USER_DEFAULT_PASSWORD } = opts;
+  const {
+    supabaseAdmin,
+    email,
+    password = TEST_USER_DEFAULT_PASSWORD,
+    onboarded = true,
+  } = opts;
 
   const { data, error } = await supabaseAdmin.auth.admin.createUser({
     email,
@@ -78,13 +89,15 @@ export async function createUser(opts: CreateUserOptions) {
     throw new Error(`No user returned when creating test user: ${email}`);
   }
 
-  // Mark test users as onboarded (so they aren't redirected to /start) and as
-  // having accepted the current policies (so the re-acceptance gate stays shut).
-  const now = new Date().toISOString();
-  await db
-    .update(users)
-    .set({ onboardedAt: now, tosAcceptedOn: now, privacyAcceptedOn: now })
-    .where(eq(users.authUserId, data.user.id));
+  if (onboarded) {
+    // Mark test users as onboarded (so they aren't redirected to /start) and as
+    // having accepted the current policies (so the re-acceptance gate stays shut).
+    const now = new Date().toISOString();
+    await db
+      .update(users)
+      .set({ onboardedAt: now, tosAcceptedOn: now, privacyAcceptedOn: now })
+      .where(eq(users.authUserId, data.user.id));
+  }
 
   return {
     id: data.user.id,
@@ -350,6 +363,32 @@ export async function findAuthUserByPhone(
     email: row.email ? row.email : null,
     isAnonymous: row.is_anonymous,
   };
+}
+
+/**
+ * Read the display name on the profile of the auth user who owns `email` —
+ * what the signup trigger set ("Participant <n>") or a later rename wrote.
+ * Straight SQL for auth.users, as in `findAuthUserByPhone`, because the admin
+ * listUsers API pages at 50 against thousands of accumulated e2e accounts.
+ */
+export async function readProfileNameByEmail(email: string): Promise<string> {
+  const rows = await db.execute<{ id: string }>(sql`
+    SELECT id FROM auth.users WHERE email = ${email}
+  `);
+  const row = rows[0];
+  if (!row) {
+    throw new Error(`No auth user exists for ${email}`);
+  }
+  const profileId = await readProfileIdForAuthUser(row.id);
+  const [profile] = await db
+    .select({ name: profiles.name })
+    .from(profiles)
+    .where(eq(profiles.id, profileId))
+    .limit(1);
+  if (!profile) {
+    throw new Error(`No profile row exists for ${profileId}`);
+  }
+  return profile.name;
 }
 
 export async function readProfileIdForAuthUser(

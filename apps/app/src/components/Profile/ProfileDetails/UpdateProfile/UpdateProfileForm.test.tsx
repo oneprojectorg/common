@@ -51,6 +51,7 @@ const profile: Profile = {
   type: 'individual',
   slug: 'dev',
   name: 'dev',
+  isAnonymous: false,
   city: null,
   state: null,
   bio: 'Budget delegate facilitator',

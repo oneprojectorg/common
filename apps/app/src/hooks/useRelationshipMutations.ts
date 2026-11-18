@@ -21,6 +21,7 @@ interface UseRelationshipMutationsOptions {
    * don't subscribe to a list they'll never use.
    */
   enabled?: boolean;
+  errorToasts?: boolean;
   invalidateQueries?: Array<{
     processInstanceId?: string;
   }>;
@@ -62,6 +63,7 @@ type UserRelationships = Partial<
 export function useRelationshipMutations({
   targetProfileId,
   enabled = true,
+  errorToasts = true,
   invalidateQueries = [],
 }: UseRelationshipMutationsOptions) {
   const t = useTranslations('decisions.proposals');
@@ -75,12 +77,10 @@ export function useRelationshipMutations({
   };
 
   // Get user's likes and follows
-  const { data: userRelationships } = trpc.profile.getRelationships.useQuery(
-    relationshipQueryKey,
-    {
+  const { data: userRelationships, isError: lookupErrored } =
+    trpc.profile.getRelationships.useQuery(relationshipQueryKey, {
       enabled: !!user && enabled,
-    },
-  );
+    });
 
   // Check if current user has liked/followed this profile
   const isLiked = Boolean(
@@ -108,6 +108,8 @@ export function useRelationshipMutations({
    * page with nothing left to restore them.
    */
   const stateUnknown = userRelationships === undefined;
+
+  const lookupFailed = lookupErrored && userRelationships === undefined;
 
   // The raw client rather than `utils`: the count caches are matched by a
   // predicate on the tRPC path, which the typed helpers can't express.
@@ -213,6 +215,9 @@ export function useRelationshipMutations({
       // Failures are logged once, in the drain's catch — it has the burst
       // context, and logging here too splits the PostHog issue group.
       onError: (_error, variables) => {
+        if (!errorToasts) {
+          return;
+        }
         // Four whole sentences rather than a verb slotted into one template:
         // the pieces don't reassemble into a sentence in every language.
         toast.error(
@@ -226,6 +231,9 @@ export function useRelationshipMutations({
   const removeRelationshipMutation =
     trpc.decision.removeProposalRelationship.useMutation({
       onError: (_error, variables) => {
+        if (!errorToasts) {
+          return;
+        }
         toast.error(
           variables.relationshipType === ProfileRelationshipType.LIKES
             ? t('unlikeError')
@@ -249,13 +257,13 @@ export function useRelationshipMutations({
   const toggleRelationship = (
     relationshipType: ProfileRelationshipType,
     context: string,
-  ) => {
+  ): Promise<boolean> => {
     if (!targetProfileId) {
       logger.error('No targetProfileId provided for relationship action', {
         context,
       });
 
-      return;
+      return Promise.resolve(false);
     }
 
     // Anything in flight would land on top of the writes below and undo the
@@ -273,10 +281,12 @@ export function useRelationshipMutations({
     patchCachedRelationship(relationshipType, next);
     patchCachedCounts(relationshipType, next ? 1 : -1);
 
+    let failed = false;
+
     // Keyed by proposal and type rather than held per instance: the same
     // proposal can be mounted twice at once, and both toggles must feed the
     // one drain.
-    void requestRelationship(`${targetProfileId}:${relationshipType}`, next, {
+    return requestRelationship(`${targetProfileId}:${relationshipType}`, next, {
       send: async (target) => {
         const mutation = target
           ? addRelationshipMutation
@@ -287,12 +297,14 @@ export function useRelationshipMutations({
       reconcile,
       // Toasted in the mutation's onError; the reconcile puts the cache back to
       // whatever the server actually has.
-      onError: (error) =>
+      onError: (error) => {
+        failed = true;
         logger.error('Relationship write failed', {
           error,
           context: `useRelationshipMutations.${relationshipType}`,
-        }),
-    });
+        });
+      },
+    }).then(() => !failed);
   };
 
   return {
@@ -304,6 +316,7 @@ export function useRelationshipMutations({
      * instead of offering a toggle that would send a redundant write.
      */
     stateUnknown,
+    lookupFailed,
 
     handleLike: () =>
       toggleRelationship(
