@@ -168,7 +168,6 @@ describe.concurrent('getDevelopConfirmState', () => {
     });
     const withOneUnconfirmed = await readCanPublish();
 
-    // The admin confirms the other category on its reviewer's behalf.
     await adminCaller.decision.confirmCategoryDevelopment({
       processInstanceId: instanceId,
       taxonomyTermId: termB.id,

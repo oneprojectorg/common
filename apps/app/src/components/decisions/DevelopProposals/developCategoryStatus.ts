@@ -1,6 +1,5 @@
 import type { CategoryWithReviewerStatusSchema } from '@op/common/client';
 
-/** How many of a category's reviewers carry the develop confirm stamp. */
 export function countConfirmedReviewers(
   reviewers: CategoryWithReviewerStatusSchema['reviewers'],
 ): number {
@@ -11,7 +10,6 @@ export function countConfirmedReviewers(
   );
 }
 
-/** A category is confirmed when it has reviewers and every one is stamped. */
 export function isCategoryConfirmed(
   status: CategoryWithReviewerStatusSchema,
 ): boolean {

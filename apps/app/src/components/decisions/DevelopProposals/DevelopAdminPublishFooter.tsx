@@ -30,12 +30,6 @@ import { type TranslateFn, useTranslations } from '@/lib/i18n';
 import { isCategoryConfirmed } from './developCategoryStatus';
 import { getHttpStatus } from './getHttpStatus';
 
-/**
- * The admin develop screen's fixed footer, on every tab: how many of the
- * categories with a facilitator are confirmed, and Publish. Whether Publish
- * is enabled comes from the server (`getDevelopConfirmState.canPublish`).
- * After a publish the instance channel moves the screen on by itself.
- */
 export function DevelopAdminPublishFooter({
   processInstanceId,
 }: {
@@ -76,7 +70,6 @@ function PublishStatusSuspense({
       processInstanceId,
     },
   );
-  // Display counts over the whole, unpaginated list of the process's categories.
   const mappedCount = items.reduce(
     (count, status) => (status.reviewers.length > 0 ? count + 1 : count),
     0,
@@ -147,8 +140,6 @@ function PublishActionSuspense({
   );
 }
 
-// The service refuses with a ValidationError (400) while a category is not
-// confirmed, and a ConflictError (409) once the phase is published or moved.
 function getPublishErrorMessage({
   status,
   t,

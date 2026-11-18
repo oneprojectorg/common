@@ -36,12 +36,8 @@ export const Channels = {
     `decisionProposal:${instanceId}:${proposalId}` as const,
 
   /**
-   * Channel for the develop confirm stamps of an instance, which lock a
-   * reviewer's develop work. Narrower than `decisionProposals`, which every
-   * proposal edit publishes.
-   * Subscribers: `listCategoryReviewerStatus` (the confirm stamps).
-   * Broadcasters: `confirmCategoryDevelopment`, `unconfirmCategoryDevelopment`,
-   * `publishDevelopedProposals` (it closes the develop window).
+   * Channel for the develop confirm stamps of an instance. Narrower than
+   * `decisionProposals`, which every proposal edit publishes.
    */
   decisionDevelopLock: (instanceId: string) =>
     `decisionDevelopLock:${instanceId}` as const,

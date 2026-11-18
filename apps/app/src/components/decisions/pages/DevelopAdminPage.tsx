@@ -19,11 +19,6 @@ const DEVELOP_TAB_PARAM = 'developTab';
 
 const developTabParser = parseAsStringLiteral(DEVELOP_TABS);
 
-/**
- * The admin's develop screen: the entries of the phase, the categories with
- * their facilitators' confirms (confirm or unconfirm on their behalf), and a
- * fixed footer to publish once every category is confirmed.
- */
 export function DevelopAdminPage({
   instance,
   decisionSlug,
@@ -46,7 +41,6 @@ export function DevelopAdminPage({
   const handleTabChange = (value: string) => {
     const next = developTabParser.parse(value);
     if (next) {
-      // Strip the param on the default tab so the URL stays clean.
       void setTab(next === DEFAULT_DEVELOP_TAB ? null : next);
     }
   };
@@ -54,8 +48,7 @@ export function DevelopAdminPage({
   return (
     <DevelopPageShell>
       <Tabs value={tab} onValueChange={handleTabChange} className="gap-6">
-        {/* The first label starts flush with the count and the table's first
-            column below it, underline included. */}
+        {/* Aligns the first label and its underline with the table's first column. */}
         <TabsList
           variant="line"
           aria-label={t('develop.tabsLabel')}

@@ -26,11 +26,6 @@ interface CategoryActionProps {
   category: { id: string; name: string };
 }
 
-/**
- * Confirms every facilitator's develop work in one category, on their
- * behalf, after a dialog. No invalidation: the confirm publishes on the
- * channels the categories tab, the publish footer and the editors read.
- */
 export function ConfirmCategoryAction({
   processInstanceId,
   category,
@@ -76,10 +71,6 @@ export function ConfirmCategoryAction({
   );
 }
 
-/**
- * Clears every facilitator's confirm in one category after a dialog, so they
- * can change their develop work again.
- */
 export function UnconfirmCategoryAction({
   processInstanceId,
   category,
@@ -126,7 +117,6 @@ export function UnconfirmCategoryAction({
   );
 }
 
-/** The dialog both actions share; the action button repeats the trigger's label. */
 function CategoryActionDialog({
   isOpen,
   onOpenChange,

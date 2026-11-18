@@ -30,11 +30,6 @@ export interface DevelopConfirmState {
   lock: DevelopLock | null;
   /** The labels of the caller's categories for the current phase, by label. */
   categoryNames: string[];
-  /**
-   * The caller may publish the develop phase (`publishDevelopedProposals`):
-   * they hold decisions ADMIN, the instance is published, the develop window
-   * is open, and {@link isEveryCategoryDevelopConfirmed} holds.
-   */
   canPublish: boolean;
 }
 
@@ -109,7 +104,6 @@ export async function getDevelopConfirmState({
   const canConfirm =
     !isAdmin && isPublishedDevelopPhase && categoryNames.length > 0;
 
-  // The same permission `publishDevelopedProposals` asserts.
   const canPublish =
     !!currentPhase &&
     isPublishedDevelopPhase &&

@@ -31,13 +31,6 @@ import {
   isCategoryConfirmed,
 } from './developCategoryStatus';
 
-/**
- * The admin develop screen's categories tab: every category of the process
- * with its facilitators (the category reviewers of the current phase),
- * how many of them confirmed, and Confirm or Unconfirm on their behalf. A
- * category with no facilitator shows so, with no action. Refreshes on the
- * develop lock channel that confirm, unconfirm and publish publish.
- */
 export function DevelopAdminCategoriesPanel({
   processInstanceId,
 }: {
@@ -81,8 +74,6 @@ function CategoriesCountSuspense({
   );
 }
 
-// The categories come in the process's category order, each category's
-// facilitators in the order they were added; nothing is re-sorted here.
 function CategoriesTableSuspense({
   processInstanceId,
 }: {
@@ -190,7 +181,6 @@ function CategoryRow({
         )}
       </TableCell>
       <TableCell className="py-4 text-end">
-        {/* Polite, so the swap between Confirm and Unconfirm is announced. */}
         <div aria-live="polite">
           {!hasFacilitators ? null : isConfirmed ? (
             <UnconfirmCategoryAction
