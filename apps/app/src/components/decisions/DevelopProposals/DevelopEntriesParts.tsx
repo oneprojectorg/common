@@ -238,6 +238,22 @@ export function DevelopEntryStatusCell({ entry }: { entry: Proposal }) {
   );
 }
 
+/** Whether an entry advances, once its caller confirmed their work. */
+export function DevelopEntryDecisionCell({ entry }: { entry: Proposal }) {
+  const t = useTranslations();
+  const advancing = entry.status !== ProposalStatus.DRAFT;
+
+  return (
+    <TableCell className="py-4">
+      <StatusBadge variant={advancing ? 'success' : 'inactive'} icon={false}>
+        {advancing
+          ? t('decisions.develop.entryAdvancingStatus')
+          : t('decisions.develop.entryNotAdvancedStatus')}
+      </StatusBadge>
+    </TableCell>
+  );
+}
+
 export function DevelopEntriesEmpty({
   narrowedDescription,
 }: {

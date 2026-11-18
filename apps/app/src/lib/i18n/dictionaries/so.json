@@ -1679,7 +1679,8 @@
       "noReviews": "Weli dib-u-eegis looma samayn soo jeedintan.",
       "advancedToast": "“<bdi>{title}</bdi>” horay ayaa loo gudbiyay",
       "savedToast": "“<bdi>{title}</bdi>” waa la kaydiyay",
-      "readOnlyNotice": "Waad arki kartaa gelistan, laakiin wax kama beddeli kartid."
+      "readOnlyNotice": "Waad arki kartaa gelistan, laakiin wax kama beddeli kartid.",
+      "confirmedNotice": "Waad xaqiijisay xulashooyinkaaga. Ka noqo xaqiijinta shaashadda horumarinta si aad isbeddel u samayso."
     },
     "develop": {
       "heroTitle": "Horumari soo jeedinta",
@@ -1721,7 +1722,23 @@
       "noFilteredEntriesDescription": "Isku day raadin kale ama qayb kale.",
       "noFilteredEntriesDistrictDescription": "Isku day raadin kale ama degmo kale.",
       "advancingCount": "{count, plural, one {# soo jeedin ayaa horumaraysa} other {# soo jeedinno ayaa horumaraya}}",
-      "confirmSelectionsAction": "Xaqiiji xulashooyinka"
+      "confirmSelectionsAction": "Xaqiiji xulashooyinka",
+      "unconfirmSelectionsAction": "Ka noqo xaqiijinta",
+      "confirmSelectionsTitle": "Ma xaqiijinaysaa xulashooyinkaaga?",
+      "confirmCategorySelectionsTitle": "Ma xaqiijinaysaa xulashooyinka <bdi>{category}</bdi>?",
+      "confirmSelectionsDescription": "{count, plural, one {# soo jeedin ayaa u gudbaysa} other {# soo jeedin ayaa u gudbaya}} warqadda codbixinta. Soo jeedimaha kale ma gudbayaan. Maamule ayaa dib u eegaya qayb kasta oo daabacaya warqadda codbixinta.",
+      "unconfirmSelectionsTitle": "Ma ka noqonaysaa xaqiijinta xulashooyinkaaga?",
+      "unconfirmCategorySelectionsTitle": "Ma ka noqonaysaa xaqiijinta xulashooyinka <bdi>{category}</bdi>?",
+      "unconfirmSelectionsDescription": "Mar kale ayaad beddeli kartaa xulashooyinkaaga. Waxba ma lumayaan. Mar kale xaqiiji markaad dhammayso.",
+      "selectionsConfirmedSuccess": "Xulashooyinka waa la xaqiijiyay",
+      "selectionsUnconfirmedSuccess": "Xaqiijinta waa laga noqday",
+      "confirmSelectionsError": "Lama xaqiijin karin xulashooyinkaaga. Isku day mar kale.",
+      "selectionsAlreadyConfirmedError": "Xulashooyinkaaga horay ayaa loo xaqiijiyay.",
+      "unconfirmSelectionsError": "Lagama noqon karin xaqiijinta xulashooyinkaaga. Isku day mar kale.",
+      "developLockedError": "Waad xaqiijisay xulashooyinkaaga. Ka noqo xaqiijinta si aad isbeddel u samayso.",
+      "entryNotAdvancedStatus": "Ma gudbin",
+      "viewEntryAction": "Eeg",
+      "viewEntryLabel": "Eeg {title}"
     },
     "suggestedWinnersHint": "Waxaan dooranay soo jeedimaha guusha helay ee la soo jeediyay iyadoo lagu salaynayo xeerarka codeynta iyo wadarta miisaaniyada.",
     "votingOpenHeading": "WAA WAKHTIGII CODAYNTA.",

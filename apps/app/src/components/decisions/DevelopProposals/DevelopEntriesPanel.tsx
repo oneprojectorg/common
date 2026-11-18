@@ -1,8 +1,9 @@
 'use client';
 
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
+import type { Proposal } from '@op/common/client';
 import { TableBody, TableHead, TableHeader, TableRow } from '@op/sense/Table';
-import { Suspense } from 'react';
+import { type ReactNode, Suspense } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -14,6 +15,7 @@ import {
   DevelopEntriesSearch,
   DevelopEntriesTable,
   DevelopEntryBudgetCell,
+  DevelopEntryDecisionCell,
   DevelopEntryStatusCell,
   DevelopEntryStatusCellSkeleton,
   DevelopEntryTextCellSkeleton,
@@ -22,22 +24,49 @@ import {
   useDevelopEntries,
 } from './DevelopEntriesParts';
 
-/**
- * The Entries tab of the develop screen: the entries this phase holds, with
- * their budget and whether they are still in progress or advancing. The
- * search runs in the API, page by page, like the list itself.
- */
-export function DevelopEntriesPanel({
-  processInstanceId,
-  phaseId,
-  decisionSlug,
-  entryName,
-}: {
+interface DevelopEntriesPanelProps {
   processInstanceId: string;
   /** The develop phase, whose entries are listed. */
   phaseId: string | undefined;
   decisionSlug: string;
   entryName: string;
+}
+
+/**
+ * The Entries tab of the develop screen: the entries this phase holds, with
+ * their budget and whether they are still in progress or advancing. The
+ * search runs in the API, page by page, like the list itself.
+ */
+export function DevelopEntriesPanel(props: DevelopEntriesPanelProps) {
+  return (
+    <EntriesPanel
+      {...props}
+      renderStatusCell={(entry) => <DevelopEntryStatusCell entry={entry} />}
+    />
+  );
+}
+
+/**
+ * The Entries tab for a caller who confirmed their work: each entry shows
+ * whether it is advancing or not advanced, and opens read-only.
+ */
+export function DevelopEntriesReadOnlyPanel(props: DevelopEntriesPanelProps) {
+  return (
+    <EntriesPanel
+      {...props}
+      renderStatusCell={(entry) => <DevelopEntryDecisionCell entry={entry} />}
+    />
+  );
+}
+
+function EntriesPanel({
+  processInstanceId,
+  phaseId,
+  decisionSlug,
+  entryName,
+  renderStatusCell,
+}: DevelopEntriesPanelProps & {
+  renderStatusCell: (entry: Proposal) => ReactNode;
 }) {
   return (
     <DevelopEntriesProvider
@@ -56,6 +85,7 @@ export function DevelopEntriesPanel({
             <DevelopEntriesTableSuspense
               decisionSlug={decisionSlug}
               entryName={entryName}
+              renderStatusCell={renderStatusCell}
             />
           </Suspense>
         </APIErrorBoundary>
@@ -67,9 +97,11 @@ export function DevelopEntriesPanel({
 function DevelopEntriesTableSuspense({
   decisionSlug,
   entryName,
+  renderStatusCell,
 }: {
   decisionSlug: string;
   entryName: string;
+  renderStatusCell: (entry: Proposal) => ReactNode;
 }) {
   const t = useTranslations();
   const { entries, total } = useDevelopEntries();
@@ -106,7 +138,7 @@ function DevelopEntriesTableSuspense({
                 decisionSlug={decisionSlug}
               />
               <DevelopEntryBudgetCell entry={entry} />
-              <DevelopEntryStatusCell entry={entry} />
+              {renderStatusCell(entry)}
             </TableRow>
           ))}
         </TableBody>

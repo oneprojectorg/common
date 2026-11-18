@@ -1679,7 +1679,8 @@
       "noReviews": "No reviews for this proposal yet.",
       "advancedToast": "“<bdi>{title}</bdi>” advanced",
       "savedToast": "“<bdi>{title}</bdi>” saved",
-      "readOnlyNotice": "You can view this entry but not edit it."
+      "readOnlyNotice": "You can view this entry but not edit it.",
+      "confirmedNotice": "You confirmed your selections. Unconfirm them on the develop screen to make changes."
     },
     "develop": {
       "heroTitle": "Advance Proposals",
@@ -1721,7 +1722,23 @@
       "noFilteredEntriesDescription": "Try another search or category.",
       "noFilteredEntriesDistrictDescription": "Try another search or district.",
       "advancingCount": "{count, plural, one {# proposal advancing} other {# proposals advancing}}",
-      "confirmSelectionsAction": "Confirm selections"
+      "confirmSelectionsAction": "Confirm selections",
+      "unconfirmSelectionsAction": "Unconfirm selections",
+      "confirmSelectionsTitle": "Confirm your selections?",
+      "confirmCategorySelectionsTitle": "Confirm <bdi>{category}</bdi>'s selections?",
+      "confirmSelectionsDescription": "{count, plural, one {# proposal advances} other {# proposals advance}} to the ballot. The other proposals do not advance. An admin reviews every category and publishes the ballot.",
+      "unconfirmSelectionsTitle": "Unconfirm your selections?",
+      "unconfirmCategorySelectionsTitle": "Unconfirm <bdi>{category}</bdi>'s selections?",
+      "unconfirmSelectionsDescription": "You can change your selections again. Nothing is lost. Confirm again when you are done.",
+      "selectionsConfirmedSuccess": "Selections confirmed",
+      "selectionsUnconfirmedSuccess": "Selections unconfirmed",
+      "confirmSelectionsError": "Could not confirm your selections. Try again.",
+      "selectionsAlreadyConfirmedError": "Your selections are already confirmed.",
+      "unconfirmSelectionsError": "Could not unconfirm your selections. Try again.",
+      "developLockedError": "You confirmed your selections. Unconfirm them to make changes.",
+      "entryNotAdvancedStatus": "Not advanced",
+      "viewEntryAction": "View",
+      "viewEntryLabel": "View {title}"
     },
     "suggestedWinnersHint": "We've selected the suggested winning proposals based on voting rules and total budget.",
     "votingOpenHeading": "TIME TO VOTE.",

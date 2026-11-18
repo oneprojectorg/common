@@ -474,6 +474,10 @@ export const developConfirmStateSchema = z.object({
   categoryNames: z.array(z.string()),
 });
 
+export type DevelopConfirmStateSchema = z.infer<
+  typeof developConfirmStateSchema
+>;
+
 export const removeCategoryReviewerResultSchema = z.object({
   removed: z.boolean(),
 });

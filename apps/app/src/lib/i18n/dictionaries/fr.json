@@ -1679,7 +1679,8 @@
       "noReviews": "Aucune évaluation pour cette proposition pour l’instant.",
       "advancedToast": "« <bdi>{title}</bdi> » a avancé",
       "savedToast": "Modifications de « <bdi>{title}</bdi> » enregistrées",
-      "readOnlyNotice": "Vous pouvez consulter cette entrée, mais pas la modifier."
+      "readOnlyNotice": "Vous pouvez consulter cette entrée, mais pas la modifier.",
+      "confirmedNotice": "Vous avez confirmé vos sélections. Annulez la confirmation sur l’écran de développement pour faire des modifications."
     },
     "develop": {
       "heroTitle": "Faire avancer les propositions",
@@ -1721,7 +1722,23 @@
       "noFilteredEntriesDescription": "Essayez une autre recherche ou catégorie.",
       "noFilteredEntriesDistrictDescription": "Essayez une autre recherche ou un autre district.",
       "advancingCount": "{count, plural, one {# proposition avance} other {# propositions avancent}}",
-      "confirmSelectionsAction": "Confirmer les sélections"
+      "confirmSelectionsAction": "Confirmer les sélections",
+      "unconfirmSelectionsAction": "Annuler la confirmation",
+      "confirmSelectionsTitle": "Confirmer vos sélections ?",
+      "confirmCategorySelectionsTitle": "Confirmer les sélections de <bdi>{category}</bdi> ?",
+      "confirmSelectionsDescription": "{count, plural, one {# proposition avance} other {# propositions avancent}} vers le bulletin. Les autres propositions n’avancent pas. Un administrateur examine chaque catégorie et publie le bulletin.",
+      "unconfirmSelectionsTitle": "Annuler la confirmation de vos sélections ?",
+      "unconfirmCategorySelectionsTitle": "Annuler la confirmation des sélections de <bdi>{category}</bdi> ?",
+      "unconfirmSelectionsDescription": "Vous pourrez de nouveau modifier vos sélections. Rien n’est perdu. Confirmez à nouveau quand vous avez terminé.",
+      "selectionsConfirmedSuccess": "Sélections confirmées",
+      "selectionsUnconfirmedSuccess": "Confirmation annulée",
+      "confirmSelectionsError": "Impossible de confirmer vos sélections. Réessayez.",
+      "selectionsAlreadyConfirmedError": "Vos sélections sont déjà confirmées.",
+      "unconfirmSelectionsError": "Impossible d’annuler la confirmation de vos sélections. Réessayez.",
+      "developLockedError": "Vous avez confirmé vos sélections. Annulez la confirmation pour faire des modifications.",
+      "entryNotAdvancedStatus": "N’avance pas",
+      "viewEntryAction": "Voir",
+      "viewEntryLabel": "Voir {title}"
     },
     "suggestedWinnersHint": "Nous avons sélectionné les propositions gagnantes suggérées en fonction des règles de vote et du budget total.",
     "votingOpenHeading": "C'EST L'HEURE DE VOTER.",
