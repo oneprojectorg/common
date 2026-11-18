@@ -59,7 +59,7 @@ async function stampRow({ id, at }: { id: string; at: string }) {
     .where(eq(categoryReviewers.id, id));
 }
 
-function reviewerProfileOf(profileId: string) {
+function profileOf(profileId: string) {
   return {
     id: profileId,
     name: expect.any(String),
@@ -68,8 +68,8 @@ function reviewerProfileOf(profileId: string) {
   };
 }
 
-describe.concurrent('listCategoryDevelopmentStatus', () => {
-  it('returns the stamps of the current phase rows only', async ({
+describe.concurrent('listCategoryReviewerStatus', () => {
+  it('returns the stamps of the current phase category reviewers only', async ({
     task,
     onTestFinished,
   }) => {
@@ -121,29 +121,29 @@ describe.concurrent('listCategoryDevelopmentStatus', () => {
     );
 
     const adminCaller = await createAuthenticatedCaller(setup.userEmail);
-    const result = await adminCaller.decision.listCategoryDevelopmentStatus({
+    const result = await adminCaller.decision.listCategoryReviewerStatus({
       processInstanceId: instanceId,
     });
 
     const categoryA = result.items.find((c) => c.category.id === termA.id);
-    expect(categoryA?.rows).toHaveLength(2);
-    expect(categoryA?.rows).toEqual(
+    expect(categoryA?.reviewers).toHaveLength(2);
+    expect(categoryA?.reviewers).toEqual(
       expect.arrayContaining([
         {
           reviewerProfileId: confirmed.profileId,
           developConfirmedAt: at,
-          reviewerProfile: reviewerProfileOf(confirmed.profileId),
+          profile: profileOf(confirmed.profileId),
         },
         {
           reviewerProfileId: open.profileId,
           developConfirmedAt: null,
-          reviewerProfile: reviewerProfileOf(open.profileId),
+          profile: profileOf(open.profileId),
         },
       ]),
     );
   });
 
-  it('returns a category with no row for the current phase with empty rows', async ({
+  it('returns a category with no category reviewer for the current phase with empty reviewers', async ({
     task,
     onTestFinished,
   }) => {
@@ -163,14 +163,14 @@ describe.concurrent('listCategoryDevelopmentStatus', () => {
     });
 
     const adminCaller = await createAuthenticatedCaller(setup.userEmail);
-    const result = await adminCaller.decision.listCategoryDevelopmentStatus({
+    const result = await adminCaller.decision.listCategoryReviewerStatus({
       processInstanceId: instanceId,
     });
 
     expect(result.items).toHaveLength(2);
-    expect(result.items.find((c) => c.category.id === termB.id)?.rows).toEqual(
-      [],
-    );
+    expect(
+      result.items.find((c) => c.category.id === termB.id)?.reviewers,
+    ).toEqual([]);
   });
 
   it('keeps the stamp when the Process Builder saves the instance', async ({
@@ -205,15 +205,17 @@ describe.concurrent('listCategoryDevelopmentStatus', () => {
       phaseId: 'initial',
     });
 
-    const result = await adminCaller.decision.listCategoryDevelopmentStatus({
+    const result = await adminCaller.decision.listCategoryReviewerStatus({
       processInstanceId: instanceId,
     });
 
-    expect(result.items.find((c) => c.category.id === termA.id)?.rows).toEqual([
+    expect(
+      result.items.find((c) => c.category.id === termA.id)?.reviewers,
+    ).toEqual([
       {
         reviewerProfileId: reviewer.profileId,
         developConfirmedAt: at,
-        reviewerProfile: reviewerProfileOf(reviewer.profileId),
+        profile: profileOf(reviewer.profileId),
       },
     ]);
   });
@@ -272,7 +274,7 @@ describe.concurrent('listCategoryDevelopmentStatus', () => {
 
     for (const caller of [developerCaller, profileAdminCaller]) {
       await expect(
-        caller.decision.listCategoryDevelopmentStatus({
+        caller.decision.listCategoryReviewerStatus({
           processInstanceId: instanceId,
         }),
       ).resolves.toMatchObject({ items: expect.any(Array) });
@@ -280,7 +282,7 @@ describe.concurrent('listCategoryDevelopmentStatus', () => {
 
     for (const caller of [reviewerCaller, memberCaller]) {
       await expect(
-        caller.decision.listCategoryDevelopmentStatus({
+        caller.decision.listCategoryReviewerStatus({
           processInstanceId: instanceId,
         }),
       ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });

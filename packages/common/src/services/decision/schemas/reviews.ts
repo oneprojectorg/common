@@ -19,6 +19,7 @@ import {
 import { accountContactSchema } from '../../profile/schemas/accountContact';
 import { profileMinimalSchema } from '../../profile/schemas/profileMinimal';
 import type { RubricTemplateSchema } from '../types';
+import { categoryReviewerDataSchema } from './categoryReviewerData';
 import {
   instanceOptionalPhaseRefSchema,
   instancePhaseRefSchema,
@@ -405,29 +406,40 @@ export type CategoryWithReviewersSchema = z.infer<
 
 export const categoryReviewersListSchema = list(categoryWithReviewersSchema);
 
-export const categoryDevelopmentStatusInputSchema = instancePhaseRefSchema.pick(
-  { processInstanceId: true },
-);
-
-/** A category with its reviewer rows for the current phase and their develop confirm stamps. */
-export const categoryDevelopmentStatusSchema = z.object({
-  category: categoryWithReviewersSchema.shape.category,
-  rows: z.array(
-    z.object({
-      reviewerProfileId: z.uuid(),
-      developConfirmedAt: z.string().nullable(),
-      reviewerProfile: profileMinimalSchema.pick({
-        id: true,
-        name: true,
-        slug: true,
-        avatarImage: true,
-      }),
-    }),
-  ),
+export const categoryReviewerStatusInputSchema = instancePhaseRefSchema.pick({
+  processInstanceId: true,
 });
 
-export const categoryDevelopmentStatusListSchema = list(
-  categoryDevelopmentStatusSchema,
+/** One category reviewer of the current phase with its develop confirm stamp. */
+export const categoryReviewerStatusSchema = z.object({
+  reviewerProfileId: z.uuid(),
+  developConfirmedAt: categoryReviewerDataSchema.shape.developConfirmedAt
+    .unwrap()
+    .nullable(),
+  profile: profileMinimalSchema.pick({
+    id: true,
+    name: true,
+    slug: true,
+    avatarImage: true,
+  }),
+});
+
+export type CategoryReviewerStatusSchema = z.infer<
+  typeof categoryReviewerStatusSchema
+>;
+
+/** A category with its category reviewers for the current phase. */
+export const categoryWithReviewerStatusSchema = z.object({
+  category: categoryWithReviewersSchema.shape.category,
+  reviewers: z.array(categoryReviewerStatusSchema),
+});
+
+export type CategoryWithReviewerStatusSchema = z.infer<
+  typeof categoryWithReviewerStatusSchema
+>;
+
+export const categoryReviewerStatusListSchema = list(
+  categoryWithReviewerStatusSchema,
 );
 
 export const removeCategoryReviewerResultSchema = z.object({
