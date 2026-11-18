@@ -2064,7 +2064,6 @@
       "inviteSent": "Meghívó elküldve ide: <bdi>{email}</bdi>",
       "inviteFailed": "Nem sikerült meghívni: <bdi>{email}</bdi>.",
       "inviteMovedToAdmin": "<bdi>{email}</bdi> a meghívó elfogadásával adminisztrátor lesz.",
-      "invitedLabel": "Meghívva",
       "addingAdminLabel": "Hozzáadás…",
       "removingAdminLabel": "Eltávolítás…",
       "youBadge": "Ön",

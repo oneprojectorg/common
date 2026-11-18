@@ -17,7 +17,7 @@ import { useTranslations } from '@/lib/i18n';
 
 import { ProcessAdminsPanel } from './ProcessAdminsPanel';
 
-/** The draft bar's "Manage admins" button and the dialog it opens. A live process manages admins from Settings. */
+/** A live process manages admins from Settings, so only the draft bar has this button. */
 export function ProcessAdminsDialog({ profileId }: { profileId: string }) {
   const t = useTranslations('decisions.processAdmin');
   const tShared = useTranslations();

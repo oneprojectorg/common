@@ -56,13 +56,11 @@ import {
 } from './processAdminActions';
 
 interface ProcessAdminsPanelProps {
-  /** The process profile the admin role belongs to. */
   profileId: string;
 }
 
 type PickerOption = AdminPickerOption<ProfileSearchResult>;
 
-/** A picked admin whose grant the server has not confirmed yet. */
 interface PendingAdmin {
   /** The picked email, lowercased. */
   key: string;
@@ -78,11 +76,9 @@ interface PendingMember {
 interface PendingInvite {
   list: 'invites';
   option: PickerOption;
-  /** The invitation being moved to the admin role, when there is one. */
   movedInvite?: ProfileInvite;
 }
 
-/** The admins of a process: a search-or-email picker that grants the role on pick, over the list of who holds it. */
 export function ProcessAdminsPanel({ profileId }: ProcessAdminsPanelProps) {
   const t = useTranslations('decisions.processAdmin');
 
@@ -123,9 +119,7 @@ function ProcessAdminsPanelSuspense({ profileId }: ProcessAdminsPanelProps) {
 
   if (!adminRole) {
     return (
-      <p role="alert" className="text-sm text-muted-foreground">
-        {t('adminRoleMissing')}
-      </p>
+      <p className="text-sm text-muted-foreground">{t('adminRoleMissing')}</p>
     );
   }
 
@@ -553,6 +547,7 @@ function PendingMemberRow({ member }: { member: ProfileUser }) {
 
 function PendingInviteRow({ pending }: { pending: PendingInvite }) {
   const t = useTranslations('decisions.processAdmin');
+  const tDecisions = useTranslations('decisions');
   const { option, movedInvite } = pending;
   const invitee =
     movedInvite?.inviteeProfile ??
@@ -562,7 +557,7 @@ function PendingInviteRow({ pending }: { pending: PendingInvite }) {
     <AdminListRow
       name={invitee?.name || option.email}
       profile={invitee ?? { email: option.email }}
-      description={t('invitedLabel')}
+      description={tDecisions('invitedStatus')}
       isBusy
       status={t('addingAdminLabel')}
     />
@@ -579,6 +574,7 @@ function InviteRow({
   onRemoved: () => void;
 }) {
   const t = useTranslations('decisions.processAdmin');
+  const tDecisions = useTranslations('decisions');
   const name = invite.inviteeProfile?.name || invite.email;
 
   const deleteInvite = trpc.profile.deleteProfileInvite.useMutation();
@@ -594,7 +590,9 @@ function InviteRow({
     <AdminListRow
       name={name}
       profile={invite.inviteeProfile ?? { email: invite.email }}
-      description={isRemoving ? t('removingAdminLabel') : t('invitedLabel')}
+      description={
+        isRemoving ? t('removingAdminLabel') : tDecisions('invitedStatus')
+      }
       isBusy={isRemoving}
       action={
         <RemoveMenu

@@ -1,4 +1,3 @@
-/** The slice of a profile member the admin rules read. */
 export interface AdminMember {
   id: string;
   email: string | null;
@@ -7,30 +6,28 @@ export interface AdminMember {
   roles: { id: string }[];
 }
 
-export interface AdminInvite {
+interface AdminInvite {
   id: string;
   email: string;
 }
 
-export interface AdminRole {
+interface AdminRole {
   id: string;
   name: string;
   permissions?: { admin: boolean };
 }
 
-/** A pick from the admin search: a person row (with the profile it names) or a typed email. */
 export type AdminPickerOption<Result extends { id: string } = { id: string }> =
   | { value: string; kind: 'person'; result: Result; email: string }
   | { value: string; kind: 'email'; email: string };
 
-/** What picking someone in the admin picker should call. */
-export type AdminPickAction =
+type AdminPickAction =
   | { kind: 'promote'; profileUserId: string; roleIds: string[] }
   | { kind: 'moveInvite'; inviteId: string }
   | { kind: 'invite'; email: string };
 
 /** What removing an admin should call: drop the role when they hold others, else the membership. */
-export type AdminRemoveAction =
+type AdminRemoveAction =
   | { kind: 'demote'; profileUserId: string; roleIds: string[] }
   | { kind: 'remove'; profileUserId: string };
 
