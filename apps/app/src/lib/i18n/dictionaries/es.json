@@ -2078,7 +2078,8 @@
       "removeAdminError": "No se pudo quitar a este administrador.",
       "adminAdded": "{name} ahora es administrador.",
       "adminRemoved": "<bdi>{name}</bdi> ya no es administrador.",
-      "adminInviteWithdrawn": "Se retiró la invitación a <bdi>{name}</bdi>."
+      "adminInviteWithdrawn": "Se retiró la invitación a <bdi>{name}</bdi>.",
+      "adminSearchError": "No se pudo realizar la búsqueda. Inténtalo de nuevo."
     }
   },
   "loadingProgress": "Cargando...",

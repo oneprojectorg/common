@@ -2078,7 +2078,8 @@
       "removeAdminError": "Ezt az adminisztrátort nem sikerült eltávolítani.",
       "adminAdded": "{name} mostantól adminisztrátor.",
       "adminRemoved": "<bdi>{name}</bdi> már nem adminisztrátor.",
-      "adminInviteWithdrawn": "<bdi>{name}</bdi> meghívója visszavonva."
+      "adminInviteWithdrawn": "<bdi>{name}</bdi> meghívója visszavonva.",
+      "adminSearchError": "Nem sikerült személyeket keresni. Próbálja újra."
     }
   },
   "loadingProgress": "Betöltés...",

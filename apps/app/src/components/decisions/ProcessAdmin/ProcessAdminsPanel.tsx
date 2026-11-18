@@ -352,7 +352,11 @@ function AdminPicker({
   const [debouncedQuery] = useDebounce(query.trim(), 200);
   const isSearching = debouncedQuery.length >= 2;
 
-  const { data: searchResults, isFetching } = trpc.profile.search.useQuery(
+  const {
+    data: searchResults,
+    isFetching,
+    isError,
+  } = trpc.profile.search.useQuery(
     { q: debouncedQuery, types: [EntityType.INDIVIDUAL] },
     {
       enabled: isSearching,
@@ -423,7 +427,12 @@ function AdminPicker({
         <ComboboxContent>
           <ComboboxEmpty>
             {isFetching ? (
-              <Spinner className="size-4" />
+              <Spinner
+                className="size-4"
+                aria-label={tShared('loadingProgress')}
+              />
+            ) : isError ? (
+              t('adminSearchError')
             ) : (
               tShared('No results')
             )}

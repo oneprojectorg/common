@@ -2078,7 +2078,8 @@
       "removeAdminError": "এই অ্যাডমিনকে সরানো যায়নি।",
       "adminAdded": "{name} এখন একজন অ্যাডমিন।",
       "adminRemoved": "<bdi>{name}</bdi> আর অ্যাডমিন নন।",
-      "adminInviteWithdrawn": "<bdi>{name}</bdi>-এর আমন্ত্রণ প্রত্যাহার করা হয়েছে।"
+      "adminInviteWithdrawn": "<bdi>{name}</bdi>-এর আমন্ত্রণ প্রত্যাহার করা হয়েছে।",
+      "adminSearchError": "লোকজন খোঁজা যায়নি। আবার চেষ্টা করুন।"
     }
   },
   "loadingProgress": "লোড হচ্ছে...",
