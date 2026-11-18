@@ -1,6 +1,7 @@
 import twilio from 'twilio';
 
 import { CommonError } from '../../utils/error';
+import { createOutboxProvider } from './providers/outbox';
 import { createTwilioProvider } from './providers/twilio';
 import type { SmsProvider } from './types';
 
@@ -63,6 +64,17 @@ import type { SmsProvider } from './types';
  * @see {@link https://www.twilio.com/docs/iam/api-keys}
  */
 export const getSmsProvider = (): SmsProvider | null => {
+  const fakeOutboxPath = process.env.TWILIO_FAKE_SMS_OUTBOX;
+
+  if (fakeOutboxPath) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new CommonError(
+        'TWILIO_FAKE_SMS_OUTBOX must not be set in production. Unset it, or configure real Twilio credentials.',
+      );
+    }
+    return createOutboxProvider(fakeOutboxPath);
+  }
+
   const accountSid = process.env.TWILIO_ACCOUNT_SID;
   const authToken = process.env.TWILIO_AUTH_TOKEN;
   const apiKeySid = process.env.TWILIO_API_KEY_SID;
