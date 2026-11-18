@@ -12,8 +12,10 @@ export function useSaveInstance(slug: string) {
   const utils = trpc.useUtils();
 
   return trpc.decision.updateDecisionInstance.useMutation({
+    // Saves to one process run in order, so an earlier save cannot land after a later one.
+    scope: { id: `process-admin-save:${slug}` },
     onSuccess: async (saved) => {
-      // The response carries no access.
+      // The response carries no access, steward, owner or process.
       utils.decision.getDecisionBySlug.setData(
         { slug },
         (current) =>
@@ -21,6 +23,7 @@ export function useSaveInstance(slug: string) {
             ...current,
             ...saved,
             processInstance: {
+              ...current.processInstance,
               ...saved.processInstance,
               access: current.processInstance.access,
             },
