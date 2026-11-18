@@ -9,7 +9,7 @@ import type { User } from '@op/supabase/lib';
 import { checkPermission, permission } from 'access-zones';
 
 import { NotFoundError, UnauthorizedError } from '../../utils';
-import { getProfileAccessRoles } from '../access';
+import { assertProfileAccess } from '../assert';
 import { type DevelopLock, getDevelopLock } from './developLock';
 import { getPhases } from './instancePhases';
 import { decisionPermission } from './permissions';
@@ -61,20 +61,21 @@ export async function getDevelopConfirmState({
 
   const [phases, roles] = await Promise.all([
     getPhases({ instance }),
-    getProfileAccessRoles({ user, profileId: instance.profileId }),
+    assertProfileAccess({
+      user,
+      profileId: instance.profileId,
+      permissions: [
+        { profile: permission.ADMIN },
+        { decisions: permission.ADMIN },
+        { decisions: decisionPermission.DEVELOP_PROPOSALS },
+      ],
+    }),
   ]);
 
   const isAdmin = checkPermission(
     [{ profile: permission.ADMIN }, { decisions: permission.ADMIN }],
     roles,
   );
-
-  if (
-    !isAdmin &&
-    !checkPermission({ decisions: decisionPermission.DEVELOP_PROPOSALS }, roles)
-  ) {
-    throw new UnauthorizedError("You don't have access to do this");
-  }
 
   const currentPhase = phases.find(
     (phase) => phase.phaseId === instance.currentStateId,
