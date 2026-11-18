@@ -27,7 +27,6 @@ import { getHttpStatus } from './getHttpStatus';
 
 interface ConfirmActionProps {
   processInstanceId: string;
-  /** The caller's categories for the current phase; one names the dialog. */
   categoryNames: string[];
 }
 
@@ -64,7 +63,6 @@ export function ConfirmSelectionsAction({
       );
     },
   });
-  const categoryName = getSingleCategoryName(categoryNames);
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -74,10 +72,10 @@ export function ConfirmSelectionsAction({
       <DialogContent showCloseButton={false}>
         <DialogHeader>
           <DialogTitle>
-            {categoryName === null
+            {categoryNames.length === 0
               ? t('confirmSelectionsTitle')
               : t.rich('confirmCategorySelectionsTitle', {
-                  category: categoryName,
+                  categories: categoryNames.join(', '),
                   bdi: (chunks) => <bdi>{chunks}</bdi>,
                 })}
           </DialogTitle>
@@ -144,7 +142,6 @@ export function UnconfirmSelectionsAction({
       toast.error(t('unconfirmSelectionsError'));
     },
   });
-  const categoryName = getSingleCategoryName(categoryNames);
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -154,10 +151,10 @@ export function UnconfirmSelectionsAction({
       <DialogContent showCloseButton={false}>
         <DialogHeader>
           <DialogTitle>
-            {categoryName === null
+            {categoryNames.length === 0
               ? t('unconfirmSelectionsTitle')
               : t.rich('unconfirmCategorySelectionsTitle', {
-                  category: categoryName,
+                  categories: categoryNames.join(', '),
                   bdi: (chunks) => <bdi>{chunks}</bdi>,
                 })}
           </DialogTitle>
@@ -252,9 +249,4 @@ function DialogCloseButton() {
       <LuX aria-hidden />
     </DialogClose>
   );
-}
-
-/** The one category the caller's rows cover, or `null` for several. */
-function getSingleCategoryName(categoryNames: string[]): string | null {
-  return categoryNames.length === 1 ? (categoryNames[0] ?? null) : null;
 }
