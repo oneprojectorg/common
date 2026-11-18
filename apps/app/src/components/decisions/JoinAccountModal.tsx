@@ -2,6 +2,7 @@
 
 import { codeFailureMessage } from '@/hooks/phoneAuth/failureMessage';
 import {
+  type ClaimVerifyMode,
   getClaimEmailErrorMessage,
   getClaimPhoneErrorMessage,
   getOnboardingPath,
@@ -166,6 +167,7 @@ const JoinAccountModalContent = ({ close }: { close: () => void }) => {
   const [channel, setChannel] = useState<'email' | 'phone'>('email');
   const [token, setToken] = useState<string | undefined>();
   const [otpSent, setOtpSent] = useState(false);
+  const [verifyMode, setVerifyMode] = useState<ClaimVerifyMode>('claim');
   const [contactError, setContactError] = useState<string | undefined>();
   const [codeError, setCodeError] = useState<string | undefined>();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -233,6 +235,7 @@ const JoinAccountModalContent = ({ close }: { close: () => void }) => {
         goAfterClaim();
         return;
       }
+      setVerifyMode(result.mode);
       setOtpSent(true);
       setIsSubmitting(false);
     } catch {
@@ -256,9 +259,13 @@ const JoinAccountModalContent = ({ close }: { close: () => void }) => {
 
     try {
       const result = isPhone
-        ? await verifyPhoneCode({ phone, token })
-        : await verifyEmailCode({ email, token });
+        ? await verifyPhoneCode({ phone, token, mode: verifyMode })
+        : await verifyEmailCode({ email, token, mode: verifyMode });
       if (result.ok) {
+        if (verifyMode === 'login') {
+          window.location.href = pathname;
+          return;
+        }
         goAfterClaim();
         return;
       }
@@ -276,6 +283,7 @@ const JoinAccountModalContent = ({ close }: { close: () => void }) => {
 
   const goBack = () => {
     setOtpSent(false);
+    setVerifyMode('claim');
     setToken(undefined);
     setContactError(undefined);
     setCodeError(undefined);
