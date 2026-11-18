@@ -5,6 +5,7 @@ import {
   getSeededTemplate,
   grantDecisionProfileAccess,
 } from '@op/common/testing/data';
+import { randomUUID } from 'node:crypto';
 
 import {
   TEST_USER_DEFAULT_PASSWORD,
@@ -39,7 +40,7 @@ test.describe('Process admin shell', () => {
     const { instance, managePath } = await seedDecision(org);
 
     const memberOrg = await createOrganization({
-      testId: `process-admin-shell-${Date.now()}`,
+      testId: `process-admin-shell-${randomUUID().slice(0, 8)}`,
       supabaseAdmin,
       users: { admin: 1, member: 0 },
     });
