@@ -30,7 +30,14 @@ import { Skeleton } from '@op/sense/Skeleton';
 import { Spinner } from '@op/sense/Spinner';
 import { toast } from '@op/sense/Toast';
 import { cn } from '@op/sense/lib/utils';
-import { type ComponentProps, Suspense, useId, useMemo, useState } from 'react';
+import {
+  type ComponentProps,
+  type ReactNode,
+  Suspense,
+  useId,
+  useMemo,
+  useState,
+} from 'react';
 import { LuEllipsisVertical, LuSearch, LuTrash2 } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -474,53 +481,45 @@ function AdminRow({
   });
 
   return (
-    <li
-      aria-busy={isRemoving}
-      className="flex items-center justify-between gap-3 py-3"
-    >
-      <div className={cn('min-w-0', isRemoving && 'opacity-50')}>
-        <ProfileItem
-          avatar={
-            <ProfileAvatar
-              profile={{ ...admin.profile, name, email: admin.email }}
-              withLink={false}
-              alt=""
-              className="size-8 shrink-0"
-            />
-          }
-          title={name}
-          description={
-            isRemoving
-              ? t('removingAdminLabel')
-              : admin.profile?.name
-                ? (admin.email ?? undefined)
-                : undefined
-          }
-        />
-      </div>
-      {isSelf ? (
-        <Badge variant="secondary">{t('youBadge')}</Badge>
-      ) : canRemoveAdmin({ admin, adminCount }) ? (
-        <RemoveMenu
-          label={t('manageAdminLabel', { name })}
-          disabled={isRemoving}
-          onRemove={remove}
-        />
-      ) : null}
-    </li>
+    <AdminListRow
+      name={name}
+      profile={{ ...admin.profile, name, email: admin.email }}
+      description={
+        isRemoving
+          ? t('removingAdminLabel')
+          : admin.profile?.name
+            ? (admin.email ?? undefined)
+            : undefined
+      }
+      isBusy={isRemoving}
+      action={
+        isSelf ? (
+          <Badge variant="secondary">{t('youBadge')}</Badge>
+        ) : canRemoveAdmin({ admin, adminCount }) ? (
+          <RemoveMenu
+            label={t('manageAdminLabel', { name })}
+            disabled={isRemoving}
+            onRemove={remove}
+          />
+        ) : null
+      }
+    />
   );
 }
 
 function PendingMemberRow({ member }: { member: ProfileUser }) {
+  const t = useTranslations('decisions.processAdmin');
   const name = member.profile?.name || member.name || member.email || '';
 
   return (
-    <PendingRow
+    <AdminListRow
       name={name}
       profile={{ ...member.profile, name, email: member.email }}
       description={
         member.profile?.name ? (member.email ?? undefined) : undefined
       }
+      isBusy
+      status={t('addingAdminLabel')}
     />
   );
 }
@@ -533,44 +532,13 @@ function PendingInviteRow({ pending }: { pending: PendingInvite }) {
     (option.kind === 'person' ? option.result : undefined);
 
   return (
-    <PendingRow
+    <AdminListRow
       name={invitee?.name || option.email}
       profile={invitee ?? { email: option.email }}
       description={t('invitedLabel')}
+      isBusy
+      status={t('addingAdminLabel')}
     />
-  );
-}
-
-/** A row the server has not confirmed yet: dimmed, with nothing to act on. */
-function PendingRow({
-  name,
-  profile,
-  description,
-}: {
-  name: string;
-  profile: ComponentProps<typeof ProfileAvatar>['profile'];
-  description?: string;
-}) {
-  const t = useTranslations('decisions.processAdmin');
-
-  return (
-    <li aria-busy className="flex items-center gap-3 py-3">
-      <div className="min-w-0 opacity-50">
-        <ProfileItem
-          avatar={
-            <ProfileAvatar
-              profile={profile}
-              withLink={false}
-              alt=""
-              className="size-8 shrink-0"
-            />
-          }
-          title={name}
-          description={description}
-        />
-      </div>
-      <span className="sr-only">{t('addingAdminLabel')}</span>
-    </li>
   );
 }
 
@@ -592,29 +560,58 @@ function InviteRow({
   });
 
   return (
+    <AdminListRow
+      name={name}
+      profile={invite.inviteeProfile ?? { email: invite.email }}
+      description={isRemoving ? t('removingAdminLabel') : t('invitedLabel')}
+      isBusy={isRemoving}
+      action={
+        <RemoveMenu
+          label={t('manageAdminLabel', { name })}
+          disabled={isRemoving}
+          onRemove={remove}
+        />
+      }
+    />
+  );
+}
+
+function AdminListRow({
+  name,
+  profile,
+  description,
+  isBusy,
+  action,
+  status,
+}: {
+  name: string;
+  profile: ComponentProps<typeof ProfileAvatar>['profile'];
+  description?: string;
+  isBusy: boolean;
+  action?: ReactNode;
+  status?: string;
+}) {
+  return (
     <li
-      aria-busy={isRemoving}
+      aria-busy={isBusy}
       className="flex items-center justify-between gap-3 py-3"
     >
-      <div className={cn('min-w-0', isRemoving && 'opacity-50')}>
+      <div className={cn('min-w-0', isBusy && 'opacity-50')}>
         <ProfileItem
           avatar={
             <ProfileAvatar
-              profile={invite.inviteeProfile ?? { email: invite.email }}
+              profile={profile}
               withLink={false}
               alt=""
               className="size-8 shrink-0"
             />
           }
           title={name}
-          description={isRemoving ? t('removingAdminLabel') : t('invitedLabel')}
+          description={description}
         />
       </div>
-      <RemoveMenu
-        label={t('manageAdminLabel', { name })}
-        disabled={isRemoving}
-        onRemove={remove}
-      />
+      {action}
+      {status ? <span className="sr-only">{status}</span> : null}
     </li>
   );
 }
