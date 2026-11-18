@@ -1,15 +1,13 @@
 'use client';
 
-import {
-  PROCESS_NAME_MAX_LENGTH,
-  PROCESS_NAME_MIN_LENGTH,
-} from '@op/common/client';
+import { PROCESS_NAME_MIN_LENGTH } from '@op/common/client';
 import { EditableText } from '@op/sense/EditableText';
 import { toast } from '@op/sense/Toast';
 import { cn } from '@op/sense/lib/utils';
 
 import { useTranslations } from '@/lib/i18n';
 
+import { PROCESS_NAME_INPUT_MAX_LENGTH } from '../processName';
 import { useSaveInstance } from './useSaveInstance';
 
 interface ProcessAdminTitleProps {
@@ -54,7 +52,7 @@ export function ProcessAdminTitle({
         label={t('processNameLabel')}
         editHint={t('editTitleHint')}
         doneLabel={tShared('Done')}
-        maxLength={PROCESS_NAME_MAX_LENGTH}
+        maxLength={PROCESS_NAME_INPUT_MAX_LENGTH}
         iconClassName="size-5"
         className={cn(
           'justify-center text-center font-serif text-display font-light',
