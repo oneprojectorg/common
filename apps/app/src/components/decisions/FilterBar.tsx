@@ -37,8 +37,8 @@ export const FilterBar = ({
 }) => (
   <StickyFilterBar pinOffset={pinOffset}>
     {/* Two boxes, not one wrapping row, so the search field stays one instance
-        (and keeps focus) across breakpoints. */}
-    <div className="flex flex-wrap items-center justify-between gap-4 max-2xl:w-full 2xl:flex-1">
+        (and keeps focus). The header's large grow keeps the search next to the filters. */}
+    <div className="flex grow-999 flex-wrap items-center justify-between gap-4">
       {header}
       <SearchField
         className="ms-auto"
@@ -51,7 +51,7 @@ export const FilterBar = ({
     </div>
     {/* An auto margin on the first child, not `justify-end`, because it
         collapses when the row overflows. */}
-    <div className="-mx-4 scrollbar-none flex items-center gap-4 overflow-x-scroll px-4 max-2xl:grow sm:-mx-8 sm:px-8 [&>*:first-child]:ms-auto">
+    <div className="-mx-4 scrollbar-none flex grow items-center gap-4 overflow-x-scroll px-4 sm:-mx-8 sm:px-8 [&>*:first-child]:ms-auto">
       {children}
     </div>
   </StickyFilterBar>
