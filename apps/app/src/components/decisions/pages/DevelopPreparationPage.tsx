@@ -3,7 +3,7 @@
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
-import type { ProcessInstance } from '@op/api/encoders';
+import { type ProcessInstance, ProposalFilter } from '@op/api/encoders';
 import { type Proposal, nextCursor } from '@op/common/client';
 import { useInfiniteScroll } from '@op/hooks';
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@op/sense/Empty';
@@ -36,15 +36,13 @@ import { PROPOSALS_PAGE_LIMIT } from '../proposalFilterQuery';
 import { proposalHref } from '../proposalHrefs';
 import { DevelopPageShell } from './DevelopPageShell';
 
-type PreparationFilter = 'all' | 'mine';
-
 interface PreparationProposalsProps {
   instanceId: string;
   sourcePhaseId: string;
   slug: string;
   decisionSlug?: string;
-  filter: PreparationFilter;
-  onFilterChange: (filter: PreparationFilter) => void;
+  filter: ProposalFilter;
+  onFilterChange: (filter: ProposalFilter) => void;
 }
 
 /**
@@ -63,7 +61,7 @@ export function DevelopPreparationPage({
 }) {
   const t = useTranslations('decisions');
   const translation = useDecisionTranslation();
-  const [filter, setFilter] = useState<PreparationFilter>('all');
+  const [filter, setFilter] = useState<ProposalFilter>(ProposalFilter.ALL);
   const [, startTransition] = useTransition();
 
   const phases = instance.instanceData.phases ?? [];
@@ -79,7 +77,7 @@ export function DevelopPreparationPage({
     translation?.additionalInfo ?? currentPhase?.additionalInfo;
 
   // A transition keeps the shown list while the next filter loads.
-  const handleFilterChange = (next: PreparationFilter) => {
+  const handleFilterChange = (next: ProposalFilter) => {
     startTransition(() => setFilter(next));
   };
 
@@ -136,11 +134,10 @@ function SourcePhaseSubmitters({
   sourcePhaseId: string;
 }) {
   const [{ items, total }] =
-    trpc.decision.listProposalSubmitters.useSuspenseQuery(
-      { processInstanceId: instanceId, phaseId: sourcePhaseId },
-      // A client fetch registers the query's realtime channel.
-      { refetchOnMount: 'always' },
-    );
+    trpc.decision.listProposalSubmitters.useSuspenseQuery({
+      processInstanceId: instanceId,
+      phaseId: sourcePhaseId,
+    });
 
   return <MemberParticipationFacePile submitters={items} total={total} />;
 }
@@ -162,26 +159,21 @@ function PreparationProposals({
       {
         processInstanceId: instanceId,
         phaseId: sourcePhaseId,
-        submittedByProfileId: filter === 'mine' ? currentProfileId : undefined,
+        submittedByProfileId:
+          filter === ProposalFilter.MY_PROPOSALS ? currentProfileId : undefined,
+        excludeDrafts: true,
         dir: 'desc',
         limit: PROPOSALS_PAGE_LIMIT,
       },
-      {
-        getNextPageParam: nextCursor,
-        staleTime: 30 * 1000,
-        // A client fetch registers the query's realtime channel.
-        refetchOnMount: 'always',
-      },
+      { getNextPageParam: nextCursor },
     );
-  const [unfilteredData] = trpc.decision.listProposals.useSuspenseQuery(
-    {
-      processInstanceId: instanceId,
-      phaseId: sourcePhaseId,
-      dir: 'desc',
-      limit: 1,
-    },
-    { staleTime: 30 * 1000 },
-  );
+  const [unfilteredData] = trpc.decision.listProposals.useSuspenseQuery({
+    processInstanceId: instanceId,
+    phaseId: sourcePhaseId,
+    excludeDrafts: true,
+    dir: 'desc',
+    limit: 1,
+  });
 
   const stableFetchNextPage = useCallback(() => {
     void fetchNextPage();
@@ -199,12 +191,15 @@ function PreparationProposals({
   const proposals = paginatedData.pages.flatMap((page) => page.items);
   const total = paginatedData.pages[0]?.total ?? 0;
   const filterItems = [
-    { value: 'all', label: t('proposals.allProposalsOption') },
-    { value: 'mine', label: t('proposals.myProposalsOption') },
+    { value: ProposalFilter.ALL, label: t('proposals.allProposalsOption') },
+    {
+      value: ProposalFilter.MY_PROPOSALS,
+      label: t('proposals.myProposalsOption'),
+    },
   ];
 
   const handleValueChange = (value: string | null) => {
-    if (value === 'all' || value === 'mine') {
+    if (value === ProposalFilter.ALL || value === ProposalFilter.MY_PROPOSALS) {
       onFilterChange(value);
     }
   };
