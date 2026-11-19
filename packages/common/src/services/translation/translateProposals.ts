@@ -1,4 +1,5 @@
-import { db } from '@op/db/client';
+import { type SQL, and, db, eq, inArray, or } from '@op/db/client';
+import { proposals } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 import type { TranslatableEntry } from '@op/translation';
 import { permission } from 'access-zones';
@@ -7,6 +8,10 @@ import { assertInstanceProfileAccess } from '../access';
 import { getProposalDocumentsContent } from '../decision/getProposalDocumentsContent';
 import { parseProposalData } from '../decision/proposalDataSchema';
 import { buildProposalListPreview } from '../decision/proposalListPreview';
+import {
+  getProposalReadContext,
+  isProposalReadable,
+} from '../decision/proposalVisibility';
 import { resolveProposalTemplate } from '../decision/resolveProposalTemplate';
 import type { SupportedLocale } from './locales';
 import { runTranslateBatch } from './runTranslateBatch';
@@ -35,9 +40,94 @@ export async function translateProposals({
   sourceLocale: string;
   targetLocale: SupportedLocale;
 }> {
-  // 1. Bulk-fetch only the columns we need + processInstance relation
-  const proposals = await db.query.proposals.findMany({
+  const accessUser = user ? { id: user.id } : undefined;
+
+  // 1. Resolve the process instances behind the requested profiles. Nothing
+  // from this query reaches the caller: it only drives the access checks.
+  const requested = await db.query.proposals.findMany({
     where: { profileId: { in: profileIds } },
+    columns: { id: true },
+    with: {
+      processInstance: {
+        columns: {
+          id: true,
+          profileId: true,
+          ownerProfileId: true,
+          instanceData: true,
+          processId: true,
+        },
+      },
+    },
+  });
+
+  if (requested.length === 0) {
+    return { translations: {}, sourceLocale: '', targetLocale };
+  }
+
+  // 2. Deduplicate process instances and assert read access + resolve templates
+  const uniqueInstances = new Map<
+    string,
+    (typeof requested)[number]['processInstance']
+  >();
+  for (const p of requested) {
+    if (!uniqueInstances.has(p.processInstance.id)) {
+      uniqueInstances.set(p.processInstance.id, p.processInstance);
+    }
+  }
+
+  const templateByInstanceId = new Map<
+    string,
+    Awaited<ReturnType<typeof resolveProposalTemplate>>
+  >();
+  // Per-instance `getProposal` gate (draft / hidden / flagged / deleted), built
+  // from the roles the instance assert returns so an instance admin widens to
+  // the same rows the single-proposal path would show them.
+  const readableByInstance: ((proposalsTable: typeof proposals) => SQL)[] = [];
+  await Promise.all(
+    [...uniqueInstances.values()].map(async (instance) => {
+      // Assert the user has decisions:READ on each unique process instance
+      const decisionRoles = await assertInstanceProfileAccess({
+        user: accessUser,
+        instance,
+        profilePermissions: [
+          { decisions: permission.READ },
+          { decisions: permission.ADMIN },
+        ],
+        orgFallbackPermissions: [
+          { decisions: permission.READ },
+          { decisions: permission.ADMIN },
+        ],
+      });
+      const readContext = getProposalReadContext({
+        user: accessUser,
+        decisionRoles,
+      });
+      readableByInstance.push((proposalsTable) =>
+        and(
+          eq(proposalsTable.processInstanceId, instance.id),
+          isProposalReadable(proposalsTable, readContext),
+        )!,
+      );
+
+      const template = await resolveProposalTemplate(
+        instance.instanceData as Record<string, unknown> | null,
+        instance.processId,
+      );
+      templateByInstanceId.set(instance.id, template);
+    }),
+  );
+
+  // Instance read access alone is not proposal read access: the same rows
+  // `getProposal` would 404 on (another member's draft, a hidden or flagged
+  // proposal) are silently dropped here rather than translated.
+  const readableProposals = await db.query.proposals.findMany({
+    where: {
+      RAW: (table) =>
+        and(
+          inArray(table.profileId, profileIds),
+          or(...readableByInstance.map((readable) => readable(table))),
+        )!,
+    },
     columns: {
       id: true,
       profileId: true,
@@ -52,61 +142,18 @@ export async function translateProposals({
       processInstance: {
         columns: {
           id: true,
-          profileId: true,
-          ownerProfileId: true,
-          instanceData: true,
-          processId: true,
         },
       },
     },
   });
 
-  if (proposals.length === 0) {
+  if (readableProposals.length === 0) {
     return { translations: {}, sourceLocale: '', targetLocale };
   }
 
-  // 2. Deduplicate process instances and assert read access + resolve templates
-  const uniqueInstances = new Map<
-    string,
-    (typeof proposals)[number]['processInstance']
-  >();
-  for (const p of proposals) {
-    if (!uniqueInstances.has(p.processInstance.id)) {
-      uniqueInstances.set(p.processInstance.id, p.processInstance);
-    }
-  }
-
-  const templateByInstanceId = new Map<
-    string,
-    Awaited<ReturnType<typeof resolveProposalTemplate>>
-  >();
-  await Promise.all(
-    [...uniqueInstances.values()].map(async (instance) => {
-      // Assert the user has decisions:READ on each unique process instance
-      await assertInstanceProfileAccess({
-        user: user ? { id: user.id } : undefined,
-        instance,
-        profilePermissions: [
-          { decisions: permission.READ },
-          { decisions: permission.ADMIN },
-        ],
-        orgFallbackPermissions: [
-          { decisions: permission.READ },
-          { decisions: permission.ADMIN },
-        ],
-      });
-
-      const template = await resolveProposalTemplate(
-        instance.instanceData as Record<string, unknown> | null,
-        instance.processId,
-      );
-      templateByInstanceId.set(instance.id, template);
-    }),
-  );
-
   // 3. Batch document fetch
   const documentContentMap = await getProposalDocumentsContent(
-    proposals.map((p) => ({
+    readableProposals.map((p) => ({
       id: p.id,
       proposalData: p.proposalData,
       proposalTemplate: templateByInstanceId.get(p.processInstance.id) ?? null,
@@ -118,7 +165,7 @@ export async function translateProposals({
   // 4. Build translatable entries for all proposals
   const entries: TranslatableEntry[] = [];
 
-  for (const proposal of proposals) {
+  for (const proposal of readableProposals) {
     const proposalData = parseProposalData(proposal.proposalData);
     const pid = proposal.profileId;
 
