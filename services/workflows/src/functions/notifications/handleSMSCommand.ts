@@ -4,6 +4,7 @@ import {
   getGeocoder,
   getPhoneSignupState,
   parsePhoneNumber,
+  recordSmsMessage,
 } from '@op/common';
 import { assertNever } from '@op/core';
 import { Events, inngest } from '@op/events';
@@ -59,6 +60,7 @@ export const handleSMSCommand = inngest.createFunction(
       keyword,
       argument,
       body,
+      messageSid,
       authUserId: accountAtReceipt,
     } = smsInboundReceived.schema.parse(event.data);
 
@@ -111,6 +113,24 @@ export const handleSMSCommand = inngest.createFunction(
 
     const { account, line } = resolved;
 
+    const inboundSmsId = await step.run('record-inbound-sms', async () => {
+      // A log failure must not fail the function: the command still answers.
+      try {
+        const message = await recordSmsMessage({
+          direction: 'inbound',
+          body: body ?? [keyword, argument].filter(Boolean).join(' '),
+          phoneNumberId: line?.id ?? null,
+          authUserId: account?.authUserId ?? null,
+          counterpartE164: to,
+          providerSid: messageSid,
+        });
+        return message.id;
+      } catch (error) {
+        logger.error('Inbound SMS could not be logged', { error });
+        return null;
+      }
+    });
+
     if (!account) {
       logger.info('SMS command from a number with no account, skipping', {
         keyword,
@@ -124,6 +144,8 @@ export const handleSMSCommand = inngest.createFunction(
       from: line ? parsePhoneNumber(line.phone) : undefined,
       purpose: 'answer an SMS command',
       context: { keyword, onLine: line !== null },
+      authUserId: account.authUserId,
+      phoneNumberId: line?.id ?? null,
     });
 
     if (!text) {
@@ -152,6 +174,7 @@ export const handleSMSCommand = inngest.createFunction(
         : null,
       deliver,
       geocode: getGeocoder(),
+      inboundSmsId,
     };
 
     switch (keyword) {

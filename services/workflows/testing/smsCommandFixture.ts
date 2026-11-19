@@ -29,6 +29,7 @@ import {
   processInstances,
   processPhases,
   profiles,
+  smsMessages,
   taxonomyTerms,
 } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
@@ -127,13 +128,19 @@ export class SmsCommandFixture {
   private readonly phoneAuth: TestPhoneAuthDataManager;
   private readonly profileIds: string[] = [];
   private readonly termIds: string[] = [];
+  private readonly phones: string[] = [];
 
   constructor(testId: string, onTestFinished: RegisterCleanup) {
     this.phoneAuth = new TestPhoneAuthDataManager(testId, onTestFinished);
     onTestFinished(() => this.cleanup());
   }
 
+  trackPhone(phone: string): void {
+    this.phones.push(phone);
+  }
+
   async createPhoneOnlyAccount(phone: PhoneNumber): Promise<FixtureAccount> {
+    this.trackPhone(phone);
     const authUserId = await this.phoneAuth.createUser({
       phone,
       confirmed: true,
@@ -384,6 +391,13 @@ export class SmsCommandFixture {
   }
 
   private async cleanup() {
+    if (this.phones.length > 0) {
+      // sms_messages rows cascade from nothing; the counterpart number is the
+      // one key every row of this fixture's traffic carries.
+      await db
+        .delete(smsMessages)
+        .where(inArray(smsMessages.counterpartE164, this.phones));
+    }
     if (this.profileIds.length > 0) {
       // An instance's phase profiles outlive it unless deleted with it.
       await db

@@ -52,13 +52,16 @@ describe('runVotingAssistant', () => {
   it('asks the configured model with the tools, the commands and the question', async () => {
     const fetchMock = stubEndpoint('Text VOTE to register.');
 
-    const answer = await runVotingAssistant({
+    const result = await runVotingAssistant({
       question: 'How do I vote?',
       commandList: COMMAND_LIST,
       tools: STUB_TOOLS,
     });
 
-    expect(answer).toBe('Text VOTE to register.');
+    expect(result.answer).toBe('Text VOTE to register.');
+    expect(result.responseMessages.at(-1)).toMatchObject({
+      role: 'assistant',
+    });
     const body = JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body));
     expect(body.model).toBe('glm-5.3-flash');
     expect(JSON.stringify(body.tools)).toContain('get_stub');
@@ -85,37 +88,61 @@ describe('runVotingAssistant', () => {
   it('clips a long answer to one SMS segment', async () => {
     stubEndpoint('a'.repeat(400));
 
-    const answer = await runVotingAssistant({
+    const result = await runVotingAssistant({
       question: 'q',
       commandList: COMMAND_LIST,
       tools: STUB_TOOLS,
     });
 
-    expect(answer?.length).toBeLessThanOrEqual(160);
+    expect(result.answer?.length).toBeLessThanOrEqual(160);
   });
 
   it('answers null when the endpoint fails', async () => {
     vi.stubEnv('AI_BASE_URL', 'https://inference.example.com/v1');
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('down')));
 
-    const answer = await runVotingAssistant({
+    const result = await runVotingAssistant({
       question: 'q',
       commandList: COMMAND_LIST,
       tools: STUB_TOOLS,
     });
 
-    expect(answer).toBeNull();
+    expect(result.answer).toBeNull();
+    expect(result.responseMessages).toEqual([]);
   });
 
   it('answers null when the model returns no text', async () => {
     stubEndpoint('');
 
-    const answer = await runVotingAssistant({
+    const result = await runVotingAssistant({
       question: 'q',
       commandList: COMMAND_LIST,
       tools: STUB_TOOLS,
     });
 
-    expect(answer).toBeNull();
+    expect(result.answer).toBeNull();
+  });
+
+  it('sends the replayed history ahead of the question', async () => {
+    const fetchMock = stubEndpoint('Your last pick was 101.');
+
+    await runVotingAssistant({
+      question: 'what did I just add?',
+      commandList: COMMAND_LIST,
+      tools: STUB_TOOLS,
+      history: [
+        { role: 'user', content: 'L add 101' },
+        { role: 'assistant', content: 'Added 101.' },
+      ],
+    });
+
+    const body = JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body));
+    const roles = body.messages.map((m: { role: string }) => m.role);
+    expect(roles.slice(-3)).toEqual(['user', 'assistant', 'user']);
+    const contents = JSON.stringify(body.messages);
+    expect(contents.indexOf('L add 101')).toBeGreaterThan(-1);
+    expect(contents.indexOf('L add 101')).toBeLessThan(
+      contents.indexOf('what did I just add?'),
+    );
   });
 });

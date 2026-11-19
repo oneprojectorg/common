@@ -78,9 +78,16 @@ import {
   startVoterEnrolment,
   submitSmsBallot,
   summarizeSmsBallot,
+  VOTING_ASSISTANT_AGENT_ID,
+  VOTING_ASSISTANT_PROMPT_VERSION,
+  appendConversationItems,
+  ensureConversation,
+  listRecentReplayMessages,
 } from '@op/common';
 import { Events, inngest } from '@op/events';
+import { logger } from '@op/logging';
 import type { GetStepTools } from 'inngest';
+import { randomUUID } from 'node:crypto';
 
 import { SMS_COMMAND_HELP_MESSAGE, SMS_COMMAND_LIST_MESSAGE } from './smsReply';
 
@@ -117,6 +124,7 @@ export interface SmsCommandContext {
   line: ChatLine | null;
   deliver: SmsDeliver;
   geocode: Geocode;
+  inboundSmsId?: string | null;
 }
 
 export type SmsCommandHandler = (
@@ -638,14 +646,45 @@ export const ask: SmsCommandHandler = async (context) => {
     });
     const instanceId =
       pending?.processInstanceId ?? (await findBallotInstance(context));
-    const answer = await runVotingAssistant({
+    const conversation = await ensureConversation({
+      authUserId: account.authUserId,
+      processInstanceId: instanceId,
+      phoneNumberId: context.line?.id ?? null,
+    });
+    const history = await listRecentReplayMessages({
+      conversationId: conversation.id,
+      limit: 10,
+    });
+    const { answer, responseMessages } = await runVotingAssistant({
       question,
       commandList: SMS_COMMAND_LIST_MESSAGE,
       tools: votingAssistantTools({
         authUserId: account.authUserId,
         instanceId,
       }),
+      history,
     });
+    // A storage failure must not fail the step: a retried step would run the
+    // agent, and its ballot writes, a second time.
+    try {
+      await appendConversationItems({
+        conversationId: conversation.id,
+        runId: randomUUID(),
+        items: [
+          {
+            message: { role: 'user', content: question },
+            smsMessageId: context.inboundSmsId ?? null,
+          },
+          ...responseMessages.map((message) => ({
+            message,
+            agentId: VOTING_ASSISTANT_AGENT_ID,
+            promptVersion: VOTING_ASSISTANT_PROMPT_VERSION,
+          })),
+        ],
+      });
+    } catch (error) {
+      logger.error('SMS assistant exchange could not be stored', { error });
+    }
     return { answer };
   });
 

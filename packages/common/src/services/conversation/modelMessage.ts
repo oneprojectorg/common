@@ -12,10 +12,9 @@ export const storedModelMessageSchema = z.object({
 
 export type StoredModelMessage = z.infer<typeof storedModelMessageSchema>;
 
-export interface ReplayMessage {
-  role: 'user' | 'assistant';
-  content: string;
-}
+export type ReplayMessage =
+  | { role: 'user'; content: string }
+  | { role: 'assistant'; content: string };
 
 export const messageText = (message: StoredModelMessage): string =>
   typeof message.content === 'string'

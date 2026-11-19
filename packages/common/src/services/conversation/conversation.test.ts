@@ -1,9 +1,8 @@
-import { randomUUID } from 'node:crypto';
-
 import { TestDecisionsDataManager } from '@op/common/testing';
 import { db } from '@op/db/client';
-import { conversationItems, smsMessages } from '@op/db/schema';
+import { smsMessages } from '@op/db/schema';
 import { inArray } from 'drizzle-orm';
+import { randomUUID } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -198,7 +197,9 @@ describe.concurrent('conversations service', () => {
       }),
     ).resolves.toEqual([]);
     expect(
-      await db.query.conversations.findFirst({ where: { id: conversation.id } }),
+      await db.query.conversations.findFirst({
+        where: { id: conversation.id },
+      }),
     ).toBeUndefined();
   });
 });

@@ -191,6 +191,7 @@ export const handleUnknownSmsSignup = inngest.createFunction(
       to,
       from: line ? parsePhoneNumber(line.phone) : undefined,
       purpose: 'start SMS signup',
+      phoneNumberId: line?.id ?? null,
     });
 
     if (!sendText) {

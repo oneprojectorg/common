@@ -15,6 +15,7 @@ import {
   decisionsVoteDraftProposals,
   processInstances,
   profileUsers,
+  smsMessages,
 } from '@op/db/schema';
 import { Events, inngest } from '@op/events';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -657,8 +658,15 @@ describe('handleSMSCommand against the database', () => {
     }
   });
 
-  it('given a number with no account texts a command, then nothing is sent because the signup function owns unknown numbers', async () => {
+  it('given a number with no account texts a command, then nothing is sent because the signup function owns unknown numbers', async ({
+    onTestFinished,
+  }) => {
     const phone = parsePhoneNumber(NUMBERS.stranger);
+    onTestFinished(async () => {
+      await db
+        .delete(smsMessages)
+        .where(eq(smsMessages.counterpartE164, phone));
+    });
     const t = new InngestTestEngine({ function: handleSMSCommand });
 
     const { result } = await t.execute({
@@ -3219,5 +3227,238 @@ describe('handleSMSCommand with a pick limit', () => {
     expect(recordedSms.at(-1)?.body).toBe(
       '"Bike lane" was not added: your ballot already holds the most picks allowed (1). REMOVE one to add another.',
     );
+  });
+});
+
+describe('handleSMSCommand conversation storage', () => {
+  beforeEach(() => {
+    resetRecordedSms();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  const STORAGE_NUMBERS = {
+    talker: '+15005550140',
+    lister: '+15005550141',
+    stranger: '+15005550142',
+  } as const;
+
+  const STORAGE_LINE = '+16145550290';
+
+  const run = (event: ReturnType<typeof smsInboundEvent>) =>
+    new InngestTestEngine({ function: handleSMSCommand }).execute({
+      events: [event],
+    });
+
+  const seed = async (fixture: SmsCommandFixture, phone: string) => {
+    const member = await fixture.createPhoneOnlyAccount(
+      parsePhoneNumber(phone),
+    );
+    const { instanceId, instanceProfileId } =
+      await fixture.createVotingInstance({
+        owner: member,
+        name: `Storage ${phone}`,
+        proposalTitles: [{ title: 'Crosswalk lighting', budget: 85_000 }],
+        votingRules: { voterBudget: 1_000_000, maxVotesPerMember: 10 },
+      });
+    await fixture.addMember(instanceProfileId, member);
+    await fixture.bindLine(instanceId, parsePhoneNumber(STORAGE_LINE));
+    return { member, instanceId };
+  };
+
+  const textAnswer = (content: string) =>
+    new Response(
+      JSON.stringify({
+        id: 'mock-answer',
+        object: 'chat.completion',
+        created: 0,
+        model: 'glm-5.3-flash',
+        choices: [
+          {
+            index: 0,
+            message: { role: 'assistant', content },
+            finish_reason: 'stop',
+          },
+        ],
+        usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 },
+      }),
+      { status: 200, headers: { 'content-type': 'application/json' } },
+    );
+
+  const stubAssistant = (
+    responses: Response[],
+    onTestFinished: (fn: () => void) => void,
+  ) => {
+    const realFetch = globalThis.fetch;
+    vi.stubEnv('AI_BASE_URL', 'https://inference.test.invalid/v1');
+    vi.stubEnv('AI_API_KEY', 'test-key');
+    const aiBodies: string[] = [];
+    vi.stubGlobal('fetch', ((input: RequestInfo | URL, init?: RequestInit) => {
+      if (isInferenceRequest(input)) {
+        aiBodies.push(String(init?.body));
+        return Promise.resolve(responses.shift()!);
+      }
+      return realFetch(input, init);
+    }) as typeof fetch);
+    onTestFinished(() => {
+      vi.unstubAllGlobals();
+      vi.unstubAllEnvs();
+    });
+    return aiBodies;
+  };
+
+  it('given a member asks L twice, then the second request replays the first exchange and every turn is stored', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsCommandFixture(task.id, onTestFinished);
+    const { member, instanceId } = await seed(fixture, STORAGE_NUMBERS.talker);
+    const aiBodies = stubAssistant(
+      [
+        textAnswer('Text SHOW to see your decisions.'),
+        textAnswer('You asked how to vote.'),
+      ],
+      onTestFinished,
+    );
+
+    const first = await run(
+      smsInboundEvent({
+        from: STORAGE_NUMBERS.talker,
+        to: STORAGE_LINE,
+        keyword: 'l',
+        argument: 'how do I vote?',
+        body: 'L how do I vote?',
+        messageSid: `SM-${task.id}-ask-1`,
+      }),
+    );
+    const second = await run(
+      smsInboundEvent({
+        from: STORAGE_NUMBERS.talker,
+        to: STORAGE_LINE,
+        keyword: 'l',
+        argument: 'what did I just ask?',
+        body: 'L what did I just ask?',
+        messageSid: `SM-${task.id}-ask-2`,
+      }),
+    );
+
+    expect(first.result).toEqual({ message: 'question answered' });
+    expect(second.result).toEqual({ message: 'question answered' });
+
+    const secondRequest = JSON.stringify(
+      JSON.parse(aiBodies[1] ?? '{}').messages,
+    );
+    expect(secondRequest).toContain('how do I vote?');
+    expect(secondRequest).toContain('Text SHOW to see your decisions.');
+
+    const conversation = await db.query.conversations.findFirst({
+      where: { processInstanceId: instanceId },
+    });
+    if (!conversation) {
+      throw new Error('no conversation was stored');
+    }
+
+    const items = await db.query.conversationItems.findMany({
+      where: { conversationId: conversation.id },
+      orderBy: { createdAt: 'asc' },
+    });
+    expect(items.map((item) => ({ kind: item.kind, role: item.role }))).toEqual(
+      [
+        { kind: 'message', role: 'user' },
+        { kind: 'message', role: 'assistant' },
+        { kind: 'message', role: 'user' },
+        { kind: 'message', role: 'assistant' },
+      ],
+    );
+    const assistantItems = items.filter((item) => item.role === 'assistant');
+    expect(
+      assistantItems.every(
+        (item) =>
+          item.agentId === 'sms-voting-assistant' &&
+          item.promptVersion !== null,
+      ),
+    ).toBe(true);
+
+    const inbound = await db.query.smsMessages.findMany({
+      where: { direction: 'inbound', authUserId: member.authUserId },
+      orderBy: { createdAt: 'asc' },
+    });
+    expect(inbound.map((row) => row.providerSid)).toEqual([
+      `SM-${task.id}-ask-1`,
+      `SM-${task.id}-ask-2`,
+    ]);
+    expect(items[0]?.smsMessageId).toBe(inbound[0]?.id);
+    expect(items[2]?.smsMessageId).toBe(inbound[1]?.id);
+
+    const outbound = await db.query.smsMessages.findMany({
+      where: { direction: 'outbound', counterpartE164: STORAGE_NUMBERS.talker },
+    });
+    expect(outbound).toHaveLength(2);
+    expect(
+      outbound.every(
+        (row) => row.status === 'sent' && row.providerSid !== null,
+      ),
+    ).toBe(true);
+  });
+
+  it('given a member texts INFO-HELP, then the exchange lands in the transport log and no conversation items are written', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsCommandFixture(task.id, onTestFinished);
+    const phone = parsePhoneNumber(STORAGE_NUMBERS.lister);
+    const { authUserId } = await fixture.createPhoneOnlyAccount(phone);
+
+    const { result } = await run(
+      smsInboundEvent({
+        from: STORAGE_NUMBERS.lister,
+        to: null,
+        keyword: 'info-help',
+        messageSid: `SM-${task.id}-help`,
+      }),
+    );
+
+    expect(result).toEqual({ message: 'command list sent' });
+    const rows = await db.query.smsMessages.findMany({
+      where: { counterpartE164: STORAGE_NUMBERS.lister },
+      orderBy: { createdAt: 'asc' },
+    });
+    expect(rows.map((row) => row.direction)).toEqual(['inbound', 'outbound']);
+    expect(rows[0]?.providerSid).toBe(`SM-${task.id}-help`);
+    expect(rows[0]?.authUserId).toBe(authUserId);
+    const linkedItems = await db.query.conversationItems.findMany({
+      where: { smsMessageId: rows[0]?.id },
+    });
+    expect(linkedItems).toEqual([]);
+  });
+
+  it('given a stranger texts the line, then only an inbound transport row is written', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsCommandFixture(task.id, onTestFinished);
+    fixture.trackPhone(STORAGE_NUMBERS.stranger);
+
+    const { result } = await run(
+      smsInboundEvent({
+        from: STORAGE_NUMBERS.stranger,
+        to: null,
+        keyword: 'show',
+        messageSid: `SM-${task.id}-stranger`,
+      }),
+    );
+
+    expect(result).toEqual({ message: 'unknown number, skipped' });
+    const rows = await db.query.smsMessages.findMany({
+      where: { counterpartE164: STORAGE_NUMBERS.stranger },
+    });
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({
+      direction: 'inbound',
+      authUserId: null,
+      providerSid: `SM-${task.id}-stranger`,
+    });
   });
 });
