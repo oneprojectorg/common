@@ -34,6 +34,7 @@ import {
   useReportProposalsForReviewDecoration,
 } from './proposalReviewDecoration';
 import {
+  ALL_REVIEW_STATUSES,
   type ReviewProposalFilterState,
   useReviewProposalFilters,
 } from './useReviewProposalFilters';
@@ -213,6 +214,31 @@ function ReviewAllProposalsContent({
           selectedCategory={filters.selectedCategory}
           onSelectCategory={filters.setSelectedCategory}
           className="min-w-40 shrink-0"
+        />
+        <FilterBarSelect
+          value={filters.reviewStatus}
+          onChange={filters.setReviewStatus}
+          label={t('decisions.review.filterByReviewStatusLabel')}
+          items={[
+            {
+              id: ALL_REVIEW_STATUSES,
+              label: t('decisions.review.allStatusesOption'),
+            },
+            {
+              id: 'unassigned',
+              label: t('decisions.review.reviewStatusUnassignedOption'),
+            },
+            { id: 'none', label: t('decisions.review.reviewStatusNoneOption') },
+            { id: 'partial', label: t('In progress') },
+            {
+              id: 'reviewed',
+              label: t('decisions.review.reviewStatusReviewedOption'),
+            },
+            {
+              id: 'outOfDate',
+              label: t('decisions.review.reviewStatusOutOfDateOption'),
+            },
+          ]}
         />
         <FilterBarSelect
           label={t('decisions.proposals.sortProposalsLabel')}

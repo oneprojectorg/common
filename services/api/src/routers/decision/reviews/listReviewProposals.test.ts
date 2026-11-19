@@ -1,7 +1,12 @@
 import {
+  type ReviewProposalStatus,
+  reviewProposalStatusSchema,
+} from '@op/common/client';
+import {
   TestReviewsDataManager,
   createProposalReview,
   createReviewAssignment,
+  reviseProposal,
 } from '@op/common/testing';
 import {
   ProposalReviewState,
@@ -53,6 +58,39 @@ async function tagProposal(proposalId: string, termIds: string[]) {
     .values(termIds.map((taxonomyTermId) => ({ proposalId, taxonomyTermId })));
 }
 
+async function addReview({
+  proposalId,
+  reviewerProfileId,
+  state = ProposalReviewState.SUBMITTED,
+  reviewedProposalHistoryId = null,
+}: {
+  proposalId: string;
+  reviewerProfileId: string;
+  state?: ProposalReviewState;
+  reviewedProposalHistoryId?: string | null;
+}) {
+  const [assignment] = await db
+    .select({ id: proposalReviewAssignments.id })
+    .from(proposalReviewAssignments)
+    .where(
+      and(
+        eq(proposalReviewAssignments.proposalId, proposalId),
+        eq(proposalReviewAssignments.reviewerProfileId, reviewerProfileId),
+      ),
+    );
+  if (!assignment) {
+    throw new Error('assignment not found');
+  }
+  await createProposalReview({
+    assignmentId: assignment.id,
+    state,
+    reviewData: { answers: {}, rationales: {} },
+    submittedAt:
+      state === ProposalReviewState.SUBMITTED ? new Date().toISOString() : null,
+    reviewedProposalHistoryId,
+  });
+}
+
 async function createReviewProposals(
   testData: TestReviewsDataManager,
   titles: string[],
@@ -71,6 +109,84 @@ async function createReviewProposals(
     context.defaultReviewer.email,
   );
   return { context, proposals: created, adminCaller };
+}
+
+async function createReviewStatusProposals(
+  taskId: string,
+  onTestFinished: ConstructorParameters<typeof TestReviewsDataManager>[1],
+) {
+  const testData = new TestReviewsDataManager(taskId, onTestFinished);
+  const { context, proposals, adminCaller } = await createReviewProposals(
+    testData,
+    [
+      'No reviewers',
+      'Draft only',
+      'Half reviewed',
+      'Stale review',
+      'Current review',
+      'Fully reviewed',
+    ],
+  );
+  const [unassigned, draftOnly, half, stale, current, fully] = proposals;
+  if (!unassigned || !draftOnly || !half || !stale || !current || !fully) {
+    throw new Error('expected six proposals');
+  }
+  const processInstanceId = context.instance.instance.id;
+  const defaultReviewer = context.defaultReviewer.profileId;
+  const second = await testData.createReviewer(context);
+
+  await db
+    .delete(proposalReviewAssignments)
+    .where(eq(proposalReviewAssignments.proposalId, unassigned.id));
+  await Promise.all(
+    [half, stale, fully].map((proposal) =>
+      createReviewAssignment({
+        processInstanceId,
+        proposalId: proposal.id,
+        reviewerProfileId: second.profileId,
+      }),
+    ),
+  );
+
+  const staleHistoryId = await reviseProposal({ proposalId: stale.id });
+  await reviseProposal({ proposalId: stale.id });
+  const currentHistoryId = await reviseProposal({ proposalId: current.id });
+
+  await Promise.all([
+    addReview({
+      proposalId: draftOnly.id,
+      reviewerProfileId: defaultReviewer,
+      state: ProposalReviewState.DRAFT,
+    }),
+    addReview({ proposalId: half.id, reviewerProfileId: defaultReviewer }),
+    addReview({
+      proposalId: stale.id,
+      reviewerProfileId: defaultReviewer,
+      reviewedProposalHistoryId: staleHistoryId,
+    }),
+    addReview({
+      proposalId: current.id,
+      reviewerProfileId: defaultReviewer,
+      reviewedProposalHistoryId: currentHistoryId,
+    }),
+    addReview({ proposalId: fully.id, reviewerProfileId: defaultReviewer }),
+    addReview({ proposalId: fully.id, reviewerProfileId: second.profileId }),
+  ]);
+
+  const byStatus: Record<ReviewProposalStatus, string[]> = {
+    unassigned: [unassigned.id],
+    none: [draftOnly.id],
+    partial: [half.id],
+    reviewed: [fully.id, current.id],
+    outOfDate: [stale.id],
+  };
+
+  return {
+    processInstanceId,
+    adminCaller,
+    byStatus,
+    proposalIds: { current: current.id, fully: fully.id },
+  };
 }
 
 describe.concurrent('decision.listReviewProposals', () => {
@@ -220,33 +336,11 @@ describe.concurrent('decision.listReviewProposals', () => {
         proposalId,
         reviewerProfileId,
       });
-    const review = async (
+    const review = (
       proposalId: string,
       reviewerProfileId: string,
       state = ProposalReviewState.SUBMITTED,
-    ) => {
-      const [assignment] = await db
-        .select({ id: proposalReviewAssignments.id })
-        .from(proposalReviewAssignments)
-        .where(
-          and(
-            eq(proposalReviewAssignments.proposalId, proposalId),
-            eq(proposalReviewAssignments.reviewerProfileId, reviewerProfileId),
-          ),
-        );
-      if (!assignment) {
-        throw new Error('assignment not found');
-      }
-      await createProposalReview({
-        assignmentId: assignment.id,
-        state,
-        reviewData: { answers: {}, rationales: {} },
-        submittedAt:
-          state === ProposalReviewState.SUBMITTED
-            ? new Date().toISOString()
-            : null,
-      });
-    };
+    ) => addReview({ proposalId, reviewerProfileId, state });
     const defaultReviewer = context.defaultReviewer.profileId;
 
     await Promise.all([
@@ -293,6 +387,85 @@ describe.concurrent('decision.listReviewProposals', () => {
     expect(fewest.seen).toEqual([p1.id, p6.id, p5.id, p3.id, p2.id, p4.id]);
     expect(most.pages).toBe(3);
     expect(most.seen).toEqual([p4.id, p2.id, p3.id, p5.id, p6.id, p1.id]);
+  });
+
+  it('filters by review status, with the total under the filter', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { processInstanceId, adminCaller, byStatus } =
+      await createReviewStatusProposals(task.id, onTestFinished);
+
+    const results = await Promise.all(
+      reviewProposalStatusSchema.options.map(async (status) => ({
+        status,
+        result: await adminCaller.decision.listReviewProposals({
+          processInstanceId,
+          status,
+        }),
+      })),
+    );
+
+    for (const { status, result } of results) {
+      expect(
+        result.items.map((item) => item.id),
+        status,
+      ).toEqual(byStatus[status]);
+      expect(result.total, status).toBe(byStatus[status].length);
+      expect(result.unfilteredTotal, status).toBe(6);
+    }
+  });
+
+  it('combines the review status with a review-count sort across pages', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { processInstanceId, adminCaller, proposalIds } =
+      await createReviewStatusProposals(task.id, onTestFinished);
+
+    const readAll = async (sort: 'fewestReviews' | 'mostReviews') => {
+      const seen: string[] = [];
+      let cursor: string | null = null;
+      let pages = 0;
+      do {
+        const page: Awaited<
+          ReturnType<typeof adminCaller.decision.listReviewProposals>
+        > = await adminCaller.decision.listReviewProposals({
+          processInstanceId,
+          status: 'reviewed',
+          sort,
+          limit: 1,
+          cursor,
+        });
+        expect(page.total).toBe(2);
+        seen.push(...page.items.map((item) => item.id));
+        cursor = page.next;
+        pages += 1;
+      } while (cursor && pages < 10);
+      return { seen, pages };
+    };
+
+    const [fewest, most, searched] = await Promise.all([
+      readAll('fewestReviews'),
+      readAll('mostReviews'),
+      adminCaller.decision.listReviewProposals({
+        processInstanceId,
+        status: 'reviewed',
+        search: 'Fully',
+      }),
+    ]);
+
+    expect(fewest).toEqual({
+      seen: [proposalIds.current, proposalIds.fully],
+      pages: 2,
+    });
+    expect(most).toEqual({
+      seen: [proposalIds.fully, proposalIds.current],
+      pages: 2,
+    });
+    expect(searched.items.map((item) => item.id)).toEqual([proposalIds.fully]);
+    expect(searched.total).toBe(1);
+    expect(searched.unfilteredTotal).toBe(6);
   });
 
   it('rejects a cursor from another sort', async ({ task, onTestFinished }) => {
