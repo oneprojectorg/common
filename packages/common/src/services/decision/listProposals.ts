@@ -48,6 +48,8 @@ export interface ListProposalsInput {
    * those earlier phases left behind. Without it, the phase's other proposals.
    */
   notAdvanced?: boolean;
+  /** Leave out the caller's own drafts, which a phase's list otherwise includes. */
+  excludeDrafts?: boolean;
   /**
    * Restrict results to proposals voted on by this profile. Bypasses phase
    * resolution so a ballot remains accessible after the process advances past

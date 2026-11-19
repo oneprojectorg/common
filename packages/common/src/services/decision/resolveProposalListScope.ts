@@ -424,10 +424,12 @@ export const resolveProposalListScope = async ({
     // via `profileUsers`) is applied inside `getPhaseProposalSqlScope` via
     // a subquery, so the draft filter is already access-filtered — no further
     // ownership filter is needed here.
-    const draftFilter = and(
-      eq(proposalsTable.status, ProposalStatus.DRAFT),
-      phaseScope.buildDraftFilter(proposalsTable),
-    )!;
+    const draftFilter = input.excludeDrafts
+      ? undefined
+      : and(
+          eq(proposalsTable.status, ProposalStatus.DRAFT),
+          phaseScope.buildDraftFilter(proposalsTable),
+        );
 
     // The profile-member arm is what keeps a collaborator's view of a
     // co-authored proposal from changing the moment it is submitted as HIDDEN.
@@ -456,7 +458,7 @@ export const resolveProposalListScope = async ({
     // is a public verdict, and `getProposal` has never gated on it.
     return and(
       clause,
-      or(draftFilter, nonDraftVisibilityFilter)!,
+      or(draftFilter, nonDraftVisibilityFilter),
       moderationFilter,
     )!;
   };

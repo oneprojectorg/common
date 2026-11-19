@@ -802,6 +802,8 @@ export const proposalFilterSchema = instanceOptionalPhaseRefSchema.extend({
    * those earlier phases left behind. Omitted lists the phase's other proposals.
    */
   notAdvanced: z.boolean().optional(),
+  /** Leave out the caller's own drafts, which a phase's list otherwise includes. */
+  excludeDrafts: z.boolean().optional(),
   /** When set to 'results', all proposals are returned as non-editable */
   phase: z.enum(['results']).optional(),
   /** Keyset pagination cursor from the previous page's `next`. */
