@@ -8,10 +8,10 @@ import { SearchField } from '@/components/SearchField';
 
 import { ResponsiveSelect } from './ResponsiveSelect';
 
-export interface FilterBarSelectControl {
-  items: { id: string; label: string; isDisabled?: boolean }[];
-  value: string;
-  onChange: (id: string) => void;
+export interface FilterBarSelectControl<T extends string = string> {
+  items: { id: T; label: string; isDisabled?: boolean }[];
+  value: T;
+  onChange: (id: T) => void;
   label: string;
 }
 
@@ -59,12 +59,12 @@ export const FilterBarSearch = ({
   />
 );
 
-export const FilterBarSelect = ({
+export const FilterBarSelect = <T extends string>({
   items,
   value,
   onChange,
   label,
-}: FilterBarSelectControl) => (
+}: FilterBarSelectControl<T>) => (
   <ResponsiveSelect
     selectedKey={value}
     onSelectionChange={onChange}

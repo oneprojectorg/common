@@ -2,9 +2,8 @@
 
 import { useTranslations } from '@/lib/i18n';
 
+import { FilterBar, FilterBarEnd, FilterBarSelect } from './FilterBar';
 import { ProposalCount } from './ProposalCount';
-import { ResponsiveSelect } from './ResponsiveSelect';
-import { StickyFilterBar } from './StickyFilterBar';
 
 interface Category {
   id: string;
@@ -38,14 +37,13 @@ export const ManualSelectionToolbar = ({
   const { selectedCategory, sortOrder } = filters;
 
   return (
-    <StickyFilterBar pinOffset={pinOffset}>
+    <FilterBar pinOffset={pinOffset}>
       <ProposalCount count={count} />
-      <div className="flex items-center gap-4 max-md:flex-wrap">
-        <ResponsiveSelect
-          selectedKey={selectedCategory}
-          onSelectionChange={(key) => onChange({ selectedCategory: key })}
-          aria-label={t('decisions.proposals.filterByCategoryLabel')}
-          className="min-w-40"
+      <FilterBarEnd>
+        <FilterBarSelect
+          value={selectedCategory}
+          onChange={(key) => onChange({ selectedCategory: key })}
+          label={t('decisions.proposals.filterByCategoryLabel')}
           items={[
             {
               id: 'all-categories',
@@ -57,18 +55,17 @@ export const ManualSelectionToolbar = ({
             })),
           ]}
         />
-        <ResponsiveSelect
-          selectedKey={sortOrder}
-          onSelectionChange={(key) => onChange({ sortOrder: key })}
-          aria-label={t('decisions.proposals.sortProposalsLabel')}
-          className="min-w-40"
+        <FilterBarSelect
+          value={sortOrder}
+          onChange={(key) => onChange({ sortOrder: key })}
+          label={t('decisions.proposals.sortProposalsLabel')}
           items={[
             { id: 'votes', label: t('decisions.review.sortMostVotes') },
             { id: 'newest', label: t('decisions.proposals.sortNewestOption') },
             { id: 'oldest', label: t('decisions.proposals.sortOldestOption') },
           ]}
         />
-      </div>
-    </StickyFilterBar>
+      </FilterBarEnd>
+    </FilterBar>
   );
 };
