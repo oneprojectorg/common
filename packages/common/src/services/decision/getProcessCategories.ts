@@ -7,13 +7,7 @@ import { permission } from 'access-zones';
 import { UnauthorizedError } from '../../utils';
 import { assertInstanceProfileAccess } from '../access';
 import { categoryTermUri } from './proposalTaxonomy';
-import type { DecisionInstanceData } from './schemas';
-
-export interface ProcessCategory {
-  id: string;
-  name: string;
-  termUri: string;
-}
+import type { DecisionInstanceData, ProcessCategory } from './schemas';
 
 export const getProcessCategories = async ({
   processInstanceId,

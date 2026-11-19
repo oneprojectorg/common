@@ -116,7 +116,7 @@ export type ProposalsLoaderRenderProps = {
   infiniteScrollRef: RefCallback<HTMLDivElement>;
 };
 
-const useProposalsLoaderRenderProps = (
+export const useProposalsLoaderRenderProps = (
   allProposals: Proposal[],
   total: number,
   totalProposalCount: number,

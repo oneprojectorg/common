@@ -2,7 +2,7 @@ import { db } from '@op/db/client';
 import type { User } from '@op/supabase/lib';
 
 import { getProcessCategories } from './getProcessCategories';
-import type { ProcessCategory } from './getProcessCategories';
+import type { ProcessCategory } from './schemas';
 
 export interface CategoryReviewerProfile {
   /** The scope row id (stable handle for the removable chip). */

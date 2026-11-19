@@ -3,6 +3,7 @@ export * from './definitions';
 export * from './instance';
 export * from './instanceData';
 export * from './proposalCategory';
+export * from './processCategory';
 export * from './reviews';
 export * from './proposal';
 export * from './developSources';
