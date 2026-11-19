@@ -430,15 +430,30 @@ export const getPendingRelationships = async ({
   return { records: organizations, count: organizations.length };
 };
 
-export const removeRelationship = async ({ id }: { id: string }) => {
-  // const orgUser = await getOrgAccessUser({ user, organizationId: user });
+export const removeRelationship = async ({
+  user,
+  id,
+}: {
+  user: User;
+  id: string;
+}) => {
+  const existing = await db.query.organizationRelationships.findFirst({
+    where: { id },
+  });
 
-  // TODO: ALL USERS IN THE ORG ARE ADMIN AT THE MOMENT
-  // assertAccess();
+  if (!existing) {
+    throw new NotFoundError('Relationship', id);
+  }
 
-  // if (!orgUser) {
-  // throw new UnauthorizedError('You are not a member of this organization');
-  // }
+  // Either side of a relationship may end it (cancel, decline or remove).
+  const [sourceOrgUser, targetOrgUser] = await Promise.all([
+    getOrgAccessUser({ user, organizationId: existing.sourceOrganizationId }),
+    getOrgAccessUser({ user, organizationId: existing.targetOrganizationId }),
+  ]);
+
+  if (!sourceOrgUser && !targetOrgUser) {
+    throw new UnauthorizedError('You are not a member of this organization');
+  }
 
   try {
     const relationship = await db
