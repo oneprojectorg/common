@@ -24,6 +24,7 @@ import { Link, useTranslations } from '@/lib/i18n';
 
 import { DecisionActionBar } from '../DecisionActionBar';
 import { useDecisionTranslation } from '../DecisionTranslationContext';
+import { MemberParticipationFacePile } from '../MemberParticipationFacePile';
 import { useProposalCardData } from '../ProposalCard';
 import { ProposalListSkeletonGrid } from '../ProposalListSkeleton';
 import { ProposalMasonry } from '../ProposalMasonry';
@@ -87,12 +88,24 @@ export function DevelopPreparationPage({
       title={t('develop.preparationHeading')}
       description={t('develop.preparationDescription')}
       heroActions={
-        <DecisionActionBar
-          instanceId={instance.id}
-          description={phaseAdditionalInfo}
-          label={t('aboutPhaseHeading')}
-          markup={!!translation?.additionalInfo}
-        />
+        <>
+          {sourcePhase ? (
+            <APIErrorBoundary fallbacks={{ default: () => null }}>
+              <Suspense fallback={null}>
+                <SourcePhaseSubmitters
+                  instanceId={instance.id}
+                  sourcePhaseId={sourcePhase.phaseId}
+                />
+              </Suspense>
+            </APIErrorBoundary>
+          ) : null}
+          <DecisionActionBar
+            instanceId={instance.id}
+            description={phaseAdditionalInfo}
+            label={t('aboutPhaseHeading')}
+            markup={!!translation?.additionalInfo}
+          />
+        </>
       }
     >
       {sourcePhase ? (
@@ -113,6 +126,23 @@ export function DevelopPreparationPage({
       )}
     </DevelopPageShell>
   );
+}
+
+function SourcePhaseSubmitters({
+  instanceId,
+  sourcePhaseId,
+}: {
+  instanceId: string;
+  sourcePhaseId: string;
+}) {
+  const [{ items, total }] =
+    trpc.decision.listProposalSubmitters.useSuspenseQuery(
+      { processInstanceId: instanceId, phaseId: sourcePhaseId },
+      // A client fetch registers the query's realtime channel.
+      { refetchOnMount: 'always' },
+    );
+
+  return <MemberParticipationFacePile submitters={items} total={total} />;
 }
 
 function PreparationProposals({
