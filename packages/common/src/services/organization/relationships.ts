@@ -439,6 +439,7 @@ export const removeRelationship = async ({
 }) => {
   const existing = await db.query.organizationRelationships.findFirst({
     where: { id },
+    columns: { sourceOrganizationId: true, targetOrganizationId: true },
   });
 
   if (!existing) {

@@ -5,10 +5,11 @@ import { waitUntil } from '@vercel/functions';
 import { permission, toBitField } from 'access-zones';
 import { eq } from 'drizzle-orm';
 
-import { CommonError, NotFoundError, ValidationError } from '../../utils';
+import { CommonError, NotFoundError } from '../../utils';
 import type { AccessUser } from '../access';
 import {
   assertPermissionRowScope,
+  assertRoleMatchesProfile,
   invalidateProfileUserCacheForRole,
 } from '../access/permissions';
 import {
@@ -242,10 +243,8 @@ export async function getDecisionRole({
     throw new NotFoundError('Zone', 'decisions');
   }
 
-  if (role?.profileId && role.profileId !== profileId) {
-    throw new ValidationError(
-      'profileId does not match the profile of the role',
-    );
+  if (role) {
+    assertRoleMatchesProfile({ role, profileId });
   }
 
   const rows =

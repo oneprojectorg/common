@@ -72,7 +72,6 @@ describe.concurrent('organization.removeRelationship authorization', () => {
   }) => {
     const source = await data.createOrganization({ users: { admin: 1 } });
     const target = await data.createOrganization({ users: { admin: 1 } });
-    const outsider = await data.createOrganization({ users: { admin: 1 } });
 
     const [relationship] = await db
       .insert(organizationRelationships)
@@ -94,7 +93,7 @@ describe.concurrent('organization.removeRelationship authorization', () => {
         .where(eq(organizationRelationships.id, relationship.id));
     });
 
-    return { source, target, outsider, relationship };
+    return { source, target, relationship };
   };
 
   const findRelationship = (id: string) =>
@@ -105,10 +104,8 @@ describe.concurrent('organization.removeRelationship authorization', () => {
     onTestFinished,
   }) => {
     const data = new TestOrganizationDataManager(task.id, onTestFinished);
-    const { outsider, relationship } = await createRelationship({
-      data,
-      onTestFinished,
-    });
+    const { relationship } = await createRelationship({ data, onTestFinished });
+    const outsider = await data.createOrganization({ users: { admin: 1 } });
     const caller = await createAuthenticatedCaller(outsider.adminUser.email);
 
     await expect(
@@ -130,35 +127,20 @@ describe.concurrent('organization.removeRelationship authorization', () => {
     ).rejects.toMatchObject({ cause: { name: 'NotFoundError' } });
   });
 
-  it('lets a member of the source organization remove it', async ({
-    task,
-    onTestFinished,
-  }) => {
-    const data = new TestOrganizationDataManager(task.id, onTestFinished);
-    const { source, relationship } = await createRelationship({
-      data,
-      onTestFinished,
-    });
-    const caller = await createAuthenticatedCaller(source.adminUser.email);
+  it.for(['source', 'target'] as const)(
+    'lets a member of the %s organization remove it',
+    async (side, { task, onTestFinished }) => {
+      const data = new TestOrganizationDataManager(task.id, onTestFinished);
+      const created = await createRelationship({ data, onTestFinished });
+      const caller = await createAuthenticatedCaller(
+        created[side].adminUser.email,
+      );
 
-    await caller.organization.removeRelationship({ id: relationship.id });
+      await caller.organization.removeRelationship({
+        id: created.relationship.id,
+      });
 
-    expect(await findRelationship(relationship.id)).toBeUndefined();
-  });
-
-  it('lets a member of the target organization remove it', async ({
-    task,
-    onTestFinished,
-  }) => {
-    const data = new TestOrganizationDataManager(task.id, onTestFinished);
-    const { target, relationship } = await createRelationship({
-      data,
-      onTestFinished,
-    });
-    const caller = await createAuthenticatedCaller(target.adminUser.email);
-
-    await caller.organization.removeRelationship({ id: relationship.id });
-
-    expect(await findRelationship(relationship.id)).toBeUndefined();
-  });
+      expect(await findRelationship(created.relationship.id)).toBeUndefined();
+    },
+  );
 });
