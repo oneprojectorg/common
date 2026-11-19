@@ -58,21 +58,17 @@ const DecisionsListSuspense = ({
   ownerProfileId?: string;
 }) => {
   const t = useTranslations();
-  const {
-    data: paginatedData,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-  } = trpc.decision.listDecisionProfiles.useInfiniteQuery(
-    {
-      limit: PAGE_LIMIT.md,
-      status,
-      ownerProfileId,
-    },
-    {
-      getNextPageParam: nextCursor,
-    },
-  );
+  const [{ pages }, { fetchNextPage, hasNextPage, isFetchingNextPage }] =
+    trpc.decision.listDecisionProfiles.useSuspenseInfiniteQuery(
+      {
+        limit: PAGE_LIMIT.md,
+        status,
+        ownerProfileId,
+      },
+      {
+        getNextPageParam: nextCursor,
+      },
+    );
 
   const { ref, shouldShowTrigger } = useInfiniteScroll(fetchNextPage, {
     hasNextPage,
@@ -81,8 +77,7 @@ const DecisionsListSuspense = ({
     rootMargin: '100px',
   });
 
-  const paginatedItems =
-    paginatedData?.pages.flatMap((page) => page.items) || [];
+  const paginatedItems = pages.flatMap((page) => page.items);
 
   if (paginatedItems.length === 0) {
     return (
