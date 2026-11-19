@@ -1,5 +1,5 @@
 import { db, eq } from '@op/db/client';
-import { authUsers, profiles, users } from '@op/db/schema';
+import { authUsers, profiles, smsMessages, users } from '@op/db/schema';
 
 import {
   type PhoneNumber,
@@ -119,10 +119,13 @@ export class TestPhoneAuthDataManager {
   }
 
   /**
-   * Removes the `auth.users` row holding `phone`, and the profile row that
-   * mirrors it. Does nothing when no row holds the number.
+   * Removes the `auth.users` row holding `phone`, the profile row that
+   * mirrors it, and the number's transport log rows. Does nothing more when
+   * no row holds the number.
    */
   async removeByPhone(phone: PhoneNumber): Promise<void> {
+    await db.delete(smsMessages).where(eq(smsMessages.counterpartE164, phone));
+
     const [authUser] = await db
       .select({ id: authUsers.id })
       .from(authUsers)
