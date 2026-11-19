@@ -216,3 +216,47 @@ describe.concurrent('organization.listRelationships', () => {
     ).toEqual(['funding']);
   });
 });
+
+describe.concurrent('organization.listPendingRelationships', () => {
+  it('lists pending requests sent to the caller organization', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const data = new TestOrganizationDataManager(task.id, onTestFinished);
+    const subject = await data.createOrganization({ users: { admin: 1 } });
+    const requester = await data.createOrganization({ users: { admin: 1 } });
+
+    const inserted = await db
+      .insert(organizationRelationships)
+      .values({
+        sourceOrganizationId: requester.organization.id,
+        targetOrganizationId: subject.organization.id,
+        relationshipType: 'funding',
+        pending: true,
+      })
+      .returning();
+    onTestFinished(async () => {
+      await db.delete(organizationRelationships).where(
+        inArray(
+          organizationRelationships.id,
+          inserted.map((relationship) => relationship.id),
+        ),
+      );
+    });
+
+    const caller = await createAuthenticatedCaller(subject.adminUser.email);
+    await caller.account.switchOrganization({
+      organizationId: subject.organization.id,
+    });
+    const { organizations, count } =
+      await caller.organization.listPendingRelationships();
+
+    expect(count).toBe(1);
+    expect(organizations[0]?.id).toBe(requester.organization.id);
+    expect(
+      organizations[0]?.relationships?.map(
+        (relationship) => relationship.relationshipType,
+      ),
+    ).toEqual(['fundedBy']);
+  });
+});

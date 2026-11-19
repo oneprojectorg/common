@@ -243,9 +243,11 @@ export async function getDecisionRole({
     throw new NotFoundError('Zone', 'decisions');
   }
 
-  if (role) {
-    assertRoleMatchesProfile({ role, profileId });
+  if (!role) {
+    throw new NotFoundError('Role', roleId);
   }
+
+  assertRoleMatchesProfile({ role, profileId });
 
   const rows =
     await defaultDb.query.accessRolePermissionsOnAccessZones.findMany({

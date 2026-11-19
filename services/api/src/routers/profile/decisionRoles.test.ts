@@ -9,6 +9,7 @@ import {
 } from '@op/db/seedData/accessControl';
 import { fromBitField, permission as acrudPermission } from 'access-zones';
 import { and, eq } from 'drizzle-orm';
+import { randomUUID } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 
 import profileRouter from '.';
@@ -673,6 +674,21 @@ describe.concurrent('profile.getDecisionRole authorization', () => {
       }),
     ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
   });
+
+  it('rejects an unknown role', async ({ task, onTestFinished }) => {
+    const testData = new TestProfileUserDataManager(task.id, onTestFinished);
+    const { profile, adminUser } = await testData.createProfile({
+      users: { admin: 1 },
+    });
+
+    const { session } = await createIsolatedSession(adminUser.email);
+    const caller = createCaller(await createTestContextWithSession(session));
+
+    await expect(
+      caller.getDecisionRole({ roleId: randomUUID(), profileId: profile.id }),
+    ).rejects.toMatchObject({ cause: { name: 'NotFoundError' } });
+  });
+
   it('rejects a role scoped to another profile', async ({
     task,
     onTestFinished,
