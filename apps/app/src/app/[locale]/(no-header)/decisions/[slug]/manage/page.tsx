@@ -8,7 +8,7 @@ import type { Metadata } from 'next';
 import { getTranslations } from '@/lib/i18n';
 
 import { ProcessAdminOverview } from '@/components/decisions/ProcessAdmin/ProcessAdminOverview';
-import { getViewableOverviewBody } from '@/components/decisions/ProcessAdmin/getViewableOverviewBody';
+import { hasViewableOverviewBody } from '@/components/decisions/ProcessAdmin/hasViewableOverviewBody';
 import { isProcessOpen } from '@/components/decisions/ProcessAdmin/processAdminStatus';
 import { RichTextRenderer } from '@/components/decisions/RichTextRenderer';
 
@@ -53,8 +53,10 @@ const ManageDecisionPage = async ({ params }: ManageDecisionPageProps) => {
 
   // Same server render as the public page, so admins and participants see one
   // renderer and the body is in the HTML instead of appearing after hydration.
-  const body = getViewableOverviewBody(instance.instanceData.overview?.body);
-  const aboutSlot = body ? <RichTextRenderer content={body} /> : null;
+  const body = instance.instanceData.overview?.body;
+  const aboutSlot = hasViewableOverviewBody(body) ? (
+    <RichTextRenderer content={body} />
+  ) : null;
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>

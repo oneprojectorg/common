@@ -1,26 +1,22 @@
-import { sanitizeTiptapDoc } from '@op/common/client';
 import type { JSONContent } from '@tiptap/core';
 
 /**
- * The stored overview body, ready for the viewer, or null when it holds nothing
- * to show. A body the admin typed and then cleared is saved as a doc of empty
- * blocks, so it counts as empty. A JSON doc is sanitized, because one unknown
- * node type makes TipTap blank the whole doc.
+ * Whether the stored overview body holds anything to show. A body the admin
+ * typed and then cleared is saved as a doc of empty blocks, so it counts as
+ * empty. `RichTextRenderer` sanitizes the doc itself.
  */
-export function getViewableOverviewBody(
+export function hasViewableOverviewBody(
   body: string | JSONContent | undefined,
-): string | JSONContent | null {
+): body is string | JSONContent {
   if (!body) {
-    return null;
+    return false;
   }
 
   if (typeof body === 'string') {
-    return body.replace(EMPTY_HTML_PARAGRAPH, '').trim() ? body : null;
+    return body.replace(EMPTY_HTML_PARAGRAPH, '').trim() !== '';
   }
 
-  const doc = sanitizeTiptapDoc(body);
-
-  return (doc.content ?? []).some(hasVisibleContent) ? doc : null;
+  return (body.content ?? []).some(hasVisibleContent);
 }
 
 const EMPTY_HTML_PARAGRAPH = /<p>(?:\s|&nbsp;|<br\s*\/?>)*<\/p>/g;

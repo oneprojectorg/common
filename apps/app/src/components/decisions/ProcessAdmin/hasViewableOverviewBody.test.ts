@@ -1,22 +1,22 @@
 import { describe, expect, it } from 'vitest';
 
-import { getViewableOverviewBody } from './getViewableOverviewBody';
+import { hasViewableOverviewBody } from './hasViewableOverviewBody';
 
 const doc = (content: object[]) => ({ type: 'doc', content });
 
-describe('getViewableOverviewBody', () => {
-  it('returns null for a missing body', () => {
-    expect(getViewableOverviewBody(undefined)).toBeNull();
-    expect(getViewableOverviewBody('')).toBeNull();
+describe('hasViewableOverviewBody', () => {
+  it('is false for a missing body', () => {
+    expect(hasViewableOverviewBody(undefined)).toBe(false);
+    expect(hasViewableOverviewBody('')).toBe(false);
   });
 
   it('treats a cleared doc of empty paragraphs as empty', () => {
-    expect(getViewableOverviewBody(doc([]))).toBeNull();
+    expect(hasViewableOverviewBody(doc([]))).toBe(false);
     expect(
-      getViewableOverviewBody(
+      hasViewableOverviewBody(
         doc([{ type: 'paragraph' }, { type: 'paragraph' }]),
       ),
-    ).toBeNull();
+    ).toBe(false);
   });
 
   it.each([
@@ -39,7 +39,7 @@ describe('getViewableOverviewBody', () => {
       ],
     ],
   ])('treats a doc holding only %s as empty', (_label, content) => {
-    expect(getViewableOverviewBody(doc(content))).toBeNull();
+    expect(hasViewableOverviewBody(doc(content))).toBe(false);
   });
 
   it('keeps a list with text in it', () => {
@@ -56,41 +56,44 @@ describe('getViewableOverviewBody', () => {
         ],
       },
     ]);
-    expect(getViewableOverviewBody(body)).not.toBeNull();
+    expect(hasViewableOverviewBody(body)).toBe(true);
   });
 
   it('treats an empty legacy HTML body as empty', () => {
-    expect(getViewableOverviewBody('  <p></p> ')).toBeNull();
-    expect(getViewableOverviewBody('<p><br></p><p>&nbsp;</p>')).toBeNull();
+    expect(hasViewableOverviewBody('  <p></p> ')).toBe(false);
+    expect(hasViewableOverviewBody('<p><br></p><p>&nbsp;</p>')).toBe(false);
   });
 
   it('keeps a doc with text', () => {
-    const body = doc([
-      { type: 'paragraph', content: [{ type: 'text', text: 'Hello' }] },
-    ]);
-    expect(getViewableOverviewBody(body)).toEqual(body);
+    expect(
+      hasViewableOverviewBody(
+        doc([
+          { type: 'paragraph', content: [{ type: 'text', text: 'Hello' }] },
+        ]),
+      ),
+    ).toBe(true);
   });
 
   it('keeps a doc whose only block is not a paragraph', () => {
-    expect(
-      getViewableOverviewBody(doc([{ type: 'horizontalRule' }])),
-    ).not.toBeNull();
+    expect(hasViewableOverviewBody(doc([{ type: 'horizontalRule' }]))).toBe(
+      true,
+    );
   });
 
   it('keeps a legacy HTML body with content', () => {
-    expect(getViewableOverviewBody('<p>Hello</p>')).toBe('<p>Hello</p>');
+    expect(hasViewableOverviewBody('<p>Hello</p>')).toBe(true);
   });
 
-  it('sanitizes an unknown node so the viewer does not blank the doc', () => {
-    const viewable = getViewableOverviewBody(
-      doc([
-        {
-          type: 'notARealNode',
-          content: [{ type: 'text', text: 'Kept' }],
-        },
-      ]),
-    );
-    expect(JSON.stringify(viewable)).not.toContain('notARealNode');
-    expect(JSON.stringify(viewable)).toContain('Kept');
+  it('keeps text inside an unknown node, which the renderer sanitizes', () => {
+    expect(
+      hasViewableOverviewBody(
+        doc([
+          {
+            type: 'notARealNode',
+            content: [{ type: 'text', text: 'Kept' }],
+          },
+        ]),
+      ),
+    ).toBe(true);
   });
 });
