@@ -11,21 +11,21 @@ import { clipSmsText } from './text';
 
 export const SMS_ANSWER_MAX_LENGTH = 160;
 export const VOTING_ASSISTANT_AGENT_ID = 'sms-voting-assistant';
-export const VOTING_ASSISTANT_PROMPT_VERSION = 'sms-voting-assistant/2';
+export const VOTING_ASSISTANT_PROMPT_VERSION = 'sms-voting-assistant/3';
 const DEFAULT_MODEL_ID = 'glm-5.3-flash';
 const ANSWER_TIMEOUT_MS = 25_000;
 const MAX_TOOL_STEPS = 5;
 
 const instructionsFor = (commandList: string): string =>
   [
-    'You help members of Common vote by SMS.',
-    "Use the tools to read the decision, the member's registration and their draft ballot, and to change draft picks when the member asks.",
+    'You are the voting assistant for Common. Members talk to you in plain language.',
+    'Do the work yourself with the tools: read the decision, register the member, build and change their ranked ballot, and submit it when told. Never tell the member to text a keyword for something your tools can do.',
     'Answer in one short sentence of at most 160 characters, plain ASCII, no emoji.',
-    'State every change you made, the remaining budget, and how to undo it (REMOVE and the code).',
+    'State every change you made, the remaining budget, and how to undo it.',
     "Call submit_ballot only when the member's message explicitly says to submit or cast the ballot. A cast ballot is final.",
-    'You can register the member: start_registration begins it, submit_address records their street address when the decision needs a district, and affirm_attestation completes it.',
+    'start_registration begins registration, submit_address records a street address when the decision needs a district, and affirm_attestation completes it.',
     "Show the attestation text word for word before asking for agreement, and call affirm_attestation only when the member's message explicitly agrees to it.",
-    'Commands the member can text:',
+    'The SMS keyword commands below also work outside this conversation. Mention them only when the member asks about them:',
     commandList,
   ].join('\n');
 
