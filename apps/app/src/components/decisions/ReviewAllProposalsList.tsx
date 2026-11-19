@@ -12,7 +12,14 @@ import { useTranslations } from '@/lib/i18n';
 
 import { CategoryFilterSelect } from './CategoryFilterSelect';
 import { ExportProposalsButton } from './ExportProposalsButton';
-import { FilterBar, FilterBarActions, FilterBarSelect } from './FilterBar';
+import {
+  FilterBar,
+  FilterBarActions,
+  FilterBarEnd,
+  FilterBarSearch,
+  FilterBarSelect,
+  FilterBarStart,
+} from './FilterBar';
 import {
   ProposalFilterBarSkeleton,
   ProposalListSkeleton,
@@ -196,71 +203,80 @@ function ReviewAllProposalsContent({
       aria-busy={filters.isFilterFetching || undefined}
       className="relative flex flex-col gap-6 pb-12"
     >
-      <FilterBar
-        pinOffset={pinOffset}
-        header={
+      <FilterBar pinOffset={pinOffset}>
+        <FilterBarStart>
           <ProposalsListHeader count={total} total={totalProposalCount} />
-        }
-        search={{
-          value: filters.search,
-          onChange: filters.setSearch,
-          isPending: filters.isSearchFetching,
-          label: t('decisions.proposals.searchProposalsLabel'),
-        }}
-      >
-        <CategoryFilterSelect
-          decisionSlug={decisionSlug}
-          categories={categories}
-          selectedCategory={filters.selectedCategory}
-          onSelectCategory={filters.setSelectedCategory}
-          className="min-w-40 shrink-0"
-        />
-        <FilterBarSelect
-          value={filters.reviewStatus}
-          onChange={filters.setReviewStatus}
-          label={t('decisions.review.filterByReviewStatusLabel')}
-          items={[
-            {
-              id: ALL_REVIEW_STATUSES,
-              label: t('decisions.review.allStatusesOption'),
-            },
-            {
-              id: 'unassigned',
-              label: t('decisions.review.reviewStatusUnassignedOption'),
-            },
-            { id: 'none', label: t('decisions.review.reviewStatusNoneOption') },
-            { id: 'partial', label: t('In progress') },
-            {
-              id: 'reviewed',
-              label: t('decisions.review.reviewStatusReviewedOption'),
-            },
-            {
-              id: 'outOfDate',
-              label: t('decisions.review.reviewStatusOutOfDateOption'),
-            },
-          ]}
-        />
-        <FilterBarSelect
-          label={t('decisions.proposals.sortProposalsLabel')}
-          value={filters.sortOrder}
-          onChange={filters.setSortOrder}
-          items={[
-            { id: 'newest', label: t('decisions.proposals.sortNewestOption') },
-            {
-              id: 'fewestReviews',
-              label: t('decisions.review.sortFewestReviews'),
-            },
-            { id: 'mostReviews', label: t('decisions.review.sortMostReviews') },
-          ]}
-        />
-        {canExport && exportEnabled && (
-          <FilterBarActions>
-            <ExportProposalsButton
-              processInstanceId={processInstanceId}
-              isListEmpty={totalProposalCount === 0}
-            />
-          </FilterBarActions>
-        )}
+          <FilterBarSearch
+            value={filters.search}
+            onChange={filters.setSearch}
+            isPending={filters.isSearchFetching}
+            label={t('decisions.proposals.searchProposalsLabel')}
+          />
+        </FilterBarStart>
+        <FilterBarEnd>
+          <CategoryFilterSelect
+            decisionSlug={decisionSlug}
+            categories={categories}
+            selectedCategory={filters.selectedCategory}
+            onSelectCategory={filters.setSelectedCategory}
+            className="min-w-40 shrink-0"
+          />
+          <FilterBarSelect
+            value={filters.reviewStatus}
+            onChange={filters.setReviewStatus}
+            label={t('decisions.review.filterByReviewStatusLabel')}
+            items={[
+              {
+                id: ALL_REVIEW_STATUSES,
+                label: t('decisions.review.allStatusesOption'),
+              },
+              {
+                id: 'unassigned',
+                label: t('decisions.review.reviewStatusUnassignedOption'),
+              },
+              {
+                id: 'none',
+                label: t('decisions.review.reviewStatusNoneOption'),
+              },
+              { id: 'partial', label: t('In progress') },
+              {
+                id: 'reviewed',
+                label: t('decisions.review.reviewStatusReviewedOption'),
+              },
+              {
+                id: 'outOfDate',
+                label: t('decisions.review.reviewStatusOutOfDateOption'),
+              },
+            ]}
+          />
+          <FilterBarSelect
+            label={t('decisions.proposals.sortProposalsLabel')}
+            value={filters.sortOrder}
+            onChange={filters.setSortOrder}
+            items={[
+              {
+                id: 'newest',
+                label: t('decisions.proposals.sortNewestOption'),
+              },
+              {
+                id: 'fewestReviews',
+                label: t('decisions.review.sortFewestReviews'),
+              },
+              {
+                id: 'mostReviews',
+                label: t('decisions.review.sortMostReviews'),
+              },
+            ]}
+          />
+          {canExport && exportEnabled && (
+            <FilterBarActions>
+              <ExportProposalsButton
+                processInstanceId={processInstanceId}
+                isListEmpty={totalProposalCount === 0}
+              />
+            </FilterBarActions>
+          )}
+        </FilterBarEnd>
       </FilterBar>
 
       {allProposals.length === 0 ? (

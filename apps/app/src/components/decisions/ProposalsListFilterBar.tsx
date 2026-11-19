@@ -7,8 +7,11 @@ import { useTranslations } from '@/lib/i18n';
 import { CategoryFilterSelect } from './CategoryFilterSelect';
 import {
   FilterBar,
+  FilterBarEnd,
+  FilterBarSearch,
   FilterBarSelect,
   type FilterBarSelectControl,
+  FilterBarStart,
 } from './FilterBar';
 
 export interface ProposalControls {
@@ -39,34 +42,36 @@ export const ProposalsListFilterBar = ({
   const t = useTranslations();
 
   return (
-    <FilterBar
-      pinOffset={pinOffset}
-      header={header}
-      search={{
-        value: controls.search,
-        onChange: controls.setSearch,
-        isPending: controls.isSearchPending,
-        label: t('decisions.proposals.searchProposalsLabel'),
-      }}
-    >
-      <FilterBarSelect {...leadingSelect} />
-      <CategoryFilterSelect
-        decisionSlug={controls.decisionSlug}
-        categories={controls.categories}
-        selectedCategory={controls.selectedCategory}
-        onSelectCategory={controls.setSelectedCategory}
-        className="min-w-40 shrink-0"
-      />
-      <FilterBarSelect
-        label={t('decisions.proposals.sortProposalsLabel')}
-        value={controls.sortOrder}
-        onChange={controls.setSortOrder}
-        items={[
-          { id: 'newest', label: t('decisions.proposals.sortNewestOption') },
-          { id: 'oldest', label: t('decisions.proposals.sortOldestOption') },
-        ]}
-      />
-      {children}
+    <FilterBar pinOffset={pinOffset}>
+      <FilterBarStart>
+        {header}
+        <FilterBarSearch
+          value={controls.search}
+          onChange={controls.setSearch}
+          isPending={controls.isSearchPending}
+          label={t('decisions.proposals.searchProposalsLabel')}
+        />
+      </FilterBarStart>
+      <FilterBarEnd>
+        <FilterBarSelect {...leadingSelect} />
+        <CategoryFilterSelect
+          decisionSlug={controls.decisionSlug}
+          categories={controls.categories}
+          selectedCategory={controls.selectedCategory}
+          onSelectCategory={controls.setSelectedCategory}
+          className="min-w-40 shrink-0"
+        />
+        <FilterBarSelect
+          label={t('decisions.proposals.sortProposalsLabel')}
+          value={controls.sortOrder}
+          onChange={controls.setSortOrder}
+          items={[
+            { id: 'newest', label: t('decisions.proposals.sortNewestOption') },
+            { id: 'oldest', label: t('decisions.proposals.sortOldestOption') },
+          ]}
+        />
+        {children}
+      </FilterBarEnd>
     </FilterBar>
   );
 };
