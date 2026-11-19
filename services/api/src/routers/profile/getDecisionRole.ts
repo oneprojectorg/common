@@ -13,10 +13,11 @@ export const getDecisionRoleRouter = router({
       }),
     )
     .output(decisionRoleEncoder)
-    .query(async ({ input }) => {
+    .query(async ({ ctx, input }) => {
       return getDecisionRole({
         roleId: input.roleId,
         profileId: input.profileId,
+        user: ctx.user,
       });
     }),
 });

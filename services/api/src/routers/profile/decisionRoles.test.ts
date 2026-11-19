@@ -649,3 +649,28 @@ describe.concurrent('profile.decisionRoles', () => {
     );
   });
 });
+
+describe.concurrent('profile.getDecisionRole authorization', () => {
+  const createCaller = createCallerFactory(profileRouter);
+
+  it('rejects a caller without access to the profile', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestProfileUserDataManager(task.id, onTestFinished);
+    const { profile } = await testData.createProfile({ users: { admin: 1 } });
+    const { adminUser: outsider } = await testData.createProfile({
+      users: { admin: 1 },
+    });
+
+    const { session } = await createIsolatedSession(outsider.email);
+    const caller = createCaller(await createTestContextWithSession(session));
+
+    await expect(
+      caller.getDecisionRole({
+        roleId: ROLES.MEMBER.id,
+        profileId: profile.id,
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
+  });
+});
