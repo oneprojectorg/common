@@ -64,7 +64,12 @@ describe('itemKindFor and itemRoleFor', () => {
     const message = storedModelMessageSchema.parse({
       role: 'assistant',
       content: [
-        { type: 'tool-call', toolCallId: 'c', toolName: 'get_ballot', input: {} },
+        {
+          type: 'tool-call',
+          toolCallId: 'c',
+          toolName: 'get_ballot',
+          input: {},
+        },
       ],
     });
     expect(itemKindFor(message)).toBe('tool_call');
@@ -75,7 +80,12 @@ describe('itemKindFor and itemRoleFor', () => {
     const message = storedModelMessageSchema.parse({
       role: 'tool',
       content: [
-        { type: 'tool-result', toolCallId: 'c', toolName: 'get_ballot', output: {} },
+        {
+          type: 'tool-result',
+          toolCallId: 'c',
+          toolName: 'get_ballot',
+          output: {},
+        },
       ],
     });
     expect(itemKindFor(message)).toBe('tool_output');
@@ -86,7 +96,9 @@ describe('itemKindFor and itemRoleFor', () => {
 describe('messageText', () => {
   it('returns string content as it is', () => {
     expect(
-      messageText(storedModelMessageSchema.parse({ role: 'user', content: 'hi' })),
+      messageText(
+        storedModelMessageSchema.parse({ role: 'user', content: 'hi' }),
+      ),
     ).toBe('hi');
   });
 

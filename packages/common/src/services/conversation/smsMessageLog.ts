@@ -73,8 +73,5 @@ export async function markSmsMessageStatus({
   id: string;
   status: SmsMessageStatus;
 }): Promise<void> {
-  await db
-    .update(smsMessages)
-    .set({ status })
-    .where(eq(smsMessages.id, id));
+  await db.update(smsMessages).set({ status }).where(eq(smsMessages.id, id));
 }

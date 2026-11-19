@@ -112,20 +112,22 @@ export async function appendConversationItems({
   // One multi-row insert shares a single now(), which would erase the order
   // of the run's items, so each row carries an explicit timestamp offset.
   const base = Date.now();
-  const rows = items.map(({ message, agentId, promptVersion, smsMessageId }, index) => {
-    const content = storedModelMessageSchema.parse(message);
-    return {
-      conversationId,
-      runId,
-      agentId: agentId ?? null,
-      kind: itemKindFor(content),
-      role: itemRoleFor(content),
-      content,
-      smsMessageId: smsMessageId ?? null,
-      promptVersion: promptVersion ?? null,
-      createdAt: new Date(base + index).toISOString(),
-    };
-  });
+  const rows = items.map(
+    ({ message, agentId, promptVersion, smsMessageId }, index) => {
+      const content = storedModelMessageSchema.parse(message);
+      return {
+        conversationId,
+        runId,
+        agentId: agentId ?? null,
+        kind: itemKindFor(content),
+        role: itemRoleFor(content),
+        content,
+        smsMessageId: smsMessageId ?? null,
+        promptVersion: promptVersion ?? null,
+        createdAt: new Date(base + index).toISOString(),
+      };
+    },
+  );
   return db.insert(conversationItems).values(rows).returning();
 }
 
