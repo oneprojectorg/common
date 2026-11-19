@@ -122,7 +122,7 @@ export async function listCategoryReviewerStatus({
   }));
 }
 
-/** The query of `listPhaseProposals` for the previous phase, grouped by category. */
+/** The query of `listDevelopSources` for the previous phase, grouped by category. */
 async function countSourcesByCategory({
   instance,
   user,

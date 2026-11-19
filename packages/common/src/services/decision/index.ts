@@ -119,7 +119,6 @@ export * from './listProposalMergeRecipients';
 
 export * from './getLatestSelectionForProposal';
 export * from './listProposals';
-export * from './listPhaseProposals';
 export * from './listDevelopSources';
 export * from './proposalAuthor';
 export * from './projectProposalLocation';
