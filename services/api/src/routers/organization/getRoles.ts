@@ -15,8 +15,8 @@ const outputSchema = list(
 export const getRolesRouter = router({
   getRoles: networkAuthenticatedProcedure()
     .output(outputSchema)
-    .query(async () => {
-      const result = await getRoles();
+    .query(async ({ ctx }) => {
+      const result = await getRoles({ user: ctx.user });
       return { items: result.items };
     }),
 });
