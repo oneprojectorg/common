@@ -18,29 +18,8 @@ import {
   stateTransitionHistory,
 } from '@op/db/schema';
 import { db, eq } from '@op/db/test';
-import type { Locator, Page } from '@playwright/test';
 
 import { expect, test } from '../fixtures/index.js';
-
-async function gotoUntilVisible(
-  page: Page,
-  url: string,
-  ready: Locator,
-  options?: Parameters<Page['goto']>[1],
-) {
-  const bounded = { ...options, timeout: 10_000 };
-  for (let attempt = 0; attempt < 2; attempt++) {
-    try {
-      await page.goto(url, bounded);
-      await ready.waitFor({ state: 'visible', timeout: 10_000 });
-      return;
-    } catch {
-      continue;
-    }
-  }
-  await page.goto(url, bounded).catch(() => undefined);
-  await expect(ready).toBeVisible({ timeout: 30_000 });
-}
 
 // Inlined from @op/common/client: loading it in the e2e runner breaks on
 // CJS/ESM interop.
@@ -348,12 +327,12 @@ test.describe('Out-of-date reviews — admin tags and banner', () => {
       stopOn: 'review',
     });
 
-    await gotoUntilVisible(
-      page,
+    await page.goto(
       `/en/decisions/${instance.slug}/proposal/${revised.profileId}/reviews`,
-      page.getByRole('heading', { name: 'Review Progress' }),
-      { waitUntil: 'domcontentloaded' },
     );
+    await expect(
+      page.getByRole('heading', { name: 'Review Progress' }),
+    ).toBeVisible({ timeout: 30_000 });
 
     const banner = page.getByRole('alert').filter({
       hasText: '1 of 2 reviews is out of date',
@@ -423,12 +402,12 @@ test.describe('Out-of-date reviews — admin tags and banner', () => {
     await page.getByRole('button', { name: 'Back to all reviewers' }).click();
 
     // The untouched proposal keeps a clean summary.
-    await gotoUntilVisible(
-      page,
+    await page.goto(
       `/en/decisions/${instance.slug}/proposal/${untouched.profileId}/reviews`,
-      page.getByRole('heading', { name: 'Review Progress' }),
-      { waitUntil: 'domcontentloaded' },
     );
+    await expect(
+      page.getByRole('heading', { name: 'Review Progress' }),
+    ).toBeVisible({ timeout: 30_000 });
     await expect(page.getByText('review is out of date')).toHaveCount(0);
     await expect(page.getByText('reviews out of date')).toHaveCount(0);
     await expect(page.getByText('Older version')).toHaveCount(0);
@@ -448,12 +427,10 @@ test.describe('Out-of-date reviews — admin tags and banner', () => {
       stopOn: 'voting',
     });
 
-    await gotoUntilVisible(
-      page,
-      `/en/decisions/${instance.slug}/current`,
+    await page.goto(`/en/decisions/${instance.slug}/current`);
+    await expect(
       page.getByRole('columnheader', { name: 'Overall recommendation' }),
-      { waitUntil: 'networkidle' },
-    );
+    ).toBeVisible({ timeout: 30_000 });
 
     const revisedRow = page
       .getByRole('row')
