@@ -31,16 +31,109 @@ async function gotoUntilVisible(
   const bounded = { ...options, timeout: 10_000 };
   for (let attempt = 0; attempt < 2; attempt++) {
     try {
-      await page.goto(url, bounded);
+      const response = await page.goto(url, bounded);
+      diagnostics.push(
+        `[goto attempt ${attempt}] ${url} -> ${response?.status()}`,
+      );
       await ready.waitFor({ state: 'visible', timeout: 10_000 });
       return;
-    } catch {
+    } catch (error) {
+      diagnostics.push(`[goto attempt ${attempt}] failed: ${String(error)}`);
+      if (attempt === 0) {
+        await dumpDiagnostics(page);
+      }
       continue;
     }
   }
   await page.goto(url, bounded).catch(() => undefined);
   await expect(ready).toBeVisible({ timeout: 30_000 });
 }
+
+// TEMP diagnostics for the first-attempt failure.
+const diagnostics: string[] = [];
+let diagnosticTarget: { slug: string; proposalProfileId: string } | undefined;
+
+function trpcGetUrl(path: string, input: unknown) {
+  return `http://localhost:4300/api/v1/trpc/${path}?input=${encodeURIComponent(
+    JSON.stringify({ json: input }),
+  )}`;
+}
+
+async function dumpDiagnostics(page: Page) {
+  diagnostics.push(
+    `[page text] ${(
+      await page
+        .locator('body')
+        .innerText()
+        .catch(() => '')
+    ).slice(0, 500)}`,
+  );
+  if (!diagnosticTarget) {
+    return;
+  }
+  const calls: Array<[string, unknown]> = [
+    ['decision.getDecisionBySlug', { slug: diagnosticTarget.slug }],
+    ['decision.getProposal', { profileId: diagnosticTarget.proposalProfileId }],
+    ['account.getMyAccount', undefined],
+  ];
+  for (const [path, input] of calls) {
+    const response = await page.request
+      .get(trpcGetUrl(path, input), {
+        headers: { 'x-csrf-protection': '1' },
+      })
+      .catch((error: unknown) => error);
+    if (response instanceof Error) {
+      diagnostics.push(`[trpc ${path}] request error ${String(response)}`);
+      continue;
+    }
+    if (response && typeof response === 'object' && 'status' in response) {
+      const typed = response as Awaited<ReturnType<Page['request']['get']>>;
+      diagnostics.push(
+        `[trpc ${path}] ${typed.status()} ${(await typed.text()).slice(0, 1500)}`,
+      );
+    }
+  }
+}
+
+test.beforeEach(async ({ page }, testInfo) => {
+  diagnostics.length = 0;
+  diagnosticTarget = undefined;
+  diagnostics.push(
+    `[worker ${testInfo.workerIndex} parallel ${testInfo.parallelIndex} retry ${testInfo.retry}]`,
+  );
+  page.on('pageerror', (error) => {
+    diagnostics.push(`[pageerror] ${error.stack ?? String(error)}`);
+  });
+  page.on('console', (message) => {
+    if (message.type() === 'error' || message.type() === 'warning') {
+      diagnostics.push(`[console ${message.type()}] ${message.text()}`);
+    }
+  });
+  page.on('response', async (response) => {
+    const request = response.request();
+    const isTrpc = response.url().includes('/trpc/');
+    if (
+      request.resourceType() === 'document' ||
+      (isTrpc && response.status() >= 400)
+    ) {
+      const body = isTrpc
+        ? (await response.text().catch(() => '')).slice(0, 1500)
+        : '';
+      diagnostics.push(
+        `[response ${request.resourceType()}] ${response.status()} ${response.url()} ${body}`,
+      );
+    }
+  });
+});
+
+test.afterEach(async ({}, testInfo) => {
+  const text = diagnostics.join('\n');
+  await testInfo.attach('diagnostics', {
+    body: text,
+    contentType: 'text/plain',
+  });
+  process.stderr.write(`\n=== DIAG ${testInfo.title} ===\n${text}\n`);
+});
 
 // Inlined from @op/common/client: loading it in the e2e runner breaks on
 // CJS/ESM interop.
@@ -334,6 +427,8 @@ async function seedMixedVersionReviews({
 }
 
 test.describe('Out-of-date reviews — admin tags and banner', () => {
+  test.describe.configure({ retries: 0 });
+
   test('the review summary banners the stale count and tags the stale reviewer row', async ({
     authenticatedPage: page,
     org,
@@ -348,6 +443,10 @@ test.describe('Out-of-date reviews — admin tags and banner', () => {
       stopOn: 'review',
     });
 
+    diagnosticTarget = {
+      slug: instance.slug,
+      proposalProfileId: revised.profileId,
+    };
     await gotoUntilVisible(
       page,
       `/en/decisions/${instance.slug}/proposal/${revised.profileId}/reviews`,
@@ -441,12 +540,16 @@ test.describe('Out-of-date reviews — admin tags and banner', () => {
   }, testInfo) => {
     test.setTimeout(90_000);
 
-    const { instance } = await seedMixedVersionReviews({
+    const { instance, revised } = await seedMixedVersionReviews({
       org,
       supabaseAdmin,
       testId: `mixed-version-table-${testInfo.workerIndex}-${Date.now()}`,
       stopOn: 'voting',
     });
+    diagnosticTarget = {
+      slug: instance.slug,
+      proposalProfileId: revised.profileId,
+    };
 
     await gotoUntilVisible(
       page,
