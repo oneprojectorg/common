@@ -9,6 +9,7 @@ import {
   appendConversationItems,
   ensureConversation,
   listRecentReplayMessages,
+  startNewConversation,
 } from './conversation';
 import { recordSmsMessage } from './smsMessageLog';
 
@@ -140,6 +141,36 @@ describe.concurrent('conversations service', () => {
       { role: 'user', content: 'question 3' },
       { role: 'assistant', content: 'answer 3' },
     ]);
+  });
+
+  it('given a new conversation is started for a decision, then the thread moves and the old one stays stored', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { authUserId, processInstanceId } = await seedVoter(testData);
+
+    const first = await ensureConversation({ authUserId, processInstanceId });
+    await appendConversationItems({
+      conversationId: first.id,
+      runId: randomUUID(),
+      items: [{ message: { role: 'user', content: 'old thread turn' } }],
+    });
+
+    const fresh = await startNewConversation({ authUserId, processInstanceId });
+    expect(fresh.id).not.toBe(first.id);
+
+    const reused = await ensureConversation({ authUserId, processInstanceId });
+    expect(reused.id).toBe(fresh.id);
+
+    await expect(
+      listRecentReplayMessages({ conversationId: fresh.id }),
+    ).resolves.toEqual([]);
+    await expect(
+      db.query.conversationItems.findMany({
+        where: { conversationId: first.id },
+      }),
+    ).resolves.toHaveLength(1);
   });
 
   it('given the same provider sid is recorded twice, then one row exists', async ({

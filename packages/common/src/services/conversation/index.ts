@@ -2,6 +2,7 @@ export {
   appendConversationItems,
   ensureConversation,
   listRecentReplayMessages,
+  startNewConversation,
 } from './conversation';
 export type { ConversationItemInput, ConversationScope } from './conversation';
 export {
