@@ -4,13 +4,15 @@ import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { trpc } from '@op/api/client';
 import type { DecisionAccess, InstancePhaseData } from '@op/api/encoders';
+import { type ProcessCategory, nextCursor } from '@op/common/client';
 import { Skeleton } from '@op/sense/Skeleton';
-import { Suspense } from 'react';
+import { Suspense, useMemo } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
+import { CategoryFilterSelect } from './CategoryFilterSelect';
 import { ExportProposalsButton } from './ExportProposalsButton';
-import { FilterBarActions, type FilterBarSelectControl } from './FilterBar';
+import { FilterBar, FilterBarActions, FilterBarSelect } from './FilterBar';
 import {
   ProposalFilterBarSkeleton,
   ProposalListSkeleton,
@@ -22,25 +24,21 @@ import {
 import { ProposalsListHeader } from './ProposalsFilterBarParts';
 import { NoProposalsFound } from './ProposalsGrid';
 import {
-  CurrentPhaseProposalsLoader,
   ProposalsList,
   type ProposalsLoaderRenderProps,
+  useProposalsLoaderRenderProps,
 } from './ProposalsList';
-import {
-  type ProposalControls,
-  ProposalsListFilterBar,
-} from './ProposalsListFilterBar';
 import { ProposalsLoadError } from './ProposalsLoadError';
 import {
   ProposalReviewDecorationProvider,
   useReportProposalsForReviewDecoration,
 } from './proposalReviewDecoration';
 import {
-  type ProposalFilterState,
-  useProposalFilters,
-} from './useProposalFilters';
+  type ReviewProposalFilterState,
+  useReviewProposalFilters,
+} from './useReviewProposalFilters';
 
-interface AllProposalsListProps {
+interface ReviewAllProposalsListProps {
   processInstanceId: string;
   slug: string;
   /** Decision profile slug — the per-proposal reviews link is built from it. */
@@ -53,16 +51,8 @@ interface AllProposalsListProps {
   pinOffset?: number;
 }
 
-/**
- * The review page's "All proposals" surface: the review progress table over
- * the same paginated, filtered `proposal.list` every other proposal screen
- * uses. A viewer who may not see review progress gets the plain proposals list.
- *
- * This is the whole review surface for an admin who is not also a reviewer —
- * there is no assignment queue to tab against, so the list owns its own
- * loading and error states rather than leaning on the page's.
- */
-export function AllProposalsList({
+/** Owns its loading and error states, because it is the whole review surface for an admin who is not a reviewer. */
+export function ReviewAllProposalsList({
   processInstanceId,
   slug,
   decisionSlug,
@@ -70,7 +60,7 @@ export function AllProposalsList({
   currentPhase,
   canSeeReviewProgress,
   pinOffset,
-}: AllProposalsListProps) {
+}: ReviewAllProposalsListProps) {
   if (!canSeeReviewProgress) {
     return (
       <APIErrorBoundary fallbacks={{ default: () => <ProposalsLoadError /> }}>
@@ -100,8 +90,8 @@ export function AllProposalsList({
         enabled
         canOpenReviews
       >
-        <Suspense fallback={<AllProposalsSkeleton />}>
-          <AllProposalsLoader
+        <Suspense fallback={<ReviewAllProposalsSkeleton />}>
+          <ReviewAllProposalsLoader
             processInstanceId={processInstanceId}
             decisionSlug={decisionSlug}
             canExport={Boolean(access?.admin)}
@@ -114,7 +104,7 @@ export function AllProposalsList({
   );
 }
 
-function AllProposalsSkeleton() {
+function ReviewAllProposalsSkeleton() {
   return (
     <div className="flex flex-col gap-6">
       <ProposalFilterBarSkeleton />
@@ -123,7 +113,7 @@ function AllProposalsSkeleton() {
   );
 }
 
-interface AllProposalsLoaderProps {
+interface ReviewAllProposalsLoaderProps {
   processInstanceId: string;
   decisionSlug: string;
   canExport: boolean;
@@ -131,76 +121,112 @@ interface AllProposalsLoaderProps {
   pinOffset?: number;
 }
 
-function AllProposalsLoader(props: AllProposalsLoaderProps) {
-  const filters = useProposalFilters({ instanceId: props.processInstanceId });
+function ReviewAllProposalsLoader(props: ReviewAllProposalsLoaderProps) {
+  const [{ items: categories }] = trpc.decision.getCategories.useSuspenseQuery({
+    processInstanceId: props.processInstanceId,
+  });
+  const filters = useReviewProposalFilters({
+    processInstanceId: props.processInstanceId,
+    categoryIds: useMemo(
+      () => new Set(categories.map((category) => category.id)),
+      [categories],
+    ),
+  });
+
+  const [paginatedData, query] =
+    trpc.decision.listReviewProposals.useSuspenseInfiniteQuery(
+      filters.queryParams,
+      {
+        getNextPageParam: nextCursor,
+        staleTime: 30 * 1000,
+        // A client-side fetch is what registers the invalidation channel.
+        refetchOnMount: 'always',
+      },
+    );
+
+  const allProposals = useMemo(
+    () => paginatedData.pages.flatMap((page) => page.items),
+    [paginatedData.pages],
+  );
+
+  const data = useProposalsLoaderRenderProps(
+    allProposals,
+    paginatedData.pages[0]?.total ?? 0,
+    paginatedData.pages[0]?.unfilteredTotal ?? 0,
+    query,
+  );
 
   return (
-    <CurrentPhaseProposalsLoader queryParams={filters.queryParams}>
-      {(data) => <AllProposalsContent {...props} {...data} filters={filters} />}
-    </CurrentPhaseProposalsLoader>
+    <ReviewAllProposalsContent
+      {...props}
+      {...data}
+      filters={filters}
+      categories={categories}
+    />
   );
 }
 
-function AllProposalsContent({
+function ReviewAllProposalsContent({
   processInstanceId,
   decisionSlug,
   canExport,
   opensInSheet,
   pinOffset,
   filters,
+  categories,
   allProposals,
   total,
   totalProposalCount,
   isFetchingNextPage,
   shouldShowTrigger,
   infiniteScrollRef,
-}: AllProposalsLoaderProps &
-  ProposalsLoaderRenderProps & { filters: ProposalFilterState }) {
+}: ReviewAllProposalsLoaderProps &
+  ProposalsLoaderRenderProps & {
+    filters: ReviewProposalFilterState;
+    categories: ProcessCategory[];
+  }) {
   const t = useTranslations();
-  const [{ items: categories }] = trpc.decision.getCategories.useSuspenseQuery({
-    processInstanceId,
-  });
   const exportEnabled = useFeatureFlag('export-feature') ?? false;
 
   useReportProposalsForReviewDecoration(allProposals);
-
-  const controls: ProposalControls = {
-    search: filters.search,
-    setSearch: filters.setSearch,
-    isSearchPending: filters.isSearchFetching,
-    selectedCategory: filters.selectedCategory,
-    setSelectedCategory: filters.setSelectedCategory,
-    sortOrder: filters.sortOrder,
-    setSortOrder: filters.setSortOrder,
-    categories,
-    decisionSlug,
-  };
-
-  const leadingSelect: FilterBarSelectControl = {
-    items: filters.availableFilters,
-    value: filters.proposalFilter,
-    onChange: (id) => {
-      const selected = filters.availableFilters.find((item) => item.id === id);
-      if (selected) {
-        filters.setProposalFilter(selected.id);
-      }
-    },
-    label: t('decisions.proposals.filterProposalsLabel'),
-  };
 
   return (
     <div
       aria-busy={filters.isFilterFetching || undefined}
       className="relative flex flex-col gap-6 pb-12"
     >
-      <ProposalsListFilterBar
+      <FilterBar
         pinOffset={pinOffset}
         header={
           <ProposalsListHeader count={total} total={totalProposalCount} />
         }
-        controls={controls}
-        leadingSelect={leadingSelect}
+        search={{
+          value: filters.search,
+          onChange: filters.setSearch,
+          isPending: filters.isSearchFetching,
+          label: t('decisions.proposals.searchProposalsLabel'),
+        }}
       >
+        <CategoryFilterSelect
+          decisionSlug={decisionSlug}
+          categories={categories}
+          selectedCategory={filters.selectedCategory}
+          onSelectCategory={filters.setSelectedCategory}
+          className="min-w-40 shrink-0"
+        />
+        <FilterBarSelect
+          label={t('decisions.proposals.sortProposalsLabel')}
+          value={filters.sortOrder}
+          onChange={filters.setSortOrder}
+          items={[
+            { id: 'newest', label: t('decisions.proposals.sortNewestOption') },
+            {
+              id: 'fewestReviews',
+              label: t('decisions.review.sortFewestReviews'),
+            },
+            { id: 'mostReviews', label: t('decisions.review.sortMostReviews') },
+          ]}
+        />
         {canExport && exportEnabled && (
           <FilterBarActions>
             <ExportProposalsButton
@@ -209,14 +235,14 @@ function AllProposalsContent({
             />
           </FilterBarActions>
         )}
-      </ProposalsListFilterBar>
+      </FilterBar>
 
       {allProposals.length === 0 ? (
         <NoProposalsFound
           hasFilter={filters.hasActiveFilter}
           searchQuery={filters.queryParams.search}
           onClearFilters={
-            filters.canClearFilters ? filters.clearFilters : undefined
+            filters.hasActiveFilter ? filters.clearFilters : undefined
           }
         />
       ) : (

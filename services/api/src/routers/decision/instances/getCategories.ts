@@ -1,5 +1,5 @@
 import { getProcessCategories } from '@op/common';
-import { list } from '@op/common/client';
+import { list, processCategorySchema } from '@op/common/client';
 import { z } from 'zod';
 
 import { openProcedure, router } from '../../../trpcFactory';
@@ -8,13 +8,7 @@ const getCategoriesInputSchema = z.object({
   processInstanceId: z.uuid(),
 });
 
-const processCategoryEncoder = z.object({
-  id: z.string(),
-  name: z.string(),
-  termUri: z.string(),
-});
-
-const getCategoriesOutputSchema = list(processCategoryEncoder);
+const getCategoriesOutputSchema = list(processCategorySchema);
 
 export const getCategoriesRouter = router({
   getCategories: openProcedure()

@@ -9,7 +9,6 @@ import { Suspense } from 'react';
 
 import { useTranslations } from '@/lib/i18n/routing';
 
-import { AllProposalsList } from '../AllProposalsList';
 import { DecisionActionBar } from '../DecisionActionBar';
 import { DecisionHero } from '../DecisionHero';
 import { DecisionHeroBanner } from '../DecisionHeroBanner';
@@ -18,6 +17,7 @@ import { ProposalListSkeleton } from '../ProposalListSkeleton';
 import { ProposalsList } from '../ProposalsList';
 import { ProposalsLoadError } from '../ProposalsLoadError';
 import { ReviewProgressStats } from '../Review/ReviewProgressStats';
+import { ReviewAllProposalsList } from '../ReviewAllProposalsList';
 import { ReviewersTableSection } from '../ReviewAssignments/ReviewersTableSection';
 import { ReviewAssignmentsList } from '../ReviewAssignmentsList';
 import { DEFAULT_REVIEW_TAB, useReviewTab } from './useReviewTab';
@@ -94,7 +94,7 @@ export function ReviewPage({
   );
 
   const allProposalsList = (
-    <AllProposalsList
+    <ReviewAllProposalsList
       processInstanceId={instance.id}
       slug={slug}
       decisionSlug={decisionSlug}

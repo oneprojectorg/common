@@ -5,6 +5,7 @@ export * from './money';
 export * from './services/decision/proposalDataSchema';
 export * from './services/decision/schemas/reviews';
 export * from './services/decision/schemas/developSources';
+export * from './services/decision/schemas/processCategory';
 export {
   phaseIdSchema,
   instanceRefSchema,
