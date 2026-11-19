@@ -9,3 +9,8 @@ export function getHttpStatus(error: unknown): number | undefined {
     ? error.data.httpStatus
     : undefined;
 }
+
+/** The server refuses a caller who confirmed their work with a 409. */
+export function isDevelopLockedError(error: unknown) {
+  return getHttpStatus(error) === 409;
+}

@@ -21,6 +21,7 @@ import { Skeleton } from '@op/sense/Skeleton';
 import { StatusBadge } from '@op/sense/StatusBadge';
 import { Table, TableCell, TableRowHeader } from '@op/sense/Table';
 import { cn } from '@op/sense/lib/utils';
+import { useFormatter } from 'next-intl';
 import {
   type ReactNode,
   createContext,
@@ -210,6 +211,29 @@ export function DevelopEntryTitleCell({
         {title}
       </Link>
     </TableRowHeader>
+  );
+}
+
+export function DevelopEntryCategoryCell({ entry }: { entry: Proposal }) {
+  const format = useFormatter();
+  const categories = entry.proposalData.category;
+
+  return (
+    <TableCell className="py-4">
+      {categories.length > 0 ? (
+        <span
+          dir="auto"
+          className="block truncate ltr:text-left rtl:text-right"
+        >
+          {format.list(
+            categories.map((category) => <bdi key={category}>{category}</bdi>),
+            { type: 'unit' },
+          )}
+        </span>
+      ) : (
+        <span className="text-muted-foreground">—</span>
+      )}
+    </TableCell>
   );
 }
 

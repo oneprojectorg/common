@@ -6,20 +6,16 @@ import { ProposalStatus } from '@op/api/encoders';
 import type { Proposal } from '@op/common/client';
 import { Header2 } from '@op/sense/Header';
 import { Skeleton } from '@op/sense/Skeleton';
-import {
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@op/sense/Table';
-import { useFormatter } from 'next-intl';
+import { TableBody, TableHead, TableHeader, TableRow } from '@op/sense/Table';
 import { parseAsString, useQueryState } from 'nuqs';
 import { Suspense, useEffect } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { CategoryFilterSelect } from '../CategoryFilterSelect';
+import {
+  CategoryFilterSelect,
+  CategoryFilterSkeleton,
+} from '../CategoryFilterSelect';
 import { ProposalsLoadError } from '../ProposalsLoadError';
 import { usesDistrictCategoryTerm } from '../categoryTerm';
 import { ALL_CATEGORIES } from '../proposalFilterQuery';
@@ -30,6 +26,7 @@ import {
   DevelopEntriesSearch,
   DevelopEntriesTable,
   DevelopEntryBudgetCell,
+  DevelopEntryCategoryCell,
   DevelopEntryStatusCell,
   DevelopEntryStatusCellSkeleton,
   DevelopEntryTextCellSkeleton,
@@ -295,29 +292,6 @@ function DevelopAdminEntriesTableHeader({
   );
 }
 
-export function DevelopEntryCategoryCell({ entry }: { entry: Proposal }) {
-  const format = useFormatter();
-  const categories = entry.proposalData.category;
-
-  return (
-    <TableCell className="py-4">
-      {categories.length > 0 ? (
-        <span
-          dir="auto"
-          className="block truncate ltr:text-left rtl:text-right"
-        >
-          {format.list(
-            categories.map((category) => <bdi key={category}>{category}</bdi>),
-            { type: 'unit' },
-          )}
-        </span>
-      ) : (
-        <span className="text-muted-foreground">—</span>
-      )}
-    </TableCell>
-  );
-}
-
 // An entry holds its category labels, which are the category names.
 function isEntryCategoryConfirmed({
   entry,
@@ -368,11 +342,6 @@ function DevelopAdminEntriesTableSkeleton({
       </DevelopEntriesTable>
     </div>
   );
-}
-
-// ResponsiveSelect caps its phone trigger at 12rem.
-export function CategoryFilterSkeleton() {
-  return <Skeleton aria-hidden className="h-11 w-full max-w-48 sm:w-48" />;
 }
 
 function useEntryCategoryParam() {

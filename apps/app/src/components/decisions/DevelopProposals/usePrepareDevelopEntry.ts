@@ -8,6 +8,7 @@ import { useTransition } from 'react';
 import { useRouter, useTranslations } from '@/lib/i18n';
 
 import { decisionProposalDevelopHref } from '../proposalHrefs';
+import { isDevelopLockedError } from './getHttpStatus';
 
 /**
  * Creates an entry of the develop phase from one source and opens it in the
@@ -37,11 +38,18 @@ export function usePrepareDevelopEntry({
     },
     onError: (error) => {
       logger.error('Failed to prepare a develop entry', { error });
-      toast.error(t('prepareEntryError'));
+      toast.error(
+        isDevelopLockedError(error)
+          ? t('developLockedError')
+          : t('prepareEntryError'),
+      );
     },
   });
 
   const isPreparing = createEntry.isPending || isNavigating;
+  const preparingSourceId = isPreparing
+    ? (createEntry.variables?.sourceProposalIds[0] ?? null)
+    : null;
 
   const prepare = (source: { id: string }) => {
     if (isPreparing) {
@@ -56,5 +64,5 @@ export function usePrepareDevelopEntry({
     });
   };
 
-  return { prepare };
+  return { prepare, isPreparing, preparingSourceId };
 }

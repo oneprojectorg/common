@@ -1,3 +1,5 @@
+import { Skeleton } from '@op/sense/Skeleton';
+
 import { useTranslations } from '@/lib/i18n';
 
 import { ResponsiveSelect } from './ResponsiveSelect';
@@ -48,3 +50,8 @@ export const CategoryFilterSelect = ({
     />
   );
 };
+
+// ResponsiveSelect caps its phone trigger at 12rem.
+export function CategoryFilterSkeleton() {
+  return <Skeleton aria-hidden className="h-11 w-full max-w-48 sm:w-48" />;
+}
