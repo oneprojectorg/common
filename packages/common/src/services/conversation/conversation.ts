@@ -90,6 +90,37 @@ export async function ensureConversation({
   return created;
 }
 
+export async function startNewConversation({
+  authUserId,
+  processInstanceId,
+  phoneNumberId,
+}: ConversationScope): Promise<Conversation> {
+  const profileId = await getIndividualProfileId(authUserId);
+  const [created] = await db
+    .insert(conversations)
+    .values({
+      profileId,
+      processInstanceId: processInstanceId ?? null,
+      phoneNumberId: phoneNumberId ?? null,
+    })
+    .returning();
+  if (!created) {
+    throw new NotFoundError('Conversation', profileId);
+  }
+  if (processInstanceId) {
+    const session = await ensureChatSession({
+      processInstanceId,
+      authUserId,
+      phoneNumberId,
+    });
+    await db
+      .update(decisionChatSessions)
+      .set({ conversationId: created.id })
+      .where(eq(decisionChatSessions.id, session.id));
+  }
+  return created;
+}
+
 export interface ConversationItemInput {
   message: StoredModelMessage;
   agentId?: string | null;
