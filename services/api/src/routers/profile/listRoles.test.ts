@@ -692,11 +692,22 @@ describe.concurrent('profile.listRoles authorization', () => {
       throw new Error('Failed to create member');
     }
 
+    const [profileRole] = await db
+      .insert(accessRoles)
+      .values({ name: `Profile Role ${task.id}`, profileId: profile.id })
+      .returning();
+    if (!profileRole) {
+      throw new Error('Failed to create role');
+    }
+    onTestFinished(async () => {
+      await db.delete(accessRoles).where(eq(accessRoles.id, profileRole.id));
+    });
+
     const { session } = await createIsolatedSession(member.email);
     const caller = createCaller(await createTestContextWithSession(session));
 
-    await expect(
-      caller.listRoles({ profileId: profile.id }),
-    ).resolves.toMatchObject({ items: [] });
+    const result = await caller.listRoles({ profileId: profile.id });
+
+    expect(result.items.map((role) => role.id)).toEqual([profileRole.id]);
   });
 });

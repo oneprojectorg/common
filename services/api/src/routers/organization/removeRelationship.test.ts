@@ -1,6 +1,7 @@
 import { TestOrganizationDataManager } from '@op/common/testing';
 import { db, eq } from '@op/db/client';
 import { organizationRelationships } from '@op/db/schema';
+import { randomUUID } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -115,6 +116,18 @@ describe.concurrent('organization.removeRelationship authorization', () => {
     ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
 
     expect(await findRelationship(relationship.id)).toBeDefined();
+  });
+
+  it('rejects an unknown relationship id', async ({ task, onTestFinished }) => {
+    const data = new TestOrganizationDataManager(task.id, onTestFinished);
+    const { adminUser } = await data.createOrganization({
+      users: { admin: 1 },
+    });
+    const caller = await createAuthenticatedCaller(adminUser.email);
+
+    await expect(
+      caller.organization.removeRelationship({ id: randomUUID() }),
+    ).rejects.toMatchObject({ cause: { name: 'NotFoundError' } });
   });
 
   it('lets a member of the source organization remove it', async ({
