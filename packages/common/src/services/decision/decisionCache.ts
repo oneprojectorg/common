@@ -1,6 +1,8 @@
 import { invalidate, invalidateMultiple } from '@op/cache';
 import { db } from '@op/db/client';
 
+import { getPhases } from './instancePhases';
+
 /**
  * Cache-key suffixes for everything we cache under `type: 'decision'` keyed by
  * INSTANCE id. Centralized so writers don't drift from readers: if a getter
@@ -21,8 +23,8 @@ const DECISION_CACHE_KEYS = [
 /**
  * Invalidate every cached projection of a decision instance — the instance
  * snapshot (`getInstance`), the categories list (`getProcessCategories`), the
- * participation face-pile (`listProposalSubmitters`), the results stats
- * (`getResultsStats`), and the slug-keyed overview snapshot
+ * participation face-pile of every phase (`listProposalSubmitters`), the
+ * results stats (`getResultsStats`), and the slug-keyed overview snapshot
  * (`getDecisionBySlug`). Call from any mutation that touches
  * `processInstances`, `decisionProcesses`, the linked profile, or any of this
  * instance's proposals.
@@ -38,14 +40,37 @@ export const invalidateDecisionInstance = async (instanceId: string) => {
     with: { profile: { columns: { slug: true } } },
   });
   const slug = instance?.profile?.slug;
+  const phases = instance ? await getPhases({ instance }) : [];
 
   await Promise.all([
     invalidateMultiple({
       type: 'decision',
-      paramsList: DECISION_CACHE_KEYS.map((suffix) => [instanceId, suffix]),
+      paramsList: [
+        ...DECISION_CACHE_KEYS.map((suffix) => [instanceId, suffix]),
+        ...phases.map((phase) =>
+          getProposalSubmittersCacheParams({
+            processInstanceId: instanceId,
+            phaseId: phase.phaseId,
+          }),
+        ),
+      ],
     }),
     slug
       ? invalidate({ type: 'decision', params: [slug, 'slugProfile'] })
       : Promise.resolve(),
   ]);
 };
+
+/** The current phase keeps the key it had before phases were requestable. */
+export const getProposalSubmittersCacheParams = ({
+  processInstanceId,
+  phaseId,
+}: {
+  processInstanceId: string;
+  phaseId?: string;
+}): string[] =>
+  // Versioned because the cached payload shape changed in ADR-0003; old
+  // entries expire on their own.
+  phaseId
+    ? [processInstanceId, 'submitters:v2', phaseId]
+    : [processInstanceId, 'submitters:v2'];

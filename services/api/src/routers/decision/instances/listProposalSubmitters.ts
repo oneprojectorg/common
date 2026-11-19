@@ -3,17 +3,13 @@ import {
   listProposalSubmitters,
   proposalSubmittersListSchema,
 } from '@op/common';
-import { z } from 'zod';
+import { instanceOptionalPhaseRefSchema } from '@op/common/client';
 
 import { openProcedure, router } from '../../../trpcFactory';
 
-const listProposalSubmittersInputSchema = z.object({
-  processInstanceId: z.uuid(),
-});
-
 export const listProposalSubmittersRouter = router({
   listProposalSubmitters: openProcedure()
-    .input(listProposalSubmittersInputSchema)
+    .input(instanceOptionalPhaseRefSchema)
     .output(proposalSubmittersListSchema)
     .query(({ ctx, input }) => {
       ctx.registerQueryChannels([
