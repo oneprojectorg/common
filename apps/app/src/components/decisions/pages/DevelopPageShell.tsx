@@ -6,17 +6,35 @@ import type { ReactNode } from 'react';
 
 import { type TranslateFn, useTranslations } from '@/lib/i18n';
 
-export function DevelopPageShell({ children }: { children: ReactNode }) {
+interface DevelopPageShellProps {
+  children: ReactNode;
+  /** Hero heading. Omit for the develop screen's heading. */
+  title?: string;
+  /** Hero text under the heading. Omit for the develop screen's text. */
+  description?: string;
+  /** Controls under the hero text. */
+  heroActions?: ReactNode;
+}
+
+export function DevelopPageShell({
+  children,
+  title,
+  description,
+  heroActions,
+}: DevelopPageShellProps) {
   const t = useTranslations('decisions');
 
   return (
     <div className="min-h-full">
       <section className="bg-muted px-4 pt-8 pb-7 text-center">
         <div className="mx-auto flex max-w-page flex-col items-center gap-3">
-          <Header1 className="text-primary">{t('develop.heroTitle')}</Header1>
+          <Header1 className="text-primary">
+            {title ?? t('develop.heroTitle')}
+          </Header1>
           <p className="max-w-prose text-base text-balance text-foreground">
-            {t('selectAdvancingHeading')}
+            {description ?? t('selectAdvancingHeading')}
           </p>
+          {heroActions}
         </div>
       </section>
 

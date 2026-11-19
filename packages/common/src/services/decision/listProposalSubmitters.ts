@@ -15,18 +15,19 @@ import { permission } from 'access-zones';
 import { countDistinct } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 
-import { UnauthorizedError } from '../../utils';
+import { NotFoundError, UnauthorizedError } from '../../utils';
 import { assertInstanceProfileAccess } from '../access';
+import { getProposalSubmittersCacheParams } from './decisionCache';
 import { getProposalIdsForPhase } from './getProposalsForPhase';
+import { getPhases } from './instancePhases';
+import type { InstanceOptionalPhaseRef } from './schemas/instance';
 import { PROPOSAL_SUBMITTER_FACE_PILE_MAX } from './schemas/proposal';
 
-export interface ListProposalSubmittersInput {
-  processInstanceId: string;
-}
+export type ListProposalSubmittersInput = InstanceOptionalPhaseRef;
 
 /**
  * Returns unique submitter profiles for non-draft, visible proposals
- * in the current phase of a decision instance. Includes every collaborator
+ * in the given phase of a decision instance, the current phase by default. Includes every collaborator
  * attached to a proposal's profile (creator + invitees) so collaborative
  * proposals contribute multiple faces to the participation face-pile.
  */
@@ -37,7 +38,7 @@ export const listProposalSubmitters = async ({
   input: ListProposalSubmittersInput;
   user: User | undefined;
 }) => {
-  const { processInstanceId } = input;
+  const { processInstanceId, phaseId } = input;
 
   const instance = await db.query.processInstances.findFirst({
     where: { id: processInstanceId },
@@ -62,15 +63,29 @@ export const listProposalSubmitters = async ({
     orgFallbackPermissions: { decisions: permission.READ },
   });
 
+  const otherPhaseId =
+    phaseId && phaseId !== instance.currentStateId ? phaseId : undefined;
+
+  if (otherPhaseId) {
+    const phases = await getPhases({ instance });
+    if (!phases.some((phase) => phase.phaseId === otherPhaseId)) {
+      throw new NotFoundError('Phase', otherPhaseId);
+    }
+  }
+
   // The face-pile data is viewer-independent; the READ gate stays outside the
   // cache so a hit can never bypass authorization.
   return cache({
     type: 'decision',
-    // Versioned because the cached payload shape changed in ADR-0003; old
-    // entries expire on their own.
-    params: [processInstanceId, 'submitters:v2'],
+    params: getProposalSubmittersCacheParams({
+      processInstanceId,
+      phaseId: otherPhaseId,
+    }),
     fetch: async () => {
-      const phaseProposalIds = await getProposalIdsForPhase({ instance });
+      const phaseProposalIds = await getProposalIdsForPhase({
+        instance,
+        phaseId: otherPhaseId,
+      });
 
       if (phaseProposalIds.length === 0) {
         return { items: [], total: 0 };

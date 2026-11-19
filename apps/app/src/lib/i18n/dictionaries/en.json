@@ -1685,6 +1685,10 @@
     },
     "develop": {
       "heroTitle": "Advance Proposals",
+      "preparationHeading": "Ballot Preparation",
+      "preparationDescription": "Budget delegates in each district are choosing which ideas go on the ballot and writing them up for voters.",
+      "underConsiderationStatus": "Under consideration",
+      "noPreparationProposalsTitle": "No proposals under consideration",
       "tabsLabel": "Develop views",
       "proposalsTab": "Proposals",
       "defaultEntryName": "Entries",

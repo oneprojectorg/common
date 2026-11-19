@@ -13,8 +13,10 @@ import { useCallback } from 'react';
 
 import { ProposalSheet } from './ProposalSheet/ProposalSheet';
 import { ProposalSheetProvider } from './ProposalSheet/ProposalSheetProvider';
+import { ReadOnlyProposalSheet } from './ProposalSheet/ReadOnlyProposalSheet';
 import { ReviewProgressProposalSheet } from './ProposalSheet/ReviewProgressProposalSheet';
 import { DevelopAdminPage } from './pages/DevelopAdminPage';
+import { DevelopPreparationPage } from './pages/DevelopPreparationPage';
 import { DevelopProposalsPage } from './pages/DevelopProposalsPage';
 import { FinalPhaseManualSelectionPage } from './pages/FinalPhaseManualSelectionPage';
 import { ResultsPage } from './pages/ResultsPage';
@@ -82,6 +84,15 @@ function DecisionStateRouterNew({
     [decisionSlug, slug, instanceId],
   );
 
+  let proposalSheet = <ProposalSheet />;
+  if (reviewSheetPhaseId) {
+    proposalSheet = (
+      <ReviewProgressProposalSheet phaseId={reviewSheetPhaseId} />
+    );
+  } else if (isDevelopPreparation(instance)) {
+    proposalSheet = <ReadOnlyProposalSheet />;
+  }
+
   return (
     <ProposalSheetProvider
       slug={slug}
@@ -94,11 +105,7 @@ function DecisionStateRouterNew({
         slug={slug}
         decisionSlug={decisionSlug}
       />
-      {reviewSheetPhaseId ? (
-        <ReviewProgressProposalSheet phaseId={reviewSheetPhaseId} />
-      ) : (
-        <ProposalSheet />
-      )}
+      {proposalSheet}
     </ProposalSheetProvider>
   );
 }
@@ -126,7 +133,7 @@ function DecisionPage({
     // branch must come first: without it an admin lands on the
     // review-selection screen below, which advances the previous phase's
     // proposals as they are. An admin wins over develop access; anyone else
-    // keeps the generic page.
+    // reads the proposals under consideration.
     if (currentPhase && isDevelopPhase(currentPhase) && decisionSlug) {
       if (isAdmin) {
         return (
@@ -142,6 +149,16 @@ function DecisionPage({
           />
         );
       }
+    }
+
+    if (isDevelopPreparation(instance)) {
+      return (
+        <DevelopPreparationPage
+          instance={instance}
+          slug={slug}
+          decisionSlug={decisionSlug}
+        />
+      );
     }
 
     // The current phase has an empty inbound transition awaiting selection.
@@ -228,6 +245,20 @@ function DecisionPage({
       decisionSlug={decisionSlug}
       pinOffset={DECISION_VIEW_PIN_OFFSET}
     />
+  );
+}
+
+/** A develop phase awaits its selection and the reader may not develop. */
+function isDevelopPreparation(instance: Instance): boolean {
+  const currentPhase = instance.instanceData?.phases?.find(
+    (phase) => phase.phaseId === instance.currentStateId,
+  );
+  return (
+    !instance.selectionsAreConfirmed &&
+    !!currentPhase &&
+    isDevelopPhase(currentPhase) &&
+    !instance.access?.admin &&
+    !instance.access?.developProposals
   );
 }
 

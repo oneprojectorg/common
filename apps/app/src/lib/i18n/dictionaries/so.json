@@ -1685,6 +1685,10 @@
     },
     "develop": {
       "heroTitle": "Horumari soo jeedinta",
+      "preparationHeading": "Diyaarinta Warqadda Codbixinta",
+      "preparationDescription": "Ergooyinka miisaaniyadda ee degmo kasta waxay dooranayaan fikradaha ku jiri doona warqadda codbixinta, waxayna u qorayaan codbixiyeyaasha.",
+      "underConsiderationStatus": "Lagu tixgelinayo",
+      "noPreparationProposalsTitle": "Ma jiraan soo jeedin la tixgelinayo",
       "tabsLabel": "Muuqaallada horumarinta",
       "proposalsTab": "Soo jeedinno",
       "defaultEntryName": "Gelisyo",

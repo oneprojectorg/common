@@ -29,6 +29,9 @@ vi.mock('./ProposalSheet/ProposalSheet', () => ({
 vi.mock('./ProposalSheet/ReviewProgressProposalSheet', () => ({
   ReviewProgressProposalSheet: () => null,
 }));
+vi.mock('./ProposalSheet/ReadOnlyProposalSheet', () => ({
+  ReadOnlyProposalSheet: () => null,
+}));
 vi.mock('./pages/useReviewTab', () => ({
   useReviewTab: () => ({ showsAllProposals: false }),
 }));
@@ -40,6 +43,9 @@ vi.mock('./pages/ReviewSelectionPage', () => ({
 }));
 vi.mock('./pages/DevelopProposalsPage', () => ({
   DevelopProposalsPage: () => <div>develop page</div>,
+}));
+vi.mock('./pages/DevelopPreparationPage', () => ({
+  DevelopPreparationPage: () => <div>develop preparation page</div>,
 }));
 vi.mock('./pages/DevelopAdminPage', () => ({
   DevelopAdminPage: () => <div>develop admin page</div>,
@@ -155,15 +161,37 @@ describe('DecisionStateRouter', () => {
     expect(screen.queryByText('develop admin page')).toBeNull();
   });
 
-  it('keeps the standard page for everyone else in a pending develop phase', () => {
+  it('sends a reviewer without develop access to the develop preparation page', () => {
     renderRouter({
       phases: reviewThenDevelop,
       currentStateId: 'develop',
       access: { review: true },
     });
-    expect(screen.getByText('standard page')).toBeTruthy();
+    expect(screen.getByText('develop preparation page')).toBeTruthy();
+    expect(screen.queryByText('standard page')).toBeNull();
     expect(screen.queryByText('develop page')).toBeNull();
     expect(screen.queryByText('develop admin page')).toBeNull();
+  });
+
+  it('sends a participant to the develop preparation page', () => {
+    renderRouter({
+      phases: reviewThenDevelop,
+      currentStateId: 'develop',
+      access: { submitProposals: true },
+    });
+    expect(screen.getByText('develop preparation page')).toBeTruthy();
+    expect(screen.queryByText('standard page')).toBeNull();
+  });
+
+  it('keeps the standard page for a participant once the selection is confirmed', () => {
+    renderRouter({
+      phases: reviewThenDevelop,
+      currentStateId: 'develop',
+      access: { submitProposals: true },
+      selectionsAreConfirmed: true,
+    });
+    expect(screen.getByText('standard page')).toBeTruthy();
+    expect(screen.queryByText('develop preparation page')).toBeNull();
   });
 
   it('keeps the review-selection page for an admin when the pending phase is not a develop phase', () => {

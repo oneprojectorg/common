@@ -1,5 +1,6 @@
 import {
   TestDecisionsDataManager,
+  schemaMissingPipeline,
   schemaWithoutPipeline,
 } from '@op/common/testing';
 import { db, eq } from '@op/db/client';
@@ -300,6 +301,74 @@ describe.concurrent('listProposalSubmitters', () => {
     expect(result.items).toHaveLength(1);
     expect(result.items[0]?.slug).toBe(collabProfile.slug);
     expect(result.items[0]?.avatarImage).not.toBeNull();
+  });
+
+  it('returns the submitters of an earlier phase when given its phaseId', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      processSchema: schemaMissingPipeline,
+      instanceCount: 1,
+      status: ProcessStatus.PUBLISHED,
+    });
+    const instanceId = setup.instance.instance.id;
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: instanceId,
+      proposalData: { title: `Proposal ${task.id}` },
+      status: ProposalStatus.SUBMITTED,
+    });
+
+    // Without a pipeline nothing is carried into the review phase.
+    await testData.advancePhase({
+      instanceId,
+      fromPhaseId: 'submission',
+      toPhaseId: 'review',
+    });
+
+    const currentPhase = await caller.decision.listProposalSubmitters({
+      processInstanceId: instanceId,
+    });
+    const submissionPhase = await caller.decision.listProposalSubmitters({
+      processInstanceId: instanceId,
+      phaseId: 'submission',
+    });
+    const currentPhaseAgain = await caller.decision.listProposalSubmitters({
+      processInstanceId: instanceId,
+    });
+    const currentPhaseById = await caller.decision.listProposalSubmitters({
+      processInstanceId: instanceId,
+      phaseId: 'review',
+    });
+
+    expect(currentPhase.total).toBe(0);
+    expect(submissionPhase.total).toBe(1);
+    expect(currentPhaseAgain.total).toBe(0);
+    expect(currentPhaseById.total).toBe(0);
+  });
+
+  it('rejects a phaseId the instance does not have', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      processSchema: schemaMissingPipeline,
+      instanceCount: 1,
+      status: ProcessStatus.PUBLISHED,
+    });
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    await expect(
+      caller.decision.listProposalSubmitters({
+        processInstanceId: setup.instance.instance.id,
+        phaseId: 'unknown-phase',
+      }),
+    ).rejects.toMatchObject({ cause: { statusCode: 404 } });
   });
 });
 

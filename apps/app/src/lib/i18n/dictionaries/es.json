@@ -1685,6 +1685,10 @@
     },
     "develop": {
       "heroTitle": "Avanzar propuestas",
+      "preparationHeading": "Preparación de la boleta",
+      "preparationDescription": "Los delegados de presupuesto de cada distrito están eligiendo qué ideas van en la boleta y redactándolas para los votantes.",
+      "underConsiderationStatus": "En consideración",
+      "noPreparationProposalsTitle": "No hay propuestas en consideración",
       "tabsLabel": "Vistas de desarrollo",
       "proposalsTab": "Propuestas",
       "defaultEntryName": "Entradas",
