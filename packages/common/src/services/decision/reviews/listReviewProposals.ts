@@ -23,7 +23,10 @@ import {
   type ReviewProposalSort,
   reviewProposalListSchema,
 } from '../schemas/reviews';
-import { reviewCountsByProposal } from './reviewProposalCounts';
+import {
+  hasReviewStatus,
+  reviewCountsByProposal,
+} from './reviewProposalCounts';
 
 /** The review page's All proposals tab, gated by `assertCanReadPhaseReviews`. */
 export async function listReviewProposals({
@@ -33,6 +36,7 @@ export async function listReviewProposals({
   search,
   categoryIds = [],
   sort,
+  status,
   cursor,
   limit = PAGE_LIMIT.md,
 }: ListReviewProposalsInput & { user: User }): Promise<ReviewProposalList> {
@@ -58,9 +62,18 @@ export async function listReviewProposals({
   const buildWhere: BuildWhere = (proposalsTable, cursorCondition) =>
     query.buildWhere(proposalsTable, [
       ...buildProposalFilterConditions({ proposalsTable, search, categoryIds }),
+      status === undefined
+        ? undefined
+        : hasReviewStatus({
+            proposalsTable,
+            processInstanceId,
+            phaseIds: query.phaseIds,
+            status,
+          }),
       cursorCondition,
     ]);
   const isFiltered =
+    status !== undefined ||
     buildProposalFilterConditions({
       proposalsTable: proposals,
       search,

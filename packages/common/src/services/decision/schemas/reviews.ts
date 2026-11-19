@@ -531,12 +531,22 @@ export const reviewProposalSortSchema = z.enum([
 
 export type ReviewProposalSort = z.infer<typeof reviewProposalSortSchema>;
 
-/** `categoryIds` combine as AND, so a category and a district can narrow together. */
+export const reviewProposalStatusSchema = z.enum([
+  'unassigned',
+  'none',
+  'partial',
+  'reviewed',
+  'outOfDate',
+]);
+
+export type ReviewProposalStatus = z.infer<typeof reviewProposalStatusSchema>;
+
 export const listReviewProposalsInputSchema = instanceOptionalPhaseRefSchema
   .extend({
     search: proposalSearchSchema,
     categoryIds: z.array(z.uuid()).max(10).optional(),
     sort: reviewProposalSortSchema.default('newest'),
+    status: reviewProposalStatusSchema.optional(),
   })
   .extend(paginationInput('md').shape);
 
