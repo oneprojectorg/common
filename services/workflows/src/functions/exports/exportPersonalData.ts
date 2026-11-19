@@ -1,4 +1,6 @@
 import {
+  PERSONAL_DATA_EXPORT_MAX_EXECUTION_MS,
+  PERSONAL_DATA_EXPORT_MAX_QUEUE_MS,
   collectPersonalData,
   holdActivePersonalDataExport,
   personalDataExportCacheKey,
@@ -19,6 +21,11 @@ export const exportPersonalData = inngest.createFunction(
     id: 'exportPersonalData',
     // one run per user; the request reuses a running export's id
     singleton: { key: 'event.data.userId', mode: 'skip' },
+    // A skipped request stays pending, so the slot must free up before the claim expires.
+    timeouts: {
+      start: `${PERSONAL_DATA_EXPORT_MAX_QUEUE_MS / 1000}s`,
+      finish: `${PERSONAL_DATA_EXPORT_MAX_EXECUTION_MS / 1000}s`,
+    },
   },
   { event: personalDataExportRequested.name },
   async ({ event, step }) => {
@@ -41,6 +48,12 @@ export const exportPersonalData = inngest.createFunction(
             personalDataExportFileName(),
           );
 
+          // Sent before the upload, so a cancelled run still deletes the file.
+          await step.sendEvent('schedule-expiry', {
+            name: personalDataExportFileStored.name,
+            data: { exportId, userId, fileName },
+          });
+
           // One step so the file never crosses a step boundary into Inngest state.
           const truncatedSections = await step.run(
             'collect-and-upload',
@@ -56,12 +69,6 @@ export const exportPersonalData = inngest.createFunction(
               return data.truncatedSections;
             },
           );
-
-          // Before any status write, so a failed write cannot keep the file.
-          await step.sendEvent('schedule-expiry', {
-            name: personalDataExportFileStored.name,
-            data: { exportId, userId, fileName },
-          });
 
           return { fileName, truncatedSections };
         },

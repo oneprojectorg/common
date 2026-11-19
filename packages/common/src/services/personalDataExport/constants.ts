@@ -1,8 +1,18 @@
 export const personalDataExportCacheKey = (exportId: string) =>
   `export:personalData:${exportId}`;
 
-// Matches how long the app waits on a run. Also the claim's lifetime, so a stuck run frees up.
+// How long the app waits on a run and the claim lives. The Inngest run is cancelled inside it.
 export const PERSONAL_DATA_EXPORT_MAX_RUN_MS = 30 * 60 * 1000;
+
+export const PERSONAL_DATA_EXPORT_MAX_QUEUE_MS = 5 * 60 * 1000;
+
+// Inngest lets a step in flight finish past the deadline; this is the default Vercel request limit.
+const PERSONAL_DATA_EXPORT_MAX_STEP_MS = 5 * 60 * 1000;
+
+export const PERSONAL_DATA_EXPORT_MAX_EXECUTION_MS =
+  PERSONAL_DATA_EXPORT_MAX_RUN_MS -
+  PERSONAL_DATA_EXPORT_MAX_QUEUE_MS -
+  PERSONAL_DATA_EXPORT_MAX_STEP_MS;
 
 // Names the user's export a repeat request reuses: running, or completed with a live file.
 export const personalDataExportActiveKey = (userId: string) =>
