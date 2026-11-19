@@ -661,6 +661,7 @@ export const ask: SmsCommandHandler = async (context) => {
       tools: votingAssistantTools({
         authUserId: account.authUserId,
         instanceId,
+        geocode: context.geocode,
       }),
       history,
     });

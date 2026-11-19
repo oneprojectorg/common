@@ -11,7 +11,7 @@ import { clipSmsText } from './text';
 
 export const SMS_ANSWER_MAX_LENGTH = 160;
 export const VOTING_ASSISTANT_AGENT_ID = 'sms-voting-assistant';
-export const VOTING_ASSISTANT_PROMPT_VERSION = 'sms-voting-assistant/1';
+export const VOTING_ASSISTANT_PROMPT_VERSION = 'sms-voting-assistant/2';
 const DEFAULT_MODEL_ID = 'glm-5.3-flash';
 const ANSWER_TIMEOUT_MS = 25_000;
 const MAX_TOOL_STEPS = 5;
@@ -23,7 +23,8 @@ const instructionsFor = (commandList: string): string =>
     'Answer in one short sentence of at most 160 characters, plain ASCII, no emoji.',
     'State every change you made, the remaining budget, and how to undo it (REMOVE and the code).',
     "Call submit_ballot only when the member's message explicitly says to submit or cast the ballot. A cast ballot is final.",
-    'You cannot register the member: tell them to text VOTE, their address, or AGREE as the next step requires.',
+    'You can register the member: start_registration begins it, submit_address records their street address when the decision needs a district, and affirm_attestation completes it.',
+    "Show the attestation text word for word before asking for agreement, and call affirm_attestation only when the member's message explicitly agrees to it.",
     'Commands the member can text:',
     commandList,
   ].join('\n');
