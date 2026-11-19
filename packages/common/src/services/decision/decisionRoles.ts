@@ -5,7 +5,7 @@ import { waitUntil } from '@vercel/functions';
 import { permission, toBitField } from 'access-zones';
 import { eq } from 'drizzle-orm';
 
-import { CommonError, NotFoundError } from '../../utils';
+import { CommonError, NotFoundError, ValidationError } from '../../utils';
 import type { AccessUser } from '../access';
 import {
   assertPermissionRowScope,
@@ -223,18 +223,29 @@ export async function getDecisionRole({
   profileId: string;
   user: AccessUser;
 }): Promise<DecisionRolePermissions> {
-  await assertProfileAccess({
-    user,
-    profileId,
-    permissions: { profile: permission.READ },
-  });
-
-  const zone = await defaultDb.query.accessZones.findFirst({
-    where: { name: 'decisions' },
-  });
+  const [, zone, role] = await Promise.all([
+    assertProfileAccess({
+      user,
+      profileId,
+      permissions: { profile: permission.READ },
+    }),
+    defaultDb.query.accessZones.findFirst({
+      where: { name: 'decisions' },
+    }),
+    defaultDb.query.accessRoles.findFirst({
+      where: { id: roleId },
+      columns: { profileId: true },
+    }),
+  ]);
 
   if (!zone) {
     throw new NotFoundError('Zone', 'decisions');
+  }
+
+  if (role?.profileId && role.profileId !== profileId) {
+    throw new ValidationError(
+      'profileId does not match the profile of the role',
+    );
   }
 
   const rows =

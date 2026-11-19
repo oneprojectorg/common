@@ -673,4 +673,61 @@ describe.concurrent('profile.getDecisionRole authorization', () => {
       }),
     ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
   });
+  it('rejects a role scoped to another profile', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestProfileUserDataManager(task.id, onTestFinished);
+    const { profile, adminUser } = await testData.createProfile({
+      users: { admin: 1 },
+    });
+    const { profile: otherProfile } = await testData.createProfile({
+      users: { admin: 1 },
+    });
+
+    const [otherRole] = await db
+      .insert(accessRoles)
+      .values({
+        name: `Other Profile Role ${task.id}`,
+        profileId: otherProfile.id,
+      })
+      .returning();
+    if (!otherRole) {
+      throw new Error('Failed to create role');
+    }
+    onTestFinished(async () => {
+      await db.delete(accessRoles).where(eq(accessRoles.id, otherRole.id));
+    });
+
+    const { session } = await createIsolatedSession(adminUser.email);
+    const caller = createCaller(await createTestContextWithSession(session));
+
+    await expect(
+      caller.getDecisionRole({ roleId: otherRole.id, profileId: profile.id }),
+    ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
+  });
+
+  it('lets a member of the profile read a decision role', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestProfileUserDataManager(task.id, onTestFinished);
+    const { profile, memberUsers } = await testData.createProfile({
+      users: { admin: 1, member: 1 },
+    });
+    const [member] = memberUsers;
+    if (!member) {
+      throw new Error('Failed to create member');
+    }
+
+    const { session } = await createIsolatedSession(member.email);
+    const caller = createCaller(await createTestContextWithSession(session));
+
+    await expect(
+      caller.getDecisionRole({
+        roleId: ROLES.MEMBER.id,
+        profileId: profile.id,
+      }),
+    ).resolves.toMatchObject({ read: true });
+  });
 });
