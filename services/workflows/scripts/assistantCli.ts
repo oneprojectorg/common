@@ -4,6 +4,7 @@ import {
   appendConversationItems,
   ensureConversation,
   getDecisionBySlug,
+  getGeocoder,
   listRecentReplayMessages,
   parsePhoneNumber,
   runVotingAssistant,
@@ -162,7 +163,11 @@ const main = async () => {
     const { answer, responseMessages } = await runVotingAssistant({
       question,
       commandList: SMS_COMMAND_LIST_MESSAGE,
-      tools: votingAssistantTools({ authUserId, instanceId }),
+      tools: votingAssistantTools({
+        authUserId,
+        instanceId,
+        geocode: getGeocoder(),
+      }),
       history,
     });
 
