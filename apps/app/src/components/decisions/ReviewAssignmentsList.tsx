@@ -40,7 +40,7 @@ import { useTranslations } from '@/lib/i18n';
 import { MobileViewSwitch } from './MobileViewSwitch';
 import { ProposalCount } from './ProposalCount';
 import { ProposalMasonry } from './ProposalMasonry';
-import { ProposalsViewSwitch } from './ProposalsFilterBar';
+import { ProposalsViewSwitch } from './ProposalsFilterBarParts';
 import { ResponsiveSelect } from './ResponsiveSelect';
 import { ReviewAssignmentCard } from './ReviewAssignmentCard';
 import { ReviewAssignmentsMapWithLocations } from './ReviewAssignmentsMapWithLocations';
