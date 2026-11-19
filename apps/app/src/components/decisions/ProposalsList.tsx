@@ -31,6 +31,7 @@ import {
 import { useTranslations } from '@/lib/i18n';
 
 import { ExportProposalsButton } from './ExportProposalsButton';
+import { FilterBarActions, type FilterBarSelectControl } from './FilterBar';
 import { MobileViewSwitch } from './MobileViewSwitch';
 import { ProposalBrowseCard } from './ProposalBrowseCard';
 import { ProposalCardDialogProvider } from './ProposalCardDialogContext';
@@ -40,17 +41,21 @@ import {
   ProposalListSkeletonGrid,
 } from './ProposalListSkeleton';
 import { ProposalsFeedView } from './ProposalsFeedView';
-import type {
-  ProposalControls,
-  ProposalSelectControl,
-} from './ProposalsFilterBar';
+import {
+  MyProposalsHeader,
+  ProposalsListHeader,
+  ProposalsViewSwitch,
+} from './ProposalsFilterBarParts';
 import { NoProposalsFound, ProposalsGrid } from './ProposalsGrid';
+import {
+  type ProposalControls,
+  ProposalsListFilterBar,
+} from './ProposalsListFilterBar';
 import {
   ProposalsMapView,
   ProposalsMapWithLocations,
 } from './ProposalsMapView';
-import { ProposalsStickyFilterBar } from './ProposalsStickyFilterBar';
-import { getScrollParent } from './StickyFilterBar';
+import { StickyFilterBar, getScrollParent } from './StickyFilterBar';
 import { proposalHref } from './proposalHrefs';
 import { useReportProposalsForReviewDecoration } from './proposalReviewDecoration';
 import {
@@ -568,7 +573,7 @@ const ProposalsListContent = ({
 
   // With a tab bar the select is the status axis; without one it is the only
   // control and keeps the combined filter.
-  const leadingSelect: ProposalSelectControl = tabsOwnAudience
+  const leadingSelect: FilterBarSelectControl = tabsOwnAudience
     ? {
         items: statusItems,
         value: proposalStatus,
@@ -592,39 +597,52 @@ const ProposalsListContent = ({
         label: t('decisions.proposals.filterProposalsLabel'),
       };
 
+  const customHeader = header?.(total);
+
+  const viewSwitch =
+    availableViews.length > 1 ? (
+      <ProposalsViewSwitch
+        view={{
+          value: effectiveView,
+          views: availableViews,
+          onChange: handleViewChange,
+        }}
+      />
+    ) : null;
+
   const listBody = (
     <>
       {/* Kept on an empty list too: "Not advanced" can hold what the list
           doesn't, such as proposals earlier phases left behind. */}
-      <ProposalsStickyFilterBar
-        pinOffset={pinOffset}
-        count={total}
-        total={totalProposalCount}
-        header={header?.(total)}
-        // Omitted when the phase hides proposals from non-admins.
-        controls={hideFilters ? undefined : controls}
-        leadingSelect={leadingSelect}
-        // Omitted when there is only one view to be in.
-        view={
-          availableViews.length > 1
-            ? {
-                value: effectiveView,
-                views: availableViews,
-                onChange: handleViewChange,
-              }
-            : undefined
-        }
-        exportControl={
-          canExportProposals ? (
-            <ExportProposalsButton
-              processInstanceId={queryParams.processInstanceId}
-              // The phase's unfiltered count: the export ignores the list's
-              // filters, so a filter matching nothing must not disable it.
-              isListEmpty={totalProposalCount === 0}
-            />
-          ) : null
-        }
-      />
+      {hideFilters ? (
+        <StickyFilterBar pinOffset={pinOffset}>
+          {customHeader ?? <MyProposalsHeader />}
+          {/* Kept so a `?view=` link into this phase still has a way out. */}
+          {viewSwitch}
+        </StickyFilterBar>
+      ) : (
+        <ProposalsListFilterBar
+          pinOffset={pinOffset}
+          header={
+            customHeader ?? (
+              <ProposalsListHeader count={total} total={totalProposalCount} />
+            )
+          }
+          controls={controls}
+          leadingSelect={leadingSelect}
+        >
+          {viewSwitch}
+          {canExportProposals && (
+            <FilterBarActions>
+              <ExportProposalsButton
+                processInstanceId={queryParams.processInstanceId}
+                // Unfiltered, because the export ignores the list's filters.
+                isListEmpty={totalProposalCount === 0}
+              />
+            </FilterBarActions>
+          )}
+        </ProposalsListFilterBar>
+      )}
 
       {browseViews[browseView]}
 

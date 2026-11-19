@@ -10,6 +10,7 @@ import { Suspense } from 'react';
 import { useTranslations } from '@/lib/i18n';
 
 import { ExportProposalsButton } from './ExportProposalsButton';
+import { FilterBarActions, type FilterBarSelectControl } from './FilterBar';
 import {
   ProposalFilterBarSkeleton,
   ProposalListSkeleton,
@@ -18,18 +19,18 @@ import {
   ProposalReviewProgressTable,
   ProposalReviewProgressTableSkeleton,
 } from './ProposalReviewProgressTable';
-import type {
-  ProposalControls,
-  ProposalSelectControl,
-} from './ProposalsFilterBar';
+import { ProposalsListHeader } from './ProposalsFilterBarParts';
 import { NoProposalsFound } from './ProposalsGrid';
 import {
   CurrentPhaseProposalsLoader,
   ProposalsList,
   type ProposalsLoaderRenderProps,
 } from './ProposalsList';
+import {
+  type ProposalControls,
+  ProposalsListFilterBar,
+} from './ProposalsListFilterBar';
 import { ProposalsLoadError } from './ProposalsLoadError';
-import { ProposalsStickyFilterBar } from './ProposalsStickyFilterBar';
 import {
   ProposalReviewDecorationProvider,
   useReportProposalsForReviewDecoration,
@@ -175,7 +176,7 @@ function AllProposalsContent({
     decisionSlug,
   };
 
-  const leadingSelect: ProposalSelectControl = {
+  const leadingSelect: FilterBarSelectControl = {
     items: filters.availableFilters,
     value: filters.proposalFilter,
     onChange: (id) => {
@@ -192,21 +193,23 @@ function AllProposalsContent({
       aria-busy={filters.isFilterFetching || undefined}
       className="relative flex flex-col gap-6 pb-12"
     >
-      <ProposalsStickyFilterBar
+      <ProposalsListFilterBar
         pinOffset={pinOffset}
-        count={total}
-        total={totalProposalCount}
+        header={
+          <ProposalsListHeader count={total} total={totalProposalCount} />
+        }
         controls={controls}
         leadingSelect={leadingSelect}
-        exportControl={
-          canExport && exportEnabled ? (
+      >
+        {canExport && exportEnabled && (
+          <FilterBarActions>
             <ExportProposalsButton
               processInstanceId={processInstanceId}
               isListEmpty={totalProposalCount === 0}
             />
-          ) : null
-        }
-      />
+          </FilterBarActions>
+        )}
+      </ProposalsListFilterBar>
 
       {allProposals.length === 0 ? (
         <NoProposalsFound

@@ -29,7 +29,7 @@ import { useProposalCardData } from '../ProposalCard';
 import { ProposalListSkeletonGrid } from '../ProposalListSkeleton';
 import { ProposalMasonry } from '../ProposalMasonry';
 import { useOpenProposalInSheet } from '../ProposalSheet/proposalSheetState';
-import { ProposalsListHeader } from '../ProposalsFilterBar';
+import { ProposalsListHeader } from '../ProposalsFilterBarParts';
 import { ProposalsLoadError } from '../ProposalsLoadError';
 import { getPendingSelectionSourcePhase } from '../pendingSelection';
 import { PROPOSALS_PAGE_LIMIT } from '../proposalFilterQuery';
