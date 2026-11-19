@@ -50,6 +50,21 @@ const DecisionsListSkeleton = () => (
   </div>
 );
 
+// Matches the tab bar of `AllDecisionsTabs` (line `TabsList`, `h-12`, under a
+// `border-b`, `gap-4` to the panel) so the list skeleton does not move when the
+// tabs replace it.
+const AllDecisionsSkeleton = () => (
+  <div className="flex flex-col gap-4">
+    <div className="border-b">
+      <div className="flex h-12 items-center gap-1">
+        <Skeleton className="mx-3 h-4 w-12" />
+        <Skeleton className="mx-3 h-4 w-20" />
+      </div>
+    </div>
+    <DecisionsListSkeleton />
+  </div>
+);
+
 const DecisionsListSuspense = ({
   status,
   ownerProfileId,
@@ -58,21 +73,17 @@ const DecisionsListSuspense = ({
   ownerProfileId?: string;
 }) => {
   const t = useTranslations();
-  const {
-    data: paginatedData,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-  } = trpc.decision.listDecisionProfiles.useInfiniteQuery(
-    {
-      limit: PAGE_LIMIT.md,
-      status,
-      ownerProfileId,
-    },
-    {
-      getNextPageParam: nextCursor,
-    },
-  );
+  const [{ pages }, { fetchNextPage, hasNextPage, isFetchingNextPage }] =
+    trpc.decision.listDecisionProfiles.useSuspenseInfiniteQuery(
+      {
+        limit: PAGE_LIMIT.md,
+        status,
+        ownerProfileId,
+      },
+      {
+        getNextPageParam: nextCursor,
+      },
+    );
 
   const { ref, shouldShowTrigger } = useInfiniteScroll(fetchNextPage, {
     hasNextPage,
@@ -81,8 +92,7 @@ const DecisionsListSuspense = ({
     rootMargin: '100px',
   });
 
-  const paginatedItems =
-    paginatedData?.pages.flatMap((page) => page.items) || [];
+  const paginatedItems = pages.flatMap((page) => page.items);
 
   if (paginatedItems.length === 0) {
     return (
@@ -185,7 +195,7 @@ export const AllDecisions = () => {
 
   return (
     <ErrorBoundary fallback={<div>{t('decisions.decisionsLoadError')}</div>}>
-      <Suspense fallback={<DecisionsListSkeleton />}>
+      <Suspense fallback={<AllDecisionsSkeleton />}>
         <AllDecisionsTabs key={user.currentProfile?.id} />
       </Suspense>
     </ErrorBoundary>
