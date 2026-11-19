@@ -8,6 +8,7 @@ import {
   listRecentReplayMessages,
   parsePhoneNumber,
   runVotingAssistant,
+  startNewConversation,
   toGoTruePhoneFormat,
   votingAssistantTools,
 } from '@op/common';
@@ -20,7 +21,9 @@ import { parseArgs } from 'node:util';
 import { SMS_COMMAND_LIST_MESSAGE } from '../src/functions/notifications/smsReply';
 
 const USAGE = [
-  'Usage: pnpm w:workflows assistant:cli (--phone <E.164> | --email <address>) [--decision <slug>]',
+  'Usage: pnpm w:workflows assistant:cli (--phone <E.164> | --email <address>) [--decision <slug>] [--new]',
+  '',
+  '--new starts a fresh conversation thread; the old one stays stored.',
   '',
   'A REPL for the SMS voting assistant against the local dev database.',
   'Type a question and read the answer; /quit or Ctrl-D exits.',
@@ -64,6 +67,7 @@ const main = async () => {
       phone: { type: 'string' },
       email: { type: 'string' },
       decision: { type: 'string' },
+      new: { type: 'boolean' },
       help: { type: 'boolean', short: 'h' },
     },
   });
@@ -92,10 +96,9 @@ const main = async () => {
     decisionName = decision.name;
   }
 
-  const conversation = await ensureConversation({
-    authUserId,
-    processInstanceId: instanceId,
-  });
+  const conversation = values.new
+    ? await startNewConversation({ authUserId, processInstanceId: instanceId })
+    : await ensureConversation({ authUserId, processInstanceId: instanceId });
 
   console.log(
     decisionName
