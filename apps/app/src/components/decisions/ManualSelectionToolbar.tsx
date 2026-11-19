@@ -40,7 +40,7 @@ export const ManualSelectionToolbar = ({
   return (
     <StickyFilterBar pinOffset={pinOffset}>
       <ProposalCount count={count} />
-      <div className="scrollbar-none flex items-center gap-4 max-md:-mx-4 max-md:w-screen max-md:overflow-x-scroll max-md:px-4">
+      <div className="flex items-center gap-4 max-md:flex-wrap">
         <ResponsiveSelect
           selectedKey={selectedCategory}
           onSelectionChange={(key) => onChange({ selectedCategory: key })}
