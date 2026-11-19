@@ -49,9 +49,9 @@ export const FilterBar = ({
         maxLength={SEARCH_MAX_LENGTH}
       />
     </div>
-    {/* An auto margin on the first child, not `justify-end`, because it
-        collapses when the row overflows. */}
-    <div className="-mx-4 scrollbar-none flex grow items-center gap-4 overflow-x-scroll px-4 sm:-mx-8 sm:px-8 [&>*:first-child]:ms-auto">
+    {/* Below `sm` the controls wrap onto more rows. From `sm` an auto margin on
+        the first child, not `justify-end`, because it collapses when the row overflows. */}
+    <div className="scrollbar-none flex grow flex-wrap items-center gap-4 sm:-mx-8 sm:flex-nowrap sm:overflow-x-scroll sm:px-8 sm:[&>*:first-child]:ms-auto">
       {children}
     </div>
   </StickyFilterBar>
@@ -80,7 +80,7 @@ export const FilterBarActions = ({
   children: ReactNode;
 }) => (
   <div className={cn('flex items-center gap-4', className)}>
-    <span aria-hidden className="h-6 w-px bg-border" />
+    <span aria-hidden className="hidden h-6 w-px bg-border sm:block" />
     {children}
   </div>
 );
