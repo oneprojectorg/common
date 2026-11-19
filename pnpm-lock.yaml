@@ -709,6 +709,9 @@ importers:
       '@mastra/core':
         specifier: ^1.51.0
         version: 1.51.0(@grpc/grpc-js@1.14.3)(express@5.2.1)(rxjs@7.8.1)(zod@4.6.7)
+      zod:
+        specifier: 'catalog:'
+        version: 4.6.7
     devDependencies:
       '@op/typescript-config':
         specifier: workspace:*
@@ -759,6 +762,9 @@ importers:
 
   packages/common:
     dependencies:
+      '@op/ai':
+        specifier: workspace:*
+        version: link:../ai
       '@op/analytics':
         specifier: workspace:*
         version: link:../analytics

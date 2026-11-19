@@ -73,6 +73,8 @@ import {
   moveSmsBallotPick,
   removeSmsBallotPick,
   resolveVoterAddress,
+  runVotingAssistant,
+  votingAssistantTools,
   startVoterEnrolment,
   submitSmsBallot,
   summarizeSmsBallot,
@@ -608,6 +610,62 @@ export const freeText: SmsCommandHandler = async (context) => {
         message: 'address resolved',
       });
   }
+};
+
+const SMS_ASK_USAGE_MESSAGE =
+  'Text L and your question, for example: L how do I vote?';
+
+export const ask: SmsCommandHandler = async (context) => {
+  const { step, account, body, deliver } = context;
+  const question = (body ?? '')
+    .trim()
+    .replace(/^l[.!:,]?\s*/i, '')
+    .trim();
+
+  if (!question) {
+    return deliverAll({
+      deliver,
+      stepId: 'send-ask-usage',
+      label: 'Ask usage reply',
+      bodies: [SMS_ASK_USAGE_MESSAGE],
+      message: 'ask needs a question',
+    });
+  }
+
+  const resolved = await step.run('resolve-ask-answer', async () => {
+    const pending = await findPendingVoterEnrolment({
+      authUserId: account.authUserId,
+    });
+    const instanceId =
+      pending?.processInstanceId ?? (await findBallotInstance(context));
+    const answer = await runVotingAssistant({
+      question,
+      commandList: SMS_COMMAND_LIST_MESSAGE,
+      tools: votingAssistantTools({
+        authUserId: account.authUserId,
+        instanceId,
+      }),
+    });
+    return { answer };
+  });
+
+  if (!resolved.answer) {
+    return deliverAll({
+      deliver,
+      stepId: 'send-ask-fallback',
+      label: 'Ask fallback reply',
+      bodies: [SMS_COMMAND_HELP_MESSAGE],
+      message: 'ask failed, help sent',
+    });
+  }
+
+  return deliverAll({
+    deliver,
+    stepId: 'send-ask-answer',
+    label: 'Ask answer',
+    bodies: [resolved.answer],
+    message: 'question answered',
+  });
 };
 
 export const sendSmsHelp = async (

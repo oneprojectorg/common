@@ -1,4 +1,5 @@
 import { Agent } from '@mastra/core/agent';
+import type { ToolsInput } from '@mastra/core/agent';
 
 import { resolveAIModelConfig } from './model';
 import type { AIModelConfig } from './model';
@@ -13,6 +14,7 @@ export interface CreateAIAgentOptions {
   /** Stable machine id (Mastra routes, memory, telemetry). Defaults to name. */
   id?: string;
   model: AIModelConfig;
+  tools?: ToolsInput;
 }
 
 export const createAIAgent = ({
@@ -20,11 +22,13 @@ export const createAIAgent = ({
   instructions,
   id,
   model,
+  tools,
 }: CreateAIAgentOptions): Agent =>
   new Agent({
     id: id ?? name,
     name,
     instructions,
+    ...(tools ? { tools } : {}),
     // Deferred so module-scope agents don't read env fallbacks at import time.
     model: () => resolveAIModelConfig(model),
   });
