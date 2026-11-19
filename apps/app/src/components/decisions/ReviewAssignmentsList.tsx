@@ -42,7 +42,6 @@ import { MobileViewSwitch } from './MobileViewSwitch';
 import { ProposalCount } from './ProposalCount';
 import { ProposalMasonry } from './ProposalMasonry';
 import { ProposalsViewSwitch } from './ProposalsFilterBarParts';
-import { ResponsiveSelect } from './ResponsiveSelect';
 import { ReviewAssignmentCard } from './ReviewAssignmentCard';
 import { ReviewAssignmentsMapWithLocations } from './ReviewAssignmentsMapWithLocations';
 import { REVIEW_ASSIGNMENT_VIEWS } from './proposalViews';
@@ -316,14 +315,10 @@ export function ReviewAssignmentsList({
             </APIErrorBoundary>
           </div>
           <FilterBarEnd>
-            {/* Not a FilterBarSelect: the items carry status icons. */}
-            <ResponsiveSelect
-              selectedKey={statusFilter ?? 'all'}
-              onSelectionChange={(key) =>
-                setStatusFilter(key === 'all' ? null : key)
-              }
-              aria-label={t('decisions.review.filterByStatusLabel')}
-              className="min-w-40 shrink-0"
+            <FilterBarSelect
+              value={statusFilter ?? 'all'}
+              onChange={(key) => setStatusFilter(key === 'all' ? null : key)}
+              label={t('decisions.review.filterByStatusLabel')}
               items={statusFilterItems}
             />
             <FilterBarSelect

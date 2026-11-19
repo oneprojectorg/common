@@ -31,7 +31,7 @@ export async function AssignmentsPageShell({
 
 export function AssignmentsTopRow({ children }: { children: ReactNode }) {
   return (
-    <div className="sticky top-0 z-20 flex h-15 shrink-0 items-center justify-between gap-4 border-b bg-background px-4 md:px-8">
+    <div className="sticky top-0 z-20 flex h-15 shrink-0 items-center justify-between gap-4 border-b bg-background px-4 sm:px-8">
       {children}
     </div>
   );
@@ -39,7 +39,7 @@ export function AssignmentsTopRow({ children }: { children: ReactNode }) {
 
 export function AssignmentsMain({ children }: { children: ReactNode }) {
   return (
-    <main className="mx-auto flex w-full max-w-page flex-col gap-8 px-4 pt-10 pb-18 md:px-8">
+    <main className="mx-auto flex w-full max-w-page flex-col gap-8 px-4 pt-10 pb-18 sm:px-8">
       {children}
     </main>
   );

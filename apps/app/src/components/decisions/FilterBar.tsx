@@ -6,10 +6,10 @@ import type { ReactNode } from 'react';
 
 import { SearchField } from '@/components/SearchField';
 
-import { ResponsiveSelect } from './ResponsiveSelect';
+import { ResponsiveSelect, type SelectOption } from './ResponsiveSelect';
 
 export interface FilterBarSelectControl<T extends string = string> {
-  items: { id: T; label: string; isDisabled?: boolean }[];
+  items: SelectOption<T>[];
   value: T;
   onChange: (id: T) => void;
   label: string;
