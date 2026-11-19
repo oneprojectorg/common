@@ -7,7 +7,6 @@ import type { ProcessInstance } from '@op/api/encoders';
 import { type Proposal, nextCursor } from '@op/common/client';
 import { useInfiniteScroll } from '@op/hooks';
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@op/sense/Empty';
-import { Header2 } from '@op/sense/Header';
 import { ProposalCard } from '@op/sense/ProposalCard';
 import {
   Select,
@@ -29,6 +28,7 @@ import { useProposalCardData } from '../ProposalCard';
 import { ProposalListSkeletonGrid } from '../ProposalListSkeleton';
 import { ProposalMasonry } from '../ProposalMasonry';
 import { useOpenProposalInSheet } from '../ProposalSheet/proposalSheetState';
+import { ProposalsListHeader } from '../ProposalsFilterBar';
 import { ProposalsLoadError } from '../ProposalsLoadError';
 import { getPendingSelectionSourcePhase } from '../pendingSelection';
 import { PROPOSALS_PAGE_LIMIT } from '../proposalFilterQuery';
@@ -143,6 +143,15 @@ function PreparationProposals({
         refetchOnMount: 'always',
       },
     );
+  const [unfilteredData] = trpc.decision.listProposals.useSuspenseQuery(
+    {
+      processInstanceId: instanceId,
+      phaseId: sourcePhaseId,
+      dir: 'desc',
+      limit: 1,
+    },
+    { staleTime: 30 * 1000 },
+  );
 
   const stableFetchNextPage = useCallback(() => {
     void fetchNextPage();
@@ -173,11 +182,7 @@ function PreparationProposals({
   return (
     <div className="flex flex-col gap-10">
       <div className="flex min-h-11 flex-wrap items-center justify-between gap-3">
-        <div aria-live="polite">
-          <Header2 className="text-title font-normal">
-            {t('develop.sourcesCount', { count: total })}
-          </Header2>
-        </div>
+        <ProposalsListHeader count={total} total={unfilteredData.total} />
         {currentProfileId ? (
           <Select
             items={filterItems}
