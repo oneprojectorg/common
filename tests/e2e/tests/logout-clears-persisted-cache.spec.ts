@@ -1,6 +1,6 @@
 import type { Page } from '@playwright/test';
 
-import { expect, test } from '../fixtures/index.js';
+import { createSignedInStorageState, expect, test } from '../fixtures/index.js';
 
 const OFFLINE_CACHE_KEY = 'REACT_QUERY_OFFLINE_CACHE';
 
@@ -8,6 +8,14 @@ const readOfflineCache = (page: Page) =>
   page.evaluate((key) => window.localStorage.getItem(key), OFFLINE_CACHE_KEY);
 
 test.describe('Sign-out', () => {
+  // Signing out revokes the session on the auth server. The worker's shared
+  // session must stay valid for the specs that run after this one.
+  test.use({
+    storageState: async ({ workerAuthUser }, use) => {
+      await use(await createSignedInStorageState(workerAuthUser));
+    },
+  });
+
   test('erases the persisted account and a late write does not restore it', async ({
     page,
     workerAuthUser,

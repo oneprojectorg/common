@@ -255,6 +255,37 @@ export async function authenticateAnonymously(page: Page) {
 }
 
 /**
+ * Sign the user in through a new Supabase session and return a storage state
+ * that carries it. Each call makes a session of its own.
+ */
+export async function createSignedInStorageState(user: {
+  email: string;
+  password: string;
+}): Promise<StorageState> {
+  const session = await signInViaApi(user);
+  const { cookies, storageKey, sessionJson } = buildSessionCookies(session);
+
+  return {
+    cookies,
+    origins: [
+      {
+        origin: 'http://localhost:4100',
+        localStorage: [
+          {
+            name: storageKey,
+            value: sessionJson,
+          },
+          // Answer the analytics consent prompt so it isn't sitting over
+          // the corner of every page in every other spec. Specs about the
+          // prompt itself clear this back out — see analytics-consent.spec.
+          ...analyticsConsentAnswered(),
+        ],
+      },
+    ],
+  };
+}
+
+/**
  * Extended test fixture with authenticated browser state.
  * Each worker gets a unique test account, authenticates once via API,
  * and saves session cookies to storageState for all tests to reuse.
@@ -295,29 +326,7 @@ export const test = base.extend<TestFixtures, WorkerFixtures>({
 
   workerStorageState: [
     async ({ workerAuthUser }, use) => {
-      const session = await signInViaApi(workerAuthUser);
-      const { cookies, storageKey, sessionJson } = buildSessionCookies(session);
-
-      const storageState: StorageState = {
-        cookies,
-        origins: [
-          {
-            origin: 'http://localhost:4100',
-            localStorage: [
-              {
-                name: storageKey,
-                value: sessionJson,
-              },
-              // Answer the analytics consent prompt so it isn't sitting over
-              // the corner of every page in every other spec. Specs about the
-              // prompt itself clear this back out — see analytics-consent.spec.
-              ...analyticsConsentAnswered(),
-            ],
-          },
-        ],
-      };
-
-      await use(storageState);
+      await use(await createSignedInStorageState(workerAuthUser));
     },
     { scope: 'worker' },
   ],
