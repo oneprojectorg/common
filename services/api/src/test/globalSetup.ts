@@ -132,6 +132,13 @@ export async function teardown() {
     .delete(schema.authUsers)
     .where(inArray(schema.authUsers.id, [...GLOBAL_USER_IDS]));
 
+  // `form_schemas` rows are content-addressed and therefore shared: two
+  // concurrent tests saving the same rubric get the same row, so no single
+  // test can own its deletion. `ON DELETE RESTRICT` from the stamped entities
+  // means they also outlive the reviews that referenced them. Sweep them here,
+  // once every test has released its rows.
+  await db.delete(schema.formSchemas);
+
   console.log('✅ Deseeding completed');
 
   // Check non-seeded tables are empty AFTER deseeding

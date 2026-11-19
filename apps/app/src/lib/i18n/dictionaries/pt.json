@@ -1722,5 +1722,11 @@
   "Check all that apply": "Marque todas as opções aplicáveis",
   "Reviewers select one or more options": "Os revisores selecionam uma ou mais opções",
   "Comments could not be loaded": "Não foi possível carregar os comentários",
-  "(opens in a new tab)": "(abre num novo separador)"
+  "(opens in a new tab)": "(abre num novo separador)",
+  "Clear all": "Limpar tudo",
+  "Filter": "Filtrar",
+  "Counting proposals...": "A contar propostas...",
+  "Show {count, plural, one {# proposal} other {# proposals}}": "Mostrar {count, plural, one {# proposta} other {# propostas}}",
+  "Search within proposals": "Pesquisar nas propostas",
+  "Search is not available in the review queue yet.": "A pesquisa ainda não está disponível na fila de avaliação."
 }

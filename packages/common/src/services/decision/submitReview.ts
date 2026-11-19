@@ -12,6 +12,7 @@ import { waitUntil } from '@vercel/functions';
 import { count } from 'drizzle-orm';
 
 import { CommonError, ValidationError } from '../../utils';
+import { ensurePhaseRubricHead } from '../formSchemas/ensurePhaseRubricHead';
 import { getRubricScoringInfo } from './getRubricScoringInfo';
 import { getSubmittedReviewScore } from './listProposalsWithReviewAggregates';
 import {
@@ -59,12 +60,22 @@ export async function submitReview({
   const submittedAt = new Date().toISOString();
 
   const review = await db.transaction(async (tx) => {
+    // Stamp the rubric version the answers were validated against, minting the
+    // lineage root on first use. Inside the transaction so a submitted review
+    // can never exist without the schema it needs to be read back.
+    const formSchemaId = await ensurePhaseRubricHead(
+      context.instance,
+      context.assignment.phaseId,
+      tx,
+    );
+
     const [submittedReview] = await tx
       .insert(proposalReviews)
       .values({
         assignmentId,
         state: ProposalReviewState.SUBMITTED,
         reviewData,
+        formSchemaId,
         overallComment: overallComment ?? null,
         submittedAt,
       })
@@ -73,6 +84,7 @@ export async function submitReview({
         set: {
           state: ProposalReviewState.SUBMITTED,
           reviewData,
+          formSchemaId,
           overallComment: overallComment ?? null,
           submittedAt,
         },

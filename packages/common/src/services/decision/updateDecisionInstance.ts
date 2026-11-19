@@ -13,7 +13,12 @@ import { waitUntil } from '@vercel/functions';
 import { permission } from 'access-zones';
 
 import { CommonError, NotFoundError, UnauthorizedError } from '../../utils';
-import { assertProfileAccess, assertProfileAdmin } from '../assert';
+import {
+  assertProfileAccess,
+  assertProfileAdmin,
+  assertUserByAuthId,
+} from '../assert';
+import { createFormSchemaVersion } from '../formSchemas/createFormSchemaVersion';
 import { generateUniqueProfileSlug } from '../profile/utils';
 import { createTransitionsForProcess } from './createTransitionsForProcess';
 import { ensureProposalTaxonomyTerms } from './proposalTaxonomy';
@@ -142,6 +147,16 @@ export const updateDecisionInstance = async ({
     updateData.stewardProfileId = stewardProfileId;
   }
 
+  // Rubric saves that need a `form_schemas` child, collected while the new
+  // `instanceData` is assembled and resolved to ids just below — the version
+  // row has to exist before the pointer that names it is persisted.
+  const rubricHeadMoves: Array<{
+    level: 'phase' | 'instance';
+    phaseId?: string;
+    schema: RubricTemplateSchema;
+    parentId: string | null;
+  }> = [];
+
   // Apply config, overview, phase overrides, and/or template updates to existing instanceData
   const hasConfigUpdate = config !== undefined;
   const hasOverviewUpdate = overview !== undefined;
@@ -245,6 +260,23 @@ export const updateDecisionInstance = async ({
         // `null` clears the phase rubric (falls back to the instance-level template).
         if (phase.rubricTemplate === null) {
           delete merged.rubricTemplate;
+          delete merged.rubricFormSchemaId;
+        } else if (phase.rubricTemplate != null) {
+          // A saved rubric becomes a child of the version currently in force
+          // and the phase pointer moves to it. The inline copy above is still
+          // written (dual write) until every read path goes through the
+          // pointer.
+          //
+          // The optimistic parent check goes here: the client would send the
+          // head it edited, and a mismatch with `existing?.rubricFormSchemaId`
+          // would reject the save as a concurrent edit rather than branching
+          // the lineage silently.
+          rubricHeadMoves.push({
+            level: 'phase',
+            phaseId: phase.phaseId,
+            schema: phase.rubricTemplate,
+            parentId: existing?.rubricFormSchemaId ?? null,
+          });
         }
         // Same for the headline — `null` clears it, and a legacy `''` on the
         // stored phase clears with it.
@@ -269,6 +301,17 @@ export const updateDecisionInstance = async ({
         ...updatedInstanceData,
         rubricTemplate,
       } as DecisionInstanceData;
+
+      if (rubricTemplate != null) {
+        // Same head-move rule as the phase branch above; the optimistic parent
+        // check would compare the client's head with
+        // `existingInstanceData.rubricFormSchemaId`.
+        rubricHeadMoves.push({
+          level: 'instance',
+          schema: rubricTemplate,
+          parentId: existingInstanceData.rubricFormSchemaId ?? null,
+        });
+      }
     }
 
     updateData.instanceData = updatedInstanceData;
@@ -295,8 +338,40 @@ export const updateDecisionInstance = async ({
     status === ProcessStatus.PUBLISHED &&
     existingInstance.status === ProcessStatus.DRAFT;
 
+  // The saving admin's profile, recorded on each new `form_schemas` row.
+  // Only fetched when there is a version to create.
+  const authorProfileId =
+    rubricHeadMoves.length > 0
+      ? ((await assertUserByAuthId(user.id)).profileId ?? null)
+      : null;
+
   // Use a transaction for updating the instance and transitions together
   await db.transaction(async (tx) => {
+    // Create the rubric versions first and point the instance data at them, so
+    // the row and the pointer that names it commit together.
+    for (const move of rubricHeadMoves) {
+      const version = await createFormSchemaVersion(
+        {
+          schema: move.schema as unknown as Record<string, unknown>,
+          parentId: move.parentId,
+          createdByProfileId: authorProfileId,
+        },
+        tx,
+      );
+
+      const nextInstanceData = updateData.instanceData as DecisionInstanceData;
+      if (move.level === 'instance') {
+        nextInstanceData.rubricFormSchemaId = version.id;
+      } else {
+        const phase = nextInstanceData.phases?.find(
+          (candidate) => candidate.phaseId === move.phaseId,
+        );
+        if (phase) {
+          phase.rubricFormSchemaId = version.id;
+        }
+      }
+    }
+
     // Update the instance
     const [updatedInstance] = await tx
       .update(processInstances)

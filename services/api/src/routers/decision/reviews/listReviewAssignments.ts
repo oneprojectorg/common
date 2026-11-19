@@ -5,6 +5,7 @@ import {
   listReviewAssignments,
   reviewAssignmentListSchema,
 } from '@op/common';
+import { reviewAssignmentFieldFiltersSchema } from '@op/common/client';
 import { ProposalReviewAssignmentStatus } from '@op/db/schema';
 import { z } from 'zod';
 
@@ -21,6 +22,12 @@ export const listReviewAssignmentsRouter = router({
           /** Limits results to one proposal's assignments. */
           proposalProfileId: z.uuid().optional(),
           sort: z.enum(REVIEW_ASSIGNMENT_SORTS).optional(),
+          /**
+           * Rubric answer filters on each assignment's own review: criterion
+           * key to option ids, ANY-OF within a key and AND across keys. An
+           * assignment with no review row matches no filter.
+           */
+          fieldFilters: reviewAssignmentFieldFiltersSchema.optional(),
         })
         .merge(paginationSchema),
     )
@@ -36,6 +43,7 @@ export const listReviewAssignmentsRouter = router({
         status: input.status,
         categoryIds: input.categoryIds,
         proposalProfileId: input.proposalProfileId,
+        fieldFilters: input.fieldFilters,
         sort: input.sort,
         cursor: input.cursor,
         limit: input.limit,

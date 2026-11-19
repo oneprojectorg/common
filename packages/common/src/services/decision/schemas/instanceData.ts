@@ -44,6 +44,13 @@ export interface PhaseInstanceData {
   settings?: Record<string, unknown>;
   /** Phase-specific rubric; resolve via `getPhaseRubricTemplate`, never directly. */
   rubricTemplate?: RubricTemplateSchema;
+  /**
+   * Head of this phase's rubric lineage in `form_schemas`. The pointer, not
+   * the inline copy, is what reviews are stamped against; `rubricTemplate`
+   * stays as a dual-written copy until every read path goes through the
+   * pointer. Resolve via `resolvePhaseRubricTemplate`, never directly.
+   */
+  rubricFormSchemaId?: string;
 }
 
 /** Public-facing overview content (headline, short description, rich text body) */
@@ -93,6 +100,18 @@ export interface DecisionInstanceData {
   proposalTemplate?: ProposalTemplateSchema;
   /** Rubric template (JSON Schema defining evaluation criteria) */
   rubricTemplate?: RubricTemplateSchema;
+  /**
+   * Head of the instance-level rubric lineage in `form_schemas` — the
+   * fallback for a phase with no rubric of its own. Dual-written with
+   * `rubricTemplate`.
+   */
+  rubricFormSchemaId?: string;
+  /**
+   * Head of the proposal-template lineage in `form_schemas`. Declared so the
+   * shape is settled; nothing reads or writes it yet — proposals still resolve
+   * through `proposalTemplate`.
+   */
+  proposalFormSchemaId?: string;
 }
 
 export interface PhaseOverride {

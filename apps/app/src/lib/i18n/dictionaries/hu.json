@@ -1722,5 +1722,11 @@
   "Check all that apply": "Jelöld be az összes megfelelőt",
   "Reviewers select one or more options": "Az értékelők egy vagy több lehetőséget választanak",
   "Comments could not be loaded": "A hozzászólásokat nem sikerült betölteni",
-  "(opens in a new tab)": "(új lapon nyílik meg)"
+  "(opens in a new tab)": "(új lapon nyílik meg)",
+  "Clear all": "Összes törlése",
+  "Filter": "Szűrés",
+  "Counting proposals...": "Javaslatok számolása...",
+  "Show {count, plural, one {# proposal} other {# proposals}}": "{count, plural, one {# javaslat} other {# javaslat}} megjelenítése",
+  "Search within proposals": "Keresés a javaslatok között",
+  "Search is not available in the review queue yet.": "A keresés még nem érhető el az értékelési listában."
 }

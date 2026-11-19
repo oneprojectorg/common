@@ -409,6 +409,33 @@ describe.concurrent('per-phase rubric templates', () => {
     });
     expect(result.state).toBe(ProposalReviewState.SUBMITTED);
     expect(result.reviewData.answers).toEqual({ viability: 2 });
+
+    // The stamp is the PHASE's rubric, and the lazily minted head lands on the
+    // phase rather than on the instance — the phase owns the rubric here, so a
+    // pointer written at the instance level would name the wrong schema.
+    const review = await db.query.proposalReviews.findFirst({
+      where: { assignmentId: scenario.assignment.id },
+    });
+    expect(review?.formSchemaId).toBeTruthy();
+
+    const version = await db.query.formSchemas.findFirst({
+      where: { id: review!.formSchemaId! },
+    });
+    expect(version?.schema).toEqual(feasibilityRubric);
+
+    const instanceRow = await db.query.processInstances.findFirst({
+      where: { id: context.instance.instance.id },
+    });
+    const instanceData = instanceRow!.instanceData as {
+      rubricFormSchemaId?: string;
+      phases: Array<{ phaseId: string; rubricFormSchemaId?: string }>;
+    };
+    const feasibility = instanceData.phases.find(
+      (phase) => phase.phaseId === FEASIBILITY_PHASE,
+    );
+
+    expect(feasibility?.rubricFormSchemaId).toBe(review!.formSchemaId);
+    expect(instanceData.rubricFormSchemaId).toBeUndefined();
   });
 
   it('validates edits of a submitted review against the assignment-phase rubric', async ({

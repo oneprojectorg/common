@@ -525,6 +525,37 @@ export const relations = defineRelations(schema, (r) => ({
       to: r.proposalReviewAssignments.id,
       optional: false,
     }),
+    // The rubric version the answers were written against. Optional: rows
+    // that predate the stamp carry NULL.
+    formSchema: r.one.formSchemas({
+      from: r.proposalReviews.formSchemaId,
+      to: r.formSchemas.id,
+    }),
+  },
+
+  /**
+   * Form schema version relations.
+   *
+   * A lineage is a parent chain, so `parent` is a self-relation and
+   * `children` its inverse. `createdBy` is nullable (the author's profile can
+   * be removed without taking the version with it).
+   */
+  formSchemas: {
+    parent: r.one.formSchemas({
+      from: r.formSchemas.parentId,
+      to: r.formSchemas.id,
+      alias: 'formSchema_parent',
+    }),
+    children: r.many.formSchemas({
+      from: r.formSchemas.id,
+      to: r.formSchemas.parentId,
+      alias: 'formSchema_children',
+    }),
+    createdBy: r.one.profiles({
+      from: r.formSchemas.createdByProfileId,
+      to: r.profiles.id,
+      alias: 'formSchema_createdBy',
+    }),
   },
 
   // Category reviewer scope relations (all FKs NOT NULL).

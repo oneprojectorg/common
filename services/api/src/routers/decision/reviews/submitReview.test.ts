@@ -169,6 +169,47 @@ describe.concurrent('submitReview', () => {
     });
   });
 
+  it('stamps the rubric version the answers were validated against', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const created = await createAssignmentWithRubric(testData);
+
+    const reviewerCaller = await createAuthenticatedCaller(
+      created.reviewer.email,
+    );
+    await reviewerCaller.decision.submitReview({
+      assignmentId: created.assignment.id,
+      reviewData: { answers: { impact: 3 }, rationales: {} },
+    });
+
+    const review = await db.query.proposalReviews.findFirst({
+      where: { assignmentId: created.assignment.id },
+    });
+
+    expect(review?.formSchemaId).toBeTruthy();
+
+    // The fixture writes the inline rubric only, so this is also the lazy
+    // mint: the stamped version holds that rubric, and the instance now
+    // points at it as the lineage head.
+    const version = await db.query.formSchemas.findFirst({
+      where: { id: review!.formSchemaId! },
+    });
+
+    expect(version?.parentId).toBeNull();
+    expect(version?.schema).toEqual(rubricTemplate);
+
+    const instance = await db.query.processInstances.findFirst({
+      where: { id: created.context.instance.instance.id },
+    });
+    const instanceData = instance?.instanceData as {
+      rubricFormSchemaId?: string;
+    };
+
+    expect(instanceData.rubricFormSchemaId).toBe(review!.formSchemaId);
+  });
+
   it('accepts submissions with empty rationales', async ({
     task,
     onTestFinished,

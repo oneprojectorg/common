@@ -10,6 +10,7 @@ import type { User } from '@op/supabase/lib';
 import { NotFoundError, UnauthorizedError, ValidationError } from '../../utils';
 import { type AccessUser, getProfileAccessRoles } from '../access';
 import { assertUserByAuthId } from '../assert';
+import { resolvePhaseRubricTemplate } from '../formSchemas/resolvePhaseRubricTemplate';
 import { getInstance } from './getInstance';
 import type { DecisionRolePermissions } from './permissions';
 import { type ProposalData, parseProposalData } from './proposalDataSchema';
@@ -17,7 +18,6 @@ import type { DecisionInstanceData } from './schemas/instanceData';
 import { isInstanceCurrentPhase } from './utils/instance';
 import { isPhaseAtOrBefore } from './utils/phaseOrder';
 import { getPhaseReviewSettings } from './utils/phaseSettings';
-import { getPhaseRubricTemplate } from './utils/phaseTemplates';
 
 /** Shared `with` config for review assignment queries. */
 export const reviewAssignmentWithConfig = {
@@ -353,17 +353,20 @@ export async function assertReviewAssignmentContext({
     );
   }
 
+  const rubricTemplate = await resolvePhaseRubricTemplate(
+    instance.instanceData,
+    assignment.phaseId,
+  );
+
   return {
     assignment,
     instance,
     review: assignment.reviews[0] ?? null,
     revisionRequest: getActiveRevisionRequest(assignment.requests),
     // Reviews are validated and rendered against the rubric of the phase
-    // their assignment belongs to.
-    rubricTemplate: getPhaseRubricTemplate(
-      instance.instanceData,
-      assignment.phaseId,
-    ),
+    // their assignment belongs to — the `form_schemas` head when the instance
+    // has a pointer, the inline copy while it does not.
+    rubricTemplate,
   };
 }
 

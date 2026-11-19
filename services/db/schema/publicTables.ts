@@ -71,6 +71,8 @@ export { attachments, attachmentsRelations } from './tables/attachments.sql';
 
 export { customForms } from './tables/customForms.sql';
 export type { CustomForm } from './tables/customForms.sql';
+export { formSchemas } from './tables/formSchemas.sql';
+export type { FormSchema } from './tables/formSchemas.sql';
 export { customFormSubmissions } from './tables/customFormSubmissions.sql';
 export type { CustomFormSubmission } from './tables/customFormSubmissions.sql';
 

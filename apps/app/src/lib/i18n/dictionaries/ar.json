@@ -1722,5 +1722,11 @@
   "Check all that apply": "اختر كل ما ينطبق",
   "Reviewers select one or more options": "يختار المراجعون خيارًا واحدًا أو أكثر",
   "Comments could not be loaded": "تعذّر تحميل التعليقات",
-  "(opens in a new tab)": "(يفتح في علامة تبويب جديدة)"
+  "(opens in a new tab)": "(يفتح في علامة تبويب جديدة)",
+  "Clear all": "مسح الكل",
+  "Filter": "تصفية",
+  "Counting proposals...": "جارٍ عدّ المقترحات...",
+  "Show {count, plural, one {# proposal} other {# proposals}}": "عرض {count, plural, zero {لا مقترحات} one {مقترح واحد} two {مقترحان} few {# مقترحات} many {# مقترحًا} other {# مقترح}}",
+  "Search within proposals": "البحث داخل المقترحات",
+  "Search is not available in the review queue yet.": "البحث غير متاح بعد في قائمة المراجعة."
 }

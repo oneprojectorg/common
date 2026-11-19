@@ -1722,5 +1722,11 @@
   "Check all that apply": "Dooro dhammaan waxa khuseeya",
   "Reviewers select one or more options": "Dib-u-eegayaashu waxay doortaan hal doorasho ama in ka badan",
   "Comments could not be loaded": "Faallooyinka lama soo bixin karin",
-  "(opens in a new tab)": "(waxay ka furmaysaa tab cusub)"
+  "(opens in a new tab)": "(waxay ka furmaysaa tab cusub)",
+  "Clear all": "Nadiifi dhammaan",
+  "Filter": "Shaandhee",
+  "Counting proposals...": "Waa la tirinayaa soo jeedimaha...",
+  "Show {count, plural, one {# proposal} other {# proposals}}": "Muuji {count, plural, one {# soo jeedin} other {# soo jeedimo}}",
+  "Search within proposals": "Raadi soo jeedimaha",
+  "Search is not available in the review queue yet.": "Raadinta weli laguma heli karo safka dib-u-eegista."
 }

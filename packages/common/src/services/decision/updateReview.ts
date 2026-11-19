@@ -7,6 +7,7 @@ import {
 import type { User } from '@op/supabase/lib';
 
 import { ValidationError } from '../../utils';
+import { ensurePhaseRubricHead } from '../formSchemas/ensurePhaseRubricHead';
 import {
   assertReviewAssignmentContext,
   assertReviewAssignmentPhaseIsCurrent,
@@ -51,20 +52,34 @@ export async function updateReview({
 
   schemaValidator.assertRubricData(context.rubricTemplate, reviewData.answers);
 
-  const [updatedReview] = await db
-    .update(proposalReviews)
-    .set({
-      reviewData,
-      overallComment: overallComment ?? null,
-    })
-    // Defensive: the row must still be SUBMITTED (nothing un-submits today).
-    .where(
-      and(
-        eq(proposalReviews.assignmentId, assignmentId),
-        eq(proposalReviews.state, ProposalReviewState.SUBMITTED),
-      ),
-    )
-    .returning();
+  // A transaction only because the stamp can mint a `form_schemas` root and
+  // move the instance's pointer: the edit and the version it points at have to
+  // land together, or a failed update would leave a root nothing references.
+  const [updatedReview] = await db.transaction(async (tx) => {
+    const formSchemaId = await ensurePhaseRubricHead(
+      context.instance,
+      context.assignment.phaseId,
+      tx,
+    );
+
+    return (
+      tx
+        .update(proposalReviews)
+        .set({
+          reviewData,
+          formSchemaId,
+          overallComment: overallComment ?? null,
+        })
+        // Defensive: the row must still be SUBMITTED (nothing un-submits today).
+        .where(
+          and(
+            eq(proposalReviews.assignmentId, assignmentId),
+            eq(proposalReviews.state, ProposalReviewState.SUBMITTED),
+          ),
+        )
+        .returning()
+    );
+  });
 
   if (!updatedReview) {
     throw new ValidationError(

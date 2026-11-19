@@ -3,6 +3,7 @@ import type { User } from '@op/supabase/lib';
 import { z } from 'zod';
 
 import { NotFoundError } from '../../utils';
+import { resolvePhaseRubricTemplate } from '../formSchemas/resolvePhaseRubricTemplate';
 import { getInstance } from './getInstance';
 import { getRubricScoringInfo } from './getRubricScoringInfo';
 import {
@@ -17,7 +18,6 @@ import {
   type ProposalWithSubmittedReviews,
   proposalWithSubmittedReviewsSchema,
 } from './schemas/reviews';
-import { getPhaseRubricTemplate } from './utils/phaseTemplates';
 
 export const getProposalWithReviewAggregatesInputSchema =
   instanceOptionalPhaseRefSchema.extend({
@@ -56,7 +56,10 @@ export async function getProposalWithReviewAggregates(
 
   // Resolved by the effective phase so each phase's reviews are scored (and
   // rendered by clients) against that phase's rubric.
-  const rubricTemplate = getPhaseRubricTemplate(instance.instanceData, phaseId);
+  const rubricTemplate = await resolvePhaseRubricTemplate(
+    instance.instanceData,
+    phaseId,
+  );
   const scoredCriterionKeys = rubricTemplate
     ? getRubricScoringInfo(rubricTemplate)
         .criteria.filter((c) => c.scored)

@@ -1722,5 +1722,11 @@
   "Check all that apply": "Cochez toutes les réponses applicables",
   "Reviewers select one or more options": "Les évaluateurs sélectionnent une ou plusieurs options",
   "Comments could not be loaded": "Impossible de charger les commentaires",
-  "(opens in a new tab)": "(s’ouvre dans un nouvel onglet)"
+  "(opens in a new tab)": "(s’ouvre dans un nouvel onglet)",
+  "Clear all": "Tout effacer",
+  "Filter": "Filtrer",
+  "Counting proposals...": "Comptage des propositions...",
+  "Show {count, plural, one {# proposal} other {# proposals}}": "Afficher {count, plural, one {# proposition} other {# propositions}}",
+  "Search within proposals": "Rechercher parmi les propositions",
+  "Search is not available in the review queue yet.": "La recherche n'est pas encore disponible dans la file d'évaluation."
 }

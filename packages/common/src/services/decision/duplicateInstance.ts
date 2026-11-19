@@ -223,26 +223,31 @@ function buildInstanceData(
       }
 
       // Phase-level rubrics travel with the rubric flag, like the
-      // instance-level template below.
+      // instance-level template below. The `form_schemas` head travels with
+      // the inline copy: the version rows are immutable and shared, so the
+      // duplicate points at the same head and a later edit on either side
+      // branches its own child.
       if (include.reviewRubric && phase.rubricTemplate) {
         copied.rubricTemplate = phase.rubricTemplate;
+        copied.rubricFormSchemaId = phase.rubricFormSchemaId;
       }
 
       return copied;
     });
   } else if (source.phases.length > 0) {
     // Even without phase details, we need at least minimal phase references
-    base.phases = source.phases.map(
-      (phase): PhaseInstanceData => ({
-        phaseId: phase.phaseId,
-        name: phase.name,
-        // Minimal phase - just identity, plus the phase rubric when the
-        // rubric flag asks for it.
-        ...(include.reviewRubric && phase.rubricTemplate
-          ? { rubricTemplate: phase.rubricTemplate }
-          : {}),
-      }),
-    );
+    base.phases = source.phases.map((phase): PhaseInstanceData => ({
+      phaseId: phase.phaseId,
+      name: phase.name,
+      // Minimal phase - just identity, plus the phase rubric when the
+      // rubric flag asks for it.
+      ...(include.reviewRubric && phase.rubricTemplate
+        ? {
+            rubricTemplate: phase.rubricTemplate,
+            rubricFormSchemaId: phase.rubricFormSchemaId,
+          }
+        : {}),
+    }));
   }
 
   // Proposal template
@@ -250,9 +255,10 @@ function buildInstanceData(
     base.proposalTemplate = source.proposalTemplate;
   }
 
-  // Review rubric
+  // Review rubric — inline copy and `form_schemas` head together.
   if (include.reviewRubric && source.rubricTemplate) {
     base.rubricTemplate = source.rubricTemplate;
+    base.rubricFormSchemaId = source.rubricFormSchemaId;
   }
 
   return base;

@@ -93,6 +93,17 @@ describe.concurrent('saveReviewDraft', () => {
     expect(assignment?.completedAt).toBeNull();
     expect(assignment?.reviews[0]?.state).toBe(ProposalReviewState.DRAFT);
     expect(assignment?.reviews[0]?.submittedAt).toBeNull();
+
+    // Drafts are stamped too: the answers already have to be read back
+    // against a specific rubric version.
+    const stampedId = assignment?.reviews[0]?.formSchemaId;
+    expect(stampedId).toBeTruthy();
+
+    const version = await db.query.formSchemas.findFirst({
+      where: { id: stampedId! },
+    });
+
+    expect(version?.schema).toEqual(rubricTemplate);
   });
 
   it('upserts a single draft row per assignment — last write wins', async ({

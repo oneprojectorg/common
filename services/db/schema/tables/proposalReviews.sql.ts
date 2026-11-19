@@ -1,3 +1,4 @@
+import { sql } from 'drizzle-orm';
 import {
   foreignKey,
   index,
@@ -17,6 +18,7 @@ import {
   serviceRolePolicies,
   timestamps,
 } from '../../helpers';
+import { formSchemas } from './formSchemas.sql';
 import { processInstances } from './processInstances.sql';
 import { profiles } from './profiles.sql';
 import { proposalHistory } from './proposalHistory.sql';
@@ -219,6 +221,14 @@ export const proposalReviews = pgTable(
       .default(ProposalReviewState.DRAFT),
 
     reviewData: jsonb('review_data').$type<Record<string, unknown>>().notNull(),
+
+    // The rubric version `reviewData.answers` was written against. Nullable
+    // only because existing rows predate it; every write path stamps it.
+    formSchemaId: uuid('form_schema_id').references(() => formSchemas.id, {
+      onUpdate: 'cascade',
+      onDelete: 'restrict',
+    }),
+
     overallComment: text('overall_comment'),
     submittedAt: timestamp('submitted_at', {
       withTimezone: true,
@@ -238,6 +248,14 @@ export const proposalReviews = pgTable(
       .onDelete('cascade'),
     unique('proposal_reviews_assignment_unique').on(table.assignmentId),
     index('proposal_reviews_process_state_idx').on(table.state),
+    index('proposal_reviews_form_schema_idx').on(table.formSchemaId),
+    // `jsonb_path_ops` because the answer filters only ever use `@>`; it is
+    // smaller and faster than the default `jsonb_ops`, which also indexes
+    // keys on their own (something no filter here needs).
+    index('proposal_reviews_answers_gin').using(
+      'gin',
+      sql`(${table.reviewData} -> 'answers') jsonb_path_ops`,
+    ),
   ],
 );
 

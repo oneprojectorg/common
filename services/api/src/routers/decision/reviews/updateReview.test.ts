@@ -107,6 +107,11 @@ describe.concurrent('updateReview', () => {
     expect(assignment?.reviews[0]?.reviewData).toMatchObject({
       answers: { impact: 2 },
     });
+
+    // An edit re-stamps rather than leaving the original stamp behind, and
+    // with an unchanged rubric that resolves to the same version.
+    expect(assignment?.reviews[0]?.formSchemaId).toBeTruthy();
+    expect(assignment?.reviews[0]?.formSchemaId).toBe(before?.formSchemaId);
   });
 
   it('rejects editing a review that has not been submitted', async ({

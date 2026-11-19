@@ -8,6 +8,7 @@ import type { User } from '@op/supabase/lib';
 import { z } from 'zod';
 
 import { UnauthorizedError } from '../../utils';
+import { resolvePhaseRubricTemplate } from '../formSchemas/resolvePhaseRubricTemplate';
 import { getInstance } from './getInstance';
 import { getProposalIdsForPhase } from './getProposalsForPhase';
 import {
@@ -22,7 +23,6 @@ import {
   proposalsWithReviewAggregatesListSchema,
 } from './schemas/reviews';
 import type { RubricTemplateSchema } from './types';
-import { getPhaseRubricTemplate } from './utils/phaseTemplates';
 
 // ── Input schema ───────────────────────────────────────────────────────
 
@@ -77,7 +77,10 @@ export async function listProposalsWithReviewAggregates(
 
   // Scoring follows the effective phase's rubric (the list is always
   // phase-scoped: explicit `phaseId`, else the current phase).
-  const rubricTemplate = getPhaseRubricTemplate(instance.instanceData, phaseId);
+  const rubricTemplate = await resolvePhaseRubricTemplate(
+    instance.instanceData,
+    phaseId,
+  );
   const scoredCriterionKeys = rubricTemplate
     ? getRubricScoringInfo(rubricTemplate)
         .criteria.filter((c) => c.scored)

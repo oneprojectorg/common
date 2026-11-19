@@ -12,6 +12,7 @@ import { waitUntil } from '@vercel/functions';
 import { eq, ne } from 'drizzle-orm';
 
 import { ValidationError } from '../../utils';
+import { ensurePhaseRubricHead } from '../formSchemas/ensurePhaseRubricHead';
 import {
   assertReviewAssignmentContext,
   assertReviewAssignmentPhaseIsCurrent,
@@ -57,12 +58,22 @@ export async function saveReviewDraft({
   }
 
   const review = await db.transaction(async (tx) => {
+    // Stamp the rubric version the answers were written against, minting the
+    // lineage root on first use. Inside the transaction so a draft row can
+    // never exist without the schema it needs to be read back.
+    const formSchemaId = await ensurePhaseRubricHead(
+      context.instance,
+      context.assignment.phaseId,
+      tx,
+    );
+
     const [draft] = await tx
       .insert(proposalReviews)
       .values({
         assignmentId,
         state: ProposalReviewState.DRAFT,
         reviewData,
+        formSchemaId,
         overallComment: overallComment ?? null,
         submittedAt: null,
       })
@@ -70,6 +81,7 @@ export async function saveReviewDraft({
         target: proposalReviews.assignmentId,
         set: {
           reviewData,
+          formSchemaId,
           overallComment: overallComment ?? null,
         },
         // Atomic guard against a late-arriving draft overwriting a row that

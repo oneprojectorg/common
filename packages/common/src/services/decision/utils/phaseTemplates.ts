@@ -34,19 +34,30 @@ export function resolvePhaseTemplate<
 }
 
 /**
+ * Instance-data shape the rubric resolvers read. Structural so the domain
+ * type and the API-encoder type both satisfy it.
+ */
+export interface RubricInstanceData {
+  rubricTemplate?: RubricTemplateSchema;
+  rubricFormSchemaId?: string;
+  phases?: ReadonlyArray<{
+    phaseId: string;
+    rubricTemplate?: RubricTemplateSchema;
+    rubricFormSchemaId?: string;
+  }>;
+}
+
+/**
  * The rubric template in effect for `phaseId`: the phase's own
- * `rubricTemplate` when set, else the instance-level one, else null. Every
- * review read/write path resolves its rubric through here — reviews are
- * always interpreted against the rubric of the phase they belong to.
+ * `rubricTemplate` when set, else the instance-level one, else null.
+ *
+ * This is the *inline* copy, and stays synchronous and client-safe because
+ * `@op/common/client` re-exports it. Server read paths go through
+ * `resolvePhaseRubricTemplate`, which prefers the `form_schemas` head and
+ * falls back to this.
  */
 export function getPhaseRubricTemplate(
-  instanceData: {
-    rubricTemplate?: RubricTemplateSchema;
-    phases?: ReadonlyArray<{
-      phaseId: string;
-      rubricTemplate?: RubricTemplateSchema;
-    }>;
-  },
+  instanceData: RubricInstanceData,
   phaseId: string | undefined,
 ): RubricTemplateSchema | null {
   return resolvePhaseTemplate(
@@ -55,4 +66,48 @@ export function getPhaseRubricTemplate(
     (phase) => phase.rubricTemplate,
     instanceData.rubricTemplate,
   );
+}
+
+/**
+ * Which level owns the rubric for `phaseId` — the phase itself, or the
+ * instance. A phase owns it as soon as it carries either half of the pair
+ * (`rubricTemplate` or `rubricFormSchemaId`), so the pointer and the inline
+ * copy can never be read from different levels while the dual write lasts.
+ */
+export function resolveRubricOwner(
+  instanceData: RubricInstanceData,
+  phaseId: string | undefined,
+): {
+  level: 'phase' | 'instance';
+  template?: RubricTemplateSchema;
+  formSchemaId?: string;
+} {
+  if (phaseId != null) {
+    const phase = instanceData.phases?.find((p) => p.phaseId === phaseId);
+    if (phase && (phase.rubricTemplate || phase.rubricFormSchemaId)) {
+      return {
+        level: 'phase',
+        template: phase.rubricTemplate,
+        formSchemaId: phase.rubricFormSchemaId,
+      };
+    }
+  }
+  return {
+    level: 'instance',
+    template: instanceData.rubricTemplate,
+    formSchemaId: instanceData.rubricFormSchemaId,
+  };
+}
+
+/**
+ * The `form_schemas` head id for the rubric in effect for `phaseId`, read
+ * from the same level `getPhaseRubricTemplate` reads the inline copy from.
+ * `null` when that level has no pointer yet — `ensurePhaseRubricHead` mints
+ * one lazily.
+ */
+export function getPhaseRubricFormSchemaId(
+  instanceData: RubricInstanceData,
+  phaseId: string | undefined,
+): string | null {
+  return resolveRubricOwner(instanceData, phaseId).formSchemaId ?? null;
 }

@@ -83,7 +83,31 @@ export {
   type PhaseReviewerSummary,
   phaseReviewerSummariesSchema,
   type PhaseReviewerSummaries,
+  reviewAssignmentFieldFiltersSchema,
+  type ReviewAssignmentFieldFilters,
+  reviewAssignmentFieldFacetsSchema,
+  type ReviewAssignmentFieldFacets,
 } from './services/decision/schemas/reviewAssignments';
+export {
+  templateFieldFiltersSchema,
+  type TemplateFieldFilters,
+  templateFieldFacetSchema,
+  type TemplateFieldFacet,
+  templateFieldFacetsSchema,
+  type TemplateFieldFacets,
+} from './services/decision/schemas/templateFieldFacets';
+export {
+  PHASE_REVIEW_STATES,
+  type PhaseReviewStateFilter,
+  phaseReviewFiltersSchema,
+  type PhaseReviewFilters,
+  phaseReviewItemSchema,
+  type PhaseReviewItem,
+  phaseReviewFacetSchema,
+  type PhaseReviewFacet,
+  phaseReviewListSchema,
+  type PhaseReviewList,
+} from './services/decision/schemas/phaseReviews';
 export {
   proposalSelectionSchema,
   type ProposalSelection,

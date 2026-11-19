@@ -231,6 +231,9 @@ export const instancePhaseDataEncoder = z.object({
   // Phase-specific rubric; resolve via getPhaseRubricTemplate (instance-level
   // rubricTemplate is the fallback)
   rubricTemplate: rubricTemplateSchema.optional(),
+  // Head of this phase's rubric lineage in `form_schemas`. Dual-written with
+  // `rubricTemplate` for now; resolve via `resolvePhaseRubricTemplate`.
+  rubricFormSchemaId: z.string().optional(),
 });
 
 /**
@@ -321,6 +324,11 @@ const instanceDataWithSchemaEncoder = z.object({
   phases: z.array(instancePhaseDataEncoder).optional(),
   proposalTemplate: jsonSchemaEncoder.optional(),
   rubricTemplate: rubricTemplateSchema.optional(),
+  // Head of the instance-level rubric lineage in `form_schemas`; the fallback
+  // for a phase with no rubric of its own.
+  rubricFormSchemaId: z.string().optional(),
+  // Declared so the shape is settled — nothing reads or writes it yet.
+  proposalFormSchemaId: z.string().optional(),
 });
 
 /** Decision access permissions encoder */

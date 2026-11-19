@@ -10,6 +10,7 @@ import {
   ProposalReviewAssignmentStatus,
   REVIEW_ASSIGNMENT_SORTS,
   getPhaseReviewSettings,
+  getPhaseRubricTemplate,
 } from '@op/common/client';
 import { useInfiniteScroll } from '@op/hooks';
 import { Card } from '@op/sense/Card';
@@ -22,7 +23,7 @@ import {
 } from '@op/sense/Empty';
 import { Skeleton } from '@op/sense/Skeleton';
 import { cn } from '@op/sense/lib/utils';
-import { parseAsStringLiteral, useQueryState } from 'nuqs';
+import { parseAsString, parseAsStringLiteral, useQueryState } from 'nuqs';
 import { type ReactNode, Suspense, useCallback, useMemo } from 'react';
 import {
   LuCircleAlert,
@@ -44,6 +45,18 @@ import { ProposalViewToggle } from './ProposalViewToggle';
 import { ResponsiveSelect } from './ResponsiveSelect';
 import { ReviewAssignmentCard } from './ReviewAssignmentCard';
 import { ReviewAssignmentsMapWithLocations } from './ReviewAssignmentsMapWithLocations';
+import { ReviewQueueFilterSheet } from './ReviewQueueFilters/ReviewQueueFilterSheet';
+import {
+  FIELD_FILTERS_PARAM,
+  countFieldFilters,
+  indexFacetCounts,
+  parseFieldFilters,
+  serializeFieldFilters,
+  toQueryInput,
+  toggleFieldFilter,
+} from './ReviewQueueFilters/fieldFilterParams';
+import { extractChoiceCriteria } from './ReviewQueueFilters/rubricChoiceCriteria';
+import { useReviewQueueFieldFacets } from './ReviewQueueFilters/useReviewQueueFieldFacets';
 import { StickyFilterBar } from './StickyFilterBar';
 import { TranslateBanner } from './TranslateBanner';
 import {
@@ -86,6 +99,30 @@ export function ReviewAssignmentsList({
     'sort',
     parseAsStringLiteral(REVIEW_ASSIGNMENT_SORTS).withDefault('leastReviewed'),
   );
+  // One param for every checked rubric option, so a narrowed queue is a
+  // shareable link. nuqs replaces rather than pushes — checking boxes is not
+  // history.
+  const [rawFieldFilters, setRawFieldFilters] = useQueryState(
+    FIELD_FILTERS_PARAM,
+    parseAsString,
+  );
+  const fieldFilters = useMemo(
+    () => parseFieldFilters(rawFieldFilters),
+    [rawFieldFilters],
+  );
+
+  const toggleFieldOption = useCallback(
+    (key: string, optionId: string) => {
+      void setRawFieldFilters(
+        serializeFieldFilters(toggleFieldFilter(fieldFilters, key, optionId)),
+      );
+    },
+    [fieldFilters, setRawFieldFilters],
+  );
+
+  const clearFieldFilters = useCallback(() => {
+    void setRawFieldFilters(null);
+  }, [setRawFieldFilters]);
 
   // cached from the page-level suspense query — no extra request
   const [instance] = trpc.decision.getInstance.useSuspenseQuery({
@@ -110,7 +147,33 @@ export function ReviewAssignmentsList({
       status: statusFilter as ProposalReviewAssignmentStatus,
     }),
     sort,
+    // Omitted when nothing is checked, so an unfiltered queue keeps the query
+    // key it had before the filter sheet existed.
+    fieldFilters: toQueryInput(fieldFilters),
   };
+
+  // The rubric of the phase whose assignments this queue holds — the sheet's
+  // section list, and the source of every criterion and option label (the
+  // facet read answers with ids and counts only).
+  const choiceCriteria = useMemo(
+    () =>
+      extractChoiceCriteria(
+        getPhaseRubricTemplate(instance.instanceData, phaseId),
+      ),
+    [instance.instanceData, phaseId],
+  );
+
+  // Per-option counts only. The footer's N and the count above the grid both
+  // come from the queue's own `total`, so the two can never disagree.
+  const { facets, isPending: isFacetsPending } = useReviewQueueFieldFacets({
+    processInstanceId,
+    phaseId,
+    status: statusFilter as ProposalReviewAssignmentStatus | null,
+    fieldFilters,
+    enabled: choiceCriteria.length > 0,
+  });
+
+  const facetCounts = useMemo(() => indexFacetCounts(facets), [facets]);
 
   const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } =
     trpc.decision.listReviewAssignments.useInfiniteQuery(queueInput, {
@@ -286,7 +349,9 @@ export function ReviewAssignmentsList({
 
   // Match the "Other proposals" tab: no toolbar when the queue is genuinely
   // empty. A filtered-to-empty result keeps it so the filter can be cleared.
-  const showToolbar = assignments.length > 0 || Boolean(statusFilter);
+  const hasFieldFilters = countFieldFilters(fieldFilters) > 0;
+  const isFiltered = Boolean(statusFilter) || hasFieldFilters;
+  const showToolbar = assignments.length > 0 || isFiltered;
 
   // Match the status-badge icon + accent for each status (see
   // ReviewAssignmentCard); "All statuses" gets a neutral filter glyph.
@@ -357,6 +422,17 @@ export function ReviewAssignmentsList({
             </APIErrorBoundary>
           </div>
           <div className="scrollbar-none flex items-center gap-4 max-md:-mx-4 max-md:w-screen max-md:overflow-x-scroll max-md:px-4">
+            {choiceCriteria.length > 0 && (
+              <ReviewQueueFilterSheet
+                criteria={choiceCriteria}
+                filters={fieldFilters}
+                counts={facetCounts}
+                total={total}
+                isPending={isFacetsPending}
+                onToggle={toggleFieldOption}
+                onClearAll={clearFieldFilters}
+              />
+            )}
             <ResponsiveSelect
               selectedKey={statusFilter ?? 'all'}
               onSelectionChange={(key) =>
@@ -411,12 +487,12 @@ export function ReviewAssignmentsList({
               <LuLeaf className="size-6" />
             </EmptyMedia>
             <EmptyTitle>
-              {statusFilter
+              {isFiltered
                 ? t('No reviews found matching the current filters.')
                 : t('No reviews assigned yet')}
             </EmptyTitle>
             <EmptyDescription>
-              {statusFilter
+              {isFiltered
                 ? t('Try adjusting your filter selection above.')
                 : t(
                     'Review assignments will appear here once they are created.',

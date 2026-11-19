@@ -1722,5 +1722,11 @@
   "Check all that apply": "Check all that apply",
   "Reviewers select one or more options": "Reviewers select one or more options",
   "Comments could not be loaded": "Comments could not be loaded",
-  "(opens in a new tab)": "(opens in a new tab)"
+  "(opens in a new tab)": "(opens in a new tab)",
+  "Clear all": "Clear all",
+  "Filter": "Filter",
+  "Counting proposals...": "Counting proposals...",
+  "Show {count, plural, one {# proposal} other {# proposals}}": "Show {count, plural, one {# proposal} other {# proposals}}",
+  "Search within proposals": "Search within proposals",
+  "Search is not available in the review queue yet.": "Search is not available in the review queue yet."
 }

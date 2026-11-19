@@ -1054,6 +1054,99 @@ describe.concurrent('updateDecisionInstance', () => {
     ).toMatchObject({ 'x-format': 'long-text' });
   });
 
+  it('versions a saved rubric and moves the instance head to the child', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instance = setup.instance;
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const first: RubricTemplateSchema = {
+      type: 'object',
+      'x-field-order': ['impact'],
+      properties: {
+        impact: {
+          type: 'integer',
+          title: 'Impact',
+          'x-format': 'dropdown',
+          minimum: 1,
+          maximum: 3,
+          oneOf: [
+            { const: 1, title: 'Low' },
+            { const: 3, title: 'High' },
+          ],
+        },
+      },
+      required: ['impact'],
+    };
+
+    await caller.decision.updateDecisionInstance({
+      instanceId: instance.instance.id,
+      rubricTemplate: first,
+    });
+
+    const afterFirst = await db.query.processInstances.findFirst({
+      where: { id: instance.instance.id },
+    });
+    const rootId = (afterFirst!.instanceData as DecisionInstanceData)
+      .rubricFormSchemaId;
+
+    expect(rootId).toBeTruthy();
+
+    const root = await db.query.formSchemas.findFirst({
+      where: { id: rootId! },
+    });
+
+    expect(root?.parentId).toBeNull();
+    expect(root?.schema).toEqual(first);
+
+    // A second save is a child of the version in force, not a new root: the
+    // lineage is what lets a review stamped with the old version still be
+    // read against the schema it was written under.
+    const second: RubricTemplateSchema = {
+      ...first,
+      properties: {
+        ...first.properties,
+        impact: {
+          ...(first.properties as Record<string, Record<string, unknown>>)
+            .impact,
+          title: 'Community impact',
+        },
+      },
+    } as RubricTemplateSchema;
+
+    await caller.decision.updateDecisionInstance({
+      instanceId: instance.instance.id,
+      rubricTemplate: second,
+    });
+
+    const afterSecond = await db.query.processInstances.findFirst({
+      where: { id: instance.instance.id },
+    });
+    const childId = (afterSecond!.instanceData as DecisionInstanceData)
+      .rubricFormSchemaId;
+
+    expect(childId).toBeTruthy();
+    expect(childId).not.toBe(rootId);
+
+    const child = await db.query.formSchemas.findFirst({
+      where: { id: childId! },
+    });
+
+    expect(child?.parentId).toBe(rootId);
+    expect(child?.schema).toEqual(second);
+
+    // The inline copy is still written alongside the pointer (dual write).
+    expect(
+      (afterSecond!.instanceData as DecisionInstanceData).rubricTemplate,
+    ).toEqual(second);
+  });
+
   it('should reject an invalid rubricTemplate and not persist it', async ({
     task,
     onTestFinished,

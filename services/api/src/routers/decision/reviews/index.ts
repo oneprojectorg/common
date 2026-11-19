@@ -7,9 +7,11 @@ import { listCategoryReviewersRouter } from './listCategoryReviewers';
 import { listEligibleReviewersRouter } from './listEligibleReviewers';
 import { listPhaseReviewAssignmentsRouter } from './listPhaseReviewAssignments';
 import { listPhaseReviewerSummariesRouter } from './listPhaseReviewerSummaries';
+import { listPhaseReviewsRouter } from './listPhaseReviews';
 import { listProposalFeedbackRouter } from './listProposalFeedback';
 import { listProposalRevisionRequestsRouter } from './listProposalRevisionRequests';
 import { listProposalsRevisionRequestsRouter } from './listProposalsRevisionRequests';
+import { listReviewAssignmentFieldFacetsRouter } from './listReviewAssignmentFieldFacets';
 import { listReviewAssignmentLocationsRouter } from './listReviewAssignmentLocations';
 import { listReviewAssignmentsRouter } from './listReviewAssignments';
 import { listReviewerCategoriesRouter } from './listReviewerCategories';
@@ -34,6 +36,8 @@ export const reviewsRouter = mergeRouters(
   listProposalsRevisionRequestsRouter,
   listPhaseReviewAssignmentsRouter,
   listPhaseReviewerSummariesRouter,
+  listPhaseReviewsRouter,
+  listReviewAssignmentFieldFacetsRouter,
   listReviewAssignmentLocationsRouter,
   listReviewAssignmentsRouter,
   removeCategoryReviewerRouter,

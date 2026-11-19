@@ -1,34 +1,15 @@
-import {
-  type SQL,
-  and,
-  count as countFn,
-  db,
-  eq,
-  exists,
-  inArray,
-  sql,
-} from '@op/db/client';
+import { type SQL, and, count as countFn, db, sql } from '@op/db/client';
 import {
   ProposalReviewAssignmentStatus,
   proposalReviewAssignments,
-  proposals,
 } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
-import { permission } from 'access-zones';
 import { z } from 'zod';
 
-import {
-  CommonError,
-  UnauthorizedError,
-  decodeCursor,
-  encodeCursor,
-} from '../../utils';
-import { assertProfileAccess, assertUserByAuthId } from '../assert';
+import { CommonError, decodeCursor, encodeCursor } from '../../utils';
+import { resolvePhaseRubricTemplate } from '../formSchemas/resolvePhaseRubricTemplate';
 import { generateProposalHtml } from './generateProposalHtml';
-import { getInstance } from './getInstance';
 import { getProposalDocumentsContent } from './getProposalDocumentsContent';
-import { decisionPermission } from './permissions';
-import { notSuperseded } from './proposalSupersession';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
 import {
   canEditSubmittedReview,
@@ -36,13 +17,13 @@ import {
   resolveAssignmentProposal,
   reviewAssignmentWithConfig,
 } from './reviewHelpers';
+import { resolveReviewQueueScope } from './reviewQueueScope';
 import {
   type ReviewAssignmentList,
   type ReviewAssignmentSort,
   reviewAssignmentListSchema,
 } from './schemas/reviews';
-import { assertInstancePhase } from './utils/instance';
-import { getPhaseRubricTemplate } from './utils/phaseTemplates';
+import type { ReviewAnswerFilters } from './utils/reviewAnswers';
 
 /**
  * Status priority for the "least reviewed" secondary sort — lower ranks first,
@@ -101,6 +82,7 @@ export async function listReviewAssignments({
   status,
   categoryIds,
   proposalProfileId,
+  fieldFilters,
   sort = 'leastReviewed',
   cursor,
   limit,
@@ -113,65 +95,40 @@ export async function listReviewAssignments({
   categoryIds?: string[];
   /** Profile id of a single proposal — limits results to that proposal's assignments. */
   proposalProfileId?: string;
+  /**
+   * Rubric answer filters on the assignment's own review: criterion key to
+   * option ids, ANY-OF within a key and AND across keys. An assignment with
+   * no review row matches no filter.
+   */
+  fieldFilters?: ReviewAnswerFilters;
   sort?: ReviewAssignmentSort;
   /** Opaque position from the previous page's `next`. */
   cursor?: string | null;
   limit: number;
   user: User;
 }): Promise<ReviewAssignmentList> {
-  const [instance, dbUser] = await Promise.all([
-    getInstance({ instanceId: processInstanceId, user }),
-    assertUserByAuthId(user.id),
-  ]);
-
-  const reviewerProfileId = dbUser.profileId;
-  if (!reviewerProfileId) {
-    throw new UnauthorizedError('User must have an active profile');
-  }
-
-  if (!instance.profileId) {
-    throw new CommonError(
-      'Decision instance does not have an associated profile',
-    );
-  }
-
-  // No org fallback by design: that pattern is being retired.
-  await assertProfileAccess({
+  // Access, phase, category and answer-filter scoping all live in the shared
+  // resolver so this page read and the facet read filter identically.
+  const scope = await resolveReviewQueueScope({
+    input: {
+      processInstanceId,
+      phaseId,
+      status,
+      categoryIds,
+      proposalProfileId,
+      fieldFilters,
+    },
     user,
-    profileId: instance.profileId,
-    permissions: [
-      { decisions: decisionPermission.REVIEW },
-      { decisions: permission.ADMIN },
-    ],
   });
 
-  assertInstancePhase({ instance, phaseId });
+  const { instance, reviewerProfileId, buildWhereClause } = scope;
 
-  // Resolve the categories' proposal IDs up front (same approach as
-  // resolveProposalListScope): assignments have no category column, so the
-  // filter is an ID-set constraint on the snapshot's proposal, matching any
-  // of the requested categories. Categories matching no proposals can't
-  // match any assignment, so short-circuit.
-  let categoryProposalIds: string[] | undefined;
-  if (categoryIds && categoryIds.length > 0) {
-    const proposalIdsInCategories = await db.query.proposalCategories.findMany({
-      columns: { proposalId: true },
-      where: {
-        taxonomyTermId: { in: categoryIds },
-        // Shared taxonomy terms can tag proposals in other instances; scope
-        // here so the ID set passed to the assignment query stays tight.
-        proposal: { processInstanceId },
-      },
+  if (scope.isEmpty) {
+    return reviewAssignmentListSchema.parse({
+      assignments: [],
+      next: null,
+      total: 0,
     });
-
-    categoryProposalIds = proposalIdsInCategories.map((p) => p.proposalId);
-    if (categoryProposalIds.length === 0) {
-      return reviewAssignmentListSchema.parse({
-        assignments: [],
-        next: null,
-        total: 0,
-      });
-    }
   }
 
   // COMPLETED reviews for the proposal across *all* reviewers — the same
@@ -234,38 +191,15 @@ export async function listReviewAssignments({
     return sql`(${assignedAtKey(t)}, ${t.id}) ${after} (${cursorAssignedAt}, ${decodedCursor.id}::uuid)`;
   };
 
-  // Shared by the page and the count so `total` describes the same set.
-  const buildFilterConditions = (t: typeof proposalReviewAssignments): SQL =>
-    and(
-      eq(t.processInstanceId, processInstanceId),
-      eq(t.reviewerProfileId, reviewerProfileId),
-      eq(t.phaseId, phaseId),
-      status ? eq(t.status, status) : undefined,
-      categoryProposalIds
-        ? inArray(t.proposalId, categoryProposalIds)
-        : undefined,
-      proposalProfileId
-        ? exists(
-            db
-              .select({ id: proposals.id })
-              .from(proposals)
-              .where(
-                and(
-                  eq(proposals.id, t.proposalId),
-                  eq(proposals.profileId, proposalProfileId),
-                ),
-              ),
-          )
-        : undefined,
-      // Merging doesn't delete assignments, so a proposal merged mid-review
-      // would otherwise stay in its reviewer's queue.
-      notSuperseded({ proposalId: t.proposalId, processInstanceId }),
-    )!;
+  const countQuery = db
+    .select({ count: countFn() })
+    .from(proposalReviewAssignments)
+    .where(buildWhereClause(proposalReviewAssignments));
 
   const [rows, countResult] = await Promise.all([
     db.query.proposalReviewAssignments.findMany({
       // The cursor lives on the page query only, so `total` stays the full count.
-      where: { RAW: (t) => and(buildFilterConditions(t), cursorCondition(t))! },
+      where: { RAW: (t) => and(buildWhereClause(t), cursorCondition(t))! },
       with: reviewAssignmentWithConfig,
       // The next cursor needs the last row's sort keys, read back from the
       // same expressions the ORDER BY uses.
@@ -294,10 +228,7 @@ export async function listReviewAssignments({
         ];
       },
     }),
-    db
-      .select({ count: countFn() })
-      .from(proposalReviewAssignments)
-      .where(buildFilterConditions(proposalReviewAssignments)),
+    countQuery,
   ]);
 
   const total = Number(countResult[0]?.count ?? 0);
@@ -334,6 +265,21 @@ export async function listReviewAssignments({
     { onFetchError: 'omit' },
   );
 
+  // Assignments in one page can span phases, and each phase can carry its own
+  // rubric, so resolve one per distinct phase up front — the mapping below is
+  // synchronous, and this keeps it to one schema fetch per phase.
+  const rubricByPhaseId = new Map(
+    await Promise.all(
+      [...new Set(assignments.map((a) => a.phaseId))].map(
+        async (phaseId) =>
+          [
+            phaseId,
+            await resolvePhaseRubricTemplate(instance.instanceData, phaseId),
+          ] as const,
+      ),
+    ),
+  );
+
   const assignmentList = assignments.map((assignment) => {
     const proposalSnapshot = resolveAssignmentProposal(assignment);
 
@@ -359,10 +305,7 @@ export async function listReviewAssignments({
         },
       },
       // From the assignment's own phase, each of which can carry a rubric.
-      rubricTemplate: getPhaseRubricTemplate(
-        instance.instanceData,
-        assignment.phaseId,
-      ),
+      rubricTemplate: rubricByPhaseId.get(assignment.phaseId) ?? null,
       review,
       revisionRequest: getActiveRevisionRequest(assignment.requests),
       canEditReview: canEditSubmittedReview({ assignment, instance, review }),

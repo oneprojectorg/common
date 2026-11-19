@@ -155,6 +155,13 @@ export const proposals = pgTable(
       table.createdAt,
       table.id,
     ),
+    // Containment (`@>`) filters over the template values in `proposal_data`.
+    // `jsonb_path_ops` is smaller and faster than the default `jsonb_ops`,
+    // which also indexes bare keys — something no filter here needs.
+    index('proposals_data_gin').using(
+      'gin',
+      sql`${table.proposalData} jsonb_path_ops`,
+    ),
   ],
 );
 
