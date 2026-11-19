@@ -3243,6 +3243,7 @@ describe('handleSMSCommand conversation storage', () => {
     talker: '+15005550140',
     lister: '+15005550141',
     stranger: '+15005550142',
+    registrant: '+15005550143',
   } as const;
 
   const STORAGE_LINE = '+16145550290';
@@ -3252,7 +3253,11 @@ describe('handleSMSCommand conversation storage', () => {
       events: [event],
     });
 
-  const seed = async (fixture: SmsCommandFixture, phone: string) => {
+  const seed = async (
+    fixture: SmsCommandFixture,
+    phone: string,
+    enrolment?: { attestation: string; boundary: boolean },
+  ) => {
     const member = await fixture.createPhoneOnlyAccount(
       parsePhoneNumber(phone),
     );
@@ -3262,11 +3267,41 @@ describe('handleSMSCommand conversation storage', () => {
         name: `Storage ${phone}`,
         proposalTitles: [{ title: 'Crosswalk lighting', budget: 85_000 }],
         votingRules: { voterBudget: 1_000_000, maxVotesPerMember: 10 },
+        ...(enrolment ? { enrolment } : {}),
       });
     await fixture.addMember(instanceProfileId, member);
     await fixture.bindLine(instanceId, parsePhoneNumber(STORAGE_LINE));
     return { member, instanceId };
   };
+
+  const toolCallAnswer = (toolName: string, args: object) =>
+    new Response(
+      JSON.stringify({
+        id: 'mock-tool-call',
+        object: 'chat.completion',
+        created: 0,
+        model: 'glm-5.3-flash',
+        choices: [
+          {
+            index: 0,
+            message: {
+              role: 'assistant',
+              content: null,
+              tool_calls: [
+                {
+                  id: `call-${toolName}`,
+                  type: 'function',
+                  function: { name: toolName, arguments: JSON.stringify(args) },
+                },
+              ],
+            },
+            finish_reason: 'tool_calls',
+          },
+        ],
+        usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 },
+      }),
+      { status: 200, headers: { 'content-type': 'application/json' } },
+    );
 
   const textAnswer = (content: string) =>
     new Response(
@@ -3432,6 +3467,78 @@ describe('handleSMSCommand conversation storage', () => {
       where: { smsMessageId: rows[0]?.id },
     });
     expect(linkedItems).toEqual([]);
+  });
+
+  it('given a member asks L to register and then agrees, the agent completes registration through the tools', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsCommandFixture(task.id, onTestFinished);
+    const { member, instanceId } = await seed(
+      fixture,
+      STORAGE_NUMBERS.registrant,
+      { attestation: 'I live in the city and vote once.', boundary: false },
+    );
+    stubAssistant(
+      [
+        toolCallAnswer('start_registration', {}),
+        textAnswer(
+          'To register, agree to: "I live in the city and vote once." Reply yes to agree.',
+        ),
+        toolCallAnswer('affirm_attestation', {}),
+        textAnswer('You are registered to vote.'),
+      ],
+      onTestFinished,
+    );
+
+    const first = await run(
+      smsInboundEvent({
+        from: STORAGE_NUMBERS.registrant,
+        to: STORAGE_LINE,
+        keyword: 'l',
+        argument: 'register me to vote',
+        body: 'L register me to vote',
+        messageSid: `SM-${task.id}-reg-1`,
+      }),
+    );
+    expect(first.result).toEqual({ message: 'question answered' });
+    expect(recordedSms.at(-1)?.body).toContain('I live in the city');
+
+    const notYet = await findVoterEnrolment({
+      processInstanceId: instanceId,
+      authUserId: member.authUserId,
+    });
+    expect(notYet?.enrolledAt ?? null).toBeNull();
+
+    const second = await run(
+      smsInboundEvent({
+        from: STORAGE_NUMBERS.registrant,
+        to: STORAGE_LINE,
+        keyword: 'l',
+        argument: 'yes, I agree to that attestation',
+        body: 'L yes, I agree to that attestation',
+        messageSid: `SM-${task.id}-reg-2`,
+      }),
+    );
+    expect(second.result).toEqual({ message: 'question answered' });
+    expect(recordedSms.at(-1)?.body).toBe('You are registered to vote.');
+
+    const enrolled = await findVoterEnrolment({
+      processInstanceId: instanceId,
+      authUserId: member.authUserId,
+    });
+    expect(enrolled?.enrolledAt).not.toBeNull();
+
+    const conversation = await db.query.conversations.findFirst({
+      where: { processInstanceId: instanceId },
+    });
+    const toolItems = await db.query.conversationItems.findMany({
+      where: { conversationId: conversation?.id, kind: 'tool_call' },
+      orderBy: { createdAt: 'asc' },
+    });
+    expect(JSON.stringify(toolItems.map((item) => item.content))).toContain(
+      'affirm_attestation',
+    );
   });
 
   it('given a stranger texts the line, then only an inbound transport row is written', async ({

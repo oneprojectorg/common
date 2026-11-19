@@ -14,16 +14,21 @@ import {
   getSmsBallotProposal,
   listSmsBallotPage,
 } from '../decision/sms/smsBallotBrowse';
+import type { Geocode } from '../decision/voterEnrolment';
 import {
+  affirmVoterAttestation,
   findPendingVoterEnrolment,
   findVoterEnrolment,
   isVoterEnrolled,
   pendingEnrolmentStep,
+  resolveVoterAddress,
+  startVoterEnrolment,
 } from '../decision/voterEnrolment';
 
 export interface VotingAssistantIdentity {
   authUserId: string;
   instanceId: string | null;
+  geocode?: Geocode;
 }
 
 const NO_DECISION = {
@@ -38,7 +43,90 @@ const failure = (error: unknown) => ({
 export const votingAssistantTools = ({
   authUserId,
   instanceId,
+  geocode,
 }: VotingAssistantIdentity) => ({
+  start_registration: createTool({
+    id: 'start_registration',
+    description:
+      'Starts or resumes the member’s voter registration. Returns registered, no_registration_needed, awaiting_address, or awaiting_agree, with the attestation text to show the member word for word.',
+    inputSchema: z.object({}),
+    execute: async () => {
+      if (!instanceId) {
+        return NO_DECISION;
+      }
+      try {
+        const decision = await describeEnrolmentDecision({
+          instanceId,
+          authUserId,
+        });
+        if (!decision.enrolment) {
+          return { status: 'no_registration_needed' };
+        }
+        if (!decision.votingOpen) {
+          return { error: 'Voting is not open on this decision.' };
+        }
+        const row = await startVoterEnrolment({
+          processInstanceId: instanceId,
+          authUserId,
+        });
+        if (isVoterEnrolled(row)) {
+          return { status: 'registered' };
+        }
+        const step = await pendingEnrolmentStep({
+          processInstanceId: instanceId,
+          taxonomyTermId: row.taxonomyTermId,
+          rule: decision.enrolment,
+        });
+        return { status: step, attestation: decision.enrolment.attestation };
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  }),
+
+  submit_address: createTool({
+    id: 'submit_address',
+    description:
+      'Records the member’s street address when registration awaits one, resolving it to the decision’s district. Returns resolved with the district, or outside, not_found or lookup_failed.',
+    inputSchema: z.object({ address: z.string().min(1) }),
+    execute: async ({ address }: { address: string }) => {
+      if (!instanceId) {
+        return NO_DECISION;
+      }
+      try {
+        return await resolveVoterAddress({
+          processInstanceId: instanceId,
+          authUserId,
+          address,
+          ...(geocode ? { geocode } : {}),
+        });
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  }),
+
+  affirm_attestation: createTool({
+    id: 'affirm_attestation',
+    description:
+      'Completes registration by recording the member’s agreement to the attestation. Call it only when the member’s message explicitly agrees to the attestation text they were shown. The affirmation is formal and final.',
+    inputSchema: z.object({}),
+    execute: async () => {
+      if (!instanceId) {
+        return NO_DECISION;
+      }
+      try {
+        await affirmVoterAttestation({
+          processInstanceId: instanceId,
+          authUserId,
+        });
+        return { status: 'registered' };
+      } catch (error) {
+        return failure(error);
+      }
+    },
+  }),
+
   get_decision: createTool({
     id: 'get_decision',
     description:
