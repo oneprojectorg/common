@@ -8,6 +8,7 @@
     ".": "./src/index.ts"
   },
   "scripts": {
+    "assistant:cli": "tsx --conditions=react-server scripts/assistantCli.ts",
     "dev": "inngest-cli dev",
     "format:check": "oxfmt --check",
     "test": "vitest run",
