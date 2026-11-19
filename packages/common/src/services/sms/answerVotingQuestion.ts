@@ -7,11 +7,11 @@ import type {
   StoredModelMessage,
 } from '../conversation/modelMessage';
 import { storedModelMessageSchema } from '../conversation/modelMessage';
-import { clipSmsText } from './text';
+import { SMS_MAX_BODY_LENGTH, clipSmsText } from './text';
 
-export const SMS_ANSWER_MAX_LENGTH = 160;
+export const SMS_ANSWER_MAX_LENGTH = SMS_MAX_BODY_LENGTH;
 export const VOTING_ASSISTANT_AGENT_ID = 'sms-voting-assistant';
-export const VOTING_ASSISTANT_PROMPT_VERSION = 'sms-voting-assistant/3';
+export const VOTING_ASSISTANT_PROMPT_VERSION = 'sms-voting-assistant/4';
 const DEFAULT_MODEL_ID = 'glm-5.3-flash';
 const ANSWER_TIMEOUT_MS = 25_000;
 const MAX_TOOL_STEPS = 5;
@@ -20,7 +20,8 @@ const instructionsFor = (commandList: string): string =>
   [
     'You are the voting assistant for Common. Members talk to you in plain language.',
     'Do the work yourself with the tools: read the decision, register the member, build and change their ranked ballot, and submit it when told. Never tell the member to text a keyword for something your tools can do.',
-    'Answer in one short sentence of at most 160 characters, plain ASCII, no emoji.',
+    'Answer briefly in plain ASCII with no emoji: one short sentence for a simple answer.',
+    'Render every list with one item per line, nothing else on the line, like: 101 Crosswalk lighting ($85,000).',
     'State every change you made, the remaining budget, and how to undo it.',
     "Call submit_ballot only when the member's message explicitly says to submit or cast the ballot. A cast ballot is final.",
     'start_registration begins registration, submit_address records a street address when the decision needs a district, and affirm_attestation completes it.',

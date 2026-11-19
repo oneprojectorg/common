@@ -85,8 +85,8 @@ describe('runVotingAssistant', () => {
     expect(body.model).toBe('other-model');
   });
 
-  it('clips a long answer to one SMS segment', async () => {
-    stubEndpoint('a'.repeat(400));
+  it('clips a long answer to the SMS body cap', async () => {
+    stubEndpoint('a'.repeat(2000));
 
     const result = await runVotingAssistant({
       question: 'q',
@@ -94,7 +94,7 @@ describe('runVotingAssistant', () => {
       tools: STUB_TOOLS,
     });
 
-    expect(result.answer?.length).toBeLessThanOrEqual(160);
+    expect(result.answer?.length).toBeLessThanOrEqual(1600);
   });
 
   it('answers null when the endpoint fails', async () => {
