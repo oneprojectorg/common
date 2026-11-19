@@ -1685,6 +1685,10 @@
     },
     "develop": {
       "heroTitle": "Avançar propostas",
+      "preparationHeading": "Preparação da cédula",
+      "preparationDescription": "Os delegados de orçamento de cada distrito estão escolhendo quais ideias entram na cédula e redigindo-as para os eleitores.",
+      "underConsiderationStatus": "Em consideração",
+      "noPreparationProposalsTitle": "Nenhuma proposta em consideração",
       "tabsLabel": "Visualizações de desenvolvimento",
       "proposalsTab": "Propostas",
       "defaultEntryName": "Entradas",

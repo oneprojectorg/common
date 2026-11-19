@@ -1685,6 +1685,10 @@
     },
     "develop": {
       "heroTitle": "প্রস্তাব এগিয়ে নিন",
+      "preparationHeading": "ব্যালট প্রস্তুতি",
+      "preparationDescription": "প্রতিটি জেলার বাজেট প্রতিনিধিরা বেছে নিচ্ছেন কোন ধারণাগুলো ব্যালটে যাবে এবং ভোটারদের জন্য সেগুলো লিখছেন।",
+      "underConsiderationStatus": "বিবেচনাধীন",
+      "noPreparationProposalsTitle": "কোনো প্রস্তাব বিবেচনাধীন নেই",
       "tabsLabel": "উন্নয়নের ভিউ",
       "proposalsTab": "প্রস্তাবসমূহ",
       "defaultEntryName": "এন্ট্রিসমূহ",

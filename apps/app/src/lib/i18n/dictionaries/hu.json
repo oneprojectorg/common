@@ -1685,6 +1685,10 @@
     },
     "develop": {
       "heroTitle": "Javaslatok továbbjuttatása",
+      "preparationHeading": "Szavazólap előkészítése",
+      "preparationDescription": "Az egyes kerületek költségvetési küldöttei kiválasztják, mely ötletek kerülnek a szavazólapra, és megírják őket a szavazók számára.",
+      "underConsiderationStatus": "Mérlegelés alatt",
+      "noPreparationProposalsTitle": "Nincs mérlegelés alatt álló javaslat",
       "tabsLabel": "Kidolgozási nézetek",
       "proposalsTab": "Javaslatok",
       "defaultEntryName": "Bejegyzések",

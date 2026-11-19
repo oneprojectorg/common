@@ -1685,6 +1685,10 @@
     },
     "develop": {
       "heroTitle": "Faire avancer les propositions",
+      "preparationHeading": "Préparation du bulletin",
+      "preparationDescription": "Les délégués budgétaires de chaque district choisissent les idées qui figureront sur le bulletin et les rédigent pour les électeurs.",
+      "underConsiderationStatus": "En cours d'examen",
+      "noPreparationProposalsTitle": "Aucune proposition en cours d'examen",
       "tabsLabel": "Vues de développement",
       "proposalsTab": "Propositions",
       "defaultEntryName": "Entrées",
