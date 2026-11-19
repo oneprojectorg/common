@@ -1083,6 +1083,8 @@
       "sortReviewersLabel": "ترتيب المراجعين",
       "sortLeastComplete": "الأقل اكتمالًا",
       "sortMostComplete": "الأكثر اكتمالًا",
+      "sortFewestReviews": "الأقل مراجعات",
+      "sortMostReviews": "الأكثر مراجعات",
       "sortRecentActivity": "النشاط الأخير",
       "sortName": "الاسم",
       "noReviewersMatchFilters": "لا يوجد مراجعون يطابقون عوامل التصفية هذه",

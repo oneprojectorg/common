@@ -2,10 +2,12 @@
 
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
+import type { RouterOutput } from '@op/api';
 import { trpc } from '@op/api/client';
 import type { DecisionAccess, InstancePhaseData } from '@op/api/encoders';
+import { nextCursor } from '@op/common/client';
 import { Skeleton } from '@op/sense/Skeleton';
-import { Suspense } from 'react';
+import { Suspense, useMemo } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -18,15 +20,12 @@ import {
   ProposalReviewProgressTable,
   ProposalReviewProgressTableSkeleton,
 } from './ProposalReviewProgressTable';
-import type {
-  ProposalControls,
-  ProposalSelectControl,
-} from './ProposalsFilterBar';
+import type { ProposalControls } from './ProposalsFilterBar';
 import { NoProposalsFound } from './ProposalsGrid';
 import {
-  CurrentPhaseProposalsLoader,
   ProposalsList,
   type ProposalsLoaderRenderProps,
+  useProposalsLoaderRenderProps,
 } from './ProposalsList';
 import { ProposalsLoadError } from './ProposalsLoadError';
 import { ProposalsStickyFilterBar } from './ProposalsStickyFilterBar';
@@ -35,9 +34,11 @@ import {
   useReportProposalsForReviewDecoration,
 } from './proposalReviewDecoration';
 import {
-  type ProposalFilterState,
-  useProposalFilters,
-} from './useProposalFilters';
+  type ReviewProposalFilterState,
+  useReviewProposalFilters,
+} from './useReviewProposalFilters';
+
+type Category = RouterOutput['decision']['getCategories']['items'][number];
 
 interface AllProposalsListProps {
   processInstanceId: string;
@@ -54,8 +55,9 @@ interface AllProposalsListProps {
 
 /**
  * The review page's "All proposals" surface: the review progress table over
- * the same paginated, filtered `proposal.list` every other proposal screen
- * uses. A viewer who may not see review progress gets the plain proposals list.
+ * `decision.listReviewProposals`, filterable by category and sortable by review
+ * count. A viewer who may not see review progress gets the plain proposals
+ * list.
  *
  * This is the whole review surface for an admin who is not also a reviewer —
  * there is no assignment queue to tab against, so the list owns its own
@@ -131,12 +133,53 @@ interface AllProposalsLoaderProps {
 }
 
 function AllProposalsLoader(props: AllProposalsLoaderProps) {
-  const filters = useProposalFilters({ instanceId: props.processInstanceId });
+  const [{ items: categories }] = trpc.decision.getCategories.useSuspenseQuery({
+    processInstanceId: props.processInstanceId,
+  });
+  const filters = useReviewProposalFilters({
+    processInstanceId: props.processInstanceId,
+    categoryIds: useMemo(
+      () => new Set(categories.map((category) => category.id)),
+      [categories],
+    ),
+  });
+
+  const [paginatedData, query] =
+    trpc.decision.listReviewProposals.useSuspenseInfiniteQuery(
+      filters.queryParams,
+      {
+        getNextPageParam: nextCursor,
+        staleTime: 30 * 1000,
+        // Force a client-side fetch so the query registers its invalidation
+        // channel via the client link, as `proposal.list` does.
+        refetchOnMount: 'always',
+      },
+    );
+  // Unfiltered count for the "of N" denominator; only `.total` is read.
+  const [unfilteredData] = trpc.decision.listReviewProposals.useSuspenseQuery(
+    { processInstanceId: props.processInstanceId, limit: 1 },
+    { staleTime: 30 * 1000 },
+  );
+
+  const allProposals = useMemo(
+    () => paginatedData.pages.flatMap((page) => page.items),
+    [paginatedData.pages],
+  );
+
+  const data = useProposalsLoaderRenderProps(
+    allProposals,
+    paginatedData.pages[0]?.total ?? 0,
+    unfilteredData.total,
+    query,
+  );
 
   return (
-    <CurrentPhaseProposalsLoader queryParams={filters.queryParams}>
-      {(data) => <AllProposalsContent {...props} {...data} filters={filters} />}
-    </CurrentPhaseProposalsLoader>
+    <AllProposalsContent
+      {...props}
+      {...data}
+      filters={filters}
+      categories={categories}
+    />
   );
 }
 
@@ -147,6 +190,7 @@ function AllProposalsContent({
   opensInSheet,
   pinOffset,
   filters,
+  categories,
   allProposals,
   total,
   totalProposalCount,
@@ -154,11 +198,11 @@ function AllProposalsContent({
   shouldShowTrigger,
   infiniteScrollRef,
 }: AllProposalsLoaderProps &
-  ProposalsLoaderRenderProps & { filters: ProposalFilterState }) {
+  ProposalsLoaderRenderProps & {
+    filters: ReviewProposalFilterState;
+    categories: Category[];
+  }) {
   const t = useTranslations();
-  const [{ items: categories }] = trpc.decision.getCategories.useSuspenseQuery({
-    processInstanceId,
-  });
   const exportEnabled = useFeatureFlag('export-feature') ?? false;
 
   useReportProposalsForReviewDecoration(allProposals);
@@ -171,20 +215,13 @@ function AllProposalsContent({
     setSelectedCategory: filters.setSelectedCategory,
     sortOrder: filters.sortOrder,
     setSortOrder: filters.setSortOrder,
+    sortOptions: [
+      { id: 'newest', label: t('decisions.proposals.sortNewestOption') },
+      { id: 'fewestReviews', label: t('decisions.review.sortFewestReviews') },
+      { id: 'mostReviews', label: t('decisions.review.sortMostReviews') },
+    ],
     categories,
     decisionSlug,
-  };
-
-  const leadingSelect: ProposalSelectControl = {
-    items: filters.availableFilters,
-    value: filters.proposalFilter,
-    onChange: (id) => {
-      const selected = filters.availableFilters.find((item) => item.id === id);
-      if (selected) {
-        filters.setProposalFilter(selected.id);
-      }
-    },
-    label: t('decisions.proposals.filterProposalsLabel'),
   };
 
   return (
@@ -197,7 +234,6 @@ function AllProposalsContent({
         count={total}
         total={totalProposalCount}
         controls={controls}
-        leadingSelect={leadingSelect}
         exportControl={
           canExport && exportEnabled ? (
             <ExportProposalsButton
@@ -213,7 +249,7 @@ function AllProposalsContent({
           hasFilter={filters.hasActiveFilter}
           searchQuery={filters.queryParams.search}
           onClearFilters={
-            filters.canClearFilters ? filters.clearFilters : undefined
+            filters.hasActiveFilter ? filters.clearFilters : undefined
           }
         />
       ) : (
