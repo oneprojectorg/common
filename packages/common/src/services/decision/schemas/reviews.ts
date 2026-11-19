@@ -523,11 +523,20 @@ export type ReviewerCategory = z.infer<typeof reviewerCategorySchema>;
 
 export const reviewerCategoriesSchema = list(reviewerCategorySchema);
 
+export const reviewProposalSortSchema = z.enum([
+  'newest',
+  'fewestReviews',
+  'mostReviews',
+]);
+
+export type ReviewProposalSort = z.infer<typeof reviewProposalSortSchema>;
+
 /** `categoryIds` combine as AND, so a category and a district can narrow together. */
 export const listReviewProposalsInputSchema = instanceOptionalPhaseRefSchema
   .extend({
     search: proposalSearchSchema,
     categoryIds: z.array(z.uuid()).max(10).optional(),
+    sort: reviewProposalSortSchema.default('newest'),
   })
   .extend(paginationInput('md').shape);
 
@@ -537,6 +546,7 @@ export type ListReviewProposalsInput = z.infer<
 
 export const reviewProposalListSchema = paginated(proposalSchema).extend({
   total,
+  unfilteredTotal: total,
 });
 
 export type ReviewProposalList = z.infer<typeof reviewProposalListSchema>;
