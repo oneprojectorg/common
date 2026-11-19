@@ -161,7 +161,6 @@ function PreparationProposals({
         phaseId: sourcePhaseId,
         submittedByProfileId:
           filter === ProposalFilter.MY_PROPOSALS ? currentProfileId : undefined,
-        excludeDrafts: true,
         dir: 'desc',
         limit: PROPOSALS_PAGE_LIMIT,
       },
@@ -170,7 +169,6 @@ function PreparationProposals({
   const [unfilteredData] = trpc.decision.listProposals.useSuspenseQuery({
     processInstanceId: instanceId,
     phaseId: sourcePhaseId,
-    excludeDrafts: true,
     dir: 'desc',
     limit: 1,
   });
