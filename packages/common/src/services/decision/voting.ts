@@ -108,6 +108,7 @@ async function getVoteCap({
   const proposalTemplate = await resolveProposalTemplate(
     processInstance.instanceData as Record<string, unknown> | null,
     processInstance.processId,
+    null,
   );
 
   return {

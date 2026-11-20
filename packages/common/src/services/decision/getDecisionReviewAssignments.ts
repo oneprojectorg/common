@@ -83,9 +83,11 @@ export async function getDecisionReviewAssignments({
 
   // Needed to read preview text out of the document fragments, exactly like
   // the proposal list reads. Started now, awaited after the assignment query.
+  // Only proposals without their own form are reviewed, so one template reads them all.
   const proposalTemplatePromise = resolveProposalTemplate(
     instance.instanceData as Record<string, unknown> | null,
     instance.processId,
+    null,
   );
 
   // Not paginated: bounded by reviewers × proposals of a single process.

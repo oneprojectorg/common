@@ -96,7 +96,7 @@ export async function listProposalsWithReviewAggregates(
   if ('proposalIds' in input) {
     const [phaseProposalIds, proposalTemplate] = await Promise.all([
       getProposalIdsForPhase({ instance, phaseId }),
-      resolveProposalTemplate(instance.instanceData, instance.processId),
+      resolveProposalTemplate(instance.instanceData, instance.processId, null),
       assertCanReadPhaseReviews({ instance, phaseId: input.phaseId, user }),
     ]);
 
@@ -117,7 +117,7 @@ export async function listProposalsWithReviewAggregates(
 
   const [phaseProposalIds, proposalTemplate, roles] = await Promise.all([
     getProposalIdsForPhase({ instance, phaseId }),
-    resolveProposalTemplate(instance.instanceData, instance.processId),
+    resolveProposalTemplate(instance.instanceData, instance.processId, null),
     assertProfileAccess({
       user,
       profileId: instance.profileId,

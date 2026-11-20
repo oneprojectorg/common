@@ -33,11 +33,11 @@ describe.concurrent('resolveProposalTemplate', () => {
     expect(orphan?.instanceData).toMatchObject({ proposalTemplate });
 
     await expect(
-      resolveProposalTemplate(instance.instance.instanceData, null),
+      resolveProposalTemplate(instance.instance.instanceData, null, null),
     ).resolves.toEqual(proposalTemplate);
   });
 
   it('has no template-level fallback without a template', async () => {
-    await expect(resolveProposalTemplate({}, null)).resolves.toBeNull();
+    await expect(resolveProposalTemplate({}, null, null)).resolves.toBeNull();
   });
 });

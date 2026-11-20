@@ -84,10 +84,13 @@ export async function listContributingProposals({
             profile: { columns: proposalProfileColumns },
           },
         }),
+    // Contributing proposals are the ideas a proposal was developed from; they
+    // have no form of their own.
     instance
       ? resolveProposalTemplate(
           instance.instanceData as Record<string, unknown> | null,
           instance.processId,
+          null,
         )
       : null,
   ]);

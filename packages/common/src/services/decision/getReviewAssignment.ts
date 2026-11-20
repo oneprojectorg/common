@@ -41,6 +41,7 @@ export async function getReviewAssignment({
   const proposalTemplate = await resolveProposalTemplate(
     instance.instanceData,
     instance.processId,
+    assignment.proposal.formSchemaId,
   );
 
   const [relationshipInfo, documentContentMap, proposalAttachments] =
