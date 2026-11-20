@@ -40,6 +40,7 @@ function Input({
       dir={resolvedDir}
       value={value}
       data-slot="input"
+      data-unstyled={unstyled || undefined}
       className={cn(
         // Uncontrolled only: nothing can read the value, so fall back to CSS.
         // `plaintext` follows UAX9 P2/P3, and P3 resolves a run with no strong

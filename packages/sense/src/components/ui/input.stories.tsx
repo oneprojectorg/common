@@ -47,6 +47,17 @@ export const Disabled: Story = {
   ),
 };
 
+export const ReadOnly: Story = {
+  render: () => (
+    <Input
+      defaultValue="Matt Wierzbicki"
+      readOnly
+      aria-label="Name"
+      className="max-w-sm"
+    />
+  ),
+};
+
 export const Invalid: Story = {
   render: () => (
     <Input

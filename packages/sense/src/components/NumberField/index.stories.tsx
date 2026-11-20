@@ -77,6 +77,7 @@ export const States: Story = {
   render: () => (
     <div className="flex w-72 flex-col gap-6">
       <NumberField label="Disabled" disabled value={42} />
+      <NumberField label="Read-only" readOnly value={42} />
       <NumberField
         label="With error"
         errorMessage="The budget exceeds the remaining funds."

@@ -143,6 +143,21 @@ export const Disabled: Story = {
   ),
 };
 
+export const ReadOnly: Story = {
+  render: () => (
+    <InputGroup className="max-w-sm">
+      <InputGroupAddon>
+        <InputGroupText>https://</InputGroupText>
+      </InputGroupAddon>
+      <InputGroupInput
+        defaultValue="example.com"
+        readOnly
+        aria-label="Website"
+      />
+    </InputGroup>
+  ),
+};
+
 export const Invalid: Story = {
   render: () => (
     <InputGroup className="max-w-sm">

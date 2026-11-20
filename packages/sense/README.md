@@ -249,7 +249,8 @@ published source lags its declared dependency versions. Reapply if you re-run
   fill, padding, radius, height, type size, the focus and invalid rings; the
   resize grip on `textarea`) and keeps the behaviour, for a field that reads as
   the text around it (`EditableText`, the process overview). The counterpart of
-  `Button`'s `bare`.
+  `Button`'s `bare`. It also stamps `data-unstyled`, so the read-only tint in
+  `@op/styles/theme.css` skips the field.
 - `textarea.tsx` — the `ref` goes through `lib/useFieldSizingFallback`, which
   sizes the box from `scrollHeight` where `field-sizing: content` is
   unsupported (Firefox) and only merges the ref elsewhere.

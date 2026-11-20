@@ -139,6 +139,23 @@ export const Disabled: Story = {
   ),
 };
 
+export const ReadOnly: Story = {
+  render: () => (
+    <Select items={fruitItems} defaultValue="banana" readOnly>
+      <SelectTrigger aria-label="Fruit" className="w-[200px]">
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        {fruitItems.map(({ value, label }) => (
+          <SelectItem key={value} value={value}>
+            {label}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  ),
+};
+
 export const Invalid: Story = {
   render: () => (
     <Select items={fruitItems}>
