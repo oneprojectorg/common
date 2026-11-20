@@ -1,6 +1,6 @@
 import { APP_NAME, noReplyEmail } from '@op/core';
 import nodemailer from 'nodemailer';
-import { render } from 'react-email';
+import { render, toPlainText } from 'react-email';
 import { Resend } from 'resend';
 import z from 'zod';
 
@@ -83,12 +83,15 @@ const sendSmtpEmail = async ({
   renderOptions,
 }: BatchEmailItem & { renderOptions?: RenderParameter[1] }) => {
   const html = await render(component(), renderOptions);
+  // Text-only clients and spam scoring both read the plain-text part.
+  const text = toPlainText(html);
 
   return getTransporter().sendMail({
     from: formatFromAddress(from),
     to: safeEmailSchema.parse(to),
     subject,
     html,
+    text,
   });
 };
 
@@ -220,5 +223,8 @@ export * from './emails/ProposalMergedEmail';
 export * from './emails/ProposalMergedIntoYoursEmail';
 export * from './emails/ProposalRejectedEmail';
 export * from './emails/DecisionResultEmail';
+export * from './emails/OPLoginCodeEmail';
+export * from './emails/OPSignupCodeEmail';
+export * from './emails/OPEmailChangeCodeEmail';
 
 export { render } from 'react-email';
