@@ -44,7 +44,6 @@ import { LuBell, LuUsers } from 'react-icons/lu';
 import { Link, useTranslations } from '@/lib/i18n';
 
 import {
-  FilterBar,
   FilterBarActions,
   FilterBarEnd,
   FilterBarSearch,
@@ -52,6 +51,7 @@ import {
   FilterBarStart,
 } from '../FilterBar';
 import { ReviewStatusBadge } from '../ReviewStatusBadge';
+import { StickyFilterBar } from '../StickyFilterBar';
 import { useSearchParam } from '../useSearchParam';
 import { ReviewersTableSkeleton } from './ReviewAssignmentsSkeletons';
 import {
@@ -205,7 +205,7 @@ function ReviewersTableContent({
   return (
     <div className="relative flex flex-col gap-6">
       {showToolbar ? (
-        <FilterBar>
+        <StickyFilterBar>
           <FilterBarStart>
             {reviewerCount}
             <FilterBarSearch
@@ -246,7 +246,7 @@ function ReviewersTableContent({
               </FilterBarActions>
             ) : null}
           </FilterBarEnd>
-        </FilterBar>
+        </StickyFilterBar>
       ) : (
         reviewerCount
       )}

@@ -37,13 +37,14 @@ import {
 
 import { useTranslations } from '@/lib/i18n';
 
-import { FilterBar, FilterBarEnd, FilterBarSelect } from './FilterBar';
+import { FilterBarEnd, FilterBarSelect } from './FilterBar';
 import { MobileViewSwitch } from './MobileViewSwitch';
 import { ProposalCount } from './ProposalCount';
 import { ProposalMasonry } from './ProposalMasonry';
 import { ProposalsViewSwitch } from './ProposalsFilterBarParts';
 import { ReviewAssignmentCard } from './ReviewAssignmentCard';
 import { ReviewAssignmentsMapWithLocations } from './ReviewAssignmentsMapWithLocations';
+import { StickyFilterBar } from './StickyFilterBar';
 import { REVIEW_ASSIGNMENT_VIEWS } from './proposalViews';
 import { useProposalViewMode } from './useProposalViewMode';
 import { useReviewersByProposalId } from './useReviewersByProposalId';
@@ -300,7 +301,7 @@ export function ReviewAssignmentsList({
   return (
     <div className="relative flex flex-col gap-6">
       {showToolbar && (
-        <FilterBar pinOffset={pinOffset}>
+        <StickyFilterBar pinOffset={pinOffset}>
           {/* min-w-0 lets the category suffix ellipsize before the filters */}
           <div className="flex min-w-0 grow-999 basis-0 items-baseline gap-1 max-md:basis-full">
             <ProposalCount count={total} />
@@ -351,7 +352,7 @@ export function ReviewAssignmentsList({
               />
             )}
           </FilterBarEnd>
-        </FilterBar>
+        </StickyFilterBar>
       )}
 
       {/* Cards grid */}

@@ -2,8 +2,9 @@
 
 import { useTranslations } from '@/lib/i18n';
 
-import { FilterBar, FilterBarEnd, FilterBarSelect } from './FilterBar';
+import { FilterBarEnd, FilterBarSelect } from './FilterBar';
 import { ProposalCount } from './ProposalCount';
+import { StickyFilterBar } from './StickyFilterBar';
 
 interface Category {
   id: string;
@@ -37,7 +38,7 @@ export const ManualSelectionToolbar = ({
   const { selectedCategory, sortOrder } = filters;
 
   return (
-    <FilterBar pinOffset={pinOffset}>
+    <StickyFilterBar pinOffset={pinOffset}>
       <ProposalCount count={count} />
       <FilterBarEnd>
         <FilterBarSelect
@@ -66,6 +67,6 @@ export const ManualSelectionToolbar = ({
           ]}
         />
       </FilterBarEnd>
-    </FilterBar>
+    </StickyFilterBar>
   );
 };

@@ -32,7 +32,6 @@ import { useTranslations } from '@/lib/i18n';
 
 import { ExportProposalsButton } from './ExportProposalsButton';
 import {
-  FilterBar,
   FilterBarActions,
   FilterBarEnd,
   type FilterBarSelectControl,
@@ -60,7 +59,7 @@ import {
   ProposalsMapView,
   ProposalsMapWithLocations,
 } from './ProposalsMapView';
-import { getScrollParent } from './StickyFilterBar';
+import { StickyFilterBar, getScrollParent } from './StickyFilterBar';
 import { proposalHref } from './proposalHrefs';
 import { useReportProposalsForReviewDecoration } from './proposalReviewDecoration';
 import {
@@ -620,11 +619,11 @@ const ProposalsListContent = ({
       {/* Kept on an empty list too: "Not advanced" can hold what the list
           doesn't, such as proposals earlier phases left behind. */}
       {hideFilters ? (
-        <FilterBar pinOffset={pinOffset}>
+        <StickyFilterBar pinOffset={pinOffset}>
           {customHeader ?? <MyProposalsHeader />}
           {/* Kept so a `?view=` link into this phase still has a way out. */}
           {viewSwitch ? <FilterBarEnd>{viewSwitch}</FilterBarEnd> : null}
-        </FilterBar>
+        </StickyFilterBar>
       ) : (
         <ProposalsListFilterBar
           pinOffset={pinOffset}
