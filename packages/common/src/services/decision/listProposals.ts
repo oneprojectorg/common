@@ -271,8 +271,7 @@ export const listProposals = async ({
   const [templateFor, advanceTarget] = await Promise.all([
     resolveProposalTemplates({
       proposals: proposalList,
-      instanceData: instance.instanceData,
-      processId: instance.processId,
+      instance,
     }),
     advanceTargetPromise,
   ]);

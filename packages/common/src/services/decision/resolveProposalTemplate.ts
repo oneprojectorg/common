@@ -1,4 +1,5 @@
 import { db } from '@op/db/client';
+import type { processInstances } from '@op/db/schema';
 
 import { NotFoundError, ValidationError } from '../../utils';
 import type { ProposalTemplateSchema } from './types';
@@ -47,12 +48,13 @@ export async function resolveProposalTemplate(
  */
 export async function resolveProposalTemplates({
   proposals,
-  instanceData,
-  processId,
+  instance,
 }: {
   proposals: ReadonlyArray<{ id: string; formSchemaId: string | null }>;
-  instanceData: unknown;
-  processId: string | null;
+  instance: Pick<
+    typeof processInstances.$inferSelect,
+    'instanceData' | 'processId'
+  >;
 }): Promise<(proposalId: string) => ProposalTemplateSchema | null> {
   const formSchemaIds = [
     ...new Set(
@@ -72,9 +74,7 @@ export async function resolveProposalTemplates({
           columns: { id: true, schema: true },
         })
       : [],
-    needsInstanceTemplate
-      ? resolveInstanceTemplate({ instanceData, processId })
-      : null,
+    needsInstanceTemplate ? resolveInstanceTemplate(instance) : null,
   ]);
 
   const formTemplates = new Map<string, ProposalTemplateSchema>();

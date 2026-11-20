@@ -239,8 +239,7 @@ export const listAllProposals = async ({
 
   const templateFor = await resolveProposalTemplates({
     proposals: pageItems,
-    instanceData: instance.instanceData,
-    processId: instance.processId,
+    instance,
   });
 
   const profileIds = pageItems
