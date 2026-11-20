@@ -301,9 +301,10 @@ export function ReviewAssignmentsList({
     <div className="relative flex flex-col gap-6">
       {showToolbar && (
         <FilterBar pinOffset={pinOffset}>
-          {/* min-w-0 + flex-1 lets the category suffix ellipsize before the
-              filters; below md the full basis puts the filters on their own row */}
-          <div className="flex min-w-0 flex-1 items-baseline gap-1 max-md:basis-full">
+          {/* The large grow gives the header the free space before the filters,
+              and min-w-0 lets the category suffix ellipsize; below md the full
+              basis puts the filters on their own row. */}
+          <div className="flex min-w-0 grow-999 basis-0 items-baseline gap-1 max-md:basis-full">
             <ProposalCount count={total} />
             {/* decorative — a failed lookup must not take down the queue */}
             <APIErrorBoundary fallbacks={{ default: () => null }}>
