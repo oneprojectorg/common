@@ -23,7 +23,11 @@ import { LuTriangleAlert } from 'react-icons/lu';
 
 import { Link, useTranslations } from '@/lib/i18n';
 
-import { ResponsiveSelect } from '@/components/decisions/ResponsiveSelect';
+import {
+  FilterBar,
+  FilterBarEnd,
+  FilterBarSelect,
+} from '@/components/decisions/FilterBar';
 
 import {
   type Sort,
@@ -56,33 +60,34 @@ export const OrganizationsDirectory = () => {
 
   return (
     <div className="flex flex-col gap-8">
-      <div className="-mx-4 -my-1 no-scrollbar flex gap-3 overflow-x-auto px-4 py-1 *:shrink-0 sm:mx-0 sm:my-0 sm:gap-6 sm:overflow-visible sm:px-0 sm:py-0">
-        <TermFilter
-          options={filterTerms?.focusAreas ?? []}
-          allLabel={t('allFocusAreasOption')}
-          ariaLabel={t('focusAreaFilterLabel')}
-          value={filters.focusArea}
-          onChange={(focusArea) => setFilters({ focusArea })}
-        />
-        <TermFilter
-          options={filterTerms?.strategies ?? []}
-          allLabel={t('allStrategiesOption')}
-          ariaLabel={t('strategyFilterLabel')}
-          value={filters.strategy}
-          onChange={(strategy) => setFilters({ strategy })}
-        />
-        <ResponsiveSelect<Sort>
-          aria-label={t('sortLabel')}
-          className="w-auto sm:w-40"
-          selectedKey={filters.sort}
-          onSelectionChange={(sort) => setFilters({ sort })}
-          items={[
-            { id: 'newest', label: t('sortNewest') },
-            { id: 'oldest', label: t('sortOldest') },
-            { id: 'name', label: t('sortName') },
-          ]}
-        />
-      </div>
+      <FilterBar>
+        <FilterBarEnd>
+          <TermFilter
+            options={filterTerms?.focusAreas ?? []}
+            allLabel={t('allFocusAreasOption')}
+            ariaLabel={t('focusAreaFilterLabel')}
+            value={filters.focusArea}
+            onChange={(focusArea) => setFilters({ focusArea })}
+          />
+          <TermFilter
+            options={filterTerms?.strategies ?? []}
+            allLabel={t('allStrategiesOption')}
+            ariaLabel={t('strategyFilterLabel')}
+            value={filters.strategy}
+            onChange={(strategy) => setFilters({ strategy })}
+          />
+          <FilterBarSelect<Sort>
+            label={t('sortLabel')}
+            value={filters.sort}
+            onChange={(sort) => setFilters({ sort })}
+            items={[
+              { id: 'newest', label: t('sortNewest') },
+              { id: 'oldest', label: t('sortOldest') },
+              { id: 'name', label: t('sortName') },
+            ]}
+          />
+        </FilterBarEnd>
+      </FilterBar>
 
       {hasTermsError ? (
         <DirectoryError onRetry={() => refetchTerms()} />
@@ -142,13 +147,10 @@ const TermFilter = ({
   value: string | null;
   onChange: (id: string | null) => void;
 }) => (
-  <ResponsiveSelect
-    aria-label={ariaLabel}
-    className="w-auto sm:w-40"
-    selectedKey={
-      options.some(({ slug }) => slug === value) && value ? value : ALL
-    }
-    onSelectionChange={(slug) => onChange(slug === ALL ? null : slug)}
+  <FilterBarSelect
+    label={ariaLabel}
+    value={options.some(({ slug }) => slug === value) && value ? value : ALL}
+    onChange={(slug) => onChange(slug === ALL ? null : slug)}
     items={[
       { id: ALL, label: allLabel },
       ...options.map(({ slug, label }) => ({ id: slug, label })),

@@ -20,6 +20,7 @@ import { Suspense, useEffect } from 'react';
 import { useTranslations } from '@/lib/i18n';
 
 import { CategoryFilterSelect } from '../CategoryFilterSelect';
+import { FilterBar, FilterBarEnd, FilterBarStart } from '../FilterBar';
 import { ProposalsLoadError } from '../ProposalsLoadError';
 import { usesDistrictCategoryTerm } from '../categoryTerm';
 import { ALL_CATEGORIES } from '../proposalFilterQuery';
@@ -66,23 +67,24 @@ export function DevelopAdminEntriesPanel({
       categoryId={categoryId}
     >
       <div className="flex flex-col gap-10">
-        <div className="flex min-h-11 flex-wrap items-center justify-between gap-4">
-          {/* Outside Suspense so the live region exists before the count changes. */}
-          <div role="status" aria-live="polite">
-            <APIErrorBoundary fallbacks={{ default: () => null }}>
-              <Suspense
-                fallback={<Skeleton aria-hidden className="h-7 w-40" />}
-              >
-                <DevelopAdminEntriesCountSuspense
-                  processInstanceId={processInstanceId}
-                  phaseId={phaseId}
-                />
-              </Suspense>
-            </APIErrorBoundary>
-          </div>
-
-          <div className="flex w-full flex-wrap items-center gap-4 sm:w-auto">
+        <FilterBar>
+          <FilterBarStart>
+            {/* Outside Suspense so the live region exists before the count changes. */}
+            <div role="status" aria-live="polite">
+              <APIErrorBoundary fallbacks={{ default: () => null }}>
+                <Suspense
+                  fallback={<Skeleton aria-hidden className="h-7 w-40" />}
+                >
+                  <DevelopAdminEntriesCountSuspense
+                    processInstanceId={processInstanceId}
+                    phaseId={phaseId}
+                  />
+                </Suspense>
+              </APIErrorBoundary>
+            </div>
             <DevelopEntriesSearch />
+          </FilterBarStart>
+          <FilterBarEnd>
             <APIErrorBoundary fallbacks={{ default: () => null }}>
               <Suspense fallback={<CategoryFilterSkeleton />}>
                 <DevelopAdminCategoryFilterSuspense
@@ -91,8 +93,8 @@ export function DevelopAdminEntriesPanel({
                 />
               </Suspense>
             </APIErrorBoundary>
-          </div>
-        </div>
+          </FilterBarEnd>
+        </FilterBar>
 
         <APIErrorBoundary fallbacks={{ default: () => <ProposalsLoadError /> }}>
           <Suspense

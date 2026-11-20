@@ -38,7 +38,7 @@ export function DevelopPageShell({
         </div>
       </section>
 
-      <div className="mx-auto w-full max-w-page px-4 pt-12 pb-32">
+      <div className="mx-auto w-full max-w-page px-4 pt-12 pb-32 sm:px-8">
         {children}
       </div>
     </div>

@@ -17,7 +17,11 @@ import { Suspense, useEffect, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { SearchField } from '@/components/SearchField';
+import {
+  FilterBar,
+  FilterBarSearch,
+  FilterBarStart,
+} from '@/components/decisions/FilterBar';
 
 import { DecisionsRowCells } from './DecisionsRow';
 
@@ -29,15 +33,18 @@ export const DecisionsTable = () => {
 
   return (
     <div className="mt-8">
-      <div className="mb-4 flex items-center justify-between gap-4">
-        <Header2 className="text-title">{t('admin.allDecisionsTitle')}</Header2>
-        <SearchField
-          className="w-64"
-          label={t('admin.searchDecisionsLabel')}
-          value={searchQuery}
-          onChange={setSearchQuery}
-        />
-      </div>
+      <FilterBar>
+        <FilterBarStart>
+          <Header2 className="text-title">
+            {t('admin.allDecisionsTitle')}
+          </Header2>
+          <FilterBarSearch
+            label={t('admin.searchDecisionsLabel')}
+            value={searchQuery}
+            onChange={setSearchQuery}
+          />
+        </FilterBarStart>
+      </FilterBar>
       <Suspense fallback={<DecisionsTableSkeleton />}>
         <DecisionsTableContent searchQuery={debouncedQuery} />
       </Suspense>

@@ -41,7 +41,13 @@ import { LuDownload, LuEllipsis } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { SearchField } from '@/components/SearchField';
+import {
+  FilterBar,
+  FilterBarActions,
+  FilterBarEnd,
+  FilterBarSearch,
+  FilterBarStart,
+} from '@/components/decisions/FilterBar';
 
 import { UsersRowCells } from './UsersRow';
 
@@ -121,15 +127,16 @@ export const UsersTable = () => {
 
   return (
     <div className="mt-8">
-      <div className="mb-4 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <Header2 className="text-title">{t('admin.allUsersTitle')}</Header2>
-        <div className="flex flex-wrap items-center gap-2">
-          <SearchField
-            className="w-full sm:w-64"
+      <FilterBar>
+        <FilterBarStart>
+          <Header2 className="text-title">{t('admin.allUsersTitle')}</Header2>
+          <FilterBarSearch
             label={t('admin.searchUsersLabel')}
             value={searchQuery}
             onChange={setSearchQuery}
           />
+        </FilterBarStart>
+        <FilterBarEnd>
           <Select
             items={anonFilterItems}
             value={anonFilter}
@@ -155,31 +162,33 @@ export const UsersTable = () => {
               </SelectGroup>
             </SelectContent>
           </Select>
-          <DropdownMenu>
-            <DropdownMenuTrigger
-              render={
-                <Button
-                  variant="outline"
-                  size="icon"
-                  aria-label={t('admin.userOptionsLabel')}
-                  className="me-1"
+          <FilterBarActions>
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                render={
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    aria-label={t('admin.userOptionsLabel')}
+                    className="me-1"
+                  >
+                    <LuEllipsis />
+                  </Button>
+                }
+              />
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem
+                  onClick={handleExportAllUsers}
+                  disabled={isExporting}
                 >
-                  <LuEllipsis />
-                </Button>
-              }
-            />
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem
-                onClick={handleExportAllUsers}
-                disabled={isExporting}
-              >
-                <LuDownload className="size-4" />
-                {t('admin.exportUsersAction')}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      </div>
+                  <LuDownload className="size-4" />
+                  {t('admin.exportUsersAction')}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </FilterBarActions>
+        </FilterBarEnd>
+      </FilterBar>
       <Suspense fallback={<UsersTableSkeleton />}>
         <UsersTableContent
           searchQuery={debouncedQuery}

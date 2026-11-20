@@ -18,7 +18,7 @@ export interface FilterBarSelectControl<T extends string = string> {
 interface FilterBarSearchControl {
   value: string;
   onChange: (value: string) => void;
-  isPending: boolean;
+  isPending?: boolean;
   label: string;
 }
 
