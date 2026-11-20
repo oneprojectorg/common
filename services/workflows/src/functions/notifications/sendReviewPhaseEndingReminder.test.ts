@@ -1,5 +1,8 @@
 import { InngestTestEngine } from '@inngest/test';
-import { TestReviewsDataManager, syncPhaseRows } from '@op/common/testing';
+import {
+  TestReviewsDataManager,
+  updateInstancePhases,
+} from '@op/common/testing';
 import { db, eq } from '@op/db/client';
 import { ProcessStatus, processInstances } from '@op/db/schema';
 import { Events } from '@op/events';
@@ -32,22 +35,19 @@ describe('sendReviewPhaseEndingReminder', () => {
 
     await db
       .update(processInstances)
-      .set({
-        status: ProcessStatus.PUBLISHED,
-        currentStateId: 'review',
-        instanceData: {
-          phases: [
-            {
-              phaseId: 'review',
-              name: 'Review',
-              endDate,
-              rules: { reviews: { submit: true } },
-            },
-          ],
-        },
-      })
+      .set({ status: ProcessStatus.PUBLISHED, currentStateId: 'review' })
       .where(eq(processInstances.id, processInstanceId));
-    await syncPhaseRows(processInstanceId);
+    await updateInstancePhases({
+      instanceId: processInstanceId,
+      update: () => [
+        {
+          phaseId: 'review',
+          name: 'Review',
+          endDate,
+          rules: { reviews: { submit: true } },
+        },
+      ],
+    });
 
     const { error, result, ctx } = await new InngestTestEngine({
       function: sendReviewPhaseEndingReminder,

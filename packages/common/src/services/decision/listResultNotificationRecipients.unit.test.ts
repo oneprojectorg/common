@@ -95,6 +95,10 @@ vi.mock('./getProposalsForPhase', () => ({
   getProposalIdsForPhase: vi.fn(),
 }));
 
+vi.mock('./instancePhases', () => ({
+  getPhases: vi.fn(),
+}));
+
 import { db } from '@op/db/client';
 
 import {
@@ -105,6 +109,7 @@ import {
   getAttachedProposalIds,
   getProposalIdsForPhase,
 } from './getProposalsForPhase';
+import { getPhases } from './instancePhases';
 import { listResultNotificationRecipients } from './listResultNotificationRecipients';
 
 const INSTANCE_ID = '11111111-1111-4111-8111-111111111111';
@@ -130,6 +135,7 @@ const findInstance = vi.mocked(db.query.processInstances.findFirst);
 const findProposals = vi.mocked(db.query.proposals.findMany);
 const mockPhaseIds = vi.mocked(getProposalIdsForPhase);
 const mockAttachedIds = vi.mocked(getAttachedProposalIds);
+const mockReadPhases = vi.mocked(getPhases);
 const mockAudiences = vi.mocked(listMemberProfileRecipientsByProfile);
 
 const ADA: EmailRecipient = {
@@ -200,10 +206,11 @@ describe('listResultNotificationRecipients', () => {
     findInstance.mockResolvedValue({
       id: INSTANCE_ID,
       name: 'Participatory Budgeting 2026',
-      instanceData: { phases: [{ phaseId: 'voting', name: 'Voting' }] },
+      instanceData: {},
       currentStateId: 'voting',
       profile: { slug: 'pb-2026' },
     } as never);
+    mockReadPhases.mockResolvedValue([{ phaseId: 'voting', name: 'Voting' }]);
     mockPhaseIds.mockResolvedValue(['selected-1', 'not-selected-1']);
     findProposals.mockResolvedValue([
       proposal({

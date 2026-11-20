@@ -2,8 +2,8 @@ import { mockCollab } from '@op/collab/testing';
 import { createDecisionRole, invalidateDecisionInstance } from '@op/common';
 import {
   TestDecisionsDataManager,
-  syncPhaseRows,
   testSimpleVotingSchema,
+  updateInstancePhase,
 } from '@op/common/testing';
 import {
   ProposalStatus,
@@ -28,10 +28,6 @@ const MILLISECONDS_PER_DAY = 86_400_000;
 
 const proposalDocSchema = z.object({
   collaborationDocId: z.string().optional(),
-});
-
-const instancePhasesSchema = z.looseObject({
-  phases: z.array(z.looseObject({ phaseId: z.string() })),
 });
 
 async function setupVotingInstance(
@@ -59,27 +55,15 @@ async function setupVotingInstance(
     });
   }
 
-  const [record] = await db
-    .select({ instanceData: processInstances.instanceData })
-    .from(processInstances)
-    .where(eq(processInstances.id, instanceId));
-  const instanceData = instancePhasesSchema.parse(record?.instanceData);
-
+  await updateInstancePhase({
+    instanceId,
+    phaseId: 'voting',
+    update: (phase) => ({ ...phase, endDate: votingEndDate }),
+  });
   await db
     .update(processInstances)
-    .set({
-      currentStateId: 'voting',
-      instanceData: {
-        ...instanceData,
-        phases: instanceData.phases.map((phase) =>
-          phase.phaseId === 'voting'
-            ? { ...phase, endDate: votingEndDate }
-            : phase,
-        ),
-      },
-    })
+    .set({ currentStateId: 'voting' })
     .where(eq(processInstances.id, instanceId));
-  await syncPhaseRows(instanceId);
   await invalidateDecisionInstance(instanceId);
 
   return { setup, instanceId, proposal };

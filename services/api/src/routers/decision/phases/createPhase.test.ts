@@ -14,8 +14,6 @@ import {
   createUnauthenticatedCaller,
   expectNoProfileNamed,
   listPhaseIds,
-  loadBlobPhases,
-  loadInstancePhases,
   loadTransitionLinks,
   setupPublishedDateDecision,
   setupPublishedDecisionAtThirdPhase,
@@ -34,7 +32,6 @@ describe.concurrent('createPhase', () => {
       task,
       onTestFinished,
     );
-    const blobPhases = await loadBlobPhases(instanceId);
 
     const result = await adminCaller.decision.createPhase({
       instanceId,
@@ -57,7 +54,6 @@ describe.concurrent('createPhase', () => {
     expect(phase?.data).toEqual({ description: 'Pitch an idea' });
     expect(profile?.type).toBe(EntityType.PHASE);
     expect(profile?.slug).toBe(result.slug);
-    expect(await loadBlobPhases(instanceId)).toEqual(blobPhases);
   });
 
   it('lets a second user granted decisions ADMIN create a phase', async ({
@@ -403,33 +399,6 @@ describe.concurrent('createPhase', () => {
         },
       }),
     ).rejects.toMatchObject({ code: 'BAD_REQUEST' });
-  });
-
-  it('gives a decision with no rows a row per blob phase before adding the phase', async ({
-    task,
-    onTestFinished,
-  }) => {
-    const { testData, instanceId, adminCaller } = await setupDecision(
-      task,
-      onTestFinished,
-    );
-    await testData.removePhaseRows(instanceId);
-    const blobPhases = await loadBlobPhases(instanceId);
-
-    const added = await adminCaller.decision.createPhase({
-      instanceId,
-      name: 'Added',
-      sortOrder: 2,
-    });
-    testData.trackProfileForCleanup(added.profileId);
-
-    const phases = await loadInstancePhases(instanceId);
-    expect(phases.map(({ phaseId }) => phaseId)).toEqual([
-      'initial',
-      'final',
-      added.slug,
-    ]);
-    expect(await loadBlobPhases(instanceId)).toEqual(blobPhases);
   });
 
   it('refuses a phase after a date-advanced phase with no end date and writes nothing', async ({

@@ -3,7 +3,7 @@ import {
   mockCollab,
   textFragment,
 } from '@op/collab/testing';
-import { type PhaseInstanceData, getInstancePhases } from '@op/common';
+import { type PhaseInstanceData } from '@op/common';
 import {
   TEST_PERMISSION_BITS,
   TestDecisionsDataManager,
@@ -13,8 +13,8 @@ import {
   grantInstanceRole,
   openDevelopWindow,
   testDevelopSchema,
-  syncPhaseRows,
 } from '@op/common/testing';
+import { updatePhaseRowData } from '@op/common/testing/data';
 import {
   ProcessStatus,
   ProposalRelationshipType,
@@ -60,24 +60,13 @@ const readDevelopedSourceIds = async (targetProposalId: string) => {
 /** Writes setup-script fields on the develop phase ("final"). */
 const configureDevelopPhase = async (
   instanceId: string,
-  fields: Partial<PhaseInstanceData>,
+  fields: Partial<Omit<PhaseInstanceData, 'phaseId' | 'name'>>,
 ) => {
-  const instance = await db.query.processInstances.findFirst({
-    where: { id: instanceId },
-    columns: { instanceData: true },
+  await updatePhaseRowData({
+    processInstanceId: instanceId,
+    phaseId: 'final',
+    data: fields,
   });
-  const instanceData = instance?.instanceData;
-  if (!instanceData) {
-    throw new Error(`Instance ${instanceId} has no instanceData`);
-  }
-  const phases = getInstancePhases(instanceData).map((phase) =>
-    phase.phaseId === 'final' ? { ...phase, ...fields } : phase,
-  );
-  await db
-    .update(processInstances)
-    .set({ instanceData: { ...instanceData, phases } })
-    .where(eq(processInstances.id, instanceId));
-  await syncPhaseRows(instanceId, phases);
 };
 
 const sourceFormSchema = {

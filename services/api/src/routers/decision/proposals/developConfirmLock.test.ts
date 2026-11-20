@@ -1,12 +1,10 @@
-import { getInstancePhases } from '@op/common';
 import {
   TEST_PERMISSION_BITS,
   TestDecisionsDataManager,
   createDevelopPhaseSetup,
-  syncPhaseRows,
+  updateInstancePhases,
 } from '@op/common/testing';
-import { db, eq } from '@op/db/client';
-import { ProposalStatus, processInstances } from '@op/db/schema';
+import { ProposalStatus } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
 import { createCategoryDevelopReviewer } from '../../../test/helpers/categoryDevelopTestUtils';
@@ -268,26 +266,11 @@ async function createEntry({
 }
 
 async function addResultsPhase(processInstanceId: string): Promise<void> {
-  const instance = await db.query.processInstances.findFirst({
-    where: { id: processInstanceId },
-    columns: { instanceData: true },
+  await updateInstancePhases({
+    instanceId: processInstanceId,
+    update: (phases) => [
+      ...phases,
+      { phaseId: 'results', name: 'Results', rules: {} },
+    ],
   });
-  const instanceData = instance?.instanceData;
-  if (instanceData === null || typeof instanceData !== 'object') {
-    throw new Error(`Instance ${processInstanceId} has no instanceData`);
-  }
-
-  await db
-    .update(processInstances)
-    .set({
-      instanceData: {
-        ...instanceData,
-        phases: [
-          ...getInstancePhases(instanceData),
-          { phaseId: 'results', name: 'Results', rules: {} },
-        ],
-      },
-    })
-    .where(eq(processInstances.id, processInstanceId));
-  await syncPhaseRows(processInstanceId);
 }

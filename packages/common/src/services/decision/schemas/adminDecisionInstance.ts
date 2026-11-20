@@ -41,7 +41,7 @@ export const adminProfileRefSchema = z.object({
 export type AdminProfileRef = z.infer<typeof adminProfileRefSchema>;
 
 /**
- * Phase summary with capability flags derived from `instanceData.phases[].rules`
+ * Phase summary with capability flags derived from the resolved phases' rules
  * (`hasProposals` = rules.proposals.submit, `hasReviews` = `isReviewPhase`
  * (rules.reviews.submit ?? rules.proposals.review), `hasVoting` = rules.voting.submit).
  */

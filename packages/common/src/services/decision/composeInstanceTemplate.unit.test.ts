@@ -133,18 +133,18 @@ describe('composeInstanceTemplate', () => {
   });
 
   it('is a template the instance builder accepts', () => {
-    const instanceData = createInstanceDataFromTemplate({
+    const { phases } = createInstanceDataFromTemplate({
       template: composeInstanceTemplate(pbIdeas),
     });
 
-    expect(instanceData.phases.map((phase) => phase.phaseId)).toEqual([
+    expect(phases.map((phase) => phase.phaseId)).toEqual([
       'submissions',
       'review',
       'submissions-2',
       'voting',
       'results',
     ]);
-    expect(instanceData.phases[1]?.name).toBe('Review ideas');
+    expect(phases[1]?.name).toBe('Review ideas');
   });
 
   it('refuses a draft with no phases', () => {
@@ -156,21 +156,21 @@ describe('composeInstanceTemplate', () => {
 
 describe('blankInstanceData', () => {
   it('starts with no phases but the same process-level defaults', () => {
-    const blank = blankInstanceData({
+    const { instanceData, phases } = blankInstanceData({
       name: 'Untitled',
       type: 'other',
       phases: [],
     });
 
-    expect(blank.phases).toEqual([]);
-    expect(blank.templateId).toBe('composed:other');
-    expect(blank.proposalTemplate).toBeUndefined();
-    expect(blank.config?.hideBudget).toBe(true);
+    expect(phases).toEqual([]);
+    expect(instanceData.templateId).toBe('composed:other');
+    expect(instanceData.proposalTemplate).toBeUndefined();
+    expect(instanceData.config?.hideBudget).toBe(true);
   });
 
   it('shows budgets on a blank PB draft', () => {
-    const blank = blankInstanceData({ ...pbIdeas, phases: [] });
+    const { instanceData } = blankInstanceData({ ...pbIdeas, phases: [] });
 
-    expect(blank.config?.hideBudget).toBe(false);
+    expect(instanceData.config?.hideBudget).toBe(false);
   });
 });

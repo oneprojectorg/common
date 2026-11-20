@@ -1,4 +1,5 @@
-import { createProposal } from '@op/common/testing/data';
+import type { PhaseInstanceData } from '@op/common';
+import { createProposal, insertPhaseRows } from '@op/common/testing/data';
 import {
   EntityType,
   ProcessStatus,
@@ -102,32 +103,33 @@ const instanceData = {
   budget: 50000,
   hideBudget: false,
   proposalTemplate: processSchema.proposalTemplate,
-  // The instance's phases carry the rules, not just the template's. The router
-  // reads `currentPhase.rules` to decide the route, and the process builder
-  // writes them here for the same reason.
-  phases: [
-    {
-      phaseId: 'proposalSubmission',
-      startDate: '2025-09-20',
-      endDate: '2025-10-01',
-      rules: {
-        proposals: { submit: true },
-        voting: { submit: false },
-        advancement: { method: 'manual' as const },
-      },
-    },
-    {
-      phaseId: 'review',
-      startDate: '2025-10-02',
-      endDate: '2025-10-20',
-      rules: {
-        proposals: { submit: false },
-        voting: { submit: false },
-        advancement: { method: 'manual' as const },
-      },
-    },
-  ],
 };
+
+// The instance's phases carry the rules, not just the template's. The router
+// reads `currentPhase.rules` to decide the route, and the process builder
+// writes them here for the same reason.
+const phases: PhaseInstanceData[] = [
+  {
+    phaseId: 'proposalSubmission',
+    startDate: '2025-09-20',
+    endDate: '2025-10-01',
+    rules: {
+      proposals: { submit: true },
+      voting: { submit: false },
+      advancement: { method: 'manual' },
+    },
+  },
+  {
+    phaseId: 'review',
+    startDate: '2025-10-02',
+    endDate: '2025-10-20',
+    rules: {
+      proposals: { submit: false },
+      voting: { submit: false },
+      advancement: { method: 'manual' },
+    },
+  },
+];
 
 test.describe('Proposals CSV export', () => {
   test('exports the phase in full, whatever the list has been narrowed to', async ({
@@ -404,6 +406,8 @@ async function createProcessAndInstance({
   if (!instance) {
     throw new Error('Failed to create process instance');
   }
+
+  await insertPhaseRows({ processInstanceId: instance.id, phases });
 
   const [profileUser] = await db
     .insert(profileUsers)

@@ -25,9 +25,12 @@ select jsonb_pretty(jsonb_build_object(
     ) from decision d join decision_processes t on t.id = d.process_id),
 
   'phases', (select jsonb_agg(jsonb_build_object(
-      'phase', ph->>'phaseId', 'name', ph->>'name',
-      'voting', ph->'rules'->'voting', 'proposals', ph->'rules'->'proposals'
-    )) from decision d, jsonb_array_elements(d.instance_data->'phases') ph),
+      'phase', coalesce(ph.data->>'phaseId', pp.slug), 'name', pp.name,
+      'voting', ph.data->'rules'->'voting', 'proposals', ph.data->'rules'->'proposals'
+    ) order by ph.sort_order)
+    from decision d
+    join decision_process_phases ph on ph.process_instance_id = d.instance_id
+    join profiles pp on pp.id = ph.profile_id),
 
   'transitions', (select coalesce(jsonb_agg(jsonb_build_object(
       'from', h.from_state_id, 'to', h.to_state_id, 'at', h.transitioned_at

@@ -1,34 +1,21 @@
-import { TestDecisionsDataManager, emptyBlobPhases } from '@op/common/testing';
+import { TestDecisionsDataManager } from '@op/common/testing';
 import { db, eq, sql } from '@op/db/client';
-import { processPhases, profiles } from '@op/db/schema';
-import { logger } from '@op/logging';
+import { processInstances, processPhases, profiles } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
 import {
-  attachBlobPhases,
   getPhases,
   resolvePhases,
   resolvePhasesForAll,
 } from './instancePhases';
-import { insertPhase } from './phaseHelpers';
-import { getInstancePhases } from './schemas/instanceData';
-
-const expectNoRowsMessage = (processInstanceIds: string[]) =>
-  expect(logger.debug).toHaveBeenCalledWith(
-    expect.stringContaining('no phase rows'),
-    { processInstanceIds },
-  );
 
 describe('instancePhases', () => {
-  it('reads the rows in sort order, ignoring the blob', async ({
+  it('reads the rows in sort order, ignoring stale phases in instanceData', async ({
     task,
     onTestFinished,
   }) => {
-    const { instanceId, testData } = await createInstance(
-      task.id,
-      onTestFinished,
-    );
-    await testData.renamePhaseRows(instanceId);
+    const { instanceId } = await createInstance(task.id, onTestFinished);
+    await seedStaleBlobPhases(instanceId);
     const rows = await loadRows(instanceId);
     await setSortOrder(rows.initial.id, 1);
     await setSortOrder(rows.final.id, 0);
@@ -38,14 +25,10 @@ describe('instancePhases', () => {
     });
 
     expect(phases.map(({ phaseId, name }) => ({ phaseId, name }))).toEqual([
-      { phaseId: 'final', name: 'Row final' },
-      { phaseId: 'initial', name: 'Row initial' },
+      { phaseId: 'final', name: 'Final Phase' },
+      { phaseId: 'initial', name: 'Initial Phase' },
     ]);
     expect(phases[1]?.rules?.proposals?.submit).toBe(true);
-    expect(logger.debug).not.toHaveBeenCalledWith(
-      expect.stringContaining('no phase rows'),
-      expect.anything(),
-    );
   });
 
   it("takes a row's phaseId from its data, else from its profile slug", async ({
@@ -53,7 +36,6 @@ describe('instancePhases', () => {
     onTestFinished,
   }) => {
     const { instanceId } = await createInstance(task.id, onTestFinished);
-    await emptyBlobPhases(instanceId);
     const rows = await loadRows(instanceId);
     await db
       .update(processPhases)
@@ -70,7 +52,7 @@ describe('instancePhases', () => {
     ]);
   });
 
-  it('falls back to instanceData.phases and logs when there are no rows', async ({
+  it('reads an instance with no rows as having no phases, even with stale phases in instanceData', async ({
     task,
     onTestFinished,
   }) => {
@@ -79,68 +61,16 @@ describe('instancePhases', () => {
       onTestFinished,
     );
     await testData.removePhaseRows(instanceId);
-
-    const phases = await getPhases({
-      instance: await loadInstance(instanceId),
-    });
-
-    expect(phases.map(({ name }) => name)).toEqual([
-      'Initial Phase',
-      'Final Phase',
-    ]);
-    expectNoRowsMessage([instanceId]);
-  });
-
-  it('reads only the rows, leaving out blob phases that have no row', async ({
-    task,
-    onTestFinished,
-  }) => {
-    const { instanceId, testData } = await createInstance(
-      task.id,
-      onTestFinished,
-    );
-    await testData.renamePhaseRows(instanceId);
-    const rows = await loadRows(instanceId);
-    await db.delete(profiles).where(eq(profiles.id, rows.initial.profileId));
-    const { profile: added } = await db.transaction((tx) =>
-      insertPhase({
-        tx,
-        processInstanceId: instanceId,
-        name: 'Added phase',
-        sortOrder: 2,
-      }),
-    );
-    testData.trackProfileForCleanup(added.id);
-
-    const phases = await getPhases({
-      instance: await loadInstance(instanceId),
-    });
-
-    expect(phases.map(({ phaseId, name }) => ({ phaseId, name }))).toEqual([
-      { phaseId: 'final', name: 'Row final' },
-      { phaseId: added.slug, name: 'Added phase' },
-    ]);
-  });
-
-  it('attaches the blob phases when it has no rows', async ({
-    task,
-    onTestFinished,
-  }) => {
-    const { instanceId, testData } = await createInstance(
-      task.id,
-      onTestFinished,
-    );
-    await testData.removePhaseRows(instanceId);
+    await seedStaleBlobPhases(instanceId);
     const instance = await loadInstance(instanceId);
 
     const resolved = await resolvePhases({ instance });
 
+    expect(resolved.phases).toEqual([]);
     expect(resolved.instanceData).toBe(instance.instanceData);
-    expect(resolved.phases).toEqual(getInstancePhases(instance.instanceData));
-    expectNoRowsMessage([instanceId]);
   });
 
-  it('reads a list in one pass and logs once for the instances without rows', async ({
+  it('reads a list of instances in one pass, each with only its own rows', async ({
     task,
     onTestFinished,
   }) => {
@@ -152,8 +82,9 @@ describe('instancePhases', () => {
     if (!withRows || !withoutRows) {
       throw new Error('Expected two instances');
     }
-    await emptyBlobPhases(withRows);
     await testData.removePhaseRows(withoutRows);
+    await seedStaleBlobPhases(withRows);
+    await seedStaleBlobPhases(withoutRows);
     const instances = [
       await loadInstance(withRows),
       await loadInstance(withoutRows),
@@ -165,13 +96,7 @@ describe('instancePhases', () => {
       { phaseId: 'initial' },
       { phaseId: 'final' },
     ]);
-    expect(first?.instanceData).toBe(instances[0]?.instanceData);
-    expect(second?.phases).toEqual(
-      getInstancePhases(instances[1]?.instanceData),
-    );
-    expect(second?.instanceData).toBe(instances[1]?.instanceData);
-    expect(logger.debug).toHaveBeenCalledTimes(1);
-    expectNoRowsMessage([withoutRows]);
+    expect(second?.phases).toEqual([]);
   });
 
   it('attaches the rows as phases and never touches instanceData', async ({
@@ -179,36 +104,15 @@ describe('instancePhases', () => {
     onTestFinished,
   }) => {
     const { instanceId } = await createInstance(task.id, onTestFinished);
-    await emptyBlobPhases(instanceId);
     const instance = await loadInstance(instanceId);
 
     const resolved = await resolvePhases({ instance });
 
+    expect(instance.instanceData).not.toHaveProperty('phases');
     expect(resolved.instanceData).toBe(instance.instanceData);
-    expect(resolved.instanceData).toMatchObject({ phases: [] });
     expect(resolved.phases).toMatchObject([
       { phaseId: 'initial' },
       { phaseId: 'final' },
-    ]);
-  });
-
-  it('attaches the blob phases even when rows exist', async ({
-    task,
-    onTestFinished,
-  }) => {
-    const { instanceId, testData } = await createInstance(
-      task.id,
-      onTestFinished,
-    );
-    await testData.renamePhaseRows(instanceId);
-    const instance = await loadInstance(instanceId);
-
-    const attached = attachBlobPhases({ instance });
-
-    expect(attached.instanceData).toBe(instance.instanceData);
-    expect(attached.phases.map(({ name }) => name)).toEqual([
-      'Initial Phase',
-      'Final Phase',
     ]);
   });
 });
@@ -256,6 +160,14 @@ async function loadRows(instanceId: string) {
 
   return { initial, final };
 }
+
+const seedStaleBlobPhases = (instanceId: string) =>
+  db
+    .update(processInstances)
+    .set({
+      instanceData: sql`${processInstances.instanceData} || ${JSON.stringify({ phases: [{ phaseId: 'stale-blob', name: 'Stale blob' }] })}::jsonb`,
+    })
+    .where(eq(processInstances.id, instanceId));
 
 const setSortOrder = (rowId: string, sortOrder: number) =>
   db

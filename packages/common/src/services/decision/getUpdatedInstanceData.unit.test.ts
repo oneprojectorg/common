@@ -1,83 +1,85 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  type InstanceDataUpdate,
   getUpdatedInstanceData,
   hasNonPhaseUpdate,
   hasPhaseUpdates,
 } from './getUpdatedInstanceData';
-import type { DecisionInstanceData } from './schemas/instanceData';
+import type {
+  DecisionInstanceData,
+  PhaseInstanceData,
+} from './schemas/instanceData';
 import type { RubricTemplateSchema } from './types';
 
 const existing = (): DecisionInstanceData => ({
   config: { hideBudget: false, categories: [] },
   overview: { headline: 'Old headline', description: 'Old blurb' },
-  phases: [
-    {
-      phaseId: 'submission',
-      name: 'Submission',
-      endDate: '2026-01-31',
-      rules: { proposals: { submit: true } },
-      settingsSchema: { type: 'object' },
-    },
-    {
-      phaseId: 'voting',
-      name: 'Voting',
-      endDate: '2026-02-28',
-      rules: { voting: { submit: true } },
-      rubricTemplate: { type: 'object', properties: {} },
-    },
-  ],
   proposalTemplate: {
     type: 'object',
     properties: { title: { type: 'string' } },
   },
 });
 
+const existingPhases = (): PhaseInstanceData[] => [
+  {
+    phaseId: 'submission',
+    name: 'Submission',
+    endDate: '2026-01-31',
+    rules: { proposals: { submit: true } },
+    settingsSchema: { type: 'object' },
+  },
+  {
+    phaseId: 'voting',
+    name: 'Voting',
+    endDate: '2026-02-28',
+    rules: { voting: { submit: true } },
+    rubricTemplate: { type: 'object', properties: {} },
+  },
+];
+
+const apply = (
+  update: InstanceDataUpdate,
+  stored: {
+    instanceData?: DecisionInstanceData;
+    phases?: PhaseInstanceData[];
+  } = {},
+) =>
+  getUpdatedInstanceData({
+    existing: stored.instanceData ?? existing(),
+    existingPhases: stored.phases ?? existingPhases(),
+    update,
+  });
+
 describe('getUpdatedInstanceData', () => {
   it('sets nothing when the update carries nothing for instanceData', () => {
-    expect(
-      getUpdatedInstanceData({
-        existing: existing(),
-        existingPhases: existing().phases,
-        update: {},
-      }),
-    ).toEqual({ phaseEndDateChanges: [] });
-    expect(
-      getUpdatedInstanceData({
-        existing: existing(),
-        existingPhases: existing().phases,
-        update: { phases: [] },
-      }),
-    ).toEqual({ phaseEndDateChanges: [] });
+    expect(apply({})).toEqual({ phaseEndDateChanges: [] });
+    expect(apply({ phases: [] })).toEqual({ phaseEndDateChanges: [] });
   });
 
   it('does not mutate the stored data', () => {
-    const stored = existing();
-    const snapshot = structuredClone(stored);
+    const instanceData = existing();
+    const phases = existingPhases();
+    const snapshot = structuredClone({ instanceData, phases });
 
-    getUpdatedInstanceData({
-      existing: stored,
-      existingPhases: stored.phases,
-      update: {
+    apply(
+      {
         config: { hideBudget: true },
         overview: { headline: null },
         phases: [{ phaseId: 'voting', endDate: '2026-03-31' }],
       },
-    });
+      { instanceData, phases },
+    );
 
-    expect(stored).toEqual(snapshot);
+    expect({ instanceData, phases }).toEqual(snapshot);
   });
 
   it('merges config and trims category copy', () => {
-    const result = getUpdatedInstanceData({
-      existing: existing(),
-      existingPhases: existing().phases,
-      update: {
-        config: {
-          categories: [
-            { id: 'a', label: '  Parks ', description: ' Green space ' },
-          ],
-        },
+    const result = apply({
+      config: {
+        categories: [
+          { id: 'a', label: '  Parks ', description: ' Green space ' },
+        ],
       },
     });
 
@@ -88,16 +90,17 @@ describe('getUpdatedInstanceData', () => {
   });
 
   it('keeps stored categories when the config update omits them', () => {
-    const stored = existing();
-    stored.config = {
-      categories: [{ id: 'a', label: 'Parks', description: '' }],
-    };
-
-    const result = getUpdatedInstanceData({
-      existing: stored,
-      existingPhases: stored.phases,
-      update: { config: { hideBudget: true } },
-    });
+    const result = apply(
+      { config: { hideBudget: true } },
+      {
+        instanceData: {
+          ...existing(),
+          config: {
+            categories: [{ id: 'a', label: 'Parks', description: '' }],
+          },
+        },
+      },
+    );
 
     expect(result.instanceData?.config).toEqual({
       hideBudget: true,
@@ -106,11 +109,7 @@ describe('getUpdatedInstanceData', () => {
   });
 
   it('merges the overview and keeps a headline it is not asked to change', () => {
-    const result = getUpdatedInstanceData({
-      existing: existing(),
-      existingPhases: existing().phases,
-      update: { overview: { description: 'New blurb' } },
-    });
+    const result = apply({ overview: { description: 'New blurb' } });
 
     expect(result.instanceData?.overview).toEqual({
       headline: 'Old headline',
@@ -120,35 +119,35 @@ describe('getUpdatedInstanceData', () => {
 
   it('clears the headline on null, and drops a legacy blank one', () => {
     expect(
-      getUpdatedInstanceData({
-        existing: existing(),
-        existingPhases: existing().phases,
-        update: { overview: { headline: null } },
-      }).instanceData?.overview,
+      apply({ overview: { headline: null } }).instanceData?.overview,
     ).toEqual({ description: 'Old blurb' });
 
-    const blank = existing();
-    blank.overview = { headline: '  ', description: 'Old blurb' };
-
     expect(
-      getUpdatedInstanceData({
-        existing: blank,
-        existingPhases: blank.phases,
-        update: { overview: { description: 'New blurb' } },
-      }).instanceData?.overview,
+      apply(
+        { overview: { description: 'New blurb' } },
+        {
+          instanceData: {
+            ...existing(),
+            overview: { headline: '  ', description: 'Old blurb' },
+          },
+        },
+      ).instanceData?.overview,
     ).toEqual({ description: 'New blurb' });
   });
 
+  it('sets no phases when the update carries none', () => {
+    const result = apply({ config: { hideBudget: true } });
+
+    expect(result.phases).toBeUndefined();
+    expect(result.instanceData).not.toHaveProperty('phases');
+  });
+
   it('replaces the phase list and keeps stored data on phases that remain', () => {
-    const result = getUpdatedInstanceData({
-      existing: existing(),
-      existingPhases: existing().phases,
-      update: {
-        phases: [
-          { phaseId: 'voting', name: 'Final vote', endDate: '2026-03-31' },
-          { phaseId: 'results', name: 'Results' },
-        ],
-      },
+    const result = apply({
+      phases: [
+        { phaseId: 'voting', name: 'Final vote', endDate: '2026-03-31' },
+        { phaseId: 'results', name: 'Results' },
+      ],
     });
 
     expect(result.phases).toEqual([
@@ -161,12 +160,13 @@ describe('getUpdatedInstanceData', () => {
       },
       { phaseId: 'results', name: 'Results' },
     ]);
+    expect(result.instanceData).toBeUndefined();
   });
 
   it('keeps the develop rule in a phase rules override', () => {
     const result = getUpdatedInstanceData({
       existing: existing(),
-      existingPhases: existing().phases,
+      existingPhases: existingPhases(),
       update: {
         phases: [
           {
@@ -184,16 +184,18 @@ describe('getUpdatedInstanceData', () => {
   });
 
   it('clears a phase rubric and headline on null', () => {
-    const stored = existing();
-    stored.phases[1] = { ...stored.phases[1]!, headline: 'Vote now' };
-
-    const result = getUpdatedInstanceData({
-      existing: stored,
-      existingPhases: stored.phases,
-      update: {
+    const result = apply(
+      {
         phases: [{ phaseId: 'voting', rubricTemplate: null, headline: null }],
       },
-    });
+      {
+        phases: existingPhases().map((phase) =>
+          phase.phaseId === 'voting'
+            ? { ...phase, headline: 'Vote now' }
+            : phase,
+        ),
+      },
+    );
 
     expect(result.phases?.[0]).toEqual({
       phaseId: 'voting',
@@ -203,36 +205,28 @@ describe('getUpdatedInstanceData', () => {
     });
   });
 
-  it('merges phases onto existingPhases and keeps the stored ones in instanceData', () => {
-    const stored = existing();
-    const rowPhases = [{ phaseId: 'review', name: 'Review' }];
-
-    const result = getUpdatedInstanceData({
-      existing: stored,
-      existingPhases: rowPhases,
-      update: {
+  it('merges phases onto existingPhases alongside an instanceData update', () => {
+    const result = apply(
+      {
         overview: { description: 'New blurb' },
         phases: [{ phaseId: 'review', endDate: '2026-05-31' }],
       },
-    });
+      { phases: [{ phaseId: 'review', name: 'Review' }] },
+    );
 
     expect(result.phases).toEqual([
       { phaseId: 'review', name: 'Review', endDate: '2026-05-31' },
     ]);
-    expect(result.instanceData?.phases).toEqual(stored.phases);
+    expect(result.instanceData).not.toHaveProperty('phases');
   });
 
   it('reports only end dates that really changed', () => {
-    const result = getUpdatedInstanceData({
-      existing: existing(),
-      existingPhases: existing().phases,
-      update: {
-        phases: [
-          { phaseId: 'submission', endDate: '2026-01-31' },
-          { phaseId: 'voting', endDate: '2026-03-31' },
-          { phaseId: 'results', endDate: '2026-04-30' },
-        ],
-      },
+    const result = apply({
+      phases: [
+        { phaseId: 'submission', endDate: '2026-01-31' },
+        { phaseId: 'voting', endDate: '2026-03-31' },
+        { phaseId: 'results', endDate: '2026-04-30' },
+      ],
     });
 
     expect(result.phaseEndDateChanges).toEqual([
@@ -251,11 +245,7 @@ describe('getUpdatedInstanceData', () => {
       properties: { score: { type: 'number' } },
     };
 
-    const result = getUpdatedInstanceData({
-      existing: existing(),
-      existingPhases: existing().phases,
-      update: { proposalTemplate, rubricTemplate },
-    });
+    const result = apply({ proposalTemplate, rubricTemplate });
 
     expect(result.instanceData?.proposalTemplate).toBe(proposalTemplate);
     expect(result.instanceData?.rubricTemplate).toBe(rubricTemplate);

@@ -6,7 +6,6 @@ import { describe, expect, it } from 'vitest';
 import {
   DAY_MS,
   listPhaseIds,
-  loadBlobPhases,
   loadInstanceData,
   loadTransitionLinks,
   setupPublishedDateDecision,
@@ -14,7 +13,7 @@ import {
 } from '../../../test/helpers/phaseTestUtils';
 
 describe.concurrent('revertPhase', () => {
-  it('reverts a decision that has no phase rows without creating any', async ({
+  it('refuses to revert a decision whose phase rows are gone', async ({
     task,
     onTestFinished,
   }) => {
@@ -25,7 +24,6 @@ describe.concurrent('revertPhase', () => {
       status: ProcessStatus.PUBLISHED,
     });
     const instanceId = setup.instance.instance.id;
-    await testData.removePhaseRows(instanceId);
 
     const advanced = await testData.advancePhase({
       instanceId,
@@ -33,20 +31,20 @@ describe.concurrent('revertPhase', () => {
       toPhaseId: 'final',
     });
     expect(advanced.conflict).toBe(false);
+    await testData.removePhaseRows(instanceId);
 
-    const result = await revertPhase({ instanceId, fromPhaseId: 'final' });
-
-    expect(result.currentPhaseId).toBe('initial');
+    await expect(
+      revertPhase({ instanceId, fromPhaseId: 'final' }),
+    ).rejects.toThrow('Phase initial is no longer defined');
     expect(await listPhaseIds(instanceId)).toEqual([]);
   });
 
-  it('reverts a decision that has phase rows and leaves its transition links and blob alone', async ({
+  it('reverts a decision that has phase rows and leaves its transition links alone', async ({
     task,
     onTestFinished,
   }) => {
     const { testData, instanceId, initial, final } =
       await setupPublishedDateDecision(task, onTestFinished);
-    const blobPhases = await loadBlobPhases(instanceId);
     const links = await loadTransitionLinks(instanceId);
     expect(links).toMatchObject([
       { fromPhaseId: initial.id, toPhaseId: final.id },
@@ -70,7 +68,6 @@ describe.concurrent('revertPhase', () => {
     );
     expect(await loadTransitionLinks(instanceId)).toEqual(links);
     expect(await listPhaseIds(instanceId)).toHaveLength(2);
-    expect(await loadBlobPhases(instanceId)).toEqual(blobPhases);
   });
 
   it('unlocks every field of the phase it reverts from and keeps the phases before the new current one locked', async ({

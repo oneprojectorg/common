@@ -22,8 +22,8 @@ export const sendReviewPhaseEndingReminder = inngest.createFunction(
     const { processInstanceId, phaseId, reminderWindowEnd } =
       reviewPhaseEndingSoon.schema.parse(event.data);
 
-    const instanceData = await step.run('get-instance-data', async () => {
-      const instance = await db.query.processInstances.findFirst({
+    const instance = await step.run('get-instance-data', async () => {
+      const row = await db.query.processInstances.findFirst({
         where: { id: processInstanceId },
         columns: {
           id: true,
@@ -35,14 +35,14 @@ export const sendReviewPhaseEndingReminder = inngest.createFunction(
         },
       });
 
-      if (!instance) {
+      if (!row) {
         return undefined;
       }
 
-      return resolvePhases({ instance });
+      return resolvePhases({ instance: row });
     });
 
-    if (!instanceData) {
+    if (!instance) {
       logger.info('No process instance found for review phase reminder', {
         processInstanceId,
       });
@@ -50,8 +50,8 @@ export const sendReviewPhaseEndingReminder = inngest.createFunction(
     }
 
     if (
-      instanceData.status !== ProcessStatus.PUBLISHED ||
-      instanceData.deletedAt !== null
+      instance.status !== ProcessStatus.PUBLISHED ||
+      instance.deletedAt !== null
     ) {
       logger.info('Skipping review phase reminder: instance is not published', {
         processInstanceId,
@@ -59,7 +59,7 @@ export const sendReviewPhaseEndingReminder = inngest.createFunction(
       return;
     }
 
-    if (!isInstanceCurrentPhase(instanceData, phaseId)) {
+    if (!isInstanceCurrentPhase(instance, phaseId)) {
       logger.info(
         'Skipping review phase reminder: phase is no longer current',
         {
@@ -70,9 +70,9 @@ export const sendReviewPhaseEndingReminder = inngest.createFunction(
       return;
     }
 
-    const { phases } = instanceData;
+    const { phases } = instance;
     const phase = getInstanceCurrentPhase({
-      currentStateId: instanceData.currentStateId,
+      currentStateId: instance.currentStateId,
       phases,
     });
 
@@ -125,7 +125,7 @@ export const sendReviewPhaseEndingReminder = inngest.createFunction(
       return;
     }
 
-    const processTitle = instanceData.name;
+    const processTitle = instance.name;
     const phaseName = phase.name || phaseId;
     const daysLeftText = daysLeft === 1 ? '1 day' : `${daysLeft} days`;
     const batchId = `${processInstanceId}-${phaseId}-${reminderWindowEnd}`;

@@ -1292,7 +1292,7 @@ describe.concurrent('phase-level comment gating', () => {
     // `updateDecisionInstance` replaces a phase's whole `rules` object, so the
     // existing rules are carried over rather than dropped.
     const currentPhaseId = instance.instance.currentStateId;
-    const currentPhase = instance.instance.instanceData?.phases?.find(
+    const currentPhase = instance.phases.find(
       (phase) => phase.phaseId === currentPhaseId,
     );
     if (!currentPhaseId || !currentPhase) {
