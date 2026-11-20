@@ -1,3 +1,4 @@
+import { setupSSR } from '@/utils/setupSSR';
 import {
   HydrationBoundary,
   createServerUtils,
@@ -32,6 +33,7 @@ export async function generateMetadata({
 export default async function ReviewAssignmentsPage({
   params,
 }: ReviewAssignmentsPageProps) {
+  await setupSSR({ params });
   const { slug } = await params;
   const [t, { processInstanceId, phaseId }] = await Promise.all([
     getTranslations('decisions'),

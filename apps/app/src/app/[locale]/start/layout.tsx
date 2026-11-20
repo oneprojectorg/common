@@ -7,8 +7,15 @@ import { Link } from '@/lib/i18n/routing';
 import { CommonLogo } from '@/components/CommonLogo';
 import { LocaleChooser } from '@/components/LocaleChooser';
 
-const StartLayout = async ({ children }: { children: React.ReactNode }) => {
-  const [t, user] = await Promise.all([getTranslations(), getUser()]);
+const StartLayout = async ({
+  children,
+  params,
+}: {
+  children: React.ReactNode;
+  params: Promise<{ locale: string }>;
+}) => {
+  const { locale } = await params;
+  const [t, user] = await Promise.all([getTranslations({ locale }), getUser()]);
 
   // Admit any real account: non-members belong in onboarding, and gating them
   // out only deadlocks returning users. Real protection is in the service layer.
