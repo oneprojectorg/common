@@ -5,7 +5,7 @@ import {
   simpleVoting,
 } from '@op/common';
 import { MAX_PHASE_NAME_LENGTH } from '@op/common/client';
-import { TestDecisionsDataManager } from '@op/common/testing';
+import { TestDecisionsDataManager, loadPhaseRows } from '@op/common/testing';
 import { db, eq } from '@op/db/client';
 import { decisionProcesses, users } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
@@ -21,7 +21,6 @@ import {
   expectNothingNamed,
   expectRowsMatchPhases,
   loadInstanceData,
-  loadPhaseRows,
 } from '../../../test/helpers/phaseTestUtils';
 import {
   createIsolatedSession,

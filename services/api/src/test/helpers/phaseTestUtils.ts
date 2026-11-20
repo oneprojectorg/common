@@ -87,8 +87,6 @@ export async function createUnauthenticatedCaller() {
   return createCaller(await createTestContextWithSession(null));
 }
 
-export { loadPhaseRows };
-
 export const loadTransitionLinks = async (
   processInstanceId: string,
   { pendingOnly = false }: { pendingOnly?: boolean } = {},
@@ -171,7 +169,7 @@ export async function setupPublishedDateDecision(
   return { testData, instanceId, adminCaller, initial, final, endDate };
 }
 
-const DAY_MS = 24 * 60 * 60 * 1000;
+export const DAY_MS = 24 * 60 * 60 * 1000;
 
 // Advances along `phaseIds` one step at a time, completing each departed phase's transition.
 export async function advanceAlong(
@@ -237,6 +235,24 @@ export async function setupPublishedDecisionAtThirdPhase(
     adminCaller,
     rows: { submission, review, voting, results },
   };
+}
+
+// The decision from setupPublishedDecisionAtThirdPhase moved back to draft; it stays on `voting`.
+export async function setupDraftDecisionWithPastPhases(
+  task: { id: string },
+  onTestFinished: OnTestFinished,
+) {
+  const setup = await setupPublishedDecisionAtThirdPhase(task, onTestFinished);
+  await setup.adminCaller.decision.updateDecisionInstance({
+    instanceId: setup.instanceId,
+    status: ProcessStatus.DRAFT,
+  });
+  const { instance } = await loadInstanceData(setup.instanceId);
+  expect(instance).toMatchObject({
+    status: ProcessStatus.DRAFT,
+    currentStateId: 'voting',
+  });
+  return setup;
 }
 
 export async function loadInstanceData(instanceId: string) {

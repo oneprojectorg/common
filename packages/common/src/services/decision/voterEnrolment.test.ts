@@ -362,6 +362,7 @@ describe.concurrent('a rewritten attestation', () => {
     await updateDecisionInstance({
       instanceId,
       phases: [
+        { phaseId: 'submission' },
         {
           phaseId: 'voting',
           rules: {

@@ -3,7 +3,11 @@ import {
   ValidationError,
   createPhase,
 } from '@op/common';
-import { TestDecisionsDataManager, emptyBlobPhases } from '@op/common/testing';
+import {
+  TestDecisionsDataManager,
+  emptyBlobPhases,
+  loadPhaseRows,
+} from '@op/common/testing';
 import { db } from '@op/db/client';
 import { EntityType } from '@op/db/schema';
 import { randomUUID } from 'node:crypto';
@@ -13,7 +17,6 @@ import {
   expectNoProfileNamed,
   listPhaseIds,
   loadBlobPhases,
-  loadPhaseRows,
 } from '../../test/helpers/phaseTestUtils';
 
 describe.concurrent('createPhase', () => {
