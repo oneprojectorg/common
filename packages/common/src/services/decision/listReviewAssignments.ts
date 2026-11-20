@@ -344,9 +344,11 @@ export async function listAssignmentsForReviewer({
   const hasMore = rows.length > limit;
   const assignments = hasMore ? rows.slice(0, limit) : rows;
 
+  // Only proposals without their own form are reviewed, so one template reads them all.
   const proposalTemplate = await resolveProposalTemplate(
     instance.instanceData,
     instance.processId,
+    null,
   );
 
   const docContentInputs: Array<{

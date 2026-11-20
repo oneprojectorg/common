@@ -16,11 +16,13 @@ import type { ProposalTemplateSchema } from './types';
  * form is configured per-instance), then falls back to
  * `decisionProcesses.processSchema` (the process-level default).
  * `processId` is null once the template has been deleted; there is no fallback then.
+ * Pass the proposal's own `formSchemaId`, or `null` only to read the instance
+ * template on purpose.
  */
 export async function resolveProposalTemplate(
   instanceData: unknown,
   processId: string | null,
-  formSchemaId?: string | null,
+  formSchemaId: string | null,
 ): Promise<ProposalTemplateSchema | null> {
   if (formSchemaId) {
     const row = await db.query.formSchemas.findFirst({

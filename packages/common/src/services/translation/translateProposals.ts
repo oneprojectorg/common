@@ -42,6 +42,7 @@ export async function translateProposals({
       id: true,
       profileId: true,
       proposalData: true,
+      formSchemaId: true,
     },
     with: {
       profile: {
@@ -65,7 +66,7 @@ export async function translateProposals({
     return { translations: {}, sourceLocale: '', targetLocale };
   }
 
-  // 2. Deduplicate process instances and assert read access + resolve templates
+  // 2. Deduplicate process instances and assert read access
   const uniqueInstances = new Map<
     string,
     (typeof proposals)[number]['processInstance']
@@ -76,10 +77,6 @@ export async function translateProposals({
     }
   }
 
-  const templateByInstanceId = new Map<
-    string,
-    Awaited<ReturnType<typeof resolveProposalTemplate>>
-  >();
   await Promise.all(
     [...uniqueInstances.values()].map(async (instance) => {
       // Assert the user has decisions:READ on each unique process instance
@@ -95,13 +92,29 @@ export async function translateProposals({
           { decisions: permission.ADMIN },
         ],
       });
-
-      const template = await resolveProposalTemplate(
-        instance.instanceData as Record<string, unknown> | null,
-        instance.processId,
-      );
-      templateByInstanceId.set(instance.id, template);
     }),
+  );
+
+  // A proposal with its own form reads under it, the rest under the instance's.
+  const templateKeyOf = (proposal: (typeof proposals)[number]) =>
+    proposal.formSchemaId ?? proposal.processInstance.id;
+  const templateSources = new Map(
+    proposals.map((proposal) => [templateKeyOf(proposal), proposal]),
+  );
+  const templates = new Map(
+    await Promise.all(
+      [...templateSources].map(
+        async ([templateKey, { formSchemaId, processInstance }]) =>
+          [
+            templateKey,
+            await resolveProposalTemplate(
+              processInstance.instanceData,
+              processInstance.processId,
+              formSchemaId,
+            ),
+          ] as const,
+      ),
+    ),
   );
 
   // 3. Batch document fetch
@@ -109,7 +122,7 @@ export async function translateProposals({
     proposals.map((p) => ({
       id: p.id,
       proposalData: p.proposalData,
-      proposalTemplate: templateByInstanceId.get(p.processInstance.id) ?? null,
+      proposalTemplate: templates.get(templateKeyOf(p)) ?? null,
     })),
     // A single unavailable document must not break the whole batch.
     { onFetchError: 'omit' },
@@ -129,8 +142,7 @@ export async function translateProposals({
     // The body text the card shows, not the first fragment (the title).
     const { previewText } = buildProposalListPreview({
       documentContent: documentContentMap.get(proposal.id),
-      proposalTemplate:
-        templateByInstanceId.get(proposal.processInstance.id) ?? null,
+      proposalTemplate: templates.get(templateKeyOf(proposal)) ?? null,
     });
     // Already plain text: cap it without re-parsing it as HTML.
     const preview =

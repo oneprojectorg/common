@@ -429,6 +429,97 @@ describe('translation.translateProposals', () => {
     );
   });
 
+  it('should take the preview of a proposal with its own form from that form, and of the others from the instance template', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const longText = (title: string) => ({
+      type: 'string',
+      title,
+      'x-format': 'long-text',
+    });
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+      proposalTemplate: {
+        type: 'object',
+        'x-field-order': ['title', 'summary'],
+        properties: {
+          title: { type: 'string', title: 'Title', 'x-format': 'short-text' },
+          summary: longText('Summary'),
+        },
+      },
+    });
+    const instanceId = setup.instance.instance.id;
+    const entryForm = await testData.createFormSchema({
+      processInstanceId: instanceId,
+      name: 'Ballot entry',
+      schema: {
+        type: 'object',
+        'x-field-order': ['title', 'entryDescription'],
+        properties: {
+          title: { type: 'string', title: 'Title', 'x-format': 'short-text' },
+          entryDescription: longText('Entry description'),
+        },
+      },
+    });
+
+    const idea = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: instanceId,
+      proposalData: { title: 'Idea' },
+    });
+    const { currentStateId } = setup.instance.instance;
+    if (!currentStateId) {
+      throw new Error('Instance has no current phase');
+    }
+    await testData.setPhaseFormSchemaId({
+      instanceId,
+      phaseId: currentStateId,
+      formSchemaId: entryForm.id,
+    });
+    const entry = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: instanceId,
+      proposalData: { title: 'Entry' },
+    });
+
+    for (const proposal of [idea, entry]) {
+      const { collaborationDocId } = parseProposalData(proposal.proposalData);
+      if (!collaborationDocId) {
+        throw new Error('Proposal has no collaboration document');
+      }
+      mockCollab.setDocFragmentResponses(collaborationDocId, {
+        title: textFragment('Shared title'),
+        summary: textFragment('Text from the summary field'),
+        entryDescription: textFragment('Text from the entry description'),
+      });
+    }
+
+    onTestFinished(async () => {
+      for (const profileId of [idea.profileId, entry.profileId]) {
+        await db
+          .delete(contentTranslations)
+          .where(like(contentTranslations.contentKey, `batch:${profileId}:%`));
+      }
+    });
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const result = await caller.translation.translateProposals({
+      profileIds: [idea.profileId, entry.profileId],
+      targetLocale: 'es',
+    });
+
+    expect(result.translations[idea.profileId]?.preview).toBe(
+      '[ES] Text from the summary field',
+    );
+    expect(result.translations[entry.profileId]?.preview).toBe(
+      '[ES] Text from the entry description',
+    );
+  });
+
   it('should send literal entity text in the preview as typed', async ({
     task,
     onTestFinished,

@@ -169,6 +169,7 @@ export async function getReviewedProposalVersion({
   const proposalTemplate = await resolveProposalTemplate(
     instance.instanceData,
     instance.processId,
+    proposal.formSchemaId,
   );
 
   const [documentContentMap, attachments] = await Promise.all([

@@ -175,7 +175,7 @@ export const buildDevelopPrefill = async ({
     resolveProposalTemplate(
       instance.instanceData,
       instance.processId,
-      targetPhase.formSchemaId,
+      targetPhase.formSchemaId ?? null,
     ),
     getProfileAccessRoles({ user, profileId: instance.profileId }),
   ]);

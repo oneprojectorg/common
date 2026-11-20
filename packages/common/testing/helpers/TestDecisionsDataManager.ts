@@ -4,6 +4,7 @@ import type { ProcessStatus } from '@op/db/schema';
 import {
   ProposalStatus,
   decisionProcesses,
+  formSchemas,
   locations,
   processInstances,
   processPhases,
@@ -714,6 +715,58 @@ export class TestDecisionsDataManager {
     }
 
     return proposal;
+  }
+
+  /**
+   * Inserts a `decision_form_schemas` row, which has no service write path.
+   * Deleting the instance in cleanup cascades to it.
+   */
+  async createFormSchema({
+    processInstanceId,
+    name,
+    schema,
+  }: {
+    processInstanceId: string;
+    name: string;
+    schema: Record<string, unknown>;
+  }) {
+    const [row] = await db
+      .insert(formSchemas)
+      .values({ processInstanceId, name, schema })
+      .returning();
+    if (!row) {
+      throw new Error('Form schema insert returned no row');
+    }
+    return row;
+  }
+
+  /**
+   * Sets the `formSchemaId` on the row of `phaseId`, as the setup script does.
+   */
+  async setPhaseFormSchemaId({
+    instanceId,
+    phaseId,
+    formSchemaId,
+  }: {
+    instanceId: string;
+    phaseId: string;
+    formSchemaId: string;
+  }): Promise<void> {
+    const updated = await db
+      .update(processPhases)
+      .set({
+        data: sql`${processPhases.data} || ${JSON.stringify({ formSchemaId })}::jsonb`,
+      })
+      .where(
+        and(
+          eq(processPhases.processInstanceId, instanceId),
+          sql`${processPhases.data} ->> 'phaseId' = ${phaseId}`,
+        ),
+      )
+      .returning({ id: processPhases.id });
+    if (updated.length !== 1) {
+      throw new Error(`Phase ${phaseId} has no row on instance ${instanceId}`);
+    }
   }
 
   /**

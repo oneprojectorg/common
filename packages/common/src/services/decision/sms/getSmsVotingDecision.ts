@@ -42,7 +42,11 @@ const summarizeVotingInstance = async (
   const voterBudget = phase ? getVoterBudget(phase) : undefined;
   const template =
     phase && voterBudget !== undefined
-      ? await resolveProposalTemplate(instance.instanceData, instance.processId)
+      ? await resolveProposalTemplate(
+          instance.instanceData,
+          instance.processId,
+          null,
+        )
       : null;
   const unit =
     phase && template

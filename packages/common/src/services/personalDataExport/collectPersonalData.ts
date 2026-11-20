@@ -254,6 +254,7 @@ const readProposals = async (profileId: string) => {
           id: proposals.id,
           processInstanceId: proposals.processInstanceId,
           proposalData: proposals.proposalData,
+          formSchemaId: proposals.formSchemaId,
           status: proposals.status,
           visibility: proposals.visibility,
           createdAt: proposals.createdAt,
@@ -271,21 +272,24 @@ const readProposals = async (profileId: string) => {
         .limit(limit),
   });
 
-  const instances = new Map(
-    submitted.rows.map(({ processInstanceId, instanceData, processId }) => [
-      processInstanceId,
-      { instanceData, processId },
-    ]),
+  // A proposal with its own form reads under it, the rest under the instance's.
+  const templateKeyOf = (row: {
+    formSchemaId: string | null;
+    processInstanceId: string;
+  }) => row.formSchemaId ?? row.processInstanceId;
+  const templateSources = new Map(
+    submitted.rows.map((row) => [templateKeyOf(row), row]),
   );
   const templates = new Map(
     await pMap(
-      instances,
-      async ([instanceId, { instanceData, processId }]) =>
+      templateSources,
+      async ([templateKey, { instanceData, processId, formSchemaId }]) =>
         [
-          instanceId,
+          templateKey,
           await resolveProposalTemplate(
             instanceData as Record<string, unknown> | null,
             processId,
+            formSchemaId,
           ),
         ] as const,
       { concurrency: PERSONAL_DATA_EXPORT_TEMPLATE_CONCURRENCY },
@@ -296,7 +300,7 @@ const readProposals = async (profileId: string) => {
     submitted.rows.map((row) => ({
       id: row.id,
       proposalData: row.proposalData,
-      proposalTemplate: templates.get(row.processInstanceId),
+      proposalTemplate: templates.get(templateKeyOf(row)),
       collaborationDocVersionId:
         row.status === ProposalStatus.DRAFT
           ? undefined
@@ -309,12 +313,13 @@ const readProposals = async (profileId: string) => {
   return {
     ...submitted,
     rows: submitted.rows.map(
-      ({ instanceData, processId, proposalData, ...row }) => {
+      ({ instanceData, processId, proposalData, formSchemaId, ...row }) => {
         const snapshot = parseProposalData(proposalData);
         const document = documents.get(row.id) ?? null;
         const { systemFieldOverrides } = buildProposalListPreview({
           documentContent: document ?? undefined,
-          proposalTemplate: templates.get(row.processInstanceId) ?? null,
+          proposalTemplate:
+            templates.get(templateKeyOf({ ...row, formSchemaId })) ?? null,
           existingBudget: snapshot.budget,
         });
 

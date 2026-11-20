@@ -60,6 +60,7 @@ export const resolveModerationItemText = async (
       const template = await resolveProposalTemplate(
         recordOf(proposal.processInstance.instanceData),
         proposal.processInstance.processId,
+        proposal.formSchemaId,
       );
       // Legacy single-fragment docs (no template) store everything under
       // `default`; template-driven docs have one fragment per field.

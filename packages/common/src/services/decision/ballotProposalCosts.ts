@@ -30,6 +30,7 @@ export async function priceBallotProposals({
   const proposalTemplate = await resolveProposalTemplate(
     instance.instanceData,
     instance.processId,
+    null,
   );
   const unit = getFieldUnit(proposalTemplate?.properties?.[voterCostField]);
 
