@@ -5,18 +5,9 @@ import { NotFoundError, ValidationError } from '../../utils';
 import type { ProposalTemplateSchema } from './types';
 
 /**
- * Resolves the proposal template schema for a proposal.
- *
- * Row first: when `formSchemaId` is set, the template is that
- * `decision_form_schemas` row's schema. A missing row throws `NotFoundError`
- * (the FK guarantees it exists, so falling back would validate against the
- * wrong template); a row whose schema is not a proposal template throws
- * `ValidationError`.
- *
- * Otherwise checks `instanceData.proposalTemplate` (written when a proposal
- * form is configured per-instance), then falls back to
- * `decisionProcesses.processSchema` (the process-level default).
- * `processId` is null once the template has been deleted; there is no fallback then.
+ * Resolves a proposal's template: the `formSchemaId` row when set, otherwise
+ * `instanceData.proposalTemplate`, then the process schema.
+ * A missing form schema row throws; there is no fallback to another template.
  */
 export async function resolveProposalTemplate(
   instanceData: unknown,
@@ -39,13 +30,7 @@ export async function resolveProposalTemplate(
   return resolveInstanceTemplate({ instanceData, processId });
 }
 
-/**
- * List form of `resolveProposalTemplate`. It runs one query over the distinct
- * non-null `formSchemaId` values, and at most one instance → process
- * resolution when a proposal has no `formSchemaId`.
- * Returns a lookup by proposal id. The lookup throws `NotFoundError` for an
- * id that was not passed in.
- */
+/** List form of `resolveProposalTemplate`. Returns a lookup by proposal id. */
 export async function resolveProposalTemplates({
   proposals,
   instance,
