@@ -70,6 +70,22 @@ describe.concurrent('customForm.getForProfile', () => {
     ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
   });
 
+  it('admits an admin of the owning organization without a decision role', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({ instanceCount: 1 });
+    const form = await attachForm(setup.instance.profileId, onTestFinished);
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const result = await caller.customForm.getForProfile({
+      profileId: setup.instance.profileId,
+    });
+
+    expect(result?.id).toBe(form.id);
+  });
+
   it('returns the form attached to a profile', async ({
     task,
     onTestFinished,

@@ -47,6 +47,10 @@ vi.mock('@op/db/schema', () => ({
 
 const assertUserByAuthId = vi.fn();
 
+vi.mock('../decision/assertDecisionProfileReadAccess', () => ({
+  assertDecisionProfileReadAccess: vi.fn().mockResolvedValue(undefined),
+}));
+
 vi.mock('../assert', () => ({
   assertUserByAuthId: (...args: unknown[]) => assertUserByAuthId(...args),
 }));

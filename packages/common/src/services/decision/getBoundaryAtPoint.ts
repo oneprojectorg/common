@@ -1,7 +1,5 @@
-import { permission } from 'access-zones';
-
 import type { AccessUser } from '../access';
-import { assertProfileAccess } from '../assert';
+import { assertDecisionProfileReadAccess } from './assertDecisionProfileReadAccess';
 import {
   type ResolvedBoundary,
   hasDecisionBoundaries,
@@ -30,10 +28,9 @@ export async function getBoundaryAtPoint({
   profileId: string;
 }): Promise<BoundaryAtPoint> {
   const [, boundary, boundariesConfigured] = await Promise.all([
-    assertProfileAccess({
+    assertDecisionProfileReadAccess({
       user,
       profileId,
-      permissions: { decisions: permission.READ },
     }),
     resolveBoundary({ lat, lng, profileId }),
     hasDecisionBoundaries({ profileId }),

@@ -67,6 +67,22 @@ describe.concurrent('decision.resolveBoundary authorization', () => {
     ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
   });
 
+  it('admits an admin of the owning organization without a decision role', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const decision = await testData.createDecisionSetup({ instanceCount: 1 });
+    const caller = await createAuthenticatedCaller(decision.userEmail);
+
+    await expect(
+      caller.decision.resolveBoundary({
+        ...input,
+        profileId: decision.instance.profileId,
+      }),
+    ).resolves.toEqual({ boundary: null, boundariesConfigured: false });
+  });
+
   it('admits any caller on a public decision', async ({
     task,
     onTestFinished,

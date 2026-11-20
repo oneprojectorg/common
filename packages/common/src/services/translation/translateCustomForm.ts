@@ -1,10 +1,9 @@
 import { db } from '@op/db/client';
-import { permission } from 'access-zones';
 
 import { NotFoundError, ValidationError } from '../../utils';
 import type { AccessUser } from '../access';
-import { assertProfileAccess } from '../assert';
 import { isCustomFormDefinition } from '../customForms/schemas/customForm';
+import { assertDecisionProfileReadAccess } from '../decision/assertDecisionProfileReadAccess';
 import type { SupportedLocale } from './locales';
 import { runTranslateBatch } from './runTranslateBatch';
 import {
@@ -41,10 +40,9 @@ export async function translateCustomForm({
     throw new NotFoundError('Custom form', customFormId);
   }
 
-  await assertProfileAccess({
+  await assertDecisionProfileReadAccess({
     user,
     profileId: form.profileId,
-    permissions: { decisions: permission.READ },
   });
 
   const definition = form.schema;
