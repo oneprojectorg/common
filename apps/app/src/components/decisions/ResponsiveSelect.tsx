@@ -16,7 +16,7 @@ import { screens } from '@op/styles/constants';
 import { type ReactNode, useState } from 'react';
 import { LuChevronDown } from 'react-icons/lu';
 
-interface SelectOption<T extends string> {
+export interface SelectOption<T extends string> {
   id: T;
   label: ReactNode;
   /** Plain-text value for typeahead — required when `label` isn't a plain string. */

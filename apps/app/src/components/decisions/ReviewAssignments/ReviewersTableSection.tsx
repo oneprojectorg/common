@@ -43,9 +43,13 @@ import { LuBell, LuUsers } from 'react-icons/lu';
 
 import { Link, useTranslations } from '@/lib/i18n';
 
-import { SearchField } from '@/components/SearchField';
-
-import { ResponsiveSelect } from '../ResponsiveSelect';
+import {
+  FilterBarActions,
+  FilterBarEnd,
+  FilterBarSearch,
+  FilterBarSelect,
+  FilterBarStart,
+} from '../FilterBar';
 import { ReviewStatusBadge } from '../ReviewStatusBadge';
 import { StickyFilterBar } from '../StickyFilterBar';
 import { useSearchParam } from '../useSearchParam';
@@ -202,46 +206,46 @@ function ReviewersTableContent({
     <div className="relative flex flex-col gap-6">
       {showToolbar ? (
         <StickyFilterBar>
-          {reviewerCount}
-          <div className="flex flex-wrap items-center gap-4 max-md:w-full">
-            <SearchField
+          <FilterBarStart>
+            {reviewerCount}
+            <FilterBarSearch
               value={search}
               onChange={(next) => void setSearch(next === '' ? null : next)}
               isPending={isSearchPending}
               label={t('decisions.review.searchReviewersLabel')}
             />
-            <ResponsiveSelect
-              selectedKey={status ?? 'all'}
-              onSelectionChange={(key) =>
-                void setStatus(key === 'all' ? null : key)
-              }
-              aria-label={t('decisions.review.filterByStatusLabel')}
-              className="min-w-40"
+          </FilterBarStart>
+          <FilterBarEnd>
+            <FilterBarSelect
+              value={status ?? 'all'}
+              onChange={(key) => void setStatus(key === 'all' ? null : key)}
+              label={t('decisions.review.filterByStatusLabel')}
               items={statusItems}
             />
-            <ResponsiveSelect
-              selectedKey={sort}
-              onSelectionChange={(key) => void setSort(key)}
-              aria-label={t('decisions.review.sortReviewersLabel')}
-              className="min-w-40"
+            <FilterBarSelect
+              value={sort}
+              onChange={(key) => void setSort(key)}
+              label={t('decisions.review.sortReviewersLabel')}
               items={sortItems}
             />
             {showSendReminder ? (
-              <Button
-                variant="outline"
-                onClick={() =>
-                  openReminder({
-                    kind: 'batch',
-                    ...(appliedSearch ? { search: appliedSearch } : {}),
-                    ...(appliedStatus ? { status: appliedStatus } : {}),
-                  })
-                }
-              >
-                <LuBell data-icon="inline-start" />
-                {t('decisions.review.sendReminderAction')}
-              </Button>
+              <FilterBarActions>
+                <Button
+                  variant="outline"
+                  onClick={() =>
+                    openReminder({
+                      kind: 'batch',
+                      ...(appliedSearch ? { search: appliedSearch } : {}),
+                      ...(appliedStatus ? { status: appliedStatus } : {}),
+                    })
+                  }
+                >
+                  <LuBell data-icon="inline-start" />
+                  {t('decisions.review.sendReminderAction')}
+                </Button>
+              </FilterBarActions>
             ) : null}
-          </div>
+          </FilterBarEnd>
         </StickyFilterBar>
       ) : (
         reviewerCount

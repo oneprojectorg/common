@@ -31,7 +31,11 @@ import {
 import { useTranslations } from '@/lib/i18n';
 
 import { ExportProposalsButton } from './ExportProposalsButton';
-import { FilterBarActions, type FilterBarSelectControl } from './FilterBar';
+import {
+  FilterBarActions,
+  FilterBarEnd,
+  type FilterBarSelectControl,
+} from './FilterBar';
 import { MobileViewSwitch } from './MobileViewSwitch';
 import { ProposalBrowseCard } from './ProposalBrowseCard';
 import { ProposalCardDialogProvider } from './ProposalCardDialogContext';
@@ -618,7 +622,7 @@ const ProposalsListContent = ({
         <StickyFilterBar pinOffset={pinOffset}>
           {customHeader ?? <MyProposalsHeader />}
           {/* Kept so a `?view=` link into this phase still has a way out. */}
-          {viewSwitch}
+          {viewSwitch ? <FilterBarEnd>{viewSwitch}</FilterBarEnd> : null}
         </StickyFilterBar>
       ) : (
         <ProposalsListFilterBar

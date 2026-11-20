@@ -7,6 +7,7 @@ import { type ReactNode, Suspense } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
+import { FilterBar, FilterBarEnd } from '../FilterBar';
 import { ProposalsLoadError } from '../ProposalsLoadError';
 import {
   DevelopEntriesEmpty,
@@ -88,9 +89,11 @@ function EntriesPanel({
       phaseId={phaseId}
     >
       <div className="flex flex-col gap-10">
-        <div className="flex min-h-11 items-center justify-end">
-          <DevelopEntriesSearch />
-        </div>
+        <FilterBar>
+          <FilterBarEnd>
+            <DevelopEntriesSearch />
+          </FilterBarEnd>
+        </FilterBar>
 
         <APIErrorBoundary fallbacks={{ default: () => <ProposalsLoadError /> }}>
           <Suspense

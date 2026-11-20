@@ -13,6 +13,7 @@ import { Suspense, useEffect } from 'react';
 import { useTranslations } from '@/lib/i18n';
 
 import { CategoryFilterSelect } from '../CategoryFilterSelect';
+import { FilterBar, FilterBarEnd, FilterBarStart } from '../FilterBar';
 import { ProposalsLoadError } from '../ProposalsLoadError';
 import { usesDistrictCategoryTerm } from '../categoryTerm';
 import { ALL_CATEGORIES } from '../proposalFilterQuery';
@@ -92,32 +93,35 @@ export function DevelopAdminSourcesPanel({
         decisionSlug={decisionSlug}
       >
         <div className="flex flex-col gap-10">
-          <div className="flex min-h-11 flex-wrap items-center justify-between gap-4">
-            {/* Outside Suspense so the live region exists before the count changes. */}
-            <div role="status" aria-live="polite">
+          <FilterBar>
+            <FilterBarStart>
+              {/* Outside Suspense so the live region exists before the count changes. */}
+              <div role="status" aria-live="polite">
+                <APIErrorBoundary fallbacks={{ default: () => null }}>
+                  <Suspense
+                    fallback={
+                      <Skeleton aria-hidden className="h-7 w-72 max-w-full" />
+                    }
+                  >
+                    <DevelopAdminSourcesCountSuspense
+                      processInstanceId={processInstanceId}
+                      decisionSlug={decisionSlug}
+                    />
+                  </Suspense>
+                </APIErrorBoundary>
+              </div>
+            </FilterBarStart>
+            <FilterBarEnd>
               <APIErrorBoundary fallbacks={{ default: () => null }}>
-                <Suspense
-                  fallback={
-                    <Skeleton aria-hidden className="h-7 w-72 max-w-full" />
-                  }
-                >
-                  <DevelopAdminSourcesCountSuspense
+                <Suspense fallback={<CategoryFilterSkeleton />}>
+                  <DevelopAdminSourceCategoryFilterSuspense
                     processInstanceId={processInstanceId}
                     decisionSlug={decisionSlug}
                   />
                 </Suspense>
               </APIErrorBoundary>
-            </div>
-
-            <APIErrorBoundary fallbacks={{ default: () => null }}>
-              <Suspense fallback={<CategoryFilterSkeleton />}>
-                <DevelopAdminSourceCategoryFilterSuspense
-                  processInstanceId={processInstanceId}
-                  decisionSlug={decisionSlug}
-                />
-              </Suspense>
-            </APIErrorBoundary>
-          </div>
+            </FilterBarEnd>
+          </FilterBar>
 
           <APIErrorBoundary
             fallbacks={{ default: () => <ProposalsLoadError /> }}

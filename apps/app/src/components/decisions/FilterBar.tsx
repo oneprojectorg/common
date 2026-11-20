@@ -6,19 +6,19 @@ import type { ReactNode } from 'react';
 
 import { SearchField } from '@/components/SearchField';
 
-import { ResponsiveSelect } from './ResponsiveSelect';
+import { ResponsiveSelect, type SelectOption } from './ResponsiveSelect';
 
-export interface FilterBarSelectControl {
-  items: { id: string; label: string; isDisabled?: boolean }[];
-  value: string;
-  onChange: (id: string) => void;
+export interface FilterBarSelectControl<T extends string = string> {
+  items: SelectOption<T>[];
+  value: T;
+  onChange: (id: T) => void;
   label: string;
 }
 
 interface FilterBarSearchControl {
   value: string;
   onChange: (value: string) => void;
-  isPending: boolean;
+  isPending?: boolean;
   label: string;
 }
 
@@ -59,12 +59,12 @@ export const FilterBarSearch = ({
   />
 );
 
-export const FilterBarSelect = ({
+export const FilterBarSelect = <T extends string>({
   items,
   value,
   onChange,
   label,
-}: FilterBarSelectControl) => (
+}: FilterBarSelectControl<T>) => (
   <ResponsiveSelect
     selectedKey={value}
     onSelectionChange={onChange}

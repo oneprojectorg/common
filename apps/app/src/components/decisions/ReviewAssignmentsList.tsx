@@ -37,11 +37,11 @@ import {
 
 import { useTranslations } from '@/lib/i18n';
 
+import { FilterBarEnd, FilterBarSelect } from './FilterBar';
 import { MobileViewSwitch } from './MobileViewSwitch';
 import { ProposalCount } from './ProposalCount';
 import { ProposalMasonry } from './ProposalMasonry';
 import { ProposalsViewSwitch } from './ProposalsFilterBarParts';
-import { ResponsiveSelect } from './ResponsiveSelect';
 import { ReviewAssignmentCard } from './ReviewAssignmentCard';
 import { ReviewAssignmentsMapWithLocations } from './ReviewAssignmentsMapWithLocations';
 import { StickyFilterBar } from './StickyFilterBar';
@@ -302,8 +302,8 @@ export function ReviewAssignmentsList({
     <div className="relative flex flex-col gap-6">
       {showToolbar && (
         <StickyFilterBar pinOffset={pinOffset}>
-          {/* min-w-0 + flex-1 lets the category suffix ellipsize before the filters */}
-          <div className="flex min-w-0 flex-1 items-baseline gap-1">
+          {/* min-w-0 lets the category suffix ellipsize before the filters */}
+          <div className="flex min-w-0 grow-999 basis-0 items-baseline gap-1 max-md:basis-full">
             <ProposalCount count={total} />
             {/* decorative — a failed lookup must not take down the queue */}
             <APIErrorBoundary fallbacks={{ default: () => null }}>
@@ -314,23 +314,17 @@ export function ReviewAssignmentsList({
               </Suspense>
             </APIErrorBoundary>
           </div>
-          <div className="scrollbar-none flex items-center gap-4 max-md:-mx-4 max-md:w-screen max-md:overflow-x-scroll max-md:px-4">
-            <ResponsiveSelect
-              selectedKey={statusFilter ?? 'all'}
-              onSelectionChange={(key) =>
-                setStatusFilter(key === 'all' ? null : key)
-              }
-              aria-label={t('decisions.review.filterByStatusLabel')}
-              className="min-w-40"
+          <FilterBarEnd>
+            <FilterBarSelect
+              value={statusFilter ?? 'all'}
+              onChange={(key) => setStatusFilter(key === 'all' ? null : key)}
+              label={t('decisions.review.filterByStatusLabel')}
               items={statusFilterItems}
             />
-            <ResponsiveSelect
-              selectedKey={sort}
-              onSelectionChange={(key) =>
-                setSort(key as (typeof REVIEW_ASSIGNMENT_SORTS)[number])
-              }
-              aria-label={t('decisions.review.sortOrderLabel')}
-              className="min-w-40"
+            <FilterBarSelect
+              value={sort}
+              onChange={(key) => setSort(key)}
+              label={t('decisions.review.sortOrderLabel')}
               items={[
                 {
                   id: 'leastReviewed',
@@ -357,7 +351,7 @@ export function ReviewAssignmentsList({
                 }}
               />
             )}
-          </div>
+          </FilterBarEnd>
         </StickyFilterBar>
       )}
 

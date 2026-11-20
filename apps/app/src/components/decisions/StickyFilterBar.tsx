@@ -19,30 +19,22 @@ export const getScrollParent = (node: Element | null): Element | null => {
   return null;
 };
 
-export interface StickyFilterBarProps {
+interface StickyFilterBarProps {
   /**
    * Px offset where the bar pins inside its scroll container — clears whatever
    * sticky chrome sits above it (e.g. the floating Overview/Current toggle).
    * Drives both the sticky `top` and the observer rootMargin. Defaults to 0.
    */
   pinOffset?: number;
-  className?: string;
   children: ReactNode;
 }
 
 /**
- * The pinning shell shared by the decision list surfaces' filter bars. A
- * zero-height sentinel just above the bar, observed against the nearest scroll
- * container (rootMargin shrunk by `pinOffset`), flips `data-pinned` exactly as
- * the bar locks; once pinned, the full-bleed hairlines and white backing fade
- * in. Requires a `relative` ancestor for the sentinel to anchor to. The bar
- * lays out its content with the same row as `FilterBar`, so callers compose the
- * `FilterBar` parts inside it. A caller that needs a different arrangement
- * overrides the row through `className`.
+ * Pins the `FilterBar` row. Requires a `relative` ancestor for the pin sentinel
+ * to anchor to.
  */
 export const StickyFilterBar = ({
   pinOffset = 0,
-  className,
   children,
 }: StickyFilterBarProps) => {
   const sentinelRef = useRef<HTMLDivElement>(null);
@@ -91,7 +83,6 @@ export const StickyFilterBar = ({
           // Bottom hairline fades in on pin — all breakpoints.
           "after:pointer-events-none after:absolute after:-bottom-px after:left-1/2 after:w-screen after:-translate-x-1/2 after:border-b after:border-border after:opacity-0 after:content-['']",
           'data-[pinned=true]:after:opacity-100',
-          className,
         )}
       >
         {/* Full-bleed white that fades in once pinned — covers the bar and its
