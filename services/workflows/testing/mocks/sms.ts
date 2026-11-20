@@ -33,7 +33,9 @@ export const recordingSmsProvider: SmsProvider = {
     if (refusal) {
       return refusal;
     }
-    const providerMessageId = `recorded-${sent.length + 1}`;
+    // Unique across tests: the sid lands in sms_messages, which carries a
+    // global unique index on it.
+    const providerMessageId = `recorded-${sent.length + 1}-${crypto.randomUUID()}`;
     sent.push({ to, from: from ?? null, body, providerMessageId });
     return { status: 'accepted', providerMessageId };
   },

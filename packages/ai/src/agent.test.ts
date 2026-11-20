@@ -1,5 +1,7 @@
 import type { MessageInput } from '@mastra/core/agent/message-list';
+import { createTool } from '@mastra/core/tools';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { z } from 'zod';
 
 import { createAIAgent } from './agent';
 
@@ -122,6 +124,78 @@ describe('asking an agent a question', () => {
     );
     expect(contents).toContain('Answer concisely.');
     expect(contents).toContain('What is the capital of France?');
+  });
+});
+
+describe('calling a tool', () => {
+  const toolCallResponse = (name: string, args: Record<string, unknown>) =>
+    new Response(
+      JSON.stringify({
+        id: 'mock-tool-call',
+        object: 'chat.completion',
+        created: 0,
+        model: 'test-model',
+        choices: [
+          {
+            index: 0,
+            message: {
+              role: 'assistant',
+              content: null,
+              tool_calls: [
+                {
+                  id: 'call-1',
+                  type: 'function',
+                  function: { name, arguments: JSON.stringify(args) },
+                },
+              ],
+            },
+            finish_reason: 'tool_calls',
+          },
+        ],
+        usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 },
+      }),
+      { status: 200, headers: { 'content-type': 'application/json' } },
+    );
+
+  it('executes the tool and threads its result into the next completion', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(toolCallResponse('read_counter', { key: 'a' }))
+      .mockResolvedValueOnce(chatCompletionResponse('The counter holds 41.'));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const execute = vi.fn().mockResolvedValue({ value: 41 });
+    const agent = createAIAgent({
+      name: 'counter-reader',
+      instructions: 'Use the tool to read the counter.',
+      model: {
+        modelId: 'test-model',
+        baseURL: 'https://inference.example.com/v1',
+        apiKey: 'test-key',
+      },
+      tools: {
+        read_counter: createTool({
+          id: 'read_counter',
+          description: 'Read the counter for a key.',
+          inputSchema: z.object({ key: z.string() }),
+          execute,
+        }),
+      },
+    });
+
+    const result = await agent.generate('What does the counter hold?', {
+      maxSteps: 3,
+    });
+
+    expect(result.text).toBe('The counter holds 41.');
+    expect(execute).toHaveBeenCalledTimes(1);
+    expect(JSON.stringify(execute.mock.calls[0]?.[0])).toContain('"a"');
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    const firstBody = JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body));
+    expect(JSON.stringify(firstBody.tools)).toContain('read_counter');
+    const secondBody = JSON.parse(String(fetchMock.mock.calls[1]?.[1]?.body));
+    expect(JSON.stringify(secondBody.messages)).toContain('41');
   });
 });
 

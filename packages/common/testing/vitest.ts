@@ -31,6 +31,12 @@ export const TEST_ENV = {
   TIPTAP_ENVIRONMENT_ID: 'test-tiptap-env',
   // Satisfies the service's key guard; `./mocks/deepl.ts` is the client.
   DEEPL_API_KEY: 'test-fake-key',
+  // Keep the cache layer off. Importing `@op/db` runs drizzle.config.ts, whose
+  // dotenv call loads the repo-root .env.local — without this pin its
+  // REDIS_URL would point the tests at the shared dev Redis, where 72h-old
+  // profileUser entries outlive the rows the tests delete. CI has no Redis;
+  // tests must not either.
+  REDIS_URL: '',
 };
 
 const harnessFile = (name: string) =>

@@ -1,3 +1,4 @@
+import { sql } from 'drizzle-orm';
 import {
   integer,
   pgTable,
@@ -7,6 +8,7 @@ import {
 } from 'drizzle-orm/pg-core';
 
 import { autoId, serviceRolePolicies, timestamps } from '../../helpers';
+import { conversations } from './conversations.sql';
 import { decisionPhoneNumbers } from './decisionPhoneNumbers.sql';
 import { processInstances } from './processInstances.sql';
 import { profiles } from './profiles.sql';
@@ -34,6 +36,10 @@ export const decisionChatSessions = pgTable(
         onDelete: 'set null',
       },
     ),
+    conversationId: uuid('conversation_id').references(() => conversations.id, {
+      onUpdate: 'cascade',
+      onDelete: 'set null',
+    }),
     pageCursor: integer('page_cursor'),
     reopenedAt: timestamp('reopened_at', { withTimezone: true }),
     ...timestamps,
@@ -44,6 +50,9 @@ export const decisionChatSessions = pgTable(
       table.processInstanceId,
       table.profileId,
     ),
+    uniqueIndex('decision_chat_sessions_conversation_uniq')
+      .on(table.conversationId)
+      .where(sql`${table.conversationId} IS NOT NULL`),
   ],
 );
 

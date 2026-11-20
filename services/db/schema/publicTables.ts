@@ -224,6 +224,28 @@ export { decisionPhoneNumbers } from './tables/decisionPhoneNumbers.sql';
 export type { DecisionPhoneNumber } from './tables/decisionPhoneNumbers.sql';
 export { decisionChatSessions } from './tables/decisionChatSessions.sql';
 export type { DecisionChatSession } from './tables/decisionChatSessions.sql';
+export {
+  CONVERSATION_ITEM_KINDS,
+  CONVERSATION_ITEM_ROLES,
+  conversationItems,
+} from './tables/conversationItems.sql';
+export type {
+  ConversationItem,
+  ConversationItemKind,
+  ConversationItemRole,
+} from './tables/conversationItems.sql';
+export { conversations } from './tables/conversations.sql';
+export type { Conversation } from './tables/conversations.sql';
+export {
+  SMS_MESSAGE_DIRECTIONS,
+  SMS_MESSAGE_STATUSES,
+  smsMessages,
+} from './tables/smsMessages.sql';
+export type {
+  SmsMessage,
+  SmsMessageDirection,
+  SmsMessageStatus,
+} from './tables/smsMessages.sql';
 export { decisionVoterEnrolments } from './tables/decisionVoterEnrolments.sql';
 export type { DecisionVoterEnrolment } from './tables/decisionVoterEnrolments.sql';
 export { decisionsVoteDrafts } from './tables/decisions_vote_drafts.sql';

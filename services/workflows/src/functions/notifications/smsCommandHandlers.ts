@@ -73,12 +73,21 @@ import {
   moveSmsBallotPick,
   removeSmsBallotPick,
   resolveVoterAddress,
+  runVotingAssistant,
+  votingAssistantTools,
   startVoterEnrolment,
   submitSmsBallot,
   summarizeSmsBallot,
+  VOTING_ASSISTANT_AGENT_ID,
+  VOTING_ASSISTANT_PROMPT_VERSION,
+  appendConversationItems,
+  ensureConversation,
+  listRecentReplayMessages,
 } from '@op/common';
 import { Events, inngest } from '@op/events';
+import { logger } from '@op/logging';
 import type { GetStepTools } from 'inngest';
+import { randomUUID } from 'node:crypto';
 
 import { SMS_COMMAND_HELP_MESSAGE, SMS_COMMAND_LIST_MESSAGE } from './smsReply';
 
@@ -115,6 +124,7 @@ export interface SmsCommandContext {
   line: ChatLine | null;
   deliver: SmsDeliver;
   geocode: Geocode;
+  inboundSmsId?: string | null;
 }
 
 export type SmsCommandHandler = (
@@ -608,6 +618,94 @@ export const freeText: SmsCommandHandler = async (context) => {
         message: 'address resolved',
       });
   }
+};
+
+const SMS_ASK_USAGE_MESSAGE =
+  'Text L and your question, for example: L how do I vote?';
+
+export const ask: SmsCommandHandler = async (context) => {
+  const { step, account, body, deliver } = context;
+  const question = (body ?? '')
+    .trim()
+    .replace(/^l[.!:,]?\s*/i, '')
+    .trim();
+
+  if (!question) {
+    return deliverAll({
+      deliver,
+      stepId: 'send-ask-usage',
+      label: 'Ask usage reply',
+      bodies: [SMS_ASK_USAGE_MESSAGE],
+      message: 'ask needs a question',
+    });
+  }
+
+  const resolved = await step.run('resolve-ask-answer', async () => {
+    const pending = await findPendingVoterEnrolment({
+      authUserId: account.authUserId,
+    });
+    const instanceId =
+      pending?.processInstanceId ?? (await findBallotInstance(context));
+    const conversation = await ensureConversation({
+      authUserId: account.authUserId,
+      processInstanceId: instanceId,
+      phoneNumberId: context.line?.id ?? null,
+    });
+    const history = await listRecentReplayMessages({
+      conversationId: conversation.id,
+      limit: 10,
+    });
+    const { answer, responseMessages } = await runVotingAssistant({
+      question,
+      commandList: SMS_COMMAND_LIST_MESSAGE,
+      tools: votingAssistantTools({
+        authUserId: account.authUserId,
+        instanceId,
+        geocode: context.geocode,
+      }),
+      history,
+    });
+    // A storage failure must not fail the step: a retried step would run the
+    // agent, and its ballot writes, a second time.
+    try {
+      await appendConversationItems({
+        conversationId: conversation.id,
+        runId: randomUUID(),
+        items: [
+          {
+            message: { role: 'user', content: question },
+            smsMessageId: context.inboundSmsId ?? null,
+          },
+          ...responseMessages.map((message) => ({
+            message,
+            agentId: VOTING_ASSISTANT_AGENT_ID,
+            promptVersion: VOTING_ASSISTANT_PROMPT_VERSION,
+          })),
+        ],
+      });
+    } catch (error) {
+      logger.error('SMS assistant exchange could not be stored', { error });
+    }
+    return { answer };
+  });
+
+  if (!resolved.answer) {
+    return deliverAll({
+      deliver,
+      stepId: 'send-ask-fallback',
+      label: 'Ask fallback reply',
+      bodies: [SMS_COMMAND_HELP_MESSAGE],
+      message: 'ask failed, help sent',
+    });
+  }
+
+  return deliverAll({
+    deliver,
+    stepId: 'send-ask-answer',
+    label: 'Ask answer',
+    bodies: [resolved.answer],
+    message: 'question answered',
+  });
 };
 
 export const sendSmsHelp = async (
