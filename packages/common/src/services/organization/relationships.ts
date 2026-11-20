@@ -547,7 +547,15 @@ export const declineRelationship = async ({
   try {
     await db
       .delete(organizationRelationships)
-      .where(inArray(organizationRelationships.id, ids));
+      .where(
+        and(
+          inArray(organizationRelationships.id, ids),
+          eq(
+            organizationRelationships.targetOrganizationId,
+            targetOrganizationId,
+          ),
+        ),
+      );
 
     return true;
   } catch (e) {
