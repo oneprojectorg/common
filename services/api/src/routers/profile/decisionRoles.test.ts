@@ -9,6 +9,7 @@ import {
 } from '@op/db/seedData/accessControl';
 import { fromBitField, permission as acrudPermission } from 'access-zones';
 import { and, eq } from 'drizzle-orm';
+import { randomUUID } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 
 import profileRouter from '.';
@@ -647,5 +648,102 @@ describe.concurrent('profile.decisionRoles', () => {
       (error: Error & { cause?: Error }) =>
         error.cause?.name === 'UnauthorizedError',
     );
+  });
+});
+
+describe.concurrent('profile.getDecisionRole authorization', () => {
+  const createCaller = createCallerFactory(profileRouter);
+
+  it('rejects a caller without access to the profile', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestProfileUserDataManager(task.id, onTestFinished);
+    const { profile } = await testData.createProfile({ users: { admin: 1 } });
+    const { adminUser: outsider } = await testData.createProfile({
+      users: { admin: 1 },
+    });
+
+    const { session } = await createIsolatedSession(outsider.email);
+    const caller = createCaller(await createTestContextWithSession(session));
+
+    await expect(
+      caller.getDecisionRole({
+        roleId: ROLES.MEMBER.id,
+        profileId: profile.id,
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
+  });
+
+  it('rejects an unknown role', async ({ task, onTestFinished }) => {
+    const testData = new TestProfileUserDataManager(task.id, onTestFinished);
+    const { profile, adminUser } = await testData.createProfile({
+      users: { admin: 1 },
+    });
+
+    const { session } = await createIsolatedSession(adminUser.email);
+    const caller = createCaller(await createTestContextWithSession(session));
+
+    await expect(
+      caller.getDecisionRole({ roleId: randomUUID(), profileId: profile.id }),
+    ).rejects.toMatchObject({ cause: { name: 'NotFoundError' } });
+  });
+
+  it('rejects a role scoped to another profile', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestProfileUserDataManager(task.id, onTestFinished);
+    const { profile, adminUser } = await testData.createProfile({
+      users: { admin: 1 },
+    });
+    const { profile: otherProfile } = await testData.createProfile({
+      users: { admin: 1 },
+    });
+
+    const [otherRole] = await db
+      .insert(accessRoles)
+      .values({
+        name: `Other Profile Role ${task.id}`,
+        profileId: otherProfile.id,
+      })
+      .returning();
+    if (!otherRole) {
+      throw new Error('Failed to create role');
+    }
+    onTestFinished(async () => {
+      await db.delete(accessRoles).where(eq(accessRoles.id, otherRole.id));
+    });
+
+    const { session } = await createIsolatedSession(adminUser.email);
+    const caller = createCaller(await createTestContextWithSession(session));
+
+    await expect(
+      caller.getDecisionRole({ roleId: otherRole.id, profileId: profile.id }),
+    ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
+  });
+
+  it('lets a member of the profile read a decision role', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestProfileUserDataManager(task.id, onTestFinished);
+    const { profile, memberUsers } = await testData.createProfile({
+      users: { admin: 1, member: 1 },
+    });
+    const [member] = memberUsers;
+    if (!member) {
+      throw new Error('Failed to create member');
+    }
+
+    const { session } = await createIsolatedSession(member.email);
+    const caller = createCaller(await createTestContextWithSession(session));
+
+    await expect(
+      caller.getDecisionRole({
+        roleId: ROLES.MEMBER.id,
+        profileId: profile.id,
+      }),
+    ).resolves.toMatchObject({ read: true });
   });
 });

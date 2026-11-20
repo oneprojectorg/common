@@ -657,3 +657,57 @@ describeAccessTierGating('profile.listRoles', {
     },
   ),
 });
+
+describe.concurrent('profile.listRoles authorization', () => {
+  const createCaller = createCallerFactory(profileRouter);
+
+  it('rejects a caller without access to the profile', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestProfileUserDataManager(task.id, onTestFinished);
+    const { profile } = await testData.createProfile({ users: { admin: 1 } });
+    const { adminUser: outsider } = await testData.createProfile({
+      users: { admin: 1 },
+    });
+
+    const { session } = await createIsolatedSession(outsider.email);
+    const caller = createCaller(await createTestContextWithSession(session));
+
+    await expect(
+      caller.listRoles({ profileId: profile.id }),
+    ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
+  });
+
+  it('lets a member of the profile list its roles', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestProfileUserDataManager(task.id, onTestFinished);
+    const { profile, memberUsers } = await testData.createProfile({
+      users: { admin: 1, member: 1 },
+    });
+    const [member] = memberUsers;
+    if (!member) {
+      throw new Error('Failed to create member');
+    }
+
+    const [profileRole] = await db
+      .insert(accessRoles)
+      .values({ name: `Profile Role ${task.id}`, profileId: profile.id })
+      .returning();
+    if (!profileRole) {
+      throw new Error('Failed to create role');
+    }
+    onTestFinished(async () => {
+      await db.delete(accessRoles).where(eq(accessRoles.id, profileRole.id));
+    });
+
+    const { session } = await createIsolatedSession(member.email);
+    const caller = createCaller(await createTestContextWithSession(session));
+
+    const result = await caller.listRoles({ profileId: profile.id });
+
+    expect(result.items.map((role) => role.id)).toEqual([profileRole.id]);
+  });
+});

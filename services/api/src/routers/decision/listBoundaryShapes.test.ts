@@ -1,5 +1,6 @@
+import { TestDecisionsDataManager } from '@op/common/testing';
 import { db, sql } from '@op/db/client';
-import { decisionBoundaries, profiles, users } from '@op/db/schema';
+import { decisionBoundaries } from '@op/db/schema';
 import { inArray } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
@@ -14,8 +15,6 @@ import {
 import {
   createIsolatedSession,
   createTestContextWithSession,
-  createTestUser,
-  supabaseTestAdminClient,
 } from '../../test/supabase-utils';
 import { createCallerFactory } from '../../trpcFactory';
 
@@ -82,10 +81,31 @@ const SAMPLE_MULTIPOLYGON = `ST_SetSRID(
 )`;
 
 describe.concurrent('decision.listBoundaryShapes', () => {
-  it('returns each boundary owned by the scoped profile as a parsed GeoJSON MultiPolygon', async ({
+  it('rejects a caller who cannot read the decision', async ({
+    task,
     onTestFinished,
   }) => {
-    const { caller, profileId } = await createScopedCaller(onTestFinished);
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const decision = await testData.createDecisionSetup({ instanceCount: 1 });
+    const outsider = await testData.createDecisionSetup();
+    const { session } = await createIsolatedSession(outsider.userEmail);
+    const caller = createCaller(await createTestContextWithSession(session));
+
+    await expect(
+      caller.decision.listBoundaryShapes({
+        profileId: decision.instance.profileId,
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
+  });
+
+  it('returns each boundary owned by the scoped profile as a parsed GeoJSON MultiPolygon', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { caller, profileId } = await createScopedCaller({
+      task,
+      onTestFinished,
+    });
 
     const boundaryName = `test-boundary-${randomUUID()}`;
     const [inserted] = await db
@@ -117,12 +137,17 @@ describe.concurrent('decision.listBoundaryShapes', () => {
   });
 
   it("does not leak another profile's boundaries", async ({
+    task,
     onTestFinished,
   }) => {
-    const { caller, profileId: ownProfileId } =
-      await createScopedCaller(onTestFinished);
-    const { profileId: otherProfileId } =
-      await createScopedCaller(onTestFinished);
+    const { caller, profileId: ownProfileId } = await createScopedCaller({
+      task,
+      onTestFinished,
+    });
+    const { profileId: otherProfileId } = await createScopedCaller({
+      task,
+      onTestFinished,
+    });
 
     const [otherBoundary] = await db
       .insert(decisionBoundaries)
@@ -152,35 +177,24 @@ describe.concurrent('decision.listBoundaryShapes', () => {
 });
 
 /**
- * Mints a fresh authenticated caller plus the test user's auto-created profile
- * id, registers cleanup, and returns both. The profile id is the scope used to
- * insert boundaries inside each test.
+ * Creates a decision the caller can read and returns the caller with the
+ * decision profile id, which scopes the boundaries inserted in each test.
  */
-async function createScopedCaller(
-  onTestFinished: (fn: () => void | Promise<void>) => void,
-): Promise<{ caller: ReturnType<typeof createCaller>; profileId: string }> {
-  const email = `boundary-shapes-${randomUUID().slice(0, 12)}@example.com`;
-  const { user } = await createTestUser(email);
-  if (!user) {
-    throw new Error(`failed to create test user ${email}`);
-  }
-
-  const userRow = await db.query.users.findFirst({
-    where: { authUserId: user.id },
-  });
-  if (!userRow?.profileId) {
-    throw new Error(`test user ${email} has no profile`);
-  }
-  const profileId = userRow.profileId;
-
-  onTestFinished(async () => {
-    await db.delete(profiles).where(inArray(profiles.id, [profileId]));
-    await db.delete(users).where(inArray(users.authUserId, [user.id]));
-    await supabaseTestAdminClient.auth.admin.deleteUser(user.id);
+async function createScopedCaller({
+  task,
+  onTestFinished,
+}: {
+  task: { id: string };
+  onTestFinished: (fn: () => void | Promise<void>) => void;
+}): Promise<{ caller: ReturnType<typeof createCaller>; profileId: string }> {
+  const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+  const setup = await testData.createDecisionSetup({
+    instanceCount: 1,
+    grantAccess: true,
   });
 
-  const { session } = await createIsolatedSession(email);
+  const { session } = await createIsolatedSession(setup.userEmail);
   const caller = createCaller(await createTestContextWithSession(session));
 
-  return { caller, profileId };
+  return { caller, profileId: setup.instance.profileId };
 }

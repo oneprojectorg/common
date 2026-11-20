@@ -2,6 +2,9 @@ import { db, sql } from '@op/db/client';
 import { decisionBoundaries } from '@op/db/schema';
 import { eq } from 'drizzle-orm';
 
+import type { AccessUser } from '../access';
+import { assertDecisionProfileReadAccess } from './assertDecisionProfileReadAccess';
+
 /**
  * Position is `[lng, lat]` (GeoJSON axis order, RFC 7946). The boundary geometry
  * is stored in PostGIS as `geometry(MultiPolygon, 4326)` and emitted via
@@ -29,10 +32,17 @@ export interface BoundaryShape {
  * to avoid round-tripping the WKB through the Node layer.
  */
 export async function listBoundaryShapes({
+  user,
   profileId,
 }: {
+  user: AccessUser;
   profileId: string;
 }): Promise<BoundaryShape[]> {
+  await assertDecisionProfileReadAccess({
+    user,
+    profileId,
+  });
+
   const rows = await db
     .select({
       id: decisionBoundaries.id,

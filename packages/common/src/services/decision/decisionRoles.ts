@@ -6,14 +6,17 @@ import { permission, toBitField } from 'access-zones';
 import { eq } from 'drizzle-orm';
 
 import { CommonError, NotFoundError } from '../../utils';
+import type { AccessUser } from '../access';
 import {
   assertPermissionRowScope,
+  assertRoleMatchesProfile,
   invalidateProfileUserCacheForRole,
 } from '../access/permissions';
 import {
   pickEffectivePermissionRows,
   zonePermissionsWhere,
 } from '../access/utils';
+import { assertProfileAccess } from '../assert';
 import {
   type DecisionRolePermissions,
   fromDecisionBitField,
@@ -208,26 +211,43 @@ export async function createDefaultDecisionRoles({
 }
 
 /**
- * Get the decision role permissions for a role on the decisions zone.
- *
- * Pass `profileId` to resolve the permissions in effect for that profile: a
- * per-profile override row wins over the role's global (NULL) row. Without
- * `profileId`, only the global row is read.
+ * Get the decision role permissions for a role on the decisions zone, as in
+ * effect for `profileId`: a per-profile override row wins over the role's
+ * global (NULL) row.
  */
 export async function getDecisionRole({
   roleId,
   profileId,
+  user,
 }: {
   roleId: string;
-  profileId?: string;
+  profileId: string;
+  user: AccessUser;
 }): Promise<DecisionRolePermissions> {
-  const zone = await defaultDb.query.accessZones.findFirst({
-    where: { name: 'decisions' },
-  });
+  const [, zone, role] = await Promise.all([
+    assertProfileAccess({
+      user,
+      profileId,
+      permissions: { profile: permission.READ },
+    }),
+    defaultDb.query.accessZones.findFirst({
+      where: { name: 'decisions' },
+    }),
+    defaultDb.query.accessRoles.findFirst({
+      where: { id: roleId },
+      columns: { profileId: true },
+    }),
+  ]);
 
   if (!zone) {
     throw new NotFoundError('Zone', 'decisions');
   }
+
+  if (!role) {
+    throw new NotFoundError('Role', roleId);
+  }
+
+  assertRoleMatchesProfile({ role, profileId });
 
   const rows =
     await defaultDb.query.accessRolePermissionsOnAccessZones.findMany({

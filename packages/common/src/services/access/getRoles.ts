@@ -21,7 +21,7 @@ import {
   profileUserToAccessRoles,
   profileUsers,
 } from '@op/db/schema';
-import { type Permission, fromBitField } from 'access-zones';
+import { type Permission, fromBitField, permission } from 'access-zones';
 
 import {
   type SortDir,
@@ -30,6 +30,8 @@ import {
   excludeGlobalUsers,
 } from '../../utils/db';
 import { type Paginated } from '../../utils/pagination';
+import { assertProfileAccess } from '../assert';
+import type { AccessUser } from './index';
 
 interface Role {
   id: string;
@@ -68,14 +70,16 @@ type RoleCursor = { value: string; id: string };
 
 /**
  * Get roles for a profile or global roles with cursor-based pagination.
- * - If profileId is provided: returns only roles specific to that profile
+ * - If profileId is provided: returns only roles specific to that profile, and
+ *   requires the user to have read access to it
  * - If no profileId: returns only exposable global roles (profileId IS NULL
  *   and named in EXPOSABLE_GLOBAL_ROLE_NAMES)
  * - If zoneName is provided: includes permission for that zone
  * - If includeMemberCounts is set (and profileId is present): each role gains
  *   a memberCount — the number of profile members holding that role
  */
-export const getRoles = async (params?: {
+export const getRoles = async (params: {
+  user: AccessUser;
   profileId?: string;
   zoneName?: string;
   includeMemberCounts?: boolean;
@@ -84,13 +88,22 @@ export const getRoles = async (params?: {
   dir?: SortDir;
 }): Promise<Paginated<Role>> => {
   const {
+    user,
     profileId = null,
     zoneName,
     includeMemberCounts,
     cursor,
     limit = 25,
     dir = 'asc',
-  } = params ?? {};
+  } = params;
+
+  if (profileId) {
+    await assertProfileAccess({
+      user,
+      profileId,
+      permissions: { profile: permission.READ },
+    });
+  }
 
   // Build cursor condition for pagination
   const decodedCursor = cursor ? decodeCursor<RoleCursor>(cursor) : undefined;

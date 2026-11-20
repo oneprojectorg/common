@@ -26,6 +26,7 @@ export const listRolesRouter = router({
         input;
 
       const result = await getRoles({
+        user: ctx.user,
         profileId,
         zoneName,
         includeMemberCounts,

@@ -16,14 +16,14 @@ export const listBoundaryShapesRouter = router({
   // location picker can render the valid-area outline beneath the marker.
   // Mirrors `resolveBoundary`'s tier — only the picker (which already requires
   // a composing session, anonymous Supabase included) calls this. Scoping is
-  // by `profileId` (== `processInstances.profileId`); access control to the
-  // decision is enforced upstream on the proposal-write paths, so this
-  // procedure does not re-authorize the caller against the profile.
+  // by `profileId` (== `processInstances.profileId`), and the caller must be
+  // able to read that decision.
   listBoundaryShapes: authenticatedProcedure()
     .input(listBoundaryShapesInputSchema)
     .output(listBoundaryShapesOutputSchema)
-    .query(async ({ input }) => {
+    .query(async ({ ctx, input }) => {
       const boundaries = await listBoundaryShapes({
+        user: ctx.user,
         profileId: input.profileId,
       });
 

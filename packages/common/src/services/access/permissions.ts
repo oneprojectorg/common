@@ -86,6 +86,23 @@ export type Permissions = {
 };
 
 /**
+ * Throws when a profile-scoped role is addressed through a different profile.
+ */
+export function assertRoleMatchesProfile({
+  role,
+  profileId,
+}: {
+  role: { profileId: string | null };
+  profileId?: string;
+}): void {
+  if (role.profileId && profileId && profileId !== role.profileId) {
+    throw new ValidationError(
+      'profileId does not match the profile of the role',
+    );
+  }
+}
+
+/**
  * Authorizes a permission-row write on a role and resolves the scope the row
  * is written under. Rows on profile-scoped roles are always global (NULL) —
  * the role itself is the scope — while global roles take per-profile override
@@ -102,11 +119,7 @@ export async function assertPermissionRowScope({
   user: { id: string };
 }): Promise<string | null> {
   if (role.profileId) {
-    if (profileId && profileId !== role.profileId) {
-      throw new ValidationError(
-        'profileId does not match the profile of the role',
-      );
-    }
+    assertRoleMatchesProfile({ role, profileId });
     await assertProfileAdmin({ user, profileId: role.profileId });
     return null;
   }

@@ -1,9 +1,15 @@
+import { TestOrganizationDataManager } from '@op/common/testing';
+import { db, inArray } from '@op/db/client';
+import { organizationRelationships } from '@op/db/schema';
+import { describe, expect, it } from 'vitest';
+
 import {
   accessTierGatingCell,
   describeAccessTierGating,
   expectFailsAccessTierGate,
   expectPassesAccessTierGate,
 } from '../../test/helpers/gating';
+import { createAuthenticatedCaller } from '../../test/supabase-utils';
 
 describeAccessTierGating('organization.listPendingRelationships', {
   noJwt: accessTierGatingCell('rejects no-JWT caller', async ({ callers }) => {
@@ -145,4 +151,112 @@ describeAccessTierGating('organization.listRelationships', {
       );
     },
   ),
+});
+
+describe.concurrent('organization.listRelationships', () => {
+  it('groups relationships in both directions by related organization', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const data = new TestOrganizationDataManager(task.id, onTestFinished);
+    const subject = await data.createOrganization({ users: { admin: 1 } });
+    const partner = await data.createOrganization({ users: { admin: 1 } });
+    const funder = await data.createOrganization({ users: { admin: 1 } });
+
+    const inserted = await db
+      .insert(organizationRelationships)
+      .values([
+        {
+          sourceOrganizationId: subject.organization.id,
+          targetOrganizationId: partner.organization.id,
+          relationshipType: 'partnership',
+          pending: false,
+        },
+        {
+          sourceOrganizationId: subject.organization.id,
+          targetOrganizationId: partner.organization.id,
+          relationshipType: 'memberOf',
+          pending: true,
+        },
+        {
+          sourceOrganizationId: funder.organization.id,
+          targetOrganizationId: subject.organization.id,
+          relationshipType: 'funding',
+          pending: false,
+        },
+      ])
+      .returning();
+    onTestFinished(async () => {
+      await db.delete(organizationRelationships).where(
+        inArray(
+          organizationRelationships.id,
+          inserted.map((relationship) => relationship.id),
+        ),
+      );
+    });
+
+    const caller = await createAuthenticatedCaller(subject.adminUser.email);
+    const { organizations, count } =
+      await caller.organization.listRelationships({
+        organizationId: subject.organization.id,
+      });
+
+    expect(count).toBe(2);
+    const byId = new Map(organizations.map((org) => [org.id, org]));
+    expect(
+      byId
+        .get(partner.organization.id)
+        ?.relationships?.map((relationship) => relationship.relationshipType)
+        .sort(),
+    ).toEqual(['hasMember', 'partnership']);
+    expect(
+      byId
+        .get(funder.organization.id)
+        ?.relationships?.map((relationship) => relationship.relationshipType),
+    ).toEqual(['funding']);
+  });
+});
+
+describe.concurrent('organization.listPendingRelationships', () => {
+  it('lists pending requests sent to the caller organization', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const data = new TestOrganizationDataManager(task.id, onTestFinished);
+    const subject = await data.createOrganization({ users: { admin: 1 } });
+    const requester = await data.createOrganization({ users: { admin: 1 } });
+
+    const inserted = await db
+      .insert(organizationRelationships)
+      .values({
+        sourceOrganizationId: requester.organization.id,
+        targetOrganizationId: subject.organization.id,
+        relationshipType: 'funding',
+        pending: true,
+      })
+      .returning();
+    onTestFinished(async () => {
+      await db.delete(organizationRelationships).where(
+        inArray(
+          organizationRelationships.id,
+          inserted.map((relationship) => relationship.id),
+        ),
+      );
+    });
+
+    const caller = await createAuthenticatedCaller(subject.adminUser.email);
+    await caller.account.switchOrganization({
+      organizationId: subject.organization.id,
+    });
+    const { organizations, count } =
+      await caller.organization.listPendingRelationships();
+
+    expect(count).toBe(1);
+    expect(organizations[0]?.id).toBe(requester.organization.id);
+    expect(
+      organizations[0]?.relationships?.map(
+        (relationship) => relationship.relationshipType,
+      ),
+    ).toEqual(['fundedBy']);
+  });
 });

@@ -1,4 +1,4 @@
-import { hasDecisionBoundaries, resolveBoundary } from '@op/common';
+import { getBoundaryAtPoint } from '@op/common';
 import { z } from 'zod';
 
 import { authenticatedProcedure, router } from '../../trpcFactory';
@@ -34,16 +34,12 @@ export const resolveBoundaryRouter = router({
   resolveBoundary: authenticatedProcedure()
     .input(resolveBoundaryInputSchema)
     .output(resolveBoundaryOutputSchema)
-    .query(async ({ input }) => {
-      const [boundary, boundariesConfigured] = await Promise.all([
-        resolveBoundary({
-          lat: input.lat,
-          lng: input.lng,
-          profileId: input.profileId,
-        }),
-        hasDecisionBoundaries({ profileId: input.profileId }),
-      ]);
-
-      return { boundary, boundariesConfigured };
+    .query(async ({ ctx, input }) => {
+      return getBoundaryAtPoint({
+        user: ctx.user,
+        lat: input.lat,
+        lng: input.lng,
+        profileId: input.profileId,
+      });
     }),
 });

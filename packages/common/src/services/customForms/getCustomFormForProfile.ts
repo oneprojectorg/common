@@ -11,6 +11,7 @@ import type { CustomForm, CustomFormSubmission } from '@op/db/schema';
 import { customFormSubmissions, proposals } from '@op/db/schema';
 
 import { assertUserByAuthId } from '../assert';
+import { assertDecisionProfileReadAccess } from '../decision/assertDecisionProfileReadAccess';
 import { getEffectiveFormPhase } from './utils';
 
 /**
@@ -39,7 +40,13 @@ export const getCustomFormForProfile = async ({
   initialPhaseId?: string;
   authUserId: string;
 }): Promise<CustomForm | null> => {
-  const form = await getFormForPhase({ profileId, phaseId, initialPhaseId });
+  const [, form] = await Promise.all([
+    assertDecisionProfileReadAccess({
+      user: { id: authUserId },
+      profileId,
+    }),
+    getFormForPhase({ profileId, phaseId, initialPhaseId }),
+  ]);
 
   if (!form) {
     return null;

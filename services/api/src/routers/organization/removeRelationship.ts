@@ -16,6 +16,7 @@ export const removeRelationshipRouter = router({
       const { id } = input;
 
       const relationshipRemoved = await removeRelationship({
+        user: ctx.user,
         id,
       });
 

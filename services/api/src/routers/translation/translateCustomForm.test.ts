@@ -180,6 +180,27 @@ describe('translation.translateCustomForm', () => {
     expect(mockTranslateText).not.toHaveBeenCalled();
   });
 
+  it('rejects a caller who cannot read the decision', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { form } = await setupForm({
+      task,
+      onTestFinished,
+      schema: { type: 'object', title: 'About you', properties: {} },
+    });
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const outsider = await testData.createDecisionSetup();
+    const caller = await createAuthenticatedCaller(outsider.userEmail);
+
+    await expect(
+      caller.translation.translateCustomForm({
+        customFormId: form.id,
+        targetLocale: 'es',
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
+  });
+
   it('rejects a deleted form', async ({ task, onTestFinished }) => {
     const { form, caller } = await setupForm({
       task,

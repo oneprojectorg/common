@@ -1,7 +1,9 @@
 import { db } from '@op/db/client';
 
 import { NotFoundError, ValidationError } from '../../utils';
+import type { AccessUser } from '../access';
 import { isCustomFormDefinition } from '../customForms/schemas/customForm';
+import { assertDecisionProfileReadAccess } from '../decision/assertDecisionProfileReadAccess';
 import type { SupportedLocale } from './locales';
 import { runTranslateBatch } from './runTranslateBatch';
 import {
@@ -14,11 +16,14 @@ import {
 /**
  * Translates the admin-authored text of a custom form: its title and
  * description, each field's title and description, and each option label.
+ * The caller must be able to read the decision the form belongs to.
  */
 export async function translateCustomForm({
+  user,
   customFormId,
   targetLocale,
 }: {
+  user: AccessUser;
   customFormId: string;
   targetLocale: SupportedLocale;
 }): Promise<{
@@ -28,12 +33,17 @@ export async function translateCustomForm({
 }> {
   const form = await db.query.customForms.findFirst({
     where: { id: customFormId, deletedAt: { isNull: true } },
-    columns: { id: true, schema: true },
+    columns: { id: true, profileId: true, schema: true },
   });
 
   if (!form) {
     throw new NotFoundError('Custom form', customFormId);
   }
+
+  await assertDecisionProfileReadAccess({
+    user,
+    profileId: form.profileId,
+  });
 
   const definition = form.schema;
   if (!isCustomFormDefinition(definition)) {
