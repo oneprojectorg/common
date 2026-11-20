@@ -34,8 +34,8 @@ type Story = StoryObj;
 
 const MODES: { mode: Mode; heading: string }[] = [
   { mode: 'editable', heading: 'Editable' },
-  { mode: 'disabled', heading: 'Disabled (before)' },
-  { mode: 'readOnly', heading: 'Read-only (new)' },
+  { mode: 'disabled', heading: 'Disabled' },
+  { mode: 'readOnly', heading: 'Read-only' },
 ];
 
 const date = new Date(2026, 5, 15);

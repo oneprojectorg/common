@@ -38,6 +38,17 @@ export const Disabled: Story = {
   ),
 };
 
+export const ReadOnly: Story = {
+  render: () => (
+    <Textarea
+      defaultValue="Members submit proposals for the community budget."
+      readOnly
+      aria-label="Description"
+      className="max-w-sm"
+    />
+  ),
+};
+
 // `unstyled`: no chrome, no resize grip and no type size, so the field takes
 // the type around it. One row, growing with the text.
 export const Unstyled: Story = {

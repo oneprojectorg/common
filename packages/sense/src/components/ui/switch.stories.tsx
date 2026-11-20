@@ -66,3 +66,12 @@ export const Disabled: Story = {
     </div>
   ),
 };
+
+export const ReadOnly: Story = {
+  render: () => (
+    <div className="flex items-center gap-4">
+      <Switch readOnly aria-label="Off" />
+      <Switch readOnly defaultChecked aria-label="On" />
+    </div>
+  ),
+};
