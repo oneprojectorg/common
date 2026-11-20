@@ -374,6 +374,9 @@ function PhaseDetailForm({
               value={safeParseLocal(phase.startDate)}
               maxDate={safeParseLocal(phase.endDate)}
               readOnly={isPast || isCurrent}
+              placeholder={
+                isPast || isCurrent ? t('Not set') : t('Select date')
+              }
               description={
                 isCurrent
                   ? t('decisions.processBuilder.currentPhaseStartLockedNote')
@@ -408,6 +411,7 @@ function PhaseDetailForm({
               value={safeParseLocal(phase.endDate)}
               minDate={safeParseLocal(phase.startDate)}
               readOnly={isPast}
+              placeholder={isPast ? t('Not set') : t('Select date')}
               onChange={(date) => {
                 if (date) {
                   updatePhase({ endDate: date.toISOString() });
