@@ -1,5 +1,5 @@
 import { db } from '@op/db/client';
-import type { processInstances } from '@op/db/schema';
+import type { ProcessInstance } from '@op/db/schema';
 
 import { NotFoundError, ValidationError } from '../../utils';
 import type { ProposalTemplateSchema } from './types';
@@ -36,10 +36,7 @@ export async function resolveProposalTemplates({
   instance,
 }: {
   proposals: ReadonlyArray<{ id: string; formSchemaId: string | null }>;
-  instance: Pick<
-    typeof processInstances.$inferSelect,
-    'instanceData' | 'processId'
-  >;
+  instance: Pick<ProcessInstance, 'instanceData' | 'processId'>;
 }): Promise<(proposalId: string) => ProposalTemplateSchema | null> {
   const formSchemaIds = [
     ...new Set(
